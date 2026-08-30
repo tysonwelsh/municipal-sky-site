@@ -15,6 +15,15 @@ include '../includes/header.php';
             <div class="entry-list entry-list--undated">
                 <div class="entry">
                     <div class="entry-content">
+                        <a href="/art/junk-drawer/" class="entry-title">The Junk Drawer</a>
+                        <span class="entry-description">A drawer of machine-made objects &mdash; SVGs
+                            drawn by large language models, imperfections intact and graded like the
+                            model output they are. Push the button and four machines draw whatever you
+                            describe; grade them blind, rank them, and the object joins the pile.</span>
+                    </div>
+                </div>
+                <div class="entry">
+                    <div class="entry-content">
                         <a href="/art/rain-of-babel/" class="entry-title">Rain of Babel</a>
                         <span class="entry-description">A rain of characters from seventy-three
                             writing systems &mdash; Greek, Cherokee, Deseret, Devanagari, Tibetan,

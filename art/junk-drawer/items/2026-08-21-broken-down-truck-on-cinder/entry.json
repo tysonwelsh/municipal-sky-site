@@ -27,7 +27,13 @@
         "layering": 3
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 1 of 3."
+      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 1 of 3.",
+      "tokens": {
+        "input": 268,
+        "output": 4544,
+        "total": 4812
+      },
+      "cost_usd": 0.055064
     },
     {
       "rid": "r2",
@@ -49,7 +55,13 @@
         "layering": 2
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 2 of 3. viewBox normalized: tightened from \"0 0 640 400\" to ink bounds (\"0.0 46.0 565.8 333.5\")."
+      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 2 of 3. viewBox normalized: tightened from \"0 0 640 400\" to ink bounds (\"0.0 46.0 565.8 333.5\").",
+      "tokens": {
+        "input": 401,
+        "output": 5882,
+        "total": 6283
+      },
+      "cost_usd": 0.149055
     },
     {
       "rid": "r3",
@@ -71,7 +83,13 @@
         "jnsq": 2
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 3 of 3. viewBox normalized: tightened from \"0 0 420 220\" to ink bounds (\"50.0 58.0 308.8 123.5\")."
+      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 3 of 3. viewBox normalized: tightened from \"0 0 420 220\" to ink bounds (\"50.0 58.0 308.8 123.5\").",
+      "tokens": {
+        "input": 274,
+        "output": 3127,
+        "total": 3401
+      },
+      "cost_usd": 0.031613
     }
   ]
 }

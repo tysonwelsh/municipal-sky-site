@@ -27,7 +27,13 @@
         "layering": 3
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"33.0 18.5 332.2 355.8\")."
+      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"33.0 18.5 332.2 355.8\").",
+      "tokens": {
+        "input": 216,
+        "output": 1794,
+        "total": 2010
+      },
+      "cost_usd": 0.027558
     },
     {
       "rid": "r2",
@@ -49,7 +55,13 @@
         "jnsq": 1
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 2 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 2 of 4.",
+      "tokens": {
+        "input": 192,
+        "output": 2666,
+        "total": 2858
+      },
+      "cost_usd": 0.06761
     },
     {
       "rid": "r3",
@@ -71,7 +83,13 @@
         "jnsq": 2
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 3 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 3 of 4.",
+      "tokens": {
+        "input": 123,
+        "output": 4130,
+        "total": 4253
+      },
+      "cost_usd": 0.049806
     },
     {
       "rid": "r4",
@@ -93,7 +111,13 @@
         "understanding-assignment": 2
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 260 260\" to ink bounds (\"23.0 28.0 216.5 203.8\")."
+      "notes": "Promoted from the turn that drew it (submission 01M01AASQ126BAG3P22YGB1K65), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 260 260\" to ink bounds (\"23.0 28.0 216.5 203.8\").",
+      "tokens": {
+        "input": 129,
+        "output": 2625,
+        "total": 2754
+      },
+      "cost_usd": 0.026411
     }
   ]
 }

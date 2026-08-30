@@ -27,7 +27,13 @@
         "layering": 3
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"25.2 45.5 350.0 293.8\")."
+      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"25.2 45.5 350.0 293.8\").",
+      "tokens": {
+        "input": 216,
+        "output": 1483,
+        "total": 1699
+      },
+      "cost_usd": 0.022893
     },
     {
       "rid": "r2",
@@ -49,7 +55,13 @@
         "structural-coherence": 1
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 2 of 4. viewBox normalized: tightened from \"0 0 800 800\" to ink bounds (\"8.0 63.0 783.8 663.8\")."
+      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 2 of 4. viewBox normalized: tightened from \"0 0 800 800\" to ink bounds (\"8.0 63.0 783.8 663.8\").",
+      "tokens": {
+        "input": 194,
+        "output": 4068,
+        "total": 4262
+      },
+      "cost_usd": 0.10267
     },
     {
       "rid": "r3",
@@ -71,7 +83,13 @@
         "jnsq": 1
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 3 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 3 of 4.",
+      "tokens": {
+        "input": 122,
+        "output": 3277,
+        "total": 3399
+      },
+      "cost_usd": 0.039568
     },
     {
       "rid": "r4",
@@ -93,7 +111,13 @@
         "structural-coherence": 1
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 4 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M0GQX91SR34KEEQ9JPJCJQV2), rated blind at the bench on the current rubric; filed rank 4 of 4.",
+      "tokens": {
+        "input": 129,
+        "output": 3204,
+        "total": 3333
+      },
+      "cost_usd": 0.032201
     }
   ]
 }

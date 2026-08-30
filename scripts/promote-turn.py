@@ -57,6 +57,37 @@ def slugify(title):
     return re.sub(r"-{2,}", "-", s)[:40] or "item"
 
 
+def price_generation(resp):
+    """tokens + cost_usd for one response, from the census and the site's
+    own pricing — the queue carries no usage, so the census answers."""
+    global _CENSUS
+    try:
+        if _CENSUS is None:
+            _CENSUS = json.load(urllib.request.urlopen(
+                urllib.request.Request(
+                    "https://municipalsky.com/api/jd-inventory.php?t=promote",
+                    headers=HDRS)))
+        row = None
+        for s in _CENSUS["submissions"]:
+            for g in s["generations"]:
+                if g["gen_id"] == resp["generation_id"]:
+                    row = g
+                    break
+            if row:
+                break
+        if not row or not row.get("usage_tokens"):
+            return {}
+        out = subprocess.run(
+            ["python3", os.path.join(REPO, "scripts", "backfill-costs.py"), "--price-one"],
+            input=json.dumps(row), capture_output=True, text=True)
+        return json.loads(out.stdout) if out.stdout.strip() else {}
+    except Exception:
+        return {}
+
+
+_CENSUS = None
+
+
 def flagged(it, which):
     return any(f["axis_id"] == which and not str(f.get("note") or "").startswith("UN")
                for r in it["responses"] for f in r["flags"])
@@ -95,6 +126,13 @@ def promote(it, dry=False):
         svg = get(GENSVG + r["generation_id"], raw=True)
         fn = r["model_id"] + ".svg"
         open(os.path.join(path, fn), "w").write(svg)
+        # WHAT IT COST (fix, 2026-08-30): the harvest carried tokens and
+        # cost_usd across from the first; this script never did, so 26 items
+        # reached the drawer with no Cost line on their cards. The numbers
+        # come from the generation's own usage, priced by the site's own
+        # function — see scripts/backfill-costs.py, which repaired the ones
+        # already promoted.
+        cost = price_generation(r)
         responses.append({
             "rid": f"r{i + 1}",
             "file": fn,
@@ -111,6 +149,10 @@ def promote(it, dry=False):
                       f"{tag.split(':', 1)[1]}), rated blind at the bench on the "
                       f"current rubric; filed rank {r['rank']} of {len(ordered)}."),
         })
+        if cost.get("tokens"):
+            responses[-1]["tokens"] = cost["tokens"]
+        if cost.get("cost_usd") is not None:
+            responses[-1]["cost_usd"] = cost["cost_usd"]
     entry = {
         "schema": 2,
         "id": iid,

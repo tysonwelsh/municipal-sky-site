@@ -27,7 +27,13 @@
         "layering": 2
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 1 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 1 of 4.",
+      "tokens": {
+        "input": 284,
+        "output": 2964,
+        "total": 3248
+      },
+      "cost_usd": 0.045312
     },
     {
       "rid": "r2",
@@ -49,7 +55,13 @@
         "layering": 3
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 2 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 2 of 4.",
+      "tokens": {
+        "input": 289,
+        "output": 3041,
+        "total": 3330
+      },
+      "cost_usd": 0.07747
     },
     {
       "rid": "r3",
@@ -71,7 +83,13 @@
         "structural-coherence": 1
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 3 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 3 of 4.",
+      "tokens": {
+        "input": 190,
+        "output": 2766,
+        "total": 2956
+      },
+      "cost_usd": 0.033572
     },
     {
       "rid": "r4",
@@ -93,7 +111,13 @@
         "understanding-assignment": 1
       },
       "transcript": null,
-      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 4 of 4."
+      "notes": "Promoted from the turn that drew it (submission 01M036YVBZBVBJ0WG4CG46R233), rated blind at the bench on the current rubric; filed rank 4 of 4.",
+      "tokens": {
+        "input": 197,
+        "output": 2921,
+        "total": 3118
+      },
+      "cost_usd": 0.029456
     }
   ]
 }

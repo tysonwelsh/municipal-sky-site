@@ -51,8 +51,11 @@ try {
         'SELECT id, item_id, prompt, created, status, client FROM jd_submissions ORDER BY created'
     )->fetchAll(PDO::FETCH_ASSOC);
 
+    // usage rides along (2026-08-30): a promoted turn's item has to state
+    // what the drawing cost, and this is the only census that can price it
     $gens = $db->query(
-        'SELECT id, submission_id, slot, model_id, status FROM jd_generations'
+        'SELECT id, submission_id, slot, model_id, model_version, provider,
+                status, usage_tokens FROM jd_generations'
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $rates = $db->query(
@@ -100,6 +103,9 @@ foreach ($gens as $g) {
         'gen_id'    => $id,
         'slot'      => $g['slot'],
         'model_id'  => $g['model_id'],
+        'model_version' => $g['model_version'],
+        'provider'  => $g['provider'],
+        'usage_tokens'  => $g['usage_tokens'],
         'status'    => $g['status'],
         'axes'      => (object) $rec['axes'],
         'axes_n'    => count($rec['axes']),
