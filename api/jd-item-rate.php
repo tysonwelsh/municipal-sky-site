@@ -219,9 +219,21 @@ try {
     // same way an axis answer is. The table lands via setup-jd-tables.php,
     // which is a manual run, so a database without it yet files the rest of
     // the batch rather than 500ing (jd-rate.php's own discipline).
+    // THE RANK ROW IS ONE PER DRAWING, WHOEVER FILED IT (fix, 2026-08-30).
+    // jd_ranks carries UNIQUE (submission_id, generation_id) — one order per
+    // drawing per turn, from when a turn was rated exactly once. The bench
+    // now re-ranks TURNS as well as curated items, so a drawing can already
+    // hold the order its own turn filed (client='web'), and clearing only
+    // the bench's rows left that one standing: the insert hit the unique key,
+    // the transaction rolled back, and the whole batch failed as
+    // 'server_error' — the owner's stuck card, and the reason a re-rated
+    // item kept coming back unfiled. The bench's order therefore REPLACES
+    // whatever was there: it is the same person's considered judgment
+    // superseding their first pass, which is the entire point of the
+    // re-rating. (The superseded value is not history worth keeping over a
+    // correction the owner deliberately made.)
     $delRank = $db->prepare(
-        "DELETE FROM jd_ranks
-          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?"
+        'DELETE FROM jd_ranks WHERE submission_id = ? AND generation_id = ?'
     );
     $insRank = $db->prepare(
         'INSERT INTO jd_ranks
@@ -234,7 +246,7 @@ try {
     foreach ($clean as [$kind, $axisId, $value]) {
         if ($kind === 'rank') {
             try {
-                $delRank->execute([$generationId, $curator]);
+                $delRank->execute([$gen['submission_id'], $generationId]);
                 $insRank->execute([
                     jd_ulid(), $gen['submission_id'], $generationId,
                     (int) $value, $curator, 'bench', $now,
