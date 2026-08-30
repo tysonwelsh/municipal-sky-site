@@ -5453,7 +5453,23 @@ function JD_layerOpen() {
        showing. Ink support samples per glyph arrive in em from the ruler
        and are cashed into real-scale px against EM here. */
     var YEXT = (140 * 33 / 41 - 110) / 2;
-    var WX0 = 0, WX1 = 140, WY0 = -YEXT, WY1 = 110 + YEXT;
+    /* CLEARANCE, SIDES ONLY (owner, 2026-08-30). The ink ruler put each
+       glyph's real ink on the wall, which was the right idea — but the
+       owner watching it reports the turn is honest at the TOP and BOTTOM
+       and late on the LEFT and RIGHT, where letters cross the frame before
+       coming back. The well is overflow:hidden and full-bleed, so a wall IS
+       the clip: ink arriving past it is sliced, which is exactly what
+       "drifting past the edge" looks like.
+       The vertical walls are left alone — they are already right, and
+       padding them would reintroduce the air the ruler removed. The
+       horizontal pair get their clearance in FIELD units, so the gap holds
+       whatever size the swatch takes: 5 units against the field's 140 is
+       ~8px at the live width, still a fraction of the 7-26px of dead air
+       the ink ruler was built to remove. ONE NUMBER TO TUNE if the sides
+       now turn a shade early. */
+    var WPADX = 5;
+    var WX0 = WPADX, WX1 = 140 - WPADX;
+    var WY0 = -YEXT, WY1 = 110 + YEXT;
     var inkEm = darkScatterInkReach();
     var INK = null, HCX = CX, HCY = CY;
     if (inkEm && inkEm.length === NG) {
