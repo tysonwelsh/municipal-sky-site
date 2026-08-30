@@ -56,11 +56,16 @@ try {
         jd_fail(404, 'not_found', 'No curated submission for that item — has the backfill run?');
     }
 
+    // ?status=any widens to un-rated turns — the diagnostic view (which slot
+    // failed, why, how long it ran) shouldn't have to wait for a rating.
+    // Harvest consumers keep the default: only rated turns are commit-worthy.
+    $anyStatus = (($_GET['status'] ?? '') === 'any');
     $stmt = $db->prepare(
         "SELECT id, created, status
            FROM jd_submissions
-          WHERE item_id IS NULL AND status = 'rated' AND prompt = ?
-          ORDER BY created DESC
+          WHERE item_id IS NULL AND prompt = ?"
+        . ($anyStatus ? '' : " AND status = 'rated'")
+        . " ORDER BY created DESC
           LIMIT 5"
     );
     $stmt->execute([$prompt]);
@@ -68,7 +73,7 @@ try {
 
     $genQ = $db->prepare(
         'SELECT id, slot, model_id, model_version, provider, harness, status,
-                reject_reason, svg, latency_ms, usage_tokens, created
+                reject_reason, svg, raw_response, latency_ms, usage_tokens, created
            FROM jd_generations
           WHERE submission_id = ?
           ORDER BY slot'
@@ -101,10 +106,22 @@ try {
             // jd_ranks lands via the manual setup script; absent = no order
         }
         $compQ->execute([$sub['id']]);
+        $gens = $genQ->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($gens as &$g) {
+            // raw_response is the diagnostic for a FAILED slot (the provider's
+            // error body); on an ok slot it's the whole model output — omit it
+            if ($g['status'] === 'ok') {
+                $g['raw_response'] = null;
+            } elseif (is_string($g['raw_response']) && strlen($g['raw_response']) > 2000) {
+                $g['raw_response'] = substr($g['raw_response'], 0, 2000) . '…[truncated]';
+            }
+        }
+        unset($g);
         $out[] = [
             'submission_id' => $sub['id'],
             'created'       => $sub['created'],
-            'generations'   => $genQ->fetchAll(PDO::FETCH_ASSOC),
+            'status'        => $sub['status'],
+            'generations'   => $gens,
             'ratings'       => $rateQ->fetchAll(PDO::FETCH_ASSOC),
             'ranks'         => $ranks,
             'comparison'    => $compQ->fetch(PDO::FETCH_ASSOC) ?: null,
