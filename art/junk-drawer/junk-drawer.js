@@ -8574,8 +8574,20 @@ function JD_layerOpen() {
         work.reached[ok[s]] = true;
         if (!benchRated(ok[s])) { firstOpenSlot = ok[s]; break; }
       }
+      var sizeStep = job.sizeTiers && job.sizeTiers.length;
+      /* everything already judged and only the size outstanding: open ON
+         the size card rather than walking the visitor back through work
+         they have finished (2026-08-30) */
+      var ranked = ok.length < 2 || ok.every(function (s2) {
+        return work.ranks[s2] >= 1;
+      });
       if (firstOpenSlot) {
         work.step = firstOpenSlot;
+      } else if (sizeStep && ranked && !work.size) {
+        work.step = 'size';
+        work.reached.size = true;
+        ok.forEach(function (s2) { work.reached[s2] = true; });
+        if (ok.length > 1) work.reached.call = true;
       } else if (ok.length > 1) {
         work.step = 'call';
         work.reached.call = true;
@@ -8742,6 +8754,16 @@ function JD_layerOpen() {
       if (!r.complete) return false;
       if (multi && !(r.rank >= 1)) return false;
     }
+    /* A TURN IS NOT DONE UNTIL IT IS SIZED (2026-08-30). A turn earns its
+       place in the drawer by being promoted into an item, and an item
+       cannot be filed without a size — the one field the rubric never
+       covered. Items rated from a tab still running the pre-size-card
+       script filed with no size at all and then counted as finished, which
+       put them beyond the bench's reach with nothing to promote. They come
+       back now, and open straight on the card that is missing. (A curated
+       item already carries its size in its entry, so this asks nothing of
+       the corpus.) */
+    if (it.source === 'turn' && !it.size_filed) return false;
     return true;
   }
   /* AN INTENT IS NOT AN OUTCOME (owner report, 2026-08-30). Pressing RERUN
