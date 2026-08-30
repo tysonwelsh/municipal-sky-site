@@ -1,0 +1,220 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="58.0 37.2 203.8 317.5">
+  <defs>
+    <linearGradient id="potBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9a98a"/>
+      <stop offset="0.4" stop-color="#c68c69"/>
+      <stop offset="1" stop-color="#a86c4c"/>
+    </linearGradient>
+    <linearGradient id="potRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e5b79a"/>
+      <stop offset="1" stop-color="#c98c67"/>
+    </linearGradient>
+    <linearGradient id="potShadow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5235" stop-opacity="0.1"/>
+      <stop offset="0.5" stop-color="#5c3622" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#8a5235" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="leafLight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8ad29a"/>
+      <stop offset="1" stop-color="#3d8c5b"/>
+    </linearGradient>
+    <linearGradient id="leafDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5eb57b"/>
+      <stop offset="1" stop-color="#256648"/>
+    </linearGradient>
+    <radialGradient id="leafHighlight" cx="0.4" cy="0.2" r="0.8">
+      <stop offset="0" stop-color="#c8f1d4" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#8fdca8" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#4a9b65" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="potLipEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b07b59"/>
+      <stop offset="0.5" stop-color="#e8c1a2"/>
+      <stop offset="1" stop-color="#b07b59"/>
+    </linearGradient>
+    <pattern id="scandiPattern" patternUnits="userSpaceOnUse" width="36" height="28">
+      <rect width="36" height="28" fill="none"/>
+      <path d="M4,24 Q8,16 12,24" fill="none" stroke="#e3c7b0" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M22,24 Q26,16 30,24" fill="none" stroke="#e3c7b0" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="8" cy="14" r="1.6" fill="#e3c7b0"/>
+      <circle cx="26" cy="14" r="1.6" fill="#e3c7b0"/>
+      <path d="M18,6 l0,6" stroke="#e3c7b0" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M18,12 q-2,-2 -4,0" fill="none" stroke="#e3c7b0" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M18,12 q2,-2 4,0" fill="none" stroke="#e3c7b0" stroke-width="1.4" stroke-linecap="round"/>
+    </pattern>
+    <clipPath id="potBodyClip">
+      <path d="M60,220 C70,300 80,340 160,348 C240,340 250,300 260,220 C230,226 199,230 160,230 C121,230 90,226 60,220 Z"/>
+    </clipPath>
+    <filter id="subtleBlur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+  </defs>
+
+  <!-- Pot shadowed silhouette for depth -->
+  <path d="M64,220 C74,302 86,344 160,352 C234,344 246,302 256,220
+           C226,226 196,230 160,230 C124,230 94,226 64,220 Z"
+        fill="rgba(0,0,0,0.18)" filter="url(#subtleBlur)"/>
+
+  <!-- Pot body -->
+  <path d="M60,220 C70,300 80,340 160,348 C240,340 250,300 260,220
+           C230,226 199,230 160,230 C121,230 90,226 60,220 Z"
+        fill="url(#potBody)"/>
+
+  <!-- Pot Scandinavian pattern clipped to body -->
+  <g clip-path="url(#potBodyClip)" opacity="0.78">
+    <rect x="52" y="214" width="216" height="144" fill="url(#scandiPattern)" />
+  </g>
+
+  <!-- Pot inner lip shadow -->
+  <ellipse cx="160" cy="214" rx="85" ry="20"
+           fill="url(#potShadow)" opacity="0.8"/>
+
+  <!-- Pot rim -->
+  <ellipse cx="160" cy="210" rx="92" ry="24"
+           fill="url(#potRim)"/>
+  <ellipse cx="160" cy="210" rx="92" ry="24"
+           fill="none" stroke="url(#potLipEdge)" stroke-width="2"/>
+
+  <!-- Top opening inner ellipse -->
+  <ellipse cx="160" cy="214" rx="74" ry="16"
+           fill="#5b402b" opacity="0.65"/>
+
+  <!-- Succulent: back layer leaves -->
+  <g>
+    <path d="M160,66
+             C144,76 132,92 126,112
+             C121,130 123,148 132,164
+             C141,179 154,188 160,190
+             C166,188 179,179 188,164
+             C197,148 199,130 194,112
+             C188,92 176,76 160,66 Z"
+          fill="url(#leafDark)"/>
+    <path d="M160,80
+             C148,90 140,106 138,122
+             C136,136 140,152 148,164
+             C152,170 158,176 160,176
+             C162,176 168,170 172,164
+             C180,152 184,136 182,122
+             C180,106 172,90 160,80 Z"
+          fill="url(#leafHighlight)" opacity="0.45"/>
+  </g>
+
+  <!-- Side leaves left -->
+  <g>
+    <path d="M120,84
+             C102,96 88,116 82,138
+             C77,156 79,178 90,194
+             C100,210 115,220 126,222
+             C128,208 135,188 140,172
+             C146,152 150,134 148,118
+             C146,103 137,90 120,84 Z"
+          fill="url(#leafDark)"/>
+    <path d="M113,98
+             C101,108 94,124 93,140
+             C92,152 96,166 104,178
+             C110,186 118,192 124,194
+             C125,183 129,170 134,158
+             C138,146 141,134 140,124
+             C139,112 131,102 113,98 Z"
+          fill="url(#leafHighlight)" opacity="0.45"/>
+  </g>
+
+  <!-- Side leaves right -->
+  <g>
+    <path d="M200,84
+             C218,96 232,116 238,138
+             C243,156 241,178 230,194
+             C220,210 205,220 194,222
+             C192,208 185,188 180,172
+             C174,152 170,134 172,118
+             C174,103 183,90 200,84 Z"
+          fill="url(#leafDark)"/>
+    <path d="M207,98
+             C219,108 226,124 227,140
+             C228,152 224,166 216,178
+             C210,186 202,192 196,194
+             C195,183 191,170 186,158
+             C182,146 179,134 180,124
+             C181,112 189,102 207,98 Z"
+          fill="url(#leafHighlight)" opacity="0.45"/>
+  </g>
+
+  <!-- Inner mid leaves -->
+  <g>
+    <path d="M140,78
+             C124,86 112,102 108,120
+             C104,136 108,154 116,168
+             C124,182 136,192 144,196
+             C150,186 155,174 160,166
+             C165,174 170,186 176,196
+             C184,192 196,182 204,168
+             C212,154 216,136 212,120
+             C208,102 196,86 180,78
+             C174,84 167,92 160,102
+             C153,92 146,84 140,78 Z"
+          fill="url(#leafLight)"/>
+    <path d="M160,96
+             C148,104 140,116 138,130
+             C136,142 140,156 148,166
+             C152,172 158,178 160,178
+             C162,178 168,172 172,166
+             C180,156 184,142 182,130
+             C180,116 172,104 160,96 Z"
+          fill="url(#leafHighlight)" opacity="0.6"/>
+  </g>
+
+  <!-- Central top leaf -->
+  <g>
+    <path d="M160,40
+             C148,50 138,64 134,80
+             C130,96 132,114 140,128
+             C146,138 154,146 160,148
+             C166,146 174,138 180,128
+             C188,114 190,96 186,80
+             C182,64 172,50 160,40 Z"
+          fill="url(#leafLight)"/>
+    <path d="M160,54
+             C150,62 144,74 142,86
+             C140,96 144,110 150,120
+             C154,126 158,130 160,130
+             C162,130 166,126 170,120
+             C176,110 180,96 178,86
+             C176,74 170,62 160,54 Z"
+          fill="url(#leafHighlight)" opacity="0.7"/>
+  </g>
+
+  <!-- Small foreground leaves near rim -->
+  <g>
+    <path d="M132,136
+             C120,142 111,152 108,162
+             C106,170 108,178 112,186
+             C117,194 124,200 132,204
+             C136,196 142,186 146,176
+             C148,170 150,162 148,156
+             C146,148 140,140 132,136 Z"
+          fill="url(#leafLight)"/>
+    <path d="M188,136
+             C200,142 209,152 212,162
+             C214,170 212,178 208,186
+             C203,194 196,200 188,204
+             C184,196 178,186 174,176
+             C172,170 170,162 172,156
+             C174,148 180,140 188,136 Z"
+          fill="url(#leafLight)"/>
+  </g>
+
+  <!-- Subtle outline strokes for definition -->
+  <g fill="none" stroke="#28533a" stroke-opacity="0.45" stroke-width="1.2">
+    <path d="M160,40 C148,50 138,64 134,80 C130,96 132,114 140,128 C146,138 154,146 160,148 C166,146 174,138 180,128 C188,114 190,96 186,80 C182,64 172,50 160,40 Z"/>
+    <path d="M140,78 C124,86 112,102 108,120 C104,136 108,154 116,168 C124,182 136,192 144,196"/>
+    <path d="M180,78 C196,86 208,102 212,120 C216,136 212,154 204,168 C196,182 184,192 176,196"/>
+    <path d="M120,84 C102,96 88,116 82,138 C77,156 79,178 90,194 C100,210 115,220 126,222"/>
+    <path d="M200,84 C218,96 232,116 238,138 C243,156 241,178 230,194 C220,210 205,220 194,222"/>
+  </g>
+
+  <!-- Pot bottom edge accent -->
+  <path d="M76,308
+           C96,332 124,344 160,348
+           C196,344 224,332 244,308"
+        fill="none" stroke="rgba(75,40,24,0.4)" stroke-width="3" stroke-linecap="round"/>
+</svg>

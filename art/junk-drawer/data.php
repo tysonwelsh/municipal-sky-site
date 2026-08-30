@@ -59,6 +59,21 @@ foreach ($entryFiles as $file) {
         continue;
     }
 
+    // A RESPONSE may retire individually (owner call, 2026-08-30, first use:
+    // the desktop succulent's two flawed originals): `"retired": true` on a
+    // response drops it from the served payload — the drawer and the report
+    // card never see it — while the entry keeps the row and its files, so
+    // rids stay permanent and the bench queue's position-join to the DB's
+    // curated generations is undisturbed. This is the display-side half of
+    // the legacy-keep exception; deletion is never the mechanism.
+    $entry['responses'] = array_values(array_filter(
+        $entry['responses'],
+        static fn($r) => empty($r['retired'])
+    ));
+    if (count($entry['responses']) === 0) {
+        continue;   // every response retired reads as no item to serve
+    }
+
     foreach ($entry['responses'] as $i => $resp) {
         $entry['responses'][$i]['url'] = '/art/junk-drawer/items/' . $dirId . '/' . ($resp['file'] ?? '');
         $entry['responses'][$i]['transcript_url'] = !empty($resp['transcript'])

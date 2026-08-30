@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="63.0 183.0 273.8 266.2">
+  <defs>
+    <linearGradient id="pot" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d9c3ae"/>
+      <stop offset="0.5" stop-color="#e8d6c4"/>
+      <stop offset="1" stop-color="#c9b096"/>
+    </linearGradient>
+    <linearGradient id="leaf1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fb285"/>
+      <stop offset="1" stop-color="#4e8a5e"/>
+    </linearGradient>
+    <linearGradient id="leaf2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fc494"/>
+      <stop offset="1" stop-color="#5a9668"/>
+    </linearGradient>
+    <linearGradient id="leaf3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a4d3a8"/>
+      <stop offset="1" stop-color="#6ba876"/>
+    </linearGradient>
+  </defs>
+
+  <!-- outer leaves -->
+  <g transform="translate(200,290)">
+    <path d="M0,20 C-55,15 -95,-15 -105,-60 C-60,-55 -25,-30 0,20 Z" fill="url(#leaf1)"/>
+    <path d="M0,20 C55,15 95,-15 105,-60 C60,-55 25,-30 0,20 Z" fill="url(#leaf1)"/>
+    <path d="M0,20 C-70,30 -110,20 -135,-10 C-85,-25 -40,-15 0,20 Z" fill="url(#leaf1)"/>
+    <path d="M0,20 C70,30 110,20 135,-10 C85,-25 40,-15 0,20 Z" fill="url(#leaf1)"/>
+    <path d="M0,20 C-40,-5 -60,-55 -55,-105 C-15,-75 5,-30 0,20 Z" fill="url(#leaf2)"/>
+    <path d="M0,20 C40,-5 60,-55 55,-105 C15,-75 -5,-30 0,20 Z" fill="url(#leaf2)"/>
+    <path d="M0,20 C-85,5 -120,-30 -130,-70 C-80,-70 -30,-40 0,20 Z" fill="url(#leaf2)"/>
+    <path d="M0,20 C85,5 120,-30 130,-70 C80,-70 30,-40 0,20 Z" fill="url(#leaf2)"/>
+    <!-- middle leaves -->
+    <path d="M0,15 C-45,10 -75,-20 -82,-65 C-45,-55 -15,-25 0,15 Z" fill="url(#leaf3)"/>
+    <path d="M0,15 C45,10 75,-20 82,-65 C45,-55 15,-25 0,15 Z" fill="url(#leaf3)"/>
+    <path d="M0,15 C-30,-10 -42,-55 -32,-100 C0,-70 10,-30 0,15 Z" fill="url(#leaf3)"/>
+    <path d="M0,15 C30,-10 42,-55 32,-100 C0,-70 -10,-30 0,15 Z" fill="url(#leaf3)"/>
+    <path d="M0,15 C-12,-15 -15,-60 0,-100 C15,-60 12,-15 0,15 Z" fill="url(#leaf3)"/>
+    <path d="M0,15 C-65,25 -95,15 -112,-15 C-68,-30 -30,-15 0,15 Z" fill="url(#leaf3)"/>
+    <path d="M0,15 C65,25 95,15 112,-15 C68,-30 30,-15 0,15 Z" fill="url(#leaf3)"/>
+    <!-- inner rosette -->
+    <path d="M0,10 C-30,5 -50,-20 -55,-55 C-28,-45 -8,-20 0,10 Z" fill="#7fb285"/>
+    <path d="M0,10 C30,5 50,-20 55,-55 C28,-45 8,-20 0,10 Z" fill="#7fb285"/>
+    <path d="M0,10 C-20,-8 -28,-42 -18,-75 C5,-50 10,-20 0,10 Z" fill="#8fc494"/>
+    <path d="M0,10 C20,-8 28,-42 18,-75 C-5,-50 -10,-20 0,10 Z" fill="#8fc494"/>
+    <path d="M0,10 C-8,-12 -10,-45 0,-72 C10,-45 8,-12 0,10 Z" fill="#a4d3a8"/>
+    <path d="M0,10 C-42,18 -62,10 -74,-12 C-42,-22 -18,-10 0,10 Z" fill="#8fc494"/>
+    <path d="M0,10 C42,18 62,10 74,-12 C42,-22 18,-10 0,10 Z" fill="#8fc494"/>
+    <!-- center bud -->
+    <path d="M0,8 C-14,0 -20,-22 -14,-44 C0,-28 4,-10 0,8 Z" fill="#b8e0bc"/>
+    <path d="M0,8 C14,0 20,-22 14,-44 C0,-28 -4,-10 0,8 Z" fill="#b8e0bc"/>
+    <path d="M0,8 C-6,-6 -6,-26 0,-40 C6,-26 6,-6 0,8 Z" fill="#cdeed0"/>
+  </g>
+
+  <!-- pot -->
+  <g>
+    <path d="M105,300 L135,440 Q200,455 265,440 L295,300 Z" fill="url(#pot)"/>
+    <rect x="90" y="272" width="220" height="34" rx="8" fill="#e0cdb8"/>
+    <rect x="90" y="272" width="220" height="34" rx="8" fill="url(#pot)" opacity="0.5"/>
+    <ellipse cx="200" cy="272" rx="110" ry="12" fill="#8a6f56"/>
+    <path d="M118,352 Q200,368 282,352 L284,364 Q200,380 116,364 Z" fill="#c2a78b" opacity="0.6"/>
+    <path d="M125,404 Q200,418 275,404 L277,413 Q200,428 123,413 Z" fill="#c2a78b" opacity="0.6"/>
+  </g>
+</svg>

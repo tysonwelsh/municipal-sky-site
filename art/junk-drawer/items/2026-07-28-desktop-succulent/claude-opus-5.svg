@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="72.0 60.0 258.8 323.8">
+  <defs>
+    <linearGradient id="potG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9694c"/>
+      <stop offset="0.18" stop-color="#d98a68"/>
+      <stop offset="0.5" stop-color="#e6a184"/>
+      <stop offset="0.82" stop-color="#c9775a"/>
+      <stop offset="1" stop-color="#9e5540"/>
+    </linearGradient>
+    <linearGradient id="rimG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c2704f"/>
+      <stop offset="0.35" stop-color="#eaa98d"/>
+      <stop offset="0.75" stop-color="#d3805f"/>
+      <stop offset="1" stop-color="#a45a43"/>
+    </linearGradient>
+    <linearGradient id="bandG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e8e0d3"/>
+      <stop offset="0.4" stop-color="#f6f1e7"/>
+      <stop offset="1" stop-color="#ddd2c2"/>
+    </linearGradient>
+    <linearGradient id="soilG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a423c"/>
+      <stop offset="1" stop-color="#2e2926"/>
+    </linearGradient>
+    <linearGradient id="leafA" x1="0" y1="1" x2="0.4" y2="0">
+      <stop offset="0" stop-color="#4e7a55"/>
+      <stop offset="0.55" stop-color="#7fae76"/>
+      <stop offset="1" stop-color="#b9d49b"/>
+    </linearGradient>
+    <linearGradient id="leafB" x1="0" y1="1" x2="0.5" y2="0">
+      <stop offset="0" stop-color="#3f6a4c"/>
+      <stop offset="0.6" stop-color="#6b9d69"/>
+      <stop offset="1" stop-color="#a6c88d"/>
+    </linearGradient>
+    <linearGradient id="leafC" x1="0" y1="1" x2="0.5" y2="0">
+      <stop offset="0" stop-color="#5b8760"/>
+      <stop offset="0.6" stop-color="#8fbc82"/>
+      <stop offset="1" stop-color="#cfe3b3"/>
+    </linearGradient>
+  </defs>
+
+  <g id="plant">
+    <!-- back ring of leaves -->
+    <g>
+      <path d="M200 208 C150 200 96 176 74 140 C104 128 156 140 186 168 C196 178 200 192 200 208Z" fill="url(#leafB)"/>
+      <path d="M200 208 C250 200 304 176 326 140 C296 128 244 140 214 168 C204 178 200 192 200 208Z" fill="url(#leafB)"/>
+      <path d="M200 208 C168 186 132 138 130 94 C160 100 192 138 202 178Z" fill="url(#leafA)"/>
+      <path d="M200 208 C232 186 268 138 270 94 C240 100 208 138 198 178Z" fill="url(#leafA)"/>
+      <path d="M200 206 C186 168 184 106 200 62 C218 106 216 168 202 206Z" fill="url(#leafA)"/>
+    </g>
+    <!-- mid ring -->
+    <g>
+      <path d="M200 212 C160 208 112 192 92 166 C122 154 168 164 192 186 C199 193 201 202 200 212Z" fill="url(#leafC)" opacity="0.98"/>
+      <path d="M200 212 C240 208 288 192 308 166 C278 154 232 164 208 186 C201 193 199 202 200 212Z" fill="url(#leafC)" opacity="0.98"/>
+      <path d="M200 212 C176 190 152 148 152 114 C178 124 198 158 204 190Z" fill="url(#leafB)"/>
+      <path d="M200 212 C224 190 248 148 248 114 C222 124 202 158 196 190Z" fill="url(#leafB)"/>
+      <path d="M200 210 C190 178 189 132 200 100 C211 132 210 178 200 210Z" fill="url(#leafC)"/>
+    </g>
+    <!-- inner rosette -->
+    <g>
+      <path d="M200 216 C176 214 146 204 134 188 C154 180 182 186 196 200 C200 204 201 210 200 216Z" fill="url(#leafC)"/>
+      <path d="M200 216 C224 214 254 204 266 188 C246 180 218 186 204 200 C200 204 199 210 200 216Z" fill="url(#leafC)"/>
+      <path d="M200 214 C184 200 170 174 170 152 C188 160 200 182 204 202Z" fill="url(#leafC)"/>
+      <path d="M200 214 C216 200 230 174 230 152 C212 160 200 182 196 202Z" fill="url(#leafC)"/>
+      <path d="M200 212 C194 190 194 166 200 146 C206 166 206 190 200 212Z" fill="#a9cf92"/>
+      <path d="M200 214 C186 208 176 196 174 186 C188 186 198 196 202 208Z" fill="#c3dda6"/>
+      <path d="M200 214 C214 208 224 196 226 186 C212 186 202 196 198 208Z" fill="#b7d69c"/>
+      <path d="M200 212 C193 200 191 188 194 178 C202 186 205 200 203 212Z" fill="#d6e7bb"/>
+    </g>
+    <!-- small offset pup -->
+    <g transform="translate(292,206) scale(0.42)">
+      <path d="M0 20 C-40 16 -74 2 -88 -18 C-58 -28 -18 -14 -4 4Z" fill="url(#leafB)"/>
+      <path d="M0 20 C40 16 74 2 88 -18 C58 -28 18 -14 4 4Z" fill="url(#leafB)"/>
+      <path d="M0 18 C-16 -4 -22 -44 -14 -70 C6 -46 10 -8 4 14Z" fill="url(#leafC)"/>
+      <path d="M0 18 C16 -4 22 -44 14 -70 C-6 -46 -10 -8 -4 14Z" fill="url(#leafC)"/>
+      <path d="M0 16 C-8 -6 -8 -30 0 -50 C8 -30 8 -6 0 16Z" fill="#bcd9a0"/>
+    </g>
+  </g>
+
+  <!-- soil -->
+  <path d="M112 228 C140 216 262 216 288 228 C266 240 134 240 112 228Z" fill="url(#soilG)"/>
+  <g fill="#8b8377" opacity="0.75">
+    <ellipse cx="136" cy="230" rx="7" ry="3.2"/>
+    <ellipse cx="158" cy="234" rx="5" ry="2.4"/>
+    <ellipse cx="252" cy="230" rx="6.5" ry="3"/>
+    <ellipse cx="268" cy="226" rx="4.5" ry="2.2"/>
+    <ellipse cx="176" cy="228" rx="4" ry="2"/>
+  </g>
+
+  <!-- pot -->
+  <g>
+    <path d="M118 232 L282 232 L262 356 C258 372 244 380 200 380 C156 380 142 372 138 356 Z" fill="url(#potG)"/>
+    <path d="M108 218 L292 218 L288 238 C288 248 250 254 200 254 C150 254 112 248 112 238 Z" fill="url(#rimG)"/>
+    <ellipse cx="200" cy="219" rx="92" ry="14" fill="#8f4d3a"/>
+    <ellipse cx="200" cy="219" rx="83" ry="10.5" fill="#3a322d"/>
+    <path d="M133 274 L268 274 L262 302 L138 302 Z" fill="url(#bandG)" opacity="0.95"/>
+    <g stroke="#c47a5c" stroke-width="2.4" stroke-linecap="round" opacity="0.9">
+      <path d="M152 288 h14"/><path d="M176 288 h14"/><path d="M200 288 h14"/><path d="M224 288 h14"/>
+    </g>
+    <path d="M143 240 C138 290 140 340 152 374 C144 372 140 366 138 356 L118 232 L142 232Z" fill="#ffffff" opacity="0.16"/>
+    <path d="M256 236 L282 232 L262 356 C259 369 250 375 238 378 C254 340 258 288 256 236Z" fill="#000000" opacity="0.14"/>
+    <path d="M200 380 C244 380 258 372 262 356 L259 374 C250 379 228 382 200 382 C172 382 150 379 141 374 L138 356 C142 372 156 380 200 380Z" fill="#8b4a37" opacity="0.55"/>
+  </g>
+</svg>
