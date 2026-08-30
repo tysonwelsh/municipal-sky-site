@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "id": "2026-08-27-vampire-bat",
+  "title": "Vampire bat",
+  "prompt": "Vampire bat. Cartoony. Round body with no head, but mouth and fangs on body below googly eye. Wings spread. Halloween ",
+  "created": "2026-08-27",
+  "sizeClass": "s",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "structural-coherence": 3,
+        "layering": 3,
+        "understanding-assignment": 4,
+        "jnsq": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M116NP1P0RQJKV8CQC8HR85A), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 600 400\" to ink bounds (\"-2.0 28.5 603.8 348.2\")."
+    },
+    {
+      "rid": "r2",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "layering": 3,
+        "jnsq": 2,
+        "structural-coherence": 1,
+        "understanding-assignment": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M116NP1P0RQJKV8CQC8HR85A), rated blind at the bench on the current rubric; filed rank 2 of 4. viewBox normalized: tightened from \"0 0 400 300\" to ink bounds (\"17.8 21.0 364.2 252.8\")."
+    },
+    {
+      "rid": "r3",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "structural-coherence": 3,
+        "understanding-assignment": 3,
+        "jnsq": 2,
+        "layering": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M116NP1P0RQJKV8CQC8HR85A), rated blind at the bench on the current rubric; filed rank 3 of 4. viewBox normalized: tightened from \"0 0 800 450\" to ink bounds (\"13.5 16.2 772.8 370.5\")."
+    },
+    {
+      "rid": "r4",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "jnsq": 1,
+        "structural-coherence": 1,
+        "layering": 3,
+        "understanding-assignment": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M116NP1P0RQJKV8CQC8HR85A), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 260 200\" to ink bounds (\"8.0 -2.0 243.8 183.8\")."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="13.5 16.2 772.8 370.5">
+  <defs>
+    <radialGradient id="bodyGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6a458c"/>
+      <stop offset="100%" stop-color="#3d2259"/>
+    </radialGradient>
+    <radialGradient id="wingGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b2054"/>
+      <stop offset="100%" stop-color="#1b0e2b"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Left Wing -->
+  <path d="M 300 180 Q 180 80 30 100 Q 40 200 20 300 Q 110 240 170 320 Q 230 250 270 340 Q 300 270 320 260 Z" fill="url(#wingGradient)" stroke="#1a0c29" stroke-width="6"/>
+  <!-- Left Wing Bones -->
+  <path d="M 300 180 Q 150 150 30 100 M 300 180 Q 200 230 20 300 M 300 180 Q 230 260 170 320 M 300 180 Q 280 280 270 340" fill="none" stroke="#2a153d" stroke-width="4"/>
+
+  <!-- Right Wing -->
+  <path d="M 500 180 Q 620 80 770 100 Q 760 200 780 300 Q 690 240 630 320 Q 570 250 530 340 Q 500 270 480 260 Z" fill="url(#wingGradient)" stroke="#1a0c29" stroke-width="6"/>
+  <!-- Right Wing Bones -->
+  <path d="M 500 180 Q 650 150 770 100 M 500 180 Q 600 230 780 300 M 500 180 Q 570 260 630 320 M 500 180 Q 520 280 530 340" fill="none" stroke="#2a153d" stroke-width="4"/>
+
+  <!-- Left Ear -->
+  <path d="M 330 130 Q 320 50 280 20 Q 340 70 380 110 Z" fill="#3d2259" stroke="#1a0c29" stroke-width="4"/>
+  <path d="M 335 125 Q 325 60 295 40 Q 335 80 365 110 Z" fill="#b06496"/>
+
+  <!-- Right Ear -->
+  <path d="M 470 130 Q 480 50 520 20 Q 460 70 420 110 Z" fill="#3d2259" stroke="#1a0c29" stroke-width="4"/>
+  <path d="M 465 125 Q 475 60 505 40 Q 465 80 435 110 Z" fill="#b06496"/>
+
+  <!-- Round Body (No Head) -->
+  <circle cx="400" cy="225" r="130" fill="url(#bodyGradient)" stroke="#1a0c29" stroke-width="6"/>
+
+  <!-- Left Googly Eye (Large) -->
+  <circle cx="355" cy="165" r="45" fill="#ffffff" stroke="#1a0c29" stroke-width="4"/>
+  <circle cx="365" cy="175" r="16" fill="#1a0c29"/>
+  <circle cx="370" cy="170" r="4" fill="#ffffff"/>
+
+  <!-- Right Googly Eye (Small & Derpy) -->
+  <circle cx="435" cy="155" r="28" fill="#ffffff" stroke="#1a0c29" stroke-width="4"/>
+  <circle cx="425" cy="160" r="10" fill="#1a0c29"/>
+  <circle cx="422" cy="157" r="3" fill="#ffffff"/>
+
+  <!-- Mouth -->
+  <path d="M 320 240 Q 400 330 480 240 Q 400 290 320 240 Z" fill="#1a0c29"/>
+  
+  <!-- Tongue -->
+  <path d="M 370 280 Q 400 310 430 280 Q 400 320 370 280 Z" fill="#d9547d"/>
+
+  <!-- Fangs -->
+  <path d="M 350 252 L 360 300 L 375 261 Z" fill="#ffffff" stroke="#1a0c29" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 450 252 L 440 300 L 425 261 Z" fill="#ffffff" stroke="#1a0c29" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- Little Feet / Claws at bottom of body -->
+  <path d="M 350 345 Q 360 370 340 380 Q 360 365 370 348 Z" fill="#1a0c29"/>
+  <path d="M 365 350 Q 380 375 370 385 Q 385 365 385 352 Z" fill="#1a0c29"/>
+  
+  <path d="M 450 345 Q 440 370 460 380 Q 440 365 430 348 Z" fill="#1a0c29"/>
+  <path d="M 435 350 Q 420 375 430 385 Q 415 365 415 352 Z" fill="#1a0c29"/>
+</svg>

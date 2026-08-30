@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="13.0 124.0 781.2 222.8">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd6a8"/>
+      <stop offset="0.18" stop-color="#3fbf8e"/>
+      <stop offset="0.55" stop-color="#2e9b73"/>
+      <stop offset="1" stop-color="#1d6f52"/>
+    </linearGradient>
+    <linearGradient id="wrap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8f0cf"/>
+      <stop offset="0.2" stop-color="#66d3a6"/>
+      <stop offset="0.6" stop-color="#34a97e"/>
+      <stop offset="1" stop-color="#1b6b50"/>
+    </linearGradient>
+    <linearGradient id="tipG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7ce3ba"/>
+      <stop offset="0.5" stop-color="#37b287"/>
+      <stop offset="1" stop-color="#175f45"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="crumb" cx="0.35" cy="0.3">
+      <stop offset="0" stop-color="#6fdcb0"/>
+      <stop offset="1" stop-color="#238063"/>
+    </radialGradient>
+  </defs>
+
+  <!-- shadows -->
+  <ellipse cx="215" cy="316" rx="200" ry="20" fill="#0d3b2c" opacity="0.18"/>
+  <ellipse cx="588" cy="316" rx="175" ry="18" fill="#0d3b2c" opacity="0.18"/>
+
+  <!-- ===== LEFT PIECE (tip end) ===== -->
+  <g transform="rotate(-4 215 220)">
+    <!-- broken wax core sticking out right -->
+    <path d="M330 176 l16 -8 6 14 14 -10 8 16 12 -6 4 18 -14 8 6 14 -18 4 2 16 -18 -2 -4 14 -14 -12z"
+          fill="url(#tipG)" stroke="#14543e" stroke-width="2" stroke-linejoin="round"/>
+    <!-- body -->
+    <path d="M120 176 h215 v112 h-215 z" fill="url(#wrap)"/>
+    <!-- tip cone -->
+    <path d="M120 176 L40 214 a12 12 0 0 0 0 36 L120 288 z" fill="url(#body)"/>
+    <path d="M120 176 L40 214 a12 12 0 0 0 0 8 L120 196 z" fill="#ffffff" opacity="0.22"/>
+    <!-- wrapper edges -->
+    <rect x="120" y="176" width="14" height="112" fill="#0f5c43" opacity="0.35"/>
+    <rect x="130" y="176" width="205" height="112" fill="none"/>
+    <!-- label bands -->
+    <rect x="146" y="176" width="10" height="112" fill="#0e5942" opacity="0.45"/>
+    <rect x="300" y="176" width="10" height="112" fill="#0e5942" opacity="0.45"/>
+    <!-- label text area -->
+    <rect x="162" y="200" width="130" height="64" rx="6" fill="#eafff6" opacity="0.9"/>
+    <text x="227" y="228" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="bold"
+          fill="#1d7a5c" text-anchor="middle" letter-spacing="1">SEA</text>
+    <text x="227" y="252" font-family="Helvetica,Arial,sans-serif" font-size="21" font-weight="bold"
+          fill="#1d7a5c" text-anchor="middle" letter-spacing="1">GREEN</text>
+    <!-- highlight -->
+    <rect x="132" y="182" width="200" height="20" rx="10" fill="url(#shine)"/>
+    <!-- bottom shade -->
+    <rect x="132" y="266" width="200" height="22" fill="#0b4c38" opacity="0.28"/>
+  </g>
+
+  <!-- ===== RIGHT PIECE (flat end) ===== -->
+  <g transform="rotate(6 590 230)">
+    <!-- socket of break on the left -->
+    <path d="M470 172 l14 12 -10 12 16 8 -8 14 12 10 -14 10 8 14 -18 6 4 16 -16 4 v-106z"
+          fill="url(#tipG)" stroke="#14543e" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M478 172 h300 v112 h-300 z" fill="url(#wrap)"/>
+    <!-- flat end cap -->
+    <rect x="762" y="172" width="26" height="112" rx="6" fill="#1f7458"/>
+    <ellipse cx="775" cy="228" rx="10" ry="52" fill="#2e9b73"/>
+    <!-- bands -->
+    <rect x="500" y="172" width="10" height="112" fill="#0e5942" opacity="0.45"/>
+    <rect x="740" y="172" width="10" height="112" fill="#0e5942" opacity="0.45"/>
+    <rect x="524" y="192" width="200" height="72" rx="6" fill="#eafff6" opacity="0.9"/>
+    <text x="624" y="222" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="bold"
+          fill="#1d7a5c" text-anchor="middle" letter-spacing="2">SEA GREEN</text>
+    <path d="M534 240 q40 -14 80 0 t80 0" stroke="#59c9a0" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <rect x="488" y="178" width="272" height="18" rx="9" fill="url(#shine)"/>
+    <rect x="488" y="262" width="272" height="22" fill="#0b4c38" opacity="0.28"/>
+  </g>
+
+  <!-- crumbs -->
+  <circle cx="400" cy="322" r="9" fill="url(#crumb)"/>
+  <circle cx="428" cy="336" r="5" fill="url(#crumb)"/>
+  <path d="M370 330 l14 4 -6 11 -13 -5z" fill="url(#crumb)"/>
+  <circle cx="452" cy="318" r="3.5" fill="#2f9f78"/>
+  <path d="M405 148 l10 -22 4 22z" fill="#4cc396" opacity="0.75"/>
+  <circle cx="440" cy="140" r="4" fill="#4cc396" opacity="0.7"/>
+</svg>

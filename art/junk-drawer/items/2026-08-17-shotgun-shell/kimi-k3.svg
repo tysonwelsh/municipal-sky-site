@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="46.0 62.0 207.8 539.8">
+  <defs>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a6420"/>
+      <stop offset="0.2" stop-color="#c99b3f"/>
+      <stop offset="0.45" stop-color="#f0d98a"/>
+      <stop offset="0.6" stop-color="#d4ad55"/>
+      <stop offset="0.85" stop-color="#a67c2e"/>
+      <stop offset="1" stop-color="#7a5a1c"/>
+    </linearGradient>
+    <linearGradient id="brassDark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e4f16"/>
+      <stop offset="0.5" stop-color="#c69a45"/>
+      <stop offset="1" stop-color="#6e4f16"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a1414"/>
+      <stop offset="0.18" stop-color="#b02020"/>
+      <stop offset="0.45" stop-color="#e0463c"/>
+      <stop offset="0.62" stop-color="#c22a24"/>
+      <stop offset="0.85" stop-color="#8f1818"/>
+      <stop offset="1" stop-color="#6b1010"/>
+    </linearGradient>
+    <radialGradient id="primer" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f5e3a8"/>
+      <stop offset="0.6" stop-color="#c9a24e"/>
+      <stop offset="1" stop-color="#8a6a28"/>
+    </radialGradient>
+    <radialGradient id="crimp" cx="0.5" cy="0.6" r="0.7">
+      <stop offset="0" stop-color="#e8b23a"/>
+      <stop offset="0.55" stop-color="#c98f22"/>
+      <stop offset="1" stop-color="#8a5c10"/>
+    </radialGradient>
+  </defs>
+
+  <!-- brass base -->
+  <rect x="60" y="440" width="180" height="120" rx="6" fill="url(#brass)"/>
+  <rect x="60" y="440" width="180" height="12" fill="url(#brassDark)"/>
+  <!-- base rim -->
+  <rect x="48" y="556" width="204" height="18" rx="8" fill="url(#brass)"/>
+  <!-- extraction groove -->
+  <rect x="60" y="500" width="180" height="6" fill="#6e4f16" opacity="0.7"/>
+  <rect x="60" y="506" width="180" height="3" fill="#f0d98a" opacity="0.5"/>
+
+  <!-- headstamp text -->
+  <text x="150" y="536" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#5e4212" text-anchor="middle" letter-spacing="2">12 GAUGE</text>
+
+  <!-- primer (bottom, centered) -->
+  <circle cx="150" cy="585" r="24" fill="url(#primer)"/>
+  <circle cx="150" cy="585" r="24" fill="none" stroke="#5e4212" stroke-width="2"/>
+  <circle cx="150" cy="585" r="5" fill="#7a5a1c"/>
+
+  <!-- hull (red plastic) -->
+  <rect x="60" y="120" width="180" height="320" fill="url(#hull)"/>
+  <!-- hull shoulder into brass -->
+  <rect x="60" y="430" width="180" height="12" fill="#8f1818"/>
+
+  <!-- hull ribs -->
+  <g stroke="#5e0e0e" stroke-width="2" opacity="0.55">
+    <line x1="60" y1="180" x2="240" y2="180"/>
+    <line x1="60" y1="240" x2="240" y2="240"/>
+    <line x1="60" y1="300" x2="240" y2="300"/>
+    <line x1="60" y1="360" x2="240" y2="360"/>
+  </g>
+  <g stroke="#f26a5e" stroke-width="1.5" opacity="0.5">
+    <line x1="60" y1="184" x2="240" y2="184"/>
+    <line x1="60" y1="244" x2="240" y2="244"/>
+    <line x1="60" y1="304" x2="240" y2="304"/>
+    <line x1="60" y1="364" x2="240" y2="364"/>
+  </g>
+
+  <!-- hull lettering -->
+  <text x="150" y="392" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#f4d9a0" text-anchor="middle" letter-spacing="1">FIELD LOAD</text>
+
+  <!-- crimp top taper -->
+  <path d="M60 120 L150 78 L240 120 Z" fill="url(#hull)"/>
+  <!-- crimp folds -->
+  <path d="M60 120 L105 96 L150 78 L150 120 Z" fill="#a02020" opacity="0.8"/>
+  <path d="M240 120 L195 96 L150 78 L150 120 Z" fill="#7a1414" opacity="0.8"/>
+
+  <!-- crimp closure (star fold cap) -->
+  <ellipse cx="150" cy="78" rx="42" ry="14" fill="url(#crimp)"/>
+  <g stroke="#7a5010" stroke-width="2" opacity="0.8">
+    <line x1="150" y1="78" x2="150" y2="65"/>
+    <line x1="150" y1="78" x2="122" y2="72"/>
+    <line x1="150" y1="78" x2="178" y2="72"/>
+    <line x1="150" y1="78" x2="130" y2="87"/>
+    <line x1="150" y1="78" x2="170" y2="87"/>
+  </g>
+  <circle cx="150" cy="78" r="5" fill="#8a5c10"/>
+
+  <!-- side highlights -->
+  <rect x="72" y="120" width="10" height="440" fill="#ffffff" opacity="0.18"/>
+  <rect x="222" y="120" width="6" height="440" fill="#000000" opacity="0.12"/>
+</svg>

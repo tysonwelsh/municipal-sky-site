@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <filter id="watercolorEdge">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      <feGaussianBlur stdDeviation="2" result="blurred" />
+      <feMerge>
+        <feMergeNode in="blurred" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="softWash">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComponentTransfer in="blur" result="glow">
+        <feFuncA type="linear" slope="0.8" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <radialGradient id="wingGradient1" cx="30%" cy="40%" r="70%" fx="20%" fy="30%">
+      <stop offset="0%" stop-color="#fff5ba" stop-opacity="0.9" />
+      <stop offset="40%" stop-color="#ff9a9e" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#a18cd1" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#667eea" stop-opacity="0.9" />
+    </radialGradient>
+    
+    <radialGradient id="wingGradient2" cx="70%" cy="40%" r="70%" fx="80%" fy="30%">
+      <stop offset="0%" stop-color="#fff5ba" stop-opacity="0.9" />
+      <stop offset="40%" stop-color="#ff9a9e" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#a18cd1" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#667eea" stop-opacity="0.9" />
+    </radialGradient>
+    
+    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a3f35" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#2a231d" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#110e0c" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Wing Masks to keep details inside -->
+    <clipPath id="leftWingClip">
+      <path d="M190 120 C 140 -20, 0 10, 10 130 C 20 230, 100 240, 180 180 C 120 280, 50 360, 100 390 C 150 420, 190 280, 190 220 Z" />
+    </clipPath>
+    
+    <clipPath id="rightWingClip">
+      <path d="M210 120 C 260 -20, 400 10, 390 130 C 380 230, 300 240, 220 180 C 280 280, 350 360, 300 390 C 250 420, 210 280, 210 220 Z" />
+    </clipPath>
+  </defs>
+
+  <g filter="url(#watercolorEdge)">
+    <g filter="url(#softWash)">
+      
+      <!-- Base Wings -->
+      <!-- Left Wing -->
+      <path d="M195 120 C 150 -10, 0 20, 10 140 C 20 240, 110 240, 185 180 C 130 280, 60 360, 110 390 C 160 420, 195 280, 195 220 Z" fill="url(#wingGradient1)" opacity="0.85" />
+      
+      <!-- Right Wing -->
+      <path d="M205 120 C 250 -10, 400 20, 390 140 C 380 240, 290 240, 215 180 C 270 280, 340 360, 290 390 C 240 420, 205 280, 205 220 Z" fill="url(#wingGradient2)" opacity="0.85" />
+
+      <!-- Watercolor Splashes and Textures -->
+      <circle cx="80" cy="100" r="30" fill="#fecfef" opacity="0.4" filter="blur(8px)" />
+      <circle cx="320" cy="100" r="30" fill="#fecfef" opacity="0.4" filter="blur(8px)" />
+      <circle cx="120" cy="300" r="40" fill="#a1c4fd" opacity="0.5" filter="blur(10px)" />
+      <circle cx="280" cy="300" r="40" fill="#a1c4fd" opacity="0.5" filter="blur(10px)" />
+      <ellipse cx="140" cy="200" rx="25" ry="40" fill="#ff9a9e" opacity="0.6" filter="blur(6px)" transform="rotate(30, 140, 200)" />
+      <ellipse cx="260" cy="200" rx="25" ry="40" fill="#ff9a9e" opacity="0.6" filter="blur(6px)" transform="rotate(-30, 260, 200)" />
+      
+      <!-- Organic Wing Details -->
+      <g clip-path="url(#leftWingClip)" opacity="0.6">
+        <path d="M190 120 Q 80 40 20 120" stroke="#4a3f35" stroke-width="4" fill="none" opacity="0.5" />
+        <path d="M190 150 Q 80 120 30 180" stroke="#4a3f35" stroke-width="3" fill="none" opacity="0.5" />
+        <path d="M185 180 Q 100 200 40 220" stroke="#4a3f35" stroke-width="2" fill="none" opacity="0.5" />
+        <path d="M190 220 Q 120 280 80 360" stroke="#4a3f35" stroke-width="4" fill="none" opacity="0.5" />
+        <circle cx="50" cy="150" r="15" fill="#3a1c71" opacity="0.7" />
+        <circle cx="90" cy="320" r="20" fill="#d76d77" opacity="0.7" />
+        <circle cx="70" cy="280" r="10" fill="#ffaf7b" opacity="0.6" />
+      </g>
+
+      <g clip-path="url(#rightWingClip)" opacity="0.6">
+        <path d="M210 120 Q 320 40 380 120" stroke="#4a3f35" stroke-width="4" fill="none" opacity="0.5" />
+        <path d="M210 150 Q 320 120 370 180" stroke="#4a3f35" stroke-width="3" fill="none" opacity="0.5" />
+        <path d="M215 180 Q 300 200 360 220" stroke="#4a3f35" stroke-width="2" fill="none" opacity="0.5" />
+        <path d="M210 220 Q 280 280 320 360" stroke="#4a3f35" stroke-width="4" fill="none" opacity="0.5" />
+        <circle cx="350" cy="150" r="15" fill="#3a1c71" opacity="0.7" />
+        <circle cx="310" cy="320" r="20" fill="#d76d77" opacity="0.7" />
+        <circle cx="330" cy="280" r="10" fill="#ffaf7b" opacity="0.6" />
+      </g>
+
+      <!-- Wing Outlines (Watercolor Style) -->
+      <path d="M195 120 C 150 -10, 0 20, 10 140 C 20 240, 110 240, 185 180" fill="none" stroke="#2a231d" stroke-width="5" opacity="0.7" />
+      <path d="M185 180 C 130 280, 60 360, 110 390 C 160 420, 195 280, 195 220" fill="none" stroke="#2a231d" stroke-width="6" opacity="0.7" />
+      <path d="M205 120 C 250 -10, 400 20, 390 140 C 380 240, 290 240, 215 180" fill="none" stroke="#2a231d" stroke-width="5" opacity="0.7" />
+      <path d="M215 180 C 270 280, 340 360, 290 390 C 240 420, 205 280, 205 220" fill="none" stroke="#2a231d" stroke-width="6" opacity="0.7" />
+      
+      <!-- Body -->
+      <ellipse cx="200" cy="170" rx="8" ry="70" fill="url(#bodyGradient)" opacity="0.85" />
+      <circle cx="200" cy="90" r="10" fill="#2a231d" opacity="0.9" />
+      
+      <!-- Antennae -->
+      <path d="M195 85 Q 160 30 140 40" stroke="#2a231d" stroke-width="2" fill="none" stroke-linecap="round" />
+      <circle cx="140" cy="40" r="3" fill="#2a231d" />
+      
+      <path d="M205 85 Q 240 30 260 40" stroke="#2a231d" stroke-width="2" fill="none" stroke-linecap="round" />
+      <circle cx="260" cy="40" r="3" fill="#2a231d" />
+      
+      <!-- Random Watercolor Splatters -->
+      <circle cx="40" cy="60" r="4" fill="#a18cd1" opacity="0.6" />
+      <circle cx="60" cy="30" r="2" fill="#ff9a9e" opacity="0.8" />
+      <circle cx="350" cy="70" r="5" fill="#667eea" opacity="0.5" />
+      <circle cx="380" cy="280" r="3" fill="#a18cd1" opacity="0.7" />
+      <circle cx="30" cy="350" r="6" fill="#ff9a9e" opacity="0.6" />
+      <circle cx="150" cy="390" r="2" fill="#3a1c71" opacity="0.6" />
+      <circle cx="260" cy="395" r="4" fill="#667eea" opacity="0.5" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30.0 36.0 339.8 339.8">
+  <g>
+    <!-- window frame outer -->
+    <rect x="110" y="40" width="180" height="320" rx="6" fill="#8a5a33" stroke="#5e3a1c" stroke-width="4"/>
+    <!-- inner opening -->
+    <rect x="126" y="56" width="148" height="288" fill="#3d4a5c"/>
+    <!-- glass panes (fixed interior glimpse) -->
+    <rect x="126" y="56" width="148" height="288" fill="#2e3947"/>
+    <!-- cross muntins inside opening -->
+    <rect x="196" y="56" width="8" height="288" fill="#8a5a33"/>
+    <rect x="126" y="196" width="148" height="8" fill="#8a5a33"/>
+
+    <!-- left casement swung open (toward viewer-left) -->
+    <g>
+      <polygon points="126,56 34,84 34,372 126,344" fill="#9c6a3c" stroke="#5e3a1c" stroke-width="4" stroke-linejoin="round"/>
+      <polygon points="114,74 50,96 50,356 114,336" fill="#bcd7e8" opacity="0.85" stroke="#5e3a1c" stroke-width="3" stroke-linejoin="round"/>
+      <!-- muntins on left casement -->
+      <line x1="114" y1="205" x2="50" y2="226" stroke="#5e3a1c" stroke-width="3"/>
+      <line x1="82" y1="85" x2="82" y2="346" stroke="#5e3a1c" stroke-width="3"/>
+      <!-- glass shine -->
+      <polygon points="100,80 70,90 62,340 88,333" fill="#ffffff" opacity="0.25"/>
+    </g>
+
+    <!-- right casement swung open (toward viewer-right) -->
+    <g>
+      <polygon points="274,56 366,84 366,372 274,344" fill="#9c6a3c" stroke="#5e3a1c" stroke-width="4" stroke-linejoin="round"/>
+      <polygon points="286,74 350,96 350,356 286,336" fill="#bcd7e8" opacity="0.85" stroke="#5e3a1c" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="286" y1="205" x2="350" y2="226" stroke="#5e3a1c" stroke-width="3"/>
+      <line x1="318" y1="85" x2="318" y2="346" stroke="#5e3a1c" stroke-width="3"/>
+      <polygon points="300,80 330,90 338,340 312,333" fill="#ffffff" opacity="0.25"/>
+    </g>
+
+    <!-- hinges -->
+    <rect x="122" y="90" width="10" height="26" rx="3" fill="#4a4a4a"/>
+    <rect x="122" y="284" width="10" height="26" rx="3" fill="#4a4a4a"/>
+    <rect x="268" y="90" width="10" height="26" rx="3" fill="#4a4a4a"/>
+    <rect x="268" y="284" width="10" height="26" rx="3" fill="#4a4a4a"/>
+
+    <!-- handles -->
+    <circle cx="128" cy="216" r="6" fill="#d9b24a" stroke="#8a6d1f" stroke-width="2"/>
+    <circle cx="272" cy="216" r="6" fill="#d9b24a" stroke="#8a6d1f" stroke-width="2"/>
+
+    <!-- sill -->
+    <rect x="96" y="352" width="208" height="18" rx="5" fill="#a9764a" stroke="#5e3a1c" stroke-width="4"/>
+  </g>
+</svg>

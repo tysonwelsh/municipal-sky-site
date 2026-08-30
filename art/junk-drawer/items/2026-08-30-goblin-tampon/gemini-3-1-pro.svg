@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.2 75.0 402.2 723.8">
+  <defs>
+    <linearGradient id="cottonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C5DCA0"/>
+      <stop offset="30%" stop-color="#F2F7EA"/>
+      <stop offset="70%" stop-color="#E1ECCB"/>
+      <stop offset="100%" stop-color="#9CB866"/>
+    </linearGradient>
+    <linearGradient id="earGradLeft" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8BB350"/>
+      <stop offset="100%" stop-color="#4F6D26"/>
+    </linearGradient>
+    <linearGradient id="earGradRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8BB350"/>
+      <stop offset="100%" stop-color="#4F6D26"/>
+    </linearGradient>
+    <radialGradient id="wartGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#BEEA6A"/>
+      <stop offset="100%" stop-color="#557521"/>
+    </radialGradient>
+    <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFEA00"/>
+      <stop offset="80%" stop-color="#FF9900"/>
+      <stop offset="100%" stop-color="#CC4400"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Left Ear -->
+  <path d="M 120 280 C 80 230 30 200 10 210 C -10 220 15 320 50 340 C 80 355 110 320 130 310 Z" fill="url(#earGradLeft)" stroke="#3E571B" stroke-width="4"/>
+  <!-- Right Ear -->
+  <path d="M 280 280 C 320 230 370 200 390 210 C 410 220 385 320 350 340 C 320 355 290 320 270 310 Z" fill="url(#earGradRight)" stroke="#3E571B" stroke-width="4"/>
+
+  <!-- Tampon String -->
+  <path d="M 200 550 C 170 610 240 680 180 760" fill="none" stroke="#D3E2B8" stroke-width="12" stroke-linecap="round"/>
+  <!-- Frayed String End -->
+  <path d="M 180 760 Q 170 780 160 790 M 180 760 Q 185 780 180 795 M 180 760 Q 195 780 205 785" fill="none" stroke="#D3E2B8" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Main Body (Tampon Cylinder) -->
+  <rect x="100" y="80" width="200" height="480" rx="90" fill="url(#cottonGrad)" stroke="#749343" stroke-width="6"/>
+
+  <!-- Fibrous Cotton Textures -->
+  <g fill="none" stroke="#B4CC88" stroke-width="3" stroke-linecap="round" opacity="0.6">
+    <path d="M 130 140 Q 140 200 120 260"/>
+    <path d="M 270 120 Q 255 180 280 240"/>
+    <path d="M 125 400 Q 135 450 145 510"/>
+    <path d="M 275 380 Q 260 450 270 520"/>
+    <path d="M 170 90 Q 200 110 230 90"/>
+    <path d="M 150 110 Q 200 130 250 110"/>
+    <path d="M 160 530 Q 200 510 240 530"/>
+  </g>
+
+  <!-- Goblin Eyes -->
+  <g stroke="#2F4212" stroke-width="4">
+    <!-- Left Eye -->
+    <path d="M 120 230 Q 150 210 170 240 Q 145 260 120 230" fill="url(#eyeGrad)"/>
+    <circle cx="150" cy="235" r="6" fill="#1A240A"/>
+    <!-- Right Eye -->
+    <path d="M 280 230 Q 250 210 230 240 Q 255 260 280 230" fill="url(#eyeGrad)"/>
+    <circle cx="250" cy="235" r="6" fill="#1A240A"/>
+  </g>
+
+  <!-- Angry Eyebrows (Cotton folds) -->
+  <path d="M 110 210 Q 150 215 175 235" fill="none" stroke="#5F8029" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 290 210 Q 250 215 225 235" fill="none" stroke="#5F8029" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Big Bumpy Nose -->
+  <path d="M 180 240 C 160 280 165 310 200 320 C 235 310 240 280 220 240 Z" fill="#9DBA5E" stroke="#5F8029" stroke-width="4"/>
+  <circle cx="185" cy="290" r="5" fill="url(#wartGrad)" stroke="#4A661D" stroke-width="2"/>
+  <circle cx="215" cy="300" r="4" fill="url(#wartGrad)" stroke="#4A661D" stroke-width="2"/>
+
+  <!-- Jagged Mouth -->
+  <path d="M 140 350 Q 200 380 260 350" fill="none" stroke="#1A240A" stroke-width="8" stroke-linecap="round"/>
+  <!-- Sharp Teeth -->
+  <path d="M 150 355 L 160 370 L 170 358 L 180 375 L 195 362 L 210 378 L 225 362 L 235 372 L 245 356" fill="#FFFAD6" stroke="#4A661D" stroke-width="2"/>
+
+  <!-- Warts on Body -->
+  <circle cx="130" cy="320" r="6" fill="url(#wartGrad)" stroke="#5F8029" stroke-width="2"/>
+  <circle cx="260" cy="420" r="8" fill="url(#wartGrad)" stroke="#5F8029" stroke-width="2"/>
+  <circle cx="160" cy="460" r="5" fill="url(#wartGrad)" stroke="#5F8029" stroke-width="2"/>
+
+  <!-- Goblin Slime (instead of blood) at the bottom -->
+  <path d="M 130 510 C 130 550 160 570 180 540 C 190 560 210 560 220 540 C 240 570 270 550 270 510 Z" fill="#75E600" opacity="0.8"/>
+  <circle cx="175" cy="565" r="4" fill="#75E600"/>
+  <circle cx="225" cy="555" r="3" fill="#75E600"/>
+
+</svg>

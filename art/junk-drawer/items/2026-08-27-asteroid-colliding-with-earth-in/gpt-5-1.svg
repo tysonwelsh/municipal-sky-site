@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="102.0 103.0 595.8 588.8">
+  <defs>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C9FF"/>
+      <stop offset="100%" stop-color="#0062FF"/>
+    </linearGradient>
+    <linearGradient id="asteroidGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A00"/>
+      <stop offset="100%" stop-color="#FF3D7F"/>
+    </linearGradient>
+    <linearGradient id="fireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE14D"/>
+      <stop offset="100%" stop-color="#FF6A00"/>
+    </linearGradient>
+    <linearGradient id="impactGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#FF98C3" stop-opacity="0.9"/>
+    </linearGradient>
+    <clipPath id="earthClip">
+      <circle cx="400" cy="420" r="260"/>
+    </clipPath>
+  </defs>
+
+  <!-- Earth -->
+  <circle cx="400" cy="420" r="260" fill="url(#earthGrad)"/>
+
+  <!-- Earth continents - flat memphis shapes -->
+  <g clip-path="url(#earthClip)">
+    <path d="M270 280
+             C320 260 380 250 430 270
+             C470 285 490 310 500 335
+             C505 355 495 380 470 390
+             C430 405 410 430 390 455
+             C370 480 340 500 310 500
+             C280 500 255 485 245 460
+             C230 430 235 395 245 360
+             C255 325 245 300 270 280Z"
+          fill="#00E08A"/>
+
+    <path d="M470 470
+             C520 450 565 445 600 455
+             C630 465 650 485 655 505
+             C660 530 650 555 625 570
+             C600 585 560 595 520 595
+             C485 595 455 585 440 565
+             C425 545 430 515 445 495
+             C455 485 460 480 470 470Z"
+          fill="#00D06A"/>
+
+    <path d="M200 430
+             C230 415 270 415 295 430
+             C320 445 335 465 340 485
+             C345 510 335 535 305 550
+             C280 565 245 570 220 565
+             C195 560 180 545 175 530
+             C170 515 170 495 185 465
+             C190 450 195 440 200 430Z"
+          fill="#00F0B2" opacity="0.9"/>
+
+    <!-- Simple memphis dots on earth -->
+    <circle cx="470" cy="330" r="10" fill="#FFFFFF" opacity="0.7"/>
+    <circle cx="330" cy="360" r="8" fill="#FFFFFF" opacity="0.7"/>
+    <circle cx="520" cy="520" r="9" fill="#FFFFFF" opacity="0.7"/>
+  </g>
+
+  <!-- Impact glow at collision point -->
+  <circle cx="520" cy="240" r="80" fill="url(#impactGrad)" opacity="0.95"/>
+
+  <!-- Asteroid body -->
+  <g transform="translate(520 180)">
+    <!-- Flame trail behind asteroid -->
+    <path d="M-120 -60
+             C-190 -40 -240 10 -260 60
+             C-220 40 -170 45 -130 70
+             C-170 20 -140 -20 -90 -40Z"
+          fill="url(#fireGrad)"/>
+
+    <path d="M-130 -30
+             C-190 0 -220 50 -230 90
+             C-200 65 -160 60 -120 80
+             C-150 40 -140 0 -110 -20Z"
+          fill="#FFD45A"/>
+
+    <!-- Asteroid main shape -->
+    <path d="M-30 -70
+             C0 -80 45 -75 75 -55
+             C105 -35 120 -5 120 25
+             C120 60 105 90 80 115
+             C50 145 10 155 -25 148
+             C-55 140 -85 120 -100 90
+             C-115 60 -120 25 -110 -5
+             C-100 -35 -70 -60 -30 -70Z"
+          fill="url(#asteroidGrad)"/>
+
+    <!-- Facets / craters -->
+    <path d="M-10 -40
+             C15 -45 40 -35 50 -15
+             C60 5 50 30 30 40
+             C10 50 -15 45 -30 25
+             C-45 10 -35 -30 -10 -40Z"
+          fill="#FFB36A"/>
+
+    <path d="M40 40
+             C60 35 80 45 90 60
+             C100 80 90 100 70 110
+             C55 115 35 110 25 95
+             C15 80 20 50 40 40Z"
+          fill="#FFB36A"/>
+
+    <path d="M-65 20
+             C-45 10 -25 15 -15 30
+             C-5 45 -15 65 -35 70
+             C-55 75 -75 65 -80 45
+             C-85 30 -80 25 -65 20Z"
+          fill="#FFB36A"/>
+
+    <!-- Small memphis marks on asteroid -->
+    <circle cx="-15" cy="10" r="6" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="55" cy="-5" r="5" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="-55" cy="60" r="4" fill="#FFFFFF" opacity="0.8"/>
+  </g>
+
+  <!-- Stylized impact lines on Earth -->
+  <g stroke="#FF3D7F" stroke-width="8" stroke-linecap="round">
+    <line x1="520" y1="240" x2="600" y2="220"/>
+    <line x1="520" y1="240" x2="590" y2="270"/>
+    <line x1="520" y1="240" x2="555" y2="190"/>
+    <line x1="520" y1="240" x2="545" y2="305"/>
+  </g>
+
+  <!-- Memphis-style abstract shapes around collision -->
+  <g>
+    <!-- Zigzag -->
+    <path d="M640 160
+             L660 180
+             L640 200
+             L660 220
+             L640 240"
+          fill="none" stroke="#0062FF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Dotted arc -->
+    <path d="M580 110
+             C620 120 655 145 675 180"
+          fill="none" stroke="#00D06A" stroke-width="8"
+          stroke-dasharray="6 16" stroke-linecap="round"/>
+
+    <!-- Plus sign -->
+    <g transform="translate(640 280)">
+      <rect x="-7" y="-24" width="14" height="48" rx="4" fill="#FF8A00"/>
+      <rect x="-24" y="-7" width="48" height="14" rx="4" fill="#FF8A00"/>
+    </g>
+
+    <!-- Circle outline -->
+    <circle cx="650" cy="340" r="18" fill="none" stroke="#00C9FF" stroke-width="6"/>
+
+    <!-- Triangles -->
+    <path d="M140 180 L170 215 L110 215 Z" fill="#FF3D7F"/>
+    <path d="M190 650 L230 680 L180 690 Z" fill="#00D06A"/>
+
+    <!-- Memphis squiggle -->
+    <path d="M140 560
+             C160 540 190 545 205 560
+             C220 575 240 580 260 570
+             C280 560 300 560 315 575"
+          fill="none" stroke="#FFB36A" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Small dots -->
+    <circle cx="120" cy="310" r="6" fill="#0062FF"/>
+    <circle cx="690" cy="470" r="6" fill="#FF8A00"/>
+    <circle cx="110" cy="470" r="6" fill="#FF3D7F"/>
+  </g>
+</svg>

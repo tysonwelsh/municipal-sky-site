@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 800" width="100%" height="100%">
+  <defs>
+    <!-- Gradients for the metallic look -->
+    <linearGradient id="redGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b30000" />
+      <stop offset="30%" stop-color="#ff3333" />
+      <stop offset="50%" stop-color="#ff9999" />
+      <stop offset="70%" stop-color="#e60000" />
+      <stop offset="100%" stop-color="#660000" />
+    </linearGradient>
+
+    <linearGradient id="silverTrim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#808080" />
+      <stop offset="25%" stop-color="#cccccc" />
+      <stop offset="50%" stop-color="#ffffff" />
+      <stop offset="75%" stop-color="#999999" />
+      <stop offset="100%" stop-color="#4d4d4d" />
+    </linearGradient>
+    
+    <linearGradient id="flameGradOuter" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff9900" />
+      <stop offset="50%" stop-color="#ff3300" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </linearGradient>
+    
+    <linearGradient id="flameGradInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#ffff00" />
+      <stop offset="100%" stop-color="#ff6600" stop-opacity="0" />
+    </linearGradient>
+    
+    <linearGradient id="windowGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ccffff" />
+      <stop offset="30%" stop-color="#66ccff" />
+      <stop offset="100%" stop-color="#006699" />
+    </linearGradient>
+  </defs>
+
+  <!-- Flames -->
+  <g transform="translate(200, 680)">
+    <!-- Outer flame -->
+    <path d="M-60,0 Q-80,80 0,120 Q80,80 60,0 Z" fill="url(#flameGradOuter)" />
+    <!-- Inner flame -->
+    <path d="M-30,0 Q-40,50 0,80 Q40,50 30,0 Z" fill="url(#flameGradInner)" />
+  </g>
+
+  <!-- Left Fin -->
+  <path d="M 120 450 C 60 520 20 650 30 700 C 60 690 90 650 140 600 Z" fill="url(#redGlow)" />
+  <!-- Left Fin Trim -->
+  <path d="M 120 450 C 60 520 20 650 30 700 L 25 710 C 15 650 50 520 115 445 Z" fill="url(#silverTrim)" />
+  
+  <!-- Right Fin -->
+  <path d="M 280 450 C 340 520 380 650 370 700 C 340 690 310 650 260 600 Z" fill="url(#redGlow)" />
+  <!-- Right Fin Trim -->
+  <path d="M 280 450 C 340 520 380 650 370 700 L 375 710 C 385 650 350 520 285 445 Z" fill="url(#silverTrim)" />
+
+  <!-- Center Fin -->
+  <path d="M 200 480 L 180 680 L 200 720 L 220 680 Z" fill="url(#silverTrim)" />
+
+  <!-- Engine Nozzle -->
+  <path d="M 140 650 C 140 670 160 690 200 690 C 240 690 260 670 260 650 L 240 630 L 160 630 Z" fill="url(#silverTrim)" />
+  <ellipse cx="200" cy="680" rx="40" ry="15" fill="#333333" />
+
+  <!-- Main Body -->
+  <path d="M 200 40 C 280 150 300 400 260 650 C 200 670 200 670 140 650 C 100 400 120 150 200 40 Z" fill="url(#redGlow)" />
+
+  <!-- Silver Trim Bands -->
+  <!-- Top cone trim -->
+  <path d="M 162 180 Q 200 200 238 180 L 242 200 Q 200 220 158 200 Z" fill="url(#silverTrim)" />
+  
+  <!-- Lower body trim -->
+  <path d="M 125 500 Q 200 520 275 500 L 270 520 Q 200 540 130 520 Z" fill="url(#silverTrim)" />
+  
+  <!-- Base trim -->
+  <path d="M 139 640 Q 200 660 261 640 L 259 655 Q 200 675 141 655 Z" fill="url(#silverTrim)" />
+
+  <!-- Cockpit Window -->
+  <circle cx="200" cy="300" r="50" fill="url(#silverTrim)" />
+  <circle cx="200" cy="300" r="40" fill="url(#windowGlass)" />
+  <!-- Window Glare -->
+  <path d="M 175 275 A 35 35 0 0 1 215 270 A 38 38 0 0 0 170 315 A 35 35 0 0 1 175 275 Z" fill="#ffffff" fill-opacity="0.6" />
+
+  <!-- Rivets on Window Frame -->
+  <circle cx="200" cy="256" r="3" fill="#ffffff" />
+  <circle cx="200" cy="344" r="3" fill="#ffffff" />
+  <circle cx="156" cy="300" r="3" fill="#ffffff" />
+  <circle cx="244" cy="300" r="3" fill="#ffffff" />
+  <circle cx="169" cy="269" r="3" fill="#ffffff" />
+  <circle cx="231" cy="331" r="3" fill="#ffffff" />
+  <circle cx="169" cy="331" r="3" fill="#ffffff" />
+  <circle cx="231" cy="269" r="3" fill="#ffffff" />
+
+  <!-- Antenna -->
+  <path d="M 197 40 L 197 10 L 203 10 L 203 40 Z" fill="url(#silverTrim)" />
+  <circle cx="200" cy="8" r="8" fill="url(#redGlow)" />
+  <!-- Antenna Ring -->
+  <ellipse cx="200" cy="20" rx="15" ry="4" fill="none" stroke="url(#silverTrim)" stroke-width="3" transform="rotate(-15 200 20)" />
+
+</svg>

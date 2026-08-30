@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="10.2 8.0 357.5 675.8">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0e2a2c"/>
+      <stop offset="0.12" stop-color="#1f5b5e"/>
+      <stop offset="0.38" stop-color="#3c8f8f"/>
+      <stop offset="0.62" stop-color="#2c7375"/>
+      <stop offset="0.85" stop-color="#164447"/>
+      <stop offset="1" stop-color="#0a1e20"/>
+    </linearGradient>
+    <linearGradient id="bodyTop" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#123336"/>
+      <stop offset="0.35" stop-color="#43989a"/>
+      <stop offset="0.7" stop-color="#256063"/>
+      <stop offset="1" stop-color="#0b2224"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5c6668"/>
+      <stop offset="0.25" stop-color="#c9d2d4"/>
+      <stop offset="0.5" stop-color="#8e999b"/>
+      <stop offset="0.75" stop-color="#c3cccd"/>
+      <stop offset="1" stop-color="#4d5658"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8eef0"/>
+      <stop offset="0.45" stop-color="#9aa5a7"/>
+      <stop offset="0.55" stop-color="#c8d1d3"/>
+      <stop offset="1" stop-color="#5a6466"/>
+    </linearGradient>
+    <linearGradient id="handset" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a4245"/>
+      <stop offset="0.35" stop-color="#14181a"/>
+      <stop offset="1" stop-color="#050708"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9fd8e0" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#3c6f78" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#0d2427" stop-opacity="0.85"/>
+    </linearGradient>
+    <radialGradient id="btn" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#f2f5f5"/>
+      <stop offset="0.6" stop-color="#b6bfc1"/>
+      <stop offset="1" stop-color="#6d7679"/>
+    </radialGradient>
+    <linearGradient id="shadow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- back plate / mounting board -->
+  <g>
+    <rect x="34" y="18" width="332" height="664" rx="16" fill="#08191b" opacity="0.55"/>
+    <rect x="44" y="10" width="312" height="660" rx="14" fill="url(#bodyTop)"/>
+  </g>
+
+  <!-- main body -->
+  <path d="M56 22 h288 a10 10 0 0 1 10 10 v600 a10 10 0 0 1 -10 10 h-288 a10 10 0 0 1 -10 -10 v-600 a10 10 0 0 1 10 -10 z" fill="url(#body)"/>
+
+  <!-- top crown / instruction panel -->
+  <rect x="66" y="38" width="268" height="96" rx="8" fill="#0d2528"/>
+  <rect x="72" y="44" width="256" height="84" rx="6" fill="url(#metal)"/>
+  <rect x="80" y="52" width="240" height="68" rx="4" fill="#101d20"/>
+  <text x="200" y="76" font-family="Helvetica,Arial,sans-serif" font-size="19" font-weight="bold" letter-spacing="3" text-anchor="middle" fill="#e6f2f3">PAY PHONE</text>
+  <text x="200" y="98" font-family="Helvetica,Arial,sans-serif" font-size="11" letter-spacing="2" text-anchor="middle" fill="#7fb9bd">LIFT RECEIVER  •  INSERT COIN</text>
+  <text x="200" y="113" font-family="Helvetica,Arial,sans-serif" font-size="9" letter-spacing="1.5" text-anchor="middle" fill="#5d9498">EMERGENCY CALLS FREE — DIAL 911</text>
+
+  <!-- coin slot plate -->
+  <g>
+    <rect x="238" y="148" width="96" height="118" rx="7" fill="url(#chrome)"/>
+    <rect x="244" y="154" width="84" height="106" rx="5" fill="#2a3335"/>
+    <!-- coin slots -->
+    <rect x="258" y="166" width="56" height="9" rx="4.5" fill="#0a0d0e"/>
+    <text x="286" y="188" font-family="Helvetica,Arial,sans-serif" font-size="8" text-anchor="middle" fill="#9fb0b2" letter-spacing="1">25¢ 10¢ 5¢</text>
+    <!-- display -->
+    <rect x="254" y="196" width="64" height="26" rx="3" fill="#08191c"/>
+    <rect x="254" y="196" width="64" height="26" rx="3" fill="none" stroke="#54696b"/>
+    <text x="286" y="214" font-family="monospace" font-size="14" text-anchor="middle" fill="#66ffb0">50¢</text>
+    <!-- coin return -->
+    <rect x="252" y="232" width="68" height="20" rx="4" fill="#0a0f10"/>
+    <text x="286" y="246" font-family="Helvetica,Arial,sans-serif" font-size="7.5" text-anchor="middle" fill="#8fa2a4" letter-spacing="1">COIN RETURN</text>
+  </g>
+
+  <!-- keypad -->
+  <g>
+    <rect x="66" y="150" width="160" height="212" rx="8" fill="url(#chrome)"/>
+    <rect x="72" y="156" width="148" height="200" rx="5" fill="#252d2f"/>
+    <g fill="url(#btn)">
+      <g>
+        <rect x="84" y="166" width="38" height="34" rx="5"/><rect x="127" y="166" width="38" height="34" rx="5"/><rect x="170" y="166" width="38" height="34" rx="5"/>
+        <rect x="84" y="206" width="38" height="34" rx="5"/><rect x="127" y="206" width="38" height="34" rx="5"/><rect x="170" y="206" width="38" height="34" rx="5"/>
+        <rect x="84" y="246" width="38" height="34" rx="5"/><rect x="127" y="246" width="38" height="34" rx="5"/><rect x="170" y="246" width="38" height="34" rx="5"/>
+        <rect x="84" y="286" width="38" height="34" rx="5"/><rect x="127" y="286" width="38" height="34" rx="5"/><rect x="170" y="286" width="38" height="34" rx="5"/>
+      </g>
+    </g>
+    <g font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="bold" fill="#1b2224" text-anchor="middle">
+      <text x="103" y="189">1</text><text x="146" y="189">2</text><text x="189" y="189">3</text>
+      <text x="103" y="229">4</text><text x="146" y="229">5</text><text x="189" y="229">6</text>
+      <text x="103" y="269">7</text><text x="146" y="269">8</text><text x="189" y="269">9</text>
+      <text x="103" y="309">*</text><text x="146" y="309">0</text><text x="189" y="309">#</text>
+    </g>
+    <g font-family="Helvetica,Arial,sans-serif" font-size="6.5" fill="#4a5456" text-anchor="middle" letter-spacing="0.5">
+      <text x="146" y="197">ABC</text><text x="189" y="197">DEF</text>
+      <text x="103" y="237">GHI</text><text x="146" y="237">JKL</text><text x="189" y="237">MNO</text>
+      <text x="103" y="277">PRS</text><text x="146" y="277">TUV</text><text x="189" y="277">WXY</text>
+    </g>
+    <text x="146" y="345" font-family="Helvetica,Arial,sans-serif" font-size="9" text-anchor="middle" fill="#8fa2a4" letter-spacing="2">DIAL TONE FIRST</text>
+  </g>
+
+  <!-- directory / lower panel -->
+  <rect x="66" y="378" width="268" height="150" rx="8" fill="#0d2528"/>
+  <rect x="74" y="386" width="252" height="134" rx="5" fill="#153a3d"/>
+  <g stroke="#2c6a6d" stroke-width="1.5">
+    <line x1="90" y1="410" x2="310" y2="410"/>
+    <line x1="90" y1="428" x2="310" y2="428"/>
+    <line x1="90" y1="446" x2="270" y2="446"/>
+    <line x1="90" y1="464" x2="310" y2="464"/>
+    <line x1="90" y1="482" x2="240" y2="482"/>
+    <line x1="90" y1="500" x2="300" y2="500"/>
+  </g>
+  <text x="200" y="402" font-family="Helvetica,Arial,sans-serif" font-size="9" text-anchor="middle" fill="#79b3b6" letter-spacing="2">LOCAL DIRECTORY</text>
+
+  <!-- coin return cup -->
+  <rect x="66" y="544" width="120" height="72" rx="7" fill="url(#chrome)"/>
+  <path d="M76 556 h100 v40 a10 10 0 0 1 -10 10 h-80 a10 10 0 0 1 -10 -10 z" fill="#05090a"/>
+  <text x="126" y="612" font-family="Helvetica,Arial,sans-serif" font-size="8" text-anchor="middle" fill="#0f2426" letter-spacing="1.5">RETURNED COINS</text>
+
+  <!-- serial plate -->
+  <rect x="204" y="544" width="130" height="40" rx="5" fill="url(#metal)"/>
+  <text x="269" y="562" font-family="monospace" font-size="9.5" text-anchor="middle" fill="#1a2224">SN 4471-BX</text>
+  <text x="269" y="576" font-family="monospace" font-size="8" text-anchor="middle" fill="#33403f">BELL SYSTEM CO.</text>
+
+  <!-- bottom vents -->
+  <g fill="#0a1e20">
+    <rect x="210" y="596" width="124" height="6" rx="3"/>
+    <rect x="210" y="608" width="124" height="6" rx="3"/>
+    <rect x="210" y="620" width="124" height="6" rx="3"/>
+  </g>
+
+  <!-- handset hook / cradle -->
+  <g>
+    <rect x="36" y="180" width="26" height="18" rx="4" fill="url(#chrome)"/>
+    <rect x="36" y="300" width="26" height="18" rx="4" fill="url(#chrome)"/>
+  </g>
+
+  <!-- coiled cord -->
+  <g fill="none" stroke="#0b0e0f" stroke-width="7" stroke-linecap="round">
+    <path d="M52 340 C10 350 12 372 52 380"/>
+    <path d="M52 378 C10 388 12 410 52 418"/>
+    <path d="M52 416 C10 426 12 448 52 456"/>
+    <path d="M52 454 C10 464 12 486 52 494"/>
+    <path d="M52 492 C10 502 12 524 52 532"/>
+    <path d="M52 530 C14 540 16 560 46 566"/>
+  </g>
+  <path d="M46 566 C60 572 60 580 52 592" fill="none" stroke="#0b0e0f" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- handset hanging on left -->
+  <g transform="translate(6,150) rotate(-4)">
+    <path d="M26 22 C6 24 2 40 6 56 L14 176 C16 192 30 200 44 198 C58 196 68 184 66 168 L58 48 C56 30 44 20 26 22 Z" fill="url(#handset)"/>
+    <!-- earpiece -->
+    <ellipse cx="30" cy="34" rx="26" ry="20" fill="#1a1f21"/>
+    <ellipse cx="30" cy="34" rx="18" ry="13" fill="#0a0d0e"/>
+    <g fill="#2e3639">
+      <circle cx="24" cy="30" r="2"/><circle cx="32" cy="29" r="2"/><circle cx="38" cy="33" r="2"/>
+      <circle cx="22" cy="38" r="2"/><circle cx="30" cy="38" r="2"/><circle cx="37" cy="41" r="2"/>
+    </g>
+    <!-- mouthpiece -->
+    <ellipse cx="42" cy="182" rx="26" ry="20" fill="#1a1f21"/>
+    <ellipse cx="42" cy="182" rx="18" ry="13" fill="#0a0d0e"/>
+    <g fill="#2e3639">
+      <circle cx="36" cy="178" r="2"/><circle cx="44" cy="177" r="2"/><circle cx="50" cy="181" r="2"/>
+      <circle cx="34" cy="186" r="2"/><circle cx="42" cy="186" r="2"/><circle cx="49" cy="189" r="2"/>
+    </g>
+    <path d="M22 60 C16 62 16 74 20 90 L30 160" stroke="#4a5457" stroke-width="2.5" fill="none" opacity="0.6"/>
+  </g>
+
+  <!-- glossy highlight over body -->
+  <path d="M56 22 h58 l-30 620 h-28 a10 10 0 0 1 -10 -10 v-600 a10 10 0 0 1 10 -10 z" fill="#ffffff" opacity="0.06"/>
+  <path d="M320 22 h24 a10 10 0 0 1 10 10 v600 a10 10 0 0 1 -10 10 h-40 z" fill="url(#shadow)"/>
+
+  <!-- edge outline -->
+  <rect x="46" y="12" width="308" height="656" rx="14" fill="none" stroke="#0a1c1e" stroke-width="3"/>
+</svg>

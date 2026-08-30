@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="23.0 28.0 216.5 203.8">
+  <defs>
+    <radialGradient id="dustCore" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#f7f7f7" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#d8d8d8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#a6a6a6" stop-opacity="0.9"/>
+    </radialGradient>
+    <radialGradient id="dustCore2" cx="40%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#fefefe" stop-opacity="0.7"/>
+      <stop offset="45%" stop-color="#e1e1e1" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#9c9c9c" stop-opacity="0.7"/>
+    </radialGradient>
+    <radialGradient id="eyeWhite" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dcdcdc"/>
+    </radialGradient>
+    <radialGradient id="eyeHighlight" cx="30%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#bbbbbb"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Dust bunny body - layered fuzzy cloud -->
+  <g>
+    <ellipse cx="130" cy="130" rx="105" ry="100" fill="url(#dustCore)" opacity="0.9"/>
+    <ellipse cx="130" cy="136" rx="96" ry="92" fill="url(#dustCore2)" opacity="0.85"/>
+
+    <!-- Outer stray fluff tufts -->
+    <g fill="none" stroke="#a7a7a7" stroke-linecap="round">
+      <g stroke-width="3.1" opacity="0.9">
+        <path d="M32 120c10-5 18-7 28-7"/>
+        <path d="M37 140c9-3 21-3 31 2"/>
+        <path d="M50 162c10 1 17 4 24 8"/>
+        <path d="M70 182c8 1 15 4 22 8"/>
+        <path d="M102 198c7 2 12 5 19 9"/>
+        <path d="M135 201c8 2 13 5 21 9"/>
+        <path d="M167 196c10 1 17 3 26 7"/>
+        <path d="M188 181c10 0 20 2 28 6"/>
+        <path d="M205 162c9-1 18 1 26 5"/>
+        <path d="M211 141c8-3 17-2 25 0"/>
+        <path d="M211 121c9-4 14-5 21-5"/>
+        <path d="M201 99c7-4 13-7 22-8"/>
+        <path d="M184 82c7-5 12-8 20-10"/>
+        <path d="M164 70c6-5 11-8 17-11"/>
+        <path d="M142 62c4-5 8-9 14-12"/>
+        <path d="M118 60c4-6 8-10 12-14"/>
+        <path d="M96 63c3-6 6-11 10-16"/>
+        <path d="M77 71c1-6 4-12 7-18"/>
+        <path d="M59 83c0-6 1-12 4-18"/>
+        <path d="M47 98c-1-5 0-11 2-17"/>
+      </g>
+
+      <!-- Fine hairs -->
+      <g stroke-width="1.7" opacity="0.65">
+        <path d="M40 112c7-6 13-9 22-10"/>
+        <path d="M44 152c8 0 15 2 23 7"/>
+        <path d="M62 172c8 2 14 5 19 10"/>
+        <path d="M88 190c7 3 12 6 18 11"/>
+        <path d="M120 200c7 3 12 7 17 11"/>
+        <path d="M153 198c9 3 16 6 24 11"/>
+        <path d="M176 186c8 1 15 3 23 7"/>
+        <path d="M193 167c7 0 14 2 21 6"/>
+        <path d="M198 148c7-1 13 0 19 2"/>
+        <path d="M200 131c7-3 11-5 18-6"/>
+        <path d="M196 110c6-3 11-5 17-7"/>
+        <path d="M185 92c5-4 10-6 16-9"/>
+        <path d="M169 79c4-4 9-7 14-9"/>
+        <path d="M152 70c4-4 7-8 11-11"/>
+        <path d="M132 66c3-5 5-8 9-11"/>
+        <path d="M112 66c2-5 4-9 7-12"/>
+        <path d="M92 71c1-5 3-9 6-13"/>
+        <path d="M75 82c0-5 1-10 3-14"/>
+        <path d="M63 96c0-4 1-8 3-12"/>
+        <path d="M55 113c0-4 0-7 1-11"/>
+      </g>
+    </g>
+
+    <!-- Inner fuzzy silhouette to break up edges -->
+    <g fill="none" stroke="#8e8e8e" stroke-linecap="round" opacity="0.8">
+      <g stroke-width="2.3">
+        <path d="M56 121c10-7 23-11 35-12"/>
+        <path d="M60 143c11-3 20-3 32 1"/>
+        <path d="M75 163c9 1 17 4 25 9"/>
+        <path d="M99 177c9 3 17 7 25 12"/>
+        <path d="M128 184c10 3 18 6 27 11"/>
+        <path d="M158 180c10 1 19 4 29 9"/>
+        <path d="M178 164c9-1 16 0 25 3"/>
+        <path d="M184 144c8-2 15-2 23 0"/>
+        <path d="M184 125c8-4 14-5 21-6"/>
+        <path d="M177 107c7-3 13-5 19-6"/>
+        <path d="M163 93c6-4 11-7 17-9"/>
+        <path d="M146 83c5-4 9-7 14-10"/>
+        <path d="M126 79c4-5 7-8 11-11"/>
+        <path d="M107 81c3-5 5-9 9-12"/>
+        <path d="M88 89c2-5 4-9 7-13"/>
+        <path d="M73 102c1-4 2-7 4-11"/>
+      </g>
+    </g>
+
+    <!-- Soft inner shading -->
+    <ellipse cx="130" cy="143" rx="70" ry="52" fill="#8a8a8a" opacity="0.22"/>
+    <ellipse cx="130" cy="122" rx="78" ry="60" fill="#ffffff" opacity="0.18"/>
+
+    <!-- Face -->
+    <!-- Eyes -->
+    <g>
+      <!-- Left eye white -->
+      <ellipse cx="98" cy="118" rx="18" ry="20" fill="url(#eyeWhite)"/>
+      <!-- Right eye white -->
+      <ellipse cx="158" cy="118" rx="18" ry="20" fill="url(#eyeWhite)"/>
+
+      <!-- Eye outlines -->
+      <ellipse cx="98" cy="118" rx="18" ry="20" fill="none" stroke="#5a5a5a" stroke-width="1.8" opacity="0.8"/>
+      <ellipse cx="158" cy="118" rx="18" ry="20" fill="none" stroke="#5a5a5a" stroke-width="1.8" opacity="0.8"/>
+
+      <!-- Pupils -->
+      <circle cx="98" cy="121" r="8.2" fill="#2b2b2b"/>
+      <circle cx="158" cy="121" r="8.2" fill="#2b2b2b"/>
+
+      <!-- Highlights -->
+      <circle cx="94.5" cy="117.5" r="3.2" fill="url(#eyeHighlight)"/>
+      <circle cx="154.5" cy="117.5" r="3.2" fill="url(#eyeHighlight)"/>
+      <circle cx="101" cy="124" r="1.5" fill="#ffffff" opacity="0.8"/>
+      <circle cx="161" cy="124" r="1.5" fill="#ffffff" opacity="0.8"/>
+    </g>
+
+    <!-- Tiny nose/mouth -->
+    <g stroke-linecap="round" stroke="#424242" stroke-width="1.6">
+      <path d="M124 134c2 2 4 2 6 0" fill="none"/>
+      <path d="M121 137c2 3 4 4 7 4" fill="none"/>
+      <path d="M131 141c3 0 5-1 7-4" fill="none"/>
+    </g>
+
+    <!-- Extra soft fluff across body -->
+    <g fill="none" stroke="#b9b9b9" stroke-linecap="round" stroke-width="1.3" opacity="0.7">
+      <path d="M72 132c10-5 21-8 34-8"/>
+      <path d="M79 149c11-3 22-2 34 0"/>
+      <path d="M95 163c10 1 19 4 28 7"/>
+      <path d="M120 170c11 2 20 5 30 8"/>
+      <path d="M143 164c10 0 19 1 29 3"/>
+      <path d="M151 149c9-2 17-3 26-2"/>
+      <path d="M148 134c9-4 17-5 26-5"/>
+      <path d="M138 121c8-3 14-4 22-4"/>
+      <path d="M118 115c7-3 13-5 21-6"/>
+      <path d="M97 114c6-3 11-5 17-7"/>
+      <path d="M86 124c6-3 11-4 17-5"/>
+    </g>
+  </g>
+</svg>

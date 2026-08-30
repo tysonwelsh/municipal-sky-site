@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "id": "2026-08-17-shotgun-shell",
+  "title": "Shotgun shell",
+  "prompt": "Shotgun shell. Not yet fired.",
+  "created": "2026-08-17",
+  "sizeClass": "s",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-17",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "layering": 3,
+        "understanding-assignment": 4,
+        "structural-coherence": 3,
+        "jnsq": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M082P9HA39ZW2WAHG6MWX8F7), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 300 700\" to ink bounds (\"46.0 51.0 207.8 638.8\")."
+    },
+    {
+      "rid": "r2",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-17",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "layering": 3,
+        "structural-coherence": 2,
+        "understanding-assignment": 4,
+        "jnsq": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M082P9HA39ZW2WAHG6MWX8F7), rated blind at the bench on the current rubric; filed rank 2 of 4. viewBox normalized: tightened from \"0 0 120 300\" to ink bounds (\"16.0 15.0 87.8 284.8\")."
+    },
+    {
+      "rid": "r3",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-17",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 3,
+        "layering": 3,
+        "structural-coherence": 1,
+        "jnsq": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M082P9HA39ZW2WAHG6MWX8F7), rated blind at the bench on the current rubric; filed rank 3 of 4."
+    },
+    {
+      "rid": "r4",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-17",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 2,
+        "structural-coherence": 1,
+        "layering": 2,
+        "jnsq": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M082P9HA39ZW2WAHG6MWX8F7), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 300 600\" to ink bounds (\"46.0 62.0 207.8 539.8\")."
+    }
+  ]
+}

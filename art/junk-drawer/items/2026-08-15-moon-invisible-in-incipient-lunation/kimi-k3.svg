@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#101426"/>
+      <stop offset="60%" stop-color="#0a0d1a"/>
+      <stop offset="100%" stop-color="#05070f"/>
+    </radialGradient>
+    <radialGradient id="moonbody" cx="45%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#181c2c"/>
+      <stop offset="70%" stop-color="#0e1120"/>
+      <stop offset="100%" stop-color="#070910"/>
+    </radialGradient>
+    <radialGradient id="earthshine" cx="38%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#3a4468" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#232a44" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0e1120" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="corona" cx="50%" cy="50%" r="50%">
+      <stop offset="62%" stop-color="#c9d4ff" stop-opacity="0"/>
+      <stop offset="72%" stop-color="#c9d4ff" stop-opacity="0.10"/>
+      <stop offset="85%" stop-color="#8fa0d8" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#8fa0d8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="perigeeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#aabbee" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#aabbee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="800" fill="url(#sky)"/>
+
+  <g fill="#ffffff">
+    <circle cx="52" cy="98" r="1.1" opacity="0.8"/>
+    <circle cx="140" cy="60" r="0.7" opacity="0.5"/>
+    <circle cx="230" cy="120" r="0.9" opacity="0.6"/>
+    <circle cx="88" cy="220" r="0.6" opacity="0.45"/>
+    <circle cx="320" cy="44" r="0.8" opacity="0.55"/>
+    <circle cx="420" cy="80" r="0.5" opacity="0.4"/>
+    <circle cx="560" cy="55" r="1.0" opacity="0.7"/>
+    <circle cx="660" cy="120" r="0.6" opacity="0.5"/>
+    <circle cx="735" cy="70" r="0.9" opacity="0.65"/>
+    <circle cx="770" cy="200" r="0.6" opacity="0.45"/>
+    <circle cx="700" cy="300" r="0.8" opacity="0.5"/>
+    <circle cx="60" cy="420" r="0.7" opacity="0.5"/>
+    <circle cx="120" cy="540" r="1.0" opacity="0.6"/>
+    <circle cx="40" cy="650" r="0.6" opacity="0.45"/>
+    <circle cx="180" cy="700" r="0.8" opacity="0.55"/>
+    <circle cx="300" cy="750" r="0.6" opacity="0.4"/>
+    <circle cx="500" cy="740" r="0.9" opacity="0.55"/>
+    <circle cx="620" cy="700" r="0.7" opacity="0.5"/>
+    <circle cx="740" cy="640" r="1.1" opacity="0.7"/>
+    <circle cx="770" cy="480" r="0.6" opacity="0.45"/>
+    <circle cx="680" cy="540" r="0.5" opacity="0.4"/>
+    <circle cx="90" cy="320" r="0.5" opacity="0.4"/>
+    <circle cx="620" cy="200" r="0.7" opacity="0.5"/>
+    <circle cx="370" cy="720" r="0.5" opacity="0.4"/>
+    <circle cx="470" cy="60" r="0.6" opacity="0.45"/>
+  </g>
+
+  <g stroke="#ffffff" stroke-linecap="round" opacity="0.55">
+    <path d="M180 150 h8 M184 146 v8" stroke-width="0.9"/>
+    <path d="M705 405 h7 M708.5 401.5 v7" stroke-width="0.8"/>
+    <path d="M250 660 h7 M253.5 656.5 v7" stroke-width="0.8"/>
+    <path d="M585 92 h6 M588 89 v6" stroke-width="0.7"/>
+  </g>
+
+  <circle cx="400" cy="400" r="350" fill="url(#perigeeGlow)"/>
+  <circle cx="400" cy="400" r="330" fill="url(#corona)"/>
+
+  <circle cx="400" cy="400" r="258" fill="url(#moonbody)"/>
+  <circle cx="400" cy="400" r="258" fill="url(#earthshine)"/>
+
+  <g opacity="0.35" fill="#0a0d18">
+    <circle cx="340" cy="330" r="34"/>
+    <circle cx="470" cy="290" r="22"/>
+    <circle cx="500" cy="430" r="40"/>
+    <circle cx="360" cy="480" r="26"/>
+    <circle cx="290" cy="420" r="18"/>
+    <circle cx="440" cy="530" r="20"/>
+  </g>
+  <g opacity="0.18" fill="#39415e">
+    <circle cx="340" cy="330" r="30"/>
+    <circle cx="470" cy="290" r="19"/>
+    <circle cx="500" cy="430" r="35"/>
+    <circle cx="360" cy="480" r="23"/>
+    <circle cx="290" cy="420" r="15"/>
+    <circle cx="440" cy="530" r="17"/>
+  </g>
+
+  <circle cx="400" cy="400" r="258" fill="none" stroke="#5a6a9e" stroke-width="1.2" opacity="0.28"/>
+  <path d="M 400 142 A 258 258 0 0 1 632 270" fill="none" stroke="#8fa2d8" stroke-width="1.6" opacity="0.30"/>
+</svg>

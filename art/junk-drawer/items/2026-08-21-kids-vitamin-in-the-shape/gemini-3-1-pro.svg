@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="13.0 16.0 187.8 150.8">
+  <defs>
+    <!-- Gummy Base Gradient -->
+    <linearGradient id="gummyBase" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5E20" />
+      <stop offset="50%" stop-color="#FF2A2A" />
+      <stop offset="100%" stop-color="#B3001B" />
+    </linearGradient>
+
+    <!-- Gummy Core (Darker) -->
+    <linearGradient id="gummyCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3814" />
+      <stop offset="100%" stop-color="#800014" />
+    </linearGradient>
+
+    <!-- Gummy Highlight -->
+    <linearGradient id="gummyHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFC2A6" />
+      <stop offset="100%" stop-color="#FF5E20" />
+    </linearGradient>
+
+    <!-- 3D Deboss Shadow -->
+    <linearGradient id="debossShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#66000C" />
+      <stop offset="100%" stop-color="#CC001F" />
+    </linearGradient>
+  </defs>
+
+  <!-- BACKGROUND SILHOUETTE (GUMMY MOLD) -->
+  <g fill="url(#gummyBase)" stroke="url(#gummyBase)" stroke-width="24" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Cab -->
+    <rect x="35" y="30" width="55" height="90" rx="12"/>
+    <!-- Boiler -->
+    <rect x="85" y="70" width="75" height="50" rx="12"/>
+    <!-- Smokestack -->
+    <rect x="120" y="35" width="22" height="40" rx="8"/>
+    <!-- Cowcatcher/Front -->
+    <path d="M 155 70 L 175 100 L 175 120 L 155 120 Z" />
+    <!-- Wheels -->
+    <circle cx="55" cy="125" r="28"/>
+    <circle cx="115" cy="130" r="22"/>
+    <circle cx="165" cy="130" r="22"/>
+  </g>
+
+  <!-- INNER GUMMY CORE (Adds depth) -->
+  <g fill="url(#gummyCore)" stroke="url(#gummyCore)" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="35" y="30" width="55" height="90" rx="12"/>
+    <rect x="85" y="70" width="75" height="50" rx="12"/>
+    <rect x="120" y="35" width="22" height="40" rx="8"/>
+    <path d="M 155 70 L 175 100 L 175 120 L 155 120 Z" />
+    <circle cx="55" cy="125" r="28"/>
+    <circle cx="115" cy="130" r="22"/>
+    <circle cx="165" cy="130" r="22"/>
+  </g>
+
+  <!-- SOFT EDGE HIGHLIGHT (Creates the gelatinous rim) -->
+  <g fill="none" stroke="url(#gummyHighlight)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity="0.8" transform="translate(-2, -2)">
+    <rect x="35" y="30" width="55" height="90" rx="12"/>
+    <rect x="85" y="70" width="75" height="50" rx="12"/>
+    <rect x="120" y="35" width="22" height="40" rx="8"/>
+    <path d="M 155 70 L 175 100 L 175 120 L 155 120 Z" />
+    <circle cx="55" cy="125" r="28"/>
+    <circle cx="115" cy="130" r="22"/>
+    <circle cx="165" cy="130" r="22"/>
+  </g>
+
+  <!-- MOLDED DETAILS (Debossed features) -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Base deboss shadow -->
+    <g fill="none" stroke="url(#debossShadow)" stroke-width="7" opacity="0.8" transform="translate(1, 1)">
+      <!-- Window -->
+      <rect x="47" y="45" width="30" height="30" rx="8"/>
+      <!-- Boiler Stripes -->
+      <line x1="100" y1="80" x2="100" y2="110"/>
+      <line x1="135" y1="80" x2="135" y2="110"/>
+      <!-- Wheel Hubs -->
+      <circle cx="55" cy="125" r="10"/>
+      <circle cx="115" cy="130" r="8"/>
+      <circle cx="165" cy="130" r="8"/>
+    </g>
+    <!-- Base deboss highlight -->
+    <g fill="none" stroke="#FF9C73" stroke-width="4" opacity="0.9" transform="translate(-1, -1)">
+      <!-- Window -->
+      <rect x="47" y="45" width="30" height="30" rx="8"/>
+      <!-- Boiler Stripes -->
+      <line x1="100" y1="80" x2="100" y2="110"/>
+      <line x1="135" y1="80" x2="135" y2="110"/>
+      <!-- Wheel Hubs -->
+      <circle cx="55" cy="125" r="10"/>
+      <circle cx="115" cy="130" r="8"/>
+      <circle cx="165" cy="130" r="8"/>
+    </g>
+  </g>
+
+  <!-- SHARP GLOSSY REFLECTIONS (Shiny wet gummy look) -->
+  <g fill="#FFFFFF" opacity="0.6">
+    <!-- Cab Top -->
+    <path d="M 38 38 Q 45 32 60 32 Q 70 32 75 38 Q 60 36 38 38 Z"/>
+    <!-- Boiler Top -->
+    <path d="M 90 75 Q 110 70 145 75 Q 120 73 90 75 Z"/>
+    <!-- Smokestack Top -->
+    <ellipse cx="128" cy="38" rx="8" ry="3"/>
+    <!-- Back Wheel Shine -->
+    <path d="M 38 105 A 24 24 0 0 1 65 102 A 26 26 0 0 0 38 105 Z"/>
+    <!-- Mid Wheel Shine -->
+    <path d="M 102 115 A 18 18 0 0 1 124 113 A 20 20 0 0 0 102 115 Z"/>
+    <!-- Front Wheel Shine -->
+    <path d="M 152 115 A 18 18 0 0 1 174 113 A 20 20 0 0 0 152 115 Z"/>
+    <!-- Window Shine -->
+    <path d="M 50 50 Q 55 47 65 47 Q 55 49 50 50 Z"/>
+    <circle cx="70" cy="50" r="2"/>
+  </g>
+</svg>

@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="33.5 -1.5 332.8 502.8">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2d95"/>
+      <stop offset="45%" stop-color="#c412ff"/>
+      <stop offset="100%" stop-color="#3d0bff"/>
+    </linearGradient>
+    <linearGradient id="neckGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5c3a1e"/>
+      <stop offset="100%" stop-color="#2e1a0c"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#9aa4b5"/>
+      <stop offset="100%" stop-color="#dfe6f0"/>
+    </linearGradient>
+    <linearGradient id="fretGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1c1c22"/>
+      <stop offset="100%" stop-color="#0a0a0e"/>
+    </linearGradient>
+    <linearGradient id="edgeGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f6ff"/>
+      <stop offset="100%" stop-color="#ff00e0"/>
+    </linearGradient>
+    <radialGradient id="knobGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#8b93a8"/>
+      <stop offset="100%" stop-color="#454c5e"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Neck / fretboard -->
+  <g>
+    <rect x="187" y="70" width="26" height="290" rx="6" fill="url(#neckGrad)"/>
+    <rect x="189" y="70" width="22" height="290" rx="5" fill="url(#fretGrad)"/>
+    <!-- frets -->
+    <g fill="#cfd6e2">
+      <rect x="189" y="95" width="22" height="2.2"/>
+      <rect x="189" y="120" width="22" height="2.2"/>
+      <rect x="189" y="144" width="22" height="2.2"/>
+      <rect x="189" y="167" width="22" height="2.2"/>
+      <rect x="189" y="189" width="22" height="2.2"/>
+      <rect x="189" y="210" width="22" height="2.2"/>
+      <rect x="189" y="230" width="22" height="2.2"/>
+      <rect x="189" y="249" width="22" height="2.2"/>
+      <rect x="189" y="267" width="22" height="2.2"/>
+      <rect x="189" y="284" width="22" height="2.2"/>
+      <rect x="189" y="300" width="22" height="2.2"/>
+      <rect x="189" y="315" width="22" height="2.2"/>
+      <rect x="189" y="330" width="22" height="2.2"/>
+    </g>
+    <!-- fret dots -->
+    <g fill="#e8ecf4">
+      <circle cx="200" cy="178" r="3"/>
+      <circle cx="200" cy="239" r="3"/>
+      <circle cx="200" cy="292" r="3"/>
+      <circle cx="195" cy="322" r="2.6"/>
+      <circle cx="205" cy="322" r="2.6"/>
+    </g>
+  </g>
+
+  <!-- Headstock (pointy, reversed style) -->
+  <path d="M186 72 L214 72 L228 8 L196 2 L182 30 Z" fill="url(#bodyGrad)" stroke="url(#edgeGlow)" stroke-width="2.5"/>
+  <rect x="196" y="66" width="8" height="6" rx="1" fill="#111"/>
+  <!-- tuning machines -->
+  <g fill="url(#chrome)" stroke="#333a45" stroke-width="0.8">
+    <circle cx="221" cy="18" r="4"/>
+    <circle cx="216" cy="34" r="4"/>
+    <circle cx="210" cy="50" r="4"/>
+    <circle cx="191" cy="22" r="4"/>
+    <circle cx="190" cy="40" r="4"/>
+    <circle cx="192" cy="56" r="4"/>
+  </g>
+
+  <!-- Guitar body: angular superstrat with sharp horns -->
+  <path d="M200 330
+           L150 318 L118 280 L92 262 L108 330 L60 348 L40 340
+           L96 430 L150 468 L180 498 L200 470 L220 498 L250 468
+           L304 430 L360 340 L340 348 L292 330 L308 262 L282 280
+           L250 318 Z"
+        fill="url(#bodyGrad)" stroke="url(#edgeGlow)" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- lightning bolt decal -->
+  <path d="M235 330 L185 400 L210 400 L165 462 L235 385 L208 385 L250 330 Z"
+        fill="#ffe600" stroke="#000" stroke-width="1.5" opacity="0.95"/>
+
+  <!-- body highlight -->
+  <path d="M115 290 Q140 320 175 336" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.35" stroke-linecap="round"/>
+  <path d="M285 292 Q262 320 230 335" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.25" stroke-linecap="round"/>
+
+  <!-- pickups -->
+  <g>
+    <rect x="172" y="352" width="56" height="18" rx="4" fill="#111318" stroke="#555c6b" stroke-width="1.5"/>
+    <g fill="url(#chrome)">
+      <circle cx="182" cy="361" r="2.6"/><circle cx="191" cy="361" r="2.6"/><circle cx="200" cy="361" r="2.6"/>
+      <circle cx="209" cy="361" r="2.6"/><circle cx="218" cy="361" r="2.6"/>
+    </g>
+    <rect x="168" y="382" width="64" height="20" rx="4" fill="#111318" stroke="#555c6b" stroke-width="1.5"/>
+    <g fill="url(#chrome)">
+      <circle cx="180" cy="392" r="2.8"/><circle cx="190" cy="392" r="2.8"/><circle cx="200" cy="392" r="2.8"/>
+      <circle cx="210" cy="392" r="2.8"/><circle cx="220" cy="392" r="2.8"/>
+    </g>
+  </g>
+
+  <!-- tremolo bridge -->
+  <rect x="170" y="414" width="60" height="16" rx="3" fill="url(#chrome)" stroke="#454c5e" stroke-width="1.2"/>
+  <rect x="230" y="418" width="42" height="5" rx="2.5" fill="url(#chrome)" transform="rotate(18 230 418)"/>
+
+  <!-- volume / tone knobs -->
+  <circle cx="258" cy="448" r="9" fill="url(#knobGrad)" stroke="#222" stroke-width="1"/>
+  <circle cx="282" cy="428" r="9" fill="url(#knobGrad)" stroke="#222" stroke-width="1"/>
+  <line x1="258" y1="448" x2="258" y2="441" stroke="#222" stroke-width="1.5"/>
+  <line x1="282" y1="428" x2="288" y2="424" stroke="#222" stroke-width="1.5"/>
+
+  <!-- pickup selector switch -->
+  <circle cx="150" cy="430" r="4" fill="url(#chrome)" stroke="#222" stroke-width="1"/>
+  <line x1="150" y1="430" x2="160" y2="416" stroke="#eee" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="160" cy="416" r="3" fill="#fff"/>
+
+  <!-- strings -->
+  <g stroke="#e8ecf4" stroke-width="0.9" opacity="0.9">
+    <line x1="193" y1="10" x2="193" y2="422"/>
+    <line x1="196" y1="8" x2="196" y2="422"/>
+    <line x1="199" y1="6" x2="199" y2="422"/>
+    <line x1="202" y1="6" x2="202" y2="422"/>
+    <line x1="205" y1="8" x2="205" y2="422"/>
+    <line x1="208" y1="10" x2="208" y2="422"/>
+  </g>
+
+  <!-- strap buttons -->
+  <circle cx="40" cy="340" r="4" fill="url(#chrome)" stroke="#222"/>
+  <circle cx="360" cy="340" r="4" fill="url(#chrome)" stroke="#222"/>
+
+  <!-- sparkle accents -->
+  <g fill="#ffffff">
+    <path d="M320 300 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity="0.9"/>
+    <path d="M80 380 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5 z" opacity="0.8"/>
+    <path d="M240 120 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity="0.7"/>
+  </g>
+</svg>

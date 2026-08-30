@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.40" stop-color="#0a0d18" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#141c31" stop-opacity="0.55"/>
+      <stop offset="0.78" stop-color="#1b2742" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#000208" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="disc" cx="0.42" cy="0.38" r="0.72">
+      <stop offset="0" stop-color="#131722"/>
+      <stop offset="0.55" stop-color="#0b0e16"/>
+      <stop offset="1" stop-color="#04050a"/>
+    </radialGradient>
+
+    <radialGradient id="earthshine" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.86" stop-color="#26344f" stop-opacity="0"/>
+      <stop offset="0.965" stop-color="#3f5madeup" stop-opacity="0"/>
+      <stop offset="0.97" stop-color="#4a5f86" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6d84ad" stop-opacity="0.9"/>
+    </radialGradient>
+
+    <linearGradient id="limb" x1="0" y1="0" x2="1" y2="0.25">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#e8eefc" stop-opacity="0.5"/>
+      <stop offset="0.85" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <radialGradient id="glint" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="0.4" stop-color="#cfe0ff" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#cfe0ff" stop-opacity="0"/>
+    </radialGradient>
+
+    <clipPath id="discClip">
+      <circle cx="400" cy="400" r="300"/>
+    </clipPath>
+
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="softer" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.14"/></feComponentTransfer>
+    </filter>
+  </defs>
+
+  <!-- faint star field -->
+  <g fill="#cfd9f0">
+    <circle cx="42" cy="96" r="1.6" opacity="0.7"/>
+    <circle cx="118" cy="212" r="1.1" opacity="0.45"/>
+    <circle cx="66" cy="410" r="1.4" opacity="0.55"/>
+    <circle cx="150" cy="612" r="1" opacity="0.4"/>
+    <circle cx="94" cy="720" r="1.7" opacity="0.65"/>
+    <circle cx="268" cy="52" r="1.2" opacity="0.5"/>
+    <circle cx="430" cy="34" r="1.6" opacity="0.6"/>
+    <circle cx="612" cy="86" r="1.1" opacity="0.45"/>
+    <circle cx="742" cy="164" r="1.5" opacity="0.6"/>
+    <circle cx="766" cy="352" r="1.2" opacity="0.5"/>
+    <circle cx="714" cy="530" r="1.6" opacity="0.6"/>
+    <circle cx="640" cy="694" r="1.1" opacity="0.45"/>
+    <circle cx="470" cy="756" r="1.4" opacity="0.55"/>
+    <circle cx="322" cy="726" r="1" opacity="0.4"/>
+    <circle cx="206" cy="140" r="0.9" opacity="0.35"/>
+    <circle cx="556" cy="742" r="0.9" opacity="0.35"/>
+    <circle cx="24" cy="560" r="0.9" opacity="0.35"/>
+    <circle cx="778" cy="612" r="0.9" opacity="0.35"/>
+  </g>
+
+  <!-- outer atmospheric halo, oversized: perigee nearness -->
+  <circle cx="400" cy="400" r="392" fill="url(#halo)"/>
+
+  <!-- the unlit disc -->
+  <circle cx="400" cy="400" r="300" fill="url(#disc)"/>
+
+  <!-- earthshine: ashen glow of the whole nightside -->
+  <circle cx="400" cy="400" r="300" fill="url(#earthshine)" opacity="0.75"/>
+
+  <!-- ghosted maria, barely resolved -->
+  <g clip-path="url(#discClip)" filter="url(#soft)" fill="#1a2233" opacity="0.5">
+    <ellipse cx="330" cy="300" rx="72" ry="58" transform="rotate(-18 330 300)"/>
+    <ellipse cx="430" cy="250" rx="52" ry="40"/>
+    <ellipse cx="290" cy="420" rx="60" ry="70" transform="rotate(12 290 420)"/>
+    <ellipse cx="470" cy="410" rx="44" ry="34"/>
+    <ellipse cx="380" cy="520" rx="66" ry="42" transform="rotate(-8 380 520)"/>
+    <ellipse cx="520" cy="330" rx="30" ry="24"/>
+  </g>
+
+  <!-- incipient crescent: a thread of first light on the western limb -->
+  <g clip-path="url(#discClip)">
+    <path d="M400 100 A300 300 0 0 1 400 700 A322 322 0 0 0 400 100 Z"
+          fill="url(#limb)" opacity="0.95"/>
+    <path d="M400 100 A300 300 0 0 1 400 700 A312 312 0 0 0 400 100 Z"
+          fill="#ffffff" opacity="0.55" filter="url(#soft)"/>
+  </g>
+
+  <!-- limb bloom -->
+  <ellipse cx="694" cy="400" rx="120" ry="230" fill="url(#glint)" filter="url(#softer)" opacity="0.55"/>
+  <circle cx="700" cy="400" r="6" fill="#ffffff" opacity="0.85" filter="url(#soft)"/>
+
+  <!-- terminator-side rim, whisper-thin -->
+  <circle cx="400" cy="400" r="299.5" fill="none" stroke="#5f76a2" stroke-width="1.1" opacity="0.35"/>
+
+  <!-- grain over everything -->
+  <circle cx="400" cy="400" r="392" filter="url(#grain)" opacity="0.35"/>
+</svg>

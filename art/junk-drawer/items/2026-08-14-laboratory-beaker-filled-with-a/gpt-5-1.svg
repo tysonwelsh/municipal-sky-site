@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="23.0 20.5 213.8 284.8">
+  <defs>
+    <linearGradient id="glassBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="0.25" stop-color="#e4f4ff" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="0.9" stop-color="#cde7ff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="lipShine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#cfd9e8" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="liquidFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6ff6e"/>
+      <stop offset="0.3" stop-color="#c7ff37"/>
+      <stop offset="0.7" stop-color="#8cd900"/>
+      <stop offset="1" stop-color="#4fa400"/>
+    </linearGradient>
+    <linearGradient id="liquidHighlight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f8ffe5" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#f8ffe5" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="bubbleGrad" cx="0.35" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#f8ffe5" stop-opacity="1"/>
+      <stop offset="0.65" stop-color="#e6ffb9" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#b3e65e" stop-opacity="0.1"/>
+    </radialGradient>
+    <radialGradient id="outerGlow" cx="0.5" cy="1" r="1">
+      <stop offset="0" stop-color="#c8ff60" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#c8ff60" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sideEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="0.4" stop-color="#e2f1ff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#a7c7e3" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Glow from liquid -->
+  <ellipse cx="130" cy="265" rx="105" ry="35" fill="url(#outerGlow)" />
+
+  <!-- Back rim of beaker -->
+  <ellipse cx="130" cy="40" rx="90" ry="16"
+           fill="url(#lipShine)"
+           stroke="#d0dcef"
+           stroke-width="3"/>
+
+  <!-- Back inner rim for depth -->
+  <ellipse cx="130" cy="42" rx="78" ry="12"
+           fill="none"
+           stroke="#ffffff"
+           stroke-width="2"
+           opacity="0.7"/>
+
+  <!-- Beaker body (back glass shape) -->
+  <path d="
+    M50 42
+    C56 140, 58 210, 70 250
+    C80 282, 105 302, 130 302
+    C155 302, 180 282, 190 250
+    C202 210, 204 140, 210 42
+    Z"
+    fill="url(#glassBody)"
+    stroke="#b3c9dd"
+    stroke-width="3"
+    stroke-linejoin="round"/>
+
+  <!-- Liquid body -->
+  <path d="
+    M60 150
+    Q100 140, 130 146
+    Q160 152, 200 150
+    L198 240
+    C192 270, 165 294, 130 294
+    C95 294, 68 270, 62 240
+    Z"
+    fill="url(#liquidFill)"/>
+
+  <!-- Liquid highlight band -->
+  <path d="
+    M68 154
+    Q100 147, 130 150
+    Q160 153, 192 154
+    L192 170
+    Q160 168, 130 166
+    Q100 164, 68 168
+    Z"
+    fill="url(#liquidHighlight)"
+    opacity="0.55"/>
+
+  <!-- Surface shine on liquid -->
+  <ellipse cx="130" cy="148" rx="66" ry="10"
+           fill="#f9ffe8"
+           opacity="0.5"/>
+
+  <!-- Top meniscus line -->
+  <path d="
+    M62 150
+    Q100 142, 130 146
+    Q160 150, 198 150"
+    fill="none"
+    stroke="#c3f27c"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.9"/>
+
+  <!-- Inner glass contour on sides (over liquid) -->
+  <path d="
+    M72 60
+    C76 138, 78 190, 84 228"
+    fill="none"
+    stroke="url(#sideEdge)"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.85"/>
+
+  <path d="
+    M188 60
+    C184 138, 182 190, 176 228"
+    fill="none"
+    stroke="url(#sideEdge)"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.85"/>
+
+  <!-- Graduated markings on beaker -->
+  <g stroke="#9fb6cc" stroke-linecap="round" stroke-width="2" opacity="0.85">
+    <line x1="92" y1="90" x2="122" y2="90"/>
+    <line x1="92" y1="112" x2="122" y2="112"/>
+    <line x1="92" y1="134" x2="122" y2="134"/>
+    <line x1="92" y1="156" x2="122" y2="156"/>
+    <line x1="92" y1="178" x2="120" y2="178"/>
+    <line x1="92" y1="200" x2="118" y2="200"/>
+  </g>
+
+  <!-- Bubbles inside liquid -->
+  <g fill="url(#bubbleGrad)" stroke="#f8ffe5" stroke-width="1.2">
+    <circle cx="110" cy="230" r="7"/>
+    <circle cx="150" cy="240" r="5.5"/>
+    <circle cx="135" cy="210" r="6.5"/>
+    <circle cx="120" cy="190" r="4.2"/>
+    <circle cx="152" cy="195" r="3.8"/>
+    <circle cx="95" cy="215" r="4.5"/>
+    <circle cx="165" cy="222" r="3.3"/>
+    <circle cx="140" cy="260" r="4.8"/>
+    <circle cx="118" cy="265" r="3.5"/>
+  </g>
+
+  <!-- Rising bubbles above the liquid -->
+  <g fill="none" stroke="#eaffba" stroke-width="1.6">
+    <circle cx="130" cy="118" r="5.5" opacity="0.7"/>
+    <circle cx="118" cy="104" r="4.2" opacity="0.6"/>
+    <circle cx="142" cy="96" r="3.4" opacity="0.55"/>
+    <circle cx="126" cy="82" r="3" opacity="0.45"/>
+    <circle cx="138" cy="72" r="2.4" opacity="0.4"/>
+  </g>
+
+  <!-- Surface sparkles on liquid -->
+  <g stroke="#f9ffe8" stroke-width="1.4" stroke-linecap="round" opacity="0.85">
+    <line x1="104" y1="142" x2="112" y2="142"/>
+    <line x1="148" y1="145" x2="158" y2="145"/>
+    <line x1="126" y1="140" x2="132" y2="140"/>
+  </g>
+
+  <!-- Front rim highlight -->
+  <ellipse cx="130" cy="40" rx="90" ry="16"
+           fill="none"
+           stroke="#ffffff"
+           stroke-width="2"
+           opacity="0.8"/>
+
+  <!-- Front-body subtle edge refine -->
+  <path d="
+    M55 42
+    C61 140, 63 210, 75 250
+    C86 284, 108 302, 130 302
+    C152 302, 174 284, 185 250
+    C197 210, 199 140, 205 42"
+    fill="none"
+    stroke="#e6f0fb"
+    stroke-width="1.6"
+    stroke-linejoin="round"
+    opacity="0.9"/>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8.0 10.0 343.8 275.8">
+  <defs>
+    <linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8a65"/>
+      <stop offset="1" stop-color="#e64a19"/>
+    </linearGradient>
+    <linearGradient id="cabG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fc3f7"/>
+      <stop offset="1" stop-color="#0288d1"/>
+    </linearGradient>
+    <linearGradient id="roofG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd54f"/>
+      <stop offset="1" stop-color="#ffb300"/>
+    </linearGradient>
+  </defs>
+  <!-- smokestack -->
+  <rect x="62" y="68" width="30" height="62" rx="8" fill="#7e57c2"/>
+  <rect x="52" y="56" width="50" height="22" rx="11" fill="#9575cd"/>
+  <!-- smoke puffs -->
+  <circle cx="77" cy="38" r="14" fill="#e1bee7" opacity="0.9"/>
+  <circle cx="95" cy="22" r="10" fill="#e1bee7" opacity="0.7"/>
+  <!-- boiler -->
+  <rect x="30" y="120" width="180" height="100" rx="30" fill="url(#bodyG)"/>
+  <ellipse cx="200" cy="170" rx="26" ry="50" fill="#ff7043"/>
+  <ellipse cx="200" cy="170" rx="14" ry="38" fill="#ffab91"/>
+  <!-- boiler bands -->
+  <rect x="100" y="120" width="10" height="100" fill="#ffccbc" opacity="0.6"/>
+  <rect x="150" y="120" width="10" height="100" fill="#ffccbc" opacity="0.6"/>
+  <!-- dome -->
+  <path d="M120 120 Q140 82 160 120 Z" fill="url(#roofG)"/>
+  <!-- cab -->
+  <rect x="210" y="70" width="130" height="150" rx="18" fill="url(#cabG)"/>
+  <rect x="200" y="58" width="150" height="24" rx="12" fill="url(#roofG)"/>
+  <!-- window -->
+  <rect x="232" y="96" width="60" height="52" rx="12" fill="#e1f5fe" stroke="#01579b" stroke-width="5"/>
+  <!-- star on cab (vitamin sparkle) -->
+  <path d="M275 176 l6 13 14 2 -10 10 2 14 -12 -7 -12 7 2 -14 -10 -10 14 -2 Z" fill="#fff176" stroke="#f9a825" stroke-width="2"/>
+  <!-- cowcatcher -->
+  <path d="M30 220 L10 258 L60 258 L60 220 Z" fill="#ffd54f"/>
+  <path d="M18 246 L52 246" stroke="#ffb300" stroke-width="4" stroke-linecap="round"/>
+  <!-- base chassis -->
+  <rect x="24" y="220" width="322" height="22" rx="10" fill="#5d4037"/>
+  <!-- wheels -->
+  <g>
+    <circle cx="70" cy="252" r="26" fill="#37474f"/>
+    <circle cx="70" cy="252" r="16" fill="#ef5350"/>
+    <circle cx="70" cy="252" r="6" fill="#ffe082"/>
+    <circle cx="150" cy="252" r="26" fill="#37474f"/>
+    <circle cx="150" cy="252" r="16" fill="#ef5350"/>
+    <circle cx="150" cy="252" r="6" fill="#ffe082"/>
+    <circle cx="280" cy="252" r="32" fill="#37474f"/>
+    <circle cx="280" cy="252" r="20" fill="#ef5350"/>
+    <circle cx="280" cy="252" r="7" fill="#ffe082"/>
+  </g>
+  <!-- connecting rod -->
+  <rect x="66" y="246" width="222" height="12" rx="6" fill="#b0bec5"/>
+  <!-- headlight -->
+  <circle cx="36" cy="140" r="12" fill="#fff9c4" stroke="#ffb300" stroke-width="4"/>
+  <!-- glossy highlights -->
+  <ellipse cx="80" cy="145" rx="40" ry="14" fill="#ffffff" opacity="0.35"/>
+  <ellipse cx="250" cy="90" rx="26" ry="8" fill="#ffffff" opacity="0.4"/>
+</svg>

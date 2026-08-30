@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "id": "2026-08-30-goblin-tampon",
+  "title": "Goblin tampon",
+  "prompt": "goblin tampon",
+  "created": "2026-08-30",
+  "sizeClass": "s",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "layering": 3,
+        "jnsq": 2,
+        "understanding-assignment": 3,
+        "structural-coherence": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M190NTG5YAKYRSNVDDYT38H3), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 400 800\" to ink bounds (\"-1.2 75.0 402.2 723.8\")."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "layering": 3,
+        "understanding-assignment": 2,
+        "jnsq": 1,
+        "structural-coherence": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M190NTG5YAKYRSNVDDYT38H3), rated blind at the bench on the current rubric; filed rank 2 of 4."
+    },
+    {
+      "rid": "r3",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "layering": 2,
+        "understanding-assignment": 2,
+        "jnsq": 1,
+        "structural-coherence": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M190NTG5YAKYRSNVDDYT38H3), rated blind at the bench on the current rubric; filed rank 3 of 4. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"36.2 76.2 327.2 305.0\")."
+    },
+    {
+      "rid": "r4",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 2,
+        "layering": 2,
+        "jnsq": 1,
+        "structural-coherence": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M190NTG5YAKYRSNVDDYT38H3), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 260 260\" to ink bounds (\"62.2 23.0 135.2 205.2\")."
+    }
+  ]
+}

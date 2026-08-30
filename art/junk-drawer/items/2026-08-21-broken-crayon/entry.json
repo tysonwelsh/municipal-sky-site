@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "id": "2026-08-21-broken-crayon",
+  "title": "Broken crayon",
+  "prompt": "A broken crayon. Sea green.",
+  "created": "2026-08-21",
+  "sizeClass": "s",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "structural-coherence": 3,
+        "layering": 3,
+        "understanding-assignment": 3,
+        "jnsq": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0GY09FCSPA6K4W7VNSN2YTW), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 800 260\" to ink bounds (\"13.2 61.5 778.2 170.2\")."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "structural-coherence": 1,
+        "layering": 3,
+        "understanding-assignment": 2,
+        "jnsq": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0GY09FCSPA6K4W7VNSN2YTW), rated blind at the bench on the current rubric; filed rank 2 of 4. viewBox normalized: tightened from \"0 0 800 400\" to ink bounds (\"13.0 124.0 781.2 222.8\")."
+    },
+    {
+      "rid": "r3",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "structural-coherence": 1,
+        "jnsq": 1,
+        "understanding-assignment": 2,
+        "layering": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0GY09FCSPA6K4W7VNSN2YTW), rated blind at the bench on the current rubric; filed rank 3 of 4. viewBox normalized: tightened from \"0 0 400 300\" to ink bounds (\"26.2 177.0 360.5 116.8\")."
+    },
+    {
+      "rid": "r4",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "jnsq": 1,
+        "structural-coherence": 1,
+        "understanding-assignment": 1,
+        "layering": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0GY09FCSPA6K4W7VNSN2YTW), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 320 120\" to ink bounds (\"2.0 15.8 319.8 94.8\")."
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "id": "2026-08-30-cartoon-rocket-ship-preparing-for",
+  "title": "Cartoon rocket ship",
+  "prompt": "A cartoon rocket ship preparing for takeoff. Shiny metallic red (like race car red) with silver metallic trim. It should have a optimistic retro-futurist vibe with a vaguely googie influence, like the style of decor in a 1905s atomic era diner  ",
+  "created": "2026-08-30",
+  "sizeClass": "xl",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 4,
+        "layering": 2,
+        "jnsq": 3,
+        "structural-coherence": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18ZYGTTR252EBSRJCWFBG7F), rated blind at the bench on the current rubric; filed rank 1 of 4. viewBox normalized: tightened from \"0 0 400 700\" to ink bounds (\"32.0 13.5 335.8 680.2\")."
+    },
+    {
+      "rid": "r2",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 4,
+        "layering": 3,
+        "jnsq": 3,
+        "structural-coherence": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18ZYGTTR252EBSRJCWFBG7F), rated blind at the bench on the current rubric; filed rank 2 of 4. viewBox normalized: tightened from \"0 0 400 520\" to ink bounds (\"84.8 15.0 230.2 460.8\")."
+    },
+    {
+      "rid": "r3",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "jnsq": 2,
+        "understanding-assignment": 4,
+        "structural-coherence": 2,
+        "layering": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18ZYGTTR252EBSRJCWFBG7F), rated blind at the bench on the current rubric; filed rank 3 of 4."
+    },
+    {
+      "rid": "r4",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "jnsq": 1,
+        "layering": 2,
+        "structural-coherence": 1,
+        "understanding-assignment": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18ZYGTTR252EBSRJCWFBG7F), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 320 640\" to ink bounds (\"46.2 5.5 275.5 636.2\")."
+    }
+  ]
+}

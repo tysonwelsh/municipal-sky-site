@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="23.0 4.5 353.8 397.2">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.15" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="0.85" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="liq" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d4ff3a"/>
+      <stop offset="0.35" stop-color="#8fe61f"/>
+      <stop offset="0.75" stop-color="#3fbf13"/>
+      <stop offset="1" stop-color="#177a1c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.62" r="0.5">
+      <stop offset="0" stop-color="#caff45" stop-opacity="0.85"/>
+      <stop offset="0.55" stop-color="#7ee81a" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#4bd10a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="surf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#eaffa0"/>
+      <stop offset="0.5" stop-color="#b6ff4d"/>
+      <stop offset="1" stop-color="#7fe025"/>
+    </linearGradient>
+
+    <clipPath id="inner">
+      <path d="M118 128 L118 296 Q118 342 165 342 L235 342 Q282 342 282 296 L282 128 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- ambient glow -->
+  <ellipse cx="200" cy="250" rx="185" ry="150" fill="url(#glow)"/>
+
+  <!-- beaker body outline -->
+  <path d="M112 112 L112 296 Q112 348 165 348 L235 348 Q288 348 288 296 L288 112"
+        fill="none" stroke="#dff4f7" stroke-opacity="0.55" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- liquid -->
+  <g clip-path="url(#inner)">
+    <path d="M118 178 Q145 168 172 178 Q200 188 228 178 Q255 168 282 178 L282 350 L118 350 Z" fill="url(#liq)"/>
+    <!-- surface highlight -->
+    <path d="M118 178 Q145 168 172 178 Q200 188 228 178 Q255 168 282 178 L282 190 Q255 180 228 190 Q200 200 172 190 Q145 180 118 190 Z" fill="url(#surf)" opacity="0.9"/>
+    <!-- internal swirls -->
+    <path d="M130 250 Q175 225 215 255 Q250 282 275 258" fill="none" stroke="#e8ff8f" stroke-opacity="0.25" stroke-width="7" stroke-linecap="round"/>
+    <path d="M125 300 Q170 280 205 305 Q240 330 278 308" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="6" stroke-linecap="round"/>
+    <!-- bubbles -->
+    <circle cx="152" cy="300" r="7" fill="#eaffb0" opacity="0.55"/>
+    <circle cx="176" cy="262" r="4.5" fill="#eaffb0" opacity="0.5"/>
+    <circle cx="163" cy="222" r="3" fill="#f5ffd8" opacity="0.6"/>
+    <circle cx="232" cy="288" r="9" fill="#eaffb0" opacity="0.4"/>
+    <circle cx="245" cy="240" r="5" fill="#f2ffcf" opacity="0.5"/>
+    <circle cx="212" cy="322" r="5.5" fill="#eaffb0" opacity="0.45"/>
+    <circle cx="197" cy="205" r="3.5" fill="#ffffff" opacity="0.55"/>
+    <circle cx="128" cy="268" r="4" fill="#eaffb0" opacity="0.4"/>
+    <!-- bottom shadow -->
+    <ellipse cx="200" cy="348" rx="90" ry="22" fill="#0d5f14" opacity="0.5"/>
+  </g>
+
+  <!-- glass overlay sheen -->
+  <path d="M118 128 L118 296 Q118 342 165 342 L235 342 Q282 342 282 296 L282 128 Z" fill="url(#glass)"/>
+
+  <!-- graduation marks -->
+  <g stroke="#f2ffff" stroke-opacity="0.75" stroke-width="4" stroke-linecap="round">
+    <line x1="133" y1="230" x2="163" y2="230"/>
+    <line x1="133" y1="262" x2="153" y2="262"/>
+    <line x1="133" y1="294" x2="163" y2="294"/>
+    <line x1="133" y1="198" x2="153" y2="198"/>
+  </g>
+
+  <!-- highlights -->
+  <path d="M136 150 L136 292 Q136 322 158 330" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="7" stroke-linecap="round"/>
+  <path d="M266 160 L266 280" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- rim and spout -->
+  <path d="M112 112 Q88 106 84 92 Q104 94 112 100" fill="none" stroke="#dff4f7" stroke-opacity="0.6" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+  <ellipse cx="200" cy="112" rx="88" ry="17" fill="none" stroke="#eafcff" stroke-opacity="0.7" stroke-width="8"/>
+  <ellipse cx="200" cy="112" rx="88" ry="17" fill="#ffffff" opacity="0.07"/>
+
+  <!-- vapor wisps -->
+  <g fill="none" stroke="#c9ff6a" stroke-linecap="round" stroke-opacity="0.5">
+    <path d="M170 100 Q152 70 172 48 Q190 28 176 10" stroke-width="7"/>
+    <path d="M225 96 Q244 68 226 44 Q212 26 226 12" stroke-width="6" stroke-opacity="0.38"/>
+    <path d="M200 88 Q188 62 202 40" stroke-width="5" stroke-opacity="0.3"/>
+  </g>
+
+  <!-- sparkle motes -->
+  <g fill="#eaff9c">
+    <circle cx="96" cy="196" r="4" opacity="0.7"/>
+    <circle cx="312" cy="230" r="5" opacity="0.6"/>
+    <circle cx="330" cy="150" r="3" opacity="0.5"/>
+    <circle cx="74" cy="290" r="3.5" opacity="0.5"/>
+    <circle cx="300" cy="330" r="4" opacity="0.45"/>
+  </g>
+
+  <!-- ground reflection -->
+  <ellipse cx="200" cy="368" rx="120" ry="16" fill="#8fe61f" opacity="0.22"/>
+</svg>

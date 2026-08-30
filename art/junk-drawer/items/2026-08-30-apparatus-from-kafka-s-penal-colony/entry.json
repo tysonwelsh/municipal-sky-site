@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "id": "2026-08-30-apparatus-from-kafka-s-penal-colony",
+  "title": "Apparatus from Kafka's Penal Colony",
+  "prompt": "The Apparatus from Kafka's Penal Colony.",
+  "created": "2026-08-30",
+  "sizeClass": "m",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 4,
+        "jnsq": 3,
+        "structural-coherence": 1,
+        "layering": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18VCHK55PX9ZRBHDT1TA32Y), rated blind at the bench on the current rubric; filed rank 1 of 4."
+    },
+    {
+      "rid": "r2",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 3,
+        "layering": 3,
+        "structural-coherence": 2,
+        "jnsq": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18VCHK55PX9ZRBHDT1TA32Y), rated blind at the bench on the current rubric; filed rank 2 of 4."
+    },
+    {
+      "rid": "r3",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 2,
+        "jnsq": 1,
+        "layering": 1,
+        "structural-coherence": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18VCHK55PX9ZRBHDT1TA32Y), rated blind at the bench on the current rubric; filed rank 3 of 4. viewBox normalized: tightened from \"0 0 900 900\" to ink bounds (\"65.5 62.0 783.2 517.8\")."
+    },
+    {
+      "rid": "r4",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 3,
+        "structural-coherence": 2,
+        "layering": 2,
+        "jnsq": 1
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M18VCHK55PX9ZRBHDT1TA32Y), rated blind at the bench on the current rubric; filed rank 4 of 4. viewBox normalized: tightened from \"0 0 400 460\" to ink bounds (\"27.0 23.5 345.8 428.2\")."
+    }
+  ]
+}

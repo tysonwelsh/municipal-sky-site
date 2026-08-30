@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16.5 99.0 729.0 300.2">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d5a3a"/>
+      <stop offset="0.3" stop-color="#7a9a6d"/>
+      <stop offset="0.48" stop-color="#e88aa0"/>
+      <stop offset="0.6" stop-color="#f0b7c4"/>
+      <stop offset="0.75" stop-color="#e8d9b8"/>
+      <stop offset="1" stop-color="#f5f0e0"/>
+    </linearGradient>
+    <linearGradient id="stripeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d95f8a"/>
+      <stop offset="0.5" stop-color="#ee7ba5"/>
+      <stop offset="1" stop-color="#d95f8a"/>
+    </linearGradient>
+    <linearGradient id="tailGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d8a60"/>
+      <stop offset="1" stop-color="#93ac82"/>
+    </linearGradient>
+    <linearGradient id="finGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9738a"/>
+      <stop offset="1" stop-color="#e8a2ae"/>
+    </linearGradient>
+  </defs>
+
+  <!-- tail -->
+  <path d="M 88 250 L 20 155 Q 55 240 30 250 Q 55 260 20 345 Z" fill="url(#tailGrad)" stroke="#4a5f42" stroke-width="3"/>
+  <path d="M 88 250 L 32 180 M 88 250 L 30 320 M 88 250 L 24 250" stroke="#4a5f42" stroke-width="2" fill="none" opacity="0.6"/>
+
+  <!-- adipose fin -->
+  <path d="M 150 208 Q 168 178 190 205 Q 172 200 150 208 Z" fill="#8aa87b" stroke="#4a5f42" stroke-width="2"/>
+
+  <!-- dorsal fin -->
+  <path d="M 310 168 Q 340 90 420 105 Q 450 110 460 150 Q 400 155 310 168 Z" fill="#7a9a6d" stroke="#4a5f42" stroke-width="3"/>
+  <path d="M 330 158 L 345 112 M 360 152 L 380 108 M 395 150 L 412 110 M 425 148 L 440 118" stroke="#4a5f42" stroke-width="2" opacity="0.6"/>
+
+  <!-- body -->
+  <path d="M 90 250
+           Q 110 190 220 165
+           Q 340 140 470 155
+           Q 590 172 660 210
+           Q 710 235 740 250
+           Q 745 258 735 262
+           Q 700 285 640 310
+           Q 540 350 420 355
+           Q 280 358 190 320
+           Q 120 292 90 250 Z"
+        fill="url(#bodyGrad)" stroke="#3a4a35" stroke-width="4"/>
+
+  <!-- lateral pink stripe -->
+  <path d="M 110 255 Q 300 230 500 245 Q 630 255 720 252 Q 630 268 500 262 Q 300 252 110 262 Z"
+        fill="url(#stripeGrad)" opacity="0.85"/>
+
+  <!-- head shading -->
+  <path d="M 660 210 Q 710 235 740 250 Q 745 258 735 262 Q 700 285 640 310 Q 665 260 660 210 Z"
+        fill="#8aa87b" opacity="0.5"/>
+
+  <!-- gill plate -->
+  <path d="M 620 195 Q 600 250 615 305" stroke="#4a5f42" stroke-width="3.5" fill="none" opacity="0.7"/>
+  <path d="M 640 200 Q 622 250 636 302" stroke="#4a5f42" stroke-width="2" fill="none" opacity="0.4"/>
+
+  <!-- eye -->
+  <circle cx="682" cy="232" r="14" fill="#f5e8c8" stroke="#3a4a35" stroke-width="2.5"/>
+  <circle cx="685" cy="233" r="8" fill="#1e1e1e"/>
+  <circle cx="688" cy="229" r="3" fill="#ffffff"/>
+
+  <!-- mouth -->
+  <path d="M 700 262 Q 725 262 740 254" stroke="#3a4a35" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+  <!-- pectoral fin -->
+  <path d="M 585 300 Q 560 350 530 365 Q 555 320 560 295 Z" fill="url(#finGrad)" stroke="#a05568" stroke-width="2.5"/>
+  <!-- pelvic fin -->
+  <path d="M 460 348 Q 445 385 420 395 Q 440 360 438 345 Z" fill="url(#finGrad)" stroke="#a05568" stroke-width="2.5"/>
+  <!-- anal fin -->
+  <path d="M 250 330 Q 235 370 210 380 Q 232 345 230 325 Z" fill="url(#finGrad)" stroke="#a05568" stroke-width="2.5"/>
+
+  <!-- spots -->
+  <g fill="#2e3b2a">
+    <circle cx="250" cy="185" r="5"/><circle cx="300" cy="172" r="4"/>
+    <circle cx="350" cy="180" r="5"/><circle cx="400" cy="168" r="4"/>
+    <circle cx="450" cy="178" r="5"/><circle cx="500" cy="172" r="4"/>
+    <circle cx="545" cy="185" r="5"/><circle cx="200" cy="210" r="4"/>
+    <circle cx="270" cy="215" r="3.5"/><circle cx="330" cy="205" r="4"/>
+    <circle cx="390" cy="200" r="3.5"/><circle cx="460" cy="208" r="4"/>
+    <circle cx="520" cy="205" r="3.5"/><circle cx="580" cy="195" r="4"/>
+    <circle cx="230" cy="240" r="3"/><circle cx="310" cy="238" r="3"/>
+    <circle cx="420" cy="232" r="3"/><circle cx="490" cy="235" r="3"/>
+    <circle cx="560" cy="228" r="3"/><circle cx="610" cy="215" r="3"/>
+    <circle cx="180" cy="255" r="3"/><circle cx="370" cy="245" r="2.5"/>
+    <circle cx="440" cy="190" r="3"/><circle cx="370" cy="160" r="3.5"/>
+    <circle cx="430" cy="162" r="3"/><circle cx="290" cy="195" r="3"/>
+    <circle cx="640" cy="235" r="2.5"/><circle cx="655" cy="220" r="2.5"/>
+  </g>
+  <!-- tail spots -->
+  <g fill="#2e3b2a">
+    <circle cx="60" cy="210" r="3"/><circle cx="70" cy="245" r="3"/>
+    <circle cx="55" cy="290" r="3"/><circle cx="75" cy="270" r="2.5"/>
+  </g>
+  <!-- dorsal fin spots -->
+  <g fill="#2e3b2a">
+    <circle cx="355" cy="130" r="3.5"/><circle cx="395" cy="125" r="3.5"/>
+    <circle cx="425" cy="132" r="3"/><circle cx="375" cy="142" r="3"/>
+  </g>
+
+  <!-- belly highlight -->
+  <path d="M 220 330 Q 400 355 600 305 Q 450 345 260 338 Z" fill="#ffffff" opacity="0.35"/>
+
+  <!-- subtle scale arcs -->
+  <g stroke="#ffffff" stroke-width="1.2" fill="none" opacity="0.25">
+    <path d="M 250 270 q 10 -12 20 0"/><path d="M 300 275 q 10 -12 20 0"/>
+    <path d="M 350 272 q 10 -12 20 0"/><path d="M 400 275 q 10 -12 20 0"/>
+    <path d="M 450 272 q 10 -12 20 0"/><path d="M 500 270 q 10 -12 20 0"/>
+    <path d="M 275 295 q 10 -12 20 0"/><path d="M 325 298 q 10 -12 20 0"/>
+    <path d="M 375 296 q 10 -12 20 0"/><path d="M 425 298 q 10 -12 20 0"/>
+    <path d="M 475 295 q 10 -12 20 0"/>
+  </g>
+</svg>

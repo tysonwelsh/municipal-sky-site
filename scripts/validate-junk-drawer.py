@@ -31,10 +31,20 @@ SLUG_RE = re.compile(r"^[a-z0-9-]+$")
 ENTRY_FIELDS = {
     "schema", "id", "title", "prompt", "created", "tags", "primary",
     "placement", "retired", "sizeClass", "sizeScale", "responses",
+    # prose beside a flag, for whoever reads the file next: why an item was
+    # retired, and (2026-08-30) why one carrying a scrap flag is nonetheless
+    # kept on display by owner call
+    "retired_note", "display_note",
 }
 RESPONSE_FIELDS = {
     "rid", "file", "model", "model_version", "date", "generation",
     "grade", "graded", "grade_history", "annotations", "transcript", "notes",
+    # what the drawing COST (2026-08-15): the reveal's per-slot usage, which
+    # the report card prints as Tokens and Cost
+    "tokens", "cost_usd",
+    # a response retired from DISPLAY (2026-08-30): data.php drops it from
+    # the payload while the row and its file stay for the record
+    "retired",
 }
 PLACEMENT_FIELDS = {"x", "y", "rotation", "scale", "z", "pinned"}
 SVG_MAX_BYTES = 200 * 1024

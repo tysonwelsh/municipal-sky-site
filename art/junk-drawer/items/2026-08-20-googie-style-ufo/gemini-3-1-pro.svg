@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="beamGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFEB3B" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#FF9800" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#E91E63" stop-opacity="0" />
+    </linearGradient>
+    <radialGradient id="domeGrad" cx="40%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#E0F7FA" stop-opacity="0.9" />
+      <stop offset="70%" stop-color="#00BCD4" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#006064" stop-opacity="0.8" />
+    </radialGradient>
+    <linearGradient id="hullGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#E0E0E0" />
+      <stop offset="100%" stop-color="#9E9E9E" />
+    </linearGradient>
+    <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF4081" />
+      <stop offset="100%" stop-color="#D50000" />
+    </linearGradient>
+
+    <!-- Starburst Template -->
+    <g id="starburst">
+      <path d="M 0,-30 Q 5,-5 30,0 Q 5,5 0,30 Q -5,5 -30,0 Q -5,-5 0,-30 Z" fill="#FFC107" />
+      <path d="M 0,-15 Q 2,-2 15,0 Q 2,2 0,15 Q -2,2 -15,0 Q -2,-2 0,-15 Z" fill="#FFF" />
+    </g>
+    <g id="starburst-alt">
+      <path d="M 0,-40 Q 5,-5 40,0 Q 5,5 0,40 Q -5,5 -40,0 Q -5,-5 0,-40 Z" fill="#1DE9B6" />
+      <path d="M 0,-20 Q 2,-2 20,0 Q 2,2 0,20 Q -2,2 -20,0 Q -2,-2 0,-20 Z" fill="#FFF" />
+    </g>
+  </defs>
+
+  <!-- Abduction / Hover Beam filling the bottom entirely -->
+  <polygon points="320,450 480,450 800,800 0,800" fill="url(#beamGrad)" />
+  <polygon points="360,450 440,450 550,800 250,800" fill="#FFEB3B" opacity="0.4" />
+
+  <!-- Background Googie Stars (filling edges) -->
+  <use href="#starburst" x="100" y="150" transform="rotate(15 100 150) scale(1.5)" />
+  <use href="#starburst-alt" x="720" y="200" transform="rotate(-10 720 200) scale(2)" />
+  <use href="#starburst" x="750" y="650" transform="rotate(45 750 650) scale(1.2)" />
+  <use href="#starburst-alt" x="60" y="550" transform="rotate(25 60 550) scale(1.3)" />
+  <use href="#starburst" x="250" y="80" transform="rotate(-20 250 80) scale(0.8)" />
+  <use href="#starburst-alt" x="550" y="100" transform="rotate(30 550 100) scale(1)" />
+
+  <!-- Atomic Rings surrounding the UFO -->
+  <ellipse cx="400" cy="400" rx="380" ry="120" fill="none" stroke="#1DE9B6" stroke-width="8" transform="rotate(-20 400 400)" />
+  <ellipse cx="400" cy="400" rx="380" ry="120" fill="none" stroke="#FFC107" stroke-width="3" transform="rotate(-20 400 400)" stroke-dasharray="15,10" />
+  <!-- Atomic Orbiting Spheres -->
+  <circle cx="70" cy="270" r="15" fill="#FF5722" />
+  <circle cx="730" cy="530" r="20" fill="#E91E63" />
+  <circle cx="200" cy="550" r="10" fill="#00BCD4" />
+
+  <!-- Antennae (Reaching to the top edge) -->
+  <g stroke="#FFF" stroke-width="6" stroke-linecap="round">
+    <line x1="400" y1="200" x2="400" y2="40" />
+    <line x1="360" y1="220" x2="280" y2="100" />
+    <line x1="440" y1="220" x2="520" y2="100" />
+  </g>
+  <!-- Antennae Balls -->
+  <circle cx="400" cy="40" r="18" fill="#FF4081" />
+  <circle cx="280" cy="100" r="14" fill="#1DE9B6" />
+  <circle cx="520" cy="100" r="14" fill="#FFC107" />
+
+  <!-- UFO Bottom Engine -->
+  <path d="M 300,430 C 300,520 500,520 500,430 Z" fill="#424242" />
+  <path d="M 320,430 C 320,480 480,480 480,430 Z" fill="#00BCD4" />
+  <ellipse cx="400" cy="460" rx="60" ry="15" fill="#FFF" opacity="0.8" />
+
+  <!-- The Googie Boomerang Fin (Sweeping through the hull) -->
+  <path d="M 20,450 Q 300,200 780,420 Q 600,480 500,430 Q 400,380 300,440 Q 150,510 20,450 Z" fill="url(#finGrad)" />
+  <!-- Boomerang Inner Accent -->
+  <path d="M 60,445 Q 300,230 730,420 Q 600,460 500,425 Q 400,385 300,435 Q 170,490 60,445 Z" fill="none" stroke="#FFC107" stroke-width="4" />
+
+  <!-- Main Saucer Hull -->
+  <ellipse cx="400" cy="400" rx="260" ry="60" fill="url(#hullGrad)" />
+  
+  <!-- Saucer Rim -->
+  <ellipse cx="400" cy="400" rx="260" ry="60" fill="none" stroke="#00BCD4" stroke-width="12" />
+  <ellipse cx="400" cy="400" rx="260" ry="60" fill="none" stroke="#E0F7FA" stroke-width="4" />
+
+  <!-- Glowing Portholes -->
+  <circle cx="200" cy="405" r="12" fill="#FFEB3B" />
+  <circle cx="280" cy="425" r="14" fill="#FFEB3B" />
+  <circle cx="400" cy="435" r="16" fill="#FFEB3B" />
+  <circle cx="520" cy="425" r="14" fill="#FFEB3B" />
+  <circle cx="600" cy="405" r="12" fill="#FFEB3B" />
+
+  <!-- Interior Control Panel & Alien Silhouette -->
+  <path d="M 280,380 C 280,330 520,330 520,380 Z" fill="#37474F" />
+  <!-- Alien -->
+  <path d="M 370,380 C 370,320 430,320 430,380 Z" fill="#00E676" />
+  <circle cx="390" cy="355" r="8" fill="#000" transform="rotate(-15 390 355)" />
+  <circle cx="410" cy="355" r="8" fill="#000" transform="rotate(15 410 355)" />
+
+  <!-- Glass Bubble Dome -->
+  <path d="M 240,385 C 240,180 560,180 560,385 Z" fill="url(#domeGrad)" />
+  
+  <!-- Dome Reflections -->
+  <path d="M 270,370 C 270,220 400,200 450,220 C 350,230 300,290 290,370 Z" fill="#FFF" opacity="0.5" />
+  <path d="M 520,350 C 530,300 500,250 480,240 C 510,270 515,310 505,350 Z" fill="#FFF" opacity="0.3" />
+
+  <!-- Foreground Starbursts for depth -->
+  <use href="#starburst" x="400" y="435" transform="scale(0.6) translate(250, 0)" />
+  <use href="#starburst-alt" x="200" y="405" transform="scale(0.5) translate(200, 0)" />
+</svg>

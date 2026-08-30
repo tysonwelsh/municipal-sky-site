@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <clipPath id="earthClip">
+      <circle cx="220" cy="620" r="380" />
+    </clipPath>
+  </defs>
+
+  <!-- Earth Shadow/Offset -->
+  <circle cx="250" cy="650" r="380" fill="#1A237E" />
+  
+  <!-- Earth Base -->
+  <circle cx="220" cy="620" r="380" fill="#3D5AFE" />
+
+  <!-- Earth Continents (Corporate Memphis Style Blobs) -->
+  <g clip-path="url(#earthClip)">
+    <path d="M -50 400 Q 150 350 250 500 T 400 450 T 550 700 L -50 800 Z" fill="#00E676" />
+    <path d="M 50 650 C 120 580, 250 600, 300 700 C 350 800, 100 850, 50 650 Z" fill="#FFC400" />
+    <circle cx="450" cy="550" r="60" fill="#F50057" />
+    <!-- Grid pattern accent -->
+    <path d="M 100 400 L 100 500 M 130 400 L 130 500 M 160 400 L 160 500 M 70 430 L 190 430 M 70 460 L 190 460" stroke="#1A237E" stroke-width="8" stroke-linecap="round" />
+  </g>
+
+  <!-- Impact Burst / Explosion -->
+  <path d="M 380 380 L 450 250 L 520 350 L 680 320 L 580 430 L 650 580 L 500 520 L 420 650 L 400 480 L 250 420 Z" fill="#FFEA00" stroke="#1A237E" stroke-width="12" stroke-linejoin="round" />
+  <!-- Inner Burst -->
+  <path d="M 430 400 L 480 320 L 510 380 L 580 360 L 530 430 L 560 500 L 490 470 L 450 540 L 450 450 L 350 420 Z" fill="#F50057" />
+
+  <!-- Asteroid Offset Shadow -->
+  <path d="M 530 180 C 580 50, 750 40, 790 150 C 820 250, 750 350, 650 330 C 560 310, 480 280, 530 180 Z" fill="#1A237E" />
+
+  <!-- Asteroid Base -->
+  <path d="M 510 160 C 560 30, 730 20, 770 130 C 800 230, 730 330, 630 310 C 540 290, 460 260, 510 160 Z" fill="#FF7043" stroke="#1A237E" stroke-width="12" />
+
+  <!-- Asteroid Craters (Minimalist circles) -->
+  <circle cx="600" cy="140" r="30" fill="#1A237E" />
+  <circle cx="680" cy="110" r="15" fill="#1A237E" />
+  <circle cx="710" cy="220" r="40" fill="#1A237E" />
+  <circle cx="560" cy="230" r="20" fill="#1A237E" />
+
+  <!-- Motion Lines / Space Debris (Memphis Squiggles & Shapes) -->
+  <polyline points="720,40 760,20 790,60" stroke="#00E676" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <polyline points="350,220 320,180 360,150 310,120" stroke="#FFC400" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  
+  <line x1="650" y1="50" x2="680" y2="20" stroke="#F50057" stroke-width="12" stroke-linecap="round" />
+  <line x1="450" y1="180" x2="400" y2="130" stroke="#3D5AFE" stroke-width="12" stroke-linecap="round" />
+  
+  <path d="M 280 250 Q 250 300 200 280" stroke="#F50057" stroke-width="12" stroke-linecap="round" fill="none" />
+  
+  <!-- Floating abstract geometric shapes -->
+  <circle cx="480" cy="120" r="15" fill="#00E676" stroke="#1A237E" stroke-width="6" />
+  <circle cx="280" cy="150" r="20" fill="#F50057" stroke="#1A237E" stroke-width="6" />
+  <rect x="680" y="450" width="40" height="40" fill="#00E676" stroke="#1A237E" stroke-width="8" transform="rotate(25 700 470)" />
+  <rect x="300" y="55" width="25" height="25" fill="#FFC400" stroke="#1A237E" stroke-width="6" transform="rotate(45 312 67)" />
+  <path d="M 720 380 L 750 430 L 690 430 Z" fill="#3D5AFE" stroke="#1A237E" stroke-width="8" stroke-linejoin="round" />
+  
+  <!-- Half circle -->
+  <path d="M 150 250 A 40 40 0 0 1 230 250 Z" fill="#FF7043" stroke="#1A237E" stroke-width="8" transform="rotate(-30 190 250)" />
+</svg>

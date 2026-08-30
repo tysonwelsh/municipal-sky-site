@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="36.2 76.2 327.2 305.0">
+  <g>
+    <!-- goblin ears -->
+    <path d="M120 130 L40 80 L100 160 Z" fill="#5f9c3f" stroke="#3e6b28" stroke-width="4"/>
+    <path d="M280 130 L360 80 L300 160 Z" fill="#5f9c3f" stroke="#3e6b28" stroke-width="4"/>
+    <path d="M105 140 L65 105 L98 150 Z" fill="#487a2e"/>
+    <path d="M295 140 L335 105 L302 150 Z" fill="#487a2e"/>
+    <!-- head -->
+    <ellipse cx="200" cy="185" rx="95" ry="80" fill="#6faf48" stroke="#3e6b28" stroke-width="4"/>
+    <!-- warts -->
+    <circle cx="150" cy="155" r="6" fill="#487a2e"/>
+    <circle cx="255" cy="205" r="5" fill="#487a2e"/>
+    <!-- eyes -->
+    <ellipse cx="165" cy="175" rx="16" ry="18" fill="#fff" stroke="#3e6b28" stroke-width="3"/>
+    <ellipse cx="235" cy="175" rx="16" ry="18" fill="#fff" stroke="#3e6b28" stroke-width="3"/>
+    <circle cx="168" cy="180" r="6" fill="#1c2b12"/>
+    <circle cx="232" cy="180" r="6" fill="#1c2b12"/>
+    <!-- brows -->
+    <path d="M148 152 Q165 144 182 152" stroke="#2e511e" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M218 152 Q235 144 252 152" stroke="#2e511e" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- nose -->
+    <path d="M200 185 Q188 210 200 214 Q212 210 200 185" fill="#5f9c3f" stroke="#3e6b28" stroke-width="3"/>
+    <!-- grin -->
+    <path d="M155 225 Q200 258 245 225 Q200 240 155 225" fill="#4a1414" stroke="#3e6b28" stroke-width="3"/>
+    <path d="M170 232 L178 244 L186 234" fill="#fff"/>
+    <path d="M214 234 L222 244 L230 232" fill="#fff"/>
+    <!-- neck/body -->
+    <path d="M170 258 Q200 272 230 258 L240 300 Q200 316 160 300 Z" fill="#6faf48" stroke="#3e6b28" stroke-width="4"/>
+    <path d="M150 300 Q200 282 250 300 L262 345 Q200 365 138 345 Z" fill="#7a5230" stroke="#54371d" stroke-width="4"/>
+    <!-- arms -->
+    <path d="M148 308 Q105 315 88 350" stroke="#6faf48" stroke-width="20" fill="none" stroke-linecap="round"/>
+    <path d="M252 308 Q295 315 312 350" stroke="#6faf48" stroke-width="20" fill="none" stroke-linecap="round"/>
+    <!-- tampon held in hands -->
+    <g transform="translate(200 352) rotate(4)">
+      <rect x="-85" y="-14" width="150" height="28" rx="14" fill="#f4f7f9" stroke="#c3ccd4" stroke-width="3"/>
+      <path d="M-70 -6 L50 -6 M-70 6 L50 6" stroke="#d7dfe6" stroke-width="3"/>
+      <path d="M65 0 Q90 -6 105 0 Q90 6 65 0" fill="#e8edf1" stroke="#c3ccd4" stroke-width="3"/>
+      <path d="M105 0 Q130 4 142 16" stroke="#e9e2d8" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- hands gripping -->
+    <circle cx="100" cy="350" r="17" fill="#6faf48" stroke="#3e6b28" stroke-width="4"/>
+    <circle cx="300" cy="350" r="17" fill="#6faf48" stroke="#3e6b28" stroke-width="4"/>
+  </g>
+</svg>

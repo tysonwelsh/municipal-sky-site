@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6.0 8.0 160.8 243.8">
+  <!-- Pay phone unit -->
+  <rect x="35" y="10" width="130" height="240" rx="10" fill="#3a4a5c"/>
+  <rect x="45" y="20" width="110" height="220" rx="6" fill="#2c3947"/>
+  <!-- Top panel with PHONE sign -->
+  <rect x="50" y="26" width="100" height="34" rx="4" fill="#1d2836"/>
+  <rect x="54" y="30" width="92" height="26" rx="3" fill="#ffd94d"/>
+  <text x="100" y="48" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#1d2836">PHONE</text>
+  <!-- Instruction card -->
+  <rect x="50" y="66" width="58" height="40" rx="3" fill="#e8e2d2"/>
+  <text x="79" y="78" font-family="Arial, sans-serif" font-size="6" text-anchor="middle" fill="#444">LOCAL 25&#162;</text>
+  <text x="79" y="88" font-family="Arial, sans-serif" font-size="5" text-anchor="middle" fill="#666">EMERGENCY</text>
+  <text x="79" y="96" font-family="Arial, sans-serif" font-size="5" text-anchor="middle" fill="#666">CALLS FREE</text>
+  <!-- Coin slot area -->
+  <rect x="112" y="66" width="38" height="40" rx="3" fill="#8a97a6"/>
+  <rect x="128" y="72" width="6" height="14" rx="2" fill="#1d2836"/>
+  <text x="131" y="98" font-family="Arial, sans-serif" font-size="6" text-anchor="middle" fill="#333">25&#162;</text>
+  <!-- Coin return -->
+  <rect x="112" y="130" width="38" height="22" rx="3" fill="#8a97a6"/>
+  <rect x="120" y="136" width="22" height="10" rx="3" fill="#1d2836"/>
+  <rect x="124" y="138" width="14" height="4" rx="2" fill="#4a5866"/>
+  <!-- Keypad -->
+  <g>
+    <rect x="50" y="158" width="100" height="76" rx="4" fill="#1d2836"/>
+    <g fill="#cfd6dd" font-family="Arial, sans-serif" font-size="7" text-anchor="middle">
+      <rect x="58" y="166" width="26" height="14" rx="3" fill="#8a97a6"/><text x="71" y="176" fill="#1d2836">1</text>
+      <rect x="87" y="166" width="26" height="14" rx="3" fill="#8a97a6"/><text x="100" y="176" fill="#1d2836">2</text>
+      <rect x="116" y="166" width="26" height="14" rx="3" fill="#8a97a6"/><text x="129" y="176" fill="#1d2836">3</text>
+      <rect x="58" y="184" width="26" height="14" rx="3" fill="#8a97a6"/><text x="71" y="194" fill="#1d2836">4</text>
+      <rect x="87" y="184" width="26" height="14" rx="3" fill="#8a97a6"/><text x="100" y="194" fill="#1d2836">5</text>
+      <rect x="116" y="184" width="26" height="14" rx="3" fill="#8a97a6"/><text x="129" y="194" fill="#1d2836">6</text>
+      <rect x="58" y="202" width="26" height="14" rx="3" fill="#8a97a6"/><text x="71" y="212" fill="#1d2836">7</text>
+      <rect x="87" y="202" width="26" height="14" rx="3" fill="#8a97a6"/><text x="100" y="212" fill="#1d2836">8</text>
+      <rect x="116" y="202" width="26" height="14" rx="3" fill="#8a97a6"/><text x="129" y="212" fill="#1d2836">9</text>
+      <rect x="58" y="220" width="26" height="10" rx="3" fill="#8a97a6"/><text x="71" y="228" fill="#1d2836">*</text>
+      <rect x="87" y="220" width="26" height="10" rx="3" fill="#8a97a6"/><text x="100" y="228" fill="#1d2836">0</text>
+      <rect x="116" y="220" width="26" height="10" rx="3" fill="#8a97a6"/><text x="129" y="228" fill="#1d2836">#</text>
+    </g>
+  </g>
+  <!-- Handset hanging on left side -->
+  <g>
+    <rect x="12" y="70" width="24" height="120" rx="11" fill="#1a222c"/>
+    <rect x="14" y="72" width="8" height="116" rx="4" fill="#2e3a48"/>
+    <!-- earpiece / mouthpiece -->
+    <rect x="8" y="60" width="32" height="26" rx="12" fill="#22303f"/>
+    <rect x="8" y="174" width="32" height="26" rx="12" fill="#22303f"/>
+    <circle cx="24" cy="73" r="5" fill="#10161d"/>
+    <circle cx="24" cy="187" r="5" fill="#10161d"/>
+  </g>
+  <!-- Cradle hook -->
+  <rect x="36" y="120" width="10" height="20" rx="3" fill="#10161d"/>
+  <!-- Curly cord -->
+  <path d="M24,196 C14,206 34,212 24,220 C14,228 34,232 26,240 C20,246 32,248 40,246" fill="none" stroke="#1a222c" stroke-width="4" stroke-linecap="round"/>
+  <!-- Shine -->
+  <rect x="48" y="22" width="6" height="216" rx="3" fill="#ffffff" opacity="0.08"/>
+</svg>

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="44.2 12.0 311.0 584.8">
+  <defs>
+    <!-- Base body shape for clipping patterns -->
+    <clipPath id="bodyClip">
+      <path d="M 150 160 C 90 160, 40 230, 60 330 C 80 440, 140 520, 160 520 L 240 520 C 260 520, 320 440, 340 330 C 360 230, 310 160, 250 160 Z" />
+    </clipPath>
+
+    <!-- Greek Key Pattern -->
+    <pattern id="meander" width="40" height="30" patternUnits="userSpaceOnUse" patternTransform="scale(0.8)">
+      <path d="M 0 5 H 35 V 25 H 15 V 15 H 25 V 20 H 20 V 10 H 5 V 30" fill="none" stroke="#1a100c" stroke-width="4" stroke-linejoin="miter" stroke-linecap="square"/>
+    </pattern>
+
+    <!-- Volume shading gradient -->
+    <linearGradient id="shading" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.7" />
+      <stop offset="15%" stop-color="#ffffff" stop-opacity="0.1" />
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.3" />
+      <stop offset="75%" stop-color="#000000" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.8" />
+    </linearGradient>
+
+    <linearGradient id="handleShading" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#fff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left Handle -->
+  <path d="M 150 110 C 60 100, 20 180, 65 245 C 80 265, 110 260, 110 240 C 90 220, 70 170, 150 145 Z" fill="#1a100c" />
+  <path d="M 150 110 C 60 100, 20 180, 65 245 C 80 265, 110 260, 110 240 C 90 220, 70 170, 150 145 Z" fill="url(#handleShading)" />
+
+  <!-- Right Handle -->
+  <path d="M 250 110 C 340 100, 380 180, 335 245 C 320 265, 290 260, 290 240 C 310 220, 330 170, 250 145 Z" fill="#1a100c" />
+  <path d="M 250 110 C 340 100, 380 180, 335 245 C 320 265, 290 260, 290 240 C 310 220, 330 170, 250 145 Z" fill="url(#handleShading)" />
+
+  <!-- Foot / Base -->
+  <path d="M 160 520 L 120 575 C 110 590, 130 595, 200 595 C 270 595, 290 590, 280 575 L 240 520 Z" fill="#b35938" />
+  <path d="M 160 520 L 120 575 C 110 590, 130 595, 200 595 C 270 595, 290 590, 280 575 L 240 520 Z" fill="url(#shading)" />
+  <!-- Base Bands -->
+  <path d="M 148 535 L 252 535 L 263 550 L 137 550 Z" fill="#1a100c" />
+  <path d="M 124 570 L 276 570 L 280 575 C 290 590, 270 595, 200 595 C 130 595, 110 590, 120 575 Z" fill="#1a100c" />
+
+  <!-- Neck -->
+  <path d="M 155 70 L 150 160 L 250 160 L 245 70 Z" fill="#b35938" />
+  <path d="M 155 70 L 150 160 L 250 160 L 245 70 Z" fill="url(#shading)" />
+  <rect x="153" y="100" width="94" height="20" fill="#1a100c" />
+  <rect x="152" y="130" width="96" height="5" fill="#1a100c" />
+  <rect x="151" y="145" width="98" height="15" fill="#1a100c" />
+
+  <!-- Main Body -->
+  <g clip-path="url(#bodyClip)">
+    <rect x="0" y="0" width="400" height="600" fill="#d46a43" />
+    
+    <!-- Top Black Band -->
+    <rect x="0" y="160" width="400" height="20" fill="#1a100c" />
+    
+    <!-- Greek Key Band -->
+    <rect x="0" y="180" width="400" height="30" fill="url(#meander)" />
+    
+    <!-- Separator Band -->
+    <rect x="0" y="210" width="400" height="15" fill="#1a100c" />
+    
+    <!-- Central Scene Silhouettes (Black-figure style) -->
+    <!-- Left Figure (Warrior) -->
+    <g fill="#1a100c">
+      <!-- Shield -->
+      <circle cx="140" cy="310" r="35" stroke="#d46a43" stroke-width="2" />
+      <circle cx="140" cy="310" r="32" />
+      <!-- Crested Helmet -->
+      <path d="M 155 240 C 170 230, 185 245, 175 255 C 180 260, 180 270, 170 275 C 160 275, 155 265, 155 255 Z" />
+      <path d="M 175 240 C 190 230, 195 250, 180 255" stroke="#1a100c" stroke-width="6" fill="none"/>
+      <!-- Body -->
+      <path d="M 160 275 L 175 320 L 155 330 L 140 285 Z" />
+      <!-- Legs -->
+      <path d="M 165 325 L 180 375 L 195 385 L 190 390 L 175 385 L 160 340 Z" />
+      <path d="M 150 330 L 145 380 L 130 385 L 130 390 L 140 395 L 160 340 Z" />
+      <!-- Spear -->
+      <line x1="110" y1="360" x2="210" y2="230" stroke="#1a100c" stroke-width="3" />
+    </g>
+
+    <!-- Right Figure (Warrior) -->
+    <g fill="#1a100c">
+      <!-- Shield -->
+      <circle cx="260" cy="300" r="35" stroke="#d46a43" stroke-width="2" />
+      <circle cx="260" cy="300" r="32" />
+      <!-- Crested Helmet -->
+      <path d="M 245 230 C 230 220, 215 235, 225 245 C 220 250, 220 260, 230 265 C 240 265, 245 255, 245 245 Z" />
+      <path d="M 225 230 C 210 220, 205 240, 220 245" stroke="#1a100c" stroke-width="6" fill="none"/>
+      <!-- Body -->
+      <path d="M 240 265 L 225 310 L 245 320 L 260 275 Z" />
+      <!-- Legs -->
+      <path d="M 235 315 L 220 365 L 205 375 L 210 380 L 225 375 L 240 330 Z" />
+      <path d="M 250 320 L 255 370 L 270 375 L 270 380 L 260 385 L 240 330 Z" />
+      <!-- Spear -->
+      <line x1="290" y1="350" x2="190" y2="220" stroke="#1a100c" stroke-width="3" />
+    </g>
+    
+    <!-- Bottom Bands -->
+    <rect x="0" y="400" width="400" height="15" fill="#1a100c" />
+    <rect x="0" y="425" width="400" height="10" fill="#1a100c" />
+    
+    <!-- Ray Pattern at Base -->
+    <path d="M 0 445 L 400 445 L 400 600 L 0 600 Z" fill="#1a100c" />
+    <path d="M 160 520 L 165 445 L 170 520 L 175 445 L 180 520 L 185 445 L 190 520 L 195 445 L 200 520 L 205 445 L 210 520 L 215 445 L 220 520 L 225 445 L 230 520 L 235 445 L 240 520 Z" fill="#d46a43" />
+  </g>
+
+  <!-- Body volume shading applied over the body -->
+  <path d="M 150 160 C 90 160, 40 230, 60 330 C 80 440, 140 520, 160 520 L 240 520 C 260 520, 320 440, 340 330 C 360 230, 310 160, 250 160 Z" fill="url(#shading)" />
+
+  <!-- Rim / Lip -->
+  <!-- Inner opening -->
+  <ellipse cx="200" cy="35" rx="80" ry="20" fill="#0d0806" />
+  <!-- Outer rim -->
+  <path d="M 120 35 C 120 55, 280 55, 280 35 L 290 60 C 290 85, 110 85, 110 60 Z" fill="#b35938" />
+  <path d="M 120 35 C 120 55, 280 55, 280 35 L 290 60 C 290 85, 110 85, 110 60 Z" fill="url(#shading)" />
+  <path d="M 112 55 C 140 78, 260 78, 288 55 L 285 70 C 260 88, 140 88, 115 70 Z" fill="#1a100c" opacity="0.8"/>
+  <ellipse cx="200" cy="35" rx="80" ry="20" fill="none" stroke="#d97652" stroke-width="2" />
+</svg>

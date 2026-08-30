@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <radialGradient id="dustBody" cx="50%" cy="50%" r="50%" fx="40%" fy="40%">
+      <stop offset="0%" stop-color="#AEB6C1" />
+      <stop offset="70%" stop-color="#8B939E" />
+      <stop offset="100%" stop-color="#676D77" />
+    </radialGradient>
+    <radialGradient id="dustShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#676D77" />
+      <stop offset="100%" stop-color="#4F545C" />
+    </radialGradient>
+  </defs>
+
+  <!-- Erratic Hair/Lint Strands extending to viewBox edges -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top left thread touching edge -->
+    <path d="M 120 150 Q 20 50 10 10 Q 50 20 80 80" stroke="#676D77" stroke-width="4" />
+    <!-- Top right thread -->
+    <path d="M 380 120 Q 480 30 490 10 Q 440 60 410 90" stroke="#AEB6C1" stroke-width="3" />
+    <!-- Bottom left thread -->
+    <path d="M 150 400 Q 10 450 10 490 Q 60 490 90 440" stroke="#54C6E8" stroke-width="5" />
+    <!-- Bottom right thread -->
+    <path d="M 380 380 Q 450 420 490 490 Q 480 440 430 420" stroke="#FF7171" stroke-width="4" />
+    <!-- Random extra threads -->
+    <path d="M 50 250 Q 5 280 15 320" stroke="#4F545C" stroke-width="4" />
+    <path d="M 450 250 Q 495 240 485 200" stroke="#FFD166" stroke-width="4" />
+  </g>
+
+  <!-- Shadow / Dark base Fluff -->
+  <g fill="url(#dustShadow)">
+    <circle cx="250" cy="330" r="150" />
+    <circle cx="140" cy="360" r="80" />
+    <circle cx="360" cy="350" r="85" />
+    <circle cx="200" cy="420" r="60" />
+    <circle cx="300" cy="410" r="70" />
+  </g>
+
+  <!-- Main Body Fluff -->
+  <g fill="url(#dustBody)">
+    <circle cx="250" cy="280" r="140" />
+    
+    <!-- Fluffy Edges Body -->
+    <circle cx="130" cy="280" r="60" />
+    <circle cx="370" cy="270" r="65" />
+    <circle cx="160" cy="360" r="70" />
+    <circle cx="340" cy="360" r="75" />
+    <circle cx="250" cy="400" r="65" />
+    <circle cx="180" cy="200" r="50" />
+    <circle cx="320" cy="200" r="55" />
+    <circle cx="250" cy="150" r="60" />
+
+    <!-- Left Ear Fluff -->
+    <circle cx="160" cy="150" r="45" />
+    <circle cx="120" cy="100" r="40" />
+    <circle cx="85" cy="55" r="30" />
+    
+    <!-- Right Ear Fluff -->
+    <circle cx="340" cy="140" r="45" />
+    <circle cx="380" cy="90" r="40" />
+    <circle cx="410" cy="45" r="30" />
+  </g>
+
+  <!-- Highlight Fluff -->
+  <g fill="#BCC3CD" opacity="0.6">
+    <circle cx="210" cy="220" r="40" />
+    <circle cx="290" cy="230" r="45" />
+    <circle cx="250" cy="180" r="35" />
+    <circle cx="140" cy="260" r="25" />
+    <circle cx="350" cy="280" r="30" />
+  </g>
+
+  <!-- Embedded Debris (Dust bunny trash) -->
+  <g fill="#FF7171">
+    <polygon points="120,320 125,310 135,315 130,325" />
+    <circle cx="380" cy="320" r="6" />
+    <circle cx="100" cy="120" r="4" />
+  </g>
+  <g fill="#54C6E8">
+    <rect x="350" y="200" width="10" height="10" transform="rotate(30 350 200)" />
+    <circle cx="170" cy="390" r="5" />
+    <circle cx="410" cy="110" r="4" />
+  </g>
+  <g fill="#FFD166">
+    <polygon points="280,410 290,405 285,420" />
+    <circle cx="150" cy="210" r="7" />
+    <circle cx="240" cy="120" r="4" />
+  </g>
+
+  <!-- Stray hairs over the body -->
+  <g fill="none" stroke="#5C626A" stroke-width="3" stroke-linecap="round">
+    <path d="M 200 180 Q 230 150 260 190" />
+    <path d="M 120 280 Q 150 300 130 340" />
+    <path d="M 370 240 Q 340 220 350 180" />
+    <path d="M 280 370 Q 300 400 340 380" />
+    <path d="M 240 430 Q 260 450 280 420" />
+  </g>
+
+  <!-- Face -->
+  <g id="face">
+    <!-- Left Eye -->
+    <circle cx="190" cy="280" r="22" fill="#2C3036" />
+    <circle cx="196" cy="272" r="8" fill="#FFFFFF" />
+    <circle cx="185" cy="285" r="3" fill="#FFFFFF" />
+    
+    <!-- Right Eye -->
+    <circle cx="310" cy="280" r="22" fill="#2C3036" />
+    <circle cx="316" cy="272" r="8" fill="#FFFFFF" />
+    <circle cx="305" cy="285" r="3" fill="#FFFFFF" />
+
+    <!-- Nose / Mouth -->
+    <path d="M 245 310 Q 250 315 255 310" fill="none" stroke="#FF9A9A" stroke-width="4" stroke-linecap="round" />
+    <path d="M 250 312 L 250 320 M 250 320 Q 240 325 245 330 M 250 320 Q 260 325 255 330" fill="none" stroke="#2C3036" stroke-width="3" stroke-linecap="round" />
+    
+    <!-- Cheeks -->
+    <circle cx="155" cy="300" r="15" fill="#FF9A9A" opacity="0.4" />
+    <circle cx="345" cy="300" r="15" fill="#FF9A9A" opacity="0.4" />
+  </g>
+</svg>

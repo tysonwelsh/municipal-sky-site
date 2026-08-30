@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <!-- Wing gradients -->
+    <radialGradient id="wingGradLeft" cx="30%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff6fb" stop-opacity="0.9"/>
+      <stop offset="45%" stop-color="#ffd2f0" stop-opacity="0.9"/>
+      <stop offset="75%" stop-color="#f8a3e0" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#cf7fd0" stop-opacity="0.8"/>
+    </radialGradient>
+    <radialGradient id="wingGradRight" cx="70%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fdfcff" stop-opacity="0.9"/>
+      <stop offset="45%" stop-color="#c8e5ff" stop-opacity="0.9"/>
+      <stop offset="75%" stop-color="#8ac3f7" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#4f8fd6" stop-opacity="0.8"/>
+    </radialGradient>
+    <radialGradient id="lowerWingGradLeft" cx="30%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#fffdf3" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#ffe4b8" stop-opacity="0.9"/>
+      <stop offset="75%" stop-color="#ffb97c" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#e48b4c" stop-opacity="0.8"/>
+    </radialGradient>
+    <radialGradient id="lowerWingGradRight" cx="70%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#f9fff6" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#c9f5c8" stop-opacity="0.9"/>
+      <stop offset="75%" stop-color="#8bd597" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#57a86a" stop-opacity="0.8"/>
+    </radialGradient>
+
+    <!-- Body gradient -->
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f273b"/>
+      <stop offset="50%" stop-color="#171322"/>
+      <stop offset="100%" stop-color="#0c0a14"/>
+    </linearGradient>
+
+    <!-- Soft watercolor edges -->
+    <filter id="softBlur">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+    <filter id="softBlurLight">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+    <filter id="edgeFeather">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+
+    <!-- Wing veins -->
+    <linearGradient id="veinGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#f2e8ff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Highlight splashes -->
+    <radialGradient id="splashLight" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Soft watercolor halos (background washes without a solid backdrop) -->
+  <g filter="url(#softBlur)">
+    <ellipse cx="400" cy="280" rx="360" ry="240" fill="#f8f1ff" fill-opacity="0.45"/>
+    <ellipse cx="260" cy="330" rx="270" ry="210" fill="#ffe4f4" fill-opacity="0.35"/>
+    <ellipse cx="540" cy="330" rx="270" ry="210" fill="#d8ecff" fill-opacity="0.4"/>
+  </g>
+
+  <!-- Upper wings - left -->
+  <g filter="url(#softBlurLight)">
+    <path
+      d="M 398 290
+         C 300 240, 210 180, 55 20
+         C 165 55, 275 75, 370 110
+         C 270 120, 170 120, 40 85
+         C 100 155, 185 220, 270 260
+         C 315 280, 355 290, 398 290 Z"
+      fill="url(#wingGradLeft)"
+      fill-opacity="0.92"
+    />
+  </g>
+
+  <!-- Upper wings - right -->
+  <g filter="url(#softBlurLight)">
+    <path
+      d="M 402 290
+         C 500 240, 590 180, 745 20
+         C 635 55, 525 75, 430 110
+         C 530 120, 630 120, 760 85
+         C 700 155, 615 220, 530 260
+         C 485 280, 445 290, 402 290 Z"
+      fill="url(#wingGradRight)"
+      fill-opacity="0.92"
+    />
+  </g>
+
+  <!-- Lower wings - left -->
+  <g filter="url(#softBlurLight)">
+    <path
+      d="M 398 310
+         C 335 310, 270 320, 200 340
+         C 120 365, 40 420, 35 580
+         C 95 540, 150 520, 210 520
+         C 150 545, 105 575, 70 605
+         C 150 600, 245 580, 310 545
+         C 350 525, 380 505, 398 485
+         Z"
+      fill="url(#lowerWingGradLeft)"
+      fill-opacity="0.93"
+    />
+  </g>
+
+  <!-- Lower wings - right -->
+  <g filter="url(#softBlurLight)">
+    <path
+      d="M 402 310
+         C 465 310, 530 320, 600 340
+         C 680 365, 760 420, 765 580
+         C 705 540, 650 520, 590 520
+         C 650 545, 695 575, 730 605
+         C 650 600, 555 580, 490 545
+         C 450 525, 420 505, 402 485
+         Z"
+      fill="url(#lowerWingGradRight)"
+      fill-opacity="0.93"
+    />
+  </g>
+
+  <!-- Wing edge feathering -->
+  <g filter="url(#edgeFeather)">
+    <path
+      d="M 398 286
+         C 300 236, 210 176, 55 16
+         C 165 51, 275 71, 370 106
+         C 270 116, 170 116, 40 81
+         C 100 151, 185 216, 270 256
+         C 315 276, 355 286, 398 286 Z"
+      fill="#ffffff"
+      fill-opacity="0.18"
+    />
+    <path
+      d="M 402 286
+         C 500 236, 590 176, 745 16
+         C 635 51, 525 71, 430 106
+         C 530 116, 630 116, 760 81
+         C 700 151, 615 216, 530 256
+         C 485 276, 445 286, 402 286 Z"
+      fill="#ffffff"
+      fill-opacity="0.18"
+    />
+    <path
+      d="M 398 312
+         C 335 312, 270 322, 200 342
+         C 120 367, 40 422, 35 582
+         C 95 542, 150 522, 210 522
+         C 150 547, 105 577, 70 608
+         C 150 602, 245 582, 310 548
+         C 350 528, 380 508, 398 488
+         Z"
+      fill="#ffffff"
+      fill-opacity="0.2"
+    />
+    <path
+      d="M 402 312
+         C 465 312, 530 322, 600 342
+         C 680 367, 760 422, 765 582
+         C 705 542, 650 522, 590 522
+         C 650 547, 695 577, 730 608
+         C 650 602, 555 582, 490 548
+         C 450 528, 420 508, 402 488
+         Z"
+      fill="#ffffff"
+      fill-opacity="0.2"
+    />
+  </g>
+
+  <!-- Wing veins - subtle -->
+  <g stroke="url(#veinGrad)" stroke-width="3" stroke-linecap="round" stroke-opacity="0.7">
+    <!-- Left upper veins -->
+    <path d="M 398 276 C 320 240, 260 205, 185 150" fill="none"/>
+    <path d="M 378 260 C 290 218, 220 180, 130 120" fill="none"/>
+    <path d="M 360 245 C 280 205, 215 170, 90 90" fill="none"/>
+
+    <!-- Right upper veins -->
+    <path d="M 402 276 C 480 240, 540 205, 615 150" fill="none"/>
+    <path d="M 422 260 C 510 218, 580 180, 670 120" fill="none"/>
+    <path d="M 440 245 C 520 205, 585 170, 710 90" fill="none"/>
+
+    <!-- Left lower veins -->
+    <path d="M 395 320 C 325 328, 260 350, 195 390" fill="none"/>
+    <path d="M 388 335 C 315 352, 248 380, 180 430" fill="none"/>
+    <path d="M 380 350 C 300 375, 225 410, 150 470" fill="none"/>
+
+    <!-- Right lower veins -->
+    <path d="M 405 320 C 475 328, 540 350, 605 390" fill="none"/>
+    <path d="M 412 335 C 485 352, 552 380, 620 430" fill="none"/>
+    <path d="M 420 350 C 500 375, 575 410, 650 470" fill="none"/>
+  </g>
+
+  <!-- Subtle color splashes -->
+  <g fill="url(#splashLight)">
+    <circle cx="260" cy="210" r="60" opacity="0.65"/>
+    <circle cx="540" cy="210" r="60" opacity="0.65"/>
+    <circle cx="260" cy="420" r="70" opacity="0.55"/>
+    <circle cx="540" cy="420" r="70" opacity="0.55"/>
+    <circle cx="400" cy="300" r="90" opacity="0.5"/>
+  </g>
+
+  <!-- Butterfly body -->
+  <g>
+    <!-- Thorax & abdomen -->
+    <path
+      d="M 390 165
+         C 385 190, 382 220, 382 255
+         C 382 290, 387 330, 390 365
+         C 392 385, 394 405, 395 425
+         C 395 440, 398 455, 400 465
+         C 402 455, 405 440, 405 425
+         C 406 405, 408 385, 410 365
+         C 413 330, 418 290, 418 255
+         C 418 220, 415 190, 410 165
+         Z"
+      fill="url(#bodyGrad)"
+    />
+
+    <!-- Head -->
+    <ellipse cx="400" cy="150" rx="18" ry="20" fill="url(#bodyGrad)"/>
+
+    <!-- Highlight on body -->
+    <path
+      d="M 395 178
+         C 392 205, 390 242, 391 270
+         C 392 298, 395 325, 397 345
+         C 399 325, 401 298, 402 270
+         C 403 242, 401 205, 398 178
+         Z"
+      fill="#ffffff"
+      fill-opacity="0.13"
+    />
+  </g>
+
+  <!-- Antennae -->
+  <g stroke="#1a1422" stroke-width="2.5" stroke-linecap="round">
+    <path d="M 392 138 C 360 110, 320 90, 280 72" fill="none"/>
+    <path d="M 408 138 C 440 110, 480 90, 520 72" fill="none"/>
+  </g>
+  <g fill="#1a1422">
+    <circle cx="276" cy="70" r="4"/>
+    <circle cx="524" cy="70" r="4"/>
+  </g>
+
+  <!-- Central glow -->
+  <radialGradient id="centerGlow" cx="50%" cy="45%" r="40%">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+    <stop offset="45%" stop-color="#fff3ff" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <circle cx="400" cy="260" r="180" fill="url(#centerGlow)" />
+
+</svg>

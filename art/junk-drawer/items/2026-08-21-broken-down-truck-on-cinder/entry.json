@@ -1,0 +1,77 @@
+{
+  "schema": 2,
+  "id": "2026-08-21-broken-down-truck-on-cinder",
+  "title": "Truck on cinder blocks",
+  "prompt": "Broken down truck on cinder blocks",
+  "created": "2026-08-21",
+  "sizeClass": "l",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 4,
+        "structural-coherence": 2,
+        "jnsq": 3,
+        "layering": 3
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 1 of 3."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 3,
+        "jnsq": 2,
+        "structural-coherence": 2,
+        "layering": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 2 of 3. viewBox normalized: tightened from \"0 0 640 400\" to ink bounds (\"0.0 46.0 565.8 333.5\")."
+    },
+    {
+      "rid": "r3",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-21",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "annotations": {
+        "understanding-assignment": 2,
+        "layering": 2,
+        "structural-coherence": 1,
+        "jnsq": 2
+      },
+      "transcript": null,
+      "notes": "Promoted from the turn that drew it (submission 01M0HRSA8NS9CPNPMHWFESZM41), rated blind at the bench on the current rubric; filed rank 3 of 3. viewBox normalized: tightened from \"0 0 420 220\" to ink bounds (\"50.0 58.0 308.8 123.5\")."
+    }
+  ]
+}

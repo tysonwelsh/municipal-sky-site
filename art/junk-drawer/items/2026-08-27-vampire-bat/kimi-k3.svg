@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="17.8 21.0 364.2 252.8">
+  <!-- wings -->
+  <path d="M200,140 C150,110 90,70 30,40 L55,95 L25,90 L70,140 L40,145 L95,180 L75,195 L140,200 C165,205 185,190 200,175 Z" fill="#3d2b5e" stroke="#2a1d42" stroke-width="4"/>
+  <path d="M200,140 C250,110 310,70 370,40 L345,95 L375,90 L330,140 L360,145 L305,180 L325,195 L260,200 C235,205 215,190 200,175 Z" fill="#3d2b5e" stroke="#2a1d42" stroke-width="4"/>
+  <path d="M200,140 C160,118 110,85 60,60 L80,105 L58,102 L95,140 L72,148 L115,172 C140,182 170,175 195,160 Z" fill="#6b4fa3"/>
+  <path d="M200,140 C240,118 290,85 340,60 L320,105 L342,102 L305,140 L328,148 L285,172 C260,182 230,175 205,160 Z" fill="#6b4fa3"/>
+  <!-- ears -->
+  <path d="M162,72 L150,28 L188,55 Z" fill="#4a3573" stroke="#2a1d42" stroke-width="4"/>
+  <path d="M238,72 L250,28 L212,55 Z" fill="#4a3573" stroke="#2a1d42" stroke-width="4"/>
+  <path d="M165,62 L158,38 L180,54 Z" fill="#e86fa0"/>
+  <path d="M235,62 L242,38 L220,54 Z" fill="#e86fa0"/>
+  <!-- round body -->
+  <circle cx="200" cy="180" r="85" fill="#4a3573" stroke="#2a1d42" stroke-width="5"/>
+  <ellipse cx="200" cy="215" rx="52" ry="45" fill="#5c4490"/>
+  <!-- googly eyes -->
+  <circle cx="172" cy="150" r="26" fill="#ffffff" stroke="#2a1d42" stroke-width="4"/>
+  <circle cx="228" cy="150" r="26" fill="#ffffff" stroke="#2a1d42" stroke-width="4"/>
+  <circle cx="179" cy="156" r="10" fill="#1a1a1a"/>
+  <circle cx="221" cy="156" r="10" fill="#1a1a1a"/>
+  <circle cx="182" cy="152" r="3.5" fill="#ffffff"/>
+  <circle cx="224" cy="152" r="3.5" fill="#ffffff"/>
+  <!-- mouth -->
+  <path d="M160,205 Q200,250 240,205 Q200,222 160,205 Z" fill="#7a1f2b" stroke="#2a1d42" stroke-width="4"/>
+  <ellipse cx="200" cy="224" rx="16" ry="8" fill="#e86fa0"/>
+  <!-- fangs -->
+  <path d="M172,206 L180,206 L176,228 Z" fill="#ffffff" stroke="#2a1d42" stroke-width="3"/>
+  <path d="M220,206 L228,206 L224,228 Z" fill="#ffffff" stroke="#2a1d42" stroke-width="3"/>
+  <!-- blush -->
+  <ellipse cx="150" cy="182" rx="12" ry="7" fill="#e86fa0" opacity="0.6"/>
+  <ellipse cx="250" cy="182" rx="12" ry="7" fill="#e86fa0" opacity="0.6"/>
+  <!-- feet -->
+  <ellipse cx="180" cy="263" rx="14" ry="9" fill="#2a1d42"/>
+  <ellipse cx="220" cy="263" rx="14" ry="9" fill="#2a1d42"/>
+</svg>

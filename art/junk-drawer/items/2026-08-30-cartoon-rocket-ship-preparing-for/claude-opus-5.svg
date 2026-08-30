@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="32.0 13.5 335.8 680.2">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d0a10"/>
+      <stop offset="0.14" stop-color="#b2141c"/>
+      <stop offset="0.32" stop-color="#f0343a"/>
+      <stop offset="0.44" stop-color="#ff8f8c"/>
+      <stop offset="0.52" stop-color="#ffd9d4"/>
+      <stop offset="0.62" stop-color="#f4474b"/>
+      <stop offset="0.8" stop-color="#c0161e"/>
+      <stop offset="1" stop-color="#5c080e"/>
+    </linearGradient>
+    <linearGradient id="nose" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a0d13"/>
+      <stop offset="0.2" stop-color="#cf1a22"/>
+      <stop offset="0.42" stop-color="#ff8b88"/>
+      <stop offset="0.52" stop-color="#ffe4de"/>
+      <stop offset="0.66" stop-color="#e83239"/>
+      <stop offset="0.86" stop-color="#a5121a"/>
+      <stop offset="1" stop-color="#5a070d"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6f7a85"/>
+      <stop offset="0.16" stop-color="#c9d4dc"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#aab6c0"/>
+      <stop offset="0.64" stop-color="#f2f6f9"/>
+      <stop offset="0.84" stop-color="#8e99a3"/>
+      <stop offset="1" stop-color="#5b656e"/>
+    </linearGradient>
+    <linearGradient id="chromeV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.35" stop-color="#c2ccd5"/>
+      <stop offset="0.6" stop-color="#7d8892"/>
+      <stop offset="1" stop-color="#d7e0e6"/>
+    </linearGradient>
+    <radialGradient id="glass" cx="0.35" cy="0.3" r="0.85">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.35" stop-color="#7fd8ee"/>
+      <stop offset="0.75" stop-color="#2a7fa8"/>
+      <stop offset="1" stop-color="#123f5c"/>
+    </radialGradient>
+    <linearGradient id="finR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d0f16"/>
+      <stop offset="0.4" stop-color="#e42d34"/>
+      <stop offset="0.7" stop-color="#ff9d99"/>
+      <stop offset="1" stop-color="#a3131b"/>
+    </linearGradient>
+    <linearGradient id="finL" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#8d0f16"/>
+      <stop offset="0.4" stop-color="#e42d34"/>
+      <stop offset="0.7" stop-color="#ff9d99"/>
+      <stop offset="1" stop-color="#a3131b"/>
+    </linearGradient>
+    <radialGradient id="flame" cx="0.5" cy="0.08" r="0.95">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.25" stop-color="#fff3a8"/>
+      <stop offset="0.55" stop-color="#ffb42e"/>
+      <stop offset="0.85" stop-color="#f2591d"/>
+      <stop offset="1" stop-color="#f2591d" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="flame2" cx="0.5" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#bfe9ff"/>
+      <stop offset="1" stop-color="#7fd0ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- exhaust flames -->
+  <g>
+    <path d="M200 560 C246 596 262 640 200 692 C138 640 154 596 200 560 Z" fill="url(#flame)" opacity="0.95"/>
+    <path d="M200 566 C228 596 236 628 200 664 C164 628 172 596 200 566 Z" fill="url(#flame2)" opacity="0.9"/>
+    <path d="M148 556 C168 586 166 610 146 634 C130 606 132 578 148 556 Z" fill="url(#flame)" opacity="0.75"/>
+    <path d="M252 556 C268 578 270 606 254 634 C234 610 232 586 252 556 Z" fill="url(#flame)" opacity="0.75"/>
+  </g>
+
+  <!-- rear fin (center back) -->
+  <path d="M200 380 L200 560 L200 560 Z" fill="none"/>
+
+  <!-- left fin -->
+  <g>
+    <path d="M146 360 C104 400 62 452 40 540 C60 552 92 556 116 548 C120 478 132 418 152 386 Z" fill="url(#finL)" stroke="#4d060b" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M40 540 C60 552 92 556 116 548 L114 572 C88 580 58 576 36 562 Z" fill="url(#chromeV)" stroke="#4d060b" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M138 392 C118 428 108 476 104 528" fill="none" stroke="#ffd6d2" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+  </g>
+
+  <!-- right fin -->
+  <g>
+    <path d="M254 360 C296 400 338 452 360 540 C340 552 308 556 284 548 C280 478 268 418 248 386 Z" fill="url(#finR)" stroke="#4d060b" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M360 540 C340 552 308 556 284 548 L286 572 C312 580 342 576 364 562 Z" fill="url(#chromeV)" stroke="#4d060b" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M262 392 C282 428 292 476 296 528" fill="none" stroke="#ffd6d2" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+  </g>
+
+  <!-- main body -->
+  <path d="M200 18
+           C246 62 282 150 288 244
+           L292 402
+           C292 452 284 500 274 534
+           L126 534
+           C116 500 108 452 108 402
+           L112 244
+           C118 150 154 62 200 18 Z"
+        fill="url(#body)" stroke="#4d060b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- nose cone -->
+  <path d="M200 18 C240 58 268 118 280 178 L120 178 C132 118 160 58 200 18 Z" fill="url(#nose)" stroke="#4d060b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- chrome nose tip -->
+  <path d="M200 18 C210 28 220 44 228 62 L172 62 C180 44 190 28 200 18 Z" fill="url(#chrome)" stroke="#4d060b" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- chrome band under nose -->
+  <path d="M118 178 L282 178 L285 202 L115 202 Z" fill="url(#chrome)" stroke="#4d060b" stroke-width="4.5" stroke-linejoin="round"/>
+
+  <!-- porthole -->
+  <g>
+    <circle cx="200" cy="272" r="60" fill="url(#chrome)" stroke="#4d060b" stroke-width="5"/>
+    <circle cx="200" cy="272" r="46" fill="url(#glass)" stroke="#3a4650" stroke-width="4"/>
+    <path d="M170 246 C182 234 200 230 214 234 C198 238 182 250 174 264 Z" fill="#ffffff" opacity="0.75"/>
+    <path d="M166 292 C176 306 192 314 208 312 C192 310 178 300 170 288 Z" fill="#ffffff" opacity="0.3"/>
+    <g fill="#c8d4dc" stroke="#5b656e" stroke-width="2">
+      <circle cx="200" cy="209" r="5.5"/>
+      <circle cx="243" cy="229" r="5.5"/>
+      <circle cx="243" cy="315" r="5.5"/>
+      <circle cx="200" cy="335" r="5.5"/>
+      <circle cx="157" cy="315" r="5.5"/>
+      <circle cx="157" cy="229" r="5.5"/>
+    </g>
+  </g>
+
+  <!-- googie star/atom emblem -->
+  <g transform="translate(200,378)">
+    <ellipse rx="34" ry="12" fill="none" stroke="#e8eef2" stroke-width="4" opacity="0.9"/>
+    <ellipse rx="34" ry="12" fill="none" stroke="#e8eef2" stroke-width="4" opacity="0.9" transform="rotate(60)"/>
+    <ellipse rx="34" ry="12" fill="none" stroke="#e8eef2" stroke-width="4" opacity="0.9" transform="rotate(-60)"/>
+    <circle r="7" fill="#ffd452" stroke="#4d060b" stroke-width="2.5"/>
+  </g>
+
+  <!-- lower chrome band -->
+  <path d="M110 430 L290 430 L291 452 L109 452 Z" fill="url(#chrome)" stroke="#4d060b" stroke-width="4.5" stroke-linejoin="round"/>
+
+  <!-- highlight streak -->
+  <path d="M168 70 C150 130 142 250 146 420" fill="none" stroke="#ffe9e4" stroke-width="9" stroke-linecap="round" opacity="0.5"/>
+  <path d="M236 84 C250 140 254 250 252 420" fill="none" stroke="#ffb0ab" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- engine skirt -->
+  <path d="M126 534 L274 534 C284 534 292 542 292 552 L288 570 C288 578 280 584 270 584 L130 584 C120 584 112 578 112 570 L108 552 C108 542 116 534 126 534 Z"
+        fill="url(#chrome)" stroke="#4d060b" stroke-width="5" stroke-linejoin="round"/>
+  <g fill="#5b656e" opacity="0.55">
+    <rect x="132" y="542" width="10" height="34" rx="5"/>
+    <rect x="160" y="542" width="10" height="34" rx="5"/>
+    <rect x="188" y="542" width="10" height="34" rx="5"/>
+    <rect x="216" y="542" width="10" height="34" rx="5"/>
+    <rect x="244" y="542" width="10" height="34" rx="5"/>
+  </g>
+
+  <!-- rivets -->
+  <g fill="#ffdcd7" opacity="0.75">
+    <circle cx="128" cy="214" r="3.5"/><circle cx="272" cy="214" r="3.5"/>
+    <circle cx="122" cy="418" r="3.5"/><circle cx="278" cy="418" r="3.5"/>
+    <circle cx="120" cy="464" r="3.5"/><circle cx="280" cy="464" r="3.5"/>
+    <circle cx="124" cy="522" r="3.5"/><circle cx="276" cy="522" r="3.5"/>
+  </g>
+</svg>

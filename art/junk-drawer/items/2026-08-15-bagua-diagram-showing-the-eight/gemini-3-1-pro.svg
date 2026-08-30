@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <filter id="paper-texture" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="4" result="noise" />
+      <feColorMatrix type="matrix" values="1 0 0 0 0   0 1 0 0 0   0 0 1 0 0   0 0 0 0.15 0" in="noise" result="coloredNoise" />
+      <feComposite operator="in" in="SourceGraphic" in2="coloredNoise" result="composite" />
+      <feBlend mode="multiply" in="composite" in2="SourceGraphic" />
+    </filter>
+    
+    <filter id="lofi-edges" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.2" numOctaves="2" result="edgeNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="edgeNoise" scale="3" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur stdDeviation="0.5" in="displaced" result="blurred"/>
+      <feComponentTransfer in="blurred">
+        <feFuncA type="discrete" tableValues="0 1"/>
+      </feComponentTransfer>
+    </filter>
+
+    <g id="yin-line">
+      <rect x="-35" y="0" width="30" height="10" fill="#1a1a1a" filter="url(#lofi-edges)" />
+      <rect x="5" y="0" width="30" height="10" fill="#1a1a1a" filter="url(#lofi-edges)" />
+    </g>
+    <g id="yang-line">
+      <rect x="-35" y="0" width="70" height="10" fill="#1a1a1a" filter="url(#lofi-edges)" />
+    </g>
+    
+    <!-- Trigrams -->
+    <g id="qian">
+      <use href="#yang-line" y="-20" />
+      <use href="#yang-line" y="0" />
+      <use href="#yang-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">乾</text>
+    </g>
+    <g id="dui">
+      <use href="#yin-line" y="-20" />
+      <use href="#yang-line" y="0" />
+      <use href="#yang-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">兌</text>
+    </g>
+    <g id="li">
+      <use href="#yang-line" y="-20" />
+      <use href="#yin-line" y="0" />
+      <use href="#yang-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">離</text>
+    </g>
+    <g id="zhen">
+      <use href="#yin-line" y="-20" />
+      <use href="#yin-line" y="0" />
+      <use href="#yang-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">震</text>
+    </g>
+    <g id="xun">
+      <use href="#yang-line" y="-20" />
+      <use href="#yang-line" y="0" />
+      <use href="#yin-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">巽</text>
+    </g>
+    <g id="kan">
+      <use href="#yin-line" y="-20" />
+      <use href="#yang-line" y="0" />
+      <use href="#yin-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">坎</text>
+    </g>
+    <g id="gen">
+      <use href="#yang-line" y="-20" />
+      <use href="#yin-line" y="0" />
+      <use href="#yin-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">艮</text>
+    </g>
+    <g id="kun">
+      <use href="#yin-line" y="-20" />
+      <use href="#yin-line" y="0" />
+      <use href="#yin-line" y="20" />
+      <text x="0" y="55" font-family="serif" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle" filter="url(#lofi-edges)">坤</text>
+    </g>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#d4d4d4" filter="url(#paper-texture)" />
+
+  <g transform="translate(400, 400)">
+    <!-- Octagon outlines -->
+    <path d="M -130 -314 L 130 -314 L 314 -130 L 314 130 L 130 314 L -130 314 L -314 130 L -314 -130 Z" fill="none" stroke="#1a1a1a" stroke-width="6" filter="url(#lofi-edges)" />
+    <path d="M -90 -217 L 90 -217 L 217 -90 L 217 90 L 90 217 L -90 217 L -217 90 L -217 -90 Z" fill="none" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)" />
+    <path d="M -145 -350 L 145 -350 L 350 -145 L 350 145 L 145 350 L -145 350 L -350 145 L -350 -145 Z" fill="none" stroke="#1a1a1a" stroke-width="2" filter="url(#lofi-edges)" />
+
+    <!-- Spoke lines -->
+    <line x1="-90" y1="-217" x2="-130" y2="-314" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="90" y1="-217" x2="130" y2="-314" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="217" y1="-90" x2="314" y2="-130" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="217" y1="90" x2="314" y2="130" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="90" y1="217" x2="130" y2="314" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="-90" y1="217" x2="-130" y2="314" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="-217" y1="90" x2="-314" y2="130" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+    <line x1="-217" y1="-90" x2="-314" y2="-130" stroke="#1a1a1a" stroke-width="4" filter="url(#lofi-edges)"/>
+
+    <!-- Yin Yang -->
+    <g filter="url(#lofi-edges)">
+      <circle cx="0" cy="0" r="140" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="5" />
+      <path d="M 0 -140 A 70 70 0 0 1 0 0 A 70 70 0 0 0 0 140 A 140 140 0 0 1 0 -140" fill="#1a1a1a" />
+      <circle cx="0" cy="-70" r="20" fill="#1a1a1a" />
+      <circle cx="0" cy="70" r="20" fill="#e6e6e6" />
+    </g>
+
+    <!-- Trigram placements (Earlier Heaven arrangement) -->
+    <use href="#qian" transform="translate(0, -250)" />
+    <use href="#xun" transform="rotate(45) translate(0, -250)" />
+    <use href="#kan" transform="rotate(90) translate(0, -250)" />
+    <use href="#gen" transform="rotate(135) translate(0, -250)" />
+    <use href="#kun" transform="rotate(180) translate(0, -250)" />
+    <use href="#zhen" transform="rotate(225) translate(0, -250)" />
+    <use href="#li" transform="rotate(270) translate(0, -250)" />
+    <use href="#dui" transform="rotate(315) translate(0, -250)" />
+
+  </g>
+</svg>

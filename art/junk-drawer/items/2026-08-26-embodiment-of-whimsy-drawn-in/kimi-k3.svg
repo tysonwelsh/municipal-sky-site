@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="44.8 -2.0 312.2 392.5">
+  <g fill="none" stroke="#141210" stroke-linecap="round">
+    <!-- swirling ink body -->
+    <path d="M200 340 C 130 330 95 285 105 235 C 113 195 150 180 165 145 C 178 115 168 90 185 70 C 195 58 212 55 222 66 C 232 77 226 95 215 100 C 205 104 196 97 198 88" stroke-width="7"/>
+    <path d="M200 340 C 265 345 310 310 305 255 C 300 210 262 200 250 165 C 242 140 252 118 238 100" stroke-width="5.5"/>
+    <!-- spiral tail -->
+    <path d="M105 235 C 80 225 62 240 66 262 C 69 279 88 285 98 274 C 105 266 100 254 90 256" stroke-width="4"/>
+    <!-- leaping legs -->
+    <path d="M150 330 C 140 355 115 365 95 358" stroke-width="5"/>
+    <path d="M250 335 C 262 358 285 366 305 356" stroke-width="5"/>
+    <path d="M95 358 C 88 361 84 357 86 352" stroke-width="3.5"/>
+    <path d="M305 356 C 312 359 316 354 313 349" stroke-width="3.5"/>
+    <!-- arms flung wide -->
+    <path d="M160 195 C 130 180 105 185 92 168" stroke-width="4.5"/>
+    <path d="M92 168 C 84 160 87 152 95 154" stroke-width="3"/>
+    <path d="M255 190 C 285 172 312 175 328 155" stroke-width="4.5"/>
+    <path d="M328 155 C 336 148 334 139 326 141" stroke-width="3"/>
+    <!-- head with delighted face -->
+    <path d="M185 70 C 175 45 190 22 215 20 C 242 18 260 38 255 62 C 251 82 236 94 218 93" stroke-width="6"/>
+    <path d="M205 48 C 208 44 213 44 215 49" stroke-width="3.5"/>
+    <path d="M232 46 C 235 42 240 43 241 48" stroke-width="3.5"/>
+    <path d="M210 68 C 218 76 232 75 238 65" stroke-width="4"/>
+    <!-- ear tufts / horns of whimsy -->
+    <path d="M192 30 C 180 18 178 6 186 2" stroke-width="4"/>
+    <path d="M246 28 C 258 15 259 4 251 0" stroke-width="4"/>
+    <!-- question-mark curl above head -->
+    <path d="M222 66 C 218 78 226 84 234 80" stroke-width="4" opacity="0.9"/>
+    <!-- floating ink droplets and stars -->
+    <circle cx="120" cy="120" r="4.5" fill="#141210" stroke="none"/>
+    <circle cx="300" cy="105" r="3.5" fill="#141210" stroke="none"/>
+    <circle cx="75" cy="210" r="3" fill="#141210" stroke="none"/>
+    <circle cx="335" cy="230" r="4" fill="#141210" stroke="none"/>
+    <circle cx="270" cy="370" r="3" fill="#141210" stroke="none"/>
+    <path d="M145 90 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#141210" stroke="none"/>
+    <path d="M310 300 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#141210" stroke="none"/>
+    <path d="M60 300 l2.5 7 7 2.5 -7 2.5 -2.5 7 -2.5 -7 -7 -2.5 7 -2.5 z" fill="#141210" stroke="none"/>
+    <!-- dry-brush hatch accents -->
+    <path d="M175 250 C 195 260 220 260 240 248" stroke-width="2.5"/>
+    <path d="M180 268 C 198 276 218 276 234 266" stroke-width="2"/>
+    <path d="M170 220 C 188 230 210 232 230 224" stroke-width="2"/>
+    <!-- motion swirls -->
+    <path d="M340 190 C 355 200 358 218 348 230" stroke-width="2.5"/>
+    <path d="M55 150 C 45 162 46 178 58 186" stroke-width="2.5"/>
+    <path d="M155 380 C 185 390 225 390 252 378" stroke-width="3"/>
+  </g>
+</svg>
