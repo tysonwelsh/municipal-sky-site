@@ -182,7 +182,16 @@ const JD_DRAW_PERMS = [
 ];
 
 const JD_MAX_TOKENS = 12000;
-const JD_PROVIDER_TIMEOUT = 90;
+// 150 since 2026-08-30 (owner call, raised from 90): Kimi K3 has repeatedly
+// missed the old budget — the subway-rat rerun timed out at 90.0s with zero
+// bytes received, and the owner has seen the same before — and a failed slot
+// costs a lopsided turn plus a full re-run. The whole pool gets the same
+// number, deliberately: an uneven budget would fail correlated with the model
+// under study (jd-bench-run.php's own argument). The visible trade: the
+// darkroom waits for the slowest slot, so a genuinely slow run can now hold
+// the reveal up to ~2.5 minutes. curl wall-time doesn't count toward PHP's
+// CPU-time execution limit, which is how 90 already lived on this host.
+const JD_PROVIDER_TIMEOUT = 150;
 const JD_PROVIDER_CONNECT_TIMEOUT = 10;
 
 // C5.2 / APP §4.5 — the consent of record. Must match JD_CONSENT.version in
