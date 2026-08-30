@@ -22,18 +22,24 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": 4.0,
-      "graded": "2026-07-29",
-      "grade_history": [],
+      "grade": 5.0,
+      "graded": "2026-08-30",
+      "grade_history": [
+        {
+          "grade": 4.0,
+          "date": "2026-07-29",
+          "taxonomy_version": null,
+          "note": "raised Choice→Prime by owner call at the legacy keep (2026-08-30)"
+        }
+      ],
       "annotations": {
-        "instruction-following": 3.0,
-        "restraint": 3.0,
-        "integrity": 3.0,
-        "style": 3.0,
-        "je-ne-sais-quoi": 2.0
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 2.0,
+        "jnsq": 3.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.4%. The only response to declare a role and aria-label on the root. Builds the eye as five nested gradient-filled ovals (outer halo, gold, copper, blue, indigo pupil) with a separate barb-stroke layer fanning out from a single origin point at the eye's base, so the barbs radiate from the eye rather than from the shaft. Rachis is a filled tapering polygon plus three offset stroke copies for pencil pressure; two blurred radial ellipses sit on top as a specular sheen. A large blurred silhouette of the whole feather underlies everything at 17% opacity as a soft shadow."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.4%. The only response to declare a role and aria-label on the root. Builds the eye as five nested gradient-filled ovals (outer halo, gold, copper, blue, indigo pupil) with a separate barb-stroke layer fanning out from a single origin point at the eye's base, so the barbs radiate from the eye rather than from the shaft. Rachis is a filled tapering polygon plus three offset stroke copies for pencil pressure; two blurred radial ellipses sit on top as a specular sheen. A large blurred silhouette of the whole feather underlies everything at 17% opacity as a soft shadow. Kept as the drawer’s display by owner call (2026-08-30) — a legacy favorite, hand-filed on the current rubric (top marks throughout except Layering middle; grade raised to Prime); the rerun set stands as the comparison."
     },
     {
       "rid": "r2",
@@ -56,7 +62,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.1%. Drew the whole bird rather than the single feather that was asked for — body, neck, crest, beak, legs and feet, with a thirteen-feather tail fan behind it. The \"curve ever so slightly to the left\" instruction landed on the neck instead of the shaft. It added no scenery or background, but the bird itself is the unrequested addition, and it upstages the feather completely — the object actually asked for survives only as thirteen small copies in the tail. The tail is one `<g id=\"feather\">` reused via `<use>` with per-copy rotate and scale, and each copy carries its own eye and barbs, so the requested object exists thirteen times over at small scale. Colour-pencil texture is a real feTurbulence + feDisplacementMap filter pair rather than drawn-in jitter."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.1%. Drew the whole bird rather than the single feather that was asked for — body, neck, crest, beak, legs and feet, with a thirteen-feather tail fan behind it. The \"curve ever so slightly to the left\" instruction landed on the neck instead of the shaft. It added no scenery or background, but the bird itself is the unrequested addition, and it upstages the feather completely — the object actually asked for survives only as thirteen small copies in the tail. The tail is one `<g id=\"feather\">` reused via `<use>` with per-copy rotate and scale, and each copy carries its own eye and barbs, so the requested object exists thirteen times over at small scale. Colour-pencil texture is a real feTurbulence + feDisplacementMap filter pair rather than drawn-in jitter. Retired from display by owner call (2026-08-30) — the kept Opus 5 original and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -79,7 +86,120 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.2%. The tallest and narrowest of the three (viewBox 460 × 1021). Barbs are individually stroked paths — several hundred of them — in a green/teal/gold rotation, drawn in left/right pairs off the shaft so the plume reads as a continuous fringe rather than a repeated symbol. Eye is two stacked radial-gradient ellipses over a teal ground, ringed by dozens of hand-drawn contour outlines in ochre and slate that overshoot each other slightly, which is where its pencil quality comes from. Shaft is a polyline with three offset companions for pressure variation."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.2%. The tallest and narrowest of the three (viewBox 460 × 1021). Barbs are individually stroked paths — several hundred of them — in a green/teal/gold rotation, drawn in left/right pairs off the shaft so the plume reads as a continuous fringe rather than a repeated symbol. Eye is two stacked radial-gradient ellipses over a teal ground, ringed by dozens of hand-drawn contour outlines in ochre and slate that overshoot each other slightly, which is where its pencil quality comes from. Shaft is a polyline with three offset companions for pressure variation. Retired from display by owner call (2026-08-30) — the kept Opus 5 original and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
+    },
+    {
+      "rid": "r4",
+      "file": "claude-opus-5-rerun.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M186HH3H8YT0BQ0MBP7EDJR3), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 900\" to ink bounds (\"117.2 79.8 220.2 807.8\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 467,
+        "output": 7258,
+        "total": 7725
+      },
+      "cost_usd": 0.183785
+    },
+    {
+      "rid": "r5",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M186HH3H8YT0BQ0MBP7EDJR3), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 600\" to ink bounds (\"59.2 19.2 269.2 570.0\").",
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 2.0,
+        "layering": 3.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 410,
+        "output": 2364,
+        "total": 2774
+      },
+      "cost_usd": 0.03669
+    },
+    {
+      "rid": "r6",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M186HH3H8YT0BQ0MBP7EDJR3), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 300 800\" to ink bounds (\"23.5 47.0 259.0 745.8\").",
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 2.0,
+        "layering": 2.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 316,
+        "output": 4511,
+        "total": 4827
+      },
+      "cost_usd": 0.054764
+    },
+    {
+      "rid": "r7",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M186HH3H8YT0BQ0MBP7EDJR3), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 320 800\" to ink bounds (\"20.8 -2.0 278.2 803.8\").",
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 1.0,
+        "layering": 2.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 323,
+        "output": 5112,
+        "total": 5435
+      },
+      "cost_usd": 0.051524
     }
   ]
 }
