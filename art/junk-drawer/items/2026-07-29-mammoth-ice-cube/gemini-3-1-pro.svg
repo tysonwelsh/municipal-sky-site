@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <linearGradient id="iceBack" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e1f5fe" />
+      <stop offset="100%" stop-color="#b3e5fc" />
+    </linearGradient>
+    <linearGradient id="iceFront" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7" />
+      <stop offset="40%" stop-color="#81d4fa" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0288d1" stop-opacity="0.6" />
+    </linearGradient>
+    <linearGradient id="iceGlare" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="tuskGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff9c4" />
+      <stop offset="100%" stop-color="#ffe082" />
+    </linearGradient>
+  </defs>
+
+  <!-- Back of Ice Cube -->
+  <rect x="10" y="10" width="480" height="480" rx="50" fill="url(#iceBack)" />
+  <path d="M 60 10 L 440 10 A 50 50 0 0 1 490 60 L 490 120 L 10 70 Z" fill="#ffffff" opacity="0.5" />
+
+  <!-- Mammoth Body -->
+  <path d="M 120 400 C 100 250, 400 250, 380 400 C 370 450, 130 450, 120 400 Z" fill="#6d4c41" />
+  <!-- Fur texture body -->
+  <path d="M 100 350 Q 130 380 120 420 Q 150 400 170 430 Q 200 400 220 430 Q 250 400 280 430 Q 300 400 330 430 Q 350 400 380 420 Q 370 380 400 350" fill="none" stroke="#5d4037" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Ears -->
+  <path d="M 160 220 C 110 200, 90 280, 140 300 Z" fill="#5d4037" />
+  <path d="M 340 220 C 390 200, 410 280, 360 300 Z" fill="#5d4037" />
+
+  <!-- Head -->
+  <circle cx="250" cy="230" r="90" fill="#8d6e63" />
+
+  <!-- Hair Tuft -->
+  <path d="M 180 170 C 190 120, 230 100, 250 110 C 270 100, 310 120, 320 170 C 300 190, 200 190, 180 170 Z" fill="#4e342e" />
+  <path d="M 220 120 Q 210 90 250 80 Q 280 70 280 110 Q 300 90 320 130" fill="none" stroke="#4e342e" stroke-width="15" stroke-linecap="round" />
+
+  <!-- Tusks -->
+  <path d="M 190 280 C 130 280, 50 250, 40 160 C 60 170, 110 240, 190 250 Z" fill="url(#tuskGrad)" />
+  <path d="M 310 280 C 370 280, 450 250, 460 160 C 440 170, 390 240, 310 250 Z" fill="url(#tuskGrad)" />
+
+  <!-- Trunk -->
+  <path d="M 220 250 C 220 350, 160 400, 190 440 C 220 480, 280 450, 280 400 C 280 350, 280 250, 280 250 Z" fill="#8d6e63" />
+  <!-- Trunk wrinkles -->
+  <path d="M 225 290 Q 250 300 275 290 M 230 330 Q 250 340 270 330 M 235 370 Q 250 380 265 370" fill="none" stroke="#6d4c41" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Eyeshadow -->
+  <path d="M 175 220 C 185 195, 215 195, 225 220 C 215 210, 185 210, 175 220 Z" fill="#e040fb" />
+  <path d="M 275 220 C 285 195, 315 195, 325 220 C 315 210, 285 210, 275 220 Z" fill="#e040fb" />
+
+  <!-- Closed Eyes (Sleeping) -->
+  <path d="M 175 220 C 190 235, 210 235, 225 220" fill="none" stroke="#212121" stroke-width="5" stroke-linecap="round" />
+  <path d="M 275 220 C 290 235, 310 235, 325 220" fill="none" stroke="#212121" stroke-width="5" stroke-linecap="round" />
+
+  <!-- Long Luscious Eyelashes -->
+  <!-- Left Eye -->
+  <path d="M 180 226 Q 165 235 155 225" fill="none" stroke="#212121" stroke-width="4" stroke-linecap="round" />
+  <path d="M 190 231 Q 180 245 165 240" fill="none" stroke="#212121" stroke-width="4" stroke-linecap="round" />
+  <path d="M 205 231 Q 195 250 185 250" fill="none" stroke="#212121" stroke-width="4" stroke-linecap="round" />
+  <!-- Right Eye -->
+  <path d="M 320 226 Q 335 235 345 225" fill="none" stroke="#212121" stroke-width="4" stroke-linecap="round" />
+  <path d="M 310 231 Q 320 245 335 240" fill="none" stroke="#212121" stroke-width="4" stroke-linecap="round" />
+  <path d="M 295 231 Q 305 250 315 250" fill="none" stroke="#212121" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Rosy Cheeks -->
+  <ellipse cx="170" cy="250" rx="15" ry="10" fill="#ff5252" opacity="0.6" />
+  <ellipse cx="330" cy="250" rx="15" ry="10" fill="#ff5252" opacity="0.6" />
+
+  <!-- Front of Ice Cube (Transparency & Frost) -->
+  <rect x="10" y="10" width="480" height="480" rx="50" fill="url(#iceFront)" />
+  
+  <!-- Ice Glare Highlights -->
+  <path d="M 20 60 A 40 40 0 0 1 60 20 L 440 20 A 40 40 0 0 1 480 60 L 480 200 C 350 100, 150 250, 20 150 Z" fill="url(#iceGlare)" />
+  
+  <!-- Frost Details -->
+  <path d="M 10 400 L 50 350 L 30 310 L 80 320 L 70 270 L 10 330 Z" fill="#ffffff" opacity="0.7" />
+  <path d="M 490 80 L 440 130 L 460 170 L 410 160 L 420 210 L 490 150 Z" fill="#ffffff" opacity="0.7" />
+  
+  <!-- Ice Facet Lines -->
+  <path d="M 60 10 L 120 70 M 440 10 L 380 70 M 10 60 L 70 120 M 490 60 L 430 120" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.6" />
+  <path d="M 60 490 L 120 430 M 440 490 L 380 430 M 10 440 L 70 380 M 490 440 L 430 380" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.6" />
+</svg>

@@ -94,7 +94,13 @@ def harvest(item_id):
         fn = g["model_id"] + ".svg"
         fpath = os.path.join(ITEMS, item_id, fn)
         if os.path.exists(fpath):
-            print(f"{item_id}: {fn} already exists — refusing to overwrite; handle manually")
+            # an ORIGINAL response by the same model already holds the plain
+            # name (the current pool overlaps the archive's models) — the
+            # rerun's copy wears a -rerun suffix rather than clobbering it
+            fn = g["model_id"] + "-rerun.svg"
+            fpath = os.path.join(ITEMS, item_id, fn)
+        if os.path.exists(fpath):
+            print(f"{item_id}: {fn} already exists too — refusing to overwrite; handle manually")
             return False
         open(fpath, "w").write(g["svg"])
         p = price(g)
