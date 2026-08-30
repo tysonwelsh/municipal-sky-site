@@ -20,9 +20,12 @@
 // The three population rules this file exists to get right, all of them from
 // setup-jd-tables.php's item_id block and PLAN-ANALYTICS §1:
 //   1. Curated rows (jd_submissions.item_id IS NOT NULL) are NOT visitor
-//      turns. They sit at status='generated' forever. Turn counts and the
-//      first-place charts exclude them; rating and cost aggregates include
-//      them, because they are the owner's corpus and the owner's spend.
+//      turns. They sit at status='generated' forever. Turn counts, the
+//      first-place charts and — since 2026-08-30, owner call — the GRADE AND
+//      AXIS charts all exclude them: the corpus was never a controlled
+//      comparison, so it cannot answer "which model draws better." Cost
+//      aggregates still include them (the spend was real), and so does
+//      rated_responses (the owner's filing work, not a scoreboard).
 //   2. Unpriced or usage-less generations are EXCLUDED from money, never
 //      counted as $0 — the same discipline as jd-rate.php's reveal.
 //   3. jd_comparisons is written alongside jd_ranks (the rank-1 winner), so a
@@ -252,6 +255,22 @@ foreach ($rates as $r) {
     $gen = $genById[$genId] ?? null;
     if ($gen === null || $r['value'] === null) {
         continue;                      // a flag carries no value; orphans cannot exist (FK)
+    }
+    // MODEL PERFORMANCE IS TURN-ONLY (owner call, 2026-08-30). The curated
+    // corpus is not a controlled comparison and never was — generations made
+    // over weeks, some refined over several prompts, under harnesses that
+    // changed underneath them, and by a Claude-only cast; jd-bench-run.php's
+    // own header says nothing about it supports "model A beats model B". The
+    // legacy responses the owner PRESERVES in the drawer are exactly those
+    // rows, so they would sit in the grade book as if they had run in the
+    // four-model bracket. They do not: the grade and axis aggregates below
+    // count only generations from real turns (the four models drawing the
+    // same prompt at the same moment, item_id IS NULL). Spend still counts
+    // the curated bench — that money was really spent (rule 1 above) — and
+    // rated_responses still counts every current-rubric judgment on file,
+    // because that figure is the owner's filing work, not a scoreboard.
+    if (!isset($turnSubs[(string) $gen['submission_id']])) {
+        continue;
     }
     $modelId = $gen['model_id'];
     $value   = (float) $r['value'];

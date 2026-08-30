@@ -43,9 +43,15 @@ and rigging are the ship); the setting it would occupy does not. Where the
 subject's edge is genuinely unclear, keep what a designer would need and
 leave out the rest. If the brief explicitly asks for a setting, follow the
 brief.
+
+When the subject is itself a picture-bearing object - a photograph, a
+tarot card, a poster, a stamp, a screen - everything inside its own edges
+is the subject, the depicted scene and that scene's own background
+included. The ground to leave out is only what lies outside the object:
+the table it rests on, the wall behind it.
 JD_PROMPT;
 
-const JD_HARNESS = 'v4-web.2';
+const JD_HARNESS = 'v4-web.3';
 
 // ---------------------------------------------------------------------------
 // EFFORT PROFILES — the reasoning condition, named and versioned.
@@ -107,9 +113,14 @@ const JD_EFFORT = [
 // The system prompt is shared by both profiles, so a prompt edit moves BOTH.
 // Everything generated before this stays under v3-web.1 and is permanently
 // distinguishable — those 77 responses were drawn to a different brief.
+// v4-*.3 (owner catch, 2026-08-30): "draw the figure, never the ground" was
+// reading too far on picture-bearing subjects — a tarot card came back with
+// the card's own face left blank, its printed scene mistaken for background.
+// The prompt now says where the object's edge is: everything inside it is
+// the subject, and the ground is only what lies outside.
 const JD_HARNESS_BY_PROFILE = [
-    'web'   => 'v4-web.2',
-    'bench' => 'v4-bench.2',
+    'web'   => 'v4-web.3',
+    'bench' => 'v4-bench.3',
 ];
 
 // A benchmark run is not on a visitor's clock. CLI has no max_execution_time,

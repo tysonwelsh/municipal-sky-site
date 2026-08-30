@@ -2829,8 +2829,9 @@ function JD_layerOpen() {
         fig('$' + (+t.cost_usd || 0).toFixed(2), 'provider spend') +
       '</div>' +
       '<p class="fx-sub fx-ledger-sub">turns and drawings are visitor ' +
-        'turns; ratings count the current rubric only; spend includes the ' +
-        'curated bench — counted ' +
+        'turns; the model charts count the current rubric and the four-model ' +
+        'turns only — the older corpus was never a controlled comparison; ' +
+        'spend includes the curated bench — counted ' +
         esc(day(data.generated)) + '</p>' +
       '</section>';
   }

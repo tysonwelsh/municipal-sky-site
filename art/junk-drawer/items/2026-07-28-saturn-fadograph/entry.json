@@ -77,5 +77,6 @@
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Landscape 800×600 print: four concentric ring bands, limb darkening, ring shadow across the globe, foxing spots in both bleach and stain colors, and a luminance mask over the whole scene that fades the print toward its corners. Blur filters do the fadograph work rather than grain alone. The `sky` backdrop rect reaches 0.95 alpha at center, so the 'transparent background' instruction is only partly honored."
     }
-  ]
+  ],
+  "display_note": "Scrapped at the bench (a retire-request flag is on file) but KEPT IN THE DRAWER by owner call (2026-08-30): shown as it always was — its original responses, no current-rubric ratings. The flag settles it for the BACKLOG only; do not retire this item when applying scrap flags."
 }
