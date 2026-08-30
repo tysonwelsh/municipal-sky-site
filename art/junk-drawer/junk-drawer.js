@@ -8291,6 +8291,15 @@ function JD_layerOpen() {
 (function () {
   if (!/[?&]bench(?:=|&|$)/.test(location.search)) return;
 
+  /* DIRECT ADDRESSING (owner, 2026-08-29): ?bench&item=<item_id> opens that
+     one item on the bench whatever its flags say — the door back onto the
+     bench for a LEGACY response the owner wants to keep in the drawer (rate
+     it under the current rubric here, then scripts/keep-legacy.py applies
+     the ratings and pins it). The queue only backs an item's ORIGINAL
+     responses with generations, so exactly those are what get seated. */
+  var directM = /[?&]item=([^&]+)/.exec(location.search);
+  var directId = directM ? decodeURIComponent(directM[1]) : null;
+
   var API_Q = JD_API + '/api/jd-bench-queue.php';
   var API_R = JD_API + '/api/jd-item-rate.php';
   var BASE = '/art/junk-drawer/';
@@ -8675,6 +8684,13 @@ function JD_layerOpen() {
         }
         Q = j;
         var open = window.JD_turn.isOpen();
+        /* the directly-addressed item takes the stage first, flags or not —
+           once, so filing it advances into the ordinary queue */
+        if (directId && !open && !rerunFor) {
+          var direct = itemById(directId);
+          directId = null;
+          if (direct) { openItem(direct); return; }
+        }
         if (!open && !rerunFor) {
           /* nothing on the stage: seat the current item if it still needs
              work (it may have been finished on another device), else move on */

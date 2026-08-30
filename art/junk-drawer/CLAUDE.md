@@ -212,6 +212,22 @@ report card states Cost/Tokens. Old responses
 stay untouched (permanent record). Validate, commit
 `junk-drawer: add rerun responses to "<title>" (<models>)`.
 
+## Procedure: KEEP a legacy response as the drawer's display
+
+The owner's exception to replace-with-the-rerun (2026-08-29): for some
+legacy items the ORIGINAL response — usually Claude Fable 5's — stays the
+drawer's display even without current-pool comparison data (named so far:
+the ionic column, the loose cigarette; more will surface as reruns land).
+The path: the owner rates the favorite on the current rubric at
+`?bench&item=<item_id>` (direct bench addressing — the queue backs only
+original responses, so those seat), then `scripts/keep-legacy.py <item_id>
+<rid>` applies the filed bench ratings to entry.json (grade regraded with
+history if changed, axis annotations written), pins `primary` to it, and
+notes the call. Same full-rubric gate as harvests. Validate, commit,
+upload the entry.json.
+
+## Procedure: regrade / annotate an existing response
+
 Push the old grade into `grade_history` as
 `{"grade": <old rank number>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,
 then set the new `grade` (a rank number, e.g. `2.0`) and `graded`. Adding annotations on new axes to old
