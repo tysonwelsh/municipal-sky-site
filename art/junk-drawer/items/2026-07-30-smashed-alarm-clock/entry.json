@@ -32,7 +32,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.0%; no viewBox normalization applied. Obeyed the output format exactly: bare SVG, no prose, no code fences. The smallest of the three at 9.6KB and 108 elements, and the flattest — 8 hex colors, zero gradients and zero filters, everything a solid fill inside a uniform #111111 keyline, which is the most literal reading of \"colors and lines and such\". Carries the highest rect count of the three (27) while still honoring the appendix's no-backdrop rule: every rect is a gear tooth or a key shaft, none is a full-bleed backdrop. What it did add is two canvas-filling starburst polygons in yellow and orange behind the clock — a pop-art ground the prompt didn't ask for, and the main thing the embellished mark records. The forensics are staged as a scatter rather than a single impact: the top of the case is caved into a zigzag with a darker crush shading beneath it, one bell stays attached and tilted while the other flies off at 38°, and a mainspring escapes a side crack as a doubled path (black stroke-width 13 under blue 5). Three gears, a winding key, glass shards, sparks and two loose screws are flung to the margins. The dial cracks radiate from roughly (428,337) but the case dent and the flying debris don't share that origin, so the read is of several blows rather than one mallet strike. 20 XML comments label the parts (\"impact speed lines\", \"crush shading under dent\"); wrote no title element."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.0%; no viewBox normalization applied. Obeyed the output format exactly: bare SVG, no prose, no code fences. The smallest of the three at 9.6KB and 108 elements, and the flattest — 8 hex colors, zero gradients and zero filters, everything a solid fill inside a uniform #111111 keyline, which is the most literal reading of \"colors and lines and such\". Carries the highest rect count of the three (27) while still honoring the appendix's no-backdrop rule: every rect is a gear tooth or a key shaft, none is a full-bleed backdrop. What it did add is two canvas-filling starburst polygons in yellow and orange behind the clock — a pop-art ground the prompt didn't ask for, and the main thing the embellished mark records. The forensics are staged as a scatter rather than a single impact: the top of the case is caved into a zigzag with a darker crush shading beneath it, one bell stays attached and tilted while the other flies off at 38°, and a mainspring escapes a side crack as a doubled path (black stroke-width 13 under blue 5). Three gears, a winding key, glass shards, sparks and two loose screws are flung to the margins. The dial cracks radiate from roughly (428,337) but the case dent and the flying debris don't share that origin, so the read is of several blows rather than one mallet strike. 20 XML comments label the parts (\"impact speed lines\", \"crush shading under dent\"); wrote no title element. Retired from display by owner call (2026-08-30) — the kept refined response and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",
@@ -55,7 +56,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%, the tightest of the three; no viewBox normalization applied. Obeyed the output format exactly: bare SVG, no prose, no code fences. The largest and densest of the three at 15KB and 177 elements, 118 of them paths, and the only one to keep a defs block — a reusable case outline, two gear profiles and an unwinding mainspring, instantiated 16 times via use, plus two clipPaths that crop the dial. Zero rect elements anywhere, so the no-opaque-backdrop rule is honored by construction. Also the only response to name itself: <title>Smashed key-wound mechanical alarm clock, pop-art</title>. Drew its numerals as stroked path glyphs under rotate/skewX/scale transforms rather than text elements — 12, 3, 6 and 9 hand-built and leaning at the angles the shattered dial would tilt them — which is why the document contains no text element at all. The mainspring is one 40-segment spiral stroked three times (32 black, 18 cyan, 5 pale cyan) unwinding off the left edge and past the bottom corner. What earns the overgrown mark is the surround: three starburst polygons whose vertices run far outside the viewBox (out to x=1843 and y=-834) fill the entire canvas behind the clock, joined by 11 shard-and-highlight pairs, six loose gears, a flung foot and ten speed lines, so the debris field competes with the clock for the frame. The strained mark has visible causes: a 22,24-offset silhouette group reads as a drop shadow under a subject that otherwise has no light direction, and the caved-in dial plate at (552,356)-(668,466) sits over the face as a separate dark slab whose edges don't meet the crack lines running underneath it."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%, the tightest of the three; no viewBox normalization applied. Obeyed the output format exactly: bare SVG, no prose, no code fences. The largest and densest of the three at 15KB and 177 elements, 118 of them paths, and the only one to keep a defs block — a reusable case outline, two gear profiles and an unwinding mainspring, instantiated 16 times via use, plus two clipPaths that crop the dial. Zero rect elements anywhere, so the no-opaque-backdrop rule is honored by construction. Also the only response to name itself: <title>Smashed key-wound mechanical alarm clock, pop-art</title>. Drew its numerals as stroked path glyphs under rotate/skewX/scale transforms rather than text elements — 12, 3, 6 and 9 hand-built and leaning at the angles the shattered dial would tilt them — which is why the document contains no text element at all. The mainspring is one 40-segment spiral stroked three times (32 black, 18 cyan, 5 pale cyan) unwinding off the left edge and past the bottom corner. What earns the overgrown mark is the surround: three starburst polygons whose vertices run far outside the viewBox (out to x=1843 and y=-834) fill the entire canvas behind the clock, joined by 11 shard-and-highlight pairs, six loose gears, a flung foot and ten speed lines, so the debris field competes with the clock for the frame. The strained mark has visible causes: a 22,24-offset silhouette group reads as a drop shadow under a subject that otherwise has no light direction, and the caved-in dial plate at (552,356)-(668,466) sits over the face as a separate dark slab whose edges don't meet the crack lines running underneath it. Retired from display by owner call (2026-08-30) — the kept refined response and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -78,7 +80,8 @@
         "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
-      "notes": "The base for r4, which refines these bytes; this response is unchanged. Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.3%; no viewBox normalization applied. The only response to disobey the output format: it wrapped the SVG in a code fence, prefaced it with \"This is confirmed clean … Here is the final SVG document\", and appended a note afterward. Per the skill, the surrounding prose and fence were stripped and nothing inside the document was touched; the disobedience is recorded here rather than repaired. That trailing note also reported a suspected prompt injection — it had found a scratchpad file of its own replaced by an unrelated clock design alongside files it never created, together with an instruction not to mention this. The stray files are leftover generator scripts sitting in a scratchpad directory shared with earlier work (timestamped before this run), so the collision was mundane rather than adversarial; it disregarded the concealment instruction, discarded the substituted content and rebuilt from its own design, and the filed bytes are its own output. Lowest element count of the three (80) and the only one with a deliberately offset viewBox (\"75 35 655 710\") rather than an origin-anchored square. Earns the disciplined mark by drawing the clock and nothing else — no starburst ground, no scattered debris field, just three impact rays and a handful of shards inside the dial. The forensics are the strongest in the set and they are single-origin: case, bezel and dial are three concentric hand-computed polylines of ~90 vertices each that all deform inward at the same place, and all eight crack paths plus the three burst rays radiate from one point, (474.6,363.5), in the dial's upper right. Consequences follow from that one strike — the right bell is rotated 21° off a bent bracket torn loose, the wind key is kinked through four segments, the mainspring escapes upper-left as a doubled stroke, and one of the three feet is flung sideways at 38°. The strained mark is earned at the hands: both are drawn as straight polylines from an undamaged centre hub and pass cleanly over the shattered quadrant without bending or breaking, so the one part of the mechanism that should show the blow is the part that reads intact."
+      "notes": "The base for r4, which refines these bytes; this response is unchanged. Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.3%; no viewBox normalization applied. The only response to disobey the output format: it wrapped the SVG in a code fence, prefaced it with \"This is confirmed clean … Here is the final SVG document\", and appended a note afterward. Per the skill, the surrounding prose and fence were stripped and nothing inside the document was touched; the disobedience is recorded here rather than repaired. That trailing note also reported a suspected prompt injection — it had found a scratchpad file of its own replaced by an unrelated clock design alongside files it never created, together with an instruction not to mention this. The stray files are leftover generator scripts sitting in a scratchpad directory shared with earlier work (timestamped before this run), so the collision was mundane rather than adversarial; it disregarded the concealment instruction, discarded the substituted content and rebuilt from its own design, and the filed bytes are its own output. Lowest element count of the three (80) and the only one with a deliberately offset viewBox (\"75 35 655 710\") rather than an origin-anchored square. Earns the disciplined mark by drawing the clock and nothing else — no starburst ground, no scattered debris field, just three impact rays and a handful of shards inside the dial. The forensics are the strongest in the set and they are single-origin: case, bezel and dial are three concentric hand-computed polylines of ~90 vertices each that all deform inward at the same place, and all eight crack paths plus the three burst rays radiate from one point, (474.6,363.5), in the dial's upper right. Consequences follow from that one strike — the right bell is rotated 21° off a bent bracket torn loose, the wind key is kinked through four segments, the mainspring escapes upper-left as a doubled stroke, and one of the three feet is flung sideways at 38°. The strained mark is earned at the hands: both are drawn as straight polylines from an undamaged centre hub and pass cleanly over the shattered quadrant without bending or breaking, so the one part of the mechanism that should show the blow is the part that reads intact. Retired from display by owner call (2026-08-30) — the kept refined response and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",
@@ -90,18 +93,136 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": 4.0,
-      "graded": "2026-07-30",
-      "grade_history": [],
+      "grade": 5.0,
+      "graded": "2026-08-30",
+      "grade_history": [
+        {
+          "grade": 4.0,
+          "date": "2026-07-30",
+          "taxonomy_version": null,
+          "note": "raised Choice→Prime by owner call at the legacy keep (2026-08-30)"
+        }
+      ],
       "annotations": {
-        "instruction-following": 3.0,
-        "restraint": 3.0,
-        "integrity": 2.0,
-        "style": 3.0,
-        "je-ne-sais-quoi": 3.0
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 3.0
       },
       "transcript": null,
-      "notes": "NOT a clean-context sample, and not comparable to r1–r3 as an eval specimen: this is r3's artwork refined by a different model. r3's SVG was handed to a fresh Opus 5 subagent together with one owner-directed refinement prompt naming three changes — resize and reshape the bells, turn the flat edge into a genuine impact smash, add a gear poking out — plus the standing brief to fix structural integrity without restyling or re-composing. prompt_count 2 counts the whole lineage: Sonnet's original creative prompt that produced the base, and the one refinement prompt. Editing inherently required showing the model the existing SVG, so the clean-context discipline the other three were generated under does not apply here; filed under its own lineage model id for that reason, registered as taxonomy v7, rather than under either parent. What changed: the two bells drop from near-circular domes (rx 99, ry 93) to shallow wider-than-tall caps ~152 × 58 on flared crimp flanges with crown bosses and mounting posts into the case shoulder — about 35% of case width where they had been 48%. The straight rim chord is regenerated in polar coordinates over θ 248°–356° as a buckled crater descending through folds to its deepest point at exactly (474.6, 363.5) — the same origin the cracks already radiated from — then shearing back out to full radius near 3 o'clock, with a torn tongue of case metal peeled up out of it. A 12-tooth cog in the mainspring's #CBD5DA sits at (572, 372) drawn BEFORE the case body, so the crushed rim clips it and the tongue overlaps it in front: real occlusion, not a decal. The hour hand that used to cross the shattered quadrant intact is folded back with a double kink and ends short; the minute hand gains a buckle. Five crack lines that ran off into empty background were rerouted to four that stay on metal, the right bell's bracket is re-hinged onto two points of the crushed rim, and the wind key moved behind the case. Verified independently of the refining agent's own report: viewBox unchanged at \"75 35 655 710\", ink-bounds check passed at worst dead margin 1.3%, no rect element, well-formed XML, no script/handler/foreignObject/external reference, and a palette diff against the base showing zero colors added and zero dropped. 80 elements to 87 — a repair, not a rebuild. The owner pinned this response for display, so the drawer shows it in place of r3; the integrity mark stayed strained even after the hands were fixed."
+      "notes": "NOT a clean-context sample, and not comparable to r1–r3 as an eval specimen: this is r3's artwork refined by a different model. r3's SVG was handed to a fresh Opus 5 subagent together with one owner-directed refinement prompt naming three changes — resize and reshape the bells, turn the flat edge into a genuine impact smash, add a gear poking out — plus the standing brief to fix structural integrity without restyling or re-composing. prompt_count 2 counts the whole lineage: Sonnet's original creative prompt that produced the base, and the one refinement prompt. Editing inherently required showing the model the existing SVG, so the clean-context discipline the other three were generated under does not apply here; filed under its own lineage model id for that reason, registered as taxonomy v7, rather than under either parent. What changed: the two bells drop from near-circular domes (rx 99, ry 93) to shallow wider-than-tall caps ~152 × 58 on flared crimp flanges with crown bosses and mounting posts into the case shoulder — about 35% of case width where they had been 48%. The straight rim chord is regenerated in polar coordinates over θ 248°–356° as a buckled crater descending through folds to its deepest point at exactly (474.6, 363.5) — the same origin the cracks already radiated from — then shearing back out to full radius near 3 o'clock, with a torn tongue of case metal peeled up out of it. A 12-tooth cog in the mainspring's #CBD5DA sits at (572, 372) drawn BEFORE the case body, so the crushed rim clips it and the tongue overlaps it in front: real occlusion, not a decal. The hour hand that used to cross the shattered quadrant intact is folded back with a double kink and ends short; the minute hand gains a buckle. Five crack lines that ran off into empty background were rerouted to four that stay on metal, the right bell's bracket is re-hinged onto two points of the crushed rim, and the wind key moved behind the case. Verified independently of the refining agent's own report: viewBox unchanged at \"75 35 655 710\", ink-bounds check passed at worst dead margin 1.3%, no rect element, well-formed XML, no script/handler/foreignObject/external reference, and a palette diff against the base showing zero colors added and zero dropped. 80 elements to 87 — a repair, not a rebuild. The owner pinned this response for display, so the drawer shows it in place of r3; the integrity mark stayed strained even after the hands were fixed. Kept as the drawer’s display by owner call (2026-08-30) — a legacy favorite, hand-filed with top marks on every current axis and the grade raised to Prime; the rerun set stands as the comparison."
+    },
+    {
+      "rid": "r5",
+      "file": "claude-opus-5-rerun.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M1879W0X5TY5GMWCXBJEC1FF), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 800 800\" to ink bounds (\"54.5 16.5 712.8 760.2\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 2.0,
+        "layering": 2.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 505,
+        "output": 3922,
+        "total": 4427
+      },
+      "cost_usd": 0.100575
+    },
+    {
+      "rid": "r6",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M1879W0X5TY5GMWCXBJEC1FF), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 500 500\" to ink bounds (\"54.0 14.0 428.8 477.8\").",
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 2.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 342,
+        "output": 3128,
+        "total": 3470
+      },
+      "cost_usd": 0.03822
+    },
+    {
+      "rid": "r7",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M1879W0X5TY5GMWCXBJEC1FF), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 800 800\" to ink bounds (\"173.0 208.8 539.8 572.5\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 2.0,
+        "layering": 2.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 348,
+        "output": 3026,
+        "total": 3374
+      },
+      "cost_usd": 0.030695
+    },
+    {
+      "rid": "r8",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M1879W0X5TY5GMWCXBJEC1FF), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"25.0 13.0 351.8 344.8\").",
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 2.0,
+        "layering": 3.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 435,
+        "output": 2033,
+        "total": 2468
+      },
+      "cost_usd": 0.0318
     }
   ]
 }

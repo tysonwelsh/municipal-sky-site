@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="25.0 13.0 351.8 344.8">
+  <!-- burst rays -->
+  <g stroke="#FFD500" stroke-width="6" stroke-linecap="round">
+    <line x1="60" y1="120" x2="30" y2="100"/>
+    <line x1="340" y1="120" x2="372" y2="98"/>
+    <line x1="70" y1="300" x2="38" y2="322"/>
+    <line x1="330" y1="300" x2="364" y2="324"/>
+  </g>
+  <polygon points="200,18 212,52 248,40 226,70 258,84 220,86 226,124 200,94 174,124 180,86 142,84 174,70 152,40 188,52" fill="#FF2E63" stroke="#1A1A1A" stroke-width="6" stroke-linejoin="round"/>
+  <!-- legs -->
+  <path d="M148 318 L128 356 L152 356 L166 322 Z" fill="#1A1A1A"/>
+  <path d="M252 322 L268 356 L292 356 L256 318 Z" fill="#1A1A1A"/>
+  <!-- left bell, dented and tilted -->
+  <g transform="rotate(-28 130 110)">
+    <path d="M96 118 Q92 62 130 58 Q168 62 164 118 Z" fill="#FF2E63" stroke="#1A1A1A" stroke-width="7"/>
+    <path d="M112 92 L148 78" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- right bell, dented -->
+  <g transform="rotate(20 270 112)">
+    <path d="M236 118 Q232 60 262 62 Q272 64 278 74 L288 66 Q296 84 288 118 Z" fill="#FF2E63" stroke="#1A1A1A" stroke-width="7"/>
+    <path d="M250 86 L282 96" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- clock body, squashed/dented -->
+  <path d="M200 108
+           C252 108 296 142 306 196
+           C312 230 304 262 288 286
+           C262 322 236 332 200 332
+           C150 332 108 306 96 250
+           C88 214 96 176 120 148
+           C142 122 168 108 200 108 Z"
+        fill="#00B8D4" stroke="#1A1A1A" stroke-width="9"/>
+  <!-- big dent caving into the right side -->
+  <path d="M306 196 C282 200 268 214 266 232 C264 252 276 270 300 276 C308 250 312 224 306 196 Z" fill="#00798C" stroke="#1A1A1A" stroke-width="6"/>
+  <!-- face -->
+  <circle cx="196" cy="222" r="86" fill="#FFF3D6" stroke="#1A1A1A" stroke-width="8"/>
+  <!-- cracks in the glass -->
+  <g stroke="#1A1A1A" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M240 190 L206 216 L178 200"/>
+    <path d="M206 216 L214 252 L246 268"/>
+    <path d="M206 216 L168 236 L140 224"/>
+    <path d="M214 252 L188 282"/>
+    <path d="M168 236 L160 268"/>
+  </g>
+  <!-- numerals, knocked loose -->
+  <g fill="#1A1A1A" font-family="Arial Black, Arial" font-weight="900" font-size="26" text-anchor="middle">
+    <text x="196" y="166" transform="rotate(14 196 162)">12</text>
+    <text x="254" y="200" transform="rotate(-20 254 196)">3</text>
+    <text x="140" y="232" transform="rotate(24 140 228)">9</text>
+    <text x="204" y="306" transform="rotate(-32 204 300)">6</text>
+  </g>
+  <!-- bent hands -->
+  <path d="M196 222 L196 176 L208 168" fill="none" stroke="#FF2E63" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M196 222 L228 244 L244 240" fill="none" stroke="#1A1A1A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="196" cy="222" r="9" fill="#FFD500" stroke="#1A1A1A" stroke-width="5"/>
+  <!-- sprung mainspring bursting out the top of the case -->
+  <path d="M196 110 C180 96 214 90 200 76 C186 62 220 56 206 42" fill="none" stroke="#1A1A1A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M196 110 C180 96 214 90 200 76 C186 62 220 56 206 42" fill="none" stroke="#FFD500" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 8"/>
+  <!-- gears flying out -->
+  <g transform="translate(316 152) rotate(18)">
+    <circle r="17" fill="#FFD500" stroke="#1A1A1A" stroke-width="5"/>
+    <circle r="6" fill="#1A1A1A"/>
+    <g stroke="#1A1A1A" stroke-width="6">
+      <line x1="-22" y1="0" x2="-17" y2="0"/><line x1="17" y1="0" x2="22" y2="0"/>
+      <line x1="0" y1="-22" x2="0" y2="-17"/><line x1="0" y1="17" x2="0" y2="22"/>
+      <line x1="-15" y1="-15" x2="-12" y2="-12"/><line x1="12" y1="12" x2="15" y2="15"/>
+      <line x1="15" y1="-15" x2="12" y2="-12"/><line x1="-12" y1="12" x2="-15" y2="15"/>
+    </g>
+  </g>
+  <g transform="translate(78 190) rotate(-14)">
+    <circle r="12" fill="#FF2E63" stroke="#1A1A1A" stroke-width="5"/>
+    <circle r="4" fill="#1A1A1A"/>
+    <g stroke="#1A1A1A" stroke-width="5">
+      <line x1="-17" y1="0" x2="-12" y2="0"/><line x1="12" y1="0" x2="17" y2="0"/>
+      <line x1="0" y1="-17" x2="0" y2="-12"/><line x1="0" y1="12" x2="0" y2="17"/>
+    </g>
+  </g>
+  <!-- loose screws -->
+  <circle cx="88" cy="258" r="6" fill="#FFD500" stroke="#1A1A1A" stroke-width="4"/>
+  <line x1="84" y1="258" x2="92" y2="258" stroke="#1A1A1A" stroke-width="3"/>
+  <circle cx="322" cy="238" r="6" fill="#FFD500" stroke="#1A1A1A" stroke-width="4"/>
+  <line x1="318" y1="242" x2="326" y2="234" stroke="#1A1A1A" stroke-width="3"/>
+  <!-- impact star on the dent -->
+  <polygon points="300,208 310,222 328,220 316,234 322,252 304,244 292,258 292,240 276,232 292,226" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round"/>
+</svg>

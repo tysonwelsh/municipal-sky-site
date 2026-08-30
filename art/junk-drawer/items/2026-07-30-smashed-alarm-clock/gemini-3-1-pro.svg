@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="54.0 14.0 428.8 477.8">
+  <g stroke="#000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Pop-art dynamic impact lines -->
+    <path d="M 250 150 L 120 40 L 200 120 M 250 150 L 250 20 L 260 120 M 250 150 L 420 30 L 320 110 M 250 150 L 470 170 L 380 190 M 250 150 L 60 180 L 160 210" fill="none" stroke="#00E5FF" stroke-width="8"/>
+    
+    <!-- Left flying gear -->
+    <path d="M 70 350 L 80 320 L 100 330 L 120 300 L 140 320 L 160 300 L 170 330 L 190 330 L 170 360 L 180 390 L 160 380 L 140 400 L 120 380 L 90 390 Z" fill="#FFEA00" transform="rotate(-20 130 350)"/>
+    <circle cx="130" cy="350" r="15" fill="#FFF"/>
+
+    <!-- Right flying bell -->
+    <path d="M 370 180 C 370 120, 470 120, 470 180 Z" fill="#FFEA00" transform="rotate(45 420 150)"/>
+    <rect x="410" y="180" width="20" height="15" fill="#FF007F" transform="rotate(45 420 150)"/>
+    <!-- Speed lines for right bell -->
+    <path d="M 320 150 L 380 130 M 340 180 L 390 160" fill="none" stroke="#000" stroke-width="4"/>
+
+    <!-- Splayed Legs -->
+    <path d="M 180 430 L 130 480 M 320 440 L 390 470" fill="none" stroke="#FF007F" stroke-width="20"/>
+
+    <!-- Squashed Clock Body -->
+    <path d="M 100 300 C 90 200, 200 180, 250 190 C 300 180, 380 220, 390 320 C 400 420, 300 450, 250 450 C 200 450, 110 400, 100 300 Z" fill="#FF007F"/>
+
+    <!-- Crushed Left Bell -->
+    <path d="M 140 210 C 130 160, 210 160, 220 200 C 200 215, 170 215, 140 210 Z" fill="#FFEA00"/>
+
+    <!-- Broken Face Background -->
+    <path d="M 120 310 C 110 220, 190 210, 240 220 C 290 210, 360 240, 360 330 C 360 410, 290 420, 240 420 C 190 420, 130 390, 120 310 Z" fill="#FFF"/>
+
+    <!-- Face Cracks -->
+    <path d="M 230 215 L 250 280 L 210 320 L 270 380 L 230 420" fill="none" stroke="#000" stroke-width="5"/>
+    <path d="M 250 280 L 320 250 M 210 320 L 120 290 M 270 380 L 350 370" fill="none" stroke="#000" stroke-width="5"/>
+
+    <!-- Shattered Glass Shards -->
+    <path d="M 150 240 L 180 230 L 160 270 Z" fill="#00E5FF" fill-opacity="0.5"/>
+    <path d="M 330 310 L 350 280 L 310 270 Z" fill="#00E5FF" fill-opacity="0.5"/>
+    <path d="M 200 400 L 220 370 L 170 380 Z" fill="#00E5FF" fill-opacity="0.5"/>
+
+    <!-- Distorted Numbers -->
+    <text x="230" y="250" font-family="sans-serif" font-weight="900" font-size="36" fill="#000" transform="rotate(-15 230 250)">12</text>
+    <text x="310" y="300" font-family="sans-serif" font-weight="900" font-size="32" fill="#000" transform="rotate(25 310 300)">3</text>
+    <text x="210" y="405" font-family="sans-serif" font-weight="900" font-size="34" fill="#000" transform="rotate(-40 210 405)">6</text>
+    <text x="140" y="320" font-family="sans-serif" font-weight="900" font-size="32" fill="#000" transform="rotate(60 140 320)">9</text>
+    <!-- Falling number -->
+    <text x="350" y="450" font-family="sans-serif" font-weight="900" font-size="28" fill="#000" transform="rotate(70 350 450)">4</text>
+
+    <!-- Bent Clock Hands -->
+    <path d="M 240 310 L 210 260 L 220 250 Z" fill="#000"/>
+    <path d="M 240 310 L 300 340 L 290 350 Z" fill="#000"/>
+    <circle cx="240" cy="310" r="10" fill="#FFEA00"/>
+
+    <!-- Popping Spring -->
+    <path d="M 270 380 C 320 360, 360 410, 390 360 C 420 310, 380 250, 440 250 C 490 250, 480 320, 450 350" fill="none" stroke="#00E5FF" stroke-width="12"/>
+    
+    <!-- Top Impact Burst (Pop Art Accent) -->
+    <path d="M 250 190 L 230 150 L 260 160 L 280 130 L 270 170 L 310 180 L 270 190 Z" fill="#FFEA00"/>
+  </g>
+</svg>
