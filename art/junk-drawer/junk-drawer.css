@@ -4240,3 +4240,64 @@ html.jd-bench-on .jd-turn-scrim {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ---- HOW BIG IS IT — the curation's closing card (owner, 2026-08-30) ------
+   The one judgment the rubric never asked for: how large the object reads in
+   the drawer, on the taxonomy's own five tiers. Five pressable cards, each
+   showing the tier's actual footprint as a filled square drawn from its own
+   `box` number — the scale demonstrating itself, so the choice is made by eye
+   rather than by adjective. The chosen one takes the graphite fill the docket
+   uses for a finished step: the owner's pencil, again. Visitors never see
+   this card (their items are filed at the fixed visitor tier). */
+.jd-turn[data-view="size"] { width: min(760px, 100%); }
+.jd-size {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 10px; align-items: end; margin: var(--sp-3) 0 var(--sp-2);
+}
+.jd-size-tier {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 6px 10px; cursor: pointer;
+  background: rgba(255, 250, 232, 0.5);
+  border: 1px solid var(--trule); border-radius: 2px;
+  font: inherit; color: var(--tink); text-align: center;
+}
+.jd-size-tier:hover { border-color: var(--tink); }
+.jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-size-tier.is-on {
+  border-color: var(--graphite); border-width: 2px; padding: 11px 5px 9px;
+  background: var(--tpaper-hi);
+  box-shadow: inset 0 0 0 1px rgba(75, 64, 48, 0.18);
+}
+/* the swatch IS the tier: --sbox is the taxonomy's own box number, drawn
+   against the largest (30) so the five squares read as one scale */
+.jd-size-swatch {
+  display: block; align-self: center;
+  width: calc(var(--sbox) / 30 * 62px); height: calc(var(--sbox) / 30 * 62px);
+  min-width: 6px; min-height: 6px;
+  background: var(--graphite); opacity: 0.55; border-radius: 1px;
+}
+.jd-size-tier.is-on .jd-size-swatch { opacity: 1; }
+.jd-size-name {
+  font-family: var(--tform); font-size: var(--t-label);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.jd-size-desc {
+  font-size: var(--t-micro); line-height: 1.4; color: var(--tink-3);
+}
+/* the swatches need a common floor to be comparable, so the row aligns to
+   the bottom and the tallest tier sets the height */
+.jd-size-tier { justify-content: flex-end; }
+@media (max-width: 700px) {
+  /* the phone stacks them: the swatch beside its name, still to scale */
+  .jd-size { grid-template-columns: 1fr; gap: 6px; }
+  .jd-size-tier {
+    flex-direction: row; align-items: center; justify-content: flex-start;
+    gap: 12px; text-align: left; padding: 8px 10px; min-height: 44px;
+  }
+  .jd-size-tier.is-on { padding: 7px 9px; }
+  .jd-size-swatch {
+    flex: 0 0 auto;
+    width: calc(var(--sbox) / 30 * 34px); height: calc(var(--sbox) / 30 * 34px);
+  }
+  .jd-size-desc { display: none; }   /* the swatch says it on a phone */
+}

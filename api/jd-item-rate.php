@@ -188,6 +188,17 @@ try {
           WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
             AND kind = ?"
     );
+    // FLAGS REPLACE THEIR OWN KIND ONLY (2026-08-30). A flag used to clear
+    // every other flag on the generation, which was harmless while the only
+    // flags were retire-request and rerun-request (mutually exclusive
+    // intents, last word wins). The bench now files a SIZE flag too, and a
+    // size must not silently un-scrap an item — so a flag carrying an
+    // axis_id replaces only flags wearing that same axis_id.
+    $delFlagAxis = $db->prepare(
+        "DELETE FROM jd_ratings
+          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
+            AND kind = 'flag' AND axis_id = ?"
+    );
     $ins = $db->prepare(
         'INSERT INTO jd_ratings
             (id, generation_id, kind, axis_id, value, note, taxonomy_version,
@@ -231,6 +242,8 @@ try {
         }
         if ($kind === 'axis') {
             $delAxis->execute([$generationId, $curator, $axisId]);
+        } elseif ($kind === 'flag' && $axisId !== null) {
+            $delFlagAxis->execute([$generationId, $curator, $axisId]);
         } else {
             $delOther->execute([$generationId, $curator, $kind]);
         }

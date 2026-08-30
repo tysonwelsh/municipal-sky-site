@@ -85,6 +85,22 @@ foreach ($taxonomy['grades'] ?? [] as $g) {
 }
 usort($grades, fn($a, $b) => $b['rank'] <=> $a['rank']);
 
+// THE SIZE SCALE (2026-08-30): the five tiers the bench's closing card asks
+// for — how big the item reads in the drawer, the owner's call per item and
+// the one curatorial field the rubric never covered. Served straight from
+// the taxonomy so the card renders from data like every other scale.
+$sizeTiers = [];
+foreach ($taxonomy['sizeTiers'] ?? [] as $s) {
+    if (isset($s['id'])) {
+        $sizeTiers[] = [
+            'id'          => (string) $s['id'],
+            'label'       => (string) ($s['label'] ?? $s['id']),
+            'description' => (string) ($s['description'] ?? ''),
+            'box'         => $s['box'] ?? null,
+        ];
+    }
+}
+
 // id -> label, for the bench's unveil: model names print only after an item's
 // grades are filed, and the queue is the one payload the bench is guaranteed
 // to hold (data.php may not have answered on a broken page).
@@ -184,6 +200,7 @@ $totalRated     = 0;
 
 foreach ($subs as $sub) {
     $itemId = (string) $sub['item_id'];
+    $sizeFiled = null;          // the tier the bench last filed for this item
     $entryPath = $ITEMS . '/' . $itemId . '/entry.json';
     $entry = is_readable($entryPath)
         ? json_decode((string) file_get_contents($entryPath), true)
@@ -216,6 +233,13 @@ foreach ($subs as $sub) {
                     $gradeBench = (float) $r['value'];
                 } elseif ($r['kind'] === 'flag') {
                     $flags[] = ['axis_id' => $r['axis_id'], 'note' => $r['note']];
+                    // the size card files its answer as a flag wearing the
+                    // tier in its note ("SIZE m") — the item's, not the
+                    // response's, so the first one seen is the item's
+                    if ($r['axis_id'] === 'size' && $sizeFiled === null
+                        && preg_match('/^SIZE ([a-z]{1,2})$/', (string) $r['note'], $m2)) {
+                        $sizeFiled = $m2[1];
+                    }
                 }
                 if ($r['note'] !== null && $note === null) {
                     $note = $r['note'];
@@ -275,6 +299,11 @@ foreach ($subs as $sub) {
         // prompt, byte for byte, which is the same join jd-harvest.php makes.
         // The bench skips a flagged item only when this is true.
         'rerun_landed' => isset($ratedRerunPrompts[(string) $sub['prompt']]),
+        // the size already on file, if any: the tier the entry carries today
+        // (the drawer's truth) and the tier the bench last filed (the owner's
+        // newer word, waiting to be applied). The card prefills from either.
+        'size_class'   => $entry['sizeClass'] ?? null,
+        'size_filed'   => $sizeFiled,
         'responses' => $responses,
     ];
 }
@@ -285,6 +314,7 @@ jd_json_out(200, [
     'taxonomy_version' => (int) ($taxonomy['version'] ?? 0),
     'axes'             => $axes,
     'grades'           => $grades,
+    'size_tiers'       => $sizeTiers,
     'models'           => $models,
     'items'            => $items,
     'progress'         => [

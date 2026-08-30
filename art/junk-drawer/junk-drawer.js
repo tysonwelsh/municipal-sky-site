@@ -6884,7 +6884,9 @@ function JD_layerOpen() {
       tray.setAttribute('aria-label', 'The row' +
         (podArmed === 0 ? ', waiting for a drawing' : ''));
     }
-    setDisabled('[data-act="file"]', !callReady());
+    /* the ranking's own button is FILE on a visitor's turn and NEXT on a
+       curation (the size card follows) — arm whichever is there */
+    setDisabled('[data-act="file"], [data-act="next"]', !callReady());
   }
   /* the only words the podium ever produces, and they are never printed:
      a visually-hidden status line, for the visitors who can't see the steps */
@@ -7261,6 +7263,23 @@ function JD_layerOpen() {
     '<path d="M2.5 11.5 A3.5 3.5 0 0 0 9.5 11.5"/>' +
     '<path d="M18 6 L15.5 11.5 M18 6 L20.5 11.5"/>' +
     '<path d="M14.5 11.5 A3.5 3.5 0 0 0 21.5 11.5"/></svg>';
+  /* the steps this turn walks, in order: a drawing per surviving slot, the
+     ranking when there is more than one, and — curation only — the size
+     card that closes it (owner, 2026-08-30) */
+  function stepSeq() {
+    var seq = okSlots();
+    if (seq.length > 1) seq = seq.concat(['call']);
+    if (curJob && curJob.sizeTiers && curJob.sizeTiers.length) seq = seq.concat(['size']);
+    return seq;
+  }
+
+  /* the size step's ring mark: two nested squares, the scale itself */
+  var RAIL_SIZE =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
+    'aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/>' +
+    '<rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/></svg>';
+
   function railHTML(ok) {
     var steps = ok.map(function (s) {
       return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(),
@@ -7269,8 +7288,16 @@ function JD_layerOpen() {
     /* "best to worst" — the ranking step's public name (owner, 2026-08-26;
        it opened life as "the call", which survives in the internal ids).
        Its ring wears the one-word form RANKING where words are worn. */
-    steps.push({ id: 'call', n: ok.length + 1, label: 'best to worst',
-      face: RAIL_SCALES, word: 'ranking' });
+    if (ok.length > 1) {
+      steps.push({ id: 'call', n: ok.length + 1, label: 'best to worst',
+        face: RAIL_SCALES, word: 'ranking' });
+    }
+    /* the size card closes a curation (owner, 2026-08-30): its ring wears
+       the nested-squares mark — the scale itself, small inside large */
+    if (curJob && curJob.sizeTiers && curJob.sizeTiers.length) {
+      steps.push({ id: 'size', n: steps.length + 1, label: 'how big is it',
+        face: RAIL_SIZE, word: 'size' });
+    }
     var h = '<div class="jd-rail" role="list">';
     steps.forEach(function (st, i) {
       var current = work.step === st.id;
@@ -7382,9 +7409,14 @@ function JD_layerOpen() {
     }
     /* the gate: disabled until benchRated — onChange re-arms it live */
     var gate = benchRated(slot) ? '' : ' disabled';
+    var sized = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
     if (!two) {
-      acts += '<button type="button" class="jd-turn-go" data-act="file"' +
-        gate + '>file the grades</button>';
+      /* one drawing, no ranking — but a curation still closes on the size */
+      acts += sized
+        ? '<button type="button" class="jd-turn-go" data-act="next"' + gate +
+          '>next — size &rarr;</button>'
+        : '<button type="button" class="jd-turn-go" data-act="file"' +
+          gate + '>file the grades</button>';
     } else {
       /* the ranking step's button wears the one-word form (owner,
          2026-08-27), like the docket ring's word — "best to worst" stays
@@ -7477,10 +7509,14 @@ function JD_layerOpen() {
         (podRankOf(s) ? '' : podPrintHTML(s)) + '</div>';
     });
     h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
+    /* a curation has one more card after this one — the size (owner,
+       2026-08-30) — so the ranking hands on rather than filing */
+    var more = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
     return h + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
-      '<button type="button" class="jd-turn-go" data-act="file"' +
-      (callReady() ? '' : ' disabled') + '>file the grades</button>');
+      '<button type="button" class="jd-turn-go" data-act="' +
+      (more ? 'next' : 'file') + '"' + (callReady() ? '' : ' disabled') + '>' +
+      (more ? 'next — size &rarr;' : 'file the grades') + '</button>');
   }
 
   /* §4 the bench, §5 the call. Neither carries an instruction line: they are
@@ -7488,18 +7524,55 @@ function JD_layerOpen() {
      least to read. The heading names the drawing on the bench, the rail says
      where in the steps it sits, and each row's own label (with its
      hover/focus definition) carries the rest. */
+  /* ---------- 5b. HOW BIG IS IT — the bench's closing card ------------------
+     (owner, 2026-08-30.) The one curatorial judgment the rubric never asked
+     for: how large the object reads in the drawer, on the five-tier scale
+     the taxonomy has always carried. It closes a CURATION only — a visitor's
+     won item is filed at the fixed visitor tier (C5.3) and never sees this.
+     The tiers render from the queue's size_tiers, so the scale stays data.
+     A tier already on file (the entry's own, or one the bench filed earlier)
+     arrives selected. Filing is gated on a choice: the drawer's sizes are
+     the owner's, and a silent default would put a size in the collection
+     nobody chose (the standing rule in CLAUDE.md's filing procedure). */
+  function sizePanel() {
+    var tiers = (curJob && curJob.sizeTiers) || [];
+    var chosen = work.size || null;
+    var h = '<div class="jd-size">';
+    tiers.forEach(function (t) {
+      h += '<button type="button" class="jd-size-tier' +
+        (chosen === t.id ? ' is-on' : '') + '" data-act="size" data-size="' +
+        esc(t.id) + '" aria-pressed="' + (chosen === t.id ? 'true' : 'false') + '">' +
+        '<span class="jd-size-swatch" style="--sbox:' +
+        (t.box ? (+t.box).toFixed(2) : 15.5) + '" aria-hidden="true"></span>' +
+        '<span class="jd-size-name">' + esc(t.label) + '</span>' +
+        '<span class="jd-size-desc">' + esc(t.description || '') + '</span>' +
+        '</button>';
+    });
+    h += '</div>';
+    return h + actions(
+      '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
+      '<button type="button" class="jd-turn-go" data-act="file"' +
+      (chosen ? '' : ' disabled') + '>file the grades</button>');
+  }
+
   function viewRate() {
     var ok = okSlots();
+    var sizes = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
     /* a restored or degraded turn may hold a step that no longer exists */
-    if (work.step !== 'call' && ok.indexOf(work.step) === -1) work.step = ok[0];
-    if (work.step === 'call' && ok.length < 2) work.step = ok[0];
+    if (work.step !== 'call' && work.step !== 'size' && ok.indexOf(work.step) === -1) {
+      work.step = ok[0];
+    }
+    if (work.step === 'call' && ok.length < 2) work.step = sizes ? 'size' : ok[0];
+    if (work.step === 'size' && !sizes) work.step = ok.length > 1 ? 'call' : ok[0];
     work.reached[work.step] = true;
     var two = ok.length > 1;
-    var call = work.step === 'call';
-    return head(call ? 'Best to worst' : 'Grade drawing ' + work.step.toUpperCase(),
-      call ? 5 : 4, { view: call ? 'call' : 'bench' }) +
-      (two ? railHTML(ok) : '') +
-      (call ? callPanel(ok) : benchPanel(work.step, ok));
+    var call = work.step === 'call', size = work.step === 'size';
+    return head(size ? 'How big is it' : call ? 'Best to worst'
+        : 'Grade drawing ' + work.step.toUpperCase(),
+      size ? 6 : call ? 5 : 4,
+      { view: size ? 'size' : call ? 'call' : 'bench' }) +
+      (two || sizes ? railHTML(ok) : '') +
+      (size ? sizePanel() : call ? callPanel(ok) : benchPanel(work.step, ok));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -7762,12 +7835,12 @@ function JD_layerOpen() {
     } else if (act === 'step' || act === 'next' || act === 'back') {
       /* bench navigation. The whole panel re-renders (state lives in `work`,
          so nothing is lost) and focus lands back on the heading. */
-      var seq = okSlots();
-      if (seq.length > 1) seq = seq.concat(['call']);
+      var seq = stepSeq();
       var at = seq.indexOf(work.step);
       /* the gate, held at the door as well as on the button (the disabled
          attribute is state the DOM could lose; this check can't) */
-      if (act === 'next' && work.step !== 'call' && !benchRated(work.step)) return;
+      if (act === 'next' && work.step !== 'call' && work.step !== 'size'
+          && !benchRated(work.step)) return;
       var dest = act === 'step' ? b.getAttribute('data-step')
         : seq[at + (act === 'next' ? 1 : -1)];
       if (dest && seq.indexOf(dest) !== -1) {
@@ -7775,9 +7848,23 @@ function JD_layerOpen() {
         work.reached[dest] = true;
         render();
       }
+    } else if (act === 'size') {
+      /* the closing card's answer — in place, so the chosen tier lights and
+         the file button arms without repainting the whole sheet */
+      work.size = b.getAttribute('data-size');
+      Array.prototype.forEach.call(bodyEl.querySelectorAll('[data-act="size"]'),
+        function (el) {
+          var on = el === b;
+          el.classList.toggle('is-on', on);
+          el.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      setDisabled('[data-act="file"]', false);
     } else if (act === 'file') {
       /* the one-survivor bench files directly — same gate as next */
-      if (work.step !== 'call' && !benchRated(work.step)) return;
+      if (work.step !== 'call' && work.step !== 'size' && !benchRated(work.step)) return;
+      /* a curation files at the SIZE card, which closes it; the size is the
+         owner's call and never defaulted (CLAUDE.md's filing rule) */
+      if (curJob && work.step === 'size' && !work.size) return;
       if (curJob) curateFile(); else submitRatings();
     } else if (act === 'keep') {
       if (work.keep) placeWinner(work.keep);
@@ -8422,6 +8509,9 @@ function JD_layerOpen() {
       if (!curJob || isOpen) return;
       work = blankWork();
       work.prompt = String(job.prompt || '').slice(0, MAX_PROMPT);
+      /* the size already on file arrives selected: the tier the bench last
+         filed, else the one the entry carries today (owner, 2026-08-30) */
+      work.size = job.size || null;
       var order = job.responses.slice();
       for (var i = order.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
@@ -8490,7 +8580,7 @@ function JD_layerOpen() {
     setDisabled('[data-act="file"]', true);
     setDisabled('[data-act="retry-file"]', true);
     var mine = token;
-    curJob.file(per).then(function () {
+    curJob.file(per, work.size || null).then(function () {
       if (mine !== token || !isOpen || !curJob) return;
       curateUnveil();
     }, function (err) {
@@ -8700,9 +8790,29 @@ function JD_layerOpen() {
   /* the curate card's file() callback: one item, every response, filed
      sequentially. Replace-on-refile makes a retry after a partial landing
      converge rather than double. */
-  function fileItem(it, per) {
+  function fileItem(it, per, size) {
     setSync('saving');
     var chain = Promise.resolve();
+    /* THE SIZE rides the item's first response as a flag wearing the tier
+       in its note (owner, 2026-08-30) — the same intent-flag shape scrap and
+       rerun use, and jd-item-rate replaces flags per axis_id, so filing a
+       size can never disturb a scrap or a rerun request. A session applies
+       it to entry.json's sizeClass, where the drawer reads it. */
+    if (size) {
+      var gen0 = null;
+      for (var gi = 0; gi < it.responses.length; gi++) {
+        if (it.responses[gi].generation_id) { gen0 = it.responses[gi].generation_id; break; }
+      }
+      if (gen0) {
+        chain = chain.then(function () {
+          return post({ generation_id: gen0,
+                        ratings: [{ kind: 'flag', axis_id: 'size' }],
+                        note: 'SIZE ' + size });
+        }).then(function () {
+          it.size_filed = size;      /* the queue copy learns it now */
+        });
+      }
+    }
     per.forEach(function (p) {
       chain = chain.then(function () {
         var ratings = [];
@@ -8778,6 +8888,10 @@ function JD_layerOpen() {
       var models = (Q && Q.models) || {};
       window.JD_turn.curate({
         prompt: it.prompt,
+        /* the closing size card's scale, and the tier already on file —
+           the bench's own last word first, else the entry's (2026-08-30) */
+        sizeTiers: (Q && Q.size_tiers) || [],
+        size: it.size_filed || it.size_class || null,
         responses: usable.map(function (r) {
           return {
             generation_id: r.generation_id,
