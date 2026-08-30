@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 8 500 44">
+  <defs>
+    <!-- Cork filter gradient -->
+    <linearGradient id="filter-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b56e35" />
+      <stop offset="25%" stop-color="#e29b61" />
+      <stop offset="55%" stop-color="#c67d42" />
+      <stop offset="85%" stop-color="#8c4e20" />
+      <stop offset="100%" stop-color="#542b0e" />
+    </linearGradient>
+
+    <!-- White paper gradient -->
+    <linearGradient id="paper-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cccccc" />
+      <stop offset="25%" stop-color="#fdfdfd" />
+      <stop offset="60%" stop-color="#e6e6e6" />
+      <stop offset="85%" stop-color="#b3b3b3" />
+      <stop offset="100%" stop-color="#808080" />
+    </linearGradient>
+
+    <!-- Gold band gradient -->
+    <linearGradient id="gold-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b8860b" />
+      <stop offset="25%" stop-color="#ffd700" />
+      <stop offset="55%" stop-color="#daa520" />
+      <stop offset="85%" stop-color="#8b6508" />
+      <stop offset="100%" stop-color="#5c4305" />
+    </linearGradient>
+
+    <!-- Subtle texture pattern for the cork filter -->
+    <pattern id="cork-pattern" width="12" height="12" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#753d1b" opacity="0.4" />
+      <circle cx="8" cy="4" r="0.8" fill="#542b0e" opacity="0.5" />
+      <circle cx="4" cy="9" r="1.5" fill="#8c4e20" opacity="0.3" />
+      <circle cx="10" cy="10" r="1" fill="#401f09" opacity="0.4" />
+      <circle cx="6" cy="6" r="0.5" fill="#401f09" opacity="0.6" />
+    </pattern>
+
+    <!-- Light lines pattern for the white paper -->
+    <pattern id="paper-lines" width="16" height="40" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="40" stroke="#d9d9d9" stroke-width="0.5" opacity="0.7" />
+    </pattern>
+  </defs>
+
+  <!-- Left end curve of the filter (creates the 3D cylinder illusion) -->
+  <ellipse cx="16" cy="30" rx="6" ry="20" fill="url(#filter-grad)" />
+
+  <!-- Main filter body -->
+  <rect x="16" y="10" width="128" height="40" fill="url(#filter-grad)" />
+  <rect x="16" y="10" width="128" height="40" fill="url(#cork-pattern)" />
+
+  <!-- Gold bands -->
+  <rect x="136" y="10" width="1.5" height="40" fill="url(#gold-grad)" />
+  <rect x="140" y="10" width="4" height="40" fill="url(#gold-grad)" />
+
+  <!-- Main paper body -->
+  <rect x="144" y="10" width="340" height="40" fill="url(#paper-grad)" />
+  <rect x="144" y="10" width="340" height="40" fill="url(#paper-lines)" />
+
+  <!-- Right end (Tobacco tip) -->
+  <!-- Paper rim -->
+  <ellipse cx="484" cy="30" rx="6" ry="20" fill="#e6e6e6" />
+  
+  <!-- Tobacco core -->
+  <ellipse cx="484" cy="30" rx="5" ry="18" fill="#2d1606" />
+  
+  <!-- Tobacco strands -->
+  <path d="M 483 15 Q 486 17 482 19 Q 487 22 483 24 Q 486 28 481 31 Q 486 35 482 38 Q 485 41 483 45" stroke="#5c3312" stroke-width="1.5" fill="none" />
+  <path d="M 485 16 Q 481 20 486 23 Q 482 27 485 30 Q 481 34 485 36 Q 482 40 486 43 Q 481 46 485 47" stroke="#824c22" stroke-width="1" fill="none" />
+  <circle cx="483" cy="22" r="1.5" fill="#a16434" />
+  <circle cx="485" cy="28" r="1" fill="#4a260d" />
+  <circle cx="482" cy="36" r="1.5" fill="#8c5025" />
+  <circle cx="486" cy="41" r="1" fill="#b3703b" />
+</svg>

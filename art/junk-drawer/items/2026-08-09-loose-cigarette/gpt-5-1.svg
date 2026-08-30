@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3.5 12.5 234.8 36.8">
+  <defs>
+    <linearGradient id="paperBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f6f6f6"/>
+      <stop offset="0.25" stop-color="#ffffff"/>
+      <stop offset="0.75" stop-color="#e5e5e5"/>
+      <stop offset="1" stop-color="#dddddd"/>
+    </linearGradient>
+    <linearGradient id="filterColor" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d38b45"/>
+      <stop offset="0.4" stop-color="#c17633"/>
+      <stop offset="1" stop-color="#ad6427"/>
+    </linearGradient>
+    <linearGradient id="filterDots" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7e5c5"/>
+      <stop offset="1" stop-color="#e7c590"/>
+    </linearGradient>
+    <radialGradient id="ashTip" cx="0" cy="0.5" r="1">
+      <stop offset="0" stop-color="#fefefe"/>
+      <stop offset="0.4" stop-color="#f5f5f5"/>
+      <stop offset="0.7" stop-color="#d3d3d3"/>
+      <stop offset="1" stop-color="#888888"/>
+    </radialGradient>
+    <linearGradient id="ember" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffb347"/>
+      <stop offset="0.4" stop-color="#ff5a3c"/>
+      <stop offset="1" stop-color="#b22222"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main cigarette body -->
+  <g transform="translate(10,15)">
+    <!-- White paper tube -->
+    <path d="M0 16
+             C0 7 7 0 16 0
+             L208 0
+             C217 0 224 7 224 16
+             C224 25 217 32 208 32
+             L16 32
+             C7 32 0 25 0 16Z"
+          fill="url(#paperBody)" stroke="#cfcfcf" stroke-width="0.8"/>
+
+    <!-- Filter segment -->
+    <path d="M160 0
+             L214 0
+             C221 0 226 7 226 16
+             C226 25 221 32 214 32
+             L160 32Z"
+          fill="url(#filterColor)" stroke="#9d5a21" stroke-width="0.8"/>
+
+    <!-- Filter paper band -->
+    <path d="M162 6
+             L212 6
+             C218 6 222 10 222 16
+             C222 22 218 26 212 26
+             L162 26Z"
+          fill="url(#filterDots)" opacity="0.9"/>
+
+    <!-- Tiny perforation dots on filter band -->
+    <g fill="#d2a96c" opacity="0.7">
+      <circle cx="170" cy="13" r="0.7"/>
+      <circle cx="176" cy="11" r="0.7"/>
+      <circle cx="182" cy="14" r="0.7"/>
+      <circle cx="188" cy="12" r="0.7"/>
+      <circle cx="194" cy="13" r="0.7"/>
+      <circle cx="200" cy="11.5" r="0.7"/>
+      <circle cx="206" cy="13.5" r="0.7"/>
+    </g>
+
+    <!-- Thin gold band near filter start -->
+    <rect x="158.5" y="3" width="3" height="26" fill="#c08a3f" opacity="0.9"/>
+
+    <!-- Front (lit) end ash -->
+    <path d="M-4 6
+             C-2 3 2 1 7 0.5
+             L18 0
+             C16 5 16 27 18 32
+             L7 31.5
+             C2 31 -2 29 -4 26Z"
+          fill="url(#ashTip)" stroke="#777" stroke-width="0.7"/>
+
+    <!-- Charred edge line -->
+    <path d="M13 4
+             C8 4.5 4 6 1 8
+             C-1 10 -2 13 -2.5 16
+             C-2 19 -1 22 1 24
+             C4 26 8 27.5 13 28"
+          fill="none" stroke="#444" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Ember glow along edge -->
+    <path d="M11 6
+             C7 7 3.5 8.5 1.5 10.5
+             C0 12 -0.4 14 0 16
+             C0.4 18 1.4 19.8 3.5 21.5
+             C5.5 23.2 8 24.3 11 25"
+          fill="none" stroke="url(#ember)" stroke-width="1.6" stroke-linecap="round" opacity="0.75"/>
+
+    <!-- Darker burnt specks on ash -->
+    <g fill="#4b4b4b" opacity="0.8">
+      <circle cx="2" cy="9" r="0.8"/>
+      <circle cx="-1" cy="14" r="0.7"/>
+      <circle cx="0.5" cy="19" r="0.6"/>
+      <circle cx="3" cy="23" r="0.7"/>
+      <circle cx="6.5" cy="11" r="0.6"/>
+      <circle cx="7" cy="21" r="0.6"/>
+    </g>
+
+    <!-- Slight shading on underside of tube -->
+    <path d="M16 26
+             L208 26
+             C216 26 222 22 222 16
+             C222 20 216 30 208 30
+             L16 30
+             C8 30 2 24 2 20
+             C4 23 10 26 16 26Z"
+          fill="#c0c0c0" opacity="0.25"/>
+
+    <!-- Fine side line on top to suggest cylindrical form -->
+    <path d="M16 7
+             L158 7"
+          stroke="#e4e4e4" stroke-width="1.1" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Fine side line on bottom -->
+    <path d="M16 25
+             L158 25"
+          stroke="#bfbfbf" stroke-width="1.1" stroke-linecap="round" opacity="0.9"/>
+  </g>
+</svg>
