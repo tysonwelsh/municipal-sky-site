@@ -263,6 +263,12 @@ try {
                     'axis_id' => 'title', 'value' => null,
                     'note' => 'TITLE ' . mb_substr(trim($titleIn), 0, 60)];
             }
+            $sizeIn = $body['size'] ?? null;
+            if (is_string($sizeIn) && preg_match('/^[a-z]{1,2}$/', $sizeIn)) {
+                $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
+                    'axis_id' => 'size', 'value' => null,
+                    'note' => 'SIZE ' . $sizeIn];
+            }
             if (!empty($body['suppress'])) {
                 $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
                     'axis_id' => 'suppress', 'value' => null,

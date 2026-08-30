@@ -220,6 +220,7 @@ try {
             if (isset($curatedPrompts[(string) $sub['prompt']])) { continue; }
 
             $responses = []; $hold = false; $title = null; $ok = true;
+            $sizeClass = null;   // the tier the turn's own size card filed
             foreach ($gens as $g) {
                 $gid = (string) $g['id'];
                 $axes = []; $grade = null;
@@ -240,6 +241,9 @@ try {
                         } elseif ($ax === 'title'
                             && preg_match('/^TITLE (.+)$/s', (string) $r['note'], $m)) {
                             $title = trim($m[1]);
+                        } elseif ($ax === 'size'
+                            && preg_match('/^SIZE ([a-z]{1,2})$/', (string) $r['note'], $m)) {
+                            $sizeClass = $m[1];
                         }
                     }
                 }
@@ -299,7 +303,9 @@ try {
                         ? mb_substr($sub['prompt'], 0, 41) . '…' : (string) $sub['prompt']),
                 'prompt' => (string) $sub['prompt'],
                 'created' => substr((string) $sub['created'], 0, 10),
-                'sizeClass' => 'm',
+                // the size the visitor chose on the closing card; 'm' is the
+                // fallback for turns filed before that card existed
+                'sizeClass' => $sizeClass ?: 'm',
                 'primary' => 'r1',
                 'fromTurn' => true,
                 'responses' => $out,

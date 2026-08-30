@@ -7293,7 +7293,7 @@ function JD_layerOpen() {
   function stepSeq() {
     var seq = okSlots();
     if (seq.length > 1) seq = seq.concat(['call']);
-    if (curJob && curJob.sizeTiers && curJob.sizeTiers.length) seq = seq.concat(['size']);
+    if (sizeTiers().length) seq = seq.concat(['size']);
     return seq;
   }
 
@@ -7318,7 +7318,7 @@ function JD_layerOpen() {
     }
     /* the size card closes a curation (owner, 2026-08-30): its ring wears
        the nested-squares mark — the scale itself, small inside large */
-    if (curJob && curJob.sizeTiers && curJob.sizeTiers.length) {
+    if (sizeTiers().length) {
       steps.push({ id: 'size', n: steps.length + 1, label: 'how big is it',
         face: RAIL_SIZE, word: 'size' });
     }
@@ -7433,7 +7433,7 @@ function JD_layerOpen() {
     }
     /* the gate: disabled until benchRated — onChange re-arms it live */
     var gate = benchRated(slot) ? '' : ' disabled';
-    var sized = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
+    var sized = sizeTiers().length;
     if (!two) {
       /* one drawing, no ranking — but a curation still closes on the size */
       acts += sized
@@ -7449,7 +7449,7 @@ function JD_layerOpen() {
       acts += '<button type="button" class="jd-turn-go" data-act="next"' +
         gate + '>next — ' + esc(next) + ' &rarr;</button>';
     }
-    if (!two && !sized) { acts = suppressHTML() + acts; }
+    if (!two && !sized) { acts = suppressHTML() + acts; }   /* the last card */
     /* the action row closes the PAPERWORK column, not the sheet: on the
        landscape bench it settles against the foot of the exhibit beside it
        (margin-top:auto), and in the portrait stack it is simply the last
@@ -7551,8 +7551,8 @@ function JD_layerOpen() {
     h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
     /* a curation has one more card after this one — the size (owner,
        2026-08-30) — so the ranking hands on rather than filing */
-    var more = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
-    return h + suppressHTML() + actions(
+    var more = sizeTiers().length;
+    return h + (more ? '' : suppressHTML()) + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="' +
       (more ? 'next' : 'file') + '"' + (callReady() ? '' : ' disabled') + '>' +
@@ -7574,8 +7574,21 @@ function JD_layerOpen() {
      arrives selected. Filing is gated on a choice: the drawer's sizes are
      the owner's, and a silent default would put a size in the collection
      nobody chose (the standing rule in CLAUDE.md's filing procedure). */
+  /* THE SCALE, wherever the card is standing (owner, 2026-08-30): a
+     curation reads the tiers the bench handed it; a visitor's turn reads
+     the same five straight out of the taxonomy the payload already carries.
+     Every turn now closes on the size, because every finished turn now goes
+     into the drawer and the drawer needs to know how big it reads. */
+  function sizeTiers() {
+    if (curJob) return curJob.sizeTiers || [];
+    return (tax().sizeTiers || []).map(function (t) {
+      return { id: t.id, label: t.label || t.id,
+               description: t.description || '', box: t.box };
+    });
+  }
+
   function sizePanel() {
-    var tiers = (curJob && curJob.sizeTiers) || [];
+    var tiers = sizeTiers();
     var chosen = work.size || null;
     var h = '<div class="jd-size">';
     tiers.forEach(function (t) {
@@ -7599,6 +7612,7 @@ function JD_layerOpen() {
     return h + (chosen ? '' :
       '<p class="jd-size-hint">Pick a size to file this item — it sets how ' +
       'big the object reads among the others in the drawer.</p>') +
+      suppressHTML() +
       actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="file"' +
@@ -7608,7 +7622,7 @@ function JD_layerOpen() {
 
   function viewRate() {
     var ok = okSlots();
-    var sizes = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
+    var sizes = sizeTiers().length;
     /* a restored or degraded turn may hold a step that no longer exists */
     if (work.step !== 'call' && work.step !== 'size' && ok.indexOf(work.step) === -1) {
       work.step = ok[0];
@@ -8177,6 +8191,7 @@ function JD_layerOpen() {
          belong to the record now that a rated turn joins the drawer */
       title: work.title || null,
       suppress: !!work.suppress,
+      size: work.size || null,
       ratings: ratings,
       ranking: ranking,
       comparison: okNow.length > 1
@@ -8255,6 +8270,7 @@ function JD_layerOpen() {
       model_id: rv.model_id || '',
       label: rv.label || '',
       won_at: new Date().toISOString(),
+      sizeClass: work.size || VISITOR_TIER,
       /* additive to the C5.3 shape: the visitor's own filing, so a restored
          item's specimen tag and report card still state what they graded */
       grade: r.grade,
@@ -8319,7 +8335,8 @@ function JD_layerOpen() {
     el.dataset.rank = grade ? grade.rank
       : (rec.grade == null ? '' : (+rec.grade || ''));
     el.dataset.steps = (tax().grades || []).length || 5;
-    el.dataset.size = window.JD_sizeLabel(tax(), { sizeClass: VISITOR_TIER }) || '';
+    el.dataset.size = window.JD_sizeLabel(tax(),
+      { sizeClass: rec.sizeClass || VISITOR_TIER }) || '';
   }
 
   function dropIntoPile(rec, animate) {
@@ -8351,7 +8368,7 @@ function JD_layerOpen() {
        drawer framed exactly as it was on the bench. */
     if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'), 'gen:' + rec.gen_id);
     if (window.JD_applySize) {
-      window.JD_applySize(el, tierBox(VISITOR_TIER), rec.gen_id, 1);
+      window.JD_applySize(el, tierBox(rec.sizeClass || VISITOR_TIER), rec.gen_id, 1);
     }
     /* position: the visitor's own scatter entry, reused across reloads the
        way every other item's is */
@@ -8457,7 +8474,7 @@ function JD_layerOpen() {
     });
     payload.items.unshift({
       id: rec.gen_id, title: title, prompt: rec.prompt, created: day,
-      visitor: true, sizeClass: VISITOR_TIER, primary: 'r1',
+      visitor: true, sizeClass: rec.sizeClass || VISITOR_TIER, primary: 'r1',
       responses: responses
     });
     window.JD_record.setData(payload, primed);
