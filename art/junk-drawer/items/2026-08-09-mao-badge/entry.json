@@ -34,7 +34,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed (worst dead margin 0.4%)."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed (worst dead margin 0.4%). Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",
@@ -64,7 +65,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed (worst dead margin 0.5%)."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed (worst dead margin 0.5%). Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -87,7 +89,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Model disobeyed the output format: wrapped the SVG in a ```svg code fence, stripped at ingest per skill rule (gradeable disobedience). ink-bounds check passed (worst dead margin 0.9%)."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Model disobeyed the output format: wrapped the SVG in a ```svg code fence, stripped at ingest per skill rule (gradeable disobedience). ink-bounds check passed (worst dead margin 0.9%). Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",
@@ -108,7 +111,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "generated via clean-context Kimi Code subagent; harness adaptation of generation harness v2 (harness preamble, standard technical appendix v1; Kimi Code has no tool-allowlisted svg-specimen equivalent, so isolation rested on the preamble alone). Output format obeyed (raw SVG, no fences). Independence verified: 0 shared path-data lines vs r1-r3. ink-bounds check passed (worst dead margin 0.6%). Owner-rated 2026-08-14; restraint and style axes skipped on the instrument."
+      "notes": "generated via clean-context Kimi Code subagent; harness adaptation of generation harness v2 (harness preamble, standard technical appendix v1; Kimi Code has no tool-allowlisted svg-specimen equivalent, so isolation rested on the preamble alone). Output format obeyed (raw SVG, no fences). Independence verified: 0 shared path-data lines vs r1-r3. ink-bounds check passed (worst dead margin 0.6%). Owner-rated 2026-08-14; restraint and style axes skipped on the instrument. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r5",

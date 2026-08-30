@@ -28,7 +28,8 @@
         "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 1.1%, viewBox left as generated. Prompt provenance: the creative prompt was drafted by Claude (Fable 5, this session) at the owner's request, written to retrieve the googly-eye style from r1 of 2026-08-01-tender-rail-car; the generating subagent saw only the prompt text, not that artwork."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 1.1%, viewBox left as generated. Prompt provenance: the creative prompt was drafted by Claude (Fable 5, this session) at the owner's request, written to retrieve the googly-eye style from r1 of 2026-08-01-tender-rail-car; the generating subagent saw only the prompt text, not that artwork. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",
@@ -51,7 +52,8 @@
         "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns — clean isolated sample. Refined: the first reply surrounded the sphere with semi-transparent blurred 'dark ground' corner brushwork and a cast shadow; at the owner's direction a second prompt was sent to the same subagent: \"Reminder of the technical appendix requirement: transparent background (no opaque backdrop rectangle) — the artwork must not paint its own ground; everything outside the subject stays fully transparent. Revise your SVG to comply and reply with the complete SVG document alone — no prose, no code fences.\" The revision removed the corner ground and cast shadow and changed nothing else; only the final SVG is filed. Ink-bounds check passed on the revision — worst dead margin 0.6%, viewBox left as generated. Prompt provenance as r1."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns — clean isolated sample. Refined: the first reply surrounded the sphere with semi-transparent blurred 'dark ground' corner brushwork and a cast shadow; at the owner's direction a second prompt was sent to the same subagent: \"Reminder of the technical appendix requirement: transparent background (no opaque backdrop rectangle) — the artwork must not paint its own ground; everything outside the subject stays fully transparent. Revise your SVG to comply and reply with the complete SVG document alone — no prose, no code fences.\" The revision removed the corner ground and cast shadow and changed nothing else; only the final SVG is filed. Ink-bounds check passed on the revision — worst dead margin 0.6%, viewBox left as generated. Prompt provenance as r1. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -74,7 +76,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 1 tool use — the isolated agent's only tool is Glob, which lists paths and cannot read file contents, so the sample is uncontaminated; independence confirmed by diff against siblings and the tender-rail-car item. Ink-bounds check passed at ingest — worst dead margin 1.2%, viewBox left as generated. The model wrapped its SVG in a ```xml code fence, disobeying the appendix's \"no code fences\" instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Interpreted the brief as a realistic eye with a radially spoked iris rather than a bare googly disc. Prompt provenance as r1."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 1 tool use — the isolated agent's only tool is Glob, which lists paths and cannot read file contents, so the sample is uncontaminated; independence confirmed by diff against siblings and the tender-rail-car item. Ink-bounds check passed at ingest — worst dead margin 1.2%, viewBox left as generated. The model wrapped its SVG in a ```xml code fence, disobeying the appendix's \"no code fences\" instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Interpreted the brief as a realistic eye with a radially spoked iris rather than a bare googly disc. Prompt provenance as r1. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",

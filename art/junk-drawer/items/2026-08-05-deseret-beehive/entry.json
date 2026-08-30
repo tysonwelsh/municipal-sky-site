@@ -33,7 +33,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings (overlap is generic id NAMES only — shadeGrad/hiveClip — with entirely different contents). Ink-bounds check passed at ingest — worst dead margin 0.9%, viewBox left as generated. Reads the faded-clipping cue as a single fade filter: fractal-noise grain plus a low-frequency blotch layer, both composited into the artwork's own alpha so nothing spills past the hive."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings (overlap is generic id NAMES only — shadeGrad/hiveClip — with entirely different contents). Ink-bounds check passed at ingest — worst dead margin 0.9%, viewBox left as generated. Reads the faded-clipping cue as a single fade filter: fractal-noise grain plus a low-frequency blotch layer, both composited into the artwork's own alpha so nothing spills past the hive. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",
@@ -56,7 +57,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 1.5%, viewBox left as generated. By far the heaviest build of the three (10.7 KB vs 5.4/4.6): the whole hive is defined once as reusable <path> ids and drawn through <use>, then aged with three off-register CMY colour plates, two masked halftone dot screens, a displacement-map 'rough' filter, and stacked fade/foxing/grain layers."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 1.5%, viewBox left as generated. By far the heaviest build of the three (10.7 KB vs 5.4/4.6): the whole hive is defined once as reusable <path> ids and drawn through <use>, then aged with three off-register CMY colour plates, two masked halftone dot screens, a displacement-map 'rough' filter, and stacked fade/foxing/grain layers. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -79,7 +81,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 1.4%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's 'no code fences' instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Adds a stepped plinth, a ledge, and a ground-shadow ellipse the prompt did not ask for, and reaches for the aged look with a red and a teal ghost of the whole silhouette offset behind the main impression."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 1.4%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's 'no code fences' instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Adds a stepped plinth, a ledge, and a ground-shadow ellipse the prompt did not ask for, and reaches for the aged look with a red and a teal ghost of the whole silhouette offset behind the main impression. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",

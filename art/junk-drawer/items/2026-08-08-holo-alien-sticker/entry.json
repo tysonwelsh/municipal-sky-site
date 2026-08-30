@@ -34,7 +34,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed as generated — worst dead margin 5.1%; viewBox untouched."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed as generated — worst dead margin 5.1%; viewBox untouched. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",
@@ -57,7 +58,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Owner-directed refinement turns to the same subagent (1: pointier eyes, slightly more prominent rainbow accents; 2: eye point flipped to the inner end, brow arc removed; 3: darker silver foil with a whiter sticker border; 4: wider eyes, foil pushed further toward neutral silver/grey); final SVG only is kept. ink-bounds check run at ingest; viewBox normalized: tightened to measured ink bounds (reframe only, artwork bytes untouched). Grade and annotations were given on the pre-refinement one-shot — owner to confirm or regrade against the refined artwork."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Owner-directed refinement turns to the same subagent (1: pointier eyes, slightly more prominent rainbow accents; 2: eye point flipped to the inner end, brow arc removed; 3: darker silver foil with a whiter sticker border; 4: wider eyes, foil pushed further toward neutral silver/grey); final SVG only is kept. ink-bounds check run at ingest; viewBox normalized: tightened to measured ink bounds (reframe only, artwork bytes untouched). Grade and annotations were given on the pre-refinement one-shot — owner to confirm or regrade against the refined artwork. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -80,7 +82,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Disobeyed the output format: wrapped the SVG in a ```svg code fence, which was stripped at ingest (bytes otherwise unedited). ink-bounds check at ingest: PADDED, worst dead margin 16.3%; viewBox normalized: tightened from \"0 0 400 500\" to \"63.2 39.5 277.0 458.5\" (reframe only, no path edits) — composition graded against the original framing."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Disobeyed the output format: wrapped the SVG in a ```svg code fence, which was stripped at ingest (bytes otherwise unedited). ink-bounds check at ingest: PADDED, worst dead margin 16.3%; viewBox normalized: tightened from \"0 0 400 500\" to \"63.2 39.5 277.0 458.5\" (reframe only, no path edits) — composition graded against the original framing. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",

@@ -212,6 +212,18 @@ report card states Cost/Tokens. Old responses
 stay untouched (permanent record). Validate, commit
 `junk-drawer: add rerun responses to "<title>" (<models>)`.
 
+## The card's cast (owner rule, 2026-08-30) — READ BEFORE HARVESTING
+
+**Once an item has a rerun set, its card shows those four responses and
+nothing else.** The pre-rerun originals — the Claude-only trio from the
+app's building days — are RETIRED from display (`"retired": true`, which
+drops a response from data.php's payload while its row and file stay for
+the record). An older response appears on a card only when the owner asks
+for it BY NAME, which is the legacy-keep path below; that keep is then the
+one visible original, and every other original on that item still retires.
+`scripts/harvest-rerun.py` applies this automatically: it retires every
+non-rerun response except a filed keep (the pinned `primary`).
+
 ## Procedure: KEEP a legacy response as the drawer's display
 
 The owner's exception to replace-with-the-rerun (2026-08-29): for some

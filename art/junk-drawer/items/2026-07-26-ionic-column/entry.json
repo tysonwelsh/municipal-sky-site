@@ -27,7 +27,8 @@
         "composition": 3.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. One-shot; output format fully obeyed (bare SVG, no prose). Ink check passed (worst-side margin 2.0%) — no viewBox normalization. Owner-graded 2026-07-26."
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. One-shot; output format fully obeyed (bare SVG, no prose). Ink check passed (worst-side margin 2.0%) — no viewBox normalization. Owner-graded 2026-07-26. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",

@@ -31,7 +31,8 @@
         "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. The one-shot's ink-bounds check passed as generated (worst dead margin 0.5%). The refined SVG kept the full-scene viewBox after the scenery was removed: viewBox normalized: tightened from \"0 0 620 1000\" to \"101.2 47.0 430.5 944.8\", and the stale width/height (620x1000) matched to the new box so it no longer letterboxes — reframe only, no path edits."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. The one-shot's ink-bounds check passed as generated (worst dead margin 0.5%). The refined SVG kept the full-scene viewBox after the scenery was removed: viewBox normalized: tightened from \"0 0 620 1000\" to \"101.2 47.0 430.5 944.8\", and the stale width/height (620x1000) matched to the new box so it no longer letterboxes — reframe only, no path edits. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",
@@ -54,7 +55,8 @@
         "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Disobeyed the output format on the one-shot: wrapped the SVG in a ```svg code fence, which was stripped at ingest (bytes otherwise unedited); it obeyed the format on the refinement turn. The one-shot was PADDED at ingest (worst dead margin 8.8%) and its viewBox was tightened from \"0 0 800 800\" to \"18.0 38.0 753.8 693.8\". Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. The refined SVG re-tightened its own viewBox to \"275 88 250 614\" and passed the ink-bounds check as returned (worst dead margin 2.1%); artwork bytes untouched."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Disobeyed the output format on the one-shot: wrapped the SVG in a ```svg code fence, which was stripped at ingest (bytes otherwise unedited); it obeyed the format on the refinement turn. The one-shot was PADDED at ingest (worst dead margin 8.8%) and its viewBox was tightened from \"0 0 800 800\" to \"18.0 38.0 753.8 693.8\". Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. The refined SVG re-tightened its own viewBox to \"275 88 250 614\" and passed the ink-bounds check as returned (worst dead margin 2.1%); artwork bytes untouched. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -77,7 +79,8 @@
         "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. It kept the side bud, reading it as part of the plant rather than scenery. The one-shot's ink-bounds check passed as generated (worst dead margin 2.2%); the refined SVG re-tightened its own viewBox to \"140 112 302 622\" and passed as returned (worst dead margin 1.7%). Artwork bytes untouched throughout."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. It kept the side bud, reading it as part of the plant rather than scenery. The one-shot's ink-bounds check passed as generated (worst dead margin 2.2%); the refined SVG re-tightened its own viewBox to \"140 112 302 622\" and passed as returned (worst dead margin 1.7%). Artwork bytes untouched throughout. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",

@@ -33,7 +33,8 @@
         }
       },
       "transcript": null,
-      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace."
+      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r2",

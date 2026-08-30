@@ -136,6 +136,20 @@ def harvest(item_id):
         filed.append((resp["rid"], g["model_id"], resp["grade"], ranks.get(g["id"])))
     # the drawer shows the re-rated set: pin the owner's 1st place
     entry["primary"] = filed[0][0]
+    # ...and the card shows ONLY that set (owner rule, 2026-08-30): every
+    # pre-rerun original retires from display — an older response earns a
+    # place on the card only by being asked for by name, which is
+    # keep-legacy.py's job, and that keep arrives as the pinned primary.
+    keep_rid = entry.get("primary")
+    for r in entry["responses"]:
+        if r["rid"] in {f[0] for f in filed} or r["rid"] == keep_rid:
+            continue
+        if not r.get("retired"):
+            r["retired"] = True
+            r["notes"] = ((r.get("notes") or "").rstrip() + " " if r.get("notes") else "") + (
+                "Retired from display by owner rule (2026-08-30): once an item has a "
+                "rerun set, the card shows those four — an older response appears only "
+                "when the owner asks for it by name. Row and file stay for the record.")
     open(entry_path, "w").write(json.dumps(entry, indent=2, ensure_ascii=False) + "\n")
     for rid, m, gr, rk in filed:
         print(f"{item_id}: {rid} {m:18s} grade {gr} rank {rk}")
