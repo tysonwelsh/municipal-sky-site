@@ -54,7 +54,8 @@
         "composition": 3.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.5%. Isometric cube with top and right faces plus chipped shards around the base and a meltwater puddle below. Mammoth built from a reusable `<use href=\"#tuft\">` fur symbol repeated fourteen times. The trunk curls back on itself and reads as flat against the body, and the tusks emerge from behind the trunk rather than the mouth line."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.5%. Isometric cube with top and right faces plus chipped shards around the base and a meltwater puddle below. Mammoth built from a reusable `<use href=\"#tuft\">` fur symbol repeated fourteen times. The trunk curls back on itself and reads as flat against the body, and the tusks emerge from behind the trunk rather than the mouth line. Retired from display by owner call (2026-08-30) — the kept Opus 5 original and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -76,7 +77,8 @@
         "composition": 2.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.8%. Flat, front-facing cartoon in the simplest construction of the three: the cube is a single rounded square with a tinted back layer and a translucent front layer sandwiching the mammoth, rather than a 3D solid. Head and body are plain overlapping ellipses with a fringe of circles for shag; three lashes per eye and a lavender lid. The mammoth fills the frame corner to corner, so the ice reads more as a tinted pane than as a giant cube around it."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.8%. Flat, front-facing cartoon in the simplest construction of the three: the cube is a single rounded square with a tinted back layer and a translucent front layer sandwiching the mammoth, rather than a 3D solid. Head and body are plain overlapping ellipses with a fringe of circles for shag; three lashes per eye and a lavender lid. The mammoth fills the frame corner to corner, so the ice reads more as a tinted pane than as a giant cube around it. Retired from display by owner call (2026-08-30) — the kept Opus 5 original and the rerun set carry the card; row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r4",
