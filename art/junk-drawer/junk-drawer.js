@@ -5644,6 +5644,21 @@ function JD_layerOpen() {
 
   function jdDriftRnd(n) { return (Math.random() * n) | 0; }
 
+  /* the floor is the sheet's OWN floor (owner report 2026-08-29): the
+     darkroom paints while the card is still transitioning, so the height
+     jdDriftBuild reads can run tens of px deep — and every letter landed
+     below the frame until the heap grew back into view. Re-read the host
+     before each letter is dealt: any bucket still at the virgin floor
+     follows the container's real bottom edge; a bucket already carrying
+     heap keeps its surface, so nothing landed ever moves. */
+  function jdDriftSync(st) {
+    var H = st.host.clientHeight;
+    if (!H || H === st.H) return;
+    for (var b = 0; b < st.top.length; b++) if (st.top[b] === st.H) st.top[b] = H;
+    st.H = H;
+    st.floorLimit = H - JD_DRIFT.maxDepth * JD_DRIFT.cell;
+  }
+
   /* the heap's height field, in buckets a third of a square wide */
   function jdDriftSurface(st, x) {
     var C = JD_DRIFT.cell;
@@ -5721,6 +5736,7 @@ function JD_layerOpen() {
      square out and it lands on the one below. */
   function jdDriftEmit(col, delayMs) {
     var st = col.st, C = JD_DRIFT.cell;
+    jdDriftSync(st);              /* the landing floor = the container floor */
     var ch = jdDriftNext(col);
     if (ch === null || ch === ' ') return;              /* the beat still passes */
 
@@ -5797,7 +5813,7 @@ function JD_layerOpen() {
     var W = host.clientWidth, H = host.clientHeight;
     if (!W || !H) return false;
     host.innerHTML = '';
-    var st = { W: W, H: H, bw: C / 3, cols: Math.floor(W / C), top: [],
+    var st = { W: W, H: H, host: host, bw: C / 3, cols: Math.floor(W / C), top: [],
                busy: {}, lane: {}, n: 0, words: JD_DRIFT_WORDS, inPlay: {},
                floorLimit: H - JD_DRIFT.maxDepth * C, beats: [], polls: [] };
     for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
@@ -7636,7 +7652,7 @@ function JD_layerOpen() {
       });
     })(1);
     JD_SLOTS.forEach(function (slot) {
-      /* NO client abort and NO client timeout — the server owns the 90s
+      /* NO client abort and NO client timeout — the server owns the 150s
          budget, and a fetch cancelled here would abandon a generation the
          server is still paying for (C5.4) */
       fetch(JD_API + API_GEN, {
