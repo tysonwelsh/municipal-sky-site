@@ -17,17 +17,24 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": 3.0,
-      "graded": "2026-07-27",
-      "grade_history": [],
+      "grade": 4.0,
+      "graded": "2026-08-30",
+      "grade_history": [
+        {
+          "grade": 3.0,
+          "date": "2026-07-27",
+          "taxonomy_version": null,
+          "note": "raised Select→Choice by owner call at the legacy keep (2026-08-30)"
+        }
+      ],
       "annotations": {
-        "prompt-fidelity": 2.0,
-        "geometry": 2.0,
-        "color": 3.0,
-        "composition": 3.0
+        "understanding-assignment": 3.0,
+        "structural-coherence": 2.0,
+        "layering": 2.0,
+        "jnsq": 3.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated. Kept as the drawer’s display by owner call (2026-08-30) — a legacy favorite, hand-filed on the current rubric: Mostly Understands, small problems on both Structural Coherence and Layering, Has it for Je ne sais quoi, grade Choice. The rerun set stands as the comparison."
     },
     {
       "rid": "r2",
@@ -49,7 +56,8 @@
         "composition": 1.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
     },
     {
       "rid": "r3",
@@ -71,7 +79,121 @@
         "composition": 1.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
+    },
+    {
+      "rid": "r4",
+      "file": "claude-opus-5-rerun.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18RXNVXB13M6ETEP7G9MM6C), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 640 360\" to ink bounds (\"11.5 82.5 616.2 230.8\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 1.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 456,
+        "output": 2908,
+        "total": 3364
+      },
+      "cost_usd": 0.07498
+    },
+    {
+      "rid": "r5",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18RXNVXB13M6ETEP7G9MM6C), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 300\" to ink bounds (\"10.0 72.0 372.8 202.8\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 1.0,
+        "layering": 2.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 145,
+        "output": 1075,
+        "total": 1476
+      },
+      "cost_usd": 0.016637
+    },
+    {
+      "rid": "r6",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18RXNVXB13M6ETEP7G9MM6C), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 300\" to ink bounds (\"6.5 53.8 395.2 248.0\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 1.0,
+        "layering": 2.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 312,
+        "output": 2466,
+        "total": 2778
+      },
+      "cost_usd": 0.030216
+    },
+    {
+      "rid": "r7",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18RXNVXB13M6ETEP7G9MM6C), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 320 200\" to ink bounds (\"0.5 43.8 302.2 158.0\").",
+      "annotations": {
+        "understanding-assignment": 1.0,
+        "structural-coherence": 1.0,
+        "layering": 1.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 314,
+        "output": 3050,
+        "total": 3364
+      },
+      "cost_usd": 0.030893
     }
-  ]
+  ],
+  "primary": "r1"
 }

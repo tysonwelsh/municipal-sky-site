@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="10.0 72.0 372.8 202.8">
+  <!-- tail -->
+  <path d="M 60 210 C 30 200 15 180 20 155 C 22 145 32 145 34 155 C 37 172 48 185 68 192" fill="none" stroke="#e8a0b0" stroke-width="14" stroke-linecap="round"/>
+  <!-- back leg extended (running) -->
+  <path d="M 105 230 L 60 265 L 40 262 L 85 215 Z" fill="#7a7a8c"/>
+  <ellipse cx="45" cy="264" rx="16" ry="9" fill="#e8a0b0"/>
+  <!-- body -->
+  <ellipse cx="170" cy="185" rx="105" ry="62" fill="#8a8a9e" transform="rotate(-8 170 185)"/>
+  <!-- belly -->
+  <ellipse cx="185" cy="205" rx="70" ry="38" fill="#b5b5c5" transform="rotate(-8 185 205)"/>
+  <!-- front leg reaching forward -->
+  <path d="M 235 215 L 300 240 L 295 255 L 225 235 Z" fill="#7a7a8c"/>
+  <ellipse cx="300" cy="248" rx="16" ry="9" fill="#e8a0b0"/>
+  <!-- head -->
+  <ellipse cx="280" cy="140" rx="58" ry="45" fill="#8a8a9e" transform="rotate(-10 280 140)"/>
+  <!-- snout -->
+  <path d="M 318 130 L 370 148 L 316 168 Z" fill="#8a8a9e"/>
+  <ellipse cx="368" cy="148" rx="10" ry="9" fill="#e8708a"/>
+  <!-- buck teeth -->
+  <rect x="336" y="164" width="10" height="14" rx="3" fill="#ffffff"/>
+  <rect x="347" y="164" width="10" height="14" rx="3" fill="#ffffff"/>
+  <line x1="351" y1="166" x2="351" y2="176" stroke="#ccc" stroke-width="1.5"/>
+  <!-- ear -->
+  <circle cx="258" cy="98" r="24" fill="#8a8a9e"/>
+  <circle cx="258" cy="98" r="14" fill="#e8a0b0"/>
+  <!-- googly eyes -->
+  <circle cx="285" cy="122" r="17" fill="#ffffff" stroke="#333" stroke-width="3"/>
+  <circle cx="290" cy="126" r="7" fill="#222"/>
+  <circle cx="315" cy="116" r="13" fill="#ffffff" stroke="#333" stroke-width="3"/>
+  <circle cx="319" cy="119" r="5" fill="#222"/>
+  <!-- shifty brow -->
+  <path d="M 268 100 Q 285 92 302 100" fill="none" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+  <!-- whiskers -->
+  <line x1="330" y1="150" x2="378" y2="140" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+  <line x1="330" y1="156" x2="380" y2="160" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+  <line x1="328" y1="160" x2="372" y2="178" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+  <!-- sly grin -->
+  <path d="M 320 172 Q 340 182 358 168" fill="none" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- speed lines -->
+  <line x1="30" y1="150" x2="90" y2="150" stroke="#9999aa" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+  <line x1="20" y1="180" x2="70" y2="180" stroke="#9999aa" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+  <line x1="35" y1="120" x2="80" y2="120" stroke="#9999aa" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+</svg>
