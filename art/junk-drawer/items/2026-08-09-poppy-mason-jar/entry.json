@@ -68,19 +68,24 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": 4.0,
-      "graded": "2026-08-09",
-      "grade_history": [],
+      "grade": 5.0,
+      "graded": "2026-08-30",
+      "grade_history": [
+        {
+          "grade": 4.0,
+          "date": "2026-08-09",
+          "taxonomy_version": null,
+          "note": "raised Choice→Prime by owner call at the legacy keep (2026-08-30)"
+        }
+      ],
       "annotations": {
-        "instruction-following": 3.0,
-        "restraint": 3.0,
-        "integrity": 2.0,
-        "style": 3.0,
-        "je-ne-sais-quoi": 3.0
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 3.0
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. It kept the side bud, reading it as part of the plant rather than scenery. The one-shot's ink-bounds check passed as generated (worst dead margin 2.2%); the refined SVG re-tightened its own viewBox to \"140 112 302 622\" and passed as returned (worst dead margin 1.7%). Artwork bytes untouched throughout. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
-      "retired": true
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the extraneous background elements so only the figure the prompt asked for remains); final SVG only is kept. It kept the side bud, reading it as part of the plant rather than scenery. The one-shot's ink-bounds check passed as generated (worst dead margin 2.2%); the refined SVG re-tightened its own viewBox to \"140 112 302 622\" and passed as returned (worst dead margin 1.7%). Artwork bytes untouched throughout. Kept as the drawer’s display by owner call (2026-08-30) — the best of this item’s originals, hand-filed with top marks on every current axis and the grade raised to Prime; the rerun set stands as the comparison."
     },
     {
       "rid": "r4",
@@ -195,5 +200,5 @@
       "cost_usd": 0.026909
     }
   ],
-  "primary": "r4"
+  "primary": "r3"
 }
