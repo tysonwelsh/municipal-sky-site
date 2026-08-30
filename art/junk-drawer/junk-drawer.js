@@ -5149,6 +5149,165 @@ function JD_layerOpen() {
     }
     return d + 'Z';
   }
+  /* ---- the scatterword's ink ruler (owner report, 2026-08-30) ------------
+     The stray's lesson, learned again one indicator over: the flight math
+     runs on each glyph's BOX, but the eye watches the INK — and a glyph box
+     carries half-leading above the ascender, air under the baseline, and
+     side bearings plus the 0.08em tracking's trailing space, so when the box
+     turned back at the roam wall the ink still had visible air on every
+     side (the owner: the letters bounce off walls they never reach). Same
+     cure as darkStrayInkInsets, per GLYPH this time — an L and a dot carry
+     very different ink: offscreen clones of the assembled word (real
+     classes, movers stilled, font pinned to a large px so cqw can't wobble
+     the probe; two clones — see below — because the baseline probes cost
+     tracking space) are measured in two steps. (1) THE BOX AND ITS BASELINE come
+     from the DOM: each glyph span's rect, plus a zero-size inline-block
+     probe inside it — an inline-block's baseline is its bottom edge, so the
+     probe pins the glyph's baseline exactly where inline layout puts it
+     (the dots' line-height:0 boxes measure 0px tall; their rects still
+     carry the truth). (2) THE INK comes from canvas: the glyph drawn with
+     its own computed font at that DOM baseline, alpha-scanned — and here
+     the scatter needs one more idea than the stray did, because its glyphs
+     SPIN. A wall is a straight edge, so the only ink that can ever touch
+     it is the ink's CONVEX HULL; and a spinning glyph meets the wall at a
+     different hull point every bounce. So instead of four box insets, the
+     ruler returns each glyph's SUPPORT FUNCTION — how far the hull reaches
+     from the box centre (the transform origin the flight translates and
+     spins about) in each of 72 sampled directions, in em of the glyph's
+     own font-size, the currency the track is emitted in. fly() reads it at
+     the glyph's spin angle at each step, which is exact tangency: the
+     bbox's mostly-empty corner never inflates the hit, and the real
+     nearest ink lands on the wall whatever the tumble. A 0.025em safety
+     (≈ stray's 0.4px at the sizes the swatch runs) keeps antialiased edges
+     off the clipped wall. On any failure this returns null and the
+     scatterword falls back to the old constant roam box — never a clip. */
+  function darkScatterInkReach() {
+    if (darkScatterInkReach.v !== undefined) return darkScatterInkReach.v;
+    darkScatterInkReach.v = null;
+    try {
+      var CHARS = 'LOADING...';   /* must match darkScatterword's GLYPHS */
+      var SAFE = 0.025, S = 2, SN = 72, i;   /* SN: support samples, 5° apart */
+      var PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
+      /* TWO clones of the word, because the probes are not free: tracking
+         (letter-spacing 0.08em) applies after every character unit — a
+         zero-size inline-block probe included — so a probed glyph's box is
+         one tracking unit too wide and the error walks down the word, a
+         glyph's worth per glyph. Clone A is pristine (and keeps the class's
+         position:absolute, which blockifies the span exactly as the live
+         word is blockified — a relative override leaves it inline, whose
+         rect is a different animal): its rects are the live geometry, box
+         centres included. Clone B carries the probes and answers ONE
+         question, per glyph: how far below the box top the baseline sits —
+         a vertical, which tracking cannot touch. */
+      var mkA = '', mkB = '';
+      for (i = 0; i < CHARS.length; i++) {
+        var open2 = '<span class="jd-dark-gl jd-dark-gl' + i +
+          '" style="animation:none;transform:none">' + CHARS.charAt(i);
+        mkA += open2 + '</span>';
+        mkB += open2 + PROBE + '</span>';
+      }
+      var host = document.createElement('div');
+      host.style.cssText = 'position:absolute;left:-9999px;top:0;' +
+        'visibility:hidden;pointer-events:none';
+      host.innerHTML =
+        '<span class="jd-dark-word" style="animation:none;left:0;top:0;' +
+        'transform:none;font-size:44.2px">' + mkA + '</span>' +
+        '<span class="jd-dark-word" style="animation:none;left:0;top:200px;' +
+        'transform:none;font-size:44.2px">' + mkB + '</span>';
+      document.body.appendChild(host);
+      var word = host.querySelector('.jd-dark-word');
+      var baseFs = parseFloat(getComputedStyle(word).fontSize);
+      var gsA = word.querySelectorAll('.jd-dark-gl');
+      var gsB = host.querySelectorAll('.jd-dark-word + .jd-dark-word .jd-dark-gl');
+      var out = [], cv = document.createElement('canvas');
+      var ctx = cv.getContext('2d', { willReadFrequently: true });
+      if (!ctx) { document.body.removeChild(host); return null; }
+      for (i = 0; i < gsA.length; i++) {
+        var g = gsA[i], gB = gsB[i], probe = gB.querySelector('[data-p]');
+        var gr = g.getBoundingClientRect();
+        var baseAbs = gr.top + (probe.getBoundingClientRect().top -
+          gB.getBoundingClientRect().top);
+        var cs = getComputedStyle(g);
+        var fs = parseFloat(cs.fontSize);
+        if (!(fs > 0) || !(gr.width > 0)) { out = null; break; }
+        /* margins catch overhang on every side; no letter-spacing on the
+           canvas — tracking pads the ADVANCE after a glyph, never its ink */
+        var M = fs * 1.25;
+        cv.width = Math.ceil((gr.width + 2 * M) * S);
+        cv.height = Math.ceil((fs + 2 * M) * S);
+        ctx.setTransform(S, 0, 0, S, 0, 0);
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+        ctx.textAlign = 'left';          /* the span's text starts at its left edge */
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#000';
+        ctx.fillText(CHARS.charAt(i), M, M);   /* canvas y=M ⇔ the DOM baseline */
+        var img = ctx.getImageData(0, 0, cv.width, cv.height).data;
+        /* per-row ink extents — the only pixels that can sit on the hull */
+        var rows = [], any = false, x, y, rw;
+        for (y = 0; y < cv.height; y++) {
+          rw = null;
+          for (x = 0; x < cv.width; x++) {
+            if (img[(y * cv.width + x) * 4 + 3] > 16) {
+              if (!rw) rw = [x, x]; else rw[1] = x;
+              any = true;
+            }
+          }
+          rows.push(rw);
+        }
+        if (!any) { out = null; break; }
+        /* hull candidate points: the outer corners of each row's extreme
+           pixels, as em offsets from the BOX CENTRE — the transform origin
+           the flight spins about */
+        var ox = gr.left + gr.width / 2, oy = gr.top + gr.height / 2;
+        var pts = [], px2, py2, k2;
+        for (y = 0; y < rows.length; y++) {
+          if (!rows[y]) continue;
+          for (k2 = 0; k2 < 4; k2++) {
+            px2 = (k2 & 1) ? rows[y][1] + 1 : rows[y][0];
+            py2 = (k2 & 2) ? y + 1 : y;
+            pts.push([
+              (gr.left + (px2 / S - M) - ox) / fs,
+              (baseAbs + (py2 / S - M) - oy) / fs
+            ]);
+          }
+        }
+        /* the support samples: farthest reach among those points in each of
+           SN directions (every candidate not on the hull can never win a
+           max, so no explicit hull pass is needed), PLUS the safety — an
+           inflated reach is what holds the ink that hair short of the
+           clipped wall (deflating it, mirrored, would slice) */
+        var sup = [], j2, ux, uy, bestd, d2, p2;
+        for (j2 = 0; j2 < SN; j2++) {
+          ux = Math.cos(j2 * 2 * Math.PI / SN);
+          uy = Math.sin(j2 * 2 * Math.PI / SN);
+          bestd = -1e9;
+          for (p2 = 0; p2 < pts.length; p2++) {
+            d2 = pts[p2][0] * ux + pts[p2][1] * uy;
+            if (d2 > bestd) bestd = d2;
+          }
+          sup.push(bestd + SAFE);
+        }
+        /* the glyph's HOME CENTRE, measured off the same clone: its box
+           centre relative to the word's, in em of the word's base type.
+           The scatterword's CX/CY constants were measured 2026-08-18 on
+           one platform's font; the live face can seat glyphs — the dots
+           especially — a few tenths of a px elsewhere, and a flight
+           anchored to a stale centre carries that error into every wall
+           hit. Measured here, the anchor is platform-true; the constants
+           stay as the no-ruler fallback. */
+        var wr2 = word.getBoundingClientRect();
+        out.push({
+          sup: sup,
+          cx: (ox - (wr2.left + wr2.width / 2)) / baseFs,
+          cy: (oy - (wr2.top + wr2.height / 2)) / baseFs
+        });
+      }
+      document.body.removeChild(host);
+      darkScatterInkReach.v = out;
+      return out;
+    } catch (e) { return null; }
+  }
   /* the scatterword for slot C (round-22 swap, owner pick 2026-08-18; the
      Win95 segmented block progress bar retires — mockup approved with seeded
      trajectories and the 3-bang super-cycle): the word LOADING… blown apart
@@ -5240,6 +5399,17 @@ function JD_layerOpen() {
     var DT = 0.003;         /* integration step, s                           */
     var POS_TOL = 0.60;     /* max waypoint error, real-scale px             */
     var ROT_TOL = 4.0;      /* …and degrees                                  */
+    /* NEAR A WALL THE TOLERANCES TIGHTEN (2026-08-30, part of the ink-flush
+       collision): the chord error is symmetric, so with the ink riding the
+       wall exactly, POS_TOL of drift toward it — and the reach swing that
+       ROT_TOL of rotation error buys — became a momentary CLIP under the
+       well's overflow:hidden (measured up to ~0.9 real px on the dots).
+       Within WALL_NEAR of any wall the chord must stay this much truer;
+       elsewhere the old numbers stand, so the style barely grows. Their
+       sum sits under the ruler's 0.025em safety — flush, never cut. */
+    var WALL_NEAR = 2.0;    /* real px of clearance that counts as "near"    */
+    var POS_TOL_W = 0.15;   /* near-wall waypoint error, real px             */
+    var ROT_TOL_W = 1.0;    /* …and degrees                                  */
     var MAX_GAP = 0.20;     /* never leave a gap longer than this, s         */
     var ERR_PROBES = 6;     /* interior points probed per candidate chord    */
     var AIM_SWEEP = 54;     /* deg the ray may be nudged for clearance       */
@@ -5252,17 +5422,55 @@ function JD_layerOpen() {
                                bangs stop looking different from each other. */
     var EM_DP = 2, DEG_DP = 1, PCT_DP = 3;  /* 0.01em ≈ 0.11px at real scale */
     /* ---- the glyphs, measured (re-measured 2026-08-18 for the 11.05px
-           type; the word now spans 0.537 of the field's width, was 0.632) - */
+           type; the word now spans 0.537 of the field's width, was 0.632).
+           Since 2026-08-30 CX/CY are the FALLBACK home centres: when the
+           ink ruler runs, the live platform's own centres are measured off
+           the same clone (HCX/HCY below) — these constants are one
+           platform's 2026-08-18 reading, and a few tenths of a px of
+           stale anchor shows once the ink bounces flush. ------------------ */
     var GLYPHS = 'LOADING...';
     var NG = 10;
     var CX = [36.16, 43.67, 51.19, 58.70, 66.22, 73.73, 81.25, 90.26, 97.79, 105.32];
     var CY = [55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 53.48, 53.48, 53.48];
     var EM = [11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 16.02, 16.02, 16.02];
-    /* roam box for glyph CENTRES — keeps the ink inside the field. UNCHANGED
-       by the 2026-08-18 shrink, on purpose: the word got smaller, the flight
-       did not. If anything the smaller glyphs now clear the edges by a
-       little more ink than they used to. */
+    /* roam box for glyph CENTRES. Since 2026-08-30 (owner report: the
+       letters bounced off walls they never reached) this is only (a) the
+       clearance heuristic aim()/freeRun() score headings against, and
+       (b) the FALLBACK walls when the ink ruler cannot run — the real
+       collision below uses each glyph's measured ink extents, rotated to
+       the glyph's spin at the moment of the hit, against the WELL's own
+       edges, so the visible ink is what strikes the wall (the stray's
+       principle, one indicator over; see darkScatterInkReach). */
     var XMIN = 8, XMAX = 132, YMIN = 12, YMAX = 98;
+    /* THE WALLS THE INK STRIKES. Horizontally the field IS the well — the
+       CSS sizes the field's 140-unit width to the swatch exactly (7.893cqw).
+       Vertically the field (140×110, aspect 1.273) is letterboxed inside
+       the well (41%×33% of the square card, aspect 41/33 ≈ 1.242), so the
+       well's top and bottom edges sit a strip of (140·33/41 − 110)/2 ≈
+       1.34 field-units beyond the field's own — the walls are pushed out
+       to THEM, or a bounce would still turn back with the letterbox strip
+       showing. Ink support samples per glyph arrive in em from the ruler
+       and are cashed into real-scale px against EM here. */
+    var YEXT = (140 * 33 / 41 - 110) / 2;
+    var WX0 = 0, WX1 = 140, WY0 = -YEXT, WY1 = 110 + YEXT;
+    var inkEm = darkScatterInkReach();
+    var INK = null, HCX = CX, HCY = CY;
+    if (inkEm && inkEm.length === NG) {
+      INK = []; HCX = []; HCY = [];
+      for (i = 0; i < NG; i++) {
+        var sup2 = [], j2;
+        for (j2 = 0; j2 < inkEm[i].sup.length; j2++) {
+          sup2.push(inkEm[i].sup[j2] * EM[i]);
+        }
+        INK.push(sup2);
+        /* the word is centred in the well, and the field is centred in the
+           well, so the word's box centre IS the field's (70, 55): the
+           measured em offsets seat each glyph's live home centre exactly.
+           EM[0] is the base type the offsets are counted in. */
+        HCX.push(70 + inkEm[i].cx * EM[0]);
+        HCY.push(55 + inkEm[i].cy * EM[0]);
+      }
+    }
 
     var DEG = Math.PI / 180;
     var CYCLE = BANG * BANGS;
@@ -5307,34 +5515,65 @@ function JD_layerOpen() {
       }
       return best;
     }
-    /* one glyph's whole flight, integrated at DT; walls reflect elastically */
-    function fly(cx, cy, ang, v0, curl, rTotal) {
+    /* one glyph's whole flight, integrated at DT; walls reflect elastically.
+       THE COLLISION BODY IS THE INK (owner report, 2026-08-30 — the glyphs
+       used to reverse with air showing on every side): when the ruler ran,
+       `ink` carries this glyph's real-scale support samples — how far its
+       ink's convex hull reaches from the box centre in each of 72
+       directions — and each step reads them at the glyph's ROTATION at
+       that instant. The reach toward a wall whose inward normal points
+       along world direction φ is the hull's support at (φ − spin), so the
+       walls for the CENTRE sit wherever the tumbling ink says: at the
+       reversal the nearest real ink — a stem's end, a dot's rim, whatever
+       the pose presents — is what touches the well, not a padded box and
+       not a bounding rectangle's empty corner. Without the ruler, the old
+       constant roam box falls out — never a clip, exactly the stray's
+       degrade. */
+    function fly(cx, cy, ang, v0, curl, rTotal, ink) {
       var n = Math.max(1, Math.round((T3 - T1) / DT));
       var dt = (T3 - T1) / n;
       var cc = Math.cos(curl * dt), ss = Math.sin(curl * dt);
       var denom = Math.log(1 + (T3 - T1) / TAU);
       var dx = Math.cos(ang), dy = Math.sin(ang);
       var x = cx, y = cy;
-      var ts = [T1], xs = [cx], ys = [cy], rs = [0], bz = [0];
-      var k, t, sp, nx, ny, ndx, hit;
+      var ts = [T1], xs = [cx], ys = [cy], rs = [0], bz = [0], gs = [1e9];
+      var k, t, sp, nx, ny, ndx, hit, r;
+      var xlo = XMIN, xhi = XMAX, ylo = YMIN, yhi = YMAX;
+      var SN = ink ? ink.length : 0;
+      /* support at a world angle (degrees), linearly interpolated between
+         the ruler's 5° samples — sub-hundredth-px error at glyph radii */
+      function reach(phi) {
+        var p = (phi / 360 * SN) % SN;
+        if (p < 0) p += SN;
+        var i0 = p | 0, f = p - i0;
+        return ink[i0] * (1 - f) + ink[(i0 + 1) % SN] * f;
+      }
       for (k = 1; k <= n; k++) {
         t = T1 + k * dt;
+        /* spin on the same log profile as distance, normalised to rTotal —
+           computed BEFORE the wall test since it is the collision's pose */
+        r = rTotal * Math.log(1 + (t - T1) / TAU) / denom;
+        if (ink) {
+          xlo = WX0 + reach(180 - r); xhi = WX1 - reach(-r);
+          ylo = WY0 + reach(-90 - r); yhi = WY1 - reach(90 - r);
+        }
         sp = v0 / (1 + (k - 0.5) * dt / TAU);          /* midpoint speed */
         ndx = dx * cc - dy * ss; dy = dx * ss + dy * cc; dx = ndx;
         nx = x + dx * sp * dt;
         ny = y + dy * sp * dt;
         hit = 0;
-        if (nx < XMIN) { nx = 2 * XMIN - nx; dx = -dx; hit = 1; }
-        else if (nx > XMAX) { nx = 2 * XMAX - nx; dx = -dx; hit = 1; }
-        if (ny < YMIN) { ny = 2 * YMIN - ny; dy = -dy; hit = 1; }
-        else if (ny > YMAX) { ny = 2 * YMAX - ny; dy = -dy; hit = 1; }
-        x = nx < XMIN ? XMIN : (nx > XMAX ? XMAX : nx);
-        y = ny < YMIN ? YMIN : (ny > YMAX ? YMAX : ny);
+        if (nx < xlo) { nx = 2 * xlo - nx; dx = -dx; hit = 1; }
+        else if (nx > xhi) { nx = 2 * xhi - nx; dx = -dx; hit = 1; }
+        if (ny < ylo) { ny = 2 * ylo - ny; dy = -dy; hit = 1; }
+        else if (ny > yhi) { ny = 2 * yhi - ny; dy = -dy; hit = 1; }
+        x = nx < xlo ? xlo : (nx > xhi ? xhi : nx);
+        y = ny < ylo ? ylo : (ny > yhi ? yhi : ny);
         ts.push(t); xs.push(x); ys.push(y); bz.push(hit);
-        /* spin on the same log profile as distance, normalised to rTotal */
-        rs.push(rTotal * Math.log(1 + (t - T1) / TAU) / denom);
+        rs.push(r);
+        /* wall clearance at this step, for the decimator's near-wall gate */
+        gs.push(Math.min(x - xlo, xhi - x, y - ylo, yhi - y));
       }
-      return { ts: ts, xs: xs, ys: ys, rs: rs, bz: bz };
+      return { ts: ts, xs: xs, ys: ys, rs: rs, bz: bz, gs: gs };
     }
     /* Does the straight chord i→cand stay within tolerance of the real
        flight? Probed at up to ERR_PROBES evenly spaced interior points: a
@@ -5343,7 +5582,7 @@ function JD_layerOpen() {
        high-frequency structure for the probes to step over. Keeping this
        O(1) per candidate is what keeps the whole generator linear. */
     function chordOk(s, i2, cand) {
-      var steps = cand - i2, sp, probes, p, k, f;
+      var steps = cand - i2, sp, probes, p, k, f, pt, rt;
       if (steps < 2) return true;
       sp = s.ts[cand] - s.ts[i2];
       probes = (steps - 1 < ERR_PROBES) ? steps - 1 : ERR_PROBES;
@@ -5351,9 +5590,13 @@ function JD_layerOpen() {
         k = i2 + Math.round(steps * p / (probes + 1));
         if (k <= i2 || k >= cand) continue;
         f = (s.ts[k] - s.ts[i2]) / sp;
-        if (Math.abs(s.xs[i2] + (s.xs[cand] - s.xs[i2]) * f - s.xs[k]) > POS_TOL ||
-            Math.abs(s.ys[i2] + (s.ys[cand] - s.ys[i2]) * f - s.ys[k]) > POS_TOL ||
-            Math.abs(s.rs[i2] + (s.rs[cand] - s.rs[i2]) * f - s.rs[k]) > ROT_TOL) {
+        /* the near-wall gate (see WALL_NEAR above): flush ink affords the
+           chord no room to drift wallward, so truth is held tighter there */
+        pt = s.gs[k] < WALL_NEAR ? POS_TOL_W : POS_TOL;
+        rt = s.gs[k] < WALL_NEAR ? ROT_TOL_W : ROT_TOL;
+        if (Math.abs(s.xs[i2] + (s.xs[cand] - s.xs[i2]) * f - s.xs[k]) > pt ||
+            Math.abs(s.ys[i2] + (s.ys[cand] - s.ys[i2]) * f - s.ys[k]) > pt ||
+            Math.abs(s.rs[i2] + (s.rs[cand] - s.rs[i2]) * f - s.rs[k]) > rt) {
           return false;
         }
       }
@@ -5390,7 +5633,7 @@ function JD_layerOpen() {
         /* golden angle between NEIGHBOURING glyphs, so adjacent letters —
            and the three dots, which start out touching — tear apart in very
            different directions while the ten headings still cover the circle */
-        ang = aim(CX[g], CY[g],
+        ang = aim(HCX[g], HCY[g],
           (base + fanDir * g * 137.5 + span(-RAY_JITTER, RAY_JITTER)) * DEG);
         v0 = V0 * (1 + span(-V0_JITTER, V0_JITTER));
         curl = span(CURL_MIN, CURL_MAX) * coin() * DEG;
@@ -5400,7 +5643,7 @@ function JD_layerOpen() {
         turns = Math.max(1, Math.round(span(SPIN_MIN, SPIN_MAX) / 360));
         rTotal = sg * (360 * turns - span(SPIN_LEFT_MIN, SPIN_LEFT_MAX));
         rHome = sg * 360 * turns;
-        s = fly(CX[g], CY[g], ang, v0, curl, rTotal);
+        s = fly(HCX[g], HCY[g], ang, v0, curl, rTotal, INK && INK[g]);
         out.push({ s: s, keep: decimate(s), rHome: rHome });
       }
       return out;
@@ -5433,7 +5676,7 @@ function JD_layerOpen() {
         for (j = 1; j < keep.length; j++) {
           idx = keep[j];
           out.push(pc(tOff + s.ts[idx]), '%{transform:',
-            tf(s.xs[idx] - CX[i], s.ys[idx] - CY[i], rotAcc + s.rs[idx], EM[i]));
+            tf(s.xs[idx] - HCX[i], s.ys[idx] - HCY[i], rotAcc + s.rs[idx], EM[i]));
           /* the last flight waypoint is where the suction takes over, and
              it carries the only easing curve in the whole animation */
           if (j === keep.length - 1) out.push(';animation-timing-function:', EZ_ZOOP);
