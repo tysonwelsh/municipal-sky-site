@@ -8622,10 +8622,26 @@ function JD_layerOpen() {
     }
     return true;
   }
+  /* AN INTENT IS NOT AN OUTCOME (owner report, 2026-08-30). Pressing RERUN
+     files the flag at once, and the flag alone used to retire an item from
+     the backlog — so a rerun that never finished (a closed window, a turn
+     left unrated, a slot that timed out) left the item in LIMBO: marked
+     sent, never returned, never decided. Four items sat there. Now the flag
+     only settles an item once the rerun LANDED (a rated turn on the same
+     prompt — the queue answers that with rerun_landed), and an unlanded one
+     comes back to the bench for the owner to scrap or rerun afresh. SCRAP
+     is different and stays absolute: it is a decision, not a pending act.
+     (An older queue payload carries no rerun_landed; treating the flag as
+     landed then keeps the pre-2026-08-30 behaviour rather than flooding a
+     stale client's backlog with items it thinks are already handled.) */
+  function rerunPending(it) {
+    return flagged(it, 'rerun-request') && it.rerun_landed === false;
+  }
   function workable(it) {
-    return !it.retired && !itemDone(it) &&
-      !flagged(it, 'retire-request') && !flagged(it, 'rerun-request') &&
-      it.responses.some(function (r) { return !!r.svg; });
+    if (it.retired || flagged(it, 'retire-request')) return false;
+    if (!it.responses.some(function (r) { return !!r.svg; })) return false;
+    if (rerunPending(it)) return true;      /* unfinished business, always */
+    return !itemDone(it) && !flagged(it, 'rerun-request');
   }
   function firstWorkable(afterId) {
     var list = (Q && Q.items) || [], start = 0, i;
@@ -8645,8 +8661,10 @@ function JD_layerOpen() {
     list.forEach(function (it) {
       if (it.retired) return;
       if (flagged(it, 'retire-request')) { c.scrapped++; return; }
-      if (flagged(it, 'rerun-request')) { c.rerun++; return; }
-      if (!itemDone(it)) c.left++;
+      /* a rerun the owner asked for and that LANDED is settled; one that
+         never landed is back in the queue, so it counts as work to go */
+      if (flagged(it, 'rerun-request') && !rerunPending(it)) { c.rerun++; return; }
+      if (rerunPending(it) || !itemDone(it)) c.left++;
       it.responses.forEach(function (r) {
         c.resp++;
         if (r.complete) c.respDone++;

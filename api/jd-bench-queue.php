@@ -149,6 +149,21 @@ foreach ($rankRows as $r) {
     $rankByGen[$r['generation_id']] = (int) $r['rank_pos'];
 }
 
+// The prompts of every RATED visitor turn — the set a curated item's prompt is
+// looked up in to answer "did this item's rerun land?" (see rerun_landed).
+$ratedRerunPrompts = [];
+try {
+    $stmt = $db->query(
+        "SELECT DISTINCT prompt FROM jd_submissions
+          WHERE item_id IS NULL AND status = 'rated'"
+    );
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $p) {
+        $ratedRerunPrompts[(string) $p] = true;
+    }
+} catch (PDOException $e) {
+    error_log('jd-bench-queue: rated-rerun prompts unavailable (' . $e->getMessage() . ')');
+}
+
 $byGen = [];
 foreach ($rates as $r) {
     $byGen[$r['generation_id']][] = $r;
@@ -251,6 +266,15 @@ foreach ($subs as $sub) {
         'prompt'    => (string) $sub['prompt'],
         'created'   => (string) $sub['created'],
         'retired'   => !empty($entry['retired']),
+        // DID THE RERUN ACTUALLY LAND? (2026-08-30) A rerun-request flag used
+        // to retire an item from the backlog the instant the button was
+        // pressed — so an abandoned rerun (a closed window, a turn left
+        // unrated, a slot that timed out) put the item in limbo: marked sent,
+        // never returned, never decided. The flag is the owner's INTENT; this
+        // is whether it was carried out — a rated visitor turn on the same
+        // prompt, byte for byte, which is the same join jd-harvest.php makes.
+        // The bench skips a flagged item only when this is true.
+        'rerun_landed' => isset($ratedRerunPrompts[(string) $sub['prompt']]),
         'responses' => $responses,
     ];
 }
