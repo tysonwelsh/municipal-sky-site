@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 800">
+  <defs>
+    <linearGradient id="shaft-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b0b0b0" />
+      <stop offset="20%" stop-color="#e0e0e0" />
+      <stop offset="50%" stop-color="#ffffff" />
+      <stop offset="80%" stop-color="#d0d0d0" />
+      <stop offset="100%" stop-color="#909090" />
+    </linearGradient>
+    <linearGradient id="flute-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#808080" />
+      <stop offset="50%" stop-color="#b8b8b8" />
+      <stop offset="100%" stop-color="#707070" />
+    </linearGradient>
+    <linearGradient id="base-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a0a0a0" />
+      <stop offset="30%" stop-color="#e8e8e8" />
+      <stop offset="70%" stop-color="#c0c0c0" />
+      <stop offset="100%" stop-color="#808080" />
+    </linearGradient>
+  </defs>
+
+  <!-- CAPITOL (Top) -->
+  <!-- Abacus -->
+  <rect x="10" y="0" width="180" height="20" fill="url(#base-grad)" stroke="#707070" stroke-width="1.5" />
+  <path d="M 15 20 L 185 20 L 175 40 L 25 40 Z" fill="url(#base-grad)" stroke="#707070" stroke-width="1.5" />
+  
+  <!-- Echinus (Under volutes) -->
+  <path d="M 40 100 L 25 40 L 175 40 L 160 100 Z" fill="url(#base-grad)" stroke="#707070" stroke-width="1.5" />
+  
+  <!-- Egg and Dart detailing (simplified) -->
+  <path d="M 50 40 Q 60 70 70 40 M 70 40 Q 80 70 90 40 M 90 40 Q 100 70 110 40 M 110 40 Q 120 70 130 40 M 130 40 Q 140 70 150 40" fill="none" stroke="#707070" stroke-width="3" />
+
+  <!-- Volutes (Scrolls) -->
+  <g stroke="#707070" stroke-width="2">
+    <!-- Connecting cushion -->
+    <rect x="35" y="40" width="130" height="30" fill="url(#base-grad)" />
+    
+    <!-- Left Volute -->
+    <circle cx="35" cy="70" r="35" fill="url(#base-grad)" />
+    <path d="M 70 70 A 35 35 0 0 1 35 105 A 30 30 0 0 1 5 70 A 25 25 0 0 1 35 45 A 20 20 0 0 1 55 70 A 15 15 0 0 1 35 85 A 10 10 0 0 1 25 70 A 5 5 0 0 1 35 65" fill="none" stroke="#606060" stroke-width="2.5" />
+    <circle cx="35" cy="70" r="4" fill="#606060" />
+
+    <!-- Right Volute -->
+    <circle cx="165" cy="70" r="35" fill="url(#base-grad)" />
+    <path d="M 130 70 A 35 35 0 0 0 165 105 A 30 30 0 0 0 195 70 A 25 25 0 0 0 165 45 A 20 20 0 0 0 145 70 A 15 15 0 0 0 165 85 A 10 10 0 0 0 175 70 A 5 5 0 0 0 165 65" fill="none" stroke="#606060" stroke-width="2.5" />
+    <circle cx="165" cy="70" r="4" fill="#606060" />
+  </g>
+
+  <!-- SHAFT -->
+  <g transform="translate(0, 100)">
+    <!-- Main cylinder -->
+    <rect x="40" y="0" width="120" height="600" fill="url(#shaft-grad)" stroke="#707070" stroke-width="1.5" />
+    
+    <!-- Fluting (Vertical Grooves) -->
+    <rect x="46" y="5" width="8" height="590" rx="4" fill="url(#flute-grad)" />
+    <rect x="58" y="5" width="14" height="590" rx="7" fill="url(#flute-grad)" />
+    <rect x="76" y="5" width="18" height="590" rx="9" fill="url(#flute-grad)" />
+    <rect x="98" y="5" width="20" height="590" rx="10" fill="url(#flute-grad)" />
+    <rect x="122" y="5" width="18" height="590" rx="9" fill="url(#flute-grad)" />
+    <rect x="144" y="5" width="14" height="590" rx="7" fill="url(#flute-grad)" />
+    <rect x="162" y="5" width="8" height="590" rx="4" fill="url(#flute-grad)" />
+  </g>
+
+  <!-- BASE (Bottom) -->
+  <g transform="translate(0, 700)" stroke="#707070" stroke-width="1.5">
+    <!-- Top Torus -->
+    <rect x="35" y="0" width="130" height="15" rx="7.5" fill="url(#base-grad)" />
+    <!-- Scotia (concave molding) -->
+    <path d="M 37 15 C 45 25 45 35 37 45 L 163 45 C 155 35 155 25 163 15 Z" fill="url(#flute-grad)" />
+    <!-- Bottom Torus -->
+    <rect x="25" y="45" width="150" height="25" rx="12.5" fill="url(#base-grad)" />
+    <!-- Plinth (Square base block) -->
+    <rect x="15" y="70" width="170" height="30" fill="url(#base-grad)" />
+  </g>
+</svg>

@@ -189,10 +189,15 @@ the bench's job now, not the entry file's.
 A bench rerun files the item's prompt as a real visitor turn; its drawings
 and the owner's blind ratings live only in the DB. To commit them back:
 `GET api/jd-harvest.php?item=<item_id>` returns the rated rerun turns whole
-(SVG text, ratings, ranks, comparison). Then: write each SVG as
-`<model-slug>.svg` (run the ink check), APPEND responses **in the owner's
-rank order** — so the earliest-rid tiebreak encodes the podium and
-best-grade-wins re-points the drawer without a pin — with `grade` from the
+(SVG text, ratings, ranks, comparison). `scripts/harvest-rerun.py <item_id>`
+does the mechanics. It writes each SVG as `<model-slug>.svg` (run the ink
+check after — and if a crop is applied, bring fixed width/height attributes
+along or the checker letterboxes and reads false padding), APPENDS responses
+**in the owner's rank order** (a pre-podium rerun has no ranks: comparison
+winner first, then grade), and **PINS `primary` to the owner's 1st place**
+— owner rule, 2026-08-29: what appears in the drawer is the RE-RATED set,
+whatever the old grades say; the old responses stay on the back end as the
+permanent record. Each response carries `grade` from the
 turn's grade rating, and **`tokens` + `cost_usd`** computed from the
 harvest's `usage_tokens` via `jd_generation_cost()` (mirror jd-rate.php's
 reveal shape: `tokens: {input, output, total}`, cost rounded to 6) so the
