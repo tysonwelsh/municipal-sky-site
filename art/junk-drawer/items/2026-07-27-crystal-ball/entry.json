@@ -97,7 +97,13 @@
         "output": 4305,
         "total": 4818
       },
-      "cost_usd": 0.11019
+      "cost_usd": 0.11019,
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 3.0
+      }
     },
     {
       "rid": "r5",
@@ -119,7 +125,13 @@
         "output": 2112,
         "total": 2557
       },
-      "cost_usd": 0.033015
+      "cost_usd": 0.033015,
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 2.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      }
     },
     {
       "rid": "r6",
@@ -141,7 +153,13 @@
         "output": 3119,
         "total": 3476
       },
-      "cost_usd": 0.031636
+      "cost_usd": 0.031636,
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 2.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      }
     },
     {
       "rid": "r7",
@@ -163,7 +181,13 @@
         "output": 3182,
         "total": 3534
       },
-      "cost_usd": 0.038888
+      "cost_usd": 0.038888,
+      "annotations": {
+        "understanding-assignment": 2.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      }
     }
   ],
   "primary": "r4"

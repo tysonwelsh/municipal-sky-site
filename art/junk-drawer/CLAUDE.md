@@ -197,12 +197,18 @@ along or the checker letterboxes and reads false padding), APPENDS responses
 winner first, then grade), and **PINS `primary` to the owner's 1st place**
 — owner rule, 2026-08-29: what appears in the drawer is the RE-RATED set,
 whatever the old grades say; the old responses stay on the back end as the
-permanent record. Each response carries `grade` from the
-turn's grade rating, and **`tokens` + `cost_usd`** computed from the
+permanent record. THE GATE (owner, same day): a rerun may take the drawer
+spot only when rated under the current taxonomy ENTIRELY — every surviving
+response graded and answered on every live axis (axis IDS are the test;
+a label-era taxonomy_version stamp doesn't disqualify) — the script refuses
+otherwise. Each response carries `grade`, its **axis `annotations`**
+(numeric ranks — an exception to the 2026-08-18 don't-copy-DB-ratings note,
+by owner direction: the card renders from entry.json and the DB read path
+is still unbuilt, and the gate guarantees the set is complete and current),
+and **`tokens` + `cost_usd`** computed from the
 harvest's `usage_tokens` via `jd_generation_cost()` (mirror jd-rate.php's
 reveal shape: `tokens: {input, output, total}`, cost rounded to 6) so the
-report card states Cost/Tokens. Do NOT write axis annotations to
-entry.json — they're already in jd_ratings as turn rows. Old responses
+report card states Cost/Tokens. Old responses
 stay untouched (permanent record). Validate, commit
 `junk-drawer: add rerun responses to "<title>" (<models>)`.
 

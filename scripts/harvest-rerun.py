@@ -65,6 +65,20 @@ def harvest(item_id):
     for r in rr["ratings"]:
         rates.setdefault(r["generation_id"], {})[r["axis_id"] or r["kind"]] = float(r["value"])
     gens = [g for g in rr["generations"] if g["status"] == "ok" and g.get("svg")]
+    # THE GATE (owner rule, 2026-08-29): a rerun takes the drawer spot only
+    # when rated under the current taxonomy ENTIRELY — every surviving
+    # response graded and answered on every live axis. (Axis ids are the
+    # permanent part; a label-era version stamp doesn't disqualify.)
+    tax = json.load(open(os.path.join(REPO, "art", "junk-drawer", "taxonomy.json")))
+    live_axes = [a["id"] for a in tax["axes"] if not a.get("defunct")]
+    for g in gens:
+        got = rates.get(g["id"], {})
+        missing = [a for a in live_axes if a not in got] + ([] if "grade" in got else ["grade"])
+        if missing:
+            print(f"{item_id}: {g['model_id']} is missing {missing} — the rerun "
+                  "is not fully rated under the current taxonomy; NOT harvesting. "
+                  "Finish rating it (rerun again from the bench) and retry.")
+            return False
     if ranks:
         gens.sort(key=lambda g: ranks.get(g["id"], 99))
     else:
@@ -104,6 +118,10 @@ def harvest(item_id):
                                else "unplaced (pre-podium turn filed no rank order). "))
                       + "Axis ratings live in jd_ratings, per the DB-era rule."),
         }
+        # the card renders annotations from entry.json (the DB read path is
+        # still unbuilt), and the owner's gate above guarantees a full set —
+        # so the harvested response carries its axis ratings visibly
+        resp["annotations"] = {a: rates[g["id"]][a] for a in live_axes}
         if p["tokens"]:
             resp["tokens"] = p["tokens"]
         if p["cost_usd"] is not None:
