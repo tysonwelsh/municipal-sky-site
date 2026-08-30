@@ -29,5 +29,7 @@
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 1.8%); no viewBox normalization. Source contains a self-correction fossil: a strand emitted with invalid stroke=\"#a2first\" was zeroed out (stroke-width 0, opacity 0) and immediately re-emitted corrected as #a28457 — invisible in the render, preserved byte-exact."
     }
-  ]
+  ],
+  "retired": true,
+  "retired_note": "Scrapped from the bench by the owner (2026-08-30) — the SCRAP control filed a retire-request flag on this item; it leaves the drawer and the manifest. Files and entry stay for the record."
 }

@@ -41,5 +41,7 @@
       "transcript": null,
       "notes": "Schema fixture: first item, added while scaffolding the backend. Grade and annotations are a provisional self-assessment by the generating model — owner to regrade. viewBox normalized 2026-07-26: tightened from \"0 0 240 480\" to measured ink bounds (framing metadata only; artwork bytes untouched)."
     }
-  ]
+  ],
+  "retired": true,
+  "retired_note": "Scrapped from the bench by the owner (2026-08-30) — the SCRAP control filed a retire-request flag on this item; it leaves the drawer and the manifest. Files and entry stay for the record."
 }
