@@ -8969,7 +8969,9 @@ function JD_layerOpen() {
             rank: r.rank != null ? r.rank : r.rank_seed
           };
         }),
-        file: function (per) { return fileItem(it, per); }
+        /* the size rides through with the ratings — the card hands it to
+           this callback, which used to drop it on the floor (2026-08-30) */
+        file: function (per, size) { return fileItem(it, per, size); }
       });
       paintBar();
     }, function () {
