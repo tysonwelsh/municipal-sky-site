@@ -1,0 +1,339 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="redRadial" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#ff5555"/>
+      <stop offset="40%" stop-color="#ff2020"/>
+      <stop offset="100%" stop-color="#b70000"/>
+    </radialGradient>
+    <linearGradient id="silverOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdfdfd"/>
+      <stop offset="20%" stop-color="#d9dde4"/>
+      <stop offset="50%" stop-color="#a6adb8"/>
+      <stop offset="80%" stop-color="#f4f6fb"/>
+      <stop offset="100%" stop-color="#808693"/>
+    </linearGradient>
+    <linearGradient id="silverInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="15%" stop-color="#e9ecf2"/>
+      <stop offset="50%" stop-color="#b6bcc7"/>
+      <stop offset="85%" stop-color="#f8f9fd"/>
+      <stop offset="100%" stop-color="#8c939f"/>
+    </linearGradient>
+    <radialGradient id="redCore" cx="50%" cy="38%" r="50%">
+      <stop offset="0%" stop-color="#ff7777"/>
+      <stop offset="40%" stop-color="#ff2020"/>
+      <stop offset="100%" stop-color="#a30000"/>
+    </radialGradient>
+    <linearGradient id="sunRayGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffd8aa"/>
+      <stop offset="30%" stop-color="#ffb85c"/>
+      <stop offset="100%" stop-color="#ff7b00" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="maoSilverMain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="18%" stop-color="#f1f3f7"/>
+      <stop offset="40%" stop-color="#cfd4df"/>
+      <stop offset="70%" stop-color="#a0a8b5"/>
+      <stop offset="100%" stop-color="#757c88"/>
+    </linearGradient>
+    <linearGradient id="maoSilverShadow" x1="20%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7f8fb" stop-opacity="0.6"/>
+      <stop offset="35%" stop-color="#c3c8d3" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#5b616d"/>
+    </linearGradient>
+    <linearGradient id="maoSilverHighlight" x1="0%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#e3e6ee" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#9ea4b0" stop-opacity="0.0"/>
+    </linearGradient>
+    <filter id="emboss" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="blur"/>
+      <feOffset in="blur" dx="1.5" dy="1.8" result="offsetBlur"/>
+      <feSpecularLighting in="blur" surfaceScale="3" specularConstant="1.1" specularExponent="20" lighting-color="#ffffff" result="specOut">
+        <fePointLight x="-120" y="-80" z="200"/>
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut2"/>
+      <feComposite in="SourceGraphic" in2="offsetBlur" operator="arithmetic" k2="1" k3="-0.7" result="litPaint"/>
+      <feComposite in="litPaint" in2="specOut2" operator="arithmetic" k2="1" k3="1" result="embossOut"/>
+    </filter>
+  </defs>
+
+  <!-- Outer badge shape with faux silver border -->
+  <g>
+    <circle cx="256" cy="256" r="252" fill="url(#silverOuter)"/>
+    <circle cx="256" cy="256" r="236" fill="url(#silverInner)"/>
+    <circle cx="256" cy="256" r="224" fill="url(#redRadial)"/>
+  </g>
+
+  <!-- Sunburst rays -->
+  <g transform="translate(256 256)">
+    <g fill="url(#sunRayGrad)" opacity="0.95">
+      <!-- 24 rays -->
+      <g>
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(15)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(30)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(45)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(60)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(75)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(90)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(105)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(120)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(135)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(150)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(165)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(180)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(195)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(210)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(225)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(240)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(255)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(270)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(285)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(300)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(315)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(330)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+      <g transform="rotate(345)">
+        <polygon points="0,-216 11,-140 -11,-140"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Red core circle over rays for clean edge -->
+  <circle cx="256" cy="256" r="188" fill="url(#redCore)"/>
+
+  <!-- Mao head profile relief -->
+  <g transform="translate(0,8)">
+    <!-- Shadow base for depth -->
+    <path d="M188 356
+             C210 350 222 339 228 330
+             C205 322 193 307 190 291
+             C186 273 189 259 195 248
+             C182 240 174 225 173 209
+             C171 186 177 168 189 154
+             C205 135 230 125 259 123
+             C281 121 301 124 318 131
+             C336 139 350 151 359 167
+             C370 186 375 208 375 234
+             C375 251 371 269 363 287
+             C355 305 343 320 329 332
+             C332 337 334 343 336 349
+             C339 359 339 370 335 377
+             C331 385 322 391 309 394
+             C287 400 251 399 223 392
+             C206 388 194 382 188 376
+             Z"
+          fill="url(#maoSilverShadow)" opacity="0.85"/>
+
+    <!-- Main silver head silhouette -->
+    <path d="M184 350
+             C203 346 216 338 225 328
+             C205 320 194 305 191 289
+             C188 272 193 258 199 247
+             C185 238 176 223 175 209
+             C173 185 180 164 195 148
+             C213 129 239 119 268 117
+             C292 115 313 120 332 130
+             C351 140 365 154 375 172
+             C385 192 389 213 387 236
+             C386 255 379 276 369 293
+             C361 307 351 319 339 328
+             C343 336 346 347 347 356
+             C348 364 347 374 343 381
+             C338 389 329 396 315 399
+             C285 407 245 404 217 397
+             C199 392 190 387 184 380
+             Z"
+          fill="url(#maoSilverMain)" filter="url(#emboss)"/>
+
+    <!-- Facial features and internal relief lines -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Nose bridge and tip -->
+      <path d="M283 210
+               C290 210 296 211 300 215
+               C303 218 304 221 304 224
+               C304 228 302 232 298 236
+               C295 239 292 241 287 242"
+            stroke="url(#maoSilverShadow)" stroke-width="3.1"/>
+
+      <!-- Upper lip and mouth -->
+      <path d="M288 247
+               C294 249 298 252 300 255
+               C302 259 302 262 300 265
+               C297 269 291 272 283 273"
+            stroke="url(#maoSilverShadow)" stroke-width="3"/>
+
+      <!-- Chin contour accent -->
+      <path d="M276 282
+               C269 287 262 290 252 292
+               C242 294 233 294 225 293"
+            stroke="url(#maoSilverShadow)" stroke-width="3.2"/>
+
+      <!-- Eye crease -->
+      <path d="M272 205
+               C279 203 286 203 292 205"
+            stroke="url(#maoSilverShadow)" stroke-width="2.6"/>
+
+      <!-- Brow / forehead accent -->
+      <path d="M248 196
+               C259 193 271 191 283 192
+               C291 192 298 194 304 197"
+            stroke="url(#maoSilverShadow)" stroke-width="2.8"/>
+
+      <!-- Ear outline hint -->
+      <path d="M311 226
+               C314 230 316 237 317 245
+               C317 251 316 256 314 260"
+            stroke="url(#maoSilverShadow)" stroke-width="2.8"/>
+
+      <!-- Neck fold -->
+      <path d="M255 260
+               C250 269 246 276 243 284
+               C241 290 240 297 241 304"
+            stroke="url(#maoSilverShadow)" stroke-width="3.1"/>
+    </g>
+
+    <!-- Jacket / collar block -->
+    <path d="M190 285
+             C201 288 210 291 216 296
+             C221 300 226 307 229 314
+             C234 325 237 337 239 353
+             C240 360 241 368 242 375
+             C231 372 221 368 213 364
+             C206 360 200 356 196 352
+             C191 347 188 341 186 334
+             C184 326 184 317 186 309
+             C187 301 189 292 190 285
+             Z"
+          fill="url(#maoSilverMain)"/>
+
+    <!-- Collar rim highlight -->
+    <path d="M193 302
+             C201 304 208 308 213 312
+             C218 317 221 322 224 329"
+          fill="none" stroke="url(#maoSilverHighlight)" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Hair mass / cap-like contour at back -->
+    <path d="M195 243
+             C189 236 186 227 185 217
+             C184 203 187 191 194 179
+             C203 164 216 153 234 145
+             C248 139 264 135 282 135
+             C299 135 314 139 327 146
+             C338 152 347 160 354 170
+             C361 181 366 193 368 206
+             C355 191 341 181 325 174
+             C307 167 289 165 272 166
+             C255 168 240 173 227 181
+             C214 189 204 199 195 212
+             Z"
+          fill="url(#maoSilverMain)"/>
+
+    <!-- Forehead / cheek highlight -->
+    <path d="M230 196
+             C242 188 257 183 274 182
+             C291 181 307 185 320 193
+             C311 192 302 192 294 194
+             C279 197 266 203 255 211
+             C246 217 238 225 232 234
+             C228 227 226 220 226 214
+             Z"
+          fill="url(#maoSilverHighlight)" opacity="0.8"/>
+
+    <!-- Nose highlight -->
+    <path d="M279 214
+             C285 214 292 216 296 219
+             C293 216 288 213 282 212
+             C276 211 270 212 265 214
+             C269 213 274 213 279 214
+             Z"
+          fill="url(#maoSilverHighlight)" opacity="0.75"/>
+
+    <!-- Cheek / jaw highlight -->
+    <path d="M260 232
+             C270 231 278 232 286 235
+             C292 237 296 240 299 244
+             C295 243 290 242 285 242
+             C273 242 261 245 251 250
+             C244 254 237 259 231 265
+             C232 259 235 254 239 249
+             C244 243 251 237 260 232
+             Z"
+          fill="url(#maoSilverHighlight)" opacity="0.75"/>
+
+    <!-- Chin highlight -->
+    <path d="M252 277
+             C261 275 270 274 279 276
+             C272 276 265 278 258 280
+             C250 283 244 286 238 290
+             C241 284 246 280 252 277
+             Z"
+          fill="url(#maoSilverHighlight)" opacity="0.7"/>
+
+    <!-- Subtle outline to sharpen edge -->
+    <path d="M184 350
+             C203 346 216 338 225 328
+             C205 320 194 305 191 289
+             C188 272 193 258 199 247
+             C185 238 176 223 175 209
+             C173 185 180 164 195 148
+             C213 129 239 119 268 117
+             C292 115 313 120 332 130
+             C351 140 365 154 375 172
+             C385 192 389 213 387 236
+             C386 255 379 276 369 293
+             C361 307 351 319 339 328
+             C343 336 346 347 347 356
+             C348 364 347 374 343 381
+             C338 389 329 396 315 399
+             C285 407 245 404 217 397
+             C199 392 190 387 184 380
+             Z"
+          fill="none" stroke="#5a606d" stroke-width="1.4" opacity="0.55"/>
+  </g>
+</svg>

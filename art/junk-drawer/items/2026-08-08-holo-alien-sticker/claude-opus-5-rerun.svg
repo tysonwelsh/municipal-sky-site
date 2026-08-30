@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="82.0 22.0 475.8 775.8">
+  <defs>
+    <linearGradient id="holo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7fe6d0"/>
+      <stop offset="0.13" stop-color="#a9c6e8"/>
+      <stop offset="0.26" stop-color="#6f8fb8"/>
+      <stop offset="0.38" stop-color="#c9e9dd"/>
+      <stop offset="0.5" stop-color="#8fb0a4"/>
+      <stop offset="0.62" stop-color="#5d7f96"/>
+      <stop offset="0.74" stop-color="#b8dce6"/>
+      <stop offset="0.86" stop-color="#7ea89c"/>
+      <stop offset="1" stop-color="#alt"/>
+      <stop offset="1" stop-color="#9fd8c8"/>
+    </linearGradient>
+
+    <linearGradient id="holo2" x1="0.1" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#57808f"/>
+      <stop offset="0.18" stop-color="#a6dfd2"/>
+      <stop offset="0.35" stop-color="#7d9dbd"/>
+      <stop offset="0.52" stop-color="#dff2ea"/>
+      <stop offset="0.68" stop-color="#6d94a5"/>
+      <stop offset="0.84" stop-color="#b3d9c9"/>
+      <stop offset="1" stop-color="#4f6f85"/>
+    </linearGradient>
+
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="0.22" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#d9fff4" stop-opacity="0.45"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.82" stop-color="#cfeaff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="eyeg" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#0d1420"/>
+      <stop offset="0.45" stop-color="#182a38"/>
+      <stop offset="0.75" stop-color="#0a1018"/>
+      <stop offset="1" stop-color="#233b46"/>
+    </linearGradient>
+
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8fff8"/>
+      <stop offset="0.3" stop-color="#8fbfd6"/>
+      <stop offset="0.55" stop-color="#f2fbff"/>
+      <stop offset="0.8" stop-color="#7fae9e"/>
+      <stop offset="1" stop-color="#dff4ff"/>
+    </linearGradient>
+
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#eafff9" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#a8e2d6" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#6f9bb5" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="starg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#a9e4dc"/>
+    </linearGradient>
+
+    <clipPath id="headClip">
+      <path d="M320 40
+               C 452 40 540 148 540 286
+               C 540 420 470 560 400 668
+               C 372 711 344 748 320 772
+               C 296 748 268 711 240 668
+               C 170 560 100 420 100 286
+               C 100 148 188 40 320 40 Z"/>
+    </clipPath>
+  </defs>
+
+  <g>
+    <!-- outer holo sticker die-cut border -->
+    <path d="M320 24
+             C 462 24 556 140 556 286
+             C 556 428 482 572 408 686
+             C 378 732 348 772 320 796
+             C 292 772 262 732 232 686
+             C 158 572 84 428 84 286
+             C 84 140 178 24 320 24 Z"
+          fill="url(#rim)"/>
+
+    <!-- head body -->
+    <path d="M320 40
+             C 452 40 540 148 540 286
+             C 540 420 470 560 400 668
+             C 372 711 344 748 320 772
+             C 296 748 268 711 240 668
+             C 170 560 100 420 100 286
+             C 100 148 188 40 320 40 Z"
+          fill="url(#holo)"/>
+
+    <g clip-path="url(#headClip)">
+      <!-- diagonal holo bands -->
+      <g opacity="0.55">
+        <path d="M-200 700 L 240 -80 L 340 -80 L -100 700 Z" fill="url(#holo2)"/>
+        <path d="M-40 820 L 400 -60 L 452 -60 L 12 820 Z" fill="#dff7ef" opacity="0.35"/>
+        <path d="M120 860 L 560 -20 L 600 -20 L 160 860 Z" fill="#5f89a3" opacity="0.4"/>
+        <path d="M260 880 L 700 0 L 740 0 L 300 880 Z" fill="#a8ded1" opacity="0.4"/>
+      </g>
+      <!-- reverse bands -->
+      <g opacity="0.3">
+        <path d="M700 640 L 260 -100 L 320 -100 L 760 640 Z" fill="#e6fbff"/>
+        <path d="M760 840 L 320 60 L 356 60 L 796 840 Z" fill="#4e7186"/>
+      </g>
+      <rect x="60" y="0" width="520" height="800" fill="url(#sheen)"/>
+      <rect x="60" y="0" width="520" height="800" fill="url(#glow)"/>
+
+      <!-- fine holo scanlines -->
+      <g stroke="#ffffff" stroke-width="2" opacity="0.18">
+        <path d="M60 120 L 580 40"/>
+        <path d="M60 180 L 580 100"/>
+        <path d="M60 240 L 580 160"/>
+        <path d="M60 300 L 580 220"/>
+        <path d="M60 360 L 580 280"/>
+        <path d="M60 420 L 580 340"/>
+        <path d="M60 480 L 580 400"/>
+        <path d="M60 540 L 580 460"/>
+        <path d="M60 600 L 580 520"/>
+        <path d="M60 660 L 580 580"/>
+        <path d="M60 720 L 580 640"/>
+      </g>
+      <g stroke="#25455a" stroke-width="1.2" opacity="0.16">
+        <path d="M60 150 L 580 70"/>
+        <path d="M60 270 L 580 190"/>
+        <path d="M60 390 L 580 310"/>
+        <path d="M60 510 L 580 430"/>
+        <path d="M60 630 L 580 550"/>
+        <path d="M60 750 L 580 670"/>
+      </g>
+
+      <!-- cheek shading -->
+      <path d="M100 300 C 150 480 250 640 320 772 C 250 640 150 470 120 300 Z" fill="#38596e" opacity="0.35"/>
+      <path d="M540 300 C 490 480 390 640 320 772 C 390 640 490 470 520 300 Z" fill="#f0ffff" opacity="0.28"/>
+
+      <!-- brow highlight -->
+      <path d="M150 200 C 230 118 410 118 490 200 C 410 152 230 152 150 200 Z" fill="#ffffff" opacity="0.45"/>
+    </g>
+
+    <!-- inner outline -->
+    <path d="M320 40
+             C 452 40 540 148 540 286
+             C 540 420 470 560 400 668
+             C 372 711 344 748 320 772
+             C 296 748 268 711 240 668
+             C 170 560 100 420 100 286
+             C 100 148 188 40 320 40 Z"
+          fill="none" stroke="#1d3746" stroke-width="7" stroke-opacity="0.65"/>
+
+    <!-- EYES -->
+    <g>
+      <!-- left eye -->
+      <path d="M262 268 C 240 226 178 214 150 246 C 124 276 138 342 178 388 C 210 424 250 434 264 410 C 280 382 284 312 262 268 Z"
+            fill="url(#eyeg)" stroke="#e9fbff" stroke-width="5"/>
+      <path d="M244 274 C 228 246 190 238 172 258 C 158 274 164 306 182 330 C 196 300 218 282 244 274 Z"
+            fill="#bfe9e2" opacity="0.5"/>
+      <path d="M196 380 C 214 400 236 404 246 392 C 232 396 212 390 196 380 Z" fill="#7fd4c6" opacity="0.45"/>
+      <ellipse cx="188" cy="272" rx="19" ry="12" transform="rotate(-32 188 272)" fill="#ffffff" opacity="0.85"/>
+
+      <!-- right eye -->
+      <path d="M378 268 C 400 226 462 214 490 246 C 516 276 502 342 462 388 C 430 424 390 434 376 410 C 360 382 356 312 378 268 Z"
+            fill="url(#eyeg)" stroke="#e9fbff" stroke-width="5"/>
+      <path d="M396 274 C 412 246 450 238 468 258 C 482 274 476 306 458 330 C 444 300 422 282 396 274 Z"
+            fill="#bfe9e2" opacity="0.5"/>
+      <path d="M444 380 C 426 400 404 404 394 392 C 408 396 428 390 444 380 Z" fill="#7fd4c6" opacity="0.45"/>
+      <ellipse cx="452" cy="272" rx="19" ry="12" transform="rotate(32 452 272)" fill="#ffffff" opacity="0.85"/>
+    </g>
+
+    <!-- nostrils -->
+    <g fill="#20404f" opacity="0.75">
+      <ellipse cx="304" cy="516" rx="6" ry="9"/>
+      <ellipse cx="336" cy="516" rx="6" ry="9"/>
+    </g>
+
+    <!-- mouth -->
+    <path d="M292 588 C 306 600 334 600 348 588" fill="none" stroke="#20404f" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- holo sparkles -->
+    <g fill="url(#starg)">
+      <path d="M470 130 L 480 162 L 512 172 L 480 182 L 470 214 L 460 182 L 428 172 L 460 162 Z" opacity="0.9"/>
+      <path d="M158 470 L 165 492 L 187 499 L 165 506 L 158 528 L 151 506 L 129 499 L 151 492 Z" opacity="0.75"/>
+      <path d="M400 640 L 405 654 L 419 659 L 405 664 L 400 678 L 395 664 L 381 659 L 395 654 Z" opacity="0.7"/>
+      <path d="M236 148 L 241 162 L 255 167 L 241 172 L 236 186 L 231 172 L 217 167 L 231 162 Z" opacity="0.6"/>
+    </g>
+  </g>
+</svg>

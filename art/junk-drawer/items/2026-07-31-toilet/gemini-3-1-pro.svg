@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 650">
+  <defs>
+    <linearGradient id="tankGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="70%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </linearGradient>
+    <linearGradient id="bowlGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+    <linearGradient id="baseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f1f5f9" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+    <linearGradient id="lidGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <linearGradient id="seatGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#d1d5db" />
+    </linearGradient>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f1f5f9" />
+      <stop offset="50%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Tank -->
+  <path d="M 330 110 L 480 110 L 480 340 L 330 340 Z" fill="url(#tankGrad)" />
+  <path d="M 330 110 L 350 110 L 350 340 L 330 340 Z" fill="#ffffff" opacity="0.6" />
+  
+  <!-- Tank Lid -->
+  <path d="M 315 110 C 315 80, 495 80, 495 110 L 490 130 L 320 130 Z" fill="url(#tankGrad)" />
+  <path d="M 315 110 C 315 90, 495 90, 495 110 L 315 110 Z" fill="#ffffff" />
+
+  <!-- Flush Handle -->
+  <rect x="420" y="150" width="45" height="12" rx="6" fill="url(#metalGrad)" transform="rotate(-15 420 150)" />
+  <circle cx="420" cy="155" r="14" fill="url(#metalGrad)" />
+  
+  <!-- Upright Toilet Lid (Cover) -->
+  <path d="M 320 340 L 330 60 C 325 30, 290 30, 280 60 L 280 340 Z" fill="url(#lidGrad)" />
+  
+  <!-- Upright Toilet Seat -->
+  <path d="M 285 340 L 290 70 C 285 40, 255 40, 240 70 L 245 340 Z" fill="url(#seatGrad)" />
+  <path d="M 270 340 L 275 90 C 273 70, 260 70, 255 90 L 255 340 Z" fill="#e2e8f0" opacity="0.5" />
+  <path d="M 240 180 C 235 180, 235 220, 240 220 Z" fill="#cbd5e1" />
+  <path d="M 243 260 C 238 260, 238 300, 243 300 Z" fill="#cbd5e1" />
+
+  <!-- Bowl and Base -->
+  <path d="M 40 360 C 40 450, 160 480, 170 560 C 170 610, 140 620, 140 640 L 380 640 C 380 620, 360 610, 360 560 C 360 460, 350 360, 350 360 Z" fill="url(#bowlGrad)" />
+  
+  <!-- Trapway Detailing (classic molded curves) -->
+  <path d="M 180 430 C 240 430, 280 480, 270 550 C 260 610, 190 620, 190 640" fill="none" stroke="#cbd5e1" stroke-width="25" stroke-linecap="round" opacity="0.6" />
+  <path d="M 180 430 C 240 430, 280 480, 270 550 C 260 610, 190 620, 190 640" fill="none" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" opacity="0.8" />
+  
+  <path d="M 330 430 C 310 480, 310 550, 330 640" fill="none" stroke="#94a3b8" stroke-width="15" stroke-linecap="round" opacity="0.4" />
+
+  <!-- Base Foot -->
+  <path d="M 130 630 C 130 615, 390 615, 390 630 L 390 640 L 130 640 Z" fill="url(#baseGrad)" />
+
+  <!-- Bowl Rim -->
+  <path d="M 15 340 C 15 315, 350 315, 350 340 L 350 365 C 100 365, 15 365, 15 340 Z" fill="url(#lidGrad)" />
+  <path d="M 15 340 C 15 325, 350 325, 350 340 C 350 355, 15 355, 15 340 Z" fill="#ffffff" />
+  
+  <!-- Seat/Bowl Hinge -->
+  <circle cx="280" cy="345" r="16" fill="url(#metalGrad)" />
+  <circle cx="280" cy="345" r="8" fill="#e2e8f0" />
+</svg>

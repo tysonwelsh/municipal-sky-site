@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="rimGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#f4f4f4"/>
+      <stop offset="35%" stop-color="#c8c8c8"/>
+      <stop offset="70%" stop-color="#8f8f8f"/>
+      <stop offset="100%" stop-color="#6a6a6a"/>
+    </radialGradient>
+    <linearGradient id="faceGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ececec"/>
+      <stop offset="45%" stop-color="#c4c4c4"/>
+      <stop offset="100%" stop-color="#8e8e8e"/>
+    </linearGradient>
+    <radialGradient id="redGrad" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#e0281e"/>
+      <stop offset="70%" stop-color="#c01512"/>
+      <stop offset="100%" stop-color="#9c0e0c"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Outer silver rim -->
+  <circle cx="200" cy="200" r="198" fill="url(#rimGrad)"/>
+  <circle cx="200" cy="200" r="198" fill="none" stroke="#5c5c5c" stroke-width="3"/>
+  <circle cx="200" cy="200" r="186" fill="none" stroke="#e8e8e8" stroke-width="3" opacity="0.8"/>
+  <circle cx="200" cy="200" r="178" fill="none" stroke="#7d7d7d" stroke-width="2"/>
+
+  <!-- Red field -->
+  <circle cx="200" cy="200" r="174" fill="url(#redGrad)"/>
+
+  <!-- Sunburst rays -->
+  <g fill="#f5c04a" opacity="0.85">
+    <g id="rays">
+      <path d="M200 200 L200 30 L222 32 Z"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(20 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(40 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(60 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(80 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(100 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(120 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(140 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(160 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(180 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(200 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(220 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(240 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(260 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(280 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(300 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(320 200 200)"/>
+      <path d="M200 200 L200 30 L222 32 Z" transform="rotate(340 200 200)"/>
+    </g>
+  </g>
+  <circle cx="200" cy="200" r="60" fill="#f5c04a" opacity="0.5"/>
+
+  <!-- Mao profile relief (facing left), faux silver -->
+  <g>
+    <!-- drop shade for relief depth -->
+    <path transform="translate(4,5)" fill="#7a0a08" opacity="0.55"
+      d="M245 118
+         C215 96 172 98 150 124
+         C133 144 128 170 124 192
+         C121 206 113 214 108 222
+         C104 228 106 234 112 236
+         C118 238 118 244 115 250
+         C112 256 114 262 120 264
+         C124 266 123 272 121 277
+         C119 283 123 288 130 289
+         C142 291 152 296 158 306
+         C164 316 166 328 165 340
+         C164 352 170 360 182 362
+         L262 362
+         C270 340 272 316 268 296
+         C278 268 282 236 276 204
+         C270 168 262 134 245 118 Z"/>
+    <!-- main silver profile -->
+    <path fill="url(#faceGrad)" stroke="#777777" stroke-width="2"
+      d="M245 118
+         C215 96 172 98 150 124
+         C133 144 128 170 124 192
+         C121 206 113 214 108 222
+         C104 228 106 234 112 236
+         C118 238 118 244 115 250
+         C112 256 114 262 120 264
+         C124 266 123 272 121 277
+         C119 283 123 288 130 289
+         C142 291 152 296 158 306
+         C164 316 166 328 165 340
+         C164 352 170 360 182 362
+         L262 362
+         C270 340 272 316 268 296
+         C278 268 282 236 276 204
+         C270 168 262 134 245 118 Z"/>
+    <!-- hair mass highlight -->
+    <path fill="#f2f2f2" opacity="0.85"
+      d="M242 124 C214 104 176 106 156 128 C143 142 137 160 134 178 C150 158 170 148 194 150 C222 152 250 168 268 196 C262 160 256 136 242 124 Z"/>
+    <!-- collar tunic suggestion -->
+    <path fill="#a8a8a8"
+      d="M180 362 C182 348 190 338 202 334 L224 330 C244 328 258 340 262 362 Z"/>
+    <path fill="none" stroke="#888888" stroke-width="3"
+      d="M204 334 C204 344 208 352 214 358"/>
+    <!-- cheek shading -->
+    <path fill="#9a9a9a" opacity="0.6"
+      d="M160 210 C176 224 198 230 220 226 C204 240 178 240 162 226 C156 220 156 214 160 210 Z"/>
+    <!-- ear hint -->
+    <path fill="none" stroke="#8a8a8a" stroke-width="3" stroke-linecap="round"
+      d="M212 218 C220 214 228 218 228 228 C228 238 220 244 212 242"/>
+    <!-- specular highlight on forehead/nose -->
+    <path fill="#ffffff" opacity="0.7"
+      d="M138 150 C132 166 128 184 126 198 C124 208 118 216 113 223 C120 220 128 210 131 198 C135 180 136 164 138 150 Z"/>
+  </g>
+
+  <!-- inner rim highlight over everything for enamel domed look -->
+  <circle cx="200" cy="200" r="174" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.35"/>
+  <ellipse cx="150" cy="95" rx="90" ry="34" fill="#ffffff" opacity="0.22" transform="rotate(-24 150 95)"/>
+</svg>

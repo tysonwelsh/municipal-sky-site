@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="eyeballSclera" cx="40%" cy="40%" r="55%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#fff8e7"/>
+      <stop offset="40%" stop-color="#f0e2ca"/>
+      <stop offset="75%" stop-color="#b89c7d"/>
+      <stop offset="90%" stop-color="#5a4231"/>
+      <stop offset="100%" stop-color="#2a1d12"/>
+    </radialGradient>
+    
+    <radialGradient id="glint" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    
+    <linearGradient id="curveGlint" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Filter to simulate oil paint texture / brush strokes -->
+    <filter id="oilPaint" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="4" result="noise"/>
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 4 -1.5" in="noise" result="highContrastNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="highContrastNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G" result="displaced1"/>
+      <feComposite operator="in" in="displaced1" in2="SourceGraphic" result="maskedTexture"/>
+      <feGaussianBlur stdDeviation="0.4" result="blurred"/>
+      
+      <!-- A second texture overlay for canvas/brush feel -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.3 0.05" numOctaves="3" result="brushNoise"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.15 0" in="brushNoise" result="subtleBrush"/>
+      <feBlend mode="multiply" in="blurred" in2="subtleBrush" result="finalTex"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#oilPaint)">
+    <!-- Base eyeball -->
+    <circle cx="50" cy="50" r="48" fill="url(#eyeballSclera)"/>
+    
+    <!-- Pupil, offset and slightly askew -->
+    <g transform="translate(18, 12) rotate(15, 50, 50)">
+      <circle cx="65" cy="40" r="14" fill="#0d0a07"/>
+      <!-- Inner pupil shadow for depth -->
+      <circle cx="63" cy="38" r="8" fill="#1c140e"/>
+      <!-- Bright pupil fleck -->
+      <ellipse cx="61" cy="35" rx="3.5" ry="2.5" fill="url(#glint)" transform="rotate(-20, 61, 35)"/>
+      <circle cx="68" cy="45" r="1.5" fill="#4a3b2c"/>
+    </g>
+
+    <!-- Glints and reflections -->
+    <!-- Large sweeping upper curve reflection -->
+    <path d="M 22 25 Q 45 5 72 15 Q 60 12 30 28 Z" fill="url(#curveGlint)" opacity="0.8"/>
+    
+    <!-- Secondary reflection, lower rim -->
+    <path d="M 30 85 Q 50 95 70 85 Q 50 90 35 80 Z" fill="#e8d5c4" opacity="0.3"/>
+    
+    <!-- Subtle color variation strokes -->
+    <path d="M 10 50 Q 15 30 30 20 Q 20 40 10 50" fill="#a07d62" opacity="0.4"/>
+    <path d="M 85 45 Q 90 60 75 80 Q 80 60 85 45" fill="#523927" opacity="0.5"/>
+  </g>
+</svg>

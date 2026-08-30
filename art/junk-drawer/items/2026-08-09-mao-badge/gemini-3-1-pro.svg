@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="sunburst-center" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#ff9999" />
+      <stop offset="100%" stop-color="#cc0000" />
+    </radialGradient>
+    <linearGradient id="silver-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0f0f0" />
+      <stop offset="25%" stop-color="#b0b0b0" />
+      <stop offset="50%" stop-color="#ffffff" />
+      <stop offset="75%" stop-color="#808080" />
+      <stop offset="100%" stop-color="#e0e0e0" />
+    </linearGradient>
+    <linearGradient id="silver-relief" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#d0d0d0" />
+      <stop offset="70%" stop-color="#909090" />
+      <stop offset="100%" stop-color="#505050" />
+    </linearGradient>
+    <filter id="relief-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="1.5" stdDeviation="1" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="border-bevel" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <g id="sunburst">
+      <path d="M50,50 L50,5 A45,45 0 0,1 61.5,6.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L72.5,11 A45,45 0 0,1 82.5,19 Z" fill="#ff3333"/>
+      <path d="M50,50 L89,27.5 A45,45 0 0,1 93.5,38.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L95,50 A45,45 0 0,1 93.5,61.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L89,72.5 A45,45 0 0,1 82.5,82.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L72.5,89 A45,45 0 0,1 61.5,93.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L50,95 A45,45 0 0,1 38.5,93.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L27.5,89 A45,45 0 0,1 17.5,82.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L11,72.5 A45,45 0 0,1 6.5,61.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L5,50 A45,45 0 0,1 6.5,38.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L11,27.5 A45,45 0 0,1 17.5,17.5 Z" fill="#ff3333"/>
+      <path d="M50,50 L27.5,11 A45,45 0 0,1 38.5,6.5 Z" fill="#ff3333"/>
+    </g>
+  </defs>
+
+  <!-- Base red circle -->
+  <circle cx="50" cy="50" r="46" fill="url(#sunburst-center)" />
+  
+  <!-- Sunburst rays -->
+  <use href="#sunburst" />
+  
+  <!-- Faux silver border -->
+  <circle cx="50" cy="50" r="46" fill="none" stroke="url(#silver-border)" stroke-width="6" filter="url(#border-bevel)" />
+  <circle cx="50" cy="50" r="48" fill="none" stroke="#606060" stroke-width="1" />
+  <circle cx="50" cy="50" r="43" fill="none" stroke="#606060" stroke-width="1" />
+
+  <!-- Relief of Mao's head in profile (facing left) -->
+  <path d="M58,80 C68,78 72,68 70,55 C69,42 66,32 58,25 C50,18 42,20 38,26 C36,29 38,32 40,35 C42,38 41,40 37,42 C33,44 28,47 28,52 C28,56 31,58 35,59 C37,59.5 38,62 36,65 C34,68 35,74 42,76 C48,78 50,82 58,80 Z" 
+        fill="url(#silver-relief)" 
+        filter="url(#relief-shadow)" />
+        
+  <!-- Relief details (hair, ear, collar, facial features) -->
+  <path d="M58,25 C64,28 66,35 68,45 C65,40 60,35 55,35 C50,35 48,30 46,25" fill="none" stroke="#606060" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M53,45 C50,47 50,51 53,53 C56,51 56,47 53,45 Z" fill="none" stroke="#606060" stroke-width="1"/>
+  <path d="M40,35 C45,36 48,40 48,44" fill="none" stroke="#808080" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M37,42 C35,42 33,43 32,44" fill="none" stroke="#606060" stroke-width="1" stroke-linecap="round"/>
+  <path d="M28,52 C30,52 32,54 32,56" fill="none" stroke="#606060" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M36,65 C40,64 45,67 50,70" fill="none" stroke="#707070" stroke-width="2" stroke-linecap="round"/>
+  <path d="M42,76 C45,74 50,73 55,75" fill="none" stroke="#606060" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M32,49 C33,49 34,49 35,48" fill="none" stroke="#505050" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

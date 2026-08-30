@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="76.2 14.5 247.2 381.2">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8d9a8"/>
+      <stop offset="0.5" stop-color="#d9c285"/>
+      <stop offset="1" stop-color="#bfa76a"/>
+    </linearGradient>
+    <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#8a744a" opacity="0.22"/>
+    </pattern>
+    <pattern id="dots2" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="4" r="1.4" fill="#6e5a35" opacity="0.14"/>
+    </pattern>
+  </defs>
+
+  <!-- skep body: stacked dome coils -->
+  <path d="M200 22
+           C150 26 112 66 98 118
+           C82 176 76 244 84 322
+           C86 348 98 368 128 380
+           C168 396 232 396 272 380
+           C302 368 314 348 316 322
+           C324 244 318 176 302 118
+           C288 66 250 26 200 22 Z"
+        fill="url(#body)" stroke="#7a6438" stroke-width="4"/>
+
+  <!-- coil ridges -->
+  <g fill="none" stroke="#8a744a" stroke-width="3.5" stroke-linecap="round" opacity="0.85">
+    <path d="M118 96 C160 116 240 116 282 96"/>
+    <path d="M100 146 C152 170 248 170 300 146"/>
+    <path d="M88 198 C146 224 254 224 312 198"/>
+    <path d="M82 252 C144 278 256 278 318 252"/>
+    <path d="M84 306 C146 330 254 330 316 306"/>
+    <path d="M96 352 C150 372 250 372 304 352"/>
+  </g>
+  <!-- coil highlight edges -->
+  <g fill="none" stroke="#f2e7bd" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+    <path d="M122 108 C162 126 238 126 278 108"/>
+    <path d="M104 158 C154 180 246 180 296 158"/>
+    <path d="M92 210 C148 234 252 234 308 210"/>
+    <path d="M86 264 C146 288 254 288 314 264"/>
+    <path d="M88 318 C148 340 252 340 312 318"/>
+  </g>
+
+  <!-- top cap knot -->
+  <ellipse cx="200" cy="30" rx="26" ry="12" fill="#c9b077" stroke="#7a6438" stroke-width="3"/>
+  <path d="M186 26 C192 20 208 20 214 26" fill="none" stroke="#f2e7bd" stroke-width="2" opacity="0.8"/>
+
+  <!-- entrance -->
+  <ellipse cx="200" cy="298" rx="34" ry="22" fill="#5a4726" stroke="#7a6438" stroke-width="3.5"/>
+  <ellipse cx="200" cy="294" rx="24" ry="14" fill="#3c2f17" opacity="0.85"/>
+
+  <!-- faded halftone print texture clipped to hive -->
+  <clipPath id="hiveClip">
+    <path d="M200 22
+             C150 26 112 66 98 118
+             C82 176 76 244 84 322
+             C86 348 98 368 128 380
+             C168 396 232 396 272 380
+             C302 368 314 348 316 322
+             C324 244 318 176 302 118
+             C288 66 250 26 200 22 Z"/>
+  </clipPath>
+  <g clip-path="url(#hiveClip)">
+    <rect x="70" y="10" width="260" height="395" fill="url(#dots)"/>
+    <rect x="70" y="10" width="260" height="395" fill="url(#dots2)"/>
+    <!-- faded newsprint mottling -->
+    <ellipse cx="140" cy="160" rx="60" ry="90" fill="#f5ecd0" opacity="0.18"/>
+    <ellipse cx="270" cy="300" rx="55" ry="80" fill="#6e5a35" opacity="0.10"/>
+    <ellipse cx="200" cy="80" rx="70" ry="45" fill="#f7f0d8" opacity="0.15"/>
+  </g>
+
+  <!-- side shading for roundness -->
+  <path d="M302 118 C318 176 324 244 316 322 C314 348 302 368 272 380
+           C286 300 290 190 272 100 Z" fill="#6e5a35" opacity="0.16"/>
+  <path d="M98 118 C82 176 76 244 84 322 C86 348 98 368 128 380
+           C114 300 110 190 128 100 Z" fill="#f7f0d8" opacity="0.20"/>
+</svg>

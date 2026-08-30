@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40.0 26.0 419.8 613.0" width="419.8" height="613.0">
+  <defs>
+    <!-- Base Holographic Gradient -->
+    <linearGradient id="holoBase" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a3c4c9" />
+      <stop offset="20%" stop-color="#72e0bd" />
+      <stop offset="40%" stop-color="#69a3df" />
+      <stop offset="60%" stop-color="#b695e6" />
+      <stop offset="80%" stop-color="#93e8a4" />
+      <stop offset="100%" stop-color="#63a5aa" />
+    </linearGradient>
+
+    <!-- Holographic Shards Gradients -->
+    <linearGradient id="holoShard1" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#6df5d8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ff9ce6" stop-opacity="0.0"/>
+    </linearGradient>
+    
+    <linearGradient id="holoShard2" x1="100%" y1="20%" x2="0%" y2="80%">
+      <stop offset="0%" stop-color="#c9ff96" stop-opacity="0.7"/>
+      <stop offset="60%" stop-color="#5fa1ff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <linearGradient id="holoShard3" x1="50%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b" stop-opacity="0.5"/>
+      <stop offset="40%" stop-color="#b86bff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Gloss Highlight -->
+    <linearGradient id="gloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Eye Gradient -->
+    <radialGradient id="eyeGrad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#333333"/>
+      <stop offset="40%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <!-- Clip Path for the Alien Head -->
+    <clipPath id="headClip">
+      <path d="M 250, 40 C 480, 40 490, 280 370, 480 C 310, 580 275, 615 250, 625 C 225, 615 190, 580 130, 480 C 10, 280 20, 40 250, 40 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- Die-cut Sticker White Border (Simulated with thick stroke) -->
+  <path d="M 250, 40 C 480, 40 490, 280 370, 480 C 310, 580 275, 615 250, 625 C 225, 615 190, 580 130, 480 C 10, 280 20, 40 250, 40 Z" 
+        fill="#f4f6f8" 
+        stroke="#ffffff" 
+        stroke-width="24" 
+        stroke-linejoin="round" />
+        
+  <path d="M 250, 40 C 480, 40 490, 280 370, 480 C 310, 580 275, 615 250, 625 C 225, 615 190, 580 130, 480 C 10, 280 20, 40 250, 40 Z" 
+        fill="none" 
+        stroke="#dcdfe3" 
+        stroke-width="4" />
+
+  <!-- Alien Head Base with Holographic Gradient -->
+  <path d="M 250, 40 C 480, 40 490, 280 370, 480 C 310, 580 275, 615 250, 625 C 225, 615 190, 580 130, 480 C 10, 280 20, 40 250, 40 Z" 
+        fill="url(#holoBase)" />
+
+  <!-- Holographic Foil Shards / Reflections -->
+  <g clip-path="url(#headClip)">
+    <polygon points="-50,-50 300,-50 150,350" fill="url(#holoShard1)" />
+    <polygon points="550,100 200,650 550,500" fill="url(#holoShard2)" />
+    <polygon points="-50,700 350,150 100,700" fill="url(#holoShard3)" />
+    
+    <!-- Sharp crystal-like shattered foil reflections -->
+    <polygon points="250,40 380,220 280,240 250,180" fill="#ffffff" opacity="0.3" />
+    <polygon points="120,220 250,40 250,180 220,240" fill="#a4ffd4" opacity="0.2" />
+    <polygon points="380,220 480,180 360,400" fill="#88b5ff" opacity="0.35" />
+    <polygon points="120,220 20,180 140,400" fill="#e3a4ff" opacity="0.25" />
+    <polygon points="250,650 140,400 250,300" fill="#b9ffe9" opacity="0.2" />
+    <polygon points="250,650 360,400 250,300" fill="#ffb4e5" opacity="0.15" />
+
+    <!-- Curved Top Gloss / Dome Effect -->
+    <path d="M -50, -50 L 550, -50 L 550, 250 C 350, 150 150, 150 -50, 250 Z" fill="url(#gloss)" />
+  </g>
+
+  <!-- Left Eye -->
+  <path d="M 220, 270 C 220, 310 150, 440 90, 410 C 40, 385 50, 250 130, 200 C 180, 170 220, 220 220, 270 Z" 
+        fill="url(#eyeGrad)" 
+        stroke="#1a2b2b" 
+        stroke-width="3" />
+        
+  <!-- Right Eye -->
+  <path d="M 280, 270 C 280, 310 350, 440 410, 410 C 460, 385 450, 250 370, 200 C 320, 170 280, 220 280, 270 Z" 
+        fill="url(#eyeGrad)" 
+        stroke="#1a2b2b" 
+        stroke-width="3" />
+
+  <!-- Eye Highlights (Y2K style curved window reflections) -->
+  <path d="M 140, 215 C 170, 200 200, 230 205, 260 C 205, 240 170, 225 140, 215 Z" fill="#ffffff" opacity="0.8" />
+  <path d="M 360, 215 C 330, 200 300, 230 295, 260 C 295, 240 330, 225 360, 215 Z" fill="#ffffff" opacity="0.8" />
+  
+  <ellipse cx="105" cy="360" rx="15" ry="8" transform="rotate(-30 105 360)" fill="#ffffff" opacity="0.6" />
+  <ellipse cx="395" cy="360" rx="15" ry="8" transform="rotate(30 395 360)" fill="#ffffff" opacity="0.6" />
+
+  <!-- Minimal Nostrils -->
+  <path d="M 235, 490 Q 240, 480 243, 495" stroke="#466f6e" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M 265, 490 Q 260, 480 257, 495" stroke="#466f6e" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7"/>
+
+  <!-- Minimal Mouth -->
+  <path d="M 225, 545 Q 250, 555 275, 545" stroke="#466f6e" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.6"/>
+</svg>

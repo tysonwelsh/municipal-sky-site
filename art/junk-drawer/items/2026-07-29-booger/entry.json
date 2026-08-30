@@ -11,7 +11,7 @@
   ],
   "sizeClass": "xs",
   "sizeScale": 0.89,
-  "primary": "r1",
+  "primary": "r4",
   "responses": [
     {
       "rid": "r1",
@@ -81,6 +81,118 @@
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.0%. Faceless and abstract, the most economical of the three: one gradient-filled blob with a small pendant drip, two low-opacity olive crescents standing in for shading, and roughly a dozen plain circles at varying opacity doing double duty as trapped bubbles and surface texture. No filters, no clip paths, everything in a single flat layer — geometrically the cleanest and the least ambitious. Obeyed the output format exactly — a bare SVG document, no prose or fences."
+    },
+    {
+      "rid": "r4",
+      "file": "claude-opus-5-rerun.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M182RMKWS8EMANT9QTMWW1Y0), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule.",
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 3.0
+      },
+      "tokens": {
+        "input": 390,
+        "output": 1750,
+        "total": 2140
+      },
+      "cost_usd": 0.0457
+    },
+    {
+      "rid": "r5",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M182RMKWS8EMANT9QTMWW1Y0), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings, per the DB-era rule.",
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 264,
+        "output": 2808,
+        "total": 3072
+      },
+      "cost_usd": 0.034224
+    },
+    {
+      "rid": "r6",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M182RMKWS8EMANT9QTMWW1Y0), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 200 200\" to ink bounds (\"23.0 16.0 152.0 166.8\").",
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 2.0,
+        "layering": 3.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 357,
+        "output": 781,
+        "total": 1138
+      },
+      "cost_usd": 0.012786
+    },
+    {
+      "rid": "r7",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M182RMKWS8EMANT9QTMWW1Y0), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 220 260\" to ink bounds (\"42.8 5.0 132.2 256.2\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 2.0,
+        "layering": 2.0,
+        "jnsq": 2.0
+      },
+      "tokens": {
+        "input": 269,
+        "output": 2721,
+        "total": 2990
+      },
+      "cost_usd": 0.027546
     }
   ]
 }

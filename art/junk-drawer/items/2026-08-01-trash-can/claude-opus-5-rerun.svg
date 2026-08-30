@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="112.8 119.0 452.2 567.2">
+  <defs>
+    <clipPath id="canClip">
+      <path d="M168 250 L432 250 L410 660 Q300 682 190 660 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- ================= GARBAGE BEHIND / OVERFLOW TOP ================= -->
+  <g>
+    <!-- crumpled paper ball back left -->
+    <path d="M176 232 l22 -26 30 -6 20 20 -6 30 -28 14 -30 -8z" fill="#f4f1e4" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M196 210 l14 20 -8 22 M226 200 l-10 26 22 12" fill="none" stroke="#1b1b1b" stroke-width="4"/>
+
+    <!-- pizza slice -->
+    <path d="M258 232 L306 138 L352 232 Z" fill="#f2b737" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M266 218 L306 156 L344 218 Z" fill="#e8442e" stroke="#1b1b1b" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="306" cy="192" r="9" fill="#a01f16" stroke="#1b1b1b" stroke-width="4"/>
+    <circle cx="288" cy="212" r="7" fill="#a01f16" stroke="#1b1b1b" stroke-width="4"/>
+    <circle cx="325" cy="212" r="7" fill="#a01f16" stroke="#1b1b1b" stroke-width="4"/>
+
+    <!-- fish bone -->
+    <g transform="translate(372,150) rotate(20)">
+      <path d="M0 40 L26 22 L26 58 Z" fill="none" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M26 40 L150 40" stroke="#1b1b1b" stroke-width="7" stroke-linecap="round"/>
+      <path d="M52 40 L44 14 M52 40 L44 66 M80 40 L74 12 M80 40 L74 68 M108 40 L104 14 M108 40 L104 66" stroke="#1b1b1b" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="158" cy="40" r="20" fill="#f7f2e0" stroke="#1b1b1b" stroke-width="6"/>
+      <circle cx="164" cy="34" r="6" fill="#1b1b1b"/>
+      <path d="M140 52 L150 60" stroke="#1b1b1b" stroke-width="5" stroke-linecap="round"/>
+    </g>
+
+    <!-- banana peel -->
+    <g transform="translate(196,268) rotate(-8)">
+      <path d="M0 0 C -6 -46 -34 -74 -66 -92 C -46 -110 -22 -96 -10 -70 C -2 -96 14 -112 40 -108 C 20 -84 12 -46 16 0 Z" fill="#f5d020" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M-10 -70 C -18 -40 -16 -18 -12 -2" fill="none" stroke="#1b1b1b" stroke-width="4"/>
+      <path d="M2 -2 L18 -2 L14 12 L2 12 Z" fill="#7a5a1a" stroke="#1b1b1b" stroke-width="5" stroke-linejoin="round"/>
+    </g>
+
+    <!-- tin can -->
+    <g transform="translate(392,196) rotate(-16)">
+      <path d="M0 30 L0 96 a26 12 0 0 0 52 0 L52 30 Z" fill="#e05a2b" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+      <ellipse cx="26" cy="30" rx="26" ry="12" fill="#c9ccd2" stroke="#1b1b1b" stroke-width="6"/>
+      <path d="M2 52 L50 52 M2 74 L50 74" stroke="#1b1b1b" stroke-width="4"/>
+      <path d="M14 20 C 30 -2 62 4 60 26 C 50 16 32 12 20 22 Z" fill="#c9ccd2" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+    </g>
+
+    <!-- soda bottle -->
+    <g transform="translate(232,150) rotate(-24)">
+      <path d="M14 0 L34 0 L34 24 L46 46 L46 108 L2 108 L2 46 L14 24 Z" fill="#3aa0d8" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+      <rect x="2" y="62" width="44" height="26" fill="#f5f0dd" stroke="#1b1b1b" stroke-width="5"/>
+      <rect x="12" y="-12" width="24" height="14" fill="#e8442e" stroke="#1b1b1b" stroke-width="5"/>
+    </g>
+
+    <!-- apple core -->
+    <g transform="translate(330,240) rotate(12)">
+      <path d="M0 0 C -14 -6 -14 -26 -2 -30 C -8 -44 6 -50 12 -40 C 20 -50 34 -42 28 -28 C 40 -22 38 -4 24 0 C 20 12 4 12 0 0 Z" fill="#f2f0df" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M12 -40 L14 -56" stroke="#1b1b1b" stroke-width="6" stroke-linecap="round"/>
+      <path d="M14 -54 C 30 -66 40 -58 30 -48 C 24 -44 16 -48 14 -54 Z" fill="#4cae4c" stroke="#1b1b1b" stroke-width="5"/>
+    </g>
+
+    <!-- newspaper wad right -->
+    <path d="M420 250 l-14 -34 24 -26 34 4 14 30 -16 30z" fill="#f4f1e4" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M418 200 l6 30 22 6 M448 194 l-8 34" fill="none" stroke="#1b1b1b" stroke-width="4"/>
+
+    <!-- small green blob / broccoli -->
+    <path d="M258 252 c-24 -6 -30 -34 -8 -44 -6 -20 22 -30 34 -14 16 -12 34 4 26 22 12 12 2 34 -14 34z" fill="#4cae4c" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+
+  <!-- ================= CAN BODY ================= -->
+  <path d="M168 250 L432 250 L410 660 Q300 686 190 660 Z" fill="#b9c0c8" stroke="#1b1b1b" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- vertical galvanized shading stripes -->
+  <g clip-path="url(#canClip)">
+    <path d="M168 250 L206 250 L192 668 L178 660 Z" fill="#d7dde3"/>
+    <path d="M232 250 L250 250 L240 674 L228 672 Z" fill="#d7dde3"/>
+    <path d="M300 250 L312 250 L308 678 L298 678 Z" fill="#cdd4db"/>
+    <path d="M356 250 L376 250 L364 670 L350 674 Z" fill="#9aa3ad"/>
+    <path d="M400 250 L432 250 L412 656 L392 664 Z" fill="#8b949f"/>
+    <path d="M270 250 L282 250 L276 678 L266 678 Z" fill="#a8b1ba"/>
+  </g>
+
+  <!-- ribs -->
+  <g fill="none" stroke="#1b1b1b" stroke-width="7" stroke-linecap="round">
+    <path d="M176 350 Q300 372 424 350"/>
+    <path d="M182 470 Q300 494 418 470"/>
+    <path d="M188 580 Q300 606 412 580"/>
+  </g>
+  <g fill="none" stroke="#f2f5f8" stroke-width="4" opacity="0.8">
+    <path d="M177 340 Q300 362 423 340"/>
+    <path d="M183 460 Q300 484 417 460"/>
+  </g>
+
+  <!-- top rim -->
+  <path d="M162 232 L438 232 L434 262 Q300 284 166 262 Z" fill="#cfd6dd" stroke="#1b1b1b" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M360 234 L436 234 L432 260 Q396 268 356 270 Z" fill="#98a1ab"/>
+  <path d="M170 236 L212 236 L208 268 Q186 264 168 258 Z" fill="#eef2f5"/>
+
+  <!-- bottom rim -->
+  <path d="M190 640 L410 640 L406 668 Q300 692 194 668 Z" fill="#a8b1ba" stroke="#1b1b1b" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- side handles -->
+  <path d="M170 380 C 132 372 126 442 168 440" fill="none" stroke="#1b1b1b" stroke-width="20" stroke-linecap="round"/>
+  <path d="M170 380 C 132 372 126 442 168 440" fill="none" stroke="#c9d0d8" stroke-width="9" stroke-linecap="round"/>
+  <path d="M430 380 C 468 372 474 442 432 440" fill="none" stroke="#1b1b1b" stroke-width="20" stroke-linecap="round"/>
+  <path d="M430 380 C 468 372 474 442 432 440" fill="none" stroke="#98a1ab" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- ================= LID LEANING ================= -->
+  <g transform="translate(430,392) rotate(16)">
+    <!-- lid disc -->
+    <ellipse cx="82" cy="140" rx="84" ry="130" fill="#c3cad2" stroke="#1b1b1b" stroke-width="9"/>
+    <path d="M82 10 a84 130 0 0 1 0 260 a52 130 0 0 0 0 -260" fill="#96a0aa"/>
+    <ellipse cx="82" cy="140" rx="60" ry="96" fill="none" stroke="#1b1b1b" stroke-width="7"/>
+    <ellipse cx="82" cy="140" rx="34" ry="54" fill="#dde3e9" stroke="#1b1b1b" stroke-width="7"/>
+    <!-- handle -->
+    <path d="M58 118 C 40 140 40 150 58 168" fill="none" stroke="#1b1b1b" stroke-width="19" stroke-linecap="round"/>
+    <path d="M58 118 C 40 140 40 150 58 168" fill="none" stroke="#eef2f5" stroke-width="8" stroke-linecap="round"/>
+    <!-- highlight -->
+    <path d="M34 78 C 22 108 22 176 34 204" fill="none" stroke="#f2f5f8" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <!-- garbage spilling over front lip -->
+  <g>
+    <!-- fish tail poking out front -->
+    <path d="M212 262 C 200 286 206 306 224 316 C 214 296 216 278 228 268 Z" fill="#f5d020" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+</svg>

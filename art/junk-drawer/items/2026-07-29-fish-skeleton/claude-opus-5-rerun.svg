@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="5.8 10.8 623.5 241.8">
+  <defs>
+    <linearGradient id="headG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fd8e6"/>
+      <stop offset="0.55" stop-color="#6bb6cc"/>
+      <stop offset="1" stop-color="#3f8ba3"/>
+    </linearGradient>
+    <linearGradient id="boneG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf3"/>
+      <stop offset="1" stop-color="#dcd3bd"/>
+    </linearGradient>
+    <linearGradient id="finG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fdf8e8"/>
+      <stop offset="1" stop-color="#cfc4aa"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#2b2b33" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- ===== TAIL FIN ===== -->
+    <path d="M567 96 C612 74 630 116 622 156 C616 194 630 236 596 246 C566 254 548 214 545 180 C542 148 546 108 567 96 Z"
+          fill="url(#finG)" stroke-width="7"/>
+    <path d="M572 108 C560 148 562 196 585 236" fill="none" stroke="#2b2b33" stroke-width="5" opacity="0.6"/>
+    <path d="M596 96 C588 144 590 198 604 240" fill="none" stroke="#2b2b33" stroke-width="5" opacity="0.45"/>
+
+    <!-- ===== SPINE (slightly curved) ===== -->
+    <path d="M175 132 C275 96 400 108 500 158 C518 167 540 174 560 172"
+          fill="none" stroke="#2b2b33" stroke-width="24"/>
+    <path d="M175 132 C275 96 400 108 500 158 C518 167 540 174 560 172"
+          fill="none" stroke="url(#boneG)" stroke-width="14"/>
+
+    <!-- ===== RIBS (top) ===== -->
+    <g fill="none" stroke="#2b2b33" stroke-width="20">
+      <path d="M228 118 C222 78 244 56 274 54"/>
+      <path d="M288 106 C286 66 310 44 340 46"/>
+      <path d="M350 106 C352 68 378 50 406 56"/>
+      <path d="M408 118 C414 84 440 70 464 80"/>
+      <path d="M458 140 C468 112 490 102 510 110"/>
+    </g>
+    <g fill="none" stroke="url(#boneG)" stroke-width="10">
+      <path d="M228 118 C222 78 244 56 274 54"/>
+      <path d="M288 106 C286 66 310 44 340 46"/>
+      <path d="M350 106 C352 68 378 50 406 56"/>
+      <path d="M408 118 C414 84 440 70 464 80"/>
+      <path d="M458 140 C468 112 490 102 510 110"/>
+    </g>
+
+    <!-- ===== RIBS (bottom) ===== -->
+    <g fill="none" stroke="#2b2b33" stroke-width="20">
+      <path d="M232 142 C230 186 254 214 286 218"/>
+      <path d="M294 128 C296 174 322 202 352 206"/>
+      <path d="M356 128 C360 172 386 198 414 198"/>
+      <path d="M414 140 C422 178 444 198 470 196"/>
+      <path d="M462 160 C472 190 494 204 514 200"/>
+    </g>
+    <g fill="none" stroke="url(#boneG)" stroke-width="10">
+      <path d="M232 142 C230 186 254 214 286 218"/>
+      <path d="M294 128 C296 174 322 202 352 206"/>
+      <path d="M356 128 C360 172 386 198 414 198"/>
+      <path d="M414 140 C422 178 444 198 470 196"/>
+      <path d="M462 160 C472 190 494 204 514 200"/>
+    </g>
+
+    <!-- ===== SPINE VERTEBRAE DOTS ===== -->
+    <g fill="#2b2b33" opacity="0.55">
+      <circle cx="258" cy="119" r="4"/>
+      <circle cx="320" cy="112" r="4"/>
+      <circle cx="382" cy="116" r="4"/>
+      <circle cx="440" cy="132" r="4"/>
+      <circle cx="492" cy="153" r="4"/>
+    </g>
+
+    <!-- ===== HEAD ===== -->
+    <path d="M195 133
+             C186 74 150 30 96 24
+             C46 18 14 62 12 118
+             C10 176 44 224 100 226
+             C152 228 190 190 197 136 Z"
+          fill="url(#headG)" stroke-width="8"/>
+
+    <!-- gill plate -->
+    <path d="M158 52 C176 92 176 168 152 206" fill="none" stroke="#2b2b33" stroke-width="6" opacity="0.75"/>
+
+    <!-- head-to-spine bone joint -->
+    <path d="M188 118 C204 116 214 122 218 132 C214 144 202 150 186 148 Z" fill="url(#boneG)" stroke-width="7"/>
+
+    <!-- mouth (open, gaping) -->
+    <path d="M14 128 C34 138 62 142 84 132 C66 158 32 160 15 146 Z" fill="#2b3038" stroke-width="7"/>
+    <path d="M22 134 l8 10 M40 140 l4 11 M60 141 l1 11" fill="none" stroke="#fffdf3" stroke-width="5" opacity="0.9"/>
+
+    <!-- X eye -->
+    <circle cx="82" cy="88" r="30" fill="#fffdf3" stroke-width="7"/>
+    <path d="M68 74 L96 102 M96 74 L68 102" fill="none" stroke="#2b2b33" stroke-width="10"/>
+
+    <!-- cheek shine -->
+    <path d="M52 168 C74 184 106 184 126 170" fill="none" stroke="#2b2b33" stroke-width="5" opacity="0.35"/>
+
+    <!-- ===== SMALL TOP FIN BONE ===== -->
+    <path d="M300 44 C318 16 356 12 372 40" fill="none" stroke="#2b2b33" stroke-width="16"/>
+    <path d="M300 44 C318 16 356 12 372 40" fill="none" stroke="url(#boneG)" stroke-width="7"/>
+
+    <!-- ===== BOTTOM SMALL FIN BONE ===== -->
+    <path d="M330 206 C346 236 380 240 396 214" fill="none" stroke="#2b2b33" stroke-width="16"/>
+    <path d="M330 206 C346 236 380 240 396 214" fill="none" stroke="url(#boneG)" stroke-width="7"/>
+
+  </g>
+</svg>

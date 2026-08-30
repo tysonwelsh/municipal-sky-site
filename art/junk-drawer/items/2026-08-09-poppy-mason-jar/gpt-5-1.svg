@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="155.0 45.5 221.8 394.2">
+  <defs>
+    <linearGradient id="jarBodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4F7FB"/>
+      <stop offset="1" stop-color="#D3E0F5"/>
+    </linearGradient>
+    <linearGradient id="jarNeckGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F8FAFF"/>
+      <stop offset="1" stop-color="#C8D7F4"/>
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B1D5FF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#72A7F2" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="poppyPetalGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF9D3B"/>
+      <stop offset="1" stop-color="#FF6126"/>
+    </linearGradient>
+    <linearGradient id="poppyPetalGrad2" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC46B"/>
+      <stop offset="1" stop-color="#FF7A39"/>
+    </linearGradient>
+    <linearGradient id="stemGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#59C485"/>
+      <stop offset="1" stop-color="#1A8B5A"/>
+    </linearGradient>
+    <linearGradient id="lidBandGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF5A99"/>
+      <stop offset="1" stop-color="#FFCF3A"/>
+    </linearGradient>
+
+    <pattern id="memphisDots" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.5" fill="#FFFFFF" opacity="0.55"/>
+      <circle cx="8" cy="6" r="1.2" fill="#FFFFFF" opacity="0.55"/>
+    </pattern>
+
+    <mask id="waterMask">
+      <rect x="0" y="0" width="520" height="520" fill="black"/>
+      <rect x="162" y="305" width="196" height="120" rx="40" ry="40" fill="white"/>
+    </mask>
+  </defs>
+
+  <!-- Stem -->
+  <path d="M272 338
+           C260 310 255 280 256 250
+           C257 220 270 200 280 184
+           C290 168 298 154 305 137"
+        fill="none"
+        stroke="url(#stemGrad)"
+        stroke-width="10"
+        stroke-linecap="round"/>
+
+  <!-- Mason jar body -->
+  <g>
+    <!-- Outer body -->
+    <path d="M160 220
+             C160 190 188 170 220 170
+             L300 170
+             C332 170 360 190 360 220
+             L360 360
+             C360 398 332 430 294 435
+             L226 435
+             C188 430 160 398 160 360
+             Z"
+          fill="url(#jarBodyGrad)"
+          stroke="#30558A"
+          stroke-width="6"
+          stroke-linejoin="round"/>
+
+    <!-- Inner cavity hint -->
+    <path d="M178 230
+             C178 205 198 190 222 190
+             L298 190
+             C322 190 342 205 342 230
+             L342 355
+             C342 385 321 410 291 413
+             L229 413
+             C199 410 178 385 178 355
+             Z"
+          fill="none"
+          stroke="#90A7D6"
+          stroke-width="4"
+          stroke-dasharray="0 9"
+          stroke-linecap="round"/>
+
+    <!-- Jar shoulder highlight -->
+    <path d="M182 226
+             C194 210 207 204 223 204
+             L297 204
+             C313 204 326 210 338 226"
+          fill="none"
+          stroke="#FFFFFF"
+          stroke-opacity="0.9"
+          stroke-width="4"
+          stroke-linecap="round"/>
+
+    <!-- Simple Memphis pattern on jar -->
+    <rect x="190" y="260" width="140" height="80" rx="24" fill="url(#memphisDots)" opacity="0.32"/>
+
+    <!-- Water -->
+    <g mask="url(#waterMask)">
+      <rect x="162" y="305" width="196" height="120" rx="40" ry="40" fill="url(#waterGrad)"/>
+      <path d="M162 315
+               C190 325 210 325 238 315
+               C266 305 292 305 320 315
+               C348 325 370 325 398 315
+               L398 335
+               C370 345 348 345 320 335
+               C292 325 266 325 238 335
+               C210 345 190 345 162 335 Z"
+            fill="#6CAFF5"
+            fill-opacity="0.75"/>
+    </g>
+  </g>
+
+  <!-- Jar neck and rim -->
+  <g>
+    <!-- Neck -->
+    <rect x="196" y="162" width="128" height="26" rx="10" fill="url(#jarNeckGrad)" stroke="#30558A" stroke-width="5"/>
+
+    <!-- Lid band (Memphis colorful stripe) -->
+    <rect x="186" y="150" width="148" height="14" rx="6" fill="url(#lidBandGrad)"/>
+    <rect x="186" y="150" width="148" height="14" rx="6" fill="none" stroke="#222A4C" stroke-width="3"/>
+
+    <!-- Inner rim line -->
+    <rect x="204" y="166" width="112" height="6" rx="3" fill="#D2DEF4"/>
+  </g>
+
+  <!-- Poppy flower -->
+  <g transform="translate(0,-16)">
+    <!-- Rear petals -->
+    <path d="M305 102
+             C276 92 256 88 240 96
+             C224 104 216 118 214 134
+             C211 151 218 164 230 176
+             C242 188 264 196 287 191
+             C310 186 328 172 335 157
+             C342 142 340 124 330 113
+             C320 102 334 108 305 102 Z"
+          fill="url(#poppyPetalGrad2)"
+          stroke="#CF4F22"
+          stroke-width="5"
+          stroke-linejoin="round"/>
+
+    <!-- Front left petal -->
+    <path d="M278 84
+             C255 78 236 80 222 90
+             C208 100 200 114 199 130
+             C198 146 204 161 216 170
+             C228 179 244 183 261 180
+             C278 177 292 170 302 159
+             C312 148 318 133 314 118
+             C310 103 301 90 278 84 Z"
+          fill="url(#poppyPetalGrad)"
+          stroke="#CF4F22"
+          stroke-width="5"
+          stroke-linejoin="round"/>
+
+    <!-- Front right petal -->
+    <path d="M300 88
+             C318 85 334 87 347 95
+             C360 103 370 117 372 133
+             C374 149 369 165 358 177
+             C347 189 330 197 311 199
+             C292 201 276 196 264 186
+             C252 176 245 161 246 145
+             C247 129 254 113 268 102
+             C282 91 300 88 300 88 Z"
+          fill="url(#poppyPetalGrad2)"
+          stroke="#CF4F22"
+          stroke-width="5"
+          stroke-linejoin="round"/>
+
+    <!-- Small top petal -->
+    <path d="M286 70
+             C270 68 256 72 246 79
+             C236 86 232 96 234 106
+             C236 116 244 124 256 130
+             C268 136 282 138 296 135
+             C310 132 321 124 326 114
+             C331 104 329 93 320 84
+             C311 75 302 72 286 70 Z"
+          fill="url(#poppyPetalGrad)"
+          stroke="#CF4F22"
+          stroke-width="5"
+          stroke-linejoin="round"/>
+
+    <!-- Center -->
+    <circle cx="286" cy="121" r="23" fill="#1E2234"/>
+    <circle cx="286" cy="121" r="14" fill="#3A3F60"/>
+    <circle cx="286" cy="121" r="8" fill="#FFD45C"/>
+
+    <!-- Stylized Memphis stamens -->
+    <g stroke="#FFD45C" stroke-width="3" stroke-linecap="round">
+      <line x1="286" y1="96" x2="286" y2="80"/>
+      <line x1="268" y1="101" x2="254" y2="91"/>
+      <line x1="304" y1="101" x2="318" y2="91"/>
+      <line x1="270" y1="122" x2="257" y2="128"/>
+      <line x1="302" y1="122" x2="317" y2="128"/>
+      <line x1="276" y1="139" x2="269" y2="152"/>
+      <line x1="296" y1="139" x2="303" y2="152"/>
+    </g>
+
+    <!-- Memphis accent shapes around flower -->
+    <g fill="#FF5A99">
+      <rect x="332" y="70" width="20" height="6" rx="3"/>
+      <rect x="224" y="66" width="12" height="12" transform="rotate(45 230 72)"/>
+    </g>
+    <g stroke="#222A4C" stroke-width="3" stroke-linecap="round">
+      <path d="M336 146 L352 146"/>
+      <path d="M230 150 L215 150"/>
+    </g>
+  </g>
+
+  <!-- Memphis decoration on jar base -->
+  <g>
+    <rect x="210" y="386" width="36" height="10" rx="5" fill="#FFCF3A"/>
+    <circle cx="322" cy="392" r="6" fill="#FF5A99"/>
+    <path d="M196 402
+             C204 394 216 394 224 402"
+          fill="none"
+          stroke="#4F65B0"
+          stroke-width="4"
+          stroke-linecap="round"/>
+  </g>
+</svg>

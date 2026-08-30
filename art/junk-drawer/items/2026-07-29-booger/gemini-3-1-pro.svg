@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <radialGradient id="baseGoo" cx="35%" cy="30%" r="70%" fx="25%" fy="25%">
+      <stop offset="0%" stop-color="#baff49"/>
+      <stop offset="40%" stop-color="#73d115"/>
+      <stop offset="85%" stop-color="#3d8704"/>
+      <stop offset="100%" stop-color="#235201"/>
+    </radialGradient>
+    <radialGradient id="bubbleGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#a3fa41" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#3d8704" stop-opacity="0.8"/>
+    </radialGradient>
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main Gooey Body -->
+  <path d="M 230 10 
+           C 260 5 280 40 290 80 
+           C 310 110 380 90 430 130 
+           C 480 170 495 240 480 310 
+           C 460 400 410 470 330 485 
+           C 250 500 170 490 100 440 
+           C 40 390 5 320 12 240 
+           C 20 150 70 120 110 90 
+           C 140 70 190 20 230 10 Z" 
+        fill="url(#baseGoo)" />
+
+  <!-- Inner Darker Chunks / Crusty Bits -->
+  <path d="M 280 180 C 310 160 350 170 360 200 C 370 230 330 250 300 240 C 270 230 250 200 280 180 Z" fill="#2d6603" opacity="0.8"/>
+  <path d="M 150 330 C 180 310 210 320 220 350 C 230 380 190 410 160 390 C 130 370 120 350 150 330 Z" fill="#2d6603" opacity="0.6"/>
+  <path d="M 380 340 C 400 320 430 330 440 360 C 450 390 410 410 390 390 C 370 370 360 360 380 340 Z" fill="#224d02" opacity="0.9"/>
+
+  <!-- Stretching Tendrils (Internal Detailing) -->
+  <path d="M 180 120 C 220 140 240 200 220 250 C 200 300 150 280 140 240 C 130 200 140 100 180 120 Z" fill="#69c70c" opacity="0.7"/>
+  <path d="M 350 220 C 390 230 420 280 400 330 C 380 380 320 360 310 310 C 300 260 310 210 350 220 Z" fill="#88e026" opacity="0.6"/>
+
+  <!-- Bubbles -->
+  <circle cx="160" cy="180" r="18" fill="url(#bubbleGrad)" />
+  <circle cx="152" cy="172" r="5" fill="#ffffff" opacity="0.7" />
+  
+  <circle cx="280" cy="380" r="28" fill="url(#bubbleGrad)" />
+  <circle cx="270" cy="368" r="8" fill="#ffffff" opacity="0.7" />
+
+  <circle cx="410" cy="240" r="12" fill="url(#bubbleGrad)" />
+  <circle cx="405" cy="235" r="3" fill="#ffffff" opacity="0.7" />
+
+  <!-- Glossy Highlights -->
+  <path d="M 230 30 
+           C 260 25 270 50 280 80 
+           C 285 95 240 70 210 80
+           C 170 90 140 140 125 180
+           C 115 210 80 160 110 110
+           C 130 75 180 40 230 30 Z" 
+        fill="url(#highlight)" />
+
+  <path d="M 450 160
+           C 475 210 475 280 440 330
+           C 430 345 420 300 435 260
+           C 445 230 450 190 420 170
+           C 400 155 425 120 450 160 Z"
+        fill="url(#highlight)" />
+        
+  <path d="M 80 380
+           C 110 420 170 460 230 470
+           C 190 455 140 410 120 360
+           C 110 335 60 335 80 380 Z"
+        fill="url(#highlight)" opacity="0.7" />
+        
+  <path d="M 330 465
+           C 370 450 410 400 420 360
+           C 405 385 365 430 315 440
+           C 290 445 295 475 330 465 Z"
+        fill="url(#highlight)" opacity="0.8" />
+</svg>

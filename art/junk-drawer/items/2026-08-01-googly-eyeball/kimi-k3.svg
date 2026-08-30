@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="sclera" cx="42%" cy="40%" r="62%">
+      <stop offset="0%" stop-color="#f7efdd"/>
+      <stop offset="45%" stop-color="#f1e4c8"/>
+      <stop offset="75%" stop-color="#dcc49a"/>
+      <stop offset="92%" stop-color="#a97f4e"/>
+      <stop offset="100%" stop-color="#6e4a26"/>
+    </radialGradient>
+    <radialGradient id="iris" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#3a2c1a"/>
+      <stop offset="70%" stop-color="#241708"/>
+      <stop offset="100%" stop-color="#120a04"/>
+    </radialGradient>
+    <radialGradient id="pupil" cx="48%" cy="44%" r="55%">
+      <stop offset="0%" stop-color="#1c1512"/>
+      <stop offset="80%" stop-color="#0a0605"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="shade" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="88%" stop-color="#4a2c10" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#2e1a08" stop-opacity="0.6"/>
+    </radialGradient>
+    <linearGradient id="glint" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fffdf4" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#fdf3d8" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="paint" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
+    </filter>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="1.5"/>
+    </filter>
+    <clipPath id="ball"><circle cx="200" cy="200" r="178"/></clipPath>
+  </defs>
+
+  <g filter="url(#paint)">
+    <circle cx="200" cy="200" r="178" fill="url(#sclera)"/>
+  </g>
+
+  <g clip-path="url(#ball)">
+    <g filter="url(#soft)" opacity="0.55" fill="none" stroke-linecap="round">
+      <path d="M60 150 Q130 110 210 130 T360 160" stroke="#e9d6ae" stroke-width="7"/>
+      <path d="M45 230 Q140 190 230 215 T370 240" stroke="#c9a destra" stroke-width="6" stroke-opacity="0"/>
+      <path d="M50 235 Q140 195 230 220 T368 245" stroke="#c9a264" stroke-width="6" opacity="0.5"/>
+      <path d="M80 300 Q170 270 260 290 T350 310" stroke="#b5895078" stroke-width="8"/>
+      <path d="M80 300 Q170 270 260 290 T350 310" stroke="#b58950" stroke-width="8" opacity="0.45"/>
+      <path d="M100 90 Q180 70 280 95" stroke="#fbf4e2" stroke-width="9" opacity="0.7"/>
+      <path d="M55 190 Q90 160 130 165" stroke="#8a5f31" stroke-width="5" opacity="0.4"/>
+      <path d="M300 340 Q340 320 355 280" stroke="#7a5226" stroke-width="7" opacity="0.45"/>
+      <path d="M70 330 Q120 350 180 345" stroke="#d9bd8c" stroke-width="6" opacity="0.5"/>
+    </g>
+
+    <g transform="rotate(-14 208 218)" filter="url(#paint)">
+      <circle cx="208" cy="218" r="86" fill="url(#iris)"/>
+      <circle cx="208" cy="218" r="62" fill="url(#pupil)"/>
+      <g opacity="0.6" stroke-linecap="round" fill="none">
+        <path d="M208 140 Q214 150 216 160" stroke="#5a3c1c" stroke-width="4"/>
+        <path d="M250 160 Q244 172 240 180" stroke="#4a3015" stroke-width="4"/>
+        <path d="M160 180 Q172 188 178 194" stroke="#4a3015" stroke-width="4"/>
+        <path d="M245 270 Q236 260 232 254" stroke="#5a3c1c" stroke-width="4"/>
+        <path d="M165 265 Q176 256 182 250" stroke="#3c2712" stroke-width="4"/>
+      </g>
+      <circle cx="182" cy="190" r="12" fill="#fffbe9" opacity="0.95"/>
+      <circle cx="191" cy="199" r="4.5" fill="#fffbe9" opacity="0.55"/>
+    </g>
+
+    <circle cx="200" cy="200" r="178" fill="url(#shade)"/>
+
+    <path d="M78 158 Q150 62 268 74 Q320 82 340 112 Q250 96 168 122 Q118 140 92 178 Z"
+          fill="url(#glint)" opacity="0.85" filter="url(#soft)"/>
+    <path d="M100 150 Q170 88 270 92" fill="none" stroke="#fffef6" stroke-width="10"
+          stroke-linecap="round" opacity="0.8" filter="url(#soft)"/>
+    <path d="M120 142 Q185 96 262 98" fill="none" stroke="#ffffff" stroke-width="4"
+          stroke-linecap="round" opacity="0.9" filter="url(#soft)"/>
+  </g>
+
+  <circle cx="200" cy="200" r="177" fill="none" stroke="#5a3a18" stroke-width="3" opacity="0.6" filter="url(#soft)"/>
+</svg>

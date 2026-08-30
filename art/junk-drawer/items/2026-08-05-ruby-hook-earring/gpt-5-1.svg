@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="41.0 16.5 177.8 318.2">
+  <defs>
+    <radialGradient id="goldGrad" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffe9a9"/>
+      <stop offset="40%" stop-color="#f4c55a"/>
+      <stop offset="80%" stop-color="#c58b32"/>
+      <stop offset="100%" stop-color="#8b5a1d"/>
+    </radialGradient>
+    <linearGradient id="goldEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5c9"/>
+      <stop offset="40%" stop-color="#f2c35b"/>
+      <stop offset="100%" stop-color="#8a5b1f"/>
+    </linearGradient>
+    <radialGradient id="rubyGrad" cx="35%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="#ff9fb9"/>
+      <stop offset="30%" stop-color="#f23557"/>
+      <stop offset="70%" stop-color="#b00026"/>
+      <stop offset="100%" stop-color="#5c0011"/>
+    </radialGradient>
+    <radialGradient id="diamondGrad" cx="30%" cy="20%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#e4f0ff"/>
+      <stop offset="70%" stop-color="#c4d2e4"/>
+      <stop offset="100%" stop-color="#8a98a8"/>
+    </radialGradient>
+    <linearGradient id="diamondEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#d6e0ef"/>
+      <stop offset="100%" stop-color="#8791a2"/>
+    </linearGradient>
+    <radialGradient id="rubyHighlight" cx="25%" cy="15%" r="30%">
+      <stop offset="0%" stop-color="#ffe3f0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffe3f0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Hook -->
+  <path d="M124 20
+           C96 20 78 43 78 72
+           C78 92 87 109 106 119
+           C112 122 116 128 116 135
+           C116 142 111 149 103 151
+           C96 153 90 150 87 147
+           C84 144 82 139 82 133
+           C82 130 81 127 78 126
+           C75 125 71 127 70 131
+           C68 138 69 148 75 156
+           C83 168 98 174 112 171
+           C129 167 140 152 140 135
+           C140 121 132 108 118 101
+           C108 96 102 86 102 74
+           C102 55 115 40 132 40
+           C139 40 145 42 151 46
+           C155 48 160 47 162 43
+           C165 39 164 34 160 31
+           C150 24 138 20 124 20Z"
+        fill="url(#goldGrad)" stroke="#7b4a18" stroke-width="3" />
+
+  <!-- Small gold connector above basket -->
+  <ellipse cx="126" cy="156" rx="11" ry="8"
+           fill="url(#goldGrad)" stroke="#7b4a18" stroke-width="2"/>
+
+  <!-- Basket outer gold frame -->
+  <ellipse cx="130" cy="226" rx="80" ry="100"
+           fill="none" stroke="url(#goldEdge)" stroke-width="14"/>
+
+  <!-- Gold inner bezel under diamonds -->
+  <ellipse cx="130" cy="226" rx="64" ry="84"
+           fill="url(#goldGrad)" />
+
+  <!-- Diamond halo stones -->
+  <g>
+    <!-- 16 diamonds around -->
+    <g id="diamond">
+      <ellipse cx="130" cy="130" rx="10" ry="7"
+               fill="url(#diamondGrad)" stroke="url(#diamondEdge)" stroke-width="2"/>
+      <!-- Facet lines -->
+      <path d="M120 130 L130 124 L140 130 L130 136 Z"
+            fill="none" stroke="#bdc7d7" stroke-width="1.2"/>
+      <line x1="130" y1="124" x2="130" y2="136" stroke="#cfd9ea" stroke-width="1"/>
+      <line x1="120" y1="130" x2="140" y2="130" stroke="#cfd9ea" stroke-width="1"/>
+    </g>
+
+    <g transform="rotate(0 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(22.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(45 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(67.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(90 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(112.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(135 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(157.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(180 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(202.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(225 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(247.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(270 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(292.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(315 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+    <g transform="rotate(337.5 130 226)">
+      <use href="#diamond" transform="translate(0,102)"/>
+    </g>
+  </g>
+
+  <!-- Ruby center stone bezel -->
+  <ellipse cx="130" cy="226" rx="44" ry="62"
+           fill="url(#goldGrad)" stroke="#7b4a18" stroke-width="3"/>
+
+  <!-- Ruby center stone -->
+  <ellipse cx="130" cy="226" rx="38" ry="56"
+           fill="url(#rubyGrad)"/>
+
+  <!-- Ruby facets (subtle) -->
+  <path d="
+    M130 172
+    L151 186
+    L160 212
+    L151 238
+    L130 252
+    L109 238
+    L100 212
+    L109 186 Z"
+    fill="none" stroke="#871233" stroke-width="1.3" opacity="0.7"/>
+
+  <line x1="130" y1="172" x2="130" y2="252" stroke="#b81a3d" stroke-width="1" opacity="0.7"/>
+  <line x1="109" y1="186" x2="151" y2="238" stroke="#b81a3d" stroke-width="1" opacity="0.7"/>
+  <line x1="151" y1="186" x2="109" y2="238" stroke="#b81a3d" stroke-width="1" opacity="0.7"/>
+
+  <!-- Ruby highlight -->
+  <ellipse cx="118" cy="204" rx="14" ry="10"
+           fill="url(#rubyHighlight)" />
+
+  <!-- Basket lattice detail (subtle vertical ribs) -->
+  <g stroke="#8f5e25" stroke-width="2" opacity="0.65">
+    <path d="M130 150 L130 302"/>
+    <path d="M114 154 L118 298"/>
+    <path d="M146 154 L142 298"/>
+    <path d="M102 162 L110 290"/>
+    <path d="M158 162 L150 290"/>
+  </g>
+
+  <!-- Lower gold tip accent -->
+  <path d="M130 320
+           C120 318 112 312 108 304
+           C114 308 122 310 130 310
+           C138 310 146 308 152 304
+           C148 312 140 318 130 320Z"
+        fill="url(#goldGrad)" stroke="#7b4a18" stroke-width="2"/>
+</svg>

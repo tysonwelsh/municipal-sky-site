@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="31.0 19.5 338.2 452.8">
+  <defs>
+    <clipPath id="jarClip">
+      <path d="M108 236 h184 v196 a34 34 0 0 1 -34 34 h-116 a34 34 0 0 1 -34 -34 z"/>
+    </clipPath>
+  </defs>
+
+  <!-- decorative memphis confetti -->
+  <circle cx="44" cy="96" r="11" fill="#F9C846"/>
+  <circle cx="352" cy="148" r="8" fill="#2BB3A3"/>
+  <path d="M330 62 l14 24 h-28 z" fill="#FF6B4A"/>
+  <rect x="36" y="330" width="20" height="20" rx="5" fill="#2BB3A3" transform="rotate(20 46 340)"/>
+  <path d="M356 372 q16 12 0 24" stroke="#F9C846" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <circle cx="62" cy="186" r="6" fill="#FF6B4A"/>
+
+  <!-- stem -->
+  <path d="M200 232 C 196 178 190 150 186 118" stroke="#2E8B72" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <!-- leaves -->
+  <path d="M196 196 C 158 190 142 168 140 146 C 172 148 192 168 196 196 Z" fill="#3FAE8B"/>
+  <path d="M192 168 C 224 160 240 140 244 120 C 214 124 196 142 192 168 Z" fill="#2E8B72"/>
+
+  <!-- bud -->
+  <path d="M244 138 a13 20 0 1 1 26 0 a13 20 0 1 1 -26 0 Z" fill="#FF8A4C" transform="rotate(24 257 138)"/>
+  <path d="M240 160 C 246 150 252 146 258 144" stroke="#2E8B72" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+  <!-- poppy flower -->
+  <g transform="translate(186 100)">
+    <path d="M0 -76 C 44 -76 74 -46 74 -8 C 74 30 44 54 0 54 C -44 54 -74 30 -74 -8 C -74 -46 -44 -76 0 -76 Z" fill="#FF6B2C"/>
+    <path d="M-74 -8 C -74 -46 -44 -76 0 -76 C 0 -50 -18 -20 -74 -8 Z" fill="#FF8A4C"/>
+    <path d="M74 -8 C 74 30 44 54 0 54 C 8 26 34 6 74 -8 Z" fill="#E8501F"/>
+    <path d="M-56 24 C -34 46 -8 54 0 54 C -22 50 -40 40 -56 24 Z" fill="#E8501F"/>
+    <!-- petal separations -->
+    <path d="M0 -8 L 0 -76" stroke="#E8501F" stroke-width="5" stroke-linecap="round"/>
+    <path d="M0 -8 L -64 -34" stroke="#E8501F" stroke-width="5" stroke-linecap="round"/>
+    <path d="M0 -8 L 64 -34" stroke="#E8501F" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="0" cy="-6" r="20" fill="#3B2B36"/>
+    <circle cx="0" cy="-6" r="10" fill="#F9C846"/>
+    <g stroke="#3B2B36" stroke-width="4" stroke-linecap="round">
+      <path d="M0 -26 v-10"/><path d="M18 -16 l9 -5"/><path d="M-18 -16 l-9 -5"/>
+      <path d="M12 10 l6 9"/><path d="M-12 10 l-6 9"/>
+    </g>
+  </g>
+
+  <!-- jar -->
+  <g>
+    <!-- water -->
+    <g clip-path="url(#jarClip)">
+      <rect x="100" y="330" width="200" height="150" fill="#BFE7E0"/>
+      <rect x="100" y="330" width="200" height="10" fill="#8FD6CB"/>
+      <path d="M200 232 C 196 300 194 340 194 390" stroke="#2E8B72" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <circle cx="150" cy="392" r="9" fill="#DFF4F0"/>
+      <circle cx="252" cy="418" r="6" fill="#DFF4F0"/>
+      <circle cx="168" cy="436" r="5" fill="#DFF4F0"/>
+    </g>
+    <path d="M108 236 h184 v196 a34 34 0 0 1 -34 34 h-116 a34 34 0 0 1 -34 -34 z"
+          fill="none" stroke="#3B2B36" stroke-width="9" stroke-linejoin="round"/>
+    <!-- neck ridges -->
+    <rect x="104" y="228" width="192" height="16" rx="8" fill="#F9C846" stroke="#3B2B36" stroke-width="9"/>
+    <rect x="112" y="256" width="176" height="9" rx="4.5" fill="#3B2B36" opacity="0.18"/>
+    <rect x="112" y="274" width="176" height="9" rx="4.5" fill="#3B2B36" opacity="0.18"/>
+    <!-- highlight -->
+    <path d="M132 282 v130" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" opacity="0.75"/>
+    <!-- label -->
+    <rect x="152" y="330" width="96" height="60" rx="12" fill="#FFF3DF" stroke="#3B2B36" stroke-width="7"/>
+    <circle cx="200" cy="352" r="11" fill="#FF6B2C"/>
+    <rect x="170" y="372" width="60" height="7" rx="3.5" fill="#3B2B36" opacity="0.55"/>
+  </g>
+</svg>

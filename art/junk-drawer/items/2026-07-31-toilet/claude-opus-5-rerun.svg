@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="72.0 30.5 273.0 452.5">
+  <defs>
+    <linearGradient id="porc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c9d2d8"/>
+      <stop offset="0.18" stop-color="#ffffff"/>
+      <stop offset="0.62" stop-color="#f4f7f9"/>
+      <stop offset="1" stop-color="#c2ccd3"/>
+    </linearGradient>
+    <linearGradient id="porc2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#bcc7ce"/>
+      <stop offset="0.25" stop-color="#fbfdfe"/>
+      <stop offset="0.7" stop-color="#eef3f6"/>
+      <stop offset="1" stop-color="#b6c1c9"/>
+    </linearGradient>
+    <linearGradient id="seatg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#eef2f5"/>
+      <stop offset="1" stop-color="#c8d2d9"/>
+    </linearGradient>
+    <linearGradient id="lidg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#eff4f7"/>
+      <stop offset="1" stop-color="#c4cfd6"/>
+    </linearGradient>
+    <radialGradient id="bowlin" cx="0.45" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#8fa2ae"/>
+      <stop offset="0.55" stop-color="#b9c6ce"/>
+      <stop offset="1" stop-color="#dde5ea"/>
+    </radialGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fc4d6"/>
+      <stop offset="1" stop-color="#6d9fb6"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2f5f7"/>
+      <stop offset="0.35" stop-color="#b9c3c9"/>
+      <stop offset="0.6" stop-color="#e8eef1"/>
+      <stop offset="1" stop-color="#8f9ba3"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#8d99a2" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- ===== raised lid (leaning back) ===== -->
+    <g>
+      <path d="M92 236 C 74 176 70 106 82 56 C 86 40 100 32 116 34 C 132 36 140 48 140 64 C 140 118 130 186 116 240 Z"
+            fill="url(#lidg)"/>
+      <path d="M100 232 C 86 178 84 110 94 62 C 97 48 105 42 113 43"
+            fill="none" stroke="#ffffff" stroke-width="4" opacity="0.85"/>
+      <path d="M129 68 C 129 120 121 186 110 236" fill="none" stroke="#cdd7dd" stroke-width="2" opacity="0.9"/>
+    </g>
+
+    <!-- ===== raised seat (in front of lid) ===== -->
+    <g>
+      <path d="M110 244 C 96 188 94 120 104 74 C 108 56 122 48 138 52 C 152 56 158 70 156 86 C 150 142 140 200 130 248 Z"
+            fill="url(#seatg)"/>
+      <path d="M120 240 C 110 190 110 124 118 82 C 121 66 130 60 139 62"
+            fill="none" stroke="#ffffff" stroke-width="3.5" opacity="0.9"/>
+    </g>
+
+    <!-- ===== tank ===== -->
+    <path d="M92 232 L92 96 C 92 84 100 76 112 76 L 176 76 C 188 76 196 84 196 96 L 196 240 Z"
+          fill="url(#porc2)"/>
+    <!-- tank lid -->
+    <path d="M84 96 C 84 84 92 74 106 74 L 182 74 C 195 74 203 84 203 96 L 203 104 C 203 108 200 111 195 111 L 92 111 C 87 111 84 108 84 104 Z"
+          fill="url(#porc)"/>
+    <path d="M96 84 L 96 104" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.7"/>
+    <path d="M104 130 L104 226" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.55"/>
+
+    <!-- flush lever -->
+    <g stroke-width="1.8">
+      <circle cx="191" cy="128" r="9" fill="url(#chrome)"/>
+      <path d="M196 124 L 224 136 C 229 138 230 143 226 146 C 223 149 218 148 215 145 L 196 133 Z" fill="url(#chrome)"/>
+    </g>
+
+    <!-- ===== bowl body ===== -->
+    <path d="M196 240 L196 200 C 254 200 300 214 322 240 C 344 266 336 300 316 322 C 300 340 288 372 286 400 L 286 448 C 286 456 280 462 272 462 L 236 462 C 228 462 222 456 222 448 L 222 404 C 216 380 200 356 178 336 C 156 316 146 292 148 268 C 150 250 168 240 196 240 Z"
+          fill="url(#porc)"/>
+
+    <!-- pedestal shading -->
+    <path d="M232 400 C 240 424 242 442 242 460" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.6"/>
+    <path d="M276 356 C 272 386 272 424 274 458" fill="none" stroke="#c3ced5" stroke-width="2.5" opacity="0.9"/>
+
+    <!-- ===== bowl rim ===== -->
+    <path d="M170 246 C 170 224 216 208 262 208 C 310 208 342 226 342 250 C 342 274 306 290 258 290 C 210 290 170 272 170 246 Z"
+          fill="url(#porc)"/>
+    <!-- inner bowl -->
+    <ellipse cx="256" cy="248" rx="72" ry="30" fill="url(#bowlin)"/>
+    <!-- water -->
+    <ellipse cx="256" cy="252" rx="52" ry="20" fill="url(#water)" stroke="#5e8ea6" stroke-width="1.6"/>
+    <path d="M222 246 C 234 240 250 238 264 240" fill="none" stroke="#d6ecf5" stroke-width="3" opacity="0.75"/>
+
+    <!-- rim highlight -->
+    <path d="M186 240 C 196 224 226 214 258 213" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.85"/>
+    <path d="M332 258 C 322 274 296 284 268 287" fill="none" stroke="#cfd9df" stroke-width="2" opacity="0.9"/>
+
+    <!-- seat hinge -->
+    <g stroke-width="1.8">
+      <rect x="150" y="228" width="44" height="20" rx="9" fill="url(#chrome)"/>
+      <circle cx="160" cy="238" r="4.5" fill="#dfe6ea"/>
+    </g>
+
+    <!-- base foot -->
+    <path d="M222 448 L 286 448 L 290 470 C 291 476 287 480 281 480 L 227 480 C 221 480 217 476 218 470 Z"
+          fill="url(#porc)"/>
+
+    <!-- supply pipe -->
+    <g stroke-width="1.8">
+      <path d="M120 232 L120 300 C 120 306 124 310 130 310 L 148 310" fill="none" stroke="#9aa6ad" stroke-width="9"/>
+      <path d="M120 232 L120 300 C 120 306 124 310 130 310 L 148 310" fill="none" stroke="#e6ecef" stroke-width="3.5"/>
+      <circle cx="150" cy="310" r="12" fill="url(#chrome)"/>
+      <path d="M150 300 L150 320" stroke="#9aa6ad" stroke-width="2.5"/>
+    </g>
+  </g>
+</svg>

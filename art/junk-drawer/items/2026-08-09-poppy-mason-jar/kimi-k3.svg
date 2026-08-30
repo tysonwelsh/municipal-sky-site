@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="86.0 68.0 242.8 393.8">
+  <!-- water in jar -->
+  <path d="M128 300 L128 420 Q128 448 156 448 L244 448 Q272 448 272 420 L272 300 Z" fill="#A8D8EA"/>
+  <!-- stem -->
+  <path d="M200 440 L192 240 L208 240 L206 440 Z" fill="#2E8B57"/>
+  <!-- leaf -->
+  <path d="M196 330 Q150 310 140 350 Q170 365 196 340 Z" fill="#3CB371"/>
+  <!-- poppy petals -->
+  <path d="M200 240 Q120 220 118 150 Q160 130 200 175 Z" fill="#FF6B35"/>
+  <path d="M200 240 Q280 220 282 150 Q240 130 200 175 Z" fill="#FF8C42"/>
+  <path d="M200 180 Q150 90 200 70 Q250 90 200 180 Z" fill="#FF9F5A"/>
+  <path d="M200 240 Q170 200 130 210 Q150 250 200 245 Z" fill="#E5551F"/>
+  <path d="M200 240 Q230 200 270 210 Q250 250 200 245 Z" fill="#E5551F"/>
+  <!-- center -->
+  <circle cx="200" cy="200" r="24" fill="#3D2C29"/>
+  <circle cx="200" cy="200" r="13" fill="#6B4A3E"/>
+  <!-- jar glass -->
+  <path d="M120 270 L120 420 Q120 455 155 455 L245 455 Q280 455 280 420 L280 270" fill="none" stroke="#5DADE2" stroke-width="10" stroke-linecap="round"/>
+  <rect x="112" y="252" width="176" height="22" rx="10" fill="#5DADE2"/>
+  <!-- highlight -->
+  <rect x="138" y="290" width="14" height="110" rx="7" fill="#FFFFFF" opacity="0.7"/>
+  <!-- decorative dots -->
+  <circle cx="96" cy="180" r="8" fill="#FFC93C"/>
+  <circle cx="310" cy="120" r="10" fill="#FF6B6B"/>
+  <circle cx="320" cy="330" r="7" fill="#6BCB77"/>
+</svg>

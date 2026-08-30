@@ -10,7 +10,7 @@
     "pop-art"
   ],
   "sizeClass": "l",
-  "primary": "r3",
+  "primary": "r4",
   "responses": [
     {
       "rid": "r1",
@@ -80,6 +80,118 @@
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 1.5%, viewBox left as generated. Carries width/height attributes alongside the viewBox; filed byte-exact. Owner-pinned as the displayed response."
+    },
+    {
+      "rid": "r4",
+      "file": "claude-opus-5-rerun.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18BDNQ9CN93X5P49GR5CCS1), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 600 700\" to ink bounds (\"112.8 119.0 452.2 567.2\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 2.0,
+        "layering": 2.0,
+        "jnsq": 3.0
+      },
+      "tokens": {
+        "input": 512,
+        "output": 4196,
+        "total": 4708
+      },
+      "cost_usd": 0.10746
+    },
+    {
+      "rid": "r5",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18BDNQ9CN93X5P49GR5CCS1), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 400\" to ink bounds (\"21.2 76.0 306.8 303.8\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 3.0,
+        "layering": 2.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 186,
+        "output": 1942,
+        "total": 2384
+      },
+      "cost_usd": 0.029765
+    },
+    {
+      "rid": "r6",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18BDNQ9CN93X5P49GR5CCS1), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 500 580\" to ink bounds (\"52.0 70.5 390.2 509.2\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 1.0,
+        "layering": 2.0,
+        "jnsq": 3.0
+      },
+      "tokens": {
+        "input": 351,
+        "output": 4762,
+        "total": 5113
+      },
+      "cost_usd": 0.057846
+    },
+    {
+      "rid": "r7",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-08-30",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M18BDNQ9CN93X5P49GR5CCS1), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 260 260\" to ink bounds (\"36.2 46.2 185.5 181.0\").",
+      "annotations": {
+        "understanding-assignment": 3.0,
+        "structural-coherence": 1.0,
+        "layering": 1.0,
+        "jnsq": 1.0
+      },
+      "tokens": {
+        "input": 354,
+        "output": 2813,
+        "total": 3167
+      },
+      "cost_usd": 0.028572
     }
   ]
 }
