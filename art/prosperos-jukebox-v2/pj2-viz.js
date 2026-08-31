@@ -201,7 +201,7 @@ PJ2.Viz = (function () {
 
     // the binding: "night" (night folio) | "parchment" (the windowed codex
     // page) — owner 2026-07-20, switchable, both kept alive
-    var binding = "night";
+    var binding = "parchment"; // the app's one dress (toggle retired 2026-08-31)
 
     // camera (v1 verbatim behavior)
     var camYaw = 0.55, camPitch = 0.30, autoRotate = true;

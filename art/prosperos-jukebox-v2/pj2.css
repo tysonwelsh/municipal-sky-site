@@ -15,9 +15,9 @@
    source of truth; PJ2.Skin.injectTheme() (called from index.php's head)
    serializes it into <style id="pj2-theme-vars"> — every track×binding block
    of --pj2-* (folio/ink/accent) and --pj2c-* (cabinet chrome) custom
-   properties, keyed on [data-pj2-theme][data-track][data-binding] attributes
-   carried by #pj2-desk (and mirrored on #pj2-app for the structural
-   selectors below). This file only CONSUMES the variables. The few literal
+   properties, keyed on [data-pj2-theme][data-track] attributes carried by
+   #pj2-desk (and mirrored on #pj2-app for the structural selectors below).
+   This file only CONSUMES the variables. The few literal
    hexes that remain are the documented no-JS fallbacks inside var(…, #hex) —
    with scripts off only .pj2-desk and .pj2-nojs render. skin-test.html's
    drift guard asserts both directions (no stray hexes here; no dead tokens
@@ -39,19 +39,11 @@
   margin: 0 auto;
 }
 
-/* (the per-track skin blocks, the parchment binding vars, the chrome-constant
-   inventory, and the log's night-ink restore all live in the GENERATED sheet
-   now — see the contract note above. What remains below is structure.) */
-
-.pj2-app[data-binding="parchment"] .pj2-folio {
-  border: 2px solid var(--pj2-paper-edge);
-  border-radius: 6px;
-  padding: 0;
-}
-.pj2-app[data-binding="parchment"] .pj2-folio-grid { gap: 20px; padding: 0 20px 12px; }
-.pj2-app[data-binding="parchment"] .pj2-tabs { margin-bottom: 18px; }
-.pj2-app[data-binding="parchment"] .pj2-tab:first-child { border-top-left-radius: 4px; }
-.pj2-app[data-binding="parchment"] .pj2-tab:last-child { border-top-right-radius: 4px; }
+/* (the per-track skin blocks, the chrome-constant inventory, and the log's
+   night-ink restore all live in the GENERATED sheet now — see the contract
+   note above. What remains below is structure. The NIGHT/PARCH binding
+   toggle retired 2026-08-31: the parchment page is the app's one dress, and
+   its old override rules folded into the base rules.) */
 
 /* ---------------------------------------------------------------------------
    Fallback / unsupported lines
@@ -102,7 +94,7 @@
   z-index: 1;
   display: flex;
   gap: 2px;           /* 1U slits of page between the segments */
-  margin: 0 0 10px;
+  margin: 0 0 18px;
 }
 .pj2-tab {
   flex: 1 1 0;
@@ -119,8 +111,8 @@
   cursor: pointer;
 }
 /* the outer segments follow the frame's inner corner radius */
-.pj2-tab:first-child { border-top-left-radius: 6px; }
-.pj2-tab:last-child { border-top-right-radius: 6px; }
+.pj2-tab:first-child { border-top-left-radius: 4px; }
+.pj2-tab:last-child { border-top-right-radius: 4px; }
 /* hover/focus in currentColor — legible on any theme's band tone */
 .pj2-tab:hover { box-shadow: inset 0 -2px 0 currentColor; }
 .pj2-tab:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
@@ -147,9 +139,9 @@
 .pj2-folio {
   position: relative;   /* the sheet below is positioned against this */
   background: var(--pj2-paper);
-  /* 6px (was 10) — a mat line around the plate, not a leather binding */
-  border: 6px solid var(--pj2-paper-edge);
-  border-radius: 12px;
+  /* a slim 2px frame line — the title band above carries the mat's weight */
+  border: 2px solid var(--pj2-paper-edge);
+  border-radius: 6px;
   /* no padding of its own — the title band runs edge-to-edge at the top;
      the grid below carries the interior padding */
   padding: 0;
@@ -163,8 +155,7 @@
    folio's flat background showing between them.
    The night binding keeps its per-panel ground untouched — the sheet is
    simply not displayed, and paperFolio returns without drawing. */
-.pj2-folio-paper { display: none; }
-.pj2-app[data-binding="parchment"] .pj2-folio-paper {
+.pj2-folio-paper {
   display: block;
   position: absolute;
   inset: 0;
@@ -179,8 +170,8 @@
 .pj2-folio-grid {
   position: relative;
   z-index: 1;
-  padding: 0 12px 8px; /* the folio's old interior padding, minus the top —
-                          the title band owns the top edge */
+  padding: 0 20px 12px; /* the folio's interior padding, minus the top —
+                           the title band owns the top edge */
 }
 
 /* (the running head — title + head transport — retired 2026-08-23: the
@@ -209,7 +200,7 @@
    its height stays modest and the log below keeps its depth. */
 .pj2-folio-grid {
   display: flex;
-  gap: 12px;
+  gap: 20px;
   align-items: stretch;
 }
 .pj2-plate-col {
@@ -716,7 +707,7 @@
 @media (max-width: 700px) {
   .pj2-desk { padding: 14px 6px 32px; }
   .pj2-folio-grid { padding: 0 10px 8px; }
-  .pj2-tabs { margin-bottom: 8px; }
+  .pj2-tabs { margin-bottom: 12px; }
   #pj2-plate { height: 360px; }
   .pj2-masthead { font-size: 28px; margin-bottom: 8px; }
   .pj2-tab { font-size: 17px; letter-spacing: 0.01em; padding: 8px 4px 7px; }

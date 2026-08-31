@@ -70,7 +70,8 @@ button { background: #3a2d18; color: #c7b795; border: 0; font-family: inherit; f
 beyond the documented no-JS fallbacks, no --pj2*/--tb-* declarations); every variable
 pj2.css consumes is emitted for every track; every emitted token is consumed (no dead
 tokens); and a live computed-style probe proves the cascade delivers the registry's
-values on all six track×binding combinations. (needs http — fetch of pj2.css.)</div>
+values on all three tracks (parchment is the one dress; the night ramps live on as
+the window inks and stay contrast-checked in §6). (needs http — fetch of pj2.css.)</div>
 <div id="themeguard">fetching pj2.css…</div>
 
 <script src="pj2-rand.js"></script>
@@ -369,31 +370,22 @@ function themeGuard() {
     document.body.appendChild(probe);
     var fails = [], checks = 0;
     TRACKS.forEach(function (tr) {
-      ["night", "parchment"].forEach(function (binding) {
-        probe.setAttribute("data-track", tr);
-        probe.setAttribute("data-binding", binding);
-        var want = {}, kk;
-        var night = genBlocks['[data-pj2-theme][data-track="' + tr + '"]'] || {};
-        for (kk in night) want[kk] = night[kk];
-        if (binding === "parchment") {
-          var parch = genBlocks['[data-pj2-theme][data-binding="parchment"][data-track="' + tr + '"]'] || {};
-          for (kk in parch) want[kk] = parch[kk];
-        }
-        var cs = getComputedStyle(probe);
-        for (kk in want) {
-          checks++;
-          var got = cs.getPropertyValue(kk).trim().replace(/\s+/g, " ");
-          if (got !== want[kk].replace(/\s+/g, " ")) fails.push(tr + "/" + binding + " " + kk);
-        }
-        if (tr === "library" && binding === "parchment") {
-          checks++;
-          var li = getComputedStyle(logProbe).getPropertyValue("--pj2-ink0").trim();
-          if (li !== Skin.palette("library", "night").text[0]) fails.push("log-block night-ink restore");
-        }
-      });
+      probe.setAttribute("data-track", tr);
+      var want = genBlocks['[data-pj2-theme][data-track="' + tr + '"]'] || {}, kk;
+      var cs = getComputedStyle(probe);
+      for (kk in want) {
+        checks++;
+        var got = cs.getPropertyValue(kk).trim().replace(/\s+/g, " ");
+        if (got !== want[kk].replace(/\s+/g, " ")) fails.push(tr + " " + kk);
+      }
+      if (tr === "library") { // the log is a night window: night ink always
+        checks++;
+        var li = getComputedStyle(logProbe).getPropertyValue("--pj2-ink0").trim();
+        if (li !== Skin.palette("library", "night").text[0]) fails.push("log-block night-ink restore");
+      }
     });
     document.body.removeChild(probe);
-    line(!fails.length, "computed-style probe, " + checks + " values across 6 combos: "
+    line(!fails.length, "computed-style probe, " + checks + " values across the 3 tracks: "
       + (fails.length ? fails.join(", ") : "all match the registry"));
 
     host.innerHTML = out.join("");

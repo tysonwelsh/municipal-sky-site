@@ -1382,41 +1382,8 @@
     if (stopBtn) stopBtn.addEventListener("click", doStop);
     if (resetBtn) resetBtn.addEventListener("click", doReset);
 
-    // the binding switch (owner 2026-07-20, undecided between the two
-    // dresses): NIGHT = the night folio; PARCH = the windowed codex page.
-    // Persisted; the viz swaps palettes/papers/window live.
-    var bindingBtn = $("pj2-binding");
-    function applyBinding(b, persist) {
-      var app = $("pj2-app");
-      if (app) app.setAttribute("data-binding", b);
-      var desk = $("pj2-desk");
-      if (desk) desk.setAttribute("data-binding", b);
-      // keep Skin's mode-global honest even if the viz failed to load
-      // (viz.setBinding repeats this call harmlessly — it early-returns on
-      // an unchanged binding but setMode is idempotent anyway)
-      try { if (window.PJ2 && PJ2.Skin) PJ2.Skin.setMode(b); } catch (e) {}
-      if (viz && viz.setBinding) { try { viz.setBinding(b); } catch (e) {} }
-      if (bindingBtn) {
-        bindingBtn.textContent = b === "night" ? "NIGHT ☽︎" : "PARCH ☰︎";
-        bindingBtn.setAttribute("aria-label",
-          "binding — showing the " + (b === "night" ? "night folio" : "parchment page")
-          + "; press to switch");
-      }
-      if (persist) { try { localStorage.setItem("pj2.binding", b); } catch (e) {} }
-    }
-    function storedBinding() {
-      try {
-        var b = localStorage.getItem("pj2.binding");
-        return b === "parchment" ? "parchment" : "night";
-      } catch (e) { return "night"; }
-    }
-    if (bindingBtn) {
-      bindingBtn.addEventListener("click", function () {
-        var cur = (viz && viz.getBinding) ? viz.getBinding()
-          : (($("pj2-app") || {}).getAttribute ? $("pj2-app").getAttribute("data-binding") : "night");
-        applyBinding(cur === "night" ? "parchment" : "night", true);
-      });
-    }
+    // (the NIGHT/PARCH binding switch retired 2026-08-31 — the parchment
+    // page is the app's one dress; PJ2.Skin and PJ2.Viz both default to it)
 
     // the seal
     var seedInput = $("pj2-seed");
@@ -1468,7 +1435,6 @@
     // viz lifecycle
     viz = makeViz();
     try { viz.setTrack(activeKey); } catch (e) {}
-    applyBinding(storedBinding(), false);
     document.addEventListener("visibilitychange", function () {
       if (!viz) return;
       if (document.visibilityState === "hidden") {

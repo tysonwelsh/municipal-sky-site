@@ -59,7 +59,7 @@ include '../../includes/header.php';
 <script src="pj2-skin.js?v=<?php echo pj2v('pj2-skin.js'); ?>"></script>
 <script>PJ2.Skin.injectTheme(document);</script>
 
-<div class="pj2-desk" id="pj2-desk" data-pj2-theme data-track="library" data-binding="night">
+<div class="pj2-desk" id="pj2-desk" data-pj2-theme data-track="library">
 
   <noscript>
     <p class="pj2-nojs">Prospero&rsquo;s Jukebox is a generative music engine and needs JavaScript
@@ -96,10 +96,9 @@ include '../../includes/header.php';
         </div>
 
         <!-- THE SHEET — the folio's own paper, one bake behind everything
-             inside it (parchment binding only; the night folio's panels
-             carry their own flat ground). Sits under the title, both
-             panels, the gutters and the log, so the page is one surface
-             instead of two textured rectangles on a bare field. -->
+             inside it. Sits under the title band, both panels, the gutters
+             and the log, so the page is one surface instead of two textured
+             rectangles on a bare field. -->
         <canvas class="pj2-folio-paper" id="pj2-folio-paper" aria-hidden="true"></canvas>
 
         <!-- (the running head is gone — owner 2026-08-23: the active tab IS
@@ -187,9 +186,8 @@ include '../../includes/header.php';
                 <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
               </div>
             </div>
-            <div class="pj2-transport" role="group" aria-label="binding">
-              <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
-            </div>
+            <!-- (the NIGHT/PARCH binding plate retired 2026-08-31 — the
+                 parchment page is the app's one dress) -->
           </div>
         </div><!-- /pj2-cab-right-row -->
       </div><!-- /pj2-cab-right -->
