@@ -206,12 +206,167 @@
 .pj2-plate-col {
   flex: 1 1 auto;
   min-width: 0;
+  position: relative; /* the apparatus column overlays the plate window */
 }
 #pj2-plate {
   display: block;
   width: 100%;
   height: 660px;
 }
+/* ---------------------------------------------------------------------------
+   THE APPARATUS COLUMN (owner 2026-08-31, "in the plate's margin") — the
+   transport lives ON the plate window now, drawn in the window's own inks:
+   the play/stop constellation dial, the wick gauge (master volume) with a
+   transient % readout riding its fill line, and the reseed rune over the
+   bare seed number. One column, one axis, at the window's left edge.
+   Library's window keeps night ink via the generated .pj2-apparatus
+   override (the same restore the log block gets).
+   ------------------------------------------------------------------------- */
+.pj2-apparatus {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  /* anchored to the CANVAS's fixed height, not the column (the telemetry
+     strip shares .pj2-plate-col below the plate on small screens) */
+  height: 620px; /* #pj2-plate 660px − 2 × 20px inset */
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 2;
+}
+
+/* the toggle — play and stop as one constellation dial: a 1U ring, twelve
+   tick dots, a stepped pixel glyph. No pill, no bevel, no glow. */
+.pj2-toggle {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+.pj2-toggle svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pj2-ring { fill: none; stroke: var(--pj2-ink2); stroke-width: 2; }
+.pj2-ticks rect { fill: var(--pj2-ink3); }
+.pj2-glyph-stop { display: none; }
+.pj2-tri-body { fill: var(--pj2-accent); }
+.pj2-tri-edge { fill: var(--pj2-ink0); }
+.pj2-stop-body { fill: var(--pj2-ink1); }
+.pj2-stop-edge { fill: var(--pj2-ink0); }
+.pj2-toggle:hover .pj2-ring { stroke: var(--pj2-ink1); }
+.pj2-toggle:hover .pj2-ticks rect { fill: var(--pj2-ink2); }
+.pj2-toggle:focus-visible { outline: 2px solid var(--pj2-accent); outline-offset: 2px; }
+.pj2-toggle:active { transform: translateY(2px); } /* a 1U press, not a shadow */
+/* the sounding state: the dial's dots come up, the glyph swaps to the rest */
+.pj2-toggle.is-on .pj2-ticks rect { fill: var(--pj2-ink0); }
+.pj2-toggle.is-on .pj2-ring { stroke: var(--pj2-ink1); }
+.pj2-toggle.is-on .pj2-glyph-play { display: none; }
+.pj2-toggle.is-on .pj2-glyph-stop { display: block; }
+
+/* the wick gauge — the master volume as a measuring column. The visually-
+   hidden range input is the real control (keyboard + AT); pointer drags on
+   the etched column write to it. */
+.pj2-wick {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 24px;
+  touch-action: none;
+}
+.pj2-wick-track {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--pj2-ink2);
+  background: var(--pj2c-slot);
+  cursor: ns-resize;
+}
+.pj2-wick-fill {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 60%;
+  /* vertical dither: 1U of fill, 1U of its shadow — the desk's own stripe */
+  background: repeating-linear-gradient(0deg, var(--pj2-fill-a) 0 2px, var(--pj2-fill-b) 2px 4px);
+  pointer-events: none;
+}
+.pj2-wick-thumb {
+  position: absolute;
+  left: -4px; right: -4px;
+  bottom: calc(60% - 2px);
+  height: 4px;
+  background: var(--pj2c-thumb);
+  pointer-events: none;
+}
+.pj2-wick.is-focus .pj2-wick-track { outline: 2px solid var(--pj2-accent); outline-offset: 2px; }
+/* the transient % readout — inside the gauge, riding just above the fill;
+   visible while adjusting, fades once the hand comes off. The slot-colored
+   backing keeps it legible if it overlaps the stripes. */
+.pj2-wick-pct {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(60% + 5px);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--pj2-ink0);
+  background: var(--pj2c-slot);
+  padding: 1px 2px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 260ms steps(4, end);
+  pointer-events: none;
+  z-index: 2;
+}
+.pj2-wick-pct.is-live { opacity: 1; transition: none; }
+
+/* reset, demoted — the rune with the bare seed number stacked beneath it */
+.pj2-reseed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.pj2-rune {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+.pj2-rune svg { display: block; width: 20px; height: 20px; }
+.pj2-snake { fill: var(--pj2-ink3); }
+.pj2-rune:hover .pj2-snake { fill: var(--pj2-ink2); }
+.pj2-rune:focus-visible { outline: 2px solid var(--pj2-ink2); outline-offset: 2px; }
+.pj2-rune.is-spun { animation: pj2-rune-spin 320ms steps(4, end); }
+@keyframes pj2-rune-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.pj2-seed-echo {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--pj2-ink3);
+  line-height: 1;
+}
+
+/* the visually-hidden input (real control behind the painted wick) */
+.pj2-vh {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+}
+
 .pj2-margin-col {
   flex: 0 0 500px;
   width: 500px;
@@ -370,25 +525,10 @@
 }
 .pj2-cab-spacer { flex: 1 1 auto; }
 
-/* the cabinet's right end (owner 2026-08-23): the transport stacked ABOVE
-   the seal + lamp pair — play moved down from the retired running head */
-.pj2-cab-right {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.pj2-transport-cab { justify-content: center; }
-.pj2-cab-right-row {
-  display: flex;
-  gap: 16px;
-  align-items: stretch;
-}
+/* (the cabinet's transport + lamp moved into the plate window as the
+   apparatus column, owner 2026-08-31 — the pushplate survives for COPY) */
 
-/* (the shelf/book-spine tab rules lived here; owner ruling moved the tracks
-   to the .pj2-tabs row above the folio) */
-
-/* --- transport: flat pushplates — pressed darkens, lit fills with accent --- */
-.pj2-transport { display: flex; align-items: center; gap: 8px; }
+/* --- pushplates: flat — pressed darkens, lit fills with accent ------------ */
 .pj2-pushplate {
   font-family: "VT323", monospace;
   font-size: 18px;
@@ -441,57 +581,8 @@
   100% { transform: translateY(0) scale(1); }
 }
 
-/* --- the lamp: master volume as the wick gauge -----------------------------
-   The lamp stacks with the binding plate beneath it (owner 2026-08-22):
-   the stack is one cabinet item sitting right of the seal; its children
-   stretch to the lamp's 136px so the plate and the gauge share a width. */
-.pj2-lamp-stack {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-}
-.pj2-lamp-stack .pj2-pushplate { width: 100%; } /* the plate matches the gauge's width */
-.pj2-lamp {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  width: 136px;
-}
-.pj2-lamp-track {
-  position: relative;
-  height: 14px;
-  border: 2px solid var(--pj2c-control-edge);
-  background: var(--pj2c-slot);
-}
-/* the lamp wears the same dither stripes and thumb as the desk sliders
-   (2026-08-31) — the master volume finally re-tints with the song */
-.pj2-lamp-fill {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 60%;
-  background: repeating-linear-gradient(90deg, var(--pj2-fill-a) 0 2px, var(--pj2-fill-b) 2px 4px);
-  pointer-events: none;
-}
-.pj2-lamp-thumb {
-  position: absolute;
-  top: -4px;
-  left: calc(60% - 3px);
-  width: 6px;
-  height: 18px;
-  background: var(--pj2c-thumb);
-  pointer-events: none;
-}
-.pj2-lamp-track input[type="range"] {
-  position: absolute;
-  inset: -6px 0;
-  width: 100%;
-  height: calc(100% + 12px);
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
+/* (the lamp lives in the plate window as the wick gauge now — see THE
+   APPARATUS COLUMN above) */
 
 /* --- the mixing desk: the instrument rows inside the cabinet --------------
    (PLAN-MIXING-DESK / -2; mixing desk III, owner 2026-08-22: no collapse,
@@ -699,6 +790,7 @@
   .pj2-folio-grid { flex-direction: column; }
   .pj2-margin-col { flex: 1 1 auto; width: auto; }
   #pj2-plate { height: 480px; }
+  .pj2-apparatus { height: 440px; } /* 480 − 2 × 20 */
   #pj2-margin { display: none; }
   .pj2-telemetry { display: block; }
   .pj2-log { max-height: 240px; }
@@ -720,15 +812,9 @@
   .pj2-legend-rate { flex: 0 1 100px; }
   .pj2-legend-rate-val { flex: 0 0 38px; font-size: 13px; }
   .pj2-cab-spacer { display: none; }
-  /* the cabinet transport spans the width, three equal thumb targets,
-     above the seal + lamp row */
-  .pj2-cab-right { width: 100%; }
-  .pj2-transport-cab { gap: 6px; }
-  .pj2-transport-cab .pj2-pushplate {
-    flex: 1 1 0;
-    min-width: 0;
-    text-align: center;
-    padding: 10px 4px;
-  }
-  .pj2-cab-right-row { justify-content: space-between; }
+  /* the apparatus column compacts with the plate */
+  .pj2-apparatus { top: 14px; left: 10px; height: 332px; width: 46px; gap: 8px; } /* 360 − 2 × 14 */
+  .pj2-toggle { width: 44px; height: 44px; }
+  .pj2-wick { width: 20px; }
+  .pj2-rune, .pj2-rune svg { width: 18px; height: 18px; }
 }

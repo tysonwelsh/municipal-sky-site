@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Transport 2 — In the Plate's Margin</title>
+
+<!-- ============================================================================
+     PROSPERO'S JUKEBOX v2 — TRANSPORT MOCKUP 2: "IN THE PLATE'S MARGIN"
+     ----------------------------------------------------------------------------
+     The transport stops being cabinet chrome and becomes apparatus drawn ON the
+     plate. The night window's empty top-left corner (the coil owns the centre)
+     holds a phosphor cluster in the coil's own language: ONE constellation-dial
+     toggle that is play and stop in two states — which settles the hierarchy
+     problem by deleting the second button — a demoted reset rune beneath it with
+     the seed folded into its caption, the status line reading out beside them,
+     and the master volume re-cut as a wick gauge etched down the window's left
+     margin. Nothing of the transport survives in the cabinet below, so play is
+     above the fold by construction at every width.
+
+     Self-contained: inline CSS/JS, Google Fonts the only external resource.
+     Palette = the Library book (parchment page, amber night window).
+     ========================================================================== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
+
+<style>
+/* ---------------------------------------------------------------------------
+   THE INK LAW — Library palette, verbatim. U (the art-pixel) = 2 CSS px:
+   every border, dither stripe and bevel below is a multiple of 2px.
+   ------------------------------------------------------------------------- */
+:root {
+  /* the desk / room void */
+  --void: #0b0a08;
+  --label: #c7b795;
+
+  /* the parchment page */
+  --page: #e3d3a8;
+  --page-lift: #efe3c0;
+  --page-deep: #d0bc8c;
+  --frame: #8a704a;
+  --ink0: #2e2114;
+  --ink1: #4a3620;
+  --ink2: #6e5638;
+  --ink3: #93794f;
+  --rubric: #8e3b2c;
+
+  /* the night window */
+  --night: #0a0805;
+  --amb0: #ffdc82;
+  --amb1: #ffc878;
+  --amb2: #b4823c;
+  --amb3: #785f32;
+  --gilt: #c9a227;
+  --gilt2: #e8c95a;
+  --disp-rubric: #b0553c;
+
+  /* control chrome */
+  --slot: #0f0c07;
+  --fill-a: #c9a227;
+  --fill-b: #4d3c10;
+  --thumb: #e8c95a;
+  --cab: #17120b;
+  --cab-edge: #2b2213;
+
+  --mono: "VT323", monospace;
+  --black-letter: "Jacquard 12", "VT323", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--void);
+}
+
+body {
+  font-family: var(--mono);
+  color: var(--label);
+  padding: 26px 12px 64px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* the house screen-reader pattern: real form control, no pixels */
+.vh {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.app { max-width: 1100px; margin: 0 auto; }
+
+/* --- THE MASTHEAD --------------------------------------------------------- */
+.masthead {
+  font-family: var(--black-letter);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+  color: var(--label);
+  letter-spacing: 0.02em;
+  margin: 0 0 16px;
+}
+.masthead .init { color: var(--gilt); }
+
+/* --- THE FOLIO + THE TITLE BAND ------------------------------------------- */
+.folio {
+  position: relative;
+  background:
+    radial-gradient(130% 96% at 50% 0%, var(--page-lift) 0%, var(--page) 52%, var(--page-deep) 100%);
+  border: 2px solid var(--frame);
+  border-radius: 6px;
+  padding: 0;
+}
+/* a faint parchment mottle — flat steps, no blur on anything that is a control */
+.folio::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(24px 18px at 18% 34%, rgba(160,132,88,0.18), transparent 70%),
+    radial-gradient(40px 26px at 78% 66%, rgba(160,132,88,0.14), transparent 72%),
+    radial-gradient(30px 22px at 46% 88%, rgba(160,132,88,0.12), transparent 70%),
+    radial-gradient(20px 16px at 88% 20%, rgba(160,132,88,0.16), transparent 70%);
+}
+
+.tabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 2px;            /* 1U slits of page between the segments */
+  margin: 0 0 18px;
+}
+.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: var(--black-letter);
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 10px 8px 9px;
+  background: var(--frame);
+  color: var(--ink0);
+  border: 0;
+  cursor: pointer;
+}
+.tab:first-child { border-top-left-radius: 4px; }
+.tab:last-child  { border-top-right-radius: 4px; }
+.tab:hover { box-shadow: inset 0 -2px 0 currentColor; }
+.tab:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+.tab.is-active {          /* the cut: the page itself shows through */
+  background: transparent;
+  color: var(--ink0);
+  cursor: default;
+}
+.tab.is-active:hover { box-shadow: none; }
+
+.folio-body {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px 14px;
+}
+
+/* ===========================================================================
+   THE PLATE WINDOW — a night window cut into the page. The coil owns the
+   centre; the corners are open ground, and the transport is drawn there.
+   ========================================================================= */
+.plate {
+  position: relative;
+  height: 60vh;
+  min-height: 420px;
+  background: var(--night);
+  border-radius: 16px;
+  overflow: hidden;
+}
+#coil { display: block; width: 100%; height: 100%; }
+
+/* --- THE APPARATUS COLUMN (the window's left margin, one shared axis) -----
+   owner 2026-08-31: dial, rune and wick gauge stack in ONE column — the dial
+   reduced, the gauge widened, both centered on the same vertical axis. */
+.apparatus {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  bottom: 20px;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 3;
+}
+
+/* THE TOGGLE — play and stop as one constellation dial. No pill, no bevel,
+   no glow: a 1U ring, twelve tick dots, a stepped pixel glyph. */
+.toggle {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+.toggle svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.toggle .ring   { fill: none; stroke: var(--amb2); stroke-width: 2; }
+.toggle .tick   { fill: var(--amb3); }
+.toggle .glyph-stop { display: none; }
+.toggle .tri-body { fill: var(--gilt); }
+.toggle .tri-edge { fill: var(--amb0); }
+.toggle .stop-body { fill: var(--amb1); }
+.toggle .stop-edge { fill: var(--amb0); }
+
+.toggle:hover .ring { stroke: var(--amb1); }
+.toggle:hover .tick { fill: var(--amb2); }
+.toggle:focus-visible { outline: 2px solid var(--gilt2); outline-offset: 2px; }
+.toggle:active { transform: translateY(2px); }   /* a 1U press, not a shadow */
+
+/* the sounding state: the dial's dots come up, the glyph swaps to the rest */
+.toggle.is-on .tick { fill: var(--amb0); }
+.toggle.is-on .ring { stroke: var(--amb1); }
+.toggle.is-on .glyph-play { display: none; }
+.toggle.is-on .glyph-stop { display: block; }
+
+/* the caption keeps the app's two voices in one line: the rubricated key word
+   in small caps, the plain-language gloss lowercase beside it */
+.toggle-cap {
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  color: var(--amb3);
+  line-height: 1;
+}
+.toggle-cap .key { color: var(--gilt); }
+.toggle.is-on ~ .toggle-cap .key { color: var(--gilt2); }
+
+/* the status line — the existing convention, moved onto the plate */
+.status {
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  color: var(--amb2);
+  line-height: 1.15;
+  min-height: 19px;
+}
+.status.is-on { color: var(--amb0); }
+.status .sep { color: var(--amb3); }
+
+/* --- RESET, DEMOTED — the rune with the bare seed number stacked beneath
+   it, centered on the column's axis at its foot. ------------------------- */
+.reseed-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin-top: 0;
+  white-space: nowrap;
+}
+.rune {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+.rune svg { display: block; width: 22px; height: 22px; }
+.rune .snake { fill: var(--amb3); }
+.rune:hover .snake { fill: var(--amb2); }
+.rune:focus-visible { outline: 2px solid var(--amb2); outline-offset: 2px; }
+.rune.is-spun { animation: rune-spin 320ms steps(4, end); }
+@keyframes rune-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.reseed-cap {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--amb3);
+  line-height: 1;
+}
+.reseed-cap .seedno { color: var(--amb2); }
+
+/* --- THE WICK GAUGE — master volume, the column's lower reach. Widened to
+   sit in proportion with the reduced dial above it; no foot caption. ------- */
+.wick {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 24px;
+  z-index: 3;
+  touch-action: none;
+}
+.wick-track {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--amb2);
+  background: var(--slot);
+  cursor: ns-resize;
+}
+.wick-fill {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 60%;
+  /* vertical dither: 1U of gilt, 1U of its shadow — the desk's own stripe */
+  background: repeating-linear-gradient(0deg, var(--fill-a) 0 2px, var(--fill-b) 2px 4px);
+  pointer-events: none;
+}
+.wick-thumb {
+  position: absolute;
+  left: -4px; right: -4px;
+  bottom: calc(60% - 2px);
+  height: 4px;
+  background: var(--thumb);
+  pointer-events: none;
+}
+.wick.is-focus .wick-track { outline: 2px solid var(--gilt2); outline-offset: 2px; }
+
+/* the transient % readout — INSIDE the gauge, riding just above the top of
+   the fill; visible while adjusting, fades once the hand comes off. The
+   slot-colored backing keeps it legible if it ever overlaps the stripes. */
+.wick-pct {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(60% + 5px);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--amb0);
+  background: var(--slot);
+  padding: 1px 2px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 260ms steps(4, end);
+  pointer-events: none;
+  z-index: 2;
+}
+.wick-pct.is-live { opacity: 1; transition: none; }
+
+/* ===========================================================================
+   THE SCRIBAL LOG — the second night window
+   ========================================================================= */
+.log-window {
+  margin-top: 12px;
+  background: var(--night);
+  border-radius: 5px;
+  padding: 8px 12px 10px;
+}
+.log-head {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amb2);
+  border-bottom: 1px solid var(--amb3);
+  padding: 0 0 2px;
+  margin: 0 0 5px;
+}
+.log-row {
+  display: flex;
+  gap: 7px;
+  font-size: 16.5px;
+  line-height: 1.3;
+  align-items: baseline;
+}
+.log-t   { flex: 0 0 44px; color: var(--amb3); }
+.log-tag { flex: 0 0 106px; color: var(--gilt); letter-spacing: 0.05em; }
+.log-body { flex: 1 1 auto; min-width: 0; color: var(--amb0); overflow-wrap: break-word; }
+.log-row.age-1 .log-body { color: var(--amb1); }
+.log-row.age-2 .log-body { color: var(--amb2); }
+.log-row.age-2 .log-tag  { color: var(--disp-rubric); }
+.log-body .cap {
+  font-family: var(--black-letter);
+  font-size: 24px;
+  line-height: 0.8;
+  color: var(--gilt);
+}
+
+/* ===========================================================================
+   THE CABINET — what is LEFT of it. The mixing desk and the seal; the
+   transport and the lamp are gone from here, which is the whole point.
+   ========================================================================= */
+.cabinet {
+  margin-top: 14px;
+  background: var(--cab);
+  border: 2px solid var(--cab-edge);
+  padding: 14px 16px;
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.mixdesk { flex: 1 1 380px; display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.desk-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.chev {
+  flex: 0 0 16px;
+  width: 16px; height: 16px;
+  padding: 0; border: 0;
+  background: transparent;
+  color: var(--ink3);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.chev:hover { color: var(--label); }
+.chev:focus-visible { outline: 2px solid var(--label); outline-offset: 2px; }
+.sigil { flex: 0 0 26px; width: 26px; height: 26px; display: block; }
+.desk-name {
+  flex: 0 0 124px;
+  font-size: 16px;
+  color: var(--label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.desk-slider {
+  position: relative;
+  flex: 1 1 auto;
+  height: 12px;
+  border: 2px solid var(--amb3);
+  background: var(--slot);
+}
+.desk-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: repeating-linear-gradient(90deg, var(--fill-a) 0 2px, var(--fill-b) 2px 4px);
+}
+.desk-thumb {
+  position: absolute;
+  top: -3px;
+  width: 4px; height: 14px;
+  background: var(--thumb);
+}
+
+.seal-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.seal-stack { position: relative; width: 84px; height: 84px; }
+.seal-stack svg { display: block; width: 84px; height: 84px; }
+.seal-num {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 76px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--page-lift);
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.seal-num:focus { outline: 1px dotted var(--page-lift); outline-offset: 2px; }
+.cab-cap {
+  font-size: 13px;
+  color: var(--ink3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* --- the dev note --------------------------------------------------------- */
+.devnote {
+  position: fixed;
+  left: 0; bottom: 0;
+  z-index: 20;
+  padding: 4px 10px 5px;
+  background: rgba(11, 10, 8, 0.92);
+  border-top: 2px solid var(--cab-edge);
+  border-right: 2px solid var(--cab-edge);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amb3);
+  pointer-events: none;
+}
+
+/* ===========================================================================
+   ≤700px — the phone. The plate is still the first thing under the title
+   band, so PLAY is above the fold by construction. Verified at 390px.
+   ========================================================================= */
+@media (max-width: 700px) {
+  body { padding: 16px 8px 56px; }
+  .masthead { font-size: 27px; margin-bottom: 12px; }
+  .tab { font-size: 15px; padding: 8px 4px 7px; }
+  .tabs { margin-bottom: 12px; }
+  .folio-body { padding: 0 10px 10px; }
+
+  .plate { height: 50vh; min-height: 340px; border-radius: 16px; }
+
+  .apparatus { top: 14px; left: 10px; bottom: 14px; width: 46px; gap: 8px; }
+  .toggle { width: 44px; height: 44px; }
+  .reseed-cap { font-size: 10px; letter-spacing: 0.1em; }
+  .rune, .rune svg { width: 18px; height: 18px; }
+
+  .wick { width: 20px; }
+
+  .log-window { padding: 7px 9px 8px; }
+  .log-row { font-size: 15px; }
+  .log-t { flex: 0 0 38px; }
+  .log-tag { flex: 0 0 84px; }
+
+  .cabinet { gap: 14px; padding: 10px 10px; }
+  .desk-name { flex: 0 0 86px; font-size: 14px; }
+  .seal-stack, .seal-stack svg { width: 68px; height: 68px; }
+  .seal-num { width: 62px; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <h1 class="masthead"><span class="init">P</span>rospero&rsquo;s Jukebox</h1>
+
+  <div class="folio">
+
+    <!-- THE TITLE BAND — three segments of the folio's frame; the active
+         title's segment is cut through to the page. -->
+    <div class="tabs" role="tablist" aria-label="the three books">
+      <button type="button" class="tab is-active" role="tab" aria-selected="true"
+              aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
+      <button type="button" class="tab" role="tab" aria-selected="false"
+              aria-label="Sycorax's Spell — the woodcut grimoire">Sycorax&rsquo;s Spell</button>
+      <button type="button" class="tab" role="tab" aria-selected="false"
+              aria-label="Ariel's Day Off — the celestial atlas">Ariel&rsquo;s Day Off</button>
+    </div>
+
+    <div class="folio-body">
+
+      <!-- ================= THE PLATE WINDOW ================= -->
+      <div class="plate" id="plate">
+
+        <canvas id="coil" aria-label="the pitch spiral — the live spectrum drawn as a glowing coil, one turn per octave"></canvas>
+
+        <!-- THE APPARATUS CLUSTER: one toggle, one rune, one status line -->
+        <div class="apparatus" id="apparatus">
+
+          <button type="button" class="toggle" id="toggle"
+                  aria-label="play" aria-pressed="false">
+            <svg viewBox="0 0 80 80" aria-hidden="true" focusable="false">
+              <g id="ticks"></g>
+              <circle class="ring" cx="40" cy="40" r="30" />
+              <g class="glyph-play" id="glyph-play"></g>
+              <g class="glyph-stop">
+                <rect class="stop-body" x="26" y="26" width="28" height="28" />
+                <rect class="stop-edge" x="26" y="26" width="2" height="28" />
+              </g>
+            </svg>
+          </button>
+
+          <!-- (the INCIPIT caption + status readout removed — owner
+               2026-08-31: the dial speaks for itself) -->
+
+          <!-- THE WICK GAUGE — the master volume, sharing the dial's column
+               (owner 2026-08-31: one apparatus column; the widened gauge and
+               the reduced dial sit on one axis; the foot caption removed) -->
+          <div class="wick" id="wick">
+            <!-- the transient readout: rides just above the fill line while
+                 the wick is being adjusted, then fades (owner 2026-08-31) -->
+            <div class="wick-track" id="wick-track">
+              <div class="wick-fill" id="wick-fill"></div>
+              <div class="wick-thumb" id="wick-thumb"></div>
+              <div class="wick-pct" id="wick-pct" aria-hidden="true">60</div>
+            </div>
+            <input class="vh" type="range" id="vol" min="0" max="1" step="0.01" value="0.6"
+                   aria-label="the lamp — master volume" />
+          </div>
+
+          <!-- reset, at the column's foot — the rune + the bare seed number
+               (owner 2026-08-31: moved below the gauge; the word retired) -->
+          <div class="reseed-row">
+            <button type="button" class="rune" id="rune"
+                    aria-label="reseed — reset this book with a fresh evening">
+              <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                <!-- a pixel ouroboros: a stepped ring with its head biting in -->
+                <g class="snake">
+                  <rect x="6" y="1" width="6" height="2" />
+                  <rect x="4" y="3" width="2" height="2" />
+                  <rect x="12" y="3" width="2" height="2" />
+                  <rect x="2" y="5" width="2" height="8" />
+                  <rect x="14" y="7" width="2" height="6" />
+                  <rect x="4" y="13" width="2" height="2" />
+                  <rect x="12" y="13" width="2" height="2" />
+                  <rect x="6" y="15" width="6" height="2" />
+                  <!-- the head, turned back on the tail -->
+                  <rect x="11" y="3" width="4" height="2" />
+                  <rect x="13" y="1" width="2" height="4" />
+                </g>
+              </svg>
+            </button>
+            <span class="reseed-cap"><span class="seedno" id="seed-echo">167176245</span></span>
+          </div>
+
+        </div><!-- /apparatus -->
+
+      </div><!-- /plate -->
+
+      <!-- ================= THE SCRIBAL LOG ================= -->
+      <section class="log-window">
+        <h2 class="log-head">annotationes &middot; the scribal log</h2>
+        <div class="log-row">
+          <span class="log-t">0:00</span>
+          <span class="log-tag">binding</span>
+          <span class="log-body"><span class="cap">T</span>he book opens at c dorian &mdash; tonic 262, seed 167176245.</span>
+        </div>
+        <div class="log-row age-1">
+          <span class="log-t">0:14</span>
+          <span class="log-tag">motif</span>
+          <span class="log-body">a rising fourth is copied into the aeolian harp, inverted.</span>
+        </div>
+        <div class="log-row age-1">
+          <span class="log-t">0:31</span>
+          <span class="log-tag">performance</span>
+          <span class="log-body">the tide comes in; three voices thicken toward the cadence.</span>
+        </div>
+        <div class="log-row age-2">
+          <span class="log-t">0:52</span>
+          <span class="log-tag">harmony</span>
+          <span class="log-body">borrowed chord &mdash; the flat seventh, held one bar longer than asked.</span>
+        </div>
+      </section>
+
+    </div><!-- /folio-body -->
+  </div><!-- /folio -->
+
+  <!-- ================= THE CABINET (transport-free) ================= -->
+  <div class="cabinet">
+    <div class="mixdesk">
+
+      <div class="desk-row">
+        <button type="button" class="chev" aria-label="unfold the glass harmonica's detail strip">&#9656;</button>
+        <svg class="sigil" viewBox="0 0 26 26" aria-hidden="true" focusable="false">
+          <rect x="4" y="10" width="4" height="4" fill="#c7b795" />
+          <rect x="10" y="6" width="4" height="4" fill="#c9a227" />
+          <rect x="10" y="14" width="4" height="4" fill="#c7b795" />
+          <rect x="16" y="10" width="4" height="4" fill="#c9a227" />
+          <rect x="10" y="10" width="4" height="4" fill="#c7b795" />
+        </svg>
+        <span class="desk-name">Glass Harmonica</span>
+        <div class="desk-slider"><div class="desk-fill" style="width:72%"></div><div class="desk-thumb" style="left:calc(72% - 2px)"></div></div>
+      </div>
+
+      <div class="desk-row">
+        <button type="button" class="chev" aria-label="unfold the aeolian harp's detail strip">&#9656;</button>
+        <svg class="sigil" viewBox="0 0 26 26" aria-hidden="true" focusable="false">
+          <rect x="6" y="4" width="2" height="18" fill="#c7b795" />
+          <rect x="12" y="6" width="2" height="14" fill="#c9a227" />
+          <rect x="18" y="8" width="2" height="10" fill="#c7b795" />
+        </svg>
+        <span class="desk-name">Aeolian Harp</span>
+        <div class="desk-slider"><div class="desk-fill" style="width:44%"></div><div class="desk-thumb" style="left:calc(44% - 2px)"></div></div>
+      </div>
+
+      <div class="desk-row">
+        <button type="button" class="chev" aria-label="unfold the bowed psaltery's detail strip">&#9656;</button>
+        <svg class="sigil" viewBox="0 0 26 26" aria-hidden="true" focusable="false">
+          <rect x="4" y="4" width="4" height="4" fill="#c9a227" />
+          <rect x="18" y="4" width="4" height="4" fill="#c7b795" />
+          <rect x="11" y="11" width="4" height="4" fill="#c7b795" />
+          <rect x="4" y="18" width="4" height="4" fill="#c7b795" />
+          <rect x="18" y="18" width="4" height="4" fill="#c9a227" />
+        </svg>
+        <span class="desk-name">Bowed Psaltery</span>
+        <div class="desk-slider"><div class="desk-fill" style="width:58%"></div><div class="desk-thumb" style="left:calc(58% - 2px)"></div></div>
+      </div>
+
+    </div>
+
+    <div class="seal-wrap">
+      <div class="seal-stack">
+        <svg viewBox="0 0 84 84" aria-hidden="true" focusable="false">
+          <circle cx="42" cy="42" r="34" fill="#8e3b2c" stroke="#5e2018" stroke-width="2" />
+          <circle cx="42" cy="42" r="27" fill="none" stroke="#b0553c" stroke-width="2" />
+          <rect x="40" y="8"  width="4" height="4" fill="#5e2018" />
+          <rect x="40" y="72" width="4" height="4" fill="#5e2018" />
+          <rect x="8"  y="40" width="4" height="4" fill="#5e2018" />
+          <rect x="72" y="40" width="4" height="4" fill="#5e2018" />
+        </svg>
+        <input type="text" inputmode="numeric" class="seal-num" id="seed"
+               value="167176245" autocomplete="off" spellcheck="false"
+               aria-label="the seed — type a number and press enter to re-stamp the seal" />
+      </div>
+      <span class="cab-cap">the seed</span>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<p class="devnote">Mockup 2 &middot; in the plate&rsquo;s margin</p>
+
+<script>
+(function () {
+  "use strict";
+
+  var TAU = Math.PI * 2;
+
+  // ==========================================================================
+  // THE TOGGLE'S DIAL — twelve tick dots and the stepped pixel play triangle,
+  // built in SVG units so both scale cleanly to the phone's 60px cluster.
+  // ==========================================================================
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function svgRect(x, y, w, h, cls) {
+    var r = document.createElementNS(SVGNS, "rect");
+    r.setAttribute("x", x); r.setAttribute("y", y);
+    r.setAttribute("width", w); r.setAttribute("height", h);
+    if (cls) r.setAttribute("class", cls);
+    return r;
+  }
+
+  // the zodiac ticks: 12 pixel dots on a 36.5 radius, just outside the ring
+  var ticks = document.getElementById("ticks");
+  for (var i = 0; i < 12; i++) {
+    var a = (i / 12) * TAU - Math.PI / 2;
+    var tx = 40 + Math.cos(a) * 36.5;
+    var ty = 40 + Math.sin(a) * 36.5;
+    // the cardinal ticks read one pixel longer — the dial has a north
+    var s = (i % 3 === 0) ? 4 : 3;
+    ticks.appendChild(svgRect(tx - s / 2, ty - s / 2, s, s, "tick"));
+  }
+
+  // the play glyph: a right-pointing triangle stepped in 5-unit rows (the
+  // steps are the point — this is a drawn mark, not an icon-font glyph), lit
+  // along its flat back edge in the brighter gilt step.
+  var gp = document.getElementById("glyph-play");
+  for (var r0 = 0; r0 < 7; r0++) {
+    var w = 34 - Math.abs(r0 - 3) * 10;
+    gp.appendChild(svgRect(24, 22 + r0 * 5, w, 5, "tri-body"));
+  }
+  gp.appendChild(svgRect(24, 22, 2, 35, "tri-edge"));
+
+  // ==========================================================================
+  // PLAY / STOP — one control, two states. Everything the transport used to
+  // say with three buttons is said here by a glyph swap and an ink step.
+  // ==========================================================================
+  var toggle = document.getElementById("toggle");
+  var playing = false;
+
+  function render() {
+    toggle.classList.toggle("is-on", playing);
+    toggle.setAttribute("aria-pressed", playing ? "true" : "false");
+    toggle.setAttribute("aria-label", playing ? "stop" : "play");
+  }
+
+  toggle.addEventListener("click", function () {
+    playing = !playing;
+    render();
+  });
+  render();
+
+  // ==========================================================================
+  // RESET, DEMOTED — the rune spins, a fresh seed is stamped, and the seal in
+  // the cabinet below follows the caption (one seed, two places to read it).
+  // ==========================================================================
+  var rune = document.getElementById("rune");
+  var seedEcho = document.getElementById("seed-echo");
+  var seedInput = document.getElementById("seed");
+
+  rune.addEventListener("click", function () {
+    var n = String(Math.floor(100000000 + Math.random() * 899999999));
+    seedEcho.textContent = n;
+    seedInput.value = n;
+    rune.classList.remove("is-spun");
+    // reflow so the steps() animation restarts on a repeat press
+    void rune.offsetWidth;
+    rune.classList.add("is-spun");
+  });
+
+  seedInput.addEventListener("input", function () {
+    seedEcho.textContent = seedInput.value.replace(/[^0-9]/g, "") || "—";
+  });
+
+  // ==========================================================================
+  // THE WICK GAUGE — a vertical throw. The visually-hidden range is the real
+  // control (keyboard + AT); pointer drags on the etched column write to it.
+  // ==========================================================================
+  var wick = document.getElementById("wick");
+  var wickTrack = document.getElementById("wick-track");
+  var wickFill = document.getElementById("wick-fill");
+  var wickThumb = document.getElementById("wick-thumb");
+  var wickPct = document.getElementById("wick-pct");
+  var vol = document.getElementById("vol");
+  var pctTimer = null;
+  var wickBooted = false; // the readout only shows for real adjustments,
+                          // not the initial paint at load
+
+  function paintWick() {
+    var pct = Math.round(parseFloat(vol.value) * 100);
+    wickFill.style.height = pct + "%";
+    wickThumb.style.bottom = "calc(" + pct + "% - 2px)";
+    // the transient readout rides the fill line (clamped so it never leaves
+    // the gauge at the top) and fades ~900ms after the last adjustment
+    wickPct.textContent = pct;
+    wickPct.style.bottom = "calc(" + Math.min(pct, 88) + "% + 8px)";
+    if (wickBooted) {
+      wickPct.classList.add("is-live");
+      if (pctTimer) clearTimeout(pctTimer);
+      pctTimer = setTimeout(function () {
+        pctTimer = null;
+        wickPct.classList.remove("is-live");
+      }, 900);
+    }
+    wickBooted = true;
+  }
+
+  function setFromPointer(clientY) {
+    var box = wickTrack.getBoundingClientRect();
+    var t = 1 - (clientY - box.top) / box.height;   // bottom = 0, top = 1
+    t = Math.max(0, Math.min(1, t));
+    vol.value = String(Math.round(t * 100) / 100);
+    paintWick();
+  }
+
+  var dragging = false;
+  wickTrack.addEventListener("pointerdown", function (e) {
+    dragging = true;
+    if (wickTrack.setPointerCapture) wickTrack.setPointerCapture(e.pointerId);
+    setFromPointer(e.clientY);
+    vol.focus();
+    e.preventDefault();
+  });
+  wickTrack.addEventListener("pointermove", function (e) {
+    if (dragging) setFromPointer(e.clientY);
+  });
+  function endDrag() { dragging = false; }
+  wickTrack.addEventListener("pointerup", endDrag);
+  wickTrack.addEventListener("pointercancel", endDrag);
+
+  vol.addEventListener("input", paintWick);
+  vol.addEventListener("focus", function () { wick.classList.add("is-focus"); });
+  vol.addEventListener("blur", function () { wick.classList.remove("is-focus"); });
+  paintWick();
+
+  // ==========================================================================
+  // THE COIL — a placeholder for pj2-viz's phosphor spiral. Thin amber strokes,
+  // one turn per octave, pixel note-dots, VT323 octave labels on the free
+  // right limb. Shifted right of centre and, on narrow screens, dropped below
+  // the apparatus cluster so nothing in the top-left corner is ever crossed.
+  // ==========================================================================
+  var canvas = document.getElementById("coil");
+  var ctx = canvas.getContext("2d");
+  var apparatus = document.getElementById("apparatus");
+
+  function drawCoil() {
+    var box = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(box.width));
+    var h = Math.max(1, Math.round(box.height));
+    var dpr = window.devicePixelRatio || 1;
+
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var narrow = w < 640;
+    var cx = w * (narrow ? 0.58 : 0.60);
+
+    // the apparatus is a narrow LEFT COLUMN now — clear it horizontally
+    // (the coil's left limb stays right of the column) instead of dropping
+    // the whole coil below it
+    var clearLeft = apparatus.offsetLeft + apparatus.offsetWidth + 18;
+    var top = h * 0.14;
+    var bot = h * 0.90;
+
+    var rxMax = Math.min(w * 0.27, (bot - top) * 0.52, cx - clearLeft);
+    var turns = 4;
+    var steps = 640;
+
+    // the coil itself, segment by segment so the far limb can step darker
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = "butt";
+    var px = 0, py = 0;
+    for (var i = 0; i <= steps; i++) {
+      var t = i / steps;
+      var ang = t * turns * TAU - Math.PI / 2;
+      var rx = rxMax * (1 - 0.40 * t);
+      var ry = rx * 0.30;
+      var x = cx + rx * Math.cos(ang);
+      var y = top + (bot - top) * t + ry * Math.sin(ang);
+      if (i > 0) {
+        // near limb (sin > 0, the front of the ellipse) burns brightest
+        var lit = 0.5 + 0.5 * Math.sin(ang);
+        ctx.strokeStyle = "rgba(255,220,130," + (0.16 + 0.62 * lit).toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      px = x; py = y;
+    }
+
+    // the note dots — the same pixel marks the cluster's ticks are made of
+    for (var d = 0; d < 34; d++) {
+      var td = (d + 0.5) / 34;
+      var ad = td * turns * TAU - Math.PI / 2;
+      var rxd = rxMax * (1 - 0.40 * td);
+      var ryd = rxd * 0.30;
+      var xd = cx + rxd * Math.cos(ad);
+      var yd = top + (bot - top) * td + ryd * Math.sin(ad);
+      var front = Math.sin(ad) > 0;
+      var sz = front ? 3 : 2;
+      ctx.fillStyle = front ? "#ffdc82" : "#b4823c";
+      ctx.fillRect(Math.round(xd - sz / 2), Math.round(yd - sz / 2), sz, sz);
+    }
+
+    // a couple of lollipop heads — the live partials, brightest ink
+    for (var k = 0; k < 3; k++) {
+      var tk = 0.22 + k * 0.24;
+      var ak = tk * turns * TAU - Math.PI / 2 + 0.35;
+      var rxk = rxMax * (1 - 0.40 * tk);
+      var xk = cx + rxk * Math.cos(ak);
+      var yk = top + (bot - top) * tk + rxk * 0.30 * Math.sin(ak);
+      ctx.fillStyle = "#ffc878";
+      ctx.fillRect(Math.round(xk - 2), Math.round(yk - 2), 5, 5);
+    }
+
+    // octave labels on the right limb, where the margin is empty
+    if (!narrow || w > 380) {
+      ctx.font = '13px "VT323", monospace';
+      ctx.fillStyle = "#b4823c";
+      ctx.textBaseline = "middle";
+      var names = ["c6", "c5", "c4", "c3"];
+      for (var o = 0; o < turns; o++) {
+        var to = (o + 0.25) / turns;
+        var rxo = rxMax * (1 - 0.40 * to);
+        var yo = top + (bot - top) * to;
+        ctx.fillText(names[o], cx + rxo + 8, yo);
+      }
+    }
+  }
+
+  var raf = null;
+  function scheduleDraw() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(function () { raf = null; drawCoil(); });
+  }
+
+  window.addEventListener("resize", scheduleDraw);
+  scheduleDraw();
+
+  // VT323 arrives after first paint — redraw so the octave labels are typeset
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(scheduleDraw);
+  }
+
+  // ==========================================================================
+  // The title band, for the demo's sake — the tabs still switch books.
+  // ==========================================================================
+  var tabs = document.querySelectorAll(".tab");
+  for (var ti = 0; ti < tabs.length; ti++) {
+    tabs[ti].addEventListener("click", function () {
+      for (var j = 0; j < tabs.length; j++) {
+        tabs[j].classList.remove("is-active");
+        tabs[j].setAttribute("aria-selected", "false");
+      }
+      this.classList.add("is-active");
+      this.setAttribute("aria-selected", "true");
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

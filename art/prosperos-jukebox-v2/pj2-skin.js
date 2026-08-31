@@ -482,9 +482,11 @@ PJ2.Skin = (function () {
       css += declBlock('[data-pj2-theme][data-track="' + tr + '"]', trackVars(PALETTES_P[tr]), "pj2-");
       css += declBlock('[data-pj2-theme][data-track="' + tr + '"]', PALETTES[tr].chrome, "pj2c-");
     }
-    // the log is a night window cut into the page; only library's page
-    // inks differ from its night inks, so only library needs restoring
-    css += declBlock('[data-pj2-theme][data-track="library"] .pj2-log-block',
+    // the log and the plate apparatus are night windows cut into the page;
+    // only library's page inks differ from its night inks, so only library
+    // needs restoring
+    css += declBlock('[data-pj2-theme][data-track="library"] .pj2-log-block,\n'
+      + '[data-pj2-theme][data-track="library"] .pj2-apparatus',
       logInkVars(PALETTES.library), "pj2-");
     return css;
   }

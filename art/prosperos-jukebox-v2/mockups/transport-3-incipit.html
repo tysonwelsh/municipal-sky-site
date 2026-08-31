@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Transport 3 · The Incipit Line — Prospero's Jukebox v2</title>
+
+<!--
+  ==========================================================================
+  MOCKUP 3 — "THE INCIPIT LINE" (transport redesign concept)
+
+  The premise: the transport is not chrome bolted to the page, it is the
+  manuscript's FIRST WRITTEN LINE. A slim night window sits directly between
+  the title band and the plate — the incipit — and everything the transport
+  needs is written on it in the scribal log's own voice:
+
+    · an illuminated pixel play-triangle as the line's initial, followed by
+      "Incipit — begin the evening's music" in the amber lead ink. The whole
+      line is ONE button; hovering rubricates it (warms to gilt, a 2px
+      #b0553c rule strikes under the text). Playing, the line re-writes
+      itself, quieter and smaller, as "Still — rest the page".
+    · the status tail at the line's right end, VT323, faintest amber.
+    · reset demoted to a terminal rune — a 16px ouroboros in #785f32, with
+      its "reseed" caption only on hover. Unmistakably tertiary.
+    · the volume as the line's UNDERSCORE — the ruled line under a heading,
+      but dithered gilt and draggable. It IS the lamp.
+
+  No pill. No pushplate. No button-shaped chrome anywhere. Play sits above
+  the fold at every width; the cabinet below keeps only the mixing desk and
+  the seal.
+
+  Self-contained: inline CSS/JS, Google Fonts the only external resource.
+  ==========================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
+
+<style>
+/* ===========================================================================
+   PALETTE — the Library (the default book), parchment binding.
+   The art-pixel unit U = 2px: every border, stripe and tick is a multiple.
+   ========================================================================= */
+:root {
+  /* the desk / the room void */
+  --desk:        #0b0a08;
+
+  /* the page (parchment) ramp */
+  --page:        #e3d3a8;
+  --page-lift:   #efe3c0;
+  --page-deep:   #d0bc8c;
+  --frame:       #8a704a;   /* frame + mat + idle title segments */
+
+  /* page inks (iron gall on tan) */
+  --ink0:        #2e2114;
+  --ink1:        #4a3620;
+  --ink2:        #6e5638;
+  --ink3:        #93794f;
+  --rubric:      #8e3b2c;
+
+  /* the night windows: ground + the amber phosphor ramp */
+  --window:      #0a0805;
+  --amber0:      #ffdc82;   /* lead ink */
+  --amber1:      #ffc878;   /* second age */
+  --amber2:      #b4823c;   /* captions, rules */
+  --amber3:      #785f32;   /* faintest step — never a sole carrier */
+  --gilt:        #c9a227;
+  --gilt2:       #e8c95a;
+  --rubric-dsp:  #b0553c;   /* display-size rubric on night */
+
+  /* chrome (the cabinet's warm brass) */
+  --masthead:    #c7b795;
+  --cab-panel:   #17120b;
+  --cab-edge:    #0b0705;
+  --slot:        #0f0c07;
+  --cab-label:   #c7b795;
+  --cab-caption: #9a8a66;
+  --control-edge:#6e5626;
+  --thumb:       #e8c95a;
+
+  --head-font:   "Jacquard 12", "UnifrakturCook", serif;
+  --data-font:   "VT323", "Courier New", monospace;
+
+  /* the one dither fill, everywhere a level is drawn */
+  --dither: repeating-linear-gradient(90deg, var(--gilt) 0 2px, #4d3c10 2px 4px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--desk);
+  color: var(--ink0);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  font-family: var(--data-font);
+  padding: 26px 20px 96px;
+}
+
+/* the centered reading column */
+.desk-col {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------------------
+   THE MASTHEAD — the machine names itself once, above everything.
+   ------------------------------------------------------------------------- */
+.masthead {
+  font-family: var(--head-font);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+  color: var(--masthead);
+  letter-spacing: 0.02em;
+  margin: 0 0 16px;
+}
+.masthead .init { color: var(--gilt); }
+
+/* ---------------------------------------------------------------------------
+   THE FOLIO + THE TITLE BAND — the song titles are segments of the frame;
+   the active title's segment is cut through to the page.
+   ------------------------------------------------------------------------- */
+.folio-wrap {
+  filter: drop-shadow(0 26px 40px rgba(0,0,0,0.8)) drop-shadow(0 6px 12px rgba(0,0,0,0.6));
+}
+.folio {
+  position: relative;
+  background: var(--page);
+  border: 2px solid var(--frame);
+  border-radius: 6px;
+  padding: 0;
+  overflow: hidden;
+}
+/* a faint parchment mottle, one bake behind everything on the page */
+.folio::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 22% 12%, rgba(239,227,192,0.55) 0%, rgba(239,227,192,0) 55%),
+    radial-gradient(90% 70% at 84% 78%, rgba(208,188,140,0.45) 0%, rgba(208,188,140,0) 60%),
+    radial-gradient(60% 40% at 55% 46%, rgba(208,188,140,0.22) 0%, rgba(208,188,140,0) 70%);
+}
+
+.tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 2px;              /* 1U slits of page between the segments */
+  margin: 0 0 16px;
+}
+.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: var(--head-font);
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 10px 8px 9px;
+  background: var(--frame);
+  color: var(--ink0);
+  border: 0;
+  cursor: pointer;
+}
+.tab:first-child { border-top-left-radius: 4px; }
+.tab:last-child  { border-top-right-radius: 4px; }
+.tab:hover { box-shadow: inset 0 -2px 0 currentColor; }
+.tab:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+.tab.is-active {
+  background: transparent;
+  color: var(--ink0);
+  cursor: default;
+}
+.tab.is-active:hover { box-shadow: none; }
+
+/* the folio interior — the windows sit in this gutter */
+.folio-inner {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px 14px;
+}
+
+/* ===========================================================================
+   ★ THE INCIPIT LINE — the concept.
+   A night window one line tall, between the title band and the plate. The
+   first written line of the page: an illuminated initial, the incipit, its
+   status tail, a terminal rune, and the ruled line beneath it (the lamp).
+   ========================================================================= */
+.incipit {
+  position: relative;
+  margin: 0 8px 14px;
+  background: var(--window);
+  border-radius: 16px;
+  padding: 11px 16px 9px;
+}
+
+/* the line itself: initial + incipit | status | rune */
+.incipit-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* --- the play control: the whole line is the button ---------------------- */
+.incipit-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--head-font);
+  color: var(--amber0);
+  /* the rubricated rule that strikes under the line on hover — a 2U bar
+     grown from nothing, never a box, never a glow */
+  position: relative;
+}
+.incipit-btn .rule-under {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  background: var(--rubric-dsp);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 110ms linear;
+  pointer-events: none;
+}
+.incipit-btn:hover .rule-under,
+.incipit-btn:focus-visible .rule-under { transform: scaleX(1); }
+.incipit-btn:focus-visible { outline: 2px solid var(--gilt); outline-offset: 4px; }
+
+/* the illuminated initial — a pixel glyph, gilt with a lighter facet */
+.initial {
+  flex: 0 0 auto;
+  display: block;
+  width: 30px;
+  height: 30px;
+}
+.initial svg { display: block; width: 100%; height: 100%; shape-rendering: crispEdges; }
+.initial .facet { fill: var(--amber0); }
+.initial .body  { fill: var(--gilt); }
+
+/* the still (stop) initial is smaller and cooler — hierarchy, in the mark */
+.is-playing .initial { width: 22px; height: 22px; }
+.is-playing .initial .body  { fill: var(--amber1); }
+.is-playing .initial .facet { fill: var(--amber1); }
+
+.incipit-words {
+  font-size: 23px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--amber0);
+  transition: color 110ms linear;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.incipit-btn:hover .incipit-words,
+.incipit-btn:focus-visible .incipit-words { color: var(--gilt2); }
+
+/* playing: the same line, re-written quieter */
+.is-playing .incipit-words {
+  font-size: 19.5px;
+  color: var(--amber1);
+}
+
+/* --- the status tail ----------------------------------------------------- */
+.status {
+  flex: 0 0 auto;
+  font-family: var(--data-font);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46%;
+  transition: color 110ms linear;
+}
+.is-playing .status { color: var(--amber2); }
+
+/* --- reset, demoted to a terminal rune ----------------------------------- */
+.rune-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rune {
+  display: block;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--amber3);
+  cursor: pointer;
+  /* an invisible thumb target around a 16px mark */
+  position: relative;
+}
+.rune::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+.rune svg { display: block; width: 16px; height: 16px; shape-rendering: crispEdges; fill: currentColor; }
+.rune:hover, .rune:focus-visible { color: var(--amber2); }
+.rune:focus-visible { outline: 2px solid var(--amber2); outline-offset: 6px; }
+.rune-cap {
+  font-family: var(--data-font);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber3);
+  opacity: 0;
+  transition: opacity 110ms linear;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.rune-wrap:hover .rune-cap,
+.rune:focus-visible + .rune-cap { opacity: 1; }
+
+/* --- the volume as the line's underscore rule ---------------------------- */
+.lamp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 11px;
+}
+/* the invisible ≥28px hit band the rule lives inside */
+.lamp-hit {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 0;
+  cursor: pointer;
+}
+.lamp-rule {
+  position: relative;
+  height: 6px;                 /* 3U of dither between 1U hairlines */
+  border-top: 2px solid var(--amber2);
+  border-bottom: 2px solid var(--amber2);
+  background: var(--slot);
+}
+.lamp-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 60%;
+  background: var(--dither);
+  pointer-events: none;
+}
+.lamp-thumb {
+  position: absolute;
+  top: -6px;
+  left: calc(60% - 2px);
+  width: 4px;
+  height: 22px;
+  background: var(--thumb);
+  pointer-events: none;
+}
+/* the house pattern: a real range input, invisible, over the whole hit band */
+.lamp-hit input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.lamp-hit input[type="range"]:focus-visible + .lamp-rule {
+  outline: 2px solid var(--gilt2);
+  outline-offset: 4px;
+}
+.lamp-cap {
+  flex: 0 0 auto;
+  font-family: var(--data-font);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber3);
+  white-space: nowrap;
+}
+
+/* ===========================================================================
+   THE PLATE WINDOW — the coil's night panel (placeholder spiral).
+   ========================================================================= */
+.plate-window {
+  margin: 0 8px 12px;
+  background: var(--window);
+  border-radius: 16px;
+  overflow: hidden;
+}
+#plate {
+  display: block;
+  width: 100%;
+  height: 55vh;
+  min-height: 300px;
+  max-height: 620px;
+}
+
+/* ===========================================================================
+   THE SCRIBAL LOG — the same window, the same typographic voice.
+   ========================================================================= */
+.log-block {
+  margin: 0 8px;
+  padding: 6px 12px 10px;
+  background: var(--window);
+  border-radius: 16px;
+}
+.log-head {
+  font-family: var(--data-font);
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber2);
+  border-bottom: 1px solid var(--amber3);
+  padding: 0 0 2px;
+  margin: 0 0 5px;
+}
+.log-row {
+  display: flex;
+  gap: 7px;
+  font-size: 16.5px;
+  line-height: 1.3;
+  align-items: baseline;
+}
+.log-t   { flex: 0 0 44px; color: var(--amber3); }
+.log-tag {
+  flex: 0 0 106px;
+  letter-spacing: 0.05em;
+  color: var(--gilt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.log-body { flex: 1 1 auto; min-width: 0; color: var(--amber0); overflow-wrap: break-word; }
+.age-1 .log-body { color: var(--amber1); }
+.age-2 .log-body { color: var(--amber2); }
+.age-1 .log-tag, .age-2 .log-tag { color: var(--rubric-dsp); }
+/* the illuminated capital habit, inside the log line */
+.log-body .cap {
+  font-family: var(--head-font);
+  font-size: 21px;
+  line-height: 0.9;
+  color: var(--gilt);
+  margin-right: 1px;
+}
+.log-body .gd { color: var(--gilt); }
+
+/* ===========================================================================
+   THE CABINET — what is LEFT down here: the desk and the seal. No transport,
+   no volume. That is the whole point of the concept.
+   ========================================================================= */
+.cabinet {
+  margin-top: 14px;
+  background: var(--cab-panel);
+  border: 2px solid var(--cab-edge);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.mixdesk { flex: 1 1 420px; max-width: 720px; display: flex; flex-direction: column; gap: 7px; }
+.desk-row { display: flex; align-items: center; gap: 8px; }
+.chev {
+  flex: 0 0 14px;
+  font-size: 16px;
+  color: var(--cab-caption);
+  line-height: 1;
+}
+.sigil {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+}
+.sigil svg { display: block; width: 26px; height: 26px; shape-rendering: crispEdges; }
+.desk-name {
+  flex: 0 0 122px;
+  font-size: 16px;
+  color: var(--cab-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.desk-slider {
+  position: relative;
+  flex: 1 1 auto;
+  height: 12px;
+  border: 2px solid var(--control-edge);
+  background: var(--slot);
+}
+.desk-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--dither);
+}
+.desk-thumb {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  background: var(--thumb);
+}
+
+.seal-wrap { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.seal {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #b0553c 0%, #8e3b2c 58%, #5e2018 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.seal-num {
+  font-family: var(--data-font);
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  color: #f0d9c8;
+}
+.cab-cap {
+  font-family: var(--data-font);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cab-caption);
+}
+
+/* ===========================================================================
+   THE DEV NOTE
+   ========================================================================= */
+.devnote {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 20;
+  font-family: var(--data-font);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber3);
+  background: var(--window);
+  border: 2px solid #241a0d;
+  padding: 4px 10px;
+  pointer-events: none;
+}
+
+.vh {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ===========================================================================
+   ≤700px — the incipit stays above the fold; the rule stays full width.
+   ========================================================================= */
+@media (max-width: 700px) {
+  body { padding: 18px 12px 84px; }
+  .masthead { font-size: 28px; margin-bottom: 10px; }
+  .tab { font-size: 17px; letter-spacing: 0.01em; padding: 8px 4px 7px; }
+  .tabs { margin-bottom: 12px; }
+  .folio-inner { padding: 0 10px 10px; }
+
+  .incipit { margin: 0 4px 10px; padding: 10px 12px 8px; border-radius: 14px; }
+  .incipit-line { gap: 8px 10px; row-gap: 7px; }
+  /* the incipit takes the whole first line; the tail wraps beneath it */
+  .incipit-btn { flex: 1 1 100%; gap: 10px; }
+  .incipit-words { font-size: 18px; white-space: normal; }
+  .is-playing .incipit-words { font-size: 16.5px; }
+  .initial { width: 26px; height: 26px; }
+  .is-playing .initial { width: 20px; height: 20px; }
+  .status {
+    flex: 1 1 auto;
+    max-width: none;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+  .rune-wrap { margin-left: auto; }
+  .rune-cap { display: none; }   /* the aria-label carries it on touch */
+
+  .lamp-row { flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; }
+  .lamp-hit { flex: 1 1 100%; padding: 11px 0; }   /* ≥28px touch band */
+  .lamp-cap { flex: 1 1 100%; text-align: right; font-size: 12px; }
+
+  .plate-window { margin: 0 4px 10px; border-radius: 14px; }
+  #plate { height: 48vh; min-height: 240px; }
+  .log-block { margin: 0 4px; border-radius: 14px; padding: 6px 10px 8px; }
+  .log-row { font-size: 15.5px; }
+  .log-t { flex: 0 0 38px; }
+  .log-tag { flex: 0 0 88px; }
+
+  .cabinet { padding: 12px; gap: 14px; }
+  .desk-name { flex: 0 0 96px; font-size: 14px; }
+  .seal-wrap { margin: 0 auto; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="desk-col">
+
+  <!-- THE MASTHEAD -->
+  <h1 class="masthead"><span class="init">P</span>rospero&rsquo;s Jukebox</h1>
+
+  <div class="folio-wrap">
+    <div class="folio">
+
+      <!-- THE TITLE BAND — three segments of the folio's frame -->
+      <div class="tabs" role="tablist" aria-label="the three books">
+        <button type="button" class="tab is-active" role="tab" aria-selected="true"
+                aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
+        <button type="button" class="tab" role="tab" aria-selected="false"
+                aria-label="Sycorax's Spell — the woodcut grimoire">Sycorax&rsquo;s Spell</button>
+        <button type="button" class="tab" role="tab" aria-selected="false"
+                aria-label="Ariel's Day Off — the celestial atlas">Ariel&rsquo;s Day Off</button>
+      </div>
+
+      <div class="folio-inner">
+
+        <!-- ============================================================
+             ★ THE INCIPIT LINE — the transport, written as the page's
+             first line. Play is here, at the very top, at every width.
+             ============================================================ -->
+        <div class="incipit" id="incipit">
+
+          <div class="incipit-line">
+
+            <!-- the play/still control: one line, one button -->
+            <button type="button" class="incipit-btn" id="incipit-btn"
+                    aria-label="play — begin the evening's music" aria-pressed="false">
+              <span class="initial" id="initial" aria-hidden="true">
+                <!-- the illuminated initial: a pixel play triangle, 8U grid.
+                     Gilt body, lighter facet along the upper-left edge. -->
+                <svg viewBox="0 0 16 16" id="initial-svg">
+                  <g id="glyph-play">
+                    <rect class="body" x="0"  y="0"  width="2" height="16"/>
+                    <rect class="body" x="2"  y="2"  width="2" height="12"/>
+                    <rect class="body" x="4"  y="4"  width="2" height="8"/>
+                    <rect class="body" x="6"  y="6"  width="2" height="4"/>
+                    <!-- the facet: the lit upper-left edge -->
+                    <rect class="facet" x="0" y="0" width="2" height="2"/>
+                    <rect class="facet" x="0" y="2" width="2" height="2"/>
+                    <rect class="facet" x="2" y="2" width="2" height="2"/>
+                    <rect class="facet" x="4" y="4" width="2" height="2"/>
+                    <rect class="facet" x="6" y="6" width="2" height="2"/>
+                  </g>
+                </svg>
+              </span>
+              <span class="incipit-words" id="incipit-words">Incipit &mdash; begin the evening&rsquo;s music</span>
+              <span class="rule-under" aria-hidden="true"></span>
+            </button>
+
+            <!-- (the status tail removed — owner 2026-08-31: the line's
+                 own wording carries the state) -->
+
+            <!-- reset, demoted to a terminal rune -->
+            <span class="rune-wrap">
+              <button type="button" class="rune" id="rune"
+                      aria-label="reseed — reset this book with a fresh evening">
+                <!-- a pixel ouroboros: an octagonal ring, broken at the
+                     upper right, closed by a barb. 8U grid. -->
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <rect x="4"  y="0"  width="6" height="2"/>
+                  <rect x="2"  y="2"  width="2" height="2"/>
+                  <rect x="0"  y="4"  width="2" height="6"/>
+                  <rect x="2"  y="10" width="2" height="2"/>
+                  <rect x="4"  y="12" width="6" height="2"/>
+                  <rect x="10" y="10" width="2" height="2"/>
+                  <rect x="12" y="6"  width="2" height="4"/>
+                  <!-- the barb closing the break at the upper right -->
+                  <rect x="14" y="0"  width="2" height="6"/>
+                  <rect x="12" y="2"  width="2" height="4"/>
+                  <rect x="10" y="4"  width="2" height="2"/>
+                </svg>
+              </button>
+              <span class="rune-cap" aria-hidden="true">reseed</span>
+            </span>
+
+          </div><!-- /incipit-line -->
+
+          <!-- the volume as the line's underscore rule: it reads as the ruled
+               line under a heading, but it is the lamp -->
+          <div class="lamp-row">
+            <div class="lamp-hit" id="lamp-hit">
+              <input type="range" id="vol" min="0" max="100" step="1" value="60"
+                     aria-label="the lamp — master volume" />
+              <div class="lamp-rule" aria-hidden="true">
+                <div class="lamp-fill" id="lamp-fill"></div>
+                <div class="lamp-thumb" id="lamp-thumb"></div>
+              </div>
+            </div>
+            <span class="lamp-cap" id="lamp-cap" aria-hidden="true">the lamp &middot; 60%</span>
+          </div>
+
+        </div><!-- /incipit -->
+
+        <!-- THE PLATE WINDOW — the coil (decorative placeholder) -->
+        <div class="plate-window">
+          <canvas id="plate" aria-label="the pitch spiral — the live spectrum drawn as a glowing coil, one turn per octave"></canvas>
+        </div>
+
+        <!-- THE SCRIBAL LOG -->
+        <section class="log-block">
+          <h2 class="log-head">annotationes &middot; the scribal log</h2>
+          <div class="log" id="log" role="log" aria-live="polite">
+            <div class="log-row age-0">
+              <span class="log-t">00:41</span>
+              <span class="log-tag">harmony</span>
+              <span class="log-body"><span class="cap">T</span>he tonic holds at <span class="gd">262</span> &mdash; c dorian, fourth turn</span>
+            </div>
+            <div class="log-row age-0">
+              <span class="log-t">00:33</span>
+              <span class="log-tag">performance</span>
+              <span class="log-body">the aeolian harp answers the viol, one octave under</span>
+            </div>
+            <div class="log-row age-1">
+              <span class="log-t">00:18</span>
+              <span class="log-tag">motif</span>
+              <span class="log-body"><span class="cap">A</span> descending third seeds the second family</span>
+            </div>
+            <div class="log-row age-2">
+              <span class="log-t">00:02</span>
+              <span class="log-tag">apparatus</span>
+              <span class="log-body">seal stamped &mdash; seed <span class="gd">4471</span>, the evening opens</span>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /folio-inner -->
+    </div><!-- /folio -->
+  </div><!-- /folio-wrap -->
+
+  <!-- THE CABINET — the desk and the seal only. The transport and the lamp
+       have moved up to the incipit line. -->
+  <div class="cabinet">
+    <div class="mixdesk">
+      <div class="desk-row">
+        <span class="chev">&rsaquo;</span>
+        <span class="sigil" aria-hidden="true">
+          <svg viewBox="0 0 13 13">
+            <rect x="2" y="2" width="9" height="2" fill="#c7b795"/>
+            <rect x="2" y="5" width="6" height="2" fill="#c7b795"/>
+            <rect x="2" y="8" width="3" height="2" fill="#c9a227"/>
+          </svg>
+        </span>
+        <span class="desk-name">Aeolian Harp</span>
+        <span class="desk-slider"><span class="desk-fill" style="width:72%"></span><span class="desk-thumb" style="left:calc(72% - 2px)"></span></span>
+      </div>
+      <div class="desk-row">
+        <span class="chev">&rsaquo;</span>
+        <span class="sigil" aria-hidden="true">
+          <svg viewBox="0 0 13 13">
+            <rect x="2" y="2"  width="2" height="9" fill="#c7b795"/>
+            <rect x="5" y="4"  width="2" height="7" fill="#c7b795"/>
+            <rect x="8" y="6"  width="2" height="5" fill="#c9a227"/>
+          </svg>
+        </span>
+        <span class="desk-name">Glass Viol</span>
+        <span class="desk-slider"><span class="desk-fill" style="width:54%"></span><span class="desk-thumb" style="left:calc(54% - 2px)"></span></span>
+      </div>
+      <div class="desk-row">
+        <span class="chev">&rsaquo;</span>
+        <span class="sigil" aria-hidden="true">
+          <svg viewBox="0 0 13 13">
+            <rect x="2" y="6" width="9" height="2" fill="#c7b795"/>
+            <rect x="6" y="2" width="2" height="9" fill="#c9a227"/>
+          </svg>
+        </span>
+        <span class="desk-name">Cellar Drone</span>
+        <span class="desk-slider"><span class="desk-fill" style="width:31%"></span><span class="desk-thumb" style="left:calc(31% - 2px)"></span></span>
+      </div>
+    </div>
+
+    <div class="seal-wrap">
+      <div class="seal"><span class="seal-num">4471</span></div>
+      <span class="cab-cap">the seed</span>
+    </div>
+  </div>
+
+</div><!-- /desk-col -->
+
+<p class="devnote">Mockup 3 &middot; the incipit line</p>
+
+<script>
+(function () {
+  "use strict";
+
+  var incipit = document.getElementById("incipit");
+  var btn     = document.getElementById("incipit-btn");
+  var words   = document.getElementById("incipit-words");
+  var glyph   = document.getElementById("initial-svg");
+  var rune    = document.getElementById("rune");
+  var vol     = document.getElementById("vol");
+  var fill    = document.getElementById("lamp-fill");
+  var thumb   = document.getElementById("lamp-thumb");
+  var lampCap = document.getElementById("lamp-cap");
+
+  var playing = false;
+  var seed    = 4471;
+
+  /* ---- the two glyphs the initial alternates between --------------------
+     PLAY: the illuminated pixel triangle, gilt body + lit facet.
+     STILL: the stop square, one step cooler and a size down. Everything is
+     drawn on the 8U grid so the marks stay art-pixel true. */
+  var GLYPH_PLAY =
+    '<rect class="body" x="0" y="0" width="2" height="16"/>' +
+    '<rect class="body" x="2" y="2" width="2" height="12"/>' +
+    '<rect class="body" x="4" y="4" width="2" height="8"/>' +
+    '<rect class="body" x="6" y="6" width="2" height="4"/>' +
+    '<rect class="facet" x="0" y="0" width="2" height="2"/>' +
+    '<rect class="facet" x="0" y="2" width="2" height="2"/>' +
+    '<rect class="facet" x="2" y="2" width="2" height="2"/>' +
+    '<rect class="facet" x="4" y="4" width="2" height="2"/>' +
+    '<rect class="facet" x="6" y="6" width="2" height="2"/>';
+
+  var GLYPH_STILL =
+    '<rect class="body" x="1" y="1" width="14" height="14"/>' +
+    '<rect class="facet" x="1" y="1" width="14" height="2"/>' +
+    '<rect class="facet" x="1" y="1" width="2" height="14"/>';
+
+  function render() {
+    if (playing) {
+      incipit.classList.add("is-playing");
+      glyph.innerHTML = GLYPH_STILL;
+      words.innerHTML = "Still — rest the page";
+      btn.setAttribute("aria-label", "stop — rest the page");
+      btn.setAttribute("aria-pressed", "true");
+    } else {
+      incipit.classList.remove("is-playing");
+      glyph.innerHTML = GLYPH_PLAY;
+      words.innerHTML = "Incipit — begin the evening’s music";
+      btn.setAttribute("aria-label", "play — begin the evening’s music");
+      btn.setAttribute("aria-pressed", "false");
+    }
+  }
+
+  btn.addEventListener("click", function () {
+    playing = !playing;
+    render();
+    if (playing) startCoil(); else stopCoil();
+  });
+
+  /* ---- reset: the terminal rune ---------------------------------------- */
+  rune.addEventListener("click", function () {
+    seed = 1000 + Math.floor(Math.random() * 9000);
+    var num = document.querySelector(".seal-num");
+    if (num) num.textContent = String(seed);
+    playing = false;
+    render();
+    stopCoil();
+  });
+
+  /* ---- the lamp: the underscore rule IS the volume ----------------------
+     The rule is painted; the real control is the invisible range input laid
+     over the whole hit band, so click, drag, arrow keys and Home/End all
+     work for free (the house pattern). */
+  function paintLamp() {
+    var v = parseInt(vol.value, 10);
+    fill.style.width = v + "%";
+    thumb.style.left = "calc(" + v + "% - 2px)";
+    lampCap.innerHTML = "the lamp · " + v + "%";
+  }
+  vol.addEventListener("input", paintLamp);
+  paintLamp();
+
+  /* ---- the plate: a decorative amber coil (placeholder for the real one) */
+  var canvas = document.getElementById("plate");
+  var ctx = canvas.getContext("2d");
+  var raf = 0, phase = 0;
+
+  function sizeCanvas() {
+    var dpr = window.devicePixelRatio || 1;
+    var r = canvas.getBoundingClientRect();
+    canvas.width  = Math.max(1, Math.round(r.width  * dpr));
+    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawCoil();
+  }
+
+  function drawCoil() {
+    var r = canvas.getBoundingClientRect();
+    var w = r.width, h = r.height;
+    if (!w || !h) return;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a0805";
+    ctx.fillRect(0, 0, w, h);
+
+    /* the constellation floor — the faintest depth cue */
+    var i, x, y;
+    for (i = 1; i <= 90; i++) {
+      x = ((i * 733) % 1009) / 1009 * w;
+      y = ((i * 409) % 977) / 977 * h;
+      ctx.fillStyle = "rgba(255,170,0," + (0.05 + (i % 5) * 0.015).toFixed(3) + ")";
+      ctx.fillRect(Math.round(x), Math.round(y), 2, 2);
+    }
+
+    /* the coil: descending ellipse loops, one turn per octave */
+    var turns = 6;
+    var cx = w / 2;
+    var top = h * 0.16;
+    var step = (h * 0.70) / (turns - 1);
+    var rx = Math.min(w * 0.34, 300);
+    var ry = Math.max(16, step * 0.52);
+
+    ctx.lineWidth = 2;
+    for (i = 0; i < turns; i++) {
+      var cy = top + i * step;
+      var a = 0.16 + (i / (turns - 1)) * 0.62;
+      ctx.strokeStyle = "rgba(255,220,130," + a.toFixed(3) + ")";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      /* the far limb, one depth step back */
+      ctx.strokeStyle = "rgba(180,130,60," + (a * 0.55).toFixed(3) + ")";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx * 0.62, ry * 0.62, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      /* note marks riding the loop */
+      var marks = 3 + (i % 3);
+      for (var m = 0; m < marks; m++) {
+        var t = (m / marks) * Math.PI * 2 + phase * (0.35 + i * 0.08) + i;
+        var mx = cx + Math.cos(t) * rx;
+        var my = cy + Math.sin(t) * ry;
+        ctx.fillStyle = (m % 3 === 0) ? "#ffdc82" : (m % 3 === 1 ? "#ffc878" : "#b4823c");
+        ctx.fillRect(Math.round(mx) - 2, Math.round(my) - 2, 4, 4);
+      }
+    }
+  }
+
+  function tick() {
+    phase += 0.012;
+    drawCoil();
+    raf = window.requestAnimationFrame(tick);
+  }
+  function startCoil() { if (!raf) raf = window.requestAnimationFrame(tick); }
+  function stopCoil()  { if (raf) { window.cancelAnimationFrame(raf); raf = 0; } drawCoil(); }
+
+  window.addEventListener("resize", sizeCanvas);
+  sizeCanvas();
+  render();
+
+  /* the title band is inert scenery in this mockup, but it should still feel
+     like the real segments when clicked */
+  var tabs = document.querySelectorAll(".tab");
+  Array.prototype.forEach.call(tabs, function (t) {
+    t.addEventListener("click", function () {
+      Array.prototype.forEach.call(tabs, function (o) {
+        o.classList.remove("is-active");
+        o.setAttribute("aria-selected", "false");
+      });
+      t.classList.add("is-active");
+      t.setAttribute("aria-selected", "true");
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

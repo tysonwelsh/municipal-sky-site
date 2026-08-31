@@ -110,6 +110,60 @@ include '../../includes/header.php';
           <div class="pj2-plate-col">
             <!-- no caption anywhere (owner 2026-07-20): the spiral explains itself -->
             <canvas id="pj2-plate" aria-label="the pitch spiral — the live spectrum drawn as a glowing coil, one turn per octave, rotating over the night ground"></canvas>
+
+            <!-- THE APPARATUS COLUMN (owner 2026-08-31, "in the plate's
+                 margin"): the transport left the cabinet for the plate
+                 window's left edge, drawn in the window's own inks. One
+                 column, one axis: the play/stop dial, the wick gauge
+                 (master volume, with a transient % readout riding the fill
+                 line), and at the foot the reseed rune over the bare seed. -->
+            <div class="pj2-apparatus" id="pj2-apparatus">
+              <button type="button" class="pj2-toggle" id="pj2-toggle"
+                      aria-label="play" aria-pressed="false">
+                <svg viewBox="0 0 80 80" aria-hidden="true" focusable="false">
+                  <g class="pj2-ticks" id="pj2-ticks"></g>
+                  <circle class="pj2-ring" cx="40" cy="40" r="30" />
+                  <g class="pj2-glyph-play" id="pj2-glyph-play"></g>
+                  <g class="pj2-glyph-stop">
+                    <rect class="pj2-stop-body" x="26" y="26" width="28" height="28" />
+                    <rect class="pj2-stop-edge" x="26" y="26" width="2" height="28" />
+                  </g>
+                </svg>
+              </button>
+
+              <div class="pj2-wick" id="pj2-wick">
+                <div class="pj2-wick-track" id="pj2-wick-track">
+                  <div class="pj2-wick-fill" id="pj2-lamp-fill"></div>
+                  <div class="pj2-wick-thumb" id="pj2-lamp-thumb"></div>
+                  <div class="pj2-wick-pct" id="pj2-wick-pct" aria-hidden="true">60</div>
+                </div>
+                <input class="pj2-vh" type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6"
+                       aria-label="the lamp — master volume" />
+              </div>
+
+              <div class="pj2-reseed">
+                <button type="button" class="pj2-rune" id="pj2-rune"
+                        aria-label="reseed — reset this book with a fresh evening">
+                  <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <!-- a pixel ouroboros: a stepped ring with its head biting in -->
+                    <g class="pj2-snake">
+                      <rect x="6" y="1" width="6" height="2" />
+                      <rect x="4" y="3" width="2" height="2" />
+                      <rect x="12" y="3" width="2" height="2" />
+                      <rect x="2" y="5" width="2" height="8" />
+                      <rect x="14" y="7" width="2" height="6" />
+                      <rect x="4" y="13" width="2" height="2" />
+                      <rect x="12" y="13" width="2" height="2" />
+                      <rect x="6" y="15" width="6" height="2" />
+                      <rect x="11" y="3" width="4" height="2" />
+                      <rect x="13" y="1" width="2" height="4" />
+                    </g>
+                  </svg>
+                </button>
+                <span class="pj2-seed-echo" id="pj2-seed-echo" aria-hidden="true">&mdash;</span>
+              </div>
+            </div><!-- /pj2-apparatus -->
+
             <!-- §6 degradation: the margin apparatus collapsed to one strip (small screens) -->
             <div class="pj2-telemetry" id="pj2-telemetry" aria-label="performance telemetry"></div>
           </div>
@@ -133,16 +187,15 @@ include '../../includes/header.php';
       </div><!-- /pj2-folio -->
     </div><!-- /pj2-folio-wrap -->
 
-    <!-- THE CABINET — one shared frame holding all the chrome (§5): THE
-         MIXING DESK (owner 2026-08-22: no collapse, no header — just the
-         instrument rows with COPY below), then the seal, then the lamp
-         with the binding plate stacked beneath it (owner 2026-08-22: the
-         binding moved off the row's left end to sit under the master
-         volume, right of the seal). Each desk row is chevron · sigil ·
-         name · VOL; the chevron unfolds that voice's detail strip
-         (M · S · RATE · fine-tune knobs). Since 2026-08-23 the desk is
-         built at EVERY width — the owner fine-tunes from a phone — with
-         the rows compacted under the 700px breakpoint. -->
+    <!-- THE CABINET — one shared frame holding the remaining chrome (§5):
+         THE MIXING DESK (owner 2026-08-22: no collapse, no header — just
+         the instrument rows with COPY below) and the seal. The transport
+         and the lamp moved INTO the plate window as the apparatus column
+         (owner 2026-08-31); the binding plate retired the same day. Each
+         desk row is chevron · sigil · name · VOL; the chevron unfolds that
+         voice's detail strip (M · S · RATE · fine-tune knobs). Since
+         2026-08-23 the desk is built at EVERY width — the owner fine-tunes
+         from a phone — with the rows compacted under the 700px breakpoint. -->
     <div class="pj2-cabinet">
 
       <div class="pj2-mixdesk" id="pj2-mixdesk">
@@ -155,42 +208,15 @@ include '../../includes/header.php';
 
       <div class="pj2-cab-spacer"></div>
 
-      <div class="pj2-cab-right">
-        <!-- TRANSPORT — moved down from the running head (owner 2026-08-23):
-             play/stop/reset sit at the cabinet's right end, ABOVE the seal
-             and the lamp, so the top of the page belongs to the masthead
-             and the tabs alone. -->
-        <div class="pj2-transport pj2-transport-cab" role="group" aria-label="transport">
-          <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>
-          <button type="button" class="pj2-pushplate" id="pj2-stop" aria-label="stop">STOP&nbsp;&#9632;&#xFE0E;</button>
-          <button type="button" class="pj2-pushplate" id="pj2-reset" aria-label="reset — reseed this book with a fresh evening">RESET&nbsp;&#8635;&#xFE0E;</button>
+      <div class="pj2-seal-wrap">
+        <div class="pj2-seal-stack" id="pj2-seal-stack">
+          <canvas id="pj2-seal" aria-hidden="true"></canvas>
+          <input type="text" inputmode="numeric" class="pj2-seal-num" id="pj2-seed"
+                 aria-label="the seed — type a number and press enter to re-stamp the seal"
+                 autocomplete="off" spellcheck="false" />
         </div>
-
-        <div class="pj2-cab-right-row">
-          <div class="pj2-seal-wrap">
-            <div class="pj2-seal-stack" id="pj2-seal-stack">
-              <canvas id="pj2-seal" aria-hidden="true"></canvas>
-              <input type="text" inputmode="numeric" class="pj2-seal-num" id="pj2-seed"
-                     aria-label="the seed — type a number and press enter to re-stamp the seal"
-                     autocomplete="off" spellcheck="false" />
-            </div>
-            <span class="pj2-cab-cap">the seed</span>
-          </div>
-
-          <div class="pj2-lamp-stack">
-            <div class="pj2-lamp">
-              <label class="pj2-cab-cap" for="pj2-vol">the lamp &middot; volume</label>
-              <div class="pj2-lamp-track">
-                <div class="pj2-lamp-fill" id="pj2-lamp-fill"></div>
-                <div class="pj2-lamp-thumb" id="pj2-lamp-thumb"></div>
-                <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
-              </div>
-            </div>
-            <!-- (the NIGHT/PARCH binding plate retired 2026-08-31 — the
-                 parchment page is the app's one dress) -->
-          </div>
-        </div><!-- /pj2-cab-right-row -->
-      </div><!-- /pj2-cab-right -->
+        <span class="pj2-cab-cap">the seed</span>
+      </div>
 
     </div><!-- /pj2-cabinet -->
 
@@ -241,7 +267,9 @@ include '../../includes/header.php';
     }
     track("page_view", null);
     var played = false;
-    var playBtn = document.getElementById("pj2-play");
+    // the first click on the apparatus dial IS the first play — the app
+    // always starts stopped, so the toggle's first press can only begin
+    var playBtn = document.getElementById("pj2-toggle");
     if (playBtn) {
       playBtn.addEventListener("click", function () {
         if (played) return;

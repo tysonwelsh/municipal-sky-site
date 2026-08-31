@@ -505,17 +505,39 @@
   }
 
   function updateTransport() {
-    var eng = engines[activeKey];
-    var sounding = !!(eng && eng.isPlaying());
-    var playBtn = $("pj2-play"), stopBtn = $("pj2-stop");
-    if (playBtn) {
-      if (playIntent) playBtn.classList.add("is-lit"); else playBtn.classList.remove("is-lit");
-      playBtn.setAttribute("aria-pressed", playIntent ? "true" : "false");
+    // one control, two states (the apparatus dial): the ticks come up and
+    // the glyph swaps to the rest when the book is asked to sound
+    var toggle = $("pj2-toggle");
+    if (!toggle) return;
+    if (playIntent) toggle.classList.add("is-on"); else toggle.classList.remove("is-on");
+    toggle.setAttribute("aria-pressed", playIntent ? "true" : "false");
+    toggle.setAttribute("aria-label", playIntent ? "stop" : "play");
+  }
+
+  // the dial's art, drawn once at init: twelve zodiac tick dots just outside
+  // the ring (the cardinals a pixel larger — the dial has a north) and the
+  // play glyph, a right-pointing triangle stepped in 5-unit rows with its
+  // flat back edge lit. SVG units, so the mark scales intact to the phone.
+  function buildDialArt() {
+    var SVGNS = "http://www.w3.org/2000/svg";
+    var ticks = $("pj2-ticks"), gp = $("pj2-glyph-play");
+    if (!ticks || !gp || ticks.childNodes.length) return;
+    function rect(g, x, y, w, h, cls) {
+      var r = document.createElementNS(SVGNS, "rect");
+      r.setAttribute("x", x); r.setAttribute("y", y);
+      r.setAttribute("width", w); r.setAttribute("height", h);
+      if (cls) r.setAttribute("class", cls);
+      g.appendChild(r);
     }
-    if (stopBtn) {
-      if (!playIntent && !sounding) stopBtn.classList.add("is-lit"); else stopBtn.classList.remove("is-lit");
-      stopBtn.setAttribute("aria-pressed", (!playIntent) ? "true" : "false");
+    for (var i = 0; i < 12; i++) {
+      var a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      var s = (i % 3 === 0) ? 4 : 3;
+      rect(ticks, 40 + Math.cos(a) * 36.5 - s / 2, 40 + Math.sin(a) * 36.5 - s / 2, s, s, null);
     }
+    for (var r0 = 0; r0 < 7; r0++) {
+      rect(gp, 24, 22 + r0 * 5, 34 - Math.abs(r0 - 3) * 10, 5, "pj2-tri-body");
+    }
+    rect(gp, 24, 22, 2, 35, "pj2-tri-edge");
   }
 
   // --------------------------------------------------------------------------
@@ -578,6 +600,9 @@
   }
 
   function syncSeedDisplay(force) {
+    // the bare echo at the apparatus column's foot follows the seal's seed
+    var echo = $("pj2-seed-echo");
+    if (echo) echo.textContent = String(currentSeed());
     var input = $("pj2-seed");
     if (!input) return;
     if (!force && document.activeElement === input) return; // don't fight the typist
@@ -599,7 +624,13 @@
 
   // --------------------------------------------------------------------------
   // THE LAMP — master volume, one shared setting across all three books.
+  // Since 2026-08-31 it is the WICK GAUGE in the apparatus column: a vertical
+  // throw with a transient % readout that rides the fill line while the hand
+  // is on it and fades once it comes off.
   // --------------------------------------------------------------------------
+  var lampBooted = false;   // the readout only shows for real adjustments
+  var lampPctTimer = null;
+
   function applyVolume(v) {
     masterVol = clamp01(v);
     for (var k in engines) {
@@ -609,10 +640,25 @@
   }
 
   function updateLamp() {
-    var pct = (masterVol * 100).toFixed(1) + "%";
+    var pct = Math.round(masterVol * 100);
     var fill = $("pj2-lamp-fill"), thumb = $("pj2-lamp-thumb"), input = $("pj2-vol");
-    if (fill) fill.style.width = pct;
-    if (thumb) thumb.style.left = "calc(" + pct + " - 3px)";
+    var pctEl = $("pj2-wick-pct");
+    if (fill) fill.style.height = pct + "%";
+    if (thumb) thumb.style.bottom = "calc(" + pct + "% - 2px)";
+    if (pctEl) {
+      pctEl.textContent = String(pct);
+      // clamped so the readout never leaves the gauge at the top
+      pctEl.style.bottom = "calc(" + Math.min(pct, 88) + "% + 5px)";
+      if (lampBooted) {
+        pctEl.classList.add("is-live");
+        if (lampPctTimer != null) clearTimeout(lampPctTimer);
+        lampPctTimer = setTimeout(function () {
+          lampPctTimer = null;
+          pctEl.classList.remove("is-live");
+        }, 900);
+      }
+    }
+    lampBooted = true;
     if (input && document.activeElement !== input) input.value = String(masterVol);
   }
 
@@ -1376,11 +1422,23 @@
       })(TRACKS[i]);
     }
 
-    // transport
-    var playBtn = $("pj2-play"), stopBtn = $("pj2-stop"), resetBtn = $("pj2-reset");
-    if (playBtn) playBtn.addEventListener("click", doPlay);
-    if (stopBtn) stopBtn.addEventListener("click", doStop);
-    if (resetBtn) resetBtn.addEventListener("click", doReset);
+    // transport — the apparatus dial (one control, two states) + the rune
+    buildDialArt();
+    var toggleBtn = $("pj2-toggle");
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", function () {
+        if (playIntent) doStop(); else doPlay();
+      });
+    }
+    var runeBtn = $("pj2-rune");
+    if (runeBtn) {
+      runeBtn.addEventListener("click", function () {
+        runeBtn.classList.remove("is-spun");
+        void runeBtn.offsetWidth; // restart the steps() spin on repeat presses
+        runeBtn.classList.add("is-spun");
+        doReset();
+      });
+    }
 
     // (the NIGHT/PARCH binding switch retired 2026-08-31 — the parchment
     // page is the app's one dress; PJ2.Skin and PJ2.Viz both default to it)
@@ -1397,11 +1455,40 @@
       seedInput.addEventListener("change", commitTypedSeed);
     }
 
-    // the lamp
+    // the lamp — the wick gauge: the visually-hidden range is the real
+    // control (keyboard + AT); pointer drags on the etched column write to it
     var volInput = $("pj2-vol");
     if (volInput) {
       volInput.addEventListener("input", function () { applyVolume(volInput.value); });
       masterVol = clamp01(volInput.value != null && volInput.value !== "" ? volInput.value : masterVol);
+    }
+    var wickEl = $("pj2-wick"), wickTrack = $("pj2-wick-track");
+    if (wickTrack) {
+      var wickDragging = false;
+      var wickSet = function (clientY) {
+        var box = wickTrack.getBoundingClientRect();
+        if (!box.height) return;
+        var t = clamp01(1 - (clientY - box.top) / box.height); // bottom = 0, top = 1
+        if (volInput) volInput.value = String(t); // keep the real control honest
+        applyVolume(t);
+      };
+      wickTrack.addEventListener("pointerdown", function (e) {
+        wickDragging = true;
+        try { if (wickTrack.setPointerCapture) wickTrack.setPointerCapture(e.pointerId); } catch (e2) {}
+        wickSet(e.clientY);
+        try { if (volInput) volInput.focus(); } catch (e2) {}
+        if (e.preventDefault) e.preventDefault();
+      });
+      wickTrack.addEventListener("pointermove", function (e) {
+        if (wickDragging) wickSet(e.clientY);
+      });
+      var wickEnd = function () { wickDragging = false; };
+      wickTrack.addEventListener("pointerup", wickEnd);
+      wickTrack.addEventListener("pointercancel", wickEnd);
+      if (volInput && wickEl) {
+        volInput.addEventListener("focus", function () { wickEl.classList.add("is-focus"); });
+        volInput.addEventListener("blur", function () { wickEl.classList.remove("is-focus"); });
+      }
     }
     updateLamp();
 

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PJ2 transport mockup 1 — the colophon strip</title>
+
+<!-- ============================================================================
+     PROSPERO'S JUKEBOX v2 — TRANSPORT REDESIGN · MOCKUP 1 · THE COLOPHON STRIP
+
+     THE CONCEPT. The transport stops being cabinet chrome and becomes the
+     folio's colophon: a slim NIGHT WINDOW — the same near-black rounded panel
+     family as the plate and the scribal log — cut into the parchment DIRECTLY
+     under the title band, spanning the page's full interior width. It is the
+     first thing beneath the song titles, so play is never below the fold, on
+     any screen.
+
+     The strip is one apparatus, not three widgets. Every cell is built the
+     same way: a caption line over a payload line, all sharing one baseline —
+     INCIPIT over its verb, THE STATE over the readout, THE LAMP over the
+     gauge, the rune over "reseed". Play is an ILLUMINATED INITIAL: a stepped
+     gilt triangle that spans both of its cell's lines exactly as a drop cap
+     spans the lines of the text it opens. Stop is the same slot at ~66% —
+     a blocky amber square — because stopping is the smaller act. Reseed is
+     demoted to a 16px scribal rune at the far end, dim until hovered.
+
+     Everything else on this page is a simplified but recognizable stand-in
+     for the real app: masthead, title band, folio, plate window, scribal log,
+     cabinet. Note what is NOT in the cabinet any more: transport and volume.
+     ========================================================================= -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
+<style>
+/* ---------------------------------------------------------------------------
+   THE LIBRARY PALETTE (PLAN-GRAPHICS §2, verbatim). Art-pixel U = 2 CSS px:
+   every border and dither stripe is a multiple of 2. No glow, no blur, no
+   gradients-as-shading, no drop shadows on controls. Flat fills and dithers.
+   ------------------------------------------------------------------------- */
+:root {
+  /* the desk / room void */
+  --void: #0b0a08;
+
+  /* the parchment page (folio frame, page, tabs) */
+  --page:       #e3d3a8;
+  --page-lift:  #efe3c0;
+  --page-deep:  #d0bc8c;
+  --frame:      #8a704a;
+  --page-ink0:  #2e2114;
+  --page-ink1:  #4a3620;
+  --page-ink2:  #6e5638;
+  --page-ink3:  #93794f;
+  --page-rubric:#8e3b2c;
+
+  /* the night window inks (inside the black panels) */
+  --window:     #0a0805;
+  --window-1:   #120d07;
+  --window-2:   #1a130a;
+  --window-3:   #241a0d;
+  --ink0:       #ffdc82;
+  --ink1:       #ffc878;
+  --ink2:       #b4823c;
+  --ink3:       #785f32;
+  --gilt:       #c9a227;
+  --gilt-lift:  #e8c95a;
+  --rubric:     #b0553c;
+
+  /* cabinet + masthead label tone, desk slider chrome */
+  --bone:        #c7b795;
+  --cab-panel:   #17120b;
+  --cab-edge:    #2e2114;
+  --ctrl-edge:   #6e5626;
+  --slot:        #0f0c07;
+  --fill-a:      #c9a227;
+  --fill-b:      #4d3c10;
+  --thumb:       #e8c95a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--void); }
+body {
+  font-family: "VT323", monospace;
+  color: var(--page-ink0);
+  padding: 18px 12px 64px;
+  -webkit-text-size-adjust: 100%;
+}
+button { font-family: "VT323", monospace; cursor: pointer; background: none; border: 0; color: inherit; }
+
+.desk { max-width: 1100px; margin: 0 auto; }
+
+/* ---------------------------------------------------------------------------
+   THE MASTHEAD — the jukebox names itself once, above everything.
+   ------------------------------------------------------------------------- */
+.masthead {
+  font-family: "Jacquard 12", "VT323", monospace;
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+  color: var(--bone);
+  letter-spacing: 0.02em;
+  margin: 0 0 16px;
+}
+.masthead .init { color: var(--gilt); }
+
+/* ---------------------------------------------------------------------------
+   THE TITLE BAND — the song titles ARE segments of the folio's frame. Idle
+   segments paint in the frame tone; the ACTIVE segment is cut through to the
+   page (transparent). 2px slits of page separate them; the outer segments
+   take the frame's 4px inner corner radius.
+   ------------------------------------------------------------------------- */
+.tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  margin: 0 0 18px;
+}
+.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: "Jacquard 12", "VT323", monospace;
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 10px 8px 9px;
+  background: var(--frame);
+  color: var(--page-ink0);
+}
+.tab:first-child { border-top-left-radius: 4px; }
+.tab:last-child  { border-top-right-radius: 4px; }
+.tab:hover { box-shadow: inset 0 -2px 0 currentColor; }
+.tab:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+.tab.is-active { background: transparent; color: var(--page-ink0); cursor: default; }
+.tab.is-active:hover { box-shadow: none; }
+
+/* ---------------------------------------------------------------------------
+   THE FOLIO — the open book: a slim 2px frame line holding the parchment.
+   ------------------------------------------------------------------------- */
+.folio-wrap { filter: drop-shadow(0 26px 40px rgba(0,0,0,0.8)) drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+.folio {
+  position: relative;
+  background: var(--page);
+  border: 2px solid var(--frame);
+  border-radius: 6px;
+  padding: 0;
+}
+/* the sheet: one speckle bake over the whole folio interior */
+#folio-paper {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%; height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.folio-body {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px 14px;
+}
+
+/* ===========================================================================
+   ★ THE COLOPHON STRIP — a night window cut into the page directly under the
+   title band. One apparatus panel: four cells, each a caption line over a
+   payload line, all on one shared baseline, separated by hairline rules.
+   ========================================================================= */
+.colophon {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--window);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin: 0 0 14px;
+}
+
+/* the shared cell: caption over payload, fixed line boxes so every caption
+   in the strip sits on the same baseline whatever it contains */
+.cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+.cap {
+  height: 15px;
+  line-height: 15px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  white-space: nowrap;
+}
+.val {
+  height: 22px;
+  line-height: 22px;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* the hairline rules that bind the cells into one panel */
+.rule {
+  flex: 0 0 2px;
+  width: 2px;
+  height: 40px;
+  background: var(--window-3);
+}
+
+/* --- 1. THE PLAY CONTROL — the illuminated initial ----------------------- */
+.incipit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 2px;
+  flex: 0 0 auto;
+}
+.incipit .mark { display: block; width: 48px; height: 48px; flex: 0 0 48px; }
+.incipit .mark svg { display: block; width: 100%; height: 100%; }
+.incipit .cap { color: var(--gilt); }
+.incipit .val { color: var(--ink2); font-size: 16px; letter-spacing: 0.02em; }
+.incipit:hover .cap { color: var(--gilt-lift); }
+.incipit:hover .val { color: var(--ink0); }
+.incipit:hover .mark .face { fill: var(--gilt-lift); }
+.incipit:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; }
+
+/* the STILL (stop) state: the same slot, visibly smaller — stopping is the
+   lesser act, so the mark drops to ~66% and the ink cools to amber */
+.is-playing .incipit .mark { width: 32px; height: 32px; flex: 0 0 32px; margin: 0 8px 0 8px; }
+.is-playing .incipit .cap { color: var(--ink1); }
+.is-playing .incipit:hover .cap { color: var(--ink0); }
+.is-playing .incipit:focus-visible { outline-color: var(--ink1); }
+
+/* --- 2. THE STATUS READOUT ---------------------------------------------- */
+.state { flex: 0 1 auto; min-width: 170px; }
+.state .val { color: var(--ink2); }
+.is-playing .state .val { color: var(--ink0); }
+
+/* --- 3. THE LAMP — the volume gauge, in window ink ----------------------- */
+.lamp { flex: 1 1 200px; min-width: 150px; }
+.lamp .val { display: flex; align-items: center; }
+.gauge {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border: 2px solid var(--ink2);
+  background: var(--window-1);
+}
+.gauge-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 62%;
+  background: repeating-linear-gradient(90deg, var(--fill-a) 0 2px, var(--fill-b) 2px 4px);
+  pointer-events: none;
+}
+.gauge-thumb {
+  position: absolute;
+  top: -5px;
+  left: calc(62% - 3px);
+  width: 6px;
+  height: 18px;
+  background: var(--thumb);
+  pointer-events: none;
+}
+/* the house pattern: a real range input, visually hidden over the custom gauge */
+.gauge input[type="range"] {
+  position: absolute;
+  inset: -8px 0;
+  width: 100%;
+  height: calc(100% + 16px);
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.gauge input[type="range"]:focus-visible + .gauge-fill { outline: 2px solid var(--gilt-lift); outline-offset: 3px; }
+
+/* --- 4. RESEED — the tertiary rune -------------------------------------- */
+.reseed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  color: var(--ink3);
+}
+.reseed .rune { display: block; width: 16px; height: 16px; }
+.reseed .rune svg { display: block; width: 100%; height: 100%; }
+.reseed .rune-cap {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  line-height: 11px;
+  color: var(--ink3);
+}
+.reseed:hover { color: var(--ink2); }
+.reseed:hover .rune-cap { color: var(--ink2); }
+.reseed:focus-visible { outline: 2px solid var(--ink2); outline-offset: 2px; }
+
+/* only used at the small breakpoint, to force the two-row wrap */
+.cx-break { display: none; flex-basis: 100%; height: 0; }
+
+/* ---------------------------------------------------------------------------
+   THE PLATE WINDOW — the phosphor coil on the night ground.
+   ------------------------------------------------------------------------- */
+.plate-window {
+  background: var(--window);
+  border-radius: 16px;
+  height: 55vh;
+  min-height: 300px;
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+#plate { display: block; width: 100%; height: 100%; }
+
+/* ---------------------------------------------------------------------------
+   THE SCRIBAL LOG — the second night window.
+   ------------------------------------------------------------------------- */
+.log-window {
+  background: var(--window);
+  border-radius: 16px;
+  padding: 10px 16px 12px;
+}
+.log-head {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  border-bottom: 1px solid var(--ink3);
+  padding: 0 0 3px;
+  margin: 0 0 6px;
+}
+.log-row {
+  display: flex;
+  gap: 8px;
+  font-size: 16.5px;
+  line-height: 1.3;
+  align-items: baseline;
+}
+.log-t   { flex: 0 0 44px; color: var(--ink3); }
+.log-tag { flex: 0 0 106px; color: var(--gilt); text-transform: lowercase; letter-spacing: 0.05em; }
+.log-body{ flex: 1 1 auto; min-width: 0; color: var(--ink0); overflow-wrap: break-word; }
+.log-body .rb { color: var(--rubric); }
+
+/* ---------------------------------------------------------------------------
+   THE CABINET — the mixing desk only. NO transport, NO volume: that is the
+   whole point of this concept. They live in the colophon strip now.
+   ------------------------------------------------------------------------- */
+.cabinet {
+  margin-top: 14px;
+  background: var(--cab-panel);
+  border: 2px solid var(--cab-edge);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.mixdesk { flex: 1 1 460px; max-width: 720px; display: flex; flex-direction: column; gap: 6px; }
+.mix-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.mix-chev { flex: 0 0 14px; font-size: 16px; color: var(--ink3); line-height: 1; }
+.mix-sigil { flex: 0 0 18px; width: 18px; height: 18px; }
+.mix-sigil canvas { display: block; width: 18px; height: 18px; image-rendering: pixelated; }
+.mix-name {
+  flex: 0 0 120px;
+  font-size: 16px;
+  color: var(--bone);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mix-slider {
+  position: relative;
+  flex: 1 1 auto;
+  height: 12px;
+  border: 2px solid var(--ctrl-edge);
+  background: var(--slot);
+}
+.mix-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: repeating-linear-gradient(90deg, var(--fill-a) 0 2px, var(--fill-b) 2px 4px);
+}
+.mix-thumb { position: absolute; top: -3px; width: 4px; height: 14px; background: var(--thumb); }
+.cab-seed {
+  flex: 0 0 auto;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+.cab-seed .n { color: var(--gilt); letter-spacing: 0.04em; }
+.cab-note {
+  flex: 1 1 100%;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a3f2c;
+  margin-top: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   the curator's dev note — not part of the design
+   ------------------------------------------------------------------------- */
+.dev-note {
+  position: fixed;
+  left: 10px; bottom: 10px;
+  z-index: 20;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b6252;
+  background: rgba(11,10,8,0.92);
+  border: 2px solid #241a0d;
+  padding: 4px 10px;
+  pointer-events: none;
+}
+.dev-note .rb { color: var(--rubric); letter-spacing: 0; }
+
+/* ---------------------------------------------------------------------------
+   ≤700px — the strip STAYS directly under the title band. Play is never
+   below the fold. The strip wraps to two rows: play + status, then the lamp
+   with the reseed rune at its end.
+   ------------------------------------------------------------------------- */
+@media (max-width: 700px) {
+  body { padding: 12px 8px 60px; }
+  .masthead { font-size: 28px; margin-bottom: 8px; }
+  .tab { font-size: 17px; letter-spacing: 0.01em; padding: 8px 4px 7px; line-height: 1.05; }
+  .folio-body { padding: 0 10px 10px; }
+
+  .colophon { gap: 10px 12px; padding: 10px 12px; border-radius: 8px; }
+  .cx-break { display: block; }
+  .rule { display: none; }
+
+  .incipit { gap: 10px; }
+  .incipit .mark { width: 40px; height: 40px; flex: 0 0 40px; }
+  .is-playing .incipit .mark { width: 28px; height: 28px; flex: 0 0 28px; margin: 0 6px; }
+  .incipit .val { font-size: 15px; }
+
+  .cap { font-size: 12px; letter-spacing: 0.12em; }
+  /* on two rows the readout may take a second line rather than truncate */
+  .state { flex: 1 1 120px; min-width: 0; }
+  .state .val {
+    height: auto; min-height: 22px;
+    font-size: 15px; line-height: 1.15;
+    white-space: normal;
+  }
+  .lamp { flex: 1 1 auto; min-width: 0; }
+
+  .plate-window { height: 42vh; min-height: 220px; border-radius: 12px; }
+  .log-window { border-radius: 12px; padding: 8px 12px 10px; }
+  .log-row { font-size: 15px; }
+  .log-t { flex: 0 0 38px; }
+  .log-tag { flex: 0 0 84px; }
+  .cabinet { padding: 10px; gap: 10px; }
+  .mix-name { flex: 0 0 92px; font-size: 14px; letter-spacing: 0.04em; }
+  .dev-note { font-size: 12px; padding: 3px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="desk">
+
+  <h1 class="masthead"><span class="init">P</span>rospero&rsquo;s Jukebox</h1>
+
+  <div class="folio-wrap">
+    <div class="folio">
+
+      <!-- THE TITLE BAND — three segments of the folio's frame -->
+      <div class="tabs" role="tablist" aria-label="the three books">
+        <button type="button" class="tab is-active" role="tab" aria-selected="true"
+                aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
+        <button type="button" class="tab" role="tab" aria-selected="false"
+                aria-label="Sycorax's Spell — the woodcut grimoire">Sycorax&rsquo;s Spell</button>
+        <button type="button" class="tab" role="tab" aria-selected="false"
+                aria-label="Ariel's Day Off — the celestial atlas">Ariel&rsquo;s Day Off</button>
+      </div>
+
+      <canvas id="folio-paper" aria-hidden="true"></canvas>
+
+      <div class="folio-body">
+
+        <!-- ★★★ THE COLOPHON STRIP ★★★ -->
+        <div class="colophon" id="colophon">
+
+          <!-- 1 · the play control: the illuminated initial, mark alone
+               (captions + status readout removed — owner 2026-08-31) -->
+          <button type="button" class="incipit" id="incipit"
+                  aria-label="play — begin the evening" aria-pressed="false">
+            <span class="mark" id="incipit-mark" aria-hidden="true"></span>
+          </button>
+
+          <div class="rule" aria-hidden="true"></div>
+
+          <!-- 3 · the lamp: master volume -->
+          <div class="cell lamp">
+            <div class="cap">The Lamp &middot; Volume</div>
+            <div class="val">
+              <div class="gauge" id="gauge">
+                <input type="range" id="vol" min="0" max="100" step="1" value="62"
+                       aria-label="the lamp — master volume" />
+                <div class="gauge-fill" id="gauge-fill"></div>
+                <div class="gauge-thumb" id="gauge-thumb"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rule" aria-hidden="true"></div>
+
+          <!-- 4 · reseed: the tertiary scribal rune -->
+          <button type="button" class="reseed" id="reseed" aria-label="reseed — draw a new seed">
+            <span class="rune" id="reseed-rune" aria-hidden="true"></span>
+            <span class="rune-cap">reseed</span>
+          </button>
+
+        </div><!-- /colophon -->
+
+        <!-- the plate window: the phosphor coil -->
+        <div class="plate-window">
+          <canvas id="plate" aria-label="the pitch spiral — the live spectrum drawn as a glowing coil, one turn per octave"></canvas>
+        </div>
+
+        <!-- the scribal log window -->
+        <section class="log-window">
+          <h2 class="log-head">Annotationes &middot; the scribal log</h2>
+          <div class="log-row"><span class="log-t">0:41</span><span class="log-tag">performance</span><span class="log-body">the aeolian harp takes the answering phrase</span></div>
+          <div class="log-row"><span class="log-t">0:28</span><span class="log-tag">harmony</span><span class="log-body">tide turns toward <span class="rb">the subdominant</span></span></div>
+          <div class="log-row"><span class="log-t">0:12</span><span class="log-tag">motif</span><span class="log-body">a third generation of the opening figure, inverted</span></div>
+          <div class="log-row"><span class="log-t">0:00</span><span class="log-tag">scene</span><span class="log-body">c dorian, tonic 262 &mdash; the evening opens</span></div>
+        </section>
+
+      </div><!-- /folio-body -->
+    </div><!-- /folio -->
+  </div><!-- /folio-wrap -->
+
+  <!-- THE CABINET — the mixing desk and the seal. No transport. No volume. -->
+  <div class="cabinet">
+    <div class="mixdesk" id="mixdesk"></div>
+    <div class="cab-seed">Seed &middot; <span class="n">40471</span></div>
+    <div class="cab-note">&mdash; the transport and the lamp moved up into the colophon &mdash;</div>
+  </div>
+
+</div>
+
+<div class="dev-note">Mockup 1 <span class="rb">&middot;</span> the colophon strip</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var U = 2; /* the art-pixel unit */
+
+  /* ------------------------------------------------------------------ */
+  /* the marks — stepped pixel shapes, built as crisp-edged SVG rects.   */
+  /* ------------------------------------------------------------------ */
+  function svg(vb, body) {
+    return '<svg viewBox="0 0 ' + vb + ' ' + vb + '" shape-rendering="crispEdges" ' +
+           'xmlns="http://www.w3.org/2000/svg" focusable="false">' + body + '</svg>';
+  }
+  function rect(x, y, w, h, fill, cls) {
+    if (w <= 0 || h <= 0) return '';
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h +
+           '" fill="' + fill + '"' + (cls ? ' class="' + cls + '"' : '') + '/>';
+  }
+
+  /* PLAY — a stepped triangle, 12 rows of 2U, widening 4U a row. The gilt
+     body carries a lighter inner facet, the way an illuminated capital is
+     laid in gold and then lit. */
+  function playMark() {
+    var rows = 12, rh = 4, out = '';
+    function w(i) { return (i < 6 ? (i + 1) : (rows - i)) * 8; }
+    for (var i = 0; i < rows; i++) out += rect(0, i * rh, w(i), rh, '#c9a227', 'face');
+    for (var j = 1; j < rows - 1; j++) {
+      out += rect(4, j * rh, w(j) - 10, rh, '#ffdc82');
+    }
+    return svg(48, out);
+  }
+
+  /* STILL — a blocky square with its corner pixels knocked out, so it stays
+     pixel-cut rather than rounded. */
+  function stopMark() {
+    var out = rect(6, 6, 36, 36, '#ffc878', 'face');
+    out += rect(14, 14, 20, 20, '#ffdc82');   /* the same facet logic as play */
+    /* corner pixels back to the window ground */
+    out += rect(6, 6, U, U, '#0a0805') + rect(40, 6, U, U, '#0a0805') +
+           rect(6, 40, U, U, '#0a0805') + rect(40, 40, U, U, '#0a0805');
+    return svg(48, out);
+  }
+
+  /* RESEED — a scribal rune: a broken ring with the seed at its centre. */
+  function reseedRune() {
+    var cells = [
+      [2,0],[3,0],[4,0],[5,0],
+      [1,1],[6,1],
+      [0,2],[7,2],
+      [0,3],[7,3],
+      [0,4],[7,4],
+      [1,5],[6,5],
+      [2,6],[3,6],[4,6]        /* the gap at [5,6] — the tail of the ring */
+    ];
+    var out = '';
+    for (var i = 0; i < cells.length; i++) {
+      out += rect(cells[i][0] * U, cells[i][1] * U, U, U, 'currentColor');
+    }
+    out += rect(3 * U, 3 * U, U * 2, U * 2, 'currentColor'); /* the seed */
+    return svg(16, out);
+  }
+
+  document.getElementById('reseed-rune').innerHTML = reseedRune();
+
+  /* ------------------------------------------------------------------ */
+  /* transport state (fake)                                              */
+  /* ------------------------------------------------------------------ */
+  var playing = false;
+  var colophon  = document.getElementById('colophon');
+  var btn       = document.getElementById('incipit');
+  var mark      = document.getElementById('incipit-mark');
+
+  function render() {
+    colophon.classList.toggle('is-playing', playing);
+    mark.innerHTML = playing ? stopMark() : playMark();
+    btn.setAttribute('aria-pressed', playing ? 'true' : 'false');
+    btn.setAttribute('aria-label', playing ? 'stop — rest the page' : 'play — begin the evening');
+  }
+  btn.addEventListener('click', function () { playing = !playing; render(); });
+  render();
+
+  /* the reseed rune — restamps the seed caption, nothing more */
+  document.getElementById('reseed').addEventListener('click', function () {
+    var n = document.querySelector('.cab-seed .n');
+    n.textContent = String(Math.floor(10000 + Math.random() * 89999));
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* the lamp gauge — the real range input drives the painted fill        */
+  /* ------------------------------------------------------------------ */
+  var vol   = document.getElementById('vol');
+  var fill  = document.getElementById('gauge-fill');
+  var thumb = document.getElementById('gauge-thumb');
+  function paintGauge() {
+    var p = Number(vol.value);
+    fill.style.width = p + '%';
+    thumb.style.left = 'calc(' + p + '% - 3px)';
+  }
+  vol.addEventListener('input', paintGauge);
+  paintGauge();
+
+  /* ------------------------------------------------------------------ */
+  /* the mixing desk rows (cabinet stand-in)                              */
+  /* ------------------------------------------------------------------ */
+  var VOICES = [
+    { name: 'Aeolian Harp', v: 74, sig: ['..X..','.XXX.','X.X.X','.XXX.','..X..'] },
+    { name: 'Glass Viol',   v: 52, sig: ['X...X','.X.X.','..X..','.X.X.','X...X'] },
+    { name: 'Deep Bourdon', v: 38, sig: ['XXXXX','X...X','X.X.X','X...X','XXXXX'] }
+  ];
+  var desk = document.getElementById('mixdesk');
+  VOICES.forEach(function (voice) {
+    var row = document.createElement('div');
+    row.className = 'mix-row';
+
+    var chev = document.createElement('div');
+    chev.className = 'mix-chev';
+    chev.textContent = '›';
+    row.appendChild(chev);
+
+    var sigWrap = document.createElement('div');
+    sigWrap.className = 'mix-sigil';
+    var c = document.createElement('canvas');
+    c.width = 36; c.height = 36;                 /* 18 CSS px at 2x */
+    var g = c.getContext('2d');
+    g.fillStyle = '#c7b795';
+    for (var y = 0; y < voice.sig.length; y++) {
+      for (var x = 0; x < voice.sig[y].length; x++) {
+        if (voice.sig[y].charAt(x) === 'X') {
+          g.fillStyle = (x === 2 && y === 2) ? '#c9a227' : '#c7b795';
+          g.fillRect(3 + x * 6, 3 + y * 6, 6, 6);
+        }
+      }
+    }
+    sigWrap.appendChild(c);
+    row.appendChild(sigWrap);
+
+    var nm = document.createElement('div');
+    nm.className = 'mix-name';
+    nm.textContent = voice.name;
+    row.appendChild(nm);
+
+    var sl = document.createElement('div');
+    sl.className = 'mix-slider';
+    sl.innerHTML = '<div class="mix-fill" style="width:' + voice.v + '%"></div>' +
+                   '<div class="mix-thumb" style="left:calc(' + voice.v + '% - 2px)"></div>';
+    row.appendChild(sl);
+
+    desk.appendChild(row);
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* the parchment sheet — one speckle bake, no gradients                 */
+  /* ------------------------------------------------------------------ */
+  var paper = document.getElementById('folio-paper');
+  function bakePaper() {
+    var w = paper.clientWidth, h = paper.clientHeight;
+    if (!w || !h) return;
+    paper.width = w; paper.height = h;
+    var g = paper.getContext('2d');
+    g.clearRect(0, 0, w, h);
+    var n = Math.round((w * h) / 900);
+    for (var i = 0; i < n; i++) {
+      var x = Math.floor(Math.random() * w / U) * U;
+      var y = Math.floor(Math.random() * h / U) * U;
+      var r = Math.random();
+      g.fillStyle = r < 0.55 ? 'rgba(46,33,20,0.045)'
+                  : r < 0.85 ? 'rgba(110,86,56,0.05)'
+                             : 'rgba(239,227,192,0.55)';
+      g.fillRect(x, y, U, U);
+    }
+    /* a few flat foxing blotches — steps, not shading */
+    for (var b = 0; b < 26; b++) {
+      var bx = Math.random() * w, by = Math.random() * h, br = 8 + Math.random() * 26;
+      g.fillStyle = 'rgba(176,85,60,0.030)';
+      g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2); g.fill();
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* the plate — a placeholder phosphor coil                              */
+  /* ------------------------------------------------------------------ */
+  var plate = document.getElementById('plate');
+  function drawPlate() {
+    var w = plate.clientWidth, h = plate.clientHeight;
+    if (!w || !h) return;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    plate.width  = Math.round(w * dpr);
+    plate.height = Math.round(h * dpr);
+    var g = plate.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+
+    /* the constellation floor */
+    for (var s = 0; s < 90; s++) {
+      g.fillStyle = 'rgba(180,130,60,' + (0.12 + Math.random() * 0.20).toFixed(3) + ')';
+      g.fillRect(Math.floor(Math.random() * w / U) * U, Math.floor(Math.random() * h / U) * U, U, U);
+    }
+
+    var cx = w / 2, top = h * 0.15, bot = h * 0.87, loops = 9;
+    for (var i = 0; i < loops; i++) {
+      var t = i / (loops - 1);
+      var y  = top + (bot - top) * t;
+      var rx = Math.max(14, w * 0.34 * (1 - 0.52 * t));
+      var ry = Math.max(5, rx * 0.19);
+      g.beginPath();
+      g.ellipse(cx, y, rx, ry, 0, 0, Math.PI * 2);
+      g.lineWidth = U;
+      g.strokeStyle = 'rgba(255,220,130,' + (0.14 + 0.52 * (1 - t)).toFixed(3) + ')';
+      g.stroke();
+
+      /* a couple of note marks riding the limb */
+      for (var k = 0; k < 2; k++) {
+        var a = (i * 1.7 + k * 2.9) % (Math.PI * 2);
+        var nx = cx + Math.cos(a) * rx, ny = y + Math.sin(a) * ry;
+        g.fillStyle = (k === 0) ? 'rgba(255,170,0,0.85)' : 'rgba(255,200,120,0.5)';
+        g.fillRect(Math.round(nx / U) * U - U, Math.round(ny / U) * U - U, U * 2, U * 2);
+      }
+    }
+  }
+
+  function relayout() { bakePaper(); drawPlate(); }
+  var t = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(t); t = setTimeout(relayout, 120);
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+  relayout();
+})();
+</script>
+</body>
+</html>
