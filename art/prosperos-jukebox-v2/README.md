@@ -38,6 +38,20 @@ antariksh / zankyo / bardo / kolob):
 
 Graphics revamp deferred until the music is in place.
 
+## Theming (single source of truth, 2026-08-31)
+
+**Every color lives in `pj2-skin.js`'s palette registry — nowhere else.**
+`PJ2.Skin.themeCSS()` serializes the registry into every track×binding block
+of CSS custom properties, and `injectTheme()` (called from index.php's head)
+mounts it as `<style id="pj2-theme-vars">` before the app markup parses.
+`pj2.css` only *consumes* the variables; its only remaining hexes are the
+documented no-JS `var(…, #hex)` fallbacks. The cabinet chrome (`--pj2c-*`)
+is per-track: one flat instrument panel re-lit per book (Library brass,
+Sycorax violet iron, Ariel steel). `skin-test.html` §7 is the drift guard —
+no stray hexes in pj2.css, consumed⊆emitted, no dead tokens, and a
+computed-style probe of every var on all six track×binding combos.
+To change a color: edit the registry, reload, and run the bench.
+
 ## Autonomous run to completion (authorized 2026-07-07)
 
 Owner authorized unattended build-out "until the app is complete."

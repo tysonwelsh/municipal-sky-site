@@ -174,9 +174,9 @@ PJ2.Skin = (function () {
         sigil: "#c7b795", sigil2: "#c9a227",                   // bone + gilt (was pj2-ui TRACK)
         wax: ["#8e3b2c", "#b0553c"], waxRim: "#5e2018", waxFleck: 0.72,
       },
-      tab: { // the tab wears its own palette even while idle (v1 rule)
-        bg: "linear-gradient(180deg, #4a3620, #2e2114 70%)", ink: "#c9a227", edge: "#6e5638",
-        openBg: "linear-gradient(180deg, #efe3c0, #e3d3a8 75%)", openInk: "#2e2114",
+      tab: { // the tab wears its own palette even while idle (v1 rule); flat spine
+        bg: "#3a2d18", ink: "#c9a227",
+        openBg: "#e3d3a8", openInk: "#2e2114",
       },
       exceptions: {
         "#785f32": "faintest amber step: depth cues and aged log lines only, never the sole carrier (3.3:1)",
@@ -198,40 +198,49 @@ PJ2.Skin = (function () {
       },
     },
     sycorax: {
-      void_:  "#070605",
+      // THE PURPLE MAKEOVER (owner 2026-08-31): the browns are gone. The
+      // reading ink cools from tan bone to "moth" — a lavender-grey,
+      // luminance-matched so every contrast step IMPROVES on the old bone
+      // (12.5/8.1/4.2 vs 11.9/7.7/3.9 on worstBg). Blood shifts to "wine" —
+      // rust-orange was the near-complement of the spiral purples and read
+      // brown; wine keeps the warm/cool fire opposition on the purple half
+      // of the wheel and stays non-data exactly as blood was. The ramp KEYS
+      // keep their old names (bone/blood) — the viz reads them and renaming
+      // would churn thirty call sites for nothing.
+      void_:  "#08060c",
       paper:  ["#08070f", "#0e0c17", "#151220"],
-      ink:    ["#0d0b09", "#1a1512"],
-      bone:   ["#d8cfc0", "#b3a68e", "#7d715c"],
-      blood:  ["#6e2a22", "#93392b"],
+      ink:    ["#0d0a14", "#1a1626"],
+      bone:   ["#d8d2e4", "#b0a8c4", "#7c7490"], // = moth
+      blood:  ["#6b2340", "#8f2f55"],            // = wine
       witch:  ["#9b87b8", "#c4b5fd"],
-      // bone carries ALL the data on the night ground; the hush is a
-      // palette step bone-0 → bone-1, never an alpha fade.
-      data:   ["#d8cfc0", "#b3a68e", "#c4b5fd"],
+      // moth carries ALL the data on the night ground; the hush is a
+      // palette step moth-0 → moth-1, never an alpha fade.
+      data:   ["#d8d2e4", "#b0a8c4", "#c4b5fd"],
       worstBg: "#151220", // lightest night tone = worst case for light marks
-      primary: "#d8cfc0", accent: "#c4b5fd",
-      accent2: "#9b87b8",                    // dim witch-light (was --pj2-accent2)
-      giltCss: ["#93392b", "#6e2a22"],       // blood does the log's gilt duty (was --pj2-gilt/-gilt2)
-      surfaceDeep: "#060509",                // was --pj2-paper-deep
-      frameEdge: "#453729",                  // the soot-rag FRAME tone (was --pj2-paper-edge)
-      age: ["#d8cfc0", "#b3a68e", "#7d715c"],// was INK_AGE.sycorax
+      primary: "#d8d2e4", accent: "#c4b5fd",
+      accent2: "#9b87b8",                    // dim witch-light
+      giltCss: ["#8f2f55", "#6b2340"],       // wine does the log's gilt duty
+      surfaceDeep: "#0b0916",
+      frameEdge: "#3e3358",                  // dusk-violet FRAME (was soot-rag #453729)
+      age: ["#d8d2e4", "#b0a8c4", "#7c7490"],
       control: {
-        fillA: "#9b87b8", fillB: "#2a2433", muteOn: "#b3a68e",
-        sigil: "#b3a68e", sigil2: "#9b87b8",                   // bone-1 + dim witch
-        wax: ["#6e2a22", "#93392b"], waxRim: "#0d0b09", waxFleck: 0.72,
+        fillA: "#9b87b8", fillB: "#2a2433", muteOn: "#b0a8c4",
+        sigil: "#b0a8c4", sigil2: "#9b87b8",                   // moth-1 + dim witch
+        wax: ["#6b2340", "#8f2f55"], waxRim: "#0d0a14", waxFleck: 0.72,
       },
-      tab: {
-        bg: "linear-gradient(180deg, #322820, #0d0b09 70%)", ink: "#b3a68e", edge: "#453729",
-        openBg: "linear-gradient(180deg, #322820, #241d17 75%)", openInk: "#d8cfc0",
+      tab: { // flat spine (the gradient bevels retired with the flattening pass)
+        bg: "#241f38", ink: "#b0a8c4",
+        openBg: "#2d2542", openInk: "#d8d2e4",
       },
       exceptions: {
-        "#7d715c": "dim bone: depth-cue far limb + oldest ink-age step, never the sole carrier",
+        "#7c7490": "dim moth: depth-cue far limb + oldest ink-age step, never the sole carrier",
       },
       rules: {
-        "#6e2a22": "blood never carries data (2.3:1 on this paper) — rubrication beside bone only",
-        "#93392b": "blood never carries data (2.3:1 on this paper) — rubrication beside bone only",
+        "#6b2340": "wine never carries data (as blood was: ~2:1 on this paper) — rubrication beside moth only",
+        "#8f2f55": "wine never carries data (2.4:1 on this paper) — rubrication beside moth only",
         "#9b87b8": "dim witch-light: the apparition's halo only; data-carrying witch-light is the bright step",
-        "#0d0b09": "ink carries weight and depth on soot, never data — the block prints in negative",
-        "#1a1512": "ink carries weight and depth on soot, never data — the block prints in negative",
+        "#0d0a14": "ink carries weight and depth on soot, never data — the block prints in negative",
+        "#1a1626": "ink carries weight and depth on soot, never data — the block prints in negative",
       },
       spiral: {
         bg: "#08070f",
@@ -260,13 +269,17 @@ PJ2.Skin = (function () {
       frameEdge: "#22345a",                  // the engraved-plate FRAME tone (was --pj2-paper-edge)
       age: ["#d8e4ec", "#a8c0d4", "#6e8aa4"],// was INK_AGE.ariel
       control: {
-        fillA: "#d4af5f", fillB: "#4a3d22", muteOn: "#a04838", // rose: registry rule, mute square only
+        // silver-on-steel stripes (owner 2026-08-31): the old gilt pair was
+        // near-identical to library's, which made Library→Ariel switches
+        // imperceptible in the desk. Gold survives as accent only (solo,
+        // wax, spiral labels).
+        fillA: "#a8c0d4", fillB: "#223444", muteOn: "#a04838", // rose: registry rule, mute square only
         sigil: "#a8c0d4", sigil2: "#d4af5f",                   // silver-1 + gilt-0
         wax: ["#a04838", "#d4af5f"], waxRim: "#05070c", waxFleck: 0.9,
       },
-      tab: {
-        bg: "linear-gradient(180deg, #22345a, #101a30 70%)", ink: "#a8c0d4", edge: "#2e4a7a",
-        openBg: "linear-gradient(180deg, #22345a, #16233f 75%)", openInk: "#d8e4ec",
+      tab: { // flat spine
+        bg: "#1a2a48", ink: "#a8c0d4",
+        openBg: "#22345a", openInk: "#d8e4ec",
       },
       exceptions: {
         "#6e8aa4": "deep silver: depth-cue hairlines, hatch shading, aged-ink log lines — never the sole carrier (3.4:1, atlas mockup)",
@@ -318,9 +331,11 @@ PJ2.Skin = (function () {
       },
     },
     sycorax: {
-      paper:  ["#241d17", "#322820", "#453729"],
-      worstBg: "#453729",
-      surfaceDeep: "#1a1512", frameEdge: "#0d0b09",
+      // violet parchment (the purple makeover reaches the binding too —
+      // the old ramp was the last brown in the book)
+      paper:  ["#1f1a30", "#2d2542", "#3e3358"],
+      worstBg: "#3e3358",
+      surfaceDeep: "#161226", frameEdge: "#0c0a14",
     },
     ariel: {
       plate:  ["#101a30", "#16233f", "#22345a"],
@@ -351,20 +366,41 @@ PJ2.Skin = (function () {
   // track — surface/text/margin/chrome — over BOTH bindings, running after
   // the parchment merge so aliases always point at the merged ramps.
   // ==========================================================================
+  // One cabinet, re-lit per song (owner 2026-08-31): the base inventory is
+  // the Library's warm brass; sycorax re-lights it as violet iron, ariel as
+  // steel/silver. Flat faces — the bevel/gradient keys retired with the
+  // de-skeuomorphizing pass. waxRim and desk are derived per palette in
+  // finalizePalette (control.waxRim / void_).
   var CHROME_BASE = {
-    panelHi: "#201613", panel: "#17120b", panelLo: "#120c09",   // was --pj2c-wood-hi/-wood/-wood-lo
-    panelEdge: "#0b0705", panelBevel: "#2e211a",                // was --pj2c-wood-edge/-wood-bevel
-    btnFace: "#3a2d18", btnHi: "#6e5626", btnLo: "#1d1509",     // was --pj2c-brass/-brass-hi/-brass-lo
-    btnText: "#e8c95a",                                         // pushplate ink (was a pj2.css literal)
-    btnLitFace: "#c9a227", btnLitText: "#2e2114",               // .is-lit (was pj2.css literals)
-    btnLitLo: "#8a6a14", btnLitHi: "#f0daa0",                   // .is-lit bevels (was pj2.css literals)
-    caption: "#6b6252", label: "#c7b795",                       // was --pj2c-caption/-bone
-    slot: "#0f0c07", thumb: "#c7b795", controlEdge: "#3a2d18",  // slider wells, thumbs, housings
-    lampA: "#c9a227", lampB: "#7a6216", lampThumb: "#e8c95a",   // the lamp (was pj2.css literals)
-    waxRim: "#5e2018", sealNum: "#f0d9c8",                      // seal-number shadow + ink
-    desk: "#0b0a08", build: "#3f3628",                          // the page void + build stamp
+    panel: "#17120b", panelEdge: "#0b0705",       // the cabinet surface + its 1U edge
+    slot: "#0f0c07",                              // slider/lamp track wells
+    label: "#c7b795", caption: "#9a8a66",         // names vs captions (caption lifted from
+                                                  // #6b6252 — 3.1:1 on the panel, a fail)
+    controlEdge: "#6e5626", thumb: "#e8c95a",     // control housings + both thumbs
+    btnFace: "#3a2d18", btnText: "#e8c95a", btnPressed: "#241c0e",
+    btnLitFace: "#c9a227", btnLitText: "#2e2114",
+    sealNum: "#f0d9c8",                           // seed ink over the wax
+    build: "#4a453f",                             // build stamp — one neutral for all tracks
   };
-  var CHROME_TRACK = { library: {}, sycorax: {}, ariel: {} };
+  var CHROME_TRACK = {
+    library: {}, // the base IS the library's brass
+    sycorax: {   // violet iron
+      panel: "#131020", panelEdge: "#08060f", slot: "#0b0916",
+      label: "#d8d2e4", caption: "#948aa8",
+      controlEdge: "#52467a", thumb: "#c4b5fd",
+      btnFace: "#322a4a", btnText: "#c4b5fd", btnPressed: "#221c36",
+      btnLitFace: "#c4b5fd", btnLitText: "#1a1626",
+      sealNum: "#ede4f6",
+    },
+    ariel: {     // steel / silver
+      panel: "#0d141d", panelEdge: "#060a10", slot: "#070d14",
+      label: "#d8e4ec", caption: "#8ea6ba",
+      controlEdge: "#446080", thumb: "#d8e4ec",
+      btnFace: "#24384c", btnText: "#d8e4ec", btnPressed: "#182838",
+      btnLitFace: "#a8c0d4", btnLitText: "#0b1119",
+      sealNum: "#eef4f8",
+    },
+  };
 
   function finalizePalette(track, pal) {
     pal.surface = pal.paper || pal.plate;                 // the one surface ramp, any track
@@ -384,6 +420,8 @@ PJ2.Skin = (function () {
     for (k in CHROME_BASE) ch[k] = CHROME_BASE[k];
     var ov = CHROME_TRACK[track] || {};
     for (k in ov) ch[k] = ov[k];
+    ch.waxRim = pal.control.waxRim; // the seal-number shadow follows the wax
+    ch.desk = pal.void_;            // the whole room shifts with the song
     pal.chrome = ch;
   }
   (function () {

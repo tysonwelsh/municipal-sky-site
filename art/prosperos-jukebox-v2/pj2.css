@@ -74,12 +74,12 @@
 .pj2-masthead {
   font-family: var(--pj2-head-font);
   font-weight: 400;
-  font-size: 40px;
+  font-size: 34px; /* one step down (was 40) — the tabs are the second tier */
   line-height: 1;
   text-align: center;
   color: var(--pj2c-label);
   letter-spacing: 0.02em;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
 }
 .pj2-masthead .pj2-init { color: var(--pj2-accent); }
 
@@ -111,10 +111,9 @@
   letter-spacing: 0.02em;
   text-align: center;
   padding: 8px 8px 7px;
-  background: var(--tb-bg, #241d17);
-  color: var(--tb-ink, #b3a68e);
+  background: var(--tb-bg, #241f38);
+  color: var(--tb-ink, #b0a8c4);
   border: 2px solid var(--pj2c-panel-edge);
-  box-shadow: inset 0 2px 0 var(--tb-edge, #453729);
   cursor: pointer;
   clip-path: polygon(
     0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
@@ -130,13 +129,13 @@
    rule. The per-tab --tb-* values are emitted by the generated sheet from
    each track's registry `tab` entry.) */
 
-/* the active tab: raised/open — taller, in its book's paper, no hover shift */
+/* the active tab: raised/open — taller against the flex-end baseline, in its
+   book's paper, no hover shift. (The type-size zoom retired 2026-08-31 —
+   height + palette flip carry the state without reflowing the row.) */
 .pj2-tab.is-active {
   padding: 14px 8px 9px;
-  font-size: 27px;
   background: var(--tb-open-bg);
   color: var(--tb-open-ink);
-  box-shadow: inset 0 2px 0 var(--tb-edge);
   cursor: default;
 }
 .pj2-tab.is-active:hover { color: var(--tb-open-ink); }
@@ -155,8 +154,9 @@
 .pj2-folio {
   position: relative;   /* the sheet below is positioned against this */
   background: var(--pj2-paper);
-  border: 10px solid var(--pj2-paper-edge);
-  border-radius: 16px;
+  /* 6px (was 10) — a mat line around the plate, not a leather binding */
+  border: 6px solid var(--pj2-paper-edge);
+  border-radius: 12px;
   padding: 10px 12px 8px;
 }
 
@@ -349,14 +349,14 @@
 .pj2-telemetry .pj2-rb { color: var(--pj2-accent); }
 
 /* ---------------------------------------------------------------------------
-   THE CABINET (§5) — dark wood-and-brass, constant across tracks. 1U borders,
-   stepped corners, inset bevels. No glow anywhere; a lit state is gilt fill.
+   THE CABINET (§5, re-lit 2026-08-31) — one flat instrument panel whose
+   metal tones follow the open book (--pj2c-* is per-track now). 1U borders,
+   stepped corners. No glow anywhere; a lit state is accent fill.
    ------------------------------------------------------------------------- */
 .pj2-cabinet {
   margin-top: 14px;
-  background: linear-gradient(180deg, var(--pj2c-panel-hi) 0%, var(--pj2c-panel) 55%, var(--pj2c-panel-lo) 100%);
+  background: var(--pj2c-panel);
   border: 2px solid var(--pj2c-panel-edge);
-  box-shadow: inset 0 2px 0 var(--pj2c-panel-bevel), inset 0 -2px 0 var(--pj2c-panel-edge);
   clip-path: polygon(
     0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
     calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
@@ -366,14 +366,15 @@
   );
   display: flex;
   align-items: stretch;
-  gap: 16px;
-  padding: 10px 16px 12px;
+  gap: 20px;
+  padding: 14px 16px;
   flex-wrap: wrap;
 }
+/* the desk's one caption voice: 13px / 0.14em / uppercase (unified 2026-08-31) */
 .pj2-cab-cap {
   font-size: 13px;
   color: var(--pj2c-caption);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 .pj2-cab-spacer { flex: 1 1 auto; }
@@ -395,7 +396,7 @@
 /* (the shelf/book-spine tab rules lived here; owner ruling moved the tracks
    to the .pj2-tabs row above the folio) */
 
-/* --- transport: brass pushplates, 1U bevels, pressed = 1U inset ------------ */
+/* --- transport: flat pushplates — pressed darkens, lit fills with accent --- */
 .pj2-transport { display: flex; align-items: center; gap: 8px; }
 .pj2-pushplate {
   font-family: "VT323", monospace;
@@ -406,14 +407,12 @@
   border: 0;
   padding: 10px 14px;
   cursor: pointer;
-  box-shadow: inset -2px -2px 0 var(--pj2c-btn-lo), inset 2px 2px 0 var(--pj2c-btn-hi);
 }
 .pj2-pushplate:active,
-.pj2-pushplate.is-pressed { box-shadow: inset 2px 2px 0 var(--pj2c-btn-lo); }
+.pj2-pushplate.is-pressed { background: var(--pj2c-btn-pressed); }
 .pj2-pushplate.is-lit {
   background: var(--pj2c-btn-lit-face);
   color: var(--pj2c-btn-lit-text);
-  box-shadow: inset -2px -2px 0 var(--pj2c-btn-lit-lo), inset 2px 2px 0 var(--pj2c-btn-lit-hi);
 }
 .pj2-pushplate:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: 2px; }
 
@@ -475,11 +474,13 @@
   border: 2px solid var(--pj2c-control-edge);
   background: var(--pj2c-slot);
 }
+/* the lamp wears the same dither stripes and thumb as the desk sliders
+   (2026-08-31) — the master volume finally re-tints with the song */
 .pj2-lamp-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 60%;
-  background: repeating-linear-gradient(90deg, var(--pj2c-lamp-a) 0 2px, var(--pj2c-lamp-b) 2px 4px);
+  background: repeating-linear-gradient(90deg, var(--pj2-fill-a) 0 2px, var(--pj2-fill-b) 2px 4px);
   pointer-events: none;
 }
 .pj2-lamp-thumb {
@@ -488,7 +489,7 @@
   left: calc(60% - 3px);
   width: 6px;
   height: 18px;
-  background: var(--pj2c-lamp-thumb);
+  background: var(--pj2c-thumb);
   pointer-events: none;
 }
 .pj2-lamp-track input[type="range"] {
@@ -526,7 +527,7 @@
 .pj2-legend {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .pj2-legend-row {
   display: flex;
@@ -590,19 +591,21 @@
 }
 /* the rate throw is the same component at a humbler width, with its readout */
 .pj2-legend-rate { flex: 0 1 150px; }
+/* the desk's one value voice: 14px / 0.02em, right-aligned */
 .pj2-legend-rate-val {
   flex: 0 0 44px;
   font-size: 14px;
   color: var(--pj2c-caption);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-align: right;
 }
-/* v1's pixel mute square, kept verbatim: filled = audible */
+/* v1's pixel mute square, kept verbatim: filled = audible.
+   Squares are CONTROLS — their borders wear the control housing tone. */
 .pj2-legend-mute {
   flex: 0 0 14px;
   width: 14px;
   height: 14px;
-  border: 2px solid var(--pj2c-caption);
+  border: 2px solid var(--pj2c-control-edge);
   background: transparent;
   padding: 0;
   cursor: pointer;
@@ -614,7 +617,7 @@
   flex: 0 0 14px;
   width: 14px;
   height: 14px;
-  border: 2px solid var(--pj2c-caption);
+  border: 2px solid var(--pj2c-control-edge);
   background: transparent;
   padding: 0;
   cursor: pointer;
@@ -651,7 +654,7 @@
   max-width: 720px;
   width: 100%;
   box-sizing: border-box;
-  padding: 2px 0 6px 56px; /* past chevron+sigil, flush under the name column */
+  padding: 4px 0 8px 56px; /* past chevron+sigil, flush under the name column */
 }
 .pj2-detail[hidden] { display: none; }
 .pj2-detail-ms { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
@@ -660,7 +663,8 @@
   flex: 0 0 auto;
   font-size: 13px;
   color: var(--pj2c-caption);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .pj2-knob {
   display: flex;
@@ -673,15 +677,15 @@
   flex: 0 0 auto;
   font-size: 13px;
   color: var(--pj2c-caption);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 .pj2-knob .pj2-legend-slider { flex: 1 1 auto; }
 .pj2-knob-val {
-  flex: 0 0 34px;
-  font-size: 13px;
+  flex: 0 0 40px; /* "0.50" never clips (was 34px) */
+  font-size: 14px;
   color: var(--pj2c-caption);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-align: right;
 }
 
@@ -716,7 +720,7 @@
   .pj2-masthead { font-size: 28px; margin-bottom: 8px; }
   .pj2-tabs { gap: 4px; }
   .pj2-tab { font-size: 17px; letter-spacing: 0.01em; padding: 7px 4px 6px; }
-  .pj2-tab.is-active { font-size: 19px; padding: 11px 4px 7px; }
+  .pj2-tab.is-active { padding: 11px 4px 7px; }
   .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
   /* the mixing desk lives at every width now (owner 2026-08-23: the
      fine-tuning happens from a phone too) — full-width rows, compacted */
