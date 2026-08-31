@@ -76,24 +76,24 @@ include '../../includes/header.php';
          here and the tabs below carry the song titles alone). -->
     <h1 class="pj2-masthead"><span class="pj2-init">P</span>rospero&rsquo;s Jukebox</h1>
 
-    <!-- THE TABS — v1's horizontal track row restored above the folio (owner
-         ruling: tabs, not book spines). Three side-by-side buttons; each tab
-         keeps its own track palette even while idle (v1's multi-colored tab
-         rule); the active tab reads raised/open against the folio below.
-         Since 2026-08-23 the tabs ARE the song titles (display face, no
-         repeated title in the folio) and sit flush against the folio. -->
-    <div class="pj2-tabs" role="tablist" aria-label="the three books">
-      <button type="button" class="pj2-tab is-active" id="pj2-tab-library" data-track="library"
-              role="tab" aria-selected="true" aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
-      <button type="button" class="pj2-tab" id="pj2-tab-sycorax" data-track="sycorax"
-              role="tab" aria-selected="false" aria-label="Sycorax's Spell — the woodcut grimoire">Sycorax&rsquo;s Spell</button>
-      <button type="button" class="pj2-tab" id="pj2-tab-ariel" data-track="ariel"
-              role="tab" aria-selected="false" aria-label="Ariel's Day Off — the celestial atlas">Ariel&rsquo;s Day Off</button>
-    </div>
-
     <!-- THE FOLIO — the open book: plate, margin apparatus, annotations, footer rule -->
     <div class="pj2-folio-wrap">
       <div class="pj2-folio">
+
+        <!-- THE TITLE BAND (owner 2026-08-31) — the song titles live IN the
+             folio's frame now: the mat thickens at the top into a band of
+             three segments, and the active title's segment is cut through
+             to the page (transparent — the page fill shows). The whole band
+             wears the ACTIVE theme; the per-song idle tints retired with it.
+             The tabs ARE the song titles (owner 2026-08-23), display face. -->
+        <div class="pj2-tabs" role="tablist" aria-label="the three books">
+          <button type="button" class="pj2-tab is-active" id="pj2-tab-library" data-track="library"
+                  role="tab" aria-selected="true" aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
+          <button type="button" class="pj2-tab" id="pj2-tab-sycorax" data-track="sycorax"
+                  role="tab" aria-selected="false" aria-label="Sycorax's Spell — the woodcut grimoire">Sycorax&rsquo;s Spell</button>
+          <button type="button" class="pj2-tab" id="pj2-tab-ariel" data-track="ariel"
+                  role="tab" aria-selected="false" aria-label="Ariel's Day Off — the celestial atlas">Ariel&rsquo;s Day Off</button>
+        </div>
 
         <!-- THE SHEET — the folio's own paper, one bake behind everything
              inside it (parchment binding only; the night folio's panels

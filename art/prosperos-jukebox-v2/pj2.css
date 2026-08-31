@@ -46,9 +46,12 @@
 .pj2-app[data-binding="parchment"] .pj2-folio {
   border: 2px solid var(--pj2-paper-edge);
   border-radius: 6px;
-  padding: 18px 20px 12px;
+  padding: 0;
 }
-.pj2-app[data-binding="parchment"] .pj2-folio-grid { gap: 20px; }
+.pj2-app[data-binding="parchment"] .pj2-folio-grid { gap: 20px; padding: 0 20px 12px; }
+.pj2-app[data-binding="parchment"] .pj2-tabs { margin-bottom: 18px; }
+.pj2-app[data-binding="parchment"] .pj2-tab:first-child { border-top-left-radius: 4px; }
+.pj2-app[data-binding="parchment"] .pj2-tab:last-child { border-top-right-radius: 4px; }
 
 /* ---------------------------------------------------------------------------
    Fallback / unsupported lines
@@ -84,23 +87,22 @@
 .pj2-masthead .pj2-init { color: var(--pj2-accent); }
 
 /* ---------------------------------------------------------------------------
-   THE TABS — v1's horizontal track row, restored above the folio (owner
-   ruling). Three side-by-side buttons; each tab tints itself by its OWN
-   data-track regardless of which book is open (v1's multi-colored tab rule —
-   hexes verbatim from pj2-skin.js's registry, same values the skin blocks
-   carry). The active tab is raised (taller against a flex-end baseline) and
-   wears its book's paper. Pixel discipline kept: 1U (2px) borders, stepped
-   1U top corners via clip-path, no glow anywhere.
-   Since 2026-08-23 the tabs ARE the song titles: they wear the display face
-   (the old running-head title's font) and sit FLUSH against the folio — no
-   gap, no repeated title inside the book.
+   THE TITLE BAND (owner 2026-08-31) — the song titles live IN the folio's
+   frame. The row sits inside the folio as its first child: idle segments
+   paint themselves in the frame tone (--pj2-paper-edge), flowing into the
+   6px border around them so the mat reads as thickening into a band; the
+   ACTIVE segment is transparent — the page itself shows through the cut.
+   2px slits of page separate the segments. The whole band wears the ACTIVE
+   theme (--pj2-tab-ink from the registry); the per-song idle tints and the
+   v1 multi-colored tab rule retired with the redesign. Tabs remain the song
+   titles in the display face (owner 2026-08-23).
    ------------------------------------------------------------------------- */
 .pj2-tabs {
+  position: relative; /* above the parchment sheet, like the grid below */
+  z-index: 1;
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin-bottom: 0;
-  padding: 0 2px;
+  gap: 2px;           /* 1U slits of page between the segments */
+  margin: 0 0 10px;
 }
 .pj2-tab {
   flex: 1 1 0;
@@ -110,35 +112,26 @@
   line-height: 1.1;
   letter-spacing: 0.02em;
   text-align: center;
-  padding: 8px 8px 7px;
-  background: var(--tb-bg, #241f38);
-  color: var(--tb-ink, #b0a8c4);
-  border: 2px solid var(--pj2c-panel-edge);
+  padding: 10px 8px 9px;
+  background: var(--pj2-paper-edge); /* a segment of the frame band */
+  color: var(--pj2-tab-ink, #b0a8c4);
+  border: 0;
   cursor: pointer;
-  clip-path: polygon(
-    0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
-    100% 100%, 0 100%
-  );
 }
-.pj2-tab:hover { color: var(--pj2c-label); }
-/* clip-path would swallow an outer outline — focus draws inside the border */
-.pj2-tab:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: -6px; }
+/* the outer segments follow the frame's inner corner radius */
+.pj2-tab:first-child { border-top-left-radius: 6px; }
+.pj2-tab:last-child { border-top-right-radius: 6px; }
+/* hover/focus in currentColor — legible on any theme's band tone */
+.pj2-tab:hover { box-shadow: inset 0 -2px 0 currentColor; }
+.pj2-tab:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
 
-/* (each tab keeps its own palette even while idle — v1's multi-colored tab
-   rule. The per-tab --tb-* values are emitted by the generated sheet from
-   each track's registry `tab` entry.) */
-
-/* the active tab: raised/open — taller against the flex-end baseline, in its
-   book's paper, no hover shift. (The type-size zoom retired 2026-08-31 —
-   height + palette flip carry the state without reflowing the row.) */
+/* the active title: the cut — page fill, reading ink, nothing raised */
 .pj2-tab.is-active {
-  padding: 14px 8px 9px;
-  background: var(--tb-open-bg);
-  color: var(--tb-open-ink);
+  background: transparent;
+  color: var(--pj2-ink0);
   cursor: default;
 }
-.pj2-tab.is-active:hover { color: var(--tb-open-ink); }
+.pj2-tab.is-active:hover { box-shadow: none; }
 
 /* ---------------------------------------------------------------------------
    THE FOLIO — the open book: plate + margin + annotation column + footer rule.
@@ -157,7 +150,9 @@
   /* 6px (was 10) — a mat line around the plate, not a leather binding */
   border: 6px solid var(--pj2-paper-edge);
   border-radius: 12px;
-  padding: 10px 12px 8px;
+  /* no padding of its own — the title band runs edge-to-edge at the top;
+     the grid below carries the interior padding */
+  padding: 0;
 }
 
 /* THE SHEET (owner 2026-08-08) — the folio's paper, on the parchment
@@ -181,7 +176,12 @@
 }
 /* the content rides above the sheet (an absolutely-positioned sibling would
    otherwise paint over static content, however early it appears in the DOM) */
-.pj2-folio-grid { position: relative; z-index: 1; }
+.pj2-folio-grid {
+  position: relative;
+  z-index: 1;
+  padding: 0 12px 8px; /* the folio's old interior padding, minus the top —
+                          the title band owns the top edge */
+}
 
 /* (the running head — title + head transport — retired 2026-08-23: the
    masthead and tabs own the top of the page, and the transport lives in
@@ -715,12 +715,11 @@
 
 @media (max-width: 700px) {
   .pj2-desk { padding: 14px 6px 32px; }
-  .pj2-folio { padding: 12px 10px 8px; }
+  .pj2-folio-grid { padding: 0 10px 8px; }
+  .pj2-tabs { margin-bottom: 8px; }
   #pj2-plate { height: 360px; }
   .pj2-masthead { font-size: 28px; margin-bottom: 8px; }
-  .pj2-tabs { gap: 4px; }
-  .pj2-tab { font-size: 17px; letter-spacing: 0.01em; padding: 7px 4px 6px; }
-  .pj2-tab.is-active { padding: 11px 4px 7px; }
+  .pj2-tab { font-size: 17px; letter-spacing: 0.01em; padding: 8px 4px 7px; }
   .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
   /* the mixing desk lives at every width now (owner 2026-08-23: the
      fine-tuning happens from a phone too) — full-width rows, compacted */

@@ -312,7 +312,7 @@ function drawContrast() {
 // the build stamp. Anything else is drift.
 var FALLBACK_HEXES = {
   "#0b0a08": 1, "#3a2d18": 1, "#c7b795": 1,
-  "#241f38": 1, "#b0a8c4": 1, "#3f3628": 1,
+  "#b0a8c4": 1, "#3f3628": 1,
 };
 function parseVarBlocks(cssText) {
   var out = {}, re = /([^{}]+)\{([^{}]*)\}/g, m;
@@ -349,10 +349,8 @@ function themeGuard() {
     TRACKS.forEach(function (tr) {
       var scope = {};
       var night = genBlocks['[data-pj2-theme][data-track="' + tr + '"]'] || {};
-      var tab = genBlocks['.pj2-tab[data-track="' + tr + '"]'] || {};
       var k;
       for (k in night) { scope[k] = 1; emittedAll[k] = 1; }
-      for (k in tab) { scope[k] = 1; emittedAll[k] = 1; }
       for (k in consumed) if (!(k in scope)) missing.push(tr + " " + k);
     });
     line(!missing.length, "consumed vars not emitted (silent-inherit bugs): " + (missing.join(", ") || "none"));
@@ -365,11 +363,8 @@ function themeGuard() {
     var probe = document.createElement("div");
     probe.setAttribute("data-pj2-theme", "");
     probe.style.display = "none";
-    var tabProbe = document.createElement("div");
-    tabProbe.className = "pj2-tab";
     var logProbe = document.createElement("div");
     logProbe.className = "pj2-log-block";
-    probe.appendChild(tabProbe);
     probe.appendChild(logProbe);
     document.body.appendChild(probe);
     var fails = [], checks = 0;
@@ -377,7 +372,6 @@ function themeGuard() {
       ["night", "parchment"].forEach(function (binding) {
         probe.setAttribute("data-track", tr);
         probe.setAttribute("data-binding", binding);
-        tabProbe.setAttribute("data-track", tr);
         var want = {}, kk;
         var night = genBlocks['[data-pj2-theme][data-track="' + tr + '"]'] || {};
         for (kk in night) want[kk] = night[kk];
@@ -390,14 +384,6 @@ function themeGuard() {
           checks++;
           var got = cs.getPropertyValue(kk).trim().replace(/\s+/g, " ");
           if (got !== want[kk].replace(/\s+/g, " ")) fails.push(tr + "/" + binding + " " + kk);
-        }
-        var tabWant = genBlocks['.pj2-tab[data-track="' + tr + '"]'] || {};
-        var tcs = getComputedStyle(tabProbe);
-        for (kk in tabWant) {
-          checks++;
-          if (tcs.getPropertyValue(kk).trim().replace(/\s+/g, " ") !== tabWant[kk].replace(/\s+/g, " ")) {
-            fails.push("tab " + tr + " " + kk);
-          }
         }
         if (tr === "library" && binding === "parchment") {
           checks++;

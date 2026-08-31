@@ -174,10 +174,10 @@ PJ2.Skin = (function () {
         sigil: "#c7b795", sigil2: "#c9a227",                   // bone + gilt (was pj2-ui TRACK)
         wax: ["#8e3b2c", "#b0553c"], waxRim: "#5e2018", waxFleck: 0.72,
       },
-      tab: { // the tab wears its own palette even while idle (v1 rule); flat spine
-        bg: "#3a2d18", ink: "#c9a227",
-        openBg: "#e3d3a8", openInk: "#2e2114",
-      },
+      // idle-title ink on the frame band (title-band tabs, owner 2026-08-31 —
+      // the whole band wears the ACTIVE theme; per-song idle tints retired).
+      // Dark iron-gall on the tan mat; works on both bindings' frame tones.
+      tabInk: "#2e2114",
       exceptions: {
         "#785f32": "faintest amber step: depth cues and aged log lines only, never the sole carrier (3.3:1)",
       },
@@ -228,10 +228,7 @@ PJ2.Skin = (function () {
         sigil: "#b0a8c4", sigil2: "#9b87b8",                   // moth-1 + dim witch
         wax: ["#6b2340", "#8f2f55"], waxRim: "#0d0a14", waxFleck: 0.72,
       },
-      tab: { // flat spine (the gradient bevels retired with the flattening pass)
-        bg: "#241f38", ink: "#b0a8c4",
-        openBg: "#2d2542", openInk: "#d8d2e4",
-      },
+      tabInk: "#b0a8c4", // moth-1 idle titles on the dusk-violet band
       exceptions: {
         "#7c7490": "dim moth: depth-cue far limb + oldest ink-age step, never the sole carrier",
       },
@@ -277,10 +274,7 @@ PJ2.Skin = (function () {
         sigil: "#a8c0d4", sigil2: "#d4af5f",                   // silver-1 + gilt-0
         wax: ["#a04838", "#d4af5f"], waxRim: "#05070c", waxFleck: 0.9,
       },
-      tab: { // flat spine
-        bg: "#1a2a48", ink: "#a8c0d4",
-        openBg: "#22345a", openInk: "#d8e4ec",
-      },
+      tabInk: "#a8c0d4", // silver-1 idle titles on the steel band
       exceptions: {
         "#6e8aa4": "deep silver: depth-cue hairlines, hatch shading, aged-ink log lines — never the sole carrier (3.4:1, atlas mockup)",
       },
@@ -462,6 +456,7 @@ PJ2.Skin = (function () {
       gilt: pal.giltCss[0],
       age0: pal.age[0], age1: pal.age[1], age2: pal.age[2],
       fillA: pal.control.fillA, fillB: pal.control.fillB, muteOn: pal.control.muteOn,
+      tabInk: pal.tabInk,
       headFont: pal.headFontCss,
     };
   }
@@ -489,10 +484,6 @@ PJ2.Skin = (function () {
     // re-inks on parchment, so only library needs restoring (see pj2.css)
     css += declBlock('[data-pj2-theme][data-binding="parchment"][data-track="library"] .pj2-log-block',
       logInkVars(PALETTES.library), "pj2-");
-    for (t = 0; t < TRACKS.length; t++) {
-      tr = TRACKS[t];
-      css += declBlock('.pj2-tab[data-track="' + tr + '"]', PALETTES[tr].tab, "tb-");
-    }
     return css;
   }
   function injectTheme(doc) {
