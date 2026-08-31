@@ -1784,15 +1784,10 @@ PJ2.Viz = (function () {
       var s = Math.floor(avail / (bmpPx * (u || 2)));
       return s < 1 ? 1 : s;
     }
-    function marginInkOf(p) {
-      return track === "library"
-        ? { cap: p.ink[2], rule: p.ink[3], lead: p.ink[0], mid: p.ink[1], accent: p.rubric[0] }
-        : (track === "sycorax"
-          ? { cap: p.bone[2], rule: p.bone[2], lead: p.bone[0], mid: p.bone[1], accent: p.witch[1] }
-          : { cap: p.silver[1], rule: p.silver[2], lead: p.silver[0], mid: p.silver[1], accent: p.gilt[0] });
-    }
-    // the ink of whatever surface is being drawn on right now
-    function marginInk() { return marginInkOf(pal); }
+    // the margin apparatus ink roles — promoted into the registry's uniform
+    // layer (pj2-skin.js finalizePalette): every palette carries `margin`
+    // ({cap, rule, lead, mid, accent}) for its own track and binding.
+    function marginInk() { return pal.margin; }
     // (pageMarginInk — the binding-following ink for text printed on the
     // paper itself — retired 2026-08-16 with the last paper-side text: the
     // readouts moved inside their windows, so every line in the apparatus

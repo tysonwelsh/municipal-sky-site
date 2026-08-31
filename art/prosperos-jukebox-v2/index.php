@@ -50,7 +50,16 @@ include '../../includes/header.php';
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="pj2.css?v=<?php echo pj2v('pj2.css'); ?>" />
 
-<div class="pj2-desk">
+<!-- THE THEME SHEET — pj2-skin.js's palette registry is the single source of
+     truth for every per-track color. injectTheme() serializes the registry
+     into <style id="pj2-theme-vars"> BEFORE the app markup parses (no flash
+     of unthemed content); pj2.css consumes the variables and carries no
+     per-track hexes of its own. pj2-skin.js is DOM-safe at eval and loads
+     here instead of the end-of-body block. -->
+<script src="pj2-skin.js?v=<?php echo pj2v('pj2-skin.js'); ?>"></script>
+<script>PJ2.Skin.injectTheme(document);</script>
+
+<div class="pj2-desk" id="pj2-desk" data-pj2-theme data-track="library" data-binding="night">
 
   <noscript>
     <p class="pj2-nojs">Prospero&rsquo;s Jukebox is a generative music engine and needs JavaScript
@@ -198,7 +207,8 @@ include '../../includes/header.php';
 
 <!-- Engine + graphics modules, in the REQUIRED order: substrate (rand, pitch,
      clock, voice), sound tools (fx), form (air, motif, harmony, conductor),
-     the three tracks, then skin → viz → ui. -->
+     the three tracks, then viz → ui. (pj2-skin.js loads up top, before the
+     app markup, so the theme sheet exists before first paint.) -->
 <!-- shared site helper: keeps the engine sounding under a locked screen /
      backgrounded mobile browser, with lock-screen media controls (the
      kolob/zankyo/bardo pattern). Must load before pj2-voice.js builds a bus. -->
@@ -215,7 +225,6 @@ include '../../includes/header.php';
 <script src="pj2-library.js?v=<?php echo pj2v('pj2-library.js'); ?>"></script>
 <script src="pj2-sycorax.js?v=<?php echo pj2v('pj2-sycorax.js'); ?>"></script>
 <script src="pj2-ariel.js?v=<?php echo pj2v('pj2-ariel.js'); ?>"></script>
-<script src="pj2-skin.js?v=<?php echo pj2v('pj2-skin.js'); ?>"></script>
 <script src="pj2-viz.js?v=<?php echo pj2v('pj2-viz.js'); ?>"></script>
 <script src="pj2-ui.js?v=<?php echo pj2v('pj2-ui.js'); ?>"></script>
 

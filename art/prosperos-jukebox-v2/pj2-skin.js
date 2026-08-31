@@ -122,6 +122,11 @@ PJ2.Skin = (function () {
 
   var Grid = { U: U, deviceUnit: deviceUnit, cssUnit: cssUnit, snap: snap, fit: fit };
 
+  // font stacks (declared up here because the palette finalize pass below
+  // consumes them at module-eval time; the Type section re-exports them)
+  var FONT_MONO = '"VT323", monospace';
+  var FONT_BLACKLETTER = '"Jacquard 12", "VT323", monospace';
+
   // ==========================================================================
   // PALETTES — the locked registry (§2) + the mockups' validated ink law
   // ==========================================================================
@@ -157,6 +162,22 @@ PJ2.Skin = (function () {
       data:   ["#ffdc82", "#ffc878", "#b4823c", "#c9a227"],
       worstBg: "#120d07",
       primary: "#ffdc82", accent: "#c9a227",
+      // theme refactor (owner 2026-08-31): every CSS-facing value lives HERE
+      // now — themeCSS() serializes these; pj2.css holds no per-track hexes.
+      accent2: "#b0553c",                    // display-size accent (was --pj2-accent2)
+      giltCss: ["#c9a227", "#e8c95a"],       // was --pj2-gilt / --pj2-gilt2
+      surfaceDeep: "#060402",                // was --pj2-paper-deep
+      frameEdge: "#b49a68",                  // the thin parchment FRAME (was --pj2-paper-edge)
+      age: ["#ffdc82", "#ffc878", "#b4823c"],// scribal-log ink aging (was INK_AGE.library)
+      control: { // mixing-desk + seal chrome duty — mode-stable across bindings
+        fillA: "#c9a227", fillB: "#4d3c10", muteOn: "#c7b795", // was --pj2-fill-a/-b/-mute-on
+        sigil: "#c7b795", sigil2: "#c9a227",                   // bone + gilt (was pj2-ui TRACK)
+        wax: ["#8e3b2c", "#b0553c"], waxRim: "#5e2018", waxFleck: 0.72,
+      },
+      tab: { // the tab wears its own palette even while idle (v1 rule)
+        bg: "linear-gradient(180deg, #4a3620, #2e2114 70%)", ink: "#c9a227", edge: "#6e5638",
+        openBg: "linear-gradient(180deg, #efe3c0, #e3d3a8 75%)", openInk: "#2e2114",
+      },
       exceptions: {
         "#785f32": "faintest amber step: depth cues and aged log lines only, never the sole carrier (3.3:1)",
       },
@@ -188,6 +209,20 @@ PJ2.Skin = (function () {
       data:   ["#d8cfc0", "#b3a68e", "#c4b5fd"],
       worstBg: "#151220", // lightest night tone = worst case for light marks
       primary: "#d8cfc0", accent: "#c4b5fd",
+      accent2: "#9b87b8",                    // dim witch-light (was --pj2-accent2)
+      giltCss: ["#93392b", "#6e2a22"],       // blood does the log's gilt duty (was --pj2-gilt/-gilt2)
+      surfaceDeep: "#060509",                // was --pj2-paper-deep
+      frameEdge: "#453729",                  // the soot-rag FRAME tone (was --pj2-paper-edge)
+      age: ["#d8cfc0", "#b3a68e", "#7d715c"],// was INK_AGE.sycorax
+      control: {
+        fillA: "#9b87b8", fillB: "#2a2433", muteOn: "#b3a68e",
+        sigil: "#b3a68e", sigil2: "#9b87b8",                   // bone-1 + dim witch
+        wax: ["#6e2a22", "#93392b"], waxRim: "#0d0b09", waxFleck: 0.72,
+      },
+      tab: {
+        bg: "linear-gradient(180deg, #322820, #0d0b09 70%)", ink: "#b3a68e", edge: "#453729",
+        openBg: "linear-gradient(180deg, #322820, #241d17 75%)", openInk: "#d8cfc0",
+      },
       exceptions: {
         "#7d715c": "dim bone: depth-cue far limb + oldest ink-age step, never the sole carrier",
       },
@@ -219,6 +254,20 @@ PJ2.Skin = (function () {
       data:   ["#d8e4ec", "#a8c0d4", "#ecd28a", "#d4af5f", "#bfe0f4", "#8fc4e4"],
       worstBg: "#121b2a", // lightest night tone
       primary: "#d8e4ec", accent: "#ecd28a",
+      accent2: "#d4af5f",                    // gilt-0 (was --pj2-accent2)
+      giltCss: ["#d4af5f", "#ecd28a"],       // was --pj2-gilt / --pj2-gilt2
+      surfaceDeep: "#04060a",                // was --pj2-paper-deep
+      frameEdge: "#22345a",                  // the engraved-plate FRAME tone (was --pj2-paper-edge)
+      age: ["#d8e4ec", "#a8c0d4", "#6e8aa4"],// was INK_AGE.ariel
+      control: {
+        fillA: "#d4af5f", fillB: "#4a3d22", muteOn: "#a04838", // rose: registry rule, mute square only
+        sigil: "#a8c0d4", sigil2: "#d4af5f",                   // silver-1 + gilt-0
+        wax: ["#a04838", "#d4af5f"], waxRim: "#05070c", waxFleck: 0.9,
+      },
+      tab: {
+        bg: "linear-gradient(180deg, #22345a, #101a30 70%)", ink: "#a8c0d4", edge: "#2e4a7a",
+        openBg: "linear-gradient(180deg, #22345a, #16233f 75%)", openInk: "#d8e4ec",
+      },
       exceptions: {
         "#6e8aa4": "deep silver: depth-cue hairlines, hatch shading, aged-ink log lines — never the sole carrier (3.4:1, atlas mockup)",
       },
@@ -254,6 +303,11 @@ PJ2.Skin = (function () {
       data:   ["#2e2114", "#4a3620", "#6e5638", "#8e3b2c"],
       worstBg: "#e3d3a8",
       primary: "#2e2114", accent: "#8e3b2c",
+      // parchment CSS-facing surfaces (the page/lite mapping inverts here:
+      // the codex page is the MID tone with the light tone as the lift)
+      surfacePage: "#e3d3a8", surfaceLite: "#efe3c0",
+      surfaceDeep: "#d0bc8c", frameEdge: "#8a704a",
+      age: ["#2e2114", "#4a3620", "#6e5638"],  // was INK_AGE_P.library
       exceptions: {
         "#93794f": "far-limb depth-cue hairline — the same datum returns at full contrast every half revolution",
       },
@@ -266,10 +320,14 @@ PJ2.Skin = (function () {
     sycorax: {
       paper:  ["#241d17", "#322820", "#453729"],
       worstBg: "#453729",
+      surfaceDeep: "#1a1512", frameEdge: "#0d0b09",
     },
     ariel: {
       plate:  ["#101a30", "#16233f", "#22345a"],
       worstBg: "#22345a",
+      // the plate page sits one step UP the ramp on parchment
+      surfacePage: "#16233f", surfaceLite: "#22345a",
+      surfaceDeep: "#101a30", frameEdge: "#05070c",
     },
   };
   var PALETTES_P = {};
@@ -282,6 +340,136 @@ PJ2.Skin = (function () {
       PALETTES_P[tr] = out;
     }
   })();
+
+  // ==========================================================================
+  // THE CABINET CHROME + THE UNIFORM LAYER (theme refactor, owner 2026-08-31).
+  //
+  // CHROME_BASE is the one shared cabinet inventory (values verbatim from
+  // pj2.css's retired --pj2c-* block + the raw component hexes it had grown);
+  // CHROME_TRACK diverges only the keys a track re-lights. finalizePalette()
+  // then installs the UNIFORM keys every consumer can rely on regardless of
+  // track — surface/text/margin/chrome — over BOTH bindings, running after
+  // the parchment merge so aliases always point at the merged ramps.
+  // ==========================================================================
+  var CHROME_BASE = {
+    panelHi: "#201613", panel: "#17120b", panelLo: "#120c09",   // was --pj2c-wood-hi/-wood/-wood-lo
+    panelEdge: "#0b0705", panelBevel: "#2e211a",                // was --pj2c-wood-edge/-wood-bevel
+    btnFace: "#3a2d18", btnHi: "#6e5626", btnLo: "#1d1509",     // was --pj2c-brass/-brass-hi/-brass-lo
+    btnText: "#e8c95a",                                         // pushplate ink (was a pj2.css literal)
+    btnLitFace: "#c9a227", btnLitText: "#2e2114",               // .is-lit (was pj2.css literals)
+    btnLitLo: "#8a6a14", btnLitHi: "#f0daa0",                   // .is-lit bevels (was pj2.css literals)
+    caption: "#6b6252", label: "#c7b795",                       // was --pj2c-caption/-bone
+    slot: "#0f0c07", thumb: "#c7b795", controlEdge: "#3a2d18",  // slider wells, thumbs, housings
+    lampA: "#c9a227", lampB: "#7a6216", lampThumb: "#e8c95a",   // the lamp (was pj2.css literals)
+    waxRim: "#5e2018", sealNum: "#f0d9c8",                      // seal-number shadow + ink
+    desk: "#0b0a08", build: "#3f3628",                          // the page void + build stamp
+  };
+  var CHROME_TRACK = { library: {}, sycorax: {}, ariel: {} };
+
+  function finalizePalette(track, pal) {
+    pal.surface = pal.paper || pal.plate;                 // the one surface ramp, any track
+    if (!pal.surfacePage) pal.surfacePage = pal.surface[0];
+    if (!pal.surfaceLite) pal.surfaceLite = pal.surface[1];
+    // the READING ramp (explicit per track — sycorax's `ink` is the woodcut
+    // negative, not text). ink3 clamps to the last step on 3-step ramps.
+    pal.text = track === "library" ? pal.ink : (track === "sycorax" ? pal.bone : pal.silver);
+    // the margin apparatus roles (promoted from pj2-viz.js marginInkOf)
+    pal.margin = track === "library"
+      ? { cap: pal.ink[2], rule: pal.ink[3], lead: pal.ink[0], mid: pal.ink[1], accent: pal.rubric[0] }
+      : (track === "sycorax"
+        ? { cap: pal.bone[2], rule: pal.bone[2], lead: pal.bone[0], mid: pal.bone[1], accent: pal.witch[1] }
+        : { cap: pal.silver[1], rule: pal.silver[2], lead: pal.silver[0], mid: pal.silver[1], accent: pal.gilt[0] });
+    pal.headFontCss = track === "ariel" ? FONT_MONO : FONT_BLACKLETTER;
+    var ch = {}, k;
+    for (k in CHROME_BASE) ch[k] = CHROME_BASE[k];
+    var ov = CHROME_TRACK[track] || {};
+    for (k in ov) ch[k] = ov[k];
+    pal.chrome = ch;
+  }
+  (function () {
+    for (var t = 0; t < TRACKS.length; t++) {
+      finalizePalette(TRACKS[t], PALETTES[TRACKS[t]]);
+      finalizePalette(TRACKS[t], PALETTES_P[TRACKS[t]]);
+    }
+  })();
+
+  // ==========================================================================
+  // THE GENERATED THEME SHEET — the single source of truth reaching CSS.
+  // themeCSS() serializes the registry into every track×binding custom-
+  // property block; injectTheme() mounts it once as <style id="pj2-theme-vars">
+  // (index.php calls it from <head>, right after this file loads). pj2.css
+  // consumes the variables and holds no per-track hexes of its own. Injection
+  // is an EXPLICIT call, never a load side effect — the headless harness and
+  // smoke pages load this file with no DOM.
+  // ==========================================================================
+  function kebab(k) {
+    return k.replace(/[A-Z]/g, function (m) { return "-" + m.toLowerCase(); });
+  }
+  function declBlock(selector, vars, prefix) {
+    var out = selector + " {\n", k;
+    for (k in vars) out += "  --" + prefix + kebab(k) + ": " + vars[k] + ";\n";
+    return out + "}\n";
+  }
+  // the --pj2-* set a track block carries (both bindings emit the FULL set —
+  // re-declaring an unchanged value is harmless and keeps the cascade simple).
+  // Only CONSUMED names are emitted — the skin-test drift guard fails on dead
+  // tokens, which is how --pj2-void/-paper-lite/-paper-deep/-gilt2 (declared
+  // but never read, a pre-refactor drift) came off this list; the values
+  // themselves stay on the registry (void_/surfaceLite/surfaceDeep/giltCss).
+  function trackVars(pal) {
+    return {
+      paper: pal.surfacePage, window: pal.spiral.bg, paperEdge: pal.frameEdge,
+      ink0: pal.text[0], ink1: pal.text[1], ink2: pal.text[2], ink3: pal.text[3] || pal.text[2],
+      accent: pal.accent, accent2: pal.accent2,
+      gilt: pal.giltCss[0],
+      age0: pal.age[0], age1: pal.age[1], age2: pal.age[2],
+      fillA: pal.control.fillA, fillB: pal.control.fillB, muteOn: pal.control.muteOn,
+      headFont: pal.headFontCss,
+    };
+  }
+  function logInkVars(pal) { // the parchment log window keeps the night ink
+    return {
+      ink0: pal.text[0], ink1: pal.text[1], ink2: pal.text[2], ink3: pal.text[3] || pal.text[2],
+      accent: pal.accent, accent2: pal.accent2,
+      age0: pal.age[0], age1: pal.age[1], age2: pal.age[2],
+    };
+  }
+  function themeCSS() {
+    var css = "/* generated by PJ2.Skin.themeCSS() — the palette registry is the source; do not hand-edit */\n";
+    var t, tr, night, parch;
+    for (t = 0; t < TRACKS.length; t++) {
+      tr = TRACKS[t]; night = PALETTES[tr];
+      css += declBlock('[data-pj2-theme][data-track="' + tr + '"]', trackVars(night), "pj2-");
+      css += declBlock('[data-pj2-theme][data-track="' + tr + '"]', night.chrome, "pj2c-");
+    }
+    for (t = 0; t < TRACKS.length; t++) {
+      tr = TRACKS[t]; parch = PALETTES_P[tr];
+      css += declBlock('[data-pj2-theme][data-binding="parchment"][data-track="' + tr + '"]',
+        trackVars(parch), "pj2-");
+    }
+    // the log is a night window on the parchment binding; only library
+    // re-inks on parchment, so only library needs restoring (see pj2.css)
+    css += declBlock('[data-pj2-theme][data-binding="parchment"][data-track="library"] .pj2-log-block',
+      logInkVars(PALETTES.library), "pj2-");
+    for (t = 0; t < TRACKS.length; t++) {
+      tr = TRACKS[t];
+      css += declBlock('.pj2-tab[data-track="' + tr + '"]', PALETTES[tr].tab, "tb-");
+    }
+    return css;
+  }
+  function injectTheme(doc) {
+    doc = doc || (typeof document !== "undefined" ? document : null);
+    if (!doc) throw new Error("PJ2.Skin.injectTheme: no document");
+    var el = doc.getElementById("pj2-theme-vars");
+    if (!el) {
+      el = doc.createElement("style");
+      el.id = "pj2-theme-vars";
+      (doc.head || doc.documentElement).appendChild(el);
+    }
+    el.textContent = themeCSS();
+    return el;
+  }
+
   function setMode(m) {
     if (m !== "night" && m !== "parchment") {
       throw new Error("PJ2.Skin.setMode: unknown mode '" + m + "'");
@@ -334,23 +522,27 @@ PJ2.Skin = (function () {
       + (p.rules && p.rules[hex] ? " — " + p.rules[hex] : ""));
   }
 
-  // the registry, checked: every data color vs its paper's worst-case tone.
-  // Returns rows for dev boxes / the skin-test page.
+  // the registry, checked: every data color vs its paper's worst-case tone,
+  // on BOTH bindings. Returns rows for dev boxes / the skin-test page.
   function checkContrast() {
     var rows = [];
-    for (var t = 0; t < TRACKS.length; t++) {
-      var track = TRACKS[t], p = PALETTES[track];
-      var i, hex;
-      for (i = 0; i < p.data.length; i++) {
-        hex = p.data[i];
-        rows.push({ track: track, hex: hex, bg: p.worstBg,
-                    ratio: contrast(hex, p.worstBg), required: 4.5,
-                    pass: contrast(hex, p.worstBg) >= 4.5, note: "data" });
-      }
-      for (hex in p.exceptions) {
-        rows.push({ track: track, hex: hex, bg: p.worstBg,
-                    ratio: contrast(hex, p.worstBg), required: 0,
-                    pass: true, note: "exception: " + p.exceptions[hex] });
+    var sets = [{ reg: PALETTES, mode: "night" }, { reg: PALETTES_P, mode: "parchment" }];
+    for (var s = 0; s < sets.length; s++) {
+      for (var t = 0; t < TRACKS.length; t++) {
+        var track = sets[s].mode === "night" ? TRACKS[t] : TRACKS[t] + " (parchment)";
+        var p = sets[s].reg[TRACKS[t]];
+        var i, hex;
+        for (i = 0; i < p.data.length; i++) {
+          hex = p.data[i];
+          rows.push({ track: track, hex: hex, bg: p.worstBg,
+                      ratio: contrast(hex, p.worstBg), required: 4.5,
+                      pass: contrast(hex, p.worstBg) >= 4.5, note: "data" });
+        }
+        for (hex in p.exceptions) {
+          rows.push({ track: track, hex: hex, bg: p.worstBg,
+                      ratio: contrast(hex, p.worstBg), required: 0,
+                      pass: true, note: "exception: " + p.exceptions[hex] });
+        }
       }
     }
     return rows;
@@ -1963,23 +2155,13 @@ PJ2.Skin = (function () {
   // display face; numerals are ALWAYS VT323 (blackletter numerals fail the
   // precision rule).
   // ==========================================================================
-  var FONT_MONO = '"VT323", monospace';
-  var FONT_BLACKLETTER = '"Jacquard 12", "VT323", monospace';
+  // (FONT_MONO / FONT_BLACKLETTER are declared above the palette registry —
+  // the finalize pass consumes them at module-eval time.)
 
-  // the three steps of ink aging per track (log entries pale as they age)
-  var INK_AGE = {
-    library: ["#ffdc82", "#ffc878", "#b4823c"],   // amber on night (C-flip)
-    sycorax: ["#d8cfc0", "#b3a68e", "#7d715c"],
-    ariel:   ["#d8e4ec", "#a8c0d4", "#6e8aa4"],
-  };
-  var INK_AGE_P = {
-    library: ["#2e2114", "#4a3620", "#6e5638"],   // iron-gall on parchment
-    sycorax: INK_AGE.sycorax,
-    ariel:   INK_AGE.ariel,
-  };
+  // the three steps of ink aging per track (log entries pale as they age) —
+  // the ramps live on the palettes now (`age`, mode-aware via palette())
   function inkAge(track, step) {
-    var ramp = (MODE === "night" ? INK_AGE : INK_AGE_P)[track];
-    if (!ramp) throw new Error("PJ2.Skin.Type.inkAge: unknown track '" + track + "'");
+    var ramp = palette(track).age;
     return ramp[Math.max(0, Math.min(2, step | 0))];
   }
 
@@ -2089,6 +2271,10 @@ PJ2.Skin = (function () {
     checkContrast: checkContrast,
     setMode: setMode,
     getMode: getMode,
+
+    // the generated theme sheet (single source of truth reaching CSS)
+    themeCSS: themeCSS,
+    injectTheme: injectTheme,
     dev: false, // set true in development: illegal data ink throws
 
     // deterministic noise (seeds enter as domain offsets)

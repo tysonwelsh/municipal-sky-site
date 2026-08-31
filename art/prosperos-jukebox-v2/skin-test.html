@@ -65,6 +65,14 @@ button { background: #3a2d18; color: #c7b795; border: 0; font-family: inherit; f
 <table id="contrast"><thead><tr><th>track</th><th>ink</th><th>worst bg</th><th>ratio</th><th>rule</th></tr></thead><tbody></tbody></table>
 <div id="verdict"></div>
 
+<h2>7 · theme contract — registry → generated sheet → pj2.css (drift guard)</h2>
+<div class="note">guards the single-source rule: pj2.css declares no theme values (no hexes
+beyond the documented no-JS fallbacks, no --pj2*/--tb-* declarations); every variable
+pj2.css consumes is emitted for every track; every emitted token is consumed (no dead
+tokens); and a live computed-style probe proves the cascade delivers the registry's
+values on all six track×binding combinations. (needs http — fetch of pj2.css.)</div>
+<div id="themeguard">fetching pj2.css…</div>
+
 <script src="pj2-rand.js"></script>
 <script src="pj2-skin.js"></script>
 <script>
@@ -298,6 +306,116 @@ function drawContrast() {
     : '<span class="fail">REGISTRY VIOLATION — a data ink fails its paper</span>';
 }
 
+/* ---------------- 7 · theme contract drift guard ---------------- */
+// the documented no-JS fallback hexes pj2.css is allowed to carry (inside
+// var(…, #hex) only): the desk ground, the nojs lines, the tab fallbacks,
+// the build stamp. Anything else is drift.
+var FALLBACK_HEXES = {
+  "#0b0a08": 1, "#3a2d18": 1, "#c7b795": 1,
+  "#241d17": 1, "#b3a68e": 1, "#453729": 1, "#3f3628": 1,
+};
+function parseVarBlocks(cssText) {
+  var out = {}, re = /([^{}]+)\{([^{}]*)\}/g, m;
+  while ((m = re.exec(cssText))) {
+    var sel = m[1].trim().replace(/\s+/g, " ");
+    var vars = out[sel] || (out[sel] = {});
+    m[2].replace(/(--[\w-]+)\s*:\s*([^;]+);/g, function (_, k, v) { vars[k] = v.trim(); return _; });
+  }
+  return out;
+}
+function themeGuard() {
+  var host = document.getElementById("themeguard");
+  var out = [];
+  function line(ok, msg) {
+    out.push('<div class="' + (ok ? "pass" : "fail") + '">' + (ok ? "OK" : "FAIL") + " — " + msg + "</div>");
+  }
+  var gen = Skin.themeCSS().replace(/\/\*[\s\S]*?\*\//g, "");
+  var genBlocks = parseVarBlocks(gen);
+  fetch("pj2.css").then(function (r) { return r.text(); }).then(function (raw) {
+    var css = raw.replace(/\/\*[\s\S]*?\*\//g, "");
+
+    // 1 · no stray hexes, no theme-var declarations in pj2.css
+    var stray = (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []).filter(function (h) {
+      return !FALLBACK_HEXES[h.toLowerCase()];
+    });
+    line(!stray.length, "pj2.css hexes beyond the no-JS allowlist: " + (stray.join(", ") || "none"));
+    var decls = css.match(/(--(?:pj2|tb)[\w-]*)\s*:/g) || [];
+    line(!decls.length, "pj2.css --pj2*/--tb-* declarations: " + (decls.join(", ") || "none"));
+
+    // 2 · every consumed variable is emitted for every track; no dead tokens
+    var consumed = {};
+    css.replace(/var\(\s*(--[\w-]+)/g, function (_, n) { consumed[n] = 1; return _; });
+    var missing = [], emittedAll = {};
+    TRACKS.forEach(function (tr) {
+      var scope = {};
+      var night = genBlocks['[data-pj2-theme][data-track="' + tr + '"]'] || {};
+      var tab = genBlocks['.pj2-tab[data-track="' + tr + '"]'] || {};
+      var k;
+      for (k in night) { scope[k] = 1; emittedAll[k] = 1; }
+      for (k in tab) { scope[k] = 1; emittedAll[k] = 1; }
+      for (k in consumed) if (!(k in scope)) missing.push(tr + " " + k);
+    });
+    line(!missing.length, "consumed vars not emitted (silent-inherit bugs): " + (missing.join(", ") || "none"));
+    var dead = [];
+    for (var k in emittedAll) if (!(k in consumed)) dead.push(k);
+    line(!dead.length, "emitted tokens no rule consumes (dead tokens): " + (dead.join(", ") || "none"));
+
+    // 3 · computed-style probe: the cascade delivers the registry's values
+    Skin.injectTheme(document);
+    var probe = document.createElement("div");
+    probe.setAttribute("data-pj2-theme", "");
+    probe.style.display = "none";
+    var tabProbe = document.createElement("div");
+    tabProbe.className = "pj2-tab";
+    var logProbe = document.createElement("div");
+    logProbe.className = "pj2-log-block";
+    probe.appendChild(tabProbe);
+    probe.appendChild(logProbe);
+    document.body.appendChild(probe);
+    var fails = [], checks = 0;
+    TRACKS.forEach(function (tr) {
+      ["night", "parchment"].forEach(function (binding) {
+        probe.setAttribute("data-track", tr);
+        probe.setAttribute("data-binding", binding);
+        tabProbe.setAttribute("data-track", tr);
+        var want = {}, kk;
+        var night = genBlocks['[data-pj2-theme][data-track="' + tr + '"]'] || {};
+        for (kk in night) want[kk] = night[kk];
+        if (binding === "parchment") {
+          var parch = genBlocks['[data-pj2-theme][data-binding="parchment"][data-track="' + tr + '"]'] || {};
+          for (kk in parch) want[kk] = parch[kk];
+        }
+        var cs = getComputedStyle(probe);
+        for (kk in want) {
+          checks++;
+          var got = cs.getPropertyValue(kk).trim().replace(/\s+/g, " ");
+          if (got !== want[kk].replace(/\s+/g, " ")) fails.push(tr + "/" + binding + " " + kk);
+        }
+        var tabWant = genBlocks['.pj2-tab[data-track="' + tr + '"]'] || {};
+        var tcs = getComputedStyle(tabProbe);
+        for (kk in tabWant) {
+          checks++;
+          if (tcs.getPropertyValue(kk).trim().replace(/\s+/g, " ") !== tabWant[kk].replace(/\s+/g, " ")) {
+            fails.push("tab " + tr + " " + kk);
+          }
+        }
+        if (tr === "library" && binding === "parchment") {
+          checks++;
+          var li = getComputedStyle(logProbe).getPropertyValue("--pj2-ink0").trim();
+          if (li !== Skin.palette("library", "night").text[0]) fails.push("log-block night-ink restore");
+        }
+      });
+    });
+    document.body.removeChild(probe);
+    line(!fails.length, "computed-style probe, " + checks + " values across 6 combos: "
+      + (fails.length ? fails.join(", ") : "all match the registry"));
+
+    host.innerHTML = out.join("");
+  }).catch(function (err) {
+    host.innerHTML = '<div class="exc">theme guard skipped — pj2.css not fetchable (' + err + "); serve over http</div>";
+  });
+}
+
 /* ---------------- boot ---------------- */
 function boot() {
   var seed = parseInt(document.getElementById("seed").value, 10) || 1;
@@ -307,6 +425,7 @@ function boot() {
   drawDithers();
   buildStacks();
   drawContrast();
+  themeGuard();
 }
 document.getElementById("rebake").addEventListener("click", function () {
   bakePapers(parseInt(document.getElementById("seed").value, 10) || 1);

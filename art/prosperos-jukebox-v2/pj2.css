@@ -10,20 +10,26 @@
    Jacquard 12, three steps of ink aging. §8 Q1: NO CRT/scanline effects —
    the retro carrier is paper and pixels, not phosphor.
 
-   THE SKINNING CONTRACT: every per-track custom property below is set by a
-   [data-track="…"] block on .pj2-app, and every hex in those blocks is
-   VERBATIM from pj2-skin.js's palette registry (PALETTES / INK_AGE — §2's
-   locked ramps). Cabinet chrome (wood, brass, captions) is the CONSTANT
-   frame and keeps its own small inventory, inherited from the mockups'
-   proven chrome strips. The art-pixel unit U = 2 CSS px: all chrome borders,
-   bevels and dither stripes are multiples of 2px.
+   THE SKINNING CONTRACT (theme refactor, owner 2026-08-31): this file
+   declares NO per-track colors. pj2-skin.js's palette registry is the single
+   source of truth; PJ2.Skin.injectTheme() (called from index.php's head)
+   serializes it into <style id="pj2-theme-vars"> — every track×binding block
+   of --pj2-* (folio/ink/accent) and --pj2c-* (cabinet chrome) custom
+   properties, keyed on [data-pj2-theme][data-track][data-binding] attributes
+   carried by #pj2-desk (and mirrored on #pj2-app for the structural
+   selectors below). This file only CONSUMES the variables. The few literal
+   hexes that remain are the documented no-JS fallbacks inside var(…, #hex) —
+   with scripts off only .pj2-desk and .pj2-nojs render. skin-test.html's
+   drift guard asserts both directions (no stray hexes here; no dead tokens
+   emitted). The art-pixel unit U = 2 CSS px: all chrome borders, bevels and
+   dither stripes are multiples of 2px.
    ========================================================================== */
 
 /* ---------------------------------------------------------------------------
    THE DESK — the site's near-black void; the folio floats on it
    ------------------------------------------------------------------------- */
 .pj2-desk {
-  background: #0b0a08;
+  background: var(--pj2c-desk, #0b0a08); /* fallback: the no-JS ground */
   padding: 26px 12px 48px;
   font-family: "VT323", monospace;
 }
@@ -31,154 +37,11 @@
 .pj2-app {
   max-width: 1392px;
   margin: 0 auto;
-
-  /* chrome constants — the cabinet's own wood-and-brass inventory */
-  --pj2c-wood-hi: #201613;
-  --pj2c-wood: #17120b;
-  --pj2c-wood-lo: #120c09;
-  --pj2c-wood-edge: #0b0705;
-  --pj2c-wood-bevel: #2e211a;
-  --pj2c-brass: #3a2d18;
-  --pj2c-brass-hi: #6e5626;
-  --pj2c-brass-lo: #1d1509;
-  --pj2c-caption: #6b6252;
-  --pj2c-bone: #c7b795;
-  --pj2c-slot: #0f0c07;
-  --pj2c-wax-rim: #5e2018;
 }
 
-/* ---------------------------------------------------------------------------
-   PER-TRACK SKINS — hexes verbatim from pj2-skin.js PALETTES / INK_AGE
-   ------------------------------------------------------------------------- */
-/* NIGHT FOLIO (PLAN-NIGHT-FOLIO §C): the folio interior is the track's
-   night ground; parchment survives only in the thin frame + the tabs.
-   Library's apparatus ink is the amber phosphor ramp. */
-.pj2-app[data-track="library"] {
-  --pj2-void: #0b0a08;
-  --pj2-paper: #0a0805;        /* the night ground — one surface everywhere */
-  --pj2-window: #0a0805;       /* the WINDOW ground — spiral.bg, binding-proof */
-  --pj2-paper-lite: #120d07;   /* the grain lift                            */
-  --pj2-paper-deep: #060402;
-  --pj2-paper-edge: #b49a68;   /* the thin parchment FRAME tone             */
-  --pj2-ink0: #ffdc82;
-  --pj2-ink1: #ffc878;
-  --pj2-ink2: #b4823c;
-  --pj2-ink3: #785f32;
-  --pj2-accent: #c9a227;       /* gilt carries rubric's body-size duty on night */
-  --pj2-accent2: #b0553c;      /* rubric-1: display-size accents only       */
-  --pj2-gilt: #c9a227;
-  --pj2-gilt2: #e8c95a;
-  --pj2-age0: #ffdc82;         /* INK_AGE.library, all three steps          */
-  --pj2-age1: #ffc878;
-  --pj2-age2: #b4823c;
-  --pj2-fill-a: #c9a227;       /* legend slider dither stripe pair          */
-  --pj2-fill-b: #4d3c10;
-  --pj2-mute-on: #c7b795;      /* the pixel mute square, filled = audible   */
-  --pj2-head-font: "Jacquard 12", "VT323", monospace; /* §2: blackletter    */
-  --pj2-head-transform: none;
-  --pj2-head-spacing: 0.02em;
-}
-
-.pj2-app[data-track="sycorax"] {
-  --pj2-void: #070605;
-  --pj2-paper: #08070f;        /* the night ground                           */
-  --pj2-window: #08070f;       /* the WINDOW ground — spiral.bg, binding-proof */
-  --pj2-paper-lite: #0e0c17;
-  --pj2-paper-deep: #060509;
-  --pj2-paper-edge: #453729;   /* the thin soot-rag FRAME tone               */
-  --pj2-ink0: #d8cfc0;         /* bone carries ALL the data on soot          */
-  --pj2-ink1: #b3a68e;
-  --pj2-ink2: #7d715c;
-  --pj2-ink3: #7d715c;
-  --pj2-accent: #c4b5fd;       /* bright witch-light: the data-legal accent  */
-  --pj2-accent2: #9b87b8;
-  --pj2-gilt: #93392b;         /* blood: rubrication BESIDE bone only        */
-  --pj2-gilt2: #6e2a22;
-  --pj2-age0: #d8cfc0;         /* INK_AGE.sycorax                            */
-  --pj2-age1: #b3a68e;
-  --pj2-age2: #7d715c;
-  --pj2-fill-a: #9b87b8;
-  --pj2-fill-b: #2a2433;
-  --pj2-mute-on: #b3a68e;
-  --pj2-head-font: "Jacquard 12", "VT323", monospace; /* bone-on-soot caps  */
-  --pj2-head-transform: none;
-  --pj2-head-spacing: 0.02em;
-}
-
-.pj2-app[data-track="ariel"] {
-  --pj2-void: #05070c;
-  --pj2-paper: #06090e;        /* the night ground                           */
-  --pj2-window: #06090e;       /* the WINDOW ground — spiral.bg, binding-proof */
-  --pj2-paper-lite: #0b1119;
-  --pj2-paper-deep: #04060a;
-  --pj2-paper-edge: #22345a;   /* the thin engraved-plate FRAME tone         */
-  --pj2-ink0: #d8e4ec;         /* silver ink                                 */
-  --pj2-ink1: #a8c0d4;
-  --pj2-ink2: #6e8aa4;
-  --pj2-ink3: #6e8aa4;
-  --pj2-accent: #ecd28a;       /* gilt-1: data-legal on plate                */
-  --pj2-accent2: #d4af5f;
-  --pj2-gilt: #d4af5f;
-  --pj2-gilt2: #ecd28a;
-  --pj2-age0: #d8e4ec;         /* INK_AGE.ariel                              */
-  --pj2-age1: #a8c0d4;
-  --pj2-age2: #6e8aa4;
-  --pj2-fill-a: #d4af5f;
-  --pj2-fill-b: #4a3d22;
-  --pj2-mute-on: #a04838;      /* registry rule: "rose: chrome accent (mute square) only" */
-  --pj2-head-font: "VT323", monospace; /* §2: engraved small caps, not blackletter */
-  --pj2-head-transform: uppercase;
-  --pj2-head-spacing: 0.18em;
-}
-
-/* ---------------------------------------------------------------------------
-   THE BINDING SWITCH — data-binding="parchment" on .pj2-app restores the
-   windowed codex page (PR #24's dress): parchment vars + the old slim
-   folio chrome. The default (night) lives in the base blocks above.
-   ------------------------------------------------------------------------- */
-.pj2-app[data-binding="parchment"][data-track="library"] {
-  --pj2-paper: #e3d3a8;
-  --pj2-paper-lite: #efe3c0;
-  --pj2-paper-deep: #d0bc8c;
-  --pj2-paper-edge: #8a704a;
-  --pj2-ink0: #2e2114;
-  --pj2-ink1: #4a3620;
-  --pj2-ink2: #6e5638;
-  --pj2-ink3: #93794f;
-  --pj2-accent: #8e3b2c;
-  --pj2-accent2: #b0553c;
-  --pj2-age0: #2e2114;
-  --pj2-age1: #4a3620;
-  --pj2-age2: #6e5638;
-}
-.pj2-app[data-binding="parchment"][data-track="sycorax"] {
-  --pj2-paper: #241d17;
-  --pj2-paper-lite: #322820;
-  --pj2-paper-deep: #1a1512;
-  --pj2-paper-edge: #0d0b09;
-}
-.pj2-app[data-binding="parchment"][data-track="ariel"] {
-  --pj2-paper: #16233f;
-  --pj2-paper-lite: #22345a;
-  --pj2-paper-deep: #101a30;
-  --pj2-paper-edge: #05070c;
-}
-/* The log's window keeps the NIGHT ink on the parchment binding, exactly as
-   inWindowInk() does for the canvas panels: a panel drawn in a night window
-   uses the night palette even while the page is paper. Only Library's
-   parchment block re-inks (Sycorax and Ariel override paper tones alone), so
-   only Library needs restoring — the values are its night block's, verbatim. */
-.pj2-app[data-binding="parchment"][data-track="library"] .pj2-log-block {
-  --pj2-ink0: #ffdc82;
-  --pj2-ink1: #ffc878;
-  --pj2-ink2: #b4823c;
-  --pj2-ink3: #785f32;
-  --pj2-accent: #c9a227;
-  --pj2-accent2: #b0553c;
-  --pj2-age0: #ffdc82;
-  --pj2-age1: #ffc878;
-  --pj2-age2: #b4823c;
-}
+/* (the per-track skin blocks, the parchment binding vars, the chrome-constant
+   inventory, and the log's night-ink restore all live in the GENERATED sheet
+   now — see the contract note above. What remains below is structure.) */
 
 .pj2-app[data-binding="parchment"] .pj2-folio {
   border: 2px solid var(--pj2-paper-edge);
@@ -195,8 +58,8 @@
   max-width: 1392px;
   margin: 0 auto 14px;
   padding: 10px 14px;
-  border: 2px solid #3a2d18;
-  color: #c7b795;
+  border: 2px solid var(--pj2c-btn-face, #3a2d18); /* fallbacks: no-JS dress */
+  color: var(--pj2c-label, #c7b795);
   font-size: 18px;
   letter-spacing: 0.06em;
 }
@@ -214,7 +77,7 @@
   font-size: 40px;
   line-height: 1;
   text-align: center;
-  color: var(--pj2c-bone);
+  color: var(--pj2c-label);
   letter-spacing: 0.02em;
   margin: 0 0 12px;
 }
@@ -250,7 +113,7 @@
   padding: 8px 8px 7px;
   background: var(--tb-bg, #241d17);
   color: var(--tb-ink, #b3a68e);
-  border: 2px solid var(--pj2c-wood-edge);
+  border: 2px solid var(--pj2c-panel-edge);
   box-shadow: inset 0 2px 0 var(--tb-edge, #453729);
   cursor: pointer;
   clip-path: polygon(
@@ -259,32 +122,13 @@
     100% 100%, 0 100%
   );
 }
-.pj2-tab:hover { color: var(--pj2c-bone); }
+.pj2-tab:hover { color: var(--pj2c-label); }
 /* clip-path would swallow an outer outline — focus draws inside the border */
-.pj2-tab:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: -6px; }
+.pj2-tab:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: -6px; }
 
-/* each tab keeps its own palette even while idle (v1's multi-colored tab rule) */
-.pj2-tab[data-track="library"] {
-  --tb-bg: linear-gradient(180deg, #4a3620, #2e2114 70%);
-  --tb-ink: #c9a227;
-  --tb-edge: #6e5638;
-  --tb-open-bg: linear-gradient(180deg, #efe3c0, #e3d3a8 75%);
-  --tb-open-ink: #2e2114;
-}
-.pj2-tab[data-track="sycorax"] {
-  --tb-bg: linear-gradient(180deg, #322820, #0d0b09 70%);
-  --tb-ink: #b3a68e;
-  --tb-edge: #453729;
-  --tb-open-bg: linear-gradient(180deg, #322820, #241d17 75%);
-  --tb-open-ink: #d8cfc0;
-}
-.pj2-tab[data-track="ariel"] {
-  --tb-bg: linear-gradient(180deg, #22345a, #101a30 70%);
-  --tb-ink: #a8c0d4;
-  --tb-edge: #2e4a7a;
-  --tb-open-bg: linear-gradient(180deg, #22345a, #16233f 75%);
-  --tb-open-ink: #d8e4ec;
-}
+/* (each tab keeps its own palette even while idle — v1's multi-colored tab
+   rule. The per-tab --tb-* values are emitted by the generated sheet from
+   each track's registry `tab` entry.) */
 
 /* the active tab: raised/open — taller, in its book's paper, no hover shift */
 .pj2-tab.is-active {
@@ -510,9 +354,9 @@
    ------------------------------------------------------------------------- */
 .pj2-cabinet {
   margin-top: 14px;
-  background: linear-gradient(180deg, var(--pj2c-wood-hi) 0%, var(--pj2c-wood) 55%, var(--pj2c-wood-lo) 100%);
-  border: 2px solid var(--pj2c-wood-edge);
-  box-shadow: inset 0 2px 0 var(--pj2c-wood-bevel), inset 0 -2px 0 var(--pj2c-wood-edge);
+  background: linear-gradient(180deg, var(--pj2c-panel-hi) 0%, var(--pj2c-panel) 55%, var(--pj2c-panel-lo) 100%);
+  border: 2px solid var(--pj2c-panel-edge);
+  box-shadow: inset 0 2px 0 var(--pj2c-panel-bevel), inset 0 -2px 0 var(--pj2c-panel-edge);
   clip-path: polygon(
     0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
     calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
@@ -557,21 +401,21 @@
   font-family: "VT323", monospace;
   font-size: 18px;
   letter-spacing: 0.08em;
-  background: var(--pj2c-brass);
-  color: #e8c95a;
+  background: var(--pj2c-btn-face);
+  color: var(--pj2c-btn-text);
   border: 0;
   padding: 10px 14px;
   cursor: pointer;
-  box-shadow: inset -2px -2px 0 var(--pj2c-brass-lo), inset 2px 2px 0 var(--pj2c-brass-hi);
+  box-shadow: inset -2px -2px 0 var(--pj2c-btn-lo), inset 2px 2px 0 var(--pj2c-btn-hi);
 }
 .pj2-pushplate:active,
-.pj2-pushplate.is-pressed { box-shadow: inset 2px 2px 0 var(--pj2c-brass-lo); }
+.pj2-pushplate.is-pressed { box-shadow: inset 2px 2px 0 var(--pj2c-btn-lo); }
 .pj2-pushplate.is-lit {
-  background: #c9a227;
-  color: #2e2114;
-  box-shadow: inset -2px -2px 0 #8a6a14, inset 2px 2px 0 #f0daa0;
+  background: var(--pj2c-btn-lit-face);
+  color: var(--pj2c-btn-lit-text);
+  box-shadow: inset -2px -2px 0 var(--pj2c-btn-lit-lo), inset 2px 2px 0 var(--pj2c-btn-lit-hi);
 }
-.pj2-pushplate:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+.pj2-pushplate:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: 2px; }
 
 /* --- the wax seal: typed seed + re-stamp ----------------------------------- */
 .pj2-seal-wrap {
@@ -593,13 +437,13 @@
   font-family: "VT323", monospace;
   font-size: 16px;
   letter-spacing: 0.04em;
-  color: #f0d9c8;
+  color: var(--pj2c-seal-num);
   text-shadow: 1px 1px 0 var(--pj2c-wax-rim);
   background: transparent;
   border: 0;
   padding: 0;
 }
-.pj2-seal-num:focus { outline: 1px dotted #f0d9c8; outline-offset: 2px; }
+.pj2-seal-num:focus { outline: 1px dotted var(--pj2c-seal-num); outline-offset: 2px; }
 .pj2-seal-stack.is-stamping { animation: pj2-stamp 280ms steps(4, end); }
 @keyframes pj2-stamp {
   0%   { transform: translateY(-6px) scale(1.12); }
@@ -628,14 +472,14 @@
 .pj2-lamp-track {
   position: relative;
   height: 14px;
-  border: 2px solid var(--pj2c-brass);
+  border: 2px solid var(--pj2c-control-edge);
   background: var(--pj2c-slot);
 }
 .pj2-lamp-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 60%;
-  background: repeating-linear-gradient(90deg, #c9a227 0 2px, #7a6216 2px 4px);
+  background: repeating-linear-gradient(90deg, var(--pj2c-lamp-a) 0 2px, var(--pj2c-lamp-b) 2px 4px);
   pointer-events: none;
 }
 .pj2-lamp-thumb {
@@ -644,7 +488,7 @@
   left: calc(60% - 3px);
   width: 6px;
   height: 18px;
-  background: #e8c95a;
+  background: var(--pj2c-lamp-thumb);
   pointer-events: none;
 }
 .pj2-lamp-track input[type="range"] {
@@ -707,7 +551,7 @@
 .pj2-legend-name {
   flex: 0 0 120px;  /* "AEOLIAN HARP" must fit un-clipped */
   font-size: 16px;
-  color: var(--pj2c-bone);
+  color: var(--pj2c-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   overflow: hidden;
@@ -718,7 +562,7 @@
   position: relative;
   flex: 1 1 auto;
   height: 12px;
-  border: 2px solid var(--pj2c-brass);
+  border: 2px solid var(--pj2c-control-edge);
   background: var(--pj2c-slot);
 }
 .pj2-legend-fill {
@@ -732,7 +576,7 @@
   top: -3px;
   width: 4px;
   height: 14px;
-  background: var(--pj2c-bone);
+  background: var(--pj2c-thumb);
   pointer-events: none; /* thumb position is unquantized — left set in % by JS */
 }
 .pj2-legend-slider input[type="range"] {
@@ -764,7 +608,7 @@
   cursor: pointer;
 }
 .pj2-legend-mute.is-on { background: var(--pj2-mute-on); }
-.pj2-legend-mute:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+.pj2-legend-mute:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: 2px; }
 /* the solo square: the same pixel, lit in the track's accent instead of bone */
 .pj2-legend-solo {
   flex: 0 0 14px;
@@ -776,7 +620,7 @@
   cursor: pointer;
 }
 .pj2-legend-solo.is-on { background: var(--pj2-accent); }
-.pj2-legend-solo:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+.pj2-legend-solo:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: 2px; }
 
 /* --- the expand chevron + the detail strip (mixing desk II/III) ---------- */
 .pj2-legend-chev {
@@ -793,8 +637,8 @@
   color: var(--pj2c-caption);
   text-align: center;
 }
-.pj2-legend-chev.is-open { color: var(--pj2c-bone); }
-.pj2-legend-chev:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 1px; }
+.pj2-legend-chev.is-open { color: var(--pj2c-label); }
+.pj2-legend-chev:focus-visible { outline: 2px solid var(--pj2c-label); outline-offset: 1px; }
 /* the detail strip: unfolds beneath its row, indented past the chevron +
    sigil so it reads as belonging to the name above. Holds the M/S squares
    (with captions), the RATE throw + readout, and the fine-tune knobs;
@@ -848,7 +692,7 @@
   text-align: center;
   font-size: 13px;
   letter-spacing: 0.12em;
-  color: #3f3628;
+  color: var(--pj2c-build, #3f3628);
 }
 .pj2-build-sep { margin: 0 0.5em; }
 

@@ -97,9 +97,10 @@
   }
 
   // --------------------------------------------------------------------------
-  // TRACK TABLE — one row per book. Wax/sigil tints are cabinet-chrome duty:
-  // wax bodies come from each track's registry accent ramp; the rim shades
-  // and the bone sigil ink are the cabinet's own constants (mockup chrome).
+  // TRACK TABLE — one row per book: wiring only (namespace, captions, the
+  // voice→sigil map). Colors — wax bodies, rims, sigil tints — come from the
+  // registry's per-track `control` group (PJ2.Skin.palette(key).control);
+  // this table holds no hexes (theme refactor, owner 2026-08-31).
   // --------------------------------------------------------------------------
   var TRACKS = ["library", "sycorax", "ariel"];
   var TRACK = {
@@ -113,8 +114,6 @@
         drone: "voice-drone", hum: "quill", harpsichord: "voice-harp",
         musicbox: "voice-box", halo: "sigil-sol",
       },
-      sigilTint: "#c7b795", sigilTint2: "#c9a227",           // bone + gilt (chrome duty)
-      wax: ["#8e3b2c", "#b0553c"], waxRim: "#5e2018", waxFleck: 0.72,
     },
     sycorax: {
       ns: "Sycorax",
@@ -126,8 +125,6 @@
         boneflute: "voice-boneflute", percussion: "voice-protodrum",
         ambient: "pose-veil",
       },
-      sigilTint: "#b3a68e", sigilTint2: "#9b87b8",           // bone-1 + dim witch
-      wax: ["#6e2a22", "#93392b"], waxRim: "#0d0b09", waxFleck: 0.72,
     },
     ariel: {
       ns: "Ariel",
@@ -138,10 +135,16 @@
         flutter: "voice-flutter", bass: "voice-bass", aeolian: "voice-aeolian",
         ambient: "voice-gust", halo: "star",
       },
-      sigilTint: "#a8c0d4", sigilTint2: "#d4af5f",           // silver-1 + gilt-0
-      wax: ["#a04838", "#d4af5f"], waxRim: "#05070c", waxFleck: 0.9,
     },
   };
+
+  // the registry's chrome-duty color group for a track (wax, sigils, fills)
+  function controlOf(track) {
+    try {
+      if (window.PJ2 && PJ2.Skin) return PJ2.Skin.palette(track).control;
+    } catch (e) {}
+    return null;
+  }
 
   // --------------------------------------------------------------------------
   // STATE
@@ -304,7 +307,7 @@
     function note(track) {
       try {
         var pal = window.PJ2 && PJ2.Skin ? PJ2.Skin.palette(track) : null;
-        var paperTone = pal ? (pal.paper ? pal.paper[1] : pal.plate[1]) : "#e3d3a8";
+        var paperTone = pal ? pal.surface[1] : "#e3d3a8";
         var inkTone = pal ? pal.primary : "#2e2114";
         var r = plate.getBoundingClientRect();
         var w = Math.max(2, Math.round(r.width)) || 640;
@@ -385,6 +388,11 @@
     var def = TRACK[activeKey];
     var app = $("pj2-app");
     if (app) app.setAttribute("data-track", activeKey);
+    // the desk carries the theme vars (generated sheet keys on
+    // [data-pj2-theme]) so elements OUTSIDE .pj2-app — the desk ground, the
+    // build stamp, the nojs lines — follow the track too
+    var desk = $("pj2-desk");
+    if (desk) desk.setAttribute("data-track", activeKey);
 
     for (var i = 0; i < TRACKS.length; i++) {
       var k = TRACKS[i];
@@ -516,7 +524,8 @@
   function drawSeal() {
     var cv = $("pj2-seal");
     if (!cv) return;
-    var def = TRACK[activeKey];
+    var def = controlOf(activeKey);
+    if (!def) return; // no registry, no seal — pj2-skin.js failed to load
     try {
       cv.width = 84; cv.height = 84;
       var c = cv.getContext("2d");
@@ -616,8 +625,9 @@
   // built there.
   // --------------------------------------------------------------------------
   function stampSigil(cv, track, layerKey, label) {
-    var def = TRACK[track];
-    var name = def.sigils[layerKey] || null;
+    var name = TRACK[track].sigils[layerKey] || null;
+    var ctl = controlOf(track);
+    if (!ctl) return;
     try {
       var at = (window.PJ2 && PJ2.Skin) ? PJ2.Skin.atlas(track) : null;
       if (at && name && at.has(name)) {
@@ -627,7 +637,7 @@
         cv.style.height = (cell.h * 2) + "px";
         var c = cv.getContext("2d");
         c.imageSmoothingEnabled = false;
-        at.stamp(c, name, 0, 0, { u: 1, align: "corner", tint: def.sigilTint, tint2: def.sigilTint2 });
+        at.stamp(c, name, 0, 0, { u: 1, align: "corner", tint: ctl.sigil, tint2: ctl.sigil2 });
         return;
       }
       // No authored cell for this layer: a scribal initial in the same ink.
@@ -635,7 +645,7 @@
       cv.style.width = "24px"; cv.style.height = "24px";
       var c2 = cv.getContext("2d");
       c2.imageSmoothingEnabled = false;
-      c2.fillStyle = def.sigilTint;
+      c2.fillStyle = ctl.sigil;
       c2.font = '12px "VT323", monospace';
       c2.textAlign = "center";
       c2.textBaseline = "middle";
@@ -1379,6 +1389,12 @@
     function applyBinding(b, persist) {
       var app = $("pj2-app");
       if (app) app.setAttribute("data-binding", b);
+      var desk = $("pj2-desk");
+      if (desk) desk.setAttribute("data-binding", b);
+      // keep Skin's mode-global honest even if the viz failed to load
+      // (viz.setBinding repeats this call harmlessly — it early-returns on
+      // an unchanged binding but setMode is idempotent anyway)
+      try { if (window.PJ2 && PJ2.Skin) PJ2.Skin.setMode(b); } catch (e) {}
       if (viz && viz.setBinding) { try { viz.setBinding(b); } catch (e) {} }
       if (bindingBtn) {
         bindingBtn.textContent = b === "night" ? "NIGHT ☽︎" : "PARCH ☰︎";
