@@ -63,7 +63,11 @@ api/chat copy.php
 # ─────────────────────────────────────────────────────────────
 # Generated debug/intermediate output and redundant local backups
 # ─────────────────────────────────────────────────────────────
-information-graphics/assets/rabelais-clips/svg_output/
+information-graphics/assets/rabelais-clips/svg_output/*
+# …except the two clips underworld-qr-card.html loads — publish ships
+# git-tracked files only, so an ignored file 404s live but works locally.
+!information-graphics/assets/rabelais-clips/svg_output/angel-bell-ringer.svg
+!information-graphics/assets/rabelais-clips/svg_output/demon-bell-ringer.svg
 information-graphics/prosperos-jukebox-backup-*/
 
 # Junk Drawer dev-mock SQLite database (JD_DEV_MOCK=1) — local only
