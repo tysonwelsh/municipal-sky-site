@@ -362,6 +362,23 @@
   var GAIN_CEILING = 0.05;
   var SHADOW_CEILING = 0.10;     // = the engine bass's own peak, 0.10 × vel
   var COMB_CEILING = 0.159;      // = 0.10 × 1.585, the wooden body's +4 dB
+  // PARTIAL_CEILING is the fourth, and it is the one the SUMMED bodies are
+  // held to. A gain node's envelope peak is not what a chain asks for when
+  // several partials, voices or parallel threads feed it: WebAudio starts
+  // every oscillator at phase 0, so at the onset they add ARITHMETICALLY.
+  // The widest chain on the page is BREEZE → STRINGS: four sawtooths at
+  // unit weight over the breeze's own 0.06 tone peak, i.e. 0.06 × 4 = 0.24.
+  // That crest is physics, not level: four bows at the same RMS as one sine
+  // peak 4/√4 = 2× higher, and the level contract this page is judged on is
+  // RMS (±1.5 dB against the engine's own layer). So the ceiling for a
+  // summed chain is the widest honest chain, 0.06 × 4 → 0.25, and NOTHING
+  // may exceed it. It is not a licence: every chain's true product now goes
+  // through capChain, __lab.maxShadowGain reports the product and not the
+  // envelope peak, and the ENVELOPE peak is still held to SHADOW_CEILING
+  // 0.10 by the same call. Two chains had to be trimmed to fit (the organ's
+  // chiff 0.9 → 0.35 of peak, the gamelan's clang 1.1 → 0.6) and the
+  // gamelan's ten partials were renormalised to sum to 1.5 instead of 2.9.
+  var PARTIAL_CEILING = 0.25;
   var maxGainSeen = 0;           // the loudest peak the PROTOTYPES have asked for
   var maxShadowSeen = 0;         // ...and the loudest a shadow has
   function capAt(v, what, ceiling, label) {
@@ -395,7 +412,20 @@
     if (v > ceiling) {
       err("chain ceiling: " + what + " asks for " + v.toFixed(4) + " (limit " + ceiling + ")");
     }
+    if (v > maxShadowSeen) maxShadowSeen = v;
     return v;
+  }
+  // capChain is the honest form, and every summed shadow body now uses it:
+  // `peak` is the envelope peak one gain node will show, `sumW` the total
+  // weight the chain feeds into it (partial gains + parallel threads +
+  // makeup). It holds the ENVELOPE peak to SHADOW_CEILING and the PRODUCT to
+  // `ceiling` (PARTIAL_CEILING unless a body documents its own), records the
+  // PRODUCT in maxShadowGain, and returns the envelope peak to schedule.
+  function capChain(peak, sumW, what, ceiling) {
+    var w = (sumW > 0) ? sumW : 1;
+    var pk = capAt(peak, what, SHADOW_CEILING, "shadow of an engine body");
+    capProduct(pk * w, what + " × " + w.toFixed(2) + " summed", ceiling || PARTIAL_CEILING);
+    return pk;
   }
 
   // ==========================================================================
@@ -851,7 +881,10 @@
     var src = c.createBufferSource();
     src.buffer = buf;
     src.loop = true;
-    src.playbackRate.setValueAtTime((sr / f) / n, t);   // pitch, exactly
+    // A looped buffer of n frames read at rate p sounds at p·sr/n, so the
+    // rate that lands f exactly is n·f/sr — NOT its reciprocal (that doubles
+    // the rounding error of n instead of cancelling it: F4 +11 c, E6 +39 c).
+    src.playbackRate.setValueAtTime(n * f / sr, t);   // pitch, exactly: p·sr/n === f
     // the lowpass that closes: bright × f → 1.2 f over 60 % of the ring
     var lp = c.createBiquadFilter();
     lp.type = "lowpass";
@@ -1420,17 +1453,19 @@
   var MATCH = {
     whistleReed: 0.578,   // 16 reed harmonics carry far more power than a 4-harmonic flute
     whistleChip: 1.915,   // a 4-bit pulse is spikier than it is loud: it needs lifting, not cutting
-    chimeGamelan: 1.871,  // four struck sines decay faster than two ringing bell waves
+    chimeGamelan: 3.420,  // ten small partials, the fundamental the quietest of them: re-measured
+                          // after the pot was re-voiced (it was 1.871 when the fundamental carried it)
     chimeGlass: 0.346,    // a swell has no decay: it holds where the bell has already gone
     flutterDrips: 1.149,  // a 45 ms chirp is shorter than the blip it replaces
-    flutterKalimba: 2.140,// a period buffer under a closing lowpass gives up much of its band
+    flutterKalimba: 2.310,// a period buffer under a closing lowpass gives up much of its band
+                          // (re-measured after the playbackRate fix moved the partials under the corner)
     bassBowed: 0.452,     // a sawtooth carries far more power than three triangle partials
     bassMarimba: 1.150,   // wood is finished in 0.65 s where the bass rings for 1.26
     breezeOrgan: 0.997,   // five harmonics, but each one small: it lands almost exactly on the sine
     breezeOrganSub: 1.00, // the 16' pedal is ONE sine — a pure flue needs no makeup
     breezeStrings: 0.856, // four sawtooths sum INCOHERENTLY (they are detuned): √4, not 4
     aeolianBowl: 1.729,   // six oscillators in beating pairs, each at a third of the glass's gain
-    aeolianTape: 0.767,   // the engine's body, band-limited 220 Hz – 2.6 kHz
+    aeolianTape: 0.845,   // the engine's body, band-limited 220 Hz – 2.6 kHz
     ambientNight: 1.00,   // one-shot to one-shot; each body already carries its own peak
     ambientSeaside: 1.00  // (measured within 0.5 dB of the engine's pool with no correction)
   };
@@ -1533,7 +1568,10 @@
       lp.Q.setValueAtTime(0.7, t);
       // the bellows tremble: ±1.5 dB at 5 Hz on the note's own gain
       var mix = c.createGain();
-      var peak = capShadow(0.028 * vel * lvl * MATCH.whistleReed, "whistle REED");
+      // the chain: the note (1) under a ±1.5 dB tremble (0.16) and a breath
+      // thread in PARALLEL at 0.3 of peak — 1.46 in all, and the ceiling
+      // sees all of it (the breath used to escape the accounting entirely)
+      var peak = capChain(0.028 * vel * lvl * MATCH.whistleReed, 1.46, "whistle REED");
       var atk = Math.min(0.06, durS * 0.3);                 // a reed speaks at once
       var susEnd = Math.max(atk + 0.05, durS * 0.6);        // the engine's own shape kept
       PJ2.Voice.env(mix.gain, t, [[atk, peak], [susEnd - atk, peak], [Math.max(0.02, durS - susEnd), 0]]);
@@ -1635,24 +1673,48 @@
   // engine's (the first radicality run had them 6 % apart, which is a shade,
   // not a stop).
   var GAMELAN_R = [1, 1.52, 2.4, 3.9, 5.7], HARMONIC_R = [1, 2, 3, 4, 5];
-  var GAMELAN_G = [1, 0.6, 0.35, 0.2, 0.12];
+  // THE POT'S OWN BALANCE, not a bell's. The first cut kept the fundamental
+  // loudest (1, 0.6, 0.35, 0.2, 0.12) and the result measured a spectral
+  // centroid 5 % BELOW the engine's bell wave — a shade, not a stop. A
+  // bonang pot's radiated spectrum is dominated by its 2.4 and 3.9 partials,
+  // not by its fundamental, so the fundamental is now the QUIETEST voice in
+  // the set and the bronze partials carry the tone. Renormalised to sum to
+  // 1.5 (it was 2.9) so the summed product clears PARTIAL_CEILING.
+  var GAMELAN_G_RAW = [0.5, 0.9, 0.7, 0.5, 0.3];
+  var GAMELAN_SUM_TARGET = 1.5;
+  var GAMELAN_G = (function () {
+    var s = 0, i, out = [];
+    for (i = 0; i < GAMELAN_G_RAW.length; i++) s += GAMELAN_G_RAW[i];
+    for (i = 0; i < GAMELAN_G_RAW.length; i++) out.push(GAMELAN_G_RAW[i] * GAMELAN_SUM_TARGET / s);
+    return out;
+  })();
+  // the fundamental dies first, the bronze partials hold on: that is what
+  // keeps the centroid up through the decay as well as at the strike
+  var GAMELAN_DEC = [0.5, 0.75, 0.75, 0.6, 0.5];
+  var GAMELAN_CLANG = 0.6;
   // OMBAK — the beat between a gamelan's paired pots, tuned some tens of
-  // cents apart rather than the chime's two-to-four. At the bell's own pitch
-  // this is a 4–8 Hz shimmer, and no bell wave in the engine does it.
-  var GAMELAN_OMBAK = 4;
+  // cents apart rather than the chime's two-to-four. The first cut scaled the
+  // chime's own 2–4 cents by 4 (8–16 cents), which at the bell's pitch is a
+  // beat you must wait two seconds to hear on a body that only rings for
+  // one. The ombak is now FLAT and wide — 25 to 40 cents between the pots,
+  // the real interval a gamelan's pairs are tuned to — so the pot beats
+  // inside its own decay.
+  var GAMELAN_OMBAK_C = [25, 40];
   function shChimeGamelan(t, f, n, K, lvl) {
     var c = cap.ctx;
     var vel = (n.velocity != null) ? n.velocity : 0.8;
-    var det = rnd(2, 4) * dparam("chime", "detune", 1);
     var q = clamp(K.inharmonic, 0, 1);
     var r = mkRec("shadow:chime", t + 2.4);
     try {
-      var peak = capShadow(0.026 * vel * lvl * MATCH.chimeGamelan, "chime GAMELAN");
-      var omb = det * GAMELAN_OMBAK;
+      // the chain: ten partials summing to GAMELAN_SUM_TARGET, plus the
+      // clang in parallel — all of it through the ceiling
+      var peak = capChain(0.026 * vel * lvl * MATCH.chimeGamelan,
+                          GAMELAN_SUM_TARGET + GAMELAN_CLANG, "chime GAMELAN");
+      var omb = rnd(GAMELAN_OMBAK_C[0], GAMELAN_OMBAK_C[1]) / 2;
       for (var di = 0; di < 2; di++) {
         for (var i = 0; i < GAMELAN_R.length; i++) {
           var ratio = HARMONIC_R[i] + (GAMELAN_R[i] - HARMONIC_R[i]) * q;
-          var dec = (1.2 + 0.8 * Math.random()) * (i === 0 ? 1 : (i === 1 ? 0.75 : 0.5));
+          var dec = (1.2 + 0.8 * Math.random()) * GAMELAN_DEC[i];
           var o = c.createOscillator();
           o.type = "sine";
           o.frequency.setValueAtTime(f * ratio, t);
@@ -1673,7 +1735,7 @@
       bp.type = "bandpass";
       bp.frequency.setValueAtTime(1200, t);
       bp.Q.setValueAtTime(3, t);
-      PJ2.Voice.env(bu.gain.gain, t, [[0.002, peak * 1.1], [0.012, 0]]);
+      PJ2.Voice.env(bu.gain.gain, t, [[0.002, peak * GAMELAN_CLANG], [0.012, 0]]);
       bu.gain.connect(bp); bp.connect(plumb.shadow);
       r.sources.push(bu.src); r.gains.push(bu.gain); r.nodes.push(bp);
       track(r);
@@ -1699,7 +1761,8 @@
         var old = glassLive.shift();
         if (old && !old.dead) killOwnerRec(old, 0.3);
       }
-      var peak = capShadow(0.026 * vel * lvl * MATCH.chimeGlass, "chime BOWED GLASS");
+      // two unit sines + the 3rd partial (0.15) + the rub (0.12) into one env
+      var peak = capChain(0.026 * vel * lvl * MATCH.chimeGlass, 2.27, "chime BOWED GLASS");
       var env = c.createGain();
       env.connect(plumb.shadow);
       PJ2.Voice.env(env.gain, t, [[swell, peak], [durS, peak * 0.92], [0.8, 0]]);
@@ -1788,7 +1851,7 @@
     var vel = (n.velocity != null) ? n.velocity : 0.8;
     var r = mkRec("shadow:flutter", t + 0.45);
     try {
-      var pk = capShadow(0.04 * vel * lvl * MATCH.flutterDrips, "flutter DRIPS");
+      var pk = capChain(0.04 * vel * lvl * MATCH.flutterDrips, 1.5, "flutter DRIPS");
       var o = c.createOscillator();
       o.type = "sine";
       var f0 = f * Math.pow(2, K.depth);
@@ -1838,7 +1901,9 @@
       var src = c.createBufferSource();
       src.buffer = buf;
       src.loop = true;
-      src.playbackRate.setValueAtTime((sr / f) / nlen, t);
+      // exact: playbackRate · sr / nlen === f (the reciprocal doubles the
+      // rounding error of nlen — up to a quarter-tone sharp at E6)
+      src.playbackRate.setValueAtTime(nlen * f / sr, t);
       var lp = c.createBiquadFilter();
       lp.type = "lowpass";
       lp.Q.setValueAtTime(0.7, t);
@@ -1861,8 +1926,8 @@
       // ceiling: the envelope peak times the body's +4 dB (×1.585). This is
       // why COMB_CEILING exists and why maxShadowGain reports the product.
       var BODY_MAKEUP = 1.585;
-      var pk = capShadow(0.04 * vel * lvl * MATCH.flutterKalimba, "flutter KALIMBA");
-      capProduct(pk * BODY_MAKEUP, "flutter KALIMBA (+4 dB wooden body)", COMB_CEILING);
+      var pk = capChain(0.04 * vel * lvl * MATCH.flutterKalimba, BODY_MAKEUP,
+                        "flutter KALIMBA (+4 dB wooden body)", COMB_CEILING);
       PJ2.Voice.env(g.gain, t, [[0.003, pk], [ring * 0.3, pk * 0.3], [ring * 0.7, 0]]);
       src.connect(lp); lp.connect(body); body.connect(g); g.connect(plumb.shadow);
       src.start(t); src.stop(t + ring + 0.1);
@@ -1919,7 +1984,7 @@
     var total = atk + sus + rel;
     var r = mkRec("shadow:bass", t + total + 0.3);
     try {
-      var peak = capShadow(0.10 * vel * lvl * MATCH.bassBowed, "bass BOWED");
+      var peak = capChain(0.10 * vel * lvl * MATCH.bassBowed, 1.06, "bass BOWED");
       var o = c.createOscillator();
       o.type = "sawtooth";
       o.frequency.setValueAtTime(f, t);
@@ -1978,7 +2043,9 @@
     var dec = rnd(0.5, 0.8);
     var r = mkRec("shadow:bass", t + dec + 0.25);
     try {
-      var peak = capShadow(0.10 * vel * lvl * MATCH.bassMarimba, "bass MARIMBA");
+      // bar + 4th partial (`bar`) + 9.2nd (0.12) + the mallet tick (0.5)
+      var peak = capChain(0.10 * vel * lvl * MATCH.bassMarimba,
+                          1 + Math.max(0, K.bar) + 0.12 + 0.5, "bass MARIMBA");
       var g = c.createGain();
       g.connect(plumb.shadow);
       PJ2.Voice.env(g.gain, t, [[0.004, peak], [dec * 0.35, peak * 0.22], [dec * 0.65, 0]]);
@@ -2082,6 +2149,10 @@
   // sine at the pedal's own level (a 16' flue has no rank above it), which
   // is also why it needs no makeup of its own.
   var ORGAN_H = [1, 2, 3, 4, 6], ORGAN_G = [1, 0.5, 0.25, 0.18, 0.08];
+  // the chiff was 0.9 of the tone's peak — a wind transient nearly as loud
+  // as the pipe. 0.35 is still plainly audible and it buys the rank the
+  // headroom its five harmonics need under PARTIAL_CEILING.
+  var ORGAN_CHIFF = 0.35;
   function shBreezeOrgan(t, f, n, K, lvl) {
     var c = cap.ctx;
     var durS = Math.max(1, n.durS || 15);
@@ -2103,7 +2174,10 @@
         track(r);
         return;
       }
-      var peak = capShadow(sh.peak * lvl * MATCH.breezeOrgan, "breeze ORGAN");
+      // the rank's true weight: the 8' at 1 plus the four upper ranks at the
+      // `rank` knob, plus the chiff in parallel — the ceiling sees the sum
+      var rankW = 1 + (ORGAN_G[1] + ORGAN_G[2] + ORGAN_G[3] + ORGAN_G[4]) * Math.max(0, K.rank) + ORGAN_CHIFF;
+      var peak = capChain(sh.peak * lvl * MATCH.breezeOrgan, rankW, "breeze ORGAN");
       breezeEnv(g, t, sh, durS, peak);
       for (var i = 0; i < ORGAN_H.length; i++) {
         var amp = ORGAN_G[i] * (i === 0 ? 1 : K.rank);
@@ -2123,7 +2197,7 @@
       bp.type = "bandpass";
       bp.frequency.setValueAtTime(Math.min(12000, f * 2), t);
       bp.Q.setValueAtTime(2.5, t);
-      PJ2.Voice.env(bu.gain.gain, t, [[0.006, peak * 0.9], [0.034, 0]]);
+      PJ2.Voice.env(bu.gain.gain, t, [[0.006, peak * ORGAN_CHIFF], [0.034, 0]]);
       bu.gain.connect(bp); bp.connect(dest);
       r.sources.push(bu.src); r.gains.push(bu.gain); r.nodes.push(bp);
       r.gains.push(g);
@@ -2148,10 +2222,12 @@
       lp.Q.setValueAtTime(0.7, t);
       lp.connect(dest);
       var g = c.createGain();
-      var peak = capShadow(sh.peak * lvl * MATCH.breezeStrings, "breeze STRINGS");
+      var nVoice = (n.kind === "sub") ? 2 : 4;
+      // four bows at unit weight: THE widest chain on the page, and the one
+      // PARTIAL_CEILING is derived from
+      var peak = capChain(sh.peak * lvl * MATCH.breezeStrings, nVoice, "breeze STRINGS");
       breezeEnv(g, t, sh, durS, peak);
       g.connect(lp);
-      var nVoice = (n.kind === "sub") ? 2 : 4;
       for (var i = 0; i < nVoice; i++) {
         var o = c.createOscillator();
         o.type = "sawtooth";
@@ -2320,6 +2396,8 @@
   // signature — glass does not do it), a rim rub, and for the SUNG notes a
   // strike at the onset before the swell: the bowl is hit, then it sings.
   var BOWL_R = [1, 2.71, 4.9], BOWL_G = [1, 0.35, 0.12];
+  var BOWL_RUB = 0.08;
+  var BOWL_W = BOWL_G[0] + BOWL_G[1] + BOWL_G[2] + BOWL_RUB;
   function shAeolianBowl(t, f, n, K, lvl) {
     var c = cap.ctx;
     var s = aeoShape(n);
@@ -2328,16 +2406,17 @@
     if (atk + rel > durS - 0.1) { atk = durS * 0.42; rel = durS * 0.42; }
     var r = mkRec("shadow:aeolian", t + durS + 0.5);
     try {
-      var peak = capShadow(s.peak * lvl * MATCH.aeolianBowl, "aeolian SINGING BOWL");
+      var peak = capChain(s.peak * lvl * MATCH.aeolianBowl, BOWL_W, "aeolian SINGING BOWL");
       var g = c.createGain();
       g.connect(plumb.shadow);
-      if (n.kind === "sing") {
-        // the strike, then the swell — one anchored envelope, no seam
-        PJ2.Voice.env(g.gain, t, [[0.003, peak * 0.5], [Math.max(0.05, atk), peak],
-                                  [Math.max(0.05, durS - atk - rel), peak * 0.9], [rel, 0]]);
-      } else {
-        PJ2.Voice.env(g.gain, t, [[atk, peak], [Math.max(0.05, durS - atk - rel), peak * 0.9], [rel, 0]]);
-      }
+      // THE STRIKE IS THE BOWL, and it belongs to EVERY kind. The first cut
+      // gave it only to the sung notes, so a bed or a consort tone swelled
+      // in exactly as the engine's glass does — measured T20 5478 ms against
+      // the glass's 5631, i.e. the same event. A bowl is STRUCK and then it
+      // sings: 3 ms to half the peak, then the swell. One anchored envelope,
+      // no seam, and the attack time is now under 10 ms on all four kinds.
+      PJ2.Voice.env(g.gain, t, [[0.003, peak * 0.5], [Math.max(0.05, atk), peak],
+                                [Math.max(0.05, durS - atk - rel), peak * 0.9], [rel, 0]]);
       for (var i = 0; i < BOWL_R.length; i++) {
         for (var k = 0; k < 2; k++) {
           var o = c.createOscillator();
@@ -2356,7 +2435,7 @@
       bp.frequency.setValueAtTime(f * 2.71, t);
       bp.Q.setValueAtTime(12, t);
       var ng = c.createGain();
-      ng.gain.setValueAtTime(0.08, t);
+      ng.gain.setValueAtTime(BOWL_RUB, t);
       ns.connect(bp); bp.connect(ng); ng.connect(g);
       ns.start(t, ns.randomOffset); ns.stop(t + durS + 0.15);
       r.sources.push(ns); r.gains.push(g); r.gains.push(ng); r.nodes.push(bp);
@@ -2587,15 +2666,25 @@
   }
 
   // ---- NIGHT — the whole sky re-voiced nocturnal --------------------------
+  // An owl is not a pair of steady sine pips. Two hoots of UNEQUAL length
+  // (0.35 s then 0.5 s), each BENDING down as the breath runs out — a
+  // semitone on the first, a tone and a half on the second (anchored
+  // exponential ramps between positive endpoints) — over two and a half
+  // times the breath the first cut had. Without the bend and the breath it
+  // measured as a soft ocarina.
+  var OWL_HZ = [380, 340], OWL_LEN = [0.35, 0.5], OWL_BEND = [0.5, 1.5];
+  var OWL_BREATH = 0.25;
   function nightOwl(t, lvl) {
-    var r = ambRec(t + 1.4);
-    var pk = capShadow(0.02 * lvl * MATCH.ambientNight, "night owl");
-    var hz = [380, 340];
+    var r = ambRec(t + 1.6);
+    var pk = capChain(0.02 * lvl * MATCH.ambientNight, 1 + OWL_BREATH, "night owl");
     for (var i = 0; i < 2; i++) {
       var at = t + i * 0.55;
-      simpleTone(r, at, "sine", hz[i], [[0.09, pk], [0.16, pk * 0.7], [0.06, 0]]);
-      noiseBand(r, at, 0.3, "bandpass", hz[i] * 2, null, 4,
-                [[0.08, pk * 0.1], [0.22, 0]]);
+      var len = OWL_LEN[i];
+      var to = OWL_HZ[i] * Math.pow(2, -OWL_BEND[i] / 12);
+      simpleTone(r, at, "sine", OWL_HZ[i],
+                 [[0.09, pk], [len - 0.15, pk * 0.7], [0.06, 0]], null, [to, len]);
+      noiseBand(r, at, len + 0.05, "bandpass", OWL_HZ[i] * 2, null, 4,
+                [[0.08, pk * OWL_BREATH], [len - 0.08, 0]]);
     }
     track(r);
   }
@@ -2618,10 +2707,23 @@
     r.sources.push(o); r.gains.push(g); r.nodes.push(lp);
     track(r);
   }
+  // ONE pure sine at 1.3 kHz is a test tone, and it was the least radical
+  // body on the page. A bell is inharmonic and it is STRUCK: partials at
+  // 2.76 (the tierce/quint region) and 5.4, each decaying faster than the
+  // hum, over a 4 ms strike through a band at the partials.
+  var DBELL_R = [1, 2.76, 5.4], DBELL_G = [1, 0.4, 0.15], DBELL_DEC = [3, 1.6, 0.9];
+  var DBELL_STRIKE = 0.5;
   function nightDistantBell(t, lvl) {
     var r = ambRec(t + 3.4);
-    var pk = capShadow(0.014 * lvl * MATCH.ambientNight, "night distant bell");
-    simpleTone(r, t, "sine", 1300, [[0.005, pk], [3, pk * 0.03], [0.2, 0]]);
+    var w = DBELL_G[0] + DBELL_G[1] + DBELL_G[2] + DBELL_STRIKE;
+    var pk = capChain(0.014 * lvl * MATCH.ambientNight, w, "night distant bell");
+    for (var i = 0; i < DBELL_R.length; i++) {
+      simpleTone(r, t, "sine", 1300 * DBELL_R[i],
+                 [[0.005, pk * DBELL_G[i]], [DBELL_DEC[i], pk * 0.03], [0.2, 0]]);
+    }
+    // the strike — 4 ms of the hammer, up where the partials are
+    noiseBand(r, t, 0.05, "bandpass", 1300 * 2.76, null, 2,
+              [[0.001, pk * DBELL_STRIKE], [0.004, 0]]);
     track(r);
   }
   function nightRain(t, lvl) {
@@ -2651,7 +2753,8 @@
   var CHURCH_R = [1, 2.0, 2.4, 3.0], CHURCH_G = [1, 0.5, 0.35, 0.2];
   function nightChurchBell(t, lvl) {
     var r = ambRec(t + 4.4);
-    var pk = capShadow(0.018 * lvl * MATCH.ambientNight, "night church bell");
+    var pk = capChain(0.018 * lvl * MATCH.ambientNight,
+                      CHURCH_G[0] + CHURCH_G[1] + CHURCH_G[2] + CHURCH_G[3], "night church bell");
     for (var i = 0; i < CHURCH_R.length; i++) {
       simpleTone(r, t, "sine", 260 * CHURCH_R[i],
         [[0.006, pk * CHURCH_G[i]], [4 / (1 + i * 0.5), pk * 0.02], [0.2, 0]]);
@@ -2689,16 +2792,27 @@
   function seaWave(t, lvl) {
     var r = ambRec(t + 6.5);
     var pk = capShadow(0.018 * lvl * MATCH.ambientSeaside, "seaside wave");
-    noiseBand(r, t, 4, "lowpass", 900, 400, 0.7, [[1.2, pk], [2.8, pk * 0.75]]);
+    // the surge must reach ZERO before its source stops: the first cut ended
+    // the envelope at 0.75 of peak and stopped the noise 100 ms later, which
+    // is a step discontinuity — a soft thump on a page whose law is that
+    // nothing startles. The last 0.5 s takes it down.
+    noiseBand(r, t, 4.5, "lowpass", 900, 400, 0.7, [[1.2, pk], [2.8, pk * 0.75], [0.5, 0]]);
     noiseBand(r, t + 4, 2, "highpass", 1800, 3200, 0.7,
               [[0.3, pk * 0.45], [1.7, 0]]);
     track(r);
   }
-  var BUOY_R = [1, 2.0, 3.0], BUOY_G = [1, 0.45, 0.22];
+  // Partials at exactly 1, 2 and 3 are an ORGAN PIP with tremolo, not a
+  // bell: a struck bell's partials are inharmonic (the minor-third 2.4 is
+  // the one an ear names as "bell"). The buoy now carries the bell set
+  // 1 / 2.0 / 2.4 / 3.0 / 4.5 with a strike, and keeps its 0.5 Hz sway.
+  var BUOY_R = [1, 2.0, 2.4, 3.0, 4.5], BUOY_G = [1, 0.5, 0.4, 0.25, 0.1];
+  var BUOY_STRIKE = 0.5;
+  var BUOY_W = (function () { var w = BUOY_STRIKE, i;
+    for (i = 0; i < BUOY_G.length; i++) w += BUOY_G[i]; return w; })();
   function seaBuoy(t, lvl) {
     var c = cap.ctx;
     var r = ambRec(t + 2.9);
-    var pk = capShadow(0.016 * lvl * MATCH.ambientSeaside, "seaside bell buoy");
+    var pk = capChain(0.016 * lvl * MATCH.ambientSeaside, BUOY_W, "seaside bell buoy");
     var sway = c.createGain();
     sway.gain.setValueAtTime(0.75, t);
     sway.connect(plumb.shadow);
@@ -2934,7 +3048,7 @@
       desc: "The fragmenter. Its bursts and its lone ping in the pause are the engine's; the metal is not.",
       variants: [
         { v: "a", name: "A · GAMELAN (a bronze bonang pot)", cls: "bell → bronze",
-          note: "Partials at 1 / 1.52 / 2.4 / 3.9 instead of the harmonic series, each dropping ten cents over the first 40 ms — which is what struck bronze does and no bell wave ever will — over a mid clang. The `inharmonic` knob morphs the ratios back to 1 / 2 / 3 / 4 so you can hear exactly what the bronze is." },
+          note: "Partials at 1 / 1.52 / 2.4 / 3.9 / 5.7 instead of the harmonic series, and the FUNDAMENTAL is the quietest of them — a bonang pot radiates from its bronze partials, which is what puts this a third of an octave above the bell wave instead of below it. Each drops ten cents over the first 40 ms (struck bronze does; no bell wave ever will), over a mid clang. The two pots are tuned 25–40 cents apart, so the OMBAK beats inside the pot's own decay. The `inharmonic` knob morphs the ratios back to 1 / 2 / 3 / 4 / 5 so you can hear exactly what the bronze is." },
         { v: "b", name: "B · BOWED GLASS (a glass harmonica)", cls: "struck → bowed",
           note: "The same pitches SWELLED instead of struck: no attack at all, a wet finger on a rim, with a rub band at the third partial. A flight's chime cloud becomes a cloud of swells — capped at eight at once, oldest fading first over 0.3 s." }
       ],
@@ -2997,13 +3111,13 @@
       desc: "The bowed glass: landscape shimmer, the third melodic speaker, and the consort body under a cadence. All three are shadowed. Landscape class — the swells stay slow.",
       variants: [
         { v: "a", name: "A · SINGING BOWL", cls: "glass → bronze bowl",
-          note: "Partials at 1, 2.71 and 4.9, each a PAIR beating at a chosen number of Hz — the beat is the bowl's signature and glass does not do it — with a rim rub. The SUNG notes get a strike at the onset: the bowl is hit, then it sings." },
+          note: "Partials at 1, 2.71 and 4.9, each a PAIR beating at a chosen number of Hz — the beat is the bowl's signature and glass does not do it — with a rim rub. EVERY kind is STRUCK at the onset (3 ms, half peak) and then sings: bed, sharp4, sung and consort alike. Without the strike the bowl swelled in exactly as the glass does and measured as the same event; with it the attack is under 10 ms on all four. The beat opens at 3 Hz." },
         { v: "b", name: "B · WORN TAPE", cls: "glass → an old recording of the glass",
           note: "The engine's own body, put on a tape that has been played too often: WOW at 0.45 Hz (±25 cents) and FLUTTER at 6 Hz (±4 cents) on every oscillator, band-limited 220 Hz – 2.6 kHz, tape hiss while a note sounds, and the odd 120 ms dropout." }
       ],
       knobs: [
         LEVEL_KNOB, regKnob(0),
-        { key: "beat", label: "A · beat Hz — how fast the bowl's pairs beat", min: 0.3, max: 4, step: 0.1, def: 1.5, dp: 1 },
+        { key: "beat", label: "A · beat Hz — how fast the bowl's pairs beat", min: 0.3, max: 4, step: 0.1, def: 3, dp: 1 },
         { key: "wow", label: "B · wow — the tape's unsteadiness (wow + flutter)", min: 0, max: 2, step: 0.05, def: 1 },
         { key: "dropout", label: "B · dropout — chance of one 120 ms dip per note", min: 0, max: 1, step: 0.02, def: 0.3 }
       ],
@@ -3014,13 +3128,13 @@
       desc: "The eight one-shots the sky speaks with. Not a body swap: a whole change of hour and place, on the engine's own timings and weather gates.",
       variants: [
         { v: "a", name: "A · NIGHT", cls: "the day sky → the night sky",
-          note: "birdsong → an owl · bee → a frog · sparkle → a distant bell · leaf → rain-drops · wind chime → a far church bell · bubbles → a stream · gust → a colder gust · cricket stays a cricket, because a cricket is already nocturnal." },
+          note: "birdsong → an owl · bee → a frog · sparkle → a distant bell · leaf → rain-drops · wind chime → a far church bell · bubbles → a stream · gust → a colder gust · cricket stays a cricket (the ENGINE'S own, unchanged) · the gust is the engine's own through a 600 Hz highpass, i.e. colder, not new." },
         { v: "b", name: "B · SEASIDE", cls: "the day sky → another sky",
-          note: "birdsong → a gull · gust → a wave · sparkle → a bell buoy · leaf → shingle · cricket → a rope creak · bee → a far boat horn · wind chime → rigging · bubbles stay bubbles, because they were already the sea." }
+          note: "birdsong → a gull · gust → a wave · sparkle → a bell buoy · leaf → shingle · cricket → a rope creak · bee → a far boat horn · wind chime → rigging (the ENGINE'S own chime an octave up, half the decay) · bubbles stay bubbles (the ENGINE'S own, unchanged — they were already the sea)." }
       ],
       knobs: [LEVEL_KNOB, regKnob(0)],
       phraseLabel: "PLAY ONE OF EACH",
-      caveat: "All eight one-shots emit a note, so all eight are re-voiced. Two other things ride the same engine layer and would be SILENCED by muting it, so the shadow carries them: the boundary and release GUSTS (re-voiced, they are wind) and the JOINT PING — the lone bell that means \"the air goes still\" on the way into a hover or the release. The ping is rendered FAITHFULLY in all three positions: it is a boundary gesture, not a sky one-shot, and re-voicing it would move furniture this card was never asked to touch."
+      caveat: "All eight one-shots emit a note, so all eight are re-rendered — but FOUR of the sixteen bodies are the ENGINE'S OWN and the card will not pretend otherwise: NIGHT's cricket is the engine's cricket verbatim (a cricket is already nocturnal) and its colder gust is the engine's gust through a 600 Hz highpass; SEASIDE's bubbles are the engine's bubbles verbatim (they were already the sea) and its rigging is the engine's wind chime an octave up with half the decay — a transposition, not a new body. The other twelve are new instruments. Two more things ride the same engine layer and would be SILENCED by muting it, so the shadow carries them: the boundary and release GUSTS (re-voiced, they are wind) and the JOINT PING — the lone bell that means \"the air goes still\" on the way into a hover or the release. The ping is rendered FAITHFULLY in all three positions: it is a boundary gesture, not a sky one-shot, and re-voicing it would move furniture this card was never asked to touch."
     }
   ];
 
