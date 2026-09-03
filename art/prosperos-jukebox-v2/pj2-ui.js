@@ -135,10 +135,16 @@
       ns: "Ariel",
       folioNo: "f lydian · tonic 349",
       logHead: "chart annotations · the scribal log",
+      // rc.33: the lyre, the concertina, the handpan and the vibraphone have
+      // no authored atlas cell — stampSigil falls back to a scribal initial
+      // in the same ink (L · C · H · V), exactly as the Library's cello and
+      // its rc.31 voices have done since. Named here so the omission reads
+      // as a decision rather than an oversight.
       sigils: {
         breeze: "voice-breeze", whistle: "voice-whistle", chime: "voice-chime",
         flutter: "voice-flutter", bass: "voice-bass", aeolian: "voice-aeolian",
         ambient: "voice-gust", halo: "star",
+        lyre: null, concertina: null, handpan: null, vibraphone: null,
       },
     },
   };

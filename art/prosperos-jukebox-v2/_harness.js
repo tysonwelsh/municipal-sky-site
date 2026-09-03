@@ -4064,6 +4064,491 @@ function p3AmbientFires(r) {
     AD1.notes.length + " notes compared" +
     (A1.swallowed.length ? "; SWALLOWED: " + A1.swallowed[0] : ""));
 
+  // ---- ARIEL rc.33: four voices + roster ----
+  // The lyre, the concertina, the handpan and the vibraphone, and the scene
+  // roster that rests everybody somewhere. Everything here is read off the
+  // SAME A1 run the rows above read (no new engine drive except the two the
+  // rows name), so a failure here and a failure there are the same evening.
+  (function testAriel33() {
+    var i, j, k, n;
+    var A_NEW = ["lyre", "concertina", "handpan", "vibraphone"];
+
+    // notes of one voice, and gestures (notes sharing an onset are ONE
+    // gesture: a block, a dyad; a ROLL is a spread, so the lyre groups by
+    // its own roll window instead — see lyreRolls).
+    function nOf(R, voice) {
+      var o = [];
+      for (var a = 0; a < R.notes.length; a++) if (R.notes[a].voice === voice) o.push(R.notes[a]);
+      return o;
+    }
+    // tol CHAINS: a note within tol of the LAST one joins the gesture, so a
+    // four-tone answer 0.35 s apart is one answer however long it runs. The
+    // hold-and-rest laws keep two gestures of the same voice seconds apart,
+    // so a chain can never swallow the next one.
+    function group(notes, tol) {
+      var g = [];
+      for (var a = 0; a < notes.length; a++) {
+        var last = g.length ? g[g.length - 1] : null;
+        if (last && notes[a].t - last.t1 <= (tol || 1e-9)) { last.notes.push(notes[a]); last.t1 = notes[a].t; continue; }
+        g.push({ t0: notes[a].t, t1: notes[a].t, notes: [notes[a]] });
+      }
+      return g;
+    }
+    // A roll is at most (roll 0.8 max) + a hair wide; 1.0 s separates two rolls
+    // safely because the hold law keeps them a ring apart.
+    function lyreRolls(R) { return group(nOf(R, "lyre"), 1.0); }
+
+    var aRel = [];
+    for (i = 0; i < aWins.length; i++) {
+      if (aWins[i].scene === "release" && isFinite(aWins[i].t1)) aRel.push(aWins[i]);
+    }
+    // (its own counter — this section's i/j/k are the callers' and a helper
+    // that borrowed one would restart every loop that called it)
+    function relXAt(t) {
+      for (var a = 0; a < aRel.length; a++) {
+        if (t >= aRel[a].t0 && t < aRel[a].t1) return (t - aRel[a].t0) / (aRel[a].t1 - aRel[a].t0);
+      }
+      return null;
+    }
+
+    // ---------------- LYRE ----------------
+    var lyN = nOf(A1, "lyre"), lyG = lyreRolls(A1);
+    // hold law: one roll at a time — a new roll never opens while the last
+    // one's ring is still inside its own hold window (roll + ring, default 3.3s)
+    var lyOverlap = 0;
+    for (i = 1; i < lyG.length; i++) {
+      if (lyG[i].t0 < lyG[i - 1].t1 + 3.0 - 1e-6) lyOverlap++;
+    }
+    check("A33 LYRE hold law: one roll at a time (a ring is never cut into)",
+      lyOverlap === 0, lyG.length + " roll(s), " + lyN.length + " strings, " + lyOverlap + " overlapping");
+
+    // the scene gates: the roster rests it in flights and the swirl, and its
+    // own entry law gives it no chance there either
+    var lyBadScene = 0, lyScenes = {};
+    for (i = 0; i < lyG.length; i++) {
+      var sc = sceneAt(aWins, lyG[i].t0) || "?";
+      lyScenes[sc] = (lyScenes[sc] || 0) + 1;
+      if (sc === "flight" || sc === "swirl") lyBadScene++;
+    }
+    check("A33 LYRE scene gates: never a flight, never the swirl (roster + entry law)",
+      lyBadScene === 0, JSON.stringify(lyScenes));
+
+    // THE LADDER. Every ROLL inside a release at x >= 0.6 must sit at least
+    // one whole octave above the lyre's pre-release register, and at x >= 0.9
+    // at least two. Judged at the ROLL's onset — the moment the register was
+    // decided — not string by string: a roll that opens at x 0.59 spreads its
+    // last string past 0.60 and is still, correctly, a roll of the lower rung.
+    // Measured on the emitted `oct` (the lift is whole octaves in degrees, so
+    // the note carries it) against the register knob's default.
+    var LY_BASE_OCT = -1;
+    var lyLadderBad = 0, lyHi = 0, lyTop = 0;
+    for (i = 0; i < lyG.length; i++) {
+      var lx = relXAt(lyG[i].t0);
+      if (lx == null) continue;
+      var want = (lx >= 0.9) ? 2 : (lx >= 0.6 ? 1 : 0);
+      if (want === 2) lyTop++; else if (want === 1) lyHi++;
+      for (j = 0; j < lyG[i].notes.length; j++) {
+        if (lyG[i].notes[j].oct - LY_BASE_OCT < want) lyLadderBad++;
+      }
+    }
+    check("A33 LYRE the release ladder: +1 octave from x >= 0.6, +2 from x >= 0.9",
+      lyLadderBad === 0, lyHi + " roll(s) on the first rung, " + lyTop +
+      " on the second, " + lyLadderBad + " string(s) short");
+
+    // …and the THINNING, asserted on the scheduled envelope peak the note
+    // carries: max(0.08, (1 - x)^1.2) of the opening level, × the roll's own
+    // 0.6..0.9 velocity. Nothing in a release may be scheduled above that
+    // bound, and nothing in a release may be louder than a roll outside one.
+    var LY_OPEN = 0.03 * 0.8;            // per string, at the default desk
+    var lyThinBad = 0, lyRelPk = 0, lyDryPk = 0, lyRelN = 0;
+    for (i = 0; i < lyN.length; i++) {
+      if (lyN[i].peak == null) continue;
+      var lx2 = relXAt(lyN[i].t);
+      if (lx2 == null) { if (lyN[i].peak > lyDryPk) lyDryPk = lyN[i].peak; continue; }
+      lyRelN++;
+      if (lyN[i].peak > lyRelPk) lyRelPk = lyN[i].peak;
+      var bound = LY_OPEN * Math.max(0.08, Math.pow(Math.max(0, 1 - lx2), 1.2)) * 0.9;
+      if (lyN[i].peak > bound + 1e-9) lyThinBad++;
+    }
+    check("A33 LYRE the release thins as it climbs (peak <= (1-x)^1.2, floor 0.08)",
+      lyThinBad === 0 && (lyRelN === 0 || lyDryPk === 0 || lyRelPk <= lyDryPk + 1e-9),
+      lyRelN + " release string(s), loudest " + lyRelPk.toFixed(5) +
+      " vs " + lyDryPk.toFixed(5) + " outside, " + lyThinBad + " over the law");
+
+    // the alighting's first chord: at most ONE per evening, and it is a roll
+    var lyFirsts = 0, lyFirstOut = 0, lyPerEvening = {};
+    for (i = 0; i < lyN.length; i++) {
+      if (lyN[i].kind !== "alighting-first") continue;
+      if (lyN[i].deg === lyN[i].deg) { /* count gestures, not strings */ }
+    }
+    for (i = 0; i < lyG.length; i++) {
+      if (lyG[i].notes[0].kind !== "alighting-first") continue;
+      lyFirsts++;
+      if ((sceneAt(aWins, lyG[i].t0) || "") !== "alighting") lyFirstOut++;
+      var ev = -1;
+      for (j = 0; j < aBegins.length; j++) if (aBegins[j].t <= lyG[i].t0) ev = j;
+      lyPerEvening[ev] = (lyPerEvening[ev] || 0) + 1;
+    }
+    var lyFirstTwice = 0;
+    for (k in lyPerEvening) if (lyPerEvening[k] > 1) lyFirstTwice++;
+    check("A33 LYRE the alighting's first chord: once per evening, in the alighting",
+      lyFirstOut === 0 && lyFirstTwice === 0,
+      lyFirsts + " first chord(s) over " + aBegins.length + " evening(s), " +
+      lyFirstTwice + " doubled, " + lyFirstOut + " misplaced");
+
+    // NEVER at a cadence's arrival sample: the lyre's cadence roll is the
+    // LIFT's second door and it opens 0.4 s after the arrival, never at it.
+    var lyAtArrival = 0, lyCadRolls = 0, lyCadOffsets = [];
+    for (i = 0; i < lyG.length; i++) {
+      for (j = 0; j < aCads.length; j++) {
+        var arr = (aCads[j].arriveT != null) ? aCads[j].arriveT : aCads[j].t;
+        if (Math.abs(lyG[i].t0 - arr) < 1e-6) lyAtArrival++;
+      }
+      if (lyG[i].notes[0].kind === "cadence") {
+        lyCadRolls++;
+        var best = null;
+        for (j = 0; j < aCads.length; j++) {
+          var arr2 = (aCads[j].arriveT != null) ? aCads[j].arriveT : aCads[j].t;
+          var d = lyG[i].t0 - arr2;
+          if (d >= 0 && (best === null || d < best)) best = d;
+        }
+        if (best !== null) lyCadOffsets.push(+best.toFixed(3));
+      }
+    }
+    var lyOffBad = 0;
+    for (i = 0; i < lyCadOffsets.length; i++) if (Math.abs(lyCadOffsets[i] - 0.4) > 0.02) lyOffBad++;
+    check("A33 LYRE the cadence door: 0.4s AFTER a lift's arrival, never at its sample",
+      lyAtArrival === 0 && lyOffBad === 0,
+      lyCadRolls + " cadence roll(s), offsets " + (lyCadOffsets.join("/") || "—") +
+      ", " + lyAtArrival + " on the arrival");
+
+    // ---------------- CONCERTINA ----------------
+    var coN = nOf(A1, "concertina"), coG = group(coN, 1e-9);
+    var coAtkBad = 0;
+    for (i = 0; i < coN.length; i++) if (!(coN[i].attackS >= 0.8 - 1e-9)) coAtkBad++;
+    check("A33 CONCERTINA the landscape edge: every attack >= 0.8s (nothing startles)",
+      coAtkBad === 0, coN.length + " part(s), " + coAtkBad + " too fast");
+
+    // out of the release from x >= 0.4 (its own law AND the roster's rest)
+    var coRelBad = 0, coRel = 0;
+    for (i = 0; i < coG.length; i++) {
+      var cx = relXAt(coG[i].t0);
+      if (cx == null) continue;
+      coRel++;
+      if (cx >= 0.4) coRelBad++;
+    }
+    check("A33 CONCERTINA silent from release x >= 0.4 (it leaves with the bass)",
+      coRelBad === 0, coRel + " onset(s) inside a release, " + coRelBad + " too late");
+
+    // THE LIFT DOOR. When the box takes the consort the aeolian consort is
+    // ABSENT for that cadence; when it does not, the aeolian sings it. And
+    // the two doors are never one voice's: the lyre's roll follows the
+    // arrival by 0.4 s, the box's dyad lands ON it.
+    var takes = 0, takeBadAeo = 0, takeBadBox = 0, plainBadBox = 0, doorClash = 0;
+    for (j = 0; j < aCads.length; j++) {
+      var cd = aCads[j];
+      var t0c = (cd.startT != null) ? cd.startT : cd.t;
+      var t1c = cd.t + 6;
+      var aeo = 0, box = 0, boxAtArrival = 0;
+      var arr3 = (cd.arriveT != null) ? cd.arriveT : cd.t;
+      for (i = 0; i < A1.notes.length; i++) {
+        var nn = A1.notes[i];
+        if (nn.t < t0c - 1e-6 || nn.t > t1c) continue;
+        if (nn.voice === "aeolian" && nn.kind === "consort") aeo++;
+        if (nn.voice === "concertina" && nn.kind === "consort") {
+          box++;
+          if (Math.abs(nn.t - arr3) < 1e-6) boxAtArrival++;
+        }
+      }
+      if (cd.voicedBy === "concertina") {
+        takes++;
+        if (aeo > 0) takeBadAeo++;          // the consort must be absent
+        if (box === 0 || boxAtArrival === 0) takeBadBox++;  // …and the box present, ON the arrival
+      } else {
+        if (box > 0) plainBadBox++;         // the box never doubles the consort
+      }
+      // never both doors to one voice: no lyre roll AT the arrival sample
+      for (i = 0; i < lyG.length; i++) if (Math.abs(lyG[i].t0 - arr3) < 1e-6) doorClash++;
+    }
+    check("A33 CONCERTINA the LIFT door: a taken consort is the box's alone, ON the arrival",
+      takeBadAeo === 0 && takeBadBox === 0 && plainBadBox === 0 && doorClash === 0,
+      takes + " taken of " + aCads.length + " cadence(s); aeo-leak " + takeBadAeo +
+      ", box-missing " + takeBadBox + ", box-doubling " + plainBadBox +
+      ", door clash " + doorClash);
+
+    var coTakeLift = 0;
+    for (j = 0; j < aCads.length; j++) if (aCads[j].voicedBy === "concertina" && aCads[j].kind !== "lift") coTakeLift++;
+    check("A33 CONCERTINA takes LIFT cadences only (the door the plan gave it)",
+      coTakeLift === 0, takes + " taken, " + coTakeLift + " not a lift");
+
+    // ---------------- HANDPAN ----------------
+    // The pan answers a whistle phrase, in songs and hovers. Its SONG cell is
+    // the roster's one departure from the lab page's table, and it is the
+    // cell that makes the voice reachable at all (the same table rests the
+    // whistle in hovers, so a hover-only pan could never hear a phrase end).
+    // Read off A1 — the same evening every row above reads.
+    var A33 = A1;
+    var a33Wins = aWins;
+    // An ANSWER is a sequence, not a block: 2-4 tones a `gap` (0.35 s) apart,
+    // so the gesture is grouped by its own span. The rest law keeps two
+    // answers at least five seconds apart, so 1.0 s cannot join two.
+    var paN = nOf(A33, "handpan"), paG = group(paN, 1.0);
+    // every answer follows a whistle phrase END within 0.2-1.0 s, and never
+    // sounds INSIDE one (the pan answers; it does not accompany)
+    var wAir = [];
+    for (i = 0; i < A33.events.length; i++) {
+      var ee = A33.events[i];
+      if (ee.type === "air" && ee.voice === "whistle") wAir.push({ t0: ee.t, t1: ee.t + ee.durS });
+    }
+    var paLate = 0, paInside = 0, paOffsets = [];
+    for (i = 0; i < paG.length; i++) {
+      var best2 = null;
+      for (j = 0; j < wAir.length; j++) {
+        var dd = paG[i].t0 - wAir[j].t1;
+        if (dd >= 0 && (best2 === null || dd < best2)) best2 = dd;
+      }
+      if (best2 === null || best2 < 0.2 || best2 > 1.0) paLate++;
+      if (best2 !== null && paOffsets.length < 6) paOffsets.push(+best2.toFixed(2));
+    }
+    // …and NOT ONE of the answer's tones may fall inside a phrase (the pan
+    // answers the song; it never sings under it).
+    for (i = 0; i < paN.length; i++) {
+      for (j = 0; j < wAir.length; j++) {
+        if (paN[i].t > wAir[j].t0 + 1e-6 && paN[i].t < wAir[j].t1 - 1e-6) paInside++;
+      }
+    }
+    check("A33 HANDPAN every answer follows a whistle phrase end within 0.2-1.0s",
+      paLate === 0 && paG.length > 0,
+      paG.length + " answer(s), offsets " + (paOffsets.join("/") || "—") + ", " + paLate + " adrift");
+    check("A33 HANDPAN never inside a whistle phrase (it answers, it does not accompany)",
+      paInside === 0, paInside + " onset(s) inside a phrase");
+
+    var paRelBad = 0, paRel = 0, a33Rel = [];
+    for (i = 0; i < a33Wins.length; i++) {
+      if (a33Wins[i].scene === "release" && isFinite(a33Wins[i].t1)) a33Rel.push(a33Wins[i]);
+    }
+    for (i = 0; i < paG.length; i++) {
+      for (j = 0; j < a33Rel.length; j++) {
+        if (paG[i].t0 < a33Rel[j].t0 || paG[i].t0 >= a33Rel[j].t1) continue;
+        paRel++;
+        if ((paG[i].t0 - a33Rel[j].t0) / (a33Rel[j].t1 - a33Rel[j].t0) >= 0.5) paRelBad++;
+      }
+    }
+    check("A33 HANDPAN no onset at release x >= 0.5 (it leaves with the flutter)",
+      paRelBad === 0, paRel + " onset(s) inside a release, " + paRelBad + " too late");
+
+    // …and it is REACHABLE: the whole point of the one ticked cell. Every
+    // answer sits in a song or a hover, and over a full run there is at
+    // least one (relaxed below 2700 s, where an evening may simply not have
+    // offered the coin a phrase to answer).
+    var paScenes = {}, paBadScene = 0;
+    for (i = 0; i < paG.length; i++) {
+      var ps2 = sceneAt(a33Wins, paG[i].t0) || "?";
+      paScenes[ps2] = (paScenes[ps2] || 0) + 1;
+      if (ps2 !== "song" && ps2 !== "hover") paBadScene++;
+    }
+    check("A33 HANDPAN reachable, and only in songs and hovers (the ticked SONG cell)",
+      paBadScene === 0 && (SHORTT || paG.length > 0),
+      P.Ariel.ROSTER.handpan.join("") + " — " + paG.length + " answer(s) " +
+      JSON.stringify(paScenes));
+
+    // ---------------- VIBRAPHONE ----------------
+    var viN = nOf(A1, "vibraphone"), viG = group(viN, 1e-9);
+    var viSpread = 0;
+    for (i = 0; i < viG.length; i++) {
+      for (j = 1; j < viG[i].notes.length; j++) {
+        if (Math.abs(viG[i].notes[j].t - viG[i].notes[0].t) > 1e-9) viSpread++;
+      }
+    }
+    var viLone = 0;
+    for (i = 0; i < viG.length; i++) if (viG[i].notes.length < 2) viLone++;
+    check("A33 VIBRAPHONE the BLOCK: every strike is a dyad or triad, struck together",
+      viSpread === 0 && viLone === 0,
+      viG.length + " block(s), " + viN.length + " bar(s), " + viSpread + " spread, " + viLone + " lone");
+
+    var viRelBad = 0, viRel = 0;
+    for (i = 0; i < viG.length; i++) {
+      var vx = relXAt(viG[i].t0);
+      if (vx == null) continue;
+      viRel++;
+      if (vx >= 0.5) viRelBad++;
+    }
+    check("A33 VIBRAPHONE no onset at release x >= 0.5",
+      viRelBad === 0, viRel + " onset(s) inside a release, " + viRelBad + " too late");
+
+    var viAlightBad = 0, viScenes = {};
+    for (i = 0; i < viG.length; i++) {
+      var vs = sceneAt(aWins, viG[i].t0) || "?";
+      viScenes[vs] = (viScenes[vs] || 0) + 1;
+      if (vs !== "alighting" && vs !== "hover") viAlightBad++;   // the roster's two cells
+    }
+    check("A33 VIBRAPHONE plays only where the roster seats it (alighting, hover)",
+      viAlightBad === 0, JSON.stringify(viScenes));
+
+    // ---------------- ROSTER-ARIEL ----------------
+    // The shipped table is the lab page's PLAN_DEFAULT with EXACTLY ONE
+    // documented departure — the handpan's song cell, without which the pan
+    // has no scene where a whistle phrase can end. Asserted against a literal
+    // copy of the lab table so nothing else can drift unnoticed, and so a
+    // second departure would have to be argued for here before it shipped.
+    var LAB_PLAN_DEFAULT = {
+      breeze: "111111", whistle: "110011", chime: "111011", flutter: "011001",
+      bass: "010101", aeolian: "010101", ambient: "111111", halo: "111111",
+      lyre: "110101", concertina: "000100", handpan: "000100", vibraphone: "100100",
+    };
+    var ROSTER_DEPARTURES = { handpan: "010100" };   // song ticked, and only that
+    var rosDrift = [];
+    for (k in LAB_PLAN_DEFAULT) {
+      var want = ROSTER_DEPARTURES[k] || LAB_PLAN_DEFAULT[k];
+      var row = P.Ariel.ROSTER[k];
+      if (!row || row.join("") !== want) rosDrift.push(k + "=" + (row ? row.join("") : "?"));
+    }
+    check("A33 ROSTER-ARIEL the shipped table is PLAN_DEFAULT + the one handpan tick",
+      rosDrift.length === 0 && P.Ariel.ROSTER_COLS.join(",") ===
+        "alighting,song,flight,hover,swirl,release",
+      rosDrift.length ? "drifted: " + rosDrift.join(",")
+        : "12 rows, 6 columns; 1 departure (handpan song 0 -> 1)");
+
+    // No voice ENTERS where its cell is 0. A rest is the absence of new
+    // entries, so a gesture begun where it was welcome may ring across the
+    // boundary: notes inside GRACE seconds of a scene's start are attributed
+    // to the scene before it. Two documented exemptions, both boundary
+    // gestures under the cadence contract: the aeolian's CONSORT and the
+    // concertina's taken consort (kind "consort"), and the breeze's cadence
+    // and sea-change pads (kind "cadence" / "seachange").
+    var GRACE = 16;
+    var rosBad = {}, rosBadN = 0, rosChecked = 0;
+    function colAt(t) {
+      for (var a = aWins.length - 1; a >= 0; a--) {
+        if (t >= aWins[a].t0) return { col: aWins[a].scene, since: t - aWins[a].t0, prev: (a > 0 ? aWins[a - 1].scene : null) };
+      }
+      return null;
+    }
+    function rowAllows(voice, col) {
+      var r = P.Ariel.ROSTER[voice];
+      if (!r) return true;
+      var ci = P.Ariel.ROSTER_COLS.indexOf(col);
+      return (ci < 0) ? true : !!r[ci];
+    }
+    for (i = 0; i < A1.notes.length; i++) {
+      var an2 = A1.notes[i];
+      var vk = an2.voice;
+      if (vk === "gust" || vk === "joint") continue;              // the joints are the conductor's
+      if (!P.Ariel.ROSTER[vk]) continue;
+      if (an2.kind === "consort" || an2.kind === "cadence" || an2.kind === "seachange") continue;
+      var ca = colAt(an2.t);
+      if (!ca) continue;
+      rosChecked++;
+      if (rowAllows(vk, ca.col)) continue;
+      if (ca.since < GRACE && ca.prev && rowAllows(vk, ca.prev)) continue;  // ringing across
+      rosBad[vk] = (rosBad[vk] || 0) + 1;
+      rosBadN++;
+    }
+    check("A33 ROSTER-ARIEL no voice enters where its cell is 0",
+      rosBadN === 0, rosChecked + " note(s) judged, " +
+      (rosBadN ? JSON.stringify(rosBad) : "0 trespasses"));
+
+    // The breeze is the SEAM and never rests: no gap longer than one cycle's
+    // own length (15-25 s + a 2-3 s overlap) anywhere in the run.
+    var brN = nOf(A1, "breeze"), brGapWorst = 0, brGapAt = 0;
+    var brOn = [];
+    for (i = 0; i < brN.length; i++) if (brN[i].kind == null) brOn.push(brN[i].t);
+    for (i = 1; i < brOn.length; i++) {
+      var gp = brOn[i] - brOn[i - 1];
+      if (gp > brGapWorst) { brGapWorst = gp; brGapAt = brOn[i - 1]; }
+    }
+    check("A33 ROSTER-ARIEL the breeze never rests (the seam holds through every scene)",
+      brOn.length > 4 && brGapWorst <= 30,
+      brOn.length + " pad(s), worst gap " + brGapWorst.toFixed(1) + "s at t+" +
+      (brGapAt - A1.t0).toFixed(0));
+
+    // Every scene rests somebody — L3's whole point, read off the table.
+    var restsEvery = true, restedBy = [];
+    for (i = 0; i < P.Ariel.ROSTER_COLS.length; i++) {
+      var any = null;
+      for (k in P.Ariel.ROSTER) if (!P.Ariel.ROSTER[k][i]) { any = k; break; }
+      if (!any) restsEvery = false; else restedBy.push(P.Ariel.ROSTER_COLS[i] + ":" + any);
+    }
+    check("A33 ROSTER-ARIEL every scene rests at least one voice",
+      restsEvery, restedBy.join(" "));
+
+    // ---------------- SEAM ----------------
+    // Nothing of the four is killed at a performance boundary: the release
+    // ends with the pad still ringing and the next alighting blooms beneath
+    // it. So a body of theirs that STRADDLES a seam is proof of the law, not
+    // a violation — what would be a violation is a cancellation, and the only
+    // lane cancel in this engine is stop()'s.
+    var seamStraddle = 0, seamCut = 0;
+    for (i = 0; i < aBegins.length; i++) {
+      var bt2 = aBegins[i].t;
+      for (j = 0; j < A1.notes.length; j++) {
+        var sn2 = A1.notes[j];
+        if (A_NEW.indexOf(sn2.voice) < 0) continue;
+        if (sn2.t < bt2 && sn2.t + (sn2.durS || 0) > bt2) {
+          seamStraddle++;
+          // the body must still carry its FULL scheduled length across —
+          // a clipped one would end exactly at the boundary
+          if (Math.abs(sn2.t + sn2.durS - bt2) < 1e-6) seamCut++;
+        }
+      }
+    }
+    check("A33 SEAM none of the four is cut at a performance boundary (tails ring across)",
+      seamCut === 0, seamStraddle + " body(s) ringing across " + aBegins.length +
+      " seam(s), " + seamCut + " cut");
+
+    // ---------------- REPRO-ARIEL ----------------
+    // The same-seed pair is the one the row above already drove (seed 881);
+    // running a third and fourth Ariel evening only to compare them again
+    // would double this section's cost to prove the same thing twice.
+    var AR1 = AD1, AR2 = AD2;
+    var AR3 = trackRun("Ariel", 4212, Math.min(TSIM, 600));
+    function newSig(R) {
+      var s = [];
+      for (var a = 0; a < R.notes.length; a++) {
+        var nn2 = R.notes[a];
+        if (A_NEW.indexOf(nn2.voice) < 0) continue;
+        s.push(nn2.voice + "|" + round6(nn2.freq) + "|" + round6(nn2.t - R.t0) + "|" + (nn2.kind || ""));
+      }
+      return s.join("\n");
+    }
+    var sig1 = newSig(AR1), sig3 = newSig(AR3);
+    check("A33 REPRO-ARIEL same seed -> identical note+event stream (four voices included)",
+      streamSig(AR1) === streamSig(AR2) && sig1 === newSig(AR2) && AR1.notes.length > 10,
+      AR1.notes.length + " notes compared, " + sig1.split("\n").length + " from the four");
+    check("A33 REPRO-ARIEL a different seed sounds a different room",
+      streamSig(AR1) !== streamSig(AR3),
+      "seeds 881 vs 4212" + (sig1 === sig3 ? " — the four matched too" : ""));
+
+    check("A33 BUDGET the four drain: zero voices held after stop, zero swallowed",
+      (!AR1.infoFinal || !AR1.infoFinal.budget || AR1.infoFinal.budget.voices === 0) &&
+      (!A33.infoFinal || !A33.infoFinal.budget || A33.infoFinal.budget.voices === 0) &&
+      A33.swallowed.length === 0 && AR1.swallowed.length === 0,
+      "budget " + (AR1.infoFinal && AR1.infoFinal.budget ? AR1.infoFinal.budget.voices : "n/a") +
+      ", swallowed " + (A33.swallowed.length + AR1.swallowed.length));
+
+    // The desk: four new rows, four new knob strips, and the handpan alone
+    // without a rate lane (its pace is the whistle's).
+    var deskOk = true, deskNote = [];
+    try {
+      var EL = P.Ariel.create({ seed: 7 });
+      var keys = {}, ls = EL.getLayers();
+      for (i = 0; i < ls.length; i++) keys[ls[i].key] = ls[i].kind;
+      var ps = EL.getLayerParams();
+      for (i = 0; i < A_NEW.length; i++) {
+        if (keys[A_NEW[i]] !== "landscape") { deskOk = false; deskNote.push(A_NEW[i] + ":row"); }
+        if (!ps[A_NEW[i]] || !ps[A_NEW[i]].length) { deskOk = false; deskNote.push(A_NEW[i] + ":knobs"); }
+        var hasPresence = false;
+        for (j = 0; j < (ps[A_NEW[i]] || []).length; j++) if (ps[A_NEW[i]][j].key === "presence") hasPresence = true;
+        if (!hasPresence) { deskOk = false; deskNote.push(A_NEW[i] + ":presence"); }
+      }
+      var rates = EL.getLayerRates();
+      if (rates.handpan !== undefined) { deskOk = false; deskNote.push("handpan:rate"); }
+      if (rates.lyre !== 1) { deskOk = false; deskNote.push("lyre:rate"); }
+    } catch (eD) { deskOk = false; deskNote.push("threw: " + eD.message); }
+    check("A33 DESK four landscape rows, every timbral constant a knob, presence on each",
+      deskOk, deskNote.length ? deskNote.join(",") : "lyre/concertina/handpan/vibraphone");
+  })();
+
   // ============================== ALCHEMY ==============================
   var L1 = trackRun("Library", 20260709, TSIM);
   var lWins = sceneWindows(L1), lBegins = perfPhase(L1, "begin"), lEnds = perfPhase(L1, "end");

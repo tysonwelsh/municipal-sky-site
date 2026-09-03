@@ -116,6 +116,48 @@
 //           weather-gated and snap()ped where pitched. v1's GIGGLE IS
 //           RETIRED (owner decision: a human voice startles under the v2
 //           aesthetic; birdsong and the bee keep the playfulness).
+//   lyre    (NEW rc.33 — landscape-chordal; Ariel's own instrument, and the
+//           plan's recommendation): the Tempest's airy songs were sung to a
+//           lyre and nothing else in this sky is PLUCKED. An exact-period
+//           LOOPED BUFFER read at n·f/sr — not a Karplus–Strong comb, which
+//           WebAudio clamps to one render quantum inside a feedback cycle
+//           (~344 Hz) while the lyre sings to F5–F6 — under a lowpass
+//           closing from bright×f to 1.2f over 60 % of the ring, through a
+//           body at 300 Hz and 1.5 kHz. Its gesture is THE ROLLED CHORD:
+//           three tones of harmony.current rolled bottom-up over 0.3 s
+//           (top-down p 0.2) at vel 0.6–0.9, in the empty F3–F5 band the map
+//           left between the bass and the breeze. Songs and hovers on
+//           harmony steps, the alighting's first chord once a night, and
+//           0.4 s after a LIFT cadence's arrival.
+//   concertina (NEW rc.33 — landscape; the air made audible): a FREE REED,
+//           the one spectrum Ariel entirely lacked. Two reed waves ±3 ¢
+//           through a 900 Hz chamber (+6 dB) and a 3 kHz lid, every part
+//           riding ONE bellows gain that wanders ±2 dB at 0.15 Hz and
+//           phrases push/draw every 3–5 s. Held dyads of the current chord,
+//           9 s, least-motion voiced, a second to speak and three to let go.
+//           Hovers; and on p 0.4 of LIFT cadences it TAKES THE CONSORT from
+//           the aeolian — the Library organist's gesture, exactly.
+//   handpan (NEW rc.33 — landscape-chordal; THE ANSWER): three sines at
+//           1 : 2 : 3 over a mallet thump, the upper partials decaying
+//           faster. It speaks only when a WHISTLE PHRASE ENDS — 2–4 chord
+//           tones 0.35 s apart, descending or in an arch. It answers; it
+//           never accompanies.
+//   vibraphone (NEW rc.33 — landscape-chordal; the Day Off's lounge): sine
+//           plus a 4th partial under a MOTOR — one shaft for the whole
+//           block, 4.5 Hz at depth 0.6, which is the one thing that makes a
+//           vibraphone a vibraphone. Its gesture is a BLOCK: a dyad or triad
+//           struck TOGETHER on harmony steps, in hovers and the alighting's
+//           first two steps.
+//
+// THE FOUR ARE LANDSCAPE. None of them ever claims THE AIR — the air's
+// limits, its overlap chances and its three speakers are exactly what they
+// were — and none of them sounds a note whose pitch was read anywhere but at
+// schedule time. In THE RELEASE the lyre climbs the whistle's own ladder
+// (+1 octave from x ≥ 0.6, +2 from x ≥ 0.9) and thins as it climbs, so the
+// dissolution stays upward and not louder; the concertina leaves with the
+// bass at x ≥ 0.4, and the handpan and the vibraphone with the flutter at
+// x ≥ 0.5. Nothing of theirs is ever killed at the seam: a ring that
+// crosses the boundary crosses it as the breeze's high tail does.
 //
 // FLIGHTS AND THE AIR: flights are gesture-clouds — 4–10 rapid notes over
 // ~1.5–4 s from flutter or a chime burst — and clouds are NOT air-exempt:
@@ -145,6 +187,124 @@
 // ambient density, breeze LFO depth, gust gate), altitude (halo level),
 // shimmer (brightness/filter cutoffs, delay wet ±0.05), thermals (gap
 // scaling ±15% — the one channel allowed to move event times).
+//
+// THE ROSTER (rc.33) — SCENE_ROSTER below: `lab-ariel.html`'s PLAN_DEFAULT
+// verbatim, the plan's §6.3 table read literally plus the two ticks the lab
+// page names as its own. It gates ENTRIES only — the dice are thrown first,
+// the gate comes after, and a sounding body always finishes. It only ever
+// ADDS rests: the flutter's exit at release x 0.5, the bass's last word at
+// x 0.4 and the whistle's intensity gate are the ENGINE's laws and are
+// untouched. Rows ticked in every column (the breeze — the seam — the
+// ambient sky, the halo) have no opinion. ONE VOICE MAY SOUND OUTSIDE ITS
+// CELLS: the concertina, and only as the consort taking a lift cadence
+// (see the note over SCENE_ROSTER).
+//
+//   ONE DISCLOSED DEPARTURE from the lab page's table, and only one: the
+//   HANDPAN's SONG cell is ticked. The page shipped it untouched and noted
+//   that this "silences the HANDPAN in songs, which is half of its own entry
+//   law" — but it is all of it, because the pan's only cue is a whistle
+//   phrase ENDING and the same table rests the whistle in hovers (and in the
+//   flight that always precedes one), so under the literal table no phrase
+//   can ever end where the pan is seated. §6.4's own words give the pan
+//   "songs and hovers"; the tick gives it that law back and nothing else.
+//
+// GAIN STAGING (rc.33 pass — worst-case *scheduled* peaks, the family
+// ledger; THE AIR and THE ROSTER are what keep the sum honest now that
+// there are twelve voices instead of eight):
+//
+//   THE AIR caps speakers at limit+1 — 2 holders outside songs/flights, 3
+//   inside them, HARD (pj2-air) — so whistle + chime + flutter + the aeolian
+//   singer can never all sound at once. THE ROSTER rests the whistle in
+//   flights and hovers, the chime in hovers, the flutter in the alighting,
+//   hovers and the swirl, the bass and the aeolian in the alighting, flights
+//   and the swirl, and it seats the concertina and the vibraphone almost
+//   entirely in the hover — the quietest scene there is (intensity
+//   0.12 + 0.10·(1−x)^1.3), which is exactly where a new body costs least.
+//   The handpan is the one newcomer that speaks in songs, and it speaks only
+//   INTO A SILENCE: its cue is the whistle's phrase ENDING, so it is never
+//   summing with the voice it answers.
+//
+//   breeze bed     2 pads × 0.06 + sub 0.025 + hiss 0.004 = 0.149, × the
+//                  breathing LFO (≤ 1.03) × the 2–3 s cycle overlap ≈ 0.31,
+//                  plus a cadence pad 2 × 0.011 or a sea-change bloom
+//                  2 × 0.04; all × breezeBreath (≤ 1) × breezeLevel
+//                  (≤ 0.48)                                   -> ~ 0.19 worst
+//   melody         whistle 0.028 (+ breath 0.5 pre-attenuated), chime
+//                  2 × 0.026 × vel, flutter 0.04 × vel; at most THREE
+//                  speakers ever, and only in songs and flights
+//                                                             -> ~ 0.12 worst
+//   bass           0.10 × vel, one note at a time by its own pacing; out of
+//                  the release at x 0.4                       -> ~ 0.10
+//   aeolian        bed 2 × 0.02 (+ sheen 0.22 and breath 0.18 into the same
+//                  gain) + the singer 0.026 + the cadence consort 3 × 0.014
+//                                                             -> ~ 0.09 worst
+//   lyre    NEW    ONE roll at a time (the hold law). 3 strings × 0.03 × 0.8
+//                  (the chord scale) × vel 0.6–0.9 ≈ 0.018 each; the roll
+//                  spreads them 0.15 s apart into a decay to 0.32 of peak,
+//                  so ~ 0.047 sums at the third onset, × the body's two
+//                  peaking bells (+3 dB at 300 Hz, +2 dB at 1.5 kHz — never
+//                  the same partial, so 1.41 honest / 1.78 pessimal), + the
+//                  20 ms pluck scrape at 0.55 × peak       -> ~ 0.085 worst
+//   concertina NEW ONE dyad at a time: 2 parts × 0.014 × the 900 Hz
+//                  chamber's +6 dB (≤ ×2 in band) × bellows (≤ 1.12)
+//                                                             -> ~ 0.063 worst
+//                  (at a TAKEN cadence × 0.6 -> ~ 0.038, under the aeolian
+//                  consort's own 3 × 0.014 it replaces — the cadence
+//                  contract holds by arithmetic, not by hope)
+//   handpan NEW    ONE answer at a time: per note 0.028 × the bowl's summed
+//                  partial weights (1 + 0.5 + 0.25 = 1.75) ≈ 0.049, + the
+//                  hand's thump at 0.5 × peak for 15 ms; the 0.35 s gap and
+//                  the partials' faster decay mean about two notes are ever
+//                  really summing                             -> ~ 0.085 worst
+//   vibraphone NEW ONE block at a time: 3 bars × 0.025 × (1 + the 4th
+//                  partial's 0.18) = 0.0885, × the motor gain (0.4–1.0 —
+//                  its own tremolo is the only thing that ever raises it,
+//                  and its ceiling is 1)                      -> ~ 0.089 worst
+//   ambient        loudest one-shot (a release gust at 0.02, wind chime
+//                  3 partials × 0.02)                         -> ~ 0.06 worst
+//   halo           levelGain ≤ 0.09 (the release's maximum) on a
+//                  whisper-fed ring                           -> ~ 0.02
+//   walls A+B      wet 0.32 / 0.15 on sends of 0.5 (chime) 0.4 (flutter)
+//                  0.35 (whistle) 0.2 (lyre) 0.18 (vib) 0.15 (pan)
+//                                                             -> ~ 0.03
+//   ------------------------------------------------------------------
+//   WORST SCENE, roster- and air-aware (the honest sum):
+//     song       0.19 + 0.12 (3 speakers) + 0.10 + 0.09 + 0.06 + 0.02
+//                + 0.03 + lyre 0.085 + handpan 0.085          = 0.780
+//     hover      0.19 + 0.00 (whistle and chime rest) + 0.10 + 0.09 + 0.06
+//                + 0.02 + 0.03 + lyre 0.085 + concertina 0.063
+//                + handpan 0.085 + vibraphone 0.089           = 0.812
+//     flight     0.19 + 0.12 (chime + flutter) + 0.06 + 0.02 + 0.03 = 0.42
+//   -> ~ 0.81 absolute worst into the rooms — and that hover figure is a
+//   deliberate fiction: the hold laws and the rest windows (4–12 s for the
+//   lyre, 6–14 for the box and the bars, 5–14 for the pan) make all four
+//   newcomers sounding at one instant a thing that needs three independent
+//   coins inside one 3 s window, in a scene that lasts 35–55 s and admits
+//   at most one entry each. The equal-power room split conserves power and
+//   each room is dry 1.0 + wet ~0.3 -> ~ 1.05 at bus input; × masterVol
+//   0.5 × the saturator's small-signal gain ~1.66 (pj2-voice lesson #1)
+//   ~ 0.87 into the limiter — under the ~ 0.89 (−1 dBFS) master ceiling
+//   with the glue compressor still idling, and the RENDERED soak (the
+//   number that actually decides it) measures the whole engine's worst
+//   1 s peak at roughly −5 dBFS with the four in, one decibel over the
+//   same seed with the four muted.
+//
+// STREAM NOTE (rc.33) — what actually moved, stated plainly:
+//
+//   Every NEW draw lands on a NEW label-hashed fork ("lyre", "concertina",
+//   "handpan", "vibraphone"), so no pre-existing stream gains or loses a
+//   single draw: the whistle, chime, flutter, bass, aeolian, breeze, joints,
+//   cadence, motif, harmony, air and weather forks advance exactly as they
+//   did at rc.32. THE HANDPAN'S CUE inside startWhistle is a CALL, not a
+//   draw — the answer's dice are thrown on the handpan's own fork when its
+//   lane fires. THE CONCERTINA'S consort take and THE LYRE'S cadence answer
+//   are each ONE draw on their own fork, taken unconditionally before
+//   anything is rendered, so neither depends on what the consort did.
+//   What DOES change, and is the whole point, is which of those draws
+//   sounds: the roster rests six of the eight old layers somewhere, so an
+//   rc.33 evening is not an rc.32 evening with four voices added — it is a
+//   differently populated evening. Same seed, same evening, forever; a
+//   different evening from rc.32's, deliberately.
 //
 // Discipline inherited whole from pj2-library.js: every pitched note reads
 // the field AT SCHEDULE TIME (never a cached Hz — that is what makes the sea
@@ -215,6 +375,14 @@
     { key: "aeolian", label: "Aeolian Harp", kind: "landscape" },
     { key: "ambient", label: "Ambient",      kind: "ambient" },
     { key: "halo",    label: "Halo",         kind: "fx" },
+    // rc.33 — the four auditioned voices, APPENDED after the fx return so no
+    // existing row moves (row order is the owner's muscle memory). Ordered as
+    // the lab page ordered them, which is the order they were auditioned in:
+    // the recommendation, the reed, then the two struck bodies.
+    { key: "lyre",       label: "Lyre",       kind: "landscape" },
+    { key: "concertina", label: "Concertina", kind: "landscape" },
+    { key: "handpan",    label: "Handpan",    kind: "landscape" },
+    { key: "vibraphone", label: "Vibraphone", kind: "landscape" },
   ];
   var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
   var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
@@ -227,6 +395,14 @@
     breeze: ["breeze"], whistle: ["whistle"], chime: ["chime"],
     flutter: ["flutter"], bass: ["bass"], aeolian: ["aeolian", "aeolianSing"],
     ambient: ["ambient"], halo: [],
+    // rc.33: the lyre, concertina and vibraphone each own one lane — the
+    // chord-name poll that IS their opportunity — so the rate slider re-paces
+    // how often the voice looks, and nothing else. The HANDPAN gets no rate
+    // lane (like the halo): its pace is the whistle's, not its own — every
+    // answer is scheduled off a phrase's end, so a rate slider would only
+    // drag the answer away from the song it is answering.
+    lyre: ["lyre"], concertina: ["concertina"],
+    handpan: [], vibraphone: ["vibraphone"],
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
@@ -261,6 +437,102 @@
     halo: [
       { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1 },
     ],
+    // rc.33 — the four new voices. EVERY timbral constant of theirs is a knob
+    // read through pVal at schedule time, and every def is the value the
+    // owner left the lab page's slider on: the desk at its defaults IS the
+    // audition. (Phase 2's per-evening spans will draw against these same
+    // defs — the hook is here, the spans are not built.)
+    lyre: [
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "roll", label: "roll s — how long the hand takes to cross the strings", min: 0.12, max: 0.8, def: 0.3 },
+      { key: "ring", label: "ring s — how long a string is left to sound", min: 1.5, max: 5, def: 3 },
+      { key: "bright", label: "bright — where the lowpass starts, in multiples of the pitch", min: 3, max: 8, def: 5 },
+      { key: "body", label: "body — the soundbox's two peaks (0 = a bare string)", min: 0, max: 2, def: 1 },
+      { key: "voices", label: "voices — strings in the roll", min: 2, max: 4, def: 3 },
+      { key: "updown", label: "updown — chance the roll comes DOWN instead of up", min: 0, max: 1, def: 0.2 },
+      { key: "register", label: "register — which octave the lyre sits in", min: -1, max: 0, def: -1 },
+    ],
+    concertina: [
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "reed", label: "reed dB — how hard the 900 Hz chamber bites", min: 0, max: 12, def: 6 },
+      { key: "detune", label: "detune ¢ — how far apart the two reeds sit", min: 0, max: 15, def: 6 },
+      { key: "bellows", label: "bellows — the pressure wander and the push/draw", min: 0, max: 2, def: 1 },
+      { key: "hold", label: "hold s — how long one dyad is held", min: 6, max: 14, def: 9 },
+      { key: "register", label: "register — which octave the box sits in", min: -1, max: 0, def: 0 },
+    ],
+    handpan: [
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "ring", label: "ring s — how long the shell rings", min: 1.5, max: 4, def: 2.5 },
+      { key: "partials", label: "partials — how much 2nd and 3rd are in the bowl", min: 0, max: 1, def: 0.5 },
+      { key: "thump", label: "thump — the hand's own low knock", min: 0, max: 2, def: 1 },
+      { key: "gap", label: "gap s — the space between the answer's notes", min: 0.2, max: 0.8, def: 0.35 },
+      { key: "register", label: "register — which octave the pan sits in", min: -1, max: 0, def: -1 },
+    ],
+    vibraphone: [
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "motor", label: "motor Hz — how fast the discs turn", min: 3, max: 7, def: 4.5 },
+      { key: "depth", label: "depth — how deep the motor's tremolo cuts", min: 0, max: 1, def: 0.6 },
+      { key: "ring", label: "ring s — how long the bars are left to sound", min: 2, max: 4, def: 3 },
+      { key: "register", label: "register — which octave the bars sit in", min: 0, max: 1, def: 0 },
+    ],
+  };
+
+  // ==========================================================================
+  // THE SCENE ROSTER (rc.33) — who plays where, as an explicit table, so
+  // every scene rests somebody and the six scenes finally SOUND different
+  // from one another. This is `lab-ariel.html`'s PLAN_DEFAULT verbatim: the
+  // plan's §6.3 roster read literally, plus the two ticks the lab page names
+  // as its own — the LYRE's hover tick (§6.2a's own entry law rolls on hover
+  // harmony steps at p 0.35, and a table that rested it there would fight the
+  // card) and the VIBRAPHONE's alighting tick (§6.4 gives it the alighting's
+  // first two steps at p 0.5).
+  //
+  // It gates ENTRIES only. Every opportunity's dice are thrown FIRST and the
+  // gate comes after (stream discipline); a "rest" is the absence of new
+  // cycles, and anything already sounding finishes and rings across the
+  // boundary. A row ticked in every column has NO OPINION — which is why the
+  // breeze (the seam: its lane is never cancelled), the ambient sky and the
+  // halo are ticked throughout. The roster only ever ADDS rests: the engine's
+  // own retirements (the flutter out by release x 0.5, the bass's last word
+  // at x 0.4, the whistle's intensity gate) are the ENGINE's law and stay
+  // exactly as they were, which is why both keep their release ticks.
+  //
+  // ONE VOICE MAY SOUND OUTSIDE ITS CELLS: the concertina, and only as the
+  // consort TAKING a lift cadence. A cadence is a boundary gesture under the
+  // cadence contract — the same contract that lets the aeolian consort
+  // surface where the aeolian bed rests — and taking it from the consort is
+  // the whole gesture (the Library's organist, exactly). Disclosed here so
+  // nobody rediscovers it as a bug.
+  //
+  // ONE CELL DEPARTS FROM PLAN_DEFAULT, and only one: the HANDPAN's SONG.
+  // The lab page shipped `handpan: [0,0,0,1,0,0]` and noted that this
+  // "silences the HANDPAN in songs, which is half of its own entry law".
+  // It is not half — it is all of it. The pan's only cue is a whistle
+  // phrase ENDING, and the same table rests the whistle in hovers (and in
+  // the flight that always precedes one), so under the literal table no
+  // phrase can ever end where the pan is seated and the voice cannot sound
+  // at all, on any evening, ever. §6.4's own text places it in "songs and
+  // hovers"; a cell that empties the intersection is a defect in the table,
+  // not a decision in it. So the row ships as [0,1,0,1,0,0] and the pan
+  // keeps the law the plan wrote for it. Everything else here is
+  // PLAN_DEFAULT to the tick.
+  // ==========================================================================
+  var ROSTER_COLS = ["alighting", "song", "flight", "hover", "swirl", "release"];
+  var SCENE_ROSTER = {
+    //           alight song flight hover swirl release
+    breeze:     [1, 1, 1, 1, 1, 1],   // the seam — no opinion, never rests
+    whistle:    [1, 1, 0, 0, 1, 1],
+    chime:      [1, 1, 1, 0, 1, 1],
+    flutter:    [0, 1, 1, 0, 0, 1],
+    bass:       [0, 1, 0, 1, 0, 1],
+    aeolian:    [0, 1, 0, 1, 0, 1],
+    ambient:    [1, 1, 1, 1, 1, 1],   // the weather — no opinion
+    halo:       [1, 1, 1, 1, 1, 1],   // the fx return — no opinion
+    lyre:       [1, 1, 0, 1, 0, 1],
+    concertina: [0, 0, 0, 1, 0, 0],
+    handpan:    [0, 1, 0, 1, 0, 0],   // the SONG cell is the one departure
+
+    vibraphone: [1, 0, 0, 1, 0, 0],
   };
 
   // Default seed when neither create({seed}) nor ?seed= supplies one — a
@@ -677,6 +949,27 @@
       return { sceneType: curSceneType(), x: curSceneX(), tidePos: curTidePos(), nowS: t };
     }
 
+    // ---- THE SCENE ROSTER (rc.33) -------------------------------------------
+    // Ariel's scene types ARE the roster's columns (no ordinals to count: an
+    // Ariel evening's songs and flights are peers, not numbered chapters), so
+    // the column is simply the scene. Pure reads — no draws, ever.
+    function rosterColumn(sceneTypeOverride) {
+      return sceneTypeOverride || curSceneType();
+    }
+    // The gate. ALWAYS called AFTER the opportunity's unconditional roll: the
+    // roster decides whether a voice ENTERS, never how the dice fall. A
+    // gesture that leans into another scene is judged by where it SOUNDS —
+    // pass that scene as the override.
+    function rosterAllows(voiceKey, columnOverride) {
+      var row = SCENE_ROSTER[voiceKey];
+      if (!row) return true;
+      var col = columnOverride || rosterColumn();
+      for (var i = 0; i < ROSTER_COLS.length; i++) {
+        if (ROSTER_COLS[i] === col) return !!row[i];
+      }
+      return true;
+    }
+
     // ========================================================================
     // THE ARIEL DRAMATURGY (Conductor contract). The numbers, argued:
     //
@@ -1041,6 +1334,10 @@
         try {
           run.harmony.step(t);
           run.bassArrival = true; // the bass answers every new center
+          // rc.33: the alighting's steps, counted (no draws) — the
+          // vibraphone's law is "the first two steps and no more", and a
+          // counter off the harmony lane is exact where a poll would guess.
+          if (curSceneType() === "alighting") run.alightSteps++;
         } catch (e) { /* a stuck chord is still a chord */ }
         lane.at(t + periodAt(t), stepFn);
       }
@@ -1220,10 +1517,37 @@
       } catch (e) { vA = null; }
       if (!vA || !vA.length) vA = [c1.rootDeg, c1.rootDeg + 2, c1.rootDeg + 4].slice(0, plan.nParts);
       var vB = climbAbove(vA, c2);
+      // rc.33 — THE CONCERTINA TAKES THE CONSORT. One draw, before anything
+      // is rendered, so the concertina's fork never depends on what the
+      // aeolian did. When it lands, the box voices BOTH chords in the
+      // consort's place as a dyad taken from the consort's OWN voicing, so
+      // the arrival keeps its rise; the breeze's cadence pads are untouched
+      // and the arrival still lands exactly on the boundary. The box's dyad
+      // sits at CONC_CADENCE_LEVEL under the consort it replaces, so the
+      // cadence contract (no new attack louder than the consort's) holds by
+      // arithmetic. This is also the ONE door the concertina takes at a
+      // cadence: the lyre's roll is the other, 0.4 s later.
+      var concTakes = concertinaTakesCadence(plan, tA);
+      var concOct = Math.round(pVal("concertina", "register"));
+      var pdRateA = 1 / 4, pdRateB = 1 / 3.5;  // drawless: a taken cadence
+                                               // borrows the consort's clock
       cadenceBreezePad(c1, tA, dA + X, 2.2, X);
-      renderConsort(vA, tA, dA + X, 2.0, X);
+      if (concTakes) {
+        concTakes = renderConcertina(consortDyad(vA), concOct, tA, dA + X, 2.0, X,
+                                     CONC_CADENCE_LEVEL, pdRateA, "consort");
+      }
+      if (!concTakes) renderConsort(vA, tA, dA + X, 2.0, X);
       cadenceBreezePad(c2, tArr, dB + RING, X, RING);
-      renderConsort(vB, tArr, dB + RING, X, 2.0);
+      if (concTakes) {
+        renderConcertina(consortDyad(vB), concOct, tArr, dB + RING, X, 2.0,
+                         CONC_CADENCE_LEVEL, pdRateB, "consort");
+        run.concHoldUntil = tArr + dB + RING + 6;
+      } else {
+        renderConsort(vB, tArr, dB + RING, X, 2.0);
+      }
+      // …and the lyre may answer the LIFT 0.4 s past the arrival's onset —
+      // the second door, and never the same one the concertina took.
+      lyreCadence(tArr, cad.kind || plan.kind);
       var meanA = 0, meanB = 0, i;
       for (i = 0; i < vA.length; i++) meanA += vA[i] / vA.length;
       for (i = 0; i < vB.length; i++) meanB += vB[i] / vB.length;
@@ -1234,6 +1558,7 @@
         chords: [c1.name != null ? c1.name : null, c2.name != null ? c2.name : null],
         approachMeanDeg: meanA, arrivalMeanDeg: meanB,
         arrivalAbove: meanB > meanA,
+        voicedBy: concTakes ? "concertina" : "consort",   // rc.33
       });
     }
 
@@ -1393,6 +1718,19 @@
           run.featherPending = (run.featherDeg != null) ? run.featherDeg : null;
           run.featherDeg = null;
 
+          // rc.33: the new evening's counters. The lyre's once-a-night door
+          // reopens (the alighting's first chord is the feather's COUSIN, and
+          // it belongs to every evening); the chord memories are cleared so
+          // the first reading of the new world is a fresh reading, not a
+          // step; the alighting's steps start over. Every hold/rest deadline
+          // is left alone on purpose — a body still ringing across the seam
+          // still holds its voice, which is the whole point of the seam.
+          run.lyreAlightDone = false;
+          run.lyreLastChord = null;
+          run.concLastChord = null;
+          run.vibLastChord = null;
+          run.alightSteps = 0;
+
           // The working set, the ghost, and the promotion coin.
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           run.signature = { name: null, promoted: false };
@@ -1427,6 +1765,12 @@
           } catch (e) {}
         } else if (evt.type === "scene") {
           setSceneRoom(evt);
+          // rc.33: an alighting is the one scene whose steps are counted (the
+          // vibraphone's "first two"). Every evening has exactly one, at
+          // index 0, but the reset is written against the SCENE and not the
+          // performance so a future dramaturgy that alights twice would still
+          // be told the truth.
+          if (evt.scene === "alighting") run.alightSteps = 0;
           // Halo retune at the FIRST boundary strictly after a field change
           // (sea change or seam reground — the arming boundary itself shares
           // its t and is skipped; the old strings ring across, the straddle
@@ -1639,7 +1983,15 @@
       var rng = run.streams.whistle;
       function phrase(t) {
         var iv = curIntensity(t);
-        if (iv < 0.07) { lane.at(t + rng.rnd(3, 6) * gmAt(t), phrase); return; }
+        // rc.33: the roster rests the singer in flights and hovers (§6.3 —
+        // the flight belongs to the clouds, the hover to the landscape). It
+        // gates the ENTRY only: a phrase already sounding finishes, and the
+        // reschedule draw is the same one the intensity gate takes, so the
+        // whistle's fork is untouched by the gate itself.
+        if (iv < 0.07 || !rosterAllows("whistle")) {
+          lane.at(t + rng.rnd(3, 6) * gmAt(t), phrase);
+          return;
+        }
         var st = curSceneType();
         var x = curSceneX();
         // A ghost denied the air is HELD, never dropped.
@@ -1710,6 +2062,12 @@
           });
         }
         maybePost("whistle", res, st, t);
+        // rc.33 — THE HANDPAN'S CUE: the phrase's span ends here, and that is
+        // the pan's one opportunity. A CALL, not a draw: no fork of the
+        // whistle's advances by a single step because of this line (the
+        // answer's dice are thrown on the handpan's own fork when its lane
+        // fires 0.25 s later).
+        handpanCue(t + tm.spanS);
         lane.at(t + tm.spanS + margin +
           (st === "song" ? rng.rnd(3, 9) : rng.rnd(2, 7)) * (1.35 - iv) * gmAt(t), phrase);
       }
@@ -1790,7 +2148,9 @@
           : st === "song" ? 0.55
           : st === "hover" || st === "release" ? 0.5
           : st === "alighting" ? 0.35 : 0.3);
-        if (rest || iv < 0.1) {
+        // rc.33: …and the roster rests the bell in hovers (the rest draw is
+        // taken FIRST, above — the gate never touches a roll).
+        if (rest || iv < 0.1 || !rosterAllows("chime")) {
           lane.at(t + rng.rnd(4, 8) * gmAt(t), phrase);
           return;
         }
@@ -1906,7 +2266,10 @@
         var restP = (st === "flight") ? 0.05
           : 0.65 + 0.15 * (1 - tide) + 0.1 * (0.5 - wx.gustiness);
         var rest = rng.chance(clamp(restP, 0, 0.92));
-        if (rest || iv < 0.12) {
+        // rc.33: the roster rests the ornament in the alighting, hovers and
+        // the swirl. The release stays TICKED — the flutter's own law retires
+        // it at x 0.5 and that is the ENGINE's retirement, not the roster's.
+        if (rest || iv < 0.12 || !rosterAllows("flutter")) {
           lane.at(t + rng.rnd(4, 8) * gmAt(t), phrase);
           return;
         }
@@ -2084,6 +2447,18 @@
         var gestureP = 0.22 + I * 0.18;
         var rootDeg = bassRootDeg();
 
+        // rc.33: the roster rests the arc in the alighting, flights and the
+        // swirl (§6.3). Entries only — a note already sounding finishes — and
+        // the armed arrival is SPENT rather than banked: a bass that returned
+        // two scenes later to plant a root the harmony has long left would be
+        // answering a question nobody asked. The release stays ticked: the
+        // bass's last word at x 0.4 is the ENGINE's law, above.
+        if (!rosterAllows("bass")) {
+          run.bassArrival = false;
+          lane.at(t + rng.rnd(7.2, 11.2) * pace * gmAt(t), fire);
+          return;
+        }
+
         // Arrival — the harmony just stepped. Plant the new root firmly.
         if (run.bassArrival) {
           run.bassArrival = false;
@@ -2213,7 +2588,12 @@
         var two = rng.chance(0.35);
         var wantSharp4 = rng.chance(0.15);
         var atkS = rng.rnd(2, 4);
-        if (iv < 0.15) { lane.at(t + rng.rnd(4, 7), swell); return; }
+        // rc.33: the roster rests the glass bed in the alighting, flights and
+        // the swirl — after every draw above, as the law requires. (The
+        // cadence CONSORT is not gated: a cadence is a boundary gesture under
+        // the cadence contract, which is exactly why the consort surfaces
+        // where the bed rests.)
+        if (iv < 0.15 || !rosterAllows("aeolian")) { lane.at(t + rng.rnd(4, 7), swell); return; }
         var ch = null;
         try { ch = run.harmony.current(); } catch (e) {}
         var rootDeg = (ch && isFinite(ch.rootDeg)) ? Math.round(ch.rootDeg) : 0;
@@ -2249,7 +2629,10 @@
         var st = curSceneType();
         var p = SING_P[st] != null ? SING_P[st] : 0;
         var sings = rng.chance(p); // drawn every opportunity — stream discipline
-        if (!sings || iv < 0.1) { lane.at(t + rng.rnd(9, 16) * gmAt(t), attempt); return; }
+        if (!sings || iv < 0.1 || !rosterAllows("aeolian")) {   // rc.33: the roster
+          lane.at(t + rng.rnd(9, 16) * gmAt(t), attempt);
+          return;
+        }
         var res = run.heldUtterance.aeolian;
         run.heldUtterance.aeolian = null;
         if (!res) {
@@ -2299,6 +2682,748 @@
         lane.at(t + tm.spanS + margin + rng.rnd(8, 16) * gmAt(t), attempt);
       }
       lane.at(run.t0 + rng.rnd(15, 28), attempt);
+    }
+
+    // ========================================================================
+    // THE FOUR LANDSCAPE-CHORDAL VOICES (rc.33) — the lyre, the concertina,
+    // the handpan and the vibraphone, ported from `lab-ariel.html` at the
+    // knob defaults the owner left its sliders on (every one of those numbers
+    // is a LAYER_PARAMS def above, read through pVal at schedule time).
+    //
+    // What they share, and what makes them a family:
+    //   * They read `harmony.current()` and the FIELD at schedule time, so a
+    //     sea change and the seam's re-grounding are free (nothing sounding
+    //     ever retunes).
+    //   * None of them ever claims THE AIR. They are landscape: they sound
+    //     UNDER the whistle, the chime and the flutter at their own level,
+    //     and the air's limits are untouched by rc.33.
+    //   * Every gesture throws its dice FIRST, unconditionally, on its own
+    //     fork; the gates — the roster, the release ladder, the hold law,
+    //     the scene chance × presence — come after.
+    //   * Every envelope is PJ2.Voice.env or an anchored ramp pair; no
+    //     setTargetAtTime, no portamento, anywhere (decision 6).
+    //   * NOTHING IS KILLED AT A BOUNDARY. The lab page clipped its bodies to
+    //     end inside the release because it could not see the seam; the
+    //     engine does not need to and must not — the release ends with the
+    //     high pad still ringing and the next alighting blooms beneath it, so
+    //     a lyre ring that crosses the seam crosses it exactly as the
+    //     breeze's tail does. The only cancellation any of these lanes ever
+    //     sees is stop().
+    // ========================================================================
+
+    // slowNoise — the family's smooth-wobble source (pj2-library's, verbatim
+    // semantics): interpolated random keyframes, one 20 s loop cached per
+    // ctx+rate, a random read offset per consumer. Math.random here is
+    // TEXTURE — never music (house rule).
+    function slowNoise(c, rateHz) {
+      var cache = c.__pj2ArielSlowNoise = c.__pj2ArielSlowNoise || {};
+      var key = "r" + rateHz;
+      if (!cache[key]) {
+        var sr = c.sampleRate || 44100;
+        var slot = Math.max(1, Math.floor(sr / rateHz));
+        var n = Math.max(slot * 4, Math.floor(sr * 20));
+        var buf = c.createBuffer(1, n, sr);
+        var data = buf.getChannelData(0);
+        var nKeys = Math.ceil(n / slot) + 2, keys = [];
+        for (var k = 0; k < nKeys; k++) keys.push(Math.random() * 2 - 1);
+        for (var i = 0; i < n; i++) {
+          var pos = i / slot, i0 = Math.floor(pos), fr = pos - i0;
+          data[i] = keys[i0] * (1 - fr) + keys[i0 + 1] * fr;
+        }
+        cache[key] = buf;
+      }
+      var src = c.createBufferSource();
+      src.buffer = cache[key];
+      src.loop = true;
+      src.randomOffset = Math.random() * 18;
+      return src;
+    }
+
+    // The free reed's wave: every harmonic at 1/n with a bump at the 5th–7th,
+    // which is what makes a concertina sound like a concertina and not like a
+    // sawtooth (the lab's recipe, cached per ctx beside the flute and bell).
+    function reedWave(c) {
+      var p = [];
+      for (var n = 1; n <= 16; n++) {
+        var a = 1 / n;
+        if (n >= 5 && n <= 7) a *= 2.2;
+        p.push(a);
+      }
+      return makeWave(c, "reed", p);
+    }
+
+    // ---- the release ladder, shared by the four (the lab's law) -------------
+    // "Nothing of yours may be louder or lower as the evening dissolves
+    // upward." The LYRE stays to the end and stays by CLIMBING the whistle's
+    // own rungs (+1 octave from x ≥ 0.6, +2 from x ≥ 0.9) while thinning;
+    // the concertina leaves with the bass at x ≥ 0.4, the handpan and the
+    // vibraphone with the flutter at x ≥ 0.5. (The roster already rests all
+    // three through the whole release — this gate is the same law checked at
+    // the body, and it is what would still hold if the table were edited.)
+    var CHORD_RELEASE_GATE = { lyre: 1.01, concertina: 0.4, handpan: 0.5, vibraphone: 0.5 };
+    function chordAllows(key) {
+      if (curSceneType() !== "release") return true;
+      var g = CHORD_RELEASE_GATE[key];
+      return curSceneX() < (g == null ? 1.01 : g);
+    }
+    // Whole octaves, in degrees — the whistle's rungs exactly, so every degree
+    // class (and every chord tone) survives the climb.
+    function chordLift() {
+      if (curSceneType() !== "release") return 0;
+      var x = curSceneX();
+      return (x >= 0.9) ? 2 : (x >= 0.6 ? 1 : 0);
+    }
+    // The thinning has two halves: the ENTRY chance falls as (1 − x)…
+    function chordThinP() {
+      return (curSceneType() === "release") ? Math.max(0, 1 - curSceneX()) : 1;
+    }
+    // …and the LEVEL as (1 − x)^1.2, with the lab's floor of 0.08: without a
+    // floor the +2-oct rung lands under −66 dBFS, which is not a thin roll,
+    // it is no roll — the top of the ladder would be a thing the engine
+    // claims to play and does not.
+    function chordThinLevel() {
+      if (curSceneType() !== "release") return 1;
+      return Math.max(0.08, Math.pow(Math.max(0, 1 - curSceneX()), 1.2));
+    }
+
+    // ---- chord tones, voiced ------------------------------------------------
+    // Root, 3rd, 5th (+ octave at four voices) from harmony.current(); on I
+    // the #4 (degree 3) arrives as a COLOUR with p 0.15, replacing the 5th —
+    // never the root, and never anywhere but on I. (The bass and the aeolian
+    // take the same 0.15 coin for the same reason: in Ariel the tritone is
+    // light.) THE COIN IS DRAWN FIRST, before the chord is read, so the
+    // caller's fork advances identically whether or not a chord is available.
+    function chordVoices(rng, nVoices, allowSharp4) {
+      var coin = rng.chance(0.15);
+      var cur = null;
+      try { cur = run.harmony.current(); } catch (e) {}
+      if (!cur || !cur.chordDegs || !cur.chordDegs.length) return null;
+      var size = run.field.size;
+      var src = cur.chordDegs;
+      var out = [src[0]];
+      out.push((src.length > 1) ? src[1] : src[0] + 2);
+      out.push((src.length > 2) ? src[2] : src[0] + 4);
+      var sharp4 = false;
+      if (allowSharp4 && degClass(cur.rootDeg) === 0 && coin) { out[2] = 3; sharp4 = true; }
+      if (nVoices >= 4) out.push(out[0] + size);
+      out = out.slice(0, Math.max(1, nVoices));
+      out.sort(function (a, b) { return a - b; });
+      return { degs: out, sharp4: sharp4, name: cur.name, rootDeg: cur.rootDeg, chordDegs: src };
+    }
+
+    // ========================================================================
+    // THE LYRE (landscape-chordal) — Ariel's own instrument. The Tempest's
+    // airy songs were sung to a lyre, and nothing else in this sky is
+    // plucked. Its gesture is THE ROLLED CHORD, and its band (F3–F5 at the
+    // default register) is the one the map left empty between the bass and
+    // the breeze.
+    // ========================================================================
+    var LYRE_PEAK = 0.03;         // per string — the lab's design constant
+    var LYRE_CHORD_SCALE = 0.8;   // …×0.8 when more than one string sounds
+    var LYRE_SCENE = { alighting: 0.35, song: 0.45, flight: 0, hover: 0.35, swirl: 0, release: 0.45 };
+    var LYRE_CADENCE_P = 0.6;     // a LIFT's second door
+    var LYRE_CADENCE_OFFSET = 0.4; // …taken 0.4 s AFTER the arrival, never at it
+
+    // ONE STRING. A plucked gut string is a period of noise ringing under a
+    // closing filter, and the plan's shape implies a Karplus–Strong comb at
+    // 1/f — but WebAudio clamps a DelayNode INSIDE A FEEDBACK CYCLE to one
+    // render quantum (128 frames ≈ 2.9 ms at 44.1 kHz), which caps such a
+    // comb at ~344 Hz. The lyre's chords reach F5 (698 Hz) and its octave
+    // voice higher still, so a comb would have sounded the WRONG NOTE. The
+    // string is therefore a LOOPED PERIOD BUFFER: one exact period of
+    // smoothed noise read at a playbackRate that lands the pitch exactly,
+    // with the closing lowpass outside the loop doing the loop filter's work.
+    // Same excitation, same spectrum, same decay — exact pitch, and no
+    // feedback cycle to keep safe.
+    //
+    // THE RATE IS n·f/sr, NOT its reciprocal (the critic's fix): a looped
+    // buffer of n frames read at rate p sounds at p·sr/n, so n·f/sr lands f
+    // exactly and CANCELS the rounding error of n instead of doubling it
+    // (sr/(n·f) measured +11 ¢ at F4 and +39 ¢ at E6; this lands every pitch
+    // F4–E6 inside ±2.3 ¢). The 20 ms burst survives as the pluck's own
+    // scrape, mixed in at the onset through the same body.
+    function pluckString(t, f, ringS, dest, peak, brightK, bodyK) {
+      var c = ctx;
+      var sr = c.sampleRate || 44100;
+      var n = Math.max(8, Math.round(sr / f));
+      var src = c.createBufferSource();
+      try {
+        var buf = c.createBuffer(1, n, sr);
+        var d = buf.getChannelData(0);
+        var prev = 0;
+        for (var i = 0; i < n; i++) {   // texture: Math.random, never music
+          var w = Math.random() * 2 - 1;
+          d[i] = (w + prev) * 0.5;      // a raw period screams; smooth it
+          prev = w;
+        }
+        src.buffer = buf;
+      } catch (eB) { /* a mock without buffers plays a silent string */ }
+      src.loop = true;
+      // pitch, exactly: p·sr/n === f. Guarded — a mock BufferSource may carry
+      // no playbackRate param, and a silent string is better than a throw.
+      try {
+        var pr = src.playbackRate;
+        if (pr && typeof pr.setValueAtTime === "function") pr.setValueAtTime(n * f / sr, t);
+        else if (pr && typeof pr === "object") pr.value = n * f / sr;
+      } catch (eR) {}
+      // the lowpass that closes: bright × f → 1.2 f over 60 % of the ring
+      var lp = c.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.Q.setValueAtTime(0.7, t);
+      var f0 = Math.min(18000, Math.max(f * 1.25, f * brightK));
+      lp.frequency.setValueAtTime(f0, t);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(80, f * 1.2), t + ringS * 0.6);
+      // the body: two peaking bells — the gut and the soundbox
+      var b1 = c.createBiquadFilter();
+      b1.type = "peaking";
+      b1.frequency.setValueAtTime(300, t);
+      b1.Q.setValueAtTime(1.1, t);
+      b1.gain.setValueAtTime(3 * bodyK, t);
+      var b2 = c.createBiquadFilter();
+      b2.type = "peaking";
+      b2.frequency.setValueAtTime(1500, t);
+      b2.Q.setValueAtTime(1.4, t);
+      b2.gain.setValueAtTime(2 * bodyK, t);
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[0.004, peak], [ringS * 0.3, peak * 0.32],
+                                [ringS * 0.4, peak * 0.06], [ringS * 0.3, 0]]);
+      src.connect(lp); lp.connect(b1); b1.connect(b2); b2.connect(g); g.connect(dest);
+      if (run.delaySendLyre) g.connect(run.delaySendLyre);  // the brighter wall
+      if (run.haloSendLyre) g.connect(run.haloSendLyre);    // …and the strings hear it
+      src.start(t);
+      src.stop(t + ringS + 0.1);        // the loop always ends — no leak
+      // the pluck itself: 20 ms of noise through the same body
+      var bu = PJ2.Voice.noiseBuffer.source(c, 30);
+      var bg = c.createGain();
+      PJ2.Voice.env(bg.gain, t, [[0.001, peak * 0.55], [0.019, 0]]);
+      bu.connect(bg); bg.connect(lp);
+      bu.start(t, bu.randomOffset);
+      bu.stop(t + 0.05);
+    }
+
+    // The rolled chord. Draws first, every one of them, then the gates.
+    function renderLyre(t, why) {
+      var rng = run.streams.lyre;
+      var nV = Math.round(clamp(pVal("lyre", "voices"), 2, 4));
+      var v = chordVoices(rng, nV, true);          // draws the #4 coin
+      var topDown = rng.chance(pVal("lyre", "updown"));
+      var vels = [];
+      for (var i = 0; i < nV; i++) vels.push(rng.rnd(0.6, 0.9));
+      var restS = rng.rnd(4, 12);
+      if (!v) return false;
+      var rollS = pVal("lyre", "roll");
+      var ringS = pVal("lyre", "ring");
+      var oct = Math.round(pVal("lyre", "register")) + chordLift();
+      // The level thins with the ladder: a roll at full 0.03 in the last
+      // tenth of the release would be the loudest thing left in the sky.
+      var peak = LYRE_PEAK * (nV > 1 ? LYRE_CHORD_SCALE : 1) * chordThinLevel();
+      if (!(peak > 0.00002)) return false;
+      var span = rollS + ringS;
+      var tok = run.budget.claim(6 * nV, t + span + 0.3);
+      if (!tok) return false;                      // graceful thinning
+      run.tokens.push(tok);
+      var order = v.degs.slice();
+      if (topDown) order.reverse();
+      var step = (order.length > 1) ? rollS / (order.length - 1) : 0;
+      var brightK = pVal("lyre", "bright"), bodyK = pVal("lyre", "body");
+      for (i = 0; i < order.length; i++) {
+        var at = t + i * step;
+        var freq = run.field.degFreq(order[i], oct);   // read AT SCHEDULE TIME
+        pluckString(at, freq, ringS, run.layLyre, peak * vels[i], brightK, bodyK);
+        emitNote({
+          voice: "lyre", kind: why, freq: freq, t: at, durS: ringS,
+          deg: order[i], oct: oct, velocity: vels[i],
+          // the scheduled envelope peak, carried so the release's THINNING is
+          // assertable and not merely asserted (the lab's ledger did the same)
+          peak: peak * vels[i],
+          chord: v.name, sharp4: v.sharp4, down: topDown,
+        });
+      }
+      run.lyreHoldUntil = t + span;                // a roll holds the lyre for its ring
+      run.lyreRestUntil = t + span + restS;
+      return true;
+    }
+
+    // The entry law, as a chance. `alighting-first` is FLAT — the evening's
+    // first chord is the feather's cousin and presence does not gate it.
+    function lyreChance(kind) {
+      if (kind === "alighting-first") return run.lyreAlightDone ? 0 : 1;
+      if (kind === "cadence") return LYRE_CADENCE_P;
+      var base = LYRE_SCENE[curSceneType()];
+      if (base == null) base = 0;
+      if (curSceneType() === "release") base *= chordThinP();  // it thins as it climbs
+      return base;
+    }
+
+    // One opportunity, one decision. The roll is drawn FIRST and
+    // unconditionally; every gate comes after.
+    function lyreConsider(kind, t) {
+      if (!run || !run.live) return;
+      var rng = run.streams.lyre;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var base = lyreChance(kind);
+      if (base <= 0) return;
+      if (!rosterAllows("lyre")) return;           // a cadence sounds inside the
+                                                   // OUTGOING scene, so the
+                                                   // current column is the one
+                                                   // the roll happens in
+      if (!chordAllows("lyre")) return;            // (open all the way — it climbs)
+      if (t < run.lyreHoldUntil || t < run.lyreRestUntil) return;  // the hold law
+      var p = (kind === "alighting-first") ? base : base * pVal("lyre", "presence");
+      if (roll >= clamp(p, 0, 1)) return;
+      if (!renderLyre(t, kind)) return;
+      if (kind === "alighting-first") run.lyreAlightDone = true;
+    }
+
+    // The lift cadence's SECOND door, 0.4 s past the arrival's onset — the
+    // cello's own offset in the Library, and here it is load-bearing: the
+    // concertina takes the consort body AT the arrival, so the lyre answering
+    // 0.4 s AFTER is what keeps two doors belonging to two voices. Scheduled
+    // on the FORM lane ("cadence"), which the desk's rate sliders never
+    // scale: the roll is part of the cadence gesture, not of the lyre's pace.
+    function lyreCadence(tArr, kind) {
+      if (!run || !run.live || kind !== "lift") return;
+      try {
+        run.clock.lane("cadence").at(tArr + LYRE_CADENCE_OFFSET, function (t) {
+          lyreConsider("cadence", t);
+        });
+      } catch (e) {}
+    }
+
+    // The lyre's own lane: the chord-NAME poll (the Library vessel's
+    // mechanism — a step noticed is an opportunity; Ariel has no harmony-step
+    // event) and, inside an alighting, the evening's first chord.
+    function startLyre() {
+      var lane = run.clock.lane("lyre");
+      function poll(t) {
+        var name = null;
+        try { name = run.harmony.current().name; } catch (e) {}
+        if (name != null) {
+          var fresh = (run.lyreLastChord == null);
+          if (!fresh && name !== run.lyreLastChord) {
+            if (curSceneType() === "alighting" && !run.lyreAlightDone) lyreConsider("alighting-first", t);
+            else lyreConsider("harmony", t);
+          } else if (fresh && curSceneType() === "alighting" && !run.lyreAlightDone) {
+            lyreConsider("alighting-first", t);    // the evening lands mid-chord
+          }
+          run.lyreLastChord = name;
+        }
+        lane.at(t + 2.5, poll);
+      }
+      lane.at(run.t0 + 2.5, poll);
+    }
+
+    // ========================================================================
+    // THE CONCERTINA (landscape) — the air made audible, and the one spectrum
+    // Ariel entirely lacked: a free reed. Held dyads, a second to speak and
+    // three to let go (the landscape edge-slope rule, ≤ 0.02 per 0.5 s), and
+    // on a lift cadence it may take the consort body from the aeolian.
+    // ========================================================================
+    var CONC_PEAK = 0.014;          // per part — the lab's design constant,
+                                    // and exactly the aeolian consort's
+    var CONC_SCENE = { alighting: 0, song: 0.2, flight: 0, hover: 0.4, swirl: 0, release: 0.15 };
+    var CONC_TAKE_P = 0.4;          // …of LIFT cadences
+    var CONC_CADENCE_LEVEL = 0.6;   // a taken cadence sits UNDER the consort it
+                                    // replaces: the reed's 16 harmonics through
+                                    // a +6 dB chamber carry roughly twice the
+                                    // in-band power of the consort's sine pair,
+                                    // so 0.6 × 0.014 × ≤2 ≈ 0.017 holds the
+                                    // cadence contract's ≤ 1.5 dB by arithmetic
+    var CONC_LO = -2, CONC_HI = 9;  // the box's window, in degrees
+
+    // A least-motion dyad voicer of the concertina's own: each reed takes the
+    // octave nearest where IT last stood, and the upper reed always stays
+    // above the lower. Its memory is its own (run.concPrev) — the cadence
+    // consort's voice-leading belongs to the consort, exactly as the
+    // Library's regal keeps its book apart from the hum's.
+    function voiceConcertina(classes) {
+      var size = run.field.size;
+      function fold(d) { return ((Math.round(d) % size) + size) % size; }
+      var prev = run.concPrev, out = [];
+      for (var i = 0; i < classes.length; i++) {
+        var c0 = fold(classes[i]);
+        var target = (prev && prev[i] != null) ? prev[i] : (i === 0 ? 0 : 4);
+        var best = null, bestD = Infinity;
+        for (var o = -1; o <= 2; o++) {
+          var cand = c0 + o * size;
+          if (cand < CONC_LO || cand > CONC_HI) continue;
+          if (i > 0 && out.length && cand <= out[0]) continue;
+          var dd = Math.abs(cand - target);
+          if (dd < bestD) { bestD = dd; best = cand; }
+        }
+        out.push(best == null ? (c0 + (i > 0 ? size : 0)) : best);
+      }
+      run.concPrev = out;
+      return out;
+    }
+
+    // THE BODY. Two reed waves `detune` cents apart per part, through the reed
+    // chamber (a peaking 900 Hz at `reed` dB) and a 3 kHz lid, and every part
+    // rides ONE bellows gain: a slow-noise pressure wander (±2 dB at 0.15 Hz)
+    // plus the push/draw swell-and-sag every 3–5 s. Timings are given as the
+    // consort's are (durS + fades) so a taken cadence can borrow the consort's
+    // own seconds-long edges.
+    function renderConcertina(degs, oct, t, durS, fadeIn, fadeOut, levelMul, pdRate, why) {
+      if (!degs || !degs.length) return false;
+      if (durS - fadeIn - fadeOut < 0.3) {
+        fadeIn = fadeOut = Math.max(0.25, (durS - 0.3) / 2);
+      }
+      var hold = Math.max(0.05, durS - fadeIn - fadeOut);
+      var tok = run.budget.claim(6 + 4 * degs.length, t + durS + 0.4);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var c = ctx;
+      var peak = CONC_PEAK * (levelMul || 1);
+      var bellowsK = pVal("concertina", "bellows");
+      var reedDb = pVal("concertina", "reed");
+      var detune = pVal("concertina", "detune");
+      // the bellows — one breath under every part
+      var bell = c.createGain();
+      bell.gain.setValueAtTime(0.85, t);
+      var sn = slowNoise(c, 0.15);
+      var sng = c.createGain();
+      sng.gain.setValueAtTime(0.15 * bellowsK, t);
+      sn.connect(sng);
+      try { sng.connect(bell.gain); } catch (e0) {}
+      sn.start(t, sn.randomOffset);
+      sn.stop(t + durS + 0.3);
+      var pd = c.createOscillator();
+      pd.type = "sine";
+      pd.frequency.setValueAtTime(pdRate, t);
+      var pdg = c.createGain();
+      pdg.gain.setValueAtTime(0.12 * bellowsK, t);
+      pd.connect(pdg);
+      try { pdg.connect(bell.gain); } catch (e1) {}
+      pd.start(t);
+      pd.stop(t + durS + 0.3);
+      var lp = c.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(3000, t);
+      lp.Q.setValueAtTime(0.7, t);
+      lp.connect(bell);
+      bell.connect(run.layConc);
+      var wave = reedWave(c);
+      for (var i = 0; i < degs.length; i++) {
+        var freq = run.field.degFreq(degs[i], oct);   // read AT SCHEDULE TIME
+        var chamber = c.createBiquadFilter();
+        chamber.type = "peaking";
+        chamber.frequency.setValueAtTime(900, t);
+        chamber.Q.setValueAtTime(1.2, t);
+        chamber.gain.setValueAtTime(reedDb, t);
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, [[fadeIn, peak], [hold, peak * 0.94], [fadeOut, 0]]);
+        chamber.connect(g); g.connect(lp);
+        for (var k = 0; k < 2; k++) {
+          var o = c.createOscillator();
+          if (wave && typeof o.setPeriodicWave === "function") o.setPeriodicWave(wave);
+          else o.type = "sawtooth";
+          o.frequency.setValueAtTime(freq, t);
+          o.detune.setValueAtTime(k ? detune / 2 : -detune / 2, t);
+          o.connect(chamber);
+          o.start(t);
+          o.stop(t + durS + 0.15);
+        }
+        emitNote({
+          voice: "concertina", kind: why, freq: freq, t: t, durS: durS,
+          deg: degs[i], oct: oct, attackS: fadeIn,
+        });
+      }
+      return true;
+    }
+
+    // A free entry: one held dyad of the current chord.
+    function concertinaEnter(t) {
+      var rng = run.streams.concertina;
+      var third = rng.chance(0.5);                 // drawn first, unconditionally
+      var atk = rng.rnd(0.8, 1.5);
+      var rel = rng.rnd(1.5, 3);
+      var pdRate = 1 / rng.rnd(3, 5);
+      var restS = rng.rnd(6, 14);
+      var cur = null;
+      try { cur = run.harmony.current(); } catch (e) {}
+      if (!cur || !cur.chordDegs || !cur.chordDegs.length) return false;
+      var src = cur.chordDegs;
+      // On II the second home wants its open fifth — the I↔II planing IS the
+      // Lydian float; elsewhere the box takes the 3rd or the 5th on a coin.
+      var onII = (degClass(cur.rootDeg) === 1);
+      var second = (onII || !third) ? 2 : 1;
+      var classes = [src[0], src[Math.min(second, src.length - 1)]];
+      var degs = voiceConcertina(classes);
+      var hold = pVal("concertina", "hold");
+      var oct = Math.round(pVal("concertina", "register"));
+      var durS = atk + hold + rel;
+      if (!renderConcertina(degs, oct, t, durS, atk, rel, 1, pdRate, "hold")) return false;
+      run.concHoldUntil = t + durS;
+      run.concRestUntil = t + durS + restS;
+      return true;
+    }
+
+    function concertinaConsider(t) {
+      if (!run || !run.live) return;
+      var rng = run.streams.concertina;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var base = CONC_SCENE[curSceneType()];
+      if (base == null) base = 0;
+      if (base <= 0) return;
+      if (!rosterAllows("concertina")) return;
+      if (!chordAllows("concertina")) return;      // silent from x ≥ 0.4
+      if (t < run.concHoldUntil || t < run.concRestUntil) return;
+      if (roll >= clamp(base * pVal("concertina", "presence"), 0, 1)) return;
+      concertinaEnter(t);
+    }
+
+    // "THE CONCERTINA TAKES THE CONSORT" — drawn ONCE per cadence, before
+    // anything is rendered, so the concertina's fork never depends on what the
+    // aeolian did (the Library organist's contract, verbatim). When it lands,
+    // the box voices BOTH cadence chords in the consort's place, as a DYAD
+    // taken from the consort's own voicing — the outer two parts — so the
+    // arrival is voiced ABOVE the approach by construction, which is what the
+    // cadence event's `arrivalAbove` reports. The breeze's cadence pads are
+    // untouched and the arrival still lands exactly on the boundary.
+    //
+    // NOT roster-gated: a cadence is a boundary gesture under the cadence
+    // contract — the same contract that lets the aeolian consort surface
+    // where the aeolian bed rests — and taking that cadence from the consort
+    // IS the gesture (see the SCENE ROSTER note at the top of this file).
+    function concertinaTakesCadence(plan, tA) {
+      if (!run || !run.live) return false;
+      var rng = run.streams.concertina;
+      var roll = rng.next();                       // drawn first, unconditionally
+      if (plan.kind !== "lift") return false;      // the LIFT's door, and only it
+      if (!chordAllows("concertina")) return false;
+      if (tA < run.concHoldUntil) return false;    // the hold law
+      return roll < clamp(CONC_TAKE_P * pVal("concertina", "presence"), 0, 1);
+    }
+    // The dyad the box takes from a consort voicing: its outer two parts (at
+    // nParts 2 that is the voicing itself). vB = climbAbove(vA) is elementwise
+    // above vA, so the same indices keep the rise.
+    function consortDyad(v) {
+      if (!v || !v.length) return null;
+      return (v.length <= 2) ? v.slice() : [v[0], v[v.length - 1]];
+    }
+
+    // The concertina's own lane: the chord-name poll.
+    function startConcertina() {
+      var lane = run.clock.lane("concertina");
+      function poll(t) {
+        var name = null;
+        try { name = run.harmony.current().name; } catch (e) {}
+        if (name != null) {
+          if (run.concLastChord != null && name !== run.concLastChord) concertinaConsider(t);
+          run.concLastChord = name;
+        }
+        lane.at(t + 2.5, poll);
+      }
+      lane.at(run.t0 + 2.5, poll);
+    }
+
+    // ========================================================================
+    // THE HANDPAN (landscape-chordal) — THE ANSWER. Three sines at 1 : 2 : 3
+    // over a mallet thump, in the empty band between the bass and the breeze.
+    // It speaks only when a WHISTLE PHRASE ENDS: it answers, it does not
+    // accompany, and it is never inside the song it is answering.
+    // ========================================================================
+    var PAN_PEAK = 0.028;        // per note — the lab's design constant
+    var PAN_ANSWER_P = 0.35;     // × presence, × the still-air preference
+    var PAN_ANSWER_GAP = 0.25;   // …s after the phrase's span ends
+
+    function panNote(t, f, ringS, dest, peak, partialsK, thumpK) {
+      var c = ctx;
+      var g = c.createGain();
+      g.connect(dest);
+      if (run.delaySendPan) g.connect(run.delaySendPan);    // the brighter wall
+      PJ2.Voice.env(g.gain, t, [[0.006, peak], [ringS * 0.35, peak * 0.3], [ringS * 0.65, 0]]);
+      // 1 : 2 : 3 at 1 / 0.5 / 0.25, the upper partials decaying faster than
+      // the fundamental (×0.7 and ×0.5 of its ring) — a struck shell, not an
+      // organ pipe.
+      var ratios = [[1, 1, 1], [2, 0.5, 0.7], [3, 0.25, 0.5]];
+      for (var i = 0; i < ratios.length; i++) {
+        var amp = ratios[i][1] * (i === 0 ? 1 : partialsK * 2);
+        if (!(amp > 0.001)) continue;
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(f * ratios[i][0], t);
+        var og = c.createGain();
+        var pr = ringS * ratios[i][2];
+        PJ2.Voice.env(og.gain, t, [[0.006, amp], [pr * 0.4, amp * 0.28], [pr * 0.6, 0]]);
+        o.connect(og); og.connect(g);
+        o.start(t);
+        o.stop(t + ringS + 0.1);
+      }
+      if (thumpK > 0) {                 // the hand's own low knock
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var tg = c.createGain();
+        PJ2.Voice.env(tg.gain, t, [[0.002, peak * 0.5 * thumpK], [0.013, 0]]);
+        var tlp = c.createBiquadFilter();
+        tlp.type = "lowpass";
+        tlp.frequency.setValueAtTime(500, t);
+        tlp.Q.setValueAtTime(0.7, t);
+        ns.connect(tg); tg.connect(tlp); tlp.connect(g);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + 0.05);
+      }
+    }
+
+    function renderHandpan(t) {
+      var rng = run.streams.handpan;
+      var nN = rng.rint(2, 4);                     // draws first, all of them
+      var v = chordVoices(rng, Math.max(3, nN), true);
+      var arch = rng.chance(0.45);
+      var restS = rng.rnd(5, 14);
+      if (!v) return false;
+      var degs = v.degs.slice(0, nN);
+      // descending, or an arch (up then back to the top) — an answer, not a scale
+      degs = degs.slice().reverse();
+      if (arch && degs.length > 2) degs.push(degs[0]);
+      var ringS = pVal("handpan", "ring");
+      var gap = pVal("handpan", "gap");
+      var oct = Math.round(pVal("handpan", "register")) + chordLift();
+      var span = (degs.length - 1) * gap;
+      var peak = PAN_PEAK * chordThinLevel();
+      var tok = run.budget.claim(5 * degs.length, t + span + ringS + 0.4);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var partialsK = pVal("handpan", "partials"), thumpK = pVal("handpan", "thump");
+      for (var i = 0; i < degs.length; i++) {
+        var at = t + i * gap;
+        var freq = run.field.degFreq(degs[i], oct);   // read AT SCHEDULE TIME
+        panNote(at, freq, ringS, run.layPan, peak, partialsK, thumpK);
+        emitNote({
+          voice: "handpan", kind: arch ? "arch" : "answer", freq: freq, t: at,
+          durS: ringS, deg: degs[i], oct: oct, chord: v.name, sharp4: v.sharp4,
+        });
+      }
+      run.panHoldUntil = t + span + ringS * 0.5;
+      run.panRestUntil = t + span + ringS + restS;
+      return true;
+    }
+
+    // One answer's decision, taken when the lane fires at the phrase's end.
+    function panConsider(t) {
+      if (!run || !run.live) return;
+      var rng = run.streams.handpan;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var st = curSceneType();
+      if (st !== "song" && st !== "hover") return; // never a flight or the swirl:
+                                                   // they have clouds enough
+      if (!rosterAllows("handpan")) return;
+      if (!chordAllows("handpan")) return;         // out from x ≥ 0.5
+      if (t < run.panHoldUntil || t < run.panRestUntil) return;
+      // it prefers still air (the gustiness gate — the lab's own weighting)
+      var p = PAN_ANSWER_P * (1 - 0.5 * wxAt(t).gustiness) * pVal("handpan", "presence");
+      if (roll >= clamp(p, 0, 1)) return;
+      renderHandpan(t);
+    }
+
+    // THE CUE. Called from startWhistle the moment a phrase's span ends — a
+    // CALL, not a draw: rc.33 adds NO draw to the whistle's fork. The answer's
+    // dice are thrown inside panConsider, on the HANDPAN's own fork, when its
+    // lane fires 0.25 s later.
+    function handpanCue(tEnd) {
+      if (!run || !run.live) return;
+      try {
+        run.clock.lane("handpan").at(tEnd + PAN_ANSWER_GAP, function (t) { panConsider(t); });
+      } catch (e) {}
+    }
+
+    // ========================================================================
+    // THE VIBRAPHONE (landscape-chordal) — the Day Off's lounge. Sine plus a
+    // fourth partial under a MOTOR: the rotating discs' amplitude tremolo,
+    // which is the one thing that makes a vibraphone a vibraphone. Its
+    // gesture is a BLOCK — a dyad or triad struck TOGETHER, never rolled.
+    // ========================================================================
+    var VIB_PEAK = 0.025;        // per bar — the lab's design constant
+    var VIB_SCENE = { alighting: 0.5, song: 0.15, flight: 0, hover: 0.4, swirl: 0, release: 0 };
+    var VIB_ALIGHT_STEPS = 2;    // …the alighting's first two steps, and no more
+
+    function renderVibraphone(t) {
+      var rng = run.streams.vibraphone;
+      var nN = rng.chance(0.5) ? 2 : 3;            // draws first, all of them
+      var v = chordVoices(rng, Math.max(3, nN), true);
+      var restS = rng.rnd(6, 14);
+      if (!v) return false;
+      var degs = v.degs.slice(0, nN);
+      var ringS = pVal("vibraphone", "ring");
+      var oct = Math.round(pVal("vibraphone", "register")) + chordLift();
+      var peak = VIB_PEAK * chordThinLevel();
+      var motor = pVal("vibraphone", "motor"), depth = pVal("vibraphone", "depth");
+      var tok = run.budget.claim(4 + 5 * degs.length, t + ringS + 0.4);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var c = ctx;
+      // ONE motor for the whole block — the bars share a shaft.
+      var motorGain = c.createGain();
+      motorGain.gain.setValueAtTime(1 - depth * 0.5, t);
+      motorGain.connect(run.layVib);
+      if (run.delaySendVib) motorGain.connect(run.delaySendVib);   // the brighter wall
+      var lfo = c.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(motor, t);
+      var lg = c.createGain();
+      lg.gain.setValueAtTime(depth * 0.5, t);
+      lfo.connect(lg);
+      try { lg.connect(motorGain.gain); } catch (e0) {}
+      lfo.start(t);
+      lfo.stop(t + ringS + 0.3);
+      for (var i = 0; i < degs.length; i++) {
+        var freq = run.field.degFreq(degs[i], oct);   // read AT SCHEDULE TIME
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, [[0.004, peak], [ringS * 0.3, peak * 0.3], [ringS * 0.7, 0]]);
+        g.connect(motorGain);
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(freq, t);
+        o.connect(g);
+        o.start(t);
+        o.stop(t + ringS + 0.15);
+        var p4 = c.createOscillator();            // the bar's 4th partial
+        p4.type = "sine";
+        p4.frequency.setValueAtTime(freq * 4, t);
+        var p4g = c.createGain();
+        PJ2.Voice.env(p4g.gain, t, [[0.003, 0.18], [ringS * 0.25, 0.02], [ringS * 0.2, 0]]);
+        p4.connect(p4g); p4g.connect(g);
+        p4.start(t);
+        p4.stop(t + ringS + 0.15);
+        emitNote({
+          voice: "vibraphone", kind: "block", freq: freq, t: t, durS: ringS,
+          deg: degs[i], oct: oct, chord: v.name, sharp4: v.sharp4,
+        });
+      }
+      run.vibHoldUntil = t + ringS * 0.6;
+      run.vibRestUntil = t + ringS + restS;
+      return true;
+    }
+
+    function vibraphoneConsider(t) {
+      if (!run || !run.live) return;
+      var rng = run.streams.vibraphone;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var st = curSceneType();
+      var base = VIB_SCENE[st];
+      if (base == null) base = 0;
+      if (st === "alighting" && run.alightSteps > VIB_ALIGHT_STEPS) base = 0;
+      if (base <= 0) return;
+      if (!rosterAllows("vibraphone")) return;
+      if (!chordAllows("vibraphone")) return;      // out from x ≥ 0.5
+      if (t < run.vibHoldUntil || t < run.vibRestUntil) return;
+      // still air, like the handpan: the lounge is not for a gale
+      var p = base * (1 - 0.5 * wxAt(t).gustiness) * pVal("vibraphone", "presence");
+      if (roll >= clamp(p, 0, 1)) return;
+      renderVibraphone(t);
+    }
+
+    function startVibraphone() {
+      var lane = run.clock.lane("vibraphone");
+      function poll(t) {
+        var name = null;
+        try { name = run.harmony.current().name; } catch (e) {}
+        if (name != null) {
+          if (run.vibLastChord != null && name !== run.vibLastChord) vibraphoneConsider(t);
+          run.vibLastChord = name;
+        }
+        lane.at(t + 2.5, poll);
+      }
+      lane.at(run.t0 + 2.5, poll);
     }
 
     // ---- ambient (landscape — the sky's sparse events) -----------------------
@@ -2613,6 +3738,7 @@
       "breeze", "whistle", "chime", "flutter", "bass", "aeolian",
       "aeolianSing", "ambient", "follow", "harmony", "cadence",
       "seachange", "release",
+      "lyre", "concertina", "handpan", "vibraphone",   // rc.33
     ];
 
     function finalize(r) {
@@ -2682,6 +3808,12 @@
         fx2: master.fork("fx2"),            // wall B's drift phase (1 draw)
         delaySend: master.fork("delaySend"),
         rooms: master.fork("rooms"),
+        // rc.33 — four NEW label-hashed forks. Nothing pre-existing gains a
+        // draw: the four voices' dice are entirely their own.
+        lyre: master.fork("lyre"),
+        concertina: master.fork("concertina"),
+        handpan: master.fork("handpan"),
+        vibraphone: master.fork("vibraphone"),
       };
 
       // TWO ROOMS: the close air (short, bright — v1 Ariel's decay 3.0
@@ -2742,6 +3874,11 @@
       var layAmb = mAttach("ambient", c.createGain(), 1);
       var layHalo = mAttach("halo", c.createGain(), 1);
       var layBass = mAttach("bass", c.createGain(), 1);
+      // rc.33 — one layer gain per new voice, mixer-owned like every other.
+      var layLyre = mAttach("lyre", c.createGain(), 1);
+      var layConc = mAttach("concertina", c.createGain(), 1);
+      var layPan = mAttach("handpan", c.createGain(), 1);
+      var layVib = mAttach("vibraphone", c.createGain(), 1);
 
       // Landscape chain: sources → breezeBreath (joints only) → breezeLevel
       // (follower only) → mixBreeze (mixer only) → the room pair. One
@@ -2763,6 +3900,15 @@
       roomBlend.register("ambient", layAmb, 0.12);
       roomBlend.register("halo", layHalo, 0.18);
       roomBlend.register("bass", layBass, -0.15);
+      // rc.33: the three STRUCK/PLUCKED bodies lean toward the sky (they are
+      // outdoor sounds and the open room flatters them); the concertina is a
+      // thing in the room with you and would drown in a 5 s tail, so it sits
+      // closest of anything here — the lab poured it into its own short room
+      // for exactly this reason.
+      roomBlend.register("lyre", layLyre, 0.10);
+      roomBlend.register("concertina", layConc, -0.10);
+      roomBlend.register("handpan", layPan, 0.08);
+      roomBlend.register("vibraphone", layVib, 0.10);
 
       var poolMel = PJ2.Voice.pannerPool(c, layMel, 3);
       var mixWraps = {
@@ -2818,6 +3964,21 @@
       delaySendFlutter.connect(delayA.send);
       var delaySendWhistle = mAttach("whistle", c.createGain(), 0.35); // the song, when the coin says
       delaySendWhistle.connect(delayA.send);
+      // rc.33 — the three STRUCK/PLUCKED newcomers speak to the BRIGHTER wall
+      // (wall A, damp 2800 with the ascending thin filter), modestly: under
+      // the bell's 0.5 and the cloud's 0.4, because they are landscape and
+      // must stay under the speakers even in their echoes. The STRUCTURAL
+      // RULE above admits them by its own terms — Ariel's loops may only be
+      // excited by phrases that END, and a pluck, a struck shell and a struck
+      // bar are nothing but endings. THE CONCERTINA IS NOT HERE, and that is
+      // load-bearing: it is a CONTINUOUS body (a 9 s held dyad), exactly the
+      // class the rule bars from a feedback line, and it stays dry.
+      var delaySendLyre = mAttach("lyre", c.createGain(), 0.2);
+      delaySendLyre.connect(delayA.send);
+      var delaySendPan = mAttach("handpan", c.createGain(), 0.15);
+      delaySendPan.connect(delayA.send);
+      var delaySendVib = mAttach("vibraphone", c.createGain(), 0.18);
+      delaySendVib.connect(delayA.send);
 
       // THE HALO — six strings on {0,1,3,4} + two octave tonics (the #4
       // rings here), excited by chime + whistle sends AND a small tap of
@@ -2871,6 +4032,16 @@
       haloSendWhistle.connect(haloSend);
       var haloSendChime = mAttach("chime", c.createGain(), 1);
       haloSendChime.connect(haloSend);
+      // rc.33 — THE LYRE'S WHISPER into the strings, and only the lyre's:
+      // sympathetic strings hearing a plucked string is the oldest thing in
+      // the instrument, and the halo is tuned to the lydian degrees the roll
+      // is voicing. Kept small on purpose — the audit above holds because
+      // this adds 0.024 × (0.35 × 0.12) ≈ 0.001 to the bank's worst
+      // SUSTAINED input of ~0.0041, and a roll is a decay, not a hold. The
+      // handpan and the vibraphone get no string send: two more struck
+      // bodies ringing the same six strings is a chorus, not an aura.
+      var haloSendLyre = mAttach("lyre", c.createGain(), 0.35);
+      haloSendLyre.connect(haloSend);
       var haloDelayTap = c.createGain();
       haloDelayTap.gain.setValueAtTime(0.1, clock.now());
       delayA.output.connect(haloDelayTap);
@@ -2914,6 +4085,15 @@
         roomClose: roomClose, roomSky: roomSky, roomBlend: roomBlend,
         roomBalance: 0.25,
         layMel: layMel, layAeo: layAeo, layAmb: layAmb, layHalo: layHalo, layBass: layBass,
+        // rc.33 — the four new layers, their sends, and their brains' state
+        layLyre: layLyre, layConc: layConc, layPan: layPan, layVib: layVib,
+        delaySendLyre: delaySendLyre, delaySendPan: delaySendPan,
+        delaySendVib: delaySendVib, haloSendLyre: haloSendLyre,
+        lyreHoldUntil: 0, lyreRestUntil: 0, lyreLastChord: null, lyreAlightDone: false,
+        concHoldUntil: 0, concRestUntil: 0, concLastChord: null, concPrev: null,
+        panHoldUntil: 0, panRestUntil: 0,
+        vibHoldUntil: 0, vibRestUntil: 0, vibLastChord: null,
+        alightSteps: 0,
         mix: mix, mixWraps: mixWraps,
         weather: weather,
         delayA: delayA, delayB: delayB,
@@ -2980,6 +4160,9 @@
       startAeolianBed();
       startAeolianSing();
       startAmbient();
+      startLyre();          // rc.33
+      startConcertina();    // rc.33 (the handpan has no lane chain of its own:
+      startVibraphone();    //        every answer is scheduled off a phrase)
 
       // Born already mixed, rate side: stamp each layer's stored rate onto
       // its lanes (no-op at the default 1 — setLaneRate early-outs).
@@ -3217,5 +4400,10 @@
     CADENCES: ARIEL_CADENCES,
     SEACHANGE: ARIEL_SEACHANGE,
     WEATHER: WEATHER_ARIEL,
+    // rc.33: and the scene roster, so the harness can assert the shipped
+    // table against the lab page's PLAN_DEFAULT instead of keeping a second
+    // copy that can silently drift out of step with this one.
+    ROSTER_COLS: ROSTER_COLS,
+    ROSTER: SCENE_ROSTER,
   };
 })();
