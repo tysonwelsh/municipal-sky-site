@@ -30,13 +30,14 @@
   MANNER of entering, not to be reproducible. The integration moves every
   draw onto seeded forks (§9).
 
-  THE ONE LAW THIS PAGE IS BUILT AROUND: THE CUT. Every prototype voice
-  here is hard-gated silent from 4 s before the cut's tB, through the hush,
-  through its return — the low horn's own law (hornConsider: "if (run.cut &&
-  !run.cut.fired && t > run.cut.tB - 4) return"). Anything of ours still
-  sounding when the cut lands gets an anchored kill-fade of 0.25 s at tB,
-  the length of the cut's own dip. The hush belongs to the proto-drum and
-  the one waterphone apparition; nothing of ours may be in it.
+  THE ONE LAW THIS PAGE IS BUILT AROUND: THE CUT. No candidate may START
+  from 4 s before the cut's tB, through the hush, through its return — the
+  low horn's own law (hornConsider: "if (run.cut && !run.cut.fired && t >
+  run.cut.tB - 4) return"). Anything already in the air is killed at tB in
+  0.25 s, an anchored fade the length of the cut's own dip. So the four
+  seconds before tB are a held breath, not an instant silence, and the hush
+  itself belongs to the proto-drum and the one waterphone apparition;
+  nothing of ours may be in it.
 
   Query parameters: ?autoplay=1 (self-test, needs Chromium's
   --autoplay-policy=no-user-gesture-required) · ?seed=N · ?tab=NAME ·
@@ -107,10 +108,11 @@
       plays the voice on the current pose immediately; presence ×3 makes it
       enter constantly; the hush chips leave the gurdy alone so you can hear
       the candidate naked against the seam.</p>
-      <p class="tiny dim"><b>The cut owns the room.</b> Every voice here is
-      silent from 4 s before the cut lands, through the hush and its return —
-      the horn's law. The line under the meter says where the cut is; while
-      it says HUSH, even SOUND ONE NOW refuses, and that refusal is the
+      <p class="tiny dim"><b>The cut owns the room.</b> No voice here may
+      <i>start</i> from 4 s before the cut lands, through the hush and its
+      return — the horn's law. Anything already in the air is killed at the
+      cut itself, in 0.25 s. The line under the meter says where the cut is;
+      while it says HUSH, even SOUND ONE NOW refuses, and that refusal is the
       feature. The hush belongs to the heartbeat and the apparition.</p>
       <p class="tiny dim">Each card shows its last two decisions. Tap
       <b>KNOBS ▾</b> to open one instrument's knobs; opening one folds the
@@ -149,8 +151,13 @@
     excite the throat or pulse the <b>trompette</b>, and every shadow takes
     the page's room instead of the scene's room blend. A shadow also cannot
     read the engine's private darkening window, so a shadowed horn or gurdy
-    does not close its filter the extra 15 % at an arrival. Judge the STOP's
-    colour here, not the layer's whole place in the cave.</p>
+    does not close its filter the extra 15 % at an arrival. What a shadow
+    <i>does</i> carry is <b>the cut</b>: the gurdy's and the horn's shadows
+    go through the page's own duck, dipping and returning on the cut event's
+    own numbers, because the engine ducks those two layers too. The
+    percussion shadows and the cut's waterphone apparition stay open — the
+    engine routes them around the dip, and the hush is theirs. Judge the
+    STOP's colour here, not the layer's whole place in the cave.</p>
     </details>
     <div id="stops"></div>
   </section>
@@ -298,7 +305,7 @@
   // "darker, not louder": the loudest thing the engine itself schedules is
   // the proto-drum's lub at ~0.055, and a frame-drum stroke at 0.045.
   // ==========================================================================
-  // TWO CEILINGS, because the page schedules two different kinds of sound.
+  // THREE CEILINGS, because the page schedules three different kinds of sound.
   //
   // GAIN_CEILING is the PROTOTYPES' law: nothing this page invents may ask
   // for more than 0.05, and window.__lab.maxGain reports it. That is the
@@ -312,8 +319,22 @@
   // Clamping that to 0.05 would quietly re-mix the heartbeat that inhabits
   // the hush, which is the one thing the FINGERTIPS card exists to preserve.
   // It is reported separately as window.__lab.maxShadowGain.
+  //
+  // COMB_CEILING is the third and last, and it exists for exactly one voice.
+  // The jaw harp's body is a lossy comb read through a Q-4 band a decade
+  // wide, which throws ~28 dB away; the family's practice is to write the
+  // makeup INTO the schedule (the engine's own chant carries "peak 0.032
+  // pre-formant-loss compensation" for the same reason). So the node-gain
+  // PRODUCT the page asks for on that chain is 6 x 0.02 = 0.12 even though
+  // the measured output is the quietest of the five candidates (-47 dB).
+  // Before this, maxGain reported only the envelope's 0.02 and the x6 was
+  // invisible — the number said 0.03 while the chain asked for 0.12. Now the
+  // product goes through capGain and maxGain reports it, and THIS is the
+  // ceiling that product is held to. Any other prototype still answers to
+  // GAIN_CEILING: passing a ceiling is deliberate, per-chain, and rare.
   var GAIN_CEILING = 0.05;
   var SHADOW_CEILING = 0.0546;   // = 0.042 x 1.3, the engine's own loudest beat
+  var COMB_CEILING = 0.15;       // = 6 x 0.025, the makeup times the loudest twang
   var maxGainSeen = 0;           // the loudest peak the PROTOTYPES have asked for
   var maxShadowSeen = 0;         // ...and the loudest a shadow has
   function capAt(v, what, ceiling, label) {
@@ -325,8 +346,8 @@
     }
     return v;
   }
-  function capGain(v, what) {
-    v = capAt(v, what, GAIN_CEILING, "prototype");
+  function capGain(v, what, ceiling) {
+    v = capAt(v, what, ceiling || GAIN_CEILING, "prototype");
     if (v > maxGainSeen) maxGainSeen = v;
     return v;
   }
@@ -568,14 +589,21 @@
   // engine's own rooms. Note they are poured into bus.input DIRECTLY, not
   // through the engine's cutGain: the cut cannot duck a prototype, which is
   // exactly why the gate above has to be a law and not a level.
+  //
+  // ONE exception, and it is not a prototype: the gurdy's and the horn's
+  // SHADOWS stand in for two engine layers that do sum into cutGain, so they
+  // go through plumb.shadowDuck — the page's own copy of the cut's dip,
+  // written from the cut event. See buildPlumbing and duckShadowAt below.
   // ==========================================================================
-  var plumb = { gen: -1, dark: null, wide: null, shadow: null, revs: [] };
+  var plumb = { gen: -1, dark: null, wide: null, shadow: null, shadowDuck: null, revs: [] };
 
   function buildPlumbing() {
     killOwner(null, 0.05);
     for (var i = 0; i < plumb.revs.length; i++) {
       try { plumb.revs[i].output.disconnect(); } catch (e) {}
     }
+    if (plumb.shadowDuck) { try { plumb.shadowDuck.disconnect(); } catch (e) {} }
+    plumb.shadowDuck = null;
     plumb.revs = [];
     try {
       var c = cap.ctx;
@@ -594,6 +622,22 @@
       plumb.wide   = room({ decayS: 6.0, preDelayS: 0.06, wet: 0.60, brightness: 0.7 });
       // the shadows stand where the engine's voices stood
       plumb.shadow = room({ decayS: 3.2, preDelayS: 0.03, wet: 0.35, brightness: 0.9 });
+      // THE SHADOW DUCK — the gurdy's and the horn's shadows only. In the
+      // engine both layers sum into run.cutGain (mixGurdy -> cutGain,
+      // layHorn -> cutGain), so the cut ducks them with the rest of the
+      // landscape; a shadow poured straight into the bus would carry the
+      // cluster UN-ducked through the hush and make the stop a lie. It sits
+      // BEFORE the shadow room, exactly as cutGain sits before the engine's
+      // room send (roomBlend.register("landscape", cutGain, 0.08)), so the
+      // tail rings past the dip the same way the engine's does.
+      //
+      // The percussion shadows and the waterphone apparition are NOT ducked,
+      // and that is not an oversight: the engine routes the proto-drum around
+      // cutGain and the apparition bypasses the hush gate, so their shadows
+      // must stay open or the hush loses its heart.
+      plumb.shadowDuck = c.createGain();
+      plumb.shadowDuck.gain.setValueAtTime(1, c.currentTime);
+      plumb.shadowDuck.connect(plumb.shadow);
       plumb.gen = cap.gen;
 
       for (var k in CANDS) resetBrain(CANDS[k]);
@@ -609,6 +653,43 @@
       plumb.gen = cap.gen; // never retry-loop a broken build every pulse
       err("plumbing failed: " + e.message);
     }
+  }
+
+  // The gurdy's and the horn's shadows sing through the duck. If a plumbing
+  // pass failed there is no duck, and the room is the fallback: better
+  // un-ducked than missing — a silent stop would read as a broken shadow.
+  function shadowDuck() { return plumb.shadowDuck || plumb.shadow; }
+
+  // THE CUT DUCKS THE SHADOW. The engine writes one schedule onto its
+  // run.cutGain (pj2-sycorax.js: anchored at 1, down to dip in 0.25 s, held
+  // holdS, returned over retS); the cut event carries the same four numbers,
+  // so the shadow's duck is written from the event rather than guessed. One
+  // writer, one schedule, all anchored — never setTargetAtTime.
+  function duckShadowAt(evt) {
+    var d = plumb.shadowDuck;
+    if (!d || !evt || evt.t == null) return;
+    var dip = (evt.dip != null) ? evt.dip : (0.28 - 0.14 * (evt.severity || 0));
+    var holdS = (evt.holdS != null) ? evt.holdS : 3;
+    var retS = (evt.returnS != null) ? evt.returnS : 4;
+    var g = d.gain;
+    if (g.cancelScheduledValues) g.cancelScheduledValues(evt.t);
+    g.setValueAtTime(1, evt.t);
+    g.linearRampToValueAtTime(dip, evt.t + 0.25);
+    g.setValueAtTime(dip, evt.t + holdS);
+    g.linearRampToValueAtTime(1, evt.t + holdS + retS);
+    console.log("DIAG shadow duck: dip " + dip.toFixed(2) + " hold " + holdS.toFixed(1) +
+                "s return " + retS.toFixed(1) + "s at t=" + evt.t.toFixed(2));
+  }
+  // stop / reseed / play — the duck goes home over 0.15 s, the same length
+  // the page's own tail is killed in, so nothing steps.
+  function resetShadowDuck() {
+    var d = plumb.shadowDuck;
+    if (!d || !cap.ctx) return;
+    var t = cap.ctx.currentTime;
+    var g = d.gain, v = g.value;
+    if (g.cancelScheduledValues) g.cancelScheduledValues(t);
+    g.setValueAtTime(v, t);
+    g.linearRampToValueAtTime(1, t + 0.15);
   }
 
   // ==========================================================================
@@ -893,7 +974,6 @@
     // the comb's own T60, so the twang is FINITE and the loop is torn down
     var t60 = dt * 60 / Math.max(0.5, -20 * Math.log10(Math.max(0.05, sus)));
     var ring = clamp(t60, 0.35, 3.5);
-    var pk = capGain(0.02 * K.level, "jaw harp");
     // FORMANT-LOSS MAKEUP, the family's own practice (the engine's chant
     // carries "peak 0.032 pre-formant-loss compensation" for the same
     // reason): a Q-4 band a decade wide throws away most of a comb's energy,
@@ -902,8 +982,17 @@
     // sits OUTSIDE the feedback loop (delay → mouth → makeup → envelope), so
     // it cannot touch the loop gain; and the measured output still lands far
     // under the 0.02 the envelope schedules.
+    //
+    // THE WHOLE PRODUCT is what goes through the ceiling, and the envelope
+    // peak is that product divided back out — so __lab.maxGain reports the
+    // 0.12 this chain really asks for rather than the 0.02 the last node
+    // shows. Held to COMB_CEILING; see the ceilings block at the top.
+    var JAW_MAKEUP = 6;
+    var pk = capGain(0.02 * K.level * JAW_MAKEUP,
+                     "jaw harp (x" + JAW_MAKEUP + " comb-loss makeup included)",
+                     COMB_CEILING) / JAW_MAKEUP;
     var makeup = c.createGain();
-    makeup.gain.setValueAtTime(6, t);
+    makeup.gain.setValueAtTime(JAW_MAKEUP, t);
     var g = c.createGain();
     PJ2.Voice.env(g.gain, t, [[0.006, pk], [ring * 0.7, pk * 0.25], [ring * 0.3, 0]]);
     dl.connect(bp); bp.connect(makeup); makeup.connect(g); g.connect(plumb.dark);
@@ -1214,12 +1303,19 @@
   // rest, so nothing goes missing. Note events arrive ~0.25 s ahead of the
   // sound, which is exactly the head start a shadow needs.
   //
-  // The shadows are NOT under the cut gate: they stand in for the engine's
-  // own voices, and the engine's own hush conduct (the percussion lane
-  // cancelled at tB, the proto-drum routed AROUND cutGain so the heartbeat
-  // keeps beating) is already baked into which notes it emits. That is why
-  // FINGERTIPS keeps the hush's heart: the proto-drum's lub/dub events keep
-  // arriving inside the hush and the shadow keeps rendering them.
+  // The shadows are NOT under the candidates' cut GATE: they stand in for
+  // the engine's own voices, and the engine's own hush conduct (the
+  // percussion lane cancelled at tB, the proto-drum routed AROUND cutGain so
+  // the heartbeat keeps beating) is already baked into which notes it emits.
+  // That is why FINGERTIPS keeps the hush's heart: the proto-drum's lub/dub
+  // events keep arriving inside the hush and the shadow keeps rendering them.
+  //
+  // They ARE under the cut's LEVEL, though, for the two layers the engine
+  // ducks: the gurdy and the horn sum into run.cutGain in pj2-sycorax.js, so
+  // their shadows sing through plumb.shadowDuck and dip with the night
+  // (duckShadowAt, from the cut event's own dip/hold/return). Percussion and
+  // the waterphone apparition stay open, because the engine routes them
+  // around cutGain — ducking those would empty the hush.
   // ==========================================================================
   var VOICE_LAYER = {
     rebec: "rebec", horn: "horn", waterphone: "waterphone",
@@ -1323,7 +1419,7 @@
       lp.frequency.exponentialRampToValueAtTime(300, t + durS);
       var g = c.createGain();
       PJ2.Voice.env(g.gain, t, [[atk, peak], [hold, peak * 0.92], [rel, 0]]);
-      o.connect(lp); lp.connect(g); g.connect(plumb.shadow);
+      o.connect(lp); lp.connect(g); g.connect(shadowDuck());
       o.start(t); o.stop(t + durS + 0.3);
       r.sources.push(o); r.gains.push(g); r.nodes.push(lp);
       // the breath — ×1.5 when stopped: more air gets past the hand than tone
@@ -1337,7 +1433,7 @@
         bp.Q.setValueAtTime(1.2, t);
         var bg = c.createGain();
         PJ2.Voice.env(bg.gain, t, [[atk, bPeak], [hold, bPeak * 0.8], [rel, 0]]);
-        nz.connect(bp); bp.connect(bg); bg.connect(plumb.shadow);
+        nz.connect(bp); bp.connect(bg); bg.connect(shadowDuck());
         nz.start(t, nz.randomOffset); nz.stop(t + durS + 0.3);
         r.sources.push(nz); r.gains.push(bg); r.nodes.push(bp);
       }
@@ -1352,7 +1448,7 @@
         var pg = c.createGain();
         PJ2.Voice.env(pg.gain, t, [[durS * 0.32, 0], [durS * 0.18, wPeak],
                                    [durS * 0.22, wPeak * 0.5], [durS * 0.28, 0]]);
-        p3.connect(pg); pg.connect(plumb.shadow);
+        p3.connect(pg); pg.connect(shadowDuck());
         p3.start(t); p3.stop(t + durS + 0.3);
         r.sources.push(p3); r.gains.push(pg);
       }
@@ -1637,7 +1733,7 @@
     lp.frequency.linearRampToValueAtTime(cutoff + 80, t + durS * 0.4);
     lp.frequency.linearRampToValueAtTime(Math.max(80, cutoff - 30), t + durS);
     lp.Q.setValueAtTime(0.5, t);
-    lp.connect(plumb.shadow);
+    lp.connect(shadowDuck());
     var rec = mkRec("shadow:gurdy", t + durS + 0.3);
     rec.nodes.push(lp);
     track(rec);
@@ -1656,7 +1752,7 @@
     o.frequency.linearRampToValueAtTime(freq, t + durS);
     var g = c.createGain();
     o.connect(g);
-    g.connect(thruLp ? cyc.lp : plumb.shadow);      // the sub bypasses the lowpass
+    g.connect(thruLp ? cyc.lp : shadowDuck());     // the sub bypasses the lowpass
     var pk = capShadow(peak * lvol, "gurdy");
     PJ2.Voice.env(g.gain, t, [[cyc.fadeIn, pk],
                               [Math.max(0.05, durS - cyc.fadeIn - cyc.fadeOut), pk],
@@ -1674,7 +1770,7 @@
     var ws = softClip(c);
     var post = c.createGain();
     post.gain.setValueAtTime(1, t);
-    o.connect(g); g.connect(ws); ws.connect(post); post.connect(plumb.shadow);
+    o.connect(g); g.connect(ws); ws.connect(post); post.connect(shadowDuck());
     var pk = capShadow(0.012 * dog * lvol, "trompette (page approximation)");
     PJ2.Voice.env(g.gain, t, [[cyc.fadeIn, pk],
                               [Math.max(0.05, durS - cyc.fadeIn - cyc.fadeOut), pk],
@@ -1791,11 +1887,11 @@
     chant:      [1, 1, 1, 1, 1],
     rebec:      [0, 1, 1, 0, 0],
     waterphone: [0, 0, 1, 0, 0],
-    boneflute:  [0, 1, 0, 1, 0],
+    boneflute:  [0, 1, 0, 1, 0],   // the invocation tick is OURS: SPEAK_P.boneflute is 0.25 in both
     percussion: [1, 1, 1, 1, 1],   // the afterimage's "proto only" is the FINGERTIPS card's job
     ambient:    [1, 1, 1, 1, 1],
     bullroarer: [0, 1, 0, 1, 0],
-    overtone:   [0, 1, 0, 1, 0],
+    overtone:   [0, 1, 0, 1, 0],   // the processional tick is OURS: the brief's entry law / OVER_SCENE
     jawharp:    [0, 0, 1, 0, 0],
     blade:      [0, 0, 0, 1, 1],
     cauldron:   [1, 0, 1, 1, 0]
@@ -2059,7 +2155,7 @@
       knobs: [
         { key: "stopped", label: "stopped — open (0) ↔ hand fully in the bell (1)", min: 0, max: 1, step: 0.02, def: 1 }
       ],
-      caveat: "A shadow cannot read the engine's private darkening window, so a shadowed horn does not close its bell the extra 15 % at an arrival, and its fixed 0.08 tap on the grit bus is gone."
+      caveat: "A shadow cannot read the engine's private darkening window, so a shadowed horn does not close its bell the extra 15 % at an arrival, and its fixed 0.08 tap on the grit bus is gone. The CUT still ducks it: the engine sums the horn into cutGain, and this shadow rides the page's own copy of the same dip, taken from the cut event."
     },
     {
       layer: "waterphone", title: "WATERPHONE — struck",
@@ -2086,7 +2182,7 @@
       knobs: [
         { key: "dog", label: "dog — off (0, the stop) ↔ a page-side trompette back in (1)", min: 0, max: 1, step: 0.02, def: 0 }
       ],
-      caveat: "READ THIS ONE. The engine's trompette lives on the GRIT BUS, which a shadow cannot reach — so \"dog off\" here also loses the grit bus's saturated shadow of the whole bed, and what the knob restores is a page-side approximation, not the engine's buzz. Judge the ABSENCE of the buzz, not the rest of the tone."
+      caveat: "READ THIS ONE. The engine's trompette lives on the GRIT BUS, which a shadow cannot reach — so \"dog off\" here also loses the grit bus's saturated shadow of the whole bed, and what the knob restores is a page-side approximation, not the engine's buzz. Judge the ABSENCE of the buzz, not the rest of the tone. The CUT still ducks this shadow — the cluster dips into the hush exactly as the engine's own would."
     }
   ];
 
@@ -2271,7 +2367,7 @@
     row3.appendChild(bReset); row3.appendChild(bPlan); row3.appendChild(bApply); row3.appendChild(bAuto);
     host.appendChild(row3);
     host.appendChild(el("p", "note tiny",
-      "The engine's own intensity gates and SPEAK_P chances still apply ON TOP of this grid: a layer ticked here can still be quiet because the rite has not warmed up. A row ticked in every column has no opinion and is left to the hush chips — which is why the plan default leaves the gurdy (the seam), the murk, the room and the chant ticked throughout; §5.3 rests players, not the cave. A layer with a STOP switched on stays muted here and its shadow obeys the same tick. The afterimage's \"percussion = proto only\" is not a roster move — the FINGERTIPS card is where that lives."));
+      "The engine's own intensity gates and SPEAK_P chances still apply ON TOP of this grid: a layer ticked here can still be quiet because the rite has not warmed up. A row ticked in every column has no opinion and is left to the hush chips — which is why the plan default leaves the gurdy (the seam), the murk, the room and the chant ticked throughout; §5.3 rests players, not the cave. A layer with a STOP switched on stays muted here and its shadow obeys the same tick. The afterimage's \"percussion = proto only\" is not a roster move — the FINGERTIPS card is where that lives. Two ticks here are NOT in §5.3 and are ours: the BONE FLUTE's invocation tick, because the engine's own SPEAK_P gives the flute the same 0.25 in the processional and the invocation and a table that rests it in one of them would fight the code; and the OVERTONE candidate's processional tick, which comes from the brief's entry law for that voice (the page's own OVER_SCENE: processional and invocation). Untick either if you want §5.3 read literally."));
   }
 
   function paintRoster() {
@@ -2429,15 +2525,19 @@
               " gate=" + (cutOut.blocking ? "SHUT" : "open"),
         lab: { pose: einfo().pose || null, cut: cutOut, roster: rosterSnapshot(),
                onsets: onsets, kills: kills, ctxTime: now(),
-               maxShadowGain: maxShadowSeen }
+               maxShadowGain: maxShadowSeen,
+               // the live node, so a headless run can read the cut's dip off
+               // the gurdy/horn shadow bus instead of taking the log's word
+               shadowDuck: plumb.shadowDuck || null,
+               shadowDuckGain: plumb.shadowDuck ? plumb.shadowDuck.gain.value : null }
       };
     },
     onTransport: function (kind) {
       // the page's own tail is cut BEFORE the engine moves (stop suspends the
       // ctx; reseed hard-cuts) — an anchored fade, never a bare cancel
-      if (kind === "stop") { killOwner(null, 0.15); cutWin = null; }
-      if (kind === "reseed") { killOwner(null, 0.1); cutWin = null; }
-      if (kind === "play") { currentCol = "gathering"; cutWin = null; gurdyCycle = { t: -1, lp: null }; }
+      if (kind === "stop") { killOwner(null, 0.15); cutWin = null; resetShadowDuck(); }
+      if (kind === "reseed") { killOwner(null, 0.1); cutWin = null; resetShadowDuck(); }
+      if (kind === "play") { currentCol = "gathering"; cutWin = null; gurdyCycle = { t: -1, lp: null }; resetShadowDuck(); }
     },
     onTick: function (info) { pulse(info); }
   });
@@ -2489,8 +2589,11 @@
           else paintRoster();
         } else if (evt.type === "cut") {
           refineCut(evt);
-          killCandidatesAt(cutWin.tB);        // anchored, 0.25 s — the dip's own length
-          cutWin.killed = true;
+          if (!cutWin.killed) {
+            killCandidatesAt(cutWin.tB);      // anchored, 0.25 s — the dip's own length
+            cutWin.killed = true;
+          }
+          duckShadowAt(evt);                  // the gurdy's and the horn's shadows dip with the night
           logLine("— THE CUT at " + cutWin.tB.toFixed(1) + "s: sev " + cutWin.sev.toFixed(2) +
                   ", hush " + cutWin.holdS.toFixed(1) + "s, return " + cutWin.retS.toFixed(1) +
                   "s — every candidate killed in 0.25 s and silent until " +
@@ -2523,31 +2626,34 @@
   // run the blade's and the cauldron's own clocks, consume opportunities,
   // sweep dead notes, repaint the status lines and the cut line.
   // ==========================================================================
+  // The strings are SHORT ON PURPOSE: the line is one nowrap row in a sticky
+  // bar 371 px wide on a 390 px phone, and the actionable half of every state
+  // is the number at the END. A sentence that reads well on a desktop is
+  // ellipsed exactly where the owner needs it, so each state says its name,
+  // its number, and nothing else. (t8/tB-clip measures every state's
+  // scrollWidth against clientWidth at 390 px.)
   function paintCut() {
     if (!cutEl) return;
     var s = cutState();
     cutEl.className = "";
-    if (s === "none") { cutEl.textContent = "the cut: not planned (it needs an invocation)"; return; }
+    if (s === "none") { cutEl.textContent = "the cut: not planned (needs an invocation)"; return; }
     var t = now();
     if (s === "planned") {
       cutEl.className = "armed";
-      cutEl.textContent = "the cut: planned in " + (cutWin.tB - t).toFixed(0) + "s · sev " +
-        cutWin.sev.toFixed(2) + " · everything here goes silent in " +
+      cutEl.textContent = "cut in " + (cutWin.tB - t).toFixed(0) + "s · sev " +
+        cutWin.sev.toFixed(2) + " · silent in " +
         (cutWin.tB - CUT_LEAD - t).toFixed(0) + "s";
     } else if (s === "held-breath") {
       cutEl.className = "hush";
-      cutEl.textContent = "the cut: HOLDING BREATH — " + (cutWin.tB - t).toFixed(1) +
-        "s to go, every candidate already silent";
+      cutEl.textContent = "HOLDING BREATH — silent · " + (cutWin.tB - t).toFixed(1) + "s to tB";
     } else if (s === "HUSH") {
       cutEl.className = "hush";
-      cutEl.textContent = "the cut: HUSH — " + (cutWin.endS - t).toFixed(1) +
-        "s left; only the heartbeat and the apparition";
+      cutEl.textContent = "HUSH — " + (cutWin.endS - t).toFixed(1) + "s left · heartbeat only";
     } else if (s === "return") {
       cutEl.className = "hush";
-      cutEl.textContent = "the cut: returning — " + (cutWin.doneS - t).toFixed(1) +
-        "s until the candidates may speak again";
+      cutEl.textContent = "returning — " + (cutWin.doneS - t).toFixed(1) + "s to speech";
     } else {
-      cutEl.textContent = "the cut: passed (sev " + cutWin.sev.toFixed(2) + ") — the afterimage is open";
+      cutEl.textContent = "cut passed (sev " + cutWin.sev.toFixed(2) + ") · candidates may speak";
     }
   }
 
