@@ -123,6 +123,71 @@
 //   knob the owner has MOVED wins over the cast until it is reset.
 //   Narrated as a {type:"cast"} event and getInfo().cast.
 //
+// rc.34 — THE WANDER (PLAN-SOUND-DIVERSITY §11 and §11.4): every instrument
+// is PLAYED now rather than set. Until this build a voice varied in what it
+// said and when, but its sound was one number: the bow always the same
+// pressure, the plectrum always the same quill, the reed always the same
+// buzz. Three kinds of draw fix that, and every layer carries ONE new `vary`
+// knob (0–2, def 1) that scales all of its spans — at vary 0 the desk is
+// rc.33 bit for bit, which the harness asserts against rc.33's own digests.
+//
+//   TOUCH      a fresh draw every sounding — "no two alike"
+//   CHARACTER  one draw per evening — the instrument stays itself, and each
+//              night is a slightly different one
+//   WEATHER    a slow drift over minutes, deterministic in SONG time
+//
+//   drone        warmth CHARACTER ±15 % · sway WEATHER ±25 %, both read ONCE
+//                at cycle start and held for the cycle's whole life (the seam
+//                may not move under the listener); registration stays the
+//                CAST's
+//   cello        brightness CHARACTER ±12 % · vibrato TOUCH ±35 % per bow ·
+//                rosin TOUCH ±30 % per bow; harmonics stays a fixed share,
+//                and the bow-in is NOT promoted — it was already drawn
+//                (rng.rnd(1.5, 3) s), not a literal
+//   hum          openness CHARACTER ±15 % AND a WEATHER openDrift ±10 %
+//                within the evening (the two classes the plan asked for on
+//                one row) · waver TOUCH ±35 % per note · breath TOUCH ±30 %
+//                per note (v1's fixed 0.10 shimmer depth, promoted)
+//   harpsichord  brightness TOUCH ±20 % per pluck (the plectrum's position) ·
+//                resonance CHARACTER ±15 % · pluck TOUCH 22.5–37.5 ms (v1's
+//                30 ms burst, promoted); buff stays the CAST's
+//   musicbox     shimmer CHARACTER ±20 % · tine TOUCH ±15 % per pin
+//                (MB_DAMP_DECAY 0.6, promoted); wound stays the CAST's
+//   ambient      density WEATHER ±30 % — the room speaks a little more
+//                freely some stretches than others
+//   halo         level CHARACTER, DOWNWARD ONLY (×0.8–1.0): the whisper's
+//                0.07 is a ceiling, and a ceiling does not wander
+//   vessel       beat / partials / register CHARACTER (0.7–1.3 · 1.25–1.65 ·
+//                +0 p .8 / +1 p .2) — the same bell all night · ring
+//                0.65–1.15 and bow 0.85–1.55 TOUCH per stroke · attack TOUCH,
+//                a ×0.92–1.17 scalar that widens the ALREADY-drawn 2.4–3.6 s
+//                bow-in to the plan's 2.2–4.2 s without moving the fork
+//   regal        reediness 0.22–0.4 and body 4–6.5 dB CHARACTER · bellows
+//                1.0–1.8 TOUCH per chord · parts TOUCH, 2 (p .25) / 3 (p .55)
+//                / 4 (p .2) · unevenness TOUCH, ±0.05 of reediness PER PIPE
+//                (a real regal is uneven, every pipe its own reed); hold and
+//                take unchanged
+//   flue         chiff 0.6–1.5 TOUCH per note (the phrase's first note takes
+//                the harder of two draws) · breath 1.3–2.2 TOUCH per PHRASE,
+//                walking from the lower of two draws to the higher across a
+//                phrase of three notes or more (the player running low on
+//                air) · vibrato 1.3–2.7 TOUCH on notes of 0.6 s and longer ·
+//                register CHARACTER, +1 p .7 / 0 p .15 / +2 p .15 — a descant
+//                one night, a treble another; pace unchanged
+//
+// Where the evening CAST and the wander would both set a knob — the drone's
+// registration, the harpsichord's buff, the music box's wound-down — the CAST
+// keeps it and the row carries no span; dress and prominence are the cast's
+// business, character is the wander's. The bodies never call the helper
+// directly: wTouch / wChar / wWx wrap it and record the min/max of every
+// value actually used, which is what the harness's LIBW rows judge.
+//
+// ONE BODY LAW CHANGED with the wander, and only because of it: the regal's
+// bellows is ONE breath, so its per-pipe peak scales by 3/nParts. A four-part
+// chord is a FULLER chord, not a louder one — which is what a fixed wind
+// supply does, and what keeps the ledger below under the ceiling now that the
+// hand wanders. At the owner's three parts the factor is exactly 1.
+//
 // ROSTER NOTE (rc.31): the regal is the ONE voice that may sound outside
 // its roster cells — only as the organist taking a cadence. Both cadence
 // chords sound inside the OUTGOING scene (tA = tB − (dA + dB)), so a take
@@ -155,6 +220,21 @@
 //   the bed rc.30 played. Same-seed reproducibility is exact, and the
 //   harness proves it every run (REPRO).
 //
+//   STREAM NOTE (rc.34) — the wander adds NO draw to any stream above. Every
+//   one of its draws lives on its own fresh fork ("wander:<layer>:touch",
+//   "wander:<layer>:weather", "wander:<layer>:dress:<n>"), forked off the run
+//   root exactly like every fork before it, so at vary 0 the note+event
+//   stream is rc.33's byte for byte — measured, on two seeds, and pinned in
+//   the harness as digests taken from rc.33's own file (LIBW VARY-ZERO).
+//   At the shipped vary 1 the REALIZED stream does move, and is meant to:
+//   note lengths breathe with the tine and the ring, the ambient's gaps drift
+//   with its density, the regal's hand and the flue's register change what
+//   sounds. Same-seed reproducibility is exact at every vary setting (the
+//   wander's forks are label-hashed off the birth seed like all the others),
+//   and weather is read in SONG time (t − run.t0), never off the absolute
+//   audio clock — the same lesson wxAt learned in Phase 3, and the reason two
+//   same-seed runs started minutes apart still tell the identical evening.
+//
 //   This is the same sanctioned kind of re-roll as Phase 3's new ambient
 //   roster — with one cost worth naming: at the harness's own Library seed
 //   the ALCHEMY refinement arc's directional score fell from 0.075 to 0.020
@@ -171,9 +251,19 @@
 //   chapter 3, and rings ~2.5 s into the reverie it otherwise rests from.
 //   Deliberate, and disclosed here so nobody rediscovers it as a bug.
 //
-// GAIN STAGING (rc.31 pass — worst-case *scheduled* peaks, the family
+// GAIN STAGING (rc.34 pass — worst-case *scheduled* peaks, the family
 // ledger; the two STRUCTURAL caps below are what keep the sum honest now
-// that there are ten voices instead of seven):
+// that there are ten voices instead of seven).
+//
+// rc.34 RULE: every ranged parameter is counted at its span's `hi`, never at
+// its knob — the ledger prices the loudest night the wander can produce, not
+// the average one. The harness recomputes this arithmetic FROM THE SPANS
+// (LIBW WANDER-LEDGER), so widening a span later cannot quietly outrun the
+// ceiling: the row goes red first. Parameters that only move a filter cutoff
+// (drone warmth, cello brightness, harpsichord brightness/resonance), a rate
+// (drone sway), a length (musicbox tine, vessel ring/attack, harpsichord
+// pluck) or an event gap (ambient density) cost nothing here — the envelope
+// peak they ride was already counted.
 //
 //   THE AIR caps speakers at limit+1 — 2 holders outside chapters, 3 in
 //   them, HARD (pj2-air) — so pluck + box + flue + hum-singer can never all
@@ -188,44 +278,69 @@
 //                  sea-change bloom adds 2 x 0.05, all x droneLevel
 //                  (<= 0.48)                                  -> ~ 0.27 worst
 //   cello          ONE bow at a time (the hold law): single 0.0225 or a
-//                  stop 2 x 0.018 = 0.036; x bow swell <= 1.12 -> ~ 0.04
-//                  (the reverie flageolet is quieter: 0.018 + a 0.12 third
-//                  partial + bow noise                        -> ~ 0.026)
+//                  stop 2 x 0.018 = 0.036, + the rosin thread
+//                  0.018 x 0.22 x ROSIN 1.3 = 0.0051 (rc.34 counts it, which
+//                  rc.31's line quietly did not); x bow swell <= 1.12
+//                                                             -> ~ 0.046
+//                  (the reverie flageolet is quieter and unranged: 0.018 +
+//                  a 0.12 third partial + bow noise           -> ~ 0.026)
 //   melody         pluck 0.055 + sparkle <= 0.012 (or, with the lute stop,
-//                  + a 0.010 felt tick), DAMPED box <= 0.024 + shimmer
-//                  <= 0.003, flue 0.021 + chiff 0.007 + breath 0.009;
+//                  + a 0.010 felt tick)                       -> 0.067
+//                  DAMPED box <= 0.024 + shimmer 0.011 x SHIMMER 1.2 x
+//                  MB_DAMP_PARTIAL 0.251 = 0.0033              -> 0.027
+//                  flue 0.021 + chiff 0.021 x 0.35 x CHIFF 1.5 = 0.0110
+//                  + breath 0.021 x 0.25 x BREATH 2.2 = 0.0116 -> 0.044
 //                  at most THREE speakers ever (the air's limit+1)
-//                                                             -> ~ 0.14 worst
+//                                                             -> ~ 0.138 worst
 //   hum            bed swells overlap x2 (env 0.026, post-formant energy
-//                  ~ x0.3) + consort 3 x 0.018 x 0.3 pre       -> ~ 0.032
+//                  ~ x0.3) x sqrt(OPENNESS 1.15 x OPENDRIFT 1.10) = x1.125
+//                  (a wider passband passes energy ~ with its bandwidth, so
+//                  amplitude ~ with its square root) x (1 + BREATH 0.13) /
+//                  1.10 = x1.027                              -> 0.018
+//                  + consort 3 x 0.018 x 0.3 pre (unranged)   -> 0.0162
+//                                                             -> ~ 0.034
 //                  (+ the singer 0.032 only when it is one of the three
 //                  speakers the air admitted — counted in `melody` there)
 //   vessel         ONE bow at a time: 0.015 x (pair 1 + 0.45/0.30/0.15 x
-//                  1.45 partials = 2.305) + friction 0.0011, x bow
-//                  pressure <= 1.1                            -> ~ 0.04 worst
-//   regal          ONE chord at a time: 3 parts x 0.0084 x bellows <= 1.264
-//                  = 0.032, x the 500 Hz body's worst in-band lift ~1.2
-//                                                             -> ~ 0.038 worst
-//                  (at a taken cadence x 0.6 -> 0.023, under the consort's
-//                  own 0.016 x 3 parts it replaces)
+//                  PARTIALS 1.65 = 2.485) + friction 0.015 x 0.06 x BOW 1.55
+//                  = 0.0014, x bow pressure <= 1.1            -> ~ 0.043 worst
+//   regal          ONE chord at a time, and ONE BELLOWS: the per-pipe peak
+//                  scales by 3/nParts, so the CHORD is 3 x 0.0084 = 0.0252
+//                  whether the hand puts down two, three or four pipes.
+//                  x bellows <= 1 + 0.1885 x BELLOWS 1.8 = 1.339
+//                  x the 500 Hz box's worst in-band lift, 1.2 at the owner's
+//                  5 dB scaled by 10^(BODY 6.5/20)/10^(5/20) = 1.426
+//                                                             -> ~ 0.048 worst
+//                  (at a taken cadence x 0.6 -> 0.029, still under the
+//                  consort's own 0.016 x 3 parts it replaces; and because
+//                  the chord total does not depend on the hand, a cadence
+//                  whose two chords draw different part counts still meets
+//                  the <= 1.5 dB / no-new-attack contract by construction)
 //   ambient        loudest one-shot (thunder: sub 0.05 + boom 0.05 x 0.4
 //                  pre + rumble 0.024)                        -> ~ 0.10 worst
-//   halo           levelGain <= 0.07 on a whisper-fed ring    -> ~ 0.02
+//   halo           levelGain <= 0.07 on a whisper-fed ring, and LEVEL's span
+//                  runs downward only, so the ceiling holds   -> ~ 0.02
 //   far-wall delay wet 0.18 x sends (0.5 box / 0.35 pluck)    -> ~ 0.02
 //   ------------------------------------------------------------------
-//   WORST SCENE, roster- and air-aware (the honest sum now):
-//     chapter 2  0.27 + 0.04 + 0.032 + 0.131 (3 speakers) + 0.10 + 0.02
-//                + 0.02 + regal 0.038                        = 0.651
-//     reverie    0.27 + 0.026 + 0.032 + 0.105 (2 speakers) + 0.10 + 0.02
-//                + 0.02 + vessel 0.04                        = 0.613
-//     seizure    0.27 + 0.093 (2 speakers) + 0.10 + 0.02 + 0.02
-//                + regal 0.038                               = 0.541
-//   -> ~ 0.65 absolute worst into the rooms; the equal-power room split
-//   conserves power and each room is dry 1.0 + wet ~0.3 -> ~ 0.85 at bus
-//   input; x masterGain default 0.6 x saturator small-signal gain ~1.66
-//   (pj2-voice lesson #1) ~ 0.85 into the limiter — under the ~ 0.89
-//   (~ -1 dB) master ceiling with the glue compressor still idling. The
-//   rc.24 MEASURED worst case (time-varying mock-param inspection, 2600 s
+//   WORST SCENE, roster- and air-aware, every span at its `hi`:
+//     chapter 2  0.270 + 0.046 + 0.034 + 0.138 (3 speakers) + 0.100
+//                + 0.020 + 0.020 + regal 0.048               = 0.676
+//     reverie    0.270 + 0.026 + 0.034 + 0.111 (2 speakers) + 0.100
+//                + 0.020 + 0.020 + vessel 0.043              = 0.623
+//     seizure    0.270 + 0.094 (2 speakers) + 0.100 + 0.020 + 0.020
+//                + regal 0.048                               = 0.552
+//   -> ~ 0.676 absolute worst into the rooms (rc.31's ledger read 0.651 at
+//   the fixed knobs); the equal-power room split conserves power and each
+//   room is dry 1.0 + wet ~0.3 -> ~ 0.879 at bus input; x masterGain default
+//   0.6 x saturator small-signal gain ~1.66 (pj2-voice lesson #1) ~ 0.876
+//   into the limiter — under the ~ 0.89 (~ -1 dB) master ceiling with the
+//   glue compressor still idling, with ~0.014 to spare. Two spans were
+//   deliberately NOT widened to the plan's numbers because they would have
+//   spent that margin: the halo's level (downward only, and it is a ceiling
+//   besides) and the regal's fourth pipe (one bellows, not a fourth voice's
+//   worth of gain).
+//
+//   The rc.24 MEASURED worst case (time-varying mock-param inspection, 2600 s
 //   run, pj2-phase3-check.js) was 0.360 at the bus input -> 0.298 into the
 //   limiter (~ -10.5 dB) at volume 0.5: concurrence is rarer than this
 //   ledger's pessimism, exactly as it should be, and rc.31 spends its new
@@ -475,66 +590,151 @@
   // seeded-stream draw, and every def equals the constant it replaces, so
   // the default desk is bit-identical to the unparametrized engine.
   // {key, label, min, max, def} — the label says what it audibly does.
+  //
+  // rc.34 — THE WANDER (plan §11). A row may also carry a SPAN:
+  //   lo, hi     the authored range around `def` (it TRANSLATES with the knob)
+  //   per        "touch"     a fresh draw every sounding
+  //              "character" one draw per evening (the instrument stays itself)
+  //              "weather"   a slow drift over minutes, deterministic in t
+  //   round      integer draws only
+  //   weights    a weighted categorical draw, used while the knob still sits
+  //              on its default (a moved knob is the owner's word and wins)
+  // and every layer ends with ONE `vary` knob (0–2, def 1) scaling all its
+  // spans: 0 = fixed at the knob — today's build, bit for bit. The desk shows
+  // key/label/min/max/def only (pj2-ui's getLayerParams contract), so the
+  // extra fields are invisible to it; PJ2.Voice.wander is the only reader.
+  // Registrations and dress (drone registration, harpsichord buff, musicbox
+  // wound) are the evening CAST's and are deliberately NOT ranged here.
+  var VARY_LABEL = "vary — how far touch, character and weather may wander (0 = fixed)";
+  function varyDef() { return { key: "vary", label: VARY_LABEL, min: 0, max: 2, def: 1 }; }
   var LAYER_PARAMS = {
     drone: [
-      { key: "warmth", label: "warmth — how open the bed's lowpass sits", min: 0.6, max: 1.5, def: 1 },
-      { key: "sway", label: "sway — the tremolo's breath rate (Hz)", min: 0.2, max: 1.6, def: 0.7 },
+      { key: "warmth", label: "warmth — how open the bed's lowpass sits", min: 0.6, max: 1.5, def: 1,
+        lo: 0.85, hi: 1.15, per: "character" },
+      { key: "sway", label: "sway — the tremolo's breath rate (Hz)", min: 0.2, max: 1.6, def: 0.7,
+        lo: 0.525, hi: 0.875, per: "weather" },
       // rc.31 stop: the pipe rank, a 3-position switch (rounded)
       // "open", not "flue": the Flue is a mixer row of its own now, and a
       // knob position sharing that name would read as the recorder.
       { key: "registration", label: "registration — the pipe: 0 open · 1 principal · 2 gedackt", min: 0, max: 2, def: 0 },
+      varyDef(),
     ],
     cello: [
-      { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200 },
-      { key: "vibrato", label: "vibrato — the bowing hand's wobble depth", min: 0, max: 2, def: 1 },
-      { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 2, def: 1 },
+      { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200,
+        lo: 1936, hi: 2464, per: "character" },
+      { key: "vibrato", label: "vibrato — the bowing hand's wobble depth", min: 0, max: 2, def: 1,
+        lo: 0.65, hi: 1.35, per: "touch" },
+      { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 2, def: 1,
+        lo: 0.7, hi: 1.3, per: "touch" },
       // rc.31 stop: the flageolet is the reverie MANNER, so its default is 1
       { key: "harmonics", label: "harmonics — the share of reverie bows played as flageolets", min: 0, max: 1, def: 1 },
+      varyDef(),
     ],
     hum: [
-      { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1 },
-      { key: "waver", label: "waver — vibrato depth", min: 0, max: 2, def: 1 },
+      { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1,
+        lo: 0.85, hi: 1.15, per: "character" },
+      // rc.34 — the second class the plan asks for on this row: the mouth
+      // also DRIFTS ±10 % over the evening, on top of the nightly openness.
+      // A pure scalar (def 1) so vary 0 is exactly the old mouth.
+      { key: "openDrift", label: "open drift — how the mouth widens and narrows over the evening", min: 0.7, max: 1.3, def: 1,
+        lo: 0.9, hi: 1.1, per: "weather" },
+      { key: "waver", label: "waver — vibrato depth", min: 0, max: 2, def: 1,
+        lo: 0.65, hi: 1.35, per: "touch" },
+      // rc.34 — promoted body constant: v1's fixed 0.10 shimmer tremolo, the
+      // tremble of breath under the vowel (renderHumNote's shD gain).
+      { key: "breath", label: "breath — the tremble of breath under the vowel", min: 0, max: 0.3, def: 0.1,
+        lo: 0.07, hi: 0.13, per: "touch" },
+      varyDef(),
     ],
     harpsichord: [
-      { key: "brightness", label: "brightness — the string filter's starting bite", min: 1.8, max: 4.6, def: 3.0 },
-      { key: "resonance", label: "resonance — the string filter's Q", min: 0.2, max: 3, def: 0.5 },
+      { key: "brightness", label: "brightness — the string filter's starting bite", min: 1.8, max: 4.6, def: 3.0,
+        lo: 2.4, hi: 3.6, per: "touch" },
+      { key: "resonance", label: "resonance — the string filter's Q", min: 0.2, max: 3, def: 0.5,
+        lo: 0.425, hi: 0.575, per: "character" },
       // rc.31 stop: 0 = today's 8′, 1 = the lute stop (buff), blended
       { key: "buff", label: "buff — the lute stop: felt on the strings, no glint", min: 0, max: 1, def: 0 },
+      // rc.34 — promoted body constant: v1's 30 ms plucked noise burst
+      // (renderPluck's burstS, still halved by the buff).
+      { key: "pluck", label: "pluck — how long the plectrum's burst is (ms)", min: 8, max: 60, def: 30,
+        lo: 22.5, hi: 37.5, per: "touch" },
+      varyDef(),
     ],
     musicbox: [
-      { key: "shimmer", label: "shimmer — the metallic 3rd-partial glint", min: 0, max: 2, def: 1 },
+      { key: "shimmer", label: "shimmer — the metallic 3rd-partial glint", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1.2, per: "character" },
       // rc.31 stop: the mechanism running down — candle-out only
       { key: "wound", label: "wound — the mechanism runs down (candle-out only)", min: 0, max: 1, def: 0 },
+      // rc.34 — promoted body constant: MB_DAMP_DECAY, the felt on the comb.
+      { key: "tine", label: "tine — how long a tine rings (× the note)", min: 0.25, max: 1.2, def: 0.6,
+        lo: 0.51, hi: 0.69, per: "touch" },
+      varyDef(),
     ],
     ambient: [
-      { key: "density", label: "density — how often the room speaks", min: 0.5, max: 2, def: 1 },
+      { key: "density", label: "density — how often the room speaks", min: 0.5, max: 2, def: 1,
+        lo: 0.7, hi: 1.3, per: "weather" },
+      varyDef(),
     ],
     halo: [
-      { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1 },
+      // rc.34 — the plan asks ±20 %, but the halo's whisper has a CEILING the
+      // harness pins (0.015 + 0.055 ≤ 0.07, asserted twice), and a ceiling
+      // may not wander. So the span goes DOWNWARD only: some evenings the
+      // sympathetic strings are strung a little slacker, never tighter.
+      { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1.0, per: "character" },
+      varyDef(),
     ],
     // rc.31 — the three new voices. Every default IS the owner's by-ear
     // tuning from lab-library.html (2026-09-03), so the desk at rest is
     // exactly the instrument they approved.
     vessel: [
-      { key: "beat", label: "beat — the two fundamentals beating (Hz — the sound itself)", min: 0, max: 3, def: 1 },
-      { key: "ring", label: "ring — how long the metal rings on after the bow lifts", min: 0.4, max: 2.5, def: 0.9 },
-      { key: "bow", label: "bow — the friction thread while the bow is on", min: 0, max: 2, def: 1.2 },
-      { key: "partials", label: "partials — the three inharmonic upper partials", min: 0, max: 2, def: 1.45 },
-      { key: "register", label: "register — which octave the bell sits in (0 or +1, rounded)", min: 0, max: 1, def: 0 },
+      { key: "beat", label: "beat — the two fundamentals beating (Hz — the sound itself)", min: 0, max: 3, def: 1,
+        lo: 0.7, hi: 1.3, per: "character" },
+      { key: "ring", label: "ring — how long the metal rings on after the bow lifts", min: 0.4, max: 2.5, def: 0.9,
+        lo: 0.65, hi: 1.15, per: "touch" },
+      { key: "bow", label: "bow — the friction thread while the bow is on", min: 0, max: 2, def: 1.2,
+        lo: 0.85, hi: 1.55, per: "touch" },
+      { key: "partials", label: "partials — the three inharmonic upper partials", min: 0, max: 2, def: 1.45,
+        lo: 1.25, hi: 1.65, per: "character" },
+      { key: "register", label: "register — which octave the bell sits in (0 or +1, rounded)", min: 0, max: 1, def: 0,
+        per: "character", round: true, weights: [[0, 0.8], [1, 0.2]] },
+      // rc.34 — the bow-in was ALREADY drawn (rng.rnd(2.4, 3.6) s); this
+      // scalar widens that draw to the plan's 2.2–4.2 s without moving the
+      // vessel fork. def 1 = the drawn seconds exactly.
+      { key: "attack", label: "attack — how slowly the bow leans in (× the drawn 2.4–3.6 s)", min: 0.5, max: 2, def: 1,
+        lo: 0.92, hi: 1.17, per: "touch" },
+      varyDef(),
     ],
     regal: [
-      { key: "reediness", label: "reediness — square (soft) to saw (buzzy)", min: 0, max: 1, def: 0.3 },
-      { key: "bellows", label: "bellows — how deeply the breath swells under the chord", min: 0, max: 2, def: 1.4 },
-      { key: "body", label: "body — the 500 Hz reed box (dB)", min: 0, max: 10, def: 5 },
+      { key: "reediness", label: "reediness — square (soft) to saw (buzzy)", min: 0, max: 1, def: 0.3,
+        lo: 0.22, hi: 0.4, per: "character" },
+      // rc.34 — a real regal is uneven: every pipe its own reed. The knob is
+      // the half-width of the per-pipe spread; the draw supplies the sign and
+      // size (see renderRegal). def 0.05 = the plan's ±0.05.
+      { key: "unevenness", label: "unevenness — how differently each pipe is voiced (± reediness)", min: 0, max: 0.15, def: 0.05,
+        lo: 0, hi: 0.1, per: "touch" },
+      { key: "bellows", label: "bellows — how deeply the breath swells under the chord", min: 0, max: 2, def: 1.4,
+        lo: 1.0, hi: 1.8, per: "touch" },
+      { key: "body", label: "body — the 500 Hz reed box (dB)", min: 0, max: 10, def: 5,
+        lo: 4, hi: 6.5, per: "character" },
+      // rc.34 — promoted body constant: REGAL_PARTS. A bare fifth some
+      // chords, a full hand others; three stays the mode.
+      { key: "parts", label: "parts — how many pipes the organist puts down", min: 2, max: 4, def: 3,
+        per: "touch", round: true, weights: [[2, 0.25], [3, 0.55], [4, 0.2]] },
       { key: "hold", label: "hold — how long a chord is held (× 8–20 s)", min: 0.5, max: 2, def: 0.7 },
       { key: "take", label: "take — the chance the organist voices the cadence himself", min: 0, max: 1, def: 0.45 },
+      varyDef(),
     ],
     flue: [
-      { key: "chiff", label: "chiff — the breath edge at each onset", min: 0, max: 2, def: 1 },
-      { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2.5, def: 1.75 },
-      { key: "vibrato", label: "vibrato — the waver, arriving half a second late", min: 0, max: 4, def: 2 },
-      { key: "register", label: "register — how high the recorder sits (0/+1/+2, rounded)", min: 0, max: 2, def: 1 },
+      { key: "chiff", label: "chiff — the breath edge at each onset", min: 0, max: 2, def: 1,
+        lo: 0.6, hi: 1.5, per: "touch" },
+      { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2.5, def: 1.75,
+        lo: 1.3, hi: 2.2, per: "touch" },
+      { key: "vibrato", label: "vibrato — the waver, arriving half a second late", min: 0, max: 4, def: 2,
+        lo: 1.3, hi: 2.7, per: "touch" },
+      { key: "register", label: "register — how high the recorder sits (0/+1/+2, rounded)", min: 0, max: 2, def: 1,
+        per: "character", round: true, weights: [[1, 0.7], [0, 0.15], [2, 0.15]] },
       { key: "pace", label: "pace — faster to the right", min: 0.5, max: 2, def: 1.5 },
+      varyDef(),
     ],
   };
 
@@ -577,7 +777,7 @@
   // 2026-09-03: "damped replaces the open box outright").
   // --------------------------------------------------------------------------
   var MB_DAMP_PARTIAL = 0.251;   // the 3rd partial, −12 dB
-  var MB_DAMP_DECAY = 0.6;       // the felt on the comb
+  var MB_DAMP_DECAY = 0.6;       // the felt on the comb — rc.34: the `tine` knob's def
   var MB_DAMP_PEAK = 0.8;
   var MB_WOUND_SPB = 1.6;        // wound-down: the spring gives out — slower
   var MB_WOUND_DECAY = 1.3;      // …and the tines ring longer, loosely
@@ -731,6 +931,75 @@
       var v = pVal(layer, key);
       if (d == null) return v;
       return (v !== d) ? v : castVal;
+    }
+
+    // ---- THE WANDER (rc.34, plan §11) --------------------------------------
+    // One PJ2.Voice.wander per layer, forked off the run's ROOT stream (so
+    // every draw lands on "wander:<layer>:…" and no pre-existing fork is
+    // re-rolled), dressed at play and again at every performance begin — the
+    // same place, and with the same evening ordinal, as the cast's draw. The
+    // cast decides registrations and prominence; the wander decides touch,
+    // character and weather. Where both would set a knob (buff, wound,
+    // registration) the CAST keeps it and the row carries no span.
+    //
+    // Bodies never call the wander directly: they go through wTouch/wChar/
+    // wWx below, which record the min/max every read actually landed on
+    // (wanderSeen) so the harness can assert the spans over a whole run
+    // instead of trusting the helper's unit test. Reads happen at SCHEDULE
+    // time and are never cached across notes — a sounding note keeps its own
+    // values (the straddle lesson).
+    var wanderSeen = {};      // {layer: {key: {min, max, n}}} — the run's own draws
+    var wanderDressed = [];   // [{evening, layer, key, value}] — the character log
+    function makeWander(layerKey, root) {
+      return PJ2.Voice.wander({
+        root: root,
+        layer: layerKey,
+        params: LAYER_PARAMS[layerKey],
+        knob: function (k) { return pVal(layerKey, k); },
+        vary: function () { return pVal(layerKey, "vary"); },
+      });
+    }
+    function wSeen(layer, key, v) {
+      var l = wanderSeen[layer] || (wanderSeen[layer] = {});
+      var s = l[key];
+      if (!s) { l[key] = { min: v, max: v, n: 1 }; return v; }
+      if (v < s.min) s.min = v;
+      if (v > s.max) s.max = v;
+      s.n++;
+      return v;
+    }
+    function wOf(layer) { return (run && run.wander) ? run.wander[layer] : null; }
+    function wTouch(layer, key) {
+      var w = wOf(layer);
+      return wSeen(layer, key, w ? w.touch(key) : pVal(layer, key));
+    }
+    function wChar(layer, key) {
+      var w = wOf(layer);
+      return wSeen(layer, key, w ? w.character(key) : pVal(layer, key));
+    }
+    // SONG TIME, never the absolute audio clock — the same lesson wxAt
+    // learned the hard way: the ctx's zero is an accident of when the page
+    // pressed play, and a weather phase read off it shifts every gap between
+    // two same-seed runs. (t − run.t0) is the position IN THE PIECE.
+    function wWx(layer, key, t) {
+      var w = wOf(layer);
+      var songT = (run && t != null) ? (t - run.t0) : 0;
+      return wSeen(layer, key, w ? w.weather(key, songT) : pVal(layer, key));
+    }
+    // Tonight's clothes for every layer at once. Called at play (evening 1)
+    // and at each performance begin, beside drawCast.
+    function dressWander(n) {
+      if (!run || !run.wander) return;
+      for (var lk in run.wander) {
+        run.wander[lk].dress(n);
+        var defs = LAYER_PARAMS[lk];
+        for (var i = 0; i < defs.length; i++) {
+          if (defs[i].per !== "character") continue;
+          wanderDressed.push({ evening: n, layer: lk, key: defs[i].key,
+                               value: run.wander[lk].character(defs[i].key) });
+        }
+      }
+      if (wanderDressed.length > 400) wanderDressed.splice(0, wanderDressed.length - 400);
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -1128,7 +1397,8 @@
       vib.frequency.setValueAtTime(4.6 + 1.2 * wx.breath, t);
       var vg = c.createGain();
       vg.gain.setValueAtTime(0, t);
-      vg.gain.linearRampToValueAtTime((0.4 + 1.3 * wx.breath) * pVal("hum", "waver"), t + Math.min(0.4, durS * 0.25));
+      // rc.34: waver is TOUCH — a fresh wobble depth every note.
+      vg.gain.linearRampToValueAtTime((0.4 + 1.3 * wx.breath) * wTouch("hum", "waver"), t + Math.min(0.4, durS * 0.25));
       vib.connect(vg);
       try { vg.connect(o.frequency); } catch (e1) {}
       vib.start(t);
@@ -1137,7 +1407,10 @@
       // Formants — openness (breath) widens the passbands by dividing Q
       // (v1's OPENNESS knob). Set once per note, never automated mid-note
       // (pj2-voice lesson #4). The desk's openness knob scales it further.
-      var open = (0.75 + 0.5 * wx.breath) * pVal("hum", "openness");
+      // rc.34: the mouth has TWO clocks — tonight's openness (character) and
+      // a slow ±10 % drift within the evening (weather). Both read here, once
+      // per note, never automated mid-note (lesson #4).
+      var open = (0.75 + 0.5 * wx.breath) * wChar("hum", "openness") * wWx("hum", "openDrift", t);
       var f1 = c.createBiquadFilter();
       f1.type = "bandpass";
       f1.frequency.setValueAtTime(vowel.f1, t);
@@ -1153,13 +1426,14 @@
       o.connect(f1); o.connect(f2);
       f1.connect(mix); f2.connect(f2g); f2g.connect(mix);
 
-      // Shimmer — tremolo driven by slow noise (fixed 0.10 depth, v1's
-      // representative value from playHumVowelNote).
+      // Shimmer — tremolo driven by slow noise (v1's fixed 0.10 depth from
+      // playHumVowelNote, promoted in rc.34 to the `breath` knob and drawn
+      // per note: the tremble of breath under the vowel).
       var sh = c.createGain();
       sh.gain.setValueAtTime(1, t);
       var shN = slowNoise(c, 4);
       var shD = c.createGain();
-      shD.gain.setValueAtTime(0.1, t);
+      shD.gain.setValueAtTime(wTouch("hum", "breath"), t);
       shN.connect(shD);
       try { shD.connect(sh.gain); } catch (e2) {}
       shN.start(t, shN.randomOffset);
@@ -1955,6 +2229,8 @@
           run.regalLastChord = null;
           run.regalPrev = null;        // the organist starts the evening fresh
           drawCast(evt);               // rc.31: tonight's dress and prominence
+          // rc.34: …and tonight's CHARACTER, the same seam, the same ordinal.
+          dressWander((evt && evt.n != null) ? evt.n : 1);
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           if (run.pendingGhost) {
             try { run.motif.seedGhost(run.pendingGhost); } catch (e) {}
@@ -2061,7 +2337,9 @@
         // desk's warmth knob multiplies the whole cutoff (def 1 = as-composed).
         var lp = c.createBiquadFilter();
         lp.type = "lowpass";
-        lp.frequency.setValueAtTime((230 + 90 * iv + 80 * (wx.brightness - 0.5)) * pVal("drone", "warmth"), t);
+        // rc.34: warmth is CHARACTER (tonight's fire, not this cycle's) —
+        // the seam may not move under the listener cycle by cycle.
+        lp.frequency.setValueAtTime((230 + 90 * iv + 80 * (wx.brightness - 0.5)) * wChar("drone", "warmth"), t);
         lp.Q.setValueAtTime(0.5, t);
         // The shared tremolo bus, back from v1 (~1307): base = 1 - depth/2,
         // LFO swings ±depth/2, so the envelope breathes between (1 - depth)
@@ -2076,7 +2354,9 @@
         trem.gain.setValueAtTime(1 - tremDepth / 2, t);
         var tremLFO = c.createOscillator();
         tremLFO.type = "sine";
-        tremLFO.frequency.setValueAtTime(pVal("drone", "sway"), t); // v1's 0.7 Hz at the default
+        // rc.34: sway is WEATHER, read ONCE here at the cycle's start and
+        // held for the cycle's whole life — the LFO is born and dies with it.
+        tremLFO.frequency.setValueAtTime(wWx("drone", "sway", t), t); // v1's 0.7 Hz at the default
         var tremG = c.createGain();
         tremG.gain.setValueAtTime(tremDepth / 2, t);
         tremLFO.connect(tremG);
@@ -2199,8 +2479,10 @@
       // the live mix — "the cello is way too loud"). The mixer's cello
       // fader still scales from here; this is the new design center.
       var toneLevel = 0.0225 * (velMul || 1) * (degList.length > 1 ? 0.8 : 1);
-      var vibDepthK = 0.0046 * pVal("cello", "vibrato") * (0.7 + 0.6 * wx.breath);
-      var cutoff = pVal("cello", "brightness") * (0.9 + 0.2 * wx.brightness);
+      // rc.34: vibrato is TOUCH (this bow's hand), brightness is CHARACTER
+      // (the body is the body all evening). Both read at schedule time.
+      var vibDepthK = 0.0046 * wTouch("cello", "vibrato") * (0.7 + 0.6 * wx.breath);
+      var cutoff = wChar("cello", "brightness") * (0.9 + 0.2 * wx.brightness);
       for (var i = 0; i < degList.length; i++) {
         var deg = degList[i][0], oct = degList[i][1];
         var freq = run.field.degFreq(deg, oct); // read at schedule time, never cached
@@ -2253,7 +2535,7 @@
       // rosin — the bow's grip, loudest as the tone finds its feet, its
       // release squeezed inside the note so a stopped source never clips
       // an envelope mid-air (mockup lesson)
-      var rosin = pVal("cello", "rosin");
+      var rosin = wTouch("cello", "rosin");   // rc.34: TOUCH — grip per bow
       if (rosin > 0) {
         var ns = PJ2.Voice.noiseBuffer.source(c, 30);
         var bp = c.createBiquadFilter();
@@ -2459,14 +2741,18 @@
       var rng = run.streams.vessel;
       // Draw everything FIRST so a budget refusal can't shift the stream.
       var wantFifth = rng.chance(0.4);            // root p .6 / fifth p .4
-      var atk = rng.rnd(2.4, 3.6);                // the owner's 3.0 s bow-in
+      // rc.34: the bow-in was already drawn on this fork; the `attack` knob
+      // (TOUCH, ×0.92–1.17) widens the draw to the plan's 2.2–4.2 s without
+      // moving a single number the vessel fork produces. Far above any
+      // click-safe floor at either end.
+      var atk = rng.rnd(2.4, 3.6) * wTouch("vessel", "attack"); // the owner's 3.0 s bow-in
       var hold = rng.rnd(3, 8);
       var restS = rng.rnd(8, 20);
       var decays = [], di;
       for (di = 0; di < VESSEL_T60.length; di++) {
         decays.push(rng.rnd(VESSEL_T60[di][0], VESSEL_T60[di][1]));
       }
-      var ring = pVal("vessel", "ring");
+      var ring = wTouch("vessel", "ring");        // rc.34: TOUCH — how the bow lifts
       var maxDecay = 0;
       for (di = 0; di < decays.length; di++) {
         decays[di] *= ring;
@@ -2483,11 +2769,14 @@
       try { ch = run.harmony.current(); } catch (e) {}
       var chordDegs = (ch && ch.chordDegs && ch.chordDegs.length >= 3) ? ch.chordDegs : [0, 2, 4];
       var deg = wantFifth ? chordDegs[2] : chordDegs[0];
-      var oct = Math.round(pVal("vessel", "register"));
+      // rc.34: register, beat and partials are all CHARACTER — the bell is
+      // the same bell all night (a beating rate that changed per stroke
+      // would be a different bell each time), drawn with the evening.
+      var oct = Math.round(wChar("vessel", "register"));
       var freq = run.field.degFreq(deg, oct);     // read at schedule time, never cached
       var peak = VESSEL_PEAK * castLevel("vessel");
-      var beat = pVal("vessel", "beat");
-      var partialsK = pVal("vessel", "partials");
+      var beat = wChar("vessel", "beat");
+      var partialsK = wChar("vessel", "partials");
       var c = ctx;
       // The bow's pressure: slow noise at ±10%, alive only while the bow is
       // (a multiplying stage — base 1, the noise rides its .gain).
@@ -2531,7 +2820,7 @@
       }
       // The friction thread — the bow's grip on the rim, gone 0.4 s after it
       // lifts. This is the thing that says "bowed" rather than "struck".
-      var bowK = pVal("vessel", "bow");
+      var bowK = wTouch("vessel", "bow");         // rc.34: TOUCH — pressure per stroke
       if (bowK > 0) {
         var ns = PJ2.Voice.noiseBuffer.source(c, 30);
         var bp = c.createBiquadFilter();
@@ -2643,9 +2932,16 @@
     // regalTakesCadence, called from realizeCadence.
     var REGAL_PEAK = 0.0084;        // 0.012 × the owner's level 0.7, per part
     var REGAL_PRESENCE = 0.95;
-    var REGAL_PARTS = 3;            // the owner's voicing
+    var REGAL_PARTS = 3;            // the owner's voicing — rc.34: the `parts` knob's def
     var REGAL_STEP_CHANCE = 0.3;    // harmony steps, chapters and the seizure
     var REGAL_CADENCE_LEVEL = 0.6;  // a taken cadence sits under the consort's 0.016
+    // rc.34 — ONE BELLOWS, however many pipes. The organist's wind supply is
+    // fixed: put a fourth pipe down and each pipe gets less of it. So the
+    // per-part peak scales by REGAL_PARTS / nParts and a four-part chord is a
+    // FULLER chord, not a louder one — which is both what a wind instrument
+    // does and what keeps the gain ledger under the ceiling now that `parts`
+    // wanders. At the def (3) the factor is exactly 1.
+    var REGAL_UNEVEN_UNIT = 0.05;   // the `unevenness` knob's def = one unit of spread
 
     // A least-motion voicer of its own: the root folded to the bottom of the
     // window, each upper part taking the octave nearest where it last stood.
@@ -2661,13 +2957,32 @@
         var c0 = fold(cls[i]);
         var target = (prev && prev[i] != null) ? prev[i] : (rootAbs + 3 * i);
         var best = null, bestD = Infinity;
+        // rc.34 — "above the root" became "above the part BELOW it". At three
+        // parts every voicing this engine has ever made was already ascending
+        // (the harness asserts it), so the tightening is a no-op there; it
+        // matters now that a two-part chord can leave a FIFTH in prev[1] and
+        // pull the next chord's third up past its own fifth. No octave of
+        // this pitch class fits above the part below and inside the window?
+        // Then the organist leaves that pipe up — the chord's total wind is
+        // shared out over however many pipes are down, so it costs nothing.
         for (var o = -1; o <= 1; o++) {
           var cand = c0 + o * size;
-          if (cand <= rootAbs || cand > size - 1) continue; // above the root, in the window
+          if (cand <= out[i - 1] || cand > size - 1) continue; // above the part below, in the window
           var d = Math.abs(cand - target);
           if (d < bestD) { bestD = d; best = cand; }
         }
-        out.push(best == null ? c0 : best);
+        if (best != null) out.push(best);
+      }
+      // rc.34 — THE FOURTH PIPE, when the hand draws four: the root taken
+      // again at the nearest octave STRICTLY above the top part and still
+      // inside the consort's −7..6 window (so the voicing stays ascending and
+      // in the window, exactly as the three-part one does). No room up there
+      // — the fifth already sitting near the ceiling — and the organist keeps
+      // three; the chord's total wind is the same either way.
+      if (nParts >= 4 && out.length === 3) {
+        var c4 = fold(src[0]);
+        while (c4 <= out[2]) c4 += size;
+        if (c4 <= size - 1) out.push(c4);
       }
       run.regalPrev = out;
       return out;
@@ -2681,21 +2996,32 @@
         fadeIn = fadeOut = Math.max(0.25, (durS - 0.3) / 2);
       }
       var hold = Math.max(0.05, durS - fadeIn - fadeOut);
-      var degs = voiceRegal(chord && chord.chordDegs, REGAL_PARTS);
+      // rc.34: the hand is TOUCH — 2 (p .25) / 3 (p .55) / 4 (p .2) pipes,
+      // drawn per chord. Three is the mode, not the rule.
+      var nParts = Math.round(wTouch("regal", "parts"));
+      if (!(nParts >= 2)) nParts = 2;
+      if (nParts > 4) nParts = 4;
+      var degs = voiceRegal(chord && chord.chordDegs, nParts);
       if (!degs || !degs.length) return false;
       var tok = run.budget.claim(3 + degs.length * 8, t + durS + 0.3);
       if (!tok) return false;
       run.tokens.push(tok);
       var c = ctx;
-      var peak = REGAL_PEAK * (levelMul || 1) * castLevel("regal");
-      var reed = pVal("regal", "reediness");
-      var bodyDb = pVal("regal", "body");
+      // ONE BELLOWS: the wind is shared out among however many pipes are
+      // down (REGAL_PARTS / nParts — exactly 1 at the owner's three).
+      var peak = REGAL_PEAK * (levelMul || 1) * castLevel("regal") * (REGAL_PARTS / degs.length);
+      // rc.34: reediness and the box are CHARACTER (this organ, tonight);
+      // the ±unevenness spread is TOUCH and lands PER PIPE below.
+      var reed = wChar("regal", "reediness");
+      var bodyDb = wChar("regal", "body");
+      var unevenKnob = pVal("regal", "unevenness");
+      var bellowsK = wTouch("regal", "bellows");   // TOUCH: he pumps differently every chord
       // The bellows: ONE breath under every part (±1.5 dB at ~0.15 Hz).
       var bell = c.createGain();
       bell.gain.setValueAtTime(1, t);
       var bn = slowNoise(c, 0.15);
       var bd = c.createGain();
-      var depth = (Math.pow(10, 1.5 / 20) - 1) * pVal("regal", "bellows");
+      var depth = (Math.pow(10, 1.5 / 20) - 1) * bellowsK;
       PJ2.Voice.env(bd.gain, t, [[fadeIn, depth], [hold, depth], [fadeOut, 0]]);
       bn.connect(bd);
       try { bd.connect(bell.gain); } catch (e0) {}
@@ -2704,6 +3030,11 @@
       bell.connect(run.layRegal);
       for (var i = 0; i < degs.length; i++) {
         var freq = run.field.degFreq(degs[i], 0);  // read at schedule time
+        // rc.34 — EVERY PIPE ITS OWN REED. The draw minus the knob is one
+        // unit of spread (±REGAL_UNEVEN_UNIT at vary 1, and exactly 0 at
+        // vary 0, whatever the knob says); the knob is the half-width.
+        var reedU = (wTouch("regal", "unevenness") - unevenKnob) / REGAL_UNEVEN_UNIT;
+        var reedI = clamp(reed + unevenKnob * reedU, 0, 1);
         var mix = c.createGain();
         mix.gain.setValueAtTime(1, t);
         var sq = c.createOscillator();
@@ -2711,14 +3042,14 @@
         sq.frequency.setValueAtTime(freq, t);
         sq.detune.setValueAtTime(-5, t);
         var sqg = c.createGain();
-        sqg.gain.setValueAtTime(1 - reed, t);
+        sqg.gain.setValueAtTime(1 - reedI, t);
         sq.connect(sqg); sqg.connect(mix);
         var sw = c.createOscillator();
         sw.type = "sawtooth";
         sw.frequency.setValueAtTime(freq, t);
         sw.detune.setValueAtTime(5, t);
         var swg = c.createGain();
-        swg.gain.setValueAtTime(reed, t);
+        swg.gain.setValueAtTime(reedI, t);
         sw.connect(swg); swg.connect(mix);
         var body = c.createBiquadFilter();
         body.type = "peaking";
@@ -2941,7 +3272,10 @@
       // tick where the glint used to be (the buff leather touching the
       // string). The desk knob wins over the evening cast once it is moved.
       var buff = clamp(knobOrCast("harpsichord", "buff", (run.cast && run.cast.lute) || 0), 0, 1);
-      var burstS = 0.03 - 0.015 * buff;                        // 30 ms → 15 ms
+      // rc.34: the burst length is TOUCH — where on the quill the string is
+      // caught. def 30 ms is v1's literal; the buff still halves whatever
+      // the plectrum drew.
+      var burstS = (wTouch("harpsichord", "pluck") / 1000) * (1 - 0.5 * buff); // 30 ms → 15 ms
       var dS = Math.max(0.12, durS * (1 - 0.45 * buff));       // decay → ×0.55
       var n = Math.max(2, Math.round((c.sampleRate || 44100) * burstS)); // v1's 30 ms burst
       var buf = c.createBuffer(1, n, c.sampleRate || 44100);
@@ -2950,13 +3284,15 @@
       var src = c.createBufferSource();
       src.buffer = buf;
       src.loop = true;
-      var bright8 = (pVal("harpsichord", "brightness") - 0.6) + 1.2 * wx.brightness; // v1 "brightness" 3.0 at the default, breathed ±0.6
+      // rc.34: brightness is TOUCH — the plectrum's position varies pluck to
+      // pluck; resonance is CHARACTER — the instrument's own strings.
+      var bright8 = (wTouch("harpsichord", "brightness") - 0.6) + 1.2 * wx.brightness; // v1 "brightness" 3.0 at the default, breathed ±0.6
       var bright = bright8 + (1.6 - bright8) * buff;
       var lp = c.createBiquadFilter();
       lp.type = "lowpass";
       lp.frequency.setValueAtTime(freq * bright, t);           // anchored, then
       lp.frequency.exponentialRampToValueAtTime(freq * 0.8, t + dS * 0.8); // the string dulls
-      lp.Q.setValueAtTime(pVal("harpsichord", "resonance"), t); // v1 "resonance" 0.5 at the default
+      lp.Q.setValueAtTime(wChar("harpsichord", "resonance"), t); // v1 "resonance" 0.5 at the default
       var g = c.createGain();
       src.connect(lp); lp.connect(g); g.connect(out);
       g.connect(run.haloSend);                                 // the strings hear every pluck
@@ -3167,14 +3503,18 @@
         // the desk's shimmer knob scales the dose (def 1 = as-composed).
         // rc.31: the box IS the DAMPED box now — the 3rd partial sits −12 dB
         // under where the open box put it (the shimmer knob still scales it).
+        // rc.34: shimmer is CHARACTER — the comb's own glint, tonight's box.
         var shimmerG = (0.005 + 0.006 * wxAt(t).brightness) *
-                       pVal("musicbox", "shimmer") * MB_DAMP_PARTIAL;
+                       wChar("musicbox", "shimmer") * MB_DAMP_PARTIAL;
         for (var i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.65, 1) * velScale;
           var nt = t + tm.offs[i], nd = tm.durs[i];
-          // rc.31 — the damped body's shorter decay (×0.6), stretched again
-          // by ×1.3 when the mechanism is running down.
-          var dS = Math.max(0.12, nd * MB_DAMP_DECAY * (wound ? MB_WOUND_DECAY : 1));
+          // rc.31 — the damped body's shorter decay (×0.6, promoted to the
+          // `tine` knob in rc.34 and drawn per PIN: felt contact is never
+          // twice the same), stretched again by ×1.3 when the mechanism is
+          // running down. The 0.12 s floor and the env's own 0.02 s tail are
+          // untouched, so a short tine can still never click.
+          var dS = Math.max(0.12, nd * wTouch("musicbox", "tine") * (wound ? MB_WOUND_DECAY : 1));
           var btok = run.budget.claim(4, nt + dS + 0.1);
           if (!btok) continue;
           run.tokens.push(btok);
@@ -3279,7 +3619,11 @@
       return -Math.floor(meanDeg / size) * size + size * Math.round(register);
     }
 
-    function renderFlue(out, freq, t, durS, vel, atk, rel) {
+    // rc.34 — `mods` carries this note's drawn chiff / breath / vibrato (the
+    // caller owns them because two of the three are phrase-shaped: breath is
+    // drawn per PHRASE and rises toward a long one's end, and the phrase's
+    // FIRST note is tongued harder). Absent, the knobs are read as before.
+    function renderFlue(out, freq, t, durS, vel, atk, rel, mods) {
       var c = ctx;
       var peak = FLUE_PEAK * vel * castLevel("flue");
       if (durS < atk + rel + 0.1) durS = atk + rel + 0.1;
@@ -3302,7 +3646,7 @@
       tri.start(t); tri.stop(t + durS + 0.1);
       sin.start(t); sin.stop(t + durS + 0.1);
       // vibrato — 5 Hz, depth ramped in over half a second
-      var vibK = pVal("flue", "vibrato");
+      var vibK = mods ? mods.vib : pVal("flue", "vibrato");
       if (vibK > 0) {
         var vib = c.createOscillator();
         vib.type = "sine";
@@ -3317,7 +3661,7 @@
         vib.start(t); vib.stop(t + durS + 0.1);
       }
       // chiff — the breath edge at the onset, 30 ms of noise at 2f
-      var chiffK = pVal("flue", "chiff");
+      var chiffK = mods ? mods.chiff : pVal("flue", "chiff");
       if (chiffK > 0 && peak > 0) {
         var cn = PJ2.Voice.noiseBuffer.source(c, 30);
         var cbp = c.createBiquadFilter();
@@ -3332,7 +3676,7 @@
         cn.stop(t + 0.12);
       }
       // breath — the wind that never stops while the note sounds
-      var breathK = pVal("flue", "breath");
+      var breathK = mods ? mods.breath : pVal("flue", "breath");
       if (breathK > 0 && peak > 0) {
         var bn2 = PJ2.Voice.noiseBuffer.source(c, 30);
         var bbp = c.createBiquadFilter();
@@ -3394,7 +3738,16 @@
         var mean = 0;
         for (var mi = 0; mi < notes.length; mi++) mean += notes[mi].deg;
         mean /= notes.length;
-        var shift = flueShift(mean, pVal("flue", "register"));
+        // rc.34: the register is CHARACTER — a descant one night, a treble
+        // another; the rarest speaker can afford to be a different recorder.
+        var shift = flueShift(mean, wChar("flue", "register"));
+        // …and the BREATH is per PHRASE: two draws give the phrase a starting
+        // and a finishing pressure, and a long phrase (3+ notes) walks from
+        // the lower to the higher across it — the player running low on air.
+        // Both draws sit inside the span, so the ledger's `hi` still holds,
+        // and at vary 0 they are the same number: today's build exactly.
+        var fb1 = wTouch("flue", "breath"), fb2 = wTouch("flue", "breath");
+        var fbLo = Math.min(fb1, fb2), fbHi = Math.max(fb1, fb2);
         var velScale = (res.kind === "ghost") ? 0.6 : 1;
         var out = mixOut("flue", run.poolMel.at(rng.rnd(-0.5, 0.5)));
         for (var i = 0; i < notes.length; i++) {
@@ -3406,7 +3759,20 @@
           if (!btok) continue;              // skip the note, keep the phrase's timing
           run.tokens.push(btok);
           var freq = run.field.degFreq(notes[i].deg + shift, 0); // read at schedule time
-          var soundS = renderFlue(out, freq, nt, nd, vel, atk, rel);
+          // TOUCH, per note: the tongue (the phrase's first note takes the
+          // harder of two draws — still inside the span), and the waver,
+          // which only reaches notes of 0.6 s and longer.
+          var chiffK = wTouch("flue", "chiff");
+          if (i === 0) chiffK = Math.max(chiffK, wTouch("flue", "chiff"));
+          var vibDraw = wTouch("flue", "vibrato");
+          var breathK = (notes.length >= 3)
+            ? fbLo + (fbHi - fbLo) * (i / (notes.length - 1))
+            : fb1;
+          var soundS = renderFlue(out, freq, nt, nd, vel, atk, rel, {
+            chiff: chiffK,
+            breath: breathK,
+            vib: (nd >= 0.6) ? vibDraw : pVal("flue", "vibrato"),
+          });
           emitNote({
             voice: "flue", freq: freq, t: nt, durS: soundS,
             deg: notes[i].deg + shift, oct: 0, velocity: vel,
@@ -3713,7 +4079,10 @@
         // THE GAP LAW — unchanged from Phase 1 but for weather's sanctioned
         // ±15% (gapMul) and the desk's density knob (def 1 = as-composed):
         // density stays within the family contract.
-        var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / pVal("ambient", "density");
+        // rc.34: density is WEATHER — the room speaks a little more freely
+        // some stretches of an evening than others. Read once, here, for the
+        // gap it is about to set; the Math.max(8, …) floor is untouched.
+        var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / wWx("ambient", "density", t);
         lane.at(t + Math.max(8, next), oneShot);
       }
       lane.at(run.t0 + rng.rnd(8, 20), oneShot);
@@ -3735,7 +4104,10 @@
       function follow(t) {
         var iv = curIntensity(t);
         var tide = curTidePos();
-        var haloV = (0.015 + 0.055 * wxAt(t).haloLevel) * pVal("halo", "level");
+        // rc.34: the halo's whisper is CHARACTER — how the sympathetic
+        // strings are strung tonight, cached until the next dress, so the
+        // 0.5 s follower pulse never steps it.
+        var haloV = (0.015 + 0.055 * wxAt(t).haloLevel) * wChar("halo", "level");
         if (curSceneType() === "candle-out") haloV *= Math.max(0, 1 - curSceneX());
         run.haloLevelCur = haloV;
         try { run.halo.setLevel(haloV, 0.5); } catch (eH) {}
@@ -4115,6 +4487,17 @@
       // we draw it from the vowels fork so the walk is seeded end to end.
       run.vowelIdx = streams.vowels.rint(0, HUM_VOWEL_POOL.length - 1);
 
+      // rc.34 — THE WANDER. Built off `master` itself, so every draw is on a
+      // fresh "wander:<layer>:…" fork and nothing above is re-rolled. Dressed
+      // for evening one here; the performance-begin handler re-dresses on
+      // every seam. Must exist before conductor.start(), which fires the
+      // first begin event.
+      run.wander = {};
+      wanderSeen = {};
+      wanderDressed = [];
+      for (var wlk in LAYER_PARAMS) run.wander[wlk] = makeWander(wlk, master);
+      dressWander(1);
+
       // Scene-dependent air knobs ("conductor supplies", per the §5 contract):
       // the as-built conductor exposes airLimit()/overlapChance() conveniences
       // for exactly this wiring; the dramaturgy tables are the fallback so
@@ -4345,6 +4728,43 @@
         for (var lk in paramState) {
           out[lk] = {};
           for (var pk in paramState[lk]) out[lk][pk] = paramState[lk][pk];
+        }
+        return out;
+      },
+
+      // ---- the wander's own window (rc.34; dev/harness surface) ------------
+      // `params` are the authored spans (lo/hi/per/round/weights included —
+      // getLayerParams deliberately strips them, so the desk never sees
+      // them); `spans` are those spans TRANSLATED by wherever the knobs
+      // currently stand; `seen` is the min/max/count of every value the run's
+      // bodies actually drew, per layer and key; `dressed` is the character
+      // log, one row per layer/key/evening. Read-only, drawless, and empty
+      // before the first play.
+      getWanderInfo: function () {
+        var out = { params: {}, spans: {}, seen: {}, dressed: wanderDressed.slice() };
+        for (var lk in LAYER_PARAMS) {
+          var defs = LAYER_PARAMS[lk], list = [];
+          out.spans[lk] = {};
+          for (var i = 0; i < defs.length; i++) {
+            var d = defs[i];
+            var row = { key: d.key, label: d.label, min: d.min, max: d.max, def: d.def };
+            if (d.lo != null) { row.lo = d.lo; row.hi = d.hi; }
+            if (d.per) row.per = d.per;
+            if (d.round) row.round = true;
+            if (d.weights) row.weights = d.weights;
+            list.push(row);
+            var w = run && run.wander && run.wander[lk];
+            var sp = w ? w.span(d.key) : null;
+            if (sp) out.spans[lk][d.key] = sp;
+          }
+          out.params[lk] = list;
+          if (wanderSeen[lk]) {
+            out.seen[lk] = {};
+            for (var sk in wanderSeen[lk]) {
+              var s = wanderSeen[lk][sk];
+              out.seen[lk][sk] = { min: s.min, max: s.max, n: s.n };
+            }
+          }
         }
         return out;
       },
