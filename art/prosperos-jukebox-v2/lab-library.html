@@ -1861,8 +1861,8 @@
     },
     {
       layer: "musicbox", title: "MUSIC BOX — damped · wound-down",
-      desc: "DAMPED: the 3rd partial 12 dB down, decay ×0.6, a softer strike — the box with felt on the comb. WOUND-DOWN: an octave lower, 8 cents of drift across every note, a longer decay — the mechanism running down. (A shadow cannot change the PACING, so wound-down here is the timbre of the ending, not its slowing.) Caveat: the shadow cannot reach the far-wall delay the box always feeds, so its distant answer is missing while a stop is on.",
-      options: [["none", "open (engine)"], ["damped", "DAMPED"], ["wound", "WOUND-DOWN"]],
+      desc: "DAMPED is the music box now (owner, 2026-09-03: it replaces the open box outright; the page opens with it on): the 3rd partial 12 dB down, decay ×0.6, a softer strike — the box with felt on the comb. WOUND-DOWN: an octave lower, 8 cents of drift across every note, a longer decay — the mechanism running down. (A shadow cannot change the PACING, so wound-down here is the timbre of the ending, not its slowing.) Caveat: the shadow cannot reach the far-wall delay the box always feeds, so its distant answer is missing while a stop is on.",
+      options: [["none", "open (engine, retired)"], ["damped", "DAMPED (default)"], ["wound", "WOUND-DOWN"]],
       knobs: [
         { key: "damper", label: "damper — open (0) ↔ fully damped (1)", min: 0, max: 1, step: 0.02, def: 1 },
       ],
@@ -1984,6 +1984,12 @@
         stopState[spec.layer] = st;
       })(STOP_SPECS[i]);
     }
+
+    // Owner (2026-09-03): the DAMPED box replaces the open box as the
+    // instrument's body outright. The page opens with the damped stop
+    // engaged so every evening is heard the way it will be integrated;
+    // "open (engine, retired)" stays selectable for the comparison.
+    setStop("musicbox", "damped");
 
     // the rolled chord — additive, so it needs no muting at all
     var card = el("div", "card");
