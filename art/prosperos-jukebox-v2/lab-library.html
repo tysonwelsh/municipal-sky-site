@@ -68,6 +68,7 @@
         <span class="vol-lab">vol</span>
         <input type="range" id="master" min="0" max="1" step="0.01" value="0.85" aria-label="master volume">
         <button id="btnAB" title="swap between the A and B snapshots (saved on the MIX tab)">A⇄B</button>
+        <button id="btnCopyQuick" title="copy the whole tuning as JSON (the MIX tab has the same button plus the text)">COPY</button>
       </div>
       <div class="bar-row meter">
         <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
@@ -1690,13 +1691,17 @@
       desc: "The one object the codex is about, bowed: four inharmonic partials, a beating fundamental, and the Library's first free ring — the bow lifts and the metal goes on sounding. Lives ABOVE the texture, in the empty register. Its scene is the reverie.",
       enabled: true,
       specs: [
-        { key: "level", label: "level — how loud each bowed bell sits (×0.02)", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, step: 0.05, def: 1 },
+        // Defaults = the owner's tuning by ear on the phone (2026-09-03):
+        // level 0.75, presence 0.85, ring 0.9, bow 1.2, partials 1.45,
+        // register oct 0 (beat and attack unchanged). These are the design
+        // constants the integration will carry into pj2-library.js.
+        { key: "level", label: "level — how loud each bowed bell sits (×0.02)", min: 0, max: 2, step: 0.05, def: 0.75 },
+        { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, step: 0.05, def: 0.85 },
         { key: "beat", label: "beat Hz — the two fundamentals beating (the sound itself)", min: 0, max: 3, step: 0.05, def: 1 },
-        { key: "ring", label: "ring × — how long the metal rings after the bow lifts", min: 0.4, max: 2.5, step: 0.05, def: 1 },
-        { key: "bow", label: "bow — the friction thread while the bow is on", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "partials", label: "partials — the three inharmonic upper partials", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "register", label: "register — which octave the bell sits in", type: "switch", choices: [[0, "oct 0"], [1, "+1"]], def: 1 },
+        { key: "ring", label: "ring × — how long the metal rings after the bow lifts", min: 0.4, max: 2.5, step: 0.05, def: 0.9 },
+        { key: "bow", label: "bow — the friction thread while the bow is on", min: 0, max: 2, step: 0.05, def: 1.2 },
+        { key: "partials", label: "partials — the three inharmonic upper partials", min: 0, max: 2, step: 0.05, def: 1.45 },
+        { key: "register", label: "register — which octave the bell sits in", type: "switch", choices: [[0, "oct 0"], [1, "+1"]], def: 0 },
         { key: "attack", label: "attack s — how slowly the bow leans in", min: 1, max: 6, step: 0.1, def: 3, dp: 1 },
       ],
       chance: vesselChance, enter: function (why, at) { return vesselBow(why, at); },

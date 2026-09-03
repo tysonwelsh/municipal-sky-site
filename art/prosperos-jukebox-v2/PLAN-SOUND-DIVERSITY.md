@@ -262,6 +262,11 @@ is the under-voice; this is the over-voice).
   (friction), partials (upper mix), register (0 / +1).
 - *Fills:* F1 (sustained high register), F2 (inharmonic), F3 (free ring),
   F4 (reverie gains a signature instrument). ~13 nodes, no feedback.
+- *Owner's tuning (by ear on the lab page, 2026-09-03 — the integration's
+  design constants):* level ×0.75 (peak 0.015), presence ×0.85, beat
+  1.0 Hz, ring ×0.9, bow ×1.2, partials ×1.45, register oct 0 (≈262–466 Hz
+  fundamentals — the owner heard it best an octave under the plan's
+  default), attack 3.0 s. These are now the lab page's defaults.
 
 **(b) THE REGAL — a small reed organ**
 A portable Renaissance reed organ (or a parlor harmonium): sustained
