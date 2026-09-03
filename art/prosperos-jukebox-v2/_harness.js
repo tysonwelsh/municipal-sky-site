@@ -3972,6 +3972,405 @@ function p3AmbientFires(r) {
     SD1.notes.length + " notes compared" +
     (S1.swallowed.length ? "; SWALLOWED: " + S1.swallowed[0] : ""));
 
+  // ==========================================================================
+  // ---- SYCORAX rc.32: five voices + roster ----
+  //
+  // PLAN-SOUND-DIVERSITY §5.2's five candidates, integrated at the owner's
+  // lab-page tunings, plus §5.3's adopted scene roster. Every section below
+  // asserts the voice's OWN conduct; the roster section carries the harness's
+  // own copy of the adopted table, because the engine's table is the thing
+  // under test and not the reference.
+  //
+  // THE CUT LAW is the spine of the whole block: none of the five may have an
+  // ONSET inside [tB − 4, cut.end + returnS], and anything of theirs still
+  // sounding at tB is ended THERE (a {type:"cut-kill"} event carries the
+  // count and the fade). Sycorax's cut is the one moment in the family where
+  // an added voice could genuinely ruin something, so it is checked per
+  // voice, per cut, from the note stream rather than from the engine's word.
+  // ==========================================================================
+  var R32_COLS = ["gathering", "processional", "circling", "invocation", "afterimage"];
+  var R32_ROSTER = {
+    //            gather  proc  circle  invoc  after
+    gurdy:      [1, 1, 1, 1, 1],
+    horn:       [0, 1, 0, 1, 1],
+    noise:      [1, 1, 1, 1, 1],
+    chant:      [1, 1, 1, 1, 1],
+    rebec:      [0, 1, 1, 0, 0],
+    waterphone: [0, 0, 1, 0, 0],
+    boneflute:  [0, 1, 0, 1, 0],
+    percussion: [1, 1, 1, 1, 1],
+    ambient:    [1, 1, 1, 1, 1],
+    bullroarer: [0, 1, 0, 1, 0],
+    overtone:   [0, 1, 0, 1, 0],
+    jawharp:    [0, 0, 1, 0, 0],
+    blade:      [0, 0, 0, 1, 1],
+    cauldron:   [1, 0, 1, 1, 0],
+  };
+  var R32_NEW = ["bullroarer", "overtone", "jawharp", "blade", "cauldron"];
+  var R32_LEAD = 4;          // the held breath before tB
+  function r32Allows(voice, col) {
+    var row = R32_ROSTER[voice];
+    if (!row || col == null) return true;
+    var i = R32_COLS.indexOf(col);
+    return (i < 0) ? true : !!row[i];
+  }
+  function r32NotesOf(R, voice) {
+    var o = [];
+    for (var i = 0; i < R.notes.length; i++) if (R.notes[i].voice === voice) o.push(R.notes[i]);
+    o.sort(function (a, b) { return a.t - b.t; });
+    return o;
+  }
+  // An ENTRY is the head of an utterance: a note more than 3 s after the last
+  // note of the same voice ended. Everything after that head is the same
+  // gesture finishing, and a gesture begun where it was welcome may finish
+  // across a boundary — that is what "resting" means here.
+  function r32Entries(notes) {
+    var out = [], endT = -Infinity;
+    for (var i = 0; i < notes.length; i++) {
+      if (notes[i].t > endT + 3) out.push(notes[i]);
+      var e = notes[i].t + (notes[i].durS || 0);
+      if (e > endT) endT = e;
+    }
+    return out;
+  }
+  // the cut windows of a run, as the engine defines them
+  function r32CutWins(R) {
+    var cs = evOf(R, "cut"), o = [];
+    for (var i = 0; i < cs.length; i++) {
+      var holdS = (cs[i].holdS != null) ? cs[i].holdS : 5;
+      var retS = (cs[i].returnS != null) ? cs[i].returnS : 4;
+      o.push({ tB: cs[i].t, lo: cs[i].t - R32_LEAD, hi: cs[i].t + holdS + retS,
+               end: cs[i].t + holdS, retS: retS });
+    }
+    return o;
+  }
+  // no onset of `voice` anywhere inside a cut window
+  function r32CutOnsetBad(R, wins, voice) {
+    var ns = r32NotesOf(R, voice), bad = 0;
+    for (var i = 0; i < ns.length; i++) {
+      for (var w = 0; w < wins.length; w++) {
+        if (ns[i].t >= wins[w].lo - 1e-9 && ns[i].t <= wins[w].hi + 1e-9) bad++;
+      }
+    }
+    return bad;
+  }
+  // one gesture at a time (the hold law), judged on onsets and durations
+  function r32OverlapBad(notes) {
+    var bad = 0;
+    for (var i = 1; i < notes.length; i++) {
+      if (notes[i].t < notes[i - 1].t + (notes[i - 1].durS || 0) - 1e-6) bad++;
+    }
+    return bad;
+  }
+  var sCutW = r32CutWins(S1);
+  var sKills = evOf(S1, "cut-kill");
+
+  // ---- BULLROARER — the rite's own machine ---------------------------------
+  (function () {
+    var ns = r32NotesOf(S1, "bullroarer");
+    var octBad = 0, sceneBad = 0, ent = r32Entries(ns), i;
+    for (i = 0; i < ns.length; i++) {
+      if (ns[i].oct !== -2 && ns[i].oct !== -3) octBad++;
+    }
+    for (i = 0; i < ent.length; i++) {
+      var sc = sceneAt(sWins, ent[i].t);
+      if (sc !== "processional" && sc !== "invocation") sceneBad++;
+    }
+    check("SYC32 BULLROARER hold law (one slat at a time) + register oct −2/−3",
+      r32OverlapBad(ns) === 0 && octBad === 0,
+      ns.length + " swell(s)" + (octBad ? ", " + octBad + " out of register" : ""));
+    check("SYC32 BULLROARER enters only in the processional and the invocation",
+      sceneBad === 0, ent.length + " entr(ies), " + sceneBad + " out of scene");
+    check("SYC32 BULLROARER the cut law: no onset from tB−4 through the return",
+      r32CutOnsetBad(S1, sCutW, "bullroarer") === 0,
+      sCutW.length + " cut(s), " + r32CutOnsetBad(S1, sCutW, "bullroarer") + " intruder(s)");
+  })();
+
+  // ---- OVERTONE CHANT — the cantor's second manner -------------------------
+  (function () {
+    var ns = r32NotesOf(S1, "overtone");
+    var octBad = 0, sceneBad = 0, pathBad = 0, ent = r32Entries(ns), i, h;
+    for (i = 0; i < ns.length; i++) {
+      if (ns[i].oct !== -1) octBad++;
+      var p = String(ns[i].path || "").split("→");
+      if (!p.length || !p[0]) { pathBad++; continue; }
+      for (h = 0; h < p.length; h++) {
+        if (p[h] === "…") continue;
+        var v = +p[h];
+        if (!(v >= 4 && v <= 10)) pathBad++;     // the default desk's lo..hi
+      }
+    }
+    for (i = 0; i < ent.length; i++) {
+      var sc = sceneAt(sWins, ent[i].t);
+      if (sc !== "processional" && sc !== "invocation") sceneBad++;
+    }
+    check("SYC32 OVERTONE hold law + oct −1 + a harmonic path inside lo..hi",
+      r32OverlapBad(ns) === 0 && octBad === 0 && pathBad === 0,
+      ns.length + " tone(s)" + (pathBad ? ", " + pathBad + " bad harmonic(s)" : ""));
+    check("SYC32 OVERTONE enters only in the processional and the invocation",
+      sceneBad === 0, ent.length + " entr(ies), " + sceneBad + " out of scene");
+    check("SYC32 OVERTONE the cut law: no onset from tB−4 through the return",
+      r32CutOnsetBad(S1, sCutW, "overtone") === 0,
+      sCutW.length + " cut(s), " + r32CutOnsetBad(S1, sCutW, "overtone") + " intruder(s)");
+  })();
+
+  // ---- JAW HARP — plucked, and a mouth that moves --------------------------
+  (function () {
+    var ns = r32NotesOf(S1, "jawharp");
+    var pitchBad = 0, sceneBad = 0, ent = r32Entries(ns), i;
+    for (i = 0; i < ns.length; i++) {
+      // THE DELAY CLAMP: a comb inside a feedback cycle is pinned to one
+      // render quantum (128 frames ≈ 344 Hz at 44.1 kHz). Above that the
+      // twang loses its pitch, so the body asserts and drops an octave.
+      if (!(ns[i].freq > 0 && ns[i].freq < 340)) pitchBad++;
+    }
+    for (i = 0; i < ent.length; i++) {
+      if (sceneAt(sWins, ent[i].t) !== "circling") sceneBad++;
+    }
+    check("SYC32 JAWHARP the comb's pitch is always under the 340 Hz quantum clamp",
+      pitchBad === 0,
+      ns.length + " utterance(s)" + (pitchBad ? ", " + pitchBad + " above the clamp" : ""));
+    check("SYC32 JAWHARP hold law + circling only (the roster's one cell)",
+      r32OverlapBad(ns) === 0 && sceneBad === 0,
+      ent.length + " entr(ies), " + sceneBad + " out of scene");
+    check("SYC32 JAWHARP the cut law: no onset from tB−4 through the return",
+      r32CutOnsetBad(S1, sCutW, "jawharp") === 0,
+      sCutW.length + " cut(s), " + r32CutOnsetBad(S1, sCutW, "jawharp") + " intruder(s)");
+  })();
+
+  // ---- BOWED BLADE — the one high sustained sound --------------------------
+  (function () {
+    var ns = r32NotesOf(S1, "blade");
+    var sceneBad = 0, earlyBad = 0, ent = r32Entries(ns), i, w;
+    for (i = 0; i < ent.length; i++) {
+      var sc = sceneAt(sWins, ent[i].t);
+      if (sc !== "invocation" && sc !== "afterimage") sceneBad++;
+      // in the afterimage the blade may only answer once the return has
+      // FULLY passed — the residue never interrupts the noticing
+      if (sc === "afterimage") {
+        for (w = 0; w < sCutW.length; w++) {
+          if (ent[i].t > sCutW[w].tB && ent[i].t <= sCutW[w].hi) earlyBad++;
+        }
+      }
+    }
+    check("SYC32 BLADE hold law + invocation / afterimage only",
+      r32OverlapBad(ns) === 0 && sceneBad === 0,
+      ent.length + " bow(s), " + sceneBad + " out of scene");
+    check("SYC32 BLADE in the afterimage only AFTER the cut's return has passed",
+      earlyBad === 0 && r32CutOnsetBad(S1, sCutW, "blade") === 0,
+      sCutW.length + " cut(s), " + earlyBad + " early");
+  })();
+
+  // ---- CAULDRON — the spell's pot ------------------------------------------
+  (function () {
+    var ns = r32NotesOf(S1, "cauldron");
+    var sceneBad = 0, hushBad = 0, i, w;
+    for (i = 0; i < ns.length; i++) {
+      var sc = sceneAt(sWins, ns[i].t);
+      if (sc !== "gathering" && sc !== "circling" && sc !== "invocation") sceneBad++;
+      for (w = 0; w < sCutW.length; w++) {
+        if (ns[i].t > sCutW[w].tB && ns[i].t < sCutW[w].end) hushBad++;   // the hush itself
+      }
+    }
+    check("SYC32 CAULDRON fires only in the gathering, the circling and the invocation",
+      sceneBad === 0 && r32OverlapBad(ns) === 0,
+      ns.length + " simmer(s), " + sceneBad + " out of scene");
+    check("SYC32 CAULDRON never inside the hush, never inside [tB−4, return]",
+      hushBad === 0 && r32CutOnsetBad(S1, sCutW, "cauldron") === 0,
+      sCutW.length + " cut(s), " + hushBad + " in the hush");
+  })();
+
+  // ---- THE CUT GATE, all five together -------------------------------------
+  (function () {
+    var onsetBad = 0, killMissing = 0, killShort = 0, sounding = 0, i, w, v;
+    for (v = 0; v < R32_NEW.length; v++) onsetBad += r32CutOnsetBad(S1, sCutW, R32_NEW[v]);
+    for (w = 0; w < sCutW.length; w++) {
+      // how many of the five are actually sounding across tB…
+      var live = 0;
+      for (v = 0; v < R32_NEW.length; v++) {
+        var ns = r32NotesOf(S1, R32_NEW[v]);
+        for (i = 0; i < ns.length; i++) {
+          if (ns[i].t < sCutW[w].tB && ns[i].t + (ns[i].durS || 0) > sCutW[w].tB) live++;
+        }
+      }
+      sounding += live;
+      // …and the kill that ends them must be scheduled AT tB, 0.25 s long
+      var k = null;
+      for (i = 0; i < sKills.length; i++) {
+        if (Math.abs(sKills[i].t - sCutW[w].tB) < 1e-6) k = sKills[i];
+      }
+      if (!k) { killMissing++; continue; }
+      if (k.n < live) killShort++;
+      if (Math.abs(k.fadeS - 0.25) > 1e-9) killShort++;
+    }
+    check("SYC32 CUT GATE: not one of the five may sound from tB−4 through the return",
+      onsetBad === 0,
+      sCutW.length + " cut(s), " + onsetBad + " intruding onset(s) across five voices");
+    check("SYC32 CUT GATE: every cut ends what the five had sounding, AT tB, in 0.25 s",
+      killMissing === 0 && killShort === 0,
+      sKills.length + " kill event(s), " + sounding + " gesture(s) caught across tB");
+  })();
+
+  // ---- and a run that actually PUTS something across tB --------------------
+  // The primary seed's cut can land in a gap: a law nothing tripped over is a
+  // law nothing tested. The REPRO run above (seed 777) reaches its second cut
+  // with a swell still sounding, so the kill is exercised there.
+  //
+  // It reuses SD1 rather than adding a run of its own on purpose: streamSig
+  // rounds t − t0 to 1e-6, and by the time the harness reaches ARIEL the
+  // virtual clock is large enough that inserting another 900 s track run
+  // shifts a whistle onset by one ULP and breaks ARI's same-seed identity
+  // check. A latent fragility in the signature, not in either engine — but
+  // this block will not be the thing that trips it.
+  (function () {
+    var SK = SD1;
+    var wins = r32CutWins(SK), kills = evOf(SK, "cut-kill");
+    var live = 0, matched = 0, i, w, v;
+    for (w = 0; w < wins.length; w++) {
+      var n = 0;
+      for (v = 0; v < R32_NEW.length; v++) {
+        var ns = r32NotesOf(SK, R32_NEW[v]);
+        for (i = 0; i < ns.length; i++) {
+          if (ns[i].t < wins[w].tB && ns[i].t + (ns[i].durS || 0) > wins[w].tB) n++;
+        }
+      }
+      live += n;
+      for (i = 0; i < kills.length; i++) {
+        if (Math.abs(kills[i].t - wins[w].tB) < 1e-6 && kills[i].n >= n &&
+            Math.abs(kills[i].fadeS - 0.25) < 1e-9) matched++;
+      }
+    }
+    var onsetBad = 0;
+    for (v = 0; v < R32_NEW.length; v++) onsetBad += r32CutOnsetBad(SK, wins, R32_NEW[v]);
+    if (live > 0) {
+      check("SYC32 CUT GATE exercised: a gesture caught across tB is ended there",
+        matched === wins.length && onsetBad === 0 && SK.swallowed.length === 0,
+        live + " gesture(s) across " + wins.length + " cut(s), " + matched + " killed at tB");
+    } else {
+      check("SYC32 CUT GATE exercised (RELAXED: this sim never reached a cut with a live gesture)",
+        onsetBad === 0 && SK.swallowed.length === 0,
+        wins.length + " cut(s), nothing of the five was sounding at tB");
+    }
+  })();
+
+  // ---- ROSTER-SYC — every scene rests somebody -----------------------------
+  (function () {
+    var ROSTER_VOICES = ["horn", "rebec", "waterphone", "boneflute"].concat(R32_NEW);
+    var bad = 0, first = "", i, v;
+    for (v = 0; v < ROSTER_VOICES.length; v++) {
+      var key = ROSTER_VOICES[v];
+      var ns = r32NotesOf(S1, key);
+      // the cut's own waterphone apparition is the CUT's gesture, not an
+      // entry, and is exempt by construction (it is the exception the hush
+      // gate protects)
+      if (key === "waterphone") {
+        var keep = [];
+        for (i = 0; i < ns.length; i++) if (ns[i].kind !== "apparition") keep.push(ns[i]);
+        ns = keep;
+      }
+      var ent = r32Entries(ns);
+      for (i = 0; i < ent.length; i++) {
+        var col = sceneAt(sWins, ent[i].t);
+        if (col && !r32Allows(key, col)) {
+          bad++;
+          if (!first) first = key + " in the " + col + " at t=" + ent[i].t.toFixed(1);
+        }
+      }
+    }
+    check("SYC32 ROSTER-SYC: no voice enters where its cell is 0",
+      bad === 0, bad ? first : ROSTER_VOICES.length + " gated voices, 0 trespasses");
+
+    // THE SEAM: the gurdy is ticked everywhere and its lane is never
+    // cancelled — not by a scene, not by a performance, not by the cut.
+    var g = r32NotesOf(S1, "gurdy"), gapBad = 0, worst = 0, endT = -Infinity;
+    for (i = 0; i < g.length; i++) {
+      if (endT > -Infinity && g[i].t > endT) {
+        var gap = g[i].t - endT;
+        if (gap > worst) worst = gap;
+        if (gap > 28) gapBad++;            // one cycle's own length
+      }
+      var e = g[i].t + (g[i].durS || 0);
+      if (e > endT) endT = e;
+    }
+    check("SYC32 ROSTER-SYC: the gurdy never rests (no gap over one cycle)",
+      gapBad === 0, g.length + " cycle note(s), worst gap " + worst.toFixed(1) + "s");
+
+    // L3's whole point: every column rests at least one voice.
+    var noRest = 0;
+    for (i = 0; i < R32_COLS.length; i++) {
+      var any = false;
+      for (var k in R32_ROSTER) if (!R32_ROSTER[k][i]) any = true;
+      if (!any) noRest++;
+    }
+    check("SYC32 ROSTER-SYC: every scene rests at least one voice",
+      noRest === 0, R32_COLS.length + " columns, " + noRest + " with nobody resting");
+  })();
+
+  // ---- the five actually sound ---------------------------------------------
+  (function () {
+    var counts = [], total = 0, heard = 0;
+    for (var v = 0; v < R32_NEW.length; v++) {
+      var n = r32NotesOf(S1, R32_NEW[v]).length;
+      counts.push(R32_NEW[v] + " " + n);
+      total += n;
+      if (n > 0) heard++;
+    }
+    if (!SHORTT) {
+      check("SYC32 all five voices enter over a full run (nothing is silent by accident)",
+        heard === R32_NEW.length, counts.join(", "));
+    } else {
+      check("SYC32 the five (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
+        true, counts.join(", ") + " so far");
+    }
+    check("SYC32 the five never claim the air (not one of them is a speaker)",
+      (function () {
+        var airs = evOf(S1, "air"), badAir = 0;
+        for (var i = 0; i < airs.length; i++) {
+          for (var j = 0; j < R32_NEW.length; j++) {
+            if (String(airs[i].voice) === R32_NEW[j]) badAir++;
+          }
+        }
+        return badAir === 0;
+      })(), total + " note(s) from the five, 0 air claims");
+  })();
+
+  // ---- REPRO-SYC + BUDGET --------------------------------------------------
+  (function () {
+    function sig32(R) {
+      var s = [];
+      for (var i = 0; i < R.notes.length; i++) {
+        var n = R.notes[i];
+        for (var j = 0; j < R32_NEW.length; j++) {
+          if (n.voice !== R32_NEW[j]) continue;
+          s.push(n.voice + "|" + round6(n.t - R.t0) + "|" +
+                 (n.freq != null ? round6(n.freq) : "-") + "|" + round6(n.durS || 0) +
+                 "|" + (n.path || n.twangs || n.pops || n.kind || ""));
+        }
+      }
+      for (i = 0; i < R.events.length; i++) {
+        if (R.events[i].type === "cut-kill") {
+          s.push("K|" + round6(R.events[i].t - R.t0) + "|" + R.events[i].n);
+        }
+      }
+      return s.join("\n");
+    }
+    var a = sig32(SD1), b = sig32(SD2), c = sig32(SD3);
+    check("SYC32 REPRO-SYC: same seed replays the five (and their cut-kills) exactly",
+      a === b, (a ? a.split("\n").length : 0) + " rc.32 event(s) compared");
+    check("SYC32 REPRO-SYC: a different seed whirls a different night",
+      streamSig(SD1) !== streamSig(SD3) && (a === "" || a !== c),
+      a === "" ? "no rc.32 notes at this short seed; full stream still diverges" :
+                 "rc.32 sub-stream diverges too");
+    check("SYC32 BUDGET reads zero after stop; zero swallowed errors in every rc.32 run",
+      (!S1.infoFinal || !S1.infoFinal.budget || S1.infoFinal.budget.voices === 0) &&
+      (!SD1.infoFinal || !SD1.infoFinal.budget || SD1.infoFinal.budget.voices === 0) &&
+      S1.swallowed.length === 0 && SD1.swallowed.length === 0 &&
+      SD2.swallowed.length === 0 && SD3.swallowed.length === 0,
+      "budget " + (S1.infoFinal && S1.infoFinal.budget ? S1.infoFinal.budget.voices : "n/a") +
+      ", swallowed " + (S1.swallowed.length + SD1.swallowed.length +
+                        SD2.swallowed.length + SD3.swallowed.length));
+  })();
+
   // ============================== ARIEL ==============================
   var A1 = trackRun("Ariel", 20260709, TSIM);
   var aBegins = perfPhase(A1, "begin"), aEnds = perfPhase(A1, "end"), aWins = sceneWindows(A1);

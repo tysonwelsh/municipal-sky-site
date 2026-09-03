@@ -124,11 +124,19 @@
       ns: "Sycorax",
       folioNo: "the ghost world · tonic 311",
       logHead: "the black book’s margins · scribal log",
+      // rc.32: the low horn and the five sound-diversity voices have no
+      // authored atlas cell — stampSigil falls back to a scribal initial in
+      // the same ink, taken from the desk LABEL (L · B · O · J · B · C),
+      // which is what the horn has worn since rc.23. Named here so the
+      // omission reads as a decision rather than an oversight; the
+      // bullroarer and the blade share a B until someone cuts them cells.
       sigils: {
         gurdy: "voice-gurdy", noise: "pose-smoke", chant: "voice-chant",
         rebec: "voice-rebec", waterphone: "voice-waterphone",
         boneflute: "voice-boneflute", percussion: "voice-protodrum",
         ambient: "pose-veil",
+        horn: null, bullroarer: null, overtone: null, jawharp: null,
+        blade: null, cauldron: null,
       },
     },
     ariel: {
