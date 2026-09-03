@@ -564,6 +564,66 @@ REJECTED by the owner (§7, decision 6): no portamento voice for Ariel.
   concertina forward / back; the one absence colour: the flutter sits out
   p 0.1 of still evenings, never twice running.
 
+
+> **Superseded (owner, 2026-09-03).** After listening to the Library and
+> Sycorax pages the owner found the stops above "not terribly exciting":
+> they are performance techniques on the same body — shades. The Ariel
+> page gets a RADICAL set instead (§6.4): every stop turns the layer into a
+> recognisably different instrument or kind of event, level-matched to the
+> engine's own layer. The sketch stays here as the record.
+
+### 6.4 The Ariel lab page — radical stops (spec, 2026-09-03)
+
+Same shell and tabs as the Sycorax page (§5.4): the real, unmodified
+`pj2-ariel.js`, the capture trick, candidate cards with entry brains,
+shadow-body stops, the roster grid over the six scenes (alighting · song ·
+flight · hover · swirl · release), COPY/PASTE/A-B, the self-test hooks.
+Ariel's laws in place of the cut: THE RELEASE (nothing of the page's may be
+louder or lower as the evening dissolves upward — the lyre's rolls climb
++1 oct at x ≥ 0.6 and +2 at x ≥ 0.9; the concertina is silent from
+x ≥ 0.4, the handpan and vibraphone from 0.5), THE SEAM (pitch read at
+schedule time; nothing killed at the boundary), NOTHING STARTLES
+(landscape edge slopes ≤ 0.02 per 0.5 s). Palette: the engraved steel plate
+(`body.lab-ariel`), monospace headings.
+
+**Candidates** (Tab 1): the LYRE (§6.2a, ON by default — the rolled chord
+on harmony steps in songs and hovers, after lift cadences, the alighting's
+first chord, climbing in the release), the CONCERTINA (§6.2b — held dyads
+in hovers and songs, the consort body on lift cadences), and two more for
+range: the HANDPAN (three sines 1:2:3 with a mallet thump; the ANSWER —
+2–4 chord tones after a whistle phrase ends, songs and hovers) and the
+VIBRAPHONE (sine + 4th partial under a motor tremolo; block dyads/triads
+on harmony steps in hovers and the alighting). All landscape-chordal;
+none claims the air.
+
+**The radical stops** (Tab 2). The test: *a listener who knows the layer
+would name it as a different instrument, or a different kind of event,
+within two seconds.* Each card is a radio ENGINE / A / B with `level` and
+`register` (−2..+1 oct) on every card and one body knob per variant; the
+notes and timing stay the engine's; A and B are level-matched to ENGINE
+within ±1.5 dB. A quick-switch row (ENGINE · ALL A · ALL B · SHUFFLE)
+transforms the whole ensemble at once.
+
+| layer | A | B | class change |
+|---|---|---|---|
+| whistle | REED — a harmonica: two detuned reed waves, 900 Hz chamber, 60 ms speak | CHIP — an 8-bit Ariel: pulse wave, 4-bit staircase, gate envelope | blown → reed · song → game |
+| chime | GAMELAN — bronze partials 1 / 1.52 / 2.4 / 3.9, onset pitch-drop, clang | BOWED GLASS — the same pitch swelled 0.3–2 s, rub noise | bell → bronze · struck → bowed |
+| flutter | DRIPS — each blip an octave-falling chirp into a plink | KALIMBA — a Karplus tine with a wooden body | tone → water · blip → pluck |
+| bass | BOWED — sawtooth under an opening lowpass, 0.35 s stroke, vibrato | MARIMBA — wooden bar partials, mallet tick, 0.5 s (opens at +1 oct) | pluck → stroke · sustain → wood |
+| breeze | ORGAN — a flue rank (harmonics 1–6, chiff, a 16' sub) | STRINGS — four detuned sawtooths, chorus, lowpass 1.4 kHz | sine dyad → pipes · → bows |
+| aeolian | SINGING BOWL — partials 1 / 2.71 / 4.9 beating, rim rub | WORN TAPE — the glass with wow, flutter, band-limit, hiss, dropouts (not a portamento voice) | glass → bronze bowl · → memory |
+| ambient | NIGHT — owl, frog, distant bell, rain-drops, far church bell, a stream | SEASIDE — gull, wave, bell buoy, shingle, rope, boat horn, rigging | the day sky → another sky |
+| halo | — (an fx return; unreachable) | | |
+
+**Roster** (Tab 3): §6.3's roster as the plan default (breeze, ambient and
+halo have no opinion); the page opens all-on. **Mix** (Tab 4): as the
+other pages, `track: "ariel"`.
+
+Verification adds two tables to the usual recipe: LEVEL MATCH (ENGINE / A
+/ B RMS per layer on the same phrase) and RADICALITY (spectral centroid
+and attack time per variant — a variant within 15 % of ENGINE on both is
+pushed further before it ships), plus the release-law assertions.
+
 ---
 
 ## 7. The curation — the owner's decisions (2026-09-02)
