@@ -472,3 +472,141 @@ html.lab-sycorax, body.lab-sycorax { background: var(--paper); color: var(--ink3
   line-height: 1.45;
   color: var(--ink3);
 }
+
+/* ==========================================================================
+   THE ARIEL SKIN — additive. lab-library.html and lab-sycorax.html are
+   untouched by everything below; only a page carrying class="lab-ariel" (on
+   <html> AND <body>, so the page ground repaints too) wears these inks.
+
+   From the pj2-skin.js registry's ariel palette (the engraved steel plate):
+   plate #06090e / #0b1119 / #121b2a, silver #d8e4ec / #a8c0d4 / #6e8aa4,
+   gilt #d4af5f / #ecd28a, sky #bfe0f4 / #8fc4e4, rose #a04838, frameEdge
+   #22345a, controls panel #0d141d / btnFace #24384c / btnLitFace #a8c0d4.
+   Registry rules kept: SILVER carries the reading, sky-blue the live
+   values, gilt is the accent that lights a control, and ROSE is chrome —
+   it carries no data here except the error line (rubrication), lightened
+   from #a04838 (2.0:1 on the plate) until it is legible.
+
+   Ariel's headings are MONOSPACE, not blackletter (the registry's
+   headFontCss). VT323 is not loaded by the lab, so the stack falls through
+   to the system monospace — legibility wins, which is the lab's own rule.
+   ========================================================================== */
+.lab-ariel {
+  --paper:  #06090e;   /* plate 0 */
+  --paper2: #0b1119;   /* plate 1 */
+  --paper3: #121b2a;   /* plate 2 */
+  --edge:   #16233f;
+  --edge2:  #22345a;   /* the registry's frameEdge */
+  --ink:    #d8e4ec;   /* silver 0 — the reading ink */
+  --ink2:   #bfe0f4;   /* sky 0 — headings and live values */
+  --ink3:   #a8c0d4;   /* silver 1 — labels */
+  --gilt:   #d4af5f;   /* gilt 0 — the accent that lights a control */
+  --bad:    #e08674;   /* rose, lightened until it reads as an error */
+  --good:   #a8c0d4;
+}
+html.lab-ariel, body.lab-ariel { background: var(--paper); color: var(--ink3); }
+
+/* the monospace title voice */
+.lab-ariel h1, .lab-ariel h2, .lab-ariel h3 {
+  font-family: "VT323", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* the Library sheet's hard-coded warm greys, re-cut in steel */
+.lab-ariel .dim,
+.lab-ariel .knob-def            { color: #6e8aa4; }        /* deep silver */
+.lab-ariel .card-desc,
+.lab-ariel .note,
+.lab-ariel p.swipe              { color: #a8c0d4; }
+.lab-ariel .log                 { color: #9fb6c8; }
+.lab-ariel .log .hd             { color: #bfe0f4; }
+.lab-ariel .log .did            { color: #d8e4ec; }
+/* the cabinet's own faces: btnFace #24384c on steel, btnLitFace #a8c0d4 for
+   anything switched ON. The tabs are re-asserted after it, because the base
+   sheet draws the SELECTED tab as the page ground and a plain button face
+   would make the unselected ones the brighter of the two. */
+.lab-ariel button               { background: #24384c; color: #d8e4ec; border-color: #446080;
+                                  -webkit-tap-highlight-color: rgba(212, 175, 95, 0.25); }
+.lab-ariel button.on            { background: #a8c0d4; color: #0b1119; border-color: var(--gilt); }
+.lab-ariel button:active        { background: #182838; }
+.lab-ariel .tab                 { background: var(--paper3); color: var(--ink3); border-color: var(--edge); }
+.lab-ariel .tab[aria-selected="true"] { background: var(--paper); color: var(--ink2); border-color: var(--edge2); }
+.lab-ariel .chip                { background: #24384c; color: #d8e4ec; }
+.lab-ariel .chip.off            { color: #5d7186; border-color: var(--edge); background: var(--paper2); }
+.lab-ariel .knob                { border-top: 1px dashed #16233f; }
+.lab-ariel .knob-reset          { background: none; border: none; color: var(--ink3); }
+.lab-ariel .card.open > button.fold { background: #a8c0d4; color: #06090e; }
+.lab-ariel .meter-fill          { background: linear-gradient(90deg, #3d5a74, #bfe0f4); }
+.lab-ariel input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #446080, var(--paper3));
+}
+.lab-ariel input[type=range]::-webkit-slider-thumb { background: #d8e4ec; border-color: #06090e; }
+.lab-ariel input[type=range]::-moz-range-thumb     { background: #d8e4ec; border-color: #06090e; }
+.lab-ariel #seed                { background: var(--paper3); color: var(--ink); border-color: var(--edge2); }
+.lab-ariel textarea             { background: var(--paper3); color: var(--ink); border-color: var(--edge2); }
+.lab-ariel table.roster td button    { background: transparent; border: none; color: #4f637a; }
+.lab-ariel table.roster td button.on { background: #22354c; color: var(--ink); }
+.lab-ariel table.roster col.here,
+.lab-ariel table.roster td.here      { background: rgba(191, 224, 244, 0.08); }
+.lab-ariel table.roster th.here      { background: #22345a; color: var(--ink); }
+.lab-ariel tr.cand th.rowlab         { color: var(--gilt); }
+.lab-ariel #errbar              { color: var(--bad); }
+
+/* THE RELEASE — Ariel's own law line, under the meter, where Sycorax puts
+   the cut. The evening dissolves UPWARD, and while it is dissolving the
+   page's own voices climb, thin and leave in a fixed order; the owner must
+   be able to see which of them are still allowed to speak. */
+.lab-ariel #releaseline {
+  font-size: 15px;
+  color: #6e8aa4;
+  padding: 0.05rem 0 0.2rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lab-ariel #releaseline.armed { color: #bfe0f4; }
+.lab-ariel #releaseline.up    { color: var(--gilt); }
+
+/* THE QUICK-SWITCH ROW — the whole ensemble transformed with one tap. It
+   sits at the top of the STOPS tab and sticks under the bar so the owner can
+   flip ENGINE / ALL A / ALL B while scrolling the cards. */
+/* NOT sticky: the transport bar is already 27 % of a 390x844 phone and it
+   is sticky at top 0, so a second sticky strip would sit BEHIND it and
+   simply disappear. The row lives at the top of the tab instead, one flick
+   away, which is where the owner starts anyway. */
+.lab-ariel .quickrow {
+  background: var(--paper2);
+  border: 1px solid var(--edge2);
+  border-radius: 10px;
+  padding: 0.35rem 0.4rem 0.1rem;
+  margin: 0.4rem 0 0.6rem;
+}
+.lab-ariel .quickrow .btnrow { margin: 0 0 0.3rem; }
+.lab-ariel .quickrow .qstate {
+  font-size: 15px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--ink3);
+  padding: 0 0.1rem 0.25rem;
+  white-space: pre-wrap; word-break: break-word;
+}
+
+/* a variant's ONE LINE naming the class change — what to listen for */
+.lab-ariel .classline {
+  font-size: 15px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--gilt);
+  margin: 0.25rem 0 0.1rem;
+}
+
+/* the roster is SIX columns wide on Ariel (alighting → release), one more
+   than Sycorax's, and it has to fit a 390 px phone with the row labels
+   readable: 6 rem of label + 6 × 44 px of cell = 360 px inside the 366 px
+   the wrap leaves. The cells keep their 44 px tap target; only the padding
+   gives. */
+.lab-ariel table.roster thead th { min-width: 44px; padding: 0.3rem 0.1rem; }
+/* the label column is sized by its longest name ("Vibraphone"), and six
+   44 px cells plus seven collapsed borders leave it 93 px. A hair of
+   negative tracking gets it there at the full 15 px reading size, which
+   matters more than the tracking does. */
+.lab-ariel table.roster th.rowlab {
+  min-width: 5.2rem; padding: 0 0.2rem; letter-spacing: -0.035em;
+}
+.lab-ariel table.roster td button { min-width: 44px; }
