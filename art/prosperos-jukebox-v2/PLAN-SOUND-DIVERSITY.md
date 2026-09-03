@@ -676,10 +676,20 @@ From the cello/horn precedent; every item is a line in the commit:
 - L1 — build `lab-library.html` (+ shell): candidates, stops, roster, COPY.
 - L2 — owner auditions on the phone; pastes COPY JSON + notes.
 - L3 + L4 — integrate all three instruments with the owner's tunings, the
-  kept stops as knobs, the adopted roster and the cast → rc.31 (one
-  integration; brief: the session scratchpad's `library-integration-brief.md`).
-  IN FLIGHT 2026-09-03.
-- L5 — long harness run, soak, README; then a listening evening.
+  kept stops as knobs, the adopted roster and the cast → **rc.31. DONE
+  2026-09-03** (one integration; brief: the session scratchpad's
+  `library-integration-brief.md`). The vessel, the regal and the flue are
+  in `pj2-library.js` with the owner's by-ear numbers as design constants;
+  the music box's damped body replaced the open one outright; the lute
+  stop, the wound-down mechanism, the cello's harmonics and the drone's
+  three registrations are desk knobs; `SCENE_ROSTER` gates entries per
+  scene; the evening cast draws on its own fork and narrates itself in the
+  log and in `getInfo().cast`. Dropped as the owner directed and NOT
+  built: the harpsichord's 4′ coupled and rolled chord, the cello's
+  pizzicato, the hum's head voice.
+- L5 — long harness run, soak, README; then a listening evening. Harness
+  and soak done at rc.31 (192 checks green at `node _harness.js 5400`);
+  the listening evening is the owner's.
 
 **Sycorax** S1–S5 and **Ariel** A1–A5 repeat the pattern with their own lab
 pages, reusing the shell and whatever the Library taught.

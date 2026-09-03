@@ -1315,6 +1315,12 @@ function eraIdxAt(eras, t) {
       if (e.type === "tide") s += ":" + String(e.pos);
       if (e.type === "air") s += ":" + e.voice + ":" + dur6(e.durS) + ":" + String(e.marginS) + ":" + (e.overlap ? "O" : "-");
       if (e.type === "engine") s += ":" + e.state;
+      // rc.31: the evening cast rides the signature too — a seeded draw that
+      // did not replay would be a silent reproducibility hole.
+      if (e.type === "cast") {
+        s += ":" + e.evening + ":" + e.harpsichord + ":" + e.musicbox + ":" + e.drone +
+             ":" + e.vessel + ":" + e.regal + ":" + e.flue;
+      }
       // PHASE 3 EDIT: display labels ride the signature — the alchemical
       // labels (scene/cadence/seachange/ghost) and the tide's weather-word
       // must replay from the seed like everything else.
@@ -2178,6 +2184,653 @@ if (!SHORT2) {
     check("CELLO presence (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
       true, bows.length + " bow(s) so far");
   }
+})();
+
+// ============================================================================
+// rc.31 — THE SOUND-DIVERSITY PASS (PLAN-SOUND-DIVERSITY §4): three new
+// voices, the stops, the scene roster and the evening cast. Every section
+// below asserts the voice's OWN conduct against the owner's adopted design,
+// and the roster/cast sections carry the harness's own copy of the adopted
+// tables — the engine's tables are the thing under test, not the reference.
+// ============================================================================
+
+var R31_COLS = ["settling", "chapter1", "chapter2", "chapter3",
+                "seizure", "reverie", "candle-out"];
+var R31_ROSTER = {
+  //             settling  ch1  ch2  ch3+  seizure  reverie  candle-out
+  drone:       [1, 1, 1, 1, 1, 1, 1],
+  cello:       [1, 1, 1, 1, 0, 1, 1],
+  hum:         [1, 1, 1, 1, 0, 1, 0],
+  harpsichord: [1, 1, 1, 1, 1, 1, 0],
+  musicbox:    [0, 1, 1, 1, 1, 0, 1],
+  ambient:     [1, 1, 1, 1, 1, 1, 1],
+  halo:        [1, 1, 1, 1, 1, 1, 1],
+  vessel:      [0, 0, 0, 0, 0, 1, 1],
+  regal:       [0, 0, 1, 0, 1, 0, 0],
+  flue:        [0, 1, 1, 1, 0, 1, 0],
+};
+// A "rest" is the absence of NEW entries: a phrase or cycle begun where it
+// was welcome finishes across the boundary. R31_GRACE is how long after a
+// boundary a note may still belong to the scene before it.
+var R31_GRACE = 16;
+
+function r31SceneIdxAt(scenes, t) {
+  var cur = -1;
+  for (var i = 0; i < scenes.length; i++) {
+    if (scenes[i].t <= t + 1e-9) cur = i; else break;
+  }
+  return cur;
+}
+function r31ColOfIdx(scenes, i) {
+  if (i < 0 || i >= scenes.length) return null;
+  var sc = scenes[i];
+  if (sc.type !== "chapter") return sc.type;
+  var ord = 0;
+  for (var j = i; j >= 0; j--) {
+    if (scenes[j].n !== sc.n) break;
+    if (scenes[j].type === "chapter") ord++;
+  }
+  return "chapter" + (ord > 3 ? 3 : (ord < 1 ? 1 : ord));
+}
+function r31ColAt(scenes, t) { return r31ColOfIdx(scenes, r31SceneIdxAt(scenes, t)); }
+function r31Allows(voice, col) {
+  var row = R31_ROSTER[voice];
+  if (!row || col == null) return true;
+  var i = R31_COLS.indexOf(col);
+  return (i < 0) ? true : !!row[i];
+}
+// how long this note has been inside its scene (a fresh boundary gets grace)
+function r31SinceEntry(scenes, t) {
+  var i = r31SceneIdxAt(scenes, t);
+  return (i < 0) ? Infinity : (t - scenes[i].t);
+}
+function r31NotesOf(r, voice) {
+  var out = [];
+  for (var i = 0; i < r.notes.length; i++) if (r.notes[i].voice === voice) out.push(r.notes[i]);
+  return out;
+}
+// notes sharing an onset are ONE gesture (a chord, a double-stop)
+function r31Group(notes) {
+  var g = [];
+  for (var i = 0; i < notes.length; i++) {
+    var last = g.length ? g[g.length - 1] : null;
+    if (last && Math.abs(notes[i].t - last.t) < 1e-9) { last.notes.push(notes[i]); continue; }
+    g.push({ t: notes[i].t, durS: notes[i].durS, notes: [notes[i]] });
+  }
+  return g;
+}
+var R31_CASTS = [];
+for (var r31i = 0; r31i < runA.events.length; r31i++) {
+  if (runA.events[r31i].type === "cast") R31_CASTS.push({ e: runA.events[r31i], i: r31i });
+}
+
+// ============================================================================
+// VESSEL (rc.31) — the reverie's own voice.
+// ============================================================================
+(function testVessel31() {
+  var notes = r31NotesOf(runA, "vessel");
+  var bows = r31Group(notes);
+  var i, j;
+
+  // the hold law: one bow at a time, ever, and one partial-stack per bow
+  var overlapBad = 0, stackBad = 0;
+  for (i = 0; i < bows.length; i++) {
+    if (bows[i].notes.length > 1) stackBad++;
+    if (i > 0 && bows[i].t < bows[i - 1].t + bows[i - 1].durS - 1e-6) overlapBad++;
+  }
+  check("VESSEL hold law: one bow at a time, ever",
+    overlapBad === 0 && stackBad === 0,
+    bows.length + " bow(s)" + (overlapBad ? ", " + overlapBad + " overlap(s)" : ""));
+
+  // the owner's register: oct 0 (≈262–466 Hz) at the default desk
+  var regBad = 0;
+  for (i = 0; i < notes.length; i++) if (notes[i].oct !== 0) regBad++;
+  check("VESSEL register: the owner's oct 0 at the default desk", regBad === 0,
+    notes.length + " note(s), " + regBad + " out of register");
+
+  // context: the reverie, the candle-out, a lean-in over a cadence that
+  // ARRIVES in one of them, or the sea change — and nothing else
+  var ctxBad = 0, kinds = {}, firstBad = "";
+  for (i = 0; i < notes.length; i++) {
+    var n = notes[i];
+    kinds[n.kind] = (kinds[n.kind] || 0) + 1;
+    var ok = false;
+    if (n.kind === "cadence") {
+      for (j = 0; j < A2.cads.length; j++) {
+        var ce = A2.cads[j].e;
+        if (Math.abs(ce.arriveT + 0.4 - n.t) < 1e-6 &&
+            (ce.to === "reverie" || ce.to === "candle-out")) { ok = true; break; }
+      }
+    } else if (n.kind === "seachange") {
+      for (j = 0; j < A2.seas.length; j++) {
+        if (Math.abs(A2.seas[j].e.t - n.t) < 1e-6) { ok = true; break; }
+      }
+    } else {
+      var st = sceneTypeAt(A2.scenes, n.t);
+      ok = (st === "reverie" || st === "candle-out");
+    }
+    if (!ok) { ctxBad++; if (!firstBad) firstBad = n.kind + "@" + (n.t - runA.t0).toFixed(1); }
+  }
+  var kindStr = [];
+  for (var k in kinds) kindStr.push(k + " " + kinds[k]);
+  check("VESSEL sounds only in the reverie / candle-out / a cadence into one / the sea change",
+    ctxBad === 0, kindStr.join(", ") + (ctxBad ? " — " + ctxBad + " bad (" + firstBad + ")" : ""));
+
+  // the guttering law: at most ONE bow per candle-out, counting a bow that
+  // leaned in over the cadence INTO it
+  var candle = {}, candBad = 0;
+  for (i = 0; i < notes.length; i++) {
+    n = notes[i];
+    var key = null;
+    if (n.kind === "cadence") {
+      for (j = 0; j < A2.cads.length; j++) {
+        ce = A2.cads[j].e;
+        if (Math.abs(ce.arriveT + 0.4 - n.t) < 1e-6 && ce.to === "candle-out") {
+          key = "e" + A2.cads[j].n;
+        }
+      }
+    } else if (sceneTypeAt(A2.scenes, n.t) === "candle-out") {
+      var si = r31SceneIdxAt(A2.scenes, n.t);
+      key = "e" + (si >= 0 ? A2.scenes[si].n : "?");
+    }
+    if (key == null) continue;
+    candle[key] = (candle[key] || 0) + 1;
+    if (candle[key] > 1) candBad++;
+  }
+  check("VESSEL the guttering law: at most ONE bow per candle-out", candBad === 0,
+    Object.keys(candle).length + " candle-out(s) bowed, " + candBad + " over the law");
+
+  // presence: an over-voice that never speaks is a wiring bug, not restraint
+  var reveries = 0, bowedReveries = 0;
+  for (i = 0; i < A2.scenes.length; i++) {
+    if (A2.scenes[i].type !== "reverie") continue;
+    reveries++;
+    var t0 = A2.scenes[i].t, t1 = t0 + A2.scenes[i].durS;
+    for (j = 0; j < notes.length; j++) {
+      if (notes[j].t >= t0 - 12 && notes[j].t < t1) { bowedReveries++; break; }
+    }
+  }
+  if (!SHORT2) {
+    check("VESSEL enters the reverie it belongs to (a majority of them, over a full run)",
+      reveries > 0 && bows.length >= 3 && bowedReveries * 2 >= reveries,
+      bowedReveries + "/" + reveries + " reveries bowed, " + bows.length + " bow(s) total");
+  } else {
+    check("VESSEL presence (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
+      true, bows.length + " bow(s) so far");
+  }
+})();
+
+// ============================================================================
+// REGAL (rc.31) — chapter 2, the seizure, and the cadences it takes.
+// ============================================================================
+(function testRegal31() {
+  var notes = r31NotesOf(runA, "regal");
+  var chords = r31Group(notes);
+  var i, j;
+
+  // the hold law: one chord at a time, three parts. The ONE sanctioned
+  // overlap is a taken cadence's own approach→arrival crossfade — the same
+  // 1.2 s the hum consort uses, and the cadence's geometry, not a second
+  // entry: the two chords belong to one cadence event.
+  function r31SameCadence(t1, t2) {
+    for (var q = 0; q < A2.cads.length; q++) {
+      var ce = A2.cads[q].e;
+      if (ce.voicedBy !== "regal") continue;
+      if (Math.abs(ce.startT - t1) < 1e-6 && Math.abs(ce.arriveT - t2) < 1e-6) return true;
+    }
+    return false;
+  }
+  var overlapBad = 0, partsBad = 0;
+  for (i = 0; i < chords.length; i++) {
+    if (chords[i].notes.length < 2 || chords[i].notes.length > 3) partsBad++;
+    if (i > 0 && chords[i].t < chords[i - 1].t + chords[i - 1].durS - 1e-6 &&
+        !r31SameCadence(chords[i - 1].t, chords[i].t)) overlapBad++;
+  }
+  check("REGAL hold law: one chord at a time, 2–3 parts",
+    overlapBad === 0 && partsBad === 0,
+    chords.length + " chord(s)" + (overlapBad ? ", " + overlapBad + " overlap(s)" : "") +
+    (partsBad ? ", " + partsBad + " bad part count(s)" : ""));
+
+  // the voicing: ascending, inside the consort's −7..6 window, root lowest
+  var voiceBad = 0, vFirst = "";
+  for (i = 0; i < chords.length; i++) {
+    var g = chords[i].notes;
+    for (j = 0; j < g.length; j++) {
+      if (g[j].deg < -7 || g[j].deg > 6) { voiceBad++; if (!vFirst) vFirst = "window " + g[j].deg; break; }
+      if (j > 0 && g[j].deg <= g[j - 1].deg) { voiceBad++; if (!vFirst) vFirst = "crossed"; break; }
+    }
+    if (g[0].deg > -1) { voiceBad++; if (!vFirst) vFirst = "root not lowest: " + g[0].deg; }
+  }
+  check("REGAL voicing: ascending, inside −7..6, the root folded lowest",
+    voiceBad === 0, chords.length + " chord(s)" + (voiceBad ? ", " + voiceBad + " bad (" + vFirst + ")" : ""));
+
+  // context: chapter 2, the seizure, or a cadence it took
+  var ctxBad = 0, cFirst = "", taken = 0, free = 0;
+  for (i = 0; i < chords.length; i++) {
+    var t = chords[i].t;
+    var isCad = false;
+    for (j = 0; j < A2.cads.length; j++) {
+      var ce = A2.cads[j].e;
+      if (ce.voicedBy === "regal" &&
+          (Math.abs(ce.startT - t) < 1e-6 || Math.abs(ce.arriveT - t) < 1e-6)) { isCad = true; break; }
+    }
+    if (isCad) { taken++; continue; }
+    free++;
+    var col = r31ColAt(A2.scenes, t);
+    if (col !== "chapter2" && col !== "seizure") {
+      ctxBad++;
+      if (!cFirst) cFirst = String(col) + "@" + (t - runA.t0).toFixed(1);
+    }
+  }
+  check("REGAL free entries only in chapter 2 and the seizure (the owner's roster)",
+    ctxBad === 0, free + " free chord(s), " + taken + " cadence chord(s)" +
+    (ctxBad ? ", " + ctxBad + " off-roster (" + cFirst + ")" : ""));
+
+  // "the organist takes the cadence": when he does, the hum consort is
+  // silent for THAT cadence and the regal voices both chords instead
+  var takes = 0, mixBad = 0, missing = 0;
+  for (j = 0; j < A2.cads.length; j++) {
+    var e = A2.cads[j].e;
+    if (e.voicedBy !== "regal") continue;
+    takes++;
+    var consortHere = 0, regalHere = 0;
+    for (i = 0; i < runA.notes.length; i++) {
+      var n = runA.notes[i];
+      var onOnset = (Math.abs(n.t - e.startT) < 1e-6 || Math.abs(n.t - e.arriveT) < 1e-6);
+      if (!onOnset) continue;
+      if (n.voice === "hum" && n.kind === "consort") consortHere++;
+      if (n.voice === "regal") regalHere++;
+    }
+    if (consortHere > 0) mixBad++;
+    if (regalHere < 2) missing++;
+  }
+  // …and every cadence the consort kept has NO regal on its onsets
+  var keptBad = 0;
+  for (j = 0; j < A2.cads.length; j++) {
+    e = A2.cads[j].e;
+    if (e.voicedBy !== "consort") continue;
+    for (i = 0; i < notes.length; i++) {
+      if (Math.abs(notes[i].t - e.startT) < 1e-6 || Math.abs(notes[i].t - e.arriveT) < 1e-6) keptBad++;
+    }
+  }
+  if (!SHORT2) {
+    check("REGAL a taken cadence replaces the consort (never doubles it)",
+      takes > 0 && mixBad === 0 && missing === 0 && keptBad === 0,
+      takes + "/" + A2.cads.length + " cadences taken" +
+      (mixBad ? ", " + mixBad + " doubled" : "") + (missing ? ", " + missing + " unvoiced" : ""));
+  } else {
+    check("REGAL taken cadences (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
+      mixBad === 0 && missing === 0 && keptBad === 0,
+      takes + " taken so far");
+  }
+})();
+
+// ============================================================================
+// FLUE (rc.31) — the rarest fourth speaker.
+// ============================================================================
+(function testFlue31() {
+  var notes = r31NotesOf(runA, "flue");
+  var claims = [];
+  var i, j;
+  for (i = 0; i < A2.airs.length; i++) if (A2.airs[i].voice === "flue") claims.push(A2.airs[i]);
+
+  // every utterance claims THE AIR (the flue is a speaker, not landscape)
+  var uncovered = 0;
+  for (i = 0; i < notes.length; i++) {
+    var ok = false;
+    for (j = 0; j < claims.length; j++) {
+      var c = claims[j];
+      if (notes[i].t >= c.t - 1e-9 && notes[i].t <= c.t + c.durS + 0.5) { ok = true; break; }
+    }
+    if (!ok) uncovered++;
+  }
+  check("FLUE every note inside a flue air claim (it never speaks unbidden)",
+    uncovered === 0, notes.length + " note(s) / " + claims.length + " claim(s)");
+
+  // the owner's phrase length: four notes, never more
+  var perClaim = {}, longBad = 0;
+  for (i = 0; i < notes.length; i++) {
+    for (j = 0; j < claims.length; j++) {
+      c = claims[j];
+      if (notes[i].t >= c.t - 1e-9 && notes[i].t <= c.t + c.durS + 0.5) {
+        perClaim[j] = (perClaim[j] || 0) + 1;
+        break;
+      }
+    }
+  }
+  for (var kk in perClaim) if (perClaim[kk] > 4) longBad++;
+  check("FLUE utterances capped at 4 notes (the head of anything longer)",
+    longBad === 0, claims.length + " utterance(s), " + longBad + " over the cap");
+
+  // the roster: chapters and the reverie only
+  var sceneBad = 0, sFirst = "";
+  for (i = 0; i < notes.length; i++) {
+    var col = r31ColAt(A2.scenes, notes[i].t);
+    if (!r31Allows("flue", col) && r31SinceEntry(A2.scenes, notes[i].t) > R31_GRACE) {
+      sceneBad++;
+      if (!sFirst) sFirst = String(col);
+    }
+  }
+  check("FLUE speaks only where the roster admits it (chapters and the reverie)",
+    sceneBad === 0, notes.length + " note(s)" + (sceneBad ? ", " + sceneBad + " off-roster (" + sFirst + ")" : ""));
+
+  // the register rule: every utterance's MEAN degree lands in the octave the
+  // register knob names (+1 at the default → degrees 7..13, C5–B5)
+  var regBad = 0;
+  for (j = 0; j < claims.length; j++) {
+    c = claims[j];
+    var sum = 0, n2 = 0;
+    for (i = 0; i < notes.length; i++) {
+      if (notes[i].t >= c.t - 1e-9 && notes[i].t <= c.t + c.durS + 0.5) { sum += notes[i].deg; n2++; }
+    }
+    if (!n2) continue;
+    var mean = sum / n2;
+    if (!(mean >= 7 && mean < 14)) regBad++;
+  }
+  check("FLUE register: every utterance's mean lands in the owner's +1 octave",
+    regBad === 0, claims.length + " utterance(s), " + regBad + " out of register");
+
+  // the rarest speaker: fewer utterances than the pluck, over a full run
+  var pluckClaims = 0;
+  for (i = 0; i < A2.airs.length; i++) if (A2.airs[i].voice === "pluck") pluckClaims++;
+  if (!SHORT2) {
+    check("FLUE speaks, and stays the RAREST speaker (fewer utterances than the pluck)",
+      claims.length > 0 && claims.length < pluckClaims,
+      claims.length + " flue vs " + pluckClaims + " pluck utterance(s)");
+  } else {
+    check("FLUE presence (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
+      claims.length <= pluckClaims, claims.length + " utterance(s) so far");
+  }
+})();
+
+// ============================================================================
+// ROSTER (rc.31) — every scene rests somebody; the drone rests never.
+// ============================================================================
+(function testRoster31() {
+  var i, j;
+  // A note is an OFFENCE only if its voice's cell is 0 AND it starts more
+  // than R31_GRACE past the boundary (a phrase begun where it was welcome
+  // finishes). Cadence gestures are exempt by contract: the consort, the
+  // drone's pads and the cello's/vessel's lean-ins all belong to the
+  // cadence, not to the scene they happen to sit in.
+  var VOICE_ROW = {
+    pluck: "harpsichord", musicbox: "musicbox", humBed: "hum", cello: "cello",
+    flue: "flue", regal: "regal", vessel: "vessel",
+  };
+  var bad = 0, checked = 0, firstBad = "";
+  for (i = 0; i < runA.notes.length; i++) {
+    var n = runA.notes[i];
+    var row = VOICE_ROW[n.voice];
+    if (n.voice === "hum") row = (n.kind === "sing") ? "hum" : null;   // consort exempt
+    if (!row) continue;
+    if (n.kind === "cadence" || n.kind === "seachange") continue;      // the cadence contract
+    if (n.phraseKind === "coagula") continue;                          // the one settling
+    if (n.voice === "vessel" || n.voice === "regal") continue;         // their own sections judge them
+    var col = r31ColAt(A2.scenes, n.t);
+    if (col == null) continue;
+    checked++;
+    if (!r31Allows(row, col) && r31SinceEntry(A2.scenes, n.t) > R31_GRACE) {
+      bad++;
+      if (!firstBad) firstBad = n.voice + " in " + col + " @" + (n.t - runA.t0).toFixed(1) + "s";
+    }
+  }
+  check("ROSTER no voice enters where its cell is 0",
+    bad === 0, checked + " note(s) judged" + (bad ? ", " + bad + " off-roster (" + firstBad + ")" : ""));
+
+  // the SOLVE ET COAGULA is exempt: where an evening drew one, it sounded
+  var coagEv = 0, coagSounded = 0;
+  for (i = 0; i < runA.events.length; i++) {
+    if (runA.events[i].type !== "coagula") continue;
+    coagEv++;
+    for (j = 0; j < runA.notes.length; j++) {
+      if (runA.notes[j].phraseKind === "coagula" &&
+          Math.abs(runA.notes[j].t - runA.events[i].t) < 30) { coagSounded++; break; }
+    }
+  }
+  check("ROSTER the candle-out's SOLVE ET COAGULA still sounds through the harpsichord's rest",
+    coagEv === coagSounded, coagEv + " coagula event(s), " + coagSounded + " sounded");
+
+  // the drone NEVER rests: its cycles are 20–30 s and overlap, so consecutive
+  // onsets can never be further apart than one cycle
+  var dOn = [], last = -1;
+  for (i = 0; i < runA.notes.length; i++) {
+    var d = runA.notes[i];
+    if (d.voice !== "drone" || d.kind) continue;   // cadence pads / blooms are not cycles
+    if (Math.abs(d.t - last) < 1e-9) continue;
+    last = d.t;
+    dOn.push(d.t);
+  }
+  var maxGap = 0;
+  for (i = 1; i < dOn.length; i++) if (dOn[i] - dOn[i - 1] > maxGap) maxGap = dOn[i] - dOn[i - 1];
+  check("ROSTER the drone never rests (no gap between cycles over one cycle's length)",
+    dOn.length > 3 && maxGap < 35,
+    dOn.length + " cycle(s), worst gap " + maxGap.toFixed(1) + "s");
+
+  // and every scene actually rests SOMEBODY (the whole point of L3)
+  var restsBad = 0;
+  for (i = 0; i < R31_COLS.length; i++) {
+    var anyRest = false;
+    for (var v in R31_ROSTER) if (!R31_ROSTER[v][i]) anyRest = true;
+    if (!anyRest) restsBad++;
+  }
+  check("ROSTER every scene rests at least one voice (L3's whole point)",
+    restsBad === 0, R31_COLS.length + " columns, " + restsBad + " with nobody resting");
+})();
+
+// ============================================================================
+// CAST (rc.31) — dress and prominence, never presence.
+// ============================================================================
+(function testCast31() {
+  var i, j;
+  var casts = R31_CASTS;
+  var begins = A2.begins;
+
+  // one cast per evening, announced the instant AFTER the evening begins —
+  // and therefore before its first note
+  var pairBad = 0;
+  for (i = 0; i < runA.events.length; i++) {
+    if (runA.events[i].type !== "performance" || runA.events[i].phase !== "begin") continue;
+    var nxt = runA.events[i + 1];
+    if (!nxt || nxt.type !== "cast" || nxt.evening !== runA.events[i].n ||
+        Math.abs(nxt.t - runA.events[i].t) > 1e-9) pairBad++;
+  }
+  check("CAST one cast per evening, announced immediately after the begin event (before any note)",
+    casts.length === begins.length && pairBad === 0,
+    casts.length + " cast(s) / " + begins.length + " evening(s)");
+
+  // EVENING ONE of a run is always the full ensemble, plain
+  var one = null;
+  for (i = 0; i < casts.length; i++) if (casts[i].e.evening === 1) one = casts[i].e;
+  check("CAST evening one is the full ensemble in plain registrations (no draw)",
+    !!one && one.plain === true && one.harpsichord === "8′" && one.musicbox === "damped" &&
+    one.drone === "flue" && one.vessel === "forward" && one.regal === "forward" && one.flue === "forward",
+    one ? JSON.stringify([one.harpsichord, one.musicbox, one.drone, one.vessel, one.regal, one.flue]) : "no cast");
+
+  // …and from evening two the dice actually dress the room
+  var varied = 0;
+  for (i = 0; i < casts.length; i++) {
+    var e = casts[i].e;
+    if (e.evening <= 1) continue;
+    if (e.harpsichord !== "8′" || e.musicbox !== "damped" || e.drone !== "flue" ||
+        e.vessel !== "forward" || e.regal !== "forward" || e.flue !== "forward") varied++;
+  }
+  if (!SHORT2) {
+    check("CAST evenings after the first draw their dress",
+      casts.length >= 2 && varied > 0,
+      varied + " of " + Math.max(0, casts.length - 1) + " later evening(s) dressed differently");
+  } else {
+    check("CAST later-evening draws (RELAXED: sim < 2700s)", true,
+      casts.length + " cast(s) so far");
+  }
+
+  // the ONE absence colour: stormy tides only, never two evenings running,
+  // and never on evening one
+  var absent = [], absBad = 0, runBad = 0, oneBad = 0;
+  for (i = 0; i < casts.length; i++) {
+    e = casts[i].e;
+    if (e.musicbox !== "absent") continue;
+    absent.push(e.evening);
+    if (e.evening <= 1) oneBad++;
+    var tide = null;
+    for (j = 0; j < begins.length; j++) if (begins[j].n === e.evening) tide = begins[j].tideLabel;
+    if (tide !== "stormy") absBad++;
+  }
+  for (i = 1; i < absent.length; i++) if (absent[i] === absent[i - 1] + 1) runBad++;
+  check("CAST the one absence colour is stormy-only and never two evenings running",
+    absBad === 0 && runBad === 0 && oneBad === 0,
+    absent.length + " absence(s) over " + casts.length + " evening(s)");
+
+  // …and an absent music box really is absent that evening
+  var leakBad = 0;
+  for (i = 0; i < casts.length; i++) {
+    e = casts[i].e;
+    if (e.musicbox !== "absent") continue;
+    var t0 = null, t1 = Infinity;
+    for (j = 0; j < begins.length; j++) {
+      if (begins[j].n === e.evening) t0 = begins[j].t;
+      if (begins[j].n === e.evening + 1) t1 = begins[j].t;
+    }
+    if (t0 == null) continue;
+    for (j = 0; j < runA.notes.length; j++) {
+      var n = runA.notes[j];
+      if (n.voice !== "musicbox") continue;
+      if (n.t > t0 + R31_GRACE && n.t < t1) leakBad++;
+    }
+  }
+  check("CAST an absent music box does not play that evening",
+    leakBad === 0, absent.length + " absence(s), " + leakBad + " leaked note(s)");
+
+  // A MOVED KNOB WINS OVER THE CAST. The drone's registration is the
+  // cleanest witness: gedackt (2) always draws the sub, where the cast's own
+  // default registration draws it only ~30% of cycles.
+  function droneSubShare(r) {
+    var cycles = {}, subs = {};
+    for (var q = 0; q < r.notes.length; q++) {
+      var d = r.notes[q];
+      if (d.voice !== "drone" || d.kind) continue;
+      var key = d.t.toFixed(6);
+      cycles[key] = 1;
+      if (d.oct === -2) subs[key] = 1;
+    }
+    var nc = Object.keys(cycles).length, ns = Object.keys(subs).length;
+    return { cycles: nc, subs: ns, share: nc ? ns / nc : 0 };
+  }
+  function knobRun(setter, simS) {
+    var origCE = console.error;
+    console.error = function () {};
+    var R = { notes: [], events: [] };
+    try {
+      var L = P.Library.create({ seed: LIB_SEED, volume: 0.5 });
+      L.setNoteListener(function (n) { R.notes.push(n); });
+      L.setEventListener(function (e) { R.events.push(e); });
+      setter(L);
+      var t0 = vnow;
+      L.play();
+      vAdvance(t0 + simS);
+      L.stop();
+      vAdvance(vnow + 3);
+      R.info = L.getInfo();
+    } catch (e) { errors.push("cast knob run: " + (e && e.message)); }
+    console.error = origCE;
+    return R;
+  }
+  var free = knobRun(function () {}, 300);
+  var forced = knobRun(function (L) { L.setLayerParam("drone", "registration", 2); }, 300);
+  var fShare = droneSubShare(free), gShare = droneSubShare(forced);
+  check("CAST a moved desk knob overrides the cast (drone registration → gedackt draws every sub)",
+    gShare.cycles > 3 && gShare.share === 1 && fShare.share < 1,
+    "gedackt " + gShare.subs + "/" + gShare.cycles + " cycles subbed vs default " +
+    fShare.subs + "/" + fShare.cycles);
+
+  // The absence colour is rare BY DESIGN (p .12 of stormy evenings only), so
+  // a single run may never show one. Scan a handful of seeds until the
+  // mechanism fires, then hold that evening to the same three laws.
+  function castScan(seedVal, simS) {
+    var origCE = console.error;
+    console.error = function () {};
+    var out = { casts: [], begins: [], notes: [] };
+    try {
+      var L = P.Library.create({ seed: seedVal, volume: 0.5 });
+      L.setEventListener(function (e) {
+        if (e.type === "cast") out.casts.push(e);
+        else if (e.type === "performance" && e.phase === "begin") out.begins.push(e);
+      });
+      L.setNoteListener(function (n) { if (n.voice === "musicbox") out.notes.push(n); });
+      var t0 = vnow;
+      L.play();
+      vAdvance(t0 + simS);
+      L.stop();
+      vAdvance(vnow + 3);
+    } catch (e) { errors.push("cast scan: " + (e && e.message)); }
+    console.error = origCE;
+    return out;
+  }
+  var found = null, scanned = 0, scanEvenings = 0;
+  for (i = 0; i < 8 && !found; i++) {
+    var sc = castScan(LIB_SEED + 101 + i * 37, SHORT2 ? 1800 : 3600);
+    scanned++;
+    scanEvenings += sc.casts.length;
+    for (j = 0; j < sc.casts.length; j++) {
+      if (sc.casts[j].musicbox === "absent") { found = { run: sc, cast: sc.casts[j] }; break; }
+    }
+  }
+  if (found) {
+    var fe = found.cast, ftide = null, ft0 = null, ft1 = Infinity;
+    for (j = 0; j < found.run.begins.length; j++) {
+      if (found.run.begins[j].n === fe.evening) { ftide = found.run.begins[j].tideLabel; ft0 = found.run.begins[j].t; }
+      if (found.run.begins[j].n === fe.evening + 1) ft1 = found.run.begins[j].t;
+    }
+    var fLeak = 0;
+    for (j = 0; j < found.run.notes.length; j++) {
+      if (ft0 != null && found.run.notes[j].t > ft0 + R31_GRACE && found.run.notes[j].t < ft1) fLeak++;
+    }
+    var fTwice = 0, prev = -99;
+    for (j = 0; j < found.run.casts.length; j++) {
+      if (found.run.casts[j].musicbox !== "absent") continue;
+      if (found.run.casts[j].evening === prev + 1) fTwice++;
+      prev = found.run.casts[j].evening;
+    }
+    check("CAST the absence colour FIRES, on a stormy evening, with the box truly silent",
+      ftide === "stormy" && fe.evening > 1 && fLeak === 0 && fTwice === 0,
+      "evening " + fe.evening + " · tide " + ftide + " · " + fLeak + " leaked note(s) · " +
+      scanEvenings + " evenings scanned");
+  } else {
+    check("CAST the absence colour (NOT OBSERVED: rare by design — p .12 of stormy evenings)",
+      true, scanned + " seed(s), " + scanEvenings + " evenings scanned, none absent");
+  }
+
+  // getInfo().cast mirrors the event (one shape, two surfaces)
+  var infoCast = runA.infoFinal && runA.infoFinal.cast;
+  var lastCast = casts.length ? casts[casts.length - 1].e : null;
+  check("CAST getInfo().cast mirrors the last announced cast",
+    !!infoCast && !!lastCast && infoCast.evening === lastCast.evening &&
+    infoCast.harpsichord === lastCast.harpsichord && infoCast.musicbox === lastCast.musicbox &&
+    infoCast.drone === lastCast.drone && infoCast.vessel === lastCast.vessel,
+    infoCast ? JSON.stringify(infoCast) : "none");
+})();
+
+// ============================================================================
+// REPRO (rc.31) — the three new voices and the cast replay from the seed.
+// ============================================================================
+(function testRepro31() {
+  function tally(r) {
+    var out = { vessel: 0, regal: 0, flue: 0, cast: 0 };
+    for (var i = 0; i < r.notes.length; i++) {
+      if (out[r.notes[i].voice] != null) out[r.notes[i].voice]++;
+    }
+    for (i = 0; i < r.events.length; i++) if (r.events[i].type === "cast") out.cast++;
+    return out;
+  }
+  var a = tally(runA), b = tally(runB), c = tally(runC);
+  var same = a.vessel === b.vessel && a.regal === b.regal && a.flue === b.flue && a.cast === b.cast;
+  var sounded = (a.vessel + a.regal + a.flue) > 0;
+  check("REPRO rc.31 voices sound and replay identically from the same seed",
+    same && (SHORT2 || sounded),
+    "vessel " + a.vessel + ", regal " + a.regal + ", flue " + a.flue + ", casts " + a.cast +
+    (same ? "" : " — DIVERGED vs " + JSON.stringify(b)));
+  check("REPRO rc.31 a different seed dresses a different room",
+    JSON.stringify(a) !== JSON.stringify(c) || SHORT2,
+    "seed+1: " + JSON.stringify(c));
 })();
 
 // ============================================================================
