@@ -4140,6 +4140,15 @@ function p3AmbientFires(r) {
   // ---- OVERTONE CHANT — the cantor's second manner -------------------------
   (function () {
     var ns = r32NotesOf(S1, "overtone");
+    // rc.35: lo and hi are TOUCH draws now, so the walk's reachable band is
+    // the union of their spans, not the desk's two defaults. Read it off the
+    // engine's own getWanderSpans rather than pinning 4..10 here — the row
+    // then follows the authored spans wherever they go.
+    var oBand = { lo: 4, hi: 10 };
+    try {
+      var oSp = P.Sycorax.create({ seed: 1 }).getWanderSpans().overtone;
+      if (oSp && oSp.lo && oSp.hi) oBand = { lo: Math.floor(oSp.lo.lo), hi: Math.ceil(oSp.hi.hi) };
+    } catch (eOB) {}
     var octBad = 0, sceneBad = 0, pathBad = 0, ent = r32Entries(ns), i, h;
     for (i = 0; i < ns.length; i++) {
       if (ns[i].oct !== -1) octBad++;
@@ -4148,7 +4157,7 @@ function p3AmbientFires(r) {
       for (h = 0; h < p.length; h++) {
         if (p[h] === "…") continue;
         var v = +p[h];
-        if (!(v >= 4 && v <= 10)) pathBad++;     // the default desk's lo..hi
+        if (!(v >= oBand.lo && v <= oBand.hi)) pathBad++;   // the wander's own lo..hi
       }
     }
     for (i = 0; i < ent.length; i++) {
@@ -4420,6 +4429,281 @@ function p3AmbientFires(r) {
       "budget " + (S1.infoFinal && S1.infoFinal.budget ? S1.infoFinal.budget.voices : "n/a") +
       ", swallowed " + (S1.swallowed.length + SD1.swallowed.length +
                         SD2.swallowed.length + SD3.swallowed.length));
+  })();
+
+  // ---- SYCORAX rc.35: wander ----
+  // PLAN-SOUND-DIVERSITY §11.2 and §11.4 landed in the rite: every layer's
+  // strip gained a `vary` knob, and the ranged knobs are drawn per sounding
+  // (TOUCH), per evening (CHARACTER) or slowly over minutes (WEATHER)
+  // through PJ2.Voice.wander, on its own forks.
+  //
+  // These rows are FIXED-LENGTH by design — 900 s and 1200 s regardless of
+  // the sim argument — because the load-bearing one is a byte-for-byte
+  // comparison against a digest taken from the rc.33 build, and a digest is
+  // only a digest at one duration.
+  (function () {
+    // Drive Sycorax like trackRun, but with the desk set before play and an
+    // optional wander tap installed.
+    function sycRun(seedVal, simS, opts) {
+      opts = opts || {};
+      var origAC = W.AudioContext;
+      W.AudioContext = function () { return mkCtx(); };
+      var origCE = console.error, swallowed = [];
+      console.error = function () { swallowed.push("Sycorax/wander: " + Array.prototype.join.call(arguments, " ")); };
+      var R = { events: [], notes: [], taps: [], swallowed: swallowed, t0: vnow, infoFinal: null };
+      try {
+        var E = P.Sycorax.create({ seed: seedVal, volume: 0.5 });
+        if (opts.vary != null) {
+          var lps = E.getLayerParams();
+          for (var lk in lps) {
+            for (var pi = 0; pi < lps[lk].length; pi++) {
+              if (lps[lk][pi].key === "vary") E.setLayerParam(lk, "vary", opts.vary);
+            }
+          }
+        }
+        if (opts.tap) {
+          E.setWanderListener(function (layer, key, value) {
+            R.taps.push({ layer: layer, key: key, v: value, t: vnow });
+          });
+        }
+        R.spans = E.getWanderSpans();
+        R.defs = E.getLayerParams();
+        E.setEventListener(function (e) { R.events.push(e); });
+        E.setNoteListener(function (n) { R.notes.push(n); });
+        R.t0 = vnow;
+        E.play();
+        vAdvance(R.t0 + simS);
+        E.stop();
+        vAdvance(vnow + 3);
+        try { R.infoFinal = E.getInfo(); } catch (eI) {}
+      } catch (e) {
+        errors.push("sycRun " + seedVal + ": " + (e && e.message));
+      }
+      console.error = origCE;
+      W.AudioContext = origAC;
+      return R;
+    }
+    function fnv1a(s) {
+      var h = 0x811c9dc5;
+      for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      return (h >>> 0).toString(16);
+    }
+
+    // ---- VARY-ZERO -------------------------------------------------------
+    // The whole round's promise: with every layer's `vary` at 0 the engine
+    // is the rc.33 build, note for note and event for event. These two
+    // digests were taken from that build (streamSig above, unchanged) at
+    // 900 s on the two Sycorax seeds this file already uses, BEFORE a line
+    // of rc.35 was written. If a future edit re-rolls a pre-existing stream
+    // — the one thing the wander must never do — this row goes red.
+    var VZ = [
+      { seed: 20260709, len: 32984, fnv: "2c8ffade" },
+      { seed: 777, len: 30580, fnv: "7f1f9b17" },
+    ];
+    var vzBad = [], vzSw = 0;
+    for (var vi = 0; vi < VZ.length; vi++) {
+      var vr = sycRun(VZ[vi].seed, 900, { vary: 0 });
+      var vs = streamSig(vr);
+      vzSw += vr.swallowed.length;
+      if (vs.length !== VZ[vi].len || fnv1a(vs) !== VZ[vi].fnv) {
+        vzBad.push(VZ[vi].seed + ": len " + vs.length + "/" + VZ[vi].len +
+                   " fnv " + fnv1a(vs) + "/" + VZ[vi].fnv);
+      }
+    }
+    check("SYC35 VARY-ZERO: vary 0 replays the rc.33 build byte for byte (two seeds, 900 s)",
+      vzBad.length === 0 && vzSw === 0,
+      vzBad.length ? vzBad.join(" · ") : "2 seeds, 63564 chars of stream, digests match, 0 swallowed");
+
+    // ---- the shipped run: vary 1, two evenings, every read tapped --------
+    var WR = sycRun(20260709, 1200, { vary: 1, tap: true });
+    var spans = WR.spans || {};
+
+    // ---- WANDER-SPANS ----------------------------------------------------
+    // Every value the engine actually used, checked against the span the
+    // engine itself reports. Untapped (layer, key) pairs — the pool's keen
+    // borrowing the chant's body, where the ambient strip carries no such
+    // knob — report no span and are skipped by construction.
+    var spanBad = [], spanN = 0, roundBad = 0, seen = {}, tapKeys = 0;
+    for (var ti = 0; ti < WR.taps.length; ti++) {
+      var tp = WR.taps[ti];
+      var sp = spans[tp.layer] && spans[tp.layer][tp.key];
+      if (!sp) continue;
+      spanN++;
+      var kk = tp.layer + "." + tp.key;
+      if (!seen[kk]) { seen[kk] = { lo: tp.v, hi: tp.v, n: 0, per: sp.per }; tapKeys++; }
+      if (tp.v < seen[kk].lo) seen[kk].lo = tp.v;
+      if (tp.v > seen[kk].hi) seen[kk].hi = tp.v;
+      seen[kk].n++;
+      if (sp.weights) {
+        var okV = false;
+        for (var wj = 0; wj < sp.values.length; wj++) if (tp.v === sp.values[wj]) okV = true;
+        if (sp.moved) okV = okV || tp.v === sp.knob;
+        if (!okV && spanBad.length < 6) spanBad.push(kk + "=" + tp.v + " not in {" + sp.values.join(",") + "}");
+      } else if (!(tp.v >= sp.lo - 1e-9 && tp.v <= sp.hi + 1e-9)) {
+        if (spanBad.length < 6) spanBad.push(kk + "=" + tp.v.toFixed(4) + " outside [" + sp.lo + ", " + sp.hi + "]");
+      }
+      if (sp.round && Math.abs(tp.v - Math.round(tp.v)) > 1e-9) roundBad++;
+    }
+    // …and the draws must actually MOVE: at least four fifths of the tapped
+    // touch keys must have found more than one value over the run.
+    var moved = 0, touchKeys = 0;
+    for (var sk in seen) {
+      if (seen[sk].per !== "touch" || seen[sk].n < 4) continue;
+      touchKeys++;
+      if (seen[sk].hi - seen[sk].lo > 1e-9) moved++;
+    }
+    check("SYC35 WANDER-SPANS every drawn value inside the engine's own span; integers land on integers",
+      spanN > 200 && spanBad.length === 0 && roundBad === 0 &&
+      (touchKeys === 0 ? SHORTT : moved >= Math.ceil(touchKeys * 0.8)),
+      spanN + " draw(s) over " + tapKeys + " ranged knob(s), " + moved + "/" + touchKeys +
+      " touch knobs moved" + (spanBad.length ? ", " + spanBad.join(" · ") : "") +
+      (roundBad ? ", " + roundBad + " non-integer" : ""));
+
+    // ---- WANDER-CHARACTER ------------------------------------------------
+    // A character value is the EVENING's: constant from one performance
+    // begin to the next, and redrawn at the seam.
+    var evT = [];
+    for (var ei = 0; ei < WR.events.length; ei++) {
+      if (WR.events[ei].type === "performance" && WR.events[ei].phase === "begin") evT.push(WR.events[ei].t);
+    }
+    function eveOf(t) { var k = 0; for (var i = 0; i < evT.length; i++) if (evT[i] <= t + 1e-9) k = i + 1; return k; }
+    var charSeen = {}, charDrift = [], charTurned = 0, charKeys = 0;
+    for (ti = 0; ti < WR.taps.length; ti++) {
+      tp = WR.taps[ti];
+      sp = spans[tp.layer] && spans[tp.layer][tp.key];
+      if (!sp || sp.per !== "character") continue;
+      kk = tp.layer + "." + tp.key;
+      var ev = eveOf(tp.t);
+      if (!charSeen[kk]) { charSeen[kk] = {}; charKeys++; }
+      if (charSeen[kk][ev] == null) charSeen[kk][ev] = tp.v;
+      else if (charSeen[kk][ev] !== tp.v && charDrift.length < 6) {
+        charDrift.push(kk + " moved inside evening " + ev);
+      }
+    }
+    for (kk in charSeen) {
+      var vals = [], evk;
+      for (evk in charSeen[kk]) vals.push(charSeen[kk][evk]);
+      if (vals.length >= 2) {
+        for (var vj = 1; vj < vals.length; vj++) if (vals[vj] !== vals[0]) { charTurned++; break; }
+      }
+    }
+    check("SYC35 WANDER-CHARACTER constant inside an evening, redrawn at the seam",
+      charKeys > 0 && charDrift.length === 0 && (evT.length >= 2 ? charTurned >= 1 : SHORTT),
+      charKeys + " character knob(s) over " + evT.length + " evening(s), " +
+      charTurned + " turned at a seam" + (charDrift.length ? ", " + charDrift.join(" · ") : ""));
+
+    // ---- WANDER-WEATHER --------------------------------------------------
+    // Weather is a slow drift, deterministic in run-relative time. Rebuilt
+    // here from the engine's OWN declarations — getLayerParams for min/max/
+    // def, getWanderSpans for lo/hi/per — on the same root seed and the same
+    // layer label, so this is the very LFO the gurdy reads at each cycle.
+    var wxRows = [], wxBad = [];
+    for (var lk2 in spans) {
+      for (var k2 in spans[lk2]) if (spans[lk2][k2].per === "weather") wxRows.push([lk2, k2]);
+    }
+    var wxSteep = 0, wxFlat = 0, wxOut = 0, wxWorstStep = 0, wxWorstRange = 0;
+    for (var wi2 = 0; wi2 < wxRows.length; wi2++) {
+      var L = wxRows[wi2][0], K = wxRows[wi2][1];
+      var defs = [];
+      for (var di = 0; di < (WR.defs[L] || []).length; di++) {
+        var d0 = WR.defs[L][di], sp0 = spans[L][d0.key];
+        var d1 = { key: d0.key, label: d0.label, min: d0.min, max: d0.max, def: d0.def };
+        if (sp0) { d1.lo = sp0.lo; d1.hi = sp0.hi; d1.per = sp0.per; if (sp0.round) d1.round = true; if (sp0.weights) d1.weights = sp0.weights; }
+        defs.push(d1);
+      }
+      var st = {};
+      for (di = 0; di < defs.length; di++) st[defs[di].key] = defs[di].def;
+      var w = P.Voice.wander({
+        root: P.Rand.stream(20260709), layer: L, params: defs,
+        knob: function (kx) { return st[kx]; }, vary: function () { return 1; },
+      });
+      var lo = spans[L][K].lo, hi = spans[L][K].hi, reach = hi - lo;
+      var vs = [], step = 0;
+      for (var tt = 0; tt <= 600; tt += 2) vs.push(w.weather(K, tt));
+      for (var vi2 = 0; vi2 < vs.length; vi2++) {
+        if (!(vs[vi2] >= lo - 1e-9 && vs[vi2] <= hi + 1e-9)) wxOut++;
+        if (vi2) step = Math.max(step, Math.abs(vs[vi2] - vs[vi2 - 1]));
+      }
+      // the helper's LFO is 0.6·sin(2π t/[60,150]) + 0.4·sin(2π t/[150,240]);
+      // its steepest possible slope maps to 0.09·reach over 2 s.
+      if (step > 0.09 * reach + 1e-9) wxSteep++;
+      var rng2 = Math.max.apply(null, vs) - Math.min.apply(null, vs);
+      if (rng2 < 0.25 * reach) wxFlat++;
+      if (reach > 0 && step / reach > wxWorstStep) wxWorstStep = step / reach;
+      if (reach > 0 && rng2 / reach > wxWorstRange) wxWorstRange = rng2 / reach;
+    }
+    check("SYC35 WANDER-WEATHER drifts slowly (< 9 % of its reach per 2 s) and moves over 600 s",
+      wxRows.length >= 3 && wxOut === 0 && wxSteep === 0 && wxFlat === 0,
+      wxRows.length + " weather knob(s); worst 2 s step " + (wxWorstStep * 100).toFixed(1) +
+      " % of reach, worst 10 min travel " + (wxWorstRange * 100).toFixed(0) + " % of reach" +
+      (wxBad.length ? ", " + wxBad.join(" · ") : ""));
+
+    // ---- WANDER-LEDGER ---------------------------------------------------
+    // The engine header's family ledger, recomputed here from the engine's
+    // OWN reported spans at their WORST CASE (each span's hi), so a widened
+    // span cannot quietly breach the master ceiling. Every line is the
+    // header's; only the ranged factors are new.
+    function hiOf(l, k, dflt) {
+      var s = spans[l] && spans[l][k];
+      return (s && s.hi != null) ? s.hi : dflt;
+    }
+    var L35 = {
+      gurdy: 0.031,                       // brightness/warble/dog carry no level
+      horn: 2 * (0.028 + 0.028 * 0.20 * hiOf("horn", "breath", 1) + 0.0028),
+      murk: 0.010,
+      grit: 0.075,                        // saturated; the dog's dose cannot move it
+      melody: 0.09 + 0.006 * (hiOf("boneflute", "breath", 1) * hiOf("boneflute", "chiff", 1) - 1),
+      percussion: 0.042 * 1.3 + 0.045 * hiOf("percussion", "stroke", 1),
+      ambient: 0.05,
+      throat: 0.04,
+      bullroarer: 0.025 + 0.025 * 0.5 * hiOf("bullroarer", "air", 1),
+      overtone: 0.03 * (1 + 0.30 * (hiOf("overtone", "body", 1) - 1)),
+      // the ring lengthens as 1/log(sustain): a longer tail is more overlap
+      jawharp: 0.020 * (Math.log(0.94) / Math.log(hiOf("jawharp", "sustain", 0.94))),
+      blade: 0.008 + 0.008 * 0.5 * hiOf("blade", "friction", 1),
+      cauldron: 0.02 + 0.02 * 0.45 * hiOf("cauldron", "wash", 1),
+    };
+    var invoc = L35.gurdy + L35.horn + L35.murk + L35.grit + L35.melody +
+                L35.percussion + L35.ambient + L35.throat +
+                L35.bullroarer + L35.overtone + L35.blade + L35.cauldron;
+    var atBus = invoc * 1.3;              // each room dry 1.0 + wet ~0.3
+    var atLimiter = atBus * 0.6 * 1.66;   // masterGain × the saturator's small-signal gain
+    check("SYC35 WANDER-LEDGER worst-case invocation, every span at its hi, under the master ceiling",
+      atLimiter <= 0.89 && L35.horn > 0 && L35.percussion > 0,
+      "worst scene " + invoc.toFixed(4) + " -> " + atLimiter.toFixed(3) +
+      " into the limiter (ceiling 0.89, " + (20 * Math.log(atLimiter / 0.89) / Math.LN10).toFixed(2) + " dB under)");
+
+    // ---- the desk ---------------------------------------------------------
+    // pj2-ui's knob strip reads key/label/min/max/def and nothing else (it
+    // sets the slider to (value − min)/(max − min)), so a def carrying lo/hi/
+    // per/round/weights renders exactly like any other. Asserted here the way
+    // the desk does it: every layer's strip ends in `vary` (0–2, def 1), and
+    // every def the desk reads is complete and renders to a legal slider.
+    var deskBad = [], deskLayers = 0;
+    for (var dl in WR.defs) {
+      var ds = WR.defs[dl];
+      deskLayers++;
+      if (!ds.length || ds[ds.length - 1].key !== "vary") { deskBad.push(dl + ": no vary last"); continue; }
+      var vd = ds[ds.length - 1];
+      if (!(vd.min === 0 && vd.max === 2 && vd.def === 1)) deskBad.push(dl + ": vary " + vd.min + "/" + vd.max + "/" + vd.def);
+      for (var dj = 0; dj < ds.length; dj++) {
+        var dd = ds[dj];
+        var okDesk = dd.key && typeof dd.label === "string" && dd.label.length &&
+          isFinite(dd.min) && isFinite(dd.max) && isFinite(dd.def) && dd.max > dd.min &&
+          dd.def >= dd.min && dd.def <= dd.max &&
+          dd.lo === undefined && dd.hi === undefined && dd.per === undefined;
+        if (!okDesk && deskBad.length < 6) deskBad.push(dl + "." + dd.key);
+      }
+    }
+    check("SYC35 DESK every strip ends in `vary` (0-2, def 1); the spans never reach the UI",
+      deskLayers >= 13 && deskBad.length === 0,
+      deskLayers + " strip(s)" + (deskBad.length ? ", " + deskBad.join(" · ") : ", every def complete and slider-legal"));
+
+    check("SYC35 zero swallowed errors across every wander run",
+      WR.swallowed.length === 0 && vzSw === 0 &&
+      (!WR.infoFinal || !WR.infoFinal.budget || WR.infoFinal.budget.voices === 0),
+      "budget " + (WR.infoFinal && WR.infoFinal.budget ? WR.infoFinal.budget.voices : "n/a") +
+      ", swallowed " + (WR.swallowed.length + vzSw));
   })();
 
   // ============================== ARIEL ==============================
