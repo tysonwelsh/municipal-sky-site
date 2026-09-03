@@ -110,9 +110,14 @@
       // carry the original v1 song titles, verbatim, in the display face)
       folioNo: "c dorian · tonic 262",
       logHead: "annotationes · the scribal log",
+      // rc.31: the cello, the vessel, the regal and the flue have no
+      // authored atlas cell — stampSigil falls back to a scribal initial in
+      // the same ink (C · V · R · F), which is exactly what the cello has
+      // worn since rc.22. Named here so the omission reads as a decision.
       sigils: {
         drone: "voice-drone", hum: "quill", harpsichord: "voice-harp",
         musicbox: "voice-box", halo: "sigil-sol",
+        cello: null, vessel: null, regal: null, flue: null,
       },
     },
     sycorax: {
@@ -1106,7 +1111,7 @@
   // --------------------------------------------------------------------------
   var SKIP_EVENTS = { air: 1, percussion: 1, organum: 1 };
   var RUBRIC_TAGS = {
-    scene: 1, cadence: 1, seachange: 1, ghost: 1, coagula: 1,
+    scene: 1, cadence: 1, seachange: 1, ghost: 1, coagula: 1, cast: 1,
     cut: 1, "cut-return": 1, reground: 1, performance: 1, arrival: 1,
   };
 
@@ -1188,6 +1193,25 @@
         body = (e.label || "solve et coagula") + (e.name ? " · " + e.name : "")
           + " — the theme settles whole";
         break;
+      // rc.31 — the evening's CAST, in plain words (owner, 2026-09-02: plain
+      // while we tune; the alchemical register is a later decision). Evening
+      // one of a run wears no draw at all and says so.
+      case "cast": {
+        if (e.plain) { body = "tonight: the full ensemble, plain"; break; }
+        var dress = [];
+        if (e.harpsichord) {
+          dress.push("harpsichord, " + (e.harpsichord === "lute" ? "lute stop" : "8′"));
+        }
+        if (e.musicbox) {
+          dress.push(e.musicbox === "absent" ? "no music box tonight" : "music box, " + e.musicbox);
+        }
+        if (e.drone) dress.push("drone, " + e.drone);
+        if (e.vessel) dress.push("the vessel " + e.vessel);
+        if (e.regal) dress.push("the regal " + e.regal);
+        if (e.flue) dress.push("the flue " + e.flue);
+        body = "tonight: " + dress.join(" · ");
+        break;
+      }
       case "develop":
         body = (e.voice ? e.voice + " · " : "") + (e.name || "motif")
           + " · gen " + roman(e.gen) + " — the branch grows";

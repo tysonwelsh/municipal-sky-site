@@ -126,6 +126,50 @@ The `PLAN-*.md` ignore rule for this folder was relaxed the same day so
 the plan travels with the code (the earlier PLAN docs cited in comments
 predate that and were never committed).
 
+**Landed in the Library (rc.31, 2026-09-03 — L3 + L4 of the sequence).**
+Three new voices, all tuned by ear by the owner on the lab page and
+carried into `pj2-library.js` with those exact numbers as design
+constants:
+
+- **the vessel** — a bowed alembic, the Library's over-voice: four
+  inharmonic bowl partials, a fundamental that BEATS at 1 Hz, and the
+  engine's first free-ring envelope (the bow lifts, the metal goes on
+  sounding). Landscape. Its scene is the reverie; one bow in the
+  candle-out, then silence.
+- **the regal** — a small reed organ: three parts of square-and-saw reed
+  under one breathing bellows. Chapter 2 and the seizure — and on p 0.45
+  of the cadences it is offered, the organist TAKES the cadence and voices
+  both chords in the hum consort's place.
+- **the flue** — a wooden recorder, the rarest fourth speaker and a real
+  motif voice (its own walk table, transform character and register). It
+  claims THE AIR like the harpsichord, the box and the hum.
+
+Plus **the stops**, each a knob on its voice's desk row: the harpsichord's
+lute stop (`buff`), the music box's wound-down mechanism (`wound`), the
+cello's reverie harmonics (`harmonics`) and the drone's three
+registrations (`registration`: open / principal / gedackt). The music box
+is simply the DAMPED box now — the open box retired.
+
+**The scene roster** (§4.4's adopted table, with the regal in the
+seizure) gates entries per scene, so every scene rests somebody: the box
+sits out the settling and the reverie, the cello and the hum sit out the
+seizure, the harpsichord rests through the candle-out except for the one
+SOLVE ET COAGULA statement, and the drone never rests at all. The regal
+is the ONE voice that may sound outside its roster cells — only as the
+organist taking a cadence: both cadence chords sound inside the outgoing
+scene, so a take on a chapter-one or chapter-three boundary puts the reed
+organ briefly in a scene the table rests it from.
+
+**The evening cast** draws once per evening on a new `cast` fork — dress
+and prominence, never presence. Evening one of a run is always the full
+ensemble in plain registrations; from evening two the harpsichord may
+draw its lute stop, the box its wound-down mechanism, the drone its
+registration, and the three new voices forward or back. One absence
+colour only ("no music box tonight", p 0.12, stormy tides, never twice
+running). A desk knob the owner has moved wins over the cast until it is
+reset. Announced as a `{type:"cast"}` event, a plain-words line in the
+scribal log, and `getInfo().cast`.
+
 ## TODO / future ideas (backburner — owner-deprioritized)
 
 - **Phase 4 apparitions** (owner, 2026-07-07: "not a priority" — parked):

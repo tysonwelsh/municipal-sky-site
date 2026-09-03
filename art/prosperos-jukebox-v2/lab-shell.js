@@ -177,8 +177,12 @@ window.PJ2Lab = (function () {
   //     engine: the track facade (play/stop/reseed/getInfo/getLayers/…),
   //     defaultSeed: number,
   //     timeS:  fn() -> audio seconds or null (for log stamps),
-  //     info:   fn() -> { cap, gen, candidates, stops, activeNodes, diag },
+  //     info:   fn() -> { cap, gen, candidates, stops, activeNodes, maxGain,
+  //                       diag,   // extra text for the DIAG line
+  //                       lab },  // extra fields copied onto window.__lab
   //     state:  { get: fn() -> json, apply: fn(json) },
+  //     nowLine: fn(engineInfo) -> string,            // optional: the track's
+  //             own "where is the evening" line (default: scene · iv · chord)
   //     onTransport: fn("play" | "stop" | "reseed"),  // fired BEFORE the engine
   //     onTick: fn(engineInfo),                       // the 250 ms pulse
   //   }
@@ -301,7 +305,12 @@ window.PJ2Lab = (function () {
     };
 
     // ---- the meter (the engine's own analyser tap, re-tapped per run) ------
-    var analyser = null, meterBuf = null, rmsDb = -120;
+    // rmsPeak is a PEAK HOLD over the animation-frame meter loop. window.__lab
+    // .rms is only refreshed on the 250 ms pulse, which can step straight over
+    // a plucked or struck body; a headless check that wants to know whether
+    // something was audible reads __lab.rmsPeak (and calls __lab.resetPeak()
+    // before the thing it is measuring).
+    var analyser = null, meterBuf = null, rmsDb = -120, rmsPeak = -120;
     function ensureAnalyser() {
       if (analyser || !engine) return;
       guard("analyser", function () {
@@ -325,6 +334,7 @@ window.PJ2Lab = (function () {
           for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
           var rms = Math.sqrt(sum / meterBuf.length);
           rmsDb = rms > 0 ? 20 * Math.log10(rms) : -120;
+          if (rmsDb > rmsPeak) rmsPeak = rmsDb;
         } catch (e) {}
       }
       if (fillEl) fillEl.style.width = clamp((rmsDb + 70) / 70 * 100, 0, 100).toFixed(1) + "%";
@@ -364,8 +374,12 @@ window.PJ2Lab = (function () {
     // ---- hush chips: the engine's own mixer, one chip per layer -----------
     // The point of the lab: a candidate must be judgeable against the drone
     // alone AND against the whole ensemble, without waiting for a scene.
+    // buildHush(container) keeps the Library's own three presets. A second
+    // argument (added for lab-sycorax.html) replaces them per track:
+    //   [{ label: "gurdy only", keys: ["gurdy"] }, { label: "all on", all: true }]
+    // — "keys" leaves exactly those layers audible, "all" un-hushes everything.
     var chipEls = {};
-    function buildHush(container) {
+    function buildHush(container, presetSpecs) {
       if (!container || !engine) return;
       var layers = [];
       guard("getLayers", function () { layers = engine.getLayers() || []; });
@@ -395,13 +409,21 @@ window.PJ2Lab = (function () {
         }
         refreshChips();
       }
-      var b1 = el("button", "wide", "drone only");
-      b1.onclick = function () { setAll(["drone"], false); log("— hush: drone only —", "hd"); };
-      var b2 = el("button", "wide", "no speakers");
-      b2.onclick = function () { setAll(["drone", "cello", "hum", "ambient", "halo"], false); log("— hush: no speakers —", "hd"); };
-      var b3 = el("button", "wide", "all on");
-      b3.onclick = function () { setAll(null, true); log("— hush: all on —", "hd"); };
-      presets.appendChild(b1); presets.appendChild(b2); presets.appendChild(b3);
+      var list = presetSpecs || [
+        { label: "drone only", keys: ["drone"] },
+        { label: "no speakers", keys: ["drone", "cello", "hum", "ambient", "halo"] },
+        { label: "all on", all: true },
+      ];
+      for (var pi = 0; pi < list.length; pi++) {
+        (function (p) {
+          var b = el("button", "wide", p.label);
+          b.onclick = function () {
+            setAll(p.all ? null : (p.keys || []), true);
+            log("— hush: " + p.label + " —", "hd");
+          };
+          presets.appendChild(b);
+        })(list[pi]);
+      }
       container.appendChild(presets);
     }
     function refreshChips() {
@@ -584,9 +606,10 @@ window.PJ2Lab = (function () {
       scene: null, intensity: null, chord: null,
       errors: errors,
       candidates: {}, stops: {},
-      activeNodes: 0, rms: -120,
+      activeNodes: 0, rms: -120, rmsPeak: -120,
       state: function () { return stateJson(); },
       apply: function (json) { return applyJson(json); },
+      resetPeak: function () { rmsPeak = -120; return true; },
     };
     shell.lab = lab;
 
@@ -611,12 +634,20 @@ window.PJ2Lab = (function () {
       lab.activeNodes = pageInfo.activeNodes || 0;
       lab.cap = !!pageInfo.cap;
       lab.rms = rmsDb;
+      lab.rmsPeak = rmsPeak;   // held since the last resetPeak()
       lab.maxGain = pageInfo.maxGain || 0;   // the loudest peak the page has scheduled
       lab.layers = info.layers || {};
+      // A track's own fields (the Library has a chord, Sycorax has a pose and
+      // a cut) ride here so a headless check reads them off window.__lab.
+      if (pageInfo.lab) { for (var pk in pageInfo.lab) lab[pk] = pageInfo.lab[pk]; }
 
       if (nowEl) {
         if (!info.playing) {
           nowEl.textContent = "stopped — press PLAY";
+        } else if (opts.nowLine) {
+          // a page may write its own "where is the evening" line
+          var line = guard("nowLine", function () { return opts.nowLine(info); });
+          nowEl.textContent = (line == null) ? "…" : String(line);
         } else {
           nowEl.textContent =
             (info.sceneLabel || info.sceneType || "…") +
@@ -667,6 +698,7 @@ window.PJ2Lab = (function () {
           " scene=" + (info.sceneType || "-") +
           " iv=" + fmtNum(info.intensity, 2) +
           " chord=" + (info.harmony || "-") +
+          (pageInfo.diag ? " " + pageInfo.diag : "") +   // the track's own fields
           cLine +
           " stops=" + (sLine.length ? sLine.join(",") : "-") +
           " nodes=" + (pageInfo.activeNodes || 0) +

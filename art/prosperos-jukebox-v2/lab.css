@@ -391,3 +391,84 @@ button.fold {
    across the grid, which reads as a broken column rather than a hint.) */
 p.swipe { margin: 0.2rem 0 0.3rem; color: #9a8155; }
 p.swipe::after { content: " ⟩⟩"; color: var(--gilt); }
+
+/* ==========================================================================
+   THE SYCORAX SKIN — additive. lab-library.html is untouched by everything
+   below; only a page that carries class="lab-sycorax" (on <html> AND
+   <body>, so the page ground repaints too) wears these inks.
+
+   From the pj2-skin.js registry's sycorax palette (the purple makeover,
+   owner 2026-08-31): paper #08070f / #0e0c17 / #151220, moth ("bone")
+   #d8d2e4 / #b0a8c4 / #7c7490, witch-light #c4b5fd / #9b87b8, wine
+   #8f2f55 / #6b2340. The registry's rules bind here too: moth carries all
+   the data, wine never carries data (rubrication only — here it is the
+   error line and the log's headings), dim witch is the halo not the text.
+   ========================================================================== */
+.lab-sycorax {
+  --paper:  #08070f;
+  --paper2: #0e0c17;
+  --paper3: #151220;
+  --edge:   #241f36;
+  --edge2:  #3e3358;   /* the registry's dusk-violet frameEdge */
+  --ink:    #d8d2e4;   /* moth 0 — the reading ink */
+  --ink2:   #c4b5fd;   /* witch-light — headings and live values */
+  --ink3:   #b0a8c4;   /* moth 1 — labels */
+  --gilt:   #9b87b8;   /* dim witch does the gilt's duty (wine carries no data) */
+  --bad:    #e08aa8;   /* wine, lightened until it is legible as an error */
+  --good:   #b0a8c4;
+}
+html.lab-sycorax, body.lab-sycorax { background: var(--paper); color: var(--ink3); }
+
+/* the hard-coded warm greys of the Library sheet, re-cut in night tones */
+.lab-sycorax .dim,
+.lab-sycorax .knob-def          { color: #7c7490; }        /* dim moth */
+.lab-sycorax .card-desc,
+.lab-sycorax .note,
+.lab-sycorax p.swipe            { color: #b0a8c4; }
+.lab-sycorax .log               { color: #a89fc0; }
+.lab-sycorax .log .hd           { color: #c4b5fd; }
+.lab-sycorax .log .did          { color: #d8d2e4; }
+.lab-sycorax button             { -webkit-tap-highlight-color: rgba(196, 181, 253, 0.25); }
+.lab-sycorax button.on          { background: #2a2340; color: var(--ink); border-color: var(--gilt); }
+.lab-sycorax button:active      { background: #362c52; }
+.lab-sycorax .chip.off          { color: #6a6284; border-color: var(--edge); background: var(--paper2); }
+.lab-sycorax .knob              { border-top: 1px dashed #221d33; }
+.lab-sycorax .card.open > button.fold { background: #2a2340; }
+.lab-sycorax .meter-fill        { background: linear-gradient(90deg, #4a3f6b, #c4b5fd); }
+.lab-sycorax input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #3a3159, var(--paper3));
+}
+.lab-sycorax input[type=range]::-webkit-slider-thumb { background: #c4b5fd; border-color: #0d0a14; }
+.lab-sycorax input[type=range]::-moz-range-thumb     { background: #c4b5fd; border-color: #0d0a14; }
+.lab-sycorax table.roster td button       { color: #5f5878; }
+.lab-sycorax table.roster td button.on    { background: #272040; color: var(--ink); }
+.lab-sycorax table.roster col.here,
+.lab-sycorax table.roster td.here         { background: rgba(196, 181, 253, 0.09); }
+.lab-sycorax table.roster th.here         { background: #2a2340; color: var(--ink); }
+.lab-sycorax tr.cand th.rowlab            { color: #c4b5fd; }
+/* the errbar is the one wine-coloured thing: rubrication, never data */
+.lab-sycorax #errbar            { color: var(--bad); }
+
+/* THE CUT — the sticky bar states the hush in words, because the whole
+   Sycorax page is built around it: while it is up, every prototype voice
+   here is silent by law and the owner must be able to see why. */
+.lab-sycorax #cutline {
+  font-size: 15px;
+  color: #7c7490;
+  padding: 0.05rem 0 0.2rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lab-sycorax #cutline.armed { color: #c4b5fd; }
+.lab-sycorax #cutline.hush  { color: #e08aa8; }
+
+/* a stop card's caveat — what a page-side shadow physically cannot carry.
+   (Unused by lab-library.html; it wears the sheet's own inks, so any lab
+   page may use it.) */
+.caveat {
+  border-left: 2px solid var(--edge2);
+  padding: 0.1rem 0 0.1rem 0.6rem;
+  margin: 0.4rem 0 0.2rem;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink3);
+}

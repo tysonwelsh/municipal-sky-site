@@ -325,7 +325,7 @@ mid-throw, in case the ear wants more.
 | cello | ~~pizzicato~~ — **dropped (owner, 2026-09-03: not to be added to the app)** | a plucked low note | — |
 | cello | **harmonics** — **KEPT (owner, 2026-09-03)** | a flageolet: sine + faint 3rd partial at oct +1 of root/fifth, with bow noise — a high thread | reverie |
 | hum | ~~head voice~~ — **dropped (owner, 2026-09-03)** | the singer an octave up | — |
-| drone | **registrations** | flue (triangle, today) / principal (+2nd, 3rd partials at −10/−16 dB) / gedackt (sine only, sub always on) | a cast draw per evening |
+| drone | **registrations** — **KEPT, all three (owner 2026-09-03 delegated the call: "more variation")** | flue (triangle, today) / principal (+2nd, 3rd partials at −10/−16 dB) / gedackt (sine only, sub always on) | a cast draw per evening (flue 0.5 / principal 0.3 / gedackt 0.2); evening one always flue; a 3-position knob on the drone's desk row |
 
 Every stop is a branch inside the existing render function. Owner
 (2026-09-02, decision 5): EVERY stop also gets a knob on its voice's desk
@@ -476,6 +476,26 @@ The spell's pot; the dark cousin of Ariel's bubbles.
   waterphone sits out p 0.12 of at-the-treeline evenings, never twice
   running.
 
+### 5.4 The Sycorax lab page
+
+`lab-sycorax.html` — the Library page's pattern (§4.6, §8) on the
+unmodified Sycorax engine, reusing `lab-shell.js` / `lab.css` (additive
+edits only; the page wears the registry's Sycorax inks). INSTRUMENTS: the
+bullroarer (on by default), the overtone chant (built as its own card —
+integration folds it into the chant), the jaw harp, the bowed blade, the
+cauldron (an ambient one-shot with "sound one now"), each with the entry
+laws above, a presence knob, and the cut gate (silent from 4 s before
+the cut through the hush and its return — the horn's law). STOPS: rebec
+sul ponticello, horn stopped, waterphone struck, percussion fingertips
+(the proto-drum re-rendered faithfully so the hush keeps its heartbeat),
+gurdy dog off (with the grit-bus caveat). ROSTER: the nine layers + five
+candidates × gathering / processional / circling / invocation /
+afterimage, "plan default" = the table above; the page opens all-on
+until the owner adopts a roster. MIX: COPY/PASTE/A-B as the Library's.
+Build brief (the contract): the session scratchpad's
+`lab-sycorax-brief.md`; the Library lab brief's hard rules, ergonomics
+and acceptance checklist apply unchanged.
+
 ---
 
 ## 6. Ariel's Day Off
@@ -573,8 +593,10 @@ box — DAMPED replaces the open box as the instrument's body outright (no
 knob needed: it is simply what the music box sounds like now), and
 WOUND-DOWN joins the cast shuffle on occasion (the candle-out draw). (The
 cello — HARMONICS kept, PIZZICATO dropped and not to be added to the app;
-hum — HEAD VOICE dropped. The drone registrations still await the owner's
-ear.)
+hum — HEAD VOICE dropped. Drone — the owner delegated the call ("more
+variation"): all three REGISTRATIONS kept as a cast draw with the plan's
+weights, evening one on the flue (today's sound), a 3-position knob on
+the drone's row.)
 
 **Roster (owner, 2026-09-03):** §4.4's default table is adopted as the
 integration's scene table, with one change — the REGAL also plays in the
@@ -653,10 +675,27 @@ From the cello/horn precedent; every item is a line in the commit:
 - L0 — owner curates this plan (§7). DONE 2026-09-02.
 - L1 — build `lab-library.html` (+ shell): candidates, stops, roster, COPY.
 - L2 — owner auditions on the phone; pastes COPY JSON + notes.
-- L3 — integrate the chosen instrument → rc.31 (harness section, ledger,
-  desk row, sigil, VERSION).
-- L4 — integrate the chosen stops + the cast + the rosters → rc.32.
-- L5 — long harness run, soak, README; then a listening evening.
+- L3 + L4 — integrate all three instruments with the owner's tunings, the
+  kept stops as knobs, the adopted roster and the cast → **rc.31. DONE
+  2026-09-03** (one integration; brief: the session scratchpad's
+  `library-integration-brief.md`). The vessel, the regal and the flue are
+  in `pj2-library.js` with the owner's by-ear numbers as design constants;
+  the music box's damped body replaced the open one outright; the lute
+  stop, the wound-down mechanism, the cello's harmonics and the drone's
+  three registrations are desk knobs; `SCENE_ROSTER` gates entries per
+  scene; the evening cast draws on its own fork and narrates itself in the
+  log and in `getInfo().cast`. Dropped as the owner directed and NOT
+  built: the harpsichord's 4′ coupled and rolled chord, the cello's
+  pizzicato, the hum's head voice.
+  Disclosure (critic, 2026-09-03): the fourth speaker necessarily re-rolls
+  the motif stream; at the harness's LIB_SEED the ALCH refinement-arc
+  check's margin shrank from 0.075 (rc.30) to 0.020 (rc.31) at 5400 s, and
+  the check went negative at 1500–1800 s. The harness now reports the arc
+  below 2700 s (its own RELAXED idiom) and still asserts it at the contract
+  length; the arc itself (`refinementTilt`) is untouched.
+- L5 — long harness run, soak, README; then a listening evening. Harness
+  and soak done at rc.31 (192 checks green at `node _harness.js 5400`);
+  the listening evening is the owner's.
 
 **Sycorax** S1–S5 and **Ariel** A1–A5 repeat the pattern with their own lab
 pages, reusing the shell and whatever the Library taught.

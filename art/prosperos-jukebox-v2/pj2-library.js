@@ -59,38 +59,177 @@
 // stream is byte-identical to rc.21's; entries scale with intensity, so
 // the voice breathes with the evening instead of ticking.
 //
-// GAIN STAGING (Phase 3 pass — worst-case *scheduled* peaks, the family
-// ledger; verified by mock-param inspection in the Phase 3 check run):
+// rc.31 — THE SOUND-DIVERSITY PASS: three voices, the stops, the roster and
+// the evening cast (PLAN-SOUND-DIVERSITY §4; every number below is the
+// owner's own tuning, made BY EAR on lab-library.html, 2026-09-03).
 //
-//   drone bed      2 pads x 0.07 + sub 0.025 = 0.165 -> x tremolo (<= 1)
-//                  x droneBreath (<= 1) x droneLevel (<= 0.48) ~ 0.079;
-//                  cycle overlap doubles it briefly ~ 0.158; + cadence pads
-//                  2 x 0.012 or a sea-change bloom 2 x 0.05   -> ~ 0.21 worst
+//   THE VESSEL — a bowed alembic: the Library's OVER-voice, where the cello
+//   is its under-voice, and the reverie's own instrument. Four inharmonic
+//   bowl partials (1 : 2.0 : 2.71 : 4.84) with the fundamental a detuned
+//   PAIR beating at 1 Hz (nothing else in this engine beats), a friction
+//   thread alive only while the bow is on, and the Library's first
+//   free-ring envelope — the bow LIFTS and each partial dies on its own
+//   T60. Landscape: it never touches the air. Its scenes are the reverie
+//   and the candle-out (ONE early bow there, the halo's guttering law),
+//   plus a lean-in 0.4 s after a cadence that ARRIVES in one of them, and a
+//   bow over the sea change. One at a time, with a drawn rest after each.
+//
+//   THE REGAL — a small reed organ: three parts of square+saw reed
+//   (reediness 0.3) through a 500 Hz body and an 1800 Hz lid, every part
+//   breathing under ONE bellows. The Library's first reed and its first
+//   chord outside a cadence. The roster gives it the second chapter and
+//   the seizure — and on p 0.45 of the cadences it is eligible for, THE
+//   ORGANIST TAKES THE CADENCE: the regal voices the approach and arrival
+//   chords INSTEAD of the hum consort. The drone's cadence pads still
+//   sound, the arrival still lands on the boundary, and the ≤ 1.5 dB /
+//   no-new-attack contract still binds (the regal borrows the consort's
+//   own seconds-long fades and sits under its 0.016).
+//
+//   THE FLUE — a wooden recorder: the RAREST fourth speaker, and a real
+//   motif voice (its own walk table, transform weights and register through
+//   PJ2.Motif's per-voice door). Triangle+sine core, a 30 ms chiff at the
+//   onset, breath at 1.5 kHz, a vibrato that arrives half a second late;
+//   utterances capped at four notes (the HEAD of anything longer). It
+//   claims THE AIR like every speaker, and it is the only new voice that
+//   may.
+//
+//   THE STOPS — every one a desk knob (owner decision 5): the harpsichord's
+//   LUTE STOP (buff, blended continuously 0..1), the music box's
+//   WOUND-DOWN mechanism (candle-out), the cello's HARMONICS (the reverie
+//   manner), and the drone's three REGISTRATIONS (open / principal /
+//   gedackt — the plan calls the first rank a "flue" pipe, but the desk
+//   calls it OPEN so it cannot be mistaken for the recorder that now has a
+//   mixer row of its own; chosen per CYCLE, and a cycle keeps its pipe for
+//   its whole life,
+//   the straddle lesson applied to stops). The music box's DAMPED body is
+//   not a stop at all any more: it IS the music box now (3rd partial
+//   −12 dB, decay ×0.6, peak ×0.8 — the open box retires).
+//
+//   THE ROSTER (L3) — SCENE_ROSTER below: an explicit per-scene table of
+//   who plays, so every scene rests somebody and the chapters finally
+//   SOUND different from one another. It gates ENTRIES only: the rolls are
+//   still drawn first, the gate comes after, and a sounding note always
+//   finishes. The drone never rests; the candle-out's SOLVE ET COAGULA
+//   still sounds even though the harpsichord otherwise rests there.
+//
+//   THE CAST (L4) — one draw per evening on the new "cast" fork: how each
+//   voice is DRESSED tonight and how forward it sits. Evening one of a run
+//   is always the full ensemble in plain registrations (a short listen
+//   hears everything the book owns); from evening two the harpsichord may
+//   draw its lute stop, the box its wound-down mechanism, the drone its
+//   registration, and the three new voices forward or back (back = level
+//   ×0.7, presence ×0.6). ONE absence colour only — "no music box
+//   tonight", p 0.12, stormy tides only, never two evenings running. A desk
+//   knob the owner has MOVED wins over the cast until it is reset.
+//   Narrated as a {type:"cast"} event and getInfo().cast.
+//
+// ROSTER NOTE (rc.31): the regal is the ONE voice that may sound outside
+// its roster cells — only as the organist taking a cadence. Both cadence
+// chords sound inside the OUTGOING scene (tA = tB − (dA + dB)), so a take
+// on a chapter1→chapter2 or chapter3→reverie boundary puts the organ in a
+// scene the table rests it from, and its release rings ~2.5 s into the
+// next. Deliberate: a cadence is a boundary gesture under the cadence
+// contract, the same reason the hum consort surfaces where its bed rests.
+//
+// STREAM NOTE (rc.31) — what actually moved, stated plainly, because the
+// honest version of this note is the only useful one:
+//
+//   Every NEW draw lands on a NEW label-hashed fork ("vessel", "regal",
+//   "flue", "cast", "stops"), so rc.31 re-rolls nothing gratuitously — no
+//   pre-existing fork gained a draw. The ONE exception is deliberate and
+//   brief-mandated: maybePost("flue", …) reaches the pre-existing "alchemy"
+//   fork for the Conjunctio wedding coin, exactly as the pluck, box and hum
+//   already do (see maybePost) — a fourth speaker asking the same question.
+//
+//   But the roster gates ENTRIES *after* the roll and *before* the render,
+//   and every render draws its own shape (renderCello's five draws, the
+//   drone's, the pluck's phrase). A gated entry therefore skips those draws
+//   and the fork's position shifts for the rest of the run — the feature,
+//   not a leak. Add a fourth motif speaker claiming the air, and the
+//   REALIZED streams of the cello, pluck, music box, hum, motif and air all
+//   differ from rc.30's at the default desk. (Measured at 2400 s on the
+//   Library seed: drone 311→331 notes — gedackt draws a sub every cycle;
+//   cello 35→33; pluck 856→833; musicbox 473→427 — the damped body's
+//   shorter durS; humBed 161→140; hum 164→208. Only ambient is untouched.)
+//   Evening one of a run keeps its plain registrations, so its drone bed is
+//   the bed rc.30 played. Same-seed reproducibility is exact, and the
+//   harness proves it every run (REPRO).
+//
+//   This is the same sanctioned kind of re-roll as Phase 3's new ambient
+//   roster — with one cost worth naming: at the harness's own Library seed
+//   the ALCHEMY refinement arc's directional score fell from 0.075 to 0.020
+//   at 5400 s (still positive, still asserted). The arc itself is untouched;
+//   the roster simply removes the harpsichord's late candle-out statements,
+//   so the late-evening sample it reads is smaller.
+//
+//   ONE VOICE MAY SOUND OUTSIDE ITS ROSTER CELLS: the regal, and only as
+//   the organist TAKING a cadence. A cadence is a boundary gesture under
+//   the cadence contract (the same contract that lets the hum consort
+//   surface where the hum bed rests), and both of its chords sound inside
+//   the OUTGOING scene — so a take on a chapter1→chapter2 or a
+//   chapter3→reverie cadence puts the organ briefly in chapter 1 or
+//   chapter 3, and rings ~2.5 s into the reverie it otherwise rests from.
+//   Deliberate, and disclosed here so nobody rediscovers it as a bug.
+//
+// GAIN STAGING (rc.31 pass — worst-case *scheduled* peaks, the family
+// ledger; the two STRUCTURAL caps below are what keep the sum honest now
+// that there are ten voices instead of seven):
+//
+//   THE AIR caps speakers at limit+1 — 2 holders outside chapters, 3 in
+//   them, HARD (pj2-air) — so pluck + box + flue + hum-singer can never all
+//   sound at once. THE ROSTER makes the vessel (reverie / candle-out) and
+//   the regal (chapter 2 / seizure) mutually exclusive by construction, and
+//   rests the box in the reverie, the cello and hum in the seizure, the
+//   harpsichord after the coagula.
+//
+//   drone bed      2 pads x 0.07 x rank sum (open 1, principal 1.474,
+//                  gedackt 1) + sub 0.025 -> <= 0.231 -> x tremolo (<= 1)
+//                  x droneBreath (<= 1); the cycle overlap doubles it and a
+//                  sea-change bloom adds 2 x 0.05, all x droneLevel
+//                  (<= 0.48)                                  -> ~ 0.27 worst
 //   cello          ONE bow at a time (the hold law): single 0.0225 or a
-//                  stop 2 x 0.018 = 0.036; x bow swell <= 1.12 -> ~ 0.04 worst
-//                  (rc.24: halved from the rc.22 launch level, owner's ear)
-//   melody         pluck 0.055 + sparkle <= 0.012, box <= 0.030 + shimmer
-//                  <= 0.009; two speakers + a rare third (limit+1)
-//                                                             -> ~ 0.16 worst
+//                  stop 2 x 0.018 = 0.036; x bow swell <= 1.12 -> ~ 0.04
+//                  (the reverie flageolet is quieter: 0.018 + a 0.12 third
+//                  partial + bow noise                        -> ~ 0.026)
+//   melody         pluck 0.055 + sparkle <= 0.012 (or, with the lute stop,
+//                  + a 0.010 felt tick), DAMPED box <= 0.024 + shimmer
+//                  <= 0.003, flue 0.021 + chiff 0.007 + breath 0.009;
+//                  at most THREE speakers ever (the air's limit+1)
+//                                                             -> ~ 0.14 worst
 //   hum            bed swells overlap x2 (env 0.026, post-formant energy
-//                  ~ x0.3) + singer 0.032 + consort 3 x 0.018 x 0.3 pre
-//                                                             -> ~ 0.09 worst
+//                  ~ x0.3) + consort 3 x 0.018 x 0.3 pre       -> ~ 0.032
+//                  (+ the singer 0.032 only when it is one of the three
+//                  speakers the air admitted — counted in `melody` there)
+//   vessel         ONE bow at a time: 0.015 x (pair 1 + 0.45/0.30/0.15 x
+//                  1.45 partials = 2.305) + friction 0.0011, x bow
+//                  pressure <= 1.1                            -> ~ 0.04 worst
+//   regal          ONE chord at a time: 3 parts x 0.0084 x bellows <= 1.264
+//                  = 0.032, x the 500 Hz body's worst in-band lift ~1.2
+//                                                             -> ~ 0.038 worst
+//                  (at a taken cadence x 0.6 -> 0.023, under the consort's
+//                  own 0.016 x 3 parts it replaces)
 //   ambient        loudest one-shot (thunder: sub 0.05 + boom 0.05 x 0.4
 //                  pre + rumble 0.024)                        -> ~ 0.10 worst
 //   halo           levelGain <= 0.07 on a whisper-fed ring    -> ~ 0.02
 //   far-wall delay wet 0.18 x sends (0.5 box / 0.35 pluck)    -> ~ 0.02
 //   ------------------------------------------------------------------
-//   sum into the rooms ~ 0.64 absolute worst (rc.24: +0.04 cello); the
-//   equal-power room split conserves power and each room is dry 1.0 +
-//   wet ~0.3 -> ~ 0.83 at bus input; x masterGain default 0.6 x saturator
-//   small-signal gain ~1.66 (pj2-voice lesson #1) ~ 0.83 into the limiter
-//   — under the ~0.89 (~ -1 dB) master ceiling with the glue compressor
-//   still idling (the hold law caps the cello at one bow, so even this
-//   coincidence is rarer than the ledger's pessimism). The
-//   MEASURED worst case (time-varying mock-param inspection, 2600 s run,
-//   pj2-phase3-check.js): 0.360 at the bus input -> 0.298 into the limiter
-//   (~ -10.5 dB) at volume 0.5, ~ -8.9 dB at the default 0.6 — concurrence
-//   is rarer than this ledger's pessimism, exactly as it should be.
+//   WORST SCENE, roster- and air-aware (the honest sum now):
+//     chapter 2  0.27 + 0.04 + 0.032 + 0.131 (3 speakers) + 0.10 + 0.02
+//                + 0.02 + regal 0.038                        = 0.651
+//     reverie    0.27 + 0.026 + 0.032 + 0.105 (2 speakers) + 0.10 + 0.02
+//                + 0.02 + vessel 0.04                        = 0.613
+//     seizure    0.27 + 0.093 (2 speakers) + 0.10 + 0.02 + 0.02
+//                + regal 0.038                               = 0.541
+//   -> ~ 0.65 absolute worst into the rooms; the equal-power room split
+//   conserves power and each room is dry 1.0 + wet ~0.3 -> ~ 0.85 at bus
+//   input; x masterGain default 0.6 x saturator small-signal gain ~1.66
+//   (pj2-voice lesson #1) ~ 0.85 into the limiter — under the ~ 0.89
+//   (~ -1 dB) master ceiling with the glue compressor still idling. The
+//   rc.24 MEASURED worst case (time-varying mock-param inspection, 2600 s
+//   run, pj2-phase3-check.js) was 0.360 at the bus input -> 0.298 into the
+//   limiter (~ -10.5 dB) at volume 0.5: concurrence is rarer than this
+//   ledger's pessimism, exactly as it should be, and rc.31 spends its new
+//   voices in scenes where old ones are resting.
 //
 // This file is four things braided together:
 //
@@ -287,6 +426,10 @@
   //   musicbox    per-seat wraps (1) + delaySendBox (.5)
   //   ambient     layAmb (1) — one-shots and the joint gestures alike
   //   halo        layHalo (1) — the RETURN side; the send follows its exciter
+  //   vessel      layVessel (1) + vesselHaloSend (.06) — rc.31; mute the bell
+  //               and the sympathetic strings stop hearing it too
+  //   regal       layRegal (1) — rc.31, one gain for every part and bellows
+  //   flue        per-seat wraps (1) over the SAME melodic pool — rc.31
   //
   // The pool problem, solved without restructuring: both melodic voices
   // share the 3-seat panner pool, so a single post-pool gain can't split
@@ -303,6 +446,13 @@
     { key: "musicbox",    label: "Music Box",   kind: "melodic" },
     { key: "ambient",     label: "Ambient",     kind: "ambient" },
     { key: "halo",        label: "Halo",        kind: "fx" },
+    // rc.31 — APPENDED, never inserted: a desk row that moves is a knob the
+    // owner has to find again. The vessel and the regal are landscape (they
+    // never touch the air); the flue is the fourth speaker and shares the
+    // melodic voices' panner pool through its own per-seat wraps.
+    { key: "vessel",      label: "Vessel",      kind: "landscape" },
+    { key: "regal",       label: "Regal",       kind: "landscape" },
+    { key: "flue",        label: "Flue",        kind: "melodic" },
   ];
   var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
   var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
@@ -315,6 +465,7 @@
     drone: ["drone"], cello: ["cello"], hum: ["hum", "humSing"],
     harpsichord: ["pluck"], musicbox: ["musicbox"], ambient: ["ambient"],
     halo: [],
+    vessel: ["vessel"], regal: ["regal"], flue: ["flue"],   // rc.31
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
@@ -328,11 +479,17 @@
     drone: [
       { key: "warmth", label: "warmth — how open the bed's lowpass sits", min: 0.6, max: 1.5, def: 1 },
       { key: "sway", label: "sway — the tremolo's breath rate (Hz)", min: 0.2, max: 1.6, def: 0.7 },
+      // rc.31 stop: the pipe rank, a 3-position switch (rounded)
+      // "open", not "flue": the Flue is a mixer row of its own now, and a
+      // knob position sharing that name would read as the recorder.
+      { key: "registration", label: "registration — the pipe: 0 open · 1 principal · 2 gedackt", min: 0, max: 2, def: 0 },
     ],
     cello: [
       { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200 },
       { key: "vibrato", label: "vibrato — the bowing hand's wobble depth", min: 0, max: 2, def: 1 },
       { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 2, def: 1 },
+      // rc.31 stop: the flageolet is the reverie MANNER, so its default is 1
+      { key: "harmonics", label: "harmonics — the share of reverie bows played as flageolets", min: 0, max: 1, def: 1 },
     ],
     hum: [
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1 },
@@ -341,9 +498,13 @@
     harpsichord: [
       { key: "brightness", label: "brightness — the string filter's starting bite", min: 1.8, max: 4.6, def: 3.0 },
       { key: "resonance", label: "resonance — the string filter's Q", min: 0.2, max: 3, def: 0.5 },
+      // rc.31 stop: 0 = today's 8′, 1 = the lute stop (buff), blended
+      { key: "buff", label: "buff — the lute stop: felt on the strings, no glint", min: 0, max: 1, def: 0 },
     ],
     musicbox: [
       { key: "shimmer", label: "shimmer — the metallic 3rd-partial glint", min: 0, max: 2, def: 1 },
+      // rc.31 stop: the mechanism running down — candle-out only
+      { key: "wound", label: "wound — the mechanism runs down (candle-out only)", min: 0, max: 1, def: 0 },
     ],
     ambient: [
       { key: "density", label: "density — how often the room speaks", min: 0.5, max: 2, def: 1 },
@@ -351,7 +512,82 @@
     halo: [
       { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1 },
     ],
+    // rc.31 — the three new voices. Every default IS the owner's by-ear
+    // tuning from lab-library.html (2026-09-03), so the desk at rest is
+    // exactly the instrument they approved.
+    vessel: [
+      { key: "beat", label: "beat — the two fundamentals beating (Hz — the sound itself)", min: 0, max: 3, def: 1 },
+      { key: "ring", label: "ring — how long the metal rings on after the bow lifts", min: 0.4, max: 2.5, def: 0.9 },
+      { key: "bow", label: "bow — the friction thread while the bow is on", min: 0, max: 2, def: 1.2 },
+      { key: "partials", label: "partials — the three inharmonic upper partials", min: 0, max: 2, def: 1.45 },
+      { key: "register", label: "register — which octave the bell sits in (0 or +1, rounded)", min: 0, max: 1, def: 0 },
+    ],
+    regal: [
+      { key: "reediness", label: "reediness — square (soft) to saw (buzzy)", min: 0, max: 1, def: 0.3 },
+      { key: "bellows", label: "bellows — how deeply the breath swells under the chord", min: 0, max: 2, def: 1.4 },
+      { key: "body", label: "body — the 500 Hz reed box (dB)", min: 0, max: 10, def: 5 },
+      { key: "hold", label: "hold — how long a chord is held (× 8–20 s)", min: 0.5, max: 2, def: 0.7 },
+      { key: "take", label: "take — the chance the organist voices the cadence himself", min: 0, max: 1, def: 0.45 },
+    ],
+    flue: [
+      { key: "chiff", label: "chiff — the breath edge at each onset", min: 0, max: 2, def: 1 },
+      { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2.5, def: 1.75 },
+      { key: "vibrato", label: "vibrato — the waver, arriving half a second late", min: 0, max: 4, def: 2 },
+      { key: "register", label: "register — how high the recorder sits (0/+1/+2, rounded)", min: 0, max: 2, def: 1 },
+      { key: "pace", label: "pace — faster to the right", min: 0.5, max: 2, def: 1.5 },
+    ],
   };
+
+  // --------------------------------------------------------------------------
+  // THE SCENE ROSTER (L3, rc.31) — PLAN-SOUND-DIVERSITY §4.4's adopted table,
+  // with the owner's 2026-09-03 change (the regal also plays in the seizure).
+  // 1 = this voice may ENTER in this column; 0 = it rests. Resting is the
+  // absence of NEW entries only: cycles and notes already sounding finish
+  // naturally, and the roster never touches a roll — every opportunity's
+  // dice are thrown first and the gate comes after (stream discipline).
+  //
+  // Chapters carry their ordinal, so Solutio / Separatio / Conjunctio can
+  // hold different rosters; a fourth chapter reads as "chapter3+", the way
+  // the alchemical labels cycle. The drone never rests — it is the seam.
+  //
+  //   * harpsichord in candle-out: the roster rests it, but the SOLVE ET
+  //     COAGULA statement is exempt by construction (see startPluck) — the
+  //     one whole-theme settling must still sound, and on an evening that
+  //     draws none, the harpsichord simply keeps its silence.
+  // --------------------------------------------------------------------------
+  var ROSTER_COLS = ["settling", "chapter1", "chapter2", "chapter3",
+                     "seizure", "reverie", "candle-out"];
+  var SCENE_ROSTER = {
+    //             settling  ch1  ch2  ch3+  seizure  reverie  candle-out
+    drone:       [1, 1, 1, 1, 1, 1, 1],
+    cello:       [1, 1, 1, 1, 0, 1, 1],
+    hum:         [1, 1, 1, 1, 0, 1, 0],
+    harpsichord: [1, 1, 1, 1, 1, 1, 0],
+    musicbox:    [0, 1, 1, 1, 1, 0, 1],
+    ambient:     [1, 1, 1, 1, 1, 1, 1],
+    halo:        [1, 1, 1, 1, 1, 1, 1],
+    vessel:      [0, 0, 0, 0, 0, 1, 1],
+    regal:       [0, 0, 1, 0, 1, 0, 0],
+    flue:        [0, 1, 1, 1, 0, 1, 0],
+  };
+
+  // --------------------------------------------------------------------------
+  // THE STOPS' CONSTANTS (rc.31). The music box's DAMPED numbers are not a
+  // stop's numbers any more — they are the instrument's body (owner,
+  // 2026-09-03: "damped replaces the open box outright").
+  // --------------------------------------------------------------------------
+  var MB_DAMP_PARTIAL = 0.251;   // the 3rd partial, −12 dB
+  var MB_DAMP_DECAY = 0.6;       // the felt on the comb
+  var MB_DAMP_PEAK = 0.8;
+  var MB_WOUND_SPB = 1.6;        // wound-down: the spring gives out — slower
+  var MB_WOUND_DECAY = 1.3;      // …and the tines ring longer, loosely
+  var MB_WOUND_CENTS = -8;       // …flattening across every note
+
+  // The drone's pipe ranks (one entry per partial: [multiple, wave, gain]).
+  // A null wave means "the pad's own type" — the fundamental rank keeps
+  // whatever the registration chose for it.
+  var DRONE_UNISON = [[1, null, 1]];
+  var DRONE_PRINCIPAL = [[1, null, 1], [2, "sine", 0.316], [3, "sine", 0.158]]; // −10/−16 dB
 
   // Default seed when neither create({seed}) nor ?seed= supplies one. A fixed
   // constant, NOT Date.now() — house rule: no wall-clock in musical paths.
@@ -479,6 +715,22 @@
     function pVal(layer, key) {
       var l = paramState[layer];
       return (l && l[key] != null) ? l[key] : 1;
+    }
+    // rc.31 — "A MOVED KNOB WINS OVER THE CAST UNTIL IT IS RESET" (owner
+    // decision 5). A knob still sitting on its authored default is the
+    // evening cast's to set; the moment the owner moves it, the desk is the
+    // authority until it is put back. Drawless, read at schedule time.
+    function pDefOf(layer, key) {
+      var defs = LAYER_PARAMS[layer];
+      if (!defs) return null;
+      for (var i = 0; i < defs.length; i++) if (defs[i].key === key) return defs[i].def;
+      return null;
+    }
+    function knobOrCast(layer, key, castVal) {
+      var d = pDefOf(layer, key);
+      var v = pVal(layer, key);
+      if (d == null) return v;
+      return (v !== d) ? v : castVal;
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -1030,6 +1282,113 @@
     }
     function inConjunctio() { return curOperation() === "Conjunctio"; }
 
+    // ---- THE SCENE ROSTER (L3, rc.31) ---------------------------------------
+    // Which column of SCENE_ROSTER the evening is standing in. Chapters carry
+    // their ordinal, counted off the performance's own plan (the same walk
+    // sceneLabelFor does for the alchemical labels), so Separatio can rest a
+    // voice Solutio played. Pure reads — no draws, ever.
+    function rosterColumn(sceneTypeOverride) {
+      var st = sceneTypeOverride || curSceneType();
+      if (st !== "chapter") return st;
+      var idx = -1;
+      if (run && run.conductor) {
+        try { idx = run.conductor.info().sceneIdx; } catch (e) { idx = -1; }
+      }
+      var ord = 0;
+      if (run && run.perfScenes && idx >= 0) {
+        for (var i = 0; i <= idx && i < run.perfScenes.length; i++) {
+          if (run.perfScenes[i] === "chapter") ord++;
+        }
+      }
+      if (ord < 1) ord = 1;
+      return "chapter" + (ord > 3 ? 3 : ord);
+    }
+    // The gate. ALWAYS called AFTER the opportunity's unconditional roll: the
+    // roster decides whether a voice ENTERS, never how the dice fall. A
+    // gesture that leans into the NEXT scene (a cadence bow, a sea-change
+    // bloom) is judged by where it LANDS — pass that scene as the override.
+    function rosterAllows(voiceKey, columnOverride) {
+      var row = SCENE_ROSTER[voiceKey];
+      if (!row) return true;
+      var col = columnOverride || rosterColumn();
+      for (var i = 0; i < ROSTER_COLS.length; i++) {
+        if (ROSTER_COLS[i] === col) return !!row[i];
+      }
+      return true;
+    }
+
+    // ---- THE EVENING CAST (L4, rc.31) ---------------------------------------
+    // Dress and prominence, never presence — with exactly one absence colour.
+    // EVERY value is drawn unconditionally on the "cast" fork and evening one
+    // simply discards its draw for the plain ensemble, so the fork's sequence
+    // depends on nothing but the seed and the evening number.
+    var CAST_LUTE_P = 0.25;                     // harpsichord: 8′ .75 / lute .25
+    var CAST_WOUND_P = 0.25;                    // the box's wound-down candle-out
+    var CAST_REG_W = [[0, 5], [1, 3], [2, 2]];  // flue .5 / principal .3 / gedackt .2
+    var CAST_BACK_P = 0.5;                      // forward / back, per new voice
+    var CAST_ABSENT_P = 0.12;                   // "no music box tonight"
+    var CAST_BACK_LEVEL = 0.7;
+    var CAST_BACK_PRESENCE = 0.6;
+    var REG_NAMES = ["open", "principal", "gedackt"];  // display only; 0/1/2 stays internal
+
+    function drawCast(evt) {
+      var rng = run.streams.cast;
+      // draws FIRST, unconditionally, in a fixed order
+      var lute = rng.chance(CAST_LUTE_P);
+      var wound = rng.chance(CAST_WOUND_P);
+      var registration = rng.pickW(CAST_REG_W);
+      var vesselBack = rng.chance(CAST_BACK_P);
+      var regalBack = rng.chance(CAST_BACK_P);
+      var flueBack = rng.chance(CAST_BACK_P);
+      var absentRoll = rng.chance(CAST_ABSENT_P);
+      var evening = (evt && evt.n != null) ? evt.n : 1;
+      var stormy = !!(evt && evt.tideLabel === "stormy");
+      // EVENING ONE of a run is always the full ensemble in plain
+      // registrations: a short listen must hear everything the book owns.
+      var plain = (evening <= 1);
+      if (plain) {
+        lute = false; wound = false; registration = 0;
+        vesselBack = false; regalBack = false; flueBack = false;
+      }
+      // the ONE absence: tide-tied so it reads as weather, and never twice
+      // running (the memory crosses the evening seam inside a run)
+      var absent = !plain && absentRoll && stormy && !run.castLastAbsent;
+      run.castLastAbsent = absent;
+      run.cast = {
+        evening: evening, plain: plain,
+        lute: lute ? 1 : 0, wound: wound ? 1 : 0,
+        registration: registration, absent: absent,
+        vesselBack: vesselBack, regalBack: regalBack, flueBack: flueBack,
+        harpsichord: lute ? "lute" : "8′",
+        musicbox: absent ? "absent" : (wound ? "damped, wound-down" : "damped"),
+        drone: REG_NAMES[registration] || "open",
+        vessel: vesselBack ? "back" : "forward",
+        regal: regalBack ? "back" : "forward",
+        flue: flueBack ? "back" : "forward",
+      };
+      // Emitted by the conductor wrapper the instant AFTER the performance's
+      // begin event, so the log reads "evening N" then "tonight: …" — and
+      // always before the evening's first note.
+      run.castPending = {
+        type: "cast", evening: evening, plain: plain,
+        harpsichord: run.cast.harpsichord, musicbox: run.cast.musicbox,
+        drone: run.cast.drone, vessel: run.cast.vessel,
+        regal: run.cast.regal, flue: run.cast.flue,
+        t: (evt && evt.t != null) ? evt.t : run.clock.now(),
+      };
+    }
+    // "Back" is dress, not absence: the voice still plays every evening, a
+    // step quieter and a step rarer.
+    function castBack(voiceKey) {
+      var c = run && run.cast;
+      if (!c) return false;
+      return !!(voiceKey === "vessel" ? c.vesselBack
+              : voiceKey === "regal" ? c.regalBack
+              : voiceKey === "flue" ? c.flueBack : false);
+    }
+    function castLevel(voiceKey) { return castBack(voiceKey) ? CAST_BACK_LEVEL : 1; }
+    function castPresence(voiceKey) { return castBack(voiceKey) ? CAST_BACK_PRESENCE : 1; }
+
     // The context object every motif.request receives. The motif engine has
     // no clock of its own (pure module); nowS is how time reaches its ledger
     // — the exact audio time of the phrase, so obligation deadlines mean
@@ -1428,19 +1787,39 @@
       var RING = 2.5; // the arrival's release into the new scene
       var tA = tB - (dA + dB);   // approach chord onset
       var tArr = tB - dB;        // arrival chord onset — sounding well BY tB
+      // rc.31: THE ORGANIST TAKES THE CADENCE. One draw, before anything is
+      // rendered, so the regal fork never depends on the consort. When it
+      // lands, the regal voices BOTH chords in the consort's place — the
+      // drone's pads are untouched, the arrival still lands exactly on tB,
+      // and the regal borrows the consort's own seconds-long fades (its
+      // 0.4–0.8 s attack belongs to free entries, not to a cadence).
+      // A taken cadence deliberately does NOT advance run.consortPrev: the
+      // hum consort's voice-leading memory is the HUM's, and the next
+      // cadence it actually sings should lead from the last chord it sang,
+      // not from one it sat out. The regal keeps its own memory
+      // (run.regalPrev) for the same reason.
+      var regalTakes = regalTakesCadence(plan, tA);
       cadenceDronePad(c1, tA, dA + X, 2.5, X);
-      renderConsort(c1, tA, dA + X, 2.0, X, plan.nParts);
+      if (regalTakes) renderRegal(c1, tA, dA + X, 2.0, X, REGAL_CADENCE_LEVEL, "cadence");
+      else renderConsort(c1, tA, dA + X, 2.0, X, plan.nParts);
       cadenceDronePad(c2, tArr, dB + RING, X, RING);  // holds through tB, releases after
-      renderConsort(c2, tArr, dB + RING, X, 2.0, plan.nParts);
+      if (regalTakes) renderRegal(c2, tArr, dB + RING, X, 2.0, REGAL_CADENCE_LEVEL, "cadence");
+      else renderConsort(c2, tArr, dB + RING, X, 2.0, plan.nParts);
+      if (regalTakes) run.regalHoldUntil = tArr + dB + RING + 6;
       // rc.22: the arrival may gain its bow. Offset 0.4s past the chord's
       // onset — the bow leans in AS the chord lands, not at its exact
       // sample (sharing the consort's precise onset would also read as one
       // compound attack to the harness's scheduled-value audit).
       celloCadence(c2, tArr + 0.4, dB + RING + 1.6);
+      // rc.31: and the vessel may lean in over an arrival into the reverie
+      // or the candle-out — the cello's own offset, judged by where the
+      // cadence LANDS rather than by the scene it leaves.
+      vesselCadence(tArr + 0.4, plan.to);
       emitEvent({
         type: "cadence", kind: cad.kind || plan.kind, t: tB,
         label: LABELS.cadences[cad.kind || plan.kind] || null, // display only
         startT: tA, arriveT: tArr,
+        voicedBy: regalTakes ? "regal" : "consort",           // rc.31
         from: plan.from, to: plan.to,
         chords: [c1.name != null ? c1.name : null, c2.name != null ? c2.name : null],
       });
@@ -1483,6 +1862,7 @@
       try { res = run.harmony.executeSeaChange(run.seaChange.target); } catch (e) { res = null; }
       run.seaChange.label = seaChangeLabel(run.seaChange.target, res); // the new ground, spelled
       run.consortPrev = null; // fresh voice-leading on the far shore
+      run.regalPrev = null;   // …and the organist's too (rc.31)
       seaChangePad(t);        // the drone is the seam: new key blooms under the old tail
       // Phase 3: the room remembers the modulation (+0.08 for the rest of
       // the evening, applied at each scene entry), and the halo is ARMED to
@@ -1495,6 +1875,7 @@
       run.roomSeaBonus = 0.08;
       run.haloRetuneAt = t;
       celloSeaBloom(t);       // rc.22: the bloom may gain an octave-doubled bow
+      vesselSeaBloom(t);      // rc.31: and the new tonic may be bowed above it
       emitEvent({
         type: "seachange", target: run.seaChange.target,
         label: LABELS.events.seachange, // Transmutatio — display only
@@ -1569,6 +1950,11 @@
           run.coagulaDone = false; // each evening earns its own settling
           run.celloCandleDone = false; // each evening earns its own last bow (rc.22)
           run.celloLastChord = null;   // the seam is not a harmony step
+          run.vesselCandleDone = false; // rc.31: and its own guttering bow
+          run.vesselLastChord = null;
+          run.regalLastChord = null;
+          run.regalPrev = null;        // the organist starts the evening fresh
+          drawCast(evt);               // rc.31: tonight's dress and prominence
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           if (run.pendingGhost) {
             try { run.motif.seedGhost(run.pendingGhost); } catch (e) {}
@@ -1647,8 +2033,19 @@
         var durS = rng.rnd(20, 30);
         var overlap = rng.rnd(2.5, 5);
         var hasSub = rng.chance(0.3);
+        // rc.31 — THE REGISTRATION for THIS CYCLE. A cycle keeps its pipe for
+        // its whole life (the straddle lesson, applied to stops): open is
+        // v1's bed unchanged, principal draws the 2nd and 3rd ranks at
+        // −10/−16 dB, gedackt is stopped pipes — sine only, with the sub
+        // always drawn. The desk's 3-position knob wins over the evening
+        // cast once the owner has moved it.
+        var reg = Math.round(clamp(knobOrCast("drone", "registration",
+                                              (run.cast && run.cast.registration) || 0), 0, 2));
+        if (reg === 2) hasSub = true;                    // gedackt: the sub is always drawn
+        var ranks = (reg === 1) ? DRONE_PRINCIPAL : DRONE_UNISON;
         var iv = curIntensity(t);
-        var tok = run.budget.claim(hasSub ? 11 : 9, t + durS + 0.3); // +3: the tremolo bus
+        var tok = run.budget.claim((hasSub ? 11 : 9) + (ranks.length - 1) * 4,
+                                   t + durS + 0.3); // +3: the tremolo bus
         if (!tok) {
           // The seam must not open: retry on a short leash instead of
           // waiting a whole cycle. (Budget 32 makes this near-impossible,
@@ -1689,24 +2086,34 @@
         var ch = null;
         try { ch = run.harmony.current(); } catch (e) {}
         var rootAbs = foldRootLow(ch && isFinite(ch.rootDeg) ? ch.rootDeg : 0);
+        var dyadType = (reg === 2) ? "sine" : "triangle";   // gedackt stops the pipe
+        // (registration 0 is "open" — the triangle bed v1 has always played)
         var pads = [
-          { deg: rootAbs, oct: -1, peak: 0.07, type: "triangle" },
-          { deg: rootAbs + 4, oct: -1, peak: 0.07, type: "triangle" },
+          { deg: rootAbs, oct: -1, peak: 0.07, type: dyadType },
+          { deg: rootAbs + 4, oct: -1, peak: 0.07, type: dyadType },
         ];
         if (hasSub) pads.push({ deg: rootAbs, oct: -2, peak: 0.025, type: "sine" });
         for (var i = 0; i < pads.length; i++) {
           var p = pads[i];
           var freq = run.field.degFreq(p.deg, p.oct);
-          var o = c.createOscillator();
-          o.type = p.type;
-          o.frequency.setValueAtTime(freq, t);
-          var g = c.createGain();
-          o.connect(g); g.connect(lp);
-          // 3s fades both ends, flat middle — v1's envelope, via env() so
-          // the anchor discipline is automatic.
-          PJ2.Voice.env(g.gain, t, [[3, p.peak], [durS - 6, p.peak], [3, 0]]);
-          o.start(t);
-          o.stop(t + durS + 0.1);
+          // The sub is one pipe whatever the registration — a 16′ stop does
+          // not grow ranks; the dyad above it does.
+          var rk = (p.oct === -2) ? DRONE_UNISON : ranks;
+          for (var q = 0; q < rk.length; q++) {
+            var o = c.createOscillator();
+            o.type = (rk[q][1] == null) ? p.type : rk[q][1];
+            o.frequency.setValueAtTime(freq * rk[q][0], t);
+            var g = c.createGain();
+            o.connect(g); g.connect(lp);
+            var pkq = p.peak * rk[q][2];
+            // 3s fades both ends, flat middle — v1's envelope, via env() so
+            // the anchor discipline is automatic.
+            PJ2.Voice.env(g.gain, t, [[3, pkq], [durS - 6, pkq], [3, 0]]);
+            o.start(t);
+            o.stop(t + durS + 0.1);
+          }
+          // one NOTE per pad: the ranks above are partials, like the pluck's
+          // octave sparkle, and never a note event of their own
           emitNote({ voice: "drone", freq: freq, t: t, durS: durS, deg: p.deg, oct: p.oct });
         }
         tremLFO.start(t);
@@ -1752,10 +2159,23 @@
       var releaseS = rng.rnd(2.5, 4);
       var vibHz = rng.rnd(4.5, 5.5);
       var restS = rng.rnd(4, 10);          // the breath after the bow lifts
+      // rc.31 — the HARMONICS stop's coin, on the dedicated "stops" fork, so
+      // the cello's OWN fork position is unchanged by the flageolet coin.
+      // (The cello's REALIZED stream still differs from rc.30's, because the
+      // roster gates some entries before this function ever runs — see the
+      // header's STREAM NOTE.) Drawn on EVERY bow, spent only in the
+      // reverie: the flageolet is the reverie MANNER (knob default 1 — all
+      // of them), not an evening's draw.
+      var harmRoll = run.streams.stops.next();
       if (durS < attackS + releaseS + 1.5) durS = attackS + releaseS + 1.5;
       var tok = run.budget.claim(9 + degList.length * 10, t + durS + 0.3);
       if (!tok) return false;              // graceful thinning — no bow tonight
       run.tokens.push(tok);
+      if (curSceneType() === "reverie" && harmRoll < pVal("cello", "harmonics")) {
+        renderCelloHarmonic(t, degList, durS, why, velMul, attackS, releaseS);
+        run.celloHoldUntil = t + durS + restS;
+        return true;
+      }
       var c = ctx;
       var wx = wxAt(t);
       // the shared bow: one pressure swell and one vibrato clock for every
@@ -1854,6 +2274,48 @@
       return true;
     }
 
+    // The REVERIE MANNER (rc.31, the owner's kept stop): a flageolet — the
+    // bow's own degree an octave up as a sine with a faint third partial and
+    // the bow's noise thread, on the arco bow's own envelope. A high thread
+    // where the under-voice usually sits: the cello answering the vessel.
+    function renderCelloHarmonic(t, degList, durS, why, velMul, attackS, releaseS) {
+      var c = ctx;
+      var hold = Math.max(0.1, durS - attackS - releaseS);
+      var pk = 0.018 * (velMul || 1) * (degList.length > 1 ? 0.8 : 1);
+      for (var i = 0; i < degList.length; i++) {
+        var deg = degList[i][0], oct = degList[i][1] + 1;   // oct +1 of the bow
+        var freq = run.field.degFreq(deg, oct);             // read at schedule time
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, [[attackS, pk], [hold, pk], [releaseS, 0]]);
+        g.connect(run.layCello);
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(freq, t);
+        o.connect(g);
+        o.start(t); o.stop(t + durS + 0.1);
+        var h = c.createOscillator();
+        h.type = "sine";
+        h.frequency.setValueAtTime(freq * 3, t);
+        var hg = c.createGain();
+        hg.gain.setValueAtTime(0.12, t);
+        h.connect(hg); hg.connect(g);
+        h.start(t); h.stop(t + durS + 0.1);
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(2800, t);
+        bp.Q.setValueAtTime(1.1, t);
+        var ng = c.createGain();
+        var bowPeak = pk * 0.25;
+        PJ2.Voice.env(ng.gain, t, [[attackS, bowPeak], [hold, bowPeak * 0.4], [releaseS, 0]]);
+        ns.connect(bp); bp.connect(ng); ng.connect(run.layCello);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + durS + 0.1);
+        emitNote({ voice: "cello", kind: why, freq: freq, t: t, durS: durS,
+                   deg: deg, oct: oct, manner: "harmonic" });
+      }
+    }
+
     // One opportunity, one decision. Gates AFTER the unconditional roll:
     // candle-out belongs to its own single bow; the settling stays bare
     // below intensity 0.15; and the hold law (one bow at a time) is what
@@ -1863,6 +2325,7 @@
       var rng = run.streams.cello;
       var roll = rng.next();                    // drawn first, unconditionally
       if (curSceneType() === "candle-out") return;
+      if (!rosterAllows("cello")) return;   // rc.31: the cello rests in the seizure
       var iv = curIntensity(t);
       if (iv < 0.15) return;
       if (t < run.celloHoldUntil) return;
@@ -1889,6 +2352,7 @@
       var roll = rng.next();                    // drawn first, unconditionally
       var isStop = rng.chance(0.35);
       if (roll >= CELLO_CHANCE.cadence) return;
+      if (!rosterAllows("cello")) return;   // rc.31
       if (t < run.celloHoldUntil) return;
       var r = foldRootLow(chord.rootDeg);
       renderCello(t, isStop ? [[r, -1], [r + 4, -1]] : [[r, -1]], durS, "cadence", 0.9);
@@ -1903,6 +2367,7 @@
       var roll = rng.next();                    // drawn first, unconditionally
       var durS = rng.rnd(18, 26);
       if (roll >= CELLO_CHANCE.seachange) return;
+      if (!rosterAllows("cello")) return;   // rc.31
       if (t < run.celloHoldUntil) return;
       var ch = null;
       try { ch = run.harmony.current(); } catch (e) {}
@@ -1953,6 +2418,388 @@
       lane.at(run.t0 + 2.5, poll);
     }
 
+    // ---- vessel (landscape — THE OVER-VOICE, rc.31) -------------------------
+    // A bowed alembic — the vas hermeticum, the one object the codex is
+    // about. Ported faithfully from the owner-approved prototype in
+    // lab-library.html: four sine partials on inharmonic bowl ratios, the
+    // fundamental a detuned PAIR whose beating IS the sound, a friction
+    // thread that exists only while the bow is on, and the Library's first
+    // FREE RING — the bow lifts, the friction stops, and every partial dies
+    // on its own T60. It lives ABOVE the texture (oct 0, ≈262–466 Hz: the
+    // register the Library had nothing sustained in) and it is landscape, so
+    // it never claims the air and never speaks a melody.
+    //
+    // THE ENTRY LAW (owner-confirmed): the reverie's own voice — every
+    // harmony step and a 20–40 s self-timer inside it is an opportunity at
+    // p 0.5; a bow leaning in 0.4 s after a cadence that ARRIVES in the
+    // reverie or the candle-out (p 0.6 — judged by where it lands, never by
+    // the scene it leaves); the sea change (p 0.7, the new tonic bowed above
+    // the bloom); rare on chapter steps (p 0.12, which the roster then
+    // rests); never in settling or the seizure; and in the candle-out at
+    // most ONE early bow, then silence (the halo's guttering law). One bow
+    // at a time, ever, with a drawn 8–20 s rest after each.
+    var VESSEL_PARTIALS = [1, 2.0, 2.71, 4.84];      // bowl ratios — inharmonic by design
+    var VESSEL_GAINS = [1, 0.45, 0.30, 0.15];
+    var VESSEL_T60 = [[8, 14], [5, 8], [3, 5], [2, 3]];
+    var VESSEL_PEAK = 0.015;        // 0.02 × the owner's level 0.75
+    var VESSEL_PRESENCE = 0.85;     // the owner's presence multiplier
+    var VESSEL_CHANCE = {
+      reverie: 0.5, cadence: 0.6, seachange: 0.7,
+      // ROSTER-SUPERSEDED: the owner's entry law keeps a rare chapter bow
+      // (p 0.12 on harmony steps), but the adopted roster rests the vessel in
+      // every chapter, so this number can never reach a bow at the default
+      // table. It stays because the DRAW must stay — deleting it would move
+      // the vessel fork's sequence — and because loosening one roster cell
+      // is all it would take to hear it.
+      chapter: 0.12,
+      candle: 0.6,
+    };
+
+    function renderVessel(t, why) {
+      var rng = run.streams.vessel;
+      // Draw everything FIRST so a budget refusal can't shift the stream.
+      var wantFifth = rng.chance(0.4);            // root p .6 / fifth p .4
+      var atk = rng.rnd(2.4, 3.6);                // the owner's 3.0 s bow-in
+      var hold = rng.rnd(3, 8);
+      var restS = rng.rnd(8, 20);
+      var decays = [], di;
+      for (di = 0; di < VESSEL_T60.length; di++) {
+        decays.push(rng.rnd(VESSEL_T60[di][0], VESSEL_T60[di][1]));
+      }
+      var ring = pVal("vessel", "ring");
+      var maxDecay = 0;
+      for (di = 0; di < decays.length; di++) {
+        decays[di] *= ring;
+        if (decays[di] > maxDecay) maxDecay = decays[di];
+      }
+      var durS = atk + hold + maxDecay + 0.3;
+      // 15 nodes at the default desk: press + slow-noise pair (3), four
+      // partial gains + five oscillators (the fundamental is a PAIR) (9),
+      // and the friction thread's noise/bandpass/gain (3).
+      var tok = run.budget.claim(15, t + durS + 0.3);
+      if (!tok) return false;                     // graceful thinning — no bow
+      run.tokens.push(tok);
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var chordDegs = (ch && ch.chordDegs && ch.chordDegs.length >= 3) ? ch.chordDegs : [0, 2, 4];
+      var deg = wantFifth ? chordDegs[2] : chordDegs[0];
+      var oct = Math.round(pVal("vessel", "register"));
+      var freq = run.field.degFreq(deg, oct);     // read at schedule time, never cached
+      var peak = VESSEL_PEAK * castLevel("vessel");
+      var beat = pVal("vessel", "beat");
+      var partialsK = pVal("vessel", "partials");
+      var c = ctx;
+      // The bow's pressure: slow noise at ±10%, alive only while the bow is
+      // (a multiplying stage — base 1, the noise rides its .gain).
+      var press = c.createGain();
+      press.gain.setValueAtTime(1, t);
+      var pn = slowNoise(c, 0.3);
+      var pd = c.createGain();
+      PJ2.Voice.env(pd.gain, t, [[atk, 0.10], [hold, 0.10], [0.4, 0]]);
+      pn.connect(pd);
+      try { pd.connect(press.gain); } catch (e0) {}
+      pn.start(t, pn.randomOffset);
+      pn.stop(t + atk + hold + 0.5);
+      press.connect(run.layVessel);
+      if (run.vesselHaloSend) press.connect(run.vesselHaloSend); // the strings hear the bell
+      for (var i = 0; i < VESSEL_PARTIALS.length; i++) {
+        var gAmt = peak * VESSEL_GAINS[i] * (i === 0 ? 1 : partialsK);
+        if (!(gAmt > 0)) continue;
+        var dec = decays[i];
+        var lvl = (i === 0) ? gAmt * 0.5 : gAmt;  // the pair splits the fundamental
+        var pg = c.createGain();
+        // swell → hold → FREE RING (exponential, on this partial's own
+        // clock) → a short linear tail to true zero.
+        PJ2.Voice.env(pg.gain, t, [[atk, lvl], [hold, lvl], [dec, lvl * 0.02], [0.3, 0]]);
+        pg.connect(press);
+        var stopAt = t + atk + hold + dec + 0.35;
+        if (i === 0) {
+          for (var sIdx = 0; sIdx < 2; sIdx++) {  // the beating pair: ±beat/2 Hz
+            var o = c.createOscillator();
+            o.type = "sine";
+            o.frequency.setValueAtTime(Math.max(20, freq + (sIdx ? beat / 2 : -beat / 2)), t);
+            o.connect(pg);
+            o.start(t); o.stop(stopAt);
+          }
+        } else {
+          var op = c.createOscillator();
+          op.type = "sine";
+          op.frequency.setValueAtTime(freq * VESSEL_PARTIALS[i], t);
+          op.connect(pg);
+          op.start(t); op.stop(stopAt);
+        }
+      }
+      // The friction thread — the bow's grip on the rim, gone 0.4 s after it
+      // lifts. This is the thing that says "bowed" rather than "struck".
+      var bowK = pVal("vessel", "bow");
+      if (bowK > 0) {
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(freq * 3, t);
+        bp.Q.setValueAtTime(8, t);
+        var fg = c.createGain();
+        var fLevel = peak * 0.06 * bowK;
+        PJ2.Voice.env(fg.gain, t, [[atk, fLevel], [hold, fLevel], [0.4, 0]]);
+        ns.connect(bp); bp.connect(fg); fg.connect(press);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + atk + hold + 0.5);
+      }
+      run.vesselHoldUntil = t + durS + restS;
+      emitNote({ voice: "vessel", kind: why, freq: freq, t: t, durS: durS, deg: deg, oct: oct });
+      return true;
+    }
+
+    // A cadence is judged by where it ARRIVES, not by the scene it leaves:
+    // the bow that leans into a reverie is the same bow whether the evening
+    // was in a chapter or a seizure a moment ago.
+    function vesselChance(kind, toScene, st, x) {
+      if (kind === "cadence") {
+        return (toScene === "reverie" || toScene === "candle-out") ? VESSEL_CHANCE.cadence : 0;
+      }
+      if (st === "settling" || st === "seizure") return 0;          // never
+      if (kind === "seachange") return VESSEL_CHANCE.seachange;     // the new tonic, bowed
+      if (st === "candle-out") {
+        if (run.vesselCandleDone) return 0;                         // one bow, then silence
+        if (x > 0.5) return 0;                                      // too late in the guttering
+        return VESSEL_CHANCE.candle;
+      }
+      if (st === "reverie") return VESSEL_CHANCE.reverie;           // Distillatio — its own voice
+      if (st === "chapter") return (kind === "harmony") ? VESSEL_CHANCE.chapter : 0;
+      return 0;
+    }
+
+    // One opportunity, one decision. The roll is drawn FIRST and
+    // unconditionally; every gate — chance, roster, hold law — comes after.
+    function vesselConsider(kind, t, toScene) {
+      if (!run || !run.live) return;
+      var rng = run.streams.vessel;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var st = curSceneType();
+      var base = vesselChance(kind, toScene, st, curSceneX());
+      if (base <= 0) return;
+      var lands = (kind === "cadence" || kind === "seachange") ? (toScene || st) : st;
+      if (!rosterAllows("vessel", rosterColumn(lands))) return;
+      if (t < run.vesselHoldUntil) return;         // the hold law: one bow at a time
+      if (roll >= clamp(base * VESSEL_PRESENCE * castPresence("vessel"), 0, 1)) return;
+      if (!renderVessel(t, kind)) return;
+      // The guttering law is spent whether the bow was drawn inside the
+      // candle-out or leaned in over the cadence into it.
+      if (st === "candle-out" || toScene === "candle-out") run.vesselCandleDone = true;
+    }
+
+    // The cadence's bow (called from realizeCadence 0.4 s past the arrival's
+    // onset — the cello's own offset: the bow leans in AS the chord lands,
+    // never at its exact sample).
+    function vesselCadence(t, toScene) { vesselConsider("cadence", t, toScene); }
+
+    // The sea change's bow: the new tonic, bowed above the drone's bloom.
+    function vesselSeaBloom(t) {
+      var to = null;
+      try {
+        if (run.seaChange && run.perfScenes) to = run.perfScenes[run.seaChange.atSceneIdx] || null;
+      } catch (e) {}
+      vesselConsider("seachange", t, to);
+    }
+
+    // Two chains on one lane: the chord-name poll (the cello's mechanism —
+    // a step noticed is an opportunity) and the reverie's own 20–40 s
+    // self-timer, so the vessel can speak in a reverie where the ground
+    // never moves. Both are pure clock arithmetic from t0.
+    function startVessel() {
+      var lane = run.clock.lane("vessel");
+      var rng = run.streams.vessel;
+      function poll(t) {
+        var name = null;
+        try { name = run.harmony.current().name; } catch (e) {}
+        if (name != null) {
+          if (run.vesselLastChord != null && name !== run.vesselLastChord) {
+            vesselConsider("harmony", t);
+          }
+          run.vesselLastChord = name;
+        }
+        lane.at(t + 2.5, poll);
+      }
+      function timer(t) {
+        var wait = rng.rnd(20, 40);                // drawn first, unconditionally
+        if (curSceneType() === "reverie") vesselConsider("reverie", t);
+        lane.at(t + wait, timer);
+      }
+      lane.at(run.t0 + 2.5, poll);
+      lane.at(run.t0 + rng.rnd(20, 40), timer);
+    }
+
+    // ---- regal (landscape — THE REED ORGAN, rc.31) --------------------------
+    // A portable Renaissance reed organ. Per part two detuned reeds (square
+    // and sawtooth blended by "reediness", ±5 cents) through a 500 Hz body
+    // and an 1800 Hz lid; every part shares ONE bellows gain breathing at
+    // ~0.15 Hz. Three parts, voiced LEAST-MOTION in the consort's own
+    // −7..6 window with the root lowest — but by its own voicer and its own
+    // state: the hum consort's voice-leading belongs to the hum.
+    //
+    // Landscape (it never claims the air). The roster gives it the second
+    // chapter and the seizure; harmony steps there are opportunities at
+    // p 0.3. And at a cadence it may TAKE the arrival from the consort — see
+    // regalTakesCadence, called from realizeCadence.
+    var REGAL_PEAK = 0.0084;        // 0.012 × the owner's level 0.7, per part
+    var REGAL_PRESENCE = 0.95;
+    var REGAL_PARTS = 3;            // the owner's voicing
+    var REGAL_STEP_CHANCE = 0.3;    // harmony steps, chapters and the seizure
+    var REGAL_CADENCE_LEVEL = 0.6;  // a taken cadence sits under the consort's 0.016
+
+    // A least-motion voicer of its own: the root folded to the bottom of the
+    // window, each upper part taking the octave nearest where it last stood.
+    function voiceRegal(chordDegs, nParts) {
+      var size = (run && run.field && run.field.size) || 7;
+      var src = (chordDegs && chordDegs.length >= 3) ? chordDegs : [0, 2, 4];
+      var cls = (nParts === 2) ? [src[0], src[2]] : [src[0], src[1], src[2]];
+      function fold(d) { return ((Math.round(d) % size) + size) % size; }
+      var rootAbs = fold(cls[0]) - size;           // −7..−1: the root, lowest
+      var out = [rootAbs];
+      var prev = run.regalPrev;
+      for (var i = 1; i < cls.length; i++) {
+        var c0 = fold(cls[i]);
+        var target = (prev && prev[i] != null) ? prev[i] : (rootAbs + 3 * i);
+        var best = null, bestD = Infinity;
+        for (var o = -1; o <= 1; o++) {
+          var cand = c0 + o * size;
+          if (cand <= rootAbs || cand > size - 1) continue; // above the root, in the window
+          var d = Math.abs(cand - target);
+          if (d < bestD) { bestD = d; best = cand; }
+        }
+        out.push(best == null ? c0 : best);
+      }
+      run.regalPrev = out;
+      return out;
+    }
+
+    // One chord. Timings are given as the consort's are (durS + fades), so a
+    // taken cadence can borrow the consort's own seconds-long edges and the
+    // ≤ 1.5 dB / no-new-attack contract holds by construction.
+    function renderRegal(chord, t, durS, fadeIn, fadeOut, levelMul, why) {
+      if (durS - fadeIn - fadeOut < 0.3) {
+        fadeIn = fadeOut = Math.max(0.25, (durS - 0.3) / 2);
+      }
+      var hold = Math.max(0.05, durS - fadeIn - fadeOut);
+      var degs = voiceRegal(chord && chord.chordDegs, REGAL_PARTS);
+      if (!degs || !degs.length) return false;
+      var tok = run.budget.claim(3 + degs.length * 8, t + durS + 0.3);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var c = ctx;
+      var peak = REGAL_PEAK * (levelMul || 1) * castLevel("regal");
+      var reed = pVal("regal", "reediness");
+      var bodyDb = pVal("regal", "body");
+      // The bellows: ONE breath under every part (±1.5 dB at ~0.15 Hz).
+      var bell = c.createGain();
+      bell.gain.setValueAtTime(1, t);
+      var bn = slowNoise(c, 0.15);
+      var bd = c.createGain();
+      var depth = (Math.pow(10, 1.5 / 20) - 1) * pVal("regal", "bellows");
+      PJ2.Voice.env(bd.gain, t, [[fadeIn, depth], [hold, depth], [fadeOut, 0]]);
+      bn.connect(bd);
+      try { bd.connect(bell.gain); } catch (e0) {}
+      bn.start(t, bn.randomOffset);
+      bn.stop(t + durS + 0.15);
+      bell.connect(run.layRegal);
+      for (var i = 0; i < degs.length; i++) {
+        var freq = run.field.degFreq(degs[i], 0);  // read at schedule time
+        var mix = c.createGain();
+        mix.gain.setValueAtTime(1, t);
+        var sq = c.createOscillator();
+        sq.type = "square";
+        sq.frequency.setValueAtTime(freq, t);
+        sq.detune.setValueAtTime(-5, t);
+        var sqg = c.createGain();
+        sqg.gain.setValueAtTime(1 - reed, t);
+        sq.connect(sqg); sqg.connect(mix);
+        var sw = c.createOscillator();
+        sw.type = "sawtooth";
+        sw.frequency.setValueAtTime(freq, t);
+        sw.detune.setValueAtTime(5, t);
+        var swg = c.createGain();
+        swg.gain.setValueAtTime(reed, t);
+        sw.connect(swg); swg.connect(mix);
+        var body = c.createBiquadFilter();
+        body.type = "peaking";
+        body.frequency.setValueAtTime(500, t);     // the reed box
+        body.Q.setValueAtTime(1.5, t);
+        body.gain.setValueAtTime(bodyDb, t);       // set once, never automated
+        var lid = c.createBiquadFilter();
+        lid.type = "lowpass";
+        lid.frequency.setValueAtTime(1800, t);
+        lid.Q.setValueAtTime(0.7, t);
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, [[fadeIn, peak], [hold, peak], [fadeOut, 0]]);
+        mix.connect(body); body.connect(lid); lid.connect(g); g.connect(bell);
+        sq.start(t); sq.stop(t + durS + 0.1);
+        sw.start(t); sw.stop(t + durS + 0.1);
+        emitNote({ voice: "regal", kind: why, freq: freq, t: t, durS: durS, deg: degs[i], oct: 0 });
+      }
+      return true;
+    }
+
+    // One harmony-step opportunity. Roll first, gates after.
+    function regalConsider(kind, t) {
+      if (!run || !run.live) return;
+      var rng = run.streams.regal;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var st = curSceneType();
+      if (st !== "chapter" && st !== "seizure") return;   // never settling, reverie, candle-out
+      if (!rosterAllows("regal")) return;
+      if (t < run.regalHoldUntil) return;          // the hold law: one chord at a time
+      if (roll >= clamp(REGAL_STEP_CHANCE * REGAL_PRESENCE * castPresence("regal"), 0, 1)) return;
+      var atk = rng.rnd(0.4, 0.8);
+      var rel = rng.rnd(0.6, 1.0);
+      var hold = rng.rnd(8, 20) * pVal("regal", "hold");  // the owner's ×0.7 → 5.6–14 s
+      var restS = rng.rnd(6, 14);
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      if (!ch) return;
+      var durS = atk + hold + rel;
+      if (!renderRegal(ch, t, durS, atk, rel, 1, kind)) return;
+      run.regalHoldUntil = t + durS + restS;
+    }
+
+    // "THE ORGANIST TAKES THE CADENCE" — drawn ONCE per cadence, before
+    // anything is rendered, so the regal fork's sequence never depends on
+    // what the consort did. When it lands, the regal voices BOTH cadence
+    // chords in the consort's place (the drone's pads are untouched: the
+    // arrival still lands exactly on the boundary).
+    function regalTakesCadence(plan, tA) {
+      if (!run || !run.live) return false;
+      var rng = run.streams.regal;
+      var roll = rng.next();                       // drawn first, unconditionally
+      var st = curSceneType();
+      // The organ does not play the evening out, it does not seize, and it
+      // does not interrupt the settling. NOT roster-gated: a cadence is a
+      // BOUNDARY gesture under the cadence contract, which is exactly why
+      // the hum consort surfaces for cadences even where the hum bed rests —
+      // and taking that cadence from the consort is the whole gesture. The
+      // roster governs the regal's FREE entries (chapter 2 and the seizure).
+      if (plan.to === "seizure" || plan.to === "candle-out") return false;
+      if (st === "settling" || st === "seizure" || st === "candle-out") return false;
+      if (tA < run.regalHoldUntil) return false;
+      var take = pVal("regal", "take");
+      return roll < clamp(take * REGAL_PRESENCE * castPresence("regal"), 0, 1);
+    }
+
+    function startRegal() {
+      var lane = run.clock.lane("regal");
+      function poll(t) {
+        var name = null;
+        try { name = run.harmony.current().name; } catch (e) {}
+        if (name != null) {
+          if (run.regalLastChord != null && name !== run.regalLastChord) {
+            regalConsider("harmony", t);
+          }
+          run.regalLastChord = name;
+        }
+        lane.at(t + 2.5, poll);
+      }
+      lane.at(run.t0 + 2.5, poll);
+    }
+
     // ---- humBed (landscape) -------------------------------------------------
     // v1's libraryHum, the full formant body now (Phase 3): one sawtooth
     // through the walked F1/F2 vowel mouth, jitter, vibrato, shimmer —
@@ -1969,6 +2816,9 @@
       function swell(t) {
         var iv = curIntensity(t);
         if (iv < 0.2) { lane.at(t + rng.rnd(4, 7), swell); return; }
+        // rc.31: the roster rests the reader's hum through the seizure and
+        // the candle-out. Entries only — a swell already sounding finishes.
+        if (!rosterAllows("hum")) { lane.at(t + rng.rnd(4, 7), swell); return; }
         var durS = rng.rnd(12, 20);
         var deg = rng.pick([0, 2, 4]);          // tonic / minor third / fifth
         var gap = rng.rnd(9, 16);               // < durS: swells overlap into a bed
@@ -2003,7 +2853,10 @@
         var st = curSceneType();
         var p = SING_P[st] != null ? SING_P[st] : 0;
         var sings = rng.chance(p); // drawn every opportunity — stream discipline
-        if (!sings || iv < 0.08) { lane.at(t + rng.rnd(10, 18) * gmAt(t), attempt); return; }
+        if (!sings || iv < 0.08 || !rosterAllows("hum")) {   // rc.31: the roster
+          lane.at(t + rng.rnd(10, 18) * gmAt(t), attempt);
+          return;
+        }
         var res = run.heldUtterance.hum;
         run.heldUtterance.hum = null;
         if (!res) {
@@ -2082,18 +2935,27 @@
     function renderPluck(out, freq, t, durS, vel, farWall) {
       var c = ctx;
       var wx = wxAt(t);
-      var n = Math.max(2, Math.round((c.sampleRate || 44100) * 0.03)); // v1's 30 ms burst
+      // rc.31 — THE LUTE STOP (buff), blended continuously: 0 is today's 8′,
+      // 1 is the lab's lute — a 15 ms burst, a filter that starts at 1.6f
+      // instead of ~3f, a decay at ×0.55, no octave glint at all, and a felt
+      // tick where the glint used to be (the buff leather touching the
+      // string). The desk knob wins over the evening cast once it is moved.
+      var buff = clamp(knobOrCast("harpsichord", "buff", (run.cast && run.cast.lute) || 0), 0, 1);
+      var burstS = 0.03 - 0.015 * buff;                        // 30 ms → 15 ms
+      var dS = Math.max(0.12, durS * (1 - 0.45 * buff));       // decay → ×0.55
+      var n = Math.max(2, Math.round((c.sampleRate || 44100) * burstS)); // v1's 30 ms burst
       var buf = c.createBuffer(1, n, c.sampleRate || 44100);
       var data = buf.getChannelData(0);
       for (var j = 0; j < n; j++) data[j] = Math.random() * 2 - 1; // texture, not music
       var src = c.createBufferSource();
       src.buffer = buf;
       src.loop = true;
-      var bright = (pVal("harpsichord", "brightness") - 0.6) + 1.2 * wx.brightness; // v1 "brightness" 3.0 at the default, breathed ±0.6
+      var bright8 = (pVal("harpsichord", "brightness") - 0.6) + 1.2 * wx.brightness; // v1 "brightness" 3.0 at the default, breathed ±0.6
+      var bright = bright8 + (1.6 - bright8) * buff;
       var lp = c.createBiquadFilter();
       lp.type = "lowpass";
       lp.frequency.setValueAtTime(freq * bright, t);           // anchored, then
-      lp.frequency.exponentialRampToValueAtTime(freq * 0.8, t + durS * 0.8); // the string dulls
+      lp.frequency.exponentialRampToValueAtTime(freq * 0.8, t + dS * 0.8); // the string dulls
       lp.Q.setValueAtTime(pVal("harpsichord", "resonance"), t); // v1 "resonance" 0.5 at the default
       var g = c.createGain();
       src.connect(lp); lp.connect(g); g.connect(out);
@@ -2101,20 +2963,36 @@
       if (farWall) g.connect(run.delaySendPluck);              // some phrases reach the far wall
       // v1's envelope shape (instant strike, exp decay to ~1/3 by 150 ms,
       // linear tail to true zero) with a 4 ms click-guard attack.
-      var knee = Math.min(0.15, durS * 0.5);
-      PJ2.Voice.env(g.gain, t, [[0.004, 0.055 * vel], [knee - 0.004, 0.018 * vel], [durS - knee, 0]]);
+      var knee = Math.min(0.15, dS * 0.5);
+      PJ2.Voice.env(g.gain, t, [[0.004, 0.055 * vel], [knee - 0.004, 0.018 * vel], [Math.max(0.02, dS - knee), 0]]);
       src.start(t);
-      src.stop(t + durS + 0.02);
+      src.stop(t + dS + 0.02);
       // octave sparkle — a partial, not a note; no note event for it.
       // v1 sparkle/peak = 0.03/0.14 ≈ 0.21; brightness breathes it here.
-      var ho = c.createOscillator();
-      ho.type = "sine";
-      ho.frequency.setValueAtTime(freq * 2, t);
-      var hg = c.createGain();
-      ho.connect(hg); hg.connect(out);
-      PJ2.Voice.env(hg.gain, t, [[0.003, (0.006 + 0.006 * wx.brightness) * vel], [0.297, 0.0008], [0.1, 0]]);
-      ho.start(t);
-      ho.stop(t + 0.42);
+      // The lute stop takes it away entirely (the buff kills the glint).
+      if (buff < 1) {
+        var ho = c.createOscillator();
+        ho.type = "sine";
+        ho.frequency.setValueAtTime(freq * 2, t);
+        var hg = c.createGain();
+        ho.connect(hg); hg.connect(out);
+        PJ2.Voice.env(hg.gain, t, [[0.003, (0.006 + 0.006 * wx.brightness) * vel * (1 - buff)],
+                                   [0.297, 0.0008], [0.1, 0]]);
+        ho.start(t);
+        ho.stop(t + 0.42);
+      }
+      // …and gives back the felt tick — 400 Hz, 20 ms, low.
+      if (buff > 0) {
+        var to = c.createOscillator();
+        to.type = "sine";
+        to.frequency.setValueAtTime(400, t);
+        var tg2 = c.createGain();
+        to.connect(tg2); tg2.connect(out);
+        PJ2.Voice.env(tg2.gain, t, [[0.002, 0.010 * vel * buff], [0.018, 0.0006], [0.01, 0]]);
+        to.start(t);
+        to.stop(t + 0.06);
+      }
+      return dS;   // the SOUNDING length (the lute stop shortens it)
     }
 
     // Phase 2 brain: every phrase is a motif.request statement. The motif
@@ -2148,7 +3026,14 @@
             res = { motif: th, kind: "coagula" };
           }
         }
-        if (!res) {
+        // rc.31 — the roster rests the harpsichord in the candle-out, with
+        // the SOLVE ET COAGULA exempted above: the one whole-theme settling
+        // must still sound, and a held ghost still finds its voice. On an
+        // evening that draws no coagula the harpsichord simply keeps its
+        // silence through Coagulatio. Placed AFTER the coagula draw, so the
+        // gate never changes what the streams did.
+        var resting = !rosterAllows("harpsichord");
+        if (!res && !resting) {
           try { res = run.motif.request("pluck", reqCtx(t)); } catch (e) { res = null; }
         }
         if (!res || !res.motif || !res.motif.notes || !res.motif.notes.length) {
@@ -2189,9 +3074,9 @@
           if (!btok) continue; // skip the note, keep the phrase's timing
           run.tokens.push(btok);
           var freq = run.field.degFreq(m.notes[i].deg + lift, 0); // read at schedule time, never cached
-          renderPluck(out, freq, nt, nd, vel, farWall);
+          var soundS = renderPluck(out, freq, nt, nd, vel, farWall);
           emitNote({
-            voice: "pluck", freq: freq, t: nt, durS: nd,
+            voice: "pluck", freq: freq, t: nt, durS: soundS,
             deg: m.notes[i].deg + lift, oct: 0, velocity: vel,
             motif: m.name, gen: m.gen, phraseKind: res.kind,
           });
@@ -2224,6 +3109,13 @@
           lane.at(t + rng.rnd(6, 12) * gmAt(t), phrase);
           return;
         }
+        // rc.31 — the roster (the box rests through the settling and the
+        // whole reverie) and the evening cast's ONE absence colour, "no
+        // music box tonight". Both gate the ENTRY only, after the draws.
+        if (!rosterAllows("musicbox") || (run.cast && run.cast.absent)) {
+          lane.at(t + rng.rnd(6, 12) * gmAt(t), phrase);
+          return;
+        }
         var res = run.heldUtterance.musicbox;
         run.heldUtterance.musicbox = null;
         if (!res) {
@@ -2234,7 +3126,15 @@
           return;
         }
         var m = res.motif;
-        var spb = rng.rnd(0.26, 0.38) * (1.3 - 0.5 * iv); // the plink's quicker tongue
+        // rc.31 — the WOUND-DOWN mechanism, candle-out only: the desk knob,
+        // or the evening cast's draw while the knob still sits at its
+        // default. The engine can do what the lab page could not — slow the
+        // PACING as well as the pitch, so the box runs down as a mechanism
+        // rather than merely detuning.
+        var wound = (st === "candle-out" &&
+                     knobOrCast("musicbox", "wound", (run.cast && run.cast.wound) || 0) > 0.5);
+        var spb = rng.rnd(0.26, 0.38) * (1.3 - 0.5 * iv) *
+                  (wound ? MB_WOUND_SPB : 1);    // the plink's quicker tongue
         var tm = phraseTiming(m, spb, 1.9, 0.5, 1.1);
         var margin = rng.rnd(3, 8);
         var tok = null;
@@ -2258,43 +3158,59 @@
         for (var bi = 0; bi < m.notes.length; bi++) bxMean += m.notes[bi].deg;
         bxMean /= m.notes.length;
         var lift = (bxMean > 2.5 + run.field.size / 2) ? 0 : run.field.size;
+        if (wound) lift -= run.field.size;   // …and it drops an octave as it goes
         var velScale = (res.kind === "ghost") ? 0.6 : 1;
         var out = mixOut("musicbox", run.poolMel.at(rng.rnd(-0.55, 0.55)));
         var c = ctx;
         // Weather read once per phrase (schedule time): brightness breathes
         // v1's SHIMMER knob instead of a fixed constant (contract item 5);
         // the desk's shimmer knob scales the dose (def 1 = as-composed).
-        var shimmerG = (0.005 + 0.006 * wxAt(t).brightness) * pVal("musicbox", "shimmer");
+        // rc.31: the box IS the DAMPED box now — the 3rd partial sits −12 dB
+        // under where the open box put it (the shimmer knob still scales it).
+        var shimmerG = (0.005 + 0.006 * wxAt(t).brightness) *
+                       pVal("musicbox", "shimmer") * MB_DAMP_PARTIAL;
         for (var i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.65, 1) * velScale;
           var nt = t + tm.offs[i], nd = tm.durs[i];
-          var btok = run.budget.claim(4, nt + nd + 0.1);
+          // rc.31 — the damped body's shorter decay (×0.6), stretched again
+          // by ×1.3 when the mechanism is running down.
+          var dS = Math.max(0.12, nd * MB_DAMP_DECAY * (wound ? MB_WOUND_DECAY : 1));
+          var btok = run.budget.claim(4, nt + dS + 0.1);
           if (!btok) continue;
           run.tokens.push(btok);
           var freq = run.field.degFreq(m.notes[i].deg + lift, 0); // read at schedule time, never cached
           var velG = 0.4 + 0.6 * vel; // v1's velocity law (~1949)
+          var pk = 0.030 * MB_DAMP_PEAK * velG;                  // damped: peak ×0.8
           var o = c.createOscillator();
           o.type = "sine";
           o.frequency.setValueAtTime(freq, nt);
+          if (wound) {
+            o.detune.setValueAtTime(0, nt);                      // anchored, then the
+            o.detune.linearRampToValueAtTime(MB_WOUND_CENTS, nt + dS); // spring gives out
+          }
           var g = c.createGain();
           o.connect(g); g.connect(out);
           g.connect(run.delaySendBox); // the far wall ALWAYS answers the box
-          PJ2.Voice.env(g.gain, nt, [[0.003, 0.030 * velG], [0.097, 0.010 * velG], [nd - 0.1, 0]]);
+          PJ2.Voice.env(g.gain, nt, [[0.003, pk], [0.097, pk * 0.333], [Math.max(0.02, dS - 0.1), 0]]);
           o.start(nt);
-          o.stop(nt + nd + 0.02);
+          o.stop(nt + dS + 0.02);
           // 3rd-partial shimmer — the metallic glint, well under the note
           // (v1 ~1965: velocity-scaled, gone by 60% of the note)
           var h = c.createOscillator();
           h.type = "sine";
           h.frequency.setValueAtTime(freq * 3, nt);
+          if (wound) {
+            h.detune.setValueAtTime(0, nt);
+            h.detune.linearRampToValueAtTime(MB_WOUND_CENTS, nt + dS);
+          }
           var hg = c.createGain();
           h.connect(hg); hg.connect(out);
           hg.connect(run.delaySendBox);
-          PJ2.Voice.env(hg.gain, nt, [[0.003, shimmerG * velG], [nd * 0.5, 0.0008], [0.06, 0]]);
+          PJ2.Voice.env(hg.gain, nt, [[0.003, shimmerG * velG], [Math.max(0.05, dS * 0.5), 0.0008], [0.06, 0]]);
           h.start(nt);
-          h.stop(nt + nd + 0.02);
+          h.stop(nt + dS + 0.02);
           emitNote({
-            voice: "musicbox", freq: freq, t: nt, durS: nd,
+            voice: "musicbox", freq: freq, t: nt, durS: dS,
             deg: m.notes[i].deg + lift, oct: 0, velocity: vel,
             motif: m.name, gen: m.gen, phraseKind: res.kind,
           });
@@ -2303,6 +3219,204 @@
         lane.at(t + tm.spanS + margin + rng.rnd(6, 18) * (1.3 - iv) * gmAt(t), phrase);
       }
       lane.at(run.t0 + rng.rnd(15, 30), phrase);
+    }
+
+    // ---- flue (melodic — the RAREST fourth speaker; claims THE AIR, rc.31) --
+    // A wooden recorder: triangle + sine hollow core, a 30 ms chiff of noise
+    // at 2f on the onset, breath at 1.5 kHz under the tone, and a vibrato
+    // that arrives half a second late (a player finding the note before
+    // wavering it). Ported from the owner-approved prototype.
+    //
+    // It is a REAL motif voice, not a walker: PJ2.Motif's per-voice door
+    // gives it its own walk table (the hum's — a wind instrument reads like
+    // a voice), its own transform weights (augment and ornament lead: a
+    // recorder stretches and decorates, it does not splinter) and its own
+    // home register (+1 — the owner's C5–B5). At render it re-registers by
+    // ONE fixed rule, flueShift: fold the line's mean into the tonic octave,
+    // then lift by the register knob. A fixed fold, never a threshold — a
+    // threshold flips the octave from phrase to phrase and the owner cannot
+    // tune what will not hold still.
+    //
+    // It is the RAREST speaker by design (owner decision 2: the air limits
+    // and overlap chances stay exactly as they are), it claims the air like
+    // every speaker, a ghost denied the air is HELD like the others, and its
+    // utterances are capped at four notes — the HEAD of anything longer.
+    var FLUE_PEAK = 0.021;          // 0.03 × the owner's level 0.7
+    var FLUE_PRESENCE = 0.8;
+    var FLUE_MAX_NOTES = 4;         // the owner's phrase length
+    // ROSTER-SUPERSEDED, like the vessel's chapter chance: "settling" carries
+    // the owner's 0.05, but the roster rests the flue through the settling,
+    // so the draw is spent and the gate refuses. Kept so the flue fork's
+    // sequence does not move.
+    var FLUE_SPEAK_P = {
+      // "settling" is ROSTER-SUPERSEDED: the owner's entry law keeps a 0.05
+      // chance, but the adopted roster rests the flue in the settling, so it
+      // never speaks there at the default table. The draw stays (stream
+      // discipline); the gate comes after it.
+      "settling": 0.05, "chapter": 0.15, "seizure": 0, "reverie": 0.2, "candle-out": 0,
+    };
+    // The recorder's walk: the hum's own table, copied here because
+    // pj2-motif keeps its tables private and this file must not reach in.
+    // KEEP IN SYNC with HUM_MARKOV in pj2-motif.js (~line 93) — these two
+    // are byte-identical by intent, not by accident. If that table is ever
+    // retuned, retune this one with it or say in a comment why not.
+    var FLUE_MARKOV = [
+      [0.044, 0.264, 0.220, 0.132, 0.220, 0.070, 0.050],
+      [0.220, 0.044, 0.264, 0.176, 0.176, 0.070, 0.050],
+      [0.176, 0.176, 0.044, 0.264, 0.220, 0.070, 0.050],
+      [0.132, 0.220, 0.220, 0.044, 0.264, 0.070, 0.050],
+      [0.264, 0.132, 0.176, 0.264, 0.044, 0.070, 0.050],
+      [0.100, 0.080, 0.120, 0.180, 0.300, 0.050, 0.170],
+      [0.300, 0.100, 0.100, 0.100, 0.200, 0.150, 0.050],
+    ];
+    var FLUE_WEIGHTS = {
+      augment: 3, ornament: 3, transpose: 2, sequence: 2, invert: 1.5,
+      fragmentTail: 1.2, retrograde: 1, diminish: 0.6, fragmentHead: 0.5,
+    };
+
+    function flueShift(meanDeg, register) {
+      var size = (run && run.field && run.field.size) || 7;
+      return -Math.floor(meanDeg / size) * size + size * Math.round(register);
+    }
+
+    function renderFlue(out, freq, t, durS, vel, atk, rel) {
+      var c = ctx;
+      var peak = FLUE_PEAK * vel * castLevel("flue");
+      if (durS < atk + rel + 0.1) durS = atk + rel + 0.1;
+      var body = Math.max(0.02, durS - atk - rel);
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[atk, peak], [body, peak], [rel, 0]]);
+      g.connect(out);
+      var tri = c.createOscillator();
+      tri.type = "triangle";
+      tri.frequency.setValueAtTime(freq, t);
+      var tg = c.createGain();
+      tg.gain.setValueAtTime(0.6, t);
+      tri.connect(tg); tg.connect(g);
+      var sin = c.createOscillator();
+      sin.type = "sine";
+      sin.frequency.setValueAtTime(freq, t);
+      var sg = c.createGain();
+      sg.gain.setValueAtTime(0.4, t);
+      sin.connect(sg); sg.connect(g);
+      tri.start(t); tri.stop(t + durS + 0.1);
+      sin.start(t); sin.stop(t + durS + 0.1);
+      // vibrato — 5 Hz, depth ramped in over half a second
+      var vibK = pVal("flue", "vibrato");
+      if (vibK > 0) {
+        var vib = c.createOscillator();
+        vib.type = "sine";
+        vib.frequency.setValueAtTime(5, t);
+        var vd = c.createGain();
+        var vDepth = freq * 0.006 * vibK;
+        PJ2.Voice.env(vd.gain, t, [[0.5, vDepth],
+                                   [Math.max(0.05, durS - 0.5 - rel), vDepth],
+                                   [rel, 0]]);
+        vib.connect(vd);
+        try { vd.connect(tri.frequency); vd.connect(sin.frequency); } catch (e1) {}
+        vib.start(t); vib.stop(t + durS + 0.1);
+      }
+      // chiff — the breath edge at the onset, 30 ms of noise at 2f
+      var chiffK = pVal("flue", "chiff");
+      if (chiffK > 0 && peak > 0) {
+        var cn = PJ2.Voice.noiseBuffer.source(c, 30);
+        var cbp = c.createBiquadFilter();
+        cbp.type = "bandpass";
+        cbp.frequency.setValueAtTime(freq * 2, t);
+        cbp.Q.setValueAtTime(6, t);
+        var cg = c.createGain();
+        var cLevel = peak * 0.35 * chiffK;
+        PJ2.Voice.env(cg.gain, t, [[0.006, cLevel], [0.024, cLevel * 0.05], [0.01, 0]]);
+        cn.connect(cbp); cbp.connect(cg); cg.connect(out);
+        cn.start(t, cn.randomOffset);
+        cn.stop(t + 0.12);
+      }
+      // breath — the wind that never stops while the note sounds
+      var breathK = pVal("flue", "breath");
+      if (breathK > 0 && peak > 0) {
+        var bn2 = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bbp = c.createBiquadFilter();
+        bbp.type = "bandpass";
+        bbp.frequency.setValueAtTime(1500, t);
+        bbp.Q.setValueAtTime(10, t);
+        var pre = c.createGain();
+        pre.gain.setValueAtTime(0.3, t);           // pre-attenuate before resonance
+        var bg2 = c.createGain();
+        var bLevel = peak * 0.25 * breathK;
+        PJ2.Voice.env(bg2.gain, t, [[atk, bLevel], [body, bLevel], [rel, 0]]);
+        bn2.connect(bbp); bbp.connect(pre); pre.connect(bg2); bg2.connect(out);
+        bn2.start(t, bn2.randomOffset);
+        bn2.stop(t + durS + 0.1);
+      }
+      return durS;
+    }
+
+    function startFlue() {
+      var lane = run.clock.lane("flue");
+      var rng = run.streams.flue;
+      function attempt(t) {
+        var iv = curIntensity(t);
+        var st = curSceneType();
+        var p = (FLUE_SPEAK_P[st] != null ? FLUE_SPEAK_P[st] : 0) *
+                FLUE_PRESENCE * castPresence("flue");
+        var speaks = rng.chance(p);       // drawn every opportunity — stream discipline
+        if (!speaks || iv < 0.08 || !rosterAllows("flue")) {
+          lane.at(t + rng.rnd(12, 22) * gmAt(t), attempt);
+          return;
+        }
+        var res = run.heldUtterance.flue;
+        run.heldUtterance.flue = null;
+        if (!res) {
+          try { res = run.motif.request("flue", reqCtx(t)); } catch (e) { res = null; }
+        }
+        if (!res || !res.motif || !res.motif.notes || !res.motif.notes.length) {
+          lane.at(t + rng.rnd(12, 22) * gmAt(t), attempt);
+          return;
+        }
+        var m = res.motif;
+        // the owner's phrase length: four notes, and the HEAD of anything longer
+        var notes = (m.notes.length > FLUE_MAX_NOTES) ? m.notes.slice(0, FLUE_MAX_NOTES) : m.notes;
+        var spb = rng.rnd(1.0, 1.4) * (1.4 - 0.6 * iv) / pVal("flue", "pace");
+        var tm = phraseTiming({ notes: notes }, spb, 1, 0.9, 4);
+        var margin = rng.rnd(3, 8);
+        var tok = null;
+        try { tok = run.air.tryClaim("flue", tm.spanS, margin); } catch (e) {}
+        if (!tok) {
+          if (res.kind === "ghost") run.heldUtterance.flue = res;
+          lane.at(t + rng.rnd(6, 10) * gmAt(t), attempt);
+          return;
+        }
+        emitEvent({
+          type: "air", voice: "flue", t: t, durS: tm.spanS, marginS: margin,
+          limit: run.airLimit(), overlap: !!(tok && tok.overlap),
+        });
+        narrate(res, "flue", t);
+        var mean = 0;
+        for (var mi = 0; mi < notes.length; mi++) mean += notes[mi].deg;
+        mean /= notes.length;
+        var shift = flueShift(mean, pVal("flue", "register"));
+        var velScale = (res.kind === "ghost") ? 0.6 : 1;
+        var out = mixOut("flue", run.poolMel.at(rng.rnd(-0.5, 0.5)));
+        for (var i = 0; i < notes.length; i++) {
+          var vel = rng.rnd(0.75, 1) * velScale;
+          var atk = rng.rnd(0.06, 0.12);
+          var rel = rng.rnd(0.08, 0.20);
+          var nt = t + tm.offs[i], nd = tm.durs[i];
+          var btok = run.budget.claim(12, nt + nd + 0.25);
+          if (!btok) continue;              // skip the note, keep the phrase's timing
+          run.tokens.push(btok);
+          var freq = run.field.degFreq(notes[i].deg + shift, 0); // read at schedule time
+          var soundS = renderFlue(out, freq, nt, nd, vel, atk, rel);
+          emitNote({
+            voice: "flue", freq: freq, t: nt, durS: soundS,
+            deg: notes[i].deg + shift, oct: 0, velocity: vel,
+            motif: m.name, gen: m.gen, phraseKind: res.kind,
+          });
+        }
+        maybePost("flue", res, st, t);
+        lane.at(t + tm.spanS + margin + rng.rnd(10, 20) * gmAt(t), attempt);
+      }
+      lane.at(run.t0 + rng.rnd(25, 45), attempt);
     }
 
     // ---- ambient (landscape — the sparse room) ------------------------------
@@ -2677,6 +3791,7 @@
 
     var LANE_NAMES = [
       "drone", "cello", "hum", "humSing", "pluck", "musicbox", "ambient",
+      "vessel", "regal", "flue",                 // rc.31
       "follow", "harmony", "cadence", "seachange",
     ];
 
@@ -2757,6 +3872,15 @@
         // nothing — every stream above is byte-identical to the cello-less
         // engine, which is the whole stream-purity contract.
         cello: master.fork("cello"),
+        // rc.31: the sound-diversity forks. Three new voices, the evening
+        // cast, and the stops' own per-note dice (the cello's flageolet
+        // coin) — all label-hashed off the birth seed like every fork
+        // before them, so adding them re-rolls nothing that came first.
+        vessel: master.fork("vessel"),
+        regal: master.fork("regal"),
+        flue: master.fork("flue"),
+        cast: master.fork("cast"),
+        stops: master.fork("stops"),
       };
 
       // The Phase 2 brains and the Phase 3 sound tools. Harmony first (Motif
@@ -2831,6 +3955,8 @@
       var layAmb = mAttach("ambient", c.createGain(), 1);
       var layHalo = mAttach("halo", c.createGain(), 1);
       var layCello = mAttach("cello", c.createGain(), 1); // rc.22: the under-voice
+      var layVessel = mAttach("vessel", c.createGain(), 1); // rc.31: the over-voice
+      var layRegal = mAttach("regal", c.createGain(), 1);   // rc.31: the reed organ
 
       // Landscape chain: cycles → droneBreath (joints only) → droneLevel
       // (intensity follower only) → mixDrone (mixer only) → the drone's
@@ -2850,6 +3976,10 @@
 
       roomBlend.register("drone", mixDrone, 0.05);
       roomBlend.register("cello", layCello, 0.04); // mid-room: behind the speakers, before the stacks
+      // rc.31: the bell lives in the stacks (the cello is the near body, the
+      // vessel the far one); the organ stands with the readers.
+      roomBlend.register("vessel", layVessel, 0.2);
+      roomBlend.register("regal", layRegal, 0.0);
       roomBlend.register("humBed", mixHumBed, 0.0);
       roomBlend.register("hum", layHum, 0.0);
       roomBlend.register("melody", layMel, -0.06);
@@ -2860,6 +3990,7 @@
       var mixWraps = {
         harpsichord: mSlotWraps("harpsichord", poolMel),
         musicbox: mSlotWraps("musicbox", poolMel),
+        flue: mSlotWraps("flue", poolMel),   // rc.31: the fourth speaker, same pool
       };
 
       // THE WEATHER — built from its own fork (all draws at build time; at()
@@ -2900,6 +4031,13 @@
       // halo layer itself owns the RETURN (layHalo).
       var haloSend = mAttach("harpsichord", c.createGain(), 0.12);
       haloSend.connect(halo.input);
+      // rc.31 — the bell's whisper into the same strings: a bowed bell
+      // excites a sympathetic bank the way a struck one does, and the
+      // vessel's register sits right on the halo's frame. Mixer-owned under
+      // VESSEL, at half the pluck's dose — mute the bell and the strings
+      // stop hearing it.
+      var vesselHaloSend = mAttach("vessel", c.createGain(), 0.06);
+      vesselHaloSend.connect(halo.input);
 
       var harmony = PJ2.Harmony.create({
         rng: streams.harmony,
@@ -2910,6 +4048,16 @@
         rng: streams.motif,
         field: field,
         harmony: harmony,
+        // rc.31 — the flue is a REAL motif voice, not a walker: its own walk
+        // table (the hum's — a wind instrument reads like a voice), its own
+        // transform character (augment and ornament lead: a recorder
+        // stretches and decorates, it does not splinter), and its home
+        // register a whole octave up (the owner's "+1", C5–B5). This is the
+        // per-voice door PJ2.Motif opened in Phase 3; it costs no extra
+        // draws — it only changes which tables the draws consult.
+        voices: {
+          flue: { table: FLUE_MARKOV, weights: FLUE_WEIGHTS, register: 1, walkStart: 0 },
+        },
         // The refinement arc rides the dynamic-tilt hook. This is the ONLY
         // policy key passed: kind pools, posting, seeding all stay on the
         // default (bit-identical) path — the tilt changes which transform
@@ -2930,7 +4078,7 @@
         seaChange: null,                   // {atSceneIdx, target, done, label} or null
         nextCadence: null,                 // {kind, label, t: boundary} once planned, cleared at realize
         pendingGhost: null,                // extracted at performance end, seeded at the next begin
-        heldUtterance: { pluck: null, musicbox: null, hum: null }, // ghosts denied the air wait here
+        heldUtterance: { pluck: null, musicbox: null, hum: null, flue: null }, // ghosts denied the air wait here
         coagulaDone: false,                // one whole-theme settling per evening (touch c)
         // ---- Phase 3 sound state ----
         roomClose: roomClose, roomWide: roomWide, roomBlend: roomBlend,
@@ -2941,6 +4089,18 @@
         celloHoldUntil: 0,                 // the hold law: one bow at a time (rc.22)
         celloLastChord: null,              // the poll's step detector
         celloCandleDone: false,            // one last bow per evening, then silence
+        // ---- rc.31 sound-diversity state ----
+        layVessel: layVessel, layRegal: layRegal,
+        vesselHaloSend: vesselHaloSend,
+        vesselHoldUntil: 0,                // the hold law: one bow at a time
+        vesselLastChord: null,             // the vessel's own step detector
+        vesselCandleDone: false,           // the guttering law: ONE bow, then silence
+        regalHoldUntil: 0,                 // one chord at a time
+        regalLastChord: null,
+        regalPrev: null,                   // the organist's own voice-leading state
+        cast: null,                        // tonight's dress (drawn at performance begin)
+        castPending: null,                 // its event, emitted just after the begin
+        castLastAbsent: false,             // the absence colour never runs twice
         mix: mix, mixWraps: mixWraps,
         weather: weather,
         delay: delay, delaySendBox: delaySendBox, delaySendPluck: delaySendPluck,
@@ -3016,6 +4176,15 @@
             evt.label = sceneLabelFor(evt.scene, evt.idx, run.perfScenes);
           }
           emitEvent(evt);
+          // rc.31: the evening announces its cast the instant AFTER it
+          // begins — so the log reads "evening N" then "tonight: …", and
+          // always before the evening's first note.
+          if (evt.type === "performance" && evt.phase === "begin" &&
+              run && run.castPending) {
+            var castEvt = run.castPending;
+            run.castPending = null;
+            emitEvent(castEvt);
+          }
         },
         jointTools: jointTools,
         tools: jointTools,
@@ -3036,6 +4205,9 @@
       startHumSing();
       startPluck();
       startMusicbox();
+      startVessel();   // rc.31
+      startRegal();    // rc.31
+      startFlue();     // rc.31
       startAmbient();
 
       // Born already mixed, rate side: stamp each layer's stored rate onto
@@ -3228,6 +4400,13 @@
           var lk = MIX_LAYERS[li].key;
           info.layers[lk] = { volume: mixState[lk].volume, muted: mixState[lk].muted };
         }
+        // rc.31 — tonight's cast, the same shape as the {type:"cast"} event.
+        info.cast = (run && run.cast) ? {
+          evening: run.cast.evening, plain: run.cast.plain,
+          harpsichord: run.cast.harpsichord, musicbox: run.cast.musicbox,
+          drone: run.cast.drone, vessel: run.cast.vessel,
+          regal: run.cast.regal, flue: run.cast.flue,
+        } : null;
         info.playing = playing;
         info.seed = seed;
         return info;
@@ -3240,7 +4419,10 @@
       // {type:"joint-gesture"...} + {type:"engine"...} + the Phase 2
       // narration: {type:"cadence", kind, t: boundary, startT, chords} /
       // {type:"seachange", target, field, t} / {type:"ghost", voice, name,
-      // t} / {type:"develop"|"answer", voice, name, gen, t}. Scene, cadence,
+      // t} / {type:"develop"|"answer", voice, name, gen, t} / rc.31's
+      // {type:"cast", evening, plain, harpsichord, musicbox, drone, vessel,
+      // regal, flue, t} — the evening's dress, announced the instant after
+      // its performance-begin event and mirrored in getInfo().cast. Scene, cadence,
       // seachange and ghost events also carry `label` — the alchemical
       // display vocabulary (PJ2.Library.LABELS; shared with PLAN-GRAPHICS).
       setNoteListener: function (fn) { return addListener(noteLs, fn); },
