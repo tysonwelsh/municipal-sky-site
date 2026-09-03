@@ -96,8 +96,11 @@
 //   THE STOPS — every one a desk knob (owner decision 5): the harpsichord's
 //   LUTE STOP (buff, blended continuously 0..1), the music box's
 //   WOUND-DOWN mechanism (candle-out), the cello's HARMONICS (the reverie
-//   manner), and the drone's three REGISTRATIONS (flue / principal /
-//   gedackt, chosen per CYCLE — a cycle keeps its pipe for its whole life,
+//   manner), and the drone's three REGISTRATIONS (open / principal /
+//   gedackt — the plan calls the first rank a "flue" pipe, but the desk
+//   calls it OPEN so it cannot be mistaken for the recorder that now has a
+//   mixer row of its own; chosen per CYCLE, and a cycle keeps its pipe for
+//   its whole life,
 //   the straddle lesson applied to stops). The music box's DAMPED body is
 //   not a stop at all any more: it IS the music box now (3rd partial
 //   −12 dB, decay ×0.6, peak ×0.8 — the open box retires).
@@ -120,13 +123,53 @@
 //   knob the owner has MOVED wins over the cast until it is reset.
 //   Narrated as a {type:"cast"} event and getInfo().cast.
 //
-// STREAM NOTE (rc.31): the vessel, regal, flue, cast and stops each draw on
-// their OWN label-hashed fork, so no pre-existing fork is perturbed — the
-// cello's stream, the drone's, the pluck's are byte-identical to rc.30's.
-// But a FOURTH motif speaker and a roster that rests voices necessarily
-// change the MOTIF and AIR streams' request sequence, exactly the way
-// Phase 3's new ambient roster re-rolled the ambient stream. Same-seed
-// reproducibility is untouched and the harness proves it (REPRO).
+// ROSTER NOTE (rc.31): the regal is the ONE voice that may sound outside
+// its roster cells — only as the organist taking a cadence. Both cadence
+// chords sound inside the OUTGOING scene (tA = tB − (dA + dB)), so a take
+// on a chapter1→chapter2 or chapter3→reverie boundary puts the organ in a
+// scene the table rests it from, and its release rings ~2.5 s into the
+// next. Deliberate: a cadence is a boundary gesture under the cadence
+// contract, the same reason the hum consort surfaces where its bed rests.
+//
+// STREAM NOTE (rc.31) — what actually moved, stated plainly, because the
+// honest version of this note is the only useful one:
+//
+//   Every NEW draw lands on a NEW label-hashed fork ("vessel", "regal",
+//   "flue", "cast", "stops"), so rc.31 re-rolls nothing gratuitously — no
+//   pre-existing fork gained a draw. The ONE exception is deliberate and
+//   brief-mandated: maybePost("flue", …) reaches the pre-existing "alchemy"
+//   fork for the Conjunctio wedding coin, exactly as the pluck, box and hum
+//   already do (see maybePost) — a fourth speaker asking the same question.
+//
+//   But the roster gates ENTRIES *after* the roll and *before* the render,
+//   and every render draws its own shape (renderCello's five draws, the
+//   drone's, the pluck's phrase). A gated entry therefore skips those draws
+//   and the fork's position shifts for the rest of the run — the feature,
+//   not a leak. Add a fourth motif speaker claiming the air, and the
+//   REALIZED streams of the cello, pluck, music box, hum, motif and air all
+//   differ from rc.30's at the default desk. (Measured at 2400 s on the
+//   Library seed: drone 311→331 notes — gedackt draws a sub every cycle;
+//   cello 35→33; pluck 856→833; musicbox 473→427 — the damped body's
+//   shorter durS; humBed 161→140; hum 164→208. Only ambient is untouched.)
+//   Evening one of a run keeps its plain registrations, so its drone bed is
+//   the bed rc.30 played. Same-seed reproducibility is exact, and the
+//   harness proves it every run (REPRO).
+//
+//   This is the same sanctioned kind of re-roll as Phase 3's new ambient
+//   roster — with one cost worth naming: at the harness's own Library seed
+//   the ALCHEMY refinement arc's directional score fell from 0.075 to 0.020
+//   at 5400 s (still positive, still asserted). The arc itself is untouched;
+//   the roster simply removes the harpsichord's late candle-out statements,
+//   so the late-evening sample it reads is smaller.
+//
+//   ONE VOICE MAY SOUND OUTSIDE ITS ROSTER CELLS: the regal, and only as
+//   the organist TAKING a cadence. A cadence is a boundary gesture under
+//   the cadence contract (the same contract that lets the hum consort
+//   surface where the hum bed rests), and both of its chords sound inside
+//   the OUTGOING scene — so a take on a chapter1→chapter2 or a
+//   chapter3→reverie cadence puts the organ briefly in chapter 1 or
+//   chapter 3, and rings ~2.5 s into the reverie it otherwise rests from.
+//   Deliberate, and disclosed here so nobody rediscovers it as a bug.
 //
 // GAIN STAGING (rc.31 pass — worst-case *scheduled* peaks, the family
 // ledger; the two STRUCTURAL caps below are what keep the sum honest now
@@ -139,7 +182,7 @@
 //   rests the box in the reverie, the cello and hum in the seizure, the
 //   harpsichord after the coagula.
 //
-//   drone bed      2 pads x 0.07 x rank sum (flue 1, principal 1.474,
+//   drone bed      2 pads x 0.07 x rank sum (open 1, principal 1.474,
 //                  gedackt 1) + sub 0.025 -> <= 0.231 -> x tremolo (<= 1)
 //                  x droneBreath (<= 1); the cycle overlap doubles it and a
 //                  sea-change bloom adds 2 x 0.05, all x droneLevel
@@ -437,7 +480,9 @@
       { key: "warmth", label: "warmth — how open the bed's lowpass sits", min: 0.6, max: 1.5, def: 1 },
       { key: "sway", label: "sway — the tremolo's breath rate (Hz)", min: 0.2, max: 1.6, def: 0.7 },
       // rc.31 stop: the pipe rank, a 3-position switch (rounded)
-      { key: "registration", label: "registration — the pipe: 0 flue · 1 principal · 2 gedackt", min: 0, max: 2, def: 0 },
+      // "open", not "flue": the Flue is a mixer row of its own now, and a
+      // knob position sharing that name would read as the recorder.
+      { key: "registration", label: "registration — the pipe: 0 open · 1 principal · 2 gedackt", min: 0, max: 2, def: 0 },
     ],
     cello: [
       { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200 },
@@ -1284,7 +1329,7 @@
     var CAST_ABSENT_P = 0.12;                   // "no music box tonight"
     var CAST_BACK_LEVEL = 0.7;
     var CAST_BACK_PRESENCE = 0.6;
-    var REG_NAMES = ["flue", "principal", "gedackt"];
+    var REG_NAMES = ["open", "principal", "gedackt"];  // display only; 0/1/2 stays internal
 
     function drawCast(evt) {
       var rng = run.streams.cast;
@@ -1316,7 +1361,7 @@
         vesselBack: vesselBack, regalBack: regalBack, flueBack: flueBack,
         harpsichord: lute ? "lute" : "8′",
         musicbox: absent ? "absent" : (wound ? "damped, wound-down" : "damped"),
-        drone: REG_NAMES[registration] || "flue",
+        drone: REG_NAMES[registration] || "open",
         vessel: vesselBack ? "back" : "forward",
         regal: regalBack ? "back" : "forward",
         flue: flueBack ? "back" : "forward",
@@ -1748,6 +1793,11 @@
       // drone's pads are untouched, the arrival still lands exactly on tB,
       // and the regal borrows the consort's own seconds-long fades (its
       // 0.4–0.8 s attack belongs to free entries, not to a cadence).
+      // A taken cadence deliberately does NOT advance run.consortPrev: the
+      // hum consort's voice-leading memory is the HUM's, and the next
+      // cadence it actually sings should lead from the last chord it sang,
+      // not from one it sat out. The regal keeps its own memory
+      // (run.regalPrev) for the same reason.
       var regalTakes = regalTakesCadence(plan, tA);
       cadenceDronePad(c1, tA, dA + X, 2.5, X);
       if (regalTakes) renderRegal(c1, tA, dA + X, 2.0, X, REGAL_CADENCE_LEVEL, "cadence");
@@ -1984,7 +2034,7 @@
         var overlap = rng.rnd(2.5, 5);
         var hasSub = rng.chance(0.3);
         // rc.31 — THE REGISTRATION for THIS CYCLE. A cycle keeps its pipe for
-        // its whole life (the straddle lesson, applied to stops): flue is
+        // its whole life (the straddle lesson, applied to stops): open is
         // v1's bed unchanged, principal draws the 2nd and 3rd ranks at
         // −10/−16 dB, gedackt is stopped pipes — sine only, with the sub
         // always drawn. The desk's 3-position knob wins over the evening
@@ -2037,6 +2087,7 @@
         try { ch = run.harmony.current(); } catch (e) {}
         var rootAbs = foldRootLow(ch && isFinite(ch.rootDeg) ? ch.rootDeg : 0);
         var dyadType = (reg === 2) ? "sine" : "triangle";   // gedackt stops the pipe
+        // (registration 0 is "open" — the triangle bed v1 has always played)
         var pads = [
           { deg: rootAbs, oct: -1, peak: 0.07, type: dyadType },
           { deg: rootAbs + 4, oct: -1, peak: 0.07, type: dyadType },
@@ -2108,10 +2159,13 @@
       var releaseS = rng.rnd(2.5, 4);
       var vibHz = rng.rnd(4.5, 5.5);
       var restS = rng.rnd(4, 10);          // the breath after the bow lifts
-      // rc.31 — the HARMONICS stop's coin, on the dedicated "stops" fork so
-      // the cello's own stream stays byte-identical to rc.30's. Drawn on
-      // EVERY bow, spent only in the reverie: the flageolet is the reverie
-      // MANNER (knob default 1 — all of them), not an evening's draw.
+      // rc.31 — the HARMONICS stop's coin, on the dedicated "stops" fork, so
+      // the cello's OWN fork position is unchanged by the flageolet coin.
+      // (The cello's REALIZED stream still differs from rc.30's, because the
+      // roster gates some entries before this function ever runs — see the
+      // header's STREAM NOTE.) Drawn on EVERY bow, spent only in the
+      // reverie: the flageolet is the reverie MANNER (knob default 1 — all
+      // of them), not an evening's draw.
       var harmRoll = run.streams.stops.next();
       if (durS < attackS + releaseS + 1.5) durS = attackS + releaseS + 1.5;
       var tok = run.budget.claim(9 + degList.length * 10, t + durS + 0.3);
@@ -2390,7 +2444,15 @@
     var VESSEL_PEAK = 0.015;        // 0.02 × the owner's level 0.75
     var VESSEL_PRESENCE = 0.85;     // the owner's presence multiplier
     var VESSEL_CHANCE = {
-      reverie: 0.5, cadence: 0.6, seachange: 0.7, chapter: 0.12, candle: 0.6,
+      reverie: 0.5, cadence: 0.6, seachange: 0.7,
+      // ROSTER-SUPERSEDED: the owner's entry law keeps a rare chapter bow
+      // (p 0.12 on harmony steps), but the adopted roster rests the vessel in
+      // every chapter, so this number can never reach a bow at the default
+      // table. It stays because the DRAW must stay — deleting it would move
+      // the vessel fork's sequence — and because loosening one roster cell
+      // is all it would take to hear it.
+      chapter: 0.12,
+      candle: 0.6,
     };
 
     function renderVessel(t, why) {
@@ -2411,7 +2473,10 @@
         if (decays[di] > maxDecay) maxDecay = decays[di];
       }
       var durS = atk + hold + maxDecay + 0.3;
-      var tok = run.budget.claim(13, t + durS + 0.3);
+      // 15 nodes at the default desk: press + slow-noise pair (3), four
+      // partial gains + five oscillators (the fundamental is a PAIR) (9),
+      // and the friction thread's noise/bandpass/gain (3).
+      var tok = run.budget.claim(15, t + durS + 0.3);
       if (!tok) return false;                     // graceful thinning — no bow
       run.tokens.push(tok);
       var ch = null;
@@ -3179,11 +3244,22 @@
     var FLUE_PEAK = 0.021;          // 0.03 × the owner's level 0.7
     var FLUE_PRESENCE = 0.8;
     var FLUE_MAX_NOTES = 4;         // the owner's phrase length
+    // ROSTER-SUPERSEDED, like the vessel's chapter chance: "settling" carries
+    // the owner's 0.05, but the roster rests the flue through the settling,
+    // so the draw is spent and the gate refuses. Kept so the flue fork's
+    // sequence does not move.
     var FLUE_SPEAK_P = {
+      // "settling" is ROSTER-SUPERSEDED: the owner's entry law keeps a 0.05
+      // chance, but the adopted roster rests the flue in the settling, so it
+      // never speaks there at the default table. The draw stays (stream
+      // discipline); the gate comes after it.
       "settling": 0.05, "chapter": 0.15, "seizure": 0, "reverie": 0.2, "candle-out": 0,
     };
     // The recorder's walk: the hum's own table, copied here because
     // pj2-motif keeps its tables private and this file must not reach in.
+    // KEEP IN SYNC with HUM_MARKOV in pj2-motif.js (~line 93) — these two
+    // are byte-identical by intent, not by accident. If that table is ever
+    // retuned, retune this one with it or say in a comment why not.
     var FLUE_MARKOV = [
       [0.044, 0.264, 0.220, 0.132, 0.220, 0.070, 0.050],
       [0.220, 0.044, 0.264, 0.176, 0.176, 0.070, 0.050],

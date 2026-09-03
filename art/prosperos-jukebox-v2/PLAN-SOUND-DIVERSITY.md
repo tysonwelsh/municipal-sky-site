@@ -687,6 +687,12 @@ From the cello/horn precedent; every item is a line in the commit:
   log and in `getInfo().cast`. Dropped as the owner directed and NOT
   built: the harpsichord's 4′ coupled and rolled chord, the cello's
   pizzicato, the hum's head voice.
+  Disclosure (critic, 2026-09-03): the fourth speaker necessarily re-rolls
+  the motif stream; at the harness's LIB_SEED the ALCH refinement-arc
+  check's margin shrank from 0.075 (rc.30) to 0.020 (rc.31) at 5400 s, and
+  the check went negative at 1500–1800 s. The harness now reports the arc
+  below 2700 s (its own RELAXED idiom) and still asserts it at the contract
+  length; the arc itself (`refinementTilt`) is untouched.
 - L5 — long harness run, soak, README; then a listening evening. Harness
   and soak done at rc.31 (192 checks green at `node _harness.js 5400`);
   the listening evening is the owner's.

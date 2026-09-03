@@ -122,6 +122,9 @@ L1 of the sequence: the unmodified engine plus the vessel / regal / flue
 and the stops as shadow bodies, phone-first, with COPY/PASTE/A-B. Built
 and verified by a coder/critic pass on 2026-09-03 (dev-only, unlinked;
 open `?autoplay=1&fast=1` for the self-test).
+The `PLAN-*.md` ignore rule for this folder was relaxed the same day so
+the plan travels with the code (the earlier PLAN docs cited in comments
+predate that and were never committed).
 
 **Landed in the Library (rc.31, 2026-09-03 — L3 + L4 of the sequence).**
 Three new voices, all tuned by ear by the owner on the lab page and
@@ -144,14 +147,18 @@ constants:
 Plus **the stops**, each a knob on its voice's desk row: the harpsichord's
 lute stop (`buff`), the music box's wound-down mechanism (`wound`), the
 cello's reverie harmonics (`harmonics`) and the drone's three
-registrations (`registration`: flue / principal / gedackt). The music box
+registrations (`registration`: open / principal / gedackt). The music box
 is simply the DAMPED box now — the open box retired.
 
 **The scene roster** (§4.4's adopted table, with the regal in the
 seizure) gates entries per scene, so every scene rests somebody: the box
 sits out the settling and the reverie, the cello and the hum sit out the
 seizure, the harpsichord rests through the candle-out except for the one
-SOLVE ET COAGULA statement, and the drone never rests at all.
+SOLVE ET COAGULA statement, and the drone never rests at all. The regal
+is the ONE voice that may sound outside its roster cells — only as the
+organist taking a cadence: both cadence chords sound inside the outgoing
+scene, so a take on a chapter-one or chapter-three boundary puts the reed
+organ briefly in a scene the table rests it from.
 
 **The evening cast** draws once per evening on a new `cast` fork — dress
 and prominence, never presence. Evening one of a run is always the full
@@ -162,9 +169,6 @@ colour only ("no music box tonight", p 0.12, stormy tides, never twice
 running). A desk knob the owner has moved wins over the cast until it is
 reset. Announced as a `{type:"cast"}` event, a plain-words line in the
 scribal log, and `getInfo().cast`.
-The `PLAN-*.md` ignore rule for this folder was relaxed the same day so
-the plan travels with the code (the earlier PLAN docs cited in comments
-predate that and were never committed).
 
 ## TODO / future ideas (backburner — owner-deprioritized)
 
