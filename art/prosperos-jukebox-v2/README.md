@@ -107,6 +107,25 @@ all recommendations in the two PLAN docs are pre-approved; the
 tonic-ratchet quirk stays (owner's call); v1 stays frozen; commit
 checkpoints per gate; never publish/deploy.
 
+## Sound diversity (owner, 2026-09-02 — curated, Library first)
+
+The owner's note: the songs can feel repetitive after a while in their
+SOUNDS (as distinct from notes or motifs). `PLAN-SOUND-DIVERSITY.md` is
+the reference: a voice-by-voice timbral audit of the three engines, six
+levers (a new instrument per book, stops on the existing bodies, scene
+rosters, a seeded evening cast, envelope/register moves, sound-kit
+touches), per-track candidates, the mobile lab-page spec
+(`lab-<track>.html`, the mockup pages' engine-unmodified pattern), the
+integration recipe, and the owner's decisions of 2026-09-02 in its §7.
+`lab-library.html` (+ `lab-shell.js`, `lab.css`) is the Library lab page —
+L1 of the sequence: the unmodified engine plus the vessel / regal / flue
+and the stops as shadow bodies, phone-first, with COPY/PASTE/A-B. Built
+and verified by a coder/critic pass on 2026-09-03 (dev-only, unlinked;
+open `?autoplay=1&fast=1` for the self-test).
+The `PLAN-*.md` ignore rule for this folder was relaxed the same day so
+the plan travels with the code (the earlier PLAN docs cited in comments
+predate that and were never committed).
+
 ## TODO / future ideas (backburner — owner-deprioritized)
 
 - **Phase 4 apparitions** (owner, 2026-07-07: "not a priority" — parked):
