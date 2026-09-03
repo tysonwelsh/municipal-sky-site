@@ -561,4 +561,158 @@
     return src;
   };
 
+  // ==========================================================================
+  // wander — plan §11: "knobs that should wander". Three kinds of draw for a
+  // desk parameter, so an instrument is played rather than set:
+  //
+  //   TOUCH      a fresh draw every sounding (bow pressure, a roll's speed,
+  //              a twang count, a chord's parts) — "no two alike";
+  //   CHARACTER  drawn ONCE per evening (a reed's buzz, a bell's beating
+  //              rate, a motor's speed, a register) — the instrument stays
+  //              itself, each night a slightly different one;
+  //   WEATHER    a value that wanders slowly over minutes (bellows depth,
+  //              air, tape wow, a section's tuning) — deterministic in t.
+  //
+  // The desk knob the owner tuned stays the CENTRE. A parameter def in an
+  // engine's LAYER_PARAMS may carry an authored span:
+  //     { key, label, min, max, def, lo, hi, per: "touch"|"character"|"weather",
+  //       round?: true, weights?: [[value, weight], ...] }
+  // The span [lo, hi] is authored around def; when the owner moves the knob
+  // the span TRANSLATES with it (lo + (knob − def) … hi + (knob − def)) and is
+  // clamped to [min, max]. One `vary` knob per layer (0–2, def 1) scales the
+  // half-width about the centre: 0 = fixed at the knob, 1 = the authored span,
+  // 2 = twice as wide (still clamped). `weights` replaces the uniform draw
+  // with a weighted choice (a chord of 2/3/4 parts) — used only while the
+  // knob still sits on its default; a moved knob is the owner's word and wins.
+  //
+  // Stream discipline (pj2-rand's law): every draw happens on the helper's
+  // OWN forks — "wander:<layer>:dress:<evening>" for character,
+  // "wander:<layer>:touch" for touch, "wander:<layer>:weather" for the
+  // weather phases — so adding a wander to a voice never re-rolls any
+  // existing stream, and the same seed still plays the same evening.
+  //
+  //   var w = PJ2.Voice.wander({
+  //     root:   rootStream,                 // the run's root PJ2.Rand stream
+  //     layer:  "cello",
+  //     params: LAYER_PARAMS.cello,         // the defs, spans included
+  //     knob:   function (k) { return pVal("cello", k); },  // the centre
+  //     vary:   function () { return pVal("cello", "vary"); },
+  //   });
+  //   w.dress(eveningIndex);          // at every performance begin (and play)
+  //   w.touch("rosin")                // per sounding
+  //   w.character("brightness")       // the evening's value (cached)
+  //   w.weather("sway", t)            // slow drift, deterministic in t
+  //   w.value("anything", t)          // dispatches on the def's `per`
+  //
+  // A def without `per` (or without lo/hi) is fixed: value() returns the
+  // knob. Nothing here touches Math.random, the clock, or any AudioParam.
+  // ==========================================================================
+  Voice.wander = function (opts) {
+    var root = opts.root, layer = String(opts.layer || "layer");
+    var defs = opts.params || [];
+    var knob = opts.knob || function () { return 1; };
+    var varyFn = opts.vary || function () { return 1; };
+    var byKey = {};
+    for (var i = 0; i < defs.length; i++) byKey[defs[i].key] = defs[i];
+    var touchRng = root.fork("wander:" + layer + ":touch");
+    var wxRng = root.fork("wander:" + layer + ":weather");
+    var dressVals = {};       // character values for the current evening
+    var evening = 0;
+
+    // the weather LFO: two slow sines with seeded periods (60–240 s) and
+    // phases, summed to [-1, 1] and softened, one pair per weather param
+    var wxPhase = {};
+    function wxOf(key) {
+      var w = wxPhase[key];
+      if (!w) {
+        w = wxPhase[key] = {
+          p1: wxRng.rnd(60, 150), p2: wxRng.rnd(150, 240),
+          f1: wxRng.rnd(0, Math.PI * 2), f2: wxRng.rnd(0, Math.PI * 2),
+        };
+      }
+      return w;
+    }
+    function lfo(key, t) {
+      var w = wxOf(key);
+      var v = 0.6 * Math.sin(2 * Math.PI * t / w.p1 + w.f1) +
+              0.4 * Math.sin(2 * Math.PI * t / w.p2 + w.f2);
+      return Math.max(-1, Math.min(1, v));
+    }
+
+    function clampTo(d, v) {
+      if (d.min != null && v < d.min) v = d.min;
+      if (d.max != null && v > d.max) v = d.max;
+      return v;
+    }
+    // the translated span around the current knob, and the vary-scaled
+    // value for a unit draw u in [0, 1] (0.5 = the centre)
+    function fromUnit(d, u) {
+      var c = knob(d.key);
+      var vy = varyFn();
+      if (!(vy > 0) || d.lo == null || d.hi == null) return c;
+      var shift = c - d.def;
+      var lo = d.lo + shift, hi = d.hi + shift;
+      var draw = lo + u * (hi - lo);
+      var v = c + vy * (draw - c);
+      v = clampTo(d, v);
+      return d.round ? Math.round(v) : v;
+    }
+    function moved(d) { return Math.abs(knob(d.key) - d.def) > 1e-9; }
+    function weighted(d, rng) {
+      // a weighted categorical draw (2/3/4 parts); a moved knob wins
+      if (moved(d) || !(varyFn() > 0)) return knob(d.key);
+      return rng.pickW(d.weights);
+    }
+    function drawWith(d, rng) {
+      if (!d) return 1;
+      if (d.weights) return weighted(d, rng);
+      return fromUnit(d, rng.next());
+    }
+
+    var api = {
+      // re-draw every character value: call at each performance begin
+      dress: function (n) {
+        evening = (n == null) ? evening + 1 : n;
+        var rng = root.fork("wander:" + layer + ":dress:" + evening);
+        dressVals = {};
+        for (var i = 0; i < defs.length; i++) {
+          var d = defs[i];
+          if (d.per === "character") dressVals[d.key] = drawWith(d, rng);
+        }
+        return api;
+      },
+      touch: function (key) { return drawWith(byKey[key], touchRng); },
+      character: function (key) {
+        var d = byKey[key];
+        if (!d) return 1;
+        if (dressVals[key] == null) dressVals[key] = drawWith(d, root.fork("wander:" + layer + ":dress:" + evening));
+        // a knob moved after the dress wins immediately
+        return moved(d) && !d.weights ? fromUnit(d, 0.5) : dressVals[key];
+      },
+      weather: function (key, t) {
+        var d = byKey[key];
+        if (!d) return 1;
+        var v = fromUnit(d, 0.5 + 0.5 * lfo(key, t || 0));
+        return v;
+      },
+      value: function (key, t) {
+        var d = byKey[key];
+        if (!d || !d.per) return knob(key);
+        if (d.per === "touch") return api.touch(key);
+        if (d.per === "character") return api.character(key);
+        if (d.per === "weather") return api.weather(key, t);
+        return knob(key);
+      },
+      // for the harness and the desk: the authored + translated span
+      span: function (key) {
+        var d = byKey[key];
+        if (!d || d.lo == null) return null;
+        var shift = knob(key) - d.def;
+        return { lo: clampTo(d, d.lo + shift), hi: clampTo(d, d.hi + shift), per: d.per || null };
+      },
+      evening: function () { return evening; },
+    };
+    return api;
+  };
+
 })();

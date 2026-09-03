@@ -760,6 +760,304 @@ From the cello/horn precedent; every item is a line in the commit:
 **Sycorax** S1–S5 and **Ariel** A1–A5 repeat the pattern with their own lab
 pages, reusing the shell and whatever the Library taught.
 
+## 11. Ranges — knobs that should wander (evaluation, 2026-09-03)
+
+The owner, listening to the three lab pages: some parameters (the lyre's
+voices, its roll, and the like) would enrich the songs if each play-through,
+or each sounding, landed somewhere in a range instead of on one value —
+tastefully. This section evaluates every knob of every new instrument and
+stop across the three books. Nothing here is built yet; it is the brief for
+the next round.
+
+**The rule of taste.** Three kinds of parameter, three kinds of draw. TOUCH
+(bow pressure, a roll's speed, a twang count, a chord's parts) changes every
+sounding, spans about ±25–35 % around the tuned value. CHARACTER (a reed's
+buzz, a bell's beating rate, a motor's speed, a register) changes only per
+evening, ±10–20 %, so the instrument stays itself. WEATHER (bellows, air,
+tape wow, a section's tuning) may drift slowly within an evening. Level,
+presence, ceilings, loop-gain caps and the entry laws never wander.
+
+**How.** The tuned knob stays the centre; each instrument row on the desk
+gains ONE `vary` knob (0–2, def 1) scaling all its spans; spans live in code
+as `{def, lo, hi, per}`. Evening draws on a new `<voice>Dress` fork at
+play/reseed, per-sounding draws on a new `<voice>Touch` fork — never on an
+existing stream, so every seed reproduces. Lab pages: two-thumb sliders on
+the flagged rows, COPY carries lo/hi. The Library's voices are in the engine
+(VERSION bump); Sycorax's and Ariel's go into the lab pages first.
+
+**First wave** (most audible repetition first): Sycorax: bullroarer swell and whirl per sounding, the whirl gathering over the rise; Ariel: lyre voices, roll and per-string ring; Sycorax: jaw harp twang count and per-twang sweep, one in three downward; Sycorax: cauldron pop pitch and length per pop; Sycorax: overtone chant step per step, longer on the high harmonics; Ariel: concertina hold over its whole range per dyad; Ariel: handpan gap per answer and uneven inside it; Sycorax: blade pitch per sounding with a nightly centre; Library: flue chiff and vibrato per note, breath per phrase; Library: regal parts per chord and per-pipe reediness; Library: vessel bow and ring per stroke; Ariel: the re-voiced one-shots: pitch and length per sounding.
+
+### 11.1 Prospero's Library
+
+_integrated in rc.31 — an engine change (pj2-library.js), so it bumps VERSION._
+
+**VESSEL** — the bowed bell
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| beat | 1 Hz | per evening | 0.7–1.3 | The beating is the bell's identity. A nightly shade; never per stroke, or it is a different bell each time. |
+| ring | 0.9 × | per sounding | 0.65–1.15 | How the bow lifts decides how long the metal rings. |
+| bow | 1.2 | per sounding | 0.85–1.55 | Bow pressure differs every stroke; let it also wander a little within the stroke. |
+| partials | 1.45 | per evening | 1.25–1.65 | The metal's own overtones: the same bell all night. |
+| register | 0 oct | per evening | 0 most nights · +1 one night in five | A higher bell some evenings, drawn with the cast, never per note. |
+| attack | 3 s | already varies | 2.4–3.6 | Already drawn per stroke around the owner's 3.0 s. Could widen to 2.2–4.2. |
+
+**REGAL** — the reed organ
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| reediness | 0.3 | per evening | 0.22–0.4 | Plus ±0.05 per pipe inside a chord: a real regal is uneven, each pipe its own reed. |
+| bellows | 1.4 | per sounding | 1–1.8 | The organist pumps differently for every chord. |
+| body | 5 dB | per evening | 4–6.5 | The box does not change mid-evening. |
+| parts | 3 | per sounding | 2 (p .25) · 3 (p .55) · 4 (p .2) | A bare fifth some chords, a full hand others. Three is the mode, not the rule. |
+| hold | 0.7 × | already varies | 0.7–0.7 | Already 8–20 s × 0.7 per chord (5.6–14 s). |
+| take | 0.45 p | keep fixed | — | Already a chance. |
+
+**FLUE** — the recorder
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| chiff | 1 | per sounding | 0.6–1.5 | Tonguing differs every note; the first note of a phrase ×1.3. |
+| breath | 1.75 | per sounding | 1.3–2.2 | Per phrase, rising toward the end of a long one: the player runs low on air. |
+| vibrato | 2 | per sounding | 1.3–2.7 | Per note, on notes 0.6 s and longer only. |
+| register | 1 oct | per evening | +1 (p .7) · 0 (p .15) · +2 (p .15) | A descant one night, a treble another: the rarest speaker can afford to be a different recorder. |
+| pace | 1.5 × | already varies | 1.5–1.5 | Already ×1.0–1.4 per phrase, and slower at low intensity. |
+
+**STOPS** — lute · damped box · harmonics · registrations
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| lute buff | 1 | per evening | 0.7–1 | A buff is set, not played. Drawn with the cast when the stop is in. |
+| lute 4′ | 0.35 | per evening | 0.25–0.45 | The coupled octave string, a nightly level. |
+| box damper | 1 | per sounding | 0.85–1 | Felt contact varies a little per pin. Subtle; low priority. |
+| cello share | 1 p | keep fixed | — | Already a chance per bow. |
+| drone registration | 0 | per evening | open (.4) · principal (.35) · gedackt (.25) | If the cast does not already draw it: a different pipe some evenings. |
+
+### 11.2 Sycorax's Spell
+
+_lab page (lab-sycorax.html) — every knob is one value today except the jaw harp's gap (±40 %) and the cauldron's pops (±50 %)._
+
+**BULLROARER** — the rite's machine
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| swell | 10 s | per sounding | 6–14 | A fixed ten-second swell is the roarer's tic; the most audible single change on this page. |
+| whirl | 24 Hz | per sounding | 18–30 | Every throw spins at its own speed. Also ramp ×0.7→1 over the rise: the slat gathers as it swells. |
+| swing | 0.8 Hz | per sounding | 0.55–1.1 | The arm's circle is never the same twice. |
+| air | 1 | per sounding | 0.7–1.3 | How much wind the slat drags. |
+| darkness | 0.5 | per evening | 0.4–0.6 | Landscape: follow the rite, not the dice. +0.15 in the invocation. |
+| doppler | 2 % | per evening | 1.5–2.5 | Physical; a nightly shade. |
+| register | -2 oct | per evening | −2 (p .7) · −3 (p .3) | A deeper roarer some nights. |
+
+**OVERTONE CHANT** — the cantor's second manner
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| step | 1.4 s | per sounding | 0.9–1.9 | Per step, longer on the higher harmonics. This is the melody's rhythm; a fixed step is a metronome. |
+| hold | 10 s | per sounding | 7–14 | Breath is not a constant. |
+| lo | 4 harm. | per sounding | 3–5 | Some utterances stay low, some climb: draw the walk's floor and ceiling per utterance. |
+| hi | 10 harm. | per sounding | 8–12 | See lo. |
+| q | 16 | per evening | 12–20 | A narrower or wider mouth some nights. |
+| body | 1 | per sounding | 0.75–1.25 | The fundamental under the sweep. |
+
+**JAW HARP** — the twang
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| twangs | 3 | per sounding | 1 (.1) · 2 (.3) · 3 (.35) · 4 (.2) · 5 (.05) | Three every time is a tic — the owner's exact kind of parameter. |
+| sweep | 0.5 s | per sounding | 0.3–0.7 | Per twang, and one in three sweeps DOWN: a different vowel each time. |
+| mouth lo | 500 Hz | per sounding | 400–620 | Per twang: ee, oo, ah. |
+| mouth hi | 1800 Hz | per sounding | 1450–2150 | Per twang. |
+| sustain | 0.94 | per sounding | 0.92–0.96 | Inside the loop-gain cap; small. |
+| gap | 0.8 s | already varies | 0.48–1.12 | Already ±40 %. |
+
+**BOWED BLADE** — the high whisper
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| pitch | 1700 Hz | per sounding | 1500–1900 | A fixed pitch becomes a note the ear learns. Draw per sounding, and move the centre ±15 % per evening. |
+| friction | 1 | per sounding | 0.6–1.4 | And let it wander within the swell: bow pressure is never steady. |
+| swell | 6 s | per sounding | 4–8 | Use the knob's whole range per sounding. |
+| ratio | 1.47 | per evening | 1.4–1.55 | The blade's own inharmonicity: one blade per night. |
+
+**CAULDRON** — the pot
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| pitch lo | 200 Hz | per sounding | 150–250 | Per POP, with the pop's length 40–90 ms: every bubble its own size. The fixed 200→400 gliss is the pot's tic. |
+| pitch hi | 400 Hz | per sounding | 300–500 | Per pop. |
+| pops/s | 2 | per sounding | 1.2–3 | Per simmer, with a build-then-settle contour inside it. The per-pop ±50 % jitter stays. |
+| length | 6 s | per sounding | 4–8 | Per simmer. |
+| wash | 1 | per sounding | 0.7–1.3 | Per simmer. |
+
+**STOPS** — ponticello · stopped · struck · fingertips · dog off
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| ponticello | 1 | per sounding | 0.8–1 | Per note: the bow wanders toward and away from the bridge. Idiomatic. |
+| stopped | 1 | per sounding | 0.8–1 | Per note: the hand is never in exactly the same place. |
+| strike | 1 | per sounding | 0.8–1 | Per note. |
+| fingertips | 1 | per sounding | 0.8–1 | Per stroke. |
+| dog | 0 | keep fixed | — | A stop is on or off. |
+
+### 11.3 Ariel's Day Off
+
+_lab page (lab-ariel.html) — every knob is one value today; the lyre's velocity (0.6–0.9) and the handpan's note count (2–4) are already drawn._
+
+**LYRE** — the rolled chord
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| voices | 3 | per sounding | 2 (p .15) · 3 (p .5) · 4 (p .35) | The owner's example: a bare dyad some rolls, a full hand others. |
+| roll | 0.3 s | per sounding | 0.16–0.48 | No hand crosses the strings at one speed; let the roll also accelerate or slow. |
+| ring | 3 s | per sounding | 2.2–3.8 | Per STRING: the top string rings longest. |
+| bright | 5 ×f | per sounding | 4–6.5 | Per roll: plucked near the bridge or over the box. |
+| body | 1 | per evening | 0.8–1.2 | One soundbox per night. |
+| updown | 0.2 p | keep fixed | — | Already a chance. |
+
+**CONCERTINA** — the free reed
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| hold | 9 s | per sounding | 6–14 | A landscape voice with one hold length is a loop. Use the whole range per dyad. |
+| bellows | 1 | per sounding | 0.65–1.35 | Per dyad, with the push/draw period drawn 3–5 s each time. |
+| reed | 6 dB | per evening | 4.5–7.5 | Plus ±1 dB per dyad. |
+| detune | 6 ¢ | per evening | 4–9 | The reeds' tuning is the instrument's. |
+
+**HANDPAN** — the answer
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| gap | 0.35 s | per sounding | 0.22–0.55 | Per answer, AND uneven inside it (±30 % note to note): an answer is a phrase, not a clock. |
+| ring | 2.5 s | per sounding | 1.9–3.2 | Per note. |
+| thump | 1 | per sounding | 0.6–1.4 | Per note: how the hand lands. |
+| partials | 0.5 | per evening | 0.4–0.65 | One shell per night. |
+
+**VIBRAPHONE** — the motor
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| motor | 4.5 Hz | per evening | 3.8–5.5 | A motor is set once. Never per note. |
+| depth | 0.6 | per evening | 0.5–0.75 | Set with the motor. |
+| ring | 3 s | per sounding | 2.3–3.8 | Per strike: the pedal. |
+
+**STOPS A / B** — the radical set
+
+| knob | now | draw | proposed | why |
+|---|---|---|---|---|
+| REED · reed | 8 dB | per sounding | 6.5–9.5 | Per phrase: embouchure. |
+| CHIP · duty | 0.25 | per evening | 0.125 · 0.25 · 0.5 | A chip's character is set once; per note it would read as a bug. bits stays fixed. |
+| GAMELAN · inharmonic | 1 | per sounding | 0.85–1 | Per pot: no two pots alike. |
+| BOWED GLASS · swell | 0.8 s | per sounding | 0.45–1.3 | Per note: the finger finds the rim differently. |
+| DRIPS · depth | 1 oct | per sounding | 0.6–1.4 | Per drip: drops of different sizes. |
+| KALIMBA · sustain | 0.93 | per sounding | 0.915–0.945 | Per tine, inside the cap. |
+| BOWED · bow | 0.35 s | per sounding | 0.22–0.55 | Per stroke: up-bow, down-bow. |
+| MARIMBA · bar | 0.45 | per sounding | 0.3–0.6 | Per note: mallet and position. |
+| ORGAN · rank | 1 | per evening | 0.7–1.3 | A registration is drawn once per piece. |
+| STRINGS · spread | 1 | slow drift | 0.8–1.2 | A nightly centre, and a slow ±0.15 wander: the section's intonation breathes. |
+| BOWL · beat | 3 Hz | per sounding | 2–4 | Per note: each strike excites a different beating pair. |
+| TAPE · wow | 1 | slow drift | 0.6–1.4 | Over minutes: the transport wanders. dropout stays a chance. |
+| NIGHT / SEASIDE one-shots | 0.5 | per sounding | pitch ±8 % · length ±25 % | No knob today. A gull that cries at one pitch is a sample; every owl, frog and gull should be its own animal. |
+| register (every stop) | 0 oct | per evening | — | A dress, drawn with the cast. Never per note. |
+
+### 11.4 Every voice — the original instruments (the owner's follow-up, 2026-09-03)
+
+The owner: "many of these sorts of rules would enhance all instruments, not
+just those we've been working on." The code agrees: inside every original
+voice's render body the timbral settings are literals (the cello 14 fixed
+settings to 4 draws; the whistle, hum, chant, aeolian 0 draws), and the
+desk's per-layer knobs are single scalars whose default equals the old
+constant. The mechanism is shared: `PJ2.Voice.wander` in `pj2-voice.js`
+(the knob is the centre; a def carries `lo`, `hi`, `per`; one `vary` knob
+per layer; draws on the helper's own forks; vary 0 is today's build
+bit-for-bit). The class tables below are the brief for the three per-song
+wander rounds (rc.34 Library, rc.35 Sycorax, rc.36 Ariel); the new voices'
+spans are in 11.1–11.3. Seams (drone, gurdy, breeze) vary by character and
+weather only, read at cycle start. Promoted body constants keep their old
+literal as the def.
+
+**Prospero's Library**
+
+| layer | key (desk) or body constant | class | span |
+|---|---|---|---|
+| drone | warmth | character | ±15 % |
+| drone | sway | weather | ±25 % (read at cycle start, held for the cycle) |
+| drone | registration | — | the cast's; skip |
+| cello | brightness | character | ±12 % |
+| cello | vibrato | touch | ±35 % per bow (depth; keep its late onset) |
+| cello | rosin | touch | ±30 % per bow |
+| cello | harmonics | — | a share; fixed |
+| cello | bow attack (body literal) | touch | ±25 % — promote as `attack` only if it is a single literal; keep ≥ the click-safe floor |
+| hum | openness | character ±15 % per evening, AND weather ±10 % within | two classes: implement as character for the def and add `openDrift` (weather, 0–0.3, def 0.1) if the body can read both cheaply; else character only |
+| hum | waver | touch | ±35 % per note |
+| hum | breath dose (body literal) | touch | ±30 % — promote as `breath` |
+| harpsichord | brightness | touch | ±20 % per pluck (plectrum position) |
+| harpsichord | resonance | character | ±15 % |
+| harpsichord | buff | — | the cast's; skip |
+| harpsichord | pluck burst length (body literal, ms) | touch | 12–20 ms if a single literal; promote as `pluck` |
+| musicbox | shimmer | character | ±20 % |
+| musicbox | wound | — | the cast's; skip |
+| musicbox | tine decay (body literal) | touch | ±15 % per pin; promote as `tine` |
+| ambient | density | weather | ±30 % |
+| halo | level | character | ±20 % |
+
+Everything not named stays a literal or a fixed knob. Every promoted def's
+`def` equals the literal it replaces (bit-identical at vary 0).
+
+**Sycorax's Spell**
+
+| layer | key (desk) or body constant | class | span |
+|---|---|---|---|
+| gurdy | brightness | character | ±12 % (the seam: never per cycle) |
+| gurdy | warble | weather | ±30 % (read at cycle start, held) |
+| gurdy | trompette dose (body literal) | character | ±20 %; promote as `dog` (0–2, def 1) |
+| horn | blossom | touch | ±30 % per tone |
+| horn | breath | touch | ±30 % per tone |
+| horn | scoop | touch | ±40 % per tone |
+| horn | attack (body literal) | touch | ±25 %; promote as `attack` only if a single literal; click-safe floor |
+| chant | openness | character ±10 % per evening AND weather ±15 % within | as the Library's hum: character on the def + `openDrift` (weather) if cheap, else character only |
+| chant | vibrato | touch | ±35 % per note |
+| chant | breath thread (body literal) | touch | ±30 %; promote as `breath` |
+| rebec | rosin | touch | ±30 % per bow |
+| rebec | body | character | ±12 % |
+| rebec | bow attack (body literal, ms) | touch | 40–120 ms if a single literal; promote as `attack` |
+| waterphone | wail | touch | ±40 % per note |
+| waterphone | bloom | touch | ±35 % per note |
+| boneflute | breath | touch | ±35 % per note |
+| boneflute | chiff (body literal) | touch | ±35 %; promote as `chiff` |
+| percussion | irregularity | weather | ±30 % |
+| percussion | adorn | character | ±25 % |
+| percussion | stroke velocity spread (body) | touch | ±20 % per stroke if not already drawn; else skip |
+| ambient | density | weather | ±30 % |
+
+Everything not named stays a literal or a fixed knob. Every promoted def's
+`def` equals the literal it replaces (bit-identical at vary 0).
+
+**Ariel's Day Off**
+
+| layer | key (desk) or body constant | class | span |
+|---|---|---|---|
+| breeze | breath | weather | ±25 % (read at cycle start, held) |
+| breeze | hiss | character | ±25 % |
+| whistle | breath | touch | ±30 % per PHRASE, on top of the shimmer coupling |
+| whistle | vibrato | touch | ±35 % per note (depth), on top of the gustiness coupling and the articulation's depth |
+| whistle | vibrato RATE 5.5 Hz (body literal) | character | 4.8–6.2 Hz; promote as `vibRate` (4–7, def 5.5) |
+| whistle | breath band 1800 Hz (body literal) | character | ±10 %; promote as `breathHz` (1400–2200, def 1800) |
+| chime | decay | touch | ±20 % per ping on top of the brain's 1.5–2.5 s draw |
+| chime | detune | character | ±30 % |
+| flutter | (no desk knobs; already the most varied voice) | — | skip |
+| bass | flourish | — | a chance; fixed |
+| bass | attack 12 ms (body literal) | touch | 8–18 ms; promote as `attack` (6–30 ms, def 12) |
+| bass | partial weights [1, .4, .18] (body literal) | character | ±20 % on the 2nd and 3rd; promote as `warmth` (0–2, def 1) scaling both |
+| aeolian | sheen | character | ±20 % |
+| aeolian | breath | touch | ±30 % per note |
+| aeolian | detune ±3 ¢ (body literal) | character | 2–5 ¢; promote as `detune` (0–8, def 3) |
+| ambient | density | weather | ±30 % |
+| halo | level | character | ±20 % |
+
+Everything not named stays a literal or a fixed knob. Every promoted def's
+`def` equals the literal it replaces (bit-identical at vary 0).
+
 ---
 
 ## Appendix A — the timbral maps in full

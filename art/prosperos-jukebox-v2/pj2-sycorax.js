@@ -72,6 +72,158 @@
 // It sums into cutGain like all landscape (the cut ducks it with the
 // rest of the night) and taps the grit bus at 0.08 off its own layer.
 //
+// rc.32 — THE SOUND-DIVERSITY PASS (PLAN-SOUND-DIVERSITY §5; every number
+// below is the owner's own tuning, made BY EAR on lab-sycorax.html,
+// 2026-09-03). Five voices and a scene roster. No stops, no evening cast:
+// the owner is holding the stops back, and the cast is a later phase.
+//
+//   THE BULLROARER — a whirled slat on a cord, the oldest ritual instrument
+//   there is and the rite's own machine. A sawtooth at the pose root two
+//   octaves down through a lowpass the DARKNESS knob closes, chopped at the
+//   WHIRL rate (24 Hz) by an LFO whose rate a slower SWING (0.8 Hz) bends
+//   ±40 %, with a ±2 % Doppler wobble on the same circle and a band of air
+//   dragged along with it. 10 s in, 10 s out. It is the one ITERATIVE
+//   texture Sycorax has never owned. Processional and invocation; peak
+//   0.025 into cutGain.
+//
+//   THE OVERTONE CHANT — the cantor's second manner, built as its own
+//   layer: a held fundamental at the pose root (oct −1) while ONE narrow
+//   bandpass (Q 16) STEPS through harmonics 4–10 in anchored jumps — a
+//   melody made of overtones above a tone that never moves. The mid-high
+//   register the rite has nothing sustained in, at almost no cost.
+//   Processional and invocation, on pose turns only; peak 0.03.
+//
+//   THE JAW HARP — nothing in Sycorax was plucked. A noise burst into a
+//   feedback comb at the pose root (oct −1, under the 340 Hz render-quantum
+//   clamp a comb inside a cycle is pinned to) read through a MOUTH: a
+//   bandpass swept 500 → 1800 Hz on every twang, so the melody is made of
+//   formants rather than pitches. Three twangs an utterance at 0.8 s ±40 %.
+//   The circling is its scene; peak 0.02 × a ×6 formant-loss makeup that
+//   goes THROUGH the accounting, not around it.
+//
+//   THE BOWED BLADE — two sines at an inharmonic 1 : 1.47 near 1.7 kHz with
+//   a slow wobble and a band of bow friction, 6 s each way at a whisper
+//   (0.008). The one high sustained sound the rite lacks, and the only
+//   voice here that could startle — so it is kept far: the CAVERN's send
+//   and the seasick delay wall, and nothing else. It is the one layer NOT
+//   registered with roomBlend. Invocation, and the afterimage once the
+//   cut's return has fully passed.
+//
+//   THE CAULDRON — the spell's pot, back in the ambient pool that dropped
+//   it in Phase 3 as a comedy risk: a low simmer (noise 80–200 Hz) with
+//   pitched pops glissing 200 → 400 Hz over 60 ms, 6 s at a time, on its
+//   own 40–120 s clock in the gathering, the circling and the invocation.
+//   Its own mixer row, so the pot can be mixed apart from the sky.
+//
+//   THE CUT LAW they all obey — the horn's held breath, extended. None of
+//   the five may have an ONSET inside [tB − 4, cut.end + returnS], and
+//   anything of theirs still sounding at tB is ended THERE on its own gate,
+//   anchored, over 0.25 s (a {type:"cut-kill"} event narrates it). The
+//   bullroarer, the overtone and the pot also SUM into cutGain, so the cut
+//   ducks them with the rest of the night on the way out.
+//
+//   THE ROSTER (L3) — SCENE_ROSTER below, §5.3's table exactly as the owner
+//   adopted it on the lab page: five columns, fourteen rows. It gates
+//   ENTRIES only — the rolls are still drawn first, the gate comes after,
+//   and a cycle or an utterance already sounding always finishes. The gurdy
+//   never rests: it is the seam.
+//
+// ROSTER NOTE (rc.32): the rows ticked in every column — the gurdy, the
+// murk, the chant, the percussion family, the ambient pool — have no
+// opinion and therefore carry no gate at all; the four with opinions (horn,
+// rebec, waterphone, bone flute) and the five new voices consult
+// rosterAllows after their roll. Two gestures are judged by where they LAND
+// rather than where they stand, because they are boundary gestures: the
+// horn's and the five's answers to a darkening ARRIVAL are gated by the
+// scene the arrival walks INTO (the Library's rc.31 rule, kept). And the
+// cut's own waterphone apparition is the CUT's gesture, not an entry: it
+// bypasses the roster exactly as it bypasses the hush gate.
+//
+// STREAM NOTE (rc.32) — what actually moved, stated plainly:
+//
+//   Every NEW draw lands on a NEW label-hashed fork ("bullroarer",
+//   "overtone", "jawharp", "blade", "cauldron"), so the five re-roll
+//   nothing by existing — no pre-existing fork gained a draw.
+//
+//   THE ROSTER DOES MOVE STREAMS, deliberately. It gates entries AFTER the
+//   roll and BEFORE the render, and every render draws its own shape, so a
+//   gated entry skips those draws and its fork's position shifts for the
+//   rest of the run — the feature, not a leak. And because the gated voices
+//   share THE AIR and the MOTIF engine with the ungated ones, resting one
+//   speaker changes what the others get to say. Measured at 2600 s on the
+//   harness's own Sycorax seed (20260709): horn 25 → 11 notes (it rests in
+//   the gathering and the circling now), waterphone 154 → 92 (circling
+//   only), rebec 296 → 276 (processional and circling), and with that air
+//   freed, chant 384 → 420 and bone flute 7 → 14. The gurdy (545), the
+//   percussion family (455 + 403), the breath bed (217), the ambient pool
+//   (65) and the joints (4) are UNCHANGED to the note: their forks are
+//   untouched and their roster rows have no opinion. Total 2556 → 2564, of
+//   which 61 are the five's own — so the nine older voices between them
+//   speak 2556 → 2503 times: fewer notes, more kinds of note. That is the
+//   trade the roster is FOR.
+//
+//   Same-seed reproducibility is exact, and the harness proves it every run
+//   (SYC32 REPRO-SYC, plus the pre-existing SYC stream-identity check).
+//
+// GAIN STAGING (rc.32 pass — worst-case *scheduled* peaks, the family
+// ledger; "darker, not louder" is the law every number here answers to):
+//
+//   gurdy bed     cluster (3 pose degrees × 0.035 + body 0.028 + sub 0.022
+//                 = 0.155) × gurdyLevel 0.10 × 2 (cycle overlap)  -> ~0.031
+//   horn          0.028 + breath 0.0056 + 3rd partial 0.0028 = 0.036, one
+//                 call at a time, ≤ 2 tones in the two-note call -> ~0.072
+//   noise + breath ember 0.030 + gust 0.030 through noiseLevel (≤ 0.8 ×
+//                 gurdyLevel = 0.08) + the breath bed 0.018     -> ~0.010
+//   grit bus      documented in play(): ≤ 0.075 at the bus       -> ~0.075
+//   melody        chant 0.032 (pre-formant, ~×0.3 after) + rebec 0.030 +
+//                 waterphone 0.04 + bone flute 0.028, capped by THE AIR at
+//                 limit+1 speakers                               -> ~0.09
+//   percussion    proto lub 0.042 × hbIntensity ≤ 1.3 = 0.0546, frame
+//                 stroke 0.045, log/rattle under both            -> ~0.10
+//   ambient pool  loudest one-shot (far thunder)                 -> ~0.05
+//   throat        bank level 0.04 behind a normalized tanh       -> ~0.04
+//   ------------------------------------------------------------------
+//   rc.32's additions, per voice (all one-gesture-at-a-time by the hold law):
+//   bullroarer    body 0.025 + air 0.0125, × the spin gain (0.55 ± 0.45,
+//                 so ≤ 1)                                        -> ~0.0375
+//   overtone      0.03 at the envelope, which sits AFTER the mouth (the
+//                 body and sweep paths are balanced under unity) -> ~0.030
+//   jaw harp      0.02 × 6 makeup = 0.12 ASKED of the chain; a Q-4 band a
+//                 decade wide gives back ~28 dB of it, so what the meter
+//                 sees is the quietest of the five               -> ~0.020
+//   blade         0.008 + friction 0.004, into the cavern only   -> ~0.012
+//   cauldron      one pop 0.02 (60 ms) + wash 0.009              -> ~0.029
+//   ------------------------------------------------------------------
+//   WORST SCENE, roster-aware (the roster is what keeps this honest — the
+//   five are spent in scenes where old voices are resting):
+//     invocation   0.031 + 0.072 + 0.010 + 0.075 + 0.09 + 0.10 + 0.05
+//                  + 0.04  = 0.468   + bullroarer 0.0375 + overtone 0.030
+//                  + blade 0.012 + cauldron 0.029  = 0.577  (+1.8 dB)
+//     circling     0.468 − horn 0.072 = 0.396 + jaw harp 0.020
+//                  + cauldron 0.029                = 0.445  (+0.6 dB)
+//     processional 0.468 + bullroarer 0.0375 + overtone 0.030 = 0.536
+//   -> ~0.58 absolute worst into the rooms (0.47 before rc.32); the
+//   equal-power room split conserves power and each room is dry 1.0 + wet
+//   ~0.3 -> ~0.75 at bus input; × masterGain 0.6 × the saturator's
+//   small-signal gain ~1.66 (pj2-voice lesson #1) ~0.75 into the limiter —
+//   under the ~0.89 (~−1 dB) master ceiling with the glue compressor still
+//   idling. Concurrence is far rarer than this ledger's pessimism, and the
+//   rendered audio says so. MEASURED at 900 s on two seeds through
+//   render-soak.html: worst peak −13.78 dBFS (seed 20260713) and −14.24 dBFS
+//   (seed 777), zero non-finite samples, no silent window outside a hush.
+//   And the "darker, not louder" test itself — the same evening rendered
+//   twice, once with the five layers muted through toggleLayer and once with
+//   them on, at presence 1:
+//     seed 20260713   long-run RMS −34.59 → −34.20 dB   (+0.39 dB)
+//                     hush RMS     −36.33 → −36.48 dB   (−0.15 dB)
+//     seed 777        long-run RMS −33.92 → −33.78 dB   (+0.15 dB)
+//                     hush RMS     −36.04 → −35.97 dB   (+0.07 dB)
+//   Both well inside the law's +3 dB ceiling, and the hush moves by less
+//   than the ±0.2–0.6 dB run-to-run variance of the freshly poured reverb
+//   IRs (unseeded by design — at seed 777 the MUTED render even peaks
+//   0.6 dB HIGHER than the unmuted one, which is that variance showing its
+//   size). The hush is not louder than it was.
+//
 // ACROSS EVENINGS the rite remembers: the standard motif ghost (intoned by
 // the chant in the next gathering, quiet), and THE BRUISE — last evening's
 // cut severity carried as one scalar (murkier opening, earlier heartbeat,
@@ -156,6 +308,19 @@
     { key: "boneflute",  label: "Bone Flute",  kind: "melodic" },
     { key: "percussion", label: "Percussion",  kind: "percussion" },
     { key: "ambient",    label: "Ambient",     kind: "ambient" },
+    // rc.32 — APPENDED, never inserted: a desk row that moves is a knob the
+    // owner has to find again. The bullroarer and the overtone chant are
+    // landscape (they sum into cutGain with the rest of the night); the jaw
+    // harp is melodic but claims no air and takes no panner seat (its own
+    // room registration); the blade is landscape by conduct but takes the
+    // CAVERN and the delay wall only — "wide room only", the plan's phrase;
+    // the cauldron is a pool member with its own row, so the pot can be
+    // mixed apart from the sky.
+    { key: "bullroarer", label: "Bullroarer",  kind: "landscape" },
+    { key: "overtone",   label: "Overtone",    kind: "landscape" },
+    { key: "jawharp",    label: "Jaw Harp",    kind: "melodic" },
+    { key: "blade",      label: "Blade",       kind: "landscape" },
+    { key: "cauldron",   label: "Cauldron",    kind: "ambient" },
   ];
   var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
   var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
@@ -169,6 +334,14 @@
     chant: ["chant"], rebec: ["rebec"], waterphone: ["waterphone"],
     boneflute: ["boneflute"], percussion: ["protodrum", "percussion"],
     ambient: ["ambient"],
+    // rc.32 — only the two voices with clocks of their own get a rate
+    // slider. The bullroarer, the overtone chant and the jaw harp answer the
+    // rite's POSE turns and its darkening ARRIVALS, and those are form lanes:
+    // they carry structure, not voice, and are never re-paced (the same
+    // reason the Library's halo has no rate). A slider that moves nothing is
+    // worse than no slider.
+    bullroarer: [], overtone: [], jawharp: [],
+    blade: ["blade"], cauldron: ["cauldron"],
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
@@ -208,6 +381,102 @@
     ambient: [
       { key: "density", label: "density — how often the dark speaks", min: 0.5, max: 2, def: 1 },
     ],
+    // rc.32 — the five auditioned voices. EVERY default is the knob the
+    // owner left on lab-sycorax.html (2026-09-03), so the desk at rest is
+    // exactly the instrument they heard. Every timbral constant of the five
+    // is read through pVal at schedule time — nothing is hard-coded in a
+    // body — which is also the hook the per-evening parameter SPANS of a
+    // later phase will hang on (this phase builds no spans).
+    // "presence" multiplies every entry chance (the cauldron's divides its
+    // clock instead — presence rides the timer there, not the draw).
+    bullroarer: [
+      { key: "whirl", label: "whirl Hz — how fast the slat spins (the chop)", min: 8, max: 60, def: 24 },
+      { key: "swing", label: "swing Hz — the arm's slower circle (bends the whirl ±40 %)", min: 0.2, max: 2, def: 0.8 },
+      { key: "doppler", label: "doppler % — the pitch wobble as it comes and goes", min: 0, max: 5, def: 2 },
+      { key: "air", label: "air — the band of wind the slat drags with it", min: 0, max: 2, def: 1 },
+      { key: "darkness", label: "darkness — closes the lowpass (400 Hz at the default)", min: 0, max: 1, def: 0.5 },
+      { key: "swell", label: "swell s — the rise, and the fall, each", min: 4, max: 20, def: 10 },
+      { key: "register", label: "register — which octave the slat sits in (−3/−2, rounded)", min: -3, max: -2, def: -2 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+    ],
+    overtone: [
+      { key: "q", label: "Q — how narrow the singing formant is", min: 6, max: 30, def: 16 },
+      { key: "lo", label: "lowest harmonic in the walk (rounded)", min: 3, max: 6, def: 4 },
+      { key: "hi", label: "highest harmonic in the walk (rounded)", min: 6, max: 12, def: 10 },
+      { key: "step", label: "step s — how long each overtone is held", min: 0.6, max: 3, def: 1.4 },
+      { key: "body", label: "body — the fundamental's own level under the sweep", min: 0, max: 2, def: 1 },
+      { key: "hold", label: "hold s — how long the tone is held", min: 6, max: 20, def: 10 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+    ],
+    jawharp: [
+      { key: "sustain", label: "sustain — how long the tongue rings (this IS the loop gain)", min: 0.85, max: 0.97, def: 0.94 },
+      { key: "mlo", label: "mouth lo Hz — where the sweep starts", min: 300, max: 900, def: 500 },
+      { key: "mhi", label: "mouth hi Hz — where the sweep ends", min: 900, max: 2500, def: 1800 },
+      { key: "sweep", label: "sweep s — how fast the mouth opens per twang", min: 0.2, max: 1.2, def: 0.5 },
+      { key: "twangs", label: "twangs — how many in one utterance (rounded)", min: 1, max: 6, def: 3 },
+      { key: "gap", label: "gap s — the average space between twangs (±40 %)", min: 0.3, max: 2, def: 0.8 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+    ],
+    blade: [
+      { key: "pitch", label: "pitch Hz — where the blade sings (snapped to the field)", min: 1200, max: 2500, def: 1700 },
+      { key: "ratio", label: "ratio — the second sine, inharmonic against the first", min: 1.2, max: 1.8, def: 1.47 },
+      { key: "friction", label: "friction — the bow's grip on the edge", min: 0, max: 2, def: 1 },
+      { key: "swell", label: "swell s — the rise, and the fall, each", min: 4, max: 8, def: 6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+    ],
+    cauldron: [
+      { key: "plo", label: "pitch lo Hz — where a pop starts", min: 150, max: 400, def: 200 },
+      { key: "phi", label: "pitch hi Hz — where a pop lands, 60 ms later", min: 250, max: 800, def: 400 },
+      { key: "pops", label: "pops/s — how busy the pot is (±50 % jitter)", min: 0.5, max: 5, def: 2 },
+      { key: "length", label: "length s — how long one simmer lasts", min: 4, max: 8, def: 6 },
+      { key: "wash", label: "wash — the low simmer under the pops", min: 0, max: 2, def: 1 },
+      { key: "presence", label: "presence — shortens the gap between firings", min: 0, max: 3, def: 1 },
+    ],
+  };
+
+  // --------------------------------------------------------------------------
+  // THE SCENE ROSTER (L3, rc.32) — PLAN-SOUND-DIVERSITY §5.3's table as the
+  // owner adopted it on lab-sycorax.html (its PLAN_DEFAULT, verbatim, in
+  // SCENE_COLS order). 1 = this voice may ENTER in this column; 0 = it rests.
+  //
+  // Resting is the absence of NEW entries only: a cycle or an utterance begun
+  // where it was welcome finishes across the boundary, and the roster never
+  // touches a roll — every opportunity's dice are thrown first and the gate
+  // comes after (stream discipline, the Library's rc.31 rule).
+  //
+  // A row ticked in EVERY column has no opinion, so it carries no gate at all:
+  // the gurdy (THE SEAM — its lane is never cancelled, not even by the cut),
+  // the murk, the chant (the principal speaker, in every scene, sinking
+  // through the afterimage), the percussion family and the ambient pool are
+  // ticked everywhere. The plan rests players, not the cave. If a future
+  // edit gives one of those rows an opinion it must also give it a gate.
+  //
+  // Two ticks are the lab page's own, and are named there as such:
+  //   - the BONE FLUTE's invocation tick (SPEAK_P.boneflute is 0.25 in the
+  //     processional AND the invocation, so the table follows the engine);
+  //   - the OVERTONE's processional tick (its entry law is processional +
+  //     invocation, so the table follows the entry law).
+  // The afterimage's "percussion = proto only" is a STOP move, not a roster
+  // move, and is out of scope here: percussion stays ticked everywhere.
+  // --------------------------------------------------------------------------
+  var ROSTER_COLS = ["gathering", "processional", "circling", "invocation",
+                     "afterimage"];
+  var SCENE_ROSTER = {
+    //            gather  proc  circle  invoc  after
+    gurdy:      [1, 1, 1, 1, 1],   // the seam — never rests
+    horn:       [0, 1, 0, 1, 1],   // rests in the gathering and the circling; the far call stays
+    noise:      [1, 1, 1, 1, 1],
+    chant:      [1, 1, 1, 1, 1],
+    rebec:      [0, 1, 1, 0, 0],
+    waterphone: [0, 0, 1, 0, 0],   // the cut's apparition is the cut's, not an entry
+    boneflute:  [0, 1, 0, 1, 0],
+    percussion: [1, 1, 1, 1, 1],
+    ambient:    [1, 1, 1, 1, 1],
+    bullroarer: [0, 1, 0, 1, 0],
+    overtone:   [0, 1, 0, 1, 0],
+    jawharp:    [0, 0, 1, 0, 0],
+    blade:      [0, 0, 0, 1, 1],
+    cauldron:   [1, 0, 1, 1, 0],
   };
 
   var DEFAULT_SEED = 1400137155; // "SYCX" as a 32-bit word, near enough
@@ -633,6 +902,117 @@
       var c = run && run.cut;
       if (!c) return false;
       return t > c.tB + 0.001 && t < c.end - 0.001;
+    }
+
+    // ---- THE SCENE ROSTER (L3, rc.32) ---------------------------------------
+    // Which column of SCENE_ROSTER the rite is standing in. Sycorax's scenes
+    // ARE the columns (no chapter ordinals to count), so this is a pure read
+    // of the conductor — no draws, ever. The gate is ALWAYS called AFTER the
+    // opportunity's unconditional roll: the roster decides whether a voice
+    // ENTERS, never how the dice fall.
+    function rosterColumn() { return curSceneType(); }
+    function rosterAllows(voiceKey, columnOverride) {
+      var row = SCENE_ROSTER[voiceKey];
+      if (!row) return true;
+      var col = columnOverride || rosterColumn();
+      for (var i = 0; i < ROSTER_COLS.length; i++) {
+        if (ROSTER_COLS[i] === col) return !!row[i];
+      }
+      return true;
+    }
+
+    // ---- THE CUT LAW, extended to the five new voices (rc.32) ---------------
+    // The horn holds its breath from 4 s before the cut and through the hush;
+    // the five auditioned voices hold theirs from tB − 4 all the way through
+    // the RETURN, and anything of theirs still sounding at tB is ended THERE
+    // with an anchored 0.25 s fade. The engine plans its cut a whole scene
+    // early (planCut at the invocation's scene event), so tB is known long
+    // before it arrives — which is the only way "silent from 4 s BEFORE"
+    // can be a law rather than a wish.
+    //
+    // Checked at the brain (each consider) AND at the body (each render): a
+    // law checked twice is a law.
+    var CUT_LEAD = 4;        // the horn's number
+    var CUT_KILL_S = 0.25;   // the cut's own dip length
+    function cutBlocks(t) {
+      var c = run && run.cut;
+      if (!c) return false;
+      return t >= c.tB - CUT_LEAD && t <= c.end + c.retS;
+    }
+    // "the cut's return has fully passed" — the blade's afterimage condition
+    function cutPast(t) {
+      var c = run && run.cut;
+      return !c || t > c.end + c.retS;
+    }
+    // Every note of the five hangs on ONE unity gate gain between its chain
+    // and its layer, registered here. The cut ends a sounding gesture by
+    // riding that gate to zero — never by cancelling the note's own envelope
+    // (the bullroarer's spin LFO is CONNECTED to its amplitude gain, and an
+    // a-rate connection sums with the intrinsic value: zeroing the intrinsic
+    // there would leave the whir running).
+    function nvRegister(key, gate, endT) {
+      var list = run.nvActive, t = run.clock.now();
+      for (var i = list.length - 1; i >= 0; i--) {
+        if (list[i].endT < t - 1) list.splice(i, 1);
+      }
+      list.push({ key: key, gate: gate, endT: endT });
+    }
+    function killNewVoicesAt(tB) {
+      if (!run || !run.live) return;
+      var list = run.nvActive, n = 0, who = {};
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i];
+        if (r.endT <= tB + 0.001) continue;      // its tail is already over
+        var p = r.gate.gain;
+        try {
+          // Anchor at whatever the gate would have reached by tB, then ride
+          // it down (lesson #3: a bare cancel clicks). cancelAndHoldAtTime
+          // is the honest anchor for a FUTURE instant; where it is missing
+          // the read-and-re-anchor pair is exact enough for a unity gate.
+          if (typeof p.cancelAndHoldAtTime === "function") {
+            p.cancelAndHoldAtTime(tB);
+          } else {
+            var v = (typeof p.value === "number") ? p.value : 1;
+            p.cancelScheduledValues(tB);
+            p.setValueAtTime(v, tB);
+          }
+          p.linearRampToValueAtTime(0, tB + CUT_KILL_S);
+        } catch (e) {}
+        n++;
+        who[r.key] = (who[r.key] || 0) + 1;
+        r.endT = tB + CUT_KILL_S;
+      }
+      emitEvent({ type: "cut-kill", t: tB, fadeS: CUT_KILL_S, n: n, voices: who });
+    }
+
+    // ---- slow noise (the family's smooth-wobble source) ----------------------
+    // Linear-interpolated random keyframes: smooth wobble, not stepped noise.
+    // One 20 s loop cached per (ctx, rate), handed out with random read
+    // offsets so simultaneous notes wobble independently. Math.random
+    // throughout: texture, not music (the zankyo rule). Ported verbatim from
+    // pj2-library.js — the bowed blade is the first Sycorax voice to need it.
+    function slowNoise(c, rateHz) {
+      var cache = c.__pj2SlowNoise = c.__pj2SlowNoise || {};
+      var key = "r" + rateHz;
+      if (!cache[key]) {
+        var sr = c.sampleRate || 44100;
+        var slot = Math.max(1, Math.floor(sr / rateHz));
+        var n = Math.max(slot * 4, Math.floor(sr * 20));
+        var buf = c.createBuffer(1, n, sr);
+        var data = buf.getChannelData(0);
+        var nKeys = Math.ceil(n / slot) + 2, keys = [];
+        for (var k = 0; k < nKeys; k++) keys.push(Math.random() * 2 - 1);
+        for (var i = 0; i < n; i++) {
+          var pos = i / slot, i0 = Math.floor(pos), fr = pos - i0;
+          data[i] = keys[i0] * (1 - fr) + keys[i0 + 1] * fr;
+        }
+        cache[key] = buf;
+      }
+      var src = c.createBufferSource();
+      src.buffer = cache[key];
+      src.loop = true;
+      src.randomOffset = Math.random() * 18;
+      return src;
     }
 
     // Motif request context — sceneType ALIASED to the Library five (see
@@ -1609,13 +1989,17 @@
     // the horn holds its breath from 4 s before the cut (a swell chopped
     // mid-bloom would read as an event, and the cut must own that moment);
     // the gathering stays bare below intensity 0.12; one call at a time.
-    function hornConsider(kind, t, poseName) {
+    function hornConsider(kind, t, poseName, col) {
       if (!run || !run.live) return;
       var rng = run.streams.horn;
       var roll = rng.next();                    // drawn first, unconditionally
       var mul = HORN_SCENE_MUL[curSceneType()];
       if (mul == null) mul = 1;
       if (mul <= 0) return;
+      // rc.32: the roster rests the horn in the gathering and the circling.
+      // A boundary answer is judged by the scene it LANDS in — an arrival
+      // into the circling must not put the treeline in a scene that rests it.
+      if (!rosterAllows("horn", col)) return;
       if (inHush(t)) return;
       if (run.cut && !run.cut.fired && t > run.cut.tB - 4) return;
       var iv = curIntensity(t);
@@ -1639,6 +2023,7 @@
       var durS = rng.rnd(16, 26);
       var rest = rng.rnd(6, 14);
       if (run.hornFinalDone) return;
+      if (!rosterAllows("horn", "afterimage")) return;   // rc.32 (ticked today)
       if (roll >= 0.6) return;
       run.hornFinalDone = true;
       var t0 = evt.t + wait;
@@ -1649,6 +2034,660 @@
         renderHornTone(0, t, durS, 0.7, "far-call");
         run.hornHoldUntil = t + durS + rest;
       });
+    }
+
+    // ========================================================================
+    // rc.32 — THE FIVE AUDITIONED VOICES (PLAN-SOUND-DIVERSITY §5.2)
+    //
+    // Ported faithfully from the owner-approved prototypes on
+    // lab-sycorax.html (2026-09-03) onto the engine's discipline. Every one
+    // of them:
+    //   - draws on its OWN label-hashed fork, so no pre-existing stream
+    //     gains or loses a draw;
+    //   - rolls FIRST and unconditionally at every opportunity, then gates
+    //     (the roster, the cut law, the hold law, the scene multiplier);
+    //   - reads the POSE and the FIELD at schedule time (era-aware through
+    //     the sink) — no cached Hz, ever;
+    //   - envelopes through PJ2.Voice.env or an anchored setValue/ramp pair,
+    //     never setTargetAtTime;
+    //   - claims the budget AFTER its draws, so a refusal is silence and
+    //     never a shifted stream;
+    //   - hangs on ONE unity gate gain the cut can ride to zero at tB;
+    //   - NEVER claims the air. Not one of them is a speaker.
+    // Every timbral constant is a desk knob read through pVal, with the
+    // knob's default equal to the constant the owner left on the page.
+    // ========================================================================
+
+    // ---- the bullroarer (landscape — THE RITE'S OWN MACHINE) ----------------
+    // A whirled slat on a cord: a sawtooth at the pose root two or three
+    // octaves down, through a lowpass the DARKNESS knob closes, amplitude-
+    // modulated at the WHIRL rate by an LFO whose own rate is bent ±40 % by a
+    // slower SWING — the arm's circle — which also dopplers the pitch and
+    // rides a band of air along with it. Swells in and out over tens of
+    // seconds. Peak 0.025 (+ 0.0125 of air) into cutGain, so the cut ducks it
+    // with the rest of the landscape AND ends it at tB. Nothing else in this
+    // engine is iterative like this; it is the plan's F3 gap, filled.
+    var BULL_SCENE = {
+      "gathering": 0, "processional": 1.2, "circling": 0,
+      "invocation": 1.25, "afterimage": 0,
+    };
+    var BULL_CHANCE = { pose: 0.4, arrival: 0.6 };
+    var BULL_PEAK = 0.025;
+
+    function renderBullroarer(t, why) {
+      var rng = run.streams.bullroarer;
+      // Draw everything FIRST so a budget refusal can't shift the stream.
+      var hold = rng.rnd(1, 4);
+      var restS = rng.rnd(8, 20);
+      var swell = pVal("bullroarer", "swell");
+      var durS = swell * 2 + hold;
+      var airK = pVal("bullroarer", "air");
+      if (cutBlocks(t)) return false;          // the law, checked again at the body
+      // 10 nodes for the machine (gate, spin gain, whirl osc + depth, swing
+      // osc + its bend, the saw, its doppler, the lowpass, the envelope),
+      // 3 more for the band of air.
+      var tok = run.budget.claim(airK > 0 ? 13 : 10, t + durS + 0.5);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var deg = (ch && ch.chordDegs && ch.chordDegs.length) ? ch.chordDegs[0] : 0;
+      var oct = Math.round(pVal("bullroarer", "register"));   // −3 or −2
+      var freq = run.field.degFreq(deg, oct);                 // AT SCHEDULE TIME
+      var whirlHz = pVal("bullroarer", "whirl");
+      var swingHz = pVal("bullroarer", "swing");
+      var c = ctx;
+
+      // the gate the cut rides to zero (unity, one per gesture)
+      var gate = c.createGain();
+      gate.gain.setValueAtTime(1, t);
+      gate.connect(run.layBull);
+
+      // THE SPIN: one amplitude-modulating gain everything rides. Base 0.55,
+      // the whirl LFO ±0.45 — deep enough to be a whir, never a hard zero.
+      var am = c.createGain();
+      am.gain.setValueAtTime(0.55, t);
+      am.connect(gate);
+      var whirl = c.createOscillator();
+      whirl.type = "sine";
+      whirl.frequency.setValueAtTime(whirlHz, t);
+      var whirlD = c.createGain();
+      whirlD.gain.setValueAtTime(0.45, t);
+      whirl.connect(whirlD);
+      try { whirlD.connect(am.gain); } catch (e0) {}
+      whirl.start(t); whirl.stop(t + durS + 0.3);
+
+      // THE SWING: the arm's slower circle. It bends the whirl RATE ±40 %,
+      // which is the difference between a tremolo and a thing on a cord.
+      var swing = c.createOscillator();
+      swing.type = "sine";
+      swing.frequency.setValueAtTime(swingHz, t);
+      var sw2wh = c.createGain();
+      sw2wh.gain.setValueAtTime(whirlHz * 0.4, t);
+      swing.connect(sw2wh);
+      try { sw2wh.connect(whirl.frequency); } catch (e1) {}
+      swing.start(t); swing.stop(t + durS + 0.3);
+
+      var o = c.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(freq, t);
+      var dop = pVal("bullroarer", "doppler");
+      if (dop > 0) {
+        var dg = c.createGain();
+        dg.gain.setValueAtTime(freq * dop / 100, t);   // the knob is a percentage
+        swing.connect(dg);
+        try { dg.connect(o.frequency); } catch (e2) {}
+      }
+      var lp = c.createBiquadFilter();
+      lp.type = "lowpass";
+      // 400 Hz at the default darkness 0.5; darker closes it, brighter opens
+      lp.frequency.setValueAtTime(Math.max(90, 400 * (1.5 - pVal("bullroarer", "darkness"))), t);
+      lp.Q.setValueAtTime(0.6, t);
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[swell, BULL_PEAK], [hold, BULL_PEAK], [swell, 0]]);
+      o.connect(lp); lp.connect(g); g.connect(am);
+      o.start(t); o.stop(t + durS + 0.3);
+
+      // the band of air the slat drags with it — modulated the same way
+      if (airK > 0) {
+        var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(350, t);           // the plan's 200–600 Hz band
+        bp.Q.setValueAtTime(1.2, t);
+        var ag = c.createGain();
+        var aPeak = BULL_PEAK * 0.5 * airK;
+        PJ2.Voice.env(ag.gain, t, [[swell, aPeak], [hold, aPeak], [swell, 0]]);
+        nz.connect(bp); bp.connect(ag); ag.connect(am);
+        nz.start(t, nz.randomOffset); nz.stop(t + durS + 0.3);
+      }
+
+      nvRegister("bullroarer", gate, t + durS + 0.3);
+      run.bullHoldUntil = t + durS + restS;    // the hold law: one slat at a time
+      emitNote({
+        voice: "bullroarer", kind: why, freq: freq, t: t, durS: durS,
+        deg: deg, oct: oct, whirlHz: whirlHz,
+      });
+      return true;
+    }
+
+    // One opportunity, one decision. The roll is drawn FIRST and
+    // unconditionally; every gate comes after.
+    function bullConsider(kind, t, col) {
+      if (!run || !run.live) return;
+      var roll = run.streams.bullroarer.next();
+      var sc = col || curSceneType();          // an arrival is judged by where it LANDS
+      var mul = BULL_SCENE[sc];
+      if (!mul) return;
+      if (!rosterAllows("bullroarer", sc)) return;
+      if (inHush(t) || cutBlocks(t)) return;             // the cut law, at the brain
+      if (t < run.bullHoldUntil) return;                 // the hold law
+      var base = (BULL_CHANCE[kind] || 0) * mul * pVal("bullroarer", "presence");
+      if (roll >= clamp(base, 0, 1)) return;
+      renderBullroarer(t, kind);
+    }
+
+    // ---- the overtone chant (landscape — THE CANTOR'S SECOND MANNER) --------
+    // A held fundamental at the pose root, oct −1 (the chant's own pair: a
+    // sawtooth at −4 cents and a little square at +5, with its breath
+    // thread), while ONE narrow bandpass STEPS through the harmonic series —
+    // a melody made of overtones above a tone that never moves. The steps are
+    // anchored setValueAtTime jumps, never a glide: an overtone singer's
+    // mouth JUMPS between harmonics.
+    //
+    // DEPARTURE FROM §5.2, disclosed: the plan imagined folding this into the
+    // chant as a cast-drawn manner. It is built here as its OWN layer, fork
+    // and mixer row instead — mixable and tunable beside the chant, and free
+    // of the chant's air claim (this manner is landscape: it never speaks a
+    // motif and never takes a seat in the parliament). Folding it into the
+    // cantor is a later phase's move, and the cast that would draw it is not
+    // in this round's scope at all.
+    var OVER_SCENE = {
+      "gathering": 0, "processional": 1, "circling": 0,
+      "invocation": 1, "afterimage": 0,
+    };
+    var OVER_CHANCE = 0.4;    // pose turns only — never on an arrival
+    var OVER_PEAK = 0.03;     // pre-formant, where the engine's chant puts its own
+
+    function renderOvertone(t, why) {
+      var rng = run.streams.overtone;
+      // Draws FIRST: the harmonic walk is the whole melody, so it is drawn
+      // in full before a single node is asked for.
+      var lo = Math.round(pVal("overtone", "lo"));
+      var hi = Math.round(pVal("overtone", "hi"));
+      if (hi < lo + 1) hi = lo + 1;
+      var stepS = pVal("overtone", "step");
+      var durS = pVal("overtone", "hold");
+      var n = rng.rint(lo, hi);
+      var path = [], tS = 0, guard = 0;
+      while (tS < durS && guard++ < 200) {
+        path.push({ n: n, dt: tS });
+        var jump = rng.chance(0.75) ? 1 : 2;             // mostly a neighbour
+        var dir = rng.chance(0.5) ? -1 : 1;
+        var next = n + dir * jump;
+        if (next > hi) next = n - jump;                  // reflect off the ceiling
+        if (next < lo) next = n + jump;                  // and off the floor
+        n = clamp(next, lo, hi);
+        tS += stepS;
+      }
+      var restS = rng.rnd(8, 18);
+      if (cutBlocks(t)) return false;          // the law, checked again at the body
+      // 12 nodes: gate, the saw + square + its trim, the breath + its trim,
+      // the pre-mix, the body share, the mouth, its makeup, the mix and the
+      // envelope.
+      var tok = run.budget.claim(12, t + durS + 0.5);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var deg = (ch && ch.chordDegs && ch.chordDegs.length) ? ch.chordDegs[0] : 0;
+      var freq = run.field.degFreq(deg, -1);             // AT SCHEDULE TIME
+      var wx = wxAt(t);
+      var c = ctx;
+
+      var gate = c.createGain();
+      gate.gain.setValueAtTime(1, t);
+      gate.connect(run.layOver);
+
+      var pre = c.createGain();
+      pre.gain.setValueAtTime(1, t);
+      var o1 = c.createOscillator();
+      o1.type = "sawtooth";
+      o1.frequency.setValueAtTime(freq, t);
+      o1.detune.setValueAtTime(-4, t);
+      o1.connect(pre);
+      var o2 = c.createOscillator();
+      o2.type = "square";
+      o2.frequency.setValueAtTime(freq, t);
+      o2.detune.setValueAtTime(5, t);
+      var o2g = c.createGain();
+      o2g.gain.setValueAtTime(0.35, t);                  // the square is colour, not body
+      o2.connect(o2g); o2g.connect(pre);
+      var br = PJ2.Voice.noiseBuffer.source(c, 30);
+      var brg = c.createGain();
+      brg.gain.setValueAtTime(0.010 + 0.014 * wx.breath, t);  // the chant's own breath
+      br.connect(brg); brg.connect(pre);
+
+      var mix = c.createGain();
+      mix.gain.setValueAtTime(1, t);
+      var bodyG = c.createGain();
+      bodyG.gain.setValueAtTime(0.30 * pVal("overtone", "body"), t);
+      pre.connect(bodyG); bodyG.connect(mix);
+      var bp = c.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.Q.setValueAtTime(pVal("overtone", "q"), t);
+      var sweepG = c.createGain();
+      sweepG.gain.setValueAtTime(2.5, t);                // makeup for a narrow band
+      pre.connect(bp); bp.connect(sweepG); sweepG.connect(mix);
+
+      var env = c.createGain();
+      mix.connect(env); env.connect(gate);
+      var atk = Math.min(1.6, durS * 0.38);
+      var rel = Math.min(1.4, durS * 0.34);
+      if (atk + rel > durS - 0.05) { atk = durS * 0.42; rel = durS * 0.42; }
+      PJ2.Voice.env(env.gain, t, [[atk, OVER_PEAK],
+                                  [Math.max(0.02, durS - atk - rel), OVER_PEAK * 0.94],
+                                  [rel, 0]]);
+      // the walk, written as anchored jumps (never a glide, never a target)
+      var shown = [];
+      for (var i = 0; i < path.length; i++) {
+        bp.frequency.setValueAtTime(freq * path[i].n, t + path[i].dt);
+        if (i < 10) shown.push(path[i].n);
+      }
+      o1.start(t); o1.stop(t + durS + 0.1);
+      o2.start(t); o2.stop(t + durS + 0.1);
+      br.start(t, br.randomOffset); br.stop(t + durS + 0.1);
+
+      nvRegister("overtone", gate, t + durS + 0.1);
+      run.overHoldUntil = t + durS + restS;              // the hold law
+      emitNote({
+        voice: "overtone", kind: "overtone", freq: freq, t: t, durS: durS,
+        deg: deg, oct: -1, via: why,
+        path: shown.join("→") + (path.length > 10 ? "→…" : ""),
+      });
+      return true;
+    }
+
+    function overConsider(kind, t, col) {
+      if (!run || !run.live) return;
+      var roll = run.streams.overtone.next();
+      if (kind !== "pose") return;                       // the plan's law: pose turns only
+      var sc = col || curSceneType();
+      var mul = OVER_SCENE[sc];
+      if (!mul) return;
+      if (!rosterAllows("overtone", sc)) return;
+      if (inHush(t) || cutBlocks(t)) return;
+      if (t < run.overHoldUntil) return;
+      if (roll >= clamp(OVER_CHANCE * mul * pVal("overtone", "presence"), 0, 1)) return;
+      renderOvertone(t, kind);
+    }
+
+    // ---- the jaw harp (plucked — A MOUTH THAT MOVES) ------------------------
+    // Nothing in Sycorax is plucked. A short noise burst into a feedback comb
+    // (delay 1/f → lowpass → feedback) gives the tongue; the MOUTH — a
+    // bandpass swept lo → hi on every twang with an anchored ramp pair —
+    // gives the melody, which is made of FORMANTS, not pitches. Three gaps at
+    // once (plucked, iterative, formant-melodic); the circling is its scene.
+    //
+    // THE LOOP-GAIN LESSON (pj2-fx.js's first law): the worst-case loop gain
+    // is feedback × max|H(f)| of the filter inside the loop, and a WebAudio
+    // lowpass's Q is in DECIBELS — at Q = −6 dB the response has no peak at
+    // all, so the printed "sustain" IS the loop gain and 0.97 means 0.97. The
+    // feedback gain is also ramped to zero at the twang's own T60, so no comb
+    // can outlive its note, and every node in the cycle is disconnected when
+    // the note is swept.
+    //
+    // THE DELAY CLAMP: WebAudio pins a DelayNode inside a cycle to at least
+    // one render quantum (128 frames ≈ 2.9 ms ≈ 344 Hz at 44.1 kHz), so the
+    // comb's pitch must stay BELOW ~340 Hz or the twang loses it. The pose
+    // root at oct −1 is 155–295 Hz — comfortably under — and the assert below
+    // drops another octave if a field ever pushed it over 330.
+    var JAW_CHANCE = 0.35;    // circling only, on pose turns
+    var JAW_PEAK = 0.02;
+    var JAW_MAKEUP = 6;       // the formant-loss makeup, INSIDE the accounting
+
+    function jawTwang(t, freq, gate, mouthLo, mouthHi, sweepS, sus) {
+      var c = ctx;
+      var sr = c.sampleRate || 44100;
+      var tok = run.budget.claim(8, t + 4.2);
+      if (!tok) return 0;                                // graceful thinning: no twang
+      run.tokens.push(tok);
+      var dt = Math.max(128 / sr, 1 / freq);
+      var dl = c.createDelay(0.25);
+      dl.delayTime.setValueAtTime(dt, t);
+      var lp = c.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(3000, t);
+      lp.Q.setValueAtTime(-6, t);                        // dB — flat, so fb IS the loop gain
+      var fb = c.createGain();
+      fb.gain.setValueAtTime(sus, t);
+      dl.connect(lp); lp.connect(fb); fb.connect(dl);
+
+      // the tongue: 8 ms of noise, enveloped so the burst itself never clicks
+      var n = Math.max(2, Math.round(sr * 0.008));
+      var buf = c.createBuffer(1, n, sr);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;   // texture, not music
+      var src = c.createBufferSource();
+      src.buffer = buf;
+      var burst = c.createGain();
+      PJ2.Voice.env(burst.gain, t, [[0.001, 1], [0.007, 0]]);
+      src.connect(burst); burst.connect(dl);
+      src.start(t); src.stop(t + 0.03);
+
+      // the mouth — the whole point of a jaw harp
+      var bp = c.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(mouthLo, t);
+      bp.frequency.linearRampToValueAtTime(mouthHi, t + sweepS);   // anchored pair
+      bp.Q.setValueAtTime(4, t);
+      // the comb's own T60, so the twang is FINITE
+      var t60 = dt * 60 / Math.max(0.5, -20 * Math.log(Math.max(0.05, sus)) / Math.LN10);
+      var ring = clamp(t60, 0.35, 3.5);
+      // THE MAKEUP goes through the accounting, not around it: a Q-4 band a
+      // decade wide throws ~28 dB away, so the chain ASKS for 6 × 0.02 =
+      // 0.12 even though the measured output is the quietest of the five.
+      // The family's own practice (the engine's chant carries "peak 0.032
+      // pre-formant-loss compensation" for the same reason). It sits OUTSIDE
+      // the feedback loop, so it cannot touch the loop gain.
+      var makeup = c.createGain();
+      makeup.gain.setValueAtTime(JAW_MAKEUP, t);
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[0.006, JAW_PEAK], [ring * 0.7, JAW_PEAK * 0.25], [ring * 0.3, 0]]);
+      dl.connect(bp); bp.connect(makeup); makeup.connect(g); g.connect(gate);
+      // and the loop is closed off after the note, an anchored pair, never a
+      // bare cancel: nothing may still be circulating when the note is over
+      fb.gain.setValueAtTime(sus, t + ring);
+      fb.gain.linearRampToValueAtTime(0, t + ring + 0.25);
+      // THE TEARDOWN. Every other body in this engine is left to the
+      // collector: its sources stop, nothing is reachable, it goes. A
+      // FEEDBACK CYCLE does not go — a DelayNode feeding its own input keeps
+      // the whole ring alive whatever its gain has been ramped to, and the
+      // ring still has a path to the destination through the mouth. So this
+      // one voice is disconnected by hand, on its own lane, once the twang
+      // has finished ringing (the lab page's rule, brought over intact).
+      run.clock.lane("jawharp").at(t + ring + 0.6, function () {
+        var n = [dl, lp, fb, bp, makeup, g, burst, src];
+        for (var i = 0; i < n.length; i++) { try { n[i].disconnect(); } catch (e) {} }
+      });
+      return t + ring + 0.35;
+    }
+
+    function renderJawharp(t, why) {
+      var rng = run.streams.jawharp;
+      // Draws FIRST: how many twangs, and every gap between them.
+      var nT = Math.max(1, Math.round(pVal("jawharp", "twangs")));
+      var jit = [];
+      for (var j = 0; j < nT; j++) jit.push(rng.rnd(0.6, 1.4));   // the ±40 %
+      var restS = rng.rnd(6, 16);
+      if (cutBlocks(t)) return false;          // the law, checked again at the body
+      var gapS = pVal("jawharp", "gap");
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var deg = (ch && ch.chordDegs && ch.chordDegs.length) ? ch.chordDegs[0] : 0;
+      var oct = -1;
+      var freq = run.field.degFreq(deg, oct);            // AT SCHEDULE TIME
+      // THE ASSERT: a comb above the render quantum's clamp is a comb with no
+      // pitch. The rite's root is pinned to i and the sink only ever lowers
+      // the field, so this can never fire today — which is exactly when an
+      // assert is cheap.
+      if (freq > 330) { oct = -2; freq = run.field.degFreq(deg, oct); }
+      var c = ctx;
+      var gate = c.createGain();
+      gate.gain.setValueAtTime(1, t);
+      gate.connect(run.layJaw);
+      var mlo = pVal("jawharp", "mlo"), mhi = pVal("jawharp", "mhi");
+      var sweepS = pVal("jawharp", "sweep");
+      var sus = clamp(pVal("jawharp", "sustain"), 0, 0.97);
+      var tw = t, last = t, sounded = 0;
+      for (j = 0; j < nT; j++) {
+        var e = jawTwang(tw, freq, gate, mlo, mhi, sweepS, sus);
+        if (e > 0) { sounded++; if (e > last) last = e; }
+        tw += gapS * jit[j];
+      }
+      if (!sounded) return false;                        // the budget said no
+      var durS = Math.max(last, tw) - t;
+      run.clock.lane("jawharp").at(t + durS + 0.8, function () {
+        try { gate.disconnect(); } catch (e) {}          // …and the gate with it
+      });
+      nvRegister("jawharp", gate, t + durS + 0.2);
+      run.jawHoldUntil = t + durS + restS;               // the hold law
+      emitNote({
+        voice: "jawharp", kind: "twang", freq: freq, t: t, durS: durS,
+        deg: deg, oct: oct, twangs: sounded, via: why,
+      });
+      return true;
+    }
+
+    function jawConsider(kind, t, col) {
+      if (!run || !run.live) return;
+      var roll = run.streams.jawharp.next();
+      if (kind !== "pose") return;
+      var sc = col || curSceneType();
+      if (sc !== "circling") return;                     // circling only
+      if (!rosterAllows("jawharp", sc)) return;
+      if (inHush(t) || cutBlocks(t)) return;
+      if (t < run.jawHoldUntil) return;
+      if (roll >= clamp(JAW_CHANCE * pVal("jawharp", "presence"), 0, 1)) return;
+      renderJawharp(t, kind);
+    }
+
+    // ---- the bowed blade (landscape — THE ONE HIGH SUSTAINED SOUND) ---------
+    // Two sines at an inharmonic ratio, a slow wobble on each, and a band of
+    // bow friction at the fundamental. Whisper level (0.008) and the CAVERN
+    // only: far and faint is the whole design, because the risk this voice
+    // carries is startle. It takes the wide room's send and the seasick delay
+    // wall — and nothing else. It is the ONE voice in this engine not
+    // registered with roomBlend: the close fireside stone would put it in the
+    // room with the listener, which is exactly what it must never be.
+    //
+    // Its pitch knob is in Hz (the plan's design: 1.2–2.5 kHz, no degree
+    // means "a bowed blade"), but the knob is SNAPPED to the live field at
+    // schedule time, so the blade sinks with the rite like everything else
+    // and the engine's 100 %-adherence law still reads it.
+    var BLADE_CHANCE = 0.3;
+    var BLADE_PEAK = 0.008;
+
+    function renderBlade(t, why) {
+      var rng = run.streams.blade;
+      // Draws FIRST.
+      var hold = rng.rnd(2, 6);
+      var restS = rng.rnd(20, 45);
+      var sw = pVal("blade", "swell");
+      var durS = sw * 2 + hold;
+      var friction = pVal("blade", "friction");
+      if (cutBlocks(t)) return false;          // the law, checked again at the body
+      var tok = run.budget.claim(friction > 0 ? 13 : 10, t + durS + 0.5);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var snap = null;
+      try { snap = run.field.snapInfo(pVal("blade", "pitch")); } catch (e) { snap = null; }
+      var deg = snap ? snap.deg : 0, oct = snap ? snap.oct : 2;
+      var f1 = run.field.degFreq(deg, oct);              // AT SCHEDULE TIME
+      var f2 = f1 * pVal("blade", "ratio");
+      var c = ctx;
+      var gate = c.createGain();
+      gate.gain.setValueAtTime(1, t);
+      gate.connect(run.layBlade);
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[sw, BLADE_PEAK], [hold, BLADE_PEAK * 0.95], [sw, 0]]);
+      g.connect(gate);
+      var pair = [f1, f2];
+      for (var i = 0; i < 2; i++) {
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(pair[i], t);
+        var og = c.createGain();
+        og.gain.setValueAtTime(i ? 0.6 : 1, t);
+        o.connect(og); og.connect(g);
+        o.start(t); o.stop(t + durS + 0.3);
+        // the wobble: a bowed blade never holds still
+        var wn = slowNoise(c, 0.35);
+        var wg = c.createGain();
+        wg.gain.setValueAtTime(pair[i] * 0.004, t);
+        wn.connect(wg);
+        try { wg.connect(o.frequency); } catch (e0) {}
+        wn.start(t, wn.randomOffset); wn.stop(t + durS + 0.3);
+      }
+      if (friction > 0) {
+        var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(f1, t);
+        bp.Q.setValueAtTime(12, t);
+        var fg = c.createGain();
+        var fPeak = BLADE_PEAK * 0.5 * friction;
+        PJ2.Voice.env(fg.gain, t, [[sw, fPeak], [hold, fPeak], [sw, 0]]);
+        nz.connect(bp); bp.connect(fg); fg.connect(gate);
+        nz.start(t, nz.randomOffset); nz.stop(t + durS + 0.3);
+      }
+      nvRegister("blade", gate, t + durS + 0.3);
+      run.bladeHoldUntil = t + durS + restS;             // the hold law
+      emitNote({
+        voice: "blade", kind: why, freq: f1, t: t, durS: durS,
+        deg: deg, oct: oct, ratio: pVal("blade", "ratio"),
+      });
+      return true;
+    }
+
+    function bladeConsider(kind, t, col) {
+      if (!run || !run.live) return;
+      var roll = run.streams.blade.next();
+      var st = col || curSceneType();
+      if (st !== "invocation" && st !== "afterimage") return;
+      // In the afterimage the blade may only answer once the cut's return has
+      // FULLY passed — the residue does not interrupt the noticing.
+      if (st === "afterimage" && !cutPast(t)) return;
+      if (!rosterAllows("blade", st)) return;
+      if (inHush(t) || cutBlocks(t)) return;
+      if (t < run.bladeHoldUntil) return;
+      if (roll >= clamp(BLADE_CHANCE * pVal("blade", "presence"), 0, 1)) return;
+      renderBlade(t, kind);
+    }
+
+    // The blade's own clock inside its scenes: an opportunity every 25–45 s,
+    // so it can speak in an invocation where the ground never turns.
+    function startBlade() {
+      var lane = run.clock.lane("blade");
+      var rng = run.streams.blade;
+      function timer(t) {
+        var wait = rng.rnd(25, 45);                      // drawn first, always
+        bladeConsider("timer", t);                       // …and the roll too: the
+        lane.at(t + wait, timer);                        // scene gate comes after
+      }
+      lane.at(run.t0 + rng.rnd(25, 45), timer);
+    }
+
+    // ---- the cauldron (ambient — THE SPELL'S POT) ---------------------------
+    // A one-shot for the pool, not a speaker: a soft low wash (noise between
+    // 80 and 200 Hz, × wash) with pitched pops rising out of it — sine
+    // glisses plo → phi over 60 ms at pops/s with half the gap jittered away.
+    // v1 had a cauldron and Phase 3 dropped it as a comedy risk; this one is
+    // the dark version — a simmer, not a bubble-bath — and it earns its own
+    // mixer row so the owner can mix the pot apart from the sky.
+    //
+    // It fires on its OWN clock (40–120 s ÷ presence: presence rides the
+    // timer here, not the draw) in the gathering, the circling and the
+    // invocation, and never in the hush.
+    var CAULD_SCENES = { "gathering": 1, "circling": 1, "invocation": 1 };
+    var CAULD_PEAK = 0.02;
+    var CAULD_MAX_POPS = 12;   // one simmer may never eat the budget
+
+    function renderCauldron(t, why) {
+      var rng = run.streams.cauldron;
+      // Draws FIRST — every pop's placement, before a node is asked for.
+      var len = pVal("cauldron", "length");
+      var gap = 1 / Math.max(0.1, pVal("cauldron", "pops"));
+      var pops = [], tp = t + rng.rnd(0.05, gap), guard = 0;
+      while (tp < t + len && guard++ < 120) {
+        pops.push(tp);
+        tp += gap * rng.rnd(0.5, 1.5);                   // ±50 % jitter
+      }
+      var restS = rng.rnd(4, 10);
+      var nPop = Math.min(pops.length, CAULD_MAX_POPS);
+      if (cutBlocks(t)) return false;          // the law, checked again at the body
+      var wash = pVal("cauldron", "wash");
+      var tok = run.budget.claim(1 + (wash > 0 ? 4 : 0) + 2 * nPop, t + len + 0.6);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var c = ctx;
+      var gate = c.createGain();
+      gate.gain.setValueAtTime(1, t);
+      gate.connect(run.layCauldron);
+      if (wash > 0) {
+        var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+        var hp = c.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.setValueAtTime(80, t);
+        hp.Q.setValueAtTime(0.7, t);
+        var lp = c.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.setValueAtTime(200, t);
+        lp.Q.setValueAtTime(0.7, t);
+        var wg = c.createGain();
+        var wPeak = CAULD_PEAK * 0.45 * wash;
+        var edge = Math.min(1.2, len * 0.25);
+        PJ2.Voice.env(wg.gain, t, [[edge, wPeak],
+                                   [Math.max(0.05, len - edge * 2), wPeak], [edge, 0]]);
+        nz.connect(hp); hp.connect(lp); lp.connect(wg); wg.connect(gate);
+        nz.start(t, nz.randomOffset); nz.stop(t + len + 0.3);
+      }
+      var plo = pVal("cauldron", "plo"), phi = pVal("cauldron", "phi");
+      for (var i = 0; i < nPop; i++) {
+        var pt = pops[i];
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(plo, pt);                      // positive → positive
+        o.frequency.exponentialRampToValueAtTime(phi, pt + 0.06); // the pop's rise
+        var pg = c.createGain();
+        PJ2.Voice.env(pg.gain, pt, [[0.004, CAULD_PEAK], [0.05, CAULD_PEAK * 0.15], [0.03, 0]]);
+        o.connect(pg); pg.connect(gate);
+        o.start(pt); o.stop(pt + 0.12);
+      }
+      nvRegister("cauldron", gate, t + len + 0.3);
+      run.cauldHoldUntil = t + len + restS;
+      emitNote({
+        voice: "cauldron", kind: "simmer", freq: null, t: t, durS: len,
+        pops: nPop, via: why,
+      });
+      return true;
+    }
+
+    // The pot's clock: the timer IS the draw (presence divides the gap), so
+    // the consider below carries no dice of its own — only the gates.
+    function cauldronConsider(t) {
+      if (!run || !run.live) return;
+      if (!CAULD_SCENES[curSceneType()]) return;
+      if (!rosterAllows("cauldron")) return;
+      if (inHush(t) || cutBlocks(t)) return;
+      if (t < run.cauldHoldUntil) return;
+      renderCauldron(t, "timer");
+    }
+
+    function startCauldron() {
+      var lane = run.clock.lane("cauldron");
+      var rng = run.streams.cauldron;
+      function timer(t) {
+        var wait = rng.rnd(40, 120) / Math.max(0.05, pVal("cauldron", "presence"));
+        cauldronConsider(t);
+        lane.at(t + wait, timer);
+      }
+      lane.at(run.t0 + rng.rnd(10, 30), timer);
+    }
+
+    // One call for the two shared opportunities the rite offers — a POSE turn
+    // and a DARKENING ARRIVAL. Every voice rolls, in a fixed order, on its own
+    // fork; a voice with no chance in this scene still spends its draw.
+    // `col` is the scene a BOUNDARY gesture lands in: the arrival at tB
+    // darkens the room the rite is walking INTO, and its answer must be
+    // judged by that scene's roster cell and scene multiplier, never by the
+    // one it is leaving (the Library's rc.31 rule, kept). Pose turns pass
+    // nothing and are judged where they stand.
+    function newVoicesConsider(kind, t, col) {
+      bullConsider(kind, t, col);
+      overConsider(kind, t, col);
+      jawConsider(kind, t, col);
+      bladeConsider(kind, t, col);
     }
 
     // ---- the ritual noise bed (landscape — "darker and noisier") -------------
@@ -2040,7 +3079,11 @@
         var iv = curIntensity(t);
         var st = curSceneType();
         var plays = rng.chance(SPEAK_P.rebec[st] != null ? SPEAK_P.rebec[st] : 0.3);
-        if (!plays || iv < 0.1) { lane.at(t + rng.rnd(8, 15) * gmAt(t), attempt); return; }
+        // rc.32: the roster gates the ENTRY, after the roll — the fiddle
+        // plays the processional and the circling and rests elsewhere.
+        if (!plays || iv < 0.1 || !rosterAllows("rebec")) {
+          lane.at(t + rng.rnd(8, 15) * gmAt(t), attempt); return;
+        }
         var res = run.heldUtterance.rebec;
         run.heldUtterance.rebec = null;
         if (!res) {
@@ -2114,7 +3157,11 @@
         var iv = curIntensity(t);
         var st = curSceneType();
         var plays = rng.chance(SPEAK_P.waterphone[st] != null ? SPEAK_P.waterphone[st] : 0.25);
-        if (!plays || iv < 0.1) { lane.at(t + rng.rnd(10, 18) * gmAt(t), attempt); return; }
+        // rc.32: the roster keeps the metal to the circling. The CUT's own
+        // apparition is not an entry and is not gated here — it is the cut's.
+        if (!plays || iv < 0.1 || !rosterAllows("waterphone")) {
+          lane.at(t + rng.rnd(10, 18) * gmAt(t), attempt); return;
+        }
         var res = null;
         try { res = run.motif.request("waterphone", reqCtx(t)); } catch (e) { res = null; }
         if (!res || !res.motif || !res.motif.notes || !res.motif.notes.length) {
@@ -2168,7 +3215,10 @@
         var plays = rng.chance(SPEAK_P.boneflute[st] != null ? SPEAK_P.boneflute[st] : 0);
         // 2â3 utterances an evening, HARD (the counter resets at each
         // performance begin) — the one high lonely color stays lonely.
-        if (!plays || iv < 0.12 || run.fluteCount >= run.fluteMax) {
+        // rc.32: the roster's boneflute row is the engine's own SPEAK_P map
+        // read as a table — processional and invocation, nothing else.
+        if (!plays || iv < 0.12 || run.fluteCount >= run.fluteMax ||
+            !rosterAllows("boneflute")) {
           lane.at(t + rng.rnd(14, 24) * gmAt(t), attempt);
           return;
         }
@@ -2496,6 +3546,7 @@
           if (after !== before) {
             emitEvent({ type: "pose", pose: after, rootDeg: 0, via: "step", t: t });
             hornConsider("pose", t, after); // rc.23: the treeline may answer the turn
+            newVoicesConsider("pose", t);   // rc.32: and so may the five
           }
         } catch (e) { /* a stuck pose is still a pose */ }
         lane.at(t + periodAt(t), stepFn);
@@ -2548,7 +3599,8 @@
         run.darkenUntil = t + 25;   // the lowpass closes ~15% for a while
         run.forceSubUntil = t + 30; // the sub-octave sinks in
         emitEvent({ type: "arrival", to: toType, t: t });
-        hornConsider("arrival", t, "sting"); // rc.23: the darkening may gain its fundament
+        hornConsider("arrival", t, "sting", toType); // rc.23/rc.32: the darkening
+        newVoicesConsider("arrival", t, toType);     // may gain its fundament
       });
     }
 
@@ -2598,6 +3650,11 @@
         if (!run || !run.live) return;
         indrawnBreath(t);
       });
+      // rc.32 — the five auditioned voices END at tB. Their entry gate has
+      // refused every onset since tB − 4, so nothing can be registered inside
+      // this last second; the ride down is written a whole second early so
+      // there is lookahead left to write it with.
+      lane.at(tB - 1, function () { killNewVoicesAt(tB); });
       lane.at(tB, function (t) { fireCut(t); });
     }
 
@@ -2890,6 +3947,10 @@
     var LANE_NAMES = [
       "gurdy", "horn", "noisebed", "breath", "protodrum", "percussion",
       "chant", "rebec", "waterphone", "boneflute", "ambient",
+      // rc.32 — the blade's and the pot's opportunity clocks, plus the jaw
+      // harp's TEARDOWN lane (it schedules no sound: it disconnects the comb
+      // once the twang has rung out, which is why it carries no rate).
+      "blade", "cauldron", "jawharp",
       "follow", "harmony", "arrival", "cut",
     ];
 
@@ -2960,6 +4021,15 @@
         horn: master.fork("horn"),
         delaySend: master.fork("delaySend"),
         rooms: master.fork("rooms"),
+        // rc.32: five more label-hashed forks. A fork made from the birth
+        // seed is independent of everything already drawn, so adding these
+        // re-rolls nothing above — the sound-diversity pass buys its dice
+        // rather than borrowing them.
+        bullroarer: master.fork("bullroarer"),
+        overtone: master.fork("overtone"),
+        jawharp: master.fork("jawharp"),
+        blade: master.fork("blade"),
+        cauldron: master.fork("cauldron"),
       };
 
       if (!PJ2.Motif || !PJ2.Motif.create || !PJ2.Harmony || !PJ2.Harmony.create) {
@@ -3042,6 +4112,20 @@
       mixBreath.connect(cutGain);
       var layAmb = mAttach("ambient", c.createGain(), 1);
       layAmb.connect(cutGain);
+      // rc.32 — the five. The bullroarer, the overtone chant and the pot are
+      // landscape and the ambient pool's own kin: they sum into cutGain, so
+      // the cut ducks them with the night before it ends them at tB. The jaw
+      // harp is melodic (never ducked — melody was never the landscape's to
+      // duck) but takes no panner seat: it has its own room registration
+      // instead. The blade is wired further down, into the CAVERN alone.
+      var layBull = mAttach("bullroarer", c.createGain(), 1);
+      layBull.connect(cutGain);
+      var layOver = mAttach("overtone", c.createGain(), 1);
+      layOver.connect(cutGain);
+      var layCauldron = mAttach("cauldron", c.createGain(), 1);
+      layCauldron.connect(cutGain);
+      var layJaw = mAttach("jawharp", c.createGain(), 1);
+      var layBlade = mAttach("blade", c.createGain(), 1);
       var layPerc = mAttach("percussion", c.createGain(), 1);
       var layProto = mAttach("percussion", c.createGain(), 1); // the heartbeat is percussion to the user
       var layMel = c.createGain();
@@ -3109,6 +4193,16 @@
       roomBlend.register("proto", layProto, -0.15);
       roomBlend.register("melody", layMel, -0.05);
       roomBlend.register("throat", layThroat, 0.2);     // the throat is deep
+      // rc.32: the jaw harp sits where the melodic voices sit (it is played
+      // in the circle, close), one step nearer than the landscape.
+      roomBlend.register("jawharp", layJaw, -0.05);
+      // THE BLADE IS NOT REGISTERED HERE, and that is the design: "wide room
+      // only" (PLAN §5.2d). It goes straight to the CAVERN's send — the
+      // engine's most distant room, decay 4.8 s — and, below, to the seasick
+      // delay wall, whose own return also lands in the cavern. The close
+      // fireside stone would put a 1.7 kHz sine in the room with the
+      // listener, which is exactly the startle this voice must never carry.
+      layBlade.connect(roomWide.send);
 
       var poolMel = PJ2.Voice.pannerPool(c, layMel, 3);
       var mixWraps = {
@@ -3140,6 +4234,12 @@
       delaySendChant.connect(delay.send);
       var delaySendRebec = mAttach("rebec", c.createGain(), 0.35);
       delaySendRebec.connect(delay.send);
+      // rc.32: the blade's half of "far and faint" — the clearing answers a
+      // sound it can barely hear. Mixer-owned like the rest, so muting the
+      // blade stops its echo too.
+      var delaySendBlade = mAttach("blade", c.createGain(), 0.5);
+      layBlade.connect(delaySendBlade);
+      delaySendBlade.connect(delay.send);
 
       // THE CAVERN'S THROAT — Fx.sympathetic as a dark resonance bank: 4
       // combs at degrees {0, 1, 5, 0+oct}, lowpass 1200 (vs the Library
@@ -3259,6 +4359,14 @@
         layHorn: layHorn, gritSendHorn: gritSendHorn,
         hornHoldUntil: 0,     // the hold law: one call at a time (rc.23)
         hornFinalDone: false, // one far call per evening's afterimage
+        // rc.32 — the five auditioned voices: their layers, their hold laws,
+        // and the register of live gates the cut ends at tB.
+        layBull: layBull, layOver: layOver, layJaw: layJaw,
+        layBlade: layBlade, layCauldron: layCauldron,
+        delaySendBlade: delaySendBlade,
+        bullHoldUntil: 0, overHoldUntil: 0, jawHoldUntil: 0,
+        bladeHoldUntil: 0, cauldHoldUntil: 0,
+        nvActive: [],
         mix: mix, mixWraps: mixWraps,
         // grit
         gritShaper: gritShaper, gritMakeup: gritMakeup, gritBlend: gritBlend,
@@ -3340,6 +4448,11 @@
       startWaterphone();
       startBoneflute();
       startAmbient();
+      // rc.32: the bullroarer, the overtone chant and the jaw harp answer the
+      // rite's own turns (the pose lane and the darkening arrivals call them);
+      // only the blade and the pot carry clocks of their own.
+      startBlade();
+      startCauldron();
 
       // Born already mixed, rate side: stamp each layer's stored rate onto
       // its lanes (no-op at the default 1 — setLaneRate early-outs).
