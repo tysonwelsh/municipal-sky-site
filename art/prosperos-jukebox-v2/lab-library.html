@@ -1712,14 +1712,18 @@
       desc: "Sustained CHORDS with a bellows breathing under them — the Library's first reed, and its first chord outside a cadence. Beside the consort at cadences, not instead of it: in the prototype the engine's own consort still sounds. Listen for crowding: its lowest parts land at 131–196 Hz, right where the drone dyad, the cello and the hum bed already live — that is the plan's own risk, and the reason the roster rests the hum when the regal plays.",
       enabled: false,
       specs: [
-        { key: "level", label: "level — how loud each part sits (×0.012)", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, step: 0.05, def: 1 },
-        { key: "reediness", label: "reediness — square (soft) ↔ saw (buzzy)", min: 0, max: 1, step: 0.02, def: 0.5 },
-        { key: "bellows", label: "bellows — how much the breath swells under the chord", min: 0, max: 2, step: 0.05, def: 1 },
+        // Defaults = the owner's tuning by ear on the phone (2026-09-03):
+        // level 0.8, presence 0.95, reediness 0.7, bellows 1.5, hold x0.7,
+        // take-cadence 0.45 (body 5 dB and 3 parts unchanged). These are
+        // the design constants the integration will carry into the engine.
+        { key: "level", label: "level — how loud each part sits (×0.012)", min: 0, max: 2, step: 0.05, def: 0.8 },
+        { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, step: 0.05, def: 0.95 },
+        { key: "reediness", label: "reediness — square (soft) ↔ saw (buzzy)", min: 0, max: 1, step: 0.02, def: 0.7 },
+        { key: "bellows", label: "bellows — how much the breath swells under the chord", min: 0, max: 2, step: 0.05, def: 1.5 },
         { key: "bodydb", label: "body dB — the 500 Hz reed box", min: 0, max: 10, step: 0.5, def: 5, dp: 1 },
         { key: "parts", label: "parts — how many voices in the chord", type: "switch", choices: [[2, "2 parts"], [3, "3 parts"]], def: 3 },
-        { key: "hold", label: "hold s × — how long a chord is held (8–20 s)", min: 0.5, max: 2, step: 0.05, def: 1 },
-        { key: "take", label: "take-cadence chance — the organist voices the arrival", min: 0, max: 1, step: 0.05, def: 0.35 },
+        { key: "hold", label: "hold s × — how long a chord is held (8–20 s)", min: 0.5, max: 2, step: 0.05, def: 0.7 },
+        { key: "take", label: "take-cadence chance — the organist voices the arrival", min: 0, max: 1, step: 0.05, def: 0.45 },
       ],
       chance: regalChance, enter: function (why, at) { return regalChord(why, at); },
       one: function () { return regalChord("manual", 0); },
