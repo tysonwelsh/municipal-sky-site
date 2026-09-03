@@ -473,16 +473,28 @@ window.PJ2Lab = (function () {
       return done;
     }
 
+    // One copy action, two buttons: the MIX tab's wide plate and the compact
+    // COPY in the sticky bar (owner 2026-09-03: the copy must be reachable
+    // from the knobs without changing tabs). Both fill the MIX textarea so
+    // the JSON is always visible somewhere if the clipboard is refused.
+    function doCopy() {
+      var text = JSON.stringify(stateJson());
+      if (jsonOut) jsonOut.value = text;
+      var ok = copyText(text);
+      log(ok ? "— copied the tuning to the clipboard —" : "— clipboard refused; the JSON is in the box on the MIX tab —", "hd");
+      if (copyQuick) {
+        copyQuick.textContent = ok ? "COPIED" : "SEE MIX";
+        setTimeout(function () { copyQuick.textContent = "COPY"; }, 1200);
+      }
+    }
+    var copyQuick = $("btnCopyQuick"); // the compact copy in the sticky bar (optional)
+    if (copyQuick) copyQuick.onclick = doCopy;
+
     function buildMix(container) {
       if (!container) return;
       var row1 = el("div", "btnrow");
       var copyBtn = el("button", "wide", "COPY the tuning");
-      copyBtn.onclick = function () {
-        var text = JSON.stringify(stateJson());
-        if (jsonOut) jsonOut.value = text;
-        var ok = copyText(text);
-        log(ok ? "— copied the tuning to the clipboard —" : "— clipboard refused; the JSON is in the box below —", "hd");
-      };
+      copyBtn.onclick = doCopy;
       row1.appendChild(copyBtn);
       container.appendChild(row1);
 

@@ -355,7 +355,7 @@ textarea {
 
 /* the compact A⇄B in the sticky bar — the fastest comparison should not live
    one tab away */
-#btnAB {
+#btnAB, #btnCopyQuick {
   flex: 0 0 auto;
   min-width: 4.6rem;
   padding: 0 0.45rem;
