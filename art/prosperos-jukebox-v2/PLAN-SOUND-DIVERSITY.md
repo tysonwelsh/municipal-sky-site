@@ -286,11 +286,12 @@ CHORDS with a bellows breathing under them.
   hum bed it is a fourth sustained low-mid voice — it must rest the hum
   bed when it plays (roster rule), or it deepens F1.
 - *Owner's tuning (by ear on the lab page, 2026-09-03 — the integration's
-  design constants):* level ×0.8 (peak 0.0096/part), presence ×0.95,
-  reediness 0.7 (toward the saw — buzzier than the sketch), bellows ×1.5
-  (a deeper breath under the chord), body +5 dB, 3 parts, hold ×0.7
-  (chords 5.6–14 s — shorter than the sketch), take-cadence 0.45. These
-  are now the lab page's defaults.
+  design constants; revised the same day from a first pass at level 0.8 /
+  reediness 0.7 / bellows 1.5):* level ×0.7 (peak 0.0084/part), presence
+  ×0.95, reediness 0.3 (toward the square — softer than the sketch's 0.5),
+  bellows ×1.4 (a deeper breath under the chord), body +5 dB, 3 parts,
+  hold ×0.7 (chords 5.6–14 s — shorter than the sketch), take-cadence
+  0.45. These are now the lab page's defaults.
 
 **(c) THE FLUE — a wooden flute (recorder)** — *approved as the rarest
 fourth speaker (owner, 2026-09-02); the air limits stay exactly as they are*
