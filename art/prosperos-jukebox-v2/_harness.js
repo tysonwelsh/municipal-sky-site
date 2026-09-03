@@ -2439,10 +2439,13 @@ for (var r31i = 0; r31i < runA.events.length; r31i++) {
   var chords = r31Group(notes);
   var i, j;
 
-  // the hold law: one chord at a time, three parts. The ONE sanctioned
-  // overlap is a taken cadence's own approach→arrival crossfade — the same
-  // 1.2 s the hum consort uses, and the cadence's geometry, not a second
-  // entry: the two chords belong to one cadence event.
+  // the hold law: one chord at a time, two to FOUR parts (rc.34: the `parts`
+  // knob wanders 2 (p .25) / 3 (p .55) / 4 (p .2) per chord, and the voicer
+  // renders all three hands — the bound moved from 3 to 4 with the law it
+  // asserts). The ONE sanctioned overlap is a taken cadence's own
+  // approach→arrival crossfade — the same 1.2 s the hum consort uses, and
+  // the cadence's geometry, not a second entry: the two chords belong to one
+  // cadence event.
   function r31SameCadence(t1, t2) {
     for (var q = 0; q < A2.cads.length; q++) {
       var ce = A2.cads[q].e;
@@ -2453,11 +2456,11 @@ for (var r31i = 0; r31i < runA.events.length; r31i++) {
   }
   var overlapBad = 0, partsBad = 0;
   for (i = 0; i < chords.length; i++) {
-    if (chords[i].notes.length < 2 || chords[i].notes.length > 3) partsBad++;
+    if (chords[i].notes.length < 2 || chords[i].notes.length > 4) partsBad++;
     if (i > 0 && chords[i].t < chords[i - 1].t + chords[i - 1].durS - 1e-6 &&
         !r31SameCadence(chords[i - 1].t, chords[i].t)) overlapBad++;
   }
-  check("REGAL hold law: one chord at a time, 2–3 parts",
+  check("REGAL hold law: one chord at a time, 2–4 parts (rc.34)",
     overlapBad === 0 && partsBad === 0,
     chords.length + " chord(s)" + (overlapBad ? ", " + overlapBad + " overlap(s)" : "") +
     (partsBad ? ", " + partsBad + " bad part count(s)" : ""));
@@ -2585,9 +2588,15 @@ for (var r31i = 0; r31i < runA.events.length; r31i++) {
   check("FLUE speaks only where the roster admits it (chapters and the reverie)",
     sceneBad === 0, notes.length + " note(s)" + (sceneBad ? ", " + sceneBad + " off-roster (" + sFirst + ")" : ""));
 
-  // the register rule: every utterance's MEAN degree lands in the octave the
-  // register knob names (+1 at the default → degrees 7..13, C5–B5)
-  var regBad = 0;
+  // the register rule: every utterance's MEAN degree lands squarely inside
+  // ONE octave of the field — the octave the register knob names (+1 at the
+  // default → degrees 7..13, C5-B5). rc.34 made that knob CHARACTER (0 p .15
+  // / +1 p .7 / +2 p .15, drawn with the evening), so the octave is no longer
+  // always +1; what the law actually says is that it is a FOLD, never a
+  // threshold — one octave for the whole utterance, and the SAME octave for
+  // every utterance of an evening, or the owner cannot tune what will not
+  // hold still. That is what this asserts now.
+  var regBad = 0, regNote = "", regByEvening = {};
   for (j = 0; j < claims.length; j++) {
     c = claims[j];
     var sum = 0, n2 = 0;
@@ -2596,10 +2605,19 @@ for (var r31i = 0; r31i < runA.events.length; r31i++) {
     }
     if (!n2) continue;
     var mean = sum / n2;
-    if (!(mean >= 7 && mean < 14)) regBad++;
+    var oct = Math.floor(mean / 7);
+    if (!(oct >= 0 && oct <= 2)) { regBad++; if (!regNote) regNote = "mean " + mean.toFixed(2); continue; }
+    var evI = 0;
+    for (i = 0; i < begins.length; i++) if (begins[i].t <= c.t + 1e-9) evI = i;
+    if (regByEvening[evI] == null) regByEvening[evI] = oct;
+    else if (regByEvening[evI] !== oct) {
+      regBad++;
+      if (!regNote) regNote = "evening " + (evI + 1) + " changed register mid-night";
+    }
   }
-  check("FLUE register: every utterance's mean lands in the owner's +1 octave",
-    regBad === 0, claims.length + " utterance(s), " + regBad + " out of register");
+  check("FLUE register: one octave per utterance, and one octave per evening (rc.34: 0/+1/+2)",
+    regBad === 0, claims.length + " utterance(s), " + regBad + " out of register" +
+    (regNote ? " (" + regNote + ")" : "") + "; octaves " + JSON.stringify(regByEvening));
 
   // the rarest speaker: fewer utterances than the pluck, over a full run
   var pluckClaims = 0;
@@ -3734,6 +3752,364 @@ function p3AmbientFires(r) {
   }
   check("LABELS/TELEMETRY getInfo().weather channels in [0,1] across the run",
     wN > 0 && wBad === 0, wN + " samples");
+})();
+
+// ============================================================================
+// ---- LIBRARY rc.34: wander ----
+//
+// Plan §11 ("Ranges — knobs that should wander") landed in the Library: every
+// layer gained a `vary` knob (0–2, def 1) and every parameter the plan's
+// tables name gained a span and a CLASS — touch (a fresh draw every
+// sounding), character (one draw per evening) or weather (a slow drift over
+// minutes). The engine never calls PJ2.Voice.wander directly: it reads
+// through wTouch/wChar/wWx, which record the min/max of every value the
+// bodies actually used, and getWanderInfo() hands that ledger (plus the
+// authored defs, the translated spans and the per-evening character log) to
+// this section. So these rows judge the ENGINE's own draws over whole
+// evenings, not the helper's unit behaviour.
+//
+// The load-bearing row is VARY-ZERO. At vary 0 the wander returns the knob
+// for every read, so the engine must be rc.33 BIT FOR BIT — the digests below
+// were taken from rc.33's own pj2-library.js (the build before the wander)
+// through this same runner, and they are what makes every span above them
+// safe to add.
+// ============================================================================
+(function testLibraryWander34() {
+  var i, j, lk, pk;
+  var W_SIM = Math.max(900, Math.min(RUN, 1800));
+  var W_SEED_A = LIB_SEED, W_SEED_B = LIB_SEED + 1;
+  // rc.33's note+event stream, seeds 20260706 / 20260707, 900 s, taken with
+  // the serializer below. Recomputed here at vary 0; a mismatch means the
+  // wander moved a stream it had no business moving.
+  var VARY0_DIGEST = { "20260706": "3e2039ae", "20260707": "56957d6f" };
+  var wErrs = [];
+
+  function fnv(s) {
+    var h = 0x811c9dc5;
+    for (var q = 0; q < s.length; q++) {
+      h ^= s.charCodeAt(q);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return h >>> 0;
+  }
+  // Times RELATIVE to the run's own start: this section runs at whatever
+  // point the virtual clock has reached, and an absolute-time digest would
+  // depend on how long the harness has been simulating.
+  function wSer(o, t0, isNote) {
+    var ks = Object.keys(o).sort(), parts = [];
+    for (var q = 0; q < ks.length; q++) {
+      var k = ks[q], v = o[k];
+      if (k === "t" || k === "startT" || k === "arriveT" || k === "atT") v = Math.round((v - t0) * 1e6) / 1e6;
+      else if (typeof v === "number") v = Math.round(v * 1e9) / 1e9;
+      parts.push(k + "=" + JSON.stringify(v));
+    }
+    return (isNote ? "N " : "E ") + parts.join(" ");
+  }
+  // One Library run with every layer's `vary` set to `vy` (null = leave the
+  // shipped default of 1). Swallowed console.error is collected, never lost.
+  function wRun(seedVal, simS, vy) {
+    var origCE = console.error;
+    console.error = function () { wErrs.push(Array.prototype.join.call(arguments, " ")); };
+    var out = { events: [], notes: [], info: null, seed: seedVal };
+    try {
+      var L = P.Library.create({ seed: seedVal, volume: 0.5 });
+      if (vy != null) {
+        var lp = L.getLayerParams();
+        for (var a in lp) {
+          for (var b = 0; b < lp[a].length; b++) {
+            if (lp[a][b].key === "vary") L.setLayerParam(a, "vary", vy);
+          }
+        }
+      }
+      L.setEventListener(function (e) { out.events.push(e); });
+      L.setNoteListener(function (n) { out.notes.push(n); });
+      var t0 = vnow;
+      L.play();
+      vAdvance(t0 + simS);
+      L.stop();
+      vAdvance(vnow + 3);
+      out.info = L.getWanderInfo();
+      var lines = [];
+      for (var e2 = 0; e2 < out.events.length; e2++) lines.push(wSer(out.events[e2], t0, false));
+      for (var n2 = 0; n2 < out.notes.length; n2++) lines.push(wSer(out.notes[n2], t0, true));
+      out.digest = fnv(lines.join("\n")).toString(16);
+    } catch (e) {
+      errors.push("wander run " + seedVal + "/" + vy + ": " + (e && e.message));
+      out.digest = "threw";
+      out.info = { params: {}, spans: {}, seen: {}, dressed: [] };
+    }
+    console.error = origCE;
+    return out;
+  }
+
+  // ---------------- VARY-ZERO: rc.33, bit for bit ----------------
+  var z1 = wRun(W_SEED_A, 900, 0);
+  var z2 = wRun(W_SEED_B, 900, 0);
+  check("LIBW VARY-ZERO the whole desk at vary 0 replays rc.33's stream byte for byte",
+    z1.digest === VARY0_DIGEST[String(W_SEED_A)] && z2.digest === VARY0_DIGEST[String(W_SEED_B)],
+    "seed " + W_SEED_A + " " + z1.digest + " vs " + VARY0_DIGEST[String(W_SEED_A)] +
+    ", seed " + W_SEED_B + " " + z2.digest + " vs " + VARY0_DIGEST[String(W_SEED_B)] +
+    " (" + z1.notes.length + "/" + z2.notes.length + " notes)");
+
+  // …and the mechanical reason it is byte-identical: at vary 0 every value a
+  // body read WAS the knob. One number seen, and it is the def.
+  var zBad = 0, zNote = "", zN = 0;
+  for (lk in z1.info.seen) {
+    for (pk in z1.info.seen[lk]) {
+      var sN = z1.info.seen[lk][pk], dv = null;
+      var defsZ = z1.info.params[lk] || [];
+      for (i = 0; i < defsZ.length; i++) if (defsZ[i].key === pk) dv = defsZ[i].def;
+      zN++;
+      if (!(sN.min === dv && sN.max === dv)) {
+        zBad++;
+        if (!zNote) zNote = lk + "." + pk + " " + sN.min + ".." + sN.max + " (def " + dv + ")";
+      }
+    }
+  }
+  check("LIBW VARY-ZERO every ranged read returns the knob exactly (no draw reaches a body)",
+    zN > 20 && zBad === 0, zN + " parameter(s) read" + (zBad ? ", " + zBad + " moved (" + zNote + ")" : ""));
+
+  // ---------------- VARY-ONE: the shipped default ----------------
+  var v1 = wRun(W_SEED_A, W_SIM, null);
+  var v1b = wRun(W_SEED_A, W_SIM, null);
+  var v2 = wRun(W_SEED_B, W_SIM, null);
+  var vs = wRun(W_SEED_A, 900, null);            // the same 900 s the vary-0 digest covers
+  check("LIBW VARY-ONE same seed replays the same evening; a different seed does not; vary moves it",
+    v1.digest === v1b.digest && v1.digest !== v2.digest && z1.digest !== vs.digest,
+    "same " + v1.digest + "/" + v1b.digest + ", other " + v2.digest +
+    ", 900 s vary1 " + vs.digest + " vs vary0 " + z1.digest);
+
+  // ---------------- WANDER-SPANS ----------------
+  // Every value the bodies drew over a whole run sits inside the parameter's
+  // translated span; every layer that sounded was actually played rather than
+  // set (n > 0 on its ranged rows).
+  var spanBad = 0, spanNote = "", spanN = 0, spanReads = 0;
+  for (lk in v1.info.params) {
+    var defs = v1.info.params[lk];
+    for (i = 0; i < defs.length; i++) {
+      var d = defs[i];
+      if (!d.per) continue;
+      var seen = v1.info.seen[lk] && v1.info.seen[lk][d.key];
+      if (!seen) continue;                       // a voice this evening never called
+      spanN++; spanReads += seen.n;
+      var lo, hi;
+      if (d.weights) {
+        lo = Infinity; hi = -Infinity;
+        for (j = 0; j < d.weights.length; j++) { lo = Math.min(lo, d.weights[j][0]); hi = Math.max(hi, d.weights[j][0]); }
+      } else {
+        var sp = v1.info.spans[lk] && v1.info.spans[lk][d.key];
+        lo = sp ? sp.lo : d.def; hi = sp ? sp.hi : d.def;
+      }
+      if (!(seen.min >= lo - 1e-9 && seen.max <= hi + 1e-9)) {
+        spanBad++;
+        if (!spanNote) spanNote = lk + "." + d.key + " [" + seen.min.toFixed(4) + ", " + seen.max.toFixed(4) + "] outside [" + lo + ", " + hi + "]";
+      }
+    }
+  }
+  check("LIBW WANDER-SPANS every drawn value stays inside its span at vary 1",
+    spanN >= 12 && spanBad === 0,
+    spanN + " ranged parameter(s), " + spanReads + " read(s)" + (spanBad ? ", " + spanBad + " outside (" + spanNote + ")" : ""));
+
+  // Integer draws may only land on values the bodies can actually render.
+  var intBad = 0, intNote = "", regalCounts = {};
+  function wSeenOf(inf, layer, key) { return (inf.seen[layer] && inf.seen[layer][key]) || null; }
+  (function () {
+    var rp = wSeenOf(v1.info, "regal", "parts");
+    if (rp && (rp.min < 2 || rp.max > 4 || rp.min !== Math.round(rp.min) || rp.max !== Math.round(rp.max))) {
+      intBad++; if (!intNote) intNote = "regal.parts " + rp.min + ".." + rp.max;
+    }
+    var vr = wSeenOf(v1.info, "vessel", "register");
+    if (vr && (vr.min < 0 || vr.max > 1 || vr.min !== Math.round(vr.min))) {
+      intBad++; if (!intNote) intNote = "vessel.register " + vr.min + ".." + vr.max;
+    }
+    var fr = wSeenOf(v1.info, "flue", "register");
+    if (fr && (fr.min < 0 || fr.max > 2 || fr.min !== Math.round(fr.min))) {
+      intBad++; if (!intNote) intNote = "flue.register " + fr.min + ".." + fr.max;
+    }
+    // …and the voicer really renders what `parts` drew: every regal chord is
+    // 2, 3 or 4 pipes struck together.
+    var byT = {};
+    for (var q = 0; q < v1.notes.length; q++) {
+      if (v1.notes[q].voice !== "regal") continue;
+      var key = v1.notes[q].t.toFixed(6);
+      byT[key] = (byT[key] || 0) + 1;
+    }
+    for (var tk in byT) {
+      regalCounts[byT[tk]] = (regalCounts[byT[tk]] || 0) + 1;
+      if (byT[tk] < 2 || byT[tk] > 4) { intBad++; if (!intNote) intNote = "a chord of " + byT[tk]; }
+    }
+  })();
+  check("LIBW WANDER-SPANS integer draws only reach values the bodies render",
+    intBad === 0, "regal chords by pipe count " + JSON.stringify(regalCounts) +
+    (intNote ? ", bad: " + intNote : ""));
+
+  // ---------------- WANDER-CHARACTER ----------------
+  // The engine's own dress log first: one row per layer/key/evening, and at
+  // least one layer wears a different value on a later evening.
+  var evs = {}, charKeys = 0, charMoved = 0, dupBad = 0;
+  for (i = 0; i < v1.info.dressed.length; i++) {
+    var row = v1.info.dressed[i];
+    var slot = row.layer + "." + row.key;
+    (evs[slot] = evs[slot] || {});
+    if (evs[slot][row.evening] != null && evs[slot][row.evening] !== row.value) dupBad++;
+    evs[slot][row.evening] = row.value;
+  }
+  for (var slot2 in evs) {
+    charKeys++;
+    var vals = [], seenOne = null, moved = false;
+    for (var ev in evs[slot2]) {
+      vals.push(evs[slot2][ev]);
+      if (seenOne == null) seenOne = evs[slot2][ev];
+      else if (evs[slot2][ev] !== seenOne) moved = true;
+    }
+    if (moved) charMoved++;
+  }
+  // …then the law itself, on the engine's OWN authored defs: a character
+  // value holds for a whole evening, changes with the next, and comes back
+  // when the same evening is dressed again.
+  var cHold = true, cMove = false, cBack = true;
+  (function () {
+    var probeParams = v1.info.params.cello;
+    var st = {};
+    for (var q = 0; q < probeParams.length; q++) st[probeParams[q].key] = probeParams[q].def;
+    var w = P.Voice.wander({
+      root: P.Rand.stream(W_SEED_A), layer: "cello", params: probeParams,
+      knob: function (k) { return st[k]; }, vary: function () { return st.vary; },
+    });
+    w.dress(1);
+    var e1 = w.character("brightness");
+    for (var r = 0; r < 40; r++) if (w.character("brightness") !== e1) cHold = false;
+    w.dress(2);
+    var e2 = w.character("brightness");
+    cMove = (e2 !== e1);
+    w.dress(1);
+    cBack = (w.character("brightness") === e1);
+  })();
+  check("LIBW WANDER-CHARACTER one value per evening: held all night, redrawn at the seam, reproducible",
+    dupBad === 0 && charKeys >= 10 && charMoved >= 1 && cHold && cMove && cBack,
+    charKeys + " character row(s), " + charMoved + " changed between evenings" +
+    (dupBad ? ", " + dupBad + " inconsistent" : "") +
+    "; hold " + cHold + ", move " + cMove + ", back " + cBack);
+
+  // ---------------- WANDER-WEATHER ----------------
+  // Slow by construction. The helper's weather is 0.6·sin(2πt/p1) +
+  // 0.4·sin(2πt/p2) with p1 in [60, 150] s and p2 in [150, 240] s, so the
+  // steepest slope it can reach is 0.6·2π/60 + 0.4·2π/150 = 0.0796 per second
+  // in LFO units, and the value is the span's centre + (span/2)·lfo — a hard
+  // ceiling of about 8 % of the span per 2 s. THE SLOPE RULE: a tenth of the
+  // span per 2 s, never more; and over 600 s it must actually have wandered a
+  // quarter of its span, or it is not weather.
+  var wxN = 0, wxFast = 0, wxStuck = 0, wxOut = 0, wxNote = "";
+  for (lk in v1.info.params) {
+    var wdefs = v1.info.params[lk];
+    for (i = 0; i < wdefs.length; i++) {
+      if (wdefs[i].per !== "weather") continue;
+      wxN++;
+      var stW = {};
+      for (j = 0; j < wdefs.length; j++) stW[wdefs[j].key] = wdefs[j].def;
+      var ww = P.Voice.wander({
+        root: P.Rand.stream(W_SEED_A), layer: lk, params: wdefs,
+        knob: (function (s) { return function (k) { return s[k]; }; })(stW),
+        vary: (function (s) { return function () { return s.vary; }; })(stW),
+      });
+      ww.dress(1);
+      var key = wdefs[i].key, span = wdefs[i].hi - wdefs[i].lo;
+      var prev = ww.weather(key, 0), lo2 = prev, hi2 = prev, worst = 0;
+      for (var t = 2; t <= 600; t += 2) {
+        var cur = ww.weather(key, t);
+        var step = Math.abs(cur - prev);
+        if (step > worst) worst = step;
+        if (cur < lo2) lo2 = cur;
+        if (cur > hi2) hi2 = cur;
+        if (cur < wdefs[i].lo - 1e-9 || cur > wdefs[i].hi + 1e-9) wxOut++;
+        prev = cur;
+      }
+      if (worst > span * 0.10) { wxFast++; if (!wxNote) wxNote = lk + "." + key + " step " + worst.toFixed(5) + " of " + span.toFixed(3); }
+      if ((hi2 - lo2) < span * 0.25) { wxStuck++; if (!wxNote) wxNote = lk + "." + key + " barely moved"; }
+    }
+  }
+  check("LIBW WANDER-WEATHER drifts, never steps: ≤10 % of the span per 2 s, and it moves over 10 min",
+    wxN >= 3 && wxFast === 0 && wxStuck === 0 && wxOut === 0,
+    wxN + " weather parameter(s)" + (wxNote ? ", " + wxNote : "") + (wxOut ? ", " + wxOut + " out of span" : ""));
+
+  // The seam voices read weather at CYCLE START and hold it: the drone's
+  // lowpass and its tremolo LFO are both set once, at t, and the LFO is born
+  // and dies with the cycle — so ONE read of sway and one of warmth per
+  // cycle, never one per pad and never mid-pad. The cycle law is 20–30 s with
+  // a 2.5–5 s overlap, so a run of S seconds admits between S/35 and S/15 of
+  // them; the drone emits 2–3 notes per cycle (plus the cadence pads and the
+  // sea-change bloom, which are not cycles at all), so a per-pad read would
+  // show up at once as the read count climbing toward the note count.
+  var droneSway = wSeenOf(v1.info, "drone", "sway");
+  var droneWarm = wSeenOf(v1.info, "drone", "warmth");
+  var droneNotes = 0;
+  for (i = 0; i < v1.notes.length; i++) if (v1.notes[i].voice === "drone") droneNotes++;
+  var seamOk = !!droneSway && !!droneWarm &&
+               droneSway.n === droneWarm.n &&
+               droneSway.n >= W_SIM / 35 && droneSway.n <= W_SIM / 15 &&
+               droneNotes >= droneSway.n * 2;
+  check("LIBW WANDER-WEATHER the seam holds: the drone reads sway/warmth once per cycle, never per pad",
+    seamOk,
+    (droneSway ? droneSway.n : "n/a") + " sway read(s), " + (droneWarm ? droneWarm.n : "n/a") +
+    " warmth read(s) over " + W_SIM + "s (" + Math.ceil(W_SIM / 35) + "–" + Math.floor(W_SIM / 15) +
+    " cycles expected), " + droneNotes + " drone note(s)");
+
+  // ---------------- WANDER-LEDGER ----------------
+  // The header's gain ledger, recomputed from the spans themselves at each
+  // ranged level-affecting parameter's `hi`, so a widened span can never
+  // quietly outrun the master ceiling.
+  function hiOf(layer, key) {
+    var defs = v1.info.params[layer] || [];
+    for (var q = 0; q < defs.length; q++) if (defs[q].key === key) return (defs[q].hi != null) ? defs[q].hi : defs[q].def;
+    return 1;
+  }
+  var MB_PARTIAL = 0.251;                       // pj2-library's MB_DAMP_PARTIAL
+  var L_DRONE = 0.27, L_AMB = 0.10, L_DELAY = 0.02;
+  var L_CELLO = (0.036 + 0.018 * 0.22 * hiOf("cello", "rosin")) * 1.12;
+  var L_CELLO_FLAG = 0.026;
+  // the bed's formants widen with openness × drift (energy ~ bandwidth, so
+  // amplitude ~ its square root) and its tremolo peak with `breath`
+  var L_HUM = 2 * 0.026 * 0.3 * Math.sqrt(hiOf("hum", "openness") * hiOf("hum", "openDrift")) *
+              ((1 + hiOf("hum", "breath")) / 1.1) + 3 * 0.018 * 0.3;
+  var L_PLUCK = 0.055 + 0.012;
+  var L_BOX = 0.024 + 0.011 * hiOf("musicbox", "shimmer") * MB_PARTIAL;
+  var L_FLUE = 0.021 + 0.021 * 0.35 * hiOf("flue", "chiff") + 0.021 * 0.25 * hiOf("flue", "breath");
+  var L_HALO = 0.02 * hiOf("halo", "level");
+  var L_REGAL = 3 * 0.0084 *                                   // ONE bellows: 3 × peak whatever the hand
+                (1 + (Math.pow(10, 1.5 / 20) - 1) * hiOf("regal", "bellows")) *
+                1.2 * Math.pow(10, hiOf("regal", "body") / 20) / Math.pow(10, 5 / 20);
+  var L_VESSEL = (0.015 * (1 + 0.9 * hiOf("vessel", "partials")) +
+                  0.015 * 0.06 * hiOf("vessel", "bow")) * 1.1;
+  var sumCh2 = L_DRONE + L_CELLO + L_HUM + (L_PLUCK + L_BOX + L_FLUE) + L_AMB + L_HALO + L_DELAY + L_REGAL;
+  var sumRev = L_DRONE + L_CELLO_FLAG + L_HUM + (L_PLUCK + L_FLUE) + L_AMB + L_HALO + L_DELAY + L_VESSEL;
+  var sumSei = L_DRONE + (L_PLUCK + L_BOX) + L_AMB + L_HALO + L_DELAY + L_REGAL;
+  var worstScene = Math.max(sumCh2, sumRev, sumSei);
+  var atLimiter = worstScene * 1.3 * 0.6 * 1.66;   // rooms dry+wet, master 0.6, saturator 1.66
+  check("LIBW WANDER-LEDGER worst case at every span's hi stays under the −1 dB master ceiling",
+    atLimiter < 0.89,
+    "chapter2 " + sumCh2.toFixed(3) + ", reverie " + sumRev.toFixed(3) + ", seizure " + sumSei.toFixed(3) +
+    " → " + atLimiter.toFixed(3) + " into the limiter (ceiling 0.89)");
+
+  // Nothing the wander touches may click: every ranged envelope edge stays
+  // above the body's click-safe floor at the FAST end of its span.
+  var edgeBad = [], vAtk = hiOf("vessel", "attack");
+  var defsV = v1.info.params.vessel || [];
+  var vAtkLo = 1;
+  for (i = 0; i < defsV.length; i++) if (defsV[i].key === "attack" && defsV[i].lo != null) vAtkLo = defsV[i].lo;
+  if (2.4 * vAtkLo < 0.05) edgeBad.push("vessel attack " + (2.4 * vAtkLo).toFixed(3) + "s");
+  var defsM = v1.info.params.musicbox || [], tineLo = 0.6;
+  for (i = 0; i < defsM.length; i++) if (defsM[i].key === "tine" && defsM[i].lo != null) tineLo = defsM[i].lo;
+  var fastest = Infinity;
+  for (i = 0; i < v1.notes.length; i++) if (v1.notes[i].voice === "musicbox" && v1.notes[i].durS < fastest) fastest = v1.notes[i].durS;
+  if (fastest < 0.12 - 1e-9) edgeBad.push("musicbox durS " + fastest.toFixed(4));
+  check("LIBW WANDER-EDGES no ranged envelope edge can click (attacks and tails keep their floors)",
+    edgeBad.length === 0,
+    "vessel bow-in " + (2.4 * vAtkLo).toFixed(2) + "–" + (3.6 * vAtk).toFixed(2) + "s, tine ×" + tineLo +
+    ", shortest box note " + (isFinite(fastest) ? fastest.toFixed(3) : "n/a") + "s" +
+    (edgeBad.length ? " — " + edgeBad.join(", ") : ""));
+
+  check("LIBW zero swallowed errors across the wander runs", wErrs.length === 0,
+    wErrs.length ? wErrs.slice(0, 3).join(" | ") : "6 run(s), " + (v1.notes.length + v2.notes.length) + " notes");
 })();
 
 // ============================================================================
