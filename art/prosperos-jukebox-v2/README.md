@@ -131,6 +131,8 @@ Three new voices, all tuned by ear by the owner on the lab page and
 carried into `pj2-library.js` with those exact numbers as design
 constants:
 
+**Landed in Sycorax (rc.32, 2026-09-03).** The five voices the owner auditioned on `lab-sycorax.html` — the BULLROARER (a whirled slat, the rite's first iterative texture; processional and invocation), the OVERTONE CHANT (one held tone with a narrow formant stepping through its harmonics), the JAW HARP (the rite's first plucked sound; the circling only), the BOWED BLADE (the one high sustained whisper, kept far in the cavern and the delay wall) and the CAULDRON (the spell's pot, in the ambient pool with a mixer row of its own) — each on its own fork, lane, layer gain and knob strip at the owner's by-ear settings, none of them ever claiming the air, and all five silent from four seconds before the cut through its return, with anything still sounding at tB ended there. And PLAN §5.3's scene roster as adopted: the horn rests in the gathering and the circling, the rebec outside the processional and the circling, the waterphone outside the circling, the gurdy never — so the chapters of the rite sound different from one another. Stops and the parameter ranges (§11) are still to come.
+
 - **the vessel** — a bowed alembic, the Library's over-voice: four
   inharmonic bowl partials, a fundamental that BEATS at 1 Hz, and the
   engine's first free-ring envelope (the bow lifts, the metal goes on
