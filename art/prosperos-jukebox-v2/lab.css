@@ -1,0 +1,334 @@
+/* ==========================================================================
+   lab.css — the sound-lab pages' own sheet (dev-only, PLAN-SOUND-DIVERSITY
+   §8). Phone first: one column, 16 px base, every control a real 44 px
+   target, nothing that needs a hover or a pointer. The inks are the
+   Library's (pj2-skin.js registry: paper #0a0805/#120d07/#1a130a, ink
+   #ffdc82/#ffc878/#b4823c, gilt #c9a227) but this sheet is independent of
+   pj2.css — the lab must keep working while the jukebox's skin changes.
+
+   Layout law: nothing may scroll the PAGE sideways at 390 px. Wide things
+   (the roster grid) scroll inside their own box.
+   ========================================================================== */
+
+:root {
+  --paper:  #0a0805;
+  --paper2: #120d07;
+  --paper3: #1a130a;
+  --edge:   #2a1e10;
+  --edge2:  #3d2c17;
+  --ink:    #ffdc82;
+  --ink2:   #ffc878;
+  --ink3:   #b4823c;
+  --gilt:   #c9a227;
+  --bad:    #e2705a;
+  --good:   #8fbf7a;
+  --tapmin: 44px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink3);
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+.wrap { max-width: 42rem; margin: 0 auto; padding: 0 0.75rem 5rem; }
+
+h1 { font-size: 1.15rem; color: var(--ink2); margin: 0.7rem 0 0.2rem; }
+h2 { font-size: 1rem;    color: var(--ink2); margin: 1.1rem 0 0.4rem; }
+h3 { font-size: 0.95rem; color: var(--ink);  margin: 0 0 0.2rem; }
+p  { margin: 0.4rem 0; font-size: 0.95rem; }
+a  { color: var(--gilt); }
+.dim  { color: #7d6742; }
+.tiny { font-size: 0.85rem; line-height: 1.4; }
+.mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+.nowrap { white-space: nowrap; }
+
+/* --------------------------------------------------------------------------
+   THE STICKY TRANSPORT — play, seed, master, meter, where the evening is,
+   and the error line. Kept under ~30% of a 390x844 phone: the owner must be
+   able to see the scene and stop the sound without scrolling.
+   -------------------------------------------------------------------------- */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--paper2);
+  border-bottom: 1px solid var(--edge2);
+  padding: 0.4rem 0.6rem 0;
+  margin: 0 -0.75rem;
+}
+.bar-in { max-width: 42rem; margin: 0 auto; }
+.bar-row { display: flex; align-items: center; gap: 0.4rem; }
+.bar-row + .bar-row { margin-top: 0.3rem; }
+
+#btnPlay { flex: 0 0 auto; min-width: 5.5rem; }
+#seed {
+  flex: 1 1 6rem;
+  min-width: 0;
+  min-height: var(--tapmin);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 15px;
+  background: var(--paper3);
+  color: var(--ink);
+  border: 1px solid var(--edge2);
+  border-radius: 6px;
+  padding: 0 0.4rem;
+}
+#btnSeed { flex: 0 0 auto; min-width: 5rem; padding: 0 0.5rem; }
+
+.vol-lab { flex: 0 0 auto; font-size: 15px; color: var(--ink3); }
+#master  { flex: 1 1 auto; min-width: 0; }
+
+.meter { display: flex; align-items: center; gap: 0.4rem; }
+.meter-bar {
+  flex: 1 1 auto;
+  height: 8px;
+  background: var(--paper3);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.meter-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4d6b41, var(--gilt)); }
+.meter-db { flex: 0 0 4.6rem; text-align: right; font-size: 14px; color: var(--ink3);
+            font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+#nowline { font-size: 15px; color: var(--ink2); padding: 0.1rem 0 0.2rem;
+           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#errbar  { font-size: 14px; color: var(--bad); white-space: pre-wrap; padding-bottom: 0.25rem; }
+#errbar:empty { display: none; }
+
+/* tabs live inside the sticky bar — always one tap away */
+.tabs { display: flex; gap: 0.25rem; margin-top: 0.25rem; }
+.tab {
+  flex: 1 1 0;
+  min-height: 40px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  background: var(--paper3);
+  color: var(--ink3);
+  border: 1px solid var(--edge);
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+  padding: 0 0.15rem;
+}
+.tab[aria-selected="true"] { background: var(--paper); color: var(--ink); border-color: var(--edge2); }
+
+/* --------------------------------------------------------------------------
+   BUTTONS, SWITCHES, CHIPS — every one a 44 px target, focus always visible.
+   -------------------------------------------------------------------------- */
+button {
+  font-family: inherit;
+  font-size: 15px;
+  min-height: var(--tapmin);
+  background: var(--paper3);
+  color: var(--ink2);
+  border: 1px solid var(--edge2);
+  border-radius: 8px;
+  padding: 0 0.8rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(201, 162, 39, 0.25);
+}
+button.wide { min-width: 88px; }
+button.on   { background: #3a2a12; color: var(--ink); border-color: var(--gilt); }
+button:active { background: #43310f; }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--gilt); outline-offset: 1px;
+}
+button[disabled] { opacity: 0.45; }
+
+.btnrow { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.45rem 0; }
+.btnrow button { flex: 1 1 auto; min-width: 88px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.4rem 0; }
+.chip {
+  min-height: var(--tapmin);
+  border-radius: 999px;
+  font-size: 14px;
+  padding: 0 0.75rem;
+}
+.chip.off { color: #6b573a; border-color: var(--edge); background: var(--paper2); text-decoration: line-through; }
+
+/* --------------------------------------------------------------------------
+   CARDS — one per candidate, one per stop.
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--paper2);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem 0.7rem;
+  margin: 0.8rem 0;
+}
+.card.enabled { border-color: var(--edge2); }
+.card-head { display: flex; align-items: center; gap: 0.5rem; }
+.card-head h3 { flex: 1 1 auto; }
+.card-desc { font-size: 0.9rem; color: #8a7148; margin: 0.15rem 0 0.4rem; }
+.card-status {
+  font-size: 14px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--good);
+  background: var(--paper);
+  border: 1px solid var(--edge);
+  border-radius: 7px;
+  padding: 0.3rem 0.4rem;
+  margin: 0.4rem 0 0.1rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* the ENABLE switch: a plain checkbox scaled to a thumb */
+.sw { display: flex; align-items: center; gap: 0.35rem; min-height: var(--tapmin); }
+.sw input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--gilt); }
+.sw label { font-size: 14px; color: var(--ink3); padding: 0.6rem 0.3rem; cursor: pointer; }
+
+/* --------------------------------------------------------------------------
+   KNOBS — label above, value right, default marked, ↺ resets (double-tap
+   the slider does too). Native range styled large: touch reliability beats
+   a prettier custom drag.
+   -------------------------------------------------------------------------- */
+.knob { padding: 0.15rem 0 0.25rem; border-top: 1px dashed #241a0e; }
+.knob-head { display: flex; align-items: center; gap: 0.4rem; min-height: 34px; }
+.knob-label { flex: 1 1 auto; font-size: 15px; color: var(--ink3); }
+.knob-val {
+  flex: 0 0 auto; font-size: 15px; color: var(--ink);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.knob-val.moved { color: var(--gilt); font-weight: 600; }
+.knob-def { flex: 0 0 auto; font-size: 12px; color: #6b573a; }
+.knob-reset {
+  flex: 0 0 auto;
+  min-width: var(--tapmin); min-height: var(--tapmin);
+  padding: 0; font-size: 17px; line-height: 1;
+  background: none; border: none; color: var(--ink3);
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: var(--tapmin);
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 8px; border-radius: 4px;
+  background: linear-gradient(90deg, #4a3413, var(--paper3));
+  border: 1px solid var(--edge2);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 30px; height: 30px; margin-top: -12px;
+  border-radius: 50%;
+  background: var(--gilt);
+  border: 2px solid #16100a;
+}
+input[type=range]::-moz-range-track {
+  height: 8px; border-radius: 4px; background: var(--paper3); border: 1px solid var(--edge2);
+}
+input[type=range]::-moz-range-thumb {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--gilt); border: 2px solid #16100a;
+}
+
+/* segmented switch (register 0/+1, parts 2/3, drone registration) */
+.seg { display: flex; gap: 0.3rem; padding-bottom: 0.35rem; }
+.seg button { flex: 1 1 0; min-width: 0; font-size: 14px; padding: 0 0.3rem; }
+
+/* --------------------------------------------------------------------------
+   THE LOG — every entry decision with its arithmetic, newest first.
+   -------------------------------------------------------------------------- */
+details.logbox { margin: 1rem 0 0; border: 1px solid var(--edge); border-radius: 10px; background: var(--paper2); }
+details.logbox > summary {
+  min-height: var(--tapmin);
+  display: flex; align-items: center;
+  padding: 0 0.7rem;
+  font-size: 15px; color: var(--ink2);
+  cursor: pointer;
+}
+.log {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.42;
+  color: #7d6742;
+  max-height: 17rem;
+  overflow-y: auto;
+  padding: 0.2rem 0.7rem 0.6rem;
+  overflow-wrap: anywhere;
+}
+.log .did { color: var(--ink2); }
+.log .hd  { color: var(--gilt); }
+
+/* --------------------------------------------------------------------------
+   THE ROSTER GRID — wider than a phone by nature, so it scrolls in its own
+   box with the layer names pinned.
+   -------------------------------------------------------------------------- */
+.gridwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--edge); border-radius: 10px; }
+table.roster { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+table.roster th, table.roster td { border: 1px solid var(--edge); padding: 0; text-align: center; }
+table.roster thead th {
+  position: sticky; top: 0;
+  background: var(--paper3); color: var(--ink3);
+  font-weight: 400; font-size: 12px; line-height: 1.15;
+  padding: 0.3rem 0.15rem; min-width: 44px;
+}
+table.roster th.rowlab {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--paper2); color: var(--ink2);
+  text-align: left; font-weight: 400; font-size: 13px;
+  padding: 0 0.4rem; min-width: 6.2rem; white-space: nowrap;
+}
+table.roster thead th.rowlab { z-index: 3; }
+table.roster td button {
+  width: 44px; height: 44px; min-height: 44px;
+  border: none; border-radius: 0; background: transparent;
+  color: #5d4a2c; font-size: 17px; padding: 0;
+}
+table.roster td button.on { background: #33260f; color: var(--ink); }
+table.roster col.here, table.roster td.here { background: rgba(201, 162, 39, 0.10); }
+table.roster th.here { background: #3a2a12; color: var(--ink); }
+tr.cand th.rowlab { color: var(--gilt); }
+
+/* --------------------------------------------------------------------------
+   MIX — the copy/paste surfaces.
+   -------------------------------------------------------------------------- */
+textarea {
+  width: 100%;
+  min-height: 8.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  background: var(--paper3);
+  color: var(--ink2);
+  border: 1px solid var(--edge2);
+  border-radius: 8px;
+  padding: 0.4rem;
+  resize: vertical;
+}
+.ab-state { font-size: 14px; color: var(--ink3); font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+.note {
+  border-left: 2px solid var(--edge2);
+  padding: 0.1rem 0 0.1rem 0.6rem;
+  margin: 0.5rem 0;
+  color: #8a7148;
+  font-size: 0.9rem;
+}
+
+.panel[hidden] { display: none !important; }
+
+@media (min-width: 34rem) {
+  .knob-head { min-height: 38px; }
+  .card { padding: 0.8rem 0.9rem 0.9rem; }
+}
