@@ -1733,14 +1733,19 @@
       desc: "The rarest fourth speaker: a blown, hollow melody in the mid register, with a chiff at the onset and a late vibrato. It has its OWN motif brain (the engine's is untouched) and it speaks only when the engine's air is free.",
       enabled: false,
       specs: [
-        { key: "level", label: "level — how loud each note sits (×0.03)", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, step: 0.05, def: 1 },
+        // Defaults = the owner's tuning by ear on the phone (2026-09-03):
+        // level 0.7, presence 0.8, breath 1.75, vibrato 2.0 (the knob's
+        // ceiling — the owner wanted the full waver), pace x1.5, phrase 4
+        // (chiff 1 and register +1 unchanged). Design constants for the
+        // integration.
+        { key: "level", label: "level — how loud each note sits (×0.03)", min: 0, max: 2, step: 0.05, def: 0.7 },
+        { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, step: 0.05, def: 0.8 },
         { key: "chiff", label: "chiff — the breath edge at each onset", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2, step: 0.05, def: 1 },
-        { key: "vibrato", label: "vibrato — the waver, arriving half a second late", min: 0, max: 2, step: 0.05, def: 1 },
+        { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2, step: 0.05, def: 1.75 },
+        { key: "vibrato", label: "vibrato — the waver, arriving half a second late", min: 0, max: 3, step: 0.05, def: 2 },
         { key: "register", label: "register — how high the recorder sits (the motif is lifted to it)", type: "switch", choices: [[0, "oct 0"], [1, "+1"], [2, "+2"]], def: 1 },
-        { key: "pace", label: "pace × — faster to the right", min: 0.5, max: 2, step: 0.05, def: 1 },
-        { key: "phrase", label: "phrase length — notes per utterance", min: 3, max: 8, step: 1, def: 5, dp: 0 },
+        { key: "pace", label: "pace × — faster to the right", min: 0.5, max: 2, step: 0.05, def: 1.5 },
+        { key: "phrase", label: "phrase length — notes per utterance", min: 3, max: 8, step: 1, def: 4, dp: 0 },
       ],
       chance: flueChance, enter: function (why, at) { return fluePhrase(why, at); },
       one: function () { return flueOneTone(); },
