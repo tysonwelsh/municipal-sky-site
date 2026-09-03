@@ -37,6 +37,8 @@
   let the bus take the plain ctx.destination route — for headless runs).
 -->
 <link rel="stylesheet" href="lab.css">
+<!-- an inline favicon: dev pages should not 404 in the console -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0805'/%3E%3Ccircle cx='8' cy='9' r='4.2' fill='none' stroke='%23c9a227' stroke-width='1.4'/%3E%3Cpath d='M6 4.6h4' stroke='%23ffdc82' stroke-width='1.4'/%3E%3C/svg%3E">
 <script>
   // Silence must never be mute: catch anything that throws before the shell
   // is alive and show it on the page (the shell replays these into its own
@@ -65,6 +67,7 @@
       <div class="bar-row">
         <span class="vol-lab">vol</span>
         <input type="range" id="master" min="0" max="1" step="0.01" value="0.85" aria-label="master volume">
+        <button id="btnAB" title="swap between the A and B snapshots (saved on the MIX tab)">A⇄B</button>
       </div>
       <div class="bar-row meter">
         <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
@@ -84,15 +87,21 @@
   <!-- ================= TAB 1 — INSTRUMENTS ================= -->
   <section class="panel" data-tab="instruments">
     <h1>Library sound lab</h1>
-    <p class="tiny dim">The real engine, unmodified, plus three candidate
-    instruments for the Library's empty register. Turn one on, let the
-    evening run, and move the knobs while it plays — every knob is read at
-    the moment the next note is scheduled.</p>
-    <p class="tiny dim"><b>You never have to wait.</b> "SOUND ONE NOW" plays
-    the instrument on the current chord immediately; presence ×3 makes it
-    enter constantly; the hush chips leave the drone alone so you can hear
-    the candidate naked. Reseeding and waiting for a reverie is not the
-    plan.</p>
+    <details class="intro">
+      <summary>how this page works</summary>
+      <p class="tiny dim">The real engine, unmodified, plus three candidate
+      instruments for the Library's empty register. Turn one on, let the
+      evening run, and move the knobs while it plays — every knob is read at
+      the moment the next note is scheduled.</p>
+      <p class="tiny dim"><b>You never have to wait.</b> "SOUND ONE NOW" plays
+      the instrument on the current chord immediately; presence ×3 makes it
+      enter constantly; the hush chips leave the drone alone so you can hear
+      the candidate naked. Reseeding and waiting for a reverie is not the
+      plan.</p>
+      <p class="tiny dim">Each card shows its last two decisions. Tap
+      <b>KNOBS ▾</b> to open one instrument's knobs; opening one folds the
+      others away.</p>
+    </details>
 
     <h2>hush the engine's own voices</h2>
     <div id="hushBody"></div>
@@ -114,9 +123,19 @@
     times — its phrasing, new clothes. Switching it off unmutes the layer
     and stops the shadow. One stop per layer.</p>
     <p class="tiny dim">Notes arrive about a quarter-second before they
-    sound, so the shadow lands where the engine's note would have. The
-    notes a stop does not change are re-rendered through a faithful copy of
-    the engine's own body, so nothing goes missing while a stop is on.</p>
+    sound, so the shadow lands where the engine's note would have. The notes
+    a stop does not change are re-rendered through a copy of the engine's own
+    body, so the layer keeps its phrases.</p>
+    <p class="note tiny"><b>What a shadow cannot carry.</b> The prototype pours
+    into the bus through its own room, so it cannot reach the engine's private
+    sends: shadowed plucks do not excite the <b>halo</b>, the shadowed music box
+    does not feed the <b>far-wall delay</b>, and shadowed notes take the page's
+    room instead of the scene's room blend. A shadowed cello or hum note also
+    gets its own swell and vibrato instead of one per bow, and the cadence
+    consort — one body for two or three parts in the engine — is re-rendered
+    part by part. So judge the STOP's colour here, not the layer's whole place
+    in the room: some of what you lose while a stop is on is the plumbing, not
+    the stop.</p>
     <div id="stops"></div>
   </section>
 
@@ -213,6 +232,13 @@
     PJ2.Air.create = function (opts) {
       var a = origAir(opts);
       try { cap.air = a; cap.airGen = cap.gen; } catch (e) {}
+      // B3 — PLUMB HERE, not on the next 250 ms pulse. play() builds the bus,
+      // field, harmony and air and then starts the voices SYNCHRONOUSLY: the
+      // drone's first pad is emitted (and, with a stop on, its layer already
+      // muted) long before a timer next fires. The air is the last thing the
+      // run builds before it starts speaking, so this is the moment the page
+      // has everything it needs and nothing has sounded yet.
+      try { if (capReady()) buildPlumbing(); } catch (e) {}
       return a;  // we only ever ASK it who is speaking — never claim
     };
   } catch (e) {
@@ -448,6 +474,7 @@
     cd.brain = {
       entries: 0, holdUntil: 0, restUntil: 0,
       last: "—", candleBowed: false, nextTimer: 0,
+      recent: [],                 // the last two log lines, mirrored onto the card
     };
   }
 
@@ -781,6 +808,21 @@
     return (h == null) ? true : (h < 2);
   }
 
+  // B1/B2 — ONE register rule for both flue paths. The motif brain answers in
+  // whatever octave its walk happens to be in (hum-fresh material sits an
+  // octave below the tonic; developed material recentres on it), so a line is
+  // first FOLDED so its mean lands in 0..size-1 — the tonic octave, C4 — and
+  // then lifted by the register switch: oct 0 = C4-Bb4, +1 = C5, +2 = C6,
+  // which is exactly the plan's C4-C6 window. A fixed fold, never a
+  // threshold: a threshold flips the octave from phrase to phrase and the
+  // owner cannot tune what will not hold still. "SOUND ONE NOW" runs the
+  // same helper on a chord tone, so the button and the brain agree.
+  function flueShift(meanDeg, register) {
+    var size = (cap.field && cap.field.size) || 7;
+    var fold = Math.floor(meanDeg / size);          // whole octaves only:
+    return -fold * size + size * Math.round(+register);  // degree classes survive
+  }
+
   function fluePhrase(why, at) {
     if (!capReady() || plumb.gen !== cap.gen || !plumb.flue) return null;
     var K = CANDS.flue.knobs.values();
@@ -803,14 +845,10 @@
       notes = [{ deg: cur0.chordDegs[0], durBeats: 1 }, { deg: cur0.chordDegs[2], durBeats: 1 },
                { deg: cur0.chordDegs[1], durBeats: 1.5 }];
     }
-    var size = (cap.field && cap.field.size) || 7;
     var mean = 0;
     for (var mi = 0; mi < notes.length; mi++) mean += notes[mi].deg;
     mean /= notes.length;
-    // the humSing re-registration, mirrored: normalize the line into the
-    // singer's chest, then lift it into the flue's own register (+1..+2)
-    var norm = (mean > 2.5) ? -size : 0;
-    var shift = norm + size * (1 + Math.round(+K.register));
+    var shift = flueShift(mean, K.register);
     var n = Math.min(notes.length, Math.round(K.phrase));
     var t = Math.max(at || 0, c.currentTime + 0.1);
     var t0 = t;
@@ -822,8 +860,10 @@
     CANDS.flue.brain.holdUntil = t;
     CANDS.flue.brain.restUntil = t + (8 + Math.random() * 12);
     CANDS.flue.brain.entries++;
+    var f0 = cap.field.degFreq(notes[0].deg + shift, 0);
     return { what: n + " notes · " + ((res && res.kind) || "walk") + " · " +
-                   (t - t0).toFixed(1) + "s · oct " + Math.round(+K.register), t0: t0 };
+                   (t - t0).toFixed(1) + "s · oct " + Math.round(+K.register) +
+                   " · from " + Math.round(f0) + " Hz", t0: t0 };
   }
 
   function flueOneTone() {
@@ -832,14 +872,16 @@
     var cur = null;
     try { cur = cap.harmony.current(); } catch (e) { return null; }
     if (!cur) return null;
-    var size = (cap.field && cap.field.size) || 7;
     var pickDeg = cur.chordDegs[Math.floor(Math.random() * 3)];
-    var shift = size * (1 + Math.round(+K.register));
+    // the SAME rule the phrases use, on a single chord tone
+    var shift = flueShift(pickDeg, K.register);
     var t = cap.ctx.currentTime + 0.08;
+    var hz = cap.field.degFreq(pickDeg + shift, 0);   // read at schedule time
     flueNote(t, pickDeg + shift, 2.5, 0.9);
     CANDS.flue.brain.holdUntil = t + 2.5;
     CANDS.flue.brain.entries++;
-    return { what: "one 2.5 s tone on deg " + pickDeg, t0: t };
+    return { what: "one 2.5 s tone · deg " + pickDeg + " · oct " + Math.round(+K.register) +
+                   " · " + Math.round(hz) + " Hz", t0: t };
   }
 
   // ==========================================================================
@@ -861,9 +903,12 @@
 
   function vesselChance(op, info) {
     var scene = info.sceneType;
+    // A CADENCE is judged by where it ARRIVES, not by the scene it leaves:
+    // the bow that leans into a reverie is the same bow whether the evening
+    // was in a chapter or a seizure a moment ago.
+    if (op.kind === "cadence") return (op.to === "reverie" || op.to === "candle-out") ? 0.6 : 0;
     if (scene === "settling" || scene === "seizure") return 0;       // never
     if (op.kind === "seachange") return 0.7;                          // the new tonic, bowed above the bloom
-    if (op.kind === "cadence") return (op.to === "reverie" || op.to === "candle-out") ? 0.6 : 0;
     if (scene === "candle-out") {
       if (CANDS.vessel.brain.candleBowed) return 0;                   // one early bow, then silence
       if (info.x != null && info.x > 0.5) return 0;                   // too late in the guttering
@@ -875,8 +920,14 @@
   }
   function regalChance(op, info) {
     var scene = info.sceneType;
+    if (op.kind === "cadence") {
+      // never in the seizure or the candle-out — including a cadence that
+      // ARRIVES in one: the organ does not play the evening out
+      if (op.to === "seizure" || op.to === "candle-out") return 0;
+      if (scene === "seizure" || scene === "candle-out") return 0;
+      return CANDS.regal.knobs.get("take");        // "the organist takes the cadence"
+    }
     if (scene === "seizure" || scene === "candle-out") return 0;
-    if (op.kind === "cadence") return CANDS.regal.knobs.get("take");  // "the organist takes the cadence"
     if (scene === "chapter" && op.kind === "harmony") return 0.3;
     return 0;
   }
@@ -886,27 +937,37 @@
     return (p == null) ? 0 : p;
   }
 
+  // every decision goes to the shared LOG and to the candidate's own card, so
+  // the owner tuning one instrument never has to scroll to the log to see why
+  // it did or did not enter
+  function candLine(cd, text, cls) {
+    logLine(text, cls);
+    if (!cd.brain.recent) cd.brain.recent = [];
+    cd.brain.recent.unshift(text.replace(cd.label + " · ", ""));
+    while (cd.brain.recent.length > 2) cd.brain.recent.pop();
+  }
+
   function considerOp(cd, op, info) {
     if (!cd.enabled) return;                                          // the switch is its own explanation
     var tag = cd.label + " · " + op.kind + (op.detail ? " (" + op.detail + ")" : "") +
               " · " + (info.sceneType || "?") + " · chord " + (info.harmony || "?");
     if (!rosterAllows(cd.key)) {
       cd.brain.last = "resting (roster)";
-      logLine(tag + " → roster: resting in this scene");
+      candLine(cd, tag + " → roster: resting in this scene");
       return;
     }
     var t = now();
     if (t < cd.brain.holdUntil) {
-      logLine(tag + " → still sounding (" + (cd.brain.holdUntil - t).toFixed(0) + "s left) → passed");
+      candLine(cd, tag + " → still sounding (" + (cd.brain.holdUntil - t).toFixed(0) + "s left) → passed");
       return;
     }
     if (t < cd.brain.restUntil) {
-      logLine(tag + " → resting (" + (cd.brain.restUntil - t).toFixed(0) + "s) → passed");
+      candLine(cd, tag + " → resting (" + (cd.brain.restUntil - t).toFixed(0) + "s) → passed");
       return;
     }
     if (cd.key === "flue" && !airFree()) {
       cd.brain.last = "the air was spoken for";
-      logLine(tag + " → the air is spoken for (" + (einfo().airHolders != null ? einfo().airHolders : "?") + " holders) → silent");
+      candLine(cd, tag + " → the air is spoken for (" + (einfo().airHolders != null ? einfo().airHolders : "?") + " holders) → silent");
       return;
     }
     var presence = cd.knobs.get("presence");
@@ -917,12 +978,12 @@
                " = " + chance.toFixed(2);
     if (base <= 0) {
       cd.brain.last = "not this scene";
-      logLine(tag + " → no chance in this scene (0.00) → silent");
+      candLine(cd, tag + " → no chance in this scene (0.00) → silent");
       return;
     }
     if (draw >= chance) {
       cd.brain.last = "passed (" + math + ")";
-      logLine(tag + " → " + math + " → passed");
+      candLine(cd, tag + " → " + math + " → passed");
       return;
     }
     var out = cd.enter(op.kind, op.at);
@@ -933,10 +994,10 @@
         cd.brain.candleBowed = true;
       }
       cd.brain.last = op.kind + ": " + out.what;
-      logLine(tag + " → " + math + " → " + cd.verb + " " + out.what, "did");
+      candLine(cd, tag + " → " + math + " → " + cd.verb + " " + out.what, "did");
     } else {
       cd.brain.last = "tried and could not sound";
-      logLine(tag + " → " + math + " → could not sound (no live run?)");
+      candLine(cd, tag + " → " + math + " → could not sound (no live run?)");
     }
   }
 
@@ -1491,7 +1552,11 @@
         if (!layer) return;
         var st = stopState[layer];
         if (!st || !st.shadowed) return;
-        if (!capReady() || plumb.gen !== cap.gen || !plumb.shadow) return;
+        if (!capReady()) return;
+        // belt and braces for B3: if a note somehow arrives before the run's
+        // rooms are poured, pour them now rather than drop the note
+        if (plumb.gen !== cap.gen) buildPlumbing();
+        if (plumb.gen !== cap.gen || !plumb.shadow) return;
         if (!rosterAllows(layer)) return;                 // a resting layer stays resting
         // The pitch is the engine's OWN freq for this note — read from the
         // live field at ITS schedule time a fraction of a second ago, which
@@ -1564,6 +1629,14 @@
   var roster = {};
   var rosterBtns = {};
   var rosterApply = true;
+  var rosterAutoBtn = null;
+  function setRosterAuto(on) {
+    rosterApply = !!on;
+    if (rosterAutoBtn) {
+      rosterAutoBtn.classList.toggle("on", rosterApply);
+      rosterAutoBtn.textContent = "auto at scene turns: " + (rosterApply ? "ON" : "off");
+    }
+  }
   var chapterN = 0;
   var currentCol = "settling";
 
@@ -1631,7 +1704,7 @@
     },
     {
       key: "regal", label: "REGAL", name: "THE REGAL — a small reed organ", verb: "VOICE",
-      desc: "Sustained CHORDS with a bellows breathing under them — the Library's first reed, and its first chord outside a cadence. Beside the consort at cadences, not instead of it: in the prototype the engine's own consort still sounds.",
+      desc: "Sustained CHORDS with a bellows breathing under them — the Library's first reed, and its first chord outside a cadence. Beside the consort at cadences, not instead of it: in the prototype the engine's own consort still sounds. Listen for crowding: its lowest parts land at 131–196 Hz, right where the drone dyad, the cello and the hum bed already live — that is the plan's own risk, and the reason the roster rests the hum when the regal plays.",
       enabled: false,
       specs: [
         { key: "level", label: "level — how loud each part sits (×0.012)", min: 0, max: 2, step: 0.05, def: 1 },
@@ -1664,6 +1737,21 @@
       one: function () { return flueOneTone(); },
     },
   ];
+
+  // one card open at a time — the vessel to begin with (the recommendation)
+  var openCard = "vessel";
+  function setOpenCard(key) {
+    openCard = key;
+    for (var i = 0; i < CAND_ORDER.length; i++) {
+      var cd = CANDS[CAND_ORDER[i]];
+      if (!cd || !cd.knobBox) continue;
+      var open = (cd.key === openCard);
+      cd.knobBox.hidden = !open;
+      cd.foldBtn.textContent = open ? "KNOBS ▴" : "KNOBS ▾";
+      cd.foldBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      cd.card.classList.toggle("open", open);
+    }
+  }
 
   function buildCandidates() {
     var host = $("candidates");
@@ -1709,25 +1797,36 @@
           var out = cd.one();
           if (out) {
             cd.brain.last = "manual audition";
-            logLine(cd.label + " · SOUND ONE NOW → " + out.what, "did");
+            candLine(cd, cd.label + " · SOUND ONE NOW → " + out.what, "did");
           } else {
-            logLine(cd.label + " · sound one now → could not sound");
+            candLine(cd, cd.label + " · sound one now → could not sound");
           }
         };
         row.appendChild(one);
         card.appendChild(row);
 
+        // S4 — the knobs FOLD. Three open cards are five phone-screens tall
+        // and the log ends up below the horizon; collapsed, every candidate's
+        // switch, audition button and status fit on one screen and the owner
+        // opens the one instrument being tuned.
         var knobBox = el("div");
         card.appendChild(knobBox);
         cd.knobs = LAB.knobs(knobBox, spec.specs);
         cd.status = el("div", "card-status", "idle · 0 entries this run");
         card.appendChild(cd.status);
+        var fold = el("button", "fold", "KNOBS ▾");
+        fold.setAttribute("aria-expanded", "false");
+        fold.onclick = function () { setOpenCard(cd.key === openCard ? null : cd.key); };
+        row.appendChild(fold);            // beside SOUND ONE NOW, not in the header
+        cd.foldBtn = fold;
+        cd.knobBox = knobBox;
         host.appendChild(card);
         cd.enableBox = cb;
         cd.card = card;
         CANDS[spec.key] = cd;
       })(CAND_SPECS[i]);
     }
+    setOpenCard(openCard);   // the vessel opens; the other two fold away
   }
 
   // ---- stops --------------------------------------------------------------
@@ -1737,7 +1836,7 @@
   var STOP_SPECS = [
     {
       layer: "harpsichord", title: "HARPSICHORD — lute stop · 4′ coupled",
-      desc: "LUTE STOP: buff leather on the strings — a 15 ms pluck, a duller filter, a shorter decay, no octave sparkle, a felt tick instead. 4′ COUPLED: a second string an octave up at −9 dB. Switching either on mutes the engine's harpsichord and re-renders its phrases here.",
+      desc: "LUTE STOP: buff leather on the strings — a 15 ms pluck, a duller filter, a shorter decay, no octave sparkle, a felt tick instead. 4′ COUPLED: a second string an octave up at −9 dB. Switching either on mutes the engine's harpsichord and re-renders its phrases here. Caveat: the shadow cannot reach the halo send, so while a stop is on the sympathetic strings stop answering the plucks — that missing shimmer is the plumbing, not the stop.",
       options: [["none", "8′ (engine)"], ["lute", "LUTE"], ["four", "4′ COUPLED"]],
       knobs: [
         { key: "buff", label: "buff — blends 8′ (0) ↔ full lute (1)", min: 0, max: 1, step: 0.02, def: 1 },
@@ -1747,7 +1846,7 @@
     },
     {
       layer: "musicbox", title: "MUSIC BOX — damped · wound-down",
-      desc: "DAMPED: the 3rd partial 12 dB down, decay ×0.6, a softer strike — the box with felt on the comb. WOUND-DOWN: an octave lower, 8 cents of drift across every note, a longer decay — the mechanism running down. (A shadow cannot change the PACING, so wound-down here is the timbre of the ending, not its slowing.)",
+      desc: "DAMPED: the 3rd partial 12 dB down, decay ×0.6, a softer strike — the box with felt on the comb. WOUND-DOWN: an octave lower, 8 cents of drift across every note, a longer decay — the mechanism running down. (A shadow cannot change the PACING, so wound-down here is the timbre of the ending, not its slowing.) Caveat: the shadow cannot reach the far-wall delay the box always feeds, so its distant answer is missing while a stop is on.",
       options: [["none", "open (engine)"], ["damped", "DAMPED"], ["wound", "WOUND-DOWN"]],
       knobs: [
         { key: "damper", label: "damper — open (0) ↔ fully damped (1)", min: 0, max: 1, step: 0.02, def: 1 },
@@ -1794,8 +1893,18 @@
     var wantShadow = (name !== "none");
     if (wantShadow !== st.shadowed) {
       st.shadowed = wantShadow;
-      try { engine.toggleLayer(layer, !wantShadow); } catch (e) { err("toggleLayer " + layer + ": " + e.message); }
-      if (!wantShadow) killOwner("shadow:" + layer, 0.15);
+      try {
+        if (wantShadow) {
+          // remember how the owner had this layer BEFORE the shadow took it:
+          // a stop borrows the layer, it does not un-hush it on the way out
+          var info = engine.getInfo() || {};
+          st.wasMuted = !!(info.layers && info.layers[layer] && info.layers[layer].muted);
+          engine.toggleLayer(layer, false);
+        } else {
+          engine.toggleLayer(layer, !st.wasMuted);
+          killOwner("shadow:" + layer, 0.15);
+        }
+      } catch (e) { err("toggleLayer " + layer + ": " + e.message); }
     }
     if (shell) shell.refreshChips();
     logLine("— " + layer + " stop: " + name + (wantShadow ? " (engine layer muted, shadow on)" : " (engine layer restored)") + " —", "hd");
@@ -1832,7 +1941,7 @@
     var host = $("stops");
     for (var i = 0; i < STOP_SPECS.length; i++) {
       (function (spec) {
-        var st = { stop: "none", shadowed: false, knobs: null, btns: [] };
+        var st = { stop: "none", shadowed: false, wasMuted: false, knobs: null, btns: [] };
         var card = el("div", "card");
         card.appendChild(el("h3", null, spec.title));
         card.appendChild(el("div", "card-desc", spec.desc));
@@ -1895,6 +2004,7 @@
   var rosterNote = null;
   function buildRoster() {
     var host = $("rosterBox");
+    host.appendChild(el("p", "tiny dim swipe", "swipe the grid sideways → seizure · reverie · candle"));
     var wrap = el("div", "gridwrap");
     var table = document.createElement("table");
     table.className = "roster";
@@ -1960,11 +2070,8 @@
     var bApply = el("button", "wide", "apply now");
     bApply.onclick = function () { applyRoster("by hand"); };
     var bAuto = el("button", "wide on", "auto at scene turns: ON");
-    bAuto.onclick = function () {
-      rosterApply = !rosterApply;
-      bAuto.classList.toggle("on", rosterApply);
-      bAuto.textContent = "auto at scene turns: " + (rosterApply ? "ON" : "off");
-    };
+    rosterAutoBtn = bAuto;
+    bAuto.onclick = function () { setRosterAuto(!rosterApply); };
     row3.appendChild(bReset); row3.appendChild(bPlan); row3.appendChild(bApply); row3.appendChild(bAuto);
     host.appendChild(row3);
     rosterNote = el("p", "note tiny",
@@ -2007,6 +2114,7 @@
       out.stops[lk] = so;
     }
     out.stops.rolled = { on: !!rolled.on, spread: r3(rolled.knobs.get("spread")) };
+    out.rosterAuto = !!rosterApply;   // the "auto at scene turns" switch travels too
     // the roster as one 0/1 string per row, in SCENE_COLS order — short
     // enough to paste from a phone
     out.rosterCols = [];
@@ -2053,6 +2161,7 @@
         if (json.stops[lk].stop != null) setStop(lk, json.stops[lk].stop);
       }
     }
+    if (json.rosterAuto != null) setRosterAuto(!!json.rosterAuto);
     if (json.roster) {
       var cols = json.rosterCols || [];
       for (var rk in json.roster) {
@@ -2144,7 +2253,13 @@
         } else if (evt.type === "engine" && evt.state === "reseed") {
           logLine("— engine reseeded to " + evt.seed + " —", "hd");
         } else if (evt.type === "performance") {
+          // a new evening inside the same run: entries and the candle-out
+          // law start again, exactly as they would after a reseed
           chapterN = 0;
+          if (evt.phase === "begin") {
+            for (var ck in CANDS) resetBrain(CANDS[ck]);
+            logLine("— a new performance: the candidates' counters reset —", "hd");
+          }
         }
       } catch (e) { err("event: " + e.message); }
     });
@@ -2228,7 +2343,12 @@
       else line = "idle";
       line += " · " + cd.brain.entries + " entr" + (cd.brain.entries === 1 ? "y" : "ies") + " this run";
       line += " · " + activeOf(cd.key) + " sounding";
-      line += "\nlast: " + cd.brain.last;
+      var rec = cd.brain.recent || [];
+      if (rec.length) {
+        for (var r = 0; r < rec.length; r++) line += "\n" + (r ? "   " : "→ ") + rec[r];
+      } else {
+        line += "\nlast: " + cd.brain.last;
+      }
       cd.status.textContent = line;
     }
   }

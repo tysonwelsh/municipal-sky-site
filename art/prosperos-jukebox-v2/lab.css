@@ -50,7 +50,7 @@ h3 { font-size: 0.95rem; color: var(--ink);  margin: 0 0 0.2rem; }
 p  { margin: 0.4rem 0; font-size: 0.95rem; }
 a  { color: var(--gilt); }
 .dim  { color: #7d6742; }
-.tiny { font-size: 0.85rem; line-height: 1.4; }
+.tiny { font-size: 15px; line-height: 1.45; }
 .mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
 .nowrap { white-space: nowrap; }
 
@@ -88,7 +88,7 @@ a  { color: var(--gilt); }
 #btnSeed { flex: 0 0 auto; min-width: 5rem; padding: 0 0.5rem; }
 
 .vol-lab { flex: 0 0 auto; font-size: 15px; color: var(--ink3); }
-#master  { flex: 1 1 auto; min-width: 0; }
+#master  { flex: 1 1 auto; min-width: 0; font-size: 15px; }
 
 .meter { display: flex; align-items: center; gap: 0.4rem; }
 .meter-bar {
@@ -100,21 +100,21 @@ a  { color: var(--gilt); }
   overflow: hidden;
 }
 .meter-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4d6b41, var(--gilt)); }
-.meter-db { flex: 0 0 4.6rem; text-align: right; font-size: 14px; color: var(--ink3);
+.meter-db { flex: 0 0 4.6rem; text-align: right; font-size: 15px; color: var(--ink3);
             font-family: ui-monospace, Menlo, Consolas, monospace; }
 
 #nowline { font-size: 15px; color: var(--ink2); padding: 0.1rem 0 0.2rem;
            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#errbar  { font-size: 14px; color: var(--bad); white-space: pre-wrap; padding-bottom: 0.25rem; }
+#errbar  { font-size: 15px; color: var(--bad); white-space: pre-wrap; padding-bottom: 0.25rem; }
 #errbar:empty { display: none; }
 
 /* tabs live inside the sticky bar — always one tap away */
 .tabs { display: flex; gap: 0.25rem; margin-top: 0.25rem; }
 .tab {
   flex: 1 1 0;
-  min-height: 40px;
-  font-size: 14px;
-  letter-spacing: 0.04em;
+  min-height: 44px;
+  font-size: 15px;
+  letter-spacing: 0.01em;
   background: var(--paper3);
   color: var(--ink3);
   border: 1px solid var(--edge);
@@ -154,7 +154,7 @@ button[disabled] { opacity: 0.45; }
 .chip {
   min-height: var(--tapmin);
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 15px;
   padding: 0 0.75rem;
 }
 .chip.off { color: #6b573a; border-color: var(--edge); background: var(--paper2); text-decoration: line-through; }
@@ -172,9 +172,9 @@ button[disabled] { opacity: 0.45; }
 .card.enabled { border-color: var(--edge2); }
 .card-head { display: flex; align-items: center; gap: 0.5rem; }
 .card-head h3 { flex: 1 1 auto; }
-.card-desc { font-size: 0.9rem; color: #8a7148; margin: 0.15rem 0 0.4rem; }
+.card-desc { font-size: 15px; line-height: 1.45; color: #9a8155; margin: 0.15rem 0 0.4rem; }
 .card-status {
-  font-size: 14px;
+  font-size: 15px;
   font-family: ui-monospace, Menlo, Consolas, monospace;
   color: var(--good);
   background: var(--paper);
@@ -186,10 +186,24 @@ button[disabled] { opacity: 0.45; }
   word-break: break-word;
 }
 
-/* the ENABLE switch: a plain checkbox scaled to a thumb */
-.sw { display: flex; align-items: center; gap: 0.35rem; min-height: var(--tapmin); }
-.sw input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--gilt); }
-.sw label { font-size: 14px; color: var(--ink3); padding: 0.6rem 0.3rem; cursor: pointer; }
+/* The ENABLE switch. The checkbox and its label are SIBLINGS (a label that
+   wraps its own control double-fires a scripted click, and this page is
+   driven by scripts as well as thumbs), so each one carries its own 44 px
+   box: the checkbox grows by padding, keeping a 26 px glyph. */
+.sw { display: flex; align-items: center; gap: 0.15rem; min-height: var(--tapmin); }
+.sw input[type=checkbox] {
+  /* Chrome ignores padding on a checkbox, so the BOX itself is the target:
+     44 px, which is also the only honest way to draw a switch a thumb hits. */
+  width: var(--tapmin); height: var(--tapmin);
+  margin: 0;
+  accent-color: var(--gilt);
+  font-size: 15px;
+}
+.sw label {
+  display: flex; align-items: center;
+  min-height: var(--tapmin); min-width: var(--tapmin);
+  font-size: 15px; color: var(--ink3); cursor: pointer;
+}
 
 /* --------------------------------------------------------------------------
    KNOBS — label above, value right, default marked, ↺ resets (double-tap
@@ -205,7 +219,7 @@ button[disabled] { opacity: 0.45; }
   font-variant-numeric: tabular-nums;
 }
 .knob-val.moved { color: var(--gilt); font-weight: 600; }
-.knob-def { flex: 0 0 auto; font-size: 12px; color: #6b573a; }
+.knob-def { flex: 0 0 auto; font-size: 13px; color: #7d6742; }
 .knob-reset {
   flex: 0 0 auto;
   min-width: var(--tapmin); min-height: var(--tapmin);
@@ -216,6 +230,7 @@ button[disabled] { opacity: 0.45; }
 input[type=range] {
   -webkit-appearance: none;
   appearance: none;
+  font-size: 15px;                 /* no glyphs of its own; keeps audits honest */
   display: block;
   width: 100%;
   height: var(--tapmin);
@@ -245,7 +260,7 @@ input[type=range]::-moz-range-thumb {
 
 /* segmented switch (register 0/+1, parts 2/3, drone registration) */
 .seg { display: flex; gap: 0.3rem; padding-bottom: 0.35rem; }
-.seg button { flex: 1 1 0; min-width: 0; font-size: 14px; padding: 0 0.3rem; }
+.seg button { flex: 1 1 0; min-width: 0; font-size: 15px; padding: 0 0.3rem; line-height: 1.15; }
 
 /* --------------------------------------------------------------------------
    THE LOG — every entry decision with its arithmetic, newest first.
@@ -260,9 +275,9 @@ details.logbox > summary {
 }
 .log {
   font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 13.5px;
-  line-height: 1.42;
-  color: #7d6742;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #8a7148;
   max-height: 17rem;
   overflow-y: auto;
   padding: 0.2rem 0.7rem 0.6rem;
@@ -281,18 +296,18 @@ table.roster th, table.roster td { border: 1px solid var(--edge); padding: 0; te
 table.roster thead th {
   position: sticky; top: 0;
   background: var(--paper3); color: var(--ink3);
-  font-weight: 400; font-size: 12px; line-height: 1.15;
-  padding: 0.3rem 0.15rem; min-width: 44px;
+  font-weight: 400; font-size: 15px; line-height: 1.15;
+  padding: 0.3rem 0.15rem; min-width: 48px; white-space: nowrap;
 }
 table.roster th.rowlab {
   position: sticky; left: 0; z-index: 2;
   background: var(--paper2); color: var(--ink2);
-  text-align: left; font-weight: 400; font-size: 13px;
+  text-align: left; font-weight: 400; font-size: 15px;
   padding: 0 0.4rem; min-width: 6.2rem; white-space: nowrap;
 }
 table.roster thead th.rowlab { z-index: 3; }
 table.roster td button {
-  width: 44px; height: 44px; min-height: 44px;
+  width: 100%; min-width: 44px; height: 44px; min-height: 44px;
   border: none; border-radius: 0; background: transparent;
   color: #5d4a2c; font-size: 17px; padding: 0;
 }
@@ -308,7 +323,7 @@ textarea {
   width: 100%;
   min-height: 8.5rem;
   font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 13px;
+  font-size: 15px;
   background: var(--paper3);
   color: var(--ink2);
   border: 1px solid var(--edge2);
@@ -316,14 +331,15 @@ textarea {
   padding: 0.4rem;
   resize: vertical;
 }
-.ab-state { font-size: 14px; color: var(--ink3); font-family: ui-monospace, Menlo, Consolas, monospace; }
+.ab-state { font-size: 15px; color: var(--ink3); font-family: ui-monospace, Menlo, Consolas, monospace; }
 
 .note {
   border-left: 2px solid var(--edge2);
   padding: 0.1rem 0 0.1rem 0.6rem;
   margin: 0.5rem 0;
-  color: #8a7148;
-  font-size: 0.9rem;
+  color: #9a8155;
+  font-size: 15px;
+  line-height: 1.45;
 }
 
 .panel[hidden] { display: none !important; }
@@ -332,3 +348,46 @@ textarea {
   .knob-head { min-height: 38px; }
   .card { padding: 0.8rem 0.9rem 0.9rem; }
 }
+
+/* --------------------------------------------------------------------------
+   ADDED IN THE FIX ROUND
+   -------------------------------------------------------------------------- */
+
+/* the compact A⇄B in the sticky bar — the fastest comparison should not live
+   one tab away */
+#btnAB {
+  flex: 0 0 auto;
+  min-width: 4.6rem;
+  padding: 0 0.45rem;
+  font-size: 15px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* the intro folds: three open candidate cards are already five screens */
+details.intro { margin: 0.3rem 0 0.6rem; border: 1px solid var(--edge); border-radius: 10px; background: var(--paper2); }
+details.intro > summary {
+  min-height: var(--tapmin);
+  display: flex; align-items: center;
+  padding: 0 0.7rem;
+  font-size: 15px; color: var(--ink2);
+  cursor: pointer;
+}
+details.intro p { padding: 0 0.7rem; }
+details.intro p:last-child { padding-bottom: 0.5rem; }
+
+/* KNOBS ▾ — one candidate's knobs open at a time */
+button.fold {
+  flex: 0 0 auto;
+  min-width: 5.6rem;
+  padding: 0 0.5rem;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.card.open { border-color: var(--gilt); }
+.card.open > button.fold { background: #3a2a12; }
+
+/* the roster is wider than a phone by nature: say so in words. (A CSS edge
+   fade was tried and dropped — inside a scrolling box it renders as a band
+   across the grid, which reads as a broken column rather than a hint.) */
+p.swipe { margin: 0.2rem 0 0.3rem; color: #9a8155; }
+p.swipe::after { content: " ⟩⟩"; color: var(--gilt); }

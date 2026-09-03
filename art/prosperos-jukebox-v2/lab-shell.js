@@ -434,6 +434,8 @@ window.PJ2Lab = (function () {
     // into the chat, and the integration uses those exact numbers.
     var slotA = null, slotB = null, abSide = "A";
     var jsonOut = null, abState = null;
+    var abRefresh = function () {};
+    var abQuick = $("btnAB");   // the compact swap in the sticky bar (optional)
 
     function stateJson() {
       if (!opts.state || !opts.state.get) return {};
@@ -513,7 +515,13 @@ window.PJ2Lab = (function () {
       function refreshAb() {
         abState.textContent = "A: " + (slotA ? "held" : "empty") +
           " · B: " + (slotB ? "held" : "empty") + " · now: " + abSide;
+        if (abQuick) {
+          abQuick.textContent = (slotA || slotB) ? ("A⇄B:" + abSide) : "A⇄B";
+          abQuick.classList.toggle("on", !!(slotA && slotB));
+        }
       }
+      abRefresh = refreshAb;
+      /* eslint-disable no-inner-declarations */
       function save(which) {
         var s = stateJson();
         if (which === "A") slotA = s; else slotB = s;
@@ -540,6 +548,17 @@ window.PJ2Lab = (function () {
         })(bs[i]);
       }
       container.appendChild(row3);
+      // the fastest comparison must not live one tab away: the sticky bar's
+      // A⇄B recalls the other snapshot wherever the owner is
+      if (abQuick) {
+        abQuick.onclick = function () {
+          if (!slotA && !slotB) {
+            error("A⇄B: save a snapshot on the MIX tab first (SAVE A, then tune, then SAVE B)");
+            return;
+          }
+          recall(abSide === "A" ? "B" : "A");
+        };
+      }
       refreshAb();
     }
     shell.buildMix = buildMix;
