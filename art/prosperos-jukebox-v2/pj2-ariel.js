@@ -289,6 +289,101 @@
 //   1 s peak at roughly −5 dBFS with the four in, one decibel over the
 //   same seed with the four muted.
 //
+// WANDER (rc.36 — plan §11: "knobs that should wander"). Every voice is now
+// PLAYED rather than set. Three classes of draw, all on PJ2.Voice.wander's
+// own forks, all read at SCHEDULE TIME through one door (wv), the desk knob
+// always the centre and each layer's new `vary` knob (0–2, def 1) scaling the
+// half-width — at vary 0 the engine is rc.33 to the bit, which the harness
+// pins with a fingerprint of the pre-change stream.
+//
+//   breeze   THE SEAM, and therefore character and weather ONLY, both read at
+//            the CYCLE'S START and held for that cycle: breath (weather,
+//            0.75–1) and hiss (character, 0.75–1). A new sway depth arrives
+//            with a NEW pad, under the old one, exactly as a new chord does.
+//            The 3 s fades are the "nothing startles" ruler and are not
+//            ranged. Both spans stop AT the knob: the seam is the floor of
+//            the whole piece and the floor never rises.
+//   whistle  breath (touch, ±30 %, ONE draw per PHRASE — a singer takes one
+//            breath) on top of the shimmer coupling; vibrato depth (touch,
+//            ±35 % per NOTE) on top of the gustiness coupling AND the
+//            articulation's own depth; the vibrato RATE (character, 4.8–6.2
+//            Hz, promoted from the body's 5.5) and the breath BAND
+//            (character, 1620–1980 Hz, promoted from 1800) — one flute per
+//            night.
+//   chime    decay (touch, ±20 % per ping, on top of the brain's 1.5–2.5 s
+//            draw); detune (character, ±30 %) — a bell's beating rate is its
+//            identity and holds all evening.
+//   flutter  nothing. It has no knobs and it is already the most varied
+//            voice in the sky; the plan's table says skip and it is right.
+//   bass     attack (touch, 8–18 ms, promoted from the body's 12 — the knob
+//            floors at 6 ms, far above any click-safe edge); warmth
+//            (character, 0.8–1, promoted: it scales the 2nd and 3rd
+//            triangle partials together). flourish stays a fixed chance.
+//   aeolian  sheen (character 0.8–1); breath (touch ±30 % per note); detune
+//            (character, 2–5 ¢, promoted from the body's ±3).
+//   ambient  density (weather, ±30 %) — the sky speaks more freely for a
+//            while, then less.
+//   halo     level (character, 0.8–1). Its RELEASE ramp is untouched.
+//   lyre     voices (touch, weighted 2 ·.15 / 3 ·.5 / 4 ·.35 — a bare dyad
+//            some rolls, a full hand others); roll (touch 0.16–0.48) AND the
+//            roll's SHAPE, taken from the draw itself with no extra dice: a
+//            roll shorter than the knob is the hand gathering, longer is the
+//            hand dragging; ring (touch 2.2–3.8 per STRING, dealt longest to
+//            the highest course); bright (touch 4–6.5 per roll); body
+//            (character 0.8–1). updown, register and presence are fixed —
+//            they are entry laws and a ladder.
+//   concert. hold (touch, the whole 6–14 s per dyad); bellows (touch
+//            0.65–1) with the push/draw period already drawn 3–5 s per dyad
+//            on its own fork; reed (character 4.5–6 dB) plus reedTouch
+//            (touch, −1…0 dB per dyad — a free reed is never twice the
+//            same); detune (character 4–9 ¢).
+//   handpan  gap (touch 0.22–0.55 per answer) AND uneven inside it
+//            (gapJitter, touch 0.75–1.25 per step: an answer is a phrase,
+//            not a clock); ring (touch 1.9–3.2); thump (touch 0.6–1);
+//            partials (character 0.4–0.5) — one shell per night.
+//   vibra.   motor (character 3.8–5.5 Hz) and depth (character 0.5–0.75) —
+//            a motor is set once and left, and one that changed per note
+//            would read as a fault; ring (touch 2.3–3.8 per strike: the
+//            pedal).
+//
+// Untouched by this round, and deliberately: the RELEASE choreography and
+// its ladders, every exit x, the seam and its re-grounding, the feather, the
+// ghost promotion, the Lydian grammar and every harmony table, the air's
+// limits, the roster, and every `presence` and `register` knob. No ranged
+// value can move a register, an entry law or a ceiling — the classes above
+// are chosen so that none of them can.
+//
+// LEDGER (rc.36). rc.33's paper worst case already sits at ~0.87 into a 0.89
+// limiter — 98 % of the master ceiling — so this round's rule is that NO
+// SPAN MAY LIFT A LAYER'S WORST-CASE LINE ABOVE THE NUMBER ABOVE. Two ways
+// it is kept, and both are things a real player does:
+//   * BODY COMPENSATION, where plan §11.3's span is kept in full. The lyre's
+//     level spreads over however many strings the hand took (never above the
+//     shipped 0.8 per string), falls with the square root of a quicker
+//     strum, and falls again for a longer-ringing string — so the worst
+//     rolled-chord sum over the whole {voices × roll × ring} grid is exactly
+//     rc.33's. The handpan's answer does the same with the gap and the ring:
+//     fingers moving fast do not also strike harder.
+//   * A TRIMMED `hi`, where it cannot. breeze breath/hiss, bass warmth,
+//     aeolian sheen/breath, halo level, lyre body, concertina reed/reedTouch/
+//     bellows and handpan partials/thump all stop at their def and wander
+//     DOWNWARD only. §11.4 asked for symmetry on several of these (aeolian
+//     sheen ±20 %, bass warmth ±20 %, concertina reed to 7.5 dB, handpan
+//     partials to 0.65, thump to 1.4); the arithmetic said no, and the
+//     engine's own closing law — when in doubt, quieter — said which way to
+//     give. The variety they lose is a decibel; the variety that carries
+//     this round lives in the level-NEUTRAL knobs (roll, ring, gap, voices,
+//     motor, detune, vibrato, attack, hold, breath band, decay, density),
+//     which keep their spans whole.
+//   The two exceptions are the WHISTLE's breath (±30 %) and the BELL's decay
+//   (±20 %), which keep the plan's symmetric spans: the roster rests both
+//   voices in the HOVER, and the hover is where the worst case is. They cost
+//   the song scene 0.780 → 0.788 (0.839 → 0.847 into the limiter).
+//   -> hover 0.812 (unchanged), song 0.788 -> 0.847 into the limiter, under
+//   the 0.89 ceiling. The harness re-derives both sums from the live spans
+//   every run, including the two gesture grids, so a weakened compensation
+//   turns a row red instead of turning up in the mix.
+//
 // STREAM NOTE (rc.33) — what actually moved, stated plainly:
 //
 //   Every NEW draw lands on a NEW label-hashed fork ("lyre", "concertina",
@@ -305,6 +400,25 @@
 //   rc.33 evening is not an rc.32 evening with four voices added — it is a
 //   differently populated evening. Same seed, same evening, forever; a
 //   different evening from rc.32's, deliberately.
+//
+// STREAM NOTE (rc.36) — the same discipline, kept:
+//
+//   Every wander draw lands on PJ2.Voice.wander's OWN forks —
+//   "wander:<layer>:touch", "wander:<layer>:weather" and
+//   "wander:<layer>:dress:<evening>" — so not one of the forks in the table
+//   above gains or loses a draw. Nothing existing is re-rolled: with `vary`
+//   at 0 on every layer the note+event stream is rc.33's BIT FOR BIT (proved
+//   two ways — a pinned fingerprint inside the harness, and a byte compare
+//   of two seeds' full 1800 s dumps taken before the change). At the shipped
+//   vary 1 the same seed still plays the same evening, forever.
+//
+//   One SECOND-ORDER consequence, stated because it is real: a wandered
+//   value can change how many draws a body then takes on its OWN fork — the
+//   lyre draws one velocity per string, so a four-string roll advances the
+//   lyre's fork one step further than a three-string one. That is downstream
+//   of the wander, not a re-roll of it, and it is exactly the sense in which
+//   an rc.36 evening is a different evening from an rc.33 one: same seed,
+//   same shape, a differently played instrument.
 //
 // Discipline inherited whole from pj2-library.js: every pitched note reads
 // the field AT SCHEDULE TIME (never a cached Hz — that is what makes the sea
@@ -413,67 +527,118 @@
   // to the unparametrized engine.
   var LAYER_PARAMS = {
     breeze: [
-      { key: "breath", label: "breath — how deeply the pad sways", min: 0, max: 2.5, def: 1 },
-      { key: "hiss", label: "hiss — the high air-mist dose", min: 0, max: 3, def: 1 },
+      { key: "breath", label: "breath — how deeply the pad sways", min: 0, max: 2.5, def: 1,
+        lo: 0.75, hi: 1, per: "weather" },
+      { key: "hiss", label: "hiss — the high air-mist dose", min: 0, max: 3, def: 1,
+        lo: 0.75, hi: 1, per: "character" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     whistle: [
-      { key: "breath", label: "breath — the airy noise under the song", min: 0, max: 2.5, def: 1 },
-      { key: "vibrato", label: "vibrato — the singer's wobble depth", min: 0, max: 2, def: 1 },
+      { key: "breath", label: "breath — the airy noise under the song", min: 0, max: 2.5, def: 1,
+        lo: 0.7, hi: 1.3, per: "touch" },
+      { key: "vibrato", label: "vibrato — the singer's wobble depth", min: 0, max: 2, def: 1,
+        lo: 0.65, hi: 1.35, per: "touch" },
+      { key: "vibRate", label: "vibrato Hz — how fast the singer's wobble beats", min: 4, max: 7, def: 5.5,
+        lo: 4.8, hi: 6.2, per: "character" },
+      { key: "breathHz", label: "breath band Hz — where the breath noise sits", min: 1400, max: 2200, def: 1800,
+        lo: 1620, hi: 1980, per: "character" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     chime: [
-      { key: "decay", label: "decay — how long the bell rings", min: 0.5, max: 2, def: 1 },
-      { key: "detune", label: "detune — how far apart the paired bells sit", min: 0, max: 3, def: 1 },
+      { key: "decay", label: "decay — how long the bell rings", min: 0.5, max: 2, def: 1,
+        lo: 0.8, hi: 1.2, per: "touch" },
+      { key: "detune", label: "detune — how far apart the paired bells sit", min: 0, max: 3, def: 1,
+        lo: 0.7, hi: 1.3, per: "character" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     bass: [
       { key: "flourish", label: "flourish — how often the bass runs", min: 0, max: 2, def: 1 },
+      { key: "attack", label: "attack ms — how hard the string is taken", min: 6, max: 30, def: 12,
+        lo: 8, hi: 18, per: "touch" },
+      { key: "warmth", label: "warmth — how much 2nd and 3rd partial are in the note", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1, per: "character" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     aeolian: [
-      { key: "sheen", label: "sheen — the glass's high octave partial", min: 0, max: 2, def: 1 },
-      { key: "breath", label: "breath — the bow's airy thread", min: 0, max: 2.5, def: 1 },
+      { key: "sheen", label: "sheen — the glass's high octave partial", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1, per: "character" },
+      { key: "breath", label: "breath — the bow's airy thread", min: 0, max: 2.5, def: 1,
+        lo: 0.7, hi: 1, per: "touch" },
+      { key: "detune", label: "detune ¢ — how far apart the glass's paired strings sit", min: 0, max: 8, def: 3,
+        lo: 2, hi: 5, per: "character" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     ambient: [
-      { key: "density", label: "density — how often the sky speaks", min: 0.5, max: 2, def: 1 },
+      { key: "density", label: "density — how often the sky speaks", min: 0.5, max: 2, def: 1,
+        lo: 0.7, hi: 1.3, per: "weather" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     halo: [
-      { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1 },
+      { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1, per: "character" },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     // rc.33 — the four new voices. EVERY timbral constant of theirs is a knob
     // read through pVal at schedule time, and every def is the value the
     // owner left the lab page's slider on: the desk at its defaults IS the
-    // audition. (Phase 2's per-evening spans will draw against these same
-    // defs — the hook is here, the spans are not built.)
+    // audition. (rc.36 hangs plan §11.3's spans off those same defs; the
+    // entry knobs — presence, register, updown — carry no span, by law.)
     lyre: [
       { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
-      { key: "roll", label: "roll s — how long the hand takes to cross the strings", min: 0.12, max: 0.8, def: 0.3 },
-      { key: "ring", label: "ring s — how long a string is left to sound", min: 1.5, max: 5, def: 3 },
-      { key: "bright", label: "bright — where the lowpass starts, in multiples of the pitch", min: 3, max: 8, def: 5 },
-      { key: "body", label: "body — the soundbox's two peaks (0 = a bare string)", min: 0, max: 2, def: 1 },
-      { key: "voices", label: "voices — strings in the roll", min: 2, max: 4, def: 3 },
+      { key: "roll", label: "roll s — how long the hand takes to cross the strings", min: 0.12, max: 0.8, def: 0.3,
+        lo: 0.16, hi: 0.48, per: "touch" },
+      { key: "ring", label: "ring s — how long a string is left to sound", min: 1.5, max: 5, def: 3,
+        lo: 2.2, hi: 3.8, per: "touch" },
+      { key: "bright", label: "bright — where the lowpass starts, in multiples of the pitch", min: 3, max: 8, def: 5,
+        lo: 4, hi: 6.5, per: "touch" },
+      { key: "body", label: "body — the soundbox's two peaks (0 = a bare string)", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1, per: "character" },
+      { key: "voices", label: "voices — strings in the roll", min: 2, max: 4, def: 3,
+        per: "touch", round: true, weights: [[2, 0.15], [3, 0.5], [4, 0.35]] },
       { key: "updown", label: "updown — chance the roll comes DOWN instead of up", min: 0, max: 1, def: 0.2 },
       { key: "register", label: "register — which octave the lyre sits in", min: -1, max: 0, def: -1 },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     concertina: [
       { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
-      { key: "reed", label: "reed dB — how hard the 900 Hz chamber bites", min: 0, max: 12, def: 6 },
-      { key: "detune", label: "detune ¢ — how far apart the two reeds sit", min: 0, max: 15, def: 6 },
-      { key: "bellows", label: "bellows — the pressure wander and the push/draw", min: 0, max: 2, def: 1 },
-      { key: "hold", label: "hold s — how long one dyad is held", min: 6, max: 14, def: 9 },
+      { key: "reed", label: "reed dB — how hard the 900 Hz chamber bites", min: 0, max: 12, def: 6,
+        lo: 4.5, hi: 6, per: "character" },
+      { key: "reedTouch", label: "reed touch dB — how much the bite varies dyad to dyad", min: -3, max: 3, def: 0,
+        lo: -1, hi: 0, per: "touch" },
+      { key: "detune", label: "detune ¢ — how far apart the two reeds sit", min: 0, max: 15, def: 6,
+        lo: 4, hi: 9, per: "character" },
+      { key: "bellows", label: "bellows — the pressure wander and the push/draw", min: 0, max: 2, def: 1,
+        lo: 0.65, hi: 1, per: "touch" },
+      { key: "hold", label: "hold s — how long one dyad is held", min: 6, max: 14, def: 9,
+        lo: 6, hi: 14, per: "touch" },
       { key: "register", label: "register — which octave the box sits in", min: -1, max: 0, def: 0 },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     handpan: [
       { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
-      { key: "ring", label: "ring s — how long the shell rings", min: 1.5, max: 4, def: 2.5 },
-      { key: "partials", label: "partials — how much 2nd and 3rd are in the bowl", min: 0, max: 1, def: 0.5 },
-      { key: "thump", label: "thump — the hand's own low knock", min: 0, max: 2, def: 1 },
-      { key: "gap", label: "gap s — the space between the answer's notes", min: 0.2, max: 0.8, def: 0.35 },
+      { key: "ring", label: "ring s — how long the shell rings", min: 1.5, max: 4, def: 2.5,
+        lo: 1.9, hi: 3.2, per: "touch" },
+      { key: "partials", label: "partials — how much 2nd and 3rd are in the bowl", min: 0, max: 1, def: 0.5,
+        lo: 0.4, hi: 0.5, per: "character" },
+      { key: "thump", label: "thump — the hand's own low knock", min: 0, max: 2, def: 1,
+        lo: 0.6, hi: 1, per: "touch" },
+      { key: "gap", label: "gap s — the space between the answer's notes", min: 0.2, max: 0.8, def: 0.35,
+        lo: 0.22, hi: 0.55, per: "touch" },
+      { key: "gapJitter", label: "gap jitter — how uneven the answer's steps are (1 = a clock)", min: 0.5, max: 1.5, def: 1,
+        lo: 0.75, hi: 1.25, per: "touch" },
       { key: "register", label: "register — which octave the pan sits in", min: -1, max: 0, def: -1 },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     vibraphone: [
       { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
-      { key: "motor", label: "motor Hz — how fast the discs turn", min: 3, max: 7, def: 4.5 },
-      { key: "depth", label: "depth — how deep the motor's tremolo cuts", min: 0, max: 1, def: 0.6 },
-      { key: "ring", label: "ring s — how long the bars are left to sound", min: 2, max: 4, def: 3 },
+      { key: "motor", label: "motor Hz — how fast the discs turn", min: 3, max: 7, def: 4.5,
+        lo: 3.8, hi: 5.5, per: "character" },
+      { key: "depth", label: "depth — how deep the motor's tremolo cuts", min: 0, max: 1, def: 0.6,
+        lo: 0.5, hi: 0.75, per: "character" },
+      { key: "ring", label: "ring s — how long the bars are left to sound", min: 2, max: 4, def: 3,
+        lo: 2.3, hi: 3.8, per: "touch" },
       { key: "register", label: "register — which octave the bars sit in", min: 0, max: 1, def: 0 },
+      { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
   };
 
@@ -869,6 +1034,67 @@
     function pVal(layer, key) {
       var l = paramState[layer];
       return (l && l[key] != null) ? l[key] : 1;
+    }
+
+    // ------------------------------------------------------------------
+    // THE WANDER (rc.36 — plan §11). Every ranged read in every render body
+    // goes through wv(): it asks PJ2.Voice.wander for the layer's value of
+    // that knob, dispatching on the def's own `per` — TOUCH a fresh draw
+    // every sounding, CHARACTER one value for the evening, WEATHER a slow
+    // drift deterministic in t — and records min/max for the harness. The
+    // desk knob stays the CENTRE; the layer's `vary` knob (0–2, def 1)
+    // scales the half-width, and at vary 0 the helper returns the knob
+    // exactly, which is what makes this build rc.33 bit for bit.
+    //
+    // Every draw lands on the helper's OWN forks ("wander:<layer>:touch",
+    // ":weather", ":dress:<n>"), so not one existing stream is re-rolled.
+    // A def without `per` (presence, register, updown, flourish — the entry
+    // laws) is fixed and wv() is simply pVal.
+    // ------------------------------------------------------------------
+    var WLOG_DRESS_MAX = 400;     // the dress log is telemetry, not memory
+
+    function wrec(layer, key, v) {
+      if (!run || !run.wlog || typeof v !== "number" || !isFinite(v)) return;
+      var L = run.wlog.draws[layer] || (run.wlog.draws[layer] = {});
+      var e = L[key];
+      if (!e) { L[key] = { n: 1, min: v, max: v }; return; }
+      e.n++;
+      if (v < e.min) e.min = v;
+      if (v > e.max) e.max = v;
+    }
+    // The one door every ranged body read uses. `t` is the note's SCHEDULE
+    // time on the CLOCK; the weather wants SONG time, so t0 comes off here —
+    // the same subtraction wxAt does, and for the same reason: a run must
+    // sound the same whatever the AudioContext's clock happened to read when
+    // it started. (Touch and character ignore t entirely.)
+    function wv(layer, key, t) {
+      var w = run && run.wander ? run.wander[layer] : null;
+      var tt = (run && run.t0 != null && typeof t === "number") ? (t - run.t0) : 0;
+      var v;
+      if (w) { try { v = w.value(key, tt); } catch (e) { v = pVal(layer, key); } }
+      else v = pVal(layer, key);
+      if (typeof v !== "number" || !isFinite(v)) v = pVal(layer, key);
+      wrec(layer, key, v);
+      return v;
+    }
+    // Re-draw every character value. Ariel has no evening cast, so this is
+    // called at play (evening 0) and at every performance-begin — the seam's
+    // re-grounding moment, counted across the seam.
+    function dressAll(n) {
+      if (!run || !run.wander) return;
+      for (var lk in run.wander) {
+        var w = run.wander[lk];
+        try { w.dress(n); } catch (e) { continue; }
+        var defs = LAYER_PARAMS[lk];
+        for (var i = 0; i < defs.length; i++) {
+          if (defs[i].per !== "character") continue;
+          var v;
+          try { v = w.character(defs[i].key); } catch (e2) { continue; }
+          if (run.wlog && run.wlog.dress.length < WLOG_DRESS_MAX) {
+            run.wlog.dress.push({ evening: n, layer: lk, key: defs[i].key, value: v });
+          }
+        }
+      }
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -1695,6 +1921,14 @@
         } else if (evt.type === "performance" && evt.phase === "begin") {
           run.perfScenes = evt.scenes ? evt.scenes.slice() : null;
 
+          // rc.36 — THE DRESSING. Ariel has no evening cast, so the seam's
+          // re-grounding moment is where the instruments are re-drawn: a new
+          // reed buzz, a new beating rate, a new motor speed, a new vibrato
+          // rate. Counted across the seam, so evening n is evening n whether
+          // or not the field had to come home.
+          run.evening = (run.evening || 0) + 1;
+          dressAll(run.evening);
+
           // THE RE-GROUNDING (§1c, owner-approved exactly): the field returns
           // home to F 349 lydian, atomically, at the seam — the ringing high
           // tail keeps its old-world Hz (straddle lesson), everything
@@ -1816,6 +2050,15 @@
         var inRelease = (st === "release");
         var iv = curIntensity(t);
         var wx = wxAt(t);
+        // rc.36 — THE SEAM'S OWN RULE: the breeze varies by CHARACTER and
+        // WEATHER only, and both are read HERE, at the cycle's start, and
+        // held for the whole cycle. Nothing sounding is ever re-read: a new
+        // sway depth arrives with a new pad, under the old one, exactly as a
+        // new chord does. The 3 s fades are the "nothing startles" ruler and
+        // are not ranged. Both spans stop AT the knob (0.75–1) on purpose —
+        // the seam is the floor of the whole piece and the floor never rises.
+        var breathK = wv("breeze", "breath", t);   // weather
+        var hissK = wv("breeze", "hiss", t);       // character
         var tok = run.budget.claim(hasSub && !inRelease ? 10 : 8, t + durS + 0.3);
         if (!tok) {
           lane.at(t + 2, cycle); // the seam must not open: short-leash retry
@@ -1839,7 +2082,7 @@
         // Dyad: root+5th; on I, the rare tritone breath (root + #4 — degree
         // 3 is a mode-third above... no: [0, 3] is F..B, the character pair).
         var degs = (tritone && rootCls === 0) ? [rootAbs, rootAbs + 3] : [rootAbs, rootAbs + 4];
-        var lfoDepth = 0.03 * (0.6 + 0.8 * wx.gustiness) * pVal("breeze", "breath"); // desk knob: def 1 = as-composed
+        var lfoDepth = 0.03 * (0.6 + 0.8 * wx.gustiness) * breathK; // desk knob: def 1 = as-composed
         var rates = [lfoR1, lfoR2];
         for (var i = 0; i < degs.length; i++) {
           var freq = run.field.degFreq(degs[i], oct);
@@ -1885,7 +2128,7 @@
         hp.Q.setValueAtTime(0.7, t);
         var ng = c.createGain();
         ns.connect(hp); hp.connect(ng); ng.connect(run.breezeBreath);
-        var airPeak = 0.004 * (0.5 + wx.gustiness) * pVal("breeze", "hiss"); // desk knob: def 1 = as-composed
+        var airPeak = 0.004 * (0.5 + wx.gustiness) * hissK; // desk knob: def 1 = as-composed
         PJ2.Voice.env(ng.gain, t, [[3, airPeak], [durS - 6, airPeak], [3, 0]]);
         ns.start(t, ns.randomOffset);
         ns.stop(t + durS + 0.1);
@@ -1916,11 +2159,16 @@
       // Vibrato — depth ramped in from zero (no cold wobble).
       var vib = c.createOscillator();
       vib.type = "sine";
-      vib.frequency.setValueAtTime(5.5, t);
+      // rc.36: the RATE is the singer's own, drawn once per evening (4.8–6.2
+      // Hz around v1's 5.5); the DEPTH is a fresh draw every note, on top of
+      // the gustiness coupling AND the articulation's own depth — three
+      // things multiplying, none of them replaced.
+      vib.frequency.setValueAtTime((art && art.vibHz != null) ? art.vibHz : 5.5, t);
       var vg = c.createGain();
       vg.gain.setValueAtTime(0, t);
       vg.gain.linearRampToValueAtTime(
-        ((art && art.vibDepth) || 2) * (0.8 + 0.6 * wx.gustiness) * pVal("whistle", "vibrato"),
+        ((art && art.vibDepth) || 2) * (0.8 + 0.6 * wx.gustiness) *
+          ((art && art.vibK != null) ? art.vibK : pVal("whistle", "vibrato")),
         t + Math.min(0.35, durS * 0.3));
       vib.connect(vg);
       try { vg.connect(o.frequency); } catch (e1) {}
@@ -1931,10 +2179,12 @@
       pre.gain.setValueAtTime(0.3, t);
       var nf = c.createBiquadFilter();
       nf.type = "bandpass";
-      nf.frequency.setValueAtTime(1800, t);
+      nf.frequency.setValueAtTime((art && art.breathHz != null) ? art.breathHz : 1800, t);
       nf.Q.setValueAtTime(12, t);
       var bg = c.createGain();
-      bg.gain.setValueAtTime((0.25 + 0.5 * wx.shimmer) * pVal("whistle", "breath"), t); // desk knob: def 1 = as-composed
+      // the shimmer coupling KEPT, the phrase's own breath draw on top
+      bg.gain.setValueAtTime((0.25 + 0.5 * wx.shimmer) *
+        ((art && art.breathK != null) ? art.breathK : pVal("whistle", "breath")), t);
       ns.connect(pre); pre.connect(nf); nf.connect(bg);
       var mix = c.createGain();
       o.connect(mix);
@@ -2037,6 +2287,12 @@
         var out = mixOut("whistle", run.poolMel.at(rng.rnd(-0.6, 0.6)));
         var farWall = run.streams.delaySend.chance(0.5); // per phrase, own fork
         var wx = wxAt(t);
+        // rc.36 — the phrase's breath (one draw for the whole phrase: a
+        // singer takes one breath), and the evening's vibrato rate and
+        // breath band (one instrument per night).
+        var breathK = wv("whistle", "breath", t);
+        var vibHz = wv("whistle", "vibRate", t);
+        var breathHz = wv("whistle", "breathHz", t);
         for (var i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.7, 1) * velScale;
           if (art.gains) vel *= art.gains[i];
@@ -2045,6 +2301,8 @@
           if (art.holdLast && i === m.notes.length - 1) nd = Math.min(4, nd * 1.5);
           var noteArt = {
             vibDepth: art.vibDepth, farWall: farWall,
+            breathK: breathK, vibHz: vibHz, breathHz: breathHz,
+            vibK: wv("whistle", "vibrato", nt),   // rc.36: per NOTE
             bendSemis: (m.notes.length === 1 || (art.bendSemis && nd >= 1.6 && i === m.notes.length - 1))
               ? art.bendSemis : 0,
           };
@@ -2081,9 +2339,12 @@
     // gesture-cloud, and the whole cloud (+ any lone ping) holds ONE claim.
     function renderChime(out, freq, t, vel, decayS, detuneCents) {
       var c = ctx;
-      // the desk knobs (def 1 = as-composed): ring length and pair distance
-      decayS *= pVal("chime", "decay");
-      detuneCents *= pVal("chime", "detune");
+      // the desk knobs (def 1 = as-composed): ring length and pair distance.
+      // rc.36 — decay is a TOUCH draw per ping, on top of the brain's own
+      // 1.5–2.5 s; the pair's distance is the bell's CHARACTER, one beating
+      // rate for the whole evening.
+      decayS *= wv("chime", "decay", t);
+      detuneCents *= wv("chime", "detune", t);
       var wave = bellWave(c);
       for (var di = 0; di < 2; di++) {
         var o = c.createOscillator();
@@ -2360,8 +2621,14 @@
       var peak = 0.10 * vel; // v1 ran 0.14 on its hotter bus; family headroom
       var g = c.createGain();
       g.connect(run.layBass);
-      PJ2.Voice.env(g.gain, t, [[0.012, peak], [0.088, peak * 0.5], [ring - 0.1, 0]]);
-      var partials = [[1, 1.0], [2, 0.4], [3, 0.18]];
+      // rc.36 — how hard the string is taken, per note (8–18 ms around v1's
+      // 12; the knob floors at 6 ms, well above any body's click-safe edge),
+      // and the evening's WARMTH: how much 2nd and 3rd partial the
+      // instrument has tonight.
+      var atkS = wv("bass", "attack", t) / 1000;
+      var warmK = wv("bass", "warmth", t);
+      PJ2.Voice.env(g.gain, t, [[atkS, peak], [0.088, peak * 0.5], [ring - 0.1, 0]]);
+      var partials = [[1, 1.0], [2, 0.4 * warmK], [3, 0.18 * warmK]];
       for (var i = 0; i < partials.length; i++) {
         var o = c.createOscillator();
         o.type = "triangle";
@@ -2541,7 +2808,8 @@
       var rel = Math.min(3, durS * 0.35);
       if (atkS + rel > durS - 0.2) { atkS = durS * 0.4; rel = durS * 0.4; }
       PJ2.Voice.env(g.gain, t, [[atkS, peak], [durS - atkS - rel, peak * 0.92], [rel, 0]]);
-      var det = [-3, 3];
+      var det0 = wv("aeolian", "detune", t);   // rc.36: the glass's own night
+      var det = [-det0, det0];
       for (var i = 0; i < 2; i++) {
         var o = c.createOscillator();
         o.type = "sine";
@@ -2555,7 +2823,7 @@
       h.type = "sine";
       h.frequency.setValueAtTime(freq * 2, t);
       var hg = c.createGain();
-      hg.gain.setValueAtTime(0.22 * pVal("aeolian", "sheen"), t); // desk knob: def 1 = as-composed
+      hg.gain.setValueAtTime(0.22 * wv("aeolian", "sheen", t), t); // rc.36: character
       h.connect(hg); hg.connect(g);
       h.start(t);
       h.stop(t + durS + 0.1);
@@ -2567,7 +2835,7 @@
       bp.frequency.setValueAtTime(freq * 2, t);
       bp.Q.setValueAtTime(8, t);
       var ng = c.createGain();
-      ng.gain.setValueAtTime(0.18 * pVal("aeolian", "breath"), t); // desk knob: def 1 = as-composed
+      ng.gain.setValueAtTime(0.18 * wv("aeolian", "breath", t), t); // rc.36: touch, per note
       ns.connect(pre); pre.connect(bp); bp.connect(ng); ng.connect(g);
       ns.start(t, ns.randomOffset);
       ns.stop(t + durS + 0.1);
@@ -2904,31 +3172,73 @@
     // The rolled chord. Draws first, every one of them, then the gates.
     function renderLyre(t, why) {
       var rng = run.streams.lyre;
-      var nV = Math.round(clamp(pVal("lyre", "voices"), 2, 4));
+      // rc.36 — how many strings the hand takes is a WEIGHTED touch draw
+      // (2 in seven rolls, 3 in half, 4 in a third): a bare dyad some rolls,
+      // a full hand others. Every draw on the lyre's own fork below is
+      // unchanged in ORDER; only the count of velocity draws follows nV,
+      // which at vary 0 is the desk's 3 and nothing moves.
+      var nV = Math.round(clamp(wv("lyre", "voices", t), 2, 4));
       var v = chordVoices(rng, nV, true);          // draws the #4 coin
       var topDown = rng.chance(pVal("lyre", "updown"));
       var vels = [];
       for (var i = 0; i < nV; i++) vels.push(rng.rnd(0.6, 0.9));
       var restS = rng.rnd(4, 12);
       if (!v) return false;
-      var rollS = pVal("lyre", "roll");
-      var ringS = pVal("lyre", "ring");
+      var rollS = wv("lyre", "roll", t);           // touch: per roll
+      // …and the RING is drawn PER STRING, then dealt out longest to the
+      // highest string: the top course of a lyre is the thinnest and rings
+      // longest. Sorted, not scaled, so at vary 0 (every draw the same
+      // number) the deal is a no-op.
+      var rings = [];
+      for (i = 0; i < nV; i++) rings.push(wv("lyre", "ring", t));
+      rings.sort(function (a, b) { return a - b; });
+      var ringTop = rings[rings.length - 1];
       var oct = Math.round(pVal("lyre", "register")) + chordLift();
-      // The level thins with the ladder: a roll at full 0.03 in the last
-      // tenth of the release would be the loudest thing left in the sky.
-      var peak = LYRE_PEAK * (nV > 1 ? LYRE_CHORD_SCALE : 1) * chordThinLevel();
+      // THE LEVEL. Three factors, every one of them exactly 1 at the desk's
+      // defaults (so vary 0 is rc.33 to the bit) and every one of them a
+      // thing a real hand does:
+      //   * the chord scale spreads a fixed loudness over however many
+      //     strings the hand took — four strings are not louder than three;
+      //   * a QUICK strum is a lighter one (the hand brushes, it does not
+      //     dig), so the level follows the square root of the roll's length;
+      //   * a string left ringing longer was let go more gently — the longer
+      //     tail carries the same energy, not more.
+      // Together they hold the rolled chord's worst-case sum AT the number
+      // the rc.33 gain ledger books, which is what lets plan §11.3's spans
+      // through in full: see the LEDGER note in the header.
+      var vKnob = Math.round(clamp(pVal("lyre", "voices"), 2, 4));
+      var rKnob = pVal("lyre", "roll"), gKnob = pVal("lyre", "ring");
+      // …and it only ever THINS: LYRE_CHORD_SCALE is the shipped per-string
+      // ceiling (rc.33's law that no scheduled string peak exceeds
+      // 0.03 x 0.8), so a two-string roll stays at 0.8 and does not grow
+      // into the room the third string vacated.
+      var nScale = (nV > 1) ? clamp(LYRE_CHORD_SCALE * vKnob / nV, 0, LYRE_CHORD_SCALE) : 1;
+      var rScale = (rKnob > 0) ? Math.min(1, Math.sqrt(rollS / rKnob)) : 1;
+      var gScale = (ringTop > 0) ? Math.min(1, Math.sqrt(gKnob / ringTop)) : 1;
+      var peak = LYRE_PEAK * nScale * rScale * gScale * chordThinLevel();
       if (!(peak > 0.00002)) return false;
-      var span = rollS + ringS;
+      var span = rollS + ringTop;
       var tok = run.budget.claim(6 * nV, t + span + 0.3);
       if (!tok) return false;                      // graceful thinning
       run.tokens.push(tok);
       var order = v.degs.slice();
       if (topDown) order.reverse();
       var step = (order.length > 1) ? rollS / (order.length - 1) : 0;
-      var brightK = pVal("lyre", "bright"), bodyK = pVal("lyre", "body");
+      // THE ROLL'S SHAPE, free of any draw: a roll drawn SHORTER than the
+      // knob is the hand gathering (the gaps close), one drawn LONGER is the
+      // hand dragging (the gaps open). At the knob the exponent is exactly 1
+      // and the old even spread is reproduced by the old arithmetic.
+      var shape = (rKnob > 0) ? clamp((rollS - rKnob) / rKnob, -0.6, 0.6) : 0;
+      var curve = 1 + 0.5 * shape;   // < 1 gathers, > 1 drags, exactly 1 at the knob
+      var brightK = wv("lyre", "bright", t), bodyK = wv("lyre", "body", t);
       for (i = 0; i < order.length; i++) {
-        var at = t + i * step;
+        var at = (curve === 1 || order.length < 2)
+          ? (t + i * step)
+          : (t + Math.pow(i / (order.length - 1), curve) * rollS);
         var freq = run.field.degFreq(order[i], oct);   // read AT SCHEDULE TIME
+        // the highest-pitched string gets the longest of the drawn rings
+        var rank = topDown ? (order.length - 1 - i) : i;
+        var ringS = rings[rank];
         pluckString(at, freq, ringS, run.layLyre, peak * vels[i], brightK, bodyK);
         emitNote({
           voice: "lyre", kind: why, freq: freq, t: at, durS: ringS,
@@ -3074,9 +3384,15 @@
       run.tokens.push(tok);
       var c = ctx;
       var peak = CONC_PEAK * (levelMul || 1);
-      var bellowsK = pVal("concertina", "bellows");
-      var reedDb = pVal("concertina", "reed");
-      var detune = pVal("concertina", "detune");
+      // rc.36 — the bellows are a TOUCH draw per dyad (how hard this breath
+      // is pushed); the reed is the box's CHARACTER for the evening plus a
+      // signed per-dyad dB of its own, because a free reed is never twice
+      // the same; the two reeds' distance is the instrument's own tuning and
+      // holds all night. The push/draw period was already drawn per dyad on
+      // the concertina's fork (3–5 s) and is untouched.
+      var bellowsK = wv("concertina", "bellows", t);
+      var reedDb = clamp(wv("concertina", "reed", t) + wv("concertina", "reedTouch", t), 0, 12);
+      var detune = wv("concertina", "detune", t);
       // the bellows — one breath under every part
       var bell = c.createGain();
       bell.gain.setValueAtTime(0.85, t);
@@ -3149,7 +3465,7 @@
       var second = (onII || !third) ? 2 : 1;
       var classes = [src[0], src[Math.min(second, src.length - 1)]];
       var degs = voiceConcertina(classes);
-      var hold = pVal("concertina", "hold");
+      var hold = wv("concertina", "hold", t);   // rc.36: touch, the whole range per dyad
       var oct = Math.round(pVal("concertina", "register"));
       var durS = atk + hold + rel;
       if (!renderConcertina(degs, oct, t, durS, atk, rel, 1, pdRate, "hold")) return false;
@@ -3275,17 +3591,37 @@
       // descending, or an arch (up then back to the top) — an answer, not a scale
       degs = degs.slice().reverse();
       if (arch && degs.length > 2) degs.push(degs[0]);
-      var ringS = pVal("handpan", "ring");
-      var gap = pVal("handpan", "gap");
+      var ringS = wv("handpan", "ring", t);     // touch: per answer
+      var gap = wv("handpan", "gap", t);        // touch: per answer…
       var oct = Math.round(pVal("handpan", "register")) + chordLift();
-      var span = (degs.length - 1) * gap;
-      var peak = PAN_PEAK * chordThinLevel();
+      // …and UNEVEN inside it: an answer is a phrase, not a clock. One
+      // jitter draw per step, and when every one of them is exactly 1 (vary
+      // 0) the offsets are computed by the old multiplication, to the bit.
+      var jit = [], even = true, i;
+      for (i = 1; i < degs.length; i++) {
+        var jv = wv("handpan", "gapJitter", t);
+        if (jv !== 1) even = false;
+        jit.push(jv);
+      }
+      var offs = [0], acc = 0;
+      for (i = 0; i < jit.length; i++) { acc += gap * jit[i]; offs.push(even ? (i + 1) * gap : acc); }
+      var span = offs[offs.length - 1];
+      // A TIGHTER ANSWER IS A LIGHTER ONE — fingers moving fast do not also
+      // strike harder — and a shell left ringing longer was struck no
+      // harder either. Both are exactly 1 at the desk's defaults, and
+      // together they hold the answer's worst-case sum at the number the
+      // rc.33 ledger books (header, LEDGER).
+      var gKnob = pVal("handpan", "gap"), rKnob = pVal("handpan", "ring");
+      var avgStep = span / Math.max(1, degs.length - 1);   // the jitter is inside it
+      var gScale = (gKnob > 0) ? Math.min(1, avgStep / gKnob) : 1;
+      var rScale = (ringS > 0) ? Math.min(1, Math.sqrt(rKnob / ringS)) : 1;
+      var peak = PAN_PEAK * gScale * rScale * chordThinLevel();
       var tok = run.budget.claim(5 * degs.length, t + span + ringS + 0.4);
       if (!tok) return false;
       run.tokens.push(tok);
-      var partialsK = pVal("handpan", "partials"), thumpK = pVal("handpan", "thump");
-      for (var i = 0; i < degs.length; i++) {
-        var at = t + i * gap;
+      var partialsK = wv("handpan", "partials", t), thumpK = wv("handpan", "thump", t);
+      for (i = 0; i < degs.length; i++) {
+        var at = t + offs[i];
         var freq = run.field.degFreq(degs[i], oct);   // read AT SCHEDULE TIME
         panNote(at, freq, ringS, run.layPan, peak, partialsK, thumpK);
         emitNote({
@@ -3343,10 +3679,13 @@
       var restS = rng.rnd(6, 14);
       if (!v) return false;
       var degs = v.degs.slice(0, nN);
-      var ringS = pVal("vibraphone", "ring");
+      // rc.36 — the pedal is a touch (per strike); the MOTOR is set once and
+      // left, so its speed and its depth are the evening's character. A motor
+      // that changed per note would read as a fault, not as playing.
+      var ringS = wv("vibraphone", "ring", t);
       var oct = Math.round(pVal("vibraphone", "register")) + chordLift();
       var peak = VIB_PEAK * chordThinLevel();
-      var motor = pVal("vibraphone", "motor"), depth = pVal("vibraphone", "depth");
+      var motor = wv("vibraphone", "motor", t), depth = wv("vibraphone", "depth", t);
       var tok = run.budget.claim(4 + 5 * degs.length, t + ringS + 0.4);
       if (!tok) return false;
       run.tokens.push(tok);
@@ -3672,7 +4011,7 @@
         } catch (e) { /* a missing one-shot is just a quieter sky */ }
         // THE GAP LAW — the family density contract, thermals' sanctioned
         // ±15%, and the desk's density knob (def 1 = as-composed).
-        var next = rng.rnd(18, 50) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / pVal("ambient", "density");
+        var next = rng.rnd(18, 50) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / wv("ambient", "density", t);
         lane.at(t + Math.max(7, next), oneShot);
       }
       lane.at(run.t0 + rng.rnd(8, 18), oneShot);
@@ -3690,7 +4029,7 @@
         var iv = curIntensity(t);
         var tide = curTidePos();
         var st = curSceneType();
-        var haloV = (0.015 + 0.05 * wxAt(t).altitude) * pVal("halo", "level"); // desk knob: def 1 = as-composed
+        var haloV = (0.015 + 0.05 * wxAt(t).altitude) * wv("halo", "level", t); // rc.36: character
         if (st === "release") haloV = haloV + (0.09 - haloV) * curSceneX();
         run.haloLevelCur = haloV;
         try { run.halo.setLevel(haloV, 0.5); } catch (eH) {}
@@ -3815,6 +4154,23 @@
         handpan: master.fork("handpan"),
         vibraphone: master.fork("vibraphone"),
       };
+
+      // rc.36 — ONE WANDER PER LAYER, forked off the same master. Its draws
+      // live on labels of its own ("wander:<layer>:touch|weather|dress:<n>"),
+      // so the table above still advances exactly as it did at rc.33: the
+      // same seed plays the same evening, and at vary 0 the same notes.
+      var wanders = {};
+      if (PJ2.Voice && PJ2.Voice.wander) {
+        for (var wlk in LAYER_PARAMS) {
+          wanders[wlk] = PJ2.Voice.wander({
+            root: master,
+            layer: wlk,
+            params: LAYER_PARAMS[wlk],
+            knob: (function (L) { return function (k) { return pVal(L, k); }; })(wlk),
+            vary: (function (L) { return function () { return pVal(L, "vary"); }; })(wlk),
+          });
+        }
+      }
 
       // TWO ROOMS: the close air (short, bright — v1 Ariel's decay 3.0
       // world, tightened) and THE SKY (5.2 s, GENTLER HF damping than the
@@ -4105,7 +4461,14 @@
         haloLevelCur: 0.04,
         t0: clock.now() + 0.08,
         conductor: null, air: null, airLimit: null,
+        // rc.36 — the wander, its evening ordinal (counted ACROSS the seam,
+        // since Ariel has no cast to draw one), and its telemetry log.
+        wander: wanders, evening: 0, wlog: { draws: {}, dress: [] },
       };
+
+      // The first dressing: evening 0 is the sliver before the conductor's
+      // first performance-begin, and every begin after it re-dresses.
+      dressAll(0);
 
       run.airLimit = function () {
         if (run.conductor && typeof run.conductor.airLimit === "function") {
@@ -4296,6 +4659,61 @@
           for (var pk in paramState[lk]) out[lk][pk] = paramState[lk][pk];
         }
         return out;
+      },
+
+      // ---- THE WANDER'S TELEMETRY (rc.36; dev surface, like the halo's
+      // .strings — no audio effect, nothing schedules off it). getWander()
+      // reports every ranged def's TRANSLATED span, what was actually drawn
+      // (count, min, max, per layer and key), and the dress log: one row per
+      // character def per evening. wanderAt() evaluates a weather or
+      // character value at a song time PURELY — it never advances a touch
+      // fork, so the harness can walk a weather channel second by second
+      // without moving the music.
+      getWander: function () {
+        var out = { evening: run ? (run.evening || 0) : 0, spans: {}, draws: {}, dress: [] };
+        for (var lk in LAYER_PARAMS) {
+          var defs = LAYER_PARAMS[lk];
+          out.spans[lk] = {};
+          for (var i = 0; i < defs.length; i++) {
+            var d = defs[i], s = null;
+            if (run && run.wander && run.wander[lk]) {
+              try { s = run.wander[lk].span(d.key); } catch (e) { s = null; }
+            }
+            if (!s && d.lo != null) s = { lo: d.lo, hi: d.hi, per: d.per || null };
+            if (!s && d.weights) s = { lo: null, hi: null, per: d.per || null };
+            if (!s) continue;
+            out.spans[lk][d.key] = {
+              lo: s.lo, hi: s.hi, per: d.per || s.per || null,
+              round: !!d.round, weights: d.weights || null, def: d.def,
+            };
+          }
+        }
+        if (run && run.wlog) {
+          for (var l2 in run.wlog.draws) {
+            out.draws[l2] = {};
+            for (var k2 in run.wlog.draws[l2]) {
+              var e2 = run.wlog.draws[l2][k2];
+              out.draws[l2][k2] = { n: e2.n, min: e2.min, max: e2.max };
+            }
+          }
+          for (var j = 0; j < run.wlog.dress.length; j++) {
+            var r = run.wlog.dress[j];
+            out.dress.push({ evening: r.evening, layer: r.layer, key: r.key, value: r.value });
+          }
+        }
+        return out;
+      },
+      wanderAt: function (layerKey, paramKey, songT) {
+        if (!run || !run.wander || !run.wander[layerKey]) return null;
+        var defs = LAYER_PARAMS[layerKey];
+        var d = null;
+        for (var i = 0; i < defs.length; i++) if (defs[i].key === paramKey) d = defs[i];
+        if (!d || !d.per) return null;
+        try {
+          if (d.per === "weather") return run.wander[layerKey].weather(paramKey, +songT || 0);
+          if (d.per === "character") return run.wander[layerKey].character(paramKey);
+        } catch (e) {}
+        return null;   // a touch value cannot be peeked: peeking would play it
       },
 
       getInfo: function () {
