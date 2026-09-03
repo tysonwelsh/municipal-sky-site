@@ -322,9 +322,9 @@ mid-throw, in case the ear wants more.
 | harpsichord | ~~rolled chord~~ — **dropped (owner, 2026-09-03)** | the arrival chord rolled bottom-up after a cadence | — |
 | music box | **damped** — **THE NEW DEFAULT BODY (owner, 2026-09-03: replaces the open box outright)** | 3rd partial −12 dB, decay ×0.6, peak ×0.8 | always — the music box IS the damped box now; "open" retires |
 | music box | **wound-down** — **kept as an occasional cast draw (owner, 2026-09-03)** | spb ×1.6, −8 cents drift across the phrase, register oct 0 — the mechanism running down | candle-out (an ending gesture), drawn some evenings |
-| cello | **pizzicato** | KS body at oct −1 (40 ms burst → LP 4f→0.7f, warm EQ), 1.5–3 s ring — a plucked low note, the Library's first | harmony steps in chapters, p 0.25, cast-drawn "the cellist plucks tonight" |
-| cello | **harmonics** | a flageolet: sine + faint 3rd partial at oct +1 of root/fifth, with bow noise — a high thread | reverie (the cheap high sustained sound if the vessel is not chosen) |
-| hum | **head voice** | the singer an octave up (oct 0), vowels restricted to oo/ng, peak ×0.8 | reverie, p 0.3 of sung phrases |
+| cello | ~~pizzicato~~ — **dropped (owner, 2026-09-03: not to be added to the app)** | a plucked low note | — |
+| cello | **harmonics** — **KEPT (owner, 2026-09-03)** | a flageolet: sine + faint 3rd partial at oct +1 of root/fifth, with bow noise — a high thread | reverie |
+| hum | ~~head voice~~ — **dropped (owner, 2026-09-03)** | the singer an octave up | — |
 | drone | **registrations** | flue (triangle, today) / principal (+2nd, 3rd partials at −10/−16 dB) / gedackt (sine only, sub always on) | a cast draw per evening |
 
 Every stop is a branch inside the existing render function. Owner
@@ -345,7 +345,7 @@ Principle: every scene has a LEAD and at least one voice RESTING.
 | chapter 1 · Solutio | harpsichord | music box, cello, hum bed | hum singer (rare), vessel |
 | chapter 2 · Separatio | harpsichord + music box (the overlap chapter) | cello, regal (chords) | hum singer |
 | chapter 3 · Conjunctio | harpsichord + hum singer (the wedding) | music box (rare) | regal, vessel |
-| seizure · Fermentatio | harpsichord (lifted, 4′) | music box (fragments), halo hot | cello, hum, vessel, regal |
+| seizure · Fermentatio | harpsichord (lifted) | music box (fragments), halo hot, **regal (owner, 2026-09-03)** | cello, hum, vessel |
 | reverie · Distillatio | vessel + hum singer (head voice) | harpsichord (lute stop, sparse), cello harmonics | music box (or wound-down), regal |
 | candle-out · Coagulatio | drone + cello (one bow) + the coagula | box wound-down (cast), one vessel bow | harpsichord after the coagula, hum, regal |
 
@@ -365,7 +365,8 @@ registrations, no draw. From evening two:
 - harpsichord stop: 8′ 0.6 / lute 0.25 / 4′-coupled 0.15 (tide-biased stormy)
 - music box: damped always (the body itself, owner 2026-09-03); wound-down
   drawn for the candle-out p 0.25 ("on occasion")
-- cello manner: arco 0.6 / arco + pizz 0.4
+- cello: arco always (pizzicato dropped, owner 2026-09-03); harmonics are a
+  reverie manner, not a cast draw
 - drone registration: flue 0.5 / principal 0.3 / gedackt 0.2
 - vessel, regal, flue prominence: forward 0.5 / back 0.5 (back = level
   ×0.7, presence ×0.6) — all three play every evening
@@ -571,8 +572,13 @@ is the only one kept; 4′ coupled and the rolled chord are dropped. Music
 box — DAMPED replaces the open box as the instrument's body outright (no
 knob needed: it is simply what the music box sounds like now), and
 WOUND-DOWN joins the cast shuffle on occasion (the candle-out draw). (The
-remaining stops — cello pizzicato / harmonics, hum head voice, drone
-registrations — await the owner's ear.)
+cello — HARMONICS kept, PIZZICATO dropped and not to be added to the app;
+hum — HEAD VOICE dropped. The drone registrations still await the owner's
+ear.)
+
+**Roster (owner, 2026-09-03):** §4.4's default table is adopted as the
+integration's scene table, with one change — the REGAL also plays in the
+seizure (Fermentatio). The lab page now opens with that roster loaded.
 
 ---
 

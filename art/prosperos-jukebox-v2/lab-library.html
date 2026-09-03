@@ -1624,7 +1624,7 @@
     ambient:     [1, 1, 1, 1, 1, 1, 1],
     halo:        [1, 1, 1, 1, 1, 1, 1],
     vessel:      [0, 0, 0, 0, 0, 1, 1],
-    regal:       [0, 0, 1, 0, 0, 0, 0],
+    regal:       [0, 0, 1, 0, 1, 0, 0], // owner 2026-09-03: the regal also plays in the seizure
     flue:        [0, 1, 1, 1, 0, 1, 0],
   };
   var roster = {};
@@ -1647,6 +1647,17 @@
       roster[k] = {};
       for (var j = 0; j < SCENE_COLS.length; j++) roster[k][SCENE_COLS[j][0]] = true;
     }
+  }
+  // §4.4's table (with the owner's regal-in-the-seizure change) is the
+  // adopted roster (owner, 2026-09-03), so the page opens with it loaded;
+  // the button re-loads it after hand edits, "reset (all on)" clears it.
+  function loadPlanDefault(why) {
+    for (var k in PLAN_DEFAULT) {
+      if (!roster[k]) roster[k] = {};
+      for (var j = 0; j < SCENE_COLS.length; j++) roster[k][SCENE_COLS[j][0]] = !!PLAN_DEFAULT[k][j];
+    }
+    if (typeof paintRoster === "function") paintRoster();
+    applyRoster(why || "plan default");
   }
   function rosterAllows(key) {
     var row = roster[key];
@@ -2081,13 +2092,7 @@
     var bReset = el("button", "wide", "reset (all on)");
     bReset.onclick = function () { rosterInit(); paintRoster(); applyRoster("reset"); };
     var bPlan = el("button", "wide", "plan default (§4.4)");
-    bPlan.onclick = function () {
-      for (var k in PLAN_DEFAULT) {
-        for (var j = 0; j < SCENE_COLS.length; j++) roster[k][SCENE_COLS[j][0]] = !!PLAN_DEFAULT[k][j];
-      }
-      paintRoster();
-      applyRoster("plan default");
-    };
+    bPlan.onclick = function () { loadPlanDefault("plan default"); };
     var bApply = el("button", "wide", "apply now");
     bApply.onclick = function () { applyRoster("by hand"); };
     var bAuto = el("button", "wide on", "auto at scene turns: ON");
@@ -2207,6 +2212,7 @@
   buildCandidates();
   buildStops();
   buildRoster();
+  loadPlanDefault("the adopted roster (§4.4 + regal in the seizure)");
 
   shell = LAB.create({
     track: "library",
