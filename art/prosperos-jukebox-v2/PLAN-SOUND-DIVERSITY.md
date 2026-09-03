@@ -960,6 +960,104 @@ _lab page (lab-ariel.html) — every knob is one value today; the lyre's velocit
 | NIGHT / SEASIDE one-shots | 0.5 | per sounding | pitch ±8 % · length ±25 % | No knob today. A gull that cries at one pitch is a sample; every owl, frog and gull should be its own animal. |
 | register (every stop) | 0 oct | per evening | — | A dress, drawn with the cast. Never per note. |
 
+### 11.4 Every voice — the original instruments (the owner's follow-up, 2026-09-03)
+
+The owner: "many of these sorts of rules would enhance all instruments, not
+just those we've been working on." The code agrees: inside every original
+voice's render body the timbral settings are literals (the cello 14 fixed
+settings to 4 draws; the whistle, hum, chant, aeolian 0 draws), and the
+desk's per-layer knobs are single scalars whose default equals the old
+constant. The mechanism is shared: `PJ2.Voice.wander` in `pj2-voice.js`
+(the knob is the centre; a def carries `lo`, `hi`, `per`; one `vary` knob
+per layer; draws on the helper's own forks; vary 0 is today's build
+bit-for-bit). The class tables below are the brief for the three per-song
+wander rounds (rc.34 Library, rc.35 Sycorax, rc.36 Ariel); the new voices'
+spans are in 11.1–11.3. Seams (drone, gurdy, breeze) vary by character and
+weather only, read at cycle start. Promoted body constants keep their old
+literal as the def.
+
+**Prospero's Library**
+
+| layer | key (desk) or body constant | class | span |
+|---|---|---|---|
+| drone | warmth | character | ±15 % |
+| drone | sway | weather | ±25 % (read at cycle start, held for the cycle) |
+| drone | registration | — | the cast's; skip |
+| cello | brightness | character | ±12 % |
+| cello | vibrato | touch | ±35 % per bow (depth; keep its late onset) |
+| cello | rosin | touch | ±30 % per bow |
+| cello | harmonics | — | a share; fixed |
+| cello | bow attack (body literal) | touch | ±25 % — promote as `attack` only if it is a single literal; keep ≥ the click-safe floor |
+| hum | openness | character ±15 % per evening, AND weather ±10 % within | two classes: implement as character for the def and add `openDrift` (weather, 0–0.3, def 0.1) if the body can read both cheaply; else character only |
+| hum | waver | touch | ±35 % per note |
+| hum | breath dose (body literal) | touch | ±30 % — promote as `breath` |
+| harpsichord | brightness | touch | ±20 % per pluck (plectrum position) |
+| harpsichord | resonance | character | ±15 % |
+| harpsichord | buff | — | the cast's; skip |
+| harpsichord | pluck burst length (body literal, ms) | touch | 12–20 ms if a single literal; promote as `pluck` |
+| musicbox | shimmer | character | ±20 % |
+| musicbox | wound | — | the cast's; skip |
+| musicbox | tine decay (body literal) | touch | ±15 % per pin; promote as `tine` |
+| ambient | density | weather | ±30 % |
+| halo | level | character | ±20 % |
+
+Everything not named stays a literal or a fixed knob. Every promoted def's
+`def` equals the literal it replaces (bit-identical at vary 0).
+
+**Sycorax's Spell**
+
+| layer | key (desk) or body constant | class | span |
+|---|---|---|---|
+| gurdy | brightness | character | ±12 % (the seam: never per cycle) |
+| gurdy | warble | weather | ±30 % (read at cycle start, held) |
+| gurdy | trompette dose (body literal) | character | ±20 %; promote as `dog` (0–2, def 1) |
+| horn | blossom | touch | ±30 % per tone |
+| horn | breath | touch | ±30 % per tone |
+| horn | scoop | touch | ±40 % per tone |
+| horn | attack (body literal) | touch | ±25 %; promote as `attack` only if a single literal; click-safe floor |
+| chant | openness | character ±10 % per evening AND weather ±15 % within | as the Library's hum: character on the def + `openDrift` (weather) if cheap, else character only |
+| chant | vibrato | touch | ±35 % per note |
+| chant | breath thread (body literal) | touch | ±30 %; promote as `breath` |
+| rebec | rosin | touch | ±30 % per bow |
+| rebec | body | character | ±12 % |
+| rebec | bow attack (body literal, ms) | touch | 40–120 ms if a single literal; promote as `attack` |
+| waterphone | wail | touch | ±40 % per note |
+| waterphone | bloom | touch | ±35 % per note |
+| boneflute | breath | touch | ±35 % per note |
+| boneflute | chiff (body literal) | touch | ±35 %; promote as `chiff` |
+| percussion | irregularity | weather | ±30 % |
+| percussion | adorn | character | ±25 % |
+| percussion | stroke velocity spread (body) | touch | ±20 % per stroke if not already drawn; else skip |
+| ambient | density | weather | ±30 % |
+
+Everything not named stays a literal or a fixed knob. Every promoted def's
+`def` equals the literal it replaces (bit-identical at vary 0).
+
+**Ariel's Day Off**
+
+| layer | key (desk) or body constant | class | span |
+|---|---|---|---|
+| breeze | breath | weather | ±25 % (read at cycle start, held) |
+| breeze | hiss | character | ±25 % |
+| whistle | breath | touch | ±30 % per PHRASE, on top of the shimmer coupling |
+| whistle | vibrato | touch | ±35 % per note (depth), on top of the gustiness coupling and the articulation's depth |
+| whistle | vibrato RATE 5.5 Hz (body literal) | character | 4.8–6.2 Hz; promote as `vibRate` (4–7, def 5.5) |
+| whistle | breath band 1800 Hz (body literal) | character | ±10 %; promote as `breathHz` (1400–2200, def 1800) |
+| chime | decay | touch | ±20 % per ping on top of the brain's 1.5–2.5 s draw |
+| chime | detune | character | ±30 % |
+| flutter | (no desk knobs; already the most varied voice) | — | skip |
+| bass | flourish | — | a chance; fixed |
+| bass | attack 12 ms (body literal) | touch | 8–18 ms; promote as `attack` (6–30 ms, def 12) |
+| bass | partial weights [1, .4, .18] (body literal) | character | ±20 % on the 2nd and 3rd; promote as `warmth` (0–2, def 1) scaling both |
+| aeolian | sheen | character | ±20 % |
+| aeolian | breath | touch | ±30 % per note |
+| aeolian | detune ±3 ¢ (body literal) | character | 2–5 ¢; promote as `detune` (0–8, def 3) |
+| ambient | density | weather | ±30 % |
+| halo | level | character | ±20 % |
+
+Everything not named stays a literal or a fixed knob. Every promoted def's
+`def` equals the literal it replaces (bit-identical at vary 0).
+
 ---
 
 ## Appendix A — the timbral maps in full

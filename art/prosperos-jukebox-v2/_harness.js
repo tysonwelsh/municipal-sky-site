@@ -721,6 +721,57 @@ function onClockError(tag) {
 })();
 
 // ============================================================================
+// WANDER — PJ2.Voice.wander (plan §11): touch / character / weather draws on
+// the helper's OWN forks, the desk knob as the centre, `vary` as the width.
+// Shared by all three engines; the per-engine wander blocks come later.
+// ============================================================================
+(function testWander() {
+  var PARAMS = [
+    { key: "rosin", label: "", min: 0, max: 2, def: 1, lo: 0.7, hi: 1.3, per: "touch" },
+    { key: "bright", label: "", min: 0, max: 2, def: 1, lo: 0.85, hi: 1.15, per: "character" },
+    { key: "sway", label: "", min: 0, max: 2, def: 1, lo: 0.8, hi: 1.2, per: "weather" },
+    { key: "parts", label: "", min: 2, max: 4, def: 3, per: "touch", weights: [[2, 0.25], [3, 0.55], [4, 0.2]], round: true },
+    { key: "plain", label: "", min: 0, max: 2, def: 1 },
+    { key: "vary", label: "", min: 0, max: 2, def: 1 },
+  ];
+  function mk(seed, knobs) {
+    var st = {}; for (var i = 0; i < PARAMS.length; i++) st[PARAMS[i].key] = PARAMS[i].def;
+    for (var k in (knobs || {})) st[k] = knobs[k];
+    var w = P.Voice.wander({ root: P.Rand.stream(seed), layer: "t", params: PARAMS,
+      knob: function (k) { return st[k]; }, vary: function () { return st.vary; } });
+    return w;
+  }
+  var a = mk(42).dress(1), b = mk(42).dress(1), i;
+  var ta = [], tb = []; for (i = 0; i < 24; i++) { ta.push(a.touch("rosin")); tb.push(b.touch("rosin")); }
+  check("WANDER same seed → identical touch / character / weather", JSON.stringify(ta) === JSON.stringify(tb) &&
+    a.character("bright") === b.character("bright") && a.weather("sway", 77) === b.weather("sway", 77));
+  var lo = Math.min.apply(null, ta), hi = Math.max.apply(null, ta);
+  check("WANDER touch draws stay inside the authored span and do vary", lo >= 0.7 - 1e-9 && hi <= 1.3 + 1e-9 && hi - lo > 0.2,
+    lo.toFixed(3) + "–" + hi.toFixed(3));
+  var m = mk(42, { rosin: 1.5 }).dress(1), tm = []; for (i = 0; i < 24; i++) tm.push(m.touch("rosin"));
+  var sp = m.span("rosin");
+  check("WANDER a moved knob translates the span (1.5 → [1.2, 1.8])",
+    Math.min.apply(null, tm) >= 1.2 - 1e-9 && Math.max.apply(null, tm) <= 1.8 + 1e-9 && sp.lo === 1.2 && sp.hi === 1.8);
+  var z = mk(42, { vary: 0 }).dress(1), fixed = true; for (i = 0; i < 8; i++) if (z.touch("rosin") !== 1 || z.value("rosin", 0) !== 1) fixed = false;
+  check("WANDER vary 0 returns the knob exactly (today's build)", fixed && z.character("bright") === 1 && z.weather("sway", 5) === 1);
+  var v2 = mk(42, { vary: 2, rosin: 1.9 }).dress(1), okc = true; for (i = 0; i < 40; i++) { var v = v2.touch("rosin"); if (v < 0 || v > 2) okc = false; }
+  check("WANDER vary 2 widens but clamps to [min, max]", okc);
+  var cnt = { 2: 0, 3: 0, 4: 0 }; for (i = 0; i < 300; i++) cnt[a.touch("parts")]++;
+  var mp = mk(42, { parts: 4 }).dress(1), mpOk = true; for (i = 0; i < 6; i++) if (mp.touch("parts") !== 4) mpOk = false;
+  check("WANDER weighted integer draw: 3 the mode, 2 and 4 present; a moved knob wins", cnt[3] > cnt[2] && cnt[3] > cnt[4] && cnt[2] > 0 && cnt[4] > 0 && mpOk,
+    JSON.stringify(cnt));
+  var ws = [], step = 0; for (var t = 0; t <= 600; t += 2) ws.push(a.weather("sway", t));
+  for (i = 1; i < ws.length; i++) step = Math.max(step, Math.abs(ws[i] - ws[i - 1]));
+  var wlo = Math.min.apply(null, ws), whi = Math.max.apply(null, ws);
+  check("WANDER weather stays in span, moves slowly (< 0.02 per 2 s) and wanders over 10 min",
+    wlo >= 0.8 - 1e-9 && whi <= 1.2 + 1e-9 && step < 0.02 && whi - wlo > 0.1, "step " + step.toFixed(4) + " range " + (whi - wlo).toFixed(3));
+  var e1 = a.character("bright"); a.dress(2); var e2 = a.character("bright"); a.dress(1);
+  check("WANDER character constant within an evening, new each evening, evening one reproducible", e1 !== e2 && a.character("bright") === e1);
+  var r1 = P.Rand.stream(42).fork("cello"), r2 = P.Rand.stream(42).fork("cello"); mk(42).dress(1).touch("rosin");
+  check("WANDER never re-rolls an existing fork", r1.next() === r2.next() && a.value("plain", 0) === 1);
+})();
+
+// ============================================================================
 // INTEGRATION — the four modules composed the way pj2-audio.js will compose
 // them: a clock over the mock ctx, a dorian field, a forked stream, a budget
 // bound to the clock, and a .every melody loop claiming budget per note and
