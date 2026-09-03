@@ -317,11 +317,11 @@ mid-throw, in case the ear wants more.
 
 | voice | stop | what changes | where |
 |---|---|---|---|
-| harpsichord | **lute stop** (buff) | 15 ms burst, LP start 1.6f (duller), decay ×0.55, no sparkle, a felt tick at 400 Hz | a cast draw (whole evening, p 0.25) or reverie |
-| harpsichord | **4′ coupled** | a second KS at 2f at −9 dB | seizure; stormy-tide evenings |
-| harpsichord | **rolled chord** | the first phrase after a cadence is the arrival chord rolled bottom-up over 0.25–0.5 s at vel 0.7 — a gesture the pluck never makes today | chapter entries |
-| music box | **damped** | 3rd partial −12 dB, decay ×0.6, peak ×0.8 | reverie; a cast draw |
-| music box | **wound-down** | spb ×1.6, −8 cents drift across the phrase, register oct 0 — the mechanism running down | candle-out only (an ending gesture) |
+| harpsichord | **lute stop** (buff) — **KEPT (owner, 2026-09-03: the only harpsichord stop)** | 15 ms burst, LP start 1.6f (duller), decay ×0.55, no sparkle, a felt tick at 400 Hz | a cast draw (whole evening, p 0.25) or reverie |
+| harpsichord | ~~4′ coupled~~ — **dropped (owner, 2026-09-03)** | a second KS at 2f at −9 dB | — |
+| harpsichord | ~~rolled chord~~ — **dropped (owner, 2026-09-03)** | the arrival chord rolled bottom-up after a cadence | — |
+| music box | **damped** — **THE NEW DEFAULT BODY (owner, 2026-09-03: replaces the open box outright)** | 3rd partial −12 dB, decay ×0.6, peak ×0.8 | always — the music box IS the damped box now; "open" retires |
+| music box | **wound-down** — **kept as an occasional cast draw (owner, 2026-09-03)** | spb ×1.6, −8 cents drift across the phrase, register oct 0 — the mechanism running down | candle-out (an ending gesture), drawn some evenings |
 | cello | **pizzicato** | KS body at oct −1 (40 ms burst → LP 4f→0.7f, warm EQ), 1.5–3 s ring — a plucked low note, the Library's first | harmony steps in chapters, p 0.25, cast-drawn "the cellist plucks tonight" |
 | cello | **harmonics** | a flageolet: sine + faint 3rd partial at oct +1 of root/fifth, with bow noise — a high thread | reverie (the cheap high sustained sound if the vessel is not chosen) |
 | hum | **head voice** | the singer an octave up (oct 0), vowels restricted to oo/ng, peak ×0.8 | reverie, p 0.3 of sung phrases |
@@ -363,7 +363,8 @@ event, narrated as `{type:"cast"}` + a scribal-log line, reported in
 registrations, no draw. From evening two:
 
 - harpsichord stop: 8′ 0.6 / lute 0.25 / 4′-coupled 0.15 (tide-biased stormy)
-- music box: open 0.7 / damped 0.3
+- music box: damped always (the body itself, owner 2026-09-03); wound-down
+  drawn for the candle-out p 0.25 ("on occasion")
 - cello manner: arco 0.6 / arco + pizz 0.4
 - drone registration: flue 0.5 / principal 0.3 / gedackt 0.2
 - vessel, regal, flue prominence: forward 0.5 / back 0.5 (back = level
@@ -564,6 +565,14 @@ REJECTED by the owner (§7, decision 6): no portamento voice for Ariel.
 7. **Already in the owner's ear:** nothing yet.
 8. **Where the plan lives:** the `PLAN-*.md` ignore rule for this folder
    is RELAXED; this document is committed under its own name.
+
+**Stops, by ear on the lab page (2026-09-03):** harpsichord — the LUTE STOP
+is the only one kept; 4′ coupled and the rolled chord are dropped. Music
+box — DAMPED replaces the open box as the instrument's body outright (no
+knob needed: it is simply what the music box sounds like now), and
+WOUND-DOWN joins the cast shuffle on occasion (the candle-out draw). (The
+remaining stops — cello pizzicato / harmonics, hum head voice, drone
+registrations — await the owner's ear.)
 
 ---
 
