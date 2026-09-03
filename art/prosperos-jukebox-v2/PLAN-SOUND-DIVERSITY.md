@@ -303,6 +303,15 @@ settling 0.05 / seizure 0 / candle-out 0. Fills F2 (blown) and F1
 (sustained mid-register melody). Risk: it is a soloist by nature; keep it
 the rarest speaker.
 
+*Owner's tuning (by ear on the lab page, 2026-09-03 — the integration's
+design constants):* level ×0.7 (peak 0.021), presence ×0.8, chiff ×1,
+breath ×1.75 (a windier tone than the sketch), vibrato ×2 (the knob's
+ceiling — the full waver, arriving half a second late), register +1
+(C5–B5 fundamentals), pace ×1.5 (quicker phrases), phrase length 4
+notes. These are now the lab page's defaults. Note the vibrato landed
+on the knob's maximum: the integration should size its range so ×2 sits
+mid-throw, in case the ear wants more.
+
 ### 4.3 Stops (L2) — variants of the existing bodies
 
 | voice | stop | what changes | where |
