@@ -6082,7 +6082,7 @@ function p3AmbientFires(r) {
 
     // trackRun + per-layer knob overrides applied before play(). `knobs` is
     // {layer: {key: value}}; the key "*" applies to every layer that has it.
-    // rc.39: `copts` is merged into create()'s options — the one caller that
+    // rc.38: `copts` is merged into create()'s options — the one caller that
     // uses it is VARY-ZERO, which needs the absences door shut to compare
     // against a digest taken before absences existed.
     function ariRun(seedVal, simS, knobs, copts) {
@@ -6170,12 +6170,12 @@ function p3AmbientFires(r) {
     // not collapse to its literal — this row goes red and nothing else needs
     // to notice.
     var AW_BASELINE = "202d7d3:45029";  // rc.33, seed 881, 600 s — captured before the engine was touched
-    // rc.39 — the row is UNCHANGED as a law; only its setup grew, because
-    // rc.39 added a second dimension the digest predates. The pinned stream
+    // rc.38 — the row is UNCHANGED as a law; only its setup grew, because
+    // rc.38 added a second dimension the digest predates. The pinned stream
     // is the engine with the wander returned (vary 0) AND with the thinning
     // returned: every presence knob at 1 (the value the rc.33 four shipped,
     // and the effective value of every voice that had no knob at all) and the
-    // absences door shut. Those two settings ARE "the engine before rc.39",
+    // absences door shut. Those two settings ARE "the engine before rc.38",
     // so the same fingerprint must still come back — and if a presence knob
     // ever leaks past a 1, or an absence is drawn where the door is shut,
     // this row goes red exactly as it did for the wander.
@@ -6420,7 +6420,7 @@ function p3AmbientFires(r) {
       (W0.swallowed.length + W1.swallowed.length + W1b.swallowed.length + W2.swallowed.length) + " swallowed");
   })();
 
-  // ---- ARIEL rc.39: thinning + absences ----
+  // ---- ARIEL rc.38: thinning + absences ----
   // The owner, 2026-09-03, after the wander rounds: "it's a little too
   // cluttered now that we added all the new instruments — reduce the
   // frequency of most instruments, pretty much anything that's not a drone or
@@ -6429,7 +6429,7 @@ function p3AmbientFires(r) {
   //
   // So: a `presence` knob on every non-seam voice, shipped BELOW 1 (that is
   // the reduction), and PJ2.Voice.absences drawn at each seam. The rows below
-  // are this round's whole contract — the engine is pre-rc.39 to the bit when
+  // are this round's whole contract — the engine is pre-rc.38 to the bit when
   // both are returned, the thinning lands where it was aimed, the seams and
   // the signatures do not move, and an absent voice is silent for exactly one
   // evening and never two running.
@@ -6510,19 +6510,19 @@ function p3AmbientFires(r) {
     var A39_SIM = 600, A39_SEED = 881;
 
     // ---------------- IDENTITY ----------------
-    // The pinned fingerprint of the PRE-rc.39 (rc.36) note+event stream for
+    // The pinned fingerprint of the PRE-rc.38 (rc.36) note+event stream for
     // seed 881 over 600 s, captured by running THIS BLOCK against the
     // untouched engine — the wander round's method exactly. With every
     // presence knob returned to its OLD EFFECTIVE VALUE (1 — the rc.33 four
     // shipped 1, and the voices that had no knob behaved as 1) and the
-    // absences door shut, rc.39 must be that stream to the bit. If a thinning
+    // absences door shut, rc.38 must be that stream to the bit. If a thinning
     // ever leaks past a knob at 1 — a rest transformed where it should have
     // been returned, a gap scaled where the multiplier should have been
     // exactly 1 — this row goes red and nothing else needs to notice.
     var A39_BASELINE = "f4adb26d:45193";  // rc.36, seed 881, 600 s
     var I0 = a39Run(A39_SEED, A39_SIM, { presence: 1 }, { absences: false });
     var dI = dig39(sig39(I0));
-    check("A39 IDENTITY: presence 1 + absences off is the pre-rc.39 engine, bit for bit",
+    check("A38 IDENTITY: presence 1 + absences off is the pre-rc.38 engine, bit for bit",
       dI === A39_BASELINE && I0.notes.length > 10 && I0.swallowed.length === 0,
       dI + (dI === A39_BASELINE ? "" : " != pinned " + A39_BASELINE) +
       ", " + I0.notes.length + " notes, " + I0.swallowed.length + " swallowed");
@@ -6599,7 +6599,7 @@ function p3AmbientFires(r) {
             (A39_BAND[vk][0] * 100) + "," + (A39_BAND[vk][1] * 100) + "]");
         }
       }
-      check("A39 THINNING: every thinned voice enters less often, inside its band",
+      check("A38 THINNING: every thinned voice enters less often, inside its band",
         bad.length === 0 && note.length >= 4,
         note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
@@ -6642,7 +6642,7 @@ function p3AmbientFires(r) {
         note.push(forms[i] + " " + fa + "/" + fb);
         if (fa !== fb) bad.push(forms[i] + " " + fa + " != " + fb);
       }
-      check("A39 SEAMS UNTOUCHED: breeze, sky, the aeolian bed, the halo and the form do not move",
+      check("A38 SEAMS UNTOUCHED: breeze, sky, the aeolian bed, the halo and the form do not move",
         bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
 
@@ -6671,7 +6671,7 @@ function p3AmbientFires(r) {
       var rel = evOf(T_NEW[0], "release").length + evOf(T_NEW[1], "release").length;
       var fin = nOf39(T_NEW[0], "bass", "final").length + nOf39(T_NEW[1], "bass", "final").length;
       if (rel >= 4 && fin < rel * 0.75) bad.push("last word in only " + fin + " of " + rel + " releases");
-      check("A39 SIGNATURES ignore presence: every one still fires at the shipped defaults",
+      check("A38 SIGNATURES ignore presence: every one still fires at the shipped defaults",
         bad.length === 0, note.join(", ") + ", releases " + rel +
         (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
@@ -6715,7 +6715,7 @@ function p3AmbientFires(r) {
         }
         note.push(cs.length + " evening(s)");
       }
-      check("A39 ABSENCES: one cast line per evening, evening one full, only eligible voices",
+      check("A38 ABSENCES: one cast line per evening, evening one full, only eligible voices",
         bad.length === 0, note.join(" + ") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
     })();
 
@@ -6745,7 +6745,7 @@ function p3AmbientFires(r) {
         if (late) bad.push("run " + r + ": " + late + " line(s) late");
         note.push(cs.length + " line(s), " + judged + " with music after them");
       }
-      check("A39 ABSENCES: the cast line precedes the evening's first note",
+      check("A38 ABSENCES: the cast line precedes the evening's first note",
         bad.length === 0, note.join(" + ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
 
@@ -6797,7 +6797,7 @@ function p3AmbientFires(r) {
         }
       }
       note.push(checked + " absence(s) judged, " + bedsHeard + " aeolian bed(s) still heard");
-      check("A39 ABSENCES: an absent voice makes ZERO new entries that evening (the bed plays on)",
+      check("A38 ABSENCES: an absent voice makes ZERO new entries that evening (the bed plays on)",
         bad.length === 0 && (SHORTT || checked > 0),
         note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
     })();
@@ -6826,7 +6826,7 @@ function p3AmbientFires(r) {
       }
       if (twice) bad.push(twice + " voice(s) absent twice running");
       if (windows > 0 && worst < 3) bad.push("a voice present in only " + worst + " of 6");
-      check("A39 ABSENCES: never the same voice twice running; every voice in >= 3 of any 6 evenings",
+      check("A38 ABSENCES: never the same voice twice running; every voice in >= 3 of any 6 evenings",
         bad.length === 0,
         note.join(" + ") + ", " + windows + " six-evening window(s), worst presence " +
         (windows ? worst + "/6" : "n/a — short run") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
@@ -6847,7 +6847,7 @@ function p3AmbientFires(r) {
         }
         note.push("evening " + info.cast.evening + " " + JSON.stringify(info.cast.absentLabels));
       }
-      check("A39 ABSENCES: getInfo().cast carries the evening's absent list",
+      check("A38 ABSENCES: getInfo().cast carries the evening's absent list",
         bad.length === 0, note.join("; ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
 
@@ -6879,7 +6879,7 @@ function p3AmbientFires(r) {
       } catch (e) { bad.push("threw: " + e.message); }
       console.error = origCE;
       W.AudioContext = origAC;
-      check("A39 ABSENCES: a reseed forgets last evening — the new run opens on the full cast",
+      check("A38 ABSENCES: a reseed forgets last evening — the new run opens on the full cast",
         bad.length === 0 && swallowed.length === 0, note + (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
 
@@ -6909,11 +6909,11 @@ function p3AmbientFires(r) {
         E.setLayerParam("chime", "presence", 1.5);
         if (Math.abs(E.getLayerParamValues().chime.presence - 1.5) > 1e-9) bad.push("presence is not settable");
       } catch (eD) { bad.push("threw: " + eD.message); }
-      check("A39 DESK: presence on every non-seam row at its shipped default, none on the seams",
+      check("A38 DESK: presence on every non-seam row at its shipped default, none on the seams",
         bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
     })();
 
-    check("A39 zero swallowed errors across every thinning run",
+    check("A38 zero swallowed errors across every thinning run",
       I0.swallowed.length === 0 && T_OLD[0].swallowed.length === 0 && T_OLD[1].swallowed.length === 0 &&
       T_NEW[0].swallowed.length === 0 && T_NEW[1].swallowed.length === 0 &&
       C1.swallowed.length === 0 && C2.swallowed.length === 0,

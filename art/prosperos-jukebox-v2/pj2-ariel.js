@@ -526,12 +526,12 @@
   // equals the constant it replaces, so the default desk is bit-identical
   // to the unparametrized engine.
   //
-  // rc.39 — ONE EXCEPTION, and it is the round's whole point: `presence`.
+  // rc.38 — ONE EXCEPTION, and it is the round's whole point: `presence`.
   // Every non-seam voice now carries one, and the SHIPPED DEFAULTS ARE THE
   // REDUCTION (the owner, 2026-09-03: "it's a little too cluttered now that
   // we added all the new instruments — reduce the frequency of most
   // instruments, pretty much anything that's not a drone or drone-adjacent").
-  // A presence knob at 1 restores the pre-rc.39 rate EXACTLY, to the bit —
+  // A presence knob at 1 restores the pre-rc.38 rate EXACTLY, to the bit —
   // which is what the harness's IDENTITY row proves. Never thinned, and so
   // carrying no presence at all: the BREEZE (the seam), the aeolian BED
   // (the singer's row owns the knob, the bed does not read it), the ambient
@@ -545,7 +545,7 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     whistle: [
-      // rc.39 — THE THINNING KNOB. The singer is a PRINCIPAL: it is never
+      // rc.38 — THE THINNING KNOB. The singer is a PRINCIPAL: it is never
       // absent and it thins only a little. It has no entry chance of its
       // own (it speaks whenever the air is free), so presence works the
       // other way the rule allows — it divides the margin it claims and the
@@ -570,7 +570,7 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     flutter: [
-      // rc.39 — the ornament had no strip at all (every constant in its body
+      // rc.38 — the ornament had no strip at all (every constant in its body
       // is literal, by design: a cloud is not a timbre). It gets the two the
       // desk is uniform on — the thinning knob, and `vary` so the row reads
       // like every other one.
@@ -587,7 +587,7 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     aeolian: [
-      // rc.39 — the SINGER's knob only. The bed is the landscape's (and the
+      // rc.38 — the SINGER's knob only. The bed is the landscape's (and the
       // cadence consort is the cadence's): neither is thinned, neither is
       // ever absent.
       { key: "presence", label: "presence — how often the glass sings (the bed plays on)", min: 0, max: 3, def: 0.6 },
@@ -965,8 +965,8 @@
 
   // ==========================================================================
   // create({ seed, volume, absences }) → Ariel  (facade mirrors PJ2.Library's
-  // exactly). `absences: false` is a DEV DOOR only — it turns the rc.39 cast
-  // draw off so the harness can prove the engine is pre-rc.39 to the bit at
+  // exactly). `absences: false` is a DEV DOOR only — it turns the rc.38 cast
+  // draw off so the harness can prove the engine is pre-rc.38 to the bit at
   // presence 1; the shipped default draws.
   // ==========================================================================
   function create(opts) {
@@ -1071,7 +1071,7 @@
     }
 
     // ------------------------------------------------------------------
-    // THE THINNING (rc.39). One rule, three faces, because Ariel's voices
+    // THE THINNING (rc.38). One rule, three faces, because Ariel's voices
     // decide to enter in three different shapes:
     //
     //   presP(layer, p)     an ENTRY / speak / consider probability —
@@ -1086,7 +1086,7 @@
     //
     // Each voice reads exactly ONE of them, at the one place that IS its
     // entry decision, so nothing is thinned twice. A knob at 1 is the
-    // pre-rc.39 engine to the bit: × 1 is exact in binary floating point,
+    // pre-rc.38 engine to the bit: × 1 is exact in binary floating point,
     // and presRest early-outs at exactly 1 because 1 − 1·(1 − 0.55) is not.
     // ------------------------------------------------------------------
     function presence(layer) {
@@ -1106,7 +1106,7 @@
     }
 
     // ------------------------------------------------------------------
-    // THE ABSENCES (rc.39) — "on certain playthroughs some instruments are
+    // THE ABSENCES (rc.38) — "on certain playthroughs some instruments are
     // not heard at all… but not as a ban" (the owner, 2026-09-03). The draw
     // is PJ2.Voice.absences (its header carries the law: evening one full,
     // 0–3 voices, never the same voice twice running, never more than a
@@ -1140,7 +1140,7 @@
     // note (the Library's own order).
     function drawAbsences(n, t) {
       // The dev door turns the WHOLE gesture off — no draw, no cast line —
-      // which is what makes "presence 1 + absences off" the pre-rc.39 engine
+      // which is what makes "presence 1 + absences off" the pre-rc.38 engine
       // byte for byte, event stream included.
       if (!absencesOn) return;
       var a = { absent: [], count: 0 };
@@ -2054,7 +2054,7 @@
           run.evening = (run.evening || 0) + 1;
           dressAll(run.evening);
 
-          // rc.39 — …and TONIGHT'S CAST, the same seam, the same ordinal:
+          // rc.38 — …and TONIGHT'S CAST, the same seam, the same ordinal:
           // who is sitting this evening out. Evening one is always full.
           drawAbsences(run.evening, (evt.t != null) ? evt.t : run.clock.now());
 
@@ -2388,7 +2388,7 @@
         var tm = phraseTiming(m, spb, 1.15, 0.5, 3.2);
         // Margins rnd(2,5) — tighter than the Library (Ariel converses
         // faster) — and DOUBLING across the release (texture thinning §1c).
-        // rc.39: …and divided by the singer's presence, which is the whole
+        // rc.38: …and divided by the singer's presence, which is the whole
         // of its thinning — the singer has no entry chance to multiply, so
         // the knob buys space instead: this margin and EVERY wait in the
         // chain above and below (the intensity rest, the empty request, the
@@ -2464,11 +2464,11 @@
         // answer's dice are thrown on the handpan's own fork when its lane
         // fires 0.25 s later).
         handpanCue(t + tm.spanS);
-        // rc.39: the WHOLE cycle — the phrase, its margin, the pause after —
+        // rc.38: the WHOLE cycle — the phrase, its margin, the pause after —
         // stretched by 1 / presence, so the singer converses a little less
         // often without one phrase of it changing. (marginRaw × wPres IS the
         // claim margin above, so the claim and the wait agree; at presence 1
-        // this sums to the pre-rc.39 expression exactly.)
+        // this sums to the pre-rc.38 expression exactly.)
         lane.at(t + (tm.spanS + marginRaw +
           (st === "song" ? rng.rnd(3, 9) : rng.rnd(2, 7)) * (1.35 - iv) * gmAt(t)) *
             wPres, phrase);
@@ -2516,7 +2516,7 @@
         // pending, is the previous release's final whistle degree — one lone
         // ping of memory (folded to the bell's shelf; air-claimed like any
         // utterance; kept pending if denied, dropped when the window closes).
-        // rc.39: the feather is a SIGNATURE — presence never touches it —
+        // rc.38: the feather is a SIGNATURE — presence never touches it —
         // but it is the bell's gesture, so on an evening the bell sits out
         // there is no feather; the pending degree simply lapses when the
         // alighting closes, as it does when the window closes on any other
@@ -2553,7 +2553,7 @@
         // cloud), breathes long in songs (the whistle's scene) and the
         // contemplative scenes — this asymmetry is what makes flight density
         // read as 2x song density without anything getting louder.
-        // rc.39: the bell's presence is read INTO this one draw — the speak
+        // rc.38: the bell's presence is read INTO this one draw — the speak
         // side of it — so the bell breathes longer everywhere at once and
         // the scene asymmetry above survives intact.
         var rest = rng.chance(presRest("chime",
@@ -2562,7 +2562,7 @@
           : st === "hover" || st === "release" ? 0.5
           : st === "alighting" ? 0.35 : 0.3));
         // rc.33: …and the roster rests the bell in hovers (the rest draw is
-        // taken FIRST, above — the gate never touches a roll). rc.39: and an
+        // taken FIRST, above — the gate never touches a roll). rc.38: and an
         // evening's absence sits beside the roster, the same way.
         if (rest || iv < 0.1 || !rosterAllows("chime") || isAbsent("chime")) {
           lane.at(t + rng.rnd(4, 8) * gmAt(t), phrase);
@@ -2683,7 +2683,7 @@
         // rc.33: the roster rests the ornament in the alighting, hovers and
         // the swirl. The release stays TICKED — the flutter's own law retires
         // it at x 0.5 and that is the ENGINE's retirement, not the roster's.
-        // rc.39: an absence rests it for the whole evening, beside the roster.
+        // rc.38: an absence rests it for the whole evening, beside the roster.
         if (rest || iv < 0.12 || !rosterAllows("flutter") || isAbsent("flutter")) {
           lane.at(t + rng.rnd(4, 8) * gmAt(t), phrase);
           return;
@@ -2836,7 +2836,7 @@
         }
       }
 
-      // rc.39 — the ground's wait, stretched by 1 / presence… EXCEPT inside a
+      // rc.38 — the ground's wait, stretched by 1 / presence… EXCEPT inside a
       // release whose LAST WORD is still unsaid. That exit at x 0.4 is a
       // SIGNATURE and its window is a sixth of the scene wide: a ground that
       // waited a third longer between fires would step straight over it, and
@@ -2853,7 +2853,7 @@
         // THE EXIT (§1c move 2): one final root an octave above the floor
         // just before x 0.4, then silence below — never a note past x 0.5.
         if (st === "release") {
-          // rc.39: the LAST WORD is a signature — presence never thins it —
+          // rc.38: the LAST WORD is a signature — presence never thins it —
           // but an absent bass has no word to say, and falls through to the
           // absence gate below like any other entry.
           if (!run.bassDone && x >= 0.25 && x < 0.42 && !isAbsent("bass")) {
@@ -2888,7 +2888,7 @@
         // two scenes later to plant a root the harmony has long left would be
         // answering a question nobody asked. The release stays ticked: the
         // bass's last word at x 0.4 is the ENGINE's law, above.
-        // rc.39: …and an evening's absence rests it the same way, arrival
+        // rc.38: …and an evening's absence rests it the same way, arrival
         // spent rather than banked, for exactly the same reason.
         if (!rosterAllows("bass") || isAbsent("bass")) {
           run.bassArrival = false;
@@ -2962,7 +2962,7 @@
             emitNote({ voice: "bass", kind: "anchor", freq: dFreq, t: t, durS: dDur, deg: dDeg, oct: BASS_OCT });
           }
         }
-        // rc.39: the ground has no entry chance either — it speaks whenever
+        // rc.38: the ground has no entry chance either — it speaks whenever
         // its lane fires and the roster seats it — so its presence lengthens
         // the wait between words. (× 1 at presence 1: as-composed.)
         lane.at(t + rng.rnd(7.2, 11.2) * pace * gmAt(t) * bassGap(st), fire);
@@ -3069,7 +3069,7 @@
         var iv = curIntensity(t);
         var st = curSceneType();
         var p = SING_P[st] != null ? SING_P[st] : 0;
-        // rc.39: presence multiplies the speak-p — and the knob is the
+        // rc.38: presence multiplies the speak-p — and the knob is the
         // SINGER's alone: the bed above never reads it, and neither does the
         // cadence consort, which belongs to the cadence.
         var sings = rng.chance(presP("aeolian", p)); // drawn every opportunity — stream discipline
@@ -3453,12 +3453,12 @@
                                                    // OUTGOING scene, so the
                                                    // current column is the one
                                                    // the roll happens in
-                                                   // (rc.39: and an absent lyre
+                                                   // (rc.38: and an absent lyre
                                                    // makes no entry at all —
                                                    // signatures included)
       if (!chordAllows("lyre")) return;            // (open all the way — it climbs)
       if (t < run.lyreHoldUntil || t < run.lyreRestUntil) return;  // the hold law
-      // rc.39 — the two SIGNATURES are flat: the alighting's first chord (the
+      // rc.38 — the two SIGNATURES are flat: the alighting's first chord (the
       // feather's cousin) and the LIFT cadence's second door. A cadence door
       // is the cadence's gesture, not the voice's own pace, so presence does
       // not thin it; only an absence closes it.
@@ -3665,7 +3665,7 @@
       var base = CONC_SCENE[curSceneType()];
       if (base == null) base = 0;
       if (base <= 0) return;
-      if (!rosterAllows("concertina") || isAbsent("concertina")) return;   // rc.39
+      if (!rosterAllows("concertina") || isAbsent("concertina")) return;   // rc.38
       if (!chordAllows("concertina")) return;      // silent from x ≥ 0.4
       if (t < run.concHoldUntil || t < run.concRestUntil) return;
       if (roll >= clamp(base * pVal("concertina", "presence"), 0, 1)) return;
@@ -3690,15 +3690,15 @@
       var rng = run.streams.concertina;
       var roll = rng.next();                       // drawn first, unconditionally
       if (plan.kind !== "lift") return false;      // the LIFT's door, and only it
-      if (isAbsent("concertina")) return false;    // rc.39: away tonight — the
+      if (isAbsent("concertina")) return false;    // rc.38: away tonight — the
                                                    // aeolian consort sounds as
                                                    // it did before the box came
       if (!chordAllows("concertina")) return false;
       if (tA < run.concHoldUntil) return false;    // the hold law
-      // rc.39 — NOT thinned: a cadence door is the cadence's gesture. (The
+      // rc.38 — NOT thinned: a cadence door is the cadence's gesture. (The
       // presence knob was here at rc.33 and is deliberately gone; at the old
       // default of 1 the two expressions are the same number, so nothing
-      // pre-rc.39 changes.)
+      // pre-rc.38 changes.)
       return roll < clamp(CONC_TAKE_P, 0, 1);
     }
     // The dyad the box takes from a consort voicing: its outer two parts (at
@@ -3833,7 +3833,7 @@
       var st = curSceneType();
       if (st !== "song" && st !== "hover") return; // never a flight or the swirl:
                                                    // they have clouds enough
-      if (!rosterAllows("handpan") || isAbsent("handpan")) return;   // rc.39
+      if (!rosterAllows("handpan") || isAbsent("handpan")) return;   // rc.38
       if (!chordAllows("handpan")) return;         // out from x ≥ 0.5
       if (t < run.panHoldUntil || t < run.panRestUntil) return;
       // it prefers still air (the gustiness gate — the lab's own weighting)
@@ -3933,7 +3933,7 @@
       if (base == null) base = 0;
       if (st === "alighting" && run.alightSteps > VIB_ALIGHT_STEPS) base = 0;
       if (base <= 0) return;
-      if (!rosterAllows("vibraphone") || isAbsent("vibraphone")) return;   // rc.39
+      if (!rosterAllows("vibraphone") || isAbsent("vibraphone")) return;   // rc.38
       if (!chordAllows("vibraphone")) return;      // out from x ≥ 0.5
       if (t < run.vibHoldUntil || t < run.vibRestUntil) return;
       // still air, like the handpan: the lounge is not for a gale
@@ -4619,7 +4619,7 @@
         breezeBreath: breezeBreath, breezeLevel: breezeLevel, aeoLevel: aeoLevel,
         breezeCur: 0.12, aeoCur: 0,
         streams: streams, tokens: [],
-        // rc.39 — the master stream itself, so PJ2.Voice.absences can take
+        // rc.38 — the master stream itself, so PJ2.Voice.absences can take
         // its own fork ("absences:<evening>") without touching any of the
         // forks above; and the evening's cast, drawn at each seam.
         master: master,
@@ -4697,7 +4697,7 @@
         onEvent: function (evt) {
           handleConductorEvent(evt);
           emitEvent(evt);
-          // rc.39 — the CAST line, the instant after the begin event it was
+          // rc.38 — the CAST line, the instant after the begin event it was
           // drawn on, so the log reads "evening N" then "tonight: …" and the
           // cast is always narrated before the evening's first note.
           if (run && run.castPending) {
@@ -4964,7 +4964,7 @@
               maxGen: mo ? mo.maxGen : null,
             };
           } catch (e) {}
-          // rc.39 — TONIGHT'S CAST: the evening's ordinal and who is sitting
+          // rc.38 — TONIGHT'S CAST: the evening's ordinal and who is sitting
           // it out (evening one is `plain` and never draws). The list is the
           // same one the cast event narrated.
           try {
@@ -4997,7 +4997,7 @@
       // {type:"joint-gesture"} + {type:"engine"} + the narration:
       // cadence (kind lift|float|up-half, arrivalAbove) / seachange / ghost
       // (promoted?) / develop / answer / reground (the seam's tonic reset) /
-      // release (scene choreography) / feather / bass-flourish / cast (rc.39:
+      // release (scene choreography) / feather / bass-flourish / cast (rc.38:
       // {evening, plain, absent, absentLabels} — who is sitting tonight out,
       // emitted the instant after each performance begin).
       setNoteListener: function (fn) { return addListener(noteLs, fn); },
