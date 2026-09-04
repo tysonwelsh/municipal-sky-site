@@ -149,6 +149,8 @@ constants:
 
 **Landed in Sycorax (rc.40, 2026-09-04 — not quite so thin).** The owner, listening to the whole jukebox after the thinning: overcorrected a little. Every `presence` default walks halfway back toward its old rate — the cantor 0.9, the percussion strokes 0.85, the other nine voices 0.8 — so the rite is thinner than rc.36 but not as sparse as rc.37 (the fleet's drop against the old rate: 31 % → 16 %, measured over sixteen seeds), with the gurdy, the heartbeat, the beds, the cut and the per-evening absences unchanged.
 
+**Landed in the Library (rc.41, 2026-09-04 — not quite so thin).** Every `presence` default moves to the midpoint between its old rate and the thinning — harpsichord 0.9, cello / the reader's singing / music box 0.8, regal 0.75, vessel 0.68, flue 0.65 — which puts back about half of what rc.39 took away (the cello now −13 % rather than −34 %, the regal −13 % rather than −41 %, the harpsichord −6 % rather than −13 %, over twelve seeds), while the drone, the hum's bed, the sky, the coagula and the evenings' absences stay exactly as they are.
+
 - **the vessel** — a bowed alembic, the Library's over-voice: four
   inharmonic bowl partials, a fundamental that BEATS at 1 Hz, and the
   engine's first free-ring envelope (the bow lifts, the metal goes on
