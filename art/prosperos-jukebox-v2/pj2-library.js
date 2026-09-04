@@ -123,6 +123,33 @@
 //   knob the owner has MOVED wins over the cast until it is reset.
 //   Narrated as a {type:"cast"} event and getInfo().cast.
 //
+// rc.39 — THE THINNING AND THE ABSENCES (owner, 2026-09-03: "it's a little
+// too cluttered now that we added all the new instruments… and bring back
+// the idea that on certain playthroughs some instruments are not heard at
+// all — but not as a ban"). Two knobs' worth of change, no new laws:
+//
+//   * PRESENCE. Every non-seam voice carries a `presence` row on its desk
+//     strip (0-3). It multiplies the entry chances a chance-driven voice
+//     rolls (cello, vessel, regal, flue, the reader's SINGING) or divides
+//     the rests and margins a loop-driven one paces itself by (harpsichord,
+//     music box), capped at x2 — never both, or the voice would be thinned
+//     twice. The shipped defaults ARE the reduction: harpsichord 0.8 (the
+//     principal), cello / hum / musicbox 0.6, regal 0.55, vessel / flue 0.5.
+//     Typing rc.36's value back into a knob restores that voice's old rate
+//     exactly. Never thinned: the drone (the seam), the hum BED, the ambient
+//     room, the halo — and the SIGNATURES, the gestures that are the song
+//     rather than the clutter: the SOLVE ET COAGULA statement and the
+//     vessel's first bow of each reverie.
+//
+//   * ABSENCES. From evening two an instrument or two may sit the whole
+//     evening out, drawn by PJ2.Voice.absences on its own fork: evening one
+//     is always full, never the same voice twice running, never more than a
+//     third of the pool. The pool is the cello, the reader's singing, the
+//     music box, the vessel, the regal and the flue — the harpsichord
+//     carries the coagula and never sits out, and the beds are the seam's.
+//     An absence stops NEW ENTRIES only, exactly like the roster. rc.31's
+//     private "no music box tonight" colour is retired into this pool.
+//
 // rc.34 — THE WANDER (PLAN-SOUND-DIVERSITY §11 and §11.4): every instrument
 // is PLAYED now rather than set. Until this build a voice varied in what it
 // said and when, but its sound was one number: the bow always the same
@@ -620,6 +647,17 @@
       varyDef(),
     ],
     cello: [
+      // rc.39 — THE THINNING (owner, 2026-09-03: "it's a little too cluttered
+      // now that we added all the new instruments — reduce the frequency of
+      // most instruments"). ONE knob per non-seam voice: it MULTIPLIES every
+      // entry chance the voice rolls and DIVIDES the rests and margins it
+      // paces itself by (rest / presence, capped at x2) — whichever of the
+      // two that voice's pacing is actually made of. The shipped default IS
+      // the reduction; the number in the comment is rc.36's effective value,
+      // and typing it into the knob restores the old rate exactly. No span,
+      // ever: an entry knob is the owner's word, never the wander's.
+      // rc.39: was 1 (no knob at all)
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
       { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200,
         lo: 1936, hi: 2464, per: "character" },
       { key: "vibrato", label: "vibrato — the bowing hand's wobble depth", min: 0, max: 2, def: 1,
@@ -631,6 +669,8 @@
       varyDef(),
     ],
     hum: [
+      // rc.39: was 1 — the SINGER only; the hum bed is the seam's
+      { key: "presence", label: "presence — how often the reader SINGS (the bed plays on)", min: 0, max: 3, def: 0.6 },
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1,
         lo: 0.85, hi: 1.15, per: "character" },
       // rc.34 — the second class the plan asks for on this row: the mouth
@@ -647,6 +687,8 @@
       varyDef(),
     ],
     harpsichord: [
+      // rc.39: was 1 — the principal, thinned least
+      { key: "presence", label: "presence — how often it speaks (its rests and margins divide by this)", min: 0, max: 3, def: 0.8 },
       { key: "brightness", label: "brightness — the string filter's starting bite", min: 1.8, max: 4.6, def: 3.0,
         lo: 2.4, hi: 3.6, per: "touch" },
       { key: "resonance", label: "resonance — the string filter's Q", min: 0.2, max: 3, def: 0.5,
@@ -660,6 +702,8 @@
       varyDef(),
     ],
     musicbox: [
+      // rc.39: was 1
+      { key: "presence", label: "presence — how often it speaks (its rests and margins divide by this)", min: 0, max: 3, def: 0.6 },
       { key: "shimmer", label: "shimmer — the metallic 3rd-partial glint", min: 0, max: 2, def: 1,
         lo: 0.8, hi: 1.2, per: "character" },
       // rc.31 stop: the mechanism running down — candle-out only
@@ -687,6 +731,8 @@
     // tuning from lab-library.html (2026-09-03), so the desk at rest is
     // exactly the instrument they approved.
     vessel: [
+      // rc.39: was 0.85 (the promoted VESSEL_PRESENCE constant)
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.5 },
       { key: "beat", label: "beat — the two fundamentals beating (Hz — the sound itself)", min: 0, max: 3, def: 1,
         lo: 0.7, hi: 1.3, per: "character" },
       { key: "ring", label: "ring — how long the metal rings on after the bow lifts", min: 0.4, max: 2.5, def: 0.9,
@@ -705,6 +751,8 @@
       varyDef(),
     ],
     regal: [
+      // rc.39: was 0.95 (the promoted REGAL_PRESENCE constant)
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.55 },
       { key: "reediness", label: "reediness — square (soft) to saw (buzzy)", min: 0, max: 1, def: 0.3,
         lo: 0.22, hi: 0.4, per: "character" },
       // rc.34 — a real regal is uneven: every pipe its own reed. The knob is
@@ -725,6 +773,8 @@
       varyDef(),
     ],
     flue: [
+      // rc.39: was 0.8 (the promoted FLUE_PRESENCE constant)
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.5 },
       { key: "chiff", label: "chiff — the breath edge at each onset", min: 0, max: 2, def: 1,
         lo: 0.6, hi: 1.5, per: "touch" },
       { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2.5, def: 1.75,
@@ -810,13 +860,21 @@
   }
 
   // ==========================================================================
-  // create({ seed, volume }) → Library
+  // create({ seed, volume, absences }) → Library
+  //
+  // `absences` (rc.39) is a DEV DOOR, default true: false makes every evening
+  // the full cast, which is how the harness proves that the engine at rc.36's
+  // presence values is rc.36's engine. Nothing else reads it.
   // ==========================================================================
   function create(opts) {
     opts = opts || {};
 
     var seed = resolveSeed(opts);
     var masterVol = (opts.volume != null) ? opts.volume : 0.5; // conservative
+    // rc.39 — the absence draw's dev door. The shipped default DRAWS; a page
+    // (or the harness's identity check) may pass { absences: false } to hear
+    // the full cast every evening. It disables the DRAW, never a law.
+    var absencesOn = (opts.absences !== false);
     var noteLs = [];   // multicast note listeners (family pattern)
     var eventLs = [];  // multicast event listeners
     var analysers = []; // attached analysers, re-tapped on every fresh bus
@@ -931,6 +989,79 @@
       var v = pVal(layer, key);
       if (d == null) return v;
       return (v !== d) ? v : castVal;
+    }
+
+    // ---- THE THINNING (rc.39) ----------------------------------------------
+    // `presence` is a pure RATE knob: it never touches a law, only how often
+    // a voice takes the opportunities its laws already allow. A voice paces
+    // itself in one of two ways — it rolls an entry CHANCE at a fixed poll
+    // (the cello, the vessel, the regal, the flue, the reader's singing), or
+    // it is a phrase loop that simply RESTS between utterances (the
+    // harpsichord, the music box). presMul multiplies the first; restMul
+    // divides the second (rest / presence, capped at x2). Applying both to
+    // one voice would thin it twice over, so each voice reads the one its
+    // pacing is actually made of, and says which where it reads it. The
+    // HOLD laws (one bow at a time, one chord at a time) are laws, not
+    // rates: they are never scaled.
+    // Three of the seven knobs PROMOTE a constant that was not 1 (the vessel's
+    // 0.85, the regal's 0.95, the flue's 0.8), so "the old rate" is not "1"
+    // for everybody. This table is each voice's rc.36 effective presence: the
+    // chance side reads the knob directly (it replaced the constant), and the
+    // rest side divides by the knob RELATIVE to this — so typing rc.36's
+    // number back in gives a rest of exactly the length that was drawn, which
+    // is what makes the identity check byte-clean.
+    var PRESENCE_RC36 = {
+      harpsichord: 1, cello: 1, hum: 1, musicbox: 1,
+      vessel: 0.85, regal: 0.95, flue: 0.8,
+    };
+    function presMul(layer) {
+      var v = pVal(layer, "presence");
+      return (v > 0) ? v : 0;
+    }
+    function restMul(layer) {
+      var v = pVal(layer, "presence");
+      var ref = PRESENCE_RC36[layer];
+      if (ref == null) ref = 1;
+      if (!(v > 0)) return 2;                 // silent anyway; never divide by 0
+      var m = ref / v;
+      return (m > 2) ? 2 : m;                 // the cap: a rest never more than doubles
+    }
+
+    // ---- THE EVENING'S ABSENCES (rc.39) ------------------------------------
+    // "On certain playthroughs some instruments are not heard at all — one,
+    // two, even three sometimes. But not as a ban" (owner, 2026-09-03). The
+    // law lives in PJ2.Voice.absences (evening one full; a count drawn 0-3;
+    // never the same voice twice running; never more than a third of the
+    // pool; the only memory is last evening's set). This is the Library's
+    // POOL: the four speakers that are not the principal, plus the two
+    // landscape newcomers. Never eligible — the drone (the seam), the hum
+    // BED (the seam's too: only the SINGER can sit out), the ambient room,
+    // the halo, and the harpsichord, which carries the coagula.
+    var ABSENCE_ELIGIBLE = ["cello", "hum", "musicbox", "vessel", "regal", "flue"];
+    // The gate. Like the roster: ALWAYS read AFTER the opportunity's
+    // unconditional roll, and it stops NEW ENTRIES only — a bow, a chord or
+    // a phrase already sounding when the seam passes finishes naturally.
+    function isAbsent(voiceKey) {
+      return !!(run && run.absent && run.absent.length &&
+                run.absent.indexOf(voiceKey) !== -1);
+    }
+    // Display names for the log line, from the mixer's own labels — except
+    // the hum, whose row is TWO voices: only the reader's SINGING can sit an
+    // evening out, and "Hum sits this one out" would say the bed had gone
+    // quiet, which it never does.
+    var ABSENT_LABEL = { hum: "the reader's singing" };
+    function absentLabels(keys) {
+      var out = [];
+      for (var i = 0; i < keys.length; i++) {
+        var lab = ABSENT_LABEL[keys[i]] || keys[i];
+        if (!ABSENT_LABEL[keys[i]]) {
+          for (var j = 0; j < MIX_LAYERS.length; j++) {
+            if (MIX_LAYERS[j].key === keys[i]) { lab = MIX_LAYERS[j].label; break; }
+          }
+        }
+        out.push(lab);
+      }
+      return out;
     }
 
     // ---- THE WANDER (rc.34, plan §11) --------------------------------------
@@ -1600,7 +1731,12 @@
     var CAST_WOUND_P = 0.25;                    // the box's wound-down candle-out
     var CAST_REG_W = [[0, 5], [1, 3], [2, 2]];  // flue .5 / principal .3 / gedackt .2
     var CAST_BACK_P = 0.5;                      // forward / back, per new voice
-    var CAST_ABSENT_P = 0.12;                   // "no music box tonight"
+    // RETIRED in rc.39: rc.31's ONE absence colour, "no music box tonight".
+    // The box now takes its chances in the general pool with everybody else
+    // (see ABSENCE_ELIGIBLE). The probability stays here because the DRAW
+    // stays — see drawCast: removing a draw would move every later evening
+    // on the cast fork, and the same seed must keep playing the same nights.
+    var CAST_ABSENT_P = 0.12;
     var CAST_BACK_LEVEL = 0.7;
     var CAST_BACK_PRESENCE = 0.6;
     var REG_NAMES = ["open", "principal", "gedackt"];  // display only; 0/1/2 stays internal
@@ -1614,9 +1750,8 @@
       var vesselBack = rng.chance(CAST_BACK_P);
       var regalBack = rng.chance(CAST_BACK_P);
       var flueBack = rng.chance(CAST_BACK_P);
-      var absentRoll = rng.chance(CAST_ABSENT_P);
+      rng.chance(CAST_ABSENT_P);   // RETIRED (rc.39) — drawn, never read
       var evening = (evt && evt.n != null) ? evt.n : 1;
-      var stormy = !!(evt && evt.tideLabel === "stormy");
       // EVENING ONE of a run is always the full ensemble in plain
       // registrations: a short listen must hear everything the book owns.
       var plain = (evening <= 1);
@@ -1624,17 +1759,29 @@
         lute = false; wound = false; registration = 0;
         vesselBack = false; regalBack = false; flueBack = false;
       }
-      // the ONE absence: tide-tied so it reads as weather, and never twice
-      // running (the memory crosses the evening seam inside a run)
-      var absent = !plain && absentRoll && stormy && !run.castLastAbsent;
-      run.castLastAbsent = absent;
+      // rc.39 — TONIGHT'S ABSENCES, drawn on their OWN fork off the run's
+      // root (never the cast fork, which must keep its rc.31 sequence). The
+      // helper carries the law; the engine only says who is eligible and
+      // remembers last evening's set, which is the whole memory there is.
+      // Evening one returns nothing — a first listener hears the lot.
+      var absent = [];
+      if (absencesOn) {
+        var aDraw = PJ2.Voice.absences({
+          root: run.rootStream, evening: evening,
+          eligible: ABSENCE_ELIGIBLE, previous: run.lastAbsent || [],
+        });
+        absent = aDraw.absent;
+      }
+      run.absent = absent;
+      run.lastAbsent = absent;
       run.cast = {
         evening: evening, plain: plain,
         lute: lute ? 1 : 0, wound: wound ? 1 : 0,
-        registration: registration, absent: absent,
+        registration: registration,
+        absent: absent, absentLabels: absentLabels(absent),
         vesselBack: vesselBack, regalBack: regalBack, flueBack: flueBack,
         harpsichord: lute ? "lute" : "8′",
-        musicbox: absent ? "absent" : (wound ? "damped, wound-down" : "damped"),
+        musicbox: wound ? "damped, wound-down" : "damped",
         drone: REG_NAMES[registration] || "open",
         vessel: vesselBack ? "back" : "forward",
         regal: regalBack ? "back" : "forward",
@@ -1648,6 +1795,9 @@
         harpsichord: run.cast.harpsichord, musicbox: run.cast.musicbox,
         drone: run.cast.drone, vessel: run.cast.vessel,
         regal: run.cast.regal, flue: run.cast.flue,
+        // rc.39 — who is sitting this one out, keys and display names. The
+        // UI's generic "cast" case reads either; the harness reads the keys.
+        absent: absent.slice(), absentLabels: absentLabels(absent),
         t: (evt && evt.t != null) ? evt.t : run.clock.now(),
       };
     }
@@ -2226,6 +2376,7 @@
           run.celloLastChord = null;   // the seam is not a harmony step
           run.vesselCandleDone = false; // rc.31: and its own guttering bow
           run.vesselLastChord = null;
+          run.vesselReverieBowed = false; // rc.39: each reverie earns its own first bow
           run.regalLastChord = null;
           run.regalPrev = null;        // the organist starts the evening fresh
           drawCast(evt);               // rc.31: tonight's dress and prominence
@@ -2264,6 +2415,9 @@
           // Phase 3 room morph: every scene entry re-aims the balance (ramped
           // 12-20s inside setSceneRoom). Audio-side only — no events emitted.
           setSceneRoom(evt);
+          // rc.39 — a new scene, a new first bow to give: the vessel's
+          // signature is per REVERIE, and every scene turn opens one.
+          run.vesselReverieBowed = false;
           // Halo retune at the FIRST scene boundary strictly after a sea
           // change (the modulation's own boundary shares its t and is
           // skipped). Freqs read from the LIVE (already-mutated) field.
@@ -2438,7 +2592,10 @@
       var attackS = rng.rnd(1.5, 3);
       var releaseS = rng.rnd(2.5, 4);
       var vibHz = rng.rnd(4.5, 5.5);
-      var restS = rng.rnd(4, 10);          // the breath after the bow lifts
+      // rc.39 — the breath after the bow lifts, DIVIDED by presence: the
+      // cello, the vessel and the regal are hold-law voices, so their rate
+      // is set as much by the silence they owe as by the coin they roll.
+      var restS = rng.rnd(4, 10) * restMul("cello");
       // rc.31 — the HARMONICS stop's coin, on the dedicated "stops" fork, so
       // the cello's OWN fork position is unchanged by the flageolet coin.
       // (The cello's REALIZED stream still differs from rc.30's, because the
@@ -2607,12 +2764,16 @@
       var rng = run.streams.cello;
       var roll = rng.next();                    // drawn first, unconditionally
       if (curSceneType() === "candle-out") return;
-      if (!rosterAllows("cello")) return;   // rc.31: the cello rests in the seizure
+      // rc.31 the roster (the cello rests in the seizure); rc.39 the evening's
+      // absences — an absent cello makes no NEW entries, bows already drawn
+      // ring out. Both gate AFTER the roll, like every gate in this file.
+      if (!rosterAllows("cello") || isAbsent("cello")) return;
       var iv = curIntensity(t);
       if (iv < 0.15) return;
       if (t < run.celloHoldUntil) return;
       var x = clamp((iv - 0.15) / 0.3, 0, 1);
-      if (roll >= baseChance * (0.25 + 0.75 * x)) return;
+      // rc.39 — the thinning: presence multiplies the chance, nothing else.
+      if (roll >= baseChance * (0.25 + 0.75 * x) * presMul("cello")) return;
       var ch = null;
       try { ch = run.harmony.current(); } catch (e) {}
       var r = foldRootLow(ch && isFinite(ch.rootDeg) ? ch.rootDeg : 0);
@@ -2633,8 +2794,8 @@
       var rng = run.streams.cello;
       var roll = rng.next();                    // drawn first, unconditionally
       var isStop = rng.chance(0.35);
-      if (roll >= CELLO_CHANCE.cadence) return;
-      if (!rosterAllows("cello")) return;   // rc.31
+      if (roll >= CELLO_CHANCE.cadence * presMul("cello")) return;   // rc.39
+      if (!rosterAllows("cello") || isAbsent("cello")) return;   // rc.31 / rc.39
       if (t < run.celloHoldUntil) return;
       var r = foldRootLow(chord.rootDeg);
       renderCello(t, isStop ? [[r, -1], [r + 4, -1]] : [[r, -1]], durS, "cadence", 0.9);
@@ -2648,8 +2809,8 @@
       var rng = run.streams.cello;
       var roll = rng.next();                    // drawn first, unconditionally
       var durS = rng.rnd(18, 26);
-      if (roll >= CELLO_CHANCE.seachange) return;
-      if (!rosterAllows("cello")) return;   // rc.31
+      if (roll >= CELLO_CHANCE.seachange * presMul("cello")) return; // rc.39
+      if (!rosterAllows("cello") || isAbsent("cello")) return;   // rc.31 / rc.39
       if (t < run.celloHoldUntil) return;
       var ch = null;
       try { ch = run.harmony.current(); } catch (e) {}
@@ -2667,7 +2828,8 @@
         var offset = rng.rnd(6, 15);
         var durS = rng.rnd(18, 24);
         if (run.celloCandleDone) return;
-        if (roll >= 0.8) return;
+        if (isAbsent("cello")) return;                    // rc.39
+        if (roll >= 0.8 * presMul("cello")) return;       // rc.39: thinned too
         run.celloCandleDone = true;
         var tBow = evt.t + Math.min(offset, evt.durS * 0.4); // early in the guttering
         run.clock.lane("cello").at(tBow, function (tt) {
@@ -2724,7 +2886,11 @@
     var VESSEL_GAINS = [1, 0.45, 0.30, 0.15];
     var VESSEL_T60 = [[8, 14], [5, 8], [3, 5], [2, 3]];
     var VESSEL_PEAK = 0.015;        // 0.02 × the owner's level 0.75
-    var VESSEL_PRESENCE = 0.85;     // the owner's presence multiplier
+    // rc.39 — the owner's by-ear presence multiplier IS the desk's `presence`
+    // knob now (def 0.5; type 0.85 back and the vessel bows at rc.36's rate).
+    // The old number survives as the SIGNATURE floor below: the reverie's own
+    // first bow is the gesture, not the clutter, so it is never thinned.
+    var VESSEL_SIG_PRESENCE = 0.85;
     var VESSEL_CHANCE = {
       reverie: 0.5, cadence: 0.6, seachange: 0.7,
       // ROSTER-SUPERSEDED: the owner's entry law keeps a rare chapter bow
@@ -2747,7 +2913,7 @@
       // click-safe floor at either end.
       var atk = rng.rnd(2.4, 3.6) * wTouch("vessel", "attack"); // the owner's 3.0 s bow-in
       var hold = rng.rnd(3, 8);
-      var restS = rng.rnd(8, 20);
+      var restS = rng.rnd(8, 20) * restMul("vessel");   // rc.39 (see renderCello)
       var decays = [], di;
       for (di = 0; di < VESSEL_T60.length; di++) {
         decays.push(rng.rnd(VESSEL_T60[di][0], VESSEL_T60[di][1]));
@@ -2869,9 +3035,20 @@
       if (base <= 0) return;
       var lands = (kind === "cadence" || kind === "seachange") ? (toScene || st) : st;
       if (!rosterAllows("vessel", rosterColumn(lands))) return;
+      if (isAbsent("vessel")) return;              // rc.39: sitting this one out
       if (t < run.vesselHoldUntil) return;         // the hold law: one bow at a time
-      if (roll >= clamp(base * VESSEL_PRESENCE * castPresence("vessel"), 0, 1)) return;
+      // rc.39 — THE SIGNATURE. The vessel's FIRST bow of a reverie is the
+      // reverie's own voice (Distillatio speaking), so it keeps the presence
+      // the owner tuned by ear however far the knob is turned down; every
+      // later bow of that reverie, and every bow anywhere else, is thinned.
+      // A knob at 0 is the owner switching the voice off, signature included.
+      var pres = presMul("vessel");
+      if (pres > 0 && lands === "reverie" && !run.vesselReverieBowed) {
+        pres = Math.max(pres, VESSEL_SIG_PRESENCE);
+      }
+      if (roll >= clamp(base * pres * castPresence("vessel"), 0, 1)) return;
       if (!renderVessel(t, kind)) return;
+      if (lands === "reverie") run.vesselReverieBowed = true;
       // The guttering law is spent whether the bow was drawn inside the
       // candle-out or leaned in over the cadence into it.
       if (st === "candle-out" || toScene === "candle-out") run.vesselCandleDone = true;
@@ -2931,7 +3108,7 @@
     // p 0.3. And at a cadence it may TAKE the arrival from the consort — see
     // regalTakesCadence, called from realizeCadence.
     var REGAL_PEAK = 0.0084;        // 0.012 × the owner's level 0.7, per part
-    var REGAL_PRESENCE = 0.95;
+    // rc.39 — promoted to the desk: `presence` (def 0.55; 0.95 restores rc.36).
     var REGAL_PARTS = 3;            // the owner's voicing — rc.34: the `parts` knob's def
     var REGAL_STEP_CHANCE = 0.3;    // harmony steps, chapters and the seizure
     var REGAL_CADENCE_LEVEL = 0.6;  // a taken cadence sits under the consort's 0.016
@@ -3077,13 +3254,13 @@
       var roll = rng.next();                       // drawn first, unconditionally
       var st = curSceneType();
       if (st !== "chapter" && st !== "seizure") return;   // never settling, reverie, candle-out
-      if (!rosterAllows("regal")) return;
+      if (!rosterAllows("regal") || isAbsent("regal")) return;   // rc.31 / rc.39
       if (t < run.regalHoldUntil) return;          // the hold law: one chord at a time
-      if (roll >= clamp(REGAL_STEP_CHANCE * REGAL_PRESENCE * castPresence("regal"), 0, 1)) return;
+      if (roll >= clamp(REGAL_STEP_CHANCE * presMul("regal") * castPresence("regal"), 0, 1)) return;
       var atk = rng.rnd(0.4, 0.8);
       var rel = rng.rnd(0.6, 1.0);
       var hold = rng.rnd(8, 20) * pVal("regal", "hold");  // the owner's ×0.7 → 5.6–14 s
-      var restS = rng.rnd(6, 14);
+      var restS = rng.rnd(6, 14) * restMul("regal");    // rc.39 (see renderCello)
       var ch = null;
       try { ch = run.harmony.current(); } catch (e) {}
       if (!ch) return;
@@ -3110,9 +3287,12 @@
       // roster governs the regal's FREE entries (chapter 2 and the seizure).
       if (plan.to === "seizure" || plan.to === "candle-out") return false;
       if (st === "settling" || st === "seizure" || st === "candle-out") return false;
+      // rc.39 — an absent organist takes nothing: a taken cadence is an
+      // ENTRY, boundary gesture or not, and an absence stops entries.
+      if (isAbsent("regal")) return false;
       if (tA < run.regalHoldUntil) return false;
       var take = pVal("regal", "take");
-      return roll < clamp(take * REGAL_PRESENCE * castPresence("regal"), 0, 1);
+      return roll < clamp(take * presMul("regal") * castPresence("regal"), 0, 1);
     }
 
     function startRegal() {
@@ -3182,9 +3362,11 @@
       function attempt(t) {
         var iv = curIntensity(t);
         var st = curSceneType();
-        var p = SING_P[st] != null ? SING_P[st] : 0;
+        // rc.39 — the reader sings less often; the hum BED above is untouched
+        // (it is the seam's), and an absent "hum" silences the SINGER alone.
+        var p = (SING_P[st] != null ? SING_P[st] : 0) * presMul("hum");
         var sings = rng.chance(p); // drawn every opportunity — stream discipline
-        if (!sings || iv < 0.08 || !rosterAllows("hum")) {   // rc.31: the roster
+        if (!sings || iv < 0.08 || !rosterAllows("hum") || isAbsent("hum")) {
           lane.at(t + rng.rnd(10, 18) * gmAt(t), attempt);
           return;
         }
@@ -3341,7 +3523,16 @@
       var rng = run.streams.pluck;
       function phrase(t) {
         var iv = curIntensity(t);
-        if (iv < 0.07) { lane.at(t + rng.rnd(4, 8) * gmAt(t), phrase); return; }
+        // rc.39 — THE THINNING, rest side. The harpsichord has no entry coin
+        // to multiply: it is a phrase loop that rests between utterances, so
+        // `presence` DIVIDES every rest it takes and the margin it leaves
+        // (rest / presence, capped at x2 — see restMul). At the knob's old
+        // value 1 every product below is the drawn number itself.
+        var rest = restMul("harpsichord");
+        if (iv < 0.07) { lane.at(t + rng.rnd(4, 8) * gmAt(t) * rest, phrase); return; }
+        // presence 0 is the owner switching the voice off outright, the
+        // coagula included — no entries, the loop just breathes.
+        if (presMul("harpsichord") <= 0) { lane.at(t + rng.rnd(4, 8) * gmAt(t) * rest, phrase); return; }
         var st = curSceneType();
         // A ghost denied the air is HELD, never dropped: the motif engine
         // offers it exactly once per evening, so the library must not let a
@@ -3373,19 +3564,19 @@
           try { res = run.motif.request("pluck", reqCtx(t)); } catch (e) { res = null; }
         }
         if (!res || !res.motif || !res.motif.notes || !res.motif.notes.length) {
-          lane.at(t + rng.rnd(4, 8) * gmAt(t), phrase);
+          lane.at(t + rng.rnd(4, 8) * gmAt(t) * rest, phrase);
           return;
         }
         var m = res.motif;
         // beats → seconds: the pluck reads faster as the room leans in.
         var spb = rng.rnd(0.42, 0.6) * (1.45 - 0.75 * iv);
         var tm = phraseTiming(m, spb, 1.6, 0.9, 2.6);
-        var margin = rng.rnd(3, 8); // enforced silence after the phrase
+        var margin = rng.rnd(3, 8) * rest; // enforced silence after the phrase (rc.39)
         var tok = null;
         try { tok = run.air.tryClaim("pluck", tm.spanS, margin); } catch (e) {}
         if (!tok) {
           if (res.kind === "ghost" || res.kind === "coagula") run.heldUtterance.pluck = res;
-          lane.at(t + rng.rnd(2.5, 5) * gmAt(t), phrase); // ask again later
+          lane.at(t + rng.rnd(2.5, 5) * gmAt(t) * rest, phrase); // ask again later
           return;
         }
         emitEvent({
@@ -3421,7 +3612,7 @@
         // Respect our own margin, then breathe: pacing tightens with
         // intensity, and the weather's gapMul stretches or squeezes the
         // breath ±15% (never the margin — that belongs to the air).
-        lane.at(t + tm.spanS + margin + rng.rnd(2, 9) * (1.35 - iv) * gmAt(t), phrase);
+        lane.at(t + tm.spanS + margin + rng.rnd(2, 9) * (1.35 - iv) * gmAt(t) * rest, phrase);
       }
       lane.at(run.t0 + rng.rnd(6, 14), phrase);
     }
@@ -3441,15 +3632,25 @@
       function phrase(t) {
         var iv = curIntensity(t);
         var st = curSceneType();
+        // rc.39 — THE THINNING, rest side (see startPluck): the box has no
+        // entry coin either, so `presence` divides every rest and its margin.
+        var rest = restMul("musicbox");
         if (iv < 0.12 || (st !== "chapter" && rng.chance(0.7))) {
-          lane.at(t + rng.rnd(6, 12) * gmAt(t), phrase);
+          lane.at(t + rng.rnd(6, 12) * gmAt(t) * rest, phrase);
+          return;
+        }
+        if (presMul("musicbox") <= 0) {         // the knob at 0: the box is shut
+          lane.at(t + rng.rnd(6, 12) * gmAt(t) * rest, phrase);
           return;
         }
         // rc.31 — the roster (the box rests through the settling and the
-        // whole reverie) and the evening cast's ONE absence colour, "no
-        // music box tonight". Both gate the ENTRY only, after the draws.
-        if (!rosterAllows("musicbox") || (run.cast && run.cast.absent)) {
-          lane.at(t + rng.rnd(6, 12) * gmAt(t), phrase);
+        // whole reverie). rc.39 — and the evening's absences: rc.31's private
+        // "no music box tonight" colour is gone, and the box now takes its
+        // chances in the general pool with the cello, the reader's singing,
+        // the vessel, the regal and the flue. Both gate the ENTRY only,
+        // after the draws; a phrase already sounding finishes.
+        if (!rosterAllows("musicbox") || isAbsent("musicbox")) {
+          lane.at(t + rng.rnd(6, 12) * gmAt(t) * rest, phrase);
           return;
         }
         var res = run.heldUtterance.musicbox;
@@ -3458,7 +3659,7 @@
           try { res = run.motif.request("musicbox", reqCtx(t)); } catch (e) { res = null; }
         }
         if (!res || !res.motif || !res.motif.notes || !res.motif.notes.length) {
-          lane.at(t + rng.rnd(6, 12) * gmAt(t), phrase);
+          lane.at(t + rng.rnd(6, 12) * gmAt(t) * rest, phrase);
           return;
         }
         var m = res.motif;
@@ -3472,12 +3673,12 @@
         var spb = rng.rnd(0.26, 0.38) * (1.3 - 0.5 * iv) *
                   (wound ? MB_WOUND_SPB : 1);    // the plink's quicker tongue
         var tm = phraseTiming(m, spb, 1.9, 0.5, 1.1);
-        var margin = rng.rnd(3, 8);
+        var margin = rng.rnd(3, 8) * rest;    // rc.39
         var tok = null;
         try { tok = run.air.tryClaim("musicbox", tm.spanS, margin); } catch (e) {}
         if (!tok) {
           if (res.kind === "ghost") run.heldUtterance.musicbox = res;
-          lane.at(t + rng.rnd(3, 6) * gmAt(t), phrase);
+          lane.at(t + rng.rnd(3, 6) * gmAt(t) * rest, phrase);
           return;
         }
         emitEvent({
@@ -3556,7 +3757,7 @@
           });
         }
         maybePost("musicbox", res, st, t);
-        lane.at(t + tm.spanS + margin + rng.rnd(6, 18) * (1.3 - iv) * gmAt(t), phrase);
+        lane.at(t + tm.spanS + margin + rng.rnd(6, 18) * (1.3 - iv) * gmAt(t) * rest, phrase);
       }
       lane.at(run.t0 + rng.rnd(15, 30), phrase);
     }
@@ -3582,7 +3783,7 @@
     // every speaker, a ghost denied the air is HELD like the others, and its
     // utterances are capped at four notes — the HEAD of anything longer.
     var FLUE_PEAK = 0.021;          // 0.03 × the owner's level 0.7
-    var FLUE_PRESENCE = 0.8;
+    // rc.39 — promoted to the desk: `presence` (def 0.5; 0.8 restores rc.36).
     var FLUE_MAX_NOTES = 4;         // the owner's phrase length
     // ROSTER-SUPERSEDED, like the vessel's chapter chance: "settling" carries
     // the owner's 0.05, but the roster rests the flue through the settling,
@@ -3702,9 +3903,9 @@
         var iv = curIntensity(t);
         var st = curSceneType();
         var p = (FLUE_SPEAK_P[st] != null ? FLUE_SPEAK_P[st] : 0) *
-                FLUE_PRESENCE * castPresence("flue");
+                presMul("flue") * castPresence("flue");
         var speaks = rng.chance(p);       // drawn every opportunity — stream discipline
-        if (!speaks || iv < 0.08 || !rosterAllows("flue")) {
+        if (!speaks || iv < 0.08 || !rosterAllows("flue") || isAbsent("flue")) {
           lane.at(t + rng.rnd(12, 22) * gmAt(t), attempt);
           return;
         }
@@ -4467,12 +4668,17 @@
         vesselHoldUntil: 0,                // the hold law: one bow at a time
         vesselLastChord: null,             // the vessel's own step detector
         vesselCandleDone: false,           // the guttering law: ONE bow, then silence
+        vesselReverieBowed: false,         // rc.39: the reverie's first bow is a signature
         regalHoldUntil: 0,                 // one chord at a time
         regalLastChord: null,
         regalPrev: null,                   // the organist's own voice-leading state
         cast: null,                        // tonight's dress (drawn at performance begin)
         castPending: null,                 // its event, emitted just after the begin
-        castLastAbsent: false,             // the absence colour never runs twice
+        // rc.39 — tonight's absences and the ONE evening of memory the law
+        // allows. A fresh run (a reseed) starts both empty: no bans carry.
+        absent: [],
+        lastAbsent: [],
+        rootStream: master,                // the absence draw forks off this
         mix: mix, mixWraps: mixWraps,
         weather: weather,
         delay: delay, delaySendBox: delaySendBox, delaySendPluck: delaySendPluck,
@@ -4821,11 +5027,14 @@
           info.layers[lk] = { volume: mixState[lk].volume, muted: mixState[lk].muted };
         }
         // rc.31 — tonight's cast, the same shape as the {type:"cast"} event.
+        // rc.39 — …carrying who is sitting the evening out, keys and labels.
         info.cast = (run && run.cast) ? {
           evening: run.cast.evening, plain: run.cast.plain,
           harpsichord: run.cast.harpsichord, musicbox: run.cast.musicbox,
           drone: run.cast.drone, vessel: run.cast.vessel,
           regal: run.cast.regal, flue: run.cast.flue,
+          absent: (run.cast.absent || []).slice(),
+          absentLabels: (run.cast.absentLabels || []).slice(),
         } : null;
         info.playing = playing;
         info.seed = seed;
@@ -4841,8 +5050,9 @@
       // {type:"seachange", target, field, t} / {type:"ghost", voice, name,
       // t} / {type:"develop"|"answer", voice, name, gen, t} / rc.31's
       // {type:"cast", evening, plain, harpsichord, musicbox, drone, vessel,
-      // regal, flue, t} — the evening's dress, announced the instant after
-      // its performance-begin event and mirrored in getInfo().cast. Scene, cadence,
+      // regal, flue, absent, absentLabels, t} — the evening's dress and
+      // (rc.39) the voices sitting it out, announced the instant after its
+      // performance-begin event and mirrored in getInfo().cast. Scene, cadence,
       // seachange and ghost events also carry `label` — the alchemical
       // display vocabulary (PJ2.Library.LABELS; shared with PLAN-GRAPHICS).
       setNoteListener: function (fn) { return addListener(noteLs, fn); },
