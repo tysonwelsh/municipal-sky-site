@@ -5521,10 +5521,13 @@ function p3AmbientFires(r) {
   // Two mechanisms, both rates and never laws:
   //   PRESENCE  one knob per non-seam layer, multiplying every entry chance
   //             and dividing every rest and margin. The shipped defaults ARE
-  //             the reduction (chant 0.8, percussion 0.7, everything else
-  //             0.6); the knob at 1 is the rc.36 engine, which the IDENTITY
-  //             row below pins byte for byte (as does SYC35 VARY-ZERO, now
-  //             driven at presence 1 with the absence draw off).
+  //             the reduction (chant 0.9, percussion 0.85, everything else
+  //             0.8 — rc.40 walked each default back to the MIDPOINT between
+  //             the pre-thinning 1 and rc.37's first, over-thinned cut, the
+  //             owner's ear: "somewhere in between"); the knob at 1 is still
+  //             the rc.36 engine, which the IDENTITY row below pins byte for
+  //             byte (as does SYC35 VARY-ZERO, driven at presence 1 with the
+  //             absence draw off).
   //   ABSENCES  PJ2.Voice.absences drawn once per evening on its own fork:
   //             evening one is the full cast, from evening two 0–3 of the
   //             nine eligible voices sit it out, never the same voice twice
@@ -5550,12 +5553,16 @@ function p3AmbientFires(r) {
     var SPEAKERS38 = { chant: 1, rebec: 1, waterphone: 1, boneflute: 1 };
     // who must NOT move at all when the knobs come down
     var UNTOUCHED38 = ["gurdy", "protodrum", "breath", "ambient", "joint"];
-    // the shipped desk, layer -> presence default (null = no presence row)
+    // The shipped desk, layer -> presence default (null = no presence row).
+    // This map is the harness's ONE typed copy of the engine's defaults: the
+    // DESK row below checks LAYER_PARAMS against it, and the THINNING row
+    // derives every band it asserts from it, so a future re-tune is one edit
+    // here and not a hunt for hard-coded percentages.
     var PRES_DEF38 = {
       gurdy: null, noise: null, ambient: null,
-      chant: 0.8, percussion: 0.7,
-      horn: 0.6, rebec: 0.6, waterphone: 0.6, boneflute: 0.6,
-      bullroarer: 0.6, overtone: 0.6, jawharp: 0.6, blade: 0.6, cauldron: 0.6,
+      chant: 0.9, percussion: 0.85,
+      horn: 0.8, rebec: 0.8, waterphone: 0.8, boneflute: 0.8,
+      bullroarer: 0.8, overtone: 0.8, jawharp: 0.8, blade: 0.8, cauldron: 0.8,
     };
 
     // One Sycorax run with the rc.37 doors: `presence` stamped on every strip
@@ -5634,7 +5641,8 @@ function p3AmbientFires(r) {
       return acc;
     }
     function mkAcc38() { return { notes: {}, ent: {}, app: 0, far: 0, cuts: 0, sw: 0 }; }
-    function pct38(a, b) { return a ? Math.round(100 * (1 - b / a)) : 0; }
+    function drop38(a, b) { return a ? 1 - b / a : 0; }   // the measured drop, 0-1
+    function pc38(x) { return (100 * x).toFixed(1) + "%"; }
 
     // A signature at millisecond resolution — see the note on fnv1a38.
     function sig38(R) {
@@ -5677,10 +5685,35 @@ function p3AmbientFires(r) {
       idBad.length ? idBad.join(" · ") : "2 seeds, 52278 chars of stream, digests match, 0 swallowed");
 
     // ---- THINNING ---------------------------------------------------------
-    // Measured, not asserted by construction: the same three seeds at 1800 s,
-    // once at presence 1 and once at the shipped defaults, absences OFF in
-    // both so the number below is the thinning ALONE.
-    var TS38 = [20260709, 777, 4212];
+    // Measured, not asserted by construction: sixteen seeds at 1800 s, once at
+    // presence 1 and once at the shipped defaults, absences OFF in both so the
+    // numbers below are the presence knobs ALONE.
+    //
+    // rc.40 — THE BAND IS DERIVED FROM THE KNOB, never typed in. A layer
+    // shipping at presence p is asking to enter about (1 - p) less often, so
+    // that is this row's expectation; what it ASSERTS is only that the engine
+    // moved the right way and by a sane multiple of it. The window is wide on
+    // purpose (a quarter to 1.6x), because a presence knob is not the only
+    // thing standing between a voice and a note: the roster, the hush, the
+    // intensity floor and THE AIR gate entries too (which damps the drop),
+    // while the same knob lengthens the rests (which deepens it), and the
+    // voices share one air, so thinning one lets another speak. Below that
+    // band sit two rules that survive any widening of it: a thinned voice is
+    // never silenced (a rate, never a ban), and a voice never gets BUSIER by
+    // more than 5 % as its knob comes down — which the band already implies
+    // for any knob under 1, and which is the whole rule for a knob left AT 1.
+    // Because the expectation is read from PRES_DEF38, the next time the
+    // owner moves a default the row moves with it instead of failing.
+    //
+    // SIXTEEN seeds, where rc.37 measured three: the sparse voices (the
+    // blade, the bone flute, the horn, the overtone chant) count in the dozens
+    // over 1800 s, and three evenings cannot tell a re-tuned knob from a
+    // shuffled evening — on rc.40's desk the first three seeds read the horn's
+    // drop as 0 % where sixteen read 8.8 %, and read the waterphone as 19 %
+    // BUSIER where sixteen read it 21 % thinner.
+    var TS38 = [20260709, 777, 4212, 881, 20260713, 31337, 2, 99,
+                555, 1234, 20260601, 7, 8080, 314159, 42, 20260814];
+    var BAND_LO38 = 0.25, BAND_HI38 = 1.6, RISE38 = 0.05;
     var base38 = mkAcc38(), ship38 = mkAcc38();
     for (var ti38 = 0; ti38 < TS38.length; ti38++) {
       census38(run38(TS38[ti38], 1800, { presence: 1, absences: false }), base38);
@@ -5688,22 +5721,36 @@ function p3AmbientFires(r) {
     }
     var THIN38 = ["chant", "horn", "rebec", "waterphone", "boneflute", "percussion",
                   "bullroarer", "overtone", "jawharp", "blade", "cauldron"];
-    var thinBad = [], thinRow = [], thinB = 0, thinS = 0;
+    var thinBad = [], thinRow = [], thinB = 0, thinS = 0, thinExpW = 0;
     for (var tv = 0; tv < THIN38.length; tv++) {
       var k38 = THIN38[tv];
       var b38 = base38.notes[k38] || 0, s38 = ship38.notes[k38] || 0;
-      var d38 = pct38(b38, s38);
-      thinB += b38; thinS += s38;
-      thinRow.push(k38.slice(0, 5) + " " + d38 + "%");
-      // every thinned voice really does thin, and none of them is thinned to
-      // nothing: a rate, never a ban.
-      if (!(b38 > 0 && s38 > 0 && d38 >= 5 && d38 <= 60)) thinBad.push(k38 + " " + b38 + "->" + s38);
+      var d38 = drop38(b38, s38);                 // what the engine did
+      var e38 = 1 - PRES_DEF38[k38];              // what the knob asked for
+      thinB += b38; thinS += s38; thinExpW += b38 * e38;
+      thinRow.push(k38.slice(0, 5) + " " + b38 + "->" + s38 + " " + pc38(d38) +
+                   (e38 > 0 ? " (x" + (d38 / e38).toFixed(2) + ")" : " (knob at 1)"));
+      // a rate, never a ban — and never a rise
+      if (!(b38 > 0 && s38 > 0)) { thinBad.push(k38 + " silenced " + b38 + "->" + s38); continue; }
+      if (d38 < -RISE38) { thinBad.push(k38 + " RISES by " + pc38(-d38)); continue; }
+      if (e38 <= 0) {                             // a knob left at 1 thins nothing
+        if (Math.abs(d38) > RISE38) thinBad.push(k38 + " moved " + pc38(d38) + " at presence 1");
+        continue;
+      }
+      if (d38 < BAND_LO38 * e38 || d38 > BAND_HI38 * e38) {
+        thinBad.push(k38 + " " + pc38(d38) + " outside " + pc38(BAND_LO38 * e38) +
+                     "-" + pc38(BAND_HI38 * e38) + " (knob " + PRES_DEF38[k38] + ")");
+      }
     }
-    var thinAll = pct38(thinB, thinS);
-    check("SYC37 THINNING: every thinned voice enters less often (5-60 % fewer notes), none silenced",
-      thinBad.length === 0 && thinAll >= 15 && thinAll <= 50,
-      thinAll + "% fewer notes over " + TS38.length + " seeds x 1800 s — " + thinRow.join(", ") +
-      (thinBad.length ? " · OUT OF BAND: " + thinBad.join(" · ") : ""));
+    var thinAll = drop38(thinB, thinS);
+    var thinExp = thinB ? thinExpW / thinB : 0;   // the fleet's count-weighted ask
+    var fleetOk = thinExp > 0 && thinAll >= BAND_LO38 * thinExp && thinAll <= BAND_HI38 * thinExp;
+    check("SYC37 THINNING: every thinned voice enters less often, inside the band its own presence knob asks for",
+      thinBad.length === 0 && fleetOk,
+      pc38(thinAll) + " fewer notes over " + TS38.length + " seeds x 1800 s (the knobs ask ~" +
+      pc38(thinExp) + ", x" + (thinExp > 0 ? (thinAll / thinExp).toFixed(2) : "-") + ") — " +
+      thinRow.join(", ") + (thinBad.length ? " · OUT OF BAND: " + thinBad.join(" · ") : "") +
+      (fleetOk ? "" : " · FLEET outside " + pc38(BAND_LO38 * thinExp) + "-" + pc38(BAND_HI38 * thinExp)));
 
     var untBad = [];
     for (var ui = 0; ui < UNTOUCHED38.length; ui++) {
@@ -5848,7 +5895,7 @@ function p3AmbientFires(r) {
     check("SYC37 DESK: every non-seam strip carries `presence` at its shipped default; the seam and the beds carry none",
       presBad.length === 0 && presRows === 11,
       presBad.length ? presBad.join(" · ")
-        : presRows + " presence row(s): chant .8, percussion .7, the other nine .6; gurdy/noise/ambient none");
+        : presRows + " presence row(s): chant .9, percussion .85, the other nine .8; gurdy/noise/ambient none");
 
     var sw38 = base38.sw + ship38.sw + idSw + AR38[0].swallowed.length + AR38[1].swallowed.length;
     check("SYC37 zero swallowed errors across every rc.37 run",
