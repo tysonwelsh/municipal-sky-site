@@ -2459,7 +2459,7 @@ for (var r31i = 0; r31i < runA.events.length; r31i++) {
     Object.keys(candle).length + " candle-out(s) bowed, " + candBad + " over the law");
 
   // presence: an over-voice that never speaks is a wiring bug, not restraint.
-  // rc.37 — …but from evening two the vessel may sit a whole evening out
+  // rc.39 — …but from evening two the vessel may sit a whole evening out
   // (PJ2.Voice.absences), so the claim is now "every reverie it belongs to
   // AND IS PRESENT FOR". The rate is relaxed; the LAW — one bow per reverie
   // it plays, the signature that ignores `presence` — is not.
@@ -2479,14 +2479,14 @@ for (var r31i = 0; r31i < runA.events.length; r31i++) {
   for (i = 0; i < A2.scenes.length; i++) {
     if (A2.scenes[i].type !== "reverie") continue;
     var t0 = A2.scenes[i].t, t1 = t0 + A2.scenes[i].durS;
-    if (vesselAbsentAt(t0)) { satOut++; continue; }   // rc.37: not its evening
+    if (vesselAbsentAt(t0)) { satOut++; continue; }   // rc.39: not its evening
     reveries++;
     for (j = 0; j < notes.length; j++) {
       if (notes[j].t >= t0 - 12 && notes[j].t < t1) { bowedReveries++; break; }
     }
   }
   if (!SHORT2) {
-    check("VESSEL enters EVERY reverie it belongs to AND is present for (rc.37)",
+    check("VESSEL enters EVERY reverie it belongs to AND is present for (rc.39)",
       reveries > 0 && bows.length >= 3 && bowedReveries === reveries,
       bowedReveries + "/" + reveries + " reveries bowed, " + satOut +
       " sat out, " + bows.length + " bow(s) total");
@@ -3872,7 +3872,7 @@ function p3AmbientFires(r) {
   }
   // One Library run with every layer's `vary` set to `vy` (null = leave the
   // shipped default of 1). Swallowed console.error is collected, never lost.
-  // rc.37 — the presence values rc.36 shipped, keyed by layer. Typing these
+  // rc.39 — the presence values rc.36 shipped, keyed by layer. Typing these
   // back into the desk is what makes the engine rc.36's engine again; the
   // VARY-ZERO row below does exactly that (plus { absences: false }) so its
   // PINNED rc.33 digest survives the thinning round unchanged.
@@ -3907,7 +3907,7 @@ function p3AmbientFires(r) {
       L.stop();
       vAdvance(vnow + 3);
       out.info = L.getWanderInfo();
-      // rc.37 — the cast event grew two DECLARATIVE fields (absent /
+      // rc.39 — the cast event grew two DECLARATIVE fields (absent /
       // absentLabels). They are empty with the absence door shut, and they
       // are not stream state, so the rc.36 comparison drops them.
       if (rc36) {
@@ -4200,7 +4200,7 @@ function p3AmbientFires(r) {
 })();
 
 // ============================================================================
-// LIBRARY rc.37: thinning + absences
+// LIBRARY rc.39: thinning + absences
 //
 // The owner, 2026-09-03: "it's a little too cluttered now that we added all
 // the new instruments. Reduce the frequency of most instruments… and bring
@@ -4272,7 +4272,7 @@ function p3AmbientFires(r) {
     return R;
   }
   // The digest the IDENTITY rows compare. Times are RELATIVE to the run's own
-  // start, and the cast event's two rc.37 fields (absent / absentLabels) are
+  // start, and the cast event's two rc.39 fields (absent / absentLabels) are
   // dropped: they are declarative, they are empty with the door shut, and the
   // rc.36 stream had no such keys to compare against.
   function tDigest(R) {
@@ -4331,19 +4331,19 @@ function p3AmbientFires(r) {
   // The pinned digests were taken from the rc.36 engine and re-taken from this
   // one at rc.36's presence values with the absence door shut; the two dumps
   // (1800 s, seeds 20260706 / 20260707, notes and events serialized in full)
-  // were diffed byte for byte before rc.37 was written. If a later round moves
+  // were diffed byte for byte before rc.39 was written. If a later round moves
   // one of these, it has moved rc.36's music, whatever else it meant to do.
   var IDENT = { "20260706": "baffbf9", "20260707": "d0b81d88" };
   var oA = tRun(T_A, T_SIM, "rc36"), oB = tRun(T_B, T_SIM, "rc36");
   var dA = tDigest(oA), dB = tDigest(oB);
-  check("LIB37 IDENTITY at rc.36's presence values, absences off, the stream is rc.36's",
+  check("LIB39 IDENTITY at rc.36's presence values, absences off, the stream is rc.36's",
     dA === IDENT[String(T_A)] && dB === IDENT[String(T_B)],
     "seed " + T_A + " " + dA + " vs " + IDENT[String(T_A)] + ", seed " + T_B + " " + dB +
     " vs " + IDENT[String(T_B)] + " (" + oA.notes.length + "/" + oB.notes.length + " notes)");
 
   var sA = tRun(T_A, T_SIM, "ship"), sA2 = tRun(T_A, T_SIM, "ship"), sB = tRun(T_B, T_SIM, "ship");
   var gA = tDigest(sA), gA2 = tDigest(sA2), gB = tDigest(sB);
-  check("LIB37 IDENTITY at the shipped defaults: one seed, one evening; another seed, another",
+  check("LIB39 IDENTITY at the shipped defaults: one seed, one evening; another seed, another",
     gA === gA2 && gA !== gB && gA !== dA,
     "same " + gA + "/" + gA2 + ", other " + gB + ", rc.36 " + dA);
 
@@ -4383,7 +4383,7 @@ function p3AmbientFires(r) {
       bandBad.push(BANDS[bi][1] + " " + d.toFixed(1) + "% outside " + BANDS[bi][2] + "-" + BANDS[bi][3] + "%");
     }
   }
-  check("LIB37 THINNING every thinned voice enters less often, each inside its band",
+  check("LIB39 THINNING every thinned voice enters less often, each inside its band",
     bandBad.length === 0, bandBad.length ? bandBad.join(" · ") : bandNote.join(" · "));
 
   // the seams and the beds are NOT thinned: identical counts, both sides
@@ -4395,13 +4395,13 @@ function p3AmbientFires(r) {
       seamBad.push(SEAMS[si] + " " + OLD[SEAMS[si]] + "->" + NEW[SEAMS[si]]);
     }
   }
-  check("LIB37 THINNING the seams and the beds are untouched (identical counts)",
+  check("LIB39 THINNING the seams and the beds are untouched (identical counts)",
     seamBad.length === 0 && (NEW["drone:cycle"] || 0) > 100,
     seamBad.length ? seamBad.join(" · ") : seamNote.join(" · "));
 
   // the SIGNATURES ignore presence: the same coagula count, and every reverie
   // the vessel plays still gets its bow
-  check("LIB37 THINNING the signatures survive: the coagula and the reverie's own bow",
+  check("LIB39 THINNING the signatures survive: the coagula and the reverie's own bow",
     (NEW["coagula"] || 0) === (OLD["coagula"] || 0) && (NEW["coagula"] || 0) > 0 &&
     (NEW["reveriesBowed"] || 0) === (NEW["reveries"] || 0) && (NEW["reveries"] || 0) > 0,
     "coagula " + (OLD["coagula"] || 0) + "->" + (NEW["coagula"] || 0) +
@@ -4420,7 +4420,7 @@ function p3AmbientFires(r) {
     return null;
   }
   var casts = AR.casts, ai2, aj2;
-  check("LIB37 ABSENCES evening one is the full cast; later evenings draw from the pool",
+  check("LIB39 ABSENCES evening one is the full cast; later evenings draw from the pool",
     casts.length >= 6 && casts[0].absent.length === 0 &&
     (function () { var any = 0; for (ai2 = 1; ai2 < casts.length; ai2++) any += casts[ai2].absent.length; return any > 0; })(),
     casts.length + " evening(s), " + (function () {
@@ -4444,11 +4444,11 @@ function p3AmbientFires(r) {
     }
     prevAbs = abs;
   }
-  check("LIB37 ABSENCES an absent voice makes ZERO new entries that evening (the beds play on)",
+  check("LIB39 ABSENCES an absent voice makes ZERO new entries that evening (the beds play on)",
     leak.length === 0, leak.length ? leak.join(" · ") : casts.length + " evening(s) scanned, 0 leaked note(s)");
-  check("LIB37 ABSENCES never the same voice twice running, never more than a third of the pool",
+  check("LIB39 ABSENCES never the same voice twice running, never more than a third of the pool",
     twice === 0 && over === 0, twice + " repeat(s), " + over + " over the third");
-  check("LIB37 ABSENCES getInfo().cast.absent mirrors the announced cast, every evening",
+  check("LIB39 ABSENCES getInfo().cast.absent mirrors the announced cast, every evening",
     mirrorBad === 0 && AR.mirrors.length === casts.length,
     AR.mirrors.length + " mirror(s), " + mirrorBad + " mismatched");
 
@@ -4462,7 +4462,7 @@ function p3AmbientFires(r) {
       if (present < worst) { worst = present; worstWho = ELIG[ai2]; }
     }
   }
-  check("LIB37 ABSENCES nothing is banned: every voice plays >= 3 of any 6 evenings",
+  check("LIB39 ABSENCES nothing is banned: every voice plays >= 3 of any 6 evenings",
     casts.length >= 6 && worst >= 3, "worst " + worst + "/6 (" + worstWho + ") over " + casts.length + " evening(s)");
 
   // the cast is announced before the evening's first note, absences included
@@ -4474,7 +4474,7 @@ function p3AmbientFires(r) {
       if (AR.log[aj2].ev && AR.log[aj2].ev.type === "cast") break;     // the cast, as it should be
     }
   }
-  check("LIB37 ABSENCES the cast (with its absent list) precedes the evening's first note",
+  check("LIB39 ABSENCES the cast (with its absent list) precedes the evening's first note",
     castLate === 0, casts.length + " evening(s), " + castLate + " announced late");
 
   // ---------------- DESK ----------------
@@ -4498,7 +4498,7 @@ function p3AmbientFires(r) {
       if (nrows[dj].key === "presence") deskBad.push(NEVER[di] + " must not be thinnable");
     }
   }
-  check("LIB37 DESK every non-seam row carries `presence` at its shipped default; the seams carry none",
+  check("LIB39 DESK every non-seam row carries `presence` at its shipped default; the seams carry none",
     deskSeen === 7 && deskBad.length === 0,
     deskBad.length ? deskBad.join(" · ") : "7 strip(s): harpsichord 0.8 · cello/hum/musicbox 0.6 · regal 0.55 · vessel/flue 0.5");
 
@@ -4524,10 +4524,10 @@ function p3AmbientFires(r) {
     if (v === "hum" && offRun.notes[ai2].kind === "consort") { offSeam++; continue; }
     offBad++;
   }
-  check("LIB37 DESK presence 0 silences the voice outright (signatures included); the seams play on",
+  check("LIB39 DESK presence 0 silences the voice outright (signatures included); the seams play on",
     offBad === 0 && offSeam > 100, offBad + " note(s) from a knob at 0, " + offSeam + " seam note(s)");
 
-  check("LIB37 zero swallowed errors across every thinning and absence run",
+  check("LIB39 zero swallowed errors across every thinning and absence run",
     tErrs.length === 0, tErrs.length ? tErrs.slice(0, 3).join(" | ") : "0 swallowed");
 })();
 
@@ -7330,7 +7330,7 @@ function p3AmbientFires(r) {
   // at 1500-1800s. So below 2700s of sim, or under three completed evenings,
   // the row REPORTS the score instead of asserting it; at 2700s and above it
   // asserts refScore > 0 exactly as before. The THRESHOLD is not relaxed.
-  // rc.37 — POOLED OVER FOUR SEEDS. rc.37 thins every non-seam voice, so one
+  // rc.39 — POOLED OVER FOUR SEEDS. rc.39 thins every non-seam voice, so one
   // evening carries about a third fewer develop events than it did, and a
   // single seed's half-sample (37/45 at rc.36, 30/27 now) is small enough
   // that two phrases either side of the midpoint decide the sign — which is
@@ -7338,7 +7338,7 @@ function p3AmbientFires(r) {
   // seeds restores the statistical footing the sample lost: the THRESHOLD is
   // untouched (still > 0) and the population it is asserted over is four
   // times larger, so this is a stronger row than the one it replaces. (Over
-  // twelve seeds the arc's mean is 0.047 at rc.36 and 0.065 at rc.37, nine
+  // twelve seeds the arc's mean is 0.047 at rc.36 and 0.065 at rc.39, nine
   // of twelve positive either way: the arc itself did not move.)
   var DARK = { fragmentHead: 1, fragmentTail: 1, retrograde: 1 };
   var LUM = { ornament: 1, sequence: 1, transpose: 1 };
