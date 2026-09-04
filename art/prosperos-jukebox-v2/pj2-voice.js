@@ -715,4 +715,51 @@
     return api;
   };
 
+  // ==========================================================================
+  // absences — "certain playthroughs, an instrument or two sits it out" (the
+  // owner, 2026-09-03), with a fairness law so nothing is ever banned:
+  //
+  //   * evening ONE of a run is always the full cast (a first listener hears
+  //     everything);
+  //   * from evening two, a COUNT of absent voices is drawn (default weights
+  //     0 → .25, 1 → .35, 2 → .25, 3 → .15) and that many distinct voices are
+  //     chosen uniformly from the eligible list;
+  //   * NEVER TWICE RUNNING: a voice absent last evening cannot be absent
+  //     this evening — so any two consecutive evenings together carry every
+  //     voice, and a listener who stays for a few playthroughs hears them
+  //     all without refreshing anything;
+  //   * never more than maxShare (a third) of the eligible voices at once;
+  //   * the only memory is last evening's set (carried across the seam,
+  //     reset by reseed) — no long-term balance, no bans.
+  //
+  // Draws happen on root.fork("absences:<evening>") — its own fork, so no
+  // existing stream is re-rolled and the same seed plays the same evenings.
+  // Seams (the drone, the gurdy, the breeze), beds and principal speakers
+  // are never eligible: the engine decides the list, this decides the draw.
+  //
+  //   var a = PJ2.Voice.absences({ root: rootStream, evening: n,
+  //     eligible: ["cello", "musicbox", "vessel", "regal", "flue"],
+  //     previous: run.lastAbsent });     // → { absent: [...], count: k }
+  // ==========================================================================
+  Voice.absences = function (opts) {
+    var root = opts.root, evening = opts.evening || 1;
+    var eligible = (opts.eligible || []).slice();
+    var previous = opts.previous || [];
+    var weights = opts.countWeights || [[0, 0.25], [1, 0.35], [2, 0.25], [3, 0.15]];
+    var maxShare = (opts.maxShare != null) ? opts.maxShare : 0.34;
+    if (evening <= 1 || !eligible.length) return { absent: [], count: 0 };
+    var rng = root.fork("absences:" + evening);
+    // draws FIRST, unconditionally (stream discipline): the count, then the
+    // shuffle; the caps come after
+    var want = rng.pickW(weights);
+    var order = rng.shuffle(eligible);
+    var cap = Math.max(0, Math.floor(eligible.length * maxShare));
+    var candidates = [];
+    for (var i = 0; i < order.length; i++) {
+      if (previous.indexOf(order[i]) === -1) candidates.push(order[i]);
+    }
+    var count = Math.min(want, cap, candidates.length);
+    return { absent: candidates.slice(0, count), count: count };
+  };
+
 })();
