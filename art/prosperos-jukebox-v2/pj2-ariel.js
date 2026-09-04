@@ -127,6 +127,11 @@
 //           weather-gated and snap()ped where pitched. v1's GIGGLE IS
 //           RETIRED (owner decision: a human voice startles under the v2
 //           aesthetic; birdsong and the bee keep the playfulness).
+//           rc.43 adds THE SEASIDE — a gull, a wave wash, a bell buoy,
+//           shingle, a rope creak, a far boat horn and the rigging — as seven
+//           more members of the SAME pool, drawn by the same weighted pick at
+//           the same density. Not a stop, not a manner, not a second sky: the
+//           sky simply has more to say. (The bubbles were already the sea.)
 //   lyre    (NEW rc.33 — landscape-chordal; Ariel's own instrument, and the
 //           plan's recommendation): the Tempest's airy songs were sung to a
 //           lyre and nothing else in this sky is PLUCKED. An exact-period
@@ -308,6 +313,13 @@
 //                  and its ceiling is 1)                      -> ~ 0.089 worst
 //   ambient        loudest one-shot (a release gust at 0.02, wind chime
 //                  3 partials × 0.02)                         -> ~ 0.06 worst
+//     rc.43, the SEASIDE. Seven more members, every one of them UNDER the
+//     chime that already sets this line: gull 0.016 (two cries 0.4 s apart,
+//     each 0.27 s long — never summing), wave 0.018 + a 0.008 hiss tail,
+//     buoy 0.016 × the bell set's 2.25 + a 0.008 clapper = 0.044 through a
+//     sway of at most 1.0, shingle 0.012 (2 ms taps), rope 0.014, horn 0.02,
+//     and the rigging IS the wind chime, so it is the 0.06 itself. One
+//     one-shot at a time, as ever.               -> ~ 0.06 worst (unchanged)
 //   halo           levelGain ≤ 0.09 (the release's maximum) on a
 //                  whisper-fed ring                           -> ~ 0.02
 //   walls A+B      wet 0.32 / 0.15 on sends of 0.5 (chime) 0.4 (flutter)
@@ -515,6 +527,23 @@
 //   that fork feeds ever reaches a note event — it is ring length and beating
 //   rate — so the STREAM is untouched and only the bells that follow are
 //   played a shade differently. Stated because it is real.)
+//
+// STREAM NOTE (rc.43) — the one place this file DOES re-roll, disclosed:
+//
+//   THE SEASIDE adds seven members to the ambient pool, and a weighted pick
+//   over fifteen entries is not the same pick as over eight. So from the very
+//   first one-shot the ambient fork chooses differently, and because the
+//   bodies take different numbers of draws from that fork, every gap after it
+//   differs too. Nothing else moves — the pool is drawn on the AMBIENT fork
+//   alone, the lane's gap law is untouched, and the harness measures the sky
+//   speaking exactly as often as before (27 firings to 27 on the row's own
+//   seed) — but a seed's sky is a different sky from rc.42's, deliberately,
+//   in the sanctioned Phase-3 sense: a differently populated sky, not a
+//   different piece.
+//   Because that would also make every identity row in this file impossible,
+//   the seven sit behind their own dev door: `create({seaside: false})` gives
+//   back the old eight and the pre-rc.43 stream bit for bit, and the VARY-ZERO,
+//   rc.38 and rc.42 identity rows all shut it.
 //
 // Discipline inherited whole from pj2-library.js: every pitched note reads
 // the field AT SCHEDULE TIME (never a cached Hz — that is what makes the sea
@@ -1127,12 +1156,14 @@
   var MARIMBA_UP = Math.pow(2, MARIMBA_UP_OCT);
 
   // ==========================================================================
-  // create({ seed, volume, cast, absences }) → Ariel  (facade mirrors
+  // create({ seed, volume, cast, absences, seaside }) → Ariel  (facade mirrors
   // PJ2.Library's exactly). `cast: false` is a DEV DOOR only — it turns the
   // whole evening cast off (rc.38's absence draw AND rc.42's manner draw), so
   // the harness can prove the engine is pre-rc.38 to the bit at presence 1
   // and pre-rc.42 to the bit at every share 0. `absences: false` is kept as
-  // an alias for it. The shipped default draws.
+  // an alias for it. `seaside: false` is the second dev door (rc.43): it takes
+  // the seven seaside members back out of the ambient pool, which is what lets
+  // every identity row still ask for a bit-exact stream. Both default OPEN.
   // ==========================================================================
   function create(opts) {
     opts = opts || {};
@@ -1314,6 +1345,13 @@
     // exactly this when the cast held nothing but absences).
     var castOn = (opts.cast !== false && opts.absences !== false);
     var absencesOn = castOn;
+    // rc.43 — and one more dev door, for the seaside's seven ambient members.
+    // Unlike the cast's, this one is not about dress: adding members to a
+    // WEIGHTED POOL changes which member each existing draw picks, so the
+    // ambient fork's sequence differs from the first one-shot onward. Shut
+    // this door and the pool is the old eight and the stream is bit for bit
+    // what it was — which is what every identity row in the harness asks for.
+    var seasideOn = (opts.seaside !== false);
     function isAbsent(key) {
       return !!(run && run.absent && run.absent.length && run.absent.indexOf(key) >= 0);
     }
@@ -1804,6 +1842,16 @@
     }
     function fluteWave(c) { return makeWave(c, "flute", [1, 0.28, 0.08, 0.02]); }
     function bellWave(c) { return makeWave(c, "bell", [1, 0.5, 0.22, 0.12, 0.06]); }
+    // rc.43 — a narrow pulse, for the seaside's rope creak. Twenty-four
+    // harmonics of a rectangular wave at `duty`, which is a groaning,
+    // hollow, entirely un-musical spectrum: exactly what a wet rope on a
+    // cleat sounds like.
+    function pulseWave(c, duty) {
+      var d = clamp(duty, 0.05, 0.95);
+      var p = [];
+      for (var n = 1; n <= 24; n++) p.push((2 / (n * Math.PI)) * Math.sin(n * Math.PI * d));
+      return makeWave(c, "pulse" + Math.round(d * 100), p);
+    }
 
     // ---- beats → seconds (the Library's mapper, verbatim semantics) --------
     function phraseTiming(m, spb, ringK, minD, maxD) {
@@ -4546,7 +4594,12 @@
 
       // -- wind chime (v1 ~5612): glassy inharmonic partials, fundamental
       // SNAPPED to the field (v1 did this too — arielSnapToScale).
-      function windChime(t) {
+      // rc.43 — the same body serves the seaside's RIGGING, an octave up with
+      // half the decay: a transposition, not a new instrument, and the lab's
+      // own card says exactly that. Called with no arguments it is the wind
+      // chime it has always been, to the bit.
+      function windChime(t, octMul, decayMul, kindName) {
+        var oct = octMul || 1, dk = decayMul || 1;
         var pings = rng.rint(3, 6);
         var rate = rng.rnd(2.5, 5);
         var minF = rng.rnd(800, 1100);
@@ -4558,7 +4611,9 @@
         var at = 0;
         for (var i = 0; i < pings; i++) {
           var pt = t + at;
-          var fund = run.field.snap(rng.rnd(minF, maxF));
+          // snapped FIRST, then lifted: an octave is always in the collection,
+          // so the rigging reads along exactly as the chime does
+          var fund = run.field.snap(rng.rnd(minF, maxF)) * oct;
           var partials = [[1.0, 1.0, 1.8], [2.4, 0.5, 1.26], [4.5, 0.25, 0.81]];
           for (var j = 0; j < partials.length; j++) {
             var o = c.createOscillator();
@@ -4566,11 +4621,11 @@
             o.frequency.setValueAtTime(fund * partials[j][0], pt);
             var g = c.createGain();
             o.connect(g); g.connect(run.layAmb);
-            PJ2.Voice.env(g.gain, pt, [[0.005, 0.02 * partials[j][1]], [partials[j][2], 0.0008], [0.05, 0]]);
+            PJ2.Voice.env(g.gain, pt, [[0.005, 0.02 * partials[j][1]], [partials[j][2] * dk, 0.0008], [0.05, 0]]);
             o.start(pt);
-            o.stop(pt + partials[j][2] + 0.1);
+            o.stop(pt + partials[j][2] * dk + 0.1);
           }
-          emitNote({ voice: "ambient", kind: "windchime", freq: fund, t: pt, durS: 1.8 });
+          emitNote({ voice: "ambient", kind: kindName || "windchime", freq: fund, t: pt, durS: 1.8 * dk });
           at += (1 / rate) * rng.rnd(0.85, 1.15);
         }
       }
@@ -4637,6 +4692,210 @@
         }
       }
 
+      // ====================================================================
+      // THE SEASIDE (rc.43) — seven more members for the same pool.
+      //
+      // NOT a stop and NOT a manner: nobody chooses between the day sky and
+      // the sea, and no evening is "a seaside evening". These are simply more
+      // things the sky may say, ported from lab-ariel.html's SEASIDE bodies,
+      // drawn by the SAME pickW on the SAME fork at the SAME density — the
+      // lane's rate, the weather gating and the `density` knob are untouched,
+      // so the sky speaks exactly as often as it did and merely has a wider
+      // vocabulary to speak with. (The bubbles are not here: they were
+      // already the sea, and they are already the engine's.)
+      //
+      // THE ONE THING THIS DOES MOVE, stated plainly: adding members to a
+      // weighted pool CHANGES WHICH member each existing draw picks, so the
+      // ambient fork's sequence is re-rolled from the first one-shot on. That
+      // is the sanctioned Phase-3 kind of re-roll (a differently populated
+      // sky, not a different piece), but it would also break every identity
+      // row this file carries — so the seven sit behind their own dev door,
+      // `create({seaside: false})`, and with it shut the pool is the old eight
+      // and the stream is bit for bit what it was.
+      // ====================================================================
+      function seaNoiseBand(t, durS, type, f0, f1, Q, segs) {
+        var c = ctx;
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bq = c.createBiquadFilter();
+        bq.type = type;
+        bq.frequency.setValueAtTime(f0, t);
+        if (f1 != null && f1 !== f0) bq.frequency.linearRampToValueAtTime(f1, t + durS);
+        bq.Q.setValueAtTime(Q, t);
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, segs);
+        ns.connect(bq); bq.connect(g); g.connect(run.layAmb);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + durS + 0.1);
+      }
+
+      // -- gull: two descending cries, a saw through a 1.5 kHz band. Texture.
+      function seaGull(t) {
+        var tok = run.budget.claim(4, t + 1.1);
+        if (!tok) return;
+        run.tokens.push(tok);
+        var c = ctx, pk = 0.016;
+        for (var i = 0; i < 2; i++) {
+          var at = t + i * 0.4;
+          var o = c.createOscillator();
+          o.type = "sawtooth";
+          o.frequency.setValueAtTime(1200, at);
+          o.frequency.exponentialRampToValueAtTime(800, at + 0.25);
+          var bp = c.createBiquadFilter();
+          bp.type = "bandpass";
+          bp.frequency.setValueAtTime(1500, at);
+          bp.Q.setValueAtTime(2, at);
+          var g = c.createGain();
+          PJ2.Voice.env(g.gain, at, [[0.02, pk], [0.19, pk * 0.5], [0.06, 0]]);
+          o.connect(bp); bp.connect(g); g.connect(run.layAmb);
+          o.start(at);
+          o.stop(at + 0.35);
+        }
+        emitNote({ voice: "ambient", kind: "gull", freq: null, t: t, durS: 0.67 });
+      }
+
+      // -- wave wash: a noise band sweeping DOWN over four and a half
+      // seconds, with the hiss of the shingle behind it. The last half second
+      // takes the surge to TRUE ZERO before its source stops — the lab
+      // learned that the hard way: ending an envelope at 0.75 of peak and
+      // stopping the noise 100 ms later is a step, i.e. a soft thump, on a
+      // sky whose whole law is that nothing startles.
+      function seaWave(t) {
+        var tok = run.budget.claim(4, t + 6.5);
+        if (!tok) return;
+        run.tokens.push(tok);
+        var pk = 0.018;
+        seaNoiseBand(t, 4.5, "lowpass", 900, 400, 0.7, [[1.2, pk], [2.8, pk * 0.75], [0.5, 0]]);
+        seaNoiseBand(t + 4, 2, "highpass", 1800, 3200, 0.7, [[0.3, pk * 0.45], [1.7, 0]]);
+        emitNote({ voice: "ambient", kind: "wave", freq: null, t: t, durS: 6 });
+      }
+
+      // -- bell buoy: partials at exactly 1, 2 and 3 are an organ pip with
+      // tremolo, not a bell — a struck bell's partials are INHARMONIC, and
+      // the minor-third 2.4 is the one an ear names as "bell". So the bell
+      // set, a strike at the onset, and the 0.5 Hz sway of a thing floating.
+      // The fundamental is SNAPPED: even the sea reads along in this sky.
+      var BUOY_R = [1, 2.0, 2.4, 3.0, 4.5], BUOY_G = [1, 0.5, 0.4, 0.25, 0.1];
+      function seaBuoy(t) {
+        var tok = run.budget.claim(7, t + 2.9);
+        if (!tok) return;
+        run.tokens.push(tok);
+        var c = ctx, pk = 0.016;
+        var fund = run.field.snap(rng.rnd(370, 440));
+        var sway = c.createGain();
+        sway.gain.setValueAtTime(0.75, t);
+        sway.connect(run.layAmb);
+        var lfo = c.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.setValueAtTime(0.5, t);
+        var lg = c.createGain();
+        lg.gain.setValueAtTime(0.25, t);
+        lfo.connect(lg);
+        try { lg.connect(sway.gain); } catch (e) {}
+        lfo.start(t);
+        lfo.stop(t + 2.8);
+        for (var i = 0; i < BUOY_R.length; i++) {
+          var o = c.createOscillator();
+          o.type = "sine";
+          o.frequency.setValueAtTime(fund * BUOY_R[i], t);
+          var g = c.createGain();
+          PJ2.Voice.env(g.gain, t, [[0.005, pk * BUOY_G[i]], [2.5, pk * 0.03], [0.15, 0]]);
+          o.connect(g); g.connect(sway);
+          o.start(t);
+          o.stop(t + 2.75);
+        }
+        // the clapper: 8 ms of noise above 2 kHz. The lab's card names a
+        // strike and its chain weight reserves 0.5 for one; its body never
+        // rendered it, so this is the reconciliation, at exactly that weight.
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var hp = c.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.setValueAtTime(2000, t);
+        hp.Q.setValueAtTime(0.7, t);
+        var sg = c.createGain();
+        PJ2.Voice.env(sg.gain, t, [[0.001, pk * 0.5], [0.008, 0]]);
+        ns.connect(sg); sg.connect(hp); hp.connect(sway);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + 0.06);
+        emitNote({ voice: "ambient", kind: "buoy", freq: fund, t: t, durS: 2.65 });
+      }
+
+      // -- shingle: twenty gravel taps of high noise, unevenly spaced. One
+      // noise source under a twenty-humped envelope (the cricket's trick).
+      function seaShingle(t) {
+        var tok = run.budget.claim(3, t + 1.1);
+        if (!tok) return;
+        run.tokens.push(tok);
+        var c = ctx, pk = 0.012;
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var hp = c.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.setValueAtTime(2000, t);
+        hp.Q.setValueAtTime(0.7, t);
+        var g = c.createGain();
+        var segs = [], at = 0;
+        for (var i = 0; i < 20; i++) {
+          var gap = rng.rnd(0.015, 0.05);
+          segs.push([gap, 0]); segs.push([0.002, pk]); segs.push([0.012, 0]);
+          at += gap + 0.014;
+        }
+        PJ2.Voice.env(g.gain, t, segs);
+        ns.connect(hp); hp.connect(g); g.connect(run.layAmb);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + at + 0.1);
+        emitNote({ voice: "ambient", kind: "shingle", freq: null, t: t, durS: at });
+      }
+
+      // -- rope creak: a narrow pulse sagging 90 → 78 Hz under a resonant
+      // lowpass. Deliberately un-musical and deliberately unsnapped — a wet
+      // rope on a cleat does not know what key it is in.
+      function seaRope(t) {
+        var tok = run.budget.claim(3, t + 0.8);
+        if (!tok) return;
+        run.tokens.push(tok);
+        var c = ctx, pk = 0.014;
+        var o = c.createOscillator();
+        var w = pulseWave(c, 0.12);
+        if (w && typeof o.setPeriodicWave === "function") o.setPeriodicWave(w);
+        else o.type = "square";
+        o.frequency.setValueAtTime(90, t);
+        o.frequency.linearRampToValueAtTime(78, t + 0.4);
+        var lp = c.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.setValueAtTime(800, t);
+        lp.Q.setValueAtTime(1.4, t);
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, [[0.08, pk], [0.24, pk * 0.6], [0.08, 0]]);
+        o.connect(lp); lp.connect(g); g.connect(run.layAmb);
+        o.start(t);
+        o.stop(t + 0.5);
+        emitNote({ voice: "ambient", kind: "rope", freq: null, t: t, durS: 0.4 });
+      }
+
+      // -- boat horn: a distant swell, a saw under a 400 Hz lowpass with
+      // nearly half a second of attack. The rarest thing the sky says, and
+      // the only one that is a whole second and a half of one note — so its
+      // 110 Hz is SNAPPED, or it would be the one voice out of key.
+      function seaHorn(t) {
+        var tok = run.budget.claim(3, t + 1.9);
+        if (!tok) return;
+        run.tokens.push(tok);
+        var c = ctx, pk = 0.02;
+        var f = run.field.snap(110);
+        var o = c.createOscillator();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(f, t);
+        var lp = c.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.setValueAtTime(400, t);
+        lp.Q.setValueAtTime(0.8, t);
+        var g = c.createGain();
+        PJ2.Voice.env(g.gain, t, [[0.45, pk], [0.6, pk * 0.9], [0.45, 0]]);
+        o.connect(lp); lp.connect(g); g.connect(run.layAmb);
+        o.start(t);
+        o.stop(t + 1.7);
+        emitNote({ voice: "ambient", kind: "boathorn", freq: f, t: t, durS: 1.5 });
+      }
+
       function oneShot(t) {
         var iv = curIntensity(t);
         var tide = curTidePos();
@@ -4647,7 +4906,7 @@
         var gustGate = Math.max(0, wx.gustiness - 0.5);
         // Weights shape WHICH sound fires, never HOW OFTEN — one fire = one
         // event; the gap law below owns the density (family contract).
-        var what = rng.pickW([
+        var pool = [
           ["birdsong", 1.0 + 1.2 * (st === "song" ? 1 : 0) + 0.8 * wx.shimmer],
           ["gust", 0.4 + 3 * gustGate],
           ["sparkle", 0.5 + 1.4 * wx.shimmer],
@@ -4656,7 +4915,22 @@
           ["windchime", 0.8 + 1.2 * wx.gustiness],
           ["bee", 0.3 + 0.9 * still * (1 - late)],
           ["bubbles", 0.6],
-        ]);
+        ];
+        // rc.43 — the seaside's seven, weighted in the pool's own terms: the
+        // gull and the shingle lean gusty and bright, the wave and the rope
+        // lean gusty, the buoy and the horn lean still and rare (the horn the
+        // rarest member of the pool, as a horn a mile out should be), and the
+        // rigging tracks the wind exactly as the wind chime it is.
+        if (seasideOn) {
+          pool.push(["gull", 0.5 + 1.2 * gustGate + 0.8 * wx.shimmer]);
+          pool.push(["wave", 0.4 + 2.2 * gustGate]);
+          pool.push(["buoy", 0.25 + 0.7 * still]);
+          pool.push(["shingle", 0.4 + 1.6 * gustGate + 0.5 * wx.shimmer]);
+          pool.push(["rope", 0.3 + 1.2 * gustGate]);
+          pool.push(["boathorn", 0.1 + 0.35 * still * (1 - late)]);
+          pool.push(["rigging", 0.5 + 0.9 * wx.gustiness]);
+        }
+        var what = rng.pickW(pool);
         try {
           if (what === "birdsong") birdsong(t);
           else if (what === "gust") renderGust(t, rng.rnd(2.5, 4.5), 0.016, rng, "ambient");
@@ -4666,6 +4940,16 @@
           else if (what === "windchime") windChime(t);
           else if (what === "bee") bumbleBee(t);
           else if (what === "bubbles") bubbles(t);
+          // the seaside's seven; the rigging IS the wind chime, an octave up
+          // with half the decay — a transposition, not a new body, and the
+          // lab's card says so too
+          else if (what === "gull") seaGull(t);
+          else if (what === "wave") seaWave(t);
+          else if (what === "buoy") seaBuoy(t);
+          else if (what === "shingle") seaShingle(t);
+          else if (what === "rope") seaRope(t);
+          else if (what === "boathorn") seaHorn(t);
+          else if (what === "rigging") windChime(t, 2, 0.5, "rigging");
         } catch (e) { /* a missing one-shot is just a quieter sky */ }
         // THE GAP LAW — the family density contract, thermals' sanctioned
         // ±15%, and the desk's density knob (def 1 = as-composed).

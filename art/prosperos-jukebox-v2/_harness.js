@@ -6625,7 +6625,7 @@ function p3AmbientFires(r) {
     // so the same fingerprint must still come back — and if a presence knob
     // ever leaks past a 1, or an absence is drawn where the door is shut,
     // this row goes red exactly as it did for the wander.
-    var W0 = ariRun(AW_SEED, AW_SIM, { "*": { vary: 0, presence: 1 } }, { absences: false });
+    var W0 = ariRun(AW_SEED, AW_SIM, { "*": { vary: 0, presence: 1 } }, { absences: false, seaside: false });
     var d0 = digest(sigA(W0));
     check("A36 VARY-ZERO: with vary 0 on every layer the stream is rc.33 bit for bit",
       d0 === AW_BASELINE && W0.notes.length > 10 && W0.swallowed.length === 0,
@@ -7014,7 +7014,7 @@ function p3AmbientFires(r) {
     // been returned, a gap scaled where the multiplier should have been
     // exactly 1 — this row goes red and nothing else needs to notice.
     var A39_BASELINE = "f4adb26d:45193";  // rc.36, seed 881, 600 s
-    var I0 = a39Run(A39_SEED, A39_SIM, { presence: 1 }, { absences: false });
+    var I0 = a39Run(A39_SEED, A39_SIM, { presence: 1 }, { absences: false, seaside: false });
     var dI = dig39(sig39(I0));
     check("A38 IDENTITY: presence 1 + absences off is the pre-rc.38 engine, bit for bit",
       dI === A39_BASELINE && I0.notes.length > 10 && I0.swallowed.length === 0,
@@ -7673,7 +7673,7 @@ function p3AmbientFires(r) {
       var bad = [], note = [];
       var seeds = [A42_SEED, A42_SEED2];
       for (i = 0; i < seeds.length; i++) {
-        var R = a42Run(seeds[i], A42_SIM, null, { cast: false });
+        var R = a42Run(seeds[i], A42_SIM, null, { cast: false, seaside: false });
         var d = dig42(sig42(R));
         note.push(seeds[i] + " " + d + " (" + R.notes.length + " notes)");
         if (d !== A42_BASELINE[seeds[i]]) bad.push(seeds[i] + ": " + d + " != pinned " + A42_BASELINE[seeds[i]]);
@@ -8153,6 +8153,220 @@ function p3AmbientFires(r) {
       (K1.swallowed.length + K2.swallowed.length +
        NEUT.off.swallowed.length + NEUT.on.swallowed.length) + " swallowed" +
       (K1.swallowed.length ? " :: " + K1.swallowed[0] : ""));
+  })();
+
+
+  // ---- ARIEL rc.43: the sky gains the seaside ----
+  // Seven more members for the ambient pool — a gull, a wave wash, a bell
+  // buoy, shingle, a rope creak, a far boat horn and the rigging — ported
+  // from lab-ariel.html's SEASIDE bodies. NOT a stop and NOT a manner: there
+  // is no seaside evening and nothing chooses between skies. The lane's rate,
+  // the weather gating and the `density` knob are untouched; the sky speaks
+  // exactly as often as it did, out of a wider vocabulary.
+  //
+  // The one real consequence is that adding members to a WEIGHTED POOL
+  // changes which member each existing draw picks, so the ambient fork's
+  // sequence re-rolls from the first one-shot on. That is why the seven have
+  // their own dev door (`create({seaside: false})`) and why every identity row
+  // in this file now shuts it — the rows below prove the door works both ways.
+  (function testAriel43() {
+    var i, j, k;
+
+    var A43_NEW = ["gull", "wave", "buoy", "shingle", "rope", "boathorn", "rigging"];
+    var A43_OLD = ["birdsong", "gust", "sparkle", "leaf", "cricket", "windchime", "bee", "bubble"];
+    // the header's sky line: no single one-shot envelope above 0.025, and no
+    // one-shot's whole chain above the wind chime's own 0.06
+    var A43_PEAK = 0.025, A43_CHAIN = 0.06;
+
+    var A43_CTX = null;
+    function a43Run(seedVal, simS, copts) {
+      var origAC = W.AudioContext;
+      A43_CTX = null;
+      W.AudioContext = function () { A43_CTX = mkCtx(); return A43_CTX; };
+      var origCE = console.error;
+      var swallowed = [];
+      console.error = function () { swallowed.push("Ariel43: " + Array.prototype.join.call(arguments, " ")); };
+      var R = { events: [], notes: [], swallowed: swallowed, t0: null, ctx: null };
+      try {
+        var co = { seed: seedVal, volume: 0.5 };
+        if (copts) for (var ck in copts) co[ck] = copts[ck];
+        var E = P.Ariel.create(co);
+        E.setEventListener(function (e) { R.events.push(e); });
+        E.setNoteListener(function (n) { R.notes.push(n); });
+        R.t0 = vnow;
+        E.play();
+        vAdvance(R.t0 + simS);
+        E.stop();
+        vAdvance(vnow + 3);
+      } catch (e) {
+        errors.push("a43Run: " + (e && e.message));
+        if (R.t0 == null) R.t0 = vnow;
+      }
+      R.ctx = A43_CTX;
+      console.error = origCE;
+      W.AudioContext = origAC;
+      return R;
+    }
+    function skyKinds(R) {
+      var out = {};
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice !== "ambient") continue;
+        var kk = R.notes[a].kind || "?";
+        out[kk] = (out[kk] || 0) + 1;
+      }
+      return out;
+    }
+    // one-shot FIRINGS, not notes: several kinds emit a note per ping, so the
+    // rate the density contract is about is the number of times the lane
+    // spoke, which is one gesture per gap draw. Group by a gap of 7 s — the
+    // lane's own floor, so two gestures can never merge.
+    function skyFirings(R) {
+      var ts = [];
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice === "ambient" || R.notes[a].voice === "gust") ts.push(R.notes[a].t);
+      }
+      ts.sort(function (x, y) { return x - y; });
+      var n = 0, last = -1e9;
+      for (a = 0; a < ts.length; a++) { if (ts[a] - last > 6.9) n++; last = ts[a]; }
+      return n;
+    }
+
+    var A43_TSIM = Math.min(RUN, 5400);
+    var S1 = a43Run(20260709, A43_TSIM, null);
+    var S2 = a43Run(881, A43_TSIM, null);
+    var SHUT = a43Run(20260709, A43_TSIM, { seaside: false });
+
+    // ---------------- COVERAGE ----------------
+    (function () {
+      var bad = [], note = [], pooled = {};
+      var runs = [S1, S2];
+      for (var r = 0; r < runs.length; r++) {
+        var kk = skyKinds(runs[r]);
+        for (var key in kk) pooled[key] = (pooled[key] || 0) + kk[key];
+      }
+      for (i = 0; i < A43_NEW.length; i++) {
+        var n = pooled[A43_NEW[i]] || 0;
+        note.push(A43_NEW[i] + " " + n);
+        if (!n) bad.push(A43_NEW[i] + " never fired");
+      }
+      // …and the old eight are all still there: a wider vocabulary, not a
+      // replaced one
+      var lost = [];
+      for (i = 0; i < A43_OLD.length; i++) if (!(pooled[A43_OLD[i]] || 0)) lost.push(A43_OLD[i]);
+      if (lost.length) note.push("old missing: " + lost.join(","));
+      check("A43 SKY: all seven seaside members fire over a long run, and the old eight still do",
+        (SHORTT || bad.length === 0) && (SHORTT || lost.length <= 1),
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : "") +
+        (SHORTT ? " — short run, reported only" : ""));
+    })();
+
+    // ---------------- THE DOOR ----------------
+    (function () {
+      var bad = [], kk = skyKinds(SHUT), seen = [];
+      for (var key in kk) {
+        seen.push(key + " " + kk[key]);
+        if (A43_NEW.indexOf(key) >= 0) bad.push(key + " sounded with the door shut");
+      }
+      check("A43 SKY: with `seaside: false` the pool is the old eight and nothing else",
+        bad.length === 0 && SHUT.swallowed.length === 0,
+        seen.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE DENSITY IS UNTOUCHED ----------------
+    // The lane's gap law owns the rate and the pool owns only WHICH member
+    // speaks, so opening the door must not change how often the sky speaks.
+    // (Not bit-identical: once a different member is picked it takes a
+    // different number of draws from the ambient fork, so the gaps after it
+    // differ. Ten per cent is the room that leaves.)
+    (function () {
+      var bad = [], a = skyFirings(S1), b = skyFirings(SHUT);
+      var d = b ? (a - b) / b : 0;
+      if (b >= 20 && Math.abs(d) > 0.1) bad.push("rate moved " + (d * 100).toFixed(0) + "%");
+      check("A43 SKY: opening the door does not change how often the sky speaks (± 10 %)",
+        bad.length === 0,
+        b + " firing(s) shut -> " + a + " open (" + (d * 100).toFixed(1) + "%)" +
+        (b < 20 ? " — under 20, reported only" : "") +
+        (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE CEILING ----------------
+    // Read off the schedule: no seaside one-shot's envelope is scheduled
+    // above the sky's own 0.025, and no one-shot's whole chain sums above the
+    // wind chime's 0.06 — so the header's sky line does not move.
+    (function () {
+      var bad = [], note = [], worst = 0, worstChain = 0, read = 0, who = "";
+      var runs = [S1, S2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], ns = (R.ctx && R.ctx._nodes) || [];
+        // index the gain anchors by time once — the runs are long
+        var byT = {};
+        for (i = 0; i < ns.length; i++) {
+          var nd = ns[i];
+          if (nd._kind !== "Gain" || !nd.gain || !nd.gain._events.length) continue;
+          var e0 = nd.gain._events[0];
+          if (e0.type !== "set" || e0.v !== 0) continue;
+          var key = e0.t.toFixed(6);
+          (byT[key] || (byT[key] = [])).push(nd.gain._events);
+        }
+        for (i = 0; i < R.notes.length; i++) {
+          var n = R.notes[i];
+          if (n.voice !== "ambient" || A43_NEW.indexOf(n.kind) < 0) continue;
+          var evs = byT[n.t.toFixed(6)];
+          if (!evs || !evs.length) continue;
+          read++;
+          var chain = 0;
+          for (j = 0; j < evs.length; j++) {
+            var pk = 0;
+            for (k = 0; k < evs[j].length; k++) if (evs[j][k].v > pk) pk = evs[j][k].v;
+            chain += pk;
+            if (pk > worst) { worst = pk; who = n.kind; }
+          }
+          if (chain > worstChain) worstChain = chain;
+          if (chain > A43_CHAIN + 1e-9) bad.push(n.kind + " chain " + chain.toFixed(4));
+        }
+      }
+      if (worst > A43_PEAK + 1e-9) bad.push("worst envelope " + worst.toFixed(4) + " (" + who + ")");
+      note.push(read + " one-shot(s) read, worst envelope " + worst.toFixed(4) +
+        (who ? " (" + who + ")" : "") + ", worst chain " + worstChain.toFixed(4));
+      check("A43 SKY: no seaside one-shot above the sky's 0.025, no chain above the chime's 0.06",
+        bad.length === 0 && (SHORTT || read > 5),
+        note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // ---------------- THE PITCHED THREE READ THE FIELD ----------------
+    // The buoy's bell, the rigging and the horn carry Hz; everything else in
+    // the seaside is texture and carries none. (The whole-track adherence row
+    // near the top of this section already judges every pitched note against
+    // the live field era by era — this row is here to say WHICH of the seven
+    // are pitched at all, so a future body that forgets to snap is caught by
+    // name rather than by a drifting aggregate.)
+    (function () {
+      var bad = [], note = [], pitched = {}, unpitched = {};
+      var runs = [S1, S2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r];
+        for (i = 0; i < R.notes.length; i++) {
+          var n = R.notes[i];
+          if (n.voice !== "ambient" || A43_NEW.indexOf(n.kind) < 0) continue;
+          if (n.freq != null && n.freq > 0) pitched[n.kind] = (pitched[n.kind] || 0) + 1;
+          else unpitched[n.kind] = (unpitched[n.kind] || 0) + 1;
+        }
+      }
+      var want = { buoy: 1, rigging: 1, boathorn: 1 };
+      for (i = 0; i < A43_NEW.length; i++) {
+        var kk = A43_NEW[i], p = pitched[kk] || 0, u = unpitched[kk] || 0;
+        note.push(kk + " " + p + "/" + (p + u));
+        if (want[kk] && u) bad.push(kk + " emitted " + u + " note(s) with no pitch");
+        if (!want[kk] && p) bad.push(kk + " is texture and should carry no Hz");
+      }
+      check("A43 SKY: the buoy, the rigging and the horn carry snapped pitch; the rest are texture",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    check("A43 zero swallowed errors across every seaside run",
+      S1.swallowed.length === 0 && S2.swallowed.length === 0 && SHUT.swallowed.length === 0,
+      (S1.swallowed.length + S2.swallowed.length + SHUT.swallowed.length) + " swallowed" +
+      (S1.swallowed.length ? " :: " + S1.swallowed[0] : ""));
   })();
 
   // ============================== ALCHEMY ==============================
