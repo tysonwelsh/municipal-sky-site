@@ -4876,7 +4876,7 @@ function p3AmbientFires(r) {
       var R = { events: [], notes: [], taps: [], swallowed: swallowed, t0: vnow, infoFinal: null };
       try {
         var copts = { seed: seedVal, volume: 0.5 };
-        if (opts.absences === false) copts.absences = false;   // rc.38 dev door
+        if (opts.absences === false) copts.absences = false;   // rc.37 dev door
         var E = P.Sycorax.create(copts);
         if (opts.vary != null || opts.presence != null) {
           var lps = E.getLayerParams();
@@ -4917,7 +4917,7 @@ function p3AmbientFires(r) {
 
     // ---- VARY-ZERO -------------------------------------------------------
     // The whole round's promise: with every layer's `vary` at 0 (and, from
-    // rc.38, every `presence` knob back at 1 with the absence draw off) the
+    // rc.37, every `presence` knob back at 1 with the absence draw off) the
     // engine is the rc.33 build, note for note and event for event. These two
     // digests were taken from that build (streamSig above, unchanged) at
     // 900 s on the two Sycorax seeds this file already uses, BEFORE a line
@@ -4929,7 +4929,7 @@ function p3AmbientFires(r) {
     ];
     var vzBad = [], vzSw = 0;
     for (var vi = 0; vi < VZ.length; vi++) {
-      // rc.38: the same pin, now driven at the PRE-rc.38 rate — every
+      // rc.37: the same pin, now driven at the PRE-rc.37 rate — every
       // `presence` knob at 1 and the absence draw off. Thinning is a rate,
       // so the old rate must replay the old build exactly; if a future edit
       // re-rolls a pre-existing stream, this row still goes red.
@@ -5138,7 +5138,7 @@ function p3AmbientFires(r) {
   })();
 
   // ==========================================================================
-  // ---- SYCORAX rc.38: thinning + absences ----
+  // ---- SYCORAX rc.37: thinning + absences ----
   // The owner, 2026-09-03, after the wander round: "it's a little too
   // cluttered now that we added all the new instruments. Reduce the
   // frequency of most instruments — pretty much anything that's not a drone
@@ -5186,7 +5186,7 @@ function p3AmbientFires(r) {
       bullroarer: 0.6, overtone: 0.6, jawharp: 0.6, blade: 0.6, cauldron: 0.6,
     };
 
-    // One Sycorax run with the rc.38 doors: `presence` stamped on every strip
+    // One Sycorax run with the rc.37 doors: `presence` stamped on every strip
     // that has one, and create({absences:false}) for the identity pass.
     function run38(seedVal, simS, opts) {
       opts = opts || {};
@@ -5284,7 +5284,7 @@ function p3AmbientFires(r) {
     // The round's promise, the other way round from SYC35's: thinning is a
     // RATE, so the old rate must replay the old build exactly. These digests
     // were taken from the rc.36 build (streamSig, 900 s, the desk at rest)
-    // before a line of rc.38 was written; they are reproduced here with every
+    // before a line of rc.37 was written; they are reproduced here with every
     // `presence` knob returned to 1 and the absence draw off.
     var ID38 = [
       { seed: 20260709, len: 26593, fnv: "b360838a" },
@@ -5300,7 +5300,7 @@ function p3AmbientFires(r) {
                    " fnv " + fnv1a38(isig) + "/" + ID38[ii].fnv);
       }
     }
-    check("SYC38 IDENTITY: presence 1 with absences off is the rc.36 build, byte for byte (two seeds, 900 s)",
+    check("SYC37 IDENTITY: presence 1 with absences off is the rc.36 build, byte for byte (two seeds, 900 s)",
       idBad.length === 0 && idSw === 0,
       idBad.length ? idBad.join(" · ") : "2 seeds, 52278 chars of stream, digests match, 0 swallowed");
 
@@ -5328,7 +5328,7 @@ function p3AmbientFires(r) {
       if (!(b38 > 0 && s38 > 0 && d38 >= 5 && d38 <= 60)) thinBad.push(k38 + " " + b38 + "->" + s38);
     }
     var thinAll = pct38(thinB, thinS);
-    check("SYC38 THINNING: every thinned voice enters less often (5-60 % fewer notes), none silenced",
+    check("SYC37 THINNING: every thinned voice enters less often (5-60 % fewer notes), none silenced",
       thinBad.length === 0 && thinAll >= 15 && thinAll <= 50,
       thinAll + "% fewer notes over " + TS38.length + " seeds x 1800 s — " + thinRow.join(", ") +
       (thinBad.length ? " · OUT OF BAND: " + thinBad.join(" · ") : ""));
@@ -5340,14 +5340,14 @@ function p3AmbientFires(r) {
         untBad.push(uk + " " + (base38.notes[uk] || 0) + "->" + (ship38.notes[uk] || 0));
       }
     }
-    check("SYC38 THINNING: the seam, the beds, the sky and the heartbeat are untouched to the note",
+    check("SYC37 THINNING: the seam, the beds, the sky and the heartbeat are untouched to the note",
       untBad.length === 0 && base38.cuts === ship38.cuts,
       untBad.length ? untBad.join(" · ")
         : "gurdy " + (base38.notes.gurdy || 0) + ", proto " + (base38.notes.protodrum || 0) +
           ", breath " + (base38.notes.breath || 0) + ", ambient " + (base38.notes.ambient || 0) +
           ", joints " + (base38.notes.joint || 0) + " — identical; " + ship38.cuts + " cut(s) either way");
 
-    check("SYC38 THINNING: the signatures still fire — every cut is inhabited, the far call still answers",
+    check("SYC37 THINNING: the signatures still fire — every cut is inhabited, the far call still answers",
       ship38.app === ship38.cuts && ship38.app > 0 && ship38.far >= 1,
       ship38.app + " apparition(s) for " + ship38.cuts + " cut(s) (was " + base38.app + "/" +
       base38.cuts + "), " + ship38.far + " far call(s) (was " + base38.far + ")");
@@ -5429,20 +5429,20 @@ function p3AmbientFires(r) {
         castBad.push("getInfo().cast.absent " + JSON.stringify(infoAbs) + " != cast " + JSON.stringify(lastCast && lastCast.absent));
       }
     }
-    check("SYC38 ABSENCES: evening one is the full cast, plain; never more than a third of the nine",
+    check("SYC37 ABSENCES: evening one is the full cast, plain; never more than a third of the nine",
       plainBad === 0 && absBad.length === 0 && evTotal >= 12,
       evTotal + " evening(s) over 2 seeds" + (absBad.length ? " · " + absBad.join(" · ") : ", cap 3 respected"));
 
-    check("SYC38 ABSENCES: an absent voice makes ZERO new entries that evening",
+    check("SYC37 ABSENCES: an absent voice makes ZERO new entries that evening",
       entBad.length === 0,
       entBad.length ? entBad.slice(0, 4).join(" · ") : "0 trespasses across " + evTotal + " evening(s)");
 
-    check("SYC38 ABSENCES: never the same voice twice running; every voice heard in >= 3 of any 6 evenings",
+    check("SYC37 ABSENCES: never the same voice twice running; every voice heard in >= 3 of any 6 evenings",
       twiceBad.length === 0 && (fairWorst === 99 || fairWorst >= 3),
       (twiceBad.length ? twiceBad.slice(0, 3).join(" · ") : "0 repeats") +
       ", worst 6-evening presence " + (fairWorst === 99 ? "n/a" : fairWorst + "/6"));
 
-    check("SYC38 ABSENCES: the cast is narrated after the begin, before the evening's first note; getInfo agrees",
+    check("SYC37 ABSENCES: the cast is narrated after the begin, before the evening's first note; getInfo agrees",
       castBad.length === 0,
       castBad.length ? castBad.slice(0, 3).join(" · ") : evTotal + " cast event(s), each in its place");
 
@@ -5453,7 +5453,7 @@ function p3AmbientFires(r) {
       var ce = AR38[0].events[ci38];
       if (ce.type === "cast") castLog.push(ce.evening + ":" + (ce.absent.join("+") || "everyone"));
     }
-    check("SYC38 ABSENCES: a seven-evening run casts a different ensemble each night",
+    check("SYC37 ABSENCES: a seven-evening run casts a different ensemble each night",
       castLog.length >= 6, castLog.join("  "));
 
     // ---- DESK -------------------------------------------------------------
@@ -5473,13 +5473,13 @@ function p3AmbientFires(r) {
       if (!(found.min === 0 && found.max === 3)) presBad.push(dk + " range " + found.min + "-" + found.max);
       if (strip[strip.length - 1].key !== "vary") presBad.push(dk + ": vary no longer last");
     }
-    check("SYC38 DESK: every non-seam strip carries `presence` at its shipped default; the seam and the beds carry none",
+    check("SYC37 DESK: every non-seam strip carries `presence` at its shipped default; the seam and the beds carry none",
       presBad.length === 0 && presRows === 11,
       presBad.length ? presBad.join(" · ")
         : presRows + " presence row(s): chant .8, percussion .7, the other nine .6; gurdy/noise/ambient none");
 
     var sw38 = base38.sw + ship38.sw + idSw + AR38[0].swallowed.length + AR38[1].swallowed.length;
-    check("SYC38 zero swallowed errors across every rc.38 run",
+    check("SYC37 zero swallowed errors across every rc.37 run",
       sw38 === 0, sw38 + " swallowed");
 
     function fnv1a38(str) {
