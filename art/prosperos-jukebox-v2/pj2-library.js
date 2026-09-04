@@ -133,8 +133,13 @@
 //     rolls (cello, vessel, regal, flue, the reader's SINGING) or divides
 //     the rests and margins a loop-driven one paces itself by (harpsichord,
 //     music box), capped at x2 — never both, or the voice would be thinned
-//     twice. The shipped defaults ARE the reduction: harpsichord 0.8 (the
-//     principal), cello / hum / musicbox 0.6, regal 0.55, vessel / flue 0.5.
+//     twice. The shipped defaults ARE the reduction: harpsichord 0.9 (the
+//     principal), cello / hum / musicbox 0.8, regal 0.75, vessel 0.68, flue
+//     0.65 — THE MIDPOINT (owner, 2026-09-04: "we may have overcorrected a
+//     bit by thinning — turn the knob back a little, somewhere in between
+//     where we were before and where we are now"), i.e. halfway between
+//     rc.36's rate and rc.39's first thinning, with the evening's absences
+//     left exactly as they were because the owner likes them.
 //     Typing rc.36's value back into a knob restores that voice's old rate
 //     exactly. Never thinned: the drone (the seam), the hum BED, the ambient
 //     room, the halo — and the SIGNATURES, the gestures that are the song
@@ -656,8 +661,8 @@
       // the reduction; the number in the comment is rc.36's effective value,
       // and typing it into the knob restores the old rate exactly. No span,
       // ever: an entry knob is the owner's word, never the wander's.
-      // rc.39: was 1 (no knob at all)
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      // rc.39: was 1 (no knob at all) · midpoint 2026-09-04: 0.6 -> 0.8
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200,
         lo: 1936, hi: 2464, per: "character" },
       { key: "vibrato", label: "vibrato — the bowing hand's wobble depth", min: 0, max: 2, def: 1,
@@ -670,7 +675,8 @@
     ],
     hum: [
       // rc.39: was 1 — the SINGER only; the hum bed is the seam's
-      { key: "presence", label: "presence — how often the reader SINGS (the bed plays on)", min: 0, max: 3, def: 0.6 },
+      // midpoint 2026-09-04: 0.6 -> 0.8
+      { key: "presence", label: "presence — how often the reader SINGS (the bed plays on)", min: 0, max: 3, def: 0.8 },
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1,
         lo: 0.85, hi: 1.15, per: "character" },
       // rc.34 — the second class the plan asks for on this row: the mouth
@@ -687,8 +693,8 @@
       varyDef(),
     ],
     harpsichord: [
-      // rc.39: was 1 — the principal, thinned least
-      { key: "presence", label: "presence — how often it speaks (its rests and margins divide by this)", min: 0, max: 3, def: 0.8 },
+      // rc.39: was 1 — the principal, thinned least · midpoint 2026-09-04: 0.8 -> 0.9
+      { key: "presence", label: "presence — how often it speaks (its rests and margins divide by this)", min: 0, max: 3, def: 0.9 },
       { key: "brightness", label: "brightness — the string filter's starting bite", min: 1.8, max: 4.6, def: 3.0,
         lo: 2.4, hi: 3.6, per: "touch" },
       { key: "resonance", label: "resonance — the string filter's Q", min: 0.2, max: 3, def: 0.5,
@@ -702,8 +708,8 @@
       varyDef(),
     ],
     musicbox: [
-      // rc.39: was 1
-      { key: "presence", label: "presence — how often it speaks (its rests and margins divide by this)", min: 0, max: 3, def: 0.6 },
+      // rc.39: was 1 · midpoint 2026-09-04: 0.6 -> 0.8
+      { key: "presence", label: "presence — how often it speaks (its rests and margins divide by this)", min: 0, max: 3, def: 0.8 },
       { key: "shimmer", label: "shimmer — the metallic 3rd-partial glint", min: 0, max: 2, def: 1,
         lo: 0.8, hi: 1.2, per: "character" },
       // rc.31 stop: the mechanism running down — candle-out only
@@ -731,8 +737,9 @@
     // tuning from lab-library.html (2026-09-03), so the desk at rest is
     // exactly the instrument they approved.
     vessel: [
-      // rc.39: was 0.85 (the promoted VESSEL_PRESENCE constant)
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.5 },
+      // rc.39: was 0.85 (the promoted VESSEL_PRESENCE constant) · midpoint
+      // 2026-09-04: 0.5 -> 0.68
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.68 },
       { key: "beat", label: "beat — the two fundamentals beating (Hz — the sound itself)", min: 0, max: 3, def: 1,
         lo: 0.7, hi: 1.3, per: "character" },
       { key: "ring", label: "ring — how long the metal rings on after the bow lifts", min: 0.4, max: 2.5, def: 0.9,
@@ -751,8 +758,9 @@
       varyDef(),
     ],
     regal: [
-      // rc.39: was 0.95 (the promoted REGAL_PRESENCE constant)
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.55 },
+      // rc.39: was 0.95 (the promoted REGAL_PRESENCE constant) · midpoint
+      // 2026-09-04: 0.55 -> 0.75
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.75 },
       { key: "reediness", label: "reediness — square (soft) to saw (buzzy)", min: 0, max: 1, def: 0.3,
         lo: 0.22, hi: 0.4, per: "character" },
       // rc.34 — a real regal is uneven: every pipe its own reed. The knob is
@@ -773,8 +781,9 @@
       varyDef(),
     ],
     flue: [
-      // rc.39: was 0.8 (the promoted FLUE_PRESENCE constant)
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.5 },
+      // rc.39: was 0.8 (the promoted FLUE_PRESENCE constant) · midpoint
+      // 2026-09-04: 0.5 -> 0.65
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.65 },
       { key: "chiff", label: "chiff — the breath edge at each onset", min: 0, max: 2, def: 1,
         lo: 0.6, hi: 1.5, per: "touch" },
       { key: "breath", label: "breath — the wind under the tone", min: 0, max: 2.5, def: 1.75,
@@ -2887,7 +2896,7 @@
     var VESSEL_T60 = [[8, 14], [5, 8], [3, 5], [2, 3]];
     var VESSEL_PEAK = 0.015;        // 0.02 × the owner's level 0.75
     // rc.39 — the owner's by-ear presence multiplier IS the desk's `presence`
-    // knob now (def 0.5; type 0.85 back and the vessel bows at rc.36's rate).
+    // knob now (def 0.68; type 0.85 back and the vessel bows at rc.36's rate).
     // The old number survives as the SIGNATURE floor below: the reverie's own
     // first bow is the gesture, not the clutter, so it is never thinned.
     var VESSEL_SIG_PRESENCE = 0.85;
@@ -3108,7 +3117,7 @@
     // p 0.3. And at a cadence it may TAKE the arrival from the consort — see
     // regalTakesCadence, called from realizeCadence.
     var REGAL_PEAK = 0.0084;        // 0.012 × the owner's level 0.7, per part
-    // rc.39 — promoted to the desk: `presence` (def 0.55; 0.95 restores rc.36).
+    // rc.39 — promoted to the desk: `presence` (def 0.75; 0.95 restores rc.36).
     var REGAL_PARTS = 3;            // the owner's voicing — rc.34: the `parts` knob's def
     var REGAL_STEP_CHANCE = 0.3;    // harmony steps, chapters and the seizure
     var REGAL_CADENCE_LEVEL = 0.6;  // a taken cadence sits under the consort's 0.016
@@ -3783,7 +3792,7 @@
     // every speaker, a ghost denied the air is HELD like the others, and its
     // utterances are capped at four notes — the HEAD of anything longer.
     var FLUE_PEAK = 0.021;          // 0.03 × the owner's level 0.7
-    // rc.39 — promoted to the desk: `presence` (def 0.5; 0.8 restores rc.36).
+    // rc.39 — promoted to the desk: `presence` (def 0.65; 0.8 restores rc.36).
     var FLUE_MAX_NOTES = 4;         // the owner's phrase length
     // ROSTER-SUPERSEDED, like the vessel's chapter chance: "settling" carries
     // the owner's 0.05, but the roster rests the flue through the settling,
