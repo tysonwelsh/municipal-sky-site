@@ -610,3 +610,35 @@ html.lab-ariel, body.lab-ariel { background: var(--paper); color: var(--ink3); }
   min-width: 5.2rem; padding: 0 0.2rem; letter-spacing: -0.035em;
 }
 .lab-ariel table.roster td button { min-width: 44px; }
+
+/* ==========================================================================
+   THE SYCORAX LAB'S STOPS TAB (the second try — PLAN §5.5). The quick row and
+   the class line are the Ariel sheet's, re-cut in the registry's night inks:
+   dim witch does the gilt's duty here, because wine carries no data.
+   Additive — nothing above is changed.
+   ========================================================================== */
+.lab-sycorax .quickrow {
+  background: var(--paper2);
+  border: 1px solid var(--edge2);
+  border-radius: 10px;
+  padding: 0.35rem 0.4rem 0.1rem;
+  margin: 0.4rem 0 0.6rem;
+}
+.lab-sycorax .quickrow .btnrow { margin: 0 0 0.3rem; }
+.lab-sycorax .quickrow .qstate {
+  font-size: 15px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--ink3);
+  padding: 0 0.1rem 0.25rem;
+  white-space: pre-wrap; word-break: break-word;
+}
+/* a variant's ONE LINE naming the class change — what to listen for */
+.lab-sycorax .classline {
+  font-size: 15px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--gilt);
+  margin: 0.25rem 0 0.1rem;
+}
+/* the FULL CAST toggle shares the transport row with A⇄B and COPY, so it is
+   allowed to be narrow — but never narrower than a thumb. */
+.lab-sycorax #btnCast { flex: 0 0 auto; padding: 0 0.45rem; }
