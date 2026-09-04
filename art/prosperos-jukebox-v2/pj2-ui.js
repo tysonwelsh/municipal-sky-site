@@ -1224,6 +1224,15 @@
         if (e.vessel) dress.push("the vessel " + e.vessel);
         if (e.regal) dress.push("the regal " + e.regal);
         if (e.flue) dress.push("the flue " + e.flue);
+        // A track may also send its dress ready-worded, as an array of plain
+        // strings (Ariel's stops do: "chimes, bowed glass"). Generic on
+        // purpose — a new stop needs no new case here, and an empty or absent
+        // array simply says nothing.
+        if (e.dress && e.dress.length) {
+          for (var di = 0; di < e.dress.length; di++) {
+            if (e.dress[di]) dress.push(String(e.dress[di]));
+          }
+        }
         var abs = (e.absentLabels && e.absentLabels.length) ? e.absentLabels : (e.absent || []);
         if (abs.length) {
           var names = abs.length === 1 ? String(abs[0])

@@ -67,7 +67,9 @@
 //
 // THE FEATHER: the release's final sounded whistle degree becomes the next
 // alighting's first chime ping. One note of memory — nearly free, and a
-// listener who notices has been told a secret.
+// listener who notices has been told a secret. (rc.42: it is the BELL's
+// gesture, so it wears the bell's manner — on a glass evening the one note of
+// memory arrives as a swell.)
 //
 // VOICES — v1 bodies (prosperos-jukebox-audio.js) with the v2 brains:
 //   breeze  (landscape) — 2 sines at root+5th of harmony.current (v1 ~4695),
@@ -83,12 +85,16 @@
 //           brain (PJ2.Motif), seven accents.
 //   chime   (melodic, air) — paired bell-wave oscillators ±2–4 cents, 1.5 to
 //           2.5 s decays, burst-and-breathe with the lone-ping-in-the-pause
-//           habit (v1 ~4804); registers +1 (F5–E6, v1's shelf).
+//           habit (v1 ~4804); registers +1 (F5–E6, v1's shelf). rc.42 gives
+//           it a second manner, the BOWED GLASS: the same pitch swelled
+//           instead of struck, capped at eight live swells (see THE STOPS).
 //   flutter (melodic, air) — fast triangle notes, ±2 cents, short phrases
 //           only (v1 ~4915); rests more in still air; stops by x≈0.5 of the
 //           release; never posts to the ledger (it decorates, it doesn't
 //           argue — the one ledger law it can't escape is answering an
-//           OVERDUE obligation, which outranks manners by design).
+//           OVERDUE obligation, which outranks manners by design). rc.42's
+//           second manner is WATER DRIPS: each blip a chirp falling into its
+//           own pitch, the cave roof instead of the bird.
 //   bass    (landscape) — v1's additive-triangle electric bass (~4564) with
 //           its ARC-FOLLOWING SOUL promoted to the whole track's arc: v1's
 //           private arielBassIntensity (two coprime sines + bounded drift,
@@ -99,6 +105,11 @@
 //           recall, arrivals armed by every harmony step. Offsets travel in
 //           DEGREES now (root/+2/+4, the #4 as a 0.15-chance color on I,
 //           reach +7) so the bass keeps the key through every sea change.
+//           rc.42's second manner is the MARIMBA: a wooden bar, always an
+//           octave above the note it replaces (the owner's own tuning: "that
+//           works best with the plus-one register"), so on a marimba evening
+//           the ground's LAST WORD at x 0.4 of the release is a bar two
+//           octaves above the floor rather than a plucked root one above it.
 //   aeolian (NEW — bowed glass / wind-harp; owner pre-approved): slow-attack
 //           detuned sine pairs with a glassy breath, sounding 1–2 tones of
 //           harmony.current. Dual role like the Library's singing hum:
@@ -233,8 +244,43 @@
 //                  2 × 0.026 × vel, flutter 0.04 × vel; at most THREE
 //                  speakers ever, and only in songs and flights
 //                                                             -> ~ 0.12 worst
+//     rc.42, the STOPS. The bell's BOWED GLASS is 0.026 × vel × 0.346 into
+//     one envelope carrying 2 (the ±3 ¢ pair, coherent) + 0.15 (the third
+//     partial) + 0.12 (the rub) = 0.0204 × vel per swell — LESS than the
+//     struck pair's 0.052 — but a swell does not decay, so the number that
+//     counts is the CAP: eight live at once, at eight different pitches, so
+//     they sum incoherently (√8, not 8 — the family's rule for detuned or
+//     differently pitched partials) -> 0.058. That is the whole reason
+//     GLASS_MAX exists; uncapped, a flight's cloud would be unbounded.
+//     The cloud it replaces is not silent either: eight struck bells 0.375 s
+//     apart into 2 s decays sum to about 0.063 by the same arithmetic, so
+//     the bowed cloud is if anything the quieter of the two.
+//     The cloud's WATER DRIPS is 0.04 × vel × 1.149 = 0.046 at the onset;
+//     the Q-20 plink's 0.5 is fed the same chirp, which is still an octave
+//     above the band at the onset and reaches it at 45 ms with the envelope
+//     already down to 0.49 (0.034 there) -> 0.046, one drip at a time as
+//     one blip was.                                -> ~ 0.13 worst (was 0.12)
 //   bass           0.10 × vel, one note at a time by its own pacing; out of
 //                  the release at x 0.4                       -> ~ 0.10
+//     rc.42, the MARIMBA. 0.10 × vel × 1.150 = 0.115 into a stack of SINES
+//     at 1, 4 and 9.2, whose composite peaks at 1.45 × the envelope with
+//     `bar` at its span's hi of 0.6 — sines at those ratios REINFORCE where
+//     the pluck's triangles at 1, 2 and 3 cancel (that composite peaks at
+//     0.99, which is why the pluck's line has always honestly read 0.10 with
+//     three partials in it; the harness computes both, it does not take my
+//     word for either) — plus the mallet's 6 ms of noise above 1.5 kHz at
+//     0.6 × peak, three milliseconds early and in a band the ground never
+//     otherwise occupies, so it sums incoherently:
+//     √(0.167² + 0.024²) = 0.174 × vel.
+//     AND IT LASTS FOUR MILLISECONDS. By 0.15 s the partials are gone and
+//     the wood is at 0.025 × vel — a QUARTER of the pluck's sustained 0.05,
+//     which the string then holds for seconds where the wood is already
+//     silent. So the LAYER's line does not move: over any window longer than
+//     a mallet's contact the marimba is the quieter manner, and its onset is
+//     a transient of exactly the kind the limiter is there for. Total
+//     scheduled ENERGY, measured: 2.7 dB under the pluck's.
+//     -> ~ 0.10 sustained (unchanged), with a 4 ms onset of 0.17 named here
+//     rather than hidden — and asserted, not merely argued, by the ledger row
 //   aeolian        bed 2 × 0.02 (+ sheen 0.22 and breath 0.18 into the same
 //                  gain) + the singer 0.026 + the cadence consort 3 × 0.014
 //                                                             -> ~ 0.09 worst
@@ -268,13 +314,14 @@
 //                  0.35 (whistle) 0.2 (lyre) 0.18 (vib) 0.15 (pan)
 //                                                             -> ~ 0.03
 //   ------------------------------------------------------------------
-//   WORST SCENE, roster- and air-aware (the honest sum):
-//     song       0.19 + 0.12 (3 speakers) + 0.10 + 0.09 + 0.06 + 0.02
-//                + 0.03 + lyre 0.085 + handpan 0.085          = 0.780
+//   WORST SCENE, roster- and air-aware (the honest sum; the melody line is
+//   rc.42's 0.13, i.e. every stop drawn at once — a 0.4³ ≈ 6 % evening):
+//     song       0.19 + 0.13 (3 speakers) + 0.10 + 0.09 + 0.06 + 0.02
+//                + 0.03 + lyre 0.085 + handpan 0.085          = 0.790
 //     hover      0.19 + 0.00 (whistle and chime rest) + 0.10 + 0.09 + 0.06
 //                + 0.02 + 0.03 + lyre 0.085 + concertina 0.063
 //                + handpan 0.085 + vibraphone 0.089           = 0.812
-//     flight     0.19 + 0.12 (chime + flutter) + 0.06 + 0.02 + 0.03 = 0.42
+//     flight     0.19 + 0.13 (chime + flutter) + 0.06 + 0.02 + 0.03 = 0.43
 //   -> ~ 0.81 absolute worst into the rooms — and that hover figure is a
 //   deliberate fiction: the hold laws and the rest windows (4–12 s for the
 //   lyre, 6–14 for the box and the bars, 5–14 for the pan) make all four
@@ -420,6 +467,55 @@
 //   an rc.36 evening is a different evening from an rc.33 one: same seed,
 //   same shape, a differently played instrument.
 //
+// THE STOPS (rc.42) — three of lab-ariel.html's STOPS cards promoted into the
+// engine, the owner having auditioned them and said "add that one into the
+// mix": the bell's BOWED GLASS (a glass harmonica — the same pitches swelled
+// instead of struck), the cloud's WATER DRIPS (each blip a chirp falling into
+// its own pitch, with a plink at the landing) and the ground's MARIMBA (a
+// wooden bar, always an octave up, finished before the next note).
+//
+//   An OPTION, never a replacement. Each is a SHARE knob on its layer's desk
+//   row — `glass`, `drips`, `marimba`, all 0–1 and all shipped at 0 — which
+//   is the chance ONE note is played the other way, drawn per note. Beside it
+//   sits the body's own knob (`swell`, `depth`, `bar`), which wanders per
+//   note like every other body knob.
+//
+//   THE EVENING CAST. Ariel had no cast fork; it has one now, and from
+//   evening two it throws three coins in a fixed order — the bell, the cloud,
+//   the ground — each 0.6 plain / 0.4 the stop. A stop drawn sets that
+//   layer's effective share to 1 for the whole evening: tonight the chimes
+//   ARE a glass harmonica. Evening one is always plain, because a short
+//   listen must hear the instruments the engine is named for before it hears
+//   their doubles. A MOVED KNOB WINS over the cast until it is put back (the
+//   Library's decision 5, inherited whole). The cast event carries `chime` /
+//   `flutter` / `bass` and a `dress` array in plain words, which pj2-ui
+//   prints generically — a fourth stop needs no new case there.
+//
+// STREAM NOTE (rc.42) — the strongest form of the discipline yet:
+//
+//   A MANNER CHANGES THE SOUND AND NEVER THE COMPOSITION. Every draw the
+//   stops make is on a NEW label-hashed fork ("cast" for the evening's three
+//   coins, "chime:glass" / "flutter:drips" / "bass:marimba" for one share
+//   draw per note), so no pre-existing fork gains or loses a step. The chime's
+//   and the flutter's budget claims are made by their CALLERS, before the
+//   manner is known; the marimba deliberately keeps the PLUCK's claim, which
+//   over-claims (a bar is done in under a second where a plucked anchor rings
+//   for three) precisely so that the polyphony governor sees the same evening
+//   either way. And the wander: a bar draws `bar` where a pluck draws
+//   `attack` — ONE touch value each, so even the bass's touch fork stays in
+//   step.
+//   The consequence, and it is asserted rather than asserted-to: with the same
+//   seed, the three shares at 0 and then at 1 give THE SAME EVENTS AT THE SAME
+//   TIMES AND THE SAME NOTES AT THE SAME TIMES AND DEGREES. The one thing that
+//   moves in the stream is the marimba's own octave — every bar exactly twice
+//   the pitch of the pluck it replaced, which is how the +1 register is proved
+//   rather than merely intended.
+//   (The bell's touch fork is the one place a manner does shift a fork: a
+//   struck ping draws `decay` and `detune`, a swell draws `swell`. Nothing
+//   that fork feeds ever reaches a note event — it is ring length and beating
+//   rate — so the STREAM is untouched and only the bells that follow are
+//   played a shade differently. Stated because it is real.)
+//
 // Discipline inherited whole from pj2-library.js: every pitched note reads
 // the field AT SCHEDULE TIME (never a cached Hz — that is what makes the sea
 // change and the seam reset free); every envelope through PJ2.Voice.env or
@@ -536,6 +632,19 @@
   // carrying no presence at all: the BREEZE (the seam), the aeolian BED
   // (the singer's row owns the knob, the bed does not read it), the ambient
   // sky and the halo.
+  //
+  // rc.42 — HALFWAY BACK. The owner, 2026-09-04, having lived with rc.38's
+  // cut: "a little too thin — halfway back." So every default moved to the
+  // MIDPOINT between the old rate and rc.38's first cut, and nothing else
+  // moved at all: SHIPPED AT whistle 0.9, bass 0.85, and 0.8 for the bell,
+  // the cloud, the glass singer, the lyre, the box, the pan and the bars
+  // (they were 0.8 / 0.7 / 0.6). The knob's MEANING is untouched — type
+  // rc.38's numbers back in and rc.38 comes back to the bit, type 1 back in
+  // and the pre-rc.38 engine does, and the harness asserts both.
+  //
+  // rc.42 also hangs THE STOPS off three of these rows — a `glass` share on
+  // the bell, `drips` on the cloud, `marimba` on the ground, each with its
+  // body's own knob beside it. See THE STOPS, below the delay doses.
   var LAYER_PARAMS = {
     breeze: [
       { key: "breath", label: "breath — how deeply the pad sways", min: 0, max: 2.5, def: 1,
@@ -550,7 +659,11 @@
       // own (it speaks whenever the air is free), so presence works the
       // other way the rule allows — it divides the margin it claims and the
       // gap it waits afterwards. The intensity gate is untouched.
-      { key: "presence", label: "presence — how often the singer takes the air", min: 0, max: 3, def: 0.8 },
+      // rc.42 — the DEFAULT walked back to the midpoint between the old rate
+      // (1) and rc.38's (0.8): "a little too thin — halfway back" (the owner,
+      // 2026-09-04). Only the def moved; type 0.8 back in and rc.38 returns,
+      // type 1 back in and the pre-thinning engine returns, to the bit.
+      { key: "presence", label: "presence — how often the singer takes the air", min: 0, max: 3, def: 0.9 },
       { key: "breath", label: "breath — the airy noise under the song", min: 0, max: 2.5, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
       { key: "vibrato", label: "vibrato — the singer's wobble depth", min: 0, max: 2, def: 1,
@@ -562,11 +675,19 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     chime: [
-      { key: "presence", label: "presence — how often the bell speaks", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — how often the bell speaks", min: 0, max: 3, def: 0.8 },
       { key: "decay", label: "decay — how long the bell rings", min: 0.5, max: 2, def: 1,
         lo: 0.8, hi: 1.2, per: "touch" },
       { key: "detune", label: "detune — how far apart the paired bells sit", min: 0, max: 3, def: 1,
         lo: 0.7, hi: 1.3, per: "character" },
+      // rc.42 — THE BOWED GLASS (the first STOP; see the stop note above).
+      // `glass` is a SHARE, not a switch: it is the chance each single ping
+      // is swelled instead of struck, drawn per note on the stop's own fork.
+      // It carries no span (a share is an entry law, like presence); `swell`
+      // is the body's own knob and wanders per note like the bell's decay.
+      { key: "glass", label: "glass — the share of pings BOWED (a glass harmonica) instead of struck", min: 0, max: 1, def: 0 },
+      { key: "swell", label: "swell s — how slowly the finger finds the rim", min: 0.3, max: 2, def: 0.8,
+        lo: 0.45, hi: 1.3, per: "touch" },
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     flutter: [
@@ -574,23 +695,36 @@
       // is literal, by design: a cloud is not a timbre). It gets the two the
       // desk is uniform on — the thinning knob, and `vary` so the row reads
       // like every other one.
-      { key: "presence", label: "presence — how often the cloud gathers", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — how often the cloud gathers", min: 0, max: 3, def: 0.8 },
+      // rc.42 — THE WATER DRIPS, the same shape as the bell's glass: a SHARE
+      // drawn per blip on the stop's own fork, and the body's own knob.
+      { key: "drips", label: "drips — the share of blips fallen as WATER instead of blipped", min: 0, max: 1, def: 0 },
+      { key: "depth", label: "depth — how many octaves each drip falls into its pitch", min: 0.5, max: 2, def: 1,
+        lo: 0.6, hi: 1.4, per: "touch" },
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     bass: [
-      { key: "presence", label: "presence — how often the ground speaks", min: 0, max: 3, def: 0.7 },
+      { key: "presence", label: "presence — how often the ground speaks", min: 0, max: 3, def: 0.85 },
       { key: "flourish", label: "flourish — how often the bass runs", min: 0, max: 2, def: 1 },
       { key: "attack", label: "attack ms — how hard the string is taken", min: 6, max: 30, def: 12,
         lo: 8, hi: 18, per: "touch" },
       { key: "warmth", label: "warmth — how much 2nd and 3rd partial are in the note", min: 0, max: 2, def: 1,
         lo: 0.8, hi: 1, per: "character" },
+      // rc.42 — THE MARIMBA, the third stop. A share again; `bar` is the
+      // wood's 4th partial, wandering per bar. The +1 REGISTER is not a knob:
+      // a marimba's floor sits an octave above the bass's F1 and the owner
+      // asked for that octave to travel with the wood, so a bar ALWAYS sounds
+      // at 2 × the note it replaces.
+      { key: "marimba", label: "marimba — the share of notes struck as WOOD (an octave up) instead of plucked", min: 0, max: 1, def: 0 },
+      { key: "bar", label: "bar — the 4th partial's share of the wood", min: 0, max: 0.6, def: 0.45,
+        lo: 0.3, hi: 0.6, per: "touch" },
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     aeolian: [
       // rc.38 — the SINGER's knob only. The bed is the landscape's (and the
       // cadence consort is the cadence's): neither is thinned, neither is
       // ever absent.
-      { key: "presence", label: "presence — how often the glass sings (the bed plays on)", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — how often the glass sings (the bed plays on)", min: 0, max: 3, def: 0.8 },
       { key: "sheen", label: "sheen — the glass's high octave partial", min: 0, max: 2, def: 1,
         lo: 0.8, hi: 1, per: "character" },
       { key: "breath", label: "breath — the bow's airy thread", min: 0, max: 2.5, def: 1,
@@ -615,7 +749,7 @@
     // audition. (rc.36 hangs plan §11.3's spans off those same defs; the
     // entry knobs — presence, register, updown — carry no span, by law.)
     lyre: [
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       { key: "roll", label: "roll s — how long the hand takes to cross the strings", min: 0.12, max: 0.8, def: 0.3,
         lo: 0.16, hi: 0.48, per: "touch" },
       { key: "ring", label: "ring s — how long a string is left to sound", min: 1.5, max: 5, def: 3,
@@ -631,7 +765,7 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     concertina: [
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       { key: "reed", label: "reed dB — how hard the 900 Hz chamber bites", min: 0, max: 12, def: 6,
         lo: 4.5, hi: 6, per: "character" },
       { key: "reedTouch", label: "reed touch dB — how much the bite varies dyad to dyad", min: -3, max: 3, def: 0,
@@ -646,7 +780,7 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     handpan: [
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       { key: "ring", label: "ring s — how long the shell rings", min: 1.5, max: 4, def: 2.5,
         lo: 1.9, hi: 3.2, per: "touch" },
       { key: "partials", label: "partials — how much 2nd and 3rd are in the bowl", min: 0, max: 1, def: 0.5,
@@ -661,7 +795,7 @@
       { key: "vary", label: "vary — how far touch, character and weather may wander (0 = fixed)", min: 0, max: 2, def: 1 },
     ],
     vibraphone: [
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       { key: "motor", label: "motor Hz — how fast the discs turn", min: 3, max: 7, def: 4.5,
         lo: 3.8, hi: 5.5, per: "character" },
       { key: "depth", label: "depth — how deep the motor's tremolo cuts", min: 0, max: 1, def: 0.6,
@@ -964,10 +1098,41 @@
   var THIN_RELEASE = 1400;  // where the release rides it (echoes ascend)
 
   // ==========================================================================
-  // create({ seed, volume, absences }) → Ariel  (facade mirrors PJ2.Library's
-  // exactly). `absences: false` is a DEV DOOR only — it turns the rc.38 cast
-  // draw off so the harness can prove the engine is pre-rc.38 to the bit at
-  // presence 1; the shipped default draws.
+  // THE STOPS (rc.42) — three of lab-ariel.html's STOPS cards promoted into
+  // the engine as OPTIONS, never as replacements. Each is a SHARE knob (the
+  // chance one note is played the other way) plus the body's own knob, and
+  // each may also be drawn for a whole evening by the cast (below).
+  //
+  // THE LEVEL MATCH is the whole reason a radical stop can be radical without
+  // being louder: the same envelope peak through two different spectra can
+  // differ by many decibels, so each variant carries a MEASURED scale factor.
+  // These three numbers are lab-ariel.html's own MATCH constants, copied
+  // verbatim — they were measured on a hushed bus against the engine's own
+  // body and tuned until the two sat within 1.5 dB. They are design
+  // constants, not magic numbers.
+  // ==========================================================================
+  var MATCH_CHIME_GLASS = 0.346;    // a swell has no decay: it holds where the bell has gone
+  var MATCH_FLUTTER_DRIPS = 1.149;  // a 45 ms chirp is shorter than the blip it replaces
+  var MATCH_BASS_MARIMBA = 1.150;   // wood is finished in 0.65 s where the bass rings for three
+  // A flight's chime cloud becomes a cloud of SWELLS, and a swell does not
+  // decay — so the simultaneous count is capped and the oldest is faded out
+  // (anchored) rather than left to pile. The lab's cap, kept: flights are
+  // clouds, and eight is what a cloud may hold.
+  var GLASS_MAX = 8;
+  var GLASS_FADE = 0.3;
+  // A bar always sounds an octave above the note it replaces (the owner:
+  // "that works best with the plus-one register — keep that for the
+  // marimba"). Not a knob: a marimba's floor sits an octave above F1.
+  var MARIMBA_UP_OCT = 1;
+  var MARIMBA_UP = Math.pow(2, MARIMBA_UP_OCT);
+
+  // ==========================================================================
+  // create({ seed, volume, cast, absences }) → Ariel  (facade mirrors
+  // PJ2.Library's exactly). `cast: false` is a DEV DOOR only — it turns the
+  // whole evening cast off (rc.38's absence draw AND rc.42's manner draw), so
+  // the harness can prove the engine is pre-rc.38 to the bit at presence 1
+  // and pre-rc.42 to the bit at every share 0. `absences: false` is kept as
+  // an alias for it. The shipped default draws.
   // ==========================================================================
   function create(opts) {
     opts = opts || {};
@@ -1069,6 +1234,23 @@
       var l = paramState[layer];
       return (l && l[key] != null) ? l[key] : 1;
     }
+    // rc.42 — "A MOVED KNOB WINS OVER THE CAST UNTIL IT IS RESET" (the
+    // Library's decision 5, inherited whole). A knob still sitting on its
+    // authored default is the evening cast's to set; the moment the owner
+    // moves it the desk is the authority until it is put back. Drawless, read
+    // at schedule time.
+    function pDefOf(layer, key) {
+      var defs = LAYER_PARAMS[layer];
+      if (!defs) return null;
+      for (var i = 0; i < defs.length; i++) if (defs[i].key === key) return defs[i].def;
+      return null;
+    }
+    function knobOrCast(layer, key, castVal) {
+      var d = pDefOf(layer, key);
+      var v = pVal(layer, key);
+      if (d == null) return v;
+      return (v !== d) ? v : castVal;
+    }
 
     // ------------------------------------------------------------------
     // THE THINNING (rc.38). One rule, three faces, because Ariel's voices
@@ -1124,7 +1306,14 @@
     // ------------------------------------------------------------------
     var ABSENT_ELIGIBLE = ["chime", "flutter", "bass", "aeolian",
                            "lyre", "concertina", "handpan", "vibraphone"];
-    var absencesOn = (opts.absences !== false);   // the dev door; the default draws
+    // rc.42 — ONE dev door for the whole evening cast: `cast: false` turns
+    // off the absence draw AND the manner draw, which is what makes "every
+    // share at 0 + the cast shut" the pre-rc.42 engine byte for byte, event
+    // stream included. `absences: false` is kept as its alias (it is what the
+    // rc.38 harness rows and the thin round's dumps ask for, and it meant
+    // exactly this when the cast held nothing but absences).
+    var castOn = (opts.cast !== false && opts.absences !== false);
+    var absencesOn = castOn;
     function isAbsent(key) {
       return !!(run && run.absent && run.absent.length && run.absent.indexOf(key) >= 0);
     }
@@ -1138,11 +1327,28 @@
     // conductor wrapper the instant AFTER the begin event, so the log reads
     // "evening N" and then "tonight: …", always before the evening's first
     // note (the Library's own order).
-    function drawAbsences(n, t) {
+    // rc.42 — TONIGHT'S MANNERS, on Ariel's own cast fork (created this
+    // round; the absences keep their own, so neither can move the other).
+    // Three coins in a FIXED order — the bell, the cloud, the ground — each
+    // 0.6 plain / 0.4 the stop. A stop drawn sets that layer's effective
+    // share to 1 for the whole evening ("tonight the chimes are a glass
+    // harmonica"); the desk still wins, by knobOrCast, the moment the owner
+    // moves the share. Evening one is always plain: a short listen must hear
+    // the instruments the engine is named for before it hears their doubles.
+    var CAST_STOP_P = 0.4;
+    function drawCast(n, t) {
       // The dev door turns the WHOLE gesture off — no draw, no cast line —
-      // which is what makes "presence 1 + absences off" the pre-rc.38 engine
-      // byte for byte, event stream included.
-      if (!absencesOn) return;
+      // which is what makes "presence 1 + the cast shut" the pre-rc.38 engine
+      // and "every share 0 + the cast shut" the pre-rc.42 engine, byte for
+      // byte, event stream included.
+      if (!castOn) return;
+      // DRAWS FIRST, unconditionally and in order, then the gates.
+      var crng = run.streams.cast;
+      var glass = crng.chance(CAST_STOP_P);
+      var drips = crng.chance(CAST_STOP_P);
+      var wood = crng.chance(CAST_STOP_P);
+      var plain = (n <= 1);
+      if (plain) { glass = false; drips = false; wood = false; }
       var a = { absent: [], count: 0 };
       try {
         a = PJ2.Voice.absences({
@@ -1154,11 +1360,41 @@
       run.lastAbsent = run.absent;
       var labels = [];
       for (var i = 0; i < run.absent.length; i++) labels.push(layerLabel(run.absent[i]));
-      run.cast = { evening: n, plain: (n <= 1), absent: run.absent.slice(), absentLabels: labels };
+      // The dress, in plain words — an array, empty when nothing was drawn,
+      // which is what the UI's generic cast case prints.
+      var dress = [];
+      if (glass) dress.push("chimes, bowed glass");
+      if (drips) dress.push("flutter, water drips");
+      if (wood) dress.push("bass, marimba");
+      run.cast = {
+        evening: n, plain: plain,
+        chime: glass ? "glass" : "struck",
+        flutter: drips ? "drips" : "blips",
+        bass: wood ? "marimba" : "plucked",
+        dress: dress,
+        absent: run.absent.slice(), absentLabels: labels,
+      };
       run.castPending = {
-        type: "cast", evening: n, plain: (n <= 1),
+        type: "cast", evening: n, plain: plain,
+        chime: run.cast.chime, flutter: run.cast.flutter, bass: run.cast.bass,
+        dress: dress.slice(),
         absent: run.absent.slice(), absentLabels: labels, t: t,
       };
+    }
+
+    // ------------------------------------------------------------------
+    // THE MANNERS (rc.42). One reader per stop: the effective SHARE is the
+    // cast's (1 when tonight's manner is the stop, 0 otherwise) unless the
+    // desk knob has been moved off its default, in which case the desk wins.
+    // Read at schedule time, drawn per note on the stop's OWN fork — so no
+    // pre-existing stream gains or loses a draw, and at share 0 with the cast
+    // shut the whole engine is rc.39 to the bit.
+    // ------------------------------------------------------------------
+    function castIs(layer, manner) {
+      return !!(run && run.cast && run.cast[layer] === manner);
+    }
+    function shareOf(layer, key, manner) {
+      return clamp(knobOrCast(layer, key, castIs(layer, manner) ? 1 : 0), 0, 1);
     }
 
     // ------------------------------------------------------------------
@@ -2055,8 +2291,10 @@
           dressAll(run.evening);
 
           // rc.38 — …and TONIGHT'S CAST, the same seam, the same ordinal:
-          // who is sitting this evening out. Evening one is always full.
-          drawAbsences(run.evening, (evt.t != null) ? evt.t : run.clock.now());
+          // who is sitting this evening out, and (rc.42) which manner the
+          // bell, the cloud and the ground play in. Evening one is full and
+          // plain.
+          drawCast(run.evening, (evt.t != null) ? evt.t : run.clock.now());
 
           // THE RE-GROUNDING (§1c, owner-approved exactly): the field returns
           // home to F 349 lydian, atomically, at the seam — the ringing high
@@ -2481,8 +2719,109 @@
     // cents, so the emitted fundamental stays snap-exact), 1.5–2.5 s decays,
     // burst-and-breathe with the lone-ping habit. In flights the burst IS a
     // gesture-cloud, and the whole cloud (+ any lone ping) holds ONE claim.
-    function renderChime(out, freq, t, vel, decayS, detuneCents) {
+    // ---- the bell's BOWED GLASS (rc.42, lab variant B) ----------------------
+    // The same pitch SWELLED instead of struck: no attack at all, a wet finger
+    // on a rim, with a rub band at the third partial. Routed exactly as the
+    // bell is (the wall always answers, the strings always hear it).
+    //
+    // THE CAP. A swell does not decay, so a flight's chime cloud would pile
+    // eight, twelve, twenty swells on top of one another and never let any of
+    // them go. GLASS_MAX live swells at once; when a ninth arrives the oldest
+    // is faded out over GLASS_FADE — an ANCHORED fade, and the anchor value is
+    // ARITHMETIC (we wrote the envelope, so we can say where it is) rather
+    // than a read of param.value, which is the browser-lazy trap the mixer
+    // avoids for exactly the same reason.
+    function glassLevelAt(r, t) {
+      var d = t - r.t;
+      if (d <= 0) return 0;
+      if (d < r.swell) return r.peak * (d / r.swell);            // the linear rise
+      d -= r.swell;
+      if (d < r.hold) return r.peak * Math.pow(0.92, d / r.hold); // the exponential sag
+      d -= r.hold;
+      if (d < 0.8) return r.peak * 0.92 * (1 - d / 0.8);          // the linear release
+      return 0;
+    }
+    function glassSweep(t) {
+      var L = run.glassLive, keep = [];
+      for (var i = 0; i < L.length; i++) if (!L[i].dead && L[i].end > t) keep.push(L[i]);
+      run.glassLive = keep;
+    }
+    function glassFade(r, t) {
+      if (!r || r.dead) return;
+      r.dead = true;
+      var v = glassLevelAt(r, t);
+      try {
+        var p = r.env.gain;
+        p.cancelScheduledValues(t);
+        p.setValueAtTime(v, t);
+        p.linearRampToValueAtTime(0, t + GLASS_FADE);
+      } catch (e) {}
+      for (var i = 0; i < r.sources.length; i++) {
+        try { r.sources[i].stop(t + GLASS_FADE + 0.05); } catch (e2) {}
+      }
+      r.end = t + GLASS_FADE;
+    }
+    function renderChimeGlass(out, freq, t, vel, durS) {
       var c = ctx;
+      // rc.36's discipline: the body's one ranged value is a TOUCH draw, on
+      // the chime's own wander fork, read at schedule time.
+      var swellS = wv("chime", "swell", t);
+      var hold = Math.max(1.5, durS || 1.5);
+      var total = swellS + hold + 0.8;
+      // the level match: a swell has no decay, so it holds where the bell has
+      // already gone — 0.346 is what makes it sit at the bell's loudness.
+      var peak = 0.026 * vel * MATCH_CHIME_GLASS;
+      glassSweep(t);
+      while (run.glassLive.length >= GLASS_MAX) glassFade(run.glassLive.shift(), t);
+      var env = c.createGain();
+      env.connect(out);
+      env.connect(run.delaySendChime);  // the wall ALWAYS answers the bell
+      env.connect(run.haloSendChime);   // and the strings hear it
+      PJ2.Voice.env(env.gain, t, [[swellS, peak], [hold, peak * 0.92], [0.8, 0]]);
+      var rec = { env: env, sources: [], t: t, swell: swellS, hold: hold,
+                  peak: peak, end: t + total, dead: false };
+      for (var k = 0; k < 2; k++) {
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(freq, t);
+        o.detune.setValueAtTime(k ? 3 : -3, t);
+        o.connect(env);
+        o.start(t); o.stop(t + total + 0.1);
+        rec.sources.push(o);
+      }
+      var p3 = c.createOscillator();          // the third partial, the glass's own
+      p3.type = "sine";
+      p3.frequency.setValueAtTime(freq * 3, t);
+      var p3g = c.createGain();
+      p3g.gain.setValueAtTime(0.15, t);
+      p3.connect(p3g); p3g.connect(env);
+      p3.start(t); p3.stop(t + total + 0.1);
+      rec.sources.push(p3);
+      var ns = PJ2.Voice.noiseBuffer.source(c, 30);  // the rub: the finger on the rim
+      var bp = c.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(freq * 3, t);
+      bp.Q.setValueAtTime(10, t);
+      var ng = c.createGain();
+      ng.gain.setValueAtTime(0.12, t);
+      ns.connect(bp); bp.connect(ng); ng.connect(env);
+      ns.start(t, ns.randomOffset); ns.stop(t + total + 0.1);
+      rec.sources.push(ns);
+      run.glassLive.push(rec);
+    }
+
+    // The bell, in tonight's manner. The share draw happens HERE, per note and
+    // before anything is built, so every chime gesture — a burst's note, the
+    // lone ping in the pause, and the seam's FEATHER — follows the same law:
+    // at share 0 every one is struck (and the draw, on the stop's own fork,
+    // costs the rest of the engine nothing), at share 1 every one is bowed.
+    // Returns the manner, which the caller puts on the note event.
+    function renderChime(out, freq, t, vel, decayS, detuneCents, durS) {
+      var c = ctx;
+      if (run.streams.chimeGlass.chance(shareOf("chime", "glass", "glass"))) {
+        renderChimeGlass(out, freq, t, vel, durS);
+        return "glass";
+      }
       // the desk knobs (def 1 = as-composed): ring length and pair distance.
       // rc.36 — decay is a TOUCH draw per ping, on top of the brain's own
       // 1.5–2.5 s; the pair's distance is the bell's CHARACTER, one beating
@@ -2504,6 +2843,7 @@
         o.start(t);
         o.stop(t + decayS + 0.15);
       }
+      return "struck";
     }
 
     function startChime() {
@@ -2536,8 +2876,10 @@
             if (fBtok) {
               run.tokens.push(fBtok);
               var fFreq = run.field.degFreq(fDeg, 0);
-              renderChime(mixOut("chime", run.poolMel.at(rng.rnd(-0.5, 0.5))), fFreq, t, 0.8, rng.rnd(1.8, 2.4), rng.rnd(2, 4));
-              emitNote({ voice: "chime", kind: "feather", freq: fFreq, t: t, durS: 2.2, deg: fDeg, oct: 0 });
+              // rc.42 — the feather follows the evening's manner: on a glass
+              // night the one ping of memory is a swell like everything else.
+              var fMan = renderChime(mixOut("chime", run.poolMel.at(rng.rnd(-0.5, 0.5))), fFreq, t, 0.8, rng.rnd(1.8, 2.4), rng.rnd(2, 4), 2.2);
+              emitNote({ voice: "chime", kind: "feather", freq: fFreq, t: t, durS: 2.2, deg: fDeg, oct: 0, manner: fMan });
               emitEvent({ type: "feather", deg: fDeg, t: t });
             }
             lane.at(t + rng.rnd(5, 9) * gmAt(t), phrase);
@@ -2630,10 +2972,11 @@
           var deg = m.notes[i].deg + lift;
           lastDeg = deg;
           var freq = run.field.degFreq(deg, 0); // read at schedule time
-          renderChime(out, freq, nt, vel, decayS, detune);
+          var nDur = Math.min(tm.durs[i], decayS);
+          var manner = renderChime(out, freq, nt, vel, decayS, detune, nDur);
           emitNote({
-            voice: "chime", freq: freq, t: nt, durS: Math.min(tm.durs[i], decayS),
-            deg: deg, oct: 0, velocity: vel,
+            voice: "chime", freq: freq, t: nt, durS: nDur,
+            deg: deg, oct: 0, velocity: vel, manner: manner,
             motif: m.name, gen: m.gen, phraseKind: res.kind,
           });
         }
@@ -2643,10 +2986,11 @@
           if (pTok) {
             run.tokens.push(pTok);
             var pFreq = run.field.degFreq(lastDeg, 0);
-            renderChime(out, pFreq, pt, 0.7 * velScale, pingDecay, 3);
+            var pMan = renderChime(out, pFreq, pt, 0.7 * velScale, pingDecay, 3, 1.2);
             emitNote({
               voice: "chime", kind: "ping", freq: pFreq, t: pt, durS: 1.2,
-              deg: lastDeg, oct: 0, motif: m.name, gen: m.gen, phraseKind: res.kind,
+              deg: lastDeg, oct: 0, manner: pMan,
+              motif: m.name, gen: m.gen, phraseKind: res.kind,
             });
           }
         }
@@ -2655,6 +2999,41 @@
           (st === "flight" ? rng.rnd(1.5, 4) : rng.rnd(3, 8)) * (1.3 - iv) * gmAt(t), phrase);
       }
       lane.at(run.t0 + rng.rnd(10, 20), phrase);
+    }
+
+    // ---- the cloud's WATER DRIPS (rc.42, lab variant A) ---------------------
+    // Every blip becomes a chirp falling `depth` octaves INTO the note's own
+    // pitch over 45 ms, with a high-Q plink at the landing: the cloud stops
+    // being a bird and becomes a cave roof. The engine's own snapped pitch is
+    // the landing, read at schedule time like every other note — the fall is
+    // above it, never below, so the drip can never sound the wrong note.
+    // Routed as the blip is (the cloud always reaches the wall).
+    function renderFlutterDrip(out, freq, t, vel) {
+      var c = ctx;
+      var depth = wv("flutter", "depth", t);   // a TOUCH draw, per drip
+      var pk = 0.04 * vel * MATCH_FLUTTER_DRIPS;
+      var o = c.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(freq * Math.pow(2, depth), t);
+      o.frequency.exponentialRampToValueAtTime(freq, t + 0.045); // positive → positive
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[0.004, pk], [0.06, pk * 0.35], [0.19, 0]]);
+      o.connect(g);
+      g.connect(out);
+      g.connect(run.delaySendFlutter);
+      // the plink: the same chirp read through a high-Q band at the landing,
+      // so the resonance only speaks when the drop arrives
+      var bp = c.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(freq, t);
+      bp.Q.setValueAtTime(20, t);
+      var pg = c.createGain();
+      pg.gain.setValueAtTime(0.5, t);
+      g.connect(bp); bp.connect(pg);
+      pg.connect(out);
+      pg.connect(run.delaySendFlutter);
+      o.start(t);
+      o.stop(t + 0.3);
     }
 
     // ---- flutter (melodic — pure ornament; claims THE AIR) -------------------
@@ -2735,19 +3114,26 @@
           run.tokens.push(btok);
           var deg = m.notes[i].deg + lift;
           var freq = run.field.degFreq(deg, 0); // read at schedule time
-          var o = c.createOscillator();
-          o.type = "triangle";
-          o.frequency.setValueAtTime(freq, nt);
-          o.detune.setValueAtTime(det, nt);
-          var g = c.createGain();
-          o.connect(g); g.connect(out);
-          g.connect(run.delaySendFlutter); // the cloud always reaches the wall
-          PJ2.Voice.env(g.gain, nt, [[0.005, 0.04 * vel], [nd * 0.4 - 0.005, 0.032 * vel], [nd * 0.6, 0]]);
-          o.start(nt);
-          o.stop(nt + nd + 0.02);
+          // rc.42 — tonight's manner, drawn per blip on the stop's own fork.
+          var manner = "blip";
+          if (run.streams.flutterDrips.chance(shareOf("flutter", "drips", "drips"))) {
+            manner = "drip";
+            renderFlutterDrip(out, freq, nt, vel);
+          } else {
+            var o = c.createOscillator();
+            o.type = "triangle";
+            o.frequency.setValueAtTime(freq, nt);
+            o.detune.setValueAtTime(det, nt);
+            var g = c.createGain();
+            o.connect(g); g.connect(out);
+            g.connect(run.delaySendFlutter); // the cloud always reaches the wall
+            PJ2.Voice.env(g.gain, nt, [[0.005, 0.04 * vel], [nd * 0.4 - 0.005, 0.032 * vel], [nd * 0.6, 0]]);
+            o.start(nt);
+            o.stop(nt + nd + 0.02);
+          }
           emitNote({
             voice: "flutter", freq: freq, t: nt, durS: nd,
-            deg: deg, oct: 0, velocity: vel,
+            deg: deg, oct: 0, velocity: vel, manner: manner,
             motif: m.name, gen: m.gen, phraseKind: res.kind,
           });
         }
@@ -2766,12 +3152,85 @@
     // (root/+2/+4/+7, #4 as deg +3 color on I) so the key survives every
     // modulation. Exits the release at x≈0.4 with one final root planted an
     // octave above its floor — the ground lets go.
+    // ---- the ground's MARIMBA (rc.42, lab variant B) ------------------------
+    // A wooden bar: sine plus the bar's 4th and 9.2nd partials, both gone
+    // inside a fifth of a second, over a mallet tick. Where the bass
+    // SUSTAINED, the wood is finished before the next note — that is the whole
+    // class change, and it is why the decay is 0.5–0.8 s and not the shorter
+    // one a top-octave bar would take (the lab's own departure, kept: this bar
+    // sits at F2, over its resonator tube, and the level contract is RMS).
+    //
+    // ALWAYS AN OCTAVE UP. The owner: "that works best with the plus-one
+    // register — keep that for the marimba." A marimba's floor sits an octave
+    // above the bass's F1, so the wood carries its own register with it; the
+    // pluck's octave logic is untouched.
+    //
+    // DEPARTURE from the lab: the mallet tick reads the engine's shared 30 s
+    // noise buffer instead of allocating a fresh one-shot buffer per note.
+    // Same texture, no per-note allocation over a nine-hundred-second run —
+    // the engine's own idiom (the lyre's pluck scrape does the same).
+    function renderMarimbaBar(t, freq, vel) {
+      var c = ctx;
+      var barK = clamp(wv("bass", "bar", t), 0, 0.6);       // a TOUCH draw, per bar
+      var dec = run.streams.bassMarimba.rnd(0.5, 0.8);      // on the stop's own fork
+      // the level match: wood is finished in 0.65 s where the bass rings for
+      // seconds, so 1.150 is what makes a bar sit at the pluck's loudness.
+      var peak = 0.10 * vel * MATCH_BASS_MARIMBA;
+      var g = c.createGain();
+      g.connect(run.layBass);
+      PJ2.Voice.env(g.gain, t, [[0.004, peak], [dec * 0.35, peak * 0.22], [dec * 0.65, 0]]);
+      var o = c.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(freq, t);
+      o.connect(g);
+      o.start(t); o.stop(t + dec + 0.1);
+      var bars = [[4, barK, 0.15], [9.2, 0.12, 0.08]];
+      for (var i = 0; i < bars.length; i++) {
+        if (bars[i][1] <= 0.001) continue;
+        var p = c.createOscillator();
+        p.type = "sine";
+        p.frequency.setValueAtTime(freq * bars[i][0], t);
+        var pg = c.createGain();
+        PJ2.Voice.env(pg.gain, t, [[0.003, bars[i][1]], [bars[i][2], 0]]);
+        p.connect(pg); pg.connect(g);
+        p.start(t); p.stop(t + bars[i][2] + 0.1);
+      }
+      // the mallet tick — 6 ms of noise above 1.5 kHz
+      var bu = PJ2.Voice.noiseBuffer.source(c, 30);
+      var hp = c.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.setValueAtTime(1500, t);
+      hp.Q.setValueAtTime(0.7, t);
+      var bg = c.createGain();
+      PJ2.Voice.env(bg.gain, t, [[0.001, peak * 0.6], [0.007, 0]]);
+      bu.connect(bg); bg.connect(hp); hp.connect(run.layBass);
+      bu.start(t, bu.randomOffset);
+      bu.stop(t + 0.05);
+    }
+
+    // The ground, in tonight's manner. Returns the manner (a truthy string) or
+    // null when the budget refused, so every caller's `if (render…)` still
+    // reads the same and the note event can say which body sounded.
+    //
+    // THE CLAIM IS THE PLUCK'S, both ways. A bar is done in under a second
+    // where a plucked anchor rings for three, so claiming the pluck's slot for
+    // the wood over-claims — deliberately. A manner must change the SOUND and
+    // never the composition: with the claim identical, the same seed plays the
+    // same evening note for note whichever way the ground is played, and the
+    // only difference in the stream is the bar's own octave.
     function renderBassNote(t, freq, durS, vel) {
       var c = ctx;
       var ring = Math.max(durS * 0.9, 0.4);
+      // rc.42 — the manner, drawn per note on the stop's own fork, BEFORE the
+      // gate (draw first, gate after: the family's law).
+      var wood = run.streams.bassMarimba.chance(shareOf("bass", "marimba", "marimba"));
       var tok = run.budget.claim(4, t + ring + 0.2);
-      if (!tok) return false; // graceful thinning — and the caller emits no event
+      if (!tok) return null; // graceful thinning — and the caller emits no event
       run.tokens.push(tok);
+      if (wood) {
+        renderMarimbaBar(t, freq * MARIMBA_UP, vel);
+        return "marimba";
+      }
       var peak = 0.10 * vel; // v1 ran 0.14 on its hotter bus; family headroom
       var g = c.createGain();
       g.connect(run.layBass);
@@ -2793,7 +3252,7 @@
         o.start(t);
         o.stop(t + ring + 0.05);
       }
-      return true;
+      return "plucked";
     }
 
     function startBass() {
@@ -2824,14 +3283,26 @@
         for (var i = 0; i < f.length; i++) out.push({ off: f[i].off, dt: f[i].dt });
         return out;
       }
+      // rc.42 — ONE place says what a bass note actually sounded, whichever
+      // manner it was played in. A bar is the same note an octave up, so the
+      // event carries the SOUNDING pitch and the lifted octave: a marimba
+      // evening's ground reads as the ground, plus one.
+      function bassEmit(man, freq, t, durS, deg, oct, kind) {
+        if (!man) return;
+        var up = (man === "marimba");
+        var e = {
+          voice: "bass", freq: up ? freq * MARIMBA_UP : freq, t: t, durS: durS,
+          deg: deg, oct: up ? oct + MARIMBA_UP_OCT : oct, manner: man,
+        };
+        if (kind) e.kind = kind;
+        emitNote(e);
+      }
       function playFig(fig, rootDeg, t, vel) {
         var at = t;
         for (var k = 0; k < fig.length; k++) {
           var deg = rootDeg + Math.min(11, fig[k].off);
           var freq = run.field.degFreq(deg, BASS_OCT);
-          if (renderBassNote(at, freq, 1.0, vel)) {
-            emitNote({ voice: "bass", freq: freq, t: at, durS: 1.0, deg: deg, oct: BASS_OCT });
-          }
+          bassEmit(renderBassNote(at, freq, 1.0, vel), freq, at, 1.0, deg, BASS_OCT);
           at += fig[k].dt;
         }
       }
@@ -2860,9 +3331,10 @@
             run.bassDone = true;
             var rootDeg0 = bassRootDeg();
             var fFreq = run.field.degFreq(rootDeg0, BASS_OCT + 1);
-            if (renderBassNote(t, fFreq, 4.0, 0.9)) {
-              emitNote({ voice: "bass", kind: "final", freq: fFreq, t: t, durS: 4, deg: rootDeg0, oct: BASS_OCT + 1 });
-            }
+            // rc.42 — the LAST WORD follows the evening's manner too: on a
+            // marimba night the ground lets go as a bar, an octave above its
+            // usual place (so two octaves above the floor).
+            bassEmit(renderBassNote(t, fFreq, 4.0, 0.9), fFreq, t, 4, rootDeg0, BASS_OCT + 1, "final");
             lane.at(t + 12, fire);
             return;
           }
@@ -2900,9 +3372,7 @@
         if (run.bassArrival) {
           run.bassArrival = false;
           var aFreq = run.field.degFreq(rootDeg, BASS_OCT);
-          if (renderBassNote(t, aFreq, 4.0, 0.94)) {
-            emitNote({ voice: "bass", kind: "arrival", freq: aFreq, t: t, durS: 4, deg: rootDeg, oct: BASS_OCT });
-          }
+          bassEmit(renderBassNote(t, aFreq, 4.0, 0.94), aFreq, t, 4, rootDeg, BASS_OCT, "arrival");
           lane.at(t + rng.rnd(5.6, 8.1) * pace * gmAt(t) * bassGap(st), fire);
           return;
         }
@@ -2947,9 +3417,8 @@
           for (var gj = 0; gj < offs.length; gj++) {
             var gDeg = rootDeg + offs[gj];
             var gFreq = run.field.degFreq(gDeg, BASS_OCT);
-            if (renderBassNote(gt, gFreq, 2.4 - gj * 0.2, (0.78 + I * 0.15) - gj * 0.04)) {
-              emitNote({ voice: "bass", freq: gFreq, t: gt, durS: 2.4 - gj * 0.2, deg: gDeg, oct: BASS_OCT });
-            }
+            bassEmit(renderBassNote(gt, gFreq, 2.4 - gj * 0.2, (0.78 + I * 0.15) - gj * 0.04),
+                     gFreq, gt, 2.4 - gj * 0.2, gDeg, BASS_OCT);
             gt += rng.rnd(0.45, 0.85);
           }
         } else {
@@ -2958,9 +3427,7 @@
           var dDur = rng.rnd(3.0, 4.3);
           var dDeg = rootDeg + off;
           var dFreq = run.field.degFreq(dDeg, BASS_OCT);
-          if (renderBassNote(t, dFreq, dDur, 0.72 + I * 0.16)) {
-            emitNote({ voice: "bass", kind: "anchor", freq: dFreq, t: t, durS: dDur, deg: dDeg, oct: BASS_OCT });
-          }
+          bassEmit(renderBassNote(t, dFreq, dDur, 0.72 + I * 0.16), dFreq, t, dDur, dDeg, BASS_OCT, "anchor");
         }
         // rc.38: the ground has no entry chance either — it speaks whenever
         // its lane fires and the roster seats it — so its presence lengthens
@@ -4344,6 +4811,14 @@
         concertina: master.fork("concertina"),
         handpan: master.fork("handpan"),
         vibraphone: master.fork("vibraphone"),
+        // rc.42 — the STOPS' four NEW label-hashed forks: the evening's
+        // manners (one coin per stop per seam) and one share draw per note,
+        // per stop. Nothing pre-existing gains a draw, which is the whole
+        // reason the identity row can be asked for at all.
+        cast: master.fork("cast"),
+        chimeGlass: master.fork("chime:glass"),
+        flutterDrips: master.fork("flutter:drips"),
+        bassMarimba: master.fork("bass:marimba"),
       };
 
       // rc.36 — ONE WANDER PER LAYER, forked off the same master. Its draws
@@ -4624,6 +5099,8 @@
         // forks above; and the evening's cast, drawn at each seam.
         master: master,
         absent: [], lastAbsent: [], cast: null, castPending: null,
+        // rc.42 — the bowed glass's live swells, oldest first (the cap).
+        glassLive: [],
         harmony: harmony, motif: motif,
         perfScenes: null,
         seaChange: null,
@@ -4966,10 +5443,13 @@
           } catch (e) {}
           // rc.38 — TONIGHT'S CAST: the evening's ordinal and who is sitting
           // it out (evening one is `plain` and never draws). The list is the
-          // same one the cast event narrated.
+          // same one the cast event narrated. rc.42 — and the three MANNERS,
+          // with the dress line in plain words.
           try {
             info.cast = run.cast
               ? { evening: run.cast.evening, plain: !!run.cast.plain,
+                  chime: run.cast.chime, flutter: run.cast.flutter, bass: run.cast.bass,
+                  dress: (run.cast.dress || []).slice(),
                   absent: run.cast.absent.slice(), absentLabels: run.cast.absentLabels.slice() }
               : null;
           } catch (e) {}
