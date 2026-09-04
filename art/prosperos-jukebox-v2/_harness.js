@@ -6082,7 +6082,10 @@ function p3AmbientFires(r) {
 
     // trackRun + per-layer knob overrides applied before play(). `knobs` is
     // {layer: {key: value}}; the key "*" applies to every layer that has it.
-    function ariRun(seedVal, simS, knobs) {
+    // rc.38: `copts` is merged into create()'s options — the one caller that
+    // uses it is VARY-ZERO, which needs the absences door shut to compare
+    // against a digest taken before absences existed.
+    function ariRun(seedVal, simS, knobs, copts) {
       var origAC = W.AudioContext;
       W.AudioContext = function () { return mkCtx(); };
       var origCE = console.error;
@@ -6090,7 +6093,9 @@ function p3AmbientFires(r) {
       console.error = function () { swallowed.push("ArielW: " + Array.prototype.join.call(arguments, " ")); };
       var R = { events: [], notes: [], swallowed: swallowed, infoFinal: null, wander: null, t0: null };
       try {
-        var E = P.Ariel.create({ seed: seedVal, volume: 0.5 });
+        var co = { seed: seedVal, volume: 0.5 };
+        if (copts) for (var ck in copts) co[ck] = copts[ck];
+        var E = P.Ariel.create(co);
         if (knobs) {
           var defs = E.getLayerParams();
           for (var L in defs) {
@@ -6165,7 +6170,16 @@ function p3AmbientFires(r) {
     // not collapse to its literal — this row goes red and nothing else needs
     // to notice.
     var AW_BASELINE = "202d7d3:45029";  // rc.33, seed 881, 600 s — captured before the engine was touched
-    var W0 = ariRun(AW_SEED, AW_SIM, { "*": { vary: 0 } });
+    // rc.38 — the row is UNCHANGED as a law; only its setup grew, because
+    // rc.38 added a second dimension the digest predates. The pinned stream
+    // is the engine with the wander returned (vary 0) AND with the thinning
+    // returned: every presence knob at 1 (the value the rc.33 four shipped,
+    // and the effective value of every voice that had no knob at all) and the
+    // absences door shut. Those two settings ARE "the engine before rc.38",
+    // so the same fingerprint must still come back — and if a presence knob
+    // ever leaks past a 1, or an absence is drawn where the door is shut,
+    // this row goes red exactly as it did for the wander.
+    var W0 = ariRun(AW_SEED, AW_SIM, { "*": { vary: 0, presence: 1 } }, { absences: false });
     var d0 = digest(sigA(W0));
     check("A36 VARY-ZERO: with vary 0 on every layer the stream is rc.33 bit for bit",
       d0 === AW_BASELINE && W0.notes.length > 10 && W0.swallowed.length === 0,
@@ -6404,6 +6418,508 @@ function p3AmbientFires(r) {
       W0.swallowed.length === 0 && W1.swallowed.length === 0 &&
       W1b.swallowed.length === 0 && W2.swallowed.length === 0,
       (W0.swallowed.length + W1.swallowed.length + W1b.swallowed.length + W2.swallowed.length) + " swallowed");
+  })();
+
+  // ---- ARIEL rc.38: thinning + absences ----
+  // The owner, 2026-09-03, after the wander rounds: "it's a little too
+  // cluttered now that we added all the new instruments — reduce the
+  // frequency of most instruments, pretty much anything that's not a drone or
+  // drone-adjacent… and bring back the idea that on certain playthroughs some
+  // instruments are not heard at all. But not as a ban."
+  //
+  // So: a `presence` knob on every non-seam voice, shipped BELOW 1 (that is
+  // the reduction), and PJ2.Voice.absences drawn at each seam. The rows below
+  // are this round's whole contract — the engine is pre-rc.38 to the bit when
+  // both are returned, the thinning lands where it was aimed, the seams and
+  // the signatures do not move, and an absent voice is silent for exactly one
+  // evening and never two running.
+  //
+  // Seven runs of its own (identity, the old rate and the new on two seeds,
+  // and two at the shipped settings), all AFTER every row above, so nothing
+  // earlier sees a different virtual clock because of them.
+  (function testAriel39() {
+    var i, j, k;
+
+    var A39_ELIGIBLE = ["chime", "flutter", "bass", "aeolian",
+                        "lyre", "concertina", "handpan", "vibraphone"];
+    // the shipped defaults, as the report names them
+    var A39_DEF = { whistle: 0.8, chime: 0.6, flutter: 0.6, bass: 0.7, aeolian: 0.6,
+                    lyre: 0.6, concertina: 0.6, handpan: 0.6, vibraphone: 0.6 };
+    // …and the rows that must NOT carry one: the seam, the sky, the fx return
+    var A39_NO_KNOB = ["breeze", "ambient", "halo"];
+
+    function a39Run(seedVal, simS, knobs, copts) {
+      var origAC = W.AudioContext;
+      W.AudioContext = function () { return mkCtx(); };
+      var origCE = console.error;
+      var swallowed = [];
+      console.error = function () { swallowed.push("Ariel39: " + Array.prototype.join.call(arguments, " ")); };
+      var R = { events: [], notes: [], swallowed: swallowed, infoFinal: null, t0: null };
+      try {
+        var co = { seed: seedVal, volume: 0.5 };
+        if (copts) for (var ck in copts) co[ck] = copts[ck];
+        var E = P.Ariel.create(co);
+        if (knobs) {
+          var defs = E.getLayerParams();
+          for (var L in defs) {
+            for (var d = 0; d < defs[L].length; d++) {
+              if (knobs[defs[L][d].key] !== undefined) E.setLayerParam(L, defs[L][d].key, knobs[defs[L][d].key]);
+            }
+          }
+        }
+        E.setEventListener(function (e) { R.events.push(e); });
+        E.setNoteListener(function (n) { R.notes.push(n); });
+        R.t0 = vnow;
+        E.play();
+        vAdvance(R.t0 + simS);
+        try { R.infoFinal = E.getInfo(); } catch (eI) {}
+        E.stop();
+        vAdvance(vnow + 3);
+      } catch (e) {
+        errors.push("a39Run: " + (e && e.message));
+        if (R.t0 == null) R.t0 = vnow;
+      }
+      console.error = origCE;
+      W.AudioContext = origAC;
+      return R;
+    }
+
+    // The same millisecond-rounded signature and FNV-1a digest the wander
+    // round pinned with, and for the same reason (see A36 VARY-ZERO).
+    function r3(x) { return Math.round(x * 1e3) / 1e3; }
+    function sig39(R) {
+      var s = [], q;
+      for (q = 0; q < R.events.length; q++) {
+        var e = R.events[q];
+        s.push("E|" + e.type + "|" + (e.t != null ? r3(e.t - R.t0) : "") + "|" +
+               (e.scene || e.kind || e.name || ""));
+      }
+      for (q = 0; q < R.notes.length; q++) {
+        var n = R.notes[q];
+        s.push("N|" + n.voice + "|" + (n.freq != null ? round6(n.freq) : "-") + "|" +
+               r3(n.t - R.t0) + "|" + (n.kind || n.phraseKind || "") + "|" + r3(n.durS || 0));
+      }
+      return s.join("\n");
+    }
+    function dig39(s) {
+      var h = 0x811c9dc5;
+      for (var q = 0; q < s.length; q++) { h ^= s.charCodeAt(q); h = Math.imul(h, 0x01000193); }
+      return ((h >>> 0).toString(16) + ":" + s.length);
+    }
+
+    var A39_SIM = 600, A39_SEED = 881;
+
+    // ---------------- IDENTITY ----------------
+    // The pinned fingerprint of the PRE-rc.38 (rc.36) note+event stream for
+    // seed 881 over 600 s, captured by running THIS BLOCK against the
+    // untouched engine — the wander round's method exactly. With every
+    // presence knob returned to its OLD EFFECTIVE VALUE (1 — the rc.33 four
+    // shipped 1, and the voices that had no knob behaved as 1) and the
+    // absences door shut, rc.38 must be that stream to the bit. If a thinning
+    // ever leaks past a knob at 1 — a rest transformed where it should have
+    // been returned, a gap scaled where the multiplier should have been
+    // exactly 1 — this row goes red and nothing else needs to notice.
+    var A39_BASELINE = "f4adb26d:45193";  // rc.36, seed 881, 600 s
+    var I0 = a39Run(A39_SEED, A39_SIM, { presence: 1 }, { absences: false });
+    var dI = dig39(sig39(I0));
+    check("A38 IDENTITY: presence 1 + absences off is the pre-rc.38 engine, bit for bit",
+      dI === A39_BASELINE && I0.notes.length > 10 && I0.swallowed.length === 0,
+      dI + (dI === A39_BASELINE ? "" : " != pinned " + A39_BASELINE) +
+      ", " + I0.notes.length + " notes, " + I0.swallowed.length + " swallowed");
+
+    // ---------------- THINNING ----------------
+    // Two long runs of the same seeds, one at the old effective values and
+    // one at the shipped defaults, both with the absences door SHUT so the
+    // measurement is presence's alone. Entries are GESTURES, not notes: an
+    // air claim for the four speakers, a note group for the bodies.
+    var A39_TSIM = Math.min(RUN, 5400);
+    var T_OLD = [a39Run(20260709, A39_TSIM, { presence: 1 }, { absences: false }),
+                 a39Run(881, A39_TSIM, { presence: 1 }, { absences: false })];
+    var T_NEW = [a39Run(20260709, A39_TSIM, null, { absences: false }),
+                 a39Run(881, A39_TSIM, null, { absences: false })];
+
+    function nOf39(R, voice, kind) {
+      var o = [];
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice !== voice) continue;
+        if (kind && R.notes[a].kind !== kind) continue;
+        o.push(R.notes[a]);
+      }
+      return o;
+    }
+    function grp39(notes, tol) {
+      var g = [];
+      for (var a = 0; a < notes.length; a++) {
+        var last = g.length ? g[g.length - 1] : null;
+        if (last && notes[a].t - last.t1 <= (tol || 1e-9)) { last.t1 = notes[a].t; continue; }
+        g.push({ t0: notes[a].t, t1: notes[a].t });
+      }
+      return g;
+    }
+    function airs39(R, voice) {
+      var n = 0;
+      for (var a = 0; a < R.events.length; a++) {
+        if (R.events[a].type === "air" && R.events[a].voice === voice) n++;
+      }
+      return n;
+    }
+    // one entry counter per voice, in the shape that voice enters in
+    var A39_COUNT = {
+      whistle: function (R) { return airs39(R, "whistle"); },
+      chime: function (R) { return airs39(R, "chime"); },
+      flutter: function (R) { return airs39(R, "flutter"); },
+      aeolian: function (R) { return airs39(R, "aeolian"); },   // the SINGER
+      bass: function (R) { return grp39(nOf39(R, "bass"), 1.2).length; },
+      lyre: function (R) { return grp39(nOf39(R, "lyre"), 1.0).length; },
+      concertina: function (R) { return grp39(nOf39(R, "concertina", "hold"), 1e-9).length; },
+      handpan: function (R) { return grp39(nOf39(R, "handpan"), 1.0).length; },
+      vibraphone: function (R) { return grp39(nOf39(R, "vibraphone"), 1e-9).length; },
+    };
+    // the band each voice's drop must land in — wider than the report's
+    // pooled numbers, because a harness row must not go red on a seed
+    var A39_BAND = {
+      whistle: [0.04, 0.35], chime: [0.15, 0.55], flutter: [0.2, 0.6], bass: [0.12, 0.5],
+      aeolian: [0.1, 0.7], lyre: [0.08, 0.55], concertina: [0.1, 0.75],
+      handpan: [0.15, 0.75], vibraphone: [0.1, 0.8],
+    };
+    (function () {
+      var bad = [], note = [];
+      for (var vk in A39_COUNT) {
+        var oldN = A39_COUNT[vk](T_OLD[0]) + A39_COUNT[vk](T_OLD[1]);
+        var newN = A39_COUNT[vk](T_NEW[0]) + A39_COUNT[vk](T_NEW[1]);
+        var drop = (oldN - newN) / oldN;
+        note.push(vk + " " + oldN + "->" + newN + " " +
+          (oldN ? (drop * 100).toFixed(0) + "%" : "—") + (oldN < 20 ? "*" : ""));
+        // Under twenty gestures a rate is noise, not a rate: the voice is
+        // reported (the star) but not judged. At `node _harness.js 5400`
+        // every one of the nine clears the bar.
+        if (oldN < 20) continue;
+        if (drop < A39_BAND[vk][0] || drop > A39_BAND[vk][1]) {
+          bad.push(vk + " " + (drop * 100).toFixed(0) + "% outside [" +
+            (A39_BAND[vk][0] * 100) + "," + (A39_BAND[vk][1] * 100) + "]");
+        }
+      }
+      check("A38 THINNING: every thinned voice enters less often, inside its band",
+        bad.length === 0 && note.length >= 4,
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // The seams and the never-thinned: IDENTICAL counts, not merely close.
+    function conc39(R) { return grp39(nOf39(R, "concertina", "consort"), 1e-9).length; }
+    (function () {
+      var bad = [], note = [];
+      var same = {
+        breeze: function (R) { return grp39(nOf39(R, "breeze"), 1e-9).length; },
+        ambient: function (R) { return R.notes.filter ? nOf39(R, "ambient").length : 0; },
+        "aeolian bed": function (R) { return nOf39(R, "aeolian", "bed").length; },
+        "aeolian consort": function (R) { return grp39(nOf39(R, "aeolian", "consort"), 1e-9).length; },
+        halo: function (R) { return nOf39(R, "halo").length; },
+      };
+      for (var sk in same) {
+        var a = same[sk](T_OLD[0]) + same[sk](T_OLD[1]);
+        var b = same[sk](T_NEW[0]) + same[sk](T_NEW[1]);
+        note.push(sk + " " + a + "/" + b);
+        // the aeolian CONSORT is a cadence gesture: the cadence count is
+        // identical, but which voice bodies it (the box or the glass) moves
+        // with the concertina's own fork, so the two are judged together
+        if (sk === "aeolian consort") {
+          var ca = conc39(T_OLD[0]) + conc39(T_OLD[1]);
+          var cb = conc39(T_NEW[0]) + conc39(T_NEW[1]);
+          // every cadence is bodied exactly twice (approach + arrival), by
+          // the glass or by the box — WHICH of the two moves with the
+          // concertina's own fork, the total never does
+          var cadN = evOf(T_NEW[0], "cadence").length + evOf(T_NEW[1], "cadence").length;
+          note.push("box " + ca + "/" + cb);
+          if (a + ca !== b + cb) bad.push("cadence bodies " + (a + ca) + " != " + (b + cb));
+          if (cadN > 0 && a + ca !== 2 * cadN) bad.push("cadence bodies " + (a + ca) + " != 2 x " + cadN);
+        } else if (a !== b) bad.push(sk + " " + a + " != " + b);
+      }
+      // and the FORM: the same evenings, scenes, cadences and regroundings
+      var forms = ["cadence", "seachange", "reground", "release"];
+      for (i = 0; i < forms.length; i++) {
+        var fa = evOf(T_OLD[0], forms[i]).length + evOf(T_OLD[1], forms[i]).length;
+        var fb = evOf(T_NEW[0], forms[i]).length + evOf(T_NEW[1], forms[i]).length;
+        note.push(forms[i] + " " + fa + "/" + fb);
+        if (fa !== fb) bad.push(forms[i] + " " + fa + " != " + fb);
+      }
+      check("A38 SEAMS UNTOUCHED: breeze, sky, the aeolian bed, the halo and the form do not move",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // The SIGNATURES ignore presence: at the shipped defaults they must all
+    // still fire, and at least as often as the old rate produced them (they
+    // are drawn on doors the thinning does not touch).
+    (function () {
+      var bad = [], note = [];
+      var sigs = {
+        feather: function (R) { return evOf(R, "feather").length; },
+        "lyre alighting": function (R) { return grp39(nOf39(R, "lyre", "alighting-first"), 1.0).length; },
+        "lyre cadence door": function (R) { return grp39(nOf39(R, "lyre", "cadence"), 1.0).length; },
+        "bass last word": function (R) { return nOf39(R, "bass", "final").length; },
+        "concertina cadence door": function (R) { return grp39(nOf39(R, "concertina", "consort"), 1e-9).length; },
+      };
+      for (var sk2 in sigs) {
+        var a = sigs[sk2](T_OLD[0]) + sigs[sk2](T_OLD[1]);
+        var b = sigs[sk2](T_NEW[0]) + sigs[sk2](T_NEW[1]);
+        note.push(sk2 + " " + a + "->" + b);
+        if (a > 0 && b === 0) bad.push(sk2 + " silenced");
+        // a signature must not be thinned: allow the fork's own wander, but
+        // never a systematic loss (a fifth of them or more)
+        if (a >= 8 && b < a * 0.8) bad.push(sk2 + " thinned " + a + "->" + b);
+      }
+      // …and every release still ends with the ground letting go
+      var rel = evOf(T_NEW[0], "release").length + evOf(T_NEW[1], "release").length;
+      var fin = nOf39(T_NEW[0], "bass", "final").length + nOf39(T_NEW[1], "bass", "final").length;
+      if (rel >= 4 && fin < rel * 0.75) bad.push("last word in only " + fin + " of " + rel + " releases");
+      check("A38 SIGNATURES ignore presence: every one still fires at the shipped defaults",
+        bad.length === 0, note.join(", ") + ", releases " + rel +
+        (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- ABSENCES ----------------
+    // Two long runs at the SHIPPED settings — the absences door open, which
+    // is how the engine ships.
+    var C1 = a39Run(20260709, A39_TSIM, null, null);
+    var C2 = a39Run(881, A39_TSIM, null, null);
+
+    function castsOf(R) { return evOf(R, "cast"); }
+    function beginsOf(R) { return perfPhase(R, "begin"); }
+    function eveningOf(R, t) {
+      var b = beginsOf(R), n = 0;
+      for (var a = 0; a < b.length; a++) if (b[a].t <= t + 1e-9) n = a + 1;
+      return n;
+    }
+
+    (function () {
+      var bad = [], note = [];
+      var runs = [C1, C2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], cs = castsOf(R), bs = beginsOf(R);
+        if (cs.length !== bs.length) bad.push("run " + r + ": " + cs.length + " cast line(s) for " + bs.length + " evening(s)");
+        for (i = 0; i < cs.length; i++) {
+          // one cast line per evening, in order, carrying its ordinal
+          if (cs[i].evening !== i + 1) bad.push("run " + r + ": cast " + i + " says evening " + cs[i].evening);
+          // EVENING ONE IS ALWAYS THE FULL CAST
+          if (i === 0 && (!cs[i].plain || (cs[i].absent && cs[i].absent.length))) {
+            bad.push("run " + r + ": evening one is not full");
+          }
+          // the labels are the desk's own row names
+          var lbl = cs[i].absentLabels || [];
+          if (lbl.length !== (cs[i].absent || []).length) bad.push("run " + r + ": label count");
+          // …and only ever an ELIGIBLE voice
+          for (j = 0; j < (cs[i].absent || []).length; j++) {
+            if (A39_ELIGIBLE.indexOf(cs[i].absent[j]) < 0) {
+              bad.push("run " + r + ": " + cs[i].absent[j] + " is not eligible");
+            }
+          }
+        }
+        note.push(cs.length + " evening(s)");
+      }
+      check("A38 ABSENCES: one cast line per evening, evening one full, only eligible voices",
+        bad.length === 0, note.join(" + ") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // The cast line lands BEFORE the evening's first note (the Library's own
+    // order: "evening N", then "tonight: …", then the music).
+    (function () {
+      var bad = [], note = [];
+      var runs = [C1, C2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], cs = castsOf(R), bs = beginsOf(R), late = 0, judged = 0;
+        for (i = 0; i < cs.length; i++) {
+          // the line carries its evening's own begin time…
+          if (bs[i] && cs[i].t > bs[i].t + 1e-6) late++;
+          // …and no note of THAT evening may sound before it
+          var t1 = bs[i + 1] ? bs[i + 1].t : Infinity;
+          for (j = 0; j < R.notes.length; j++) {
+            var nt = R.notes[j].t;
+            if (nt < cs[i].t - 1e-9 || nt >= t1) continue;
+            judged++;
+            break;                                  // the evening's first note
+          }
+          for (j = 0; j < R.notes.length; j++) {
+            if (R.notes[j].t >= (bs[i] ? bs[i].t : 0) - 1e-9 &&
+                R.notes[j].t < cs[i].t - 1e-6 && R.notes[j].t < t1) { late++; break; }
+          }
+        }
+        if (late) bad.push("run " + r + ": " + late + " line(s) late");
+        note.push(cs.length + " line(s), " + judged + " with music after them");
+      }
+      check("A38 ABSENCES: the cast line precedes the evening's first note",
+        bad.length === 0, note.join(" + ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // AN ABSENT VOICE MAKES ZERO NEW ENTRIES THAT EVENING — and the beds are
+    // excepted by construction: the aeolian's bed and the cadence consort
+    // belong to the landscape and the cadence, not to the singer.
+    (function () {
+      var bad = [], note = [], checked = 0, bedsHeard = 0;
+      var runs = [C1, C2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], cs = castsOf(R);
+        for (i = 0; i < cs.length; i++) {
+          var away = cs[i].absent || [];
+          for (j = 0; j < away.length; j++) {
+            var vk = away[j];
+            checked++;
+            var n = 0;
+            if (vk === "aeolian") {
+              n = 0;                                   // the SINGER only
+              for (k = 0; k < R.events.length; k++) {
+                var ev = R.events[k];
+                if (ev.type === "air" && ev.voice === "aeolian" && eveningOf(R, ev.t) === i + 1) n++;
+              }
+              // …and the BED must still be heard that same evening
+              for (k = 0; k < R.notes.length; k++) {
+                if (R.notes[k].voice === "aeolian" && R.notes[k].kind === "bed" &&
+                    eveningOf(R, R.notes[k].t) === i + 1) { bedsHeard++; break; }
+              }
+            } else {
+              var gs = (vk === "chime" || vk === "flutter")
+                ? (function () {
+                    var c = 0;
+                    for (var a = 0; a < R.events.length; a++) {
+                      var e2 = R.events[a];
+                      if (e2.type === "air" && e2.voice === vk && eveningOf(R, e2.t) === i + 1) c++;
+                    }
+                    return c;
+                  })()
+                : (function () {
+                    var c = 0, ns = nOf39(R, vk);
+                    var g = grp39(ns, vk === "bass" || vk === "lyre" || vk === "handpan" ? 1.2 : 1e-9);
+                    for (var a = 0; a < g.length; a++) if (eveningOf(R, g[a].t0) === i + 1) c++;
+                    return c;
+                  })();
+              n = gs;
+            }
+            if (n > 0) bad.push("run " + r + " evening " + (i + 1) + ": " + vk + " entered " + n + " time(s) while away");
+          }
+        }
+      }
+      note.push(checked + " absence(s) judged, " + bedsHeard + " aeolian bed(s) still heard");
+      check("A38 ABSENCES: an absent voice makes ZERO new entries that evening (the bed plays on)",
+        bad.length === 0 && (SHORTT || checked > 0),
+        note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // THE FAIRNESS LAW, observed on the engine rather than on the helper:
+    // never the same voice twice running, and over any six consecutive
+    // evenings every eligible voice is heard at least three times.
+    (function () {
+      var bad = [], note = [], twice = 0, worst = 99, windows = 0;
+      var runs = [C1, C2];
+      for (var r = 0; r < runs.length; r++) {
+        var cs = castsOf(runs[r]), seq = [];
+        for (i = 0; i < cs.length; i++) seq.push(cs[i].absent || []);
+        for (i = 1; i < seq.length; i++) {
+          for (j = 0; j < seq[i].length; j++) if (seq[i - 1].indexOf(seq[i][j]) >= 0) twice++;
+        }
+        for (var s0 = 0; s0 + 6 <= seq.length; s0++) {
+          windows++;
+          for (i = 0; i < A39_ELIGIBLE.length; i++) {
+            var present = 0;
+            for (j = s0; j < s0 + 6; j++) if (seq[j].indexOf(A39_ELIGIBLE[i]) < 0) present++;
+            if (present < worst) worst = present;
+          }
+        }
+        note.push(seq.length + " evening(s)");
+      }
+      if (twice) bad.push(twice + " voice(s) absent twice running");
+      if (windows > 0 && worst < 3) bad.push("a voice present in only " + worst + " of 6");
+      check("A38 ABSENCES: never the same voice twice running; every voice in >= 3 of any 6 evenings",
+        bad.length === 0,
+        note.join(" + ") + ", " + windows + " six-evening window(s), worst presence " +
+        (windows ? worst + "/6" : "n/a — short run") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // getInfo().cast is the same list the log narrated.
+    (function () {
+      var bad = [], note = [];
+      var runs = [C1, C2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], cs = castsOf(R), info = R.infoFinal;
+        var last = cs.length ? cs[cs.length - 1] : null;
+        if (!info || !info.cast) { bad.push("run " + r + ": no getInfo().cast"); continue; }
+        if (!last) continue;
+        if (info.cast.evening !== last.evening) bad.push("run " + r + ": cast evening " + info.cast.evening + " != " + last.evening);
+        if (JSON.stringify(info.cast.absent) !== JSON.stringify(last.absent)) {
+          bad.push("run " + r + ": " + JSON.stringify(info.cast.absent) + " != " + JSON.stringify(last.absent));
+        }
+        note.push("evening " + info.cast.evening + " " + JSON.stringify(info.cast.absentLabels));
+      }
+      check("A38 ABSENCES: getInfo().cast carries the evening's absent list",
+        bad.length === 0, note.join("; ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // A reseed is a NEW RUN, so the one memory (last evening's set) is gone
+    // and evening one is full again.
+    (function () {
+      var bad = [], note = "";
+      var origAC = W.AudioContext;
+      W.AudioContext = function () { return mkCtx(); };
+      var origCE = console.error, swallowed = [];
+      console.error = function () { swallowed.push(Array.prototype.join.call(arguments, " ")); };
+      try {
+        var casts = [];
+        var E = P.Ariel.create({ seed: 20260709, volume: 0.5 });
+        E.setEventListener(function (e) { if (e.type === "cast") casts.push(e); });
+        E.play();
+        vAdvance(vnow + Math.min(RUN, 1500));
+        var before = casts.length;
+        E.reseed(4212);
+        vAdvance(vnow + Math.min(RUN, 400));
+        E.stop();
+        vAdvance(vnow + 3);
+        var after = casts.slice(before);
+        note = before + " evening(s), then " + after.length + " after the reseed";
+        if (!after.length) { if (!SHORTT) bad.push("no cast line after the reseed"); }
+        else if (!after[0].plain || (after[0].absent && after[0].absent.length) || after[0].evening !== 1) {
+          bad.push("the reseeded run's first evening is not full: " + JSON.stringify(after[0].absent));
+        }
+      } catch (e) { bad.push("threw: " + e.message); }
+      console.error = origCE;
+      W.AudioContext = origAC;
+      check("A38 ABSENCES: a reseed forgets last evening — the new run opens on the full cast",
+        bad.length === 0 && swallowed.length === 0, note + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- DESK ----------------
+    // Every non-seam row carries a presence knob at its shipped default, and
+    // the never-thinned rows carry none at all.
+    (function () {
+      var bad = [], note = [];
+      try {
+        var E = P.Ariel.create({ seed: 7 });
+        var ps = E.getLayerParams(), vals = E.getLayerParamValues();
+        for (var lk in A39_DEF) {
+          var found = null;
+          for (i = 0; i < (ps[lk] || []).length; i++) if (ps[lk][i].key === "presence") found = ps[lk][i];
+          if (!found) { bad.push(lk + ": no presence knob"); continue; }
+          if (Math.abs(found.def - A39_DEF[lk]) > 1e-9) bad.push(lk + " def " + found.def + " != " + A39_DEF[lk]);
+          if (!vals[lk] || Math.abs(vals[lk].presence - A39_DEF[lk]) > 1e-9) bad.push(lk + " not at its def");
+          note.push(lk + " " + found.def);
+        }
+        for (i = 0; i < A39_NO_KNOB.length; i++) {
+          var row = ps[A39_NO_KNOB[i]] || [];
+          for (j = 0; j < row.length; j++) {
+            if (row[j].key === "presence") bad.push(A39_NO_KNOB[i] + " must never be thinned");
+          }
+        }
+        // the knob is a live control, not just a default
+        E.setLayerParam("chime", "presence", 1.5);
+        if (Math.abs(E.getLayerParamValues().chime.presence - 1.5) > 1e-9) bad.push("presence is not settable");
+      } catch (eD) { bad.push("threw: " + eD.message); }
+      check("A38 DESK: presence on every non-seam row at its shipped default, none on the seams",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    check("A38 zero swallowed errors across every thinning run",
+      I0.swallowed.length === 0 && T_OLD[0].swallowed.length === 0 && T_OLD[1].swallowed.length === 0 &&
+      T_NEW[0].swallowed.length === 0 && T_NEW[1].swallowed.length === 0 &&
+      C1.swallowed.length === 0 && C2.swallowed.length === 0,
+      (I0.swallowed.length + T_OLD[0].swallowed.length + T_OLD[1].swallowed.length +
+       T_NEW[0].swallowed.length + T_NEW[1].swallowed.length +
+       C1.swallowed.length + C2.swallowed.length) + " swallowed");
   })();
 
   // ============================== ALCHEMY ==============================
