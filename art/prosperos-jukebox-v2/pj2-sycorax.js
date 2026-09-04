@@ -150,9 +150,9 @@
 //   PRESENCE — one knob per non-seam layer (LAYER_PARAMS), multiplying
 //   every entry chance the voice rolls and dividing the rest (and the air
 //   margin) it leaves after speaking, capped at twice as long. The shipped
-//   defaults ARE the reduction: the cantor 0.8 — the principal is thinned
-//   least — the percussion STROKES 0.7, and the horn, the rebec, the
-//   waterphone, the bone flute and the five rc.32 voices 0.6 each. The knob
+//   defaults ARE the reduction: the cantor 0.9 — the principal is thinned
+//   least — the percussion STROKES 0.85, and the horn, the rebec, the
+//   waterphone, the bone flute and the five rc.32 voices 0.8 each. The knob
 //   back at 1 is the rc.36 engine byte for byte, which the harness pins.
 //   A poll is not a rest: the lanes' "try again in a few seconds" gaps are
 //   untouched, so the knob is spent once per decision, never twice. Nothing
@@ -160,6 +160,17 @@
 //   the ambient sky, the proto-drum heartbeat carry no knob at all — and
 //   two SIGNATURES ignore it: the cut's waterphone apparition and the
 //   afterimage's far final call.
+//
+//   THOSE DEFAULTS ARE rc.40's, not rc.37's. The owner, 2026-09-04, after
+//   living with the first cut: "we may have overcorrected a bit by thinning.
+//   Turn the knob back a little — somewhere in between where we were before
+//   the thinning and where we are now. I do like how only some instruments
+//   play on a given playthrough; keep that." So every default moved to the
+//   MIDPOINT of its pre-thinning value and rc.37's — the cantor 0.8 -> 0.9,
+//   the strokes 0.7 -> 0.85, the other nine 0.6 -> 0.8 — and nothing else
+//   about the round moved: not the knob's meaning (1 still replays rc.36
+//   exactly), not the cut, not the hush, not the heartbeat, and not the
+//   absences, which are the part the owner asked to keep.
 //
 //   ABSENCES — at every performance begin, PJ2.Voice.absences draws the
 //   evening's cast on its own fork: evening one is full, and from evening
@@ -526,7 +537,10 @@
       // MULTIPLIES every entry chance and DIVIDES every rest and margin
       // (capped at twice as long). The shipped default IS the reduction;
       // 1 is the pre-rc.37 rate, exactly (the harness pins that identity).
-      { key: "presence", label: "presence — how often the treeline answers (entry chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
+      // rc.40 walked every default here HALFWAY BACK — 0.6 -> 0.8 on this
+      // strip — because rc.37's first cut was thinner than the owner's ear
+      // wanted. Only the numbers moved; the law above is untouched.
+      { key: "presence", label: "presence — how often the treeline answers (entry chance × this, rests ÷ it)", min: 0, max: 3, def: 0.8 },
       { key: "blossom", label: "blossom — how far the bell opens", min: 0, max: 1.5, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
       { key: "breath", label: "breath — the air in the bore", min: 0, max: 2, def: 1,
@@ -536,9 +550,10 @@
       varyDef(),
     ],
     chant: [
-      // rc.37 — the PRINCIPAL's presence: the cantor is thinned least (0.8),
-      // and is never absent. See the horn strip's note for the rule.
-      { key: "presence", label: "presence — how often the cantor speaks (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.8 },
+      // rc.37 — the PRINCIPAL's presence: the cantor is thinned least (0.9
+      // since rc.40, 0.8 before it), and is never absent. See the horn
+      // strip's note for the rule and for rc.40's midpoint.
+      { key: "presence", label: "presence — how often the cantor speaks (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.9 },
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1,
         lo: 0.9, hi: 1.1, per: "character" },
       { key: "vibrato", label: "vibrato — the cantor's wobble depth", min: 0, max: 2, def: 1,
@@ -552,7 +567,7 @@
       varyDef(),
     ],
     rebec: [
-      { key: "presence", label: "presence — how often the fiddle plays (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — how often the fiddle plays (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.8 },
       { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 3, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
       { key: "body", label: "body — how hard the box resonances ring", min: 0.4, max: 2, def: 1,
@@ -565,7 +580,7 @@
     waterphone: [
       // the CUT's apparition is the cut's gesture, not the waterphone's
       // entry: presence never touches it (and neither does an absence).
-      { key: "presence", label: "presence — how often the metal speaks (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — how often the metal speaks (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.8 },
       { key: "wail", label: "wail — how far each note glisses down (%)", min: 0, max: 6, def: 1.8,
         lo: 1.08, hi: 2.52, per: "touch" },
       { key: "bloom", label: "bloom — the FM swell inside the sustain", min: 0, max: 2, def: 1,
@@ -573,7 +588,7 @@
       varyDef(),
     ],
     boneflute: [
-      { key: "presence", label: "presence — how often the flute is heard (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — how often the flute is heard (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.8 },
       { key: "breath", label: "breath — the air across the embouchure", min: 0, max: 3, def: 1,
         lo: 0.65, hi: 1.35, per: "touch" },
       // promoted rc.35: the tongued edge — the breath's onset stage (0.006)
@@ -584,7 +599,7 @@
     percussion: [
       // the STROKES only — frame, log and rattle. The proto-drum heartbeat
       // is the hush's heart and is never thinned (nor ever absent).
-      { key: "presence", label: "presence — how often the strokes fall (the heartbeat is never thinned)", min: 0, max: 3, def: 0.7 },
+      { key: "presence", label: "presence — how often the strokes fall (the heartbeat is never thinned)", min: 0, max: 3, def: 0.85 },
       { key: "irregularity", label: "irregularity — how loosely the walk keeps its grid", min: 0, max: 2.5, def: 1,
         lo: 0.7, hi: 1.3, per: "weather" },
       { key: "adorn", label: "adorn — how often pairs and rattles answer", min: 0, max: 2.5, def: 1,
@@ -607,8 +622,9 @@
     // later phase will hang on (this phase builds no spans).
     // "presence" multiplies every entry chance (the cauldron's divides its
     // clock instead — presence rides the timer there, not the draw). rc.37
-    // lowered all five defaults 1 -> 0.6: the knob's meaning is unchanged,
-    // only the rate the engine ships with.
+    // lowered all five defaults 1 -> 0.6, and rc.40 walked them back to the
+    // midpoint, 0.8: the knob's meaning is unchanged either time, only the
+    // rate the engine ships with.
     bullroarer: [
       { key: "whirl", label: "whirl Hz — how fast the slat spins (the chop)", min: 8, max: 60, def: 24,
         lo: 18, hi: 30, per: "touch" },
@@ -624,7 +640,7 @@
         lo: 6, hi: 14, per: "touch" },
       { key: "register", label: "register — which octave the slat sits in (−3/−2, rounded)", min: -3, max: -2, def: -2,
         per: "character", round: true, weights: [[-2, 0.7], [-3, 0.3]] },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       varyDef(),
     ],
     overtone: [
@@ -640,7 +656,7 @@
         lo: 0.75, hi: 1.25, per: "touch" },
       { key: "hold", label: "hold s — how long the tone is held", min: 6, max: 20, def: 10,
         lo: 7, hi: 14, per: "touch" },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       varyDef(),
     ],
     jawharp: [
@@ -656,7 +672,7 @@
         per: "touch", round: true,
         weights: [[1, 0.1], [2, 0.3], [3, 0.35], [4, 0.2], [5, 0.05]] },
       { key: "gap", label: "gap s — the average space between twangs (±40 %)", min: 0.3, max: 2, def: 0.8 },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       varyDef(),
     ],
     blade: [
@@ -668,7 +684,7 @@
         lo: 0.6, hi: 1.4, per: "touch" },
       { key: "swell", label: "swell s — the rise, and the fall, each", min: 4, max: 8, def: 6,
         lo: 4, hi: 8, per: "touch" },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       // promoted rc.35: the evening's own blade — a nightly shift of the
       // pitch centre, multiplying the per-sounding draw
       { key: "pitchNight", label: "pitch night — the evening's own blade, shifting the pitch centre", min: 0.8, max: 1.25, def: 1,
@@ -686,7 +702,7 @@
         lo: 4, hi: 8, per: "touch" },
       { key: "wash", label: "wash — the low simmer under the pops", min: 0, max: 2, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
-      { key: "presence", label: "presence — shortens the gap between firings", min: 0, max: 3, def: 0.6 },
+      { key: "presence", label: "presence — shortens the gap between firings", min: 0, max: 3, def: 0.8 },
       // promoted rc.35: every bubble its own size — the body's 60 ms rise
       { key: "poplen", label: "pop s — how long one bubble takes to rise", min: 0.02, max: 0.15, def: 0.06,
         lo: 0.04, hi: 0.09, per: "touch" },
@@ -4392,6 +4408,9 @@
         var nC = rngC.rint(1, 3);
         // rc.37: fewer clusters in a thinned invocation — never fewer than
         // one (the scene's gesture stands), and exactly nC at presence 1.
+        // At rc.40's 0.85 the rounding lands back on nC for all three counts,
+        // so the invocation keeps its clusters and the thinning of the
+        // strokes is carried by the walk and the answers alone.
         nC = Math.max(1, Math.round(nC * presK("percussion")));
         for (var i = 0; i < nC; i++) {
           var tC = evt.t + evt.durS * ((i + rngC.rnd(0.2, 0.8)) / nC);
@@ -4443,8 +4462,9 @@
           run.fluteCount = 0;
           // "2-3 utterances an evening, HARD" — and the cap, not the chance,
           // is what the flute actually meets, so presence thins the CAP:
-          // 1-2 at the shipped 0.6, exactly 2-3 at presence 1. Never zero —
-          // an absence is how the flute goes silent, not a rate.
+          // exactly 2 at the shipped 0.8 (it was 1-2 at rc.37's 0.6), and
+          // 2-3 at presence 1. Never zero — an absence is how the flute goes
+          // silent, not a rate.
           run.fluteMax = Math.max(1, Math.round(
             run.streams.boneflute.rint(2, 3) * presK("boneflute")));
           run.hornFinalDone = false; // each evening earns its own far call (rc.23)
