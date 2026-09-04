@@ -355,7 +355,30 @@
   // Clamping that to 0.05 would quietly re-mix the heartbeat that inhabits
   // the hush — the one thing the PERCUSSION card's heartbeat rule exists to
   // preserve (the proto-drum is rendered faithfully in all three positions).
-  // It is reported separately as window.__lab.maxShadowGain.
+  // It is reported as window.__lab.maxShadowGain — and that readout means
+  // exactly what its name says: THE WORST SINGLE SCHEDULED ENVELOPE PEAK,
+  // one gain node's own number, held to SHADOW_CEILING. What a whole CHAIN
+  // asks for — several partials or threads summing into one node, times any
+  // makeup after a mouth — is a different quantity with a different ceiling,
+  // and it is reported separately as window.__lab.maxShadowProduct (see
+  // PARTIAL_CEILING and FORMANT_CEILING below). Reading a 0.26 product as if
+  // it were a single gain is how a page talks itself into believing it is
+  // five times over the engine's loudest beat when it is not.
+  //
+  // THE FIVE CEILINGS, and their arithmetic, in one place:
+  //   GAIN_CEILING    0.05   the prototypes' own law — "darker, not louder"
+  //                          (the engine's loudest lub 0.055 rounded down)
+  //   SHADOW_CEILING  0.0546 = 0.042 x 1.3   one scheduled envelope peak
+  //   COMB_CEILING    0.15   = 6 x 0.025     the jaw comb's makeup x its peak
+  //   PARTIAL_CEILING 0.14   = 0.035 x 4     the choir's four voices over the
+  //                          gurdy's own pad peak — the widest summed chain
+  //   FORMANT_CEILING 0.28   = 0.035 x 3.15 x 2.46 = 0.271, rounded up: the
+  //                          choir's three voices times the mouth's measured
+  //                          loss, for the two bodies whose makeup is AFTER
+  //                          the formants
+  // The first three bound a SINGLE gain node (maxGain / maxShadowGain); the
+  // last two bound a PRODUCT (maxGain for the comb, maxShadowProduct for the
+  // summed shadows).
   //
   // COMB_CEILING is the third and last, and it exists for exactly one voice.
   // The jaw harp's body is a lossy comb read through a Q-4 band a decade
@@ -373,7 +396,8 @@
   var SHADOW_CEILING = 0.0546;   // = 0.042 x 1.3, the engine's own loudest beat
   var COMB_CEILING = 0.15;       // = 6 x 0.025, the makeup times the loudest twang
   var maxGainSeen = 0;           // the loudest peak the PROTOTYPES have asked for
-  var maxShadowSeen = 0;         // ...and the loudest a shadow has
+  var maxShadowSeen = 0;         // the loudest SINGLE envelope peak a shadow has
+  var maxShadowProductSeen = 0;  // ...and the loudest chain PRODUCT one has asked for
   function capAt(v, what, ceiling, label) {
     if (!(v >= 0) || !isFinite(v)) return 0;
     if (v > ceiling) {
@@ -709,6 +733,7 @@
       onsets.length = 0;
       kills.length = 0;
       maxShadowSeen = 0;
+      maxShadowProductSeen = 0;
       logLine("— fresh run (gen " + cap.gen + "): rooms poured, prototypes plumbed —", "hd");
     } catch (e) {
       plumb.gen = cap.gen; // never retry-loop a broken build every pulse
@@ -1415,7 +1440,8 @@
                             // cantor's saw never had
     chantWhisper: 3.050,    // noise through two bands is 10.7 dB under a saw through them; a
                             // makeup node after the mouth, as the choir's
-    rebecGlass: 0.163,      // a sine and two partials against a saw through four bandpasses
+    rebecGlass: 0.224,      // three partials and a wide sustained rub against a saw through
+                            // four bandpasses, on an attack twice as long
     rebecTromba: 0.224,     // the buzzing bridge is broadband
     waterGong: 0.820,       // a struck bloom has no bow to hold it up
     waterCrystal: 1.012,    // three pure partials against six inharmonic ones plus FM
@@ -1432,8 +1458,12 @@
                             // 28 dB under the slat — see the body)
     overOrgan: 0.304,       // six flue harmonics against one bandpass and its makeup
     overVocoder: 2.000,     // four narrow channels throw 6 dB away; a makeup node after them
-    jawBerimbau: 0.146,     // a struck partial set against a comb carrying a ×6 makeup
-    jawMbira: 0.098,        // three tines that ring two seconds against a comb gone in 0.13 s
+    jawBerimbau: 0.195,     // a struck partial set against a comb carrying a ×6 makeup
+                            // (re-measured once the comb's exciting burst was energy-normalised
+                            //  and the ENGINE reference stopped wandering 4–7 dB)
+    jawMbira: 0.213,        // three tines that ring two seconds against a comb gone in 0.13 s
+                            // (raised from 0.098 when the body started dividing its peak by
+                            //  sqrt(the overlap) — see MBIRA_GAP — and stopped clicking)
     bladeGlass: 1.490,      // near-harmonic partials against an inharmonic pair
     bladeWhale: 0.891,      // two octaves down, under a 900 Hz lid
     cauldFire: 0.668,       // a hiss bed plus crackles
@@ -1464,19 +1494,21 @@
   // chain: the choir's three voices over the gurdy's own pad peak, times the
   // mouth's measured loss — 0.035 × 3.15 × 2.46 = 0.271.
   var FORMANT_CEILING = 0.28;
+  // capProduct is the PRODUCT half: it never touches maxShadowGain, which is
+  // reserved for single scheduled peaks, and reports into maxShadowProduct.
   function capProduct(v, what, ceiling) {
     if (v > ceiling) {
       err("chain ceiling: " + what + " asks for " + v.toFixed(4) + " (limit " + ceiling + ")");
     }
-    if (v > maxShadowSeen) maxShadowSeen = v;
+    if (v > maxShadowProductSeen) maxShadowProductSeen = v;
     return v;
   }
   // capChain is the honest form, and every summed shadow body uses it:
   // `peak` is the envelope peak one gain node will show, `sumW` the total
   // weight the chain feeds into it. It holds the ENVELOPE peak to
   // SHADOW_CEILING and the PRODUCT to `ceiling` (PARTIAL_CEILING unless a
-  // body documents its own), records the PRODUCT in maxShadowGain, and
-  // returns the envelope peak to schedule.
+  // body documents its own), records the peak in maxShadowGain and the
+  // PRODUCT in maxShadowProduct, and returns the envelope peak to schedule.
   function capChain(peak, sumW, what, ceiling) {
     var w = (sumW > 0) ? sumW : 1;
     var pk = capAt(peak, what, SHADOW_CEILING, "shadow of an engine body");
@@ -1548,9 +1580,26 @@
     r.sources.push(n);
     return n;
   }
+  // A GAIN. With no value it is an ENVELOPE gain — and an envelope gain must
+  // be SHUT until its envelope opens it, which is why the `else` branch is
+  // here and is not decoration.
+  //
+  // A GainNode is born at 1. env() anchors it with setValueAtTime(0, t0),
+  // but an AudioParam's value is computed once per RENDER QUANTUM from the
+  // timeline as it stood at the quantum's start, while a source's start(t) is
+  // SAMPLE-ACCURATE. So when t0 falls inside a quantum rather than on its
+  // boundary, the source is already running while the param still holds the
+  // value it had before the anchor — 1 — and up to 128 samples (2.9 ms) of
+  // the body go through AT FULL SCALE. On a noise band that is a CLICK about
+  // 30 dB over the note, and because it depends on where t0 lands inside a
+  // quantum it fires on some notes and not others: the MBIRA's intermittent
+  // "+12 dB with a 9 kHz centroid" was exactly this, one strike in six, and
+  // every enveloped body on this page had the same lottery underneath it.
+  // Anchoring at zero on creation costs one scheduled event and closes it.
   function sGain(r, c, v, t) {
     var g = c.createGain();
     if (v != null) g.gain.setValueAtTime(v, t);
+    else g.gain.setValueAtTime(0, c.currentTime);
     r.gains.push(g);
     return g;
   }
@@ -2271,10 +2320,27 @@
     lp.Q.setValueAtTime(-6, t);
     var fb = sGain(r, c, sus, t);
     dl.connect(lp); lp.connect(fb); fb.connect(dl);
+    // THE STRIKE, its ENERGY normalised. How loud a comb rings is set by how
+    // much of the exciting burst happens to land on its resonance, and an
+    // un-normalised burst made this card's ENGINE reference wander 4-7 dB
+    // from press to press with the note's pitch held FIXED — which is not a
+    // jaw harp being expressive, it is a reference with no zero, and every
+    // level claim on this card rests on it. A plucked tongue delivers the
+    // same energy every time, so the burst is scaled back to a uniform
+    // burst's own RMS (1 / sqrt 3). Its SPECTRUM is still a fresh draw:
+    // that is where a twang's real variety lives, and it is what the ear
+    // hears rather than measures.
+    // This is a stated DEPARTURE from pj2-sycorax.js's own jawTwang, which
+    // does not normalise — and it costs the rite nothing, because this body
+    // is the page's AUDITION copy: it sounds only through PLAY A PHRASE NOW,
+    // where its whole job is to be the thing A and B are measured against.
     var n = Math.max(2, Math.round(sr * 0.008));
     var buf = c.createBuffer(1, n, sr);
     var d = buf.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    var e2 = 0;
+    for (var i = 0; i < n; i++) { d[i] = Math.random() * 2 - 1; e2 += d[i] * d[i]; }
+    var kb = 0.5774 / (Math.sqrt(e2 / n) || 0.5774);
+    for (i = 0; i < n; i++) d[i] *= kb;
     var src = c.createBufferSource();
     src.buffer = buf;
     var burst = sGain(r, c);
@@ -2502,11 +2568,15 @@
       var nz = sNoise(r, c, t, stopAt);
       var bp = sFilt(r, c, "bandpass", freq * 4, 9, t);
       var ng = sGain(r, c);
-      nz.connect(bp); bp.connect(ng); ng.connect(g);
+      // the finger's own wobble rides its OWN gain, in series after the
+      // envelope (sTrem's rule): hung on ng.gain it would sum with the
+      // envelope and put a thread of un-enveloped friction under the whole
+      // cycle. Depth is the RATIO the absolute 0.1-on-0.28 used to give.
+      var rw = sTrem(r, c, 3.1, 0.36, t, stopAt);
+      nz.connect(bp); bp.connect(ng); ng.connect(rw); rw.connect(g);
       PJ2.Voice.env(ng.gain, t, [[cyc.fadeIn, 0.28 * rub],
                                  [Math.max(0.05, durS - cyc.fadeIn - cyc.fadeOut), 0.22 * rub],
                                  [cyc.fadeOut, 0]]);
-      sLfo(r, c, 3.1, 0.1 * rub, ng.gain, t, stopAt);
     }
   }
 
@@ -2686,9 +2756,19 @@
     } catch (e) { err("chant WHISPER: " + e.message); sweepRec(r); }
   }
   // ---- REBEC A · GLASS VIOLIN ---------------------------------------------
-  // A sine bow: the box's four resonances thrown away and three pure
-  // partials put in their place, with a wet rub at the fifth partial instead
-  // of rosin. The wyrd fiddle stops being wood and starts being glass.
+  // A bow drawn on a glass rim. Three changes, and the first two are the
+  // ones that make it an instrument rather than an organ pip (the Ariel
+  // critic's word for a 1 : 2 : 3 partial set, and the first cut of this
+  // body was exactly that):
+  //   1. the third partial is INHARMONIC — 2.76, a rim mode, not a twelfth;
+  //   2. the rub is SUSTAINED at about a third of the mix for the whole
+  //      note and pulses at 5.6 Hz — STICK-SLIP, the wet finger catching and
+  //      letting go, the same gesture the GLASS RIM body is built on. A
+  //      rub that fades out is rosin; a rub that never stops is friction,
+  //      and friction is what a listener names glass by;
+  //   3. the onset SCOOPS — a quarter of the peak in the first half of the
+  //      attack, the rest in the second — because glass under a bow does not
+  //      bite, it swells.
   function shRebecGlass(t, f, n, K, lvl) {
     var c = cap.ctx;
     var durS = Math.max(0.2, n.durS || 1);
@@ -2699,13 +2779,15 @@
       var rub = clamp(K.rub == null ? 1 : K.rub, 0, 2);
       var env = sGain(r, c);
       env.connect(plumb.shadow);
-      var atk = Math.min(0.5, durS * 0.3), rel = Math.min(0.6, durS * 0.35);
-      if (atk + rel > durS - 0.04) { atk = durS * 0.4; rel = durS * 0.4; }
+      var atk = Math.min(0.78, durS * 0.55), rel = Math.min(0.5, durS * 0.3);
+      if (atk + rel > durS - 0.04) { atk = durS * 0.55; rel = durS * 0.35; }
       var pk = capChain(0.030 * vel * layerVol("rebec") * lvl * MATCH.rebecGlass,
-                        1.42 + 0.1 * rub, "rebec GLASS VIOLIN");
-      PJ2.Voice.env(env.gain, t, [[atk, pk],
+                        1.42 + 0.45 * rub, "rebec GLASS VIOLIN");
+      // THE SCOOP: a quarter of the peak in the first 62 % of the attack,
+      // the rest in the last 38 %. Concave, so the onset is a swell.
+      PJ2.Voice.env(env.gain, t, [[atk * 0.62, pk * 0.22], [atk * 0.38, pk],
                                   [Math.max(0.02, durS - atk - rel), pk * 0.867], [rel, 0]]);
-      var parts = [[1, 1], [2, 0.3], [3, 0.12]];
+      var parts = [[1, 1], [2, 0.3], [2.76, 0.12]];
       for (var i = 0; i < parts.length; i++) {
         var o = sOsc(r, c, "sine", f * parts[i][0], t, stopAt);
         // the second partial beats a hair against its own harmonic: glass
@@ -2715,13 +2797,16 @@
       }
       if (rub > 0) {
         var nz = sNoise(r, c, t, stopAt);
-        var bp = sFilt(r, c, "bandpass", f * 5, 7, t);
+        var bp = sFilt(r, c, "bandpass", f * 4.4, 3.5, t);
         var ng = sGain(r, c);
-        nz.connect(bp); bp.connect(ng); ng.connect(env);
-        // a wet finger sticks and slips: the rub pulses, it does not hiss
-        PJ2.Voice.env(ng.gain, t, [[atk, 0.1 * rub],
-                                   [Math.max(0.02, durS - atk), 0]]);
-        sLfo(r, c, 5.5, 0.04 * rub, ng.gain, t, stopAt);
+        // STICK-SLIP, in series (sTrem's rule): the pulse is the finger's,
+        // and it must go to nothing when the note does.
+        var slip = sTrem(r, c, 5.6, 0.5, t, stopAt);
+        nz.connect(bp); bp.connect(ng); ng.connect(slip); slip.connect(env);
+        // held, not fading: a bowed rim rubs for as long as it sounds
+        PJ2.Voice.env(ng.gain, t, [[atk, 0.30 * rub],
+                                   [Math.max(0.02, durS - atk - rel), 0.28 * rub],
+                                   [rel, 0]]);
       }
       track(r);
     } catch (e) { err("rebec GLASS VIOLIN: " + e.message); sweepRec(r); }
@@ -2744,8 +2829,10 @@
       env.connect(plumb.shadow);
       var atk = Math.min(0.35, durS * 0.22), rel = Math.min(0.6, durS * 0.35);
       if (atk + rel > durS - 0.04) { atk = durS * 0.4; rel = durS * 0.4; }
+      // the true simultaneous sum: the saw pair through the shaper (bounded
+      // at 1) plus the bridge band at its own peak times the rattle's crest
       var pk = capChain(0.030 * vel * layerVol("rebec") * lvl * MATCH.rebecTromba,
-                        1.85, "rebec TROMBA MARINA");
+                        1 + 0.55 * bridge * 1.9, "rebec TROMBA MARINA");
       PJ2.Voice.env(env.gain, t, [[atk, pk],
                                   [Math.max(0.02, durS - atk - rel), pk * 0.867], [rel, 0]]);
       var pre = sGain(r, c, 0.5, t);
@@ -2762,15 +2849,28 @@
       pre.connect(ws); ws.connect(lp); lp.connect(env);
       if (bridge > 0) {
         // THE BRIDGE: a band of noise rattling at 55 Hz, arriving 40 ms after
-        // the bow bites — the foot only starts to buzz once the string moves
+        // the bow bites — the foot only starts to buzz once the string moves.
+        // TWO things make that sentence true rather than decorative:
+        //   the 55 Hz wobble rides its OWN gain in series after the envelope
+        //   (sTrem's rule) — hung on bg.gain it summed with the envelope, so
+        //   the buzz was present from the first sample at 80 % of its peak
+        //   and the held 40 ms of silence was silent only on paper;
+        //   and the band sits at 2.8 kHz, not 1800 — a loose foot knocking
+        //   on a belly is WOOD, brighter than the string's own formants,
+        //   and at 1800 it hid underneath them.
         var nz = sNoise(r, c, t, stopAt);
-        var bp = sFilt(r, c, "bandpass", 1800, 3, t);
+        // Q 1.1, wide: a rattle is a knock, not a whistle, and a narrow band
+        // carries too little power to shift the note's colour at all
+        var bp = sFilt(r, c, "bandpass", 2800, 1.1, t);
         var bg = sGain(r, c);
-        nz.connect(bp); bp.connect(bg); bg.connect(env);
-        var bAmt = 0.34 * bridge;
+        // depth 0.9: a rattle is nearly total — the foot leaves the wood
+        var rat = sTrem(r, c, 55, 0.9, t, stopAt);
+        nz.connect(bp); bp.connect(bg); bg.connect(rat); rat.connect(env);
+        // 0.55, not 0.34: on a real trumpet marine the rattle is the loudest
+        // thing in the sound — the string is what the buzz is played ON
+        var bAmt = 0.55 * bridge;
         PJ2.Voice.env(bg.gain, t, [[0.04, 0], [Math.min(0.2, durS * 0.2), bAmt],
                                    [Math.max(0.05, durS - 0.24 - rel), bAmt * 0.7], [rel, 0]]);
-        sLfo(r, c, 55, bAmt * 0.8, bg.gain, t, stopAt);
       }
       track(r);
     } catch (e) { err("rebec TROMBA MARINA: " + e.message); sweepRec(r); }
@@ -2856,9 +2956,11 @@
       var nz = sNoise(r, c, t, stopAt);
       var bp = sFilt(r, c, "bandpass", f * 3, 12, t);
       var ng = sGain(r, c);
-      nz.connect(bp); bp.connect(ng); ng.connect(env);
+      // "it never quite settles" — but on its OWN gain, in series (sTrem's
+      // rule), not summed into the envelope that has to reach zero.
+      var fw = sTrem(r, c, 0.7, 0.35, t, stopAt);
+      nz.connect(bp); bp.connect(ng); ng.connect(fw); fw.connect(env);
       PJ2.Voice.env(ng.gain, t, [[a, 0.2], [Math.max(0.1, durS - a), 0]]);
-      sLfo(r, c, 0.7, 0.07, ng.gain, t, stopAt);
       track(r);
     } catch (e) { err("waterphone CRYSTAL: " + e.message); sweepRec(r); }
   }
@@ -3085,10 +3187,13 @@
           bend: [[0.1, f0 * 1.02], [0.34, f0 * 0.955]], f1: f0 * 1.9, q1: 1.6,
           dest: dest, peak: pk, breath: 0.3, breathHz: 900,
           segs: [[0.08, pk], [0.16, pk * 0.85], [0.1, 0]] });
-        var t2 = t + 0.62;
+        // 1.9 s, not 0.62: a tawny leaves a second and a half to three
+        // between the two halves of its call — the pause is as much the bird
+        // as the pitch is — and the long note TREMBLES at 13 Hz.
+        var t2 = t + 1.9;
         callBody(r, c, t2, { type: "sine", f0: f0 * 1.03, len: 0.52, pre: 1,
           bend: [[0.14, f0 * 1.03], [0.52, f0 * 0.9]], f1: f0 * 1.9, q1: 1.6,
-          dest: dest, peak: pk, breath: 0.3, breathHz: 900,
+          dest: dest, peak: pk, breath: 0.3, breathHz: 900, trem: [13, 0.2],
           segs: [[0.1, pk], [0.28, pk * 0.8], [0.14, 0]] });
         r.tEnd = t2 + 0.7;
       } else if (k === "ember") {
@@ -3538,16 +3643,34 @@
   // own decay, and the shells buzzing on the soundboard for a fifth of a
   // second after every one.
   var MBIRA_PARTIALS = [[1, 1, 1.05], [2.76, 0.4, 0.55], [5.4, 0.15, 0.3]];
+  // THE SPACING, and why it is floored. The engine spaces its own twangs by
+  // a FIXED gap (pj2-sycorax.js renderJawharp: `tw += gapS * jit[j]`, gapS
+  // 0.8 s ± 40 %, so never under 0.48 s) and reports a durS measured to the
+  // END of the last twang's ring — so durS / nT is normally LOOSER than the
+  // engine's own spacing. It is not guaranteed to be: a hand-made note (a
+  // phrase, a pasted state, a knob at 6) can carry six twangs on a
+  // half-second duration, and six 3 ms attacks inside 83 ms are a click, not
+  // tines. So:
+  //   the spacing is FLOORED at 0.14 s, a tine's own attack plus a little;
+  //   the peak falls as 1 / sqrt(lap), where `lap` is how many tines are
+  //     actually ringing at once — independent strikes add in POWER, not in
+  //     amplitude, so a dense roll must not be nT times as loud as one tine;
+  //   the buzz is given an 8 ms attack instead of a transient's 2 ms;
+  //   and capChain is told the TRUE simultaneous sum (every overlapping
+  //     strike's every partial) rather than one strike's.
+  var MBIRA_GAP = 0.14;
   function shJawMbira(t, f, n, K, lvl) {
     var c = cap.ctx;
     var nT = Math.max(1, Math.min(6, n.twangs || 3));
     var durS = Math.max(0.5, n.durS || 1.5);
-    var r = mkRec("shadow:jawharp", t + durS + 1.6);
+    var gap = Math.max(MBIRA_GAP, durS / nT);
+    var spanS = Math.max(durS, (nT - 1) * gap);
+    var r = mkRec("shadow:jawharp", t + spanS + 1.6);
     try {
       var buzz = clamp(K.buzz == null ? 1 : K.buzz, 0, 2);
-      var gap = durS / Math.max(1, nT);
-      var pk = capChain(0.02 * layerVol("jawharp") * lvl * MATCH.jawMbira,
-                        1.85, "jaw harp MBIRA");
+      var lap = Math.min(nT, 1 + MBIRA_PARTIALS[0][2] / gap);
+      var pk = capChain(0.02 * layerVol("jawharp") * lvl * MATCH.jawMbira / Math.sqrt(lap),
+                        (1.55 + 0.45 * buzz) * lap, "jaw harp MBIRA");
       for (var i = 0; i < nT; i++) {
         var at = t + i * gap;
         var g = sGain(r, c, 1, at);
@@ -3564,10 +3687,12 @@
           var hp = sFilt(r, c, "highpass", 2200, 0.8, at);
           var ng = sGain(r, c);
           nz.connect(hp); hp.connect(ng); ng.connect(g);
-          PJ2.Voice.env(ng.gain, at, [[0.002, pk * 0.45 * buzz], [0.18, pk * 0.05 * buzz], [0.05, 0]]);
+          // 8 ms, not 2: a shell buzzing on a soundboard is a rattle
+          // starting, not a transient — and at 2 ms a stack of them is a click
+          PJ2.Voice.env(ng.gain, at, [[0.008, pk * 0.45 * buzz], [0.18, pk * 0.05 * buzz], [0.05, 0]]);
         }
       }
-      r.tEnd = t + durS + 1.2;
+      r.tEnd = t + spanS + 1.2;
       track(r);
     } catch (e) { err("jaw harp MBIRA: " + e.message); sweepRec(r); }
   }
@@ -4184,14 +4309,14 @@
       layer: "rebec", title: "REBEC — glass, or a buzzing bridge",
       desc: "The wyrd fiddle. Its phrases, its double stops and its 0.5 s bow edges are the engine's.",
       variants: [
-        { v: "a", name: "A · GLASS VIOLIN", cls: "bowed gut → glass",
-          note: "A sine bow: the box's four resonances thrown away and three pure partials put in their place (the second beating nine cents against its own harmonic), with a wet rub at the fifth partial — stick-slip, not rosin — instead of the bow-noise thread." },
+        { v: "a", name: "A · GLASS VIOLIN", cls: "bowed gut → bowed glass",
+          note: "A bow drawn on glass. The box's four wooden resonances are thrown away and three partials put in their place at 1 : 2 : 2.76 — the third INHARMONIC, a rim mode rather than a twelfth, which is what stops a partial set reading as an organ pip — and the rosin thread becomes STICK-SLIP: a wide friction band held at about a third of the mix for the whole note, pulsing 5.6 times a second. A rub that fades is rosin; a rub that never stops is friction, and friction is what a listener names glass by. The onset scoops: a quarter of the peak in the first half of the attack, the rest in the second, because glass under a bow swells rather than bites." },
         { v: "b", name: "B · TROMBA MARINA", cls: "bowed gut → buzz",
-          note: "One string, played low, with the trumpet-marine's rattling bridge: the note keeps its pitch as the SECOND partial and the fundamental is an octave beneath it, driven into a clip, with the foot buzzing against the belly at 55 Hz from 40 ms after the bow bites." }
+          note: "One string, played low, with the trumpet-marine's rattling bridge: the note keeps its pitch as the SECOND partial and the fundamental is an octave beneath it, driven into a clip, with the foot buzzing against the belly at 55 Hz from 40 ms after the bow bites — really 40 ms, the rattle rides its own gain in series so there is nothing of it before the string moves. The buzz band sits at 2.8 kHz, where a loose foot knocking on a belly lives; under the string's own formants at 1800 it read as more string." }
       ],
       knobs: [
         LEVEL_KNOB, regKnob(0),
-        { key: "rub", label: "A · rub — the wet finger at the fifth partial", min: 0, max: 2, step: 0.05, def: 1 },
+        { key: "rub", label: "A · rub — how hard the finger sticks and slips", min: 0, max: 2, step: 0.05, def: 1 },
         { key: "bridge", label: "B · bridge — how hard the foot rattles", min: 0, max: 2, step: 0.05, def: 1 }
       ],
       caveat: "The shadow cannot reach the seasick delay, so the clearing stops answering the fiddle while a rebec stop is on."
@@ -4248,7 +4373,7 @@
       desc: "The eight one-shots the dark speaks with. Not a body swap: a change of hour and place, on the engine's own timings, weather gates and pitches.",
       variants: [
         { v: "a", name: "A · NIGHT", cls: "the fen → the night",
-          note: "gust → an owl (two hoots, and NOT the same hoot: a short one, then a longer one bending a tone and a half down) · ember → a frog (a pulse train through a 430 Hz throat) · stone → a wolf far off · chains → a nightjar's churr · raven → a fox's barks, no two alike · bell → a night bird on the bell's OWN pitch two octaves up · keen → three wolves, staggered, none of them agreeing about the note." },
+          note: "gust → an owl (two hoots, and NOT the same hoot: a short one, then — a second and a half later, the pause being as much the bird as the pitch is — a longer one that trembles at 13 Hz and bends a tone and a half down) · ember → a frog (a pulse train through a 430 Hz throat) · stone → a wolf far off · chains → a nightjar's churr · raven → a fox's barks, no two alike · bell → a night bird on the bell's OWN pitch two octaves up · keen → three wolves, staggered, none of them agreeing about the note." },
         { v: "b", name: "B · THE CAVE", cls: "the fen → underground",
           note: "gust → a deep rumble · ember → water drips (a fall into a Q-14 plink) · stone → a rockfall with a thud under it · chains → bats · raven → a knock and the cave answering it · bell → water into a pool, on the bell's own pitch · keen → the cave's own breath through a long throat, not a voice at all." }
       ],
@@ -4306,7 +4431,7 @@
         { key: "gourd", label: "A · gourd — how far the gourd opens", min: 0, max: 2, step: 0.05, def: 1 },
         { key: "buzz", label: "B · buzz — the shells on the board", min: 0, max: 2, step: 0.05, def: 1 }
       ],
-      caveat: "THIS CARD'S REGISTER STOPS AT 0. The ENGINE body is a real feedback comb, which is legal only because the engine pins the jaw harp to oct −1 (≤ 330 Hz): WebAudio clamps any DelayNode inside a feedback cycle to one render quantum — about 344 Hz — so at +1 the comb would sound the WRONG NOTE, the one thing a stop may never do. A and B are struck partial sets and have no such floor; the switch is held to the engine's own limit so the three positions stay comparable."
+      caveat: "THIS CARD'S REGISTER STOPS AT 0. The ENGINE body is a real feedback comb, which is legal only because the engine pins the jaw harp to oct −1 (≤ 330 Hz): WebAudio clamps any DelayNode inside a feedback cycle to one render quantum — about 344 Hz — so at +1 the comb would sound the WRONG NOTE, the one thing a stop may never do. A and B are struck partial sets and have no such floor; the switch is held to the engine's own limit so the three positions stay comparable. And READ THIS CARD'S ±1.5 dB LOOSELY: a comb's ring is 95/f seconds, floored at 0.35, so the ENGINE position is genuinely 2–3 dB quieter on a high chord degree than on a low one — the engine's own behaviour, not a fault — while A and B do not move with the pitch. Press the phrase two or three times before you believe a difference."
     },
     {
       layer: "blade", title: "BOWED BLADE — glass, or the sea",
@@ -4462,7 +4587,15 @@
         R({ voice: "overtone", kind: "overtone", freq: degF(degs[0], -1), t: t, durS: 10,
             path: "4→6→5→7→8→10→9→7→5→4" });
       } else if (layer === "jawharp") {
-        R({ voice: "jawharp", kind: "twang", freq: degF(degs[0], -1), t: t, durS: 1.8, twangs: 3 });
+        // THE ENGINE'S OWN ASSERT, kept here too: a DelayNode inside a
+        // feedback cycle is clamped to one render quantum (~344 Hz), so
+        // renderJawharp drops to oct −2 whenever the degree would land above
+        // 330 Hz — and a phrase that ignored that would hand the ENGINE
+        // position a body the engine never schedules, which is the very
+        // thing A and B are measured against.
+        var jo = -1, jf = degF(degs[0], jo);
+        if (jf > 330) { jo = -2; jf = degF(degs[0], jo); }
+        R({ voice: "jawharp", kind: "twang", freq: jf, t: t, durS: 1.8, twangs: 3 });
       } else if (layer === "blade") {
         R({ voice: "blade", kind: "manual", freq: degF(degs[0], 2), t: t, durS: 8, ratio: 1.47 });
       } else if (layer === "cauldron") {
@@ -4860,7 +4993,8 @@
               " gate=" + (cutOut.blocking ? "SHUT" : "open"),
         lab: { pose: einfo().pose || null, cut: cutOut, roster: rosterSnapshot(),
                onsets: onsets, kills: kills, ctxTime: now(),
-               maxShadowGain: maxShadowSeen,
+               maxShadowGain: maxShadowSeen,           // worst SINGLE scheduled peak
+               maxShadowProduct: maxShadowProductSeen,  // worst CHAIN product
                // the live node, so a headless run can read the cut's dip off
                // the gurdy/horn shadow bus instead of taking the log's word
                shadowDuck: plumb.shadowDuck || null,
