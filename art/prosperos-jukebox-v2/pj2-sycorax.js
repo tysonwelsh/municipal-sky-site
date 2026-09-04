@@ -139,6 +139,40 @@
 // cut's own waterphone apparition is the CUT's gesture, not an entry: it
 // bypasses the roster exactly as it bypasses the hush gate.
 //
+// PRESENCE AND ABSENCE (rc.38) — the owner, 2026-09-03, after the wander
+// round: "it's a little too cluttered now that we added all the new
+// instruments. Reduce the frequency of most instruments — pretty much
+// anything that's not a drone or drone-adjacent … And bring back the idea
+// that on certain playthroughs some instruments are not heard at all — one,
+// two, even three sometimes. But not as a ban." Two mechanisms, both RATES
+// and never laws, and both sitting AFTER the roll like the roster does:
+//
+//   PRESENCE — one knob per non-seam layer (LAYER_PARAMS), multiplying
+//   every entry chance the voice rolls and dividing the rest (and the air
+//   margin) it leaves after speaking, capped at twice as long. The shipped
+//   defaults ARE the reduction: the cantor 0.8 — the principal is thinned
+//   least — the percussion STROKES 0.7, and the horn, the rebec, the
+//   waterphone, the bone flute and the five rc.32 voices 0.6 each. The knob
+//   back at 1 is the rc.36 engine byte for byte, which the harness pins.
+//   A poll is not a rest: the lanes' "try again in a few seconds" gaps are
+//   untouched, so the knob is spent once per decision, never twice. Nothing
+//   is thinned that holds the floor — the gurdy, the murk and breath beds,
+//   the ambient sky, the proto-drum heartbeat carry no knob at all — and
+//   two SIGNATURES ignore it: the cut's waterphone apparition and the
+//   afterimage's far final call.
+//
+//   ABSENCES — at every performance begin, PJ2.Voice.absences draws the
+//   evening's cast on its own fork: evening one is full, and from evening
+//   two nought to three of the NINE eligible voices (horn, rebec,
+//   waterphone, bone flute, and the five) sit the evening out, never the
+//   same voice twice running, never more than a third at once, the only
+//   memory last evening's set. An absent voice makes no NEW entries — the
+//   gate sits beside the roster's — while anything already sounding
+//   finishes, and the cut's apparition still inhabits the hush because it
+//   is the cut's gesture and not the waterphone's entry. A {type:"cast"}
+//   event names the sitters the instant after the begin, getInfo().cast
+//   carries them, and a reseed opens a new run at evening one, full.
+//
 // STREAM NOTE (rc.32) — what actually moved, stated plainly:
 //
 //   Every NEW draw lands on a NEW label-hashed fork ("bullroarer",
@@ -420,6 +454,11 @@
     { key: "blade",      label: "Blade",       kind: "landscape" },
     { key: "cauldron",   label: "Cauldron",    kind: "ambient" },
   ];
+  // key -> display name, for the cast event's plain words (rc.38)
+  var MIX_LABELS = {};
+  for (var mlbi = 0; mlbi < MIX_LAYERS.length; mlbi++) {
+    MIX_LABELS[MIX_LAYERS[mlbi].key] = MIX_LAYERS[mlbi].label;
+  }
   var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
   var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
 
@@ -481,6 +520,13 @@
       varyDef(),
     ],
     horn: [
+      // rc.38 — PRESENCE. The owner, 2026-09-03: "it's a little too cluttered
+      // now that we added all the new instruments. Reduce the frequency of
+      // most instruments." One uniform knob per non-seam layer: it
+      // MULTIPLIES every entry chance and DIVIDES every rest and margin
+      // (capped at twice as long). The shipped default IS the reduction;
+      // 1 is the pre-rc.38 rate, exactly (the harness pins that identity).
+      { key: "presence", label: "presence — how often the treeline answers (entry chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
       { key: "blossom", label: "blossom — how far the bell opens", min: 0, max: 1.5, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
       { key: "breath", label: "breath — the air in the bore", min: 0, max: 2, def: 1,
@@ -490,6 +536,9 @@
       varyDef(),
     ],
     chant: [
+      // rc.38 — the PRINCIPAL's presence: the cantor is thinned least (0.8),
+      // and is never absent. See the horn strip's note for the rule.
+      { key: "presence", label: "presence — how often the cantor speaks (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.8 },
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1,
         lo: 0.9, hi: 1.1, per: "character" },
       { key: "vibrato", label: "vibrato — the cantor's wobble depth", min: 0, max: 2, def: 1,
@@ -503,6 +552,7 @@
       varyDef(),
     ],
     rebec: [
+      { key: "presence", label: "presence — how often the fiddle plays (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
       { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 3, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
       { key: "body", label: "body — how hard the box resonances ring", min: 0.4, max: 2, def: 1,
@@ -513,6 +563,9 @@
       varyDef(),
     ],
     waterphone: [
+      // the CUT's apparition is the cut's gesture, not the waterphone's
+      // entry: presence never touches it (and neither does an absence).
+      { key: "presence", label: "presence — how often the metal speaks (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
       { key: "wail", label: "wail — how far each note glisses down (%)", min: 0, max: 6, def: 1.8,
         lo: 1.08, hi: 2.52, per: "touch" },
       { key: "bloom", label: "bloom — the FM swell inside the sustain", min: 0, max: 2, def: 1,
@@ -520,6 +573,7 @@
       varyDef(),
     ],
     boneflute: [
+      { key: "presence", label: "presence — how often the flute is heard (phrase chance × this, rests ÷ it)", min: 0, max: 3, def: 0.6 },
       { key: "breath", label: "breath — the air across the embouchure", min: 0, max: 3, def: 1,
         lo: 0.65, hi: 1.35, per: "touch" },
       // promoted rc.35: the tongued edge — the breath's onset stage (0.006)
@@ -528,6 +582,9 @@
       varyDef(),
     ],
     percussion: [
+      // the STROKES only — frame, log and rattle. The proto-drum heartbeat
+      // is the hush's heart and is never thinned (nor ever absent).
+      { key: "presence", label: "presence — how often the strokes fall (the heartbeat is never thinned)", min: 0, max: 3, def: 0.7 },
       { key: "irregularity", label: "irregularity — how loosely the walk keeps its grid", min: 0, max: 2.5, def: 1,
         lo: 0.7, hi: 1.3, per: "weather" },
       { key: "adorn", label: "adorn — how often pairs and rattles answer", min: 0, max: 2.5, def: 1,
@@ -549,7 +606,9 @@
     // body — which is also the hook the per-evening parameter SPANS of a
     // later phase will hang on (this phase builds no spans).
     // "presence" multiplies every entry chance (the cauldron's divides its
-    // clock instead — presence rides the timer there, not the draw).
+    // clock instead — presence rides the timer there, not the draw). rc.38
+    // lowered all five defaults 1 -> 0.6: the knob's meaning is unchanged,
+    // only the rate the engine ships with.
     bullroarer: [
       { key: "whirl", label: "whirl Hz — how fast the slat spins (the chop)", min: 8, max: 60, def: 24,
         lo: 18, hi: 30, per: "touch" },
@@ -565,7 +624,7 @@
         lo: 6, hi: 14, per: "touch" },
       { key: "register", label: "register — which octave the slat sits in (−3/−2, rounded)", min: -3, max: -2, def: -2,
         per: "character", round: true, weights: [[-2, 0.7], [-3, 0.3]] },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
       varyDef(),
     ],
     overtone: [
@@ -581,7 +640,7 @@
         lo: 0.75, hi: 1.25, per: "touch" },
       { key: "hold", label: "hold s — how long the tone is held", min: 6, max: 20, def: 10,
         lo: 7, hi: 14, per: "touch" },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
       varyDef(),
     ],
     jawharp: [
@@ -597,7 +656,7 @@
         per: "touch", round: true,
         weights: [[1, 0.1], [2, 0.3], [3, 0.35], [4, 0.2], [5, 0.05]] },
       { key: "gap", label: "gap s — the average space between twangs (±40 %)", min: 0.3, max: 2, def: 0.8 },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
       varyDef(),
     ],
     blade: [
@@ -609,7 +668,7 @@
         lo: 0.6, hi: 1.4, per: "touch" },
       { key: "swell", label: "swell s — the rise, and the fall, each", min: 4, max: 8, def: 6,
         lo: 4, hi: 8, per: "touch" },
-      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 1 },
+      { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.6 },
       // promoted rc.35: the evening's own blade — a nightly shift of the
       // pitch centre, multiplying the per-sounding draw
       { key: "pitchNight", label: "pitch night — the evening's own blade, shifting the pitch centre", min: 0.8, max: 1.25, def: 1,
@@ -627,7 +686,7 @@
         lo: 4, hi: 8, per: "touch" },
       { key: "wash", label: "wash — the low simmer under the pops", min: 0, max: 2, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
-      { key: "presence", label: "presence — shortens the gap between firings", min: 0, max: 3, def: 1 },
+      { key: "presence", label: "presence — shortens the gap between firings", min: 0, max: 3, def: 0.6 },
       // promoted rc.35: every bubble its own size — the body's 60 ms rise
       { key: "poplen", label: "pop s — how long one bubble takes to rise", min: 0.02, max: 0.15, def: 0.06,
         lo: 0.04, hi: 0.09, per: "touch" },
@@ -679,6 +738,24 @@
     blade:      [0, 0, 0, 1, 1],
     cauldron:   [1, 0, 1, 1, 0],
   };
+
+  // ---- WHO MAY SIT AN EVENING OUT (rc.38) ---------------------------------
+  // The owner, 2026-09-03: "bring back the idea that on certain playthroughs
+  // some instruments are not heard at all — one, two, even three sometimes.
+  // But not as a ban." PJ2.Voice.absences owns the law; this list is the
+  // engine's opinion about who may be drawn. NOT eligible, and named here so
+  // the omissions are deliberate rather than forgotten:
+  //   gurdy       THE SEAM — the night has no other floor
+  //   noise       the murk bed, the seam's own weather
+  //   ambient     the dark outside the circle is not an instrument
+  //   percussion  the rite's walk and the proto-drum's heart (the hush's
+  //               heartbeat beats even inside the cut)
+  //   chant       the PRINCIPAL speaker — the ghost is intoned by the cantor,
+  //               so an evening without one would be an evening without a
+  //               memory. It is thinned (0.8), never absent.
+  // Nine eligible, so a third of the cast is three: the helper's own cap.
+  var ABSENCE_ELIGIBLE = ["horn", "rebec", "waterphone", "boneflute",
+                          "bullroarer", "overtone", "jawharp", "blade", "cauldron"];
 
   var DEFAULT_SEED = 1400137155; // "SYCX" as a 32-bit word, near enough
 
@@ -921,6 +998,11 @@
 
     var seed = resolveSeed(opts);
     var masterVol = (opts.volume != null) ? opts.volume : 0.5;
+    // rc.38 — the dev door the identity check drives: with absences off no
+    // draw is made and no cast is narrated, so the engine at presence 1 is
+    // the rc.36 build, note for note and event for event. The shipped
+    // default draws.
+    var absencesOn = (opts.absences !== false);
     var noteLs = [];
     var eventLs = [];
     var analysers = [];
@@ -1027,6 +1109,46 @@
       return (l && l[key] != null) ? l[key] : 1;
     }
 
+    // ---- PRESENCE (rc.38) — how often a voice enters -----------------------
+    // The owner, 2026-09-03: "it's a little too cluttered now that we added
+    // all the new instruments. Reduce the frequency of most instruments —
+    // pretty much anything that's not a drone or drone-adjacent."
+    //
+    // ONE rule, uniform across the three books: a non-seam layer's `presence`
+    // knob MULTIPLIES every entry chance the voice rolls, and DIVIDES every
+    // rest and margin it leaves behind (capped at twice as long, so a knob at
+    // zero silences rather than stalls). Both readers return exactly 1 at
+    // presence 1, and multiplying a float by 1 is exact — which is what makes
+    // "the old knob replays the old build byte for byte" a fact and not a
+    // hope. NOTHING here is a law: presence moves rates only. The seam (the
+    // gurdy), the beds (murk, breath), the ambient sky and the proto-drum
+    // heartbeat carry no presence knob at all, and the two SIGNATURES — the
+    // cut's waterphone apparition and the afterimage's far final call —
+    // ignore it (they are the song, not the clutter).
+    function presK(layer) {
+      var p = pVal(layer, "presence");
+      return p > 0 ? p : 0;
+    }
+    function restK(layer) {
+      var p = pVal(layer, "presence");
+      if (!(p > 0)) return 2;
+      var k = 1 / p;
+      return k > 2 ? 2 : (k < 0.34 ? 0.34 : k);
+    }
+
+    // ---- ABSENCES (rc.38) — some evenings a voice sits it out --------------
+    // Drawn once per evening by PJ2.Voice.absences on its own fork (see the
+    // helper's header for the law: evening one full, 0–3 voices, never the
+    // same voice twice running, never more than a third of the eligible).
+    // An absent voice makes NO NEW ENTRIES that evening — the gate sits
+    // beside the roster's, always AFTER the opportunity's own roll, so an
+    // absence changes what is heard and never what is drawn. Sounding notes
+    // finish naturally, and the cut's apparition is the CUT's gesture: the
+    // waterphone can sit the evening out and the hush is still inhabited.
+    function isAbsent(key) {
+      return !!(run && run.absentMap && run.absentMap[key]);
+    }
+
     // ----------------------------------------------------------------------
     // THE WANDER (rc.35) — PJ2.Voice.wander, one per layer, built at play
     // into run.wander and re-dressed at every performance begin. The desk
@@ -1083,6 +1205,47 @@
         try { run.wander[lk].dress(n); } catch (e) {}
       }
     }
+    // ---- THE EVENING'S CAST (rc.38) ---------------------------------------
+    // Called at every performance begin with the conductor's own ordinal —
+    // the same place, and the same number, the wander dresses itself with.
+    // The draw lands on PJ2.Voice.absences' own fork ("absences:<n>" off the
+    // birth seed), so not one pre-existing stream is re-rolled and the same
+    // seed tells the same evenings. The only memory is last evening's set,
+    // carried across the seam and reset by a reseed (a reseed is a new run).
+    function drawAbsences(evt) {
+      var n = (evt && evt.n != null) ? evt.n : 1;
+      var absent = [];
+      if (absencesOn && PJ2.Voice && typeof PJ2.Voice.absences === "function") {
+        try {
+          var a = PJ2.Voice.absences({
+            root: run.master, evening: n,
+            eligible: ABSENCE_ELIGIBLE, previous: run.lastAbsent || [],
+          });
+          absent = (a && a.absent) ? a.absent : [];
+        } catch (e) { absent = []; }
+      }
+      run.absent = absent;
+      run.lastAbsent = absent;
+      run.absentMap = {};
+      var labels = [], i;
+      for (i = 0; i < absent.length; i++) {
+        run.absentMap[absent[i]] = 1;
+        labels.push(MIX_LABELS[absent[i]] || absent[i]);
+      }
+      run.castEvening = n;
+      run.castPlain = (n <= 1);
+      if (!absencesOn) return;                 // no draw, no narration
+      // Emitted by the conductor wrapper the instant AFTER the performance's
+      // begin event (pj2-library's rc.31 pattern), so the log reads
+      // "evening N" then "tonight: …" — always before the evening's first
+      // note.
+      run.castPending = {
+        type: "cast", evening: n, plain: (n <= 1),
+        absent: absent.slice(), absentLabels: labels,
+        t: (evt && evt.t != null) ? evt.t : run.clock.now(),
+      };
+    }
+
     function mixEff(key) {
       var st = mixState[key];
       return st ? (st.muted ? 0 : st.volume) : 1;
@@ -2259,7 +2422,7 @@
           if (!run || !run.live || inHush(tt)) return;
           renderHornTone(0, tt, d2, 1, "call");
         });
-        run.hornHoldUntil = t + d1 * 0.55 + d2 + rest2;
+        run.hornHoldUntil = t + d1 * 0.55 + d2 + rest2 * restK("horn");
         return;
       }
       var ch = null;
@@ -2271,7 +2434,7 @@
       var durS = rng.rnd(12, 30);
       var rest = rng.rnd(6, 14);
       renderHornTone(deg, t, durS, 1, "held");
-      run.hornHoldUntil = t + durS + rest;
+      run.hornHoldUntil = t + durS + rest * restK("horn");
     }
 
     // One opportunity, one decision. Gates AFTER the unconditional roll:
@@ -2289,7 +2452,7 @@
       // rc.32: the roster rests the horn in the gathering and the circling.
       // A boundary answer is judged by the scene it LANDS in — an arrival
       // into the circling must not put the treeline in a scene that rests it.
-      if (!rosterAllows("horn", col)) return;
+      if (!rosterAllows("horn", col) || isAbsent("horn")) return;
       if (inHush(t)) return;
       if (run.cut && !run.cut.fired && t > run.cut.tB - 4) return;
       var iv = curIntensity(t);
@@ -2297,7 +2460,10 @@
       if (t < run.hornHoldUntil) return;
       var poseMul = (poseName === "sting" || poseName === "hollow") ? 1.3 : 1;
       var x = clamp((iv - 0.12) / 0.3, 0, 1);
-      if (roll >= Math.min(1, (HORN_CHANCE[kind] || 0.3) * mul * poseMul * (0.25 + 0.75 * x))) return;
+      // rc.38: presence multiplies the chance — the treeline answers less
+      // often, and the rests it leaves are longer (see hornCall).
+      if (roll >= Math.min(1, (HORN_CHANCE[kind] || 0.3) * mul * poseMul *
+                              (0.25 + 0.75 * x) * presK("horn"))) return;
       hornCall(t);
     }
 
@@ -2313,13 +2479,17 @@
       var durS = rng.rnd(16, 26);
       var rest = rng.rnd(6, 14);
       if (run.hornFinalDone) return;
-      if (!rosterAllows("horn", "afterimage")) return;   // rc.32 (ticked today)
+      // rc.32 (ticked today); rc.38: the far call is a SIGNATURE — the
+      // evening's last word — so presence never thins it, but an absent horn
+      // is absent all evening, this call included.
+      if (!rosterAllows("horn", "afterimage") || isAbsent("horn")) return;
       if (roll >= 0.6) return;
       run.hornFinalDone = true;
       var t0 = evt.t + wait;
       if (run.cut) t0 = Math.max(t0, run.cut.end + run.cut.retS + 2);
       run.clock.lane("horn").at(t0, function (t) {
         if (!run || !run.live || inHush(t)) return;
+        if (isAbsent("horn")) return;      // rc.38: the seam may have moved
         if (t < run.hornHoldUntil) return;
         renderHornTone(0, t, durS, 0.7, "far-call");
         run.hornHoldUntil = t + durS + rest;
@@ -2467,7 +2637,7 @@
       }
 
       nvRegister("bullroarer", gate, t + durS + 0.3);
-      run.bullHoldUntil = t + durS + restS;    // the hold law: one slat at a time
+      run.bullHoldUntil = t + durS + restS * restK("bullroarer");  // the hold law: one slat at a time
       emitNote({
         voice: "bullroarer", kind: why, freq: freq, t: t, durS: durS,
         deg: deg, oct: oct, whirlHz: whirlHz,
@@ -2483,7 +2653,7 @@
       var sc = col || curSceneType();          // an arrival is judged by where it LANDS
       var mul = BULL_SCENE[sc];
       if (!mul) return;
-      if (!rosterAllows("bullroarer", sc)) return;
+      if (!rosterAllows("bullroarer", sc) || isAbsent("bullroarer")) return;
       if (inHush(t) || cutBlocks(t)) return;             // the cut law, at the brain
       if (t < run.bullHoldUntil) return;                 // the hold law
       var base = (BULL_CHANCE[kind] || 0) * mul * pVal("bullroarer", "presence");
@@ -2612,7 +2782,7 @@
       br.start(t, br.randomOffset); br.stop(t + durS + 0.1);
 
       nvRegister("overtone", gate, t + durS + 0.1);
-      run.overHoldUntil = t + durS + restS;              // the hold law
+      run.overHoldUntil = t + durS + restS * restK("overtone");   // the hold law
       emitNote({
         voice: "overtone", kind: "overtone", freq: freq, t: t, durS: durS,
         deg: deg, oct: -1, via: why,
@@ -2628,7 +2798,7 @@
       var sc = col || curSceneType();
       var mul = OVER_SCENE[sc];
       if (!mul) return;
-      if (!rosterAllows("overtone", sc)) return;
+      if (!rosterAllows("overtone", sc) || isAbsent("overtone")) return;
       if (inHush(t) || cutBlocks(t)) return;
       if (t < run.overHoldUntil) return;
       if (roll >= clamp(OVER_CHANCE * mul * pVal("overtone", "presence"), 0, 1)) return;
@@ -2777,7 +2947,7 @@
         try { gate.disconnect(); } catch (e) {}          // …and the gate with it
       });
       nvRegister("jawharp", gate, t + durS + 0.2);
-      run.jawHoldUntil = t + durS + restS;               // the hold law
+      run.jawHoldUntil = t + durS + restS * restK("jawharp");     // the hold law
       emitNote({
         voice: "jawharp", kind: "twang", freq: freq, t: t, durS: durS,
         deg: deg, oct: oct, twangs: sounded, via: why,
@@ -2791,7 +2961,7 @@
       if (kind !== "pose") return;
       var sc = col || curSceneType();
       if (sc !== "circling") return;                     // circling only
-      if (!rosterAllows("jawharp", sc)) return;
+      if (!rosterAllows("jawharp", sc) || isAbsent("jawharp")) return;
       if (inHush(t) || cutBlocks(t)) return;
       if (t < run.jawHoldUntil) return;
       if (roll >= clamp(JAW_CHANCE * pVal("jawharp", "presence"), 0, 1)) return;
@@ -2883,7 +3053,7 @@
         nz.start(t, nz.randomOffset); nz.stop(t + durS + 0.3);
       }
       nvRegister("blade", gate, t + durS + 0.3);
-      run.bladeHoldUntil = t + durS + restS;             // the hold law
+      run.bladeHoldUntil = t + durS + restS * restK("blade");     // the hold law
       emitNote({
         voice: "blade", kind: why, freq: f1, t: t, durS: durS,
         deg: deg, oct: oct, ratio: ratio,
@@ -2899,7 +3069,7 @@
       // In the afterimage the blade may only answer once the cut's return has
       // FULLY passed — the residue does not interrupt the noticing.
       if (st === "afterimage" && !cutPast(t)) return;
-      if (!rosterAllows("blade", st)) return;
+      if (!rosterAllows("blade", st) || isAbsent("blade")) return;
       if (inHush(t) || cutBlocks(t)) return;
       if (t < run.bladeHoldUntil) return;
       if (roll >= clamp(BLADE_CHANCE * pVal("blade", "presence"), 0, 1)) return;
@@ -3015,7 +3185,7 @@
     function cauldronConsider(t) {
       if (!run || !run.live) return;
       if (!CAULD_SCENES[curSceneType()]) return;
-      if (!rosterAllows("cauldron")) return;
+      if (!rosterAllows("cauldron") || isAbsent("cauldron")) return;
       if (inHush(t) || cutBlocks(t)) return;
       if (t < run.cauldHoldUntil) return;
       renderCauldron(t, "timer");
@@ -3222,10 +3392,12 @@
       var iv = curIntensity(t);
       // Draws first, unconditionally (stream discipline). The desk's adorn
       // knob scales the pair/rattle chances (def 1 = as-composed).
-      var gap = rng.rnd(3, 10) * (1.25 - 0.7 * iv);
+      // rc.38: presence spaces the loose strokes out and thins the answers.
+      // The idle poll below keeps its own pace — it sounds nothing.
+      var gap = rng.rnd(3, 10) * (1.25 - 0.7 * iv) * restK("percussion");
       var adorn = wChar("percussion", "adorn");   // rc.35: the evening's manners
-      var pairRoll = rng.chance(0.25 * adorn);
-      var rattleRoll = rng.chance(0.3 * adorn);
+      var pairRoll = rng.chance(0.25 * adorn * presK("percussion"));
+      var rattleRoll = rng.chance(0.3 * adorn * presK("percussion"));
       if (st === "circling" && !inHush(t)) {
         frameDrum(t, rng, { mode: "loose" });
         if (pairRoll) {
@@ -3256,12 +3428,14 @@
       // rc.35: irregularity is WEATHER — the walk loosens and tightens over
       // minutes; adorn is the evening's manner.
       var jitter = 1 + (rng.rnd(0.8, 1.2) - 1) * wWx("percussion", "irregularity", t);
-      var rattleRoll = rng.chance(0.25 * wChar("percussion", "adorn"));
+      var rattleRoll = rng.chance(0.25 * wChar("percussion", "adorn") * presK("percussion"));
       if (!inHush(t)) {
         frameDrum(t, rng, { mode: "walk" });
         if (rattleRoll) boneRattle(t + 0.02, rng, { mode: "walk-accent" });
       }
-      lane.at(t + run.walkPeriod * jitter, walkStroke);
+      // rc.38: the walk is the rite's own step and is never absent, but it
+      // falls less often — the period stretches by 1 / presence.
+      lane.at(t + run.walkPeriod * jitter * restK("percussion"), walkStroke);
     }
 
     // One accelerating cluster: n strokes, spacing shrinking geometrically
@@ -3273,7 +3447,7 @@
       var n = rng.rint(5, 9);
       var s0 = rng.rnd(1.8, 2.1);
       var s1 = rng.rnd(0.68, 0.8);
-      var logRoll = rng.chance(0.5);
+      var logRoll = rng.chance(0.5 * presK("percussion"));
       var cid = "c" + Math.round((t - run.t0) * 1000); // run-relative: same-seed runs mint identical ids
       emitEvent({ type: "percussion", mode: "cluster", n: n, t: t, clusterId: cid });
       var r = Math.pow(s1 / s0, 1 / Math.max(1, n - 2));
@@ -3318,7 +3492,13 @@
       function attempt(t) {
         var iv = curIntensity(t);
         var st = curSceneType();
-        var sings = rng.chance(SPEAK_P.chant[st] != null ? SPEAK_P.chant[st] : 0.4);
+        // rc.38: presence multiplies the phrase chance, and lengthens the
+        // REST the cantor takes after a phrase (and the air margin it holds
+        // with it). The lane's own retry polls are not rests and are left
+        // alone — a poll sounds nothing, and thinning it would spend the
+        // same knob twice on one decision. The cantor is the principal
+        // speaker and is thinned least of all.
+        var sings = rng.chance((SPEAK_P.chant[st] != null ? SPEAK_P.chant[st] : 0.4) * presK("chant"));
         if (!sings || iv < 0.05) { lane.at(t + rng.rnd(7, 13) * gmAt(t), attempt); return; }
         var res = run.heldUtterance.chant;
         run.heldUtterance.chant = null;
@@ -3332,7 +3512,7 @@
         var m = res.motif;
         var spb = rng.rnd(1.2, 1.8) * (1.5 - 0.6 * iv); // the slowest lungs in the clearing
         var tm = phraseTiming(m, spb, 1.25, 1.5, 6);
-        var margin = rng.rnd(5, 10);
+        var margin = rng.rnd(5, 10) * restK("chant");
         var tok = null;
         try { tok = run.air.tryClaim("chant", tm.spanS, margin); } catch (e) {}
         if (!tok) {
@@ -3426,7 +3606,7 @@
           }
         }
         maybePost("chant", res, t);
-        lane.at(t + tm.spanS + margin + rng.rnd(6, 14) * (1.35 - iv) * gmAt(t), attempt);
+        lane.at(t + tm.spanS + margin + rng.rnd(6, 14) * (1.35 - iv) * gmAt(t) * restK("chant"), attempt);
       }
       lane.at(run.t0 + rng.rnd(8, 16), attempt);
     }
@@ -3437,10 +3617,11 @@
       function attempt(t) {
         var iv = curIntensity(t);
         var st = curSceneType();
-        var plays = rng.chance(SPEAK_P.rebec[st] != null ? SPEAK_P.rebec[st] : 0.3);
+        var plays = rng.chance((SPEAK_P.rebec[st] != null ? SPEAK_P.rebec[st] : 0.3) * presK("rebec"));
         // rc.32: the roster gates the ENTRY, after the roll — the fiddle
         // plays the processional and the circling and rests elsewhere.
-        if (!plays || iv < 0.1 || !rosterAllows("rebec")) {
+        // rc.38: and on some evenings it sits the whole night out.
+        if (!plays || iv < 0.1 || !rosterAllows("rebec") || isAbsent("rebec")) {
           lane.at(t + rng.rnd(8, 15) * gmAt(t), attempt); return;
         }
         var res = run.heldUtterance.rebec;
@@ -3455,7 +3636,7 @@
         var m = res.motif;
         var spb = rng.rnd(0.55, 0.85) * (1.4 - 0.6 * iv);
         var tm = phraseTiming(m, spb, 1.35, 0.8, 3.5);
-        var margin = rng.rnd(4, 8);
+        var margin = rng.rnd(4, 8) * restK("rebec");
         var tok = null;
         try { tok = run.air.tryClaim("rebec", tm.spanS, margin); } catch (e) {}
         if (!tok) {
@@ -3504,7 +3685,7 @@
             }
           }
         }
-        lane.at(t + tm.spanS + margin + rng.rnd(5, 12) * (1.35 - iv) * gmAt(t), attempt);
+        lane.at(t + tm.spanS + margin + rng.rnd(5, 12) * (1.35 - iv) * gmAt(t) * restK("rebec"), attempt);
       }
       lane.at(run.t0 + rng.rnd(20, 40), attempt);
     }
@@ -3515,10 +3696,11 @@
       function attempt(t) {
         var iv = curIntensity(t);
         var st = curSceneType();
-        var plays = rng.chance(SPEAK_P.waterphone[st] != null ? SPEAK_P.waterphone[st] : 0.25);
+        var plays = rng.chance((SPEAK_P.waterphone[st] != null ? SPEAK_P.waterphone[st] : 0.25) * presK("waterphone"));
         // rc.32: the roster keeps the metal to the circling. The CUT's own
-        // apparition is not an entry and is not gated here — it is the cut's.
-        if (!plays || iv < 0.1 || !rosterAllows("waterphone")) {
+        // apparition is not an entry and is not gated here — it is the cut's
+        // (rc.38: nor by an absence — the hush is inhabited every evening).
+        if (!plays || iv < 0.1 || !rosterAllows("waterphone") || isAbsent("waterphone")) {
           lane.at(t + rng.rnd(10, 18) * gmAt(t), attempt); return;
         }
         var res = null;
@@ -3530,7 +3712,7 @@
         var m = res.motif;
         var spb = rng.rnd(1.0, 1.5) * (1.3 - 0.4 * iv); // the metal takes its time
         var tm = phraseTiming(m, spb, 1.6, 2.2, 8);
-        var margin = rng.rnd(6, 12);                    // the lyrical OCCASIONAL voice
+        var margin = rng.rnd(6, 12) * restK("waterphone"); // the lyrical OCCASIONAL voice
         var tok = null;
         try { tok = run.air.tryClaim("waterphone", tm.spanS, margin); } catch (e) {}
         if (!tok) { lane.at(t + rng.rnd(5, 9) * gmAt(t), attempt); return; }
@@ -3560,7 +3742,7 @@
             final: i === m.notes.length - 1,
           });
         }
-        lane.at(t + tm.spanS + margin + rng.rnd(8, 16) * (1.3 - iv) * gmAt(t), attempt);
+        lane.at(t + tm.spanS + margin + rng.rnd(8, 16) * (1.3 - iv) * gmAt(t) * restK("waterphone"), attempt);
       }
       lane.at(run.t0 + rng.rnd(30, 55), attempt);
     }
@@ -3571,13 +3753,13 @@
       function attempt(t) {
         var iv = curIntensity(t);
         var st = curSceneType();
-        var plays = rng.chance(SPEAK_P.boneflute[st] != null ? SPEAK_P.boneflute[st] : 0);
+        var plays = rng.chance((SPEAK_P.boneflute[st] != null ? SPEAK_P.boneflute[st] : 0) * presK("boneflute"));
         // 2â3 utterances an evening, HARD (the counter resets at each
         // performance begin) — the one high lonely color stays lonely.
         // rc.32: the roster's boneflute row is the engine's own SPEAK_P map
         // read as a table — processional and invocation, nothing else.
         if (!plays || iv < 0.12 || run.fluteCount >= run.fluteMax ||
-            !rosterAllows("boneflute")) {
+            !rosterAllows("boneflute") || isAbsent("boneflute")) {
           lane.at(t + rng.rnd(14, 24) * gmAt(t), attempt);
           return;
         }
@@ -3590,7 +3772,7 @@
         var m = res.motif;
         var spb = rng.rnd(0.45, 0.7);
         var tm = phraseTiming(m, spb, 1.3, 0.6, 2.2); // breath-length phrases
-        var margin = rng.rnd(6, 10);
+        var margin = rng.rnd(6, 10) * restK("boneflute");
         var tok = null;
         try { tok = run.air.tryClaim("boneflute", tm.spanS, margin); } catch (e) {}
         if (!tok) { lane.at(t + rng.rnd(6, 10) * gmAt(t), attempt); return; }
@@ -3617,7 +3799,7 @@
             final: i === m.notes.length - 1,
           });
         }
-        lane.at(t + tm.spanS + margin + rng.rnd(20, 40) * gmAt(t), attempt);
+        lane.at(t + tm.spanS + margin + rng.rnd(20, 40) * gmAt(t) * restK("boneflute"), attempt);
       }
       lane.at(run.t0 + rng.rnd(60, 120), attempt);
     }
@@ -4208,6 +4390,9 @@
         // straddling the cut is cut off unfinished — the gesture).
         var rngC = run.streams.cluster;
         var nC = rngC.rint(1, 3);
+        // rc.38: fewer clusters in a thinned invocation — never fewer than
+        // one (the scene's gesture stands), and exactly nC at presence 1.
+        nC = Math.max(1, Math.round(nC * presK("percussion")));
         for (var i = 0; i < nC; i++) {
           var tC = evt.t + evt.durS * ((i + rngC.rnd(0.2, 0.8)) / nC);
           run.clock.lane("percussion").at(tC, function (tc) {
@@ -4243,6 +4428,7 @@
           run.perfScenes = evt.scenes ? evt.scenes.slice() : null;
           run.perfN = evt.n;
           dressWander(evt.n);   // rc.35: a new evening, a slightly different instrument
+          drawAbsences(evt);    // rc.38: …and an instrument or two may sit it out
           // THE BRUISE: last evening's cut severity, one scalar, carried.
           run.bruise = run.lastCutSeverity;
           run.lastCutSeverity = 0;
@@ -4255,7 +4441,12 @@
           // forever): a bruised evening opens on "sting", else on "coil".
           setPoseIfNew(run.bruise > 0.5 ? "sting" : "coil", evt.t, "opening");
           run.fluteCount = 0;
-          run.fluteMax = run.streams.boneflute.rint(2, 3);
+          // "2-3 utterances an evening, HARD" — and the cap, not the chance,
+          // is what the flute actually meets, so presence thins the CAP:
+          // 1-2 at the shipped 0.6, exactly 2-3 at presence 1. Never zero —
+          // an absence is how the flute goes silent, not a rate.
+          run.fluteMax = Math.max(1, Math.round(
+            run.streams.boneflute.rint(2, 3) * presK("boneflute")));
           run.hornFinalDone = false; // each evening earns its own far call (rc.23)
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           if (run.pendingGhost) {
@@ -4706,6 +4897,12 @@
       run = {
         live: true, finalized: false, finalizeId: null,
         clock: clock, bus: bus, budget: budget, field: field,
+        // rc.38 — the birth seed itself, so the absences helper can make its
+        // own fork off it; and the evening's cast (empty until the
+        // conductor's first begin, which arrives before any lane fires).
+        master: master,
+        absent: [], absentMap: {}, lastAbsent: [],
+        castPending: null, castEvening: 0, castPlain: true,
         poolMel: poolMel,
         streams: streams, tokens: [],
         harmony: harmony, motif: motif,
@@ -4807,6 +5004,12 @@
         onEvent: function (evt) {
           handleConductorEvent(evt);
           emitEvent(evt);
+          // rc.38: the cast rides out AFTER the begin event it belongs to.
+          if (run && run.castPending) {
+            var cp = run.castPending;
+            run.castPending = null;
+            emitEvent(cp);
+          }
         },
         jointTools: jointTools,
         tools: jointTools,
@@ -5048,6 +5251,17 @@
               : (info.sceneType === "gathering" || info.sceneType === "afterimage") ? "heartbeat"
               : "loose",
             walkPeriodS: run.walkPeriod,
+          };
+          // rc.38 — tonight's cast: who is sitting this evening out.
+          var absLabels = [];
+          for (var abi = 0; abi < run.absent.length; abi++) {
+            absLabels.push(MIX_LABELS[run.absent[abi]] || run.absent[abi]);
+          }
+          info.cast = {
+            evening: run.castEvening || run.perfN || 0,
+            plain: !!run.castPlain,
+            absent: run.absent.slice(), absentLabels: absLabels,
+            eligible: ABSENCE_ELIGIBLE.slice(),
           };
           info.sink = run.seaChange ? { planned: true, done: !!run.seaChange.done } : { planned: false, done: false };
           info.tonicHz = run.field.tonicHz;
