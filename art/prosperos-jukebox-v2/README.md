@@ -151,6 +151,10 @@ constants:
 
 **Landed in the Library (rc.41, 2026-09-04 — not quite so thin).** Every `presence` default moves to the midpoint between its old rate and the thinning — harpsichord 0.9, cello / the reader's singing / music box 0.8, regal 0.75, vessel 0.68, flue 0.65 — which puts back about half of what rc.39 took away (the cello now −13 % rather than −34 %, the regal −13 % rather than −41 %, the harpsichord −6 % rather than −13 %, over twelve seeds), while the drone, the hum's bed, the sky, the coagula and the evenings' absences stay exactly as they are.
 
+**Landed in Ariel (rc.42, 2026-09-04 — three stops the owner chose, and not quite so thin).** The chimes can be bowed glass, the flutter water drips, the bass a marimba an octave up — three of the lab's radical stops promoted into the engine as options rather than replacements, each a share knob on its desk row (how often a note is played the other way) plus the body's own knob, and each a manner the evening cast may draw for a whole night from the second evening on (struck / plain six evenings in ten), with a moved knob always winning over the cast; the log says "chimes, bowed glass · flutter, water drips · bass, marimba". A manner changes the sound and never the composition: same seed, same evening, note for note, whichever way it is played. And Ariel's `presence` defaults walk halfway back like the other books' — the whistle 0.9, the bass 0.85, the rest 0.8.
+
+**Landed in Ariel (rc.43, 2026-09-04 — the sky gains the seaside).** A gull, a wave wash, a bell buoy, shingle, a rope creak, a far boat horn and the rigging join the ambient pool as seven more things the sky may say, drawn at exactly the same density as before out of a wider vocabulary. Nothing chooses between skies and no evening is a seaside evening; the sea is simply weather now, like everything else up there.
+
 - **the vessel** — a bowed alembic, the Library's over-voice: four
   inharmonic bowl partials, a fundamental that BEATS at 1 Hz, and the
   engine's first free-ring envelope (the bow lifts, the metal goes on

@@ -6625,7 +6625,7 @@ function p3AmbientFires(r) {
     // so the same fingerprint must still come back — and if a presence knob
     // ever leaks past a 1, or an absence is drawn where the door is shut,
     // this row goes red exactly as it did for the wander.
-    var W0 = ariRun(AW_SEED, AW_SIM, { "*": { vary: 0, presence: 1 } }, { absences: false });
+    var W0 = ariRun(AW_SEED, AW_SIM, { "*": { vary: 0, presence: 1 } }, { absences: false, seaside: false });
     var d0 = digest(sigA(W0));
     check("A36 VARY-ZERO: with vary 0 on every layer the stream is rc.33 bit for bit",
       d0 === AW_BASELINE && W0.notes.length > 10 && W0.swallowed.length === 0,
@@ -6843,10 +6843,53 @@ function p3AmbientFires(r) {
       // vibraphone 0.089: the motor's peak is 1 whatever the depth
       var vib = 0.089;
       var amb = 0.06, walls = 0.03;
-      // melody 0.12 (songs and flights only): the whistle's breath rides into
-      // its own mix, the bell's decay lengthens the burst's overlap.
+      // melody (songs and flights only): the whistle's breath rides into its
+      // own mix, the bell's decay lengthens the burst's overlap — and rc.42's
+      // two melodic STOPS are each taken at the LOUDER of the two manners a
+      // note may be played in, because the cast may draw either.
+      //   bell   struck 2 × 0.026 × the decay's overlap, versus the BOWED
+      //          GLASS's cap: eight live swells at eight pitches, summing
+      //          incoherently (√8), each 0.026 × 0.346 × the chain's 2.27.
+      //   cloud  blip 0.04, versus a DRIP's 0.04 × 1.149 at its onset (the
+      //          Q-20 plink is fed a chirp still an octave above its band
+      //          there, and by the time the chirp lands the envelope is at
+      //          0.49 — so the onset is the worst instant either way).
+      var chimeStruck = 0.052 * Math.min(1.12, hi("chime", "decay", 1));
+      var chimeGlass = Math.sqrt(8) * 0.026 * 0.346 * (2 + 0.15 + 0.12);
+      var flutBlip = 0.04, flutDrip = 0.04 * 1.149;
       var mel = 0.028 * ((1 + 0.3 * 0.725 * hi("whistle", "breath", 1)) / 1.2175) +
-                0.052 * Math.min(1.12, hi("chime", "decay", 1)) + 0.04;
+                Math.max(chimeStruck, chimeGlass) + Math.max(flutBlip, flutDrip);
+      notes.push("bell " + Math.max(chimeStruck, chimeGlass).toFixed(3) +
+                 " (glass " + chimeGlass.toFixed(3) + ")");
+      // …and the MARIMBA's onset, which the header's bass line names rather
+      // than folds in: the wood's sine stack at `bar`'s span hi plus the
+      // mallet, incoherent (the tick lives above 1.5 kHz, where the ground
+      // does not). It is four milliseconds long and the wood is a quarter of
+      // the pluck's level by 0.15 s, so it does not enter the scene sums —
+      // but it is asserted here so the number is checked and not merely
+      // argued.
+      // The composites are COMPUTED, not guessed — which is also the answer
+      // to why the pluck's line has always read 0.10 with three partials in
+      // it: triangles at 1, 2 and 3 cancel where sines at 1, 4 and 9.2 pile
+      // up. Same arithmetic, two spectra, two very different peaks.
+      function stackPeak(f, parts) {
+        var best = 0;
+        for (var q = 0; q <= 4000; q++) {
+          var x = q / 4000, v = 0;
+          for (var r = 0; r < parts.length; r++) v += parts[r][1] * f(parts[r][0] * x);
+          v = Math.abs(v);
+          if (v > best) best = v;
+        }
+        return best;
+      }
+      function sinw(x) { return Math.sin(2 * Math.PI * x); }
+      function triw(x) { x = x - Math.floor(x); return x < 0.25 ? 4 * x : (x < 0.75 ? 2 - 4 * x : 4 * x - 4); }
+      var barHi = hi("bass", "bar", 0.45);
+      var pluckPeak = 0.10 * stackPeak(triw, [[1, 1], [2, 0.4 * hi("bass", "warmth", 1)], [3, 0.18 * hi("bass", "warmth", 1)]]);
+      var woodStack = 0.10 * 1.150 * stackPeak(sinw, [[1, 1], [4, barHi], [9.2, 0.12]]);
+      var woodOnset = Math.sqrt(woodStack * woodStack +
+                                Math.pow(0.10 * 1.150 * 0.6 * 0.343, 2));
+      notes.push("pluck onset " + pluckPeak.toFixed(3) + "; marimba onset " + woodOnset.toFixed(3));
       var hover = breeze + bass + aeo + amb + halo + walls + lyre + conc + pan + vib;
       var song = breeze + mel + bass + aeo + amb + halo + walls + lyre + pan;
       // the header's own chain: raw -> rooms (x1.296) -> masterVol 0.5 x the
@@ -6856,7 +6899,7 @@ function p3AmbientFires(r) {
       notes.push("song " + song.toFixed(3) + " -> " + intoLimiter(song).toFixed(3));
       check("A36 WANDER-LEDGER: every span at its worst case still clears the master ceiling",
         intoLimiter(hover) < 0.89 && intoLimiter(song) < 0.89 &&
-        hover <= 0.8125 && song <= 0.827,
+        hover <= 0.8125 && song <= 0.827 && woodOnset <= 0.18 && pluckPeak <= 0.105,
         notes.join("; ") + "; ceiling 0.89");
     })();
 
@@ -6888,9 +6931,14 @@ function p3AmbientFires(r) {
 
     var A39_ELIGIBLE = ["chime", "flutter", "bass", "aeolian",
                         "lyre", "concertina", "handpan", "vibraphone"];
-    // the shipped defaults, as the report names them
-    var A39_DEF = { whistle: 0.8, chime: 0.6, flutter: 0.6, bass: 0.7, aeolian: 0.6,
-                    lyre: 0.6, concertina: 0.6, handpan: 0.6, vibraphone: 0.6 };
+    // The shipped defaults, as the report names them. rc.42 walked every one
+    // of them to the MIDPOINT between the old rate (1 — nobody's constant was
+    // anything else in Ariel) and rc.38's first cut, the owner having found
+    // that cut a little too thin. The knob's MEANING did not change, which is
+    // what the IDENTITY row below still proves by typing 1 back in.
+    var A39_OLD = 1;
+    var A39_DEF = { whistle: 0.9, chime: 0.8, flutter: 0.8, bass: 0.85, aeolian: 0.8,
+                    lyre: 0.8, concertina: 0.8, handpan: 0.8, vibraphone: 0.8 };
     // …and the rows that must NOT carry one: the seam, the sky, the fx return
     var A39_NO_KNOB = ["breeze", "ambient", "halo"];
 
@@ -6966,7 +7014,7 @@ function p3AmbientFires(r) {
     // been returned, a gap scaled where the multiplier should have been
     // exactly 1 — this row goes red and nothing else needs to notice.
     var A39_BASELINE = "f4adb26d:45193";  // rc.36, seed 881, 600 s
-    var I0 = a39Run(A39_SEED, A39_SIM, { presence: 1 }, { absences: false });
+    var I0 = a39Run(A39_SEED, A39_SIM, { presence: 1 }, { absences: false, seaside: false });
     var dI = dig39(sig39(I0));
     check("A38 IDENTITY: presence 1 + absences off is the pre-rc.38 engine, bit for bit",
       dI === A39_BASELINE && I0.notes.length > 10 && I0.swallowed.length === 0,
@@ -7021,13 +7069,23 @@ function p3AmbientFires(r) {
       handpan: function (R) { return grp39(nOf39(R, "handpan"), 1.0).length; },
       vibraphone: function (R) { return grp39(nOf39(R, "vibraphone"), 1e-9).length; },
     };
-    // the band each voice's drop must land in — wider than the report's
-    // pooled numbers, because a harness row must not go red on a seed
-    var A39_BAND = {
-      whistle: [0.04, 0.35], chime: [0.15, 0.55], flutter: [0.2, 0.6], bass: [0.12, 0.5],
-      aeolian: [0.1, 0.7], lyre: [0.08, 0.55], concertina: [0.1, 0.75],
-      handpan: [0.15, 0.75], vibraphone: [0.1, 0.8],
-    };
+    // The band each voice's drop must land in, DERIVED FROM THE KNOB rather
+    // than typed (rc.42): a voice thinned to `def` should enter about
+    // 1 − def/old less often, and the window is deliberately generous — a
+    // quarter of the expected drop to sixty per cent more than it, because
+    // the drop a voice actually shows is not the knob (thinning the bell and
+    // the cloud FREES the air the singer competes for, so the singer's own
+    // drop is smaller than its knob, and a voice with few gestures on one
+    // seed is noise, not a rate). A RISE is the one thing that is never
+    // allowed past five per cent: presence may only ever thin.
+    // Written this way so the NEXT tune of the defaults does not turn these
+    // rows red — move a def and its band moves with it.
+    function a39Band(vk) {
+      var exp = 1 - A39_DEF[vk] / A39_OLD;
+      return [Math.min(exp * 0.25, exp), exp * 1.6];
+    }
+    var A39_RISE = -0.05;   // never a rise beyond five per cent
+    var A39_MIN_N = 100;    // …and under this many gestures, reported not judged
     (function () {
       var bad = [], note = [];
       for (var vk in A39_COUNT) {
@@ -7035,14 +7093,21 @@ function p3AmbientFires(r) {
         var newN = A39_COUNT[vk](T_NEW[0]) + A39_COUNT[vk](T_NEW[1]);
         var drop = (oldN - newN) / oldN;
         note.push(vk + " " + oldN + "->" + newN + " " +
-          (oldN ? (drop * 100).toFixed(0) + "%" : "—") + (oldN < 20 ? "*" : ""));
-        // Under twenty gestures a rate is noise, not a rate: the voice is
-        // reported (the star) but not judged. At `node _harness.js 5400`
-        // every one of the nine clears the bar.
-        if (oldN < 20) continue;
-        if (drop < A39_BAND[vk][0] || drop > A39_BAND[vk][1]) {
+          (oldN ? (drop * 100).toFixed(0) + "%" : "—") + (oldN < A39_MIN_N ? "*" : ""));
+        // Under A39_MIN_N gestures a rate is noise, not a rate: the voice is
+        // reported (the star) but not judged. rc.38 could ask for twenty
+        // because it thinned by forty per cent; rc.42's walk-back to the
+        // midpoint HALVES every drop, so twenty per cent of sixty-seven
+        // gestures is thirteen — well inside the Poisson wobble of two pooled
+        // seeds. A hundred is where the expected loss clears that wobble.
+        // The one thing still judged at any sample size is a RISE: presence
+        // may only ever thin.
+        if (drop < A39_RISE) bad.push(vk + " ROSE " + (-drop * 100).toFixed(0) + "%");
+        if (oldN < A39_MIN_N) continue;
+        var band = a39Band(vk);
+        if (drop < band[0] || drop > band[1]) {
           bad.push(vk + " " + (drop * 100).toFixed(0) + "% outside [" +
-            (A39_BAND[vk][0] * 100) + "," + (A39_BAND[vk][1] * 100) + "]");
+            (band[0] * 100).toFixed(0) + "," + (band[1] * 100).toFixed(0) + "]");
         }
       }
       check("A38 THINNING: every thinned voice enters less often, inside its band",
@@ -7366,6 +7431,942 @@ function p3AmbientFires(r) {
       (I0.swallowed.length + T_OLD[0].swallowed.length + T_OLD[1].swallowed.length +
        T_NEW[0].swallowed.length + T_NEW[1].swallowed.length +
        C1.swallowed.length + C2.swallowed.length) + " swallowed");
+  })();
+
+
+  // ---- ARIEL rc.42: the bowed glass, the water drips and the marimba ----
+  // The owner, 2026-09-04, listening to lab-ariel.html's STOPS tab: "let's
+  // start with the bowed glass on the glass harmonica — option B — add that
+  // one into the mix", then the flutter's water drips, then the bass's
+  // marimba ("that works best with the plus-one register — keep that for the
+  // marimba").
+  //
+  // Three STOPS, built the same way and tested the same way, because the next
+  // one will be built this way too. Each is:
+  //   * a SHARE knob on its layer's desk row (0–1, def 0) — the chance ONE
+  //     note is played the other way, drawn per note on the stop's own fork;
+  //   * the body's own knob, wandering per note like every other body knob;
+  //   * a manner the EVENING CAST may draw from evening two (0.6 plain /
+  //     0.4 the stop), which sets the effective share to 1 for that evening —
+  //     and a moved knob wins over the cast until it is put back;
+  //   * a faithful port of lab-ariel.html's shadow body, the lab's MEASURED
+  //     level-match constant included, routed exactly as the engine's own
+  //     body is routed.
+  //
+  // The contract this block asserts, in one line: A MANNER CHANGES THE SOUND
+  // AND NEVER THE COMPOSITION. Every draw the stops make is on a NEW fork,
+  // the chime's and the flutter's budget claims are made by their callers,
+  // and the marimba deliberately keeps the PLUCK's claim — so the same seed
+  // plays the same evening note for note whichever way it is played, and the
+  // only thing that moves in the stream is the marimba's own octave.
+  (function testAriel42() {
+    var i, j, k;
+
+    // The three stops, as one table — every row below is written against it,
+    // so a fourth stop is four lines here and no new row.
+    var A42_STOPS = [
+      { layer: "chime", share: "glass", body: "swell", stop: "glass", plain: "struck",
+        dress: "chimes, bowed glass", match: 0.346, base: 0.026,
+        bodyDef: 0.8, bodyLo: 0.45, bodyHi: 1.3 },
+      { layer: "flutter", share: "drips", body: "depth", stop: "drip", plain: "blip",
+        castStop: "drips", castPlain: "blips",
+        dress: "flutter, water drips", match: 1.149, base: 0.04,
+        bodyDef: 1, bodyLo: 0.6, bodyHi: 1.4 },
+      { layer: "bass", share: "marimba", body: "bar", stop: "marimba", plain: "plucked",
+        dress: "bass, marimba", match: 1.150, base: 0.10,
+        bodyDef: 0.45, bodyLo: 0.3, bodyHi: 0.6 },
+    ];
+    function castStopOf(S) { return S.castStop || S.stop; }
+    function castPlainOf(S) { return S.castPlain || S.plain; }
+
+    // A run with a RECORDING context kept, so the bodies can be read off what
+    // was actually scheduled rather than off what the engine says it did.
+    // `knobs` is PER LAYER here ({chime: {glass: 1}}), because the stops are
+    // per-layer things and a flat map would set `presence` on nine rows.
+    var A42_CTX = null;
+    function a42Run(seedVal, simS, knobs, copts) {
+      var origAC = W.AudioContext;
+      A42_CTX = null;
+      W.AudioContext = function () { A42_CTX = mkCtx(); return A42_CTX; };
+      var origCE = console.error;
+      var swallowed = [];
+      console.error = function () { swallowed.push("Ariel42: " + Array.prototype.join.call(arguments, " ")); };
+      var R = { events: [], notes: [], swallowed: swallowed, infoFinal: null, t0: null, ctx: null };
+      try {
+        var co = { seed: seedVal, volume: 0.5 };
+        if (copts) for (var ck in copts) co[ck] = copts[ck];
+        var E = P.Ariel.create(co);
+        if (knobs) for (var L in knobs) for (var kk in knobs[L]) E.setLayerParam(L, kk, knobs[L][kk]);
+        E.setEventListener(function (e) { R.events.push(e); });
+        E.setNoteListener(function (n) { R.notes.push(n); });
+        R.t0 = vnow;
+        E.play();
+        vAdvance(R.t0 + simS);
+        try { R.infoFinal = E.getInfo(); } catch (eI) {}
+        E.stop();
+        vAdvance(vnow + 3);
+      } catch (e) {
+        errors.push("a42Run: " + (e && e.message));
+        if (R.t0 == null) R.t0 = vnow;
+      }
+      R.ctx = A42_CTX;
+      console.error = origCE;
+      W.AudioContext = origAC;
+      return R;
+    }
+
+    function r3b(x) { return Math.round(x * 1e3) / 1e3; }
+    function sig42(R) {
+      var s = [], q;
+      for (q = 0; q < R.events.length; q++) {
+        var e = R.events[q];
+        s.push("E|" + e.type + "|" + (e.t != null ? r3b(e.t - R.t0) : "") + "|" +
+               (e.scene || e.kind || e.name || ""));
+      }
+      for (q = 0; q < R.notes.length; q++) {
+        var n = R.notes[q];
+        s.push("N|" + n.voice + "|" + (n.freq != null ? round6(n.freq) : "-") + "|" +
+               r3b(n.t - R.t0) + "|" + (n.kind || n.phraseKind || "") + "|" + r3b(n.durS || 0));
+      }
+      return s.join("\n");
+    }
+    function dig42(s) {
+      var h = 0x811c9dc5;
+      for (var q = 0; q < s.length; q++) { h ^= s.charCodeAt(q); h = Math.imul(h, 0x01000193); }
+      return ((h >>> 0).toString(16) + ":" + s.length);
+    }
+    function notesOf(R, voice, manner) {
+      var o = [];
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice !== voice) continue;
+        if (manner && R.notes[a].manner !== manner) continue;
+        o.push(R.notes[a]);
+      }
+      return o;
+    }
+    function shareOf42(R, S) {
+      var tot = 0, hit = 0;
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice !== S.layer || !R.notes[a].manner) continue;
+        tot++;
+        if (R.notes[a].manner === S.stop) hit++;
+      }
+      return { n: tot, share: tot ? hit / tot : null };
+    }
+
+    // ---------------- the scheduled-envelope reader ----------------
+    // Every body writes its envelope through PJ2.Voice.env, which anchors at
+    // zero and then ramps: a gain node whose first automation event is
+    // set(0, t) IS a note that started at t. That is all the identification
+    // these rows need, and it reads the SCHEDULE rather than trusting the
+    // engine's own account of itself.
+    function envsAt(R, t) {
+      var o = [], ns = (R.ctx && R.ctx._nodes) || [];
+      for (var a = 0; a < ns.length; a++) {
+        var n = ns[a];
+        if (n._kind !== "Gain" || !n.gain || !n.gain._events.length) continue;
+        var e0 = n.gain._events[0];
+        if (e0.type !== "set" || e0.v !== 0 || Math.abs(e0.t - t) > 1e-9) continue;
+        o.push(n.gain._events);
+      }
+      return o;
+    }
+    // …and one body's envelope picked out of them by its SHAPE: how many
+    // segments it has and how long its first one is. (Two voices landing on
+    // the same nanosecond is possible in principle; the shape filter is what
+    // makes the pick unambiguous when it happens.)
+    function envShaped(R, t, nSeg, atkLo, atkHi) {
+      var cands = envsAt(R, t);
+      for (var a = 0; a < cands.length; a++) {
+        var ev = cands[a];
+        if (ev.length !== nSeg) continue;
+        var atk = ev[1].t - ev[0].t;
+        if (atk < atkLo - 1e-9 || atk > atkHi + 1e-9) continue;
+        return ev;
+      }
+      return null;
+    }
+    // the scheduled ENERGY of an envelope (∫A²dt over its segments) and its
+    // peak — the two numbers a level contract can be written in
+    function envEnergy(ev) {
+      var E = 0, pv = 0, pt = null, peak = 0, a2;
+      for (var a = 0; a < ev.length; a++) {
+        var e = ev[a];
+        if (e.type === "cancel") { pt = e.t; continue; }
+        if (e.type === "set") { pv = e.v; pt = e.t; if (e.v > peak) peak = e.v; continue; }
+        if (pt == null) { pv = e.v; pt = e.t; continue; }
+        var dt = e.t - pt, lo = pv, hi = e.v;
+        if (hi > peak) peak = hi;
+        if (dt > 0) {
+          if (e.type === "exp" && lo > 0 && hi > 0) {
+            var r = hi / lo;
+            a2 = (Math.abs(r - 1) < 1e-12) ? lo * lo * dt
+               : lo * lo * dt * (r * r - 1) / (2 * Math.log(r));
+            E += a2;
+          } else {
+            E += dt * (lo * lo + lo * hi + hi * hi) / 3;   // a linear ramp
+          }
+        }
+        pv = hi; pt = e.t;
+      }
+      return { E: E, peak: peak, span: ev.length ? ev[ev.length - 1].t - ev[0].t : 0 };
+    }
+    function meanOf(a) { var s = 0; for (var q = 0; q < a.length; q++) s += a[q]; return a.length ? s / a.length : 0; }
+    function dB(a, b) { return (a > 0 && b > 0) ? 10 * Math.log(a / b) / Math.LN10 : NaN; }
+
+    var A42_SIM = 600, A42_SEED = 881, A42_SEED2 = 20260709;
+    var A42_TSIM = Math.min(RUN, 5400);
+
+    // ---------------- DESK ----------------
+    // The six new knobs, on the three rows, at the defaults the lab page's
+    // sliders were left on. A SHARE carries no span by law (it is an entry
+    // law, like presence and register); a BODY knob carries plan §11.3's.
+    (function () {
+      var bad = [], note = [];
+      try {
+        var E = P.Ariel.create({ seed: 7 });
+        var ps = E.getLayerParams(), vals = E.getLayerParamValues();
+        // the spans live on the wander's own door (getLayerParams is the
+        // DESK's shape — key/label/min/max/def — and stays that way)
+        var sp = E.getWander().spans;
+        for (i = 0; i < A42_STOPS.length; i++) {
+          var S = A42_STOPS[i], row = ps[S.layer] || [], sh = null, bd = null;
+          for (j = 0; j < row.length; j++) {
+            if (row[j].key === S.share) sh = row[j];
+            if (row[j].key === S.body) bd = row[j];
+          }
+          if (!sh) { bad.push(S.layer + ": no " + S.share + " knob"); continue; }
+          if (!bd) { bad.push(S.layer + ": no " + S.body + " knob"); continue; }
+          if (sh.def !== 0) bad.push(S.share + " def " + sh.def + " != 0");
+          if (sh.min !== 0 || sh.max !== 1) bad.push(S.share + " range " + sh.min + "–" + sh.max);
+          if (sp[S.layer] && sp[S.layer][S.share]) bad.push(S.share + " must not wander: a share is an entry law");
+          if (Math.abs(bd.def - S.bodyDef) > 1e-9) bad.push(S.body + " def " + bd.def + " != " + S.bodyDef);
+          var bsp = sp[S.layer] && sp[S.layer][S.body];
+          if (!bsp) bad.push(S.body + " carries no span");
+          else {
+            if (bsp.per !== "touch") bad.push(S.body + " per " + bsp.per + " != touch");
+            if (Math.abs(bsp.lo - S.bodyLo) > 1e-9 || Math.abs(bsp.hi - S.bodyHi) > 1e-9) {
+              bad.push(S.body + " span " + bsp.lo + "–" + bsp.hi + " != " + S.bodyLo + "–" + S.bodyHi);
+            }
+          }
+          if (!vals[S.layer] || vals[S.layer][S.share] !== 0) bad.push(S.share + " not at its def");
+          E.setLayerParam(S.layer, S.share, 0.5);
+          if (Math.abs(E.getLayerParamValues()[S.layer][S.share] - 0.5) > 1e-9) bad.push(S.share + " is not settable");
+          note.push(S.layer + "." + S.share + " 0 + " + S.body + " " + bd.def +
+            (bsp ? " [" + bsp.lo + "," + bsp.hi + "]" : ""));
+        }
+      } catch (eD) { bad.push("threw: " + eD.message); }
+      check("A42 DESK: a share knob (def 0, no span) and a body knob (its span) on each of the three rows",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- IDENTITY ----------------
+    // Pinned against the UNTOUCHED rc.39 engine, the rc.36/rc.38 method
+    // exactly: rc.39's own build was driven with rc.42's presence values typed
+    // into its knobs and the cast door shut, and this is the fingerprint it
+    // returned. So the row proves TWO things at once — that the three stops
+    // cost the stream nothing at share 0 (every draw of theirs is on a fork of
+    // its own), and that walking the presence DEFAULTS to the midpoint moved
+    // nothing but the defaults.
+    var A42_BASELINE = { 881: "33e30ab9:41076", 20260709: "2d709628:34419" };
+    (function () {
+      var bad = [], note = [];
+      var seeds = [A42_SEED, A42_SEED2];
+      for (i = 0; i < seeds.length; i++) {
+        var R = a42Run(seeds[i], A42_SIM, null, { cast: false, seaside: false });
+        var d = dig42(sig42(R));
+        note.push(seeds[i] + " " + d + " (" + R.notes.length + " notes)");
+        if (d !== A42_BASELINE[seeds[i]]) bad.push(seeds[i] + ": " + d + " != pinned " + A42_BASELINE[seeds[i]]);
+        if (R.swallowed.length) bad.push(seeds[i] + ": " + R.swallowed.length + " swallowed");
+        // …and not one note wore a stop
+        for (j = 0; j < A42_STOPS.length; j++) {
+          var s = shareOf42(R, A42_STOPS[j]);
+          if (s.share) bad.push(A42_STOPS[j].stop + " sounded at share 0");
+        }
+      }
+      check("A42 IDENTITY: every share at 0 + the cast shut is the rc.39 engine, bit for bit",
+        bad.length === 0, note.join("; ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // A MANNER CHANGES THE SOUND AND NEVER THE COMPOSITION. Same seed, the
+    // three shares at 0 and then at 1: the same events at the same times, the
+    // same notes at the same times and degrees — and the bass an octave up,
+    // which is the +1 register proved by construction rather than asserted.
+    var NEUT = null;
+    (function () {
+      var bad = [], note = [];
+      var A = a42Run(A42_SEED, A42_SIM, null, { cast: false });
+      var B = a42Run(A42_SEED, A42_SIM,
+        { chime: { glass: 1 }, flutter: { drips: 1 }, bass: { marimba: 1 } }, { cast: false });
+      NEUT = { off: A, on: B };
+      var eA = [], eB = [];
+      for (i = 0; i < A.events.length; i++) eA.push(A.events[i].type + "@" + r3b(A.events[i].t - A.t0));
+      for (i = 0; i < B.events.length; i++) eB.push(B.events[i].type + "@" + r3b(B.events[i].t - B.t0));
+      if (eA.join("|") !== eB.join("|")) bad.push("events differ (" + eA.length + " vs " + eB.length + ")");
+      if (A.notes.length !== B.notes.length) bad.push("note counts " + A.notes.length + " vs " + B.notes.length);
+      var lifted = 0, mism = 0;
+      for (i = 0; i < Math.min(A.notes.length, B.notes.length); i++) {
+        var a = A.notes[i], b = B.notes[i];
+        if (a.voice !== b.voice || r3b(a.t - A.t0) !== r3b(b.t - B.t0) || a.deg !== b.deg ||
+            (a.kind || "") !== (b.kind || "")) { mism++; continue; }
+        if (a.voice === "bass") {
+          // the bar sounds an octave above the note it replaces — exactly
+          if (Math.abs(b.freq - a.freq * 2) > 1e-9 || b.oct !== a.oct + 1 ||
+              b.manner !== "marimba" || a.manner !== "plucked") mism++;
+          else lifted++;
+        } else if (Math.abs((a.freq || 0) - (b.freq || 0)) > 1e-9) mism++;
+      }
+      if (mism) bad.push(mism + " note(s) differ beyond the manner");
+      if (!lifted && !SHORTT) bad.push("no bass note to compare");
+      note.push(A.notes.length + " notes, " + eA.length + " events, " + lifted + " bar(s) an octave up");
+      check("A42 NEUTRAL: shares 0 vs 1 is the same evening — same events, same notes, the bar exactly 2x",
+        bad.length === 0, note.join("") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- SHARE ----------------
+    // The share IS a share: none at 0, all at 1, and half of them at a half.
+    (function () {
+      var bad = [], note = [];
+      var half = a42Run(A42_SEED, A42_TSIM,
+        { chime: { glass: 0.5 }, flutter: { drips: 0.5 }, bass: { marimba: 0.5 } }, { cast: false });
+      for (i = 0; i < A42_STOPS.length; i++) {
+        var S = A42_STOPS[i];
+        var z = shareOf42(NEUT.off, S), o = shareOf42(NEUT.on, S), h = shareOf42(half, S);
+        note.push(S.stop + " " + (h.share == null ? "—" : h.share.toFixed(2)) + " of " + h.n);
+        if (z.share) bad.push(S.stop + " sounded at 0");
+        if (o.n > 0 && o.share !== 1) bad.push(S.stop + " only " + o.share.toFixed(2) + " at share 1");
+        // a rate needs a sample: under forty notes it is reported, not judged
+        if (h.n >= 40 && Math.abs(h.share - 0.5) > 0.1) {
+          bad.push(S.stop + " " + h.share.toFixed(2) + " != 0.5 ± 0.1 over " + h.n);
+        }
+      }
+      check("A42 SHARE: at 0 none, at 1 all, at 0.5 half the notes (± 0.1)",
+        bad.length === 0 && half.swallowed.length === 0,
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- CAST ----------------
+    // Two long runs at the SHIPPED settings, which is how the engine plays.
+    var K1 = a42Run(A42_SEED, A42_TSIM, null, null);
+    var K2 = a42Run(A42_SEED2, A42_TSIM, null, null);
+    function castsOf42(R) { return evOf(R, "cast"); }
+
+    (function () {
+      var bad = [], note = [], drawn = {}, evenings = 0;
+      for (i = 0; i < A42_STOPS.length; i++) drawn[A42_STOPS[i].stop] = 0;
+      var runs = [K1, K2];
+      for (var r = 0; r < runs.length; r++) {
+        var cs = castsOf42(runs[r]);
+        for (i = 0; i < cs.length; i++) {
+          var c = cs[i];
+          // EVENING ONE IS ALWAYS PLAIN — the instruments before their doubles
+          if (i === 0) {
+            for (j = 0; j < A42_STOPS.length; j++) {
+              if (c[A42_STOPS[j].layer] !== castPlainOf(A42_STOPS[j])) {
+                bad.push("run " + r + ": evening one wears " + c[A42_STOPS[j].layer]);
+              }
+            }
+            if (c.dress && c.dress.length) bad.push("run " + r + ": evening one is dressed");
+            continue;
+          }
+          evenings++;
+          for (j = 0; j < A42_STOPS.length; j++) {
+            var S = A42_STOPS[j], worn = c[S.layer];
+            if (worn !== castStopOf(S) && worn !== castPlainOf(S)) {
+              bad.push("run " + r + ": " + S.layer + " wears '" + worn + "'");
+              continue;
+            }
+            var isStop = (worn === castStopOf(S));
+            if (isStop) drawn[S.stop]++;
+            // the dress line and the field must agree, always
+            var inDress = (c.dress || []).indexOf(S.dress) >= 0;
+            if (isStop !== inDress) bad.push("run " + r + ": " + S.layer + " field/dress disagree");
+          }
+        }
+      }
+      for (var sk in drawn) note.push(sk + " " + drawn[sk] + "/" + evenings);
+      // 0.4 a stop, pooled over every evening from the second — judged only
+      // when there are twenty of them (at `node _harness.js 5400` there are)
+      if (evenings >= 20) {
+        for (i = 0; i < A42_STOPS.length; i++) {
+          var p = drawn[A42_STOPS[i].stop] / evenings;
+          if (Math.abs(p - 0.4) > 0.22) bad.push(A42_STOPS[i].stop + " drawn " + p.toFixed(2) + " != 0.4 ± 0.22");
+        }
+      }
+      check("A42 CAST: evening one plain; from evening two each manner is drawn about 0.4",
+        bad.length === 0, evenings + " evening(s) judged, " + note.join(", ") +
+        (evenings < 20 ? " — under 20, rate reported only" : "") +
+        (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // What the cast SAYS is what the evening PLAYS — and getInfo() says it too.
+    (function () {
+      var bad = [], note = [];
+      var runs = [K1, K2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], cs = castsOf42(R), bs = perfPhase(R, "begin"), judged = 0;
+        for (i = 0; i < cs.length; i++) {
+          var t0e = cs[i].t, t1e = bs[i + 1] ? bs[i + 1].t : Infinity;
+          for (j = 0; j < A42_STOPS.length; j++) {
+            var S = A42_STOPS[j], want = (cs[i][S.layer] === castStopOf(S)) ? S.stop : S.plain;
+            var wrong = 0, seen = 0;
+            for (k = 0; k < R.notes.length; k++) {
+              var n = R.notes[k];
+              if (n.voice !== S.layer || !n.manner) continue;
+              if (n.t < t0e - 1e-9 || n.t >= t1e) continue;
+              seen++;
+              if (n.manner !== want) wrong++;
+            }
+            if (seen) judged++;
+            if (wrong) bad.push("run " + r + " evening " + cs[i].evening + ": " + wrong + " " + S.layer + " note(s) not " + want);
+          }
+        }
+        var info = R.infoFinal, last = cs.length ? cs[cs.length - 1] : null;
+        if (last) {
+          if (!info || !info.cast) bad.push("run " + r + ": no getInfo().cast");
+          else {
+            for (j = 0; j < A42_STOPS.length; j++) {
+              if (info.cast[A42_STOPS[j].layer] !== last[A42_STOPS[j].layer]) {
+                bad.push("run " + r + ": getInfo().cast." + A42_STOPS[j].layer + " disagrees");
+              }
+            }
+            if (JSON.stringify(info.cast.dress) !== JSON.stringify(last.dress)) bad.push("run " + r + ": dress disagrees");
+          }
+        }
+        note.push(cs.length + " evening(s), " + judged + " layer-evening(s) with notes");
+      }
+      check("A42 CAST: a drawn manner is worn by EVERY note that evening; getInfo().cast carries it",
+        bad.length === 0, note.join(" + ") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // A MOVED KNOB WINS OVER THE CAST — the Library's decision 5, kept. The
+    // share is pinned at 0 while the cast is free to draw whatever it likes.
+    (function () {
+      var bad = [], note = [];
+      var R = a42Run(A42_SEED, A42_TSIM,
+        { chime: { glass: 0 }, flutter: { drips: 0 }, bass: { marimba: 0 } }, null);
+      // …the knob is ON its default here, so this run is the CONTROL: the
+      // cast must still be able to dress it.
+      var castDrew = 0, cs = castsOf42(R);
+      for (i = 0; i < cs.length; i++) if ((cs[i].dress || []).length) castDrew++;
+      var R2 = a42Run(A42_SEED, A42_TSIM,
+        { chime: { glass: 0.0001 }, flutter: { drips: 0.0001 }, bass: { marimba: 0.0001 } }, null);
+      var cs2 = castsOf42(R2), dressed2 = 0;
+      for (i = 0; i < cs2.length; i++) if ((cs2[i].dress || []).length) dressed2++;
+      // the cast still SAYS what it drew (the log is the log)…
+      if (!SHORTT && dressed2 === 0) bad.push("the cast drew nothing to be overridden");
+      // …but a moved knob means the notes obey the desk, not the cast
+      for (i = 0; i < A42_STOPS.length; i++) {
+        var s = shareOf42(R2, A42_STOPS[i]);
+        note.push(A42_STOPS[i].stop + " " + (s.share == null ? "—" : s.share.toFixed(3)) + " of " + s.n);
+        if (s.n >= 20 && s.share > 0.02) {
+          bad.push(A42_STOPS[i].stop + " " + s.share.toFixed(2) + " — the cast beat the knob");
+        }
+      }
+      check("A42 CAST: a moved knob wins over the cast until it is put back",
+        bad.length === 0, dressed2 + " dressed evening(s) overridden (" + castDrew + " when the knobs sat still), " +
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- BODY: the bowed glass ----------------
+    // Read off the schedule: the attack IS the swell draw, the release is
+    // eight tenths of a second, the sag is to 0.92 of the peak, and the LIVE
+    // CAP is never exceeded — a record leaves the live list when it is faded
+    // (the cap biting) or when it ends, which is the engine's own bookkeeping
+    // re-derived from the envelopes it actually wrote.
+    (function () {
+      var bad = [], note = [];
+      var R = a42Run(A42_SEED, A42_TSIM, { chime: { glass: 1 } }, { cast: false });
+      var gs = notesOf(R, "chime", "glass"), read = 0, faded = 0;
+      var atkLo = 0.45, atkHi = 1.3;   // the swell's span at vary 1
+      var spans = [];
+      for (i = 0; i < gs.length; i++) {
+        var ev = envShaped(R, gs[i].t, 4, atkLo, atkHi) || envShaped(R, gs[i].t, 7, atkLo, atkHi);
+        if (!ev) continue;
+        read++;
+        var atk = ev[1].t - ev[0].t;
+        var hold = ev[2].t - ev[1].t;
+        var rel = ev[3].t - ev[2].t;
+        if (atk < atkLo - 1e-9 || atk > atkHi + 1e-9) bad.push("swell " + atk.toFixed(3) + " outside its span");
+        if (Math.abs(rel - 0.8) > 1e-9) bad.push("release " + rel.toFixed(3) + " != 0.8");
+        if (hold < 1.5 - 1e-9) bad.push("hold " + hold.toFixed(3) + " < 1.5");
+        if (Math.abs(ev[2].v / ev[1].v - 0.92) > 1e-9) bad.push("sag " + (ev[2].v / ev[1].v).toFixed(3) + " != 0.92");
+        if (ev.length === 7) {
+          faded++;
+          // an anchored fade: cancel, then a fresh anchor, then a ramp to zero
+          if (ev[4].type !== "cancel" || ev[5].type !== "set" || ev[6].type !== "lin" || ev[6].v !== 0) {
+            bad.push("the cap's fade is not anchored");
+          } else if (Math.abs(ev[6].t - ev[5].t - 0.3) > 1e-9) {
+            bad.push("the cap's fade is " + (ev[6].t - ev[5].t).toFixed(3) + " s, not 0.3");
+          }
+          spans.push([ev[0].t, ev[5].t]);          // it left the list when it was faded
+        } else {
+          spans.push([ev[0].t, ev[3].t]);
+        }
+      }
+      // the live count, swept over every start
+      var worst = 0;
+      for (i = 0; i < spans.length; i++) {
+        var live = 0;
+        for (j = 0; j < spans.length; j++) if (spans[j][0] <= spans[i][0] && spans[j][1] > spans[i][0]) live++;
+        if (live > worst) worst = live;
+      }
+      if (worst > 8) bad.push(worst + " swells live at once (the cap is 8)");
+      note.push(read + " of " + gs.length + " swell(s) read, " + faded + " faded by the cap, worst live " + worst);
+      check("A42 BODY glass: the attack is the swell draw, the release 0.8 s, never more than 8 live",
+        bad.length === 0 && (SHORTT || read > 10) && R.swallowed.length === 0,
+        note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // ---------------- BODY: the water drips ----------------
+    // Each drip starts `depth` octaves ABOVE the note's own pitch and falls
+    // into it over 45 ms — above, never below, so a drip can never sound the
+    // wrong note — and the whole drop is over in a quarter of a second.
+    (function () {
+      var bad = [], note = [];
+      var R = a42Run(A42_SEED, A42_TSIM, { flutter: { drips: 1 } }, { cast: false });
+      var ds = notesOf(R, "flutter", "drip"), read = 0, depths = [];
+      var ns = (R.ctx && R.ctx._nodes) || [];
+      for (i = 0; i < ds.length; i++) {
+        var n = ds[i], osc = null;
+        for (j = 0; j < ns.length; j++) {
+          var nd = ns[j];
+          if (nd._kind !== "Oscillator" || !nd.frequency || nd.frequency._events.length !== 2) continue;
+          if (nd.frequency._events[0].type !== "set" || Math.abs(nd.frequency._events[0].t - n.t) > 1e-9) continue;
+          if (nd.frequency._events[1].type !== "exp") continue;
+          osc = nd; break;
+        }
+        if (!osc) continue;
+        read++;
+        var f0 = osc.frequency._events[0].v, f1 = osc.frequency._events[1].v;
+        var oct = Math.log(f0 / n.freq) / Math.LN2;
+        depths.push(oct);
+        if (Math.abs(f1 - n.freq) > 1e-9) bad.push("lands on " + f1.toFixed(2) + ", not " + n.freq.toFixed(2));
+        if (oct < 0.6 - 1e-9 || oct > 1.4 + 1e-9) bad.push("falls " + oct.toFixed(3) + " octaves, outside 0.6–1.4");
+        if (Math.abs(osc.frequency._events[1].t - n.t - 0.045) > 1e-9) bad.push("the fall is not 45 ms");
+        var ev = envShaped(R, n.t, 4, 0.004, 0.004);
+        if (ev) {
+          var span = ev[3].t - ev[0].t;
+          if (Math.abs(span - 0.254) > 1e-9) bad.push("the drop lasts " + span.toFixed(3) + " s, not 0.254");
+        }
+      }
+      var lo = 9, hi = 0;
+      for (i = 0; i < depths.length; i++) { if (depths[i] < lo) lo = depths[i]; if (depths[i] > hi) hi = depths[i]; }
+      note.push(read + " of " + ds.length + " drip(s) read, fall " +
+        (depths.length ? lo.toFixed(2) + "–" + hi.toFixed(2) : "—") + " octaves");
+      check("A42 BODY drips: each drip falls `depth` octaves INTO its own pitch over 45 ms, gone in 0.25 s",
+        bad.length === 0 && (SHORTT || read > 10) && R.swallowed.length === 0,
+        note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // ---------------- BODY: the marimba ----------------
+    // The bar's fundamental is the note event's own pitch (which the NEUTRAL
+    // row above already proved is exactly twice the pluck's), its decay is the
+    // lab's 0.5–0.8 s, and the mallet tick is there: 6 ms of noise through a
+    // highpass at 1.5 kHz.
+    (function () {
+      var bad = [], note = [];
+      var R = a42Run(A42_SEED, A42_TSIM, { bass: { marimba: 1 } }, { cast: false });
+      var ms = notesOf(R, "bass", "marimba"), read = 0, ticks = 0, decs = [];
+      var ns = (R.ctx && R.ctx._nodes) || [];
+      var hp = 0;
+      for (i = 0; i < ns.length; i++) {
+        if (ns[i]._kind === "BiquadFilter" && ns[i].type === "highpass" &&
+            ns[i].frequency && ns[i].frequency._events.length &&
+            ns[i].frequency._events[0].v === 1500) hp++;
+      }
+      for (i = 0; i < ms.length; i++) {
+        var n = ms[i];
+        var ev = envShaped(R, n.t, 4, 0.004, 0.004);
+        if (!ev) continue;
+        read++;
+        var dec = (ev[3].t - ev[1].t);        // the two decay segments together
+        decs.push(dec);
+        if (dec < 0.5 - 1e-9 || dec > 0.8 + 1e-9) bad.push("decay " + dec.toFixed(3) + " outside 0.5–0.8");
+        if (Math.abs(ev[2].v / ev[1].v - 0.22) > 1e-9) bad.push("the wood's step is not 0.22");
+        // the fundamental sounds the note the event says it sounds
+        var found = false;
+        for (j = 0; j < ns.length; j++) {
+          var o = ns[j];
+          if (o._kind !== "Oscillator" || !o.frequency || o.frequency._events.length !== 1) continue;
+          if (Math.abs(o.frequency._events[0].t - n.t) > 1e-9) continue;
+          if (Math.abs(o.frequency._events[0].v - n.freq) < 1e-9) { found = true; break; }
+        }
+        if (!found) bad.push("no fundamental at " + n.freq.toFixed(2));
+        // the mallet: a 6 ms envelope at 0.6 of the bar's peak
+        var tick = envShaped(R, n.t, 3, 0.001, 0.001);
+        if (tick && Math.abs(tick[1].v / ev[1].v - 0.6) < 1e-6 &&
+            Math.abs(tick[2].t - tick[1].t - 0.007) < 1e-9) ticks++;
+      }
+      var lo = 9, hi = 0;
+      for (i = 0; i < decs.length; i++) { if (decs[i] < lo) lo = decs[i]; if (decs[i] > hi) hi = decs[i]; }
+      if (read > 0 && ticks < read) bad.push((read - ticks) + " bar(s) with no mallet");
+      if (read > 0 && hp === 0) bad.push("no 1.5 kHz highpass — the mallet is unfiltered");
+      note.push(read + " of " + ms.length + " bar(s) read, decay " +
+        (decs.length ? lo.toFixed(2) + "–" + hi.toFixed(2) : "—") + " s, " + ticks + " mallet(s), " + hp + " highpass(es)");
+      check("A42 BODY marimba: the bar sounds its own pitch, decays in 0.5–0.8 s, over a 6 ms mallet",
+        bad.length === 0 && (SHORTT || read > 5) && R.swallowed.length === 0,
+        note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // ---------------- LEVEL ----------------
+    // Two claims, and they are different claims on purpose.
+    //
+    // (a) THE MATCH IS APPLIED, EXACTLY. Each stop's mean scheduled envelope
+    //     peak over its plain body's, on the SAME run's velocity draws, must
+    //     come out as the lab's own measured constant. This is the row that
+    //     goes red if a level match is ever dropped, mistyped or applied to
+    //     the wrong base.
+    //
+    // (b) AND IT LANDS. The scheduled ENERGY (∫A²dt × the chain's summed
+    //     power) sits inside a band this round measured and pinned. The bands
+    //     differ because the stops differ, and saying so is the honest thing:
+    //       glass    −1.2 dB — a swell has no decay, so it holds where the
+    //                bell has already gone; 0.346 is an ENERGY match and the
+    //                measurement agrees inside the brief's 1.5 dB.
+    //       drips    −3.0 dB on the envelope alone, of which 1.8 dB is the
+    //                waveform: a SINE carries 1.8 dB more power per unit peak
+    //                than the TRIANGLE it replaces, which is what MATCH was
+    //                measured against — so what a listener gets is about
+    //                −1.2 dB, again inside 1.5.
+    //       marimba  −4.5 dB, and DELIBERATELY. A bar is finished in 0.65 s
+    //                where the string rings for three; matching a plucked
+    //                anchor's total energy with a bar would need a peak above
+    //                the layer's ceiling (the lab's own card says so). The
+    //                wood may be quieter than the string. It may never be
+    //                louder, and the band's upper end is where that is said.
+    var A42_LEVEL_BAND = { glass: [-3, 1.5], drip: [-4.5, 1.5], marimba: [-8, 0] };
+    // the chain's summed POWER: coherent parts add as amplitude (squared
+    // here), incoherent ones add as power. Two bell oscillators at ±3 cents
+    // are one voice; a third partial and a rub band are not.
+    var A42_CHAIN = {
+      struck: 4, glass: 2 * 2 + 0.15 * 0.15 + 0.12 * 0.12,
+      blip: 1, drip: 1 + 0.5 * 0.5,
+      plucked: 1 + 0.4 * 0.4 + 0.18 * 0.18, marimba: 1 + 0.45 * 0.45 + 0.12 * 0.12 + 0.6 * 0.6,
+    };
+    (function () {
+      var bad = [], note = [];
+      var R = a42Run(A42_SEED, A42_TSIM,
+        { chime: { glass: 0.5 }, flutter: { drips: 0.5 }, bass: { marimba: 0.5 } }, { cast: false });
+      for (i = 0; i < A42_STOPS.length; i++) {
+        var S = A42_STOPS[i];
+        var got = { }, want = [S.plain, S.stop];
+        for (j = 0; j < want.length; j++) {
+          var ns2 = notesOf(R, S.layer, want[j]), Es = [], pks = [], rats = [];
+          for (k = 0; k < ns2.length; k++) {
+            var ev = envsAt(R, ns2[k].t), best = null;
+            for (var q = 0; q < ev.length; q++) if (ev[q].length === 4) { best = ev[q]; break; }
+            if (!best) continue;
+            var m = envEnergy(best);
+            Es.push(m.E); pks.push(m.peak);
+            // …and, where the note event carries the velocity it was played
+            // at, the EXACT factor this body applied to the layer's own base
+            // peak. That is the number the match constant IS, note by note,
+            // with no sampling in it at all.
+            if (typeof ns2[k].velocity === "number" && ns2[k].velocity > 0) {
+              rats.push(m.peak / (S.base * ns2[k].velocity));
+            }
+          }
+          got[want[j]] = { n: Es.length, E: meanOf(Es), peak: meanOf(pks), rats: rats };
+        }
+        var A = got[S.plain], B = got[S.stop];
+        if (!A.n || !B.n) { note.push(S.stop + " — no sample"); continue; }
+        var dbE = dB(B.E * A42_CHAIN[S.stop], A.E * A42_CHAIN[S.plain]);
+        var mr;
+        if (B.rats.length) {
+          // exact, per note
+          mr = meanOf(B.rats);
+          var wob = 0;
+          for (k = 0; k < B.rats.length; k++) wob = Math.max(wob, Math.abs(B.rats[k] - S.match));
+          if (wob > 1e-9) bad.push(S.stop + " match wobbles by " + wob.toExponential(1));
+          for (k = 0; k < A.rats.length; k++) {
+            if (Math.abs(A.rats[k] - 1) > 1e-9) { bad.push(S.plain + " is not its own base peak"); break; }
+          }
+        } else {
+          // the ground's events carry no velocity, so its match is read as
+          // the ratio of the two manners' MEAN scheduled peaks over one run:
+          // the same velocity draw feeds both, so the ratio converges on the
+          // constant, and five per cent is the sampling slack that leaves.
+          mr = B.peak / A.peak;
+          if (Math.abs(mr / S.match - 1) > 0.05) bad.push(S.stop + " match " + mr.toFixed(3) + " != " + S.match);
+        }
+        note.push(S.stop + " match " + mr.toFixed(4) + " energy " + dbE.toFixed(1) + " dB (" + A.n + "/" + B.n + ")");
+        var band = A42_LEVEL_BAND[S.stop];
+        if (!(dbE >= band[0] && dbE <= band[1])) {
+          bad.push(S.stop + " energy " + dbE.toFixed(1) + " dB outside [" + band[0] + "," + band[1] + "]");
+        }
+      }
+      check("A42 LEVEL: the lab's measured match is applied exactly, and each stop lands in its band",
+        bad.length === 0 && R.swallowed.length === 0,
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE LAWS THE STOPS MAY NOT TOUCH ----------------
+    // A manner is dress. The feather still crosses the seam (wearing the
+    // evening's manner, because it is the bell's gesture), the ground still
+    // says its last word at x 0.4 of the release (as a bar, an octave above
+    // its usual place), the flutter still retires at x 0.5, and an absent
+    // voice is still absent.
+    (function () {
+      var bad = [], note = [];
+      var R = a42Run(A42_SEED, A42_TSIM,
+        { chime: { glass: 1 }, flutter: { drips: 1 }, bass: { marimba: 1 } }, null);
+      var feathers = notesOf(R, "chime", null), fN = 0, fGlass = 0;
+      for (i = 0; i < feathers.length; i++) {
+        if (feathers[i].kind !== "feather") continue;
+        fN++;
+        if (feathers[i].manner === "glass") fGlass++;
+      }
+      if (fN && fGlass !== fN) bad.push(fN - fGlass + " feather(s) still struck on a glass evening");
+      var finals = 0, lifted = 0;
+      for (i = 0; i < R.notes.length; i++) {
+        var n = R.notes[i];
+        if (n.voice !== "bass" || n.kind !== "final") continue;
+        finals++;
+        if (n.manner === "marimba") lifted++;
+      }
+      if (finals && lifted !== finals) bad.push((finals - lifted) + " last word(s) not wood");
+      var rels = evOf(R, "release").length;
+      if (rels >= 4 && finals < rels * 0.75) bad.push("the ground let go in only " + finals + " of " + rels + " releases");
+      // the ornament still leaves at x 0.5 (the engine's law, not the stop's)
+      var wins = sceneWindows(R), late = 0;
+      for (i = 0; i < wins.length; i++) {
+        if (wins[i].scene !== "release" || !isFinite(wins[i].t1)) continue;
+        var span = wins[i].t1 - wins[i].t0;
+        for (j = 0; j < R.notes.length; j++) {
+          var fn = R.notes[j];
+          if (fn.voice !== "flutter" || fn.t < wins[i].t0 || fn.t >= wins[i].t1) continue;
+          if ((fn.t - wins[i].t0) / span > 0.55) late++;
+        }
+      }
+      if (late) bad.push(late + " drip(s) past x 0.55 of a release");
+      note.push(fN + " feather(s) (" + fGlass + " bowed), " + finals + " last word(s) of " + rels +
+        " release(s) (" + lifted + " wood), " + late + " late drip(s)");
+      check("A42 LAWS: the feather, the last word and the ornament's exit all survive the stops",
+        bad.length === 0 && R.swallowed.length === 0,
+        note.join("") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    check("A42 zero swallowed errors across every stop run",
+      K1.swallowed.length === 0 && K2.swallowed.length === 0 &&
+      NEUT.off.swallowed.length === 0 && NEUT.on.swallowed.length === 0,
+      (K1.swallowed.length + K2.swallowed.length +
+       NEUT.off.swallowed.length + NEUT.on.swallowed.length) + " swallowed" +
+      (K1.swallowed.length ? " :: " + K1.swallowed[0] : ""));
+  })();
+
+
+  // ---- ARIEL rc.43: the sky gains the seaside ----
+  // Seven more members for the ambient pool — a gull, a wave wash, a bell
+  // buoy, shingle, a rope creak, a far boat horn and the rigging — ported
+  // from lab-ariel.html's SEASIDE bodies. NOT a stop and NOT a manner: there
+  // is no seaside evening and nothing chooses between skies. The lane's rate,
+  // the weather gating and the `density` knob are untouched; the sky speaks
+  // exactly as often as it did, out of a wider vocabulary.
+  //
+  // The one real consequence is that adding members to a WEIGHTED POOL
+  // changes which member each existing draw picks, so the ambient fork's
+  // sequence re-rolls from the first one-shot on. That is why the seven have
+  // their own dev door (`create({seaside: false})`) and why every identity row
+  // in this file now shuts it — the rows below prove the door works both ways.
+  (function testAriel43() {
+    var i, j, k;
+
+    var A43_NEW = ["gull", "wave", "buoy", "shingle", "rope", "boathorn", "rigging"];
+    var A43_OLD = ["birdsong", "gust", "sparkle", "leaf", "cricket", "windchime", "bee", "bubble"];
+    // the header's sky line: no single one-shot envelope above 0.025, and no
+    // one-shot's whole chain above the wind chime's own 0.06
+    var A43_PEAK = 0.025, A43_CHAIN = 0.06;
+
+    var A43_CTX = null;
+    function a43Run(seedVal, simS, copts) {
+      var origAC = W.AudioContext;
+      A43_CTX = null;
+      W.AudioContext = function () { A43_CTX = mkCtx(); return A43_CTX; };
+      var origCE = console.error;
+      var swallowed = [];
+      console.error = function () { swallowed.push("Ariel43: " + Array.prototype.join.call(arguments, " ")); };
+      var R = { events: [], notes: [], swallowed: swallowed, t0: null, ctx: null };
+      try {
+        var co = { seed: seedVal, volume: 0.5 };
+        if (copts) for (var ck in copts) co[ck] = copts[ck];
+        var E = P.Ariel.create(co);
+        E.setEventListener(function (e) { R.events.push(e); });
+        E.setNoteListener(function (n) { R.notes.push(n); });
+        R.t0 = vnow;
+        E.play();
+        vAdvance(R.t0 + simS);
+        E.stop();
+        vAdvance(vnow + 3);
+      } catch (e) {
+        errors.push("a43Run: " + (e && e.message));
+        if (R.t0 == null) R.t0 = vnow;
+      }
+      R.ctx = A43_CTX;
+      console.error = origCE;
+      W.AudioContext = origAC;
+      return R;
+    }
+    function skyKinds(R) {
+      var out = {};
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice !== "ambient") continue;
+        var kk = R.notes[a].kind || "?";
+        out[kk] = (out[kk] || 0) + 1;
+      }
+      return out;
+    }
+    // one-shot FIRINGS, not notes: several kinds emit a note per ping, so the
+    // rate the density contract is about is the number of times the lane
+    // spoke, which is one gesture per gap draw. Group by a gap of 7 s — the
+    // lane's own floor, so two gestures can never merge.
+    function skyFirings(R) {
+      var ts = [];
+      for (var a = 0; a < R.notes.length; a++) {
+        if (R.notes[a].voice === "ambient" || R.notes[a].voice === "gust") ts.push(R.notes[a].t);
+      }
+      ts.sort(function (x, y) { return x - y; });
+      var n = 0, last = -1e9;
+      for (a = 0; a < ts.length; a++) { if (ts[a] - last > 6.9) n++; last = ts[a]; }
+      return n;
+    }
+
+    var A43_TSIM = Math.min(RUN, 5400);
+    var S1 = a43Run(20260709, A43_TSIM, null);
+    var S2 = a43Run(881, A43_TSIM, null);
+    var SHUT = a43Run(20260709, A43_TSIM, { seaside: false });
+
+    // ---------------- COVERAGE ----------------
+    (function () {
+      var bad = [], note = [], pooled = {};
+      var runs = [S1, S2];
+      for (var r = 0; r < runs.length; r++) {
+        var kk = skyKinds(runs[r]);
+        for (var key in kk) pooled[key] = (pooled[key] || 0) + kk[key];
+      }
+      for (i = 0; i < A43_NEW.length; i++) {
+        var n = pooled[A43_NEW[i]] || 0;
+        note.push(A43_NEW[i] + " " + n);
+        if (!n) bad.push(A43_NEW[i] + " never fired");
+      }
+      // …and the old eight are all still there: a wider vocabulary, not a
+      // replaced one
+      var lost = [];
+      for (i = 0; i < A43_OLD.length; i++) if (!(pooled[A43_OLD[i]] || 0)) lost.push(A43_OLD[i]);
+      if (lost.length) note.push("old missing: " + lost.join(","));
+      check("A43 SKY: all seven seaside members fire over a long run, and the old eight still do",
+        (SHORTT || bad.length === 0) && (SHORTT || lost.length <= 1),
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : "") +
+        (SHORTT ? " — short run, reported only" : ""));
+    })();
+
+    // ---------------- THE DOOR ----------------
+    (function () {
+      var bad = [], kk = skyKinds(SHUT), seen = [];
+      for (var key in kk) {
+        seen.push(key + " " + kk[key]);
+        if (A43_NEW.indexOf(key) >= 0) bad.push(key + " sounded with the door shut");
+      }
+      check("A43 SKY: with `seaside: false` the pool is the old eight and nothing else",
+        bad.length === 0 && SHUT.swallowed.length === 0,
+        seen.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE DENSITY IS UNTOUCHED ----------------
+    // The lane's gap law owns the rate and the pool owns only WHICH member
+    // speaks, so opening the door must not change how often the sky speaks.
+    // (Not bit-identical: once a different member is picked it takes a
+    // different number of draws from the ambient fork, so the gaps after it
+    // differ. Ten per cent is the room that leaves.)
+    (function () {
+      var bad = [], a = skyFirings(S1), b = skyFirings(SHUT);
+      var d = b ? (a - b) / b : 0;
+      if (b >= 20 && Math.abs(d) > 0.1) bad.push("rate moved " + (d * 100).toFixed(0) + "%");
+      check("A43 SKY: opening the door does not change how often the sky speaks (± 10 %)",
+        bad.length === 0,
+        b + " firing(s) shut -> " + a + " open (" + (d * 100).toFixed(1) + "%)" +
+        (b < 20 ? " — under 20, reported only" : "") +
+        (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE CEILING ----------------
+    // Read off the schedule: no seaside one-shot's envelope is scheduled
+    // above the sky's own 0.025, and no one-shot's whole chain sums above the
+    // wind chime's 0.06 — so the header's sky line does not move.
+    (function () {
+      var bad = [], note = [], worst = 0, worstChain = 0, read = 0, who = "";
+      var runs = [S1, S2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r], ns = (R.ctx && R.ctx._nodes) || [];
+        // index the gain anchors by time once — the runs are long
+        var byT = {};
+        for (i = 0; i < ns.length; i++) {
+          var nd = ns[i];
+          if (nd._kind !== "Gain" || !nd.gain || !nd.gain._events.length) continue;
+          var e0 = nd.gain._events[0];
+          if (e0.type !== "set" || e0.v !== 0) continue;
+          var key = e0.t.toFixed(6);
+          (byT[key] || (byT[key] = [])).push(nd.gain._events);
+        }
+        for (i = 0; i < R.notes.length; i++) {
+          var n = R.notes[i];
+          if (n.voice !== "ambient" || A43_NEW.indexOf(n.kind) < 0) continue;
+          var evs = byT[n.t.toFixed(6)];
+          if (!evs || !evs.length) continue;
+          read++;
+          var chain = 0;
+          for (j = 0; j < evs.length; j++) {
+            var pk = 0;
+            for (k = 0; k < evs[j].length; k++) if (evs[j][k].v > pk) pk = evs[j][k].v;
+            chain += pk;
+            if (pk > worst) { worst = pk; who = n.kind; }
+          }
+          if (chain > worstChain) worstChain = chain;
+          if (chain > A43_CHAIN + 1e-9) bad.push(n.kind + " chain " + chain.toFixed(4));
+        }
+      }
+      if (worst > A43_PEAK + 1e-9) bad.push("worst envelope " + worst.toFixed(4) + " (" + who + ")");
+      note.push(read + " one-shot(s) read, worst envelope " + worst.toFixed(4) +
+        (who ? " (" + who + ")" : "") + ", worst chain " + worstChain.toFixed(4));
+      check("A43 SKY: no seaside one-shot above the sky's 0.025, no chain above the chime's 0.06",
+        bad.length === 0 && (SHORTT || read > 5),
+        note.join("") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // ---------------- THE PITCHED THREE READ THE FIELD ----------------
+    // The buoy's bell, the rigging and the horn carry Hz; everything else in
+    // the seaside is texture and carries none. (The whole-track adherence row
+    // near the top of this section already judges every pitched note against
+    // the live field era by era — this row is here to say WHICH of the seven
+    // are pitched at all, so a future body that forgets to snap is caught by
+    // name rather than by a drifting aggregate.)
+    (function () {
+      var bad = [], note = [], pitched = {}, unpitched = {};
+      var runs = [S1, S2];
+      for (var r = 0; r < runs.length; r++) {
+        var R = runs[r];
+        for (i = 0; i < R.notes.length; i++) {
+          var n = R.notes[i];
+          if (n.voice !== "ambient" || A43_NEW.indexOf(n.kind) < 0) continue;
+          if (n.freq != null && n.freq > 0) pitched[n.kind] = (pitched[n.kind] || 0) + 1;
+          else unpitched[n.kind] = (unpitched[n.kind] || 0) + 1;
+        }
+      }
+      var want = { buoy: 1, rigging: 1, boathorn: 1 };
+      for (i = 0; i < A43_NEW.length; i++) {
+        var kk = A43_NEW[i], p = pitched[kk] || 0, u = unpitched[kk] || 0;
+        note.push(kk + " " + p + "/" + (p + u));
+        if (want[kk] && u) bad.push(kk + " emitted " + u + " note(s) with no pitch");
+        if (!want[kk] && p) bad.push(kk + " is texture and should carry no Hz");
+      }
+      check("A43 SKY: the buoy, the rigging and the horn carry snapped pitch; the rest are texture",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    check("A43 zero swallowed errors across every seaside run",
+      S1.swallowed.length === 0 && S2.swallowed.length === 0 && SHUT.swallowed.length === 0,
+      (S1.swallowed.length + S2.swallowed.length + SHUT.swallowed.length) + " swallowed" +
+      (S1.swallowed.length ? " :: " + S1.swallowed[0] : ""));
   })();
 
   // ============================== ALCHEMY ==============================
