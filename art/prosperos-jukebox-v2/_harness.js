@@ -4214,6 +4214,11 @@ function p3AmbientFires(r) {
 //   three of the seven knobs promote a constant that was not 1). The shipped
 //   defaults ARE the reduction; typing rc.36's numbers back restores the old
 //   rate EXACTLY, which is what the IDENTITY rows below assert byte for byte.
+//   The defaults were re-tuned on 2026-09-04 to the MIDPOINT between rc.36 and
+//   rc.39's first thinning ("we may have overcorrected a bit"), so the per-
+//   voice drop row derives its expectation from the knobs themselves and the
+//   next tune moves it too; the seam, bed and signature rows are pinned and
+//   pass unchanged, because none of them may move whatever presence says.
 //   ABSENCES — from evening two, PJ2.Voice.absences may sit a voice or two of
 //   the pool out for the whole evening. Entries only: a gesture already
 //   sounding at the seam finishes, the beds never sit out, and the memory is
@@ -4227,7 +4232,10 @@ function p3AmbientFires(r) {
   var T_A = 20260706, T_B = 20260707;
   var T_SIM = 1800, T_LONG = 9000;
   var RC36 = { harpsichord: 1, cello: 1, hum: 1, musicbox: 1, vessel: 0.85, regal: 0.95, flue: 0.8 };
-  var SHIP = { harpsichord: 0.8, cello: 0.6, hum: 0.6, musicbox: 0.6, vessel: 0.5, regal: 0.55, flue: 0.5 };
+  // the MIDPOINT tune (owner, 2026-09-04: rc.39 overcorrected — "turn the
+  // knob back a little, somewhere in between"): every default is halfway
+  // between its rc.36 value above and rc.39's first thinning.
+  var SHIP = { harpsichord: 0.9, cello: 0.8, hum: 0.8, musicbox: 0.8, vessel: 0.68, regal: 0.75, flue: 0.65 };
   var THIN_SEEDS = [20260706, 20260707, 20260708, 20260709, 20260710, 20260711, 20260712, 20260713];
   var tErrs = [];
 
@@ -4359,31 +4367,48 @@ function p3AmbientFires(r) {
     var a = OLD[key] || 0, b = NEW[key] || 0;
     return a ? Math.round((a - b) / a * 1000) / 10 : 0;
   }
-  // key -> [display, lo%, hi%]. The bands are wide on purpose: these are
-  // counts of gestures over eight evenings-worth of seeds, and the point of
-  // the row is "audibly thinner, and not absurdly so", not a pinned number.
+  // key -> [display, layer]. The expectation is DERIVED FROM THE KNOB, never
+  // pinned: a voice standing at `def` where rc.36 stood at `ref` should enter
+  // about 1 - def/ref less often, so the owner's next tune of the defaults
+  // moves this row's expectation with it instead of breaking it.
+  //
+  // The window around that expectation is deliberately generous — a quarter
+  // of it to 1.6x, plus a 3-point grace for counting noise (the flue enters
+  // about forty times over these eight evenings-worth of seeds, so a single
+  // gesture is worth 2.4 points) — and it is one-directional at heart: a
+  // thinned voice may never come out LOUDER than rc.36 by more than 5 %.
+  // Entries are gated by the roster, the air and the hold laws as well as by
+  // the voice's own coin, so a poll that was nearly certain to fire anyway
+  // loses less than the knob's arithmetic suggests, and better than a third
+  // of the vessel's bows are its SIGNATURE, which ignores presence outright.
+  // What the row is for is "audibly thinner, in the direction and roughly the
+  // proportion the knob asks, and never louder" — not a pinned number.
+  var BAND_LO_MUL = 0.25, BAND_HI_MUL = 1.6, BAND_GRACE = 3, BAND_MAX_RISE = 5;
   var BANDS = [
-    ["air:pluck", "harpsichord x0.8", 8, 30],
-    ["air:musicbox", "music box x0.6", 22, 50],
-    ["air:hum", "the reader's singing x0.6", 35, 68],
-    ["air:flue", "flue x0.5", 28, 65],
-    ["cello", "cello x0.6", 22, 50],
-    ["regal", "regal x0.55", 25, 55],
-    // the vessel is the exception the brief asks for: better than a third of
-    // its bows ARE its signature (the first bow of each reverie, which
-    // ignores `presence`), so the whole voice thins by less than its
-    // thinnable half does. Both numbers are reported.
-    ["vessel", "vessel x0.5 (signature-heavy)", 8, 35],
+    ["air:pluck", "harpsichord", "harpsichord"],
+    ["air:musicbox", "music box", "musicbox"],
+    ["air:hum", "the reader's singing", "hum"],
+    ["air:flue", "flue", "flue"],
+    ["cello", "cello", "cello"],
+    ["regal", "regal", "regal"],
+    ["vessel", "vessel (signature-heavy)", "vessel"],
   ];
   var bandBad = [], bandNote = [];
   for (var bi = 0; bi < BANDS.length; bi++) {
+    var bLayer = BANDS[bi][2];
     var d = drop(BANDS[bi][0]);
-    bandNote.push(BANDS[bi][1] + " " + (OLD[BANDS[bi][0]] || 0) + "->" + (NEW[BANDS[bi][0]] || 0) + " " + d.toFixed(1) + "%");
-    if (!(d >= BANDS[bi][2] && d <= BANDS[bi][3])) {
-      bandBad.push(BANDS[bi][1] + " " + d.toFixed(1) + "% outside " + BANDS[bi][2] + "-" + BANDS[bi][3] + "%");
+    var want = 100 * (1 - SHIP[bLayer] / RC36[bLayer]);       // the knob's own arithmetic
+    var bLo = Math.max(want * BAND_LO_MUL - BAND_GRACE, -BAND_MAX_RISE);
+    var bHi = want * BAND_HI_MUL + BAND_GRACE;
+    var bName = BANDS[bi][1] + " x" + SHIP[bLayer];
+    bandNote.push(bName + " " + (OLD[BANDS[bi][0]] || 0) + "->" + (NEW[BANDS[bi][0]] || 0) +
+      " " + d.toFixed(1) + "% (want ~" + want.toFixed(1) + "%)");
+    if (!(d >= bLo && d <= bHi)) {
+      bandBad.push(bName + " " + d.toFixed(1) + "% outside " + bLo.toFixed(1) + "-" + bHi.toFixed(1) +
+        "% (knob asks ~" + want.toFixed(1) + "%)");
     }
   }
-  check("LIB39 THINNING every thinned voice enters less often, each inside its band",
+  check("LIB39 THINNING every thinned voice enters less often, by about what its knob asks",
     bandBad.length === 0, bandBad.length ? bandBad.join(" · ") : bandNote.join(" · "));
 
   // the seams and the beds are NOT thinned: identical counts, both sides
@@ -4498,9 +4523,11 @@ function p3AmbientFires(r) {
       if (nrows[dj].key === "presence") deskBad.push(NEVER[di] + " must not be thinnable");
     }
   }
+  var deskShown = [];
+  for (lk in SHIP) deskShown.push(lk + " " + SHIP[lk]);
   check("LIB39 DESK every non-seam row carries `presence` at its shipped default; the seams carry none",
     deskSeen === 7 && deskBad.length === 0,
-    deskBad.length ? deskBad.join(" · ") : "7 strip(s): harpsichord 0.8 · cello/hum/musicbox 0.6 · regal 0.55 · vessel/flue 0.5");
+    deskBad.length ? deskBad.join(" · ") : deskShown.length + " strip(s): " + deskShown.join(" · "));
 
   // the knob is honest at both ends: 0 silences the voice, and a big number
   // does not (the entry laws still hold — the roster, the holds, the air)
