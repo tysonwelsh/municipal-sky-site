@@ -496,6 +496,45 @@ Build brief (the contract): the session scratchpad's
 `lab-sycorax-brief.md`; the Library lab brief's hard rules, ergonomics
 and acceptance checklist apply unchanged.
 
+### 5.5 The Sycorax stops, second try — radical (owner, 2026-09-04)
+
+The owner, after choosing Ariel's stops by ear: "I didn't love any of the
+Sycorax stops. Redo them — more creative, more diverse, like we did with
+Ariel's — a whole new stops tab for the Sycorax lab." So §5.3's stops
+(ponticello, stopped horn, struck waterphone, fingertips, dog off) are
+retired from the page and replaced by a RADICAL set in §6.4's form: every
+layer a radio ENGINE / A / B, `level` and `register` on every card, one
+body knob per variant, a class-change line, level-matched to the engine
+within ±1.5 dB, the quick row (ENGINE · ALL A · ALL B · SHUFFLE), and the
+test — *a listener names a different instrument within two seconds*.
+The rite's laws hold for every shadow: the gurdy's and the horn's go
+through the page's cut duck; every shadow of a voice the engine kills at
+tB is killed there too; the seam never startles.
+
+| layer | A | B | class change |
+|---|---|---|---|
+| gurdy (the seam) | THE CHOIR — wordless vowels on root and fifth, four detuned voices, a slow breath | THE ARMONICA — bowed glass on the same tones, sine pairs and a rub | wheel-and-string → voices · → glass |
+| horn | CONCH — a shell trumpet, bright formants, speaks in 60 ms | DIDGERIDOO — a buzzing drone with circular-breath pulses and a formant sweep | horn → shell · → pipe |
+| chant | THROAT — kargyraa: a sub-octave growl under the vowel | WHISPER — noise-only formant speech, the ghost of the words | sung → growled · → breathed |
+| rebec | GLASS VIOLIN — a sine bow with a glass rub, no rosin | TROMBA MARINA — one string with a buzzing bridge, low | bowed gut → glass · → buzz |
+| waterphone | GONG — an inharmonic bloom that swells after the strike | CRYSTAL — a rubbed rim singing, pure and slow | wail → bronze · → glass |
+| bone flute | OCARINA — a hollow vessel, breath chiff, no upper partials | SHAKUHACHI — wide breath, bent attacks, a shading of the pitch | flute → vessel · → wind |
+| percussion (strokes only; the heartbeat is exempt) | TAIKO — deep skins, slow | BONES — dry wood clicks and rattles | frame drum → war drum · → clatter |
+| ambient | NIGHT — owl, frog, thunder, wolves far off | THE CAVE — drips, stone falls, bats, a distant rumble | the fen → the night · → underground |
+| bullroarer | SIREN — a rising and falling tone at the whirl | THUNDER SHEET — a metal sheet's rumble | slat → tone · → sheet |
+| overtone chant | ORGAN — a pipe organ chord stepping its mixture | VOCODER — the walk as a robot vowel | voice → pipes · → machine |
+| jaw harp | BERIMBAU — gourd resonance on a wire | MBIRA — metal tines in a gourd | twang → wire · → tines |
+| blade | GLASS RIM — a wet finger on crystal | WHALE — a far, slow song under the water | steel → glass · → sea |
+| cauldron | FIRE — crackle and hiss | RAIN — drops and a patter | pot → hearth · → weather |
+
+The page audits with the FULL CAST: the lab creates its engine with
+absences off and pins every `presence` at 1 while a sticky-bar toggle is
+on (default on), so every layer is present to be shadowed; the toggle
+off restores the shipped rite. Verification as §6.4 plus the cut checks;
+one critic pass, one fix round; the owner chooses by ear; chosen stops
+integrate as Ariel's did (a share knob, the evening cast's manner draw,
+a moved knob wins).
+
 ---
 
 ## 6. Ariel's Day Off
