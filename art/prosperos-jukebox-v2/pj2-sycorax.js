@@ -296,6 +296,119 @@
 //   0.6 dB HIGHER than the unmuted one, which is that variance showing its
 //   size). The hush is not louder than it was.
 //
+// rc.44 - THE STOPS, AND WHAT THEY COST. Seven manners, four register laws
+//   and one body swap, each declared here the way the family declares
+//   everything: the SCHEDULED peak, the chain it feeds, and the MEASURED
+//   number that says whether the arithmetic was honest. Every "measured"
+//   below is a 900 s render through render-soak.html at seed 20260713 with
+//   the layer SOLOED, the manner off and then on, so the number is the
+//   voice's own and not the mix's.
+//
+//   gurdy bed    THE ARMONICA. Pads (3 x 0.035 + 0.028) x 0.480 = 0.0638 and
+//                the sub 0.022 x 0.480 = 0.0106 of envelope, into five sine
+//                partials whose weights sum to 2.75 and whose COMPOSITE is
+//                2.415 (measured over 30 s, the 4 / 4.02 beat included; the
+//                sub keeps partials 1 and 2 only, 0.85). The rub band adds
+//                0.28 x rub (<= 0.336 at the span's hi) of NOISE, incoherent
+//                with the sines, so it sums in quadrature:
+//                sqrt(0.1632^2 + 0.0215^2) = 0.1646, x gurdyLevel 0.10 x 2
+//                (cycle overlap)                     0.031 -> 0.033
+//                and NO grit at all: a glass cycle has no lowpass to send
+//                from and no trompette to buzz, so the gurdy family's whole
+//                share of the grit bus is silent for its life.
+//                MEASURED: -0.14 dB against the cluster (and that is what
+//                the 0.81 correction on the lab's constant bought - see the
+//                constant's own note).
+//   horn         THE REGISTER LAW. The scheduled peak does not move (0.028 +
+//                breath 0.00728 + 3rd partial 0.0028 = 0.0381, x2 for the
+//                two-note call = 0.0762). What moves is what the bell's
+//                FIXED 300->900 Hz lid lets through: a band-limited saw's
+//                peak through it is 1.34-1.46 at the old placement, 1.47-1.57
+//                at -2 and 1.58-1.63 at -3, so the rendered body is up to
+//                x1.21 where the ledger read it as x1.0
+//                                                    0.0762 -> 0.0922
+//                THE CONCH rides inside that: 0.028 x 1.044 = 0.0292 through
+//                two peaking cavities and a 3200 Hz lid, measured peak 1.57
+//                (shell 9) to 1.82 (shell at its span's hi) - the same peak
+//                as the horn's own body, a very different spectrum (centroid
+//                203-474 Hz where the horn at -3 is 90-152 Hz). So the conch
+//                does not raise the line the register law already raised.
+//                MEASURED: -1.39 dB against the horn (presence 3, for a
+//                sample worth reading).
+//   melody       THE THROAT halves the cantor's scheduled peak: 0.032 x vel
+//                x MATCH 0.500 = 0.016. Its source is a saw at 0.55 plus a
+//                square an octave down at `growl`, x 0.5, into tanh(3.2x) -
+//                measured, the clip's output peaks at 0.990 and carries RMS
+//                0.888 where the sung pair carried 0.675, and the 420 Hz
+//                chest sits beside the mouth at 0.55. Net, against the rc.43
+//                engine file with the layer soloed: +0.83 dB of RMS and 4.4
+//                dB LESS peak (0.0383 vs 0.0634) - a clip is a limiter.
+//                THE GLASS VIOLIN: 0.030 x vel x 0.224 = 0.0067 into
+//                1 + 0.3 + 0.12 (composite 1.256) plus a rub band at 0.30 x
+//                rub, incoherent: 0.0088, well UNDER the fiddle's own 0.030.
+//                MEASURED +0.32 dB (the match is what makes those two
+//                sentences agree).
+//                THE CRYSTAL: 0.04 x vel x 1.012 = 0.0405 into three pairs
+//                summing to 1.5 (composite 1.236) plus the finger at 0.2,
+//                incoherent: 0.0507, beside the metal's own ~0.048.
+//                MEASURED -0.21 dB.               0.0949 -> 0.0949 (held)
+//   percussion   THE BONES. One clack is amt = 0.054 (frame 0.045 at the
+//                stroke span's hi) x MATCH 1.200 = 0.0648, into a bar at 1,
+//                its 2.71 mode at 0.35 and a body at 0.2 (composite 1.491)
+//                plus the stick's 0.5 of noise, incoherent:
+//                sqrt(0.0966^2 + 0.0324^2) = 0.102 for one clack - AND IT
+//                LASTS ABOUT TWO MILLISECONDS, after which the bar rings at
+//                6 % of that. Measured, layer-soloed: the RMS is -0.63 dB
+//                against the drums and the worst PEAK is x1.59. So the
+//                LAYER's line does not move - over any window longer than a
+//                clave's contact the bones are the quieter manner - and the
+//                2 ms onset is named here rather than hidden, exactly as
+//                Ariel's marimba names its 4 ms one:
+//                                                    0.1086 sustained, with
+//                                                    a 2 ms onset of 0.17
+//   ambient pool THE CAVE. The loudest of its eight bodies is the thunder
+//                taken underground, 0.045 x 0.893 x 0.9 = 0.0362, under the
+//                fen's own far thunder (0.045); the rumble, the next
+//                loudest, is 0.026 x 0.893 = 0.0232. The sky's line does not
+//                move.                              0.05 -> 0.05
+//                MEASURED +0.81 dB (after the 0.75 correction on the lab's
+//                constant - see it).
+//   blade        THE WHALE: 0.008 x 0.891 = 0.0071 into three partials
+//                summing to 1.55 (composite 1.236) plus the water at 0.2,
+//                incoherent: 0.0089, under the blade's own 0.0136.
+//                MEASURED -0.26 dB (presence 3).    0.0136 -> 0.0136 (held)
+//   jaw harp     THE WIDER RANGE costs the chain nothing: the comb's delay
+//                LENGTHENS (9.1 ms at the old placement, 18.2 at -1, 25.6 at
+//                -2), which is further from the 2.9 ms render-quantum clamp
+//                the body already asserts against, and the Q-4 mouth and the
+//                x6 makeup do not move at all.      0.0303 -> 0.0303
+//   ------------------------------------------------------------------
+//   WORST SCENE, rc.44 (rc.35's numbers in brackets):
+//     invocation   0.033 + 0.0922 + 0.010 + 0.075 + 0.0949 + 0.1086 + 0.05
+//                  + 0.04 = 0.5037 + bullroarer 0.0413 + overtone 0.0323
+//                  + blade 0.0136 + cauldron 0.0317 = 0.6226   [0.6045]
+//   -> ~0.62 absolute worst into the rooms; x the equal-power split's dry
+//   1.0 + wet ~0.3 -> ~0.81 at bus input, x masterGain 0.6 x the saturator's
+//   small-signal ~1.66 -> ~0.806 into the limiter, still under the ~0.89
+//   (-1 dB) master ceiling. For the two milliseconds of a bones onset add
+//   0.065 and read 0.87 - which is the transient the limiter is there for,
+//   and which no scene actually assembles.
+//   MEASURED, 900 s through render-soak.html at seed 20260713, the cast shut
+//   so only the knob differs (the shipped reference is -34.288 dB RMS, worst
+//   peak 0.1943):
+//     gurdy glass 1     -34.482 dB (-0.19)   peak 0.1935
+//     horn conch 1      -34.501 dB (-0.21)   peak 0.1990
+//     rebec glass 1     -34.343 dB (-0.06)   peak 0.2150
+//     water crystal 1   -34.439 dB (-0.15)   peak 0.1814
+//     perc bones 1      -34.360 dB (-0.07)   peak 0.2330
+//     sky cave 1        -34.492 dB (-0.20)   peak 0.2071
+//     blade whale 1     -34.279 dB (+0.01)   peak 0.2042
+//     ALL SEVEN at 1    -34.752 dB (-0.46)   peak 0.2351  (-12.58 dBFS)
+//   and at seed 20260709: reference -34.631, glass 1 -34.426 (+0.21). Zero
+//   non-finite samples, zero silent windows outside a hush, zero page errors
+//   in every one of them. The stops are darker, not louder - which is the
+//   only thing this ledger has ever been for.
+//
 // rc.35 — THE WANDER (PLAN-SOUND-DIVERSITY §11.2 and §11.4). Until now a
 // voice varied in WHAT it played and WHEN; its SOUND was set once — the
 // bullroarer's ten-second swell, the jaw harp's three twangs, the blade's
@@ -519,6 +632,116 @@
   // APPENDED to a strip, never inserted — a knob that moves is a knob the
   // owner has to find again — so the promoted body constants sit after the
   // rc.32 rows and before `vary`.
+  // ==========================================================================
+  // THE STOPS (rc.44) — six of lab-sycorax.html's STOPS cards promoted into
+  // the rite. Five of them are MANNERS: an option the evening may put on,
+  // never a replacement. One of them — the chant's THROAT — is a body SWAP,
+  // because the owner asked for it that way ("replace the chant we currently
+  // have with the throat, so that only the throat occurs"), which is rc.31's
+  // music-box precedent: a stop the owner chooses to live in stops being a
+  // stop and becomes the instrument.
+  //
+  // Every manner is built the same way, and the next one will be too
+  // (pj2-ariel's rc.42 is the family's precedent, inherited whole):
+  //   * a SHARE knob on its layer's desk row (0–1, def 0) — the chance ONE
+  //     sounding is played the other way, drawn on the stop's OWN fork;
+  //   * the body's own knob, wandering like every other body knob;
+  //   * a manner the EVENING CAST may draw from evening two (0.6 plain /
+  //     0.4 the stop), which sets the effective share to 1 for that evening,
+  //     and A MOVED KNOB WINS over the cast until it is put back;
+  //   * a faithful port of the lab's shadow body, the lab's MEASURED
+  //     level-match constant included, routed exactly as the engine's own
+  //     body is routed (so the cut still ducks it, the mixer still faders it
+  //     and the layer's absence still silences it).
+  //
+  // THE CONTRACT, in one line: A MANNER CHANGES THE SOUND AND NEVER THE
+  // COMPOSITION. Every draw a stop makes is on a NEW label-hashed fork —
+  // "cast", "gurdy:glass", "horn:conch", "rebec:glass",
+  // "waterphone:crystal", "percussion:bones", "ambient:cave" — and every
+  // body's own dice (a rattle's clacks, a rockfall's stones) come off the
+  // stop's fork too, never off the voice's. So the same seed plays the same
+  // evening, note for note and event for event, whichever way it is played.
+  //
+  // WHERE THE MANNER IS DRAWN is the one thing that differs per voice, and
+  // it follows the voice's own grain:
+  //   gurdy        per CYCLE (the seam: nothing may change while it sounds)
+  //   horn         per TONE          rebec        per NOTE
+  //   waterphone   per NOTE          percussion   per STROKE (never the
+  //                                               heartbeat: it is the
+  //                                               hush's heart)
+  //   ambient      per ONE-SHOT (never the organum pad, never the cut's
+  //                indrawn breath: those are the rite's own gestures
+  //                rendered into the sky's layer, not sky one-shots)
+  //
+  // THE LEVEL MATCH is what lets a radical stop be radical without being
+  // louder: the same envelope peak through two different spectra can differ
+  // by many decibels, so each body carries the lab's MEASURED scale factor.
+  // These are lab-sycorax.html's own MATCH constants, copied verbatim.
+  // ==========================================================================
+  // THE ONE RE-MEASURED CONSTANT. The lab's is 0.593, measured on its shadow
+  // bus against a gurdy reference that carried the page's own approximation
+  // of the trompette. On the ENGINE's bus a glass cycle carries no trompette
+  // and no grit AT ALL (see armonicaPad), and five sine partials at RMS 0.93
+  // sit where four saws under a 200 Hz lid sat at RMS ~0.35 — so 0.593 landed
+  // the armonica 1.8 dB OVER the cluster, measured layer-soloed at 900 s
+  // through render-soak.html. The engine's own correction is beside the lab's
+  // number rather than instead of it: 0.593 x 0.81. Re-measured after the
+  // trim: +0.1 dB. (The family has done this before — the jaw harp's mbira
+  // constant was re-measured the day its body changed underneath it.)
+  var MATCH_GURDY_ARMONICA = 0.593 * 0.81;  // = 0.480, five glass partials where the cluster had one saw under a 200 Hz lid
+  var MATCH_HORN_CONCH = 1.044;      // two bright formants carry more power than a 300→900 Hz lowpass
+  var MATCH_CHANT_THROAT = 0.500;    // a square an octave down through a clip is 6 dB the cantor's saw never had
+  var MATCH_REBEC_GLASS = 0.224;     // three partials and a wide sustained rub against a saw through four bandpasses
+  var MATCH_WATER_CRYSTAL = 1.012;   // three pure partials against six inharmonic ones plus FM
+  var MATCH_PERC_BONES = 1.200;      // a bar rings 0.14 s where the frame's body runs 0.18
+  // THE SECOND RE-MEASURED CONSTANT, for the same reason as the armonica's.
+  // The lab's is 1.191 (a one-shot-to-one-shot correction: animals and drips
+  // are shorter events than a six-second gust). On the engine's own sky it
+  // landed the cave 2.5 dB over the fen, layer-soloed at 900 s — the cave's
+  // bodies are not only shorter, they are BUSIER (a rockfall is eight clacks
+  // and a thud where a stone-grind is one swept saw). 1.191 x 0.75.
+  var MATCH_AMB_CAVE = 1.191 * 0.75;  // = 0.893, drips and bats against a 6-second gust
+  var MATCH_BLADE_WHALE = 0.891;     // two octaves down, under a 900 Hz lid
+  // The whale's three partials, and the sea's own wow on each of them.
+  var WHALE_PARTIALS = [[1, 1], [2, 0.4], [3, 0.15]];
+
+  // The armonica's five partials, WEIGHT ON THE FOURTH — glass radiates from
+  // its upper modes, and that is the whole reason this is not "a quieter
+  // cluster". The fourth is split into a beating pair (4 and 4.02).
+  var ARM_PARTIALS = [[1, 0.35], [2, 0.5], [4, 0.8], [4.02, 0.8], [5.4, 0.3]];
+  // The glass violin's three, the third INHARMONIC (2.76 — a rim mode, not a
+  // twelfth: a 1:2:3 set reads as an organ pip, which is what the lab's fix
+  // round re-cut this body to escape).
+  var REBEC_GLASS_PARTIALS = [[1, 1], [2, 0.3], [2.76, 0.12]];
+  // The crystal rim's three harmonic pairs.
+  var CRYSTAL_PARTIALS = [[1, 1], [2, 0.35], [3, 0.15]];
+  // The evening cast's coin, per stop.
+  var CAST_STOP_P = 0.4;
+  // …and the seven stops it may draw, in the ONE FIXED ORDER the coins are
+  // tossed in. The order is load-bearing: an eighth stop appended here one
+  // day costs the seven above it not a single draw, so tonight's gurdy is
+  // still tonight's gurdy on the same seed.
+  var CAST_STOPS = [
+    { layer: "gurdy", share: "glass", manner: "glass", plain: "wheel",
+      dress: "gurdy, glass armonica" },
+    { layer: "horn", share: "conch", manner: "conch", plain: "horn",
+      dress: "horn, conch shell" },
+    { layer: "rebec", share: "glassviolin", manner: "glass", plain: "rebec",
+      dress: "rebec, glass violin" },
+    { layer: "waterphone", share: "crystal", manner: "crystal", plain: "waterphone",
+      dress: "waterphone, crystal" },
+    { layer: "percussion", share: "bones", manner: "bones", plain: "drums",
+      dress: "percussion, bones" },
+    { layer: "ambient", share: "cave", manner: "cave", plain: "fen",
+      dress: "sky, the cave" },
+    { layer: "blade", share: "whale", manner: "whale", plain: "blade",
+      dress: "blade, the whale" },
+  ];
+  // The bones sound ONE OCTAVE BELOW the lab's placement — the owner's own
+  // setting, baked into the body the way Ariel's marimba bakes its +1: a
+  // transposition of the instrument, not a knob for the desk.
+  var BONES_OCT = 0.5;
+
   var LAYER_PARAMS = {
     gurdy: [
       { key: "brightness", label: "brightness — how open the cluster's lowpass sits", min: 0.5, max: 1.6, def: 1,
@@ -527,6 +750,17 @@
         lo: 0.7, hi: 1.3, per: "weather" },
       // promoted rc.35: the trompette's env dose, the body's own 0.02
       { key: "dog", label: "dog — the trompette's buzzing dose into the grit bus", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1.2, per: "character" },
+      // rc.44 — THE ARMONICA (see THE STOPS above). `glass` is a SHARE, not
+      // a switch: the chance one CYCLE is bowed glass instead of the
+      // wheel-and-string cluster, drawn at the cycle's own start on the
+      // stop's own fork and held for the cycle's whole life (the seam's
+      // rule — nothing about this drone may move while it is sounding). A
+      // share carries no span: it is an entry law, like presence.
+      { key: "glass", label: "glass — the share of cycles bowed as a GLASS ARMONICA instead of the wheel", min: 0, max: 1, def: 0 },
+      // …and the body's own knob. CHARACTER, because the seam varies by
+      // character and weather only, both read at the cycle's start.
+      { key: "rub", label: "rub — the wet finger's friction on the glass", min: 0, max: 2, def: 1,
         lo: 0.8, hi: 1.2, per: "character" },
       varyDef(),
     ],
@@ -547,6 +781,23 @@
         lo: 0.7, hi: 1.3, per: "touch" },
       { key: "scoop", label: "scoop — the attack's pitch dip", min: 0, max: 2, def: 1,
         lo: 0.6, hi: 1.4, per: "touch" },
+      // rc.44 — THE REGISTER LAW. The owner, 2026-09-04: "drop it down
+      // either one or two octaves — a −2 or a −1 from where it's at now —
+      // and no longer played at the zero point where it's at now." So every
+      // horn tone (the conch's included, and the afterimage's far call and
+      // the arrival's answer, which are horn tones) is drawn ONE or TWO
+      // octaves below the treeline's rc.23 placement, per tone, on the
+      // wander's own touch fork. The knob is that offset in OCTAVES: at its
+      // default the weighted draw plays the law, and a MOVED knob (0 for
+      // today's placement, −1 or −2 to pin one) is the owner's word and
+      // wins — a weighted def costs the fork no draw when it is moved,
+      // which is what lets the identity row ask for today's stream back.
+      { key: "register", label: "register — octaves below the treeline's old placement (−1 or −2, drawn per tone)", min: -2, max: 0, def: -1.5,
+        per: "touch", round: true, weights: [[-1, 0.5], [-2, 0.5]] },
+      // rc.44 — THE CONCH (a manner; see THE STOPS above).
+      { key: "conch", label: "conch — the share of calls blown on a SHELL instead of the horn", min: 0, max: 1, def: 0 },
+      { key: "shell", label: "shell dB — how hard the conch's two cavity peaks bite", min: 0, max: 16, def: 9,
+        lo: 7, hi: 11, per: "touch" },
       varyDef(),
     ],
     chant: [
@@ -564,6 +815,13 @@
         lo: 0.85, hi: 1.15, per: "weather" },
       { key: "breath", label: "breath — the unvoiced air threaded under the tone", min: 0, max: 3, def: 1,
         lo: 0.7, hi: 1.3, per: "touch" },
+      // rc.44 — THE THROAT is the cantor's body now (a SWAP, not a manner:
+      // the owner asked that only the throat occur). `growl` is the weight
+      // of the kargyraa sub-octave square under the vowel. CHARACTER, like
+      // the mouth's own openness: a voice does not change its throat
+      // mid-evening.
+      { key: "growl", label: "growl — the kargyraa sub-octave's weight under the vowel", min: 0, max: 1.5, def: 1,
+        lo: 0.85, hi: 1.15, per: "character" },
       varyDef(),
     ],
     rebec: [
@@ -575,6 +833,12 @@
       // promoted rc.35: how long the rosin grips (the body's 0.12 s)
       { key: "attack", label: "attack s — how long the rosin grips before the tone takes over", min: 0.03, max: 0.3, def: 0.12,
         lo: 0.084, hi: 0.156, per: "touch" },
+      // rc.44 — THE GLASS VIOLIN (a manner; see THE STOPS above). The rebec
+      // keeps its own body; this is the other way the same phrase may be
+      // bowed, drawn per NOTE on the stop's own fork.
+      { key: "glassviolin", label: "glass violin — the share of notes bowed on GLASS instead of gut", min: 0, max: 1, def: 0 },
+      { key: "rub", label: "rub — how hard the finger sticks and slips on the glass", min: 0, max: 2, def: 1,
+        lo: 0.8, hi: 1.2, per: "touch" },
       varyDef(),
     ],
     waterphone: [
@@ -585,6 +849,21 @@
         lo: 1.08, hi: 2.52, per: "touch" },
       { key: "bloom", label: "bloom — the FM swell inside the sustain", min: 0, max: 2, def: 1,
         lo: 0.65, hi: 1.35, per: "touch" },
+      // rc.44 — THE METAL'S RANGE WIDENS. Every waterphone note is drawn at
+      // today's placement or one octave below it, per note, equal odds. The
+      // CUT's apparition is the cut's own gesture, not the waterphone's
+      // entry, and it keeps its placement (as presence and the absences
+      // already leave it alone).
+      { key: "register", label: "register — octaves below the metal's old placement (0 or −1, drawn per note)", min: -1, max: 0, def: -0.5,
+        per: "touch", round: true, weights: [[0, 0.5], [-1, 0.5]] },
+      // rc.44 — THE CRYSTAL (a manner; see THE STOPS above), with a register
+      // law of its OWN: a rubbed rim is a bigger, slower thing than a struck
+      // rod, and it never sounds at today's placement.
+      { key: "crystal", label: "crystal — the share of notes rung as a CRYSTAL rim instead of the metal", min: 0, max: 1, def: 0 },
+      { key: "beat", label: "beat Hz — how fast the crystal rim's pairs beat", min: 0.2, max: 6, def: 2.5,
+        lo: 1.8, hi: 3.2, per: "touch" },
+      { key: "crystalRegister", label: "crystal register — octaves below the old placement for a crystal note (−1 or −2)", min: -2, max: -1, def: -1.5,
+        per: "touch", round: true, weights: [[-1, 0.5], [-2, 0.5]] },
       varyDef(),
     ],
     boneflute: [
@@ -607,11 +886,30 @@
       // promoted rc.35: the hand's velocity spread on the skin strokes
       { key: "stroke", label: "stroke — the hand's velocity spread, one skin stroke to the next", min: 0, max: 2, def: 1,
         lo: 0.8, hi: 1.2, per: "touch" },
+      // rc.44 — THE BONES (a manner; see THE STOPS above). The share is over
+      // the STROKES only — frame, log and rattle. The proto-drum heartbeat
+      // is never re-voiced and never even draws: it is the hush's heart, and
+      // it beats the same in every manner.
+      { key: "bones", label: "bones — the share of STROKES played on dry wood (never the heartbeat)", min: 0, max: 1, def: 0 },
+      // The owner's own setting, and so the shipped default: 0.5, half the
+      // lab's ring. A drier bone is a bone.
+      { key: "dryness", label: "dryness — how long the bones' wood rings (lower is deader)", min: 0.2, max: 2, def: 0.5,
+        lo: 0.4, hi: 0.6, per: "touch" },
       varyDef(),
     ],
     ambient: [
       { key: "density", label: "density — how often the dark speaks", min: 0.5, max: 2, def: 1,
         lo: 0.7, hi: 1.3, per: "weather" },
+      // rc.44 — THE CAVE (a manner; see THE STOPS above). Not new members in
+      // the pool, as Ariel's seaside was: the same eight one-shots, at the
+      // same moments, in the cave's voice. So the pool's weighted draw, its
+      // gap law and its weather gating are untouched by construction — the
+      // sky says the same things, underground.
+      { key: "cave", label: "cave — the share of sky one-shots voiced as THE CAVE instead of the fen", min: 0, max: 1, def: 0 },
+      // the lab's own `cave` size knob, renamed on the desk so the share can
+      // keep the name the owner used for it
+      { key: "depth", label: "depth — how deep the cave runs (the drips' ring, the knock's echo)", min: 0.2, max: 2, def: 1,
+        lo: 0.8, hi: 1.2, per: "touch" },
       varyDef(),
     ],
     // rc.32 — the five auditioned voices. EVERY default is the knob the
@@ -672,6 +970,14 @@
         per: "touch", round: true,
         weights: [[1, 0.1], [2, 0.3], [3, 0.35], [4, 0.2], [5, 0.05]] },
       { key: "gap", label: "gap s — the average space between twangs (±40 %)", min: 0.3, max: 2, def: 0.8 },
+      // rc.44 — THE WIDER RANGE. The owner: "expand the octave range so it
+      // can go from the zero all the way down to negative two." One draw per
+      // UTTERANCE (every twang of it at one placement — a player does not
+      // change instrument mid-phrase), equal odds over the three. Downward
+      // is the safe direction for the comb: a lower pitch is a LONGER delay,
+      // further from the render-quantum clamp the body already asserts.
+      { key: "register", label: "register — octaves below the harp's old placement (0, −1 or −2, per utterance)", min: -2, max: 0, def: -1,
+        per: "touch", round: true, weights: [[0, 1], [-1, 1], [-2, 1]] },
       { key: "presence", label: "presence — multiplies every entry chance", min: 0, max: 3, def: 0.8 },
       varyDef(),
     ],
@@ -689,6 +995,13 @@
       // pitch centre, multiplying the per-sounding draw
       { key: "pitchNight", label: "pitch night — the evening's own blade, shifting the pitch centre", min: 0.8, max: 1.25, def: 1,
         lo: 0.85, hi: 1.15, per: "character" },
+      // rc.44 — THE WHALE (a manner; see THE STOPS above). The two-octave
+      // drop is INSIDE the body, as the lab cut it: that transposition is
+      // the class change — whales do not sing in the treble — so it is not a
+      // knob. `glide` is how far the song bends, in semitones.
+      { key: "whale", label: "whale — the share of soundings sung as a WHALE instead of bowed", min: 0, max: 1, def: 0 },
+      { key: "glide", label: "glide — how far the whale's song bends, in semitones", min: 0, max: 14, def: 5,
+        lo: 3.5, hi: 7, per: "touch" },
       varyDef(),
     ],
     cauldron: [
@@ -992,6 +1305,24 @@
   var TROMP_BASE = 0.10;    // trompette send at rest
   var TROMP_PULSE_MAX = 0.1;// pulses add at most this (60 ms+ ramps)
 
+  // A PLAIN tanh curve, cached by drive — lab-sycorax.html's shaperNode,
+  // ported for the chant's throat (rc.44). Deliberately NOT normalised: the
+  // kargyraa's clip is a saturator, and dividing by tanh(drive) would give
+  // back the 3.2x small-signal gain that IS the growl.
+  var SHAPE_CURVES = {};
+  function shapeCurve(drive) {
+    var key = "d" + Math.round(drive * 10);
+    if (!SHAPE_CURVES[key]) {
+      var n = 1024, curve = new Float32Array(n);
+      for (var i = 0; i < n; i++) {
+        var x = (i / (n - 1)) * 2 - 1;
+        curve[i] = Math.tanh(x * drive);
+      }
+      SHAPE_CURVES[key] = curve;
+    }
+    return SHAPE_CURVES[key];
+  }
+
   // A normalized tanh soft-ceiling (the pj2-voice saturator's shape) —
   // used as INSURANCE after the cavern's-throat bank: |output| â¤ 1 by
   // construction whatever a feedback loop does upstream, and at whisper
@@ -1018,7 +1349,15 @@
     // draw is made and no cast is narrated, so the engine at presence 1 is
     // the rc.36 build, note for note and event for event. The shipped
     // default draws.
-    var absencesOn = (opts.absences !== false);
+    // rc.44 — ONE dev door for the WHOLE evening cast now: `cast: false`
+    // turns off the absence draw AND the seven manner coins, which is what
+    // makes "every share at 0 + the cast shut" the rc.43 engine byte for
+    // byte, event stream included. `absences: false` is kept as its alias
+    // (it is what the rc.37 rows and the thin round's dumps ask for, and it
+    // meant exactly this when the cast held nothing but absences). Both
+    // default OPEN — the shipped engine dresses itself.
+    var castOn = (opts.cast !== false && opts.absences !== false);
+    var absencesOn = castOn;
     var noteLs = [];
     var eventLs = [];
     var analysers = [];
@@ -1125,6 +1464,50 @@
       return (l && l[key] != null) ? l[key] : 1;
     }
 
+    // rc.44 — "A MOVED KNOB WINS OVER THE CAST UNTIL IT IS RESET" (the
+    // Library's decision 5, inherited whole through Ariel's rc.42). A knob
+    // still sitting on its authored default is the evening cast's to set;
+    // the moment the owner moves it the desk is the authority until it is
+    // put back. Drawless, read at schedule time.
+    function pDefOf(layer, key) {
+      var defs = LAYER_PARAMS[layer];
+      if (!defs) return null;
+      for (var i = 0; i < defs.length; i++) if (defs[i].key === key) return defs[i].def;
+      return null;
+    }
+    function knobOrCast(layer, key, castVal) {
+      var d = pDefOf(layer, key);
+      var v = pVal(layer, key);
+      if (d == null) return v;
+      return (v !== d) ? v : castVal;
+    }
+    // THE MANNERS (rc.44). One reader for all seven: the effective SHARE is
+    // the cast's (1 when tonight's manner is the stop, 0 otherwise) unless
+    // the desk knob has been moved off its default, in which case the desk
+    // wins. Read at schedule time; the coin itself is drawn on the stop's
+    // own fork, so at share 0 with the cast shut the whole engine is rc.43
+    // to the bit.
+    // rc.44 - ONE PLACE SAYS WHAT A SOUNDING ACTUALLY SOUNDED. A body that
+    // may be played two ways records which way it went the instant it
+    // renders, and the caller that emits the note reads it back. The
+    // alternative - drawing the coin in the caller and passing it down -
+    // puts one decision in five callers and lets them disagree.
+    var lastManner = {};
+    function tookManner(layer, m) { lastManner[layer] = m; return m; }
+    function mannerOf(layer, dflt) { return lastManner[layer] || dflt || null; }
+
+    function plainCast() {
+      var c = { evening: 0, plain: true, dress: [], absent: [], absentLabels: [] };
+      for (var i = 0; i < CAST_STOPS.length; i++) c[CAST_STOPS[i].layer] = CAST_STOPS[i].plain;
+      return c;
+    }
+    function castIs(layer, manner) {
+      return !!(run && run.cast && run.cast[layer] === manner);
+    }
+    function shareOf(layer, key, manner) {
+      return clamp(knobOrCast(layer, key, castIs(layer, manner) ? 1 : 0), 0, 1);
+    }
+
     // ---- PRESENCE (rc.37) — how often a voice enters -----------------------
     // The owner, 2026-09-03: "it's a little too cluttered now that we added
     // all the new instruments. Reduce the frequency of most instruments —
@@ -1221,15 +1604,40 @@
         try { run.wander[lk].dress(n); } catch (e) {}
       }
     }
-    // ---- THE EVENING'S CAST (rc.37) ---------------------------------------
+    // ---- THE EVENING'S CAST (rc.37; rc.44 gave it its dress) --------------
     // Called at every performance begin with the conductor's own ordinal —
     // the same place, and the same number, the wander dresses itself with.
-    // The draw lands on PJ2.Voice.absences' own fork ("absences:<n>" off the
-    // birth seed), so not one pre-existing stream is re-rolled and the same
-    // seed tells the same evenings. The only memory is last evening's set,
-    // carried across the seam and reset by a reseed (a reseed is a new run).
-    function drawAbsences(evt) {
+    // The absence draw lands on PJ2.Voice.absences' own fork ("absences:<n>"
+    // off the birth seed) and the manner coins on the cast's own, so not one
+    // pre-existing stream is re-rolled and the same seed tells the same
+    // evenings. The only memory is last evening's absent set, carried across
+    // the seam and reset by a reseed (a reseed is a new run).
+    //
+    // rc.44 — TONIGHT'S MANNERS. Seven coins in the fixed order of
+    // CAST_STOPS, each 0.6 plain / 0.4 the stop. A stop drawn sets that
+    // layer's effective share to 1 for the whole evening ("tonight the gurdy
+    // is a glass armonica"); the desk still wins, by knobOrCast, the moment
+    // the owner moves the share. EVENING ONE IS ALWAYS PLAIN: a short listen
+    // must hear the instruments the rite is made of before it hears their
+    // doubles.
+    function drawCast(evt) {
       var n = (evt && evt.n != null) ? evt.n : 1;
+      var si;
+      // DRAWS FIRST, unconditionally and in order, then the gates. The dev
+      // door turns the WHOLE gesture off — no coin, no absence draw, no cast
+      // line — which is what makes "every share 0 + the cast shut" the rc.43
+      // engine byte for byte.
+      var worn = {};
+      for (si = 0; si < CAST_STOPS.length; si++) worn[CAST_STOPS[si].layer] = false;
+      if (castOn) {
+        var crng = run.streams.cast;
+        for (si = 0; si < CAST_STOPS.length; si++) {
+          worn[CAST_STOPS[si].layer] = crng.chance(CAST_STOP_P);
+        }
+        if (n <= 1) {
+          for (si = 0; si < CAST_STOPS.length; si++) worn[CAST_STOPS[si].layer] = false;
+        }
+      }
       var absent = [];
       if (absencesOn && PJ2.Voice && typeof PJ2.Voice.absences === "function") {
         try {
@@ -1250,16 +1658,33 @@
       }
       run.castEvening = n;
       run.castPlain = (n <= 1);
-      if (!absencesOn) return;                 // no draw, no narration
+      // The dress, in plain words — an array, empty when nothing was drawn,
+      // which is exactly what pj2-ui's generic cast case already prints.
+      var dress = [], cast = { evening: n, plain: (n <= 1) };
+      for (si = 0; si < CAST_STOPS.length; si++) {
+        var S = CAST_STOPS[si];
+        cast[S.layer] = worn[S.layer] ? S.manner : S.plain;
+        if (worn[S.layer]) dress.push(S.dress);
+      }
+      cast.dress = dress;
+      cast.absent = absent.slice();
+      cast.absentLabels = labels.slice();
+      run.cast = cast;
+      if (!castOn) return;                     // no draw, no narration
       // Emitted by the conductor wrapper the instant AFTER the performance's
       // begin event (pj2-library's rc.31 pattern), so the log reads
       // "evening N" then "tonight: …" — always before the evening's first
       // note.
-      run.castPending = {
+      var pending = {
         type: "cast", evening: n, plain: (n <= 1),
+        dress: dress.slice(),
         absent: absent.slice(), absentLabels: labels,
         t: (evt && evt.t != null) ? evt.t : run.clock.now(),
       };
+      for (si = 0; si < CAST_STOPS.length; si++) {
+        pending[CAST_STOPS[si].layer] = cast[CAST_STOPS[si].layer];
+      }
+      run.castPending = pending;
     }
 
     function mixEff(key) {
@@ -1695,7 +2120,7 @@
     // (0.5 for the joint, 1.0 when the ambient pool draws it). Sub thump +
     // resonant low boom (pre-attenuated 0.4 BEFORE the Q 5 filter —
     // pj2-voice lesson #2) + a rolling rumble cresting mid-way.
-    function farThunder(t, rng, dose, who) {
+    function farThunder(t, rng, dose, who, cave) {
       var durS = rng.rnd(4.5, 6);
       var peakFreq = rng.rnd(280, 360);
       var boomDur = rng.rnd(0.7, 1.1);
@@ -1703,6 +2128,14 @@
       if (!tok) return;
       run.tokens.push(tok);
       var c = ctx;
+      if (cave) {
+        // the same thunder, underground. The JOINTS' far thunder never comes
+        // here: a joint is the rite's own seam-sound, not a sky one-shot.
+        caveShot("thunder", t, { durS: durS, dose: dose });
+        emitNote({ voice: who || "ambient", kind: "thunder", freq: null, t: t,
+                   durS: durS, manner: "cave" });
+        return;
+      }
       var P = 0.045 * dose;
       var subO = c.createOscillator();
       subO.type = "sine";
@@ -1738,7 +2171,8 @@
       PJ2.Voice.env(g.gain, t, [[0.3, 0.02 * dose], [durS * 0.5 - 0.3, 0.018 * dose], [durS * 0.5, 0]]);
       n.start(t, n.randomOffset);
       n.stop(t + durS + 0.1);
-      emitNote({ voice: who || "ambient", kind: "thunder", freq: null, t: t, durS: durS });
+      emitNote({ voice: who || "ambient", kind: "thunder", freq: null, t: t, durS: durS,
+                 manner: (who === "ambient") ? "fen" : undefined });
     }
 
     // ========================================================================
@@ -1766,6 +2200,53 @@
     // MELODIC BODIES
     // ========================================================================
 
+    // A TREMBLE, IN SERIES (rc.44 — lab-sycorax.html's sTrem, ported). A gain
+    // of 1 with an LFO summed into its param, placed AFTER the envelope in
+    // the chain. A source connected to an AudioParam SUMS with that param's
+    // intrinsic value, so an LFO hung on a note's ENVELOPE gain is audible
+    // before the note opens and after it closes: a thread of un-enveloped
+    // signal under the whole sounding, and one the cut cannot duck. In
+    // series it can do neither.
+    function seriesTrem(rate, depth, t, stopAt, slow) {
+      var c = ctx;
+      var g = c.createGain();
+      g.gain.setValueAtTime(1, t);
+      var dg = c.createGain();
+      dg.gain.setValueAtTime(depth, t);
+      if (slow) {
+        // a random walk rather than a sine: a player's breath does not beat
+        var src = slowNoise(c, rate);
+        src.connect(dg);
+        src.start(t, src.randomOffset); src.stop(stopAt);
+      } else {
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(rate, t);
+        o.connect(dg);
+        o.start(t); o.stop(stopAt);
+      }
+      try { dg.connect(g.gain); } catch (e) {}
+      return g;
+    }
+    // An ENVELOPE GAIN, shut at birth (rc.44). A GainNode is born at 1 and
+    // PJ2.Voice.env anchors it with setValueAtTime(0, t0) — but an
+    // AudioParam's value is computed once per RENDER QUANTUM from the
+    // timeline as it stood at the quantum's start, while a source's start(t)
+    // is sample-accurate. So when t0 falls inside a quantum rather than on
+    // its boundary, the source is already running while the param still
+    // holds the value it had before the anchor — 1 — and up to 128 samples
+    // (2.9 ms) of the body go through AT FULL SCALE. On a noise band that is
+    // a click about 30 dB over the note, and because it depends on where t0
+    // lands inside a quantum it fires on some soundings and not others. One
+    // scheduled event at creation closes it. (The lab's fix round found this
+    // under every enveloped body on its page; the audit note in the header
+    // says where the same shape still lives in this engine.)
+    function envGain() {
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0, ctx.currentTime);
+      return g;
+    }
+
     // ---- the chant (whisper DNA matured: pitched, principal) ---------------
     // Soft saw + detuned pulse-ish square pair â dual F1/F2 vowel bandpasses
     // (set once per note — the bardo formant lesson) with a breath-noise
@@ -1773,6 +2254,36 @@
     // vibrato blooming late. Peak ~0.032 pre-formant-loss compensation
     // (formants eat energy; the v1 hum precedent). Returns the env gain so
     // callers can add the seasick-delay send. ~11 nodes.
+    //
+    // rc.44 - THE CANTOR IS THROAT-SUNG NOW. The owner, 2026-09-04: "replace
+    // the chant we currently have - the default engine one - with the
+    // throat, so that only the throat occurs." So this is a body SWAP, not a
+    // manner: no share knob, no cast draw, no way back from the desk - the
+    // rc.31 music-box precedent, where the stop the owner chose to live in
+    // became the instrument. The stream does not move a millisecond: the
+    // same notes at the same times, sung from a foot lower in the body.
+    //
+    // KARGYRAA (lab-sycorax.html's chant variant A): a square an OCTAVE
+    // BELOW the note - the ventricular folds beating at half the pitch -
+    // added under the saw, both driven into a soft clip, and a 420 Hz chest
+    // resonance mixed in beside the vowel. `growl` is the sub's weight.
+    //
+    // WHAT STAYS, exactly as it was: the cantor's own mouth (F1/F2 set once
+    // per note, Q divided by `openness` x `openDrift`), the vibrato blooming
+    // over the first third, the unvoiced breath thread pre-formant (it goes
+    // straight to the mouth, not through the clip: air is not made by the
+    // folds), the seconds-long edges, the delay send, the roster, presence,
+    // the absences and the cut.
+    // WHAT GOES: the engine's own square AT the note (detune +5, x0.35). The
+    // throat already carries a square, an octave down; two of them in one
+    // clip is mud, and the lab's body - which is what the level match was
+    // measured on - has one.
+    // WHO IS NOT THROAT-SUNG: the ambient pool's KEEN, which borrows this
+    // body with layerKey "ambient". It is the sky's voice, not the cantor's,
+    // it is mixed on the ambient row, and its knobs come off a strip that
+    // has no `growl` at all. The arrival's ORGANUM PAD is the cantor's
+    // throat by the engine's own account (it reads the chant's knobs), so it
+    // IS throat-sung, and it is rendered into the ambient layer as before.
     function renderChantNote(dest, freq, t, durS, peak, vowel, wx, extraSend, layerKey) {
       var c = ctx;
       // The desk knobs bind to the layer that owns the sound: the ambient
@@ -1785,16 +2296,31 @@
       // neither def, so both doors hand back its bare knob: 1, as before.
       var open = (0.75 + 0.5 * wx.breath) *
                  wChar(pLayer, "openness") * wWx(pLayer, "openDrift", t);
+      var throat = (pLayer === "chant");    // rc.44: the cantor, not the sky's keen
+      var stopAt = t + durS + 0.05;
       var o1 = c.createOscillator();
       o1.type = "sawtooth";
       o1.frequency.setValueAtTime(freq, t);
       o1.detune.setValueAtTime(-4, t);
-      var o2 = c.createOscillator();
-      o2.type = "square";
-      o2.frequency.setValueAtTime(freq, t);
-      o2.detune.setValueAtTime(5, t);
-      var o2g = c.createGain();
-      o2g.gain.setValueAtTime(0.35, t);      // the square is color, not body
+      // the throat's own pair: the saw held back, and the fold an octave
+      // under it. The keen keeps the old square AT the note.
+      var o1g = null, sub = null, subg = null, o2 = null, o2g = null;
+      if (throat) {
+        o1g = c.createGain();
+        o1g.gain.setValueAtTime(0.55, t);
+        sub = c.createOscillator();
+        sub.type = "square";
+        sub.frequency.setValueAtTime(freq * 0.5, t);
+        subg = c.createGain();
+        subg.gain.setValueAtTime(clamp(wChar("chant", "growl"), 0, 1.5), t);
+      } else {
+        o2 = c.createOscillator();
+        o2.type = "square";
+        o2.frequency.setValueAtTime(freq, t);
+        o2.detune.setValueAtTime(5, t);
+        o2g = c.createGain();
+        o2g.gain.setValueAtTime(0.35, t);    // the square is color, not body
+      }
       // breath thread — unvoiced air under the tone, pre-formant
       var br = PJ2.Voice.noiseBuffer.source(c, 30);
       var brg = c.createGain();
@@ -1810,7 +2336,16 @@
       vg.gain.linearRampToValueAtTime((0.5 + 1.4 * wx.breath) * wTouch(pLayer, "vibrato"), t + Math.min(1.2, durS * 0.33));
       vib.connect(vg);
       try { vg.connect(o1.frequency); } catch (e0) {}
-      try { vg.connect(o2.frequency); } catch (e1) {}
+      if (throat) {
+        // the fold is locked at half the pitch, so it takes half the
+        // deviation: the same wobble in cents, one octave down
+        var vgHalf = c.createGain();
+        vgHalf.gain.setValueAtTime(0.5, t);
+        vg.connect(vgHalf);
+        try { vgHalf.connect(sub.frequency); } catch (e1) {}
+      } else {
+        try { vg.connect(o2.frequency); } catch (e1b) {}
+      }
       // the mouth — F1/F2, Q divided by openness, set once per note
       var f1 = c.createBiquadFilter();
       f1.type = "bandpass";
@@ -1824,24 +2359,58 @@
       f2g.gain.setValueAtTime(0.5, t);
       var mix = c.createGain();
       mix.gain.setValueAtTime(1, t);
-      o1.connect(f1); o1.connect(f2);
-      o2.connect(o2g); o2g.connect(f1); o2g.connect(f2);
+      if (throat) {
+        // THE FOLDS, THE CLIP, THE MOUTH, THE CHEST.
+        var pre = c.createGain();
+        pre.gain.setValueAtTime(0.5, t);
+        o1.connect(o1g); o1g.connect(pre);
+        sub.connect(subg); subg.connect(pre);
+        var ws = c.createWaveShaper();
+        try { ws.curve = shapeCurve(3.2); ws.oversample = "2x"; } catch (eWs) {}
+        pre.connect(ws);
+        ws.connect(f1); ws.connect(f2);
+        var chest = c.createBiquadFilter();
+        chest.type = "lowpass";
+        chest.frequency.setValueAtTime(420, t);
+        chest.Q.setValueAtTime(0.9, t);
+        var chg = c.createGain();
+        chg.gain.setValueAtTime(0.55, t);
+        ws.connect(chest); chest.connect(chg); chg.connect(mix);
+      } else {
+        o1.connect(f1); o1.connect(f2);
+        o2.connect(o2g); o2g.connect(f1); o2g.connect(f2);
+      }
       br.connect(brg); brg.connect(f1); brg.connect(f2);
       f1.connect(mix); f2.connect(f2g); f2g.connect(mix);
-      var env = c.createGain();
+      var env = envGain();
       mix.connect(env);
-      env.connect(dest);
-      if (extraSend) env.connect(extraSend);
+      // the growl is not steady: the folds beat unevenly. In SERIES after
+      // the envelope, so there is nothing of it before the word starts and
+      // nothing left of it when the cut arrives.
+      var tail = env;
+      if (throat) {
+        var rough = seriesTrem(5.4 + 1.4 * wx.breath, 0.12, t, stopAt);
+        env.connect(rough);
+        tail = rough;
+      }
+      tail.connect(dest);
+      if (extraSend) tail.connect(extraSend);
       // seconds-long edges: the chant never attacks, it surfaces.
       var atk = Math.min(1.6, durS * 0.38);
       var rel = Math.min(1.4, durS * 0.34);
       if (atk + rel > durS - 0.05) { atk = durS * 0.42; rel = durS * 0.42; }
-      PJ2.Voice.env(env.gain, t, [[atk, peak], [Math.max(0.02, durS - atk - rel), peak * 0.94], [rel, 0]]);
-      o1.start(t); o1.stop(t + durS + 0.05);
-      o2.start(t); o2.stop(t + durS + 0.05);
-      br.start(t, br.randomOffset); br.stop(t + durS + 0.05);
-      vib.start(t); vib.stop(t + durS + 0.05);
-      return env;
+      // THE LEVEL MATCH: a square an octave down through a clip is 6 dB of
+      // energy the cantor's saw never had, so the throat schedules HALF the
+      // old peak to sit at the old loudness (the lab's measured
+      // MATCH.chantThroat).
+      var pk = throat ? peak * MATCH_CHANT_THROAT : peak;
+      PJ2.Voice.env(env.gain, t, [[atk, pk], [Math.max(0.02, durS - atk - rel), pk * 0.94], [rel, 0]]);
+      o1.start(t); o1.stop(stopAt);
+      if (throat) { sub.start(t); sub.stop(stopAt); }
+      else { o2.start(t); o2.stop(stopAt); }
+      br.start(t, br.randomOffset); br.stop(stopAt);
+      vib.start(t); vib.stop(stopAt);
+      return tail;
     }
 
     // ---- the rebec (bowed wyrd fiddle) --------------------------------------
@@ -1849,18 +2418,91 @@
     // note — the bardo murmur-formant lesson: automate a formant mid-note
     // and it zippers), a bow-noise thread on the attack, slow bow edges.
     var REBEC_BODY = [[285, 2.2], [610, 2.8], [1150, 3.2], [1900, 2.4]]; // [Hz, Q]
+    // ---- THE GLASS VIOLIN (rc.44, lab-sycorax.html's rebec variant A) -------
+    // A bow drawn on a glass rim. Three things make it an instrument rather
+    // than an organ pip (the Ariel critic's word for a 1:2:3 partial set, and
+    // the first cut of this body was exactly that):
+    //   1. the third partial is INHARMONIC - 2.76, a rim mode, not a twelfth;
+    //   2. the rub is SUSTAINED at about a third of the mix for the whole
+    //      note and pulses at 5.6 Hz - STICK-SLIP, the wet finger catching
+    //      and letting go. A rub that fades out is rosin; a rub that never
+    //      stops is friction, and friction is what a listener names glass by;
+    //   3. the onset SCOOPS - a fifth of the peak through the first 62 % of
+    //      the attack, the rest in the last 38 % - because glass under a bow
+    //      does not bite, it swells.
+    // It keeps the rebec's own everything else: the phrase, the double
+    // stops, the delay send, the air claim, presence, the absences, the cut.
+    // Of the fiddle's wanders it inherits none but its own `rub` - `body`
+    // shapes four wooden resonances this body throws away, and `rosin` and
+    // `attack` shape a bow-noise thread the stick-slip replaces - which is
+    // why both are still DRAWN in renderRebecNote before the branch.
+    function renderRebecGlass(dest, freq, t, durS, vel, extraSend) {
+      var c = ctx;
+      var stopAt = t + durS + 0.06;
+      var rub = clamp(wTouch("rebec", "rub"), 0, 2);
+      var env = envGain();
+      env.connect(dest);
+      if (extraSend) env.connect(extraSend);
+      var atk = Math.min(0.78, durS * 0.55), rel = Math.min(0.5, durS * 0.3);
+      if (atk + rel > durS - 0.04) { atk = durS * 0.55; rel = durS * 0.35; }
+      // THE LEVEL MATCH: three partials and a wide sustained rub against a
+      // saw through four bandpasses, on an attack twice as long.
+      var pk = 0.030 * vel * MATCH_REBEC_GLASS;
+      PJ2.Voice.env(env.gain, t, [[atk * 0.62, pk * 0.22], [atk * 0.38, pk],
+                                  [Math.max(0.02, durS - atk - rel), pk * 0.867], [rel, 0]]);
+      for (var i = 0; i < REBEC_GLASS_PARTIALS.length; i++) {
+        var o = c.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(freq * REBEC_GLASS_PARTIALS[i][0], t);
+        // the second partial beats a hair against its own harmonic: glass
+        if (i === 1) o.detune.setValueAtTime(9, t);
+        var g = c.createGain();
+        g.gain.setValueAtTime(REBEC_GLASS_PARTIALS[i][1], t);
+        o.connect(g); g.connect(env);
+        o.start(t); o.stop(stopAt);
+      }
+      if (rub > 0) {
+        var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(freq * 4.4, t);
+        bp.Q.setValueAtTime(3.5, t);
+        var ng = envGain();
+        // STICK-SLIP, in series: the pulse is the finger's, and it must go
+        // to nothing when the note does.
+        var slip = seriesTrem(5.6, 0.5, t, stopAt);
+        nz.connect(bp); bp.connect(ng); ng.connect(slip); slip.connect(env);
+        // held, not fading: a bowed rim rubs for as long as it sounds
+        PJ2.Voice.env(ng.gain, t, [[atk, 0.30 * rub],
+                                   [Math.max(0.02, durS - atk - rel), 0.28 * rub],
+                                   [rel, 0]]);
+        nz.start(t, nz.randomOffset); nz.stop(stopAt);
+      }
+      return env;
+    }
+
     function renderRebecNote(dest, freq, t, durS, vel, rng, extraSend) {
       var c = ctx;
+      // rc.44 - DRAWS FIRST, in the plain body's own order, WHICHEVER manner
+      // sounds: the hand's detune and the two body resonances come off the
+      // fiddle's own stream, so a glass note must spend them too or the
+      // fiddle's next phrase would land somewhere else. A manner changes the
+      // sound and never the composition.
+      var det = rng.rnd(-6, 6);
+      var i1 = rng.rint(0, 1), i2 = rng.rint(2, 3);
+      var glassRoll = run.streams.rebecGlass.next();
+      if (glassRoll < shareOf("rebec", "glassviolin", "glass")) {
+        tookManner("rebec", "glass");
+        return renderRebecGlass(dest, freq, t, durS, vel, extraSend);
+      }
+      tookManner("rebec", "rebec");
       var o = c.createOscillator();
       o.type = "sawtooth";
       o.frequency.setValueAtTime(freq, t);
-      o.detune.setValueAtTime(rng.rnd(-6, 6), t); // the hand, not the tuning
+      o.detune.setValueAtTime(det, t);            // the hand, not the tuning
       var pre = c.createGain();
       pre.gain.setValueAtTime(0.5, t);            // quiet into the resonances
       o.connect(pre);
-      // two of the four body resonances, drawn per note (a real box moves
-      // as the bow position moves)
-      var i1 = rng.rint(0, 1), i2 = rng.rint(2, 3);
       var mix = c.createGain();
       mix.gain.setValueAtTime(1, t);
       var picks = [REBEC_BODY[i1], REBEC_BODY[i2]];
@@ -1909,7 +2551,73 @@
     // fundamental (era-aware), the injected rng supplies the tremolo rates
     // (texture-adjacent but musical state — seeded), and the master
     // envelope goes through Voice.env for the anchor discipline. ~30 nodes.
-    function renderWaterphoneNote(dest, freq, t, durS, gainScale, rng, extraSend) {
+    // ---- THE CRYSTAL (rc.44, lab-sycorax.html's waterphone variant B) -------
+    // A rubbed rim singing: three HARMONIC partials in beating pairs, an
+    // onset measured in SECONDS, and the finger's friction at the third.
+    // Where the waterphone wails downward, crystal does not move at all -
+    // no gliss, no FM bloom, nothing inharmonic. It has a register law of
+    // its own (one or two octaves below the metal's old placement, never
+    // today's): a rubbed rim is a bigger, slower thing than a struck rod.
+    function renderCrystalNote(dest, freq, t, durS, gainScale, rng, extraSend) {
+      var c = ctx;
+      // A CRYSTAL SPENDS THE METAL'S OWN DICE. The shimmer rates come off
+      // the waterphone's stream, one per tremolo partial; a manner may not
+      // move the voice's stream by a single draw, so they are spent here
+      // even though nothing in this body shimmers.
+      for (var q = 0; q < WATERPHONE_PARTIALS.length; q++) {
+        if (WATERPHONE_PARTIALS[q].trem > 0) rng.rnd(2.5, 6.5);
+      }
+      var d = Math.max(0.6, durS);
+      var stopAt = t + d + 0.3;
+      var gs = (gainScale == null) ? 1 : gainScale;
+      var beat = clamp(wTouch("waterphone", "beat"), 0.2, 6);
+      var env = envGain();
+      env.connect(dest);
+      if (extraSend) env.connect(extraSend);
+      // THE LEVEL MATCH: three pure partials against six inharmonic ones
+      // plus FM.
+      var pk = 0.04 * gs * MATCH_WATER_CRYSTAL;
+      var a = Math.min(2.4, d * 0.42);
+      PJ2.Voice.env(env.gain, t, [[a, pk],
+                                  [Math.max(0.1, d - a - d * 0.3), pk * 0.95],
+                                  [Math.max(0.1, d * 0.3), 0]]);
+      for (var i = 0; i < CRYSTAL_PARTIALS.length; i++) {
+        var hz = freq * CRYSTAL_PARTIALS[i][0];
+        // the pair beats at `beat` Hz, whatever the partial's own pitch
+        var cents = 1200 * Math.log(1 + beat / Math.max(20, hz)) / Math.LN2;
+        for (var k = 0; k < 2; k++) {
+          var o = c.createOscillator();
+          o.type = "sine";
+          o.frequency.setValueAtTime(hz, t);
+          o.detune.setValueAtTime(k ? cents : 0, t);
+          var g = c.createGain();
+          g.gain.setValueAtTime(CRYSTAL_PARTIALS[i][1] * 0.5, t);
+          o.connect(g); g.connect(env);
+          o.start(t); o.stop(stopAt);
+        }
+      }
+      // the finger on the rim - narrow, wet, and it never quite settles.
+      // The unsettling rides its OWN gain, in series: summed into the
+      // envelope it would leave friction under a note that has ended.
+      var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+      var bp = c.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(freq * 3, t);
+      bp.Q.setValueAtTime(12, t);
+      var ng = envGain();
+      var fw = seriesTrem(0.7, 0.35, t, stopAt);
+      nz.connect(bp); bp.connect(ng); ng.connect(fw); fw.connect(env);
+      PJ2.Voice.env(ng.gain, t, [[a, 0.2], [Math.max(0.1, d - a), 0]]);
+      nz.start(t, nz.randomOffset); nz.stop(stopAt);
+      return env;
+    }
+
+    function renderWaterphoneNote(dest, freq, t, durS, gainScale, rng, extraSend, crystal) {
+      if (crystal) {
+        tookManner("waterphone", "crystal");
+        return renderCrystalNote(dest, freq, t, durS, gainScale, rng, extraSend);
+      }
+      tookManner("waterphone", "waterphone");
       var c = ctx;
       var env = c.createGain();
       env.connect(dest);
@@ -2090,6 +2798,62 @@
     // Filtered sine burst (70â110 Hz, fast exponential decay) + a
     // band-passed skin transient â¤ 30 ms. The deadened variant is the
     // muffled palm — shorter, duller, quieter.
+    // ---- THE BONES (rc.44, lab-sycorax.html's percussion variant B) --------
+    // Dry wood: no skin at all. Every stroke is a tuned bar - two modes at
+    // hz and hz x 2.71 - with a hint of body under it and the stick on top;
+    // the log becomes a hollow woodblock and the rattle a clatter of them.
+    // TWO OWNER SETTINGS ARE BAKED IN: `dryness` ships at 0.5 (half the
+    // lab's ring - a drier bone is a bone), and the whole instrument sounds
+    // ONE OCTAVE BELOW the lab's placement, a transposition of the
+    // instrument rather than a knob (Ariel's marimba bakes its +1 the same
+    // way). The heartbeat is not here and never will be: it is the hush's
+    // heart, and it beats the same in every manner.
+    function bonesClack(at, hz, amt, len, dry, thru) {
+      var c = ctx;
+      var mix = c.createGain();
+      mix.gain.setValueAtTime(1, at);
+      var g = envGain();
+      mix.connect(g); g.connect(run.layPerc);
+      // the strike still wakes the cavern, as the skin's did
+      if (thru) { try { g.connect(run.throatSendPerc); } catch (eT) {} }
+      PJ2.Voice.env(g.gain, at, [[0.001, amt], [len * dry, amt * 0.06], [0.02, 0]]);
+      var m1 = c.createOscillator();
+      m1.type = "sine";
+      m1.frequency.setValueAtTime(hz, at);
+      var m1g = c.createGain();
+      m1g.gain.setValueAtTime(1, at);
+      m1.connect(m1g); m1g.connect(mix);
+      m1.start(at); m1.stop(at + len * dry + 0.08);
+      var m2 = c.createOscillator();
+      m2.type = "sine";
+      m2.frequency.setValueAtTime(hz * 2.71, at);
+      var m2g = envGain();
+      m2.connect(m2g); m2g.connect(mix);
+      PJ2.Voice.env(m2g.gain, at, [[0.001, 0.35], [len * dry * 0.45, 0]]);
+      m2.start(at); m2.stop(at + len * dry * 0.5 + 0.05);
+      var wo = c.createOscillator();
+      wo.type = "sine";
+      wo.frequency.setValueAtTime(hz * 0.25, at);
+      var wg = envGain();
+      wo.connect(wg); wg.connect(mix);
+      PJ2.Voice.env(wg.gain, at, [[0.002, 0.2], [0.04, 0]]);
+      wo.start(at); wo.stop(at + 0.06);
+      var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+      var bq = c.createBiquadFilter();
+      bq.type = "bandpass";
+      bq.frequency.setValueAtTime(hz * 1.6, at);
+      bq.Q.setValueAtTime(3, at);
+      var ng = envGain();
+      nz.connect(bq); bq.connect(ng); ng.connect(mix);
+      PJ2.Voice.env(ng.gain, at, [[0.001, 0.5], [0.012, 0]]);
+      nz.start(at, nz.randomOffset); nz.stop(at + 0.03);
+    }
+    // the stroke's manner, drawn on the stop's own fork, one coin per stroke
+    function strokeIsBones() {
+      return run.streams.percBones.next() < shareOf("percussion", "bones", "bones");
+    }
+    function bonesDry() { return clamp(wTouch("percussion", "dryness"), 0.2, 2); }
+
     function frameDrum(t, rng, o2) {
       o2 = o2 || {};
       // rc.35: the hand's own spread, drawn per STROKE (promoted `stroke`,
@@ -2101,10 +2865,27 @@
       var toneFreq = rng.rnd(70, 110);
       var skinFreq = rng.rnd(900, 1500);
       var pulses = !deadened && rng.chance(0.7); // the trompette hears most strokes
+      var isBones = strokeIsBones();            // rc.44, drawn with the rest
       var tok = run.budget.claim(4, t + 0.5);
       if (!tok) return;
       run.tokens.push(tok);
       var c = ctx;
+      if (isBones) {
+        // a clave rings for about an eighth of a second, and half of the
+        // bones' level lives in that ring rather than in its peak - which is
+        // what keeps the stop under the engine's own loudest beat
+        var bp2 = run.streams.percBones;
+        bonesClack(t, bp2.rnd(1450, 1850) * BONES_OCT, peak * MATCH_PERC_BONES,
+                   deadened ? 0.06 : 0.14, bonesDry(), true);
+        if (pulses) pulseTrompette(t);
+        emitNote({
+          voice: o2.who || "percussion", kind: deadened ? "frame-deadened" : "frame",
+          mode: o2.mode || null, clusterId: o2.clusterId || null,
+          freq: null, t: t, durS: 0.25, velocity: o2.vel != null ? o2.vel : 1,
+          manner: "bones",
+        });
+        return;
+      }
       var o = c.createOscillator();
       o.type = "sine";
       o.frequency.setValueAtTime(toneFreq, t);
@@ -2133,6 +2914,7 @@
         voice: o2.who || "percussion", kind: deadened ? "frame-deadened" : "frame",
         mode: o2.mode || null, clusterId: o2.clusterId || null,
         freq: null, t: t, durS: 0.25, velocity: o2.vel != null ? o2.vel : 1,
+        manner: "drums",
       });
     }
 
@@ -2142,11 +2924,27 @@
     function logDrum(t, rng, o2) {
       o2 = o2 || {};
       var deg = rng.chance(0.5) ? 0 : 4;
+      var isBones = strokeIsBones();            // rc.44, drawn with the rest
       var tok = run.budget.claim(3, t + 1.2);
       if (!tok) return;
       run.tokens.push(tok);
       var c = ctx;
       var freq = run.field.degFreq(deg, -2); // read at schedule time
+      if (isBones) {
+        // a WOODBLOCK, hollow, and its knock behind it. The bar has no
+        // pitch to keep - the field's degree is drawn and emitted exactly as
+        // before, so the stream cannot tell the two apart, but a struck bar
+        // is not a tuned log and the lab did not pretend otherwise.
+        var dry = bonesDry();
+        bonesClack(t, 780 * BONES_OCT, 0.04 * MATCH_PERC_BONES, 0.11, dry, true);
+        bonesClack(t + 0.055, 1300 * BONES_OCT, 0.04 * MATCH_PERC_BONES * 0.4, 0.05, dry, false);
+        emitNote({
+          voice: "percussion", kind: "log", mode: o2.mode || null,
+          clusterId: o2.clusterId || null,
+          freq: freq, deg: deg, oct: -2, t: t, durS: 0.9, manner: "bones",
+        });
+        return;
+      }
       var o = c.createOscillator();
       o.type = "sine";
       o.frequency.setValueAtTime(freq, t);
@@ -2166,7 +2964,7 @@
       emitNote({
         voice: "percussion", kind: "log", mode: o2.mode || null,
         clusterId: o2.clusterId || null,
-        freq: freq, deg: deg, oct: -2, t: t, durS: 0.9,
+        freq: freq, deg: deg, oct: -2, t: t, durS: 0.9, manner: "drums",
       });
     }
 
@@ -2176,10 +2974,32 @@
     function boneRattle(t, rng, o2) {
       o2 = o2 || {};
       var nTicks = rng.rint(3, 7);
+      var isBones = strokeIsBones();
       var tok = run.budget.claim(3, t + 1.0);
       if (!tok) return;
       run.tokens.push(tok);
+      // EVERY gap the plain rattle would have drawn is drawn here, whichever
+      // manner sounds, so a clatter cannot move the next stroke by a
+      // millisecond. (After the claim, where the rattle has always drawn
+      // them: a refused stroke draws nothing.)
+      var gaps = [];
+      for (var q = 0; q < nTicks; q++) gaps.push(rng.rnd(0.03, 0.09));
       var c = ctx;
+      if (isBones) {
+        // A CLATTER of little bars, five to ten of them.
+        var brng = run.streams.percBones;
+        var nT = brng.rint(5, 10), atB = 0, dryB = bonesDry();
+        for (var b = 0; b < nT; b++) {
+          bonesClack(t + atB, brng.rnd(1300, 2100) * BONES_OCT,
+                     0.011 * MATCH_PERC_BONES * brng.rnd(0.7, 1), 0.075, dryB, false);
+          atB += brng.rnd(0.035, 0.1);
+        }
+        emitNote({
+          voice: "percussion", kind: "rattle", mode: o2.mode || null,
+          freq: null, t: t, durS: atB, manner: "bones",
+        });
+        return;
+      }
       var src = PJ2.Voice.noiseBuffer.source(c, 30);
       var hp = c.createBiquadFilter();
       hp.type = "highpass";
@@ -2189,7 +3009,7 @@
       src.connect(hp); hp.connect(g); g.connect(run.layPerc);
       var segs = [], at = 0;
       for (var i = 0; i < nTicks; i++) {
-        var gap = rng.rnd(0.03, 0.09);
+        var gap = gaps[i];
         segs.push([gap, 0]);
         segs.push([0.003, 0.011]);
         segs.push([0.02, 0]);
@@ -2200,7 +3020,7 @@
       src.stop(t + at + 0.1);
       emitNote({
         voice: "percussion", kind: "rattle", mode: o2.mode || null,
-        freq: null, t: t, durS: at,
+        freq: null, t: t, durS: at, manner: "drums",
       });
     }
 
@@ -2229,6 +3049,69 @@
     function startGurdy() {
       var lane = run.clock.lane("gurdy");
       var rng = run.streams.gurdy;
+
+      // ---- THE ARMONICA (rc.44, lab-sycorax.html's gurdy variant B) --------
+      // Bowed glass on the same tones: no sawtooth anywhere, five partials
+      // with the WEIGHT ON THE FOURTH (glass radiates from its upper modes,
+      // which is what stops this being "a quieter cluster"), that fourth
+      // split into a beating pair at 4 / 4.02, and a wet finger's rub band
+      // above it. One pad of the cycle, rendered the glass way.
+      //
+      // What a glass cycle does NOT have: the LOWPASS (there is no saw to
+      // shade), the TROMPETTE (a bowed glass has no buzzing bridge and no
+      // dog), and therefore NO GRIT AT ALL — the bed's own grit send hangs
+      // off the lowpass, so on a glass cycle the grit bus hears nothing from
+      // the gurdy family. The neighbouring cycle it crossfades with still
+      // feeds it, which is why the bus never falls silent at a seam.
+      // What it keeps: the sub (as the lab keeps it — partials 1 and 2 only,
+      // "the sub stays a floor"), the cycle's own 3–5 s fades, the pose's
+      // degrees from the live field at schedule time, and the route through
+      // gurdyBreath -> gurdyLevel -> mixGurdy -> cutGain, so the cut ducks it
+      // exactly as it ducks the wheel.
+      function armonicaPad(mix, t, freq, durS, peak, isSub, rub, fadeIn, fadeOut) {
+        var c = ctx;
+        var stopAt = t + durS + 0.1;
+        var g = envGain();
+        // THE LEVEL MATCH: five glass partials where the cluster had one saw
+        // under a 200 Hz lid, measured on the lab's hushed bus.
+        var pk = peak * MATCH_GURDY_ARMONICA;
+        PJ2.Voice.env(g.gain, t, [[fadeIn, pk],
+                                  [Math.max(0.05, durS - fadeIn - fadeOut), pk * 0.94],
+                                  [fadeOut, 0]]);
+        g.connect(mix);
+        for (var i = 0; i < ARM_PARTIALS.length; i++) {
+          var pr = ARM_PARTIALS[i];
+          if (isSub && pr[0] > 2) continue;          // the sub stays a floor
+          var o = c.createOscillator();
+          o.type = "sine";
+          o.frequency.setValueAtTime(freq * pr[0], t);
+          var og = c.createGain();
+          og.gain.setValueAtTime(pr[1], t);
+          o.connect(og); og.connect(g);
+          o.start(t);
+          o.stop(stopAt);
+        }
+        // the finger — a narrow band of friction at the fourth partial. Its
+        // wobble rides its OWN gain, in series after the envelope: hung on
+        // ng.gain it would sum with the envelope and put a thread of
+        // un-enveloped friction under the whole cycle.
+        if (rub > 0 && !isSub) {
+          var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+          var bp = c.createBiquadFilter();
+          bp.type = "bandpass";
+          bp.frequency.setValueAtTime(freq * 4, t);
+          bp.Q.setValueAtTime(9, t);
+          var ng = envGain();
+          var rw = seriesTrem(3.1, 0.36, t, stopAt);
+          nz.connect(bp); bp.connect(ng); ng.connect(rw); rw.connect(g);
+          PJ2.Voice.env(ng.gain, t, [[fadeIn, 0.28 * rub],
+                                     [Math.max(0.05, durS - fadeIn - fadeOut), 0.22 * rub],
+                                     [fadeOut, 0]]);
+          nz.start(t, nz.randomOffset);
+          nz.stop(stopAt);
+        }
+      }
+
       function cycle(t) {
         // Draw everything FIRST so a budget refusal can't shift the stream.
         var durS = rng.rnd(20, 28);
@@ -2246,11 +3129,25 @@
           driftDraws.push([1 + rng.rnd(-0.03, 0.03) * warble, 1 + rng.rnd(-0.02, 0.02) * warble]);
         }
         var cutoffDraw = rng.rnd(150, 350);
+        // rc.44 — THE MANNER, drawn HERE, at the cycle's own start, on the
+        // stop's own fork, and held for the cycle's whole life. That is the
+        // seam's rule applied to a stop: a drone that changed instrument
+        // halfway would move the floor under the listener. Two consecutive
+        // cycles of different manners simply crossfade over their normal
+        // 3–5 s fades, which is the same crossfade the wheel has always
+        // made with itself. The coin is tossed unconditionally, whatever the
+        // share says, so moving the knob mid-run cannot shift this fork.
+        var glassRoll = run.streams.gurdyGlass.next();
+        var isGlass = glassRoll < shareOf("gurdy", "glass", "glass");
         var st = curSceneType();
         var iv = curIntensity(t);
         var wx = wxAt(t);
         var hasSub = subRoll || st === "invocation" || t < run.forceSubUntil;
-        var tok = run.budget.claim(hasSub ? 14 : 12, t + durS + 0.3);
+        // The claim counts VOICES, not nodes (pj2-voice: nNodes is telemetry),
+        // so the glass declares its real node cost — five sines and a rub
+        // chain per pad — without changing what else fits in the room.
+        var tok = run.budget.claim(isGlass ? (hasSub ? 74 : 62) : (hasSub ? 14 : 12),
+                                   t + durS + 0.3);
         if (!tok) {
           lane.at(t + 2, cycle); // the seam must not open: short-leash retry
           return;
@@ -2263,14 +3160,25 @@
         if (t < run.darkenUntil) cutoff *= 0.85;
         cutoff = Math.max(90, cutoff + 60 * iv);
         cutoff *= bright;                      // read at cycle start, held (rc.35)
-        var lp = c.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.setValueAtTime(cutoff, t);
-        lp.frequency.linearRampToValueAtTime(cutoff + 80, t + durS * 0.4);
-        lp.frequency.linearRampToValueAtTime(Math.max(80, cutoff - 30), t + durS);
-        lp.Q.setValueAtTime(0.5, t);
-        lp.connect(run.gurdyBreath);
-        lp.connect(run.gritSendGurdy); // the grit bus always hears the bed
+        // THE CYCLE'S HEAD. The wheel's is a moving lowpass into the bed and
+        // the grit bus; the glass's is a plain mixing stage into the bed
+        // alone (see armonicaPad's note on the grit).
+        var lp = null, mix = null, rub = 0;
+        if (isGlass) {
+          mix = c.createGain();
+          mix.gain.setValueAtTime(1, t);
+          mix.connect(run.gurdyBreath);
+          rub = clamp(wChar("gurdy", "rub"), 0, 2);   // character, at cycle start (the seam's rule)
+        } else {
+          lp = c.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.setValueAtTime(cutoff, t);
+          lp.frequency.linearRampToValueAtTime(cutoff + 80, t + durS * 0.4);
+          lp.frequency.linearRampToValueAtTime(Math.max(80, cutoff - 30), t + durS);
+          lp.Q.setValueAtTime(0.5, t);
+          lp.connect(run.gurdyBreath);
+          lp.connect(run.gritSendGurdy); // the grit bus always hears the bed
+        }
         var ch = null;
         try { ch = run.harmony.current(); } catch (e) {}
         var degs = (ch && ch.chordDegs && ch.chordDegs.length) ? ch.chordDegs : [0, 2, 4];
@@ -2281,45 +3189,64 @@
         pads.push({ deg: degs[0], oct: -1, peak: 0.028, type: "sawtooth" }); // the body course
         var fadeIn = 3 + rng.rnd(0, 2);
         var fadeOut = 3 + rng.rnd(0, 2);
+        // The glass's edges are the cycle's own 3–5 s, floored at the lab's
+        // 1.5 s: a bowed rim must never arrive faster than a finger can
+        // start it, and no crossfade this slow can be heard as an event.
+        var gFadeIn = Math.max(1.5, fadeIn), gFadeOut = fadeOut;
         for (var i = 0; i < pads.length; i++) {
           var p = pads[i];
           var freq = run.field.degFreq(p.deg, p.oct); // read at schedule time
-          var o = c.createOscillator();
-          o.type = p.type;
-          o.frequency.setValueAtTime(freq, t);
-          // v1's drift: anchored ramps to Â±3% waypoints and home again
-          o.frequency.linearRampToValueAtTime(freq * driftDraws[i][1], t + durS * 0.35);
-          o.frequency.linearRampToValueAtTime(freq * driftDraws[i][0], t + durS * 0.7);
-          o.frequency.linearRampToValueAtTime(freq, t + durS);
-          var g = c.createGain();
-          o.connect(g); g.connect(lp);
-          PJ2.Voice.env(g.gain, t, [[fadeIn, p.peak], [durS - fadeIn - fadeOut, p.peak], [fadeOut, 0]]);
-          o.start(t);
-          o.stop(t + durS + 0.1);
-          emitNote({ voice: "gurdy", freq: freq, t: t, durS: durS, deg: p.deg, oct: p.oct });
+          if (isGlass) {
+            armonicaPad(mix, t, freq, durS, p.peak, false, rub, gFadeIn, gFadeOut);
+          } else {
+            var o = c.createOscillator();
+            o.type = p.type;
+            o.frequency.setValueAtTime(freq, t);
+            // v1's drift: anchored ramps to Â±3% waypoints and home again
+            o.frequency.linearRampToValueAtTime(freq * driftDraws[i][1], t + durS * 0.35);
+            o.frequency.linearRampToValueAtTime(freq * driftDraws[i][0], t + durS * 0.7);
+            o.frequency.linearRampToValueAtTime(freq, t + durS);
+            var g = c.createGain();
+            o.connect(g); g.connect(lp);
+            PJ2.Voice.env(g.gain, t, [[fadeIn, p.peak], [durS - fadeIn - fadeOut, p.peak], [fadeOut, 0]]);
+            o.start(t);
+            o.stop(t + durS + 0.1);
+          }
+          emitNote({ voice: "gurdy", freq: freq, t: t, durS: durS, deg: p.deg, oct: p.oct,
+                     manner: isGlass ? "glass" : "wheel" });
         }
-        // the trompette — grit-only, always present, pulsed elsewhere
-        var tf = run.field.degFreq(degs[0], -1);
-        var to = c.createOscillator();
-        to.type = "sawtooth";
-        to.frequency.setValueAtTime(tf, t);
-        var tg = c.createGain();
-        to.connect(tg);
-        tg.connect(run.gritSendTromp);
-        PJ2.Voice.env(tg.gain, t, [[fadeIn, 0.02 * dog], [durS - fadeIn - fadeOut, 0.02 * dog], [fadeOut, 0]]);
-        to.start(t);
-        to.stop(t + durS + 0.1);
+        // the trompette — grit-only, always present, pulsed elsewhere. A
+        // glass cycle has none: a bowed rim has no buzzing bridge, so the
+        // dog's dose is read (it is the evening's, drawn either way) and
+        // spent on nothing.
+        if (!isGlass) {
+          var tf = run.field.degFreq(degs[0], -1);
+          var to = c.createOscillator();
+          to.type = "sawtooth";
+          to.frequency.setValueAtTime(tf, t);
+          var tg = c.createGain();
+          to.connect(tg);
+          tg.connect(run.gritSendTromp);
+          PJ2.Voice.env(tg.gain, t, [[fadeIn, 0.02 * dog], [durS - fadeIn - fadeOut, 0.02 * dog], [fadeOut, 0]]);
+          to.start(t);
+          to.stop(t + durS + 0.1);
+        }
         if (hasSub) {
           var sf = run.field.degFreq(degs[0], -3);
-          var so = c.createOscillator();
-          so.type = "sine";
-          so.frequency.setValueAtTime(sf, t);
-          var sg = c.createGain();
-          so.connect(sg); sg.connect(run.gurdyBreath);
-          PJ2.Voice.env(sg.gain, t, [[fadeIn, 0.022], [durS - fadeIn - fadeOut, 0.022], [fadeOut, 0]]);
-          so.start(t);
-          so.stop(t + durS + 0.1);
-          emitNote({ voice: "gurdy", kind: "sub", freq: sf, t: t, durS: durS, deg: degs[0], oct: -3 });
+          if (isGlass) {
+            armonicaPad(mix, t, sf, durS, 0.022, true, rub, gFadeIn, gFadeOut);
+          } else {
+            var so = c.createOscillator();
+            so.type = "sine";
+            so.frequency.setValueAtTime(sf, t);
+            var sg = c.createGain();
+            so.connect(sg); sg.connect(run.gurdyBreath);
+            PJ2.Voice.env(sg.gain, t, [[fadeIn, 0.022], [durS - fadeIn - fadeOut, 0.022], [fadeOut, 0]]);
+            so.start(t);
+            so.stop(t + durS + 0.1);
+          }
+          emitNote({ voice: "gurdy", kind: "sub", freq: sf, t: t, durS: durS, deg: degs[0], oct: -3,
+                     manner: isGlass ? "glass" : "wheel" });
         }
         lane.at(t + (durS - overlap), cycle);
       }
@@ -2344,11 +3271,21 @@
     };
 
     // One horn tone. Returns true if it sounded (budget willing).
+    //
+    // rc.44 — THE REGISTER LAW and THE CONCH both live here, because every
+    // horn tone in this engine comes through this one door: the held call,
+    // the two-note call's pair, the arrival's answer and the afterimage's
+    // far final call are all horn tones, and the owner's "no longer played
+    // at the zero point where it's at now" is a law about the instrument,
+    // not about one gesture.
     function renderHornTone(deg, t, durS, vel, kind) {
       var rng = run.streams.horn;
       // Draw everything FIRST so a budget refusal can't shift the stream.
       var atk = rng.rnd(3, 6);
       var rel = rng.rnd(4, 8);
+      // …the manner among them, on the stop's own fork, one coin per tone.
+      var conchRoll = run.streams.hornConch.next();
+      var isConch = conchRoll < shareOf("horn", "conch", "conch");
       if (atk + rel > durS - 1) { atk = durS * 0.35; rel = durS * 0.45; }
       var hold = durS - atk - rel;
       var tok = run.budget.claim(8, t + durS + 0.4);
@@ -2356,11 +3293,78 @@
       run.tokens.push(tok);
       var c = ctx;
       var wx = wxAt(t);
-      var freq = run.field.degFreq(deg, -1); // read at schedule time, never cached
+      // THE REGISTER, drawn per TONE on the wander's own touch fork: −1 or
+      // −2 octaves below the treeline's rc.23 placement, equal odds, and
+      // never today's. Rounded like the bullroarer's (a weighted def hands
+      // back the KNOB at vary 0, and a knob sitting between two octaves is
+      // no octave at all); clamped to the strip so a hand-typed value cannot
+      // put the horn somewhere the ledger has not been asked about.
+      var regOct = Math.round(clamp(wTouch("horn", "register"), -2, 0));
+      var oct = -1 + regOct;                 // −2 or −3 (0 on the knob = today's −1)
+      var freq = run.field.degFreq(deg, oct); // read at schedule time, never cached
       // 0.028: ~30% under the rc.23 launch level (owner, 2026-08-23, by
       // ear on the live mix). Breath, 3rd partial and the grit tap all
       // scale from here; the mixer's horn fader scales from here too.
       var peak = 0.028 * (vel || 1);
+      if (isConch) {
+        // ---- THE CONCH (rc.44, lab-sycorax.html's horn variant A) --------
+        // A shell trumpet. The horn's whole tell is its three-to-six-second
+        // swell; a conch is simply THERE in sixty milliseconds, and its two
+        // cavity peaks (520 Hz and 1450 Hz) sit far above the horn's
+        // 300→900 Hz lid — which is the point of a shell, and the reason the
+        // conch survives the register law intact: the fundamental drops two
+        // or three octaves and the CAVITY does not move, so what the ear
+        // gets is a brighter, thinner voice on a lower note, exactly as a
+        // real shell would sound over a longer air column.
+        var stopAtC = t + durS + 0.3;
+        var atkC = 0.06, relC = Math.min(2.5, durS * 0.25);
+        var holdC = Math.max(0.1, durS - atkC - relC);
+        var pkC = peak * MATCH_HORN_CONCH;
+        var oC = c.createOscillator();
+        oC.type = "sawtooth";
+        oC.frequency.setValueAtTime(freq, t);
+        oC.detune.setValueAtTime(-18, t);
+        oC.detune.linearRampToValueAtTime(0, t + 0.18);   // the lips finding the shell
+        var preC = c.createGain();
+        preC.gain.setValueAtTime(0.55, t);
+        var shell = clamp(wTouch("horn", "shell"), 0, 16);
+        var p1C = c.createBiquadFilter();
+        p1C.type = "peaking";
+        p1C.frequency.setValueAtTime(520, t);
+        p1C.Q.setValueAtTime(1.6, t);
+        p1C.gain.setValueAtTime(shell, t);
+        var p2C = c.createBiquadFilter();
+        p2C.type = "peaking";
+        p2C.frequency.setValueAtTime(1450, t);
+        p2C.Q.setValueAtTime(2.2, t);
+        p2C.gain.setValueAtTime(shell * 0.7, t);
+        var lpC = c.createBiquadFilter();
+        lpC.type = "lowpass";
+        lpC.frequency.setValueAtTime(3200, t);
+        lpC.Q.setValueAtTime(0.7, t);
+        var gC = envGain();
+        // the shell wavers: a player's breath, in series so it cannot sound
+        // before the note opens or survive the cut
+        var wavC = seriesTrem(0.5, 0.06, t, stopAtC, true);
+        oC.connect(preC); preC.connect(p1C); p1C.connect(p2C); p2C.connect(lpC); lpC.connect(gC);
+        gC.connect(wavC); wavC.connect(run.layHorn);
+        PJ2.Voice.env(gC.gain, t, [[atkC, pkC], [holdC, pkC * 0.86], [relC, 0]]);
+        oC.start(t); oC.stop(stopAtC);
+        // the blown air at the lip, loudest in the first breath
+        var nzC = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bpC = c.createBiquadFilter();
+        bpC.type = "bandpass";
+        bpC.frequency.setValueAtTime(1600, t);
+        bpC.Q.setValueAtTime(1.1, t);
+        var ngC = envGain();
+        nzC.connect(bpC); bpC.connect(ngC); ngC.connect(run.layHorn);
+        PJ2.Voice.env(ngC.gain, t, [[0.04, pkC * 0.45], [0.4, pkC * 0.16],
+                                    [Math.max(0.1, durS - 0.44), 0]]);
+        nzC.start(t, nzC.randomOffset); nzC.stop(stopAtC);
+        emitNote({ voice: "horn", kind: kind, freq: freq, t: t, durS: durS, deg: deg,
+                   oct: oct, manner: "conch" });
+        return true;
+      }
       // rc.35: blossom, breath and scoop are all TOUCH — a fresh draw every
       // tone. The horn's own attack is NOT promoted: rng.rnd(3, 6) already
       // draws it per tone, so there is no single literal to range (the
@@ -2419,7 +3423,8 @@
         p3.start(t);
         p3.stop(t + durS + 0.3);
       }
-      emitNote({ voice: "horn", kind: kind, freq: freq, t: t, durS: durS, deg: deg, oct: -1 });
+      emitNote({ voice: "horn", kind: kind, freq: freq, t: t, durS: durS, deg: deg,
+                 oct: oct, manner: "horn" });
       return true;
     }
 
@@ -2918,6 +3923,14 @@
       // rc.35: how many twangs is a WEIGHTED draw (1 .1 · 2 .3 · 3 .35 ·
       // 4 .2 · 5 .05) — three every time was the tic. A moved knob is the
       // owner's word and wins, exactly as the helper promises.
+      // rc.44 - THE PLACEMENT, ONE DRAW FOR THE UTTERANCE. The owner:
+      // "expand the octave range so it can go from the zero all the way down
+      // to negative two." Every twang of an utterance sounds at the one
+      // placement (a player does not change instrument mid-phrase), and the
+      // three are equally likely. Rounded and clamped like the bullroarer's:
+      // a weighted def hands back the KNOB at vary 0, and a knob sitting
+      // between two octaves is no octave at all.
+      var jawReg = Math.round(clamp(wTouch("jawharp", "register"), -2, 0));
       var nT = Math.max(1, Math.round(wTouch("jawharp", "twangs")));
       var jit = [];
       for (var j = 0; j < nT; j++) jit.push(rng.rnd(0.6, 1.4));   // the ±40 %
@@ -2927,13 +3940,16 @@
       var ch = null;
       try { ch = run.harmony.current(); } catch (e) {}
       var deg = (ch && ch.chordDegs && ch.chordDegs.length) ? ch.chordDegs[0] : 0;
-      var oct = -1;
+      var oct = -1 + jawReg;                             // -1, -2 or -3
       var freq = run.field.degFreq(deg, oct);            // AT SCHEDULE TIME
       // THE ASSERT: a comb above the render quantum's clamp is a comb with no
       // pitch. The rite's root is pinned to i and the sink only ever lowers
       // the field, so this can never fire today — which is exactly when an
-      // assert is cheap.
-      if (freq > 330) { oct = -2; freq = run.field.degFreq(deg, oct); }
+      // assert is cheap. rc.44 widened the range DOWNWARD, which is the safe
+      // direction for a comb (a lower pitch is a longer delay, further from
+      // the clamp), so the assert can only get easier; it still lowers by one
+      // octave from wherever the draw put the harp.
+      if (freq > 330) { oct -= 1; freq = run.field.degFreq(deg, oct); }
       var c = ctx;
       var gate = c.createGain();
       gate.gain.setValueAtTime(1, t);
@@ -3005,6 +4021,9 @@
       // Draws FIRST.
       var hold = rng.rnd(2, 6);
       var restS = rng.rnd(20, 45);
+      // …the manner among them, on the stop's own fork, one coin per sounding.
+      var whaleRoll = run.streams.bladeWhale.next();
+      var isWhale = whaleRoll < shareOf("blade", "whale", "whale");
       // rc.35: the swell and the pitch are drawn per SOUNDING; the pitch's
       // centre is shifted per EVENING by pitchNight, and the blade's own
       // inharmonicity (ratio) is the evening's too — one blade per night.
@@ -3027,6 +4046,70 @@
       var gate = c.createGain();
       gate.gain.setValueAtTime(1, t);
       gate.connect(run.layBlade);
+      if (isWhale) {
+        // ---- THE WHALE (rc.44, lab-sycorax.html's blade variant B) --------
+        // A far, slow song under the water. TWO OCTAVES below the blade's
+        // 1.2-2.5 kHz - that transposition IS the class change, whales do
+        // not sing in the treble - gliding up over the first third and
+        // sagging back through a 900 Hz lid, with the sea's own slow wow on
+        // every partial and the water itself underneath.
+        //
+        // It hangs off the SAME gate as the blade, so the cut's kill at tB
+        // takes the whale's long sag exactly as it takes the blade's swell,
+        // and it takes the wide room and the delay wall and nothing else.
+        // Of the blade's wanders it inherits the SWELL (its own edges) and
+        // the PITCH and PITCHNIGHT that chose f1; `ratio` shapes a second
+        // inharmonic sine this body does not have and `friction` a bow band
+        // the water replaces, so both are drawn above and spent on nothing.
+        var stopAtW = t + durS + 0.3;
+        var glide = clamp(wTouch("blade", "glide"), 0, 14);   // semitones
+        var base = f1 * 0.25;
+        var up = base * Math.pow(2, glide / 12);
+        var gW = envGain();
+        var lid = c.createBiquadFilter();
+        lid.type = "lowpass";
+        lid.frequency.setValueAtTime(900, t);
+        lid.Q.setValueAtTime(1.1, t);
+        gW.connect(lid); lid.connect(gate);
+        var pkW = BLADE_PEAK * MATCH_BLADE_WHALE;
+        PJ2.Voice.env(gW.gain, t, [[sw, pkW], [hold, pkW * 0.95], [sw, 0]]);
+        for (var wi = 0; wi < WHALE_PARTIALS.length; wi++) {
+          var wr = WHALE_PARTIALS[wi][0];
+          var ow = c.createOscillator();
+          ow.type = "sine";
+          ow.frequency.setValueAtTime(base * wr, t);
+          ow.frequency.exponentialRampToValueAtTime(up * wr, t + durS * 0.32);
+          ow.frequency.exponentialRampToValueAtTime(up * wr * 0.97, t + durS * 0.62);
+          ow.frequency.exponentialRampToValueAtTime(base * wr * 0.87, t + durS);
+          var owg = c.createGain();
+          owg.gain.setValueAtTime(WHALE_PARTIALS[wi][1], t);
+          ow.connect(owg); owg.connect(gW);
+          ow.start(t); ow.stop(stopAtW);
+          var wn = slowNoise(c, 0.18);
+          var wng = c.createGain();
+          wng.gain.setValueAtTime(base * wr * 0.006, t);
+          wn.connect(wng);
+          try { wng.connect(ow.frequency); } catch (eW0) {}
+          wn.start(t, wn.randomOffset); wn.stop(stopAtW);
+        }
+        // the water itself
+        var nzW = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bqW = c.createBiquadFilter();
+        bqW.type = "lowpass";
+        bqW.frequency.setValueAtTime(300, t);
+        bqW.Q.setValueAtTime(0.7, t);
+        var ngW = envGain();
+        nzW.connect(bqW); bqW.connect(ngW); ngW.connect(lid);
+        PJ2.Voice.env(ngW.gain, t, [[sw, pkW * 0.2], [hold, pkW * 0.16], [sw, 0]]);
+        nzW.start(t, nzW.randomOffset); nzW.stop(stopAtW);
+        nvRegister("blade", gate, t + durS + 0.3);
+        run.bladeHoldUntil = t + durS + restS * restK("blade");   // the hold law
+        emitNote({
+          voice: "blade", kind: why, freq: f1, t: t, durS: durS,
+          deg: deg, oct: oct, ratio: ratio, manner: "whale",
+        });
+        return true;
+      }
       var g = c.createGain();
       PJ2.Voice.env(g.gain, t, [[sw, BLADE_PEAK], [hold, BLADE_PEAK * 0.95], [sw, 0]]);
       g.connect(gate);
@@ -3072,7 +4155,7 @@
       run.bladeHoldUntil = t + durS + restS * restK("blade");     // the hold law
       emitNote({
         voice: "blade", kind: why, freq: f1, t: t, durS: durS,
-        deg: deg, oct: oct, ratio: ratio,
+        deg: deg, oct: oct, ratio: ratio, manner: "blade",
       });
       return true;
     }
@@ -3683,7 +4766,7 @@
           emitNote({
             voice: "rebec", freq: freq, t: nt, durS: nd, deg: abs, oct: 0,
             velocity: vel, motif: m.name, gen: m.gen, phraseKind: res.kind,
-            final: isFinal,
+            final: isFinal, manner: mannerOf("rebec", "rebec"),
           });
           if (isFinal && dblRoll) {
             // double stop: the authored organum interval below the final —
@@ -3696,6 +4779,7 @@
               emitNote({
                 voice: "rebec", kind: "doublestop", freq: lf, t: nt, durS: nd,
                 deg: duo2[0], oct: 0, velocity: vel * 0.7,
+                manner: mannerOf("rebec", "rebec"),
               });
               emitEvent({ type: "organum", top: duo2[1], low: duo2[0], parts: 2, t: nt, via: "doublestop" });
             }
@@ -3747,15 +4831,26 @@
           if (!btok) continue;
           run.tokens.push(btok);
           var abs = m.notes[i].deg;
-          var freq = run.field.degFreq(abs, 0);
+          // rc.44 - THE MANNER, drawn per note on the stop's own fork, and
+          // THEN the register: which body is playing decides which register
+          // law applies. The metal's own range widened this round (today's
+          // placement or one octave below, equal odds); the crystal's is a
+          // law of its own (one or two below, never today's).
+          var crystalRoll = run.streams.waterCrystal.next();
+          var isCrystal = crystalRoll < shareOf("waterphone", "crystal", "crystal");
+          var wOct = isCrystal
+            ? Math.round(clamp(wTouch("waterphone", "crystalRegister"), -2, -1))
+            : Math.round(clamp(wTouch("waterphone", "register"), -1, 0));
+          var freq = run.field.degFreq(abs, wOct);
           // the metal ALWAYS reaches the clearing wall (delay), and the
           // cavern's throat hears it through a small send.
-          var wEnv = renderWaterphoneNote(out, freq, nt, nd, vel, rng, run.delaySendWater);
+          var wEnv = renderWaterphoneNote(out, freq, nt, nd, vel, rng, run.delaySendWater, isCrystal);
           try { wEnv.connect(run.throatSendWater); } catch (eT) {}
           emitNote({
-            voice: "waterphone", freq: freq, t: nt, durS: nd, deg: abs, oct: 0,
+            voice: "waterphone", freq: freq, t: nt, durS: nd, deg: abs, oct: wOct,
             velocity: vel, motif: m.name, gen: m.gen, phraseKind: res.kind,
             final: i === m.notes.length - 1,
+            manner: mannerOf("waterphone", "waterphone"),
           });
         }
         lane.at(t + tm.spanS + margin + rng.rnd(8, 16) * (1.3 - iv) * gmAt(t) * restK("waterphone"), attempt);
@@ -3827,9 +4922,209 @@
     // strange, the room is no busier). Dropped from v1: cackle, glass,
     // cauldron (startle/comedy risks).
     // ========================================================================
+    // ========================================================================
+    // THE CAVE (rc.44, lab-sycorax.html's ambient variant B) - a MANNER, not
+    // a wider pool. Ariel's rc.43 seaside added members to a weighted pool
+    // and moved every draw after the first; this does the opposite. The
+    // pool's weighted draw, its gap law, its weather gating and its budget
+    // claims are untouched, and every one-shot the sky speaks with is
+    // answered by the cave's own version of the same thing at the same
+    // instant: gust becomes a deep rumble, ember becomes drips, stone a
+    // rockfall, chains bats, the raven a knock and its echo, the bell water
+    // into a pool (on the bell's own pitch - the field is kept), the keen
+    // the cave's own breath, and the far thunder itself taken underground
+    // beneath a 260 Hz lid. The sky says the same things at the same
+    // moments, in a different room.
+    //
+    // NOT sky one-shots, and so never re-voiced: the arrival's ORGANUM PAD
+    // and the cut's INDRAWN BREATH. Both are the rite's own gestures that
+    // happen to be rendered into the ambient layer, and the lab's card says
+    // so too.
+    //
+    // Every die this manner throws comes off its OWN fork, so a cave evening
+    // and a fen evening fire the same one-shots at the same times.
+    function caveBand(t, opt) {
+      var c = ctx;
+      var len = opt.len || 1;
+      var stopAt = t + len + 0.1;
+      var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+      var f = c.createBiquadFilter();
+      f.type = opt.type || "bandpass";
+      f.frequency.setValueAtTime(opt.f0 || 800, t);
+      f.Q.setValueAtTime(opt.q == null ? 2 : opt.q, t);
+      var sweep = opt.sweep || [];
+      for (var i = 0; i < sweep.length; i++) {
+        f.frequency.linearRampToValueAtTime(sweep[i][1], t + sweep[i][0]);
+      }
+      var pre = c.createGain();
+      pre.gain.setValueAtTime(opt.pre == null ? 1 : opt.pre, t);
+      var g = envGain();
+      nz.connect(pre); pre.connect(f); f.connect(g);
+      if (opt.trem) {
+        var tr = seriesTrem(opt.trem[0], opt.trem[1], t, stopAt);
+        g.connect(tr); tr.connect(run.layAmb);
+      } else {
+        g.connect(run.layAmb);
+      }
+      PJ2.Voice.env(g.gain, t, opt.segs);
+      nz.start(t, nz.randomOffset); nz.stop(stopAt);
+      return g;
+    }
+    // a drip: a fast fall into a high-Q plink - the cave's signature
+    function caveDrip(at, hz, amt, ring, size) {
+      var c = ctx;
+      var o = c.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(hz * 3.2, at);
+      o.frequency.exponentialRampToValueAtTime(hz, at + 0.035);
+      var bp = c.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(hz, at);
+      bp.Q.setValueAtTime(14 * size, at);
+      var g = envGain();
+      o.connect(bp); bp.connect(g); g.connect(run.layAmb);
+      PJ2.Voice.env(g.gain, at, [[0.002, amt], [0.02, amt * 0.5], [ring, 0]]);
+      o.start(at); o.stop(at + ring + 0.1);
+    }
+    // one cave one-shot. `o` carries whatever the fen's own body already
+    // drew and emitted (its length, its pitch), so the two manners are the
+    // same event in the stream.
+    function caveShot(kind, t, o) {
+      var c = ctx, rng = run.streams.ambCave;
+      o = o || {};
+      var size = clamp(wTouch("ambient", "depth"), 0.2, 2);   // how deep it runs
+      var L = MATCH_AMB_CAVE;
+      var i, at;
+      if (kind === "gust") {
+        // THE DEEP RUMBLE - something very large, very far, underneath.
+        var durS = Math.max(2, o.durS || 6);
+        var pkG = 0.026 * L;
+        caveBand(t, { len: durS, f0: 70, q: 1.2, type: "lowpass", pre: 0.5,
+                      sweep: [[durS * 0.5, 130 * size], [durS, 55]],
+                      segs: [[durS * 0.4, pkG], [durS * 0.3, pkG * 0.6], [durS * 0.3, 0]] });
+      } else if (kind === "ember") {
+        // DRIPS - where the fire spat, water falls.
+        var nd = rng.rint(3, 6), pkD = 0.017 * L;
+        at = 0;
+        for (i = 0; i < nd; i++) {
+          caveDrip(t + at, 900 + rng.rnd(0, 900), pkD * rng.rnd(0.6, 1), 0.28 * size, size);
+          at += rng.rnd(0.16, 0.55);
+        }
+      } else if (kind === "stone") {
+        // A ROCKFALL - clacks, unequal, with a thud under the last of them.
+        var nc = rng.rint(4, 8), pkS = 0.022 * L;
+        at = 0;
+        for (i = 0; i < nc; i++) {
+          var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+          var bq = c.createBiquadFilter();
+          bq.type = "bandpass";
+          bq.frequency.setValueAtTime(rng.rnd(700, 2200), t + at);
+          bq.Q.setValueAtTime(6, t + at);
+          var g2 = envGain();
+          nz.connect(bq); bq.connect(g2); g2.connect(run.layAmb);
+          PJ2.Voice.env(g2.gain, t + at, [[0.002, pkS * rng.rnd(0.5, 1)], [rng.rnd(0.03, 0.08), 0]]);
+          nz.start(t + at, nz.randomOffset); nz.stop(t + at + 0.1);
+          at += rng.rnd(0.05, 0.19);
+        }
+        var th = c.createOscillator();
+        th.type = "sine";
+        th.frequency.setValueAtTime(78, t + at * 0.6);
+        th.frequency.exponentialRampToValueAtTime(42, t + at * 0.6 + 0.22);
+        var tg = envGain();
+        th.connect(tg); tg.connect(run.layAmb);
+        PJ2.Voice.env(tg.gain, t + at * 0.6, [[0.006, pkS * 0.9], [0.3, 0.001], [0.1, 0]]);
+        th.start(t + at * 0.6); th.stop(t + at * 0.6 + 0.5);
+      } else if (kind === "chains") {
+        // BATS - very short, very high, falling; six to ten of them. The
+        // lab's fix round found this body the most exposed of all to the
+        // late-anchor click (a 2 ms attack on a 7-10 kHz tone), which is
+        // why every gain here is born shut, envGain's whole reason.
+        var nbt = rng.rint(6, 10), pkBt = 0.010 * L;
+        at = 0;
+        for (i = 0; i < nbt; i++) {
+          var hf = 7000 + rng.rnd(0, 3000);
+          var ob = c.createOscillator();
+          ob.type = "sine";
+          ob.frequency.setValueAtTime(hf, t + at);
+          ob.frequency.exponentialRampToValueAtTime(hf * 0.45, t + at + 0.022);
+          var gb = envGain();
+          ob.connect(gb); gb.connect(run.layAmb);
+          PJ2.Voice.env(gb.gain, t + at, [[0.002, pkBt * rng.rnd(0.6, 1)], [0.02, 0]]);
+          ob.start(t + at); ob.stop(t + at + 0.05);
+          at += rng.rnd(0.03, 0.13);
+        }
+      } else if (kind === "raven") {
+        // A KNOCK, and the cave answering it a beat later.
+        var pkK = 0.018 * L;
+        for (i = 0; i < 2; i++) {
+          var at2 = t + i * (0.36 * size), amt = pkK * (i ? 0.45 : 1);
+          var nz2 = PJ2.Voice.noiseBuffer.source(c, 30);
+          var bq2 = c.createBiquadFilter();
+          bq2.type = "bandpass";
+          bq2.frequency.setValueAtTime(420 - i * 90, at2);
+          bq2.Q.setValueAtTime(5, at2);
+          var g3 = envGain();
+          nz2.connect(bq2); bq2.connect(g3); g3.connect(run.layAmb);
+          PJ2.Voice.env(g3.gain, at2, [[0.003, amt], [0.13, 0]]);
+          nz2.start(at2, nz2.randomOffset); nz2.stop(at2 + 0.2);
+          var wo = c.createOscillator();
+          wo.type = "sine";
+          wo.frequency.setValueAtTime(150 - i * 30, at2);
+          var wg = envGain();
+          wo.connect(wg); wg.connect(run.layAmb);
+          PJ2.Voice.env(wg.gain, at2, [[0.004, amt * 0.6], [0.2, 0]]);
+          wo.start(at2); wo.stop(at2 + 0.3);
+        }
+      } else if (kind === "bell") {
+        // WATER INTO A POOL, on the bell's own pitch: the field is kept.
+        var bf = o.freq || 400;
+        caveDrip(t, bf * 2, 0.019 * L, 1.1 * size, size);
+        caveDrip(t + 0.9 * size, bf * 3, 0.011 * L, 0.8 * size, size);
+      } else if (kind === "keen") {
+        // THE CAVE'S OWN BREATH - air moving through a long throat, on the
+        // keen's own two formants, and not a voice at all.
+        var kd = Math.max(2, o.durS || 3.5), pkB = 0.013 * L;
+        caveBand(t, { len: kd, f0: 150, q: 5,
+                      sweep: [[kd * 0.5, 300 * size], [kd, 130]], trem: [0.24, 0.25],
+                      segs: [[kd * 0.35, pkB], [kd * 0.3, pkB * 0.8], [kd * 0.35, 0]] });
+        caveBand(t, { len: kd, f0: 640, q: 8,
+                      sweep: [[kd * 0.6, 480]],
+                      segs: [[kd * 0.35, pkB * 0.4], [kd * 0.3, pkB * 0.3], [kd * 0.35, 0]] });
+      } else if (kind === "thunder") {
+        // the engine's own far thunder, taken underground: a 260 Hz lid and
+        // the sub alone. A transposition, and the card says so.
+        var td = Math.max(1, o.durS || 4);
+        var P = 0.045 * (o.dose == null ? 1 : o.dose) * L * 0.9;
+        var so = c.createOscillator();
+        so.type = "sine";
+        so.frequency.setValueAtTime(46, t);
+        so.frequency.exponentialRampToValueAtTime(30, t + td);
+        var sg = envGain();
+        so.connect(sg); sg.connect(run.layAmb);
+        PJ2.Voice.env(sg.gain, t, [[0.3, P], [td - 0.4, 0.0012], [0.1, 0]]);
+        so.start(t); so.stop(t + td + 0.15);
+        var bn = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bpre = c.createGain();
+        bpre.gain.setValueAtTime(0.4, t);
+        var blp = c.createBiquadFilter();
+        blp.type = "lowpass";
+        blp.frequency.setValueAtTime(260, t);
+        blp.frequency.exponentialRampToValueAtTime(45, t + td);
+        blp.Q.setValueAtTime(4, t);
+        var bg = envGain();
+        bn.connect(bpre); bpre.connect(blp); blp.connect(bg); bg.connect(run.layAmb);
+        PJ2.Voice.env(bg.gain, t, [[0.35, P * 0.8], [td - 0.45, 0.0012], [0.1, 0]]);
+        bn.start(t, bn.randomOffset); bn.stop(t + td + 0.15);
+      }
+    }
+
     function startAmbient() {
       var lane = run.clock.lane("ambient");
       var rng = run.streams.ambient;
+      // rc.44 - tonight's room, drawn per one-shot in oneShot() and read by
+      // the eight bodies below. One coin per one-shot, on the stop's own
+      // fork; the pool's own draw above it never moves.
+      var caveNow = false;
 
       // -- ruin-wind gust (a louder single gust, the bed's cousin)
       function poolGust(t) {
@@ -3839,6 +5134,11 @@
         if (!tok) return;
         run.tokens.push(tok);
         var c = ctx;
+        if (caveNow) {
+          caveShot("gust", t, { durS: durS });
+          emitNote({ voice: "ambient", kind: "gust", freq: null, t: t, durS: durS, manner: "cave" });
+          return;
+        }
         var src = PJ2.Voice.noiseBuffer.source(c, 30);
         var bp = c.createBiquadFilter();
         bp.type = "bandpass";
@@ -3851,7 +5151,7 @@
         PJ2.Voice.env(g.gain, t, [[durS * 0.35, 0.024], [durS * 0.3, 0.012], [durS * 0.35, 0]]);
         src.start(t, src.randomOffset);
         src.stop(t + durS + 0.1);
-        emitNote({ voice: "ambient", kind: "gust", freq: null, t: t, durS: durS });
+        emitNote({ voice: "ambient", kind: "gust", freq: null, t: t, durS: durS, manner: "fen" });
       }
 
       // -- ember pops (the fire spitting — crackle pattern, one gain chain)
@@ -3860,7 +5160,22 @@
         var tok = run.budget.claim(3, t + 1.4);
         if (!tok) return;
         run.tokens.push(tok);
+        // The pops' shapes, drawn here as they always were (AFTER the claim -
+        // a refused one-shot draws nothing) but drawn WHICHEVER room they
+        // land in, so the cave's drips cost the pool not one die.
+        var pops = [];
+        for (var pi = 0; pi < n; pi++) {
+          pops.push([0.003 + rng.rnd(0, 0.006), 0.02 + rng.rnd(0, 0.05),
+                     rng.rnd(0.06, 0.22), rng.rnd(0.6, 1)]);
+        }
         var c = ctx;
+        var atE = 0;
+        for (var pj = 0; pj < pops.length; pj++) atE += pops[pj][0] + pops[pj][1] + pops[pj][2];
+        if (caveNow) {
+          caveShot("ember", t, { durS: atE });
+          emitNote({ voice: "ambient", kind: "ember", freq: null, t: t, durS: atE, manner: "cave" });
+          return;
+        }
         var src = PJ2.Voice.noiseBuffer.source(c, 30);
         var hp = c.createBiquadFilter();
         hp.type = "highpass";
@@ -3870,10 +5185,8 @@
         src.connect(hp); hp.connect(g); g.connect(run.layAmb);
         var segs = [], at = 0;
         for (var i = 0; i < n; i++) {
-          var up = 0.003 + rng.rnd(0, 0.006);
-          var dn = 0.02 + rng.rnd(0, 0.05);
-          var rest = rng.rnd(0.06, 0.22);
-          segs.push([up, 0.012 * rng.rnd(0.6, 1)]);
+          var up = pops[i][0], dn = pops[i][1], rest = pops[i][2];
+          segs.push([up, 0.012 * pops[i][3]]);
           segs.push([dn, 0]);
           segs.push([rest, 0]);
           at += up + dn + rest;
@@ -3881,7 +5194,7 @@
         PJ2.Voice.env(g.gain, t, segs);
         src.start(t, src.randomOffset);
         src.stop(t + at + 0.1);
-        emitNote({ voice: "ambient", kind: "ember", freq: null, t: t, durS: at });
+        emitNote({ voice: "ambient", kind: "ember", freq: null, t: t, durS: at, manner: "fen" });
       }
 
       // -- stone-grind (v1's scrape ~3717, demoted to the pool, at 2/3 dose)
@@ -3894,6 +5207,11 @@
         if (!tok) return;
         run.tokens.push(tok);
         var c = ctx;
+        if (caveNow) {
+          caveShot("stone", t, { durS: dur });
+          emitNote({ voice: "ambient", kind: "stone", freq: null, t: t, durS: dur, manner: "cave" });
+          return;
+        }
         var o = c.createOscillator();
         var f = c.createBiquadFilter();
         o.type = "sawtooth";
@@ -3918,7 +5236,7 @@
         PJ2.Voice.env(g.gain, t, [[0.06, 0.026], [dur * 0.5 - 0.06, 0.022], [dur * 0.5, 0]]);
         o.start(t);
         o.stop(t + dur + 0.1);
-        emitNote({ voice: "ambient", kind: "stone", freq: null, t: t, durS: dur });
+        emitNote({ voice: "ambient", kind: "stone", freq: null, t: t, durS: dur, manner: "fen" });
       }
 
       // -- chains (v1 ~3838, node-economy port: ONE noise + ONE bandpass,
@@ -3930,19 +5248,34 @@
         var tok = run.budget.claim(3, t + pings * spacing + 0.3);
         if (!tok) return;
         run.tokens.push(tok);
+        // the pings' pitches, lengths and levels are the sky's, whichever
+        // room hears them (see emberPops on where these are drawn)
+        var pl = [];
+        for (var qi = 0; qi < pings; qi++) {
+          pl.push([rng.rnd(3000, 7000), 0.02 + rng.rnd(0, 0.03), rng.rnd(0.7, 1)]);
+        }
         var c = ctx;
+        var atC = 0;
+        for (var qj = 0; qj < pl.length; qj++) {
+          atC += 0.002 + pl[qj][1] + Math.max(0.004, spacing - pl[qj][1] - 0.002);
+        }
+        if (caveNow) {
+          caveShot("chains", t, { durS: atC });
+          emitNote({ voice: "ambient", kind: "chains", freq: null, t: t, durS: atC, manner: "cave" });
+          return;
+        }
         var src = PJ2.Voice.noiseBuffer.source(c, 30);
         var bp = c.createBiquadFilter();
         bp.type = "bandpass";
-        bp.frequency.setValueAtTime(rng.rnd(3000, 7000), t);
+        bp.frequency.setValueAtTime(pl[0][0], t);
         bp.Q.setValueAtTime(20, t);
         var g = c.createGain();
         src.connect(bp); bp.connect(g); g.connect(run.layAmb);
         var segs = [], at = 0;
         for (var i = 0; i < pings; i++) {
-          if (i > 0) bp.frequency.setValueAtTime(rng.rnd(3000, 7000), t + at); // silent retune
-          var pd = 0.02 + rng.rnd(0, 0.03);
-          segs.push([0.002, 0.016 * rng.rnd(0.7, 1)]);
+          if (i > 0) bp.frequency.setValueAtTime(pl[i][0], t + at); // silent retune
+          var pd = pl[i][1];
+          segs.push([0.002, 0.016 * pl[i][2]]);
           segs.push([pd, 0]);
           segs.push([Math.max(0.004, spacing - pd - 0.002), 0]);
           at += 0.002 + pd + Math.max(0.004, spacing - pd - 0.002);
@@ -3950,7 +5283,7 @@
         PJ2.Voice.env(g.gain, t, segs);
         src.start(t, src.randomOffset);
         src.stop(t + at + 0.1);
-        emitNote({ voice: "ambient", kind: "chains", freq: null, t: t, durS: at });
+        emitNote({ voice: "ambient", kind: "chains", freq: null, t: t, durS: at, manner: "fen" });
       }
 
       // -- raven (v1 ~3957: sawtooth squawks through two formant bands,
@@ -3960,11 +5293,22 @@
         var tok = run.budget.claim(5 * squawks, t + squawks * 0.3 + 0.4);
         if (!tok) return;
         run.tokens.push(tok);
+        // the squawks' own numbers (see emberPops on where these are drawn)
+        var sq = [];
+        for (var ri = 0; ri < squawks; ri++) {
+          sq.push([0.15 + rng.rnd(0, 0.1), 0.12 + rng.rnd(0, 0.08), 800 + rng.rnd(0, 400)]);
+        }
         var c = ctx;
+        if (caveNow) {
+          caveShot("raven", t, { durS: squawks * 0.3 });
+          emitNote({ voice: "ambient", kind: "raven", freq: null, t: t,
+                     durS: squawks * 0.3, manner: "cave" });
+          return;
+        }
         for (var i = 0; i < squawks; i++) {
-          var st2 = t + i * (0.15 + rng.rnd(0, 0.1));
-          var dur = 0.12 + rng.rnd(0, 0.08);
-          var f0 = 800 + rng.rnd(0, 400);
+          var st2 = t + i * sq[i][0];
+          var dur = sq[i][1];
+          var f0 = sq[i][2];
           var o = c.createOscillator();
           o.type = "sawtooth";
           o.frequency.setValueAtTime(f0, st2);
@@ -3988,7 +5332,7 @@
           o.start(st2);
           o.stop(st2 + dur + 0.06);
         }
-        emitNote({ voice: "ambient", kind: "raven", freq: null, t: t, durS: squawks * 0.3 });
+        emitNote({ voice: "ambient", kind: "raven", freq: null, t: t, durS: squawks * 0.3, manner: "fen" });
       }
 
       // -- cracked iron bell (tide-near): one struck tone + an inharmonic
@@ -4000,6 +5344,14 @@
         if (!tok) return;
         run.tokens.push(tok);
         var c = ctx;
+        if (caveNow) {
+          caveShot("bell", t, { freq: info.freq });
+          emitNote({
+            voice: "ambient", kind: "bell", freq: info.freq, t: t, durS: 5.5,
+            deg: info.deg, oct: info.oct, manner: "cave",
+          });
+          return;
+        }
         var o = c.createOscillator();
         o.type = "sine";
         o.frequency.setValueAtTime(info.freq, t);
@@ -4018,7 +5370,7 @@
         h.stop(t + 2.8);
         emitNote({
           voice: "ambient", kind: "bell", freq: info.freq, t: t, durS: 5.5,
-          deg: info.deg, oct: info.oct,
+          deg: info.deg, oct: info.oct, manner: "fen",
         });
       }
 
@@ -4033,10 +5385,11 @@
         if (!tok) return;
         run.tokens.push(tok);
         var freq = run.field.degFreq(deg, 1);
-        renderChantNote(run.layAmb, freq, t, durS, 0.014, walkVowel(), wxAt(t), null, "ambient");
+        if (caveNow) caveShot("keen", t, { durS: durS });
+        else renderChantNote(run.layAmb, freq, t, durS, 0.014, walkVowel(), wxAt(t), null, "ambient");
         emitNote({
           voice: "ambient", kind: "keen", freq: freq, t: t, durS: durS,
-          deg: deg, oct: 1,
+          deg: deg, oct: 1, manner: caveNow ? "cave" : "fen",
         });
       }
 
@@ -4057,16 +5410,21 @@
           ["bell", 8 * (0.25 + 1.5 * tide)],
           ["keen", 6],
         ]);
+        // rc.44 - TONIGHT'S ROOM, drawn per one-shot on the stop's own fork
+        // AFTER the pool's own weighted draw, so the sky says the same thing
+        // at the same moment whichever room it says it in.
+        caveNow = run.streams.ambCave.next() < shareOf("ambient", "cave", "cave");
         try {
           if (what === "gust") poolGust(t);
           else if (what === "ember") emberPops(t);
           else if (what === "stone") stoneGrind(t);
           else if (what === "chains") chains(t);
           else if (what === "raven") raven(t);
-          else if (what === "thunder") farThunder(t, rng, 1.0, "ambient");
+          else if (what === "thunder") farThunder(t, rng, 1.0, "ambient", caveNow);
           else if (what === "bell") ironBell(t);
           else if (what === "keen") keen(t);
         } catch (e) { /* a missing one-shot is just a darker treeline */ }
+        caveNow = false;
         // THE GAP LAW — the Library's, verbatim (plus the desk's density
         // knob, def 1 = as-composed): density within the family contract by
         // construction.
@@ -4447,7 +5805,7 @@
           run.perfScenes = evt.scenes ? evt.scenes.slice() : null;
           run.perfN = evt.n;
           dressWander(evt.n);   // rc.35: a new evening, a slightly different instrument
-          drawAbsences(evt);    // rc.37: …and an instrument or two may sit it out
+          drawCast(evt);        // rc.37/rc.44: who sits out, and what tonight wears
           // THE BRUISE: last evening's cut severity, one scalar, carried.
           run.bruise = run.lastCutSeverity;
           run.lastCutSeverity = 0;
@@ -4594,6 +5952,21 @@
         horn: master.fork("horn"),
         delaySend: master.fork("delaySend"),
         rooms: master.fork("rooms"),
+        // rc.44 — THE STOPS' EIGHT NEW label-hashed forks: the evening's
+        // manners (one coin per stop per seam, in a fixed order) and one
+        // share draw per sounding, per stop — plus each body's OWN dice (a
+        // rattle's clacks, a rockfall's stones), which come off the stop's
+        // fork too so a manner cannot move the voice's own stream. Nothing
+        // pre-existing gains a draw, which is the whole reason the identity
+        // rows can be asked for at all.
+        cast: master.fork("cast"),
+        gurdyGlass: master.fork("gurdy:glass"),
+        hornConch: master.fork("horn:conch"),
+        rebecGlass: master.fork("rebec:glass"),
+        waterCrystal: master.fork("waterphone:crystal"),
+        percBones: master.fork("percussion:bones"),
+        ambCave: master.fork("ambient:cave"),
+        bladeWhale: master.fork("blade:whale"),
         // rc.32: five more label-hashed forks. A fork made from the birth
         // seed is independent of everything already drawn, so adding these
         // re-rolls nothing above — the sound-diversity pass buys its dice
@@ -4661,6 +6034,7 @@
       cutGain._pj2Tag = "cutGain"; // harness handle: param inspection
       var gurdyBreath = c.createGain();
       gurdyBreath.gain.setValueAtTime(1, clock.now());
+      gurdyBreath._pj2Tag = "gurdyBreath"; // harness handle: the seam's own bus
       var gurdyLevel = c.createGain();
       gurdyLevel.gain.setValueAtTime(0.10, clock.now());
       gurdyBreath.connect(gurdyLevel);
@@ -4923,6 +6297,10 @@
         master: master,
         absent: [], absentMap: {}, lastAbsent: [],
         castPending: null, castEvening: 0, castPlain: true,
+        // rc.44 — the evening's manners. Plain until the conductor's first
+        // begin (which arrives before any lane fires), so a body reading
+        // castIs() before the cast exists reads "plain", never undefined.
+        cast: plainCast(),
         poolMel: poolMel,
         streams: streams, tokens: [],
         harmony: harmony, motif: motif,
@@ -5282,7 +6660,15 @@
             plain: !!run.castPlain,
             absent: run.absent.slice(), absentLabels: absLabels,
             eligible: ABSENCE_ELIGIBLE.slice(),
+            // rc.44 — …and what tonight is WEARING: one field per stop, plus
+            // the dress in plain words (the same array the cast event and
+            // the UI's log line carry).
+            dress: (run.cast && run.cast.dress) ? run.cast.dress.slice() : [],
           };
+          for (var csi = 0; csi < CAST_STOPS.length; csi++) {
+            var csk = CAST_STOPS[csi].layer;
+            info.cast[csk] = (run.cast && run.cast[csk]) ? run.cast[csk] : CAST_STOPS[csi].plain;
+          }
           info.sink = run.seaChange ? { planned: true, done: !!run.seaChange.done } : { planned: false, done: false };
           info.tonicHz = run.field.tonicHz;
         }

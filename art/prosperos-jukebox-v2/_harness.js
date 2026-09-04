@@ -4815,8 +4815,12 @@ function p3AmbientFires(r) {
           hn.t < sCuts[si].t + (sCuts[si].holdS || 5) - 0.001) sHornHushBad++;
     }
   }
+  // rc.44 - THE REGISTER LAW moved the treeline one or two octaves below its
+  // rc.23 placement, per tone. This row pinned that placement; it now pins
+  // the LAW instead - the octave is relaxed, nothing else is. HORN-REGISTER
+  // in the rc.44 block below is where the law itself is asserted.
   for (ni = 0; ni < sHornN.length; ni++) {
-    if (sHornN[ni].oct !== -1) sHornOctBad++;
+    if (sHornN[ni].oct !== -2 && sHornN[ni].oct !== -3) sHornOctBad++;
     var sHornConc = 1;
     for (var nj = 0; nj < sHornN.length; nj++) {
       if (nj !== ni && sHornN[nj].t < sHornN[ni].t + 1e-9 &&
@@ -4824,7 +4828,7 @@ function p3AmbientFires(r) {
     }
     if (sHornConc > 2) sHornStack++;
   }
-  check("SYC HORN: never inside the hush, <= 2 concurrent (the call), oct -1 only",
+  check("SYC HORN: never inside the hush, <= 2 concurrent (the call), oct -2/-3 only (rc.44)",
     sHornHushBad === 0 && sHornOctBad === 0 && sHornStack === 0,
     sHornN.length + " horn note(s)" +
     (sHornHushBad ? ", " + sHornHushBad + " in the hush" : ""));
@@ -5286,6 +5290,13 @@ function p3AmbientFires(r) {
             }
           }
         }
+        // rc.44 - and the per-layer door the register laws need: a pinned
+        // digest asks for TODAY'S placement back, which is `register` 0.
+        if (opts.knobs) {
+          for (var kL in opts.knobs) {
+            for (var kK in opts.knobs[kL]) E.setLayerParam(kL, kK, opts.knobs[kL][kK]);
+          }
+        }
         if (opts.tap) {
           E.setWanderListener(function (layer, key, value) {
             R.taps.push({ layer: layer, key: key, v: value, t: vnow });
@@ -5313,6 +5324,10 @@ function p3AmbientFires(r) {
       for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
       return (h >>> 0).toString(16);
     }
+    // rc.44 - the three REGISTER knobs put back where rc.43 played them.
+    // Every pinned Sycorax digest in this file is driven through this door.
+    var RC44_OFF = { horn: { register: 0 }, waterphone: { register: 0 },
+                     jawharp: { register: 0 } };
 
     // ---- VARY-ZERO -------------------------------------------------------
     // The whole round's promise: with every layer's `vary` at 0 (and, from
@@ -5332,7 +5347,13 @@ function p3AmbientFires(r) {
       // `presence` knob at 1 and the absence draw off. Thinning is a rate,
       // so the old rate must replay the old build exactly; if a future edit
       // re-rolls a pre-existing stream, this row still goes red.
-      var vr = sycRun(VZ[vi].seed, 900, { vary: 0, presence: 1, absences: false });
+      // rc.44: …and every REGISTER knob back at 0, which is today's
+      // placement for the horn, the metal and the jaw harp. A register law
+      // is a composition change by design, so the pin asks for the octave it
+      // was taken at; the manners cost the stream nothing at share 0 (their
+      // shipped default), so they need no door here beyond the cast's.
+      var vr = sycRun(VZ[vi].seed, 900, { vary: 0, presence: 1, absences: false,
+                                          knobs: RC44_OFF });
       var vs = streamSig(vr);
       vzSw += vr.swallowed.length;
       if (vs.length !== VZ[vi].len || fnv1a(vs) !== VZ[vi].fnv) {
@@ -5613,6 +5634,12 @@ function p3AmbientFires(r) {
             }
           }
         }
+        // rc.44 - the register laws' door (see RC44_OFF38 below).
+        if (opts.knobs) {
+          for (var kL in opts.knobs) {
+            for (var kK in opts.knobs[kL]) E.setLayerParam(kL, kK, opts.knobs[kL][kK]);
+          }
+        }
         E.setEventListener(function (e) { R.events.push(e); });
         E.setNoteListener(function (n) { R.notes.push(n); });
         R.t0 = vnow;
@@ -5693,13 +5720,17 @@ function p3AmbientFires(r) {
     // were taken from the rc.36 build (streamSig, 900 s, the desk at rest)
     // before a line of rc.37 was written; they are reproduced here with every
     // `presence` knob returned to 1 and the absence draw off.
+    // rc.44: driven with every REGISTER knob back at 0 (today's placement)
+    // as well, for the reason SYC35 VARY-ZERO gives.
+    var RC44_OFF38 = { horn: { register: 0 }, waterphone: { register: 0 },
+                       jawharp: { register: 0 } };
     var ID38 = [
       { seed: 20260709, len: 26593, fnv: "b360838a" },
       { seed: 777, len: 25685, fnv: "ffd00b11" },
     ];
     var idBad = [], idSw = 0;
     for (var ii = 0; ii < ID38.length; ii++) {
-      var ir = run38(ID38[ii].seed, 900, { presence: 1, absences: false });
+      var ir = run38(ID38[ii].seed, 900, { presence: 1, absences: false, knobs: RC44_OFF38 });
       var isig = sig38(ir);
       idSw += ir.swallowed.length;
       if (isig.length !== ID38[ii].len || fnv1a38(isig) !== ID38[ii].fnv) {
@@ -5933,6 +5964,887 @@ function p3AmbientFires(r) {
       for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
       return (h >>> 0).toString(16);
     }
+  })();
+
+  // ---- SYCORAX rc.44: the glass armonica ----
+  // The owner, 2026-09-04, going through lab-sycorax.html's STOPS tab card by
+  // card: "for the gurdy, include the glass option — add it into the mix",
+  // then the horn dropped an octave or two and given its conch, the chant
+  // REPLACED by the throat, the rebec's glass violin, the waterphone's wider
+  // range and its crystal, the drums' bones, the sky's cave, the jaw harp's
+  // three octaves and the blade's whale. Nine items, one round.
+  //
+  // Two mechanisms and one swap:
+  //   A MANNER   a share knob (0–1, def 0) on its layer's desk row, drawn on
+  //              the stop's OWN fork at the voice's own grain (the gurdy per
+  //              CYCLE, the percussion per STROKE, the sky per ONE-SHOT, the
+  //              rest per note/tone/sounding), plus the body's own knob, plus
+  //              a coin the evening cast may toss from evening two (0.6
+  //              plain / 0.4 the stop) which a MOVED knob overrides.
+  //   A REGISTER a weighted per-sounding draw in OCTAVES relative to the
+  //              voice's old placement, on the wander's own touch fork. The
+  //              horn is now −1 or −2 and never 0; the waterphone 0 or −1;
+  //              the crystal −1 or −2 and never 0; the jaw harp 0, −1 or −2.
+  //              A register law CHANGES THE COMPOSITION by design — that is
+  //              what the owner asked for — so the identity rows drive it
+  //              back to 0 and pin the stream there.
+  //   THE THROAT the chant's body, swapped. No share, no cast, no way back.
+  //
+  // The contract every manner row below is written against: A MANNER CHANGES
+  // THE SOUND AND NEVER THE COMPOSITION. Every die a manner throws is on a
+  // fork of its own, and every die the PLAIN body would have thrown is thrown
+  // anyway, so the same seed plays the same evening whichever way it sounds.
+  // The one exception is named where it lives: the crystal carries a register
+  // law of its own, so a crystal note moves an octave or two — the owner's
+  // design, asserted rather than hidden.
+  //
+  // These rows are FIXED-LENGTH by design (900 / 1800 / 5400 s regardless of
+  // the sim argument), for the reason the rc.35 and rc.37 blocks give: a
+  // digest is only a digest at one duration.
+  (function testSyc44() {
+    var i, j, k, r;
+
+    // ---------------- the seven manners, as one table ----------------
+    // Every row below is written against this, so an eighth stop is one line
+    // here and no new row.
+    var S44 = [
+      { layer: "gurdy", share: "glass", body: "rub", stop: "glass", plain: "wheel",
+        dress: "gurdy, glass armonica", voice: "gurdy", match: 0.593 * 0.81,
+        bodyDef: 1, bodyLo: 0.8, bodyHi: 1.2, per: "character" },
+      { layer: "horn", share: "conch", body: "shell", stop: "conch", plain: "horn",
+        dress: "horn, conch shell", voice: "horn", match: 1.044,
+        bodyDef: 9, bodyLo: 7, bodyHi: 11, per: "touch" },
+      { layer: "rebec", share: "glassviolin", body: "rub", stop: "glass", plain: "rebec",
+        dress: "rebec, glass violin", voice: "rebec", match: 0.224,
+        bodyDef: 1, bodyLo: 0.8, bodyHi: 1.2, per: "touch" },
+      { layer: "waterphone", share: "crystal", body: "beat", stop: "crystal", plain: "waterphone",
+        dress: "waterphone, crystal", voice: "waterphone", match: 1.012,
+        bodyDef: 2.5, bodyLo: 1.8, bodyHi: 3.2, per: "touch" },
+      { layer: "percussion", share: "bones", body: "dryness", stop: "bones", plain: "drums",
+        dress: "percussion, bones", voice: "percussion", match: 1.2,
+        bodyDef: 0.5, bodyLo: 0.4, bodyHi: 0.6, per: "touch" },
+      { layer: "ambient", share: "cave", body: "depth", stop: "cave", plain: "fen",
+        dress: "sky, the cave", voice: "ambient", match: 1.191 * 0.75,
+        bodyDef: 1, bodyLo: 0.8, bodyHi: 1.2, per: "touch" },
+      { layer: "blade", share: "whale", body: "glide", stop: "whale", plain: "blade",
+        dress: "blade, the whale", voice: "blade", match: 0.891,
+        bodyDef: 5, bodyLo: 3.5, bodyHi: 7, per: "touch" },
+    ];
+    // …and the four register laws, as another. `base` is the octave the voice
+    // sounded at before rc.44, so the note's own `oct` must be base + a value.
+    var R44 = [
+      { layer: "horn", key: "register", def: -1.5, values: [-1, -2], base: -1, voice: "horn" },
+      { layer: "waterphone", key: "register", def: -0.5, values: [0, -1], base: 0, voice: "waterphone" },
+      { layer: "waterphone", key: "crystalRegister", def: -1.5, values: [-1, -2], base: 0, voice: "waterphone" },
+      { layer: "jawharp", key: "register", def: -1, values: [0, -1, -2], base: -1, voice: "jawharp" },
+    ];
+    // every share at 0 and every register back where rc.43 played it
+    function allOff() {
+      var o = {};
+      for (var a = 0; a < R44.length; a++) {
+        o[R44[a].layer] = o[R44[a].layer] || {};
+        o[R44[a].layer][R44[a].key] = 0;
+      }
+      return o;
+    }
+    function allShares(v) {
+      var o = {};
+      for (var a = 0; a < S44.length; a++) {
+        o[S44[a].layer] = o[S44[a].layer] || {};
+        o[S44[a].layer][S44[a].share] = v;
+      }
+      return o;
+    }
+    function merge(a, b) {
+      var o = {}, L;
+      for (L in a) { o[L] = {}; for (var x in a[L]) o[L][x] = a[L][x]; }
+      for (L in b) { o[L] = o[L] || {}; for (var y in b[L]) o[L][y] = b[L][y]; }
+      return o;
+    }
+
+    // A run with its RECORDING CONTEXT kept, so the bodies can be read off
+    // what was actually scheduled rather than off what the engine says it did.
+    var C44 = null;
+    function run44(seedVal, simS, knobs, copts) {
+      var origAC = W.AudioContext;
+      C44 = null;
+      W.AudioContext = function () { C44 = mkCtx(); return C44; };
+      var origCE = console.error, sw = [];
+      console.error = function () { sw.push("Sycorax/rc44: " + Array.prototype.join.call(arguments, " ")); };
+      var R = { events: [], notes: [], swallowed: sw, t0: vnow, infoFinal: null, ctx: null };
+      try {
+        var co = { seed: seedVal, volume: 0.5 };
+        if (copts) for (var ck in copts) co[ck] = copts[ck];
+        var E = P.Sycorax.create(co);
+        if (knobs) for (var L in knobs) for (var kk in knobs[L]) E.setLayerParam(L, kk, knobs[L][kk]);
+        E.setEventListener(function (e) { R.events.push(e); });
+        E.setNoteListener(function (n) { R.notes.push(n); });
+        R.t0 = vnow;
+        E.play();
+        vAdvance(R.t0 + simS);
+        try { R.infoFinal = E.getInfo(); } catch (eI) {}
+        E.stop();
+        vAdvance(vnow + 3);
+      } catch (e) {
+        errors.push("run44 " + seedVal + ": " + (e && e.message));
+      }
+      R.ctx = C44;
+      console.error = origCE;
+      W.AudioContext = origAC;
+      return R;
+    }
+
+    function ms(x) { return Math.round(x * 1000); }
+    function sig44(R) {
+      var out = [], q;
+      for (q = 0; q < R.events.length; q++) {
+        var e = R.events[q];
+        out.push("E|" + e.type + "|" + (e.t != null ? ms(e.t - R.t0) : "") + "|" +
+                 (e.scene || e.kind || e.name || ""));
+      }
+      for (q = 0; q < R.notes.length; q++) {
+        var n = R.notes[q];
+        out.push("N|" + n.voice + "|" + (n.freq != null ? ms(n.freq) : "-") + "|" +
+                 ms(n.t - R.t0) + "|" + (n.kind || n.phraseKind || ""));
+      }
+      return out.join("\n");
+    }
+    function fnv44(s) {
+      var h = 0x811c9dc5;
+      for (var q = 0; q < s.length; q++) { h ^= s.charCodeAt(q); h = Math.imul(h, 0x01000193); }
+      return (h >>> 0).toString(16) + ":" + s.length;
+    }
+    function notesOf(R, voice, manner) {
+      var o = [];
+      for (var a = 0; a < R.notes.length; a++) {
+        var n = R.notes[a];
+        if (String(n.voice || "") !== voice) continue;
+        if (manner && n.manner !== manner) continue;
+        o.push(n);
+      }
+      return o;
+    }
+    // the share a layer's soundings were played at. The gurdy emits one note
+    // per PAD and the percussion one per stroke, so this counts soundings the
+    // way the manner is drawn: by note, except the gurdy, whose whole cycle
+    // (every pad at the same t) is one draw.
+    function shareOf44(R, S) {
+      var tot = 0, hit = 0, lastT = null;
+      for (var a = 0; a < R.notes.length; a++) {
+        var n = R.notes[a];
+        if (String(n.voice || "") !== S.voice || !n.manner) continue;
+        if (S.layer === "gurdy") {
+          if (lastT != null && Math.abs(n.t - lastT) < 1e-9) continue;
+          lastT = n.t;
+        }
+        tot++;
+        if (n.manner === S.stop) hit++;
+      }
+      return { n: tot, share: tot ? hit / tot : null };
+    }
+
+    // ---------------- the scheduled-envelope reader ----------------
+    // Every body writes its envelope through PJ2.Voice.env, which anchors at
+    // zero and then ramps: a gain node whose FIRST automation event is
+    // set(0, …) is an envelope gain, and the second one at time t is a body
+    // that started at t. rc.44's own gains carry one extra anchor at
+    // creation (envGain), so the first event may be set(0, now) and the
+    // SECOND set(0, t) — which is exactly the click fix, and the reader
+    // simply skips past it.
+    function envAt(ev) {
+      var a = 0;
+      while (a + 1 < ev.length && ev[a].type === "set" && ev[a].v === 0 &&
+             ev[a + 1].type === "set" && ev[a + 1].v === 0) a++;
+      return ev[a] ? ev[a].t : null;
+    }
+    function envsAt(R, t) {
+      var o = [], ns = (R.ctx && R.ctx._nodes) || [];
+      for (var a = 0; a < ns.length; a++) {
+        var n = ns[a];
+        if (n._kind !== "Gain" || !n.gain || !n.gain._events.length) continue;
+        var e0 = n.gain._events[0];
+        if (e0.type !== "set" || e0.v !== 0) continue;
+        if (Math.abs(envAt(n.gain._events) - t) > 1e-9) continue;
+        o.push(n);
+      }
+      return o;
+    }
+    // the segments of an envelope, past any birth anchor
+    function segsOf(node) {
+      var ev = node.gain._events, a = 0;
+      while (a + 1 < ev.length && ev[a].type === "set" && ev[a].v === 0 &&
+             ev[a + 1].type === "set" && ev[a + 1].v === 0) a++;
+      return ev.slice(a);
+    }
+    function peakOf(node) {
+      var ev = segsOf(node), p = 0;
+      for (var a = 0; a < ev.length; a++) if (ev[a].v > p) p = ev[a].v;
+      return p;
+    }
+    // the scheduled ENERGY of an envelope (∫A²dt over its segments)
+    function energyOf(node) {
+      var ev = segsOf(node), E = 0, pv = 0, pt = null;
+      for (var a = 0; a < ev.length; a++) {
+        var e = ev[a];
+        if (e.type === "cancel") { pt = e.t; continue; }
+        if (e.type === "set") { pv = e.v; pt = e.t; continue; }
+        if (pt == null) { pv = e.v; pt = e.t; continue; }
+        var dt = e.t - pt, lo = pv, hi = e.v;
+        if (dt > 0) E += dt * (lo * lo + lo * hi + hi * hi) / 3;
+        pv = hi; pt = e.t;
+      }
+      return E;
+    }
+    // A gain feeding an AudioParam is a MODULATOR (an FM index, a vibrato
+    // depth), not a voice: its "peak" is in hertz, and summing it into a
+    // level comparison is how a −73 dB reading happens.
+    function isModulator(node) {
+      var ts = node._targets || [];
+      for (var a = 0; a < ts.length; a++) {
+        var t = ts[a];
+        if (t && typeof t === "object" && t._events && t._label) return true;
+      }
+      return false;
+    }
+    // every envelope a sounding scheduled, and what they add up to
+    function bodyAt(R, t) {
+      var ns = envsAt(R, t), E = 0, pk = 0, keep = [];
+      for (var a = 0; a < ns.length; a++) {
+        if (isModulator(ns[a])) continue;
+        keep.push(ns[a]);
+        E += energyOf(ns[a]);
+        var p = peakOf(ns[a]);
+        if (p > pk) pk = p;
+      }
+      return { n: keep.length, E: E, peak: pk, nodes: keep };
+    }
+    // THE SOUNDING'S OWN ENVELOPE. A body schedules several: the note's, a
+    // noise thread's, and PRE-GAIN stages that drive a filter or a shaper at
+    // levels no output ever reaches (the glass violin's rub band sits at
+    // 0.30 INTO the envelope, the bones' stick at 0.5). The one that carries
+    // the sounding is the loudest envelope still at OUTPUT level, and it is
+    // the only one a level comparison may read.
+    var AUDIO_LEVEL = 0.1;
+    function principal(R, t) {
+      var ns = envsAt(R, t), best = null, bestE = -1;
+      for (var a = 0; a < ns.length; a++) {
+        if (isModulator(ns[a])) continue;
+        if (peakOf(ns[a]) > AUDIO_LEVEL) continue;
+        var e = energyOf(ns[a]);
+        if (e > bestE) { bestE = e; best = ns[a]; }
+      }
+      return best ? { node: best, E: bestE, peak: peakOf(best) } : null;
+    }
+    function meanOf(a) { var s = 0; for (var q = 0; q < a.length; q++) s += a[q]; return a.length ? s / a.length : 0; }
+    function dB(a, b) { return (a > 0 && b > 0) ? 10 * Math.log(a / b) / Math.LN10 : NaN; }
+    // does this node reach `target` through connect()?
+    function reaches(node, target) {
+      var seen = [], stack = [node], hops = 0;
+      while (stack.length && hops++ < 4000) {
+        var n = stack.pop();
+        if (n === target) return true;
+        if (seen.indexOf(n) >= 0) continue;
+        seen.push(n);
+        var ts = n._targets || [];
+        for (var a = 0; a < ts.length; a++) if (ts[a] && typeof ts[a] === "object") stack.push(ts[a]);
+      }
+      return false;
+    }
+    function taggedNode(R, tag) {
+      var ns = (R.ctx && R.ctx._nodes) || [];
+      for (var a = 0; a < ns.length; a++) if (ns[a]._pj2Tag === tag) return ns[a];
+      return null;
+    }
+
+    var SEED44 = 20260709, SEED44B = 777;
+    var LONG44 = 5400;
+
+    // ---------------- DESK ----------------
+    (function () {
+      var bad = [], note = [];
+      try {
+        var E = P.Sycorax.create({ seed: 7 });
+        var ps = E.getLayerParams(), vals = E.getLayerParamValues();
+        var sp = E.getWanderSpans();
+        for (i = 0; i < S44.length; i++) {
+          var S = S44[i], row = ps[S.layer] || [], sh = null, bd = null;
+          for (j = 0; j < row.length; j++) {
+            if (row[j].key === S.share) sh = row[j];
+            if (row[j].key === S.body) bd = row[j];
+          }
+          if (!sh) { bad.push(S.layer + ": no " + S.share + " knob"); continue; }
+          if (!bd) { bad.push(S.layer + ": no " + S.body + " knob"); continue; }
+          if (sh.def !== 0) bad.push(S.share + " def " + sh.def + " != 0");
+          if (sh.min !== 0 || sh.max !== 1) bad.push(S.share + " range " + sh.min + "-" + sh.max);
+          if (sp[S.layer] && sp[S.layer][S.share]) bad.push(S.share + " must not wander: a share is an entry law");
+          if (Math.abs(bd.def - S.bodyDef) > 1e-9) bad.push(S.body + " def " + bd.def + " != " + S.bodyDef);
+          var bsp = sp[S.layer] && sp[S.layer][S.body];
+          if (!bsp) bad.push(S.body + " carries no span");
+          else {
+            if (bsp.per !== S.per) bad.push(S.body + " per " + bsp.per + " != " + S.per);
+            if (Math.abs(bsp.lo - S.bodyLo) > 1e-9 || Math.abs(bsp.hi - S.bodyHi) > 1e-9) {
+              bad.push(S.body + " span " + bsp.lo + "-" + bsp.hi + " != " + S.bodyLo + "-" + S.bodyHi);
+            }
+          }
+          if (!vals[S.layer] || vals[S.layer][S.share] !== 0) bad.push(S.share + " not at its def");
+          E.setLayerParam(S.layer, S.share, 0.5);
+          if (Math.abs(E.getLayerParamValues()[S.layer][S.share] - 0.5) > 1e-9) bad.push(S.share + " is not settable");
+          note.push(S.layer + "." + S.share);
+        }
+        // the four register laws, and the chant's growl (no share, by design)
+        for (i = 0; i < R44.length; i++) {
+          var Rg = R44[i], rw = ps[Rg.layer] || [], rk = null;
+          for (j = 0; j < rw.length; j++) if (rw[j].key === Rg.key) rk = rw[j];
+          if (!rk) { bad.push(Rg.layer + ": no " + Rg.key + " knob"); continue; }
+          if (Math.abs(rk.def - Rg.def) > 1e-9) bad.push(Rg.key + " def " + rk.def + " != " + Rg.def);
+          var rsp = sp[Rg.layer] && sp[Rg.layer][Rg.key];
+          if (!rsp || !rsp.weights) { bad.push(Rg.key + " carries no weighted draw"); continue; }
+          if (rsp.per !== "touch") bad.push(Rg.key + " per " + rsp.per + " != touch");
+          if (!rsp.round) bad.push(Rg.key + " does not round");
+          if (rsp.values.length !== Rg.values.length) bad.push(Rg.key + " draws " + rsp.values.join("/"));
+          else for (j = 0; j < Rg.values.length; j++) {
+            if (rsp.values.indexOf(Rg.values[j]) < 0) bad.push(Rg.key + " cannot draw " + Rg.values[j]);
+          }
+        }
+        var crow = ps.chant || [], growl = null, throatShare = false;
+        for (j = 0; j < crow.length; j++) {
+          if (crow[j].key === "growl") growl = crow[j];
+          if (crow[j].key === "throat") throatShare = true;
+        }
+        if (!growl) bad.push("chant: no growl knob");
+        else if (growl.def !== 1 || growl.min !== 0 || growl.max !== 1.5) bad.push("growl " + growl.min + "-" + growl.max + " def " + growl.def);
+        if (throatShare) bad.push("the throat is a body, not a share: it must have no share knob");
+      } catch (eD) { bad.push("threw: " + eD.message); }
+      check("SYC44 DESK: a share knob (def 0, no span) and a body knob on each of the seven rows; four weighted register laws; the chant's growl and no throat share",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- IDENTITY ----------------
+    // Every share at 0, every REGISTER knob back at 0 (today's placement) and
+    // the cast door shut: the rc.43 engine, note for note and event for
+    // event. These digests were taken from the rc.43 build itself, driven
+    // through the same door, before a line of rc.44 was written.
+    var ID44 = { 20260709: "1dd5b224:49069", 777: "ed087a4c:47825" };
+    (function () {
+      var bad = [], note = [], seeds = [SEED44, SEED44B];
+      for (i = 0; i < seeds.length; i++) {
+        var R = run44(seeds[i], 1800, allOff(), { cast: false, absences: false });
+        var d = fnv44(sig44(R));
+        note.push(seeds[i] + " " + d + " (" + R.notes.length + " notes)");
+        if (d !== ID44[seeds[i]]) bad.push(seeds[i] + ": " + d + " != pinned " + ID44[seeds[i]]);
+        if (R.swallowed.length) bad.push(seeds[i] + ": " + R.swallowed.length + " swallowed");
+        for (j = 0; j < S44.length; j++) {
+          var s = shareOf44(R, S44[j]);
+          if (s.share) bad.push(S44[j].stop + " sounded at share 0");
+        }
+      }
+      check("SYC44 IDENTITY: every share 0 + every register 0 + the cast shut is the rc.43 engine, bit for bit (two seeds, 1800 s)",
+        bad.length === 0, note.join("; ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- NEUTRAL ----------------
+    // A MANNER CHANGES THE SOUND AND NEVER THE COMPOSITION: the same seed at
+    // every share 0 and at every share 1 plays the same events at the same
+    // times and the same notes at the same times and degrees. The ONE thing
+    // that moves is the crystal's own register law, which the row names.
+    var N44 = null;
+    (function () {
+      var bad = [], note = [];
+      var A = run44(SEED44, 1800, allOff(), { cast: false });
+      var B = run44(SEED44, 1800, merge(allOff(), allShares(1)), { cast: false });
+      N44 = { off: A, on: B };
+      var eA = [], eB = [];
+      for (i = 0; i < A.events.length; i++) eA.push(A.events[i].type + "@" + ms(A.events[i].t - A.t0));
+      for (i = 0; i < B.events.length; i++) eB.push(B.events[i].type + "@" + ms(B.events[i].t - B.t0));
+      if (eA.join("|") !== eB.join("|")) bad.push("events differ (" + eA.length + " vs " + eB.length + ")");
+      if (A.notes.length !== B.notes.length) bad.push("note counts " + A.notes.length + " vs " + B.notes.length);
+      var moved = 0, mism = 0;
+      for (i = 0; i < Math.min(A.notes.length, B.notes.length); i++) {
+        var a = A.notes[i], b = B.notes[i];
+        if (a.voice !== b.voice || ms(a.t - A.t0) !== ms(b.t - B.t0) || a.deg !== b.deg ||
+            (a.kind || "") !== (b.kind || "")) { mism++; continue; }
+        if (a.voice === "waterphone" && b.manner === "crystal") {
+          // the crystal's own law: one or two octaves below the metal's
+          var oct = Math.log(b.freq / a.freq) / Math.LN2;
+          if (Math.abs(oct + 1) > 1e-6 && Math.abs(oct + 2) > 1e-6) mism++;
+          else moved++;
+        } else if (Math.abs((a.freq || 0) - (b.freq || 0)) > 1e-9) mism++;
+      }
+      if (mism) bad.push(mism + " note(s) differ beyond the manner");
+      note.push(A.notes.length + " notes, " + eA.length + " events, " +
+                moved + " crystal note(s) moved by their own register law");
+      check("SYC44 NEUTRAL: every share 0 vs every share 1 is the same evening - same events, same notes (only the crystal's own register moves)",
+        bad.length === 0, note.join("") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- SHARE ----------------
+    (function () {
+      var bad = [], note = [];
+      var half = run44(SEED44, LONG44, merge(allOff(), allShares(0.5)), { cast: false });
+      var one = run44(SEED44, LONG44, merge(allOff(), allShares(1)), { cast: false });
+      for (i = 0; i < S44.length; i++) {
+        var S = S44[i];
+        var z = shareOf44(N44.off, S), o = shareOf44(one, S), h = shareOf44(half, S);
+        note.push(S.stop + " " + (h.share == null ? "-" : h.share.toFixed(2)) + " of " + h.n);
+        if (z.share) bad.push(S.stop + " sounded at 0");
+        if (o.n > 0 && o.share !== 1) bad.push(S.stop + " only " + o.share.toFixed(2) + " at share 1");
+        if (h.n >= 40 && Math.abs(h.share - 0.5) > 0.12) {
+          bad.push(S.stop + " " + h.share.toFixed(2) + " != 0.5 +- 0.12 over " + h.n);
+        }
+      }
+      check("SYC44 SHARE: at 0 none, at 1 all, at 0.5 half the soundings (+- 0.12)",
+        bad.length === 0 && half.swallowed.length === 0 && one.swallowed.length === 0,
+        note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- CAST ----------------
+    var K1 = run44(SEED44, LONG44, null, null);
+    var K2 = run44(SEED44B, LONG44, null, null);
+    var K3 = run44(881, LONG44, null, null);
+    var K4 = run44(20260713, LONG44, null, null);
+    function castsOf(R) { return evOf(R, "cast"); }
+    (function () {
+      var bad = [], note = [], drawn = {}, evenings = 0, runs = [K1, K2, K3, K4];
+      // keyed by LAYER: two of the seven manners are called "glass"
+      for (i = 0; i < S44.length; i++) drawn[S44[i].layer] = 0;
+      for (r = 0; r < runs.length; r++) {
+        var cs = castsOf(runs[r]);
+        for (i = 0; i < cs.length; i++) {
+          var c = cs[i];
+          if (i === 0) {
+            // EVENING ONE IS ALWAYS PLAIN - the instruments before their doubles
+            for (j = 0; j < S44.length; j++) {
+              if (c[S44[j].layer] !== S44[j].plain) bad.push("run " + r + ": evening one wears " + c[S44[j].layer]);
+            }
+            if (c.dress && c.dress.length) bad.push("run " + r + ": evening one is dressed");
+            continue;
+          }
+          evenings++;
+          for (j = 0; j < S44.length; j++) {
+            var S = S44[j], worn = c[S.layer];
+            if (worn !== S.stop && worn !== S.plain) { bad.push("run " + r + ": " + S.layer + " wears '" + worn + "'"); continue; }
+            if (worn === S.stop) drawn[S.layer]++;
+            var inDress = (c.dress || []).indexOf(S.dress) >= 0;
+            if ((worn === S.stop) !== inDress) bad.push("run " + r + ": " + S.layer + " field/dress disagree");
+          }
+        }
+      }
+      for (var sk in drawn) note.push(sk + " " + drawn[sk] + "/" + evenings);
+      if (evenings >= 20) {
+        for (i = 0; i < S44.length; i++) {
+          var pr = drawn[S44[i].layer] / evenings;
+          if (Math.abs(pr - 0.4) > 0.22) bad.push(S44[i].layer + " drawn " + pr.toFixed(2) + " != 0.4 +- 0.22");
+        }
+      }
+      check("SYC44 CAST: evening one plain; from evening two each manner is drawn about 0.4, and the dress says so",
+        bad.length === 0, evenings + " evening(s) judged, " + note.join(", ") +
+        (evenings < 20 ? " - under 20, rate reported only" : "") +
+        (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // What the cast SAYS is what the evening PLAYS - and getInfo() says it too.
+    (function () {
+      var bad = [], note = [], runs = [K1, K2];
+      for (r = 0; r < runs.length; r++) {
+        var R = runs[r], cs = castsOf(R), bs = perfPhase(R, "begin"), judged = 0;
+        for (i = 0; i < cs.length; i++) {
+          var t0e = cs[i].t, t1e = bs[i + 1] ? bs[i + 1].t : Infinity;
+          for (j = 0; j < S44.length; j++) {
+            var S = S44[j], want = (cs[i][S.layer] === S.stop) ? S.stop : S.plain;
+            var wrong = 0, seen = 0;
+            for (k = 0; k < R.notes.length; k++) {
+              var n = R.notes[k];
+              if (String(n.voice || "") !== S.voice || !n.manner) continue;
+              if (n.t < t0e - 1e-9 || n.t >= t1e) continue;
+              seen++;
+              if (n.manner !== want) wrong++;
+            }
+            if (seen) judged++;
+            // a gurdy CYCLE begun before the seam finishes in its old manner:
+            // the seam's rule. Those pads carry the previous evening's t, so
+            // they are counted from the cast line, not before it.
+            if (wrong) bad.push("run " + r + " evening " + cs[i].evening + ": " + wrong + " " + S.layer + " note(s) not " + want);
+          }
+        }
+        var info = R.infoFinal, last = cs.length ? cs[cs.length - 1] : null;
+        if (last) {
+          if (!info || !info.cast) bad.push("run " + r + ": no getInfo().cast");
+          else {
+            for (j = 0; j < S44.length; j++) {
+              if (info.cast[S44[j].layer] !== last[S44[j].layer]) bad.push("run " + r + ": getInfo().cast." + S44[j].layer + " disagrees");
+            }
+            if (JSON.stringify(info.cast.dress) !== JSON.stringify(last.dress)) bad.push("run " + r + ": dress disagrees");
+          }
+        }
+        note.push(cs.length + " evening(s), " + judged + " layer-evening(s) with soundings");
+      }
+      check("SYC44 CAST: a drawn manner is worn by every sounding that evening; the event and getInfo().cast carry it",
+        bad.length === 0, note.join(" + ") + (bad.length ? "; BAD " + bad.slice(0, 3).join(" | ") : ""));
+    })();
+
+    // A MOVED KNOB WINS OVER THE CAST.
+    (function () {
+      var bad = [], note = [];
+      var R0 = run44(SEED44, LONG44, null, null);
+      var castDrew = 0, cs0 = castsOf(R0);
+      for (i = 0; i < cs0.length; i++) if ((cs0[i].dress || []).length) castDrew++;
+      var R2 = run44(SEED44, LONG44, allShares(0.0001), null);
+      var cs2 = castsOf(R2), dressed2 = 0;
+      for (i = 0; i < cs2.length; i++) if ((cs2[i].dress || []).length) dressed2++;
+      if (dressed2 === 0) bad.push("the cast drew nothing to be overridden");
+      for (i = 0; i < S44.length; i++) {
+        var s = shareOf44(R2, S44[i]);
+        note.push(S44[i].stop + " " + (s.share == null ? "-" : s.share.toFixed(3)) + " of " + s.n);
+        if (s.n >= 20 && s.share > 0.02) bad.push(S44[i].stop + " " + s.share.toFixed(2) + " - the cast beat the knob");
+      }
+      check("SYC44 CAST: a moved knob wins over the cast until it is put back",
+        bad.length === 0, dressed2 + " dressed evening(s) overridden (" + castDrew +
+        " when the knobs sat still), " + note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE SEAM ----------------
+    // The gurdy is the one voice that may never gap and may never startle,
+    // and the manner is drawn per CYCLE for exactly that reason.
+    (function () {
+      var bad = [], note = [];
+      var runs = [{ tag: "glass 1", R: N44.on }, { tag: "glass 0", R: N44.off },
+                  { tag: "glass 0.5", R: run44(SEED44, 1800, merge(allOff(), { gurdy: { glass: 0.5 } }), { cast: false }) }];
+      var minAtk = Infinity, worstStep = 0, gaps = 0, cycles = 0, glassCycles = 0;
+      for (r = 0; r < runs.length; r++) {
+        var R = runs[r].R, gs = notesOf(R, "gurdy"), lastT = null, lastEnd = null;
+        // the seam's OWN bus: at run.t0 half a dozen lanes open at once, so
+        // "every envelope anchored at this instant" is not the gurdy's cycle
+        // until it is filtered by the route the cycle actually takes.
+        var gb = taggedNode(R, "gurdyBreath");
+        for (i = 0; i < gs.length; i++) {
+          var n = gs[i];
+          if (lastT != null && Math.abs(n.t - lastT) < 1e-9) continue;   // one cycle, many pads
+          cycles++;
+          if (n.manner === "glass") glassCycles++;
+          // the seam never gaps: the next cycle opens before this one closes
+          if (lastEnd != null && n.t > lastEnd + 1e-6) gaps++;
+          lastT = n.t; lastEnd = n.t + n.durS;
+          // every cycle's edges, off the schedule
+          var b = bodyAt(R, n.t);
+          for (j = 0; j < b.nodes.length; j++) {
+            if (gb && !reaches(b.nodes[j], gb)) continue;
+            var ev = segsOf(b.nodes[j]);
+            if (ev.length < 2) continue;
+            var atk = ev[1].t - ev[0].t;
+            if (atk < minAtk) minAtk = atk;
+            // THE EDGE RULER: no more than 0.02 of amplitude per 0.5 s. It
+            // is a rule about what a listener hears, so it reads the gains
+            // that ARE the output; the rub band's 0.28 is a drive level into
+            // an envelope of 0.02, and reading it here would be measuring a
+            // number that never reaches the room.
+            if (peakOf(b.nodes[j]) > AUDIO_LEVEL) continue;
+            for (k = 1; k < ev.length; k++) {
+              var dt = ev[k].t - ev[k - 1].t, dv = Math.abs(ev[k].v - (ev[k - 1].v || 0));
+              if (dt <= 0) continue;
+              var stepPerHalf = dv / (dt / 0.5);
+              if (stepPerHalf > worstStep) worstStep = stepPerHalf;
+            }
+          }
+        }
+      }
+      if (minAtk < 1.5 - 1e-9) bad.push("a gurdy edge of " + minAtk.toFixed(3) + " s (< 1.5)");
+      if (worstStep > 0.02 + 1e-9) bad.push("an edge of " + worstStep.toFixed(4) + " per 0.5 s (> 0.02)");
+      if (gaps) bad.push(gaps + " gap(s) in the seam");
+      if (!glassCycles) bad.push("no glass cycle to judge");
+      check("SYC44 SEAM: every gurdy cycle opens over >= 1.5 s, no edge over 0.02 per 0.5 s, and the drone never gaps at any share",
+        bad.length === 0, cycles + " cycle(s), " + glassCycles + " glass, slowest edge " +
+        (isFinite(minAtk) ? minAtk.toFixed(2) : "-") + " s, worst step " + worstStep.toFixed(4) +
+        " per 0.5 s" + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE CUT ----------------
+    // A glass cycle is ducked exactly as a wheel cycle: same route to
+    // run.cutGain, same schedule on it. And the blade's whale hangs off the
+    // same gate the cut kills at tB.
+    (function () {
+      var bad = [], note = [];
+      var cg = taggedNode(N44.on, "cutGain"), cgOff = taggedNode(N44.off, "cutGain");
+      if (!cg || !cgOff) bad.push("no cutGain node");
+      else {
+        var gs = notesOf(N44.on, "gurdy", "glass"), routed = 0, orphan = 0;
+        for (i = 0; i < Math.min(gs.length, 40); i++) {
+          var b = bodyAt(N44.on, gs[i].t);
+          for (j = 0; j < b.nodes.length; j++) {
+            if (reaches(b.nodes[j], cg)) routed++; else orphan++;
+          }
+        }
+        if (!routed) bad.push("no glass cycle reaches cutGain");
+        if (orphan) bad.push(orphan + " glass gain(s) outside the cut's reach");
+        note.push(routed + " glass gain(s) routed through cutGain");
+        // the duck's own schedule is untouched by the manners
+        var tOn = N44.on.t0, tOff = N44.off.t0;
+        var a = JSON.stringify(cg.gain._events.map(function (e) { return [e.type, e.v, ms(e.t - tOn)]; }));
+        var b2 = JSON.stringify(cgOff.gain._events.map(function (e) { return [e.type, e.v, ms(e.t - tOff)]; }));
+        if (a !== b2) bad.push("the cut's own schedule differs between manners");
+      }
+      check("SYC44 CUT: a glass cycle is ducked exactly as a wheel cycle, and the cut's own schedule does not move",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE REGISTER LAWS ----------------
+    (function () {
+      var bad = [], note = [];
+      var R = run44(SEED44, LONG44, merge(allOff(), allShares(0)), { cast: false });   // registers at 0
+      var D = K1;                                                                       // the shipped desk
+      // at register 0, today's placement comes back
+      var h0 = notesOf(R, "horn"), w0 = notesOf(R, "waterphone"), j0 = notesOf(R, "jawharp");
+      for (i = 0; i < h0.length; i++) if (h0[i].oct !== -1) bad.push("horn at " + h0[i].oct + " with register 0");
+      for (i = 0; i < w0.length; i++) if (w0[i].oct !== 0) bad.push("metal at " + w0[i].oct + " with register 0");
+      for (i = 0; i < j0.length; i++) if (j0[i].oct !== -1 && j0[i].oct !== -2) bad.push("harp at " + j0[i].oct + " with register 0");
+      // …and at the shipped defaults, the laws
+      for (i = 0; i < R44.length; i++) {
+        var L = R44[i], seen = {}, n2 = 0;
+        var pool = notesOf(D, L.voice);
+        for (j = 0; j < pool.length; j++) {
+          var nn = pool[j];
+          if (L.voice === "waterphone") {
+            if (nn.kind === "apparition") continue;                 // the cut's gesture, not the metal's entry
+            var isC = (nn.manner === "crystal");
+            if (L.key === "register" && isC) continue;
+            if (L.key === "crystalRegister" && !isC) continue;
+          }
+          n2++;
+          var rel = nn.oct - L.base;
+          seen[rel] = (seen[rel] || 0) + 1;
+          if (L.values.indexOf(rel) < 0) bad.push(L.layer + "." + L.key + ": a sounding at " + rel + " (allowed " + L.values.join("/") + ")");
+        }
+        var got = [];
+        for (var kk in seen) got.push(kk + "x" + seen[kk]);
+        note.push(L.layer + "." + L.key + " " + (got.length ? got.join(" ") : "none") + " of " + n2);
+        if (n2 >= 12) {
+          for (j = 0; j < L.values.length; j++) {
+            if (!seen[L.values[j]]) bad.push(L.layer + "." + L.key + " never drew " + L.values[j] + " in " + n2);
+          }
+        }
+      }
+      // every twang of an utterance at ONE placement (the note event is per
+      // utterance, so this is read off the comb's own frequency instead)
+      var jn = notesOf(D, "jawharp"), combBad = 0;
+      for (i = 0; i < jn.length; i++) if (jn[i].freq > 330) combBad++;
+      if (combBad) bad.push(combBad + " comb(s) above 330 Hz");
+      check("SYC44 REGISTER: the horn -1/-2, the metal 0/-1, the crystal -1/-2, the harp 0/-1/-2 - and register 0 gives today's placement back",
+        bad.length === 0, note.join("; ") + (bad.length ? "; BAD " + bad.slice(0, 4).join(" | ") : ""));
+    })();
+
+    // ---------------- THE BODIES ----------------
+    (function () {
+      var bad = [], note = [];
+      var ON = N44.on;
+      // THE CONCH speaks in 60 ms where the horn swells for seconds
+      var cn = notesOf(ON, "horn", "conch"), conchRead = 0;
+      for (i = 0; i < cn.length; i++) {
+        var b = bodyAt(ON, cn[i].t);
+        for (j = 0; j < b.nodes.length; j++) {
+          var ev = segsOf(b.nodes[j]);
+          if (ev.length >= 2 && Math.abs((ev[1].t - ev[0].t) - 0.06) < 1e-9) { conchRead++; break; }
+        }
+      }
+      if (cn.length && !conchRead) bad.push("no conch spoke in 60 ms");
+      note.push("conch " + conchRead + "/" + cn.length + " at 60 ms");
+      // THE CRYSTAL: an onset measured in seconds, and pairs that beat
+      var xn = notesOf(ON, "waterphone", "crystal"), xRead = 0, pairsOK = 0;
+      for (i = 0; i < xn.length && i < 40; i++) {
+        var bx = bodyAt(ON, xn[i].t);
+        for (j = 0; j < bx.nodes.length; j++) {
+          var evx = segsOf(bx.nodes[j]);
+          if (evx.length >= 2 && evx[1].t - evx[0].t >= 0.25) { xRead++; break; }
+        }
+        // the beating pair: two oscillators on the same frequency, one detuned
+        var ns = (ON.ctx && ON.ctx._nodes) || [], det = 0;
+        for (j = 0; j < ns.length; j++) {
+          var nd = ns[j];
+          if (nd._kind !== "Oscillator" || !nd.detune || !nd.detune._events.length) continue;
+          if (Math.abs(nd.detune._events[0].t - xn[i].t) > 1e-9) continue;
+          if (nd.detune._events[0].v > 0) det++;
+        }
+        if (det >= 3) pairsOK++;
+      }
+      if (xn.length && !xRead) bad.push("no crystal onset over 0.25 s");
+      if (xn.length && !pairsOK) bad.push("no crystal beating pairs");
+      note.push("crystal " + xRead + " slow onset(s), " + pairsOK + " beating set(s)");
+      // THE WHALE: two octaves under the blade, and it glides
+      var wn = notesOf(ON, "blade", "whale"), wOK = 0, wGlide = 0;
+      for (i = 0; i < wn.length; i++) {
+        var ns2 = (ON.ctx && ON.ctx._nodes) || [];
+        for (j = 0; j < ns2.length; j++) {
+          var o2 = ns2[j];
+          if (o2._kind !== "Oscillator" || !o2.frequency || !o2.frequency._events.length) continue;
+          var e0 = o2.frequency._events[0];
+          if (e0.type !== "set" || Math.abs(e0.t - wn[i].t) > 1e-9) continue;
+          if (Math.abs(e0.v - wn[i].freq * 0.25) < 1e-6) {
+            wOK++;
+            if (o2.frequency._events.length >= 4) wGlide++;
+            break;
+          }
+        }
+      }
+      if (wn.length && !wOK) bad.push("no whale two octaves under its blade");
+      if (wn.length && !wGlide) bad.push("no whale glided");
+      note.push("whale " + wOK + "/" + wn.length + " at -2 oct, " + wGlide + " gliding");
+      // THE BONES: the bar's two modes, an octave below the lab's placement
+      var bn = notesOf(ON, "percussion", "bones"), barOK = 0;
+      for (i = 0; i < bn.length && i < 60; i++) {
+        var ns3 = (ON.ctx && ON.ctx._nodes) || [];
+        var hz = null, second = false;
+        for (j = 0; j < ns3.length; j++) {
+          var o3 = ns3[j];
+          if (o3._kind !== "Oscillator" || !o3.frequency || !o3.frequency._events.length) continue;
+          var f0 = o3.frequency._events[0];
+          if (f0.type !== "set" || Math.abs(f0.t - bn[i].t) > 1e-9) continue;
+          if (hz == null && f0.v >= 300 && f0.v <= 1100) hz = f0.v;      // the octave-down bar
+          if (hz != null && Math.abs(f0.v - hz * 2.71) < 1e-6) second = true;
+        }
+        if (hz != null && second) barOK++;
+      }
+      if (bn.length && !barOK) bad.push("no bones bar with its second mode");
+      note.push("bones " + barOK + " bar(s) with two modes");
+      // THE THROAT: every sung chant note carries a square an octave down
+      var chn = notesOf(ON, "chant"), subOK = 0, chJudged = 0;
+      for (i = 0; i < chn.length && chJudged < 40; i++) {
+        if (chn[i].freq == null) continue;
+        chJudged++;
+        var ns4 = (ON.ctx && ON.ctx._nodes) || [];
+        for (j = 0; j < ns4.length; j++) {
+          var o4 = ns4[j];
+          if (o4._kind !== "Oscillator" || o4.type !== "square") continue;
+          if (!o4.frequency || !o4.frequency._events.length) continue;
+          var f4 = o4.frequency._events[0];
+          if (f4.type !== "set" || Math.abs(f4.t - chn[i].t) > 1e-9) continue;
+          if (Math.abs(f4.v - chn[i].freq * 0.5) < 1e-6) { subOK++; break; }
+        }
+      }
+      if (chJudged && subOK < chJudged) bad.push((chJudged - subOK) + " chant note(s) with no sub-octave square");
+      note.push("throat " + subOK + "/" + chJudged);
+      check("SYC44 BODIES: the conch's 60 ms speak, the crystal's slow onset and beating pairs, the whale two octaves down and gliding, the bones' two modes, the throat's sub-octave square",
+        bad.length === 0, note.join("; ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE HEARTBEAT IS EXEMPT ----------------
+    (function () {
+      var bad = [], note = [];
+      var ON = N44.on;
+      var hb = notesOf(ON, "protodrum"), voiced = 0;
+      for (i = 0; i < hb.length; i++) if (hb[i].manner) voiced++;
+      if (voiced) bad.push(voiced + " heartbeat(s) carry a manner");
+      // …and it still beats, at exactly the rate it beats at share 0
+      var off = notesOf(N44.off, "protodrum");
+      if (hb.length !== off.length) bad.push("heartbeat " + off.length + " -> " + hb.length);
+      note.push(hb.length + " beat(s), unmoved");
+      // the organum pad and the cut's indrawn breath are never re-voiced
+      var pad = 0, padVoiced = 0;
+      for (i = 0; i < ON.notes.length; i++) {
+        var n5 = ON.notes[i];
+        if (n5.kind === "organum-pad" || n5.kind === "indrawn-breath") {
+          pad++;
+          if (n5.manner === "cave") padVoiced++;
+        }
+      }
+      if (padVoiced) bad.push(padVoiced + " rite gesture(s) re-voiced as the cave");
+      note.push(pad + " pad/breath gesture(s) left alone");
+      check("SYC44 EXEMPT: the heartbeat is never bones and never draws; the organum pad and the indrawn breath are never the cave",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- THE CAVE ----------------
+    (function () {
+      var bad = [], note = [];
+      var ON = run44(SEED44, LONG44, merge(allOff(), { ambient: { cave: 1 } }), { cast: false });
+      var OFF = run44(SEED44, LONG44, allOff(), { cast: false });
+      var kinds = {}, seen = {};
+      for (i = 0; i < OFF.notes.length; i++) {
+        var a = OFF.notes[i];
+        if (String(a.voice || "") === "ambient" && a.manner === "fen") kinds[a.kind] = (kinds[a.kind] || 0) + 1;
+      }
+      var caved = 0, fen = 0, worst = 0, worstKind = "";
+      for (i = 0; i < ON.notes.length; i++) {
+        var b = ON.notes[i];
+        if (String(b.voice || "") !== "ambient" || !b.manner) continue;
+        if (b.manner === "cave") { caved++; seen[b.kind] = (seen[b.kind] || 0) + 1; }
+        else fen++;
+        var bd = bodyAt(ON, b.t);
+        if (bd.peak > worst) { worst = bd.peak; worstKind = b.kind; }
+      }
+      if (fen) bad.push(fen + " sky one-shot(s) still the fen at cave 1");
+      for (var kk in kinds) if (!seen[kk]) bad.push("the cave never voiced a " + kk);
+      // the pool fires at exactly the same rate, one-shot for one-shot
+      var nOn = 0, nOff = 0;
+      for (i = 0; i < ON.notes.length; i++) if (String(ON.notes[i].voice || "") === "ambient") nOn++;
+      for (i = 0; i < OFF.notes.length; i++) if (String(OFF.notes[i].voice || "") === "ambient") nOff++;
+      if (nOn !== nOff) bad.push("the pool fired " + nOff + " -> " + nOn);
+      // …and every body sits under the sky's own loudest one-shot
+      if (worst > 0.05 + 1e-9) bad.push("a cave body at " + worst.toFixed(4) + " (> 0.05, the fen's thunder)");
+      note.push(caved + " cave one-shot(s) over " + Object.keys(seen).length + " kind(s), pool " +
+                nOff + "/" + nOn + ", worst envelope " + worst.toFixed(4) + " (" + worstKind + ")");
+      check("SYC44 CAVE: at cave 1 every sky one-shot is the cave's, every kind is voiced, the pool fires identically, and no body passes the fen's loudest",
+        bad.length === 0 && ON.swallowed.length === 0,
+        note.join("; ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- LEVEL ----------------
+    // The lab's MEASURED match constants, applied exactly where they are
+    // applied: the scheduled peak of the stop's own envelope over the plain
+    // body's. (Loudness is a SPECTRAL question — that is what a match
+    // constant is FOR — so the ±1.5 dB claim belongs to the rendered soak,
+    // and the numbers this row prints are the scheduled-energy ratios that
+    // soak is read against.)
+    (function () {
+      var bad = [], note = [];
+      var ON = N44.on, OFF = N44.off;
+      for (i = 0; i < S44.length; i++) {
+        var S = S44[i];
+        var on = notesOf(ON, S.voice, S.stop), off = notesOf(OFF, S.voice, S.plain);
+        var eOn = [], eOff = [];
+        for (j = 0; j < on.length && j < 120; j++) { var b1 = principal(ON, on[j].t); if (b1) eOn.push(b1.E); }
+        for (j = 0; j < off.length && j < 120; j++) { var b2 = principal(OFF, off[j].t); if (b2) eOff.push(b2.E); }
+        var d = dB(meanOf(eOn), meanOf(eOff));
+        note.push(S.stop + " " + (isFinite(d) ? (d >= 0 ? "+" : "") + d.toFixed(1) + " dB" : "-") +
+                  " (" + eOn.length + "/" + eOff.length + ")");
+        if (!eOn.length && !SHORTT) bad.push(S.stop + " never sounded");
+      }
+      // the gurdy's own match, read straight off the schedule: a glass pad's
+      // envelope peak is the cluster pad's times 0.593, exactly.
+      // the gurdy's own match, read straight off the seam's bus: the loudest
+      // output-level pad of a glass cycle is the cluster pad of the same
+      // cycle times 0.480 — the lab's measured 0.593 with the engine's own
+      // 0.81 correction on it (the engine's header says why, and the soak
+      // that measured it is in the round's report).
+      function gurdyPeak(R, t) {
+        var gb = taggedNode(R, "gurdyBreath"), ns = envsAt(R, t), best = 0;
+        for (var a = 0; a < ns.length; a++) {
+          if (isModulator(ns[a])) continue;
+          if (gb && !reaches(ns[a], gb)) continue;
+          var pk2 = peakOf(ns[a]);
+          if (pk2 > AUDIO_LEVEL) continue;
+          if (pk2 > best) best = pk2;
+        }
+        return best;
+      }
+      var gOn = notesOf(ON, "gurdy", "glass"), gOff = notesOf(OFF, "gurdy", "wheel");
+      var pOn = gOn.length ? gurdyPeak(ON, gOn[0].t) : 0;
+      var pOff = gOff.length ? gurdyPeak(OFF, gOff[0].t) : 0;
+      if (pOn && pOff) {
+        var ratio = pOn / pOff;
+        note.push("gurdy peak x" + ratio.toFixed(3));
+        if (Math.abs(ratio - 0.593 * 0.81) > 0.002) {
+          bad.push("the armonica's match reads " + ratio.toFixed(4) + ", not 0.593 x 0.81");
+        }
+      }
+      check("SYC44 LEVEL: every manner carries the lab's measured match, and its scheduled energy is reported against the body it replaces",
+        bad.length === 0, note.join(", ") + (bad.length ? "; BAD " + bad.join(" | ") : ""));
+    })();
+
+    // ---------------- swallowed ----------------
+    (function () {
+      var sw = N44.on.swallowed.length + N44.off.swallowed.length +
+               K1.swallowed.length + K2.swallowed.length +
+               K3.swallowed.length + K4.swallowed.length;
+      check("SYC44 zero swallowed errors across every stop run", sw === 0, sw + " swallowed");
+    })();
   })();
 
   // ============================== ARIEL ==============================
