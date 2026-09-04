@@ -772,6 +772,53 @@ function onClockError(tag) {
 })();
 
 // ============================================================================
+// ABSENCES — PJ2.Voice.absences: some evenings an instrument or two sits it
+// out; never twice running; evening one full; no long-term memory.
+// ============================================================================
+(function testAbsences() {
+  var ELIG = ["cello", "musicbox", "vessel", "regal", "flue", "hum", "harpsichord2", "x8", "x9"];
+  function run(seed, evenings, elig) {
+    var root = P.Rand.stream(seed), prev = [], out = [];
+    for (var n = 1; n <= evenings; n++) {
+      var a = P.Voice.absences({ root: root, evening: n, eligible: elig || ELIG, previous: prev });
+      out.push(a.absent); prev = a.absent;
+    }
+    return out;
+  }
+  var A = run(7, 12), B = run(7, 12), i, j;
+  check("ABSENCES evening one is always the full cast", A[0].length === 0 && run(99, 3)[0].length === 0);
+  check("ABSENCES same seed → the same absences every evening", JSON.stringify(A) === JSON.stringify(B));
+  var twice = 0;
+  for (i = 1; i < A.length; i++) for (j = 0; j < A[i].length; j++) if (A[i - 1].indexOf(A[i][j]) !== -1) twice++;
+  check("ABSENCES never the same voice twice running (12 evenings)", twice === 0, JSON.stringify(A.slice(0, 5)));
+  // over any 6 consecutive evenings every eligible voice is present at least 3 times
+  var worst = 99;
+  for (var s0 = 0; s0 + 6 <= A.length; s0++) {
+    for (i = 0; i < ELIG.length; i++) {
+      var present = 0;
+      for (j = s0; j < s0 + 6; j++) if (A[j].indexOf(ELIG[i]) === -1) present++;
+      worst = Math.min(worst, present);
+    }
+  }
+  check("ABSENCES over any 6 evenings every voice is heard ≥ 3 times", worst >= 3, "worst " + worst);
+  var counts = {}, total = 0, N = 400, over = 0;
+  for (var sd = 1; sd <= N; sd++) {
+    var r = run(1000 + sd, 2)[1];
+    counts[r.length] = (counts[r.length] || 0) + 1; total += r.length;
+    if (r.length > Math.floor(ELIG.length * 0.34)) over++;
+  }
+  var mean = total / N;
+  check("ABSENCES count 0–3, mean ~1.3 over 400 evenings, never over a third of the cast",
+    !counts[4] && mean > 0.9 && mean < 1.7 && over === 0, JSON.stringify(counts) + " mean " + mean.toFixed(2));
+  var small = run(5, 8, ["a", "b"]);
+  var okSmall = true; for (i = 0; i < small.length; i++) if (small[i].length > 0) okSmall = false;
+  check("ABSENCES a cast of two never loses anyone (a third of two is nobody)", okSmall);
+  var none = P.Voice.absences({ root: P.Rand.stream(3), evening: 4, eligible: [], previous: [] });
+  var r1 = P.Rand.stream(7).fork("cello"), r2 = P.Rand.stream(7).fork("cello"); run(7, 4);
+  check("ABSENCES empty cast → none; never re-rolls an existing fork", none.absent.length === 0 && r1.next() === r2.next());
+})();
+
+// ============================================================================
 // INTEGRATION — the four modules composed the way pj2-audio.js will compose
 // them: a clock over the mock ctx, a dorian field, a forked stream, a budget
 // bound to the clock, and a .every melody loop claiming budget per note and
