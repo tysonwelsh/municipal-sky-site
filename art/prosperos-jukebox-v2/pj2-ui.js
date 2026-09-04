@@ -1211,18 +1211,26 @@
       // while we tune; the alchemical register is a later decision). Evening
       // one of a run wears no draw at all and says so.
       case "cast": {
-        if (e.plain) { body = "tonight: the full ensemble, plain"; break; }
+        // Every track sends this at a performance begin: the Library's dress
+        // fields, and (rc.37+) an `absent` list — the voices sitting this
+        // evening out, as display names (`absentLabels`) or keys. Evening one
+        // is always the full cast.
         var dress = [];
         if (e.harpsichord) {
           dress.push("harpsichord, " + (e.harpsichord === "lute" ? "lute stop" : "8′"));
         }
-        if (e.musicbox) {
-          dress.push(e.musicbox === "absent" ? "no music box tonight" : "music box, " + e.musicbox);
-        }
+        if (e.musicbox && e.musicbox !== "absent") dress.push("music box, " + e.musicbox);
         if (e.drone) dress.push("drone, " + e.drone);
         if (e.vessel) dress.push("the vessel " + e.vessel);
         if (e.regal) dress.push("the regal " + e.regal);
         if (e.flue) dress.push("the flue " + e.flue);
+        var abs = (e.absentLabels && e.absentLabels.length) ? e.absentLabels : (e.absent || []);
+        if (abs.length) {
+          var names = abs.length === 1 ? String(abs[0])
+            : abs.slice(0, -1).join(", ") + " and " + abs[abs.length - 1];
+          dress.push(names + (abs.length === 1 ? " sits" : " sit") + " this one out");
+        }
+        if (!dress.length) { body = "tonight: the full ensemble" + (e.plain ? ", plain" : ""); break; }
         body = "tonight: " + dress.join(" · ");
         break;
       }
