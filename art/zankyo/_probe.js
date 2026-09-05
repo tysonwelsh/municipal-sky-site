@@ -352,6 +352,8 @@ function analyze(R) {
   var ambNames = {};
   R.events.filter(function (e) { return e.cat === "ambient"; }).forEach(function (e) { ambNames[e.label] = (ambNames[e.label] || 0) + 1; });
   A.ambientByName = ambNames;
+  var nb = {}; R.events.filter(function (e) { return e.cat === "noise" && /^(wall|screech|static|rumble)/.test(e.label); }).forEach(function (e) { var k = e.label.split(" ")[0]; nb[k] = (nb[k] || 0) + 1; });
+  A.noiseBodies = nb;
 
   // ---- notes per layer per phase (per minute of that phase) ----
   A.notesPerMinByLayerPhase = {};
@@ -481,6 +483,7 @@ function report(A) {
     line("  " + pad(c, 12) + lpad(fmt(A.eventsPerMin[c]), 8) + phases.map(function (p) { var v = A.eventsPerMinByPhase[c][p]; return lpad(v == null ? "-" : fmt(v), 9); }).join(""));
   });
   line("  ambient by name: " + Object.keys(A.ambientByName).map(function (n) { return n + " " + A.ambientByName[n]; }).join(" · "));
+  line("  noise bodies: " + JSON.stringify(A.noiseBodies));
   line();
   line("--- form ---");
   line("  cycles " + A.cycles.length + " · KIRUs " + A.kirus.length + " · kinds " + JSON.stringify(A.kinds) + " · seatings " + JSON.stringify(A.seatings) + " · scenes " + JSON.stringify(A.scenes) + " · joints " + A.joints);
