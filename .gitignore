@@ -76,9 +76,6 @@ local-dev/jd-dev.sqlite
 # Thousand Flowers dev accounts database (localhost SQLite fallback) — local only
 local-dev/flowers-dev.sqlite
 
-# ZANKYŌ headless dev harness — not for production
-art/zankyo/_harness.js
-
 # BARDO headless dev harness — not for production
 art/bardo/_harness.js
 # KOLOB headless dev harness — not for production

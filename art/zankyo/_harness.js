@@ -247,6 +247,21 @@ const kirus = events.filter((e) => e.label.indexOf("KIRU") >= 0).length;
 console.log("meta: cycles seen", cycles.length, "· distinct ARC_PERIODs", JSON.stringify(periods), "· metaPos range", +metaRange.toFixed(3), "· KIRUs", kirus);
 console.log("meta trace:", cycles.map((c) => { const m = metaByCycle.get(c); return "c" + c + ":" + m.period + "s@" + m.metaPos; }).join(" "));
 
+// ---- form vocabulary (Phase 1): kinds, seatings, scenes, joints, air ----
+const formVocab = (() => {
+  const count = (re, key) => { const m = {}; for (const e of events) { const x = re.exec(e.label + " · " + (e.detail || "")); if (x) m[x[1]] = (m[x[1]] || 0) + 1; } return m; };
+  const kinds = count(/kind: ([a-z]+)/), scenes = count(/scene: ([a-z]+)/), joints = count(/joint: ([a-z ]+?) ·/);
+  const seatings = {};
+  for (const e of events) { const m = /seating: ([^·]+?)(?: · scenes:|$)/.exec(e.detail || ""); if (m) seatings[m[1].trim()] = (seatings[m[1].trim()] || 0) + 1; }
+  const nSeat = Object.keys(seatings).length, nKind = Object.keys(kinds).length;
+  const oroshi = events.filter((e) => e.label.indexOf("oroshi") >= 0).length;
+  const airInfo = runA.Z.getAirInfo ? runA.Z.getAirInfo() : null;
+  console.log("form: kinds " + JSON.stringify(kinds) + " · scenes " + JSON.stringify(scenes) + " · joints " + JSON.stringify(joints) + " · oroshi " + oroshi);
+  console.log("seatings (" + nSeat + " distinct): " + Object.keys(seatings).map((k) => k + "×" + seatings[k]).join(" | "));
+  if (airInfo) console.log("air: attempts " + airInfo.attempts + " · grants " + airInfo.grants + " · denials " + airInfo.denials + " · overlap grants " + airInfo.overlapGrants + " (" + Math.round(100 * airInfo.denials / Math.max(1, airInfo.attempts)) + "% denied)");
+  return { nKind, nSeat, kinds, seatings };
+})();
+
 // ---- node budget: creations per simulated minute + peak concurrent sources ----
 (function nodeBudget() {
   const ns = runA.nodes;
@@ -306,6 +321,12 @@ if (RUN >= 700 && maxGen < 3) fails.push("max generation " + maxGen + " < 3");
 if (RUN >= 1500 && periods.length < 2) fails.push("only " + periods.length + " distinct ARC_PERIOD(s) — per-cycle draw not working");
 if (RUN >= 1500 && metaRange < 0.05) fails.push("meta drift range " + metaRange.toFixed(3) + " < 0.05 — meta-curve not traveling");
 if (RUN >= 1500 && kirus < 1) fails.push("no KIRU");
+// Phase 1 gates (plan §7): melodic density ≈ half the baseline (4 600–5 780 / 30 min → 2 300–2 900 ±);
+// ≥ 3 cycle kinds and ≥ 2 seatings seen in an hour
+const melPer30 = melodicNotes * 1800 / RUN;
+if (RUN >= 1500 && (melPer30 < 1900 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1900–3300");
+if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
+if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
 if (!reproSame) fails.push("REPRO gate failed");
 if (errors.length) fails.push(errors.length + " runtime errors");
 console.log(fails.length ? "VERDICT: FAIL — " + fails.join("; ") : "VERDICT: PASS ✓");
