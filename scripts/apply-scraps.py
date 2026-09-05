@@ -16,6 +16,17 @@ stub) is left alone. Run this after any bench session that scrapped anything
 """
 import json, os, sys, urllib.request
 
+def bench_headers(h):
+    """The bench key, since the gate went on (2026-09-05): export
+    JD_BENCH_KEY=<jd_bench_key from the server's secrets> before running."""
+    k = os.environ.get("JD_BENCH_KEY", "")
+    if not k:
+        sys.exit("JD_BENCH_KEY is not set — export the bench key "
+                 "(jd_bench_key in private_config/secrets.php) and rerun")
+    h["X-Bench-Key"] = k
+    return h
+
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEMS = os.path.join(REPO, "art", "junk-drawer", "items")
 QUEUE = "https://municipalsky.com/api/jd-bench-queue.php"
@@ -25,9 +36,9 @@ NOTE = ("Scrapped from the bench by the owner — the SCRAP control marked "
 
 dry = "--dry-run" in sys.argv
 
-req = urllib.request.Request(QUEUE + "?t=apply", headers={
+req = urllib.request.Request(QUEUE + "?t=apply", headers=bench_headers({
     "Origin": "https://municipalsky.com",
-    "User-Agent": "Mozilla/5.0 (apply-scraps.py; municipal-sky curation)"})
+    "User-Agent": "Mozilla/5.0 (apply-scraps.py; municipal-sky curation)"}))
 q = json.load(urllib.request.urlopen(req))
 
 did, kept, already = [], [], []

@@ -26,6 +26,7 @@ function jd_build_files(): array
         $root . '/api/jd-bench-queue.php',
         $root . '/api/jd-item-rate.php',
         $root . '/api/jd-curate.php',
+        $root . '/api/jd-admin-check.php',
         $root . '/api/jd-bench-run.php',
         $root . '/api/jd-provider.php',
         $root . '/api/jd-config.php',

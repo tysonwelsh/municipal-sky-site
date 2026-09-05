@@ -249,14 +249,13 @@ foreach ($curated as $sub) {
     $entry = is_readable($entryPath)
         ? json_decode((string) file_get_contents($entryPath), true)
         : null;
-    $byIndex = array_values($entry['responses'] ?? []);
-
     $responses = [];
-    foreach ($gensBySub[(string) $sub['id']] ?? [] as $i => $g) {
-        $src = $byIndex[$i] ?? null;
-        $file = $src['file'] ?? null;
+    // the position join is shared with data.php's overlay (jd-config.php)
+    foreach (jd_curated_positions($entry['responses'] ?? [], $gensBySub[(string) $sub['id']] ?? []) as $p) {
+        $g = $p['gen'];
+        $file = $p['src']['file'] ?? null;
         $r = jdq_response($g, $fold[(string) $g['id']] ?? [], $rankByGen[(string) $g['id']] ?? [], $axisCount, false);
-        $r['rid'] = $src['rid'] ?? ('r' . ($i + 1));
+        $r['rid'] = $p['rid'];
         // relative to /art/junk-drawer/ — the drawer builds the same URL
         $r['svg'] = $file ? ('items/' . $itemId . '/' . $file) : null;
         $responses[] = $r;

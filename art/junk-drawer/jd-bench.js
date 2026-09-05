@@ -1,11 +1,11 @@
 /* ============================================================================
    THE JUNK DRAWER — jd-bench.js
-   The curator's bench strip (?bench): the queue, the sync truth, and the
-   curator-only acts around the turn card that JD_turn.curate seats. Loaded
-   last. See jd-core.js for the file map.
+   The curator's strip (?bench and, since 2026-09-05, ?admin): the key gate,
+   the queue, the sync truth, and the curator-only acts around the turn card
+   that JD_turn.curate seats. Loaded last. See jd-core.js for the file map.
    ========================================================================== */
 
-/* ---- THE CURATOR'S BENCH (?bench) — JD_bench ------------------------------
+/* ---- THE CURATOR'S BENCH (?bench) and ADMIN MODE (?admin) — JD_bench ------
    The re-rating driver for the curated backlog (owner, 2026-08-28; successor
    to rating-bench.html, which was its own page in its own visual language).
    The INSTRUMENT is the turn card itself — JD_turn.curate() seats an item's
@@ -16,6 +16,19 @@
    and the curator-only acts (scrap, rerun, skip, prev). Nothing of the
    card's chrome is duplicated here.
 
+   TWO MODES, ONE STRIP (owner, 2026-09-05):
+     ?bench — the backlog walk: the queue seats the next item that still
+              needs the curator, and the strip carries skip / prev.
+     ?admin — the roving edit: nothing is seated until the owner opens an
+              item's REPORT CARD and presses ADJUST RATINGS; the item then
+              comes to the bench with everything on file prefilled and the
+              machines NAMED (a first-pass bench deal stays blind), and when
+              the card comes down the page reloads onto that card so the
+              change is on view at once.
+   Both stand behind JD_admin (jd-core.js): the bench key, remembered per
+   device, verified before anything paints, sent as X-Bench-Key on every
+   keyed request. The server throttles wrong keys per address (429).
+
    STATE IS SERVER-SIDE (jd_ratings / jd_ranks / jd_submissions, via
    jd-item-rate.php with replace-on-refile semantics and jd-curate.php),
    which is what keeps a phone and a desktop working the same backlog in
@@ -25,20 +38,23 @@
    apply later (`retired` lives in git-tracked entry.json; a rerun's
    drawings land as turn rows) — the bench itself commits nothing.
 
-   A RERUN IS A REAL TURN, exactly as the old bench held: the flag row goes
+   A RERUN IS A REAL TURN, exactly as the old bench held: the intent goes
    on the record, then JD_turn.rerun() runs the ordinary four-model turn —
    darkroom, blind bench, podium, unveil — and its ratings file through
    jd-rate.php like any visitor's. The strip resumes the backlog when that
    turn's card comes down. */
 (function () {
-  if (!/[?&]bench(?:=|&|$)/.test(location.search)) return;
+  if (!window.JD_admin || !JD_admin.on) return;
+  var MODE = JD_admin.mode;             /* 'bench' | 'admin' */
+  var ADMIN = MODE === 'admin';
 
   /* DIRECT ADDRESSING (owner, 2026-08-29): ?bench&item=<item_id> opens that
      one item on the bench whatever its flags say — the door back onto the
      bench for a LEGACY response the owner wants to keep in the drawer (rate
      it under the current rubric here, then scripts/keep-legacy.py applies
      the ratings and pins it). The queue only backs an item's ORIGINAL
-     responses with generations, so exactly those are what get seated. */
+     responses with generations, so exactly those are what get seated.
+     ?admin&item=<item_id> does the same as an adjustment. */
   var directM = /[?&]item=([^&]+)/.exec(location.search);
   var directId = directM ? decodeURIComponent(directM[1]) : null;
 
@@ -46,27 +62,32 @@
   var API_R = JD_API + '/api/jd-item-rate.php';
   var API_C = JD_API + '/api/jd-curate.php';
   var BASE = '/art/junk-drawer/';
-  var K_KEY = 'jd-bench-key';
 
   var Q = null;             /* the queue payload */
   var curId = null;         /* the item on (or awaiting) the bench */
   var visited = [];         /* item_ids opened this session — prev walks it */
   var filedNow = {};        /* item_id -> true once its batch filed */
+  var topGen = {};          /* item_id -> the generation the last filing ranked 1st */
   var svgCache = {};        /* svg path -> document text */
   var intent = null;        /* why the card is coming down: scrap|skip|prev|rerun */
   var rerunFor = null;      /* item_id whose rerun turn holds the stage */
+  var adjusting = null;     /* admin: { key, id, curated } while an adjustment is up */
   var stale = false;        /* a deploy landed since this page loaded */
   var sync = { state: 'idle', detail: '' };
   var bar = null, sheet = null;
 
-  function bkey() {
-    try { return sessionStorage.getItem(K_KEY) || ''; } catch (e) { return ''; }
-  }
   var esc = JD_esc;
   function itemById(id) {
     var list = (Q && Q.items) || [];
     for (var i = 0; i < list.length; i++) if (list[i].item_id === id) return list[i];
     return null;
+  }
+  function tag() {
+    return '<span class="jd-bench-tag" aria-hidden="true">' + (ADMIN ? 'ADMIN' : 'BENCH') + '</span>';
+  }
+  function outHTML() {
+    return '<button type="button" class="jd-bench-out" data-bench="out" ' +
+      'title="forget the key on this device">sign out</button>';
   }
 
   /* ---------- what still needs the curator ------------------------------- */
@@ -146,7 +167,7 @@
   function post(url, body) {
     return fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Bench-Key': bkey() },
+      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body)
     }).then(function (r) {
       return r.json().catch(function () {
@@ -171,7 +192,7 @@
      take one generation per request, which could leave an item half-filed
      when a later request failed), and replace-on-refile makes a retry
      converge rather than double. The size lands on the item's submission
-     (size_class), where a session reads it into entry.json's sizeClass. */
+     (size_class), where data.php now reads it straight onto the item. */
   function fileItem(it, per, size) {
     setSync('saving');
     var body = { submission_id: it.submission_id, responses: [] };
@@ -187,6 +208,11 @@
     return post(API_R, body).then(function () {
       if (size) it.size_filed = size;      /* the queue copy learns it now */
       filedNow[it.item_id] = true;
+      /* the drawing that now stands first: the reload after an adjustment
+         lands on its card (a turn's item id IS its 1st-place drawing) */
+      var top = null;
+      per.forEach(function (p) { if (p.rank === 1) top = p.generation_id; });
+      topGen[it.item_id] = top || (per.length === 1 ? per[0].generation_id : null);
       /* fold the answers back into the queue copy, so done/left arithmetic
          and any revisit read what the server now holds */
       it.responses.forEach(function (r) {
@@ -219,7 +245,8 @@
   }
 
   /* ---------- seating an item on the bench ------------------------------- */
-  function openItem(it) {
+  function openItem(it, opts) {
+    opts = opts || {};
     if (!it) { curId = null; paintBar(); return; }
     curId = it.item_id;
     if (visited[visited.length - 1] !== it.item_id) visited.push(it.item_id);
@@ -233,7 +260,7 @@
       var key = r.svg || r.svg_url;
       if (svgCache[key]) return null;
       return fetch(r.svg ? (BASE + r.svg) : (JD_API + r.svg_url), {
-        headers: bkey() ? { 'X-Bench-Key': bkey() } : {}
+        headers: JD_admin.headers()
       }).then(function (res) {
         if (!res.ok) throw new Error('svg ' + res.status);
         return res.text();
@@ -247,6 +274,8 @@
            the bench's own last word first, else the entry's (2026-08-30) */
         sizeTiers: (Q && Q.size_tiers) || [],
         size: it.size_filed || it.size_class || null,
+        /* an ADJUSTMENT names the machines on the card (owner, 2026-09-05) */
+        reveal: !!opts.reveal,
         responses: usable.map(function (r) {
           /* the bench's own answers outrank the seeds: a turn arrives
              carrying the judgment its visitor pass filed under today's
@@ -275,10 +304,59 @@
     });
   }
 
+  /* ---------- ADMIN MODE: the adjustment ---------------------------------- */
+  /* the report card names the item (a curated entry id, or turn:<submission>)
+     and the card it was showing; the queue is fetched on demand — it holds
+     every rateable item, finished or not, with the bench's answers on it */
+  function adjust(key, cardId) {
+    if (!ADMIN) return;
+    setSync('idle');
+    fetchQueue().then(function () {
+      var it = itemById(key);
+      if (!it) { setSync('failed', 'not on the bench'); return; }
+      adjusting = { key: key, id: cardId, curated: it.source === 'curated' };
+      whenRecordClosed(function () { openItem(it, { reveal: true }); });
+    }, function (code) {
+      if (code === 'forbidden' || code === 'too_many_attempts') gate(gateMsg(code));
+      else setSync('failed', code || 'network');
+    });
+  }
+  /* the record card closes through history (Android back symmetry), so its
+     teardown lands a tick later than the press */
+  function whenRecordClosed(cb) {
+    var tries = 0;
+    (function poll() {
+      if (!window.JD_record || !window.JD_record.isOpen() || tries++ > 40) { cb(); return; }
+      window.setTimeout(poll, 50);
+    })();
+  }
+  /* the change is on view at once: reload onto the card that was open — a
+     turn's card is its 1st-place drawing, which the filing may have moved */
+  function reloadOnto(a) {
+    var id = a.curated ? a.id : (topGen[a.key] || a.id);
+    var url = location.pathname + location.search + (id ? '#' + id : '');
+    try { history.replaceState(null, '', url); } catch (e) {}
+    location.reload();
+  }
+
   /* ---------- the card coming down --------------------------------------- */
   window.addEventListener('jd-turn-close', function () {
     var why = intent;
     intent = null;
+    if (ADMIN) {
+      var a = adjusting;
+      adjusting = null;
+      curId = null;
+      if (why === 'scrap' || (a && filedNow[a.key])) { reloadOnto(why === 'scrap' ? { curated: true, id: '' } : a); return; }
+      if (why === 'rerun') {
+        var ar = itemById(rerunFor);
+        if (ar && window.JD_turn.rerun(ar.prompt)) { paintBar(); return; }
+        rerunFor = null;
+      }
+      if (rerunFor) { rerunFor = null; location.reload(); return; }
+      paintBar();                        /* set aside — nothing changed */
+      return;
+    }
     if (why === 'rerun') {
       var rr = itemById(rerunFor);
       if (rr && window.JD_turn.rerun(rr.prompt)) { paintBar(); return; }
@@ -305,13 +383,18 @@
   function act(kind) {
     var it = itemById(curId);
     var open = window.JD_turn.isOpen();
-    if (kind === 'skip') {
+    if (kind === 'out') {
+      /* forget the key on this device and leave the mode: the plain drawer */
+      JD_admin.signOut();
+      location.href = location.pathname;
+    } else if (kind === 'skip') {
       if (open) { intent = 'skip'; window.JD_turn.close(); }
       else openItem(firstWorkable(curId));
     } else if (kind === 'scrap') {
       if (!it) return;
       fileIntent(it, 'retire');
       if (open) { intent = 'scrap'; window.JD_turn.close(); }
+      else if (ADMIN) location.reload();
       else openItem(firstWorkable(curId));
     } else if (kind === 'rerun') {
       if (!it) return;
@@ -321,7 +404,7 @@
       else if (!window.JD_turn.rerun(it.prompt)) { rerunFor = null; }
       paintBar();
     } else if (kind === 'resume') {
-      if (!open) openItem(it || firstWorkable(null));
+      if (!open) openItem(it || firstWorkable(null), { reveal: ADMIN });
     } else if (kind === 'prev') {
       if (visited.length < 2) return;
       visited.pop();
@@ -344,7 +427,7 @@
     bar = document.createElement('div');
     bar.className = 'jd-bench-bar';
     bar.setAttribute('role', 'toolbar');
-    bar.setAttribute('aria-label', 'curator’s bench');
+    bar.setAttribute('aria-label', ADMIN ? 'admin strip' : 'curator’s bench');
     document.body.appendChild(bar);
     bar.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('[data-bench]') : null;
@@ -372,6 +455,20 @@
     }
     return '';
   }
+  function stampHTML() {
+    var b = (Q && Q.build) || null;
+    var info = JD_admin.info();
+    if (stale) return '<span class="jd-bench-build is-stale">a deploy landed — reload before rating on</span>';
+    if (b) {
+      return '<span class="jd-bench-build">' +
+        esc(b.version + ' · ' + b.build + ' · tax v' + Q.taxonomy_version) + '</span>';
+    }
+    if (info && info.build) {
+      return '<span class="jd-bench-build">' +
+        esc((info.version || '') + ' · ' + info.build + ' · tax v' + info.taxonomy_version) + '</span>';
+    }
+    return '';
+  }
   function paintBar() {
     if (!bar) return;
     var c = counts();
@@ -381,10 +478,12 @@
     if (rerunFor) {
       left = '<span class="jd-bench-note">rerun running — it files as a real turn</span>';
     } else if (it) {
-      left = '<span class="jd-bench-pos">' + c.left + ' to go</span>' +
+      left = (ADMIN ? '' : '<span class="jd-bench-pos">' + c.left + ' to go</span>') +
         '<button type="button" class="jd-bench-title" data-bench="prompt" ' +
         'title="the item’s prompt">' + esc(it.title) + '</button>' +
         (!open ? '<button type="button" data-bench="resume">resume</button>' : '');
+    } else if (ADMIN) {
+      left = '<span class="jd-bench-note">open any report card to adjust its ratings</span>';
     } else {
       left = '<span class="jd-bench-note">backlog clear — ' + c.respDone + '/' +
         c.resp + ' responses filed' +
@@ -393,82 +492,93 @@
     }
     var acts = (it && !rerunFor)
       ? '<div class="jd-bench-acts">' +
-        (visited.length > 1 ? '<button type="button" data-bench="prev" title="previous item">&larr;</button>' : '') +
-        '<button type="button" data-bench="skip" title="set this item aside for now">skip &rarr;</button>' +
+        (!ADMIN && visited.length > 1 ? '<button type="button" data-bench="prev" title="previous item">&larr;</button>' : '') +
+        (!ADMIN ? '<button type="button" data-bench="skip" title="set this item aside for now">skip &rarr;</button>' : '') +
         '<button type="button" class="jd-bench-scrap" data-bench="scrap" ' +
         'title="flag this item to be retired from the drawer">scrap ✕</button>' +
         '<button type="button" class="jd-bench-rerun" data-bench="rerun" ' +
         'title="re-issue this prompt to the four current models, as a real turn">rerun ↻</button>' +
         '</div>'
       : '';
-    var stamp = Q && Q.build
-      ? '<span class="jd-bench-build' + (stale ? ' is-stale' : '') + '">' +
-        (stale ? 'a deploy landed — reload before rating on'
-          : esc(Q.build.version + ' · ' + Q.build.build +
-                ' · tax v' + Q.taxonomy_version)) + '</span>'
-      : '';
-    bar.innerHTML =
-      '<span class="jd-bench-tag" aria-hidden="true">BENCH</span>' +
-      left + syncHTML() + acts + stamp;
+    bar.innerHTML = tag() + left + syncHTML() + acts + stampHTML() + outHTML();
   }
 
   /* ---------- the gate and the queue -------------------------------------- */
+  function gateMsg(code, retry) {
+    if (code === 'too_many_attempts') {
+      return 'too many wrong keys — try again in ' +
+        Math.max(1, Math.ceil((retry || 3600) / 60)) + ' min —';
+    }
+    if (code === 'forbidden') return JD_admin.key() ? 'the key was refused —' : '';
+    return 'the gate didn’t answer (' + (code || 'network') + ') —';
+  }
   function gate(msg) {
     if (!bar) buildBar();
-    bar.innerHTML =
-      '<span class="jd-bench-tag" aria-hidden="true">BENCH</span>' +
+    bar.innerHTML = tag() +
       '<label class="jd-bench-gate">' + (msg ? esc(msg) + ' ' : '') +
       'bench key <input type="password" autocomplete="off"></label>';
     var input = bar.querySelector('input');
     input.focus();
     input.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
-      try { sessionStorage.setItem(K_KEY, input.value); } catch (err) {}
-      loadQueue(false);
+      JD_admin.setKey(input.value);
+      boot();
     });
   }
-  function loadQueue(quiet) {
-    if (!quiet) {
-      if (bar) {
-        bar.innerHTML = '<span class="jd-bench-tag" aria-hidden="true">BENCH</span>' +
-          '<span class="jd-bench-note">loading the queue…</span>';
-      }
-    }
+  /* the queue, keyed; resolves Q, rejects with the error code */
+  function fetchQueue() {
     /* the timestamp defeats any cache that ignores the endpoint's no-store
        headers (the host's edge cache was caught serving a stale queue,
        2026-08-28) — a cached queue would quietly break cross-device sync */
-    fetch(API_Q + '?t=' + Date.now(), { headers: { 'X-Bench-Key': bkey() } })
+    return fetch(API_Q + '?t=' + Date.now(), { headers: JD_admin.headers() })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j || !j.ok) {
-          if (j && j.error && j.error.code === 'forbidden') {
-            gate(quiet ? '' : 'the key was refused —');
-            return;
-          }
-          if (!quiet) gate('queue failed (' + esc(((j || {}).error || {}).code || 'network') + ') —');
-          return;
-        }
+        if (!j || !j.ok) throw (((j || {}).error || {}).code || 'network');
         Q = j;
-        var open = window.JD_turn.isOpen();
-        /* the directly-addressed item takes the stage first, flags or not —
-           once, so filing it advances into the ordinary queue */
-        if (directId && !open && !rerunFor) {
-          var direct = itemById(directId);
-          directId = null;
-          if (direct) { openItem(direct); return; }
-        }
-        if (!open && !rerunFor) {
-          /* nothing on the stage: seat the current item if it still needs
-             work (it may have been finished on another device), else move on */
-          var cur = itemById(curId);
-          if (!cur || !workable(cur)) openItem(firstWorkable(curId));
-          else paintBar();
-        } else {
-          paintBar();
-        }
-      }, function () {
-        if (!quiet) gate('the queue endpoint didn’t answer —');
-      });
+        return j;
+      }, function () { throw 'network'; });
+  }
+  function loadQueue(quiet) {
+    if (!quiet && bar) {
+      bar.innerHTML = tag() + '<span class="jd-bench-note">loading the queue…</span>';
+    }
+    fetchQueue().then(function () {
+      var open = window.JD_turn.isOpen();
+      /* the directly-addressed item takes the stage first, flags or not —
+         once, so filing it advances into the ordinary queue */
+      if (directId && !open && !rerunFor) {
+        var direct = itemById(directId);
+        directId = null;
+        if (direct) { openItem(direct); return; }
+      }
+      if (!open && !rerunFor) {
+        /* nothing on the stage: seat the current item if it still needs
+           work (it may have been finished on another device), else move on */
+        var cur = itemById(curId);
+        if (!cur || !workable(cur)) openItem(firstWorkable(curId));
+        else paintBar();
+      } else {
+        paintBar();
+      }
+    }, function (code) {
+      if (code === 'forbidden' || code === 'too_many_attempts') { gate(quiet ? '' : gateMsg(code)); return; }
+      if (!quiet) gate(gateMsg(code));
+    });
+  }
+
+  /* the key first, then the mode: the gate on refusal, the queue walk on
+     ?bench, the idle strip on ?admin (or the addressed item, if any) */
+  function boot() {
+    if (!bar) buildBar();
+    bar.innerHTML = tag() + '<span class="jd-bench-note">checking the key…</span>';
+    JD_admin.verify().then(function (res) {
+      if (!res.ok) { gate(gateMsg(res.code, res.retry_after)); return; }
+      if (!ADMIN) { loadQueue(false); return; }
+      paintBar();
+      /* a card deep-linked by the reload painted before the key verified */
+      if (window.JD_record && window.JD_record.refresh) window.JD_record.refresh();
+      if (directId) { var d = directId; directId = null; adjust(d, d); }
+    });
   }
 
   window.addEventListener('jd-turn-open', function () { paintBar(); });
@@ -476,11 +586,11 @@
   /* the other device may have moved the backlog — refetch when this tab
      comes back to the front (never mid-card: an open card is not disturbed) */
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible' && Q) loadQueue(true);
+    if (!ADMIN && document.visibilityState === 'visible' && Q) loadQueue(true);
   });
 
+  window.JD_bench = { adjust: adjust, mode: MODE };
+
   buildBar();
-  /* try first, gate on refusal: dev serves the queue keyless, and production
-     answers 403, which routes to the key prompt */
-  loadQueue(false);
+  boot();
 })();

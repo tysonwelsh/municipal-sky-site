@@ -26,9 +26,26 @@ foreach (array_merge([$taxonomyFile], $entryFiles) as $f) {
 $dbStamp = '';
 try {
     require_once __DIR__ . '/../../api/jd-config.php';
-    $dbq = jd_db()->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ratings')
+    $dbc = jd_db();
+    $dbq = $dbc->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ratings')
         ->fetch(PDO::FETCH_ASSOC);
     $dbStamp = ($dbq['n'] ?? '0') . '@' . ($dbq['m'] ?? '');
+    // since 2026-09-05 the payload also carries the bench's RANKS and the
+    // size the bench filed on a curated item (the overlay below), so those
+    // have to move the tag as well — a rank-only refile changed nothing in
+    // jd_ratings and would otherwise 304 a stale card back to everyone
+    try {
+        $dbr = $dbc->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ranks')
+            ->fetch(PDO::FETCH_ASSOC);
+        $dbStamp .= '|' . ($dbr['n'] ?? '0') . '@' . ($dbr['m'] ?? '');
+    } catch (Throwable $e) {
+        $dbStamp .= '|no-ranks';
+    }
+    $sizes = '';
+    foreach ($dbc->query("SELECT id, size_class FROM jd_submissions WHERE item_id IS NOT NULL AND size_class IS NOT NULL ORDER BY id") as $sz) {
+        $sizes .= $sz['id'] . '=' . $sz['size_class'] . ',';
+    }
+    $dbStamp .= '|' . md5($sizes);
 } catch (Throwable $e) {
     $dbStamp = 'db-unavailable';
 }
@@ -84,6 +101,7 @@ foreach ($entryFiles as $file) {
     // rids stay permanent and the bench queue's position-join to the DB's
     // curated generations is undisturbed. This is the display-side half of
     // the legacy-keep exception; deletion is never the mechanism.
+    $unfiltered[$dirId] = $entry['responses'];   // the position join reads these
     $entry['responses'] = array_values(array_filter(
         $entry['responses'],
         static fn($r) => empty($r['retired'])
@@ -107,20 +125,156 @@ foreach ($entryFiles as $file) {
     // "best" is just the highest number. Entries whose responses carry no
     // numeric grade fall back to the first response.
     $rids = array_column($entry['responses'], 'rid');
-    if (empty($entry['primary']) || !in_array($entry['primary'], $rids, true)) {
-        $best = null;
-        $bestRank = -1;
-        foreach ($entry['responses'] as $resp) {
-            $rank = is_numeric($resp['grade'] ?? null) ? (float) $resp['grade'] : -1;
-            if ($rank > $bestRank) {
-                $bestRank = $rank;
-                $best = $resp['rid'] ?? null;
-            }
-        }
-        $entry['primary'] = $best ?? ($rids[0] ?? null);
+    $pinned[$dirId] = !empty($entry['primary']) && in_array($entry['primary'], $rids, true);
+    if (!$pinned[$dirId]) {
+        $entry['primary'] = jd_best_graded($entry['responses']);
     }
 
     $items[] = $entry;
+}
+
+/** the best-graded response's rid, ties to the earliest; the first when none is graded */
+function jd_best_graded(array $responses): ?string
+{
+    $best = null;
+    $bestRank = -1;
+    foreach ($responses as $resp) {
+        $rank = is_numeric($resp['grade'] ?? null) ? (float) $resp['grade'] : -1;
+        if ($rank > $bestRank) {
+            $bestRank = $rank;
+            $best = $resp['rid'] ?? null;
+        }
+    }
+    return $best ?? ($responses[0]['rid'] ?? null);
+}
+
+// ===========================================================================
+// THE BENCH'S WORD ON THE CURATED CORPUS (owner call, 2026-09-05 — admin mode)
+//
+// Until this block the drawer rendered a curated item's grades and axis
+// annotations from entry.json alone; the owner's re-ratings at the bench
+// lived in jd_ratings / jd_ranks and reached the card only when a session
+// copied them into the entry by hand (ROADMAP: "a read path for DB
+// ratings"). Now what the bench filed is laid OVER the entry at request
+// time, response by response:
+//   · grade and every live axis the bench answered replace the entry's
+//     (an axis the bench never answered keeps the entry's value; a remark
+//     the entry carries on that axis survives unless the bench filed one)
+//   · rank rides along as `rank`
+//   · the size the bench filed (jd_submissions.size_class) replaces the
+//     entry's sizeClass
+//   · which response the drawer SHOWS: the bench's 1st place whenever the
+//     bench has ranked EVERY served response (owner, 2026-09-05: a re-rank
+//     re-points the drawer without a harvest, over any `primary` the entry
+//     carries — the pin a harvest wrote was that day's 1st place, and the
+//     bench's later word supersedes it, matching the 2026-08-29 "what
+//     appears is the re-rated set" rule); else the entry's explicit pin;
+//     else the best overlaid grade as before. A harvested rerun set has no
+//     generations of its own until the backfill runs, so a partly-ranked
+//     item keeps its pin — the legacy-keep exceptions stand.
+// The entry stays the permanent record and the harvest scripts keep
+// copying into it; this only changes what is SERVED. Same outage
+// discipline as the turn block: one try, and a failure serves the files.
+$unfiltered = $unfiltered ?? [];
+$pinned = $pinned ?? [];
+try {
+    if (!function_exists('jd_db')) {
+        require_once __DIR__ . '/../../api/jd-config.php';
+    }
+    $cdb = jd_db();
+    $cdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $cLive = jd_live_axes($taxonomy);
+
+    $subByItem = [];
+    foreach ($cdb->query('SELECT id, item_id, size_class FROM jd_submissions WHERE item_id IS NOT NULL') as $row) {
+        $subByItem[(string) $row['item_id']] = $row;
+    }
+    $cgens = [];
+    foreach ($cdb->query(
+        "SELECT g.id, g.submission_id, g.slot
+           FROM jd_generations g
+           JOIN jd_submissions s ON s.id = g.submission_id
+          WHERE s.item_id IS NOT NULL
+          ORDER BY g.submission_id, g.slot"
+    ) as $g) {
+        $cgens[(string) $g['submission_id']][] = $g;
+    }
+    $cfold = jd_fold_ratings($cdb->query(
+        "SELECT r.generation_id, r.kind, r.axis_id, r.value, r.note, r.client, r.taxonomy_version
+           FROM jd_ratings r
+           JOIN jd_generations g ON g.id = r.generation_id
+           JOIN jd_submissions s ON s.id = g.submission_id
+          WHERE s.item_id IS NOT NULL AND r.client = 'bench'
+          ORDER BY r.rated_at, r.id"
+    )->fetchAll(PDO::FETCH_ASSOC), $cLive);
+    $cranks = [];
+    try {
+        foreach ($cdb->query(
+            "SELECT r.generation_id, r.rank_pos
+               FROM jd_ranks r
+               JOIN jd_submissions s ON s.id = r.submission_id
+              WHERE s.item_id IS NOT NULL AND r.client = 'bench'"
+        ) as $r) {
+            $cranks[(string) $r['generation_id']] = (int) $r['rank_pos'];
+        }
+    } catch (PDOException $e) { /* no ranks table: no re-pointing */ }
+
+    foreach ($items as $ii => $entry) {
+        $id = (string) $entry['id'];
+        $sub = $subByItem[$id] ?? null;
+        if ($sub === null) {
+            continue;   // never backfilled: the entry is all there is
+        }
+        $genByRid = [];
+        foreach (jd_curated_positions($unfiltered[$id] ?? [], $cgens[(string) $sub['id']] ?? []) as $p) {
+            $genByRid[$p['rid']] = (string) $p['gen']['id'];
+        }
+        $allRanked = count($entry['responses']) > 0;
+        foreach ($entry['responses'] as $ri => $resp) {
+            $gid = $genByRid[(string) ($resp['rid'] ?? '')] ?? null;
+            if ($gid === null) {
+                $allRanked = false;
+                continue;
+            }
+            $pick = jd_pick_rating($cfold[$gid] ?? [], ['bench']);
+            if ($pick['grade'] !== null) {
+                $resp['grade'] = $pick['grade'];
+            }
+            foreach ($pick['axes'] as $axis => $value) {
+                $cur = $resp['annotations'][$axis] ?? null;
+                $note = $pick['notes'][$axis] ?? (is_array($cur) ? ($cur['note'] ?? null) : null);
+                $resp['annotations'][$axis] = ($note !== null && $note !== '')
+                    ? ['value' => $value, 'note' => $note]
+                    : $value;
+            }
+            if (isset($cranks[$gid])) {
+                $resp['rank'] = $cranks[$gid];
+            } else {
+                $allRanked = false;
+            }
+            $entry['responses'][$ri] = $resp;
+        }
+        if (!empty($sub['size_class'])) {
+            $entry['sizeClass'] = (string) $sub['size_class'];
+        }
+        $first = null;
+        if ($allRanked) {
+            foreach ($entry['responses'] as $resp) {
+                if ((int) ($resp['rank'] ?? 0) === 1) {
+                    $first = $resp['rid'];
+                    break;
+                }
+            }
+        }
+        if ($first !== null) {
+            $entry['primary'] = $first;
+        } elseif (empty($pinned[$id])) {
+            $entry['primary'] = jd_best_graded($entry['responses']);
+        }
+        $items[$ii] = $entry;
+    }
+} catch (Throwable $e) {
+    error_log('data.php: bench overlay unavailable (' . $e->getMessage() . ')');
 }
 
 // ===========================================================================
@@ -277,6 +431,7 @@ try {
             $turnItems[] = [
                 'schema' => 2,
                 'id' => $out[0]['gen_id'],
+                'submission_id' => $sid,
                 'title' => $title !== ''
                     ? $title
                     : (mb_strlen($sub['prompt']) > 42

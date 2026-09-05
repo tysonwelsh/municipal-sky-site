@@ -30,7 +30,7 @@ data files are `.json`, art is `.svg`.
   `jd-furniture.js` (turn object, instructions sheet, analytics folder),
   `jd-record.js` (the report card), `jd-darkroom.js` (the wait indicators,
   `window.JD_dark`), `jd-turn.js` (the turn modal + curate mode), `jd-bench.js`
-  (the `?bench` strip). `card-gallery.html` loads the same six.
+  (the `?bench` / `?admin` strip). `card-gallery.html` loads the same six.
 - `api/jd-config.php` — the shared runtime every endpoint requires: the
   taxonomy accessors, the ratings fold (`jd_fold_ratings` / `jd_pick_rating`),
   the key gate, the schema probes. Schema doc: `db/junk-drawer-schema.md`.
@@ -151,6 +151,24 @@ endpoint filters `defunct`, the write endpoint validates against the live ranks,
 and the bench binds keys by POSITION. A taxonomy change of this shape needs no
 code change — which is the test a future rubric edit should still pass.
 
+- **`index.php?admin` — ADMIN MODE (owner, 2026-09-05).** The same strip
+  as `?bench`, idle: open any item's REPORT CARD and it carries ADJUST
+  RATINGS, which seats the item in the turn card's curate mode with
+  everything on file prefilled and the machines NAMED, opening on the first
+  drawing with every step reachable from the docket; filing goes through
+  `jd-item-rate.php` as one batch and the page reloads onto that card so
+  the change is on view. `?admin&item=<item_id>` opens the adjustment
+  directly. SIGN OUT forgets the key on the device.
+- **THE GATE IS ON (2026-09-05).** `JD_BENCH_REQUIRE_KEY = true`: every
+  curator endpoint wants the bench key (`jd_bench_key` in
+  `private_config/secrets.php`, falling back to `jd_setup_key`) as
+  `X-Bench-Key`. The page's `JD_admin` (jd-core.js) asks once per device,
+  remembers it in localStorage, verifies it against `jd-admin-check.php`
+  before painting any write control. Wrong keys are throttled per address
+  (8 an hour, then 429). The five scripts that call these endpoints
+  (`apply-scraps`, `backfill-costs`, `harvest-rerun`, `keep-legacy`,
+  `promote-turn`) read `JD_BENCH_KEY` from the environment — export it
+  first. A dev checkout with no `config/secrets.php` runs keyless.
 - **`index.php?bench` — the owner's rating instrument since 2026-08-28.**
   Bench mode runs the backlog INSIDE the real turn card (`JD_turn.curate` in
   `jd-turn.js`): an item's existing responses are dealt blind into slots
@@ -187,11 +205,16 @@ code change — which is the test a future rubric edit should still pass.
 the whole publishing act for ARTWORK and item METADATA — the `.svg`, the
 prompt, the title, `sizeClass`, `retired`. It is no longer true of scores.
 
-**Transitional state, and the thing most likely to confuse you:** the drawer
-still RENDERS annotations from `entry.json`, and the read path that would show
-DB ratings is not built yet. So bench ratings are being collected but are not
-visible on the site. Do not "fix" the drawer by copying DB ratings back into
-`entry.json` — the direction of travel is the other way.
+**The read path is built (2026-09-05).** `data.php` lays the bench's word
+OVER a curated entry at request time: the grade and every live axis the
+bench answered replace the entry's (an entry remark on an axis survives
+unless the bench filed one), the bench's rank rides along as `rank`, the
+size the bench filed replaces `sizeClass`, and the response the drawer SHOWS
+is the bench's 1st place whenever the bench has ranked every served
+response — over any `primary` pin — else the pin, else the best grade. The
+entry stays the permanent record; the harvest scripts keep copying into it.
+Do not "fix" the drawer by copying DB ratings back into `entry.json` — the
+direction of travel is the other way.
 
 The 9 defunct-axis scores still in `entry.json` are a deliberate historical
 record: they span five taxonomy versions, so they were NOT migrated (a single

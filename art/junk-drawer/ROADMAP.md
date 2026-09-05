@@ -31,13 +31,6 @@ which is a real eval set.
 Related: `sizing-desk.html` already exists for tuning sizes in bulk against
 the live pile math, and `sizeScale` is the continuous dial under the tiers.
 
-### A read path for DB ratings (standing, since 2026-08-18)
-
-The drawer still renders annotations from `entry.json`; bench ratings live in
-`jd_ratings` and are copied into entries by hand at harvest time. A read path
-would let the card render the database's judgments directly and retire the
-copying. (See CLAUDE.md's note on the direction of travel.)
-
 ### Promotion of turns into the drawer
 
 `scripts/promote-turn.py` — the counterpart to `harvest-rerun.py` for prompts
@@ -46,6 +39,17 @@ entry from the owner's bench ratings, title via `jd-title.php`, size from the
 bench's size flag. Blocked on nothing; wanted for the reassessment backlog.
 
 ## Done
+
+### Admin mode, a gated bench, and the DB read path (2026-09-05)
+
+`?admin` on the drawer, behind the bench key (`JD_BENCH_REQUIRE_KEY = true`,
+wrong keys throttled): the report card carries ADJUST RATINGS, which
+re-seats the item in the turn card's curate mode, prefilled and with the
+machines named, and files through `jd-item-rate.php`. `data.php` now lays
+the bench's grades, axes, ranks and size over a curated entry at request
+time and shows the bench's 1st place, so an adjustment is on view without a
+harvest (the standing "read path for DB ratings" item, closed). Scripts
+take `JD_BENCH_KEY`. See CLAUDE.md.
 
 - **The size card** (0.9.96, 2026-08-30) — the bench's closing step.
 - **Bench mode** (0.9.73 →) — the backlog runs inside the real turn card.

@@ -17,11 +17,22 @@ anything whose provider has no rate on file.
 """
 import json, os, subprocess, sys, tempfile, urllib.request, re
 
+def bench_headers(h):
+    """The bench key, since the gate went on (2026-09-05): export
+    JD_BENCH_KEY=<jd_bench_key from the server's secrets> before running."""
+    k = os.environ.get("JD_BENCH_KEY", "")
+    if not k:
+        sys.exit("JD_BENCH_KEY is not set — export the bench key "
+                 "(jd_bench_key in private_config/secrets.php) and rerun")
+    h["X-Bench-Key"] = k
+    return h
+
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEMS = os.path.join(REPO, "art", "junk-drawer", "items")
 INVENTORY = "https://municipalsky.com/api/jd-inventory.php?t=costs"
-HDRS = {"Origin": "https://municipalsky.com",
-        "User-Agent": "Mozilla/5.0 (backfill-costs.py; municipal-sky curation)"}
+HDRS = bench_headers({"Origin": "https://municipalsky.com",
+        "User-Agent": "Mozilla/5.0 (backfill-costs.py; municipal-sky curation)"})
 
 PRICER = """<?php
 require_once %(cfg)s; require_once %(usage)s;

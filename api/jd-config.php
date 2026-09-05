@@ -237,16 +237,16 @@ const JD_LIMIT_GLOBAL_DAILY = 2000;
 
 // The rating bench's auth, in one switch.
 //
-// FALSE (2026-08-18, owner call): the owner is effectively the only visitor and
-// wanted to just open the link and rate. The bench endpoints are therefore
-// unauthenticated. What that exposes: anyone who finds two unlinked, noindex
-// URLs could file junk ratings, or re-run an idempotent backfill that writes
-// nothing new. No spend, no personal data, and fully recoverable — bench rows
-// are deletable with `DELETE FROM jd_ratings WHERE client = 'bench'`.
-//
-// Set this back to true to require jd_bench_key (falling back to jd_setup_key),
-// which is the whole of the reversal.
-const JD_BENCH_REQUIRE_KEY = false;
+// TRUE since 2026-09-05 (owner call: admin mode). It was FALSE from
+// 2026-08-18 — the owner, effectively the only visitor, wanted to open the
+// link and rate, and the bench endpoints ran unauthenticated. Now that admin
+// mode can REWRITE the ratings the drawer shows, the gate is on: every
+// curator endpoint wants jd_bench_key (falling back to jd_setup_key) in
+// X-Bench-Key or ?key=. A box with NO key on file (a dev checkout without
+// config/secrets.php) stays open so the harness runs keyless; production
+// without a key is shut, never open. Wrong keys are throttled per address —
+// see jd_require_bench_key.
+const JD_BENCH_REQUIRE_KEY = true;
 
 const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
@@ -537,25 +537,107 @@ function jd_is_ulid(mixed $value): bool
 // is on, production callers present jd_bench_key (falling back to the
 // jd_setup_key already on file) in X-Bench-Key or ?key=.
 
-/** Does this request hold the bench key, or is no key required? */
-function jd_bench_keyed(): bool
+/** The bench key on file, or null when none is configured. */
+function jd_bench_key_expected(): ?string
 {
-    if (!JD_IS_PRODUCTION || !JD_BENCH_REQUIRE_KEY) {
-        return true;
-    }
-    $secrets  = jd_secrets();
-    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
-    $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
-    return is_string($expected) && $expected !== ''
-        && hash_equals($expected, (string) $supplied);
+    $secrets = jd_secrets();
+    $k = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
+    return is_string($k) && $k !== '' ? $k : null;
 }
 
-/** 403 unless the caller is keyed (see jd_bench_keyed). */
+/** The key this request presented ('' when none). */
+function jd_bench_key_supplied(): string
+{
+    return (string) ($_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? ''));
+}
+
+/** Does this request hold the bench key, or is no key required? Pure — the
+ *  throttle bookkeeping is jd_require_bench_key's. */
+function jd_bench_keyed(): bool
+{
+    if (!JD_BENCH_REQUIRE_KEY) {
+        return true;
+    }
+    $expected = jd_bench_key_expected();
+    if ($expected === null) {
+        return !JD_IS_PRODUCTION;
+    }
+    $supplied = jd_bench_key_supplied();
+    return $supplied !== '' && hash_equals($expected, $supplied);
+}
+
+// THE THROTTLE (owner, 2026-09-05). A wrong key costs a miss against the
+// caller's address; JD_KEY_MISS_LIMIT misses inside JD_KEY_MISS_WINDOW
+// seconds and the address is answered 429 until the window passes, right
+// key or wrong. A request that presents NO key is not a guess and is not
+// counted (the page's first keyless probe; a visitor path that happens to
+// reach a gated endpoint). A right key clears the address's misses. The
+// counter is one small file per address under the system temp dir — no
+// table, no migration — and a temp dir that cannot be written fails OPEN
+// with a log line rather than locking the owner out. The address is
+// REMOTE_ADDR only: a forwarded header is the caller's to forge.
+const JD_KEY_MISS_LIMIT = 8;
+const JD_KEY_MISS_WINDOW = 3600;
+
+function jd_key_miss_file(): string
+{
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+    return rtrim(sys_get_temp_dir(), '/') . '/jd-keymiss-' . substr(hash('sha256', $ip), 0, 24) . '.json';
+}
+
+/** @return array{n:int,since:int} misses inside the current window */
+function jd_key_misses(): array
+{
+    $raw = @file_get_contents(jd_key_miss_file());
+    $d = $raw !== false ? json_decode($raw, true) : null;
+    if (!is_array($d) || (time() - (int) ($d['since'] ?? 0)) > JD_KEY_MISS_WINDOW) {
+        return ['n' => 0, 'since' => time()];
+    }
+    return ['n' => (int) ($d['n'] ?? 0), 'since' => (int) $d['since']];
+}
+
+function jd_key_miss_record(): int
+{
+    $m = jd_key_misses();
+    $m['n']++;
+    if (@file_put_contents(jd_key_miss_file(), json_encode($m), LOCK_EX) === false) {
+        error_log('jd: bench-key miss counter unwritable in ' . sys_get_temp_dir() . ' — throttle off');
+    }
+    return $m['n'];
+}
+
+function jd_key_miss_clear(): void
+{
+    @unlink(jd_key_miss_file());
+}
+
+/** 403 unless the caller is keyed; 429 while the caller's address is throttled. */
 function jd_require_bench_key(): void
 {
-    if (!jd_bench_keyed()) {
-        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
+    if (!JD_BENCH_REQUIRE_KEY || jd_bench_key_expected() === null) {
+        // nothing to guess at: no key on file means open (dev) or shut (prod)
+        if (!jd_bench_keyed()) {
+            jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
+        }
+        return;
     }
+    $m = jd_key_misses();
+    if ($m['n'] >= JD_KEY_MISS_LIMIT) {
+        $wait = max(1, JD_KEY_MISS_WINDOW - (time() - $m['since']));
+        jd_fail(429, 'too_many_attempts',
+            'Too many wrong keys from this address — try again later.', ['retry_after' => $wait]);
+    }
+    if (jd_bench_keyed()) {
+        if ($m['n'] > 0) {
+            jd_key_miss_clear();
+        }
+        return;
+    }
+    if (jd_bench_key_supplied() !== '') {
+        $n = jd_key_miss_record();
+        error_log('jd: bench key refused (' . $n . '/' . JD_KEY_MISS_LIMIT . ' this hour)');
+    }
+    jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
 }
 
 // ---------------------------------------------------------------------------
@@ -807,7 +889,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
         $client = (string) ($r['client'] ?? 'web');
         if (!isset($fold[$gid][$client])) {
             $fold[$gid][$client] = [
-                'axes' => [], 'axes_version' => [],
+                'axes' => [], 'axes_version' => [], 'notes' => [],
                 'grade' => null, 'grade_version' => null, 'note' => null,
             ];
         }
@@ -818,6 +900,12 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
             if (isset($liveAxes[$axis])) {
                 $slot['axes'][$axis] = (float) $r['value'];
                 $slot['axes_version'][$axis] = $version;
+                // a remark filed WITH the axis row rides with it (the report
+                // card renders {value, note}); the row-less 'note' below is
+                // the older per-response remark
+                if (isset($r['note']) && $r['note'] !== null && $r['note'] !== '') {
+                    $slot['notes'][$axis] = (string) $r['note'];
+                }
             }
         } elseif ($r['kind'] === 'grade') {
             $slot['grade'] = (float) $r['value'];
@@ -838,11 +926,11 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
  *
  * @param array<string,array> $byClient  one generation's entry from jd_fold_ratings
  * @param string[] $order  e.g. ['bench', '*'] — the bench outranks everyone
- * @return array{axes:array<string,float>,grade:?float,note:?string}
+ * @return array{axes:array<string,float>,notes:array<string,string>,grade:?float,note:?string}
  */
 function jd_pick_rating(array $byClient, array $order): array
 {
-    $out = ['axes' => [], 'grade' => null, 'note' => null];
+    $out = ['axes' => [], 'notes' => [], 'grade' => null, 'note' => null];
     $seen = [];
     $walk = [];
     foreach ($order as $client) {
@@ -862,6 +950,9 @@ function jd_pick_rating(array $byClient, array $order): array
         foreach ($s['axes'] as $axis => $value) {
             if (!array_key_exists($axis, $out['axes'])) {
                 $out['axes'][$axis] = $value;
+                if (isset($s['notes'][$axis])) {
+                    $out['notes'][$axis] = $s['notes'][$axis];
+                }
             }
         }
         if ($out['grade'] === null && $s['grade'] !== null) {
@@ -870,6 +961,32 @@ function jd_pick_rating(array $byClient, array $order): array
         if ($out['note'] === null && $s['note'] !== null) {
             $out['note'] = $s['note'];
         }
+    }
+    return $out;
+}
+
+/**
+ * THE POSITION JOIN between a curated item's entry.json and its backfilled
+ * generations (2026-08-18 contract, shared since 2026-09-05): the backfill
+ * filed slot a,b,c,d in the order responses appear in the entry — retired
+ * ones INCLUDED, which is why rids stay permanent — so entry index i is
+ * generation i. $entryResponses must therefore be the UNFILTERED list, and
+ * $gens ordered by slot. A generation past the entry's end (a response the
+ * entry lost) keeps a synthetic rid so nothing is silently dropped.
+ *
+ * @return list<array{gen:array,src:?array,rid:string}>
+ */
+function jd_curated_positions(array $entryResponses, array $gens): array
+{
+    $byIndex = array_values($entryResponses);
+    $out = [];
+    foreach (array_values($gens) as $i => $g) {
+        $src = $byIndex[$i] ?? null;
+        $out[] = [
+            'gen' => $g,
+            'src' => is_array($src) ? $src : null,
+            'rid' => (string) ($src['rid'] ?? ('r' . ($i + 1))),
+        ];
     }
     return $out;
 }

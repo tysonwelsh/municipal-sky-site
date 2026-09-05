@@ -19,14 +19,25 @@ asks a model for) and printed for the owner to correct; slugs come from it.
 Run the ink check afterwards — the caller validates, commits and uploads.
 """
 import json, os, re, subprocess, sys, tempfile, urllib.request
+
+def bench_headers(h):
+    """The bench key, since the gate went on (2026-09-05): export
+    JD_BENCH_KEY=<jd_bench_key from the server's secrets> before running."""
+    k = os.environ.get("JD_BENCH_KEY", "")
+    if not k:
+        sys.exit("JD_BENCH_KEY is not set — export the bench key "
+                 "(jd_bench_key in private_config/secrets.php) and rerun")
+    h["X-Bench-Key"] = k
+    return h
+
 from datetime import date
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEMS = os.path.join(REPO, "art", "junk-drawer", "items")
 QUEUE = "https://municipalsky.com/api/jd-bench-queue.php"
 GENSVG = "https://municipalsky.com/api/jd-gen-svg.php?gen="
-HDRS = {"Origin": "https://municipalsky.com",
-        "User-Agent": "Mozilla/5.0 (promote-turn.py; municipal-sky curation)"}
+HDRS = bench_headers({"Origin": "https://municipalsky.com",
+        "User-Agent": "Mozilla/5.0 (promote-turn.py; municipal-sky curation)"})
 
 STOP = {"a", "an", "the", "of", "in", "on", "with", "and", "for", "at", "its",
         "that", "this", "like", "just", "some", "kind", "sort"}

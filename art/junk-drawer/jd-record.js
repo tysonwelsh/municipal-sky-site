@@ -505,7 +505,13 @@
     var m = modelOf(resp.model);
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
-      '<div class="rc-item">' + esc(entry.title) + '</div></header>';
+      '<div class="rc-item">' + esc(entry.title) + '</div>' +
+      /* ADMIN MODE (owner, 2026-09-05): the card's one write control, and
+         only once the key has verified — a visitor's card never carries it */
+      (window.JD_admin && JD_admin.isVerified() && window.JD_bench
+        ? '<button type="button" class="rc-adjust" data-rc="adjust">adjust ratings</button>'
+        : '') +
+      '</header>';
     /* the plate is the enlargement's handle: role/tabindex make it a real
        button for keyboard and screen readers without wrapping the artwork in
        a <button>, whose UA box model would fight the absolutely-positioned
@@ -674,6 +680,10 @@
     });
     scrim.querySelector('.jd-record-close').addEventListener('click', close);
     scrollEl.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-rc="adjust"]')) {
+        adjust();
+        return;
+      }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
       /* REPLAY rides the plate too: it redraws, never zooms. An explicit
@@ -904,6 +914,21 @@
     JD_track('item_open', id);
   }
 
+  /* ADMIN MODE: hand the item to the bench driver, which seats it in the
+     turn card with everything on file prefilled and names on the slots. A
+     turn is named by its submission (data.php carries submission_id since
+     2026-09-05); a curated item by its entry id. The card comes down first
+     — two aria-modal dialogs on one page is the trap open() guards against. */
+  function adjust() {
+    if (!curEntry || !window.JD_bench) return;
+    var key = curEntry.fromTurn
+      ? 'turn:' + (curEntry.submission_id || '')
+      : curEntry.id;
+    var id = curEntry.id;
+    close();
+    window.JD_bench.adjust(key, id);
+  }
+
   function teardown() {
     if (!isOpen) return;
     closeZoom(true);
@@ -949,6 +974,9 @@
     open: open,
     close: close,
     isOpen: function () { return isOpen; },
+    /* a plain re-paint of the open card (admin mode: the key verifies after
+       a deep-linked card has already painted, and the control has to appear) */
+    refresh: function () { if (isOpen) render(false); },
     openFromHash: function () {
       var h = decodeURIComponent(location.hash.slice(1));
       if (h && payload && byId(payload.items, h)) open(h, true);
