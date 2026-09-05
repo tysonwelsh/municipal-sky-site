@@ -256,7 +256,13 @@
 .kolob-viz-wrap {
   position: relative;
   height: 220px;
-  margin: 0;                        /* the direction line sits directly beneath */
+  /* The staff and the wheel are almost one plate: the staff's top ledger room
+     (33px above the first rule) is laid over the foot of the wheel band, so the
+     first rule sits about 17px beneath the wheel's horizon (12px on a phone).
+     Notes above the staff may drift over the wheel — by design. The bottom
+     step to the console is a scale step less than the plates above. */
+  margin: -20px 0 0.6rem;
+  z-index: 2;                       /* over the wheel band (both are z-index 1 by the frame rule) */
 }
 .kolob-viz {
   position: absolute;
@@ -271,10 +277,12 @@
    staff — right-aligned, italic, gilt (the one colour for what moves or
    fires). A fixed one-line height, so the console beneath never shifts. */
 .kolob-direction {
-  height: 1.6rem;
-  line-height: 1.6rem;
-  margin: -0.6rem 0 1.2rem;      /* pulled up under the staff, as a direction is; the step goes to the band */
-  text-align: right;
+  position: absolute;               /* at the staff plate's foot, under the clefs, in the note-free fade zone */
+  left: 22px;
+  bottom: 3px;
+  line-height: 1.2rem;
+  pointer-events: none;
+  text-align: left;
   font-family: "EB Garamond", "Noto Sans Deseret", Georgia, serif;
   font-style: italic;
   font-size: 0.95rem;
@@ -293,7 +301,6 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  margin-top: 0.6rem;              /* the step the direction line gave back */
   margin: 0 0 2.8rem;
   padding: 0.6rem 0;
   border-top: 1px solid var(--rule);
@@ -402,8 +409,8 @@
    readers who cannot see the wheel. */
 .kolob-wheel-wrap {
   position: relative;
-  height: 210px;                    /* crown at 20%, horizon pinned 22px above the bottom (kolob-viz.js wheelGeom): the sky above the crown is 42px, the horizon-to-staff gap 76 at every width */
-  margin: 0 0 1.2rem;
+  height: 210px;                    /* crown at 20%, horizon pinned 4px above the bottom (kolob-viz.js wheelGeom) */
+  margin: 0;                        /* the staff plate is drawn up over this band's foot — see .kolob-viz-wrap */
 }
 .kolob-wheel {
   position: absolute;

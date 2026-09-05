@@ -667,11 +667,11 @@ window.KolobViz = (function () {
   function wheelGeom() {
     var fontPx = Math.max(14, Math.min(24, XW * 0.03));     // the type scales with the wheel
     var crownY = XH * 0.20;                                 // the sky above the crown, a fifth of the plate
-    // the horizon is pinned to the plate (22px above its foot) so the divider
+    // the horizon is pinned to the plate (4px above its foot) so the divider
     // before the staff sits at one height at every width; the wheel's radius
     // follows from it — the crown shows 0.44 R above the horizon — capped so a
     // narrow page still sees the neighbouring seats
-    var horizonY = XH - 22;
+    var horizonY = XH - 4;                                  // at the band's foot: the staff plate is drawn up over it
     var R = Math.min((horizonY - crownY) / 0.44, XW * 0.62);
     return {
       fontPx: fontPx, R: R, cx: XW / 2, cy: crownY + R, crownY: crownY,
