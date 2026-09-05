@@ -1,6 +1,17 @@
 <?php
-// Junk Drawer visitor-prompt feature — shared constants and helpers.
+// Junk Drawer — the shared runtime every jd-* endpoint includes.
 // Contracts: PLAN-USER-PROMPTS-CONTRACTS.md C4 (harness), C6 (dev mode).
+//
+// Sections, in order:
+//   1. environment, harness, model pool, limits            (constants)
+//   2. secrets + the database handle                       (jd_secrets, jd_db, …)
+//   3. ids, timestamps                                     (jd_ulid, jd_now, …)
+//   4. responses and request parsing                       (jd_json_out, jd_fail, …)
+//   5. the bench gate                                      (jd_bench_keyed, …)
+//   6. database error classification + schema probes      (jd_missing_table, …)
+//   7. taxonomy access                                     (jd_taxonomy, jd_live_axes, …)
+//   8. the ratings fold                                    (jd_fold_ratings, jd_pick_rating)
+//   9. SVG extraction                                      (jd_extract_svg)
 //
 // Include-only: this file emits no output and starts no session. No cookies,
 // no PHP sessions anywhere in this feature (APP §4.3) — msky_visitor_hash()
@@ -491,6 +502,124 @@ function jd_require_post(): void
     }
 }
 
+function jd_require_get(): void
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+        jd_fail(405, 'method_not_allowed', 'GET only.');
+    }
+}
+
+// The host fronts the site with an edge cache that will cache a header-less
+// GET — observed serving a previous deploy's bench queue to a fresh session
+// (2026-08-28). Every read the bench or the drawer depends on for live truth
+// sends this, so no cache anywhere may store the answer.
+function jd_no_store(): void
+{
+    if (!headers_sent()) {
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    }
+}
+
+// A 26-char Crockford ULID as minted by jd_ulid() — the shape of every
+// submission and generation id, and the only shape an endpoint accepts.
+const JD_ULID_RE = '/^[0-9A-HJKMNP-TV-Z]{26}$/';
+
+function jd_is_ulid(mixed $value): bool
+{
+    return is_string($value) && preg_match(JD_ULID_RE, $value) === 1;
+}
+
+// ---------------------------------------------------------------------------
+// The bench gate. JD_BENCH_REQUIRE_KEY (above) is the one switch; while it is
+// off — the standing state — every curator endpoint answers keyless. When it
+// is on, production callers present jd_bench_key (falling back to the
+// jd_setup_key already on file) in X-Bench-Key or ?key=.
+
+/** Does this request hold the bench key, or is no key required? */
+function jd_bench_keyed(): bool
+{
+    if (!JD_IS_PRODUCTION || !JD_BENCH_REQUIRE_KEY) {
+        return true;
+    }
+    $secrets  = jd_secrets();
+    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
+    $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
+    return is_string($expected) && $expected !== ''
+        && hash_equals($expected, (string) $supplied);
+}
+
+/** 403 unless the caller is keyed (see jd_bench_keyed). */
+function jd_require_bench_key(): void
+{
+    if (!jd_bench_keyed()) {
+        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Database error classification — for the one recoverable failure class, a
+// migration that has not been run yet. Deploys are instant and
+// setup-jd-tables.php is a manual run, so a reader must be able to tell
+// "table not there yet" from "bad statement". Anything these do not match
+// re-throws at the call site.
+
+// MySQL says SQLSTATE 42S02 / "Table ... doesn't exist" (8.0: "Base table or
+// view not found"); SQLite says "no such table".
+function jd_missing_table(PDOException $e): bool
+{
+    if (($e->getCode() ?: '') === '42S02') {
+        return true;
+    }
+    $msg = $e->getMessage();
+    return str_contains($msg, 'no such table')
+        || str_contains($msg, "doesn't exist")
+        || str_contains($msg, 'Base table or view not found');
+}
+
+// MySQL says SQLSTATE 42S22 / "Unknown column"; SQLite says "has no column
+// named" (insert) or "no such column" (elsewhere).
+function jd_missing_column(PDOException $e): bool
+{
+    if (($e->getCode() ?: '') === '42S22') {
+        return true;
+    }
+    $msg = $e->getMessage();
+    return str_contains($msg, 'no such column')
+        || str_contains($msg, 'has no column named')
+        || str_contains($msg, 'Unknown column');
+}
+
+/** Schema probe, both dialects: does $table exist? */
+function jd_has_table(PDO $db, string $table): bool
+{
+    if (jd_db_driver($db) === 'sqlite') {
+        $q = $db->prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?");
+        $q->execute([$table]);
+    } else {
+        $q = $db->prepare('SHOW TABLES LIKE ?');
+        $q->execute([$table]);
+    }
+    return $q->fetch() !== false;
+}
+
+/** Schema probe, both dialects: does $table carry $column? */
+function jd_has_column(PDO $db, string $table, string $column): bool
+{
+    if (jd_db_driver($db) === 'sqlite') {
+        foreach ($db->query('PRAGMA table_info(' . $table . ')') as $col) {
+            if (($col['name'] ?? '') === $column) {
+                return true;
+            }
+        }
+        return false;
+    }
+    $q = $db->prepare('SHOW COLUMNS FROM ' . $table . ' LIKE ?');
+    $q->execute([$column]);
+    return $q->fetch() !== false;
+}
+
 // Any client-held identifier travels in the JSON body — never a cookie.
 function jd_read_json_body(): array
 {
@@ -531,6 +660,208 @@ function jd_taxonomy(): ?array
     }
     $cache = $parsed;
     return $cache;
+}
+
+/**
+ * The taxonomy, or a 500 — for endpoints that cannot do their job without
+ * it. A taxonomy that cannot state its version must not produce rows: a
+ * silent 0 in taxonomy_version would be indistinguishable from a real one.
+ */
+function jd_taxonomy_required(string $who): array
+{
+    $taxonomy = jd_taxonomy();
+    if ($taxonomy === null) {
+        error_log($who . ': taxonomy.json could not be read at ' . JD_TAXONOMY_PATH);
+        jd_fail(500, 'server_error', 'The rubric could not be read.');
+    }
+    if (jd_taxonomy_version($taxonomy) < 1) {
+        error_log($who . ': taxonomy.json has no usable version field');
+        jd_fail(500, 'server_error', 'The rubric could not be read.');
+    }
+    return $taxonomy;
+}
+
+function jd_taxonomy_version(array $taxonomy): int
+{
+    return (int) ($taxonomy['version'] ?? 0);
+}
+
+/** @return array<string,array> live (non-defunct) axes, id => axis, in taxonomy order */
+function jd_live_axes(array $taxonomy): array
+{
+    $axes = [];
+    foreach ($taxonomy['axes'] ?? [] as $axis) {
+        if (isset($axis['id']) && empty($axis['defunct'])) {
+            $axes[(string) $axis['id']] = $axis;
+        }
+    }
+    return $axes;
+}
+
+/** @return float[] every grade rank on the scale */
+function jd_grade_ranks(array $taxonomy): array
+{
+    $ranks = [];
+    foreach ($taxonomy['grades'] ?? [] as $grade) {
+        if (isset($grade['rank'])) {
+            $ranks[] = (float) $grade['rank'];
+        }
+    }
+    return $ranks;
+}
+
+/** @return array<string,float[]> live axis id => the ranks its values allow */
+function jd_axis_ranks(array $taxonomy): array
+{
+    $out = [];
+    foreach (jd_live_axes($taxonomy) as $id => $axis) {
+        $ranks = [];
+        foreach ($axis['values'] ?? [] as $value) {
+            if (isset($value['rank'])) {
+                $ranks[] = (float) $value['rank'];
+            }
+        }
+        $out[$id] = $ranks;
+    }
+    return $out;
+}
+
+/** @return array<string,array> the model registry, id => {id,label,vendor} */
+function jd_model_registry(array $taxonomy): array
+{
+    $models = [];
+    foreach ($taxonomy['models'] ?? [] as $model) {
+        if (isset($model['id'])) {
+            $models[(string) $model['id']] = $model;
+        }
+    }
+    return $models;
+}
+
+/** @return array<string,array> size tiers, id => tier, in taxonomy order */
+function jd_size_tiers(array $taxonomy): array
+{
+    $tiers = [];
+    foreach ($taxonomy['sizeTiers'] ?? [] as $tier) {
+        if (isset($tier['id'])) {
+            $tiers[(string) $tier['id']] = $tier;
+        }
+    }
+    return $tiers;
+}
+
+// Ranks are filed as decimals; match on the DECIMAL(3,1) grid the column
+// stores rather than on exact float equality, and return the TAXONOMY's rank
+// rather than the client's near-miss — what is stored has to sit exactly on
+// the published scale, or a GROUP BY value in the export splits a rank in two.
+function jd_rank_on_scale(mixed $value, array $ranks): ?float
+{
+    if (is_string($value) && is_numeric($value)) {
+        $value = (float) $value;
+    }
+    if (!is_int($value) && !is_float($value)) {
+        return null;
+    }
+    foreach ($ranks as $rank) {
+        if (abs($rank - (float) $value) < 0.05) {
+            return $rank;
+        }
+    }
+    return null;
+}
+
+// ---------------------------------------------------------------------------
+// The ratings fold. jd_ratings is one row per judgment, and three readers
+// (data.php, the bench queue, the census) each need "what does this
+// generation stand at" with the same precedence rule — the bench's answer
+// outranks the turn's own, and a seed grade is a fallback only. One fold,
+// one picker, so the rule cannot drift between them.
+
+/**
+ * Fold rating rows onto their generations, split by the client that filed
+ * them. Rows must carry generation_id, kind, axis_id, value, client and
+ * taxonomy_version (note is optional). Only LIVE axes are kept — a rating
+ * filed under a retired axis stays in the table as history but never counts
+ * toward "complete", a prefill or a chart. Within one client a later row
+ * overwrites an earlier one, so order the query by rated_at when it matters.
+ *
+ * @param array<string,mixed> $liveAxes  id => axis (jd_live_axes)
+ * @return array<string,array<string,array{axes:array,axes_version:array,grade:?float,grade_version:?int,note:?string}>>
+ *   generation_id => client => the client's standing
+ */
+function jd_fold_ratings(array $rows, array $liveAxes): array
+{
+    $fold = [];
+    foreach ($rows as $r) {
+        $gid = (string) $r['generation_id'];
+        $client = (string) ($r['client'] ?? 'web');
+        if (!isset($fold[$gid][$client])) {
+            $fold[$gid][$client] = [
+                'axes' => [], 'axes_version' => [],
+                'grade' => null, 'grade_version' => null, 'note' => null,
+            ];
+        }
+        $slot = &$fold[$gid][$client];
+        $version = (int) ($r['taxonomy_version'] ?? 0);
+        if ($r['kind'] === 'axis') {
+            $axis = (string) $r['axis_id'];
+            if (isset($liveAxes[$axis])) {
+                $slot['axes'][$axis] = (float) $r['value'];
+                $slot['axes_version'][$axis] = $version;
+            }
+        } elseif ($r['kind'] === 'grade') {
+            $slot['grade'] = (float) $r['value'];
+            $slot['grade_version'] = $version;
+        }
+        if ($slot['note'] === null && isset($r['note']) && $r['note'] !== null) {
+            $slot['note'] = (string) $r['note'];
+        }
+        unset($slot);
+    }
+    return $fold;
+}
+
+/**
+ * One generation's standing, merged across clients in precedence order:
+ * the first client in $order that answered an axis (or the grade) wins it.
+ * '*' stands for "any client not named earlier", in filing order.
+ *
+ * @param array<string,array> $byClient  one generation's entry from jd_fold_ratings
+ * @param string[] $order  e.g. ['bench', '*'] — the bench outranks everyone
+ * @return array{axes:array<string,float>,grade:?float,note:?string}
+ */
+function jd_pick_rating(array $byClient, array $order): array
+{
+    $out = ['axes' => [], 'grade' => null, 'note' => null];
+    $seen = [];
+    $walk = [];
+    foreach ($order as $client) {
+        if ($client === '*') {
+            foreach ($byClient as $c => $_) {
+                if (!isset($seen[$c]) && !in_array($c, $order, true)) {
+                    $walk[] = $c;
+                }
+            }
+        } elseif (isset($byClient[$client])) {
+            $walk[] = $client;
+        }
+        $seen[$client] = true;
+    }
+    foreach ($walk as $client) {
+        $s = $byClient[$client];
+        foreach ($s['axes'] as $axis => $value) {
+            if (!array_key_exists($axis, $out['axes'])) {
+                $out['axes'][$axis] = $value;
+            }
+        }
+        if ($out['grade'] === null && $s['grade'] !== null) {
+            $out['grade'] = $s['grade'];
+        }
+        if ($out['note'] === null && $s['note'] !== null) {
+            $out['note'] = $s['note'];
+        }
+    }
+    return $out;
 }
 
 // ---------------------------------------------------------------------------

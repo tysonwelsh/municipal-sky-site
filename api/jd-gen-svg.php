@@ -2,42 +2,27 @@
 // GET /api/jd-gen-svg.php?gen=<generation_id> — one drawing's SVG (2026-08-30).
 //
 // A curated response's artwork is a file in its item directory; a TURN's
-// artwork exists only as a column in jd_generations. The bench now seats
-// turns as well as curated items (the reassessment backlog: 84 prompts that
-// never reached the drawer), so it needs a way to fetch one drawing at a
-// time. Inlining 314 SVGs in the queue payload would be megabytes; this is
-// the on-demand half, and the bench's per-item fetch already has the shape
-// for it.
+// artwork exists only as a column in jd_generations. The bench seats turns
+// as well as curated items, so it needs a way to fetch one drawing at a
+// time — and since a rated turn joins the drawer for everyone, so does the
+// drawer itself: each served turn response points here rather than at a
+// file.
 //
 // Serves the SANITIZED text as stored — the same bytes the turn flow drew
 // and the same bytes a promotion would commit. Read-only.
+//
+// A drawing whose turn is RATED is on display, and is served to anyone;
+// everything else (an unrated turn's drawings, which only the bench has
+// business seeing) answers to the bench gate when the gate is on.
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 
 jd_require_allowed_origin();
-
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
-    jd_fail(405, 'method_not_allowed', 'GET only.');
-}
-
-// THE DRAWER DEPENDS ON THIS ENDPOINT NOW (2026-08-30): a rated turn's
-// artwork is served from here to every visitor, so the key cannot be the
-// only way in. A drawing whose turn is RATED is public by definition — it
-// is on display — and is served to anyone; everything else (an unrated
-// turn's drawings, which only the bench has business seeing) still answers
-// to the gate when the gate is on.
-$keyed = true;
-if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
-    $secrets  = jd_secrets();
-    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
-    $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
-    $keyed = is_string($expected) && $expected !== ''
-        && hash_equals($expected, (string) $supplied);
-}
+jd_require_get();
 
 $gen = (string) ($_GET['gen'] ?? '');
-if (!preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/', $gen)) {
+if (!jd_is_ulid($gen)) {
     jd_fail(400, 'bad_request', 'A generation id is required.');
 }
 
@@ -56,7 +41,7 @@ try {
     // on display = rated turn, or any curated response
     $public = $row !== false
         && ($row['status'] === 'rated' || $row['item_id'] !== null);
-    if (!$keyed && !$public) {
+    if (!$public && !jd_bench_keyed()) {
         jd_fail(403, 'forbidden', 'That drawing is not on display.');
     }
 } catch (PDOException $e) {
@@ -71,6 +56,6 @@ if ($svg === false || !is_string($svg) || $svg === '') {
 // image/svg+xml so an <img> or a fetch both work; no-store because the
 // bench is an instrument, not a gallery, and a stale drawing would be a lie.
 header('Content-Type: image/svg+xml; charset=utf-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+jd_no_store();
 header('X-Content-Type-Options: nosniff');
 echo $svg;

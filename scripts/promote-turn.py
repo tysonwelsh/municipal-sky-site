@@ -88,14 +88,9 @@ def price_generation(resp):
 _CENSUS = None
 
 
-def flagged(it, which):
-    return any(f["axis_id"] == which and not str(f.get("note") or "").startswith("UN")
-               for r in it["responses"] for f in r["flags"])
-
-
 def promote(it, dry=False):
     tag = it["item_id"]
-    if flagged(it, "retire-request"):
+    if it.get("retire_requested"):
         return None, f"{tag}: scrapped — skipped"
     resp = it["responses"]
     if not resp:

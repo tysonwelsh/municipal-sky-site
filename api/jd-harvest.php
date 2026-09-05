@@ -10,33 +10,19 @@
 // item's prompt byte-for-byte (a rerun re-issues the stored prompt verbatim,
 // so exact match is the honest join), newest first.
 //
-// Read-only. Same soft gate as the other bench endpoints (JD_BENCH_REQUIRE_KEY,
-// currently off by owner call, 2026-08-18 — see jd-config.php). What it could
-// expose while open: generated SVGs and the ratings on them for prompts that
-// are already public in the drawer. No visitor identity: hashes are omitted.
+// Read-only. Same gate as the other bench endpoints. What it could expose
+// while the gate is open: generated SVGs and the ratings on them for prompts
+// that are already public in the drawer. No visitor identity: hashes are
+// omitted.
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 
 jd_require_allowed_origin();
-
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Expires: 0');
-
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
-    jd_fail(405, 'method_not_allowed', 'GET only.');
-}
-
-if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
-    $secrets  = jd_secrets();
-    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
-    $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
-    if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
-        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
-    }
-}
+jd_no_store();
+jd_require_get();
+jd_require_bench_key();
 
 $itemId = (string) ($_GET['item'] ?? '');
 if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]{1,64}$/', $itemId)) {
@@ -47,9 +33,7 @@ try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $stmt = $db->prepare(
-        'SELECT prompt FROM jd_submissions WHERE item_id = ? LIMIT 1'
-    );
+    $stmt = $db->prepare('SELECT prompt FROM jd_submissions WHERE item_id = ? LIMIT 1');
     $stmt->execute([$itemId]);
     $prompt = $stmt->fetchColumn();
     if ($prompt === false) {
@@ -61,7 +45,8 @@ try {
     // Harvest consumers keep the default: only rated turns are commit-worthy.
     $anyStatus = (($_GET['status'] ?? '') === 'any');
     $stmt = $db->prepare(
-        "SELECT id, created, status
+        "SELECT id, created, status, title, size_class, suppressed,
+                retire_requested_at, rerun_requested_at
            FROM jd_submissions
           WHERE item_id IS NULL AND prompt = ?"
         . ($anyStatus ? '' : " AND status = 'rated'")
@@ -84,14 +69,10 @@ try {
           WHERE generation_id IN (SELECT id FROM jd_generations WHERE submission_id = ?)'
     );
     $rankQ = $db->prepare(
-        'SELECT generation_id, rank_pos, client
-           FROM jd_ranks
-          WHERE submission_id = ?'
+        'SELECT generation_id, rank_pos, client FROM jd_ranks WHERE submission_id = ?'
     );
     $compQ = $db->prepare(
-        'SELECT winner_gen_id, strength
-           FROM jd_comparisons
-          WHERE submission_id = ?'
+        'SELECT winner_gen_id, strength FROM jd_comparisons WHERE submission_id = ?'
     );
 
     $out = [];
@@ -103,6 +84,9 @@ try {
             $rankQ->execute([$sub['id']]);
             $ranks = $rankQ->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            if (!jd_missing_table($e)) {
+                throw $e;
+            }
             // jd_ranks lands via the manual setup script; absent = no order
         }
         $compQ->execute([$sub['id']]);
@@ -118,13 +102,18 @@ try {
         }
         unset($g);
         $out[] = [
-            'submission_id' => $sub['id'],
-            'created'       => $sub['created'],
-            'status'        => $sub['status'],
-            'generations'   => $gens,
-            'ratings'       => $rateQ->fetchAll(PDO::FETCH_ASSOC),
-            'ranks'         => $ranks,
-            'comparison'    => $compQ->fetch(PDO::FETCH_ASSOC) ?: null,
+            'submission_id'       => $sub['id'],
+            'created'             => $sub['created'],
+            'status'              => $sub['status'],
+            'title'               => $sub['title'],
+            'size_class'          => $sub['size_class'],
+            'suppressed'          => (bool) $sub['suppressed'],
+            'retire_requested_at' => $sub['retire_requested_at'],
+            'rerun_requested_at'  => $sub['rerun_requested_at'],
+            'generations'         => $gens,
+            'ratings'             => $rateQ->fetchAll(PDO::FETCH_ASSOC),
+            'ranks'               => $ranks,
+            'comparison'          => $compQ->fetch(PDO::FETCH_ASSOC) ?: null,
         ];
     }
 } catch (PDOException $e) {

@@ -3,10 +3,11 @@
 
     python3 scripts/apply-scraps.py [--dry-run]
 
-Pressing SCRAP at the bench files a retire-request flag — an INTENT, on the
-database, where the drawer cannot see it. This is the step that carries it
-out: every flagged item gets `"retired": true` in its entry.json, which drops
-it from data.php's manifest. Files and rows stay; retirement is display-side.
+Pressing SCRAP at the bench sets retire_requested_at on the item's
+submission — an INTENT, on the database, where the drawer cannot see it.
+This is the step that carries it out: every scrapped item gets
+`"retired": true` in its entry.json, which drops it from data.php's manifest.
+Files and rows stay; retirement is display-side.
 
 THE EXCEPTIONS ARE HONOURED: an entry carrying a `display_note` that says the
 owner kept it on display despite the flag (the Saturn fadograph, the pencil
@@ -18,9 +19,9 @@ import json, os, sys, urllib.request
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEMS = os.path.join(REPO, "art", "junk-drawer", "items")
 QUEUE = "https://municipalsky.com/api/jd-bench-queue.php"
-NOTE = ("Scrapped from the bench by the owner — the SCRAP control filed a "
-        "retire-request flag on this item; it leaves the drawer and the "
-        "manifest. Files and entry stay for the record.")
+NOTE = ("Scrapped from the bench by the owner — the SCRAP control marked "
+        "this item's submission retire-requested; it leaves the drawer and "
+        "the manifest. Files and entry stay for the record.")
 
 dry = "--dry-run" in sys.argv
 
@@ -31,10 +32,7 @@ q = json.load(urllib.request.urlopen(req))
 
 did, kept, already = [], [], []
 for it in q["items"]:
-    flags = [f for r in it["responses"] for f in r["flags"]]
-    scrapped = any(f["axis_id"] == "retire-request"
-                   and not str(f.get("note") or "").startswith("UN") for f in flags)
-    if not scrapped:
+    if not it.get("retire_requested"):
         continue
     p = os.path.join(ITEMS, it["item_id"], "entry.json")
     if not os.path.exists(p):

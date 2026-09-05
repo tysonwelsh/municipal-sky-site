@@ -17,12 +17,11 @@
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
-require_once __DIR__ . '/jd-provider.php';   // jd_provider_key
+require_once __DIR__ . '/jd-provider.php';   // jd_provider_key, jd_http_post_json
 
 jd_require_allowed_origin();
 jd_require_post();
-
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+jd_no_store();
 
 const JD_TITLE_MODEL = 'claude-haiku-4-5-20251001';
 const JD_TITLE_SYSTEM =
@@ -93,31 +92,21 @@ if ($key === null) {
     jd_fail(500, 'server_error', 'No provider key on file.');
 }
 
-$ch = curl_init('https://api.anthropic.com/v1/messages');
-curl_setopt_array($ch, [
-    CURLOPT_POST           => true,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_CONNECTTIMEOUT => 10,
-    CURLOPT_TIMEOUT        => 20,
-    CURLOPT_HTTPHEADER     => [
-        'Content-Type: application/json',
-        'x-api-key: ' . $key,
-        'anthropic-version: 2023-06-01',
-    ],
-    CURLOPT_POSTFIELDS     => json_encode([
-        'model'      => JD_TITLE_MODEL,
-        'max_tokens' => 30,
-        'system'     => JD_TITLE_SYSTEM,
-        'messages'   => [['role' => 'user', 'content' => $prompt]],
-    ]),
-]);
-$raw  = curl_exec($ch);
-$http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+$wire = jd_http_post_json('https://api.anthropic.com/v1/messages', [
+    'Content-Type: application/json',
+    'x-api-key: ' . $key,
+    'anthropic-version: 2023-06-01',
+], [
+    'model'      => JD_TITLE_MODEL,
+    'max_tokens' => 30,
+    'system'     => JD_TITLE_SYSTEM,
+    'messages'   => [['role' => 'user', 'content' => $prompt]],
+], 20);
+$http = $wire['http_code'];
 
 $text = null;
-if (is_string($raw) && $http === 200) {
-    $j = json_decode($raw, true);
+if ($wire['error'] === null && $http === 200) {
+    $j = json_decode($wire['body'], true);
     $text = $j['content'][0]['text'] ?? null;
 }
 if (!is_string($text)) {
