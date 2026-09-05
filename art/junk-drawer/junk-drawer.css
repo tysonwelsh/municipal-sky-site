@@ -4208,6 +4208,22 @@ html.jd-folder-open { overflow: hidden; }
 }
 .jd-bench-acts + .jd-bench-build { margin-left: 0; }
 .jd-bench-build.is-stale { color: #e5c06b; }
+/* ADMIN MODE (owner, 2026-09-05): SIGN OUT sits at the strip's far end in
+   both modes; the model's name on the bench head and the report card's one
+   write control wear the bench palette, so they read as the curator's
+   marks and never as part of the form */
+.jd-bench-bar .jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
+.jd-bench-acts + .jd-bench-out, .jd-bench-build + .jd-bench-out { margin-left: 0; }
+.jd-row-model { font-weight: 700; margin-left: 0.4em; }
+.rc-adjust {
+  display: inline-block; margin-top: 6px;
+  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
+  padding: 3px 8px; cursor: pointer;
+}
+.rc-adjust:hover { background: #e5c06b; }
+.rc-adjust:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
 .jd-bench-gate { display: flex; align-items: center; gap: 8px; }
 .jd-bench-gate input {
   font: inherit; color: inherit; width: 200px;

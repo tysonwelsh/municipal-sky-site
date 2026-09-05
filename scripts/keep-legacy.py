@@ -16,16 +16,27 @@ call. Same gate as harvests: refuses without a grade and every live axis.
 The caller validates, commits, uploads.
 """
 import json, os, sys, urllib.request
+
+def bench_headers(h):
+    """The bench key, since the gate went on (2026-09-05): export
+    JD_BENCH_KEY=<jd_bench_key from the server's secrets> before running."""
+    k = os.environ.get("JD_BENCH_KEY", "")
+    if not k:
+        sys.exit("JD_BENCH_KEY is not set — export the bench key "
+                 "(jd_bench_key in private_config/secrets.php) and rerun")
+    h["X-Bench-Key"] = k
+    return h
+
 from datetime import date
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QUEUE = "https://municipalsky.com/api/jd-bench-queue.php"
 
 def main(item_id, rid):
-    req = urllib.request.Request(QUEUE, headers={
+    req = urllib.request.Request(QUEUE, headers=bench_headers({
         "Origin": "https://municipalsky.com",
         "User-Agent": "Mozilla/5.0 (keep-legacy.py; municipal-sky curation)",
-    })
+    }))
     q = json.load(urllib.request.urlopen(req))
     tax = json.load(open(os.path.join(REPO, "art", "junk-drawer", "taxonomy.json")))
     live_axes = [a["id"] for a in tax["axes"] if not a.get("defunct")]

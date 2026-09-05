@@ -319,6 +319,71 @@ function JD_zoomLayer() {
   };
 }
 
+/* ---- ADMIN MODE — JD_admin (owner, 2026-09-05) ---------------------------
+   The page's one gate for the owner's write controls: ?admin (the report
+   card's ADJUST RATINGS) and ?bench (the backlog strip) both stand behind
+   it. The key is the bench key (jd_bench_key in the server's secrets, or
+   the setup key when none is set), remembered PER DEVICE in localStorage —
+   the owner's own phone and desk; SIGN OUT forgets it — and VERIFIED
+   against jd-admin-check.php before anything is painted, so a stale or
+   wrong key shows the prompt rather than a string of refused writes. It
+   travels only as the X-Bench-Key header, never in a URL from this page;
+   every keyed request goes through headers(). Nothing here paints — the
+   strip in jd-bench.js owns the prompt and the tag. */
+var JD_admin = (function () {
+  var m = /[?&](admin|bench)(?:=|&|$)/.exec(location.search);
+  var K = 'jd-admin-key', K_OLD = 'jd-bench-key';
+  var verified = false, info = null;
+  function key() {
+    try {
+      var k = localStorage.getItem(K);
+      if (!k) {   /* the strip's per-tab key from before 2026-09-05 */
+        k = sessionStorage.getItem(K_OLD) || '';
+        if (k) { localStorage.setItem(K, k); sessionStorage.removeItem(K_OLD); }
+      }
+      return k || '';
+    } catch (e) { return ''; }
+  }
+  function setKey(v) {
+    verified = false;
+    try { if (v) localStorage.setItem(K, v); else localStorage.removeItem(K); } catch (e) {}
+  }
+  function headers(extra) {
+    var h = extra || {}, k = key();
+    if (k) h['X-Bench-Key'] = k;
+    return h;
+  }
+  /* resolves { ok, build } or { ok:false, code, retry_after } — never rejects */
+  function verify() {
+    return fetch(JD_API + '/api/jd-admin-check.php?t=' + Date.now(), { headers: headers() })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        verified = !!(j && j.ok);
+        info = verified ? j : null;
+        document.documentElement.classList.toggle('jd-admin-on', verified);
+        return verified
+          ? { ok: true, build: j }
+          : { ok: false, code: (j && j.error && j.error.code) || 'network',
+              retry_after: j && j.retry_after };
+      }, function () {
+        verified = false;
+        return { ok: false, code: 'network' };
+      });
+  }
+  function signOut() {
+    setKey('');
+    info = null;
+    document.documentElement.classList.remove('jd-admin-on');
+  }
+  return {
+    on: !!m,
+    mode: m ? m[1] : null,
+    key: key, setKey: setKey, headers: headers, verify: verify, signOut: signOut,
+    isVerified: function () { return verified; },
+    info: function () { return info; }
+  };
+})();
+
 /* ---- the pile loader + field-notes renderer ------------------------------ */
 (function () {
   var pile = document.querySelector('.jd-pile');

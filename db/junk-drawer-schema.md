@@ -183,6 +183,20 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
   (`{submission_id, size?, responses: [{generation_id, grade?, axes, rank?}]}`),
   and curator intents got their own endpoint, `jd-curate.php`.
 
+## The bench gate and the read path (2026-09-05, no schema change)
+
+- `JD_BENCH_REQUIRE_KEY` is on: every curator endpoint (`jd-bench-queue`,
+  `jd-item-rate`, `jd-curate`, `jd-harvest`, `jd-inventory`,
+  `jd-admin-check`, and `jd-gen-svg` for unrated turns) wants
+  `X-Bench-Key` = `jd_bench_key` from the secrets file (falling back to
+  `jd_setup_key`). Wrong keys are counted per `REMOTE_ADDR` in a small file
+  under the system temp dir (no table): 8 misses in an hour answer 429 with
+  `Retry-After`. A right key clears the count.
+- `data.php` overlays the bench's rows (`client = 'bench'`) onto curated
+  items at request time — grade, live axes, rank, `size_class` — and picks
+  the shown response from a complete bench ranking. Nothing is written; the
+  ETag now also moves with `jd_ranks` and curated `size_class`.
+
 ## Candidates (not done, on purpose)
 
 - `jd_comparisons` is now redundant with `jd_ranks` for ranked submissions.

@@ -13,6 +13,17 @@ skipped. The caller still validates, ink-checks, commits, uploads.
 """
 import json, subprocess, sys, urllib.request, os, tempfile
 
+def bench_headers(h):
+    """The bench key, since the gate went on (2026-09-05): export
+    JD_BENCH_KEY=<jd_bench_key from the server's secrets> before running."""
+    k = os.environ.get("JD_BENCH_KEY", "")
+    if not k:
+        sys.exit("JD_BENCH_KEY is not set — export the bench key "
+                 "(jd_bench_key in private_config/secrets.php) and rerun")
+    h["X-Bench-Key"] = k
+    return h
+
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEMS = os.path.join(REPO, "art", "junk-drawer", "items")
 HARVEST = "https://municipalsky.com/api/jd-harvest.php?item="
@@ -45,11 +56,11 @@ def price(gen):
         os.unlink(path)
 
 def harvest(item_id):
-    req = urllib.request.Request(HARVEST + item_id, headers={
+    req = urllib.request.Request(HARVEST + item_id, headers=bench_headers({
         "Origin": "https://municipalsky.com",
         # the host's WAF answers python-urllib's default agent with a 406
         "User-Agent": "Mozilla/5.0 (harvest-rerun.py; municipal-sky curation)",
-    })
+    }))
     d = json.load(urllib.request.urlopen(req))
     if not d.get("ok") or not d.get("reruns"):
         print(f"{item_id}: no rated rerun on file — nothing to harvest")

@@ -60,6 +60,15 @@ great on a phone. See PLAN-MOBILE.md.
 
 ## Status
 
+**Admin mode (2026-09-05, v0.9.106)**: `?admin` on the drawer, behind the
+bench key (remembered per device, verified before anything paints, wrong
+keys throttled), puts ADJUST RATINGS on every report card: the item is
+re-seated in the turn card's curate mode with everything on file prefilled
+and the models named, filed as one batch, and the page reloads onto the
+card. The bench is keyed again, the owner scripts take `JD_BENCH_KEY`, and
+`data.php` now renders the bench's grades, axes, ranks and size over a
+curated entry at request time — a full re-rank re-points the drawer.
+
 **Consolidation pass (2026-09-05, v0.9.105)**: no visible change. The page
 script was split at its IIFE seams into six files (`jd-core.js`,
 `jd-furniture.js`, `jd-record.js`, `jd-darkroom.js`, `jd-turn.js`,

@@ -827,8 +827,9 @@
          placed, so the drawing sits exactly where it did unlabelled.
          aria-hidden — the pod wrapper's aria-label already says the name. */
       (opts.overlay
-        ? '<span class="jd-pod-tag" aria-hidden="true">Model ' +
-          slot.toUpperCase() + '</span>' + (opts.spark || '')
+        ? '<span class="jd-pod-tag" aria-hidden="true">' +
+          (slotName(slot) ? esc(slotName(slot)) : 'Model ' + slot.toUpperCase()) +
+          '</span>' + (opts.spark || '')
         : '') +
       '</div>' +
       /* "Model A" since rounds 28–29 (owner): the Results view restyles this
@@ -883,7 +884,7 @@
       '</div></div>' +
       '<div class="rc-zoom-cap">' +
       '<span class="rc-zoom-cap-t">' + esc(shortTitle(work.prompt)) +
-      ' · drawing ' + slot.toUpperCase() + '</span>' +
+      ' · ' + (slotName(slot) ? esc(slotName(slot)) : 'drawing ' + slot.toUpperCase()) + '</span>' +
       '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
       '</div>';
   }
@@ -1471,9 +1472,19 @@
      a blank still waiting to be filled. A plain grid row, not a table head,
      so it carries nothing assistive tech needs; each select's own
      aria-label/aria-describedby already says what it is. */
-  function benchHeadHTML() {
+  /* ADJUST MODE (owner, 2026-09-05): a curate job opened from a report card
+     in admin mode carries `reveal`, and the head names the machine outright
+     — the owner has just read it off the card, so a blind deal would be
+     theatre. A first-pass bench job stays blind. */
+  function slotName(slot) {
+    var c = curJob && curJob.reveal && work.slots[slot] && work.slots[slot].cur;
+    return c ? (c.label || c.model_id || '') : '';
+  }
+  function benchHeadHTML(slot) {
+    var name = slot ? slotName(slot) : '';
     return '<div class="jd-row jd-row--head" aria-hidden="true">' +
-      '<span>Subject</span><span>Your rating</span></div>';
+      '<span>Subject' + (name ? ' <b class="jd-row-model">' + esc(name) + '</b>' : '') +
+      '</span><span>Your rating</span></div>';
   }
   /* the bench gate (owner, 2026-08-27): a drawing's panel doesn't hand off
      — to the next drawing or to the ranking — until every scale on it is
@@ -1621,7 +1632,7 @@
          2026-08-28) — and, the wrappers being display:contents in the
          portrait stack, sits between the sticky plate and the rows there */
       briefHTML() +
-      benchHeadHTML();
+      benchHeadHTML(slot);
     /* axes first, in taxonomy order, THEN the overall grade (owner
        directive r4): the report card files axes in <tbody> and the overall
        grade alone in <tfoot> below a rule — the SAME rubric was reading in
@@ -2852,7 +2863,16 @@
       var ranked = ok.length < 2 || ok.every(function (s2) {
         return work.ranks[s2] >= 1;
       });
-      if (firstOpenSlot) {
+      if (job.reveal) {
+        /* AN ADJUSTMENT (admin mode, 2026-09-05) opens on the first drawing
+           whatever is already on file — the owner came to change something,
+           not to be walked past it — with every step reached, so the docket
+           jumps straight to the panel, the ranking or the size they want */
+        ok.forEach(function (s2) { work.reached[s2] = true; });
+        if (ok.length > 1) work.reached.call = true;
+        if (sizeStep) work.reached.size = true;
+        work.step = ok[0];
+      } else if (firstOpenSlot) {
         work.step = firstOpenSlot;
       } else if (sizeStep && ranked && !work.size) {
         work.step = 'size';
