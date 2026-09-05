@@ -1,0 +1,19 @@
+{
+  "id": "interval-signals-1976-77",
+  "title": "Shortwave interval signals, 1976–77",
+  "year": 1977,
+  "src": "https://archive.org/download/sraa-fkfqcz9gamn3z3bc81fyibnyvj5uk3/IntervalSignals-1976-77.mp3",
+  "license": "CC BY-NC 3.0 (Shortwave Radio Audio Archive)",
+  "tier": "A",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 81.75,
+  "bytes": 383690,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0], [60.0, 70.0], [70.0, 80.0]],
+  "srcWindows": [[76.0, 86], [136.0, 146], [246.0, 256], [270.0, 280], [378.0, 388], [476.0, 486], [540.0, 550], [600.0, 610]],
+  "notes": "Greg Shoom's off-air log from Kingston, Ontario: Deutsche Welle, Radio Nederland, Radio Habana Cuba, Voice of Spain, RCI, Radio Nacional de Brasilia, Radio RSA, Voice of Iran, BBC Spanish, Voice of Turkey — the little melodies stations played before sign-on",
+  "takedown": false
+}
