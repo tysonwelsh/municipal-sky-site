@@ -772,6 +772,12 @@
 .zankyo-log-tag.noise      { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.4); }
 .zankyo-log-tag.ambient    { color: var(--ink);     border: 1px dashed var(--ink-dim); }
 .zankyo-log-tag.mode       { color: var(--amber);   border: 1px dashed var(--amber); }
+/* ZANKYŌ 2 vocabulary: the form (kinds, seatings, scenes, joints, visitations), the shō's aitake, the new bodies, the PA */
+.zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }
+.zankyo-log-tag.sho        { color: var(--ink);     border: 1px solid rgba(var(--cyan-rgb), 0.35); }
+.zankyo-log-tag.hichiriki  { color: var(--red);     border: 1px dashed rgba(var(--red-rgb), 0.6); }
+.zankyo-log-tag.biwa       { color: var(--amber);   border: 1px dashed rgba(var(--amber-rgb), 0.6); }
+.zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
 .zankyo-log-text { color: var(--ink); }
 
 /* ---------------------------------------------------------------------------

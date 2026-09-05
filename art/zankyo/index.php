@@ -155,7 +155,9 @@ include '../../includes/header.php';
     <p class="zankyo-note">
       Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
       <strong>jo-ha-kyū</strong> (序破急) — a slow spacious opening that accelerates into a noise-wall climax,
-      then dissolves. Nothing repeats; the voices answer one another.
+      then dissolves. Each cycle is planned anew (a rite, a drift, a storm, a silence, a broadcast), the voices take turns and rest,
+      the key drifts, themes are born and inherited, and rare guests visit. Nothing repeats; the voices answer one another.
+      Add <code>?seed=</code> to the address to share a night.
     </p>
 
   </div>

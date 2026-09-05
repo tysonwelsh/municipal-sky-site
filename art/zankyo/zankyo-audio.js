@@ -677,6 +677,7 @@ window.ZankyoAudio = (function () {
     var named = rng.pickW([["free", 6.5], ["shakuhachi alone", 1.2], ["danmono", 1.0], ["taiko-led", 0.8],
       ["dead station", (kind === "drift" || kind === "silence") ? 1.1 : 0.45]]);
     if (cyc.n < 0 && named === "dead station") named = "free";   // the first cycle must show the bodies before their absence can mean anything
+    if (lastCycleEmpty && named === "dead station") named = "free";   // never two empty cycles in a row (critic, Phase 4)
     var s = { shakuhachi: rng.chance(0.78), koto: rng.chance(0.75), shamisen: rng.chance(0.72), taiko: rng.chance(0.75), sho: rng.chance(0.8), entry: {}, named: named,
       // Phase 3: the hichiriki lives in the rite (always) and visits elsewhere; the biwa belongs to drift and silence
       hichiriki: rng.chance(kind === "rite" ? 1 : 0.3), biwa: rng.chance(kind === "drift" || kind === "silence" ? 0.65 : 0.15) };
@@ -2382,6 +2383,8 @@ window.ZankyoAudio = (function () {
     return noiseBodyForScene;
   }
   var crushCurve = null;
+  var liveRings = [];                              // screech loops in flight — torn down by their lane event, or by stop()
+  function ringDown(nodes) { for (var i = 0; i < nodes.length; i++) { try { nodes[i].disconnect(); } catch (e) {} } var k = liveRings.indexOf(nodes); if (k >= 0) liveRings.splice(k, 1); }
   function noiseEvent(t) {
     if (!playing) return;
     var c = ctx, now = t, out = lg("noise");
@@ -2410,7 +2413,8 @@ window.ZankyoAudio = (function () {
       // (0.9^n: −60 dB in ~65 trips ≈ 0.5 s).
       var tEnd = now + dur + 1.5;
       fb.gain.setValueAtTime(0.9, tEnd - 0.3); fb.gain.linearRampToValueAtTime(0, tEnd);
-      lane("noise").at(tEnd + 0.2, function () { try { nz0.disconnect(); exg.disconnect(); dl.disconnect(); bpq.disconnect(); fb.disconnect(); og.disconnect(); } catch (e) {} });
+      var ring = [nz0, exg, dl, bpq, fb, og]; liveRings.push(ring);
+      lane("noise").at(tEnd + 0.2, function () { ringDown(ring); });
       if (arc > 0.4) emitEvent({ cat: "noise", label: "screech", detail: arcPhase(now) + " · " + Math.round(f0) + "→" + Math.round(f1) + " Hz" }, now);
     } else if (body === "static") {
       if (!crushCurve) { crushCurve = new Float32Array(1024); for (var ci = 0; ci < 1024; ci++) { var cx = (ci / 1023) * 2 - 1; crushCurve[ci] = Math.round(cx * 6) / 6; } }
@@ -2619,20 +2623,6 @@ window.ZankyoAudio = (function () {
       o.start(tt); o.stop(tt + 0.65); tt += 0.06;
     }
   }
-  function ambBiwa(t) {                            // plucked lute with sawari buzz
-    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.4);
-    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(0) + Math.floor(S.ambient.next() * 5))].freq, dec = 1.6 + S.ambient.next() * 1.2;
-    var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.04);
-    var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(f * 6, t); lp.frequency.exponentialRampToValueAtTime(f * 2, t + dec * 0.7); lp.Q.setValueAtTime(2, t);
-    var g = c.createGain(); o.connect(lp); lp.connect(g); g.connect(out);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.1, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
-    o.start(t); o.stop(t + dec + 0.05);
-    var bo = c.createOscillator(); bo.type = "sawtooth"; bo.frequency.setValueAtTime(f * 7, t); bo.frequency.exponentialRampToValueAtTime(f * 4, t + dec);
-    var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(f * 6, t); bp.Q.setValueAtTime(7, t);
-    var bg = c.createGain(); bo.connect(bp); bp.connect(bg); bg.connect(out);
-    bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(0.045, t + 0.02); bg.gain.exponentialRampToValueAtTime(0.0001, t + dec * 1.2);
-    bo.start(t); bo.stop(t + dec * 1.3);
-  }
   function ambCommsVox(t) {                         // malfunctioning comms — stuttered vowel-formant glitch
     var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.6);
     var carrier = c.createOscillator(); carrier.type = "sawtooth"; carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(2)].freq * 2, t);
@@ -2823,6 +2813,7 @@ window.ZankyoAudio = (function () {
     if (bg) bg.stopped();
     if (conductor) { try { conductor.stop(); } catch (e) {} }
     if (clock) clock.stop();                     // every lane's pending events die here
+    while (liveRings.length) ringDown(liveRings[0]);   // screech loops in flight lose their lane teardown with the clock — tear them down here
     if (ctx) {
       for (var i = 0; i < LAYERS.length; i++) {
         var node = layerGains[LAYERS[i]];
