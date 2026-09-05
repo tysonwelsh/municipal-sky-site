@@ -1,0 +1,19 @@
+{
+  "id": "jjy-last-morning-2001",
+  "title": "JJY 8 MHz — the last minutes, 31 March 2001",
+  "year": 2001,
+  "src": "https://archive.org/download/JapanTimeSignalRadioStationJjy8MhzCloses/jjymono.mp3",
+  "license": "CC0",
+  "tier": "A",
+  "tone": "tone",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 49.75,
+  "bytes": 231078,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 8.0], [8.0, 16.0], [16.0, 24.0], [24.0, 32.0], [32.0, 40.0], [40.0, 48.0]],
+  "srcWindows": [[4.0, 12], [40.0, 48], [48.0, 56], [56.0, 64], [66.0, 74], [76.0, 84]],
+  "notes": "Japanese standard time station JJY shortwave, digitized by N1EA; second ticks, Morse ID burst, the closing announcement in Japanese, then the carrier drops at 0300 UTC and the band goes to noise",
+  "takedown": false
+}
