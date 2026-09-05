@@ -178,6 +178,7 @@ function runOnce(seed, runS, jitterSeed) {
   var loadErrors = [];
   scripts.forEach(function (s) {
     var full = path.resolve(dir, s);
+    if (/zankyo-audio\.js$/.test(s) && process.env.ZK_ENGINE) full = path.resolve(process.env.ZK_ENGINE);   // A/B an alternate engine build
     try { (0, eval)(fs.readFileSync(full, "utf8")); } catch (e) { loadErrors.push(s + ": " + (e && e.message)); }
   });
   var Z = W.ZankyoAudio;
@@ -228,7 +229,9 @@ function runOnce(seed, runS, jitterSeed) {
 
   // sources still live at the end that started more than 60 s ago = leaks
   var leaked = [];
-  for (var lid in liveSources) if (vnow - liveSources[lid].at > 60) leaked.push(liveSources[lid]);
+  var infra = 0;
+  for (var lid in liveSources) { if (liveSources[lid].at < 0.05) { infra++; continue; } if (vnow - liveSources[lid].at > 60) leaked.push(liveSources[lid]); }
+  faults.infraSources = infra;   // persistent modulators built with the graph (e.g. Fx.delay's drift LFO) — not leaks
   faults.neverStopped = leaked.length;
   var leakWhere = {};
   leaked.forEach(function (l) { leakWhere[l.type + " " + l.where] = (leakWhere[l.type + " " + l.where] || 0) + 1; });
@@ -239,6 +242,7 @@ function runOnce(seed, runS, jitterSeed) {
     faults: faults, leakWhere: leakWhere, counts: counts,
     randomPlayCount: randomPlayCount, randomDuringPlay: randomDuringPlay,
     motifStats: Z.getMotifStats ? Z.getMotifStats() : null,
+    airInfo: (function () { try { var a = Z.getAir ? Z.getAir() : null; return a && a.info ? a.info() : (Z.getAirInfo ? Z.getAirInfo() : null); } catch (e) { return null; } })(),
     layers: Z.LAYERS ? Z.LAYERS.slice() : [],
     api: Object.keys(Z).sort(),
   };
@@ -319,6 +323,11 @@ function analyze(R) {
   A.silenceByPhase = {};
   for (var gp in gapsByPhase) { var ga = gapsByPhase[gp].slice().sort(function (a, b) { return a - b; }); A.silenceByPhase[gp] = { n: ga.length, median: q(ga, 0.5), p90: q(ga, 0.9), max: ga[ga.length - 1] }; }
 
+  // ---- liveness: longest stretch with no melodic note AND no ambient/noise/taiko/joint/KIRU event ----
+  var marks = mel.map(function (n) { return n.t; }).concat(R.events.filter(function (e) { return /ambient|noise|taiko/.test(e.cat) || /joint/.test(e.label); }).map(function (e) { return e.t; })).sort(function (a, b) { return a - b; });
+  var dead = { longest: 0, at: 0, over20: 0, over30: 0 };
+  for (var di = 1; di < marks.length; di++) { var dg = marks[di] - marks[di - 1]; if (dg > dead.longest) { dead.longest = dg; dead.at = marks[di - 1]; } if (dg >= 20) dead.over20++; if (dg >= 30) dead.over30++; }
+  A.dead = dead;
   // ---- events per minute per category, and by phase ----
   var evByCat = {}, evByCatPhase = {};
   R.events.forEach(function (e) {
@@ -376,9 +385,18 @@ function analyze(R) {
   }
 
   // ---- technical ----
+  A.airInfo = R.airInfo;
+  // ---- Phase 1 gate summary (plan §7): half the baseline density, ≥3 kinds, ≥2 seatings in 1 h ----
+  var BASE_MELODIC_30 = 5075;   // baseline seed 3042 (see baseline-critic.md)
+  A.gates = {
+    melodicPer30: A.melodicPer30, melodicRatioToBaseline: +(A.melodicPer30 / BASE_MELODIC_30).toFixed(2),
+    zeroVoiceFrac: +A.voices[0].toFixed(3), joThreePlus: A.voicesByPhase.jo ? +A.voicesByPhase.jo["3+"].toFixed(3) : null,
+    gapsOver10s: A.silence.over10s, kinds: Object.keys(A.kinds).length, seatings: Object.keys(A.seatings).length,
+    seaChanges: A.seaChanges.length, visitations: A.visitations.length, cycles: A.cycles.length, kirus: A.kirus.length,
+  };
   A.tech = {
     loadErrors: R.loadErrors, errors: R.errors, expZero: R.faults.expZero, pastSchedule: R.faults.pastSchedule,
-    neverStopped: R.faults.neverStopped, leakWhere: R.leakWhere, startedTwice: R.faults.startedTwice,
+    neverStopped: R.faults.neverStopped, leakWhere: R.leakWhere, startedTwice: R.faults.startedTwice, infraSources: R.faults.infraSources,
     nodesCreated: R.counts.nodes, nodesPerMin: R.counts.nodes / (runS / 60), sourcesStarted: R.counts.sourcesStarted, byType: R.counts.byType,
     randomDuringPlay: R.randomPlayCount, randomWhere: R.randomDuringPlay,
     api: R.api,
@@ -425,6 +443,7 @@ function report(A) {
   line("--- melodic silence (gaps with no melodic voice sounding) ---");
   line("  gaps " + A.silence.count + " · median " + fmt(A.silence.median) + " s · p90 " + fmt(A.silence.p90) + " s · ≥5s " + A.silence.over5s + " · ≥10s " + A.silence.over10s + " · ≥20s " + A.silence.over20s);
   line("  longest " + fmt(A.silence.longest.gap, 1) + " s at " + Math.round(A.silence.longest.at) + " s (" + A.silence.longest.phase + ")");
+  line("  dead air (no melodic note, no ambient/noise/taiko/joint event): longest " + fmt(A.dead.longest, 1) + " s at " + Math.round(A.dead.at) + " s · ≥20 s " + A.dead.over20 + " · ≥30 s " + A.dead.over30);
   phases.forEach(function (p) { var v = A.silenceByPhase[p]; if (v) line("  " + pad(p, 8) + " n " + v.n + " · median " + fmt(v.median) + " · p90 " + fmt(v.p90) + " · max " + fmt(v.max, 1)); });
   line();
   line("--- events per minute (by category × phase) ---");
@@ -440,6 +459,8 @@ function report(A) {
   line("  visitations " + A.visitations.length + (A.visitations.length ? ": " + A.visitations.slice(0, 8).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
   line("  KIRUs: " + A.kirus.map(function (k) { return k.t + "s " + k.detail; }).join(" | "));
   line("  motif: " + JSON.stringify(A.motif));
+  if (A.airInfo) line("  air: " + JSON.stringify(A.airInfo));
+  line("  GATES: " + JSON.stringify(A.gates));
   line("  per cycle:");
   line("  " + pad("c", 3) + lpad("start", 6) + lpad("len", 5) + lpad("maxV", 5) + lpad("3+%", 6) + "  notes · info");
   A.perCycle.forEach(function (r) {
@@ -454,7 +475,7 @@ function report(A) {
   T.errors.slice(0, 10).forEach(function (e) { line("    " + e); });
   line("  exp ramps from/to ≤0: " + T.expZero.length + (T.expZero.length ? "  e.g. " + T.expZero.slice(0, 5).map(function (f) { return f.where + " " + f.from + "→" + f.to; }).join(" | ") : ""));
   line("  scheduled in the past (>0.25 s): " + T.pastSchedule.length + (T.pastSchedule.length ? "  e.g. " + T.pastSchedule.slice(0, 3).map(function (f) { return f.where + " t=" + f.t + " now=" + f.now; }).join(" | ") : ""));
-  line("  sources never stopped (alive >60 s at end): " + T.neverStopped + (T.neverStopped ? "  " + JSON.stringify(T.leakWhere) : "") + " · started twice: " + T.startedTwice);
+  line("  sources never stopped (alive >60 s at end): " + T.neverStopped + (T.neverStopped ? "  " + JSON.stringify(T.leakWhere) : "") + " · started twice: " + T.startedTwice + " · build-time persistent sources (not leaks): " + (T.infraSources || 0));
   line("  nodes created " + T.nodesCreated + " (" + Math.round(T.nodesPerMin) + " /min) · sources started " + T.sourcesStarted + " · " + JSON.stringify(T.byType));
   line("  Math.random during play: " + T.randomDuringPlay + (T.randomDuringPlay ? "  " + JSON.stringify(T.randomWhere) : ""));
   line("  public API: " + T.api.join(", "));
