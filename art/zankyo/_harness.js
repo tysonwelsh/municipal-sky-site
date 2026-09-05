@@ -252,7 +252,7 @@ const formVocab = (() => {
   const count = (re, key) => { const m = {}; for (const e of events) { const x = re.exec(e.label + " · " + (e.detail || "")); if (x) m[x[1]] = (m[x[1]] || 0) + 1; } return m; };
   const kinds = count(/kind: ([a-z]+)/), scenes = count(/scene: ([a-z]+)/), joints = count(/joint: ([a-z ]+?) ·/);
   const seatings = {};
-  for (const e of events) { const m = /seating: ([^·]+?)(?: · scenes:|$)/.exec(e.detail || ""); if (m) seatings[m[1].trim()] = (seatings[m[1].trim()] || 0) + 1; }
+  for (const e of events) { const m = /seating: (.+?)(?: · scenes:|$)/.exec(e.detail || ""); if (m) seatings[m[1].trim()] = (seatings[m[1].trim()] || 0) + 1; }   // the whole seating string, named part included
   const nSeat = Object.keys(seatings).length, nKind = Object.keys(kinds).length;
   const oroshi = events.filter((e) => e.label.indexOf("oroshi") >= 0).length;
   const airInfo = runA.Z.getAirInfo ? runA.Z.getAirInfo() : null;

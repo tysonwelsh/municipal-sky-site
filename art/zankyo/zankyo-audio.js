@@ -48,6 +48,7 @@ window.ZankyoAudio = (function () {
   var gritShaper = null;           // distortion bus (gritty instruments route here)
   var shamEdge = null;             // shamisen's own gentle saturator (bite without the grit-bus onset spike)
   var dryGritGain = null;          // parallel dry grit send, opened up toward the kyū climax
+  var gritMakeup = null;           // the grit bus's makeup-DOWN stage (tapped by attachBusAnalyser)
   var masterSat = null;
   var bg = null;                   // background-audio handle (lock-screen survival)
   var sharedNoiseBuf = null;
@@ -207,7 +208,10 @@ window.ZankyoAudio = (function () {
   // they read more clearly in the mix without changing the displayed values.
   // shamisen 2.2: makes up the level it lost coming off the grit bus (which was
   // boosting it ~5-10x via the grit curve's makeup) so it sits in the mix again.
-  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.1, shamisen: 2.2 };
+  // koto 1.25 / shamisen 2.5 (ZANKYŌ 2, Phase 1): +1.1 dB each — with the air
+  // they are often the only line for 20–40 s and read under the drone bed
+  // at the old trims (critic's real-audio measurement; owner may revert).
+  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.25, shamisen: 2.5 };
 
   // ==========================================================================
   // LISTENERS / LOG
@@ -319,7 +323,7 @@ window.ZankyoAudio = (function () {
       // headroom — so every new note onset (koto, taiko) clips into an audible
       // click. Pull the gritty bus back to a sane level; the distortion timbre
       // is baked into the waveshape and survives the attenuation.
-      var gritMakeup = ctx.createGain();
+      gritMakeup = ctx.createGain();
       gritMakeup.gain.setValueAtTime(0.4, ctx.currentTime);
       gritShaper.connect(gritMakeup);
       gritMakeup.connect(reverbSend); roomBlend.register("grit", gritMakeup, -0.12);
@@ -504,6 +508,14 @@ window.ZankyoAudio = (function () {
   // level, so the faceplate is untouched. JOINTS land at exact audio times.
   var conductor = null;
   var air = null;
+  // THE AIR'S CLOCK reads the CLAIMANT'S scheduled time, never the wall
+  // clock: the lookahead pump fires a callback anywhere in [t − 0.25, t]
+  // (1.6 s early in a hidden tab), so an Air sweeping expiries against
+  // ctx.currentTime would grant or deny by how early the pump ran and the
+  // seeded performance would diverge under timer jitter (critic, Phase 1
+  // round 1 — measured at 5 ms). Every claim sets airT to its own t first.
+  var airT = 0, airClock = { now: function () { return airT; } };
+  function airClaimAt(t, voice, span, margin) { airT = t; return air.tryClaim(voice, span, margin); }
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi" };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -557,7 +569,7 @@ window.ZankyoAudio = (function () {
     if (named === "shakuhachi alone") { s.shakuhachi = true; s.entry.koto = "ha"; s.entry.shamisen = "ha"; }
     else if (named === "danmono") { s.koto = true; s.shamisen = false; }
     else if (named === "taiko-led") { s.taiko = true; s.shakuhachi = true; s.entry.shakuhachi = "reprise"; }
-    else if (named === "dead station") { s.shakuhachi = s.koto = s.shamisen = s.taiko = false; }
+    else if (named === "dead station") { s.shakuhachi = s.koto = s.shamisen = s.taiko = false; s.sho = true; }   // dead, not switched off: the shō is a drone here
     if (kind === "rite") s.sho = true;
     if (kind === "storm") s.taiko = true;
     if (kind === "silence" && s.shakuhachi && s.koto && s.shamisen) s.shamisen = false;
@@ -673,7 +685,7 @@ window.ZankyoAudio = (function () {
   // back to the hull for the bell. Ramped 8–16 s on the rooms stream.
   var ROOM_BALANCE = { jo: 0.85, ha: 0.5, kakeai: 0.45, solo: 0.65, oroshi: 0.3, kyu: 0.12, release: 0.9 };
   function setSceneRoom(evt) {
-    var rampS = S.rooms.rnd(8, 16);              // draw first, unconditionally
+    var rampS = Math.min(S.rooms.rnd(8, 16), 0.6 * evt.durS);   // draw first, unconditionally; short scenes arrive in their room
     if (!roomBlend) return;
     var bal = ROOM_BALANCE[evt.scene] != null ? ROOM_BALANCE[evt.scene] : 0.5;
     try { roomBlend.setBalance(bal, rampS); } catch (e) {}
@@ -1323,7 +1335,7 @@ window.ZankyoAudio = (function () {
     // THE AIR: claim before speaking (phrase + a margin of silence after);
     // denied → let the moment pass and ask again shortly.
     var margin = airMargin(S.shakuhachi, now);
-    var tok = air.tryClaim("shakuhachi", shakuState.lastSpan || 3.5, margin);
+    var tok = airClaimAt(now, "shakuhachi", shakuState.lastSpan || 3.5, margin);
     if (!tok) { afterRaw("shakuhachi", now, S.shakuhachi.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), shakuhachiPhrase); return; }
     var breathSolo = scn.type === "solo" && scn.activity === "breath";   // the muraiki solo breath
     var pace = getLayerParam("shakuhachi", "pace", 1.0) * (1 + arc * 0.6) * (breathSolo ? 0.7 : 1);
@@ -1368,7 +1380,7 @@ window.ZankyoAudio = (function () {
     // list, its own ornament choices, a hair sharp. The shadow is a GRANTED
     // overlap: it asks the air (a second holder needs the scene's limit or
     // the overlap dice) and the koto must be seated.
-    if (sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08) && seated("koto", now) && air.tryClaim("koto", t - now, 0)) {
+    if (sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08) && seated("koto", now) && airClaimAt(now, "koto", t - now, 0)) {
       var lag = S.shakuhachi.rnd(0.15, 0.4), sharp = Math.pow(2, S.shakuhachi.rnd(2, 3.5) / 1200), sprev = null;
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
@@ -1439,7 +1451,7 @@ window.ZankyoAudio = (function () {
     var now = t0, arc = getArc(now);
     if (!seated("koto", now)) { afterRaw("koto", now, S.koto.rnd(5, 9), kotoPhrase); return; }
     var margin = airMargin(S.koto, now);
-    var tok = air.tryClaim("koto", kotoState.lastSpan || 2.5, margin);
+    var tok = airClaimAt(now, "koto", kotoState.lastSpan || 2.5, margin);
     if (!tok) { afterRaw("koto", now, S.koto.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), kotoPhrase); return; }
     var kotoSolo = scn.type === "solo" && scn.activity === "koto";
     var pace = getLayerParam("koto", "pace", 1.0) * (1 + arc * 0.7) * (kotoSolo ? 0.9 : 1);
@@ -1466,7 +1478,7 @@ window.ZankyoAudio = (function () {
     // 〰 sankyoku heterophony downward: the shamisen sometimes shadows the koto
     // a breath behind — same page, its own accents, a hair sharp (a granted
     // overlap, as above).
-    if (sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07) && seated("shamisen", now) && air.tryClaim("shamisen", t - now, 0)) {
+    if (sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07) && seated("shamisen", now) && airClaimAt(now, "shamisen", t - now, 0)) {
       var lag = S.koto.rnd(0.15, 0.4), sharp = Math.pow(2, S.koto.rnd(2, 3.5) / 1200);
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
@@ -1524,7 +1536,7 @@ window.ZankyoAudio = (function () {
     var now = t0, arc = getArc(now);
     if (!seated("shamisen", now)) { afterRaw("shamisen", now, S.shamisen.rnd(5, 9), shamisenPhrase); return; }
     var margin = airMargin(S.shamisen, now);
-    var tok = air.tryClaim("shamisen", shamiState.lastSpan || 1.8, margin);
+    var tok = airClaimAt(now, "shamisen", shamiState.lastSpan || 1.8, margin);
     if (!tok) { afterRaw("shamisen", now, S.shamisen.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), shamisenPhrase); return; }
     var pace = getLayerParam("shamisen", "pace", 1.0) * (1 + arc * 1.0);   // comes alive in ha/kyū
     shamiState.center = Math.round(scaleIndexOf(3) + arc * 3);
@@ -1856,7 +1868,8 @@ window.ZankyoAudio = (function () {
     // THE AIR and THE CONDUCTOR — fresh per play, on their own streams. The
     // conductor starts FIRST so cycle 0's mode, kind and seating are drawn
     // before any body sounds (the shō's opening cluster is in the cycle's mode).
-    air = PJ.Air.create({ clock: clock, rng: S.air, limit: airLimitNow, overlapChance: airOverlapNow });
+    airT = t0;
+    air = PJ.Air.create({ clock: airClock, rng: S.air, limit: airLimitNow, overlapChance: airOverlapNow });
     conductor = PJ.Conductor.create({ clock: clock, rng: S.conductor, dramaturgy: DRAM, onEvent: onConductorEvent,
       jointTools: function () { return { ctx: ctx, rng: S.joints, field: field }; }, air: air, seed: seed });
     conductor.start();
@@ -2026,5 +2039,12 @@ window.ZankyoAudio = (function () {
     getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
     attachAnalyser: function (node) { if (!masterGain || !node) return false; try { masterGain.connect(node); return true; } catch (e) { return false; } },
     attachLayerAnalyser: function (layer, node) { if (!layerGains[layer] || !node) return false; try { layerGains[layer].connect(node); return true; } catch (e) { return false; } },
+    // dev tap on the buses (critic's instrument): dry (the room-bound sum),
+    // grit (post makeup-down), hull / corridor (each room's wet return), farWall
+    attachBusAnalyser: function (name, node) {
+      var src = { dry: reverbSend, grit: gritMakeup, hull: roomHull && roomHull.output, corridor: roomCorridor && roomCorridor.output, farWall: farWall && farWall.output }[name];
+      if (!src || !node) return false;
+      try { src.connect(node); return true; } catch (e) { return false; }
+    },
   };
 })();
