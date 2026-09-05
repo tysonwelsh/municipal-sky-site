@@ -64,7 +64,7 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
 .kolob-sec-head { font-family: "Noto Sans Deseret", serif; font-size: 0.8rem; letter-spacing: 0.22em; color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding-bottom: 0.45rem; margin: 0 0 0.6rem; }
 
 /* ---------------- the wheel band ---------------- */
-.kolob-wheel-wrap { position: relative; height: 230px; margin: 0 0 0.6rem; }
+.kolob-wheel-wrap { position: relative; height: 240px; margin: 0 0 0.6rem; }
 .kolob-wheel { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* mockup controls (not part of the design) */
@@ -199,16 +199,37 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
   function giltA(a) { return "rgba(138, 122, 69, " + a + ")"; }
   function label(p) { return latin ? p.en : p.ds; }
 
+  // Set a string along a circle: glyph by glyph, each rotated to the tangent at
+  // its own angle, the whole word centred on `centreA`. Deseret letters are
+  // astral code points, so the string is split with Array.from, not charAt.
+  // Returns the word's length along the arc, in px, for the arc's track.
+  function curvedText(txt, cx, cy, r, centreA, track) {
+    var glyphs = Array.from(txt), widths = [], total = 0;
+    for (var i = 0; i < glyphs.length; i++) { widths[i] = ctx.measureText(glyphs[i]).width; total += widths[i]; }
+    total += track * (glyphs.length - 1);
+    var ang = centreA - (total / 2) / r;
+    for (var j = 0; j < glyphs.length; j++) {
+      var ga = ang + (widths[j] / 2) / r;
+      ctx.save();
+      ctx.translate(cx + Math.cos(ga) * r, cy + Math.sin(ga) * r);
+      ctx.rotate(ga + Math.PI / 2);
+      ctx.fillText(glyphs[j], 0, 0);
+      ctx.restore();
+      ang += (widths[j] + track) / r;
+    }
+    return total;
+  }
   function draw() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     var R = Math.max(W * 0.5, 280);
     var crownY = H * 0.30;
     var cx = W / 2, cy = crownY + R;
-    var horizonY = crownY + Math.min(R * 0.42, H * 0.64);
-    var fontPx = W < 520 ? 12 : 15;
+    var horizonY = crownY + Math.min(R * 0.44, H - crownY - 20);   // room beneath for the meeting count
+    var fontPx = Math.max(14, Math.min(24, W * 0.03));   // the type scales with the wheel
+    var TRACK = fontPx * 0.14;                                 // letter-spacing, in px
     ctx.font = fontPx + 'px "Noto Sans Deseret", "EB Garamond", serif';
-    if ("letterSpacing" in ctx) ctx.letterSpacing = "0.12em";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0em";
     ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
 
     // everything of the wheel lives above the horizon
@@ -224,7 +245,7 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
     ctx.lineWidth = 1; ctx.strokeStyle = inkA(0.5);
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
     ctx.strokeStyle = inkA(0.14);
-    ctx.beginPath(); ctx.arc(cx, cy, R - fontPx * 2.1, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R - fontPx * 2.0, 0, Math.PI * 2); ctx.stroke();
 
     for (var i = 0; i < N; i++) {
       var p = PANELS[i];
@@ -239,19 +260,15 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
       ctx.lineTo(cx + Math.cos(a) * (R - 7), cy + Math.sin(a) * (R - 7));
       ctx.stroke();
 
-      // the label, printed on the wheel, tangent to the rim
+      // the label, lettered round the rim — each glyph seated on the curve,
+      // rotated to its own tangent, so the word bends with the wheel
       var txt = label(p);
-      var tw = ctx.measureText(txt).width;
-      ctx.save();
-      ctx.translate(cx + Math.cos(a) * (R - fontPx * 1.15), cy + Math.sin(a) * (R - fontPx * 1.15));
-      ctx.rotate(a + Math.PI / 2);
-      var alpha = isCur ? 1 : isDone ? 0.28 * S.fade + 0.28 * (1 - S.fade) : 0.62;
+      var alpha = isCur ? 1 : isDone ? 0.28 : 0.62;
       ctx.fillStyle = inkA(alpha);
-      ctx.fillText(txt, 0, fontPx * 0.36);
-      ctx.restore();
+      var tw = curvedText(txt, cx, cy, R - fontPx * 1.1, a, TRACK);
 
       // the arc: a dotted track over the label, a gilt fill that grows left → right
-      var span = (tw + fontPx * 1.6) / R;
+      var span = (tw + fontPx * 1.4) / R;
       var a0 = a - span / 2, a1 = a + span / 2;
       var rr = R + 6;
       ctx.save();
