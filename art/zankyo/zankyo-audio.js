@@ -49,6 +49,8 @@ window.ZankyoAudio = (function () {
   var weather = null;                                                            // Phase 3: PJ2.Fx.weather — the continuous modulator field
   var gritShaperB = null, gritBlendA = null, gritBlendB = null;                   // Phase 3: the second grit curve, crossfaded by the weather
   var screechBus = null;                                                         // Phase 3: the feedback-screech bodies' sum (tapped)
+  var cutGrit = null, cutSho = null, cutAmb = null;                               // Phase 4: THE CUT — gains over the landscape groups (never the master)
+  var radioBus = null;                                                           // Phase 4: the lost broadcast's radio filter
   var gritShaper = null;           // distortion bus (gritty instruments route here)
   var shamEdge = null;             // shamisen's own gentle saturator (bite without the grit-bus onset spike)
   var dryGritGain = null;          // parallel dry grit send, opened up toward the kyū climax
@@ -363,8 +365,21 @@ window.ZankyoAudio = (function () {
       sumSho = ctx.createGain(); sumSho.gain.setValueAtTime(1, ctx.currentTime);
       sumAmb = ctx.createGain(); sumAmb.gain.setValueAtTime(1, ctx.currentTime);
       sumVoices.connect(reverbSend); roomBlend.register("voices", sumVoices, 0);
-      sumSho.connect(reverbSend); roomBlend.register("sho", sumSho, 0.1);
-      sumAmb.connect(reverbSend); roomBlend.register("ambient", sumAmb, 0.15);
+      // THE CUT (Phase 4, Sycorax's mechanics): the KIRU lives on dedicated
+      // gains over the LANDSCAPE groups — shō, ambient, and the grit bus below
+      // — never on the master. Three nodes, one schedule (kiru writes the same
+      // envelope to each); the melodic voices are silenced by scheduling, not
+      // gain, and their tails and the rooms ring into the hush. Tap "cut".
+      cutSho = ctx.createGain(); cutSho.gain.setValueAtTime(1, ctx.currentTime);
+      cutAmb = ctx.createGain(); cutAmb.gain.setValueAtTime(1, ctx.currentTime);
+      cutGrit = ctx.createGain(); cutGrit.gain.setValueAtTime(1, ctx.currentTime);
+      sumSho.connect(cutSho); cutSho.connect(reverbSend); roomBlend.register("sho", cutSho, 0.1);
+      sumAmb.connect(cutAmb); cutAmb.connect(reverbSend); roomBlend.register("ambient", cutAmb, 0.15);
+      // THE RADIO (Phase 4): the lost broadcast surfaces through this — a
+      // bandpass the width of an old receiver, into the ambient sum.
+      radioBus = ctx.createGain(); radioBus.gain.setValueAtTime(1, ctx.currentTime);
+      var radioBp = ctx.createBiquadFilter(); radioBp.type = "bandpass"; radioBp.frequency.setValueAtTime(1300, ctx.currentTime); radioBp.Q.setValueAtTime(0.9, ctx.currentTime);
+      radioBus.connect(radioBp); radioBp.connect(sumAmb);
       // THE FAR WALL: the corridor answering the koto — modulated, dark, low
       // feedback; the answer goes into the rooms like any voice. One seeded
       // draw at build (the drift LFO's phase) on the fx stream.
@@ -408,11 +423,12 @@ window.ZankyoAudio = (function () {
       gritMakeup = ctx.createGain();
       gritMakeup.gain.setValueAtTime(0.4, ctx.currentTime);
       gritBlendA.connect(gritMakeup); gritBlendB.connect(gritMakeup);
-      gritMakeup.connect(reverbSend); roomBlend.register("grit", gritMakeup, -0.12);
+      gritMakeup.connect(cutGrit);
+      cutGrit.connect(reverbSend); roomBlend.register("grit", cutGrit, -0.12);
       // parallel dry path — crossfaded up by the arc so the kyū gets close + abrasive
       dryGritGain = ctx.createGain();
       dryGritGain.gain.setValueAtTime(0, ctx.currentTime);
-      gritMakeup.connect(dryGritGain);
+      cutGrit.connect(dryGritGain);
       dryGritGain.connect(masterGain);
 
       // Shamisen's own saturator: a near-unity-makeup tanh that gives the
@@ -611,7 +627,7 @@ window.ZankyoAudio = (function () {
   // round 1 — measured at 5 ms). Every claim sets airT to its own t first.
   var airT = 0, airClock = { now: function () { return airT; } };
   function airClaimAt(t, voice, span, margin) { airT = t; return air.tryClaim(voice, span, margin); }
-  var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi" };
+  var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
 
@@ -688,6 +704,9 @@ window.ZankyoAudio = (function () {
     var mode = rng.pickW(modePool(tp));
     var pitch = drawPitchMove(rng, mode, tp);   // 海 the sea change, or a mode-tonic pivot, or nothing
     var seating = drawSeating(rng, kind);
+    var visit = drawVisitation(rng, kind, tp, seating);   // 客 at most one guest per cycle, on its own dice
+    if (visit && visit.name === "mu") { seating.shakuhachi = seating.koto = seating.shamisen = seating.taiko = seating.hichiriki = seating.biwa = seating.sho = false; seating.named = "dead station"; seating.label = "mu (dead station)"; }
+    if (visit && visit.name === "the festival") seating.taiko = true;
     var subDraw = rng.chance(Kd.sub), subKind = rng.pickW([["kakeai", 3], ["koto", 2], ["breath", 2]]);
     var oroDraw = rng.chance(Kd.oroshi);
     var melodicSeated = 0;
@@ -709,8 +728,122 @@ window.ZankyoAudio = (function () {
     if (oroshi) scenes.push({ type: "oroshi", durS: oroDur, activity: null });
     scenes.push({ type: "kyu", durS: durS * Kd.kyu, activity: null });
     scenes.push({ type: "release", durS: durS * Kd.rel, activity: null });
-    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch };
+    if (visit) {                                    // seat the guest in the scene where it belongs
+      var want = visit.name === "the festival" ? "ha" : visit.name === "the tolling" ? "jo" : visit.name === "mu" ? "jo" : (visit.name === "the line" ? "jo" : "ha");
+      var idx = -1;
+      for (var vi = 0; vi < scenes.length; vi++) if (scenes[vi].type === want) { idx = vi; break; }
+      if (idx < 0) idx = 0;
+      visit.sceneIdx = idx; visit.scene = scenes[idx].type;
+    }
+    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit };
     return scenes;
+  }
+  // 客 VISITATIONS (Phase 4) — rare seeded guests. Each rolls its OWN die every
+  // cycle (unconditionally; the tide tilts the odds, the kind doubles them
+  // where they belong); if more than one is drawn, one is picked — never two
+  // in one cycle. Cycle 0 never hosts one.
+  //   放送 the broadcast — a lost gagaku recording surfaces through the static
+  //   祭 the festival   — the taiko goes to a full matsuri pattern with kakegoe for one ha
+  //   無 mu             — a cycle where only the reactor and the ambient breathe; the KIRU cuts silence
+  //   回線 the line     — the PA and the comms-vox trade a conversation over static; nothing else claims the air
+  //   鐘 the tolling    — the bonshō every ~20 s across the whole jo, the hull ringing in sympathy
+  var VISITATIONS = ["the broadcast", "the festival", "mu", "the line", "the tolling"];
+  var VISIT_KANA = { "the broadcast": "放送", "the festival": "祭", "mu": "無", "the line": "回線", "the tolling": "鐘" };
+  function drawVisitation(rng, kind, tp, seating) {
+    var p = {
+      "the broadcast": (0.10 + 0.06 * tp) * (kind === "broadcast" || kind === "drift" ? 2 : 1),
+      "the festival":  (0.10 + 0.10 * tp) * (kind === "storm" ? 2 : 1),
+      "mu":            (0.03 + 0.03 * (1 - tp)) * (kind === "drift" || kind === "silence" ? 1.5 : 1),   // rare: a dead night is one cycle, not a third of them
+      "the line":      0.07 * (kind === "broadcast" ? 1.8 : 1),
+      "the tolling":   (0.09 + 0.05 * tp) * (kind === "rite" ? 2 : 1),
+    };
+    var drawn = [];
+    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], 1]); }
+    var pick = rng.pickW(drawn.length ? drawn : [["none", 1]]);   // one pickW draw either way
+    if (cyc.n < 0 || pick === "none") return null;
+    if (pick === "the festival" && seating.named === "dead station") return null;
+    if (pick === "mu" && (lastCycleEmpty || seating.named === "dead station")) return null;   // never two empty cycles in a row
+    return { name: pick };
+  }
+  var visitActive = null;                          // the guest in progress: { name, until }
+  var lastCycleEmpty = false;                      // the previous cycle was mu or a dead station
+  function fireVisitation(v, t) {
+    var name = v.name;
+    emitEvent({ cat: "form", label: "客 " + VISIT_KANA[name] + " " + name, detail: "begins · " + scn.type + " · " + Math.round(scn.durS) + "s" }, t);
+    if (name === "the broadcast") visitBroadcast(t);
+    else if (name === "the festival") visitActive = { name: name, until: scn.startT + scn.durS };
+    else if (name === "the line") visitLine(t);
+    else if (name === "the tolling") visitTolling(t);
+    // mu is the seating itself; the KIRU cuts silence
+  }
+  // 放送 THE BROADCAST — an Etenraku-SHAPED contour (shape only, no quotation):
+  // hichiriki + a flute (the shakuhachi's kan register an octave up, a breath
+  // behind) over a shō aitake, all through the radio bandpass and a bed of
+  // static; fades in from the static and dissolves back into it. Takes the
+  // air if it can; a radio does not ask twice.
+  var ETENRAKU_SHAPE = [[3, 2], [4, 1], [3, 2], [2, 1], [0, 3], [2, 1], [3, 1], [4, 2], [5, 1], [4, 1], [3, 3], [2, 1], [0, 4]];
+  function visitBroadcast(t0) {
+    var R = S.visit, t = t0 + 2, beat = 1.35 + R.rnd(0, 0.4), total = 0, i;
+    for (i = 0; i < ETENRAKU_SHAPE.length; i++) total += ETENRAKU_SHAPE[i][1] * beat;
+    var dur = total + 6;
+    airClaimAt(t0, "broadcast", dur, 4);
+    // the static bed: rises, holds under, swallows the end
+    var nz = noiseSource(), hp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    hp.type = "highpass"; hp.frequency.setValueAtTime(1800, t0);
+    nz.connect(hp); hp.connect(ng); ng.connect(radioBus);
+    PJ.Voice.env(ng.gain, t0, [[2, 0.05], [dur - 6, 0.025], [3, 0.06], [1.5, 0]]);
+    nz.start(t0, R.next() * 10); nz.stop(t0 + dur + 2);
+    var fade = ctx.createGain(); fade.connect(radioBus);
+    PJ.Voice.env(fade.gain, t0, [[3, 0.9], [dur - 7, 0.9], [4, 0]]);
+    var base = scaleIndexOf(6), prev = null;
+    // the shō under it: one aitake for the whole recording, through the radio
+    var ait = chooseAitake(R, 5), c = ctx;
+    for (i = 0; i < ait.freqs.length; i++) {
+      var so = c.createOscillator(), sg = c.createGain(); so.type = "sawtooth"; so.frequency.setValueAtTime(ait.freqs[i], t);
+      var slp = c.createBiquadFilter(); slp.type = "lowpass"; slp.frequency.setValueAtTime(1400, t);
+      so.connect(slp); slp.connect(sg); sg.connect(fade);
+      PJ.Voice.env(sg.gain, t, [[3, 0.03], [total - 3, 0.03], [3, 0]]);
+      so.start(t); so.stop(t + total + 3.2);
+      emitNote("sho", ait.freqs[i], t);
+    }
+    var tt = t;
+    for (i = 0; i < ETENRAKU_SHAPE.length; i++) {
+      var deg = base + ETENRAKU_SHAPE[i][0], d = ETENRAKU_SHAPE[i][1] * beat;
+      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, deg))].freq;
+      hichirikiNote(f, tt, d * 0.95, { glideFrom: prev, gain: 0.7, out: fade });
+      var f2 = SCALE[Math.max(0, Math.min(SCALE.length - 1, deg + 5))].freq;   // the flute an octave up, a breath behind
+      shakuhachiNote(f2, tt + 0.12 + R.rnd(0, 0.1), d * 0.85, { glideFrom: prev ? prev * 2 : null, breath: 0.7, out: fade });
+      prev = f; tt += d;
+    }
+    emitEvent({ cat: "form", label: "客 放送 the recording dissolves", detail: Math.round(dur) + "s" }, t0 + dur);
+  }
+  // 回線 THE LINE — the PA and the comms-vox trade a conversation over static
+  // for 40–90 s; nothing else claims the air (the line holds it).
+  function visitLine(t0) {
+    var R = S.visit, dur = 40 + R.rnd(0, 50), t = t0 + 1;
+    var tok = airClaimAt(t0, "line", dur, 5);
+    var nz = noiseSource(), hp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    hp.type = "highpass"; hp.frequency.setValueAtTime(2500, t0);
+    nz.connect(hp); hp.connect(ng); ng.connect(lg("pa"));
+    PJ.Voice.env(ng.gain, t0, [[1, 0.02], [dur - 2, 0.02], [1, 0]]);
+    nz.start(t0, R.next() * 10); nz.stop(t0 + dur + 0.2);
+    var who = 0;
+    while (t < t0 + dur - 4) {
+      if (who === 0) { var d = 1.5 + R.rnd(0, 2); paSpeak(t, d, { gain: 0.8 }); t += d + 0.6 + R.rnd(0, 1.2); }
+      else { ambCommsVox(t); t += 1.2 + R.rnd(0, 1.5); }
+      who = 1 - who;
+      if (R.next() < 0.15) t += 2 + R.rnd(0, 3);   // a long pause on the line
+    }
+    if (tok) tok.until = t0 + dur + 5;
+    emitEvent({ cat: "form", label: "客 回線 the line goes dead", detail: Math.round(dur) + "s" }, t0 + dur);
+  }
+  // 鐘 THE TOLLING — the bonshō every ~20 s across the whole jo; the room goes
+  // all the way into the hull and the koto's strings ring with every stroke.
+  function visitTolling(t0) {
+    var R = S.visit, t = t0 + 3, end = scn.startT + scn.durS - 5, n = 0;
+    if (roomBlend) { try { roomBlend.setBalance(1, 6); } catch (e) {} }
+    while (t < end) { ambBonsho(t, { halo: true }); n++; t += 18 + R.rnd(0, 6); }
+    emitEvent({ cat: "form", label: "客 鐘 the tolling", detail: n + " strokes across the jo" }, t0);
   }
   // 海 THE SEA CHANGE — once every 2–4 cycles, at a cycle boundary, the
   // field's tonic moves: up a fourth or down a fifth (the traditional koto
@@ -823,12 +956,17 @@ window.ZankyoAudio = (function () {
         emitEvent({ cat: "mode", label: "海 sea change", detail: fromName + " → " + noteName(field.tonicHz) + " · " + pm.label + " · " + MODES[p.mode].name + " · cycle " + cyc.n }, evt.t);
       }
       emitEvent({ cat: "form", label: "❁ cycle plan", detail: KINDS[p.kind].kana + " kind: " + p.kind + " · seating: " + p.seating.label + " · scenes: " + evt.scenes.join(">") }, evt.t);
+      cyc.visit = p.visit || null; visitActive = null;
+      lastCycleEmpty = !!(p.seating && p.seating.named === "dead station");
+      if (p.visit) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[p.visit.name] + " " + p.visit.name, detail: "visitation: " + p.visit.name + " · seated in " + p.visit.scene + " (" + (p.visit.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
       scn.type = evt.scene; scn.activity = evt.activity; scn.startT = evt.t; scn.durS = evt.durS;
       Motif.setDialogue(evt.scene === "kakeai" ? { postMul: 1.6, types: [["imitate", 6], ["invert", 1], ["develop", 1]] } : null);
       emitEvent({ cat: "form", label: "▸ scene", detail: "scene: " + evt.scene + (evt.activity ? " (" + evt.activity + ")" : "") + " · " + Math.round(evt.durS) + "s · " + (evt.idx + 1) + "/" + evt.count }, evt.t);
       setSceneRoom(evt);
+      if (visitActive && evt.t >= visitActive.until) visitActive = null;
+      if (cyc.visit && cyc.visit.sceneIdx === evt.idx && !cyc.visit.fired) { cyc.visit.fired = true; try { fireVisitation(cyc.visit, evt.t + (cyc.visit.name === "the tolling" ? 0 : S.visit.rnd(8, 25))); } catch (e) {} }
     }
   }
   // Room balance per scene (0 = the corridor, close; 1 = the hull, vast):
@@ -920,6 +1058,7 @@ window.ZankyoAudio = (function () {
   // over the tightening ensemble.
   var pulse = { bpm: 0, beat: 0, anchor: 0, active: false };
   function pulseStrength(arc) {
+    if (visitActive && visitActive.name === "the festival" && pulse.active && pulse.beat > 0) return 0.95;   // 祭 the ensemble locks hard
     if (!pulse.active || pulse.beat <= 0 || arc < 0.45) return 0;
     var s = (arc - 0.45) / 0.5;                  // 0 at arc 0.45 → 1 at 0.95
     if (s > 1) s = 1;
@@ -1688,7 +1827,7 @@ window.ZankyoAudio = (function () {
     var c = ctx; opts = opts || {};
     var R = S.shakuhachi, wx = wxAt(t);
     var kan = freq >= 440;
-    var out = panAt("shakuhachi", (R.next() * 2 - 1) * 0.25);
+    var out = opts.out || panAt("shakuhachi", (R.next() * 2 - 1) * 0.25);
     var o = c.createOscillator(), o2 = c.createOscillator();
     o.type = "sine"; o2.type = kan ? "sine" : "triangle";
     var f2mul = kan ? 3 : 1;                                   // kan: the 3rd partial rides along; otsu: the triangle body
@@ -1772,7 +1911,7 @@ window.ZankyoAudio = (function () {
     var c = ctx; opts = opts || {};
     var R = S.hichiriki, wx = wxAt(t);
     var reed = getLayerParam("hichiriki", "reed", 0.5), enbai = getLayerParam("hichiriki", "enbai", 0.6), breathAmt = getLayerParam("hichiriki", "breath", 0.35) * (0.7 + 0.6 * wx.breath);
-    var out = panAt("hichiriki", (R.next() * 2 - 1) * 0.3);
+    var out = opts.out || panAt("hichiriki", (R.next() * 2 - 1) * 0.3);
     var mix = c.createGain(); mix.gain.setValueAtTime(0.5, t);
     var slideFrom = opts.glideFrom || freq * Math.pow(2, -(0.4 + enbai * 0.6) / 12);   // the enbai: from below, always
     var slideT = 0.1 + enbai * 0.15;
@@ -2181,14 +2320,16 @@ window.ZankyoAudio = (function () {
     var bpm = 50 + arc * 90, beat = 60 / bpm, t = now + 0.05;
     pulse.bpm = bpm; pulse.beat = beat; pulse.anchor = t; pulse.active = true;   // publish the grid — the ensemble magnetizes to this
     var kyu = arcPhase(now) === "kyū";
-    var kind = kyu || (arc > 0.62 && R.next() < 0.5) ? "matsuri" : "ji";
-    var res = taikoPattern(t, kind, beat, 0.55 + arc * 0.45);
+    var festival = !!(visitActive && visitActive.name === "the festival" && now < visitActive.until);
+    if (festival) { bpm = Math.max(bpm, 96); beat = 60 / bpm; pulse.bpm = bpm; pulse.beat = beat; }
+    var kind = kyu || festival || (arc > 0.62 && R.next() < 0.5) ? "matsuri" : "ji";
+    var res = taikoPattern(t, kind, beat, festival ? 1 : 0.55 + arc * 0.45);
     // KAKEGOE — the crew calling time to nobody, through the broken PA
     var kk = getLayerParam("taiko", "kakegoe", 0.5);
-    if (kind === "matsuri" && R.next() < kk * (kyu ? 0.35 : 0.15)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: arcPhase(now) }, now); }
+    if (kind === "matsuri" && R.next() < kk * (festival ? 0.6 : kyu ? 0.35 : 0.15)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: festival ? "祭" : arcPhase(now) }, now); }
     t = res.end;
     emitEvent({ cat: "taiko", label: kind === "matsuri" ? "祭 " + res.pat : "地 " + res.pat, detail: Math.round(bpm) + "bpm" }, now);
-    var rest = (2 + R.next() * 4) * (1 - arc * 0.7) / trimOf("taiko");
+    var rest = (2 + R.next() * 4) * (1 - arc * 0.7) * (festival ? 0.25 : 1) / trimOf("taiko");
     afterRaw("taiko", now, (t - now) + rest, taikoPulse);
   }
 
@@ -2398,8 +2539,11 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // AMBIENT — quirky events (derelict orbital station incidentals)
   // ==========================================================================
-  function ambBonsho(t) {                          // temple bell (bonshō) — deep, long, inharmonic
+  function ambBonsho(t, opts) {                    // temple bell (bonshō) — deep, long, inharmonic
     var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3);
+    if (opts && opts.halo && haloSend) {             // the hull (the koto's strings) ringing in sympathy
+      var hs = ctx.createGain(); hs.gain.setValueAtTime(0.5, t); hs.connect(haloSend); out = (function (dest, tap) { var g = ctx.createGain(); g.gain.setValueAtTime(1, t); g.connect(dest); g.connect(tap); return g; })(out, hs);
+    }
     var base = S.ambient.next() < 0.5 ? subRoot() : subFifth();
     var partials = [{ m: 1, a: 0.08, d: 6 }, { m: 2.7, a: 0.04, d: 4 }, { m: 5.2, a: 0.02, d: 2.4 }, { m: 8.1, a: 0.012, d: 1.5 }];
     partials.forEach(function (p) {
@@ -2574,7 +2718,7 @@ window.ZankyoAudio = (function () {
     cyc.n = -1; cyc.seating = null; scn.type = null; pendingPlan = null; cyclesSinceSea = 0;
     field.modulate({ tonicHz: TONIC_HZ, mode: { name: "hirajoshi", steps: MODES.hirajoshi.offsets } }); currentMode = "hirajoshi"; rebuildScale();   // every play opens at home
     pulse.active = false;                        // no grid until the taiko speaks
-    lastAitake = null;
+    lastAitake = null; visitActive = null; cyc.visit = null;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
     masterGain.gain.cancelScheduledValues(t0);
@@ -2623,14 +2767,33 @@ window.ZankyoAudio = (function () {
   // Severity rides the meta-curve: at the trough a passing hush (shallow dip,
   // ~3 s of ma, one bell); at the peak a devastating cut (down to 0.08 of
   // master, up to ~9 s of held silence, the bell tolling twice).
+  // 斬 KIRU — the cut (Phase 4: Sycorax's mechanics). A final taiko roll +
+  // noise swell, then the LANDSCAPE (grit bus, shō, ambient) drops on its own
+  // cut gains — never the master — to a hush; the melodic voices stop MID-
+  // GESTURE by scheduling (their lanes' pending phrases die where they stand,
+  // their sounding tails and the rooms ring into the silence) and re-arm
+  // after the hush; the hush is INHABITED: a lone bonshō always, the broken
+  // PA rarely, and the koto's halo (never cut) ringing out. Severity rides
+  // the tide: at the trough a passing hush, at the peak a devastating cut,
+  // the bell tolling twice. In a silence or dead-station cycle the KIRU cuts
+  // nothing: no roll, no swell — the hush deepens and the bell speaks.
+  var MELODIC_LANES = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa"];
+  var MELODIC_RESTART = { shakuhachi: function (t) { shakuhachiPhrase(t); }, koto: function (t) { kotoPhrase(t); }, shamisen: function (t) { shamisenPhrase(t); },
+    hichiriki: function (t) { hichirikiPhrase(t); }, biwa: function (t) { biwaPhrase(t); } };
+  function cutEnvelope(g, t, dip, hold) {
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(1, t + 0.52);
+    g.linearRampToValueAtTime(dip, t + 0.58);
+    g.setValueAtTime(dip, t + 0.6 + hold);
+    g.linearRampToValueAtTime(1, t + 0.6 + hold + 1.5);
+  }
   function kiru(t) {
-    if (!ctx || !masterGain || !playing) return;
+    if (!ctx || !playing) return;
     var sev = metaSeverity();
-    var dip = 0.3 - 0.22 * sev;                                           // hush depth: 0.3 → 0.08 of master
+    var dip = 0.3 - 0.22 * sev;                                           // hush depth: 0.3 → 0.08 of the landscape
     var hold = 3 + 6 * sev;                                               // held silence: ~3 s → ~9 s
-    var twice = sev > 0.45 && S.form.chance(0.4 + sev * 0.5);                    // the bell tolls again near the peak
-    // 沈黙 in a silence cycle the KIRU cuts nothing: no roll, no swell — the
-    // hush simply deepens and the bell speaks into it.
+    var twice = sev > 0.45 && S.form.chance(0.4 + sev * 0.5);            // the bell tolls again near the peak
+    var paHush = S.form.chance(0.2);                                      // unconditional draws
     var cutsSomething = cyc.kind !== "silence" && cyc.seating && cyc.seating.named !== "dead station";
     if (cutsSomething) {
       for (var i = 0; i < 6; i++) taikoHit(t + i * 0.08, i === 5, i === 5 ? "odaiko" : "shime");   // final roll
@@ -2640,16 +2803,19 @@ window.ZankyoAudio = (function () {
       ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.28, t + 0.5); ng.gain.setValueAtTime(0.0001, t + 0.56);
       nz.start(t); nz.stop(t + 0.6);
     }
-    masterGain.gain.cancelScheduledValues(t);                            // the cut
-    masterGain.gain.setValueAtTime(masterVolume, t + 0.52);
-    masterGain.gain.linearRampToValueAtTime(masterVolume * dip, t + 0.58);
-    ambBonsho(t + 0.78);                                                  // a lone bell in the ma
-    var paHush = S.form.chance(0.2);                                      // unconditional draw
+    // the cut: the landscape's three gains, one schedule each — the master is untouched
+    if (cutGrit) { cutEnvelope(cutGrit.gain, t, dip, hold); cutEnvelope(cutSho.gain, t, dip, hold); cutEnvelope(cutAmb.gain, t, dip, hold); }
+    // the melodic voices stop mid-gesture and re-arm after the hush
+    var tBack = t + 0.6 + hold + 1.0;
+    for (var li = 0; li < MELODIC_LANES.length; li++) {
+      var L = MELODIC_LANES[li];
+      try { lane(L).cancelAll(); } catch (e) {}
+      lane(L).at(tBack + li * 0.7, guarded(MELODIC_RESTART[L]));
+    }
+    ambBonsho(t + 0.78, { halo: true });                                  // a lone bell in the ma — the koto's strings hear it
+    if (twice) ambBonsho(t + 0.78 + hold * S.form.rnd(0.4, 0.6), { halo: true });   // … and again, deeper into the silence
     if (paHush && cyc.kind !== "silence") { paSpeak(t + 1.6, Math.min(hold - 0.5, 3 + S.pa.next() * 2), { gain: 0.6 }); emitEvent({ cat: "pa", label: "放送 in the hush", detail: "the PA speaks into the ma" }, t + 1.6); }
-    if (twice) ambBonsho(t + 0.78 + hold * S.form.rnd(0.4, 0.6));                // … and again, deeper into the silence
-    masterGain.gain.setValueAtTime(masterVolume * dip, t + 0.6 + hold);  // hold the silence
-    masterGain.gain.linearRampToValueAtTime(masterVolume, t + 0.6 + hold + 1.5);  // voices return
-    emitEvent({ cat: "noise", label: "斬 KIRU", detail: "the cut · severity " + sev.toFixed(2) + " · hush " + dip.toFixed(2) + " · ma " + hold.toFixed(1) + "s" + (twice ? " · the bell twice" : "") + (cutsSomething ? "" : " · cuts nothing") }, t);
+    emitEvent({ cat: "noise", label: "斬 KIRU", detail: "the cut · severity " + sev.toFixed(2) + " · hush " + dip.toFixed(2) + " · ma " + hold.toFixed(1) + "s" + (twice ? " · the bell twice" : "") + (cutsSomething ? "" : " · cuts nothing") + " · landscape only" }, t);
   }
   function stop() {
     if (!playing) return;
@@ -2786,7 +2952,7 @@ window.ZankyoAudio = (function () {
     // grit (post makeup-down), hull / corridor (each room's wet return), farWall
     attachBusAnalyser: function (name, node) {
       var src = { dry: reverbSend, grit: gritMakeup, hull: roomHull && roomHull.output, corridor: roomCorridor && roomCorridor.output, farWall: farWall && farWall.output,
-        halo: layHalo, screech: screechBus }[name];
+        halo: layHalo, screech: screechBus, cut: cutGrit, radio: radioBus }[name];
       if (!src || !node) return false;
       try { src.connect(node); return true; } catch (e) { return false; }
     },

@@ -284,6 +284,21 @@ const pitchVocab = (() => {
   return { seas: seas.length, pool: Object.keys(pool).length, voicings: Object.keys(voicings).length };
 })();
 
+// ---- visitations (Phase 4): one 'visitation: <name>' event per hosting cycle; never two in one cycle ----
+const visitVocab = (() => {
+  const byName = {}, perCycle = {};
+  let cycleN = -1;
+  for (const e of events) {
+    const mc = /cycle (\d+)/.exec(e.detail || ""); if (e.cat === "mode" && mc && e.label.indexOf("mode") >= 0) cycleN = +mc[1];
+    const mv = /visitation: ([a-z ]+?) ·/.exec(e.detail || "");
+    if (mv) { byName[mv[1]] = (byName[mv[1]] || 0) + 1; perCycle[cycleN] = (perCycle[cycleN] || 0) + 1; }
+  }
+  const total = Object.values(byName).reduce((a, b) => a + b, 0), maxPer = Math.max(0, ...Object.values(perCycle));
+  const kiruMaster = events.filter((e) => e.label.indexOf("KIRU") >= 0 && (e.detail || "").indexOf("landscape only") < 0).length;
+  console.log("visitations: " + total + " in " + cycles.length + " cycles " + JSON.stringify(byName) + " · max per cycle " + maxPer + " · KIRUs not on the landscape: " + kiruMaster);
+  return { total, maxPer, kiruMaster };
+})();
+
 // ---- node budget: creations per simulated minute + peak concurrent sources ----
 (function nodeBudget() {
   const ns = runA.nodes;
@@ -360,6 +375,10 @@ if (RUN >= 1500 && pitchVocab.voicings < 8) fails.push("only " + pitchVocab.voic
 if (runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget " + Math.round(runA.nodes.total / (RUN / 60)) + "/min > 1500");
 if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
 if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
+// Phase 4 gates (plan §7): ≥ 1 visitation per 3 cycles over 4 h; never two in one cycle; the KIRU lives on the landscape cut
+if (visitVocab.maxPer > 1) fails.push("two visitations in one cycle");
+if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push("visitations " + visitVocab.total + " < " + Math.floor(cycles.length / 3) + " (one per 3 cycles)");
+if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not on the landscape cut");
 if (!reproSame) fails.push("REPRO gate failed");
 if (errors.length) fails.push(errors.length + " runtime errors");
 console.log(fails.length ? "VERDICT: FAIL — " + fails.join("; ") : "VERDICT: PASS ✓");
