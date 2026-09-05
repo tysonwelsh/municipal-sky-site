@@ -1,0 +1,19 @@
+{
+  "id": "prelinger-a-is-for-atom-1953",
+  "title": "A is for Atom",
+  "year": 1953,
+  "src": "https://archive.org/details/isforAto1953",
+  "license": "PD",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 96.08,
+  "bytes": 1035488,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08]],
+  "srcWindows": [[27.0, 39], [66.0, 78], [101.0, 113], [378.0, 390], [487.0, 499], [683.0, 695], [810.0, 822], [852.0, 864]],
+  "notes": "GE animated atom primer; Dr. Atom; 'a hundred billion billion atoms'; chain reaction; 'not one but many giants: the warrior, the destroyer'",
+  "takedown": false
+}
