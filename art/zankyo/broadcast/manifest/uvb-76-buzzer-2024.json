@@ -1,0 +1,19 @@
+{
+  "id": "uvb-76-buzzer-2024",
+  "title": "UVB-76, 'The Buzzer', 4625 kHz",
+  "year": 2024,
+  "src": "https://archive.org/download/websdr-recording-start-2024-06-04-t-18-37-36-z-4625.0k-hz/websdr_recording_start_2024-06-04T18%2037%2036Z_4625.0kHz.mp3",
+  "license": "unknown (anonymous WebSDR capture)",
+  "tier": "B",
+  "tone": "tone",
+  "weight": 2,
+  "gain": -0.4,
+  "durS": 72.08,
+  "bytes": 501173,
+  "audioOnly": true,
+  "picture": "wave",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[10.0, 22], [40.0, 52], [70.0, 82], [100.0, 112], [130.0, 142], [160.0, 172]],
+  "notes": "Russian military channel-marker beacon buzzing since the 1970s; WebSDR recording 4 June 2024 with a voice message somewhere in it",
+  "takedown": false
+}
