@@ -1,0 +1,19 @@
+{
+  "id": "ntv-ohayo-tenki-1989",
+  "title": "NTV (JOAX-TV) sign-on and Ohayo Tenki morning weather",
+  "year": 1989,
+  "src": "https://archive.org/details/JOAXTV_SignOn_12-22_89",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.02,
+  "bytes": 656385,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[0.0, 12], [24.0, 36], [168.0, 180], [224.0, 236], [560.0, 572], [856.0, 868]],
+  "notes": "5:15 am sign-on ident; Ohayo Tenki title and greeting; AMeDAS rainfall map; today's weather map; Mt Fuji radar; tide table; Betamax",
+  "takedown": false
+}

@@ -1,0 +1,19 @@
+{
+  "id": "nhk-joak-closedown-1982",
+  "title": "NHK General TV closedown (JOAK-TV)",
+  "year": 1982,
+  "src": "https://archive.org/details/NHK_JOAK-TV_1982_NHK_General_TV_sign_off_1982",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 30.5,
+  "bytes": 223115,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.5], [10.5, 20.5], [20.5, 30.5]],
+  "srcWindows": [[2.5, 13.0], [15.0, 25.0], [30.0, 40.0]],
+  "notes": "NHK sign-off card: 'this ends General TV's broadcasts', 'check the stove and the locks before bed', JOAK-TV 1 ident; VHS; only 40 s survive so 3 windows",
+  "takedown": false
+}
