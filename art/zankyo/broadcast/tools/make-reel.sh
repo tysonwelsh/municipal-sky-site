@@ -27,6 +27,9 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
   --tone voice|music|noise|sung|tone   (default voice)
   --weight 1..5          lottery weight (default 3)
   --notes "…"            one line for the manifest
+  --distort 0..1         bake extra receiver distortion into the reel (narrow band, drive
+                         and soft clip, bit-crush, flutter); 0 = none. Use for material
+                         that must arrive already broken (the owner's Tier B music)
   --propose              analyze and print proposed windows only; cut nothing
   --force-analyze        ignore the cached analysis in local-dev/broadcast-src
   -h, --help
@@ -71,6 +74,7 @@ while [ $# -gt 0 ]; do
     --tone) TONE="${2:?}"; shift 2 ;;
     --weight) WEIGHT="${2:?}"; shift 2 ;;
     --notes) NOTES="${2:?}"; shift 2 ;;
+    --distort) DISTORT="${2:?}"; shift 2 ;;
     --propose) PROPOSE=1; shift ;;
     --force-analyze) FORCE_AN=1; shift ;;
     -*) die "unknown option $1 (see --help)" ;;
@@ -229,6 +233,19 @@ if [ "$PROPOSE" = 1 ]; then log "--propose: stopping before the cut"; exit 0; fi
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/make-reel.$ID.XXXXXX")"; trap 'rm -rf "$TMP"' EXIT
 VF="scale=192:144:force_original_aspect_ratio=decrease,pad=192:144:-1:-1,hue=s=0,fps=12,format=yuv420p"
 AF="highpass=f=200,lowpass=f=6000"
+# --distort d: baked distortion after the mono fold. Drive rises 3→9, bits fall 8→5,
+# the band narrows toward 350–3400 Hz (a bad receiver), flutter deepens. Still legible.
+DISTORT="${DISTORT:-0}"
+if awk "BEGIN{exit !($DISTORT > 0)}"; then
+  D_DRIVE="$(awk "BEGIN{printf \"%.2f\", 3+6*$DISTORT}")"
+  D_BITS="$(awk "BEGIN{printf \"%.1f\", 8-3*$DISTORT}")"
+  D_HP="$(awk "BEGIN{printf \"%d\", 200+150*$DISTORT}")"
+  D_LP="$(awk "BEGIN{printf \"%d\", 6000-2600*$DISTORT}")"
+  D_TREM="$(awk "BEGIN{printf \"%.2f\", 0.15+0.3*$DISTORT}")"
+  D_MIX="$(awk "BEGIN{printf \"%.2f\", 0.3+0.5*$DISTORT}")"
+  DIST_AF=",highpass=f=$D_HP,lowpass=f=$D_LP,volume=-6dB,aeval=exprs='tanh($D_DRIVE*val(0))/tanh($D_DRIVE)',acrusher=bits=$D_BITS:mode=log:mix=$D_MIX,tremolo=f=2.7:d=$D_TREM,lowpass=f=$D_LP"
+  log "distort $DISTORT: drive $D_DRIVE, $D_BITS bits, band ${D_HP}-${D_LP} Hz, flutter $D_TREM"
+else DIST_AF=""; fi
 : > "$TMP/list.txt"
 i=0
 while IFS=$'\t' read -r s e; do
@@ -237,10 +254,10 @@ while IFS=$'\t' read -r s e; do
   log "cutting window $i/$NWIN  $(fmt_t "$s") +${len}s"
   if [ "$AUDIO_ONLY" = 1 ]; then
     ffmpeg -hide_banner -nostdin -loglevel error -ss "$s" -t "$len" -i "$SRC" -vn \
-      -af "$AF,aformat=channel_layouts=mono" -c:a pcm_s16le -ar 48000 "$seg"
+      -af "$AF,aformat=channel_layouts=mono$DIST_AF" -c:a pcm_s16le -ar 48000 "$seg"
   elif [ "$HAS_A" = 1 ]; then
     ffmpeg -hide_banner -nostdin -loglevel error -ss "$s" -t "$len" -i "$SRC" \
-      -vf "$VF" -af "$AF,aformat=channel_layouts=mono" -map 0:v:0 -map 0:a:0 -sn -dn \
+      -vf "$VF" -af "$AF,aformat=channel_layouts=mono$DIST_AF" -map 0:v:0 -map 0:a:0 -sn -dn \
       -c:v libx264 -preset veryfast -crf 16 -c:a pcm_s16le -ar 48000 "$seg"
   else
     ffmpeg -hide_banner -nostdin -loglevel error -ss "$s" -t "$len" -i "$SRC" -f lavfi -t "$len" -i anullsrc=r=48000:cl=mono \
