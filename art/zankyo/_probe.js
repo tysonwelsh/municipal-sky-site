@@ -205,7 +205,8 @@ function runOnce(seed, runS, jitterSeed) {
       var mi = Z.getMetaInfo ? Z.getMetaInfo() : null;
       var pi = Z.getPlanInfo ? Z.getPlanInfo() : (Z.getSceneInfo ? Z.getSceneInfo() : null);
       var fi = Z.getMode ? Z.getMode() : null;
-      planInfo.push({ t: vnow, meta: mi, plan: pi, mode: fi && (fi.key || fi.name), tonic: fi && (fi.tonic || fi.tonicHz) });
+      var fld = null; try { fld = Z.getField ? Z.getField() : null; } catch (e) {}
+      planInfo.push({ t: vnow, meta: mi, plan: pi, mode: fi && (fi.key || fi.name), tonic: fld ? +(+fld.tonicHz).toFixed(3) : (fi && (fi.tonic || fi.tonicHz)) });
       nextInfo += 15;
     }
   }
@@ -368,6 +369,17 @@ function analyze(R) {
     var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1;
     if (/joint/i.test(txt)) A.joints++;
   });
+  // ---- Phase 2: tonic trace (sea changes) and shō voicings (aitake) ----
+  var tonics = [], lastTon = null;
+  R.planInfo.forEach(function (pi) { if (pi.tonic != null && pi.tonic !== lastTon) { tonics.push({ t: Math.round(pi.t), hz: pi.tonic }); lastTon = pi.tonic; } });
+  A.tonicTrace = tonics;
+  var byStart = {};
+  R.notes.filter(function (n) { return n.layer === "sho"; }).forEach(function (n) { var k = n.t.toFixed(3); (byStart[k] = byStart[k] || []).push(n.freq); });
+  var voicings = {}, clusters = 0;
+  for (var bk in byStart) { var fs = byStart[bk].slice().sort(function (a, b) { return a - b; }); if (fs.length < 2) continue; clusters++; var sig = fs.map(function (f) { return Math.round(12 * Math.log2(f / fs[0])); }).join(","); voicings[sig] = (voicings[sig] || 0) + 1; }
+  A.shoVoicings = { clusters: clusters, distinct: Object.keys(voicings).length, top: Object.keys(voicings).sort(function (a, b) { return voicings[b] - voicings[a]; }).slice(0, 12).map(function (k) { return k + "×" + voicings[k]; }) };
+  A.seedPool = {};
+  R.events.forEach(function (e) { if (/working set/.test(e.label)) e.detail.split("·").forEach(function (part) { var nm = part.replace(/^\s*[イロハ]\s*/, "").trim(); if (nm) A.seedPool[nm] = (A.seedPool[nm] || 0) + 1; }); });
   A.modeEventLog = modeEvents.map(function (e) { return Math.round(e.t) + "s " + e.cat + " " + e.label + " · " + e.detail; });
   A.motif = R.motifStats;
 
@@ -393,6 +405,7 @@ function analyze(R) {
     zeroVoiceFrac: +A.voices[0].toFixed(3), joThreePlus: A.voicesByPhase.jo ? +A.voicesByPhase.jo["3+"].toFixed(3) : null,
     gapsOver10s: A.silence.over10s, kinds: Object.keys(A.kinds).length, seatings: Object.keys(A.seatings).length,
     seaChanges: A.seaChanges.length, visitations: A.visitations.length, cycles: A.cycles.length, kirus: A.kirus.length,
+    tonicsSeen: A.tonicTrace.length, seedPool: Object.keys(A.seedPool).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.tech = {
     loadErrors: R.loadErrors, errors: R.errors, expZero: R.faults.expZero, pastSchedule: R.faults.pastSchedule,
@@ -459,6 +472,9 @@ function report(A) {
   line("  visitations " + A.visitations.length + (A.visitations.length ? ": " + A.visitations.slice(0, 8).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
   line("  KIRUs: " + A.kirus.map(function (k) { return k.t + "s " + k.detail; }).join(" | "));
   line("  motif: " + JSON.stringify(A.motif));
+  line("  tonic trace: " + A.tonicTrace.map(function (x) { return x.t + "s " + x.hz + "Hz"; }).join(" → "));
+  line("  seed pool seen (" + Object.keys(A.seedPool).length + "): " + Object.keys(A.seedPool).map(function (k) { return k + " " + A.seedPool[k]; }).join(" · "));
+  line("  shō voicings: " + A.shoVoicings.clusters + " clusters · " + A.shoVoicings.distinct + " distinct (semitones above the lowest) · " + A.shoVoicings.top.join(" | "));
   if (A.airInfo) line("  air: " + JSON.stringify(A.airInfo));
   line("  GATES: " + JSON.stringify(A.gates));
   line("  per cycle:");
