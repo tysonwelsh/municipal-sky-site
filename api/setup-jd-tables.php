@@ -125,7 +125,14 @@ try {
 // join key back to the filesystem AND the discriminator that keeps curated
 // rows out of turn-flow analytics: curated rows are NOT visitor turns (see
 // db/junk-drawer-schema.md), so every turn report filters item_id IS NULL.
-$hadItemId = jd_has_column($db, 'jd_submissions', 'item_id');
+try {
+    $hadItemId = jd_has_column($db, 'jd_submissions', 'item_id');
+} catch (PDOException $e) {
+    // a probe that cannot run must not kill the script mid-report
+    $failed++;
+    $hadItemId = true;
+    jd_setup_line('jd_submissions.item_id', 'FAILED: ' . $e->getMessage());
+}
 jd_ensure_column($db, 'jd_submissions', 'item_id',
     'VARCHAR(64) NULL AFTER client_ref', 'TEXT NULL');
 if (!$hadItemId) {

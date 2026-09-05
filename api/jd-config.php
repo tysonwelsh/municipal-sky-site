@@ -598,7 +598,13 @@ function jd_has_table(PDO $db, string $table): bool
         $q = $db->prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?");
         $q->execute([$table]);
     } else {
-        $q = $db->prepare('SHOW TABLES LIKE ?');
+        // information_schema, not SHOW TABLES LIKE ?: MySQL refuses bind
+        // parameters in SHOW statements under native prepares (1064 near
+        // '?'), which is what took the 2026-09-05 migration down mid-run.
+        $q = $db->prepare(
+            'SELECT 1 FROM information_schema.TABLES
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+        );
         $q->execute([$table]);
     }
     return $q->fetch() !== false;
@@ -615,8 +621,12 @@ function jd_has_column(PDO $db, string $table, string $column): bool
         }
         return false;
     }
-    $q = $db->prepare('SHOW COLUMNS FROM ' . $table . ' LIKE ?');
-    $q->execute([$column]);
+    // information_schema for the same reason as jd_has_table
+    $q = $db->prepare(
+        'SELECT 1 FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+    );
+    $q->execute([$table, $column]);
     return $q->fetch() !== false;
 }
 
