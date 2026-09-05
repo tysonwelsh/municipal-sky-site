@@ -379,7 +379,14 @@ function analyze(R) {
   for (var bk in byStart) { var fs = byStart[bk].slice().sort(function (a, b) { return a - b; }); if (fs.length < 2) continue; clusters++; var sig = fs.map(function (f) { return Math.round(12 * Math.log2(f / fs[0])); }).join(","); voicings[sig] = (voicings[sig] || 0) + 1; }
   A.shoVoicings = { clusters: clusters, distinct: Object.keys(voicings).length, top: Object.keys(voicings).sort(function (a, b) { return voicings[b] - voicings[a]; }).slice(0, 12).map(function (k) { return k + "×" + voicings[k]; }) };
   A.seedPool = {};
-  R.events.forEach(function (e) { if (/working set/.test(e.label)) e.detail.split("·").forEach(function (part) { var nm = part.replace(/^\s*[イロハ]\s*/, "").trim(); if (nm) A.seedPool[nm] = (A.seedPool[nm] || 0) + 1; }); });
+  A.seedPoolAuthentic = {}; A.seedPoolBorn = {}; A.seedPoolInherited = 0;
+  R.events.forEach(function (e) { if (/working set/.test(e.label)) e.detail.split(" · ").forEach(function (part) {
+    var nm = part.replace(/^\s*[イロハ]\s*/, "").trim(); if (!nm) return;
+    A.seedPool[nm] = (A.seedPool[nm] || 0) + 1;
+    if (/^inherited:/.test(nm)) A.seedPoolInherited++;
+    else if (/^born:/.test(nm)) A.seedPoolBorn[nm] = 1;
+    else A.seedPoolAuthentic[nm] = (A.seedPoolAuthentic[nm] || 0) + 1;
+  }); });
   A.modeEventLog = modeEvents.map(function (e) { return Math.round(e.t) + "s " + e.cat + " " + e.label + " · " + e.detail; });
   A.motif = R.motifStats;
 
@@ -405,7 +412,7 @@ function analyze(R) {
     zeroVoiceFrac: +A.voices[0].toFixed(3), joThreePlus: A.voicesByPhase.jo ? +A.voicesByPhase.jo["3+"].toFixed(3) : null,
     gapsOver10s: A.silence.over10s, kinds: Object.keys(A.kinds).length, seatings: Object.keys(A.seatings).length,
     seaChanges: A.seaChanges.length, visitations: A.visitations.length, cycles: A.cycles.length, kirus: A.kirus.length,
-    tonicsSeen: A.tonicTrace.length, seedPool: Object.keys(A.seedPool).length, shoVoicings: A.shoVoicings.distinct,
+    tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.tech = {
     loadErrors: R.loadErrors, errors: R.errors, expZero: R.faults.expZero, pastSchedule: R.faults.pastSchedule,
@@ -473,7 +480,7 @@ function report(A) {
   line("  KIRUs: " + A.kirus.map(function (k) { return k.t + "s " + k.detail; }).join(" | "));
   line("  motif: " + JSON.stringify(A.motif));
   line("  tonic trace: " + A.tonicTrace.map(function (x) { return x.t + "s " + x.hz + "Hz"; }).join(" → "));
-  line("  seed pool seen (" + Object.keys(A.seedPool).length + "): " + Object.keys(A.seedPool).map(function (k) { return k + " " + A.seedPool[k]; }).join(" · "));
+  line("  seed pool: authentic " + Object.keys(A.seedPoolAuthentic).length + " seen (" + Object.keys(A.seedPoolAuthentic).map(function (k) { return k + " " + A.seedPoolAuthentic[k]; }).join(", ") + ") · born " + Object.keys(A.seedPoolBorn).length + " · inherited slots " + A.seedPoolInherited);
   line("  shō voicings: " + A.shoVoicings.clusters + " clusters · " + A.shoVoicings.distinct + " distinct (semitones above the lowest) · " + A.shoVoicings.top.join(" | "));
   if (A.airInfo) line("  air: " + JSON.stringify(A.airInfo));
   line("  GATES: " + JSON.stringify(A.gates));
