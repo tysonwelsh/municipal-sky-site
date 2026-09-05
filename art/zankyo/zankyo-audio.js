@@ -1614,7 +1614,7 @@ window.ZankyoAudio = (function () {
     // denied → let the moment pass and ask again shortly.
     var margin = airMargin(S.shakuhachi, now);
     var tok = airClaimAt(now, "shakuhachi", shakuState.lastSpan || 3.5, margin);
-    if (!tok) { afterRaw("shakuhachi", now, S.shakuhachi.rnd(2, 5) * (arcPhase(now) === "jo" ? 2.5 : 1), shakuhachiPhrase); return; }   // a one-voice jo is not re-asked every breath
+    if (!tok) { afterRaw("shakuhachi", now, S.shakuhachi.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), shakuhachiPhrase); return; }
     var breathSolo = scn.type === "solo" && scn.activity === "breath";   // the muraiki solo breath
     var pace = getLayerParam("shakuhachi", "pace", 1.0) * (1 + arc * 0.6) * (breathSolo ? 0.7 : 1);
     var glideAmt = getLayerParam("shakuhachi", "glide", 0.6);
@@ -1907,11 +1907,11 @@ window.ZankyoAudio = (function () {
   // carries the glides and the oshide press-bend. The old envelope shapes
   // (linear from true zero, exponential knee, linear to zero) are kept.
   var STRING_KIT = {
-    // peaks 0.33 / 0.33 / 0.30 (critic, Phase 3 r1): the lowpassed burst carries far
-    // less RMS than the old saw+triangle at the same peak; target −16 ± 2 dB rel master
-    koto:     { plectrum: "tsume", peak: 0.33, decay: 1.0,  brightK: 0.35, brightBase: 1.5, sawari: 0,   sparkle: 0.015 },
-    shamisen: { plectrum: "bachi", peak: 0.33, decay: 0.75, brightK: 0.45, brightBase: 1.6, sawari: 1,   sparkle: 0 },
-    biwa:     { plectrum: "bachi", peak: 0.30, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
+    // peaks 0.16 / 0.16 / 0.14 (critic, Phase 3 r2): with the brown burst the body
+    // carries a sawtooth's power through its lowpass; target −16 ± 2 dB rel master
+    koto:     { plectrum: "tsume", peak: 0.16, decay: 1.0,  brightK: 0.35, brightBase: 1.5, sawari: 0,   sparkle: 0.015 },
+    shamisen: { plectrum: "bachi", peak: 0.16, decay: 0.75, brightK: 0.45, brightBase: 1.6, sawari: 1,   sparkle: 0 },
+    biwa:     { plectrum: "bachi", peak: 0.14, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
   };
   function stringNote(layer, freq, t, dur, opts) {
     var c = ctx, K = STRING_KIT[layer], R = S[layer]; opts = opts || {};
@@ -1926,9 +1926,16 @@ window.ZankyoAudio = (function () {
     var raw = new Float32Array(N);
     for (var i = 0; i < N; i++) raw[i] = Math.random() * 2 - 1;                 // texture, not music
     for (i = 0; i < N; i++) d[i] = raw[i] - raw[(i - k + N) % N];             // the pluck-position comb
-    // normalise the burst to a fixed RMS (0.5; a sawtooth's is 0.58): a white
-    // one-period burst lowpassed at ~4 f keeps ~5 % of its power, and a raw
-    // burst's level scatters per pluck — the level lives in the peak below
+    // A BROWN burst (critic, Phase 3 r2): a white one-period burst loses
+    // ~23 dB through the note's lowpass at ~4 f whatever its level; a leaky
+    // integrator run twice around the loop tilts it to ~1/n² — a plucked
+    // string's real initial displacement (a triangle) — and it then keeps
+    // within 1 dB of a sawtooth through the same lowpass. DC removed after.
+    var acc = 0, pass, m = 0;
+    for (pass = 0; pass < 2; pass++) for (i = 0; i < N; i++) { acc = 0.995 * acc + d[i]; if (pass) d[i] = acc; }
+    for (i = 0; i < N; i++) m += d[i]; m /= N; for (i = 0; i < N; i++) d[i] -= m;
+    // then normalise to a fixed RMS (0.5; a sawtooth's is 0.58) so the level
+    // lives in the peak below and does not scatter per pluck
     var en = 0; for (i = 0; i < N; i++) en += d[i] * d[i];
     var sc = 0.5 / Math.sqrt(Math.max(1e-9, en / N)); for (i = 0; i < N; i++) d[i] *= sc;
     var src = c.createBufferSource(); src.buffer = buf; src.loop = true;
@@ -1995,7 +2002,7 @@ window.ZankyoAudio = (function () {
     if (!seated("koto", now)) { afterRaw("koto", now, S.koto.rnd(5, 9), kotoPhrase); return; }
     var margin = airMargin(S.koto, now);
     var tok = airClaimAt(now, "koto", kotoState.lastSpan || 2.5, margin);
-    if (!tok) { afterRaw("koto", now, S.koto.rnd(2, 5) * (arcPhase(now) === "jo" ? 2.5 : 1), kotoPhrase); return; }   // a one-voice jo is not re-asked every breath
+    if (!tok) { afterRaw("koto", now, S.koto.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), kotoPhrase); return; }
     var kotoSolo = scn.type === "solo" && scn.activity === "koto";
     var pace = getLayerParam("koto", "pace", 1.0) * (1 + arc * 0.7) * (kotoSolo ? 0.9 : 1);
     var glissAmt = getLayerParam("koto", "gliss", 0.4) * (kotoSolo ? 1.6 : 1);
@@ -2060,7 +2067,7 @@ window.ZankyoAudio = (function () {
     if (!seated("shamisen", now)) { afterRaw("shamisen", now, S.shamisen.rnd(5, 9), shamisenPhrase); return; }
     var margin = airMargin(S.shamisen, now);
     var tok = airClaimAt(now, "shamisen", shamiState.lastSpan || 1.8, margin);
-    if (!tok) { afterRaw("shamisen", now, S.shamisen.rnd(2, 5) * (arcPhase(now) === "jo" ? 2.5 : 1), shamisenPhrase); return; }   // a one-voice jo is not re-asked every breath
+    if (!tok) { afterRaw("shamisen", now, S.shamisen.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), shamisenPhrase); return; }
     var pace = getLayerParam("shamisen", "pace", 1.0) * (1 + arc * 1.0);   // comes alive in ha/kyū
     shamiState.center = Math.round(scaleIndexOf(3) + arc * 3);
     var phrase, motif = null;
@@ -2329,7 +2336,7 @@ window.ZankyoAudio = (function () {
     o.frequency.setValueAtTime(f0, t);
     o.frequency.linearRampToValueAtTime(f0 * (0.985 + R.next() * 0.035), t + dur * 0.5);
     o.frequency.linearRampToValueAtTime(f0 * 0.985, t + dur);
-    var pre = c.createGain(); pre.gain.setValueAtTime(0.32, t);        // pre-attenuate before the high-Q formants (unity-peak bandpasses)
+    var pre = c.createGain(); pre.gain.setValueAtTime(0.6, t);         // −4.4 dB into unity-peak formants (they pass little of a 150–300 Hz saw)
     o.connect(pre);
     var f1 = c.createBiquadFilter(); f1.type = "bandpass"; f1.Q.setValueAtTime(5, t);
     var f2 = c.createBiquadFilter(); f2.type = "bandpass"; f2.Q.setValueAtTime(6, t);
@@ -2339,6 +2346,11 @@ window.ZankyoAudio = (function () {
     var gate = c.createGain(), og = c.createGain();
     pre.connect(f1); f1.connect(f1g); f1g.connect(gate);
     pre.connect(f2); f2.connect(f2g); f2g.connect(gate);
+    // a dry BODY beside the formants (critic, Phase 3 r2): the formants pass
+    // little of a 150–300 Hz saw; a lowpassed dry path gives the voice a chest
+    var body = c.createBiquadFilter(); body.type = "lowpass"; body.frequency.setValueAtTime(900, t); body.Q.setValueAtTime(0.7, t);
+    var bodyG = c.createGain(); bodyG.gain.setValueAtTime(0.2, t);
+    pre.connect(body); body.connect(bodyG); bodyG.connect(gate);
     gate.connect(og); og.connect(out);
     gate.gain.setValueAtTime(0, t);
     var sylRate = opts.shout ? 4 : 2 + R.next() * 1.5, st = t + 0.03, end = t + dur - (opts.shout ? 0.02 : 0.4);
