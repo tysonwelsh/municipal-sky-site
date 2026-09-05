@@ -100,13 +100,13 @@ include '../../includes/header.php';
     <!-- The page (shape-note engraving) -->
     <div class="kolob-viz-wrap">
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
+      <!-- The direction line: the event flag printed as a performance
+           direction at the foot of the staff, set left beneath the clefs —
+           where the ink fade keeps the notes away (stillness, fuging, the
+           question, two bands, the steeples answer, the whole tune). It
+           takes no line of its own. -->
+      <div class="kolob-direction" id="kolob-direction" aria-label="performance direction"></div>
     </div>
-
-    <!-- The direction line: the event flag printed as a performance direction
-         in the margin under the staff (stillness, fuging, the question, two
-         bands, the steeples answer, the whole tune). One reserved line, so
-         nothing beneath shifts when it comes and goes. -->
-    <div class="kolob-direction" id="kolob-direction" aria-label="performance direction"></div>
 
     <!-- The console: one ruled band like the masthead — PLAY and STOP at the
          left, the volume slider after a spacer, the Liahona dial at the right
@@ -147,25 +147,27 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- The instruments — a collapsible console with a copy-parameters button -->
-    <div class="kolob-stops-block">
-      <button type="button" class="kolob-sec-head kolob-instruments-head" id="kolob-instruments-head" aria-expanded="true" aria-controls="kolob-instruments-body">
-        <span class="kolob-collapse-caret" aria-hidden="true"></span>
-        <span class="kolob-sec-head-label">𐐜 𐐆𐐤𐐝𐐓𐐡𐐊𐐣𐐊𐐤𐐓𐐝</span>
-      </button>
-      <div class="kolob-instruments-body" id="kolob-instruments-body">
-        <div id="kolob-layers"></div>
-        <button type="button" class="kolob-btn kolob-copy-btn" id="kolob-copy-params" aria-label="copy current volume parameters">
-          <span class="kolob-copy-label">𐐗𐐃𐐑𐐆 𐐑𐐊𐐡𐐈𐐣𐐊𐐓𐐊𐐡𐐞</span>
-        </button>
-      </div>
-    </div>
-
     <!-- Clerk's minutes -->
     <div class="kolob-log-block">
       <div class="kolob-sec-head">𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝</div>
       <div id="kolob-log" class="kolob-log" aria-label="the clerk's minutes">
         <div class="kolob-log-empty">𐐑𐐡𐐇𐐝 𐐑𐐢𐐁</div>
+      </div>
+    </div>
+
+    <!-- The instruments — a collapsible console with a copy-parameters button.
+         Seated last, beneath the minutes, and closed by default: a drawer for
+         the curious, not part of the page as read. -->
+    <div class="kolob-stops-block">
+      <button type="button" class="kolob-sec-head kolob-instruments-head" id="kolob-instruments-head" aria-expanded="false" aria-controls="kolob-instruments-body">
+        <span class="kolob-collapse-caret" aria-hidden="true"></span>
+        <span class="kolob-sec-head-label">𐐜 𐐆𐐤𐐝𐐓𐐡𐐊𐐣𐐊𐐤𐐓𐐝</span>
+      </button>
+      <div class="kolob-instruments-body" id="kolob-instruments-body" hidden>
+        <div id="kolob-layers"></div>
+        <button type="button" class="kolob-btn kolob-copy-btn" id="kolob-copy-params" aria-label="copy current volume parameters">
+          <span class="kolob-copy-label">𐐗𐐃𐐑𐐆 𐐑𐐊𐐡𐐈𐐣𐐊𐐓𐐊𐐡𐐞</span>
+        </button>
       </div>
     </div>
 
