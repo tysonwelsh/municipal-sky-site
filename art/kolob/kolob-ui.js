@@ -1,6 +1,7 @@
 // ============================================================================
-// KOLOB — UI controller (running head + order of service + hymn board +
-// the stops + clerk's minutes + broadside)
+// KOLOB — UI controller (running head + hymn board + the stops + clerk's
+// minutes + broadside; the order of service is the WHEEL, drawn by the viz —
+// this file only hands it the labels and the dev jump)
 //
 // EVERYTHING the reader sees is set in the DESERET ALPHABET. The engine emits
 // English event labels internally; this file maps them to Deseret renderings
@@ -479,33 +480,15 @@
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
   function metersDots(m) { return METER_DOTS[m] || m; }
 
-  function updateOrder(c, playing) {
-    var host = document.getElementById("kolob-order"); if (!host) return;
-    if (!host.childElementCount) {
-      SECTION_ORDER.forEach(function (sec) {
-        var row = document.createElement("div");
-        row.className = "kolob-order-row";
-        row.setAttribute("data-sec", sec);
-        row.innerHTML =
-          '<span class="kolob-order-hand" aria-hidden="true">☞</span>' +
-          '<span class="kolob-order-name">' + TT(SECTIONS_DS, SECTIONS_EN)[sec] + '</span>' +
-          '<span class="kolob-order-fill"><span></span></span>';
-        host.appendChild(row);
-      });
-    }
-    // an interlude is not on the printed program; the manicule rests on the
-    // hymn it grew out of
-    var curSec = c.section === "interlude" ? "hymn" : c.section;
-    var rows = host.children;
-    for (var i = 0; i < rows.length; i++) {
-      var sec = rows[i].getAttribute("data-sec");
-      var isCur = playing && sec === curSec;
-      // multiple hymns share one program row; done = the plan has moved past all of that type
-      rows[i].classList.toggle("current", isCur);
-      var fill = rows[i].querySelector(".kolob-order-fill span");
-      if (fill) fill.style.width = isCur ? Math.round(Math.max(0, Math.min(1, c.local)) * 100) + "%" : "0%";
-      rows[i].classList.toggle("done", playing && SECTION_ORDER.indexOf(sec) < SECTION_ORDER.indexOf(curSec));
-    }
+  // The order of service is the wheel (kolob-viz.js drawWheel); it reads the
+  // conductor straight from the viz hand-off below. Its labels are set here,
+  // in the current script, and refreshed when the script toggles.
+  function updateWheelLabels() {
+    if (!window.KolobViz || !window.KolobViz.setWheelLabels) return;
+    var tbl = TT(SECTIONS_DS, SECTIONS_EN);
+    window.KolobViz.setWheelLabels(
+      SECTION_ORDER.map(function (sec) { return tbl[sec]; }),
+      SECTION_ORDER.map(function (sec) { return SECTIONS_EN[sec]; }));
   }
 
   function updateBoard(c, playing) {
@@ -544,7 +527,6 @@
       scene.classList.toggle("is-dev", latinMode);
     }
     updateTelemetry(c, playing);
-    updateOrder(c, playing);
     updateBoard(c, playing);
     flushPhraseLog();
     if (window.KolobViz && window.KolobViz.setConductor) window.KolobViz.setConductor(c, playing);
@@ -638,6 +620,7 @@
     if (empty) empty.textContent = ST.pressPlay;
     if (lastBroadside) setBroadside(lastBroadside, false);
     else setText("#kolob-broadside-line", ST.placeholder);
+    updateWheelLabels();
     var tog = document.getElementById("kolob-latin");
     if (tog) {
       // The toggle names the OTHER script, written in that script: in Deseret
@@ -648,16 +631,16 @@
       tog.classList.toggle("is-deseret", latinMode);
     }
   }
-  // Dev aid: with the Latin toggle on, the printed program becomes a jump
-  // menu — click a line of the order of service to skip the meeting there.
+  // Dev aid: with the Latin toggle on, the wheel becomes a jump menu — click a
+  // seat of the order of service to skip the meeting there.
   function wireOrderSkip() {
-    var host = document.getElementById("kolob-order");
-    if (!host) return;
-    host.addEventListener("click", function (e) {
+    var wheel = document.getElementById("kolob-wheel");
+    if (!wheel) return;
+    wheel.addEventListener("click", function (e) {
       if (!latinMode) return;                                 // inert for the congregation
-      var row = e.target.closest ? e.target.closest(".kolob-order-row") : null;
-      if (!row) return;
-      var sec = row.getAttribute("data-sec");
+      if (!window.KolobViz || !window.KolobViz.wheelSeatAt) return;
+      var r = wheel.getBoundingClientRect();
+      var sec = window.KolobViz.wheelSeatAt(e.clientX - r.left, e.clientY - r.top);
       if (sec && K.skipToSection && K.isPlaying && K.isPlaying()) K.skipToSection(sec);
     });
   }
@@ -670,8 +653,6 @@
       try { localStorage.setItem("kolobLatin", latinMode ? "1" : "0"); } catch (e) {}
       applyScript();
       renderMixer();
-      var order = document.getElementById("kolob-order");
-      if (order) order.innerHTML = "";                        // rebuilt in the new script on next poll
       poll();
     });
   }
@@ -683,8 +664,9 @@
     var canvas = document.getElementById("kolob-viz");
     var dial = document.getElementById("kolob-dial");
     var organ = document.getElementById("kolob-organ");
+    var wheel = document.getElementById("kolob-wheel");
     if (window.KolobViz && typeof window.KolobViz.init === "function") {
-      try { window.KolobViz.init(canvas, dial, organ); }
+      try { window.KolobViz.init(canvas, dial, organ, wheel); }
       catch (e) { if (window.console) console.error("Kolob viz init failed", e); }
     }
   }

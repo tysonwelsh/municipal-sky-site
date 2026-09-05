@@ -161,9 +161,8 @@
   border-style: dashed;
 }
 
-/* dev mode: the order of service becomes a jump menu */
-.kolob-scene.is-dev .kolob-order-row { cursor: pointer; }
-.kolob-scene.is-dev .kolob-order-row:hover .kolob-order-name { color: var(--gilt); }
+/* dev mode: the wheel becomes a jump menu (click a seat) */
+.kolob-scene.is-dev .kolob-wheel { cursor: pointer; }
 
 /* the hush: the page holds its breath with the music */
 .kolob-scene.is-hush .kolob-viz-wrap,
@@ -358,7 +357,7 @@
   .kolob-range::-moz-range-thumb { width: 18px; height: 18px; }
 }
 
-/* ===================== order of service + hymn board ==================== */
+/* ================ the wheel, then hymn board + broadside ================ */
 .kolob-columns {
   display: grid;
   grid-template-columns: 1.25fr 1fr;
@@ -375,41 +374,29 @@
   margin: 0 0 1rem;
 }
 
-.kolob-order-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: 0.34rem 0;
-  font-family: "Noto Sans Deseret", serif;
-  font-size: 0.92rem;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-  transition: color 600ms;
-}
-.kolob-order-row.current { color: var(--ink); }
-.kolob-order-row.done { color: var(--ink-faint); }
-.kolob-order-hand {
-  width: 1.3em;
-  opacity: 0;
-  transition: opacity 600ms;
-  font-family: Georgia, serif;
-}
-.kolob-order-row.current .kolob-order-hand { opacity: 1; }
-.kolob-order-fill {
-  flex: 1;
-  height: 1px;
-  align-self: center;
-  background: transparent;
-  border-bottom: 1px dotted var(--ink-faint);
+/* the order of service: the crown of a wheel, drawn by the canvas
+   (kolob-viz.js drawWheel) — a full-width band above the board, since the
+   horizon metaphor wants width. The live region beneath it speaks the seat
+   and its progress for readers who cannot see the wheel. */
+.kolob-order-block { margin: 0 0 2rem; }
+.kolob-wheel-wrap {
   position: relative;
+  height: 262px;
 }
-.kolob-order-fill span {
+.kolob-wheel {
   position: absolute;
-  left: 0; bottom: -1px;
-  height: 1px;
-  width: 0;
-  background: var(--ink);
-  transition: width 900ms linear;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.kolob-visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* the hymn board: dark green board, ivory number cards */
@@ -562,7 +549,7 @@
 /* ============================== broadside ================================ */
 /* seated in the right column beneath the hymn board */
 .kolob-broadside-block {
-  margin: 1.6rem 0 0;
+  margin: 0;                       /* beside the board now, not beneath it */
   text-align: center;
 }
 .kolob-broadside-block .kolob-sec-head { text-align: left; }
@@ -668,6 +655,7 @@
 .kolob-scene.is-sacrament .kolob-log-block,
 .kolob-scene.is-sacrament .kolob-broadside-block,
 .kolob-scene.is-sacrament .kolob-stops-block,
+.kolob-scene.is-sacrament .kolob-order-block,
 .kolob-scene.is-sacrament .kolob-columns {
   opacity: 0.55;
   transition: opacity 4s ease;
@@ -675,6 +663,7 @@
 .kolob-scene .kolob-log-block,
 .kolob-scene .kolob-broadside-block,
 .kolob-scene .kolob-stops-block,
+.kolob-scene .kolob-order-block,
 .kolob-scene .kolob-columns {
   transition: opacity 4s ease;
 }
@@ -685,6 +674,7 @@
   .kolob-scene::before { inset: 8px; }
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
+  .kolob-wheel-wrap { height: 200px; }
   #kolob-layers { grid-template-columns: 1fr; }
   /* re-lay the console: the info text spans the top as TWO columns, and the
      Liahona dial shares the row beneath with the transport (buttons + slider). */

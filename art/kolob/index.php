@@ -96,12 +96,22 @@ include '../../includes/header.php';
       <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
-    <!-- Order of service + hymn board -->
-    <div class="kolob-columns">
-      <div class="kolob-order-block">
-        <div class="kolob-sec-head">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
-        <div id="kolob-order" aria-label="order of service"></div>
+    <!-- Order of service: the crown of a wheel. The seven sections are seated
+         round the rim of one great wheel and the page shows only its crown, a
+         sun low on the horizon. The section now playing is lettered at the
+         crown beneath ONE fixed gilt arc that fills as the section plays; when
+         it is full the wheel turns anticlockwise a seat beneath it and the arc
+         fills again. Drawn by kolob-viz.js (drawWheel). -->
+    <div class="kolob-order-block">
+      <div class="kolob-sec-head">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
+      <div class="kolob-wheel-wrap">
+        <canvas id="kolob-wheel" class="kolob-wheel" aria-label="the order of service — a wheel turning beneath one arc"></canvas>
+        <div id="kolob-wheel-live" class="kolob-visually-hidden" aria-live="polite"></div>
       </div>
+    </div>
+
+    <!-- Hymn board + broadside -->
+    <div class="kolob-columns">
       <div class="kolob-board-block">
         <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
         <div class="kolob-board">
@@ -113,11 +123,10 @@ include '../../includes/header.php';
             <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
           </div>
         </div>
-        <!-- The broadside — seated beneath the board to keep the page short -->
-        <div class="kolob-broadside-block">
-          <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
-          <div class="kolob-broadside-line" id="kolob-broadside-line" aria-label="the broadside verse">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
-        </div>
+      </div>
+      <div class="kolob-broadside-block">
+        <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+        <div class="kolob-broadside-line" id="kolob-broadside-line" aria-label="the broadside verse">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
       </div>
     </div>
 

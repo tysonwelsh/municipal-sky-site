@@ -3,6 +3,10 @@
 *A plan for replacing the printed seven-row program (and its straight
 progress rule) with a turning wheel seen low on the horizon.*
 
+> **Built** — landed in v0.11 as `drawWheel` in `kolob-viz.js`, following
+> mockup 1 (the horizon) as revised: one arc fixed at the crown, tick to
+> tick; labels lettered round the rim; spokes and hour-marks beneath.
+
 ## The idea, restated
 
 The seven sections of a meeting are seated around the rim of one wheel.
