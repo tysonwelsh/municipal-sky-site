@@ -1,7 +1,7 @@
 // ============================================================================
-// KOLOB — UI controller (running head + hymn board + the stops + clerk's
-// minutes + broadside; the order of service is the WHEEL, drawn by the viz —
-// this file only hands it the labels and the dev jump)
+// KOLOB — UI controller (running head + direction line + hymn board + the
+// stops + clerk's minutes + broadside; the order of service is the WHEEL,
+// drawn by the viz — this file only hands it the labels and the dev jump)
 //
 // EVERYTHING the reader sees is set in the DESERET ALPHABET. The engine emits
 // English event labels internally; this file maps them to Deseret renderings
@@ -127,7 +127,7 @@
   // ==========================================================================
   var STR_EN = {
     play: "PLAY", stop: "STOP", vol: "VOL", seed: "SEED", gather: "GATHER",
-    meeting: "MEETING", hertz: "HZ", idle: "THE VALLEY IS STILL",
+    meeting: "MEETING", hertz: "HERTZ", idle: "THE VALLEY IS STILL",
     listening: "THE MINUTES BEGIN", stillness: "STILLNESS", fuging: "FUGING",
     reprise: "REPRISE", develops: "DEVELOPS", disperses: "DISPERSES",
     answers: "ANSWERS", linesOut: "LINES OUT", shadows: "SHADOWS",
@@ -162,6 +162,13 @@
   try {
     latinMode = /[?&]latin=1/.test(location.search) || localStorage.getItem("kolobLatin") === "1";
   } catch (e) {}
+  // Dev preview (?kolobPreview=1): with the engine idle, the running head and
+  // the direction line show a sample conductor so the dressed page can be seen
+  // (and screenshotted) without audio. The real conductor always wins once the
+  // engine plays. Mirrors the ?latin=1 switch; not persisted.
+  var previewMode = false;
+  try { previewMode = /[?&]kolobPreview=1/.test(location.search); } catch (e) {}
+  var PREVIEW_CONDUCTOR = { meeting: 3, section: "hymn", meter: "CM", activity: "conference", mode: "mixolydian", f0: 65.4, fuging: true };
   function TT(dsTable, enTable) { return latinMode ? enTable : dsTable; }
   function ambientName(entry) { return latinMode ? entry[2] : entry[1]; }
   // gesture ciphers run 𐐀..𐐚 (the Deseret alphabet from its first letter);
@@ -457,28 +464,57 @@
   var SECTION_ORDER = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
   function pad3(n) { n = Math.max(0, n | 0); return (n < 10 ? "00" : n < 100 ? "0" : "") + n; }
 
-  function updateTelemetry(c, playing) {
-    var el = document.getElementById("kolob-telemetry"); if (!el) return;
-    var SEP = '<span class="t-sep">·</span>';
+  // The running head — two fixed slots under the title, as a hymnal's:
+  //   left   MEETING 001 · ORDINARY
+  //   right  8.6.8.6 · IONIAN · 65.4 HERTZ   (the meter dots only during a hymn)
+  // Idle, the left slot alone says the valley is still. The section is not
+  // named here: the wheel names it.
+  var SEP = '<span class="t-sep">·</span>';
+  function joinParts(parts) { return parts.filter(Boolean).join(SEP); }
+  function updateRunningHead(c, playing) {
+    var left = document.getElementById("kolob-rh-left");
+    var right = document.getElementById("kolob-rh-right");
+    if (!left || !right) return;
+    var head = document.getElementById("kolob-running-head");
+    if (head) head.classList.toggle("is-live", !!playing);
     if (!playing) {
-      el.innerHTML = '<span class="t-part">' + TT(STR, STR_EN).idle + '</span>';
+      left.textContent = TT(STR, STR_EN).idle;
+      right.textContent = "";
       return;
     }
-    var parts = [
+    left.innerHTML = joinParts([
       TT(STR, STR_EN).meeting + " " + pad3(c.meeting),
-      TT(SECTIONS_DS, SECTIONS_EN)[c.section] || "",
       TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "",
+    ]);
+    right.innerHTML = joinParts([
+      c.section === "hymn" && c.meter ? metersDots(c.meter) : "",
       TT(MODES_DS, MODES_EN)[c.mode] || "",
       (typeof c.f0 === "number" ? c.f0.toFixed(1) : "—") + " " + TT(STR, STR_EN).hertz,
-    ];
-    if (c.section === "hymn" && c.meter) parts.splice(2, 0, metersDots(c.meter));
-    if (c.hush) parts.push('<span class="t-flag">' + TT(STR, STR_EN).stillness + '</span>');
-    else if (c.fuging) parts.push('<span class="t-flag">' + TT(STR, STR_EN).fuging + '</span>');
-    else if (c.visit) parts.push('<span class="t-flag">' + TT(STR, STR_EN)[{ question: "theQuestion", bands: "twoBands", steeples: "steeplesFlag", assembly: "wholeFlag" }[c.visit] || "twoBands"] + '</span>');
-    el.innerHTML = parts.filter(Boolean).map(function (p) { return '<span class="t-part">' + p + '</span>'; }).join(SEP);
+    ]);
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
   function metersDots(m) { return METER_DOTS[m] || m; }
+
+  // The direction line — the event flag printed as a performance direction
+  // under the staff: stillness, fuging, the question, two bands, the steeples
+  // answer, the whole tune. Empty (but its line reserved) when nothing fires.
+  var VISIT_FLAG = { question: "theQuestion", bands: "twoBands", steeples: "theSteeples", assembly: "wholeFlag" };
+  function directionFor(c, playing) {
+    if (!playing) return "";
+    var S = TT(STR, STR_EN);
+    if (c.hush) return S.stillness;
+    if (c.fuging) return S.fuging;
+    if (c.visit) return S[VISIT_FLAG[c.visit] || "twoBands"];
+    return "";
+  }
+  function updateDirection(c, playing) {
+    var el = document.getElementById("kolob-direction"); if (!el) return;
+    var txt = directionFor(c, playing);
+    // lower case, as a direction is set (rit., a tempo); Deseret keeps its capitals
+    if (latinMode) txt = txt.toLowerCase();
+    if (el.textContent !== txt) el.textContent = txt;
+    el.classList.toggle("is-deseret", !latinMode);
+  }
 
   // The order of service is the wheel (kolob-viz.js drawWheel); it reads the
   // conductor straight from the viz hand-off below. Its labels are set here,
@@ -526,7 +562,12 @@
       scene.classList.toggle("is-hush", !!(playing && c.hush));
       scene.classList.toggle("is-dev", latinMode);
     }
-    updateTelemetry(c, playing);
+    // the head and the direction line: the real meeting, or — idle, in
+    // preview — the sample conductor, so the dressed page can be seen
+    var shown = playing, cc = c;
+    if (!playing && previewMode) { shown = true; cc = PREVIEW_CONDUCTOR; }
+    updateRunningHead(cc, shown);
+    updateDirection(cc, shown);
     updateBoard(c, playing);
     flushPhraseLog();
     if (window.KolobViz && window.KolobViz.setConductor) window.KolobViz.setConductor(c, playing);
@@ -598,7 +639,6 @@
     var S = TT(STR, STR_EN), ST = TT(STATIC_DS, STATIC_EN);
     function setText(sel, txt) { var el = document.querySelector(sel); if (el) el.textContent = txt; }
     setText(".kolob-title", ST.title);
-    setText(".kolob-order-block .kolob-sec-head", S.orderOfService);
     setText(".kolob-board-block .kolob-sec-head", S.hymnBoard);
     setText(".kolob-stops-block .kolob-sec-head-label", S.theStops);
     setText("#kolob-copy-params .kolob-copy-label", S.copyParams);
@@ -620,6 +660,13 @@
     if (empty) empty.textContent = ST.pressPlay;
     if (lastBroadside) setBroadside(lastBroadside, false);
     else setText("#kolob-broadside-line", ST.placeholder);
+    // the running head and the direction line: idle text now; poll() re-sets
+    // them in the current script from the conductor (or the preview) at once
+    setText("#kolob-rh-left", S.idle);
+    setText("#kolob-rh-right", "");
+    setText("#kolob-direction", "");
+    var dir = document.getElementById("kolob-direction");
+    if (dir) dir.classList.toggle("is-deseret", !latinMode);
     updateWheelLabels();
     var tog = document.getElementById("kolob-latin");
     if (tog) {
@@ -668,6 +715,14 @@
     if (window.KolobViz && typeof window.KolobViz.init === "function") {
       try { window.KolobViz.init(canvas, dial, organ, wheel); }
       catch (e) { if (window.console) console.error("Kolob viz init failed", e); }
+      // The canvases are measured at init, which can run before the page has
+      // its final width (a pending webfont stylesheet, a late layout). The viz
+      // re-measures on window resize, so nudge it once the page has settled
+      // and once the fonts are in — otherwise the plates draw at the wrong
+      // scale and their geometry (the wheel's radius) is off.
+      var remeasure = function () { try { window.dispatchEvent(new Event("resize")); } catch (e2) {} };
+      window.addEventListener("load", remeasure);
+      if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(remeasure);
     }
   }
 

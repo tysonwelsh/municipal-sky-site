@@ -1,5 +1,8 @@
 # KOLOB — a cohesive page (layout plan, v0.12)
 
+> **Built** — landed in v0.12 after three coder/designer rounds (final score 8/10,
+> approved); the four minor findings left open were applied by hand.
+
 ## Diagnosis
 
 The page grew by accretion. Each element is good on its own and none was

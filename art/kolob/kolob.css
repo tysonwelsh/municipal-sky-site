@@ -91,8 +91,8 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0 0 1.8rem;
-  padding-bottom: 0.8rem;
+  margin: 0 0 1.2rem;
+  padding-bottom: 0.6rem;
   border-bottom: 1px solid var(--rule);
 }
 /* dev script toggle — deliberately faint; a development aid, not a feature */
@@ -166,14 +166,21 @@
 
 /* the hush: the page holds its breath with the music */
 .kolob-scene.is-hush .kolob-viz-wrap,
+.kolob-scene.is-hush .kolob-wheel-wrap,
 .kolob-scene.is-hush .kolob-organ-wrap { opacity: 0.7; transition: opacity 2.5s ease; }
 .kolob-scene .kolob-viz-wrap,
+.kolob-scene .kolob-wheel-wrap,
 .kolob-scene .kolob-organ-wrap { transition: opacity 2.5s ease; }
+
+/* ===================== the spacing scale — 0.6 / 1.2 / 2 / 2.8 rem ==========
+   Every block margin on the page is one of these four. 0.6 inside a band or
+   under a head; 1.2 between the plates and between the parts of the head;
+   2 between the boards; 2.8 between the console and the boards. */
 
 /* ============================== title page ============================== */
 .kolob-header {
   text-align: center;
-  margin: 0 0 1.7rem;
+  margin: 0 0 1.2rem;               /* the running head belongs to the plates; the 2rem step is for the boards */
 }
 .kolob-title {
   font-family: "Noto Sans Deseret", serif;
@@ -189,7 +196,7 @@
   height: 9px;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  margin: 0 8%;
+  margin: 0;                        /* the full measure, like every other rule; the running head's slots sit under its ends */
 }
 .kolob-rule::after {
   content: "✧";
@@ -202,13 +209,36 @@
   font-size: 0.72rem;
 }
 
+/* the running head — as a hymnal's: one line of letterspaced capitals in two
+   FIXED slots, left and right, under the title's double rule. The slots are
+   sized by the line, not by their text, so the head never reflows as the
+   values change; the right slot holds its place even when empty. */
+.kolob-running-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.2rem;
+  margin: 1.2rem 0 0;
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.kolob-rh-left  { flex: 1 1 0; min-width: 0; text-align: left; white-space: nowrap; }
+.kolob-rh-right { flex: 1 1 0; min-width: 0; text-align: right; white-space: nowrap; margin-right: -0.18em; }  /* the trailing tracking, so the last glyph meets the edge */
+.kolob-rh-right:empty::before { content: "\00a0"; }   /* the slot keeps its line */
+/* ink for the current meeting; ink-soft when the valley is still */
+.kolob-running-head.is-live { color: var(--ink); }
+.kolob-running-head .t-sep { margin: 0 0.45em; color: var(--ink-faint); }
+
 /* ============================== the organ ================================ */
 /* the tabernacle facade as a spectrum analyzer — black pipe silhouettes on
    their impost line, drawn entirely by the canvas */
 .kolob-organ-wrap {
   position: relative;
-  height: 175px;
-  margin: 0 0 0.9rem;
+  height: 120px;                    /* pipes at rest fill the bottom ~45px; live pipes have OH-10 = 110px of headroom. 120 puts the running head 89px above the pipe tops — the same step as impost-to-crown and horizon-to-staff (76) plus a breath */
+  margin: 0 0 1.2rem;
 }
 .kolob-organ {
   position: absolute;
@@ -226,7 +256,7 @@
 .kolob-viz-wrap {
   position: relative;
   height: 220px;
-  margin: 0 0 1.4rem;
+  margin: 0;                        /* the direction line sits directly beneath */
 }
 .kolob-viz {
   position: absolute;
@@ -236,39 +266,44 @@
   display: block;
 }
 
-/* ================== running head + transport + liahona =================== */
-/* the console is a grid: the running head and dial share the top row, the
-   transport spans the row beneath. (Small screens re-lay these areas — see the
-   media query.) */
-.kolob-console {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "info dial"
-    "controls controls";
-  column-gap: 1.2rem;
-  row-gap: 1.4rem;
-  align-items: center;
-  margin: 0 0 2rem;
-}
-.kolob-telemetry { grid-area: info; }
-.kolob-dial { grid-area: dial; }
-.kolob-transport { grid-area: controls; }
-.kolob-telemetry {
-  font-family: "Noto Sans Deseret", serif;
-  font-size: 0.82rem;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-  line-height: 1.9;
-}
-.kolob-telemetry .t-sep { margin: 0 0.55em; color: var(--ink-faint); }
-.kolob-telemetry .t-flag {
+/* ============================ the direction line ========================= */
+/* the event flag printed as a performance direction in the margin under the
+   staff — right-aligned, italic, gilt (the one colour for what moves or
+   fires). A fixed one-line height, so the console beneath never shifts. */
+.kolob-direction {
+  height: 1.6rem;
+  line-height: 1.6rem;
+  margin: -0.6rem 0 1.2rem;      /* pulled up under the staff, as a direction is; the step goes to the band */
+  text-align: right;
+  font-family: "EB Garamond", "Noto Sans Deseret", Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
   color: var(--gilt);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.kolob-direction.is-deseret { font-family: "Noto Sans Deseret", "EB Garamond", serif; }
+
+/* ====================== the console: transport + liahona ================= */
+/* one ruled band, like the masthead: hairlines above and below, the transport
+   (PLAY, STOP, a spacer, the VOL slider) filling the line and the Liahona dial
+   seated at its right end, everything centred on one line. */
+.kolob-console {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 0.6rem;              /* the step the direction line gave back */
+  margin: 0 0 2.8rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
 }
 .kolob-dial {
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   flex: 0 0 auto;
+  display: block;
 }
 
 /* ============================== transport ================================ */
@@ -276,7 +311,9 @@
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  margin: 0;                        /* the console grid owns the outer spacing */
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;                        /* the console band owns the outer spacing */
 }
 .kolob-btn {
   font-family: "Noto Sans Deseret", serif;
@@ -357,31 +394,16 @@
   .kolob-range::-moz-range-thumb { width: 18px; height: 18px; }
 }
 
-/* ================ the wheel, then hymn board + broadside ================ */
-.kolob-columns {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: 2.4rem;
-  margin: 0 0 2.2rem;
-}
-.kolob-sec-head {
-  font-family: "Noto Sans Deseret", serif;
-  font-size: 0.8rem;
-  letter-spacing: 0.22em;
-  color: var(--ink-soft);
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 0.45rem;
-  margin: 0 0 1rem;
-}
-
+/* ============================== the wheel ================================ */
 /* the order of service: the crown of a wheel, drawn by the canvas
-   (kolob-viz.js drawWheel) — a full-width band above the board, since the
-   horizon metaphor wants width. The live region beneath it speaks the seat
-   and its progress for readers who cannot see the wheel. */
-.kolob-order-block { margin: 0 0 2rem; }
+   (kolob-viz.js drawWheel) — the middle plate, between the organ and the
+   staff. Its horizon rule is the divider before the staff, so the band ends
+   just beneath it. The live region speaks the seat and its progress for
+   readers who cannot see the wheel. */
 .kolob-wheel-wrap {
   position: relative;
-  height: 262px;
+  height: 210px;                    /* crown at 20%, horizon pinned 22px above the bottom (kolob-viz.js wheelGeom): the sky above the crown is 42px, the horizon-to-staff gap 76 at every width */
+  margin: 0 0 1.2rem;
 }
 .kolob-wheel {
   position: absolute;
@@ -399,6 +421,24 @@
   white-space: nowrap;
 }
 
+/* ======================= the boards: hymn board + broadside ============== */
+/* the boards share one block margin (2rem) and one section head */
+.kolob-columns {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 2.8rem;
+  margin: 0 0 2rem;
+}
+.kolob-sec-head {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.6rem;
+  margin: 0 0 1.2rem;
+}
+
 /* the hymn board: dark green board, ivory number cards */
 .kolob-board {
   background: linear-gradient(175deg, var(--cover-hi), var(--cover));
@@ -407,11 +447,14 @@
   box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 .kolob-board .kolob-ctl-label { color: rgba(245, 240, 228, 0.6); }
-/* the number cards ride the seed row now (right of GATHER), one line tall */
+/* the number cards: their own line beneath the seed row, set to the LEFT edge
+   so both lines share the SEED edge (a hymn board's cards hang from one side),
+   one line tall — a fixed plate, the same in both scripts and both widths */
 .kolob-board-nums {
   display: flex;
+  justify-content: flex-start;
   gap: 0.4rem;
-  margin: 0 0 0 auto;              /* pushed to the row's right edge */
+  margin: 0.6rem 0 0;
   min-height: 2.1rem;
   align-items: center;
 }
@@ -428,7 +471,7 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;               /* one fixed line: SEED, the value, the input, GATHER — the input gives way */
 }
 .kolob-seed-current {
   font-family: "EB Garamond", serif;
@@ -437,7 +480,9 @@
   letter-spacing: 0.06em;
 }
 .kolob-seed-input {
-  width: 7.5em;
+  width: 6em;
+  flex: 1 1 4em;
+  min-width: 0;
   font-family: "EB Garamond", serif;
   font-size: 0.85rem;
   color: var(--paper);
@@ -448,6 +493,8 @@
 }
 .kolob-seed-input:focus { outline: 1px solid var(--gilt); }
 .kolob-btn.kolob-btn-board {
+  flex: 0 0 auto;
+  white-space: nowrap;
   background: transparent;
   color: var(--paper);
   border-color: rgba(245, 240, 228, 0.45);
@@ -458,13 +505,16 @@
 .kolob-btn.kolob-btn-board:hover { border-color: var(--paper); background: rgba(245, 240, 228, 0.06); }
 
 /* ========================= the instruments console ====================== */
-.kolob-stops-block { margin: 0 0 2.2rem; }
-/* the section head is now a collapse toggle (a caret + the label) */
+.kolob-stops-block { margin: 0 0 2rem; }
+/* the section head is now a collapse toggle (a caret + the label). The caret
+   hangs in the margin outside the label column, so the label shares the same
+   left edge as every other section head */
 .kolob-instruments-head {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.55rem;
   width: 100%;
+  padding: 0 0 0.6rem;
   background: none;
   border: 0;
   border-bottom: 1px solid var(--rule);
@@ -475,8 +525,10 @@
 .kolob-instruments-head:focus-visible .kolob-sec-head-label { color: var(--ink); }
 /* a CSS chevron: down when open, right when collapsed */
 .kolob-collapse-caret {
+  position: absolute;
+  left: -1rem;
+  top: 0.22em;
   width: 0.5em; height: 0.5em;
-  flex: 0 0 auto;
   border-right: 1.5px solid var(--ink-soft);
   border-bottom: 1.5px solid var(--ink-soft);
   transform: translateY(-0.12em) rotate(45deg);
@@ -486,16 +538,20 @@
   transform: translateY(0) rotate(-45deg);
 }
 .kolob-instruments-body[hidden] { display: none; }
-/* the FIELD subheading inside the console grid */
+/* the FIELD subheading inside the console grid — set on the running head's
+   measure (0.78rem / 0.18em: the page has two small-caps sizes, the section
+   heads' 0.8/0.22 and this one), ink-faint to sit beneath the heads. Its rule
+   is ABOVE the label, deliberately: it closes the main list of stops, and the
+   field stops hang beneath the label with no rule between them and it. */
 .kolob-field-head {
   grid-column: 1 / -1;
   font-family: "Noto Sans Deseret", serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  color: var(--ink-faint);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);          /* subordinate by size and position, not by fading away */
   border-top: 1px solid var(--rule);
-  padding-top: 0.7rem;
-  margin-top: 0.35rem;
+  padding-top: 0.6rem;
+  margin-top: 0.6rem;
 }
 /* the copy-parameters button, seated under the console */
 .kolob-copy-btn {
@@ -627,7 +683,7 @@
   color: var(--ink-soft);
   text-align: center;
   border-top: 1px solid var(--rule);
-  padding-top: 1.4rem;
+  padding-top: 1.2rem;
   margin: 0;
 }
 .kolob-note a {
@@ -641,7 +697,7 @@
    deploy time. Latin + monospace on purpose; it is a marginer's note, not part
    of the piece. */
 .kolob-build {
-  margin: 1.3rem 0 0;
+  margin: 1.2rem 0 0;
   text-align: center;
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 0.62rem;
@@ -655,7 +711,6 @@
 .kolob-scene.is-sacrament .kolob-log-block,
 .kolob-scene.is-sacrament .kolob-broadside-block,
 .kolob-scene.is-sacrament .kolob-stops-block,
-.kolob-scene.is-sacrament .kolob-order-block,
 .kolob-scene.is-sacrament .kolob-columns {
   opacity: 0.55;
   transition: opacity 4s ease;
@@ -663,7 +718,6 @@
 .kolob-scene .kolob-log-block,
 .kolob-scene .kolob-broadside-block,
 .kolob-scene .kolob-stops-block,
-.kolob-scene .kolob-order-block,
 .kolob-scene .kolob-columns {
   transition: opacity 4s ease;
 }
@@ -673,50 +727,44 @@
   .kolob-scene { margin: 0.9rem auto 2rem; padding: 18px; }
   .kolob-scene::before { inset: 8px; }
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
-  .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
-  .kolob-wheel-wrap { height: 200px; }
+  .kolob-columns { grid-template-columns: 1fr; gap: 2rem; }
   #kolob-layers { grid-template-columns: 1fr; }
-  /* re-lay the console: the info text spans the top as TWO columns, and the
-     Liahona dial shares the row beneath with the transport (buttons + slider). */
-  /* fixed first track (the dial's width) so long info text can't stretch the
-     grid columns; the info area is therefore always the full width. */
+  /* the running head stacks: two short lines, both set to the left edge */
+  .kolob-running-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    letter-spacing: 0.14em;
+  }
+  .kolob-rh-left, .kolob-rh-right { flex: 0 0 auto; width: 100%; text-align: left; margin-right: 0; }
+  /* the console band re-lays as a grid: the buttons and the dial keep the
+     first line, the slider takes the whole line beneath — still inside the
+     band, between its two hairlines. The transport's children become items of
+     the band's grid (display: contents) so the dial can share their line. */
   .kolob-console {
-    grid-template-columns: 64px 1fr;
+    display: grid;
+    grid-template-columns: auto auto 1fr 64px;
     grid-template-areas:
-      "info info"
-      "dial controls";
-    column-gap: 0.9rem;
-    row-gap: 1rem;
+      "play stop . dial"
+      "vol vol vol vol";
+    column-gap: 0.6rem;
+    row-gap: 0.6rem;
     align-items: center;
   }
-  /* the running head breaks into two side-by-side columns of FIXED width: with
-     column-count over a full-width, min-width:0 box each column is exactly half,
-     independent of the text — long words wrap inside their column instead of
-     widening it. A min-height reserves room for the worst case (6 info parts +
-     the event flag that sometimes appears at the end = 4 lines) so the dial/
-     transport row below never shifts when that flag comes and goes. */
-  .kolob-telemetry {
-    column-count: 2;
-    column-gap: 1rem;
-    line-height: 1.5;
-    min-height: 5.2rem;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .kolob-telemetry .t-part { display: block; break-inside: avoid; overflow-wrap: anywhere; }
-  .kolob-telemetry .t-sep { display: none; }
-  .kolob-dial { justify-self: start; width: 64px; height: 64px; }
-  /* the transport sits beside the dial: buttons and slider on one line */
-  .kolob-transport {
-    flex-flow: row wrap;
-    align-items: center;
-    gap: 0.45rem;
-  }
+  .kolob-transport { display: contents; }
+  .kolob-console .play-btn { grid-area: play; }
+  .kolob-console .stop-btn { grid-area: stop; }
+  .kolob-console .kolob-dial { grid-area: dial; justify-self: end; }
+  /* the slider on its own line, bounded and centred — 200px of track with paper
+     either side, so it reads as a control and not as a third rule in the band.
+     The 2.8rem height is the coarse-pointer height, reserved on every pointer,
+     so the band is one size everywhere */
+  .kolob-console .kolob-range { grid-area: vol; width: 200px; height: 2.8rem; justify-self: center; }
   .kolob-transport-spacer { display: none; }
   .kolob-transport .kolob-btn { padding: 0.5rem 0.7rem; }
   /* the slider is self-evident (and keeps its aria-label) — drop the "VOL" caption */
   .kolob-transport .kolob-ctl-label { display: none; }
-  .kolob-transport .kolob-range { flex: 1 1 70px; min-width: 60px; width: auto; }
-  .kolob-organ-wrap { height: 135px; }
+  .kolob-organ-wrap { height: 110px; }
+  .kolob-wheel-wrap { height: 165px; }
   .kolob-viz-wrap { height: 184px; }
 }

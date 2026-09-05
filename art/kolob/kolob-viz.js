@@ -163,15 +163,11 @@ window.KolobViz = (function () {
       var h = minH + bands[k2] * (maxH - minH) * (0.55 + centerness * 0.45);
       drawPipe(octx, x0 + seat * step, baseY, w, h);
     }
-    // the impost — the case line the pipes stand on
-    octx.strokeStyle = INK;
-    octx.globalAlpha = 0.6;
-    octx.lineWidth = 1.4;
-    octx.beginPath(); octx.moveTo(OW * 0.04, baseY + 1); octx.lineTo(OW * 0.96, baseY + 1); octx.stroke();
-    octx.globalAlpha = 0.3;
+    // the impost — the case line the pipes stand on: one hairline at the
+    // page's rule weight, margin to margin, like every other rule
+    octx.strokeStyle = "rgba(30, 77, 59, 0.42)";
     octx.lineWidth = 1;
-    octx.beginPath(); octx.moveTo(OW * 0.07, baseY + 5); octx.lineTo(OW * 0.93, baseY + 5); octx.stroke();
-    octx.globalAlpha = 1;
+    octx.beginPath(); octx.moveTo(0, baseY + 0.5); octx.lineTo(OW, baseY + 0.5); octx.stroke();
   }
 
   // ---- pitch → staff position -----------------------------------------------
@@ -424,20 +420,20 @@ window.KolobViz = (function () {
   // travel).
   function buildStaffLayer(c) {
     c.clearRect(0, 0, W, H);
-    var xL = 22, xR = W;                            // rules run from the barline to the right edge
+    var xL = 12, xR = W;                            // rules run from the barline to the right edge; the brace hangs on the margin
     var sp = stepPx(), staffH = 8 * sp;
     // the ten rules
     c.strokeStyle = RULE; c.lineWidth = 1;
     var rules = BASS_RULES.concat(TREBLE_RULES);
     for (var i = 0; i < rules.length; i++) {
-      var yy = yOfQ(rules[i]) + 0.5;
+      var yy = Math.round(yOfQ(rules[i])) + 0.5;     // snapped: every rule one crisp pixel
       c.beginPath(); c.moveTo(xL, yy); c.lineTo(xR, yy); c.stroke();
     }
     // the left barline joining the staves through the gap
     c.strokeStyle = INK_SOFT; c.lineWidth = 1.2;
-    c.beginPath(); c.moveTo(xL + 0.5, yOfQ(20)); c.lineTo(xL + 0.5, yOfQ(0)); c.stroke();
+    c.beginPath(); c.moveTo(xL + 0.5, Math.round(yOfQ(20)) + 0.5); c.lineTo(xL + 0.5, Math.round(yOfQ(0)) + 0.5); c.stroke();
     // the brace
-    var bx = 12, yt = yOfQ(20), yb = yOfQ(0), mid = (yt + yb) / 2;
+    var bx = 5, yt = yOfQ(20), yb = yOfQ(0), mid = (yt + yb) / 2;   // the brace's tip at the plate's edge
     c.strokeStyle = INK; c.lineWidth = 1.6; c.lineCap = "round";
     c.beginPath();
     c.moveTo(bx + 6, yt);
@@ -457,14 +453,14 @@ window.KolobViz = (function () {
       // the seating: the treble curl (0.58 down its glyph) rides the G line
       // (q14); the bass dots (0.24 down) straddle the F line (q6).
       var trebH = 1.28 * staffH;
-      drawClef(c, CLEF_TREBLE, trebPath, 30, yOfQ(14) - 0.583 * trebH, trebH);
-      drawClef(c, CLEF_BASS,   bassPath, 30, yOfQ(6)  - 0.237 * bassH, bassH);
+      drawClef(c, CLEF_TREBLE, trebPath, xL + 8, yOfQ(14) - 0.583 * trebH, trebH);
+      drawClef(c, CLEF_BASS,   bassPath, xL + 8, yOfQ(6)  - 0.237 * bassH, bassH);
     }
     // The scrolling ink must be gone by the time it reaches the clefs. Compute
     // the right edge of the (wider) bass clef, and fade the ink to nothing just
     // before it — so notes never cross the clefs or the brace.
     var bassW = bassH * (CLEF_BASS.bbox[2] - CLEF_BASS.bbox[0]) / (CLEF_BASS.bbox[3] - CLEF_BASS.bbox[1]);
-    fadeX0 = 30 + bassW + 4;                        // ink ≈ 0 here (just past the clefs)
+    fadeX0 = xL + 8 + bassW + 4;                    // ink ≈ 0 here (just past the clefs)
     fadeX1 = fadeX0 + 58;                           // ink at full strength here
   }
   function stampFuging() {
@@ -670,11 +666,16 @@ window.KolobViz = (function () {
   }
   function wheelGeom() {
     var fontPx = Math.max(14, Math.min(24, XW * 0.03));     // the type scales with the wheel
-    var R = Math.max(XW * 0.5, 280);
-    var crownY = XH * 0.30;
+    var crownY = XH * 0.20;                                 // the sky above the crown, a fifth of the plate
+    // the horizon is pinned to the plate (22px above its foot) so the divider
+    // before the staff sits at one height at every width; the wheel's radius
+    // follows from it — the crown shows 0.44 R above the horizon — capped so a
+    // narrow page still sees the neighbouring seats
+    var horizonY = XH - 22;
+    var R = Math.min((horizonY - crownY) / 0.44, XW * 0.62);
     return {
       fontPx: fontPx, R: R, cx: XW / 2, cy: crownY + R, crownY: crownY,
-      horizonY: crownY + Math.min(R * 0.44, XH - crownY - 8),
+      horizonY: horizonY,
       rBanner: R - fontPx * 2.35,                            // the banner's inner rule
     };
   }
@@ -801,11 +802,10 @@ window.KolobViz = (function () {
     }
     c.restore();
 
-    // the horizon: the letterpress rule the wheel sets behind
+    // the horizon: the letterpress rule the wheel sets behind — one hairline;
+    // the double rule stays unique to the title
     c.strokeStyle = inkA(0.42);
     c.beginPath(); c.moveTo(0, g.horizonY + 0.5); c.lineTo(XW, g.horizonY + 0.5); c.stroke();
-    c.strokeStyle = inkA(0.16);
-    c.beginPath(); c.moveTo(0, g.horizonY + 4.5); c.lineTo(XW, g.horizonY + 4.5); c.stroke();
 
     // the live region, for readers who cannot see the wheel: on a new seat and
     // at the quarter-marks, never every frame

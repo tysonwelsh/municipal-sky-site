@@ -41,8 +41,8 @@ include '../../includes/header.php';
 
     <!-- Title page. The edition controls ride a masthead at the head of the
          page — a ruled band in the flow, not pinned to a corner — so they read
-         as page furniture the title page was set around, then the title and
-         its double rule below. -->
+         as page furniture the title page was set around, then the title, its
+         double rule, and the running head below. -->
     <header class="kolob-header">
 
       <!-- The masthead: the three edition switches, right-justified on their
@@ -63,37 +63,25 @@ include '../../includes/header.php';
 
       <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
       <div class="kolob-rule" aria-hidden="true"></div>
+
+      <!-- The running head, as a hymnal's: two fixed slots on one line. Left,
+           the meeting number and the day; right, the meter dots (during a
+           hymn), the mode and the pitch. Idle, the left slot alone says the
+           valley is still. The slots never reflow as the values change; on a
+           narrow page they stack as two short lines. The section is not named
+           here — the wheel names it. -->
+      <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: meeting, day, meter, mode and pitch">
+        <span class="kolob-rh-left" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</span>
+        <span class="kolob-rh-right" id="kolob-rh-right"></span>
+      </div>
     </header>
+
+    <!-- The plates: three engravings in one column, at one rhythm — the organ
+         facade, the wheel, the staff. -->
 
     <!-- The organ: the tabernacle facade as a spectrum analyzer -->
     <div class="kolob-organ-wrap">
       <canvas id="kolob-organ" class="kolob-organ" aria-label="the tabernacle organ pipes, breathing with the music"></canvas>
-    </div>
-
-    <!-- The page (shape-note engraving) -->
-    <div class="kolob-viz-wrap">
-      <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
-    </div>
-
-    <!-- The console: the running head (telemetry), the transport, and the
-         Liahona dial. A grid — on wide pages the telemetry and dial share the
-         top row with the transport beneath; on small pages the telemetry sits
-         beside the buttons & slider and the dial drops to its own row below
-         (with room to its right for a future companion). -->
-    <div class="kolob-console">
-      <div class="kolob-telemetry" id="kolob-telemetry" aria-label="meeting telemetry">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
-
-      <!-- Transport -->
-      <div class="kolob-transport">
-        <button type="button" class="kolob-btn play-btn" id="kolob-play" aria-label="play"><span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
-        <button type="button" class="kolob-btn stop-btn" id="kolob-stop" aria-label="stop"><span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
-        <div class="kolob-transport-spacer"></div>
-        <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
-        <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
-      </div>
-
-      <!-- The Liahona dial — its own row on small screens -->
-      <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
     <!-- Order of service: the crown of a wheel. The seven sections are seated
@@ -101,13 +89,39 @@ include '../../includes/header.php';
          sun low on the horizon. The section now playing is lettered at the
          crown beneath ONE fixed gilt arc that fills as the section plays; when
          it is full the wheel turns anticlockwise a seat beneath it and the arc
-         fills again. Drawn by kolob-viz.js (drawWheel). -->
-    <div class="kolob-order-block">
-      <div class="kolob-sec-head">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
-      <div class="kolob-wheel-wrap">
-        <canvas id="kolob-wheel" class="kolob-wheel" aria-label="the order of service — a wheel turning beneath one arc"></canvas>
-        <div id="kolob-wheel-live" class="kolob-visually-hidden" aria-live="polite"></div>
+         fills again. Drawn by kolob-viz.js (drawWheel); its horizon rule is
+         the divider between this plate and the staff beneath. The live region
+         speaks the seat and its progress for readers who cannot see it. -->
+    <div class="kolob-wheel-wrap">
+      <canvas id="kolob-wheel" class="kolob-wheel" aria-label="the order of service — a wheel turning beneath one arc"></canvas>
+      <div id="kolob-wheel-live" class="kolob-visually-hidden" aria-live="polite"></div>
+    </div>
+
+    <!-- The page (shape-note engraving) -->
+    <div class="kolob-viz-wrap">
+      <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
+    </div>
+
+    <!-- The direction line: the event flag printed as a performance direction
+         in the margin under the staff (stillness, fuging, the question, two
+         bands, the steeples answer, the whole tune). One reserved line, so
+         nothing beneath shifts when it comes and goes. -->
+    <div class="kolob-direction" id="kolob-direction" aria-label="performance direction"></div>
+
+    <!-- The console: one ruled band like the masthead — PLAY and STOP at the
+         left, the volume slider after a spacer, the Liahona dial at the right
+         end, all on one line between two hairlines. On a narrow page the
+         buttons and the dial keep the line and the slider drops beneath them,
+         still inside the band. -->
+    <div class="kolob-console">
+      <div class="kolob-transport">
+        <button type="button" class="kolob-btn play-btn" id="kolob-play" aria-label="play"><span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
+        <button type="button" class="kolob-btn stop-btn" id="kolob-stop" aria-label="stop"><span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+        <div class="kolob-transport-spacer"></div>
+        <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
+        <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
       </div>
+      <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
     <!-- Hymn board + broadside -->
@@ -120,8 +134,11 @@ include '../../includes/header.php';
             <span class="kolob-seed-current" id="kolob-seed-current">—</span>
             <input type="text" inputmode="numeric" class="kolob-seed-input" id="kolob-seed-input" aria-label="seed for a new gathering" />
             <button type="button" class="kolob-btn kolob-btn-board" id="kolob-gather" aria-label="reseed and restart">𐐘𐐈𐐜𐐊𐐡</button>
-            <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
           </div>
+          <!-- the number cards: their own line beneath, set to the left edge
+               with the seed row, so the board is a fixed plate in both scripts
+               and both widths -->
+          <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
         </div>
       </div>
       <div class="kolob-broadside-block">
