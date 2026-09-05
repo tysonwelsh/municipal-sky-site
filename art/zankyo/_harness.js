@@ -116,7 +116,7 @@ function mkCtx() {
     const chans = []; for (let c = 0; c < nCh; c++) chans.push(new Float32Array(len));
     return { numberOfChannels: nCh, length: len, sampleRate: sr, duration: len / sr, getChannelData: (i) => chans[i] };
   };
-  ctx.createBufferSource = () => mkNode("BufferSource", {}, { buffer: null, loop: false, loopStart: 0, loopEnd: 0 });
+  ctx.createBufferSource = () => mkNode("BufferSource", { playbackRate: 1, detune: 0 }, { buffer: null, loop: false, loopStart: 0, loopEnd: 0 });
   ctx.createPeriodicWave = () => ({});
   return ctx;
 }
@@ -353,6 +353,10 @@ if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + "
 if (RUN >= 3600 && pitchVocab.seas < 1) fails.push("no sea change in " + RUN + "s");
 if (RUN >= 7200 && pitchVocab.pool < 12) fails.push("seed pool " + pitchVocab.pool + " < 12");
 if (RUN >= 1500 && pitchVocab.voicings < 8) fails.push("only " + pitchVocab.voicings + " distinct aitake voicings");
+// Phase 3 gates: node budget ≤ 1 500/min and ≤ 110 concurrent sources (the critic's ceilings); every new body heard in an hour
+if (runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget " + Math.round(runA.nodes.total / (RUN / 60)) + "/min > 1500");
+if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
+if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
 if (!reproSame) fails.push("REPRO gate failed");
 if (errors.length) fails.push(errors.length + " runtime errors");
 console.log(fails.length ? "VERDICT: FAIL — " + fails.join("; ") : "VERDICT: PASS ✓");

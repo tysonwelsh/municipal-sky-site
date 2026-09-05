@@ -9,26 +9,32 @@
   var Z = window.ZankyoAudio;
   if (!Z) { if (window.console) console.error("Zankyo UI: engine missing"); return; }
 
-  var RATE_LAYERS = { shakuhachi: true, koto: true, shamisen: true, taiko: true, noise: true, ambient: true };
+  var RATE_LAYERS = { shakuhachi: true, hichiriki: true, koto: true, shamisen: true, biwa: true, taiko: true, noise: true, ambient: true, pa: true };
   var LAYER_META = {
     subDrone:   { label: "Sub-drone", kana: "重低音" },
     sho:        { label: "Shō",        kana: "笙" },
     shakuhachi: { label: "Shakuhachi", kana: "尺八" },
+    hichiriki:  { label: "Hichiriki",  kana: "篳篥" },
     koto:       { label: "Koto",       kana: "箏" },
     shamisen:   { label: "Shamisen",   kana: "三味線" },
+    biwa:       { label: "Biwa",       kana: "琵琶" },
     taiko:      { label: "Taiko",      kana: "太鼓" },
     noise:      { label: "Noise",      kana: "雑音" },
     ambient:    { label: "Ambient",    kana: "環境" },
+    pa:         { label: "PA",         kana: "放送" },
   };
   var PARAM_META = {
     subDrone:   { cutoff: [80, 500, 5, 0, "Hz"], drive: [0, 1, 0.05, 2, ""], sub: [0, 1, 0.05, 2, ""], movement: [0, 0.5, 0.02, 2, ""] },
     sho:        { cutoff: [400, 3000, 20, 0, "Hz"], voices: [3, 7, 1, 0, ""], shimmer: [0, 1, 0.05, 2, ""], drift: [0, 1, 0.05, 2, ""] },
     shakuhachi: { breath: [0, 1, 0.05, 2, ""], muraiki: [0, 1, 0.05, 2, ""], pace: [0.5, 2, 0.05, 2, "×"], glide: [0, 1, 0.05, 2, ""], ornament: [0, 1, 0.05, 2, ""] },
-    koto:       { brightness: [2, 16, 0.5, 1, ""], pace: [0.5, 2, 0.05, 2, "×"], gliss: [0, 1, 0.05, 2, ""], sustain: [0.3, 2, 0.05, 2, ""] },
+    hichiriki:  { reed: [0, 1, 0.05, 2, ""], enbai: [0, 1, 0.05, 2, ""], breath: [0, 1, 0.05, 2, ""], pace: [0.5, 2, 0.05, 2, "×"] },
+    koto:       { brightness: [2, 16, 0.5, 1, ""], pace: [0.5, 2, 0.05, 2, "×"], gliss: [0, 1, 0.05, 2, ""], sustain: [0.3, 2, 0.05, 2, ""], pluck: [0, 1, 0.05, 2, ""] },
     shamisen:   { sawari: [0, 1, 0.05, 2, ""], drive: [0, 1, 0.05, 2, ""], pace: [0.5, 2, 0.05, 2, "×"], attack: [0, 1, 0.05, 2, ""] },
-    taiko:      { punch: [0, 1, 0.05, 2, ""], drive: [0, 1, 0.05, 2, ""], lowTune: [0.5, 2, 0.05, 2, "×"] },
+    biwa:       { sawari: [0, 1, 0.05, 2, ""], tremolo: [0, 1, 0.05, 2, ""], pace: [0.5, 2, 0.05, 2, "×"] },
+    taiko:      { punch: [0, 1, 0.05, 2, ""], drive: [0, 1, 0.05, 2, ""], lowTune: [0.5, 2, 0.05, 2, "×"], kakegoe: [0, 1, 0.05, 2, ""] },
     noise:      { density: [0, 1, 0.05, 2, ""], color: [0, 1, 0.05, 2, ""], crush: [0, 1, 0.05, 2, ""] },
     ambient:    {},
+    pa:         { presence: [0, 1, 0.05, 2, ""], static: [0, 1, 0.05, 2, ""] },
   };
 
   function pct(v) { return Math.round(v * 100); }
@@ -129,7 +135,7 @@
     kumoi:     [0, 2, 3, 7, 9],
     iwato:     [0, 1, 5, 6, 10],
   };
-  var MELODIC = { shakuhachi: true, koto: true, shamisen: true, sho: true };
+  var MELODIC = { shakuhachi: true, koto: true, shamisen: true, sho: true, hichiriki: true, biwa: true };
   var curOffsets = MODE_OFFSETS.hirajoshi;
   var degEls = null;                           // live HTMLCollection of .zk-deg cells
   var litUntil = [0, 0, 0, 0, 0];
@@ -329,7 +335,7 @@
   }
 
   // ---- Activity log (VFD display; content logic unchanged) ----
-  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ" };
+  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA" };
   var logStart = null;
   function fmtTime(t) { if (logStart === null) logStart = t; var s = Math.max(0, Math.floor(t - logStart)); var m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function clearLog() { logStart = null; var l = document.getElementById("zankyo-log"); if (l) l.innerHTML = '<div class="zankyo-log-empty">listening…</div>'; }
