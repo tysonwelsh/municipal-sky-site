@@ -30,7 +30,7 @@ for (var ai = 2; ai < args.length; ai++) {
   else if (args[ai] === "--jitter") JITTER = parseInt(args[++ai], 10) || 0;   // timer jitter seed (0 = exact)
 }
 
-var LANDSCAPE = { subDrone: 1, sho: 1, taiko: 1, noise: 1, ambient: 1 };   // never "melodic voices"
+var LANDSCAPE = { subDrone: 1, sho: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, weather: 1 };   // never "melodic voices" (new melodic bodies — hichiriki, biwa — count automatically)
 function isMelodic(layer) { return !LANDSCAPE[layer]; }
 
 // ============================================================================
@@ -61,6 +61,7 @@ function runOnce(seed, runS, jitterSeed) {
   var counts = { nodes: 0, sourcesStarted: 0, byType: {} };
   var liveSources = {};   // id → {type, startedAt, stack}
   var srcId = 1;
+  var srcSpans = [];      // [startT, stopT] per source (scheduled times) → peak concurrency
   function callerLine() {
     var st = (new Error().stack || "").split("\n");
     for (var i = 2; i < st.length; i++) {
@@ -96,13 +97,14 @@ function runOnce(seed, runS, jitterSeed) {
   }
   function source(type, extra) {
     var n = node(type, extra), id = srcId++, started = false, stopped = false;
+    var startT = null;
     n.start = function (t) {
       if (started) faults.startedTwice++;
-      started = true; counts.sourcesStarted++;
+      started = true; counts.sourcesStarted++; startT = typeof t === "number" ? t : vnow;
       liveSources[id] = { type: type, at: +vnow.toFixed(2), where: callerLine() };
       checkPast(t);
     };
-    n.stop = function () { stopped = true; delete liveSources[id]; };
+    n.stop = function (t) { stopped = true; delete liveSources[id]; if (startT != null) srcSpans.push([startT, typeof t === "number" ? t : vnow]); };
     n.addEventListener = function () {};
     return n;
   }
@@ -237,6 +239,12 @@ function runOnce(seed, runS, jitterSeed) {
   var leakWhere = {};
   leaked.forEach(function (l) { leakWhere[l.type + " " + l.where] = (leakWhere[l.type + " " + l.where] || 0) + 1; });
 
+  var evs = [];
+  srcSpans.forEach(function (sp) { evs.push([sp[0], 1]); evs.push([sp[1], -1]); });
+  evs.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+  var live = 0, peakSources = 0, peakAt = 0;
+  evs.forEach(function (e) { live += e[1]; if (live > peakSources) { peakSources = live; peakAt = e[0]; } });
+  counts.peakSources = peakSources; counts.peakAt = +peakAt.toFixed(1);
   return {
     scripts: scripts, loadErrors: loadErrors, errors: errors, seed: seed, runS: runS,
     notes: notes, events: events, phaseTimeline: phaseTimeline, arcSamples: arcSamples, planInfo: planInfo,
@@ -412,12 +420,13 @@ function analyze(R) {
     zeroVoiceFrac: +A.voices[0].toFixed(3), joThreePlus: A.voicesByPhase.jo ? +A.voicesByPhase.jo["3+"].toFixed(3) : null,
     gapsOver10s: A.silence.over10s, kinds: Object.keys(A.kinds).length, seatings: Object.keys(A.seatings).length,
     seaChanges: A.seaChanges.length, visitations: A.visitations.length, cycles: A.cycles.length, kirus: A.kirus.length,
+    nodesPerMin: Math.round(R.counts.nodes / (runS / 60)), peakSources: R.counts.peakSources,
     tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.tech = {
     loadErrors: R.loadErrors, errors: R.errors, expZero: R.faults.expZero, pastSchedule: R.faults.pastSchedule,
     neverStopped: R.faults.neverStopped, leakWhere: R.leakWhere, startedTwice: R.faults.startedTwice, infraSources: R.faults.infraSources,
-    nodesCreated: R.counts.nodes, nodesPerMin: R.counts.nodes / (runS / 60), sourcesStarted: R.counts.sourcesStarted, byType: R.counts.byType,
+    nodesCreated: R.counts.nodes, nodesPerMin: R.counts.nodes / (runS / 60), sourcesStarted: R.counts.sourcesStarted, byType: R.counts.byType, peakSources: R.counts.peakSources, peakAt: R.counts.peakAt,
     randomDuringPlay: R.randomPlayCount, randomWhere: R.randomDuringPlay,
     api: R.api,
   };
@@ -499,7 +508,7 @@ function report(A) {
   line("  exp ramps from/to ≤0: " + T.expZero.length + (T.expZero.length ? "  e.g. " + T.expZero.slice(0, 5).map(function (f) { return f.where + " " + f.from + "→" + f.to; }).join(" | ") : ""));
   line("  scheduled in the past (>0.25 s): " + T.pastSchedule.length + (T.pastSchedule.length ? "  e.g. " + T.pastSchedule.slice(0, 3).map(function (f) { return f.where + " t=" + f.t + " now=" + f.now; }).join(" | ") : ""));
   line("  sources never stopped (alive >60 s at end): " + T.neverStopped + (T.neverStopped ? "  " + JSON.stringify(T.leakWhere) : "") + " · started twice: " + T.startedTwice + " · build-time persistent sources (not leaks): " + (T.infraSources || 0));
-  line("  nodes created " + T.nodesCreated + " (" + Math.round(T.nodesPerMin) + " /min) · sources started " + T.sourcesStarted + " · " + JSON.stringify(T.byType));
+  line("  nodes created " + T.nodesCreated + " (" + Math.round(T.nodesPerMin) + " /min; Phase 3 budget ≤ 1500) · sources started " + T.sourcesStarted + " · peak concurrent sources " + T.peakSources + " at " + T.peakAt + " s (budget ≤ 110) · " + JSON.stringify(T.byType));
   line("  Math.random during play: " + T.randomDuringPlay + (T.randomDuringPlay ? "  " + JSON.stringify(T.randomWhere) : ""));
   line("  public API: " + T.api.join(", "));
   return out.join("\n");
