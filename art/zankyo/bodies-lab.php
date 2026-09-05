@@ -48,7 +48,10 @@ include '../../includes/header.php';
     ["sho", "笙 shō", "an aitake cluster, pipes entering one at a time"],
     ["taiko", "太鼓 taiko", "a matsuri pattern, then ō-daiko / shime / ka"],
     ["pa", "放送 PA", "a wordless announcement decaying into static"],
-    ["noise", "雑音 noise", "a filtered wall (the vocabulary's screech / static / rumble play per scene)"],
+    ["noise", "雑音 noise · wall", "the filtered-noise swell", "wall"],
+    ["noise", "雑音 noise · screech", "the feedback loop (gain 0.9), swept — rings out and tears down", "screech"],
+    ["noise", "雑音 noise · static", "bit-crushed, gated bursts", "static"],
+    ["noise", "雑音 noise · rumble", "contact-mic: half the sub root through the grit bus, LFO", "rumble"],
     ["subDrone", "重低音 sub-drone", "the hull in its 64–128 Hz register"],
     ["ambient", "環境 ambient", "one pool event"],
   ];
@@ -56,7 +59,7 @@ include '../../includes/header.php';
   BODIES.forEach(function (b) {
     var btn = document.createElement("button");
     btn.innerHTML = "<b>" + b[1] + "</b>" + b[2];
-    btn.addEventListener("click", function () { Z.sample(b[0]); });
+    btn.addEventListener("click", function () { Z.sample(b[0], b[3]); });
     host.appendChild(btn);
   });
 })();

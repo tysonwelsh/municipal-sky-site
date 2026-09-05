@@ -379,8 +379,8 @@ window.ZankyoAudio = (function () {
       // 0.95 < 1; T60 ≈ ln(0.001)/ln(0.95) ≈ 135 round trips ≈ 0.9 s at 147 Hz.
       layHalo = ctx.createGain(); layHalo.gain.setValueAtTime(1, ctx.currentTime);
       layHalo.connect(sumVoices);
-      halo = PJ.Fx.sympathetic(ctx, { nStrings: 8, freqs: haloFreqs(), out: layHalo, level: 0.04, feedback: 0.95, damp: 3000 });
-      haloSend = ctx.createGain(); haloSend.gain.setValueAtTime(0.10, ctx.currentTime);
+      halo = PJ.Fx.sympathetic(ctx, { nStrings: 8, freqs: haloFreqs(), out: layHalo, level: 0.08, feedback: 0.95, damp: 3000 });
+      haloSend = ctx.createGain(); haloSend.gain.setValueAtTime(0.25, ctx.currentTime);   // a whisper that exists: target ≈ −27 dB rel master
       haloSend.connect(halo.input);
       // THE SCREECH BUS: the noise layer's feedback bodies sum here (tapped
       // for the critic) before the noise layer gain, so the layer's mute and
@@ -793,7 +793,7 @@ window.ZankyoAudio = (function () {
       kakeai:  sceneDef("kakeai", 2, 0.35),
       solo:    sceneDef("solo", 1, 0),
       oroshi:  sceneDef("oroshi", 2, 0.2),
-      kyu:     sceneDef("kyu", 3, 0.5),
+      kyu:     sceneDef("kyu", 2, 0.45),        // five melodic voices now: two hold the kyū, a third by the dice — the tangle earned, not the norm
       release: sceneDef("release", 1, 0),
     },
     joint: function (fromType, toType, t) {
@@ -890,6 +890,7 @@ window.ZankyoAudio = (function () {
       if (scn.activity === "breath" && voice !== "shakuhachi") return false;
     }
     if (scn.type === "kakeai" && (voice === "hichiriki" || voice === "biwa")) return false;   // the duet is the trio's
+    if (voice === "biwa" && arcPhase(t) === "kyū") return false;                             // the narrator falls silent when the storm comes
     return true;
   }
   // THE AIR's manners: the scene's declared limit and overlap chance, the
@@ -1613,7 +1614,7 @@ window.ZankyoAudio = (function () {
     // denied → let the moment pass and ask again shortly.
     var margin = airMargin(S.shakuhachi, now);
     var tok = airClaimAt(now, "shakuhachi", shakuState.lastSpan || 3.5, margin);
-    if (!tok) { afterRaw("shakuhachi", now, S.shakuhachi.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), shakuhachiPhrase); return; }
+    if (!tok) { afterRaw("shakuhachi", now, S.shakuhachi.rnd(2, 5) * (arcPhase(now) === "jo" ? 2.5 : 1), shakuhachiPhrase); return; }   // a one-voice jo is not re-asked every breath
     var breathSolo = scn.type === "solo" && scn.activity === "breath";   // the muraiki solo breath
     var pace = getLayerParam("shakuhachi", "pace", 1.0) * (1 + arc * 0.6) * (breathSolo ? 0.7 : 1);
     var glideAmt = getLayerParam("shakuhachi", "glide", 0.6);
@@ -1801,7 +1802,7 @@ window.ZankyoAudio = (function () {
       PJ.Voice.env(ng.gain, t, [[0.06, npk], [Math.max(0.1, dur - 0.26), npk * 0.8], [0.2, 0]]);
       nz.start(t, R.next() * 20); nz.stop(t + dur + 0.3);
     }
-    var peak = 0.34 * (opts.gain == null ? 1 : opts.gain);
+    var peak = 0.50 * (opts.gain == null ? 1 : opts.gain);     // target −9 ± 2 dB rel master (critic r1)
     var atk = opts.swell ? Math.min(1.2, dur * 0.3) : 0.05, rel = Math.min(0.6, 0.2 + dur * 0.06);
     PJ.Voice.env(og.gain, t, [[atk, peak], [Math.max(0.06, dur - atk - rel), peak * 0.9], [rel, 0]]);
     emitNote("hichiriki", freq, t, dur);
@@ -1818,7 +1819,7 @@ window.ZankyoAudio = (function () {
     if (!seated("hichiriki", now)) { afterRaw("hichiriki", now, R.rnd(6, 10), hichirikiPhrase); return; }
     var margin = airMargin(R, now) * 1.2;
     var tok = airClaimAt(now, "hichiriki", hichiState.lastSpan || 5, margin);
-    if (!tok) { afterRaw("hichiriki", now, R.rnd(3, 6), hichirikiPhrase); return; }
+    if (!tok) { afterRaw("hichiriki", now, R.rnd(5, 9), hichirikiPhrase); return; }   // a sparse voice does not hammer a full air
     var pace = getLayerParam("hichiriki", "pace", 1.0) * (1 + arc * 0.3);
     var cry = arcPhase(now) === "kyū";
     hichiState.center = Math.round(scaleIndexOf(6) + arc * 3 + (cry ? 2 : 0));
@@ -1870,7 +1871,7 @@ window.ZankyoAudio = (function () {
     if (!seated("biwa", now)) { afterRaw("biwa", now, R.rnd(8, 14), biwaPhrase); return; }
     var margin = airMargin(R, now) * 1.5;
     var tok = airClaimAt(now, "biwa", biwaState.lastSpan || 4, margin);
-    if (!tok) { afterRaw("biwa", now, R.rnd(4, 8), biwaPhrase); return; }
+    if (!tok) { afterRaw("biwa", now, R.rnd(8, 14), biwaPhrase); return; }
     biwaState.center = Math.round(scaleIndexOf(2) + arc * 2);
     var phrase, motif = null;
     if (Motif.overdueFor("biwa", now)) motif = Motif.claim("biwa", now);
@@ -1906,9 +1907,11 @@ window.ZankyoAudio = (function () {
   // carries the glides and the oshide press-bend. The old envelope shapes
   // (linear from true zero, exponential knee, linear to zero) are kept.
   var STRING_KIT = {
-    koto:     { plectrum: "tsume", peak: 0.13, decay: 1.0,  brightK: 0.35, brightBase: 1.5, sawari: 0,   sparkle: 0.015 },
-    shamisen: { plectrum: "bachi", peak: 0.13, decay: 0.75, brightK: 0.45, brightBase: 1.6, sawari: 1,   sparkle: 0 },
-    biwa:     { plectrum: "bachi", peak: 0.12, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
+    // peaks 0.33 / 0.33 / 0.30 (critic, Phase 3 r1): the lowpassed burst carries far
+    // less RMS than the old saw+triangle at the same peak; target −16 ± 2 dB rel master
+    koto:     { plectrum: "tsume", peak: 0.33, decay: 1.0,  brightK: 0.35, brightBase: 1.5, sawari: 0,   sparkle: 0.015 },
+    shamisen: { plectrum: "bachi", peak: 0.33, decay: 0.75, brightK: 0.45, brightBase: 1.6, sawari: 1,   sparkle: 0 },
+    biwa:     { plectrum: "bachi", peak: 0.30, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
   };
   function stringNote(layer, freq, t, dur, opts) {
     var c = ctx, K = STRING_KIT[layer], R = S[layer]; opts = opts || {};
@@ -1922,7 +1925,12 @@ window.ZankyoAudio = (function () {
     var buf = c.createBuffer(1, N, sr), d = buf.getChannelData(0), k = Math.max(1, Math.round(pos * N));
     var raw = new Float32Array(N);
     for (var i = 0; i < N; i++) raw[i] = Math.random() * 2 - 1;                 // texture, not music
-    for (i = 0; i < N; i++) d[i] = 0.5 * (raw[i] - raw[(i - k + N) % N]);       // the pluck-position comb
+    for (i = 0; i < N; i++) d[i] = raw[i] - raw[(i - k + N) % N];             // the pluck-position comb
+    // normalise the burst to a fixed RMS (0.5; a sawtooth's is 0.58): a white
+    // one-period burst lowpassed at ~4 f keeps ~5 % of its power, and a raw
+    // burst's level scatters per pluck — the level lives in the peak below
+    var en = 0; for (i = 0; i < N; i++) en += d[i] * d[i];
+    var sc = 0.5 / Math.sqrt(Math.max(1e-9, en / N)); for (i = 0; i < N; i++) d[i] *= sc;
     var src = c.createBufferSource(); src.buffer = buf; src.loop = true;
     src.playbackRate.setValueAtTime(rate, t);
     if (opts.glideFrom) { var gt = Math.min(dur * 0.35, 0.18); src.playbackRate.setValueAtTime(rate * opts.glideFrom / freq, t); src.playbackRate.exponentialRampToValueAtTime(rate, t + gt); }
@@ -1987,7 +1995,7 @@ window.ZankyoAudio = (function () {
     if (!seated("koto", now)) { afterRaw("koto", now, S.koto.rnd(5, 9), kotoPhrase); return; }
     var margin = airMargin(S.koto, now);
     var tok = airClaimAt(now, "koto", kotoState.lastSpan || 2.5, margin);
-    if (!tok) { afterRaw("koto", now, S.koto.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), kotoPhrase); return; }
+    if (!tok) { afterRaw("koto", now, S.koto.rnd(2, 5) * (arcPhase(now) === "jo" ? 2.5 : 1), kotoPhrase); return; }   // a one-voice jo is not re-asked every breath
     var kotoSolo = scn.type === "solo" && scn.activity === "koto";
     var pace = getLayerParam("koto", "pace", 1.0) * (1 + arc * 0.7) * (kotoSolo ? 0.9 : 1);
     var glissAmt = getLayerParam("koto", "gliss", 0.4) * (kotoSolo ? 1.6 : 1);
@@ -2052,7 +2060,7 @@ window.ZankyoAudio = (function () {
     if (!seated("shamisen", now)) { afterRaw("shamisen", now, S.shamisen.rnd(5, 9), shamisenPhrase); return; }
     var margin = airMargin(S.shamisen, now);
     var tok = airClaimAt(now, "shamisen", shamiState.lastSpan || 1.8, margin);
-    if (!tok) { afterRaw("shamisen", now, S.shamisen.rnd(2, 5) * (arcPhase(now) === "jo" ? 1.5 : 1), shamisenPhrase); return; }
+    if (!tok) { afterRaw("shamisen", now, S.shamisen.rnd(2, 5) * (arcPhase(now) === "jo" ? 2.5 : 1), shamisenPhrase); return; }   // a one-voice jo is not re-asked every breath
     var pace = getLayerParam("shamisen", "pace", 1.0) * (1 + arc * 1.0);   // comes alive in ha/kyū
     shamiState.center = Math.round(scaleIndexOf(3) + arc * 3);
     var phrase, motif = null;
@@ -2248,6 +2256,13 @@ window.ZankyoAudio = (function () {
       PJ.Voice.env(exg.gain, now, [[0.02, 0.4], [Math.max(0.05, dur * 0.5), 0.15], [0.05, 0]]);   // the excitation, then the loop rings
       PJ.Voice.env(og.gain, now, [[dur * 0.3, peak * 0.7], [dur * 0.4, peak * 0.5], [dur * 0.3, 0]]);
       nz0.start(now, S.noise.next() * 10); nz0.stop(now + dur + 0.1);
+      // TEAR THE LOOP DOWN: a node in a live cycle is never collected — the
+      // delay and biquad would render forever. Close the feedback, then
+      // disconnect the whole ring on the noise lane once it has rung out
+      // (0.9^n: −60 dB in ~65 trips ≈ 0.5 s).
+      var tEnd = now + dur + 1.5;
+      fb.gain.setValueAtTime(0.9, tEnd - 0.3); fb.gain.linearRampToValueAtTime(0, tEnd);
+      lane("noise").at(tEnd + 0.2, function () { try { nz0.disconnect(); exg.disconnect(); dl.disconnect(); bpq.disconnect(); fb.disconnect(); og.disconnect(); } catch (e) {} });
       if (arc > 0.4) emitEvent({ cat: "noise", label: "screech", detail: arcPhase(now) + " · " + Math.round(f0) + "→" + Math.round(f1) + " Hz" }, now);
     } else if (body === "static") {
       if (!crushCurve) { crushCurve = new Float32Array(1024); for (var ci = 0; ci < 1024; ci++) { var cx = (ci / 1023) * 2 - 1; crushCurve[ci] = Math.round(cx * 6) / 6; } }
@@ -2314,7 +2329,7 @@ window.ZankyoAudio = (function () {
     o.frequency.setValueAtTime(f0, t);
     o.frequency.linearRampToValueAtTime(f0 * (0.985 + R.next() * 0.035), t + dur * 0.5);
     o.frequency.linearRampToValueAtTime(f0 * 0.985, t + dur);
-    var pre = c.createGain(); pre.gain.setValueAtTime(0.16, t);        // pre-attenuate before the high-Q formants
+    var pre = c.createGain(); pre.gain.setValueAtTime(0.32, t);        // pre-attenuate before the high-Q formants (unity-peak bandpasses)
     o.connect(pre);
     var f1 = c.createBiquadFilter(); f1.type = "bandpass"; f1.Q.setValueAtTime(5, t);
     var f2 = c.createBiquadFilter(); f2.type = "bandpass"; f2.Q.setValueAtTime(6, t);
@@ -2340,7 +2355,7 @@ window.ZankyoAudio = (function () {
       gate.gain.linearRampToValueAtTime(0, st + on + hold);
       st += syl + (!opts.shout && R.next() < 0.2 ? 0.3 + R.next() * 0.8 : 0);    // long breath commas
     }
-    var peak = (opts.shout ? 0.5 : 0.42) * presence * (opts.gain || 1);
+    var peak = (opts.shout ? 0.8 : 0.90) * presence * (opts.gain || 1);   // target −18 ± 3 dB rel master while speaking; the shout capped at 0.8
     if (opts.shout) PJ.Voice.env(og.gain, t, [[0.02, peak], [Math.max(0.05, dur - 0.1), peak * 0.8], [0.08, 0]]);
     else PJ.Voice.env(og.gain, t, [[0.5, peak], [Math.max(0.4, dur * 0.55 - 0.5), peak * 0.9], [dur * 0.45, 0]]);   // decays into the static below
     o.start(t); o.stop(t + dur + 0.3);
@@ -2664,12 +2679,24 @@ window.ZankyoAudio = (function () {
     bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(0.5, t + 0.8); bus.gain.setValueAtTime(0.5, t + dur - 1); bus.gain.linearRampToValueAtTime(0, t + dur);
     chooseAitake(S.sample, 6).freqs.forEach(function (f) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, t); o.start(t); o.stop(t + dur + 0.1); });
   }
-  function sampleNoise(t) {
+  function sampleNoise(t, kind) {
+    if (kind && kind !== "wall") {
+      // audition one vocabulary body through the real noiseEvent (the bench's
+      // instrument): force the scene's body, a mid intensity, one event
+      var savedBody = noiseBodyForScene, savedScene = noiseBodyScene, savedPlaying = playing, savedArc = getArc;
+      noiseBodyForScene = kind; noiseBodyScene = cyc.n + ":" + scn.type + ":" + scn.startT;
+      playing = true; getArc = function () { return 0.7; };
+      var savedAfter = after; after = function () {};                 // one event, no loop
+      try { noiseEvent(t); } catch (e) {}
+      after = savedAfter; getArc = savedArc; playing = savedPlaying;
+      noiseBodyForScene = savedBody; noiseBodyScene = savedScene;
+      return;
+    }
     var dur = 2.5, nz = noiseSource(), bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(800, t); bp.frequency.linearRampToValueAtTime(3000, t + dur); bp.Q.setValueAtTime(4, t);
     var g = ctx.createGain(); nz.connect(bp); bp.connect(g); g.connect(lg("noise"));
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, S.sample.next() * 5); nz.stop(t + dur + 0.1);
   }
-  function sample(layer) {
+  function sample(layer, variant) {
     init();
     if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
@@ -2692,11 +2719,11 @@ window.ZankyoAudio = (function () {
       case "pa": paSpeak(t, 4, {}); break;
       case "biwa": biwaStrum(SCALE[scaleIndexOf(0)].freq, t, {}); stringNote("biwa", SCALE[scaleIndexOf(3)].freq, t + 1.2, 1.4, { vel: 0.8 }); stringNote("biwa", SCALE[scaleIndexOf(0)].freq, t + 2.4, 2, { vel: 0.7 }); break;
       case "taiko": taikoPattern(t, "matsuri", 0.5, 1); taikoHit(t + 2.2, true, "odaiko"); taikoHit(t + 2.6, false, "shime"); taikoHit(t + 2.8, false, "ka"); break;
-      case "noise": sampleNoise(t); break;
+      case "noise": sampleNoise(t, variant); break;
       case "ambient": var e = AMBIENT_POOL[Math.floor(S.sample.next() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
     }
     for (bi = 0; bi < borrowed.length; bi++) S[borrowed[bi]] = saved[borrowed[bi]];
-    emitEvent({ cat: "mode", label: "♪ sample", detail: layer });
+    emitEvent({ cat: "mode", label: "♪ sample", detail: layer + (variant ? " · " + variant : "") });
   }
 
   // ==========================================================================
