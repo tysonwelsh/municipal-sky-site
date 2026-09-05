@@ -1,0 +1,19 @@
+{
+  "id": "now-artist-jokr-1991",
+  "title": "Now Artist, 1991: HIS",
+  "year": 1991,
+  "src": "https://archive.org/details/now-artist-jokr-tv-1991",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.1,
+  "durS": 60.08,
+  "bytes": 485034,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.08], [40.08, 50.08], [50.08, 60.08]],
+  "srcWindows": [[441.0, 451], [482.0, 492], [896.0, 906], [1366.0, 1376], [1600.0, 1610], [3358.0, 3368]],
+  "notes": "TBS (JOKR-TV) late-night music programme, S-VHS off-air; the HIS trio (Hosono, Imawano, Sakamoto) interviewed on a wall of four monitors; a text card explaining the group read aloud, the I / S / HIS letter idents, 'Hosono, now 44' into black into the four faces, a Shinjuku capsule-hotel commercial (4,100 yen a night, sauna, a phone number), ten seconds mid-song of a silhouette singing 500 Miles in smoke, and the sponsor card into 'see you next time'; five of six windows are talk, one is sung; baked distortion 0.5",
+  "takedown": false
+}
