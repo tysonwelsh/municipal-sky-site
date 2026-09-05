@@ -22,6 +22,18 @@
 // reverb → master → compressor → destination; per-layer GainNodes; a rate-aware
 // scheduler; per-layer params for the console; a jo-ha-kyū arc; an event-log
 // feed. Public surface: window.ZankyoAudio
+//
+// ZANKYŌ 2 (Phase 0, 2026-09): the engine stands on the Prospero's Jukebox v2
+// SUBSTRATE, loaded by relative path from ../prosperos-jukebox-v2/ and never
+// modified here — PJ2.Rand (forked seeded streams: one per subsystem, so a
+// new ambient draw can never re-roll a melody), PJ2.Clock (the lookahead
+// transport: one lane per layer, the console's rate knobs are lane.rate,
+// background tabs keep time), PJ2.Pitch (a mutable pitch field carrying the
+// four modes — the door to sea changes), PJ2.Voice (click-safe envelopes, the
+// pooled panner rack, the shared noise buffer). The grit bus, its makeup-down,
+// the shamisen saturator, the master saturator/compressor/trim and the
+// metallic reverb are kept exactly as tuned. Every callback receives its
+// exact scheduled audio time `t` and places audio at `t`, never at "now".
 // ============================================================================
 
 window.ZankyoAudio = (function () {
@@ -42,10 +54,22 @@ window.ZankyoAudio = (function () {
   var playing = false;
   var masterVolume = 0.6;
 
+  // The substrate (see header). Hard requirement: index.php loads the pj2-*
+  // modules before this file; the harness evals them first.
+  var PJ = window.PJ2;
+  if (!PJ || !PJ.Rand || !PJ.Clock || !PJ.Pitch || !PJ.Voice) {
+    throw new Error("ZankyoAudio: the PJ2 substrate (pj2-rand/pitch/clock/voice) must load first");
+  }
+  var clock = null;                // PJ2.Clock — created with the ctx, started per play
+
   // ==========================================================================
-  // SEEDED RNG — every musical choice flows through rng(); a performance is
-  // reproducible and shareable (?seed=). Math.random survives only in init
-  // noise-buffer / reverb-IR generation, where it shapes texture, not music.
+  // SEEDED STREAMS — every musical choice flows through a forked PJ2.Rand
+  // stream; a performance is reproducible and shareable (?seed=). Each
+  // subsystem owns its stream (the kolob-text lesson: adding a draw to the
+  // ambient pool must not re-roll every melody after it). Streams are
+  // re-forked from the master seed at every play(), so stop → play replays
+  // the same performance. Math.random survives only in noise-buffer /
+  // reverb-IR generation, where it shapes texture, not music.
   // ==========================================================================
   var seed = (function () {
     try {
@@ -56,24 +80,18 @@ window.ZankyoAudio = (function () {
     } catch (e) {}
     return (Date.now() % 0xffffffff) >>> 0;
   })();
-  var rngState = seed;
-  function mulberry32() {
-    rngState |= 0; rngState = (rngState + 0x6D2B79F5) | 0;
-    var t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  }
-  function rng() { return mulberry32(); }
-  function rnd(a, b) { return a + rng() * (b - a); }
-  function rint(a, b) { return Math.floor(rnd(a, b + 1)); }
-  function chance(p) { return rng() < p; }
-  function pick(arr) { return arr[Math.floor(rng() * arr.length)]; }
-  function pickW(pool) {              // pool = [[value, weight], ...]
-    var total = 0, i;
-    for (i = 0; i < pool.length; i++) total += pool[i][1];
-    var r = rng() * total;
-    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
-    return pool[pool.length - 1][0];
+  // form: cycle lengths, the meta-swing, the mode lottery, the KIRU's dice.
+  // motif: the working set, transforms, the ledger. One per voice body. The
+  // last four are reserved for later phases (weather field, joints,
+  // visitations) and the console's ♪ audition, which must never perturb a
+  // performance in progress.
+  var STREAM_LABELS = ["form", "motif", "shakuhachi", "koto", "shamisen", "sho", "subDrone",
+    "taiko", "noise", "ambient", "weather", "joints", "visit", "sample"];
+  var S = null;                                // the streams, forked per play
+  function forkStreams() {
+    var master = PJ.Rand.stream(seed);
+    S = {};
+    for (var i = 0; i < STREAM_LABELS.length; i++) S[STREAM_LABELS[i]] = master.fork(STREAM_LABELS[i]);
   }
 
   // ==========================================================================
@@ -94,29 +112,39 @@ window.ZankyoAudio = (function () {
   // (mode-lottery weights live in metaModePool() below — they drift with the
   // meta-arc: home-leaning at the trough, in-sen/iwato-leaning at the peak)
   var currentMode = "hirajoshi";
-  var CUR_OFFSETS = MODES.hirajoshi.offsets;
-  function semis(i) { return CUR_OFFSETS[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5); }
-  function degFreq(i, octShift) {              // i = scale-degree index (can exceed 5), octShift in octaves
-    return TONIC_HZ * Math.pow(2, semis(i) / 12 + (octShift || 0));
+  // THE PITCH FIELD (PJ2.Pitch): tonic + mode + tuning, mutable only through
+  // modulate(). Every frequency is a query on the field at use time; the
+  // SCALE table below is a cached register-spanning view of it, rebuilt on
+  // every modulation. Sounding notes keep their Hz across a change (the
+  // kolob straddle lesson) — the field never retunes what already rang.
+  var field = PJ.Pitch.field({ tonicHz: TONIC_HZ, mode: { name: "hirajoshi", steps: MODES.hirajoshi.offsets }, tuning: "et" });
+  function degFreq(i, octShift) {              // i = scale-degree index (folds by field.size), octShift in octaves
+    return field.degFreq(i, octShift || 0);
   }
 
-  // Build an ascending frequency table across registers (oct -1 .. +2 ≈ 4 oct).
+  // Ascending frequency table across registers (degree index -5 .. 15 ≈ 4 oct).
+  var SCALE_LO = -5, SCALE_HI = 15;
   var SCALE = (function () {
     var arr = [];
-    for (var i = -5; i <= 15; i++) arr.push({ deg: ((i % 5) + 5) % 5, freq: degFreq(i, 0), idx: i });
+    for (var i = SCALE_LO; i <= SCALE_HI; i++) arr.push({ deg: ((i % 5) + 5) % 5, freq: degFreq(i, 0), idx: i });
     return arr;
   })();
-  function rebuildScale() { for (var k = 0; k < SCALE.length; k++) SCALE[k].freq = degFreq(SCALE[k].idx, 0); }
-  function pickMode() { return pickW(metaModePool()); }
+  function rebuildScale() {
+    var n = field.size;
+    for (var k = 0; k < SCALE.length; k++) { SCALE[k].freq = degFreq(SCALE[k].idx, 0); SCALE[k].deg = ((SCALE[k].idx % n) + n) % n; }
+  }
+  function pickMode() { return S.form.pickW(metaModePool()); }
   function setMode(name, extra) {
     if (!MODES[name]) return;
-    currentMode = name; CUR_OFFSETS = MODES[name].offsets; rebuildScale();
+    currentMode = name;
+    field.modulate({ mode: { name: name, steps: MODES[name].offsets } });
+    rebuildScale();
     SCALE_INFO.name = MODES[name].name; SCALE_INFO.kana = MODES[name].kana.slice();
     emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name + (extra ? " · " + extra : "") });
   }
   function scaleIndexOf(i) {                    // map a degree index i to SCALE array index
-    for (var k = 0; k < SCALE.length; k++) if (SCALE[k].idx === i) return k;
-    return 5;
+    var k = i - SCALE_LO;
+    return k < 0 ? 0 : k > SCALE.length - 1 ? SCALE.length - 1 : k;
   }
   function nearestScaleIndex(freq) {
     var best = 0, bd = 1e9;
@@ -202,10 +230,14 @@ window.ZankyoAudio = (function () {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-    var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
-    sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
-    var nd = sharedNoiseBuf.getChannelData(0);
-    for (var ni = 0; ni < noiseSamples; ni++) nd[ni] = Math.random() * 2 - 1;   // texture, not music — stays unseeded
+    sharedNoiseBuf = PJ.Voice.noiseBuffer(ctx, NOISE_BUF_DURATION);          // texture, not music — stays unseeded
+    if (!S) forkStreams();                                                    // the ♪ audition may run before play()
+    // The transport: one lookahead clock, one lane per layer (+ "form" for
+    // the cycle watch). Lane rates are the console's RATE knobs.
+    clock = PJ.Clock.create(ctx, { tickMs: 25, aheadS: 0.25, onError: function (err, where) {
+      if (window.console) console.error("ZankyoAudio lane " + (where && where.lane) + " threw at t=" + (where && where.t), err);
+    } });
+    for (var lni = 0; lni < LAYERS.length; lni++) clock.lane(LAYERS[lni]).rate = layerRate[LAYERS[lni]] || 1;
 
     masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
@@ -338,36 +370,34 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // SCHEDULING + HELPERS
   // ==========================================================================
-  var timers = new Set();
-  function scheduleLayer(fn, baseMs, layer) {
-    var ms = baseMs / (getRate(layer) || 1);
-    var id = setTimeout(function () { timers.delete(id); if (playing) fn(); }, ms);
-    timers.add(id);
+  // Every layer loop lives on its own PJ2.Clock lane. `t` is always the
+  // SCHEDULED audio time handed to the caller (never ctx.currentTime, which
+  // the lookahead clock runs up to 0.25 s behind): the next fire is placed at
+  // an absolute audio time, so a thousand phrases later the loop is exactly
+  // where arithmetic says it is. The console's RATE knob is lane.rate — the
+  // Clock divides the delay by it and bends already-pending events when it
+  // turns. The hidden per-layer trim stays a divisor on the delay itself.
+  function lane(name) { return clock.lane(name); }
+  function trimOf(layer) { return LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1; }
+  function after(layer, t, delayS, fn) {        // trimmed: the whole delay is "rest"
+    var L = lane(layer);
+    return L.at(t + delayS / trimOf(layer) / L.rate, guarded(fn));
   }
-  function scheduleRaw(fn, ms) {
-    var id = setTimeout(function () { timers.delete(id); if (playing) fn(); }, ms);
-    timers.add(id);
+  function afterRaw(layer, t, delayS, fn) {     // untrimmed: caller already trimmed the rest part
+    var L = lane(layer);
+    return L.at(t + delayS / L.rate, guarded(fn));
   }
-  function clearAllTimers() { timers.forEach(function (id) { clearTimeout(id); }); timers.clear(); }
+  function guarded(fn) { return function (t) { if (playing) fn(t); }; }
 
   function lg(layer) { return layerGains[layer]; }
-  // Three persistent panners per layer (L / C / R) instead of one per note —
-  // keeps stereo width while collapsing the node count dramatically.
+  // The pooled panner rack (PJ2.Voice): three persistent seats per layer
+  // (L / C / R, ±0.66) instead of one panner per note — stereo width with a
+  // constant node count. A note asks for a pan and gets the nearest seat.
   var panPool = {};
   function panAt(layer, p) {
     var pool = panPool[layer];
-    if (!pool) {
-      pool = panPool[layer] = [-0.5, 0, 0.5].map(function (pp) {
-        var sp = ctx.createStereoPanner(); sp.pan.setValueAtTime(pp, ctx.currentTime); sp.connect(layerGains[layer]); return sp;
-      });
-    }
-    var cl = p < -1 ? -1 : (p > 1 ? 1 : p);
-    return pool[cl < -0.2 ? 0 : cl > 0.2 ? 2 : 1];
-  }
-  function getRate(layer) {
-    var base = (layerRate[layer] != null ? layerRate[layer] : 1);
-    var trim = LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1;
-    return base * trim;
+    if (!pool) pool = panPool[layer] = PJ.Voice.pannerPool(ctx, layerGains[layer], 3);
+    return pool.at(p);
   }
   function getLayerParam(layer, key, fallback) {
     if (layerParams[layer] && layerParams[layer][key] != null) return layerParams[layer][key];
@@ -395,26 +425,28 @@ window.ZankyoAudio = (function () {
   // play time so it's deterministic/resumable.
   var ARC_PERIOD = 420;                          // the CURRENT cycle's length — redrawn ~rnd(300,600)s at each boundary
   var arcStartTime = 0;                          // start of the CURRENT cycle (advances by ARC_PERIOD at each boundary)
-  function getArc() {
+  function getArc(t) {                          // t: the scheduled audio time (defaults to now)
     if (!ctx || !playing) return 0;
-    var ph = (((ctx.currentTime - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
+    var at = t != null ? t : ctx.currentTime;
+    var ph = (((at - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
     // jo 0–0.45 (0→0.25), ha 0.45–0.82 (0.25→0.8), kyū 0.82–0.95 (0.8→1), release 0.95–1 (1→0)
     var a;
     if (ph < 0.45) { var x = ph / 0.45; a = 0.25 * (x * x); }
     else if (ph < 0.82) { var y = (ph - 0.45) / 0.37; a = 0.25 + 0.55 * (y * y * (3 - 2 * y)); }
     else if (ph < 0.95) { var z = (ph - 0.82) / 0.13; a = 0.8 + 0.2 * Math.sqrt(z); }   // steep rush to the peak
     else { var w = (ph - 0.95) / 0.05; a = 0.8 * Math.pow(1 - w, 3); }                    // kiru — near-instant cut, then ma
-    var vary = 0.8 + 0.2 * (0.5 + 0.5 * Math.sin(2 * Math.PI * (ctx.currentTime - arcStartTime) / 271));
+    var vary = 0.8 + 0.2 * (0.5 + 0.5 * Math.sin(2 * Math.PI * (at - arcStartTime) / 271));
     a *= vary;
     return a < 0 ? 0 : a > 1 ? 1 : a;
   }
-  function arcPos() {                            // raw 0..1 position within the cycle
+  function arcPos(t) {                           // raw 0..1 position within the cycle
     if (!ctx || !playing) return 0;
-    return (((ctx.currentTime - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
+    var at = t != null ? t : ctx.currentTime;
+    return (((at - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
   }
-  function arcPhase() {
+  function arcPhase(t) {
     if (!ctx || !playing) return "—";
-    var ph = arcPos();
+    var ph = arcPos(t);
     return ph < 0.45 ? "jo" : ph < 0.82 ? "ha" : ph < 0.95 ? "kyū" : "release";
   }
   function arcInfo() {
@@ -459,11 +491,11 @@ window.ZankyoAudio = (function () {
   // of the long form, not a reset.
   function beginCycle(n) {
     metaCycle = n;
-    ARC_PERIOD = rnd(300, 600);                  // this cycle's own breadth
-    if (n === 0) { metaPeriod = rnd(5, 8); metaPhase = 0; }
+    ARC_PERIOD = S.form.rnd(300, 600);                  // this cycle's own breadth
+    if (n === 0) { metaPeriod = S.form.rnd(5, 8); metaPhase = 0; }
     else {
       metaPhase += 1 / metaPeriod;
-      if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = rnd(5, 8); }   // a new swing, its own span
+      if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = S.form.rnd(5, 8); }   // a new swing, its own span
     }
     metaPos = 0.5 - 0.5 * Math.cos(2 * Math.PI * metaPhase);
     // Cycle 0 draws from the same lottery as every other boundary (at the
@@ -583,25 +615,25 @@ window.ZankyoAudio = (function () {
         return m;
       },
       transpose: function (m) {                    // ±1–3 scale DEGREES — real pitch-content change, not octaves
-        var by = pickW([[1, 3], [2, 3], [-1, 3], [-2, 3], [3, 1], [-3, 1]]);
+        var by = S.motif.pickW([[1, 3], [2, 3], [-1, 3], [-2, 3], [3, 1], [-3, 1]]);
         m.notes.forEach(function (n) { n.deg += by; });
         return m;
       },
       fragmentHead: function (m) { m.notes = m.notes.slice(0, Math.max(2, Math.ceil(m.notes.length / 2))); return m; },
       fragmentTail: function (m) { m.notes = m.notes.slice(-Math.max(2, Math.ceil(m.notes.length / 2))); return m; },
       augment: function (m) {
-        var f = rnd(1.35, 1.9);
+        var f = S.motif.rnd(1.35, 1.9);
         m.notes.forEach(function (n) { n.durBeats = Math.min(6, n.durBeats * f); });
         return m;
       },
       diminish: function (m) {
-        var f = rnd(0.5, 0.72);
+        var f = S.motif.rnd(0.5, 0.72);
         m.notes.forEach(function (n) { n.durBeats = Math.max(0.3, n.durBeats * f); });
         return m;
       },
       retrograde: function (m) { m.notes.reverse(); return m; },
       sequence: function (m) {                     // restate at a transposition — real sequencing
-        var step = pickW([[1, 3], [2, 2], [-1, 3], [-2, 2]]);
+        var step = S.motif.pickW([[1, 3], [2, 2], [-1, 3], [-2, 2]]);
         var rep = m.notes.map(function (n) { return { deg: n.deg + step, durBeats: n.durBeats }; });
         m.notes = m.notes.concat(rep).slice(0, 12);            // runaway guard
         return m;
@@ -610,7 +642,7 @@ window.ZankyoAudio = (function () {
         var res = [];
         for (var i = 0; i < m.notes.length; i++) {
           var n = m.notes[i], nx = m.notes[i + 1];
-          if (nx && res.length < 9 && Math.abs(nx.deg - n.deg) >= 2 && n.durBeats >= 1 && chance(0.6)) {
+          if (nx && res.length < 9 && Math.abs(nx.deg - n.deg) >= 2 && n.durBeats >= 1 && S.motif.chance(0.6)) {
             res.push({ deg: n.deg, durBeats: n.durBeats * 0.65 });
             res.push({ deg: n.deg + (nx.deg > n.deg ? 1 : -1), durBeats: Math.max(0.35, n.durBeats * 0.35) });
           } else res.push({ deg: n.deg, durBeats: n.durBeats });
@@ -682,7 +714,7 @@ window.ZankyoAudio = (function () {
         if (last && AFFINITY[last] && AFFINITY[last][name]) wt *= AFFINITY[last][name];
         pool.push([name, wt]);
       }
-      return pool.length ? pickW(pool) : null;
+      return pool.length ? S.motif.pickW(pool) : null;
     }
     // Keep the motif's centre of mass in the singable mid-band by whole
     // octaves — internal intervals untouched; voices re-register per phrase.
@@ -725,7 +757,7 @@ window.ZankyoAudio = (function () {
       // generations into the twenties).
       if (m.gen >= 9) { var anc = ancestorOf(m.name); if (anc) m = anc; }
       var out = clone(m);
-      var links = rint(1, maxChain || 2);
+      var links = S.motif.rint(1, maxChain || 2);
       var used = [];
       for (var i = 0; i < links; i++) {
         var name = pickTransform(voice, out, out.chain.concat(used));
@@ -751,9 +783,9 @@ window.ZankyoAudio = (function () {
     // The ma decomposing a motif: notes released, time stretched.
     function decompose(m, voice) {
       var out = clone(m);
-      var keep = Math.max(2, Math.round(out.notes.length * rnd(0.4, 0.7)));
-      while (out.notes.length > keep) out.notes.splice(rint(1, out.notes.length - 1), 1);
-      out.notes.forEach(function (n) { n.durBeats = Math.min(6, n.durBeats * rnd(1.4, 2)); });
+      var keep = Math.max(2, Math.round(out.notes.length * S.motif.rnd(0.4, 0.7)));
+      while (out.notes.length > keep) out.notes.splice(S.motif.rint(1, out.notes.length - 1), 1);
+      out.notes.forEach(function (n) { n.durBeats = Math.min(6, n.durBeats * S.motif.rnd(1.4, 2)); });
       out.gen = m.gen + 1;
       out.chain = m.chain.concat(["dissolve"]);
       emitEvent({ cat: voice, label: "散 " + out.name + " decomposes", detail: "releasing notes into the ma" });
@@ -762,8 +794,8 @@ window.ZankyoAudio = (function () {
     function makeGhost(m) {
       var g = clone(m);
       var keep = Math.max(2, Math.round(g.notes.length * 0.5));
-      while (g.notes.length > keep) g.notes.splice(rint(1, g.notes.length - 1), 1);
-      g.notes.forEach(function (n) { n.durBeats = Math.min(8, n.durBeats * rnd(2, 3)); });
+      while (g.notes.length > keep) g.notes.splice(S.motif.rint(1, g.notes.length - 1), 1);
+      g.notes.forEach(function (n) { n.durBeats = Math.min(8, n.durBeats * S.motif.rnd(2, 3)); });
       g.chain = g.chain.concat(["ghost"]);
       return g;
     }
@@ -787,19 +819,19 @@ window.ZankyoAudio = (function () {
         return clone(working.theme);
       }
       var m;
-      if (phase === "jo") m = chance(0.7) ? working.theme : pick(working.subs);
-      else if (phase === "ha") m = pickW([[working.theme, 3], [working.subs[0], 2], [working.subs[1] || working.theme, 2]]);
-      else m = chance(0.6) ? working.theme : pick(working.subs);   // kyū/release: the theme drives
+      if (phase === "jo") m = S.motif.chance(0.7) ? working.theme : S.motif.pick(working.subs);
+      else if (phase === "ha") m = S.motif.pickW([[working.theme, 3], [working.subs[0], 2], [working.subs[1] || working.theme, 2]]);
+      else m = S.motif.chance(0.6) ? working.theme : S.motif.pick(working.subs);   // kyū/release: the theme drives
       if (!m) m = working.theme;
       // Work what the cycle has BUILT: continue from the most-developed living
       // descendant about half the time in ha/kyū (the tether keeps it honest).
       if (phase === "ha" || phase === "kyū") {
         var line = lineage[m.name];
-        if (line && line.gen > 0 && line.gen < 6 && chance(0.45)) m = line;
+        if (line && line.gen > 0 && line.gen < 6 && S.motif.chance(0.45)) m = line;
       }
       // jo states plainly first — an idea must be LEARNED before it is worked,
       // but only a few times: after that, even the jo varies it
-      if (phase === "jo" && m.gen === 0 && (plainCounts[m.name] || 0) < 3 && chance(0.5)) {
+      if (phase === "jo" && m.gen === 0 && (plainCounts[m.name] || 0) < 3 && S.motif.chance(0.5)) {
         plainCounts[m.name] = (plainCounts[m.name] || 0) + 1;
         emitEvent({ cat: voice, label: "○ " + m.name + " stated plain", detail: m.notes.length + " notes · jo" });
         return clone(m);
@@ -816,12 +848,12 @@ window.ZankyoAudio = (function () {
       shamisen: [["koto", 3], ["shakuhachi", 2]],
     };
     function post(fromVoice, toVoice, motif, type) {
-      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: ctx.currentTime + rnd(6, 16) });
+      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: ctx.currentTime + S.motif.rnd(6, 16) });
       if (ledger.length > 6) ledger.shift();
     }
     function postFrom(voice, motif) {
-      if (!working.theme || !chance(POST_P[voice] || 0.4)) return;
-      post(voice, pickW(POST_TO[voice]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
+      if (!working.theme || !S.motif.chance(POST_P[voice] || 0.4)) return;
+      post(voice, S.motif.pickW(POST_TO[voice]), motif, S.motif.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
     }
     function claim(voice) {
       var i, ob = null;
@@ -869,12 +901,12 @@ window.ZankyoAudio = (function () {
       if (deepest && deepest.gen > 0) ghost = makeGhost(deepest);
       // a fresh working set, drawn from the ancestral pool
       var order = [0, 1, 2, 3, 4, 5], picks = [];
-      while (picks.length < 3) picks.push(order.splice(Math.floor(rng() * order.length), 1)[0]);
+      while (picks.length < 3) picks.push(order.splice(Math.floor(S.motif.next() * order.length), 1)[0]);
       working.theme = fromSeed(picks[0], NAMES[0]);
       working.subs = [fromSeed(picks[1], NAMES[1]), fromSeed(picks[2], NAMES[2])];
       // subsidiaries may enter pre-transposed — pitch variety, not novelty churn
       working.subs.forEach(function (s) {
-        if (chance(0.5)) { TRANSFORMS.transpose(s); s.chain = ["transpose"]; recentre(s); }
+        if (S.motif.chance(0.5)) { TRANSFORMS.transpose(s); s.chain = ["transpose"]; recentre(s); }
       });
       ledger.length = 0;
       lineage = {};
@@ -911,20 +943,20 @@ window.ZankyoAudio = (function () {
 
   // A biased hirajoshi walk. state = { idx, dir, center }; returns phrase of
   // { deg, durBeats }. window widens / steps loosen with arc.
-  function walk(state, len, windowR, arc) {
+  function walk(R, state, len, windowR, arc) {  // R: the walking voice's own stream
     var notes = [];
-    if (rng() < 0.4) state.dir = -state.dir;
+    if (R.next() < 0.4) state.dir = -state.dir;
     for (var i = 0; i < len; i++) {
-      var step = rng() < (0.62 - arc * 0.18) ? 1 : rng() < 0.8 ? 2 : 3;
+      var step = R.next() < (0.62 - arc * 0.18) ? 1 : R.next() < 0.8 ? 2 : 3;
       state.idx += state.dir * step;
       if (state.idx < state.center - windowR) { state.idx = state.center - windowR; state.dir = 1; }
       if (state.idx > state.center + windowR) { state.idx = state.center + windowR; state.dir = -1; }
       if (state.idx < 0) state.idx = 0; else if (state.idx >= SCALE.length) state.idx = SCALE.length - 1;
-      if (rng() < 0.34) state.idx = pullTo(state.idx, IMPORTANT_DEG);
-      notes.push({ deg: state.idx, durBeats: 0.6 + rng() * 0.9 });
+      if (R.next() < 0.34) state.idx = pullTo(state.idx, IMPORTANT_DEG);
+      notes.push({ deg: state.idx, durBeats: 0.6 + R.next() * 0.9 });
     }
     state.idx = pullTo(state.idx, REST_DEG);
-    notes.push({ deg: state.idx, durBeats: 1.4 + rng() * 1.2 });
+    notes.push({ deg: state.idx, durBeats: 1.4 + R.next() * 1.2 });
     return notes;
   }
   function pullTo(idx, flags) {
@@ -938,25 +970,22 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // SUB-DRONE — deep distorted ground (the derelict's hull resonance)
   // ==========================================================================
-  function subDroneCycle() {
+  function subDroneCycle(t) {
     if (!playing) return;
-    var c = ctx, now = c.currentTime, out = lg("subDrone");
+    var c = ctx, now = t, out = lg("subDrone");
     var cutoff = getLayerParam("subDrone", "cutoff", 220);
     var movement = getLayerParam("subDrone", "movement", 0.18);
     var subAmt = getLayerParam("subDrone", "sub", 0.6);
-    var dur = 26 + rng() * 10, fadeIn = 7, fadeOut = 8;
+    var dur = 26 + S.subDrone.next() * 10, fadeIn = 7, fadeOut = 8;
 
     var lp = c.createBiquadFilter();
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.8, now);
     var mlfo = c.createOscillator(), mg = c.createGain();
-    mlfo.type = "sine"; mlfo.frequency.setValueAtTime(0.02 + rng() * 0.03, now);
+    mlfo.type = "sine"; mlfo.frequency.setValueAtTime(0.02 + S.subDrone.next() * 0.03, now);
     mg.gain.setValueAtTime(cutoff * movement, now); mlfo.connect(mg); mg.connect(lp.frequency);
     mlfo.start(now); mlfo.stop(now + dur + 0.3);
     var bus = c.createGain();
-    bus.gain.setValueAtTime(0, now);
-    bus.gain.linearRampToValueAtTime(1, now + fadeIn);
-    bus.gain.setValueAtTime(1, now + dur - fadeOut);
-    bus.gain.linearRampToValueAtTime(0, now + dur);
+    PJ.Voice.env(bus.gain, now, [[fadeIn, 1], [dur - fadeIn - fadeOut, 1], [fadeOut, 0]]);
     lp.connect(bus); bus.connect(out);
 
     // tonic + fifth, detuned sawtooth pairs (grit comes from the distortion bus)
@@ -975,8 +1004,8 @@ window.ZankyoAudio = (function () {
       so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08 * subAmt, now);
       so.start(now); so.stop(now + dur + 0.3);
     }
-    var overlap = 7 + rng() * 3;
-    scheduleLayer(subDroneCycle, (dur - overlap) * 1000, "subDrone");
+    var overlap = 7 + S.subDrone.next() * 3;
+    after("subDrone", now, dur - overlap, subDroneCycle);
   }
 
   // ==========================================================================
@@ -984,27 +1013,24 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // Sustained 5–6 note clusters (aitake) built from in-scale degrees, breathing
   // slowly, with a high digital shimmer. The shimmering harmonic bed.
-  function shoCycle() {
+  function shoCycle(t) {
     if (!playing) return;
-    var c = ctx, now = c.currentTime, out = lg("sho");
+    var c = ctx, now = t, out = lg("sho");
     var cutoff = getLayerParam("sho", "cutoff", 1400);
     var voices = Math.round(getLayerParam("sho", "voices", 5));
     var shimmer = getLayerParam("sho", "shimmer", 0.4);
     var drift = getLayerParam("sho", "drift", 0.5);
-    var dur = 14 + rng() * 8, fadeIn = 5, fadeOut = 6;
+    var dur = 14 + S.sho.next() * 8, fadeIn = 5, fadeOut = 6;
 
     var lp = c.createBiquadFilter();
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.5, now);
     var bus = c.createGain();
-    bus.gain.setValueAtTime(0, now);
-    bus.gain.linearRampToValueAtTime(0.5, now + fadeIn);
-    bus.gain.setValueAtTime(0.5, now + dur - fadeOut);
-    bus.gain.linearRampToValueAtTime(0, now + dur);
+    PJ.Voice.env(bus.gain, now, [[fadeIn, 0.5], [dur - fadeIn - fadeOut, 0.5], [fadeOut, 0]]);
     lp.connect(bus); bus.connect(out);
 
     // a real aitake cluster: a CLOSE voicing (with a deliberate semitone rub),
     // sitting high (~A4–A5) so the bed shimmers above the drones.
-    var base = scaleIndexOf(6 + Math.floor(rng() * 2));
+    var base = scaleIndexOf(6 + Math.floor(S.sho.next() * 2));
     var used = {};
     for (var v = 0; v < voices; v++) {
       var idx = base + [0, 1, 2, 4, 5][v % 5];
@@ -1014,9 +1040,9 @@ window.ZankyoAudio = (function () {
       var f = SCALE[idx].freq;
       var o = c.createOscillator(), g = c.createGain();
       o.type = "sawtooth"; o.frequency.setValueAtTime(f, now);
-      o.detune.setValueAtTime((rng() * 2 - 1) * 6 * drift, now);
+      o.detune.setValueAtTime((S.sho.next() * 2 - 1) * 6 * drift, now);
       var dl = c.createOscillator(), dlg = c.createGain();
-      dl.type = "sine"; dl.frequency.setValueAtTime(0.05 + rng() * 0.08, now);
+      dl.type = "sine"; dl.frequency.setValueAtTime(0.05 + S.sho.next() * 0.08, now);
       dlg.gain.setValueAtTime(5 * drift, now); dl.connect(dlg); dlg.connect(o.detune);
       dl.start(now); dl.stop(now + dur + 0.2);
       o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, now);
@@ -1036,8 +1062,8 @@ window.ZankyoAudio = (function () {
       }
       emitNote("sho", f, now);
     }
-    var overlap = 4 + rng() * 2;
-    scheduleLayer(shoCycle, (dur - overlap) * 1000, "sho");
+    var overlap = 4 + S.sho.next() * 2;
+    after("sho", now, dur - overlap, shoCycle);
   }
 
   // ==========================================================================
@@ -1047,15 +1073,15 @@ window.ZankyoAudio = (function () {
   // breath, meri-kari pitch bends, and occasional MURAIKI (explosive breath
   // noise — the gritty cry). Motif memory + answers other voices.
   var shakuState = { idx: 10, dir: 1, center: 10 };
-  function startShakuhachi() {
+  function startShakuhachi(t) {
     if (!playing) return;
     shakuState.center = scaleIndexOf(5);         // mid-high register, above the drones
     shakuState.idx = shakuState.center; shakuState.dir = 1;
-    shakuhachiPhrase();
+    shakuhachiPhrase(t);
   }
-  function shakuhachiPhrase() {
+  function shakuhachiPhrase(t0) {
     if (!playing) return;
-    var now = ctx.currentTime, arc = getArc();
+    var now = t0, arc = getArc(now);
     var pace = getLayerParam("shakuhachi", "pace", 1.0) * (1 + arc * 0.6);
     var glideAmt = getLayerParam("shakuhachi", "glide", 0.6);
     var ornament = getLayerParam("shakuhachi", "ornament", 0.5);
@@ -1069,13 +1095,13 @@ window.ZankyoAudio = (function () {
     var phrase, motif = null;
     if (Motif.wantsReprise()) motif = Motif.request("shakuhachi");
     if (!motif && Motif.overdueFor("shakuhachi")) motif = Motif.claim("shakuhachi");
-    if (!motif && chance(0.6)) motif = Motif.request("shakuhachi");
+    if (!motif && S.shakuhachi.chance(0.6)) motif = Motif.request("shakuhachi");
     if (motif) {
       phrase = fitToRegister(motif.notes, shakuState.center);
       Motif.postFrom("shakuhachi", motif);
     } else {
-      phrase = walk(shakuState, 2 + Math.floor(rng() * 3) + Math.floor(arc * 2), 6 + Math.round(arc * 2), arc);
-      emitEvent({ cat: "shakuhachi", label: "fresh", detail: phrase.length + " notes · " + arcPhase() });
+      phrase = walk(S.shakuhachi, shakuState, 2 + Math.floor(S.shakuhachi.next() * 3) + Math.floor(arc * 2), 6 + Math.round(arc * 2), arc);
+      emitEvent({ cat: "shakuhachi", label: "fresh", detail: phrase.length + " notes · " + arcPhase(now) });
     }
     if (phrase.length) shakuState.idx = phrase[phrase.length - 1].deg;   // melodic continuity for the next walk
 
@@ -1083,22 +1109,22 @@ window.ZankyoAudio = (function () {
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.25, n.durBeats * beat);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      var glideFrom = (prev && rng() < glideAmt) ? prev : null;
-      var mur = (i === 0 && rng() < muraiki * (0.4 + arc * 0.6));
-      shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: rng() < ornament });
+      var glideFrom = (prev && S.shakuhachi.next() < glideAmt) ? prev : null;
+      var mur = (i === 0 && S.shakuhachi.next() < muraiki * (0.4 + arc * 0.6));
+      shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: S.shakuhachi.next() < ornament });
       sched.push({ f: f, t: t, dur: dur });
       prev = f;
-      t += dur + rng() * 0.05;
+      t += dur + S.shakuhachi.next() * 0.05;
     }
     // 〰 SANKYOKU HETEROPHONY — in the ha especially, the koto sometimes reads
     // the same phrase a breath behind (jiuta ensemble texture): the same note
     // list, its own ornament choices, a hair sharp.
-    if (sched.length >= 3 && chance(arcPhase() === "ha" ? 0.22 : 0.08)) {
-      var lag = rnd(0.15, 0.4), sharp = Math.pow(2, rnd(2, 3.5) / 1200), sprev = null;
+    if (sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08)) {
+      var lag = S.shakuhachi.rnd(0.15, 0.4), sharp = Math.pow(2, S.shakuhachi.rnd(2, 3.5) / 1200), sprev = null;
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
-        kotoNote(sn.f * sharp, sn.t + lag + rnd(0, 0.05), Math.max(0.12, sn.dur * 0.8),
-          { gain: 0.65, glideFrom: (sprev && chance(0.3)) ? sprev * sharp : null, bend: chance(0.2) });
+        kotoNote(sn.f * sharp, sn.t + lag + S.shakuhachi.rnd(0, 0.05), Math.max(0.12, sn.dur * 0.8),
+          { gain: 0.65, glideFrom: (sprev && S.shakuhachi.chance(0.3)) ? sprev * sharp : null, bend: S.shakuhachi.chance(0.2) });
         sprev = sn.f;
       }
       emitEvent({ cat: "koto", label: "〰 koto shadows shakuhachi", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") + " · " + sched.length + " notes" });
@@ -1106,12 +1132,12 @@ window.ZankyoAudio = (function () {
     // MA — breathing space between phrases (more in jo, less in kyū; the meta
     // journey tilts overall density ±12% — the shakuhachi stays UNLOCKED from
     // the pulse but still breathes with the long form)
-    var ma = (1.8 + rng() * 4) * (1 - arc * 0.55) * metaRestMul() / getRate("shakuhachi");
-    scheduleRaw(shakuhachiPhrase, (t - now + ma) * 1000);
+    var ma = (1.8 + S.shakuhachi.next() * 4) * (1 - arc * 0.55) * metaRestMul() / trimOf("shakuhachi");
+    afterRaw("shakuhachi", now, (t - now) + ma, shakuhachiPhrase);
   }
   function shakuhachiNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
-    var out = panAt("shakuhachi", (rng() * 2 - 1) * 0.25);
+    var out = panAt("shakuhachi", (S.shakuhachi.next() * 2 - 1) * 0.25);
     var o = c.createOscillator(), o2 = c.createOscillator();
     o.type = "sine"; o2.type = "triangle";
     if (opts.glideFrom) {                          // meri-kari slide
@@ -1145,7 +1171,7 @@ window.ZankyoAudio = (function () {
       ng.gain.setValueAtTime(0.0001, t);
       ng.gain.exponentialRampToValueAtTime(bpeak, t + (opts.muraiki ? 0.015 : 0.09));
       ng.gain.exponentialRampToValueAtTime(0.0001, t + (opts.muraiki ? Math.min(dur, 0.5) : dur));
-      nz.start(t, rng() * 20); nz.stop(t + dur + 0.1);
+      nz.start(t, S.shakuhachi.next() * 20); nz.stop(t + dur + 0.1);
     }
     emitNote("shakuhachi", freq, t, dur);
   }
@@ -1154,23 +1180,23 @@ window.ZankyoAudio = (function () {
   // KOTO 箏 — plucked zither (bright melodic voice + glissando flourishes)
   // ==========================================================================
   var kotoState = { idx: 8, dir: 1, center: 8 };
-  function startKoto() {
+  function startKoto(t) {
     if (!playing) return;
     kotoState.center = scaleIndexOf(4); kotoState.idx = kotoState.center; kotoState.dir = 1;
-    kotoPhrase();
+    kotoPhrase(t);
   }
-  function kotoPhrase() {
+  function kotoPhrase(t0) {
     if (!playing) return;
-    var now = ctx.currentTime, arc = getArc();
+    var now = t0, arc = getArc(now);
     var pace = getLayerParam("koto", "pace", 1.0) * (1 + arc * 0.7);
     var glissAmt = getLayerParam("koto", "gliss", 0.4);
     kotoState.center = Math.round(scaleIndexOf(4) + arc * 3);
     var phrase, motif = null;
     if (Motif.overdueFor("koto")) motif = Motif.claim("koto");
-    if (!motif && chance(0.55)) motif = Motif.request("koto");
+    if (!motif && S.koto.chance(0.55)) motif = Motif.request("koto");
     if (motif) { phrase = fitToRegister(motif.notes, kotoState.center); Motif.postFrom("koto", motif); }
     else {
-      phrase = walk(kotoState, 3 + Math.floor(rng() * 3) + Math.floor(arc * 2), 7 + Math.round(arc * 2), arc);
+      phrase = walk(S.koto, kotoState, 3 + Math.floor(S.koto.next() * 3) + Math.floor(arc * 2), 7 + Math.round(arc * 2), arc);
       emitEvent({ cat: "koto", label: "fresh", detail: phrase.length + " notes" });
     }
     if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
@@ -1179,36 +1205,36 @@ window.ZankyoAudio = (function () {
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = pulseQuantDur(Math.max(0.12, n.durBeats * beat), arc);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      kotoNote(f, t, dur, { glideFrom: (prev && rng() < 0.3) ? prev : null, bend: rng() < 0.2 });
+      kotoNote(f, t, dur, { glideFrom: (prev && S.koto.next() < 0.3) ? prev : null, bend: S.koto.next() < 0.2 });
       sched.push({ f: f, t: t, dur: dur });
-      prev = f; t += dur + rng() * 0.03;
+      prev = f; t += dur + S.koto.next() * 0.03;
     }
     // 〰 sankyoku heterophony downward: the shamisen sometimes shadows the koto
     // a breath behind — same page, its own accents, a hair sharp.
-    if (sched.length >= 3 && chance(arcPhase() === "ha" ? 0.2 : 0.07)) {
-      var lag = rnd(0.15, 0.4), sharp = Math.pow(2, rnd(2, 3.5) / 1200);
+    if (sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07)) {
+      var lag = S.koto.rnd(0.15, 0.4), sharp = Math.pow(2, S.koto.rnd(2, 3.5) / 1200);
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
-        shamisenNote(sn.f * sharp, sn.t + lag + rnd(0, 0.04), Math.max(0.1, Math.min(sn.dur, 0.3)), { gain: sh % 2 === 0 ? 0.6 : 0.4 });
+        shamisenNote(sn.f * sharp, sn.t + lag + S.koto.rnd(0, 0.04), Math.max(0.1, Math.min(sn.dur, 0.3)), { gain: sh % 2 === 0 ? 0.6 : 0.4 });
       }
       emitEvent({ cat: "shamisen", label: "〰 shamisen shadows koto", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") + " · " + sched.length + " notes" });
     }
     // glissando flourish — a rapid run up/down the scale (more in ha/kyū)
-    if (rng() < glissAmt * (0.3 + arc)) {
-      var up = rng() < 0.5, start = kotoState.idx, gn = 4 + Math.floor(rng() * 5), gt = t;
+    if (S.koto.next() < glissAmt * (0.3 + arc)) {
+      var up = S.koto.next() < 0.5, start = kotoState.idx, gn = 4 + Math.floor(S.koto.next() * 5), gt = t;
       for (var k = 0; k < gn; k++) {
         var gi = Math.max(0, Math.min(SCALE.length - 1, start + (up ? k : -k)));
-        kotoNote(SCALE[gi].freq, gt, 0.14, { gain: 0.7 }); gt += 0.05 + rng() * 0.03;
+        kotoNote(SCALE[gi].freq, gt, 0.14, { gain: 0.7 }); gt += 0.05 + S.koto.next() * 0.03;
       }
       t = gt; emitEvent({ cat: "koto", label: "gliss", detail: (up ? "↑" : "↓") + gn });
     }
-    var rest = (1.6 + rng() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() / getRate("koto");  // sparse in jo; meta tilts density ±12%
-    scheduleRaw(kotoPhrase, (t - now + rest) * 1000);
+    var rest = (1.6 + S.koto.next() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() / trimOf("koto");  // sparse in jo; meta tilts density ±12%
+    afterRaw("koto", now, (t - now) + rest, kotoPhrase);
   }
   function kotoNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
     var bright = getLayerParam("koto", "brightness", 7), sustain = getLayerParam("koto", "sustain", 1.0);
-    var out = panAt("koto", (rng() * 2 - 1) * 0.35);
+    var out = panAt("koto", (S.koto.next() * 2 - 1) * 0.35);
     var o1 = c.createOscillator(), o2 = c.createOscillator();
     o1.type = "sawtooth"; o2.type = "triangle"; o2.detune.setValueAtTime(4, t);
     if (opts.glideFrom) { var gt = Math.min(dur * 0.35, 0.18); o1.frequency.setValueAtTime(opts.glideFrom, t); o1.frequency.exponentialRampToValueAtTime(freq, t + gt); o2.frequency.setValueAtTime(opts.glideFrom, t); o2.frequency.exponentialRampToValueAtTime(freq, t + gt); }
@@ -1220,10 +1246,7 @@ window.ZankyoAudio = (function () {
     // Click-safe: linear fades from/to true zero; anchors clamped inside the note.
     var decA = Math.min(0.15 * sustain, dec * 0.6), atkK = Math.max(0.004, Math.min(0.006, decA * 0.5));
     if (atkK >= decA) atkK = decA * 0.5;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + atkK);
-    g.gain.exponentialRampToValueAtTime(peak * 0.3, t + decA);
-    g.gain.linearRampToValueAtTime(0, t + dec);
+    PJ.Voice.env(g.gain, t, [[atkK, peak], [decA - atkK, peak * 0.3], [dec - decA, 0]]);
     o1.start(t); o1.stop(t + dec + 0.05); o2.start(t); o2.stop(t + dec + 0.05);
     var sh = c.createOscillator(), shg = c.createGain(); sh.type = "sine"; sh.frequency.setValueAtTime(freq * 2, t); sh.connect(shg); shg.connect(out);
     shg.gain.setValueAtTime(0.0001, t); shg.gain.exponentialRampToValueAtTime(0.015, t + 0.04); shg.gain.exponentialRampToValueAtTime(0.001, t + dec); sh.start(t); sh.stop(t + dec + 0.1);
@@ -1234,23 +1257,23 @@ window.ZankyoAudio = (function () {
   // SHAMISEN 三味線 — gritty plucked lute with SAWARI buzz (tsugaru/punk edge)
   // ==========================================================================
   var shamiState = { idx: 7, dir: 1, center: 7 };
-  function startShamisen() {
+  function startShamisen(t) {
     if (!playing) return;
     shamiState.center = scaleIndexOf(3); shamiState.idx = shamiState.center; shamiState.dir = 1;
-    shamisenPhrase();
+    shamisenPhrase(t);
   }
-  function shamisenPhrase() {
+  function shamisenPhrase(t0) {
     if (!playing) return;
-    var now = ctx.currentTime, arc = getArc();
+    var now = t0, arc = getArc(now);
     var pace = getLayerParam("shamisen", "pace", 1.0) * (1 + arc * 1.0);   // comes alive in ha/kyū
     shamiState.center = Math.round(scaleIndexOf(3) + arc * 3);
     var phrase, motif = null;
     if (Motif.overdueFor("shamisen")) motif = Motif.claim("shamisen");
-    if (!motif && chance(0.45)) motif = Motif.request("shamisen");
+    if (!motif && S.shamisen.chance(0.45)) motif = Motif.request("shamisen");
     if (motif) { phrase = fitToRegister(motif.notes, shamiState.center); Motif.postFrom("shamisen", motif); }
     else {
-      phrase = walk(shamiState, 3 + Math.floor(rng() * 4) + Math.floor(arc * 3), 6 + Math.round(arc * 2), arc);
-      emitEvent({ cat: "shamisen", label: "fresh", detail: phrase.length + " notes · " + arcPhase() });
+      phrase = walk(S.shamisen, shamiState, 3 + Math.floor(S.shamisen.next() * 4) + Math.floor(arc * 3), 6 + Math.round(arc * 2), arc);
+      emitEvent({ cat: "shamisen", label: "fresh", detail: phrase.length + " notes · " + arcPhase(now) });
     }
     if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
@@ -1259,20 +1282,20 @@ window.ZankyoAudio = (function () {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
       var dur = pulseQuantDur(Math.max(0.1, Math.min(n.durBeats, 1) * beat), arc);
       // tsugaru hammer-on: a quick lower-neighbor grace before the beat
-      if (rng() < 0.25 + arc * 0.3) {
+      if (S.shamisen.next() < 0.25 + arc * 0.3) {
         shamisenNote(SCALE[Math.max(0, n.deg - 1)].freq, t, 0.05, { gain: 0.55 });
         t += 0.05;
       }
       shamisenNote(f, t, dur, { gain: (i % 2 === 0 ? 1.0 : 0.6) });
       t += dur + 0.01;
     }
-    var rest = (2.2 + rng() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) * metaRestMul() / getRate("shamisen");  // mostly absent in jo; meta tilts density ±12%
-    scheduleRaw(shamisenPhrase, (t - now + rest) * 1000);
+    var rest = (2.2 + S.shamisen.next() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) * metaRestMul() / trimOf("shamisen");  // mostly absent in jo; meta tilts density ±12%
+    afterRaw("shamisen", now, (t - now) + rest, shamisenPhrase);
   }
   function shamisenNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
     var sawari = getLayerParam("shamisen", "sawari", 0.6), attack = getLayerParam("shamisen", "attack", 0.5);
-    var out = panAt("shamisen", (rng() * 2 - 1) * 0.3);
+    var out = panAt("shamisen", (S.shamisen.next() * 2 - 1) * 0.3);
     var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(freq, t);
     var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(freq * 6, t); f.frequency.exponentialRampToValueAtTime(freq * 2, t + dur * 0.6); f.Q.setValueAtTime(2, t);
     var g = c.createGain(); o.connect(f); f.connect(g); g.connect(out);
@@ -1284,19 +1307,14 @@ window.ZankyoAudio = (function () {
     var decA = Math.min(0.12, dur * 0.6);
     var atk = Math.max(0.005, Math.min(0.002 + (1 - attack) * 0.02, decA * 0.6));
     if (atk >= decA) atk = decA * 0.5;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + atk);
-    g.gain.exponentialRampToValueAtTime(peak * 0.2, t + decA);
-    g.gain.linearRampToValueAtTime(0, t + dur);
+    PJ.Voice.env(g.gain, t, [[atk, peak], [decA - atk, peak * 0.2], [dur - decA, 0]]);
     o.start(t); o.stop(t + dur + 0.02);
     if (sawari > 0.01) {                                   // sawari buzz — bright high resonance (grit)
       var bo = c.createOscillator(); bo.type = "sawtooth"; bo.frequency.setValueAtTime(freq * 1.005, t);
       var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(freq * 7, t); bp.Q.setValueAtTime(6, t);
       var bg = c.createGain(); bo.connect(bp); bp.connect(bg); bg.connect(out);
-      bg.gain.setValueAtTime(0, t);                        // linear fade-in from true zero (no resonant onset tick)
-      bg.gain.linearRampToValueAtTime(0.05 * sawari, t + Math.min(0.014, dur * 0.4));
-      bg.gain.exponentialRampToValueAtTime(0.005 * sawari, t + dur * 0.7);
-      bg.gain.linearRampToValueAtTime(0, t + dur * 1.1);
+      var sawIn = Math.min(0.014, dur * 0.4);              // linear fade-in from true zero (no resonant onset tick)
+      PJ.Voice.env(bg.gain, t, [[sawIn, 0.05 * sawari], [dur * 0.7 - sawIn, 0.005 * sawari], [dur * 0.4, 0]]);
       bo.start(t); bo.stop(t + dur * 1.2 + 0.05);
     }
     emitNote("shamisen", freq, t, dur);
@@ -1305,9 +1323,9 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // TAIKO 太鼓 — drums (silent in jo; drives the ha → kyū climb)
   // ==========================================================================
-  function startTaiko() { if (playing) taikoPulse(); }
+  function startTaiko(t) { if (playing) taikoPulse(t); }
   function taikoHit(t, accent) {
-    var c = ctx, out = panAt("taiko", (rng() * 2 - 1) * 0.2);
+    var c = ctx, out = panAt("taiko", (S.taiko.next() * 2 - 1) * 0.2);
     var lowTune = getLayerParam("taiko", "lowTune", 1.0), punch = getLayerParam("taiko", "punch", 0.6);
     var o = c.createOscillator(), g = c.createGain(); o.type = "sine";
     o.frequency.setValueAtTime(95 * lowTune, t); o.frequency.exponentialRampToValueAtTime(45 * lowTune, t + 0.16);
@@ -1319,19 +1337,19 @@ window.ZankyoAudio = (function () {
       var nz = noiseSource(); var bp = c.createBiquadFilter(); bp.type = "lowpass"; bp.frequency.setValueAtTime(800, t);
       var ng = c.createGain(); nz.connect(bp); bp.connect(ng); ng.connect(out);
       ng.gain.setValueAtTime(0.06 * (accent ? 1.2 : 0.8), t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
-      nz.start(t, rng() * 10); nz.stop(t + 0.2);
+      nz.start(t, S.taiko.next() * 10); nz.stop(t + 0.2);
     }
   }
-  function taikoPulse() {
+  function taikoPulse(t0) {
     if (!playing) return;
-    var now = ctx.currentTime, arc = getArc();
-    if (arc < 0.3) { pulse.active = false; scheduleRaw(taikoPulse, (3 + rng() * 3) * 1000); return; }   // silent in jo — no grid to lock to
+    var now = t0, arc = getArc(now);
+    if (arc < 0.3) { pulse.active = false; afterRaw("taiko", now, 3 + S.taiko.next() * 3, taikoPulse); return; }   // silent in jo — no grid to lock to
     var bpm = 50 + arc * 90, beat = 60 / bpm, beats = 2 + Math.floor(arc * 8), t = now + 0.05;
     pulse.bpm = bpm; pulse.beat = beat; pulse.anchor = t; pulse.active = true;   // publish the grid — the ensemble magnetizes to this
-    for (var i = 0; i < beats; i++) { if (rng() < 0.5 + arc * 0.45) taikoHit(t, i % 4 === 0); t += beat * (rng() < 0.3 ? 0.5 : 1); }
+    for (var i = 0; i < beats; i++) { if (S.taiko.next() < 0.5 + arc * 0.45) taikoHit(t, i % 4 === 0); t += beat * (S.taiko.next() < 0.3 ? 0.5 : 1); }
     emitEvent({ cat: "taiko", label: "pattern", detail: beats + " beats · " + Math.round(bpm) + "bpm" });
-    var rest = (2 + rng() * 4) * (1 - arc * 0.7) / getRate("taiko");
-    scheduleRaw(taikoPulse, (t - now + rest) * 1000);
+    var rest = (2 + S.taiko.next() * 4) * (1 - arc * 0.7) / trimOf("taiko");
+    afterRaw("taiko", now, (t - now) + rest, taikoPulse);
   }
 
   // ==========================================================================
@@ -1339,44 +1357,44 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // Sparse, swelling beds of filtered/crushed noise that grow with the arc —
   // gentle hiss in jo, scraping walls in kyū. Routed through the distortion bus.
-  function noiseEvent() {
+  function noiseEvent(t) {
     if (!playing) return;
-    var c = ctx, now = c.currentTime, out = lg("noise");
-    var arc = getArc();
+    var c = ctx, now = t, out = lg("noise");
+    var arc = getArc(now);
     var density = getLayerParam("noise", "density", 0.4);
     var color = getLayerParam("noise", "color", 0.5);
     var crush = getLayerParam("noise", "crush", 0.4);
 
-    var dur = 2 + rng() * 5 + arc * 4;
+    var dur = 2 + S.noise.next() * 5 + arc * 4;
     var nz = noiseSource();
     var bp = c.createBiquadFilter();
     bp.type = arc > 0.6 ? "bandpass" : "lowpass";
     var fc = 200 + color * 3000 + arc * 2500;
     bp.frequency.setValueAtTime(fc, now); bp.Q.setValueAtTime(0.5 + crush * 8 + arc * 6, now);
     // sweep the filter for a scraping motion
-    bp.frequency.linearRampToValueAtTime(fc * (0.5 + rng()), now + dur);
+    bp.frequency.linearRampToValueAtTime(fc * (0.5 + S.noise.next()), now + dur);
     var g = c.createGain(); nz.connect(bp); bp.connect(g); g.connect(out);
     var peak = (0.05 + arc * 0.22) * (0.4 + density);
     g.gain.setValueAtTime(0.0001, now);
     g.gain.exponentialRampToValueAtTime(peak, now + dur * 0.4);
     g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-    nz.start(now, rng() * 10); nz.stop(now + dur + 0.1);
-    if (arc > 0.4) emitEvent({ cat: "noise", label: "wall", detail: arcPhase() });
+    nz.start(now, S.noise.next() * 10); nz.stop(now + dur + 0.1);
+    if (arc > 0.4) emitEvent({ cat: "noise", label: "wall", detail: arcPhase(now) });
 
-    var gap = (6 + rng() * 10) * (1 - arc * 0.6) / (0.4 + density);
-    scheduleLayer(noiseEvent, gap * 1000, "noise");
+    var gap = (6 + S.noise.next() * 10) * (1 - arc * 0.6) / (0.4 + density);
+    after("noise", now, gap, noiseEvent);
   }
 
   // ==========================================================================
   // AMBIENT — quirky events (derelict orbital station incidentals)
   // ==========================================================================
   function ambBonsho(t) {                          // temple bell (bonshō) — deep, long, inharmonic
-    var out = panAt("ambient", (rng() * 2 - 1) * 0.3);
-    var base = degFreq(0, -1) * (rng() < 0.5 ? 1 : Math.pow(2, 7 / 12));
+    var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3);
+    var base = degFreq(0, -1) * (S.ambient.next() < 0.5 ? 1 : Math.pow(2, 7 / 12));
     var partials = [{ m: 1, a: 0.08, d: 6 }, { m: 2.7, a: 0.04, d: 4 }, { m: 5.2, a: 0.02, d: 2.4 }, { m: 8.1, a: 0.012, d: 1.5 }];
     partials.forEach(function (p) {
       var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine"; o.frequency.setValueAtTime(base * p.m, t); o.detune.setValueAtTime((rng() * 2 - 1) * 5, t);
+      o.type = "sine"; o.frequency.setValueAtTime(base * p.m, t); o.detune.setValueAtTime((S.ambient.next() * 2 - 1) * 5, t);
       o.connect(g); g.connect(out);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(p.a, t + 0.01);
       g.gain.exponentialRampToValueAtTime(0.0001, t + p.d);
@@ -1384,21 +1402,21 @@ window.ZankyoAudio = (function () {
     });
   }
   function ambFurin(t) {                            // wind-chime (fūrin) — a few tiny high pings
-    var out = panAt("ambient", (rng() * 2 - 1) * 0.6);
-    var n = 2 + Math.floor(rng() * 3), tt = t;
+    var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.6);
+    var n = 2 + Math.floor(S.ambient.next() * 3), tt = t;
     for (var i = 0; i < n; i++) {
-      var idx = Math.min(SCALE.length - 1, scaleIndexOf(8) + Math.floor(rng() * 4));
+      var idx = Math.min(SCALE.length - 1, scaleIndexOf(8) + Math.floor(S.ambient.next() * 4));
       var o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "triangle"; o.frequency.setValueAtTime(SCALE[idx].freq * 2, tt);
       o.connect(g); g.connect(out);
       g.gain.setValueAtTime(0.0001, tt); g.gain.exponentialRampToValueAtTime(0.035, tt + 0.004);
       g.gain.exponentialRampToValueAtTime(0.0001, tt + 1.4);
-      o.start(tt); o.stop(tt + 1.5); tt += 0.12 + rng() * 0.2;
+      o.start(tt); o.stop(tt + 1.5); tt += 0.12 + S.ambient.next() * 0.2;
     }
   }
   function ambSuikinkutsu(t) {                      // water drip resonance (suikinkutsu)
-    var out = panAt("ambient", (rng() * 2 - 1) * 0.5);
-    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(7) + Math.floor(rng() * 5))].freq * 2;
+    var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.5);
+    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(7) + Math.floor(S.ambient.next() * 5))].freq * 2;
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "sine"; o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
     o.connect(g); g.connect(out);
@@ -1408,19 +1426,19 @@ window.ZankyoAudio = (function () {
   }
   function ambGlitch(t) {                           // digital glitch / static burst (the 3042 grit)
     if (!sharedNoiseBuf) return;
-    var out = panAt("ambient", (rng() * 2 - 1) * 0.8);
-    var n = 3 + Math.floor(rng() * 6), tt = t;
+    var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.8);
+    var n = 3 + Math.floor(S.ambient.next() * 6), tt = t;
     for (var i = 0; i < n; i++) {
       var nz = noiseSource();
-      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(800 + rng() * 4000, tt);
+      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(800 + S.ambient.next() * 4000, tt);
       var g = ctx.createGain(); nz.connect(hp); hp.connect(g); g.connect(out);
-      var d = 0.02 + rng() * 0.05;
+      var d = 0.02 + S.ambient.next() * 0.05;
       g.gain.setValueAtTime(0.05, tt); g.gain.setValueAtTime(0.0001, tt + d);
-      nz.start(tt, rng() * 10); nz.stop(tt + d + 0.02); tt += d + rng() * 0.06;
+      nz.start(tt, S.ambient.next() * 10); nz.stop(tt + d + 0.02); tt += d + S.ambient.next() * 0.06;
     }
   }
   function ambDistantTaiko(t) {                     // a lone distant drum hit
-    var out = panAt("ambient", (rng() * 2 - 1) * 0.4);
+    var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.4);
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "sine"; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.18);
     o.connect(g); g.connect(out);
@@ -1431,11 +1449,11 @@ window.ZankyoAudio = (function () {
       var nz = noiseSource(); var bp = ctx.createBiquadFilter(); bp.type = "lowpass"; bp.frequency.setValueAtTime(400, t);
       var ng = ctx.createGain(); nz.connect(bp); bp.connect(ng); ng.connect(out);
       ng.gain.setValueAtTime(0.06, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-      nz.start(t, rng() * 10); nz.stop(t + 0.2);
+      nz.start(t, S.ambient.next() * 10); nz.stop(t + 0.2);
     }
   }
   function ambKotoSweep(t) {                        // a fast koto-ish glissando flourish
-    var out = panAt("ambient", (rng() * 2 - 1) * 0.5);
+    var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.5);
     var start = scaleIndexOf(3), n = 6, tt = t;
     for (var i = 0; i < n; i++) {
       var idx = Math.min(SCALE.length - 1, start + i);
@@ -1448,8 +1466,8 @@ window.ZankyoAudio = (function () {
     }
   }
   function ambBiwa(t) {                            // plucked lute with sawari buzz
-    var c = ctx, out = panAt("ambient", (rng() * 2 - 1) * 0.4);
-    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(0) + Math.floor(rng() * 5))].freq, dec = 1.6 + rng() * 1.2;
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.4);
+    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(0) + Math.floor(S.ambient.next() * 5))].freq, dec = 1.6 + S.ambient.next() * 1.2;
     var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.04);
     var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(f * 6, t); lp.frequency.exponentialRampToValueAtTime(f * 2, t + dec * 0.7); lp.Q.setValueAtTime(2, t);
     var g = c.createGain(); o.connect(lp); lp.connect(g); g.connect(out);
@@ -1462,22 +1480,22 @@ window.ZankyoAudio = (function () {
     bo.start(t); bo.stop(t + dec * 1.3);
   }
   function ambCommsVox(t) {                         // malfunctioning comms — stuttered vowel-formant glitch
-    var c = ctx, out = panAt("ambient", (rng() * 2 - 1) * 0.6);
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.6);
     var carrier = c.createOscillator(); carrier.type = "sawtooth"; carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(2)].freq * 2, t);
     var vca = c.createGain(); vca.connect(out); vca.gain.setValueAtTime(0.0001, t);
     [700, 1100, 2600].forEach(function (ff) { var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(ff, t); bp.Q.setValueAtTime(8, t); carrier.connect(bp); bp.connect(vca); });
-    var syl = 3 + Math.floor(rng() * 4), tt = t;
+    var syl = 3 + Math.floor(S.ambient.next() * 4), tt = t;
     for (var i = 0; i < syl; i++) {
-      var d = 0.05 + rng() * 0.12;
-      carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(Math.floor(rng() * 5))].freq * 2, tt);
+      var d = 0.05 + S.ambient.next() * 0.12;
+      carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(Math.floor(S.ambient.next() * 5))].freq * 2, tt);
       vca.gain.setValueAtTime(0.05, tt); vca.gain.setValueAtTime(0.0001, tt + d);
-      tt += d + 0.04 + rng() * 0.08;
+      tt += d + 0.04 + S.ambient.next() * 0.08;
     }
     carrier.start(t); carrier.stop(tt + 0.1);
-    if (sharedNoiseBuf) { var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2000, t); var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out); ng.gain.setValueAtTime(0.02, t); ng.gain.exponentialRampToValueAtTime(0.0001, tt); nz.start(t, rng() * 10); nz.stop(tt + 0.1); }
+    if (sharedNoiseBuf) { var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2000, t); var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out); ng.gain.setValueAtTime(0.02, t); ng.gain.exponentialRampToValueAtTime(0.0001, tt); nz.start(t, S.ambient.next() * 10); nz.stop(tt + 0.1); }
   }
   function ambGeigerHum(t) {                        // dying machinery — sagging drone + thinning radiation clicks
-    var c = ctx, out = panAt("ambient", (rng() * 2 - 1) * 0.3), dur = 3 + rng() * 3, base = degFreq(0, -2);
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3), dur = 3 + S.ambient.next() * 3, base = degFreq(0, -2);
     [-8, 8].forEach(function (det) {
       var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(base, t); o.detune.setValueAtTime(det, t); o.frequency.exponentialRampToValueAtTime(base * 0.94, t + dur);
       var g = c.createGain(); o.connect(g); g.connect(out);
@@ -1490,8 +1508,8 @@ window.ZankyoAudio = (function () {
         var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(3000, tt);
         var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out);
         ng.gain.setValueAtTime(0.04, tt); ng.gain.setValueAtTime(0.0001, tt + 0.01);
-        nz.start(tt, rng() * 10); nz.stop(tt + 0.03);
-        tt += 0.05 + rng() * 0.3 * (1 + ((tt - t) / dur) * 3);   // clicks thin out as it dies
+        nz.start(tt, S.ambient.next() * 10); nz.stop(tt + 0.03);
+        tt += 0.05 + S.ambient.next() * 0.3 * (1 + ((tt - t) / dur) * 3);   // clicks thin out as it dies
       }
     }
   }
@@ -1506,17 +1524,17 @@ window.ZankyoAudio = (function () {
     { fn: ambCommsVox,     w: 2, name: "Comms vox" },
     { fn: ambGeigerHum,    w: 3, name: "Geiger hum" },
   ];
-  function startAmbient() { if (playing) ambientEvent(); }
-  function ambientEvent() {
+  function startAmbient(t) { if (playing) ambientEvent(t); }
+  function ambientEvent(t) {
     if (!playing) return;
-    var now = ctx.currentTime, total = 0, i;
+    var now = t, total = 0, i;
     for (i = 0; i < AMBIENT_POOL.length; i++) total += AMBIENT_POOL[i].w;
-    var r = rng() * total, entry = AMBIENT_POOL[0];
+    var r = S.ambient.next() * total, entry = AMBIENT_POOL[0];
     for (i = 0; i < AMBIENT_POOL.length; i++) { r -= AMBIENT_POOL[i].w; if (r <= 0) { entry = AMBIENT_POOL[i]; break; } }
     try { entry.fn(now + 0.05); } catch (e) {}
     emitEvent({ cat: "ambient", label: entry.name });
-    var gap = (12 + rng() * 22) * (1 - getArc() * 0.35);
-    scheduleLayer(ambientEvent, gap * 1000, "ambient");
+    var gap = (12 + S.ambient.next() * 22) * (1 - getArc(now) * 0.35);
+    after("ambient", now, gap, ambientEvent);
   }
 
   // ==========================================================================
@@ -1528,52 +1546,56 @@ window.ZankyoAudio = (function () {
     if (playing) return;
     playing = true;
     if (bg) bg.started();
-    arcStartTime = ctx.currentTime;
+    // one fresh world per play, all of it derived from the seed
+    forkStreams();
+    clock.start();
+    var t0 = clock.now();
+    arcStartTime = t0;
     metaCycle = -1; lastPhase = "";
     pulse.active = false;                        // no grid until the taiko speaks
-    Motif.reset();                               // updateDryGrit() below builds cycle 0's working set
+    Motif.reset();                               // formPulse() below builds cycle 0's working set
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed });
-    masterGain.gain.cancelScheduledValues(ctx.currentTime);
-    masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
-    for (var i = 0; i < LAYERS.length; i++) applyLayerGain(LAYERS[i]);
+    masterGain.gain.cancelScheduledValues(t0);
+    masterGain.gain.setValueAtTime(masterVolume, t0);
+    for (var i = 0; i < LAYERS.length; i++) { applyLayerGain(LAYERS[i]); lane(LAYERS[i]).rate = layerRate[LAYERS[i]] || 1; }
     // drones first; voices and grit enter in turn (jo opening)
-    subDroneCycle();
-    shoCycle();
-    scheduleLayer(startShakuhachi, 4000, "shakuhachi");
-    scheduleLayer(startKoto, 10000, "koto");
-    scheduleLayer(startShamisen, 16000, "shamisen");
-    scheduleLayer(startTaiko, 22000, "taiko");
-    scheduleLayer(noiseEvent, 8000, "noise");
-    scheduleLayer(startAmbient, 7000, "ambient");
-    updateDryGrit();
+    subDroneCycle(t0);
+    shoCycle(t0);
+    after("shakuhachi", t0, 4, startShakuhachi);
+    after("koto", t0, 10, startKoto);
+    after("shamisen", t0, 16, startShamisen);
+    after("taiko", t0, 22, startTaiko);
+    after("noise", t0, 8, noiseEvent);
+    after("ambient", t0, 7, startAmbient);
+    lane("form").every(formPulse);
   }
-  // Crossfade the dry-grit send up as the arc rises — kyū gets close + abrasive.
-  // Watches for the cycle boundary (each cycle its own seeded length → the
-  // meta-arc advances, the mode modulates), and fires the KIRU (斬 — the cut)
-  // at the kyū → release transition: the climax's payoff.
+  // The form pulse (0.7 s, on its own lane): crossfades the dry-grit send up
+  // as the arc rises — kyū gets close + abrasive; watches for the cycle
+  // boundary (each cycle its own seeded length → the meta-arc advances, the
+  // mode modulates); fires the KIRU (斬 — the cut) at the kyū → release
+  // transition: the climax's payoff.
   var lastPhase = "";
-  function updateDryGrit() {
-    if (!playing) return;
-    if (dryGritGain) dryGritGain.gain.setTargetAtTime(getArc() * 0.7, ctx.currentTime, 0.5);
+  function formPulse(t) {
+    if (!playing) return null;
+    if (dryGritGain) dryGritGain.gain.setTargetAtTime(getArc(t) * 0.7, t, 0.5);
     if (metaCycle < 0) beginCycle(0);
-    else if (ctx.currentTime - arcStartTime >= ARC_PERIOD) { arcStartTime += ARC_PERIOD; beginCycle(metaCycle + 1); }
-    var phase = arcPhase();
-    if (lastPhase === "kyū" && phase === "release") kiru();
+    else if (t - arcStartTime >= ARC_PERIOD) { arcStartTime += ARC_PERIOD; beginCycle(metaCycle + 1); }
+    var phase = arcPhase(t);
+    if (lastPhase === "kyū" && phase === "release") kiru(t);
     lastPhase = phase;
-    scheduleRaw(updateDryGrit, 700);
+    return 0.7;
   }
   // 斬 KIRU — a final taiko roll + noise swell, then a sudden cut to a hush; a
   // lone temple bell rings in the silence (ma); the voices return as a new jo.
   // Severity rides the meta-curve: at the trough a passing hush (shallow dip,
   // ~3 s of ma, one bell); at the peak a devastating cut (down to 0.08 of
   // master, up to ~9 s of held silence, the bell tolling twice).
-  function kiru() {
+  function kiru(t) {
     if (!ctx || !masterGain || !playing) return;
-    var t = ctx.currentTime;
     var sev = metaSeverity();
     var dip = 0.3 - 0.22 * sev;                                           // hush depth: 0.3 → 0.08 of master
     var hold = 3 + 6 * sev;                                               // held silence: ~3 s → ~9 s
-    var twice = sev > 0.45 && chance(0.4 + sev * 0.5);                    // the bell tolls again near the peak
+    var twice = sev > 0.45 && S.form.chance(0.4 + sev * 0.5);                    // the bell tolls again near the peak
     for (var i = 0; i < 6; i++) taikoHit(t + i * 0.08, i === 5);          // final roll
     var nz = noiseSource(), bp = ctx.createBiquadFilter();
     bp.type = "bandpass"; bp.frequency.setValueAtTime(1200, t); bp.frequency.linearRampToValueAtTime(4500, t + 0.5); bp.Q.setValueAtTime(2, t);
@@ -1584,7 +1606,7 @@ window.ZankyoAudio = (function () {
     masterGain.gain.setValueAtTime(masterVolume, t + 0.52);
     masterGain.gain.linearRampToValueAtTime(masterVolume * dip, t + 0.58);
     ambBonsho(t + 0.78);                                                  // a lone bell in the ma
-    if (twice) ambBonsho(t + 0.78 + hold * rnd(0.4, 0.6));                // … and again, deeper into the silence
+    if (twice) ambBonsho(t + 0.78 + hold * S.form.rnd(0.4, 0.6));                // … and again, deeper into the silence
     masterGain.gain.setValueAtTime(masterVolume * dip, t + 0.6 + hold);  // hold the silence
     masterGain.gain.linearRampToValueAtTime(masterVolume, t + 0.6 + hold + 1.5);  // voices return
     emitEvent({ cat: "noise", label: "斬 KIRU", detail: "the cut · severity " + sev.toFixed(2) + " · hush " + dip.toFixed(2) + " · ma " + hold.toFixed(1) + "s" + (twice ? " · the bell twice" : "") });
@@ -1593,7 +1615,7 @@ window.ZankyoAudio = (function () {
     if (!playing) return;
     playing = false;
     if (bg) bg.stopped();
-    clearAllTimers();
+    if (clock) clock.stop();                     // every lane's pending events die here
     if (ctx) {
       for (var i = 0; i < LAYERS.length; i++) {
         var node = layerGains[LAYERS[i]];
@@ -1632,12 +1654,16 @@ window.ZankyoAudio = (function () {
   function sampleNoise(t) {
     var dur = 2.5, nz = noiseSource(), bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(800, t); bp.frequency.linearRampToValueAtTime(3000, t + dur); bp.Q.setValueAtTime(4, t);
     var g = ctx.createGain(); nz.connect(bp); bp.connect(g); g.connect(lg("noise"));
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, rng() * 5); nz.stop(t + dur + 0.1);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, S.sample.next() * 5); nz.stop(t + dur + 0.1);
   }
   function sample(layer) {
     init();
     if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
+    // The audition draws from its own stream: while it plays, every body
+    // borrows S.sample so a ♪ press mid-performance re-rolls nothing.
+    var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone"], saved = {}, bi;
+    for (bi = 0; bi < borrowed.length; bi++) { saved[borrowed[bi]] = S[borrowed[bi]]; S[borrowed[bi]] = S.sample; }
     masterGain.gain.cancelScheduledValues(ctx.currentTime);
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     var node = layerGains[layer];
@@ -1651,8 +1677,9 @@ window.ZankyoAudio = (function () {
       case "shamisen": samplePhrase(shamisenNote, t, [0, 2, 0, 3, 0], 0.3); break;
       case "taiko": for (var i = 0; i < 4; i++) taikoHit(t + i * 0.22, i === 0); break;
       case "noise": sampleNoise(t); break;
-      case "ambient": var e = AMBIENT_POOL[Math.floor(rng() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
+      case "ambient": var e = AMBIENT_POOL[Math.floor(S.sample.next() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
     }
+    for (bi = 0; bi < borrowed.length; bi++) S[borrowed[bi]] = saved[borrowed[bi]];
     emitEvent({ cat: "mode", label: "♪ sample", detail: layer });
   }
 
@@ -1664,7 +1691,11 @@ window.ZankyoAudio = (function () {
     if (ctx && masterGain && playing) { masterGain.gain.cancelScheduledValues(ctx.currentTime); masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime); }
   }
   function setLayerVolume(layer, val) { if (layerVolumes[layer] != null) { layerVolumes[layer] = Math.max(0, Math.min(1, val)); if (ctx) applyLayerGain(layer); } }
-  function setLayerRate(layer, rate) { if (layerRate[layer] != null) layerRate[layer] = Math.max(0.05, rate); }
+  function setLayerRate(layer, rate) {
+    if (layerRate[layer] == null) return;
+    layerRate[layer] = Math.max(0.05, rate);
+    if (clock) lane(layer).rate = layerRate[layer];   // bends the lane's pending events in place
+  }
   function toggleLayer(layer) { if (layerMuted[layer] == null) return false; layerMuted[layer] = !layerMuted[layer]; if (ctx) applyLayerGain(layer); return layerMuted[layer]; }
   function setLayerParam(layer, key, val) { if (layerParams[layer]) layerParams[layer][key] = val; }
   function resetLayerParams(layer) { if (LAYER_PARAM_DEFAULTS[layer]) layerParams[layer] = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS[layer])); }
@@ -1682,7 +1713,9 @@ window.ZankyoAudio = (function () {
     SCALE_INFO: SCALE_INFO,
     getArc: getArc, getArcInfo: arcInfo, getMetaInfo: getMetaInfo,
     getSeed: function () { return seed; },
-    reseed: function (s) { seed = (s >>> 0) || 3042; rngState = seed; },
+    reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
+    getField: function () { return field; },
+    getClock: function () { return clock; },
     getMotifStats: function () { return Motif.stats(); },
     getMode: function () { return { key: currentMode, name: MODES[currentMode].name, kana: MODES[currentMode].kana.slice() }; },
     setNoteListener: function (fn) { if (typeof fn === "function") { if (noteListeners.indexOf(fn) < 0) noteListeners.push(fn); } else noteListeners.length = 0; },

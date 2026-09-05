@@ -2,13 +2,41 @@
 $page_title = "ZANKYŌ 残響 - Municipal Sky";
 $page_description = "A Japanese aleatoric noise-engine: generative gagaku and koto eroded by Japanoise grit — a derelict orbital station, year 3042.";
 $page_image = "/images/zankyo-share.png";
+
+// Cache-bust local assets from their mtimes (?v=…) — the Jukebox v2 pattern.
+function zkv($file)
+{
+    $path = __DIR__ . '/' . $file;
+    return file_exists($path) ? filemtime($path) : 0;
+}
+
+// Build/version stamp (Jukebox v2 / kolob pattern): VERSION marker + content
+// fingerprint + newest-asset mtime, printed small by the serial plate so the
+// live build is legible. The footer shows only the version NUMBER; the
+// "— summary" tail in VERSION stays for git history and the bump rule.
+$zk_assets = [
+    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zankyo.css', 'index.php',
+    '../prosperos-jukebox-v2/pj2-rand.js', '../prosperos-jukebox-v2/pj2-pitch.js',
+    '../prosperos-jukebox-v2/pj2-clock.js', '../prosperos-jukebox-v2/pj2-voice.js',
+    '../prosperos-jukebox-v2/pj2-fx.js', '../prosperos-jukebox-v2/pj2-air.js',
+    '../prosperos-jukebox-v2/pj2-conductor.js',
+];
+$zk_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
+$zk_version = trim(explode('—', $zk_version)[0]);
+$zk_build = substr(md5(implode('', array_map('zkv', $zk_assets))), 0, 6);
+$zk_mtime = 0;
+foreach ($zk_assets as $zk_a) {
+    $zk_p = __DIR__ . '/' . $zk_a;
+    if (is_file($zk_p)) { $zk_m = filemtime($zk_p); if ($zk_m > $zk_mtime) $zk_mtime = $zk_m; }
+}
+$zk_deployed = $zk_mtime ? gmdate('Y-m-d H:i', $zk_mtime) . ' UTC' : '';
 include '../../includes/header.php';
 ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="zankyo.css?v=10080336" />
+<link rel="stylesheet" href="zankyo.css?v=<?php echo zkv('zankyo.css'); ?>" />
 
 <div class="main-wrapper">
  <div class="zankyo-scene">
@@ -119,6 +147,10 @@ include '../../includes/header.php';
     <div class="zk-plate-row">
       <span class="zk-plate">残響-3042 &middot; MUNICIPAL SKY HEAVY INDUSTRIES &middot; 製造番号 3042-0117</span>
     </div>
+    <!-- Build stamp: version · content fingerprint · deploy time (Jukebox v2 pattern) -->
+    <p class="zk-build" aria-label="build version">
+      <?php echo htmlspecialchars($zk_version); ?><span class="zk-build-sep">&middot;</span><?php echo $zk_build; ?><?php if ($zk_deployed): ?><span class="zk-build-sep">&middot;</span><?php echo $zk_deployed; ?><?php endif; ?>
+    </p>
 
     <p class="zankyo-note">
       Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
@@ -130,11 +162,23 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="../background-audio.js?v=fc868a9e"></script>
-<script src="zankyo-audio.js?v=4161392f"></script>
+<!-- shared site helper: keeps the engine sounding under a locked screen /
+     backgrounded mobile browser, with lock-screen media controls. -->
+<script src="../background-audio.js?v=<?php echo zkv('../background-audio.js'); ?>"></script>
+<!-- THE SUBSTRATE (ZANKYŌ 2): the Prospero's Jukebox v2 modules, shared by
+     relative path and never modified from here — in the REQUIRED order:
+     rand, pitch, clock, voice, fx, air, conductor — then the engine. -->
+<script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-pitch.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-pitch.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-clock.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-clock.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-voice.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-voice.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-air.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-air.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-conductor.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-conductor.js'); ?>"></script>
+<script src="zankyo-audio.js?v=<?php echo zkv('zankyo-audio.js'); ?>"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
-<script src="zankyo-viz.js?v=f8b989f1"></script>
-<script src="zankyo-ui.js?v=40536d6a"></script>
+<script src="zankyo-viz.js?v=<?php echo zkv('zankyo-viz.js'); ?>"></script>
+<script src="zankyo-ui.js?v=<?php echo zkv('zankyo-ui.js'); ?>"></script>
 
 <!-- Anonymous usage tracking: a page view, plus the first PLAY press as an
      engagement signal (a raw view understates an audio page). No personal data

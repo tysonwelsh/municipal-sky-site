@@ -778,6 +778,9 @@
    SERIAL PLATE + NOTES
 --------------------------------------------------------------------------- */
 .zk-plate-row { display: flex; justify-content: center; margin-top: 20px; }
+/* build stamp: version · fingerprint · deploy time — small print under the serial plate */
+.zk-build { margin: 8px 0 0; text-align: center; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-dim); opacity: 0.7; }
+.zk-build-sep { margin: 0 0.5em; }
 .zk-plate {
   position: relative; padding: 6px 26px; border-radius: 2px;
   background: linear-gradient(180deg, #3b3b43, #26262c 60%, #1e1e24);
