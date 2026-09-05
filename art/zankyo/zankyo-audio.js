@@ -137,14 +137,36 @@ window.ZankyoAudio = (function () {
     var n = field.size;
     for (var k = 0; k < SCALE.length; k++) { SCALE[k].freq = degFreq(SCALE[k].idx, 0); SCALE[k].deg = ((SCALE[k].idx % n) + n) % n; }
   }
-  function pickMode() { return S.form.pickW(metaModePool()); }
-  function setMode(name, extra, t) {
+  // 12-TET note name for a tonic (flats: the station sinks, it does not rise)
+  var NOTE_NAMES = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];
+  function noteName(hz) { var n = Math.round(12 * Math.log(hz / 440) / Math.LN2) + 69; return NOTE_NAMES[((n % 12) + 12) % 12]; }
+  // The tonic keeps to one register band (G2 … G3): a fourth up that would
+  // leave it becomes a fifth down (the koto's retuning between pieces —
+  // same pitch class, the strings loosened instead of tightened).
+  var TONIC_LO = 98, TONIC_HI = 196;
+  function foldTonic(hz) { while (hz >= TONIC_HI) hz /= 2; while (hz < TONIC_LO) hz *= 2; return hz; }
+  // setMode(name, extra, t, tonicHz): one atomic modulate() of mode and
+  // (optionally) tonic — sounding notes keep their Hz (the straddle lesson).
+  function setMode(name, extra, t, tonicHz) {
     if (!MODES[name]) return;
     currentMode = name;
-    field.modulate({ mode: { name: name, steps: MODES[name].offsets } });
+    var patch = { mode: { name: name, steps: MODES[name].offsets } };
+    if (tonicHz) patch.tonicHz = tonicHz;
+    field.modulate(patch);
     rebuildScale();
-    SCALE_INFO.name = MODES[name].name; SCALE_INFO.kana = MODES[name].kana.slice();
-    emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name + (extra ? " · " + extra : "") }, t);
+    SCALE_INFO.name = MODES[name].name; SCALE_INFO.kana = MODES[name].kana.slice(); SCALE_INFO.tonic = noteName(field.tonicHz);
+    emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name + " on " + SCALE_INFO.tonic + (extra ? " · " + extra : "") }, t);
+  }
+  // Pitch classes (cents mod 1200) of a (mode, tonic) — for the pivots.
+  function pcSet(steps, tonicHz) {
+    var out = [], base = 1200 * Math.log(tonicHz) / Math.LN2;
+    for (var i = 0; i < steps.length; i++) { var c = (base + 100 * steps[i]) % 1200; out.push(c < 0 ? c + 1200 : c); }
+    return out;
+  }
+  function sharedPcs(a, b) {
+    var n = 0;
+    for (var i = 0; i < a.length; i++) for (var j = 0; j < b.length; j++) { var d = Math.abs(a[i] - b[j]) % 1200; if (d > 600) d = 1200 - d; if (d <= 15) { n++; break; } }
+    return n;
   }
   function scaleIndexOf(i) {                    // map a degree index i to SCALE array index
     var k = i - SCALE_LO;
@@ -312,7 +334,7 @@ window.ZankyoAudio = (function () {
       // THE FAR WALL: the corridor answering the koto — modulated, dark, low
       // feedback; the answer goes into the rooms like any voice. One seeded
       // draw at build (the drift LFO's phase) on the fx stream.
-      farWall = PJ.Fx.delay(ctx, { timeS: 0.37, feedback: 0.28, damp: 1400, driftHz: 0.03, driftDepth: 0.004, wet: 0.16, rng: S.fx });
+      farWall = PJ.Fx.delay(ctx, { timeS: 0.37, feedback: 0.28, damp: 1400, driftHz: 0.03, driftDepth: 0.004, wet: 0.28, rng: S.fx });   // wet 0.28 (critic P1 r2: 0.16 measured ~20 dB under the koto)
       farWall.output.connect(sumVoices);
 
       gritShaper = ctx.createWaveShaper();
@@ -587,6 +609,7 @@ window.ZankyoAudio = (function () {
     var kind = rng.pickW([["ordinary", 3], ["rite", 1.5], ["drift", 1 + 2 * (1 - tp)], ["storm", 0.5 + 3 * tp], ["silence", 0.6 + 1.6 * (1 - tp)], ["broadcast", 1]]);
     var Kd = KINDS[kind];
     var mode = rng.pickW(modePool(tp));
+    var pitch = drawPitchMove(rng, mode, tp);   // 海 the sea change, or a mode-tonic pivot, or nothing
     var seating = drawSeating(rng, kind);
     var subDraw = rng.chance(Kd.sub), subKind = rng.pickW([["kakeai", 3], ["koto", 2], ["breath", 2]]);
     var oroDraw = rng.chance(Kd.oroshi);
@@ -609,8 +632,52 @@ window.ZankyoAudio = (function () {
     if (oroshi) scenes.push({ type: "oroshi", durS: oroDur, activity: null });
     scenes.push({ type: "kyu", durS: durS * Kd.kyu, activity: null });
     scenes.push({ type: "release", durS: durS * Kd.rel, activity: null });
-    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS };
+    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch };
     return scenes;
+  }
+  // 海 THE SEA CHANGE — once every 2–4 cycles, at a cycle boundary, the
+  // field's tonic moves: up a fourth or down a fifth (the traditional koto
+  // retuning between pieces; a home pull keeps the wander on the circle of
+  // fourths from drifting forever), or — rare, dark-tide only — the
+  // station's own gesture, a SEMITONE SINK (the reactor sagging; Sycorax's
+  // rule). Otherwise, when the mode changes, about half the time it PIVOTS on
+  // shared tones instead of restarting on the tonic (hirajoshi on D → in-sen
+  // on A shares four pitches): the same four modes yield far more colors.
+  // Every draw is taken unconditionally (stream discipline).
+  var cyclesSinceSea = 0;
+  function drawPitchMove(rng, mode, tp) {
+    var seaDraw = rng.next(), sinkDraw = rng.next(), pivotDraw = rng.next(), dirDraw = rng.next(), pivotPick = rng.next();
+    var cur = field.tonicHz, curPcs = pcSet(MODES[currentMode].offsets, cur);
+    var due = cyclesSinceSea >= 4 || (cyclesSinceSea >= 2 && seaDraw < 0.45);
+    if (cyc.n >= 0 && due) {
+      if (tp > 0.7 && sinkDraw < 0.22) {
+        return { kind: "sink", tonicHz: foldTonic(cur * Math.pow(2, -1 / 12)), label: "semitone sink" };
+      }
+      // distance from home (D) on the circle of fourths: k up-fourths mod 12
+      var off = ((Math.round(12 * Math.log(cur / TONIC_HZ) / Math.LN2) % 12) + 12) % 12;
+      var k = (off * 5) % 12, dist = Math.min(k, 12 - k);
+      var homeward = k !== 0 && dirDraw < 0.3 + 0.2 * dist;
+      var up = homeward ? (k <= 6 ? -5 : 5) : (k <= 6 ? 5 : -5);   // +5 = up a fourth, −5 = down a fourth (= up a fifth, folded)
+      var raw = cur * Math.pow(2, up / 12), folded = foldTonic(raw);
+      var label = up > 0 ? (folded < raw ? "down a fifth" : "up a fourth") : (folded > raw ? "up a fifth" : "down a fourth");
+      return { kind: "sea", tonicHz: folded, label: label };
+    }
+    if (mode !== currentMode && pivotDraw < 0.5) {
+      // candidate tonics: the current field's own pitches; keep those where
+      // the new mode shares ≥ 4 pitch classes with what is sounding now
+      var cands = [], steps = MODES[mode].offsets;
+      for (var d = 0; d < field.size; d++) {
+        var th = foldTonic(field.degFreq(d, 0));
+        if (Math.abs(th - cur) < 1) continue;
+        var n = sharedPcs(pcSet(steps, th), curPcs);
+        if (n >= 4) cands.push([th, n]);
+      }
+      if (cands.length) {
+        var pick = cands[Math.floor(pivotPick * cands.length)];
+        return { kind: "pivot", tonicHz: pick[0], label: "pivot · " + pick[1] + " shared" };
+      }
+    }
+    return null;
   }
   // JOINTS — a page of static, a hull tick, a single fūrin, or nothing
   // (about one in three pass silent). The kyū → release joint IS the KIRU.
@@ -670,7 +737,13 @@ window.ZankyoAudio = (function () {
       pendingPlan = null;
       cyc.n = evt.n - 1; cyc.kind = p.kind; cyc.seating = p.seating; cyc.durS = evt.durS; cyc.startT = evt.t; cyc.mode = p.mode;
       arcStartTime = evt.t; ARC_PERIOD = evt.durS;
-      setMode(p.mode, "cycle " + cyc.n + " · " + Math.round(evt.durS) + "s · kind: " + p.kind + " · meta " + evt.tidePos.toFixed(2) + " (" + evt.tideLabel + ")", evt.t);
+      var pm = p.pitch, fromName = noteName(field.tonicHz);
+      cyclesSinceSea++;
+      setMode(p.mode, "cycle " + cyc.n + " · " + Math.round(evt.durS) + "s · kind: " + p.kind + " · meta " + evt.tidePos.toFixed(2) + " (" + evt.tideLabel + ")" + (pm && pm.kind === "pivot" ? " · " + pm.label : ""), evt.t, pm ? pm.tonicHz : null);
+      if (pm && pm.kind !== "pivot") {
+        cyclesSinceSea = 0;
+        emitEvent({ cat: "mode", label: "海 sea change", detail: fromName + " → " + noteName(field.tonicHz) + " · " + pm.label + " · " + MODES[p.mode].name + " · cycle " + cyc.n }, evt.t);
+      }
       emitEvent({ cat: "form", label: "❁ cycle plan", detail: KINDS[p.kind].kana + " kind: " + p.kind + " · seating: " + p.seating.label + " · scenes: " + evt.scenes.join(">") }, evt.t);
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
@@ -808,9 +881,10 @@ window.ZankyoAudio = (function () {
   // (5 scale steps), so a transposed motif keeps its contour instead of
   // flattening against the rails.
   function foldDeg(i) {
+    var n = field.size;
     i = Math.round(i);
-    while (i < 0) i += 5;
-    while (i > SCALE.length - 1) i -= 5;
+    while (i < 0) i += n;
+    while (i > SCALE.length - 1) i -= n;
     return i;
   }
   // Shift a motif into a voice's register by whole octaves (mean toward the
@@ -819,7 +893,7 @@ window.ZankyoAudio = (function () {
     if (!notes.length) return [];
     var sum = 0, i;
     for (i = 0; i < notes.length; i++) sum += notes[i].deg;
-    var shift = Math.round((center - sum / notes.length) / 5) * 5;
+    var n = field.size, shift = Math.round((center - sum / notes.length) / n) * n;
     var out = [];
     for (i = 0; i < notes.length; i++) out.push({ deg: foldDeg(notes[i].deg + shift), durBeats: notes[i].durBeats });
     return out;
@@ -827,14 +901,67 @@ window.ZankyoAudio = (function () {
 
   var Motif = (function () {
     var NAMES = ["イ", "ロ", "ハ"];                // katakana iroha — the working set's names
-    var SEED_PHRASES = [                           // the six authentic gestures — the ancestor pool
+    var SEED_PHRASES = [                           // the twelve authentic gestures — the ancestor pool
       { name: "honkyoku descent", degs: [3, 2, 1, 0], durs: [1, 1, 1, 2] },            // → tonic (shakuhachi, jo)
       { name: "sakura sigh",      degs: [1, 2, 1],    durs: [1, 1.5, 2] },             // the most recognizably-Japanese turn
       { name: "kumoi cadence",    degs: [4, 3, 0],    durs: [1, 1, 2] },
       { name: "tsugaru run",      degs: [0, 1, 2, 3, 4], durs: [0.5, 0.5, 0.5, 0.5, 1.5] },  // hammer run
       { name: "midare leaps",     degs: [0, 4, 1, 3, 0], durs: [1, 0.5, 1, 0.5, 2] },  // scattered (kyū)
       { name: "kakegoe answer",   degs: [0, 1, 2],    durs: [0.5, 0.5, 1.5] },         // retrograde-pairs with the sigh
+      // ZANKYŌ 2 (Phase 2): the pool grows — each a real idiom's contour, none a quotation
+      { name: "netori tuning",    degs: [0, 1, 0, 3, 3], durs: [3, 1, 2, 1, 4] },       // the gagaku tuning-in: tonic tried, the fifth held
+      { name: "sugagaki figure",  degs: [3, 3, 2, 3, 0], durs: [0.5, 0.5, 1, 0.5, 2] }, // koto: the repeated-note strum figure
+      { name: "rokudan opening",  degs: [0, 0, 4, 3, 5, 3], durs: [1, 1, 1, 0.5, 2, 2] }, // danmono: the tonic twice, then the rise
+      { name: "jongara lick",     degs: [5, 4, 3, 4, 3, 2, 0], durs: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.5] }, // Tsugaru: the fast fall
+      { name: "kagura call",      degs: [0, 3, 3, 5, 3], durs: [1, 1.5, 0.5, 2, 2] },   // the shrine flute's rising call
+      { name: "yatai-bayashi",    degs: [0, 0, 1, 0, 3, 0], durs: [0.5, 0.25, 0.25, 0.5, 0.5, 1] }, // the festival drum's don-doko-don, sung
     ];
+    // ---- THE IMPROVISER (ported in spirit from the Jukebox's motif improviser):
+    // a first-order Markov walk in degree-class space with JAPANESE-IDIOM
+    // transition tables and tendency rules — the semitone above the tonic
+    // FALLS (in-sen / iwato's second), the fifth LEAPS to the octave, the sixth
+    // sinks back onto the fifth, and descents end on the tonic with a MERI dip
+    // (the final note carries a meri tag the shakuhachi honours as a bend).
+    // Each cycle's working set gains one NEWBORN from here; the pool of names
+    // grows all night. All draws on the motif stream.
+    var BORN_ROWS = [
+      [1,   3,   2,   3,   1  ],   // from the tonic: to the 2nd or the 5th
+      [4,   0.5, 2.5, 1,   0.5],   // from the 2nd: falls to the tonic
+      [2,   3,   1,   3,   1  ],   // from the 3rd
+      [3,   1,   2.5, 1,   3  ],   // from the 5th: to the tonic (the leap), the 6th, the 3rd
+      [1,   0.5, 2,   4,   1  ],   // from the 6th: back to the fifth
+    ];
+    var BORN_DURS = [[0.5, 3], [1, 5], [1.5, 3], [2, 1.5]];
+    var SYL_A = ["ka", "shi", "to", "mi", "yu", "ha", "ne", "sa", "ku", "ri"];
+    var SYL_B = ["ge", "ro", "n", "ki", "ma", "zu", "te", "yo", "ru", "e"];
+    var bornSerial = 0, bornNames = {};
+    function birth() {
+      var R = S.motif, n = R.rint(4, 7), notes = [], cls = R.pickW([[0, 3], [3, 2], [1, 1], [2, 1], [4, 1]]);
+      var deg = scaleIndexOf(cls) + 5 * R.rint(0, 1);       // absolute degree index in the mid band
+      for (var i = 0; i < n; i++) {
+        var last = i === n - 1;
+        var row = BORN_ROWS[((cls % 5) + 5) % 5];
+        var pool = [];
+        for (var c = 0; c < 5; c++) pool.push([c, row[c] * (last && c === 0 ? 3 : 1)]);   // descents end on the tonic
+        var next = R.pickW(pool);
+        var up = R.next() < 0.5, dirDraw = R.next();
+        // tendency rules
+        if (cls === 1 && next === 0) up = false;                                   // the second falls
+        else if (cls === 3 && next === 0) up = dirDraw < 0.6;                      // the fifth leaps to the octave
+        else if (cls === 4 && next === 3) up = false;                              // the sixth sinks
+        var cur = ((deg % 5) + 5) % 5, delta = ((next - cur) % 5 + 5) % 5;         // steps up to reach `next`
+        deg = up ? deg + delta : deg - (5 - delta) % 5;
+        if (delta === 0) deg += up ? 5 : -5;                                       // same class → the octave
+        deg = foldDeg(deg);
+        cls = next;
+        var dur = R.pickW(BORN_DURS) * (last ? 1.6 : 1);
+        notes.push({ deg: deg, durBeats: dur, meri: !!(last && cls === 0) });
+      }
+      var nm = R.pick(SYL_A) + R.pick(SYL_B);
+      if (bornNames[nm]) nm = nm + "·" + (++bornSerial);
+      bornNames[nm] = 1;
+      return { name: "born: " + nm, degs: null, notes: notes };
+    }
     var working = { theme: null, subs: [] };       // the whole cycle works ≤3 ideas
     var ledger = [];                               // [{from, to, motif, type, deadline}]
     var lineage = {};                              // most-developed living descendant per name
@@ -847,7 +974,7 @@ window.ZankyoAudio = (function () {
     function fromSeed(i, name) {
       var s = SEED_PHRASES[i], notes = [];
       for (var k = 0; k < s.degs.length; k++) notes.push({ deg: scaleIndexOf(s.degs[k]), durBeats: s.durs[k] });
-      return { name: name, gen: 0, chain: [], notes: notes };
+      return { name: name, gen: 0, chain: [], notes: notes, src: s.name };   // src: the gesture this line descends from
     }
 
     // ---- the transform algebra (each mutates a clone; chain appended by develop) ----
@@ -1144,25 +1271,38 @@ window.ZankyoAudio = (function () {
     function newCycle(t) {
       // carry a decomposed memory of the deepest development across the cut
       ghost = null;
-      var deepest = null, k;
+      var deepest = null, second = null, k;
       for (k in lineage) if (lineage[k] && (!deepest || lineage[k].gen > deepest.gen)) deepest = lineage[k];
+      for (k in lineage) if (lineage[k] && lineage[k] !== deepest && (!second || lineage[k].gen > second.gen)) second = lineage[k];
       if (deepest && deepest.gen > 0) ghost = makeGhost(deepest);
-      // a fresh working set, drawn from the ancestral pool
-      var order = [0, 1, 2, 3, 4, 5], picks = [];
-      while (picks.length < 3) picks.push(order.splice(Math.floor(S.motif.next() * order.length), 1)[0]);
+      // THE WORKING SET (Phase 2): イ one authentic gesture (the theme — learnable,
+      // reprised verbatim), ロ one INHERITED descendant (last cycle's second-deepest
+      // living line, or its deepest, carried with its generation and chain — the
+      // work continues), ハ one NEWBORN from the improviser. Cycle 0, with nothing
+      // to inherit, draws two authentics.
+      var order = [], i; for (i = 0; i < SEED_PHRASES.length; i++) order.push(i);
+      var picks = [];
+      while (picks.length < 2) picks.push(order.splice(Math.floor(S.motif.next() * order.length), 1)[0]);
       working.theme = fromSeed(picks[0], NAMES[0]);
-      working.subs = [fromSeed(picks[1], NAMES[1]), fromSeed(picks[2], NAMES[2])];
-      // subsidiaries may enter pre-transposed — pitch variety, not novelty churn
-      working.subs.forEach(function (s) {
-        if (S.motif.chance(0.5)) { TRANSFORMS.transpose(s); s.chain = ["transpose"]; recentre(s); }
-      });
+      var inherit = second || deepest, names = [SEED_PHRASES[picks[0]].name];
+      var sub1;
+      if (inherit && inherit.gen > 0) {
+        sub1 = clone(inherit); sub1.name = NAMES[1]; sub1.chain = inherit.chain.concat(["inherit"]);
+        names.push("inherited: " + (inherit.src || inherit.name) + "·g" + inherit.gen);
+      } else { sub1 = fromSeed(picks[1], NAMES[1]); names.push(SEED_PHRASES[picks[1]].name); }
+      var born = birth(), bornMotif = { name: NAMES[2], gen: 0, chain: [], notes: born.notes, src: born.name };
+      names.push(born.name);
+      working.subs = [sub1, bornMotif];
+      // the authentic subsidiary may enter pre-transposed — pitch variety, not novelty churn
+      if (S.motif.chance(0.5) && !(inherit && inherit.gen > 0)) { TRANSFORMS.transpose(sub1); sub1.chain = ["transpose"]; recentre(sub1); }
+      recentre(bornMotif);
       ledger.length = 0;
       lineage = {};
       reprised = false;
       plainCounts = {};
       emitEvent({
         cat: "mode", label: "❁ working set",
-        detail: NAMES[0] + " " + SEED_PHRASES[picks[0]].name + " · " + NAMES[1] + " " + SEED_PHRASES[picks[1]].name + " · " + NAMES[2] + " " + SEED_PHRASES[picks[2]].name,
+        detail: NAMES[0] + " " + names[0] + " · " + NAMES[1] + " " + names[1] + " · " + NAMES[2] + " " + names[2],
       }, t);
     }
     function reset() {
@@ -1259,6 +1399,55 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // SHŌ 笙 — gagaku mouth-organ cluster drone (shimmering tone-clusters)
   // ==========================================================================
+  // THE ELEVEN AITAKE (合竹) as interval shapes — semitones above the lowest
+  // sounding pipe, after the documented chart (the shō's fixed chords: each
+  // a stack of 4ths/5ths with a 2nd rubbing inside and an octave on top).
+  // The shapes are approximations of the traditional voicings; the station
+  // PROJECTS each onto the current field (every offset to its nearest scale
+  // tone), so in a five-note mode two pipes may fold onto one pitch and the
+  // cluster reads as 4–6 voices. Color, never harmony.
+  var AITAKE = [
+    { kana: "乙", name: "otsu",  semis: [0, 2, 7, 9, 12, 14] },
+    { kana: "一", name: "ichi",  semis: [0, 5, 7, 12, 14, 19] },
+    { kana: "工", name: "kō",    semis: [0, 2, 5, 7, 12, 14] },
+    { kana: "凢", name: "bō",    semis: [0, 3, 5, 10, 12, 15] },
+    { kana: "乞", name: "kotsu", semis: [0, 2, 4, 9, 11, 14] },
+    { kana: "十", name: "jū",    semis: [0, 5, 7, 9, 12, 17] },
+    { kana: "下", name: "ge",    semis: [0, 2, 7, 9, 14, 16] },
+    { kana: "美", name: "bi",    semis: [0, 3, 7, 10, 12, 15] },
+    { kana: "行", name: "gyō",   semis: [0, 2, 5, 7, 9, 14] },
+    { kana: "比", name: "hi",    semis: [0, 5, 7, 12, 14, 17] },
+    { kana: "言", name: "gon",   semis: [0, 2, 7, 12, 14, 19] },
+  ];
+  var lastAitake = null;                         // the cluster still sounding (te-utsuri reads it)
+  function projectAitake(a, baseHz, maxVoices) {
+    var out = [], seen = {};
+    for (var i = 0; i < a.semis.length && out.length < maxVoices; i++) {
+      var f = field.snap(baseHz * Math.pow(2, a.semis[i] / 12)), key = f.toFixed(3);
+      if (!seen[key]) { seen[key] = 1; out.push(f); }
+    }
+    out.sort(function (x, y) { return x - y; });
+    return out;
+  }
+  function sharedFreqs(a, b) {
+    if (!a || !b) return 0;
+    var n = 0;
+    for (var i = 0; i < a.length; i++) for (var j = 0; j < b.length; j++) if (Math.abs(1200 * Math.log(a[i] / b[j]) / Math.LN2) < 15) { n++; break; }
+    return n;
+  }
+  // Draw the next aitake: the base pipe sits high (~A4–B4, degree 6–7 of the
+  // field's mid octave); candidates are weighted by tones shared with the
+  // cluster still sounding (te-utsuri: the player moves one pipe at a time).
+  function chooseAitake(R, maxVoices) {
+    var base = SCALE[scaleIndexOf(6 + R.rint(0, 1))].freq;
+    var pool = [];
+    for (var i = 0; i < AITAKE.length; i++) {
+      var fr = projectAitake(AITAKE[i], base, maxVoices), sh = sharedFreqs(fr, lastAitake);
+      pool.push([{ a: AITAKE[i], freqs: fr, shared: sh }, 1 + (lastAitake ? sh * 1.5 : 0)]);
+    }
+    var pick = R.pickW(pool);
+    return { kana: pick.a.kana, name: pick.a.name, freqs: pick.freqs, shared: pick.shared };
+  }
   // Sustained 5–6 note clusters (aitake) built from in-scale degrees, breathing
   // slowly, with a high digital shimmer. The shimmering harmonic bed.
   function shoCycle(t) {
@@ -1277,16 +1466,15 @@ window.ZankyoAudio = (function () {
     PJ.Voice.env(bus.gain, now, [[fadeIn, 0.5], [dur - fadeIn - fadeOut, 0.5], [fadeOut, 0]]);
     lp.connect(bus); bus.connect(out);
 
-    // a real aitake cluster: a CLOSE voicing (with a deliberate semitone rub),
-    // sitting high (~A4–A5) so the bed shimmers above the drones.
-    var base = scaleIndexOf(6 + Math.floor(S.sho.next() * 2));
-    var used = {};
-    for (var v = 0; v < voices; v++) {
-      var idx = base + [0, 1, 2, 4, 5][v % 5];
-      if (idx >= SCALE.length) idx = SCALE.length - 1;
-      if (used[idx]) idx = Math.min(SCALE.length - 1, idx + 1);
-      used[idx] = 1;
-      var f = SCALE[idx].freq;
+    // THE AITAKE (Phase 2): one of the eleven named voicings, projected onto
+    // the current mode; TE-UTSURI — the next cluster is drawn to share tones
+    // with the one still sounding, and its voices enter one at a time.
+    var ait = chooseAitake(S.sho, voices);
+    var freqs = ait.freqs, shared = ait.shared;
+    emitEvent({ cat: "sho", label: "笙 " + ait.kana + " " + ait.name, detail: "aitake · " + freqs.length + " voices · base " + noteName(freqs[0]) + (shared ? " · te-utsuri " + shared + " shared" : "") }, now);
+    for (var v = 0; v < freqs.length; v++) {
+      var f = freqs[v];
+      var vIn = now + v * S.sho.rnd(0.4, 1.1);           // te-utsuri: the voices enter one at a time
       var o = c.createOscillator(), g = c.createGain();
       o.type = "sawtooth"; o.frequency.setValueAtTime(f, now);
       o.detune.setValueAtTime((S.sho.next() * 2 - 1) * 6 * drift, now);
@@ -1294,23 +1482,24 @@ window.ZankyoAudio = (function () {
       dl.type = "sine"; dl.frequency.setValueAtTime(0.05 + S.sho.next() * 0.08, now);
       dlg.gain.setValueAtTime(5 * drift, now); dl.connect(dlg); dlg.connect(o.detune);
       dl.start(now); dl.stop(now + dur + 0.2);
-      o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, now);
-      o.start(now); o.stop(now + dur + 0.2);
+      o.connect(g); g.connect(lp); PJ.Voice.env(g.gain, vIn, [[2.5, 0.045], [Math.max(0.1, now + dur - vIn - 2.5), 0.045]]);
+      o.start(vIn); o.stop(now + dur + 0.2);
       // nasal free-reed character: square reed sub + 5th/7th partials
       [[1, "square", 0.018], [5, "sine", 0.014], [7, "sine", 0.008]].forEach(function (pr) {
         var po = c.createOscillator(), pg = c.createGain();
-        po.type = pr[1]; po.frequency.setValueAtTime(f * pr[0], now);
-        po.connect(pg); pg.connect(lp); pg.gain.setValueAtTime(pr[2], now);
-        po.start(now); po.stop(now + dur + 0.2);
+        po.type = pr[1]; po.frequency.setValueAtTime(f * pr[0], vIn);
+        po.connect(pg); pg.connect(lp); PJ.Voice.env(pg.gain, vIn, [[2.5, pr[2]], [Math.max(0.1, now + dur - vIn - 2.5), pr[2]]]);
+        po.start(vIn); po.stop(now + dur + 0.2);
       });
       if (shimmer > 0.01) {
         var ho = c.createOscillator(), hg = c.createGain();
-        ho.type = "triangle"; ho.frequency.setValueAtTime(f * 4, now);
-        ho.connect(hg); hg.connect(bus); hg.gain.setValueAtTime(0.009 * shimmer, now);
-        ho.start(now); ho.stop(now + dur + 0.2);
+        ho.type = "triangle"; ho.frequency.setValueAtTime(f * 4, vIn);
+        ho.connect(hg); hg.connect(bus); PJ.Voice.env(hg.gain, vIn, [[2.5, 0.009 * shimmer], [Math.max(0.1, now + dur - vIn - 2.5), 0.009 * shimmer]]);
+        ho.start(vIn); ho.stop(now + dur + 0.2);
       }
-      emitNote("sho", f, now);
+      emitNote("sho", f, now);                           // one shared t per cluster, so voicings group
     }
+    lastAitake = freqs;
     var overlap = 4 + S.sho.next() * 2;
     after("sho", now, dur - overlap, shoCycle);
   }
@@ -1368,7 +1557,7 @@ window.ZankyoAudio = (function () {
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
       var glideFrom = (prev && S.shakuhachi.next() < glideAmt) ? prev : null;
       var mur = (i === 0 && S.shakuhachi.next() < muraiki * (0.4 + arc * 0.6) * (breathSolo ? 3 : 1));
-      shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: S.shakuhachi.next() < ornament });
+      shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: S.shakuhachi.next() < ornament || !!n.meri });   // a born descent ends in a meri dip
       sched.push({ f: f, t: t, dur: dur });
       prev = f;
       t += dur + S.shakuhachi.next() * 0.05;
@@ -1858,8 +2047,10 @@ window.ZankyoAudio = (function () {
     clock.start();
     var t0 = clock.now();
     arcStartTime = t0;
-    cyc.n = -1; cyc.seating = null; scn.type = null; pendingPlan = null;
+    cyc.n = -1; cyc.seating = null; scn.type = null; pendingPlan = null; cyclesSinceSea = 0;
+    field.modulate({ tonicHz: TONIC_HZ, mode: { name: "hirajoshi", steps: MODES.hirajoshi.offsets } }); currentMode = "hirajoshi"; rebuildScale();   // every play opens at home
     pulse.active = false;                        // no grid until the taiko speaks
+    lastAitake = null;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
     masterGain.gain.cancelScheduledValues(t0);
@@ -1961,8 +2152,7 @@ window.ZankyoAudio = (function () {
     var dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("sho", "cutoff", 1400), t);
     var bus = ctx.createGain(); lp.connect(bus); bus.connect(lg("sho"));
     bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(0.5, t + 0.8); bus.gain.setValueAtTime(0.5, t + dur - 1); bus.gain.linearRampToValueAtTime(0, t + dur);
-    var base = scaleIndexOf(6);
-    [0, 1, 2, 4, 5].forEach(function (off) { var f = SCALE[Math.min(SCALE.length - 1, base + off)].freq; var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, t); o.start(t); o.stop(t + dur + 0.1); });
+    chooseAitake(S.sample, 6).freqs.forEach(function (f) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, t); o.start(t); o.stop(t + dur + 0.1); });
   }
   function sampleNoise(t) {
     var dur = 2.5, nz = noiseSource(), bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(800, t); bp.frequency.linearRampToValueAtTime(3000, t + dur); bp.Q.setValueAtTime(4, t);
@@ -2032,7 +2222,7 @@ window.ZankyoAudio = (function () {
     getField: function () { return field; },
     getClock: function () { return clock; },
     getMotifStats: function () { return Motif.stats(); },
-    getMode: function () { return { key: currentMode, name: MODES[currentMode].name, kana: MODES[currentMode].kana.slice() }; },
+    getMode: function () { return { key: currentMode, name: MODES[currentMode].name, kana: MODES[currentMode].kana.slice(), tonicHz: field.tonicHz, tonic: noteName(field.tonicHz), offsets: MODES[currentMode].offsets.slice() }; },
     setNoteListener: function (fn) { if (typeof fn === "function") { if (noteListeners.indexOf(fn) < 0) noteListeners.push(fn); } else noteListeners.length = 0; },
     setEventListener: function (fn) { if (typeof fn === "function") { if (eventListeners.indexOf(fn) < 0) eventListeners.push(fn); } else eventListeners.length = 0; },
     getAudioContext: function () { return ctx; },

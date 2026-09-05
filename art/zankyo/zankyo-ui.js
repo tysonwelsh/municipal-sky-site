@@ -122,7 +122,7 @@
   // emitted at schedule time with a future audio-time start, so a small ring
   // buffer holds them until getAudioTime() catches up (no per-note timers).
   // ==========================================================================
-  var TONIC_HZ = 146.83;                       // D3 — mirrors the engine tonic
+  var TONIC_HZ = 146.83;                       // D3 — the opening tonic; the engine's field moves it (sea changes) and renderScale() follows
   var MODE_OFFSETS = {                         // semitone offsets, per mode key
     hirajoshi: [0, 2, 3, 7, 8],
     insen:     [0, 1, 5, 7, 8],
@@ -195,7 +195,7 @@
       degEls = row.children;
       for (var i = 0; i < litUntil.length; i++) litUntil[i] = 0;
     }
-    if (Z.getMode) { var m = Z.getMode(); curOffsets = MODE_OFFSETS[m.key] || MODE_OFFSETS.hirajoshi; }
+    if (Z.getMode) { var m = Z.getMode(); curOffsets = MODE_OFFSETS[m.key] || MODE_OFFSETS.hirajoshi; if (m.tonicHz > 0) TONIC_HZ = m.tonicHz; }
   }
 
   // ==========================================================================
@@ -329,7 +329,7 @@
   }
 
   // ---- Activity log (VFD display; content logic unchanged) ----
-  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM" };
+  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ" };
   var logStart = null;
   function fmtTime(t) { if (logStart === null) logStart = t; var s = Math.max(0, Math.floor(t - logStart)); var m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function clearLog() { logStart = null; var l = document.getElementById("zankyo-log"); if (l) l.innerHTML = '<div class="zankyo-log-empty">listening…</div>'; }
@@ -414,7 +414,7 @@
     }
     if (barSegs.length) setBar(info.level, Date.now(), info.phase !== "—");
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
-    if (Z.getMode) { var m = Z.getMode(); if (m.name !== lastMode) { lastMode = m.name; renderScale(); } }   // live modal modulation
+    if (Z.getMode) { var m = Z.getMode(); var mk = m.name + "@" + (m.tonic || ""); if (mk !== lastMode) { lastMode = mk; renderScale(); } }   // live modal modulation + sea changes
     // transport state can change outside the buttons (lock-screen pause via
     // the media session) — keep the arcade button and power LED honest
     if (Z.getState) {

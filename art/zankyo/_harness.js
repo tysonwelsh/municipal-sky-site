@@ -149,7 +149,7 @@ function runOnce(seed, simS, opts) {
   if (!Z) { errors.push("ZankyoAudio not defined"); return null; }
   Z.reseed(seed);
   const R = { seed, simS, notes: [], events: [], arcSamples: [], metaByCycle: new Map(), t0: 0 };
-  Z.setNoteListener((n) => R.notes.push({ t: n.startTime, layer: n.layer, freq: n.freq, dur: n.duration }));
+  Z.setNoteListener((n) => { const F = Z.getField ? Z.getField() : null; R.notes.push({ t: n.startTime, layer: n.layer, freq: n.freq, dur: n.duration, tonic: F ? F.tonicHz : 146.83, steps: F ? (Z.getMode().offsets) : null }); });
   Z.setEventListener((e) => R.events.push({ t: e.t, cat: e.cat, label: e.label, detail: e.detail }));
   const SAMPLE_EVERY = 15;
   let nextSample = 0;
@@ -179,15 +179,19 @@ function runOnce(seed, simS, opts) {
   return R;
 }
 
-// ---- scale model (must match engine) for adherence checks ----
-const TONIC = 146.83;
+// ---- scale model for adherence checks: ERA-AWARE (Phase 2) — each note is
+// judged against the field AS IT STOOD WHEN THE NOTE WAS SCHEDULED (tonic +
+// mode captured at emit time), so a sea change mid-run is honoured and a
+// straddling note (scheduled before the seam, sounding after) keeps its
+// old-world truth. Any of the four modes on that tonic counts (the shō's
+// aitake project onto the current mode; the bell rings the tonic).
 const ALL_MODES = [[0,2,3,7,8],[0,1,5,7,8],[0,2,3,7,9],[0,1,5,6,10]];   // hirajoshi/insen/kumoi/iwato
-function nearestCents(freq) {
+function nearestCents(freq, tonic) {
   let best = 1e9;
   for (const M of ALL_MODES) {
     for (let i = -10; i <= 25; i++) {
       const semi = M[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5);
-      const f = TONIC * Math.pow(2, semi / 12);
+      const f = (tonic || 146.83) * Math.pow(2, semi / 12);
       const cents = Math.abs(1200 * Math.log2(freq / f));
       if (cents < best) best = cents;
     }
@@ -212,7 +216,7 @@ notes.forEach((n) => (byLayer[n.layer] = (byLayer[n.layer] || 0) + 1));
 const byCat = {};
 events.forEach((e) => (byCat[e.cat] = (byCat[e.cat] || 0) + 1));
 let inScale = 0, offNotes = [];
-notes.forEach((n) => { const c = nearestCents(n.freq); if (c < 5) inScale++; else offNotes.push({ layer: n.layer, freq: Math.round(n.freq), cents: Math.round(c) }); });
+notes.forEach((n) => { const c = nearestCents(n.freq, n.tonic); if (c < 5) inScale++; else offNotes.push({ layer: n.layer, freq: Math.round(n.freq), cents: Math.round(c), tonic: Math.round(n.tonic) }); });
 const arcMax = Math.max(...arcSamples.map((s) => s.level), 0);
 const arcMin = Math.min(...arcSamples.map((s) => s.level), 1);
 const phasesSeen = [...new Set(arcSamples.map((s) => s.phase))];
@@ -260,6 +264,24 @@ const formVocab = (() => {
   console.log("seatings (" + nSeat + " distinct): " + Object.keys(seatings).map((k) => k + "×" + seatings[k]).join(" | "));
   if (airInfo) console.log("air: attempts " + airInfo.attempts + " · grants " + airInfo.grants + " · denials " + airInfo.denials + " · overlap grants " + airInfo.overlapGrants + " (" + Math.round(100 * airInfo.denials / Math.max(1, airInfo.attempts)) + "% denied)");
   return { nKind, nSeat, kinds, seatings };
+})();
+
+// ---- pitch + melody vocabulary (Phase 2): sea changes, tonic trace, seed pool, aitake ----
+const pitchVocab = (() => {
+  const seas = events.filter((e) => (e.label + " " + (e.detail || "")).indexOf("sea change") >= 0);
+  const pivots = events.filter((e) => e.cat === "mode" && /pivot/.test(e.detail || ""));
+  const tonics = []; for (const n of notes) { const t = Math.round(n.tonic * 100) / 100; if (tonics.indexOf(t) < 0) tonics.push(t); }
+  const pool = {};
+  for (const e of events) if (e.label.indexOf("working set") >= 0) for (const part of (e.detail || "").split(" · ")) { const nm = part.replace(/^[イロハ] /, "").replace(/^inherited: /, "").replace(/·g\d+$/, ""); pool[nm] = (pool[nm] || 0) + 1; }
+  const born = Object.keys(pool).filter((k) => k.indexOf("born: ") === 0).length;
+  // aitake: group shō notes by shared t → semitone set above the lowest
+  const byT = {}; for (const n of notes) if (n.layer === "sho") (byT[n.t.toFixed(4)] = byT[n.t.toFixed(4)] || []).push(n.freq);
+  const voicings = {}; let clusters = 0;
+  for (const k in byT) { const fs = byT[k].sort((a, b) => a - b); clusters++; const set = fs.map((f) => Math.round(12 * Math.log2(f / fs[0]))).join(","); voicings[set] = (voicings[set] || 0) + 1; }
+  const aitakeNames = {}; for (const e of events) { const m = /^笙 (\S+) (\S+)/.exec(e.label); if (m) aitakeNames[m[2]] = (aitakeNames[m[2]] || 0) + 1; }
+  console.log("pitch: sea changes " + seas.length + " [" + seas.map((e) => Math.round(e.t) + "s " + e.detail).join(" | ") + "] · pivots " + pivots.length + " · tonics seen " + JSON.stringify(tonics));
+  console.log("melody: seed pool " + Object.keys(pool).length + " names (" + born + " born) · aitake " + Object.keys(voicings).length + " distinct voicings in " + clusters + " clusters · named " + JSON.stringify(aitakeNames));
+  return { seas: seas.length, pool: Object.keys(pool).length, voicings: Object.keys(voicings).length };
 })();
 
 // ---- node budget: creations per simulated minute + peak concurrent sources ----
@@ -327,6 +349,10 @@ const melPer30 = melodicNotes * 1800 / RUN;
 if (RUN >= 1500 && (melPer30 < 1900 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1900–3300");
 if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
 if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
+// Phase 2 gates (plan §7): ≥ 1 sea change per hour; seed pool ≥ 12 over a long run; ≥ 8 distinct aitake voicings
+if (RUN >= 3600 && pitchVocab.seas < 1) fails.push("no sea change in " + RUN + "s");
+if (RUN >= 7200 && pitchVocab.pool < 12) fails.push("seed pool " + pitchVocab.pool + " < 12");
+if (RUN >= 1500 && pitchVocab.voicings < 8) fails.push("only " + pitchVocab.voicings + " distinct aitake voicings");
 if (!reproSame) fails.push("REPRO gate failed");
 if (errors.length) fails.push(errors.length + " runtime errors");
 console.log(fails.length ? "VERDICT: FAIL — " + fails.join("; ") : "VERDICT: PASS ✓");
