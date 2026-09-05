@@ -21,9 +21,18 @@
 //  · THE LIAHONA — a small engraved dial in a hexagonal case. One needle
 //    walks the section, a second leans with the intensity; it glints when
 //    the oracle points.
+//  · THE WHEEL — the order of service seated round the rim of one great
+//    wheel, of which the page shows only the crown: a sun low on a far
+//    horizon. The section now playing is lettered at the crown beneath ONE
+//    gilt arc fixed to the page, which fills as the section plays; when it
+//    is full the wheel turns anticlockwise a seat beneath it and the arc
+//    fills again. Spokes and hour-marks beneath the banner make the turning
+//    visible. Postlude turns into the next meeting's prelude like any other
+//    seat — the cycle is the picture.
 //
 // No neon, no glitch, no CRT. A printed thing with one soft glow in it.
-// Public surface: window.KolobViz = { init(canvas, dialCanvas, organCanvas), setConductor }
+// Public surface: window.KolobViz = { init(canvas, dialCanvas, organCanvas, wheelCanvas),
+//   setConductor, setWheelLabels, wheelSeatAt }
 // ============================================================================
 
 window.KolobViz = (function () {
@@ -37,7 +46,8 @@ window.KolobViz = (function () {
   var fadeX0 = 90, fadeX1 = 150;                    // ink: ~0 at x≤fadeX0, full at x≥fadeX1
   var dial = null, dctx = null;
   var organ = null, octx = null;                   // the facade
-  var W = 0, H = 0, DW = 0, DH = 0, OW = 0, OH = 0, dpr = 1;
+  var wheel = null, xctx = null;                   // the order of service
+  var W = 0, H = 0, DW = 0, DH = 0, OW = 0, OH = 0, XW = 0, XH = 0, dpr = 1;
   var running = false;
 
   var cond = { section: null, local: 0, intensity: 0, f0: 65, mode: "ionian", hush: false, fuging: false };
@@ -553,6 +563,7 @@ window.KolobViz = (function () {
 
     drawOrgan(dt);
     drawDial(dt);
+    drawWheel(dt);
   }
 
   // ---- the Liahona dial — a hexagonal case -----------------------------------
@@ -626,6 +637,206 @@ window.KolobViz = (function () {
     if (liahonaGlint > 0) liahonaGlint = Math.max(0, liahonaGlint - dt);
   }
 
+
+  // ---- the wheel — the order of service round the crown -----------------------
+  var SEATS = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
+  var NSEAT = SEATS.length, SEAT_STEP = Math.PI * 2 / NSEAT;
+  var seatLabels = ["PRELUDE", "INVOCATION", "HYMN", "TESTIMONY", "SACRAMENT", "DOXOLOGY", "POSTLUDE"];
+  var seatSpoken = seatLabels.slice();             // for the live region (always Latin)
+  var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var wh = {
+    seat: 0,                 // the seat at the crown (folded)
+    offset: 0,               // the wheel's rotation, in seats — grows anticlockwise
+    from: 0, to: 0, t: 1, dur: 0, e: 1, wrap: false,
+    fill: 0, fillHold: 0,    // the arc: what is shown, and what it held when the turn began
+    liveKey: "",
+  };
+  function seatOfType(t) { return t === "interlude" ? "hymn" : t; }
+  // Fold the plan onto the seven seats: which seat is up, and how far through
+  // it — several hymns (and the interlude) share one seat, so the arc fills in
+  // parts, a tick between them.
+  function wheelState() {
+    var type = seatOfType(cond.section || "prelude");
+    var seat = Math.max(0, SEATS.indexOf(type));
+    var plan = cond.plan, si = cond.sectionIndex || 0, k = 0, count = 1;
+    if (plan && plan.length) {
+      count = 0;
+      for (var i = 0; i < plan.length; i++) if (seatOfType(plan[i]) === type) { if (i < si) k++; count++; }
+      count = Math.max(1, count);
+    }
+    k = Math.min(k, count - 1);
+    var local = Math.max(0, Math.min(1, cond.local || 0));
+    return { seat: seat, prog: (k + local) / count, count: count, k: k };
+  }
+  function wheelGeom() {
+    var fontPx = Math.max(14, Math.min(24, XW * 0.03));     // the type scales with the wheel
+    var R = Math.max(XW * 0.5, 280);
+    var crownY = XH * 0.30;
+    return {
+      fontPx: fontPx, R: R, cx: XW / 2, cy: crownY + R, crownY: crownY,
+      horizonY: crownY + Math.min(R * 0.44, XH - crownY - 8),
+      rBanner: R - fontPx * 2.35,                            // the banner's inner rule
+    };
+  }
+  // Set a string along a circle: glyph by glyph, each rotated to the tangent at
+  // its own angle, the word centred on `centreA`. Deseret letters are astral
+  // code points, so the string is split with Array.from, not charAt.
+  function curvedText(c, txt, cx, cy, r, centreA, track) {
+    var glyphs = Array.from(txt), widths = [], total = 0;
+    for (var i = 0; i < glyphs.length; i++) { widths[i] = c.measureText(glyphs[i]).width; total += widths[i]; }
+    total += track * (glyphs.length - 1);
+    var ang = centreA - (total / 2) / r;
+    for (var j = 0; j < glyphs.length; j++) {
+      var ga = ang + (widths[j] / 2) / r;
+      c.save();
+      c.translate(cx + Math.cos(ga) * r, cy + Math.sin(ga) * r);
+      c.rotate(ga + Math.PI / 2);
+      c.fillText(glyphs[j], 0, 0);
+      c.restore();
+      ang += (widths[j] + track) / r;
+    }
+  }
+  function inkA(a) { return "rgba(30, 77, 59, " + a.toFixed(3) + ")"; }
+  function giltA(a) { return "rgba(138, 122, 69, " + a.toFixed(3) + ")"; }
+  function radial(c, cx, cy, a, r0, r1) {
+    c.beginPath();
+    c.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+    c.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+    c.stroke();
+  }
+  function drawWheel(dt) {
+    if (!xctx) return;
+    var c = xctx, st = wheelState();
+    // a new seat is up: turn to it — always anticlockwise, always forward round
+    // the wheel, so postlude → prelude is one seat and a rehearsal skip back
+    // goes the long way round (faster, the further it has to go)
+    if (playing && st.seat !== wh.seat) {
+      var steps = (st.seat - wh.seat + NSEAT) % NSEAT;
+      wh.wrap = st.seat < wh.seat;
+      wh.from = wh.offset; wh.to = wh.offset + steps; wh.t = 0;
+      wh.dur = reduceMotion ? 0 : Math.min(3, 1.6 + 0.4 * (steps - 1));
+      wh.fillHold = wh.fill;
+      wh.seat = st.seat;
+    }
+    if (wh.t < 1) {
+      wh.t = wh.dur > 0 ? Math.min(1, wh.t + dt / wh.dur) : 1;
+      wh.e = wh.t < 0.5 ? 2 * wh.t * wh.t : 1 - Math.pow(-2 * wh.t + 2, 2) / 2;
+      wh.offset = wh.from + (wh.to - wh.from) * wh.e;
+      if (wh.t >= 1) { wh.offset = wh.offset % NSEAT; wh.wrap = false; wh.fill = 0; }
+    }
+    var turning = wh.t < 1;
+    // the arc follows the conductor with a short lag; through a turn it holds
+    // what it had and fades, then starts again from nothing for the risen seat
+    if (turning) {
+      wh.fill = wh.fillHold;
+    } else {
+      var target = playing ? st.prog : 0;
+      if (target < wh.fill - 0.3) wh.fill = target;          // a skip: no rewind
+      else wh.fill += (target - wh.fill) * Math.min(1, dt * 5);
+    }
+    var fillAlpha = turning ? 1 - wh.e : 1;
+
+    var g = wheelGeom(), R = g.R, cx = g.cx, cy = g.cy, fontPx = g.fontPx;
+    var TRACK = fontPx * 0.14;
+    c.clearRect(0, 0, XW, XH);
+    c.font = fontPx + 'px "Noto Sans Deseret", "EB Garamond", serif';
+    if ("letterSpacing" in c) c.letterSpacing = "0em";
+    c.textAlign = "center"; c.textBaseline = "alphabetic";
+    c.lineWidth = 1;
+
+    c.save();
+    c.beginPath(); c.rect(0, 0, XW, g.horizonY); c.clip();  // the wheel lives above the horizon
+
+    // the sun's body: a breath of gilt at the crown, fading to paper
+    var grad = c.createRadialGradient(cx, g.crownY + R * 0.18, 0, cx, g.crownY + R * 0.18, R * 0.75);
+    grad.addColorStop(0, giltA(0.10)); grad.addColorStop(1, giltA(0));
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.fillStyle = grad; c.fill();
+    // the rim, and the banner's inner rule
+    c.strokeStyle = inkA(0.5);
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
+    c.strokeStyle = inkA(0.3);
+    c.beginPath(); c.arc(cx, cy, g.rBanner, 0, Math.PI * 2); c.stroke();
+    // beneath the banner: the dial. A spoke to every seat, a faint hour ring
+    // with quarter-marks between the seats — the turning made visible.
+    var rHour = g.rBanner - fontPx * 1.3;
+    c.strokeStyle = inkA(0.12);
+    c.beginPath(); c.arc(cx, cy, rHour, 0, Math.PI * 2); c.stroke();
+    for (var q = 0; q < NSEAT * 4; q++) {
+      var qa = -Math.PI / 2 + (q / 4 - wh.offset) * SEAT_STEP;
+      if (q % 4 === 0) { c.strokeStyle = inkA(0.2); radial(c, cx, cy, qa, 0, g.rBanner); }
+      else { var half = q % 4 === 2; c.strokeStyle = inkA(half ? 0.3 : 0.2); radial(c, cx, cy, qa, rHour, rHour - (half ? 9 : 5)); }
+    }
+    // the seats: a tick on the rim, the label lettered round the banner
+    for (var i = 0; i < NSEAT; i++) {
+      var a = -Math.PI / 2 + (i - wh.offset) * SEAT_STEP;
+      c.strokeStyle = inkA(0.45); radial(c, cx, cy, a, R, R - 7);
+      var alpha = 0.62;
+      if (playing) {
+        if (i === wh.seat) alpha = 1;
+        else if (i < wh.seat) alpha = 0.28;
+        else if (wh.wrap && turning) alpha = 0.28 + 0.34 * wh.e;   // the finished seats clear as the new meeting rises
+      }
+      c.fillStyle = inkA(alpha);
+      curvedText(c, seatLabels[i] || SEATS[i], cx, cy, R - fontPx * 1.6, a, TRACK);
+    }
+    // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
+    // It runs from the left neighbour's tick to the right neighbour's: the whole
+    // crown of the wheel is the bar, and each section refills it.
+    var span = SEAT_STEP * 2, a0 = -Math.PI / 2 - SEAT_STEP, rr = R + 6;
+    c.save();
+    c.setLineDash([1, 3]); c.strokeStyle = inkA(0.3);
+    c.beginPath(); c.arc(cx, cy, rr, a0, a0 + span); c.stroke();
+    c.restore();
+    c.strokeStyle = inkA(0.4);
+    radial(c, cx, cy, a0, rr - 3, rr + 3); radial(c, cx, cy, a0 + span, rr - 3, rr + 3);
+    if (wh.fill > 0.002 && fillAlpha > 0.01) {
+      c.lineWidth = 3; c.lineCap = "butt"; c.strokeStyle = giltA(fillAlpha);
+      c.beginPath(); c.arc(cx, cy, rr, a0, a0 + span * wh.fill); c.stroke();
+      c.lineWidth = 1;
+    }
+    // a seat that folds several hymns: ticks divide the arc, one hymn to a part
+    if (playing && st.count > 1) {
+      c.strokeStyle = inkA(0.45);
+      for (var k = 1; k < st.count; k++) radial(c, cx, cy, a0 + span * k / st.count, rr - 3, rr + 3);
+    }
+    c.restore();
+
+    // the horizon: the letterpress rule the wheel sets behind
+    c.strokeStyle = inkA(0.42);
+    c.beginPath(); c.moveTo(0, g.horizonY + 0.5); c.lineTo(XW, g.horizonY + 0.5); c.stroke();
+    c.strokeStyle = inkA(0.16);
+    c.beginPath(); c.moveTo(0, g.horizonY + 4.5); c.lineTo(XW, g.horizonY + 4.5); c.stroke();
+
+    // the live region, for readers who cannot see the wheel: on a new seat and
+    // at the quarter-marks, never every frame
+    var live = document.getElementById("kolob-wheel-live");
+    if (live) {
+      var key = playing ? wh.seat + ":" + st.k + ":" + Math.floor(st.prog * 4) : "idle";
+      if (key !== wh.liveKey) {
+        wh.liveKey = key;
+        live.textContent = playing
+          ? seatSpoken[wh.seat] + (st.count > 1 ? " " + (st.k + 1) + " of " + st.count : "") + " · " + Math.round(st.prog * 100) + "%"
+          : "";
+      }
+    }
+  }
+  // Which seat is under a point of the wheel canvas (CSS px) — for the dev
+  // jump menu. Null off the wheel or beneath the horizon.
+  function wheelSeatAt(x, y) {
+    if (!xctx) return null;
+    var g = wheelGeom();
+    if (y > g.horizonY) return null;
+    var d = Math.hypot(x - g.cx, y - g.cy);
+    if (d < g.rBanner - 4 || d > g.R + 12) return null;
+    var a = Math.atan2(y - g.cy, x - g.cx);
+    var i = Math.round((a + Math.PI / 2) / SEAT_STEP + wh.offset);
+    return SEATS[((i % NSEAT) + NSEAT) % NSEAT];
+  }
+  function setWheelLabels(display, spoken) {
+    if (display && display.length === NSEAT) seatLabels = display.slice();
+    if (spoken && spoken.length === NSEAT) seatSpoken = spoken.slice();
+  }
+
   // ---- lifecycle -------------------------------------------------------------
   function resize() {
     if (!canvas) return;
@@ -672,13 +883,22 @@ window.KolobViz = (function () {
       octx = organ.getContext("2d");
       octx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+    if (wheel) {
+      var xr = wheel.getBoundingClientRect();
+      XW = Math.max(60, Math.round(xr.width));
+      XH = Math.max(60, Math.round(xr.height));
+      wheel.width = XW * dpr; wheel.height = XH * dpr;
+      xctx = wheel.getContext("2d");
+      xctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
   }
 
-  function init(mainCanvas, dialCanvas, organCanvas) {
+  function init(mainCanvas, dialCanvas, organCanvas, wheelCanvas) {
     canvas = mainCanvas || null;
     dial = dialCanvas || null;
     organ = organCanvas || null;
-    if (!canvas && !dial && !organ) return;
+    wheel = wheelCanvas || null;
+    if (!canvas && !dial && !organ && !wheel) return;
     resize();
     window.addEventListener("resize", resize);
     if (K) {
@@ -693,5 +913,5 @@ window.KolobViz = (function () {
     playing = !!isPlaying;
   }
 
-  return { init: init, setConductor: setConductor };
+  return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt };
 })();

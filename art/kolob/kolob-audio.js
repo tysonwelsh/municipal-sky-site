@@ -3611,6 +3611,7 @@ window.KolobAudio = (function () {
         visit: (ctx && ctx.currentTime < C.assemblyUntil) ? "assembly" : (inVisit() ? C.visitType : null),
         f0: F0, season: seasonPos,
         sectionIndex: C.si, planLength: C.plan.length,
+        plan: C.plan.map(function (s) { return s.type; }),   // the wheel folds hymns onto one seat
         fifths: Harmony.fifthCount(),
       };
     },

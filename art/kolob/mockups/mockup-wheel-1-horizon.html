@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOLOB wheel mockup 1 — THE HORIZON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — WHEEL MOCKUP 1 · THE HORIZON
+   The order of service is seated round the rim of one great wheel, and the
+   page shows only its crown: a sun low on a far horizon. The section now
+   playing is printed upright at the crown; its neighbours tilt away to
+   left and right and dip beneath the horizon rule. ONE gilt arc is fixed to
+   the page above the crown — it does not turn with the wheel. It fills as
+   the section plays; when it is full the wheel turns anticlockwise one
+   seat beneath it, the fill fades, and the same arc fills again for the
+   section that has risen. Finished labels go faint until the next meeting.
+   ========================================================================== */
+:root {
+  --cover: #14382c; --cover-hi: #1a4536;
+  --paper: #f5efe0; --paper-lo: #ebe3cf;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding: 2.6rem 1rem 4rem; }
+.mock-label { max-width: 860px; margin: 0 auto 1rem; font-size: 0.7rem; letter-spacing: 0.24em; color: #999; text-transform: uppercase; text-align: center; }
+
+.kolob-mat {
+  position: relative; max-width: 860px; margin: 0 auto; padding: 34px; border-radius: 3px;
+  background: radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+}
+.kolob-mat::after {
+  content: ""; position: absolute; inset: 0; border-radius: 3px; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.kolob-mat::before { content: ""; position: absolute; inset: 13px; pointer-events: none; z-index: 1; border: 1px solid var(--gilt); opacity: 0.75; }
+.kolob-page {
+  position: relative; z-index: 2;
+  background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink); border-radius: 1px; padding: 2.2rem 2.8rem 2.2rem;
+  box-shadow: 0 1px 0 rgba(255,250,235,0.1) inset, 0 6px 18px rgba(0,0,0,0.35);
+}
+.kolob-page::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+}
+.kolob-page > * { position: relative; z-index: 1; }
+
+.kolob-header { text-align: center; margin: 0 0 1.4rem; }
+.kolob-title { font-family: "Noto Sans Deseret", serif; font-size: clamp(2rem, 5.5vw, 2.9rem); font-weight: 400; letter-spacing: 0.22em; margin: 0 0 0.5rem; color: var(--ink); }
+.kolob-rule { position: relative; height: 9px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 8%; }
+.kolob-rule::after { content: "✧"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -52%); background: var(--paper); color: var(--ink-soft); font-size: 0.7rem; padding: 0 0.5em; line-height: 1; }
+
+.kolob-telemetry { font-family: "Noto Sans Deseret", serif; font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-soft); text-align: center; margin: 0 0 1.6rem; }
+.kolob-telemetry .t-sep { margin: 0 0.6em; color: var(--ink-faint); }
+
+.kolob-sec-head { font-family: "Noto Sans Deseret", serif; font-size: 0.8rem; letter-spacing: 0.22em; color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding-bottom: 0.45rem; margin: 0 0 0.6rem; }
+
+/* ---------------- the wheel band ---------------- */
+.kolob-wheel-wrap { position: relative; height: 262px; margin: 0 0 0.6rem; }
+.kolob-wheel { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* mockup controls (not part of the design) */
+.mock-controls { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 2rem; }
+.mock-controls .spacer { flex: 1; }
+.kolob-btn { font-family: "Noto Sans Deseret", serif; font-size: 0.78rem; letter-spacing: 0.16em; color: var(--ink); background: var(--paper); border: 1px solid var(--ink-soft); border-radius: 2px; padding: 0.4rem 1rem; cursor: pointer; box-shadow: 0 1.5px 0 var(--ink-faint); }
+.kolob-btn.latin { font-family: "EB Garamond", serif; letter-spacing: 0.06em; }
+.kolob-btn.is-on { background: var(--ink); color: var(--paper); }
+.mock-note { font-size: 0.82rem; font-style: italic; color: var(--ink-soft); }
+
+/* ---------------- hymn board (context only) ---------------- */
+.kolob-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem; }
+.kolob-board { background: linear-gradient(175deg, var(--cover-hi), var(--cover)); border-radius: 3px; padding: 1.1rem; box-shadow: inset 0 1px 6px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 0.55rem; }
+.kolob-board .lab { font-family: "Noto Sans Deseret", serif; font-size: 0.78rem; letter-spacing: 0.14em; color: rgba(245,240,228,0.6); }
+.kolob-board .seed { color: var(--paper); font-size: 0.95rem; letter-spacing: 0.06em; }
+.kolob-board .cards { margin-left: auto; display: flex; gap: 0.4rem; }
+.kolob-board-card { font-family: "Noto Sans Deseret", "EB Garamond", serif; background: var(--paper); color: var(--cover); padding: 0.22rem 0.6rem; border-radius: 1px; font-size: 1.02rem; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.kolob-broadside-line { font-family: "Noto Sans Deseret", serif; font-size: 0.95rem; letter-spacing: 0.06em; color: var(--ink-soft); font-style: italic; }
+
+@media (max-width: 700px) {
+  .kolob-mat { padding: 18px; }
+  .kolob-page { padding: 1.6rem 1.2rem 1.6rem; }
+  .kolob-wheel-wrap { height: 200px; }
+  .kolob-columns { grid-template-columns: 1fr; gap: 1.4rem; }
+}
+</style>
+</head>
+<body>
+<p class="mock-label">wheel mockup 1 of 3 · the horizon — a shallow crown, labels lettered round the rim, one fixed arc over the crown</p>
+
+<div class="kolob-mat">
+ <div class="kolob-page">
+  <header class="kolob-header">
+    <h1 class="kolob-title" id="title">𐐗𐐄𐐢𐐉𐐒</h1>
+    <div class="kolob-rule" aria-hidden="true"></div>
+  </header>
+
+  <div class="kolob-telemetry" id="telemetry"></div>
+
+  <div class="kolob-sec-head" id="head-order">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
+  <div class="kolob-wheel-wrap">
+    <canvas id="wheel" class="kolob-wheel" aria-label="the order of service, a wheel seen low on the horizon"></canvas>
+  </div>
+
+  <div class="mock-controls">
+    <button type="button" class="kolob-btn" id="btn-turn">𐐓𐐊𐐡𐐤</button>
+    <button type="button" class="kolob-btn" id="btn-pause">𐐑𐐃𐐞</button>
+    <span class="mock-note">demo clock · about 5 s a section</span>
+    <span class="spacer"></span>
+    <button type="button" class="kolob-btn latin" id="btn-latin">Latin</button>
+  </div>
+
+  <div class="kolob-columns">
+    <div>
+      <div class="kolob-sec-head" id="head-board">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
+      <div class="kolob-board">
+        <span class="lab" id="lab-seed">𐐝𐐀𐐔</span><span class="seed">1847</span>
+        <span class="cards"><span class="kolob-board-card">𐐗·2</span><span class="kolob-board-card">14</span><span class="kolob-board-card">3</span></span>
+      </div>
+    </div>
+    <div>
+      <div class="kolob-sec-head" id="head-broad">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+      <div class="kolob-broadside-line" id="broadside">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
+    </div>
+  </div>
+ </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // ---- the seats: seven fixed, hymns folded into one seat (n = hymns in the plan)
+  var PANELS = [
+    { key: "prelude",    ds: "𐐑𐐡𐐇𐐢𐐧𐐔",      en: "PRELUDE",    n: 1 },
+    { key: "invocation", ds: "𐐆𐐤𐐚𐐄𐐗𐐁𐐟𐐊𐐤",  en: "INVOCATION", n: 1 },
+    { key: "hymn",       ds: "𐐐𐐆𐐣",          en: "HYMN",       n: 2 },
+    { key: "testimony",  ds: "𐐓𐐇𐐝𐐓𐐆𐐣𐐄𐐤𐐆",   en: "TESTIMONY",  n: 1 },
+    { key: "sacrament",  ds: "𐐝𐐈𐐗𐐡𐐊𐐣𐐇𐐤𐐓",   en: "SACRAMENT",  n: 1 },
+    { key: "doxology",   ds: "𐐔𐐉𐐗𐐝𐐉𐐢𐐊𐐖𐐆",   en: "DOXOLOGY",   n: 1 },
+    { key: "postlude",   ds: "𐐑𐐄𐐝𐐓𐐢𐐅𐐔",      en: "POSTLUDE",   n: 1 },
+  ];
+  var N = PANELS.length, STEP = Math.PI * 2 / N;
+  var SEC_MS = 5000, TURN_MS = 1600;
+
+  var latin = false;
+  var S = { cur: 0, prog: 0, meeting: 1, offset: 0, turning: false, turnFrom: 0, turnT: 0, done: [], fade: 1, paused: false };
+
+  // ---- demo clock
+  function advance(dt) {
+    if (S.turning) {
+      S.turnT += dt / TURN_MS;
+      var e = S.turnT >= 1 ? 1 : (S.turnT < 0.5 ? 2 * S.turnT * S.turnT : 1 - Math.pow(-2 * S.turnT + 2, 2) / 2);
+      S.offset = S.turnFrom + e;
+      if (S.wrapping) S.fade = 1 - e;
+      if (S.turnT >= 1) {
+        S.turning = false; S.cur = (S.cur + 1) % N; S.offset = S.cur; S.prog = 0;
+        if (S.wrapping) { S.done = []; S.fade = 1; S.wrapping = false; }
+      }
+    } else {
+      S.prog += dt / (SEC_MS * PANELS[S.cur].n);
+      if (S.prog >= 1) beginTurn();
+    }
+  }
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(100, now - last); last = now;
+    if (!S.paused) advance(dt);
+    draw();
+    telemetry();
+    requestAnimationFrame(tick);
+  }
+  function beginTurn() {
+    S.prog = 1;
+    if (S.done.indexOf(S.cur) < 0) S.done.push(S.cur);
+    S.turning = true; S.turnFrom = S.cur; S.turnT = 0;
+    S.wrapping = S.cur === N - 1;
+    if (S.wrapping) S.meeting++;
+  }
+
+  // ---- the canvas
+  var canvas = document.getElementById("wheel"), ctx = canvas.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  }
+  window.addEventListener("resize", resize); resize();
+
+  var INK = "#1e4d3b", GILT = "#8a7a45";
+  function inkA(a) { return "rgba(30, 77, 59, " + a + ")"; }
+  function giltA(a) { return "rgba(138, 122, 69, " + a + ")"; }
+  function label(p) { return latin ? p.en : p.ds; }
+
+  // Set a string along a circle: glyph by glyph, each rotated to the tangent at
+  // its own angle, the whole word centred on `centreA`. Deseret letters are
+  // astral code points, so the string is split with Array.from, not charAt.
+  // Returns the word's length along the arc, in px, for the arc's track.
+  function curvedText(txt, cx, cy, r, centreA, track) {
+    var glyphs = Array.from(txt), widths = [], total = 0;
+    for (var i = 0; i < glyphs.length; i++) { widths[i] = ctx.measureText(glyphs[i]).width; total += widths[i]; }
+    total += track * (glyphs.length - 1);
+    var ang = centreA - (total / 2) / r;
+    for (var j = 0; j < glyphs.length; j++) {
+      var ga = ang + (widths[j] / 2) / r;
+      ctx.save();
+      ctx.translate(cx + Math.cos(ga) * r, cy + Math.sin(ga) * r);
+      ctx.rotate(ga + Math.PI / 2);
+      ctx.fillText(glyphs[j], 0, 0);
+      ctx.restore();
+      ang += (widths[j] + track) / r;
+    }
+    return total;
+  }
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    var R = Math.max(W * 0.5, 280);
+    var crownY = H * 0.30;
+    var cx = W / 2, cy = crownY + R;
+    var horizonY = crownY + Math.min(R * 0.44, H - crownY - 20);   // room beneath for the meeting count
+    var fontPx = Math.max(14, Math.min(24, W * 0.03));   // the type scales with the wheel
+    var TRACK = fontPx * 0.14;                                 // letter-spacing, in px
+    ctx.font = fontPx + 'px "Noto Sans Deseret", "EB Garamond", serif';
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0em";
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+
+    // everything of the wheel lives above the horizon
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, W, horizonY); ctx.clip();
+
+    // the sun's body: a breath of gilt at the crown, fading to paper
+    var g = ctx.createRadialGradient(cx, crownY + R * 0.18, 0, cx, crownY + R * 0.18, R * 0.75);
+    g.addColorStop(0, giltA(0.10)); g.addColorStop(1, giltA(0));
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+
+    // the rim — one hairline, and a fainter inner rule the labels sit on
+    ctx.lineWidth = 1; ctx.strokeStyle = inkA(0.5);
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    var rBanner = R - fontPx * 2.35;                       // the banner's inner rule
+    ctx.strokeStyle = inkA(0.3);
+    ctx.beginPath(); ctx.arc(cx, cy, rBanner, 0, Math.PI * 2); ctx.stroke();
+
+    // beneath the banner: the dial. A spoke to every seat, a faint hour ring
+    // with quarter-marks between the seats — the wheel's turning made visible.
+    var rHour = rBanner - fontPx * 1.3;
+    ctx.strokeStyle = inkA(0.12);
+    ctx.beginPath(); ctx.arc(cx, cy, rHour, 0, Math.PI * 2); ctx.stroke();
+    for (var q = 0; q < N * 4; q++) {
+      var qa = -Math.PI / 2 + (q / 4 - S.offset) * STEP;
+      var isSeat = q % 4 === 0, isHalf = q % 4 === 2;
+      if (isSeat) {
+        ctx.strokeStyle = inkA(0.2);
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(qa) * rBanner, cy + Math.sin(qa) * rBanner); ctx.stroke();
+      } else {
+        var len = isHalf ? 9 : 5;
+        ctx.strokeStyle = inkA(isHalf ? 0.3 : 0.2);
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(qa) * rHour, cy + Math.sin(qa) * rHour);
+        ctx.lineTo(cx + Math.cos(qa) * (rHour - len), cy + Math.sin(qa) * (rHour - len));
+        ctx.stroke();
+      }
+    }
+
+    for (var i = 0; i < N; i++) {
+      var p = PANELS[i];
+      var a = -Math.PI / 2 + (i - S.offset) * STEP;          // seat angle
+      var isCur = i === S.cur && !S.turning || (S.turning && i === S.turnFrom);
+      var isDone = S.done.indexOf(i) >= 0 && !(S.turning && i === S.turnFrom);
+      var near = Math.cos(a + Math.PI / 2);                    // 1 at the crown, 0 at the sides
+      // seat tick on the rim
+      ctx.strokeStyle = inkA(0.45);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      ctx.lineTo(cx + Math.cos(a) * (R - 7), cy + Math.sin(a) * (R - 7));
+      ctx.stroke();
+
+      // the label, lettered round the rim — each glyph seated on the curve,
+      // rotated to its own tangent, so the word bends with the wheel
+      var txt = label(p);
+      var alpha = isCur ? 1 : isDone ? 0.28 : 0.62;
+      ctx.fillStyle = inkA(alpha);
+      curvedText(txt, cx, cy, R - fontPx * 1.6, a, TRACK);
+
+    }
+
+    // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
+    // It runs from the left neighbour's tick to the right neighbour's: the
+    // whole crown of the wheel is the bar, and each section refills it.
+    var span = STEP * 2, top = -Math.PI / 2, a0 = top - STEP;
+    var rr = R + 6;
+    var curP = PANELS[S.turning ? S.turnFrom : S.cur];
+    var fill = S.turning ? 1 : S.prog;                       // holds full through the turn…
+    var fillAlpha = S.turning ? 1 - S.turnT : 1;             // …and fades as the next seat rises
+    ctx.save();
+    ctx.setLineDash([1, 3]); ctx.lineWidth = 1; ctx.strokeStyle = inkA(0.3);
+    ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + span); ctx.stroke();
+    ctx.restore();
+    // the arc's end-stops
+    ctx.strokeStyle = inkA(0.4); ctx.lineWidth = 1;
+    [a0, a0 + span].forEach(function (e) {
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(e) * (rr - 3), cy + Math.sin(e) * (rr - 3));
+      ctx.lineTo(cx + Math.cos(e) * (rr + 3), cy + Math.sin(e) * (rr + 3));
+      ctx.stroke();
+    });
+    if (fill > 0) {
+      ctx.lineWidth = 3; ctx.lineCap = "butt"; ctx.strokeStyle = giltA(fillAlpha);
+      ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + span * fill); ctx.stroke();
+    }
+    // a seat that folds several hymns: ticks divide the arc, one hymn to a part
+    if (curP.n > 1) {
+      ctx.strokeStyle = inkA(0.45); ctx.lineWidth = 1;
+      for (var k = 1; k < curP.n; k++) {
+        var ta = a0 + span * k / curP.n;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ta) * (rr - 3), cy + Math.sin(ta) * (rr - 3));
+        ctx.lineTo(cx + Math.cos(ta) * (rr + 3), cy + Math.sin(ta) * (rr + 3));
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+
+    // the horizon: the letterpress rule the wheel sets behind
+    ctx.strokeStyle = inkA(0.42); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, horizonY + 0.5); ctx.lineTo(W, horizonY + 0.5); ctx.stroke();
+    ctx.strokeStyle = inkA(0.16);
+    ctx.beginPath(); ctx.moveTo(0, horizonY + 4.5); ctx.lineTo(W, horizonY + 4.5); ctx.stroke();
+
+    // the meeting number, small, at the foot of the band — the cycle's count
+    ctx.font = '11px "Noto Sans Deseret", "EB Garamond", serif';
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0.2em";
+    ctx.textAlign = "right"; ctx.fillStyle = inkA(0.45);
+    ctx.fillText((latin ? "MEETING " : "𐐣𐐀𐐓𐐆𐐥 ") + pad3(S.meeting), W, H - 4);
+  }
+  function pad3(n) { return (n < 10 ? "00" : n < 100 ? "0" : "") + n; }
+
+  function telemetry() {
+    var el = document.getElementById("telemetry");
+    var p = PANELS[S.cur];
+    var sub = p.n > 1 ? " " + (Math.min(p.n, Math.floor(S.prog * p.n) + 1)) + "/" + p.n : "";
+    el.innerHTML = '<span>' + (latin ? "MEETING " : "𐐣𐐀𐐓𐐆𐐥 ") + pad3(S.meeting) + '</span><span class="t-sep">·</span><span>' + label(p) + sub + '</span><span class="t-sep">·</span><span>' + (latin ? "ORDINARY" : "𐐃𐐡𐐔𐐆𐐤𐐇𐐡𐐆") + '</span>';
+  }
+
+  // ---- controls
+  document.getElementById("btn-turn").addEventListener("click", function () { if (!S.turning) beginTurn(); });
+  var pauseBtn = document.getElementById("btn-pause");
+  pauseBtn.addEventListener("click", function () { S.paused = !S.paused; pauseBtn.classList.toggle("is-on", S.paused); });
+  var latinBtn = document.getElementById("btn-latin");
+  function applyScript() {
+    latinBtn.textContent = latin ? "𐐔𐐇𐐞𐐊𐐡𐐇𐐓" : "Latin";
+    document.getElementById("title").textContent = latin ? "KOLOB" : "𐐗𐐄𐐢𐐉𐐒";
+    document.getElementById("head-order").textContent = latin ? "ORDER OF SERVICE" : "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝";
+    document.getElementById("head-board").textContent = latin ? "HYMN BOARD" : "𐐐𐐆𐐣 𐐒𐐄𐐡𐐔";
+    document.getElementById("head-broad").textContent = latin ? "THE BROADSIDE" : "𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔";
+    document.getElementById("lab-seed").textContent = latin ? "SEED" : "𐐝𐐀𐐔";
+    document.getElementById("broadside").textContent = latin ? "the valley is still" : "𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊";
+    document.getElementById("btn-turn").textContent = latin ? "TURN" : "𐐓𐐊𐐡𐐤";
+    pauseBtn.textContent = latin ? "PAUSE" : "𐐑𐐃𐐞";
+  }
+  latinBtn.addEventListener("click", function () { latin = !latin; applyScript(); });
+  // ?latin=1 opens the mockup in Latin (the site's own dev switch does the same)
+  if (/[?&]latin=1/.test(location.search)) { latin = true; applyScript(); }
+  // ?t=SECONDS starts the demo clock that far in (for screenshots)
+  var t0 = parseFloat((location.search.match(/[?&]t=([\d.]+)/) || [])[1]);
+  if (t0 > 0) for (var pre = 0; pre < t0 * 1000; pre += 50) advance(50);
+
+  var start = function () { last = performance.now(); requestAnimationFrame(tick); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+})();
+</script>
+</body>
+</html>
