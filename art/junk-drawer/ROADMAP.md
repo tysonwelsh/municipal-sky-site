@@ -31,6 +31,15 @@ which is a real eval set.
 Related: `sizing-desk.html` already exists for tuning sizes in bulk against
 the live pile math, and `sizeScale` is the continuous dial under the tiers.
 
+### Admin mode + a gated bench (planned 2026-09-05, not built)
+
+`?admin` on the drawer, gated by a bench key: the report card gains ADJUST
+RATINGS, which re-seats the item in the one rating instrument (the turn
+card's curate mode, prefilled) and files through `jd-item-rate.php`; `?bench`
+and the scripts get the same gate (`JD_BENCH_REQUIRE_KEY = true`). Needs the
+read path below so curated edits show without a harvest. Full design:
+`ADMIN-MODE.md`.
+
 ### A read path for DB ratings (standing, since 2026-08-18)
 
 The drawer still renders annotations from `entry.json`; bench ratings live in
