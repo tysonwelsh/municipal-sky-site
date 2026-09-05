@@ -1,0 +1,19 @@
+{
+  "id": "conet-atencion",
+  "title": "¡Atención! (numbers station, Spanish)",
+  "year": 1997,
+  "src": "https://archive.org/download/ird059/tcp_d1_16_attencion_3_finals_irdial.mp3",
+  "license": "Irdial FMP (non-commercial)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 72.08,
+  "bytes": 595522,
+  "audioOnly": true,
+  "picture": "wave",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[0.0, 12], [48.0, 60], [96.0, 108], [140.0, 152], [176.0, 188], [198.0, 210]],
+  "notes": "Conet Project d1-16, Irdial-Discs; Cuban station: '¡Atención!' then five-figure groups in Spanish; three 'final's at the end",
+  "takedown": false
+}
