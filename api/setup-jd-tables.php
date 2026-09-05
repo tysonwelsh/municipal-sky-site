@@ -1,10 +1,16 @@
 <?php
-// One-time setup script — delete after running.
-// The five Junk Drawer visitor-prompt tables (PLAN-USER-PROMPTS-CONTRACTS C2,
-// with the C6.2 SQLite deltas and the C6.4 environment gating).
+// Junk Drawer — tables and migrations. Idempotent: run it after every deploy
+// that touches the schema, and re-running it is always safe.
 //
-// Production requires ?key=<jd_setup_key> because this one creates every
-// table the feature has, unlike the older single-table setup scripts.
+//   CLI:  JD_DEV_MOCK=1 php api/setup-jd-tables.php        (the SQLite dev database)
+//   web:  https://municipalsky.com/api/setup-jd-tables.php?key=<jd_setup_key>
+//
+// Production requires ?key=<jd_setup_key> because this script creates every
+// table the feature has and alters live ones.
+//
+// The schema is documented in db/junk-drawer-schema.md. Every migration below
+// is guarded (jd_has_column / jd_has_table / a row count), so a run against a
+// database that already carries it reports "already present" and moves on.
 
 require_once __DIR__ . '/jd-config.php';
 
@@ -36,60 +42,71 @@ try {
     exit;
 }
 
-$statements = JD_DEV_MODE ? jd_setup_sqlite_ddl() : jd_setup_mysql_ddl();
+$sqlite = jd_db_driver($db) === 'sqlite';
+$statements = $sqlite ? jd_setup_sqlite_ddl() : jd_setup_mysql_ddl();
 
-echo JD_DEV_MODE
+echo $sqlite
     ? "Dev mode (SQLite): " . realpath(dirname(JD_DEV_DB_PATH)) . "/" . basename(JD_DEV_DB_PATH) . "\n\n"
     : "MySQL\n\n";
 
 $failed = 0;
+function jd_setup_line(string $label, string $result): void
+{
+    echo str_pad($label, 24) . ' ' . $result . "\n";
+}
+
 foreach ($statements as $table => $sql) {
     try {
         $db->exec($sql);
-        echo str_pad($table, 20) . " ok\n";
+        jd_setup_line($table, 'ok');
     } catch (PDOException $e) {
         $failed++;
-        echo str_pad($table, 20) . " FAILED: " . $e->getMessage() . "\n";
+        jd_setup_line($table, 'FAILED: ' . $e->getMessage());
     }
 }
 
 // --- additive migrations (safe to re-run) ----------------------------------
-// jd_comparisons.strength (C1.3 addition, 2026-08-11): the likert margin on
-// a comparison. Fresh installs get it from the CREATE above; a live table
-// gets it here. Checked before altering so a re-run stays quiet.
-try {
-    $has = false;
-    if (JD_DEV_MODE) {
-        foreach ($db->query('PRAGMA table_info(jd_comparisons)') as $col) {
-            if (($col['name'] ?? '') === 'strength') { $has = true; break; }
+// Fresh installs get every column from the CREATE above; a live table gets
+// it here. SQLite cannot widen a CHECK constraint or an ENUM-shaped column,
+// but the dev database is disposable: delete local-dev/jd-dev.sqlite and
+// re-run.
+
+/**
+ * ADD COLUMN unless it is already there. $mysql / $sqlite are the column
+ * definitions in each dialect (the SQLite one may be null when SQLite
+ * already carries it from the CREATE, e.g. an ENUM widening).
+ */
+function jd_ensure_column(PDO $db, string $table, string $column, string $mysql, ?string $sqlite): void
+{
+    global $failed;
+    $label = $table . '.' . $column;
+    try {
+        if (jd_has_column($db, $table, $column)) {
+            jd_setup_line($label, 'already present');
+            return;
         }
-        if (!$has) {
-            $db->exec('ALTER TABLE jd_comparisons ADD COLUMN strength TEXT NULL');
+        $def = jd_db_driver($db) === 'sqlite' ? $sqlite : $mysql;
+        if ($def === null) {
+            jd_setup_line($label, 'n/a in this dialect');
+            return;
         }
-    } else {
-        $q = $db->query("SHOW COLUMNS FROM jd_comparisons LIKE 'strength'");
-        $has = $q !== false && $q->fetch() !== false;
-        if (!$has) {
-            $db->exec("ALTER TABLE jd_comparisons ADD COLUMN strength VARCHAR(8) NULL AFTER winner_gen_id");
-        }
+        $db->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $def);
+        jd_setup_line($label, 'added');
+    } catch (PDOException $e) {
+        $failed++;
+        jd_setup_line($label, 'FAILED: ' . $e->getMessage());
     }
-    echo str_pad('strength column', 20) . ($has ? " already present\n" : " added\n");
-} catch (PDOException $e) {
-    $failed++;
-    echo str_pad('strength column', 20) . " FAILED: " . $e->getMessage() . "\n";
 }
 
-// jd_generations.slot gains 'd' (fourth model per turn, 2026-08-14; 'c'
-// joined earlier the same day): fresh installs get ENUM('a','b','c','d')
-// from the CREATE above; a live MySQL table gets widened here. SQLite tables
-// created before this change carry the old CHECK constraint — SQLite can't
-// alter one, but the dev database is disposable: delete
-// local-dev/jd-dev.sqlite and re-run. (Checked first so a re-run stays
-// quiet.)
+// jd_comparisons.strength (C1.3 addition, 2026-08-11): the likert margin.
+jd_ensure_column($db, 'jd_comparisons', 'strength',
+    'VARCHAR(8) NULL AFTER winner_gen_id', 'TEXT NULL');
+
+// jd_generations.slot gains 'd' (fourth model per turn, 2026-08-14). MySQL
+// only — SQLite's CHECK lives in the CREATE.
 try {
-    $widened = false;
-    if (JD_DEV_MODE) {
-        $widened = true;  // CHECK lives in the CREATE; nothing to alter
+    if ($sqlite) {
+        jd_setup_line('jd_generations.slot d', 'n/a in this dialect');
     } else {
         $q = $db->query("SHOW COLUMNS FROM jd_generations LIKE 'slot'");
         $col = $q !== false ? $q->fetch() : false;
@@ -97,102 +114,172 @@ try {
         if (!$widened) {
             $db->exec("ALTER TABLE jd_generations MODIFY COLUMN slot ENUM('a','b','c','d') NOT NULL");
         }
+        jd_setup_line('jd_generations.slot d', $widened ? 'already present' : 'added');
     }
-    echo str_pad('slot d', 20) . ($widened ? " already present\n" : " added\n");
 } catch (PDOException $e) {
     $failed++;
-    echo str_pad('slot d', 20) . " FAILED: " . $e->getMessage() . "\n";
+    jd_setup_line('jd_generations.slot d', 'FAILED: ' . $e->getMessage());
 }
 
-// jd_submissions.item_id — the curated backfill (2026-08-18).
-//
-// The Junk Drawer's curated collection (art/junk-drawer/items/) is backfilled
-// into jd_submissions/jd_generations so its responses can be rated through the
-// same jd_ratings store the turn flow writes. item_id is the join key back to
-// the filesystem AND the discriminator that keeps curated rows out of
-// turn-flow analytics.
-//
-// *** READ THIS BEFORE WRITING ANY REPORT OVER THESE TABLES ***
-// Curated rows are NOT visitor turns. They sit permanently at
-// status='generated' because the ENUM has no 'curated' member, which in the
-// turn flow is the signature of a visitor who abandoned before rating. Any
-// funnel/abandonment/spend report MUST exclude them with:
-//     WHERE s.item_id IS NULL      (turn data only)
-// Curated jd_generations rows also carry svg = NULL: the .svg file on disk is
-// canonical. Anything assuming jd_generations.svg IS NOT NULL breaks on them.
+// jd_submissions.item_id — the curated backfill (2026-08-18). item_id is the
+// join key back to the filesystem AND the discriminator that keeps curated
+// rows out of turn-flow analytics: curated rows are NOT visitor turns (see
+// db/junk-drawer-schema.md), so every turn report filters item_id IS NULL.
+$hadItemId = jd_has_column($db, 'jd_submissions', 'item_id');
+jd_ensure_column($db, 'jd_submissions', 'item_id',
+    'VARCHAR(64) NULL AFTER client_ref', 'TEXT NULL');
+if (!$hadItemId) {
+    try {
+        $db->exec($sqlite
+            ? 'CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)'
+            : 'CREATE INDEX idx_jds_item ON jd_submissions (item_id)');
+        jd_setup_line('idx_jds_item', 'added');
+    } catch (PDOException $e) {
+        $failed++;
+        jd_setup_line('idx_jds_item', 'FAILED: ' . $e->getMessage());
+    }
+}
+
+// THE SUBMISSION'S OWN FACTS (2026-09-05). Until this migration, five things
+// about a SUBMISSION were stored as `kind='flag'` rows in jd_ratings, hung
+// off whichever generation came first, with the value encoded in the note
+// ("SIZE m", "TITLE …", "RETIRE <id>"): the object's title and size, the
+// visitor's keep-it-out wish, and the curator's scrap / rerun intents. They
+// are columns on jd_submissions now — one row, one fact, no parsing — and
+// the block after this one folds every legacy flag row into them.
+jd_ensure_column($db, 'jd_submissions', 'title',
+    'VARCHAR(80) NULL AFTER status', 'TEXT NULL');
+jd_ensure_column($db, 'jd_submissions', 'size_class',
+    'VARCHAR(2) NULL AFTER title', 'TEXT NULL');
+jd_ensure_column($db, 'jd_submissions', 'suppressed',
+    'TINYINT NOT NULL DEFAULT 0 AFTER size_class', 'INTEGER NOT NULL DEFAULT 0');
+jd_ensure_column($db, 'jd_submissions', 'retire_requested_at',
+    'DATETIME NULL AFTER suppressed', 'TEXT NULL');
+jd_ensure_column($db, 'jd_submissions', 'rerun_requested_at',
+    'DATETIME NULL AFTER retire_requested_at', 'TEXT NULL');
+
+// Fold the legacy flag rows into those columns, then delete them. Idempotent:
+// a second run finds no such rows. Rows are applied in filing order, so the
+// last word wins exactly as it did when readers scanned the flags; a note
+// beginning "UN" (UNRETIRE / UNRERUN / UNSUPPRESS) was the convention for a
+// withdrawn intent and clears the column.
 try {
-    $has = false;
-    if (JD_DEV_MODE) {
-        foreach ($db->query('PRAGMA table_info(jd_submissions)') as $col) {
-            if (($col['name'] ?? '') === 'item_id') { $has = true; break; }
-        }
-        if (!$has) {
-            $db->exec('ALTER TABLE jd_submissions ADD COLUMN item_id TEXT NULL');
-            $db->exec('CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)');
-        }
+    $rows = $db->query(
+        "SELECT r.id, r.axis_id, r.note, r.rated_at, g.submission_id
+           FROM jd_ratings r
+           JOIN jd_generations g ON g.id = r.generation_id
+          WHERE r.kind = 'flag'
+            AND r.axis_id IN ('title', 'size', 'suppress', 'retire-request', 'rerun-request')
+          ORDER BY r.rated_at, r.id"
+    )->fetchAll(PDO::FETCH_ASSOC);
+    if (!$rows) {
+        jd_setup_line('flag rows → columns', 'nothing to migrate');
     } else {
-        $q = $db->query("SHOW COLUMNS FROM jd_submissions LIKE 'item_id'");
-        $has = $q !== false && $q->fetch() !== false;
-        if (!$has) {
-            $db->exec("ALTER TABLE jd_submissions ADD COLUMN item_id VARCHAR(64) NULL AFTER client_ref");
-            $db->exec("CREATE INDEX idx_jds_item ON jd_submissions (item_id)");
+        $facts = [];   // submission_id => [column => value]
+        $ids = [];
+        foreach ($rows as $r) {
+            $sid = (string) $r['submission_id'];
+            $note = (string) ($r['note'] ?? '');
+            $withdrawn = strpos($note, 'UN') === 0;
+            $ids[] = $r['id'];
+            switch ($r['axis_id']) {
+                case 'title':
+                    if (preg_match('/^TITLE (.+)$/s', $note, $m)) {
+                        $facts[$sid]['title'] = mb_substr(trim($m[1]), 0, 80);
+                    }
+                    break;
+                case 'size':
+                    if (preg_match('/^SIZE ([a-z]{1,2})$/', $note, $m)) {
+                        $facts[$sid]['size_class'] = $m[1];
+                    }
+                    break;
+                case 'suppress':
+                    $facts[$sid]['suppressed'] = $withdrawn ? 0 : 1;
+                    break;
+                case 'retire-request':
+                    $facts[$sid]['retire_requested_at'] = $withdrawn ? null : (string) $r['rated_at'];
+                    break;
+                case 'rerun-request':
+                    $facts[$sid]['rerun_requested_at'] = $withdrawn ? null : (string) $r['rated_at'];
+                    break;
+            }
+        }
+        $db->beginTransaction();
+        try {
+            foreach ($facts as $sid => $cols) {
+                $sets = [];
+                $vals = [];
+                foreach ($cols as $col => $val) {
+                    $sets[] = $col . ' = ?';
+                    $vals[] = $val;
+                }
+                $vals[] = $sid;
+                $db->prepare('UPDATE jd_submissions SET ' . implode(', ', $sets) . ' WHERE id = ?')
+                   ->execute($vals);
+            }
+            $del = $db->prepare('DELETE FROM jd_ratings WHERE id = ?');
+            foreach ($ids as $id) {
+                $del->execute([$id]);
+            }
+            $db->commit();
+            jd_setup_line('flag rows → columns',
+                count($ids) . ' flag row(s) folded into ' . count($facts) . ' submission(s) and deleted');
+        } catch (PDOException $e) {
+            $db->rollBack();
+            throw $e;
         }
     }
-    echo str_pad('item_id column', 20) . ($has ? " already present\n" : " added\n");
 } catch (PDOException $e) {
     $failed++;
-    echo str_pad('item_id column', 20) . " FAILED: " . $e->getMessage() . "\n";
+    jd_setup_line('flag rows → columns', 'FAILED: ' . $e->getMessage());
 }
 
-// jd_ranks — the full rank order (C1.3 addition, 2026-08-22).
-//
-// This one needs no ALTER: it is a whole new TABLE, so the CREATE TABLE IF
-// NOT EXISTS in the DDL above is itself the migration and is idempotent on a
-// live database. The check below exists only so the run SAYS so — the owner
-// has to know the table landed, because jd-rate.php deliberately keeps filing
-// ratings (minus the rank rows) while it is absent.
+// jd_ranks (C1.3 addition, 2026-08-22) is a whole table, so the CREATE above
+// is its own migration; this line only SAYS whether it landed, because
+// jd-rate.php deliberately keeps filing ratings (minus the rank rows) while
+// it is absent.
 try {
-    $present = false;
-    if (JD_DEV_MODE) {
-        $q = $db->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'jd_ranks'");
-        $present = $q !== false && $q->fetch() !== false;
-    } else {
-        $q = $db->query("SHOW TABLES LIKE 'jd_ranks'");
-        $present = $q !== false && $q->fetch() !== false;
-    }
-    echo str_pad('jd_ranks table', 20) . ($present ? " present\n" : " MISSING — see the failure above\n");
+    $present = jd_has_table($db, 'jd_ranks');
+    jd_setup_line('jd_ranks table', $present ? 'present' : 'MISSING — see the failure above');
     if (!$present) {
         $failed++;
     }
 } catch (PDOException $e) {
     $failed++;
-    echo str_pad('jd_ranks table', 20) . " FAILED: " . $e->getMessage() . "\n";
+    jd_setup_line('jd_ranks table', 'FAILED: ' . $e->getMessage());
 }
 
-echo "\n" . ($failed === 0 ? "All tables present. Delete this script when you are done.\n" : "$failed statement(s) failed.\n");
+echo "\n" . ($failed === 0 ? "All tables present and migrated.\n" : "$failed statement(s) failed.\n");
 
 // ---------------------------------------------------------------------------
 
-// C2, verbatim. MySQL 5.7+/MariaDB compatible: no JSON column type, no
-// AUTO_INCREMENT — every id is an app-generated ULID.
+// C2, plus the columns added since. MySQL 5.7+/MariaDB compatible: no JSON
+// column type, no AUTO_INCREMENT — every id is an app-generated ULID.
 function jd_setup_mysql_ddl(): array
 {
     return [
         'jd_submissions' => "
 CREATE TABLE IF NOT EXISTS jd_submissions (
-    id                 CHAR(26)     NOT NULL PRIMARY KEY,
-    client_ref         CHAR(36)     NOT NULL,
-    created            DATETIME     NOT NULL,
-    prompt             TEXT         NOT NULL,
-    visitor_hash       CHAR(64)     NOT NULL,
-    client             VARCHAR(16)  NOT NULL DEFAULT 'web',
-    pair_order         TINYINT      NOT NULL,
-    ai_consent_at      DATETIME     NULL,
-    ai_consent_version VARCHAR(16)  NULL,
-    status             ENUM('pending','generated','rated','failed') NOT NULL DEFAULT 'pending',
+    id                  CHAR(26)     NOT NULL PRIMARY KEY,
+    client_ref          CHAR(36)     NOT NULL,
+    item_id             VARCHAR(64)  NULL,           -- curated item this row backs; NULL = a visitor turn
+    created             DATETIME     NOT NULL,
+    prompt              TEXT         NOT NULL,
+    visitor_hash        CHAR(64)     NOT NULL,
+    client              VARCHAR(16)  NOT NULL DEFAULT 'web',
+    pair_order          TINYINT      NOT NULL,
+    ai_consent_at       DATETIME     NULL,
+    ai_consent_version  VARCHAR(16)  NULL,
+    status              ENUM('pending','generated','rated','failed') NOT NULL DEFAULT 'pending',
+    title               VARCHAR(80)  NULL,           -- the object's tag title (jd-title.php)
+    size_class          VARCHAR(2)   NULL,           -- taxonomy sizeTiers id, as filed
+    suppressed          TINYINT      NOT NULL DEFAULT 0, -- visitor: keep it out of the drawer
+    retire_requested_at DATETIME     NULL,           -- curator: scrap (NULL = not requested)
+    rerun_requested_at  DATETIME     NULL,           -- curator: rerun (NULL = not requested)
     UNIQUE KEY uq_client_ref (client_ref),
     KEY idx_visitor_created (visitor_hash, created),
-    KEY idx_created (created)
+    KEY idx_created (created),
+    KEY idx_jds_item (item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
         'jd_generations' => "
@@ -251,10 +338,9 @@ CREATE TABLE IF NOT EXISTS jd_comparisons (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
         // The full rank order of the surviving drawings (C1.3 addition,
-        // 2026-08-22): one row per ok slot, replacing "who won" with "in what
-        // order". jd_comparisons keeps being written alongside it (winner =
-        // the rank-1 generation) so the historical win series stays one
-        // continuous table.
+        // 2026-08-22): one row per ok slot. jd_comparisons keeps being written
+        // alongside it (winner = the rank-1 generation) so the historical win
+        // series stays one continuous table.
         //
         // THE COLUMN IS rank_pos, NOT rank: RANK is a reserved word in MySQL
         // 8.0 (the window function), and an unquoted `rank` column is a
@@ -287,22 +373,29 @@ function jd_setup_sqlite_ddl(): array
     return [
         'jd_submissions' => "
 CREATE TABLE IF NOT EXISTS jd_submissions (
-    id                 TEXT     NOT NULL PRIMARY KEY,
-    client_ref         TEXT     NOT NULL,
-    created            TEXT     NOT NULL,
-    prompt             TEXT     NOT NULL,
-    visitor_hash       TEXT     NOT NULL,
-    client             TEXT     NOT NULL DEFAULT 'web',
-    pair_order         INTEGER  NOT NULL,
-    ai_consent_at      TEXT     NULL,
-    ai_consent_version TEXT     NULL,
-    status             TEXT     NOT NULL DEFAULT 'pending'
-                       CHECK (status IN ('pending','generated','rated','failed')),
+    id                  TEXT     NOT NULL PRIMARY KEY,
+    client_ref          TEXT     NOT NULL,
+    item_id             TEXT     NULL,
+    created             TEXT     NOT NULL,
+    prompt              TEXT     NOT NULL,
+    visitor_hash        TEXT     NOT NULL,
+    client              TEXT     NOT NULL DEFAULT 'web',
+    pair_order          INTEGER  NOT NULL,
+    ai_consent_at       TEXT     NULL,
+    ai_consent_version  TEXT     NULL,
+    status              TEXT     NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','generated','rated','failed')),
+    title               TEXT     NULL,
+    size_class          TEXT     NULL,
+    suppressed          INTEGER  NOT NULL DEFAULT 0,
+    retire_requested_at TEXT     NULL,
+    rerun_requested_at  TEXT     NULL,
     UNIQUE (client_ref)
 )",
         'jd_submissions idx' => "
 CREATE INDEX IF NOT EXISTS idx_jds_visitor_created ON jd_submissions (visitor_hash, created);
-CREATE INDEX IF NOT EXISTS idx_jds_created ON jd_submissions (created)",
+CREATE INDEX IF NOT EXISTS idx_jds_created ON jd_submissions (created);
+CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)",
 
         'jd_generations' => "
 CREATE TABLE IF NOT EXISTS jd_generations (

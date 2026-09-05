@@ -36,6 +36,36 @@ function jd_provider_params(string $provider, string $profile = 'web'): string
     ]));
 }
 
+/**
+ * One JSON POST over cURL — the single wire call every provider request
+ * (and jd-title.php's small one) goes through. No reuse, one attempt.
+ *
+ * @return array{http_code:int, body:string, error:?string}  error is the
+ *   transport failure text, or null when a response (any status) came back
+ */
+function jd_http_post_json(string $url, array $headers, array $payload, int $timeout): array
+{
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, JD_PROVIDER_CONNECT_TIMEOUT);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
+    $response = curl_exec($ch);
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false || $curlError !== '') {
+        return ['http_code' => $httpCode, 'body' => '', 'error' => $curlError];
+    }
+    return ['http_code' => $httpCode, 'body' => (string) $response, 'error' => null];
+}
+
 // The owner's runbook adds the dedicated jd_* keys; the fallback keeps the
 // feature launchable on the existing ones.
 function jd_provider_key(string $provider): ?string
@@ -157,34 +187,23 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         }
     }
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT,
+    $wire = jd_http_post_json($url, $headers, $payload,
         $profile === 'bench' ? JD_BENCH_TIMEOUT : JD_PROVIDER_TIMEOUT);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, JD_PROVIDER_CONNECT_TIMEOUT);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    $httpCode = $wire['http_code'];
+    $response = $wire['body'];
 
-    $response = curl_exec($ch);
-    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-
-    if ($response === false || $curlError !== '') {
-        return ['ok' => false, 'http_code' => $httpCode, 'raw' => '', 'usage' => [], 'error' => 'transport: ' . $curlError];
+    if ($wire['error'] !== null) {
+        return ['ok' => false, 'http_code' => $httpCode, 'raw' => '', 'usage' => [], 'error' => 'transport: ' . $wire['error']];
     }
     if ($httpCode !== 200) {
         // The body is the error text and is kept as raw_response — failure
         // rates per model are first-class results.
-        return ['ok' => false, 'http_code' => $httpCode, 'raw' => (string) $response, 'usage' => [], 'error' => 'http_' . $httpCode];
+        return ['ok' => false, 'http_code' => $httpCode, 'raw' => $response, 'usage' => [], 'error' => 'http_' . $httpCode];
     }
 
-    $data = json_decode((string) $response, true);
+    $data = json_decode($response, true);
     if (!is_array($data)) {
-        return ['ok' => false, 'http_code' => $httpCode, 'raw' => (string) $response, 'usage' => [], 'error' => 'unparseable_response'];
+        return ['ok' => false, 'http_code' => $httpCode, 'raw' => $response, 'usage' => [], 'error' => 'unparseable_response'];
     }
 
     $usage = isset($data['usage']) && is_array($data['usage']) ? $data['usage'] : [];

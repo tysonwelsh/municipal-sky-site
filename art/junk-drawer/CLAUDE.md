@@ -21,6 +21,19 @@ data files are `.json`, art is `.svg`.
   responses (from different models) to that prompt live in this one entry.
 - `items/<...>/<model-slug>.svg` — one file per response.
 - `data.php` — read-only serving endpoint. Do not modify during content adds.
+- The page script is SIX files since 2026-09-05 (one 9,200-line
+  `junk-drawer.js` before that), loaded synchronously in this order by
+  `index.php`, each a set of IIFEs talking through `window.JD_*`, no build
+  step: `jd-core.js` (constants, the shared helpers `JD_esc` / `JD_byId` /
+  `JD_fnv1a` / `JD_xorshift` / `JD_fetchArt` / `JD_zoomLayer`, the pile
+  loader, the drag script, immersive chrome, the draw-on engine),
+  `jd-furniture.js` (turn object, instructions sheet, analytics folder),
+  `jd-record.js` (the report card), `jd-darkroom.js` (the wait indicators,
+  `window.JD_dark`), `jd-turn.js` (the turn modal + curate mode), `jd-bench.js`
+  (the `?bench` strip). `card-gallery.html` loads the same six.
+- `api/jd-config.php` — the shared runtime every endpoint requires: the
+  taxonomy accessors, the ratings fold (`jd_fold_ratings` / `jd_pick_rating`),
+  the key gate, the schema probes. Schema doc: `db/junk-drawer-schema.md`.
 - `scripts/validate-junk-drawer.py` (repo root `scripts/`) — the validator.
 - `sizing-desk.html` — owner-only curatorial harness (unlinked, noindex):it
   steps through the items previewing size tiers with the live pile math and
@@ -140,18 +153,22 @@ code change — which is the test a future rubric edit should still pass.
 
 - **`index.php?bench` — the owner's rating instrument since 2026-08-28.**
   Bench mode runs the backlog INSIDE the real turn card (`JD_turn.curate` in
-  `junk-drawer.js`): an item's existing responses are dealt blind into slots
+  `jd-turn.js`): an item's existing responses are dealt blind into slots
   on the same bench/rail/podium a visitor gets, filed per item through
-  `jd-item-rate.php` (ranks land in `jd_ranks`), names withheld until the
-  unveil. The `JD_bench` driver at the foot of `junk-drawer.js` owns only
-  the furniture around the card — key gate, queue, the dark strip at the
-  viewport foot with scrap / rerun / skip / prev. The POINT of this seating:
-  every layout/appearance change the owner requests for the rating flow is
-  made ONCE, in the shared card, and reaches visitors and backlog alike —
-  never fork a bench-only copy of the instrument. Scrap and rerun file
-  intent FLAG rows (`retire-request` / `rerun-request`, note `RETIRE <id>` /
-  `RERUN <id>`) for a session to apply later; a rerun then runs as a REAL
-  turn via `JD_turn.rerun`. Phone and desktop stay in sync through the
+  `jd-item-rate.php` as ONE batch (`{submission_id, size, responses:
+  [{generation_id, grade, axes, rank}]}`; ranks land in `jd_ranks`, the
+  size in `jd_submissions.size_class`), names withheld until the unveil.
+  The `JD_bench` driver (`jd-bench.js`) owns only the furniture around the
+  card — key gate, queue, the dark strip at the viewport foot with scrap /
+  rerun / skip / prev. The POINT of this seating: every layout/appearance
+  change the owner requests for the rating flow is made ONCE, in the shared
+  card, and reaches visitors and backlog alike — never fork a bench-only
+  copy of the instrument. Scrap and rerun are curator INTENTS, filed by
+  `jd-curate.php` into `jd_submissions.retire_requested_at` /
+  `rerun_requested_at` (until 2026-09-05 they were `flag` rows in
+  `jd_ratings`; `setup-jd-tables.php` folded those into the columns) for a
+  session to apply later (`scripts/apply-scraps.py`); a rerun then runs as a
+  REAL turn via `JD_turn.rerun`. Phone and desktop stay in sync through the
   server (the strip refetches the queue when the tab regains visibility).
 - `art/junk-drawer/rating-bench.html` — the RETIRED first instrument
   (unlinked, noindex; its own flat-dark page, keys answer by position).

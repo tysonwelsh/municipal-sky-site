@@ -37,11 +37,7 @@ require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-usage.php';   // the ONLY way a generation is priced
 
 jd_require_allowed_origin();
-
-// GET only — the jd-bench-queue.php precedent.
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
-    jd_fail(405, 'method_not_allowed', 'GET only.');
-}
+jd_require_get();
 
 // no-cache, as data.php serves the drawer itself. A max-age here would be
 // defensible (the aggregate is cheap and staleness harms nobody), but the
@@ -51,43 +47,31 @@ if (!headers_sent()) {
     header('Cache-Control: no-cache');
 }
 
-$taxonomy = jd_taxonomy();
-if ($taxonomy === null) {
-    error_log('jd-analytics: taxonomy.json could not be read at ' . JD_TAXONOMY_PATH);
-    jd_fail(500, 'server_error', 'The rubric could not be read.');
-}
+$taxonomy = jd_taxonomy_required('jd-analytics');
 
 // --- the rubric, live only -------------------------------------------------
 // Model identity resolves through taxonomy.json's registry; a model_id with no
 // entry still appears, labelled with its raw id, because a chart that silently
 // drops a model is worse than one that shows an ugly name.
 $registry = [];
-$registryOrder = [];
-foreach ($taxonomy['models'] ?? [] as $model) {
-    if (!isset($model['id'])) {
-        continue;
-    }
-    $id = (string) $model['id'];
+foreach (jd_model_registry($taxonomy) as $id => $model) {
     $registry[$id] = [
         'label'  => (string) ($model['label'] ?? $id),
         'vendor' => (string) ($model['vendor'] ?? ''),
     ];
-    $registryOrder[] = $id;
 }
+$registryOrder = array_keys($registry);
 
 // Live axes in taxonomy order, each carrying its own scale length. The 3-point
 // and 4-point axes are DIFFERENT RULERS and are never normalized together, so
 // `points` travels with every panel and the frontend has no reason to guess.
-// Defunct axes are dropped outright (jd-bench-queue.php's precedent): a rating
-// filed under a retired axis stays in the table as history and must not
-// reappear as a chart of a question nobody is asked any more.
+// Defunct axes are dropped outright: a rating filed under a retired axis stays
+// in the table as history and must not reappear as a chart of a question
+// nobody is asked any more.
 $axisDefs = [];
-foreach ($taxonomy['axes'] ?? [] as $axis) {
-    if (!isset($axis['id']) || !empty($axis['defunct'])) {
-        continue;
-    }
-    $axisDefs[(string) $axis['id']] = [
-        'label'  => (string) ($axis['label'] ?? $axis['id']),
+foreach (jd_live_axes($taxonomy) as $id => $axis) {
+    $axisDefs[$id] = [
+        'label'  => (string) ($axis['label'] ?? $id),
         'points' => count($axis['values'] ?? []),
     ];
 }
@@ -129,7 +113,7 @@ try {
             'SELECT submission_id, generation_id, rank_pos FROM jd_ranks'
         )->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        if (!jd_analytics_missing_table($e)) {
+        if (!jd_missing_table($e)) {
             throw $e;
         }
         error_log('jd-analytics: jd_ranks is missing — firsts come from '
@@ -493,21 +477,3 @@ jd_json_out(200, [
     'axes'   => $axes,
     'spend'  => $spend,
 ]);
-
-// ---------------------------------------------------------------------------
-
-// jd-rate.php's jd_missing_table(), under its own name so the two endpoints
-// stay independently includable. MySQL says SQLSTATE 42S02 / "Table ...
-// doesn't exist" (8.0: "Base table or view not found"); SQLite says "no such
-// table". Anything else re-throws — this recovers a migration that has not
-// been run yet, not a bad statement.
-function jd_analytics_missing_table(PDOException $e): bool
-{
-    if (($e->getCode() ?: '') === '42S02') {
-        return true;
-    }
-    $msg = $e->getMessage();
-    return str_contains($msg, 'no such table')
-        || str_contains($msg, "doesn't exist")
-        || str_contains($msg, 'Base table or view not found');
-}

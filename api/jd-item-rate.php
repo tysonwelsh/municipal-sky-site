@@ -1,21 +1,40 @@
 <?php
-// POST /api/jd-item-rate.php — the curator's rating of ONE curated response.
+// POST /api/jd-item-rate.php — the curator's rating of ONE ITEM, whole.
 //
-// Sibling of jd-rate.php, not a reuse of it. jd-rate.php cannot serve this:
-// it claims a submission with `UPDATE ... WHERE status <> 'rated'` (one batch
-// per submission, ever), it requires a pairwise comparison once more than one
-// generation survives (jd_comparisons is UNIQUE per submission), and it
-// releases the model reveal. Re-rating the curated corpus needs the opposite
-// of all three: repeatable writes, no comparison, no reveal.
+// Sibling of jd-rate.php, not a reuse of it. jd-rate.php claims a submission
+// once (one batch per submission, ever), requires a pairwise judgment, and
+// releases the model reveal. Re-rating the corpus needs the opposite of all
+// three: repeatable writes, no reveal, and — since 2026-09-05 — the whole
+// item in ONE transaction, so a retry after a failure converges rather than
+// half-applies. (It used to take one generation per request, which left an
+// item half-filed when a later request failed.)
+//
+// Request:
+//   {
+//     "submission_id": "<ulid>",                 the item's submission
+//     "size": "m" | null,                        optional — the item's tier
+//     "responses": [
+//       { "generation_id": "<ulid>",
+//         "grade": 4 | null,                     null = leave the grade alone
+//         "axes": { "<axis_id>": 3, ... },       only the axes sent are replaced
+//         "rank": 1 | null,                      all responses ranked, or none
+//         "note": "..." }                        optional
+//     ]
+//   }
 //
 // Writes jd_ratings rows exactly as the turn flow does — same table, same
-// columns, same taxonomy_version discipline — so curator and visitor ratings
-// aggregate together and stay separable by `client`.
+// columns, same taxonomy_version discipline — under client='bench' and the
+// curator's fixed hash, so curator and visitor ratings aggregate together and
+// stay separable by `client`. Re-rating REPLACES this curator's prior answer
+// on the same axis rather than stacking a second row; visitor rows are never
+// touched. Ranks go to jd_ranks and REPLACE whatever row stood there for the
+// drawing, whoever filed it (the bench's order is the same person's
+// considered judgment superseding a first pass). The size goes to
+// jd_submissions.size_class.
 //
-// AUTH: this endpoint writes AUTHORITATIVE ratings under the curator identity.
-// It is gated in production on jd_bench_key; without the gate anyone could
-// forge the owner's judgments. visitor_hash and client are ALWAYS assigned
-// server-side and are never read from the request body.
+// AUTH: writes AUTHORITATIVE ratings under the curator identity, gated by
+// jd_require_bench_key(). visitor_hash and client are ALWAYS assigned
+// server-side and never read from the request.
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
@@ -23,126 +42,109 @@ require_once __DIR__ . '/jd-build.php';
 
 jd_require_allowed_origin();
 jd_require_post();
-
-// --- Auth -----------------------------------------------------------------
-if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
-    // jd_bench_key if it exists, else the jd_setup_key that is already on file
-    // — this needs no new secret to work in production. Same trust level:
-    // whoever holds jd_setup_key can already create and alter these tables.
-    // Set a dedicated jd_bench_key later if the two should be separable.
-    $secrets  = jd_secrets();
-    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
-    $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? '';
-    if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
-        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
-    }
-}
+jd_require_bench_key();
 
 $body = jd_read_json_body();
 
-// --- Taxonomy -------------------------------------------------------------
-// Same discipline as jd-rate.php: a taxonomy that cannot state its version
-// must not produce rows, because a silent 0 is indistinguishable from a real
-// version once it is on disk.
-$taxonomy = jd_taxonomy();
-if ($taxonomy === null) {
-    error_log('jd-item-rate: taxonomy.json could not be read at ' . JD_TAXONOMY_PATH);
-    jd_fail(500, 'server_error', 'The rubric could not be read.');
-}
-$taxonomyVersion = (int) ($taxonomy['version'] ?? 0);
-if ($taxonomyVersion < 1) {
-    error_log('jd-item-rate: taxonomy.json has no usable version field');
-    jd_fail(500, 'server_error', 'The rubric could not be read.');
-}
-
-// Live axes only, with the ranks each one actually allows. Rating a defunct
-// axis is refused: they are kept for already-graded responses and never
-// surveyed again.
-$liveAxes = [];
-foreach ($taxonomy['axes'] ?? [] as $axis) {
-    if (!empty($axis['defunct'])) {
-        continue;
-    }
-    $ranks = [];
-    foreach ($axis['values'] ?? [] as $v) {
-        if (isset($v['rank'])) {
-            $ranks[] = (float) $v['rank'];
-        }
-    }
-    if ($ranks) {
-        $liveAxes[(string) $axis['id']] = $ranks;
-    }
-}
-$gradeRanks = [];
-foreach ($taxonomy['grades'] ?? [] as $g) {
-    if (isset($g['rank'])) {
-        $gradeRanks[] = (float) $g['rank'];
-    }
-}
+$taxonomy = jd_taxonomy_required('jd-item-rate');
+$taxonomyVersion = jd_taxonomy_version($taxonomy);
+$axisRanks = jd_axis_ranks($taxonomy);   // live axes only: a retired axis is refused
+$gradeRanks = jd_grade_ranks($taxonomy);
+$sizeTiers = jd_size_tiers($taxonomy);
 
 // --- Parse ----------------------------------------------------------------
-$generationId = $body['generation_id'] ?? null;
-if (!is_string($generationId) || !preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/', $generationId)) {
-    jd_fail(400, 'bad_request', 'A generation_id is required.');
+$submissionId = $body['submission_id'] ?? null;
+if (!jd_is_ulid($submissionId)) {
+    jd_fail(400, 'bad_request', 'A submission_id is required.');
 }
 
-$ratings = $body['ratings'] ?? [];
-if (!is_array($ratings) || !array_is_list($ratings) || !$ratings) {
-    jd_fail(400, 'bad_request', 'ratings must be a non-empty list.');
-}
-if (count($ratings) > JD_RATINGS_MAX) {
-    jd_fail(400, 'rating_invalid', 'Too many ratings in one batch.');
+$size = $body['size'] ?? null;
+if ($size !== null && (!is_string($size) || !isset($sizeTiers[$size]))) {
+    jd_fail(400, 'rating_invalid', 'That size is not one of the taxonomy tiers.');
 }
 
-$note = $body['note'] ?? null;
-if ($note !== null && (!is_string($note) || mb_strlen($note) > JD_NOTE_MAX_CHARS)) {
-    jd_fail(400, 'bad_request', 'A note must be a string of at most ' . JD_NOTE_MAX_CHARS . ' characters.');
+$responses = $body['responses'] ?? [];
+if (!is_array($responses) || !array_is_list($responses)) {
+    jd_fail(400, 'bad_request', 'responses must be a list.');
+}
+if (count($responses) > 4) {
+    jd_fail(400, 'bad_request', 'An item carries at most four responses.');
+}
+if (!$responses && $size === null) {
+    jd_fail(400, 'bad_request', 'Nothing to file.');
 }
 
-// Validate every row BEFORE opening a transaction, so a bad batch cannot
+// Validate every response BEFORE opening a transaction, so a bad batch cannot
 // half-apply.
 $clean = [];
-foreach ($ratings as $r) {
+$ranked = 0;
+$ranks = [];
+foreach ($responses as $r) {
     if (!is_array($r)) {
-        jd_fail(400, 'bad_request', 'Each rating must be an object.');
+        jd_fail(400, 'bad_request', 'Each response must be an object.');
     }
-    $kind = $r['kind'] ?? 'axis';
-    if (!in_array($kind, ['axis', 'grade', 'flag', 'rank'], true)) {
-        jd_fail(400, 'rating_invalid', 'kind must be axis, grade, flag or rank.');
+    $gid = $r['generation_id'] ?? null;
+    if (!jd_is_ulid($gid)) {
+        jd_fail(400, 'bad_request', 'Each response needs a generation_id.');
+    }
+    if (isset($clean[$gid])) {
+        jd_fail(400, 'bad_request', 'A generation was listed twice.');
     }
 
-    if ($kind === 'axis') {
-        $axisId = $r['axis_id'] ?? null;
-        if (!is_string($axisId) || !isset($liveAxes[$axisId])) {
+    $axes = [];
+    foreach ((array) ($r['axes'] ?? []) as $axisId => $value) {
+        if (!is_string($axisId) || !isset($axisRanks[$axisId])) {
             jd_fail(400, 'rating_invalid', 'Unknown or retired axis: ' . var_export($axisId, true));
         }
-        $value = $r['value'] ?? null;
-        if (!is_numeric($value) || !in_array((float) $value, $liveAxes[$axisId], true)) {
+        $rank = jd_rank_on_scale($value, $axisRanks[$axisId]);
+        if ($rank === null) {
             jd_fail(400, 'rating_invalid', "Value out of range for axis $axisId.");
         }
-        $clean[] = ['axis', $axisId, (float) $value];
-    } elseif ($kind === 'grade') {
-        $value = $r['value'] ?? null;
-        if (!is_numeric($value) || ($gradeRanks && !in_array((float) $value, $gradeRanks, true))) {
+        $axes[$axisId] = $rank;
+    }
+
+    $grade = null;
+    if (array_key_exists('grade', $r) && $r['grade'] !== null) {
+        $grade = jd_rank_on_scale($r['grade'], $gradeRanks);
+        if ($grade === null) {
             jd_fail(400, 'rating_invalid', 'Value out of range for the grade scale.');
         }
-        $clean[] = ['grade', null, (float) $value];
-    } elseif ($kind === 'rank') {
-        // The podium's answer for this one response: its position in the
-        // item's rank order (1 = best). Goes to jd_ranks, NOT jd_ratings —
-        // the kind column's enum does not know 'rank' and the turn flow
-        // already keeps rank rows in their own table. Dense-from-1 across
-        // the whole item cannot be checked one response at a time; the
-        // podium client guarantees it, and this endpoint is the curator's
-        // gated instrument, not public intake.
-        $value = $r['value'] ?? null;
-        if (!is_numeric($value) || (float) $value != (int) $value
-            || (int) $value < 1 || (int) $value > 8) {
-            jd_fail(400, 'rating_invalid', 'A rank must be an integer position from 1.');
+    }
+
+    $rank = null;
+    if (array_key_exists('rank', $r) && $r['rank'] !== null) {
+        $v = $r['rank'];
+        if (is_bool($v) || !is_numeric($v) || (float) $v != (int) $v || (int) $v < 1 || (int) $v > 4) {
+            jd_fail(400, 'rating_invalid', 'A rank must be a whole number from 1 to 4.');
         }
-        $clean[] = ['rank', null, (float) $value];
-    } else {
-        $clean[] = ['flag', is_string($r['axis_id'] ?? null) ? $r['axis_id'] : null, null];
+        $rank = (int) $v;
+        $ranked++;
+        $ranks[] = $rank;
+    }
+
+    $note = $r['note'] ?? null;
+    if ($note !== null && (!is_string($note) || mb_strlen($note) > JD_NOTE_MAX_CHARS)) {
+        jd_fail(400, 'bad_request', 'A note must be a string of at most ' . JD_NOTE_MAX_CHARS . ' characters.');
+    }
+
+    $clean[$gid] = ['axes' => $axes, 'grade' => $grade, 'rank' => $rank, 'note' => $note];
+}
+
+// The rank order is checked across the WHOLE item (which the old one-
+// generation-per-request shape could not do): every response ranked or none,
+// exactly one first, dense from 1 — the same rules jd-rate.php holds a
+// visitor's ranking to.
+if ($ranked > 0) {
+    if ($ranked !== count($clean)) {
+        jd_fail(400, 'ranking_invalid', 'Rank every response, or none of them.');
+    }
+    if (count(array_keys($ranks, 1, true)) !== 1) {
+        jd_fail(400, 'ranking_invalid', 'Exactly one response must be ranked first.');
+    }
+    $distinct = array_values(array_unique($ranks));
+    sort($distinct);
+    if ($distinct !== range(1, count($distinct))) {
+        jd_fail(400, 'ranking_invalid', 'Ranks must run 1, 2, 3 … with no gaps.');
     }
 }
 
@@ -151,61 +153,38 @@ try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // The generation must exist AND be curated. Refusing turn generations here
-    // keeps the two write paths from crossing: a visitor's turn is rated
-    // through jd-rate.php, under its one-batch-per-submission rule.
-    $stmt = $db->prepare(
-        'SELECT g.id, g.submission_id, s.item_id
-           FROM jd_generations g
-           JOIN jd_submissions s ON s.id = g.submission_id
-          WHERE g.id = ?'
-    );
-    $stmt->execute([$generationId]);
-    $gen = $stmt->fetch();
-    if ($gen === false) {
-        jd_fail(404, 'not_found', 'That drawing is not on file.');
+    $stmt = $db->prepare('SELECT id, item_id FROM jd_submissions WHERE id = ?');
+    $stmt->execute([$submissionId]);
+    $sub = $stmt->fetch();
+    if ($sub === false) {
+        jd_fail(404, 'not_found', 'That submission is not on file.');
     }
-    // TURN GENERATIONS ARE RATEABLE HERE TOO (owner call, 2026-08-30). This
-    // endpoint used to refuse them, to keep the two write paths from
-    // crossing — a visitor's turn is rated once, through jd-rate.php, under
-    // its one-batch-per-submission rule. The reassessment changed the
-    // question: 84 prompts that never became drawer items have to be
-    // re-rated at the bench, and their drawings are turn generations. The
-    // paths still do not cross, because these rows are written as
-    // client='bench' under the CURATOR's hash: a visitor's own client='web'
-    // judgment on the same drawing is left exactly where it is, and every
-    // reader that cares (the queue's prefill, jd-analytics) already splits
-    // on client. jd-rate.php's rules are untouched.
+
+    // Every generation must belong to THIS submission — a rating can never be
+    // filed against a drawing from another turn, whatever the body claims.
+    if ($clean) {
+        $stmt = $db->prepare('SELECT id FROM jd_generations WHERE submission_id = ?');
+        $stmt->execute([$submissionId]);
+        $owned = array_fill_keys($stmt->fetchAll(PDO::FETCH_COLUMN), true);
+        foreach (array_keys($clean) as $gid) {
+            if (!isset($owned[$gid])) {
+                jd_fail(400, 'bad_request', 'A generation does not belong to that submission.');
+            }
+        }
+    }
 
     $curator = jd_curator_hash();
-    $now     = gmdate('Y-m-d H:i:s');
+    $now = jd_now();
 
-    $db->beginTransaction();
-
-    // Re-rating REPLACES this rater's prior answer on the same axis rather than
-    // stacking a second row: the bench is a corrective instrument and the
-    // curator changing their mind is expected. Only rows from this client and
-    // this rater are cleared — visitor ratings are never touched.
-    $delAxis  = $db->prepare(
+    $delAxis = $db->prepare(
         "DELETE FROM jd_ratings
           WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
             AND kind = 'axis' AND axis_id = ?"
     );
-    $delOther = $db->prepare(
+    $delGrade = $db->prepare(
         "DELETE FROM jd_ratings
           WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
-            AND kind = ?"
-    );
-    // FLAGS REPLACE THEIR OWN KIND ONLY (2026-08-30). A flag used to clear
-    // every other flag on the generation, which was harmless while the only
-    // flags were retire-request and rerun-request (mutually exclusive
-    // intents, last word wins). The bench now files a SIZE flag too, and a
-    // size must not silently un-scrap an item — so a flag carrying an
-    // axis_id replaces only flags wearing that same axis_id.
-    $delFlagAxis = $db->prepare(
-        "DELETE FROM jd_ratings
-          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
-            AND kind = 'flag' AND axis_id = ?"
+            AND kind = 'grade'"
     );
     $ins = $db->prepare(
         'INSERT INTO jd_ratings
@@ -213,90 +192,67 @@ try {
              visitor_hash, client, rated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
-
-    // Rank rows live in jd_ranks (the turn flow's own rank table — the
-    // jd_ratings kind enum does not know 'rank'), replaced per generation the
-    // same way an axis answer is. The table lands via setup-jd-tables.php,
-    // which is a manual run, so a database without it yet files the rest of
-    // the batch rather than 500ing (jd-rate.php's own discipline).
-    // THE RANK ROW IS ONE PER DRAWING, WHOEVER FILED IT (fix, 2026-08-30).
-    // jd_ranks carries UNIQUE (submission_id, generation_id) — one order per
-    // drawing per turn, from when a turn was rated exactly once. The bench
-    // now re-ranks TURNS as well as curated items, so a drawing can already
-    // hold the order its own turn filed (client='web'), and clearing only
-    // the bench's rows left that one standing: the insert hit the unique key,
-    // the transaction rolled back, and the whole batch failed as
-    // 'server_error' — the owner's stuck card, and the reason a re-rated
-    // item kept coming back unfiled. The bench's order therefore REPLACES
-    // whatever was there: it is the same person's considered judgment
-    // superseding their first pass, which is the entire point of the
-    // re-rating. (The superseded value is not history worth keeping over a
-    // correction the owner deliberately made.)
-    $delRank = $db->prepare(
-        'DELETE FROM jd_ranks WHERE submission_id = ? AND generation_id = ?'
-    );
+    $delRank = $db->prepare('DELETE FROM jd_ranks WHERE submission_id = ? AND generation_id = ?');
     $insRank = $db->prepare(
         'INSERT INTO jd_ranks
             (id, submission_id, generation_id, rank_pos, visitor_hash, client, rated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
 
+    $db->beginTransaction();
     $written = 0;
-    $noteUsed = false;
-    foreach ($clean as [$kind, $axisId, $value]) {
-        if ($kind === 'rank') {
-            try {
-                $delRank->execute([$gen['submission_id'], $generationId]);
-                $insRank->execute([
-                    jd_ulid(), $gen['submission_id'], $generationId,
-                    (int) $value, $curator, 'bench', $now,
-                ]);
-                $written++;
-            } catch (PDOException $e) {
-                if (!jd_item_rate_missing_table($e)) {
-                    throw $e;
-                }
-                error_log('jd-item-rate: jd_ranks is missing — filed without the rank (run setup-jd-tables.php)');
-            }
-            continue;
-        }
-        if ($kind === 'axis') {
-            $delAxis->execute([$generationId, $curator, $axisId]);
-        } elseif ($kind === 'flag' && $axisId !== null) {
-            $delFlagAxis->execute([$generationId, $curator, $axisId]);
-        } else {
-            $delOther->execute([$generationId, $curator, $kind]);
-        }
-        $ins->execute([
-            jd_ulid(), $generationId, $kind, $axisId, $value,
-            // the note rides on the first jd_ratings row of the batch only
-            $noteUsed ? null : $note,
-            $taxonomyVersion, $curator, 'bench', $now,
-        ]);
-        $noteUsed = true;
+    $ranksFiled = true;
+
+    if ($size !== null) {
+        $db->prepare('UPDATE jd_submissions SET size_class = ? WHERE id = ?')
+           ->execute([$size, $submissionId]);
         $written++;
     }
 
-    $db->commit();
+    foreach ($clean as $gid => $c) {
+        $noteUsed = false;   // the note rides the first jd_ratings row only
+        foreach ($c['axes'] as $axisId => $value) {
+            $delAxis->execute([$gid, $curator, $axisId]);
+            $ins->execute([jd_ulid(), $gid, 'axis', $axisId, $value,
+                $noteUsed ? null : $c['note'], $taxonomyVersion, $curator, 'bench', $now]);
+            $noteUsed = true;
+            $written++;
+        }
+        if ($c['grade'] !== null) {
+            $delGrade->execute([$gid, $curator]);
+            $ins->execute([jd_ulid(), $gid, 'grade', null, $c['grade'],
+                $noteUsed ? null : $c['note'], $taxonomyVersion, $curator, 'bench', $now]);
+            $noteUsed = true;
+            $written++;
+        }
+        if ($c['rank'] !== null) {
+            // jd_ranks lands via the manual setup script; a database without
+            // it yet files the rest of the batch rather than 500ing.
+            try {
+                $delRank->execute([$submissionId, $gid]);
+                $insRank->execute([jd_ulid(), $submissionId, $gid, $c['rank'], $curator, 'bench', $now]);
+                $written++;
+            } catch (PDOException $e) {
+                if (!jd_missing_table($e)) {
+                    throw $e;
+                }
+                $ranksFiled = false;
+            }
+        }
+    }
 
-    // Report back what this response now stands at, so the bench can render
-    // truth from the server rather than trusting its own optimism.
-    $stmt = $db->prepare(
-        "SELECT kind, axis_id, value
-           FROM jd_ratings
-          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
-          ORDER BY kind, axis_id"
-    );
-    $stmt->execute([$generationId, $curator]);
+    $db->commit();
+    if (!$ranksFiled) {
+        error_log('jd-item-rate: jd_ranks is missing — filed without the ranks (run setup-jd-tables.php)');
+    }
 
     jd_json_out(200, [
         'ok'               => true,
         'build'            => jd_build_stamp()['build'],
-        'generation_id'    => $generationId,
-        'item_id'          => $gen['item_id'],
+        'submission_id'    => $submissionId,
+        'item_id'          => $sub['item_id'],
         'written'          => $written,
         'taxonomy_version' => $taxonomyVersion,
-        'current'          => $stmt->fetchAll(PDO::FETCH_ASSOC),
     ]);
 } catch (PDOException $e) {
     if (isset($db) && $db instanceof PDO && $db->inTransaction()) {
@@ -304,18 +260,4 @@ try {
     }
     error_log('jd-item-rate: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The rating could not be filed.');
-}
-
-// jd-rate.php's jd_missing_table, under its own name (the two endpoints are
-// never included together, but a shared name would be a fatal redeclare if
-// they ever were). MySQL says SQLSTATE 42S02; SQLite says "no such table".
-function jd_item_rate_missing_table(PDOException $e): bool
-{
-    if (($e->getCode() ?: '') === '42S02') {
-        return true;
-    }
-    $msg = $e->getMessage();
-    return str_contains($msg, 'no such table')
-        || str_contains($msg, "doesn't exist")
-        || str_contains($msg, 'Base table or view not found');
 }

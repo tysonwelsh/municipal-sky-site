@@ -19,7 +19,7 @@ jd_require_post();
 $body = jd_read_json_body();
 
 $submissionId = $body['submission_id'] ?? null;
-if (!is_string($submissionId) || !preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/', $submissionId)) {
+if (!jd_is_ulid($submissionId)) {
     jd_fail(400, 'bad_request', 'A submission_id is required.');
 }
 
@@ -52,20 +52,23 @@ if (is_array($ranking) && count($ranking) > JD_RATINGS_MAX) {
     jd_fail(400, 'ranking_invalid', 'Too many entries in one ranking.');
 }
 
-$taxonomy = jd_taxonomy();
-if ($taxonomy === null) {
-    error_log('jd-rate: taxonomy.json could not be read at ' . JD_TAXONOMY_PATH);
-    jd_fail(500, 'server_error', 'The rubric could not be read.');
-}
+// taxonomy_version is what makes an old rating still mean something (see
+// jd_taxonomy_required for why a versionless taxonomy is refused outright)
+$taxonomy = jd_taxonomy_required('jd-rate');
+$taxonomyVersion = jd_taxonomy_version($taxonomy);
 
-// taxonomy_version is what makes an old rating still mean something, so a
-// taxonomy that cannot say which version it is must not produce rows: a
-// silent 0 in the column would be indistinguishable from a real version.
-$taxonomyVersion = (int) ($taxonomy['version'] ?? 0);
-if ($taxonomyVersion < 1) {
-    error_log('jd-rate: taxonomy.json has no usable version field');
-    jd_fail(500, 'server_error', 'The rubric could not be read.');
-}
+// THE TURN'S OWN CARD (2026-08-30). A fully rated turn takes a place in the
+// drawer itself, so three facts the client knows reach the submission row:
+// the TITLE a model wrote for the object (jd-title.php drafts it during the
+// darkroom wait), the SIZE the visitor chose on the closing card, and whether
+// they asked to SUPPRESS it — everything recorded, nothing displayed. They
+// are columns on jd_submissions (since 2026-09-05; they rode as flag rows
+// before), written with the claim below.
+$titleIn = $body['title'] ?? null;
+$title = (is_string($titleIn) && trim($titleIn) !== '') ? mb_substr(trim($titleIn), 0, 80) : null;
+$sizeIn = $body['size'] ?? null;
+$size = (is_string($sizeIn) && isset(jd_size_tiers($taxonomy)[$sizeIn])) ? $sizeIn : null;
+$suppressed = !empty($body['suppress']) ? 1 : 0;
 
 $db = null;
 
@@ -105,8 +108,8 @@ try {
     }
 
     // --- 4. Validate every rating against the live taxonomy ---------------
-    $gradeRanks = jd_taxonomy_grade_ranks($taxonomy);
-    $axisRanks = jd_taxonomy_axis_ranks($taxonomy);
+    $gradeRanks = jd_grade_ranks($taxonomy);
+    $axisRanks = jd_axis_ranks($taxonomy);
 
     $seenGrades = [];
     $seenAxes = [];
@@ -129,7 +132,7 @@ try {
             if (array_key_exists('axis_id', $rating) && $rating['axis_id'] !== null) {
                 jd_fail(400, 'rating_invalid', 'A grade cannot carry an axis_id.');
             }
-            $value = jd_rank_on_scale(jd_numeric_value($rating['value'] ?? null), $gradeRanks);
+            $value = jd_rank_on_scale($rating['value'] ?? null, $gradeRanks);
             if ($value === null) {
                 jd_fail(400, 'rating_invalid', 'That grade is not on the scale.');
             }
@@ -147,7 +150,7 @@ try {
             if (!is_string($axisId) || !isset($axisRanks[$axisId])) {
                 jd_fail(400, 'rating_invalid', 'That axis is not open for annotation.');
             }
-            $value = jd_rank_on_scale(jd_numeric_value($rating['value'] ?? null), $axisRanks[$axisId]);
+            $value = jd_rank_on_scale($rating['value'] ?? null, $axisRanks[$axisId]);
             if ($value === null) {
                 jd_fail(400, 'rating_invalid', 'That value is not on the axis.');
             }
@@ -237,43 +240,17 @@ try {
         // (comparison null) there is no jd_comparisons unique key to make the
         // loser roll back. The guarded UPDATE is the serialization point —
         // exactly one caller can move a submission out of its current status,
-        // and everything below rides on that row lock.
-        $claim = $db->prepare("UPDATE jd_submissions SET status = 'rated' WHERE id = ? AND status <> 'rated'");
-        $claim->execute([$submissionId]);
+        // and everything below rides on that row lock. The turn's own facts
+        // (title, size, suppress — see above) land in the same statement.
+        $claim = $db->prepare(
+            "UPDATE jd_submissions
+                SET status = 'rated', title = ?, size_class = ?, suppressed = ?
+              WHERE id = ? AND status <> 'rated'"
+        );
+        $claim->execute([$title, $size, $suppressed, $submissionId]);
         if ($claim->rowCount() !== 1) {
             $db->rollBack();
             jd_fail(409, 'already_rated', 'This submission has already been rated.');
-        }
-
-        // THE TURN'S OWN CARD (2026-08-30). A fully rated turn now takes a
-        // place in the drawer itself rather than living out its life as a
-        // souvenir in one browser's storage (owner call), so two facts the
-        // client knows have to reach the record: the TITLE a model wrote for
-        // the object (jd-title.php drafts it during the darkroom wait), and
-        // whether the visitor asked to SUPPRESS it — everything recorded,
-        // nothing displayed. Both ride as flag rows on the winning slot's
-        // generation, the shape retire-request and rerun-request already use;
-        // jd_submissions has no free column and this needs no migration.
-        // $okSlots holds the surviving GENERATION ROWS (not slot letters)
-        $firstGen = $okSlots ? (string) $okSlots[0]['id'] : null;
-        if ($firstGen !== null) {
-            $titleIn = $body['title'] ?? null;
-            if (is_string($titleIn) && trim($titleIn) !== '') {
-                $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
-                    'axis_id' => 'title', 'value' => null,
-                    'note' => 'TITLE ' . mb_substr(trim($titleIn), 0, 60)];
-            }
-            $sizeIn = $body['size'] ?? null;
-            if (is_string($sizeIn) && preg_match('/^[a-z]{1,2}$/', $sizeIn)) {
-                $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
-                    'axis_id' => 'size', 'value' => null,
-                    'note' => 'SIZE ' . $sizeIn];
-            }
-            if (!empty($body['suppress'])) {
-                $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
-                    'axis_id' => 'suppress', 'value' => null,
-                    'note' => 'SUPPRESS — kept out of the drawer by the visitor'];
-            }
         }
 
         $insertRating = $db->prepare(
@@ -373,92 +350,8 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-
-/** @return float[] every grade rank on the live scale */
-function jd_taxonomy_grade_ranks(array $taxonomy): array
-{
-    $ranks = [];
-    foreach ($taxonomy['grades'] ?? [] as $grade) {
-        if (isset($grade['rank'])) {
-            $ranks[] = (float) $grade['rank'];
-        }
-    }
-    return $ranks;
-}
-
-/** @return array<string,float[]> non-defunct axis id => its value ranks */
-function jd_taxonomy_axis_ranks(array $taxonomy): array
-{
-    $axes = [];
-    foreach ($taxonomy['axes'] ?? [] as $axis) {
-        if (!isset($axis['id']) || !empty($axis['defunct'])) {
-            continue;
-        }
-        $ranks = [];
-        foreach ($axis['values'] ?? [] as $value) {
-            if (isset($value['rank'])) {
-                $ranks[] = (float) $value['rank'];
-            }
-        }
-        $axes[(string) $axis['id']] = $ranks;
-    }
-    return $axes;
-}
-
-function jd_numeric_value(mixed $value): ?float
-{
-    if (is_int($value) || is_float($value)) {
-        return (float) $value;
-    }
-    if (is_string($value) && is_numeric($value)) {
-        return (float) $value;
-    }
-    return null;
-}
-
-// Ranks are filed as decimals; match on the DECIMAL(3,1) grid the column
-// stores rather than on exact float equality, and return the TAXONOMY's rank
-// rather than the client's near-miss — what is stored has to sit exactly on
-// the published scale, or a GROUP BY value in the export splits a rank in two.
-function jd_rank_on_scale(?float $value, array $ranks): ?float
-{
-    if ($value === null) {
-        return null;
-    }
-    foreach ($ranks as $rank) {
-        if (abs($rank - $value) < 0.05) {
-            return $rank;
-        }
-    }
-    return null;
-}
-
-// MySQL says SQLSTATE 42S22 / "Unknown column"; SQLite says "has no column
-// named" (insert) or "no such column" (elsewhere). Anything else re-throws.
-function jd_missing_column(PDOException $e): bool
-{
-    if (($e->getCode() ?: '') === '42S22') {
-        return true;
-    }
-    $msg = $e->getMessage();
-    return str_contains($msg, 'no such column')
-        || str_contains($msg, 'has no column named')
-        || str_contains($msg, 'Unknown column');
-}
-
-// MySQL says SQLSTATE 42S02 / "Table ... doesn't exist" (8.0: "Base table or
-// view not found"); SQLite says "no such table". Anything else re-throws —
-// this recovers a migration that has not been run yet, not a bad statement.
-function jd_missing_table(PDOException $e): bool
-{
-    if (($e->getCode() ?: '') === '42S02') {
-        return true;
-    }
-    $msg = $e->getMessage();
-    return str_contains($msg, 'no such table')
-        || str_contains($msg, "doesn't exist")
-        || str_contains($msg, 'Base table or view not found');
-}
+// (the taxonomy rank helpers and the missing-table/column classifiers this
+// file used to carry live in jd-config.php now, shared with every endpoint)
 
 /**
  * C1.3's ranking rules, enforced here and never trusted from the client.
@@ -582,12 +475,7 @@ function jd_clean_note(mixed $note): ?string
 // failed call's usage (when one exists) is partial anyway.
 function jd_build_reveal(array $generations, array $taxonomy): array
 {
-    $registry = [];
-    foreach ($taxonomy['models'] ?? [] as $model) {
-        if (isset($model['id'])) {
-            $registry[(string) $model['id']] = $model;
-        }
-    }
+    $registry = jd_model_registry($taxonomy);
 
     $reveal = [];
     foreach ($generations as $generation) {

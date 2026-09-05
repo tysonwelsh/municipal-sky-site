@@ -84,12 +84,8 @@ function bc_uuid4(): string
 /** model id → provider slug, via taxonomy.json's model registry. */
 function bc_provider(string $modelId, array $taxonomy): string
 {
-    foreach ($taxonomy['models'] ?? [] as $m) {
-        if (($m['id'] ?? null) === $modelId) {
-            return VENDOR_PROVIDER[$m['vendor'] ?? ''] ?? 'unknown';
-        }
-    }
-    return 'unknown';
+    $m = jd_model_registry($taxonomy)[$modelId] ?? null;
+    return $m ? (VENDOR_PROVIDER[$m['vendor'] ?? ''] ?? 'unknown') : 'unknown';
 }
 
 /**
@@ -135,30 +131,12 @@ if (!$entries) {
 $db = jd_db();
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Self-migrating: this script NEEDS jd_submissions.item_id, so it adds the
-// column rather than depending on setup-jd-tables.php having been run first.
-// Same guarded idiom as the migrations there; safe to re-run.
-try {
-    $hasItemId = false;
-    if (JD_DEV_MODE) {
-        foreach ($db->query('PRAGMA table_info(jd_submissions)') as $col) {
-            if (($col['name'] ?? '') === 'item_id') { $hasItemId = true; break; }
-        }
-        if (!$hasItemId) {
-            $db->exec('ALTER TABLE jd_submissions ADD COLUMN item_id TEXT NULL');
-            $db->exec('CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)');
-        }
-    } else {
-        $q = $db->query("SHOW COLUMNS FROM jd_submissions LIKE 'item_id'");
-        $hasItemId = $q !== false && $q->fetch() !== false;
-        if (!$hasItemId) {
-            $db->exec("ALTER TABLE jd_submissions ADD COLUMN item_id VARCHAR(64) NULL AFTER client_ref");
-            $db->exec("CREATE INDEX idx_jds_item ON jd_submissions (item_id)");
-        }
-    }
-    echo $hasItemId ? "item_id column: already present\n" : "item_id column: ADDED\n";
-} catch (PDOException $e) {
-    echo "item_id column: FAILED — " . $e->getMessage() . "\n";
+// The schema is setup-jd-tables.php's job, and only its job: this script
+// used to add jd_submissions.item_id itself, which meant two files knew how
+// to alter the table. It now refuses to run against a database the setup
+// script has not brought up to date.
+if (!jd_has_column($db, 'jd_submissions', 'item_id')) {
+    echo "jd_submissions.item_id is missing — run api/setup-jd-tables.php first.\n";
     exit(1);
 }
 

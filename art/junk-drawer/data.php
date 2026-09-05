@@ -158,20 +158,22 @@ try {
     $tdb = jd_db();
     $tdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $liveAxes = [];
-    foreach ($taxonomy['axes'] ?? [] as $ax) {
-        if (empty($ax['defunct']) && isset($ax['id'])) {
-            $liveAxes[(string) $ax['id']] = true;
-        }
-    }
+    $liveAxes = jd_live_axes($taxonomy);
     $curatedPrompts = [];
     foreach ($items as $e) {
         $curatedPrompts[(string) ($e['prompt'] ?? '')] = true;
     }
 
+    // The three ways a turn is held back, read straight off its row: the
+    // visitor ticked SUPPRESS (suppressed), the owner scrapped it at the
+    // bench (retire_requested_at), or its prompt belongs to a curated item
+    // (checked below). title and size_class are the turn's own facts, filed
+    // with its ratings.
     $tsubs = $tdb->query(
-        "SELECT id, prompt, created FROM jd_submissions
+        "SELECT id, prompt, created, title, size_class
+           FROM jd_submissions
           WHERE item_id IS NULL AND status = 'rated'
+            AND suppressed = 0 AND retire_requested_at IS NULL
           ORDER BY created DESC"
     )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -188,15 +190,14 @@ try {
         $bySub = [];
         foreach ($tgens as $g) { $bySub[(string) $g['submission_id']][] = $g; }
 
-        $trates = $tdb->query(
-            "SELECT r.generation_id, r.kind, r.axis_id, r.value, r.note, r.client
+        $fold = jd_fold_ratings($tdb->query(
+            "SELECT r.generation_id, r.kind, r.axis_id, r.value, r.client, r.taxonomy_version
                FROM jd_ratings r
                JOIN jd_generations g ON g.id = r.generation_id
                JOIN jd_submissions s ON s.id = g.submission_id
-              WHERE s.item_id IS NULL AND s.status = 'rated'"
-        )->fetchAll(PDO::FETCH_ASSOC);
-        $rby = [];
-        foreach ($trates as $r) { $rby[(string) $r['generation_id']][] = $r; }
+              WHERE s.item_id IS NULL AND s.status = 'rated'
+              ORDER BY r.rated_at, r.id"
+        )->fetchAll(PDO::FETCH_ASSOC), $liveAxes);
 
         $tranks = [];
         try {
@@ -207,6 +208,7 @@ try {
                   WHERE s.item_id IS NULL AND s.status = 'rated'"
             )->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $gid = (string) $r['generation_id'];
+                // the bench's order outranks the turn's own
                 if ($r['client'] === 'bench' || !isset($tranks[$gid])) {
                     $tranks[$gid] = (int) $r['rank_pos'];
                 }
@@ -219,46 +221,25 @@ try {
             if (!$gens) { continue; }
             if (isset($curatedPrompts[(string) $sub['prompt']])) { continue; }
 
-            $responses = []; $hold = false; $title = null; $ok = true;
-            $sizeClass = null;   // the tier the turn's own size card filed
+            // the condition: every surviving drawing graded and answered on
+            // every live axis (the bench's answer outranking the turn's own),
+            // and the ranking filed when there was more than one
+            $responses = []; $ok = true;
             foreach ($gens as $g) {
                 $gid = (string) $g['id'];
-                $axes = []; $grade = null;
-                foreach ($rby[$gid] ?? [] as $r) {
-                    if ($r['kind'] === 'axis' && isset($liveAxes[(string) $r['axis_id']])) {
-                        // the bench's answer outranks the turn's own
-                        if ($r['client'] === 'bench' || !isset($axes[(string) $r['axis_id']])) {
-                            $axes[(string) $r['axis_id']] = (float) $r['value'];
-                        }
-                    } elseif ($r['kind'] === 'grade') {
-                        if ($r['client'] === 'bench' || $grade === null) {
-                            $grade = (float) $r['value'];
-                        }
-                    } elseif ($r['kind'] === 'flag') {
-                        $ax = (string) $r['axis_id'];
-                        if ($ax === 'suppress' || $ax === 'retire-request') {
-                            if (strpos((string) $r['note'], 'UN') !== 0) { $hold = true; }
-                        } elseif ($ax === 'title'
-                            && preg_match('/^TITLE (.+)$/s', (string) $r['note'], $m)) {
-                            $title = trim($m[1]);
-                        } elseif ($ax === 'size'
-                            && preg_match('/^SIZE ([a-z]{1,2})$/', (string) $r['note'], $m)) {
-                            $sizeClass = $m[1];
-                        }
-                    }
-                }
-                if (count($axes) !== count($liveAxes) || $grade === null) { $ok = false; break; }
+                $pick = jd_pick_rating($fold[$gid] ?? [], ['bench', '*']);
+                if (count($pick['axes']) !== count($liveAxes) || $pick['grade'] === null) { $ok = false; break; }
                 $rank = $tranks[$gid] ?? null;
                 if (count($gens) > 1 && $rank === null) { $ok = false; break; }
                 $responses[] = [
                     'gen_id' => $gid, 'rank' => $rank ?: 1,
                     'model' => (string) $g['model_id'],
                     'model_version' => (string) ($g['model_version'] ?? $g['model_id']),
-                    'axes' => $axes, 'grade' => $grade,
+                    'axes' => $pick['axes'], 'grade' => $pick['grade'],
                     'usage' => $g['usage_tokens'], 'provider' => (string) $g['provider'],
                 ];
             }
-            if (!$ok || $hold || !$responses) { continue; }
+            if (!$ok || !$responses) { continue; }
 
             usort($responses, fn($a, $b) => $a['rank'] <=> $b['rank']);
             $out = [];
@@ -276,28 +257,27 @@ try {
                     'url' => '/api/jd-gen-svg.php?gen=' . rawurlencode($r['gen_id']),
                     'transcript_url' => null,
                 ];
-                if (function_exists('jd_generation_cost')) {
-                    $u = $r['usage'] ? json_decode((string) $r['usage'], true) : null;
-                    $c = jd_generation_cost($r['provider'], $r['model_version'],
-                        is_array($u) ? $u : null);
-                    if ($c['tokens']) {
-                        $row['tokens'] = [
-                            'input' => $c['tokens']['input'], 'output' => $c['tokens']['output'],
-                            'total' => $c['tokens']['input'] + $c['tokens']['cache_write']
-                                + $c['tokens']['cache_read'] + $c['tokens']['output'],
-                        ];
-                    }
-                    if ($c['cost_usd'] !== null) { $row['cost_usd'] = round($c['cost_usd'], 6); }
+                $u = $r['usage'] ? json_decode((string) $r['usage'], true) : null;
+                $c = jd_generation_cost($r['provider'], $r['model_version'],
+                    is_array($u) ? $u : null);
+                if ($c['tokens']) {
+                    $row['tokens'] = [
+                        'input' => $c['tokens']['input'], 'output' => $c['tokens']['output'],
+                        'total' => $c['tokens']['input'] + $c['tokens']['cache_write']
+                            + $c['tokens']['cache_read'] + $c['tokens']['output'],
+                    ];
                 }
+                if ($c['cost_usd'] !== null) { $row['cost_usd'] = round($c['cost_usd'], 6); }
                 $out[] = $row;
             }
+            $title = trim((string) ($sub['title'] ?? ''));
             // the id IS the winning drawing's generation, which is also the id
             // the visitor's own browser gave it the moment they won it — so a
             // freshly-won item and the served one are one item, not two
             $turnItems[] = [
                 'schema' => 2,
                 'id' => $out[0]['gen_id'],
-                'title' => $title !== null && $title !== ''
+                'title' => $title !== ''
                     ? $title
                     : (mb_strlen($sub['prompt']) > 42
                         ? mb_substr($sub['prompt'], 0, 41) . '…' : (string) $sub['prompt']),
@@ -305,7 +285,7 @@ try {
                 'created' => substr((string) $sub['created'], 0, 10),
                 // the size the visitor chose on the closing card; 'm' is the
                 // fallback for turns filed before that card existed
-                'sizeClass' => $sizeClass ?: 'm',
+                'sizeClass' => $sub['size_class'] ?: 'm',
                 'primary' => 'r1',
                 'fromTurn' => true,
                 'responses' => $out,

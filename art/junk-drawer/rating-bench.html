@@ -188,12 +188,19 @@ body.excluded #banner{display:block}
   </div>
 </div>
 
+<!-- RETIRED INSTRUMENT (superseded by index.php?bench, 2026-08-28). Kept
+     until the owner says to delete. NOTE 2026-09-05: it can no longer FILE:
+     jd-item-rate.php now takes one batch per item ({submission_id, size,
+     responses: [{generation_id, grade, axes, rank}]}) and the queue payload
+     no longer carries per-response `flags` — this page still posts the old
+     one-judgment-at-a-time shape, so every save will come back rejected.
+     The queue still loads, so it remains a read-only viewer. -->
 <script>
 (function(){
 'use strict';
 
 var API_Q = '/api/jd-bench-queue.php';
-var API_R = '/api/jd-item-rate.php';
+var API_R = '/api/jd-item-rate.php';  /* contract changed 2026-09-05 — see the note above */
 var BASE  = '/art/junk-drawer/';
 var K_KEY = 'jd-bench-key';
 

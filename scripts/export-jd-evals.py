@@ -221,7 +221,7 @@ def as_stamp(value):
 
 
 def build_submission(row):
-    return {
+    out = {
         "id": as_text(row["id"]),
         "created": as_stamp(row["created"]),
         "prompt": as_text(row["prompt"]),          # byte-exact, untrimmed
@@ -233,6 +233,19 @@ def build_submission(row):
         "client_ref": as_text(row["client_ref"]),
         "pair_order": as_int(row["pair_order"]),
     }
+    # the submission's own facts (2026-09-05 migration): absent from a dump
+    # taken before it, in which case the keys are simply omitted
+    for key in ("item_id", "title", "size_class", "suppressed",
+                "retire_requested_at", "rerun_requested_at"):
+        if key in row.keys():
+            value = row[key]
+            if key == "suppressed":
+                out[key] = None if value is None else bool(int(value))
+            elif key.endswith("_at"):
+                out[key] = as_stamp(value)
+            else:
+                out[key] = as_text(value)
+    return out
 
 
 def build_generation(row, include_svg, include_raw):
@@ -336,11 +349,12 @@ def export(conn, ph, args):
         params.extend(args.status)
     clause = (" WHERE " + " AND ".join(where)) if where else ""
 
+    # SELECT * rather than a column list: the 2026-09-05 columns (title,
+    # size_class, suppressed, the two intent stamps) are exported when the
+    # database has them and silently absent from a dump taken before.
     submissions = rows(
         conn,
-        "SELECT id, client_ref, created, prompt, visitor_hash, client, pair_order,"
-        " ai_consent_at, ai_consent_version, status"
-        " FROM jd_submissions" + clause + " ORDER BY created, id",
+        "SELECT * FROM jd_submissions" + clause + " ORDER BY created, id",
         params,
     )
     if not submissions:
