@@ -70,13 +70,19 @@ canvases). Let `N` = number of seats (7, see *data* below),
   neighbours in `--ink-soft`, finished seats in `--ink-faint` (the existing
   row colour states). *Alternative (mockup 2): upright labels that ride the
   rotation but never tilt, like the numerals on a dial.*
-- **The arc.** For each seat, a track spans the label's angular width plus
-  padding: `span = (textWidth + 2·pad) / R`. The track is the dotted
-  hairline the rows use now; the fill is a 3px arc from
-  `θᵢ − span/2` to `θᵢ − span/2 + progress × span`. Gilt for the current
-  seat (the one place gold is allowed to move on this page), faint ink for
-  finished seats, whose arcs stay full as they turn away — so over a meeting
-  the rim fills up clockwise-behind, and clears when the new meeting begins.
+- **The arc.** ONE arc, fixed to the page at the crown; it does not turn
+  with the wheel. Its span is set once from the widest label plus padding
+  (`span = (widestLabel + 1.6·fontPx) / R`), so every section reads inside
+  the same bar. The track is the dotted hairline the rows use now, with
+  hairline end-stops; the fill is a 3px gilt arc from the left end to
+  `progress × span`. When a section completes the fill holds through the
+  turn and fades as the next seat rises, then the same arc fills again from
+  the left. While the hymn seat is at the crown, ticks divide the arc one
+  hymn to a part. Finished labels go faint on the rim (the rows' *done*
+  colour) and recover as the next meeting's prelude rises.
+- **Labels** are lettered round the rim glyph by glyph, each rotated to its
+  own tangent (the mockup's `curvedText`), at a size that scales with the
+  wheel: ~24px at full width, 14px on a phone.
 
 ## Data — what the engine already gives us
 
@@ -166,9 +172,9 @@ change and at quarter marks (not every frame).
 |---|---|---|---|
 | how much wheel shows | a shallow cap, sun on a far horizon | a broader cap with spokes and a hub | a disc behind a valley silhouette |
 | labels | printed on the rim, tilt with the wheel | upright, ride the wheel like dial numerals | printed on the rim, tilt with the wheel |
-| the arc | gilt band on the rim, over the label | ink fill between the rim's double rule | a corona of engraved rays growing round the crown |
+| the arc | one gilt bar fixed at the crown, refilled each section | ink fill between the rim's double rule | a corona of engraved rays growing round the crown |
 | the fixed mark | none — the crown is the mark | a gilt index at the crown | none |
-| finished seats | faint filled arcs stay on the rim | faint fills between the rules | faint rays remain |
+| finished seats | labels go faint on the rim | faint fills between the rules | faint rays remain |
 
 Open each mockup; the demo runs a shortened meeting (about 5s a section,
 1.6s a turn) and rolls into the next meeting so the wrap can be seen.

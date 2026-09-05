@@ -13,10 +13,11 @@
    The order of service is seated round the rim of one great wheel, and the
    page shows only its crown: a sun low on a far horizon. The section now
    playing is printed upright at the crown; its neighbours tilt away to
-   left and right and dip beneath the horizon rule. A gilt arc hugs the rim
-   above the crown label and fills as the section plays. When it is full the
-   wheel turns anticlockwise one seat. Finished seats keep a faint arc, so
-   the rim fills up behind the meeting and clears when the next begins.
+   left and right and dip beneath the horizon rule. ONE gilt arc is fixed to
+   the page above the crown — it does not turn with the wheel. It fills as
+   the section plays; when it is full the wheel turns anticlockwise one
+   seat beneath it, the fill fades, and the same arc fills again for the
+   section that has risen. Finished labels go faint until the next meeting.
    ========================================================================== */
 :root {
   --cover: #14382c; --cover-hi: #1a4536;
@@ -93,7 +94,7 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
 </style>
 </head>
 <body>
-<p class="mock-label">wheel mockup 1 of 3 · the horizon — a shallow crown, labels printed on the rim, a gilt arc over the crown</p>
+<p class="mock-label">wheel mockup 1 of 3 · the horizon — a shallow crown, labels lettered round the rim, one fixed arc over the crown</p>
 
 <div class="kolob-mat">
  <div class="kolob-page">
@@ -203,6 +204,11 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
   // its own angle, the whole word centred on `centreA`. Deseret letters are
   // astral code points, so the string is split with Array.from, not charAt.
   // Returns the word's length along the arc, in px, for the arc's track.
+  function lettered(txt, track) {
+    var g = Array.from(txt), w = 0;
+    for (var i = 0; i < g.length; i++) w += ctx.measureText(g[i]).width;
+    return w + track * (g.length - 1);
+  }
   function curvedText(txt, cx, cy, r, centreA, track) {
     var glyphs = Array.from(txt), widths = [], total = 0;
     for (var i = 0; i < glyphs.length; i++) { widths[i] = ctx.measureText(glyphs[i]).width; total += widths[i]; }
@@ -265,33 +271,44 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
       var txt = label(p);
       var alpha = isCur ? 1 : isDone ? 0.28 : 0.62;
       ctx.fillStyle = inkA(alpha);
-      var tw = curvedText(txt, cx, cy, R - fontPx * 1.1, a, TRACK);
+      curvedText(txt, cx, cy, R - fontPx * 1.1, a, TRACK);
 
-      // the arc: a dotted track over the label, a gilt fill that grows left → right
-      var span = (tw + fontPx * 1.4) / R;
-      var a0 = a - span / 2, a1 = a + span / 2;
-      var rr = R + 6;
-      ctx.save();
-      ctx.setLineDash([1, 3]); ctx.lineWidth = 1; ctx.strokeStyle = inkA(0.28 * (isDone ? S.fade : 1));
-      ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a1); ctx.stroke();
-      ctx.restore();
-      var prog = isCur ? S.prog : isDone ? 1 : 0;
-      if (prog > 0) {
-        ctx.lineWidth = isCur ? 3 : 2; ctx.lineCap = "butt";
-        ctx.strokeStyle = isCur ? GILT : giltA(0.38 * S.fade);
-        ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + span * prog); ctx.stroke();
-      }
-      // hymn sub-ticks: one hymn, then the next, along the same arc
-      if (p.n > 1) {
-        ctx.strokeStyle = inkA(0.4);
-        ctx.lineWidth = 1;
-        for (var k = 1; k < p.n; k++) {
-          var ta = a0 + span * k / p.n;
-          ctx.beginPath();
-          ctx.moveTo(cx + Math.cos(ta) * (rr - 3), cy + Math.sin(ta) * (rr - 3));
-          ctx.lineTo(cx + Math.cos(ta) * (rr + 3), cy + Math.sin(ta) * (rr + 3));
-          ctx.stroke();
-        }
+    }
+
+    // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
+    // Wide enough for the longest label, so every section reads inside it.
+    var widest = 0;
+    for (var m = 0; m < N; m++) widest = Math.max(widest, lettered(label(PANELS[m]), TRACK));
+    var span = (widest + fontPx * 1.6) / R, top = -Math.PI / 2, a0 = top - span / 2;
+    var rr = R + 6;
+    var curP = PANELS[S.turning ? S.turnFrom : S.cur];
+    var fill = S.turning ? 1 : S.prog;                       // holds full through the turn…
+    var fillAlpha = S.turning ? 1 - S.turnT : 1;             // …and fades as the next seat rises
+    ctx.save();
+    ctx.setLineDash([1, 3]); ctx.lineWidth = 1; ctx.strokeStyle = inkA(0.3);
+    ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + span); ctx.stroke();
+    ctx.restore();
+    // the arc's end-stops
+    ctx.strokeStyle = inkA(0.4); ctx.lineWidth = 1;
+    [a0, a0 + span].forEach(function (e) {
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(e) * (rr - 3), cy + Math.sin(e) * (rr - 3));
+      ctx.lineTo(cx + Math.cos(e) * (rr + 3), cy + Math.sin(e) * (rr + 3));
+      ctx.stroke();
+    });
+    if (fill > 0) {
+      ctx.lineWidth = 3; ctx.lineCap = "butt"; ctx.strokeStyle = giltA(fillAlpha);
+      ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + span * fill); ctx.stroke();
+    }
+    // a seat that folds several hymns: ticks divide the arc, one hymn to a part
+    if (curP.n > 1) {
+      ctx.strokeStyle = inkA(0.45); ctx.lineWidth = 1;
+      for (var k = 1; k < curP.n; k++) {
+        var ta = a0 + span * k / curP.n;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ta) * (rr - 3), cy + Math.sin(ta) * (rr - 3));
+        ctx.lineTo(cx + Math.cos(ta) * (rr + 3), cy + Math.sin(ta) * (rr + 3));
+        ctx.stroke();
       }
     }
     ctx.restore();
