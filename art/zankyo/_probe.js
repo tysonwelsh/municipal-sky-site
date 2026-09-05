@@ -375,7 +375,7 @@ function analyze(R) {
     var km = /(?:kind|活動|cycle kind)[:\s]+([^\s·,]+)/i.exec(txt); if (km) A.kinds[km[1]] = (A.kinds[km[1]] || 0) + 1;
     var sm = /seat(?:ing|ed)[:\s]+([^·]+)/i.exec(txt); if (sm) A.seatings[sm[1].trim()] = (A.seatings[sm[1].trim()] || 0) + 1;
     if (/sea change|modulat|海|retun/i.test(txt) && !/mode lottery/.test(txt)) A.seaChanges.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });
-    if (/visit(ation)?:|apparition|guest:|放送 the broadcast|祭 the festival|回線 the line|鐘 the tolling|無 mu\b/i.test(txt) && e.cat !== "ambient") A.visitations.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });
+    if (/visit(ation)?:/i.test(txt) && e.cat !== "ambient") A.visitations.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });   // the plan-time token only (one per hosting cycle); "begins"/"goes dead" are not counted
     var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1;
     if (/joint/i.test(txt)) A.joints++;
   });
