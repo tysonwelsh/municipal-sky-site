@@ -417,12 +417,17 @@ function analyze(R) {
   A.airInfo = R.airInfo;
   // ---- Phase 1 gate summary (plan §7): half the baseline density, ≥3 kinds, ≥2 seatings in 1 h ----
   var BASE_MELODIC_30 = 5075;   // baseline seed 3042 (see baseline-critic.md)
+  // ---- Phase 4: visitations per cycle (≥ 1 per 3 cycles over a long run; never two in one cycle) ----
+  var vpc = {}; A.visitations.forEach(function (v) { var ci = 0; for (var q = 0; q < A.cycles.length; q++) if (A.cycles[q].t <= v.t) ci = q; vpc[ci] = (vpc[ci] || 0) + 1; });
+  A.visitPerCycle = vpc; A.visitMaxPerCycle = Object.keys(vpc).length ? Math.max.apply(null, Object.keys(vpc).map(function (k) { return vpc[k]; })) : 0;
+  A.visitRatePer3 = A.cycles.length ? +(3 * A.visitations.length / A.cycles.length).toFixed(2) : 0;
   A.gates = {
     melodicPer30: A.melodicPer30, melodicRatioToBaseline: +(A.melodicPer30 / BASE_MELODIC_30).toFixed(2),
     zeroVoiceFrac: +A.voices[0].toFixed(3), joThreePlus: A.voicesByPhase.jo ? +A.voicesByPhase.jo["3+"].toFixed(3) : null,
     gapsOver10s: A.silence.over10s, kinds: Object.keys(A.kinds).length, seatings: Object.keys(A.seatings).length,
     seaChanges: A.seaChanges.length, visitations: A.visitations.length, cycles: A.cycles.length, kirus: A.kirus.length,
     nodesPerMin: Math.round(R.counts.nodes / (runS / 60)), peakSources: R.counts.peakSources,
+    visitPer3Cycles: A.visitRatePer3, visitMaxPerCycle: A.visitMaxPerCycle,
     tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.tech = {
@@ -488,7 +493,7 @@ function report(A) {
   line("--- form ---");
   line("  cycles " + A.cycles.length + " · KIRUs " + A.kirus.length + " · kinds " + JSON.stringify(A.kinds) + " · seatings " + JSON.stringify(A.seatings) + " · scenes " + JSON.stringify(A.scenes) + " · joints " + A.joints);
   line("  sea changes " + A.seaChanges.length + (A.seaChanges.length ? ": " + A.seaChanges.slice(0, 6).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
-  line("  visitations " + A.visitations.length + (A.visitations.length ? ": " + A.visitations.slice(0, 8).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
+  line("  visitations " + A.visitations.length + " (" + A.visitRatePer3 + " per 3 cycles · max " + A.visitMaxPerCycle + " in one cycle)" + (A.visitations.length ? ": " + A.visitations.slice(0, 8).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
   line("  KIRUs: " + A.kirus.map(function (k) { return k.t + "s " + k.detail; }).join(" | "));
   line("  motif: " + JSON.stringify(A.motif));
   line("  tonic trace: " + A.tonicTrace.map(function (x) { return x.t + "s " + x.hz + "Hz"; }).join(" → "));
