@@ -143,8 +143,17 @@ window.ZankyoAudio = (function () {
   // The tonic keeps to one register band (G2 … G3): a fourth up that would
   // leave it becomes a fifth down (the koto's retuning between pieces —
   // same pitch class, the strings loosened instead of tightened).
-  var TONIC_LO = 98, TONIC_HI = 196;
+  var TONIC_LO = 100, TONIC_HI = 200;         // not on a scale-tone edge (G3 = 195.998 would wobble across 196)
   function foldTonic(hz) { while (hz >= TONIC_HI) hz /= 2; while (hz < TONIC_LO) hz *= 2; return hz; }
+  // THE SUB REGISTER folds on its own: the drone's saw roots live in 64–128 Hz
+  // whatever the tonic (73.4 at D3, 98 at G2 and G3, 103.8 at A♭2), the fifth
+  // folds into the same band, the sub sine is root/2 (never below 32 Hz —
+  // at the low tonics degFreq(0, −2) went subsonic and ate the compressor's
+  // headroom; critic, Phase 2). Geiger hum, bonshō and the audition drone
+  // read the same helper.
+  function foldInto(hz, lo, hi) { while (hz >= hi) hz /= 2; while (hz < lo) hz *= 2; return hz; }
+  function subRoot() { return foldInto(field.tonicHz, 64, 128); }
+  function subFifth() { return foldInto(subRoot() * Math.pow(2, 7 / 12), 64, 128); }
   // setMode(name, extra, t, tonicHz): one atomic modulate() of mode and
   // (optionally) tonic — sounding notes keep their Hz (the straddle lesson).
   function setMode(name, extra, t, tonicHz) {
@@ -587,10 +596,11 @@ window.ZankyoAudio = (function () {
   function drawSeating(rng, kind) {
     var named = rng.pickW([["free", 6.5], ["shakuhachi alone", 1.2], ["danmono", 1.0], ["taiko-led", 0.8],
       ["dead station", (kind === "drift" || kind === "silence") ? 1.1 : 0.45]]);
+    if (cyc.n < 0 && named === "dead station") named = "free";   // the first cycle must show the bodies before their absence can mean anything
     var s = { shakuhachi: rng.chance(0.78), koto: rng.chance(0.75), shamisen: rng.chance(0.72), taiko: rng.chance(0.75), sho: rng.chance(0.8), entry: {}, named: named };
     if (named === "shakuhachi alone") { s.shakuhachi = true; s.entry.koto = "ha"; s.entry.shamisen = "ha"; }
     else if (named === "danmono") { s.koto = true; s.shamisen = false; }
-    else if (named === "taiko-led") { s.taiko = true; s.shakuhachi = true; s.entry.shakuhachi = "reprise"; }
+    else if (named === "taiko-led") { s.taiko = true; s.shakuhachi = true; s.entry.shakuhachi = "reprise"; if (!s.koto && !s.shamisen) s.koto = true; }   // the plucked voices carry a taiko-led cycle
     else if (named === "dead station") { s.shakuhachi = s.koto = s.shamisen = s.taiko = false; s.sho = true; }   // dead, not switched off: the shō is a drone here
     if (kind === "rite") s.sho = true;
     if (kind === "storm") s.taiko = true;
@@ -937,21 +947,21 @@ window.ZankyoAudio = (function () {
     var bornSerial = 0, bornNames = {};
     function birth() {
       var R = S.motif, n = R.rint(4, 7), notes = [], cls = R.pickW([[0, 3], [3, 2], [1, 1], [2, 1], [4, 1]]);
-      var deg = scaleIndexOf(cls) + 5 * R.rint(0, 1);       // absolute degree index in the mid band
+      var N = field.size, deg = scaleIndexOf(cls) + N * R.rint(0, 1);   // absolute degree index in the mid band
       for (var i = 0; i < n; i++) {
         var last = i === n - 1;
-        var row = BORN_ROWS[((cls % 5) + 5) % 5];
+        var row = BORN_ROWS[((cls % N) + N) % N] || BORN_ROWS[0];
         var pool = [];
-        for (var c = 0; c < 5; c++) pool.push([c, row[c] * (last && c === 0 ? 3 : 1)]);   // descents end on the tonic
+        for (var c = 0; c < N; c++) pool.push([c, (row[c] || 1) * (last && c === 0 ? 3 : 1)]);   // descents end on the tonic
         var next = R.pickW(pool);
         var up = R.next() < 0.5, dirDraw = R.next();
         // tendency rules
         if (cls === 1 && next === 0) up = false;                                   // the second falls
         else if (cls === 3 && next === 0) up = dirDraw < 0.6;                      // the fifth leaps to the octave
         else if (cls === 4 && next === 3) up = false;                              // the sixth sinks
-        var cur = ((deg % 5) + 5) % 5, delta = ((next - cur) % 5 + 5) % 5;         // steps up to reach `next`
-        deg = up ? deg + delta : deg - (5 - delta) % 5;
-        if (delta === 0) deg += up ? 5 : -5;                                       // same class → the octave
+        var cur = ((deg % N) + N) % N, delta = ((next - cur) % N + N) % N;         // steps up to reach `next`
+        deg = up ? deg + delta : deg - (N - delta) % N;
+        if (delta === 0) deg += up ? N : -N;                                       // same class → the octave
         deg = foldDeg(deg);
         cls = next;
         var dur = R.pickW(BORN_DURS) * (last ? 1.6 : 1);
@@ -1288,6 +1298,7 @@ window.ZankyoAudio = (function () {
       var sub1;
       if (inherit && inherit.gen > 0) {
         sub1 = clone(inherit); sub1.name = NAMES[1]; sub1.chain = inherit.chain.concat(["inherit"]);
+        sub1.gen = Math.min(inherit.gen, 3);            // room to develop: at its old g8–9 the line renewed to itself and froze
         names.push("inherited: " + (inherit.src || inherit.name) + "·g" + inherit.gen);
       } else { sub1 = fromSeed(picks[1], NAMES[1]); names.push(SEED_PHRASES[picks[1]].name); }
       var born = birth(), bornMotif = { name: NAMES[2], gen: 0, chain: [], notes: born.notes, src: born.name };
@@ -1377,7 +1388,7 @@ window.ZankyoAudio = (function () {
     lp.connect(bus); bus.connect(out);
 
     // tonic + fifth, detuned sawtooth pairs (grit comes from the distortion bus)
-    var roots = [degFreq(0, -1), degFreq(3, -1)];
+    var roots = [subRoot(), subFifth()];
     for (var k = 0; k < roots.length; k++) {
       [-7, 7].forEach(function (det) {
         var o = c.createOscillator(), g = c.createGain();
@@ -1388,7 +1399,7 @@ window.ZankyoAudio = (function () {
     }
     if (subAmt > 0.01) {
       var so = c.createOscillator(), sg = c.createGain();
-      so.type = "sine"; so.frequency.setValueAtTime(degFreq(0, -2), now);
+      so.type = "sine"; so.frequency.setValueAtTime(subRoot() / 2, now);
       so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08 * subAmt, now);
       so.start(now); so.stop(now + dur + 0.3);
     }
@@ -1875,7 +1886,7 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   function ambBonsho(t) {                          // temple bell (bonshō) — deep, long, inharmonic
     var out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3);
-    var base = degFreq(0, -1) * (S.ambient.next() < 0.5 ? 1 : Math.pow(2, 7 / 12));
+    var base = S.ambient.next() < 0.5 ? subRoot() : subFifth();
     var partials = [{ m: 1, a: 0.08, d: 6 }, { m: 2.7, a: 0.04, d: 4 }, { m: 5.2, a: 0.02, d: 2.4 }, { m: 8.1, a: 0.012, d: 1.5 }];
     partials.forEach(function (p) {
       var o = ctx.createOscillator(), g = ctx.createGain();
@@ -1980,7 +1991,7 @@ window.ZankyoAudio = (function () {
     if (sharedNoiseBuf) { var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2000, t); var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out); ng.gain.setValueAtTime(0.02, t); ng.gain.exponentialRampToValueAtTime(0.0001, tt); nz.start(t, S.ambient.next() * 10); nz.stop(tt + 0.1); }
   }
   function ambGeigerHum(t) {                        // dying machinery — sagging drone + thinning radiation clicks
-    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3), dur = 3 + S.ambient.next() * 3, base = degFreq(0, -2);
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3), dur = 3 + S.ambient.next() * 3, base = subRoot() / 2;
     [-8, 8].forEach(function (det) {
       var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(base, t); o.detune.setValueAtTime(det, t); o.frequency.exponentialRampToValueAtTime(base * 0.94, t + dur);
       var g = c.createGain(); o.connect(g); g.connect(out);
@@ -2143,10 +2154,10 @@ window.ZankyoAudio = (function () {
     var dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("subDrone", "cutoff", 220), t);
     var bus = ctx.createGain(); lp.connect(bus); bus.connect(lg("subDrone"));
     bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(1, t + 0.8); bus.gain.setValueAtTime(1, t + dur - 1); bus.gain.linearRampToValueAtTime(0, t + dur);
-    [degFreq(0, -1), degFreq(3, -1)].forEach(function (rf) {
+    [subRoot(), subFifth()].forEach(function (rf) {
       [-7, 7].forEach(function (det) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(rf, t); o.detune.setValueAtTime(det, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.05, t); o.start(t); o.stop(t + dur + 0.1); });
     });
-    var so = ctx.createOscillator(), sg = ctx.createGain(); so.type = "sine"; so.frequency.setValueAtTime(degFreq(0, -2), t); so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08, t); so.start(t); so.stop(t + dur + 0.1);
+    var so = ctx.createOscillator(), sg = ctx.createGain(); so.type = "sine"; so.frequency.setValueAtTime(subRoot() / 2, t); so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08, t); so.start(t); so.stop(t + dur + 0.1);
   }
   function sampleSho(t) {
     var dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("sho", "cutoff", 1400), t);
