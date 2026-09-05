@@ -20,8 +20,8 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
   --audio-only           source is audio (or use its audio only); a picture is generated
   --picture static|line|wave
                          generated picture for --audio-only (default line):
-                         static = slow noise field, line = one line of light (Paik's
-                         Zen for TV), wave = the line drawn by the audio
+                         static = a slow dark snow field, line = one line of light (Paik's
+                         Zen for TV), wave = a band of light that breathes with the audio
   --tier A|B             A = free to use (default), B = copyrighted (≤ 6 windows)
   --title "…"  --year N  --license "PD|CC-BY|CC-BY-NC|unknown|…"  (default unknown)
   --tone voice|music|noise|sung|tone   (default voice)
@@ -272,14 +272,16 @@ if [ -n "$LN" ] && ! [[ "$LN" == *"measured_I=-inf"* ]]; then LNF="loudnorm=I=-1
 
 if [ "$AUDIO_ONLY" = 1 ]; then
   case "$PICTURE" in
-    static) PIC="nullsrc=s=192x144:r=12,geq=lum='random(1)*255':cb=128:cr=128,tmix=frames=3,format=yuv420p" ;;
+    # a slow dark snow field: luma-only noise at 96x72, 6-frame persistence, scaled up
+    # (full-frame random() noise does not compress — 500 kbps; this lands near 40 kbps)
+    static) PIC="color=c=0x383838:s=96x72:r=12,noise=c0s=60:c0f=t+u,tmix=frames=6,scale=192:144:flags=bilinear,format=yuv420p" ;;
     line)   PIC="nullsrc=s=192x144:r=12,geq=lum='if(lt(abs(Y-72),1),200+55*random(1),if(lt(abs(Y-72),3),40+10*random(1),8))':cb=128:cr=128,format=yuv420p" ;;
     wave)   PIC="" ;;
   esac
   log "encoding reel with a generated '$PICTURE' picture"
   if [ "$PICTURE" = wave ]; then
     ffmpeg -hide_banner -nostdin -loglevel error -y -f concat -safe 0 -i "$TMP/list.txt" \
-      -filter_complex "[0:a]$LNF,asplit[a1][a2];[a2]showwaves=s=192x144:mode=p2p:rate=12:colors=0xd8d8d8:scale=lin,format=yuv420p[v]" \
+      -filter_complex "[0:a]$LNF,asplit[a1][a2];[a2]showwaves=s=96x72:mode=cline:rate=12:colors=0xc8c8c8:scale=sqrt,tmix=frames=2,scale=192:144:flags=bilinear,format=yuv420p[v]" \
       -map "[v]" -map "[a1]" \
       -c:v libx264 -preset slow -crf 30 -g 12 -keyint_min 12 -sc_threshold 0 -pix_fmt yuv420p \
       -c:a aac -b:a 32k -ac 1 -ar 48000 -movflags +faststart "$OUT"
