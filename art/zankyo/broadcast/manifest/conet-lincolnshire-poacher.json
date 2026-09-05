@@ -1,0 +1,19 @@
+{
+  "id": "conet-lincolnshire-poacher",
+  "title": "The Lincolnshire Poacher (numbers station, English)",
+  "year": 1997,
+  "src": "https://archive.org/download/ird059/tcp_d1_06_the_lincolnshire_poacher_mi5_irdial.mp3",
+  "license": "Irdial FMP (non-commercial)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 73.75,
+  "bytes": 353573,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[0.0, 12], [56.0, 68], [110.0, 122], [170.0, 182], [220.0, 232], [262.0, 274]],
+  "notes": "Conet Project d1-06, Irdial-Discs; the folk tune on a synth, then an English woman reading five-figure groups twice each; attributed to MI6, Cyprus",
+  "takedown": false
+}
