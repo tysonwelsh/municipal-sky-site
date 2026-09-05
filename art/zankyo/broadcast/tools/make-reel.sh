@@ -113,6 +113,14 @@ else
     log "downloading with yt-dlp → $SRC_DIR/$ID.<ext>"
     if ! "$YTDLP" --no-playlist -I 1 --no-mtime --no-warnings -f "$FMT" \
          -o "$SRC_DIR/$ID.%(ext)s" "$INPUT" >&2; then
+      # YouTube sometimes 403s the split DASH streams; a single progressive file usually still works
+      log "yt-dlp failed; retrying with a single progressive format"
+      rm -f "$SRC_DIR/$ID".*.part "$SRC_DIR/$ID".*.ytdl
+      if [ "$AUDIO_ONLY" = 1 ]; then FMT2="b[height<=360]/b"; else FMT2="b[height<=480]/b"; fi
+      "$YTDLP" --no-playlist -I 1 --no-mtime --no-warnings -f "$FMT2" \
+         -o "$SRC_DIR/$ID.%(ext)s" "$INPUT" >&2 || RETRY_FAILED=1
+    fi
+    if [ "${RETRY_FAILED:-0}" = 1 ]; then
       case "$INPUT" in
         *.mp4|*.mkv|*.webm|*.mov|*.avi|*.mpg|*.mpeg|*.ogv|*.mp3|*.m4a|*.wav|*.flac|*.ogg|*.oga|*.aac)
           log "yt-dlp failed; fetching the file directly with curl"
@@ -180,7 +188,7 @@ else
     log "analyzing (scene changes, black, loudness) … this is the slow step"
     FC=""; MAPS=()
     if [ "$AUDIO_ONLY" = 0 ]; then
-      FC="[0:v]scale=160:120,split[sa][sb];[sa]select='gt(scene,0.35)',showinfo[vo];[sb]blackdetect=d=0.5:pix_th=0.10[bo]"
+      FC="[0:v]scale=160:120,split[sa][sb];[sa]scdet=threshold=14[vo];[sb]blackdetect=d=0.5:pix_th=0.10[bo]"
       MAPS+=(-map "[vo]" -map "[bo]")
     fi
     if [ "$HAS_A" = 1 ]; then

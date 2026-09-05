@@ -17,7 +17,11 @@ def main():
     audio_only = "--audio-only" in sys.argv[5:]
     text = open(log, errors="replace").read()
 
-    scenes = [float(m) for m in re.findall(r"showinfo.*?pts_time:\s*([\d.]+)", text)]
+    # scdet (threshold 14 ≈ select scene>0.35) passes every frame, so the analysis stream never
+    # comes up empty on a source with no hard cuts; older cached logs used select+showinfo.
+    scenes = [float(m) for m in re.findall(r"lavfi\.scd\.time:\s*([\d.]+)", text)]
+    if not scenes:
+        scenes = [float(m) for m in re.findall(r"showinfo.*?pts_time:\s*([\d.]+)", text)]
     blacks = [(float(a), float(b)) for a, b in
               re.findall(r"black_start:\s*([\d.]+)\s+black_end:\s*([\d.]+)", text)]
     loud = []
