@@ -1,0 +1,19 @@
+{
+  "id": "tokyo-station-1993",
+  "title": "Tokyo Station, Yamanote and Keihin-Tohoku platforms, 16 May 1993",
+  "year": 1993,
+  "src": "https://www.youtube.com/watch?v=CJtbh9CHyb0",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "tone",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 73.92,
+  "bytes": 355887,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[0.0, 12], [60.0, 72], [204.0, 216], [384.0, 396], [564.0, 576], [756.0, 768]],
+  "notes": "mono cassette recording by 足元の丸印: departure melodies, automatic announcements, doors, trains; from about 3:45 platforms 3 and 4",
+  "takedown": false
+}
