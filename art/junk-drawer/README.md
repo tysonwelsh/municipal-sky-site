@@ -60,6 +60,19 @@ great on a phone. See PLAN-MOBILE.md.
 
 ## Status
 
+**Consolidation pass (2026-09-05, v0.9.105)**: no visible change. The page
+script was split at its IIFE seams into six files (`jd-core.js`,
+`jd-furniture.js`, `jd-record.js`, `jd-darkroom.js`, `jd-turn.js`,
+`jd-bench.js`) with the helpers each copy had grown (escaping, the seeded
+RNG, the artwork fetch, the enlargement layer) defined once in `jd-core.js`;
+the API endpoints share their taxonomy, key-gate, schema-probe and
+ratings-fold code through `api/jd-config.php`; and the five submission
+facts that had been living as encoded `flag` rows in `jd_ratings` (title,
+size, keep-it-out, scrap, rerun) became columns on `jd_submissions`, with
+`api/setup-jd-tables.php` folding the old rows in. Schema and runbook:
+`db/junk-drawer-schema.md`. **Run the setup script right after deploying
+this.**
+
 **Live drawer + visitor turns (2026-08-09, v0.5.0)**: the pile, drag /
 dig / pick gestures, specimen tags, and report cards shipped through
 v0.4.x (PLAN-FRONTEND / PLAN-MOBILE / PLAN-RECORD). The "TAKE A TURN"

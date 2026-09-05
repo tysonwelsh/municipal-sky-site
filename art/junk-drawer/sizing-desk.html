@@ -11,7 +11,7 @@
   Step through every drawer item one at a time and try it at any of the five
   size tiers (plus the fine dial). The preview renders with EXACTLY the pile
   loader's math — area normalization, the 1.8× elongation clamp, and the same
-  id-hashed jitter (junk-drawer.js SIZE) — so what reads right here reads
+  id-hashed jitter (jd-core.js SIZE) — so what reads right here reads
   right in the drawer. Reference items (small / medium / large by default)
   stand beside the current item at their own effective sizes for comparison.
 
@@ -160,7 +160,7 @@ below and hand it to a filing session.</p>
 (function () {
   'use strict';
 
-  /* mirror of junk-drawer.js SIZE — keep these three in step by hand */
+  /* mirror of jd-core.js SIZE — keep these three in step by hand */
   var ELONG = 1.8, JIT = 0.09;
   function jitterOf(id) {
     var s = String(id), h = 5381, i;

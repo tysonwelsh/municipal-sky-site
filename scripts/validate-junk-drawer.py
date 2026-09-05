@@ -317,13 +317,13 @@ def validate_svg(path):
 
 
 # Long-side cap of the pile loader's area normalization — keep in step with
-# SIZE.elong in art/junk-drawer/junk-drawer.js.
+# SIZE.elong in art/junk-drawer/jd-core.js.
 SIZE_ELONG = 1.8
 
 
 def size_report():
     """Print the drawer footprint every item renders at, per the pile
-    loader's area-normalization rule (SIZE in junk-drawer.js): the tier box
+    loader's area-normalization rule (SIZE in jd-core.js): the tier box
     is an AREA class — w·h = (box × sizeScale)² — with the artwork's aspect
     deciding the proportions and the long side capped at box × SIZE_ELONG
     (before sizeScale). The loader's id-hashed jitter (±9% linear) is

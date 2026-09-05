@@ -1,0 +1,2342 @@
+/* ============================================================================
+   THE JUNK DRAWER — jd-core.js
+   The drawer is six scripts, loaded in this order by index.php (each one a
+   set of IIFEs talking through window.JD_* — no build step, no modules):
+     jd-core.js       this file: file-scope constants, the shared helpers
+                      (JD_esc, JD_byId, the seeded RNG, JD_fetchArt,
+                      JD_zoomLayer), the pile loader + field notes, the
+                      drag/rotate gesture script, the immersive chrome and
+                      the draw-on engine
+     jd-furniture.js  the three pieces of furniture in the pile: the turn
+                      object (PUSH FOR JUNK), the instructions sheet, the
+                      analytics folder
+     jd-record.js     the report card
+     jd-darkroom.js   the wait indicators the turn's darkroom deals per turn
+     jd-turn.js       TAKE A TURN — the modal and its state machine, curate
+                      mode included
+     jd-bench.js      the curator's bench strip (?bench)
+   Until 2026-09-05 all of it was one 9,200-line junk-drawer.js; the split
+   is at the IIFE seams and changes no behaviour.
+
+   This file's two responsibilities, promoted from mockups/mockup-2-frame-kit
+   (the proven Phase 0 build; plans: PLAN-FRONTEND §3/§6, PLAN-MOBILE §§1–3):
+     1. the pile loader — one request to data.php ({taxonomy, items[]},
+        PLAN-BACKEND §7), each item's PRIMARY response SVG inlined into a
+        .jd-item wrapper with its entry.json placement applied inline. The
+        same payload also renders the field-notes sections in #notes: the
+        wall-label count line and the taxonomy-driven grade legend — zero
+        hardcoded rubric strings anywhere.
+     2. the drag/rotate gesture script — Pointer Events, one code path:
+        hold-to-grip on touch, transform-only drag motion, wheel / [ ] keys /
+        second-finger twist rotation, silhouette-accurate hit-testing.
+   Vanilla JS, no build step. The Safari/Blink notes inline are load-bearing,
+   not commentary — do not regress them.
+   ========================================================================== */
+
+/* ---- named constants, storage, and shims (contract C5.1/C5.3/C5.6/C5.7) ---
+   File scope, above every module below, so all of them share one copy. This
+   is the whole list of things the packaged-app stage has to re-point: an API
+   base, a client name, the consent record, and the visible strings. */
+
+/* API base; '' = same origin. EVERY fetch in this file is JD_API + an
+   ABSOLUTE path — nothing may assume the page and the API share a directory
+   (APP constraint 1). Item urls arrive from data.php already root-absolute,
+   so they are prefixed at their call sites too. */
+var JD_API = '';
+
+/* sent in every POST body and validated server-side against a small enum;
+   never sniffed from User-Agent, which in a webview reads as web forever */
+var JD_CLIENT = 'web';
+
+/* The third-party-AI disclosure, recorded per submission. This copy is
+   canonical: privacy.php §4 quotes it verbatim, and drift between the two is
+   a blocking review finding (APP §4.5). The prompt card stopped PRINTING
+   these words in round 17 (owner call, 2026-08-14: privacy.php already
+   carries the full disclosure live, so the card links to it instead of
+   repeating it) — JD_CONSENT.text/.version stay exactly as filed regardless,
+   because they are still what gets recorded against the visitor's turn. */
+var JD_CONSENT = {
+  version: 'jd-consent-4',
+  text: 'When you take a turn, the words you type are sent to four AI ' +
+    'providers — Anthropic (Claude), OpenAI (GPT), Moonshot AI (Kimi), and ' +
+    'Google (Gemini) — which each draw an object from them. Your prompt, ' +
+    'the drawings that come back, your ratings, and an anonymous ' +
+    'daily-rotating visitor code are stored so the results can be studied ' +
+    'and the feature kept honest. Nothing you type here is shown to other ' +
+    'visitors.',
+  check: 'I understand — send my words to Anthropic, OpenAI, Moonshot AI and Google'
+};
+
+/* one slot per pool chair — every model draws every turn (four chairs,
+   2026-08-14; the brief draw-3-of-4 rotation lasted a few hours before the
+   owner called it: no sit-outs). The generating lines, the plates, the
+   rail and the call all read this list. */
+var JD_SLOTS = ['a', 'b', 'c', 'd'];
+
+var JD_STRINGS = {
+  /* the owner's pick, mockup-9a-labels tasting, 2026-08-11 — it is also the
+     wording PRINTED ON the button's lens in turn-object.svg: change the two
+     together or the accessible name and the artwork disagree */
+  turnButton: 'PUSH FOR JUNK',
+  visitorTag: 'YOURS'          /* the paper tag on an item the visitor won */
+};
+
+/* One storage accessor (APP constraint 7) — sessionStorage, JSON both ways,
+   every call wrapped: private mode throws on write and a null read is the
+   contract, not an error. Keys must be 'jd-' prefixed; anything else is
+   refused rather than silently creating a second namespace. Session scope is
+   deliberate (the won items are session-local by design, master plan §4.5);
+   it is also the one place the app swaps in Capacitor Preferences. */
+var JD_store = (function () {
+  function ours(key) { return typeof key === 'string' && key.indexOf('jd-') === 0; }
+  return {
+    get: function (key) {
+      if (!ours(key)) return null;
+      try {
+        var raw = sessionStorage.getItem(key);
+        return raw == null ? null : JSON.parse(raw);
+      } catch (e) { return null; }
+    },
+    set: function (key, value) {
+      if (!ours(key)) return false;
+      try { sessionStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch (e) { return false; }
+    },
+    remove: function (key) {
+      if (!ours(key)) return false;
+      try { sessionStorage.removeItem(key); return true; } catch (e) { return false; }
+    }
+  };
+})();
+
+/* the haptics shim (APP constraint 8): one site to route through, silent
+   where the API is absent (iOS Safari has no vibrate at all) */
+function JD_haptic(kind) {
+  var ms = { grip: 8, settle: 12, drop: 16, select: 8 }[kind];
+  if (!ms || !navigator.vibrate) return;
+  try { navigator.vibrate(ms); } catch (e) {}
+}
+
+/* anonymous usage events, fire-and-forget. Every caller on the page goes
+   through this one function so the endpoint has exactly one URL. */
+function JD_track(type, label) {
+  try {
+    fetch(JD_API + '/api/page-event-tracking.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: 'junk-drawer', event_type: type, label: label || null })
+    }).catch(function () {});
+  } catch (e) {}
+}
+
+/* is a modal layer holding the page? The pile's dismissal paths (pointerdown,
+   Escape, resize) stand down while one is up, so Esc peels the top layer and
+   never reaches through it to the selection underneath. */
+function JD_layerOpen() {
+  return !!((window.JD_record && window.JD_record.isOpen()) ||
+            (window.JD_turn && window.JD_turn.isOpen()) ||
+            /* the analytics folder is the third one (2026-08-28) */
+            (window.JD_folder && window.JD_folder.isOpen()));
+}
+/* ---- shared helpers ------------------------------------------------------
+   Every module below (and in the other five files) used to carry its own
+   copy of these. One definition each, at file scope, so a fix lands
+   everywhere at once. */
+
+/* HTML-escape for every string interpolated into markup: item titles and
+   visitor prompts are not repo-controlled, and model/axis labels go into
+   both markup and SVG attribute values. */
+function JD_esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* the first entry of a list whose .id matches, or null */
+function JD_byId(list, id) {
+  list = list || [];
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+
+/* THE HOUSE FOLD: FNV-1a of a string to a uint32, then xorshift32 from it.
+   Seeds the darkroom's generated indicators (a plotted circuit, the
+   scatterword's flights, the honest bar's climb, the watch's time, the
+   deal of indicators to slots) from the turn's client_ref, so every turn
+   draws its own and a repaint or a restored turn re-derives the same one
+   byte for byte. JD_fnv1a alone is used where only the hash is wanted. */
+function JD_fnv1a(s) {
+  var h = 2166136261 >>> 0, i;
+  for (i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+  }
+  return h;
+}
+/* a seeded rnd() in [0,1); xorshift must never sit at zero, so a zero seed
+   takes the classic 88172645 */
+function JD_xorshift(seed) {
+  var st = (seed >>> 0) || 88172645;
+  return function () {
+    st ^= st << 13; st >>>= 0; st ^= st >>> 17; st ^= st << 5; st >>>= 0;
+    return st / 4294967296;
+  };
+}
+
+/* has the visitor asked for stillness? (a fresh read every call — the
+   preference can change while the page is open) */
+function JD_reduced() {
+  try {
+    return !!(window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { return false; }
+}
+
+/* THE FURNITURE'S ARTWORK FETCH — one loader for the turn object, the
+   instructions sheet and the analytics folder. The asset is a served file
+   like the stylesheet and this script, so it is cache-busted like them:
+   index.php lists it in $jd_assets and stamps its content hash onto the
+   script tag as data-<attr>; the bare path is the fallback for a host that
+   didn't (a dev harness), where a stale copy costs nothing. The request goes
+   out immediately, in parallel with data.php; it is RETRIED twice (a flaky
+   first request on a phone shouldn't cost the visitor the object) and a body
+   without '<svg' is refused (a captive-portal login page or an HTML 404
+   served with 200 would otherwise be injected as furniture). onFail runs
+   once the retries are spent. */
+function JD_fetchArt(opts) {
+  var RETRY_MS = [600, 1800];
+  var tag = document.querySelector('script[' + opts.attr + ']');
+  var v = tag && tag.getAttribute(opts.attr);
+  var url = JD_API + opts.asset + (v ? '?v=' + encodeURIComponent(v) : '');
+  (function load(tries) {
+    fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error(opts.asset + ' ' + r.status);
+        return r.text();
+      })
+      .then(function (text) {
+        if (text.indexOf('<svg') < 0) throw new Error(opts.asset + ' is not an SVG');
+        opts.onArt(text);
+      })
+      .catch(function (err) {
+        if (tries < RETRY_MS.length) {
+          window.setTimeout(function () { load(tries + 1); }, RETRY_MS[tries]);
+          return;
+        }
+        opts.onFail(err);
+      });
+  })(0);
+}
+
+/* THE ENLARGEMENT LAYER — the report card's press-to-enlarge, shared with
+   the turn's bench and podium (2026-08-21) class-for-class, and since
+   2026-09-05 code-for-code: each dialog owns one instance.
+
+   The layer is a child of <body>, NOT of a scrim: a scrim's z-index makes
+   it a stacking context capped below the fixed site banner (z 1000), and
+   "easier to see" means the whole viewport. Being outside the scrim also
+   keeps its presses away from the scrim's click-to-close. It is a dialog
+   in its own right (role/aria-modal) because the card behind it carries
+   aria-modal and assistive tech ignores everything outside that card —
+   focus moves onto the figure on open, which is what scopes AT here.
+   One dismissal path for every press inside the layer — the artwork, the
+   caption, the dark surround — and Enter/Space on the figure: put it back.
+   Escape is the owning dialog's business (it has to know which layer it is
+   peeling), so the owner checks isOn() in its own keydown handler.
+
+   open(from, html, plate): `from` is the element focus returns to on
+   close; `plate` (default `from`) is the photograph the grid scale is
+   measured against — the print's graph squares grow by the factor the
+   paper itself grew (owner, 2026-08-14), fig width over plate width, fed
+   to the gradient math via --gk. fill() re-paints the layer's contents
+   without closing it (the record card re-syncs across re-renders; the
+   bench closes instead — its whole navigation IS a re-render). Reframing
+   (JD_fitAll) and the grid scale only count once the layer is display:flex,
+   which is why open() runs both after is-on. */
+function JD_zoomLayer() {
+  var el = null, on = false, from = null;
+  function build() {
+    if (el) return;
+    el = document.createElement('div');
+    el.className = 'jd-record-zoom';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'enlarged artwork');
+    document.body.appendChild(el);
+    el.addEventListener('click', function () { close(); });
+    el.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      close();
+    });
+  }
+  function gridScale(plate) {
+    if (!on || !el) return;
+    var fig = el.querySelector('.rc-zoom-fig');
+    plate = plate || from;
+    if (!fig || !plate || !document.contains(plate)) return;
+    var pw = plate.getBoundingClientRect().width;
+    var fw = fig.getBoundingClientRect().width;
+    if (pw > 0 && fw > 0) fig.style.setProperty('--gk', (fw / pw).toFixed(3));
+  }
+  function fill(html, plate) {
+    if (!el) return;
+    el.innerHTML = html;
+    if (window.JD_fitAll) window.JD_fitAll(el);
+    gridScale(plate);
+  }
+  function open(fromEl, html, plate) {
+    if (on) return;
+    build();
+    on = true;
+    from = fromEl || null;
+    fill(html, plate);
+    el.classList.add('is-on');
+    if (window.JD_fitAll) window.JD_fitAll(el);
+    gridScale(plate);
+    /* focus follows the artwork so Space/Enter/Esc all land here, and so a
+       keyboard visitor isn't left tabbing the card hidden behind the layer */
+    var fig = el.querySelector('.rc-zoom-fig');
+    if (fig) { try { fig.focus(); } catch (e) {} }
+  }
+  /* `silent` closes without handing focus back — for when the owning card
+     is re-rendering or going away and the plate we came from is about to
+     be replaced anyway */
+  function close(silent) {
+    if (!on) return;
+    on = false;
+    if (el) { el.classList.remove('is-on'); el.innerHTML = ''; }
+    var back = from;
+    from = null;
+    if (!silent && back && document.contains(back)) {
+      try { back.focus(); } catch (e) {}
+    }
+  }
+  return {
+    open: open, close: close, fill: fill, gridScale: gridScale,
+    isOn: function () { return on; },
+    setFrom: function (f) { from = f || null; }
+  };
+}
+
+/* ---- the pile loader + field-notes renderer ------------------------------ */
+(function () {
+  var pile = document.querySelector('.jd-pile');
+  var payloadRef = null;   /* the data.php payload, handed to JD_record */
+  /* the "m" tier box in cqmin, resolved from the live taxonomy and handed to
+     the turn object so the turn button is measured on exactly the ruler the
+     collection is measured on (null when data.php never answered — the
+     object falls back to BASE.m rather than going missing, since it is now
+     the ONLY way to take a turn) */
+  var turnBox = null;
+  /* tier box per sizeClass, in cqmin. Fallback only — the live boxes come
+     from taxonomy.sizeTiers at load (see sizeBoxes), so the scale is
+     data-driven. */
+  var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
+  /* THE TIER RULER, and why it is declared all the way out here (2026-08-28,
+     found while wiring the analytics folder onto the same line): it is
+     RESOLVED from the live taxonomy inside the data.php .then, and READ two
+     .then's later, by the furniture's ready() calls — separate function
+     scopes. Declared as a local `function boxFor` in the first block, the
+     sheet's `ready(boxFor('xl'))` in the second threw a ReferenceError
+     INSIDE the success handler, so every single load fell through to the
+     .catch: the fallback note printed under a pile that had in fact loaded,
+     and JD_record.setData / JD_turn.setData / the #<id> deep link never ran
+     at all (the report card was dead on every press). Hoisting the binding
+     is the whole fix; the fallback body is what a failed load still gets. */
+  var boxFor = function (sc) { return BASE[sc] || BASE.m; };
+
+  /* ---- size normalization (owner decision, 2026-08-09) -------------------
+     Tiers are AREA classes. The tier box is the side of the square every
+     item's footprint matches: w·h = box² whatever the artwork's proportions,
+     so a tall column and a wide fish filed "m" carry the same visual weight.
+     (Before this, --w set the tier box as the WIDTH and height followed the
+     viewBox freely — a 0.38-aspect "m" rendered 2.7× the area of a square
+     "m" and outgrew every "l".) Two dials ride on top:
+       · sizeScale — the owner's per-item fine multiplier, applied AFTER
+         normalization so it means the same thing at every aspect;
+       · a small deterministic jitter hashed from the item id — stable
+         natural variation, so a tier reads as a family of near-sizes, never
+         as ranks of uniform boxes. Hashed, not random: an item's size is
+         part of its identity, identical on every visit. */
+  var SIZE = {
+    elong: 1.8,    /* long-side cap, × the tier box: past this elongation the
+                      long side stops growing and the item pays in area
+                      instead, so slivers (pencil, popsicle) read a touch
+                      lighter than tier-mates rather than spanning the well */
+    jitter: 0.09   /* ± fraction of linear size (≈ ±18% of area) */
+  };
+
+  function sizeJitter(id) {
+    var s = String(id), h = 5381, i;
+    for (i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; }
+    return 1 - SIZE.jitter + (h % 1000) / 999 * 2 * SIZE.jitter;
+  }
+
+  /* ---- procedural scatter -------------------------------------------------
+     Item positions are COMPUTED at load, never authored. Each browsing
+     session gets ONE scatter, persisted in sessionStorage, so the layout is
+     stable across refreshes but fresh on the next visit. An adaptive jittered
+     grid (cell count tracks the item count) keeps things spread as the
+     collection grows; generous jitter plus a wide rotation range give the
+     loose, overlapping "junk pile" read. This retires both the hand-authored
+     entry.placement blocks and the old MOBILE_POUR table — desktop and mobile
+     now share one computed layout, and nobody hand-places items. */
+  var SCATTER = {
+    key: 'jd-scatter-v2',   /* v2: area-normalized sizes — v1 positions were
+                               clamped against the old width-only footprints */
+    jitter: 0.62,   /* random offset as a fraction of the cell; >0.5 lets
+                       neighbours cross and cluster → the looser pile */
+    rotMax: 34,     /* rotation range, ± degrees */
+    inset: 0.012    /* keep item centres at least this far off the well edge */
+  };
+
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1)), t = a[i];
+      a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function seq(n) { var a = [], i; for (i = 0; i < n; i++) { a.push(i); } return a; }
+
+  /* Namespace one inlined copy of an SVG: prefix every id it declares and
+     every reference to one (url(#), href, xlink:href), so copies sharing a
+     document can't bind to each other's defs.
+
+     This is not optional hygiene. Item SVGs are authored independently and
+     nothing stops two of them choosing the same id — `leaf`, `glow`, `grain`
+     and `soft` are all declared by more than one item. A `<use href="#leaf">`
+     resolves to the FIRST match in the document, so unprefixed copies fight
+     over one definition and the winner depends on DOM order — which pick()
+     and returnToPile() change every time an item is selected and dismissed.
+     Prefixing per copy makes ids unique whatever a future item declares, and
+     makes DOM order irrelevant.
+
+     Both quote styles are matched: models emit double quotes today, but the
+     guarantee shouldn't rest on that. (Not handled, because nothing in the
+     collection uses them: `#id` selectors inside an SVG <style> block, and
+     id references that aren't url(#)/href form — aria-labelledby, SMIL
+     begin="other.click". Check before filing an item that uses one.) */
+  function svgInst(svg, pfx) {
+    return String(svg)
+      .replace(/^\s*<\?xml[^>]*\?>\s*/i, '')
+      .replace(/\sid=(["'])([^"']+)\1/g, ' id=$1' + pfx + '$2$1')
+      .replace(/url\((["']?)#([^)"']+)\1\)/g, 'url($1#' + pfx + '$2$1)')
+      .replace(/(\s(?:xlink:)?href=)(["'])#([^"']+)\2/g, '$1$2#' + pfx + '$3$2');
+  }
+  window.JD_svgInst = svgInst;   /* the record card inlines copies too */
+
+  /* REFRAME, never redraw (owner-approved, 2026-08-15). Models are prompted
+     to fill the viewBox edge to edge and sometimes draw past it — a headstock
+     at negative y, a glow bleeding past the frame. An inline <svg> clips at
+     the viewport it declares, so the overshoot is sliced off in the pile, on
+     the report card's plate, in the enlargement, and on the turn plates; the
+     DOWNLOADED file clips too, but its bytes are its own business — the
+     sanitizer passes generation bytes through untouched, so reframing is the
+     display layer's job (the sanctioned inverse of the ingest-time viewBox
+     tightening in CLAUDE.md).
+
+     The fix is a wider viewBox, NOT overflow:visible: spilled ink would paint
+     over the plate's borders and kraft photo corners, and in the pile it
+     would break the item's silhouette — drag/hit math trusts the element box
+     the viewBox aspect defines (svgAspect, applySize, the scatter clamping).
+
+     `svg` must be IN THE RENDERED DOM: getBBox throws on non-rendered
+     subtrees, so callers fit after insertion and before anything measures
+     aspect or footprint. A skipped fit is silent and harmless — the drawing
+     stays clipped, exactly as it always has.
+
+     ONE FRAME PER ARTWORK, SHARED BY EVERY SURFACE (2026-08-15, second
+     pass — the owner reported thumbnails that don't match the drawing
+     shown elsewhere). Two things made the fit drift between copies:
+
+       · getBBox is a LAYOUT measurement, not a property of the file. On
+         artwork carrying <text> it comes back slightly different at 46px
+         than at 350px (font metrics resolve per rendered size), so the
+         pile, the plate, the strip thumbnail and the enlargement each
+         derived their own frame from their own copy — the same drawing,
+         four framings.
+       · a copy measured before its box has a size measures nothing.
+
+     So the fit is computed ONCE per artwork and MEMOISED under a caller's
+     key (the response's cache key, a generation id — anything stable per
+     artwork). Every later copy applies the stored frame without measuring:
+     identical framing everywhere, by construction, and one layout pass
+     instead of one per copy. A failed measurement is never cached, so the
+     first copy that renders in a real box still gets to decide.
+
+     WHAT THE FRAME MAY GROW BY. Ink that pokes a little past the frame is
+     a model missing its own edge, and reframing rescues it. Ink that runs
+     WELL past the frame is deliberate full bleed — a sunburst, a glow, a
+     drop shadow drawn oversize precisely so the viewport crops it — and
+     "rescuing" that wrecks the composition: the first pass grew a 1000×1000
+     alarm-clock poster to 2000×2000, which drew the clock at half size in a
+     field of white with the rays' points now sticking out. So:
+
+       · the pad (getBBox ignores stroke width, so ink AT the edge may paint
+         just past it) is 2% of the SHORTER frame side. The old 4% of the
+         LONGER side was ruinous on an elongated frame — on a 1000×110
+         cigarette it added 40 units of sky and floor, 73% of the height,
+         to a drawing whose ink never left the frame at all.
+       · each side is rescued ALL OR NOTHING, at 15% of its own dimension.
+         Growing "up to a cap" was the worst of both: still clipped AND
+         shrunk. Past the cap the authored edge stands and the overshoot
+         stays cropped — which is what a full-bleed drawing wants.
+
+     A drawing that already fits is left byte-identical. */
+  var FIT_PAD = 0.02, FIT_CAP = 0.15;
+  var fitFrames = {};              /* key -> viewBox string ('' = as authored) */
+
+  function fitView(svg, key) {
+    if (!svg) return;
+    /* the artwork is letterboxed on every surface, whatever the file asks
+       for: a root preserveAspectRatio of "none" would stretch the drawing
+       to each box's own shape (so the plate and the strip thumbnail would
+       disagree), and a "slice" would crop it differently in each. Neither
+       is a choice the display layer can honour across boxes of four
+       different proportions, so the root is normalised on every copy.
+       Curated files declare none of these today; visitor generations are
+       passed through the sanitizer's bytes untouched and can. */
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    var vb = String(svg.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+    if (vb.length !== 4 || !(vb[2] > 0) || !(vb[3] > 0)) return;
+    if (key && fitFrames[key] !== undefined) {
+      if (fitFrames[key]) svg.setAttribute('viewBox', fitFrames[key]);
+      return;
+    }
+    var bb;
+    try { bb = svg.getBBox(); } catch (e) { return; }   /* not rendered: don't cache */
+    if (!bb || !(bb.width > 0) || !(bb.height > 0)) return;
+    var pad = FIT_PAD * Math.min(vb[2], vb[3]);
+    var capX = FIT_CAP * vb[2], capY = FIT_CAP * vb[3];
+    var x0 = vb[0], y0 = vb[1], x1 = vb[0] + vb[2], y1 = vb[1] + vb[3];
+    /* how far each side would have to move to take in the padded ink */
+    var wl = x0 - (bb.x - pad), wr = (bb.x + bb.width + pad) - x1;
+    var wt = y0 - (bb.y - pad), wb = (bb.y + bb.height + pad) - y1;
+    if (wl > 0 && wl <= capX) x0 -= wl;
+    if (wr > 0 && wr <= capX) x1 += wr;
+    if (wt > 0 && wt <= capY) y0 -= wt;
+    if (wb > 0 && wb <= capY) y1 += wb;
+    var frame = '';
+    if (x0 !== vb[0] || y0 !== vb[1] ||
+        x1 !== vb[0] + vb[2] || y1 !== vb[1] + vb[3]) {
+      var r = function (n) { return Math.round(n * 100) / 100; };
+      frame = [r(x0), r(y0), r(x1 - x0), r(y1 - y0)].join(' ');
+      svg.setAttribute('viewBox', frame);
+    }
+    if (key) fitFrames[key] = frame;
+  }
+  window.JD_fitView = fitView;   /* every surface that inlines an item SVG */
+
+  /* the one call every surface makes after it writes artwork into the DOM:
+     each holder carries data-fit="<key>" and gets the frame filed under that
+     key. Keys are per-ARTWORK, never per-copy or per-surface — that is what
+     makes a 46px thumbnail and a 350px plate show the same drawing. */
+  function fitAll(root) {
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('[data-fit]'), function (el) {
+      fitView(el.querySelector('svg'), el.getAttribute('data-fit'));
+    });
+  }
+  window.JD_fitAll = fitAll;
+
+  /* SIZE, as filed — the one display string for how big an item reads in the
+     drawer, shown on the specimen tag and the report card. Taxonomy-driven:
+     the tier's own label, never a hardcoded name, falling back to the raw
+     sizeClass id if the tier isn't registered. The per-item sizeScale is part
+     of the size the owner chose, so it is stated too rather than hidden — an
+     item filed as "s" × 0.364 reads "Small ×0.36", not "Small". */
+  function sizeLabel(tax, item) {
+    var tiers = (tax || {}).sizeTiers || [], t = null;
+    for (var i = 0; i < tiers.length; i++) {
+      if (tiers[i].id === item.sizeClass) { t = tiers[i]; break; }
+    }
+    var label = t ? t.label : (item.sizeClass || '');
+    if (!label) return '';
+    /* round FIRST, then decide: a scale of 1.003 displays as ×1, which says
+       nothing the tier hasn't already said — so it is dropped rather than
+       printed as a distinction the reader can't see */
+    var fine = item.sizeScale;
+    if (typeof fine === 'number' && fine > 0) {
+      var shown = +fine.toFixed(2);
+      if (shown !== 1) label += ' ×' + String(shown);
+    }
+    return label;
+  }
+  window.JD_sizeLabel = sizeLabel;   /* kept global: the pile loader and the
+                                        visitor-item labeler both call it,
+                                        though no UI surface displays size
+                                        any more (owner, 2026-08-13) */
+
+  /* RATINGS, as filed — entries store every rating as a NUMBER: a grade is
+     the taxonomy grade's `rank` (5.0 … 1.0) and an annotation is the axis
+     value's `rank` (the axis's top rank — 3.0 or 4.0 — down to 1.0),
+     never the id or label (entry schema 2), so
+     the scales' wording can change without touching filed data. Resolve the
+     number back to its taxonomy object here; display strings still come
+     only from the taxonomy. */
+  function byRank(list, value) {
+    list = list || [];
+    for (var i = 0; i < list.length; i++) {
+      if (Number(list[i].rank) === Number(value)) return list[i];
+    }
+    return null;
+  }
+  window.JD_byRank = byRank;     /* the record card resolves axis values */
+
+  /* Taxonomy labels may carry _underscored_ emphasis (v14, owner request:
+     "Has _it_"). HTML surfaces render the run in italics; plain-text
+     surfaces — native <option> text, aria strings, the report card's
+     stamped marks — strip the markers. The data stays honest either way:
+     an underscore pair is the whole convention. */
+  function labelText(s) {
+    return String(s == null ? '' : s).replace(/_([^_]+)_/g, '$1');
+  }
+  window.JD_labelText = labelText;
+
+  /* The pencil an axis value writes with. Classes encode rank AND scale
+     length, because a rank means nothing without its scale: on a 3-point
+     axis rank 3 is the best news there is (dark green), on a 4-point axis
+     it is second place (leaf green). 3-point axes keep the original
+     rc-r1..3 pencils; 4-point axes (v17) get their own rc-q1..4 ramp in
+     the stylesheet. The grade scale's rc-g1..5 is separate (JD_gradeOf). */
+  function axisCls(axis, rank) {
+    var pts = ((axis || {}).values || []).length;
+    return (pts === 4 ? 'rc-q' : 'rc-r') + Math.round(rank);
+  }
+  window.JD_axisCls = axisCls;   /* the record card and the bench share it */
+  function gradeOf(tax, value) {
+    return byRank((tax || {}).grades, value);
+  }
+  window.JD_gradeOf = gradeOf;   /* the record card resolves grades too */
+
+  /* the tier box → the element's --w, area-normalized (see SIZE above):
+       w = box·√aspect  →  h = w/aspect = box/√aspect  →  w·h = box².
+     Elongation past SIZE.elong shrinks the whole item so the long side stops
+     at box×elong; then the owner's fine dial and the id-hashed jitter. The
+     aspect is read from the copy already inlined into `el`. Shared, because a
+     visitor's won item is filed on the same ruler as a curated one (C5.3). */
+  function applySize(el, box, id, fine) {
+    var sq = Math.sqrt(svgAspect(el));
+    var shape = Math.min(1, SIZE.elong / Math.max(sq, 1 / sq));
+    el.style.setProperty('--w',
+      +((box || BASE.m) * sq * shape * (fine || 1) * sizeJitter(id)).toFixed(2));
+  }
+  window.JD_applySize = applySize;
+
+  /* aspect (w/h) from the inlined SVG's viewBox; the item box is that wide by
+     that tall, so it tells us how much room the item claims for clamping */
+  function svgAspect(el) {
+    var svg = el.querySelector('svg'), vb = svg && svg.getAttribute('viewBox');
+    if (vb) {
+      var n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n[2] > 0 && n[3] > 0) { return n[2] / n[3]; }
+    }
+    return 1;
+  }
+
+  /* fresh scatter for every element in `els` (each already sized + in the DOM,
+     so its footprint and aspect are measurable). Returns id -> {x,y,rot,z},
+     x/y as 0..1 fractions of the well (resize-safe). */
+  function computeScatter(els) {
+    var host = pile.getBoundingClientRect();
+    var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
+    var N = els.length;
+    var cols = Math.max(1, Math.round(Math.sqrt(N * (W / H))));
+    var rows = Math.max(1, Math.ceil(N / cols));
+    var cells = shuffle(seq(rows * cols));   /* random item -> cell mapping */
+    var zs = shuffle(seq(N));                /* random, distinct stack order */
+    var cellW = 1 / cols, cellH = 1 / rows, out = {};
+    els.forEach(function (el, i) {
+      var wpx = (parseFloat(el.style.getPropertyValue('--w')) || BASE.m) / 100 * MIN;
+      var hpx = wpx / svgAspect(el);
+      var hw = Math.min(0.5, wpx / 2 / W), hh = Math.min(0.5, hpx / 2 / H);
+      var cell = cells[i], cc = cell % cols, cr = Math.floor(cell / cols);
+      var x = (cc + 0.5) * cellW + (Math.random() * 2 - 1) * SCATTER.jitter * cellW;
+      var y = (cr + 0.5) * cellH + (Math.random() * 2 - 1) * SCATTER.jitter * cellH;
+      var loX = hw + SCATTER.inset, hiX = 1 - hw - SCATTER.inset;
+      var loY = hh + SCATTER.inset, hiY = 1 - hh - SCATTER.inset;
+      out[el.dataset.id] = {
+        x: +(hiX > loX ? Math.max(loX, Math.min(hiX, x)) : 0.5).toFixed(4),
+        y: +(hiY > loY ? Math.max(loY, Math.min(hiY, y)) : 0.5).toFixed(4),
+        rot: +((Math.random() * 2 - 1) * SCATTER.rotMax).toFixed(1),
+        z: zs[i] + 1
+      };
+    });
+    return out;
+  }
+
+  /* ---- the turn button's corner is reserved (owner, 2026-08-10) --------------
+     The Take-a-Turn button is FIXED hardware in the bottom-left corner
+     (see the turn-object module), so nothing may spawn overlapping it. Its
+     rect is replayed here from the module's own geometry (JD_turnObject.GEOM)
+     with the same footprint math applySize gives every item, and positions
+     are pushed clear at APPLY time rather than only at scatter time: stored
+     scatters can predate this rule, and a viewport change moves the rect —
+     enforcing per-load is the only version that holds. Nothing is written
+     back; where the junk lies is scenery either way. */
+  function turnRect(W, H, MIN) {
+    var g = window.JD_turnObject && window.JD_turnObject.GEOM;
+    if (!g || !(W > 0 && H > 0)) return null;
+    var M = SCATTER.inset;
+    /* the BUILT button is the truth — the ≤768px ×1.2 size band and the
+       44px touch floor are CSS the math below does not see (measured cost
+       of trusting math alone: a 15px graze on a phone). Measure the plate
+       whenever it exists. */
+    var bell = document.querySelector('.jd-item--turn');
+    if (bell) {
+      var pr = pile.getBoundingClientRect(), br = bell.getBoundingClientRect();
+      if (br.width > 0) {
+        return { x1: (br.right - pr.left) / W + M, y0: (br.top - pr.top) / H - M };
+      }
+    }
+    /* not built yet (its artwork fetch is async): replay the sizing —
+       tier box × aspect × fine × id jitter, plus the mobile band and the
+       floor. Approximate on purpose; JD_enforceTurnCorner re-runs against
+       the measured plate the moment it is built. */
+    var sq = Math.sqrt(g.aspect);
+    var shape = Math.min(1, SIZE.elong / Math.max(sq, 1 / sq));
+    var band = (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) ? 1.2 : 1;
+    var wpx = Math.max((turnBox || BASE.m) * sq * shape * g.fine * sizeJitter(g.id) / 100 * MIN * band, 44);
+    var hpx = wpx / g.aspect;
+    var hw = Math.min(0.5, wpx / 2 / W), hh = Math.min(0.5, hpx / 2 / H);
+    /* the corner the button owns: x below x1 AND y above y0, its full plate
+       plus the pile's standard clearance as margin */
+    return { x1: 2 * hw + g.inset + M, y0: 1 - 2 * hh - g.inset - M };
+  }
+  /* the exact pass, run by the turn module once the plate is built and
+     seated (and so measurable): push anything already lying in the corner
+     clear of the REAL rect. Closes the race between the pile's apply pass
+     and the turn button's async artwork fetch, whichever lands first. */
+  window.JD_enforceTurnCorner = function () {
+    var host = pile.getBoundingClientRect();
+    var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
+    pile.querySelectorAll('.jd-item:not([data-turn])').forEach(function (el) {
+      var x = parseFloat(el.style.left) / 100, y = parseFloat(el.style.top) / 100;
+      if (!isFinite(x) || !isFinite(y)) return;
+      var r = el.getBoundingClientRect();
+      var rot = (parseFloat(el.style.getPropertyValue('--rot')) || 0) * Math.PI / 180;
+      var c = Math.abs(Math.cos(rot)), s = Math.abs(Math.sin(rot));
+      var w = r.width || 40, h = r.height || 40;
+      var a = avoidTurn(x, y,
+        Math.min(0.5, (w * c + h * s) / 2 / W),
+        Math.min(0.5, (w * s + h * c) / 2 / H), W, H, MIN);
+      if (a.x !== x || a.y !== y) {
+        el.style.left = (a.x * 100) + '%';
+        el.style.top = (a.y * 100) + '%';
+      }
+    });
+  };
+  function avoidTurn(x, y, hw, hh, W, H, MIN) {
+    var R = turnRect(W, H, MIN);
+    if (!R) return { x: x, y: y };
+    if (x - hw >= R.x1 || y + hh <= R.y0) return { x: x, y: y };   /* clear */
+    var pushX = R.x1 + hw;                       /* rightward, off the plate */
+    var pushY = R.y0 - hh;                       /* upward, off the plate */
+    var okX = pushX <= 1 - hw - SCATTER.inset;
+    var okY = pushY >= hh + SCATTER.inset;
+    if (okX && (!okY || pushX - x <= y - pushY)) return { x: +pushX.toFixed(4), y: y };
+    if (okY) return { x: x, y: +pushY.toFixed(4) };
+    return { x: x, y: y };   /* an item too big to fit anywhere else keeps its
+                                spot — overlap beats teleporting off the well */
+  }
+  /* the won-items module spawns into the same pile and honours the same
+     reservation; centre + half-sizes in well fractions in, corrected out */
+  window.JD_avoidTurn = function (x, y, hw, hh) {
+    var host = pile.getBoundingClientRect();
+    var W = host.width || 1, H = host.height || 1;
+    return avoidTurn(x, y, hw, hh, W, H, Math.min(W, H));
+  };
+
+  /* stable-per-session: reuse the stored scatter iff it covers exactly the
+     items on the page; otherwise recompute and persist. sessionStorage may be
+     unavailable (private mode) — degrade to a fresh scatter each load. */
+  function layoutFor(els) {
+    var ids = els.map(function (e) { return e.dataset.id; });
+    var stored = JD_store.get(SCATTER.key);
+    var covers = stored && ids.every(function (id) { return stored[id]; });
+    if (covers) { return stored; }
+    var fresh = computeScatter(els);
+    /* a visitor's won items are merged into this same map under their gen_id
+       (C5.3), so the merge base is whatever is already stored */
+    if (stored) { Object.keys(stored).forEach(function (k) { if (!fresh[k]) fresh[k] = stored[k]; }); }
+    JD_store.set(SCATTER.key, fresh);
+    return fresh;
+  }
+
+  /* arrange mode: the copy-layout link renders ONLY under ?arrange=1 (a dev
+     affordance; the gesture script binds it by id when present). Since items
+     are now auto-scattered (no entry.placement), this is a debug readout of
+     the live/dragged positions, not an authoring step. Inserted before the
+     gesture IIFE runs, so the binding below always sees it. */
+  if (location.search.indexOf('arrange=1') !== -1) {
+    var stage = document.querySelector('.jd-stage');
+    var arr = document.createElement('p');
+    arr.className = 'jd-arrange';
+    arr.innerHTML = 'arrange mode &mdash; <a href="#" id="copy-layout">copy layout</a>';
+    stage.parentNode.insertBefore(arr, stage.nextSibling);
+  }
+
+  /* fallback: shown when data.php is unreachable — a quiet mono note in the
+     well, nothing else (the painted drawer stands alone as a coherent image) */
+  function fallbackNote() {
+    var note = document.createElement('p');
+    note.className = 'jd-fallback';
+    note.innerHTML = 'the drawer is stuck &mdash; its contents load from ' +
+      '<code>data.php</code>, which did not answer. ' +
+      '<a href="">pull again</a>';
+    pile.appendChild(note);
+  }
+
+  /* ---------- the field notes, rendered from the same payload ------------- */
+
+  /* the wall label's live line: "10 items · 2026" (year range once it spans) */
+  function renderCount(data) {
+    var el = document.getElementById('jd-count');
+    if (!el) return;
+    var items = data.items || [];
+    var lo = '', hi = '';
+    items.forEach(function (item) {
+      var y = String(item.created || '').slice(0, 4);
+      if (!y) return;
+      if (!lo || y < lo) lo = y;
+      if (!hi || y > hi) hi = y;
+    });
+    var span = lo ? (lo === hi ? lo : lo + '–' + hi) : '';
+    el.textContent = items.length + (items.length === 1 ? ' item' : ' items') +
+      (span ? ' · ' + span : '');
+  }
+
+  /* HOW TO READ THE GRADES — grade scale in rank order (higher = better,
+     contract guarantee 1), then the annotation axes. Labels and descriptions
+     come from the taxonomy block only; a taxonomy edit updates this legend
+     with no frontend change. */
+  function renderLegend(tax) {
+    var gradesEl = document.getElementById('jd-grades');
+    var axesEl = document.getElementById('jd-axes');
+    if (gradesEl) {
+      (tax.grades || []).slice()
+        .sort(function (a, b) { return (b.rank || 0) - (a.rank || 0); })
+        .forEach(function (g) {
+          var row = document.createElement('div');
+          row.className = 'jd-grade-row';
+          var mark = document.createElement('span');
+          mark.className = 'jd-grade-mark';
+          mark.textContent = g.label || g.id;
+          var desc = document.createElement('span');
+          desc.className = 'jd-grade-desc';
+          desc.textContent = g.description || '';
+          row.appendChild(mark);
+          row.appendChild(desc);
+          gradesEl.appendChild(row);
+        });
+    }
+    if (axesEl) {
+      /* LIVE axes only (owner, 2026-08-11): the dimmed defunct rows are
+         gone from the legend — the field notes describe the survey as it
+         is asked today. Retired axes still exist in the taxonomy for the
+         old responses that carry their grades (the report card is where
+         that history surfaces, when it lands). */
+      var axes = (tax.axes || []).filter(function (ax) { return !ax.defunct; });
+      axes.forEach(function (ax) {
+        var row = document.createElement('div');
+        row.className = 'jd-axis-row';
+        var label = document.createElement('span');
+        label.className = 'jd-axis-label';
+        label.textContent = ax.label || ax.id;
+        var desc = document.createElement('span');
+        desc.className = 'jd-axis-desc';
+        desc.textContent = ax.description || '';
+        row.appendChild(label);
+        row.appendChild(desc);
+        axesEl.appendChild(row);
+      });
+    }
+  }
+
+  /* (the inventory — one mono line per item — left the field notes
+     2026-08-28, owner call: the pile IS the inventory, and the count line
+     above says how many. Every item's paperwork lives on its report card.) */
+  function renderNotes(data) {
+    renderCount(data);
+    renderLegend(data.taxonomy || {});
+  }
+
+  /* ---------- one request, then the pile ---------------------------------- */
+  fetch(JD_API + '/art/junk-drawer/data.php')
+    .then(function (r) {
+      if (!r.ok) throw new Error('data.php ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      /* contract guarantee 6: skipped/malformed entries are logged, never
+         rendered */
+      if (data.errors && data.errors.length && window.console && console.warn) {
+        console.warn('junk drawer: data.php skipped entries', data.errors);
+      }
+      renderNotes(data);
+      payloadRef = data;   /* the record module renders from this payload */
+      /* resolve + fetch every primary response SVG (contract: primary
+         always resolves; every response has a ready same-origin url) */
+      var tax = data.taxonomy || {};
+      function byId(list, id) {
+        return (list || []).filter(function (x) { return x.id === id; })[0];
+      }
+      /* tier boxes are data: taxonomy.sizeTiers is the source of truth, with
+         the hardcoded BASE as fallback if an id is missing */
+      var tiers = {};
+      (tax.sizeTiers || []).forEach(function (t) { tiers[t.id] = t.box; });
+      boxFor = function (sc) { return tiers[sc] || BASE[sc] || BASE.m; };
+      turnBox = boxFor('m');   /* the turn button is a medium drawer object */
+      return Promise.all(data.items.map(function (item) {
+        var primary = item.responses.filter(function (r) {
+          return r.rid === item.primary;
+        })[0] || item.responses[0];
+        /* display labels for the tap pick-chip, resolved while the
+           taxonomy is in scope */
+        var model = byId(tax.models, primary.model);
+        var grade = gradeOf(tax, primary.grade);
+        item._modelLabel = model ? model.label : (primary.model || '');
+        item._gradeLabel = grade ? grade.label
+          : (primary.grade == null ? '' : String(primary.grade));
+        /* the item tag also needs: process, date, the grade's rank on the
+           scale (bar fill), the scale size, and the file url */
+        var gen = primary.generation || {};
+        item._process = gen.mode === 'refined'
+          ? 'REFINED ×' + (gen.prompt_count || '?') : 'ONE-SHOT';
+        item._date = primary.date || '';
+        item._rank = grade ? grade.rank : (+primary.grade || 0);
+        item._steps = (tax.grades || []).length || 5;
+        item._box = boxFor(item.sizeClass);   /* tier box in cqmin, from taxonomy */
+        /* SIZE, as filed: the owner's sizeClass tier read back as its
+           taxonomy label, with the fine multiplier appended when one is set
+           (so "Small ×0.36" states the whole size, not just the tier) */
+        item._sizeLabel = sizeLabel(tax, item);
+        item._url = primary.url;
+        /* the artwork's identity for the shared display frame — the SAME
+           string the report card keys its copies under (see fitView) */
+        item._fit = item.id + '/' + primary.file;
+        return fetch(JD_API + primary.url).then(function (r) {
+          if (!r.ok) throw new Error(primary.url + ' ' + r.status);
+          return r.text();
+        }).then(function (svg) { return { item: item, svg: svg }; });
+      }));
+    })
+    .then(function (loaded) {
+      /* build + size every item first (sizeClass only; positions come next) */
+      var els = loaded.map(function (rec, i) {
+        var item = rec.item;
+        /* a turn the visitor JUST won is already in the pile, dropped from
+           their own storage the moment they filed — and since 2026-08-30 the
+           server serves that same turn to everyone, keyed on the winning
+           drawing's generation, which is the id the local copy carries. Same
+           id, same item: reuse the element rather than laying a second copy
+           of the object on top of the first. */
+        var had = pile.querySelector('[data-id="' + item.id + '"]');
+        if (had) { had.parentNode.removeChild(had); }
+        var el = document.createElement('div');
+        el.className = 'jd-item';
+        el.dataset.id = item.id;
+        el.dataset.scale = 1;                    /* copy-layout passthrough */
+        el.dataset.title = item.title;
+        el.dataset.model = item._modelLabel;
+        el.dataset.grade = item._gradeLabel;
+        el.dataset.process = item._process;
+        el.dataset.date = item._date;
+        el.dataset.rank = item._rank;
+        el.dataset.steps = item._steps;
+        el.dataset.size = item._sizeLabel;
+        el.dataset.url = item._url;
+        el.setAttribute('role', 'img');
+        el.setAttribute('aria-label', item.title);
+        /* per-item prefix: the pile is many independently-authored SVGs in
+           one document, so each copy gets its own id namespace */
+        el.innerHTML = svgInst(rec.svg, 'jp' + i + '_');
+        pile.appendChild(el);
+        /* reframe BEFORE sizing: the fit needs the rendered copy (getBBox
+           throws otherwise), and applySize reads aspect off the viewBox —
+           the expanded frame must be what it reads. Keyed on the artwork,
+           under the SAME key the report card files its copies under, so the
+           pile and the card cannot disagree about the frame. See fitView. */
+        fitView(el.querySelector('svg'), item._fit);
+        /* size: area-normalized on the shared ruler (--w still carries WIDTH;
+           the CSS contract is unchanged) — see applySize above */
+        applySize(el, item._box, item.id,
+          (typeof item.sizeScale === 'number' && item.sizeScale > 0) ? item.sizeScale : 1);
+        return el;
+      });
+      /* positions are computed, never authored — see SCATTER above. One layout
+         per session; applied in the same tick so nothing paints un-placed. */
+      var layout = layoutFor(els);
+      var hostR = pile.getBoundingClientRect();
+      var HW = hostR.width || 1, HH = hostR.height || 1, HM = Math.min(HW, HH);
+      els.forEach(function (el) {
+        var p = layout[el.dataset.id];
+        /* pushed clear of the turn button's reserved corner at apply time —
+           see turnRect above; the stored scatter itself is left alone.
+           The half-sizes are the item's ROTATED bounding box (its scatter
+           angle is known here): an unrotated box lets a tilted item's
+           corner reach ~15px onto the plate at ±34°. */
+        var wpx = (parseFloat(el.style.getPropertyValue('--w')) || BASE.m) / 100 * HM;
+        var hpx = wpx / svgAspect(el);
+        var rad = (p.rot || 0) * Math.PI / 180;
+        var c = Math.abs(Math.cos(rad)), s = Math.abs(Math.sin(rad));
+        var a = avoidTurn(p.x, p.y,
+          Math.min(0.5, (wpx * c + hpx * s) / 2 / HW),
+          Math.min(0.5, (wpx * s + hpx * c) / 2 / HH), HW, HH, HM);
+        el.style.left = (a.x * 100) + '%';
+        el.style.top = (a.y * 100) + '%';
+        el.style.setProperty('--rot', p.rot + 'deg');
+        el.style.zIndex = p.z;
+      });
+      if (window.JD_wirePile) window.JD_wirePile();
+      /* the drawer's own hardware goes in on top of the collection: the
+         Take-a-Turn button, sized on the tier box just resolved. It is not
+         an entry and never was — see the turn-object module below. */
+      if (window.JD_turnObject) window.JD_turnObject.ready(turnBox);
+      /* …and the instructions sheet, on the xl ruler — furniture in the
+         same tradition (see the sheet module below) */
+      if (window.JD_sheet) window.JD_sheet.ready(boxFor('xl'));
+      /* …and the analytics folder, on the l ruler — the third piece of
+         furniture, same tradition (see the folder module below) */
+      if (window.JD_folder) window.JD_folder.ready(boxFor('l'));
+      /* hand the record module the payload + the primary SVG texts, so a
+         record opens with zero extra requests */
+      if (window.JD_record) {
+        var primaries = {};
+        loaded.forEach(function (rec) {
+          var it = rec.item;
+          var pr = it.responses.filter(function (r) {
+            return r.rid === it.primary;
+          })[0] || it.responses[0];
+          primaries[it.id + '/' + pr.file] = rec.svg;
+        });
+        window.JD_record.setData(payloadRef, primaries);
+      }
+      /* the turn modal renders its survey from this same taxonomy, and
+         restores any items this visitor has already won into the pile now
+         that the curated items are placed and wired (C5.4 step 8) */
+      if (window.JD_turn) window.JD_turn.setData(payloadRef);
+      /* ONLY NOW the #<id> deep link. openFromHash resolves the id against
+         payload.items and silently does nothing if it isn't there yet, and
+         the visitor's own won items are appended to that list by the call
+         above — so checking the hash first meant a reload on #<gen_id> never
+         opened the card and left the stale hash sitting in the URL. Curated
+         ids are in the payload from the fetch and are unaffected by the
+         move; JD_turn.setData is synchronous, so nothing else changes. */
+      if (window.JD_record && location.hash.length > 1) {
+        window.JD_record.openFromHash();
+      }
+      /* ?rerun=<item_id> — the rating bench opens the drawer here to re-issue
+         a curated item's prompt to the four current models. Handled beside the
+         #<id> deep link and for the same reason: it resolves an id against
+         payload.items, so it can only run once the payload is in. The bench
+         cannot host this itself — the whole point is that a rerun is an
+         ordinary turn, and the turn flow lives here. The param is consumed
+         from the URL so a refresh does not spend a second generation. */
+      var rr = /[?&]rerun=([^&]+)/.exec(location.search);
+      if (rr && window.JD_turn) {
+        var wanted = decodeURIComponent(rr[1]);
+        var item = null;
+        for (var ri = 0; ri < payloadRef.items.length; ri++) {
+          if (payloadRef.items[ri].id === wanted) { item = payloadRef.items[ri]; break; }
+        }
+        try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+        if (item && item.prompt) {
+          window.JD_turn.rerun(item.prompt);
+        } else {
+          console.warn('rerun: no such item, or it carries no prompt:', wanted);
+        }
+      }
+    })
+    .catch(function (err) {
+      fallbackNote();
+      /* the collection is what failed, not the drawer: the turn object is
+         frontend-injected and owes data.php nothing, and it is the only
+         trigger there is now — so it still goes in, on the fallback tier box.
+         The instructions sheet rides the same rule. */
+      if (window.JD_turnObject) window.JD_turnObject.ready(null);
+      if (window.JD_sheet) window.JD_sheet.ready(null);
+      /* the folder likewise: its numbers come from jd-analytics.php, which
+         data.php's failure says nothing about */
+      if (window.JD_folder) window.JD_folder.ready(null);
+      if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
+    });
+})();
+
+/* ---- dragging the pile — Pointer Events, one code path (PLAN-FRONTEND §3,
+   PLAN-MOBILE §2). Mouse: press-and-drag immediately; click without drag
+   (≤8px slop) just brings the item to front. Touch: items are
+   touch-action: pan-y, so a quick swipe scrolls the page (we get
+   pointercancel and release cleanly); holding ~180ms without moving >10px
+   grips the item — the lift animation is the acknowledgment — and a
+   non-passive touchmove preventDefault() keeps the drag from panning.
+   On settle the item's rendered centre is baked back into its inline
+   left/top in % of the well (the same coordinate space the loader applied
+   from placement data). Drops clamp to the well minus a clearance margin
+   (the overflow guillotine). Session-only; no persistence. Rotation
+   while held: mouse wheel, [ / ] keys, or a second finger twisting
+   around the gripping finger on touch — all mutate --rot, which the
+   settle impulse and copy-layout already speak. Hit-testing is
+   silhouette-accurate (shapes are pointer-events: visiblePainted, the
+   wrapper and svg root none), so events target inner SVG shapes and
+   bubble up to these item listeners. */
+(function () {
+  var well = document.querySelector('.jd-well');
+  /* touch slops are wider than mouse: real thumbs jitter well past the
+     10px that works in a simulator, and every misread press became a
+     scroll (then a page-flip) on device — owner report, 2026-07-26 */
+  var SLOP = 8, TOUCH_SLOP = 14, CLEAR = 6;
+  var tapSlop = SLOP;
+  var zTop = 100;
+  var pend = null, held = null, drag = false;
+  var sx = 0, sy = 0, ox = 0, oy = 0;
+  var pid = -1, fx = 0, fy = 0, twist = null;
+
+  function grip(item) {
+    held = item;
+    /* the turn button is FIXED hardware (owner revision, 2026-08-10): it still
+       becomes `held` — the pointerup press path requires it — but it never
+       lifts, so no is-held shadow and no grip haptic (press() buzzes) */
+    if (item.dataset.turn === 'object') return;
+    item.classList.remove('is-lifted');          /* releases the demo pin */
+    item.classList.add('is-held');
+    JD_haptic('grip');       /* Android only; a silent no-op everywhere else */
+  }
+
+  /* tap = pick: pop to front, brief lift pulse, and the ITEM TAG — a manila
+     specimen tag tethered to the picked object by a red elastic through its
+     grommet (owner design, mockup-6). Persists until dismissed: tap wood /
+     Esc / pick another item. Dragging the picked item NO LONGER lets go —
+     the elastic has real physics now and follows (owner request,
+     2026-08-09); the tag itself can be dragged around too. The picked
+     specimen is also turned UPRIGHT for inspection (0deg, CSS) and its
+     rotation gestures stand down until it is put back — see spin(). */
+  var tag = null, rope = null, picked = null, pendingReturn = null;
+  var pileEl = well.querySelector('.jd-pile');
+
+  /* The tag is built with innerHTML, and since C5 a pile item's dataset can
+     carry a VISITOR's own words (their prompt is the specimen name of an item
+     they won). Everything interpolated below is therefore escaped — the
+     dataset is no longer repo-controlled. */
+  var esc = JD_esc;
+
+  /* The grade meter: the same segmented bar gauge as the report card —
+     rank/steps of the track filled in the grade's ink, with paper-colored
+     dividers (the tag's #e8d9a8) drawn OVER the fill, battery-style, so
+     the segments stay visible even at 100%. rank === null draws the empty
+     track with faint ink dividers: an abstention, not a verdict. The fill
+     has to be absent rather than parked at one segment, because a bar
+     filled to the first segment is a legible reading — "graded, and graded
+     worst" — and that is the one thing an ungraded specimen must not say.
+     Width is unchanged either way (fixed 88px box, 66px track — the tag's
+     wrap math depends on it) so the layout doesn't shift between a graded
+     and an ungraded specimen. */
+  function meterSVG(rank, steps) {
+    var span = 66, x0 = 2, y = 2, h = 9;
+    /* worst → best, matched to the report card's rc-g1..5 ramp */
+    var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+    var graded = rank !== null;
+    var color = 'rgba(58,42,18,0.55)', fill = '';
+    if (graded) {
+      var full = Math.max(1, Math.min(steps, rank));
+      color = RAMP[steps > 1 ? Math.round((full - 1) / (steps - 1) * 4) : 4];
+      fill = '<rect x="' + x0 + '" y="' + y + '" width="' +
+        (span * full / steps).toFixed(1) + '" height="' + h +
+        '" fill="' + color + '"/>';
+    }
+    var ticks = '';
+    for (var t = 1; t < steps; t++) {
+      var tx = (x0 + span * t / steps).toFixed(1);
+      ticks += '<line x1="' + tx + '" y1="' + y + '" x2="' + tx +
+        '" y2="' + (y + h) + '" stroke="' +
+        (graded ? '#e8d9a8' : 'rgba(58,42,18,0.3)') + '" stroke-width="1.5"/>';
+    }
+    return '<svg width="88" height="14" viewBox="-9 0 88 14" role="img" ' +
+      'aria-label="' + (graded ? 'grade ' + rank + ' of ' + steps
+        : 'not graded') + '">' +
+      '<defs><clipPath id="jd-meterclip"><rect x="' + x0 + '" y="' + y +
+      '" width="' + span + '" height="' + h + '" rx="2"/></clipPath></defs>' +
+      '<g clip-path="url(#jd-meterclip)">' + fill + ticks + '</g>' +
+      '<rect x="' + x0 + '" y="' + y + '" width="' + span + '" height="' + h +
+      '" rx="2" fill="none" stroke="' + color + '" stroke-width="1.5"/>' +
+      '</svg>';
+  }
+
+  /* ---- the red elastic, as an actual elastic (owner request, 2026-08-09) ---
+     The tether used to be ONE static quadratic path, drawn once at pick time
+     and then frozen. It could not dangle, could not stretch, and the instant
+     anything moved it was a lie — which is why dragging a picked item used to
+     dismiss the tag outright rather than admit the string had stopped
+     following. It is a Verlet chain now: SEGMENTS point masses pinned at both
+     ends, gravity plus distance constraints, resimulated per frame while the
+     tag is up.
+
+     Four decisions carry the behavior, and each is load-bearing:
+
+     · REST LENGTH IS FIXED AT PIN TIME, not recomputed per frame. The chain
+       is handed SLACK× the endpoint distance the moment it is pinned (floored
+       at MIN_REST, so a tag seated almost on top of its item still gets a
+       visible loop of string rather than a taut hyphen). That fixed length IS
+       the physics: drag the item away and the same piece of string runs out
+       of slack and pulls straight; bring it back and the slack returns as
+       dangle. Re-measuring the rest length every frame would give a rope that
+       is always equally slack — i.e. no stretch at all.
+
+     · THE ITEM END ANCHORS AT THE ITEM'S CENTRE, never at an edge. The
+       z-sandwich (tag 70 < rope 71 < picked item 72) means the rope passes
+       UNDER the artwork, so an anchor at the centre is always buried in ink
+       and can never show a gap. The old anchor was the edge-centre of the
+       item's PREDICTED rotated/zoomed bounding box, and for a rotated or
+       elongated item that point floats well off the drawn shape — the string
+       visibly ended in mid-air. Centre anchoring is the fix.
+
+     · THE LOOP SLEEPS. rAF runs only while the tag is on AND something is
+       still moving; once every point settles below EPS with both endpoints
+       unchanged, the frame cancels itself and an endpoint move wakes it
+       again. A picked item sitting still costs exactly nothing.
+
+     · THE STEP IS PER-FRAME, NOT PER-MILLISECOND. Verlet stores velocity as
+       (position − previous position), so feeding it a variable dt rescales
+       that velocity mid-flight and a single dropped frame launches the chain
+       across the well. A fixed step is stable; the cost is that the sag falls
+       a little faster on a 120Hz display, which nobody can see. */
+  var ROPE = {
+    SEGMENTS: 16,     /* point masses in the chain, both ends included */
+    SLACK: 1.14,      /* rest length as a multiple of the span at pin time.
+                         Was 1.25, then 1.17; the excess took another ~20%
+                         cut (owner, 2026-08-11) with MIN_REST and the seat
+                         gaps — original note: shortened with the seat gaps
+                         (owner request, 2026-08-10: the string reads about
+                         two-thirds its former length); the surplus that hangs
+                         as dangle is what this dial actually sets */
+    MIN_REST: 32,     /* px — the shortest string we will ever hang (60→40→32) */
+    GRAVITY: 0.55,    /* px per frame², ~60fps */
+    DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
+    ITER: 4,          /* constraint relaxation passes per frame (alternating) */
+    STIFF: 0.09,      /* bending resistance, 0..1 — see ropeStep */
+    EPS: 0.05         /* px moved per frame under which the chain is at rest */
+  };
+  var ropePts = null;         /* the chain: [{x,y,px,py}], 0 = item, last = grommet */
+  var ropeSeg = 0;            /* per-segment rest length, frozen at pin time */
+  var ropeAx = 0, ropeAy = 0; /* live item-end endpoint, well coords */
+  var ropeBx = 0, ropeBy = 0; /* live grommet endpoint, well coords */
+  var ropeRAF = 0;
+  var ropePath = null, ropeGrom = null;
+  /* the tag's height, measured when it is seated. The grommet sits at its
+     vertical middle, and we refuse to read offsetHeight inside the rAF loop —
+     a forced layout per frame on a drop-shadowed element is exactly the
+     repaint stall the drag path already goes out of its way to avoid. */
+  var ropeTagH = 0;
+  var ropeCalm = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function ropeReduced() { return !!(ropeCalm && ropeCalm.matches); }
+  function r1(v) { return Math.round(v * 10) / 10; }
+
+  /* the item's layout-box CENTRE in well coords. The rotation and the picked
+     zoom both live on the INNER svg, so the wrapper's rect centre is the
+     visual centre whatever the item is doing — this is the one point about an
+     item that never needs a transform correction. */
+  function ropeCentre(item) {
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top };
+  }
+  /* The tag endpoint is the GROMMET: 10px in from the tag's left edge,
+     vertically centred — the same spot the ::before brass ring is painted at
+     in the stylesheet. Both places that move the tag (pick's seating and the
+     tag drag) already hold its left/top as numbers, so they pass the grommet
+     straight to ropeSetTagEnd rather than reading it back off the element. */
+
+  /* ---- where the elastic grabs the object (testing report, 2026-08-09) ----
+     Anchoring at the item's CENTRE cured the old bounding-box disconnect, but
+     it bought two defects of its own, both caused by the same thing — half
+     the string living underneath the artwork:
+
+       · on HOLLOW silhouettes the centre is not ink at all. A rubber band's
+         centre is the hole; the toilet's is the notch between seat and tank;
+         the fish skeleton's is the gap between two ribs. The tip came to
+         rest on bare wood INSIDE the item's own box, which reads as exactly
+         the disconnected string we set out to fix.
+       · the DANGLE went missing. The belly of a slack rope sits near the
+         middle of its span, and with one pin buried at the centre, up to
+         55% of the chain was hidden under the artwork — so the visible
+         remainder ran dead straight and the elastic read as taut.
+
+     Both are fixed by grabbing the NEAR EDGE of the silhouette instead:
+     march from the grommet toward the item and stop at the first painted
+     pixel (ropeAnchor below, which fans several rays so a concave object
+     can't hide behind its own hole). The tip is then on ink by construction,
+     whatever shape the item is, and almost the whole chain hangs in the open
+     where its sag can be seen.
+
+     Hit testing does the shape reading, because the shape is the SVG's own
+     and nothing else can answer for it: item ink is pointer-events
+     visiblePainted, the picked item is the topmost hit-testable thing in the
+     well (z 72; every overlay above the pile is pointer-events:none), and
+     the rope overlay cannot hit itself. A probe is only accepted when it
+     lands on THIS item, so the tag, neighbours and wood are all rejected.
+
+     THE MATRIX CORRECTION IS THE SUBTLE PART. pick() runs at the START of
+     the 0.15s zoom-and-straighten transition, so the artwork on screen is
+     part-way between its scattered pose and its picked one — probing it
+     naively would find ink at coordinates that mean something else once the
+     transition lands. So probes are authored in the SETTLED pose (upright,
+     ×--pick-scale) as offsets from the centre, then pushed through the svg's
+     CURRENT matrix to ask "where is this point right now?" before the hit
+     test. getComputedStyle and hit testing read the same in-flight animation
+     value, so the two always agree. The anchor is stored as that settled-pose
+     offset, which is why it survives drags untouched: a picked item is rigid
+     (upright, fixed scale), so centre + offset is the live tip forever. */
+  var ANCHOR_STEP = 2;    /* px between probes along the ray */
+  var ANCHOR_BITE = 6;    /* px to sink past the first ink, so antialiasing at
+                             the silhouette edge can't leave a hairline of
+                             wood showing at the tip — but never deeper than
+                             the ink runs, or a thin ring's far side is the
+                             hole again */
+  var ANCHOR_MIN_RUN = 3; /* px of ink along the ray that count as a real
+                             purchase rather than a grazed corner */
+  /* aim points for the probe fan, as fractions of the item's half-short-side
+     either side of the centre. Centre first — it is right for most items and
+     costs one ray; the rest only run when the object is concave enough to
+     have swallowed the centre line. */
+  var ANCHOR_FAN = [0, -0.3, 0.3, -0.6, 0.6, -0.85, 0.85];
+  var ropeOffX = 0, ropeOffY = 0;   /* the anchor, as a settled-pose offset */
+
+  function ropeMatrix(el) {
+    var m = /matrix\(([^)]+)\)/.exec(getComputedStyle(el).transform || '');
+    if (!m) return [1, 0, 0, 1];
+    var n = m[1].split(',');
+    return [parseFloat(n[0]) || 0, parseFloat(n[1]) || 0,
+            parseFloat(n[2]) || 0, parseFloat(n[3]) || 0];
+  }
+
+  /* resolve the anchor for `item`, given its centre and the grommet (both in
+     well coords). Sets ropeOffX/ropeOffY; falls back to the centre (0,0) if
+     nothing is found at all, so the worst case is the old behavior.
+
+     A SINGLE ray at the centre is not enough, because plenty of these
+     objects are concave and the centre line runs through the hole. The line
+     from a tag up-left of the toilet to the toilet's centre passes over the
+     empty air above the bowl, through the notch between bowl and tank, and
+     arrives at a centre that is itself unpainted — it never touches the
+     toilet at all. So the probe FANS: the centre ray first (cheap, and right
+     for the great majority), then progressively wider rays aimed either side
+     of the centre, until one finds ink. The elastic ends up hooked on
+     whatever part of the object actually faces the tag, which is what a
+     string tied round a real object does. */
+  function ropeAnchor(item, cx, cy, gx, gy) {
+    ropeOffX = 0; ropeOffY = 0;
+    var svg = item.querySelector('svg');
+    if (!svg || !document.elementFromPoint) return;
+    var w = well.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var m = ropeMatrix(svg);
+    var r = item.getBoundingClientRect();
+    var dx = cx - gx, dy = cy - gy;
+    var len0 = Math.sqrt(dx * dx + dy * dy);
+    if (len0 < 1) return;
+    /* how far off the centre line the widest fan rays aim. The SHORT side of
+       the item bounds it, so an aim point stays inside the artwork however
+       elongated it is. */
+    var spread = zoom * Math.min(r.width, r.height) / 2;
+    var nx = -dy / len0 * spread, ny = dx / len0 * spread;
+    /* only the stretch of ray that can be inside the item is worth probing —
+       start where it enters the settled pose's bounding circle */
+    var reach = zoom * Math.sqrt(r.width * r.width + r.height * r.height) / 2;
+
+    /* is the settled-pose offset (vx,vy) from the centre on this item's ink
+       as things stand right now? (see the matrix note above) */
+    function inkAt(vx, vy) {
+      var el = document.elementFromPoint(
+        w.left + cx + (m[0] * vx + m[2] * vy) / zoom,
+        w.top + cy + (m[1] * vx + m[3] * vy) / zoom);
+      return !!(el && el.closest && el.closest('.jd-item') === item);
+    }
+
+    var graze = null;
+    /* one ray, grommet -> (centre + perpendicular·f). Returns the offset to
+       grab, or null when this ray finds no real purchase. */
+    function ray(f) {
+      var ex = cx + nx * f - gx, ey = cy + ny * f - gy;
+      var len = Math.sqrt(ex * ex + ey * ey);
+      if (len < 1) return null;
+      var ux = ex / len, uy = ey / len;
+      var from = Math.max(0, len - reach);
+      function at(s) { return inkAt(gx + ux * s - cx, gy + uy * s - cy); }
+      var s, a, b, deep, v;
+      for (s = from; s <= len; s += ANCHOR_STEP) {
+        if (!at(s)) continue;
+        /* Found an edge. Measure how far the ink RUNS from here, refining
+           both ends at sub-step resolution, and settle in the middle of that
+           run — capped at ANCHOR_BITE so a solid body is still gripped near
+           its edge (which is what keeps the sag out in the open) while a
+           SLIVER is gripped down its spine. Biting a flat few px into a
+           popsicle stick crossed near-lengthwise put the tip back out in the
+           antialiasing on the far side; centring in the run cannot. */
+        a = s; b = s;
+        while (a - 0.5 >= from && at(a - 0.5)) { a -= 0.5; }
+        while (b + ANCHOR_STEP <= len && b - a < ANCHOR_BITE * 2 && at(b + ANCHOR_STEP)) {
+          b += ANCHOR_STEP;
+        }
+        while (b + 0.5 <= len && b - a < ANCHOR_BITE * 2 && at(b + 0.5)) { b += 0.5; }
+        deep = Math.min(a + ANCHOR_BITE, (a + b) / 2);
+        v = { x: gx + ux * deep - cx, y: gy + uy * deep - cy };
+        /* a GRAZE — the ray clipping a corner or a rounded end, a run barely
+           a pixel thick — has no interior to sit in, so even its midpoint is
+           within antialiasing of bare wood. Remember it and keep looking for
+           ink thick enough to hold a knot; the graze is only used if nothing
+           better turns up on any ray. */
+        if (b - a < ANCHOR_MIN_RUN) {
+          /* keep the THICKEST graze seen, not the first: on a wispy item —
+             a peacock feather is all barbs — every crossing is a graze, and
+             the fattest one (a quill rather than a barb) is the only place
+             with enough ink to hide a rope end in */
+          if (!graze || b - a > graze.run) { graze = { v: v, run: b - a }; }
+          s = b; continue;
+        }
+        return v;
+      }
+      return null;
+    }
+
+    var i, hit;
+    for (i = 0; i < ANCHOR_FAN.length; i++) {
+      hit = ray(ANCHOR_FAN[i]);
+      if (hit) { ropeOffX = hit.x; ropeOffY = hit.y; return; }
+    }
+    if (graze) { ropeOffX = graze.v.x; ropeOffY = graze.v.y; }
+  }
+
+  /* pick() probes while the 0.15s zoom is still in flight, and the matrix
+     correction above is only as good as a hit test on part-grown artwork:
+     a 3px rim in the settled pose is under 2px while the item is still
+     small, which is thin enough for antialiasing to answer "wood" on a
+     probe that will land on ink a moment later. So the anchor is CONFIRMED
+     once, right after the transition lands, against the real geometry. The
+     chain is still swinging into its sag at that point, so moving a pinned
+     end is invisible — it is the same thing an item drag does. */
+  var ZOOM_SETTLE = 200;    /* ms: the 0.15s transform ease, plus slack */
+  var ropeArm = 0;
+  function ropeConfirmAnchor(item) {
+    if (ropeArm) clearTimeout(ropeArm);
+    ropeArm = setTimeout(function () {
+      ropeArm = 0;
+      if (picked === item) ropeReanchor(item);
+    }, ZOOM_SETTLE);
+  }
+
+  /* re-read the anchor against the CURRENT grommet direction and move the
+     endpoint to match. Called at the two moments the geometry has just
+     changed and everything is at rest — an item drop and a tag drop — because
+     the near edge of a silhouette depends on which way the string is pulling.
+     Deliberately does NOT re-pin: the rest length stays frozen from pick, so
+     a dragged-away item keeps its hard-won tautness. */
+  function ropeReanchor(item) {
+    if (!ropePts || item !== picked) return;
+    var c = ropeCentre(item);
+    ropeAnchor(item, c.x, c.y, ropeBx, ropeBy);
+    ropeSetItemEnd(c.x + ropeOffX, c.y + ropeOffY);
+  }
+
+  /* (re)string the elastic between two points: freeze the rest length, then
+     lay the chain out ALREADY BOWED by the slack, at zero velocity. Called at
+     every pick — a re-pick gets a fresh string, not a stretched one.
+
+     The bow is not decoration, it is the difference between string and
+     squiggle. Laid out dead straight, the extra length has nowhere to go: the
+     tag is seated directly below its item most of the time, so the span is
+     near-vertical, gravity points along it, and the surplus buckles into a
+     little kink near one pin instead of hanging. Seeding a half-sine bow of
+     the right amplitude spends the surplus sideways from the first frame —
+     for y = A·sin(πt) the arc runs π²A²/4L longer than the chord, so
+     A = (2/π)·√(L·(rest−L)) puts exactly the slack we froze into the curve.
+     The bow leans DOWNWARD (leftward when the span is perfectly vertical,
+     which keeps it off the manila, whose grommet is on its left edge), so
+     gravity finishes the shape rather than fighting it. */
+  function ropePin(ax, ay, bx, by) {
+    var n = ROPE.SEGMENTS, i, t;
+    var dx = bx - ax, dy = by - ay;
+    var span = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+    var rest = Math.max(ROPE.MIN_REST, span * ROPE.SLACK);
+    ropeSeg = rest / (n - 1);
+    ropeAx = ax; ropeAy = ay; ropeBx = bx; ropeBy = by;
+    var amp = 2 / Math.PI * Math.sqrt(span * Math.max(0, rest - span));
+    var nx = -dy / span, ny = dx / span;            /* unit perpendicular */
+    if (ny < 0) { nx = -nx; ny = -ny; }             /* always bow downward */
+    ropePts = [];
+    for (i = 0; i < n; i++) {
+      t = i / (n - 1);
+      var bow = amp * Math.sin(Math.PI * t);
+      var x = ax + dx * t + nx * bow, y = ay + dy * t + ny * bow;
+      ropePts.push({ x: x, y: y, px: x, py: y });
+    }
+    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    else { ropeDraw(); ropeWake(); }
+  }
+  /* endpoint setters — the ONLY things that wake the loop */
+  function ropeSetItemEnd(x, y) {
+    if (!ropePts || (x === ropeAx && y === ropeAy)) return;
+    ropeAx = x; ropeAy = y; ropeKick();
+  }
+  function ropeSetTagEnd(x, y) {
+    if (!ropePts || (x === ropeBx && y === ropeBy)) return;
+    ropeBx = x; ropeBy = y; ropeKick();
+  }
+  /* reduced motion: no swinging, ever. Run the same constraints to
+     convergence in one synchronous pass and draw the settled shape, so the
+     string is still correctly slack or taut — it just never sways there. */
+  function ropeKick() {
+    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    else ropeWake();
+  }
+
+  /* one physics frame. Returns the largest distance any point travelled, so
+     the caller can decide whether the chain has come to rest. */
+  function ropeStep() {
+    var n = ropePts.length, i, k, p, moved = 0;
+    for (i = 1; i < n - 1; i++) {          /* verlet integrate the free points */
+      p = ropePts[i];
+      var vx = (p.x - p.px) * ROPE.DAMPING, vy = (p.y - p.py) * ROPE.DAMPING;
+      p.px = p.x; p.py = p.y;
+      p.x += vx; p.y += vy + ROPE.GRAVITY;
+    }
+    p = ropePts[0]; p.x = p.px = ropeAx; p.y = p.py = ropeAy;      /* pinned */
+    p = ropePts[n - 1]; p.x = p.px = ropeBx; p.y = p.py = ropeBy;  /* pinned */
+    /* Gauss-Seidel relaxation, ALTERNATING DIRECTION each pass. A one-way
+       sweep resolves each link using the already-corrected point behind it,
+       so the leftover error is pushed steadily toward the far end: the chain
+       coils up against whichever pin the sweep finishes on and takes seconds
+       of visible creep to even out. Reversing every other pass sends the
+       error back the other way and the slack distributes evenly — the shape
+       is symmetric and the chain reaches rest (and therefore sleeps) in a
+       fraction of the frames. */
+    for (k = 0; k < ROPE.ITER; k++) {
+      var back = (k & 1) === 1;
+      for (var j = 0; j < n - 1; j++) {
+        i = back ? n - 2 - j : j;
+        var a = ropePts[i], b = ropePts[i + 1];
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var d = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        /* half the error each when both ends are free; the whole of it when
+           one end is a pin and cannot absorb its share */
+        var f = (d - ropeSeg) / d * 0.5;
+        var af = i > 0, bf = i + 1 < n - 1;
+        if (af && bf) {
+          a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
+        } else if (af) { a.x += dx * f * 2; a.y += dy * f * 2; }
+        else if (bf) { b.x -= dx * f * 2; b.y -= dy * f * 2; }
+      }
+    }
+    /* BENDING RESISTANCE — the thing that makes this an elastic band and not
+       a bead chain, and the fix for the last of the "reads taut" cases
+       (testing report, 2026-08-09).
+
+       A perfectly limp chain hung between two points that are vertically in
+       line has one lowest-energy shape: fold the surplus into a hairpin and
+       let it hang straight down as a narrow bight. That is genuinely what a
+       bead chain does — and on a tag seated directly above its item it put
+       the entire fold inside the artwork, leaving a dead-straight line on
+       screen. Correct physics, useless picture, and untrue to the object:
+       red elastic cord resists being folded double. It bows.
+
+       Each interior point is nudged toward the midpoint of its neighbours,
+       which is a curvature penalty: negligible along a broad sag (the
+       neighbours nearly are its midpoint) and strong in a hairpin (where the
+       midpoint is far away). So the surplus stops folding and spends itself
+       sideways instead, which is both what the real cord does and the shape
+       that shows. Applied after the distance constraints and kept small, so
+       it shapes the sag without straightening it. */
+    for (i = 1; i < n - 1; i++) {
+      p = ropePts[i];
+      p.x += ((ropePts[i - 1].x + ropePts[i + 1].x) / 2 - p.x) * ROPE.STIFF;
+      p.y += ((ropePts[i - 1].y + ropePts[i + 1].y) / 2 - p.y) * ROPE.STIFF;
+    }
+    for (i = 1; i < n - 1; i++) {
+      p = ropePts[i];
+      var mx = p.x - p.px, my = p.y - p.py, m = Math.sqrt(mx * mx + my * my);
+      if (m > moved) moved = m;
+    }
+    return moved;
+  }
+  /* run to rest (reduced motion, and any time a settled shape is wanted
+     without animating toward it). Capped so a pathological configuration
+     can never spin the main thread. */
+  function ropeSettle() {
+    for (var i = 0; i < 400; i++) { if (ropeStep() < ROPE.EPS) return; }
+  }
+
+  /* one <path> for the whole chain, midpoint-quadratic smoothed so 16 points
+     read as string rather than as a surveyor's polyline, plus the grommet
+     ring at the tag end. Attributes are written on nodes built once in
+     buildTag() — re-parsing innerHTML 60×/second is the one avoidable cost
+     here. */
+  function ropeDraw() {
+    if (!ropePts || !ropePath) return;
+    var n = ropePts.length, i;
+    var d = 'M ' + r1(ropePts[0].x) + ' ' + r1(ropePts[0].y);
+    for (i = 1; i < n - 1; i++) {
+      d += ' Q ' + r1(ropePts[i].x) + ' ' + r1(ropePts[i].y) + ' ' +
+        r1((ropePts[i].x + ropePts[i + 1].x) / 2) + ' ' +
+        r1((ropePts[i].y + ropePts[i + 1].y) / 2);
+    }
+    d += ' L ' + r1(ropePts[n - 1].x) + ' ' + r1(ropePts[n - 1].y);
+    ropePath.setAttribute('d', d);
+    ropeGrom.setAttribute('cx', r1(ropeBx));
+    ropeGrom.setAttribute('cy', r1(ropeBy));
+  }
+
+  function ropeTick() {
+    ropeRAF = 0;
+    if (!ropePts) return;
+    var moved = ropeStep();
+    ropeDraw();
+    if (moved > ROPE.EPS) ropeWake();     /* still swinging → another frame */
+  }
+  function ropeWake() {
+    if (!ropeRAF && ropePts && !ropeReduced()) {
+      ropeRAF = requestAnimationFrame(ropeTick);
+    }
+  }
+  function ropeStop() {
+    if (ropeRAF) cancelAnimationFrame(ropeRAF);
+    ropeRAF = 0; ropePts = null;
+    ropeOffX = 0; ropeOffY = 0;
+  }
+
+  /* ---- dragging the tag itself (owner request, 2026-08-09) ---------------
+     The tag is furniture now: press anywhere on the manila and it moves,
+     clamped to the well with the same 8px margin pick() seats against, with
+     the grommet endpoint feeding the rope every frame. Two guards make it
+     coexist with what is already on the tag:
+       · the two <a class="btn"> links are exempt — a press that starts on one
+         never becomes a drag, so DOWNLOAD SVG and REPORT CARD still click;
+       · a ~4px slop before the press counts as a drag, so an imprecise tap on
+         the manila doesn't shift the tag a pixel under the finger.
+     Pointer capture keeps the drag alive off the tag's edge; the document
+     dismissal handler already ignores presses inside .jd-itemtag. */
+  var TAG_SLOP = 4;
+  var tdrag = null;
+  function wireTagDrag() {
+    tag.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target.closest && e.target.closest('.btn')) return;
+      tdrag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, on: false,
+                l0: parseFloat(tag.style.left) || 0,
+                t0: parseFloat(tag.style.top) || 0 };
+      try { tag.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault();          /* no text selection dragging the manila */
+    });
+    tag.addEventListener('pointermove', function (e) {
+      if (!tdrag || e.pointerId !== tdrag.id) return;
+      var dx = e.clientX - tdrag.sx, dy = e.clientY - tdrag.sy;
+      if (!tdrag.on) {
+        if (dx * dx + dy * dy < TAG_SLOP * TAG_SLOP) return;
+        tdrag.on = true;
+        tag.classList.add('is-dragging');
+      }
+      var w = well.getBoundingClientRect();
+      var l = Math.max(8, Math.min(w.width - tag.offsetWidth - 8, tdrag.l0 + dx));
+      var t = Math.max(8, Math.min(w.height - ropeTagH - 8, tdrag.t0 + dy));
+      tag.style.left = l + 'px';
+      tag.style.top = t + 'px';
+      ropeSetTagEnd(l + 10, t + ropeTagH / 2);
+    });
+    function endTagDrag(e) {
+      if (!tdrag || e.pointerId !== tdrag.id) return;
+      var moved = tdrag.on;
+      tag.classList.remove('is-dragging');
+      tdrag = null;
+      /* the tag has landed somewhere new, so the string pulls on the object
+         from a new direction — re-read which edge it grips */
+      if (moved && picked) ropeReanchor(picked);
+    }
+    tag.addEventListener('pointerup', endTagDrag);
+    tag.addEventListener('pointercancel', endTagDrag);
+  }
+
+  function buildTag() {
+    tag = document.createElement('div');
+    tag.className = 'jd-itemtag';
+    tag.setAttribute('role', 'group');
+    rope = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    rope.setAttribute('class', 'jd-rope');
+    /* built once, then only ever given new attribute values — see ropeDraw */
+    rope.innerHTML =
+      '<path fill="none" stroke="#b3402f" stroke-width="2" stroke-linecap="round"/>' +
+      '<circle r="4.5" fill="none" stroke="#b3402f" stroke-width="2"/>';
+    ropePath = rope.querySelector('path');
+    ropeGrom = rope.querySelector('circle');
+    well.appendChild(rope);
+    well.appendChild(tag);
+    wireTagDrag();
+  }
+
+  function returnToPile(item) {
+    if (item.parentNode === well && pileEl) {
+      pileEl.appendChild(item);
+      item.style.zIndex = ++zTop;
+    }
+  }
+  function hideTag() {
+    if (tag) {
+      tag.classList.remove('is-on');
+      tag.classList.remove('is-dragging');
+      rope.classList.remove('is-on');
+    }
+    tdrag = null;
+    if (ropeArm) { clearTimeout(ropeArm); ropeArm = 0; }
+    ropeStop();          /* the chain stops simulating the moment it's gone */
+    if (picked) {
+      picked.classList.remove('is-picked');
+      /* mid-drag dismissal: moving the node now would break pointer
+         capture — settle() performs the return instead */
+      if (held === picked) pendingReturn = picked;
+      else returnToPile(picked);
+      picked = null;
+    }
+    well.classList.remove('jd-has-pick');
+  }
+  /* the turn object dismisses the selection before it opens the modal, from
+     both the pointer and the keyboard press — and it lives outside this IIFE */
+  window.JD_hideTag = hideTag;
+  /* the instructions sheet's keyboard path (Enter/Space on the wrapper)
+     picks through the same door the tap does — see the sheet module */
+  window.JD_pick = pick;
+
+  /* An item lying against a wall zooms straight into the well's
+     overflow:hidden and gets a slice shaved off it — the skeleton key lost
+     the end of its shaft, the succulent the top of its leaves (testing
+     report, 2026-08-09). Selecting a specimen is picking it UP to look at
+     it, so before the zoom runs, slide it just far enough off the wall that
+     its enlarged self fits. Done once, as a baked left/top in % exactly like
+     settle()'s, so it costs one layout move and nothing downstream knows the
+     difference; the item keeps the new spot after dismissal, the way an
+     object you moved to see better stays where you put it.
+     Two limits: an item too big for the well in a given axis is left alone
+     in that axis (there is no position that helps), and the slide is capped,
+     because the move is instant while the zoom eases — a tap must never fling
+     an object across the drawer out from under the finger that chose it. The
+     cap is generous next to the shaves it was written for (~14px), but one of
+     the XL items jammed into a corner can still keep a sliver behind the
+     wall; that is the deliberate trade. */
+  var NUDGE_MAX = 48;
+  function nudgeIntoWell(item) {
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var hw = zoom * r.width / 2 + 2, hh = zoom * r.height / 2 + 2;
+    var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
+    var dx = hw * 2 > w.width ? 0
+      : Math.max(hw, Math.min(w.width - hw, cx)) - cx;
+    var dy = hh * 2 > w.height ? 0
+      : Math.max(hh, Math.min(w.height - hh, cy)) - cy;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    dx = Math.max(-NUDGE_MAX, Math.min(NUDGE_MAX, dx));
+    dy = Math.max(-NUDGE_MAX, Math.min(NUDGE_MAX, dy));
+    item.style.left = ((cx + dx) / w.width * 100).toFixed(2) + '%';
+    item.style.top = ((cy + dy) / w.height * 100).toFixed(2) + '%';
+  }
+
+  function pick(item) {
+    item.style.zIndex = ++zTop;
+    if (picked && picked !== item) {
+      picked.classList.remove('is-picked');
+      returnToPile(picked);
+    }
+    picked = item;
+    item.classList.add('is-picked');       /* persists: selected = lifted */
+    well.classList.add('jd-has-pick');     /* the rest of the pile dims */
+    /* hoist the object out of the pile's stacking context so it renders
+       ABOVE the elastic (tag 70 < rope 71 < item 72). Same positioning
+       box — the pile is inset:0 of the well. Returned on dismissal. */
+    if (item.parentNode !== well) well.appendChild(item);
+    item.style.zIndex = 72;
+    /* THE INSTRUCTIONS SHEET reads bare (owner, 2026-08-28): the same
+       in-place zoom-and-straighten as any pick — hoisted, upright,
+       ×--pick-scale, the pile dimmed behind it — with no specimen tag and
+       no elastic, because the words on it ARE the paperwork. Nudged into
+       the well like every pick so the enlarged sheet can't hang past the
+       wall; every standard dismissal (tap away, Esc, resize, hideTag)
+       puts it back exactly as it puts back a specimen. */
+    if (item.dataset.sheet) { nudgeIntoWell(item); return; }
+    if (!tag) buildTag();
+
+    var d = item.dataset;
+    /* GRADE, three states, read straight off the dataset — one code path for
+       every specimen in the well:
+       · data-rank a number → filed grade, the bar filled to it.
+         Curated items ALWAYS land here: the loader writes a number (0 when
+         the grade doesn't resolve), so their reading is untouched.
+       · data-rank empty → the visitor skipped the grade step, and there is
+         no verdict to show. Blank label + a bar filled to one segment read
+         as a filed worst-grade, so it says UNGRADED over an empty track.
+       data-card="none" is the other dataset switch: see dropIntoPile. */
+    var ranked = !!d.rank;
+    tag.setAttribute('aria-label', 'specimen tag: ' + (d.title || ''));
+    tag.innerHTML =
+      /* PRESSED & FILED (round 12, mockup-12a, owner pick 2026-08-12): three
+         ruled registers — name / filing grid / button bar. The name has a
+         fixed width to wrap inside (two lines reserved); MODEL and GRADE
+         share one label column so the values align on a common left edge.
+         (The filed SIZE and the DATE used to ride the tag too — both dropped
+         at the owner's request, 2026-08-12; the report card still shows
+         them.) */
+      '<div class="name">' + esc((d.title || '').toUpperCase()) + '</div>' +
+      '<div class="rows">' +
+      '<div class="row"><span class="lab">MODEL</span><span class="val">' +
+      esc((d.model || '').toUpperCase()) + '</span></div>' +
+      '<div class="row row--grade"><span class="lab">GRADE</span>' +
+      '<span class="val g' + (ranked ? '' : ' none') + '">' +
+      (ranked ? esc((d.grade || '').toUpperCase()) : 'UNGRADED') + '</span>' +
+      meterSVG(ranked ? (+d.rank || 1) : null, +d.steps || 5) +
+      '</div></div>' +
+      '<div class="btns">' +
+      '<a class="btn" href="' + esc(d.url || '') + '" download="' + esc(d.id || '') + '.svg" ' +
+      'title="download the SVG as generated">DOWNLOAD SVG ⤓</a>' +
+      (d.card === 'none' ? '' :
+        '<a class="btn jd-fullrecord" href="#' + esc(d.id || '') + '" title="open the report card">REPORT CARD →</a>') +
+      '</div>';
+    var fr = tag.querySelector('.jd-fullrecord');
+    if (fr) fr.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (window.JD_record) window.JD_record.open(d.id);
+    });
+
+    /* seat the tag just below the item, grommet toward it, clamped to the
+       well; if there's no room below, it hangs above instead. The wrapper
+       div's rect knows nothing of the inner svg's scale (and the picked zoom
+       is still transitioning at this point anyway), so the enlarged extent is
+       PREDICTED: --pick-scale × the layout height, seated against that —
+       otherwise the zoomed artwork lands on top of its own tag.
+       This used to also rotate the layout box by --rot × 0.94 to find the
+       swept height. It no longer has to: a picked specimen stands UPRIGHT
+       (see .jd-item.is-picked svg), so the displayed angle is 0 and the
+       layout box IS the extent. One fewer approximation, one less seat
+       error — the old projection over-estimated the height of any rotated
+       item and pushed its tag further down the well than it needed to go. */
+    nudgeIntoWell(item);      /* before measuring — it may move the item */
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var vh = zoom * r.height;
+    var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
+    var vTop = cy - vh / 2, vBottom = cy + vh / 2;
+    var ay = vBottom - 6;                        /* foot of the predicted extent */
+    tag.classList.add('is-on');                  /* measurable before placing */
+    var tw = tag.offsetWidth, th = tag.offsetHeight;
+    /* seat gaps trimmed 26→17 / 20→13 (owner request, 2026-08-10), then
+       17→14 / 13→10 with the second ~20% cut (owner, 2026-08-11): the tag
+       sits closer so the string's span — the part of its length no slack
+       dial can shorten — comes down with the ROPE constants */
+    var below = ay + 14 + th < w.height - 8;
+    var ty = below ? ay + 14 : (vTop - 10 - th);
+    function clampX(v) { return Math.max(8, Math.min(w.width - tw - 8, v)); }
+    var tx;
+    if (below) {
+      tx = clampX(cx + 4);
+    } else {
+      /* SEATED ABOVE — LEAN IT TO ONE SIDE (testing report, 2026-08-09).
+         A tag hung straight above its item puts both ends of the elastic on
+         one vertical line, and a slack cord between two such points has
+         nowhere to put its surplus except a fold hanging straight down —
+         i.e. straight into the artwork, where none of it can be seen. The
+         string then reads bone-taut however much slack it actually has.
+         Leaning the tag sideways by a good fraction of the drop gives the
+         sag somewhere to be, and the elastic hangs in an arc the way it
+         already does in the (far commoner) seated-below case.
+         HOW FAR: the belly of the sag hangs around the midpoint of the two
+         ends, so the lean has to be wide enough to swing that midpoint clear
+         of the artwork — a lean of half the item's width just parks the
+         belly back on top of it. Hence the item's own ZOOMED width (plus a
+         margin) as the floor, alongside a fraction of the drop.
+         Lean LEFT by preference: the grommet is on the tag's left edge, so
+         leaning left slides the body back over ground the tag already
+         covered and can't push it off the right wall. If the well runs out
+         that way — item hard against the left edge — lean right instead;
+         whichever survives clamping with more offset wins. */
+      /* 110→80 / 0.62→0.48 with the shorter string (2026-08-10), then
+         80→64 / 0.48→0.38 with the second cut (2026-08-11): less slack
+         means a smaller belly to swing clear, so the lean scales with it —
+         the zoomed-width floor is geometry and stays */
+      var lean = Math.max(64, 0.38 * (cy - (ty + th / 2)), zoom * r.width + 40);
+      var lx = clampX(cx - lean - 10), rx = clampX(cx + lean - 10);
+      tx = Math.abs(lx + 10 - cx) >= Math.abs(rx + 10 - cx) ? lx : rx;
+    }
+    tag.style.left = tx + 'px';
+    tag.style.top = ty + 'px';
+
+    /* string the elastic: the item's NEAR EDGE -> the grommet at the tag's
+       left edge. The predicted extent above still decides where the tag is
+       SEATED (so the zoomed artwork never lands on its own tag); it has no
+       say in where the rope starts, because that is read off the silhouette
+       itself — see ropeAnchor. Rest length is frozen here — see ROPE. */
+    ropeTagH = th;
+    var gx = tx + 10, gy = ty + th / 2;
+    ropeAnchor(item, cx, cy, gx, gy);
+    rope.setAttribute('class', 'jd-rope is-on');
+    ropePin(cx + ropeOffX, cy + ropeOffY, gx, gy);
+    ropeConfirmAnchor(item);
+  }
+
+  /* dismissal: any press that isn't the item or the tag — wood, page,
+     notes, anywhere — plus Escape and resize (positions go stale). Note what
+     is NOT on this list any more: dragging the picked item. The elastic
+     stretches and follows now (2026-08-09), so a drag is inspection, not
+     dismissal — only a press on something else lets go. */
+  /* every dismissal path stands down while the report card is open — the
+     record owns Esc/scrim then, and the selection must survive its close */
+  document.addEventListener('pointerdown', function (e) {
+    if (JD_layerOpen()) return;
+    if (!e.target.closest || !e.target.closest('.jd-item, .jd-itemtag')) hideTag();
+  });
+  window.addEventListener('keydown', function (e) {
+    if (JD_layerOpen()) return;
+    if (e.key === 'Escape') hideTag();
+  });
+  window.addEventListener('resize', function () {
+    if (JD_layerOpen()) return;
+    hideTag();
+  });
+  var dropX = 0, dropY = 0;
+  /* drag moves are TRANSFORM-only (--dx/--dy): moving a filtered element via
+     left/top forces layout repaints, and Blink leaves stale drop-shadow
+     trails behind the old positions. The final spot is baked into left/top
+     once, at settle, when the element is at rest. */
+  function place(item, x, y) {
+    /* fixed hardware does not travel: an attempted drag of the turn button
+       moves nothing (and pointerup will see drag=true, so it won't press
+       either — an aborted drag is not a tap) */
+    if (item.dataset.turn === 'object') return;
+    var w = well.getBoundingClientRect();
+    var mx = item.offsetWidth / 2 + CLEAR, my = item.offsetHeight / 2 + CLEAR;
+    x = Math.max(mx, Math.min(w.width - mx, x));
+    y = Math.max(my, Math.min(w.height - my, y));
+    dropX = x; dropY = y;
+    item.style.setProperty('--dx', (x - ox).toFixed(1) + 'px');
+    item.style.setProperty('--dy', (y - oy).toFixed(1) + 'px');
+    /* the clamped x,y IS the item's live centre in well coords — exactly the
+       rope's item endpoint, handed over for free. Measuring the element per
+       frame instead would force a layout on a filtered, compositor-promoted
+       node mid-drag, which is the whole reason this path is transform-only. */
+    if (item === picked) ropeSetItemEnd(x + ropeOffX, y + ropeOffY);
+  }
+  function settle(item, moved) {
+    item.classList.remove('is-held');
+    /* the turn button settles into nothing: it never moved (place() refuses),
+       it keeps its fixed z instead of riding zTop, and it gets no landing
+       jostle — its seat is not the visitor's to change any more */
+    if (item.dataset.turn === 'object') {
+      item.style.removeProperty('--dx');
+      item.style.removeProperty('--dy');
+      return;
+    }
+    if (pendingReturn === item) { returnToPile(item); pendingReturn = null; }
+    /* the picked item keeps its place in the z-sandwich (tag 70 < rope 71 <
+       item 72) instead of riding the zTop counter — it is still selected and
+       the elastic must still pass under it */
+    item.style.zIndex = item === picked ? 72 : ++zTop;
+    if (moved) {                                 /* bake position, then rest */
+      var w = well.getBoundingClientRect();
+      item.style.left = (dropX / w.width * 100).toFixed(2) + '%';
+      item.style.top = (dropY / w.height * 100).toFixed(2) + '%';
+      /* the landing jostle — skipped for a picked item for the same reason
+         rotation input is (see spin): it stands upright, so the nudge would
+         not be seen now and would only show up as an unexplained kick when
+         the tag is dismissed */
+      if (item !== picked) {
+        var rot = parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0;
+        rot += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random());  /* impulse */
+        item.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      }
+    }
+    item.style.removeProperty('--dx');
+    item.style.removeProperty('--dy');
+    /* one authoritative pass once the position is baked into left/top: the %
+       round-trip moves the centre by a fraction of a pixel, and the drop has
+       changed which way the string pulls, so the near edge it should be
+       gripping has moved too. Both are settled here in one go — a handful of
+       hit tests on a stationary item, never per frame. */
+    ropeReanchor(item);
+  }
+
+  /* per-item wiring is deferred: the pile is BUILT by the loader above, so
+     the loader calls window.JD_wirePile() once the items exist in the DOM.
+     Touch grips IMMEDIATELY, same as mouse (G5 revision 3, 2026-07-26):
+     the old ~180ms hold existed only to prove a touch wasn't a page-scroll
+     starting — moot now that item ink is touch-action:none. Touch-and-move
+     drags right away; press-and-release within the slop is a tap/pick. */
+  function wireItem(item) {
+    item.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (held && e.pointerId !== pid) return;   /* second finger: twist owns it */
+      /* the turn modal opens a beat AFTER the turn button press so the press can
+         be seen (OPEN_MS). Grabbing something else inside that beat means the
+         visitor has moved on — stand the pending open down, or the modal pops
+         on top of a drag that is still in flight.
+         The turn button's OWN re-grip is exempt HERE and handled at the drag
+         threshold instead (see pointermove): standing down on its pointerdown
+         would break the fast double-tap, because press() debounces at 150ms
+         and returns early without re-arming — the second tap would cancel the
+         first tap's open and then decline to schedule its own, swallowing the
+         modal entirely. A re-grip only has to cancel once it stops being a
+         tap. */
+      if (item.dataset.turn !== 'object' &&
+          window.JD_turnObject && window.JD_turnObject.standDown) {
+        window.JD_turnObject.standDown();
+      }
+      pend = item; drag = false;
+      pid = e.pointerId;
+      tapSlop = e.pointerType === 'touch' ? TOUCH_SLOP : SLOP;
+      sx = fx = e.clientX; sy = fy = e.clientY;
+      var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+      ox = r.left + r.width / 2 - w.left;
+      oy = r.top + r.height / 2 - w.top;
+      try { item.setPointerCapture(e.pointerId); } catch (_) {}
+      if (e.pointerType === 'mouse') e.preventDefault();
+      grip(item);
+    });
+    item.addEventListener('pointermove', function (e) {
+      if (pend !== item || e.pointerId !== pid) return;
+      fx = e.clientX; fy = e.clientY;            /* twist pivots on this finger */
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      if (held === item) {
+        /* the elastic used to let go here; it holds on now (2026-08-09) —
+           place() feeds the rope the same clamped centre it clamps to */
+        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) {
+          drag = true;
+          /* the turn button cancelling its own pending open, at the exact moment
+             this gesture stops being a tap. A re-grip that becomes a DRAG
+             never reaches press(), so without this the previous tap's
+             openTimer would still fire. The button itself no longer travels
+             (place() refuses fixed hardware), but the principle stands: a
+             gesture that outgrew the slop is not a tap, and must not open
+             the modal. Deliberately here and not on pointerdown — see the
+             note there. */
+          if (item.dataset.turn === 'object' &&
+              window.JD_turnObject && window.JD_turnObject.standDown) {
+            window.JD_turnObject.standDown();
+          }
+        }
+        if (drag) place(item, ox + dx, oy + dy);
+      }
+    });
+    item.addEventListener('touchmove', function (e) {
+      if (held === item) e.preventDefault();     /* non-passive: stop the pan */
+    }, { passive: false });
+    item.addEventListener('pointerup', function (e) {
+      if (e.pointerId !== pid) return;           /* second finger up ≠ release */
+      if (held === item) {
+        settle(item, drag);
+        /* press-release without a drag = tap. For a specimen that is pick();
+           for the drawer's one piece of HARDWARE (the Take-a-Turn button,
+           flagged data-turn) it is a PRESS instead — no specimen tag, no
+           report card, because it is not collection. Everything before this
+           line is identical for both: same grip, same drag, same settle. */
+        if (!drag) {
+          if (item.dataset.turn === 'object') {
+            /* press() dismisses any live specimen tag itself, on both the
+               pointer and the keyboard path — see the turn-object module */
+            if (window.JD_turnObject) window.JD_turnObject.press();
+          } else if (item.dataset.sheet) {
+            /* the instructions sheet: tap = larger (a bare pick — see the
+               data-sheet branch in pick()), tap again = back down. Tapping
+               away, Esc and resize already put it back via hideTag. */
+            if (item === picked) hideTag();
+            else pick(item);
+          } else if (item.dataset.folder) {
+            /* the analytics folder: a tap OPENS it into its dialog. No pick,
+               no specimen tag, no report card — it is not collection either,
+               and what is inside it is a dashboard, not an object. */
+            if (window.JD_folder) window.JD_folder.open();
+          } else {
+            pick(item);
+          }
+        }
+      }
+      pend = held = null; drag = false; twist = null;
+    });
+    item.addEventListener('pointercancel', function (e) {
+      if (e.pointerId !== pid) return;
+      if (held === item) settle(item, drag);
+      pend = held = null; drag = false; twist = null;
+    });
+  }
+  /* idempotent: a won item is appended to the pile long after load and calls
+     this again, so already-wired items must not collect a second set of
+     listeners (which would grip and pick twice per press) */
+  window.JD_wirePile = function () {
+    well.querySelectorAll('.jd-item:not([data-wired])').forEach(function (item) {
+      item.setAttribute('data-wired', '');
+      wireItem(item);
+    });
+  };
+
+  /* ---- rotating the held item ------------------------------------------ */
+  /* ROTATION IS INHIBITED WHILE PICKED (owner request, 2026-08-09). A picked
+     specimen displays upright at 0deg, so every rotation gesture would mutate
+     a --rot nothing is currently drawing — invisible until dismissal, at
+     which point the item would drop back to the pile at an angle the owner
+     never saw it take. Silently banking the change was the alternative and it
+     is worse: a gesture with no feedback and a delayed surprise. So the input
+     is simply refused while the item is picked; dismiss it and the pile
+     gesture works exactly as before. The events are still consumed by the
+     handlers below (preventDefault stays), because a wheel or pinch over a
+     held item must never scroll or zoom the page out from under it. */
+  function rotOf(item) { return parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0; }
+  function spin(item, d) {
+    if (item === picked) return;
+    if (item.dataset.turn === 'object') return;  /* fixed hardware: no rotation */
+    item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg');
+  }
+
+  window.addEventListener('wheel', function (e) {
+    if (!held) return;
+    e.preventDefault();                          /* no page scroll mid-hold */
+    /* both axes: on macOS trackpads two-finger swipes arrive as wheel
+       deltas in x AND y, so any two-finger stroke direction rotates */
+    spin(held, Math.max(-30, Math.min(30, e.deltaY + e.deltaX)) * 0.2);
+  }, { passive: false });
+
+  /* macOS Safari exposes the trackpad two-finger ROTATE gesture as
+     non-standard gesture events carrying a cumulative rotation angle.
+     Chrome never fires these (its trackpad path is the wheel handler
+     above). Only engaged while holding, so page pinch-zoom is untouched
+     otherwise. */
+  var gBase = 0;
+  window.addEventListener('gesturestart', function (e) {
+    if (!held) return;
+    e.preventDefault(); gBase = rotOf(held);
+  });
+  window.addEventListener('gesturechange', function (e) {
+    if (!held) return;
+    e.preventDefault();
+    if (held === picked) return;              /* upright while picked */
+    if (held.dataset.turn === 'object') return;  /* fixed hardware */
+    held.style.setProperty('--rot', (gBase + e.rotation).toFixed(1) + 'deg');
+  });
+  window.addEventListener('gestureend', function (e) { if (held) e.preventDefault(); });
+
+  window.addEventListener('keydown', function (e) {
+    if (!held) return;
+    if (e.key === '[') { e.preventDefault(); spin(held, -5); }
+    else if (e.key === ']') { e.preventDefault(); spin(held, 5); }
+  });
+
+  /* second finger, anywhere: twist around the gripping finger */
+  document.addEventListener('pointerdown', function (e) {
+    if (!held || twist || e.pointerId === pid) return;
+    twist = { id: e.pointerId,
+              a0: Math.atan2(e.clientY - fy, e.clientX - fx),
+              r0: rotOf(held) };
+    e.stopPropagation(); e.preventDefault();
+  }, true);
+  document.addEventListener('pointermove', function (e) {
+    if (!twist || !held || e.pointerId !== twist.id) return;
+    /* the second finger is still SWALLOWED while picked (the twist object
+       exists, so it can't grab a neighbour or dismiss the tag) — it just
+       doesn't turn an upright specimen */
+    if (held === picked) return;
+    if (held.dataset.turn === 'object') return;  /* fixed hardware */
+    var a = Math.atan2(e.clientY - fy, e.clientX - fx);
+    held.style.setProperty('--rot',
+      (twist.r0 + (a - twist.a0) * 180 / Math.PI).toFixed(1) + 'deg');
+  }, true);
+  function endTwist(e) { if (twist && e.pointerId === twist.id) twist = null; }
+  document.addEventListener('pointerup', endTwist, true);
+  document.addEventListener('pointercancel', endTwist, true);
+
+  /* while gripping, two fingers must never pinch-zoom the page */
+  document.addEventListener('touchmove', function (e) {
+    if (held) e.preventDefault();
+  }, { passive: false });
+
+  /* arrange-mode: dump the pile's current positions (x/y 0..1 fractions of the
+     well, item centre), keyed by full item id. Debug readout only — items are
+     auto-scattered now, so this is for inspecting a layout, not authoring one;
+     nothing consumes a pasted-back block. */
+  var copy = document.getElementById('copy-layout');
+  if (copy) copy.addEventListener('click', function (e) {
+    e.preventDefault();
+    var w = well.getBoundingClientRect(), out = {};
+    /* :not([data-turn]):not([data-sheet]) — the turn button and the
+       instructions sheet are furniture, not specimens, and this readout is
+       a list of where the COLLECTION is lying */
+    well.querySelectorAll('.jd-item:not([data-turn]):not([data-sheet])').forEach(function (item) {
+      var r = item.getBoundingClientRect();
+      out[item.dataset.id || 'item'] = {
+        x: +(((r.left + r.width / 2 - w.left) / w.width).toFixed(4)),
+        y: +(((r.top + r.height / 2 - w.top) / w.height).toFixed(4)),
+        rotation: +(parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0).toFixed(1),
+        scale: parseFloat(item.dataset.scale) || 1,
+        z: parseInt(getComputedStyle(item).zIndex, 10) || 0
+      };
+    });
+    var json = JSON.stringify(out, null, 2), a = e.target, label = a.textContent;
+    function done(ok) {
+      a.textContent = ok ? 'copied ✓' : 'clipboard blocked — see prompt';
+      setTimeout(function () { a.textContent = label; }, 1200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(
+        function () { done(true); },
+        function () { window.prompt('layout JSON:', json); done(false); });
+    } else { window.prompt('layout JSON:', json); done(false); }
+  });
+})();
+
+/* ---- immersive chrome (G5 revision 4, 2026-07-26) -----------------------
+   Mobile only: the fixed site banner hides while the drawer is in view
+   (the drawer owns the full 100svh on load) and slides back once the
+   visitor scrolls toward the notes. The CSS lives in junk-drawer.css, so
+   the behavior is scoped to this page; every other page's banner is
+   untouched. */
+(function () {
+  var mq = window.matchMedia('(max-width: 768px)');
+  var stage = document.querySelector('.jd-stage');
+  if (!stage) return;
+  function update() {
+    /* one scrollY read + an idempotent class toggle: cheap enough to run
+       unthrottled on scroll (rAF-gating proved unreliable in throttled/
+       background contexts) */
+    var show = !mq.matches || window.scrollY > stage.offsetHeight * 0.5;
+    document.documentElement.classList.toggle('jd-chrome', show);
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  if (mq.addEventListener) mq.addEventListener('change', update);
+  else if (mq.addListener) mq.addListener(update);
+  update();
+})();
+
+/* ============================================================================
+   THE DRAW-ON ENGINE — window.JD_drawOn(svg, opts)
+   Animates an inlined SVG as if it were being drawn: every element plays in
+   DOCUMENT ORDER — the order the generating model actually emitted the
+   shapes — so the reveal is a small replay of the generation, provenance as
+   motion rather than a canned wipe. Stroked paths draw along their measured
+   length (the dasharray trick); filled shapes fade in once their outline is
+   mostly down; pre-dashed strokes and unmeasurables (text, use) fall back
+   to a fade. Each element's share of the run scales with the square root of
+   its length, so one long spine can't starve the small bones.
+   Two customers: the report card's plate (open / response flip / REPLAY)
+   and the turn's reveal, where the fresh drawings' first appearance is the
+   whole point. opts: { force: play even under prefers-reduced-motion — an
+   explicit request is not ambient animation; secs: run length — omit it
+   and the run is paced by the DRAWING (below) }. Returns the seconds the
+   run will take (truthy), or false if it didn't play. The inline
+   animation styles are stripped when the run ends, so the DOM goes back
+   to exactly what was rendered; overlapping runs on one svg settle by a
+   sequence stamp on the element — the newer run owns the artwork.
+   Keyframes live in junk-drawer.css beside .rc-plate-art.
+
+   PACING (owner rev, 2026-08-16 — "simple objects drew in slow motion"):
+   a fixed run length made every drawing finish in the same time, so a
+   one-path paperclip crawled while a 600-element portrait sprinted. The
+   default now models a hand moving at constant speed: the run length is
+   total measured ink (every element's length, min-clamped) divided by
+   the artwork's viewBox diagonal — a scale-free "diagonals of ink"
+   number — drawn at WORK_RATE diagonals/second, clamped to
+   [SECS_MIN, SECS_MAX] so a two-stroke doodle still registers and a
+   monster can't run half a minute. Calibrated on the live items:
+   paperclip work≈3 → 1.2s, fish skeleton ≈5 → 1.6s, subway rat ≈9 →
+   3.0s, crystal ball ≈25 and up → the 4.2s cap. */
+(function () {
+  var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
+  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,' +
+    'symbol,marker';
+  var WORK_RATE = 3, SECS_MIN = 1.2, SECS_MAX = 4.2;
+  var seq = 0;
+  function strip(svg) {
+    if (!svg || !document.contains(svg)) return;
+    var els = svg.querySelectorAll(SEL);
+    for (var i = 0; i < els.length; i++) {
+      els[i].style.animation = '';
+      els[i].style.strokeDasharray = '';
+      els[i].style.strokeDashoffset = '';
+      els[i].style.removeProperty('--jdfo');
+      els[i].style.removeProperty('--jdo');
+    }
+  }
+  window.JD_drawOn = function (svg, opts) {
+    opts = opts || {};
+    if (!svg || (JD_reduced() && !opts.force)) return false;
+    var els = svg.querySelectorAll(SEL);
+    var items = [], i, el, cs, L, stroked, filled, ink = 0;
+    for (i = 0; i < els.length; i++) {
+      el = els[i];
+      if (el.closest && el.closest(SKIP)) continue;
+      cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      L = 0;
+      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
+      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
+        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' &&
+        L > 0;
+      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
+      if (!stroked && !filled) continue;
+      items.push({ el: el, L: Math.max(L, 4), stroked: stroked,
+        filled: filled, fo: cs.fillOpacity, op: cs.opacity });
+      ink += Math.max(L, 4);
+    }
+    var secs = opts.secs;
+    if (!secs) {
+      /* pace by the drawing, not the clock (see PACING above). The
+         diagonal comes from the declared viewBox — the same frame the
+         lengths are measured in; a viewBox-less artwork (none in the
+         collection, but the validator doesn't forbid it) falls back to
+         its rendered bounding box. */
+      var diag = 0;
+      var vb = svg.viewBox && svg.viewBox.baseVal;
+      if (vb && vb.width > 0) {
+        diag = Math.sqrt(vb.width * vb.width + vb.height * vb.height);
+      } else {
+        try {
+          var bb = svg.getBBox();
+          diag = Math.sqrt(bb.width * bb.width + bb.height * bb.height);
+        } catch (e) {}
+      }
+      var work = diag > 0 ? ink / diag : 0;
+      secs = Math.min(SECS_MAX, Math.max(SECS_MIN, work / WORK_RATE));
+    }
+    var totalW = 0;
+    for (i = 0; i < items.length; i++) totalW += Math.sqrt(items[i].L);
+    var acc = 0, my = ++seq;
+    svg.__jdDrawSeq = my;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      var w = Math.sqrt(it.L) / (totalW || 1);
+      /* starts pack into the first 90% so the tail still finishes inside
+         the run; durations get 1.7x their share, overlapping neighbours
+         the way a hand keeps moving before the last stroke dries */
+      var startF = acc * 0.9;
+      acc += w;
+      var durF = Math.min(w * 1.7, 1 - startF);
+      var start = startF * secs;
+      var dur = Math.max(durF * secs, 0.12);
+      if (it.stroked) {
+        it.el.style.strokeDasharray = it.L;
+        it.el.style.strokeDashoffset = it.L;
+        var a = 'jdDrawOn ' + dur.toFixed(3) + 's ease-out ' +
+          start.toFixed(3) + 's 1 both';
+        if (it.filled) {
+          it.el.style.setProperty('--jdfo', it.fo);
+          a += ', jdFillOn ' + Math.max(dur * 0.6, 0.15).toFixed(3) +
+            's ease-in ' + (start + dur * 0.45).toFixed(3) + 's 1 both';
+        }
+        it.el.style.animation = a;
+      } else {
+        it.el.style.setProperty('--jdo', it.op);
+        it.el.style.animation = 'jdFadeOn ' +
+          Math.max(dur * 0.8, 0.15).toFixed(3) + 's ease-in ' +
+          start.toFixed(3) + 's 1 both';
+      }
+    }
+    /* put the artwork back to plain rendered state once the run is over;
+       a newer run on the same svg owns it instead */
+    setTimeout(function () {
+      if (svg.__jdDrawSeq === my) strip(svg);
+    }, (secs + 0.4) * 1000);
+    return secs;
+  };
+})();
