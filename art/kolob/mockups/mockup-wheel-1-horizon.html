@@ -65,7 +65,7 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
 .kolob-sec-head { font-family: "Noto Sans Deseret", serif; font-size: 0.8rem; letter-spacing: 0.22em; color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding-bottom: 0.45rem; margin: 0 0 0.6rem; }
 
 /* ---------------- the wheel band ---------------- */
-.kolob-wheel-wrap { position: relative; height: 240px; margin: 0 0 0.6rem; }
+.kolob-wheel-wrap { position: relative; height: 262px; margin: 0 0 0.6rem; }
 .kolob-wheel { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* mockup controls (not part of the design) */
@@ -88,7 +88,7 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
 @media (max-width: 700px) {
   .kolob-mat { padding: 18px; }
   .kolob-page { padding: 1.6rem 1.2rem 1.6rem; }
-  .kolob-wheel-wrap { height: 170px; }
+  .kolob-wheel-wrap { height: 200px; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.4rem; }
 }
 </style>
@@ -204,11 +204,6 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
   // its own angle, the whole word centred on `centreA`. Deseret letters are
   // astral code points, so the string is split with Array.from, not charAt.
   // Returns the word's length along the arc, in px, for the arc's track.
-  function lettered(txt, track) {
-    var g = Array.from(txt), w = 0;
-    for (var i = 0; i < g.length; i++) w += ctx.measureText(g[i]).width;
-    return w + track * (g.length - 1);
-  }
   function curvedText(txt, cx, cy, r, centreA, track) {
     var glyphs = Array.from(txt), widths = [], total = 0;
     for (var i = 0; i < glyphs.length; i++) { widths[i] = ctx.measureText(glyphs[i]).width; total += widths[i]; }
@@ -250,8 +245,30 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
     // the rim — one hairline, and a fainter inner rule the labels sit on
     ctx.lineWidth = 1; ctx.strokeStyle = inkA(0.5);
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = inkA(0.14);
-    ctx.beginPath(); ctx.arc(cx, cy, R - fontPx * 2.0, 0, Math.PI * 2); ctx.stroke();
+    var rBanner = R - fontPx * 2.35;                       // the banner's inner rule
+    ctx.strokeStyle = inkA(0.3);
+    ctx.beginPath(); ctx.arc(cx, cy, rBanner, 0, Math.PI * 2); ctx.stroke();
+
+    // beneath the banner: the dial. A spoke to every seat, a faint hour ring
+    // with quarter-marks between the seats — the wheel's turning made visible.
+    var rHour = rBanner - fontPx * 1.3;
+    ctx.strokeStyle = inkA(0.12);
+    ctx.beginPath(); ctx.arc(cx, cy, rHour, 0, Math.PI * 2); ctx.stroke();
+    for (var q = 0; q < N * 4; q++) {
+      var qa = -Math.PI / 2 + (q / 4 - S.offset) * STEP;
+      var isSeat = q % 4 === 0, isHalf = q % 4 === 2;
+      if (isSeat) {
+        ctx.strokeStyle = inkA(0.2);
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(qa) * rBanner, cy + Math.sin(qa) * rBanner); ctx.stroke();
+      } else {
+        var len = isHalf ? 9 : 5;
+        ctx.strokeStyle = inkA(isHalf ? 0.3 : 0.2);
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(qa) * rHour, cy + Math.sin(qa) * rHour);
+        ctx.lineTo(cx + Math.cos(qa) * (rHour - len), cy + Math.sin(qa) * (rHour - len));
+        ctx.stroke();
+      }
+    }
 
     for (var i = 0; i < N; i++) {
       var p = PANELS[i];
@@ -271,15 +288,14 @@ body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding:
       var txt = label(p);
       var alpha = isCur ? 1 : isDone ? 0.28 : 0.62;
       ctx.fillStyle = inkA(alpha);
-      curvedText(txt, cx, cy, R - fontPx * 1.1, a, TRACK);
+      curvedText(txt, cx, cy, R - fontPx * 1.6, a, TRACK);
 
     }
 
     // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
-    // Wide enough for the longest label, so every section reads inside it.
-    var widest = 0;
-    for (var m = 0; m < N; m++) widest = Math.max(widest, lettered(label(PANELS[m]), TRACK));
-    var span = (widest + fontPx * 1.6) / R, top = -Math.PI / 2, a0 = top - span / 2;
+    // It runs from the left neighbour's tick to the right neighbour's: the
+    // whole crown of the wheel is the bar, and each section refills it.
+    var span = STEP * 2, top = -Math.PI / 2, a0 = top - STEP;
     var rr = R + 6;
     var curP = PANELS[S.turning ? S.turnFrom : S.cur];
     var fill = S.turning ? 1 : S.prog;                       // holds full through the turn…
