@@ -55,6 +55,7 @@ window.ZankyoAudio = (function () {
   var landscapeTap = null, outTrim = null;                                        // Phase M: dev taps — the landscape sum (grit bus + shō, as cut) and the output
   var layerIn = {}, presenceOf = {};                                              // Phase M: per-layer entry node → presence stage → the layer gain (so the tap hears it)
   var gritShaper = null;           // distortion bus (gritty instruments route here)
+  var taikoShaper = null, taikoMakeup = null;   // Phase M (orchestrator Q4): the kit's own grit curve — it no longer shares the drone's clip
   var shamEdge = null;             // shamisen's own gentle saturator (bite without the grit-bus onset spike)
   var dryGritGain = null;          // parallel dry grit send, opened up toward the kyū climax
   var gritMakeup = null;           // the grit bus's makeup-DOWN stage (tapped by attachBusAnalyser)
@@ -277,7 +278,7 @@ window.ZankyoAudio = (function () {
   // shamisen 2.5 → 3.0 (+1.6),
   // biwa 2.0 → 2.8, hichiriki and PA 1 → 1.4 (+2.9 dB each) — the bodies the owner
   // heard buried; the shakuhachi and the shamisen already read.
-  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.6, shamisen: 3.0, biwa: 2.8, hichiriki: 1.4, pa: 1.4 };
+  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.6, shamisen: 3.0, biwa: 2.55, hichiriki: 1.4, pa: 1.4 };   // biwa 2.8 → 2.55 (round 2): its strums' picks summed per row pushed the peak to +3.4
   // PRESENCE (Phase M): a peaking boost on each body's defining band, chosen
   // from the masker map — the band where the landscape is weakest against the
   // voice — pre-attenuated (pre) so the compressor sees no new peak. Measured:
@@ -485,6 +486,19 @@ window.ZankyoAudio = (function () {
       // not part of the sum the crew ducks)
       landscapeTap = ctx.createGain(); landscapeTap.gain.setValueAtTime(1, ctx.currentTime);
       cutGrit.connect(landscapeTap); cutSho.connect(landscapeTap); cutAmb.connect(landscapeTap);   // grit-cut + shō-cut + ambient-cut: the landscape exactly as it reaches the dry sum
+      // THE KIT'S OWN CLIP (Phase M, the orchestrator's Q4): the taiko used to
+      // ride the drone's shaper and lose the clip to it — a hit on a railed
+      // drone gets ~14 dB less of the curve's gain than the drone does, so the
+      // kit read 18 dB under the bus it was in. Now it has its own copy of the
+      // grit curve (the same 0.6 shape, 4× oversampled) and its own makeup-down,
+      // set so a LOUD hit leaves the shaper at the level it entered (the curve
+      // gives ~+17 dB at the rail; 0.13 takes it back): no level change for the
+      // kit's accents, the soft strokes come up with the clip's compression.
+      // Into the KIRU's cut gain after the crew's chain: the cut still hushes the
+      // kit; the crew does not duck or notch it (it is a voice, not the floor).
+      taikoShaper = ctx.createWaveShaper(); taikoShaper.curve = buildGritCurve(0.6); taikoShaper.oversample = "4x";
+      taikoMakeup = ctx.createGain(); taikoMakeup.gain.setValueAtTime(0.13, ctx.currentTime);
+      taikoShaper.connect(taikoMakeup); taikoMakeup.connect(cutGrit);
       // parallel dry path — crossfaded up by the arc so the kyū gets close + abrasive
       dryGritGain = ctx.createGain();
       dryGritGain.gain.setValueAtTime(0, ctx.currentTime);
@@ -524,7 +538,8 @@ window.ZankyoAudio = (function () {
         entry.connect(pk); pk.connect(node); presenceOf[layer] = pk;
       } else entry.connect(node);
       layerIn[layer] = entry;
-      if (GRIT_LAYERS[layer] && effectsReady && gritShaper) { node.connect(gritShaper); if (gritShaperB) node.connect(gritShaperB); }   // Phase M: the second curve finally HAS an input (see the makeup note)
+      if (layer === "taiko" && effectsReady && taikoShaper) node.connect(taikoShaper);                                            // Phase M: the kit's own clip (Q4)
+      else if (GRIT_LAYERS[layer] && effectsReady && gritShaper) { node.connect(gritShaper); if (gritShaperB) node.connect(gritShaperB); }   // Phase M: the second curve finally HAS an input (see the makeup note)
       else if (layer === "shamisen" && effectsReady && shamEdge) node.connect(shamEdge);
       else if (layer === "sho" && effectsReady && sumSho) node.connect(sumSho);
       else if (layer === "ambient" && effectsReady && sumAmb) node.connect(sumAmb);
@@ -2182,11 +2197,11 @@ window.ZankyoAudio = (function () {
     // keeps its low slap beside the click. The seeded draw for the noise
     // offset is kept in place (stream discipline).
     if (sharedNoiseBuf) {
-      var tsume = K.plectrum === "tsume", gmul = (0.5 + 0.5 * vel) * (opts.gain == null ? 1 : opts.gain);   // a gentler velocity law than the body's: the softest plucks still show their pick (the gate's p10)
+      var tsume = K.plectrum === "tsume", gmul = (0.7 + 0.3 * vel) * Math.max(0.75, opts.gain == null ? 1 : opts.gain);   // a gentler law than the body's (critic r1): the softest plucks and the shadow notes still show their pick; the loud end is unchanged (floor 0.75, not 0.85: a gliss run's picks summed in one row pushed the koto's peak to +3.6)
       var pn = noiseSource(), pf = c.createBiquadFilter(), pg = c.createGain();
       pf.type = "bandpass"; pf.frequency.setValueAtTime((tsume ? 3000 : 2500) * Math.pow(2, (Math.random() - 0.5) * 0.7), t); pf.Q.setValueAtTime(1.0, t);   // 2.4–3.8 kHz tsume, 2.0–3.2 kHz bachi
       pn.connect(pf); pf.connect(pg); pg.connect(out);
-      var pd = 0.007 + Math.random() * 0.0035, pp = (tsume ? 0.18 : 0.15) * gmul;                                       // 7–10.5 ms body of the burst; ≤ 15 ms in all (measured: 0.11 read +4.8 at the koto's onset in the jo, −0.6 in the ha — the noise bodies own that band there)
+      var pd = 0.007 + Math.random() * 0.0035, pp = (tsume ? 0.17 : 0.12) * gmul;                                       // 7–10.5 ms body of the burst; ≤ 15 ms in all (measured: 0.11 read +4.8 at the koto's onset in the jo, −0.6 in the ha — the noise bodies own that band there)
       PJ.Voice.env(pg.gain, t, [[0.0015, pp], [pd, pp * 0.3], [0.003, 0]]);
       pn.start(t, R.next() * 10); pn.stop(t + pd + 0.02);
       if (!tsume) {                                                                                                 // the bachi's slap: the old lowpassed thud, as it was
@@ -2933,15 +2948,16 @@ window.ZankyoAudio = (function () {
   var ROOM_CARVE_DB = -2, ROOM_Q = 2.0;                                                       // the notch at the speaking register: narrow (a critical band) and deeper — it clears the fundamental's band for a fraction of the power a broad duck would spend
   var ROOM_F_LO = 150, ROOM_F_HI = 1200;                                                    // the dip stays inside 150–1200 Hz (the orchestrator's cap)
   var LAND_SHELF_DB = -3;                                                                  // the static shelf above 1.5 kHz on the grit bus and the shō
-  var ROOM_PICK_DB = -3;                                                                   // the pick-band dip while a plucked voice speaks (× scene)
-  var ROOM_PLUCKED = { koto: 1, shamisen: 1, biwa: 1 };
-  var room = { spans: [], g: 1, gs: 1, cg: 0, pg: 0, lf: Math.log(400) };
+  var ROOM_PICK_DB = -4;                                                                   // the pick-band dip while a plucked voice (or the PA) speaks (× scene)
+  var ROOM_PLUCKED = { koto: 1, shamisen: 1, biwa: 1, pa: 1 };                             // the PA too: the shō masks it in the same 1.4–4.5 kHz (critic r1)
+  var ROOM_F_HI_SHO = 1600;                                                                // the shō's notch may follow the PA's band centre (1.5 kHz); the grit's stays inside 150–1200
+  var room = { spans: [], g: 1, gs: 1, cg: 0, pg: 0, lf: Math.log(400), lfs: Math.log(400) };
   function roomSpeak(layer, t, dur, f) {
     if (!ROOM_VOICES[layer] || !(dur > 0) || !(f > 0)) return;
-    room.spans.push({ a: t, b: t + dur, f: f, db: ROOM_VOICES[layer], dbs: ROOM_VOICES_SHO[layer] || ROOM_VOICES[layer], pl: !!ROOM_PLUCKED[layer] });
+    room.spans.push({ a: t, b: t + dur, f: f, fs: layer === "pa" ? 1500 : f, db: ROOM_VOICES[layer], dbs: ROOM_VOICES_SHO[layer] || ROOM_VOICES[layer], pl: !!ROOM_PLUCKED[layer] });   // the PA: the grit notch at its reciting tone, the shō's at its band centre
   }
   function roomReset(t) {
-    room.spans.length = 0; room.g = 1; room.gs = 1; room.cg = 0; room.pg = 0; room.lf = Math.log(400);
+    room.spans.length = 0; room.g = 1; room.gs = 1; room.cg = 0; room.pg = 0; room.lf = Math.log(400); room.lfs = Math.log(400);
     if (!duckGrit) return;
     [duckGrit.gain, duckSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(1, t); });
     [carveGrit.gain, carveSho.gain, pickGrit.gain, pickSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(0, t); });
@@ -2953,27 +2969,30 @@ window.ZankyoAudio = (function () {
     for (i = 0; i < sp.length; i++) if (sp[i].b > t - 1) keep.push(sp[i]);      // spans older than the release are forgotten
     room.spans = sp = keep;
     var scene = ROOM_SCENE[arcPhase(t)] != null ? ROOM_SCENE[arcPhase(t)] : 0.7;
-    var g = room.g, gs = room.gs, cg = room.cg, pg = room.pg, lf = room.lf;
+    var g = room.g, gs = room.gs, cg = room.cg, pg = room.pg, lf = room.lf, lfs = room.lfs;
     duckGrit.gain.setValueAtTime(g, t); duckSho.gain.setValueAtTime(gs, t);              // anchors: this writer's own last values, which the previous window's ramps reached at t
     carveGrit.gain.setValueAtTime(cg, t); carveSho.gain.setValueAtTime(cg, t); pickGrit.gain.setValueAtTime(pg, t); pickSho.gain.setValueAtTime(pg, t);
-    carveGrit.frequency.setValueAtTime(Math.exp(lf), t); carveSho.frequency.setValueAtTime(Math.exp(lf), t);
+    carveGrit.frequency.setValueAtTime(Math.exp(lf), t); carveSho.frequency.setValueAtTime(Math.exp(lfs), t);
     for (var k = 1; k <= N; k++) {
-      var tau = t + k * dt, step = 0, steps = 0, fsum = 0, fn = 0, plucked = false;
-      for (i = 0; i < sp.length; i++) if (sp[i].a <= tau && tau <= sp[i].b) { if (sp[i].db > step) step = sp[i].db; if (sp[i].dbs > steps) steps = sp[i].dbs; if (sp[i].pl) plucked = true; fsum += Math.log(sp[i].f); fn++; }
+      var tau = t + k * dt, step = 0, steps = 0, fsum = 0, fssum = 0, fn = 0, plucked = false;
+      for (i = 0; i < sp.length; i++) if (sp[i].a <= tau && tau <= sp[i].b) { if (sp[i].db > step) step = sp[i].db; if (sp[i].dbs > steps) steps = sp[i].dbs; if (sp[i].pl) plucked = true; fsum += Math.log(sp[i].f); fssum += Math.log(sp[i].fs); fn++; }
       var target = step > 0 ? Math.pow(10, -step * scene / 20) : 1, targetS = steps > 0 ? Math.pow(10, -steps * scene / 20) : 1;
       var a = 1 - Math.exp(-dt / (target < g ? 0.05 : 0.2));                   // attack ≈ 150 ms (3 τ), release ≈ 600 ms
       g += (target - g) * a;
       gs += (targetS - gs) * (1 - Math.exp(-dt / (targetS < gs ? 0.05 : 0.2)));
       cg += ((step > 0 ? ROOM_CARVE_DB * scene : 0) - cg) * a;
       pg += ((plucked ? ROOM_PICK_DB * scene : 0) - pg) * a;
-      if (fn) { var lt = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI), fsum / fn)); lf += (lt - lf) * (1 - Math.exp(-dt / 0.04)); }
-      var fq = Math.exp(lf);
+      if (fn) {
+        var lt = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI), fsum / fn)); lf += (lt - lf) * (1 - Math.exp(-dt / 0.04));
+        var lts = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI_SHO), fssum / fn)); lfs += (lts - lfs) * (1 - Math.exp(-dt / 0.04));
+      }
+      var fq = Math.exp(lf), fqs = Math.exp(lfs);
       duckGrit.gain.linearRampToValueAtTime(g, tau); duckSho.gain.linearRampToValueAtTime(gs, tau);
       carveGrit.gain.linearRampToValueAtTime(cg, tau); carveSho.gain.linearRampToValueAtTime(cg, tau);
       pickGrit.gain.linearRampToValueAtTime(pg, tau); pickSho.gain.linearRampToValueAtTime(pg, tau);
-      carveGrit.frequency.linearRampToValueAtTime(fq, tau); carveSho.frequency.linearRampToValueAtTime(fq, tau);
+      carveGrit.frequency.linearRampToValueAtTime(fq, tau); carveSho.frequency.linearRampToValueAtTime(fqs, tau);
     }
-    room.g = g; room.gs = gs; room.cg = cg; room.pg = pg; room.lf = lf;
+    room.g = g; room.gs = gs; room.cg = cg; room.pg = pg; room.lf = lf; room.lfs = lfs;
     return P;
   }
 
@@ -3114,7 +3133,7 @@ window.ZankyoAudio = (function () {
     attachBusAnalyser: function (name, node) {
       var src = { dry: reverbSend, grit: gritMakeup, hull: roomHull && roomHull.output, corridor: roomCorridor && roomCorridor.output, farWall: farWall && farWall.output,
         halo: layHalo, screech: screechBus, cut: cutGrit, radio: radioBus,
-        landscape: landscapeTap, duck: duckGrit, out: outTrim }[name];                  // Phase M: the landscape sum, the duck gain, the output
+        landscape: landscapeTap, duck: duckGrit, out: outTrim, taiko: taikoMakeup }[name];        // taiko: the kit after its own clip                  // Phase M: the landscape sum, the duck gain, the output
       if (!src || !node) return false;
       try { src.connect(node); return true; } catch (e) { return false; }
     },
