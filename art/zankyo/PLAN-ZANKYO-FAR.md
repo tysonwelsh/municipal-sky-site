@@ -175,3 +175,29 @@ that a home night's note stream is unchanged when the dial is not touched.
 audition plays a FULL window of the reel (its whole 10–12 s, with the
 complete tune-in / hold / loss gesture on the tube), not a two-second
 tune-in. The new dial's stopped-state audition does the same.
+
+## 8. Owner additions after the rc.9 listen (receiver; deliver while the critic holds the W2 turn)
+
+The owner: "the direction we're going in" — and three changes to the
+receiver, which is its own module and may be worked while W2 is under
+review (zk-broadcast.js, zk-set.js, index.php/zankyo.css for the button;
+never the engine files the W2 round is judging). Own commits, VERSION bumps,
+reviewed by the critic in the same round.
+
+1. **Signals more often, video favored.** Raise the seating rate from
+   ≈ 1 per 3 cycles to ≈ 1 per cycle (still never two in a cycle, never in
+   a KIRU or hush, the recent ring kept), and weight reels WITH a picture
+   about 3× over audio-only reels in the lottery. The synthetic gagaku
+   broadcast stays the fallback only. (Later, the owner intends to split
+   audio signals and video signals into two kinds of visitation; for now
+   one track, video-heavy.)
+2. **The dial becomes a button.** Replace the §7 tuning dial with a push
+   BUTTON on the CRT-9's chin (same footprint, unlabeled, diegetic — a
+   worn square push-switch with a lens): PRESS → a real reel with a
+   picture locks in at once (tune-in / hold / loss); then the button is
+   COLD for a cooldown (45–60 s, seeded jitter) during which presses do
+   nothing but a click and a flicker of snow; when it is ready again its
+   lens glows faintly. Works while playing (except inside a signal or a
+   hush) and while stopped (a full-window audition). The 選局 knob is
+   unchanged.
+3. Attribution and the log lines unchanged.
