@@ -573,6 +573,11 @@
   function wireTransport() {
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
     if (playBtn) playBtn.addEventListener("click", function () {
+      // the tube stops being a title card the moment the station plays, and
+      // does not go back to one for the session (a STOP leaves the scope as
+      // it has always been)
+      var boot = document.getElementById("zankyo-boot");
+      if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
       if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
       else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
       clearLog(); Z.play();

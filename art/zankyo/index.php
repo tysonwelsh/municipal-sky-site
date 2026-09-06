@@ -42,6 +42,12 @@ include '../../includes/header.php';
  <div class="zankyo-scene">
   <div class="content-frame zankyo-frame">
 
+    <!-- The page's heading. It used to be the marquee's big title; now the tube
+         shows a decorative copy that disappears on the first PLAY, so the real
+         h1 lives here off-screen and the document keeps a heading in every
+         state. -->
+    <h1 class="zk-sr-title">ZANKYŌ 残響</h1>
+
     <!-- chassis furniture -->
     <span class="zk-screw zk-screw-tl" style="--slot:23deg" aria-hidden="true"></span>
     <span class="zk-screw zk-screw-tr" style="--slot:74deg" aria-hidden="true"></span>
@@ -57,15 +63,6 @@ include '../../includes/header.php';
          assistive technology is a different thing from hiding it on a panel. -->
     <button type="button" class="zk-far-sw" id="zankyo-far-sw" role="switch" aria-checked="false" aria-label="逸脱"><span class="zk-far-nub" aria-hidden="true"></span></button>
 
-    <!-- illuminated marquee -->
-    <div class="zk-marquee">
-      <span class="zk-marquee-screw" aria-hidden="true"></span>
-      <div class="zankyo-header">
-        <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
-      </div>
-      <span class="zk-marquee-screw zk-marquee-screw-r" aria-hidden="true"></span>
-    </div>
-
     <!-- THE BANK (S0, the second set): the scope + bargraph stack on the left
          (3fr), and to its right the older receive-only tube the yard bolted on
          later — 映像管 MSHI CRT-9, 受信専用 — on its own steel strap (2fr). Under
@@ -77,6 +74,14 @@ include '../../includes/header.php';
         <div class="zk-monitor">
           <div class="zk-screen zankyo-viz-wrap">
             <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
+            <!-- the title now lives ON THE TUBE until the station is played:
+                 it sits under the scanlines and the glass, so the same
+                 treatment reads as phosphor rather than as a printed sign.
+                 The first PLAY removes it for the session. -->
+            <div class="zk-boot" id="zankyo-boot" aria-hidden="true">
+              <div class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></div>
+              <p class="zk-boot-line">// awaiting signal, press play</p>
+            </div>
             <div class="zankyo-scanlines" aria-hidden="true"></div>
             <div class="zk-glass" aria-hidden="true"></div>
           </div>
