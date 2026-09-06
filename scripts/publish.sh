@@ -77,6 +77,7 @@ while IFS= read -r -d '' f; do
     .git*|*/.git*) continue ;;   # .gitignore, .github/, etc.
     *.md|*.backup-*) continue ;; # docs and backups (deploy.yml excludes)
     local-dev/*) continue ;;     # dev-only assets, not for production
+    art/zankyo/broadcast/reels/*) continue ;;  # broadcast reels: large, never change; the Actions deploy ships them (plan §5.3)
     scripts/*) continue ;;       # dev tooling (publish.sh, bust-cache.py) — not web content
   esac
   FILES+=("$f")

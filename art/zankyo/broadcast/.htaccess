@@ -1,0 +1,6 @@
+# ZANKYŌ broadcast signal pool — no directory listing, no search indexing
+# (plan §5.5 hygiene). Reels are opaque ids fetched by the station only.
+Options -Indexes
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>

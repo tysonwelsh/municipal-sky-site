@@ -16,3 +16,16 @@ see), **bump `art/prosperos-jukebox-v2/VERSION` in the same commit**.
   verify they're hearing/seeing the updated build — the fingerprint alone
   is not human-checkable. Dev-only changes (harness, docs, mockup pages)
   do NOT require a bump.
+
+## ZANKYŌ — version bumping (adopted from the Jukebox rule, 2026-09-05)
+
+The same rule applies to `art/zankyo/`: every commit that changes what the
+owner hears or sees bumps `art/zankyo/VERSION` in the same commit —
+one line, `2.0.0-rc.N — short human summary of what changed` (semver
+after the 2.0.0 release). `art/zankyo/index.php` renders the version
+number with an asset fingerprint and the newest asset's mtime under the
+serial plate, so the owner can verify the build they are hearing.
+Dev-only changes (`_harness.js`, `_probe.js`, `bodies-lab.php`, docs) do
+not bump. The Jukebox v2 substrate (`art/prosperos-jukebox-v2/pj2-*.js`)
+is shared by relative path and is never modified from ZANKYŌ; ZANKYŌ's
+own extensions live in `art/zankyo/`.

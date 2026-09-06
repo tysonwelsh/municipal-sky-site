@@ -1,0 +1,19 @@
+{
+  "id": "best-ten-jokr-1988",
+  "title": "The Best Ten, 18 February 1988",
+  "year": 1988,
+  "src": "https://archive.org/details/za-besutoten-jocx-tv-1988",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.3,
+  "durS": 60.08,
+  "bytes": 753818,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.08], [40.08, 50.08], [50.08, 60.08]],
+  "srcWindows": [[34.0, 44], [245.0, 255], [1183.0, 1193], [1866.0, 1876], [2471.0, 2481], [2924.0, 2934]],
+  "notes": "TBS (JOKR-TV) music show, VHS off-air; Dunlop idents into the 9 pm time signal and the title fanfare, the tenth-place flip board with its points, a satellite remote from a cornfield in New South Wales (date, 30 degrees, a map of Australia), ranks 20 to 18 read with their trajectory graphs, a roller-skating idol group's O/X quiz with the audience screaming, and ten seconds mid-song of the week's number one; five of six windows are talk, one is sung; baked distortion 0.5",
+  "takedown": false
+}

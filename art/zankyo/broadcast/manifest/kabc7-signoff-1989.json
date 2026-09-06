@@ -1,0 +1,19 @@
+{
+  "id": "kabc7-signoff-1989",
+  "title": "KABC-7 Los Angeles late-night commercials and sign-off",
+  "year": 1989,
+  "src": "https://archive.org/details/capture-a-271",
+  "license": "unknown (off-air VHS; commercials and station content copyrighted; anthem PD)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": 0.0,
+  "durS": 70.0,
+  "bytes": 550293,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 70.0]],
+  "srcWindows": [[0.5, 12.5], [48.0, 60], [96.0, 108], [127.0, 139], [195.0, 207], [280.0, 290.0]],
+  "notes": "Oct 1989 off-air tape: Dianetics testimonial, 'the owner's manual for the human mind', 'Channel 7 leaves the air', Roger Carroll's good morning, High Flight poem, Moog national anthem. Tier B: 6 windows.",
+  "takedown": false
+}

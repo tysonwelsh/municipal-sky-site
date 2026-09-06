@@ -1,0 +1,19 @@
+{
+  "id": "wwv-fort-collins-1991",
+  "title": "WWV, 5 MHz, 8 December 1991",
+  "year": 1991,
+  "src": "https://archive.org/download/sraa-wwv-december-8-1991/sraa-wwv-december-8-1991.mp3",
+  "license": "CC BY-NC 3.0 (Shortwave Radio Audio Archive)",
+  "tier": "A",
+  "tone": "tone",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 97.75,
+  "bytes": 466175,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[50.0, 62], [108.0, 120], [228.0, 240], [348.0, 360], [468.0, 480], [588.0, 600], [656.0, 668], [716.0, 728]],
+  "notes": "NIST time station WWV, Fort Collins; recorded by Myke Dodge Weiskopf in Rockford IL; ticks, the 500/600 Hz tone, 'At the tone, two hours nineteen minutes Coordinated Universal Time' in the short-lived 1991 digital voice",
+  "takedown": false
+}

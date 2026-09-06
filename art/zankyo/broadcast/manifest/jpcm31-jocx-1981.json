@@ -1,0 +1,19 @@
+{
+  "id": "jpcm31-jocx-1981",
+  "title": "Fuji TV (JOCX-TV) 1981: FNN news, weather, commercials",
+  "year": 1981,
+  "src": "https://archive.org/details/jpcm31_1982",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.08,
+  "bytes": 789084,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.08], [48.08, 60.08], [60.08, 72.08]],
+  "srcWindows": [[72.0, 84], [160.0, 172], [186.0, 198], [198.0, 210], [216.0, 228], [384.0, 396]],
+  "notes": "FNN news open; 'FNN news ends' into a rocket launch; Utsu Kyumeigan jingle; tomorrow's weather for Tokyo and Kanto over the night city; Kuishinbo Banzai opening",
+  "takedown": false
+}

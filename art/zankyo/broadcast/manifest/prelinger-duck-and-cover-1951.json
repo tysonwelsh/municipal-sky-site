@@ -1,0 +1,19 @@
+{
+  "id": "prelinger-duck-and-cover-1951",
+  "title": "Duck and Cover",
+  "year": 1951,
+  "src": "https://archive.org/details/DuckandC1951",
+  "license": "PD",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 96.33,
+  "bytes": 899976,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.08], [48.08, 60.17], [60.17, 72.25], [72.25, 84.25], [84.25, 96.33]],
+  "srcWindows": [[25.0, 37.0], [85.95, 97.95], [152.05, 164.05], [239.11, 251.11], [278.28, 290.28], [361.0, 373.0], [475.0, 487.0], [533.0, 545.0]],
+  "notes": "Federal Civil Defense Administration; Bert the Turtle; 'duck and cover'",
+  "takedown": false
+}

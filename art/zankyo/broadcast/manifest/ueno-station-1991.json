@@ -1,0 +1,19 @@
+{
+  "id": "ueno-station-1991",
+  "title": "Ueno Station platforms 16 and 17, July 1991",
+  "year": 1991,
+  "src": "https://www.youtube.com/watch?v=jaWVJij2s98",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 73.92,
+  "bytes": 359034,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[276.0, 288], [348.0, 360], [612.0, 624], [756.0, 768], [804.0, 816], [972.0, 984]],
+  "notes": "mono cassette recording by 足元の丸印: 沢田敏子's automatic announcements for the Asama, Hakusan, Hitachi and Soyokaze limited expresses, departure melodies, the trains",
+  "takedown": false
+}
