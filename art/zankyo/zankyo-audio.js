@@ -1664,14 +1664,23 @@ window.ZankyoAudio = (function () {
   var VISIT_KANA = { "the broadcast": "放送", "the festival": "祭", "mu": "無", "the line": "回線", "the tolling": "鐘" };
   function drawVisitation(rng, kind, tp, seating) {
     var p = {
-      "the broadcast": kind === "broadcast" ? 1 : (0.30 + 0.08 * tp) * (kind === "drift" ? 1.5 : 1),   // S1: the signal about one cycle in three (the critic measured 0.3 per 3 on the base); a 放送 cycle always carries one
+      // §8.1 (the owner, after the rc.9 listen): the station picks something up
+      // about once a CYCLE now, not once in three. This is a deliberate change
+      // to ORDINARY nights — it is not a far-tail feature — so it is the one
+      // engine edit outside the far tail's own files, and the identity baseline
+      // is re-based on it rather than the change being hidden from the gate.
+      // Measured before: 0.34 / 0.35 / 0.35 planned per cycle over 97 cycles.
+      // The other guards are untouched: never two in a cycle, never in a KIRU
+      // or a hush, and the recent ring still keeps a reel out for three cycles.
+      "the broadcast": 1,
+
       "the festival":  (0.10 + 0.10 * tp) * (kind === "storm" ? 2 : 1),
       "mu":            (0.03 + 0.03 * (1 - tp)) * (kind === "drift" || kind === "silence" ? 1.5 : 1),   // rare: a dead night is one cycle, not a third of them
       "the line":      0.07 * (kind === "broadcast" ? 1.8 : 1),
       "the tolling":   (0.09 + 0.05 * tp) * (kind === "rite" ? 2 : 1),
     };
     var drawn = [];
-    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], VISITATIONS[i] === "the broadcast" ? 1.5 : 1]); }   // S1: the signal leans a collision its way (same draw count; 2.5 starved the other guests)
+    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], VISITATIONS[i] === "the broadcast" ? 0.5 : 1]); }   // §8.1: the signal now wins on FREQUENCY, not on collisions — at p ≈ 0.95 it is drawn nearly every cycle, so a 1.5 collision weight would have deleted 祭 無 回線 鐘 from the night (measured: two other guests in two hours). At 0.5 the rarer guest takes the cycle when both are drawn and the broadcast simply takes the many cycles nothing else wants.
     var pick = rng.pickW(drawn.length ? drawn : [["none", 1]]);   // one pickW draw either way
     if (cyc.n < 0 || pick === "none") return null;
     if (pick === "the festival" && seating.named === "dead station") return null;

@@ -111,7 +111,12 @@ the story as it happens.
 
 - The interface: nothing on the faceplate, console, set or log changes
   shape; the VFD only gains words.
-- The median: at d < 0.15 the note stream is byte-identical to 2.1.0-rc.1.
+- The median: at d < 0.15 the note stream is byte-identical to **the current
+  release baseline** (named in the crew's STATUS). It was 2.1.0-rc.1 until
+  §8.1 raised the broadcast seating rate on ordinary nights — a deliberate
+  change to home nights, at the owner's ask — and the baseline was re-based
+  on that commit. Home nights are byte-identical to the baseline; the
+  baseline moves only when the owner asks for it and never as a side effect.
 - Ceilings: master integrated within ±0.7 dB at any d; no layer peak
   moves; a harshness cap (master spectral centroid and roughness never
   above the current kyū wall's) so "weird" never becomes "painful".

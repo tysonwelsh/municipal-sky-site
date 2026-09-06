@@ -103,7 +103,15 @@
   // ---- the recent ring: reels heard in the last RECENT_CYCLES cycles ----
   var recent = [];   // [{ id, cycle }]
   function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
-  function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); while (recent.length > 12) recent.shift(); }
+  function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); lastCycleSeen = cycle; while (recent.length > 12) recent.shift(); }
+  var lastCycleSeen = 0;
+
+  // §8.1: reels WITH a picture are weighted 3× in the lottery. The manifest is
+  // 21 with a picture against 11 audio-only, so the share of received reels
+  // carrying one goes from ~65 % to ~85 %. The synthetic gagaku broadcast stays
+  // the fallback only — this weights which real reel is chosen, never whether
+  // a real one is chosen.
+  var VIDEO_WEIGHT = 3;
 
   // ---- the choice (arm time): six draws, always ----
   function choose(R, cycle, tidePos) {
@@ -117,6 +125,7 @@
     var dark = tidePos, w = [], tot = 0;
     for (i = 0; i < cands.length; i++) {
       var e = cands[i], x = +e.weight > 0 ? +e.weight : 1, tone = e.tone;
+      if (!e.audioOnly) x *= VIDEO_WEIGHT;                                                        // §8.1: a reel with a picture is three times as likely to be the one
       if (tone === "voice" || tone === "noise" || tone === "tone") x *= 0.7 + 0.6 * dark;          // the dark tide leans to voices and noise
       else if (tone === "music" || tone === "sung") x *= 0.7 + 0.6 * (1 - dark);                  // the light tide to music
       w.push(x); tot += x;
@@ -497,9 +506,41 @@
     getState: function () {
       return { pool: poolState, poolSize: pool ? pool.length : 0, poolError: poolError, primed: primed, video: !!video, mediaSource: !!mediaSrc,
         armed: armed ? { cycle: armed.cycle, reel: armed.reel && armed.reel.id, inS: +armed.inS.toFixed(2), holdS: +armed.holdS.toFixed(2), lossD: +armed.lossD.toFixed(2), drops: armed.drops.length, ready: armed.ready, t0: armed.t0, decided: armed.decided } : null,
-        live: !!live, stats: stats, recent: recent.slice(-4) };
+        live: !!live, stats: stats, recent: recent.slice(-4),
+        // the ring under pressure: at ~1 signal per cycle a four-hour night is
+        // about 32 reels from a pool of 32, so "the ring is working" and "the
+        // ring is exhausted and repeating" need to be tellable apart
+        ring: { keptForCycles: RECENT_CYCLES, held: recent.length, cap: 12, poolSize: pool ? pool.length : 0,
+                excludedNow: Object.keys(recentIds(lastCycleSeen)).length } };
     },
     _dev: {
+      // §8.1, for the critic: n reel choices through the REAL choose(), with
+      // nothing armed and nothing fired. The video-share gate wants ~40 chosen
+      // reels and at one signal a cycle that is five hours of browser
+      // wall-clock; this makes it a second. It draws on its own fork, so it
+      // cannot perturb a performance, and it walks the same candidate list,
+      // the same recent-ring exclusion and the same tide weighting the live
+      // path walks — the point is that it is not a re-implementation.
+      // Validate it against a real capture rather than trusting it.
+      drawReels: function (n, seed) {
+        if (!pool || !pool.length) return { error: "pool " + poolState, ids: [] };
+        n = Math.max(1, Math.min(2000, n | 0 || 40));
+        var R = PJ.Rand.stream((seed >>> 0) || 3042).fork("dev:drawReels");
+        var saved = recent.slice(), ids = [], video = 0, i;
+        recent = [];
+        for (i = 0; i < n; i++) {
+          var c = choose(R, i, (i % 7) / 6);      // walk the tide across the sample
+          if (!c.reel) break;
+          ids.push(c.reel.id);
+          if (!c.reel.audioOnly) video++;
+          remember(c.reel.id, i);                 // so the ring exerts the same pressure it would live
+        }
+        recent = saved;
+        return { n: ids.length, ids: ids, video: video, videoShare: ids.length ? +(video / ids.length).toFixed(4) : 0,
+                 distinct: Object.keys(ids.reduce(function (o, x) { o[x] = 1; return o; }, {})).length,
+                 poolSize: pool.length, videoInPool: pool.filter(function (p2) { return !p2.audioOnly; }).length,
+                 videoWeight: VIDEO_WEIGHT, keptForCycles: RECENT_CYCLES };
+      },
       // the bench: seat a signal delayS from now on the current cycle (bypasses the plan; draws on a bench fork, never on S.signal)
       seatNow: function (delayS) {
         var T = tl(); if (!T.ctx || !T.playing() || !T.S) return false;
