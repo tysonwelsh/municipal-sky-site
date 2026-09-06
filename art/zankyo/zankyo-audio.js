@@ -93,6 +93,19 @@ window.ZankyoAudio = (function () {
     } catch (e) {}
     return (Date.now() % 0xffffffff) >>> 0;
   })();
+  // 逸脱 W0 — the dev override for the night's distance. `?far=0.95` forces a
+  // far night, `?far=0` forces home. The draw is still TAKEN either way (see
+  // farDraw below): only the value is replaced, so a forced night leaves the
+  // far stream exactly where an unforced one would.
+  var farForced = (function () {
+    try {
+      if (typeof location !== "undefined" && location.search) {
+        var m = location.search.match(/[?&]far=([0-9.]+)/);
+        if (m) { var v = parseFloat(m[1]); if (isFinite(v)) return v < 0 ? 0 : v > 1 ? 1 : v; }
+      }
+    } catch (e) {}
+    return null;
+  })();
   // form: cycle lengths, the meta-swing, the mode lottery, the KIRU's dice.
   // motif: the working set, transforms, the ledger. One per voice body. The
   // last four are reserved for later phases (weather field, joints,
@@ -102,7 +115,8 @@ window.ZankyoAudio = (function () {
     "taiko", "noise", "ambient", "weather", "joints", "visit", "sample",
     "conductor", "air", "rooms", "fx",                                    // Phase 1: the form, the air, the rooms
     "hichiriki", "biwa", "pa", "halo",                                    // Phase 3: the new bodies
-    "signal"];                                                             // S1: the receiver — reel choice, window, in-point, the dropouts (zk-broadcast.js)
+    "signal",                                                              // S1: the receiver — reel choice, window, in-point, the dropouts (zk-broadcast.js)
+    "far"];                                                                // W0: 逸脱 — the night's distance from home, its departures, their parameters (zk-far.js)
   var S = null;                                // the streams, forked per play
   function forkStreams() {
     var master = PJ.Rand.stream(seed);
@@ -126,6 +140,52 @@ window.ZankyoAudio = (function () {
   };
   var WX_STILL = { brightness: 0.5, breath: 0.5, gritColor: 0.5, gapMul: 0.5, roomTilt: 0.5 };
   function wxAt(t) { return weather ? weather.at(t) : WX_STILL; }
+
+  // ==========================================================================
+  // 逸脱 ITSUDATSU — THE FAR TAIL (W0)
+  // ==========================================================================
+  // One draw at PLAY, on its own fork, sets the night's DISTANCE FROM HOME.
+  // Four nights in five come out home and are the engine as it shipped at
+  // 2.1.0-rc.1, note for note; the rest depart. The law, the registry of
+  // departures and the naming all live in zk-far.js (pure, no audio) — this
+  // is only the engine's window onto tonight's answer.
+  //
+  // THE CONTRACT, and the reason home nights stay byte-identical:
+  //   · every far draw happens at exactly two moments — the night draw here,
+  //     and the per-cycle lift at plan time (W4). Nothing else ever draws.
+  //   · FAR.on/amt/p are pure LOOKUPS. A hook asked ten thousand times costs
+  //     nothing and cannot move any stream.
+  //   · at d < ZK_FAR.D_HOME the night is `home` and every accessor answers
+  //     false / identity, so the only reachable code is the code that was
+  //     already there.
+  var farNight = null;                         // tonight, drawn at play()
+  var FAR_NONE = { d: 0, home: true, ids: [], dep: {}, kana: "家", name: "home", label: "家 home" };
+  function farDraw() {
+    var M = window.ZK_FAR;
+    if (!M || !S || !S.far) { farNight = FAR_NONE; return farNight; }
+    try { farNight = M.night(S.far, farForced); } catch (e) { farNight = FAR_NONE; }
+    return farNight;
+  }
+  var FAR = {
+    night: function () { return farNight || FAR_NONE; },
+    d:     function () { return (farNight || FAR_NONE).d; },
+    home:  function () { return !farNight || farNight.home; },
+    // is this departure live tonight?
+    on:    function (id) { return !!(farNight && farNight.dep[id]); },
+    // how far it goes tonight, 0 when it is not live
+    amt:   function (id) { var p = farNight && farNight.dep[id]; return p ? p.amt : 0; },
+    // its drawn parameters, or null
+    p:     function (id) { return (farNight && farNight.dep[id]) || null; },
+    // THE PITCH CHOKE POINT. Every body's note function passes its frequency
+    // through here before it becomes an oscillator, so W1's tuning and time
+    // departures — 撓 the sagging octave, 耳 just-intoned plucked bodies,
+    // 双 bitonality, 螺 the gliding tonic, 弛 the tape sag — have ONE seam to
+    // hook instead of nine. Identity today, and proven identity: it is on the
+    // hot path of every home night, which is what the byte-identity gate
+    // measures. `voice` is the layer name, `t` the scheduled audio time (the
+    // gliding departures are functions of time, never of "now").
+    pitch: function (voice, f, t) { return f; },
+  };
 
   // ==========================================================================
   // SCALE — HIRAJOSHI (平調子)
@@ -1956,6 +2016,7 @@ window.ZankyoAudio = (function () {
   // The weather's breath channel breathes the noise and the vowel.
   function shakuhachiNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
+    freq = FAR.pitch("shakuhachi", freq, t);   // 逸脱 the pitch choke point (identity at home)
     var R = S.shakuhachi, wx = wxAt(t);
     var kan = freq >= 440;
     var out = opts.out || panAt("shakuhachi", (R.next() * 2 - 1) * 0.25);
@@ -2040,6 +2101,7 @@ window.ZankyoAudio = (function () {
   }
   function hichirikiNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
+    freq = FAR.pitch("hichiriki", freq, t);    // 逸脱 the pitch choke point (identity at home)
     var R = S.hichiriki, wx = wxAt(t);
     var reed = getLayerParam("hichiriki", "reed", 0.5), enbai = getLayerParam("hichiriki", "enbai", 0.6), breathAmt = getLayerParam("hichiriki", "breath", 0.35) * (0.7 + 0.6 * wx.breath);
     var out = opts.out || panAt("hichiriki", (R.next() * 2 - 1) * 0.3);
@@ -2185,6 +2247,7 @@ window.ZankyoAudio = (function () {
   };
   function stringNote(layer, freq, t, dur, opts) {
     var c = ctx, K = STRING_KIT[layer], R = S[layer]; opts = opts || {};
+    freq = FAR.pitch(layer, freq, t);          // 逸脱 the pitch choke point — koto, shamisen, biwa (identity at home)
     var wx = wxAt(t);
     var vel = opts.vel != null ? opts.vel : (0.55 + R.next() * 0.45);
     var out = panAt(layer, (R.next() * 2 - 1) * (layer === "koto" ? 0.35 : 0.3));
@@ -2859,7 +2922,9 @@ window.ZankyoAudio = (function () {
     pulse.active = false;                        // no grid until the taiko speaks
     lastAitake = null; visitActive = null; cyc.visit = null; airHold = {}; airHoldDenials = 0;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
+    farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
+    if (!farNight.home) emitEvent({ cat: "far", label: "逸脱 " + farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);
     masterGain.gain.cancelScheduledValues(t0);
     masterGain.gain.setValueAtTime(masterVolume, t0);
     for (var i = 0; i < LAYERS.length; i++) { applyLayerGain(LAYERS[i]); lane(LAYERS[i]).rate = layerRate[LAYERS[i]] || 1; }
@@ -3194,6 +3259,30 @@ window.ZankyoAudio = (function () {
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
+    // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
+    // (the probe uses it); pass null to return to the lottery.
+    setFar: function (d) { farForced = (d == null || !isFinite(d)) ? null : (d < 0 ? 0 : d > 1 ? 1 : +d); },
+    // the night as drawn — the probe's handle on what it is measuring. Before
+    // play() this is the home sentinel, not null: a caller never has to guard.
+    getFar: function () {
+      var n = FAR.night();
+      return { d: n.d, home: !!n.home, kana: n.kana, name: n.name, label: n.label, detail: n.detail || "",
+        band: n.band ? n.band.label : "home", ids: n.ids.slice(), dep: n.dep, forced: farForced };
+    },
+    far: {
+      night: function () { return FAR.night(); },
+      d: function () { return FAR.d(); },
+      forced: function () { return farForced; },
+      // the hidden switch's hunt: the first seed at or past minD, walking up
+      // from the current one. d is a pure function of the seed (zk-far.js), so
+      // this is ~29 hashes, not 29 performances. The page rewrites ?seed= with
+      // what comes back, and that night is then shareable like any other.
+      seek: function (minD, from) {
+        var M = window.ZK_FAR;
+        if (!M) return null;
+        return M.seek(from != null ? (from >>> 0) : seed, minD != null ? minD : 0.8);
+      },
+    },
     getField: function () { return field; },
     getClock: function () { return clock; },
     getMotifStats: function () { return Motif.stats(); },

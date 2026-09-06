@@ -337,7 +337,7 @@
   }
 
   // ---- Activity log (VFD display; content logic unchanged) ----
-  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
+  var CAT_TAG = { far: "逸脱 ITSU", shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
   var logStart = null;
   function fmtTime(t) { if (logStart === null) logStart = t; var s = Math.max(0, Math.floor(t - logStart)); var m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function clearLog() { logStart = null; var l = document.getElementById("zankyo-log"); if (l) l.innerHTML = '<div class="zankyo-log-empty">listening…</div>'; }
@@ -440,10 +440,55 @@
   }
   setInterval(pollArc, 280);
 
+  // ==========================================================================
+  // 逸脱 THE HIDDEN SWITCH (plan §5)
+  // ==========================================================================
+  // Thrown, the station restarts on a far night: the engine hunts upward from
+  // the current seed for the first one whose far fork yields d ≥ 0.8 (a pure
+  // function of the seed — about 29 hashes, no audio), the address bar is
+  // rewritten so that night can be sent to somebody, and it plays. While the
+  // switch is on, PLAY goes the same way. Off, the ordinary lottery returns —
+  // the night already running is left alone to finish.
+  //
+  // No persistence, deliberately: the rewritten ?seed= IS the memory, and it
+  // is the one thing the owner can share. A stored flag would fight it — a
+  // reload would hunt again and throw the shared night away.
+  var FAR_MIN_D = 0.8;
+  var farArmed = false;
+  function farHunt() {
+    if (!Z.far || !Z.far.seek) return false;
+    var s = Z.far.seek(FAR_MIN_D);
+    if (s == null) return false;
+    Z.reseed(s);
+    if (Z.setFar) Z.setFar(null);              // a ?far= from the address bar would override the night we just hunted for
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.set("seed", String(s));
+      u.searchParams.delete("far");
+      window.history.replaceState(null, "", u.toString());
+    } catch (e) {}
+    return true;
+  }
+  function wireFarSwitch() {
+    var sw = document.getElementById("zankyo-far-sw");
+    if (!sw) return;
+    sw.addEventListener("click", function () {
+      farArmed = !farArmed;
+      sw.setAttribute("aria-checked", farArmed ? "true" : "false");
+      if (!farArmed) return;                   // off: the current night plays out
+      var playBtn = document.getElementById("zankyo-play");
+      Z.stop();
+      farHunt();
+      clearLog(); Z.play();
+      if (playBtn) playBtn.classList.add("is-playing");
+      if (sceneEl) sceneEl.classList.add("is-on");
+    });
+  }
   // ---- Transport (arcade buttons + master volume knob) ----
   function wireTransport() {
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
     if (playBtn) playBtn.addEventListener("click", function () {
+      if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
       clearLog(); Z.play();
       playBtn.classList.add("is-playing");
       if (sceneEl) sceneEl.classList.add("is-on");   // power LED
@@ -470,5 +515,5 @@
     }
   }
 
-  renderScale(); renderMixer(); wireTransport(); pollArc();
+  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); pollArc();
 })();
