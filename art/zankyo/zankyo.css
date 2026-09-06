@@ -814,7 +814,12 @@
    A bank row: the scope + bargraph stack on the left (3fr), MSHI CRT-9 on the
    right (2fr) on its own steel mounting strap, bolted through the faceplate.
    =========================================================================== */
-.zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: stretch; margin-bottom: 16px; }
+/* owner refinement (plan §4.2–3): the columns' TOPS align and the housing hugs
+   the tube — the right column is a stack (the set on its strap, then the
+   receiver sub-panel), stretched to the row so the plate takes the room the
+   housing no longer does */
+.zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
+.zk-bank-side { min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }
 .zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
 .zk-bank-main .zk-bargraph { margin-bottom: 0; }
 .zk-bank-main .zk-sticker { right: 62px; }
@@ -822,7 +827,7 @@
 /* mounting strap: a strip of thicker steel behind the set, welded and bolted
    through the panel in a later decade — its rust runs down from the bolts */
 .zk-mount {
-  position: relative; min-width: 0; padding: 7px 7px 9px;
+  position: relative; min-width: 0; flex: none; padding: 7px 7px 9px;
   border-radius: 4px; border: 1px solid #08080a;
   background:
     radial-gradient(40% 55% at 6% 6%,  rgba(140, 78, 36, 0.28), transparent 70%),
@@ -857,27 +862,20 @@
 .zk-bolt-bl { bottom: 3px; left: 3px; filter: sepia(0.3) brightness(0.9); }
 .zk-bolt-br { bottom: 3px; right: 3px; }
 
-/* the set: older, yellowed plastic, a heavier bezel, deeper radius */
+/* the set: older, yellowed plastic, a heavier bezel, deeper radius; the
+   housing HUGS the tube with the scope's bezel proportions (13 px), the chin
+   directly beneath — owner refinement §4.2 */
 .zk-set2 {
-  position: relative; height: 100%; box-sizing: border-box;
+  position: relative; box-sizing: border-box;
   display: flex; flex-direction: column;
-  padding: 11px 12px 0; border-radius: 11px; border: 1px solid #000;
+  padding: 13px 13px 0; border-radius: 11px; border: 1px solid #000;
   background:
     radial-gradient(70% 26% at 62% 0%, rgba(255, 240, 200, 0.06), transparent 70%),
     radial-gradient(30% 40% at 100% 100%, rgba(110, 66, 32, 0.22), transparent 70%),
     linear-gradient(180deg, #2b2826, #1a1817 55%, #100f0e);
   box-shadow: inset 0 1px 0 rgba(255, 244, 220, 0.1), inset 0 -5px 12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.55);
 }
-.zk-set2-top { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 0 4px 7px; }
-.zk-set2-model {
-  font-size: 7px; letter-spacing: 0.24em; color: #6a6259;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06);
-}
-.zk-set2-model b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.2em; color: #7d7368; margin-right: 6px; }
-/* a scratched-on stock number, the yard's chalk pen */
-.zk-set2-stock { font-size: 6.5px; letter-spacing: 0.18em; color: #5b544d; transform: rotate(-1deg); text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
-
-.zk-set2-tubewrap { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.zk-set2-tubewrap { flex: none; display: flex; align-items: center; justify-content: center; min-height: 0; }
 .zk-tube {
   position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden;
   border-radius: 18px / 22px;
@@ -907,7 +905,7 @@
 }
 
 /* chin: brand plate · 選局 tune button · 受信 lamp */
-.zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 6px 4px 7px 4px; }
+.zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 7px 6px 8px; }
 .zk-set2-brand { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); white-space: nowrap; }
 .zk-set2-brand i { font-style: normal; color: #574f47; }
 .zk-tune-unit { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; margin-right: 4px; }
@@ -930,7 +928,8 @@
 .zk-rx.is-lit { background: radial-gradient(circle at 35% 30%, #ffe2a0, var(--amber) 60%); box-shadow: 0 0 9px rgba(var(--amber-rgb), 0.85), 0 0 2px rgba(var(--amber-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5); }
 .zk-rx.is-flicker { animation: zk-led-flicker 0.11s infinite; }
 
-/* yellowed tape on the bezel — the glass is held in with it */
+/* yellowed tape on the bezel — the glass is held in with it (one piece, the
+   right-side one: owner refinement §4.1) */
 .zk-tape {
   position: absolute; z-index: 9; height: 17px; pointer-events: none;
   background:
@@ -941,13 +940,33 @@
   font-family: "Shippori Mincho", serif; font-size: 8.5px; letter-spacing: 0.24em; line-height: 17px; text-align: center;
   color: rgba(48, 32, 18, 0.85); white-space: nowrap; overflow: hidden;
 }
-.zk-tape-1 { width: 84px; left: -14px; top: 26px; transform: rotate(-42deg); }
 .zk-tape-2 { width: 58px; right: -8px; top: 46%; transform: rotate(9deg); opacity: 0.86; }
 .zk-tape-2::after { /* the lifted end, gone glossy */
   content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 14px;
   background: linear-gradient(90deg, transparent, rgba(255, 246, 220, 0.5));
 }
-.zk-tape-3 { width: 46px; left: 34%; bottom: 40px; transform: rotate(2deg); height: 13px; line-height: 13px; font-size: 7px; opacity: 0.8; }
+
+/* the receiver sub-panel (§4.3): a bolted plate under the set, one console
+   knob row tall, that fills the column; S1 mounts band / flutter / grit and
+   the 選局 TUNE control on it. Cut from the same stock as the control rail's
+   pitch-management module. */
+.zk-rxpanel {
+  position: relative; flex: 1; min-height: 64px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 22px 10px 22px; border-radius: 5px; border: 1px solid #000;
+  background:
+    radial-gradient(30% 60% at 4% 100%, rgba(96, 58, 32, 0.22), transparent 74%),
+    radial-gradient(18% 34% at 96% 6%, rgba(20, 14, 10, 0.5), transparent 78%),
+    linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-rxpanel .zk-bolt { width: 10px; height: 10px; }
+.zk-rxpanel .zk-bolt-tl, .zk-rxpanel .zk-bolt-tr { top: 4px; }
+.zk-rxpanel .zk-bolt-bl, .zk-rxpanel .zk-bolt-br { bottom: 4px; }
+.zk-rxpanel .zk-bolt-tl, .zk-rxpanel .zk-bolt-bl { left: 4px; }
+.zk-rxpanel .zk-bolt-tr, .zk-rxpanel .zk-bolt-br { right: 4px; }
+.zk-rxpanel-head { font-size: 8px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-rxpanel-stamp { font-size: 6.5px; letter-spacing: 0.22em; color: #56525f; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); transform: rotate(-0.6deg); }
 
 /* ---------------------------------------------------------------------------
    MOBILE — the machine simplifies: monitor + transport + reduced strip
@@ -994,8 +1013,7 @@
   /* the bank stacks: scope, bargraph, then the second set at full width */
   .zk-bank { grid-template-columns: 1fr; gap: 14px 0; }
   .zk-mount { transform: rotate(0.25deg); padding: 6px 6px 8px; }
-  .zk-set2 { padding: 9px 10px 0; }
-  .zk-tape-1 { top: 22px; }
+  .zk-set2 { padding: 9px 9px 0; }
 }
 @media (max-width: 380px) {
   .zk-unit-vol .zk-unit-meta { display: none; }

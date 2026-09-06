@@ -105,17 +105,16 @@ include '../../includes/header.php';
         </div>
       </div>
 
-      <!-- 隣 THE SECOND SET — MSHI CRT-9, receive only, on its strap -->
+      <!-- 隣 THE SECOND SET — MSHI CRT-9, receive only, on its strap; under it
+           the receiver sub-panel (owner refinement §4.3: S0 leaves the plate,
+           S1 fills it with band / flutter / grit and the 選局 TUNE control) -->
+      <div class="zk-bank-side">
       <div class="zk-mount">
         <span class="zk-bolt zk-bolt-tl" style="--hex:12deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-tr" style="--hex:-20deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-bl" style="--hex:40deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-br" style="--hex:5deg" aria-hidden="true"></span>
         <div class="zk-set2" id="zankyo-set2">
-          <div class="zk-set2-top">
-            <span class="zk-set2-stock">No. 2887-R</span>
-            <span class="zk-set2-model"><b>受信機</b>TYPE 9-B</span>
-          </div>
           <div class="zk-set2-tubewrap">
             <div class="zk-tube" id="zankyo-tube">
               <canvas id="zankyo-set" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
@@ -131,10 +130,18 @@ include '../../includes/header.php';
             <span class="zk-rx-label">受信</span>
             <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
           </div>
-          <span class="zk-tape zk-tape-1" aria-hidden="true">ヒビ注意</span>
           <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
-          <span class="zk-tape zk-tape-3" aria-hidden="true">触るな</span>
         </div>
+      </div>
+      <div class="zk-rxpanel" id="zankyo-rxpanel">
+        <span class="zk-bolt zk-bolt-tl" style="--hex:33deg" aria-hidden="true"></span>
+        <span class="zk-bolt zk-bolt-tr" style="--hex:-8deg" aria-hidden="true"></span>
+        <span class="zk-bolt zk-bolt-bl" style="--hex:17deg" aria-hidden="true"></span>
+        <span class="zk-bolt zk-bolt-br" style="--hex:-41deg" aria-hidden="true"></span>
+        <span class="zk-rxpanel-head">受信機 &middot; RECEIVER</span>
+        <span class="zk-chin-spacer"></span>
+        <span class="zk-rxpanel-stamp" aria-hidden="true">TYPE 9-B &middot; No. 2887-R</span>
+      </div>
       </div>
     </div>
 

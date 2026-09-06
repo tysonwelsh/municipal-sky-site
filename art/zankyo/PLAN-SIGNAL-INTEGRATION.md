@@ -117,3 +117,18 @@ hush; graceful thinning (skip, never stall); pj2-*.js frozen; no publish.
 | S1 | a real signal in the hull, the crew falls silent | mocked-timing gates; ceiling; audible in browser |
 | S2 | the picture on the CRT-9, the full gesture | fps, REPRO, side-by-side with mockup 1 |
 | S3 | the owner's tweaks | UI smoke; VERSION 2.1.0-rc.1 |
+
+## 4. Owner refinements (running list; the crew folds each into the phase in flight)
+
+1. **Tape:** one piece only, the one on the right side of the bezel. Remove
+   the other two. (2026-09-05, after the mockup.)
+2. **Vertical padding:** too much empty housing above and below the tube.
+   Do NOT stretch the CRT-9 housing to the scope stack's height; the housing
+   hugs the tube (same bezel proportions as the scope's), with the chin
+   directly beneath. The tube keeps its 4:3 — never taller than wide.
+3. **Controls under the set:** the vertical room this frees in the right
+   column is for controls that will move under the monitor. S0 leaves a
+   receiver sub-panel there (a plate the size of one console knob row,
+   bolted, labeled 受信機 · RECEIVER); S1 fills it with the broadcast layer's
+   knobs (band / flutter / grit) and the 選局 TUNE control; which other
+   controls migrate there is the owner's later call.
