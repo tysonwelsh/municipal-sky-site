@@ -1,0 +1,69 @@
+{
+  "id": "etv-cairo-clock-1980s",
+  "title": "التلفزيون المصري — القناة الأولى: الساعة والفاصل",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=ZJ0uPTzsT8U",
+  "license": "Egyptian TV (ERTU); copyrighted (fair-use posture)",
+  "tier": "B",
+  "tone": "sung",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 555360,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16.0
+    ],
+    [
+      25.0,
+      37.0
+    ],
+    [
+      70.0,
+      82.0
+    ],
+    [
+      124.0,
+      136.0
+    ],
+    [
+      196.0,
+      208.0
+    ],
+    [
+      250.0,
+      262.0
+    ]
+  ],
+  "notes": "Egyptian Channel 1: the clock with Arabic numerals, bands of dropout, the sunburst card, the call to prayer, blue pages of Quranic text",
+  "takedown": false
+}
