@@ -132,3 +132,15 @@ hush; graceful thinning (skip, never stall); pj2-*.js frozen; no publish.
    bolted, labeled 受信機 · RECEIVER); S1 fills it with the broadcast layer's
    knobs (band / flutter / grit) and the 選局 TUNE control; which other
    controls migrate there is the owner's later call.
+4. **The tune knob keeps, its label goes:** the small knob on the CRT-9's
+   chin stays (the owner likes it) but the label beneath it is removed — it
+   was costing a whole row. Tighten the housing again by that row.
+5. **Transport moves under the set — now, not later:** PLAY, STOP and the
+   master volume knob + readout leave the control rail and live on the
+   receiver plate under the monitor (the plate becomes the transport plate,
+   label 操作 · TRANSPORT, or keep 受信機 if the tune knob joins them). The
+   control rail keeps the pitch module (旋法 / 音階), which may widen to the
+   rail's full width.
+6. **The broadcast layer's knobs** (band / flutter / grit) therefore go in
+   the console as an ordinary layer row (like every other layer), not on
+   the plate. (2026-09-05, during S1.)

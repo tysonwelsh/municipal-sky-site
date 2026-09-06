@@ -22,6 +22,7 @@
     noise:      { label: "Noise",      kana: "雑音" },
     ambient:    { label: "Ambient",    kana: "環境" },
     pa:         { label: "PA",         kana: "放送" },
+    broadcast:  { label: "Broadcast",  kana: "受信" },   // S1: the receiver — an ordinary console row (owner §4.6)
   };
   var PARAM_META = {
     subDrone:   { cutoff: [80, 500, 5, 0, "Hz"], drive: [0, 1, 0.05, 2, ""], sub: [0, 1, 0.05, 2, ""], movement: [0, 0.5, 0.02, 2, ""] },
@@ -35,6 +36,7 @@
     noise:      { density: [0, 1, 0.05, 2, ""], color: [0, 1, 0.05, 2, ""], crush: [0, 1, 0.05, 2, ""] },
     ambient:    {},
     pa:         { presence: [0, 1, 0.05, 2, ""], static: [0, 1, 0.05, 2, ""] },
+    broadcast:  { band: [0, 1, 0.05, 2, ""], flutter: [0, 1, 0.05, 2, ""], grit: [0, 1, 0.05, 2, ""] },
   };
 
   function pct(v) { return Math.round(v * 100); }
@@ -335,7 +337,7 @@
   }
 
   // ---- Activity log (VFD display; content logic unchanged) ----
-  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA" };
+  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
   var logStart = null;
   function fmtTime(t) { if (logStart === null) logStart = t; var s = Math.max(0, Math.floor(t - logStart)); var m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function clearLog() { logStart = null; var l = document.getElementById("zankyo-log"); if (l) l.innerHTML = '<div class="zankyo-log-empty">listening…</div>'; }

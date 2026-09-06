@@ -908,16 +908,14 @@
 .zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 5px 6px 6px; }
 .zk-set2-brand { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); white-space: nowrap; }
 .zk-set2-brand i { font-style: normal; color: #574f47; }
-.zk-tune-unit { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; margin-right: 4px; }
 .zk-tune {
-  position: relative; width: 20px; height: 20px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none;
+  position: relative; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none;   /* §4.4: on the chin, no label (it cost a row) */
   background: radial-gradient(circle at 34% 28%, #5c5c66, #2a2a31 50%, #101014 90%);
   box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -3px 4px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.28);
 }
 .zk-tune::after { content: ""; position: absolute; left: 50%; top: 18%; width: 2px; height: 34%; margin-left: -1px; background: #d8d2c2; border-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.7); transform-origin: 50% 94%; transform: rotate(var(--ch, -40deg)); transition: transform 0.18s cubic-bezier(.5,1.6,.6,1); }
 .zk-tune:active { transform: translateY(1px); box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
 .zk-tune:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
-.zk-tune-label { font-size: 6px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; line-height: 1; }
 .zk-rx-label { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; }
 .zk-rx {
   width: 7px; height: 7px; border-radius: 50%; flex: none;
@@ -946,14 +944,15 @@
   background: linear-gradient(90deg, transparent, rgba(255, 246, 220, 0.5));
 }
 
-/* the receiver sub-panel (§4.3): a bolted plate under the set, one console
-   knob row tall, that fills the column; S1 mounts band / flutter / grit and
-   the 選局 TUNE control on it. Cut from the same stock as the control rail's
-   pitch-management module. */
+/* the plate under the set (§4.3, then §4.5): the TRANSPORT plate — PLAY, STOP
+   and the master volume live here now, at the sizes the machine already uses
+   under 700 px (66 / 56 / 50) so the bank still closes level with the
+   bargraph at 860; it fills the column. Cut from the same stock as the
+   control rail's pitch-management module. */
 .zk-rxpanel {
   position: relative; flex: 1; min-height: 48px; box-sizing: border-box;
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 22px 10px 22px; border-radius: 5px; border: 1px solid #000;
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 16px 3px 14px; border-radius: 5px; border: 1px solid #000;   /* 3 px: the 66 px PLAY button + 3 + 3 + the border = 74, what the column has left at 860 */
   background:
     radial-gradient(30% 60% at 4% 100%, rgba(96, 58, 32, 0.22), transparent 74%),
     radial-gradient(18% 34% at 96% 6%, rgba(20, 14, 10, 0.5), transparent 78%),
@@ -965,8 +964,14 @@
 .zk-rxpanel .zk-bolt-bl, .zk-rxpanel .zk-bolt-br { bottom: 4px; }
 .zk-rxpanel .zk-bolt-tl, .zk-rxpanel .zk-bolt-bl { left: 4px; }
 .zk-rxpanel .zk-bolt-tr, .zk-rxpanel .zk-bolt-br { right: 4px; }
-.zk-rxpanel-head { font-size: 8px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
-.zk-rxpanel-stamp { font-size: 6.5px; letter-spacing: 0.22em; color: #56525f; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); transform: rotate(-0.6deg); }
+.zk-rxpanel-head { position: absolute; left: 96px; bottom: 2px;   /* under the STOP button — the PLAY button fills the plate's height */ font-size: 6.5px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-rxpanel-stamp { position: absolute; right: 20px; bottom: 2px; font-size: 6px; letter-spacing: 0.22em; color: #56525f; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); transform: rotate(-0.6deg); }
+.zk-rxpanel .zk-transport-cluster { gap: 10px; margin-left: 6px; }
+.zk-rxpanel .zk-arcade { width: 66px; height: 66px; }
+.zk-rxpanel .stop-btn { width: 56px; height: 56px; }
+.zk-rxpanel .zk-master { flex-direction: row; gap: 9px; margin-right: 4px; }
+.zk-rxpanel .zk-master-meta { flex-direction: column; align-items: flex-start; gap: 3px; }
+.zk-rxpanel .zk-knob-master { width: 50px; height: 50px; }
 
 /* ---------------------------------------------------------------------------
    MOBILE — the machine simplifies: monitor + transport + reduced strip

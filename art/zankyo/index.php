@@ -126,31 +126,42 @@ include '../../includes/header.php';
           <div class="zk-set2-chin">
             <span class="zk-set2-brand">映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
             <span class="zk-chin-spacer"></span>
-            <span class="zk-tune-unit"><button type="button" class="zk-tune" id="zankyo-tune" aria-label="Tune: scan for a signal" title="選局 &middot; tune"></button><span class="zk-tune-label">選局</span></span>
+            <button type="button" class="zk-tune" id="zankyo-tune" aria-label="選局 · tune: scan for a signal" title="選局 &middot; tune"></button>
             <span class="zk-rx-label">受信</span>
             <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
           </div>
           <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
         </div>
       </div>
+      <!-- the transport plate (owner §4.5): PLAY · STOP · master volume, moved
+           here from the control rail; the ids are the same, zankyo-ui.js binds
+           to them wherever they sit -->
       <div class="zk-rxpanel" id="zankyo-rxpanel">
         <span class="zk-bolt zk-bolt-tl" style="--hex:33deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-tr" style="--hex:-8deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-bl" style="--hex:17deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-br" style="--hex:-41deg" aria-hidden="true"></span>
-        <span class="zk-rxpanel-head">受信機 &middot; RECEIVER</span>
+        <span class="zk-rxpanel-head" aria-hidden="true">操作 &middot; TRANSPORT</span>
+        <div class="zk-transport-cluster">
+          <button type="button" class="zk-arcade play-btn" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
+          <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+        </div>
         <span class="zk-chin-spacer"></span>
+        <div class="zk-master">
+          <div id="zankyo-master-knob" class="zk-knob-mount"></div>
+          <div class="zk-master-meta">
+            <span class="zk-print">主音量 &middot; VOL</span>
+            <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
+          </div>
+        </div>
         <span class="zk-rxpanel-stamp" aria-hidden="true">TYPE 9-B &middot; No. 2887-R</span>
       </div>
       </div>
     </div>
 
-    <!-- control rail: transport · pitch-management module · master volume, one compact row -->
+    <!-- control rail: the pitch-management module, full width (the transport
+         and the master volume moved to the plate under the second set, §4.5) -->
     <div class="zk-console-top">
-      <div class="zk-transport-cluster">
-        <button type="button" class="zk-arcade play-btn" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
-        <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
-      </div>
       <div class="zk-module">
         <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
         <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
@@ -167,13 +178,6 @@ include '../../includes/header.php';
           <span class="zk-testpoints" aria-hidden="true"></span>
         </div>
         <span class="zk-mod-stamp" aria-hidden="true">音程管理 &middot; MODULE 04</span>
-      </div>
-      <div class="zk-master">
-        <div id="zankyo-master-knob" class="zk-knob-mount"></div>
-        <div class="zk-master-meta">
-          <span class="zk-print">主音量 &middot; VOL</span>
-          <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
-        </div>
       </div>
     </div>
 
