@@ -62,7 +62,6 @@ include '../../includes/header.php';
       <span class="zk-marquee-screw" aria-hidden="true"></span>
       <div class="zankyo-header">
         <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
-        <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a derelict noise-engine &middot; 3042 //</p>
       </div>
       <span class="zk-marquee-screw zk-marquee-screw-r" aria-hidden="true"></span>
     </div>
@@ -94,15 +93,12 @@ include '../../includes/header.php';
              Fill = jo-ha-kyū arc level; zone splits sit where the engine's phase
              cuts land on the level curve (pos 0.45 → level 0.25, pos 0.82 → 0.80). -->
         <div class="zk-bargraph" id="zankyo-bargraph">
-          <div class="zk-bar-scale" aria-hidden="true">
-            <span class="zk-bar-zl zk-bar-zl-jo">序 jo</span>
-            <span class="zk-bar-zl zk-bar-zl-ha">破 ha</span>
-            <span class="zk-bar-zl zk-bar-zl-kyu">急 kyū</span>
-            <span class="zk-bar-tick" style="left:25%"></span>
-            <span class="zk-bar-tick" style="left:80%"></span>
-          </div>
           <div class="zk-bar-housing">
             <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
+            <!-- the jo/ha/kyū splits, moved INSIDE the housing when the scale
+                 row came off: the marks survive and cost no height of their own -->
+            <span class="zk-bar-tick" style="left:25%" aria-hidden="true"></span>
+            <span class="zk-bar-tick" style="left:80%" aria-hidden="true"></span>
             <span class="zk-bar-glass" aria-hidden="true"></span>
           </div>
           <div class="zk-bar-foot" aria-hidden="true">

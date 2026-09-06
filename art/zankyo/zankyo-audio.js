@@ -4322,18 +4322,43 @@ window.ZankyoAudio = (function () {
     var g = ctx.createGain(); nz.connect(bp); bp.connect(g); g.connect(lg("noise"));
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, S.sample.next() * 5); nz.stop(t + dur + 0.1);
   }
-  function sample(layer, variant) {
+  // Everything an audition needs before it can be HEARD while the station is
+  // stopped. It was inline in sample() and the 受信 button's path did not have
+  // it, so the button showed a picture and played silence (measured on the
+  // master: −999 dB from a fresh load, −75.9 dB after a stop, against 選局's
+  // −18.9 dB by either route). Two of the four steps are the ones that bite:
+  // stop() sets EVERY layer gain to zero, so the broadcast layer is muted
+  // until something re-arms it; and the <audio> route has to be poked or the
+  // context is running with nowhere to go. Now there is one function and both
+  // controls call it, so a third control cannot be added silent.
+  function auditionPrep(layer) {
     init();
     if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
+    // Re-armed with a 12 ms ramp from wherever the gain actually is, not a step
+    // to the target. A step is inaudible on a silent bus and a click on a live
+    // one — and this runs while a previous audition may still be ringing out.
+    // Anchored at the current value, so it is a legal ramp either way.
+    var now = ctx.currentTime;
+    reArm(masterGain.gain, masterVolume, now);
+    var node = layerGains[layer];
+    if (node) {
+      var vt = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1;
+      reArm(node.gain, (layerVolumes[layer] != null ? layerVolumes[layer] : DEFAULT_LAYER_VOL) * vt, now);
+    }
+  }
+  function reArm(param, target, now) {
+    var cur = param.value;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(cur, now);
+    param.linearRampToValueAtTime(target, now + 0.012);
+  }
+  function sample(layer, variant) {
+    auditionPrep(layer);
     // The audition draws from its own stream: while it plays, every body
     // borrows S.sample so a ♪ press mid-performance re-rolls nothing.
     var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone", "hichiriki", "biwa", "pa"], saved = {}, bi;
     for (bi = 0; bi < borrowed.length; bi++) { saved[borrowed[bi]] = S[borrowed[bi]]; S[borrowed[bi]] = S.sample; }
-    masterGain.gain.cancelScheduledValues(ctx.currentTime);
-    masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
-    var node = layerGains[layer];
-    if (node) { var vt = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1; node.gain.cancelScheduledValues(ctx.currentTime); node.gain.setValueAtTime((layerVolumes[layer] != null ? layerVolumes[layer] : DEFAULT_LAYER_VOL) * vt, ctx.currentTime); }
     var t = ctx.currentTime + 0.05;
     switch (layer) {
       case "subDrone": sampleDrone(t); break;
@@ -4388,8 +4413,11 @@ window.ZankyoAudio = (function () {
     // than in the receiver: during the cut the dial makes snow and nothing else.
     dial: function (amt, wantLock) {
       if (!signalProvider) return "snow";
-      init();                                                 // stopped and never played: there is no context yet (the ♪ audition wakes it the same way)
-      if (ctx.state !== "running") { try { ctx.resume(); } catch (e0) {} }
+      // Stopped and never played: there is no context yet, the master may be
+      // where stop() left it and the broadcast layer is muted. The button's
+      // audition has to be as audible as the knob's, so it takes the same
+      // preparation rather than a subset of it.
+      auditionPrep("broadcast");
       try { if (signalProvider.dialNoise) signalProvider.dialNoise(Math.max(0, Math.min(1, +amt || 0))); } catch (e) {}
       if (!wantLock || !signalProvider.dialLock) return "snow";
       if (playing && ctx && cutGrit) {                        // inside the KIRU's hush the station is listening to itself
