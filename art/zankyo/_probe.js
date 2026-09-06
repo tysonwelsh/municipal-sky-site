@@ -22,9 +22,12 @@ var path = require("path");
 var args = process.argv.slice(2);
 var RUN = parseFloat(args[0] || "1800"); if (!isFinite(RUN) || RUN <= 0) RUN = 1800;
 var SEED = parseInt(args[1] || "3042", 10) || 3042;
-var JSON_OUT = null, REPRO = false, QUIET = false, JITTER = 0;
+var JSON_OUT = null, REPRO = false, QUIET = false, JITTER = 0, FAR = null, DIST_JSON = null, BASE_FILE = path.join(__dirname, "_probe-base.json");
 for (var ai = 2; ai < args.length; ai++) {
   if (args[ai] === "--json") JSON_OUT = args[++ai];
+  else if (args[ai] === "--far") FAR = args[++ai];              // W0+: force the night's distance (?far=d) — the engine reads location.search, or setFar(d) if it exposes one
+  else if (args[ai] === "--dist-json") DIST_JSON = args[++ai];  // write the distance components only (the batch driver's per-seed file)
+  else if (args[ai] === "--base") BASE_FILE = args[++ai];       // the base statistics the distance is standardized against
   else if (args[ai] === "--repro") REPRO = true;
   else if (args[ai] === "--quiet") QUIET = true;
   else if (args[ai] === "--jitter") JITTER = parseInt(args[++ai], 10) || 0;   // timer jitter seed (0 = exact)
@@ -152,7 +155,7 @@ function runOnce(seed, runS, jitterSeed) {
   W.AudioContext = MockCtx;
   W.window = W; W.document = doc;
   W.addEventListener = function () {}; W.removeEventListener = function () {};
-  W.location = { search: "", href: "http://127.0.0.1/art/zankyo/", pathname: "/art/zankyo/" };
+  W.location = { search: FAR != null ? "?far=" + FAR : "", href: "http://127.0.0.1/art/zankyo/", pathname: "/art/zankyo/" };
   W.navigator = { userAgent: "probe", mediaSession: null };
   W.fetch = function () { return { then: function () { return this; }, catch: function () { return this; } }; };
   W.console = console;
@@ -187,11 +190,13 @@ function runOnce(seed, runS, jitterSeed) {
   if (!Z) return { fatal: "ZankyoAudio not defined; loaded " + JSON.stringify(scripts) + " errors " + JSON.stringify(loadErrors) };
 
   if (Z.reseed) Z.reseed(seed);
+  if (FAR != null && typeof Z.setFar === "function") { try { Z.setFar(parseFloat(FAR)); } catch (e) {} }
 
   // ---- capture ----
   var notes = [], events = [], phaseTimeline = [], arcSamples = [], planInfo = [];
   Z.setNoteListener(function (n) {
-    notes.push({ layer: n.layer, freq: n.freq, t: typeof n.startTime === "number" ? n.startTime : vnow, dur: n.duration || 0, at: vnow });
+    var fld = null; try { fld = Z.getField ? Z.getField() : null; } catch (e) {}
+    notes.push({ layer: n.layer, freq: n.freq, t: typeof n.startTime === "number" ? n.startTime : vnow, dur: n.duration || 0, at: vnow, tonic: fld ? fld.tonicHz : 146.83 });
   });
   Z.setEventListener(function (e) {
     events.push({ t: typeof e.t === "number" ? e.t : vnow, cat: e.cat, label: String(e.label || ""), detail: String(e.detail || "") });
@@ -253,6 +258,7 @@ function runOnce(seed, runS, jitterSeed) {
     motifStats: Z.getMotifStats ? Z.getMotifStats() : null,
     airInfo: (function () { try { var a = Z.getAir ? Z.getAir() : null; return a && a.info ? a.info() : (Z.getAirInfo ? Z.getAirInfo() : null); } catch (e) { return null; } })(),
     layers: Z.LAYERS ? Z.LAYERS.slice() : [],
+    far: (function () { try { return Z.getFar ? Z.getFar() : null; } catch (e) { return null; } })(),   // W0+: {d, name, departures…} when the engine exposes it
     api: Object.keys(Z).sort(),
   };
 }
@@ -438,6 +444,9 @@ function analyze(R) {
     signals: A.signals.length, signalFallbacks: A.signalFallbacks, signalPer3Cycles: A.signalRatePer3, signalMaxPerCycle: A.signalMaxPerCycle, signalPerKind: A.signalPerKind,
     tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
+  A.far = R.far;
+  A.distance = distanceComponents(R, A);
+  A.distanceScalar = distanceScalar(A.distance, loadBase());
   A.tech = {
     loadErrors: R.loadErrors, errors: R.errors, expZero: R.faults.expZero, pastSchedule: R.faults.pastSchedule,
     neverStopped: R.faults.neverStopped, leakWhere: R.leakWhere, startedTwice: R.faults.startedTwice, infraSources: R.faults.infraSources,
@@ -456,6 +465,113 @@ function signature(R) {
   var h2 = crypto.createHash("sha1");
   R.events.forEach(function (e) { h2.update(e.t.toFixed(3) + "|" + e.cat + "|" + e.label + "|" + e.detail + "\n"); });
   return { notes: hn, events: h2.digest("hex"), noteCount: R.notes.length, eventCount: R.events.length };
+}
+
+
+// ============================================================================
+// THE DISTANCE METRIC (far tail, PLAN-ZANKYO-FAR §1) — one scalar per night.
+// ============================================================================
+// Nine symbolic components from the note + event streams and the arc samples,
+// each standardized against the BASE distribution over 40 seeds (median, MAD)
+// with a musical floor on the scale so a base of zero spread (12-TET: every
+// note exactly on the grid) cannot make a 1-cent wobble "far". The scalar is
+// the Euclidean norm of the standardized deviations, either direction (Ma
+// inverted is as far from home as clouds are). Units: "how many base spreads
+// / floors away". The real-audio components (master centroid, roughness) are
+// measured by the critic's recorder (handoff/W0/farrec.js) and reported on
+// their own base (3 seeds); they are not folded into this scalar.
+var DIST_FLOORS = {   // one unit = a just-noticeable departure (the critic's floors; see phase-W0-critic-baseline.md §1)
+  pcEntropy: 0.20,    // bits — pitch-class entropy of the melodic notes (rel. the emit-time tonic, 12 bins)
+  tetDev: 5,          // cents RMS — melodic pitch vs the nearest 12-TET step of the emit-time tonic (a stretched octave, JI, quarter-tones)
+  offMode: 0.05,      // fraction of melodic notes > 15 cents from every degree of the four modes on the emit-time tonic (bitonality, the spiral)
+  ioiVar: 0.10,       // octaves — std of log2 of the within-phrase inter-onset intervals (tempo variance: dilation, canons, varispeed)
+  rateExc: 0.20,      // octaves — max |2-min window median log2 IOI − run median| (rate excursion: a glacial or frantic cycle)
+  densVar: 0.08,      // coefficient of variation of log2(1 + melodic notes per 60 s window) (density variance: ma inverted, clouds)
+  formDev: 0.06,      // per cycle: (1 − Spearman ρ of arc level vs time)/2 + out-of-order phase steps + a missing KIRU, averaged (form-shape deviation)
+  coinc: 0.03,        // fraction of melodic notes with another voice's onset within 40 ms (synchrony: gagaku heterophony, swarm)
+  polyMean: 0.12      // mean melodic voices sounding over the seconds where any sounds (polyphony: swarm, hocket, clouds)
+};
+var DIST_KEYS = Object.keys(DIST_FLOORS);
+function q(arr, f) { if (!arr.length) return 0; var a = arr.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.floor(a.length * f))]; }
+function mean(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return a.length ? s / a.length : 0; }
+function sd(a) { var m = mean(a), s = 0; for (var i = 0; i < a.length; i++) s += (a[i] - m) * (a[i] - m); return a.length > 1 ? Math.sqrt(s / (a.length - 1)) : 0; }
+function spearman(xs, ys) {
+  function ranks(a) { var idx = a.map(function (v, i) { return [v, i]; }).sort(function (p, q2) { return p[0] - q2[0]; }); var r = new Array(a.length); for (var i = 0; i < idx.length;) { var j = i; while (j + 1 < idx.length && idx[j + 1][0] === idx[i][0]) j++; var rk = (i + j) / 2 + 1; for (var k = i; k <= j; k++) r[idx[k][1]] = rk; i = j + 1; } return r; }
+  if (xs.length < 3) return 1;
+  var rx = ranks(xs), ry = ranks(ys), mx = mean(rx), my = mean(ry), num = 0, dx = 0, dy = 0;
+  for (var i = 0; i < xs.length; i++) { num += (rx[i] - mx) * (ry[i] - my); dx += (rx[i] - mx) * (rx[i] - mx); dy += (ry[i] - my) * (ry[i] - my); }
+  return dx > 0 && dy > 0 ? num / Math.sqrt(dx * dy) : 0;
+}
+var ALL_MODES = [[0, 2, 3, 7, 8], [0, 1, 5, 7, 8], [0, 2, 3, 7, 9], [0, 1, 5, 6, 10]];   // hirajoshi / in-sen / kumoi / iwato (the harness's model)
+function distanceComponents(R, A) {
+  var runS = R.runS, tl = R.phaseTimeline;
+  var mel = R.notes.filter(function (n) { return isMelodic(n.layer) && n.freq > 0; }).sort(function (a, b) { return a.t - b.t || (a.layer < b.layer ? -1 : 1); });
+  var C = { n: mel.length };
+  // --- pitch: entropy, 12-TET deviation, off-mode fraction (all relative to the tonic in force when the note was emitted) ---
+  var pcHist = new Array(12).fill(0), devs = [], off = 0;
+  mel.forEach(function (n) {
+    var cents = 1200 * Math.log2(n.freq / (n.tonic || 146.83));
+    var pc = ((Math.round(cents / 100) % 12) + 12) % 12; pcHist[pc]++;
+    var dev = cents - 100 * Math.round(cents / 100); devs.push(dev * dev);
+    var best = 1e9;
+    for (var mi = 0; mi < ALL_MODES.length; mi++) for (var d = 0; d < 5; d++) { var semi = ALL_MODES[mi][d]; var x = ((cents - 100 * semi) % 1200 + 1200) % 1200; if (x > 600) x = 1200 - x; if (x < best) best = x; }
+    if (best > 15) off++;
+  });
+  var H = 0; pcHist.forEach(function (c) { if (c > 0) { var p = c / mel.length; H -= p * Math.log2(p); } });
+  C.pcEntropy = +H.toFixed(4); C.tetDev = +Math.sqrt(mean(devs)).toFixed(3); C.offMode = mel.length ? +(off / mel.length).toFixed(4) : 0;
+  // --- time: within-phrase IOIs per voice → tempo variance, rate excursion ---
+  var byLayer = {}; mel.forEach(function (n) { (byLayer[n.layer] = byLayer[n.layer] || []).push(n); });
+  var ioi = [];   // [t, log2 ioi]
+  for (var L in byLayer) { var arr = byLayer[L]; for (var i = 1; i < arr.length; i++) { var g = arr[i].t - arr[i - 1].t; if (g > 0.02 && g <= 2.0) ioi.push([arr[i].t, Math.log2(g)]); } }
+  var lg = ioi.map(function (x) { return x[1]; });
+  C.ioiVar = +sd(lg).toFixed(4);
+  var runMed = q(lg, 0.5), exc = 0, W2 = 120;
+  for (var w0 = 0; w0 + W2 <= runS + 1; w0 += W2 / 2) { var win = ioi.filter(function (x) { return x[0] >= w0 && x[0] < w0 + W2; }).map(function (x) { return x[1]; }); if (win.length >= 12) { var e = Math.abs(q(win, 0.5) - runMed); if (e > exc) exc = e; } }
+  C.rateExc = +exc.toFixed(4); C.ioiN = ioi.length;
+  // --- density variance over 60 s windows ---
+  var nW = Math.max(1, Math.floor(runS / 60)), cnt = new Array(nW).fill(0);
+  mel.forEach(function (n) { var w = Math.floor(n.t / 60); if (w >= 0 && w < nW) cnt[w]++; });
+  var lc = cnt.map(function (c) { return Math.log2(1 + c); }), lm = mean(lc);
+  C.densVar = lm > 0 ? +(sd(lc) / lm).toFixed(4) : 0; C.densPerMin = +mean(cnt).toFixed(1);
+  // --- form: per completed cycle — arc level vs time (Spearman), phase steps out of jo→ha→kyū→release order, a missing KIRU ---
+  var cyc = R.events.filter(function (e) { return e.cat === "mode" && /cycle \d+/.test(e.detail) && /mode/.test(e.label); }).map(function (e) { return e.t; });
+  cyc.push(runS);
+  var ORDER = { "jo": 0, "ha": 1, "kyū": 2, "release": 3 };
+  var formPer = [], kiruT = R.events.filter(function (e) { return /KIRU/.test(e.label); }).map(function (e) { return e.t; });
+  for (var ci = 0; ci + 1 < cyc.length; ci++) {
+    var a = cyc[ci], b = cyc[ci + 1];
+    if (b - a < 60 || b > runS - 1 && ci + 2 === cyc.length && (b - a) < 240) continue;   // incomplete tail cycle (< 4 min seen) is not judged
+    var smp = R.arcSamples.filter(function (s) { return s.t >= a && s.t < b && s.phase !== "release"; });
+    var rho = spearman(smp.map(function (s) { return s.t; }), smp.map(function (s) { return s.level; }));
+    var steps = tl.filter(function (p) { return p.t > a && p.t < b; }), bad = 0, prev = phaseAt(tl, a);
+    steps.forEach(function (p) { var o1 = ORDER[prev], o2 = ORDER[p.phase]; if (o1 != null && o2 != null && !(o2 === o1 || o2 === o1 + 1 || (o1 === 3 && o2 === 0))) bad++; prev = p.phase; });
+    var kiru = kiruT.some(function (t) { return t >= a && t < b; }) ? 0 : 1;
+    if (ci + 2 === cyc.length && b >= runS - 1) kiru = 0;   // the last (unfinished) cycle has not had its chance
+    formPer.push((1 - rho) / 2 + 0.5 * Math.min(1, bad / 2) + 0.5 * kiru);
+  }
+  C.formDev = +mean(formPer).toFixed(4); C.cycles = formPer.length;
+  // --- ensemble: onset coincidence across voices, mean polyphony ---
+  var co = 0;
+  for (var i2 = 0; i2 < mel.length; i2++) {
+    var hit = false;
+    for (var j = i2 - 1; j >= 0 && mel[i2].t - mel[j].t <= 0.04; j--) if (mel[j].layer !== mel[i2].layer) { hit = true; break; }
+    if (!hit) for (var k2 = i2 + 1; k2 < mel.length && mel[k2].t - mel[i2].t <= 0.04; k2++) if (mel[k2].layer !== mel[i2].layer) { hit = true; break; }
+    if (hit) co++;
+  }
+  C.coinc = mel.length ? +(co / mel.length).toFixed(4) : 0;
+  var v = A.voices, any = 1 - v[0];
+  C.polyMean = any > 0 ? +((v[1] + 2 * v[2] + 3.2 * v["3+"]) / any).toFixed(4) : 0;
+  return C;
+}
+function loadBase() { try { return JSON.parse(fs.readFileSync(BASE_FILE, "utf8")); } catch (e) { return null; } }
+function distanceScalar(C, base) {
+  var u = {}, ss = 0;
+  DIST_KEYS.forEach(function (k) {
+    var med = base && base.stats && base.stats[k] ? base.stats[k].median : 0;
+    var scale = base && base.stats && base.stats[k] ? Math.max(base.stats[k].mad * 1.4826, DIST_FLOORS[k]) : DIST_FLOORS[k];
+    var z = Math.abs((C[k] || 0) - med) / scale; u[k] = +z.toFixed(2); ss += z * z;
+  });
+  return { D: +Math.sqrt(ss).toFixed(2), u: u, base: base ? base.meta : null };
 }
 
 // ============================================================================
@@ -518,6 +634,15 @@ function report(A) {
   line("  mode/form event log (first 40):");
   A.modeEventLog.slice(0, 40).forEach(function (s) { line("    " + s); });
   line();
+  line("--- distance from home (far tail) ---");
+  var DC = A.distance, DS = A.distanceScalar;
+  line("  far: " + (A.far ? JSON.stringify(A.far) : "(engine exposes no getFar)"));
+  line("  D = " + DS.D + (DS.base ? "  (base: " + DS.base.seeds + " seeds × " + DS.base.runS + " s, p50 " + DS.base.p50 + " · p95 " + DS.base.p95 + " · 3×p95 " + (3 * DS.base.p95).toFixed(1) + ")" : "  (no base file — raw floors only)"));
+  line("  " + pad("component", 11) + lpad("value", 9) + lpad("z", 6) + "   meaning");
+  var MEAN = { pcEntropy: "bits, pitch-class entropy (12 bins rel. tonic)", tetDev: "cents RMS off 12-TET", offMode: "fraction > 15 c off every mode degree", ioiVar: "octaves, std log2 within-phrase IOI", rateExc: "octaves, 2-min tempo excursion", densVar: "CV of log2(1+notes/min)", formDev: "arc shape: (1−ρ)/2 + bad steps + no KIRU", coinc: "onsets within 40 ms of another voice", polyMean: "mean voices when any sounds" };
+  DIST_KEYS.forEach(function (k) { line("  " + pad(k, 11) + lpad(DC[k], 9) + lpad(DS.u[k], 6) + "   " + MEAN[k]); });
+  line("  (melodic notes " + DC.n + " · IOIs " + DC.ioiN + " · cycles judged " + DC.cycles + " · notes/min " + DC.densPerMin + ")");
+  line();
   line("--- technical ---");
   var T = A.tech;
   line("  load errors: " + (T.loadErrors.length ? JSON.stringify(T.loadErrors) : "none") + " · runtime errors: " + (T.errors.length ? T.errors.length : "none"));
@@ -532,8 +657,72 @@ function report(A) {
 }
 
 // ============================================================================
-// Main
+// Batch driver: node _probe.js batch [seconds] [--seeds "a b c" | --nseeds 40] [--far d] [--calibrate] [--out dir] [--par 8]
+//   runs every seed in its own process (--quiet --dist-json), prints the
+//   component table with p50 / p95 of D, the note/event signatures (the
+//   byte-identity gate), and with --calibrate writes _probe-base.json.
 // ============================================================================
+if (args[0] === "batch") {
+  var cp = require("child_process");
+  var bRun = parseFloat(args[1] || "1800"); if (!isFinite(bRun) || bRun <= 0) bRun = 1800;
+  var seeds = null, nseeds = 40, bFar = null, calibrate = false, outDir = null, par = 8;
+  for (var bi = 2; bi < args.length; bi++) {
+    if (args[bi] === "--seeds") seeds = args[++bi].split(/[\s,]+/).filter(Boolean).map(Number);
+    else if (args[bi] === "--nseeds") nseeds = parseInt(args[++bi], 10) || 40;
+    else if (args[bi] === "--far") bFar = args[++bi];
+    else if (args[bi] === "--calibrate") calibrate = true;
+    else if (args[bi] === "--out") outDir = args[++bi];
+    else if (args[bi] === "--par") par = parseInt(args[++bi], 10) || 8;
+    else if (args[bi] === "--base") BASE_FILE = args[++bi];
+  }
+  if (!seeds) { seeds = [3042, 17, 7, 8891]; for (var si = 101; seeds.length < nseeds; si++) seeds.push(si); }   // the crew's four + a fixed run of seeds
+  var tmpDir = outDir || fs.mkdtempSync(path.join(require("os").tmpdir(), "zk-batch-"));
+  try { fs.mkdirSync(tmpDir, { recursive: true }); } catch (e) {}
+  var results = [], queue = seeds.slice(), running = 0;
+  function next() {
+    while (running < par && queue.length) {
+      (function (sd0) {
+        running++;
+        var f = path.join(tmpDir, "dist-" + sd0 + (bFar != null ? "-far" + bFar : "") + ".json");
+        var a2 = [__filename, String(bRun), String(sd0), "--quiet", "--dist-json", f, "--base", BASE_FILE]; if (bFar != null) a2.push("--far", bFar);
+        cp.execFile(process.execPath, a2, { maxBuffer: 1 << 26 }, function (err, so, se) {
+          running--;
+          try { results.push(JSON.parse(fs.readFileSync(f, "utf8"))); } catch (e) { results.push({ seed: sd0, error: (err && err.message) || String(e), stderr: String(se).slice(0, 300) }); }
+          if (queue.length) next(); else if (!running) finish();
+        });
+      })(queue.shift());
+    }
+  }
+  function finish() {
+    results.sort(function (a, b) { return seeds.indexOf(a.seed) - seeds.indexOf(b.seed); });
+    var ok = results.filter(function (r) { return !r.error; });
+    var base = loadBase();
+    var stats = {};
+    DIST_KEYS.forEach(function (k) { var vals = ok.map(function (r) { return r.C[k]; }); var med = q(vals, 0.5); var mad = q(vals.map(function (v) { return Math.abs(v - med); }), 0.5); stats[k] = { median: +med.toFixed(4), mad: +mad.toFixed(4), min: +Math.min.apply(null, vals).toFixed(4), max: +Math.max.apply(null, vals).toFixed(4) }; });
+    var useBase = base;
+    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, runS: bRun, seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
+    ok.forEach(function (r) { r.DS = distanceScalar(r.C, useBase); });
+    var Ds = ok.map(function (r) { return r.DS.D; });
+    var p50 = +q(Ds, 0.5).toFixed(2), p95 = +q(Ds, 0.95).toFixed(2);
+    if (calibrate || !base) { useBase.meta.p50 = p50; useBase.meta.p95 = p95; useBase.meta.pmax = +Math.max.apply(null, Ds).toFixed(2); }
+    if (calibrate) { fs.writeFileSync(BASE_FILE, JSON.stringify(useBase, null, 1)); }
+    var out = [];
+    out.push("=== ZANKYŌ distance batch ===  " + ok.length + " seeds × " + bRun + " s" + (bFar != null ? " · ?far=" + bFar : "") + (calibrate ? " · CALIBRATED → " + BASE_FILE : base ? " · base " + base.meta.seeds + " seeds (p50 " + base.meta.p50 + " · p95 " + base.meta.p95 + ")" : " · no base"));
+    out.push(pad("seed", 6) + lpad("D", 7) + DIST_KEYS.map(function (k) { return lpad(k, 10); }).join("") + "   far · notes/events signature");
+    ok.forEach(function (r) { out.push(pad(r.seed, 6) + lpad(r.DS.D, 7) + DIST_KEYS.map(function (k) { return lpad(r.C[k], 10); }).join("") + "   " + (r.far ? (r.far.d != null ? "d " + (+r.far.d).toFixed(2) + " " + (r.far.name || "") : JSON.stringify(r.far).slice(0, 30)) : "-") + " · " + r.sig.notes.slice(0, 10) + "/" + r.sig.events.slice(0, 10) + " (" + r.sig.noteCount + "/" + r.sig.eventCount + ")" + (r.errors ? "  ERRORS " + r.errors : "")); });
+    out.push(pad("median", 6) + lpad(p50, 7) + DIST_KEYS.map(function (k) { return lpad(stats[k].median, 10); }).join(""));
+    out.push(pad("MAD", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(stats[k].mad, 10); }).join(""));
+    out.push(pad("scale", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(Math.max(stats[k].mad * 1.4826, DIST_FLOORS[k]).toFixed(3), 10); }).join("") + "   (max(1.4826·MAD, floor))");
+    out.push("D: p50 " + p50 + " · p95 " + p95 + " · max " + Math.max.apply(null, Ds) + " · min " + Math.min.apply(null, Ds) + (useBase && useBase.meta && useBase.meta.p95 ? " · 3× base p95 = " + (3 * useBase.meta.p95).toFixed(1) + " · 5× = " + (5 * useBase.meta.p95).toFixed(1) : ""));
+    out.push("seeds with D ≥ 3× base p95: " + ok.filter(function (r) { return useBase.meta.p95 && r.DS.D >= 3 * useBase.meta.p95; }).map(function (r) { return r.seed; }).join(" ") + " · ≥ 5×: " + ok.filter(function (r) { return useBase.meta.p95 && r.DS.D >= 5 * useBase.meta.p95; }).map(function (r) { return r.seed; }).join(" "));
+    results.filter(function (r) { return r.error; }).forEach(function (r) { out.push("seed " + r.seed + " FAILED: " + r.error + " " + r.stderr); });
+    console.log(out.join("\n"));
+    fs.writeFileSync(path.join(tmpDir, "batch" + (bFar != null ? "-far" + bFar : "") + ".json"), JSON.stringify({ runS: bRun, far: bFar, seeds: seeds, results: ok, stats: stats, p50: p50, p95: p95 }, null, 1));
+    console.log("per-seed files in " + tmpDir);
+    process.exit(results.some(function (r) { return r.error; }) ? 1 : 0);
+  }
+  next();
+} else {
 var R1 = runOnce(SEED, RUN, JITTER);
 if (R1.fatal) { console.error("FATAL: " + R1.fatal); process.exit(2); }
 var A1 = analyze(R1);
@@ -563,4 +752,9 @@ if (JSON_OUT) {
   fs.writeFileSync(JSON_OUT, JSON.stringify(A1, null, 1));
   console.log("wrote " + JSON_OUT);
 }
+if (DIST_JSON) {
+  var engineSig = (function () { try { return require("crypto").createHash("sha1").update(fs.readFileSync(path.join(__dirname, "zankyo-audio.js"))).digest("hex").slice(0, 12); } catch (e) { return null; } })();
+  fs.writeFileSync(DIST_JSON, JSON.stringify({ seed: SEED, runS: RUN, far: A1.far, C: A1.distance, sig: sig1, engineSig: engineSig, errors: A1.tech.errors.length + A1.tech.loadErrors.length || undefined, gates: A1.gates }));
+}
 process.exit(A1.tech.errors.length || A1.tech.loadErrors.length || reproOk === false ? 1 : 0);
+}
