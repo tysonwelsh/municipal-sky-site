@@ -1,0 +1,19 @@
+{
+  "id": "daehan-news-1970",
+  "title": "대한뉴스 — 우리는 건설한다 (Korean News: We Build)",
+  "year": 1970,
+  "src": "https://www.youtube.com/watch?v=T4QVxiC7ocI",
+  "license": "Korean government production (KTV archive, KOGL open)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 96.01,
+  "bytes": 1042758,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01], [72.01, 84.01], [84.01, 96.01]],
+  "srcWindows": [[3.0, 15.0], [72.0, 84.0], [140.0, 152.0], [180.0, 192.0], [228.0, 240.0], [268.0, 280.0], [300.0, 312.0], [320.0, 332.0]],
+  "notes": "newsreel fanfare, bridge girders, ice hockey, a protest card, a semiconductor plant's tape reels",
+  "takedown": false
+}

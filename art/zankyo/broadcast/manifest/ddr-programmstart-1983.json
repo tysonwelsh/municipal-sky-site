@@ -1,0 +1,19 @@
+{
+  "id": "ddr-programmstart-1983",
+  "title": "Fernsehen der DDR — Programmstart und Ansage, 25.6.1983",
+  "year": 1983,
+  "src": "https://www.youtube.com/watch?v=nRphSUe1pL4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 547533,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[8.0, 20], [175.0, 187], [215.0, 227], [290.0, 302], [370.0, 382], [569.0, 581]],
+  "notes": "East German television opens for the day: the tumbling 'Fernsehen der DDR' cube, the station clock, a swan under the date, the Ansagerin, the printed programme down to 'Sendeschluß gegen 23.50', and 'das sollten Sie wissen'",
+  "takedown": false
+}

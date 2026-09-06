@@ -1,0 +1,19 @@
+{
+  "id": "ct2-testcard-1994",
+  "title": "TV-DX: ČT2 / STV, test card to sign-off, 12.07.1994",
+  "year": 1994,
+  "src": "https://archive.org/details/youtube-Flju_I8aUjw",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "tone",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 72.0,
+  "bytes": 581871,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[10.0, 22], [62.0, 74], [128.0, 140], [578.0, 590], [640.0, 652], [845.0, 857]],
+  "notes": "source: YouTube Flju_I8aUjw, mirrored on archive.org; off-air long-distance reception: the HSR PRAHA FUBK test card and its tone, the clock, a BBC World Service News relay, the Slovak Predpoveď počasia, the flag at close",
+  "takedown": false
+}

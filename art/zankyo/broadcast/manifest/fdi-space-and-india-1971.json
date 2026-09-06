@@ -1,0 +1,19 @@
+{
+  "id": "fdi-space-and-india-1971",
+  "title": "Space and India",
+  "year": 1971,
+  "src": "https://archive.org/download/dli.MoI.SpaceandIndia_Eng/SpaceandIndia_Eng.ogv",
+  "license": "Govt of India (Films Division); 60-yr govt-works term, in copyright to 2032",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 604911,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[100.0, 112.0], [134.0, 146.0], [474.0, 486.0], [542.0, 554.0], [814.0, 826.0], [1120.0, 1132.0]],
+  "notes": "INCOSPAR: sounding rockets at Thumba, the title card, a scientist to camera, a rocket trail spiralling in the sky, the dish",
+  "takedown": false
+}

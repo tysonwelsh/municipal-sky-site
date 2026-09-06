@@ -1,0 +1,19 @@
+{
+  "id": "protect-and-survive-1980",
+  "title": "Protect and Survive",
+  "year": 1980,
+  "src": "https://archive.org/search?query=identifier%3AProtectAndSurvive*",
+  "license": "PD Mark 1.0 (Internet Archive)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.1,
+  "durS": 96.04,
+  "bytes": 650129,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[110.0, 122], [212.0, 224], [300.0, 312], [640.0, 652], [1570.0, 1582], [1798.0, 1810], [2060.0, 2072], [2596.0, 2608]],
+  "notes": "concatenation of all 20 films (archive.org ProtectAndSurvive1..20, PD Mark); UK Home Office / COI civil defence: the attack warning, the model house, the transistor radio, 'the importance of your radio'",
+  "takedown": false
+}

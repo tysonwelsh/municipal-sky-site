@@ -1,0 +1,19 @@
+{
+  "id": "night-mail-1936",
+  "title": "Night Mail",
+  "year": 1936,
+  "src": "https://archive.org/details/night-mail-1936",
+  "license": "PD Mark 1.0 (Internet Archive)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 96.01,
+  "bytes": 947856,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[2.0, 14], [150.0, 162], [190.0, 202], [250.0, 262], [510.0, 522], [770.0, 782], [1290.0, 1302], [1370.0, 1382]],
+  "notes": "GPO Film Unit; Auden's verse over Britten's score, 'recorded on Visatone-Marconi'; the signal lamps, the sorting carriage, the descent into Glasgow",
+  "takedown": false
+}

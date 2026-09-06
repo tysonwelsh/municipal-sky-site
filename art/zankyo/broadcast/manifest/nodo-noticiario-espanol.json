@@ -1,0 +1,19 @@
+{
+  "id": "nodo-noticiario-espanol",
+  "title": "NO-DO — Noticiario Documental Español",
+  "year": 1955,
+  "src": "https://www.youtube.com/watch?v=f_DyLOcIkw4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 743598,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[345.0, 357], [540.0, 552], [930.0, 942], [1580.0, 1592], [2100.0, 2112], [3070.0, 3082]],
+  "notes": "Spanish state cinema newsreel, 1943-1963: the NO-DO presenta card and its fanfare, the eagle masthead 'el mundo entero al alcance de todos los españoles', the narrator over coast, fog and crowds",
+  "takedown": false
+}
