@@ -334,7 +334,7 @@ window.ZankyoAudio = (function () {
   //
   // Determinism: the subject is a MEMORY, not a decision. Nothing here draws.
   var farSubject = null;   // { notes, at, lead, taken, n, mode, plan }
-  var farHetero = null, farHocket = null, farSwarm = null, farPoly = null, farMirror = null;
+  var farHetero = null, farHocket = null, farSwarm = null, farPoly = null, farMirror = null, farClouds = null;
 
   // Which departure owns the ensemble right now, and its voice list. Only one
   // can: they are all "everybody plays this phrase" and two at once is mud, so
@@ -343,8 +343,7 @@ window.ZankyoAudio = (function () {
   var FAR_MELODIC = ["shakuhachi", "hichiriki", "koto", "shamisen", "biwa"];
   var FAR_MEL_SET = { shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1 };
   function farEnsemble() {
-    // 群 swarm joins here in rc.12, with 雲 — the two that need the node budget
-    // measured around them rather than after them.
+    if (farSwarm) return { kind: "swarm", voices: FAR_MELODIC, p: farSwarm };
     if (farHocket) return { kind: "hocket", voices: FAR_MELODIC, p: farHocket };
     if (farCanon) return { kind: "canon", voices: FAR_CANON_VOICES, p: farCanon };
     if (farHetero) return { kind: "hetero", voices: FAR_MELODIC, p: farHetero };
@@ -364,7 +363,125 @@ window.ZankyoAudio = (function () {
     return out;
   }
   function farEntryCount(E) {
-    return E.kind === "swarm" ? Math.max(2, Math.round(E.p.entries)) : E.voices.length;
+    // 群: only the first three entries are real bodies — the rest are the
+    // swarm's own shadows on the cheap body, which is where the concurrency
+    // budget is actually won.
+    return E.kind === "swarm" ? 3 : E.voices.length;
+  }
+
+  // ==========================================================================
+  // A CHEAP BODY for the dense departures (W2: 群 and 雲)
+  // ==========================================================================
+  // 群 is 6–10 overlapping entries and 雲 is hundreds of short notes, and the
+  // hard constraint of this phase is CONCURRENT SOURCES: the base peaks at 104
+  // and the ceiling is 110, so there are six to spend. A plucked note costs
+  // about three sources (buffer, pick burst, sparkle) and its own filter and
+  // panner; at a swarm's density that is thirty.
+  //
+  // So these two get one oscillator and one gain per event, into a bus built
+  // ONCE per gesture — filter, panner, layer gain amortised across the whole
+  // burst. One source per event instead of three, and the node count roughly
+  // halved. That is not a compromise dressed as a design: micropolyphony and a
+  // stochastic cloud are about DENSITY AND BLUR, not about the individual
+  // timbre of the two hundredth note, and the simpler body is what makes the
+  // mass audible as a mass. (The critic reached the same conclusion from the
+  // other side — Ligeti's entries are close, not many-bodied.)
+  function farCheapBus(layer, t, cutoff, pan, peak) {
+    var c = ctx, lp = c.createBiquadFilter(), g = c.createGain();
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, t); lp.Q.setValueAtTime(0.6, t);
+    g.gain.setValueAtTime(peak, t);
+    lp.connect(g); g.connect(panAt(layer, pan));
+    return { input: lp, gain: g };
+  }
+  function farCheapNote(bus, f, t, dur, peak, glideTo, layer) {
+    var c = ctx, o = c.createOscillator(), g = c.createGain();
+    // A cheap body is still a note: it goes through emitNote like every other,
+    // so the viz strikes for it, the crew lowers its voice for it, and every
+    // instrument that reads the note stream can see it. A departure invisible
+    // to the note stream would be invisible to every gate in this program.
+    if (layer) emitNote(layer, f, t, dur);
+    o.type = "triangle";
+    o.frequency.setValueAtTime(f, t);
+    if (glideTo > 0 && glideTo !== f) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+    o.connect(g); g.connect(bus.input);
+    var atk = Math.min(0.012, dur * 0.25);
+    PJ.Voice.env(g.gain, t, [[atk, peak], [Math.max(0.01, dur - atk - 0.015), peak * 0.35], [0.015, 0]]);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  // ==========================================================================
+  // 群 SWARM (W2) — a canon of 6–10 entries at short delays
+  // ==========================================================================
+  // The plan: "the air's limit is lifted and the motif engine runs a canon of
+  // 6–10 entries at short delays — micropolyphony on a Japanese pentatonic."
+  // The first three entries are the station's own voices, through the shared
+  // subject engine; the rest are the swarm proper, on the cheap body, each an
+  // octave-displaced copy entering a gap later. Three bodies you can pick out
+  // and a cloud of their own shadows behind them, which is what the texture is.
+  function farSwarmTail(phrase, now, beat, center) {
+    if (!farSwarm || !phrase || phrase.length < 2) return;
+    var n = Math.max(2, Math.round(farSwarm.entries) - 3);
+    var R = S.far.fork("swarm:" + Math.round(now * 4));
+    for (var e = 0; e < n; e++) {
+      // Each shadow entry belongs to a DIFFERENT body, and its own bus. They
+      // all went out under one layer name at first, which made a swarm of eight
+      // entries read as one voice everywhere downstream — to the polyphony
+      // measure, to the viz, and to the crew's duck. A shadow of the koto is
+      // still the koto's shadow; a swarm is the whole band's.
+      var lay = FAR_MELODIC[(3 + e) % FAR_MELODIC.length];
+      var bus = farCheapBus(lay, now, 2600, R.rnd(-0.55, 0.55), 1);
+      var t = now + (3 + e) * farSwarm.gapS, oct = (e % 3) - 1;
+      var notes = fitToRegister(phrase, center + oct * field.size);
+      for (var i = 0; i < notes.length; i++) {
+        var d = Math.max(0.1, notes[i].durBeats * beat);
+        farCheapNote(bus, SCALE[notes[i].deg].freq, t, d, 0.030 + 0.012 * R.next(), 0, lay);
+        t += d;
+      }
+    }
+    emitEvent({ cat: "far", label: "群 the swarm", detail: n + " shadow entries at " + farSwarm.gapS.toFixed(2) + "s · " + phrase.length + " notes each" }, now);
+  }
+
+  // ==========================================================================
+  // 雲 CLOUDS (W2) — the plucked bodies as stochastic glissando clouds
+  // ==========================================================================
+  // "Hundreds of short notes on distributions, not phrases." The voice stops
+  // phrasing and becomes a distribution: `rateHz` events a second across
+  // `spanOct` octaves around its own centre, each a short glide. The plan's own
+  // compatibility rule (no clouds under a glacial dilation) is enforced in the
+  // registry, where it belongs.
+  // The whole of a plucked voice's turn, under 雲: a burst instead of a phrase,
+  // its own claim on the air, and its own rest afterwards. Kept in one place so
+  // the three voices share it rather than each growing a copy.
+  function farCloudSpan(layer, R, now, center, tok, margin, arc, again) {
+    var durS = 2.5 + R.next() * 5;
+    var t = farCloudBurst(layer, R, now + 0.05, center, durS);
+    if (tok) tok.until = t + margin;
+    var rest = (2 + R.next() * 5) * (1 - arc * 0.4) * metaRestMul() * gapMulAt(t) / trimOf(layer);
+    afterSpan(layer, now, (t - now) + rest * farTimeMul(layer, now), again);
+  }
+  var FAR_CLOUD_VOICES = 5;                      // notes in the air at once, per clouding voice
+  function farCloudBurst(layer, R, now, center, durS) {
+    var rate = farClouds.rateHz, n = Math.max(4, Math.round(rate * durS));
+    if (n > 220) n = 220;                        // a burst is a burst, not a night
+    var bus = farCheapBus(layer, now, 3200, R.rnd(-0.5, 0.5), 1);
+    var lo = center - farClouds.spanOct * field.size, hi = center + farClouds.spanOct * field.size, t = now;
+    for (var i = 0; i < n; i++) {
+      var a = foldDeg(Math.round(lo + R.next() * (hi - lo)));
+      var b = foldDeg(a + Math.round((R.next() * 2 - 1) * 4));
+      // A cloud's concurrency is its event RATE times its note LENGTH, and
+      // nothing was tying those two together: at 15 events a second with notes
+      // up to 2.2 s long, three plucked voices clouding at once peaked at 143
+      // concurrent sources against a ceiling of 110. So the note length is
+      // capped so that a cloud holds about FAR_CLOUD_VOICES notes in the air at
+      // a time whatever its rate — a denser cloud is made of shorter notes,
+      // which is also what a denser cloud sounds like.
+      var d = Math.max(0.06, Math.min(farClouds.glissS * (0.4 + R.next()), FAR_CLOUD_VOICES / rate));
+      farCheapNote(bus, SCALE[a].freq, t, d, 0.020 + 0.014 * R.next(), SCALE[b].freq, layer);
+      t += (durS / n) * (0.5 + R.next());
+      if (t > now + durS) break;
+    }
+    emitEvent({ cat: "far", label: "雲 a cloud", detail: layer + " · " + n + " events over " + durS.toFixed(1) + "s · " + farClouds.spanOct.toFixed(1) + " oct" }, now);
+    return t;
   }
 
   // ==========================================================================
@@ -540,7 +657,7 @@ window.ZankyoAudio = (function () {
 
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
-    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null;
+    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
@@ -567,7 +684,8 @@ window.ZankyoAudio = (function () {
     // W2 合奏 — the other three that ride the shared subject
     if ((p = farNight.dep.hetero)) farHetero = p;
     if ((p = farNight.dep.hocket)) farHocket = p;
-    if ((p = farNight.dep.swarm)) farSwarm = p;      // read now, engaged in rc.12
+    if ((p = farNight.dep.swarm)) farSwarm = p;
+    if ((p = farNight.dep.clouds)) farClouds = p;
     if ((p = farNight.dep.poly)) { farPoly = p; farPolyN = 0; }
     if ((p = farNight.dep.mirror)) farMirror = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
@@ -3076,6 +3194,8 @@ window.ZankyoAudio = (function () {
     var ownBeat = 0.9 * farTimeMul("biwa", now);   // the narrator has no `pace`; 0.9 was its inline factor
     var cn = farCanonTake("biwa", phrase, now, biwaState.center, ownBeat);   // 影
     phrase = cn.phrase;
+    if (farClouds) { farCloudSpan("biwa", R, now, biwaState.center, tok, margin, arc, biwaPhrase); return; }   // 雲
+    if (cn.kind === "swarm" && !cn.take) farSwarmTail(phrase, cn.t0, ownBeat * cn.cs, biwaState.center);   // 群
     if (phrase.length) biwaState.idx = phrase[phrase.length - 1].deg;
     var beat = ownBeat * cn.cs, t = cn.t0, strummed = false;   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
@@ -3242,6 +3362,8 @@ window.ZankyoAudio = (function () {
     var ownBeat = 0.4 / pace * farTimeMul("koto", now);
     var cn = farCanonTake("koto", phrase, now, kotoState.center, ownBeat);   // 影: the same page, in the drawn ratio
     phrase = cn.phrase;
+    if (farClouds) { farCloudSpan("koto", S.koto, now, kotoState.center, tok, margin, arc, kotoPhrase); return; }   // 雲
+    if (cn.kind === "swarm" && !cn.take) farSwarmTail(phrase, cn.t0, ownBeat * cn.cs, kotoState.center);   // 群
     if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
     // pulse) — but never on a canon take: a canon keeps its own time.
@@ -3312,6 +3434,8 @@ window.ZankyoAudio = (function () {
     var ownBeat = 0.28 / pace * farTimeMul("shamisen", now);
     var cn = farCanonTake("shamisen", phrase, now, shamiState.center, ownBeat);   // 影
     phrase = cn.phrase;
+    if (farClouds) { farCloudSpan("shamisen", S.shamisen, now, shamiState.center, tok, margin, arc, shamisenPhrase); return; }   // 雲
+    if (cn.kind === "swarm" && !cn.take) farSwarmTail(phrase, cn.t0, ownBeat * cn.cs, shamiState.center);   // 群
     if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
     // pulse) — never on a canon take.
