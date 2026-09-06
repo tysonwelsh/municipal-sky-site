@@ -557,7 +557,7 @@
     // describes a fixed window, so it is one. A slow drift still cannot reach
     // it (200 units over a minute puts ~13 in any 4 s window) and a sweep back
     // and forth still counts, because it is the same wrist.
-    var ring = [], lastV = null;
+    var ring = [], lastV = 50;                 // the knob's own starting value: a null here loses the first step of the first gesture (~3 units in 200; the critic's carried note 3)
     mount.appendChild(makeKnob({
       min: 0, max: 100, step: 0.5, value: 50,
       label: "\u6383\u5f15",                    // 掃引 — a name, not an instruction
@@ -565,7 +565,7 @@
       format: function (v) { return Math.round(v) + ""; },
       onInput: function (v) {
         var now = (window.performance && performance.now) ? performance.now() / 1000 : Date.now() / 1000;
-        var d = lastV == null ? 0 : Math.abs(v - lastV);
+        var d = Math.abs(v - lastV);
         lastV = v;
         ring.push([now, d]);
         var sum = 0, keep = [];
