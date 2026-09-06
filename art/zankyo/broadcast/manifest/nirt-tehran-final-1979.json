@@ -1,0 +1,69 @@
+{
+  "id": "nirt-tehran-final-1979",
+  "title": "National Iranian Radio and Television — the last programme",
+  "year": 1979,
+  "src": "https://www.youtube.com/watch?v=6W_kXjNzs3c",
+  "license": "NIRT/IRIB; copyrighted (fair-use posture)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 532196,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      50.0,
+      62.0
+    ],
+    [
+      88.0,
+      100.0
+    ],
+    [
+      172.0,
+      184.0
+    ],
+    [
+      206.0,
+      218.0
+    ],
+    [
+      250.0,
+      262.0
+    ],
+    [
+      340.0,
+      352.0
+    ]
+  ],
+  "notes": "February 1979: the station clock ident, announcers reading to camera off a blue chroma wall, tanks in the street, the interlude card of red geraniums",
+  "takedown": false
+}
