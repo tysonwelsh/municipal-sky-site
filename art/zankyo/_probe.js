@@ -714,6 +714,13 @@ if (args[0] === "batch") {
     out.push(pad("MAD", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(stats[k].mad, 10); }).join(""));
     out.push(pad("scale", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(Math.max(stats[k].mad * 1.4826, DIST_FLOORS[k]).toFixed(3), 10); }).join("") + "   (max(1.4826·MAD, floor))");
     out.push("D: p50 " + p50 + " · p95 " + p95 + " · max " + Math.max.apply(null, Ds) + " · min " + Math.min.apply(null, Ds) + (useBase && useBase.meta && useBase.meta.p95 ? " · 3× base p95 = " + (3 * useBase.meta.p95).toFixed(1) + " · 5× = " + (5 * useBase.meta.p95).toFixed(1) : ""));
+    // W1+: D by drawn departure — which departures carry the distance, and which draw without registering
+    var byDep = {};
+    ok.forEach(function (r) { var ids = r.far && r.far.ids ? r.far.ids : []; ids.forEach(function (id) { (byDep[id] = byDep[id] || []).push(r.DS.D); }); });
+    var depKeys = Object.keys(byDep).sort(function (a, b) { return q(byDep[b], 0.5) - q(byDep[a], 0.5); });
+    if (depKeys.length) out.push("D by departure (median · n): " + depKeys.map(function (k) { return k + " " + q(byDep[k], 0.5).toFixed(1) + "·" + byDep[k].length; }).join(" · "));
+    var nDep = ok.filter(function (r) { return r.far && !r.far.home; }).length;
+    if (nDep) out.push("departed nights " + nDep + "/" + ok.length + " · their D p50 " + q(ok.filter(function (r) { return r.far && !r.far.home; }).map(function (r) { return r.DS.D; }), 0.5).toFixed(2) + " · home p50 " + q(ok.filter(function (r) { return !r.far || r.far.home; }).map(function (r) { return r.DS.D; }), 0.5).toFixed(2));
     out.push("seeds with D ≥ 3× base p95: " + ok.filter(function (r) { return useBase.meta.p95 && r.DS.D >= 3 * useBase.meta.p95; }).map(function (r) { return r.seed; }).join(" ") + " · ≥ 5×: " + ok.filter(function (r) { return useBase.meta.p95 && r.DS.D >= 5 * useBase.meta.p95; }).map(function (r) { return r.seed; }).join(" "));
     results.filter(function (r) { return r.error; }).forEach(function (r) { out.push("seed " + r.seed + " FAILED: " + r.error + " " + r.stderr); });
     console.log(out.join("\n"));
