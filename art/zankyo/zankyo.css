@@ -162,33 +162,29 @@
 /* ---------------------------------------------------------------------------
    MARQUEE — the machine's illuminated title strip (smoked acrylic, backlit)
 --------------------------------------------------------------------------- */
-.zk-marquee {
-  position: relative; margin: 0 6px 22px; padding: 16px 12px 13px;
-  border-radius: 5px; border: 1px solid #08080a;
-  background:
-    radial-gradient(70% 130% at 50% 55%, rgba(var(--red-rgb), 0.09), transparent 72%),
-    linear-gradient(180deg, rgba(8, 6, 11, 0.94), rgba(15, 11, 18, 0.82) 45%, rgba(6, 5, 9, 0.95));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 0 34px rgba(0, 0, 0, 0.65),
-    0 1px 0 rgba(255, 255, 255, 0.05),
-    0 4px 10px rgba(0, 0, 0, 0.5);
-}
-/* smoked-glass specular streak across the marquee */
-.zk-marquee::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px;
-  background: linear-gradient(107deg, transparent 12%, rgba(255, 255, 255, 0.045) 20%, rgba(255, 255, 255, 0.012) 27%, transparent 34%);
-}
-.zk-marquee-screw {
-  position: absolute; top: 50%; left: 7px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%);
-  box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-.zk-marquee-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(35deg); }
-.zk-marquee-screw-r { left: auto; right: 7px; }
-.zk-marquee-screw-r::before { transform: rotate(-58deg); }
+/* The document's heading, off-screen in every state: the tube's title is a
+   decoration that leaves on the first PLAY, and a page should not lose its
+   only h1 when somebody presses play. */
+.zk-sr-title { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-.zankyo-header { text-align: center; }
+/* THE TITLE ON THE TUBE (the owner): the marquee container is gone entirely
+   and the title shows on the scope until the station is played. It sits
+   INSIDE .zk-screen, beneath the scanlines and the glass, so the same fonts
+   and the same glitch echoes read as phosphor text rather than as a sign
+   bolted above the machine. Its own ground covers the canvas, so the viz's
+   idle line does not show through — that line is what the scope goes back to
+   after a STOP, which is unchanged. */
+.zk-boot {
+  position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 0 12px;
+  background: radial-gradient(78% 120% at 50% 46%, rgba(20, 40, 26, 0.55), rgba(2, 2, 4, 0.97) 76%), #020204;
+}
+.zk-boot .zankyo-title { font-size: clamp(24px, 5.2vw, 44px); }
+.zk-boot-line {
+  margin: 0; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.08em;
+  color: rgba(126, 214, 150, 0.62); text-shadow: 0 0 8px rgba(126, 214, 150, 0.35);
+}
+
 .zankyo-title {
   font-family: "Orbitron", sans-serif; font-weight: 900;
   font-size: clamp(34px, 9vw, 64px); letter-spacing: 0.12em;
@@ -1048,7 +1044,8 @@
      enough to hold the slot and read as louvre, clear of the corner screw. */
   .zk-vent-bl { display: block; width: 46px; left: 32px; bottom: 10px; }
   .zk-far-sw { left: 43px; bottom: 10px; }
-  .zk-marquee { margin: 0 0 16px; padding: 12px 8px 10px; }
+  .zk-boot { gap: 6px; }
+  .zk-boot-line { font-size: 10px; }
   .zankyo-viz { height: 160px; }
   .zk-monitor { padding: 9px 9px 0; }
 
