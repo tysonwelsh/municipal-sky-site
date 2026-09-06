@@ -387,7 +387,7 @@ const signalVocab = (() => {
   let live = 0, peak = 0;
   for (const e of evs) { live += e[1]; if (live > peak) peak = live; }
   const kinds = Object.keys(ns.created).map((k) => k + ":" + ns.created[k]).join(" ");
-  console.log("node budget: " + ns.total + " nodes created (" + perMin.toFixed(0) + "/min) · peak concurrent sources " + peak + " · " + kinds);
+  console.log("node budget: " + ns.total + " nodes created (" + perMin.toFixed(0) + "/min; base spread 791–2064, bound enforced on seeds 3042/7) · peak concurrent sources " + peak + " (≤ 110, every seed) · " + kinds);
   runA.peakSources = peak;
 })();
 
@@ -445,7 +445,17 @@ const melPer30 = melodicNotes * 1800 / RUN;
 // melodic voices; at 4 h the base engine (a96f592) failed it on seed 3042 with or without the receiver. Measured the
 // same way — all five voices — on the base: 1 800 s seeds 3042 / 17 / 7 → 2 808 / 2 437 / 2 444; 14 400 s seeds
 // 3042 / 17 → 1 838 / 2 154 (the critic adds 2 626 at 1 800 / 8891 and 2 512 at 7 200 / 7). Floor = the lowest − 10 % ≈ 1 650; the 3 300 ceiling stays (the critic's ruling).
-if (RUN >= 1500 && (melPer30 < 1650 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3300");
+// REGRESSION BOUND, seeds 3042 and 7 only — not an engine invariant. The
+// critic measured the base's own spread over the 36 home nights of the 40-seed
+// batch: melodic notes/30 min runs 1084–4191, and TWELVE of the thirty-six sit
+// outside this band. The shipped engine fails it on seed 134 (4261) playing an
+// ordinary home night. It is still a good tripwire on the two seeds the
+// harness habitually runs — on 3042 a move outside this band really would mean
+// something changed — but read as an invariant it sends people chasing
+// phantoms, or teaches them to ignore a red VERDICT. So it is scoped to its
+// seeds and the number is reported on every other one.
+var CANON_SEED = (SEED === 3042 || SEED === 7);
+if (RUN >= 1500 && CANON_SEED && (melPer30 < 1650 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3300 (regression bound, seeds 3042/7; base spread 1084–4191)");
 if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
 if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
 // Phase 2 gates (plan §7): ≥ 1 sea change per hour; seed pool ≥ 12 over a long run; ≥ 8 distinct aitake voicings
@@ -453,7 +463,15 @@ if (RUN >= 3600 && pitchVocab.seas < 1) fails.push("no sea change in " + RUN + "
 if (RUN >= 7200 && pitchVocab.pool < 12) fails.push("seed pool " + pitchVocab.pool + " < 12");
 if (RUN >= 1500 && pitchVocab.voicings < 8) fails.push("only " + pitchVocab.voicings + " distinct aitake voicings");
 // Phase 3 gates: node budget ≤ 1 500/min and ≤ 110 concurrent sources (the critic's ceilings); every new body heard in an hour
-if (runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget " + Math.round(runA.nodes.total / (RUN / 60)) + "/min > 1500");
+// Same: base spread 791–2064/min, NINE of thirty-six home nights over 1500.
+// (The runtime gate for the far tail is already same-seed relative after the
+// W2a ruling — far ≤ its own home × 1.5 — which is the shape this one would
+// take if the harness had a reference build to compare against; it does not,
+// so it is scoped instead.)
+if (CANON_SEED && runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget " + Math.round(runA.nodes.total / (RUN / 60)) + "/min > 1500 (regression bound, seeds 3042/7; base spread 791–2064)");
+// This one IS an invariant and stays absolute on every seed: the base's max
+// over the same 36 nights is 100, and nothing in the far tail may exceed 110.
+// It is the constraint 群 and 雲 were designed against.
 if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
 if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
 // Phase 4 gates (plan §7): ≥ 1 visitation per 3 cycles over 4 h; never two in one cycle; the KIRU lives on the landscape cut
