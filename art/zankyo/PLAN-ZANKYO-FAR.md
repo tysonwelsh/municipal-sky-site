@@ -154,3 +154,19 @@ Remove the text on the transport plate under the second set — the
 「操作 · TRANSPORT」 label and the 「TYPE 9-B · No. 2887-R」 stamp. The
 buttons and the knob speak for themselves. Keep aria-labels. The plate's
 metal, bolts and layout are unchanged.
+
+## 7. Owner addition: the tuning dial (between W1 and W2)
+
+A second knob on the CRT-9's chin beside the existing 選局 knob — a
+tuning DIAL. Fidgeting it is what makes it work: as it turns, the tube
+shows snow and the receiver band-noise rises with the motion (the feel of
+sweeping a dial); once the cumulative rotation within a few seconds
+passes a threshold (about a turn and a half), a real reel LOCKS IN
+immediately — tune-in, hold, loss as usual — not at the next legal moment.
+Works while playing (any time except inside a signal already playing or a
+KIRU hush, where the dial only makes snow) and while stopped (an
+audition). Rate-limit: one lock per 30 s; further fidgeting makes snow.
+The existing 選局 knob keeps its behavior. Unlabeled like the first; same
+size; it shows its position. Delivered as its own commit with a VERSION
+bump; the critic checks feel (snow follows the hand), timing, ceiling, and
+that a home night's note stream is unchanged when the dial is not touched.
