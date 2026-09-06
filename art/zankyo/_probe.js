@@ -369,13 +369,15 @@ function analyze(R) {
   var modeEvents = R.events.filter(function (e) { return e.cat === "mode" || e.cat === "form" || e.cat === "plan" || e.cat === "scene" || e.cat === "visit" || e.cat === "visitation" || e.cat === "pitch"; });
   A.kirus = R.events.filter(function (e) { return /KIRU/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
   A.cycles = R.events.filter(function (e) { return /cycle \d+/.test(e.detail) && /mode/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
-  A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null;
+  A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null; A.signals = []; A.signalFallbacks = 0;
   R.events.forEach(function (e) {
     var txt = e.label + " · " + e.detail;
     var km = /(?:kind|活動|cycle kind)[:\s]+([^\s·,]+)/i.exec(txt); if (km) A.kinds[km[1]] = (A.kinds[km[1]] || 0) + 1;
     var sm = /seat(?:ing|ed)[:\s]+([^·]+)/i.exec(txt); if (sm) A.seatings[sm[1].trim()] = (A.seatings[sm[1].trim()] || 0) + 1;
     if (/sea change|modulat|海|retun/i.test(txt) && !/mode lottery/.test(txt)) A.seaChanges.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });
     if (/visit(ation)?:/i.test(txt) && e.cat !== "ambient") A.visitations.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });   // the plan-time token only (one per hosting cycle); "begins"/"goes dead" are not counted
+    if (e.cat === "rx" && e.label === "受信") A.signals.push({ t: Math.round(e.t), txt: e.detail });          // S3: the receiver's signals (受信 = a reel played; the fallback and the scan are not counted)
+    if (e.cat === "rx" && e.label === "受信 fallback") A.signalFallbacks++;
     var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1;
     if (/joint/i.test(txt)) A.joints++;
   });
@@ -421,6 +423,11 @@ function analyze(R) {
   var vpc = {}; A.visitations.forEach(function (v) { var ci = 0; for (var q = 0; q < A.cycles.length; q++) if (A.cycles[q].t <= v.t) ci = q; vpc[ci] = (vpc[ci] || 0) + 1; });
   A.visitPerCycle = vpc; A.visitMaxPerCycle = Object.keys(vpc).length ? Math.max.apply(null, Object.keys(vpc).map(function (k) { return vpc[k]; })) : 0;
   A.visitRatePer3 = A.cycles.length ? +(3 * A.visitations.length / A.cycles.length).toFixed(2) : 0;
+  // ---- S3: the signal per cycle and per cycle kind ----
+  var spc = {}, spk = {};
+  A.signals.forEach(function (s) { var ci = 0; for (var q = 0; q < A.cycles.length; q++) if (A.cycles[q].t <= s.t) ci = q; spc[ci] = (spc[ci] || 0) + 1; var kd = A.cycles[ci] ? /kind: ([a-z]+)/.exec(A.cycles[ci].detail) : null; var kk = kd ? kd[1] : "?"; spk[kk] = (spk[kk] || 0) + 1; });
+  A.signalPerCycle = spc; A.signalPerKind = spk; A.signalMaxPerCycle = Object.keys(spc).length ? Math.max.apply(null, Object.keys(spc).map(function (k) { return spc[k]; })) : 0;
+  A.signalRatePer3 = A.cycles.length ? +(3 * A.signals.length / A.cycles.length).toFixed(2) : 0;
   A.gates = {
     melodicPer30: A.melodicPer30, melodicRatioToBaseline: +(A.melodicPer30 / BASE_MELODIC_30).toFixed(2),
     zeroVoiceFrac: +A.voices[0].toFixed(3), joThreePlus: A.voicesByPhase.jo ? +A.voicesByPhase.jo["3+"].toFixed(3) : null,
@@ -428,6 +435,7 @@ function analyze(R) {
     seaChanges: A.seaChanges.length, visitations: A.visitations.length, cycles: A.cycles.length, kirus: A.kirus.length,
     nodesPerMin: Math.round(R.counts.nodes / (runS / 60)), peakSources: R.counts.peakSources,
     visitPer3Cycles: A.visitRatePer3, visitMaxPerCycle: A.visitMaxPerCycle,
+    signals: A.signals.length, signalFallbacks: A.signalFallbacks, signalPer3Cycles: A.signalRatePer3, signalMaxPerCycle: A.signalMaxPerCycle, signalPerKind: A.signalPerKind,
     tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.tech = {
@@ -494,6 +502,7 @@ function report(A) {
   line("  cycles " + A.cycles.length + " · KIRUs " + A.kirus.length + " · kinds " + JSON.stringify(A.kinds) + " · seatings " + JSON.stringify(A.seatings) + " · scenes " + JSON.stringify(A.scenes) + " · joints " + A.joints);
   line("  sea changes " + A.seaChanges.length + (A.seaChanges.length ? ": " + A.seaChanges.slice(0, 6).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
   line("  visitations " + A.visitations.length + " (" + A.visitRatePer3 + " per 3 cycles · max " + A.visitMaxPerCycle + " in one cycle)" + (A.visitations.length ? ": " + A.visitations.slice(0, 8).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
+  line("  signals " + A.signals.length + " (" + A.signalRatePer3 + " per 3 cycles · max " + A.signalMaxPerCycle + " in one cycle · by kind " + JSON.stringify(A.signalPerKind) + " · fallbacks " + A.signalFallbacks + ")" + (A.signals.length ? ": " + A.signals.slice(0, 6).map(function (s) { return s.t + "s " + s.txt; }).join(" | ") : ""));
   line("  KIRUs: " + A.kirus.map(function (k) { return k.t + "s " + k.detail; }).join(" | "));
   line("  motif: " + JSON.stringify(A.motif));
   line("  tonic trace: " + A.tonicTrace.map(function (x) { return x.t + "s " + x.hz + "Hz"; }).join(" → "));

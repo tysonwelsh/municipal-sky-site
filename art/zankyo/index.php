@@ -149,8 +149,7 @@ include '../../includes/header.php';
         <div class="zk-master">
           <div id="zankyo-master-knob" class="zk-knob-mount"></div>
           <div class="zk-master-meta">
-            <span class="zk-print">主音量 &middot; VOL</span>
-            <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
+            <span class="zankyo-val-readout" id="zankyo-master-vol-val" aria-label="master volume">60</span>
           </div>
         </div>
       </div>
@@ -206,7 +205,9 @@ include '../../includes/header.php';
       Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
       <strong>jo-ha-kyū</strong> (序破急) — a slow spacious opening that accelerates into a noise-wall climax,
       then dissolves. Each cycle is planned anew (a rite, a drift, a storm, a silence, a broadcast), the voices take turns and rest,
-      the key drifts, themes are born and inherited, and rare guests visit. Nothing repeats; the voices answer one another.
+      the key drifts, themes are born and inherited, and rare guests visit. Now and then the station picks up a
+      <strong>broadcast</strong> from the distant past — for a machine in 3042, our time — on the second set, and loses it again.
+      Nothing repeats; the voices answer one another.
       Add <code>?seed=</code> to the address to share a night.
     </p>
 

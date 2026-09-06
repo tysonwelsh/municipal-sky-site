@@ -40,6 +40,7 @@
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var HOLD_LEAD_S = 6, STATIC_LEAD_S = 4, DECIDE_LEAD_S = 1, PREFETCH_LEAD_S = 12;   // from the hosting scene's start (t0 ≥ start + 8)
   var RECENT_CYCLES = 3;
+  var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
   // gesture (the ▶ play event is emitted synchronously from the click), so
   // later timer-driven play() calls are allowed where autoplay policy would
@@ -165,7 +166,7 @@
     var url = REEL_DIR + a.reel.id + ".mp4";
     function seekIn() {
       try {
-        var once = function () { try { v.removeEventListener("seeked", once); } catch (e) {} if (armed === a) a.ready = true; };
+        var once = function () { try { v.removeEventListener("seeked", once); } catch (e) {} if (armed === a) a.ready = true; warmPicture(v); };
         v.addEventListener("seeked", once, { once: true });
         v.currentTime = a.inS;
       } catch (e) {}
@@ -237,10 +238,11 @@
       // the radio band: opens with the tuning, narrows again in the loss
       var hp = N(c.createBiquadFilter()); hp.type = "highpass"; hp.Q.setValueAtTime(0.7, t0);
       var lp = N(c.createBiquadFilter()); lp.type = "lowpass"; lp.Q.setValueAtTime(0.7, t0);
-      hp.frequency.setValueAtTime(800, t0); hp.frequency.linearRampToValueAtTime(hpHold, t0 + TUNE_S + 1.0);
-      lp.frequency.setValueAtTime(1600, t0); lp.frequency.linearRampToValueAtTime(lpHold, t0 + TUNE_S + 1.0);
-      hp.frequency.setValueAtTime(hpHold, lossStart); hp.frequency.linearRampToValueAtTime(900, cut);
-      lp.frequency.setValueAtTime(lpHold, lossStart); lp.frequency.linearRampToValueAtTime(1500, cut);
+      // exponential Hz ramps (S3, critic S1 §2.7c): a band opening in pitch, not in Hz
+      hp.frequency.setValueAtTime(800, t0); hp.frequency.exponentialRampToValueAtTime(hpHold, t0 + TUNE_S + 1.0);
+      lp.frequency.setValueAtTime(1600, t0); lp.frequency.exponentialRampToValueAtTime(lpHold, t0 + TUNE_S + 1.0);
+      hp.frequency.setValueAtTime(hpHold, lossStart); hp.frequency.exponentialRampToValueAtTime(900, cut);
+      lp.frequency.setValueAtTime(lpHold, lossStart); lp.frequency.exponentialRampToValueAtTime(1500, cut);
       // the receiver: pre-attenuated tanh, makeup after (the grit knob is the drive)
       var pre = N(c.createGain()); pre.gain.setValueAtTime(0.5, t0);
       var sh = N(c.createWaveShaper()); var k = 1 + 5 * grit, curve = new Float32Array(1024), tk = Math.tanh(k);
@@ -262,10 +264,15 @@
         gate.gain.setValueAtTime(0, da + dd); gate.gain.linearRampToValueAtTime(1, da + dd + 0.004);
         absDrops.push([da, dd]);
       }
-      // the 3042 codec: a staircase, coarser with the grit
+      // the 3042 codec: a staircase, coarser with the grit. A whisper of dither
+      // (texture, unseeded) rides in ahead of it so the quiet between words
+      // hisses instead of gating to digital silence — the critic's softener
+      // (S1 §2.7c); the owner's ear sets it (DITHER_DB)
       var cr = N(c.createWaveShaper()); var steps = Math.round(48 - 40 * grit), cc = new Float32Array(1024);
       for (i = 0; i < 1024; i++) { var cx = (i / 1023) * 2 - 1; cc[i] = Math.round(cx * steps) / steps; }
       cr.curve = cc;
+      var dn = N(T.noiseSource()), dg2 = N(c.createGain()); dg2.gain.setValueAtTime(db2lin(DITHER_DB) / steps, t0);
+      dn.connect(dg2); dg2.connect(cr); dn.start(t0, 7); dn.stop(end);
       // the tuning envelope: in over 0.4 + 1.0 s, out as (1 − k²) through the loss, a hard cut
       var sg = N(c.createGain());
       var peak = 0.35 * db2lin(a.reel.gain);
@@ -307,6 +314,7 @@
     });
     T.lane("broadcast").at(end + 0.5, function () { teardown(); });
   }
+  function warmPicture(v) { try { if (window.ZankyoSet && ZankyoSet.warm) ZankyoSet.warm(v); } catch (e) {} }   // S3: one offscreen drawImage now, so the first frame at t0 does not stall
   function shortTitle(t) { t = String(t || ""); var i = t.indexOf(" ("); if (i > 0) t = t.slice(0, i); i = t.indexOf(","); if (i > 0) t = t.slice(0, i); return t; }
   function teardown() {
     var L = live; live = null;
@@ -394,7 +402,7 @@
     videoSrcId = reel.id;
     try {
       if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
-      var go = function () { try { v.currentTime = inS; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
+      var go = function () { try { v.currentTime = inS; warmPicture(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
       if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
       else setTimeout(go, startMs);
     } catch (e) {}
