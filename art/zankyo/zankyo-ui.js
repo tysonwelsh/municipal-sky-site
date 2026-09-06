@@ -526,64 +526,47 @@
     });
   }
   // ==========================================================================
-  // 掃引 THE TUNING DIAL (plan §7)
+  // 受信 THE PUSH BUTTON (plan §8.2)
   // ==========================================================================
-  // Unlabeled, the same size as 選局 beside it, and it shows its position.
-  // Fidgeting is the mechanism: every degree of rotation feeds the receiver,
-  // which answers with snow on the tube and a band of noise that wanders with
-  // the hand — the sound of sweeping past nothing. Once about a turn and a
-  // half has gone by inside a few seconds, a real reel locks in AT ONCE.
+  // §7's tuning dial became this: a worn square push-switch with a lens, the
+  // same footprint, still unlabeled. Press it and the set finds a real
+  // broadcast AT ONCE — waiting for the next legal moment is 選局's manners,
+  // and the point of a button under the thumb is that it does not wait. Then
+  // it is cold for 45–60 s (drawn with seeded jitter, so a press schedule
+  // replays like everything else here) and presses in that window get a click
+  // and a flicker of snow, which is the honest thing for a receiver to do.
   //
-  // The knob's own range is 0–100 over its 270° sweep, so "a turn and a half"
-  // is 540° is 200 units. Rotation is accumulated with a decaying window
-  // rather than a fixed one: a sweep back and forth counts (it is the same
-  // wrist), but a slow drift over a minute does not, because the window
-  // forgets at DIAL_TAU. Below the threshold — and always, past it — the
-  // engine is asked for the noise, so the tube answers the hand whether or
-  // not a reel is there. Rate-limiting, the KIRU's hush and "a signal is
-  // already up" all live in the engine and the receiver, which know.
-  var DIAL_THRESHOLD = 200;      // units of knob travel ≈ 540° ≈ a turn and a half
-  var DIAL_WINDOW = 4;           // seconds: "within a few seconds", as a real window
-  function wireDial() {
-    var mount = document.getElementById("zankyo-dial");
-    if (!mount || !Z.dial) return;
-    // A RING OF (time, travel), summed over the last DIAL_WINDOW seconds — not
-    // an exponentially decaying accumulator, which is what shipped in rc.7 and
-    // could not work. A decaying sum plateaus at rate × τ, so with τ 2.2 s and
-    // a 200-unit threshold the dial could only ever lock above 245 °/s, while
-    // the plan's own sentence — 540° within a few seconds — is about 180 °/s
-    // and plateaued at 73 of 200: it never locked, however long you swept.
-    // The critic measured it: a 648° drag over 1.28 s did nothing. The plan
-    // describes a fixed window, so it is one. A slow drift still cannot reach
-    // it (200 units over a minute puts ~13 in any 4 s window) and a sweep back
-    // and forth still counts, because it is the same wrist.
-    var ring = [], lastV = 50;                 // the knob's own starting value: a null here loses the first step of the first gesture (~3 units in 200; the critic's carried note 3)
-    mount.appendChild(makeKnob({
-      min: 0, max: 100, step: 0.5, value: 50,
-      label: "\u6383\u5f15",                    // 掃引 — a name, not an instruction
-      cls: "zk-knob-dial",
-      format: function (v) { return Math.round(v) + ""; },
-      onInput: function (v) {
-        var now = (window.performance && performance.now) ? performance.now() / 1000 : Date.now() / 1000;
-        var d = Math.abs(v - lastV);
-        lastV = v;
-        ring.push([now, d]);
-        var sum = 0, keep = [];
-        for (var i = 0; i < ring.length; i++) if (now - ring[i][0] <= DIAL_WINDOW) { keep.push(ring[i]); sum += ring[i][1]; }
-        ring = keep;
-        // how hard the hand is moving, for the snow and the band's centre
-        var amt = Math.min(1, sum / DIAL_THRESHOLD);
-        try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(0.25 + 0.75 * amt); } catch (e) {}
-        var want = sum >= DIAL_THRESHOLD;
-        var got = "snow";
-        try { got = Z.dial(amt, want); } catch (e2) {}
-        if (got === "locked") ring.length = 0;                // the gesture is spent
-        else if (want) {                                       // refused: earned again, but not from nothing
-          var drop = sum * 0.4;
-          while (ring.length && drop > 0) { drop -= ring[0][1]; ring.shift(); }
-        }
-      },
-    }));
+  // The lens carries the whole state: lit when the receiver will actually
+  // answer, dark while it will not. No print, no tooltip — the panel tells the
+  // truth and you learn it by pressing once.
+  //
+  // Refusals stay where the knowledge is: the receiver refuses when a signal
+  // is up, when one is ARMED AND WAITING (the D1 guard, which matters three
+  // times as much now that broadcasts come every cycle — a press must never
+  // seat over the reel the plan drew), or when the scene has no room; the
+  // engine refuses inside the KIRU's hush. In every refusal the snow still
+  // plays, so the tube always answers the hand.
+  function wirePush() {
+    var b = document.getElementById("zankyo-push");
+    if (!b || !Z.dial) return;
+    b.addEventListener("click", function () {
+      var got = "snow";
+      try { got = Z.dial(1, true); } catch (e) {}
+      // the click and the flicker happen whatever the answer — a dead press is
+      // still a press, and a button that does nothing at all feels broken
+      try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(got === "locked" ? 1 : 0.45); } catch (e2) {}
+      b.classList.add("is-down");
+      setTimeout(function () { b.classList.remove("is-down"); }, 90);
+      paintLens();
+    });
+    function paintLens() {
+      var ready = true;
+      try { ready = Z.dialReady ? !!Z.dialReady() : true; } catch (e) {}
+      b.classList.toggle("is-ready", ready);
+      b.setAttribute("aria-disabled", ready ? "false" : "true");
+    }
+    paintLens();
+    setInterval(paintLens, 250);                 // the lens follows readiness; the cooldown is tens of seconds
   }
 
   // ---- Transport (arcade buttons + master volume knob) ----
@@ -618,5 +601,5 @@
     }
   }
 
-  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); wireDial(); pollArc();
+  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); wirePush(); pollArc();
 })();

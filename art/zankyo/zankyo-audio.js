@@ -4227,6 +4227,11 @@ window.ZankyoAudio = (function () {
       }
       try { return signalProvider.dialLock() || "snow"; } catch (e3) { return "snow"; }
     },
+    // §8.2: is the button's lens lit? Read every frame by the page.
+    dialReady: function () {
+      if (!signalProvider || !signalProvider.dialReady) return true;
+      try { return !!signalProvider.dialReady(); } catch (e) { return true; }
+    },
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,
     getArc: getArc, getArcInfo: arcInfo, getMetaInfo: getMetaInfo,

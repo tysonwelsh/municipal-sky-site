@@ -250,7 +250,21 @@
   // open, so it costs nothing when nobody is touching it, and it cannot leak a
   // running oscillator if the page is closed mid-turn.
   var dialLast = -1e9;                                       // audio time of the last lock
+  var dialCold = 0;                                          // the drawn cooldown for the press just made
+  var dialPresses = 0;
   var dialNoiseUntil = -1e9;
+  // §8.2: 45–60 s, drawn with SEEDED jitter — the same seed gives the same
+  // cooldowns, so a press schedule is reproducible like everything else here.
+  function dialDrawCold() {
+    var T = tl(), R = (T.S && T.S.signal) ? T.S.signal.fork("button:" + dialPresses) : PJ.Rand.stream(dialPresses + 1);
+    return 45 + R.next() * 15;
+  }
+  // Is the button ready? The lens reads this every frame.
+  function dialReady() {
+    var T = tl(), c = T.ctx;
+    if (!c) return true;                                     // nothing has happened yet
+    return (c.currentTime - dialLast) >= dialCold;
+  }
   function dialNoise(amt) {
     var T = tl(), c = T.ctx; if (!c) return;
     var t = c.currentTime + 0.02, durS = 0.16;
@@ -271,14 +285,24 @@
   }
   // The dial asks for a lock. Returns "locked" | "snow" | "wait" — the caller
   // makes snow either way; this only says whether a reel came with it.
+  // §8.2: the button's audition, while the station is stopped — a full window
+  // as §7's addendum established, and a reel with a picture as §8.2 asks.
+  function dialAudition(now) {
+    for (var attempt = 0; attempt < 6; attempt++) {
+      if (!sampleTune(now)) return false;
+      if (!lastSampleAudioOnly) return true;
+    }
+    return true;
+  }
+  var lastSampleAudioOnly = false;
   function dialLock() {
     var T = tl(), c = T.ctx;
     if (!c) return "snow";
     var now = c.currentTime;
-    if (now - dialLast < 30) return "wait";                  // one lock per 30 s
+    if (now - dialLast < dialCold) return "wait";            // §8.2: cold for the drawn 45–60 s
     if (!T.playing()) {                                      // stopped: the audition, a full window
-      if (!sampleTune(now)) return "snow";
-      dialLast = now; stats.dial = (stats.dial || 0) + 1;
+      if (!dialAudition(now)) return "snow";
+      dialLast = now; dialPresses++; dialCold = dialDrawCold(); stats.dial = (stats.dial || 0) + 1;
       return "locked";
     }
     // A signal is up, OR one is ARMED AND WAITING — which is exactly how a
@@ -295,12 +319,23 @@
     var t0 = now + STATIC_LEAD_S + 0.5;
     var room = (sc.startT + sc.durS - 3) - (t0 + TUNE_S + 2.8 + COLLAPSE_S + BURST_S);
     if (room < 4) return "snow";                             // no room before the scene turns
-    var R = T.S.signal.fork("dial:" + Math.max(0, cy.n) + ":" + Math.round(now));
-    if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R)) return "snow";
+    var R = T.S.signal.fork("button:" + dialPresses + ":" + Math.max(0, cy.n));
+    // §8.2, the owner's words: "a real reel WITH A PICTURE". The lottery is
+    // already weighted 3× toward video by §8.1; a deliberate press asks for one
+    // outright, so the button re-draws (up to a few times, deterministically)
+    // until the choice carries a picture. If the pool holds nothing but
+    // audio-only reels it takes what there is rather than refusing — the button
+    // must always DO something.
+    var got = false;
+    for (var attempt = 0; attempt < 6; attempt++) {
+      if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R.fork("try:" + attempt))) return "snow";
+      if (!armed || !armed.reel || !armed.reel.audioOnly) { got = true; break; }
+    }
+    if (!got && !armed) return "snow";
     if (armed.holdS + armed.lossD > room) armed.holdS = Math.max(3, room - armed.lossD);
     if (!fire(t0)) { armed = null; return "snow"; }
-    dialLast = now; stats.dial = (stats.dial || 0) + 1;
-    T.emitEvent({ cat: "rx", label: "掃引 locked on", detail: "the dial finds one · " + Math.round(t0 - now) + " s" }, now);
+    dialLast = now; dialPresses++; dialCold = dialDrawCold(); stats.dial = (stats.dial || 0) + 1;
+    T.emitEvent({ cat: "rx", label: "受信 locked on", detail: "the set finds one · " + Math.round(t0 - now) + " s" }, now);
     return "locked";
   }
 
@@ -493,13 +528,14 @@
       if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
       else setTimeout(go, startMs);
     } catch (e) {}
+    lastSampleAudioOnly = !!reel.audioOnly;
     var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
     T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
     setTimeout(function () { try { if (mediaSrc && hp) mediaSrc.disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
     return true;
   }
 
-  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock });
+  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock, dialReady: dialReady });
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {
