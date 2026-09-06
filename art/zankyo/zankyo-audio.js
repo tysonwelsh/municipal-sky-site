@@ -1630,15 +1630,26 @@ window.ZankyoAudio = (function () {
   // per-voice window {from, until}; a claim inside it is denied (counted).
   // The drones, shō, noise and ambient never ask, so they continue.
   var airHold = {}, airHoldDenials = 0;
+  var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
     var h = airHold[voice];
-    if (h && t >= h.from && t < h.until) { airHoldDenials++; return null; }
+    // The claim's whole FOOTPRINT must clear the hold, not just its start. A
+    // phrase claiming a moment before a signal's hold and running into it was
+    // always able to talk over the broadcast; at one signal in three cycles it
+    // almost never happened, and §8.1's one per cycle made it show — six
+    // melodic notes inside a hold over two hours (the harness caught it).
+    // …and conservatively, because `span` is an ESTIMATE — a voice claims with
+    // its LAST phrase's length and then renders whatever this one turns out to
+    // be. Testing the estimate alone took the intrusions from six to one over
+    // two hours; the pad takes the last one. Better to let a voice miss a turn
+    // than to talk over the broadcast, which is the whole point of the hold.
+    if (h && t < h.until && (t + (span > 0 ? span : 0) + AIR_HOLD_PAD) > h.from) { airHoldDenials++; return null; }
     return air.tryClaim(voice, span, margin);
   }
   var signalProvider = null;                     // zk-broadcast.js installs itself here (S1)
   function signalUp(t) { for (var k in airHold) { var h = airHold[k]; if (h && t >= h.from && t < h.until) return true; } return false; }   // a signal holds the air at t
-  var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null };
+  var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null, visit2: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
 
@@ -1740,12 +1751,25 @@ window.ZankyoAudio = (function () {
     if (oroshi) scenes.push({ type: "oroshi", durS: oroDur, activity: null });
     scenes.push({ type: "kyu", durS: durS * Kd.kyu, activity: null });
     scenes.push({ type: "release", durS: durS * Kd.rel, activity: null });
-    if (visit) {                                    // seat the guest in the scene where it belongs
-      var want = visit.name === "the festival" ? "ha" : visit.name === "the tolling" ? "jo" : visit.name === "mu" ? "jo" : (visit.name === "the line" ? "jo" : "ha");
-      var idx = -1;
-      for (var vi = 0; vi < scenes.length; vi++) if (scenes[vi].type === want) { idx = vi; break; }
+    function seatVisit(v, want, avoid) {            // the scene where this guest belongs
+      var idx = -1, vi;
+      for (vi = 0; vi < scenes.length; vi++) if (scenes[vi].type === want && vi !== avoid) { idx = vi; break; }
+      if (idx < 0) for (vi = 0; vi < scenes.length; vi++) if (vi !== avoid) { idx = vi; break; }
       if (idx < 0) idx = 0;
-      visit.sceneIdx = idx; visit.scene = scenes[idx].type;
+      v.sceneIdx = idx; v.scene = scenes[idx].type;
+      return idx;
+    }
+    var WANT = { "the festival": "ha", "the tolling": "jo", "mu": "jo", "the line": "jo", "the broadcast": "ha" };
+    if (visit) {
+      var gi = seatVisit(visit, WANT[visit.name] || "ha", -1);
+      // §8.1 follow-up: a broadcast rides along in ANOTHER scene of the same
+      // cycle. Two seats, one plan — the scene event fires whichever guest is
+      // seated there, so nothing downstream needs a second seating path, and
+      // the two can never overlap because they are never in the same scene.
+      if (visit.alsoBroadcast) {
+        visit.second = { name: "the broadcast" };
+        seatVisit(visit.second, "ha", gi);
+      }
     }
     scenes = farErode(scenes, durS);              // 逸脱 蝕: the arc decomposes
     // 逸脱 遅/弛 (critic W1 r1, items 10 & 11): the cycle's own tempo is decided
@@ -1797,13 +1821,28 @@ window.ZankyoAudio = (function () {
       "the line":      0.07 * (kind === "broadcast" ? 1.8 : 1),
       "the tolling":   (0.09 + 0.05 * tp) * (kind === "rite" ? 2 : 1),
     };
-    var drawn = [];
-    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], VISITATIONS[i] === "the broadcast" ? 0.5 : 1]); }   // §8.1: the signal now wins on FREQUENCY, not on collisions — at p ≈ 0.95 it is drawn nearly every cycle, so a 1.5 collision weight would have deleted 祭 無 回線 鐘 from the night (measured: two other guests in two hours). At 0.5 the rarer guest takes the cycle when both are drawn and the broadcast simply takes the many cycles nothing else wants.
+    // §8.1 follow-up (the orchestrator, and the owner's own direction): the
+    // broadcast is becoming its OWN KIND of visitation, so it stops competing
+    // with the guests for the cycle. A cycle may host one broadcast AND one of
+    // 祭 無 回線 鐘, seated in different scenes and never overlapping. The old
+    // shape forced a choice, and at one broadcast a cycle that choice was
+    // deleting the other four: measured, two non-broadcast guests in two hours.
+    // Still never two broadcasts in a cycle, never in a KIRU or a hush.
+    var drawn = [], bc = false;
+    for (var i = 0; i < VISITATIONS.length; i++) {
+      var hit = rng.chance(p[VISITATIONS[i]]);                 // every draw taken, unconditionally
+      if (!hit) continue;
+      if (VISITATIONS[i] === "the broadcast") bc = true; else drawn.push([VISITATIONS[i], 1]);
+    }
     var pick = rng.pickW(drawn.length ? drawn : [["none", 1]]);   // one pickW draw either way
-    if (cyc.n < 0 || pick === "none") return null;
-    if (pick === "the festival" && seating.named === "dead station") return null;
-    if (pick === "mu" && (lastCycleEmpty || seating.named === "dead station")) return null;   // never two empty cycles in a row
-    return { name: pick };
+    if (cyc.n < 0) return null;
+    if (pick === "the festival" && seating.named === "dead station") pick = "none";
+    if (pick === "mu" && (lastCycleEmpty || seating.named === "dead station")) pick = "none";   // never two empty cycles in a row
+    if (pick === "none") return bc ? { name: "the broadcast" } : null;
+    // both drawn: the guest takes its scene and the broadcast takes another.
+    // `guest` rides along on the same object so nothing else has to learn a
+    // second seating path — one plan, two seats.
+    return bc ? { name: pick, alsoBroadcast: true } : { name: pick };
   }
   var visitActive = null;                          // the guest in progress: { name, until }
   var lastCycleEmpty = false;                      // the previous cycle was mu or a dead station
@@ -2012,14 +2051,20 @@ window.ZankyoAudio = (function () {
       // tell from a bug — and this one shipped silent once already (the critic
       // found a 遅 night that played thirty minutes of home and announced 遅).
       if (farCycleRate !== 1) emitEvent({ cat: "far", label: "遅 " + (farCycleRate > 1 ? "the cycle slows" : "the cycle races"), detail: "×" + (1 / farCycleRate).toFixed(2) + " speed · " + Math.round(evt.durS) + "s" }, evt.t);
-      cyc.visit = p.visit || null; visitActive = null;
+      cyc.visit = p.visit || null; cyc.visit2 = (p.visit && p.visit.second) || null; visitActive = null;
       lastCycleEmpty = !!(p.seating && p.seating.named === "dead station");
       if (p.visit) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[p.visit.name] + " " + p.visit.name, detail: "visitation: " + p.visit.name + " · seated in " + p.visit.scene + " (" + (p.visit.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
+      // …and the broadcast riding along in its own scene is announced in its
+      // own right. It was seated and it fired, but nothing downstream could see
+      // it — not the log, not the analyzer — because only the first seat was
+      // ever announced. A guest nobody can see is a guest nobody can gate.
+      if (cyc.visit2) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[cyc.visit2.name] + " " + cyc.visit2.name, detail: "visitation: " + cyc.visit2.name + " · seated in " + cyc.visit2.scene + " (" + (cyc.visit2.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
       // S1: the receiver is ARMED at plan time — it draws the reel and schedules
       // its prefetch from the hosting scene's start (≥ 20 s before any t0)
-      if (p.visit && p.visit.name === "the broadcast" && signalProvider && p.sceneDurS) {
-        var hostStart = evt.t; for (var hi = 0; hi < p.visit.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
-        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[p.visit.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
+      var bcSeat = (p.visit && p.visit.name === "the broadcast") ? p.visit : ((p.visit && p.visit.second) || null);
+      if (bcSeat && signalProvider && p.sceneDurS) {
+        var hostStart = evt.t; for (var hi = 0; hi < bcSeat.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
+        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[bcSeat.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
@@ -2038,6 +2083,7 @@ window.ZankyoAudio = (function () {
         try { farDisintegrate(evt.t + 2); } catch (e) {}
       }
       if (cyc.visit && cyc.visit.sceneIdx === evt.idx && !cyc.visit.fired) { cyc.visit.fired = true; try { fireVisitation(cyc.visit, evt.t + (cyc.visit.name === "the tolling" ? 0 : S.visit.rnd(8, 25))); } catch (e) {} }
+      if (cyc.visit2 && cyc.visit2.sceneIdx === evt.idx && !cyc.visit2.fired) { cyc.visit2.fired = true; try { fireVisitation(cyc.visit2, evt.t + S.visit.rnd(8, 25)); } catch (e) {} }   // §8.1: the broadcast riding along in its own scene
     }
   }
   // Room balance per scene (0 = the corridor, close; 1 = the hull, vast):
@@ -3625,7 +3671,7 @@ window.ZankyoAudio = (function () {
     var res = taikoPattern(t, kind, beat, festival ? 1 : 0.55 + arc * 0.45);
     // KAKEGOE — the crew calling time to nobody, through the broken PA
     var kk = getLayerParam("taiko", "kakegoe", 0.5);
-    if (kind === "matsuri" && R.next() < kk * (festival ? 0.6 : kyu ? 0.35 : 0.15)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: festival ? "祭" : arcPhase(now) }, now); }
+    if (kind === "matsuri" && R.next() < kk * (festival ? 0.6 : kyu ? 0.35 : 0.15) && !signalUp(t)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: festival ? "祭" : arcPhase(now) }, now); }
     t = res.end;
     if (res.rows) {                              // 逸脱 多: one line per drum, each in its own meter
       for (var dn in res.rows) emitEvent({ cat: "taiko", label: "地 " + res.rows[dn].join(""), detail: Math.round(bpm) + "bpm · " + dn + " · 多 " + res.meters }, now);
@@ -4010,7 +4056,7 @@ window.ZankyoAudio = (function () {
     cyc.n = -1; cyc.seating = null; scn.type = null; pendingPlan = null; cyclesSinceSea = 0;
     field.modulate({ tonicHz: TONIC_HZ, mode: { name: "hirajoshi", steps: MODES.hirajoshi.offsets } }); currentMode = "hirajoshi"; rebuildScale();   // every play opens at home
     pulse.active = false;                        // no grid until the taiko speaks
-    lastAitake = null; visitActive = null; cyc.visit = null; airHold = {}; airHoldDenials = 0;
+    lastAitake = null; visitActive = null; cyc.visit = null; cyc.visit2 = null; airHold = {}; airHoldDenials = 0;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded

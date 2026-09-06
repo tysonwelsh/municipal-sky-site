@@ -106,12 +106,15 @@
   function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); lastCycleSeen = cycle; while (recent.length > 12) recent.shift(); }
   var lastCycleSeen = 0;
 
-  // §8.1: reels WITH a picture are weighted 3× in the lottery. The manifest is
-  // 21 with a picture against 11 audio-only, so the share of received reels
-  // carrying one goes from ~65 % to ~85 %. The synthetic gagaku broadcast stays
-  // the fallback only — this weights which real reel is chosen, never whether
-  // a real one is chosen.
-  var VIDEO_WEIGHT = 3;
+  // §8.1: reels WITH a picture are weighted in the lottery, and 85 % of
+  // received reels carrying one is the target the weight serves — not the
+  // weight itself. On the old 32-reel pool (21 video) that took 3×; on the
+  // wider 52-reel pool (41 video) 3× overshoots to 90 % and starts crowding
+  // out the numbers stations, the Buzzer and the time signals, which are the
+  // receiver's core and must keep surfacing. 1.5× lands the same 85 % on the
+  // new pool. The synthetic gagaku broadcast stays the fallback only — this
+  // weights WHICH real reel is chosen, never whether a real one is.
+  var VIDEO_WEIGHT = 1.5;
 
   // ---- the choice (arm time): six draws, always ----
   function choose(R, cycle, tidePos) {
@@ -198,6 +201,12 @@
     // the hold is time-based, so it is set now and applies to claims from t0 − 6
     var hold = {}, from = t0 - HOLD_LEAD_S;
     for (var vname in a.rel) hold[vname] = { from: from, until: cut + 2 + a.rel[vname] };
+    // The PA was never held — `rel` covers the five melodic voices and the
+    // engine's own gate counts the tannoy too, so a kakegoe could land inside a
+    // signal. It comes back with the shakuhachi, first of the crew to speak
+    // again. (No new draw: it borrows the shakuhachi's zero offset rather than
+    // taking one of its own, so the signal stream is untouched.)
+    hold.pa = { from: from, until: cut + 2 };
     T.airHold(hold);
     T.lane("broadcast").at(t0 - STATIC_LEAD_S, function (t) { staticRise(t, t0); });
     T.lane("broadcast").at(t0 - DECIDE_LEAD_S, function () { decide(t0); });

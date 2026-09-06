@@ -326,18 +326,29 @@ const pitchVocab = (() => {
   return { seas: seas.length, pool: Object.keys(pool).length, voicings: Object.keys(voicings).length };
 })();
 
-// ---- visitations (Phase 4): one 'visitation: <name>' event per hosting cycle; never two in one cycle ----
+// ---- visitations (Phase 4; §8.1 follow-up): never two BROADCASTS and never
+// two GUESTS in a cycle — but a broadcast and one guest may share one, seated
+// in different scenes. The broadcast became its own kind of visitation when
+// the owner asked for one a cycle; before that, "never two in a cycle" and
+// "never two of a kind" were the same sentence, and this gate encoded the
+// version that is no longer true. ----
 const visitVocab = (() => {
-  const byName = {}, perCycle = {};
+  const byName = {}, perCycleBc = {}, perCycleGuest = {};
   let cycleN = -1;
   for (const e of events) {
     const mc = /cycle (\d+)/.exec(e.detail || ""); if (e.cat === "mode" && mc && e.label.indexOf("mode") >= 0) cycleN = +mc[1];
     const mv = /visitation: ([a-z ]+?) ·/.exec(e.detail || "");
-    if (mv) { byName[mv[1]] = (byName[mv[1]] || 0) + 1; perCycle[cycleN] = (perCycle[cycleN] || 0) + 1; }
+    if (mv) {
+      byName[mv[1]] = (byName[mv[1]] || 0) + 1;
+      const bucket = mv[1] === "the broadcast" ? perCycleBc : perCycleGuest;
+      bucket[cycleN] = (bucket[cycleN] || 0) + 1;
+    }
   }
-  const total = Object.values(byName).reduce((a, b) => a + b, 0), maxPer = Math.max(0, ...Object.values(perCycle));
+  const perCycle = perCycleBc;
+  const total = Object.values(byName).reduce((a, b) => a + b, 0);
+  const maxPer = Math.max(0, ...Object.values(perCycleBc), ...Object.values(perCycleGuest));
   const kiruMaster = events.filter((e) => e.label.indexOf("KIRU") >= 0 && (e.detail || "").indexOf("landscape only") < 0).length;
-  console.log("visitations: " + total + " in " + cycles.length + " cycles " + JSON.stringify(byName) + " · max per cycle " + maxPer + " · KIRUs not on the landscape: " + kiruMaster);
+  console.log("visitations: " + total + " in " + cycles.length + " cycles " + JSON.stringify(byName) + " · max of a kind per cycle " + maxPer + " · KIRUs not on the landscape: " + kiruMaster);
   return { total, maxPer, kiruMaster };
 })();
 
@@ -446,7 +457,7 @@ if (runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget " + Math.round
 if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
 if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
 // Phase 4 gates (plan §7): ≥ 1 visitation per 3 cycles over 4 h; never two in one cycle; the KIRU lives on the landscape cut
-if (visitVocab.maxPer > 1) fails.push("two visitations in one cycle");
+if (visitVocab.maxPer > 1) fails.push("two of a kind in one cycle (two broadcasts, or two guests)");
 if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push("visitations " + visitVocab.total + " < " + Math.floor(cycles.length / 3) + " (one per 3 cycles)");
 if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not on the landscape cut");
 // S1 gates (PLAN-SIGNAL-INTEGRATION §1 S1): never two per cycle, never in a KIRU, the melodic voices silent for the hold,
@@ -454,7 +465,12 @@ if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not 
 if (signalVocab.maxPer > 1) fails.push("two signals in one cycle");
 if (signalVocab.nearKiru > 0) fails.push(signalVocab.nearKiru + " signal(s) within a KIRU's reach");
 if (signalVocab.notSilent > 0) fails.push(signalVocab.notSilent + " melodic note(s) inside a signal's hold");
-if (SIGNAL_MOCK === "ready" && RUN >= 14000) { const r3 = 3 * signalVocab.n / Math.max(1, signalVocab.cycles); if (r3 < 0.7 || r3 > 1.6) fails.push("signals " + r3.toFixed(2) + " per 3 cycles outside 0.7–1.6"); }
+// §8.1 (the owner, after the rc.9 listen) raised the seating rate from about
+// one signal in three cycles to about one per cycle, so this gate's old
+// 0.7–1.6 per 3 cycles encodes a design that no longer exists. Re-stated as
+// the new intent: 2.2–3.6 per 3 cycles, i.e. 0.73–1.2 per cycle around the
+// measured 0.97.
+if (SIGNAL_MOCK === "ready" && RUN >= 14000) { const r3 = 3 * signalVocab.n / Math.max(1, signalVocab.cycles); if (r3 < 2.2 || r3 > 3.6) fails.push("signals " + r3.toFixed(2) + " per 3 cycles outside 2.2–3.6"); }
 if (SIGNAL_MOCK === "ready" && RUN >= 14000 && signalVocab.fallbacks > 0) fails.push(signalVocab.fallbacks + " fallback(s) with the reel ready");
 if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.n > 0) fails.push("a signal played with the reel unavailable");
 if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.fallbacks < 1) fails.push("no fallback fired with the reel unavailable");
