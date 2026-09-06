@@ -348,6 +348,12 @@
     row.innerHTML = '<span class="zankyo-log-time">' + fmtTime(ev.t) + '</span>' +
       '<span class="zankyo-log-tag ' + ev.cat + '">' + (CAT_TAG[ev.cat] || ev.cat) + '</span>' +
       '<span class="zankyo-log-text">' + ev.label + (ev.detail ? ' · ' + ev.detail : '') + '</span>';
+    // attribution (S2): a signal's source, opened in a new tab — never playback here
+    if (ev.link && /^https?:\/\//.test(String(ev.link))) {
+      var a = document.createElement("a"); a.className = "zk-log-src"; a.href = String(ev.link); a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.title = "the source of this signal"; a.setAttribute("aria-label", "open the source of this signal"); a.textContent = "\u25B6";
+      row.appendChild(a);
+    }
     log.insertBefore(row, log.firstChild);
     while (log.children.length > 120) log.removeChild(log.lastChild);
   }

@@ -1096,6 +1096,7 @@ window.ZankyoAudio = (function () {
       emitEvent({ cat: "form", label: "▸ scene", detail: "scene: " + evt.scene + (evt.activity ? " (" + evt.activity + ")" : "") + " · " + Math.round(evt.durS) + "s · " + (evt.idx + 1) + "/" + evt.count }, evt.t);
       setSceneRoom(evt);
       if (visitActive && evt.t >= visitActive.until) visitActive = null;
+      if (signalProvider && signalProvider.scene) { try { signalProvider.scene({ type: evt.scene, startT: evt.t, durS: evt.durS, idx: evt.idx, count: evt.count, cycle: cyc.n, kind: cyc.kind, planned: !!(cyc.visit && cyc.visit.name === "the broadcast") }); } catch (e) {} }   // S2: the 選局 scan seats at the next legal scene
       if (cyc.visit && cyc.visit.sceneIdx === evt.idx && !cyc.visit.fired) { cyc.visit.fired = true; try { fireVisitation(cyc.visit, evt.t + (cyc.visit.name === "the tolling" ? 0 : S.visit.rnd(8, 25))); } catch (e) {} }
     }
   }
@@ -3167,6 +3168,8 @@ window.ZankyoAudio = (function () {
     setMasterVolume: setMasterVolume, setLayerVolume: setLayerVolume, setLayerRate: setLayerRate,
     setLayerParam: setLayerParam, getLayerParam: getLayerParam, resetLayerParams: resetLayerParams,
     toggleLayer: toggleLayer, getState: getState, sample: sample,
+    // 選局 TUNE (S2): playing → ask the receiver to seat a signal at the next legal moment (one per cycle); stopped → the layer's ♪ tune-in
+    tune: function () { if (!signalProvider) return false; if (playing) return !!(signalProvider.scan && signalProvider.scan()); sample("broadcast"); return true; },
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,
     getArc: getArc, getArcInfo: arcInfo, getMetaInfo: getMetaInfo,

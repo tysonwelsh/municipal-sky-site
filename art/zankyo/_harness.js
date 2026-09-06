@@ -195,9 +195,12 @@ function runOnce(seed, simS, opts) {
   const origCE = console.error;
   const swallowed = [];
   console.error = function () { swallowed.push(Array.prototype.join.call(arguments, " ")); };
+  // S2: ZK_TUNE_AT=<seconds> presses 選局 TUNE (Z.tune) at that virtual time — the same press in every run, so REPRO holds
+  const TUNE_AT = parseFloat(process.env.ZK_TUNE_AT || "0");
   try {
     Z.play();
     R.t0 = vnow;
+    if (TUNE_AT > 0) vSetTimeout(() => { try { R.tunePressed = vnow; R.tuneResult = Z.tune(); } catch (e) { errors.push("tune: " + e.message); } }, TUNE_AT * 1000);
     vAdvance(simS, () => {
       if (vnow >= nextSample) { R.arcSamples.push({ t: Math.round(vnow), level: +Z.getArc().toFixed(3), phase: Z.getArcInfo().phase }); nextSample += SAMPLE_EVERY; }
       if (Z.getMetaInfo) {
@@ -354,6 +357,8 @@ const signalVocab = (() => {
     for (const n of notes) if ((MEL[n.layer] || n.layer === "pa") && n.t >= t0 + 1 && n.t <= tEnd) notSilent++;   // the PA counts too (critic S1 r1)
   }
   const hosted = events.filter((e) => /visitation: the broadcast/.test(e.detail || "")).length;
+  const scans = events.filter((e) => e.cat === "rx" && e.label === "選局 scanning");
+  if (runA.tunePressed != null) console.log("tune: pressed at " + Math.round(runA.tunePressed) + "s → " + runA.tuneResult + " · " + scans.map((e) => Math.round(e.t) + "s " + e.detail).join(" | ") + " · signals after the press: " + sigs.filter((x) => x.sig.t0 > runA.tunePressed).map((x) => Math.round(x.sig.t0) + "s " + x.sig.id).join(" | "));
   const ai = runA.Z.getAirInfo ? runA.Z.getAirInfo() : null;
   console.log("signal (" + SIGNAL_MOCK + "): " + sigs.length + " signals + " + fallbacks.length + " fallbacks in " + cycleStarts.length + " cycles (" + hosted + " hosted the broadcast) · " + (cycleStarts.length ? (3 * sigs.length / cycleStarts.length).toFixed(2) : "—") + " per 3 cycles · max per cycle " + maxPer + " · near a KIRU " + nearKiru + " · melodic/PA notes inside a hold " + notSilent + (ai ? " · hold denials " + ai.holdDenials : "") +
     (sigs.length ? " · " + sigs.slice(0, 5).map((s) => Math.round(s.sig.t0) + "s " + s.sig.id + " " + s.sig.holdS.toFixed(1) + "s").join(" | ") : "") + (fallbacks.length ? " · fallback: " + fallbacks[0].detail : ""));

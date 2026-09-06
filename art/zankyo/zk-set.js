@@ -46,6 +46,10 @@
   // on PLAY or a ♪ press); before that, the wall clock in seconds — the bench
   // gesture can run on a page that has never played
   var atime = function () { var c = Z.getAudioContext && Z.getAudioContext(); return c ? c.currentTime : now() / 1000; };
+  var wallTime = function () { return now() / 1000; };
+  // a signal remembers the clock it started on (critic S0 r1 §2.7a): a bench
+  // signal started before PLAY keeps its wall clock even after the context appears
+  var sigTime = function () { return (sig && sig.wall) ? wallTime() : atime(); };
   var clamp01 = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
   var rnd = Math.random;                                   // texture only (snow, sparks, tear jitter)
 
@@ -265,8 +269,7 @@
     else if (ph === "dead" || ph === "idle") { rx.classList.remove("is-flicker"); rx.classList.remove("is-lit"); }
   }
   function endSignal(t) {
-    if (sig && sig.video) { try { sig.video.pause(); } catch (e) {} }
-    sig = null; S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0;
+    sig = null;                                              // the receiver owns the element; the set never pauses it S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0;
     idle.nextCard = t + 6000 + Ridle.next() * 10000; idle.nextLine = t + 8000 + Ridle.next() * 12000;
     enterPhase("idle", t);
   }
@@ -278,7 +281,7 @@
   }
   // per-frame strength + weather, from the audio clock
   function tickSignal(t) {
-    var a = atime(), pe = phaseOf(a), ph = pe[0], el = pe[1];
+    var a = sigTime(), pe = phaseOf(a), ph = pe[0], el = pe[1];
     if (ph === "over") { endSignal(t); return; }
     if (ph !== S.phase) enterPhase(ph, t);
     if (ph === "tuning") {
@@ -521,15 +524,16 @@
   // ---- a signal arrives (S2: the engine's rx events carry the descriptor) ----
   function signal(desc) {
     if (!desc || !(desc.t0 >= 0)) return false;
-    if (desc.picture === false) return false;                   // S1: sound only — the set lights up in S2
-    var a = atime();
+    if (desc.picture === false) return false;                   // sound only (a descriptor without a picture)
+    var a = sigTime();
     if (sig && phaseOf(a)[0] !== "idle") return false;        // never two at once
-    sig = { t0: +desc.t0, holdS: Math.max(1, +desc.holdS || 10), lossD: Math.max(0.5, +desc.lossD || 2.2), drops: (desc.drops || []).slice(), id: desc.id || null, title: desc.title || "", year: desc.year || "", video: desc.video || null };
+    var c = Z.getAudioContext && Z.getAudioContext();
+    sig = { t0: +desc.t0, holdS: Math.max(1, +desc.holdS || 10), lossD: Math.max(0.5, +desc.lossD || 2.2), drops: (desc.drops || []).slice(), id: desc.id || null, title: desc.title || "", year: desc.year || "", video: desc.video || null, wall: !c };
     sig.drops.sort(function (p, q) { return p[0] - q[0]; });
     S.seed = (desc.seed != null ? +desc.seed : Ridle.next() * 1000); S.drop = 0; S.holdFrame = 0; S.strength = 0;
     return true;
   }
-  if (Z.setEventListener) { try { Z.setEventListener(function (ev) { if (ev && ev.cat === "rx" && ev.signal) signal(ev.signal); }); } catch (e) {} }
+  if (Z.setEventListener) { try { Z.setEventListener(function (ev) { if (ev && ev.cat === "rx" && ev.signal) signal(ev.signal); }); } catch (e) {} }   // 受信 and ♪ 受信 both carry a descriptor
 
   // ---- public surface ----
   window.ZankyoSet = {

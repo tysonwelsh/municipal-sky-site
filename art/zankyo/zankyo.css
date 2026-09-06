@@ -781,6 +781,8 @@
 /* the second set (S0+): 受信 / 消失 — the signal's own amber tag */
 .zankyo-log-tag.rx         { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.7); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.5); }
 .zankyo-log-text { color: var(--ink); }
+.zk-log-src { margin-left: auto; font-size: 9px; color: rgba(var(--amber-rgb), 0.7); text-decoration: none; padding: 0 4px; border: 1px solid rgba(var(--amber-rgb), 0.35); border-radius: 2px; }   /* S2: the signal's attribution ▶ */
+.zk-log-src:hover, .zk-log-src:focus-visible { color: var(--amber); border-color: var(--amber); outline: none; }
 
 /* ---------------------------------------------------------------------------
    SERIAL PLATE + NOTES

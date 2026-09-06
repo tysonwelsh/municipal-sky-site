@@ -143,7 +143,7 @@
   // ---- the state ----
   var armed = null;   // the coming signal (from arm to teardown)
   var live = null;    // the nodes of the signal in progress
-  var stats = { armed: 0, fired: 0, signals: 0, fallbacks: 0, lastReason: "" };
+  var stats = { armed: 0, fired: 0, signals: 0, fallbacks: 0, scans: 0, lastReason: "" };
 
   function arm(info, rng) {
     var T = tl(); if (!T.S) return false;
@@ -297,9 +297,9 @@
       setTimeout(function () { try { if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }, lead);
     });
     // the descriptor for the set and the VFD line 「受信 · title · year」
-    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: false };
+    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v };
     T.lane("broadcast").at(t0 - 0.15, function () {
-      T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year, signal: desc }, t0);
+      T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year, signal: desc, link: a.reel.src || null }, t0);
     });
     T.lane("broadcast").at(cut, function () {
       T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" }, cut);
@@ -317,10 +317,93 @@
   }
   function stop() {
     teardown();
-    armed = null;
+    armed = null; scanWanted = false; scanCycle = -1;
   }
 
-  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: null });
+  // ---- 選局 SCAN NOW (S2): the listener turns the dial. Never in a KIRU or its
+  // hush (the kyū, the release and a jo's first 12 s are out), never two in a
+  // cycle (if the plan already carries the broadcast this cycle, that one is
+  // the answer; if one has played, the scan waits for the next cycle), the
+  // signal seated ≥ 14 s out so the prefetch and the static rise have room.
+  // Draws on a per-cycle fork of the signal stream: a user's act, but a
+  // reproducible one for a given cycle.
+  var scanWanted = false, scanCycle = -1;
+  function legalT0(sc, now) {
+    if (!sc || !sc.type) return null;
+    if (sc.type === "kyu" || sc.type === "oroshi" || sc.type === "release") return null;
+    var t0 = Math.max(now + 14, sc.type === "jo" ? sc.startT + 12 + 8 : sc.startT + 8);
+    var end = sc.startT + sc.durS - 3;
+    return (t0 + TUNE_S + 12 + 2.8 + COLLAPSE_S + BURST_S <= end) ? t0 : null;
+  }
+  function seatScan(sc, cy) {
+    var T = tl(), now = T.ctx.currentTime, t0 = legalT0(sc, now);
+    if (t0 == null) return false;
+    var R = T.S.signal.fork("scan:" + cy.n);
+    if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R)) return false;
+    if (!fire(t0)) { armed = null; return false; }
+    scanWanted = false; scanCycle = cy.n; stats.scans++;
+    T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "a signal in " + Math.round(t0 - now) + " s" }, now);
+    return true;
+  }
+  function scan() {
+    var T = tl(); if (!T.ctx || !T.playing() || !T.S) return false;
+    var cy = T.cycle(), sc = T.scene(), now = T.ctx.currentTime;
+    if (live || (armed && armed.t0 != null)) { T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "a signal is up" }, now); return true; }
+    if (cy.visit === "the broadcast" && armed && armed.cycle === cy.n) { T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "a signal is already on its way this cycle" }, now); return true; }
+    if (scanCycle === cy.n || (recent.length && recent[recent.length - 1].cycle === cy.n)) { scanWanted = true; T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "nothing more on the air this cycle · the next" }, now); return true; }
+    if (seatScan(sc, cy)) return true;
+    scanWanted = true; T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "not now (" + (sc.type || "—") + ") · at the next scene" }, now);
+    return true;
+  }
+  function onScene(sc) {
+    if (!scanWanted) return;
+    var T = tl(); if (!T.playing()) return;
+    var cy = T.cycle();
+    if (sc.planned || live || (armed && armed.t0 != null) || scanCycle === cy.n) return;   // a planned one is the answer; one per cycle
+    seatScan(sc, cy);
+  }
+
+  // ---- the ♪ audition (S2): a 2 s tune-in on a random window, while stopped
+  // (no lanes — the clock is not running — so Web Audio times and timeouts).
+  // The picture rides the same descriptor, so the set shows it too.
+  function sampleTune(t) {
+    var T = tl(), c = T.ctx; if (!c) return false;
+    loadPool();
+    var v = ensureVideo(), ms = ensureMediaSource(c);
+    var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
+    var rReel = R.next(), rWin = R.next(), rIn = R.next();
+    var holdS = 1.2, lossD = 0.5, t0 = t + 1.0, tuneEnd = t0 + TUNE_S + holdS + lossD;
+    if (poolState !== "ready" || !v || !ms || !pool.length) { staticRise(t, t0); return true; }   // the dial turns, nothing found
+    var reel = pool[Math.floor(rReel * pool.length)], win = reel.windows[Math.floor(rWin * reel.windows.length)];
+    var inS = win[0] + rIn * Math.max(0, (win[1] - win[0]) - (tuneEnd - t0) - 0.5);
+    var nodes = [], hp, lp, pre, sh, sg;
+    try {
+      hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(700, t0); hp.frequency.linearRampToValueAtTime(260, t0 + 0.8);
+      lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(1600, t0); lp.frequency.linearRampToValueAtTime(4700, t0 + 0.8);
+      pre = c.createGain(); pre.gain.setValueAtTime(0.5, t0);
+      sh = c.createWaveShaper(); var cv = new Float32Array(1024); for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; cv[i] = Math.tanh(x * 3.5) / Math.tanh(3.5); } sh.curve = cv;
+      sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6;
+      PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [holdS, peak], [lossD * 0.6, peak * 0.4], [lossD * 0.4, 0]]);
+      nodes = [hp, lp, pre, sh, sg];
+      ms.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
+    } catch (e) { return false; }
+    staticRise(t, t0);
+    var startMs = Math.max(0, (t0 - c.currentTime) * 1000);
+    var url = REEL_DIR + reel.id + ".mp4", srcChanged = videoSrcId !== reel.id;
+    videoSrcId = reel.id;
+    try {
+      if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
+      var go = function () { try { v.currentTime = inS; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
+      if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
+      else setTimeout(go, startMs);
+    } catch (e) {}
+    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: [], id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
+    T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
+    setTimeout(function () { try { if (mediaSrc && hp) mediaSrc.disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
+    return true;
+  }
+
+  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene });
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {
@@ -341,6 +424,7 @@
         return fire(now + delayS);
       },
       loadPool: loadPool,
+      scan: scan,
     },
   };
 })();
