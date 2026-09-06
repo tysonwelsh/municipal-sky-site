@@ -115,6 +115,34 @@
 .zk-vent-tr { top: 12px; right: 58px; }
 .zk-vent-bl { bottom: 12px; left: 58px; transform: rotate(0.4deg); }
 
+/* 逸脱 THE HIDDEN SWITCH (plan §5) — one slat of the bottom-left vent is a
+   different metal and it slides. It carries no print, no pointer cursor and no
+   focus ring until tabbed to; the only tell is that the nub brightens under the
+   hand. Thrown, it glows the faintest amber and the station restarts far. */
+.zk-far-sw {
+  position: absolute; z-index: 8; bottom: 12px; left: 130px; width: 24px; height: 13px;
+  padding: 0; border: 0; border-radius: 1px; cursor: default; -webkit-appearance: none; appearance: none;
+  background: linear-gradient(180deg, #050506 0%, #0d0d11 62%, #030304 100%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+  transform: rotate(0.4deg);
+}
+.zk-far-nub {
+  position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 1px;
+  background: linear-gradient(180deg, #2e2e37 0%, #202028 55%, #101015 100%);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  transition: left 0.13s ease-out, background 0.13s ease-out;
+}
+.zk-far-sw:hover .zk-far-nub { background: linear-gradient(180deg, #40404b 0%, #2a2a33 55%, #16161c 100%); }
+.zk-far-sw:focus-visible { outline: 1px solid rgba(var(--amber-rgb), 0.5); outline-offset: 1px; }
+.zk-far-sw[aria-checked="true"] .zk-far-nub {
+  left: 13px;
+  background: linear-gradient(180deg, #55492f 0%, #322818 55%, #17130c 100%);
+}
+.zk-far-sw[aria-checked="true"] {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+              0 0 5px rgba(var(--amber-rgb), 0.35), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 /* --- silk-screened panel print (slight misregistration = worn ink) --- */
 .zk-print {
   font-size: 9px; letter-spacing: 0.22em; color: var(--print);
@@ -774,6 +802,7 @@
 .zankyo-log-tag.mode       { color: var(--amber);   border: 1px dashed var(--amber); }
 /* ZANKYŌ 2 vocabulary: the form (kinds, seatings, scenes, joints, visitations), the shō's aitake, the new bodies, the PA */
 .zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }
+.zankyo-log-tag.far        { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.6); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.45); }
 .zankyo-log-tag.sho        { color: var(--ink);     border: 1px solid rgba(var(--cyan-rgb), 0.35); }
 .zankyo-log-tag.hichiriki  { color: var(--red);     border: 1px dashed rgba(var(--red-rgb), 0.6); }
 .zankyo-log-tag.biwa       { color: var(--amber);   border: 1px dashed rgba(var(--amber-rgb), 0.6); }
@@ -918,6 +947,19 @@
 .zk-tune::after { content: ""; position: absolute; left: 50%; top: 18%; width: 2px; height: 34%; margin-left: -1px; background: #d8d2c2; border-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.7); transform-origin: 50% 94%; transform: rotate(var(--ch, -40deg)); transition: transform 0.18s cubic-bezier(.5,1.6,.6,1); }
 .zk-tune:active { transform: translateY(1px); box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
 .zk-tune:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+
+/* 掃引 THE TUNING DIAL (plan §7) — the same 20 px cap as 選局 next to it, no
+   print, and a pointer that shows where it stands. It is a knob, not a
+   button: it wants to be swept, and the sweep is the mechanism. */
+.zk-dial { width: 20px; height: 20px; margin-right: 6px; flex: none; }
+.zk-dial .zk-knob { width: 20px; height: 20px; }
+.zk-dial .zk-knob-cap {
+  background: radial-gradient(circle at 34% 28%, #5c5c66, #2a2a31 50%, #101014 90%);
+  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -3px 4px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.28);
+}
+.zk-dial .zk-knob-ind { top: 18%; height: 34%; width: 2px; margin-left: -1px; background: #d8d2c2; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.7); }
+.zk-dial .zk-knob.is-drag .zk-knob-cap { box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
+.zk-dial .zk-knob:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
 .zk-rx-label { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; }
 .zk-rx {
   width: 7px; height: 7px; border-radius: 50%; flex: none;
@@ -971,9 +1013,7 @@
    numeric readout sits INSIDE the knob's footprint (over the dome, no row
    added). The head and the stamp are centred in the gap between STOP and the
    knob, where no button sits (critic). */
-.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }   /* the gap between STOP and the knob: the print lives in it, so it can never sit under a button at any width */
-.zk-rxpanel-head { position: absolute; left: 50%; top: 3px; transform: translateX(-50%); font-size: 6.5px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); pointer-events: none; }
-.zk-rxpanel-stamp { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%) rotate(-0.6deg); font-size: 6px; letter-spacing: 0.14em; color: #56525f; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); pointer-events: none; }
+.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }   /* the gap between STOP and the knob: bare metal since the print came off (plan §6), and still the spacer that keeps STOP off the knob at every width */
 .zk-rxpanel .zk-transport-cluster { gap: 10px; margin-left: 4px; }
 .zk-rxpanel .zk-arcade { width: 54px; height: 54px; }
 .zk-rxpanel .zk-arcade-cap { inset: 7px; font-size: 14px; }
@@ -993,6 +1033,11 @@
   .zankyo-sub-long { display: none; }
   .zankyo-title { letter-spacing: 0.06em; }
   .zk-vent, .zk-warn, .zk-sticker, .zk-warn-small { display: none; }
+  /* 逸脱: the long vents go on a small panel, but the switch needs something to
+     hide in — so a three-slat stub of the bottom-left vent stays, just wide
+     enough to hold the slot and read as louvre, clear of the corner screw. */
+  .zk-vent-bl { display: block; width: 46px; left: 32px; bottom: 10px; }
+  .zk-far-sw { left: 43px; bottom: 10px; }
   .zk-marquee { margin: 0 0 16px; padding: 12px 8px 10px; }
   .zankyo-viz { height: 160px; }
   .zk-monitor { padding: 9px 9px 0; }

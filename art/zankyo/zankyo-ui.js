@@ -337,7 +337,7 @@
   }
 
   // ---- Activity log (VFD display; content logic unchanged) ----
-  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
+  var CAT_TAG = { far: "逸脱 ITSU", shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
   var logStart = null;
   function fmtTime(t) { if (logStart === null) logStart = t; var s = Math.max(0, Math.floor(t - logStart)); var m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function clearLog() { logStart = null; var l = document.getElementById("zankyo-log"); if (l) l.innerHTML = '<div class="zankyo-log-empty">listening…</div>'; }
@@ -440,10 +440,158 @@
   }
   setInterval(pollArc, 280);
 
+  // ==========================================================================
+  // 逸脱 THE HIDDEN SWITCH (plan §5)
+  // ==========================================================================
+  // Thrown, the station restarts on a far night: the engine hunts upward from
+  // the current seed for the first one whose far fork yields d ≥ 0.8 (a pure
+  // function of the seed — about 29 hashes, no audio), the address bar is
+  // rewritten so that night can be sent to somebody, and it plays. While the
+  // switch is on, PLAY goes the same way.
+  //
+  // AND IT MUST TURN OFF AGAIN — the second half of the owner's sentence, and
+  // the thing round 0 got wrong. A hunt leaves the engine and the address on a
+  // far seed; without undoing that, every later restart (and every reload, the
+  // URL now carrying it) replayed a far night and the switch could not be
+  // switched off. So the first hunt REMEMBERS what the page had — the seed the
+  // engine held, and whether the address carried ?seed= at all — and OFF
+  // restores it in two moves, because the two halves have different costs:
+  //
+  //   the ADDRESS goes back at once. It is DOM, it costs nothing, and it is
+  //   what closes the reload hole: a reload after OFF is an ordinary night.
+  //   The far link the owner copied while the switch was thrown still works —
+  //   it is a seed, and seeds are forever.
+  //
+  //   the SEED goes back at the next PLAY, not now. Z.reseed() re-forks every
+  //   stream, so calling it mid-performance would re-roll the music under the
+  //   night that is still playing. The plan says the running night is left
+  //   alone, so the restore waits for the moment the engine re-forks anyway.
+  //
+  // Where the page arrived with no ?seed=, "restore" means what a cold load
+  // means: drop `seed` from the address and draw a fresh one off the clock.
+  //
+  // No persistence, deliberately: the rewritten ?seed= IS the memory, and it
+  // is the one thing the owner can share. A stored flag would fight it — a
+  // reload would hunt again and throw the shared night away.
+  var FAR_MIN_D = 0.8;
+  var farArmed = false;
+  var farPre = null;        // what the page had before the first hunt: { seedParam }
+  var farRestore = false;   // one-shot: the next PLAY while disarmed goes home
+
+  function farSetSeedParam(v) {                // v = a seed string, or null to drop it
+    try {
+      var u = new URL(window.location.href);
+      if (v == null) u.searchParams.delete("seed"); else u.searchParams.set("seed", String(v));
+      u.searchParams.delete("far");            // an explicit ?far= would override whatever we just chose
+      window.history.replaceState(null, "", u.toString());
+    } catch (e) {}
+  }
+  function farHunt() {
+    if (!Z.far || !Z.far.seek) return false;
+    var s = Z.far.seek(FAR_MIN_D);
+    if (s == null) return false;
+    if (!farPre) {                             // remember the ordinary world, once per arming
+      var had = null;
+      try { had = new URL(window.location.href).searchParams.get("seed"); } catch (e) {}
+      farPre = { seedParam: had };
+    }
+    Z.reseed(s);
+    if (Z.setFar) Z.setFar(null);
+    farSetSeedParam(s);
+    return true;
+  }
+  function farGoHome() {                       // the one-shot, consumed at PLAY
+    farRestore = false;
+    var pre = farPre; farPre = null;
+    if (!pre) return;
+    if (pre.seedParam != null) Z.reseed(parseInt(pre.seedParam, 10) >>> 0);
+    else Z.reseed((Date.now() % 0xffffffff) >>> 0);   // a cold load's own draw
+  }
+  function wireFarSwitch() {
+    var sw = document.getElementById("zankyo-far-sw");
+    if (!sw) return;
+    sw.addEventListener("click", function () {
+      farArmed = !farArmed;
+      sw.setAttribute("aria-checked", farArmed ? "true" : "false");
+      if (!farArmed) {                         // off: the running night finishes; the world goes back
+        if (farPre) { farRestore = true; farSetSeedParam(farPre.seedParam); }
+        return;
+      }
+      var playBtn = document.getElementById("zankyo-play");
+      Z.stop();
+      farHunt();
+      clearLog(); Z.play();
+      if (playBtn) playBtn.classList.add("is-playing");
+      if (sceneEl) sceneEl.classList.add("is-on");
+    });
+  }
+  // ==========================================================================
+  // 掃引 THE TUNING DIAL (plan §7)
+  // ==========================================================================
+  // Unlabeled, the same size as 選局 beside it, and it shows its position.
+  // Fidgeting is the mechanism: every degree of rotation feeds the receiver,
+  // which answers with snow on the tube and a band of noise that wanders with
+  // the hand — the sound of sweeping past nothing. Once about a turn and a
+  // half has gone by inside a few seconds, a real reel locks in AT ONCE.
+  //
+  // The knob's own range is 0–100 over its 270° sweep, so "a turn and a half"
+  // is 540° is 200 units. Rotation is accumulated with a decaying window
+  // rather than a fixed one: a sweep back and forth counts (it is the same
+  // wrist), but a slow drift over a minute does not, because the window
+  // forgets at DIAL_TAU. Below the threshold — and always, past it — the
+  // engine is asked for the noise, so the tube answers the hand whether or
+  // not a reel is there. Rate-limiting, the KIRU's hush and "a signal is
+  // already up" all live in the engine and the receiver, which know.
+  var DIAL_THRESHOLD = 200;      // units of knob travel ≈ 540° ≈ a turn and a half
+  var DIAL_WINDOW = 4;           // seconds: "within a few seconds", as a real window
+  function wireDial() {
+    var mount = document.getElementById("zankyo-dial");
+    if (!mount || !Z.dial) return;
+    // A RING OF (time, travel), summed over the last DIAL_WINDOW seconds — not
+    // an exponentially decaying accumulator, which is what shipped in rc.7 and
+    // could not work. A decaying sum plateaus at rate × τ, so with τ 2.2 s and
+    // a 200-unit threshold the dial could only ever lock above 245 °/s, while
+    // the plan's own sentence — 540° within a few seconds — is about 180 °/s
+    // and plateaued at 73 of 200: it never locked, however long you swept.
+    // The critic measured it: a 648° drag over 1.28 s did nothing. The plan
+    // describes a fixed window, so it is one. A slow drift still cannot reach
+    // it (200 units over a minute puts ~13 in any 4 s window) and a sweep back
+    // and forth still counts, because it is the same wrist.
+    var ring = [], lastV = null;
+    mount.appendChild(makeKnob({
+      min: 0, max: 100, step: 0.5, value: 50,
+      label: "\u6383\u5f15",                    // 掃引 — a name, not an instruction
+      cls: "zk-knob-dial",
+      format: function (v) { return Math.round(v) + ""; },
+      onInput: function (v) {
+        var now = (window.performance && performance.now) ? performance.now() / 1000 : Date.now() / 1000;
+        var d = lastV == null ? 0 : Math.abs(v - lastV);
+        lastV = v;
+        ring.push([now, d]);
+        var sum = 0, keep = [];
+        for (var i = 0; i < ring.length; i++) if (now - ring[i][0] <= DIAL_WINDOW) { keep.push(ring[i]); sum += ring[i][1]; }
+        ring = keep;
+        // how hard the hand is moving, for the snow and the band's centre
+        var amt = Math.min(1, sum / DIAL_THRESHOLD);
+        try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(0.25 + 0.75 * amt); } catch (e) {}
+        var want = sum >= DIAL_THRESHOLD;
+        var got = "snow";
+        try { got = Z.dial(amt, want); } catch (e2) {}
+        if (got === "locked") ring.length = 0;                // the gesture is spent
+        else if (want) {                                       // refused: earned again, but not from nothing
+          var drop = sum * 0.4;
+          while (ring.length && drop > 0) { drop -= ring[0][1]; ring.shift(); }
+        }
+      },
+    }));
+  }
+
   // ---- Transport (arcade buttons + master volume knob) ----
   function wireTransport() {
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
     if (playBtn) playBtn.addEventListener("click", function () {
+      if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
+      else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
       clearLog(); Z.play();
       playBtn.classList.add("is-playing");
       if (sceneEl) sceneEl.classList.add("is-on");   // power LED
@@ -470,5 +618,5 @@
     }
   }
 
-  renderScale(); renderMixer(); wireTransport(); pollArc();
+  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); wireDial(); pollArc();
 })();

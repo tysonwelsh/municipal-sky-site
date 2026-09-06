@@ -49,6 +49,13 @@ include '../../includes/header.php';
     <span class="zk-screw zk-screw-br" style="--slot:51deg" aria-hidden="true"></span>
     <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
     <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
+    <!-- 逸脱 (plan §5): one slat of the bottom-left vent is a different metal
+         and it slides. Unlabeled, nothing printed near it, no cursor tell until
+         you are on it. ON → the station restarts on a night with d ≥ 0.8 and
+         rewrites ?seed= so it can be sent to somebody. It is reachable from the
+         keyboard and named 逸脱 to a screen reader: hiding a control from
+         assistive technology is a different thing from hiding it on a panel. -->
+    <button type="button" class="zk-far-sw" id="zankyo-far-sw" role="switch" aria-checked="false" aria-label="逸脱"><span class="zk-far-nub" aria-hidden="true"></span></button>
 
     <!-- illuminated marquee -->
     <div class="zk-marquee">
@@ -127,6 +134,10 @@ include '../../includes/header.php';
             <span class="zk-set2-brand">映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
             <span class="zk-chin-spacer"></span>
             <button type="button" class="zk-tune" id="zankyo-tune" aria-label="選局 · tune: scan for a signal" title="選局 &middot; tune"></button>
+            <!-- 掃引 (plan §7): the tuning dial. Unlabeled, the same 20 px as
+                 選局 beside it, and it shows its position. Turning it makes
+                 snow and band-noise; keep turning and a reel locks in. -->
+            <div class="zk-dial" id="zankyo-dial"></div>
             <span class="zk-rx-label">受信</span>
             <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
           </div>
@@ -145,7 +156,7 @@ include '../../includes/header.php';
           <button type="button" class="zk-arcade play-btn" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
           <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
         </div>
-        <span class="zk-rxpanel-gap" aria-hidden="true"><span class="zk-rxpanel-head">操作 &middot; TRANSPORT</span><span class="zk-rxpanel-stamp">TYPE 9-B &middot; No. 2887-R</span></span>
+        <span class="zk-rxpanel-gap" aria-hidden="true"></span>
         <div class="zk-master">
           <div id="zankyo-master-knob" class="zk-knob-mount"></div>
           <div class="zk-master-meta">
@@ -228,6 +239,7 @@ include '../../includes/header.php';
 <script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
 <script src="../prosperos-jukebox-v2/pj2-air.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-air.js'); ?>"></script>
 <script src="../prosperos-jukebox-v2/pj2-conductor.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-conductor.js'); ?>"></script>
+<script src="zk-far.js?v=<?php echo zkv('zk-far.js'); ?>"></script>
 <script src="zankyo-audio.js?v=<?php echo zkv('zankyo-audio.js'); ?>"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <!-- THE RECEIVER (S1): a real reel from broadcast/ through the station's own

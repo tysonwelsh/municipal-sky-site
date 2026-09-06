@@ -268,6 +268,30 @@
     else if (ph === "collapse") { rx.classList.remove("is-lit"); }
     else if (ph === "dead" || ph === "idle") { rx.classList.remove("is-flicker"); rx.classList.remove("is-lit"); }
   }
+  // ---- 掃引 THE SWEEP (plan §7): while the tuning dial turns, the tube shows
+  // snow. It follows the HAND: every bit of rotation raises it, and it decays
+  // over ~0.7 s, so the picture is loud while the fingers move and settles the
+  // moment they stop. It only ever paints on an idle or dead tube — a signal
+  // already up owns the screen and the dial must not scribble on it.
+  var sweepAmt = 0, sweepAt = 0;
+  function sweep(a) {
+    a = +a; if (!(a > 0)) return;
+    var now = (typeof performance !== "undefined" && performance.now) ? performance.now() : 0;
+    if (now - sweepAt > 900) sweepAmt = 0;                    // a fresh gesture starts from nothing
+    sweepAt = now;
+    sweepAmt = Math.min(1, Math.max(sweepAmt, a));
+  }
+  // The decayed sweep level. It reads its OWN wall clock rather than taking a
+  // timestamp, because the two callers are in different clocks (renderSource
+  // gets the frame time, compose gets nothing) and a snow level does not need
+  // the audio clock's precision — it needs to follow a hand.
+  function sweepNow() {
+    if (sweepAmt <= 0) return 0;
+    var now = (typeof performance !== "undefined" && performance.now) ? performance.now() : 0;
+    var dt = (now - sweepAt) / 1000;
+    if (dt > 3) { sweepAmt = 0; return 0; }
+    return sweepAmt * Math.exp(-dt / 0.7);
+  }
   function endSignal(t) {
     sig = null;                                              // the receiver owns the element; the set never pauses it
     S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0;
@@ -344,7 +368,8 @@
     }
     var sdata = scx.getImageData(0, 0, SW, SH).data;
     // luminance → snow mix → P39
-    var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? 0 : clamp01(1 - strength);
+    var sw = (ph === "idle" || ph === "dead") ? sweepNow() : 0;   // 掃引: the dial's snow
+    var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? sw : clamp01(1 - strength);
     // idle: a faint raster glow added under the LUT — the tube is warm, not lit
     var idleGlow = ph === "idle" ? 9 + 3 * Math.sin(t / 2300) : 0;
     var crawl = t / 240;
@@ -353,8 +378,11 @@
       var vign = 1 - Math.abs(y - SH / 2) / SH * 0.7;
       for (var x = 0; x < SW; x++, i += 4, p += 4) {
         var l = 0.299 * sdata[i] + 0.587 * sdata[i + 1] + 0.114 * sdata[i + 2];
-        if (ph === "idle") { l = l * 0.9 + (rnd() < 0.002 ? 30 + rnd() * 50 : 0); }
-        else if (ph === "dead") { l = 0; }
+        if (ph === "idle") {
+          l = l * 0.9 + (rnd() < 0.002 ? 30 + rnd() * 50 : 0);
+          if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());   // 掃引
+        }
+        else if (ph === "dead") { l = snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08 ? rnd() * 255 * (0.45 + 0.55 * rnd()) : 0; }
         else {
           l = (l - 18) * 1.22;
           // snow: a pixel is either the picture or a spark — density grows with the square of (1 − strength)
@@ -471,6 +499,7 @@
     tcx.clearRect(0, 0, TW, TH);
     tcx.fillStyle = "#030503"; tcx.fillRect(0, 0, TW, TH);
     var lit = S.phase === "idle" ? 0.08 : S.phase === "dead" ? 0.02 : 0.3 + S.strength * 0.7;
+    if (S.phase === "idle" || S.phase === "dead") lit = Math.max(lit, sweepNow() * 0.5);   // 掃引: the lamp stirs under the hand
     for (var i = 0; i < P.shards.length; i++) {
       var s = P.shards[i];
       tcx.save(); tcx.clip(shardPaths[i]);
@@ -539,6 +568,7 @@
   // ---- public surface ----
   window.ZankyoSet = {
     signal: signal,
+    sweep: sweep,                                            // 掃引 (plan §7): the tuning dial's snow, 0..1, follows the hand
     warm: function (v) { try { scx.drawImage(v, 0, 0, SW, SH); } catch (e) {} },   // S3: a first drawImage off-screen at prefetch (the decoder's first frame stalled ~250 ms)
     getState: function () { return { phase: S.phase, strength: S.strength, pattern: patternIdx, patternName: P.name, seed: seed, tube: [TW, TH], fps: perf.n > 1 ? +((perf.n - 1) * 1000 / Math.max(1, perf.last - perf.first)).toFixed(1) : 0, frameMs: perf.n ? +(perf.ms / perf.n).toFixed(2) : 0, worstMs: +perf.worst.toFixed(2), lowPower: lowPower, hasFilter: hasFilter }; },
     _dev: {
