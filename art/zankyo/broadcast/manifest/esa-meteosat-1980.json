@@ -1,0 +1,19 @@
+{
+  "id": "esa-meteosat-1980",
+  "title": "Cosmovideo: Europe in Space — Meteosat 1",
+  "year": 1980,
+  "src": "https://www.youtube.com/watch?v=ObwBpmHciCg",
+  "license": "ESA production; licence unverified",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 558870,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[4.0, 16.0], [78.0, 90.0], [214.0, 226.0], [565.0, 577.0], [808.0, 820.0], [943.0, 955.0]],
+  "notes": "ESA's first weather satellite: clean room, launch, ground stations at Lannion and Villafranca, the whole Earth disc coming down as a picture",
+  "takedown": false
+}
