@@ -335,6 +335,7 @@ window.ZankyoAudio = (function () {
   // Determinism: the subject is a MEMORY, not a decision. Nothing here draws.
   var farSubject = null;   // { notes, at, lead, taken, n, mode, plan }
   var farHetero = null, farHocket = null, farSwarm = null, farPoly = null, farMirror = null, farClouds = null;
+  var farRev = null, farMetal = null, farNlead = null;
 
   // Which departure owns the ensemble right now, and its voice list. Only one
   // can: they are all "everybody plays this phrase" and two at once is mud, so
@@ -367,6 +368,75 @@ window.ZankyoAudio = (function () {
     // swarm's own shadows on the cheap body, which is where the concurrency
     // budget is actually won.
     return E.kind === "swarm" ? 3 : E.voices.length;
+  }
+
+  // ==========================================================================
+  // 逆 REVERSE (W3) — envelopes played backwards
+  // ==========================================================================
+  // "Plucks that swell, breaths that end in the attack." PJ.Voice.env takes
+  // cumulative [dt, value] segments from true zero, so the time-reverse of an
+  // envelope is the same durations in reverse order carrying the PREVIOUS
+  // value at each step — the last segment lands back at zero, which keeps the
+  // writer's from-zero-to-zero contract and its click-safety with it.
+  //
+  // Which notes reverse is a deterministic function of the note's own start
+  // time, NOT a draw: a departure that changes timbre should not also shift
+  // every later pitch by consuming a number from the voice's stream.
+  // Forward the path is 0 → v1 → v2 → … → vn over d1, d2, … dn. Reversed it is
+  // the same values backwards over the same durations backwards, and because a
+  // note's forward envelope ends at zero the reversal STARTS at zero too — so
+  // env's from-true-zero anchor is honoured rather than worked around.
+  function farRevEnv(segs) {
+    var n = segs.length, out = [], i;
+    for (i = 0; i < n; i++) out.push([segs[n - 1 - i][0], i === n - 1 ? 0 : segs[n - 2 - i][1]]);
+    return out;
+  }
+  function farRevPick(t) {
+    if (!farRev) return false;
+    var h = Math.imul((t * 1000) | 0, 0x9e3779b1) >>> 0;      // one hash, no stream draw
+    return (h / 4294967296) < farRev.share;
+  }
+  // The engine's bodies all write their amplitude through PJ.Voice.env, so 逆
+  // is one wrapper at that seam rather than a change in every body.
+  function farEnv(param, t0, segs, base) {
+    return PJ.Voice.env(param, t0, (farRev && farRevPick(t0)) ? farRevEnv(segs) : segs, base);
+  }
+
+  // ==========================================================================
+  // 凍 FREEZE (W3) — a note held into a drone
+  // ==========================================================================
+  // "A shakuhachi note held into a drone for a minute (jittered sustained
+  // partials), the ensemble re-tuning around it." The engine's longest melodic
+  // note today is 2.4–4.0 s at p99 with one 11.1 s outlier and ZERO over 20 s
+  // (the critic's floor), so a 20–80 s hold is not a long note — it is a
+  // different kind of event, and it needs the air for its whole length.
+  function farFreeze(f, t0) {
+    var p = farNight && farNight.dep.freeze;
+    if (!p || !ctx) return 0;
+    var c = ctx, holdS = p.holdS, out = panAt("shakuhachi", 0), R = S.far.fork("freeze:" + Math.round(t0));
+    var bus = c.createGain();
+    bus.connect(out);
+    // the body: the fundamental and three partials, each drifting a few cents
+    // against the others so the tone breathes instead of sitting still
+    var parts = [[1, 0.055], [2, 0.016], [3, 0.010], [4.02, 0.006]];
+    for (var i = 0; i < parts.length; i++) {
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = i === 0 ? "sine" : "triangle";
+      o.frequency.setValueAtTime(f * parts[i][0], t0);
+      var lfo = c.createOscillator(), lg0 = c.createGain();
+      lfo.type = "sine"; lfo.frequency.setValueAtTime(0.03 + R.next() * 0.09, t0);
+      lg0.gain.setValueAtTime(p.jitterC * (0.5 + R.next()), t0);   // cents of drift
+      lfo.connect(lg0); lg0.connect(o.detune);
+      lfo.start(t0); lfo.stop(t0 + holdS + 3);
+      o.connect(g); g.connect(bus);
+      PJ.Voice.env(g.gain, t0, [[6, parts[i][1]], [holdS - 9, parts[i][1]], [3, 0]]);
+      o.start(t0); o.stop(t0 + holdS + 0.3);
+    }
+    emitNote("shakuhachi", f, t0, holdS);
+    // it holds the air: nobody talks over a minute-long held tone
+    airHold.shakuhachi = { from: t0 - 0.2, until: t0 + holdS };
+    emitEvent({ cat: "far", label: "凍 the note freezes", detail: Math.round(holdS) + "s · " + noteName(f) + " · ±" + p.jitterC.toFixed(1) + " cents" }, t0);
+    return holdS;
   }
 
   // ==========================================================================
@@ -405,7 +475,10 @@ window.ZankyoAudio = (function () {
     if (glideTo > 0 && glideTo !== f) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
     o.connect(g); g.connect(bus.input);
     var atk = Math.min(0.012, dur * 0.25);
-    PJ.Voice.env(g.gain, t, [[atk, peak], [Math.max(0.01, dur - atk - 0.015), peak * 0.35], [0.015, 0]]);
+    // 逆 reaches the cheap body too: a cloud of swelling grains is as much the
+    // departure as a pluck that swells, and leaving it out meant a cloud night
+    // diluted 逆's share with thousands of un-reversed events.
+    farEnv(g.gain, t, [[atk, peak], [Math.max(0.01, dur - atk - 0.015), peak * 0.35], [0.015, 0]]);
     o.start(t); o.stop(t + dur + 0.02);
   }
 
@@ -657,7 +730,7 @@ window.ZankyoAudio = (function () {
 
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
-    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null;
+    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
@@ -688,6 +761,9 @@ window.ZankyoAudio = (function () {
     if ((p = farNight.dep.clouds)) farClouds = p;
     if ((p = farNight.dep.poly)) { farPoly = p; farPolyN = 0; }
     if ((p = farNight.dep.mirror)) farMirror = p;
+    if ((p = farNight.dep.rev)) farRev = p;
+    if ((p = farNight.dep.metal)) farMetal = p;
+    if ((p = farNight.dep.nlead)) farNlead = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
   }
   // 遅 — one cycle glacial (a forty-minute jo made of single notes) or frantic,
@@ -2992,6 +3068,20 @@ window.ZankyoAudio = (function () {
       t += dur + S.shakuhachi.next() * 0.05;
     }
     farMirrorAnswer("shakuhachi", phrase, sched, now, beat);   // 鏡
+    // 凍: now and then the last breath does not end — it is held into a drone
+    // and the ensemble re-tunes around it. Decided per phrase on the far
+    // stream's own fork, so it costs the shakuhachi's stream nothing.
+    if (farNight && farNight.dep.freeze && sched.length && !signalUp(t) &&
+        S.far.fork("freeze-when:" + Math.round(now)).chance(0.22)) {
+      var held = farFreeze(sched[sched.length - 1].f, t + 0.1);
+      if (held > 0) {
+        t += 0.1 + held;
+        tok.until = t + margin;
+        shakuState.lastSpan = t - now;
+        afterSpan("shakuhachi", now, (t - now) + S.shakuhachi.rnd(2, 6) * farTimeMul("shakuhachi", now), shakuhachiPhrase);
+        return;
+      }
+    }
     shakuState.lastSpan = t - now;
     tok.until = t + margin;                      // the claim's true footprint: the phrase as rendered + the margin
     // 〰 SANKYOKU HETEROPHONY — in the ha especially, the koto sometimes reads
@@ -3061,7 +3151,7 @@ window.ZankyoAudio = (function () {
     var peak = 0.16 * (opts.muraiki ? 0.7 : 1);                  // the lead's presence; muraiki lets the breath lead
     var atk = opts.atari ? 0.06 : 0.09;
     if (opts.atari) {                              // a dip and a swell, no new strike
-      PJ.Voice.env(g.gain, t, [[0.004, peak * 0.35], [atk, peak], [Math.max(0.1, dur - atk - 0.22), peak], [0.22, 0]]);
+      farEnv(g.gain, t, [[0.004, peak * 0.35], [atk, peak], [Math.max(0.1, dur - atk - 0.22), peak], [0.22, 0]]);   // 逆: a breath that ends in its attack
     } else {
       g.gain.setValueAtTime(0.0001, t);
       g.gain.exponentialRampToValueAtTime(peak, t + atk);
@@ -3155,7 +3245,7 @@ window.ZankyoAudio = (function () {
     }
     var peak = 0.50 * (opts.gain == null ? 1 : opts.gain);     // target −9 ± 2 dB rel master (critic r1)
     var atk = opts.swell ? Math.min(1.2, dur * 0.3) : 0.05, rel = Math.min(0.6, 0.2 + dur * 0.06);
-    PJ.Voice.env(og.gain, t, [[atk, peak], [Math.max(0.06, dur - atk - rel), peak * 0.9], [rel, 0]]);
+    farEnv(og.gain, t, [[atk, peak], [Math.max(0.06, dur - atk - rel), peak * 0.9], [rel, 0]]);   // 逆
     emitNote("hichiriki", freq, t, dur);
   }
   var hichiState = { idx: 11, dir: 1, center: 11, lastSpan: 0 };
@@ -3327,7 +3417,7 @@ window.ZankyoAudio = (function () {
     var peak = K.peak * (opts.gain == null ? 1 : opts.gain) * (0.4 + 0.6 * vel);
     var atk = Math.max(0.004, Math.min(0.006, dec * 0.3)), knee = Math.min(0.15, dec * 0.6);
     if (atk >= knee) atk = knee * 0.5;
-    PJ.Voice.env(g.gain, t, [[atk, peak], [knee - atk, peak * 0.3], [dec - knee, 0]]);
+    farEnv(g.gain, t, [[atk, peak], [knee - atk, peak * 0.3], [dec - knee, 0]]);   // 逆: a pluck that swells
     FAR.glideDetune(src.detune, t, dec + 0.05, 0);   // 逸脱 螺/弛: the string sags with the room (detune is free here; playbackRate carries the pluck's own bends)
     src.start(t); src.stop(t + dec + 0.05);
     // THE PICK (Phase M — the mix pass, the orchestrator's ruling): the plan's
