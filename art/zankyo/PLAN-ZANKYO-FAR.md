@@ -134,3 +134,16 @@ the story as it happens.
 Each phase bumps VERSION (2.1.0-rc.2 …); the release is 2.2.0 — "the far
 tail". Three rounds per phase; the critic holds the distance gates, the
 ceilings, the harshness cap and byte-identity of home nights.
+
+## 5. Owner addition: the hidden switch (W0)
+
+A hidden switch on the machine — unlabeled, diegetic, not discoverable by
+reading (a small toggle inside one of the chassis vents, or a screw that
+turns; the designer's choice, but it must look like it has always been
+there). Flipping it ON restarts the station and the night it begins is a
+far one: the engine draws fresh seeds until the `far` fork yields
+d ≥ 0.8 (a pure function of the seed, so cheap), rewrites `?seed=` in the
+URL so that night is shareable, and plays. While ON, every restart is far;
+flipping it OFF returns to the ordinary lottery. The switch itself shows
+its state (a physical position, a faint glow); nothing else on the panel
+changes. This is the one deliberate interface addition of this plan.
