@@ -1,0 +1,69 @@
+{
+  "id": "nta2-lagos-continuity-1985",
+  "title": "NTA2 Channel 5 Lagos — continuity, clock and news",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=73a9iaRZ-pY",
+  "license": "NTA Nigeria; copyrighted (fair-use posture)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 529861,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      15.0
+    ],
+    [
+      75.0,
+      87.0
+    ],
+    [
+      96.0,
+      108.0
+    ],
+    [
+      117.0,
+      129.0
+    ],
+    [
+      156.0,
+      168.0
+    ],
+    [
+      180.0,
+      192.0
+    ]
+  ],
+  "notes": "an off-air VHS from July 1985: the NTA2 caption slide, the clock, the War Against Indiscipline card, the news sting, a singer at the microphone",
+  "takedown": false
+}
