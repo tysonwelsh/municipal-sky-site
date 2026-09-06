@@ -118,6 +118,11 @@ window.ZK_FAR = (function () {
   // threshold d sits, jittered. A departure at its threshold barely leans;
   // the same departure at d = 0.95 is unmistakable.
   // ==========================================================================
+  // The voices 双 bitonality may send across to the second field. "sho2" is
+  // the shō's odd pipes — the cluster straddling both fields, which is what
+  // the plan asks the shō to do.
+  var BITO_VOICES = ["shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "sho2"];
+
   var REGISTRY = [
     // ---- 音律 pitch and tuning ----
     { id: "sag", kana: "撓", name: "sagging clock", family: "音律", d: 0.15, w: 3.0, phase: "W1",
@@ -144,7 +149,23 @@ window.ZK_FAR = (function () {
       // change already travels by fourths), so the tritone is where this goes
       // when it goes furthest, not where it starts: its weight rises with amt
       // (critic, W0 r1 §4).
-      params: function (R, d, amt) { return { interval: R.pickW([[5, 3], [7, 3], [6, 6 * amt * amt]]), mode: R.pick(["insen", "iwato", "kumoi"]), share: 0.3 + 0.35 * amt }; } },
+      params: function (R, d, amt) {
+        var share = 0.3 + 0.35 * amt, camp = {}, i;
+        // who crosses to the second field. Every voice draws, unconditionally;
+        // the shō straddles by alternating pipes ("sho2" is its odd half), so
+        // it is drawn separately and can be the only crossing there is.
+        for (i = 0; i < BITO_VOICES.length; i++) if (R.chance(share)) camp[BITO_VOICES[i]] = 1;
+        // A PREFERENCE, not a decision. Measured on the probe: a second field
+        // a fifth up in in-sen has exactly hirajoshi's pitch classes — it is
+        // not bitonality, it is the same scale spelled differently, and
+        // neither the metric nor the ear can tell. So the night draws an
+        // ordered preference and the ENGINE picks, at each cycle, the pairing
+        // that shares fewest pitch classes with the mode actually in force.
+        // No new draws: the ordering is the draw.
+        return { interval: R.pickW([[5, 3], [7, 3], [6, 6 * amt * amt]]),
+          modes: R.shuffle(["insen", "iwato", "kumoi", "hirajoshi"]),
+          intervals: R.shuffle([5, 6, 7]), share: share, camp: camp };
+      } },
     { id: "spiral", kana: "螺", name: "the spiral", family: "音律", d: 0.75, w: 1.5, phase: "W1", no: ["bito"],
       // The tonic glides, a few cents a second: a key that never arrives.
       params: function (R, d, amt) { return { centsPerS: (R.chance(0.5) ? 1 : -1) * (0.6 + 3.4 * amt), wrap: 1200 }; } },
