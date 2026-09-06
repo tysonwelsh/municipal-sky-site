@@ -233,6 +233,70 @@ window.ZankyoAudio = (function () {
     },
   };
 
+  // ---- the time departures (all identity while farTimeOn is false) ----
+  // 遅 dilation, 弛 varispeed's time half and 影 tempo canons are ONE function
+  // of the scheduled time, and deliberately NOT clock.lane(x).rate: setLaneRate
+  // rescales pending events around ctx.currentTime — a "now" read — so a
+  // departure that breathed through the lane rates would move the note stream
+  // by however late the pump happened to fire, and REPRO under the critic's
+  // timer jitter would fail. (The console's RATE knobs get away with it
+  // because a human turns them once.) Here everything is a pure function of
+  // the time an event was SCHEDULED for, so two runs of a seed are identical
+  // however sloppy the timers are.
+  //
+  // It multiplies exactly two things — the reschedule delay inside after() /
+  // afterRaw(), which every body already routes its "ask again later"
+  // through, and the `beat` local in the five phrase functions, so notes
+  // stretch WITH the gaps instead of gaps opening around unchanged notes.
+  var farTimeOn = false, farDilate = null, farCanon = null;
+  var farCycleRate = 1;                          // 遅: this cycle's own tempo, redrawn at each cycle boundary
+  function farTimeMul(layer, t) {
+    if (!farTimeOn) return 1;
+    var m = farDilate ? farCycleRate : 1;
+    // 弛: a tape that sags in pitch sags in time by the SAME ratio — it is one
+    // motor. So the time factor is the reciprocal of the pitch multiplier: as
+    // the pitch falls the seconds get longer.
+    if (farVari) m /= farGlideMul(t);
+    if (farCanon && farCanon.of[layer]) m *= farCanon.of[layer];
+    return m;
+  }
+  // 影 — the same material at 3:4:5. Nancarrow on a pentatonic: the voices
+  // converge, pass and diverge, and because the ratio scales both the notes
+  // and the gaps they stay in their own tempo instead of drifting apart once.
+  var FAR_CANON_VOICES = ["koto", "shamisen", "biwa"];
+  function farTimeSetup() {
+    farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
+    if (!farNight || farNight.home) return;
+    var p;
+    if ((p = farNight.dep.dilate)) farDilate = p;
+    if ((p = farNight.dep.canon)) {
+      var r = p.ratios, of = {}, mid = r[1];
+      for (var i = 0; i < FAR_CANON_VOICES.length; i++) of[FAR_CANON_VOICES[i]] = r[i % r.length] / mid;
+      farCanon = { of: of, ratios: r };
+    }
+    farTimeOn = !!(farDilate || farCanon || farVari);
+  }
+  // 遅 — one cycle glacial (a forty-minute jo made of single notes) or frantic,
+  // drawn per cycle from the night's own band on the cycle's own sub-fork, so
+  // the draw count never depends on how many cycles a listener sits through.
+  function farCycleTime(n) {
+    farCycleRate = 1;
+    if (!farDilate) return 1;
+    var R = S.far.fork("dilate:" + n);
+    var slow = R.chance(farDilate.slow ? 0.62 : 0.38), lean = R.next();
+    // Seven cycles in ten depart; the other three keep the ordinary pace,
+    // which is the plan's "a far night can have one calm cycle". √lean is how
+    // far toward the edge of the night's band a departing cycle goes, and it
+    // leans toward the EDGE — a glacial cycle should be glacial. (Measured
+    // twice, both times wrong first: one-in-three left two of three test seeds
+    // untouched across a whole 30-minute run, and lean² pulled the survivors
+    // back to 1.00 at the median, so 68 % of cycles "departed" to nowhere. A
+    // departure the owner never hears is not a departure.)
+    var k = Math.sqrt(lean);
+    if (R.chance(0.7)) farCycleRate = slow ? 1 - (1 - farDilate.lo) * k : 1 + (farDilate.hi - 1) * k;
+    return farCycleRate;
+  }
+
   // ---- the pitch departures' machinery (all identity while farPitchOn is false) ----
   var FAR_PLUCKED = { koto: 1, shamisen: 1, biwa: 1 };
   var farPitchOn = false, farGlideOn = false;
@@ -927,9 +991,18 @@ window.ZankyoAudio = (function () {
   function trimOf(layer) { return LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1; }
   function after(layer, t, delayS, fn) {        // trimmed: the whole delay is "rest"
     var L = lane(layer);
-    return L.at(t + delayS / trimOf(layer) / L.rate, guarded(fn));
+    return L.at(t + farTimeMul(layer, t) * delayS / trimOf(layer) / L.rate, guarded(fn));   // 逸脱 遅/弛/影
   }
   function afterRaw(layer, t, delayS, fn) {     // untrimmed: caller already trimmed the rest part
+    var L = lane(layer);
+    return L.at(t + farTimeMul(layer, t) * delayS / L.rate, guarded(fn));                   // 逸脱 遅/弛/影
+  }
+  // 逸脱: for a caller whose delay ALREADY contains time it scaled itself — a
+  // phrase's rendered span (its notes came out of a scaled `beat`) or a
+  // drone's envelope. Scaling it again would square the dilation and open a
+  // hole between the fade-out and the next cycle. Identical to afterRaw at
+  // home, where farTimeMul is 1.
+  function afterSpan(layer, t, delayS, fn) {
     var L = lane(layer);
     return L.at(t + delayS / L.rate, guarded(fn));
   }
@@ -1348,6 +1421,7 @@ window.ZankyoAudio = (function () {
         emitEvent({ cat: "mode", label: "海 sea change", detail: fromName + " → " + noteName(field.tonicHz) + " · " + pm.label + " · " + MODES[p.mode].name + " · cycle " + cyc.n }, evt.t);
       }
       emitEvent({ cat: "form", label: "❁ cycle plan", detail: KINDS[p.kind].kana + " kind: " + p.kind + " · seating: " + p.seating.label + " · scenes: " + evt.scenes.join(">") }, evt.t);
+      farCycleTime(evt.n);                        // 逸脱 遅: this cycle's own tempo, on the cycle's own sub-fork
       cyc.visit = p.visit || null; visitActive = null;
       lastCycleEmpty = !!(p.seating && p.seating.named === "dead station");
       if (p.visit) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[p.visit.name] + " " + p.visit.name, detail: "visitation: " + p.visit.name + " · seated in " + p.visit.scene + " (" + (p.visit.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
@@ -1991,7 +2065,8 @@ window.ZankyoAudio = (function () {
     var cutoff = getLayerParam("subDrone", "cutoff", 220);
     var movement = getLayerParam("subDrone", "movement", 0.18);
     var subAmt = getLayerParam("subDrone", "sub", 0.6);
-    var dur = 26 + S.subDrone.next() * 10, fadeIn = 7, fadeOut = 8;
+    var tmul = farTimeMul("subDrone", t);        // 逸脱 遅/弛: the floor breathes with the night
+    var dur = (26 + S.subDrone.next() * 10) * tmul, fadeIn = 7 * tmul, fadeOut = 8 * tmul;
 
     var lp = c.createBiquadFilter();
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.8, now);
@@ -2019,8 +2094,8 @@ window.ZankyoAudio = (function () {
       so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08 * subAmt, now);
       so.start(now); so.stop(now + dur + 0.3);
     }
-    var overlap = 7 + S.subDrone.next() * 3;
-    after("subDrone", now, dur - overlap, subDroneCycle);
+    var overlap = (7 + S.subDrone.next() * 3) * tmul;
+    afterSpan("subDrone", now, dur - overlap, subDroneCycle);   // dur is already dilated
   }
 
   // ==========================================================================
@@ -2091,7 +2166,8 @@ window.ZankyoAudio = (function () {
     var voices = Math.round(getLayerParam("sho", "voices", 5));
     var shimmer = getLayerParam("sho", "shimmer", 0.4);
     var drift = getLayerParam("sho", "drift", 0.5);
-    var dur = (14 + S.sho.next() * 8) * (cyc.kind === "rite" ? 1.4 : 1), fadeIn = 5, fadeOut = 6;   // the rite's clusters breathe longer
+    var stmul = farTimeMul("sho", t);            // 逸脱 遅/弛
+    var dur = (14 + S.sho.next() * 8) * (cyc.kind === "rite" ? 1.4 : 1) * stmul, fadeIn = 5 * stmul, fadeOut = 6 * stmul;   // the rite's clusters breathe longer
 
     var lp = c.createBiquadFilter();
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.5, now);
@@ -2133,8 +2209,8 @@ window.ZankyoAudio = (function () {
       emitNote("sho", fSound, now);                      // one shared t per cluster, so voicings group — and the pitch the pipe actually sounds
     }
     lastAitake = freqs;
-    var overlap = 4 + S.sho.next() * 2;
-    after("sho", now, dur - overlap, shoCycle);
+    var overlap = (4 + S.sho.next() * 2) * stmul;
+    afterSpan("sho", now, dur - overlap, shoCycle);              // dur is already dilated
   }
 
   // ==========================================================================
@@ -2184,7 +2260,7 @@ window.ZankyoAudio = (function () {
     if (breathSolo && phrase.length > 2) phrase = phrase.slice(0, 2);        // one or two long breaths
     if (phrase.length) shakuState.idx = phrase[phrase.length - 1].deg;   // melodic continuity for the next walk
 
-    var beat = 0.62 / pace, t = now + 0.05, prev = null, sched = [];
+    var beat = 0.62 / pace * farTimeMul("shakuhachi", now), t = now + 0.05, prev = null, sched = [];   // 逸脱 遅/弛
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.25, n.durBeats * beat);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
@@ -2216,7 +2292,7 @@ window.ZankyoAudio = (function () {
     // journey tilts overall density ±12% — the shakuhachi stays UNLOCKED from
     // the pulse but still breathes with the long form)
     var ma = (1.8 + S.shakuhachi.next() * 4) * (1 - arc * 0.55) * metaRestMul() * gapMulAt(t) / trimOf("shakuhachi");
-    afterRaw("shakuhachi", now, (t - now) + ma, shakuhachiPhrase);
+    afterSpan("shakuhachi", now, (t - now) + ma * farTimeMul("shakuhachi", now), shakuhachiPhrase);   // 逸脱: the phrase is already dilated, the ma is not
   }
   // The shakuhachi body (Phase 3): two REGISTERS with different bodies —
   // otsu (low, dark, sine-heavy) below A4, kan (overblown: breathier, more
@@ -2385,7 +2461,7 @@ window.ZankyoAudio = (function () {
       emitEvent({ cat: "hichiriki", label: "fresh", detail: phrase.length + " notes · " + arcPhase(now) }, now);
     }
     if (phrase.length) hichiState.idx = phrase[phrase.length - 1].deg;
-    var beat = (cry ? 2.2 : 1.4) / pace, t = now + 0.05, prev = null;
+    var beat = (cry ? 2.2 : 1.4) / pace * farTimeMul("hichiriki", now), t = now + 0.05, prev = null;   // 逸脱 遅/弛
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.8, n.durBeats * beat);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
@@ -2395,7 +2471,7 @@ window.ZankyoAudio = (function () {
     hichiState.lastSpan = t - now;
     tok.until = t + margin;
     var rest = (5 + R.next() * 8) * (1 - arc * 0.5) * metaRestMul() * gapMulAt(t) / trimOf("hichiriki");
-    afterRaw("hichiriki", now, (t - now) + rest, hichirikiPhrase);
+    afterSpan("hichiriki", now, (t - now) + rest * farTimeMul("hichiriki", now), hichirikiPhrase);
   }
 
   // ==========================================================================
@@ -2432,17 +2508,18 @@ window.ZankyoAudio = (function () {
     if (motif) { phrase = fitToRegister(motif.notes, biwaState.center).slice(0, 4); Motif.postFrom("biwa", motif, now); }
     else { phrase = walk(R, biwaState, 1 + Math.floor(R.next() * 3), 4, arc); emitEvent({ cat: "biwa", label: "fresh", detail: phrase.length + " notes" }, now); }
     if (phrase.length) biwaState.idx = phrase[phrase.length - 1].deg;
+    var beat = 0.9 * farTimeMul("biwa", now);   // 逸脱 遅/弛/影 (the narrator has no `pace`; 0.9 was its inline factor)
     var t = now + 0.05, strummed = false;
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
       if ((i === 0 || i === phrase.length - 1) && R.next() < 0.6) { t += biwaStrum(f, t, {}) + 0.3; strummed = true; }
-      else { stringNote("biwa", f, t, Math.max(0.6, n.durBeats * 0.9), { vel: 0.6 + R.next() * 0.35 }); t += Math.max(0.6, n.durBeats * 0.9) + R.next() * 0.3; }
+      else { var bd = Math.max(0.6 * beat / 0.9, n.durBeats * beat); stringNote("biwa", f, t, bd, { vel: 0.6 + R.next() * 0.35 }); t += bd + R.next() * 0.3; }
     }
     if (strummed) emitEvent({ cat: "biwa", label: "琵琶 strum", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") }, now);
     biwaState.lastSpan = t - now;
     tok.until = t + margin;
     var rest = (8 + R.next() * 12) * (1 - arc * 0.3) * metaRestMul() * gapMulAt(t) / trimOf("biwa");
-    afterRaw("biwa", now, (t - now) + rest, biwaPhrase);
+    afterSpan("biwa", now, (t - now) + rest * farTimeMul("biwa", now), biwaPhrase);
   }
 
   // ==========================================================================
@@ -2589,7 +2666,7 @@ window.ZankyoAudio = (function () {
     }
     if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
-    var beat = 0.4 / pace, t = pulseSnap(now + 0.05, arc), prev = null, sched = [];
+    var beat = 0.4 / pace * farTimeMul("koto", now), t = pulseSnap(now + 0.05, arc), prev = null, sched = [];   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = pulseQuantDur(Math.max(0.12, n.durBeats * beat), arc);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
@@ -2620,7 +2697,7 @@ window.ZankyoAudio = (function () {
     kotoState.lastSpan = t - now;
     tok.until = t + margin;
     var rest = (1.6 + S.koto.next() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() * gapMulAt(t) / trimOf("koto");  // sparse in jo; meta tilts density ±12%
-    afterRaw("koto", now, (t - now) + rest, kotoPhrase);
+    afterSpan("koto", now, (t - now) + rest * farTimeMul("koto", now), kotoPhrase);
   }
   function kotoNote(freq, t, dur, opts) { stringNote("koto", freq, t, dur, opts); }
 
@@ -2652,7 +2729,7 @@ window.ZankyoAudio = (function () {
     }
     if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
-    var beat = 0.28 / pace, t = pulseSnap(now + 0.05, arc);
+    var beat = 0.28 / pace * farTimeMul("shamisen", now), t = pulseSnap(now + 0.05, arc);   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
       var dur = pulseQuantDur(Math.max(0.1, Math.min(n.durBeats, 1) * beat), arc);
@@ -2667,7 +2744,7 @@ window.ZankyoAudio = (function () {
     shamiState.lastSpan = t - now;
     tok.until = t + margin;
     var rest = (2.2 + S.shamisen.next() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) * metaRestMul() * gapMulAt(t) / trimOf("shamisen");  // mostly absent in jo; meta tilts density ±12%
-    afterRaw("shamisen", now, (t - now) + rest, shamisenPhrase);
+    afterSpan("shamisen", now, (t - now) + rest * farTimeMul("shamisen", now), shamisenPhrase);
   }
   function shamisenNote(freq, t, dur, opts) { stringNote("shamisen", freq, t, dur, opts); }
 
@@ -2763,7 +2840,7 @@ window.ZankyoAudio = (function () {
     t = res.end;
     emitEvent({ cat: "taiko", label: kind === "matsuri" ? "祭 " + res.pat : "地 " + res.pat, detail: Math.round(bpm) + "bpm" }, now);
     var rest = (2 + R.next() * 4) * (1 - arc * 0.7) * (festival ? 0.25 : 1) / trimOf("taiko");
-    afterRaw("taiko", now, (t - now) + rest, taikoPulse);
+    afterSpan("taiko", now, (t - now) + rest * farTimeMul("taiko", now), taikoPulse);
   }
 
   // 颪 OROSHI — the accelerating roll into the kyū (the ha's last sub-scene):
@@ -2782,7 +2859,7 @@ window.ZankyoAudio = (function () {
     }
     pulse.bpm = 60 / to; pulse.beat = to; pulse.anchor = t; pulse.active = true;
     emitEvent({ cat: "taiko", label: "颪 oroshi", detail: n + " strokes over " + Math.round(t - now) + "s · " + Math.round(1000 * from) + "→" + Math.round(1000 * to) + " ms" }, now);
-    afterRaw("taiko", now, (t - now) + S.taiko.rnd(0.6, 1.6), taikoPulse);
+    afterSpan("taiko", now, (t - now) + S.taiko.rnd(0.6, 1.6) * farTimeMul("taiko", now), taikoPulse);
   }
 
   // ==========================================================================
@@ -2970,7 +3047,7 @@ window.ZankyoAudio = (function () {
     var dur = 4 + R.next() * 5;
     paSpeak(now + 0.05, dur, {});
     emitEvent({ cat: "pa", label: "放送 announcement", detail: dur.toFixed(1) + "s · " + arcPhase(now) }, now);
-    afterRaw("pa", now, dur + 30 + R.next() * 50, paCycle);
+    afterSpan("pa", now, dur + (30 + R.next() * 50) * farTimeMul("pa", now), paCycle);
   }
 
   // ==========================================================================
@@ -3145,6 +3222,7 @@ window.ZankyoAudio = (function () {
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded
+    farTimeSetup();                              // …and what its time departures do
     // The opening field, re-read through tonight's tuning: 減 narrows the
     // semitone pairs (the opening modulate above goes straight to MODES, not
     // through setMode, so it needs saying here), 撓 restretches the octave.
