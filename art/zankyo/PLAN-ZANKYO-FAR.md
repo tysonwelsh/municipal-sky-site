@@ -206,3 +206,12 @@ reviewed by the critic in the same round.
    hush) and while stopped (a full-window audition). The 選局 knob is
    unchanged.
 3. Attribution and the log lines unchanged.
+
+## 9. Ruling: the far target is pinned (2026-09-06)
+
+The base's own tail compresses as the owner asks the receiver for more
+broadcasts, so a target re-derived as "3× the current home p95" gets easier
+every phase. The far target is therefore PINNED at the original numbers:
+far p95 17.4 (3× the 2.1.0-rc.1 home p95) and the W4 1-in-50 at 29.0 (5×).
+Identity re-bases and home-only calibration continue; only the target is
+fixed.

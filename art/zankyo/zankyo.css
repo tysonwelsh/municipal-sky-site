@@ -209,7 +209,6 @@
 .zankyo-title::before { color: var(--cyan); animation: zk-glitch 3.6s infinite steps(2); clip-path: inset(0 0 62% 0); }
 .zankyo-title::after  { color: var(--magenta); animation: zk-glitch 2.7s infinite steps(2) reverse; clip-path: inset(58% 0 0 0); }
 @keyframes zk-glitch { 0%,92%,100% { transform: translate(0,0); } 93% { transform: translate(-2px,1px); } 96% { transform: translate(2px,-1px); } }
-.zankyo-subtitle { margin: 7px 0 0; font-size: 11px; letter-spacing: 0.18em; color: var(--ink-dim); }
 
 /* ---------------------------------------------------------------------------
    CRT MONITOR — plastic housing, recessed curved glass, power LED
@@ -305,17 +304,13 @@
   background: linear-gradient(180deg, #1d1d24, #111116 70%, #0d0d11);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
 }
-/* etched zone scale above the housing — 序/破/急 centered in their spans */
-.zk-bar-scale { grid-column: 1; position: relative; height: 13px; }
-.zk-bar-zl {
-  position: absolute; bottom: 1px; transform: translateX(-50%); white-space: nowrap;
-  font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.14em; color: #7d7887;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);   /* etched */
+/* The 序/破/急 zone scale is gone (the owner, for vertical compactness before
+   sharing): its 13 px row went with it. The two phase-split ticks moved INSIDE
+   the housing, where they mark the same places and cost no height at all. */
+.zk-bar-tick {
+  position: absolute; top: 0; bottom: 0; width: 1px; z-index: 3; pointer-events: none;
+  background: rgba(120, 114, 132, 0.45); box-shadow: 1px 0 0 rgba(0, 0, 0, 0.55);
 }
-.zk-bar-zl-jo  { left: 12.5%; color: rgba(var(--cyan-rgb), 0.6); }
-.zk-bar-zl-ha  { left: 52.5%; color: rgba(var(--amber-rgb), 0.6); }
-.zk-bar-zl-kyu { left: 90%;   color: rgba(var(--red-rgb), 0.7); }
-.zk-bar-tick { position: absolute; bottom: 0; width: 1px; height: 5px; background: #5a5563; box-shadow: 1px 0 0 rgba(0, 0, 0, 0.7); }
 /* recessed housing */
 .zk-bar-housing {
   grid-column: 1; position: relative; padding: 5px 6px; border-radius: 3px; border: 1px solid #030305;
@@ -1046,7 +1041,6 @@
 @media (max-width: 700px) {
   .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
   .zankyo-frame { padding: 20px 13px 30px; }
-  .zankyo-sub-long { display: none; }
   .zankyo-title { letter-spacing: 0.06em; }
   .zk-vent, .zk-warn, .zk-sticker, .zk-warn-small { display: none; }
   /* 逸脱: the long vents go on a small panel, but the switch needs something to

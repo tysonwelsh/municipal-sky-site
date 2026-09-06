@@ -22,6 +22,14 @@ var path = require("path");
 var args = process.argv.slice(2);
 var RUN = parseFloat(args[0] || "1800"); if (!isFinite(RUN) || RUN <= 0) RUN = 1800;
 var SEED = parseInt(args[1] || "3042", 10) || 3042;
+// THE FAR TARGET IS PINNED (plan §9, 2026-09-06). It was "3× the base p95",
+// re-derived each phase — but the base's own tail compresses as the owner asks
+// the receiver for more broadcasts, so a re-derived target got EASIER every
+// phase (17.4 → 17.0 → 15.5) exactly as the far tail was being asked to go
+// further. These are the original numbers, 3× and 5× the 2.1.0-rc.1 home p95,
+// and they do not move again. Identity re-bases and home-only calibration
+// continue; only the target is fixed.
+var FAR_TARGET = 17.4, FAR_TARGET_5X = 29.0;
 var JSON_OUT = null, REPRO = false, QUIET = false, JITTER = 0, FAR = null, DIST_JSON = null, BASE_FILE = path.join(__dirname, "_probe-base.json");
 for (var ai = 2; ai < args.length; ai++) {
   if (args[ai] === "--json") JSON_OUT = args[++ai];
@@ -726,8 +734,12 @@ if (args[0] === "batch") {
     out.push(pad("median", 6) + lpad(p50, 7) + DIST_KEYS.map(function (k) { return lpad(stats[k].median, 10); }).join(""));
     out.push(pad("MAD", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(stats[k].mad, 10); }).join(""));
     out.push(pad("scale", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(Math.max(stats[k].mad * 1.4826, DIST_FLOORS[k]).toFixed(3), 10); }).join("") + "   (max(1.4826·MAD, floor))");
-    out.push("D: p50 " + p50 + " · p95 " + p95 + " · max " + Math.max.apply(null, Ds) + " · min " + Math.min.apply(null, Ds) + (useBase && useBase.meta && useBase.meta.p95 ? " · 3× base p95 = " + (3 * useBase.meta.p95).toFixed(1) + " · 5× = " + (5 * useBase.meta.p95).toFixed(1) : ""));
-    out.push("   home-only (" + homeOk.length + " of " + ok.length + ", the basis for the gate): p50 " + hp50 + " · p95 " + hp95 + " · max " + Math.max.apply(null, homeDs).toFixed(2));
+    out.push("D: p50 " + p50 + " · p95 " + p95 + " · max " + Math.max.apply(null, Ds) + " · min " + Math.min.apply(null, Ds));
+    out.push("   home-only (" + homeOk.length + " of " + ok.length + "): p50 " + hp50 + " · p95 " + hp95 + " · max " + Math.max.apply(null, homeDs).toFixed(2) +
+      (useBase && useBase.meta && useBase.meta.p95 ? "   [3× this base's p95 would be " + (3 * useBase.meta.p95).toFixed(1) + " — NOT the gate, see below]" : ""));
+    out.push("   THE FAR TARGET IS PINNED (plan §9): p95 ≥ " + FAR_TARGET + " · W4 1-in-50 ≥ " + FAR_TARGET_5X +
+      "   — this run: p95 " + p95 + " (" + (p95 >= FAR_TARGET ? "clears" : "SHORT OF") + " " + FAR_TARGET + ") · nights ≥ " + FAR_TARGET + ": " +
+      Ds.filter(function (d) { return d >= FAR_TARGET; }).length + "/" + Ds.length + " · ≥ " + FAR_TARGET_5X + ": " + Ds.filter(function (d) { return d >= FAR_TARGET_5X; }).length);
     // W1+: D by drawn departure — which departures carry the distance, and which draw without registering
     var byDep = {};
     ok.forEach(function (r) { var ids = r.far && r.far.ids ? r.far.ids : []; ids.forEach(function (id) { (byDep[id] = byDep[id] || []).push(r.DS.D); }); });
@@ -735,7 +747,7 @@ if (args[0] === "batch") {
     if (depKeys.length) out.push("D by departure (median · n): " + depKeys.map(function (k) { return k + " " + q(byDep[k], 0.5).toFixed(1) + "·" + byDep[k].length; }).join(" · "));
     var nDep = ok.filter(function (r) { return r.far && !r.far.home; }).length;
     if (nDep) out.push("departed nights " + nDep + "/" + ok.length + " · their D p50 " + q(ok.filter(function (r) { return r.far && !r.far.home; }).map(function (r) { return r.DS.D; }), 0.5).toFixed(2) + " · home p50 " + q(ok.filter(function (r) { return !r.far || r.far.home; }).map(function (r) { return r.DS.D; }), 0.5).toFixed(2));
-    out.push("seeds with D ≥ 3× base p95: " + ok.filter(function (r) { return useBase.meta.p95 && r.DS.D >= 3 * useBase.meta.p95; }).map(function (r) { return r.seed; }).join(" ") + " · ≥ 5×: " + ok.filter(function (r) { return useBase.meta.p95 && r.DS.D >= 5 * useBase.meta.p95; }).map(function (r) { return r.seed; }).join(" "));
+    out.push("seeds ≥ " + FAR_TARGET + ": " + ok.filter(function (r) { return r.DS.D >= FAR_TARGET; }).map(function (r) { return r.seed; }).join(" ") + " · ≥ " + FAR_TARGET_5X + ": " + ok.filter(function (r) { return r.DS.D >= FAR_TARGET_5X; }).map(function (r) { return r.seed; }).join(" "));
     results.filter(function (r) { return r.error; }).forEach(function (r) { out.push("seed " + r.seed + " FAILED: " + r.error + " " + r.stderr); });
     console.log(out.join("\n"));
     fs.writeFileSync(path.join(tmpDir, "batch" + (bFar != null ? "-far" + bFar : "") + ".json"), JSON.stringify({ runS: bRun, far: bFar, seeds: seeds, results: ok, stats: stats, p50: p50, p95: p95 }, null, 1));
