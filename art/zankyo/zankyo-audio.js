@@ -334,7 +334,7 @@ window.ZankyoAudio = (function () {
   //
   // Determinism: the subject is a MEMORY, not a decision. Nothing here draws.
   var farSubject = null;   // { notes, at, lead, taken, n, mode, plan }
-  var farHetero = null, farHocket = null, farSwarm = null;
+  var farHetero = null, farHocket = null, farSwarm = null, farPoly = null, farMirror = null;
 
   // Which departure owns the ensemble right now, and its voice list. Only one
   // can: they are all "everybody plays this phrase" and two at once is mud, so
@@ -365,6 +365,76 @@ window.ZankyoAudio = (function () {
   }
   function farEntryCount(E) {
     return E.kind === "swarm" ? Math.max(2, Math.round(E.p.entries)) : E.voices.length;
+  }
+
+  // ==========================================================================
+  // 鏡 STRICT MIRROR (W2) — every phrase answered by its retrograde-inversion
+  // ==========================================================================
+  // The plan: "every phrase answered by its exact retrograde-inversion; the
+  // ledger enforces it." The engine already has both transforms and a real
+  // obligation ledger, but the ledger CHOOSES its answer; 鏡 removes the
+  // choice. The answer is rendered directly on the answering voice — the same
+  // way the sankyoku shadow already works — so it is exact by construction
+  // rather than exact by hope, and it lands at lagBeats rather than at
+  // whenever that voice next happened to wake (the critic measured 10–17 s
+  // between accidental mirrors at home; this one answers inside a phrase).
+  //
+  // The axis is where the inversion pivots: the tonic, the fifth, or the
+  // phrase's own last note — the third being the one that keeps the answer in
+  // the same register as the call.
+  // 鏡 also stands the loose sankyoku shadows down (the koto shadowing the
+  // shakuhachi, the shamisen shadowing the koto): they inject notes into
+  // exactly the voice that is about to answer, and a night whose rule is
+  // "every phrase answered EXACTLY" cannot also have voices half-echoing each
+  // other by the dice. Same reasoning as the idioms standing aside under 影.
+  var FAR_MIRROR_ANSWER = { shakuhachi: "koto", koto: "shamisen", shamisen: "koto", biwa: "koto", hichiriki: "shakuhachi" };
+  // The inversion is computed in UNFOLDED degree space and then transposed by
+  // whole octaves to fit the register. Folding each note as it was made — which
+  // is what foldDeg does, one octave at a time — silently changed the intervals
+  // of any note that landed outside the table, so the "exact" retrograde-
+  // inversion was exact only for phrases that happened to stay in range. An
+  // octave transposition of the whole answer preserves every interval.
+  function farMirrorOf(phrase, axisDeg) {
+    var out = [], i, lo = 1e9, hi = -1e9, d;
+    for (i = phrase.length - 1; i >= 0; i--) {
+      d = 2 * axisDeg - phrase[i].deg;
+      out.push({ deg: d, durBeats: phrase[i].durBeats });
+      if (d < lo) lo = d; if (d > hi) hi = d;
+    }
+    var n = field.size, shift = 0;
+    while (lo + shift < 0) shift += n;
+    while (hi + shift > SCALE.length - 1) shift -= n;
+    for (i = 0; i < out.length; i++) out[i].deg = Math.max(0, Math.min(SCALE.length - 1, out[i].deg + shift));
+    return out;
+  }
+  // Answer a phrase that has just been scheduled. `sched` is what the caller
+  // rendered: [{ f, t, dur }]. Nothing is drawn — the answer is determined by
+  // the call — so 鏡 costs no randomness and cannot perturb a stream.
+  function farMirrorAnswer(voice, phrase, sched, now, beat) {
+    if (!farMirror || !phrase || phrase.length < 3 || !sched || !sched.length) return;
+    var ans = FAR_MIRROR_ANSWER[voice];
+    if (!ans || !seated(ans, now)) return;
+    var axisDeg = farMirror.axis === "tonic" ? scaleIndexOf(0)
+                : farMirror.axis === "fifth" ? scaleIndexOf(3)
+                : phrase[phrase.length - 1].deg;
+    // The answer FOLLOWS the call — lagBeats after the phrase ends, not after
+    // it begins. Measuring from the first note put the answer 0.2 s in, which
+    // is not an answer, it is a doubling.
+    var last = sched[sched.length - 1];
+    var m = farMirrorOf(phrase, axisDeg), lag = farMirror.lagBeats * beat, t = last.t + last.dur + lag;
+    var note = ans === "koto" ? kotoNote : ans === "shamisen" ? shamisenNote : ans === "shakuhachi" ? shakuhachiNote : kotoNote;
+    var t0 = t;
+    for (var i = 0; i < m.length; i++) {
+      var d = Math.max(0.12, m[i].durBeats * beat);
+      note(SCALE[m[i].deg].freq, t, d, { gain: 0.7 });
+      t += d;
+    }
+    // The answer is that voice's utterance: hold its air across the span so it
+    // does not play its own phrase over its own answer. Without this the answer
+    // was there in the stream and inaudible as a shape, because the answering
+    // voice was talking across it.
+    airHold[ans] = { from: t0 - 0.2, until: t + 0.3 };
+    emitEvent({ cat: "far", label: "鏡 answered", detail: voice + " → " + ans + " · " + m.length + " notes · axis " + farMirror.axis + " · lag " + lag.toFixed(2) + "s after the phrase" }, last.t + last.dur);
   }
 
   // Is this voice's entry in the current gesture still ahead of it? The same
@@ -470,7 +540,7 @@ window.ZankyoAudio = (function () {
 
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
-    farHetero = null; farHocket = null; farSwarm = null; farSubject = null;
+    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
@@ -498,6 +568,8 @@ window.ZankyoAudio = (function () {
     if ((p = farNight.dep.hetero)) farHetero = p;
     if ((p = farNight.dep.hocket)) farHocket = p;
     if ((p = farNight.dep.swarm)) farSwarm = p;      // read now, engaged in rc.12
+    if ((p = farNight.dep.poly)) { farPoly = p; farPolyN = 0; }
+    if ((p = farNight.dep.mirror)) farMirror = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
   }
   // 遅 — one cycle glacial (a forty-minute jo made of single notes) or frantic,
@@ -1895,9 +1967,13 @@ window.ZankyoAudio = (function () {
   // implies: 重 copies the line five ways (5/2 against the air's usual two),
   // 継 splits it rather than copying it and only pays for its 2–3 passes, and
   // 影 already equalises its own beats and needs nothing.
-  var FAR_ENS_REST = { hetero: 6, hocket: 4.2, canon: 1, swarm: 7 };
+  var FAR_ENS_REST = { hetero: 7.5, hocket: 4.6, canon: 1, swarm: 7 };
   var FAR_ENS_GAP = { hetero: 10, hocket: 7, canon: 6, swarm: 12 };   // seconds between gestures
-  function farEnsembleRest() { var E = farEnsemble(); return E ? (FAR_ENS_REST[E.kind] || 1) : 1; }
+  function farEnsembleRest() {
+    var E = farEnsemble(), m = E ? (FAR_ENS_REST[E.kind] || 1) : 1;
+    if (farMirror) m *= 1.8;                     // 鏡: an answered phrase is two phrases
+    return m;
+  }
   function gapMulAt(t) { return 0.85 + 0.3 * wxAt(t).gapMul; }   // the weather's ±15 % on phrase gaps
   // Is this voice seated right now? The cycle's seating, its entry rule
   // (koto/shamisen "from the ha"; the shakuhachi "for the reprise only"),
@@ -1972,11 +2048,23 @@ window.ZankyoAudio = (function () {
   }
   // Blend a freely-chosen onset toward the nearest UPCOMING taiko beat.
   // Only ever delays (audio can't rewind), and never by more than one beat.
-  function pulseSnap(t, arc) {
+  // 逸脱 多: under polymeter each magnetized voice is pulled to a DIFFERENT
+  // drum's meter, which is the half of the departure that makes it music
+  // rather than a drum exercise — the koto hears the 3, the shamisen the 4,
+  // the biwa the 7, and their phrases fall apart from one another accordingly.
+  var FAR_POLY_VOICE = { koto: 0, shamisen: 1, biwa: 2 };
+  function pulseBeatFor(voice) {
+    if (!farPoly || !pulse.active || voice == null || FAR_POLY_VOICE[voice] == null) return pulse.beat;
+    var m = farPoly.meters;
+    return pulse.beat * m[FAR_POLY_VOICE[voice] % m.length] * 0.5;   // the drum's own cycle, in the shared tatum
+  }
+  function pulseSnap(t, arc, voice) {
     var s = pulseStrength(arc);
     if (s <= 0) return t;
-    var grid = pulse.anchor + Math.ceil((t - pulse.anchor) / pulse.beat) * pulse.beat;
-    if (grid - t > pulse.beat + 1e-6) return t;  // degenerate-grid guard
+    var b = pulseBeatFor(voice);
+    if (!(b > 0)) return t;
+    var grid = pulse.anchor + Math.ceil((t - pulse.anchor) / b) * b;
+    if (grid - t > b + 1e-6) return t;           // degenerate-grid guard
     return t + (grid - t) * s;
   }
   // Light duration quantization above arc 0.7 — note lengths lean ~30% toward
@@ -2730,6 +2818,7 @@ window.ZankyoAudio = (function () {
       prev = f;
       t += dur + S.shakuhachi.next() * 0.05;
     }
+    farMirrorAnswer("shakuhachi", phrase, sched, now, beat);   // 鏡
     shakuState.lastSpan = t - now;
     tok.until = t + margin;                      // the claim's true footprint: the phrase as rendered + the margin
     // 〰 SANKYOKU HETEROPHONY — in the ha especially, the koto sometimes reads
@@ -2737,7 +2826,7 @@ window.ZankyoAudio = (function () {
     // list, its own ornament choices, a hair sharp. The shadow is a GRANTED
     // overlap: it asks the air (a second holder needs the scene's limit or
     // the overlap dice) and the koto must be seated.
-    if (sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08) && seated("koto", now) && airClaimAt(now, "koto", t - now, 0)) {
+    if (!farMirror && sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08) && seated("koto", now) && airClaimAt(now, "koto", t - now, 0)) {
       var lag = S.shakuhachi.rnd(0.15, 0.4), sharp = Math.pow(2, S.shakuhachi.rnd(2, 3.5) / 1200), sprev = null;
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
@@ -3147,7 +3236,7 @@ window.ZankyoAudio = (function () {
     if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
     // pulse) — but never on a canon take: a canon keeps its own time.
-    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc), prev = null, sched = [];   // 逸脱 遅/弛/影
+    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc, "koto"), prev = null, sched = [];   // 逸脱 遅/弛/影/多
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.12 * cn.cs, n.durBeats * beat);
       if (!cn.take) dur = pulseQuantDur(dur, arc);
@@ -3160,7 +3249,7 @@ window.ZankyoAudio = (function () {
     // 〰 sankyoku heterophony downward: the shamisen sometimes shadows the koto
     // a breath behind — same page, its own accents, a hair sharp (a granted
     // overlap, as above).
-    if (sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07) && seated("shamisen", now) && airClaimAt(now, "shamisen", t - now, 0)) {
+    if (!farMirror && sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07) && seated("shamisen", now) && airClaimAt(now, "shamisen", t - now, 0)) {
       var lag = S.koto.rnd(0.15, 0.4), sharp = Math.pow(2, S.koto.rnd(2, 3.5) / 1200);
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
@@ -3177,6 +3266,7 @@ window.ZankyoAudio = (function () {
       }
       t = gt; emitEvent({ cat: "koto", label: "gliss", detail: (up ? "↑" : "↓") + gn }, now);
     }
+    farMirrorAnswer("koto", phrase, sched, now, beat);         // 鏡
     kotoState.lastSpan = t - now;
     tok.until = t + margin;
     var rest = (1.6 + S.koto.next() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() * gapMulAt(t) / trimOf("koto");  // sparse in jo; meta tilts density ±12%
@@ -3216,7 +3306,7 @@ window.ZankyoAudio = (function () {
     if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
     // pulse) — never on a canon take.
-    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc);   // 逸脱 遅/弛/影
+    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc, "shamisen");   // 逸脱 遅/弛/影/多
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq * cn.sharp;   // 重
       // 影: no cap on the note's length — the shamisen alone clipped durBeats at
@@ -3301,7 +3391,70 @@ window.ZankyoAudio = (function () {
     ji:      [["D.d.d.d.", 3], ["D.d.D.d.", 2], ["D...d...", 2], ["D.d.d.k.", 1]],
     matsuri: [["D.ssD.s.", 3], ["DsdsD.k.", 2], ["D.D.ss.k", 2], ["dsdsdsDk", 2], ["D..sD.sk", 1.5]],   // don-doko-don, the yatai-bayashi shape
   };
+  // ==========================================================================
+  // 多 POLYMETER (W2) — three drums, three meters, one tatum
+  // ==========================================================================
+  // The plan: "3 against 4 against 7 across its three drums; the pulse magnet
+  // pulls each voice to a different drum." At home the three drums read one
+  // shared pattern string, so they are one instrument with three timbres — the
+  // critic measured it: the share of a drum's inter-onsets near its own median
+  // is 8–17 % for the shime and 9–10 % for the ō-daiko, i.e. no periodicity of
+  // its own at all. Under 多 each drum keeps ITS OWN cycle against a common
+  // tatum, and the phase carries across calls (farPolyN), so the three really
+  // do converge, pass and diverge over minutes rather than re-aligning at every
+  // pattern boundary. The figures are the drums' own: the ō-daiko marks the
+  // downbeat and one interior stroke, the shime fills, the ka chatters.
+  var farPolyN = 0;
+  // Offsets in TATUMS within each drum's own meter — not fractions of it, which
+  // was the first version and meant the ka (meter 7) never matched a quarter
+  // and struck exactly zero times in half an hour. Every drum marks its own
+  // downbeat, so its median inter-onset IS its meter and the three periods
+  // stand in the drawn ratio; the interior strokes are occasional, so they
+  // colour the figure without moving that median.
+  function farPolyFig(drum, m) {
+    if (drum === "odaiko") return [0];
+    if (drum === "shime") return [0, Math.ceil(m / 2)];
+    return [1, m - 1];                           // the ka chatters off the beat
+  }
+  var FAR_POLY_CH = { odaiko: ["D", "d"], shime: ["S", "s"], ka: ["k", "k"] };
+  function farPolyPattern(t0, beat, hitP) {
+    var R = S.taiko, half = beat * 0.5, span = 32;
+    var m = farPoly.meters, drums = ["odaiko", "shime", "ka"], rows = {};
+    for (var d = 0; d < drums.length; d++) rows[drums[d]] = new Array(span);
+    for (var i = 0; i < span; i++) {
+      var n = farPolyN + i;
+      for (d = 0; d < drums.length; d++) {
+        var dr = drums[d], mm = m[d % m.length], pos = n % mm, fig = farPolyFig(dr, mm), hit = null;
+        for (var f = 0; f < fig.length; f++) {
+          if (pos !== fig[f]) continue;
+          // the downbeat is the meter; the interior strokes are occasional so
+          // they do not move the drum's median inter-onset off its own period
+          var interior = f > 0;
+          // 0.62 overall: three drums each on their own downbeat is about twice
+          // the strike rate of the one shared pattern they read at home, and
+          // that took the peak concurrent sources to 112 against a hard 110 on
+          // a night that also carried 重 (the critic's number, and the one with
+          // 群 and 雲 still to come). Thinning the strikes keeps all three
+          // meters — the periodicity is in WHERE they fall, not how many.
+          if (R.next() >= hitP * 0.62 * (interior ? 0.15 : 1) * (dr === "ka" ? 0.55 : 1)) break;
+          var accent = !interior && dr !== "ka";
+          taikoHit(t0 + i * half, accent, dr);
+          hit = FAR_POLY_CH[dr][accent ? 0 : 1];
+          break;
+        }
+        rows[dr][i] = hit || ".";
+      }
+    }
+    farPolyN += span;
+    // ONE PATTERN STRING PER DRUM, in the engine's own "地 <string>" shape.
+    // The kit is not in the note stream — it is in the taiko event stream as a
+    // pattern at half-beat resolution — so a polymetric kit that emitted one
+    // merged string would be unreadable to anything downstream (and would hide
+    // exactly the periodicity that IS the departure). Three drums, three rows.
+    return { end: t0 + span * half, pat: rows.odaiko.join(""), rows: rows, meters: m.join(":") };
+  }
   function taikoPattern(t0, kind, beat, hitP) {
+    if (farPoly) return farPolyPattern(t0, beat, hitP);   // 逸脱 多
     var R = S.taiko, pat = R.pickW(TAIKO_PATTERNS[kind]), t = t0, half = beat * 0.5;
     for (var i = 0; i < pat.length; i++) {
       var ch = pat.charAt(i);
@@ -3324,7 +3477,13 @@ window.ZankyoAudio = (function () {
     // does the GRID it publishes — otherwise the strings magnetize to a pulse
     // that never left home and a glacial cycle keeps a brisk heartbeat.
     var tmul = farTimeMul("taiko", now);
-    var beat = 60 / (50 + arc * 90) * tmul, bpm = 60 / beat, t = now + 0.05;
+    // 逸脱 多: a polymetric kit does NOT ride the arc. Three meters are only
+    // audible against a tatum that holds still — measured, letting the tempo
+    // climb from 50 to 140 bpm across a cycle blurred each drum's own period
+    // into the next and the periodicity share barely left its floor. So under
+    // 多 the kit is a machine at a fixed pulse (it still dilates with 遅 and
+    // 弛, which move the whole world), and the arc is spent on density instead.
+    var beat = (farPoly ? 60 / 74 : 60 / (50 + arc * 90)) * tmul, bpm = 60 / beat, t = now + 0.05;
     pulse.bpm = bpm; pulse.beat = beat; pulse.anchor = t; pulse.active = true;   // publish the grid — the ensemble magnetizes to this
     var kyu = arcPhase(now) === "kyū";
     var festival = !!(visitActive && visitActive.name === "the festival" && now < visitActive.until);
@@ -3335,7 +3494,9 @@ window.ZankyoAudio = (function () {
     var kk = getLayerParam("taiko", "kakegoe", 0.5);
     if (kind === "matsuri" && R.next() < kk * (festival ? 0.6 : kyu ? 0.35 : 0.15)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: festival ? "祭" : arcPhase(now) }, now); }
     t = res.end;
-    emitEvent({ cat: "taiko", label: kind === "matsuri" ? "祭 " + res.pat : "地 " + res.pat, detail: Math.round(bpm) + "bpm" }, now);
+    if (res.rows) {                              // 逸脱 多: one line per drum, each in its own meter
+      for (var dn in res.rows) emitEvent({ cat: "taiko", label: "地 " + res.rows[dn].join(""), detail: Math.round(bpm) + "bpm · " + dn + " · 多 " + res.meters }, now);
+    } else emitEvent({ cat: "taiko", label: kind === "matsuri" ? "祭 " + res.pat : "地 " + res.pat, detail: Math.round(bpm) + "bpm" }, now);
     var rest = (2 + R.next() * 4) * (1 - arc * 0.7) * (festival ? 0.25 : 1) / trimOf("taiko");
     afterSpan("taiko", now, (t - now) + rest * farTimeMul("taiko", now), taikoPulse);
   }
