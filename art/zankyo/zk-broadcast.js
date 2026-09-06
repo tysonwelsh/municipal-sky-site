@@ -272,7 +272,13 @@
       dialLast = now; stats.dial = (stats.dial || 0) + 1;
       return "locked";
     }
-    if (live || (armed && armed.t0 != null)) return "snow";  // a signal is up: the dial only makes snow
+    // A signal is up, OR one is ARMED AND WAITING — which is exactly how a
+    // planned broadcast lives between plan time and its host scene. Locking in
+    // that window replaces `armed`, and then the visitation's own fire()
+    // refuses and the engine falls back to the synthesized Etenraku: the cycle
+    // keeps a broadcast but silently loses the reel the plan drew. 選局 has
+    // this guard; the dial did not. (Critic W1 r2, D1.)
+    if (live || armed) return "snow";
     var sc = T.scene(), cy = T.cycle();
     if (!sc || sc.type === "kyu" || sc.type === "release" || sc.type === "oroshi") return "snow";   // the wall and the hush are not the dial's to interrupt
     // IMMEDIATELY, not at the next legal moment: t0 is now + the static lead,

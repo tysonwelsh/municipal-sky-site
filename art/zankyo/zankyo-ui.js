@@ -543,31 +543,45 @@
   // not a reel is there. Rate-limiting, the KIRU's hush and "a signal is
   // already up" all live in the engine and the receiver, which know.
   var DIAL_THRESHOLD = 200;      // units of knob travel ≈ 540° ≈ a turn and a half
-  var DIAL_TAU = 2.2;            // seconds: the window forgets at this rate
+  var DIAL_WINDOW = 4;           // seconds: "within a few seconds", as a real window
   function wireDial() {
     var mount = document.getElementById("zankyo-dial");
     if (!mount || !Z.dial) return;
-    var travel = 0, lastT = 0, lastV = null;
+    // A RING OF (time, travel), summed over the last DIAL_WINDOW seconds — not
+    // an exponentially decaying accumulator, which is what shipped in rc.7 and
+    // could not work. A decaying sum plateaus at rate × τ, so with τ 2.2 s and
+    // a 200-unit threshold the dial could only ever lock above 245 °/s, while
+    // the plan's own sentence — 540° within a few seconds — is about 180 °/s
+    // and plateaued at 73 of 200: it never locked, however long you swept.
+    // The critic measured it: a 648° drag over 1.28 s did nothing. The plan
+    // describes a fixed window, so it is one. A slow drift still cannot reach
+    // it (200 units over a minute puts ~13 in any 4 s window) and a sweep back
+    // and forth still counts, because it is the same wrist.
+    var ring = [], lastV = null;
     mount.appendChild(makeKnob({
       min: 0, max: 100, step: 0.5, value: 50,
-      label: "\u63a1\u5f15",                    // 掃引 — a name, not an instruction
+      label: "\u6383\u5f15",                    // 掃引 — a name, not an instruction
       cls: "zk-knob-dial",
       format: function (v) { return Math.round(v) + ""; },
       onInput: function (v) {
         var now = (window.performance && performance.now) ? performance.now() / 1000 : Date.now() / 1000;
         var d = lastV == null ? 0 : Math.abs(v - lastV);
         lastV = v;
-        if (lastT) travel *= Math.exp(-(now - lastT) / DIAL_TAU);
-        lastT = now;
-        travel += d;
+        ring.push([now, d]);
+        var sum = 0, keep = [];
+        for (var i = 0; i < ring.length; i++) if (now - ring[i][0] <= DIAL_WINDOW) { keep.push(ring[i]); sum += ring[i][1]; }
+        ring = keep;
         // how hard the hand is moving, for the snow and the band's centre
-        var amt = Math.min(1, travel / DIAL_THRESHOLD);
+        var amt = Math.min(1, sum / DIAL_THRESHOLD);
         try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(0.25 + 0.75 * amt); } catch (e) {}
-        var want = travel >= DIAL_THRESHOLD;
+        var want = sum >= DIAL_THRESHOLD;
         var got = "snow";
         try { got = Z.dial(amt, want); } catch (e2) {}
-        if (got === "locked") { travel = 0; lastT = 0; }      // the gesture is spent
-        else if (want) travel = DIAL_THRESHOLD * 0.6;         // refused: it must be earned again, but not from nothing
+        if (got === "locked") ring.length = 0;                // the gesture is spent
+        else if (want) {                                       // refused: earned again, but not from nothing
+          var drop = sum * 0.4;
+          while (ring.length && drop > 0) { drop -= ring[0][1]; ring.shift(); }
+        }
       },
     }));
   }

@@ -292,8 +292,7 @@ window.ZankyoAudio = (function () {
     // motor. So the time factor is the reciprocal of the pitch multiplier: as
     // the pitch falls the seconds get longer.
     if (farVari) m /= farGlideMul(t);
-    if (farCanon && farCanon.of[layer]) m *= farCanon.of[layer];
-    return m;
+    return m;                                    // 影 is NOT here: it owns the plucked voices' beat outright (see farCanonTake)
   }
   // 影 — a CANON, not merely three tempos (critic W1 r1 item 12, confirmed by
   // the orchestrator): the koto, shamisen and biwa take THE SAME MATERIAL,
@@ -309,33 +308,96 @@ window.ZankyoAudio = (function () {
   // drawn here — the subject is a memory, not a decision — so the canon costs
   // no randomness and cannot perturb a stream.
   var FAR_CANON_VOICES = ["koto", "shamisen", "biwa"];
-  var farSubject = null;                         // { notes, at, taken:{voice:1}, n }
-  function farCanonSubject(voice, phrase, now, center) {
-    if (!farCanon || !farCanon.of[voice] || !phrase || !phrase.length) return phrase;
-    var win = farCanon.spreadS * 3 + 8;
-    if (farSubject && now - farSubject.at < win && !farSubject.taken[voice]) {
-      farSubject.taken[voice] = 1; farSubject.n++;
-      return fitToRegister(farSubject.notes, center);        // the same material, in this voice's register
+  var FAR_CANON_HOME = { koto: 0.4, shamisen: 0.28, biwa: 0.9 };   // their own beats, for the density-preserving base above
+  // the phrase functions, by name, so the canon's leader can call the others in
+  // (they are declared far below; a var reference is resolved at call time)
+  var FAR_CANON_START = { koto: function (t) { kotoPhrase(t); }, shamisen: function (t) { shamisenPhrase(t); }, biwa: function (t) { biwaPhrase(t); } };
+  var farSubject = null;                         // { notes, at, beat, lead, taken, n }
+  // A voice asks whether it is playing the canon, and on what terms. Returns
+  // { phrase, t0, cs, take } — the material, WHEN it enters, and the scale its
+  // whole rendering runs at.
+  //
+  // Round 2 shipped the shared material and not the ratios, and the critic
+  // measured exactly why: the factor was on `beat`, but the floor
+  // Math.max(0.12, …), the fixed 0.14 s gliss steps and biwaStrum never see
+  // `beat` at all — and the three voices' own beats already differ 0.4 / 0.28 /
+  // 0.9, so the drawn 4:5:6 was a small perturbation of a large pre-existing
+  // inequality. Between-voice IOI came out 1.66 : 1.00 : 0.64 on the canon
+  // night and 1.65 : 1.00 : 0.63 at home: no canon at all.
+  //
+  // So a TAKE does not render at its own beat scaled — it renders at the
+  // SUBJECT's beat scaled by the drawn ratio, and `cs` (that beat over its own)
+  // multiplies every duration in the phrase: the floor, the ornament steps, the
+  // strum span. The three voices then differ by the ratio and by nothing else,
+  // which is what a canon is. A take is also unhooked from the taiko's magnet
+  // (no pulseSnap, no pulseQuantDur): a canon keeps its own time, and quantizing
+  // its durations to a shared grid is precisely how the ratio was disappearing.
+  //
+  // ENTRIES are anchored to the SUBJECT's onset — subject.at + n·spreadS, where
+  // n is how many voices have entered — not to whenever this voice happened to
+  // wake up. A voice that wakes before its entry waits for it; one that wakes
+  // after it has passed does not take, and plays its own phrase instead. That
+  // is the difference between "they converge, pass and diverge" and three
+  // voices that happen to share a tune.
+  function farCanonTake(voice, phrase, now, center, ownBeat) {
+    var plain = { phrase: phrase, t0: now + 0.05, cs: 1, take: false };
+    if (!farCanon || !farCanon.of[voice] || !phrase || !phrase.length) return plain;
+    var of = farCanon.of, sp = farCanon.spreadS;
+    // EVERY phrase these three play on a 影 night runs at the common beat —
+    // not only the takes. Otherwise the canon is twice a minute inside a night
+    // that is otherwise home, and the between-voice ratio (which is what a
+    // canon IS) never moves.
+    var canonBeat = farCanon.base * of[voice] * farTimeMul(voice, now);
+    plain.cs = ownBeat > 0 ? canonBeat / ownBeat : 1;
+    if (farSubject && !farSubject.taken[voice] && farSubject.n < 3) {
+      var t0 = farSubject.at + farSubject.n * sp;
+      if (now <= t0 + 0.6) {                                  // it is still this voice's entry to make
+        farSubject.taken[voice] = 1; farSubject.n++;
+        return { phrase: fitToRegister(farSubject.notes, center), t0: Math.max(now + 0.05, t0),
+                 cs: plain.cs, take: true };
+      }
+      if (now > farSubject.at + 2 * sp + 4) farSubject = null;   // the gesture is over
     }
-    if (!farSubject || now - farSubject.at >= win) farSubject = { notes: phrase.slice(), at: now, taken: {}, n: 1 };
+    // This voice announces the next subject — and CALLS THE OTHER TWO IN. A
+    // canon is one gesture with three entries, not three voices that happen to
+    // agree; leaving each voice to notice the subject on its own next phrase
+    // gave take latencies of 0.5–9.8 s (the critic's instrumented count) when
+    // they should be exactly i·spreadS. So the leader cancels the others'
+    // pending phrase and schedules their entry at the anchor. Their own phrase
+    // functions then reschedule themselves as usual, so the loop is unbroken —
+    // this is the same cancel-and-re-arm the KIRU already does to these lanes.
+    farSubject = { notes: phrase.slice(), at: now + 0.05, lead: voice, taken: {}, n: 1 };
     farSubject.taken[voice] = 1;
-    return phrase;
+    for (var ci = 0, k = 1; ci < FAR_CANON_VOICES.length; ci++) {
+      var v = FAR_CANON_VOICES[ci];
+      if (v === voice || !FAR_CANON_START[v]) continue;
+      try {
+        lane(v).cancelAll();
+        lane(v).at(farSubject.at + k * sp, guarded(FAR_CANON_START[v]));
+      } catch (e) {}
+      k++;
+    }
+    return plain;
   }
-  // How long after the subject this voice enters: the canon's stagger.
-  function farCanonEntry(voice, now) {
-    if (!farCanon || !farCanon.of[voice] || !farSubject) return 0;
-    var i = FAR_CANON_VOICES.indexOf(voice);
-    return i <= 0 ? 0 : farCanon.spreadS * i;
-  }
+
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
     if ((p = farNight.dep.canon)) {
-      var r = p.ratios, of = {}, mid = r[1];
-      for (var i = 0; i < FAR_CANON_VOICES.length; i++) of[FAR_CANON_VOICES[i]] = r[i % r.length] / mid;
-      farCanon = { of: of, ratios: r, spreadS: p.spreadS };
+      var r = p.ratios, of = {}, mid = r[1], i, sumHome = 0, sumCanon = 0;
+      for (i = 0; i < FAR_CANON_VOICES.length; i++) of[FAR_CANON_VOICES[i]] = r[i % r.length] / mid;
+      // THE COMMON BEAT. The three voices' own beats are 0.4 / 0.28 / 0.9 —
+      // a large pre-existing inequality that swallowed the drawn ratio whole
+      // (the critic measured 1.66 : 1.00 : 0.64 on a 4:5:6 night, identical to
+      // its home). Under 影 they abandon their own tempi and run at
+      // base × ratio, so the between-voice relationship IS the drawn ratio and
+      // nothing else. `base` is chosen to preserve the trio's total note
+      // density — sum of rates before equals sum of rates after — so a canon
+      // night is a canon, not a louder night.
+      for (i = 0; i < FAR_CANON_VOICES.length; i++) { sumHome += 1 / FAR_CANON_HOME[FAR_CANON_VOICES[i]]; sumCanon += 1 / of[FAR_CANON_VOICES[i]]; }
+      farCanon = { of: of, ratios: r, spreadS: p.spreadS, base: sumCanon / sumHome };
       farSubject = null;
     }
     farTimeOn = !!(farDilate || farCanon || farVari);
@@ -457,7 +519,10 @@ window.ZankyoAudio = (function () {
     var frag = fitToRegister(th.notes.slice(0, Math.min(5, th.notes.length)), scaleIndexOf(4));
     if (!frag.length) return;
     var voice = R.pick(["koto", "shamisen", "biwa"]);
-    var beat = 0.42 * farTimeMul(voice, t0);
+    // 影 + 崩: the groove is played BY one of the canon's voices, so on a canon
+    // night it must run at that voice's canon beat — otherwise a stuck cycle
+    // quietly reintroduces a third tempo the canon does not have.
+    var beat = (farCanon && farCanon.of[voice] ? farCanon.base * farCanon.of[voice] : 0.42) * farTimeMul(voice, t0);
     var span = 0;
     for (var i = 0; i < frag.length; i++) span += Math.max(0.14, frag[i].durBeats * beat);
     span += beat * 0.8;                                   // the groove's own gap: the click of the loop
@@ -2742,9 +2807,13 @@ window.ZankyoAudio = (function () {
   var biwaState = { idx: 6, dir: 1, center: 6, lastSpan: 0 };
   function biwaStrum(freq, t, opts) {                       // a tremolo strum: 3–7 restrikes at 45–80 ms, velocity decaying
     var R = S.biwa, n = 3 + Math.floor(R.next() * 5), tt = t, tremolo = getLayerParam("biwa", "tremolo", 0.6);
+    // 影 opts.scale: the strum is part of the phrase, so under a canon take it
+    // runs in the canon's time like everything else. It read no beat at all
+    // before, which is one of the three reasons the ratios never arrived.
+    var cs = (opts && opts.scale > 0) ? opts.scale : 1;
     for (var i = 0; i < n; i++) {
-      stringNote("biwa", freq, tt, 0.9 + (i === n - 1 ? 1.2 : 0), { vel: 0.9 - i * 0.08, gain: opts && opts.gain != null ? opts.gain : 1 });
-      tt += 0.045 + (1 - tremolo) * 0.035 + R.next() * 0.02;
+      stringNote("biwa", freq, tt, (0.9 + (i === n - 1 ? 1.2 : 0)) * cs, { vel: 0.9 - i * 0.08, gain: opts && opts.gain != null ? opts.gain : 1 });
+      tt += (0.045 + (1 - tremolo) * 0.035 + R.next() * 0.02) * cs;
     }
     return tt - t;
   }
@@ -2766,14 +2835,21 @@ window.ZankyoAudio = (function () {
     if (!motif && R.chance(0.4)) motif = Motif.request("biwa", now);
     if (motif) { phrase = fitToRegister(motif.notes, biwaState.center).slice(0, 4); Motif.postFrom("biwa", motif, now); }
     else { phrase = walk(R, biwaState, 1 + Math.floor(R.next() * 3), 4, arc); emitEvent({ cat: "biwa", label: "fresh", detail: phrase.length + " notes" }, now); }
-    phrase = farCanonSubject("biwa", phrase, now, biwaState.center);   // 影: the canon's three voices read the same page
+    var ownBeat = 0.9 * farTimeMul("biwa", now);   // the narrator has no `pace`; 0.9 was its inline factor
+    var cn = farCanonTake("biwa", phrase, now, biwaState.center, ownBeat);   // 影
+    phrase = cn.phrase;
     if (phrase.length) biwaState.idx = phrase[phrase.length - 1].deg;
-    var beat = 0.9 * farTimeMul("biwa", now);   // 逸脱 遅/弛/影 (the narrator has no `pace`; 0.9 was its inline factor)
-    var t = now + 0.05 + farCanonEntry("biwa", now), strummed = false;   // 影: this voice enters after the subject
+    var beat = ownBeat * cn.cs, t = cn.t0, strummed = false;   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      if ((i === 0 || i === phrase.length - 1) && R.next() < 0.6) { t += biwaStrum(f, t, {}) + 0.3; strummed = true; }
-      else { var bd = Math.max(0.6 * beat / 0.9, n.durBeats * beat); stringNote("biwa", f, t, bd, { vel: 0.6 + R.next() * 0.35 }); t += bd + R.next() * 0.3; }
+      // 影: a canon voice STATES the subject — it does not tremolo through it.
+      // The strum is the narrator's own gesture and it belongs to the narrator's
+      // own phrases, not to a canon entry.
+      if (!farCanon && (i === 0 || i === phrase.length - 1) && R.next() < 0.6) { t += biwaStrum(f, t, { scale: cn.cs }) + 0.3 * cn.cs; strummed = true; }
+      // the gap between notes is the narrator's breath at home and a fraction
+      // of the beat under a canon, where every voice must differ by the ratio
+      // and by nothing else (a flat 0.3 s gap put the biwa 17 % wide)
+      else { var bd = Math.max(0.6 * beat / 0.9, n.durBeats * beat); stringNote("biwa", f, t, bd, { vel: 0.6 + R.next() * 0.35 }); t += bd + R.next() * (farCanon ? 0.09 * beat : 0.3); }
     }
     if (strummed) emitEvent({ cat: "biwa", label: "琵琶 strum", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") }, now);
     biwaState.lastSpan = t - now;
@@ -2925,12 +3001,16 @@ window.ZankyoAudio = (function () {
       phrase = walk(S.koto, kotoState, 3 + Math.floor(S.koto.next() * 3) + Math.floor(arc * 2), 7 + Math.round(arc * 2), arc);
       emitEvent({ cat: "koto", label: "fresh", detail: phrase.length + " notes" }, now);
     }
-    phrase = farCanonSubject("koto", phrase, now, kotoState.center);   // 影: the canon's three voices read the same page
+    var ownBeat = 0.4 / pace * farTimeMul("koto", now);
+    var cn = farCanonTake("koto", phrase, now, kotoState.center, ownBeat);   // 影: the same page, in the drawn ratio
+    phrase = cn.phrase;
     if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
-    // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
-    var beat = 0.4 / pace * farTimeMul("koto", now), t = pulseSnap(now + 0.05 + farCanonEntry("koto", now), arc), prev = null, sched = [];   // 逸脱 遅/弛/影
+    // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
+    // pulse) — but never on a canon take: a canon keeps its own time.
+    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc), prev = null, sched = [];   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
-      var n = phrase[i], dur = pulseQuantDur(Math.max(0.12, n.durBeats * beat), arc);
+      var n = phrase[i], dur = Math.max(0.12 * cn.cs, n.durBeats * beat);
+      if (!cn.take) dur = pulseQuantDur(dur, arc);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
       kotoNote(f, t, dur, { glideFrom: (prev && S.koto.next() < 0.3) ? prev : null, bend: S.koto.next() < 0.2 });
       sched.push({ f: f, t: t, dur: dur });
@@ -2948,11 +3028,11 @@ window.ZankyoAudio = (function () {
       emitEvent({ cat: "shamisen", label: "〰 shamisen shadows koto", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") + " · " + sched.length + " notes" }, now);
     }
     // glissando flourish — a rapid run up/down the scale (more in ha/kyū)
-    if (S.koto.next() < glissAmt * (0.3 + arc)) {
+    if (!farCanon && S.koto.next() < glissAmt * (0.3 + arc)) {   // 影: a canon voice states the subject, it does not flourish
       var up = S.koto.next() < 0.5, start = kotoState.idx, gn = 4 + Math.floor(S.koto.next() * 5), gt = t;
       for (var k = 0; k < gn; k++) {
         var gi = Math.max(0, Math.min(SCALE.length - 1, start + (up ? k : -k)));
-        kotoNote(SCALE[gi].freq, gt, 0.14, { gain: 0.7 }); gt += 0.05 + S.koto.next() * 0.03;
+        kotoNote(SCALE[gi].freq, gt, 0.14 * cn.cs, { gain: 0.7 }); gt += (0.05 + S.koto.next() * 0.03) * cn.cs;   // 影: the ornament runs in the canon's time too
       }
       t = gt; emitEvent({ cat: "koto", label: "gliss", detail: (up ? "↑" : "↓") + gn }, now);
     }
@@ -2989,20 +3069,28 @@ window.ZankyoAudio = (function () {
       phrase = walk(S.shamisen, shamiState, 3 + Math.floor(S.shamisen.next() * 4) + Math.floor(arc * 3), 6 + Math.round(arc * 2), arc);
       emitEvent({ cat: "shamisen", label: "fresh", detail: phrase.length + " notes · " + arcPhase(now) }, now);
     }
-    phrase = farCanonSubject("shamisen", phrase, now, shamiState.center);   // 影: the canon's three voices read the same page
+    var ownBeat = 0.28 / pace * farTimeMul("shamisen", now);
+    var cn = farCanonTake("shamisen", phrase, now, shamiState.center, ownBeat);   // 影
+    phrase = cn.phrase;
     if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
-    // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
-    var beat = 0.28 / pace * farTimeMul("shamisen", now), t = pulseSnap(now + 0.05 + farCanonEntry("shamisen", now), arc);   // 逸脱 遅/弛/影
+    // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
+    // pulse) — never on a canon take.
+    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc);   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      var dur = pulseQuantDur(Math.max(0.1, Math.min(n.durBeats, 1) * beat), arc);
-      // tsugaru hammer-on: a quick lower-neighbor grace before the beat
-      if (S.shamisen.next() < 0.25 + arc * 0.3) {
-        shamisenNote(SCALE[Math.max(0, n.deg - 1)].freq, t, 0.05, { gain: 0.55 });
-        t += 0.05;
+      // 影: no cap on the note's length — the shamisen alone clipped durBeats at
+      // one beat, so on a shared subject its long notes were short and the
+      // drawn ratio came apart at the wide spreads (2:3:5 read 0.95 : 1.00).
+      var dur = Math.max(0.1 * cn.cs, (farCanon ? n.durBeats : Math.min(n.durBeats, 1)) * beat);
+      if (!cn.take) dur = pulseQuantDur(dur, arc);
+      // tsugaru hammer-on: a quick lower-neighbor grace before the beat — the
+      // shamisen's own idiom, and not part of a canon entry (see the biwa's strum)
+      if (!farCanon && S.shamisen.next() < 0.25 + arc * 0.3) {
+        shamisenNote(SCALE[Math.max(0, n.deg - 1)].freq, t, 0.05 * cn.cs, { gain: 0.55 });
+        t += 0.05 * cn.cs;
       }
       shamisenNote(f, t, dur, { gain: (i % 2 === 0 ? 1.0 : 0.6) });
-      t += dur + 0.01;
+      t += dur + 0.01 * cn.cs;
     }
     shamiState.lastSpan = t - now;
     tok.until = t + margin;

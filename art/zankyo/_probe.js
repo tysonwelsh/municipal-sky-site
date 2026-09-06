@@ -372,7 +372,7 @@ function analyze(R) {
 
   // ---- form vocabulary from the event stream ----
   function has(e, re) { return re.test(e.label) || re.test(e.detail); }
-  var modeEvents = R.events.filter(function (e) { return e.cat === "mode" || e.cat === "form" || e.cat === "plan" || e.cat === "scene" || e.cat === "visit" || e.cat === "visitation" || e.cat === "pitch"; });
+  var modeEvents = R.events.filter(function (e) { return e.cat === "mode" || e.cat === "form" || e.cat === "plan" || e.cat === "scene" || e.cat === "visit" || e.cat === "visitation" || e.cat === "pitch" || e.cat === "far"; });   // "far" (W1): the 逸脱 lines were in the stream but invisible in a printout — the critic's free note, r2
   A.kirus = R.events.filter(function (e) { return /KIRU/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
   A.cycles = R.events.filter(function (e) { return /cycle \d+/.test(e.detail) && /mode/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
   A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null; A.signals = []; A.signalFallbacks = 0;
