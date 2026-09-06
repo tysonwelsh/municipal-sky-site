@@ -170,3 +170,8 @@ The existing 選局 knob keeps its behavior. Unlabeled like the first; same
 size; it shows its position. Delivered as its own commit with a VERSION
 bump; the critic checks feel (snow follows the hand), timing, ceiling, and
 that a home night's note stream is unchanged when the dial is not touched.
+
+**§7 addendum (owner):** while the station is STOPPED, the 選局 knob's
+audition plays a FULL window of the reel (its whole 10–12 s, with the
+complete tune-in / hold / loss gesture on the tube), not a two-second
+tune-in. The new dial's stopped-state audition does the same.
