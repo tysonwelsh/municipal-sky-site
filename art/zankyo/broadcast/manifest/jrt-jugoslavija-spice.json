@@ -1,0 +1,19 @@
+{
+  "id": "jrt-jugoslavija-spice",
+  "title": "JRT — stare TV špice i džinglovi",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=rsDWmCBgOuI",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "music",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 60.01,
+  "bytes": 550009,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[35.0, 45], [135.0, 145], [195.0, 205], [245.0, 255], [355.0, 365], [465.0, 475]],
+  "notes": "Yugoslav television idents and stings, Cyrillic and Latin: the dot-matrix world map, Мали програм, LOTO, 24 часа, the night programme menu, tv dnevnik",
+  "takedown": false
+}

@@ -948,18 +948,34 @@
 .zk-tune:active { transform: translateY(1px); box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
 .zk-tune:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
 
-/* 掃引 THE TUNING DIAL (plan §7) — the same 20 px cap as 選局 next to it, no
-   print, and a pointer that shows where it stands. It is a knob, not a
-   button: it wants to be swept, and the sweep is the mechanism. */
-.zk-dial { width: 20px; height: 20px; margin-right: 6px; flex: none; }
-.zk-dial .zk-knob { width: 20px; height: 20px; }
-.zk-dial .zk-knob-cap {
-  background: radial-gradient(circle at 34% 28%, #5c5c66, #2a2a31 50%, #101014 90%);
-  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -3px 4px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.28);
+/* 受信 THE PUSH BUTTON (plan §8.2) — a worn square push-switch with a lens,
+   the same 20 px footprint as 選局 next to it, no print. It travels when
+   pressed, and its lens is lit only while the receiver will actually answer:
+   dark for the cooldown, so the panel tells you the truth without a word. */
+.zk-push {
+  position: relative; width: 20px; height: 20px; margin-right: 6px; flex: none;
+  padding: 0; border: 0; border-radius: 2px; cursor: default; -webkit-appearance: none; appearance: none;
+  background: linear-gradient(180deg, #3a3a44 0%, #23232b 55%, #14141a 100%);
+  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 3px rgba(0, 0, 0, 0.75),
+              inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -2px 3px rgba(0, 0, 0, 0.8);
+  transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
 }
-.zk-dial .zk-knob-ind { top: 18%; height: 34%; width: 2px; margin-left: -1px; background: #d8d2c2; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.7); }
-.zk-dial .zk-knob.is-drag .zk-knob-cap { box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
-.zk-dial .zk-knob:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+.zk-push-lens {
+  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 1px;
+  background: linear-gradient(180deg, #26221a 0%, #17140f 100%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+.zk-push.is-ready .zk-push-lens {   /* "a faint glow", per the owner — lit enough to read as ready, not a warning lamp */
+  background: linear-gradient(180deg, rgba(var(--amber-rgb), 0.30) 0%, rgba(var(--amber-rgb), 0.15) 100%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.6), 0 0 3px rgba(var(--amber-rgb), 0.22);
+}
+.zk-push:active, .zk-push.is-down {
+  transform: translateY(1px);
+  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 1px rgba(0, 0, 0, 0.7),
+              inset 0 2px 4px rgba(0, 0, 0, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+.zk-push:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
 .zk-rx-label { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; }
 .zk-rx {
   width: 7px; height: 7px; border-radius: 50%; flex: none;

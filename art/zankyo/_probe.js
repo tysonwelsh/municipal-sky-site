@@ -698,13 +698,26 @@ if (args[0] === "batch") {
     var ok = results.filter(function (r) { return !r.error; });
     var base = loadBase();
     var stats = {};
-    DIST_KEYS.forEach(function (k) { var vals = ok.map(function (r) { return r.C[k]; }); var med = q(vals, 0.5); var mad = q(vals.map(function (v) { return Math.abs(v - med); }), 0.5); stats[k] = { median: +med.toFixed(4), mad: +mad.toFixed(4), min: +Math.min.apply(null, vals).toFixed(4), max: +Math.max.apply(null, vals).toFixed(4) }; });
+    // THE BASE IS HOME NIGHTS ONLY (critic, §8.1 re-base). A law-drawn sample
+    // carries ~10 % departed nights, and once the far tail actually works those
+    // nights score high — so calibrating on the whole sample makes the base
+    // chase the work: the better the departures get, the higher the base's p95
+    // and the harder the gate that is derived from it. At W0 nothing departed
+    // and the two were the same number, which is why this went unnoticed until
+    // the far tail had teeth (all-40 p95 7.75 vs home-only 5.71 on the same run).
+    var homeOk = ok.filter(function (r) { return !r.far || r.far.home; });
+    if (!homeOk.length) homeOk = ok;
+    DIST_KEYS.forEach(function (k) { var vals = homeOk.map(function (r) { return r.C[k]; }); var med = q(vals, 0.5); var mad = q(vals.map(function (v) { return Math.abs(v - med); }), 0.5); stats[k] = { median: +med.toFixed(4), mad: +mad.toFixed(4), min: +Math.min.apply(null, vals).toFixed(4), max: +Math.max.apply(null, vals).toFixed(4) }; });
     var useBase = base;
-    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, runS: bRun, seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
+    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, homeSeeds: homeOk.length, runS: bRun, seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
     ok.forEach(function (r) { r.DS = distanceScalar(r.C, useBase); });
     var Ds = ok.map(function (r) { return r.DS.D; });
     var p50 = +q(Ds, 0.5).toFixed(2), p95 = +q(Ds, 0.95).toFixed(2);
-    if (calibrate || !base) { useBase.meta.p50 = p50; useBase.meta.p95 = p95; useBase.meta.pmax = +Math.max.apply(null, Ds).toFixed(2); }
+    // The GATE is derived from home nights only, for the reason above.
+    var homeDs = homeOk.map(function (r) { return r.DS.D; });
+    var hp50 = +q(homeDs, 0.5).toFixed(2), hp95 = +q(homeDs, 0.95).toFixed(2);
+    if (calibrate || !base) { useBase.meta.p50 = hp50; useBase.meta.p95 = hp95; useBase.meta.pmax = +Math.max.apply(null, homeDs).toFixed(2);
+      useBase.meta.p50AllDrawn = p50; useBase.meta.p95AllDrawn = p95; }
     if (calibrate) { fs.writeFileSync(BASE_FILE, JSON.stringify(useBase, null, 1)); }
     var out = [];
     out.push("=== ZANKYŌ distance batch ===  " + ok.length + " seeds × " + bRun + " s" + (bFar != null ? " · ?far=" + bFar : "") + (calibrate ? " · CALIBRATED → " + BASE_FILE : base ? " · base " + base.meta.seeds + " seeds (p50 " + base.meta.p50 + " · p95 " + base.meta.p95 + ")" : " · no base"));
@@ -714,6 +727,7 @@ if (args[0] === "batch") {
     out.push(pad("MAD", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(stats[k].mad, 10); }).join(""));
     out.push(pad("scale", 6) + lpad("", 7) + DIST_KEYS.map(function (k) { return lpad(Math.max(stats[k].mad * 1.4826, DIST_FLOORS[k]).toFixed(3), 10); }).join("") + "   (max(1.4826·MAD, floor))");
     out.push("D: p50 " + p50 + " · p95 " + p95 + " · max " + Math.max.apply(null, Ds) + " · min " + Math.min.apply(null, Ds) + (useBase && useBase.meta && useBase.meta.p95 ? " · 3× base p95 = " + (3 * useBase.meta.p95).toFixed(1) + " · 5× = " + (5 * useBase.meta.p95).toFixed(1) : ""));
+    out.push("   home-only (" + homeOk.length + " of " + ok.length + ", the basis for the gate): p50 " + hp50 + " · p95 " + hp95 + " · max " + Math.max.apply(null, homeDs).toFixed(2));
     // W1+: D by drawn departure — which departures carry the distance, and which draw without registering
     var byDep = {};
     ok.forEach(function (r) { var ids = r.far && r.far.ids ? r.far.ids : []; ids.forEach(function (id) { (byDep[id] = byDep[id] || []).push(r.DS.D); }); });

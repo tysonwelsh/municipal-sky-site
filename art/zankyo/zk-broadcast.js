@@ -103,7 +103,18 @@
   // ---- the recent ring: reels heard in the last RECENT_CYCLES cycles ----
   var recent = [];   // [{ id, cycle }]
   function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
-  function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); while (recent.length > 12) recent.shift(); }
+  function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); lastCycleSeen = cycle; while (recent.length > 12) recent.shift(); }
+  var lastCycleSeen = 0;
+
+  // §8.1: reels WITH a picture are weighted in the lottery, and 85 % of
+  // received reels carrying one is the target the weight serves — not the
+  // weight itself. On the old 32-reel pool (21 video) that took 3×; on the
+  // wider 52-reel pool (41 video) 3× overshoots to 90 % and starts crowding
+  // out the numbers stations, the Buzzer and the time signals, which are the
+  // receiver's core and must keep surfacing. 1.5× lands the same 85 % on the
+  // new pool. The synthetic gagaku broadcast stays the fallback only — this
+  // weights WHICH real reel is chosen, never whether a real one is.
+  var VIDEO_WEIGHT = 1.5;
 
   // ---- the choice (arm time): six draws, always ----
   function choose(R, cycle, tidePos) {
@@ -117,6 +128,7 @@
     var dark = tidePos, w = [], tot = 0;
     for (i = 0; i < cands.length; i++) {
       var e = cands[i], x = +e.weight > 0 ? +e.weight : 1, tone = e.tone;
+      if (!e.audioOnly) x *= VIDEO_WEIGHT;                                                        // §8.1: a reel with a picture is three times as likely to be the one
       if (tone === "voice" || tone === "noise" || tone === "tone") x *= 0.7 + 0.6 * dark;          // the dark tide leans to voices and noise
       else if (tone === "music" || tone === "sung") x *= 0.7 + 0.6 * (1 - dark);                  // the light tide to music
       w.push(x); tot += x;
@@ -189,6 +201,12 @@
     // the hold is time-based, so it is set now and applies to claims from t0 − 6
     var hold = {}, from = t0 - HOLD_LEAD_S;
     for (var vname in a.rel) hold[vname] = { from: from, until: cut + 2 + a.rel[vname] };
+    // The PA was never held — `rel` covers the five melodic voices and the
+    // engine's own gate counts the tannoy too, so a kakegoe could land inside a
+    // signal. It comes back with the shakuhachi, first of the crew to speak
+    // again. (No new draw: it borrows the shakuhachi's zero offset rather than
+    // taking one of its own, so the signal stream is untouched.)
+    hold.pa = { from: from, until: cut + 2 };
     T.airHold(hold);
     T.lane("broadcast").at(t0 - STATIC_LEAD_S, function (t) { staticRise(t, t0); });
     T.lane("broadcast").at(t0 - DECIDE_LEAD_S, function () { decide(t0); });
@@ -241,7 +259,21 @@
   // open, so it costs nothing when nobody is touching it, and it cannot leak a
   // running oscillator if the page is closed mid-turn.
   var dialLast = -1e9;                                       // audio time of the last lock
+  var dialCold = 0;                                          // the drawn cooldown for the press just made
+  var dialPresses = 0;
   var dialNoiseUntil = -1e9;
+  // §8.2: 45–60 s, drawn with SEEDED jitter — the same seed gives the same
+  // cooldowns, so a press schedule is reproducible like everything else here.
+  function dialDrawCold() {
+    var T = tl(), R = (T.S && T.S.signal) ? T.S.signal.fork("button:" + dialPresses) : PJ.Rand.stream(dialPresses + 1);
+    return 45 + R.next() * 15;
+  }
+  // Is the button ready? The lens reads this every frame.
+  function dialReady() {
+    var T = tl(), c = T.ctx;
+    if (!c) return true;                                     // nothing has happened yet
+    return (c.currentTime - dialLast) >= dialCold;
+  }
   function dialNoise(amt) {
     var T = tl(), c = T.ctx; if (!c) return;
     var t = c.currentTime + 0.02, durS = 0.16;
@@ -262,14 +294,24 @@
   }
   // The dial asks for a lock. Returns "locked" | "snow" | "wait" — the caller
   // makes snow either way; this only says whether a reel came with it.
+  // §8.2: the button's audition, while the station is stopped — a full window
+  // as §7's addendum established, and a reel with a picture as §8.2 asks.
+  function dialAudition(now) {
+    for (var attempt = 0; attempt < 6; attempt++) {
+      if (!sampleTune(now)) return false;
+      if (!lastSampleAudioOnly) return true;
+    }
+    return true;
+  }
+  var lastSampleAudioOnly = false;
   function dialLock() {
     var T = tl(), c = T.ctx;
     if (!c) return "snow";
     var now = c.currentTime;
-    if (now - dialLast < 30) return "wait";                  // one lock per 30 s
+    if (now - dialLast < dialCold) return "wait";            // §8.2: cold for the drawn 45–60 s
     if (!T.playing()) {                                      // stopped: the audition, a full window
-      if (!sampleTune(now)) return "snow";
-      dialLast = now; stats.dial = (stats.dial || 0) + 1;
+      if (!dialAudition(now)) return "snow";
+      dialLast = now; dialPresses++; dialCold = dialDrawCold(); stats.dial = (stats.dial || 0) + 1;
       return "locked";
     }
     // A signal is up, OR one is ARMED AND WAITING — which is exactly how a
@@ -286,12 +328,23 @@
     var t0 = now + STATIC_LEAD_S + 0.5;
     var room = (sc.startT + sc.durS - 3) - (t0 + TUNE_S + 2.8 + COLLAPSE_S + BURST_S);
     if (room < 4) return "snow";                             // no room before the scene turns
-    var R = T.S.signal.fork("dial:" + Math.max(0, cy.n) + ":" + Math.round(now));
-    if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R)) return "snow";
+    var R = T.S.signal.fork("button:" + dialPresses + ":" + Math.max(0, cy.n));
+    // §8.2, the owner's words: "a real reel WITH A PICTURE". The lottery is
+    // already weighted 3× toward video by §8.1; a deliberate press asks for one
+    // outright, so the button re-draws (up to a few times, deterministically)
+    // until the choice carries a picture. If the pool holds nothing but
+    // audio-only reels it takes what there is rather than refusing — the button
+    // must always DO something.
+    var got = false;
+    for (var attempt = 0; attempt < 6; attempt++) {
+      if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R.fork("try:" + attempt))) return "snow";
+      if (!armed || !armed.reel || !armed.reel.audioOnly) { got = true; break; }
+    }
+    if (!got && !armed) return "snow";
     if (armed.holdS + armed.lossD > room) armed.holdS = Math.max(3, room - armed.lossD);
     if (!fire(t0)) { armed = null; return "snow"; }
-    dialLast = now; stats.dial = (stats.dial || 0) + 1;
-    T.emitEvent({ cat: "rx", label: "掃引 locked on", detail: "the dial finds one · " + Math.round(t0 - now) + " s" }, now);
+    dialLast = now; dialPresses++; dialCold = dialDrawCold(); stats.dial = (stats.dial || 0) + 1;
+    T.emitEvent({ cat: "rx", label: "受信 locked on", detail: "the set finds one · " + Math.round(t0 - now) + " s" }, now);
     return "locked";
   }
 
@@ -484,22 +537,55 @@
       if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
       else setTimeout(go, startMs);
     } catch (e) {}
+    lastSampleAudioOnly = !!reel.audioOnly;
     var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
     T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
     setTimeout(function () { try { if (mediaSrc && hp) mediaSrc.disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
     return true;
   }
 
-  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock });
+  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock, dialReady: dialReady });
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {
     getState: function () {
       return { pool: poolState, poolSize: pool ? pool.length : 0, poolError: poolError, primed: primed, video: !!video, mediaSource: !!mediaSrc,
         armed: armed ? { cycle: armed.cycle, reel: armed.reel && armed.reel.id, inS: +armed.inS.toFixed(2), holdS: +armed.holdS.toFixed(2), lossD: +armed.lossD.toFixed(2), drops: armed.drops.length, ready: armed.ready, t0: armed.t0, decided: armed.decided } : null,
-        live: !!live, stats: stats, recent: recent.slice(-4) };
+        live: !!live, stats: stats, recent: recent.slice(-4),
+        // the ring under pressure: at ~1 signal per cycle a four-hour night is
+        // about 32 reels from a pool of 32, so "the ring is working" and "the
+        // ring is exhausted and repeating" need to be tellable apart
+        ring: { keptForCycles: RECENT_CYCLES, held: recent.length, cap: 12, poolSize: pool ? pool.length : 0,
+                excludedNow: Object.keys(recentIds(lastCycleSeen)).length } };
     },
     _dev: {
+      // §8.1, for the critic: n reel choices through the REAL choose(), with
+      // nothing armed and nothing fired. The video-share gate wants ~40 chosen
+      // reels and at one signal a cycle that is five hours of browser
+      // wall-clock; this makes it a second. It draws on its own fork, so it
+      // cannot perturb a performance, and it walks the same candidate list,
+      // the same recent-ring exclusion and the same tide weighting the live
+      // path walks — the point is that it is not a re-implementation.
+      // Validate it against a real capture rather than trusting it.
+      drawReels: function (n, seed) {
+        if (!pool || !pool.length) return { error: "pool " + poolState, ids: [] };
+        n = Math.max(1, Math.min(2000, n | 0 || 40));
+        var R = PJ.Rand.stream((seed >>> 0) || 3042).fork("dev:drawReels");
+        var saved = recent.slice(), ids = [], video = 0, i;
+        recent = [];
+        for (i = 0; i < n; i++) {
+          var c = choose(R, i, (i % 7) / 6);      // walk the tide across the sample
+          if (!c.reel) break;
+          ids.push(c.reel.id);
+          if (!c.reel.audioOnly) video++;
+          remember(c.reel.id, i);                 // so the ring exerts the same pressure it would live
+        }
+        recent = saved;
+        return { n: ids.length, ids: ids, video: video, videoShare: ids.length ? +(video / ids.length).toFixed(4) : 0,
+                 distinct: Object.keys(ids.reduce(function (o, x) { o[x] = 1; return o; }, {})).length,
+                 poolSize: pool.length, videoInPool: pool.filter(function (p2) { return !p2.audioOnly; }).length,
+                 videoWeight: VIDEO_WEIGHT, keptForCycles: RECENT_CYCLES };
+      },
       // the bench: seat a signal delayS from now on the current cycle (bypasses the plan; draws on a bench fork, never on S.signal)
       seatNow: function (delayS) {
         var T = tl(); if (!T.ctx || !T.playing() || !T.S) return false;

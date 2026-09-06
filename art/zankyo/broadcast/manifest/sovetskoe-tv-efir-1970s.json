@@ -1,0 +1,19 @@
+{
+  "id": "sovetskoe-tv-efir-1970s",
+  "title": "ЦТ СССР, Первая программа — эфир 17 февраля 1980",
+  "year": 1980,
+  "src": "https://www.youtube.com/watch?v=fpjWCnKPKs0",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 671059,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[26.0, 38], [188.0, 200], [1586.0, 1598], [2766.0, 2778], [3046.0, 3058], [4683.0, 4695]],
+  "notes": "reconstructed broadcast day of Soviet Central Television: the date-and-clock cards, 'Информационная программа' over the Spasskaya tower, the Kremlin clock, the announcer, and the sign-off — 'НЕ ЗАБУДЬТЕ ВЫКЛЮЧИТЬ ТЕЛЕВИЗОР!'",
+  "takedown": false
+}

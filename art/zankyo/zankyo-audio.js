@@ -311,69 +311,344 @@ window.ZankyoAudio = (function () {
   var FAR_CANON_HOME = { koto: 0.4, shamisen: 0.28, biwa: 0.9 };   // their own beats, for the density-preserving base above
   // the phrase functions, by name, so the canon's leader can call the others in
   // (they are declared far below; a var reference is resolved at call time)
-  var FAR_CANON_START = { koto: function (t) { kotoPhrase(t); }, shamisen: function (t) { shamisenPhrase(t); }, biwa: function (t) { biwaPhrase(t); } };
-  var farSubject = null;                         // { notes, at, beat, lead, taken, n }
-  // A voice asks whether it is playing the canon, and on what terms. Returns
-  // { phrase, t0, cs, take } — the material, WHEN it enters, and the scale its
-  // whole rendering runs at.
+  var FAR_CANON_START = { koto: function (t) { kotoPhrase(t); }, shamisen: function (t) { shamisenPhrase(t); }, biwa: function (t) { biwaPhrase(t); },
+    shakuhachi: function (t) { shakuhachiPhrase(t); }, hichiriki: function (t) { hichirikiPhrase(t); } };
+  // ==========================================================================
+  // THE SHARED SUBJECT — one engine, four departures (W1 影, W2 重 継 群)
+  // ==========================================================================
+  // A leader announces a phrase, cancels the other voices' pending phrases and
+  // schedules their entries at anchors it chooses; each taker renders the same
+  // material its own way. W1 built this for 影 and it turned out not to be
+  // canon-specific at all — four of the plan's departures are this shape with
+  // different answers to three questions: WHO takes it, WHEN, and WHAT they do
+  // with it.
   //
-  // Round 2 shipped the shared material and not the ratios, and the critic
-  // measured exactly why: the factor was on `beat`, but the floor
-  // Math.max(0.12, …), the fixed 0.14 s gliss steps and biwaStrum never see
-  // `beat` at all — and the three voices' own beats already differ 0.4 / 0.28 /
-  // 0.9, so the drawn 4:5:6 was a small perturbation of a large pre-existing
-  // inequality. Between-voice IOI came out 1.66 : 1.00 : 0.64 on the canon
-  // night and 1.65 : 1.00 : 0.63 at home: no canon at all.
+  //   影 canon   the 3 plucked   at i·spreadS      same notes, beat × the ratio
+  //   重 hetero  all 5 melodic   at 0…lagS jittered same notes, own ornaments
+  //   継 hocket  all present     the subject's own note times, ONE NOTE EACH
+  //   群 swarm   6–10 entries    at i·gapS, short   same notes, own register
   //
-  // So a TAKE does not render at its own beat scaled — it renders at the
-  // SUBJECT's beat scaled by the drawn ratio, and `cs` (that beat over its own)
-  // multiplies every duration in the phrase: the floor, the ornament steps, the
-  // strum span. The three voices then differ by the ratio and by nothing else,
-  // which is what a canon is. A take is also unhooked from the taiko's magnet
-  // (no pulseSnap, no pulseQuantDur): a canon keeps its own time, and quantizing
-  // its durations to a shared grid is precisely how the ratio was disappearing.
+  // So there is one `farTakePlan` and one taker path, and adding a departure
+  // means answering the three questions, not copying the function. (If I ever
+  // find myself copying it, the abstraction is wrong.)
   //
-  // ENTRIES are anchored to the SUBJECT's onset — subject.at + n·spreadS, where
-  // n is how many voices have entered — not to whenever this voice happened to
-  // wake up. A voice that wakes before its entry waits for it; one that wakes
-  // after it has passed does not take, and plays its own phrase instead. That
-  // is the difference between "they converge, pass and diverge" and three
-  // voices that happen to share a tune.
-  function farCanonTake(voice, phrase, now, center, ownBeat) {
-    var plain = { phrase: phrase, t0: now + 0.05, cs: 1, take: false };
-    if (!farCanon || !farCanon.of[voice] || !phrase || !phrase.length) return plain;
-    var of = farCanon.of, sp = farCanon.spreadS;
-    // EVERY phrase these three play on a 影 night runs at the common beat —
-    // not only the takes. Otherwise the canon is twice a minute inside a night
-    // that is otherwise home, and the between-voice ratio (which is what a
-    // canon IS) never moves.
-    var canonBeat = farCanon.base * of[voice] * farTimeMul(voice, now);
-    plain.cs = ownBeat > 0 ? canonBeat / ownBeat : 1;
-    if (farSubject && !farSubject.taken[voice] && farSubject.n < 3) {
-      var t0 = farSubject.at + farSubject.n * sp;
-      if (now <= t0 + 0.6) {                                  // it is still this voice's entry to make
-        farSubject.taken[voice] = 1; farSubject.n++;
-        return { phrase: fitToRegister(farSubject.notes, center), t0: Math.max(now + 0.05, t0),
-                 cs: plain.cs, take: true };
+  // Determinism: the subject is a MEMORY, not a decision. Nothing here draws.
+  var farSubject = null;   // { notes, at, lead, taken, n, mode, plan }
+  var farHetero = null, farHocket = null, farSwarm = null, farPoly = null, farMirror = null, farClouds = null;
+
+  // Which departure owns the ensemble right now, and its voice list. Only one
+  // can: they are all "everybody plays this phrase" and two at once is mud, so
+  // the order below is the precedence — the rarer (higher-threshold) departure
+  // wins, which is also the one the night is named for.
+  var FAR_MELODIC = ["shakuhachi", "hichiriki", "koto", "shamisen", "biwa"];
+  var FAR_MEL_SET = { shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1 };
+  function farEnsemble() {
+    if (farSwarm) return { kind: "swarm", voices: FAR_MELODIC, p: farSwarm };
+    if (farHocket) return { kind: "hocket", voices: FAR_MELODIC, p: farHocket };
+    if (farCanon) return { kind: "canon", voices: FAR_CANON_VOICES, p: farCanon };
+    if (farHetero) return { kind: "hetero", voices: FAR_MELODIC, p: farHetero };
+    return null;
+  }
+  // How many entries the gesture wants, and where each one falls after the
+  // subject's onset.
+  function farEntryAt(E, i) {
+    if (E.kind === "canon") return i * E.p.spreadS;
+    if (E.kind === "swarm") return i * E.p.gapS;
+    if (E.kind === "hetero") return (i / Math.max(1, E.voices.length - 1)) * E.p.lagS;
+    return 0;                                   // hocket: everyone is inside one phrase's own times
+  }
+  function farHocketLine(phrase, reps) {
+    var out = [];
+    for (var r = 0; r < reps; r++) for (var i = 0; i < phrase.length; i++) out.push(phrase[i]);
+    return out;
+  }
+  function farEntryCount(E) {
+    // 群: only the first three entries are real bodies — the rest are the
+    // swarm's own shadows on the cheap body, which is where the concurrency
+    // budget is actually won.
+    return E.kind === "swarm" ? 3 : E.voices.length;
+  }
+
+  // ==========================================================================
+  // A CHEAP BODY for the dense departures (W2: 群 and 雲)
+  // ==========================================================================
+  // 群 is 6–10 overlapping entries and 雲 is hundreds of short notes, and the
+  // hard constraint of this phase is CONCURRENT SOURCES: the base peaks at 104
+  // and the ceiling is 110, so there are six to spend. A plucked note costs
+  // about three sources (buffer, pick burst, sparkle) and its own filter and
+  // panner; at a swarm's density that is thirty.
+  //
+  // So these two get one oscillator and one gain per event, into a bus built
+  // ONCE per gesture — filter, panner, layer gain amortised across the whole
+  // burst. One source per event instead of three, and the node count roughly
+  // halved. That is not a compromise dressed as a design: micropolyphony and a
+  // stochastic cloud are about DENSITY AND BLUR, not about the individual
+  // timbre of the two hundredth note, and the simpler body is what makes the
+  // mass audible as a mass. (The critic reached the same conclusion from the
+  // other side — Ligeti's entries are close, not many-bodied.)
+  function farCheapBus(layer, t, cutoff, pan, peak) {
+    var c = ctx, lp = c.createBiquadFilter(), g = c.createGain();
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, t); lp.Q.setValueAtTime(0.6, t);
+    g.gain.setValueAtTime(peak, t);
+    lp.connect(g); g.connect(panAt(layer, pan));
+    return { input: lp, gain: g };
+  }
+  function farCheapNote(bus, f, t, dur, peak, glideTo, layer) {
+    var c = ctx, o = c.createOscillator(), g = c.createGain();
+    // A cheap body is still a note: it goes through emitNote like every other,
+    // so the viz strikes for it, the crew lowers its voice for it, and every
+    // instrument that reads the note stream can see it. A departure invisible
+    // to the note stream would be invisible to every gate in this program.
+    if (layer) emitNote(layer, f, t, dur);
+    o.type = "triangle";
+    o.frequency.setValueAtTime(f, t);
+    if (glideTo > 0 && glideTo !== f) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+    o.connect(g); g.connect(bus.input);
+    var atk = Math.min(0.012, dur * 0.25);
+    PJ.Voice.env(g.gain, t, [[atk, peak], [Math.max(0.01, dur - atk - 0.015), peak * 0.35], [0.015, 0]]);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  // ==========================================================================
+  // 群 SWARM (W2) — a canon of 6–10 entries at short delays
+  // ==========================================================================
+  // The plan: "the air's limit is lifted and the motif engine runs a canon of
+  // 6–10 entries at short delays — micropolyphony on a Japanese pentatonic."
+  // The first three entries are the station's own voices, through the shared
+  // subject engine; the rest are the swarm proper, on the cheap body, each an
+  // octave-displaced copy entering a gap later. Three bodies you can pick out
+  // and a cloud of their own shadows behind them, which is what the texture is.
+  function farSwarmTail(phrase, now, beat, center) {
+    if (!farSwarm || !phrase || phrase.length < 2) return;
+    var n = Math.max(2, Math.round(farSwarm.entries) - 3);
+    var R = S.far.fork("swarm:" + Math.round(now * 4));
+    for (var e = 0; e < n; e++) {
+      // Each shadow entry belongs to a DIFFERENT body, and its own bus. They
+      // all went out under one layer name at first, which made a swarm of eight
+      // entries read as one voice everywhere downstream — to the polyphony
+      // measure, to the viz, and to the crew's duck. A shadow of the koto is
+      // still the koto's shadow; a swarm is the whole band's.
+      var lay = FAR_MELODIC[(3 + e) % FAR_MELODIC.length];
+      var bus = farCheapBus(lay, now, 2600, R.rnd(-0.55, 0.55), 1);
+      var t = now + (3 + e) * farSwarm.gapS, oct = (e % 3) - 1;
+      var notes = fitToRegister(phrase, center + oct * field.size);
+      for (var i = 0; i < notes.length; i++) {
+        var d = Math.max(0.1, notes[i].durBeats * beat);
+        farCheapNote(bus, SCALE[notes[i].deg].freq, t, d, 0.030 + 0.012 * R.next(), 0, lay);
+        t += d;
       }
-      if (now > farSubject.at + 2 * sp + 4) farSubject = null;   // the gesture is over
     }
-    // This voice announces the next subject — and CALLS THE OTHER TWO IN. A
-    // canon is one gesture with three entries, not three voices that happen to
-    // agree; leaving each voice to notice the subject on its own next phrase
-    // gave take latencies of 0.5–9.8 s (the critic's instrumented count) when
-    // they should be exactly i·spreadS. So the leader cancels the others'
-    // pending phrase and schedules their entry at the anchor. Their own phrase
-    // functions then reschedule themselves as usual, so the loop is unbroken —
-    // this is the same cancel-and-re-arm the KIRU already does to these lanes.
-    farSubject = { notes: phrase.slice(), at: now + 0.05, lead: voice, taken: {}, n: 1 };
+    emitEvent({ cat: "far", label: "群 the swarm", detail: n + " shadow entries at " + farSwarm.gapS.toFixed(2) + "s · " + phrase.length + " notes each" }, now);
+  }
+
+  // ==========================================================================
+  // 雲 CLOUDS (W2) — the plucked bodies as stochastic glissando clouds
+  // ==========================================================================
+  // "Hundreds of short notes on distributions, not phrases." The voice stops
+  // phrasing and becomes a distribution: `rateHz` events a second across
+  // `spanOct` octaves around its own centre, each a short glide. The plan's own
+  // compatibility rule (no clouds under a glacial dilation) is enforced in the
+  // registry, where it belongs.
+  // The whole of a plucked voice's turn, under 雲: a burst instead of a phrase,
+  // its own claim on the air, and its own rest afterwards. Kept in one place so
+  // the three voices share it rather than each growing a copy.
+  function farCloudSpan(layer, R, now, center, tok, margin, arc, again) {
+    var durS = 2.5 + R.next() * 5;
+    var t = farCloudBurst(layer, R, now + 0.05, center, durS);
+    if (tok) tok.until = t + margin;
+    var rest = (2 + R.next() * 5) * (1 - arc * 0.4) * metaRestMul() * gapMulAt(t) / trimOf(layer);
+    afterSpan(layer, now, (t - now) + rest * farTimeMul(layer, now), again);
+  }
+  var FAR_CLOUD_VOICES = 5;                      // notes in the air at once, per clouding voice
+  function farCloudBurst(layer, R, now, center, durS) {
+    var rate = farClouds.rateHz, n = Math.max(4, Math.round(rate * durS));
+    if (n > 220) n = 220;                        // a burst is a burst, not a night
+    var bus = farCheapBus(layer, now, 3200, R.rnd(-0.5, 0.5), 1);
+    var lo = center - farClouds.spanOct * field.size, hi = center + farClouds.spanOct * field.size, t = now;
+    for (var i = 0; i < n; i++) {
+      var a = foldDeg(Math.round(lo + R.next() * (hi - lo)));
+      var b = foldDeg(a + Math.round((R.next() * 2 - 1) * 4));
+      // A cloud's concurrency is its event RATE times its note LENGTH, and
+      // nothing was tying those two together: at 15 events a second with notes
+      // up to 2.2 s long, three plucked voices clouding at once peaked at 143
+      // concurrent sources against a ceiling of 110. So the note length is
+      // capped so that a cloud holds about FAR_CLOUD_VOICES notes in the air at
+      // a time whatever its rate — a denser cloud is made of shorter notes,
+      // which is also what a denser cloud sounds like.
+      var d = Math.max(0.06, Math.min(farClouds.glissS * (0.4 + R.next()), FAR_CLOUD_VOICES / rate));
+      farCheapNote(bus, SCALE[a].freq, t, d, 0.020 + 0.014 * R.next(), SCALE[b].freq, layer);
+      t += (durS / n) * (0.5 + R.next());
+      if (t > now + durS) break;
+    }
+    emitEvent({ cat: "far", label: "雲 a cloud", detail: layer + " · " + n + " events over " + durS.toFixed(1) + "s · " + farClouds.spanOct.toFixed(1) + " oct" }, now);
+    return t;
+  }
+
+  // ==========================================================================
+  // 鏡 STRICT MIRROR (W2) — every phrase answered by its retrograde-inversion
+  // ==========================================================================
+  // The plan: "every phrase answered by its exact retrograde-inversion; the
+  // ledger enforces it." The engine already has both transforms and a real
+  // obligation ledger, but the ledger CHOOSES its answer; 鏡 removes the
+  // choice. The answer is rendered directly on the answering voice — the same
+  // way the sankyoku shadow already works — so it is exact by construction
+  // rather than exact by hope, and it lands at lagBeats rather than at
+  // whenever that voice next happened to wake (the critic measured 10–17 s
+  // between accidental mirrors at home; this one answers inside a phrase).
+  //
+  // The axis is where the inversion pivots: the tonic, the fifth, or the
+  // phrase's own last note — the third being the one that keeps the answer in
+  // the same register as the call.
+  // 鏡 also stands the loose sankyoku shadows down (the koto shadowing the
+  // shakuhachi, the shamisen shadowing the koto): they inject notes into
+  // exactly the voice that is about to answer, and a night whose rule is
+  // "every phrase answered EXACTLY" cannot also have voices half-echoing each
+  // other by the dice. Same reasoning as the idioms standing aside under 影.
+  var FAR_MIRROR_ANSWER = { shakuhachi: "koto", koto: "shamisen", shamisen: "koto", biwa: "koto", hichiriki: "shakuhachi" };
+  // The inversion is computed in UNFOLDED degree space and then transposed by
+  // whole octaves to fit the register. Folding each note as it was made — which
+  // is what foldDeg does, one octave at a time — silently changed the intervals
+  // of any note that landed outside the table, so the "exact" retrograde-
+  // inversion was exact only for phrases that happened to stay in range. An
+  // octave transposition of the whole answer preserves every interval.
+  function farMirrorOf(phrase, axisDeg) {
+    var out = [], i, lo = 1e9, hi = -1e9, d;
+    for (i = phrase.length - 1; i >= 0; i--) {
+      d = 2 * axisDeg - phrase[i].deg;
+      out.push({ deg: d, durBeats: phrase[i].durBeats });
+      if (d < lo) lo = d; if (d > hi) hi = d;
+    }
+    var n = field.size, shift = 0;
+    while (lo + shift < 0) shift += n;
+    while (hi + shift > SCALE.length - 1) shift -= n;
+    for (i = 0; i < out.length; i++) out[i].deg = Math.max(0, Math.min(SCALE.length - 1, out[i].deg + shift));
+    return out;
+  }
+  // Answer a phrase that has just been scheduled. `sched` is what the caller
+  // rendered: [{ f, t, dur }]. Nothing is drawn — the answer is determined by
+  // the call — so 鏡 costs no randomness and cannot perturb a stream.
+  function farMirrorAnswer(voice, phrase, sched, now, beat) {
+    if (!farMirror || !phrase || phrase.length < 3 || !sched || !sched.length) return;
+    var ans = FAR_MIRROR_ANSWER[voice];
+    if (!ans || !seated(ans, now)) return;
+    var axisDeg = farMirror.axis === "tonic" ? scaleIndexOf(0)
+                : farMirror.axis === "fifth" ? scaleIndexOf(3)
+                : phrase[phrase.length - 1].deg;
+    // The answer FOLLOWS the call — lagBeats after the phrase ends, not after
+    // it begins. Measuring from the first note put the answer 0.2 s in, which
+    // is not an answer, it is a doubling.
+    var last = sched[sched.length - 1];
+    var m = farMirrorOf(phrase, axisDeg), lag = farMirror.lagBeats * beat, t = last.t + last.dur + lag;
+    var note = ans === "koto" ? kotoNote : ans === "shamisen" ? shamisenNote : ans === "shakuhachi" ? shakuhachiNote : kotoNote;
+    var t0 = t;
+    for (var i = 0; i < m.length; i++) {
+      var d = Math.max(0.12, m[i].durBeats * beat);
+      note(SCALE[m[i].deg].freq, t, d, { gain: 0.7 });
+      t += d;
+    }
+    // The answer is that voice's utterance: hold its air across the span so it
+    // does not play its own phrase over its own answer. Without this the answer
+    // was there in the stream and inaudible as a shape, because the answering
+    // voice was talking across it.
+    airHold[ans] = { from: t0 - 0.2, until: t + 0.3 };
+    emitEvent({ cat: "far", label: "鏡 answered", detail: voice + " → " + ans + " · " + m.length + " notes · axis " + farMirror.axis + " · lag " + lag.toFixed(2) + "s after the phrase" }, last.t + last.dur);
+  }
+
+  // Is this voice's entry in the current gesture still ahead of it? The same
+  // test the taker path makes, factored out so `seated` can ask it too.
+  function farDueToEnter(voice, now) {
+    var E = farEnsemble();
+    if (!E || !farSubject || farSubject.mode !== E.kind) return false;
+    if (E.voices.indexOf(voice) < 0 || farSubject.taken[voice]) return false;
+    var maxN = farEntryCount(E);
+    if (farSubject.n >= maxN) return false;
+    return now <= farSubject.at + farEntryAt(E, farSubject.n) + 0.6;
+  }
+
+  // A voice asks whether it is playing the ensemble's phrase, and on what terms.
+  // Returns { phrase, t0, cs, take, kind, slot } — the material, WHEN it enters,
+  // the scale its whole rendering runs at, and (for 継) which notes are its.
+  //
+  // 影's rendering rule, kept from W1 because the critic proved it load-bearing:
+  // a take renders at the SUBJECT's beat scaled by the drawn ratio, `cs`
+  // multiplies every duration in the phrase (floors, ornament steps, strum
+  // span), and a take is unhooked from the taiko's magnet — quantizing three
+  // ratios to one grid is precisely how a ratio disappears.
+  function farCanonTake(voice, phrase, now, center, ownBeat) {
+    var plain = { phrase: phrase, t0: now + 0.05, cs: 1, take: false, kind: null, slot: 0, of: 1, sharp: 1 };
+    var E = farEnsemble();
+    if (!E || !phrase || !phrase.length) return plain;
+    var mine = E.voices.indexOf(voice) >= 0;
+    if (!mine) return plain;
+    plain.kind = E.kind;
+    // 影 alone changes the tempo of every phrase these voices play, take or not
+    // — the between-voice ratio IS the canon, so it cannot be only occasional.
+    if (E.kind === "canon" && farCanon.of[voice]) {
+      var canonBeat = farCanon.base * farCanon.of[voice] * farTimeMul(voice, now);
+      plain.cs = ownBeat > 0 ? canonBeat / ownBeat : 1;
+    }
+    var maxN = farEntryCount(E);
+    if (farSubject && farSubject.mode === E.kind && !farSubject.taken[voice] && farSubject.n < maxN) {
+      var t0 = farSubject.at + farEntryAt(E, farSubject.n);
+      if (now <= t0 + 0.6) {                                  // it is still this voice's entry to make
+        var slot = farSubject.n;
+        farSubject.taken[voice] = 1; farSubject.n++;
+        var out = { phrase: fitToRegister(farSubject.notes, center), t0: Math.max(now + 0.05, t0),
+                    cs: plain.cs, take: true, kind: E.kind, slot: slot, of: maxN };
+        if (E.kind === "hocket") {
+          // one timeline for everyone, and this voice's own beat is irrelevant
+          out.t0 = farSubject.at;
+          out.cs = (ownBeat > 0 && farSubject.beat > 0) ? farSubject.beat / ownBeat : 1;
+          out.of = Math.min(maxN, E.voices.length);
+        } else if (E.kind === "hetero") {
+          // 重: the same line, each voice a hair sharp and a breath behind —
+          // the engine's own sankyoku shadow, made the rule instead of a
+          // 22 % chance and taken to all five.
+          out.sharp = Math.pow(2, ((slot % 2) ? 1 : -1) * (1.5 + slot * 0.8) / 1200);
+        }
+        return out;
+      }
+      if (now > farSubject.at + farEntryAt(E, maxN - 1) + 4) farSubject = null;   // the gesture is over
+    }
+    // THE GESTURE'S OWN PACE. A leader announces on every phrase it plays, and
+    // each announcement calls the other voices in — so without a floor between
+    // gestures 重 was starting one every five seconds and spawning four entries
+    // each time, which took the node budget to 3314/min against a ceiling of
+    // 1500 and pushed the concurrent sources past theirs. The floor is the
+    // gesture's own note count over the density the engine can afford: five
+    // voices on one six-note line is thirty notes, and thirty notes want ten
+    // seconds. Between gestures the voices play their own phrases, which is
+    // also the difference between an ensemble that GATHERS and one that never
+    // lets anybody speak alone. (The critic's W1 carried note (2) is the same
+    // observation about 影, and this answers it for all four at once.)
+    if (farSubject && now < farSubject.at + (FAR_ENS_GAP[E.kind] || 4)) return plain;
+    // This voice announces the next subject — and CALLS THE OTHERS IN. A
+    // gesture with staggered entries is one gesture, not several voices that
+    // happen to agree; leaving each to notice the subject on its own next
+    // phrase gave take latencies of 0.5–9.8 s (the critic's instrumented count)
+    // when they should be exactly the anchor. So the leader cancels the others'
+    // pending phrase and schedules their entry. Their own phrase functions
+    // reschedule themselves as usual, so the loop is unbroken — the same
+    // cancel-and-re-arm the KIRU already does to these lanes.
+    farSubject = { notes: phrase.slice(), at: now + 0.05, beat: ownBeat, lead: voice, taken: {}, n: 1, mode: E.kind };
     farSubject.taken[voice] = 1;
-    for (var ci = 0, k = 1; ci < FAR_CANON_VOICES.length; ci++) {
-      var v = FAR_CANON_VOICES[ci];
+    // 継: the leader is slot 0 of its own hocket, and everyone shares one
+    // timeline — the melody exists only in the sum, so the notes must fall
+    // where the subject put them, not where each voice would have put them.
+    if (E.kind === "hocket") {
+      plain.slot = 0; plain.t0 = farSubject.at; plain.of = Math.min(maxN, E.voices.length);
+      // A three-note phrase split five ways is one note each and then silence.
+      // The subject goes round the voices 2–3 times, so the hocket is a LINE
+      // you can follow being handed along — which is what the technique is.
+      farSubject.notes = farHocketLine(phrase, E.p.strict ? 3 : 2);
+      plain.phrase = farSubject.notes.slice();
+    }
+    for (var ci = 0, k = 1; ci < E.voices.length && k < maxN; ci++) {
+      var v = E.voices[ci];
       if (v === voice || !FAR_CANON_START[v]) continue;
       try {
         lane(v).cancelAll();
-        lane(v).at(farSubject.at + k * sp, guarded(FAR_CANON_START[v]));
+        lane(v).at(farSubject.at + farEntryAt(E, k), guarded(FAR_CANON_START[v]));
       } catch (e) {}
       k++;
     }
@@ -382,6 +657,7 @@ window.ZankyoAudio = (function () {
 
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
+    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
@@ -393,13 +669,25 @@ window.ZankyoAudio = (function () {
       // (the critic measured 1.66 : 1.00 : 0.64 on a 4:5:6 night, identical to
       // its home). Under 影 they abandon their own tempi and run at
       // base × ratio, so the between-voice relationship IS the drawn ratio and
-      // nothing else. `base` is chosen to preserve the trio's total note
-      // density — sum of rates before equals sum of rates after — so a canon
-      // night is a canon, not a louder night.
+      // nothing else. `base` equalises the sum of the three BEATS, before and
+      // after, so the canon cannot make the trio louder by making it faster.
+      // The realised note count still falls to 61–74 % of a home night (the
+      // critic measured it), because the idioms that stand aside for a canon —
+      // the gliss, the hammer-on, the tremolo — were contributing many of those
+      // onsets. That thinner night is the better music and it is intended: a
+      // canon is three lines you can follow, not three lines plus their
+      // ornaments.
       for (i = 0; i < FAR_CANON_VOICES.length; i++) { sumHome += 1 / FAR_CANON_HOME[FAR_CANON_VOICES[i]]; sumCanon += 1 / of[FAR_CANON_VOICES[i]]; }
       farCanon = { of: of, ratios: r, spreadS: p.spreadS, base: sumCanon / sumHome };
       farSubject = null;
     }
+    // W2 合奏 — the other three that ride the shared subject
+    if ((p = farNight.dep.hetero)) farHetero = p;
+    if ((p = farNight.dep.hocket)) farHocket = p;
+    if ((p = farNight.dep.swarm)) farSwarm = p;
+    if ((p = farNight.dep.clouds)) farClouds = p;
+    if ((p = farNight.dep.poly)) { farPoly = p; farPolyN = 0; }
+    if ((p = farNight.dep.mirror)) farMirror = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
   }
   // 遅 — one cycle glacial (a forty-minute jo made of single notes) or frantic,
@@ -1342,15 +1630,26 @@ window.ZankyoAudio = (function () {
   // per-voice window {from, until}; a claim inside it is denied (counted).
   // The drones, shō, noise and ambient never ask, so they continue.
   var airHold = {}, airHoldDenials = 0;
+  var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
     var h = airHold[voice];
-    if (h && t >= h.from && t < h.until) { airHoldDenials++; return null; }
+    // The claim's whole FOOTPRINT must clear the hold, not just its start. A
+    // phrase claiming a moment before a signal's hold and running into it was
+    // always able to talk over the broadcast; at one signal in three cycles it
+    // almost never happened, and §8.1's one per cycle made it show — six
+    // melodic notes inside a hold over two hours (the harness caught it).
+    // …and conservatively, because `span` is an ESTIMATE — a voice claims with
+    // its LAST phrase's length and then renders whatever this one turns out to
+    // be. Testing the estimate alone took the intrusions from six to one over
+    // two hours; the pad takes the last one. Better to let a voice miss a turn
+    // than to talk over the broadcast, which is the whole point of the hold.
+    if (h && t < h.until && (t + (span > 0 ? span : 0) + AIR_HOLD_PAD) > h.from) { airHoldDenials++; return null; }
     return air.tryClaim(voice, span, margin);
   }
   var signalProvider = null;                     // zk-broadcast.js installs itself here (S1)
   function signalUp(t) { for (var k in airHold) { var h = airHold[k]; if (h && t >= h.from && t < h.until) return true; } return false; }   // a signal holds the air at t
-  var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null };
+  var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null, visit2: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
 
@@ -1452,12 +1751,25 @@ window.ZankyoAudio = (function () {
     if (oroshi) scenes.push({ type: "oroshi", durS: oroDur, activity: null });
     scenes.push({ type: "kyu", durS: durS * Kd.kyu, activity: null });
     scenes.push({ type: "release", durS: durS * Kd.rel, activity: null });
-    if (visit) {                                    // seat the guest in the scene where it belongs
-      var want = visit.name === "the festival" ? "ha" : visit.name === "the tolling" ? "jo" : visit.name === "mu" ? "jo" : (visit.name === "the line" ? "jo" : "ha");
-      var idx = -1;
-      for (var vi = 0; vi < scenes.length; vi++) if (scenes[vi].type === want) { idx = vi; break; }
+    function seatVisit(v, want, avoid) {            // the scene where this guest belongs
+      var idx = -1, vi;
+      for (vi = 0; vi < scenes.length; vi++) if (scenes[vi].type === want && vi !== avoid) { idx = vi; break; }
+      if (idx < 0) for (vi = 0; vi < scenes.length; vi++) if (vi !== avoid) { idx = vi; break; }
       if (idx < 0) idx = 0;
-      visit.sceneIdx = idx; visit.scene = scenes[idx].type;
+      v.sceneIdx = idx; v.scene = scenes[idx].type;
+      return idx;
+    }
+    var WANT = { "the festival": "ha", "the tolling": "jo", "mu": "jo", "the line": "jo", "the broadcast": "ha" };
+    if (visit) {
+      var gi = seatVisit(visit, WANT[visit.name] || "ha", -1);
+      // §8.1 follow-up: a broadcast rides along in ANOTHER scene of the same
+      // cycle. Two seats, one plan — the scene event fires whichever guest is
+      // seated there, so nothing downstream needs a second seating path, and
+      // the two can never overlap because they are never in the same scene.
+      if (visit.alsoBroadcast) {
+        visit.second = { name: "the broadcast" };
+        seatVisit(visit.second, "ha", gi);
+      }
     }
     scenes = farErode(scenes, durS);              // 逸脱 蝕: the arc decomposes
     // 逸脱 遅/弛 (critic W1 r1, items 10 & 11): the cycle's own tempo is decided
@@ -1494,19 +1806,43 @@ window.ZankyoAudio = (function () {
   var VISIT_KANA = { "the broadcast": "放送", "the festival": "祭", "mu": "無", "the line": "回線", "the tolling": "鐘" };
   function drawVisitation(rng, kind, tp, seating) {
     var p = {
-      "the broadcast": kind === "broadcast" ? 1 : (0.30 + 0.08 * tp) * (kind === "drift" ? 1.5 : 1),   // S1: the signal about one cycle in three (the critic measured 0.3 per 3 on the base); a 放送 cycle always carries one
+      // §8.1 (the owner, after the rc.9 listen): the station picks something up
+      // about once a CYCLE now, not once in three. This is a deliberate change
+      // to ORDINARY nights — it is not a far-tail feature — so it is the one
+      // engine edit outside the far tail's own files, and the identity baseline
+      // is re-based on it rather than the change being hidden from the gate.
+      // Measured before: 0.34 / 0.35 / 0.35 planned per cycle over 97 cycles.
+      // The other guards are untouched: never two in a cycle, never in a KIRU
+      // or a hush, and the recent ring still keeps a reel out for three cycles.
+      "the broadcast": 1,
+
       "the festival":  (0.10 + 0.10 * tp) * (kind === "storm" ? 2 : 1),
       "mu":            (0.03 + 0.03 * (1 - tp)) * (kind === "drift" || kind === "silence" ? 1.5 : 1),   // rare: a dead night is one cycle, not a third of them
       "the line":      0.07 * (kind === "broadcast" ? 1.8 : 1),
       "the tolling":   (0.09 + 0.05 * tp) * (kind === "rite" ? 2 : 1),
     };
-    var drawn = [];
-    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], VISITATIONS[i] === "the broadcast" ? 1.5 : 1]); }   // S1: the signal leans a collision its way (same draw count; 2.5 starved the other guests)
+    // §8.1 follow-up (the orchestrator, and the owner's own direction): the
+    // broadcast is becoming its OWN KIND of visitation, so it stops competing
+    // with the guests for the cycle. A cycle may host one broadcast AND one of
+    // 祭 無 回線 鐘, seated in different scenes and never overlapping. The old
+    // shape forced a choice, and at one broadcast a cycle that choice was
+    // deleting the other four: measured, two non-broadcast guests in two hours.
+    // Still never two broadcasts in a cycle, never in a KIRU or a hush.
+    var drawn = [], bc = false;
+    for (var i = 0; i < VISITATIONS.length; i++) {
+      var hit = rng.chance(p[VISITATIONS[i]]);                 // every draw taken, unconditionally
+      if (!hit) continue;
+      if (VISITATIONS[i] === "the broadcast") bc = true; else drawn.push([VISITATIONS[i], 1]);
+    }
     var pick = rng.pickW(drawn.length ? drawn : [["none", 1]]);   // one pickW draw either way
-    if (cyc.n < 0 || pick === "none") return null;
-    if (pick === "the festival" && seating.named === "dead station") return null;
-    if (pick === "mu" && (lastCycleEmpty || seating.named === "dead station")) return null;   // never two empty cycles in a row
-    return { name: pick };
+    if (cyc.n < 0) return null;
+    if (pick === "the festival" && seating.named === "dead station") pick = "none";
+    if (pick === "mu" && (lastCycleEmpty || seating.named === "dead station")) pick = "none";   // never two empty cycles in a row
+    if (pick === "none") return bc ? { name: "the broadcast" } : null;
+    // both drawn: the guest takes its scene and the broadcast takes another.
+    // `guest` rides along on the same object so nothing else has to learn a
+    // second seating path — one plan, two seats.
+    return bc ? { name: pick, alsoBroadcast: true } : { name: pick };
   }
   var visitActive = null;                          // the guest in progress: { name, until }
   var lastCycleEmpty = false;                      // the previous cycle was mu or a dead station
@@ -1715,14 +2051,20 @@ window.ZankyoAudio = (function () {
       // tell from a bug — and this one shipped silent once already (the critic
       // found a 遅 night that played thirty minutes of home and announced 遅).
       if (farCycleRate !== 1) emitEvent({ cat: "far", label: "遅 " + (farCycleRate > 1 ? "the cycle slows" : "the cycle races"), detail: "×" + (1 / farCycleRate).toFixed(2) + " speed · " + Math.round(evt.durS) + "s" }, evt.t);
-      cyc.visit = p.visit || null; visitActive = null;
+      cyc.visit = p.visit || null; cyc.visit2 = (p.visit && p.visit.second) || null; visitActive = null;
       lastCycleEmpty = !!(p.seating && p.seating.named === "dead station");
       if (p.visit) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[p.visit.name] + " " + p.visit.name, detail: "visitation: " + p.visit.name + " · seated in " + p.visit.scene + " (" + (p.visit.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
+      // …and the broadcast riding along in its own scene is announced in its
+      // own right. It was seated and it fired, but nothing downstream could see
+      // it — not the log, not the analyzer — because only the first seat was
+      // ever announced. A guest nobody can see is a guest nobody can gate.
+      if (cyc.visit2) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[cyc.visit2.name] + " " + cyc.visit2.name, detail: "visitation: " + cyc.visit2.name + " · seated in " + cyc.visit2.scene + " (" + (cyc.visit2.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
       // S1: the receiver is ARMED at plan time — it draws the reel and schedules
       // its prefetch from the hosting scene's start (≥ 20 s before any t0)
-      if (p.visit && p.visit.name === "the broadcast" && signalProvider && p.sceneDurS) {
-        var hostStart = evt.t; for (var hi = 0; hi < p.visit.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
-        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[p.visit.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
+      var bcSeat = (p.visit && p.visit.name === "the broadcast") ? p.visit : ((p.visit && p.visit.second) || null);
+      if (bcSeat && signalProvider && p.sceneDurS) {
+        var hostStart = evt.t; for (var hi = 0; hi < bcSeat.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
+        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[bcSeat.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
@@ -1741,6 +2083,7 @@ window.ZankyoAudio = (function () {
         try { farDisintegrate(evt.t + 2); } catch (e) {}
       }
       if (cyc.visit && cyc.visit.sceneIdx === evt.idx && !cyc.visit.fired) { cyc.visit.fired = true; try { fireVisitation(cyc.visit, evt.t + (cyc.visit.name === "the tolling" ? 0 : S.visit.rnd(8, 25))); } catch (e) {} }
+      if (cyc.visit2 && cyc.visit2.sceneIdx === evt.idx && !cyc.visit2.fired) { cyc.visit2.fired = true; try { fireVisitation(cyc.visit2, evt.t + S.visit.rnd(8, 25)); } catch (e) {} }   // §8.1: the broadcast riding along in its own scene
     }
   }
   // Room balance per scene (0 = the corridor, close; 1 = the hull, vast):
@@ -1785,7 +2128,25 @@ window.ZankyoAudio = (function () {
   function metaSeverity() { return tidePos() * (cyc.kind === "drift" ? 0.5 : 1); }
   // Global density tilt (±12% on melodic rest multipliers with the tide) ×
   // the kind's own rest multiplier (silence rests most, storm least).
-  function metaRestMul() { return (1 + 0.12 * (1 - 2 * tidePos())) * K().restMul * farRestMul(); }   // 逸脱 間: silence becomes the material
+  function metaRestMul() { return (1 + 0.12 * (1 - 2 * tidePos())) * K().restMul * farRestMul() * farEnsembleRest(); }   // 逸脱 間 + 重/継/群
+  // 逸脱 — THE ENSEMBLE'S DENSITY BRAKE. An ensemble departure seats all five
+  // melodic voices and lifts the air, and five bodies where the air normally
+  // allows two is two and a half times the notes: measured, 重 took the node
+  // budget from ~1100/min to 3314 and the peak concurrent sources past their
+  // ceiling. But five voices sharing ONE LINE should cost about what the line
+  // costs — that is the whole idea of heterophony, and a version of it that is
+  // simply louder and busier is not the departure, it is a mistake with a
+  // Japanese name. So each departure carries the factor its own arithmetic
+  // implies: 重 copies the line five ways (5/2 against the air's usual two),
+  // 継 splits it rather than copying it and only pays for its 2–3 passes, and
+  // 影 already equalises its own beats and needs nothing.
+  var FAR_ENS_REST = { hetero: 7.5, hocket: 4.6, canon: 1, swarm: 7 };
+  var FAR_ENS_GAP = { hetero: 10, hocket: 7, canon: 6, swarm: 12 };   // seconds between gestures
+  function farEnsembleRest() {
+    var E = farEnsemble(), m = E ? (FAR_ENS_REST[E.kind] || 1) : 1;
+    if (farMirror) m *= 1.8;                     // 鏡: an answered phrase is two phrases
+    return m;
+  }
   function gapMulAt(t) { return 0.85 + 0.3 * wxAt(t).gapMul; }   // the weather's ±15 % on phrase gaps
   // Is this voice seated right now? The cycle's seating, its entry rule
   // (koto/shamisen "from the ha"; the shakuhachi "for the reprise only"),
@@ -1793,6 +2154,16 @@ window.ZankyoAudio = (function () {
   function seated(voice, t) {
     var s = cyc.seating;
     if (!s) return true;
+    // 逸脱 重/継/群: an ensemble departure IS the scene, FOR THE LENGTH OF ITS
+    // GESTURE. "All five melodic voices read the same phrase" cannot be true
+    // while the cycle's seating lottery has rested two of them, so a voice due
+    // to enter is seated whatever the lottery said — but only then. Seating all
+    // five for the whole night instead cost 74 % more nodes than the same
+    // seed's home and made the departure a constant medium density rather than
+    // an ensemble that GATHERS: between gestures the ordinary seating stands,
+    // and voices speak alone or not at all, which is what makes the gathering
+    // audible when it comes.
+    if (FAR_MEL_SET[voice] && farDueToEnter(voice, t)) return true;
     if (s[voice] === false) return false;
     var e = s.entry[voice];
     if (e === "ha" && arcPhase(t) === "jo") return false;
@@ -1807,7 +2178,17 @@ window.ZankyoAudio = (function () {
   }
   // THE AIR's manners: the scene's declared limit and overlap chance, the
   // silence kind capping the air at one voice.
-  function airLimitNow() { var l = conductor ? conductor.airLimit() : 1; return cyc.kind === "silence" ? 1 : l; }
+  function airLimitNow() {
+    var l = conductor ? conductor.airLimit() : 1;
+    if (cyc.kind === "silence") return 1;
+    // 逸脱 重/継: an ensemble departure is five voices on one line, which the
+    // air's ordinary manners (one or two holders) would deny four of. The air
+    // is the station's courtesy protocol, not a polyphony budget, and on these
+    // nights the courtesy is suspended — that IS the departure.
+    var E = farEnsemble();
+    if (E) return Math.max(l, E.voices.length);
+    return l;
+  }
   function airOverlapNow() { return conductor ? conductor.overlapChance() : 0; }
   // A claim's margin of silence after the phrase, by phase and kind.
   function airMargin(R, t) {
@@ -1840,11 +2221,23 @@ window.ZankyoAudio = (function () {
   }
   // Blend a freely-chosen onset toward the nearest UPCOMING taiko beat.
   // Only ever delays (audio can't rewind), and never by more than one beat.
-  function pulseSnap(t, arc) {
+  // 逸脱 多: under polymeter each magnetized voice is pulled to a DIFFERENT
+  // drum's meter, which is the half of the departure that makes it music
+  // rather than a drum exercise — the koto hears the 3, the shamisen the 4,
+  // the biwa the 7, and their phrases fall apart from one another accordingly.
+  var FAR_POLY_VOICE = { koto: 0, shamisen: 1, biwa: 2 };
+  function pulseBeatFor(voice) {
+    if (!farPoly || !pulse.active || voice == null || FAR_POLY_VOICE[voice] == null) return pulse.beat;
+    var m = farPoly.meters;
+    return pulse.beat * m[FAR_POLY_VOICE[voice] % m.length] * 0.5;   // the drum's own cycle, in the shared tatum
+  }
+  function pulseSnap(t, arc, voice) {
     var s = pulseStrength(arc);
     if (s <= 0) return t;
-    var grid = pulse.anchor + Math.ceil((t - pulse.anchor) / pulse.beat) * pulse.beat;
-    if (grid - t > pulse.beat + 1e-6) return t;  // degenerate-grid guard
+    var b = pulseBeatFor(voice);
+    if (!(b > 0)) return t;
+    var grid = pulse.anchor + Math.ceil((t - pulse.anchor) / b) * b;
+    if (grid - t > b + 1e-6) return t;           // degenerate-grid guard
     return t + (grid - t) * s;
   }
   // Light duration quantization above arc 0.7 — note lengths lean ~30% toward
@@ -2583,10 +2976,14 @@ window.ZankyoAudio = (function () {
     if (breathSolo && phrase.length > 2) phrase = phrase.slice(0, 2);        // one or two long breaths
     if (phrase.length) shakuState.idx = phrase[phrase.length - 1].deg;   // melodic continuity for the next walk
 
-    var beat = 0.62 / pace * farTimeMul("shakuhachi", now), t = now + 0.05, prev = null, sched = [];   // 逸脱 遅/弛
+    var ownBeat = 0.62 / pace * farTimeMul("shakuhachi", now);
+    var cn = farCanonTake("shakuhachi", phrase, now, shakuState.center, ownBeat);   // 重 継: the winds join the ensemble departures (影 is the plucked trio's)
+    phrase = cn.phrase;
+    var beat = ownBeat * cn.cs, t = cn.t0, prev = null, sched = [];   // 逸脱 遅/弛
     for (var i = 0; i < phrase.length; i++) {
-      var n = phrase[i], dur = Math.max(0.25, n.durBeats * beat);
-      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
+      var n = phrase[i], dur = Math.max(0.25 * cn.cs, n.durBeats * beat);
+      if (cn.kind === "hocket" && (i % cn.of) !== cn.slot) { t += dur; continue; }   // 継
+      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq * cn.sharp;   // 重
       var glideFrom = (prev && S.shakuhachi.next() < glideAmt) ? prev : null;
       var mur = (i === 0 && S.shakuhachi.next() < muraiki * (0.4 + arc * 0.6) * (breathSolo ? 3 : 1) * (0.6 + 0.8 * wxAt(t).breath));
       shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: S.shakuhachi.next() < ornament || !!n.meri, atari: prev === f });   // a born descent ends in a meri dip; a repeated pitch is an atari
@@ -2594,6 +2991,7 @@ window.ZankyoAudio = (function () {
       prev = f;
       t += dur + S.shakuhachi.next() * 0.05;
     }
+    farMirrorAnswer("shakuhachi", phrase, sched, now, beat);   // 鏡
     shakuState.lastSpan = t - now;
     tok.until = t + margin;                      // the claim's true footprint: the phrase as rendered + the margin
     // 〰 SANKYOKU HETEROPHONY — in the ha especially, the koto sometimes reads
@@ -2601,7 +2999,7 @@ window.ZankyoAudio = (function () {
     // list, its own ornament choices, a hair sharp. The shadow is a GRANTED
     // overlap: it asks the air (a second holder needs the scene's limit or
     // the overlap dice) and the koto must be seated.
-    if (sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08) && seated("koto", now) && airClaimAt(now, "koto", t - now, 0)) {
+    if (!farMirror && sched.length >= 3 && S.shakuhachi.chance(arcPhase(now) === "ha" ? 0.22 : 0.08) && seated("koto", now) && airClaimAt(now, "koto", t - now, 0)) {
       var lag = S.shakuhachi.rnd(0.15, 0.4), sharp = Math.pow(2, S.shakuhachi.rnd(2, 3.5) / 1200), sprev = null;
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
@@ -2785,10 +3183,14 @@ window.ZankyoAudio = (function () {
       emitEvent({ cat: "hichiriki", label: "fresh", detail: phrase.length + " notes · " + arcPhase(now) }, now);
     }
     if (phrase.length) hichiState.idx = phrase[phrase.length - 1].deg;
-    var beat = (cry ? 2.2 : 1.4) / pace * farTimeMul("hichiriki", now), t = now + 0.05, prev = null;   // 逸脱 遅/弛
+    var ownBeat = (cry ? 2.2 : 1.4) / pace * farTimeMul("hichiriki", now);
+    var cn = farCanonTake("hichiriki", phrase, now, hichiState.center, ownBeat);   // 重 継
+    phrase = cn.phrase;
+    var beat = ownBeat * cn.cs, t = cn.t0, prev = null;   // 逸脱 遅/弛
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.8, n.durBeats * beat);
-      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
+      if (cn.kind === "hocket" && (i % cn.of) !== cn.slot) { t += dur; continue; }   // 継
+      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq * cn.sharp;   // 重
       hichirikiNote(f, t, dur, { glideFrom: (prev && R.next() < 0.6) ? prev : null, bend: R.next() < 0.35 || !!n.meri, swell: i === 0 && !cry });
       prev = f; t += dur + R.next() * 0.1;
     }
@@ -2838,6 +3240,8 @@ window.ZankyoAudio = (function () {
     var ownBeat = 0.9 * farTimeMul("biwa", now);   // the narrator has no `pace`; 0.9 was its inline factor
     var cn = farCanonTake("biwa", phrase, now, biwaState.center, ownBeat);   // 影
     phrase = cn.phrase;
+    if (farClouds) { farCloudSpan("biwa", R, now, biwaState.center, tok, margin, arc, biwaPhrase); return; }   // 雲
+    if (cn.kind === "swarm" && !cn.take) farSwarmTail(phrase, cn.t0, ownBeat * cn.cs, biwaState.center);   // 群
     if (phrase.length) biwaState.idx = phrase[phrase.length - 1].deg;
     var beat = ownBeat * cn.cs, t = cn.t0, strummed = false;   // 逸脱 遅/弛/影
     for (var i = 0; i < phrase.length; i++) {
@@ -3004,14 +3408,17 @@ window.ZankyoAudio = (function () {
     var ownBeat = 0.4 / pace * farTimeMul("koto", now);
     var cn = farCanonTake("koto", phrase, now, kotoState.center, ownBeat);   // 影: the same page, in the drawn ratio
     phrase = cn.phrase;
+    if (farClouds) { farCloudSpan("koto", S.koto, now, kotoState.center, tok, margin, arc, kotoPhrase); return; }   // 雲
+    if (cn.kind === "swarm" && !cn.take) farSwarmTail(phrase, cn.t0, ownBeat * cn.cs, kotoState.center);   // 群
     if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
     // pulse) — but never on a canon take: a canon keeps its own time.
-    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc), prev = null, sched = [];   // 逸脱 遅/弛/影
+    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc, "koto"), prev = null, sched = [];   // 逸脱 遅/弛/影/多
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.12 * cn.cs, n.durBeats * beat);
       if (!cn.take) dur = pulseQuantDur(dur, arc);
-      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
+      if (cn.kind === "hocket" && (i % cn.of) !== cn.slot) { t += dur; continue; }   // 継: the melody exists only in the sum
+      var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq * cn.sharp;   // 重: a hair sharp
       kotoNote(f, t, dur, { glideFrom: (prev && S.koto.next() < 0.3) ? prev : null, bend: S.koto.next() < 0.2 });
       sched.push({ f: f, t: t, dur: dur });
       prev = f; t += dur + S.koto.next() * 0.03;
@@ -3019,7 +3426,7 @@ window.ZankyoAudio = (function () {
     // 〰 sankyoku heterophony downward: the shamisen sometimes shadows the koto
     // a breath behind — same page, its own accents, a hair sharp (a granted
     // overlap, as above).
-    if (sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07) && seated("shamisen", now) && airClaimAt(now, "shamisen", t - now, 0)) {
+    if (!farMirror && sched.length >= 3 && S.koto.chance(arcPhase(now) === "ha" ? 0.2 : 0.07) && seated("shamisen", now) && airClaimAt(now, "shamisen", t - now, 0)) {
       var lag = S.koto.rnd(0.15, 0.4), sharp = Math.pow(2, S.koto.rnd(2, 3.5) / 1200);
       for (var sh = 0; sh < sched.length; sh++) {
         var sn = sched[sh];
@@ -3036,6 +3443,7 @@ window.ZankyoAudio = (function () {
       }
       t = gt; emitEvent({ cat: "koto", label: "gliss", detail: (up ? "↑" : "↓") + gn }, now);
     }
+    farMirrorAnswer("koto", phrase, sched, now, beat);         // 鏡
     kotoState.lastSpan = t - now;
     tok.until = t + margin;
     var rest = (1.6 + S.koto.next() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() * gapMulAt(t) / trimOf("koto");  // sparse in jo; meta tilts density ±12%
@@ -3072,17 +3480,20 @@ window.ZankyoAudio = (function () {
     var ownBeat = 0.28 / pace * farTimeMul("shamisen", now);
     var cn = farCanonTake("shamisen", phrase, now, shamiState.center, ownBeat);   // 影
     phrase = cn.phrase;
+    if (farClouds) { farCloudSpan("shamisen", S.shamisen, now, shamiState.center, tok, margin, arc, shamisenPhrase); return; }   // 雲
+    if (cn.kind === "swarm" && !cn.take) farSwarmTail(phrase, cn.t0, ownBeat * cn.cs, shamiState.center);   // 群
     if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
     // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic
     // pulse) — never on a canon take.
-    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc);   // 逸脱 遅/弛/影
+    var beat = ownBeat * cn.cs, t = cn.take ? cn.t0 : pulseSnap(cn.t0, arc, "shamisen");   // 逸脱 遅/弛/影/多
     for (var i = 0; i < phrase.length; i++) {
-      var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
+      var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq * cn.sharp;   // 重
       // 影: no cap on the note's length — the shamisen alone clipped durBeats at
       // one beat, so on a shared subject its long notes were short and the
       // drawn ratio came apart at the wide spreads (2:3:5 read 0.95 : 1.00).
       var dur = Math.max(0.1 * cn.cs, (farCanon ? n.durBeats : Math.min(n.durBeats, 1)) * beat);
       if (!cn.take) dur = pulseQuantDur(dur, arc);
+      if (cn.kind === "hocket" && (i % cn.of) !== cn.slot) { t += dur; continue; }   // 継
       // tsugaru hammer-on: a quick lower-neighbor grace before the beat — the
       // shamisen's own idiom, and not part of a canon entry (see the biwa's strum)
       if (!farCanon && S.shamisen.next() < 0.25 + arc * 0.3) {
@@ -3159,7 +3570,70 @@ window.ZankyoAudio = (function () {
     ji:      [["D.d.d.d.", 3], ["D.d.D.d.", 2], ["D...d...", 2], ["D.d.d.k.", 1]],
     matsuri: [["D.ssD.s.", 3], ["DsdsD.k.", 2], ["D.D.ss.k", 2], ["dsdsdsDk", 2], ["D..sD.sk", 1.5]],   // don-doko-don, the yatai-bayashi shape
   };
+  // ==========================================================================
+  // 多 POLYMETER (W2) — three drums, three meters, one tatum
+  // ==========================================================================
+  // The plan: "3 against 4 against 7 across its three drums; the pulse magnet
+  // pulls each voice to a different drum." At home the three drums read one
+  // shared pattern string, so they are one instrument with three timbres — the
+  // critic measured it: the share of a drum's inter-onsets near its own median
+  // is 8–17 % for the shime and 9–10 % for the ō-daiko, i.e. no periodicity of
+  // its own at all. Under 多 each drum keeps ITS OWN cycle against a common
+  // tatum, and the phase carries across calls (farPolyN), so the three really
+  // do converge, pass and diverge over minutes rather than re-aligning at every
+  // pattern boundary. The figures are the drums' own: the ō-daiko marks the
+  // downbeat and one interior stroke, the shime fills, the ka chatters.
+  var farPolyN = 0;
+  // Offsets in TATUMS within each drum's own meter — not fractions of it, which
+  // was the first version and meant the ka (meter 7) never matched a quarter
+  // and struck exactly zero times in half an hour. Every drum marks its own
+  // downbeat, so its median inter-onset IS its meter and the three periods
+  // stand in the drawn ratio; the interior strokes are occasional, so they
+  // colour the figure without moving that median.
+  function farPolyFig(drum, m) {
+    if (drum === "odaiko") return [0];
+    if (drum === "shime") return [0, Math.ceil(m / 2)];
+    return [1, m - 1];                           // the ka chatters off the beat
+  }
+  var FAR_POLY_CH = { odaiko: ["D", "d"], shime: ["S", "s"], ka: ["k", "k"] };
+  function farPolyPattern(t0, beat, hitP) {
+    var R = S.taiko, half = beat * 0.5, span = 32;
+    var m = farPoly.meters, drums = ["odaiko", "shime", "ka"], rows = {};
+    for (var d = 0; d < drums.length; d++) rows[drums[d]] = new Array(span);
+    for (var i = 0; i < span; i++) {
+      var n = farPolyN + i;
+      for (d = 0; d < drums.length; d++) {
+        var dr = drums[d], mm = m[d % m.length], pos = n % mm, fig = farPolyFig(dr, mm), hit = null;
+        for (var f = 0; f < fig.length; f++) {
+          if (pos !== fig[f]) continue;
+          // the downbeat is the meter; the interior strokes are occasional so
+          // they do not move the drum's median inter-onset off its own period
+          var interior = f > 0;
+          // 0.62 overall: three drums each on their own downbeat is about twice
+          // the strike rate of the one shared pattern they read at home, and
+          // that took the peak concurrent sources to 112 against a hard 110 on
+          // a night that also carried 重 (the critic's number, and the one with
+          // 群 and 雲 still to come). Thinning the strikes keeps all three
+          // meters — the periodicity is in WHERE they fall, not how many.
+          if (R.next() >= hitP * 0.62 * (interior ? 0.15 : 1) * (dr === "ka" ? 0.55 : 1)) break;
+          var accent = !interior && dr !== "ka";
+          taikoHit(t0 + i * half, accent, dr);
+          hit = FAR_POLY_CH[dr][accent ? 0 : 1];
+          break;
+        }
+        rows[dr][i] = hit || ".";
+      }
+    }
+    farPolyN += span;
+    // ONE PATTERN STRING PER DRUM, in the engine's own "地 <string>" shape.
+    // The kit is not in the note stream — it is in the taiko event stream as a
+    // pattern at half-beat resolution — so a polymetric kit that emitted one
+    // merged string would be unreadable to anything downstream (and would hide
+    // exactly the periodicity that IS the departure). Three drums, three rows.
+    return { end: t0 + span * half, pat: rows.odaiko.join(""), rows: rows, meters: m.join(":") };
+  }
   function taikoPattern(t0, kind, beat, hitP) {
+    if (farPoly) return farPolyPattern(t0, beat, hitP);   // 逸脱 多
     var R = S.taiko, pat = R.pickW(TAIKO_PATTERNS[kind]), t = t0, half = beat * 0.5;
     for (var i = 0; i < pat.length; i++) {
       var ch = pat.charAt(i);
@@ -3182,7 +3656,13 @@ window.ZankyoAudio = (function () {
     // does the GRID it publishes — otherwise the strings magnetize to a pulse
     // that never left home and a glacial cycle keeps a brisk heartbeat.
     var tmul = farTimeMul("taiko", now);
-    var beat = 60 / (50 + arc * 90) * tmul, bpm = 60 / beat, t = now + 0.05;
+    // 逸脱 多: a polymetric kit does NOT ride the arc. Three meters are only
+    // audible against a tatum that holds still — measured, letting the tempo
+    // climb from 50 to 140 bpm across a cycle blurred each drum's own period
+    // into the next and the periodicity share barely left its floor. So under
+    // 多 the kit is a machine at a fixed pulse (it still dilates with 遅 and
+    // 弛, which move the whole world), and the arc is spent on density instead.
+    var beat = (farPoly ? 60 / 74 : 60 / (50 + arc * 90)) * tmul, bpm = 60 / beat, t = now + 0.05;
     pulse.bpm = bpm; pulse.beat = beat; pulse.anchor = t; pulse.active = true;   // publish the grid — the ensemble magnetizes to this
     var kyu = arcPhase(now) === "kyū";
     var festival = !!(visitActive && visitActive.name === "the festival" && now < visitActive.until);
@@ -3191,9 +3671,11 @@ window.ZankyoAudio = (function () {
     var res = taikoPattern(t, kind, beat, festival ? 1 : 0.55 + arc * 0.45);
     // KAKEGOE — the crew calling time to nobody, through the broken PA
     var kk = getLayerParam("taiko", "kakegoe", 0.5);
-    if (kind === "matsuri" && R.next() < kk * (festival ? 0.6 : kyu ? 0.35 : 0.15)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: festival ? "祭" : arcPhase(now) }, now); }
+    if (kind === "matsuri" && R.next() < kk * (festival ? 0.6 : kyu ? 0.35 : 0.15) && !signalUp(t)) { paKakegoe(t - 0.12); emitEvent({ cat: "pa", label: "掛け声 kakegoe", detail: festival ? "祭" : arcPhase(now) }, now); }
     t = res.end;
-    emitEvent({ cat: "taiko", label: kind === "matsuri" ? "祭 " + res.pat : "地 " + res.pat, detail: Math.round(bpm) + "bpm" }, now);
+    if (res.rows) {                              // 逸脱 多: one line per drum, each in its own meter
+      for (var dn in res.rows) emitEvent({ cat: "taiko", label: "地 " + res.rows[dn].join(""), detail: Math.round(bpm) + "bpm · " + dn + " · 多 " + res.meters }, now);
+    } else emitEvent({ cat: "taiko", label: kind === "matsuri" ? "祭 " + res.pat : "地 " + res.pat, detail: Math.round(bpm) + "bpm" }, now);
     var rest = (2 + R.next() * 4) * (1 - arc * 0.7) * (festival ? 0.25 : 1) / trimOf("taiko");
     afterSpan("taiko", now, (t - now) + rest * farTimeMul("taiko", now), taikoPulse);
   }
@@ -3574,7 +4056,7 @@ window.ZankyoAudio = (function () {
     cyc.n = -1; cyc.seating = null; scn.type = null; pendingPlan = null; cyclesSinceSea = 0;
     field.modulate({ tonicHz: TONIC_HZ, mode: { name: "hirajoshi", steps: MODES.hirajoshi.offsets } }); currentMode = "hirajoshi"; rebuildScale();   // every play opens at home
     pulse.active = false;                        // no grid until the taiko speaks
-    lastAitake = null; visitActive = null; cyc.visit = null; airHold = {}; airHoldDenials = 0;
+    lastAitake = null; visitActive = null; cyc.visit = null; cyc.visit2 = null; airHold = {}; airHoldDenials = 0;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded
@@ -3914,6 +4396,11 @@ window.ZankyoAudio = (function () {
         try { if (cutGrit.gain.value < 0.9) return "snow"; } catch (e2) {}
       }
       try { return signalProvider.dialLock() || "snow"; } catch (e3) { return "snow"; }
+    },
+    // §8.2: is the button's lens lit? Read every frame by the page.
+    dialReady: function () {
+      if (!signalProvider || !signalProvider.dialReady) return true;
+      try { return !!signalProvider.dialReady(); } catch (e) { return true; }
     },
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,

@@ -134,10 +134,11 @@ include '../../includes/header.php';
             <span class="zk-set2-brand">映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
             <span class="zk-chin-spacer"></span>
             <button type="button" class="zk-tune" id="zankyo-tune" aria-label="選局 · tune: scan for a signal" title="選局 &middot; tune"></button>
-            <!-- 掃引 (plan §7): the tuning dial. Unlabeled, the same 20 px as
-                 選局 beside it, and it shows its position. Turning it makes
-                 snow and band-noise; keep turning and a reel locks in. -->
-            <div class="zk-dial" id="zankyo-dial"></div>
+            <!-- 受信 (plan §8.2): a worn square push-switch with a lens, the
+                 same footprint as 選局 beside it, unlabeled. Press it and the
+                 set finds a real broadcast at once; then it is cold for the
+                 best part of a minute and the lens goes out. -->
+            <button type="button" class="zk-push" id="zankyo-push" aria-label="受信" aria-disabled="false"><span class="zk-push-lens" aria-hidden="true"></span></button>
             <span class="zk-rx-label">受信</span>
             <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
           </div>
