@@ -947,6 +947,19 @@
 .zk-tune::after { content: ""; position: absolute; left: 50%; top: 18%; width: 2px; height: 34%; margin-left: -1px; background: #d8d2c2; border-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.7); transform-origin: 50% 94%; transform: rotate(var(--ch, -40deg)); transition: transform 0.18s cubic-bezier(.5,1.6,.6,1); }
 .zk-tune:active { transform: translateY(1px); box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
 .zk-tune:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+
+/* 掃引 THE TUNING DIAL (plan §7) — the same 20 px cap as 選局 next to it, no
+   print, and a pointer that shows where it stands. It is a knob, not a
+   button: it wants to be swept, and the sweep is the mechanism. */
+.zk-dial { width: 20px; height: 20px; margin-right: 6px; flex: none; }
+.zk-dial .zk-knob { width: 20px; height: 20px; }
+.zk-dial .zk-knob-cap {
+  background: radial-gradient(circle at 34% 28%, #5c5c66, #2a2a31 50%, #101014 90%);
+  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -3px 4px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.28);
+}
+.zk-dial .zk-knob-ind { top: 18%; height: 34%; width: 2px; margin-left: -1px; background: #d8d2c2; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.7); }
+.zk-dial .zk-knob.is-drag .zk-knob-cap { box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
+.zk-dial .zk-knob:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
 .zk-rx-label { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; }
 .zk-rx {
   width: 7px; height: 7px; border-radius: 50%; flex: none;

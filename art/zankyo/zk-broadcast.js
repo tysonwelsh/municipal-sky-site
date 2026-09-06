@@ -226,6 +226,69 @@
     } catch (e) {}
   }
 
+  // ==========================================================================
+  // 掃引 THE TUNING DIAL (plan §7)
+  // ==========================================================================
+  // Fidgeting is what makes it work. Every bit of rotation raises a band of
+  // receiver noise whose centre wanders with the hand — the sound of sweeping
+  // a dial past nothing — and once about a turn and a half has gone by within
+  // a few seconds, a real reel locks in AT ONCE. Not at the next legal moment:
+  // that is 選局's manners, and the whole point of the dial is that it does not
+  // wait. It is rate-limited to one lock in 30 s; past that, fidgeting is
+  // snow and hiss, which is the honest thing for a receiver to do.
+  //
+  // The noise is scheduled one short burst per gesture-tick rather than held
+  // open, so it costs nothing when nobody is touching it, and it cannot leak a
+  // running oscillator if the page is closed mid-turn.
+  var dialLast = -1e9;                                       // audio time of the last lock
+  var dialNoiseUntil = -1e9;
+  function dialNoise(amt) {
+    var T = tl(), c = T.ctx; if (!c) return;
+    var t = c.currentTime + 0.02, durS = 0.16;
+    if (t < dialNoiseUntil - 0.02) return;                   // one burst at a time: the hand is faster than the ear
+    dialNoiseUntil = t + durS;
+    try {
+      var nz = T.noiseSource(), bp = c.createBiquadFilter(), g = c.createGain();
+      bp.type = "bandpass"; bp.Q.setValueAtTime(4.5, t);
+      // the band wanders with the motion: that is what a dial sounds like
+      var f0 = 500 + 2600 * amt * (0.5 + 0.5 * Math.sin(t * 3.1));
+      bp.frequency.setValueAtTime(Math.max(200, f0), t);
+      bp.frequency.exponentialRampToValueAtTime(Math.max(200, f0 * (0.7 + 0.6 * amt)), t + durS);
+      nz.connect(bp); bp.connect(g); g.connect(T.lg("broadcast"));
+      var peak = 0.010 + 0.030 * amt;                        // well under the reel's own 0.35 peak
+      PJ.Voice.env(g.gain, t, [[0.02, peak], [durS - 0.05, peak * 0.7], [0.03, 0]]);
+      nz.start(t, Math.random() * 20); nz.stop(t + durS + 0.05);
+    } catch (e) {}
+  }
+  // The dial asks for a lock. Returns "locked" | "snow" | "wait" — the caller
+  // makes snow either way; this only says whether a reel came with it.
+  function dialLock() {
+    var T = tl(), c = T.ctx;
+    if (!c) return "snow";
+    var now = c.currentTime;
+    if (now - dialLast < 30) return "wait";                  // one lock per 30 s
+    if (!T.playing()) {                                      // stopped: the audition, a full window
+      if (!sampleTune(now)) return "snow";
+      dialLast = now; stats.dial = (stats.dial || 0) + 1;
+      return "locked";
+    }
+    if (live || (armed && armed.t0 != null)) return "snow";  // a signal is up: the dial only makes snow
+    var sc = T.scene(), cy = T.cycle();
+    if (!sc || sc.type === "kyu" || sc.type === "release" || sc.type === "oroshi") return "snow";   // the wall and the hush are not the dial's to interrupt
+    // IMMEDIATELY, not at the next legal moment: t0 is now + the static lead,
+    // and the window is trimmed to whatever room the scene has left.
+    var t0 = now + STATIC_LEAD_S + 0.5;
+    var room = (sc.startT + sc.durS - 3) - (t0 + TUNE_S + 2.8 + COLLAPSE_S + BURST_S);
+    if (room < 4) return "snow";                             // no room before the scene turns
+    var R = T.S.signal.fork("dial:" + Math.max(0, cy.n) + ":" + Math.round(now));
+    if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R)) return "snow";
+    if (armed.holdS + armed.lossD > room) armed.holdS = Math.max(3, room - armed.lossD);
+    if (!fire(t0)) { armed = null; return "snow"; }
+    dialLast = now; stats.dial = (stats.dial || 0) + 1;
+    T.emitEvent({ cat: "rx", label: "掃引 locked on", detail: "the dial finds one · " + Math.round(t0 - now) + " s" }, now);
+    return "locked";
+  }
+
   // ---- the signal itself ----
   function startSignal(a, t0) {
     var T = tl(), c = T.ctx, v = video, ms = mediaSrc;
@@ -372,19 +435,28 @@
     seatScan(sc, cy);
   }
 
-  // ---- the ♪ audition (S2): a 2 s tune-in on a random window, while stopped
-  // (no lanes — the clock is not running — so Web Audio times and timeouts).
-  // The picture rides the same descriptor, so the set shows it too.
+  // ---- the ♪ audition (S2; plan §7 addendum): a FULL reel window while the
+  // station is stopped — the whole 10–12 s with the complete tune-in / hold /
+  // loss gesture on the tube, not the 2 s tune-in it used to be. The owner's
+  // note: an audition should show what a signal IS. It draws the same hold and
+  // loss as a real one (8–12 s and 1.6–2.8 s), and the same dropout plan, so
+  // the picture breathes and stutters the way it does in a performance.
+  // No lanes — the clock is not running — so Web Audio times and timeouts.
   function sampleTune(t) {
     var T = tl(), c = T.ctx; if (!c) return false;
     loadPool();
     var v = ensureVideo(), ms = ensureMediaSource(c);
     var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
-    var rReel = R.next(), rWin = R.next(), rIn = R.next();
-    var holdS = 1.2, lossD = 0.5, t0 = t + 1.0, tuneEnd = t0 + TUNE_S + holdS + lossD;
+    var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
+    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2, t0 = t + 1.0, tuneEnd = t0 + TUNE_S + holdS + lossD;
     if (poolState !== "ready" || !v || !ms || !pool.length) { staticRise(t, t0); return true; }   // the dial turns, nothing found
     var reel = pool[Math.floor(rReel * pool.length)], win = reel.windows[Math.floor(rWin * reel.windows.length)];
-    var inS = win[0] + rIn * Math.max(0, (win[1] - win[0]) - (tuneEnd - t0) - 0.5);
+    var wl = (win[1] - win[0]), need = TUNE_S + holdS + lossD;
+    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; tuneEnd = t0 + need; }
+    var inS = win[0] + rIn * Math.max(0, wl - need - 0.5);
+    // the same dropout plan a real signal gets, so the picture stutters
+    var adrops = [], dt = TUNE_S + 0.6;
+    while (dt < TUNE_S + holdS) { dt += 1.2 + R.next() * 3.2; if (dt < TUNE_S + holdS) adrops.push([dt, 0.12 + R.next() * 0.25]); }
     var nodes = [], hp, lp, pre, sh, sg;
     try {
       hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(700, t0); hp.frequency.linearRampToValueAtTime(260, t0 + 0.8);
@@ -392,7 +464,7 @@
       pre = c.createGain(); pre.gain.setValueAtTime(0.5, t0);
       sh = c.createWaveShaper(); var cv = new Float32Array(1024); for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; cv[i] = Math.tanh(x * 3.5) / Math.tanh(3.5); } sh.curve = cv;
       sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6;
-      PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [holdS, peak], [lossD * 0.6, peak * 0.4], [lossD * 0.4, 0]]);
+      PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak], [lossD * 0.6, peak * 0.4], [lossD * 0.4, 0]]);
       nodes = [hp, lp, pre, sh, sg];
       ms.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
     } catch (e) { return false; }
@@ -406,13 +478,13 @@
       if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
       else setTimeout(go, startMs);
     } catch (e) {}
-    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: [], id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
+    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
     T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
     setTimeout(function () { try { if (mediaSrc && hp) mediaSrc.disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
     return true;
   }
 
-  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene });
+  Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock });
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {

@@ -3717,6 +3717,22 @@ window.ZankyoAudio = (function () {
     toggleLayer: toggleLayer, getState: getState, sample: sample,
     // 選局 TUNE (S2): playing → ask the receiver to seat a signal at the next legal moment (one per cycle); stopped → the layer's ♪ tune-in
     tune: function () { if (!signalProvider) return false; if (playing) return !!(signalProvider.scan && signalProvider.scan()); sample("broadcast"); return true; },
+    // 掃引 THE TUNING DIAL (plan §7). The page hands over how hard the hand is
+    // moving (0..1) and whether the fidget has passed the threshold; the
+    // receiver makes the noise either way and only locks when asked to. The
+    // KIRU's hush is the engine's to know about, so it is refused here rather
+    // than in the receiver: during the cut the dial makes snow and nothing else.
+    dial: function (amt, wantLock) {
+      if (!signalProvider) return "snow";
+      init();                                                 // stopped and never played: there is no context yet (the ♪ audition wakes it the same way)
+      if (ctx.state !== "running") { try { ctx.resume(); } catch (e0) {} }
+      try { if (signalProvider.dialNoise) signalProvider.dialNoise(Math.max(0, Math.min(1, +amt || 0))); } catch (e) {}
+      if (!wantLock || !signalProvider.dialLock) return "snow";
+      if (playing && ctx && cutGrit) {                        // inside the KIRU's hush the station is listening to itself
+        try { if (cutGrit.gain.value < 0.9) return "snow"; } catch (e2) {}
+      }
+      try { return signalProvider.dialLock() || "snow"; } catch (e3) { return "snow"; }
+    },
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,
     getArc: getArc, getArcInfo: arcInfo, getMetaInfo: getMetaInfo,

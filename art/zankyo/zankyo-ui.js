@@ -525,6 +525,53 @@
       if (sceneEl) sceneEl.classList.add("is-on");
     });
   }
+  // ==========================================================================
+  // 掃引 THE TUNING DIAL (plan §7)
+  // ==========================================================================
+  // Unlabeled, the same size as 選局 beside it, and it shows its position.
+  // Fidgeting is the mechanism: every degree of rotation feeds the receiver,
+  // which answers with snow on the tube and a band of noise that wanders with
+  // the hand — the sound of sweeping past nothing. Once about a turn and a
+  // half has gone by inside a few seconds, a real reel locks in AT ONCE.
+  //
+  // The knob's own range is 0–100 over its 270° sweep, so "a turn and a half"
+  // is 540° is 200 units. Rotation is accumulated with a decaying window
+  // rather than a fixed one: a sweep back and forth counts (it is the same
+  // wrist), but a slow drift over a minute does not, because the window
+  // forgets at DIAL_TAU. Below the threshold — and always, past it — the
+  // engine is asked for the noise, so the tube answers the hand whether or
+  // not a reel is there. Rate-limiting, the KIRU's hush and "a signal is
+  // already up" all live in the engine and the receiver, which know.
+  var DIAL_THRESHOLD = 200;      // units of knob travel ≈ 540° ≈ a turn and a half
+  var DIAL_TAU = 2.2;            // seconds: the window forgets at this rate
+  function wireDial() {
+    var mount = document.getElementById("zankyo-dial");
+    if (!mount || !Z.dial) return;
+    var travel = 0, lastT = 0, lastV = null;
+    mount.appendChild(makeKnob({
+      min: 0, max: 100, step: 0.5, value: 50,
+      label: "\u63a1\u5f15",                    // 掃引 — a name, not an instruction
+      cls: "zk-knob-dial",
+      format: function (v) { return Math.round(v) + ""; },
+      onInput: function (v) {
+        var now = (window.performance && performance.now) ? performance.now() / 1000 : Date.now() / 1000;
+        var d = lastV == null ? 0 : Math.abs(v - lastV);
+        lastV = v;
+        if (lastT) travel *= Math.exp(-(now - lastT) / DIAL_TAU);
+        lastT = now;
+        travel += d;
+        // how hard the hand is moving, for the snow and the band's centre
+        var amt = Math.min(1, travel / DIAL_THRESHOLD);
+        try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(0.25 + 0.75 * amt); } catch (e) {}
+        var want = travel >= DIAL_THRESHOLD;
+        var got = "snow";
+        try { got = Z.dial(amt, want); } catch (e2) {}
+        if (got === "locked") { travel = 0; lastT = 0; }      // the gesture is spent
+        else if (want) travel = DIAL_THRESHOLD * 0.6;         // refused: it must be earned again, but not from nothing
+      },
+    }));
+  }
+
   // ---- Transport (arcade buttons + master volume knob) ----
   function wireTransport() {
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
@@ -557,5 +604,5 @@
     }
   }
 
-  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); pollArc();
+  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); wireDial(); pollArc();
 })();
