@@ -1,0 +1,19 @@
+{
+  "id": "prelinger-operation-cue-1964",
+  "title": "Operation Cue",
+  "year": 1964,
+  "src": "https://archive.org/details/Operatio1964",
+  "license": "PD",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 96.17,
+  "bytes": 966881,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.17], [84.17, 96.17]],
+  "srcWindows": [[3.0, 15], [86.0, 98], [261.0, 273], [398.0, 410], [530.0, 542], [570.0, 582], [600.0, 612], [781.0, 793]],
+  "notes": "FCDA study of the 1955 Nevada test (1964 revision): a radio transmitter broadcasting from tape before the shot, mannequins facing the blast, 'on the silent desert the test objects waited', the shot, 'this time it was only a test'",
+  "takedown": false
+}

@@ -1,0 +1,19 @@
+{
+  "id": "prelinger-tv-commercials-1960s",
+  "title": "Television Commercials (1950s–1960s)",
+  "year": 1960,
+  "src": "https://archive.org/details/Televisi1960",
+  "license": "PD",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 94.0,
+  "bytes": 971706,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 58.0], [58.0, 70.0], [70.0, 82.0], [82.0, 94.0]],
+  "srcWindows": [[90.0, 102], [129.0, 141], [349.0, 361], [446.0, 458], [483.0, 493.0], [606.0, 618], [976.0, 988], [1340.0, 1352]],
+  "notes": "Prelinger reel of 1950s–60s spots: Alka-Seltzer, 'like sending your sinuses to Arizona', NAB code PSA, Coca-Cola stewardess, Colt 45, 'the blahs', Heinz pickles",
+  "takedown": false
+}

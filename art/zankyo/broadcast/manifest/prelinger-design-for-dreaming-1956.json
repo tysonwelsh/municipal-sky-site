@@ -1,0 +1,19 @@
+{
+  "id": "prelinger-design-for-dreaming-1956",
+  "title": "Design for Dreaming",
+  "year": 1956,
+  "src": "https://archive.org/details/Designfo1956",
+  "license": "PD",
+  "tier": "A",
+  "tone": "sung",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 96.0,
+  "bytes": 991017,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[4.0, 16], [87.0, 99], [141.0, 153], [321.0, 333], [350.0, 362], [371.0, 383], [477.0, 489], [524.0, 536]],
+  "notes": "GM Motorama 1956 musical; sung throughout; 'everyone says the future is strange'; Eldorado, Buick Centurion, the kitchen of tomorrow",
+  "takedown": false
+}
