@@ -49,9 +49,9 @@ window.ZankyoAudio = (function () {
   var weather = null;                                                            // Phase 3: PJ2.Fx.weather — the continuous modulator field
   var gritShaperB = null, gritBlendA = null, gritBlendB = null;                   // Phase 3: the second grit curve, crossfaded by the weather
   var screechBus = null;                                                         // Phase 3: the feedback-screech bodies' sum (tapped)
-  var cutGrit = null, cutSho = null, cutAmb = null;                               // Phase 4: THE CUT — gains over the landscape groups (never the master)
+  var cutGrit = null, cutSho = null, cutAmb = null, cutTaiko = null;              // Phase 4: THE CUT — gains over the landscape groups (never the master); Phase M r3: the kit has its own
   var radioBus = null;                                                           // Phase 4: the lost broadcast's radio filter
-  var duckGrit = null, duckSho = null, carveGrit = null, carveSho = null, shelfGrit = null, shelfSho = null, pickGrit = null, pickSho = null;   // Phase M: THE CREW LOWERS ITS VOICE — one writer's gains and notches over the landscape
+  var duckGrit = null, duckSho = null, carveGrit = null, carveSho = null, carveGrit2 = null, carveSho2 = null, shelfGrit = null, shelfSho = null, pickGrit = null, pickSho = null;   // Phase M: THE CREW LOWERS ITS VOICE — one writer's gains and notches over the landscape
   var landscapeTap = null, outTrim = null;                                        // Phase M: dev taps — the landscape sum (grit bus + shō, as cut) and the output
   var layerIn = {}, presenceOf = {};                                              // Phase M: per-layer entry node → presence stage → the layer gain (so the tap hears it)
   var gritShaper = null;           // distortion bus (gritty instruments route here)
@@ -404,7 +404,8 @@ window.ZankyoAudio = (function () {
       carveSho = ctx.createBiquadFilter(); carveSho.type = "peaking"; carveSho.frequency.setValueAtTime(400, ctx.currentTime); carveSho.Q.setValueAtTime(ROOM_Q, ctx.currentTime); carveSho.gain.setValueAtTime(0, ctx.currentTime);
       shelfSho = ctx.createBiquadFilter(); shelfSho.type = "highshelf"; shelfSho.frequency.setValueAtTime(1500, ctx.currentTime); shelfSho.gain.setValueAtTime(LAND_SHELF_DB, ctx.currentTime);
       pickSho = ctx.createBiquadFilter(); pickSho.type = "peaking"; pickSho.frequency.setValueAtTime(2500, ctx.currentTime); pickSho.Q.setValueAtTime(0.8, ctx.currentTime); pickSho.gain.setValueAtTime(0, ctx.currentTime);
-      sumSho.connect(duckSho); duckSho.connect(carveSho); carveSho.connect(shelfSho); shelfSho.connect(pickSho); pickSho.connect(cutSho);   // the same duck, notch, shelf and pick dip as the grit bus (Phase M)
+      carveSho2 = ctx.createBiquadFilter(); carveSho2.type = "peaking"; carveSho2.frequency.setValueAtTime(400, ctx.currentTime); carveSho2.Q.setValueAtTime(ROOM_Q, ctx.currentTime); carveSho2.gain.setValueAtTime(0, ctx.currentTime);
+      sumSho.connect(duckSho); duckSho.connect(carveSho); carveSho.connect(carveSho2); carveSho2.connect(shelfSho); shelfSho.connect(pickSho); pickSho.connect(cutSho);   // the same duck, notches, shelf and pick dip as the grit bus (Phase M)
       cutSho.connect(reverbSend); roomBlend.register("sho", cutSho, 0.1);
       sumAmb.connect(cutAmb); cutAmb.connect(reverbSend); roomBlend.register("ambient", cutAmb, 0.15);
       // THE RADIO (Phase 4): the lost broadcast surfaces through this — a
@@ -479,7 +480,9 @@ window.ZankyoAudio = (function () {
       shelfGrit = ctx.createBiquadFilter(); shelfGrit.type = "highshelf"; shelfGrit.frequency.setValueAtTime(1500, ctx.currentTime); shelfGrit.gain.setValueAtTime(LAND_SHELF_DB, ctx.currentTime);
       // and a DYNAMIC dip in the pick band (peaking 2.5 kHz, Q 0.8 → 1.4–4.5 kHz), opened only while a plucked voice speaks (the writer below), so the wall keeps its top when nobody plucks
       pickGrit = ctx.createBiquadFilter(); pickGrit.type = "peaking"; pickGrit.frequency.setValueAtTime(2500, ctx.currentTime); pickGrit.Q.setValueAtTime(0.8, ctx.currentTime); pickGrit.gain.setValueAtTime(0, ctx.currentTime);
-      gritMakeup.connect(duckGrit); duckGrit.connect(carveGrit); carveGrit.connect(shelfGrit); shelfGrit.connect(pickGrit); pickGrit.connect(cutGrit);
+      // r3: a SECOND notch per bus — notch 1 follows the plucked / reed / PA spans, notch 2 the shakuhachi's, so a koto under a flute has its own band cleared (one notch at the mean pitch cleared neither)
+      carveGrit2 = ctx.createBiquadFilter(); carveGrit2.type = "peaking"; carveGrit2.frequency.setValueAtTime(400, ctx.currentTime); carveGrit2.Q.setValueAtTime(ROOM_Q, ctx.currentTime); carveGrit2.gain.setValueAtTime(0, ctx.currentTime);
+      gritMakeup.connect(duckGrit); duckGrit.connect(carveGrit); carveGrit.connect(carveGrit2); carveGrit2.connect(shelfGrit); shelfGrit.connect(pickGrit); pickGrit.connect(cutGrit);
       cutGrit.connect(reverbSend); roomBlend.register("grit", cutGrit, -0.12);
       // dev tap: the LANDSCAPE as the critic measures it — the grit bus and the
       // shō after their cut gains (ambient events keep their own depth and are
@@ -491,18 +494,24 @@ window.ZankyoAudio = (function () {
       // drone gets ~14 dB less of the curve's gain than the drone does, so the
       // kit read 18 dB under the bus it was in. Now it has its own copy of the
       // grit curve (the same 0.6 shape, 4× oversampled) and its own makeup-down,
-      // set so a LOUD hit leaves the shaper at the level it entered (the curve
-      // gives ~+17 dB at the rail; 0.13 takes it back): no level change for the
-      // kit's accents, the soft strokes come up with the clip's compression.
+      // first set so a LOUD hit left the shaper at the level it entered (the curve
+      // gives ~+17 dB at the rail; 0.13 took it back), then doubled by ruling —
+      // see the makeup line below.
       // Into the KIRU's cut gain after the crew's chain: the cut still hushes the
       // kit; the crew does not duck or notch it (it is a voice, not the floor).
       taikoShaper = ctx.createWaveShaper(); taikoShaper.curve = buildGritCurve(0.6); taikoShaper.oversample = "4x";
-      taikoMakeup = ctx.createGain(); taikoMakeup.gain.setValueAtTime(0.13, ctx.currentTime);
-      taikoShaper.connect(taikoMakeup); taikoMakeup.connect(cutGrit);
+      taikoMakeup = ctx.createGain(); taikoMakeup.gain.setValueAtTime(0.26, ctx.currentTime);   // r3 (orchestrator Q6): 0.13 → 0.26 — the one deliberate level move of the pass: a kit 17–19 dB under the drone is not audible; +6 dB puts its hits near the koto's level (~+0.15 dB integrated while it drums)
+      // r3: the kit's own CUT gain (the KIRU hushes it with the landscape) into the
+      // dry sum and the rooms like the grit, and into the dry-grit send it always
+      // had — but NOT into the landscape tap: the kit is a voice, measured against
+      // the landscape, not part of it.
+      cutTaiko = ctx.createGain(); cutTaiko.gain.setValueAtTime(1, ctx.currentTime);
+      taikoShaper.connect(taikoMakeup); taikoMakeup.connect(cutTaiko);
+      cutTaiko.connect(reverbSend); roomBlend.register("taiko", cutTaiko, -0.12);
       // parallel dry path — crossfaded up by the arc so the kyū gets close + abrasive
       dryGritGain = ctx.createGain();
       dryGritGain.gain.setValueAtTime(0, ctx.currentTime);
-      cutGrit.connect(dryGritGain);
+      cutGrit.connect(dryGritGain); if (cutTaiko) cutTaiko.connect(dryGritGain);
       dryGritGain.connect(masterGain);
 
       // Shamisen's own saturator: a near-unity-makeup tanh that gives the
@@ -2905,7 +2914,7 @@ window.ZankyoAudio = (function () {
       nz.start(t); nz.stop(t + 0.6);
     }
     // the cut: the landscape's three gains, one schedule each — the master is untouched
-    if (cutGrit) { cutEnvelope(cutGrit.gain, t, dip, hold); cutEnvelope(cutSho.gain, t, dip, hold); cutEnvelope(cutAmb.gain, t, dip, hold); }
+    if (cutGrit) { cutEnvelope(cutGrit.gain, t, dip, hold); cutEnvelope(cutSho.gain, t, dip, hold); cutEnvelope(cutAmb.gain, t, dip, hold); if (cutTaiko) cutEnvelope(cutTaiko.gain, t, dip, hold); }
     // the melodic voices stop mid-gesture and re-arm after the hush
     var tBack = t + 0.6 + hold + 1.0;
     for (var li = 0; li < MELODIC_LANES.length; li++) {
@@ -2944,55 +2953,67 @@ window.ZankyoAudio = (function () {
   // differ by a lookahead between runs.
   var ROOM_VOICES = { shakuhachi: 1.5, koto: 2, shamisen: 2, hichiriki: 2, biwa: 2, pa: 2 };          // the grit bus: duck + notch ≤ 4 dB in 150–1200 Hz (orchestrator's cap)
   var ROOM_VOICES_SHO = { shakuhachi: 1.5, koto: 3.5, shamisen: 2.5, hichiriki: 3, biwa: 3, pa: 4 };   // the shō: the PA's masker at 0.8–3.2 kHz, so it steps back further for the PA   // the crew's step for each speaker, dB, in the jo (measured: the landscape is 78 % of the master's power, so every dB of duck while a voice speaks is ~0.8 dB of loudness for that time — the budget caps the frequent speakers)
-  var ROOM_SCENE = { jo: 1.0, ha: 0.9, "kyū": 0.7, release: 0.8 };                          // jo deepest, kyū shallowest (the ruling); the ha is where the strings live                          // × by phase (the loudness budget: voices speak ~45 % of the jo, ~80 % of the ha, ~95 % of the kyū)
-  var ROOM_CARVE_DB = -2, ROOM_Q = 2.0;                                                       // the notch at the speaking register: narrow (a critical band) and deeper — it clears the fundamental's band for a fraction of the power a broad duck would spend
+  var ROOM_SCENE = { jo: 1.0, ha: 0.9, "kyū": 0.8, release: 0.8 };                          // jo deepest, kyū shallowest (the ruling); the ha is where the strings live                          // × by phase (the loudness budget: voices speak ~45 % of the jo, ~80 % of the ha, ~95 % of the kyū)
+  var ROOM_CARVE_DB = -2, ROOM_Q = 2.0;
+  var ROOM_CARVE_KOTO_DB = -4, ROOM_KOTO_DEEP = { jo: 1, ha: 1 };                           // r3 (orchestrator Q5): the koto's notch −4 in the jo and ha (duck 2 + notch 4 = the 6 dB cap for the koto there); kyū and release stay at 4                                                       // the notch at the speaking register: narrow (a critical band) and deeper — it clears the fundamental's band for a fraction of the power a broad duck would spend
   var ROOM_F_LO = 150, ROOM_F_HI = 1200;                                                    // the dip stays inside 150–1200 Hz (the orchestrator's cap)
   var LAND_SHELF_DB = -3;                                                                  // the static shelf above 1.5 kHz on the grit bus and the shō
-  var ROOM_PICK_DB = -4;                                                                   // the pick-band dip while a plucked voice (or the PA) speaks (× scene)
-  var ROOM_PLUCKED = { koto: 1, shamisen: 1, biwa: 1, pa: 1 };                             // the PA too: the shō masks it in the same 1.4–4.5 kHz (critic r1)
-  var ROOM_F_HI_SHO = 1600;                                                                // the shō's notch may follow the PA's band centre (1.5 kHz); the grit's stays inside 150–1200
-  var room = { spans: [], g: 1, gs: 1, cg: 0, pg: 0, lf: Math.log(400), lfs: Math.log(400) };
+  var ROOM_PICK = { koto: -4, shamisen: -4, biwa: -4, pa: -6 };                            // the pick-band dip (1.4–4.5 kHz, above the cap) while a plucked voice or the PA speaks, dB × scene; the PA deeper (critic r2)
+  var ROOM_F_HI_SHO = 1600;                                                                // the shō's notch may follow the PA's band centre; the grit's stays inside 150–1200
+  var ROOM_GROUP = { koto: 1, shamisen: 1, biwa: 1, hichiriki: 1, pa: 1, shakuhachi: 2 };  // notch 1: the plucked / reed / PA; notch 2: the flute (critic r2 §3.1)
+  var ROOM_PA_SHO_F = 1100, ROOM_PA_SHO_Q = 1.0;                                          // the PA's shō notch: 1.1 kHz at Q 1 clears 0.8–1.6 kHz, where the shō's A5 partials cover the tannoy (critic r2 §3.2)
+  var room = { spans: [], g: 1, gs: 1, pg: 0, cg: [0, 0], lf: [Math.log(400), Math.log(400)], lfs: [Math.log(400), Math.log(400)], qs: ROOM_Q };
   function roomSpeak(layer, t, dur, f) {
     if (!ROOM_VOICES[layer] || !(dur > 0) || !(f > 0)) return;
-    room.spans.push({ a: t, b: t + dur, f: f, fs: layer === "pa" ? 1500 : f, db: ROOM_VOICES[layer], dbs: ROOM_VOICES_SHO[layer] || ROOM_VOICES[layer], pl: !!ROOM_PLUCKED[layer] });   // the PA: the grit notch at its reciting tone, the shō's at its band centre
+    room.spans.push({ a: t, b: t + dur, f: f, fs: layer === "pa" ? ROOM_PA_SHO_F : f, qs: layer === "pa" ? ROOM_PA_SHO_Q : ROOM_Q, db: ROOM_VOICES[layer], dbs: ROOM_VOICES_SHO[layer] || ROOM_VOICES[layer], pk: ROOM_PICK[layer] || 0, grp: ROOM_GROUP[layer] || 1, koto: layer === "koto" });   // the PA: the grit notch at its reciting tone, the shō's at 1.1 kHz
   }
   function roomReset(t) {
-    room.spans.length = 0; room.g = 1; room.gs = 1; room.cg = 0; room.pg = 0; room.lf = Math.log(400); room.lfs = Math.log(400);
+    room.spans.length = 0; room.g = 1; room.gs = 1; room.pg = 0; room.cg = [0, 0]; room.lf = [Math.log(400), Math.log(400)]; room.lfs = [Math.log(400), Math.log(400)]; room.qs = ROOM_Q;
     if (!duckGrit) return;
     [duckGrit.gain, duckSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(1, t); });
-    [carveGrit.gain, carveSho.gain, pickGrit.gain, pickSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(0, t); });
-    [carveGrit.frequency, carveSho.frequency].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(400, t); });
+    [carveGrit.gain, carveSho.gain, carveGrit2.gain, carveSho2.gain, pickGrit.gain, pickSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(0, t); });
+    [carveGrit.frequency, carveSho.frequency, carveGrit2.frequency, carveSho2.frequency].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(400, t); });
+    carveSho.Q.cancelScheduledValues(t); carveSho.Q.setValueAtTime(ROOM_Q, t);
   }
   function roomPulse(t) {
     if (!playing || !duckGrit) return null;
     var P = 0.25, N = 5, dt = P / N, sp = room.spans, keep = [], i;
     for (i = 0; i < sp.length; i++) if (sp[i].b > t - 1) keep.push(sp[i]);      // spans older than the release are forgotten
     room.spans = sp = keep;
-    var scene = ROOM_SCENE[arcPhase(t)] != null ? ROOM_SCENE[arcPhase(t)] : 0.7;
-    var g = room.g, gs = room.gs, cg = room.cg, pg = room.pg, lf = room.lf, lfs = room.lfs;
+    var scene = ROOM_SCENE[arcPhase(t)] != null ? ROOM_SCENE[arcPhase(t)] : 0.7, deepPhase = !!ROOM_KOTO_DEEP[arcPhase(t)];
+    var g = room.g, gs = room.gs, pg = room.pg, cg = room.cg.slice(), lf = room.lf.slice(), lfs = room.lfs.slice(), qs = room.qs;
+    var CG = [carveGrit, carveGrit2], CS = [carveSho, carveSho2];
     duckGrit.gain.setValueAtTime(g, t); duckSho.gain.setValueAtTime(gs, t);              // anchors: this writer's own last values, which the previous window's ramps reached at t
-    carveGrit.gain.setValueAtTime(cg, t); carveSho.gain.setValueAtTime(cg, t); pickGrit.gain.setValueAtTime(pg, t); pickSho.gain.setValueAtTime(pg, t);
-    carveGrit.frequency.setValueAtTime(Math.exp(lf), t); carveSho.frequency.setValueAtTime(Math.exp(lfs), t);
+    pickGrit.gain.setValueAtTime(pg, t); pickSho.gain.setValueAtTime(pg, t);
+    for (var n = 0; n < 2; n++) { CG[n].gain.setValueAtTime(cg[n], t); CS[n].gain.setValueAtTime(cg[n], t); CG[n].frequency.setValueAtTime(Math.exp(lf[n]), t); CS[n].frequency.setValueAtTime(Math.exp(lfs[n]), t); }
+    carveSho.Q.setValueAtTime(qs, t);
     for (var k = 1; k <= N; k++) {
-      var tau = t + k * dt, step = 0, steps = 0, fsum = 0, fssum = 0, fn = 0, plucked = false;
-      for (i = 0; i < sp.length; i++) if (sp[i].a <= tau && tau <= sp[i].b) { if (sp[i].db > step) step = sp[i].db; if (sp[i].dbs > steps) steps = sp[i].dbs; if (sp[i].pl) plucked = true; fsum += Math.log(sp[i].f); fssum += Math.log(sp[i].fs); fn++; }
+      var tau = t + k * dt, step = 0, steps = 0, pk = 0, sp1 = [0, 0], fsum = [0, 0], fssum = [0, 0], fn = [0, 0], qmin = ROOM_Q, kotoDeep = false;
+      for (i = 0; i < sp.length; i++) if (sp[i].a <= tau && tau <= sp[i].b) {
+        var x = sp[i], gi = x.grp === 2 ? 1 : 0;
+        if (x.koto && deepPhase) kotoDeep = true;
+        if (x.db > step) step = x.db; if (x.dbs > steps) steps = x.dbs; if (x.pk < pk) pk = x.pk;
+        sp1[gi] = 1; fsum[gi] += Math.log(x.f); fssum[gi] += Math.log(x.fs); fn[gi]++; if (gi === 0 && x.qs < qmin) qmin = x.qs;
+      }
       var target = step > 0 ? Math.pow(10, -step * scene / 20) : 1, targetS = steps > 0 ? Math.pow(10, -steps * scene / 20) : 1;
       var a = 1 - Math.exp(-dt / (target < g ? 0.05 : 0.2));                   // attack ≈ 150 ms (3 τ), release ≈ 600 ms
       g += (target - g) * a;
       gs += (targetS - gs) * (1 - Math.exp(-dt / (targetS < gs ? 0.05 : 0.2)));
-      cg += ((step > 0 ? ROOM_CARVE_DB * scene : 0) - cg) * a;
-      pg += ((plucked ? ROOM_PICK_DB * scene : 0) - pg) * a;
-      if (fn) {
-        var lt = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI), fsum / fn)); lf += (lt - lf) * (1 - Math.exp(-dt / 0.04));
-        var lts = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI_SHO), fssum / fn)); lfs += (lts - lfs) * (1 - Math.exp(-dt / 0.04));
+      pg += (pk * scene - pg) * a;
+      for (n = 0; n < 2; n++) {
+        cg[n] += ((sp1[n] ? (n === 0 && kotoDeep ? ROOM_CARVE_KOTO_DB : ROOM_CARVE_DB) * scene : 0) - cg[n]) * a;
+        if (fn[n]) {
+          var lt = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI), fsum[n] / fn[n])); lf[n] += (lt - lf[n]) * (1 - Math.exp(-dt / 0.04));
+          var lts = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI_SHO), fssum[n] / fn[n])); lfs[n] += (lts - lfs[n]) * (1 - Math.exp(-dt / 0.04));
+        }
+        CG[n].gain.linearRampToValueAtTime(cg[n], tau); CS[n].gain.linearRampToValueAtTime(cg[n], tau);
+        CG[n].frequency.linearRampToValueAtTime(Math.exp(lf[n]), tau); CS[n].frequency.linearRampToValueAtTime(Math.exp(lfs[n]), tau);
       }
-      var fq = Math.exp(lf), fqs = Math.exp(lfs);
+      qs += (qmin - qs) * (1 - Math.exp(-dt / 0.04)); carveSho.Q.linearRampToValueAtTime(qs, tau);   // the PA's shō notch is wider (Q 1); the strings' stays a critical band (Q 2)
       duckGrit.gain.linearRampToValueAtTime(g, tau); duckSho.gain.linearRampToValueAtTime(gs, tau);
-      carveGrit.gain.linearRampToValueAtTime(cg, tau); carveSho.gain.linearRampToValueAtTime(cg, tau);
       pickGrit.gain.linearRampToValueAtTime(pg, tau); pickSho.gain.linearRampToValueAtTime(pg, tau);
-      carveGrit.frequency.linearRampToValueAtTime(fq, tau); carveSho.frequency.linearRampToValueAtTime(fqs, tau);
     }
-    room.g = g; room.gs = gs; room.cg = cg; room.pg = pg; room.lf = lf; room.lfs = lfs;
+    room.g = g; room.gs = gs; room.pg = pg; room.cg = cg; room.lf = lf; room.lfs = lfs; room.qs = qs;
     return P;
   }
 
@@ -3133,7 +3154,7 @@ window.ZankyoAudio = (function () {
     attachBusAnalyser: function (name, node) {
       var src = { dry: reverbSend, grit: gritMakeup, hull: roomHull && roomHull.output, corridor: roomCorridor && roomCorridor.output, farWall: farWall && farWall.output,
         halo: layHalo, screech: screechBus, cut: cutGrit, radio: radioBus,
-        landscape: landscapeTap, duck: duckGrit, out: outTrim, taiko: taikoMakeup }[name];        // taiko: the kit after its own clip                  // Phase M: the landscape sum, the duck gain, the output
+        landscape: landscapeTap, duck: duckGrit, out: outTrim, taiko: cutTaiko }[name];           // taiko: the kit after its own clip and cut, as it reaches the dry sum                  // Phase M: the landscape sum, the duck gain, the output
       if (!src || !node) return false;
       try { src.connect(node); return true; } catch (e) { return false; }
     },
