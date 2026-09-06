@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — monitor mockup 2 — 割込 THE INTERRUPT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   MOCKUP 2 — 割込 THE INTERRUPT.  No new hardware: the signal hijacks the
+   scope. Everything below the "ADDITIONS" rule is copied verbatim from the
+   engine's zankyo.css so the faceplate can be judged against the real one.
+   =========================================================================== */
+html, body { margin: 0; background: #07070a; }
+body { min-height: 100vh; background:
+  radial-gradient(90% 40% at 50% 0%, rgba(255,45,85,0.05), transparent 70%),
+  #07070a; }
+
+/* ---------------- verbatim faceplate CSS (zankyo.css) ---------------- */
+.zankyo-scene {
+  --bg:        #050507;
+  --surface:   #0a0a0f;
+  --surface-2: #0f0f17;
+  --border:    #241a22;
+  --grid:      #15101a;
+  --ink:       #d6d2dc;
+  --ink-dim:   #6b6473;
+  --ink-label: #8a7e92;
+  --red:       #ff2d55;
+  --red-rgb:   255, 45, 85;
+  --cyan:      #16e0e0;
+  --cyan-rgb:  22, 224, 224;
+  --magenta:   #ff3df0;
+  --magenta-rgb:255, 61, 240;
+  --amber:     #ffb000;
+  --amber-rgb: 255, 176, 0;
+  --panel-hi:  #32323b;
+  --panel:     #26262d;
+  --panel-lo:  #191920;
+  --steel-hi:  #4a4a52;
+  --steel:     #2a2a31;
+  --steel-lo:  #0c0c0f;
+  --print:     #918c9c;
+  --print-dim: #6a6572;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 8px 16px 56px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--ink);
+}
+.content-frame { max-width: 860px; margin: 0 auto; }
+.zankyo-frame {
+  position: relative;
+  background:
+    radial-gradient(55% 7% at 14% 0%,  rgba(136, 82, 44, 0.24), transparent 75%),
+    radial-gradient(34% 9% at 90% 100%, rgba(124, 70, 38, 0.28), transparent 72%),
+    radial-gradient(26% 22% at 100% 26%, rgba(108, 62, 34, 0.18), transparent 70%),
+    radial-gradient(18% 14% at 0% 74%,  rgba(84, 52, 30, 0.2), transparent 75%),
+    radial-gradient(14% 8% at 78% 0%,  rgba(96, 58, 32, 0.16), transparent 75%),
+    radial-gradient(42% 5% at 40% 100%, rgba(24, 18, 12, 0.5), transparent 80%),
+    radial-gradient(130% 60% at 50% -8%, rgba(var(--red-rgb), 0.05), transparent 55%),
+    radial-gradient(120% 80% at 82% 118%, rgba(var(--cyan-rgb), 0.04), transparent 60%),
+    repeating-linear-gradient(91deg, rgba(255, 255, 255, 0.028) 0 2px, rgba(0, 0, 0, 0.16) 2px 3px, rgba(255, 255, 255, 0.012) 3px 5px, rgba(0, 0, 0, 0.05) 5px 7px),
+    linear-gradient(180deg, var(--panel-hi), var(--panel) 40%, var(--panel-lo) 88%);
+  border: 1px solid #000;
+  border-radius: 6px;
+  padding: 30px 26px 42px;
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.65),
+    inset 4px 0 10px rgba(0, 0, 0, 0.3),
+    inset -2px 0 8px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 90px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+.zankyo-frame::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  opacity: 0.9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.28' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.2' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.22' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23c9c4b4' stroke-opacity='0.22' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23c9c4b4' stroke-opacity='0.18' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23c9c4b4' stroke-opacity='0.14' stroke-width='1.8'/></g></svg>");
+}
+.zankyo-frame::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.zankyo-frame > * { position: relative; z-index: 1; }
+.zk-screw {
+  position: absolute; z-index: 7; width: 17px; height: 17px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #6e6e7a, #30303a 55%, #0c0c0f);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -2px 3px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+.zk-screw::before {
+  content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 2.5px; margin-top: -1.25px;
+  background: linear-gradient(180deg, #050506, #3d3d45); border-radius: 2px;
+  transform: rotate(var(--slot, 20deg));
+}
+.zk-screw-tl { top: 9px; left: 10px; }
+.zk-screw-tr { top: 9px; right: 10px; }
+.zk-screw-bl { bottom: 9px; left: 10px; }
+.zk-screw-br { bottom: 9px; right: 10px; filter: sepia(0.5) brightness(0.85); }
+.zk-vent {
+  position: absolute; z-index: 7; height: 13px; width: 118px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #050506 0 5px, #34343e 5px 7px, #1c1c22 7px 12px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.zk-vent-tr { top: 12px; right: 58px; }
+.zk-vent-bl { bottom: 12px; left: 58px; transform: rotate(0.4deg); }
+.zk-print {
+  font-size: 9px; letter-spacing: 0.22em; color: var(--print);
+  text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.12), -0.5px 0 0 rgba(var(--cyan-rgb), 0.1);
+}
+.zankyo-scene.is-kyu .zankyo-title::before { animation-duration: 0.8s; }
+.zankyo-scene.is-kyu .zankyo-title::after  { animation-duration: 0.7s; }
+.zankyo-scene.is-kyu .zankyo-title { text-shadow: -1.5px 0 var(--red), 1.5px 0 var(--cyan), 0 0 20px rgba(var(--red-rgb), 0.6); }
+.zankyo-scene.is-kyu .zankyo-frame { animation: zk-shake 0.16s infinite; }
+.zankyo-scene.is-kyu .zankyo-scanlines { opacity: 0.8; }
+.zankyo-scene.is-kyu .zk-led { animation: zk-led-flicker 0.3s infinite; }
+@keyframes zk-shake { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-1px,1px); } 50% { transform: translate(1px,-1px); } 75% { transform: translate(-1px,0); } }
+@keyframes zk-led-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.zk-marquee {
+  position: relative; margin: 0 6px 22px; padding: 16px 12px 13px;
+  border-radius: 5px; border: 1px solid #08080a;
+  background:
+    radial-gradient(70% 130% at 50% 55%, rgba(var(--red-rgb), 0.09), transparent 72%),
+    linear-gradient(180deg, rgba(8, 6, 11, 0.94), rgba(15, 11, 18, 0.82) 45%, rgba(6, 5, 9, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 34px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-marquee::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px;
+  background: linear-gradient(107deg, transparent 12%, rgba(255, 255, 255, 0.045) 20%, rgba(255, 255, 255, 0.012) 27%, transparent 34%);
+}
+.zk-marquee-screw {
+  position: absolute; top: 50%; left: 7px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%);
+  box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.zk-marquee-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(35deg); }
+.zk-marquee-screw-r { left: auto; right: 7px; }
+.zk-marquee-screw-r::before { transform: rotate(-58deg); }
+.zankyo-header { text-align: center; }
+.zankyo-title {
+  font-family: "Orbitron", sans-serif; font-weight: 900;
+  font-size: clamp(34px, 9vw, 64px); letter-spacing: 0.12em;
+  margin: 0; color: #fff; position: relative; display: inline-block;
+  text-shadow: 0 0 16px rgba(var(--red-rgb), 0.5), 0 0 40px rgba(var(--red-rgb), 0.25);
+}
+.zankyo-title .zankyo-kanji {
+  font-family: "Shippori Mincho", serif; font-weight: 700;
+  font-size: 0.42em; letter-spacing: 0.1em; color: var(--cyan);
+  margin-left: 0.35em; vertical-align: 0.5em;
+  text-shadow: 0 0 14px rgba(var(--cyan-rgb), 0.6);
+}
+.zankyo-title::before, .zankyo-title::after {
+  content: attr(data-glitch); position: absolute; left: 0; top: 0;
+  width: 100%; overflow: hidden; opacity: 0.6;
+}
+.zankyo-title::before { color: var(--cyan); animation: zk-glitch 3.6s infinite steps(2); clip-path: inset(0 0 62% 0); }
+.zankyo-title::after  { color: var(--magenta); animation: zk-glitch 2.7s infinite steps(2) reverse; clip-path: inset(58% 0 0 0); }
+@keyframes zk-glitch { 0%,92%,100% { transform: translate(0,0); } 93% { transform: translate(-2px,1px); } 96% { transform: translate(2px,-1px); } }
+.zankyo-subtitle { margin: 7px 0 0; font-size: 11px; letter-spacing: 0.18em; color: var(--ink-dim); }
+
+.zk-monitor {
+  position: relative; margin-bottom: 18px; padding: 13px 13px 0;
+  border-radius: 9px; border: 1px solid #000;
+  background: radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%), linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -5px 12px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.zk-screen {
+  position: relative; overflow: hidden;
+  border-radius: 14px / 18px;
+  background: #020204;
+  border: 1px solid #030305;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.9), inset 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.zankyo-viz { display: block; width: 100%; height: 200px; }
+.zankyo-scanlines {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px);
+  mix-blend-mode: multiply; opacity: 0.62;
+}
+.zk-glass {
+  position: absolute; inset: 0; pointer-events: none; z-index: 6; border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 16%, transparent 28%, transparent 70%, rgba(255, 255, 255, 0.02) 86%),
+    radial-gradient(135% 96% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.42) 96%);
+}
+.zk-glass::after {
+  content: ""; position: absolute; right: 8%; bottom: 6%; width: 60px; height: 34px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(190, 200, 210, 0.045), transparent 75%);
+  transform: rotate(-18deg);
+}
+.zk-monitor-chin { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 6px 8px; }
+.zk-monitor-brand {
+  font-size: 8px; letter-spacing: 0.26em; color: #5f5b68;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-chin-spacer { flex: 1; }
+.zk-led-label { font-size: 7px; letter-spacing: 0.2em; color: #55515e; }
+.zk-led {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.zankyo-scene.is-on .zk-led {
+  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
+  box-shadow: 0 0 8px rgba(var(--red-rgb), 0.8), 0 0 2px rgba(var(--red-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5);
+}
+.zk-sticker {
+  position: absolute; right: 74px; bottom: 5px; z-index: 3; width: 46px; padding: 3px 4px 4px;
+  transform: rotate(-3.5deg);
+  background: linear-gradient(160deg, #cfc5ac, #b3a88d 65%, #9d9177);
+  color: #55492f; font-size: 7px; letter-spacing: 0.08em; line-height: 1.5; text-align: center;
+  border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  clip-path: polygon(0 0, 100% 0, 100% 74%, 86% 100%, 0 100%);
+  opacity: 0.92;
+}
+.zk-sticker b { display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9.5px; letter-spacing: 0.2em; color: #83291c; }
+.zk-sticker i {
+  position: absolute; right: 1px; bottom: 0; width: 11px; height: 11px;
+  background: linear-gradient(315deg, transparent 44%, #e9e1cb 48%, #d8cfb4 62%, rgba(60, 48, 30, 0.55) 100%);
+}
+
+.zk-bargraph {
+  position: relative; margin: -4px 0 16px;
+  display: grid; grid-template-columns: 1fr; gap: 4px 10px; align-items: center;
+  padding: 8px 12px 6px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #1d1d24, #111116 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-bar-scale { grid-column: 1; position: relative; height: 13px; }
+.zk-bar-zl {
+  position: absolute; bottom: 1px; transform: translateX(-50%); white-space: nowrap;
+  font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.14em; color: #7d7887;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-zl-jo  { left: 12.5%; color: rgba(var(--cyan-rgb), 0.6); }
+.zk-bar-zl-ha  { left: 52.5%; color: rgba(var(--amber-rgb), 0.6); }
+.zk-bar-zl-kyu { left: 90%;   color: rgba(var(--red-rgb), 0.7); }
+.zk-bar-tick { position: absolute; bottom: 0; width: 1px; height: 5px; background: #5a5563; box-shadow: 1px 0 0 rgba(0, 0, 0, 0.7); }
+.zk-bar-housing {
+  grid-column: 1; position: relative; padding: 5px 6px; border-radius: 3px; border: 1px solid #030305;
+  background: linear-gradient(180deg, #050507, #0b0b0f);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), inset 0 -1px 1px rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-glass {
+  position: absolute; inset: 0; pointer-events: none; border-radius: 3px;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 22%, transparent 34%);
+}
+.zk-bar-cells { display: flex; gap: 2px; height: 16px; }
+.zk-seg {
+  flex: 1 1 0; min-width: 0; border-radius: 1px;
+  background: linear-gradient(180deg, rgba(var(--c), 0.11), rgba(var(--c), 0.05) 55%, rgba(0, 0, 0, 0.4));
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.85);
+}
+.zk-seg-jo  { --c: var(--cyan-rgb); }
+.zk-seg-ha  { --c: var(--amber-rgb); }
+.zk-seg-kyu { --c: var(--red-rgb); }
+.zk-seg.on {
+  background: linear-gradient(180deg, rgba(var(--c), 1), rgba(var(--c), 0.72));
+  box-shadow: 0 0 5px rgba(var(--c), 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+}
+.zk-seg.is-head { box-shadow: 0 0 9px rgba(var(--c), 0.95), 0 0 18px rgba(var(--c), 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+.zk-seg.is-peak {
+  background: linear-gradient(180deg, rgba(var(--c), 0.95), rgba(var(--c), 0.6));
+  box-shadow: 0 0 6px rgba(var(--c), 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+.zankyo-scene.is-kyu .zk-seg-kyu.on { animation: zk-led-flicker 0.3s infinite; }
+.zankyo-scene.is-kyu .zk-seg-kyu.on:nth-child(2n) { animation-duration: 0.22s; animation-delay: 0.08s; }
+.zk-bar-foot { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; padding: 1px 1px 0; }
+.zk-bar-label { font-size: 8.5px; letter-spacing: 0.18em; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-bar-serial { font-size: 6.5px; letter-spacing: 0.24em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); }
+
+.zk-console-top { display: flex; gap: 18px; align-items: center; margin-bottom: 16px; }
+.zk-transport-cluster { position: relative; display: flex; align-items: center; gap: 14px; flex: none; }
+.zk-transport-cluster::before {
+  content: ""; position: absolute; inset: -10px -12px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side at 30% 46%, rgba(26, 18, 10, 0.5), transparent 72%);
+}
+.zk-module {
+  position: relative; flex: 1; min-width: 0;
+  display: flex; align-items: stretch; gap: 13px;
+  padding: 9px 14px 15px 16px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-module::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px;
+  background: radial-gradient(34% 52% at 2% 100%, rgba(96, 58, 32, 0.24), transparent 74%), radial-gradient(16% 30% at 97% 4%, rgba(20, 14, 10, 0.55), transparent 78%);
+}
+.zk-mod-screw {
+  position: absolute; z-index: 2; top: 7px; left: 6px; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%);
+  box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.zk-mod-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(var(--slot, 20deg)); }
+.zk-mod-screw-r { top: auto; left: auto; bottom: 7px; right: 6px; filter: sepia(0.4) brightness(0.9); }
+.zk-mod-stamp {
+  position: absolute; right: 22px; bottom: 3px; pointer-events: none; white-space: nowrap;
+  font-size: 6.5px; letter-spacing: 0.24em; color: #56525f;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transform: rotate(-0.4deg);
+}
+.zk-mod-zone { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.zk-mod-zone + .zk-mod-zone { border-left: 1px solid rgba(0, 0, 0, 0.6); box-shadow: -1px 0 0 rgba(255, 255, 255, 0.045); padding-left: 13px; }
+.zk-mod-head { font-size: 8px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-mod-mode { flex: 1; }
+.zk-mod-lamp {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 8px 11px; border-radius: 4px; border: 1px solid #030305;
+  background: radial-gradient(90% 100% at 50% 0%, rgba(var(--cyan-rgb), 0.05), transparent 70%), linear-gradient(180deg, #0b0b10, #08080c);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zankyo-scale-name {
+  font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #fff;
+  text-shadow: 0 0 10px rgba(var(--red-rgb), 0.35);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.zankyo-scale-name b { color: var(--red); }
+.zankyo-scale-mood { font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.7; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--magenta-rgb), 0.14); }
+.zk-deg-row { display: flex; gap: 4px; margin-top: 5px; }
+.zk-deg {
+  width: 23px; height: 27px; display: flex; align-items: center; justify-content: center;
+  font-family: "Shippori Mincho", serif; font-size: 15px; line-height: 1;
+  color: rgba(var(--cyan-rgb), 0.26);
+  background: linear-gradient(180deg, #020608, #04090b);
+  border: 1px solid #000; border-radius: 2px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: color 0.45s ease, text-shadow 0.45s ease, background 0.45s ease;
+}
+.zk-deg.is-lit { color: #dbfbfb; text-shadow: 0 0 9px rgba(var(--cyan-rgb), 0.9), 0 0 3px rgba(var(--cyan-rgb), 1); background: linear-gradient(180deg, #072224, #04181a); transition-duration: 0.04s; }
+.zk-testpoints {
+  width: 58px; height: 5px; margin: auto 0 4px 2px; border-radius: 1px;
+  background: repeating-linear-gradient(90deg, #6f5a2e 0 4px, #0c0c0f 4px 9px);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+  opacity: 0.85;
+}
+.zk-knob { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; flex: none; }
+.zk-knob::before {
+  content: ""; position: absolute; inset: -8px; pointer-events: none; opacity: 0.85;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><g stroke='%23a9a3b6' stroke-width='2' stroke-linecap='round' opacity='0.9'><line x1='40' y1='3' x2='40' y2='8' transform='rotate(-135 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-108 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-27 40 40)'/><line x1='40' y1='3' x2='40' y2='8'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(27 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(108 40 40)'/><line x1='40' y1='3' x2='40' y2='8' transform='rotate(135 40 40)'/></g></svg>") center / contain no-repeat;
+}
+.zk-knob::after {
+  content: ""; position: absolute; inset: -12px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 60% 68%, transparent 42%, rgba(22, 15, 9, 0.5) 60%, transparent 78%);
+  opacity: 0.55;
+}
+.zk-knob-cap {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%), conic-gradient(from 210deg, #34343c, #17171b 22%, #2b2b32 47%, #101014 74%, #34343c), #1d1d22;
+  border: 1px solid #08080a;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65), 0 1px 1px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+}
+.zk-knob-cap::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.07) 0deg 4deg, rgba(0, 0, 0, 0.28) 4deg 8deg);
+  -webkit-mask: radial-gradient(circle, transparent 60%, #000 65%); mask: radial-gradient(circle, transparent 60%, #000 65%);
+}
+.zk-knob-cap::after {
+  content: ""; position: absolute; inset: 16%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #303038, #16161b 72%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+.zk-knob-rot { position: absolute; inset: 0; z-index: 2; will-change: transform; pointer-events: none; }
+.zk-knob-ind {
+  position: absolute; left: 50%; top: 8%; width: 3px; height: 36%; margin-left: -1.5px; border-radius: 2px;
+  background: linear-gradient(#f4f0e4, #b6b0a0);
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.25), 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.zk-knob-master { width: 58px; height: 58px; }
+.zankyo-val-readout {
+  font-size: 11px; color: var(--cyan); font-variant-numeric: tabular-nums;
+  background: rgba(2, 8, 10, 0.92); border: 1px solid #000; border-radius: 2px;
+  padding: 1px 5px; min-width: 34px; text-align: right;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.85);
+  text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.5);
+}
+.zk-arcade {
+  position: relative; width: 78px; height: 78px; border-radius: 50%; border: 1px solid #000; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 32% 26%, #3e3e47, #1a1a20 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -3px 5px rgba(0, 0, 0, 0.85), 0 3px 8px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-arcade-cap {
+  position: absolute; inset: 9px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Orbitron", sans-serif; font-size: 19px;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+.play-btn .zk-arcade-cap {
+  color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle at 35% 27%, #ff90a8, var(--red) 42%, #900f2c 84%, #560a1b);
+  box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35);
+}
+.stop-btn { width: 62px; height: 62px; }
+.stop-btn .zk-arcade-cap {
+  inset: 8px; font-size: 26px; color: var(--magenta); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.4);
+  background: radial-gradient(circle at 35% 27%, #3a3a43, #202027 46%, #0e0e12 88%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 -5px 9px rgba(0, 0, 0, 0.8), inset 0 2px 3px rgba(255, 255, 255, 0.2);
+}
+.zk-arcade:active .zk-arcade-cap { transform: translateY(3px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.7), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.play-btn.is-playing .zk-arcade-cap {
+  box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35), 0 0 24px rgba(var(--red-rgb), 0.55), inset 0 0 16px rgba(255, 130, 160, 0.45);
+  animation: zk-play-breathe 2.4s ease-in-out infinite;
+}
+@keyframes zk-play-breathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+.zk-master { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: none; }
+.zk-knob-mount { display: flex; justify-content: center; }
+.zk-master-meta { display: flex; align-items: center; gap: 6px; }
+
+.zankyo-mixer { border: 1px solid #000; border-radius: 5px; background: linear-gradient(180deg, #16161b, #0f0f14 80%); box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.04); }
+.zankyo-mixer-title {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print);
+  padding: 9px 16px; border-bottom: 1px solid #030305;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1);
+}
+.zk-warn-small { font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.3em; color: rgba(var(--amber-rgb), 0.55); transform: rotate(0.8deg); text-transform: none; }
+.zankyo-layer { padding: 13px 16px 12px; border-bottom: 1px solid #050507; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.035); }
+.zankyo-layer:last-child { border-bottom: none; box-shadow: none; }
+.zankyo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
+.zankyo-layer-name {
+  display: flex; align-items: center; text-align: left; cursor: pointer;
+  font-family: "Orbitron", sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #eee;
+  flex: 1; min-width: 132px; padding: 7px 11px;
+  background: linear-gradient(180deg, #24242b, #191920);
+  border: 1px solid #0a0a0d; border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+.zankyo-layer-kana { font-family: "Shippori Mincho", serif; color: var(--red); margin-right: 7px; text-shadow: 0 0 7px rgba(var(--red-rgb), 0.45); }
+.zk-name-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zk-ch { font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 7.5px; letter-spacing: 0.2em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); padding-top: 2px; flex: none; }
+.zk-name-latch { margin-left: 10px; width: 11px; height: 11px; border-radius: 50%; position: relative; flex: none; background: radial-gradient(circle at 35% 30%, #55555e, #1c1c21 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.85), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-name-latch::after { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1.5px; margin-left: -0.75px; background: #060608; }
+.zankyo-layer-sample {
+  position: relative; width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none;
+  background: radial-gradient(circle at 34% 28%, #8a2f7e, #571a4f 48%, #2b0d28 88%);
+  box-shadow: 0 0 0 3px #23232b, 0 0 0 4px #000, 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 -3px 5px rgba(20, 0, 18, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+.zankyo-layer-sample .tri { position: absolute; left: 55%; top: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 7px solid rgba(255, 210, 250, 0.9); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+.zk-switch { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; background: none; border: none; padding: 2px 5px; cursor: pointer; font-family: "JetBrains Mono", monospace; }
+.zk-switch i { font-style: normal; font-size: 6.5px; letter-spacing: 0.16em; }
+.zk-switch .zk-switch-on { color: var(--cyan); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6); }
+.zk-switch .zk-switch-off { color: #4d4956; }
+.zk-switch.muted .zk-switch-on { color: #4d4956; text-shadow: none; }
+.zk-switch.muted .zk-switch-off { color: #a29db0; }
+.zk-switch-slot { position: relative; width: 17px; height: 34px; border-radius: 8px; background: linear-gradient(180deg, #040405, #121216); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-switch-lever { position: absolute; left: 2px; right: 2px; top: 2px; height: 15px; border-radius: 6px; background: linear-gradient(180deg, #6e6e7a, #3a3a44 62%, #23232b); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+.zk-switch.muted .zk-switch-lever { top: 17px; background: linear-gradient(0deg, #6e6e7a, #3a3a44 62%, #23232b); }
+
+.zankyo-log-block {
+  position: relative; margin-top: 18px; padding: 9px 10px 10px;
+  border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #1d1d23, #111116 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zankyo-log-label { display: flex; align-items: center; justify-content: space-between; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); margin: 0 2px 8px; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-vfd-tag { font-size: 7px; letter-spacing: 0.2em; color: #59555f; }
+.zankyo-log {
+  background: radial-gradient(rgba(var(--cyan-rgb), 0.05) 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(180deg, #04100f, #030a0a);
+  border: 1px solid #000; border-radius: 4px;
+  height: 230px; overflow-y: auto; padding: 5px 0;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85), inset 0 0 70px rgba(var(--cyan-rgb), 0.03);
+}
+.zankyo-log-block::after { content: ""; position: absolute; left: 11px; right: 11px; bottom: 11px; top: 27px; pointer-events: none; border-radius: 4px; background: linear-gradient(108deg, rgba(190, 255, 250, 0.045), transparent 26%); }
+.zankyo-log-row { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid rgba(var(--cyan-rgb), 0.04); font-size: 12px; animation: zk-logfade 0.3s ease; }
+.zankyo-log-row:last-child { border-bottom: none; }
+@keyframes zk-logfade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.zankyo-log-time { color: var(--ink-dim); font-size: 10px; min-width: 36px; }
+.zankyo-log-tag { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 2px; min-width: 66px; text-align: center; }
+.zankyo-log-tag.shakuhachi { color: var(--cyan);    border: 1px solid rgba(var(--cyan-rgb), 0.4); }
+.zankyo-log-tag.koto       { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.4); }
+.zankyo-log-tag.shamisen   { color: var(--red);     border: 1px solid rgba(var(--red-rgb), 0.4); }
+.zankyo-log-tag.taiko      { color: #fff;           border: 1px solid var(--border); }
+.zankyo-log-tag.noise      { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.4); }
+.zankyo-log-tag.ambient    { color: var(--ink);     border: 1px dashed var(--ink-dim); }
+.zankyo-log-tag.mode       { color: var(--amber);   border: 1px dashed var(--amber); }
+.zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }
+.zankyo-log-tag.sho        { color: var(--ink);     border: 1px solid rgba(var(--cyan-rgb), 0.35); }
+.zankyo-log-tag.hichiriki  { color: var(--red);     border: 1px dashed rgba(var(--red-rgb), 0.6); }
+.zankyo-log-tag.biwa       { color: var(--amber);   border: 1px dashed rgba(var(--amber-rgb), 0.6); }
+.zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
+.zankyo-log-text { color: var(--ink); }
+
+.zk-plate-row { display: flex; justify-content: center; margin-top: 20px; }
+.zk-build { margin: 8px 0 0; text-align: center; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-dim); opacity: 0.7; }
+.zk-build-sep { margin: 0 0.5em; }
+.zk-plate {
+  position: relative; padding: 6px 26px; border-radius: 2px;
+  background: linear-gradient(180deg, #3b3b43, #26262c 60%, #1e1e24);
+  border: 1px solid #0a0a0c;
+  font-size: 8.5px; letter-spacing: 0.2em; color: #9d99a6;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 3px rgba(0, 0, 0, 0.6);
+  transform: rotate(-0.3deg);
+}
+.zk-plate::before, .zk-plate::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5a5a63, #1e1e23 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-plate::before { left: 7px; }
+.zk-plate::after { right: 7px; }
+.zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 4px 0; }
+.zankyo-note strong { color: var(--red); font-weight: 500; }
+
+@media (max-width: 700px) {
+  .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
+  .zankyo-frame { padding: 20px 13px 30px; }
+  .zankyo-sub-long { display: none; }
+  .zankyo-title { letter-spacing: 0.06em; }
+  .zk-vent, .zk-warn, .zk-sticker, .zk-warn-small { display: none; }
+  .zk-marquee { margin: 0 0 16px; padding: 12px 8px 10px; }
+  .zankyo-viz { height: 160px; }
+  .zk-monitor { padding: 9px 9px 0; }
+  .zk-bargraph { padding: 7px 9px 5px; gap: 3px 8px; }
+  .zk-bar-cells { gap: 1px; height: 13px; }
+  .zk-bar-serial { display: none; }
+  .zk-console-top { flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+  .zk-module { order: 2; flex: 1 1 100%; }
+  .zk-master { order: 1; }
+  .zk-module { flex-wrap: wrap; gap: 10px 13px; padding: 9px 12px 15px 14px; }
+  .zk-mod-mode { flex: 1 1 100%; }
+  .zk-mod-scale { border-left: none; box-shadow: none; padding-left: 0; }
+  .zk-testpoints { display: none; }
+  .zk-arcade { width: 66px; height: 66px; }
+  .stop-btn { width: 56px; height: 56px; }
+  .zk-knob-master { width: 50px; height: 50px; }
+  .zankyo-layer-sample { display: none; }
+  .zankyo-layer { padding: 10px 12px 9px; }
+  .zankyo-layer-head { gap: 8px 12px; flex-wrap: nowrap; }
+  .zankyo-layer-name { min-width: 0; font-size: 10px; padding: 6px 9px; }
+  .zankyo-log { height: 180px; }
+}
+
+/* ===========================================================================
+   ADDITIONS — the only new hardware on the faceplate. A neon-gas cluster
+   riveted to the monitor chin beside the brand plate: an NE-2 neon tally
+   lamp (受信) and a two-digit NIXIE channel counter. Both are gas-discharge
+   tubes, both glow the same neon orange — one retrofit, one decade, one
+   gas. Everything else on the chin (sticker, 電源 LED) is untouched.
+   =========================================================================== */
+.zk-monitor-chin { --neon: 255, 122, 42; --neon-hi: #ffd3a6; }
+.zk-rx {
+  display: flex; align-items: center; gap: 7px; margin-left: 10px; padding: 2px 9px 2px 10px;
+  border-left: 1px solid rgba(0, 0, 0, 0.7);
+  box-shadow: -1px 0 0 rgba(255, 255, 255, 0.05);            /* machined seam */
+  position: relative;
+}
+/* two pop rivets holding the retrofit plate */
+.zk-rx::before, .zk-rx::after {
+  content: ""; position: absolute; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6a6a74, #23232a 70%);
+  box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.zk-rx::before { left: 2px; }
+.zk-rx::after { right: -1px; filter: sepia(0.6) brightness(0.8); }
+.zk-rx-label { font-size: 7px; letter-spacing: 0.2em; color: #55515e; font-family: "Shippori Mincho", serif; }
+
+/* NE-2 neon tally lamp: a tiny glass bulb seen end-on, two electrodes inside */
+.zk-tally {
+  position: relative; width: 11px; height: 11px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 38% 32%, #3a2f36, #1a1519 60%, #0b090b);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), inset 0 -1px 2px rgba(0, 0, 0, 0.9), 0 0 0 2px #0a0a0d, 0 0 0 3px rgba(255, 255, 255, 0.04), 0 1px 1px rgba(0, 0, 0, 0.7);
+  transition: background 0.08s, box-shadow 0.08s;
+}
+.zk-tally::before {                                          /* the electrode wire */
+  content: ""; position: absolute; top: 3px; bottom: 3px; left: 5px; width: 0.8px; background: #4a4046;
+}
+.zk-tally.is-lit {
+  background: radial-gradient(circle at 50% 50%, #fff1de 0%, #ffb27a 28%, #ff7a2a 58%, #a0300c 100%);
+  box-shadow: 0 0 6px rgba(var(--neon), 0.95), 0 0 14px rgba(var(--neon), 0.6), 0 0 26px rgba(var(--neon), 0.25), 0 0 0 2px #0a0a0d, 0 0 0 3px rgba(255, 255, 255, 0.05), inset 0 0 2px rgba(255, 255, 255, 0.7);
+  animation: zk-neon-buzz 0.11s steps(2) infinite;
+}
+.zk-tally.is-lit::before { background: #fff3e4; box-shadow: 0 0 3px #ffb27a; }
+@keyframes zk-neon-buzz { 0%,100% { filter: brightness(1); } 50% { filter: brightness(0.93); } }
+
+/* NIXIE channel counter — a side-view tube with the ten cathodes stacked;
+   the unlit digits stay faintly visible behind the lit one, as they do. */
+.zk-nixie { display: flex; align-items: center; gap: 5px; }
+.zk-nixie-tube {
+  position: relative; display: flex; gap: 1px; padding: 2px 4px 1px;
+  border-radius: 4px 4px 3px 3px; border: 1px solid #000;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%),
+    radial-gradient(80% 60% at 50% 100%, rgba(120, 60, 30, 0.12), transparent 70%),
+    linear-gradient(180deg, #0f0b0d, #070506);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+/* the anode mesh over the digits */
+.zk-nixie-tube::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3; border-radius: inherit; opacity: 0.55;
+  background:
+    repeating-linear-gradient(60deg, rgba(0,0,0,0.35) 0 0.5px, transparent 0.5px 2.6px),
+    repeating-linear-gradient(-60deg, rgba(0,0,0,0.35) 0 0.5px, transparent 0.5px 2.6px);
+}
+/* glass specular */
+.zk-nixie-tube::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 4; border-radius: inherit;
+  background: linear-gradient(100deg, rgba(255,255,255,0.09) 4%, rgba(255,255,255,0.02) 18%, transparent 30%);
+}
+.zk-nixie-digit { position: relative; width: 10px; height: 14px; }
+.zk-nixie-digit i {
+  position: absolute; inset: 0; text-align: center; font-style: normal;
+  font-family: "JetBrains Mono", monospace; font-weight: 400; font-size: 12.5px; line-height: 14px;
+  color: rgba(110, 70, 58, 0.1);                           /* unlit cathode wire */
+  transform: translateX(var(--sx, 0)) scale(0.96);
+  transition: color 0.05s;
+}
+.zk-nixie-digit i.on {
+  color: var(--neon-hi);
+  text-shadow: 0 0 2px #fff, 0 0 4px rgba(var(--neon), 1), 0 0 8px rgba(var(--neon), 0.85), 0 0 15px rgba(var(--neon), 0.45);
+  z-index: 2;
+}
+.zk-nixie.is-lit .zk-nixie-tube { box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.9), inset 0 0 10px rgba(var(--neon), 0.25), 0 0 8px rgba(var(--neon), 0.25), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-nixie.is-lit i.on { animation: zk-nixie-flicker 1.7s steps(3) infinite; }
+@keyframes zk-nixie-flicker { 0%,100% { opacity: 1; } 47% { opacity: 0.92; } 51% { opacity: 1; } 83% { opacity: 0.88; } }
+/* a poisoned cathode: idle glow leaking from one digit, faint */
+.zk-nixie-digit i.poison { color: rgba(255, 122, 42, 0.14); text-shadow: 0 0 3px rgba(var(--neon), 0.25); animation: zk-poison 4.3s steps(2) infinite; }
+@keyframes zk-poison { 0%, 74%, 100% { opacity: 1; } 76% { opacity: 0.3; } 79% { opacity: 1; } 90% { opacity: 0.5; } }
+.zk-nixie-label { font-size: 6.5px; letter-spacing: 0.22em; color: #55515e; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); }
+/* the VFD's one new tag */
+.zankyo-log-tag.signal { color: #ffb27a; border: 1px solid rgba(255, 122, 42, 0.55); text-shadow: 0 0 5px rgba(255, 122, 42, 0.5); }
+.zk-screen { cursor: pointer; }
+
+/* ----- the mockup's own notes card, OUTSIDE the machine ----- */
+.mk-card {
+  max-width: 860px; margin: 0 auto; padding: 0 16px 60px;
+  font-family: "JetBrains Mono", monospace; color: #9a94a3; font-size: 11.5px; line-height: 1.75;
+}
+.mk-inner { border: 1px dashed #2a2530; border-radius: 4px; padding: 18px 22px 20px; background: rgba(12, 11, 15, 0.6); }
+.mk-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 10px; }
+.mk-title { font-family: "Orbitron", sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: #e6e2ea; }
+.mk-title b { font-family: "Shippori Mincho", serif; color: #ffb27a; margin-right: 8px; font-weight: 700; }
+.mk-sub { font-size: 9px; letter-spacing: 0.22em; color: #6b6473; text-transform: uppercase; }
+.mk-card h3 { margin: 16px 0 4px; font-size: 9.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #ffb27a; font-weight: 500; }
+.mk-card p { margin: 0 0 8px; }
+.mk-card em { color: #d6d2dc; font-style: normal; }
+.mk-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 14px 0 4px; }
+.mk-btn {
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+  color: #ffd3a6; background: linear-gradient(180deg, #24242b, #15151a); border: 1px solid #000; border-radius: 3px; padding: 7px 13px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 1px 2px rgba(0,0,0,0.6);
+}
+.mk-btn:hover { background: linear-gradient(180deg, #2b2b33, #1a1a20); }
+.mk-btn:active { transform: translateY(1px); }
+.mk-status { font-size: 10px; letter-spacing: 0.1em; color: #6b6473; }
+.mk-status b { color: #16e0e0; font-weight: 400; }
+.mk-status i { color: #ffb27a; font-style: normal; }
+.mk-list { margin: 0; padding-left: 18px; }
+.mk-list li { margin: 2px 0; }
+</style>
+</head>
+<body>
+
+<div class="main-wrapper">
+ <div class="zankyo-scene is-on" id="scene">
+  <div class="content-frame zankyo-frame">
+
+    <span class="zk-screw zk-screw-tl" style="--slot:23deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-tr" style="--slot:74deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-bl" style="--slot:-15deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-br" style="--slot:51deg" aria-hidden="true"></span>
+    <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
+    <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
+
+    <div class="zk-marquee">
+      <span class="zk-marquee-screw" aria-hidden="true"></span>
+      <div class="zankyo-header">
+        <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
+        <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a derelict noise-engine &middot; 3042 //</p>
+      </div>
+      <span class="zk-marquee-screw zk-marquee-screw-r" aria-hidden="true"></span>
+    </div>
+
+    <!-- CRT monitor — the SAME tube; the signal hijacks it -->
+    <div class="zk-monitor">
+      <div class="zk-screen zankyo-viz-wrap" id="screen" title="tune in now">
+        <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
+        <div class="zankyo-scanlines" aria-hidden="true"></div>
+        <div class="zk-glass" aria-hidden="true"></div>
+      </div>
+      <div class="zk-monitor-chin">
+        <span class="zk-monitor-brand">映像管 &middot; MSHI CRT-19</span>
+        <!-- ADDITION: the neon-gas retrofit cluster -->
+        <span class="zk-rx" aria-hidden="true">
+          <span class="zk-rx-label">受信</span>
+          <span class="zk-tally" id="tally"></span>
+          <span class="zk-nixie" id="nixie">
+            <span class="zk-nixie-tube">
+              <span class="zk-nixie-digit" id="nx0"></span>
+              <span class="zk-nixie-digit" id="nx1"></span>
+            </span>
+            <span class="zk-nixie-label">CH</span>
+          </span>
+        </span>
+        <span class="zk-chin-spacer"></span>
+        <span class="zk-led-label">電源</span>
+        <span class="zk-led" aria-hidden="true"></span>
+      </div>
+      <span class="zk-sticker" aria-hidden="true"><b>検査済</b>3042.04<i></i></span>
+    </div>
+
+    <div class="zk-bargraph" id="zankyo-bargraph">
+      <div class="zk-bar-scale" aria-hidden="true">
+        <span class="zk-bar-zl zk-bar-zl-jo">序 jo</span>
+        <span class="zk-bar-zl zk-bar-zl-ha">破 ha</span>
+        <span class="zk-bar-zl zk-bar-zl-kyu">急 kyū</span>
+        <span class="zk-bar-tick" style="left:25%"></span>
+        <span class="zk-bar-tick" style="left:80%"></span>
+      </div>
+      <div class="zk-bar-housing">
+        <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
+        <span class="zk-bar-glass" aria-hidden="true"></span>
+      </div>
+      <div class="zk-bar-foot" aria-hidden="true">
+        <span class="zk-bar-label">段階 &middot; DEVELOPMENT</span>
+        <span class="zk-bar-serial">LM-3814 &middot; 56&nbsp;SEG</span>
+      </div>
+    </div>
+
+    <div class="zk-console-top">
+      <div class="zk-transport-cluster">
+        <button type="button" class="zk-arcade play-btn is-playing" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
+        <button type="button" class="zk-arcade stop-btn" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+      </div>
+      <div class="zk-module">
+        <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
+        <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
+        <div class="zk-mod-zone zk-mod-mode">
+          <span class="zk-mod-head">旋法 &middot; MODE</span>
+          <div class="zk-mod-lamp">
+            <span class="zankyo-scale-name"><b>Hirajoshi</b> &middot; D</span>
+            <span class="zankyo-scale-mood">haunted &middot; derelict &middot; neon-rust</span>
+          </div>
+        </div>
+        <div class="zk-mod-zone zk-mod-scale">
+          <span class="zk-mod-head">音階 &middot; SCALE</span>
+          <div class="zk-deg-row" id="zankyo-degrees">
+            <span class="zk-deg">一</span><span class="zk-deg">二</span><span class="zk-deg">三</span><span class="zk-deg">四</span><span class="zk-deg">五</span>
+          </div>
+          <span class="zk-testpoints" aria-hidden="true"></span>
+        </div>
+        <span class="zk-mod-stamp" aria-hidden="true">音程管理 &middot; MODULE 04</span>
+      </div>
+      <div class="zk-master">
+        <div class="zk-knob-mount">
+          <div class="zk-knob zk-knob-master zk-wear-1" role="slider" aria-label="Master volume"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform:rotate(27deg)"><span class="zk-knob-ind"></span></span></div>
+        </div>
+        <div class="zk-master-meta">
+          <span class="zk-print">主音量 &middot; VOL</span>
+          <span class="zankyo-val-readout">60</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="zankyo-mixer">
+      <div class="zankyo-mixer-title"><span>卓 &middot; CONSOLE</span><span class="zk-warn-small" aria-hidden="true">機動注意</span></div>
+      <div id="zankyo-layers"></div>
+    </div>
+
+    <div class="zankyo-log-block">
+      <div class="zankyo-log-label"><span>活動 &middot; ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
+      <div id="zankyo-log" class="zankyo-log"></div>
+    </div>
+
+    <div class="zk-plate-row">
+      <span class="zk-plate">残響-3042 &middot; MUNICIPAL SKY HEAVY INDUSTRIES &middot; 製造番号 3042-0117</span>
+    </div>
+    <p class="zk-build" aria-label="build version">2.0.0-rc.10<span class="zk-build-sep">&middot;</span>mockup<span class="zk-build-sep">&middot;</span>monitor-2</p>
+
+    <p class="zankyo-note">
+      Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
+      <strong>jo-ha-kyū</strong> (序破急) — a slow spacious opening that accelerates into a noise-wall climax,
+      then dissolves. Each cycle is planned anew (a rite, a drift, a storm, a silence, a broadcast), the voices take turns and rest,
+      the key drifts, themes are born and inherited, and rare guests visit. Nothing repeats; the voices answer one another.
+      Add <code>?seed=</code> to the address to share a night.
+    </p>
+
+  </div>
+ </div>
+</div>
+
+<!-- the mockup's argument — a work order clipped under the machine, not on it -->
+<div class="mk-card">
+  <div class="mk-inner">
+    <div class="mk-head">
+      <span class="mk-title"><b>割込</b>THE INTERRUPT</span>
+      <span class="mk-sub">monitor mockup 2 of 4 · no new hardware · Paik: Zen for TV</span>
+    </div>
+    <div class="mk-controls">
+      <button type="button" class="mk-btn" id="btn-tune">受信 · tune in now</button>
+      <button type="button" class="mk-btn" id="btn-next">次 · next reel</button>
+      <span class="mk-status" id="status">phase <b>idle</b> · next visitation in <i>—</i></span>
+    </div>
+    <h3>the argument</h3>
+    <p>There is one television on this machine and Paik would bend it rather than buy a second one. The signal is a visitation, not a channel: for the length of it the scope <em>stops to listen</em>. The spectrum bars slide toward the centre line and lose their height, the waveform flattens, and every trace of light on the tube gathers into a single horizontal line — <em>Zen for TV</em> — that holds, breathing, for most of a second. Then the line thickens, a picture is squashed inside it and rolling, the vertical hold catches on the second roll, and the frame stands up to full height still snowing. Loss reverses it: tear, roll, fold into the line, and the scope grows back out of the line as if it had never left. Nothing is added to the faceplate except the tally and the counter, so the whole cost of the option is the thing that makes it Paik: for five to fifteen seconds the visualizer is gone and the machine is a television.</p>
+    <h3>phosphor</h3>
+    <p><em>The scope's own cyan gun.</em> No new tube means no new phosphor: the picture is drawn in the same trace the waveform is drawn in (black → deep teal → <code>#16e0e0</code> → pale cyan-white), and the red and magenta guns that fringe the waveform stay misregistered as the picture's multipath ghost. A P39 green picture would announce a second, different tube inside the first; cyan says it is the same one, bent.</p>
+    <h3>the counter: nixie, not seven-segment</h3>
+    <p>The tally lamp is an NE-2 neon bulb and the two-digit channel counter is a nixie tube, so the whole retrofit is one gas — neon orange, a colour the machine did not have before, sitting between its red and its amber. Seven-segment is an LED and belongs to the bargraph's decade; a nixie is a tube like the CRT, and its stacked cathodes stay faintly visible behind the lit digit, which is the kind of imperfection this yard leaves in. The counter spins while the dial is turning and locks with the vertical hold. Audio-only reels (a platform, a numbers station) never lock: the counter hunts slowly through the hold, because there is no channel.</p>
+    <h3>mobile</h3>
+    <p>Nothing to do. The scope already stacks full-width under 700 px, the fold is the same gesture at 160 px tall, and the neon cluster is 95 px wide on the chin, which still fits beside the brand plate at 390 px. The sticker hides on mobile as it does on the live page.</p>
+    <h3>reels in this mockup</h3>
+    <ul class="mk-list">
+      <li><em>Duck and Cover</em> · 1951 · a film · ch 13</li>
+      <li><em>NHK General TV closedown, JOAK-TV</em> · 1982 · a Japanese sign-off · ch 01</li>
+      <li><em>TV-DX reception of NTV, JOAX-TV</em> · 1992 · a test card · ch 04</li>
+      <li><em>Tokyo Station platforms</em> · 1993 · audio-only, line picture · no channel</li>
+    </ul>
+    <p style="margin-top:8px">Cycle: a visitation every 40 s, or click the screen / the button. Gesture: 3 s dial static → 1.1 s fold → 0.75 s line → 1.4 s unfold with two rolls → 8–12 s hold → 2.3 s loss → 0.55 s line → 0.95 s scope returns.</p>
+  </div>
+</div>
+
+<video id="reel" muted playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:4px;height:3px;opacity:0.01" aria-hidden="true"></video>
+
+<script>
+(function () {
+  "use strict";
+
+  // ------------------------------------------------------------------ reels
+  var REELS = [
+    { id: "prelinger-duck-and-cover-1951", title: "Duck and Cover", year: 1951, ch: "13",
+      windows: [[0,12],[12,24],[24,36],[36,48.08],[48.08,60.17],[60.17,72.25],[72.25,84.25],[84.25,96.33]] },
+    { id: "nhk-joak-closedown-1982", title: "NHK General TV closedown · JOAK-TV", year: 1982, ch: "01",
+      windows: [[0,10.5],[10.5,20.5],[20.5,30.5]] },
+    { id: "tvdx-joax-1992", title: "TV-DX · NTV test card · JOAX-TV", year: 1992, ch: "04",
+      windows: [[0,12],[12,24],[24,36],[36,48],[48,60],[60,72]] },
+    { id: "tokyo-station-1993", title: "Tokyo Station · Yamanote platforms", year: 1993, ch: null, gain: 3.0,
+      windows: [[0,12],[12,24],[24,36],[36,48],[48,60],[60,72.01]] }
+  ];
+
+  var canvas = document.getElementById("zankyo-viz");
+  var ctx = canvas.getContext("2d");
+  var vid = document.getElementById("reel");
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    var r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize); resize();
+
+  var frozenAt = 0, frozenOffset = 0;
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeIn(t) { return t * t * t; }
+  function flick(i, tq, salt) {
+    var h = (Math.imul(i, 374761393) + Math.imul(tq, 668265263) + Math.imul(salt | 0, 2246822519)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177) | 0; h = h ^ (h >>> 16);
+    return (h >>> 0) / 4294967296;
+  }
+
+  // ------------------------------------------------ synthetic engine audio
+  // (the mockup has no audio engine; this stands in for the analyser taps so
+  // the scope draws exactly the way zankyo-viz.js draws it)
+  var BINS = 64, spec = new Float32Array(BINS), specT = new Float32Array(BINS);
+  var WN = 512, wave = new Float32Array(WN);
+  var peaks = [
+    { p: 5, a: 0.85, f: 0.31, ph: 0.2 }, { p: 9, a: 0.6, f: 0.53, ph: 1.7 }, { p: 14, a: 0.55, f: 0.23, ph: 3.1 },
+    { p: 21, a: 0.45, f: 0.71, ph: 0.9 }, { p: 31, a: 0.35, f: 0.17, ph: 2.2 }, { p: 44, a: 0.22, f: 0.43, ph: 4.0 }
+  ];
+  function synth(ts, arc, noise) {
+    var i, v;
+    for (i = 0; i < BINS; i++) {
+      var base = 0.5 * Math.exp(-i / 15) * (0.65 + 0.35 * Math.sin(ts * 0.7 + i * 0.31));
+      for (var k = 0; k < peaks.length; k++) {
+        var pk = peaks[k], pos = pk.p + 1.8 * Math.sin(ts * 0.11 + k * 1.3);
+        var d = i - pos;
+        base += pk.a * Math.exp(-(d * d) / 3.6) * (0.45 + 0.55 * Math.max(0, Math.sin(ts * pk.f + pk.ph)));
+      }
+      base *= 0.55 + arc * 0.6;
+      base += noise * Math.random() * 0.95 + arc * 0.14 * Math.random();
+      specT[i] = clamp01(base);
+      spec[i] = spec[i] * 0.78 + specT[i] * 0.22;
+    }
+    var amp = 0.3 + arc * 0.32;
+    for (i = 0; i < WN; i++) {
+      var x = i / WN;
+      v = 0.55 * Math.sin(6.2832 * (3 * x + ts * 1.7)) + 0.3 * Math.sin(6.2832 * (4.5 * x - ts * 1.13) + 1) + 0.18 * Math.sin(6.2832 * (6.75 * x + ts * 2.3));
+      v = v * amp + noise * (Math.random() - 0.5) * 1.6 + arc * 0.12 * (Math.random() - 0.5);
+      wave[i] = v > 1 ? 1 : v < -1 ? -1 : v;
+    }
+  }
+
+  // ---------------------------------------------- the scope, with a FOLD k
+  // k = 0: the real scope (bars from the floor, wave about the centre).
+  // k = 1: every trace gathered into one horizontal line at H/2.
+  function strokeWave(xoff, arc, k, dial) {
+    ctx.beginPath();
+    var step = Math.max(1, (WN / W) | 0), tear = 0, ampK = 1 - k;
+    for (var sx = 0, idx = 0; sx < W; sx++, idx += step) {
+      if (arc > 0.6 && Math.random() < 0.012) tear = (Math.random() * 2 - 1) * arc * 16 * ampK;
+      var y = H * 0.5 + wave[idx % WN] * H * 0.4 * ampK + tear;
+      if (dial > 0 && Math.random() < dial * 0.02) y += (Math.random() - 0.5) * 30 * dial * ampK;
+      if (sx === 0) ctx.moveTo(sx + xoff, y); else ctx.lineTo(sx + xoff, y);
+    }
+    ctx.stroke();
+  }
+  function drawZenLine(alpha, ts, thick, jitter) {
+    if (alpha <= 0) return;
+    var y = H * 0.5 + (jitter || 0);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(22,224,224," + (0.16 * alpha).toFixed(3) + ")";
+    ctx.fillRect(0, y - 3 - thick, W, 6 + thick * 2);
+    ctx.fillStyle = "rgba(22,224,224," + (0.28 * alpha).toFixed(3) + ")";
+    ctx.fillRect(0, y - 1.5 - thick * 0.5, W, 3 + thick);
+    ctx.fillStyle = "rgba(255,45,85," + (0.55 * alpha).toFixed(3) + ")";
+    ctx.fillRect(0, y - 1.6 - thick * 0.5, W, 0.8);
+    ctx.fillStyle = "rgba(255,61,240," + (0.5 * alpha).toFixed(3) + ")";
+    ctx.fillRect(0, y + 0.9 + thick * 0.5, W, 0.8);
+    ctx.fillStyle = "rgba(225,255,252," + alpha.toFixed(3) + ")";
+    ctx.fillRect(0, y - 0.7, W, 1.4 + thick);
+    // a hot spot travelling along the line — the beam's brightest moment
+    var hx = ((ts * 0.35) % 1.4 - 0.2) * W;
+    var g = ctx.createLinearGradient(hx - 60, 0, hx + 60, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "rgba(255,255,255," + (0.65 * alpha).toFixed(3) + ")"); g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(hx - 60, y - 1.2, 120, 2.4 + thick);
+    ctx.globalCompositeOperation = "source-over";
+  }
+  function snow(amount) {
+    if (amount <= 0) return;
+    var n = (amount * 420) | 0, i;
+    ctx.fillStyle = "rgba(220,255,250,0.55)";
+    for (i = 0; i < n; i++) ctx.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.2);
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    n = (amount * 6) | 0;
+    for (i = 0; i < n; i++) { var y = Math.random() * H; ctx.fillRect(Math.random() * W * 0.7, y, 20 + Math.random() * 90, 1); }
+  }
+  function drawScope(ts, arc, k, noise, dial) {
+    // datamosh smear (kyū) — the real scope's habit
+    if (arc > 0.55 && k < 0.2 && Math.random() < arc * 0.1) {
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+      var bandH = (16 + Math.random() * 70) * dpr, bandY = Math.random() * (H * dpr - bandH);
+      var jit = (Math.random() * 2 - 1) * 40 * dpr * arc;
+      ctx.globalAlpha = 0.85; ctx.drawImage(canvas, 0, bandY, W * dpr, bandH, jit, bandY, W * dpr, bandH);
+      ctx.restore();
+    }
+    // phosphor trails: fade rather than clear
+    ctx.fillStyle = "rgba(3,3,5," + (0.35 + k * 0.3).toFixed(2) + ")";
+    ctx.fillRect(0, 0, W, H);
+
+    var bw = W / BINS, i;
+    var floorY = lerp(H, H * 0.5, k);
+    // the dial: a band-pass window narrowing onto the centre of the spectrum
+    var dc = lerp(BINS * 0.85, BINS * 0.5, dial), dw = lerp(BINS * 0.6, BINS * 0.07, dial);
+    for (i = 0; i < BINS; i++) {
+      var v = spec[i];
+      if (dial > 0) { var inb = Math.abs(i - dc) < dw; v = inb ? Math.min(1, v * (1 + dial * 0.9)) : v * (1 - dial * 0.7); }
+      var h = v * H * 0.62 * (1 - k);
+      var glitch = (arc > 0.5 && Math.random() < arc * 0.07) ? (Math.random() * 2 - 1) * 12 * arc : 0;
+      if (dial > 0 && Math.random() < dial * 0.3) glitch += (Math.random() - 0.5) * 6 * dial;
+      var x = i * bw + glitch, mix = i / BINS;
+      var r = Math.round(255 * (1 - mix * 0.4)), g = Math.round(45 + mix * 120), b = Math.round(85 + mix * 150);
+      ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + (0.35 + v * 0.5).toFixed(2) + ")";
+      ctx.fillRect(x, floorY - h, Math.max(1, bw - 1.5), Math.max(0.5, h));
+      if (k > 0) { // the bars' light also pools ABOVE the line as they fold (the beam has nowhere to go)
+        ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + (0.12 * k * v).toFixed(2) + ")";
+        ctx.fillRect(x, floorY, Math.max(1, bw - 1.5), Math.max(0.5, h * 0.25));
+      }
+    }
+    var off = arc * 6 * (1 - k * 0.6);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineWidth = 1.3;
+    ctx.strokeStyle = "rgba(255,45,85," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(-off, arc, k, dial);
+    ctx.strokeStyle = "rgba(22,224,224," + (0.5 + arc * 0.4).toFixed(2) + ")"; strokeWave(0, arc, k, dial);
+    ctx.strokeStyle = "rgba(255,61,240," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(off, arc, k, dial);
+    ctx.globalCompositeOperation = "source-over";
+    // red centre-line pulsing with energy — this IS the line the scope folds into
+    var energy = 0; for (i = 0; i < BINS; i += 2) energy += spec[i]; energy /= (BINS / 2);
+    ctx.fillStyle = "rgba(255,45,85," + (0.05 + energy * 0.18 + k * 0.4).toFixed(3) + ")";
+    ctx.fillRect(0, H * 0.5 - 1, W, 2);
+    if (arc > 0.5 && k < 0.5) {
+      var nb = Math.floor(Math.random() * arc * 3);
+      ctx.fillStyle = "rgba(0,0,0,0.7)";
+      for (var b2 = 0; b2 < nb; b2++) ctx.fillRect(0, Math.random() * H, W, 1 + Math.random() * 3);
+    }
+    snow(noise * 0.8);
+    if (k > 0.001) drawZenLine(Math.pow(k, 1.6), ts, 0, 0);
+    var sweep = (ts * 40) % W;
+    ctx.fillStyle = "rgba(255,61,240,0.06)";
+    ctx.fillRect(sweep, 0, 2, H);
+  }
+
+  // ------------------------------------------------ the picture pipeline
+  var PW = 96, PH_ = 72;
+  var off = document.createElement("canvas"); off.width = PW; off.height = PH_;
+  var octx = off.getContext("2d", { willReadFrequently: true });
+  var pic = document.createElement("canvas"); pic.width = PW; pic.height = PH_;
+  var pctx = pic.getContext("2d");
+  var bloom = document.createElement("canvas"); bloom.width = 24; bloom.height = 18;
+  var bctx = bloom.getContext("2d");
+  var img = pctx.createImageData(PW, PH_);
+  var SW = 64, side = document.createElement("canvas"); side.width = SW; side.height = PH_;   // raster outside the 4:3 picture
+  var sctx = side.getContext("2d"), simg = sctx.createImageData(SW, PH_);
+  // cyan-gun phosphor ramp: the scope's own trace colour
+  var LUT = new Uint8ClampedArray(256 * 3);
+  (function () {
+    var stops = [[0, 2, 4, 6], [0.22, 0, 30, 36], [0.52, 8, 112, 118], [0.8, 22, 224, 224], [1, 205, 255, 250]];
+    for (var v = 0; v < 256; v++) {
+      var x = Math.pow(v / 255, 1.2), j = 0;
+      while (j < stops.length - 2 && x > stops[j + 1][0]) j++;
+      var a = stops[j], b = stops[j + 1], t = clamp01((x - a[0]) / (b[0] - a[0]));
+      LUT[v * 3] = lerp(a[1], b[1], t); LUT[v * 3 + 1] = lerp(a[2], b[2], t); LUT[v * 3 + 2] = lerp(a[3], b[3], t);
+    }
+  })();
+  var frameHoldUntil = 0, lastSampled = 0, vidReady = false;
+  function samplePicture(strength, t) {
+    if (t < frameHoldUntil) return;
+    lastSampled = t;
+    var ready = vidReady && vid.readyState >= 2 && !vid.seeking && (!document.hidden || manual);
+    var src = null;
+    if (ready) { try { octx.drawImage(vid, 0, 0, PW, PH_); src = octx.getImageData(0, 0, PW, PH_).data; } catch (e) { src = null; } }
+    var snowP = Math.pow(1 - strength, 1.6) * 0.95, dim = (0.5 + 0.5 * strength) * ((reel && reel.gain) || 1);
+    var d = img.data, n = PW * PH_;
+    for (var i = 0; i < n; i++) {
+      var o = i * 4, l;
+      if (src) {
+        l = (src[o] * 77 + src[o + 1] * 150 + src[o + 2] * 29) >> 8;
+        if (Math.random() < snowP) l = (l * 0.35 + Math.random() * 255 * 0.65) | 0;
+        l = Math.min(255, (l * dim) | 0);
+      } else l = (Math.random() * 255 * (0.4 + 0.6 * Math.random())) | 0;
+      var j = l * 3;
+      d[o] = LUT[j]; d[o + 1] = LUT[j + 1]; d[o + 2] = LUT[j + 2]; d[o + 3] = 255;
+    }
+    pctx.putImageData(img, 0, 0);
+    bctx.clearRect(0, 0, 24, 18); bctx.drawImage(pic, 0, 0, 24, 18);
+    var sd = simg.data, sn = SW * PH_, sp = 0.02 + (1 - strength) * 0.35;
+    for (i = 0; i < sn; i++) { var so = i * 4, sl = Math.random() < sp ? (Math.random() * 140) | 0 : 0, sj = sl * 3; sd[so] = LUT[sj]; sd[so + 1] = LUT[sj + 1]; sd[so + 2] = LUT[sj + 2]; sd[so + 3] = 255; }
+    sctx.putImageData(simg, 0, 0);
+  }
+  var SLICES = 12;
+  function tearOffset(s, t, strength, boost) {
+    var weak = (1 - strength) + boost;
+    var slow = Math.sin(t / 700 + s * 0.9) * weak * W * 0.035;
+    var tq = (t / 90) | 0;
+    var gl = flick(s, tq, 7) < weak * 0.33 ? (flick(s + 50, tq, 9) - 0.5) * W * 0.28 * (weak + 0.15) : 0;
+    return slow + gl;
+  }
+  function drawSlices(x0, pw, y0, bh, yoff, xoff, t, strength, boost) {
+    var sh = PH_ / SLICES, dh = bh / SLICES;
+    for (var s = 0; s < SLICES; s++) {
+      ctx.drawImage(pic, 0, s * sh, PW, sh, x0 + xoff + tearOffset(s, t, strength, boost), y0 + yoff + s * dh, pw, dh + 0.6);
+    }
+  }
+  // y0/bh: the band the picture is squashed into (vertical deflection); pw: its
+  // width (horizontal deflection — W while it is the line, 4:3 when it stands);
+  // roll: 0..1 of bh (vertical hold)
+  function drawPicture(y0, bh, pw, roll, strength, t, boost) {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#020204"; ctx.fillRect(0, 0, W, H);
+    if (bh < 1) return;
+    var x0 = (W - pw) / 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, y0, W, bh); ctx.clip();
+    ctx.imageSmoothingEnabled = false;
+    // the raster either side of the picture: dark, snowing with weakness
+    if (x0 > 1) {
+      ctx.globalAlpha = 0.25 + (1 - strength) * 0.5;
+      ctx.drawImage(side, 0, 0, SW, PH_, 0, y0, x0 + 2, bh);
+      ctx.drawImage(side, 0, 0, SW, PH_, W - x0 - 2, y0, x0 + 2, bh);
+    }
+    var ry = roll * bh, sc = bh / H;
+    // bloom under the sharp picture
+    ctx.imageSmoothingEnabled = true;
+    ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.14 + 0.3 * strength;
+    ctx.drawImage(bloom, x0 - 12, y0 + ry - 10 * sc, pw + 24, bh + 20 * sc);
+    if (roll > 0) ctx.drawImage(bloom, x0 - 12, y0 + ry - bh - 10 * sc, pw + 24, bh + 20 * sc);
+    // multipath ghost — the red/magenta guns misregistered
+    ctx.imageSmoothingEnabled = false;
+    var gx = 4 + (1 - strength) * 9;
+    ctx.globalAlpha = 0.05 + (1 - strength) * 0.22;
+    drawSlices(x0, pw, y0, bh, ry, gx, t, strength, boost);
+    if (roll > 0) drawSlices(x0, pw, y0, bh, ry - bh, gx, t, strength, boost);
+    // the picture
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+    drawSlices(x0, pw, y0, bh, ry, 0, t, strength, boost);
+    if (roll > 0) drawSlices(x0, pw, y0, bh, ry - bh, 0, t, strength, boost);
+    // vertical blanking bar at the seam while rolling
+    if (roll > 0) { ctx.fillStyle = "rgba(2,2,4,0.94)"; ctx.fillRect(0, y0 + ry - bh * 0.07, W, bh * 0.07); ctx.fillStyle = "rgba(120,200,200,0.06)"; ctx.fillRect(0, y0 + ry - bh * 0.07, W, 1); }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = true;
+  }
+  function picW() { return Math.min(W, H * 4 / 3); }
+
+  // ------------------------------------------------------------- the chin
+  var tally = document.getElementById("tally"), nixie = document.getElementById("nixie");
+  var nx = [document.getElementById("nx0"), document.getElementById("nx1")];
+  nx.forEach(function (el, di) {
+    var s = "";
+    for (var d = 0; d < 10; d++) s += '<i style="--sx:' + ((flick(d, di, 3) - 0.5) * 0.8).toFixed(2) + 'px">' + d + "</i>";
+    el.innerHTML = s;
+  });
+  nx[1].children[7].classList.add("poison");            // the poisoned cathode, idle
+  var nxShown = [-1, -1];
+  function setNixie(a, b, lit) {                          // a/b: 0..9 or -1 (dark)
+    nixie.classList.toggle("is-lit", !!lit);
+    [a, b].forEach(function (d, di) {
+      if (nxShown[di] === d) return; nxShown[di] = d;
+      var kids = nx[di].children;
+      for (var i = 0; i < 10; i++) kids[i].classList.toggle("on", i === d);
+    });
+  }
+  function setTally(on) { tally.classList.toggle("is-lit", !!on); }
+
+  // -------------------------------------------------------------- the VFD
+  var log = document.getElementById("zankyo-log"), logT0 = now();
+  var CAT_TAG = { shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", signal: "受信 SIGNAL" };
+  function fmtTime(ms) { var s = Math.max(0, Math.floor(ms / 1000)), m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
+  function logEvent(cat, label, detail) {
+    var row = document.createElement("div"); row.className = "zankyo-log-row";
+    row.innerHTML = '<span class="zankyo-log-time">' + fmtTime(now() - logT0) + '</span><span class="zankyo-log-tag ' + cat + '">' + CAT_TAG[cat] + '</span><span class="zankyo-log-text">' + label + (detail ? " · " + detail : "") + "</span>";
+    log.insertBefore(row, log.firstChild);
+    while (log.children.length > 120) log.removeChild(log.lastChild);
+  }
+  var POOL = [
+    ["form", "❁ new cycle", "儀式 rite · 序 jo"], ["shakuhachi", "○ stated plain", "イ"], ["sho", "aitake", "乙 otsu"],
+    ["koto", "◆ development", "イ ·g1"], ["ambient", "geiger", "0.4"], ["biwa", "⇄ answers", "イ"], ["hichiriki", "〰 shadows", "イ"],
+    ["noise", "grit swell", "破 ha"], ["taiko", "oroshi", ""], ["koto", "◆ development", "イ ·g2"], ["shamisen", "sawari", ""],
+    ["mode", "旋法", "Hirajoshi · D"], ["pa", "platform chime", "far"], ["shakuhachi", "muraiki", ""], ["form", "斬 KIRU", "hush"]
+  ];
+  var poolIdx = 0, nextPoolAt = 0;
+  for (var pi = 0; pi < 5; pi++) { logEvent.apply(null, POOL[poolIdx]); poolIdx++; }
+
+  // ------------------------------------------------------- the bargraph
+  var cells = document.getElementById("zankyo-bar-cells"), segs = [];
+  for (var ci = 0; ci < 56; ci++) {
+    var sg = document.createElement("span");
+    sg.className = "zk-seg " + (ci < 14 ? "zk-seg-jo" : ci < 45 ? "zk-seg-ha" : "zk-seg-kyu");
+    cells.appendChild(sg); segs.push(sg);
+  }
+  var peakLevel = 0, lastOn = -1, lastPeak = -1;
+  function arcLevel(ts) {                                  // a synthetic jo-ha-kyū over 100 s
+    var pos = (ts % 100) / 100, lv;
+    if (pos < 0.45) lv = 0.25 * Math.pow(pos / 0.45, 1.4);
+    else if (pos < 0.82) lv = 0.25 + 0.55 * ((pos - 0.45) / 0.37);
+    else if (pos < 0.9) lv = 0.8 + 0.2 * Math.sin(((pos - 0.82) / 0.08) * Math.PI);
+    else lv = 0.8 * (1 - (pos - 0.9) / 0.1);
+    return clamp01(lv + 0.03 * Math.sin(ts * 2.1) + 0.02 * Math.sin(ts * 5.3));
+  }
+  function updateBar(level, dt) {
+    var on = Math.round(level * 56);
+    if (level > peakLevel) peakLevel = level; else peakLevel = Math.max(level, peakLevel - dt * 0.12);
+    var pk = Math.round(peakLevel * 56) - 1;
+    if (on !== lastOn || pk !== lastPeak) {
+      for (var i = 0; i < 56; i++) {
+        var s = segs[i];
+        s.classList.toggle("on", i < on);
+        s.classList.toggle("is-head", i === on - 1);
+        s.classList.toggle("is-peak", i === pk && i >= on);
+      }
+      lastOn = on; lastPeak = pk;
+    }
+  }
+  var degs = document.querySelectorAll(".zk-deg"), nextDegAt = 0;
+
+  // ----------------------------------------------------------- console
+  var LAYERS = [["重低音", "Sub-drone"], ["笙", "Shō"], ["尺八", "Shakuhachi"], ["篳篥", "Hichiriki"], ["箏", "Koto"], ["三味線", "Shamisen"], ["琵琶", "Biwa"], ["太鼓", "Taiko"], ["雑音", "Noise"], ["環境", "Ambient"], ["放送", "PA"]];
+  var host = document.getElementById("zankyo-layers"), hs = "";
+  LAYERS.forEach(function (L, li) {
+    var muted = li === 6 || li === 10;
+    hs += '<div class="zankyo-layer"><div class="zankyo-layer-head">' +
+      '<button type="button" class="zankyo-layer-name"><span class="zankyo-layer-kana">' + L[0] + '</span><span class="zk-name-label">' + L[1] + '</span><i class="zk-ch">CH·' + (li < 9 ? "0" : "") + (li + 1) + '</i><span class="zk-name-latch"></span></button>' +
+      '<button type="button" class="zankyo-layer-sample" aria-label="sample"><span class="tri"></span></button>' +
+      '<button type="button" class="zk-switch' + (muted ? " muted" : "") + '"><i class="zk-switch-on">ON</i><span class="zk-switch-slot"><span class="zk-switch-lever"></span></span><i class="zk-switch-off">MUTE</i></button>' +
+      "</div></div>";
+  });
+  host.innerHTML = hs;
+
+  // ------------------------------------------------------ state machine
+  var PH = { IDLE: 0, PRE: 1, FOLD: 2, LINE: 3, UNFOLD: 4, HOLD: 5, LOSS: 6, LINE2: 7, RETURN: 8 };
+  var NAMES = ["idle · scope", "dial · static rising", "fold → line", "line (Zen for TV)", "unfold · vertical hold", "hold · picture", "loss · tear / roll / fold", "line", "scope returns"];
+  var DUR = [0, 3000, 1100, 750, 1400, 0, 2300, 550, 950];
+  var phase = PH.IDLE, phaseStart = now(), holdDur = 9000, reel = null, reelIdx = -1;
+  var VISIT_EVERY = 40000, nextVisitAt = now() + 7000, curStrength = 0, lastNixieFlip = 0, unfoldRolls = 2;
+  var statusEl = document.getElementById("status"), lastStatus = "";
+
+  function loadReel(r) {
+    vidReady = false;
+    var w = r.windows[(Math.random() * r.windows.length) | 0];
+    var winMs = (w[1] - w[0]) * 1000;
+    holdDur = Math.max(5000, Math.min(12000, winMs - DUR[PH.LINE] - DUR[PH.UNFOLD] - DUR[PH.LOSS] * 0.8));
+    var src = "../broadcast/reels/" + r.id + ".mp4";
+    var seekTo = function () { try { vid.currentTime = w[0] + 0.05; } catch (e) {} };
+    if (vid.getAttribute("data-id") !== r.id) {
+      vid.setAttribute("data-id", r.id); vid.src = src; vid.load();
+      vid.addEventListener("loadedmetadata", seekTo, { once: true });
+    } else seekTo();
+    vid.addEventListener("seeked", function () { vidReady = true; }, { once: true });
+  }
+  function startVisit(idx) {
+    reelIdx = (idx == null ? reelIdx + 1 : idx) % REELS.length;
+    reel = REELS[reelIdx];
+    loadReel(reel);
+    unfoldRolls = Math.random() < 0.5 ? 1 : 2;
+    setPhase(PH.PRE);
+    nextVisitAt = now() + VISIT_EVERY;
+  }
+  function setPhase(p) {
+    phase = p; phaseStart = now();
+    if (p === PH.LINE) { vid.play().catch(function () {}); }
+    if (p === PH.UNFOLD) { setTally(true); logEvent("signal", "受信", reel.title + " · " + reel.year + (reel.ch ? " · ch " + reel.ch : " · no channel")); }
+    if (p === PH.HOLD) { nextDropAt = now() + 1500 + Math.random() * 2000; }
+    if (p === PH.LINE2) { setTally(false); }
+    if (p === PH.RETURN) { logEvent("signal", "喪失 lost", (reel.ch ? "ch " + reel.ch + " → " : "") + "scope"); }
+    if (p === PH.IDLE) { try { vid.pause(); } catch (e) {} setNixie(-1, -1, false); }
+  }
+  function cutToLoss() { if (phase === PH.HOLD || phase === PH.UNFOLD) setPhase(PH.LOSS); else if (phase >= PH.PRE && phase <= PH.LINE) setPhase(PH.RETURN); }
+  document.getElementById("btn-tune").addEventListener("click", function () { if (phase === PH.IDLE) startVisit(); });
+  document.getElementById("screen").addEventListener("click", function () { if (phase === PH.IDLE) startVisit(); });
+  document.getElementById("btn-next").addEventListener("click", function () { if (phase === PH.IDLE) startVisit(); else { cutToLoss(); } });
+
+  // nixie behaviour per phase
+  function nixieFrame(t, p, el) {
+    if (phase === PH.IDLE) { setNixie(-1, -1, false); return; }
+    if (phase <= PH.LINE) {                                // the dial turning: digits spin
+      var rate = phase === PH.PRE ? 70 + (1 - p) * 90 : phase === PH.FOLD ? 55 : 45;
+      if (t - lastNixieFlip > rate) { lastNixieFlip = t; setNixie((Math.random() * 10) | 0, (Math.random() * 10) | 0, true); }
+      return;
+    }
+    if (phase === PH.UNFOLD || phase === PH.HOLD) {
+      if (reel.ch) {
+        var a = +reel.ch[0], b = +reel.ch[1];
+        if (phase === PH.UNFOLD && p < 0.45) { if (t - lastNixieFlip > 60) { lastNixieFlip = t; setNixie(a, (Math.random() * 10) | 0, true); } }
+        else setNixie(a, b, true);
+      } else if (t - lastNixieFlip > 420) { lastNixieFlip = t; setNixie((Math.random() * 10) | 0, (Math.random() * 10) | 0, true); }   // hunting: no channel
+      return;
+    }
+    if (phase === PH.LOSS) { if (p > 0.5 && t - lastNixieFlip > 80) { lastNixieFlip = t; setNixie((Math.random() * 10) | 0, (Math.random() * 10) | 0, true); } return; }
+    setNixie(-1, -1, false);
+  }
+  function tallyFrame(p) {
+    if (phase === PH.PRE) setTally(Math.random() < p * 0.35);
+    else if (phase === PH.FOLD || phase === PH.LINE) setTally(Math.random() < 0.6);
+    else if (phase === PH.LOSS) setTally(p < 0.4 ? true : Math.random() < 0.5 * (1 - p));
+    else if (phase === PH.UNFOLD || phase === PH.HOLD) setTally(true);
+    else setTally(false);
+  }
+
+  // ------------------------------------------------------------ frame
+  var lastT = now(), dropUntil = 0, nextDropAt = 0, manual = false;
+  // dev hooks for judging single frames: ZK2.go(), ZK2.freeze(true|false)
+  window.ZK2 = { go: function (i) { if (phase === PH.IDLE) startVisit(i); }, freeze: function (on) { if (on) { if (!frozenAt) frozenAt = performance.now(); } else if (frozenAt) { frozenOffset += performance.now() - frozenAt; frozenAt = 0; } }, phase: function () { return NAMES[phase]; },
+    jump: function (ph, p) { if (!reel) startVisit(0); setPhase(ph); if (ph >= PH.LINE) vid.play().catch(function () {}); phaseStart = now() - (p || 0) * (ph === PH.HOLD ? holdDur : DUR[ph]); } };
+  function now() { return (frozenAt || performance.now()) - frozenOffset; }
+  function frame() { render(); requestAnimationFrame(frame); }
+  function render() {
+    var t = now(), dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
+    var ts = t / 1000, arc = arcLevel(ts);
+    document.getElementById("scene").classList.toggle("is-kyu", arc > 0.82);
+    updateBar(arc, dt);
+    if (t > nextDegAt) { nextDegAt = t + 350 + Math.random() * 1400; var d = degs[(Math.random() * 5) | 0]; d.classList.add("is-lit"); setTimeout(function () { d.classList.remove("is-lit"); }, 120 + Math.random() * 300); }
+    if (t > nextPoolAt) { nextPoolAt = t + 2500 + Math.random() * 5500; logEvent.apply(null, POOL[poolIdx % POOL.length]); poolIdx++; }
+    if (phase === PH.IDLE && t >= nextVisitAt) startVisit();
+
+    var el = t - phaseStart, dur = phase === PH.HOLD ? holdDur : DUR[phase];
+    if (phase !== PH.IDLE && el >= dur) { setPhase(phase === PH.RETURN ? PH.IDLE : phase + 1); el = 0; dur = phase === PH.HOLD ? holdDur : DUR[phase]; }
+    var p = dur ? clamp01(el / dur) : 0;
+
+    switch (phase) {
+      case PH.IDLE:
+        synth(ts, arc, 0); drawScope(ts, arc, 0, 0, 0); curStrength = 0; break;
+      case PH.PRE: {                                       // static rises, the band-pass narrows: the dial turning
+        var nz = easeIn(p) * 0.55;
+        synth(ts, arc, nz); drawScope(ts, arc, 0, nz, p); break;
+      }
+      case PH.FOLD: {                                      // every trace gathers into one line
+        var k = easeInOut(p);
+        synth(ts, arc, 0.45 * (1 - p)); drawScope(ts, arc, k, 0.35 * (1 - p), 1 - p * 0.5); break;
+      }
+      case PH.LINE: {                                      // Zen for TV: the line holds, breathing
+        ctx.fillStyle = "rgba(3,3,5,0.5)"; ctx.fillRect(0, 0, W, H);
+        var breathe = 1 + 0.15 * Math.sin(ts * 9), jit = (flick(1, (t / 70) | 0, 2) - 0.5) * 1.2;
+        drawZenLine(breathe, ts, 0.4 + 0.4 * Math.sin(ts * 5), jit);
+        samplePicture(0.2, t); break;
+      }
+      case PH.UNFOLD: {                                    // the line thickens; the picture unfolds out of it, rolling
+        var u = easeOut(p);
+        var bh = lerp(2, H, u), y0 = (H - bh) / 2;
+        var roll = (unfoldRolls * Math.pow(1 - p, 2)) % 1;
+        curStrength = 0.15 + 0.7 * u;
+        samplePicture(curStrength, t);
+        drawPicture(y0, bh, lerp(W, picW(), easeInOut(clamp01(p * 1.25))), roll, curStrength, t, (1 - p) * 0.5);
+        drawZenLine(1 - u, ts, bh * 0.5 * (1 - u), 0);
+        break;
+      }
+      case PH.HOLD: {                                      // strength breathes; dropouts hold a frame
+        var base = 0.78 + 0.14 * Math.sin(ts * 0.9) + 0.06 * Math.sin(ts * 3.7);
+        if (t > nextDropAt) { nextDropAt = t + 1800 + Math.random() * 3500; dropUntil = t + 250 + Math.random() * 500; frameHoldUntil = t + 100 + Math.random() * 200; }
+        var dropping = t < dropUntil;
+        curStrength = clamp01(dropping ? base - 0.45 : base);
+        samplePicture(curStrength, t);
+        var slip = dropping ? (((t - (dropUntil - 750)) / 750) * 0.12) % 1 : 0;   // the hold slips a little on a dropout
+        drawPicture(0, H, picW(), slip > 0 ? slip : 0, curStrength, t, dropping ? 0.35 : 0);
+        break;
+      }
+      case PH.LOSS: {                                      // tear, roll, fold back into the line
+        curStrength = 0.8 * Math.pow(1 - p, 1.3);
+        var boost = p < 0.45 ? p * 1.4 : 0.6;
+        var roll2 = p > 0.3 && p < 0.78 ? (1.6 * Math.pow((p - 0.3) / 0.48, 2.2)) % 1 : 0;
+        var fold = p > 0.7 ? easeIn((p - 0.7) / 0.3) : 0;
+        var bh2 = lerp(H, 2, fold), y2 = (H - bh2) / 2;
+        samplePicture(curStrength, t);
+        drawPicture(y2, bh2, lerp(picW(), W, fold), roll2, curStrength, t, boost);
+        if (fold > 0) drawZenLine(fold, ts, bh2 * 0.5 * fold, 0);
+        snow(fold * 0.5);
+        break;
+      }
+      case PH.LINE2: {
+        ctx.fillStyle = "rgba(3,3,5,0.5)"; ctx.fillRect(0, 0, W, H);
+        var fl = flick(3, (t / 60) | 0, 5) < 0.25 ? 0.4 : 1;
+        drawZenLine(fl, ts, 0.3, (flick(2, (t / 60) | 0, 6) - 0.5) * 2);
+        break;
+      }
+      case PH.RETURN: {                                    // the scope grows back out of the line
+        var k2 = 1 - easeOut(p);
+        synth(ts, arc, 0.7 * (1 - p)); drawScope(ts, arc, k2, 0.6 * (1 - p) * (1 - p), 0);
+        break;
+      }
+    }
+    nixieFrame(t, p, el); tallyFrame(p);
+
+    var st = "phase <b>" + NAMES[phase] + "</b>" + (phase !== PH.IDLE && reel ? " · <i>" + reel.title + " · " + reel.year + "</i> · strength " + curStrength.toFixed(2) : " · next visitation in <i>" + Math.max(0, Math.ceil((nextVisitAt - t) / 1000)) + " s</i>");
+    if (st !== lastStatus) { lastStatus = st; statusEl.innerHTML = st; }
+  }
+  window.ZK2.step = function (n) { manual = true; for (var i = 0; i < (n || 1); i++) { render(); if (frozenAt) frozenAt += 16.7; } manual = false; };
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
