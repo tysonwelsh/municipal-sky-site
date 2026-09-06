@@ -827,7 +827,7 @@
 /* mounting strap: a strip of thicker steel behind the set, welded and bolted
    through the panel in a later decade — its rust runs down from the bolts */
 .zk-mount {
-  position: relative; min-width: 0; flex: none; padding: 7px 7px 9px;
+  position: relative; min-width: 0; flex: none; padding: 4px 7px 4px;   /* critic S0 r1: 14 px trimmed off the housing (strap 7/9 → 4/4, bezel 13 → 11, chin 7/8 → 5/6) so the column ends with the bargraph at 860 */
   border-radius: 4px; border: 1px solid #08080a;
   background:
     radial-gradient(40% 55% at 6% 6%,  rgba(140, 78, 36, 0.28), transparent 70%),
@@ -857,10 +857,10 @@
   background: #060608; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
   transform: rotate(var(--hex, 0deg));
 }
-.zk-bolt-tl { top: 3px; left: 3px; }
-.zk-bolt-tr { top: 3px; right: 3px; filter: sepia(0.6) brightness(0.8); }
-.zk-bolt-bl { bottom: 3px; left: 3px; filter: sepia(0.3) brightness(0.9); }
-.zk-bolt-br { bottom: 3px; right: 3px; }
+.zk-bolt-tl { top: 2px; left: 3px; }
+.zk-bolt-tr { top: 2px; right: 3px; filter: sepia(0.6) brightness(0.8); }
+.zk-bolt-bl { bottom: 2px; left: 3px; filter: sepia(0.3) brightness(0.9); }
+.zk-bolt-br { bottom: 2px; right: 3px; }
 
 /* the set: older, yellowed plastic, a heavier bezel, deeper radius; the
    housing HUGS the tube with the scope's bezel proportions (13 px), the chin
@@ -868,7 +868,7 @@
 .zk-set2 {
   position: relative; box-sizing: border-box;
   display: flex; flex-direction: column;
-  padding: 13px 13px 0; border-radius: 11px; border: 1px solid #000;
+  padding: 11px 13px 0; border-radius: 11px; border: 1px solid #000;
   background:
     radial-gradient(70% 26% at 62% 0%, rgba(255, 240, 200, 0.06), transparent 70%),
     radial-gradient(30% 40% at 100% 100%, rgba(110, 66, 32, 0.22), transparent 70%),
@@ -905,7 +905,7 @@
 }
 
 /* chin: brand plate · 選局 tune button · 受信 lamp */
-.zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 7px 6px 8px; }
+.zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 5px 6px 6px; }
 .zk-set2-brand { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); white-space: nowrap; }
 .zk-set2-brand i { font-style: normal; color: #574f47; }
 .zk-tune-unit { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; margin-right: 4px; }
@@ -951,7 +951,7 @@
    the 選局 TUNE control on it. Cut from the same stock as the control rail's
    pitch-management module. */
 .zk-rxpanel {
-  position: relative; flex: 1; min-height: 64px; box-sizing: border-box;
+  position: relative; flex: 1; min-height: 48px; box-sizing: border-box;
   display: flex; align-items: center; gap: 10px;
   padding: 10px 22px 10px 22px; border-radius: 5px; border: 1px solid #000;
   background:
