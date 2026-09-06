@@ -15,7 +15,7 @@ function zkv($file)
 // live build is legible. The footer shows only the version NUMBER; the
 // "— summary" tail in VERSION stays for git history and the bump rule.
 $zk_assets = [
-    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zankyo.css', 'index.php',
+    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zankyo.css', 'index.php',
     '../prosperos-jukebox-v2/pj2-rand.js', '../prosperos-jukebox-v2/pj2-pitch.js',
     '../prosperos-jukebox-v2/pj2-clock.js', '../prosperos-jukebox-v2/pj2-voice.js',
     '../prosperos-jukebox-v2/pj2-fx.js', '../prosperos-jukebox-v2/pj2-air.js',
@@ -60,40 +60,81 @@ include '../../includes/header.php';
       <span class="zk-marquee-screw zk-marquee-screw-r" aria-hidden="true"></span>
     </div>
 
-    <!-- CRT monitor -->
-    <div class="zk-monitor">
-      <div class="zk-screen zankyo-viz-wrap">
-        <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
-        <div class="zankyo-scanlines" aria-hidden="true"></div>
-        <div class="zk-glass" aria-hidden="true"></div>
-      </div>
-      <div class="zk-monitor-chin">
-        <span class="zk-monitor-brand">映像管 &middot; MSHI CRT-19</span>
-        <span class="zk-chin-spacer"></span>
-        <span class="zk-led-label">電源</span>
-        <span class="zk-led" aria-hidden="true"></span>
-      </div>
-      <span class="zk-sticker" aria-hidden="true"><b>検査済</b>3042.04<i></i></span>
-    </div>
+    <!-- THE BANK (S0, the second set): the scope + bargraph stack on the left
+         (3fr), and to its right the older receive-only tube the yard bolted on
+         later — 映像管 MSHI CRT-9, 受信専用 — on its own steel strap (2fr). Under
+         700 px the bank stacks and the set goes full width under the bargraph.
+         Look decided by the owner: mockups/monitor-1-second-set.html. -->
+    <div class="zk-bank">
+      <div class="zk-bank-main">
+        <!-- CRT monitor -->
+        <div class="zk-monitor">
+          <div class="zk-screen zankyo-viz-wrap">
+            <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
+            <div class="zankyo-scanlines" aria-hidden="true"></div>
+            <div class="zk-glass" aria-hidden="true"></div>
+          </div>
+          <div class="zk-monitor-chin">
+            <span class="zk-monitor-brand">映像管 &middot; MSHI CRT-19</span>
+            <span class="zk-chin-spacer"></span>
+            <span class="zk-led-label">電源</span>
+            <span class="zk-led" aria-hidden="true"></span>
+          </div>
+          <span class="zk-sticker" aria-hidden="true"><b>検査済</b>3042.04<i></i></span>
+        </div>
 
-    <!-- 段階 DEVELOPMENT — segmented LED bargraph, full display width.
-         Fill = jo-ha-kyū arc level; zone splits sit where the engine's phase
-         cuts land on the level curve (pos 0.45 → level 0.25, pos 0.82 → 0.80). -->
-    <div class="zk-bargraph" id="zankyo-bargraph">
-      <div class="zk-bar-scale" aria-hidden="true">
-        <span class="zk-bar-zl zk-bar-zl-jo">序 jo</span>
-        <span class="zk-bar-zl zk-bar-zl-ha">破 ha</span>
-        <span class="zk-bar-zl zk-bar-zl-kyu">急 kyū</span>
-        <span class="zk-bar-tick" style="left:25%"></span>
-        <span class="zk-bar-tick" style="left:80%"></span>
+        <!-- 段階 DEVELOPMENT — segmented LED bargraph, full display width.
+             Fill = jo-ha-kyū arc level; zone splits sit where the engine's phase
+             cuts land on the level curve (pos 0.45 → level 0.25, pos 0.82 → 0.80). -->
+        <div class="zk-bargraph" id="zankyo-bargraph">
+          <div class="zk-bar-scale" aria-hidden="true">
+            <span class="zk-bar-zl zk-bar-zl-jo">序 jo</span>
+            <span class="zk-bar-zl zk-bar-zl-ha">破 ha</span>
+            <span class="zk-bar-zl zk-bar-zl-kyu">急 kyū</span>
+            <span class="zk-bar-tick" style="left:25%"></span>
+            <span class="zk-bar-tick" style="left:80%"></span>
+          </div>
+          <div class="zk-bar-housing">
+            <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
+            <span class="zk-bar-glass" aria-hidden="true"></span>
+          </div>
+          <div class="zk-bar-foot" aria-hidden="true">
+            <span class="zk-bar-label">段階 &middot; DEVELOPMENT</span>
+            <span class="zk-bar-serial">LM-3814 &middot; 56&nbsp;SEG</span>
+          </div>
+        </div>
       </div>
-      <div class="zk-bar-housing">
-        <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
-        <span class="zk-bar-glass" aria-hidden="true"></span>
-      </div>
-      <div class="zk-bar-foot" aria-hidden="true">
-        <span class="zk-bar-label">段階 &middot; DEVELOPMENT</span>
-        <span class="zk-bar-serial">LM-3814 &middot; 56&nbsp;SEG</span>
+
+      <!-- 隣 THE SECOND SET — MSHI CRT-9, receive only, on its strap -->
+      <div class="zk-mount">
+        <span class="zk-bolt zk-bolt-tl" style="--hex:12deg" aria-hidden="true"></span>
+        <span class="zk-bolt zk-bolt-tr" style="--hex:-20deg" aria-hidden="true"></span>
+        <span class="zk-bolt zk-bolt-bl" style="--hex:40deg" aria-hidden="true"></span>
+        <span class="zk-bolt zk-bolt-br" style="--hex:5deg" aria-hidden="true"></span>
+        <div class="zk-set2" id="zankyo-set2">
+          <div class="zk-set2-top">
+            <span class="zk-set2-stock">No. 2887-R</span>
+            <span class="zk-set2-model"><b>受信機</b>TYPE 9-B</span>
+          </div>
+          <div class="zk-set2-tubewrap">
+            <div class="zk-tube" id="zankyo-tube">
+              <canvas id="zankyo-set" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
+              <div class="zankyo-scanlines" aria-hidden="true"></div>
+              <svg class="zk-crack" id="zankyo-crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div class="zk-glass" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="zk-set2-chin">
+            <span class="zk-set2-brand">映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
+            <span class="zk-chin-spacer"></span>
+            <span class="zk-tune-unit"><button type="button" class="zk-tune" id="zankyo-tune" aria-label="Tune: scan for a signal" title="選局 &middot; tune"></button><span class="zk-tune-label">選局</span></span>
+            <span class="zk-rx-label">受信</span>
+            <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
+          </div>
+          <span class="zk-tape zk-tape-1" aria-hidden="true">ヒビ注意</span>
+          <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
+          <span class="zk-tape zk-tape-3" aria-hidden="true">触るな</span>
+        </div>
       </div>
     </div>
 
@@ -180,6 +221,9 @@ include '../../includes/header.php';
 <script src="zankyo-audio.js?v=<?php echo zkv('zankyo-audio.js'); ?>"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=<?php echo zkv('zankyo-viz.js'); ?>"></script>
+<!-- THE SECOND SET (S0): the CRT-9's own phosphor pipeline and its idle stream;
+     no-ops headless (the probe loads every zk-*.js). -->
+<script src="zk-set.js?v=<?php echo zkv('zk-set.js'); ?>"></script>
 <script src="zankyo-ui.js?v=<?php echo zkv('zankyo-ui.js'); ?>"></script>
 
 <!-- Anonymous usage tracking: a page view, plus the first PLAY press as an

@@ -127,6 +127,17 @@ const PJ2_MODULES = ["pj2-rand.js", "pj2-pitch.js", "pj2-clock.js", "pj2-voice.j
 const SRC = {};
 for (const m of PJ2_MODULES) SRC[m] = fs.readFileSync(path.join(PJ2_DIR, m), "utf8");
 SRC.engine = fs.readFileSync(process.env.ZK_ENGINE || path.join(__dirname, "zankyo-audio.js"), "utf8");   // ZK_ENGINE: A/B an alternate build
+// ZANKYŌ's own extensions (S0+): every zk-*.js index.php loads after the engine,
+// in page order, the way _probe.js does — minus the viz-side zk-set.js (DOM only;
+// it no-ops headless anyway). So zk-broadcast.js (S1) is under the harness too.
+const ZK_EXT = (() => {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, "index.php"), "utf8"), re = /<script[^>]+src="(zk-[^"?]+\.js)(?:\?[^"]*)?"/g, out = [];
+    let m; while ((m = re.exec(html))) if (!/zk-set\.js$/.test(m[1])) out.push(m[1]);
+    return out;
+  } catch (e) { return []; }
+})();
+for (const m of ZK_EXT) SRC[m] = fs.readFileSync(path.join(__dirname, m), "utf8");
 
 function loadEngine() {
   const W = { AudioContext: function () { return mkCtx(); } };
@@ -137,6 +148,7 @@ function loadEngine() {
     try { (0, eval)(SRC[m]); } catch (e) { errors.push("LOAD " + m + ": " + e.message); }
   }
   try { (0, eval)(SRC.engine); } catch (e) { errors.push("LOAD zankyo-audio.js: " + e.message); }
+  for (const m of ZK_EXT) { try { (0, eval)(SRC[m]); } catch (e) { errors.push("LOAD " + m + ": " + e.message); } }
   return W.ZankyoAudio;
 }
 

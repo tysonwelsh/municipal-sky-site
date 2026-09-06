@@ -778,6 +778,8 @@
 .zankyo-log-tag.hichiriki  { color: var(--red);     border: 1px dashed rgba(var(--red-rgb), 0.6); }
 .zankyo-log-tag.biwa       { color: var(--amber);   border: 1px dashed rgba(var(--amber-rgb), 0.6); }
 .zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
+/* the second set (S0+): 受信 / 消失 — the signal's own amber tag */
+.zankyo-log-tag.rx         { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.7); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.5); }
 .zankyo-log-text { color: var(--ink); }
 
 /* ---------------------------------------------------------------------------
@@ -806,6 +808,146 @@
 
 .zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 4px 0; }
 .zankyo-note strong { color: var(--red); font-weight: 500; }
+
+/* ===========================================================================
+   THE ADDITION — 隣 the second set.
+   A bank row: the scope + bargraph stack on the left (3fr), MSHI CRT-9 on the
+   right (2fr) on its own steel mounting strap, bolted through the faceplate.
+   =========================================================================== */
+.zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: stretch; margin-bottom: 16px; }
+.zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
+.zk-bank-main .zk-bargraph { margin-bottom: 0; }
+.zk-bank-main .zk-sticker { right: 62px; }
+
+/* mounting strap: a strip of thicker steel behind the set, welded and bolted
+   through the panel in a later decade — its rust runs down from the bolts */
+.zk-mount {
+  position: relative; min-width: 0; padding: 7px 7px 9px;
+  border-radius: 4px; border: 1px solid #08080a;
+  background:
+    radial-gradient(40% 55% at 6% 6%,  rgba(140, 78, 36, 0.28), transparent 70%),
+    radial-gradient(30% 80% at 96% 20%, rgba(120, 66, 30, 0.22), transparent 70%),
+    radial-gradient(60% 30% at 50% 100%, rgba(24, 18, 12, 0.6), transparent 80%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, rgba(0,0,0,0.12) 1px 3px),
+    linear-gradient(180deg, #3a3a42, #2b2b32 45%, #1c1c22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -2px 6px rgba(0,0,0,0.6), 0 5px 14px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.04);
+  transform: rotate(0.45deg);
+  transform-origin: 50% 40%;
+}
+/* rust weep under the top bolts */
+.zk-mount::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 4px;
+  background:
+    linear-gradient(178deg, rgba(150, 82, 34, 0.32) 0, rgba(150, 82, 34, 0.1) 26px, transparent 56px) 10px 14px / 9px 100% no-repeat,
+    linear-gradient(182deg, rgba(150, 82, 34, 0.26) 0, rgba(150, 82, 34, 0.08) 34px, transparent 70px) calc(100% - 12px) 16px / 7px 100% no-repeat;
+}
+/* hex bolts through the strap */
+.zk-bolt {
+  position: absolute; z-index: 4; width: 13px; height: 13px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #7a7a86, #34343c 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -2px 2px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.8), 0 0 0 2px rgba(0,0,0,0.4);
+}
+.zk-bolt::before { /* hex socket */
+  content: ""; position: absolute; left: 30%; top: 30%; width: 40%; height: 40%;
+  background: #060608; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  transform: rotate(var(--hex, 0deg));
+}
+.zk-bolt-tl { top: 3px; left: 3px; }
+.zk-bolt-tr { top: 3px; right: 3px; filter: sepia(0.6) brightness(0.8); }
+.zk-bolt-bl { bottom: 3px; left: 3px; filter: sepia(0.3) brightness(0.9); }
+.zk-bolt-br { bottom: 3px; right: 3px; }
+
+/* the set: older, yellowed plastic, a heavier bezel, deeper radius */
+.zk-set2 {
+  position: relative; height: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column;
+  padding: 11px 12px 0; border-radius: 11px; border: 1px solid #000;
+  background:
+    radial-gradient(70% 26% at 62% 0%, rgba(255, 240, 200, 0.06), transparent 70%),
+    radial-gradient(30% 40% at 100% 100%, rgba(110, 66, 32, 0.22), transparent 70%),
+    linear-gradient(180deg, #2b2826, #1a1817 55%, #100f0e);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 220, 0.1), inset 0 -5px 12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.55);
+}
+.zk-set2-top { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 0 4px 7px; }
+.zk-set2-model {
+  font-size: 7px; letter-spacing: 0.24em; color: #6a6259;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06);
+}
+.zk-set2-model b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.2em; color: #7d7368; margin-right: 6px; }
+/* a scratched-on stock number, the yard's chalk pen */
+.zk-set2-stock { font-size: 6.5px; letter-spacing: 0.18em; color: #5b544d; transform: rotate(-1deg); text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
+
+.zk-set2-tubewrap { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.zk-tube {
+  position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden;
+  border-radius: 18px / 22px;
+  background: #030503;
+  border: 1px solid #020302;
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.95),
+    inset 0 0 26px rgba(0, 0, 0, 0.95),
+    inset 0 3px 10px rgba(0, 0, 0, 0.85),
+    inset 0 0 60px rgba(30, 90, 40, 0.05);
+}
+.zk-tube canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.zk-tube .zankyo-scanlines { opacity: 0.7; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.24) 3px); }
+/* the crack, glass thickness and the chip — SVG, drawn from the same point data the shader slices on */
+.zk-crack { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; }
+.zk-tube .zk-glass {
+  background:
+    linear-gradient(118deg, rgba(255, 250, 235, 0.11) 0%, rgba(255, 250, 235, 0.03) 14%, transparent 26%, transparent 66%, rgba(255, 255, 255, 0.025) 84%),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 96%);
+}
+/* older glass: more dust, a second smudge low-left, a fingerprint whorl top-right */
+.zk-tube .zk-glass::after { right: auto; left: 10%; bottom: 10%; width: 44px; height: 26px; transform: rotate(22deg); background: radial-gradient(closest-side, rgba(200, 205, 190, 0.06), transparent 75%); }
+.zk-tube .zk-glass::before {
+  content: ""; position: absolute; right: 12%; top: 12%; width: 30px; height: 30px; border-radius: 50%;
+  background: repeating-radial-gradient(circle at 50% 50%, rgba(210, 215, 200, 0.05) 0 1px, transparent 1px 3px);
+  transform: rotate(-30deg) scaleX(0.8); opacity: 0.8;
+}
+
+/* chin: brand plate · 選局 tune button · 受信 lamp */
+.zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 6px 4px 7px 4px; }
+.zk-set2-brand { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); white-space: nowrap; }
+.zk-set2-brand i { font-style: normal; color: #574f47; }
+.zk-tune-unit { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; margin-right: 4px; }
+.zk-tune {
+  position: relative; width: 20px; height: 20px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none;
+  background: radial-gradient(circle at 34% 28%, #5c5c66, #2a2a31 50%, #101014 90%);
+  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -3px 4px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.28);
+}
+.zk-tune::after { content: ""; position: absolute; left: 50%; top: 18%; width: 2px; height: 34%; margin-left: -1px; background: #d8d2c2; border-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.7); transform-origin: 50% 94%; transform: rotate(var(--ch, -40deg)); transition: transform 0.18s cubic-bezier(.5,1.6,.6,1); }
+.zk-tune:active { transform: translateY(1px); box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
+.zk-tune:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+.zk-tune-label { font-size: 6px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; line-height: 1; }
+.zk-rx-label { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; }
+.zk-rx {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #3a2a10, #1c1408 70%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.zk-rx.is-lit { background: radial-gradient(circle at 35% 30%, #ffe2a0, var(--amber) 60%); box-shadow: 0 0 9px rgba(var(--amber-rgb), 0.85), 0 0 2px rgba(var(--amber-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5); }
+.zk-rx.is-flicker { animation: zk-led-flicker 0.11s infinite; }
+
+/* yellowed tape on the bezel — the glass is held in with it */
+.zk-tape {
+  position: absolute; z-index: 9; height: 17px; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(222, 198, 138, 0.78), rgba(206, 180, 118, 0.82) 50%, rgba(186, 158, 96, 0.8));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 240, 200, 0.12);
+  clip-path: polygon(0 12%, 3% 0, 97% 4%, 100% 20%, 98% 100%, 95% 88%, 2% 96%, 0 70%);
+  font-family: "Shippori Mincho", serif; font-size: 8.5px; letter-spacing: 0.24em; line-height: 17px; text-align: center;
+  color: rgba(48, 32, 18, 0.85); white-space: nowrap; overflow: hidden;
+}
+.zk-tape-1 { width: 84px; left: -14px; top: 26px; transform: rotate(-42deg); }
+.zk-tape-2 { width: 58px; right: -8px; top: 46%; transform: rotate(9deg); opacity: 0.86; }
+.zk-tape-2::after { /* the lifted end, gone glossy */
+  content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 14px;
+  background: linear-gradient(90deg, transparent, rgba(255, 246, 220, 0.5));
+}
+.zk-tape-3 { width: 46px; left: 34%; bottom: 40px; transform: rotate(2deg); height: 13px; line-height: 13px; font-size: 7px; opacity: 0.8; }
 
 /* ---------------------------------------------------------------------------
    MOBILE — the machine simplifies: monitor + transport + reduced strip
@@ -848,6 +990,12 @@
   .zk-cavity-knobs { gap: 18px; }
   .zk-knob-vol { width: 38px; height: 38px; }
   .zankyo-log { height: 180px; }
+
+  /* the bank stacks: scope, bargraph, then the second set at full width */
+  .zk-bank { grid-template-columns: 1fr; gap: 14px 0; }
+  .zk-mount { transform: rotate(0.25deg); padding: 6px 6px 8px; }
+  .zk-set2 { padding: 9px 10px 0; }
+  .zk-tape-1 { top: 22px; }
 }
 @media (max-width: 380px) {
   .zk-unit-vol .zk-unit-meta { display: none; }
