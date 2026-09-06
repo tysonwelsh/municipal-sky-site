@@ -269,7 +269,8 @@
     else if (ph === "dead" || ph === "idle") { rx.classList.remove("is-flicker"); rx.classList.remove("is-lit"); }
   }
   function endSignal(t) {
-    sig = null;                                              // the receiver owns the element; the set never pauses it S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0;
+    sig = null;                                              // the receiver owns the element; the set never pauses it
+    S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0;
     idle.nextCard = t + 6000 + Ridle.next() * 10000; idle.nextLine = t + 8000 + Ridle.next() * 12000;
     enterPhase("idle", t);
   }

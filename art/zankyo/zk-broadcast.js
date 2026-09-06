@@ -97,6 +97,7 @@
     } catch (e) {}
   }
   try { Z.setEventListener(function (ev) { if (ev && ev.label === "▶ play") onPlay(); }); } catch (e) {}
+  loadPool();   // the manifest is the one thing fetched at page load (plan §2.1) — so the first ♪ or 選局 finds a reel (critic S2 r1)
 
   // ---- the recent ring: reels heard in the last RECENT_CYCLES cycles ----
   var recent = [];   // [{ id, cycle }]
