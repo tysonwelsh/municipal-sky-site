@@ -172,10 +172,14 @@ window.ZK_FAR = (function () {
 
     // ---- 時間 time ----
     { id: "dilate", kana: "遅", name: "dilation", family: "時間", d: 0.25, w: 3.0, phase: "W1",
-      // A cycle at 0.4× (a forty-minute jo of single notes) or 2.5×. Drawn per
-      // cycle at wiring time from this night's band; `slow` says which side the
-      // night leans. Under 雲 clouds the slow side is forbidden (see COMPAT).
-      params: function (R, d, amt) { return { lo: 1 - 0.6 * amt, hi: 1 + 1.5 * amt, slow: R.chance(0.55) }; } },
+      // A cycle at 0.4× speed (a forty-minute jo of single notes) or at 2.5×.
+      // NAMED AS TIME, not as speed, because that is what the engine multiplies
+      // and the first version got it backwards for exactly that reason (the
+      // critic caught it): a cycle at 0.4× SPEED is time stretched 2.5×. So
+      // `slowMul` ≥ 1 is the glacial side and `fastMul` ≤ 1 the frantic one,
+      // and at amt 1 they are the plan's own 2.5 and 0.4. `slow` says which
+      // side the night leans. Under 雲 clouds the glacial side is forbidden.
+      params: function (R, d, amt) { return { slowMul: 1 + 1.5 * amt, fastMul: 1 - 0.6 * amt, slow: R.chance(0.55) }; } },
     { id: "vari", kana: "弛", name: "varispeed", family: "時間", d: 0.50, w: 2.2, phase: "W1",
       // The whole ensemble sags in pitch AND time like a dying tape, then
       // snaps or crawls back. Drones and reverb tails included.
@@ -343,10 +347,11 @@ window.ZK_FAR = (function () {
       out.dep[r.id] = p;
       out.ids.push(r.id);
     }
-    // 雲 clouds against a glacial dilation is mud, not music: the plan's
-    // composition rule, enforced on the parameter rather than the pairing so
-    // both departures survive.
-    if (out.dep.clouds && out.dep.dilate) { out.dep.dilate.lo = 1; out.dep.dilate.slow = false; }
+    // 雲 clouds against a GLACIAL dilation is mud, not music: hundreds of short
+    // notes stretched to nothing. The plan's composition rule, enforced on the
+    // parameter rather than the pairing so both departures survive. (This was
+    // inverted too, for the same naming reason — it pinned the fast side.)
+    if (out.dep.clouds && out.dep.dilate) { out.dep.dilate.slowMul = 1; out.dep.dilate.slow = false; }
 
     // The name: the strangest departure present speaks for the night — the
     // highest threshold, and on a tie the LATER one in the registry, because
