@@ -1,0 +1,136 @@
+# ZANKYŌ — 逸脱 ITSUDATSU: pushing the far tail into interstellar space
+
+*Plan, 2026-09-06. Branch `zankyo-far` from main (2.1.0-rc.1, live). Music
+only: the interface does not change. The median night does not change. The
+far tail does.*
+
+The owner's brief, in substance: what we have is great — keep it. But push
+the boundaries of the aleatoric generation so that the weirdest 5–10 % of
+playthroughs go far beyond anything the engine can do today: one night in
+twenty should make a listener say "this is something else." Stranger,
+more experimental, more variable between nights — not necessarily harder
+to listen to. Median unchanged. UI unchanged.
+
+## 1. The mechanism: one seeded draw sets the night's distance
+
+At PLAY, a new `PJ2.Rand` fork ("far") draws the night's **distance from
+home** `d ∈ [0, 1]` from a heavy-tailed law:
+
+| share of nights | d | the night |
+|---|---|---|
+| ~80 % | < 0.15 | home: today's engine, **byte-identical** (no other stream sees a new draw) |
+| ~15 % | 0.15–0.7 | one or two departures, moderate |
+| ~5 % | > 0.7 | far: several departures stacked; d > 0.9 (≈ 1 in 50) is "interstellar" |
+
+Within a night the meta-tide may lift one cycle further out than the rest
+(a home night can have one strange cycle; a far night can have one calm
+one). Every departure below reads d and unlocks past its own threshold;
+which departures a far night carries is itself a seeded draw, so two far
+nights differ. Dev: `?far=0.95` forces d; the VFD names the night
+(逸脱 · <name> · d 0.xx) so the owner can tell what they are hearing;
+`?seed=` reproduces it exactly.
+
+The **distance metric** (probe): pitch-class entropy and deviation from
+12-TET, tempo variance and rate excursion, density variance, spectral
+centroid/roughness of the master, form-shape deviation from jo-ha-kyū,
+ensemble synchrony. One scalar per night. The gates in §4 are stated on it.
+
+## 2. The departures (each seeded, each gated by d, each with a name)
+
+**Pitch and tuning** 音律
+- *Sagging clock* (d > 0.2): the octave stretches or compresses (1180–1230
+  cents) — the field's tuning system leaves 12-TET; everything stays
+  self-consistent, nothing is "out of tune" with itself.
+- *Koto by ear* (d > 0.3): just-intonation tunings for the plucked bodies
+  while the shakuhachi and hichiriki stay tempered — a real ensemble's
+  disagreement, scaled up with d.
+- *Meri quarter-tones* (d > 0.4): the shakuhachi's meri pitches and the
+  in-sen semitone split into quarter-tones; ornaments walk them.
+- *Two modes at once* (d > 0.6): bitonality — one voice in iwato on the
+  tonic, another in in-sen a tritone away; the shō cluster straddles both.
+- *The spiral* (d > 0.75): the tonic glides continuously (a few cents per
+  second), Shepard-style — a key that never arrives; the drones follow.
+
+**Time** 時間
+- *Dilation* (d > 0.25): a cycle at 0.4× (glacial: a forty-minute jo made of
+  single notes) or 2.5× (frantic), drawn per cycle; the clock's lanes do it.
+- *Varispeed* (d > 0.5): the whole ensemble sags in pitch AND time together
+  like a dying tape (−1 to −4 semitones over minutes), then snaps or crawls
+  back; drones and reverb tails included.
+- *Tempo canons* (d > 0.6): the same motif in koto / shamisen / biwa at
+  duration ratios 3:4:5 (Nancarrow) — they converge, pass, diverge.
+
+**Form** 形
+- *Eroded arc* (d > 0.3): kyū-ha-jo — the cycle opens at the wall and
+  decomposes; or a jo that never arrives; or a double kyū.
+- *The KIRU fails* (d > 0.5): the cut does not come; the wall runs straight
+  into the next cycle's jo, which is born inside it.
+- *Disintegration* (d > 0.65): the station gets stuck — one motif fragment
+  loops like a locked groove and decays (Basinski): each pass loses notes,
+  gains grit, drifts in pitch, until only the room remains; then the next
+  cycle begins from the residue.
+- *Ma inverted* (d > 0.4): a cycle in which silence is the material and
+  sound is the interruption — single events minutes apart.
+
+**Ensemble** 合奏
+- *Swarm* (d > 0.55): the air's limit is lifted and the motif engine runs a
+  canon of 6–10 entries at short delays — micropolyphony (Ligeti) on a
+  Japanese pentatonic.
+- *Hocket* (d > 0.45): one melody split note-by-note across all voices.
+- *Strict mirror* (d > 0.5): every phrase answered by its exact
+  retrograde-inversion; the ledger enforces it.
+- *Gagaku heterophony at scale* (d > 0.35): all five melodic voices read
+  the same phrase at once, each in its own ornaments and lag.
+- *Clouds* (d > 0.7): Xenakis — the plucked bodies as stochastic glissando
+  clouds, hundreds of short notes on distributions, not phrases.
+- *Polymeter* (d > 0.4): the taiko kit in 3 against 4 against 7 across its
+  three drums; the pulse magnet pulls each voice to a different drum.
+
+**Spectrum** 音色
+- *Metal* (d > 0.35): ring modulation of the shō by the sub-drone; the
+  bells and the koto through FM — inharmonic, gong-like, still pitched.
+- *Reverse* (d > 0.4): envelopes reversed — plucks that swell, breaths that
+  end in the attack; a tape played backwards.
+- *Freeze* (d > 0.5): a shakuhachi note held into a drone for a minute
+  (jittered sustained partials), the ensemble re-tuning around it.
+- *Noise leads* (d > 0.6): the japanoise vocabulary becomes the soloist,
+  claims the air, and the melodic voices become texture behind it.
+- *The reel as the room* (d > 0.7): a two-second slice of a broadcast reel
+  becomes the convolution impulse — the whole station played through the
+  voice of Duck and Cover or the Buzzer. Audio only; the set stays dark.
+- *Phasing* (d > 0.6): two copies of a signal's two-second window drift out
+  of phase (Reich) instead of the normal tune-in/hold/loss.
+
+**Composition** at d > 0.85 ("interstellar"): three or four of the above
+stacked by a seeded draw with compatibility rules (no clouds + dilation
+0.4×; no spiral + bitonality), a named night (渦 the vortex, 崩 the
+collapse, 凍 the freeze, 鏡 the mirror, 塵 the dust …), and the VFD tells
+the story as it happens.
+
+## 3. What does not change
+
+- The interface: nothing on the faceplate, console, set or log changes
+  shape; the VFD only gains words.
+- The median: at d < 0.15 the note stream is byte-identical to 2.1.0-rc.1.
+- Ceilings: master integrated within ±0.7 dB at any d; no layer peak
+  moves; a harshness cap (master spectral centroid and roughness never
+  above the current kyū wall's) so "weird" never becomes "painful".
+- The character: still a derelict Japanese station; still no cheer, no
+  ending; still seeded and shareable. The contract's "12-TET dark
+  pentatonics only" is relaxed *at high d only*, and only toward tunings
+  and modes with Japanese roots (just koto tunings, meri quarter-tones,
+  bitonal pentatonics) — never toward Western triads.
+
+## 4. Phases and gates
+
+| phase | delivers | gate |
+|---|---|---|
+| W0 | the `far` fork and d law; distance metric in `_probe.js`; `?far=`; VFD naming; departure registry (no departures yet) | home nights byte-identical on 20 seeds; metric stable; REPRO |
+| W1 | pitch/tuning + time + form departures | at `?far=0.8` the metric ≥ 3× the base p95; p50 over 40 seeds within ±10 % of base; ceilings |
+| W2 | ensemble departures | same, plus node budget ≤ 90 % under swarm/clouds |
+| W3 | spectrum departures (incl. reel-as-room, phasing) | same; harshness cap holds under metal/noise-leads |
+| W4 | composition at d > 0.85, names, compatibility rules, the meta-tide's per-cycle lift | 1-in-20 nights ≥ 3× base p95 and 1-in-50 ≥ 5× over 200 simulated seeds; owner listens to `?far=0.95` on three seeds |
+
+Each phase bumps VERSION (2.1.0-rc.2 …); the release is 2.2.0 — "the far
+tail". Three rounds per phase; the critic holds the distance gates, the
+ceilings, the harshness cap and byte-identity of home nights.
