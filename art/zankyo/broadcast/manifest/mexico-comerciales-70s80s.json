@@ -1,0 +1,19 @@
+{
+  "id": "mexico-comerciales-70s80s",
+  "title": "Comerciales mexicanos, los 70 y los 80",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=1X3NFluZLKQ",
+  "license": "various advertisers; copyrighted (fair-use posture)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.4,
+  "durS": 72.17,
+  "bytes": 614259,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.09], [36.09, 48.09], [48.09, 60.17], [60.17, 72.17]],
+  "srcWindows": [[832.0, 844.0], [1805.0, 1817.0], [3348.0, 3360.0], [3473.0, 3485.0], [5136.0, 5148.0], [5280.0, 5292.0]],
+  "notes": "Burger Boy, a bell in a town square, neon and motorcycles at night, 'Mafer es muy cacahuate', a television inside the commercial, '¿pies ardorosos?' — Spanish jingles arriving one product name at a time",
+  "takedown": false
+}
