@@ -100,7 +100,7 @@
 
   // ---- the recent ring: reels heard in the last RECENT_CYCLES cycles ----
   var recent = [];   // [{ id, cycle }]
-  function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle > cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }
+  function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
   function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); while (recent.length > 12) recent.shift(); }
 
   // ---- the choice (arm time): six draws, always ----

@@ -267,7 +267,7 @@ const reprises = events.filter((e) => e.label.indexOf("reprise") >= 0).length;
 const ghosts = events.filter((e) => e.label.indexOf("ghost") >= 0).length;
 const shadows = events.filter((e) => e.label.indexOf("shadows") >= 0).length;
 const decomposes = events.filter((e) => e.label.indexOf("decomposes") >= 0).length;
-const MELODIC = { shakuhachi: 1, koto: 1, shamisen: 1 };
+const MELODIC = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };   // all five melodic voices (S1 re-base, orchestrator ruling)
 const melodicNotes = notes.filter((n) => MELODIC[n.layer]).length;
 
 console.log("=== ZANKYŌ harness ===  (simulated " + RUN + "s, seed " + SEED + ")");
@@ -351,11 +351,11 @@ const signalVocab = (() => {
   for (const s of sigs) {
     const t0 = s.sig.t0, tEnd = t0 + 0.4 + s.sig.holdS + s.sig.lossD;
     for (const k of kiruTs) if (k > t0 - 20 && k < tEnd + 15) nearKiru++;
-    for (const n of notes) if (MEL[n.layer] && n.t >= t0 + 1 && n.t <= tEnd) notSilent++;
+    for (const n of notes) if ((MEL[n.layer] || n.layer === "pa") && n.t >= t0 + 1 && n.t <= tEnd) notSilent++;   // the PA counts too (critic S1 r1)
   }
   const hosted = events.filter((e) => /visitation: the broadcast/.test(e.detail || "")).length;
   const ai = runA.Z.getAirInfo ? runA.Z.getAirInfo() : null;
-  console.log("signal (" + SIGNAL_MOCK + "): " + sigs.length + " signals + " + fallbacks.length + " fallbacks in " + cycleStarts.length + " cycles (" + hosted + " hosted the broadcast) · " + (cycleStarts.length ? (3 * sigs.length / cycleStarts.length).toFixed(2) : "—") + " per 3 cycles · max per cycle " + maxPer + " · near a KIRU " + nearKiru + " · melodic notes inside a hold " + notSilent + (ai ? " · hold denials " + ai.holdDenials : "") +
+  console.log("signal (" + SIGNAL_MOCK + "): " + sigs.length + " signals + " + fallbacks.length + " fallbacks in " + cycleStarts.length + " cycles (" + hosted + " hosted the broadcast) · " + (cycleStarts.length ? (3 * sigs.length / cycleStarts.length).toFixed(2) : "—") + " per 3 cycles · max per cycle " + maxPer + " · near a KIRU " + nearKiru + " · melodic/PA notes inside a hold " + notSilent + (ai ? " · hold denials " + ai.holdDenials : "") +
     (sigs.length ? " · " + sigs.slice(0, 5).map((s) => Math.round(s.sig.t0) + "s " + s.sig.id + " " + s.sig.holdS.toFixed(1) + "s").join(" | ") : "") + (fallbacks.length ? " · fallback: " + fallbacks[0].detail : ""));
   return { n: sigs.length, fallbacks: fallbacks.length, cycles: cycleStarts.length, maxPer, nearKiru, notSilent, hosted };
 })();
@@ -425,7 +425,11 @@ const melPer30 = melodicNotes * 1800 / RUN;
 // floor 1700 (Phase 3): with five melodic voices and the seating lottery resting each about one cycle in
 // four, an hour can draw three sparse seatings in a row (seed 17: drift koto+biwa, ordinary without the
 // shakuhachi, storm shamisen-only → ~1 850) — that is the design, not a fault; the ceiling stays
-if (RUN >= 1500 && (melPer30 < 1700 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1700–3300");
+// S1 RE-BASE (orchestrator ruling, 2026-09-05): the 1700–3300 floor predated the Air and counted three of the five
+// melodic voices; at 4 h the base engine (a96f592) failed it on seed 3042 with or without the receiver. Measured the
+// same way — all five voices — on the base: 1 800 s seeds 3042 / 17 / 7 → 2 808 / 2 437 / 2 444; 14 400 s seeds
+// 3042 / 17 → 1 838 / 2 154. Floor = the lowest − 10 % ≈ 1 650; ceiling 3 700 (≈ 1.3 × the highest).
+if (RUN >= 1500 && (melPer30 < 1650 || melPer30 > 3700)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3700");
 if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
 if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
 // Phase 2 gates (plan §7): ≥ 1 sea change per hour; seed pool ≥ 12 over a long run; ≥ 8 distinct aitake voicings

@@ -745,6 +745,7 @@ window.ZankyoAudio = (function () {
     return air.tryClaim(voice, span, margin);
   }
   var signalProvider = null;                     // zk-broadcast.js installs itself here (S1)
+  function signalUp(t) { for (var k in airHold) { var h = airHold[k]; if (h && t >= h.from && t < h.until) return true; } return false; }   // a signal holds the air at t
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -2680,6 +2681,7 @@ window.ZankyoAudio = (function () {
     if (!playing) return;
     var now = t0, R = S.pa;
     if (cyc.kind !== "broadcast") { afterRaw("pa", now, 15 + R.next() * 10, paCycle); return; }   // only a broadcast cycle announces
+    if (signalUp(now + 0.05)) { afterRaw("pa", now, 8, paCycle); return; }                          // S1 (critic r1): the tannoy does not talk over a signal — try again after the hold (no draw)
     var dur = 4 + R.next() * 5;
     paSpeak(now + 0.05, dur, {});
     emitEvent({ cat: "pa", label: "放送 announcement", detail: dur.toFixed(1) + "s · " + arcPhase(now) }, now);
@@ -2983,7 +2985,7 @@ window.ZankyoAudio = (function () {
   // (no .value reads, no setTarget). The pulse draws no randomness and emits
   // nothing: the note stream is untouched; only the envelope's timing can
   // differ by a lookahead between runs.
-  var ROOM_VOICES = { shakuhachi: 1.5, koto: 2, shamisen: 2, hichiriki: 2, biwa: 2, pa: 2, broadcast: 3 };   // broadcast (S1): the landscape steps back 3 dB for the signal (the crew has stopped to listen)          // the grit bus: duck + notch ≤ 4 dB in 150–1200 Hz (orchestrator's cap)
+  var ROOM_VOICES = { shakuhachi: 1.5, koto: 2, shamisen: 2, hichiriki: 2, biwa: 2, pa: 2, broadcast: 2 };   // broadcast (S1): the grit steps back 2 dB (+ the 2 dB notch = the mix pass's 4 dB cap, orchestrator ruling; the reel reads +11–14 dB over the landscape in its band, so no more is needed)          // the grit bus: duck + notch ≤ 4 dB in 150–1200 Hz (orchestrator's cap)
   var ROOM_VOICES_SHO = { shakuhachi: 1.5, koto: 3.5, shamisen: 2.5, hichiriki: 3, biwa: 3, pa: 4, broadcast: 4 };   // the shō: the PA's masker at 0.8–3.2 kHz, so it steps back further for the PA   // the crew's step for each speaker, dB, in the jo (measured: the landscape is 78 % of the master's power, so every dB of duck while a voice speaks is ~0.8 dB of loudness for that time — the budget caps the frequent speakers)
   var ROOM_SCENE = { jo: 1.0, ha: 0.9, "kyū": 0.8, release: 0.8 };                          // jo deepest, kyū shallowest (the ruling); the ha is where the strings live                          // × by phase (the loudness budget: voices speak ~45 % of the jo, ~80 % of the ha, ~95 % of the kyū)
   var ROOM_CARVE_DB = -2, ROOM_Q = 2.0;
