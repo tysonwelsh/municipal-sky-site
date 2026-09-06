@@ -128,14 +128,23 @@ window.ZK_FAR = (function () {
     { id: "ear", kana: "耳", name: "koto by ear", family: "音律", d: 0.30, w: 2.6, phase: "W1",
       // Just intonation for the plucked bodies while the winds stay tempered —
       // a real ensemble's disagreement. `depth` is how far the snap is taken.
-      params: function (R, d, amt) { return { depth: 0.35 + 0.65 * amt, limit: R.chance(0.35) ? 7 : 5 }; } },
+      // 5-LIMIT ONLY (critic, W0 r1 §4): the hirajoshi thirds as 6/5 and 5/4,
+      // the fourths as 4/3 and 3/2. A 7-limit interval reads as blues, which is
+      // the wrong country — the draw chooses which degrees are taken, not how
+      // far out the prime limit goes.
+      params: function (R, d, amt) { return { depth: 0.35 + 0.65 * amt, limit: 5, strict: R.chance(0.35) }; } },
     { id: "meri", kana: "減", name: "meri quarter-tones", family: "音律", d: 0.40, w: 2.2, phase: "W1",
       // The semitone steps split. PJ2.Pitch's equal-tempered path already
       // accepts fractional mode steps, so this needs no substrate change.
       params: function (R, d, amt) { return { split: 0.5, walk: 0.25 + 0.5 * amt, which: R.chance(0.5) ? "low" : "all" }; } },
     { id: "bito", kana: "双", name: "two modes at once", family: "音律", d: 0.60, w: 1.8, phase: "W1", no: ["spiral"],
-      // One voice in iwato on the tonic, another in in-sen a tritone away.
-      params: function (R, d, amt) { return { interval: R.pickW([[6, 3], [5, 1], [7, 1]]), mode: R.pick(["insen", "iwato", "kumoi"]), share: 0.3 + 0.35 * amt }; } },
+      // One voice on the tonic, another a fourth, a fifth or — at the far end —
+      // a tritone away. The plan's example is the tritone, but a fourth or a
+      // fifth shares more tones and is the more Japanese disagreement (the sea
+      // change already travels by fourths), so the tritone is where this goes
+      // when it goes furthest, not where it starts: its weight rises with amt
+      // (critic, W0 r1 §4).
+      params: function (R, d, amt) { return { interval: R.pickW([[5, 3], [7, 3], [6, 6 * amt * amt]]), mode: R.pick(["insen", "iwato", "kumoi"]), share: 0.3 + 0.35 * amt }; } },
     { id: "spiral", kana: "螺", name: "the spiral", family: "音律", d: 0.75, w: 1.5, phase: "W1", no: ["bito"],
       // The tonic glides, a few cents a second: a key that never arrives.
       params: function (R, d, amt) { return { centsPerS: (R.chance(0.5) ? 1 : -1) * (0.6 + 3.4 * amt), wrap: 1200 }; } },

@@ -1020,7 +1020,11 @@
   .zankyo-sub-long { display: none; }
   .zankyo-title { letter-spacing: 0.06em; }
   .zk-vent, .zk-warn, .zk-sticker, .zk-warn-small { display: none; }
-  .zk-far-sw { left: 36px; bottom: 10px; }   /* the vents go on a small panel; the switch stays on the chassis where its vent was, clear of the corner screw */
+  /* 逸脱: the long vents go on a small panel, but the switch needs something to
+     hide in — so a three-slat stub of the bottom-left vent stays, just wide
+     enough to hold the slot and read as louvre, clear of the corner screw. */
+  .zk-vent-bl { display: block; width: 46px; left: 32px; bottom: 10px; }
+  .zk-far-sw { left: 43px; bottom: 10px; }
   .zk-marquee { margin: 0 0 16px; padding: 12px 8px 10px; }
   .zankyo-viz { height: 160px; }
   .zk-monitor { padding: 9px 9px 0; }

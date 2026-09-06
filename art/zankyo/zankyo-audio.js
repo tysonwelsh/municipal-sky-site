@@ -2924,7 +2924,7 @@ window.ZankyoAudio = (function () {
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
-    if (!farNight.home) emitEvent({ cat: "far", label: "逸脱 " + farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);
+    if (!farNight.home) emitEvent({ cat: "far", label: farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);   // the VFD tag already says 逸脱
     masterGain.gain.cancelScheduledValues(t0);
     masterGain.gain.setValueAtTime(masterVolume, t0);
     for (var i = 0; i < LAYERS.length; i++) { applyLayerGain(LAYERS[i]); lane(LAYERS[i]).rate = layerRate[LAYERS[i]] || 1; }

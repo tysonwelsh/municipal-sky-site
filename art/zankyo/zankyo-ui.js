@@ -447,27 +447,65 @@
   // the current seed for the first one whose far fork yields d ≥ 0.8 (a pure
   // function of the seed — about 29 hashes, no audio), the address bar is
   // rewritten so that night can be sent to somebody, and it plays. While the
-  // switch is on, PLAY goes the same way. Off, the ordinary lottery returns —
-  // the night already running is left alone to finish.
+  // switch is on, PLAY goes the same way.
+  //
+  // AND IT MUST TURN OFF AGAIN — the second half of the owner's sentence, and
+  // the thing round 0 got wrong. A hunt leaves the engine and the address on a
+  // far seed; without undoing that, every later restart (and every reload, the
+  // URL now carrying it) replayed a far night and the switch could not be
+  // switched off. So the first hunt REMEMBERS what the page had — the seed the
+  // engine held, and whether the address carried ?seed= at all — and OFF
+  // restores it in two moves, because the two halves have different costs:
+  //
+  //   the ADDRESS goes back at once. It is DOM, it costs nothing, and it is
+  //   what closes the reload hole: a reload after OFF is an ordinary night.
+  //   The far link the owner copied while the switch was thrown still works —
+  //   it is a seed, and seeds are forever.
+  //
+  //   the SEED goes back at the next PLAY, not now. Z.reseed() re-forks every
+  //   stream, so calling it mid-performance would re-roll the music under the
+  //   night that is still playing. The plan says the running night is left
+  //   alone, so the restore waits for the moment the engine re-forks anyway.
+  //
+  // Where the page arrived with no ?seed=, "restore" means what a cold load
+  // means: drop `seed` from the address and draw a fresh one off the clock.
   //
   // No persistence, deliberately: the rewritten ?seed= IS the memory, and it
   // is the one thing the owner can share. A stored flag would fight it — a
   // reload would hunt again and throw the shared night away.
   var FAR_MIN_D = 0.8;
   var farArmed = false;
+  var farPre = null;        // what the page had before the first hunt: { seedParam }
+  var farRestore = false;   // one-shot: the next PLAY while disarmed goes home
+
+  function farSetSeedParam(v) {                // v = a seed string, or null to drop it
+    try {
+      var u = new URL(window.location.href);
+      if (v == null) u.searchParams.delete("seed"); else u.searchParams.set("seed", String(v));
+      u.searchParams.delete("far");            // an explicit ?far= would override whatever we just chose
+      window.history.replaceState(null, "", u.toString());
+    } catch (e) {}
+  }
   function farHunt() {
     if (!Z.far || !Z.far.seek) return false;
     var s = Z.far.seek(FAR_MIN_D);
     if (s == null) return false;
+    if (!farPre) {                             // remember the ordinary world, once per arming
+      var had = null;
+      try { had = new URL(window.location.href).searchParams.get("seed"); } catch (e) {}
+      farPre = { seedParam: had };
+    }
     Z.reseed(s);
-    if (Z.setFar) Z.setFar(null);              // a ?far= from the address bar would override the night we just hunted for
-    try {
-      var u = new URL(window.location.href);
-      u.searchParams.set("seed", String(s));
-      u.searchParams.delete("far");
-      window.history.replaceState(null, "", u.toString());
-    } catch (e) {}
+    if (Z.setFar) Z.setFar(null);
+    farSetSeedParam(s);
     return true;
+  }
+  function farGoHome() {                       // the one-shot, consumed at PLAY
+    farRestore = false;
+    var pre = farPre; farPre = null;
+    if (!pre) return;
+    if (pre.seedParam != null) Z.reseed(parseInt(pre.seedParam, 10) >>> 0);
+    else Z.reseed((Date.now() % 0xffffffff) >>> 0);   // a cold load's own draw
   }
   function wireFarSwitch() {
     var sw = document.getElementById("zankyo-far-sw");
@@ -475,7 +513,10 @@
     sw.addEventListener("click", function () {
       farArmed = !farArmed;
       sw.setAttribute("aria-checked", farArmed ? "true" : "false");
-      if (!farArmed) return;                   // off: the current night plays out
+      if (!farArmed) {                         // off: the running night finishes; the world goes back
+        if (farPre) { farRestore = true; farSetSeedParam(farPre.seedParam); }
+        return;
+      }
       var playBtn = document.getElementById("zankyo-play");
       Z.stop();
       farHunt();
@@ -489,6 +530,7 @@
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
     if (playBtn) playBtn.addEventListener("click", function () {
       if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
+      else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
       clearLog(); Z.play();
       playBtn.classList.add("is-playing");
       if (sceneEl) sceneEl.classList.add("is-on");   // power LED
