@@ -428,8 +428,8 @@ const melPer30 = melodicNotes * 1800 / RUN;
 // S1 RE-BASE (orchestrator ruling, 2026-09-05): the 1700–3300 floor predated the Air and counted three of the five
 // melodic voices; at 4 h the base engine (a96f592) failed it on seed 3042 with or without the receiver. Measured the
 // same way — all five voices — on the base: 1 800 s seeds 3042 / 17 / 7 → 2 808 / 2 437 / 2 444; 14 400 s seeds
-// 3042 / 17 → 1 838 / 2 154. Floor = the lowest − 10 % ≈ 1 650; ceiling 3 700 (≈ 1.3 × the highest).
-if (RUN >= 1500 && (melPer30 < 1650 || melPer30 > 3700)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3700");
+// 3042 / 17 → 1 838 / 2 154 (the critic adds 2 626 at 1 800 / 8891 and 2 512 at 7 200 / 7). Floor = the lowest − 10 % ≈ 1 650; the 3 300 ceiling stays (the critic's ruling).
+if (RUN >= 1500 && (melPer30 < 1650 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3300");
 if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
 if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
 // Phase 2 gates (plan §7): ≥ 1 sea change per hour; seed pool ≥ 12 over a long run; ≥ 8 distinct aitake voicings
