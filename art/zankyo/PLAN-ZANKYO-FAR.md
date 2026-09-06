@@ -147,3 +147,10 @@ URL so that night is shareable, and plays. While ON, every restart is far;
 flipping it OFF returns to the ordinary lottery. The switch itself shows
 its state (a physical position, a faint glow); nothing else on the panel
 changes. This is the one deliberate interface addition of this plan.
+
+## 6. Owner addition: the transport plate loses its print (W0)
+
+Remove the text on the transport plate under the second set — the
+「操作 · TRANSPORT」 label and the 「TYPE 9-B · No. 2887-R」 stamp. The
+buttons and the knob speak for themselves. Keep aria-labels. The plate's
+metal, bolts and layout are unchanged.
