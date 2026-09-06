@@ -101,7 +101,8 @@ window.ZankyoAudio = (function () {
   var STREAM_LABELS = ["form", "motif", "shakuhachi", "koto", "shamisen", "sho", "subDrone",
     "taiko", "noise", "ambient", "weather", "joints", "visit", "sample",
     "conductor", "air", "rooms", "fx",                                    // Phase 1: the form, the air, the rooms
-    "hichiriki", "biwa", "pa", "halo"];                                   // Phase 3: the new bodies
+    "hichiriki", "biwa", "pa", "halo",                                    // Phase 3: the new bodies
+    "signal"];                                                             // S1: the receiver — reel choice, window, in-point, the dropouts (zk-broadcast.js)
   var S = null;                                // the streams, forked per play
   function forkStreams() {
     var master = PJ.Rand.stream(seed);
@@ -232,16 +233,16 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // LAYERS + STATE
   // ==========================================================================
-  var LAYERS = ["subDrone", "sho", "shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "taiko", "noise", "ambient", "pa"];
+  var LAYERS = ["subDrone", "sho", "shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "taiko", "noise", "ambient", "pa", "broadcast"];   // broadcast (S1): the receiver — a real reel from the past, heard in the hull
   // Shamisen is deliberately NOT routed through the grit bus: the grit curve's
   // ~27x small-signal makeup spikes its plucked onset into an audible click.
   // Its own sawari buzz + the master saturator keep it abrasive without that.
   var GRIT_LAYERS = { subDrone: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
-  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.7, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.62, noise: 0.5, ambient: 0.55, pa: 0.6 };
-  var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false };
-  var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, pa: 1 };
+  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.7, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.62, noise: 0.5, ambient: 0.55, pa: 0.6, broadcast: 0.7 };
+  var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
+  var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, broadcast: 1 };
   var DEFAULT_LAYER_VOL = 0.7;
 
   var LAYER_PARAM_DEFAULTS = {
@@ -256,6 +257,7 @@ window.ZankyoAudio = (function () {
     noise:      { density: 0.4, color: 0.5, crush: 0.4 },
     ambient:    {},
     pa:         { presence: 0.5, static: 0.5 },
+    broadcast:  { band: 0.5, flutter: 0.5, grit: 0.5 },   // S1: how narrow the radio band, how deep the fading, how much the receiver distorts
   };
   var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
 
@@ -552,6 +554,15 @@ window.ZankyoAudio = (function () {
       else if (layer === "shamisen" && effectsReady && shamEdge) node.connect(shamEdge);
       else if (layer === "sho" && effectsReady && sumSho) node.connect(sumSho);
       else if (layer === "ambient" && effectsReady && sumAmb) node.connect(sumAmb);
+      else if (layer === "broadcast" && effectsReady && roomBlend) {
+        // THE RECEIVER (S1): the reel is heard IN the reactor hall — registered
+        // with the blend a step deeper than the ambient (+0.3), into the dry
+        // sum like every room-bound source, and a low send to the far wall (the
+        // corridor repeats a syllable). Not through the KIRU's cut: a signal is
+        // never seated where the KIRU falls.
+        node.connect(reverbSend); roomBlend.register("broadcast", node, 0.3);
+        if (farWall) { var bcFw = ctx.createGain(); bcFw.gain.setValueAtTime(0.35, ctx.currentTime); node.connect(bcFw); bcFw.connect(farWall.send); }
+      }
       else if (layer === "biwa" && effectsReady && shamEdge) node.connect(shamEdge);      // the biwa shares the shamisen's saturator (stateless)
       else if (effectsReady && sumVoices) {
         node.connect(sumVoices);
@@ -722,7 +733,18 @@ window.ZankyoAudio = (function () {
   // seeded performance would diverge under timer jitter (critic, Phase 1
   // round 1 — measured at 5 ms). Every claim sets airT to its own t first.
   var airT = 0, airClock = { now: function () { return airT; } };
-  function airClaimAt(t, voice, span, margin) { airT = t; return air.tryClaim(voice, span, margin); }
+  // THE HOLD (S1): while a signal is up the melodic voices may not claim the
+  // air at all — pj2-air's limit floor is 1, so the hold lives here as a
+  // per-voice window {from, until}; a claim inside it is denied (counted).
+  // The drones, shō, noise and ambient never ask, so they continue.
+  var airHold = {}, airHoldDenials = 0;
+  function airClaimAt(t, voice, span, margin) {
+    airT = t;
+    var h = airHold[voice];
+    if (h && t >= h.from && t < h.until) { airHoldDenials++; return null; }
+    return air.tryClaim(voice, span, margin);
+  }
+  var signalProvider = null;                     // zk-broadcast.js installs itself here (S1)
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -832,7 +854,7 @@ window.ZankyoAudio = (function () {
       if (idx < 0) idx = 0;
       visit.sceneIdx = idx; visit.scene = scenes[idx].type;
     }
-    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit };
+    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, sceneDurS: scenes.map(function (sc) { return sc.durS; }) };
     return scenes;
   }
   // 客 VISITATIONS (Phase 4) — rare seeded guests. Each rolls its OWN die every
@@ -848,14 +870,14 @@ window.ZankyoAudio = (function () {
   var VISIT_KANA = { "the broadcast": "放送", "the festival": "祭", "mu": "無", "the line": "回線", "the tolling": "鐘" };
   function drawVisitation(rng, kind, tp, seating) {
     var p = {
-      "the broadcast": (0.10 + 0.06 * tp) * (kind === "broadcast" || kind === "drift" ? 2 : 1),
+      "the broadcast": kind === "broadcast" ? 1 : (0.30 + 0.08 * tp) * (kind === "drift" ? 1.5 : 1),   // S1: the signal about one cycle in three (the critic measured 0.3 per 3 on the base); a 放送 cycle always carries one
       "the festival":  (0.10 + 0.10 * tp) * (kind === "storm" ? 2 : 1),
       "mu":            (0.03 + 0.03 * (1 - tp)) * (kind === "drift" || kind === "silence" ? 1.5 : 1),   // rare: a dead night is one cycle, not a third of them
       "the line":      0.07 * (kind === "broadcast" ? 1.8 : 1),
       "the tolling":   (0.09 + 0.05 * tp) * (kind === "rite" ? 2 : 1),
     };
     var drawn = [];
-    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], 1]); }
+    for (var i = 0; i < VISITATIONS.length; i++) { var hit = rng.chance(p[VISITATIONS[i]]); if (hit) drawn.push([VISITATIONS[i], VISITATIONS[i] === "the broadcast" ? 1.5 : 1]); }   // S1: the signal leans a collision its way (same draw count; 2.5 starved the other guests)
     var pick = rng.pickW(drawn.length ? drawn : [["none", 1]]);   // one pickW draw either way
     if (cyc.n < 0 || pick === "none") return null;
     if (pick === "the festival" && seating.named === "dead station") return null;
@@ -867,7 +889,11 @@ window.ZankyoAudio = (function () {
   function fireVisitation(v, t) {
     var name = v.name;
     emitEvent({ cat: "form", label: "客 " + VISIT_KANA[name] + " " + name, detail: "begins · " + scn.type + " · " + Math.round(scn.durS) + "s" }, t);
-    if (name === "the broadcast") visitBroadcast(t);
+    if (name === "the broadcast") {
+      var took = false;
+      if (signalProvider) { try { took = !!signalProvider.fire(t); } catch (e) { took = false; } }   // S1: the receiver takes it when it can (it decides at t0 − 1 and falls back itself)
+      if (!took) visitBroadcast(t);
+    }
     else if (name === "the festival") visitActive = { name: name, until: scn.startT + scn.durS };
     else if (name === "the line") visitLine(t);
     else if (name === "the tolling") visitTolling(t);
@@ -1056,6 +1082,12 @@ window.ZankyoAudio = (function () {
       cyc.visit = p.visit || null; visitActive = null;
       lastCycleEmpty = !!(p.seating && p.seating.named === "dead station");
       if (p.visit) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[p.visit.name] + " " + p.visit.name, detail: "visitation: " + p.visit.name + " · seated in " + p.visit.scene + " (" + (p.visit.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
+      // S1: the receiver is ARMED at plan time — it draws the reel and schedules
+      // its prefetch from the hosting scene's start (≥ 20 s before any t0)
+      if (p.visit && p.visit.name === "the broadcast" && signalProvider && p.sceneDurS) {
+        var hostStart = evt.t; for (var hi = 0; hi < p.visit.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
+        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[p.visit.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
+      }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
       scn.type = evt.scene; scn.activity = evt.activity; scn.startT = evt.t; scn.durS = evt.durS;
@@ -2822,7 +2854,7 @@ window.ZankyoAudio = (function () {
     cyc.n = -1; cyc.seating = null; scn.type = null; pendingPlan = null; cyclesSinceSea = 0;
     field.modulate({ tonicHz: TONIC_HZ, mode: { name: "hirajoshi", steps: MODES.hirajoshi.offsets } }); currentMode = "hirajoshi"; rebuildScale();   // every play opens at home
     pulse.active = false;                        // no grid until the taiko speaks
-    lastAitake = null; visitActive = null; cyc.visit = null;
+    lastAitake = null; visitActive = null; cyc.visit = null; airHold = {}; airHoldDenials = 0;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
     masterGain.gain.cancelScheduledValues(t0);
@@ -2951,16 +2983,16 @@ window.ZankyoAudio = (function () {
   // (no .value reads, no setTarget). The pulse draws no randomness and emits
   // nothing: the note stream is untouched; only the envelope's timing can
   // differ by a lookahead between runs.
-  var ROOM_VOICES = { shakuhachi: 1.5, koto: 2, shamisen: 2, hichiriki: 2, biwa: 2, pa: 2 };          // the grit bus: duck + notch ≤ 4 dB in 150–1200 Hz (orchestrator's cap)
-  var ROOM_VOICES_SHO = { shakuhachi: 1.5, koto: 3.5, shamisen: 2.5, hichiriki: 3, biwa: 3, pa: 4 };   // the shō: the PA's masker at 0.8–3.2 kHz, so it steps back further for the PA   // the crew's step for each speaker, dB, in the jo (measured: the landscape is 78 % of the master's power, so every dB of duck while a voice speaks is ~0.8 dB of loudness for that time — the budget caps the frequent speakers)
+  var ROOM_VOICES = { shakuhachi: 1.5, koto: 2, shamisen: 2, hichiriki: 2, biwa: 2, pa: 2, broadcast: 3 };   // broadcast (S1): the landscape steps back 3 dB for the signal (the crew has stopped to listen)          // the grit bus: duck + notch ≤ 4 dB in 150–1200 Hz (orchestrator's cap)
+  var ROOM_VOICES_SHO = { shakuhachi: 1.5, koto: 3.5, shamisen: 2.5, hichiriki: 3, biwa: 3, pa: 4, broadcast: 4 };   // the shō: the PA's masker at 0.8–3.2 kHz, so it steps back further for the PA   // the crew's step for each speaker, dB, in the jo (measured: the landscape is 78 % of the master's power, so every dB of duck while a voice speaks is ~0.8 dB of loudness for that time — the budget caps the frequent speakers)
   var ROOM_SCENE = { jo: 1.0, ha: 0.9, "kyū": 0.8, release: 0.8 };                          // jo deepest, kyū shallowest (the ruling); the ha is where the strings live                          // × by phase (the loudness budget: voices speak ~45 % of the jo, ~80 % of the ha, ~95 % of the kyū)
   var ROOM_CARVE_DB = -2, ROOM_Q = 2.0;
   var ROOM_CARVE_KOTO_DB = -4, ROOM_KOTO_DEEP = { jo: 1, ha: 1 };                           // r3 (orchestrator Q5): the koto's notch −4 in the jo and ha (duck 2 + notch 4 = the 6 dB cap for the koto there); kyū and release stay at 4                                                       // the notch at the speaking register: narrow (a critical band) and deeper — it clears the fundamental's band for a fraction of the power a broad duck would spend
   var ROOM_F_LO = 150, ROOM_F_HI = 1200;                                                    // the dip stays inside 150–1200 Hz (the orchestrator's cap)
   var LAND_SHELF_DB = -3;                                                                  // the static shelf above 1.5 kHz on the grit bus and the shō
-  var ROOM_PICK = { koto: -4, shamisen: -4, biwa: -4, pa: -6 };                            // the pick-band dip (1.4–4.5 kHz, above the cap) while a plucked voice or the PA speaks, dB × scene; the PA deeper (critic r2)
+  var ROOM_PICK = { koto: -4, shamisen: -4, biwa: -4, pa: -6, broadcast: -4 };   // the signal's speech band is the pick band                            // the pick-band dip (1.4–4.5 kHz, above the cap) while a plucked voice or the PA speaks, dB × scene; the PA deeper (critic r2)
   var ROOM_F_HI_SHO = 1600;                                                                // the shō's notch may follow the PA's band centre; the grit's stays inside 150–1200
-  var ROOM_GROUP = { koto: 1, shamisen: 1, biwa: 1, hichiriki: 1, pa: 1, shakuhachi: 2 };  // notch 1: the plucked / reed / PA; notch 2: the flute (critic r2 §3.1)
+  var ROOM_GROUP = { koto: 1, shamisen: 1, biwa: 1, hichiriki: 1, pa: 1, shakuhachi: 2, broadcast: 1 };  // notch 1: the plucked / reed / PA; notch 2: the flute (critic r2 §3.1)
   var ROOM_PA_SHO_F = 1100, ROOM_PA_SHO_Q = 1.0;                                          // the PA's shō notch: 1.1 kHz at Q 1 clears 0.8–1.6 kHz, where the shō's A5 partials cover the tannoy (critic r2 §3.2)
   var room = { spans: [], g: 1, gs: 1, pg: 0, cg: [0, 0], lf: [Math.log(400), Math.log(400)], lfs: [Math.log(400), Math.log(400)], qs: ROOM_Q };
   function roomSpeak(layer, t, dur, f) {
@@ -3022,6 +3054,7 @@ window.ZankyoAudio = (function () {
     playing = false;
     if (bg) bg.stopped();
     if (conductor) { try { conductor.stop(); } catch (e) {} }
+    if (signalProvider) { try { signalProvider.stop(); } catch (e) {} }
     if (clock) clock.stop();                     // every lane's pending events die here
     while (liveRings.length) ringDown(liveRings[0]);   // screech loops in flight lose their lane teardown with the clock — tear them down here
     if (ctx) {
@@ -3100,6 +3133,7 @@ window.ZankyoAudio = (function () {
       case "taiko": taikoPattern(t, "matsuri", 0.5, 1); taikoHit(t + 2.2, true, "odaiko"); taikoHit(t + 2.6, false, "shime"); taikoHit(t + 2.8, false, "ka"); break;
       case "noise": sampleNoise(t, variant); break;
       case "ambient": var e = AMBIENT_POOL[Math.floor(S.sample.next() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
+      case "broadcast": if (signalProvider && signalProvider.sample) { try { signalProvider.sample(t); } catch (x2) {} } break;
     }
     for (bi = 0; bi < borrowed.length; bi++) S[borrowed[bi]] = saved[borrowed[bi]];
     emitEvent({ cat: "mode", label: "♪ sample", detail: layer + (variant ? " · " + variant : "") });
@@ -3134,7 +3168,23 @@ window.ZankyoAudio = (function () {
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,
     getArc: getArc, getArcInfo: arcInfo, getMetaInfo: getMetaInfo,
-    getAirInfo: function () { return air ? air.info() : null; },
+    getAirInfo: function () { if (!air) return null; var ai = air.info(); ai.holdDenials = airHoldDenials; return ai; },
+    // THE SIGNAL SEAM (S1): zk-broadcast.js installs a provider {arm, fire, stop,
+    // sample?}; the engine hands it its tools. Nothing here is for the page.
+    _signal: {
+      install: function (p) { signalProvider = p || null; },
+      tools: function () {
+        return {
+          ctx: ctx, PJ: PJ, S: S, lane: lane, playing: function () { return playing; },
+          emitEvent: emitEvent, lg: lg, roomSpeak: roomSpeak, noiseSource: noiseSource, panAt: panAt,
+          getArc: getArc, arcPhase: arcPhase, scene: function () { return { type: scn.type, activity: scn.activity, startT: scn.startT, durS: scn.durS }; },
+          cycle: function () { return { n: cyc.n, kind: cyc.kind, startT: cyc.startT, durS: cyc.durS, visit: cyc.visit ? cyc.visit.name : null }; },
+          getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
+          airHold: function (map) { for (var k in map) airHold[k] = map[k]; }, airHoldClear: function () { airHold = {}; },
+          fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
+        };
+      },
+    },
     getRooms: function () { return { hull: roomHull, corridor: roomCorridor, blend: roomBlend, farWall: farWall, halo: halo }; },
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },

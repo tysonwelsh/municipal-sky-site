@@ -118,8 +118,33 @@ function mkCtx() {
   };
   ctx.createBufferSource = () => mkNode("BufferSource", { playbackRate: 1, detune: 0 }, { buffer: null, loop: false, loopStart: 0, loopEnd: 0 });
   ctx.createPeriodicWave = () => ({});
+  ctx.createMediaElementSource = (el) => mkNode("MediaElementSource", {}, { mediaElement: el });
   return ctx;
 }
+
+// ---- the receiver's world (S1): a document with a <video>, a fetch that serves
+// the real manifest — all on the virtual clock. ZK_SIGNAL_MOCK=ready (default:
+// the reel is ready 0.3 s after prefetch) | slow (never ready → the gagaku
+// fallback) | none (fetch fails → the fallback). Promises would only settle
+// when the JS stack empties (after the whole run), so the mocks are
+// synchronous thenables. ----
+const SIGNAL_MOCK = process.env.ZK_SIGNAL_MOCK || "ready";
+const MANIFEST_TEXT = (() => { try { return fs.readFileSync(path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; } })();
+function thenableOf(v) { return { then(f) { let r; try { r = f(v); } catch (e) { return failing(e); } return (r && typeof r.then === "function") ? r : thenableOf(r); }, catch() { return this; } }; }
+function failing(err) { return { then() { return this; }, catch(f) { try { f(err); } catch (e) {} return this; } }; }
+function mockVideo() {
+  const latencyS = SIGNAL_MOCK === "slow" ? 600 : 0.3;
+  const v = { src: "", preload: "none", muted: false, volume: 1, playsInline: false, crossOrigin: null, readyState: 0, duration: 96, paused: true, style: {}, _l: {}, _ct: 0, _plays: 0 };
+  v.setAttribute = () => {}; v.addEventListener = (n, f) => { (v._l[n] = v._l[n] || []).push(f); }; v.removeEventListener = (n, f) => { if (v._l[n]) v._l[n] = v._l[n].filter((g) => g !== f); };
+  const fire = (n) => { const L = v._l[n] || []; v._l[n] = []; for (const f of L) { try { f({ type: n }); } catch (e) {} } };
+  Object.defineProperty(v, "currentTime", { get: () => v._ct, set: (x) => { v._ct = x; vSetTimeout(() => fire("seeked"), 40); } });
+  v.load = () => { v.readyState = 0; vSetTimeout(() => { v.readyState = 1; fire("loadedmetadata"); vSetTimeout(() => { v.readyState = 4; fire("canplay"); }, 200); }, latencyS * 1000); };
+  v.play = () => { v.paused = false; v._plays++; return thenableOf(undefined); };
+  v.pause = () => { v.paused = true; };
+  return v;
+}
+function mockDocument() { return { createElement: (tag) => tag === "video" ? mockVideo() : { style: {}, setAttribute() {}, appendChild() {} }, body: { appendChild() {} }, documentElement: { appendChild() {} } }; }
+function mockFetch(url) { if (SIGNAL_MOCK === "none") return failing(new Error("offline")); return thenableOf({ ok: true, json: () => thenableOf(JSON.parse(MANIFEST_TEXT)) }); }
 
 // ---- load the substrate + the engine, fresh per run ----
 const PJ2_DIR = path.join(__dirname, "..", "prosperos-jukebox-v2");
@@ -144,6 +169,8 @@ function loadEngine() {
   global.window = W;
   global.PJ2 = W.PJ2 = {};
   global.location = undefined;
+  global.document = W.document = mockDocument();
+  global.fetch = W.fetch = mockFetch;
   for (const m of PJ2_MODULES) {
     try { (0, eval)(SRC[m]); } catch (e) { errors.push("LOAD " + m + ": " + e.message); }
   }
@@ -162,7 +189,7 @@ function runOnce(seed, simS, opts) {
   Z.reseed(seed);
   const R = { seed, simS, notes: [], events: [], arcSamples: [], metaByCycle: new Map(), t0: 0 };
   Z.setNoteListener((n) => { const F = Z.getField ? Z.getField() : null; R.notes.push({ t: n.startTime, layer: n.layer, freq: n.freq, dur: n.duration, tonic: F ? F.tonicHz : 146.83, steps: F ? (Z.getMode().offsets) : null }); });
-  Z.setEventListener((e) => R.events.push({ t: e.t, cat: e.cat, label: e.label, detail: e.detail }));
+  Z.setEventListener((e) => R.events.push({ t: e.t, cat: e.cat, label: e.label, detail: e.detail, sig: e.signal ? { t0: e.signal.t0, holdS: e.signal.holdS, lossD: e.signal.lossD, id: e.signal.id } : null }));
   const SAMPLE_EVERY = 15;
   let nextSample = 0;
   const origCE = console.error;
@@ -311,6 +338,28 @@ const visitVocab = (() => {
   return { total, maxPer, kiruMaster };
 })();
 
+// ---- the receiver (S1): signals per cycle, never two, never near a KIRU, the crew silent for the hold, the fallback when the reel is not ready ----
+const signalVocab = (() => {
+  const cycleStarts = events.filter((e) => e.label.indexOf("❁ cycle plan") >= 0).map((e) => e.t);
+  const cycleOf = (t) => { let ci = -1; for (let q = 0; q < cycleStarts.length; q++) if (cycleStarts[q] <= t) ci = q; return ci; };
+  const sigs = events.filter((e) => e.cat === "rx" && e.label === "受信" && e.sig);
+  const fallbacks = events.filter((e) => e.cat === "rx" && e.label === "受信 fallback");
+  const kiruTs = events.filter((e) => e.label.indexOf("KIRU") >= 0).map((e) => e.t);
+  const perCycle = {}; for (const s of sigs) { const ci = cycleOf(s.sig.t0); perCycle[ci] = (perCycle[ci] || 0) + 1; }
+  const maxPer = Math.max(0, ...Object.values(perCycle));
+  let nearKiru = 0, notSilent = 0; const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };
+  for (const s of sigs) {
+    const t0 = s.sig.t0, tEnd = t0 + 0.4 + s.sig.holdS + s.sig.lossD;
+    for (const k of kiruTs) if (k > t0 - 20 && k < tEnd + 15) nearKiru++;
+    for (const n of notes) if (MEL[n.layer] && n.t >= t0 + 1 && n.t <= tEnd) notSilent++;
+  }
+  const hosted = events.filter((e) => /visitation: the broadcast/.test(e.detail || "")).length;
+  const ai = runA.Z.getAirInfo ? runA.Z.getAirInfo() : null;
+  console.log("signal (" + SIGNAL_MOCK + "): " + sigs.length + " signals + " + fallbacks.length + " fallbacks in " + cycleStarts.length + " cycles (" + hosted + " hosted the broadcast) · " + (cycleStarts.length ? (3 * sigs.length / cycleStarts.length).toFixed(2) : "—") + " per 3 cycles · max per cycle " + maxPer + " · near a KIRU " + nearKiru + " · melodic notes inside a hold " + notSilent + (ai ? " · hold denials " + ai.holdDenials : "") +
+    (sigs.length ? " · " + sigs.slice(0, 5).map((s) => Math.round(s.sig.t0) + "s " + s.sig.id + " " + s.sig.holdS.toFixed(1) + "s").join(" | ") : "") + (fallbacks.length ? " · fallback: " + fallbacks[0].detail : ""));
+  return { n: sigs.length, fallbacks: fallbacks.length, cycles: cycleStarts.length, maxPer, nearKiru, notSilent, hosted };
+})();
+
 // ---- node budget: creations per simulated minute + peak concurrent sources ----
 (function nodeBudget() {
   const ns = runA.nodes;
@@ -391,6 +440,15 @@ if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa"]) if (!byLayer[L]) f
 if (visitVocab.maxPer > 1) fails.push("two visitations in one cycle");
 if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push("visitations " + visitVocab.total + " < " + Math.floor(cycles.length / 3) + " (one per 3 cycles)");
 if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not on the landscape cut");
+// S1 gates (PLAN-SIGNAL-INTEGRATION §1 S1): never two per cycle, never in a KIRU, the melodic voices silent for the hold,
+// ≈ 1 per 3 cycles over 4 h (0.7–1.6) when the reel is ready; the fallback fires when it is not
+if (signalVocab.maxPer > 1) fails.push("two signals in one cycle");
+if (signalVocab.nearKiru > 0) fails.push(signalVocab.nearKiru + " signal(s) within a KIRU's reach");
+if (signalVocab.notSilent > 0) fails.push(signalVocab.notSilent + " melodic note(s) inside a signal's hold");
+if (SIGNAL_MOCK === "ready" && RUN >= 14000) { const r3 = 3 * signalVocab.n / Math.max(1, signalVocab.cycles); if (r3 < 0.7 || r3 > 1.6) fails.push("signals " + r3.toFixed(2) + " per 3 cycles outside 0.7–1.6"); }
+if (SIGNAL_MOCK === "ready" && RUN >= 14000 && signalVocab.fallbacks > 0) fails.push(signalVocab.fallbacks + " fallback(s) with the reel ready");
+if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.n > 0) fails.push("a signal played with the reel unavailable");
+if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.fallbacks < 1) fails.push("no fallback fired with the reel unavailable");
 if (!reproSame) fails.push("REPRO gate failed");
 if (errors.length) fails.push(errors.length + " runtime errors");
 console.log(fails.length ? "VERDICT: FAIL — " + fails.join("; ") : "VERDICT: PASS ✓");

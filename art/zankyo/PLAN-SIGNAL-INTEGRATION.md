@@ -144,3 +144,10 @@ hush; graceful thinning (skip, never stall); pj2-*.js frozen; no publish.
 6. **The broadcast layer's knobs** (band / flutter / grit) therefore go in
    the console as an ordinary layer row (like every other layer), not on
    the plate. (2026-09-05, during S1.)
+7. **The transport plate, smaller and wordless:** PLAY/STOP buttons smaller,
+   the volume knob a little smaller; remove the 主音量 · VOL print, its
+   translation, and every other text in the volume container (keep the
+   numeric readout only if it can sit inside the knob's footprint; otherwise
+   drop it too — the knob's pointer says enough). The buttons and the knob
+   speak for themselves. Keep the aria-labels for accessibility. (Owner:
+   "not too bad… great work".) (2026-09-05, during S1.)

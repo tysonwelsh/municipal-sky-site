@@ -15,7 +15,7 @@ function zkv($file)
 // live build is legible. The footer shows only the version NUMBER; the
 // "— summary" tail in VERSION stays for git history and the bump rule.
 $zk_assets = [
-    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zankyo.css', 'index.php',
+    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'zankyo.css', 'index.php',
     '../prosperos-jukebox-v2/pj2-rand.js', '../prosperos-jukebox-v2/pj2-pitch.js',
     '../prosperos-jukebox-v2/pj2-clock.js', '../prosperos-jukebox-v2/pj2-voice.js',
     '../prosperos-jukebox-v2/pj2-fx.js', '../prosperos-jukebox-v2/pj2-air.js',
@@ -141,12 +141,11 @@ include '../../includes/header.php';
         <span class="zk-bolt zk-bolt-tr" style="--hex:-8deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-bl" style="--hex:17deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-br" style="--hex:-41deg" aria-hidden="true"></span>
-        <span class="zk-rxpanel-head" aria-hidden="true">操作 &middot; TRANSPORT</span>
         <div class="zk-transport-cluster">
           <button type="button" class="zk-arcade play-btn" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
           <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
         </div>
-        <span class="zk-chin-spacer"></span>
+        <span class="zk-rxpanel-gap" aria-hidden="true"><span class="zk-rxpanel-head">操作 &middot; TRANSPORT</span><span class="zk-rxpanel-stamp">TYPE 9-B &middot; No. 2887-R</span></span>
         <div class="zk-master">
           <div id="zankyo-master-knob" class="zk-knob-mount"></div>
           <div class="zk-master-meta">
@@ -154,7 +153,6 @@ include '../../includes/header.php';
             <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
           </div>
         </div>
-        <span class="zk-rxpanel-stamp" aria-hidden="true">TYPE 9-B &middot; No. 2887-R</span>
       </div>
       </div>
     </div>
@@ -231,6 +229,9 @@ include '../../includes/header.php';
 <script src="../prosperos-jukebox-v2/pj2-conductor.js?v=<?php echo zkv('../prosperos-jukebox-v2/pj2-conductor.js'); ?>"></script>
 <script src="zankyo-audio.js?v=<?php echo zkv('zankyo-audio.js'); ?>"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
+<!-- THE RECEIVER (S1): a real reel from broadcast/ through the station's own
+     receiver chain, seated by the Conductor as the broadcast visitation. -->
+<script src="zk-broadcast.js?v=<?php echo zkv('zk-broadcast.js'); ?>"></script>
 <script src="zankyo-viz.js?v=<?php echo zkv('zankyo-viz.js'); ?>"></script>
 <!-- THE SECOND SET (S0): the CRT-9's own phosphor pipeline and its idle stream;
      no-ops headless (the probe loads every zk-*.js). -->

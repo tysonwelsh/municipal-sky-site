@@ -521,6 +521,7 @@
   // ---- a signal arrives (S2: the engine's rx events carry the descriptor) ----
   function signal(desc) {
     if (!desc || !(desc.t0 >= 0)) return false;
+    if (desc.picture === false) return false;                   // S1: sound only — the set lights up in S2
     var a = atime();
     if (sig && phaseOf(a)[0] !== "idle") return false;        // never two at once
     sig = { t0: +desc.t0, holdS: Math.max(1, +desc.holdS || 10), lossD: Math.max(0.5, +desc.lossD || 2.2), drops: (desc.drops || []).slice(), id: desc.id || null, title: desc.title || "", year: desc.year || "", video: desc.video || null };
