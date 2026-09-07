@@ -1,0 +1,20 @@
+{
+  "id": "mtv1-musorzaras-1989",
+  "title": "Műsorzárás — Magyar Televízió TV1, 12 June 1989",
+  "year": 1989,
+  "src": "https://youtu.be/GkgCv6Zxqvc",
+  "license": "unknown (off-air recording of Magyar Televízió)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.07,
+  "bytes": 612441,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[0.0, 12.0], [18.0, 30.0], [32.0, 44.0], [48.0, 60.0], [108.0, 120.0], [130.0, 142.0]],
+  "notes": "Hungarian state television closing down four months before the People's Republic did: the announcer's goodnight, the card wishing every viewer a peaceful night, the People's Republic coat of arms, and a Budapest montage — Heroes' Square, the Parliament, the flag, the lights on the Danube",
+  "takedown": false
+}
