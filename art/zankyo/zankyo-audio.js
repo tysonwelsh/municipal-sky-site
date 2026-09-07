@@ -1358,7 +1358,12 @@ window.ZankyoAudio = (function () {
   var GRIT_LAYERS = { subDrone: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
-  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.7, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.62, noise: 0.5, ambient: 0.55, pa: 0.6, broadcast: 0.7 };
+  // hichiriki 0.35 — HALVED from 0.7 at the owner's ask (2026-09-07). The
+  // console DEFAULT only: the slider now opens at half of what it did and the
+  // owner can raise it again from the faceplate. Its body, its trims and the
+  // mix pass's presence work are deliberately untouched — this is a level
+  // decision about how loud the reed sits in the ensemble, not a voicing one.
+  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.35, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.62, noise: 0.5, ambient: 0.55, pa: 0.6, broadcast: 0.7 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
   var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, broadcast: 1 };
   var DEFAULT_LAYER_VOL = 0.7;
