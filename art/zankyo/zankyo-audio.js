@@ -698,7 +698,16 @@ window.ZankyoAudio = (function () {
     var t0 = t;
     for (var i = 0; i < m.length; i++) {
       var d = Math.max(0.12, m[i].durBeats * beat);
-      note(SCALE[m[i].deg].freq, t, d, { gain: 0.7 });
+      // 鏡 DOES NOT ANSWER OVER THE BROADCAST. The answer renders directly and
+      // never claims the air — that is deliberate, since it is the answering
+      // voice's own utterance rather than a new turn — but "never claims" also
+      // meant "never denied", so a mirror answer played straight through a
+      // signal's hold. Measured at two per cycle: seed 7 at far 0.9 put four
+      // consecutive koto notes 3.7 to 10.5 s inside a hold, on a 鏡 night.
+      // Skipped, not rescheduled, exactly as 崩's groove is (rc.24): an answer
+      // is a shape and a shape with a hole in it is still recognisable, where
+      // an answer that arrives late is a different gesture.
+      if (!signalUp(t)) note(SCALE[m[i].deg].freq, t, d, { gain: 0.7 });
       t += d;
     }
     // The answer is that voice's utterance: hold its air across the span so it
@@ -872,7 +881,7 @@ window.ZankyoAudio = (function () {
           " · " + (v.ids.length ? v.ids.map(function (x) { return v.dep[x].kana; }).join(" ") : "—")) }, t);
   }
 
-  function farTimeSetup() {
+  function farTimeSetup(setupT) {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
     farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null; farMetalMod = null; farMetalAmp = null;
     if (!farNight || farNight.home) return;
@@ -909,7 +918,13 @@ window.ZankyoAudio = (function () {
     if ((p = farNight.dep.metal)) farMetal = p;
     if ((p = farNight.dep.nlead)) farNlead = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
-    var tt = ctx ? ctx.currentTime : 0;
+    // THE SCHEDULED TIME, NEVER ctx.currentTime. These lines carry a timestamp
+    // and a "now" read makes it depend on when the tick happened to run — which
+    // is exactly what the REPRO-under-jitter gate exists to catch, and did:
+    // 386.327 against 386.301 for the same 重 line on two jitter seeds. Latent
+    // since rc.31, and invisible to a jitter run on a HOME seed because a home
+    // night has no departures to announce.
+    var tt = (setupT != null) ? setupT : (ctx ? ctx.currentTime : 0);
     farSay("canon", tt); farSay("hetero", tt); farSay("poly", tt); farSay("hocket", tt);
     farSay("erode", tt); farSay("mainv", tt); farSay("metal", tt); farSay("rev", tt);
   }
@@ -1975,6 +1990,19 @@ window.ZankyoAudio = (function () {
     }
   }
   var kiruAt = -1e9, kiruHushUntil = -1e9;       // §11.3: when the last KIRU cut, and when its hush is over
+  // THE ARM LEAD MUST EXCEED THE LONGEST BODY LOOKAHEAD, not merely the
+  // prefetch. The hold is written at arm, and plan §12 measured the long-note
+  // bodies committing 33 to 46 s ahead of the audio clock — so an arm 20 s
+  // before t0 leaves a claim made at t0−40 uncaught, which is the §12 defect
+  // reintroduced. It showed immediately: seed 7 put an 11.2 s hichiriki note
+  // 3.5 s inside a hold on the first measured run.
+  //
+  // 55 s clears the 46 s lookahead. The minimum spacing between two broadcasts
+  // must then clear lead + footprint — 55 + 29.2 = 84.2 — so BC_GAP_S is 95,
+  // and the receiver's single armed slot is never asked to hold two at once.
+  // The two constants are related and the relation is written here because
+  // changing one alone silently breaks the other.
+  var BC_ARM_LEAD_S = 55;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
@@ -2145,7 +2173,66 @@ window.ZankyoAudio = (function () {
       visit.sceneIdx = vi2 < 0 ? 0 : vi2;
       visit.scene = scenes[visit.sceneIdx].type;
     }
-    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate, sceneDurS: scenes.map(function (sc) { return sc.durS; }) };
+    // ==========================================================================
+    // THE BROADCASTS' OWN TIMES (owner, 2 per cycle) — drawn HERE, at plan
+    // ==========================================================================
+    // Two changes in one, and they depend on each other. The owner asked for
+    // two broadcasts a cycle instead of one; the orchestrator asked that the
+    // planned air hold EQUAL the real one. The second is only possible if t0
+    // is known when the receiver arms — so t0 stops being `sceneStart +
+    // rnd(8, 25)` drawn at the scene event and becomes an absolute time drawn
+    // here, carried on the plan, and used unchanged at fire().
+    //
+    // With t0 known at arm the plan and the hold are the same object: 18.0 to
+    // 29.2 s instead of 41.0 to 46.2, and the over-denial is not reduced but
+    // ELIMINATED. At two a cycle that is 11 % of the night occupied rather
+    // than 20 %, and none of the 11 % is air the broadcast does not use.
+    //
+    // PLACEMENT IS FREE ACROSS ALL LEGAL TIME (the orchestrator's ruling, after
+    // "one in each half" turned out to force a jo broadcast the description
+    // never promised). Legal is jo, ha and the sub-scenes; never kyū, never
+    // oroshi, never release — the kyū→release joint is where the KIRU lives,
+    // and that is the one place a broadcast must never be. Minimum 90 s between
+    // the two and from any guest. Under 180 s of legal time, one broadcast.
+    //
+    // Everything the receiver commits against is fixed before it commits: the
+    // scene list above, the KIRU's position at the kyū→release joint, and the
+    // guest's seat. Nothing that can collide with a broadcast is drawn later.
+    var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
+    var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
+    var legal = [], acc = 0, li;
+    for (li = 0; li < scenes.length; li++) {
+      var sc0 = scenes[li];
+      if (LEGAL[sc0.type] && sc0.durS > BC_EDGE_S * 2) legal.push([acc + BC_EDGE_S, acc + sc0.durS - BC_EDGE_S]);
+      acc += sc0.durS;
+    }
+    var legalS = 0; for (li = 0; li < legal.length; li++) legalS += legal[li][1] - legal[li][0];
+    var guestT = null;
+    if (visit && visit.name !== "the broadcast") {
+      guestT = 0; for (li = 0; li < visit.sceneIdx; li++) guestT += scenes[li].durS;
+      guestT += 16;                                  // the guest fires 8–25 s into its scene; take the middle
+    }
+    // The draw is on the form stream's own per-cycle fork, so however many
+    // times it is taken it cannot move anything else in the plan.
+    var BR = rng.fork("bc:" + Math.max(0, cyc.n + 1));
+    var want = legalS >= 180 ? 2 : 1, picks = [], tries;
+    for (var pk = 0; pk < want; pk++) {
+      for (tries = 0; tries < 24; tries++) {
+        var u = BR.next() * legalS, seg = 0, off = 0;
+        for (li = 0; li < legal.length; li++) {
+          var w = legal[li][1] - legal[li][0];
+          if (u <= seg + w) { off = legal[li][0] + (u - seg); break; }
+          seg += w;
+        }
+        var ok = true;
+        if (guestT != null && Math.abs(off - guestT) < BC_GAP_S) ok = false;
+        for (var qi = 0; qi < picks.length; qi++) if (Math.abs(off - picks[qi]) < BC_GAP_S) ok = false;
+        if (ok) { picks.push(off); break; }
+      }
+    }
+    picks.sort(function (a, b) { return a - b; });
+    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
+      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS };
     return scenes;
   }
   // 客 VISITATIONS (Phase 4) — rare seeded guests. Each rolls its OWN die every
@@ -2205,9 +2292,10 @@ window.ZankyoAudio = (function () {
     var name = v.name;
     emitEvent({ cat: "form", label: "客 " + VISIT_KANA[name] + " " + name, detail: "begins · " + scn.type + " · " + Math.round(scn.durS) + "s" }, t);
     if (name === "the broadcast") {
-      var took = false;
-      if (signalProvider) { try { took = !!signalProvider.fire(t); } catch (e) { took = false; } }   // S1: the receiver takes it when it can (it decides at t0 − 1 and falls back itself)
-      if (!took) visitBroadcast(t);
+      // The broadcast is no longer fired from the visitation seam: it has its
+      // own drawn times on the form lane (see the cycle handler). Firing here
+      // as well would seat a third.
+      return;
     }
     else if (name === "the festival") visitActive = { name: name, until: scn.startT + scn.durS };
     else if (name === "the line") visitLine(t);
@@ -2395,7 +2483,7 @@ window.ZankyoAudio = (function () {
       // new view. FIRST, deliberately: farTimeSetup caches sixteen departures'
       // parameters, so a lift applied after it would be read by nothing.
       farLiftCycle(cyc.n, evt.t);
-      farTimeSetup();
+      farTimeSetup(evt.t);
       farPitchSetup(evt.t, true);            // …and the tuning departures, without moving the glide's origin
       arcStartTime = evt.t; ARC_PERIOD = evt.durS;
       var pm = p.pitch, fromName = noteName(field.tonicHz);
@@ -2423,10 +2511,26 @@ window.ZankyoAudio = (function () {
       if (cyc.visit2) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[cyc.visit2.name] + " " + cyc.visit2.name, detail: "visitation: " + cyc.visit2.name + " · seated in " + cyc.visit2.scene + " (" + (cyc.visit2.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
       // S1: the receiver is ARMED at plan time — it draws the reel and schedules
       // its prefetch from the hosting scene's start (≥ 20 s before any t0)
-      var bcSeat = (p.visit && p.visit.name === "the broadcast") ? p.visit : ((p.visit && p.visit.second) || null);
-      if (bcSeat && signalProvider && p.sceneDurS) {
-        var hostStart = evt.t; for (var hi = 0; hi < bcSeat.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
-        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[bcSeat.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
+      // The broadcasts no longer ride a scene seat: each has an absolute time
+      // drawn at plan, and each arms ARM_LEAD_S before it so the receiver can
+      // prefetch. arm() is given the exact t0, which is what lets the planned
+      // hold BE the real hold instead of covering the guess.
+      if (signalProvider && p.bcAt && p.bcAt.length) {
+        (function (times, kind, tide, cyN, t0c) {
+          for (var bi = 0; bi < times.length; bi++) {
+            (function (off) {
+              var at = t0c + off;
+              lane("form").at(Math.max(t0c + 0.05, at - BC_ARM_LEAD_S), function () {
+                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide }); } catch (e) {}
+              });
+              lane("form").at(at, function (t) {
+                var took = false;
+                try { took = !!signalProvider.fire(at); } catch (e) { took = false; }
+                if (!took) { try { visitBroadcast(at); } catch (e2) {} }   // abandoned to the fallback rather than forced
+              });
+            })(times[bi]);
+          }
+        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t);
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
@@ -3406,6 +3510,20 @@ window.ZankyoAudio = (function () {
   // tongue-less ATARI re-attacks on repeated pitches (a dip, not a strike).
   // The weather's breath channel breathes the noise and the vowel.
   function shakuhachiNote(freq, t, dur, opts) {
+    // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
+    // with an ESTIMATE of the phrase's length — the last phrase's — and a
+    // 4 s pad; a phrase that turns out far longer runs into a hold its claim
+    // legitimately cleared. Raising the pad does not close it (measured: 4 s
+    // gives 4 intrusions, 12 s gives 3, and costs 4 % of the melodic density),
+    // because the shortfall is tens of seconds, not units.
+    //
+    // This works now and did NOT before rc.37: the hold is written at arm,
+    // 55 s ahead of t0, so by the time a note is scheduled the hold it would
+    // land in already exists. That is the difference between this and plan
+    // §12, where no render-time test could help because the hold did not yet
+    // exist. Same one-line shape 崩's groove and 鏡's answer already use.
+    if (signalUp(t)) return;
+
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("shakuhachi", freq, t);   // 逸脱 the pitch choke point (identity at home)
     var R = S.shakuhachi, wx = wxAt(t);
@@ -3499,6 +3617,20 @@ window.ZankyoAudio = (function () {
     return cv;
   }
   function hichirikiNote(freq, t, dur, opts) {
+    // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
+    // with an ESTIMATE of the phrase's length — the last phrase's — and a
+    // 4 s pad; a phrase that turns out far longer runs into a hold its claim
+    // legitimately cleared. Raising the pad does not close it (measured: 4 s
+    // gives 4 intrusions, 12 s gives 3, and costs 4 % of the melodic density),
+    // because the shortfall is tens of seconds, not units.
+    //
+    // This works now and did NOT before rc.37: the hold is written at arm,
+    // 55 s ahead of t0, so by the time a note is scheduled the hold it would
+    // land in already exists. That is the difference between this and plan
+    // §12, where no render-time test could help because the hold did not yet
+    // exist. Same one-line shape 崩's groove and 鏡's answer already use.
+    if (signalUp(t)) return;
+
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("hichiriki", freq, t);    // 逸脱 the pitch choke point (identity at home)
     var R = S.hichiriki, wx = wxAt(t);
@@ -3664,6 +3796,20 @@ window.ZankyoAudio = (function () {
     biwa:     { plectrum: "bachi", peak: 0.14, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
   };
   function stringNote(layer, freq, t, dur, opts) {
+    // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
+    // with an ESTIMATE of the phrase's length — the last phrase's — and a
+    // 4 s pad; a phrase that turns out far longer runs into a hold its claim
+    // legitimately cleared. Raising the pad does not close it (measured: 4 s
+    // gives 4 intrusions, 12 s gives 3, and costs 4 % of the melodic density),
+    // because the shortfall is tens of seconds, not units.
+    //
+    // This works now and did NOT before rc.37: the hold is written at arm,
+    // 55 s ahead of t0, so by the time a note is scheduled the hold it would
+    // land in already exists. That is the difference between this and plan
+    // §12, where no render-time test could help because the hold did not yet
+    // exist. Same one-line shape 崩's groove and 鏡's answer already use.
+    if (signalUp(t)) return;
+
     var c = ctx, K = STRING_KIT[layer], R = S[layer]; opts = opts || {};
     freq = FAR.pitch(layer, freq, t);          // 逸脱 the pitch choke point — koto, shamisen, biwa (identity at home)
     var wx = wxAt(t);
@@ -4489,7 +4635,7 @@ window.ZankyoAudio = (function () {
     farSaid = null;                              // quiet until the night has named itself
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded
-    farTimeSetup(); farPlanN = 0; farCycleRate = 1;   // …and what its time departures do
+    farTimeSetup(t0); farPlanN = 0; farCycleRate = 1;   // …and what its time departures do
     // The opening field, re-read through tonight's tuning: 減 narrows the
     // semitone pairs (the opening modulate above goes straight to MODES, not
     // through setMode, so it needs saying here), 撓 restretches the octave.

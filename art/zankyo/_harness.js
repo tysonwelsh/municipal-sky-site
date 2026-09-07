@@ -516,7 +516,11 @@ if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push
 if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not on the landscape cut");
 // S1 gates (PLAN-SIGNAL-INTEGRATION §1 S1): never two per cycle, never in a KIRU, the melodic voices silent for the hold,
 // ≈ 1 per 3 cycles over 4 h (0.7–1.6) when the reel is ready; the fallback fires when it is not
-if (signalVocab.maxPer > 1) fails.push("two signals in one cycle");
+// The owner asked for TWO broadcasts a cycle (was one). Three is still a
+// fault: the plan draws at most two, so a third means the visitation seam is
+// firing one as well as the drawn times, which is exactly what happened on the
+// first pass of this change.
+if (signalVocab.maxPer > 2) fails.push("more than two signals in one cycle");
 if (signalVocab.nearKiru > 0) fails.push(signalVocab.nearKiru + " signal(s) within a KIRU's reach");
 if (signalVocab.notSilent > 0) fails.push(signalVocab.notSilent + " melodic note(s) inside a signal's hold");
 // §8.1 (the owner, after the rc.9 listen) raised the seating rate from about

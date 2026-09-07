@@ -72,6 +72,7 @@
   function db2lin(db) { return Math.pow(10, (+db || 0) / 20); }
 
   // ---- the pool ----
+  var armedT0 = null;                                   // the t0 arm() was given, if any
   var pool = null, poolState = "idle", poolError = null, poolUnknownTones = {};   // idle | loading | ready | failed
   function loadPool() {
     if (poolState === "loading" || poolState === "ready") return;
@@ -344,9 +345,21 @@
     // and signalUp() ignores it — a PLAN must not silence 崩's groove or
     // trigger §11.3, because a plan can still fall back to the gagaku and then
     // nothing was ever on the air.
-    T.airHoldClear("signal-planned");
-    var pFrom = info.hostStartT + 8 - HOLD_LEAD_S;
-    var pUntil = info.hostStartT + 25 + TUNE_S + c.holdS + c.lossD + 2 + PLAN_REL_MAX;
+    T.airHoldClear();
+    // THE PLANNED HOLD IS NOW THE REAL HOLD. t0 arrives WITH the arm — every
+    // broadcast's time is drawn at plan now — so there is nothing left to be
+    // uncertain about and nothing to over-deny: 18.0 to 29.2 s where it was
+    // 41.0 to 46.2, and the difference was never air a broadcast used. The
+    // WRITE stays at arm, which is what catches the long-note bodies that
+    // commit 33 to 46 s ahead (plan §12): narrowing the window is safe,
+    // moving the write would put that defect straight back.
+    //
+    // Two things that had to agree have become one thing, which matters more
+    // than the seconds do.
+    armedT0 = (info.t0 != null) ? info.t0 : null;
+    var t0k = (info.t0 != null) ? info.t0 : (info.hostStartT + 16);
+    var pFrom = t0k - HOLD_LEAD_S;
+    var pUntil = t0k + TUNE_S + c.holdS + c.lossD + 2;
     // THE PLAN'S LANES ARE DERIVED FROM THE SAME OBJECT THE REAL HOLD USES,
     // never from a second list. fire() builds its hold by looping over a.rel
     // and bolting on the PA; if the plan looped over a constant instead, the
@@ -359,9 +372,15 @@
     // held both at arm and at fire, in the same commit, without anyone
     // remembering to.
     var plan = {}, pk = Object.keys(wx.rel);
-    for (var pv = 0; pv < pk.length; pv++) plan[pk[pv]] = { from: pFrom, until: pUntil };
+    for (var pv = 0; pv < pk.length; pv++) plan[pk[pv]] = { from: pFrom, until: pUntil + wx.rel[pk[pv]] };
     plan.pa = { from: pFrom, until: pUntil };                 // the PA is held too, and for the same reason fire() holds it
-    T.airHold(plan, "signal-planned");
+    // Written as the SIGNAL'S hold, not as a "plan" — because it is not a plan
+    // any more, it is the exact window. That also makes signalUp() see it,
+    // which is what lets 崩, 鏡 and the melodic bodies yield to a broadcast
+    // that has not aired yet: signalUp asks about a TIME, so a note scheduled
+    // 40 s early and landing inside the window is refused now rather than
+    // after the fact.
+    T.airHold(plan, "signal");
     var when = Math.max(T.ctx ? T.ctx.currentTime + 0.05 : 0, info.hostStartT - PREFETCH_LEAD_S);
     T.lane("broadcast").at(when, prefetch);
     return true;
@@ -401,8 +420,12 @@
     // again. (No new draw: it borrows the shakuhachi's zero offset rather than
     // taking one of its own, so the signal stream is untouched.)
     hold.pa = { from: from, until: cut + 2 };
-    T.airHoldClear("signal-planned");        // the intent is now a fact: replace it, never both
-    T.airHold(hold);
+    // NOT WRITTEN AGAIN HERE. arm() already wrote this exact window, 55 s ago,
+    // from the same t0 and the same wx.rel — writing it a second time would
+    // restore precisely the two-things-that-must-agree shape this change
+    // removed, and the second copy would be the one nobody updated. `hold` is
+    // still built above because the descriptor below reads its span.
+    if (armedT0 == null) T.airHold(hold);    // only if this signal never went through a t0-bearing arm
     T.lane("broadcast").at(t0 - STATIC_LEAD_S, function (t) { staticRise(t, t0); });
     T.lane("broadcast").at(t0 - DECIDE_LEAD_S, function () { decide(t0); });
     return true;
