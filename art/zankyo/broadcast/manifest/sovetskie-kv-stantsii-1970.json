@@ -1,0 +1,62 @@
+{
+  "id": "sovetskie-kv-stantsii-1970",
+  "title": "Советские КВ станции, около 1970: Маяк, Родина, Атлантика, «Мир и прогресс»",
+  "year": 1970,
+  "src": "https://archive.org/details/radio-rodina",
+  "license": "unknown (off-air recordings by Dan Greenall, shared to archive.org opensource_audio; no licence stated)",
+  "tier": "B",
+  "tone": "tone",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 61.75,
+  "bytes": 310266,
+  "band": "low",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      25.0,
+      37.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      92.0,
+      104.0
+    ]
+  ],
+  "notes": "four Soviet shortwave services other than Radio Moscow, caught around 1970-71 by a listener in Ontario: Радио Маяк, Радиостанция Родина calling the diaspora home, Радиостанция Атлантика broadcasting to the fishing fleet, and Radio Station Peace and Progress — its interval signal and then its English service. Cut from the five archive clips concatenated in that order (offsets 0 / 23.25 / 45.71 / 70.84 / 88.67 s); the raw parts are kept beside the concatenation",
+  "takedown": false
+}
