@@ -27,6 +27,13 @@ const path = require("path");
 
 const RUN = parseFloat(process.argv[2] || "480");   // simulate N seconds
 const SEED = parseInt(process.argv[3] || "3042", 10) || 3042;
+// --far d : force tonight's distance, the same door ?far= opens (rc.21). The
+// harness could not reach a far night before this, which is how 継's NaN
+// shipped: the ensemble departures are only drawn on seeds that draw them, and
+// the fault check had never been run on one.
+let FARD = null;
+for (let ai = 4; ai < process.argv.length; ai++) if (process.argv[ai] === "--far") FARD = parseFloat(process.argv[++ai]);
+if (FARD != null && !isFinite(FARD)) FARD = null;
 
 // ---- virtual clock + timer queue ----
 let vnow = 0;
@@ -187,6 +194,7 @@ function runOnce(seed, simS, opts) {
   const Z = loadEngine();
   if (!Z) { errors.push("ZankyoAudio not defined"); return null; }
   Z.reseed(seed);
+  if (FARD != null && Z.setFar) Z.setFar(FARD);
   const R = { seed, simS, notes: [], events: [], arcSamples: [], metaByCycle: new Map(), t0: 0 };
   Z.setNoteListener((n) => { const F = Z.getField ? Z.getField() : null; R.notes.push({ t: n.startTime, layer: n.layer, freq: n.freq, dur: n.duration, tonic: F ? F.tonicHz : 146.83, steps: F ? (Z.getMode().offsets) : null }); });
   Z.setEventListener((e) => R.events.push({ t: e.t, cat: e.cat, label: e.label, detail: e.detail, sig: e.signal ? { t0: e.signal.t0, holdS: e.signal.holdS, lossD: e.signal.lossD, id: e.signal.id } : null }));
@@ -426,9 +434,31 @@ console.log("param violations: " + (violKeys.length ? violKeys.map((k) => k + "�
 
 console.log(errors.length ? "ERRORS (" + errors.length + "):\n  " + errors.slice(0, 20).join("\n  ") : "ERRORS: none ✓");
 
+// ---- the fault tally (rc.21): lanes that threw, notes that were not finite ----
+// This gate exists because 継's takes handed four melodic bodies a NaN
+// frequency from rc.15 to rc.21 — the winds threw "non-finite float" at an
+// oscillator, the strings threw on createBuffer via N = round(sr / freq) — and
+// every gate here passed, because the lane guard only wrote to the console and
+// nothing read it. A thrown lane loses the rest of its phrase and goes quiet
+// until something re-arms it; that is a listener-facing fault and it must not
+// be possible to ship one again. Any count fails, on any seed.
+let FAULTS = { lanes: 0, notes: 0, lane: [], note: [] };
+try { FAULTS = (runA && runA.Z && runA.Z.getFaults) ? runA.Z.getFaults() : FAULTS; } catch (e) {}
+if (FAULTS.lanes || FAULTS.notes) {
+  console.log("FAULTS: " + FAULTS.lanes + " lane throw(s), " + FAULTS.notes + " non-finite note(s)");
+  FAULTS.lane.forEach((f) => console.log("  lane " + f.lane + " @" + f.t + "s — " + f.msg));
+  FAULTS.note.forEach((f) => console.log("  note " + f.layer + " freq=" + f.freq + " t=" + f.t + " dur=" + f.dur));
+} else console.log("faults: no lane threw, every scheduled note finite ✓");
+
 // ---- verdicts ----
 const fails = [];
-if (notes.length > 50 && inScale < notes.length) fails.push("scale adherence < 100%");
+if (FAULTS.lanes) fails.push(FAULTS.lanes + " lane throw(s) — " + FAULTS.lane.map((f) => f.lane + ": " + f.msg).slice(0, 3).join(" | "));
+if (FAULTS.notes) fails.push(FAULTS.notes + " note(s) scheduled with a non-finite freq/time/duration");
+// Scale adherence is a HOME gate. 耳 bends the koto off the grid by ear, 減
+// narrows semitone pairs toward quarter-tones, 螺 spirals the whole field —
+// leaving the scale is what the far tail IS, so the check only binds at home.
+if (FARD == null && notes.length > 50 && inScale < notes.length) fails.push("scale adherence < 100%");
+else if (FARD != null && notes.length > 50 && inScale < notes.length) console.log("scale adherence: " + inScale + "/" + notes.length + " (far night — off-grid is the departure, not a fault)");
 if (RUN >= 700 && stats.transforms.length < 6) fails.push("only " + stats.transforms.length + " transform types used");
 if (RUN >= 700 && answers < 1) fails.push("no cross-voice answers");
 if (RUN >= 700 && maxGen < 3) fails.push("max generation " + maxGen + " < 3");

@@ -735,8 +735,23 @@ window.ZankyoAudio = (function () {
       if (now <= t0 + 0.6) {                                  // it is still this voice's entry to make
         var slot = farSubject.n;
         farSubject.taken[voice] = 1; farSubject.n++;
-        var out = { phrase: fitToRegister(farSubject.notes, center), t0: Math.max(now + 0.05, t0),
-                    cs: plain.cs, take: true, kind: E.kind, slot: slot, of: maxN };
+        // A TAKE IS `plain` WITH THE TAKE'S TERMS WRITTEN OVER IT, never a
+        // fresh literal. It used to be a literal, and it silently dropped
+        // `sharp` — 重's detune, which every melodic body multiplies its
+        // frequency by. A take of any other kind (継, 群, 影) therefore
+        // computed `freq * undefined` = NaN, which reached an oscillator as a
+        // non-finite float in the winds and, through N = round(sr / freq), a
+        // non-finite frame count in createBuffer for the strings. Four melodic
+        // bodies threw on every ensemble entry from W2 (rc.15) to rc.21, and
+        // every gate passed, because the symbolic mock tolerates NaN where the
+        // browser throws. Building the take from `plain` makes the two paths
+        // share ONE declaration of the contract, so a field added to it later
+        // cannot go missing from a take. The fault is fixed at its source; the
+        // source is now also watched (see the fault tally at emitNote).
+        var out = plain;
+        out.phrase = fitToRegister(farSubject.notes, center);
+        out.t0 = Math.max(now + 0.05, t0);
+        out.take = true; out.slot = slot; out.of = maxN;
         if (E.kind === "hocket") {
           // one timeline for everyone, and this voice's own beat is irrelevant
           out.t0 = farSubject.at;
@@ -1332,7 +1347,23 @@ window.ZankyoAudio = (function () {
   // LISTENERS / LOG
   // ==========================================================================
   var noteListeners = [], eventListeners = [];
+  // THE FAULT TALLY (rc.21). Two classes the gates could not see: a lane that
+  // threw, and a note scheduled with a non-finite frequency, time or duration.
+  // Counting only — no behaviour changes, no RNG is touched, so home nights
+  // stay byte-identical. _harness.js reads it and fails on any.
+  var faults = { lanes: 0, notes: 0, lane: [], note: [] };
+  // EVERY SCHEDULED NOTE IS FINITE. The companion tripwire to the lane tally:
+  // a non-finite frequency reaches an oscillator as "non-finite float" and, via
+  // N = round(sr / freq), a non-finite frame count in createBuffer — both throw
+  // — but a non-finite DURATION mostly does not throw, it just renders nothing,
+  // and nothing in the gates would have said so. Counted here, never thrown:
+  // the owner's night must not break because a gate wants to be loud. The
+  // harness fails on a single one.
   function emitNote(layer, freq, startTime, duration) {
+    if (!(isFinite(freq) && isFinite(startTime) && isFinite(duration || 0))) {
+      faults.notes++;
+      if (faults.note.length < 12) faults.note.push({ layer: layer, freq: freq, t: startTime, dur: duration });
+    }
     roomSpeak(layer, startTime, duration, freq);   // Phase M: the crew hears who is about to speak
     for (var i = 0; i < noteListeners.length; i++) {
       try { noteListeners[i]({ layer: layer, freq: freq, startTime: startTime, duration: duration || 0 }); } catch (e) {}
@@ -1358,6 +1389,16 @@ window.ZankyoAudio = (function () {
     // The transport: one lookahead clock, one lane per layer (+ "form" for
     // the cycle watch). Lane rates are the console's RATE knobs.
     clock = PJ.Clock.create(ctx, { tickMs: 25, aheadS: 0.25, onError: function (err, where) {
+      // A lane that throws loses the rest of its phrase and is silent until
+      // something re-arms it. That is invisible to a listener as anything but
+      // a voice going quiet, and it was invisible to the gates too: the hook
+      // only wrote to console, and neither _harness.js nor _probe.js reads
+      // the console. 継's takes threw on four melodic bodies from rc.15 to
+      // rc.21 and every gate passed. Now the throws are COUNTED, and the
+      // harness fails on any.
+      faults.lanes++;
+      if (faults.lane.length < 12) faults.lane.push({ lane: (where && where.lane) || "?", t: +((where && where.t) || 0).toFixed(2),
+        msg: String((err && err.message) || err).slice(0, 120) });
       if (typeof console !== "undefined" && console.error) console.error("ZankyoAudio lane " + (where && where.lane) + " threw at t=" + (where && where.t), err && err.stack ? err.stack : err);
     } });
     for (var lni = 0; lni < LAYERS.length; lni++) clock.lane(LAYERS[lni]).rate = layerRate[LAYERS[lni]] || 1;
@@ -4625,6 +4666,8 @@ window.ZankyoAudio = (function () {
     getRooms: function () { return { hull: roomHull, corridor: roomCorridor, blend: roomBlend, farWall: farWall, halo: halo }; },
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
+    // the gates' handle on the two fault classes (rc.21)
+    getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice() }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.
