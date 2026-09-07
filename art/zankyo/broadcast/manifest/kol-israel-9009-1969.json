@@ -1,0 +1,20 @@
+{
+  "id": "kol-israel-9009-1969",
+  "title": "Kol Israel, 9.009 MHz shortwave to North America",
+  "year": 1969,
+  "src": "https://archive.org/details/KolIsrael9.009MHz22Feb19690400UTC",
+  "license": "PD (CC PD Mark 1.0)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.1,
+  "durS": 97.75,
+  "bytes": 471005,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[8.0, 20.0], [120.0, 132.0], [300.0, 312.0], [470.0, 482.0], [640.0, 652.0], [800.0, 812.0], [940.0, 952.0], [1080.0, 1092.0]],
+  "notes": "Jerusalem, 22 Feb 1969, 0400 UTC, recorded off-air in the eastern US; the interval signal, the ID, news read under fading that comes and goes",
+  "takedown": false
+}
