@@ -1,0 +1,20 @@
+{
+  "id": "fr-fr3-fin-de-soiree-1989",
+  "title": "FR3 — fin de soirée, 27 février 1989",
+  "year": 1989,
+  "src": "https://www.youtube.com/watch?v=92ylVCIBsds",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 627106,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[24.0, 36.0], [200.0, 212.0], [594.0, 606.0], [758.16, 770.16], [1594.0, 1606.0], [1803.0, 1815.0]],
+  "notes": "off a French VHS: the presenter between his monitors, l'indice des prix, a wet street, and the Espace 3 publicité card",
+  "takedown": false
+}
