@@ -41,6 +41,7 @@ for (var ai = 2; ai < args.length; ai++) {
   else if (args[ai] === "--jitter") JITTER = parseInt(args[++ai], 10) || 0;   // timer jitter seed (0 = exact)
 }
 
+var LOADED_FROM = null;      // which file each script was actually read from (set by runOnce)
 var LANDSCAPE = { subDrone: 1, sho: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, weather: 1 };   // never "melodic voices" (new melodic bodies — hichiriki, biwa — count automatically)
 function isMelodic(layer) { return !LANDSCAPE[layer]; }
 
@@ -189,11 +190,30 @@ function runOnce(seed, runS, jitterSeed) {
   scripts = scripts.filter(function (s) { return !/background-audio|zankyo-ui|zankyo-viz|page-event/.test(s); });
   if (!scripts.length) scripts = ["zankyo-audio.js"];
   var loadErrors = [];
+  // ZK_SRCDIR — swap the WHOLE ZANKYŌ script set, not just the engine.
+  //
+  // ZK_ENGINE below replaces zankyo-audio.js alone, which is what
+  // _far-identity.js used, and it meant the home-identity gate compared two
+  // engines across ONE shared receiver: zk-broadcast.js was the working tree's
+  // in both runs. Every receiver change in §11, the planned hold, degreeHz and
+  // the tone tables therefore went through a gate that could not see them.
+  // With ZK_SRCDIR set, any script the page loads is taken from that directory
+  // when a file of the same name is there, so the comparison is between two
+  // BUILDS. The PJ2 substrate is deliberately not swapped: it is frozen by
+  // policy and never modified from ZANKYŌ, so both sides should share it.
+  var srcDir = process.env.ZK_SRCDIR ? path.resolve(process.env.ZK_SRCDIR) : null;
+  var loadedFrom = {};
   scripts.forEach(function (s) {
-    var full = path.resolve(dir, s);
+    var full = path.resolve(dir, s), base = path.basename(s);
+    if (srcDir && /^(zankyo-audio|zk-[a-z0-9-]+)\.js$/.test(base)) {
+      var alt = path.join(srcDir, base);
+      if (fs.existsSync(alt)) full = alt;
+    }
     if (/zankyo-audio\.js$/.test(s) && process.env.ZK_ENGINE) full = path.resolve(process.env.ZK_ENGINE);   // A/B an alternate engine build
+    loadedFrom[base] = full;
     try { (0, eval)(fs.readFileSync(full, "utf8")); } catch (e) { loadErrors.push(s + ": " + (e && e.message)); }
   });
+  LOADED_FROM = loadedFrom;
   var Z = W.ZankyoAudio;
   if (!Z) return { fatal: "ZankyoAudio not defined; loaded " + JSON.stringify(scripts) + " errors " + JSON.stringify(loadErrors) };
 
@@ -786,7 +806,20 @@ if (JSON_OUT) {
   console.log("wrote " + JSON_OUT);
 }
 if (DIST_JSON) {
-  var engineSig = (function () { try { return require("crypto").createHash("sha1").update(fs.readFileSync(path.join(__dirname, "zankyo-audio.js"))).digest("hex").slice(0, 12); } catch (e) { return null; } })();
+  // The signature of what was ACTUALLY LOADED, not of the file in the tree —
+  // under ZK_SRCDIR or ZK_ENGINE those differ, and a signature that names the
+  // wrong build is worse than none.
+  var engineSig = (function () {
+    try {
+      var h = require("crypto").createHash("sha1");
+      var lf = LOADED_FROM || {};
+      var names = Object.keys(lf).sort();
+      if (!names.length) names = null;
+      if (names) { for (var i = 0; i < names.length; i++) h.update(names[i]).update(fs.readFileSync(lf[names[i]])); }
+      else h.update(fs.readFileSync(path.join(__dirname, "zankyo-audio.js")));
+      return h.digest("hex").slice(0, 12);
+    } catch (e) { return null; }
+  })();
   fs.writeFileSync(DIST_JSON, JSON.stringify({ seed: SEED, runS: RUN, far: A1.far, C: A1.distance, sig: sig1, engineSig: engineSig, errors: A1.tech.errors.length + A1.tech.loadErrors.length || undefined, gates: A1.gates }));
 }
 process.exit(A1.tech.errors.length || A1.tech.loadErrors.length || reproOk === false ? 1 : 0);
