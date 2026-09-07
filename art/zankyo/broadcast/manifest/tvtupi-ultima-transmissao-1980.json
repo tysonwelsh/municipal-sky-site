@@ -1,0 +1,20 @@
+{
+  "id": "tvtupi-ultima-transmissao-1980",
+  "title": "TV Tupi — os últimos 47 minutos",
+  "year": 1980,
+  "src": "https://archive.org/details/ultima-transmissao-da-tv-tupi",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.8,
+  "durS": 72.17,
+  "bytes": 643893,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.17], [24.17, 36.17], [36.17, 48.17], [48.17, 60.17], [60.17, 72.17]],
+  "srcWindows": [[99.0, 111.0], [367.0, 379.0], [919.0, 931.0], [1693.0, 1705.0], [2151.0, 2163.0], [2845.0, 2857.0]],
+  "notes": "Brazil's first network signs off for good, 18 July 1980: announcers saying goodbye to camera, the last continuity, the carrier",
+  "takedown": false
+}
