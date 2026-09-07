@@ -23,3 +23,11 @@ when its reel and `manifest/<id>.json` are committed.
 | url | why |
 |---|---|
 |  |  |
+
+## Set aside by the owner (2026-09-07)
+
+- **Voice of Kenya, 1 August 1982** — the coup-morning broadcast (560 s, a
+  station taken over live on air). Source and windows in the reels-3
+  africa queue. Not cut: out of place while the rest of the pool is
+  ephemera; the owner may revisit if the pool ever takes on heavier
+  material as a class.
