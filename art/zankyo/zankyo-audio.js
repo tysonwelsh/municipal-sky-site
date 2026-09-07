@@ -371,6 +371,75 @@ window.ZankyoAudio = (function () {
   }
 
   // ==========================================================================
+  // 金 METAL (W3) — ring modulation and FM, inharmonic but still pitched
+  // ==========================================================================
+  // The plan: "ring modulation of the shō by the sub-drone; the bells and the
+  // koto through FM — inharmonic, gong-like, still pitched."
+  //
+  // THE FLOOR AND THE CEILING ARE ONE NUMBER, which is what makes this the
+  // most interesting departure to build: the critic's floor is roughness over
+  // brightness, rn ÷ (centroid/100), home median 0.099–0.11 — and the harshness
+  // cap is on brightness alone. So 金 must raise the RATIO without raising its
+  // denominator. Inharmonic, not merely bright.
+  //
+  // Ring modulation is exactly that instrument and it is not a coincidence:
+  // multiplying a pipe at f by the drone at m yields the pair f−m and f+m and
+  // NO carrier. The sidebands sit symmetrically about f in frequency, so the
+  // power-weighted centroid barely moves, while f−m and f+m beat against the
+  // cluster's other pipes — roughness up, brightness flat. FM by contrast adds
+  // partials UPWARD with the index, so the koto's modulator sits at an
+  // inharmonic ratio BELOW its carrier and the string's own lowpass (~4f)
+  // stays where it is: sidebands on both sides rather than a bright stack.
+  //
+  // Cost, counted before wiring rather than after (peakSources ≤ 110 with four
+  // sources of margin at the tightest): the shō's ring is ONE modulator shared
+  // by a whole cluster — 1 source and 3 gains per cluster, not per pipe. The
+  // koto's FM is 1 source per plucked note, short-lived; measured below.
+  // ONE modulator for the whole night, not one per cluster. The first version
+  // built a modulator per shō cluster, and because clusters overlap that cost
+  // two concurrent sources and took a 群 night to 111 against the hard 110.
+  // It is also the truer object: the thing doing the modulating is the
+  // reactor's drone, and there is one of those — so it is created once, tracks
+  // the tonic through a sea change, and stops with the clock.
+  var farMetalMod = null, farMetalAmp = null;
+  function farMetalModulator(t) {
+    if (farMetalMod) return farMetalAmp;
+    var c = ctx;
+    farMetalMod = c.createOscillator(); farMetalAmp = c.createGain();
+    farMetalMod.type = "sine";
+    farMetalMod.frequency.setValueAtTime(subRoot(), t);
+    farMetalAmp.gain.setValueAtTime(farMetal.ringMix, t);
+    farMetalMod.connect(farMetalAmp);
+    farMetalMod.start(t);
+    return farMetalAmp;
+  }
+  function farMetalRing(dryIn, out, t, durS) {
+    var p = farMetal;
+    if (!p || !ctx) return false;
+    var c = ctx, dry = c.createGain(), ring = c.createGain();
+    dry.gain.setValueAtTime(1 - p.ringMix, t);
+    ring.gain.setValueAtTime(0, t);              // the carrier is multiplied away: DC zero, the modulator swings it
+    farMetalModulator(t).connect(ring.gain);
+    dryIn.connect(dry); dry.connect(out);
+    dryIn.connect(ring); ring.connect(out);
+    return true;
+  }
+  // FM on a body whose source is a buffer: an oscillator into `detune` at audio
+  // rate IS frequency modulation, and detune is free on these bodies (the W1
+  // glide uses it only under 螺/弛, and the two compose additively).
+  function farMetalFM(param, carrierHz, t, durS) {
+    var p = farMetal;
+    if (!p || !ctx || !(carrierHz > 0)) return;
+    var c = ctx, mod = c.createOscillator(), amp = c.createGain();
+    mod.type = "sine";
+    mod.frequency.setValueAtTime(carrierHz * FAR_METAL_RATIO, t);   // inharmonic, and below the carrier
+    amp.gain.setValueAtTime(p.fmIndex * 55, t);                     // cents of deviation
+    mod.connect(amp); amp.connect(param);
+    mod.start(t); mod.stop(t + durS + 0.05);
+  }
+  var FAR_METAL_RATIO = 0.7071;                  // √½ — irrational to the carrier, so the sidebands are inharmonic
+
+  // ==========================================================================
   // 逆 REVERSE (W3) — envelopes played backwards
   // ==========================================================================
   // "Plucks that swell, breaths that end in the attack." PJ.Voice.env takes
@@ -730,7 +799,7 @@ window.ZankyoAudio = (function () {
 
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
-    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null;
+    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null; farMetalMod = null; farMetalAmp = null;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
@@ -1151,6 +1220,7 @@ window.ZankyoAudio = (function () {
     field.modulate(patch);
     rebuildScale();
     if (farBito) farBitoBuild();                 // 逸脱 双: the other world moves with this one
+    if (farMetalMod && ctx) { try { farMetalMod.frequency.setValueAtTime(subRoot(), t != null ? t : ctx.currentTime); } catch (e) {} }   // 金: the ring follows the reactor
     SCALE_INFO.name = MODES[name].name; SCALE_INFO.kana = MODES[name].kana.slice(); SCALE_INFO.tonic = noteName(field.tonicHz);
     emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name + " on " + SCALE_INFO.tonic + (extra ? " · " + extra : "") }, t);
   }
@@ -2951,7 +3021,11 @@ window.ZankyoAudio = (function () {
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.5, now);
     var bus = c.createGain();
     PJ.Voice.env(bus.gain, now, [[fadeIn, 0.5], [dur - fadeIn - fadeOut, 0.5], [fadeOut, 0]]);
-    lp.connect(bus); bus.connect(out);
+    // 金: the whole cluster through one ring modulator at the drone's root —
+    // the seam is here, at lp → bus, so a cluster of five or six pipes costs
+    // ONE extra source between them rather than one each.
+    if (!(farMetal && farMetal.targets.indexOf("sho") >= 0 && farMetalRing(lp, bus, now, dur))) lp.connect(bus);
+    bus.connect(out);
 
     // THE AITAKE (Phase 2): one of the eleven named voicings, projected onto
     // the current mode; TE-UTSURI — the next cluster is drawn to share tones
@@ -3419,6 +3493,7 @@ window.ZankyoAudio = (function () {
     if (atk >= knee) atk = knee * 0.5;
     farEnv(g.gain, t, [[atk, peak], [knee - atk, peak * 0.3], [dec - knee, 0]]);   // 逆: a pluck that swells
     FAR.glideDetune(src.detune, t, dec + 0.05, 0);   // 逸脱 螺/弛: the string sags with the room (detune is free here; playbackRate carries the pluck's own bends)
+    if (farMetal && farMetal.targets.indexOf(layer) >= 0) farMetalFM(src.detune, freq, t, dec);   // 金: and the same param carries the FM, additively
     src.start(t); src.stop(t + dec + 0.05);
     // THE PICK (Phase M — the mix pass, the orchestrator's ruling): the plan's
     // plectrum noise made a real transient. Measured, the string bodies hold
@@ -4359,6 +4434,7 @@ window.ZankyoAudio = (function () {
     if (conductor) { try { conductor.stop(); } catch (e) {} }
     if (signalProvider) { try { signalProvider.stop(); } catch (e) {} }
     farGroove = null; farStuck = false;          // 逸脱 崩: the groove dies with the clock; the grit goes back to the arc
+    if (farMetalMod) { try { farMetalMod.stop(ctx ? ctx.currentTime : 0); } catch (e) {} farMetalMod = null; farMetalAmp = null; }   // 金: one modulator, and it stops here
     if (clock) clock.stop();                     // every lane's pending events die here
     while (liveRings.length) ringDown(liveRings[0]);   // screech loops in flight lose their lane teardown with the clock — tear them down here
     if (ctx) {
@@ -4537,6 +4613,12 @@ window.ZankyoAudio = (function () {
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
           airHold: function (map) { for (var k in map) airHold[k] = map[k]; }, airHoldClear: function () { airHold = {}; },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
+          // 室 (W3): the reel becomes the room. The receiver needs the station's
+          // dry sum to feed a convolver and the master to return it to; both are
+          // the engine's, so the engine hands them over rather than the receiver
+          // reaching into the graph.
+          dryBus: function () { return reverbSend; },
+          masterIn: function () { return masterGain; },
         };
       },
     },
