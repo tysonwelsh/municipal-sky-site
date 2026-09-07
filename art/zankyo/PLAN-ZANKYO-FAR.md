@@ -258,3 +258,19 @@ should sound IN TUNE with the station when they are picked up.
    shakuhachi and the shō answer the chant in its key; the reel then plays
    unbent. Never during a KIRU hush; never on home nights.
 4. Untuned reels (speech, noise, static) are untouched.
+
+## 12. Known open defect, accepted on the record (2026-09-07)
+
+On ~8 % of seeds (2 of 25 measured), 2–6 melodic notes sound over a
+broadcast the air hold exists to protect. Mechanism: long-note bodies
+(hichiriki, biwa) commit notes 33–46 s ahead, while the receiver writes its
+hold only ~15.5 s before t0 (HOLD_LEAD_S 6 + the fire lead); the claim was
+valid when made. Pre-existing, bounded, live since the receiver shipped.
+Any fix changes the byte-identical home stream, so it is deferred to the
+next DELIBERATE re-base, which is declared here: **the first commit of W4**
+(W4's per-cycle meta-tide lift already touches home nights, so W4 opens
+with a re-base by construction). Fix at that point: the hold written far
+enough ahead to cover the longest lookahead (≥ 50 s) or the claim path
+checking planned holds, whichever the coder judges cleaner; the critic
+re-derives the base at that commit. Seeds and signatures are in the coder's
+W3 handoff.
