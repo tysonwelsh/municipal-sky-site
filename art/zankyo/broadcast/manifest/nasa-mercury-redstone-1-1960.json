@@ -1,0 +1,20 @@
+{
+  "id": "nasa-mercury-redstone-1-1960",
+  "title": "Project Mercury: Mercury-Redstone 1 Launch",
+  "year": 1960,
+  "src": "https://archive.org/details/project_mercury_mr-1_launch",
+  "license": "PD (NASA)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 108.0,
+  "bytes": 1006353,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0]],
+  "srcWindows": [[103.0, 115], [257.0, 269], [319.0, 331], [435.0, 447], [473.0, 485], [575.0, 587], [673.0, 685], [781.0, 793], [823.0, 835]],
+  "notes": "the four-inch flight; a technician in headset at the console; the card REENTRY RELAY ACTUATED",
+  "takedown": false
+}
