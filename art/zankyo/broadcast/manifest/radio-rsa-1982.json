@@ -1,0 +1,20 @@
+{
+  "id": "radio-rsa-1982",
+  "title": "Radio RSA — The Voice of South Africa, 9580 kHz",
+  "year": 1982,
+  "src": "https://archive.org/download/sraa-radio-rsa-the-voice-of-south-africa-march-14-1982/RadioRSA-9580-14March1982.mp3",
+  "license": "CC-BY-NC",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 97.92,
+  "bytes": 472072,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[3.0, 15.0], [66.0, 78.0], [152.0, 164.0], [204.0, 216.0], [290.0, 302.0], [352.0, 364.0], [436.0, 448.0], [579.0, 591.0]],
+  "notes": "the apartheid state's external service on shortwave, already band-limited by the ionosphere; announcements riding a loud noise floor",
+  "takedown": false
+}
