@@ -1,0 +1,20 @@
+{
+  "id": "itv-schools-c4-1987",
+  "title": "ITV Schools on Channel 4 — first day",
+  "year": 1987,
+  "src": "https://archive.org/download/itv-schools-on-channel-four-first-day-14th-sept-1987/ITV%20Schools%20on%20Channel%20Four%20-%20first%20day%2014th%20Sept%201987.mp4",
+  "license": "PD Mark (as tagged); ITV/C4 presentation",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 609148,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[12.0, 24.0], [76.0, 88.0], [136.0, 148.0], [200.0, 212.0], [540.0, 552.0], [636.0, 648.0]],
+  "notes": "'ENVIRONMENTS — Follows shortly'; the silver ITV Schools roundel; a publications slide with prices; JUNIOR MATHS in dot-matrix",
+  "takedown": false
+}
