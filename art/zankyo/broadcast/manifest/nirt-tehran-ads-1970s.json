@@ -1,0 +1,20 @@
+{
+  "id": "nirt-tehran-ads-1970s",
+  "title": "NIRT commercials, Pahlavi-era Tehran",
+  "year": 1975,
+  "src": "https://www.youtube.com/watch?v=SH8oLs1fR0A",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.6,
+  "durS": 72.0,
+  "bytes": 654061,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[149.5, 161.5], [211.0, 223.0], [449.2, 461.2], [677.17, 689.17], [793.9, 805.9], [971.0, 983.0]],
+  "notes": "National Iranian Radio and Television in the 1970s; jingles, product names in Persian, a sung tag, an announcer's close",
+  "takedown": false
+}
