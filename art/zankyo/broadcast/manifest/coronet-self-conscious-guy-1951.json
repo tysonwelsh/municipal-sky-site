@@ -1,0 +1,20 @@
+{
+  "id": "coronet-self-conscious-guy-1951",
+  "title": "Self-Conscious Guy",
+  "year": 1951,
+  "src": "https://archive.org/details/SelfCons1951",
+  "license": "PD Mark 1.0 (Internet Archive)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 108.08,
+  "bytes": 1047183,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.08]],
+  "srcWindows": [[5.0, 17], [91.42, 103.42], [149.0, 161], [229.0, 241], [283.0, 295], [369.0, 381], [495.0, 507], [541.0, 553], [599.0, 611]],
+  "notes": "Coronet Instructional Films; the crown ident; a boy alone in a spotlight against a studio curtain; mental-hygiene narration",
+  "takedown": false
+}
