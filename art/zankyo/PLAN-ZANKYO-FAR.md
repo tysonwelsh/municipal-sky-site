@@ -234,3 +234,27 @@ everywhere (nothing gets louder to sound stranger):
   This is where the noise is meant to live.
 
 Nothing above changes how OFTEN far nights occur.
+
+## 11. Owner addition: tuned signals (deliver with W3's 室, before W4)
+
+Reels that carry a sustained pitch — chant, drones, horns, tones, hums —
+should sound IN TUNE with the station when they are picked up.
+
+1. **Measure at cut time.** `make-reel.sh` gains a pitch pass: for each
+   window, the dominant sustained pitch (a simple autocorrelation or
+   ffmpeg-side estimate is enough; only windows with a stable pitch get a
+   value) is written to the manifest window as `pitchHz`, and the reel gains
+   `tuned: true|false`. The librarian back-fills the existing pool.
+2. **Bend the reel to the station** (the default). When a tuned signal is
+   seated, the receiver chooses the window whose pitch is nearest the
+   current field's tonic or fifth, then sets the media element's
+   playbackRate so that pitch lands exactly on that degree — capped at
+   ±4 semitones (a rate of 0.79–1.26); beyond the cap the window plays
+   unbent. Tape-style: pitch and time move together, which is the
+   receiver's own idiom. Log 「同調 · tuned +2.1 st → D」.
+3. **Bend the station to the reel** (far nights only, d ≥ 0.5): for reels
+   tagged `tone: drone` or `sung`, the engine may instead schedule a sea
+   change toward the reel's pitch as the signal tunes in, so the
+   shakuhachi and the shō answer the chant in its key; the reel then plays
+   unbent. Never during a KIRU hush; never on home nights.
+4. Untuned reels (speech, noise, static) are untouched.
