@@ -1,0 +1,19 @@
+{
+  "id": "kctv-signoff-1994",
+  "title": "조선중앙텔레비죤 sign-off (KCTV)",
+  "year": 1994,
+  "src": "https://archive.org/details/kctv-broadcast-end-1994-10-10",
+  "license": "CC0 1.0 (uploader's claim)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 889703,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[4.0, 16], [26.0, 38], [44.0, 56], [120.0, 132], [272.0, 284], [286.0, 298]],
+  "notes": "tomorrow's weather read over a grid of twelve cities — Pyongyang, Hyesan, Paektusan Secret Camp, Kanggye, Chongjin, Hamhung, Wonsan, Sinuiju, Pyongsong, Sariwon, Haeju, Kaesong; tomorrow's schedule; the good-night message; the flag and 빛나는 조국 as the station goes",
+  "takedown": false
+}
