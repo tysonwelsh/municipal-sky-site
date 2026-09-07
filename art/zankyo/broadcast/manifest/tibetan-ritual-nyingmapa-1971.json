@@ -1,0 +1,79 @@
+{
+  "id": "tibetan-ritual-nyingmapa-1971",
+  "title": "Tibetan Ritual: Invocation to the Goddess Yeshiki Mamo (Nyingmapa)",
+  "year": 1971,
+  "src": "https://archive.org/details/lp_tibetan-ritual_the-nyingmapa-sect",
+  "license": "unknown (Lyrichord LLST 7181, in copyright)",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 61.92,
+  "bytes": 293275,
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [
+    [
+      0.0,
+      10.0
+    ],
+    [
+      10.0,
+      20.0
+    ],
+    [
+      20.0,
+      30.0
+    ],
+    [
+      30.0,
+      40.0
+    ],
+    [
+      40.0,
+      50.0
+    ],
+    [
+      50.0,
+      60.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      384.0,
+      394.0
+    ],
+    [
+      1030.0,
+      1040.0
+    ],
+    [
+      1324.0,
+      1334.0
+    ],
+    [
+      1611.0,
+      1621.0
+    ],
+    [
+      1871.0,
+      1881.0
+    ],
+    [
+      2456.0,
+      2466.0
+    ]
+  ],
+  "notes": "Tantric puja: overtone chant, dungchen, rolmo. Six 10 s windows chosen where the drone HOLDS, never at an entry; both LP sides. pitchNote is the SOURCE fundamental (measured 105-112 Hz G#2/A2, one window 162 Hz E3); the reel's baked 200 Hz highpass removes it, so what survives in the reel is the 4th-6th partial (416-733 Hz).",
+  "country": "Tibet (recorded in exile, India/Nepal)",
+  "language": "Tibetan (liturgical)",
+  "pitchNote": [
+    "G#2",
+    "A2",
+    "A2",
+    "E3",
+    "A2",
+    "G#2"
+  ],
+  "takedown": false
+}
