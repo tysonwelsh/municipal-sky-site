@@ -1,0 +1,20 @@
+{
+  "id": "usaf-power-of-decision-1958",
+  "title": "Power of Decision (Air Force Special Film Project 416)",
+  "year": 1958,
+  "src": "https://archive.org/details/AirForceSpecialFilmProject416powerOfDecision",
+  "license": "CC-BY 3.0 (uploader's tag; US Air Force work)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 108.17,
+  "bytes": 698198,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08], [96.08, 108.17]],
+  "srcWindows": [[131.0, 143], [203.0, 215], [271.0, 283], [303.0, 315], [425.0, 437], [461.0, 473], [521.0, 533], [617.0, 629], [663.0, 675]],
+  "notes": "SAC dramatises a nuclear exchange entirely by telephone; globes with attack arcs; an officer speaking from inside a CRT",
+  "takedown": false
+}
