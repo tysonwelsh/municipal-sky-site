@@ -1,0 +1,19 @@
+{
+  "id": "cccp-zastavki-1952-1991",
+  "title": "Все заставки Первой программы ЦТ СССР (1952–1991)",
+  "year": 1988,
+  "src": "https://youtu.be/kfzA3rMf450",
+  "license": "unknown (uploader compilation of USSR state TV idents)",
+  "tier": "B",
+  "tone": "tone",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 498258,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[40.0, 52.0], [58.0, 70.0], [158.0, 170.0], [258.0, 270.0], [298.0, 310.0], [578.0, 590.0]],
+  "notes": "ЦТ СССР First Programme idents 1952-1991: the 1952 Ostankino card, the 1970s oval, the 1986 star, «Не забудьте выключить телевизор!», the clock, and 1991's «Ваша реклама — наша независимость»",
+  "takedown": false
+}
