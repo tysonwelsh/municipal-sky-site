@@ -1,0 +1,22 @@
+{
+  "id": "tvn-chile-tandas-1985",
+  "title": "TVN — tandas comerciales de noviembre",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=JFwHNCbgi04",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.09,
+  "bytes": 839901,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.09], [36.09, 48.09], [48.09, 60.09], [60.09, 72.09]],
+  "srcWindows": [[303.0, 315], [461.09, 473.09], [799.0, 811], [1050.08, 1062.08], [1472.77, 1484.77], [2383.98, 2395.98]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Televisión Nacional de Chile, November 1985: jingles, promos and the state channel selling washing powder under the dictatorship",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "kcbs-japanese-1974",
+  "title": "조선중앙방송 Japanese service (KCBS, Pyongyang), 6540 kHz",
+  "year": 1974,
+  "src": "https://www.youtube.com/watch?v=SOlznujWSQk",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 74.17,
+  "bytes": 633203,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "static",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[5.0, 17], [35.0, 47], [65.0, 77], [95.0, 107], [125.0, 137], [160.0, 172]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "the start of the Japanese-language programme from Pyongyang, heard on 6540 kHz in 1974 — the interval signal, then 애국가, then the announcer introducing the hour in Japanese",
+  "takedown": false
+}

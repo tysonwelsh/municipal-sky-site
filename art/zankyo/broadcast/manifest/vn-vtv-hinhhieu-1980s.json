@@ -1,0 +1,22 @@
+{
+  "id": "vn-vtv-hinhhieu-1980s",
+  "title": "VTV — hình hiệu chương trình (the 1980s block)",
+  "year": 1985,
+  "src": "https://youtu.be/BZCUK_HYul0",
+  "license": "none stated; VTV programme idents, from a viewer's compilation of the broadcaster's archive",
+  "tier": "B",
+  "tone": "music",
+  "weight": 2,
+  "gain": -0.3,
+  "durS": 60.01,
+  "bytes": 460474,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[24.0, 34.0], [46.0, 56.0], [90.0, 100.0], [112.0, 122.0], [156.0, 166.0], [178.0, 188.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Vietnamese television announcing itself: CHƯƠNG TRÌNH THỜI SỰ, the children's hour Những bông hoa nhỏ, SÂN KHẤU, PHIM TRUYỆN, and two newsreaders at a desk — cut only from the oldest, 1980s end of the source",
+  "takedown": false
+}

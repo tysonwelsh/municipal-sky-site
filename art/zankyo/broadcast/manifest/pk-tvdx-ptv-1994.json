@@ -1,0 +1,22 @@
+{
+  "id": "pk-tvdx-ptv-1994",
+  "title": "TV-DX: PTV Islamabad — test card, opening, Khabarnama",
+  "year": 1994,
+  "src": "https://youtu.be/P_z-EPRS4w4",
+  "license": "none stated; DXer's off-air recording of PTV (channel E8, Murree transmitter), recorded in Islamabad",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 72.09,
+  "bytes": 526597,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.09], [36.09, 48.09], [48.09, 60.09], [60.09, 72.09]],
+  "srcWindows": [[8.0, 20.0], [250.0, 262.0], [410.0, 422.0], [500.0, 512.0], [1005.0, 1017.0], [1155.0, 1167.0]],
+  "pitchHz": [1009.85, null, null, null, null, 149.91],
+  "tuned": true,
+  "notes": "8 Sept 1994: the PTV ISLAMABAD test card with its tone, the PAKISTAN STANDARD TIME card, a submarine surfacing in the news, an Urdu newsreader to camera, the SATURDAY programme slide, and the clock running through 20:59:45",
+  "takedown": false
+}

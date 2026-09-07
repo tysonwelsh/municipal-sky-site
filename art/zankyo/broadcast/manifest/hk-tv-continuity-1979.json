@@ -1,0 +1,22 @@
+{
+  "id": "hk-tv-continuity-1979",
+  "title": "Hong Kong Television Continuity (TVB Pearl / RTV-2)",
+  "year": 1979,
+  "src": "https://archive.org/download/HongKongTV/HongKongTV.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.03,
+  "bytes": 942465,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[63.0, 75.0], [186.72, 198.72], [265.2, 277.2], [315.0, 327.0], [350.6, 362.6], [492.0, 504.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "off U-matic; a CARTOON ident card, 'Whiz Kids Time', 'One Too Many Girls', a transistor-radio ad, the tape tearing between them",
+  "takedown": false
+}

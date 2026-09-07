@@ -1,0 +1,72 @@
+{
+  "id": "cubavision-aberturas-90s",
+  "title": "Cubavisión — aberturas del Período Especial",
+  "year": 1995,
+  "src": "https://archive.org/details/90stvintros_cuba_cubavision",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 60.0,
+  "bytes": 473970,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      10.0
+    ],
+    [
+      10.0,
+      20.0
+    ],
+    [
+      20.0,
+      30.0
+    ],
+    [
+      30.0,
+      40.0
+    ],
+    [
+      40.0,
+      50.0
+    ],
+    [
+      50.0,
+      60.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      14
+    ],
+    [
+      808.0,
+      818
+    ],
+    [
+      1030.0,
+      1040
+    ],
+    [
+      1303.0,
+      1313
+    ],
+    [
+      1620.0,
+      1630
+    ],
+    [
+      1976.0,
+      1986
+    ]
+  ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Havana programme openings made on nothing: the NTV title, a painted rainbow, credit crawls, a face, and the Televisión Cubana card; archivist's caption bar and flag cropped off the source",
+  "takedown": false
+}

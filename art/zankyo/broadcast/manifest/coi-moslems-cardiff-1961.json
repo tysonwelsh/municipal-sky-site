@@ -1,0 +1,22 @@
+{
+  "id": "coi-moslems-cardiff-1961",
+  "title": "Moslems in Britain — Cardiff",
+  "year": 1961,
+  "src": "https://archive.org/download/moslems-in-britain-cardiff/Moslems%20in%20Britain%20-%20Cardiff.mp4",
+  "license": "PD (Crown copyright expired)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 96.0,
+  "bytes": 859032,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[66.0, 78.0], [160.0, 172.0], [300.0, 312.0], [396.0, 408.0], [490.0, 502.0], [678.0, 690.0], [962.0, 974.0], [1056.0, 1068.0]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "COI film narrated in Arabic, shot in Tiger Bay: an Arabic title card over Cardiff roofs, a welder pushing up his goggles, Arabic letters chalked on a blackboard",
+  "takedown": false
+}

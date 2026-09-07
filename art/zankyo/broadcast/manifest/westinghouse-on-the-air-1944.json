@@ -1,0 +1,22 @@
+{
+  "id": "westinghouse-on-the-air-1944",
+  "title": "On the Air: The Story of Radio Broadcasting",
+  "year": 1944,
+  "src": "https://archive.org/details/0961OnTheAir",
+  "license": "PD (Westinghouse sponsored film; Prelinger, no rights statement)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 96.09,
+  "bytes": 896821,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08]],
+  "srcWindows": [[91.0, 103], [141.0, 153], [424.96, 436.96], [619.0, 631], [825.0, 837], [918.35, 930.35], [997.03, 1009.03], [1215.0, 1227]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Westinghouse; master control, the transmitter bench, a KDKA mic flag, paper slid under the microphone",
+  "takedown": false
+}

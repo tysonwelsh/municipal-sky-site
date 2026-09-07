@@ -51,6 +51,49 @@ a whole joke, or a whole song. Set `tone` and `weight` by ear. Once the
 bench page (`broadcast-lab.php`) exists, audition there through the receiver
 and the phosphor shader.
 
+## Field notes
+
+Hard-won in rounds 2 and 3, by the agents who hit them.
+
+- **Bilibili answers HTTP 412** to a bare yt-dlp. It is beaten by sending a
+  full browser header set — User-Agent, Referer, Origin, Accept-Language and
+  the `Sec-Fetch-*` trio — and, for an anthology, by fetching one part at a
+  time with `?p=N` plus `--no-playlist`. Niconico, VK and Dailymotion have
+  needed nothing special.
+- **`--band low`** (highpass 60 Hz instead of 200) is the difference between
+  hearing a chant or a dungchen and hearing the air above it: a drone
+  fundamental sits at 55–160 Hz and the normal band throws all of it away.
+  It is applied automatically for `--tone drone` and `--tone tone`, and is
+  worth asking for by hand on anything sung.
+- **Pre-crop an archivist's watermark before you cut.** At 192×144 a corner
+  bug or a caption bar is not a blemish, it is a third of the picture, and it
+  destroys the found-signal illusion. Crop the raw file into
+  `local-dev/broadcast-src/_crop/<id>.mp4` with ffmpeg, keep the untouched
+  download beside it, cut from the crop — and leave the entry's `src` at the
+  TRUE source URL, never a local path. A `drawbox` mask was tried and
+  rejected: it reads as a mask, not as damage.
+- **CC BY-ND is Tier B, not Tier A.** ND forbids derivatives and a reel is
+  nothing but a derivative. Likewise, an uploader's PD Mark on material that
+  is plainly a broadcaster's presentation is the uploader's opinion, not a
+  licence — cut it Tier B.
+- **The pitch pass runs itself.** Every finished reel is measured for a
+  stable dominant pitch per window; the entry gets `pitchHz` and `tuned`,
+  and the receiver uses them to tune a chant or a test tone to the station
+  (PLAN-ZANKYO-FAR §11). It reads the reel and never writes it, so nothing
+  you cut is changed by it. A reel that is all speech reads `tuned: false`,
+  which is correct and not a failure. To re-measure the whole pool:
+  `tools/backfill-pitch.py` (`--check` to look without writing).
+- **`--propose` exits 2 when nothing passed the gates.** What it printed is
+  then an even spread across the source, not a proposal — look at it before
+  you trust it. A silent or very quiet transfer is the usual cause, and a
+  rendered waveform at boosted gain will tell you whether the source is dead
+  or merely recorded 20 dB low; the second kind is worth keeping, because
+  `loudnorm` recovers it.
+- **Four agents share this tool.** Do not edit `make-reel.sh` while another
+  agent is mid-cut with it. The body is wrapped in one braced block so bash
+  parses the whole file before running it — that is why — but the courtesy
+  still applies to the other tools, which are not protected.
+
 ## Commit
 
 ```

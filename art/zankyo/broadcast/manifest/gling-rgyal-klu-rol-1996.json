@@ -1,0 +1,74 @@
+{
+  "id": "gling-rgyal-klu-rol-1996",
+  "title": "གླིང་རྒྱལ། Klu rol — the Lurol festival at Gling rgyal village",
+  "year": 1996,
+  "src": "https://archive.org/details/Longjia_Laru",
+  "license": "unknown (ethnographic deposit, no licence stated)",
+  "tier": "B",
+  "tone": "sung",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 72.0,
+  "bytes": 995806,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      340.0,
+      352.0
+    ],
+    [
+      608.0,
+      620.0
+    ],
+    [
+      1026.0,
+      1038.0
+    ],
+    [
+      2052.0,
+      2064.0
+    ],
+    [
+      2104.0,
+      2116.0
+    ],
+    [
+      2148.0,
+      2160.0
+    ]
+  ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Amdo Tibetan village ritual on camcorder tape: a line of dancers on the road, the crowd running through juniper smoke, a ritual effigy standing in the smoke, and the long communal dance in the courtyard. Filmed by Dpal ldan bkra shis and Kevin Stuart, written up in ANTHROPOS 93 (1998).",
+  "country": "China (Qinghai, Amdo)",
+  "language": "Amdo Tibetan",
+  "takedown": false
+}

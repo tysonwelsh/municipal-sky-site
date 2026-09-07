@@ -1,0 +1,22 @@
+{
+  "id": "sabc-tv1-nuus-1984",
+  "title": "TV1 Nuus — Afrikaans bulletin and advertisements",
+  "year": 1984,
+  "src": "https://youtu.be/toy3wPLv2Zc",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 677597,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[324.0, 336.0], [512.0, 524.0], [890.0, 902.0], [1173.0, 1185.0], [1645.0, 1657.0], [1928.0, 1940.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Afrikaans news over a map of Zambia and Moçambique; a hammer and sickle burning across the USA for the Olympic boycott; 'Volgende: Die Weerberg ... 23h00 Dagsluiting'",
+  "takedown": false
+}

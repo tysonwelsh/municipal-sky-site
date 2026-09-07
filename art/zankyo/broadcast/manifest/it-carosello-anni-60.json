@@ -1,0 +1,22 @@
+{
+  "id": "it-carosello-anni-60",
+  "title": "Carosello — le indimenticabili pubblicità (anni '60)",
+  "year": 1965,
+  "src": "https://www.youtube.com/watch?v=k9FMRzCuylk",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 653806,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[20.0, 32.0], [405.0, 417.0], [795.76, 807.76], [1143.0, 1155.0], [2067.0, 2079.0], [2773.0, 2785.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "RAI's nightly advertising theatre, 1957–77; sketches, sung jingles, the codino product card — 'Gelati Alemagna'",
+  "takedown": false
+}

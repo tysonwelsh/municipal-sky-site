@@ -1,0 +1,22 @@
+{
+  "id": "es-tvdx-tve2-catala-1984",
+  "title": "TV-DX: TVE-2 Barcelona, carta d'ajust i obertura del Circuit Català, 6.V.1984",
+  "year": 1984,
+  "src": "https://archive.org/download/youtube-mEyciVH2Nak/mEyciVH2Nak.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "tone",
+  "weight": 2,
+  "gain": 0.0,
+  "durS": 72.42,
+  "bytes": 648304,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.17], [36.17, 48.25], [48.25, 60.33], [60.33, 72.41]],
+  "srcWindows": [[4.21, 16.21], [60.0, 72.0], [95.0, 107.0], [140.0, 152.0], [168.0, 180.0], [188.0, 200.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "received at distance: the Barcelona test card with its clock running, Gaudí trencadís as filler, then the Catalan announcer",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "it-giornale-luce-340-1943",
+  "title": "Giornale Luce n. 340",
+  "year": 1943,
+  "src": "https://archive.org/download/NPC-10589/NPC-10589.mp4",
+  "license": "PD",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 96.02,
+  "bytes": 1040902,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[5.0, 17.0], [110.0, 122.0], [179.45, 191.45], [259.0, 271.0], [305.17, 317.17], [404.0, 416.0], [470.67, 482.67], [543.0, 555.0]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Istituto Luce newsreel; the LVCE she-wolf card and its fanfare, then the declamatory Italian commentary over the war",
+  "takedown": false
+}

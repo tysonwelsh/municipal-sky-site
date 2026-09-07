@@ -40,6 +40,25 @@
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var HOLD_LEAD_S = 6, STATIC_LEAD_S = 4, DECIDE_LEAD_S = 1, PREFETCH_LEAD_S = 12;   // from the hosting scene's start (t0 ≥ start + 8)
   var PLAN_REL_MAX = 6;                              // the largest per-voice release offset weather() can draw
+
+  // ---- the tone vocabulary, in ONE place ------------------------------------
+  // `tone` was tested by open-coded string comparison in two places, and when
+  // the pool went from 52 reels to 207 it gained a value neither of them knew:
+  // `drone`, carried by exactly one reel — cham-tashi-lhunpo-ignca, a Tibetan
+  // ritual horn drone, tuned, four measured pitches, the most drone-like thing
+  // in the pool. It matched NEITHER tide arm, so alone of 207 reels it got no
+  // tide multiplier at all; and it failed §11.3's eligibility test, so the one
+  // reel the sea-change path was designed for was the one excluded from it.
+  //
+  // The orchestrator's ruling: drone is handled exactly as tone is, everywhere.
+  // The tables are here so that "everywhere" is one edit and not three, and so
+  // an unknown value is LOUD rather than silently unweighted — the librarian
+  // will add more reels, and this is a data-shape assumption about a file that
+  // is not ours.
+  var TONE_DARK = { voice: 1, noise: 1, tone: 1, drone: 1 };
+  var TONE_LIGHT = { music: 1, sung: 1 };
+  var TONE_PITCHED = { tone: 1, sung: 1, drone: 1 };     // §11.3: the kinds that may pull the field to themselves
+  function toneKnown(t) { return !!(TONE_DARK[t] || TONE_LIGHT[t]); }
   var RECENT_CYCLES = 3;
   var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
@@ -52,7 +71,7 @@
   function db2lin(db) { return Math.pow(10, (+db || 0) / 20); }
 
   // ---- the pool ----
-  var pool = null, poolState = "idle", poolError = null;   // idle | loading | ready | failed
+  var pool = null, poolState = "idle", poolError = null, poolUnknownTones = {};   // idle | loading | ready | failed
   function loadPool() {
     if (poolState === "loading" || poolState === "ready") return;
     if (!hasFetch) { poolState = "failed"; poolError = "no fetch"; return; }
@@ -61,7 +80,21 @@
       fetch(MANIFEST_URL).then(function (r) { return r.json(); }).then(function (m) {
         var arr = Array.isArray(m) ? m : (m && m.reels) || [];
         var out = [];
-        for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) out.push(e); }
+        var unknown = {};
+        for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) {
+          if (!toneKnown(e.tone)) unknown[e.tone] = (unknown[e.tone] || 0) + 1;
+          out.push(e);
+        } }
+        // LOUD, not silent. A tone the receiver does not know gets no tide
+        // weighting and no §11.3 eligibility, which is invisible in every gate
+        // we own — it is simply a reel that never quite behaves.
+        var uk = Object.keys(unknown);
+        if (uk.length && typeof console !== "undefined" && console.error) {
+          console.error("ZankyoBroadcast: manifest carries " + uk.length + " UNKNOWN tone value(s) — " +
+            uk.map(function (k) { return k + "×" + unknown[k]; }).join(", ") +
+            ". They get no tide weighting and cannot sea-change. Add them to TONE_DARK/TONE_LIGHT/TONE_PITCHED in zk-broadcast.js.");
+        }
+        poolUnknownTones = unknown;
         pool = out; poolState = out.length ? "ready" : "failed"; if (!out.length) poolError = "empty manifest";
       }).catch(function (e) { poolState = "failed"; poolError = String(e && e.message || e); });
     } catch (e) { poolState = "failed"; poolError = String(e && e.message || e); }
@@ -130,8 +163,8 @@
     for (i = 0; i < cands.length; i++) {
       var e = cands[i], x = +e.weight > 0 ? +e.weight : 1, tone = e.tone;
       if (!e.audioOnly) x *= VIDEO_WEIGHT;                                                        // §8.1: a reel with a picture is three times as likely to be the one
-      if (tone === "voice" || tone === "noise" || tone === "tone") x *= 0.7 + 0.6 * dark;          // the dark tide leans to voices and noise
-      else if (tone === "music" || tone === "sung") x *= 0.7 + 0.6 * (1 - dark);                  // the light tide to music
+      if (TONE_DARK[tone]) x *= 0.7 + 0.6 * dark;                                                // the dark tide leans to voices, noise, tones and drones
+      else if (TONE_LIGHT[tone]) x *= 0.7 + 0.6 * (1 - dark);                                     // the light tide to music and singing
       w.push(x); tot += x;
     }
     var r = rReel * tot, reel = cands[cands.length - 1];
@@ -262,7 +295,7 @@
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
       rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0,
-      ready: false, t0: null, decided: false, bench: !!rng };
+      ready: false, t0: null, decided: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     stats.armed++;
     // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
     // commit notes 33–46 s ahead of the audio clock, and the real hold was only
@@ -593,14 +626,15 @@
     var band = T.getLayerParam("broadcast", "band", 0.5), flutter = T.getLayerParam("broadcast", "flutter", 0.5), grit = T.getLayerParam("broadcast", "grit", 0.5);
     var holdS = a.holdS, lossD = a.lossD, lossStart = t0 + TUNE_S + holdS, cut = lossStart + lossD, burstAt = cut + COLLAPSE_S, end = burstAt + BURST_S + DEAD_S;
     // §11.3 THE STATION TUNES TO THE SIGNAL. On a far night at d ≥ 0.5, a reel
-    // that is TAGGED as holding a pitch (tone or sung — there is no "drone"
-    // value in this manifest; tone IS the drone bucket) and MEASURED as
-    // holding one may pull the field to itself instead of being pulled. Tag
+    // that is TAGGED as holding a pitch (TONE_PITCHED: tone, sung and drone —
+    // `drone` arrived with the 207-reel pool and this comment used to say it
+    // did not exist, which was true of 52 reels and false of 207) and MEASURED
+    // as holding one may pull the field to itself instead of being pulled. Tag
     // and measurement both, because a tag is an assertion and the flag is a
     // fact. The engine refuses in a KIRU's hush, at home, and below 0.5 — all
     // three tested there rather than here, so this cannot forget one.
     var rate = a.rate || 1, seaHz = 0;
-    if (a.pitchHz > 0 && (a.reel.tone === "tone" || a.reel.tone === "sung") && T.seaToward) {
+    if (a.pitchHz > 0 && TONE_PITCHED[a.reel.tone] && T.seaToward) {
       var got = T.seaToward(a.pitchHz, t0 + TUNE_S);
       if (got) { seaHz = got; rate = 1; }                 // the tape is not warped; the station moves
     }

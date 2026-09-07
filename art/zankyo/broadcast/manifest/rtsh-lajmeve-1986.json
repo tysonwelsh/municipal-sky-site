@@ -1,0 +1,22 @@
+{
+  "id": "rtsh-lajmeve-1986",
+  "title": "Emisioni i Lajmeve — Radiotelevizioni Shqiptar, 1986",
+  "year": 1986,
+  "src": "https://youtu.be/H6vChwJ7bBc",
+  "license": "unknown (RTSH archive material, uploader copy)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.1,
+  "durS": 72.25,
+  "bytes": 643443,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.17], [36.17, 48.17], [48.17, 60.17], [60.17, 72.25]],
+  "srcWindows": [[12.0, 24.0], [348.0, 360.0], [828.0, 840.0], [1014.0, 1026.0], [1236.0, 1248.0], [1303.0, 1315.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "the news of Hoxha's Albania: the star-and-pickaxe EMISIONI I LAJMEVE emblem, plan-fulfilment percentages from the chromium mines, the reader against a map of the Balkans, an item on Nicaragua, the list of tomorrow's temperatures town by town, and the closing emblem",
+  "takedown": false
+}

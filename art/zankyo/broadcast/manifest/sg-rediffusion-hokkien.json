@@ -1,0 +1,22 @@
+{
+  "id": "sg-rediffusion-hokkien",
+  "title": "Rediffusion Singapore — 講古 in Hokkien",
+  "year": 1980,
+  "src": "sg-rediffusion-hokkien.mp3",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.4,
+  "durS": 73.83,
+  "bytes": 356306,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[48.0, 60.0], [212.0, 224.0], [274.0, 286.0], [342.0, 354.0], [570.0, 582.0], [708.0, 720.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "wired-radio storytelling from the box on the wall: 济东巷的故事, The Story of Jidong Lane, 閩南語; Paik's one line of light for a picture",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "radio-nacional-angola-mocambique-1979-1988",
+  "title": "Radio Nacional de Angola, Radio Mocambique",
+  "year": 1980,
+  "src": "https://archive.org/search?query=collection%3Ashortwave-airchecks+AND+%28ANGOLA+OR+MOZAMBIQUE%29",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 69.83,
+  "bytes": 333066,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 22.0], [22.0, 32.0], [32.0, 44.0], [44.0, 56.0], [56.0, 68.0]],
+  "srcWindows": [[8.0, 20.0], [250.0, 260.0], [440.0, 450.0], [530.0, 542.0], [610.0, 622.0], [825.0, 837.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Portuguese off 3265, 3375, 4862, 11955 kHz, 1979-1988. Luanda signing on at 0400, its interval signal and anthem, then Maputo: the Mocambique interval signal, an identification given in English at 0357 UTC, and the Emissora do Sofala in 1988.",
+  "takedown": false
+}

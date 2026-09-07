@@ -1,0 +1,22 @@
+{
+  "id": "ert-roloi-1985",
+  "title": "ERT: the clock at 22:59 and the closing credits",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=dLe4IGpjMg0",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 714524,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[5.0, 17.0], [30.0, 42.0], [65.0, 77.0], [101.0, 113.0], [137.0, 149.0], [167.0, 179.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Greece, 1985; the ERT clock counting toward 23:00, then the credit crawl over chroma noise as the night's programme ends",
+  "takedown": false
+}

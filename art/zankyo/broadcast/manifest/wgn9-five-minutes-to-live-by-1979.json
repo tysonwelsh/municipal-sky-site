@@ -1,0 +1,22 @@
+{
+  "id": "wgn9-five-minutes-to-live-by-1979",
+  "title": "WGN Channel 9 — Newsbreak, Five Minutes to Live By, and sign-off",
+  "year": 1979,
+  "src": "https://archive.org/details/youtube-zUyrFJLLoRc",
+  "license": "WGN Continental Broadcasting; copyrighted (fair-use posture); off-air recording by the Museum of Classic Chicago Television",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.08,
+  "bytes": 757042,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.08], [60.08, 72.08]],
+  "srcWindows": [[15.0, 27], [281.0, 293], [394.0, 406], [675.0, 687], [797.0, 809], [1225.0, 1237]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "chroma-smeared skyline, the NEWSBREAK card (c) 1979 WGN, Local and Sports panels, a priest under stained glass, then snow",
+  "takedown": false
+}

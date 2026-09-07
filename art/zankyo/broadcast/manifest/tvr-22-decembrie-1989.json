@@ -1,0 +1,22 @@
+{
+  "id": "tvr-22-decembrie-1989",
+  "title": "Televiziunea Română Liberă — 22 decembrie 1989, în direct",
+  "year": 1989,
+  "src": "https://youtu.be/QM2ZiFmOICc",
+  "license": "unknown (TVR archive material, uploader copy of the uncut live feed)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 614138,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[400.0, 412.0], [1200.0, 1212.0], [5138.0, 5150.0], [11500.0, 11512.0], [13950.0, 13962.0], [14455.0, 14467.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "the uncut live feed from Bucharest the day the studio changed hands: the crowded studio and the papers being read, the row of microphones, the tvr ident card still being played out between statements, silhouettes on a balcony in the floodlit haze at night, and the caption the station gave itself — TELEVIZIUNEA ROMÂNA LIBERA. Fragments only; no statement is carried whole",
+  "takedown": false
+}
