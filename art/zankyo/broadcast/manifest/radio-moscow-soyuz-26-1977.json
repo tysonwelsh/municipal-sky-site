@@ -1,0 +1,20 @@
+{
+  "id": "radio-moscow-soyuz-26-1977",
+  "title": "Radio Moscow — the Soyuz 26 launch",
+  "year": 1977,
+  "src": "https://archive.org/download/sraa-radio-moscow-salyut-6-space-station-coverage-december-10-1977/1977-12-10%20Saturday%20-%20Soyuz%2026%20Launch%20%281%29.mp3",
+  "license": "CC BY-NC 3.0",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 97.75,
+  "bytes": 465961,
+  "band": "low",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[4.0, 16], [113.0, 125], [192.0, 204], [257.0, 269], [293.0, 305], [359.0, 371], [436.0, 448], [529.0, 541]],
+  "notes": "Radio Moscow's interval signal into the Soyuz 26 bulletin, read in English for shortwave listeners; Salyut 6 coverage, 10 Dec 1977",
+  "takedown": false
+}
