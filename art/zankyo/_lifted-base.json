@@ -1,0 +1,184 @@
+{
+ "commit": "e7e2445 (engine da8ceb5 / rc.38)",
+ "runS": 1800,
+ "sigVersion": 2,
+ "note": "The LIFTED half of the W4 partition (plan §13). Part (b) checks unlifted home nights against _probe-base.json; part (c) checks THESE against their own signatures here. Seeds 530, 863 and 3055 lift at cycle 8, past a typical run horizon, so they exercise the (c) EXCLUSION path rather than the comparison — deliberately.",
+ "lifted": {
+  "530": {
+   "cycles": 5,
+   "notes": "33b50fe247cb70790a16e40f0b4be0b4966fa9f6",
+   "events": "f7d3955654bfb03312b1f3022f4b506507de84e2",
+   "noteCount": 2575,
+   "homeLift": {
+    "cycle": 8,
+    "d": 0.15317861819639803
+   },
+   "melodic": 2040
+  },
+  "863": {
+   "cycles": 5,
+   "notes": "b0cad1a57066b4717a06c236f7373796911811db",
+   "events": "559f8feb5509e25a02d1feef1d93edb3d3b61b6a",
+   "noteCount": 3373,
+   "homeLift": {
+    "cycle": 8,
+    "d": 0.2429306005127728
+   },
+   "melodic": 2596
+  },
+  "1020": {
+   "cycles": 5,
+   "notes": "5d1153e2e5c91da3c16193dc0da4832cb85986f5",
+   "events": "bb661cfeab635d9f842458819fb66ea0107db3fc",
+   "noteCount": 3149,
+   "homeLift": {
+    "cycle": 6,
+    "d": 0.1502634952776134
+   },
+   "melodic": 2507
+  },
+  "1119": {
+   "cycles": 4,
+   "notes": "adfc90fecdc5f18a18a7439625a040b73a3da4b0",
+   "events": "5d2c962636c47bfaee5b276836826c42169f36f8",
+   "noteCount": 3471,
+   "homeLift": {
+    "cycle": 3,
+    "d": 0.1511255744844675
+   },
+   "melodic": 2720
+  },
+  "1479": {
+   "cycles": 5,
+   "notes": "d99f20f4df5a743954a32e6aabc68663dcba13cf",
+   "events": "8b3c01e48ab54e70dcbf26319cebbd5085879ee8",
+   "noteCount": 2681,
+   "homeLift": {
+    "cycle": 4,
+    "d": 0.2412155785597861
+   },
+   "melodic": 2155
+  },
+  "1654": {
+   "cycles": 5,
+   "notes": "3d669f9e380cc0f92a8c78be79c06994058d9ee8",
+   "events": "e57cd5af5bd9b5daf62e5482361697102924e687",
+   "noteCount": 2660,
+   "homeLift": {
+    "cycle": 4,
+    "d": 0.2872959994710982
+   },
+   "melodic": 1943
+  },
+  "1842": {
+   "cycles": 4,
+   "notes": "8e9c05d983b300b2c09ec646d5935afee24732c3",
+   "events": "dbc9bf23e2e9c2be3e9bb1605b3e8a73835fc055",
+   "noteCount": 2808,
+   "homeLift": {
+    "cycle": 5,
+    "d": 0.34853076720610265
+   },
+   "melodic": 2451
+  },
+  "2550": {
+   "cycles": 5,
+   "notes": "3456ac5802b733f4c7ef4495a28f7d87f4525daf",
+   "events": "9dc1d8521f955d4a71ba34da9e79bcf3a3d3307b",
+   "noteCount": 3774,
+   "homeLift": {
+    "cycle": 0,
+    "d": 0.2407504384405911
+   },
+   "melodic": 3014
+  },
+  "2910": {
+   "cycles": 4,
+   "notes": "0febaa852c1f7b7a53a186906de3d1a6569ea9fb",
+   "events": "3bd21f76e6715c6975669b18c646cfd3f18c2e5b",
+   "noteCount": 2441,
+   "homeLift": {
+    "cycle": 6,
+    "d": 0.2197194463107735
+   },
+   "melodic": 1815
+  },
+  "3055": {
+   "cycles": 4,
+   "notes": "2ea0ef21f80c856fd848e8f3cd399e38ea0ccd12",
+   "events": "94079ea44cac1ae3e6e23cd4b0db29e6af5afa1e",
+   "noteCount": 2658,
+   "homeLift": {
+    "cycle": 8,
+    "d": 0.3491780410520733
+   },
+   "melodic": 2030
+  },
+  "3298": {
+   "cycles": 5,
+   "notes": "f0b5fd04ad7d961ba630726199e9e494c83da11e",
+   "events": "75de1045cd890cd159411cd511f804ad855d1fff",
+   "noteCount": 2677,
+   "homeLift": {
+    "cycle": 3,
+    "d": 0.19332091649994254
+   },
+   "melodic": 2120
+  },
+  "4232": {
+   "cycles": 4,
+   "notes": "01235abb0dbbbf95f1ab17ff9ae65337a49d4196",
+   "events": "f0f370db245463c5a6b1d544ecede3118552b953",
+   "noteCount": 3117,
+   "homeLift": {
+    "cycle": 1,
+    "d": 0.2967548590619117
+   },
+   "melodic": 2501
+  },
+  "4581": {
+   "cycles": 5,
+   "notes": "abd10b4fa95ac7d4f4a00b314cb64e23f0aefef3",
+   "events": "ffe237581a58d1d5fb31591c4d75e73216d91820",
+   "noteCount": 2848,
+   "homeLift": {
+    "cycle": 2,
+    "d": 0.15270208483561873
+   },
+   "melodic": 2505
+  },
+  "5256": {
+   "cycles": 5,
+   "notes": "40bae3365bd750e95bcaa6acc0ce593208e2326a",
+   "events": "871d523364262921ecbdf3eec0a1ede5bf20f040",
+   "noteCount": 2951,
+   "homeLift": {
+    "cycle": 7,
+    "d": 0.28416312485933304
+   },
+   "melodic": 2359
+  },
+  "5363": {
+   "cycles": 5,
+   "notes": "3e9caf5d80499d8ee8503be4eea2bc6327afeb67",
+   "events": "b20fcb4d18e659d20c0a1259afc66db19c65fb93",
+   "noteCount": 3150,
+   "homeLift": {
+    "cycle": 2,
+    "d": 0.3366733986418694
+   },
+   "melodic": 2632
+  },
+  "5784": {
+   "cycles": 5,
+   "notes": "eb16f4bf19649f27ae7760348c1b359606ed9ff2",
+   "events": "90aa592105eb7ccab0da247acc8e62a2a6b975d1",
+   "noteCount": 2804,
+   "homeLift": {
+    "cycle": 7,
+    "d": 0.34974191766232254
+   },
+   "melodic": 2182
+  }
+ }
+}

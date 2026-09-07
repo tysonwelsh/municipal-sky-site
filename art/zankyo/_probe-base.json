@@ -45,50 +45,55 @@
    135,
    136
   ],
-  "engine": "fa44cee1bfb2",
-  "written": "2026-09-06T16:16:13.613Z",
-  "p50": 1.88,
-  "p95": 5.15,
-  "pmax": 5.66,
-  "p50AllDrawn": 1.98,
-  "p95AllDrawn": 7.77
+  "engine": "954b3a66a587",
+  "written": "2026-09-07T22:35:36.285Z",
+  "p50": 1.73,
+  "p95": 4.7,
+  "pmax": 5.28,
+  "p50AllDrawn": 1.92,
+  "p95AllDrawn": 5.29,
+  "sigVersion": 2,
+  "sigNote": "sigVersion 2: engineSig hashes EVERY file the page loads (all zk-*.js plus zankyo-audio.js), not the zankyo-audio.js sitting in the tree. Version 1 signatures are NOT comparable — a v1 value names a different quantity, not a different build.",
+  "commit": "e7e2445 (engine at da8ceb5 / 2.1.0-rc.38)",
+  "reBaseOf": "9 commits: b1cf62b 9352887 a81a908 9eb5a87 50cd8da d116170 0e37885 da8ceb5, plus dev/plan commits that move no nights",
+  "farTarget": "PINNED 17.4 / 29.0 (plan §9) — a re-base moves the BASE, never the TARGET"
  },
  "stats": {
   "pcEntropy": {
-   "median": 2.8337,
-   "mad": 0.1776,
-   "min": 2.3348,
-   "max": 3.1007
+   "median": 2.8654,
+   "mad": 0.1729,
+   "min": 2.3279,
+   "max": 3.0959
   },
   "tetDev": {
-   "median": 0.319,
-   "mad": 0.068,
+   "median": 0.231,
+   "mad": 0.074,
    "min": 0,
-   "max": 0.482
+   "max": 3.849
   },
   "offMode": {
    "median": 0,
    "mad": 0,
    "min": 0,
-   "max": 0
+   "max": 0.0146
   },
   "ioiVar": {
-   "median": 1.3866,
-   "mad": 0.0447,
-   "min": 1.2286,
-   "max": 1.5305
+   "median": 1.4335,
+   "mad": 0.0645,
+   "min": 1.2945,
+   "max": 1.6085
   },
   "rateExc": {
-   "median": 1.7624,
-   "mad": 0.3992,
-   "min": 0.6172,
-   "max": 3.2338
+   "median": 2.091,
+   "mad": 0.5743,
+   "min": 0.9889,
+   "max": 3.1477
   },
   "densVar": {
-   "median": 0.2135,
-   "mad": 0.0299,
-   "min": 0.1594,
-   "max": 0.5931
+   "median": 0.2101,
+   "mad": 0.0287,
+   "min": 0.1579,
+   "max": 0.5987
   },
   "formDev": {
    "median": 0.0088,
@@ -97,16 +102,16 @@
    "max": 0.0337
   },
   "coinc": {
-   "median": 0.0963,
-   "mad": 0.0226,
-   "min": 0.0229,
-   "max": 0.1469
+   "median": 0.0895,
+   "mad": 0.0165,
+   "min": 0.0355,
+   "max": 0.1333
   },
   "polyMean": {
-   "median": 1.4195,
-   "mad": 0.0576,
-   "min": 1.2681,
-   "max": 1.5549
+   "median": 1.543,
+   "mad": 0.0524,
+   "min": 1.3829,
+   "max": 1.7121
   }
  }
 }
