@@ -1,0 +1,72 @@
+{
+  "id": "tibet-tv-dharamsala-2016",
+  "title": "བོད་ཀྱི་བརྙན་འཕྲིན། Tibet TV news, Dharamsala",
+  "year": 2016,
+  "src": "https://www.youtube.com/watch?v=N0Whovir_z0",
+  "license": "unknown (Tibet TV / DIIR, Central Tibetan Administration)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 558440,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      22.0,
+      34.0
+    ],
+    [
+      236.0,
+      248.0
+    ],
+    [
+      1146.0,
+      1158.0
+    ],
+    [
+      1214.0,
+      1226.0
+    ],
+    [
+      1252.0,
+      1264.0
+    ]
+  ],
+  "notes": "The other Tibetan television: the exile signal out of Dharamsala. The title card over a world map, the anchor, an elder speaking to camera, the station's own URLs, the six-day weather in Tibetan, and the closing card on black.",
+  "country": "India (Dharamsala, Tibetan exile)",
+  "language": "Tibetan",
+  "takedown": false
+}
