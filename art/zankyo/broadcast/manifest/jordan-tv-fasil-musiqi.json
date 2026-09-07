@@ -1,0 +1,20 @@
+{
+  "id": "jordan-tv-fasil-musiqi",
+  "title": "Jordan TV: the musical interlude",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=mjFMUvCXTZc",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 60.01,
+  "bytes": 428322,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[3.0, 13.0], [25.0, 35.0], [45.0, 55.0], [57.0, 67.0], [87.0, 97.0], [111.0, 121.0]],
+  "notes": "the fasil musiqi that filled the gaps on Arab state television; a coral reef turning under the music, an old recording from the Jordanian TV archive",
+  "takedown": false
+}
