@@ -1,0 +1,70 @@
+{
+  "id": "atc-malvinas-tandas-1982",
+  "title": "ATC — tandas dentro de «24 horas por Malvinas»",
+  "year": 1982,
+  "src": "https://www.youtube.com/watch?v=DUK0M2qdylQ",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 551187,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16
+    ],
+    [
+      178.0,
+      190
+    ],
+    [
+      718.0,
+      730
+    ],
+    [
+      1138.0,
+      1150
+    ],
+    [
+      1378.0,
+      1390
+    ],
+    [
+      1918.0,
+      1930
+    ]
+  ],
+  "notes": "Argentina Televisora Color, 9 May 1982: the telethon host at the microphone, a detergent ad, then 'SOLUVEL EN LAS MALVINAS 2-4-82' over the islands and the flag — a country at war selling soap",
+  "takedown": false
+}
