@@ -1,0 +1,20 @@
+{
+  "id": "radio-pyongyang-mandarin-1999",
+  "title": "Radio Pyongyang, Mandarin service, 9445 kHz",
+  "year": 1999,
+  "src": "https://archive.org/download/sraa-radio-pyongyang-mandarin-service-april-25-1999/RadioPyongyangMandarinService-9.445MHz-25April1999-1100UTC.mp3",
+  "license": "CC-BY-NC 3.0",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.6,
+  "durS": 74.42,
+  "bytes": 617998,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "static",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[10.0, 22], [200.0, 212], [480.0, 492], [870.0, 882], [1260.0, 1272], [1680.0, 1692]],
+  "notes": "Pyongyang addressing China in Mandarin on a fading shortwave band, three years before the service was renamed Voice of Korea",
+  "takedown": false
+}
