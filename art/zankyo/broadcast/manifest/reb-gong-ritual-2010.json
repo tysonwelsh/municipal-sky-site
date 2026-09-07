@@ -1,0 +1,80 @@
+{
+  "id": "reb-gong-ritual-2010",
+  "title": "རེབ་གོང་། Reb gong — a monastery procession through Tongren",
+  "year": 2010,
+  "src": "https://archive.org/details/RebGongtongrenTibetanRitual2010",
+  "license": "unknown (ethnographic deposit, no licence stated)",
+  "tier": "B",
+  "tone": "sung",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 889052,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      226.0,
+      238.0
+    ],
+    [
+      708.0,
+      720.0
+    ],
+    [
+      862.0,
+      874.0
+    ],
+    [
+      1155.0,
+      1167.0
+    ],
+    [
+      1209.0,
+      1221.0
+    ],
+    [
+      1440.0,
+      1452.0
+    ]
+  ],
+  "notes": "Amdo: the decorated street and its thangka, monks coming out of the monastery gate, the yellow-hat procession down the town road past a truck, and the offering tables. Chanted recitation holds under most of it. Cut with --band low.",
+  "country": "China (Rebgong/Tongren, Qinghai — Amdo)",
+  "language": "Amdo Tibetan (chanted)",
+  "pitchNote": [
+    "C4",
+    "E4",
+    "F4",
+    "C#4",
+    "C#4",
+    "G4"
+  ],
+  "takedown": false
+}
