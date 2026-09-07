@@ -274,3 +274,21 @@ enough ahead to cover the longest lookahead (≥ 50 s) or the claim path
 checking planned holds, whichever the coder judges cleaner; the critic
 re-derives the base at that commit. Seeds and signatures are in the coder's
 W3 handoff.
+
+## 13. Ruling: the W4 home lift (2026-09-07)
+
+The per-cycle lift on HOME nights is gated at **one night in twelve**
+(≈ 1.04 % of home cycles), never more than one lifted cycle per night, and
+a lifted night is FLAGGED in getFar() so the identity gate partitions:
+unlifted home nights stay byte-identical (≈ 91.7 % of home nights); lifted
+nights are checked against their own recorded baseline. Removing the
+guard entirely was measured (4 000 seeds) to lift a cycle on 82 % of home
+nights — that is the removal of the invariant, not a frequency, and is
+refused. Far nights keep lift() as declared.
+
+**§12 correction:** the air-hold fix rides W4's re-base because the
+PLANNED HOLD required a re-base (rc.25 moved eleven home seeds by −4.1 %
+to +5.6 %), and because the 207-reel pool merge moved the receiver's
+draws — not because the lift touches home nights by construction (at
+1-in-12 with the flag, it touches the flagged twelfth only). The action
+stands; the reason is corrected.
