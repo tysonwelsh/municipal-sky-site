@@ -1,0 +1,20 @@
+{
+  "id": "ktv-kuwait-programmes-80s",
+  "title": "Kuwait TV: programme trailers and continuity",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=EqTHJlg58bk",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.09,
+  "bytes": 664477,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.09], [36.09, 48.09], [48.09, 60.09], [60.09, 72.09]],
+  "srcWindows": [[62.33, 74.33], [274.74, 286.74], [385.0, 397.0], [631.13, 643.13], [741.84, 753.84], [1037.0, 1049.0]],
+  "notes": "KTV in the 1980s, from a rare-archive upload; trailer beds, the continuity announcer, station stings between items",
+  "takedown": false
+}
