@@ -1,0 +1,20 @@
+{
+  "id": "voice-of-revolutionary-ethiopia-1978-1991",
+  "title": "Voice of Revolutionary Ethiopia",
+  "year": 1980,
+  "src": "https://archive.org/search?query=collection%3Ashortwave-airchecks+AND+ETHIOPIA",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 71.83,
+  "bytes": 338442,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 22.0], [22.0, 34.0], [34.0, 46.0], [46.0, 58.0], [58.0, 70.0]],
+  "srcWindows": [[4.0, 16.0], [24.0, 34.0], [60.0, 72.0], [95.0, 107.0], [195.0, 207.0], [262.0, 274.0]],
+  "notes": "Amharic off 7110 and 9560 kHz, 1978-1991: the interval signal at 0330, the anthem at 0400, announcers, and — in the last window — the same transmitter in January 1991, by then calling itself the Voice of Ethiopia.",
+  "takedown": false
+}
