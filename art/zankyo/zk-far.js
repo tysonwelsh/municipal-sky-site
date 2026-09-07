@@ -455,32 +455,34 @@ window.ZK_FAR = (function () {
   // a night lifts, which cycle, and how far are all independent of each other
   // and of everything else in the night — and forking by label never advances
   // the parent, so a home night that does NOT lift is untouched to the byte.
-  // SIX, FROM A CENSUS AND NOT FROM CONVENIENCE. My first version drew the
-  // index from twelve and a third of the flagged nights chose a cycle no run
-  // reaches; my second drew from four because a 900 s gate could see four,
-  // which is an instrument shaping the music and was struck out as such.
+  // THE CYCLE IS POISSON λ=5 (orchestrator). Not a range and not a geometric:
+  // an event that ARRIVES somewhere in the night rather than a lean toward
+  // either end. P(0) = 0.67 %, mode at 4 and 5 together, CDF(4) = 0.4405,
+  // CDF(5) = 0.6160, median 5 — verified independently rather than taken. It
+  // beats the geometric on exactly the property that bothered the owner:
+  // cycle 0 falls from 12 % to two thirds of one percent.
   //
-  // The number now comes from measurement: 100 seeds at 3600 s against a
-  // pinned build give a cycle count of 6 ×1, 7 ×7, 8 ×41, 9 ×49, 10 ×2 —
-  // minimum SIX, median nine. At K=8 the 1.13 % of lifted nights that draw a
-  // cycle their night never reaches fire nothing, and a partition gate reads
-  // that as the lift failing: one night in ninety, seed-dependent and
-  // intermittent, which is the most expensive shape of bug available to us.
-  // K=6 is the largest range with a zero miss rate. The full curve is
-  // K=6 0.00 %, K=7 0.14 %, K=8 1.13 %, K=9 6.44 %, K=10 15.60 %.
+  // THE CYCLE IS SAMPLED ON ITS OWN SUB-FORK, and that is not tidiness. Knuth's
+  // method multiplies uniforms until the product drops under e^−λ — about six
+  // draws at λ=5, sometimes three, sometimes twelve. A VARIABLE-LENGTH MIDDLE
+  // would move `d` on every lifted night, and worse, would COUPLE d to the
+  // sampler's internals forever: a different rejection bound or an early exit,
+  // years from now, would silently move d on all 371 lifted nights. Forking
+  // costs the parent nothing — pj2-rand derives a fork from seed0 without
+  // advancing it — so the sampler may take as many uniforms as it likes and d
+  // never notices. The critic caught this before I wrote the sampler.
   //
-  // It STILL leans early — a median night reaches nine cycles — and that is
-  // recorded rather than hidden. A proportional draw was ruled to replace it,
-  // but the ruling assumes the engine knows its total cycle count, and it does
-  // not: pj2-conductor plans each performance when the last one ends, so a
-  // night is unbounded and there is no total to be proportional TO. That is
-  // escalated rather than fudged.
-  var HOME_LIFT_ODDS = 1 / 12, HOME_LIFT_CYCLES = 6;
+  // Drawing d first would also work and is worse: it leaves the coupling one
+  // refactor away from returning.
+  var HOME_LIFT_ODDS = 1 / 12, HOME_LIFT_LAMBDA = 5, HOME_LIFT_CAP = 200;
   function homeLift(rng) {
     var R = rng.fork("homelift");
     var on = R.chance(HOME_LIFT_ODDS);
-    var which = Math.floor(R.next() * HOME_LIFT_CYCLES) % HOME_LIFT_CYCLES;
+    var C = R.fork("cycle");                           // its own stream — see above
     var d = 0.15 + R.rnd(0, 0.20);
+    var L = Math.exp(-HOME_LIFT_LAMBDA), which = 0, prod = 1;
+    do { which++; prod *= C.next(); } while (prod > L && which <= HOME_LIFT_CAP);
+    which -= 1;
     return on ? { cycle: which, d: d } : null;
   }
 
