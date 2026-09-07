@@ -2028,6 +2028,8 @@ window.ZankyoAudio = (function () {
   // and the receiver's single armed slot is never asked to hold two at once.
   // The two constants are related and the relation is written here because
   // changing one alone silently breaks the other.
+  var BC_JO_P = 0.20;                            // one broadcast in five opens a cycle — the same in every kind
+  var bcPlace = {};                              // dev: where the drawn broadcasts landed, by scene type
   var BC_ARM_LEAD_S = 55;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
@@ -2229,10 +2231,33 @@ window.ZankyoAudio = (function () {
     var legal = [], acc = 0, li;
     for (li = 0; li < scenes.length; li++) {
       var sc0 = scenes[li];
-      if (LEGAL[sc0.type] && sc0.durS > BC_EDGE_S * 2) legal.push([acc + BC_EDGE_S, acc + sc0.durS - BC_EDGE_S]);
+      if (LEGAL[sc0.type] && sc0.durS > BC_EDGE_S * 2) legal.push([acc + BC_EDGE_S, acc + sc0.durS - BC_EDGE_S, sc0.type]);
       acc += sc0.durS;
     }
-    var legalS = 0; for (li = 0; li < legal.length; li++) legalS += legal[li][1] - legal[li][0];
+    // THE SCENE IS DRAWN FIRST, THEN THE POSITION IN IT (orchestrator's ruling
+    // on the jo share; the critic's on how to implement it, and the second half
+    // matters as much as the first).
+    //
+    // Drawing uniformly over legal SECONDS put most broadcasts in the jo
+    // because the jo is simply the longest scene — measured on this build,
+    // 0.69 / 0.38 / 0.45 across three seeds. Weighting jo seconds down would
+    // fix the average and nothing else: the jo's share of legal time runs from
+    // 28.6 % on a storm to 66.3 % on a rite, so one global weight tuned to the
+    // average gives 8.3 % on a storm and 30.7 % on a rite. Right on average and
+    // wrong in every kind, and nobody would have chosen that.
+    //
+    // So P(jo) is the constant, not a weight on it: one broadcast in five opens
+    // a cycle, in EVERY kind, and the listener-facing number is the number in
+    // the code rather than something that emerges from six duration tables.
+    // The owner moves one value after listening and it means the same thing on
+    // every night.
+    var legalS = 0, joSegs = [], otherSegs = [], joS = 0, otherS = 0;
+    for (li = 0; li < legal.length; li++) {
+      var wlen = legal[li][1] - legal[li][0];
+      legalS += wlen;
+      if (legal[li][2] === "jo") { joSegs.push(legal[li]); joS += wlen; }
+      else { otherSegs.push(legal[li]); otherS += wlen; }
+    }
     var guestT = null;
     if (visit && visit.name !== "the broadcast") {
       guestT = 0; for (li = 0; li < visit.sceneIdx; li++) guestT += scenes[li].durS;
@@ -2243,17 +2268,29 @@ window.ZankyoAudio = (function () {
     var BR = rng.fork("bc:" + Math.max(0, cyc.n + 1));
     var want = legalS >= 180 ? 2 : 1, picks = [], tries;
     for (var pk = 0; pk < want; pk++) {
+      // THE GROUP IS DRAWN ONCE PER BROADCAST, OUTSIDE THE RETRY. Drawing it
+      // inside biased the result badly and subtly: the second pick must clear
+      // 95 s of the first, so when the first lands in the ha a second ha
+      // position is usually rejected while a jo one is not — rejection
+      // sampling quietly re-weights toward whichever group is FAR from what is
+      // already placed. Measured with the draw inside the loop, P(jo) = 0.20
+      // delivered 0.22 to 0.45 depending on how the ha was split. Drawn once,
+      // the constant means what it says and only the POSITION is retried.
+      var wantJo = BR.chance(BC_JO_P);
+      var grp = (wantJo && joSegs.length) ? joSegs : (otherSegs.length ? otherSegs : joSegs);
+      var grpS = (grp === joSegs) ? joS : otherS;
       for (tries = 0; tries < 24; tries++) {
-        var u = BR.next() * legalS, seg = 0, off = 0;
-        for (li = 0; li < legal.length; li++) {
-          var w = legal[li][1] - legal[li][0];
-          if (u <= seg + w) { off = legal[li][0] + (u - seg); break; }
+        // …then uniformly within it, so position inside a scene stays even
+        var u = BR.next() * grpS, seg = 0, off = 0, hit = grp[0];
+        for (li = 0; li < grp.length; li++) {
+          var w = grp[li][1] - grp[li][0];
+          if (u <= seg + w) { hit = grp[li]; off = grp[li][0] + (u - seg); break; }
           seg += w;
         }
         var ok = true;
         if (guestT != null && Math.abs(off - guestT) < BC_GAP_S) ok = false;
         for (var qi = 0; qi < picks.length; qi++) if (Math.abs(off - picks[qi]) < BC_GAP_S) ok = false;
-        if (ok) { picks.push(off); break; }
+        if (ok) { picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1; break; }
       }
     }
     picks.sort(function (a, b) { return a - b; });
@@ -5125,6 +5162,8 @@ window.ZankyoAudio = (function () {
     getRooms: function () { return { hull: roomHull, corridor: roomCorridor, blend: roomBlend, farWall: farWall, halo: halo }; },
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
+    getPlacement: function () { var o = {}, k, n = 0; for (k in bcPlace) { o[k] = bcPlace[k]; n += bcPlace[k]; }
+      o.total = n; o.joShare = n ? +(( bcPlace.jo || 0) / n).toFixed(4) : 0; o.joP = BC_JO_P; return o; },
     // the gates' handle on the two fault classes (rc.21)
     getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
       maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S }; },

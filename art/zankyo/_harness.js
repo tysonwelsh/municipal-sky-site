@@ -507,7 +507,24 @@ const melPer30 = melodicNotes * 1800 / RUN;
 // phantoms, or teaches them to ignore a red VERDICT. So it is scoped to its
 // seeds and the number is reported on every other one.
 var CANON_SEED = (SEED === 3042 || SEED === 7);
-if (RUN >= 1500 && CANON_SEED && (melPer30 < 1650 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3300 (regression bound, seeds 3042/7; base spread 1084–4191)");
+// The lower bound moves with the two-broadcasts-a-cycle change, and it is a
+// RE-BASE rather than a tuning. Two broadcasts hold the air where one did, and
+// the measured cost is 6 to 8 % of the melodic notes (3042 1728→1627,
+// 7 2113→1938, 11 2007→1860 over 4 h) — intended, ruled, and reported to the
+// owner as the character line. A regression bound calibrated against the
+// one-broadcast build therefore fails on the change it was never measuring:
+// seed 3042 reads 1647 at 7200 s against a floor of 1650.
+//
+// 1650 × 0.92 is 1518, so the floor moves to 1500 — the same proportion as the
+// change, not the distance to whatever number happened to fail. It remains a
+// real bound: the base spread is 1084 to 4191, so 1500 is well inside it and a
+// genuine collapse would still be caught.
+//
+// Note the figure is RUN-LENGTH DEPENDENT and always was: seed 3042 reads 2385
+// at 1800 s, 1818 at 3600 and 1647 at 7200, while seed 7 climbs 1971 → 2150 →
+// 2271. Comparing two runs of different lengths through this gate means
+// nothing, which is worth knowing before anyone quotes it.
+if (RUN >= 1500 && CANON_SEED && (melPer30 < 1500 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1500–3300 (regression bound, seeds 3042/7; base spread 1084–4191)");
 if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
 if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
 // Phase 2 gates (plan §7): ≥ 1 sea change per hour; seed pool ≥ 12 over a long run; ≥ 8 distinct aitake voicings
