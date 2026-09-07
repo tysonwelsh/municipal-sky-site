@@ -1,0 +1,20 @@
+{
+  "id": "vok-kenya-mambo-leo",
+  "title": "Mambo Leo — Voice of Kenya",
+  "year": 1980,
+  "src": "https://youtu.be/dzfc396HNrY",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 66.0,
+  "bytes": 554299,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 22.0], [22.0, 32.0], [32.0, 44.0], [44.0, 56.0], [56.0, 66.01]],
+  "srcWindows": [[2.0, 12.0], [45.0, 57.0], [110.0, 120.0], [130.0, 142.0], [193.0, 205.0], [268.0, 278.0]],
+  "notes": "The VOK YAWALETEA card, a band in the studio, a presenter talking straight down the lens, and the Asian Service's tabla and harmonium — Voice of Kenya television off a worn tape.",
+  "takedown": false
+}
