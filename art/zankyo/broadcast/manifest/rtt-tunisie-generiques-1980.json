@@ -1,0 +1,20 @@
+{
+  "id": "rtt-tunisie-generiques-1980",
+  "title": "Génériques de la Télévision Tunisienne",
+  "year": 1985,
+  "src": "https://youtu.be/zf8vbbwGgwY",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "music",
+  "weight": 2,
+  "gain": -0.4,
+  "durS": 60.01,
+  "bytes": 462493,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[4.0, 14.0], [20.0, 30.0], [36.0, 46.0], [52.0, 62.0], [68.0, 78.0], [84.0, 94.0]],
+  "notes": "The opening titles of the Tunisian television news, oldest first: an orbiting globe, شريط الأنباء, a newsreader at a bare desk. Windows kept inside the compilation's pre-1995 half.",
+  "takedown": false
+}
