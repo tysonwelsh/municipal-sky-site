@@ -237,7 +237,47 @@ window.ZK_FAR = (function () {
     { id: "metal", kana: "金", name: "metal", family: "音色", d: 0.35, w: 2.6, phase: "W3",
       // Ring modulation of the shō by the sub-drone; the bells and the koto
       // through FM. Inharmonic, gong-like, still pitched.
-      params: function (R, d, amt) { return { ringMix: 0.2 + 0.5 * amt, fmIndex: 0.5 + 3 * amt, targets: R.pick([["sho"], ["sho", "koto"], ["koto"]]) }; } },
+      // §10 (owner, 2026-09-07): the roughness gate is TIERED by distance and
+      // 金 is named as allowed to be abrasive above 0.7. `bite` is that ruling
+      // as a number — nothing at or below 0.70, rising across the loosened
+      // 0.70–0.85 band, full where there is no roughness gate at all. Below
+      // 0.70 every value here is exactly what it was, because that band was
+      // ruled unchanged.
+      params: function (R, d, amt) {
+        var bite = d <= 0.70 ? 0 : d >= 0.85 ? 1 : (d - 0.70) / 0.15;
+        var targets = R.pick([["sho"], ["sho", "koto"], ["koto"]]);   // the draw is kept, and kept FIRST, so the low band is untouched
+        if (bite > 0) {
+          // In the loosened band both of the pitched targets are metal; at the
+          // top the plucked trio goes with them and the ensemble is struck
+          // rather than blown. Widening, never narrowing, so a night that drew
+          // ["sho"] keeps its shō.
+          if (targets.indexOf("sho") < 0) targets = targets.concat(["sho"]);
+          if (targets.indexOf("koto") < 0) targets = targets.concat(["koto"]);
+          // NO FURTHER, and the reason is the peak cap, which §10 kept hard.
+          // FM costs an oscillator and a gain PER NOTE and the strings are the
+          // dense bodies: adding shamisen and biwa took seed 810 from 107
+          // concurrent sources to 116, and shamisen alone still left only one
+          // source of headroom on seeds 810 and 122 (108 and 109 against 110).
+          // A gate with a margin of one is a gate that an unsampled seed
+          // breaches. So the whole of the top tier's escalation goes into the
+          // RING, which costs nothing per note — one modulator serves the
+          // night — and into the FM index on the two targets already there.
+        }
+        return {
+          // THE RING IS THE DARKENING TERM and it is the one to push. dry is
+          // 1 - ringMix, so ringMix 1 leaves no pipe at all — only its own
+          // sidebands, which sit symmetrically about each partial with the
+          // carrier multiplied away. That is a struck bell instead of a blown
+          // pipe, and it costs the centroid nothing: the critic measured the
+          // ratio at 0.85 over 900 s, DARKER than home. The centroid gate is
+          // not tiered and does not need to be.
+          ringMix: Math.min(1, 0.2 + 0.5 * amt + 0.30 * bite),
+          // FM is the term that BRIGHTENS — index buys sidebands and width —
+          // so it rises far less. This is the one place 金 can still fail a
+          // gate that stayed hard everywhere.
+          fmIndex: 0.5 + 3 * amt + 1.5 * bite,
+          targets: targets, bite: bite };
+      } },
     { id: "rev", kana: "逆", name: "reverse", family: "音色", d: 0.40, w: 2.2, phase: "W3",
       // Envelopes reversed: plucks that swell, breaths that end in the attack.
       // A tape played backwards.
@@ -249,7 +289,14 @@ window.ZK_FAR = (function () {
     { id: "nlead", kana: "騒", name: "noise leads", family: "音色", d: 0.60, w: 1.8, phase: "W3",
       // The japanoise vocabulary becomes the soloist, claims the air, and the
       // melodic voices become the texture behind it.
-      params: function (R, d, amt) { return { share: 0.3 + 0.5 * amt, holdS: 12 + 40 * amt }; } },
+      // §10 (owner, 2026-09-07): above 0.85 there is no roughness gate at all
+      // and 騒 is named as allowed to be abrasive. `bite` carries that the same
+      // way 金's does — nothing at or below 0.70, so the band the ruling left
+      // alone is left alone.
+      params: function (R, d, amt) {
+        var bite = d <= 0.70 ? 0 : d >= 0.85 ? 1 : (d - 0.70) / 0.15;
+        return { share: 0.3 + 0.5 * amt, holdS: 12 + 40 * amt, bite: bite };
+      } },
     { id: "phase", kana: "相", name: "phasing", family: "音色", d: 0.60, w: 1.6, phase: "W3",
       // Two copies of a signal's two-second window drift out of phase (Reich)
       // instead of the receiver's usual tune-in / hold / loss.

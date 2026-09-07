@@ -673,6 +673,16 @@ window.ZankyoAudio = (function () {
     if (!farMirror || !phrase || phrase.length < 3 || !sched || !sched.length) return;
     var ans = FAR_MIRROR_ANSWER[voice];
     if (!ans || !seated(ans, now)) return;
+    // 鏡 DOES NOT ANSWER INSIDE AN ENSEMBLE GESTURE. Under 重 all five voices
+    // play the same phrase, so every one of them called for its own answer and
+    // five answers landed on a gesture that was already five voices deep. Seed
+    // 19 at d 0.90 (崩 重 多 鏡) peaked at 113 concurrent sources against the
+    // cap of 110 that §10 kept hard — 94 at d 0.85, where the same night draws
+    // no 鏡. It is the right musical answer as well as the affordable one: an
+    // answer is a SHAPE, and a shape inside a five-voice heterophony is not
+    // audible as one. That is the same reason this function holds the
+    // answerer's air at all. Between gestures 鏡 answers exactly as before.
+    if (farSubject && farEnsemble() && now < farSubject.at + (FAR_ENS_GAP[farSubject.mode] || 4)) return;
     var axisDeg = farMirror.axis === "tonic" ? scaleIndexOf(0)
                 : farMirror.axis === "fifth" ? scaleIndexOf(3)
                 : phrase[phrase.length - 1].deg;
@@ -3948,6 +3958,49 @@ window.ZankyoAudio = (function () {
     var wx = wxAt(now), body = noiseBody();
     var dur = 2 + S.noise.next() * 5 + arc * 4;
     var peak = (0.05 + arc * 0.22) * (0.4 + density) * K().noiseMul;   // the storm's wall, the drift's hiss
+    // ------------------------------------------------------------------
+    // 騒 NOISE LEADS (W3). "The japanoise vocabulary becomes the soloist,
+    // claims the air, and the melodic voices become the texture behind it."
+    //
+    // The soloist is made by TAKING THE AIR, not by turning the noise up. The
+    // master loudness ceiling stayed hard in §10 while the roughness gate was
+    // tiered, so a departure that leads by getting louder is a departure that
+    // fails a gate the owner deliberately did not move. The melodic voices
+    // standing down is what frees the room, and it is the same seam the
+    // broadcast uses to hold the air — proven, and already watched by the
+    // harness's "melodic notes inside a hold" count.
+    //
+    // ONE VOICE IS LEFT PLAYING, drawn on the departure's own sub-fork. "The
+    // melodic voices become the texture behind it" is not "the melodic voices
+    // stop": a single body murmuring under a fifty-second wall is the texture,
+    // and five bodies silent is just a noise track.
+    //
+    // The decision is a time-keyed sub-fork of the far stream, the same idiom
+    // 凍 uses, so it costs the far stream nothing and no draw moves.
+    var nlead = null;
+    if (farNlead) {
+      var NR = S.far.fork("nlead:" + Math.round(now));
+      var takes = NR.chance(farNlead.share);                       // drawn unconditionally: the fork's position never depends on the outcome
+      var spare = MELODIC_LANES[Math.floor(NR.next() * MELODIC_LANES.length) % MELODIC_LANES.length];
+      var stretch = NR.rnd(0.7, 1.3);
+      if (takes) nlead = { spare: spare, holdS: farNlead.holdS * stretch, bite: farNlead.bite || 0 };
+    }
+    if (nlead) {
+      dur = nlead.holdS;
+      // THE LEVEL LIFT IS ENTIRELY THE TIER'S. At and below 0.70 — the band
+      // §10 left on the tripwire as ruled — this is ×1 exactly: 騒 leads there
+      // by taking the air and by nothing else, which is a change in who is
+      // speaking rather than in how loud the room is. The lift arrives only
+      // across the loosened band and is full where there is no roughness gate
+      // at all. The master ceiling is unmoved either way; the headroom comes
+      // from the four voices that stood down.
+      peak *= 1 + 0.5 * nlead.bite;
+      for (var nli = 0; nli < MELODIC_LANES.length; nli++) {
+        if (MELODIC_LANES[nli] === nlead.spare) continue;
+        airHold[MELODIC_LANES[nli]] = { from: now - 0.2, until: now + dur + 0.4 };
+      }
+      emitEvent({ cat: "far", label: "騒 the noise takes the lead", detail: body + " · " + dur.toFixed(0) + "s · " + nlead.spare + " left behind it" }, now);
+    }
     if (body === "screech" && arc > 0.3) {
       // excite a short burst into the loop; the centre sweeps up then down
       var nz0 = noiseSource(), exg = c.createGain(), dl = c.createDelay(0.05), bpq = c.createBiquadFilter(), fb = c.createGain(), og = c.createGain();
@@ -4012,6 +4065,10 @@ window.ZankyoAudio = (function () {
     }
 
     var gap = (6 + S.noise.next() * 10) * (1 - arc * 0.6) / (0.4 + density) / K().noiseMul;
+    // 騒: a set, not an interjection — the next wall begins before this one has
+    // finished. Keyed to the gesture rather than the ordinary gap, because a
+    // 6–16 s gap under a fifty-second wall would stack walls without bound.
+    if (nlead) gap = Math.max(2, dur * 0.8);
     after("noise", now, gap, noiseEvent);
   }
 
