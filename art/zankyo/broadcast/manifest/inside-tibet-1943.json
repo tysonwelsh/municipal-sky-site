@@ -10,6 +10,7 @@
   "gain": -0.1,
   "durS": 120.0,
   "bytes": 1322226,
+  "band": "normal",
   "audioOnly": false,
   "picture": null,
   "windows": [
