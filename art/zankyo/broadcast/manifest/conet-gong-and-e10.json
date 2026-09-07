@@ -1,0 +1,86 @@
+{
+  "id": "conet-gong-and-e10",
+  "title": "The Gong Station and E10 (numbers stations)",
+  "year": 1997,
+  "src": "https://archive.org/details/ird059",
+  "license": "Irdial FMP (non-commercial)",
+  "tier": "A",
+  "tone": "tone",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 98.0,
+  "bytes": 819666,
+  "band": "low",
+  "audioOnly": true,
+  "picture": "static",
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      84.0,
+      96.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      15
+    ],
+    [
+      65.0,
+      77
+    ],
+    [
+      137.0,
+      149
+    ],
+    [
+      158.0,
+      170
+    ],
+    [
+      214.0,
+      226
+    ],
+    [
+      282.0,
+      294
+    ],
+    [
+      324.0,
+      336
+    ],
+    [
+      388.0,
+      400
+    ]
+  ],
+  "notes": "Conet Project d1-07 and d2-27: a struck gong then figures, and E10's 'Nancy Adam Susan' — the phonetic callup Israel never explained",
+  "takedown": false
+}
