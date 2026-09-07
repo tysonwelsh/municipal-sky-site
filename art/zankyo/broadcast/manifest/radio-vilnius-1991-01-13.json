@@ -1,0 +1,20 @@
+{
+  "id": "radio-vilnius-1991-01-13",
+  "title": "Radio Vilnius, 9.750 MHz, 13 January 1991, 2300 UTC",
+  "year": 1991,
+  "src": "https://archive.org/details/sraa-radio-vilnius-1990-1991-5th-recording-january-13-1991",
+  "license": "CC-BY-NC-3.0",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 110.25,
+  "bytes": 921555,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "static",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0]],
+  "srcWindows": [[6.0, 18.0], [120.0, 132.0], [196.0, 208.0], [405.0, 417.0], [695.0, 707.0], [915.0, 927.0], [1155.0, 1167.0], [1575.0, 1587.0], [1735.0, 1747.0]],
+  "notes": "the Lithuanian external service on shortwave the night Soviet troops took the Vilnius television tower, recorded off air by a listener half a world away; the signal fades under the noise and comes back, over and over, for twenty-nine minutes",
+  "takedown": false
+}
