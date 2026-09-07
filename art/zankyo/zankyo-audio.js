@@ -1496,12 +1496,20 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // LISTENERS / LOG
   // ==========================================================================
+  // The five melodic bodies, and NOT the PA. The PA is held by a broadcast like
+  // the rest, but 回線 bulk-schedules a whole conversation across its own span
+  // (visitLine walks `t` forward through the visitation), so its commit lead
+  // reaches 105 s and would swamp this measurement while telling us nothing
+  // about the five voices the relation exists to protect. The PA's own lead is
+  // reported separately, because it is a gap rather than a non-issue: see
+  // paLead below.
+  var MEL_LEAD = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };
   var noteListeners = [], eventListeners = [];
   // THE FAULT TALLY (rc.21). Two classes the gates could not see: a lane that
   // threw, and a note scheduled with a non-finite frequency, time or duration.
   // Counting only — no behaviour changes, no RNG is touched, so home nights
   // stay byte-identical. _harness.js reads it and fails on any.
-  var faults = { lanes: 0, notes: 0, lane: [], note: [] };
+  var faults = { lanes: 0, notes: 0, lane: [], note: [], maxLead: 0, maxLeadLayer: null, paLead: 0 };
   // EVERY SCHEDULED NOTE IS FINITE. The companion tripwire to the lane tally:
   // a non-finite frequency reaches an oscillator as "non-finite float" and, via
   // N = round(sr / freq), a non-finite frame count in createBuffer — both throw
@@ -1510,6 +1518,24 @@ window.ZankyoAudio = (function () {
   // the owner's night must not break because a gate wants to be loud. The
   // harness fails on a single one.
   function emitNote(layer, freq, startTime, duration) {
+    // HOW FAR AHEAD DID THIS VOICE COMMIT? The air hold is written
+    // BC_ARM_LEAD_S before a broadcast; a body that commits FURTHER ahead than
+    // that schedules a note the hold cannot yet refuse, which is plan §12
+    // exactly. The relation "arm lead > commit lead" was written in a comment
+    // and justified by a measured maximum — and a measured maximum drifts the
+    // moment somebody adds a slower body or a time departure that reaches
+    // further. Nothing would fail; §12 would quietly re-open on the nights
+    // that draw it. So the relation is recorded here and ASSERTED by the
+    // harness against the engine's own constant, never a copy of it.
+    //
+    // Diagnostic only: it reads ctx.currentTime, which is a "now", but it
+    // feeds no musical decision and no stream. The note and event signatures
+    // REPRO compares are untouched by it.
+    if (ctx && isFinite(startTime)) {
+      var lead = startTime - ctx.currentTime;
+      if (MEL_LEAD[layer]) { if (lead > faults.maxLead) { faults.maxLead = lead; faults.maxLeadLayer = layer; } }
+      else if (layer === "pa" && lead > faults.paLead) faults.paLead = lead;
+    }
     if (!(isFinite(freq) && isFinite(startTime) && isFinite(duration || 0))) {
       faults.notes++;
       if (faults.note.length < 12) faults.note.push({ layer: layer, freq: freq, t: startTime, dur: duration });
@@ -5100,7 +5126,8 @@ window.ZankyoAudio = (function () {
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
     // the gates' handle on the two fault classes (rc.21)
-    getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice() }; },
+    getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
+      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.

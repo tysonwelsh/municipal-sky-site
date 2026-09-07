@@ -449,11 +449,27 @@ if (FAULTS.lanes || FAULTS.notes) {
   FAULTS.lane.forEach((f) => console.log("  lane " + f.lane + " @" + f.t + "s — " + f.msg));
   FAULTS.note.forEach((f) => console.log("  note " + f.layer + " freq=" + f.freq + " t=" + f.t + " dur=" + f.dur));
 } else console.log("faults: no lane threw, every scheduled note finite ✓");
+// THE ARM LEAD MUST OUTREACH THE VOICES. A body that commits a note further
+// ahead than the air hold is written schedules something the hold cannot yet
+// refuse — plan §12, exactly. The relation was a comment justified by a
+// measured maximum (35.55 s worst, against a 55 s lead); measured maxima drift
+// when a slower body or a further-reaching time departure is added, and §12
+// would re-open silently on the nights that draw it. Compared against the
+// ENGINE'S OWN constant rather than a copy, so the two cannot disagree.
+if (FAULTS.armLeadS && FAULTS.maxLead) {
+  const marg = FAULTS.armLeadS - FAULTS.maxLead;
+  console.log("commit lead: worst " + FAULTS.maxLead.toFixed(2) + "s (" + FAULTS.maxLeadLayer +
+    ") against an arm lead of " + FAULTS.armLeadS + "s — margin " + marg.toFixed(2) + "s" + (marg > 0 ? " ✓" : " ✗") +
+    (FAULTS.paLead > FAULTS.armLeadS ? "   [PA reaches " + FAULTS.paLead.toFixed(1) + "s — 回線 bulk-schedules; not asserted, see §12 note]" : ""));
+}
 
 // ---- verdicts ----
 const fails = [];
 if (FAULTS.lanes) fails.push(FAULTS.lanes + " lane throw(s) — " + FAULTS.lane.map((f) => f.lane + ": " + f.msg).slice(0, 3).join(" | "));
 if (FAULTS.notes) fails.push(FAULTS.notes + " note(s) scheduled with a non-finite freq/time/duration");
+if (FAULTS.armLeadS && FAULTS.maxLead >= FAULTS.armLeadS)
+  fails.push("a voice committed " + FAULTS.maxLead.toFixed(2) + "s ahead (" + FAULTS.maxLeadLayer +
+    "), beyond the " + FAULTS.armLeadS + "s arm lead — the air hold cannot refuse a note that early (plan §12)");
 // Scale adherence is a HOME gate. 耳 bends the koto off the grid by ear, 減
 // narrows semitone pairs toward quarter-tones, 螺 spirals the whole field —
 // leaving the scale is what the far tail IS, so the check only binds at home.
