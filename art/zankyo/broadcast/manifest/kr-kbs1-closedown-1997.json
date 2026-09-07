@@ -1,0 +1,20 @@
+{
+  "id": "kr-kbs1-closedown-1997",
+  "title": "KBS1 방송종료 + 애국가 1절 (news end, closedown, anthem)",
+  "year": 1997,
+  "src": "https://youtu.be/GJrH4CQ0a4w",
+  "license": "none stated; KBS closedown, copyrighted",
+  "tier": "B",
+  "tone": "sung",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 60.01,
+  "bytes": 609750,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[0.0, 10.0], [34.0, 44.0], [82.0, 92.0], [94.0, 104.0], [118.0, 128.0], [133.0, 143.0]],
+  "notes": "the end of a Korean broadcasting day: the newsreader signing off against a night skyline, the weather caption 전국 한두 차례 비, the card thanking everyone who watched this late, then 애국가 over the Taegukgi, a sunrise on water, city aerials, egrets on a nest, a waterfall, a child laughing and a lit dome",
+  "takedown": false
+}
