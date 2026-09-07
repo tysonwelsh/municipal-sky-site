@@ -1,0 +1,70 @@
+{
+  "id": "dziennik-telewizyjny-1984",
+  "title": "Dziennik Telewizyjny — 22 lipca 1984",
+  "year": 1984,
+  "src": "https://youtu.be/DGALppOlKnQ",
+  "license": "unknown (TVP archive material, uploader copy)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.03,
+  "bytes": 623612,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.01
+    ]
+  ],
+  "srcWindows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      386.0,
+      398.0
+    ],
+    [
+      646.0,
+      658.0
+    ],
+    [
+      698.0,
+      710.0
+    ],
+    [
+      1818.0,
+      1830.0
+    ],
+    [
+      1845.0,
+      1857.0
+    ]
+  ],
+  "notes": "the evening news of the Polish People's Republic on its national holiday: the DTV logo assembling over the map of Poland, the reader and his red telephone, the MOSKWA / BERLIN / PARYŻ correspondent cards, the weather map, and the closing DZIENNIK sting",
+  "takedown": false
+}
