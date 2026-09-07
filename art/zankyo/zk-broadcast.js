@@ -668,7 +668,39 @@
       var phased = farPhaseTap(sg, t0, holdS, lossD, N);
       (phased || sg).connect(T.lg("broadcast"));
       farRoomCapture(sg, t0 + TUNE_S + 1.0);      // 室: two seconds of the reel, once it is properly tuned in
-      // the burst after the collapse: pure static, then the afterglow
+      // 螺 / 弛 — THE REEL RIDES THE GLIDE. The station's whole field slides
+    // under a spiral or a varispeed: 螺 reaches 200–700 cents, 弛 100–400, and
+    // together up to 1100. The air hold silences the five melodic voices and
+    // the PA, but NOT the sub-drone and NOT the shō — and both follow the
+    // glide explicitly through glidePartial. So a reel that held still would
+    // be the one thing in the room not moving, against precisely the two
+    // sustained pitched voices left sounding under it.
+    //
+    // Evaluating the degree once at "air time" does not fix this and is the
+    // wrong shape of answer: 螺's drawn slope is 0.6–4.0 cents/s, so the field
+    // moves up to 48 cents across a 12 s hold — five times the gate — and a
+    // snapshot is in tune for one instant. Tracking dissolves the question of
+    // WHICH instant to snapshot, which is also why it is the right design and
+    // not merely the thorough one.
+    //
+    // The tuning bend stays unglided and stays capped; the glide multiplies on
+    // top, exactly as it does for every voice. It is always downward, so the
+    // reel runs SLOWER and consumes less of its window than `need × rate`
+    // reserved — the in-point stays conservative. Nothing is scheduled at all
+    // unless the night glides, so home nights add no events.
+    // The reel must SOUND at degreeHz × glide(t); its rate is degreeHz/pitchHz,
+    // so the playback rate is simply rate × glide(t) — no reference value and
+    // nothing to divide out.
+    if (T.gliding && T.gliding() && T.glideMul) {
+      for (var gt = t0 + 0.5; gt < cut; gt += 0.5) {
+        (function (tt) {
+          T.lane("broadcast").at(tt - 0.05, function () {
+            try { if (video && !video.paused) video.playbackRate = rate * T.glideMul(tt); } catch (e) {}
+          });
+        })(gt);
+      }
+    }
+    // the burst after the collapse: pure static, then the afterglow
       var bn = N(T.noiseSource()), bh = N(c.createBiquadFilter()), bg = N(c.createGain());
       bh.type = "highpass"; bh.frequency.setValueAtTime(1800, burstAt);
       bn.connect(bh); bh.connect(bg); bg.connect(T.lg("broadcast"));
@@ -697,7 +729,7 @@
         // whole idiom — a reel bent to the field also runs slow or fast, and
         // that is the sound of a machine, not a pitch-shifter.
         try { v.preservesPitch = false; v.mozPreservesPitch = false; v.webkitPreservesPitch = false; } catch (e2) {}
-        v.playbackRate = rate;
+        v.playbackRate = rate * (T.glideMul ? T.glideMul(t0) : 1);
         var p = v.play(); if (p && p.catch) p.catch(function () {});
       } catch (e) {} }, lead);
     });
@@ -714,8 +746,15 @@
       T.emitEvent({ cat: "rx", label: "同調", detail: "the station tunes to the signal · reel " + a.pitchHz.toFixed(2) +
         " Hz · tonic → " + seaHz.toFixed(2) + " Hz · reel unbent" }, t0 + TUNE_S);
     } else if (rate !== 1 && a.pitchHz > 0) {
+      // The line must describe what is SOUNDING, not what was drawn. On a
+      // gliding night the element's rate is rate × glide(t) and the reel
+      // follows the field down all through the hold, so a reader comparing
+      // this line against the element — or against an FFT — would otherwise
+      // find a discrepancy that is the glide doing its job. Say so.
+      var gl = (T.gliding && T.gliding()) ? T.glideMul(t0 + TUNE_S) : 1;
       T.emitEvent({ cat: "rx", label: "同調", detail: "reel " + a.pitchHz.toFixed(2) + " Hz → " + (a.pitchHz * rate).toFixed(2) +
-        " Hz · " + (a.cents > 0 ? "+" : "") + a.cents.toFixed(1) + " cents · rate " + rate.toFixed(4) }, t0 + TUNE_S);
+        " Hz · " + (a.cents > 0 ? "+" : "") + a.cents.toFixed(1) + " cents · rate " + rate.toFixed(4) +
+        (gl !== 1 ? " · riding the glide, ×" + gl.toFixed(4) + " at air (" + (1200 * Math.log(gl) / Math.LN2).toFixed(1) + " cents) and tracking" : "") }, t0 + TUNE_S);
     }
     T.lane("broadcast").at(cut, function () {
       T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" }, cut);

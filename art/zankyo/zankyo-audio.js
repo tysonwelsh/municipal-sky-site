@@ -4783,6 +4783,15 @@ window.ZankyoAudio = (function () {
           // the FIELD-level warp only; 減 and 螺 do their own work on the mode
           // steps and I have not measured whether the fifth moves under them.
           degreeHz: function (cents) { return farWarp(field.tonicHz * Math.pow(2, (+cents || 0) / 1200)); },
+          // 螺 AND 弛 ARE TRANSPOSITION, NOT TUNING — the engine's own rule, and
+          // the reason `degreeHz` above deliberately does NOT carry them: they
+          // multiply last, over everything, and they are a function of TIME.
+          // A reel is part of the station's world, so it rides them like every
+          // other voice; the receiver multiplies its playback rate by this
+          // across the hold. 1 at home and on any night without 螺 or 弛, so
+          // the receiver schedules nothing at all on those nights.
+          glideMul: function (t) { return farGlideOn ? farGlideMul(t) : 1; },
+          gliding: function () { return !!farGlideOn; },
           // §11.3 TUNED SIGNALS — the station tunes to the REEL. On a far
           // night (d ≥ 0.5) a reel that holds a pitch may pull the field to it
           // as it tunes in, and then plays unbent: the tape is not warped, the
