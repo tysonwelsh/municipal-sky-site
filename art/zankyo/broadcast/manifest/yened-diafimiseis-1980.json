@@ -1,0 +1,20 @@
+{
+  "id": "yened-diafimiseis-1980",
+  "title": "YENED commercials",
+  "year": 1980,
+  "src": "https://www.youtube.com/watch?v=kXx0G-kvxRU",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 60.01,
+  "bytes": 750679,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[32.36, 42.36], [61.0, 71.0], [88.88, 98.88], [110.72, 120.72], [138.24, 148.24], [165.76, 175.76]],
+  "notes": "the Greek armed-forces channel in its last years before it became ERT2; jingles, product names, a sung tag, an announcer's close",
+  "takedown": false
+}
