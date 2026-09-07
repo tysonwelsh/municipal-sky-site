@@ -1,0 +1,20 @@
+{
+  "id": "macau-tdm-falar-1984",
+  "title": "TDM — Falar de Macau",
+  "year": 1984,
+  "src": "https://archive.org/download/tdm-falar-de-macau-1984/TDM%20Falar%20de%20Macau%201984.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 665169,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[58.56, 70.56], [143.0, 155.0], [269.0, 281.0], [419.0, 431.0], [457.0, 469.0], [531.0, 543.0]],
+  "notes": "Portuguese narration over the Igreja de S. Domingos, a crowned Christ, a Dominican friar; the tape gives out into chroma tearing",
+  "takedown": false
+}
