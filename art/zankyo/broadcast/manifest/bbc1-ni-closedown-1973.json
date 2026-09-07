@@ -1,0 +1,20 @@
+{
+  "id": "bbc1-ni-closedown-1973",
+  "title": "BBC1 Northern Ireland — late news, weather, closedown",
+  "year": 1973,
+  "src": "https://youtu.be/kh1p9hH9p8I",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 497179,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[16.0, 28.0], [44.0, 56.0], [110.0, 122.0], [160.0, 172.0], [214.0, 226.0], [260.0, 272.0]],
+  "notes": "the NI knot held over the Late News; a weather card of cloud and rain beside a Gothic window; 'THEY MAKE MUSIC TOMORROW 10.15'; the anthem",
+  "takedown": false
+}
