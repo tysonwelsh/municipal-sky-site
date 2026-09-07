@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.17], [36.17, 48.17], [48.17, 60.25], [60.25, 72.25]],
   "srcWindows": [[0.0, 12], [64.0, 76], [264.0, 276], [408.0, 420], [632.0, 644], [736.0, 748]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "night-game eyecatch; Takara Can Chu-hi with Boy George; MBS News open; tomorrow's Kansai weather map; the Marcos press conference relayed from Manila dissolving into rainbow bars; anchor on the phone to the Manila reporter",
   "takedown": false
 }

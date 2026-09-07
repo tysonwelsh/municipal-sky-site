@@ -1827,6 +1827,7 @@ window.ZankyoAudio = (function () {
   // per-voice window {from, until}; a claim inside it is denied (counted).
   // The drones, shō, noise and ambient never ask, so they continue.
   var airHold = {}, airHoldDenials = 0;
+  var kiruAt = -1e9, kiruHushUntil = -1e9;       // §11.3: when the last KIRU cut, and when its hush is over
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
@@ -4410,6 +4411,13 @@ window.ZankyoAudio = (function () {
     var sev = metaSeverity();
     var dip = 0.3 - 0.22 * sev;                                           // hush depth: 0.3 → 0.08 of the landscape
     var hold = 3 + 6 * sev;                                               // held silence: ~3 s → ~9 s
+    // §11.3's hush gate needs the hush to be a FACT and not an inference.
+    // Signals already never fire in a KIRU or its hush — the visitation
+    // planner refuses them and the harness counts it as "near a KIRU 0" — so
+    // a sea change riding a signal's tune-in inherits that guard. But
+    // inheriting a guard is not the same as having one, and the owner named
+    // this gate explicitly, so the moment is recorded and seaToward tests it.
+    kiruAt = t; kiruHushUntil = t + hold + 2;
     var twice = sev > 0.45 && S.form.chance(0.4 + sev * 0.5);            // the bell tolls again near the peak
     var paHush = S.form.chance(0.2);                                      // unconditional draws
     var cutsSomething = cyc.kind !== "silence" && cyc.seating && cyc.seating.named !== "dead station";
@@ -4711,6 +4719,26 @@ window.ZankyoAudio = (function () {
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
           airHold: function (map) { for (var k in map) airHold[k] = map[k]; }, airHoldClear: function () { airHold = {}; },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
+          // §11.3 TUNED SIGNALS — the station tunes to the REEL. On a far
+          // night (d ≥ 0.5) a reel that holds a pitch may pull the field to it
+          // as it tunes in, and then plays unbent: the tape is not warped, the
+          // station moves. The tonic is folded into the field's own register,
+          // so a 587 Hz time signal becomes a tonic near D3 rather than a
+          // tonic three octaves up. Refused in a KIRU's hush, which is the
+          // owner's gate, and refused at home and below 0.5, which are §11.3's
+          // own two conditions — all three tested HERE so the receiver cannot
+          // forget one of them.
+          seaToward: function (hz, t) {
+            if (!playing || !(hz > 0)) return null;
+            if (FAR.home() || FAR.d() < 0.5) return null;
+            var now = t != null ? t : (ctx ? ctx.currentTime : 0);
+            if (now < kiruHushUntil) return null;
+            var target = foldTonic(hz);
+            if (Math.abs(1200 * Math.log(target / field.tonicHz) / Math.LN2) < 15) return target;  // already there
+            setMode(currentMode, "同調 · the station tunes to the signal", now, target);
+            return target;
+          },
+          fieldMode: function () { return currentMode; },
           // 室 (W3): the reel becomes the room. The receiver needs the station's
           // dry sum to feed a convolver and the master to return it to; both are
           // the engine's, so the engine hands them over rather than the receiver

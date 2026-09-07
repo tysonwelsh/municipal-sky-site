@@ -457,8 +457,14 @@ if (FAULTS.notes) fails.push(FAULTS.notes + " note(s) scheduled with a non-finit
 // Scale adherence is a HOME gate. 耳 bends the koto off the grid by ear, 減
 // narrows semitone pairs toward quarter-tones, 螺 spirals the whole field —
 // leaving the scale is what the far tail IS, so the check only binds at home.
-if (FARD == null && notes.length > 50 && inScale < notes.length) fails.push("scale adherence < 100%");
-else if (FARD != null && notes.length > 50 && inScale < notes.length) console.log("scale adherence: " + inScale + "/" + notes.length + " (far night — off-grid is the departure, not a fault)");
+//
+// AND "HOME" MEANS THE NIGHT, NOT THE FLAG. rc.21 keyed this to whether --far
+// was passed, which is wrong for the obvious reason: a seed can be far without
+// being told to be. Seed 19 draws d 0.94 naturally (崩 重 多 鏡) and was failing
+// this gate on its own lottery, with no flag in sight.
+const NIGHT_HOME = (() => { try { return !!(runA && runA.Z && runA.Z.getFar && runA.Z.getFar().home); } catch (e) { return FARD == null; } })();
+if (NIGHT_HOME && notes.length > 50 && inScale < notes.length) fails.push("scale adherence < 100%");
+else if (!NIGHT_HOME && notes.length > 50 && inScale < notes.length) console.log("scale adherence: " + inScale + "/" + notes.length + " (far night — off-grid is the departure, not a fault)");
 if (RUN >= 700 && stats.transforms.length < 6) fails.push("only " + stats.transforms.length + " transform types used");
 if (RUN >= 700 && answers < 1) fails.push("no cross-voice answers");
 if (RUN >= 700 && maxGen < 3) fails.push("max generation " + maxGen + " < 3");

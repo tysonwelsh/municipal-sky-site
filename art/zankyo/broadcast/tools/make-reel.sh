@@ -331,10 +331,25 @@ GAIN="$(awk "BEGIN{g=-18-($MEAS); if(g>12)g=12; if(g<-12)g=-12; printf \"%.1f\",
 RDUR="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | head -1)"
 BYTES="$(stat -f%z "$OUT")"
 
+# ---- 6. the pitch of each window (plan §11.1) -------------------------------
+# Measured on the FINISHED reel, not the source: the band-pass, the distortion
+# and the loudnorm are all between the two, and the pitch the receiver will
+# tune to is the one the reel actually carries. Reads only — it never opens the
+# reel for writing, so a re-run cannot change a byte of it.
+PITCH="$(python3 "$HERE/reel-pitch.py" "$OUT" "$REELWIN" 2>/dev/null || echo '')"
+if [ -z "$PITCH" ]; then
+  log "WARNING: pitch analysis failed — the entry gets pitchHz nulls and tuned false"
+  PITCH="$(python3 -c 'import json,sys; w=json.loads(sys.argv[1]); print(json.dumps({"pitchHz":[None]*len(w),"tuned":False}))' "$REELWIN")"
+fi
+python3 -c 'import json,sys
+d=json.loads(sys.argv[1]); n=sum(1 for p in d["pitchHz"] if p)
+print("▸ pitch  %d/%d windows carry a stable pitch%s" % (n, len(d["pitchHz"]), "  (tuned)" if d["tuned"] else ""))' "$PITCH" >&2
+
 python3 - "$MANI/$ID.json" "$ID" "$TITLE" "$YEAR" "$SRC_REF" "$LICENSE" "$TIER" "$TONE" "$WEIGHT" "$GAIN" \
-  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" <<'PY'
+  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$PITCH" <<'PY'
 import json,sys
-(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes) = sys.argv
+(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, pitch) = sys.argv
+P = json.loads(pitch)
 e = {
   "id": id_,
   "title": title or id_,
@@ -351,6 +366,8 @@ e = {
   "picture": pic if ao == "1" else None,
   "windows": json.loads(reelwin),
   "srcWindows": json.loads(srcwin),
+  "pitchHz": P["pitchHz"],
+  "tuned": P["tuned"],
   "notes": notes,
   "takedown": False,
 }
@@ -359,7 +376,9 @@ lines = ["{"]
 keys = list(e)
 for i, k in enumerate(keys):
     v = e[k]; comma = "," if i < len(keys) - 1 else ""
-    if k in ("windows", "srcWindows"):
+    if k == "pitchHz":
+        lines.append('  "%s": [%s]%s' % (k, ", ".join("null" if x is None else repr(round(float(x), 2)) for x in v), comma))
+    elif k in ("windows", "srcWindows"):
         body = ", ".join("[%s, %s]" % (a, b) for a, b in v)
         lines.append('  "%s": [%s]%s' % (k, body, comma))
     else:

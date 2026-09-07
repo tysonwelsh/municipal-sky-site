@@ -135,11 +135,71 @@
     }
     var r = rReel * tot, reel = cands[cands.length - 1];
     for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; break; } }
-    var win = reel.windows[Math.floor(rWin * reel.windows.length)], wl = win[1] - win[0];
+    // §11.2 TUNED SIGNALS. The drawn window is still DRAWN — rWin is consumed
+    // above whatever happens here, so the signal stream never moves — but on a
+    // reel that holds a pitch the receiver prefers the window it can land on
+    // the field with, and bends it there tape-style.
+    //
+    // windows stay [start, end] ARRAYS. pitchHz is a PARALLEL array, index for
+    // index, because five call sites index a window positionally and a
+    // half-converted window would read win[0] as undefined and put NaN into
+    // inS — the same shape as the fault that cost the crew a phase.
+    var wi = Math.floor(rWin * reel.windows.length);
+    var tune = farTune(reel, wi);
+    if (tune.wi !== wi) wi = tune.wi;
+    var win = reel.windows[wi], wl = win[1] - win[0];
+    // THE HOLD IS DECIDED ON THE UNBENT WINDOW, DELIBERATELY. At rate r a
+    // window of wl source seconds lasts wl / r on the wall clock, so the
+    // "honest" test is need > wl / r — and it moves holdS by a tenth of a
+    // second on a bent reel, which moves the air hold, which denies a melodic
+    // claim that was granted before, which moves the note stream on a HOME
+    // night. Measured: seeds 3042 and 7 both changed their note counts, and
+    // §11.2 is the default path so it fires at home. Byte-identity is worth
+    // more than a tenth of a second of hold, so the decision stays on wl and
+    // the rate is spent on the in-point instead.
     var need = TUNE_S + holdS + lossD;
     if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
-    c.reel = reel; c.win = win; c.holdS = holdS; c.inS = win[0] + rIn * Math.max(0, wl - need);
+    c.reel = reel; c.win = win; c.holdS = holdS;
+    // The in-point does carry the rate: `need` wall seconds eat need × r
+    // SOURCE seconds, so a sped-up reel starts nearer the window's head. When
+    // need × r exceeds the window the in-point pins to the head and the last
+    // fraction of a second runs past the edge — inside the loss ramp, where
+    // the signal is already under 6 % of peak.
+    c.inS = win[0] + rIn * Math.max(0, wl - need * tune.rate);
+    c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents; c.sea = tune.sea;
     return c;
+  }
+
+  // ---- §11 the bend ---------------------------------------------------------
+  // Given a reel and the window the draw landed on, decide which window is
+  // actually seated and at what playback rate.
+  //
+  // THE CAP IS A REFUSAL, NOT A CLAMP. Past ±4 semitones the reel plays at
+  // rate EXACTLY 1 and unbent — clamping would leave it still bent and still
+  // wrong, which is worse than not trying: a reel a fifth away from the field
+  // dragged four semitones toward it is out of tune with both.
+  var TUNE_CAP_CENTS = 400;
+  function farTune(reel, wi) {
+    var flat = { wi: wi, rate: 1, pitchHz: null, degHz: 0, cents: 0, sea: false };
+    var T = tl();
+    if (!reel || !reel.tuned || !reel.pitchHz || !T.fieldTonic) return flat;
+    var tonic = T.fieldTonic(); if (!(tonic > 0)) return flat;
+    // the degrees a signal may land on: the tonic and its fifth (§11.2)
+    var degs = [tonic, tonic * 1.4983070768766815];            // 3:2 tempered — the field is ET
+    var best = null;
+    for (var i = 0; i < reel.pitchHz.length && i < reel.windows.length; i++) {
+      var p = reel.pitchHz[i]; if (!(p > 0)) continue;
+      for (var k = 0; k < degs.length; k++) {
+        // octave-free: a 587 Hz tone may land on the tonic three octaves down
+        var c = 1200 * Math.log(degs[k] / p) / Math.LN2;
+        c = c - 1200 * Math.round(c / 1200);
+        if (!best || Math.abs(c) < Math.abs(best.cents)) best = { wi: i, cents: c, pitchHz: p, degHz: degs[k] };
+      }
+    }
+    if (!best) return flat;
+    if (Math.abs(best.cents) > TUNE_CAP_CENTS) { flat.pitchHz = best.pitchHz; return flat; }
+    return { wi: best.wi, rate: Math.pow(2, best.cents / 1200), pitchHz: best.pitchHz,
+             degHz: best.degHz, cents: best.cents, sea: false };
   }
   // the dropout schedule (relative to t0) and the voices' return offsets, on the cycle's own fork
   function weather(R, cycle, holdS, lossD) {
@@ -164,8 +224,16 @@
     var R = rng || T.S.signal; if (!R) return false;
     loadPool();
     var c = choose(R, info.cycle, info.tidePos || 0), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    // §11's four fields ride here too, and the reason they are called out is
+    // that this literal is EXACTLY the shape that cost the crew a phase: a
+    // fresh object built field by field from a contract declared somewhere
+    // else, which silently drops whatever the author forgot. It dropped them
+    // on the first pass — 同調 never fired once and the harness output was
+    // byte-identical to the old build, which reads like a pass. Anything
+    // choose() adds must be added here in the same commit.
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
+      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0,
       ready: false, t0: null, decided: false, bench: !!rng };
     stats.armed++;
     var when = Math.max(T.ctx ? T.ctx.currentTime + 0.05 : 0, info.hostStartT - PREFETCH_LEAD_S);
@@ -459,7 +527,26 @@
     var T = tl(), c = T.ctx, v = video, ms = mediaSrc;
     var band = T.getLayerParam("broadcast", "band", 0.5), flutter = T.getLayerParam("broadcast", "flutter", 0.5), grit = T.getLayerParam("broadcast", "grit", 0.5);
     var holdS = a.holdS, lossD = a.lossD, lossStart = t0 + TUNE_S + holdS, cut = lossStart + lossD, burstAt = cut + COLLAPSE_S, end = burstAt + BURST_S + DEAD_S;
-    var hpHold = 200 + 120 * band, lpHold = 6000 - 2600 * band;
+    // §11.3 THE STATION TUNES TO THE SIGNAL. On a far night at d ≥ 0.5, a reel
+    // that is TAGGED as holding a pitch (tone or sung — there is no "drone"
+    // value in this manifest; tone IS the drone bucket) and MEASURED as
+    // holding one may pull the field to itself instead of being pulled. Tag
+    // and measurement both, because a tag is an assertion and the flag is a
+    // fact. The engine refuses in a KIRU's hush, at home, and below 0.5 — all
+    // three tested there rather than here, so this cannot forget one.
+    var rate = a.rate || 1, seaHz = 0;
+    if (a.pitchHz > 0 && (a.reel.tone === "tone" || a.reel.tone === "sung") && T.seaToward) {
+      var got = T.seaToward(a.pitchHz, t0 + TUNE_S);
+      if (got) { seaHz = got; rate = 1; }                 // the tape is not warped; the station moves
+    }
+    // The live band must open low enough to PASS the fundamental the tool
+    // measured. A tuned reel whose pitch is 97 Hz played behind a 300 Hz
+    // highpass is a reel tuned to something the listener cannot hear — the
+    // bend would be arithmetically perfect and inaudible. So the floor drops
+    // for a tuned reel and the band knob still narrows above it; an untuned
+    // reel keeps exactly the band it had, which is also why no untuned
+    // broadcast changes by a sample here.
+    var hpHold = (a.reel.tuned ? 80 + 60 * band : 200 + 120 * band), lpHold = 6000 - 2600 * band;
     var nodes = [];
     function N(n) { nodes.push(n); return n; }
     try {
@@ -539,13 +626,32 @@
     // the element starts on the audio clock's cue (a setTimeout for the lookahead lead)
     T.lane("broadcast").at(t0 - 0.12, function (t) {
       var lead = Math.max(0, (t - c.currentTime) * 1000);
-      setTimeout(function () { try { if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }, lead);
+      setTimeout(function () { try {
+        if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS;
+        // TAPE-STYLE: the pitch and the speed move together, which is the
+        // whole idiom — a reel bent to the field also runs slow or fast, and
+        // that is the sound of a machine, not a pitch-shifter.
+        try { v.preservesPitch = false; v.mozPreservesPitch = false; v.webkitPreservesPitch = false; } catch (e2) {}
+        v.playbackRate = rate;
+        var p = v.play(); if (p && p.catch) p.catch(function () {});
+      } catch (e) {} }, lead);
     });
     // the descriptor for the set and the VFD line 「受信 · title · year」
     var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v };
     T.lane("broadcast").at(t0 - 0.15, function () {
       T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year, signal: desc, link: a.reel.src || null }, t0);
     });
+    // 同調 — the tuning line, and the critic's arithmetic gate reads it. It is
+    // emitted ONLY when something was actually tuned: an untuned reel, and a
+    // reel past the ±4 semitone cap, play at rate exactly 1 and say nothing,
+    // so the absence of this line is itself a claim that can be checked.
+    if (seaHz) {
+      T.emitEvent({ cat: "rx", label: "同調", detail: "the station tunes to the signal · reel " + a.pitchHz.toFixed(2) +
+        " Hz · tonic → " + seaHz.toFixed(2) + " Hz · reel unbent" }, t0 + TUNE_S);
+    } else if (rate !== 1 && a.pitchHz > 0) {
+      T.emitEvent({ cat: "rx", label: "同調", detail: "reel " + a.pitchHz.toFixed(2) + " Hz → " + (a.pitchHz * rate).toFixed(2) +
+        " Hz · " + (a.cents > 0 ? "+" : "") + a.cents.toFixed(1) + " cents · rate " + rate.toFixed(4) }, t0 + TUNE_S);
+    }
     T.lane("broadcast").at(cut, function () {
       T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" }, cut);
     });

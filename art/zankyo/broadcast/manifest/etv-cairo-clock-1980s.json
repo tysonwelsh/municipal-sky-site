@@ -64,6 +64,8 @@
       262.0
     ]
   ],
+  "pitchHz": [null, 256.55, 282.05, null, null, null],
+  "tuned": true,
   "notes": "Egyptian Channel 1: the clock with Arabic numerals, bands of dropout, the sunburst card, the call to prayer, blue pages of Quranic text",
   "takedown": false
 }

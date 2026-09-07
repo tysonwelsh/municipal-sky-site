@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08]],
   "srcWindows": [[48.0, 60], [97.0, 109], [192.0, 204], [359.0, 371], [404.0, 416], [523.0, 535], [539.0, 551], [663.0, 675]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "CBS/FCDA dramatized H-bomb evacuation of Portland, Oregon; air-raid warning; sirens; 'This is a CONELRAD radio alert… 640 or 1240 on your regular radio receiver'",
   "takedown": false
 }

@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[345.0, 357], [540.0, 552], [930.0, 942], [1580.0, 1592], [2100.0, 2112], [3070.0, 3082]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Spanish state cinema newsreel, 1943-1963: the NO-DO presenta card and its fanfare, the eagle masthead 'el mundo entero al alcance de todos los españoles', the narrator over coast, fog and crowds",
   "takedown": false
 }

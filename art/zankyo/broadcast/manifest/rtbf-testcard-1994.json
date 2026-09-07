@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[10.0, 22], [74.0, 86], [330.0, 342], [714.0, 726], [906.0, 918], [1768.0, 1780]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "source: YouTube fWixsa1XQb8, mirrored on archive.org; off-air long-distance reception of Belgian French-language TV: the RTBF 1 test card, the FOREM-ORBEM job pages ('si vous cherchez du travail'), the ident, samedi 18h45 continuity, a street interview, and À BIENTÔT",
   "takedown": false
 }
