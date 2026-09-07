@@ -1,0 +1,20 @@
+{
+  "id": "coi-operation-hurricane-1952",
+  "title": "Operation Hurricane",
+  "year": 1952,
+  "src": "https://archive.org/download/PublicInformationFilms/Public%20Information%20Films%20_%201951%20to%201964%20_%20%20Film%20index%20_%20Operation%20Hurricane-Operation-Hurricane.mp4",
+  "license": "PD (Crown copyright expired)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 96.0,
+  "bytes": 857210,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[36.0, 48.0], [116.0, 128.0], [274.0, 286.0], [672.0, 684.0], [1152.0, 1164.0], [1312.0, 1324.0], [1630.0, 1642.0], [1870.0, 1882.0]],
+  "notes": "COI film of Britain's first atomic test, Monte Bello: valve banks, a pipette, a survey meter over rock, a boy releasing a balloon, the flash through a filter",
+  "takedown": false
+}
