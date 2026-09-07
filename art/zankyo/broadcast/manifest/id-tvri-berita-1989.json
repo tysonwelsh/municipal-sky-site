@@ -1,0 +1,20 @@
+{
+  "id": "id-tvri-berita-1989",
+  "title": "TVRI — Berita Nasional, 10 September 1989",
+  "year": 1989,
+  "src": "https://youtu.be/K6obEEjR3Nk",
+  "license": "none stated; posted by TVRI's own documentation centre (TVRI DOKPUS PUSAT)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 584967,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[2.0, 14.0], [45.0, 57.0], [309.0, 321.0], [573.0, 585.0], [925.0, 937.0], [1013.0, 1025.0]],
+  "notes": "the clock card counting to 6:59.45 WIB before the bulletin, Oetari Noor Permadi and Yasir Den Has reading Berita Nasional, Habibie captioned Menristek/Ka. BPPT, the Bursa Efek Jakarta board and a REKAPITULASI of figures",
+  "takedown": false
+}
