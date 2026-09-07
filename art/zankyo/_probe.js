@@ -315,6 +315,22 @@ function analyze(R) {
   A.notesPer30 = {}; for (var k in byLayer) A.notesPer30[k] = Math.round(byLayer[k] * per30);
   var mel = R.notes.filter(function (n) { return isMelodic(n.layer); }).sort(function (a, b) { return a.t - b.t; });
   A.melodicNotes = mel.length; A.melodicPer30 = Math.round(mel.length * per30); A.melodicPerSec = mel.length / runS;
+  // CRITIC, §12 closure check: the COMMIT LEAD — how far ahead of the audio
+  // clock a note is committed. This is the number the 55 s guaranteed arm lead
+  // must exceed, and the coder's 33-46 s was measured on nights without the
+  // time departures. 遅 dilate and 弛 vari SCALE a lane's delays, so the lead
+  // is a function of the night, not a constant. `at` (virtual now at commit)
+  // and `t` (scheduled start) are both already recorded; the lead is their
+  // difference and nothing new had to be instrumented.
+  A.commitLead = {};
+  (function () {
+    var by = {};
+    R.notes.forEach(function (n) { if (!isMelodic(n.layer)) return; var d = n.t - n.at; if (!(d >= 0)) return; (by[n.layer] = by[n.layer] || []).push(d); });
+    Object.keys(by).forEach(function (k) {
+      var a = by[k].sort(function (x, y) { return x - y; });
+      A.commitLead[k] = { n: a.length, p50: +a[Math.floor(a.length * 0.5)].toFixed(2), p99: +a[Math.floor(a.length * 0.99)].toFixed(2), max: +a[a.length - 1].toFixed(2) };
+    });
+  })();
   A.totalNotes = R.notes.length; A.totalPer30 = Math.round(R.notes.length * per30);
 
   // ---- phase durations ----
