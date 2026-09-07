@@ -6,7 +6,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"; BC="$(cd "$HERE/.." && pwd)"
 python3 - "$BC" <<'PY'
 import glob, json, os, sys
 bc = sys.argv[1]
-TONES = {"voice", "music", "noise", "sung", "tone"}
+TONES = {"voice", "music", "noise", "sung", "tone", "drone"}
 MAX_BYTES = 2 * 1024 * 1024
 entries, errors = [], []
 def err(f, msg): errors.append(f"{os.path.relpath(f, bc)}: {msg}")

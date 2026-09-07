@@ -24,7 +24,12 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
                          Zen for TV), wave = a band of light that breathes with the audio
   --tier A|B             A = free to use (default), B = copyrighted (≤ 6 windows)
   --title "…"  --year N  --license "PD|CC-BY|CC-BY-NC|unknown|…"  (default unknown)
-  --tone voice|music|noise|sung|tone   (default voice)
+  --tone voice|music|noise|sung|tone|drone   (default voice)
+  --band normal|low      baked band-pass floor. normal = highpass 200 Hz (default, what
+                         every reel before this used); low = highpass 60 Hz, which keeps a
+                         chant or dungchen FUNDAMENTAL (~55-160 Hz) that 200 Hz throws
+                         away. Applied automatically for --tone drone and --tone tone;
+                         allowed explicitly anywhere (the owner's rule: sung, chant, music).
   --weight 1..5          lottery weight (default 3)
   --notes "…"            one line for the manifest
   --distort 0..1         bake extra receiver distortion into the reel (narrow band, drive
@@ -58,6 +63,7 @@ YTDLP="$(command -v yt-dlp || true)"; [ -n "$YTDLP" ] || YTDLP="$HOME/anaconda3/
 # ---- args -------------------------------------------------------------------
 INPUT=""; ID=""; WINDOWS=""; WLEN=12; MAXW=""; AUDIO_ONLY=0; PICTURE="line"; TIER="A"
 TITLE=""; YEAR=""; LICENSE="unknown"; TONE="voice"; WEIGHT=3; NOTES=""; PROPOSE=0; FORCE_AN=0
+BAND=""   # empty = not set explicitly; resolved from --tone below
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
@@ -72,6 +78,7 @@ while [ $# -gt 0 ]; do
     --year) YEAR="${2:?}"; shift 2 ;;
     --license) LICENSE="${2:?}"; shift 2 ;;
     --tone) TONE="${2:?}"; shift 2 ;;
+    --band) BAND="${2:?}"; shift 2 ;;
     --weight) WEIGHT="${2:?}"; shift 2 ;;
     --notes) NOTES="${2:?}"; shift 2 ;;
     --distort) DISTORT="${2:?}"; shift 2 ;;
@@ -85,7 +92,12 @@ done
 [ -n "$ID" ] || die "--id <slug> is required"
 [[ "$ID" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "--id must be lowercase letters, digits, hyphens: '$ID'"
 [[ "$TIER" =~ ^[AB]$ ]] || die "--tier must be A or B"
-[[ "$TONE" =~ ^(voice|music|noise|sung|tone)$ ]] || die "--tone must be voice|music|noise|sung|tone"
+[[ "$TONE" =~ ^(voice|music|noise|sung|tone|drone)$ ]] || die "--tone must be voice|music|noise|sung|tone|drone"
+[ -z "$BAND" ] || [[ "$BAND" =~ ^(normal|low)$ ]] || die "--band must be normal or low"
+if [ -z "$BAND" ]; then
+  case "$TONE" in drone|tone) BAND=low ;; *) BAND=normal ;; esac
+fi
+if [ "$BAND" = low ]; then HP_BASE=60; else HP_BASE=200; fi
 [[ "$WEIGHT" =~ ^[1-5]$ ]] || die "--weight must be 1..5"
 [[ "$PICTURE" =~ ^(static|line|wave)$ ]] || die "--picture must be static|line|wave"
 [[ "$WLEN" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "--window-len must be a number of seconds"
@@ -232,14 +244,15 @@ if [ "$PROPOSE" = 1 ]; then log "--propose: stopping before the cut"; exit 0; fi
 # ---- 4. cut each window to an intermediate ---------------------------------
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/make-reel.$ID.XXXXXX")"; trap 'rm -rf "$TMP"' EXIT
 VF="scale=192:144:force_original_aspect_ratio=decrease,pad=192:144:-1:-1,hue=s=0,fps=12,format=yuv420p"
-AF="highpass=f=200,lowpass=f=6000"
+AF="highpass=f=$HP_BASE,lowpass=f=6000"
+[ "$BAND" = low ] && log "band low: highpass 60 Hz — the chant/dungchen fundamental survives"
 # --distort d: baked distortion after the mono fold. Drive rises 3→9, bits fall 8→5,
 # the band narrows toward 350–3400 Hz (a bad receiver), flutter deepens. Still legible.
 DISTORT="${DISTORT:-0}"
 if awk "BEGIN{exit !($DISTORT > 0)}"; then
   D_DRIVE="$(awk "BEGIN{printf \"%.2f\", 3+6*$DISTORT}")"
   D_BITS="$(awk "BEGIN{printf \"%.1f\", 8-3*$DISTORT}")"
-  D_HP="$(awk "BEGIN{printf \"%d\", 200+150*$DISTORT}")"
+  D_HP="$(awk "BEGIN{printf \"%d\", $HP_BASE+0.75*$HP_BASE*$DISTORT}")"
   D_LP="$(awk "BEGIN{printf \"%d\", 6000-2600*$DISTORT}")"
   D_TREM="$(awk "BEGIN{printf \"%.2f\", 0.15+0.3*$DISTORT}")"
   D_MIX="$(awk "BEGIN{printf \"%.2f\", 0.3+0.5*$DISTORT}")"
@@ -332,9 +345,9 @@ RDUR="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | head
 BYTES="$(stat -f%z "$OUT")"
 
 python3 - "$MANI/$ID.json" "$ID" "$TITLE" "$YEAR" "$SRC_REF" "$LICENSE" "$TIER" "$TONE" "$WEIGHT" "$GAIN" \
-  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" <<'PY'
+  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" <<'PY'
 import json,sys
-(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes) = sys.argv
+(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band) = sys.argv
 e = {
   "id": id_,
   "title": title or id_,
@@ -347,6 +360,7 @@ e = {
   "gain": float(gain),
   "durS": round(float(rdur), 2),
   "bytes": int(nbytes),
+  "band": band,
   "audioOnly": ao == "1",
   "picture": pic if ao == "1" else None,
   "windows": json.loads(reelwin),
