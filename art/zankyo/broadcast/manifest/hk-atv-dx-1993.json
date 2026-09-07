@@ -1,0 +1,20 @@
+{
+  "id": "hk-atv-dx-1993",
+  "title": "ATV Hong Kong, caught off air",
+  "year": 1993,
+  "src": "https://archive.org/download/youtube-PlAmvUCJm2s/PlAmvUCJm2s.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 72.33,
+  "bytes": 806279,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.17], [24.17, 36.25], [36.25, 48.33], [48.33, 60.33], [60.33, 72.33]],
+  "srcWindows": [[3.0, 15.0], [139.0, 151.0], [193.0, 205.0], [329.0, 341.0], [381.15, 393.15], [424.41, 436.41]],
+  "notes": "a DXer's capture; Cantonese news, an AIDS testing form held to camera, an RTHK flag-mic, the gold news clock",
+  "takedown": false
+}
