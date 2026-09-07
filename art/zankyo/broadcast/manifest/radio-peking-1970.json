@@ -1,0 +1,20 @@
+{
+  "id": "radio-peking-1970",
+  "title": "Radio Peking — 东方红, the interval signal",
+  "year": 1970,
+  "src": "https://archive.org/download/sraa-radio-peking-6-nov1970/Radio%20Peking%20%286Nov70%29.mp3",
+  "license": "CC BY-NC 3.0",
+  "tier": "A",
+  "tone": "tone",
+  "weight": 4,
+  "gain": 0.5,
+  "durS": 97.75,
+  "bytes": 467276,
+  "band": "low",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[19.0, 31], [91.0, 103], [126.0, 138], [170.0, 182], [214.0, 226], [250.0, 262], [309.0, 321], [365.0, 377]],
+  "notes": "The East Is Red on brass, the most recognisable four bars on the shortwave band, then the announcer; 6 Nov 1970",
+  "takedown": false
+}
