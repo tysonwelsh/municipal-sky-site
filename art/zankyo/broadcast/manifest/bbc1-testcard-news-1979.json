@@ -1,0 +1,20 @@
+{
+  "id": "bbc1-testcard-news-1979",
+  "title": "BBC1 — Test Card, music, lunchtime news",
+  "year": 1979,
+  "src": "https://youtu.be/yOduZrrIgI8",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 604911,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[12.0, 24.0], [30.0, 42.0], [78.0, 90.0], [110.0, 122.0], [168.0, 180.0], [200.0, 212.0]],
+  "notes": "Test Card F under music; the orange globe turning into 'LUNCHTIME ON BBC 1 — 12.45 MID-DAY NEWS AND WEATHER'; the clock; the BBC Mid-Day News titles",
+  "takedown": false
+}
