@@ -507,13 +507,32 @@ function analyze(R) {
 }
 
 function signature(R) {
+  // TRIM AT THE RUN BOUNDARY BEFORE HASHING. A run is cut at runS, but the
+  // scheduler commits a whole phrase at once, so a tick landing a few
+  // milliseconds inside the window emits notes scheduled AFTER it. Whether
+  // that last tick lands inside is a function of timer jitter, so a signature
+  // that includes those notes reports DIFFERENT for two runs whose music is
+  // identical.
+  //
+  // This was a permanent intermittent FALSE POSITIVE in the REPRO gate,
+  // firing on whichever seed happened to tick near the cut. It cost the crew a
+  // held tree: seed 1 at far 0.50 failed under jitter 301/302 and 401/402,
+  // passed at 501/502 and with exact timers, and had a clean boundary at
+  // 0.49/0.50 — every one of which reads as a "now" read in a musical
+  // decision. The streams were identical for all 3314 shared notes; run 302
+  // simply had five more, scheduled at t = 1800.3 to 1800.9 against a run
+  // ending at 1800, committed at ctx 1799.9952.
+  //
+  // A note the run never intended to contain does not belong in its signature.
+  // Events need the same trim — three of them sat past the boundary too.
   var crypto = require("crypto");
-  var h = crypto.createHash("sha1");
-  R.notes.forEach(function (n) { h.update(n.layer + "|" + n.freq.toFixed(4) + "|" + n.t.toFixed(4) + "|" + (+n.dur).toFixed(4) + "\n"); });
+  var end = R.runS != null ? R.runS : RUN;
+  var h = crypto.createHash("sha1"), notes = R.notes.filter(function (n) { return n.t < end; });
+  notes.forEach(function (n) { h.update(n.layer + "|" + n.freq.toFixed(4) + "|" + n.t.toFixed(4) + "|" + (+n.dur).toFixed(4) + "\n"); });
   var hn = h.digest("hex");
-  var h2 = crypto.createHash("sha1");
-  R.events.forEach(function (e) { h2.update(e.t.toFixed(3) + "|" + e.cat + "|" + e.label + "|" + e.detail + "\n"); });
-  return { notes: hn, events: h2.digest("hex"), noteCount: R.notes.length, eventCount: R.events.length };
+  var h2 = crypto.createHash("sha1"), events = R.events.filter(function (e) { return e.t < end; });
+  events.forEach(function (e) { h2.update(e.t.toFixed(3) + "|" + e.cat + "|" + e.label + "|" + e.detail + "\n"); });
+  return { notes: hn, events: h2.digest("hex"), noteCount: notes.length, eventCount: events.length };
 }
 
 
