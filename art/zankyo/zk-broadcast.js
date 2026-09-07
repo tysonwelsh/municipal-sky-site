@@ -348,6 +348,112 @@
     return "locked";
   }
 
+  // ---- 相 phasing, and 室 the reel as the room (W3) ----
+  // Both read the night from the engine rather than keeping their own copy of
+  // it: the receiver is a module, and which departures a night carries is the
+  // engine's business.
+  function farDep(id) {
+    try { var f = Z.getFar && Z.getFar(); return (f && !f.home && f.dep && f.dep[id]) || null; } catch (e) { return null; }
+  }
+  function farPhaseTap(src, t0, holdS, lossD, N) {
+    var p = farDep("phase"); if (!p) return null;
+    // N is the caller's node registrar: the comb has to be torn down with the
+    // signal that made it. Without it the three nodes outlive every broadcast
+    // and accumulate for the life of the page — silent, because `src` is
+    // disconnected, but never collected. (Found in the browser, W3b; the
+    // symbolic probe counts sources, not gains.)
+    var T = tl(), c = T.ctx, sum = N(c.createGain()), dly = N(c.createDelay(1.5)), wet = N(c.createGain());
+    var total = (p.driftMs / 1000) * p.passes;                 // where the two copies end up
+    dly.delayTime.setValueAtTime(0.0005, t0);
+    dly.delayTime.linearRampToValueAtTime(Math.min(1.4, total), t0 + TUNE_S + holdS + lossD);
+    wet.gain.setValueAtTime(0.85, t0);                          // near-equal copies: the comb is deep
+    src.connect(sum);                                           // the first loop
+    src.connect(dly); dly.connect(wet); wet.connect(sum);       // the second, sliding behind it
+    T.emitEvent({ cat: "far", label: "相 the loops drift", detail: p.passes.toFixed(0) + " passes · " + p.driftMs.toFixed(0) + " ms each · " + Math.round(total * 1000) + " ms apart by the end" }, t0);
+    return sum;
+  }
+
+  // 室 THE REEL AS THE ROOM (W3). "A two-second slice of a broadcast reel
+  // becomes the convolution impulse — the whole station played through the
+  // voice of Duck and Cover or the Buzzer. Audio only; the set stays dark."
+  //
+  // The slice has to be the REEL'S OWN AUDIO, not a synthesised stand-in, so it
+  // is tapped live: a ScriptProcessor sits on the signal's output for sliceS
+  // seconds and writes what it hears into a buffer. That buffer, windowed and
+  // normalised, becomes a ConvolverNode's impulse, and a share of the station's
+  // dry sum goes through it for the rest of the cycle. The processor is torn
+  // down the moment it has enough — it exists for two seconds, not for a night.
+  //
+  // Windowing matters more than it looks: an impulse that starts or ends
+  // abruptly convolves a click onto every sound in the station, so the slice
+  // gets a short fade at both ends and is normalised to a fixed energy — the
+  // room must change its CHARACTER without changing the station's level.
+  var farRoomConv = null, farRoomWet = null, farRoomTap = null;
+  //
+  // WHEN the tap listens is the whole departure. The graph is built a second
+  // or more ahead of t0 (the lookahead lead), and the signal's own gain is at
+  // zero until t0 and only reaches full level after TUNE_S — so a tap that
+  // starts the moment it is connected records the silence before the
+  // broadcast and the whisper of it tuning in, and is finished before the
+  // reel is properly up. Measured in a real browser at rc.19: 1.1 s of exact
+  // digital silence, then a step, with the median energy 2.1 s into a 2.34 s
+  // impulse. Convolved, that is not a room — it is a one-second slap-back
+  // with a click on its front edge, which is precisely what the windowing
+  // below exists to prevent.
+  //
+  // So the handler gates on `startT`: it drops every block that begins before
+  // the reel is up and starts accumulating at the first one that does not.
+  // ev.playbackTime is the context time of the block's first sample, which is
+  // the same clock startT is written in. The tap is connected early because
+  // that is when the graph is built; it simply does not listen yet.
+  function farRoomCapture(srcNode, startT) {
+    var p = farDep("reelrm"); if (!p || farRoomConv) return;
+    var T = tl(), c = T.ctx;
+    if (!c.createScriptProcessor) return;
+    var sr = c.sampleRate, want = Math.round(p.sliceS * sr), got = 0;
+    var acc = new Float32Array(want);
+    var sp = c.createScriptProcessor(4096, 1, 1), sink = c.createGain();
+    sink.gain.setValueAtTime(0, c.currentTime);            // the tap is silent: it listens only
+    var done = false;
+    sp.onaudioprocess = function (ev) {
+      if (done) return;
+      if (ev.playbackTime + 1e-4 < startT) return;         // not yet: the reel is not up
+      var inp = ev.inputBuffer.getChannelData(0), n = Math.min(inp.length, want - got);
+      for (var i = 0; i < n; i++) acc[got + i] = inp[i];
+      got += n;
+      if (got >= want) { done = true; try { srcNode.disconnect(sp); sp.disconnect(); } catch (e) {} farRoomBuild(acc, sr); }
+    };
+    try { srcNode.connect(sp); sp.connect(sink); sink.connect(c.destination); } catch (e) { return; }
+    farRoomTap = sp;
+  }
+  function farRoomBuild(acc, sr) {
+    var p = farDep("reelrm"); if (!p) return;
+    var T = tl(), c = T.ctx, dry = T.dryBus && T.dryBus(), out = T.masterIn && T.masterIn();
+    if (!dry || !out) return;
+    var n = acc.length, fade = Math.min(Math.round(0.02 * sr), n >> 2), i, e = 0;
+    for (i = 0; i < fade; i++) { acc[i] *= i / fade; acc[n - 1 - i] *= i / fade; }
+    for (i = 0; i < n; i++) e += acc[i] * acc[i];
+    var rms = Math.sqrt(e / n);
+    if (!(rms > 1e-6)) return;                             // silence makes no room
+    var k = 0.06 / rms;                                    // a fixed energy: the character changes, the level does not
+    for (i = 0; i < n; i++) acc[i] *= k;
+    try {
+      var buf = c.createBuffer(1, n, sr);
+      buf.getChannelData(0).set(acc);
+      farRoomConv = c.createConvolver(); farRoomConv.normalize = false; farRoomConv.buffer = buf;
+      farRoomWet = c.createGain(); farRoomWet.gain.setValueAtTime(0, c.currentTime);
+      farRoomWet.gain.linearRampToValueAtTime(p.wet, c.currentTime + 4);
+      dry.connect(farRoomConv); farRoomConv.connect(farRoomWet); farRoomWet.connect(out);
+      T.emitEvent({ cat: "far", label: "室 the reel becomes the room", detail: (n / sr).toFixed(2) + "s impulse · wet " + p.wet.toFixed(2) }, c.currentTime);
+    } catch (e2) {}
+  }
+  function farRoomTeardown() {
+    try { if (farRoomTap) { farRoomTap.onaudioprocess = null; farRoomTap.disconnect(); } } catch (e) {}
+    try { if (farRoomWet) farRoomWet.disconnect(); } catch (e) {}
+    try { if (farRoomConv) farRoomConv.disconnect(); } catch (e) {}
+    farRoomTap = null; farRoomWet = null; farRoomConv = null;
+  }
+
   // ---- the signal itself ----
   function startSignal(a, t0) {
     var T = tl(), c = T.ctx, v = video, ms = mediaSrc;
@@ -400,7 +506,16 @@
       var peak = 0.35 * db2lin(a.reel.gain);
       PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak],
         [lossD * 0.5, peak * 0.75], [lossD * 0.25, peak * 0.44], [lossD * 0.15, peak * 0.19], [lossD * 0.1, peak * 0.06], [0.02, 0]]);
-      ms.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg); sg.connect(T.lg("broadcast"));
+      ms.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
+      // 相 PHASING (W3): two copies of the same window drifting apart. Reich
+      // ran two tape loops at almost the same speed; here one copy goes through
+      // a delay whose time ramps from nothing to driftMs × passes across the
+      // hold, which is the same relationship expressed as a comb that sweeps —
+      // and it is the comb, not the delay, that is the sound. It costs one
+      // delay and one gain, and only while a signal is up.
+      var phased = farPhaseTap(sg, t0, holdS, lossD, N);
+      (phased || sg).connect(T.lg("broadcast"));
+      farRoomCapture(sg, t0 + TUNE_S + 1.0);      // 室: two seconds of the reel, once it is properly tuned in
       // the burst after the collapse: pure static, then the afterglow
       var bn = N(T.noiseSource()), bh = N(c.createBiquadFilter()), bg = N(c.createGain());
       bh.type = "highpass"; bh.frequency.setValueAtTime(1800, burstAt);
@@ -448,6 +563,7 @@
   }
   function stop() {
     teardown();
+    farRoomTeardown();                            // 室: the room goes back to being a room
     armed = null; scanWanted = false; scanCycle = -1;
   }
 

@@ -371,6 +371,75 @@ window.ZankyoAudio = (function () {
   }
 
   // ==========================================================================
+  // 金 METAL (W3) — ring modulation and FM, inharmonic but still pitched
+  // ==========================================================================
+  // The plan: "ring modulation of the shō by the sub-drone; the bells and the
+  // koto through FM — inharmonic, gong-like, still pitched."
+  //
+  // THE FLOOR AND THE CEILING ARE ONE NUMBER, which is what makes this the
+  // most interesting departure to build: the critic's floor is roughness over
+  // brightness, rn ÷ (centroid/100), home median 0.099–0.11 — and the harshness
+  // cap is on brightness alone. So 金 must raise the RATIO without raising its
+  // denominator. Inharmonic, not merely bright.
+  //
+  // Ring modulation is exactly that instrument and it is not a coincidence:
+  // multiplying a pipe at f by the drone at m yields the pair f−m and f+m and
+  // NO carrier. The sidebands sit symmetrically about f in frequency, so the
+  // power-weighted centroid barely moves, while f−m and f+m beat against the
+  // cluster's other pipes — roughness up, brightness flat. FM by contrast adds
+  // partials UPWARD with the index, so the koto's modulator sits at an
+  // inharmonic ratio BELOW its carrier and the string's own lowpass (~4f)
+  // stays where it is: sidebands on both sides rather than a bright stack.
+  //
+  // Cost, counted before wiring rather than after (peakSources ≤ 110 with four
+  // sources of margin at the tightest): the shō's ring is ONE modulator shared
+  // by a whole cluster — 1 source and 3 gains per cluster, not per pipe. The
+  // koto's FM is 1 source per plucked note, short-lived; measured below.
+  // ONE modulator for the whole night, not one per cluster. The first version
+  // built a modulator per shō cluster, and because clusters overlap that cost
+  // two concurrent sources and took a 群 night to 111 against the hard 110.
+  // It is also the truer object: the thing doing the modulating is the
+  // reactor's drone, and there is one of those — so it is created once, tracks
+  // the tonic through a sea change, and stops with the clock.
+  var farMetalMod = null, farMetalAmp = null;
+  function farMetalModulator(t) {
+    if (farMetalMod) return farMetalAmp;
+    var c = ctx;
+    farMetalMod = c.createOscillator(); farMetalAmp = c.createGain();
+    farMetalMod.type = "sine";
+    farMetalMod.frequency.setValueAtTime(subRoot(), t);
+    farMetalAmp.gain.setValueAtTime(farMetal.ringMix, t);
+    farMetalMod.connect(farMetalAmp);
+    farMetalMod.start(t);
+    return farMetalAmp;
+  }
+  function farMetalRing(dryIn, out, t, durS) {
+    var p = farMetal;
+    if (!p || !ctx) return false;
+    var c = ctx, dry = c.createGain(), ring = c.createGain();
+    dry.gain.setValueAtTime(1 - p.ringMix, t);
+    ring.gain.setValueAtTime(0, t);              // the carrier is multiplied away: DC zero, the modulator swings it
+    farMetalModulator(t).connect(ring.gain);
+    dryIn.connect(dry); dry.connect(out);
+    dryIn.connect(ring); ring.connect(out);
+    return true;
+  }
+  // FM on a body whose source is a buffer: an oscillator into `detune` at audio
+  // rate IS frequency modulation, and detune is free on these bodies (the W1
+  // glide uses it only under 螺/弛, and the two compose additively).
+  function farMetalFM(param, carrierHz, t, durS) {
+    var p = farMetal;
+    if (!p || !ctx || !(carrierHz > 0)) return;
+    var c = ctx, mod = c.createOscillator(), amp = c.createGain();
+    mod.type = "sine";
+    mod.frequency.setValueAtTime(carrierHz * FAR_METAL_RATIO, t);   // inharmonic, and below the carrier
+    amp.gain.setValueAtTime(p.fmIndex * 55, t);                     // cents of deviation
+    mod.connect(amp); amp.connect(param);
+    mod.start(t); mod.stop(t + durS + 0.05);
+  }
+  var FAR_METAL_RATIO = 0.7071;                  // √½ — irrational to the carrier, so the sidebands are inharmonic
+
+  // ==========================================================================
   // 逆 REVERSE (W3) — envelopes played backwards
   // ==========================================================================
   // "Plucks that swell, breaths that end in the attack." PJ.Voice.env takes
@@ -666,8 +735,23 @@ window.ZankyoAudio = (function () {
       if (now <= t0 + 0.6) {                                  // it is still this voice's entry to make
         var slot = farSubject.n;
         farSubject.taken[voice] = 1; farSubject.n++;
-        var out = { phrase: fitToRegister(farSubject.notes, center), t0: Math.max(now + 0.05, t0),
-                    cs: plain.cs, take: true, kind: E.kind, slot: slot, of: maxN };
+        // A TAKE IS `plain` WITH THE TAKE'S TERMS WRITTEN OVER IT, never a
+        // fresh literal. It used to be a literal, and it silently dropped
+        // `sharp` — 重's detune, which every melodic body multiplies its
+        // frequency by. A take of any other kind (継, 群, 影) therefore
+        // computed `freq * undefined` = NaN, which reached an oscillator as a
+        // non-finite float in the winds and, through N = round(sr / freq), a
+        // non-finite frame count in createBuffer for the strings. Four melodic
+        // bodies threw on every ensemble entry from W2 (rc.15) to rc.21, and
+        // every gate passed, because the symbolic mock tolerates NaN where the
+        // browser throws. Building the take from `plain` makes the two paths
+        // share ONE declaration of the contract, so a field added to it later
+        // cannot go missing from a take. The fault is fixed at its source; the
+        // source is now also watched (see the fault tally at emitNote).
+        var out = plain;
+        out.phrase = fitToRegister(farSubject.notes, center);
+        out.t0 = Math.max(now + 0.05, t0);
+        out.take = true; out.slot = slot; out.of = maxN;
         if (E.kind === "hocket") {
           // one timeline for everyone, and this voice's own beat is irrelevant
           out.t0 = farSubject.at;
@@ -730,7 +814,7 @@ window.ZankyoAudio = (function () {
 
   function farTimeSetup() {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
-    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null;
+    farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null; farMetalMod = null; farMetalAmp = null;
     if (!farNight || farNight.home) return;
     var p;
     if ((p = farNight.dep.dilate)) farDilate = p;
@@ -1151,6 +1235,7 @@ window.ZankyoAudio = (function () {
     field.modulate(patch);
     rebuildScale();
     if (farBito) farBitoBuild();                 // 逸脱 双: the other world moves with this one
+    if (farMetalMod && ctx) { try { farMetalMod.frequency.setValueAtTime(subRoot(), t != null ? t : ctx.currentTime); } catch (e) {} }   // 金: the ring follows the reactor
     SCALE_INFO.name = MODES[name].name; SCALE_INFO.kana = MODES[name].kana.slice(); SCALE_INFO.tonic = noteName(field.tonicHz);
     emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name + " on " + SCALE_INFO.tonic + (extra ? " · " + extra : "") }, t);
   }
@@ -1262,7 +1347,23 @@ window.ZankyoAudio = (function () {
   // LISTENERS / LOG
   // ==========================================================================
   var noteListeners = [], eventListeners = [];
+  // THE FAULT TALLY (rc.21). Two classes the gates could not see: a lane that
+  // threw, and a note scheduled with a non-finite frequency, time or duration.
+  // Counting only — no behaviour changes, no RNG is touched, so home nights
+  // stay byte-identical. _harness.js reads it and fails on any.
+  var faults = { lanes: 0, notes: 0, lane: [], note: [] };
+  // EVERY SCHEDULED NOTE IS FINITE. The companion tripwire to the lane tally:
+  // a non-finite frequency reaches an oscillator as "non-finite float" and, via
+  // N = round(sr / freq), a non-finite frame count in createBuffer — both throw
+  // — but a non-finite DURATION mostly does not throw, it just renders nothing,
+  // and nothing in the gates would have said so. Counted here, never thrown:
+  // the owner's night must not break because a gate wants to be loud. The
+  // harness fails on a single one.
   function emitNote(layer, freq, startTime, duration) {
+    if (!(isFinite(freq) && isFinite(startTime) && isFinite(duration || 0))) {
+      faults.notes++;
+      if (faults.note.length < 12) faults.note.push({ layer: layer, freq: freq, t: startTime, dur: duration });
+    }
     roomSpeak(layer, startTime, duration, freq);   // Phase M: the crew hears who is about to speak
     for (var i = 0; i < noteListeners.length; i++) {
       try { noteListeners[i]({ layer: layer, freq: freq, startTime: startTime, duration: duration || 0 }); } catch (e) {}
@@ -1288,6 +1389,16 @@ window.ZankyoAudio = (function () {
     // The transport: one lookahead clock, one lane per layer (+ "form" for
     // the cycle watch). Lane rates are the console's RATE knobs.
     clock = PJ.Clock.create(ctx, { tickMs: 25, aheadS: 0.25, onError: function (err, where) {
+      // A lane that throws loses the rest of its phrase and is silent until
+      // something re-arms it. That is invisible to a listener as anything but
+      // a voice going quiet, and it was invisible to the gates too: the hook
+      // only wrote to console, and neither _harness.js nor _probe.js reads
+      // the console. 継's takes threw on four melodic bodies from rc.15 to
+      // rc.21 and every gate passed. Now the throws are COUNTED, and the
+      // harness fails on any.
+      faults.lanes++;
+      if (faults.lane.length < 12) faults.lane.push({ lane: (where && where.lane) || "?", t: +((where && where.t) || 0).toFixed(2),
+        msg: String((err && err.message) || err).slice(0, 120) });
       if (typeof console !== "undefined" && console.error) console.error("ZankyoAudio lane " + (where && where.lane) + " threw at t=" + (where && where.t), err && err.stack ? err.stack : err);
     } });
     for (var lni = 0; lni < LAYERS.length; lni++) clock.lane(LAYERS[lni]).rate = layerRate[LAYERS[lni]] || 1;
@@ -2951,7 +3062,11 @@ window.ZankyoAudio = (function () {
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.5, now);
     var bus = c.createGain();
     PJ.Voice.env(bus.gain, now, [[fadeIn, 0.5], [dur - fadeIn - fadeOut, 0.5], [fadeOut, 0]]);
-    lp.connect(bus); bus.connect(out);
+    // 金: the whole cluster through one ring modulator at the drone's root —
+    // the seam is here, at lp → bus, so a cluster of five or six pipes costs
+    // ONE extra source between them rather than one each.
+    if (!(farMetal && farMetal.targets.indexOf("sho") >= 0 && farMetalRing(lp, bus, now, dur))) lp.connect(bus);
+    bus.connect(out);
 
     // THE AITAKE (Phase 2): one of the eleven named voicings, projected onto
     // the current mode; TE-UTSURI — the next cluster is drawn to share tones
@@ -3419,6 +3534,7 @@ window.ZankyoAudio = (function () {
     if (atk >= knee) atk = knee * 0.5;
     farEnv(g.gain, t, [[atk, peak], [knee - atk, peak * 0.3], [dec - knee, 0]]);   // 逆: a pluck that swells
     FAR.glideDetune(src.detune, t, dec + 0.05, 0);   // 逸脱 螺/弛: the string sags with the room (detune is free here; playbackRate carries the pluck's own bends)
+    if (farMetal && farMetal.targets.indexOf(layer) >= 0) farMetalFM(src.detune, freq, t, dec);   // 金: and the same param carries the FM, additively
     src.start(t); src.stop(t + dec + 0.05);
     // THE PICK (Phase M — the mix pass, the orchestrator's ruling): the plan's
     // plectrum noise made a real transient. Measured, the string bodies hold
@@ -4359,6 +4475,7 @@ window.ZankyoAudio = (function () {
     if (conductor) { try { conductor.stop(); } catch (e) {} }
     if (signalProvider) { try { signalProvider.stop(); } catch (e) {} }
     farGroove = null; farStuck = false;          // 逸脱 崩: the groove dies with the clock; the grit goes back to the arc
+    if (farMetalMod) { try { farMetalMod.stop(ctx ? ctx.currentTime : 0); } catch (e) {} farMetalMod = null; farMetalAmp = null; }   // 金: one modulator, and it stops here
     if (clock) clock.stop();                     // every lane's pending events die here
     while (liveRings.length) ringDown(liveRings[0]);   // screech loops in flight lose their lane teardown with the clock — tear them down here
     if (ctx) {
@@ -4537,12 +4654,20 @@ window.ZankyoAudio = (function () {
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
           airHold: function (map) { for (var k in map) airHold[k] = map[k]; }, airHoldClear: function () { airHold = {}; },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
+          // 室 (W3): the reel becomes the room. The receiver needs the station's
+          // dry sum to feed a convolver and the master to return it to; both are
+          // the engine's, so the engine hands them over rather than the receiver
+          // reaching into the graph.
+          dryBus: function () { return reverbSend; },
+          masterIn: function () { return masterGain; },
         };
       },
     },
     getRooms: function () { return { hull: roomHull, corridor: roomCorridor, blend: roomBlend, farWall: farWall, halo: halo }; },
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
+    // the gates' handle on the two fault classes (rc.21)
+    getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice() }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.
