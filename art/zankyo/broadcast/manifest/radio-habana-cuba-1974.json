@@ -1,0 +1,20 @@
+{
+  "id": "radio-habana-cuba-1974",
+  "title": "Radio Habana Cuba — XV aniversario de la Revolución",
+  "year": 1974,
+  "src": "https://archive.org/download/sraa-dhnf9tj7iv2skr1l2e8nbxj5f9icxi/01.%20Radio%20Havana%20Cuba-%20Speech%20by%20Fidel%20Castro%20%281974%29%20%28mp3%29.mp3",
+  "license": "CC BY-NC 3.0",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 98.42,
+  "bytes": 830898,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "static",
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
+  "srcWindows": [[3.0, 15], [81.0, 93], [138.0, 150], [175.0, 187], [244.0, 256], [259.0, 271], [331.0, 343], [350.0, 362]],
+  "notes": "Spanish arriving through fade and heterodyne: Castro on the fifteenth anniversary, carried on Radio Habana's shortwave service",
+  "takedown": false
+}
