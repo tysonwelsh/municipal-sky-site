@@ -403,7 +403,7 @@ function analyze(R) {
   var modeEvents = R.events.filter(function (e) { return e.cat === "mode" || e.cat === "form" || e.cat === "plan" || e.cat === "scene" || e.cat === "visit" || e.cat === "visitation" || e.cat === "pitch" || e.cat === "far"; });   // "far" (W1): the 逸脱 lines were in the stream but invisible in a printout — the critic's free note, r2
   A.kirus = R.events.filter(function (e) { return /KIRU/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
   A.cycles = R.events.filter(function (e) { return /cycle \d+/.test(e.detail) && /mode/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
-  A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null; A.signals = []; A.signalFallbacks = 0;
+  A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null; A.signals = []; A.signalFallbacks = 0; A.sceneSpans = []; A.signalTimes = [];
   R.events.forEach(function (e) {
     var txt = e.label + " · " + e.detail;
     var km = /(?:kind|活動|cycle kind)[:\s]+([^\s·,]+)/i.exec(txt); if (km) A.kinds[km[1]] = (A.kinds[km[1]] || 0) + 1;
@@ -412,7 +412,12 @@ function analyze(R) {
     if (/visit(ation)?:/i.test(txt) && e.cat !== "ambient") A.visitations.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });   // the plan-time token only (one per hosting cycle); "begins"/"goes dead" are not counted
     if (e.cat === "rx" && e.label === "受信") A.signals.push({ t: Math.round(e.t), txt: e.detail });          // S3: the receiver's signals (受信 = a reel played; the fallback and the scan are not counted)
     if (e.cat === "rx" && e.label === "受信 fallback") A.signalFallbacks++;
-    var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1;
+    var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) { A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1; A.sceneSpans.push({ t: +e.t.toFixed(2), type: scm[1] }); }
+    // CRITIC: the orchestrator wants the JO SHARE of broadcasts. signalFallbacks
+    // was a bare counter, so a seating could not be located in the cycle at all.
+    // Record every seating's TIME — real or fallback — and bucket it against
+    // sceneSpans in analysis. (Dev-only, my file, no VERSION bump.)
+    if (e.cat === "rx" && (e.label === "受信" || e.label === "受信 fallback")) A.signalTimes.push({ t: +e.t.toFixed(2), real: e.label === "受信" });
     if (/joint/i.test(txt)) A.joints++;
   });
   // ---- Phase 2: tonic trace (sea changes) and shō voicings (aitake) ----
