@@ -1,0 +1,20 @@
+{
+  "id": "noticiero-icaic-1969",
+  "title": "Noticiero ICAIC Latinoamericano, 22 de diciembre",
+  "year": 1969,
+  "src": "https://archive.org/details/untitled_20240803",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 72.0,
+  "bytes": 773072,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[54.16, 66.16], [123.0, 135], [235.0, 247], [323.0, 335], [455.0, 467], [561.0, 573]],
+  "notes": "Santiago Álvarez's weekly Cuban newsreel: hard cuts, brass stings, a narrator over marching feet; young North Americans in Cuba",
+  "takedown": false
+}
