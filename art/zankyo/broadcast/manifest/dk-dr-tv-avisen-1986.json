@@ -1,0 +1,20 @@
+{
+  "id": "dk-dr-tv-avisen-1986",
+  "title": "Danmarks Radio — TV-Avisen, 2. juli 1986",
+  "year": 1986,
+  "src": "https://www.youtube.com/watch?v=vseD2CiEN6c",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 564241,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[4.0, 16.0], [409.0, 421.0], [801.0, 813.0], [1094.0, 1106.0], [1195.0, 1207.0], [1763.0, 1775.0]],
+  "notes": "Lone Zilstorff's first night reading the news; a demonstration, a name caption, a Swedish elk on a map, and the credits over a water lily",
+  "takedown": false
+}
