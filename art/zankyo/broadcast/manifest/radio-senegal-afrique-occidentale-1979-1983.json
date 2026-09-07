@@ -1,0 +1,20 @@
+{
+  "id": "radio-senegal-afrique-occidentale-1979-1983",
+  "title": "Radio Sénégal et l'Afrique occidentale, 0600 UTC",
+  "year": 1981,
+  "src": "https://archive.org/search?query=collection%3Ashortwave-airchecks+AND+%28SENEGAL+OR+NIGER+OR+TOGO+OR+MALI+OR+MAURITANIA+OR+%22IVORY+COAST%22%29",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 70.25,
+  "bytes": 330868,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 12.0], [12.0, 22.0], [22.0, 34.0], [34.0, 46.0], [46.0, 56.0], [56.0, 68.0]],
+  "srcWindows": [[130.0, 142.0], [215.0, 225.0], [275.0, 287.0], [315.0, 327.0], [380.0, 390.0], [490.0, 502.0]],
+  "notes": "Six countries waking up on the 60 m band at the same hour, 1979-1983: Radio Sénégal on 4890, ORTN Niamey with the anthem, the Radio Togo interval signal, Bamako, the Radio Mauritanie signal in Arabic, and Radio Abidjan signing on. French, Wolof, Arabic.",
+  "takedown": false
+}
