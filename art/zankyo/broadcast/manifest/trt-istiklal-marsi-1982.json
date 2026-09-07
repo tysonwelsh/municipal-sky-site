@@ -1,0 +1,20 @@
+{
+  "id": "trt-istiklal-marsi-1982",
+  "title": "TRT sign-on: Istiklal Marsi and the opening announcement",
+  "year": 1982,
+  "src": "https://www.youtube.com/watch?v=xrfrRY7eZPM",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 60.01,
+  "bytes": 476396,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
+  "srcWindows": [[15.0, 25.0], [61.0, 71.0], [75.0, 85.0], [103.0, 113.0], [135.0, 145.0], [165.0, 175.0]],
+  "notes": "29 October 1982, Republic Day, two years into the junta; the flag, the anthem, announcer Fatih Orbay opening the day",
+  "takedown": false
+}
