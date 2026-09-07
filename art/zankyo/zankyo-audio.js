@@ -503,7 +503,7 @@ window.ZankyoAudio = (function () {
     }
     emitNote("shakuhachi", f, t0, holdS);
     // it holds the air: nobody talks over a minute-long held tone
-    airHold.shakuhachi = { from: t0 - 0.2, until: t0 + holdS };
+    airHoldAdd("shakuhachi", t0 - 0.2, t0 + holdS, "freeze");
     emitEvent({ cat: "far", label: "凍 the note freezes", detail: Math.round(holdS) + "s · " + noteName(f) + " · ±" + p.jitterC.toFixed(1) + " cents" }, t0);
     return holdS;
   }
@@ -702,7 +702,7 @@ window.ZankyoAudio = (function () {
     // does not play its own phrase over its own answer. Without this the answer
     // was there in the stream and inaudible as a shape, because the answering
     // voice was talking across it.
-    airHold[ans] = { from: t0 - 0.2, until: t + 0.3 };
+    airHoldAdd(ans, t0 - 0.2, t + 0.3, "mirror");
     emitEvent({ cat: "far", label: "鏡 answered", detail: voice + " → " + ans + " · " + m.length + " notes · axis " + farMirror.axis + " · lag " + lag.toFixed(2) + "s after the phrase" }, last.t + last.dur);
   }
 
@@ -989,8 +989,8 @@ window.ZankyoAudio = (function () {
     for (i = 0; i < frag.length; i++) farGroove.alive.push(true);
     // the crew stops playing for the duration — the station is stuck, not busy
     var holdUntil = t0 + totalS + 2;
-    for (var vi = 0; vi < MELODIC_LANES.length; vi++) airHold[MELODIC_LANES[vi]] = { from: t0, until: holdUntil };
-    airHold.pa = { from: t0, until: holdUntil };
+    for (var vi = 0; vi < MELODIC_LANES.length; vi++) airHoldAdd(MELODIC_LANES[vi], t0, holdUntil, "disint");
+    airHoldAdd("pa", t0, holdUntil, "disint");
     emitEvent({ cat: "far", label: "崩 the station sticks", detail: th.name + " · " + frag.length + " notes · " + p.passes + " passes · " + Math.round(totalS) + "s · " + voice }, t0);
     var note = voice === "koto" ? kotoNote : voice === "shamisen" ? shamisenNote : function (f, tt, d, o) { stringNote("biwa", f, tt, d, o); };
     function pass(t) {
@@ -1003,7 +1003,21 @@ window.ZankyoAudio = (function () {
         if (k > 0 && R.chance(p.lossPer)) { farGroove.alive[j] = false; continue; }   // gone for good
         var d = Math.max(0.14, frag[j].durBeats * beat);
         var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, frag[j].deg))].freq * mul;
-        note(f, tt, d, { gain: 0.35 + 0.5 * decay, vel: 0.35 + 0.45 * decay });
+        // 崩 DOES NOT PLAY OVER THE BROADCAST. The stuck groove holds the air
+        // against the other five voices and then played straight through a
+        // signal's hold itself — measured on seven far seeds, 7 to 59 melodic
+        // notes inside a hold, and every one of them was this loop: one voice,
+        // perfectly regular spacing, spanning the whole hold. The hold exists
+        // so that nothing talks over the broadcast, and "nothing" has to
+        // include the departure that set the hold.
+        //
+        // The note is SKIPPED, not rescheduled: a stuck tape does not wait its
+        // turn, and the loop keeps its own timing so it comes back exactly
+        // where it would have been. It also keeps ageing — the pass counter and
+        // the loss draws are untouched — so the disintegration is the same
+        // length whether a broadcast crossed it or not, which is what keeps a
+        // 崩 night reproducible.
+        if (!signalUp(tt)) { note(f, tt, d, { gain: 0.35 + 0.5 * decay, vel: 0.35 + 0.45 * decay }); }
         tt += d; any = true;
       }
       // the grit rises as the music leaves: what is left is the room. formPulse
@@ -1826,12 +1840,34 @@ window.ZankyoAudio = (function () {
   // air at all — pj2-air's limit floor is 1, so the hold lives here as a
   // per-voice window {from, until}; a claim inside it is denied (counted).
   // The drones, shō, noise and ambient never ask, so they continue.
+  // THE AIR HOLD IS A LIST PER LAYER, NOT A SLOT. It has five writers — the
+  // broadcast through the tools, 凍 on the shakuhachi, 鏡's answer, 崩's stuck
+  // groove and 騒's wall — and it used to be one object per layer written by
+  // assignment, so the last writer silently erased everyone else's claim. That
+  // is the same shape as 継's dropped field and arm()'s dropped fields: a
+  // shared structure one writer overwrites instead of composing with.
+  //
+  // Entries carry WHO set them, which is what makes signalUp answerable: "is a
+  // BROADCAST holding the air" is a different question from "is anything
+  // holding it", and 崩 has to be able to ask the first while itself holding
+  // the second.
   var airHold = {}, airHoldDenials = 0;
+  function airHoldAdd(layer, from, until, who) {
+    var a = airHold[layer] || (airHold[layer] = []);
+    for (var i = a.length - 1; i >= 0; i--) if (a[i].until < from - 30) a.splice(i, 1);   // long expired
+    a.push({ from: from, until: until, who: who || "?" });
+  }
+  function airHoldDrop(who) {
+    for (var k in airHold) {
+      var a = airHold[k]; if (!a) continue;
+      for (var i = a.length - 1; i >= 0; i--) if (!who || a[i].who === who) a.splice(i, 1);
+    }
+  }
   var kiruAt = -1e9, kiruHushUntil = -1e9;       // §11.3: when the last KIRU cut, and when its hush is over
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
-    var h = airHold[voice];
+    var a = airHold[voice] || [];
     // The claim's whole FOOTPRINT must clear the hold, not just its start. A
     // phrase claiming a moment before a signal's hold and running into it was
     // always able to talk over the broadcast; at one signal in three cycles it
@@ -1842,11 +1878,21 @@ window.ZankyoAudio = (function () {
     // be. Testing the estimate alone took the intrusions from six to one over
     // two hours; the pad takes the last one. Better to let a voice miss a turn
     // than to talk over the broadcast, which is the whole point of the hold.
-    if (h && t < h.until && (t + (span > 0 ? span : 0) + AIR_HOLD_PAD) > h.from) { airHoldDenials++; return null; }
+    for (var hi = 0; hi < a.length; hi++) {
+      var h = a[hi];
+      if (t < h.until && (t + (span > 0 ? span : 0) + AIR_HOLD_PAD) > h.from) { airHoldDenials++; return null; }
+    }
     return air.tryClaim(voice, span, margin);
   }
   var signalProvider = null;                     // zk-broadcast.js installs itself here (S1)
-  function signalUp(t) { for (var k in airHold) { var h = airHold[k]; if (h && t >= h.from && t < h.until) return true; } return false; }   // a signal holds the air at t
+  // "A SIGNAL holds the air at t" — the broadcast only. 崩 and 騒 hold the air
+  // too, and answering yes for them made every caller think a broadcast was up
+  // whenever the station was merely stuck.
+  function signalUp(t) {
+    for (var k in airHold) { var a = airHold[k] || [];
+      for (var i = 0; i < a.length; i++) if (a[i].who === "signal" && t >= a[i].from && t < a[i].until) return true; }
+    return false;
+  }
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null, visit2: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -3998,7 +4044,7 @@ window.ZankyoAudio = (function () {
       peak *= 1 + 0.5 * nlead.bite;
       for (var nli = 0; nli < MELODIC_LANES.length; nli++) {
         if (MELODIC_LANES[nli] === nlead.spare) continue;
-        airHold[MELODIC_LANES[nli]] = { from: now - 0.2, until: now + dur + 0.4 };
+        airHoldAdd(MELODIC_LANES[nli], now - 0.2, now + dur + 0.4, "nlead");
       }
       emitEvent({ cat: "far", label: "騒 the noise takes the lead", detail: body + " · " + dur.toFixed(0) + "s · " + nlead.spare + " left behind it" }, now);
     }
@@ -4717,7 +4763,8 @@ window.ZankyoAudio = (function () {
           getArc: getArc, arcPhase: arcPhase, scene: function () { return { type: scn.type, activity: scn.activity, startT: scn.startT, durS: scn.durS }; },
           cycle: function () { return { n: cyc.n, kind: cyc.kind, startT: cyc.startT, durS: cyc.durS, visit: cyc.visit ? cyc.visit.name : null }; },
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
-          airHold: function (map) { for (var k in map) airHold[k] = map[k]; }, airHoldClear: function () { airHold = {}; },
+          airHold: function (map) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, "signal"); },
+          airHoldClear: function () { airHoldDrop("signal"); },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
           // §11.3 TUNED SIGNALS — the station tunes to the REEL. On a far
           // night (d ≥ 0.5) a reel that holds a pitch may pull the field to it

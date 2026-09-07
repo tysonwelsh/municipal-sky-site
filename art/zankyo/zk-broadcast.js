@@ -166,7 +166,7 @@
     // fraction of a second runs past the edge — inside the loss ramp, where
     // the signal is already under 6 % of peak.
     c.inS = win[0] + rIn * Math.max(0, wl - need * tune.rate);
-    c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents; c.sea = tune.sea;
+    c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents;
     return c;
   }
 
@@ -180,7 +180,7 @@
   // dragged four semitones toward it is out of tune with both.
   var TUNE_CAP_CENTS = 400;
   function farTune(reel, wi) {
-    var flat = { wi: wi, rate: 1, pitchHz: null, degHz: 0, cents: 0, sea: false };
+    var flat = { wi: wi, rate: 1, pitchHz: null, degHz: 0, cents: 0 };
     var T = tl();
     if (!reel || !reel.tuned || !reel.pitchHz || !T.fieldTonic) return flat;
     var tonic = T.fieldTonic(); if (!(tonic > 0)) return flat;
@@ -198,8 +198,16 @@
     }
     if (!best) return flat;
     if (Math.abs(best.cents) > TUNE_CAP_CENTS) { flat.pitchHz = best.pitchHz; return flat; }
+    // §11.3's decision is NOT made here. It lives at the one site that acts on
+    // it, in the graph build, where the night and the reel's tag are both to
+    // hand. A `sea` flag here was computed, never copied by arm() and never
+    // read by anything — dead, and worse than absent, because the day someone
+    // simplifies that site to read it, it is undefined, the branch goes falsy
+    // and §11.3 stops firing in silence. (The critic's static field-contract
+    // check found it on rc.23; it is the precondition for a fourth instance of
+    // a fault we have now had three times.)
     return { wi: best.wi, rate: Math.pow(2, best.cents / 1200), pitchHz: best.pitchHz,
-             degHz: best.degHz, cents: best.cents, sea: false };
+             degHz: best.degHz, cents: best.cents };
   }
   // the dropout schedule (relative to t0) and the voices' return offsets, on the cycle's own fork
   function weather(R, cycle, holdS, lossD) {
