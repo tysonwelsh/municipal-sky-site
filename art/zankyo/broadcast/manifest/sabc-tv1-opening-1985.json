@@ -15,7 +15,7 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[6.0, 18.0], [68.0, 80.0], [114.0, 126.0], [140.0, 152.0], [196.0, 208.0], [248.0, 260.0]],
-  "pitchHz": [73.55, 130.56, null, 130.91, 97.92, null],
+  "pitchHz": [null, 130.43, null, null, null, null],
   "tuned": true,
   "notes": "the SAUK SABC JHB card with a clock running inside it; the schedule in English then in Afrikaans; the blue clock to noon; an announcer opening the day",
   "takedown": false

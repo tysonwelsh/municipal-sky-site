@@ -15,7 +15,7 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[1.0, 13.0], [17.0, 29.0], [33.0, 45.0], [47.0, 59.0], [63.0, 75.0], [77.0, 89.0]],
-  "pitchHz": [988.44, 988.33, 988.67, 990.76, 990.46, 990.36],
+  "pitchHz": [986.83, 986.82, 986.86, 988.01, 988.01, 988.05],
   "tuned": true,
   "notes": "22 November 1993; sync rolling into a PM5544 reading QATAR and DOH 9,11452, held under the tone",
   "takedown": false

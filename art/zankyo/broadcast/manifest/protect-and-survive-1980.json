@@ -14,8 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
   "srcWindows": [[110.0, 122], [212.0, 224], [300.0, 312], [640.0, 652], [1570.0, 1582], [1798.0, 1810], [2060.0, 2072], [2596.0, 2608]],
-  "pitchHz": [97.39, null, 97.21, null, null, null, null, null],
-  "tuned": true,
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "concatenation of all 20 films (archive.org ProtectAndSurvive1..20, PD Mark); UK Home Office / COI civil defence: the attack warning, the model house, the transistor radio, 'the importance of your radio'",
   "takedown": false
 }

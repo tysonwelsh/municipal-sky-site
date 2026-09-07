@@ -14,7 +14,7 @@
   "picture": "static",
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[0.0, 12], [56.0, 68], [110.0, 122], [170.0, 182], [220.0, 232], [262.0, 274]],
-  "pitchHz": [416.6, null, null, null, null, 416.76],
+  "pitchHz": [416.81, null, null, null, null, 416.67],
   "tuned": true,
   "notes": "Conet Project d1-06, Irdial-Discs; the folk tune on a synth, then an English woman reading five-figure groups twice each; attributed to MI6, Cyprus",
   "takedown": false

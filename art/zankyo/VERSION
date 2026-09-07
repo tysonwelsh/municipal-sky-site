@@ -1,1 +1,1 @@
-2.1.0-rc.33 — the drifting cycle now arrives rather than leans: on an ordinary night that drifts, the strange cycle falls around the fifth, sometimes much later, and almost never the first. Nights that do not drift are untouched
+2.1.0-rc.34 — the station now knows the true pitch of the reels it tunes to. The measuring tool was reading a few cents sharp on the encoded reels, so every bent broadcast was landing slightly flat; windows where two independent measurements disagree are no longer offered for tuning at all

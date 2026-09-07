@@ -26,6 +26,8 @@ FMIN, FMAX = 55.0, 1400.0
 THRESH   = 0.15          # YIN aperiodicity: below this a frame is voiced
 COVER    = 0.45          # at least this share of frames must be voiced
 SPREAD   = 45.0          # and the middle 80 % of them within this many cents
+DISAGREE_MAX = 10.0      # cents — inside this, either estimator will do
+DISAGREE_MAX_HARD = 20.0 # past this, no pitch here whatever the sign
 AGREE    = 0.30          # cover x strength — the share of the window that is ONE pitch. Set from the pool, not guessed: over 342 windows the voice bucket reads p90 0.183 and the tone bucket p75 0.669, so 0.30 sits near voice p96 and well under tone p75 — it keeps a third of the tone windows and admits 4 % of the voice ones, and those are voice windows that really do hold one pitch for a third of their length.
 
 
@@ -82,6 +84,53 @@ def fold_octaves(f, ref):
     while f > ref * 1.4142:
         f /= 2
     return f
+
+
+def fft_peak_near(x, f_expect, sr=SR, span_cents=200):
+    """An INDEPENDENT estimate: the spectral peak nearest f_expect, parabolically
+    interpolated on the log magnitude. Shares nothing with the YIN path above
+    except the samples, which is the whole point — two estimators that fail the
+    same way tell you nothing when they agree."""
+    n = 1 << 18
+    seg = x[:n] if len(x) >= n else x
+    if len(seg) < sr // 4:
+        return None
+    w = np.hanning(len(seg))
+    sp = np.abs(np.fft.rfft(seg * w, n))
+    fr = np.fft.rfftfreq(n, 1.0 / sr)
+    lo, hi = f_expect * 2 ** (-span_cents / 1200.0), f_expect * 2 ** (span_cents / 1200.0)
+    m = (fr >= lo) & (fr <= hi)
+    if not m.any():
+        return None
+    idx = int(np.argmax(np.where(m, sp, 0)))
+    if idx < 1 or idx + 1 >= len(sp):
+        return None
+    a, b, c = (np.log(sp[i] + 1e-20) for i in (idx - 1, idx, idx + 1))
+    den = a - 2 * b + c
+    shift = 0.5 * (a - c) / den if abs(den) > 1e-12 else 0.0
+    return (idx + shift) * sr / n
+
+
+def refine(x, f_yin):
+    """→ (refined Hz, disagreement in cents) or (None, None).
+
+    YIN is accurate on a raw tone — measured, +0.00 to +1.73 cents on synthetic
+    sines — and reads SHARP once the reel chain has been through it: filters
+    alone and AAC alone are both clean, the two together give +3.79 to +11.14.
+    A spectral peak does not share that failure, so the refined value is the
+    FFT's and the DISAGREEMENT is the confidence.
+    """
+    ests = []
+    step = max(1, len(x) // 4)
+    for k in range(4):
+        seg = x[k * step:(k + 1) * step]
+        f = fft_peak_near(seg, f_yin)
+        if f:
+            ests.append(f)
+    if not ests:
+        return None, None
+    f = float(np.median(ests))
+    return f, 1200 * np.log2(f / f_yin)
 
 
 def window_pitch(path, t0, t1):
@@ -149,11 +198,47 @@ def window_pitch(path, t0, t1):
     det["kind"] = "steady" if spread <= SPREAD else "tonal"
     if agree < AGREE:
         det["why"] = "not one pitch"; return None, det
-    if det["kind"] == "steady":
-        return round(float(np.median(folded)), 2), det
-    hz = med * 2 ** (((peak * 10 + 5) - 600) / 1200.0)
-    det["hz"] = round(hz, 2)
-    return round(hz, 2), det
+    hz = float(np.median(folded)) if det["kind"] == "steady" else med * 2 ** (((peak * 10 + 5) - 600) / 1200.0)
+
+    # TWO INDEPENDENT ESTIMATORS, AND THEIR DISAGREEMENT IS THE TEST. The
+    # critic's rule, and it turns a data-quality problem into a property of the
+    # manifest: if YIN and a spectral peak differ by more than the whole ±10
+    # cent gate, THIS WINDOW HAS NO PITCH and is not offered to the receiver at
+    # all. Not a smaller weight, not an average — excluded. Otherwise the reel
+    # is bent confidently onto a tone no listener hears, and the gate reads
+    # that as a wiring fault. jjy's first window reads 600.23 by YIN and 549.95
+    # by spectrum because the reel carries more than one tone; neither is "the"
+    # pitch and averaging them would invent a third.
+    ref, disagree = refine(x, hz)
+    if ref is None:
+        det["why"] = "no spectral peak"; return None, det
+    det["yinHz"] = round(hz, 2); det["fftHz"] = round(ref, 2); det["disagree"] = round(float(disagree), 2)
+    # THE SIGN CARRIES INFORMATION, so the rule is asymmetric (the critic's
+    # refinement, and it is principled rather than a compromise). Refusing every
+    # disagreement over 10 cents was right WHEN NEITHER ESTIMATOR WAS KNOWN
+    # BETTER. That is no longer the situation: the FFT is validated against an
+    # acoustic measurement of the sounding reel to 0.07 cents, and YIN has a
+    # CHARACTERISED failure — filters and AAC 32k together, one direction,
+    # +3.79 to +11.14 cents, worst low. YIN reads SHARP, so `disagree`
+    # (fft/yin) is NEGATIVE when the known bias is what we are seeing.
+    #
+    # So: past 20 cents, refuse either way. Between 10 and 20, a NEGATIVE
+    # disagreement is YIN's known bias and the FFT is trusted; a POSITIVE one
+    # is unexplained by anything either of us has measured, and unexplained
+    # disagreement is exactly what this rule exists to refuse. It fails closed.
+    #
+    # Confirmed on the pool before it was written: of the six marginals, the
+    # four with YIN's sign sit at 58, 94, 265 and 280 Hz — low, where the bias
+    # is worst — and the two with the opposite sign at 393 and 502 Hz. Five of
+    # six below 400 Hz. That is independent of the sign argument and agrees
+    # with it.
+    if abs(disagree) > DISAGREE_MAX_HARD or (disagree > DISAGREE_MAX and disagree <= DISAGREE_MAX_HARD):
+        det["why"] = ("estimators disagree by %+.0f cents — " % disagree) + (
+            "no single pitch here" if abs(disagree) > DISAGREE_MAX_HARD else
+            "and not in the direction YIN's bias explains")
+        return None, det
+    det["hz"] = round(ref, 2)
+    return round(ref, 2), det
 
 
 def main():

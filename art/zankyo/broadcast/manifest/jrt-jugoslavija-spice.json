@@ -14,7 +14,7 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
   "srcWindows": [[35.0, 45], [135.0, 145], [195.0, 205], [245.0, 255], [355.0, 365], [465.0, 475]],
-  "pitchHz": [null, 1013.34, null, null, null, null],
+  "pitchHz": [null, 1012.48, null, null, null, null],
   "tuned": true,
   "notes": "Yugoslav television idents and stings, Cyrillic and Latin: the dot-matrix world map, Мали програм, LOTO, 24 часа, the night programme menu, tv dnevnik",
   "takedown": false

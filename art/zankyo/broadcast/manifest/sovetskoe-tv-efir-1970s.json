@@ -14,7 +14,7 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[26.0, 38], [188.0, 200], [1586.0, 1598], [2766.0, 2778], [3046.0, 3058], [4683.0, 4695]],
-  "pitchHz": [1001.02, null, null, null, null, null],
+  "pitchHz": [999.99, null, null, null, null, null],
   "tuned": true,
   "notes": "reconstructed broadcast day of Soviet Central Television: the date-and-clock cards, 'Информационная программа' over the Spasskaya tower, the Kremlin clock, the announcer, and the sign-off — 'НЕ ЗАБУДЬТЕ ВЫКЛЮЧИТЬ ТЕЛЕВИЗОР!'",
   "takedown": false

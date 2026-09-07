@@ -14,8 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[0.0, 12], [160.0, 172], [268.0, 280], [280.0, 292], [292.0, 304], [304.0, 316]],
-  "pitchHz": [null, null, 100.05, null, null, null],
-  "tuned": true,
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "late-1970s Quasar/VX home tape, station and exact year unknown; a Coronet deer film dubbed into Japanese, 'The End', then slide ads read by an announcer (ski sale, Park Hotel, Hotel Sounkyo); true source youtube Q7g9xPfsqcw",
   "takedown": false
 }
