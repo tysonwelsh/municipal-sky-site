@@ -1,0 +1,20 @@
+{
+  "id": "nz-tvnz-tv2-breaks-1983",
+  "title": "Television New Zealand — Television 2 breaks, 24 October 1983",
+  "year": 1983,
+  "src": "https://archive.org/download/tvnz-breaks-24-10-83/TVNZ%20Breaks%2024-10-83.mp4",
+  "license": "none stated; off-air VHS of a TVNZ Television 2 commercial break",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 892192,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[118.0, 130.0], [138.0, 150.0], [170.0, 182.0], [222.0, 234.0], [254.0, 266.0], [390.0, 402.0]],
+  "notes": "New Zealand advertising itself at itself: exa-gym's list of regional phone numbers and PHONE NOW, an I SPEAK YOUR WEIGHT machine, KISS YOUR MORTGAGE GOODBYE, the paving people of Western Hutt Rd Petone, the channel-2 slide for OUR WORLD TONIGHT 7.30, and Tip Top's Instant Dollars",
+  "takedown": false
+}
