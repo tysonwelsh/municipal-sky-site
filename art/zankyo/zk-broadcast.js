@@ -55,6 +55,7 @@
   // an unknown value is LOUD rather than silently unweighted — the librarian
   // will add more reels, and this is a data-shape assumption about a file that
   // is not ours.
+  var RAGGED_WINDOW_S = 0.25;                            // the tuned reels sit at 0.090 s today; the pool reaches 2.0
   var TONE_DARK = { voice: 1, noise: 1, tone: 1, drone: 1 };
   var TONE_LIGHT = { music: 1, sung: 1 };
   var TONE_PITCHED = { tone: 1, sung: 1, drone: 1 };     // §11.3: the kinds that may pull the field to themselves
@@ -80,9 +81,32 @@
       fetch(MANIFEST_URL).then(function (r) { return r.json(); }).then(function (m) {
         var arr = Array.isArray(m) ? m : (m && m.reels) || [];
         var out = [];
-        var unknown = {};
+        var unknown = {}, ragged = [];
         for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) {
           if (!toneKnown(e.tone)) unknown[e.tone] = (unknown[e.tone] || 0) + 1;
+          // A TUNED REEL'S WINDOWS MUST BE THE SAME LENGTH, near enough.
+          // §11.2 re-aims a tuned reel onto whichever window sits nearest the
+          // field, and holdS is derived from THAT window's length — so on a
+          // reel whose windows differ, re-aiming changes the hold, which
+          // changes the air hold, which denies a different melodic claim, and
+          // HOME NIGHTS MOVE. Today they do not, because the tuned reels vary
+          // by at most 0.090 s (tvdx-pik1-cyprus) which is under a percent of
+          // a hold. But the pool's true spread is 2.000 s — gbc-accra
+          // alternates 12 s and 10 s windows — and TEN reels over 0.2 s are
+          // untuned only because no pitch was found in them. The bound is a
+          // property of a neighbouring fact, not of anything here, exactly like
+          // §11's cap being unreachable only because there are two degrees a
+          // fifth apart. One `tuned: true` from the librarian on any of those
+          // ten and byte-identity starts failing with no visible cause, so the
+          // assumption says so out loud instead of resting quietly.
+          if (e.tuned && e.windows.length > 1) {
+            var wlo = 1e9, whi = -1e9;
+            for (var wj = 0; wj < e.windows.length; wj++) {
+              var wln = e.windows[wj][1] - e.windows[wj][0];
+              if (wln < wlo) wlo = wln; if (wln > whi) whi = wln;
+            }
+            if (whi - wlo > RAGGED_WINDOW_S) ragged.push(e.id + " (" + (whi - wlo).toFixed(2) + "s)");
+          }
           out.push(e);
         } }
         // LOUD, not silent. A tone the receiver does not know gets no tide
@@ -93,6 +117,11 @@
           console.error("ZankyoBroadcast: manifest carries " + uk.length + " UNKNOWN tone value(s) — " +
             uk.map(function (k) { return k + "×" + unknown[k]; }).join(", ") +
             ". They get no tide weighting and cannot sea-change. Add them to TONE_DARK/TONE_LIGHT/TONE_PITCHED in zk-broadcast.js.");
+        }
+        if (ragged.length && typeof console !== "undefined" && console.error) {
+          console.error("ZankyoBroadcast: " + ragged.length + " TUNED reel(s) have windows of differing length — " +
+            ragged.slice(0, 6).join(", ") + ". §11.2 re-aims across windows and derives the hold from the one it picks, " +
+            "so this moves home nights. Either give the reel equal windows or leave it untuned.");
         }
         poolUnknownTones = unknown;
         pool = out; poolState = out.length ? "ready" : "failed"; if (!out.length) poolError = "empty manifest";
