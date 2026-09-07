@@ -292,3 +292,14 @@ to +5.6 %), and because the 207-reel pool merge moved the receiver's
 draws — not because the lift touches home nights by construction (at
 1-in-12 with the flag, it touches the flagged twelfth only). The action
 stands; the reason is corrected.
+
+**§12 CLOSED (2026-09-07, W4).** Mechanism, not count: rc.25's planned hold
+covered the arm-to-fire gap; rc.37's guaranteed 55 s arm lead exceeds the
+measured worst commit lead of any melodic lane (35.55 s at ?far=0.95 across
+the departure-covering set; dilated nights are NOT the worst), and a
+render-time refusal in the note functions catches the remainder (4–9 notes
+per 30 min of 1 600–2 400, every one of which would have sounded over a
+broadcast). Guarded by an assertion in the fault tally:
+max(commitLead) < ARM_LEAD on the covering set, so a future body or time
+departure that reaches further ahead fails by name instead of re-opening
+§12 as an intermittent intrusion.
