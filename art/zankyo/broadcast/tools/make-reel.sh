@@ -6,6 +6,15 @@
 # H.264 + 32 kbps mono band-passed AAC), plus one manifest JSON per reel.
 # See --help. Runs on the owner's Mac only (needs ffmpeg + yt-dlp).
 set -euo pipefail
+{ # ---------------------------------------------------------------------------
+# Everything below is ONE compound command, on purpose. bash reads a script
+# lazily, by byte offset: if another agent edits this file while a run is in
+# flight (round 3: --band landed mid-run), the running shell resumes at a stale
+# offset and parses the middle of a heredoc as script — the reported
+# "line 223: syntax error near unexpected token `('", which is the
+# `for i,(s,e) in enumerate(w,1)` line of the window-printing heredoc. Wrapping
+# the body in braces forces bash to parse to the final `}` before it executes
+# anything, so a concurrent edit can no longer derail a run.
 
 usage() {
   cat <<'EOF'
@@ -35,9 +44,15 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
   --distort 0..1         bake extra receiver distortion into the reel (narrow band, drive
                          and soft clip, bit-crush, flutter); 0 = none. Use for material
                          that must arrive already broken (the owner's Tier B music)
-  --propose              analyze and print proposed windows only; cut nothing
+  --propose              analyze and print proposed windows only; cut nothing.
+                         Exits 2 (not 0) when no window passed the loudness/black
+                         gates — what it printed is then an even spread, a guess.
   --force-analyze        ignore the cached analysis in local-dev/broadcast-src
   -h, --help
+
+Every finished reel is measured for a stable dominant pitch per window
+(reel-pitch.py): the entry carries `pitchHz` and `tuned`, which is how the
+receiver tunes a chant or a test tone to the station (PLAN-ZANKYO-FAR §11).
 
 Outputs (relative to art/zankyo/broadcast/):
   reels/<id>.mp4        the reel        manifest/<id>.json   its manifest entry
@@ -219,9 +234,16 @@ else
     log "using cached analysis $AN (--force-analyze to redo)"
   fi
   AOFLAG=""; [ "$AUDIO_ONLY" = 1 ] && AOFLAG="--audio-only"
-  PROP="$(python3 "$HERE/reel-propose.py" "$AN" "$DUR" "$WLEN" "$MAXW" $AOFLAG)"
+  PROP="$(python3 "$HERE/reel-propose.py" "$AN" "$DUR" "$WLEN" "$MAXW" $AOFLAG || true)"
+  [ -n "$PROP" ] || { echo "no windows proposed (the analyser returned nothing)" >&2; exit 2; }
   WINJSON="$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["windows"]))' "$PROP")"
   NWIN="$(python3 -c 'import json,sys; print(len(json.loads(sys.argv[1])))' "$WINJSON")"
+  # nothing passed the loudness/black gates: reel-propose falls back to an even
+  # spread and says so. That spread is a guess, not a proposal — print it so it
+  # can still be copied, then leave with 2 so a caller can tell the difference.
+  GATED=0
+  python3 -c 'import json,sys; sys.exit(0 if "no candidate passed" in (json.loads(sys.argv[1]).get("note") or "") else 1)' "$PROP" && GATED=1 || true
+  [ "$NWIN" -ge 1 ] || { echo "no windows proposed" >&2; exit 2; }
   python3 - "$PROP" <<'PY' >&2
 import json,sys; p=json.loads(sys.argv[1])
 print(f"▸ proposed {len(p['windows'])} windows from {p.get('candidates',0)} candidates "
@@ -239,7 +261,13 @@ def f(t): return f"{int(t//60)}:{t%60:05.2f}"
 for i,(s,e) in enumerate(w,1): print(f"    {i:2d}. {f(s)} – {f(e)}   ({s:.2f}-{e:.2f})")
 print("  --windows " + ",".join(f"{s:.2f}-{e:.2f}" for s,e in w))
 PY
-if [ "$PROPOSE" = 1 ]; then log "--propose: stopping before the cut"; exit 0; fi
+if [ "$PROPOSE" = 1 ]; then
+  if [ "${GATED:-0}" = 1 ]; then
+    echo "no windows proposed — no window passed the loudness/black gates; the list above is an even spread, verify it by eye" >&2
+    exit 2
+  fi
+  log "--propose: stopping before the cut"; exit 0
+fi
 
 # ---- 4. cut each window to an intermediate ---------------------------------
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/make-reel.$ID.XXXXXX")"; trap 'rm -rf "$TMP"' EXIT
@@ -319,7 +347,7 @@ if [ "$AUDIO_ONLY" = 1 ]; then
   log "encoding reel with a generated '$PICTURE' picture"
   if [ "$PICTURE" = wave ]; then
     ffmpeg -hide_banner -nostdin -loglevel error -y -f concat -safe 0 -i "$TMP/list.txt" \
-      -filter_complex "[0:a]$LNF,asplit[a1][a2];[a2]showwaves=s=96x72:mode=cline:rate=12:colors=0xc8c8c8:scale=sqrt,tmix=frames=2,scale=192:144:flags=bilinear,format=yuv420p[v]" \
+      -filter_complex "[0:a]$LNF,aresample=48000,asplit[a1][a2];[a2]showwaves=s=96x72:mode=cline:rate=12:colors=0xc8c8c8:scale=sqrt,tmix=frames=2,scale=192:144:flags=bilinear,format=yuv420p[v]" \
       -map "[v]" -map "[a1]" \
       -c:v libx264 -preset slow -crf 30 -g 12 -keyint_min 12 -sc_threshold 0 -pix_fmt yuv420p \
       -c:a aac -b:a 32k -ac 1 -ar 48000 -movflags +faststart "$OUT"
@@ -344,10 +372,25 @@ GAIN="$(awk "BEGIN{g=-18-($MEAS); if(g>12)g=12; if(g<-12)g=-12; printf \"%.1f\",
 RDUR="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | head -1)"
 BYTES="$(stat -f%z "$OUT")"
 
+# ---- 6b. the pitch of each window (PLAN-ZANKYO-FAR §11.1) -------------------
+# Measured on the FINISHED reel, not the source: the band-pass, the distortion
+# and the loudnorm are all between the two, and the pitch the receiver will
+# tune to is the one the reel actually carries. Reads only — it never opens the
+# reel for writing, so a re-run cannot change a byte of it.
+PITCH="$(python3 "$HERE/reel-pitch.py" "$OUT" "$REELWIN" 2>/dev/null || echo '')"
+if [ -z "$PITCH" ]; then
+  log "WARNING: pitch analysis failed — the entry gets pitchHz nulls and tuned false"
+  PITCH="$(python3 -c 'import json,sys; w=json.loads(sys.argv[1]); print(json.dumps({"pitchHz":[None]*len(w),"tuned":False}))' "$REELWIN")"
+fi
+python3 -c 'import json,sys
+d=json.loads(sys.argv[1]); n=sum(1 for p in d["pitchHz"] if p)
+print("▸ pitch  %d/%d windows carry a stable pitch%s" % (n, len(d["pitchHz"]), "  (tuned)" if d["tuned"] else ""))' "$PITCH" >&2
+
 python3 - "$MANI/$ID.json" "$ID" "$TITLE" "$YEAR" "$SRC_REF" "$LICENSE" "$TIER" "$TONE" "$WEIGHT" "$GAIN" \
-  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" <<'PY'
+  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" "$PITCH" <<'PY'
 import json,sys
-(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band) = sys.argv
+(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band, pitch) = sys.argv
+P = json.loads(pitch)
 e = {
   "id": id_,
   "title": title or id_,
@@ -365,6 +408,8 @@ e = {
   "picture": pic if ao == "1" else None,
   "windows": json.loads(reelwin),
   "srcWindows": json.loads(srcwin),
+  "pitchHz": P["pitchHz"],
+  "tuned": P["tuned"],
   "notes": notes,
   "takedown": False,
 }
@@ -373,7 +418,9 @@ lines = ["{"]
 keys = list(e)
 for i, k in enumerate(keys):
     v = e[k]; comma = "," if i < len(keys) - 1 else ""
-    if k in ("windows", "srcWindows"):
+    if k == "pitchHz":
+        lines.append('  "%s": [%s]%s' % (k, ", ".join("null" if x is None else repr(round(float(x), 2)) for x in v), comma))
+    elif k in ("windows", "srcWindows"):
         body = ", ".join("[%s, %s]" % (a, b) for a, b in v)
         lines.append('  "%s": [%s]%s' % (k, body, comma))
     else:
@@ -388,3 +435,5 @@ printf '▸ reel   %s  (%d windows, %.1f s, %d KB, integrated %s LUFS, gain %s d
 echo "▸ entry  ${MANI#$REPO/}/$ID.json" >&2
 if [ "$BYTES" -gt 2097152 ]; then log "WARNING: reel is over 2 MB — fewer/shorter windows, please"; fi
 echo "▸ audition: $(dirname "${HERE#$REPO/}")/tools/preview.sh $ID" >&2
+exit 0
+} # end of the parse-first wrapper — nothing may follow this line
