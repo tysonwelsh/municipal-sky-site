@@ -215,3 +215,22 @@ every phase. The far target is therefore PINNED at the original numbers:
 far p95 17.4 (3× the 2.1.0-rc.1 home p95) and the W4 1-in-50 at 29.0 (5×).
 Identity re-bases and home-only calibration continue; only the target is
 fixed.
+
+## 10. Owner ruling: a little pain is allowed (2026-09-07)
+
+The owner, having heard far nights from the crew's captures: "I'm okay with a
+little bit of pain … some noise is good … let's not go overboard." So the
+harshness gate is TIERED by distance, and the loudness ceiling stays hard
+everywhere (nothing gets louder to sound stranger):
+
+- d < 0.15 (home): unchanged — byte-identical, the tripwire as it stands.
+- 0.15 ≤ d < 0.7: the roughness tripwire as ruled (≤ 0.25 absolute, ≤ home
+  + 0.07).
+- 0.7 ≤ d < 0.85 (far): the tripwire loosens to ≤ 0.35 absolute, ≤ home
+  + 0.15. 騒 noise-leads and 金 metal are expressly allowed to be abrasive
+  here; the centroid gate stays (darker, not brighter).
+- d ≥ 0.85 (interstellar): no roughness gate at all — only the master
+  loudness ceiling, the peak cap and the owner's ear at the W4 listen.
+  This is where the noise is meant to live.
+
+Nothing above changes how OFTEN far nights occur.
