@@ -1,0 +1,70 @@
+{
+  "id": "cst-vysilani-znelky",
+  "title": "Vysílání Československé televize — znělka, hodiny, Zprávy TN",
+  "year": 1985,
+  "src": "https://youtu.be/OVwgs3ET4jM",
+  "license": "unknown (off-air recording of ČST)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 497698,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      16.0,
+      28.0
+    ],
+    [
+      32.0,
+      44.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      74.0,
+      86.0
+    ],
+    [
+      220.0,
+      232.0
+    ]
+  ],
+  "notes": "Czechoslovak Television opening up: the TV2 test card, the ČS monogram assembling itself, ČESKOSLOVENSKÁ TELEVIZE, the announcer Miloš Frýba, the Zprávy TN title and the reader mid-bulletin. Undated off-air recording; the ident and test card are ČST's 1970s–80s set, so the year is an estimate",
+  "takedown": false
+}
