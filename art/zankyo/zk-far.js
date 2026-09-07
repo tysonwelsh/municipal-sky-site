@@ -476,9 +476,16 @@ window.ZK_FAR = (function () {
 
   function lift(rng, cycleN, d) {
     if (!(d >= D_HOME)) {
-      // a home night lifts only on the one cycle it drew, and only if it drew one
+      // A home night lifts only on the one cycle it drew, and only if it drew
+      // one. RETURNS THE NIGHT'S d WHEN IT DOES NOT LIFT, not 0 — the far
+      // branch below already returns d for an unlifted cycle, and the two
+      // disagreeing meant the engine read "no lift" as "this cycle is at
+      // distance zero". Seed 250 announced 潮 closer in · d 0.03 → 0.00 on
+      // every one of its seven unlifted cycles, and getFar().lifted was true
+      // on every ordinary home cycle — the flag the whole partition rests on.
+      // One contract: this returns the CYCLE'S DISTANCE, always.
       var h = homeLift(rng);
-      return (h && h.cycle === cycleN) ? h.d : 0;
+      return (h && h.cycle === cycleN) ? h.d : d;
     }
     var R = rng.fork("cycle:" + cycleN);
     var u = R.next(), mag = R.rnd(0.10, 0.32), out = R.chance(0.5);

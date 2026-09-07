@@ -909,6 +909,9 @@ window.ZankyoAudio = (function () {
     if ((p = farNight.dep.metal)) farMetal = p;
     if ((p = farNight.dep.nlead)) farNlead = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
+    var tt = ctx ? ctx.currentTime : 0;
+    farSay("canon", tt); farSay("hetero", tt); farSay("poly", tt); farSay("hocket", tt);
+    farSay("erode", tt); farSay("mainv", tt); farSay("metal", tt); farSay("rev", tt);
   }
   // 遅 — one cycle glacial (a forty-minute jo made of single notes) or frantic,
   // drawn per cycle from the night's own band on the cycle's own sub-fork, so
@@ -1205,8 +1208,58 @@ window.ZankyoAudio = (function () {
   }
   // Read tonight's pitch departures into the machinery above. Called once at
   // play(), after the night is drawn; every value here is already seeded.
-  function farPitchSetup(t0) {
-    farT0 = t0;
+  // THE STORY, TOLD AS IT HAPPENS (W4). The plan asks that "the VFD tells the
+  // story as it happens", and until this commit fourteen of the twenty-four
+  // departures never said a word: all six pitch departures, all four ensemble
+  // ones, 金 and 逆. Seed 61 draws 螺 蝕 金 and produced a night name, two lift
+  // lines, and silence from its three departures for a full hour.
+  //
+  // The ones that ACT AT MOMENTS already speak each time (崩, 騒, 群, 相, 室,
+  // 凍, 雲, 鏡, 遅, 未斬). The ones that TRANSFORM THE WHOLE WORLD cannot speak
+  // per note without drowning the log, so they speak when they TAKE HOLD —
+  // once at the start of a night, and again whenever a lifted cycle changes
+  // what they are doing, which is exactly when a listener wants to be told.
+  // Deduplicated on the rendered line, so a lift that leaves a departure
+  // unchanged says nothing about it.
+  // null = "not announcing yet". play() runs the setups BEFORE the night names
+  // itself, and a departure introducing itself above the night it belongs to
+  // reads backwards; so the setups stay quiet until play() opens the story.
+  var farSaid = null;
+  var FAR_SAY = {
+    sag:    function (p) { return "the octave is " + Math.round(p.cents) + " cents, not 1200 — the whole field is somewhere else"; },
+    ear:    function (p) { return "the plucked bodies tuned by ear, the winds left tempered · depth " + p.depth.toFixed(2); },
+    meri:   function (p) { return "the semitone pairs narrow toward a quarter-tone · " + p.which; },
+    bito:   function (p) { return "two modes at once · " + (p.modes || []).slice(0, 2).join(" against ") + " · share " + p.share.toFixed(2); },
+    spiral: function (p) { return "the tonic glides " + p.centsPerS.toFixed(1) + " cents a second — a key that never arrives"; },
+    vari:   function (p) { return "the tape sags " + Math.round(-p.semis * 100) + " cents over " + Math.round(p.overS) + "s, then " + (p.snap ? "snaps" : "crawls") + " back"; },
+    canon:  function (p) { return "the plucked trio in a tempo canon · " + (p.ratios || []).join(":"); },
+    hetero: function (p) { return "all five melodic voices on one line, each a hair sharp and a breath behind · lag " + p.lagS.toFixed(2) + "s"; },
+    poly:   function (p) { return "each voice keeps its own meter · " + (p.meters || []).join(" / "); },
+    hocket: function (p) { return "one melody split note by note across the voices" + (p.strict ? ", strictly" : ""); },
+    erode:  function (p) { return "the arc erodes · " + p.shape; },
+    mainv:  function (p) { return "間 inverted: the rests are the music · rest ×" + p.restMul.toFixed(1) + (p.singleton ? " · one voice at a time" : ""); },
+    metal:  function (p) { return "ring modulation on " + (p.targets || []).join(" and ") + " · mix " + p.ringMix.toFixed(2) + " · FM index " + p.fmIndex.toFixed(1); },
+    rev:    function (p) { return "envelopes played backwards · " + Math.round(p.share * 100) + "% of them · swell " + p.swellS.toFixed(1) + "s"; },
+  };
+  function farSay(id, t) {
+    if (!farSaid) return;
+    var p = farNight && farNight.dep && farNight.dep[id];
+    if (!p || !FAR_SAY[id]) return;
+    var line;
+    try { line = FAR_SAY[id](p); } catch (e) { return; }
+    if (farSaid[id] === line) return;                 // unchanged by this cycle: nothing to tell
+    farSaid[id] = line;
+    emitEvent({ cat: "far", label: p.kana + " " + p.name, detail: line }, t);
+  }
+
+  // `keepOrigin` — a lifted cycle rebuilds the pitch departures at its own
+  // distance, but must NOT move farT0. That is the glide's phase origin, and
+  // resetting it every cycle would make 螺 restart from zero each time instead
+  // of being the slow continuous drift it is named for. Found while wiring the
+  // announcements: the lift was rebuilding the TIME departures and leaving the
+  // pitch ones on the night's values entirely.
+  function farPitchSetup(t0, keepOrigin) {
+    if (!keepOrigin) farT0 = t0;
     farWarpK = 1; farEar = null; farBito = null; farBitoField = null; farSpiral = null; farVari = null;
     farPitchOn = false; farGlideOn = false;
     if (!farNight || farNight.home) return;
@@ -1226,6 +1279,9 @@ window.ZankyoAudio = (function () {
     }
     farPitchOn = !!(farWarpK !== 1 || farEar || farBito || farSpiral || farVari);
     farGlideOn = !!(farSpiral || farVari);
+    var pt = t0 != null ? t0 : (ctx ? ctx.currentTime : 0);
+    farSay("sag", pt); farSay("ear", pt); farSay("meri", pt); farSay("bito", pt);
+    farSay("spiral", pt); farSay("vari", pt);
   }
   // 減 — the semitone pairs narrow toward a quarter-tone. Applied to a mode's
   // steps as setMode builds its custom-mode object, so field.size never
@@ -2340,6 +2396,7 @@ window.ZankyoAudio = (function () {
       // parameters, so a lift applied after it would be read by nothing.
       farLiftCycle(cyc.n, evt.t);
       farTimeSetup();
+      farPitchSetup(evt.t, true);            // …and the tuning departures, without moving the glide's origin
       arcStartTime = evt.t; ARC_PERIOD = evt.durS;
       var pm = p.pitch, fromName = noteName(field.tonicHz);
       cyclesSinceSea++;
@@ -4429,6 +4486,7 @@ window.ZankyoAudio = (function () {
     pulse.active = false;                        // no grid until the taiko speaks
     lastAitake = null; visitActive = null; cyc.visit = null; cyc.visit2 = null; airHold = {}; airHoldDenials = 0;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
+    farSaid = null;                              // quiet until the night has named itself
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded
     farTimeSetup(); farPlanN = 0; farCycleRate = 1;   // …and what its time departures do
@@ -4440,7 +4498,17 @@ window.ZankyoAudio = (function () {
     if (farNight.dep.meri) field.modulate({ mode: { name: currentMode, steps: farMeriSteps(MODES[currentMode].offsets) } });
     if (farWarpK !== 1 || farNight.dep.meri) rebuildScale();
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
-    if (!farNight.home) emitEvent({ cat: "far", label: farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);   // the VFD tag already says 逸脱
+    if (!farNight.home) {
+      // The night names itself FIRST and its departures introduce themselves
+      // after — the setups run before this line, so without holding their
+      // lines back the log opened with three departures explaining themselves
+      // and only then said what night it was. The story has an order.
+      emitEvent({ cat: "far", label: farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);   // the VFD tag already says 逸脱
+      farSaid = {};
+      var sayIds = ["sag", "ear", "meri", "bito", "spiral", "vari", "canon", "hetero",
+                    "poly", "hocket", "erode", "mainv", "metal", "rev"];
+      for (var syi = 0; syi < sayIds.length; syi++) farSay(sayIds[syi], t0);
+    }
     masterGain.gain.cancelScheduledValues(t0);
     masterGain.gain.setValueAtTime(masterVolume, t0);
     for (var i = 0; i < LAYERS.length; i++) { applyLayerGain(LAYERS[i]); lane(LAYERS[i]).rate = layerRate[LAYERS[i]] || 1; }
@@ -4896,7 +4964,14 @@ window.ZankyoAudio = (function () {
     getFar: function () {
       var n = FAR.night();
       var dn = farNightDrawn || n;
-      return { d: n.d, home: !!n.home, kana: n.kana, name: n.name, label: n.label, detail: n.detail || "",
+      // `d` and `home` are THE NIGHT'S, not this cycle's. rc.29 made farNight
+      // the cycle view, which silently changed what this field meant for every
+      // caller — the critic's dist-json reads far.d, and seed 1024 started
+      // reporting 0.56 for a night drawn at 0.73 purely because the last cycle
+      // had leaned in. A field whose MEANING changes under a reader is worse
+      // than one that changes value, which is the lesson engineSig taught an
+      // hour ago. The cycle's own distance is cycleD, next to it.
+      return { d: dn.d, home: !!dn.home, kana: n.kana, name: n.name, label: n.label, detail: n.detail || "",
         // §13 — enough to RE-DERIVE, not just lifted:true. "Byte-identical to
         // its own baseline" only says that SOMETHING moved; with the cycle and
         // d′ visible, a lift that shifted from cycle 3 to cycle 5, one that
