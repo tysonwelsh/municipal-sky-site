@@ -1,0 +1,72 @@
+{
+  "id": "shigatse-tibetan-news-weather",
+  "title": "རི་ཀ་ཟེ། Rikaze News and the weather, Shigatse Tibetan-language channel",
+  "year": 2024,
+  "src": "https://www.bilibili.com/video/BV19r421G7Cc",
+  "license": "unknown (broadcast ephemera, uploaded to Bilibili)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.4,
+  "durS": 72.0,
+  "bytes": 633894,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      16.0,
+      28.0
+    ],
+    [
+      86.0,
+      98.0
+    ],
+    [
+      566.0,
+      578.0
+    ],
+    [
+      626.0,
+      638.0
+    ],
+    [
+      696.0,
+      708.0
+    ],
+    [
+      726.0,
+      738.0
+    ]
+  ],
+  "notes": "Prefecture television in Tibetan: the globe news open with its Tibetan title, an anchor in a chuba mid-sentence, the two-anchor desk, then the weather — the panel, the prefecture map, temperatures read in Tibetan.",
+  "country": "China (Shigatse, Tibet AR)",
+  "language": "Tibetan (Ü-Tsang)",
+  "takedown": false
+}
