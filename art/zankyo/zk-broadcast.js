@@ -355,9 +355,14 @@
   function farDep(id) {
     try { var f = Z.getFar && Z.getFar(); return (f && !f.home && f.dep && f.dep[id]) || null; } catch (e) { return null; }
   }
-  function farPhaseTap(src, t0, holdS, lossD) {
+  function farPhaseTap(src, t0, holdS, lossD, N) {
     var p = farDep("phase"); if (!p) return null;
-    var T = tl(), c = T.ctx, sum = c.createGain(), dly = c.createDelay(1.5), wet = c.createGain();
+    // N is the caller's node registrar: the comb has to be torn down with the
+    // signal that made it. Without it the three nodes outlive every broadcast
+    // and accumulate for the life of the page — silent, because `src` is
+    // disconnected, but never collected. (Found in the browser, W3b; the
+    // symbolic probe counts sources, not gains.)
+    var T = tl(), c = T.ctx, sum = N(c.createGain()), dly = N(c.createDelay(1.5)), wet = N(c.createGain());
     var total = (p.driftMs / 1000) * p.passes;                 // where the two copies end up
     dly.delayTime.setValueAtTime(0.0005, t0);
     dly.delayTime.linearRampToValueAtTime(Math.min(1.4, total), t0 + TUNE_S + holdS + lossD);
@@ -384,17 +389,35 @@
   // gets a short fade at both ends and is normalised to a fixed energy — the
   // room must change its CHARACTER without changing the station's level.
   var farRoomConv = null, farRoomWet = null, farRoomTap = null;
-  function farRoomCapture(srcNode, t0) {
+  //
+  // WHEN the tap listens is the whole departure. The graph is built a second
+  // or more ahead of t0 (the lookahead lead), and the signal's own gain is at
+  // zero until t0 and only reaches full level after TUNE_S — so a tap that
+  // starts the moment it is connected records the silence before the
+  // broadcast and the whisper of it tuning in, and is finished before the
+  // reel is properly up. Measured in a real browser at rc.19: 1.1 s of exact
+  // digital silence, then a step, with the median energy 2.1 s into a 2.34 s
+  // impulse. Convolved, that is not a room — it is a one-second slap-back
+  // with a click on its front edge, which is precisely what the windowing
+  // below exists to prevent.
+  //
+  // So the handler gates on `startT`: it drops every block that begins before
+  // the reel is up and starts accumulating at the first one that does not.
+  // ev.playbackTime is the context time of the block's first sample, which is
+  // the same clock startT is written in. The tap is connected early because
+  // that is when the graph is built; it simply does not listen yet.
+  function farRoomCapture(srcNode, startT) {
     var p = farDep("reelrm"); if (!p || farRoomConv) return;
     var T = tl(), c = T.ctx;
     if (!c.createScriptProcessor) return;
     var sr = c.sampleRate, want = Math.round(p.sliceS * sr), got = 0;
     var acc = new Float32Array(want);
     var sp = c.createScriptProcessor(4096, 1, 1), sink = c.createGain();
-    sink.gain.setValueAtTime(0, t0);                       // the tap is silent: it listens only
+    sink.gain.setValueAtTime(0, c.currentTime);            // the tap is silent: it listens only
     var done = false;
     sp.onaudioprocess = function (ev) {
       if (done) return;
+      if (ev.playbackTime + 1e-4 < startT) return;         // not yet: the reel is not up
       var inp = ev.inputBuffer.getChannelData(0), n = Math.min(inp.length, want - got);
       for (var i = 0; i < n; i++) acc[got + i] = inp[i];
       got += n;
@@ -490,7 +513,7 @@
       // hold, which is the same relationship expressed as a comb that sweeps —
       // and it is the comb, not the delay, that is the sound. It costs one
       // delay and one gain, and only while a signal is up.
-      var phased = farPhaseTap(sg, t0, holdS, lossD);
+      var phased = farPhaseTap(sg, t0, holdS, lossD, N);
       (phased || sg).connect(T.lg("broadcast"));
       farRoomCapture(sg, t0 + TUNE_S + 1.0);      // 室: two seconds of the reel, once it is properly tuned in
       // the burst after the collapse: pure static, then the afterglow
