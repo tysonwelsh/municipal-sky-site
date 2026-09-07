@@ -1,0 +1,88 @@
+{
+  "id": "unconquerable-tibet-1959",
+  "title": "Unconquerable Tibet",
+  "year": 1959,
+  "src": "https://archive.org/details/gov.archives.arc.1633560",
+  "license": "PD (CC0, US National Archives)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.2,
+  "durS": 96.08,
+  "bytes": 1008329,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.08
+    ],
+    [
+      72.08,
+      84.08
+    ],
+    [
+      84.08,
+      96.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      85.0,
+      97.0
+    ],
+    [
+      120.0,
+      132.0
+    ],
+    [
+      155.0,
+      167.0
+    ],
+    [
+      190.0,
+      202.0
+    ],
+    [
+      225.0,
+      237.0
+    ],
+    [
+      330.0,
+      342.0
+    ],
+    [
+      400.0,
+      412.0
+    ],
+    [
+      470.0,
+      482.0
+    ]
+  ],
+  "notes": "NSC/CIA film on the 1959 revolt and the flight into India: a file crossing a ridge, a monastery hung with banners, a street of pilgrims, a truck in dust on the road out, then the party arriving in India and the press that met it. English narration throughout — the Tibetan part of this reel is the pictures. Low weight.",
+  "country": "Tibet and India (filmed) / US (produced)",
+  "language": "none (English narration)",
+  "takedown": false
+}
