@@ -4768,6 +4768,21 @@ window.ZankyoAudio = (function () {
           airHold: function (map, who) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, who || "signal"); },
           airHoldClear: function (who) { airHoldDrop(who === undefined ? "signal" : who); },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
+          // §11.2 asks for "the window nearest the current tonic or fifth", and
+          // CURRENT has to mean tonight's. 撓 warps every interval about the
+          // tonic — farWarp(f) = T·(f/T)^k with k = the drawn octave over 1200
+          // — so on a sagging night the fifth the station actually sounds is
+          // 700·k cents, measured across 370 撓 nights as 690.4 to 716.8. The
+          // receiver was aiming at the tempered 700.0, which is up to 16.8
+          // cents adrift: 1.7× the ±10 cent gate the whole feature is held to.
+          // The TONIC is exact for any k, since farWarp(T) = T, so only reels
+          // that land on the fifth were affected.
+          //
+          // Identity at home (k = 1) and on every night that does not draw 撓,
+          // so this moves nothing the re-base did not already move. It covers
+          // the FIELD-level warp only; 減 and 螺 do their own work on the mode
+          // steps and I have not measured whether the fifth moves under them.
+          degreeHz: function (cents) { return farWarp(field.tonicHz * Math.pow(2, (+cents || 0) / 1200)); },
           // §11.3 TUNED SIGNALS — the station tunes to the REEL. On a far
           // night (d ≥ 0.5) a reel that holds a pitch may pull the field to it
           // as it tunes in, and then plays unbent: the tape is not warped, the

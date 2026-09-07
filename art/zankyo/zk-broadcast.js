@@ -40,7 +40,6 @@
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var HOLD_LEAD_S = 6, STATIC_LEAD_S = 4, DECIDE_LEAD_S = 1, PREFETCH_LEAD_S = 12;   // from the hosting scene's start (t0 ≥ start + 8)
   var PLAN_REL_MAX = 6;                              // the largest per-voice release offset weather() can draw
-  var HELD_LANES = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa", "pa"];
   var RECENT_CYCLES = 3;
   var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
@@ -180,6 +179,20 @@
   // rate EXACTLY 1 and unbent — clamping would leave it still bent and still
   // wrong, which is worse than not trying: a reel a fifth away from the field
   // dragged four semitones toward it is out of tune with both.
+  // THE CAP IS INSURANCE AGAINST A CHANGE TO THE DEGREE SET, NOT AGAINST THE
+  // REELS, and it is unreachable as the code stands. Two degrees a fifth apart
+  // divide the octave into a 700-cent gap and a 500-cent one, so the furthest
+  // any pitch can sit from the NEARER of them — octave-free, as the search
+  // below computes it — is half the larger gap: 350 cents, tonic-independent.
+  // 350 < 400, so the refusal below has never executed and cannot. The largest
+  // bend the pool actually needs is 244.3 cents.
+  //
+  // Do NOT delete it on the strength of "it never fires". The 350-cent bound is
+  // a property of the DEGREE SET on the line above and of nothing here: narrow
+  // the field to the tonic alone and the worst case jumps to 600 cents, the cap
+  // starts binding, and this becomes live code that has never once run. (The
+  // warped fifth keeps the bound too — at 690.4 to 716.8 cents the worst case
+  // is 345.2 to 358.4.) The comment is the protection, not the code.
   var TUNE_CAP_CENTS = 400;
   function farTune(reel, wi) {
     var flat = { wi: wi, rate: 1, pitchHz: null, degHz: 0, cents: 0 };
@@ -187,7 +200,12 @@
     if (!reel || !reel.tuned || !reel.pitchHz || !T.fieldTonic) return flat;
     var tonic = T.fieldTonic(); if (!(tonic > 0)) return flat;
     // the degrees a signal may land on: the tonic and its fifth (§11.2)
-    var degs = [tonic, tonic * 1.4983070768766815];            // 3:2 tempered — the field is ET
+    // The degrees a signal may land on: the tonic and its fifth AS THE STATION
+    // IS SOUNDING THEM TONIGHT. Under 撓 the fifth is 700·k cents rather than
+    // 700, up to 16.8 cents from tempered, which is 1.7× the gate this feature
+    // is held to; the tonic is unaffected for any k. Falls back to the
+    // tempered fifth if the engine is too old to answer.
+    var degs = [tonic, (T.degreeHz ? T.degreeHz(700) : tonic * 1.4983070768766815)];
     var best = null;
     for (var i = 0; i < reel.pitchHz.length && i < reel.windows.length; i++) {
       var p = reel.pitchHz[i]; if (!(p > 0)) continue;
@@ -267,8 +285,20 @@
     T.airHoldClear("signal-planned");
     var pFrom = info.hostStartT + 8 - HOLD_LEAD_S;
     var pUntil = info.hostStartT + 25 + TUNE_S + c.holdS + c.lossD + 2 + PLAN_REL_MAX;
-    var plan = {};
-    for (var pv = 0; pv < HELD_LANES.length; pv++) plan[HELD_LANES[pv]] = { from: pFrom, until: pUntil };
+    // THE PLAN'S LANES ARE DERIVED FROM THE SAME OBJECT THE REAL HOLD USES,
+    // never from a second list. fire() builds its hold by looping over a.rel
+    // and bolting on the PA; if the plan looped over a constant instead, the
+    // two would agree only by inspection — and the day a sixth melodic body
+    // joins `rel` (this crew has added TWO in this program, the hichiriki and
+    // the biwa) that voice would get the real hold and not the planned one.
+    // That is exactly the pre-W4 defect, reintroduced for one voice, invisible
+    // on every seed where it does not happen to sing over a broadcast. Derived
+    // here, the two lists cannot drift: anything added to weather()'s `rel` is
+    // held both at arm and at fire, in the same commit, without anyone
+    // remembering to.
+    var plan = {}, pk = Object.keys(wx.rel);
+    for (var pv = 0; pv < pk.length; pv++) plan[pk[pv]] = { from: pFrom, until: pUntil };
+    plan.pa = { from: pFrom, until: pUntil };                 // the PA is held too, and for the same reason fire() holds it
     T.airHold(plan, "signal-planned");
     var when = Math.max(T.ctx ? T.ctx.currentTime + 0.05 : 0, info.hostStartT - PREFETCH_LEAD_S);
     T.lane("broadcast").at(when, prefetch);
