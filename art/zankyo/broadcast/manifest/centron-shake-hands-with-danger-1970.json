@@ -1,0 +1,20 @@
+{
+  "id": "centron-shake-hands-with-danger-1970",
+  "title": "Shake Hands With Danger",
+  "year": 1970,
+  "src": "https://archive.org/details/ShakeHan1970",
+  "license": "PD Mark 1.0 (Internet Archive)",
+  "tier": "A",
+  "tone": "sung",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 108.0,
+  "bytes": 1288529,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0]],
+  "srcWindows": [[107.0, 119], [181.78, 193.78], [306.07, 318.07], [551.28, 563.28], [634.03, 646.03], [712.11, 724.11], [880.88, 892.88], [1009.0, 1021], [1264.23, 1276.23]],
+  "notes": "Centron for Caterpillar; the country ballad refrain 'shake hands with danger' over staged construction accidents",
+  "takedown": false
+}
