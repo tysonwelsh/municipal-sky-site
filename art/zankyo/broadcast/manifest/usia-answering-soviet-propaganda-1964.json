@@ -1,0 +1,20 @@
+{
+  "id": "usia-answering-soviet-propaganda-1964",
+  "title": "Answering Soviet Propaganda",
+  "year": 1964,
+  "src": "https://archive.org/details/gov.archives.arc.650334",
+  "license": "CC0 (USIA via NARA FedFlix)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 84.0,
+  "bytes": 700129,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0]],
+  "srcWindows": [[9.0, 21], [247.0, 259], [383.0, 395], [551.0, 563], [619.0, 631], [727.0, 739], [921.0, 933]],
+  "notes": "USIA; WHAT EVERYONE SHOULD KNOW ABOUT COMMUNISM over a turning globe; one man talking into the lens for sixteen minutes",
+  "takedown": false
+}
