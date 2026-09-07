@@ -1,0 +1,70 @@
+{
+  "id": "xew-tv-aberturas-70s",
+  "title": "XEW-TV Canal 2 — aberturas y cortinillas de los setenta",
+  "year": 1976,
+  "src": "https://archive.org/details/70stvintros_mexico_xew-tv",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 60.0,
+  "bytes": 484469,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      10.0
+    ],
+    [
+      10.0,
+      20.0
+    ],
+    [
+      20.0,
+      30.0
+    ],
+    [
+      30.0,
+      40.0
+    ],
+    [
+      40.0,
+      50.0
+    ],
+    [
+      50.0,
+      60.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      155.0,
+      165
+    ],
+    [
+      315.0,
+      325
+    ],
+    [
+      403.0,
+      413
+    ],
+    [
+      475.0,
+      485
+    ],
+    [
+      535.0,
+      545
+    ],
+    [
+      755.0,
+      765
+    ]
+  ],
+  "notes": "Mexico City programme openings and cortinillas: a street, a libretto credit, the Canal 2 numeral, cartoons, the Mundo de Juguetes card; archivist's caption bar and flag cropped off the source",
+  "takedown": false
+}
