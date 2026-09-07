@@ -1,0 +1,20 @@
+{
+  "id": "sg-sbc5-dx-1991",
+  "title": "SBC 5 Singapore test card and news",
+  "year": 1991,
+  "src": "https://archive.org/download/youtube-QOyweBaJNZw/QOyweBaJNZw.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 72.17,
+  "bytes": 685001,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.08], [36.08, 48.17], [48.17, 60.17], [60.17, 72.17]],
+  "srcWindows": [[3.0, 15.0], [97.0, 109.0], [111.0, 123.0], [127.0, 139.0], [141.0, 153.0], [157.0, 169.0]],
+  "notes": "PM5544 marked SBCTEXT and SBC 5 STEREO, clock running 06:36:22 to 06:37:57, then a sponsored Raymond Weil clock and the news: NEW UNION PLAN, parliament recessed",
+  "takedown": false
+}
