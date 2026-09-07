@@ -1,0 +1,20 @@
+{
+  "id": "grazhdanskaya-oborona-1982",
+  "title": "Учащимся о гражданской обороне (Киевнаучфильм)",
+  "year": 1982,
+  "src": "https://archive.org/details/1982.-.mp-4",
+  "license": "unknown (Soviet state film studio; contested status)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.08,
+  "bytes": 671598,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08]],
+  "srcWindows": [[0.0, 12.0], [208.0, 220.0], [313.0, 325.0], [663.0, 675.0], [803.0, 815.0], [964.0, 976.0]],
+  "notes": "Soviet civil defence taught to schoolchildren by Kyiv Popular Science Film: the Киевнаучфильм card and the title over fire, wartime bombardment, a polar map with Moscow at the centre, the staff duty boards, the ГРУППА ОХРАНЫ ОБЩЕСТВЕННОГО ПОРЯДКА sign, and a gas mask filling the frame",
+  "takedown": false
+}
