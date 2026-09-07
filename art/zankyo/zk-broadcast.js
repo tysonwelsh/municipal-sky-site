@@ -39,6 +39,8 @@
   var MANIFEST_URL = "broadcast/manifest.json", REEL_DIR = "broadcast/reels/";
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var HOLD_LEAD_S = 6, STATIC_LEAD_S = 4, DECIDE_LEAD_S = 1, PREFETCH_LEAD_S = 12;   // from the hosting scene's start (t0 ≥ start + 8)
+  var PLAN_REL_MAX = 6;                              // the largest per-voice release offset weather() can draw
+  var HELD_LANES = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa", "pa"];
   var RECENT_CYCLES = 3;
   var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
@@ -244,6 +246,30 @@
       rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0,
       ready: false, t0: null, decided: false, bench: !!rng };
     stats.armed++;
+    // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
+    // commit notes 33–46 s ahead of the audio clock, and the real hold was only
+    // written at fire(), ~15.5 s before t0. The claim was legitimate when it
+    // was made and no render-time guard could have caught it — measured with
+    // the engine printing its own state: `NOTE hichiriki t=322.13 dur=8.54
+    // ctxNow=275.68 holds=[] signalUp=false`.
+    //
+    // So the receiver declares its INTENT as soon as it has one. It does not
+    // know t0 yet — the visitation fires at hostStartT + rnd(8, 25), drawn at
+    // the scene boundary — so the planned window covers the whole of that
+    // uncertainty, about 46 s against the real 21 s. That over-denial for the
+    // arm→fire gap is the price, and it is what the deliberate re-base buys.
+    //
+    // It is a separate owner from the real hold, which matters twice over:
+    // fire() replaces it exactly rather than leaving two overlapping claims,
+    // and signalUp() ignores it — a PLAN must not silence 崩's groove or
+    // trigger §11.3, because a plan can still fall back to the gagaku and then
+    // nothing was ever on the air.
+    T.airHoldClear("signal-planned");
+    var pFrom = info.hostStartT + 8 - HOLD_LEAD_S;
+    var pUntil = info.hostStartT + 25 + TUNE_S + c.holdS + c.lossD + 2 + PLAN_REL_MAX;
+    var plan = {};
+    for (var pv = 0; pv < HELD_LANES.length; pv++) plan[HELD_LANES[pv]] = { from: pFrom, until: pUntil };
+    T.airHold(plan, "signal-planned");
     var when = Math.max(T.ctx ? T.ctx.currentTime + 0.05 : 0, info.hostStartT - PREFETCH_LEAD_S);
     T.lane("broadcast").at(when, prefetch);
     return true;
@@ -283,6 +309,7 @@
     // again. (No new draw: it borrows the shakuhachi's zero offset rather than
     // taking one of its own, so the signal stream is untouched.)
     hold.pa = { from: from, until: cut + 2 };
+    T.airHoldClear("signal-planned");        // the intent is now a fact: replace it, never both
     T.airHold(hold);
     T.lane("broadcast").at(t0 - STATIC_LEAD_S, function (t) { staticRise(t, t0); });
     T.lane("broadcast").at(t0 - DECIDE_LEAD_S, function () { decide(t0); });
@@ -298,7 +325,7 @@
     else if (!a.ready) reason = "reel not ready · " + a.reel.id;
     if (reason) {
       stats.fallbacks++; stats.lastReason = reason;
-      T.airHoldClear();
+      T.airHoldClear(); T.airHoldClear("signal-planned");   // a fallback releases the intent too
       T.emitEvent({ cat: "rx", label: "受信 fallback", detail: reason }, t0);
       armed = null;
       try { T.fallback(t0); } catch (e) {}
@@ -620,7 +647,7 @@
     } catch (e) {
       for (i = 0; i < nodes.length; i++) { try { nodes[i].disconnect(); } catch (e2) {} }
       stats.fallbacks++; stats.lastReason = "graph: " + (e && e.message);
-      T.airHoldClear(); armed = null;
+      T.airHoldClear(); T.airHoldClear("signal-planned"); armed = null;
       try { T.fallback(t0); } catch (e3) {}
       return;
     }

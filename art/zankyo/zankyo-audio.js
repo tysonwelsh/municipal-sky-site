@@ -4763,8 +4763,10 @@ window.ZankyoAudio = (function () {
           getArc: getArc, arcPhase: arcPhase, scene: function () { return { type: scn.type, activity: scn.activity, startT: scn.startT, durS: scn.durS }; },
           cycle: function () { return { n: cyc.n, kind: cyc.kind, startT: cyc.startT, durS: cyc.durS, visit: cyc.visit ? cyc.visit.name : null }; },
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
-          airHold: function (map) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, "signal"); },
-          airHoldClear: function () { airHoldDrop("signal"); },
+          // `who` lets the receiver declare an INTENDED hold at arm time and
+          // replace it with the exact one at fire (W4 §12).
+          airHold: function (map, who) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, who || "signal"); },
+          airHoldClear: function (who) { airHoldDrop(who === undefined ? "signal" : who); },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
           // §11.3 TUNED SIGNALS — the station tunes to the REEL. On a far
           // night (d ≥ 0.5) a reel that holds a pitch may pull the field to it
