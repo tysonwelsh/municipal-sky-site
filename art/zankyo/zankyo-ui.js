@@ -251,17 +251,25 @@
       });
       head.appendChild(sample);
 
-      // mute: rocker switch
+      // mute: a flat console rocker — wordless. The thumb slides across a
+      // two-colour well: thrown right it uncovers the green lamp (layer on),
+      // thrown left it uncovers the red one (muted). Colour, not a legend.
       var sw = document.createElement("button");
       sw.type = "button"; sw.className = "zk-switch zankyo-layer-mute" + (muted ? " muted" : "");
       sw.setAttribute("data-layer", layer);
-      sw.setAttribute("aria-pressed", muted ? "false" : "true");
+      sw.setAttribute("role", "switch");
+      sw.setAttribute("aria-checked", muted ? "false" : "true");
       sw.setAttribute("aria-label", meta.label + " on/off");
-      sw.innerHTML = '<i class="zk-switch-on">ON</i><span class="zk-switch-slot"><span class="zk-switch-lever"></span></span><i class="zk-switch-off">OFF</i>';
+      sw.innerHTML = '<span class="zk-switch-well" aria-hidden="true">' +
+        '<i class="zk-switch-lamp zk-lamp-on"></i>' +
+        '<i class="zk-switch-lamp zk-lamp-off"></i>' +
+        '<span class="zk-switch-thumb"></span></span>';
+      row.classList.toggle("is-muted", muted);
       sw.addEventListener("click", function () {
         var m = Z.toggleLayer(layer);
         sw.classList.toggle("muted", m);
-        sw.setAttribute("aria-pressed", m ? "false" : "true");
+        sw.setAttribute("aria-checked", m ? "false" : "true");
+        row.classList.toggle("is-muted", m);
       });
       head.appendChild(sw);
       row.appendChild(head);
