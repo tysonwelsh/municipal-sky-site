@@ -1,0 +1,20 @@
+{
+  "id": "se-anslagstavlan-1985",
+  "title": "Anslagstavlan — SVT, 15 augusti 1985",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=-pCxZwGyIQM",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 596893,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[3.0, 15.0], [51.0, 63.0], [113.0, 125.0], [189.0, 201.0], [239.0, 251.0], [259.88, 271.88]],
+  "notes": "the Swedish state's noticeboard programme: the ballot, Riksskatteverket before the 1985 election, a fire-safety film spoken in Finnish, and the Aktuellt globe",
+  "takedown": false
+}
