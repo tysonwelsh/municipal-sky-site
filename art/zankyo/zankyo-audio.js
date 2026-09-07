@@ -158,12 +158,15 @@ window.ZankyoAudio = (function () {
   //   · at d < ZK_FAR.D_HOME the night is `home` and every accessor answers
   //     false / identity, so the only reachable code is the code that was
   //     already there.
-  var farNight = null;                         // tonight, drawn at play()
+  var farNight = null;                         // the CYCLE's view — what all 31 read sites see
+  var farNightDrawn = null;                    // the night as drawn at play(), which never changes
+  var farCycleD = 0;                           // W4: this cycle's own distance after the meta-tide's lift
   var FAR_NONE = { d: 0, home: true, ids: [], dep: {}, kana: "家", name: "home", label: "家 home" };
   function farDraw() {
     var M = window.ZK_FAR;
     if (!M || !S || !S.far) { farNight = FAR_NONE; return farNight; }
-    try { farNight = M.night(S.far, farForced); } catch (e) { farNight = FAR_NONE; }
+    try { farNightDrawn = M.night(S.far, farForced); } catch (e) { farNightDrawn = FAR_NONE; }
+    farNight = farNightDrawn; farCycleD = farNight.d;
     return farNight;
   }
   var FAR = {
@@ -820,6 +823,53 @@ window.ZankyoAudio = (function () {
       k++;
     }
     return plain;
+  }
+
+  // ==========================================================================
+  // 逸脱 W4 — THE META-TIDE'S PER-CYCLE LIFT
+  //
+  // One cycle may sit further out than the rest of its night, or closer in.
+  // The night's MEMBERSHIP never changes — a 崩 night that stopped being one
+  // for a cycle would be two nights — only how far out those departures are
+  // pushed, and whether the ones with the highest thresholds are in reach at
+  // all. A cycle that falls below D_HOME has every departure stand down, which
+  // is the plan's calm cycle, and it costs nothing to express because
+  // farTimeSetup already returns early on a home view.
+  //
+  // farNight IS THE CYCLE'S VIEW and farNightDrawn is the night. That is
+  // deliberate: thirty-one places read farNight.dep, and threading a second
+  // object through all of them is the shape of fault this crew has now been
+  // caught by five times. Re-pointing one variable is immune to it.
+  //
+  // The naming travels from the drawn night — the VFD names what tonight IS,
+  // not what this cycle is doing — and the lift is announced as its own line
+  // when it happens.
+  function farLiftCycle(cycleN, t) {
+    if (!farNightDrawn || !window.ZK_FAR || !S || !S.far) return;
+    if (farNightDrawn.home && !farNightDrawn.homeLift) return;    // the eleven nights in twelve: nothing to do, nothing touched
+    var M = window.ZK_FAR, dp;
+    try { dp = M.lift(S.far, cycleN, farNightDrawn.d); } catch (e) { return; }
+    if (!(dp >= 0)) return;
+    farCycleD = dp;
+    if (Math.abs(dp - farNightDrawn.d) < 1e-9) { farNight = farNightDrawn; return; }
+    var v;
+    try {
+      // A HOME night has no drawn departures, so there is nothing to re-derive:
+      // its one strange cycle draws a night of its own at d′, on its own fork,
+      // and that draw is what the cycle plays. A FAR night re-derives, because
+      // its membership is its identity and must not change.
+      v = farNightDrawn.home ? M.night(S.far.fork("homelift-draw"), dp)
+                             : M.relift(S.far, farNightDrawn, dp);
+    } catch (e) { return; }
+    // the night's identity rides along; only the distance and the parameters move
+    v.kana = farNightDrawn.kana; v.name = farNightDrawn.name; v.band = farNightDrawn.band;
+    v.label = farNightDrawn.label; v.detail = farNightDrawn.detail; v.u = farNightDrawn.u;
+    farNight = v;
+    var away = dp > farNightDrawn.d;
+    emitEvent({ cat: "far", label: away ? "潮 further out" : "潮 closer in",
+      detail: "cycle " + cycleN + " · d " + farNightDrawn.d.toFixed(2) + " → " + dp.toFixed(2) +
+        (v.home ? " · the departures stand down for this cycle" :
+          " · " + (v.ids.length ? v.ids.map(function (x) { return v.dep[x].kana; }).join(" ") : "—")) }, t);
   }
 
   function farTimeSetup() {
@@ -2279,6 +2329,12 @@ window.ZankyoAudio = (function () {
       var p = pendingPlan || { kind: "ordinary", mode: "hirajoshi", seating: drawSeating(S.form, "ordinary"), durS: evt.durS };
       pendingPlan = null;
       cyc.n = evt.n - 1; cyc.kind = p.kind; cyc.seating = p.seating; cyc.durS = evt.durS; cyc.startT = evt.t; cyc.mode = p.mode;
+      // 逸脱 W4 — the meta-tide lifts this cycle before anything in it reads
+      // how far out the night is, and the time departures are rebuilt on the
+      // new view. FIRST, deliberately: farTimeSetup caches sixteen departures'
+      // parameters, so a lift applied after it would be read by nothing.
+      farLiftCycle(cyc.n, evt.t);
+      farTimeSetup();
       arcStartTime = evt.t; ARC_PERIOD = evt.durS;
       var pm = p.pitch, fromName = noteName(field.tonicHz);
       cyclesSinceSea++;
@@ -4834,7 +4890,15 @@ window.ZankyoAudio = (function () {
     // play() this is the home sentinel, not null: a caller never has to guard.
     getFar: function () {
       var n = FAR.night();
+      var dn = farNightDrawn || n;
       return { d: n.d, home: !!n.home, kana: n.kana, name: n.name, label: n.label, detail: n.detail || "",
+        // §13 — enough to RE-DERIVE, not just lifted:true. "Byte-identical to
+        // its own baseline" only says that SOMETHING moved; with the cycle and
+        // d′ visible, a lift that shifted from cycle 3 to cycle 5, one that
+        // changed d′, and one that stopped firing are three different faults
+        // instead of one bisect.
+        nightD: dn.d, cycleD: farCycleD, lifted: Math.abs(farCycleD - dn.d) > 1e-9,
+        homeLift: dn.homeLift ? { cycle: dn.homeLift.cycle, d: dn.homeLift.d } : null,
         band: n.band ? n.band.label : "home", ids: n.ids.slice(), dep: n.dep, forced: farForced };
     },
     far: {

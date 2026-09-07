@@ -362,7 +362,17 @@ window.ZK_FAR = (function () {
     var b = band(d);
     var out = { d: d, u: u, home: d < D_HOME, band: b, ids: [], dep: {},
       kana: b.kana, name: b.label, detail: "", label: "" };
-    if (out.home) { out.detail = "d " + d.toFixed(2); out.label = "家 home · d " + d.toFixed(2); return out; }
+    if (out.home) {
+      // §13: a home night that will lift one cycle says so, so getFar() can
+      // flag it and the identity gate can PARTITION — byte-identity on the
+      // unlifted, a recorded baseline on the lifted. A lifted night that the
+      // gate cannot tell from a regression is a feature indistinguishable from
+      // a bug, which is the critic's condition for allowing this at all.
+      out.homeLift = homeLift(rng);
+      out.detail = "d " + d.toFixed(2) + (out.homeLift ? " · one cycle adrift" : "");
+      out.label = "家 home · d " + d.toFixed(2) + (out.homeLift ? " · 潮 cycle " + out.homeLift.cycle : "");
+      return out;
+    }
 
     // the pool: everything this distance unlocks
     var pool = [], i;
@@ -433,16 +443,108 @@ window.ZK_FAR = (function () {
   // what makes "the median is byte-identical" true rather than nearly true.
   // Declared here from W0; the engine calls it from W4.
   // ==========================================================================
+  // §13 (orchestrator, 2026-09-07): ONE HOME NIGHT IN TWELVE has exactly ONE
+  // strange cycle. The plan's prose always said a home night could have one;
+  // its table always said home nights are byte-identical; and simply removing
+  // the guard below would have given 82.2 % of home nights a crossing cycle,
+  // which is not "one strange cycle" but the end of the invariant. Twelve is
+  // the ruled frequency and it lives here, alone, so the owner can move it
+  // after listening without touching anything else.
+  //
+  // Every draw is taken UNCONDITIONALLY on a night-level sub-fork, so whether
+  // a night lifts, which cycle, and how far are all independent of each other
+  // and of everything else in the night — and forking by label never advances
+  // the parent, so a home night that does NOT lift is untouched to the byte.
+  // The cycle is drawn from the FIRST FOUR, not from twelve, and that is a
+  // correction to my own first version rather than a preference. Drawing the
+  // index over twelve meant a third of the nights flagged as lifted chose a
+  // cycle a run never reaches — measured: 371 nights flagged, only 249 cycles
+  // actually crossed. The flag would have said lifted and nothing would have
+  // happened, and the critic's partition would have read that as the lift
+  // failing rather than as an index out of range. Four cycles is roughly
+  // twenty minutes: long enough that the strange cycle is always reachable,
+  // short enough that any run able to judge it will contain it. The cost is
+  // that a home night's strange cycle is always an early one.
+  var HOME_LIFT_ODDS = 1 / 12, HOME_LIFT_CYCLES = 4;
+  function homeLift(rng) {
+    var R = rng.fork("homelift");
+    var on = R.chance(HOME_LIFT_ODDS);
+    var which = Math.floor(R.next() * HOME_LIFT_CYCLES) % HOME_LIFT_CYCLES;
+    var d = 0.15 + R.rnd(0, 0.20);
+    return on ? { cycle: which, d: d } : null;
+  }
+
   function lift(rng, cycleN, d) {
-    if (!(d >= D_HOME)) return 0;
+    if (!(d >= D_HOME)) {
+      // a home night lifts only on the one cycle it drew, and only if it drew one
+      var h = homeLift(rng);
+      return (h && h.cycle === cycleN) ? h.d : 0;
+    }
     var R = rng.fork("cycle:" + cycleN);
     var u = R.next(), mag = R.rnd(0.10, 0.32), out = R.chance(0.5);
     if (u >= 0.40) return d;
     return clamp01(d + (out ? mag : -mag));
   }
 
+  // ==========================================================================
+  // relift(farStream, night, dPrime) → the same night's departures, re-derived
+  // at a DIFFERENT distance (W4)
+  //
+  // The per-cycle lift changes how far out a cycle sits, not who is playing.
+  // Membership is the night's identity — a 崩 night that stopped being a 崩
+  // night for one cycle would be two nights, not one — so this re-runs each
+  // DRAWN departure's own params function at d′, on the same "dep:<id>"
+  // sub-fork it was drawn on. Same members, same jitter stream, different
+  // intensity, and reproducible: forking is by label, so the same fork gives
+  // the same numbers however many times it is taken.
+  //
+  // A departure whose threshold sits ABOVE d′ falls silent for that cycle
+  // rather than being re-derived at a distance it does not reach. That is
+  // exactly what the plan's "calm cycle" is: not a different night, the same
+  // night with its furthest-out voices standing down for a while.
+  //
+  // W0 built FAR.amt()/FAR.on() so a cycle could re-read its own distance, and
+  // then every one of the sixteen departures cached its parameters once per
+  // night in farTimeSetup and never asked again — the accessors have zero call
+  // sites. So the lift has to work by re-deriving the parameters, which is
+  // this, rather than by the departures politely asking.
+  // ==========================================================================
+  function relift(rng, night, dPrime) {
+    var d = clamp01(dPrime), out = { d: d, home: d < D_HOME, ids: [], dep: {} };
+    if (!night || !night.ids) return out;
+    for (var i = 0; i < night.ids.length; i++) {
+      var id = night.ids[i], r = BY_ID[id];
+      if (!r || d < r.d) continue;                       // out of reach this cycle: it stands down
+      var F = rng.fork("dep:" + id);
+      var span = clamp01((d - r.d) / Math.max(0.05, 1 - r.d));
+      var amt = clamp01(0.4 + 0.6 * span + F.rnd(-0.12, 0.12));
+      var p = {};
+      try { p = r.params(F, d, amt) || {}; } catch (e) { p = {}; }
+      p.id = r.id; p.kana = r.kana; p.name = r.name; p.family = r.family; p.amt = amt;
+      out.dep[id] = p; out.ids.push(id);
+    }
+    // The night's own composition rule travels with it: 雲 against a GLACIAL
+    // dilation is mud at any distance.
+    if (out.dep.clouds && out.dep.dilate) { out.dep.dilate.slowMul = 1; out.dep.dilate.slow = false; }
+    // MEMBERSHIP MUST NOT GROW — the critic's requirement, asserted here and
+    // not only in a test. A lift may SILENCE a departure whose threshold is out
+    // of reach this cycle; it must never INTRODUCE one the night did not draw,
+    // because then the night has quietly become a different night and every
+    // distance component moves for a reason that is not the lift. The loop
+    // above only walks night.ids, so this cannot fail as written — which is
+    // exactly why it is worth stating: the next person to edit that loop is
+    // the one this catches.
+    for (var k = 0; k < out.ids.length; k++) {
+      if (night.ids.indexOf(out.ids[k]) < 0) {
+        out.ids.splice(k, 1); k--;
+        if (typeof console !== "undefined" && console.error) console.error("ZK_FAR.relift: membership grew — dropping " + out.ids[k]);
+      }
+    }
+    return out;
+  }
+
   return {
-    D_HOME: D_HOME, D_MIN: D_MIN,
+    D_HOME: D_HOME, D_MIN: D_MIN, relift: relift,
     law: law, dForSeed: dForSeed, seek: seek, band: band,
     REGISTRY: REGISTRY, BY_ID: BY_ID, COMPAT: COMPAT, NAMES: NAMES,
     night: night, lift: lift, count: count,
