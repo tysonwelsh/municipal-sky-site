@@ -1,0 +1,72 @@
+{
+  "id": "xz-tibetan-channel-song",
+  "title": "མཉམ་འགྲོགས། The station song of the Xizang Tibetan-language channel",
+  "year": 2012,
+  "src": "https://www.bilibili.com/video/BV1LF41137FQ",
+  "license": "unknown (station promo, uploaded to Bilibili)",
+  "tier": "B",
+  "tone": "sung",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 60.0,
+  "bytes": 805229,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      10.0
+    ],
+    [
+      10.0,
+      20.0
+    ],
+    [
+      20.0,
+      30.0
+    ],
+    [
+      30.0,
+      40.0
+    ],
+    [
+      40.0,
+      50.0
+    ],
+    [
+      50.0,
+      60.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      12.0,
+      22.0
+    ],
+    [
+      40.0,
+      50.0
+    ],
+    [
+      88.0,
+      98.0
+    ],
+    [
+      128.0,
+      138.0
+    ],
+    [
+      170.0,
+      180.0
+    ],
+    [
+      208.0,
+      218.0
+    ]
+  ],
+  "notes": "A channel singing its own call sign: the station song over a montage of its programmes, every caption in Tibetan — gala singers, presenters in the street, a title card in gold. Ten-second windows with baked distortion, per the Tier B music rule.",
+  "country": "China (Tibet AR)",
+  "language": "Tibetan (sung)",
+  "takedown": false
+}
