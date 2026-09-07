@@ -1,0 +1,20 @@
+{
+  "id": "de-ard-abend-1976",
+  "title": "Deutsches Fernsehen — Ansage, Kinderstunde, Tagesschau (27.10.1976)",
+  "year": 1976,
+  "src": "https://www.youtube.com/watch?v=iIf67T7XcNI",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 72.0,
+  "bytes": 567275,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[114.0, 126.0], [138.0, 150.0], [396.0, 408.0], [554.0, 566.0], [724.0, 736.0], [1341.0, 1353.0]],
+  "notes": "Sonja Kurowsky announcing, a children's story read aloud, the network apologising on air for a failed transmitter, then the Tagesschau from Moscow to a Hamburg fire",
+  "takedown": false
+}
