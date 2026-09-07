@@ -1,0 +1,19 @@
+{
+  "id": "kctv-signon-1994",
+  "title": "조선중앙텔레비죤 sign-on (KCTV)",
+  "year": 1994,
+  "src": "https://archive.org/details/kctv-broadcast-start-1994-10-10",
+  "license": "PD Mark 1.0 (uploader's claim)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 683887,
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[30.0, 42], [198.0, 210], [245.0, 257], [348.0, 360], [372.0, 384], [682.0, 694]],
+  "notes": "test card with Pochonbo Electronic Ensemble; the two-bar interval signal (Song of General Kim Il Sung); Aegukka over Mount Paektu; the anchor's greeting and the day's schedule read aloud",
+  "takedown": false
+}
