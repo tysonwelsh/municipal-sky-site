@@ -1,0 +1,20 @@
+{
+  "id": "tvdx-pik1-cyprus-1992",
+  "title": "TV-DX: RIK 1 Cyprus, opening, news, weather and closedown",
+  "year": 1992,
+  "src": "https://archive.org/details/youtube-GEJO3aG-FxU",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 72.25,
+  "bytes": 749020,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.17], [60.17, 72.25]],
+  "srcWindows": [[183.0, 195.0], [303.21, 315.21], [388.99, 400.99], [632.1, 644.1], [841.0, 853.0], [951.39, 963.39]],
+  "notes": "CyBC caught via satellite on 26 December 1992; a whole broadcast day's punctuation in one catch",
+  "takedown": false
+}
