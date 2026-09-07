@@ -1,0 +1,20 @@
+{
+  "id": "radio-caroline-1966",
+  "title": "Radio Caroline, offshore on 199",
+  "year": 1966,
+  "src": "https://archive.org/download/radio-caroline-1966-tony-blackburn-unscoped-copy/Radio%20Caroline%201966%20Tony%20Blackburn%20Unscoped%20%20-%20Copy.mp3",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.6,
+  "durS": 60.08,
+  "bytes": 552647,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "wave",
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
+  "srcWindows": [[55.0, 65], [458.0, 468], [667.0, 677], [1119.0, 1129], [1233.0, 1243], [1606.0, 1616]],
+  "notes": "The pirate ship off the Essex coast, Tony Blackburn on the daytime show; windows on links and jingles, never a song through",
+  "takedown": false
+}
