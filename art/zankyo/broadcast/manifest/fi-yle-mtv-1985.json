@@ -1,0 +1,20 @@
+{
+  "id": "fi-yle-mtv-1985",
+  "title": "TV2 ja MTV — tunnus, uutisotsikot, kuulutus ja mainokset, 16.7.1985",
+  "year": 1985,
+  "src": "https://www.youtube.com/watch?v=7fRmhBZb3xs",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 72.0,
+  "bytes": 723816,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[3.0, 15.0], [20.0, 32.0], [51.0, 63.0], [121.0, 133.0], [159.0, 171.0], [205.0, 217.0]],
+  "notes": "the YLE TV2 dinghy, the MTV owl, the newsroom clock at 19.30, a promo for the summer dances at Mäntsälä, the kuulutus, and the lottery jester",
+  "takedown": false
+}
