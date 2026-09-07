@@ -455,17 +455,27 @@ window.ZK_FAR = (function () {
   // a night lifts, which cycle, and how far are all independent of each other
   // and of everything else in the night — and forking by label never advances
   // the parent, so a home night that does NOT lift is untouched to the byte.
-  // The cycle is drawn from the FIRST FOUR, not from twelve, and that is a
-  // correction to my own first version rather than a preference. Drawing the
-  // index over twelve meant a third of the nights flagged as lifted chose a
-  // cycle a run never reaches — measured: 371 nights flagged, only 249 cycles
-  // actually crossed. The flag would have said lifted and nothing would have
-  // happened, and the critic's partition would have read that as the lift
-  // failing rather than as an index out of range. Four cycles is roughly
-  // twenty minutes: long enough that the strange cycle is always reachable,
-  // short enough that any run able to judge it will contain it. The cost is
-  // that a home night's strange cycle is always an early one.
-  var HOME_LIFT_ODDS = 1 / 12, HOME_LIFT_CYCLES = 4;
+  // SIX, FROM A CENSUS AND NOT FROM CONVENIENCE. My first version drew the
+  // index from twelve and a third of the flagged nights chose a cycle no run
+  // reaches; my second drew from four because a 900 s gate could see four,
+  // which is an instrument shaping the music and was struck out as such.
+  //
+  // The number now comes from measurement: 100 seeds at 3600 s against a
+  // pinned build give a cycle count of 6 ×1, 7 ×7, 8 ×41, 9 ×49, 10 ×2 —
+  // minimum SIX, median nine. At K=8 the 1.13 % of lifted nights that draw a
+  // cycle their night never reaches fire nothing, and a partition gate reads
+  // that as the lift failing: one night in ninety, seed-dependent and
+  // intermittent, which is the most expensive shape of bug available to us.
+  // K=6 is the largest range with a zero miss rate. The full curve is
+  // K=6 0.00 %, K=7 0.14 %, K=8 1.13 %, K=9 6.44 %, K=10 15.60 %.
+  //
+  // It STILL leans early — a median night reaches nine cycles — and that is
+  // recorded rather than hidden. A proportional draw was ruled to replace it,
+  // but the ruling assumes the engine knows its total cycle count, and it does
+  // not: pj2-conductor plans each performance when the last one ends, so a
+  // night is unbounded and there is no total to be proportional TO. That is
+  // escalated rather than fudged.
+  var HOME_LIFT_ODDS = 1 / 12, HOME_LIFT_CYCLES = 6;
   function homeLift(rng) {
     var R = rng.fork("homelift");
     var on = R.chance(HOME_LIFT_ODDS);
