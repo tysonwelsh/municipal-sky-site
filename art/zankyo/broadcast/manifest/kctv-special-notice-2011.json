@@ -1,0 +1,20 @@
+{
+  "id": "kctv-special-notice-2011",
+  "title": "조선중앙텔레비죤 special notice — 리춘히",
+  "year": 2011,
+  "src": "https://archive.org/details/kim-jong-il-passes-away-official-notice",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 526882,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[57.0, 69], [241.0, 253], [359.0, 371], [537.0, 549], [799.0, 811], [923.0, 935]],
+  "notes": "Ri Chun-hee (리춘히) in black against the Paektu backdrop, and the portrait card that replaces her — fragments of a seventeen-minute delivery, the pauses and the break in the voice, never the announcement whole",
+  "takedown": false
+}
