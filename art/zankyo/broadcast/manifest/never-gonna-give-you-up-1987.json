@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0]],
   "srcWindows": [[43.0, 55], [80.0, 92], [107.0, 119], [146.0, 158], [185.0, 197]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
   "notes": "Rick Astley, 1987, official video; five 12 s windows, none the hook whole; baked distortion 0.7 so it arrives already broken; weight 1 — the joke works rare",
   "takedown": false
 }

@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.08], [36.08, 48.17], [48.17, 60.17], [60.17, 72.17]],
   "srcWindows": [[62.0, 74.0], [425.0, 437.0], [590.0, 602.0], [855.0, 867.0], [1085.0, 1097.0], [1150.0, 1162.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the Soviet shuttle that flew once, unmanned, and was then left in a shed: the ЭНЕРГИЯ nose cone in the assembly hall, the ascent as a point of light in the dark, the orbiter on the runway, the control-room consoles, the ОПОРНАЯ ОРБИТА orbit-insertion card, and the closing credits",
   "takedown": false
 }

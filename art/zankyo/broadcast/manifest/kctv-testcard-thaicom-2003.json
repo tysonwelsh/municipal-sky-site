@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[120.0, 132], [1604.0, 1616], [1630.0, 1642], [1760.0, 1772], [1840.0, 1852], [2060.0, 2072]],
+  "pitchHz": [null, 1011.29, null, null, null, null],
+  "tuned": true,
   "notes": "the test card's clock running out the last ten seconds to a 17:00 sign-on, then Paektu at dusk, the portrait on a black field and a massed choir — taken off Thaicom 5 at a low elevation, which the recordist notes was harder to receive then than now",
   "takedown": false
 }

@@ -65,6 +65,8 @@
       172.0
     ]
   ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Tibetan arriving as a signal rather than a recording: the Xizang People's Broadcasting Station on 4920 kHz, fading, with AIR Chennai bleeding through the same channel from 1:23. Two countries on one frequency.",
   "country": "China (Tibet AR) / India, received off-air",
   "language": "Tibetan (with Tamil/Hindi co-channel)",

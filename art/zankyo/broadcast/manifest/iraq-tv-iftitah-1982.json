@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
   "srcWindows": [[5.0, 15.0], [20.0, 30.0], [35.0, 45.0], [49.0, 59.0], [63.0, 73.0], [88.0, 98.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Baghdad, second year of the war with Iran; the station card - Television of the Iraqi Republic, a flag waving inside the emblem - held under the republican anthem. Source cropped to drop a modern uploader caption bar before cutting.",
   "takedown": false
 }

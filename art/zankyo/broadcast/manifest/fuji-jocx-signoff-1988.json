@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.17], [36.17, 48.17], [48.17, 60.17], [60.17, 72.17]],
   "srcWindows": [[0.0, 12], [600.0, 612], [700.0, 712], [870.0, 882], [940.0, 952], [1038.0, 1050]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "tape static; 'Sound Weather' sung forecast; illegal-radio PSA 'get a licence for your transmitter'; JOCX master-control card 'resting until broadcasts resume'; the dark building the station leaves on air as the sound dies",
   "takedown": false
 }

@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[89.0, 101], [291.0, 303], [449.0, 461], [733.9, 745.9], [1063.63, 1075.63], [1331.33, 1343.33]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Augusto Ferrando's Lima talent show, 6 Oct 1984: the bell, the applause, a child singing, an audience. ND licence, so cut as Tier B",
   "takedown": false
 }

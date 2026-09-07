@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.08]],
   "srcWindows": [[165.0, 177], [565.0, 577], [665.0, 677], [725.0, 737], [905.0, 917], [1145.0, 1157]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "PeriscopeFilm transfer, bottom watermark strip cropped before cutting; Soviet school science film: Tsiolkovsky, the R-7 on the pad at night, Gagarin's CCCP helmet and the capsule, the porthole, the Salyut station",
   "takedown": false
 }

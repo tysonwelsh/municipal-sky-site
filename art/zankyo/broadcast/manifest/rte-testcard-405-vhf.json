@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
   "srcWindows": [[10.0, 20.0], [57.0, 67.0], [160.0, 170.0], [280.0, 290.0], [357.0, 367.0], [517.0, 527.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "'ELEPHANT BOY FOLLOWS SHORTLY', then the monochrome circle-and-grating card held for nine minutes under tape music and hiss",
   "takedown": false
 }

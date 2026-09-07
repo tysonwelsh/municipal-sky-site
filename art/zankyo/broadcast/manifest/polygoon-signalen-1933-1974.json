@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0]],
   "srcWindows": [[105.0, 117], [266.0, 278], [470.0, 482], [545.0, 557], [800.0, 812], [903.0, 915], [1000.0, 1012], [1165.0, 1177], [1228.0, 1240]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "concatenation of nine Open Beelden items (oi16641, oi24735, oi22180, oi22071, oi30859, oi22876, oi23072, oi32229, oi22741); Polygoon-Profilti cinema newsreels: the PHOHI shortwave transmitter (1933), London Calling (1946), the TV mast (1951), the state telegraph (1952), the Netherlands hears Sputnik (1957), the space centre (1968), KNMI weather (1974), the weather ships (1951)",
   "takedown": false
 }

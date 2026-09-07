@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01], [72.01, 84.01], [84.01, 96.01]],
   "srcWindows": [[3.0, 15.0], [72.0, 84.0], [140.0, 152.0], [180.0, 192.0], [228.0, 240.0], [268.0, 280.0], [300.0, 312.0], [320.0, 332.0]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "newsreel fanfare, bridge girders, ice hockey, a protest card, a semiconductor plant's tape reels",
   "takedown": false
 }

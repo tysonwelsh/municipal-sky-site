@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[54.16, 66.16], [123.0, 135], [235.0, 247], [323.0, 335], [455.0, 467], [561.0, 573]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Santiago Álvarez's weekly Cuban newsreel: hard cuts, brass stings, a narrator over marching feet; young North Americans in Cuba",
   "takedown": false
 }

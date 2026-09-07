@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[58.56, 70.56], [143.0, 155.0], [269.0, 281.0], [419.0, 431.0], [457.0, 469.0], [531.0, 543.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Portuguese narration over the Igreja de S. Domingos, a crowned Christ, a Dominican friar; the tape gives out into chroma tearing",
   "takedown": false
 }

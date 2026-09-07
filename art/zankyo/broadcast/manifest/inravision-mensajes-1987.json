@@ -65,6 +65,8 @@
       260
     ]
   ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Colombian state television between programmes: the Colombiana de Television ident, the PSA that asks where your children are right now, the Ministerio de Comunicaciones card, a school's public notice, the Cadena Uno ident, and tape dropout",
   "takedown": false
 }

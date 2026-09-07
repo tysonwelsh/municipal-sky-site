@@ -15,6 +15,8 @@
   "picture": "wave",
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
   "srcWindows": [[55.0, 65], [458.0, 468], [667.0, 677], [1119.0, 1129], [1233.0, 1243], [1606.0, 1616]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "The pirate ship off the Essex coast, Tony Blackburn on the daytime show; windows on links and jingles, never a song through",
   "takedown": false
 }

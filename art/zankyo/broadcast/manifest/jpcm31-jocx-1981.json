@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.08], [48.08, 60.08], [60.08, 72.08]],
   "srcWindows": [[72.0, 84], [160.0, 172], [186.0, 198], [198.0, 210], [216.0, 228], [384.0, 396]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "FNN news open; 'FNN news ends' into a rocket launch; Utsu Kyumeigan jingle; tomorrow's weather for Tokyo and Kanto over the night city; Kuishinbo Banzai opening",
   "takedown": false
 }

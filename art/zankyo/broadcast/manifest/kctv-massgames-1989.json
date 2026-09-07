@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
   "srcWindows": [[8.0, 18], [35.0, 45], [62.0, 72], [88.0, 98], [112.0, 122], [135.0, 145]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the card-flip block that turns tens of thousands of people into pixels; mass gymnastics and the sound a stadium makes when every card turns at once",
   "takedown": false
 }

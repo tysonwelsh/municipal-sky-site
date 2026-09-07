@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[3.0, 15.0], [20.0, 32.0], [51.0, 63.0], [121.0, 133.0], [159.0, 171.0], [205.0, 217.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the YLE TV2 dinghy, the MTV owl, the newsroom clock at 19.30, a promo for the summer dances at Mäntsälä, the kuulutus, and the lottery jester",
   "takedown": false
 }

@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 36.09], [36.09, 48.09], [48.09, 60.09], [60.09, 72.09]],
   "srcWindows": [[25.43, 37.43], [87.0, 99.0], [135.0, 147.0], [181.0, 193.0], [229.0, 241.0], [253.0, 265.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Israeli TV Channel 1, December 1985; psukim shel Shabbat, the news in brief, the closedown announcement and the anthem",
   "takedown": false
 }

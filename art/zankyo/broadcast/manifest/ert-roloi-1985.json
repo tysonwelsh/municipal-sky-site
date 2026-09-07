@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[5.0, 17.0], [30.0, 42.0], [65.0, 77.0], [101.0, 113.0], [137.0, 149.0], [167.0, 179.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Greece, 1985; the ERT clock counting toward 23:00, then the credit crawl over chroma noise as the night's programme ends",
   "takedown": false
 }

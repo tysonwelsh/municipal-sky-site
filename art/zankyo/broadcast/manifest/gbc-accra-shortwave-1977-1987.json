@@ -15,6 +15,8 @@
   "picture": "line",
   "windows": [[0.0, 12.0], [12.0, 22.0], [22.0, 34.0], [34.0, 44.0], [44.0, 56.0], [56.0, 68.0]],
   "srcWindows": [[6.0, 18.0], [104.0, 114.0], [146.0, 158.0], [216.0, 226.0], [290.0, 302.0], [392.0, 404.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Ghana Broadcasting Corporation caught off 3366/4915/6130 kHz 1977-87: station ID, sign-off and national anthem, the bare interval signal, and a Christmas greeting at 0002 UTC. Six nights of Dave Valko's DX tapes, one window each.",
   "takedown": false
 }

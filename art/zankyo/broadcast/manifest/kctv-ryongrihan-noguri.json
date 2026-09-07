@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[6.0, 18], [140.0, 152], [210.0, 222], [350.0, 362], [500.0, 512], [680.0, 692]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "KCTV's long-running children's cartoon — over-articulated voices, a sung passage, sound effects done by mouth. Year is the series' start (1987–2013, 63 parts); this episode's own broadcast date is not documented on the source, which is a recording off KCTV",
   "takedown": false
 }

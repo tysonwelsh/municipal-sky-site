@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[3.0, 15.0], [51.0, 63.0], [113.0, 125.0], [189.0, 201.0], [239.0, 251.0], [259.88, 271.88]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the Swedish state's noticeboard programme: the ballot, Riksskatteverket before the 1985 election, a fire-safety film spoken in Finnish, and the Aktuellt globe",
   "takedown": false
 }

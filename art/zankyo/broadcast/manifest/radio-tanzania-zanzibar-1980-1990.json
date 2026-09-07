@@ -15,6 +15,8 @@
   "picture": "line",
   "windows": [[0.0, 12.0], [12.0, 22.0], [22.0, 34.0], [34.0, 46.0], [46.0, 58.0], [58.0, 70.0]],
   "srcWindows": [[40.0, 52.0], [105.0, 115.0], [118.0, 130.0], [145.0, 157.0], [185.0, 197.0], [285.0, 297.0]],
+  "pitchHz": [null, null, 470.69, null, null, null],
+  "tuned": true,
   "notes": "Swahili off 3339, 4785, 5050 and 6014.6 kHz, 1980-1990. Taarab under the noise from Zanzibar, then Dar es Salaam signing on at 0256 UTC, then Zanzibar again ten years later on a drifting frequency.",
   "takedown": false
 }

@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[720.0, 732], [744.0, 756], [780.0, 792], [896.0, 908], [908.0, 920], [936.0, 948]],
+  "pitchHz": [null, null, 1066.5, null, null, null],
+  "tuned": true,
   "notes": "region-by-region weather cards over a sunset; 'CBC's broadcasts are all finished for today'; JOAR-TV ch5 output-power card over a space animation; relay-station list; CBC galaxy logo; true source youtube w7vXJpZ-v-Y",
   "takedown": false
 }

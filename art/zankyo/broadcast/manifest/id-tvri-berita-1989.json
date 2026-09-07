@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[2.0, 14.0], [45.0, 57.0], [309.0, 321.0], [573.0, 585.0], [925.0, 937.0], [1013.0, 1025.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the clock card counting to 6:59.45 WIB before the bulletin, Oetari Noor Permadi and Yasir Den Has reading Berita Nasional, Habibie captioned Menristek/Ka. BPPT, the Bursa Efek Jakarta board and a REKAPITULASI of figures",
   "takedown": false
 }

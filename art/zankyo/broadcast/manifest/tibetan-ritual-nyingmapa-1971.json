@@ -65,6 +65,8 @@
       2466.0
     ]
   ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Tantric puja: overtone chant, dungchen, rolmo. Six 10 s windows chosen where the drone HOLDS, never at an entry; both LP sides. Cut with --band low so the fundamental survives; pitchNote is the source pitch.",
   "country": "Tibet (recorded in exile)",
   "language": "Tibetan (liturgical)",

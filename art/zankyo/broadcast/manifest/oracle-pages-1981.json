@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
   "srcWindows": [[120.0, 130.0], [560.0, 570.0], [800.0, 810.0], [1300.0, 1310.0], [2900.0, 2910.0], [3800.0, 3810.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "ITV teletext under library music: ATV's Christmas listings, Scottish ski reports, a Visionhire ad, the headlines, The Blockheads, and P362 amateur radio — 'the Russians launched a number of amateur radio satellites on Dec 17th'",
   "takedown": false
 }

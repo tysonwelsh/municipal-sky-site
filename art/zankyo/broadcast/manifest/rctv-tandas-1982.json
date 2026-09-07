@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[4.0, 16], [122.0, 134], [322.0, 334], [348.0, 360], [500.0, 512], [798.0, 810]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Radio Caracas Television, 1982: the 'Cara a Cara' card, a sunset, an aerosol promising it never leaves you, the Banco de Venezuela logo, a magazine cover, and the 'El Protocolo de Puerto Espana' title",
   "takedown": false
 }

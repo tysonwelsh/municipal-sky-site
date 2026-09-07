@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.17], [36.17, 48.17], [48.17, 60.17], [60.17, 72.25]],
   "srcWindows": [[12.0, 24.0], [65.32, 77.32], [109.0, 121.0], [300.0, 312.0], [324.37, 336.37], [533.0, 545.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "SRT channel E05 caught 5 July 1984; the flag ident, the announcer in blue limbo, colour that will not stay put",
   "takedown": false
 }

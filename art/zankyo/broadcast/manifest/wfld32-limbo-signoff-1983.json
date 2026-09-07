@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[23.0, 35], [47.0, 59], [240.0, 252], [300.0, 312], [600.0, 612], [5560.0, 5572]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "LATE LATE DOUBLE FEATURE card, 'Thought for Today' over water, the GM's address card, then eighty silent minutes of the 32 logo held alone, then the sign-on cube",
   "takedown": false
 }

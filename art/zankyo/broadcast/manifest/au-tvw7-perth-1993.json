@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[222.0, 234.0], [497.0, 509.0], [552.0, 564.0], [717.0, 729.0], [1102.0, 1114.0], [1267.0, 1279.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "a Western Australian station talking to its own state: a SHADDAP YOU FACE title over stars, half chicken and chips for three dollars, the Seven logo over MONDAY 6.00, a housing estate from $75,000, a Red Cross Calling notice with a donations number, and West Coast Hi-Fi naming Perth City, Balcatta and Cannington",
   "takedown": false
 }

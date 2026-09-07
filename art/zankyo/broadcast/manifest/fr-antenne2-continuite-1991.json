@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[10.0, 22.0], [56.6, 68.6], [124.0, 136.0], [203.88, 215.88], [294.0, 306.0], [881.72, 893.72]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the Antenne 2 '2' turning on its plinth, a spot break, the hand-painted École des fans card, and a studio mid-sentence",
   "takedown": false
 }

@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 22.0], [22.0, 32.0], [32.0, 44.0], [44.0, 56.0], [56.0, 66.01]],
   "srcWindows": [[2.0, 12.0], [45.0, 57.0], [110.0, 120.0], [130.0, 142.0], [193.0, 205.0], [268.0, 278.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "The VOK YAWALETEA card, a band in the studio, a presenter talking straight down the lens, and the Asian Service's tabla and harmonium — Voice of Kenya television off a worn tape.",
   "takedown": false
 }

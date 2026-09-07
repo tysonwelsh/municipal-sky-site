@@ -81,6 +81,8 @@
       400
     ]
   ],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Conet Project d1-07 and d2-27: a struck gong then figures, and E10's 'Nancy Adam Susan' — the phonetic callup Israel never explained",
   "takedown": false
 }

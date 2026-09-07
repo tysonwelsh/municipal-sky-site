@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
   "srcWindows": [[4.0, 14.0], [20.0, 30.0], [36.0, 46.0], [52.0, 62.0], [68.0, 78.0], [84.0, 94.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "The opening titles of the Tunisian television news, oldest first: an orbiting globe, شريط الأنباء, a newsreader at a bare desk. Windows kept inside the compilation's pre-1995 half.",
   "takedown": false
 }

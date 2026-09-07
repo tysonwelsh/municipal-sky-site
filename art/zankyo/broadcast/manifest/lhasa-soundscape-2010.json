@@ -65,6 +65,8 @@
       712.0
     ]
   ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Seven field recordings concatenated in the uploader's order (see srcWindows). Windows: Sera Monastery's daily debate; twice the work song of the rammers compacting the Jokhang's adobe roof; the driver and guide talking Tibetan on the road; a liturgic music class overheard in a Lhasa backstreet; a pilgrim chanting his kora round the Jokhang. Cut with --band low. The tent-wind file at Qomolangma was dropped as too quiet to survive the receiver, and the car-radio file as not Tibetan.",
   "country": "China (Lhasa, Tibet AR)",
   "language": "Tibetan",

@@ -15,6 +15,8 @@
   "picture": "wave",
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0]],
   "srcWindows": [[13.0, 25.0], [300.0, 312.0], [420.0, 432.0], [760.0, 772.0], [1140.0, 1152.0], [1300.0, 1312.0], [1700.0, 1712.0], [2020.0, 2032.0], [2150.0, 2162.0]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Radio Moscow's World Service relaying the 52nd anniversary parade live off Red Square, recorded off air on the 16 m band in Brisbane; the English commentator, the bands, the roll of units and the crowd, all coming and going under shortwave fading",
   "takedown": false
 }

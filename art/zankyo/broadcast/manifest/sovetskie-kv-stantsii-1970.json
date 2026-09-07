@@ -57,6 +57,8 @@
       104.0
     ]
   ],
+  "pitchHz": [94.78, null, null, null, null],
+  "tuned": true,
   "notes": "four Soviet shortwave services other than Radio Moscow, caught around 1970-71 by a listener in Ontario: Радио Маяк, Радиостанция Родина calling the diaspora home, Радиостанция Атлантика broadcasting to the fishing fleet, and Radio Station Peace and Progress — its interval signal and then its English service. Cut from the five archive clips concatenated in that order (offsets 0 / 23.25 / 45.71 / 70.84 / 88.67 s); the raw parts are kept beside the concatenation",
   "takedown": false
 }

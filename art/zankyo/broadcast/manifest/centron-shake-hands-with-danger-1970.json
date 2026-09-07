@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0]],
   "srcWindows": [[107.0, 119], [181.78, 193.78], [306.07, 318.07], [551.28, 563.28], [634.03, 646.03], [712.11, 724.11], [880.88, 892.88], [1009.0, 1021], [1264.23, 1276.23]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Centron for Caterpillar; the country ballad refrain 'shake hands with danger' over staged construction accidents",
   "takedown": false
 }

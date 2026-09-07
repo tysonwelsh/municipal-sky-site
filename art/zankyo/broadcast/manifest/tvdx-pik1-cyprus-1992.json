@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.17], [60.17, 72.25]],
   "srcWindows": [[183.0, 195.0], [303.21, 315.21], [388.99, 400.99], [632.1, 644.1], [841.0, 853.0], [951.39, 963.39]],
+  "pitchHz": [null, null, 96.99, null, null, null],
+  "tuned": true,
   "notes": "CyBC caught via satellite on 26 December 1992; a whole broadcast day's punctuation in one catch",
   "takedown": false
 }

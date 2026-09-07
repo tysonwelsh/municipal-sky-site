@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.17], [72.17, 84.25], [84.25, 96.25], [96.25, 108.25]],
   "srcWindows": [[33.0, 45], [100.43, 112.43], [161.0, 173], [251.0, 263], [289.0, 301], [397.0, 409], [463.0, 475], [559.0, 571], [593.0, 605]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Encyclopaedia Britannica Films; MICROPHONE / AMPLIFIER / RECORDER; the optical soundtrack drawn as one band of light",
   "takedown": false
 }

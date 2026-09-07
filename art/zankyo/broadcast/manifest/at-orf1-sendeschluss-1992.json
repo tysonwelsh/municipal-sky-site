@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[5.0, 17.0], [285.0, 297.0], [312.0, 324.0], [553.0, 565.0], [1145.0, 1157.0], [1440.0, 1452.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "teletext pages turning by themselves, the Ansage, Erwin Steinhauer reading Georg Kreisler by a candle, Anselm Kiefer's empty hall, then the Bundeshymne over the flag",
   "takedown": false
 }

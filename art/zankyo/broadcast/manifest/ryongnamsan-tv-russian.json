@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[5.0, 17], [25.0, 37], [45.0, 57], [65.0, 77], [85.0, 97], [105.0, 117]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the DPRK educational channel (the former Mansudae Television) broadcasting in Russian — a narrator walking the revolutionary sites in snow, stopping to ask the viewer whether they know what a word means",
   "takedown": false
 }

@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.08], [60.08, 72.17], [72.17, 84.17], [84.17, 96.17], [96.17, 108.17]],
   "srcWindows": [[73.0, 85], [129.0, 141], [217.0, 229], [359.0, 371], [394.33, 406.33], [457.86, 469.86], [576.14, 588.14], [641.0, 653], [719.0, 731]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "IBM Military Products Division; the round radar scope and light gun, drum memory, the blockhouse in snow, a sleeping child",
   "takedown": false
 }

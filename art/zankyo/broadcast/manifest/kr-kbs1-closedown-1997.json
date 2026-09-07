@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.01]],
   "srcWindows": [[0.0, 10.0], [34.0, 44.0], [82.0, 92.0], [94.0, 104.0], [118.0, 128.0], [133.0, 143.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "the end of a Korean broadcasting day: the newsreader signing off against a night skyline, the weather caption 전국 한두 차례 비, the card thanking everyone who watched this late, then 애국가 over the Taegukgi, a sunrise on water, city aerials, egrets on a nest, a waterfall, a child laughing and a lit dome",
   "takedown": false
 }

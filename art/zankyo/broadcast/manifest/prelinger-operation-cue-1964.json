@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.17], [84.17, 96.17]],
   "srcWindows": [[3.0, 15], [86.0, 98], [261.0, 273], [398.0, 410], [530.0, 542], [570.0, 582], [600.0, 612], [781.0, 793]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "FCDA study of the 1955 Nevada test (1964 revision): a radio transmitter broadcasting from tape before the shot, mannequins facing the blast, 'on the silent desert the test objects waited', the shot, 'this time it was only a test'",
   "takedown": false
 }

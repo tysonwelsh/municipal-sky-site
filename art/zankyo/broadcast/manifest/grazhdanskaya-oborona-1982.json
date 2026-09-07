@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08]],
   "srcWindows": [[0.0, 12.0], [208.0, 220.0], [313.0, 325.0], [663.0, 675.0], [803.0, 815.0], [964.0, 976.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Soviet civil defence taught to schoolchildren by Kyiv Popular Science Film: the Киевнаучфильм card and the title over fire, wartime bombardment, a polar map with Moscow at the centre, the staff duty boards, the ГРУППА ОХРАНЫ ОБЩЕСТВЕННОГО ПОРЯДКА sign, and a gas mask filling the frame",
   "takedown": false
 }

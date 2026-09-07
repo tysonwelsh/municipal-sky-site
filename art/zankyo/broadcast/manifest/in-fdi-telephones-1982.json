@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[3.0, 15.0], [104.0, 116.0], [146.0, 158.0], [251.0, 263.0], [336.0, 348.0], [483.0, 495.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Hindi narration over the telephone: the Films Division title card, an animated diagram of speech entering a mouthpiece, an operator at a manual exchange, relay racks, a satellite over the earth beaming down to Indian ground stations, and the credits in two scripts",
   "takedown": false
 }

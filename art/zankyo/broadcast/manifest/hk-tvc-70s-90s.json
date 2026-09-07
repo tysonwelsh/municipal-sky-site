@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.08], [60.08, 72.08]],
   "srcWindows": [[185.0, 197.0], [620.0, 632.0], [1210.0, 1222.0], [1705.0, 1717.0], [5105.0, 5117.0], [5620.0, 5632.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Cantonese ad voice-overs and jingles off a DVD compilation; a property development over the harbour, a herbal medicine pack, children, a machine shop",
   "takedown": false
 }

@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0]],
   "srcWindows": [[3.0, 15], [20.0, 32], [37.0, 49], [54.0, 66], [71.0, 83]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
   "notes": "a 1989 bulletin as broadcast footage: crowds at Sunan, a wall of microphones and a woman speaking into it, the reporter's voice over the roar — the arrival of a south Korean student at the World Festival of Youth and Students",
   "takedown": false
 }

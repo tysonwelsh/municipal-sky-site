@@ -14,6 +14,8 @@
   "picture": "line",
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
   "srcWindows": [[276.0, 288], [348.0, 360], [612.0, 624], [756.0, 768], [804.0, 816], [972.0, 984]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "mono cassette recording by 足元の丸印: 沢田敏子's automatic announcements for the Asama, Hakusan, Hitachi and Soyokaze limited expresses, departure melodies, the trains",
   "takedown": false
 }

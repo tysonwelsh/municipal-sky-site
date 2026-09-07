@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08]],
   "srcWindows": [[91.0, 103], [141.0, 153], [424.96, 436.96], [619.0, 631], [825.0, 837], [918.35, 930.35], [997.03, 1009.03], [1215.0, 1227]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Westinghouse; master control, the transmitter bench, a KDKA mic flag, paper slid under the microphone",
   "takedown": false
 }

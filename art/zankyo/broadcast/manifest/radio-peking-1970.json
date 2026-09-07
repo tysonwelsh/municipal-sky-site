@@ -15,6 +15,8 @@
   "picture": "line",
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
   "srcWindows": [[19.0, 31], [91.0, 103], [126.0, 138], [170.0, 182], [214.0, 226], [250.0, 262], [309.0, 321], [365.0, 377]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "The East Is Red on brass, the most recognisable four bars on the shortwave band, then the announcer; 6 Nov 1970",
   "takedown": false
 }

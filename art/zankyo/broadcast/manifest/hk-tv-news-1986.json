@@ -15,6 +15,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.08]],
   "srcWindows": [[53.0, 65.0], [127.0, 139.0], [303.0, 315.0], [545.0, 557.0], [743.0, 755.0], [863.0, 875.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Cantonese and English bulletins on the proposed tobacco advertising ban; kept only because an industry body was taping them; the chroma has collapsed into colour fields; NEWS AT 7 and NEWS ROUNDUP title cards",
   "takedown": false
 }
