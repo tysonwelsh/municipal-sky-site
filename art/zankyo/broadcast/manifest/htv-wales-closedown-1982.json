@@ -1,0 +1,20 @@
+{
+  "id": "htv-wales-closedown-1982",
+  "title": "HTV Wales — Christmas closedown",
+  "year": 1982,
+  "src": "https://youtu.be/RrvdfyUSFhk",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 719217,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[4.0, 16.0], [50.0, 62.0], [96.0, 108.0], [184.0, 196.0], [258.0, 270.0], [318.0, 330.0]],
+  "notes": "an in-vision announcer under 'Christmas on HTV'; a holly clock; the closedown film over Snowdon; the red dragon and the Union flag; HTV bars",
+  "takedown": false
+}
