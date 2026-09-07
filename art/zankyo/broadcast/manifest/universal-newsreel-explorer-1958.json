@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0]],
   "srcWindows": [[0.5, 12.5], [38.0, 50], [55.0, 67], [70.0, 82], [85.0, 97], [109.0, 121], [148.0, 160]],
+  "pitchHz": [null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "Universal Newsreel, Feb 1958: Jupiter-C / Explorer 1 at Cape Canaveral, 'the countdown reaches zero', 'broadcasting to the world its coded scientific data'; second story: Nasser and the United Arab Republic",
   "takedown": false
 }

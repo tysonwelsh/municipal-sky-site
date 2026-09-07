@@ -1,0 +1,22 @@
+{
+  "id": "bureau-of-mines-drama-of-steel-1946",
+  "title": "The Drama of Steel",
+  "year": 1946,
+  "src": "https://archive.org/details/youtube-CpZmu5ynKa8",
+  "license": "CC-BY (US Bureau of Mines, ARC 12505; Public.Resource.Org)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 96.08,
+  "bytes": 972469,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.08]],
+  "srcWindows": [[111.0, 123], [397.13, 409.13], [751.85, 763.85], [998.56, 1010.56], [1184.98, 1196.98], [1263.0, 1275], [1489.75, 1501.75], [1799.0, 1811]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "US Bureau of Mines, 33:29 narrated; a furnace venting white into a suburban street, two men riding a ladle car, a worker in silhouette against the pour, the open hearth flaring, a hot roll running the mill. At 192x144 it is nothing but light and dark.",
+  "takedown": false
+}

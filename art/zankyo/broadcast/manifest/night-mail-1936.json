@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0]],
   "srcWindows": [[2.0, 14], [150.0, 162], [190.0, 202], [250.0, 262], [510.0, 522], [770.0, 782], [1290.0, 1302], [1370.0, 1382]],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "GPO Film Unit; Auden's verse over Britten's score, 'recorded on Visatone-Marconi'; the signal lamps, the sorting carriage, the descent into Glasgow",
   "takedown": false
 }

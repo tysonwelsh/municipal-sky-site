@@ -1,0 +1,22 @@
+{
+  "id": "hk-tvb-pearl-weather-1987",
+  "title": "TVB Pearl weather report",
+  "year": 1987,
+  "src": "https://archive.org/download/tvb-pearl-weather-report-03041987/TVB%20Pearl%20Weather%20Report%2003041987.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": 0.0,
+  "durS": 72.0,
+  "bytes": 623639,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[37.0, 49.0], [65.0, 77.0], [95.0, 107.0], [109.0, 121.0], [129.0, 141.0], [147.0, 159.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Cathy Osmund; the harbour at night; SHANGHAI, TOKYO 6-10C, BANGKOK 27-38C; tape carries a Macau relay's on-screen bug",
+  "takedown": false
+}

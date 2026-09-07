@@ -1,0 +1,22 @@
+{
+  "id": "ryongnamsan-tv-russian",
+  "title": "룡남산텔레비죤 — the Russian-language broadcast",
+  "year": 2019,
+  "src": "https://archive.org/details/ryongnamsan-tv-russian-speaking-broadcast.-rare-northkorea-russian",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 670448,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[5.0, 17], [25.0, 37], [45.0, 57], [65.0, 77], [85.0, 97], [105.0, 117]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "the DPRK educational channel (the former Mansudae Television) broadcasting in Russian — a narrator walking the revolutionary sites in snow, stopping to ask the viewer whether they know what a word means",
+  "takedown": false
+}

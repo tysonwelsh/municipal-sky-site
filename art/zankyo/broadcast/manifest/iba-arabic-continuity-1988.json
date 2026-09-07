@@ -1,0 +1,22 @@
+{
+  "id": "iba-arabic-continuity-1988",
+  "title": "IBA Arabic service: transition slide, news summary, continuity",
+  "year": 1988,
+  "src": "https://archive.org/details/arabic-tv-broadcasts-transition-slide-news-summary-continuous-announcer-may-1988",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 701644,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[4.0, 16.0], [35.0, 47.0], [57.0, 69.0], [79.0, 91.0], [101.0, 113.0], [177.0, 189.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Israel Broadcasting Authority, Arabic service, May 1988; the transition slide, a newsreader keyed over Peres and the Knesset, the continuity announcer handing over",
+  "takedown": false
+}

@@ -80,6 +80,8 @@
       256.51
     ]
   ],
+  "pitchHz": [null, null, null, null, null, null, null, null],
+  "tuned": false,
   "notes": "NASA's 55 greetings from the Voyager Golden Record, concatenated in NASA's order from soundcloud.com/nasa/sets/golden-record-greetings-to-the (also archive.org/details/voyager_202608); Akkadian, Amoy, Arabic… English 'Hello from the children of planet Earth', Japanese, Latin, Persian, Russian, Sumerian, Vietnamese, Welsh, Wu",
   "takedown": false
 }

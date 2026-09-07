@@ -1,0 +1,22 @@
+{
+  "id": "vok-interval-signal-2021",
+  "title": "Voice of Korea — interval signal and intro, 11635 kHz",
+  "year": 2021,
+  "src": "https://archive.org/download/sraa-voice-of-korea-interval-signal-and-intro-july-13-2021/sraa-voice-of-korea-interval-signal-and-intro-july-13-2021.mp3",
+  "license": "CC-BY-NC 3.0",
+  "tier": "B",
+  "tone": "music",
+  "weight": 4,
+  "gain": -0.6,
+  "durS": 61.75,
+  "bytes": 295223,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
+  "srcWindows": [[4.0, 14], [22.0, 32], [40.0, 50], [58.0, 68], [80.0, 90], [104.0, 114]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "the two bars of 김일성장군의 노래 that every DPRK station signs on with, looping into a dead band, then the announcer's intro — caught on a remote SDR at 20:00 UTC",
+  "takedown": false
+}

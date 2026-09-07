@@ -1,0 +1,22 @@
+{
+  "id": "jamhandy-from-dawn-to-sunset-1937",
+  "title": "From Dawn to Sunset",
+  "year": 1937,
+  "src": "https://archive.org/details/FromDawn1937",
+  "license": "PD Mark 1.0 (Internet Archive)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 108.08,
+  "bytes": 1278472,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.08], [84.08, 96.08], [96.08, 108.08]],
+  "srcWindows": [[53.0, 65], [71.0, 83], [200.4, 212.4], [218.28, 230.28], [290.82, 302.82], [371.0, 383], [400.97, 412.97], [439.0, 451], [495.0, 507]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Jam Handy for Chevrolet; title crawl over smokestacks - 'the whistles from America's greatest factories'; the plant gate emptying",
+  "takedown": false
+}

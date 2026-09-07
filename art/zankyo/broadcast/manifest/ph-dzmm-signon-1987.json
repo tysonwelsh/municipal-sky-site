@@ -1,0 +1,22 @@
+{
+  "id": "ph-dzmm-signon-1987",
+  "title": "DZMM 630 kHz Manila — sign-on",
+  "year": 1987,
+  "src": "https://archive.org/download/dzmm-630-sign-on-1987.mp-4/DZMM_630_Sign-On_1987.mp4.mp4",
+  "license": "uploader marks CC BY-NC 4.0; the underlying DZMM/ABS-CBN broadcast is copyrighted",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 69.75,
+  "bytes": 329995,
+  "band": "normal",
+  "audioOnly": true,
+  "picture": "line",
+  "windows": [[0.0, 10.0], [10.0, 22.0], [22.0, 34.0], [34.0, 46.0], [46.0, 56.0], [56.0, 68.0]],
+  "srcWindows": [[4.0, 14.0], [84.0, 96.0], [120.0, 132.0], [168.0, 180.0], [202.0, 212.0], [232.0, 244.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "a radio station waking up on medium wave: the opening theme, the station identification and the invocation in Filipino, the sung station jingle at 3:22, and the first announcer of the day",
+  "takedown": false
+}

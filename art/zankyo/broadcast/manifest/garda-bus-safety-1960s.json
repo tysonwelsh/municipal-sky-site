@@ -1,0 +1,22 @@
+{
+  "id": "garda-bus-safety-1960s",
+  "title": "Irish bus safety public information film",
+  "year": 1968,
+  "src": "https://archive.org/download/irish-bus-safety-public-information-film.-1960s./Irish%20bus%20safety%20public%20information%20film.%201960%27s..mp4",
+  "license": "PD (Irish Government copyright expired)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 84.0,
+  "bytes": 874942,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0]],
+  "srcWindows": [[2.0, 14.0], [18.0, 30.0], [40.0, 52.0], [56.0, 68.0], [84.0, 96.0], [106.0, 118.0], [128.0, 140.0]],
+  "pitchHz": [null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "a single-decker on a hedged road; a shelter of schoolchildren; a Garda speaking straight to camera; credits, Silverpine Studios, Bray, Co. Wicklow",
+  "takedown": false
+}

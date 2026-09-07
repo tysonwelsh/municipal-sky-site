@@ -1,0 +1,22 @@
+{
+  "id": "bell-speeding-speech-1950",
+  "title": "Speeding Speech",
+  "year": 1950,
+  "src": "https://archive.org/details/Speeding1950",
+  "license": "PD Mark 1.0 (Internet Archive)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 108.08,
+  "bytes": 1230033,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.08], [48.08, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08], [96.08, 108.08]],
+  "srcWindows": [[19.0, 31], [101.0, 113], [141.0, 153], [233.0, 245], [301.0, 313], [407.0, 419], [480.88, 492.88], [524.82, 536.82], [561.46, 573.46]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Bell System; the long-distance map with two faces inset and a line drawn between them; relay racks and the test board",
+  "takedown": false
+}

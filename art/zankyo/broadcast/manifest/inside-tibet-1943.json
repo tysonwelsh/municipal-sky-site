@@ -1,0 +1,106 @@
+{
+  "id": "inside-tibet-1943",
+  "title": "Inside Tibet",
+  "year": 1943,
+  "src": "https://archive.org/details/gov.archives.arc.40103",
+  "license": "PD (CC0, US National Archives)",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 120.0,
+  "bytes": 1322226,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      84.0,
+      96.0
+    ],
+    [
+      96.0,
+      108.0
+    ],
+    [
+      108.0,
+      120.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      938.0,
+      950.0
+    ],
+    [
+      1062.0,
+      1074.0
+    ],
+    [
+      1876.0,
+      1888.0
+    ],
+    [
+      1915.0,
+      1927.0
+    ],
+    [
+      1955.0,
+      1967.0
+    ],
+    [
+      2080.0,
+      2092.0
+    ],
+    [
+      2103.0,
+      2115.0
+    ],
+    [
+      2190.0,
+      2202.0
+    ],
+    [
+      2250.0,
+      2262.0
+    ],
+    [
+      2314.0,
+      2326.0
+    ]
+  ],
+  "pitchHz": [null, null, null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "OSS Field Photographic Branch; the Tolstoy-Dolan mission to Lhasa. Kodachrome: cham dancers, the great drum and long horns, pilgrims prostrating, an oracle turning to the camera, the young 14th Dalai Lama seated.",
+  "country": "Tibet (filmed) / US (produced)",
+  "language": "none (English narration; no Tibetan sound on the optical track)",
+  "takedown": false
+}

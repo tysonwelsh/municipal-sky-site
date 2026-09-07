@@ -1,0 +1,72 @@
+{
+  "id": "canal13-uctv-tanda-1982",
+  "title": "Canal 13 UCTV — tanda comercial de agosto",
+  "year": 1982,
+  "src": "https://www.youtube.com/watch?v=0NrHmmIcpuo",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 72.08,
+  "bytes": 744004,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.08
+    ],
+    [
+      12.08,
+      24.08
+    ],
+    [
+      24.08,
+      36.08
+    ],
+    [
+      36.08,
+      48.08
+    ],
+    [
+      48.08,
+      60.08
+    ],
+    [
+      60.08,
+      72.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      31.0,
+      43
+    ],
+    [
+      85.0,
+      97
+    ],
+    [
+      128.56,
+      140.56
+    ],
+    [
+      211.0,
+      223
+    ],
+    [
+      301.0,
+      313
+    ],
+    [
+      396.0,
+      408
+    ]
+  ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "The Catholic University's channel in Santiago, August 1982: an orchestra, a lighter, a hand filling in a form, a host in white looking into the camera; the uploader's neon VHS border cropped away",
+  "takedown": false
+}

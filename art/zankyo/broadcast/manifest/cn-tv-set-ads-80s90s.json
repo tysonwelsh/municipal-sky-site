@@ -1,0 +1,22 @@
+{
+  "id": "cn-tv-set-ads-80s90s",
+  "title": "中国电视机广告 — Chinese television-set commercials",
+  "year": 1988,
+  "src": "https://www.youtube.com/watch?v=e8JfnUYI3IU",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 739989,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[5.0, 17.0], [55.0, 67.0], [69.2, 81.2], [104.93, 116.93], [127.0, 139.0], [191.0, 203.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "taped off CCTV-1 with the channel bug and the wall clock in frame, 19:43 to 20:58; 南宝电视机 NANBAO of the Hebei electronics corporation, and 美乐电视 中国·新乡 国营760廠 — a state factory number as a brand",
+  "takedown": false
+}

@@ -1,0 +1,72 @@
+{
+ "id": "dff1-sendeschluss-1990",
+ "title": "Sendeschluß — DFF 1. Programm, 8. Dezember 1990",
+ "year": 1990,
+ "src": "https://archive.org/details/youtube-sgce_MqncO8",
+ "license": "unknown (off-air TV-DX recording; Deutscher Fernsehfunk material)",
+ "tier": "B",
+ "tone": "voice",
+ "weight": 4,
+ "gain": -0.2,
+ "durS": 72.0,
+ "bytes": 607031,
+ "band": "normal",
+ "audioOnly": false,
+ "picture": null,
+ "windows": [
+  [
+   0.0,
+   12.0
+  ],
+  [
+   12.0,
+   24.0
+  ],
+  [
+   24.0,
+   36.0
+  ],
+  [
+   36.0,
+   48.0
+  ],
+  [
+   48.0,
+   60.0
+  ],
+  [
+   60.0,
+   72.0
+  ]
+ ],
+ "srcWindows": [
+  [
+   4.0,
+   16.0
+  ],
+  [
+   20.0,
+   32.0
+  ],
+  [
+   106.0,
+   118.0
+  ],
+  [
+   160.0,
+   172.0
+  ],
+  [
+   240.0,
+   252.0
+  ],
+  [
+   298.0,
+   310.0
+  ]
+ ],
+  "pitchHz": [null, null, null, null, 57.97, null],
+  "tuned": true,
+ "notes": "the Deutscher Fernsehfunk closing down for the night three weeks before it was wound up: the last credits, the Ansagerin, her voice reading the blue schedule cards for 9 December 1990 (Unser Sandmännchen at 17.50, Polizeiruf 110, AK-Nachrichten), and the closing harbour film. The tape's audio dies at 5:15, so the flag, the Sendeschluß clock and the Fernsehsender Berlin card are left out",
+ "takedown": false
+}

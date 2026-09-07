@@ -14,6 +14,8 @@
   "picture": null,
   "windows": [[0.0, 12.08], [12.08, 24.08], [24.08, 36.08], [36.08, 48.08], [48.08, 60.08], [60.08, 72.08]],
   "srcWindows": [[98.0, 110], [144.0, 156], [190.0, 202], [334.0, 346], [346.0, 358], [505.0, 517]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
   "notes": "TV Asahi (JOEX-TV) off-air CM reel, summer 1980; tomorrow's mystery-theatre trailer, sponsor cards and 'next week at this hour', the Be Forever Yamato trailer, tomorrow's weather (Tokyo / South Kanto / North Kanto, cloudy then rain) read over seahorses and reef fish, and the schedule card for the Moscow Olympics Japan boycotted",
   "takedown": false
 }

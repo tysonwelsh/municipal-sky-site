@@ -1,0 +1,22 @@
+{
+  "id": "ddr1-aktuelle-kamera-1986",
+  "title": "DDR1, 16.09.1986 — Aktuelle Kamera, Ansage, Verkehrskompaß, Pausenfüller, Programmtafeln",
+  "year": 1986,
+  "src": "https://archive.org/details/youtube-SwLPX8xpxGU",
+  "license": "unknown (off-air TV-DX recording; Fernsehen der DDR material)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 72.0,
+  "bytes": 714378,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[30.0, 42.0], [120.0, 132.0], [296.0, 308.0], [548.0, 560.0], [695.0, 707.0], [805.0, 817.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "one East German evening off air: the Aktuelle Kamera reader on Honecker's condolences to Greece, the AK ident and the Ansagerin looking into the lens, the Verkehrskompaß card giving way to its cartoon traffic light, the DDR1 '1' pause filler, Honecker met at an airport, and the schedule card for the rest of the night",
+  "takedown": false
+}

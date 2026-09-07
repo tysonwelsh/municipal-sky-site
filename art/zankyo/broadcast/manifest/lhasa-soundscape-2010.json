@@ -1,0 +1,82 @@
+{
+  "id": "lhasa-soundscape-2010",
+  "title": "Tibetan Soundscape: Sera, the Jokhang roof, a Lhasa backstreet, a pilgrim's kora",
+  "year": 2010,
+  "src": "https://archive.org/details/WorkSongForTheRefectionOfTheJokhangTempleRoof",
+  "license": "unknown (field recordings uploaded to archive.org, no licence stated)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.08,
+  "bytes": 343993,
+  "band": "low",
+  "audioOnly": true,
+  "picture": "wave",
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      25.0,
+      37.0
+    ],
+    [
+      120.0,
+      132.0
+    ],
+    [
+      240.0,
+      252.0
+    ],
+    [
+      545.0,
+      557.0
+    ],
+    [
+      625.0,
+      637.0
+    ],
+    [
+      700.0,
+      712.0
+    ]
+  ],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Seven field recordings concatenated in the uploader's order (see srcWindows). Windows: Sera Monastery's daily debate; twice the work song of the rammers compacting the Jokhang's adobe roof; the driver and guide talking Tibetan on the road; a liturgic music class overheard in a Lhasa backstreet; a pilgrim chanting his kora round the Jokhang. Cut with --band low. The tent-wind file at Qomolangma was dropped as too quiet to survive the receiver, and the car-radio file as not Tibetan.",
+  "country": "China (Lhasa, Tibet AR)",
+  "language": "Tibetan",
+  "pitchNote": [
+    null,
+    null,
+    null,
+    null,
+    "F3",
+    "G4"
+  ],
+  "takedown": false
+}
