@@ -1,0 +1,20 @@
+{
+  "id": "tele-zaire-ozrt-souvenir",
+  "title": "Télé Zaïre: Soir Actualités",
+  "year": 1985,
+  "src": "https://youtu.be/WP46A-aywWA",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 72.0,
+  "bytes": 602129,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.01]],
+  "srcWindows": [[19.0, 31.0], [59.0, 71.0], [89.0, 101.0], [111.0, 123.0], [125.0, 137.0], [151.0, 163.0]],
+  "notes": "OZRT off a worn VHS: the Télé Zaïre globe, the SOIR ACTUALITÉS title, announcers to camera in French and Lingala, Mobutu in the leopard cap at a bank of microphones, a stadium.",
+  "takedown": false
+}
