@@ -681,33 +681,73 @@
     0 0 14px rgba(var(--magenta-rgb), 0.6);
 }
 
-/* mute: rocker switch */
+/* mute: the console rocker — flat, wordless, matte.
+   A channel milled into the panel, its floor a printed paper label — dried
+   ink, flat and matte, no sheen anywhere: deep bottle green over the left
+   half, dark brick red over the right. The round metal cap (the same turned
+   cap the knobs wear) slides across and covers one half, so the exposed
+   colour IS the state — cap right, green showing = the layer is on; cap
+   left, red showing = muted. No lamp, no bloom: the paper carries its own
+   grain and the panel's scratches fall across it. */
 .zk-switch {
-  display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none;
-  background: none; border: none; padding: 2px 5px; cursor: pointer;
-  font-family: "JetBrains Mono", monospace;
+  display: block; position: relative; flex: none; line-height: 0;
+  background: none; border: none; padding: 2px 3px; cursor: pointer;
 }
-.zk-switch:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 3px; }
-.zk-switch i { font-style: normal; font-size: 6.5px; letter-spacing: 0.16em; }
-.zk-switch .zk-switch-on { color: var(--cyan); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6); }
-.zk-switch .zk-switch-off { color: #4d4956; }
-.zk-switch.muted .zk-switch-on { color: #4d4956; text-shadow: none; }
-.zk-switch.muted .zk-switch-off { color: #a29db0; }
-.zk-switch-slot {
-  position: relative; width: 17px; height: 34px; border-radius: 8px;
-  background: linear-gradient(180deg, #040405, #121216);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 1px 0 rgba(255, 255, 255, 0.05);
+.zk-switch:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 12px; }
+.zk-switch-well {
+  position: relative; display: block; box-sizing: border-box;
+  width: 42px; height: 22px; border-radius: 11px; overflow: hidden;
+  background: #0b0b0d;
+  border: 1px solid #08080a;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.85);
 }
-.zk-switch-lever {
-  position: absolute; left: 2px; right: 2px; top: 2px; height: 15px; border-radius: 6px;
-  background: linear-gradient(180deg, #6e6e7a, #3a3a44 62%, #23232b);
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.3);
-  transition: top 0.1s ease, background 0.1s;
+/* the paper: matte, printed a long time ago — dried ink, flat, no sheen */
+.zk-switch-lamp {
+  position: absolute; top: 0; bottom: 0; width: 50%;
 }
-.zk-switch.muted .zk-switch-lever {
-  top: 17px;
-  background: linear-gradient(0deg, #6e6e7a, #3a3a44 62%, #23232b);
+.zk-lamp-on  { left: 0;  background: #1f4a2a; }
+.zk-lamp-off { right: 0; background: #6b1f1f; }
+/* paper grain — the faceplate's own fractal noise, printed at label scale */
+.zk-switch-lamp::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  opacity: 0.2; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>");
 }
+/* the cap — the knob's turned metal, shrunk to a lever and laid on its side */
+.zk-switch-thumb {
+  position: absolute; left: 0; top: 0; box-sizing: border-box;
+  width: 20px; height: 20px; border-radius: 50%; z-index: 2;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%),
+    conic-gradient(from 210deg, #34343c, #17171b 22%, #2b2b32 47%, #101014 74%, #34343c),
+    #1d1d22;
+  border: 1px solid #08080a;
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.8),
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+  transform: translateX(20px);
+  transition: transform 0.12s ease, filter 0.12s;
+}
+.zk-switch-thumb::before {          /* knurled skirt */
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.07) 0deg 6deg, rgba(0, 0, 0, 0.28) 6deg 12deg);
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 64%);
+  mask: radial-gradient(circle, transparent 58%, #000 64%);
+}
+.zk-switch-thumb::after {           /* domed centre */
+  content: ""; position: absolute; inset: 24%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #303038, #16161b 72%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+.zk-switch.muted .zk-switch-thumb { transform: translateX(0); }
+.zk-switch:active .zk-switch-thumb { filter: brightness(1.12); }
+/* no two labels on this panel have faded the same */
+.zankyo-layer:nth-child(3n) .zk-switch-well { filter: brightness(0.92) sepia(0.1) saturate(0.9); }
+.zankyo-layer:nth-child(4n) .zk-switch-well { filter: brightness(1.05) saturate(0.82); }
+.zankyo-layer:nth-child(5n) .zk-switch-thumb { filter: brightness(0.9) saturate(0.85); }
+/* a muted row goes quiet behind its own name plate */
+.zankyo-layer.is-muted .zankyo-layer-name { opacity: 0.62; filter: saturate(0.55); }
 
 /* the control cavity — knobs + fine trims, revealed by the name plate */
 .zk-cavity {
