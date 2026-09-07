@@ -1,0 +1,20 @@
+{
+  "id": "be-brtn-eedaflegging-1993",
+  "title": "BRTN — eedaflegging van koning Albert II, 9 augustus 1993",
+  "year": 1993,
+  "src": "https://archive.org/download/brtn-uitzending-eedaflegging-van-koning-albert-ii-1993/%28JPVR%20Archief%29%20Volledige%20BRTN%20Uitzending%2C%20Eedaflegging%20van%20Koning%20Albert%20II%2C%201993.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -1.0,
+  "durS": 72.0,
+  "bytes": 817724,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[141.0, 153.0], [977.0, 989.0], [1279.0, 1291.0], [1947.0, 1959.0], [2339.0, 2351.0], [2685.0, 2697.0]],
+  "notes": "Flemish commentary over a state morning: Brussels from the air, the escorted car, the packed chamber, the oath read from the throne",
+  "takedown": false
+}
