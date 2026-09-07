@@ -7,9 +7,10 @@
   "tier": "B",
   "tone": "music",
   "weight": 3,
-  "gain": -0.4,
-  "durS": 61.92,
-  "bytes": 293275,
+  "gain": -0.1,
+  "durS": 61.67,
+  "bytes": 293154,
+  "band": "low",
   "audioOnly": true,
   "picture": "line",
   "windows": [
@@ -64,8 +65,8 @@
       2466.0
     ]
   ],
-  "notes": "Tantric puja: overtone chant, dungchen, rolmo. Six 10 s windows chosen where the drone HOLDS, never at an entry; both LP sides. pitchNote is the SOURCE fundamental (measured 105-112 Hz G#2/A2, one window 162 Hz E3); the reel's baked 200 Hz highpass removes it, so what survives in the reel is the 4th-6th partial (416-733 Hz).",
-  "country": "Tibet (recorded in exile, India/Nepal)",
+  "notes": "Tantric puja: overtone chant, dungchen, rolmo. Six 10 s windows chosen where the drone HOLDS, never at an entry; both LP sides. Cut with --band low so the fundamental survives; pitchNote is the source pitch.",
+  "country": "Tibet (recorded in exile)",
   "language": "Tibetan (liturgical)",
   "pitchNote": [
     "G#2",
