@@ -1,0 +1,20 @@
+{
+  "id": "macau-tdm-02",
+  "title": "Teledifusão de Macau 澳門廣播電視公司",
+  "year": 1985,
+  "src": "https://archive.org/download/teledifusao-de-macau-02/Teledifusao%20de%20Macau%2002.mp4",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.1,
+  "durS": 72.0,
+  "bytes": 711955,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
+  "srcWindows": [[37.0, 49.0], [183.04, 195.04], [197.64, 209.64], [301.0, 313.0], [340.2, 352.2], [369.0, 381.0]],
+  "notes": "the red M ident, a transmitter mast, then Japanese animation subtitled in Cantonese on a Portuguese colonial channel",
+  "takedown": false
+}
