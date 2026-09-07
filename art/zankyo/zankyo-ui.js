@@ -507,6 +507,23 @@
     if (pre.seedParam != null) Z.reseed(parseInt(pre.seedParam, 10) >>> 0);
     else Z.reseed((Date.now() % 0xffffffff) >>> 0);   // a cold load's own draw
   }
+  // THE TUBE STOPS BEING A TITLE CARD WHENEVER THE STATION STARTS, by whichever
+  // control started it. This lived inline in the play button's handler and the
+  // hidden switch — which also starts the station — never called it. The
+  // overlay is position:absolute, inset:0, z-index:2 over an opaque background,
+  // so a listener who threw the switch WITHOUT pressing play first got a far
+  // night playing correctly underneath a panel that hid the scope completely.
+  // Measured on rc.23: boot still present, viz 100 % covered, station playing
+  // 崩 the collapse. Owner-reported.
+  //
+  // One function, called by both, because "two controls that must do the same
+  // thing" maintained in two places is the fault this crew has spent the week
+  // finding in five other forms.
+  function clearBoot() {
+    var boot = document.getElementById("zankyo-boot");
+    if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+  }
+
   function wireFarSwitch() {
     var sw = document.getElementById("zankyo-far-sw");
     if (!sw) return;
@@ -518,6 +535,7 @@
         return;
       }
       var playBtn = document.getElementById("zankyo-play");
+      clearBoot();                             // the switch starts the station too
       Z.stop();
       farHunt();
       clearLog(); Z.play();
@@ -576,8 +594,7 @@
       // the tube stops being a title card the moment the station plays, and
       // does not go back to one for the session (a STOP leaves the scope as
       // it has always been)
-      var boot = document.getElementById("zankyo-boot");
-      if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+      clearBoot();
       if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
       else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
       clearLog(); Z.play();
