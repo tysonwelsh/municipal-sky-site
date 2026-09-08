@@ -716,9 +716,56 @@
   // ev.playbackTime is the context time of the block's first sample, which is
   // the same clock startT is written in. The tap is connected early because
   // that is when the graph is built; it simply does not listen yet.
+  // 経路 ?capture=off — 室 DOES NOT BUILD ITS TAP.
+  //
+  // On a reelrm night this ScriptProcessor is, for about two seconds in the
+  // middle of a reel, THE ONLY NODE CONNECTED TO ctx.destination: the master
+  // leaves through the MediaStreamDestination (background-audio.js), so on a
+  // default night nothing else touches the destination at all. The tap
+  // therefore does not merely add a main-thread audio callback every 85 ms —
+  // it gives the context's hardware output a graph where it had none, and
+  // takes it away again two seconds later, at the exact moment the owner says
+  // they hear something.
+  //
+  // ITS LEVEL IS NOT THE WORRY, and that was worth checking rather than
+  // assuming. Measured in WKWebView (seed 12, ?far=0.9, a night that draws
+  // 室), with AudioNode.prototype.connect patched to catch every connection
+  // to the destination and meter it:
+  //
+  //   · exactly ONE connection to ctx.destination in the whole night, and it
+  //     is this one — a GainNode, from farRoomCapture. Not the processor
+  //     direct: it does go through `sink`.
+  //   · peak at the sink's output (what the speakers would get): 0.00000000
+  //     over 463 blocks. Peak at the PROCESSOR's own output, before the
+  //     gain: also 0.00000000 — WebKit zero-fills an outputBuffer the
+  //     handler never writes. Nothing is added to anything.
+  //   · sink.gain.value reads 1 at the instant connect() is called, because
+  //     setValueAtTime schedules rather than assigns; it is 0 by the first
+  //     sample of the first quantum, and 0 at every poll thereafter. The
+  //     window is arithmetic, not audible.
+  //
+  // What IS true, and is why the switch exists: on a default night the master
+  // leaves through the MediaStreamDestination, so NOTHING is connected to
+  // ctx.destination at all — and then, mid-reel, this is. The destination
+  // goes from no inputs to one. `sink` is never disconnected (sp is, at
+  // completion), so it is a ONE-TIME transition per night rather than one per
+  // reel — which is a mark AGAINST it explaining a per-reel symptom, and is
+  // recorded here so the next reader does not have to re-derive it.
+  //
+  // With the switch off, 室 simply does not sound: there is no synthetic
+  // reel-room to fall back to, so the station keeps the hull and the
+  // corridor it already has. It says so in the log rather than going quietly
+  // missing.
+  function captureOff() {
+    try { return !!(window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().capture === "off"); } catch (e) { return false; }
+  }
   function farRoomCapture(srcNode, startT) {
     var p = farDep("reelrm"); if (!p || farRoomConv) return;
     var T = tl(), c = T.ctx;
+    if (captureOff()) {
+      T.emitEvent({ cat: "far", label: "室 not taken", detail: "?capture=off · no tap on ctx.destination · the station keeps the hull and the corridor" }, startT);
+      return;
+    }
     if (!c.createScriptProcessor) return;
     var sr = c.sampleRate, want = Math.round(p.sliceS * sr), got = 0;
     var acc = new Float32Array(want);
