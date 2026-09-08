@@ -5145,7 +5145,12 @@ window.ZankyoAudio = (function () {
   // and the KIRU are the Conductor's now (exact audio times).
   function formPulse(t) {
     if (!playing) return null;
-    if (dryGritGain) dryGritGain.gain.setTargetAtTime(farGroove && farGroove.grit != null ? farGroove.grit : getArc(t) * 0.7, t, 0.5);   // 逸脱 崩: while the station is stuck, the groove sets the crud
+    // Same discipline as roomPulse: the grit send and the colour blend are
+    // heard continuously, so a back-dated write on them is a jump. The weather
+    // is still read at the SCHEDULED t — the value the window is about does
+    // not change because we were late delivering it.
+    var nowT = ctx.currentTime, t0 = t < nowT ? nowT : t;
+    if (dryGritGain) dryGritGain.gain.setTargetAtTime(farGroove && farGroove.grit != null ? farGroove.grit : getArc(t) * 0.7, t0, 0.5);   // 逸脱 崩: while the station is stuck, the groove sets the crud
     // the grit's colour: equal-power crossfade of the two curves by the
     // weather's gritColor (anchored ramps every pulse — the weather moves
     // ≤ 0.026/s, so each chord is a hair)
@@ -5155,8 +5160,9 @@ window.ZankyoAudio = (function () {
       // equal-power law would bump the bus +3 dB at mid-blend; with linear
       // weights the sum's level holds and only the colour moves.
       var gc = wxAt(t + 0.7).gritColor;
-      gritBlendA.gain.setValueAtTime(gritBlendA.gain.value, t); gritBlendA.gain.linearRampToValueAtTime(1 - gc, t + 0.7);
-      gritBlendB.gain.setValueAtTime(gritBlendB.gain.value, t); gritBlendB.gain.linearRampToValueAtTime(gc, t + 0.7);
+      var endT = (t + 0.7 > t0 + LATE_RAMP_S) ? t + 0.7 : t0 + LATE_RAMP_S;   // never a ramp that ends in the past: that IS the step
+      gritBlendA.gain.setValueAtTime(gritBlendA.gain.value, t0); gritBlendA.gain.linearRampToValueAtTime(1 - gc, endT);
+      gritBlendB.gain.setValueAtTime(gritBlendB.gain.value, t0); gritBlendB.gain.linearRampToValueAtTime(gc, endT);
     }
     return 0.7;
   }
@@ -5257,13 +5263,47 @@ window.ZankyoAudio = (function () {
   var ROOM_F_HI_SHO = 1600;                                                                // the shō's notch may follow the PA's band centre; the grit's stays inside 150–1200
   var ROOM_GROUP = { koto: 1, shamisen: 1, biwa: 1, hichiriki: 1, pa: 1, shakuhachi: 2, broadcast: 1 };  // notch 1: the plucked / reed / PA; notch 2: the flute (critic r2 §3.1)
   var ROOM_PA_SHO_F = 1100, ROOM_PA_SHO_Q = 1.0;                                          // the PA's shō notch: 1.1 kHz at Q 1 clears 0.8–1.6 kHz, where the shō's A5 partials cover the tannoy (critic r2 §3.2)
-  var room = { spans: [], g: 1, gs: 1, pg: 0, cg: [0, 0], lf: [Math.log(400), Math.log(400)], lfs: [Math.log(400), Math.log(400)], qs: ROOM_Q };
+  // ==========================================================================
+  // THE LATE-WRITE DISCIPLINE (rc.52) — rc.50's rule, applied to the periodic
+  // writers on the SHARED buses.
+  //
+  // PJ2.Clock fires overdue events by design ("Web Audio clamps their
+  // placement to as-soon-as-possible, which is the least-bad recovery and
+  // drops nothing"), and .every reschedules from the SCHEDULED t, not from the
+  // clock — so one main-thread stall delivers a dozen back-dated windows in a
+  // row. For a note that is the right answer: the note starts late, from its
+  // beginning, and nothing is already sounding on those nodes. For roomPulse
+  // and formPulse it is NOT, because they write the duck, the notch and the
+  // grit blend — parameters the listener is hearing continuously. A back-dated
+  // setValueAtTime on those is an instantaneous jump. Measured on a 3 s stall
+  // before this commit: 182 past-dated steps from roomPulse and 21 from
+  // formPulse per stall, on a home seed as much as a far one. The broadcast
+  // agent independently found single-sample discontinuities 18–29 ms after a
+  // reel's onset in about one reel in nine, in both of their reel modes —
+  // the picture work at onset costs a main-thread frame, so this stall is real
+  // on the owner's machine and not a synthetic worry.
+  //
+  // The rule: a periodic writer on a shared bus NEVER STEPS. If its window has
+  // already passed it re-bases on the clock and slews in from wherever the
+  // param actually is, over LATE_RAMP_S. 20 ms is well under the ear's click
+  // threshold and orders of magnitude above a sample. When the writer is on
+  // time — every normal tick — this is byte-for-byte the old code path, which
+  // is what keeps REPRO identical.
+  var LATE_RAMP_S = 0.02, ROOM_LATE_TOL_S = 0.05;   // one chord of roomPulse's five-chord window
+  function anchorAt(p, v, t, late) {
+    if (!late) { p.setValueAtTime(v, t); return; }
+    var cur = p.value;                      // the one place a .value read is right: we are recovering, and the remembered value is exactly what is no longer true
+    p.cancelScheduledValues(t);
+    p.setValueAtTime(cur, t);
+    p.linearRampToValueAtTime(v, t + LATE_RAMP_S);
+  }
+  var room = { spans: [], g: 1, gs: 1, pg: 0, cg: [0, 0], lf: [Math.log(400), Math.log(400)], lfs: [Math.log(400), Math.log(400)], qs: ROOM_Q, late: false };
   function roomSpeak(layer, t, dur, f) {
     if (!ROOM_VOICES[layer] || !(dur > 0) || !(f > 0)) return;
     room.spans.push({ a: t, b: t + dur, f: f, fs: layer === "pa" ? ROOM_PA_SHO_F : f, qs: layer === "pa" ? ROOM_PA_SHO_Q : ROOM_Q, db: ROOM_VOICES[layer], dbs: ROOM_VOICES_SHO[layer] || ROOM_VOICES[layer], pk: ROOM_PICK[layer] || 0, grp: ROOM_GROUP[layer] || 1, koto: layer === "koto" });   // the PA: the grit notch at its reciting tone, the shō's at 1.1 kHz
   }
   function roomReset(t) {
-    room.spans.length = 0; room.g = 1; room.gs = 1; room.pg = 0; room.cg = [0, 0]; room.lf = [Math.log(400), Math.log(400)]; room.lfs = [Math.log(400), Math.log(400)]; room.qs = ROOM_Q;
+    room.spans.length = 0; room.late = false; room.g = 1; room.gs = 1; room.pg = 0; room.cg = [0, 0]; room.lf = [Math.log(400), Math.log(400)]; room.lfs = [Math.log(400), Math.log(400)]; room.qs = ROOM_Q;
     if (!duckGrit) return;
     [duckGrit.gain, duckSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(1, t); });
     [carveGrit.gain, carveSho.gain, carveGrit2.gain, carveSho2.gain, pickGrit.gain, pickSho.gain].forEach(function (p) { p.cancelScheduledValues(t); p.setValueAtTime(0, t); });
@@ -5272,16 +5312,34 @@ window.ZankyoAudio = (function () {
   }
   function roomPulse(t) {
     if (!playing || !duckGrit) return null;
+    // Late? Then this window's start is in the past. Re-base the anchors on the
+    // clock, slew in, and write only the chords still ahead of us — the state
+    // below still advances through every chord, so the envelope stays on
+    // absolute time rather than drifting by the length of the stall.
+    // MEASURED, because the obvious test is wrong: in normal play this lane
+    // fires EARLY, by the lookahead — 3 603 fires on a 300 s home night read
+    // p50 −0.25 s, and only THREE were late at all, by at most 25 ms. So
+    // `t < now` is not lateness, it is the ordinary jitter of a 25 ms tick, and
+    // triggering the recovery on it perturbs every normal night for nothing.
+    // One chord (50 ms) is the honest threshold: below it no chord has been
+    // missed and the remembered values are still exactly what the params hold,
+    // so the anchor is a no-op. At or beyond it, chords have gone by and the
+    // remembered values are precisely what is no longer true.
+    // t0 never goes backwards regardless, so this writer cannot date a write
+    // into the past at any lag.
+    var nowT = ctx.currentTime, lag = nowT - t, t0 = lag > 0 ? nowT : t;
+    var late = (lag > ROOM_LATE_TOL_S) || room.late;
+    var floorT = late ? t0 + LATE_RAMP_S : t0, skipped = 0;
     var P = 0.25, N = 5, dt = P / N, sp = room.spans, keep = [], i;
     for (i = 0; i < sp.length; i++) if (sp[i].b > t - 1) keep.push(sp[i]);      // spans older than the release are forgotten
     room.spans = sp = keep;
     var scene = ROOM_SCENE[arcPhase(t)] != null ? ROOM_SCENE[arcPhase(t)] : 0.7, deepPhase = !!ROOM_KOTO_DEEP[arcPhase(t)];
     var g = room.g, gs = room.gs, pg = room.pg, cg = room.cg.slice(), lf = room.lf.slice(), lfs = room.lfs.slice(), qs = room.qs;
     var CG = [carveGrit, carveGrit2], CS = [carveSho, carveSho2];
-    duckGrit.gain.setValueAtTime(g, t); duckSho.gain.setValueAtTime(gs, t);              // anchors: this writer's own last values, which the previous window's ramps reached at t
-    pickGrit.gain.setValueAtTime(pg, t); pickSho.gain.setValueAtTime(pg, t);
-    for (var n = 0; n < 2; n++) { CG[n].gain.setValueAtTime(cg[n], t); CS[n].gain.setValueAtTime(cg[n], t); CG[n].frequency.setValueAtTime(Math.exp(lf[n]), t); CS[n].frequency.setValueAtTime(Math.exp(lfs[n]), t); }
-    carveSho.Q.setValueAtTime(qs, t);
+    anchorAt(duckGrit.gain, g, t0, late); anchorAt(duckSho.gain, gs, t0, late);          // anchors: this writer's own last values, which the previous window's ramps reached at t — unless we are late, when they are exactly what is no longer true
+    anchorAt(pickGrit.gain, pg, t0, late); anchorAt(pickSho.gain, pg, t0, late);
+    for (var n = 0; n < 2; n++) { anchorAt(CG[n].gain, cg[n], t0, late); anchorAt(CS[n].gain, cg[n], t0, late); anchorAt(CG[n].frequency, Math.exp(lf[n]), t0, late); anchorAt(CS[n].frequency, Math.exp(lfs[n]), t0, late); }
+    anchorAt(carveSho.Q, qs, t0, late);
     for (var k = 1; k <= N; k++) {
       var tau = t + k * dt, step = 0, steps = 0, pk = 0, sp1 = [0, 0], fsum = [0, 0], fssum = [0, 0], fn = [0, 0], qmin = ROOM_Q, kotoDeep = false;
       for (i = 0; i < sp.length; i++) if (sp[i].a <= tau && tau <= sp[i].b) {
@@ -5301,13 +5359,20 @@ window.ZankyoAudio = (function () {
           var lt = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI), fsum[n] / fn[n])); lf[n] += (lt - lf[n]) * (1 - Math.exp(-dt / 0.04));
           var lts = Math.max(Math.log(ROOM_F_LO), Math.min(Math.log(ROOM_F_HI_SHO), fssum[n] / fn[n])); lfs[n] += (lts - lfs[n]) * (1 - Math.exp(-dt / 0.04));
         }
-        CG[n].gain.linearRampToValueAtTime(cg[n], tau); CS[n].gain.linearRampToValueAtTime(cg[n], tau);
-        CG[n].frequency.linearRampToValueAtTime(Math.exp(lf[n]), tau); CS[n].frequency.linearRampToValueAtTime(Math.exp(lfs[n]), tau);
+        if (tau > floorT) { CG[n].gain.linearRampToValueAtTime(cg[n], tau); CS[n].gain.linearRampToValueAtTime(cg[n], tau);
+          CG[n].frequency.linearRampToValueAtTime(Math.exp(lf[n]), tau); CS[n].frequency.linearRampToValueAtTime(Math.exp(lfs[n]), tau); }
       }
-      qs += (qmin - qs) * (1 - Math.exp(-dt / 0.04)); carveSho.Q.linearRampToValueAtTime(qs, tau);   // the PA's shō notch is wider (Q 1); the strings' stays a critical band (Q 2)
+      qs += (qmin - qs) * (1 - Math.exp(-dt / 0.04));
+      if (tau <= floorT) { skipped++; continue; }                                       // this chord's moment has gone; its state stands, its writes do not
+      carveSho.Q.linearRampToValueAtTime(qs, tau);   // the PA's shō notch is wider (Q 1); the strings' stays a critical band (Q 2)
       duckGrit.gain.linearRampToValueAtTime(g, tau); duckSho.gain.linearRampToValueAtTime(gs, tau);
       pickGrit.gain.linearRampToValueAtTime(pg, tau); pickSho.gain.linearRampToValueAtTime(pg, tau);
     }
+    // If any chord was dropped, the remembered values no longer match what the
+    // params actually hold, so the NEXT window must slew in too rather than
+    // trust them. This is the flag that keeps one stall from becoming a click
+    // a quarter-second later.
+    room.late = skipped > 0;
     room.g = g; room.gs = gs; room.pg = pg; room.cg = cg; room.lf = lf; room.lfs = lfs; room.qs = qs;
     return P;
   }
