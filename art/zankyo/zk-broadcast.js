@@ -130,6 +130,72 @@
     } catch (e) { poolState = "failed"; poolError = String(e && e.message || e); }
   }
 
+  // ==========================================================================
+  // 経路 ?reels=buffer — THE REEL WITHOUT A MEDIA ELEMENT (the Bluetooth switch)
+  // ==========================================================================
+  // Suspect 2 and suspect 4 of the skipping report are the same object seen
+  // twice: the reel <video>. On Safari a media element with an audio track is
+  // a thing the OS is told about — it joins Now Playing, it is offered to the
+  // route manager, and on a Bluetooth sink that is exactly where a codec or
+  // route renegotiation would come from. "Every time the TV turns on" is what
+  // that would sound like. createMediaElementSource is supposed to take the
+  // element's audio away from the OS and give it to the graph, but the
+  // ELEMENT is still an element, and WebKit's bookkeeping is not Chrome's.
+  //
+  // This switch removes the question instead of arguing it. The reel's audio
+  // arrives as an ArrayBuffer, is decoded once, and is played by an
+  // AudioBufferSourceNode into the same receiver chain — the band, the grit,
+  // the flutter, the dropouts, the staircase, the tuning envelope, all of it
+  // unchanged, because only the FIRST node differs. The <video> is kept for
+  // the picture alone and given no voice at all: muted, volume 0, its
+  // AudioTrackList disabled where the UA has one, and never once passed to
+  // createMediaElementSource. Nothing new is announced to the OS when the
+  // second set lights up.
+  //
+  // It is not free — the whole reel is decoded (a 72-120 s file is 30-45 MB of
+  // float) and fetched a second time for the picture. Two buffers are kept.
+  // That is the price of an answer.
+  function reelsBuffered() {
+    try { return !!(window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().reelsMode === "buffer"); } catch (e) { return false; }
+  }
+  // Take the element's voice away, as far as each engine allows. muted and
+  // volume are the portable half; audioTracks is WebKit's own, and is the
+  // only one that removes the TRACK rather than silencing it — which is the
+  // difference between an element the OS route manager still counts and one
+  // it does not. Re-applied on every metadata load: a new src brings new
+  // tracks, and a track list that arrives after the src is set would
+  // otherwise come back enabled.
+  function hushElement(v) {
+    if (!v) return;
+    try { v.muted = true; v.volume = 0; } catch (e) {}
+    try {
+      var at = v.audioTracks;
+      if (at && at.length) for (var i = 0; i < at.length; i++) { try { at[i].enabled = false; } catch (e2) {} }
+    } catch (e3) {}
+  }
+  // the decoded reels: at most two, the live one and the one before it
+  var bufCache = {}, bufOrder = [], bufPending = {};
+  function decodeReel(id, ctx) {
+    if (bufCache[id]) return Promise.resolve(bufCache[id]);
+    if (bufPending[id]) return bufPending[id];
+    if (!hasFetch || !ctx || typeof ctx.decodeAudioData !== "function") return Promise.reject(new Error("no decoder"));
+    var pr = fetch(REEL_DIR + id + ".mp4").then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.arrayBuffer();
+    }).then(function (ab) {
+      // Safari has only recently had the promise form; the callback form is
+      // the one both engines have always had, so ask for it explicitly.
+      return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, function (e) { rej(e || new Error("decode failed")); }); });
+    }).then(function (buf) {
+      bufCache[id] = buf; bufOrder.push(id);
+      while (bufOrder.length > 2) { var old = bufOrder.shift(); if (old !== id) delete bufCache[old]; }
+      delete bufPending[id];
+      return buf;
+    }, function (e) { delete bufPending[id]; throw e; });
+    bufPending[id] = pr;
+    return pr;
+  }
+
   // ---- the element and its node ----
   var video = null, mediaSrc = null, primed = false, videoSrcId = null;
   function ensureVideo() {
@@ -137,14 +203,27 @@
     try {
       var v = document.createElement("video");
       v.setAttribute("playsinline", ""); v.playsInline = true; v.preload = "none"; v.crossOrigin = "anonymous";
-      v.muted = false; v.volume = 1;
+      var buffered = reelsBuffered();
+      if (buffered) { v.muted = true; v.defaultMuted = true; v.setAttribute("muted", ""); v.volume = 0; }
+      else { v.muted = false; v.volume = 1; }
+      if (buffered) {
+        // a new src brings a new track list; hush it every time one lands
+        v.addEventListener("loadedmetadata", function () { hushElement(v); });
+        v.addEventListener("loadeddata", function () { hushElement(v); });
+        try { if (v.audioTracks && v.audioTracks.addEventListener) v.audioTracks.addEventListener("addtrack", function () { hushElement(v); }); } catch (e2) {}
+      }
       if (v.style) v.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:0";
       var host = document.body || document.documentElement; if (host && host.appendChild) host.appendChild(v);
       video = v;
+      if (buffered) hushElement(v);
     } catch (e) { video = null; }
     return video;
   }
   function ensureMediaSource(ctx) {
+    // 経路: in buffer mode the element is NEVER given to the graph. One call
+    // is permanent — WebKit re-routes the element for the life of the page —
+    // so this is the single gate that keeps the two worlds apart.
+    if (reelsBuffered()) return null;
     if (mediaSrc || !video || !ctx || typeof ctx.createMediaElementSource !== "function") return mediaSrc;
     try { mediaSrc = ctx.createMediaElementSource(video); } catch (e) { mediaSrc = null; }
     return mediaSrc;
@@ -389,6 +468,14 @@
     var a = armed; if (!a || !a.reel) return;
     var v = ensureVideo(); if (!v) return;
     var url = REEL_DIR + a.reel.id + ".mp4";
+    // 経路 buffer mode: the AUDIO's readiness is the decode, not the seek. The
+    // picture below still loads and seeks exactly as it always did — but it is
+    // decoration now, and a picture that stalls must not deny the signal.
+    if (reelsBuffered()) {
+      a.buf = null; a.bufErr = null;
+      decodeReel(a.reel.id, tl().ctx).then(function (b) { if (armed === a) { a.buf = b; a.ready = true; } },
+                                          function (e) { if (armed === a) a.bufErr = String((e && e.message) || e); });
+    }
     function seekIn() {
       try {
         var once = function () { try { v.removeEventListener("seeked", once); } catch (e) {} if (armed === a) a.ready = true; warmPicture(v); };
@@ -436,8 +523,13 @@
     var v = video, ms = ensureMediaSource(T.ctx), reason = null;
     if (poolState !== "ready") reason = "pool " + poolState + (poolError ? " (" + poolError + ")" : "");
     else if (!a.reel) reason = "no reel drawn";
-    else if (!v || !ms) reason = "no media element";
-    else if (!a.ready) reason = "reel not ready · " + a.reel.id;
+    else if (!v) reason = "no media element";
+    // 経路: in buffer mode the reel's readiness is its DECODE. The element is
+    // still required — it carries the picture — but its audio is not asked
+    // about, because it does not have any.
+    else if (reelsBuffered()) { if (!a.buf) reason = a.bufErr ? ("reel decode failed · " + a.reel.id + " · " + a.bufErr) : ("reel not decoded · " + a.reel.id); }
+    else if (!ms) reason = "no media element";
+    if (!reason && !a.ready) reason = "reel not ready · " + a.reel.id;
     if (reason) {
       stats.fallbacks++; stats.lastReason = reason;
       T.airHoldClear(); T.airHoldClear("signal-planned");   // a fallback releases the intent too
@@ -675,6 +767,7 @@
   // ---- the signal itself ----
   function startSignal(a, t0) {
     var T = tl(), c = T.ctx, v = video, ms = mediaSrc;
+    var buffered = reelsBuffered(), bufSrc = null;   // 経路: the reel's first node is the only thing this switch moves
     var band = T.getLayerParam("broadcast", "band", 0.5), flutter = T.getLayerParam("broadcast", "flutter", 0.5), grit = T.getLayerParam("broadcast", "grit", 0.5);
     var holdS = a.holdS, lossD = a.lossD, lossStart = t0 + TUNE_S + holdS, cut = lossStart + lossD, burstAt = cut + COLLAPSE_S, end = burstAt + BURST_S + DEAD_S;
     // §11.3 THE STATION TUNES TO THE SIGNAL. On a far night at d ≥ 0.5, a reel
@@ -744,7 +837,22 @@
       var peak = 0.35 * db2lin(a.reel.gain);
       PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak],
         [lossD * 0.5, peak * 0.75], [lossD * 0.25, peak * 0.44], [lossD * 0.15, peak * 0.19], [lossD * 0.1, peak * 0.06], [0.02, 0]]);
-      ms.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
+      // THE HEAD OF THE CHAIN, and the whole of the ?reels=buffer difference.
+      // Everything downstream — band, receiver, flutter, dropouts, staircase,
+      // envelope, phasing, room tap — is the same graph on the same schedule;
+      // the reel simply arrives from a buffer instead of from an element. The
+      // in-point becomes start()'s offset and the tape rate becomes the
+      // source's playbackRate, which are the two things v.currentTime and
+      // v.playbackRate were doing.
+      var head = ms;
+      if (buffered) {
+        head = bufSrc = N(c.createBufferSource());
+        bufSrc.buffer = a.buf;
+        bufSrc.playbackRate.setValueAtTime(rate * (T.glideMul ? T.glideMul(t0) : 1), t0);
+        bufSrc.start(t0, a.inS);
+        bufSrc.stop(cut + 0.2);
+      }
+      head.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
       // 相 PHASING (W3): two copies of the same window drifting apart. Reich
       // ran two tape loops at almost the same speed; here one copy goes through
       // a delay whose time ramps from nothing to driftMs × passes across the
@@ -782,6 +890,7 @@
         (function (tt) {
           T.lane("broadcast").at(tt - 0.05, function () {
             try { if (video && !video.paused) video.playbackRate = rate * T.glideMul(tt); } catch (e) {}
+            try { if (bufSrc) bufSrc.playbackRate.setValueAtTime(rate * T.glideMul(tt), tt); } catch (e) {}
           });
         })(gt);
       }
@@ -799,7 +908,7 @@
       try { T.fallback(t0); } catch (e3) {}
       return;
     }
-    live = { a: a, nodes: nodes, hp: hp, end: end };
+    live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc };
     stats.signals++;
     remember(a.reel.id, a.cycle);
     // the crew's duck and notch for the signal's span
@@ -810,6 +919,8 @@
     T.lane("broadcast").at(t0 - 0.12, function (t) {
       var lead = Math.max(0, (t - c.currentTime) * 1000);
       setTimeout(function () { try {
+        if (!v) return;                                     // 経路 buffer mode with no DOM: the sound is already away
+        if (buffered) hushElement(v);                       // …and the picture stays voiceless right up to the moment it moves
         if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS;
         // TAPE-STYLE: the pitch and the speed move together, which is the
         // whole idiom — a reel bent to the field also runs slow or fast, and
@@ -853,6 +964,7 @@
     var L = live; live = null;
     if (video) { try { video.pause(); } catch (e) {} }
     if (!L) return;
+    try { if (L.bufSrc) L.bufSrc.stop(); } catch (e) {}
     try { if (mediaSrc && L.hp) mediaSrc.disconnect(L.hp); } catch (e) {}
     for (var i = 0; i < L.nodes.length; i++) { try { L.nodes[i].disconnect(); } catch (e2) {} }
     if (armed === L.a) armed = null;
@@ -916,44 +1028,68 @@
   function sampleTune(t) {
     var T = tl(), c = T.ctx; if (!c) return false;
     loadPool();
+    // 経路 buffer mode: the element is the picture only, and the audition's
+    // audio comes from the same decoded buffer a real signal uses.
+    var buffered = reelsBuffered();
     var v = ensureVideo(), ms = ensureMediaSource(c);
     var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
-    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2, t0 = t + 1.0, tuneEnd = t0 + TUNE_S + holdS + lossD;
-    if (poolState !== "ready" || !v || !ms || !pool.length) { staticRise(t, t0); return true; }   // the dial turns, nothing found
+    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2;
+    if (poolState !== "ready" || !v || (!buffered && !ms) || !pool.length) { staticRise(t, t + 1.0); return true; }   // the dial turns, nothing found
     var reel = pool[Math.floor(rReel * pool.length)], win = reel.windows[Math.floor(rWin * reel.windows.length)];
     var wl = (win[1] - win[0]), need = TUNE_S + holdS + lossD;
-    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; tuneEnd = t0 + need; }
+    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
     var inS = win[0] + rIn * Math.max(0, wl - need - 0.5);
     // the same dropout plan a real signal gets, so the picture stutters
     var adrops = [], dt = TUNE_S + 0.6;
     while (dt < TUNE_S + holdS) { dt += 1.2 + R.next() * 3.2; if (dt < TUNE_S + holdS) adrops.push([dt, 0.12 + R.next() * 0.25]); }
-    var nodes = [], hp, lp, pre, sh, sg;
-    try {
-      hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(700, t0); hp.frequency.linearRampToValueAtTime(260, t0 + 0.8);
-      lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(1600, t0); lp.frequency.linearRampToValueAtTime(4700, t0 + 0.8);
-      pre = c.createGain(); pre.gain.setValueAtTime(0.5, t0);
-      sh = c.createWaveShaper(); var cv = new Float32Array(1024); for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; cv[i] = Math.tanh(x * 3.5) / Math.tanh(3.5); } sh.curve = cv;
-      sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6;
-      PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak], [lossD * 0.6, peak * 0.4], [lossD * 0.4, 0]]);
-      nodes = [hp, lp, pre, sh, sg];
-      ms.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
-    } catch (e) { return false; }
-    staticRise(t, t0);
-    var startMs = Math.max(0, (t0 - c.currentTime) * 1000);
-    var url = REEL_DIR + reel.id + ".mp4", srcChanged = videoSrcId !== reel.id;
-    videoSrcId = reel.id;
-    try {
-      if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
-      var go = function () { try { v.currentTime = inS; warmPicture(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
-      if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
-      else setTimeout(go, startMs);
-    } catch (e) {}
-    lastSampleAudioOnly = !!reel.audioOnly;
-    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
-    T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
-    setTimeout(function () { try { if (mediaSrc && hp) mediaSrc.disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
-    return true;
+    // EVERY DRAW IS ABOVE THIS LINE. build() may run now or a fetch later, and
+    // it takes no draws of its own — so a deferred audition is the same
+    // audition, just further down the clock, and the sample stream is left
+    // exactly where an undeferred one would leave it.
+    function build(tt) {
+      var t0 = tt + 1.0, tuneEnd = t0 + TUNE_S + holdS + lossD;
+      var nodes = [], hp, lp, pre, sh, sg, bufSrc = null;
+      try {
+        hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(700, t0); hp.frequency.linearRampToValueAtTime(260, t0 + 0.8);
+        lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(1600, t0); lp.frequency.linearRampToValueAtTime(4700, t0 + 0.8);
+        pre = c.createGain(); pre.gain.setValueAtTime(0.5, t0);
+        sh = c.createWaveShaper(); var cv = new Float32Array(1024); for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; cv[i] = Math.tanh(x * 3.5) / Math.tanh(3.5); } sh.curve = cv;
+        sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6;
+        PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak], [lossD * 0.6, peak * 0.4], [lossD * 0.4, 0]]);
+        nodes = [hp, lp, pre, sh, sg];
+        var head = ms;
+        if (buffered) {
+          head = bufSrc = c.createBufferSource(); bufSrc.buffer = bufCache[reel.id];
+          nodes.push(bufSrc); bufSrc.start(t0, inS); bufSrc.stop(tuneEnd + 0.2);
+        }
+        head.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
+      } catch (e) { return false; }
+      staticRise(tt, t0);
+      var startMs = Math.max(0, (t0 - c.currentTime) * 1000);
+      var url = REEL_DIR + reel.id + ".mp4", srcChanged = videoSrcId !== reel.id;
+      videoSrcId = reel.id;
+      try {
+        if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
+        var go = function () { try { if (buffered) hushElement(v); v.currentTime = inS; warmPicture(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
+        if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
+        else setTimeout(go, startMs);
+      } catch (e) {}
+      lastSampleAudioOnly = !!reel.audioOnly;
+      var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
+      T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
+      setTimeout(function () { try { if (bufSrc) bufSrc.stop(); } catch (e0) {} try { if (mediaSrc && hp) mediaSrc.disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
+      return true;
+    }
+    // In buffer mode an undecoded reel means a fetch of a megabyte or so
+    // before there is anything to sound. The dial turns NOW — the press must
+    // answer immediately — and the reel arrives behind it.
+    if (buffered && !bufCache[reel.id]) {
+      staticRise(t, t + 1.0);
+      decodeReel(reel.id, c).then(function () { try { build(tl().ctx.currentTime + 0.15); } catch (e) {} }, function () {});
+      return true;
+    }
+    return build(t);
   }
 
   Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock, dialReady: dialReady });
@@ -962,6 +1098,16 @@
   window.ZankyoBroadcast = {
     getState: function () {
       return { pool: poolState, poolSize: pool ? pool.length : 0, poolError: poolError, primed: primed, video: !!video, mediaSource: !!mediaSrc,
+        // 経路 — what the reel path actually is, read from the objects. `muted`
+        // / `volume` / `audioTracks` are the element's real state, so "the
+        // <video> has no voice" is a fact a reader can check rather than a
+        // claim this switch makes about itself.
+        reelsMode: reelsBuffered() ? "buffer" : "element",
+        element: video ? { muted: !!video.muted, volume: video.volume, readyState: video.readyState,
+                           audioTracks: video.audioTracks ? video.audioTracks.length : null,
+                           audioTracksEnabled: (function () { var at = video.audioTracks, n = 0; if (at) for (var i = 0; i < at.length; i++) if (at[i].enabled) n++; return at ? n : null; })(),
+                           src: video.currentSrc ? video.currentSrc.split("/").pop() : null } : null,
+        decoded: bufOrder.slice(), decoding: Object.keys(bufPending),
         armed: armed ? { cycle: armed.cycle, reel: armed.reel && armed.reel.id, inS: +armed.inS.toFixed(2), holdS: +armed.holdS.toFixed(2), lossD: +armed.lossD.toFixed(2), drops: armed.drops.length, ready: armed.ready, t0: armed.t0, decided: armed.decided } : null,
         live: !!live, stats: stats, recent: recent.slice(-4),
         // the ring under pressure: at ~1 signal per cycle a four-hour night is

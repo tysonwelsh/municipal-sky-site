@@ -1,1 +1,1 @@
-2.1.0-rc.48 — every console knob reads 50: the mix is the same, the ambient twice as present
+2.1.0-rc.49 — every console knob reads 50 (the mix unchanged, the ambient twice as present) + Bluetooth test switches: ?route=direct, ?reels=buffer, ?latency=playback, ?bt=1 (default unchanged)
