@@ -1,1 +1,1 @@
-2.1.0-rc.47 — the second set loses its bolted strap: the receive tube now sits in its own casing alone, and the width the strap took has gone into the picture
+2.1.0-rc.48 — four dev switches for the Bluetooth skips (?route=direct, ?reels=buffer, ?latency=playback, ?bt=1); nothing changes unless one is asked for

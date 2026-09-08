@@ -106,6 +106,53 @@ window.ZankyoAudio = (function () {
     } catch (e) {}
     return null;
   })();
+  // 経路 THE OUTPUT PATH — dev switches for the Bluetooth investigation.
+  //
+  // The owner hears skips and choppiness over Bluetooth headphones (Safari on
+  // macOS) that a tap ON THE GRAPH cannot see: 25 minutes, zero
+  // discontinuities, before the output device. So the fault is in the last
+  // hop — the path between the graph and the OS — and the three things this
+  // page does there that an ordinary page does not are (1) the master leaves
+  // through a MediaStreamAudioDestinationNode into an <audio> element, (2) a
+  // second media element, the reel <video>, comes alive mid-performance and
+  // announces itself to the OS route manager, and (3) the context is built
+  // with the default latencyHint, which is the small buffer.
+  //
+  // None of these can be reasoned to a verdict — only the owner's ear can
+  // decide — so each becomes a switch that is OFF by default and changes
+  // NOTHING about synthesis, seeding or the note stream:
+  //
+  //   ?route=direct     the master goes straight to ctx.destination.
+  //                     No MediaStream, no <audio>, no lock-screen controls.
+  //   ?reels=buffer     a reel is fetched and decoded to an AudioBuffer and
+  //                     played by an AudioBufferSourceNode. The <video> keeps
+  //                     the picture and is given no voice at all — muted,
+  //                     volume 0, its audio tracks disabled, and NEVER passed
+  //                     to createMediaElementSource.
+  //   ?latency=playback the context asks for the large buffer.
+  //   ?bt=1             all three.
+  //
+  // Read back at any time with ZankyoAudio.getRoute().
+  var ROUTE = (function () {
+    var q = { route: "stream", reels: "element", latency: "default", bt: false };
+    try {
+      var s = (typeof location !== "undefined" && location.search) || "";
+      if (/[?&]bt=1(&|$)/.test(s)) { q.bt = true; q.route = "direct"; q.reels = "buffer"; q.latency = "playback"; }
+      var m = s.match(/[?&]route=([a-z]+)/);   if (m && m[1] === "direct") q.route = "direct";
+      m = s.match(/[?&]reels=([a-z]+)/);       if (m && m[1] === "buffer") q.reels = "buffer";
+      m = s.match(/[?&]latency=([a-z]+)/);     if (m && (m[1] === "playback" || m[1] === "balanced" || m[1] === "interactive")) q.latency = m[1];
+    } catch (e) {}
+    return q;
+  })();
+  // A one-line human summary, or "" when nothing is switched — the VFD line
+  // and the report both want the same words.
+  function routeLabel() {
+    var p = [];
+    if (ROUTE.route === "direct") p.push("direct route");
+    if (ROUTE.reels === "buffer") p.push("reels decoded");
+    if (ROUTE.latency !== "default") p.push("latency " + ROUTE.latency);
+    return p.join(" · ");
+  }
   // form: cycle lengths, the meta-swing, the mode lottery, the KIRU's dice.
   // motif: the working set, transforms, the ledger. One per voice body. The
   // last four are reserved for later phases (weather field, joints,
@@ -1558,7 +1605,16 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   function init() {
     if (ctx) return;
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var AC = window.AudioContext || window.webkitAudioContext;
+    // 経路 ?latency= — Bluetooth wants a big buffer. The default hint is
+    // "interactive", the smallest the implementation will give, which is the
+    // wrong ask for a sink whose own latency is already 150-200 ms. Asked for
+    // only when the switch is thrown; a UA that does not honour the option
+    // constructor still gets a context (the catch), and getRoute() reports
+    // the baseLatency it actually ended up with rather than what we asked for.
+    ctx = null;
+    if (ROUTE.latency !== "default") { try { ctx = new AC({ latencyHint: ROUTE.latency }); } catch (e) { ctx = null; } }
+    if (!ctx) ctx = new AC();
 
     sharedNoiseBuf = PJ.Voice.noiseBuffer(ctx, NOISE_BUF_DURATION);          // texture, not music — stays unseeded
     if (!S) forkStreams();                                                    // the ♪ audition may run before play()
@@ -1604,7 +1660,12 @@ window.ZankyoAudio = (function () {
     // Final hop: prefer the background-audio route (a MediaStreamDestination
     // feeding a real <audio> element — survives screen lock / backgrounding
     // and carries lock-screen controls). Identical signal either way.
-    bg = window.MskyBackgroundAudio ? window.MskyBackgroundAudio.create({
+    // 経路 ?route=direct suppresses the whole media-element hop — nothing is
+    // created, so there is no MediaStream, no <audio>, no Now Playing session
+    // and no lock-screen transport. Every bg.* call site is already guarded
+    // for the browser that cannot route, so a null handle is a path the engine
+    // has always had.
+    bg = (ROUTE.route !== "direct" && window.MskyBackgroundAudio) ? window.MskyBackgroundAudio.create({
       context: ctx,
       source: outTrim,
       title: "ZANKYŌ 残響",
@@ -4858,6 +4919,17 @@ window.ZankyoAudio = (function () {
     if (farNight.dep.meri) field.modulate({ mode: { name: currentMode, steps: farMeriSteps(MODES[currentMode].offsets) } });
     if (farWarpK !== 1 || farNight.dep.meri) rebuildScale();
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
+    // 経路 — a switched output path says so, at the top of the night, every
+    // night it is switched. Silent by default: an unswitched night's log is
+    // byte-for-byte the log it always was.
+    var rlab = routeLabel();
+    if (rlab) emitEvent({ cat: "mode", label: "経路 · " + rlab, detail:
+      "out " + (bg && bg.routed ? "mediastream → <audio>" : "ctx.destination") +
+      " · reels " + ROUTE.reels +
+      " · latencyHint " + ROUTE.latency +
+      " · base " + (ctx.baseLatency != null ? (ctx.baseLatency * 1000).toFixed(1) + " ms" : "n/a") +
+      " · out " + (ctx.outputLatency != null ? (ctx.outputLatency * 1000).toFixed(1) + " ms" : "n/a") +
+      " · " + Math.round(ctx.sampleRate) + " Hz" }, t0);
     if (!farNight.home) {
       // The night names itself FIRST and its departures introduce themselves
       // after — the setups run before this line, so without holding their
@@ -5374,6 +5446,27 @@ window.ZankyoAudio = (function () {
     getMode: function () { return { key: currentMode, name: MODES[currentMode].name, kana: MODES[currentMode].kana.slice(), tonicHz: field.tonicHz, tonic: noteName(field.tonicHz), offsets: MODES[currentMode].offsets.slice() }; },
     setNoteListener: function (fn) { if (typeof fn === "function") { if (noteListeners.indexOf(fn) < 0) noteListeners.push(fn); } else noteListeners.length = 0; },
     setEventListener: function (fn) { if (typeof fn === "function") { if (eventListeners.indexOf(fn) < 0) eventListeners.push(fn); } else eventListeners.length = 0; },
+    // 経路 THE OUTPUT PATH, as it actually ended up. Everything here is READ
+    // from the live objects rather than echoed from the query string, so a
+    // switch the browser refused (a latencyHint it ignores, a MediaStream
+    // route that fell back to direct at runtime) reads as what is true, not as
+    // what was asked. `asked` keeps the request beside it so the two can
+    // disagree in public.
+    getRoute: function () {
+      return {
+        // before init() there is no context and no handle: the honest answer
+        // is "not yet", not the default the null handle would imply
+        route: !ctx ? null : ((bg && bg.routed) ? "stream" : "direct"),
+        reelsMode: ROUTE.reels,
+        latencyHint: ROUTE.latency,
+        asked: { route: ROUTE.route, reels: ROUTE.reels, latency: ROUTE.latency, bt: ROUTE.bt },
+        label: routeLabel(),
+        baseLatency: ctx && ctx.baseLatency != null ? ctx.baseLatency : null,
+        outputLatency: ctx && ctx.outputLatency != null ? ctx.outputLatency : null,
+        sampleRate: ctx ? ctx.sampleRate : null,
+        state: ctx ? ctx.state : null,
+      };
+    },
     getAudioContext: function () { return ctx; },
     getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
     attachAnalyser: function (node) { if (!masterGain || !node) return false; try { masterGain.connect(node); return true; } catch (e) { return false; } },
