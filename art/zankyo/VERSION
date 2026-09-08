@@ -1,1 +1,1 @@
-2.1.0-rc.51 — the frame stops painting itself over its own panels in Safari; the glide writes spread over a second with two guards; the Bluetooth test switches (?route=direct, ?reels=buffer, ?capture=off, ?bt=1) stay
+2.1.0-rc.52 — a stalled machine no longer snaps the room's duck and notch: the recovery slews instead of stepping
