@@ -123,3 +123,64 @@ worth trading for a gate number.
 - **A note-count validity check cannot validate seed 89** — it has 5 notes by
   300 s *by design* (沈). The sweep's evidence is graded, not binary: strong on
   1047/16/13, weak on 84 and 89, inconclusive on 1.
+
+---
+
+## Closing: the listener-facing constants and where each lives
+
+Six numbers the owner can move and hear the result of. Each is the number *in
+the code* rather than something that emerges from a table, which is the property
+worth keeping: moving one should mean the same thing on every night.
+
+| what the owner hears | constant | lives at | value |
+|---|---|---|---|
+| a home night lifts | `HOME_LIFT_ODDS` | `zk-far.js:477` | `1/12` |
+| which cycle lifts | `HOME_LIFT_LAMBDA` | `zk-far.js:477` | `5` |
+| a broadcast opens a cycle | `BC_JO_P` | `zankyo-audio.js:2031` | `0.20` |
+| a reel arrives with a picture | `VIDEO_WEIGHT` | `zk-broadcast.js:181` | `1.5` |
+| the weather comes forward | `layerVolumes.ambient` | `zankyo-audio.js:1437` | `0.9625` |
+| the reed sits back | `layerVolumes.hichiriki` | `zankyo-audio.js:1437` | `0.35` |
+
+### What each one actually controls, including where the number is not the outcome
+
+**`1/12` and `λ = 5`** — one home night in twelve lifts a single cycle out of
+home, and which cycle is Poisson-drawn with λ = 5. The draw runs on its own
+sub-fork (`R.fork("cycle")`), because Knuth's method consumes a variable number
+of uniforms and would otherwise shift every later draw on the parent stream by
+an amount that depends on the answer. `getFar()` carries the lifted cycle and
+its d′ so the flag can never disagree with the night.
+
+**`P(jo) = 0.20` is per BROADCAST, and the owner-facing figure is per CYCLE.**
+With two broadcasts a cycle, about **39.5 %** of cycles open with one, and that
+is not a tuning failure: 30.5 points of it are drawn jo seats and only 8.9 are
+overflow. At this constant, over a mix of one- and two-broadcast cycles, the
+drawn term lands near 31 % — `1 − 0.8² = 36 %` is its ceiling on the
+two-broadcast cycles alone. Anyone reading "one in five" and expecting one cycle
+in five to open with a signal will be wrong by twice, so state the cycle figure
+to the owner, not the constant.
+
+**`VIDEO_WEIGHT = 1.5` is calibrated against a pool that has since quadrupled.**
+The comment at `zk-broadcast.js:172` reasons about a 32-reel pool (21 video) and
+then a 52-reel pool (41 video), where 1.5× lands the 85 % target it was chosen
+to serve. The manifest now holds **207 reels — 171 with a picture, 36
+audio-only** — so the same weight now gives
+`171×1.5 / (171×1.5 + 36) = 87.7 %`. Drifted about three points above target,
+not broken, and worth re-deriving whenever the pool next grows: the target is
+85 %, the weight is only the means. Two stale comments still say "3×" at `:195`
+and `:552` and should be read as 1.5.
+
+**`ambient = 0.9625` is the gain.** ambient has no entry in `LAYER_VOL_TRIM`
+(`zankyo-audio.js:1477`), so the layer gain is 0.9625 rather than 0.9625 × a
+trim — the move from the original 0.55 is exactly `20·log10(1.75) = 4.86 dB`.
+
+**`hichiriki = 0.35` is NOT the gain.** `LAYER_VOL_TRIM.hichiriki = 1.4` is
+deliberately unchanged, so the effective layer gain is `0.35 × 1.4 = 0.49`.
+Reading the default alone understates the reed by 3 dB.
+
+### The property that made these safe to change
+
+Both volume changes were verified by note-stream byte-identity — every onset,
+layer, frequency and duration unchanged across four seeds at 1800 s. A layer
+gain reaches no musical decision. That is the test worth repeating on any future
+volume move: if the note stream shifts at all, a gain is feeding back into a
+decision and that is the finding, not the level.

@@ -195,7 +195,29 @@
     var s = Z.SCALE_INFO;
     var name = document.getElementById("zankyo-mode-name");
     var mood = document.getElementById("zankyo-mode-mood");
-    if (name) name.innerHTML = '<b>' + s.name + '</b> · ' + s.tonic;
+    // The tonic goes in its own monospace span. Orbitron's capital D is a
+    // square with a rectangular counter and at 13px it is indistinguishable
+    // from a .notdef box — the owner reported it as a missing glyph, and the
+    // home default tonic IS D3, so every night showed it. The letter was never
+    // missing; the face simply cannot carry a single letter unambiguously.
+    //
+    // NO CENTS OFFSET, and that is a measured decision rather than a shortcut.
+    // The suggested fallback ("D −23¢") assumes a far tonic can sit between
+    // named notes. It cannot: every tonic comes from an equal-tempered start
+    // and moves only by whole semitones — foldTonic, the semitone sink, the sea
+    // change and the pivots all preserve that — so the deviation is exactly 0.
+    // Measured over 2 h on seeds 34 (far 0.9 and 0.0), 16 and 1 (far 0.95) and
+    // 3042 at home: tonicC was 0 in every case. Shipping the offset would have
+    // added a branch that cannot fire. 撓 stretches the octave and 螺 spirals
+    // the field, but they move the intervals ABOVE the tonic, not the tonic.
+    // The flat is written ASCII in the readout as well. It is NOT the reported
+    // box — that is the D — but Orbitron has no U+266D either, so a flat tonic
+    // reaches whatever the fallback supplies. On the critic's machine the
+    // fallback has it and it renders; on the owner's it may not, and neither of
+    // us can test the other's. "Eb" removes a character neither face owns.
+    // The log keeps SCALE_INFO.tonic with the real ♭; this is display only.
+    if (name) name.innerHTML = '<b>' + s.name + '</b> · <span class="zk-tonic">' +
+      String(s.tonic).replace(/\u266d/g, "b") + '</span>';
     if (mood) mood.textContent = s.mood;
     var row = document.getElementById("zankyo-degrees");
     if (row) {

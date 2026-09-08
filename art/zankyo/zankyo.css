@@ -73,15 +73,28 @@
     0 28px 90px rgba(0, 0, 0, 0.75);
   overflow: hidden;
 }
-/* scratch strokes + scuffs, panel-wide */
+/* Scratch strokes + scuffs — on the CHASSIS, not over the panels.
+   These sat at z-index 5 and the film grain at 6, while every panel is pinned
+   to z-index 1 by the `.zankyo-frame > *` rule below, so both layers painted
+   ACROSS the monitor housings, the bargraph, the module and the transport
+   plate. That is what read as the housings being translucent and the chassis
+   showing through them: the panels' own gradients are fully opaque (measured —
+   .zk-bargraph and .zk-module have zero rgba stops), so nothing was ever
+   showing THROUGH. A texture was being drawn ON TOP.
+   The effect looked width-dependent because at a narrow window the console
+   fills more of the frame, so more of a fixed-size scratch tile lands on a
+   panel rather than on bare chassis. It was never far-night-specific: home and
+   far render identically, and so does rc.38.
+   Dropping both layers below the panels keeps the scuffed chassis between the
+   panels, which is where the frame's own material belongs. */
 .zankyo-frame::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   opacity: 0.9;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.28' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.2' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.22' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23c9c4b4' stroke-opacity='0.22' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23c9c4b4' stroke-opacity='0.18' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23c9c4b4' stroke-opacity='0.14' stroke-width='1.8'/></g></svg>");
 }
 /* static film grain (inline SVG fractal noise) over the whole machine */
 .zankyo-frame::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0.05; mix-blend-mode: overlay;
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.05; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 .zankyo-frame > * { position: relative; z-index: 1; }
@@ -426,6 +439,11 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .zankyo-scale-name b { color: var(--red); }
+/* The tonic is a SINGLE letter and must be unambiguous. Orbitron's D and O are
+   squares with rectangular counters — at 13px a D reads as a tofu box, which is
+   exactly how it was reported. The face stays on the mode name; the letter that
+   has to be legible gets the mono face. */
+.zk-tonic { font-family: "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.04em; }
 /* mood words: demoted to a screen-printed spec line */
 .zankyo-scale-mood {
   font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.7;
@@ -886,29 +904,13 @@
 .zk-bank-main .zk-bargraph { margin-bottom: 0; }
 .zk-bank-main .zk-sticker { right: 62px; }
 
-/* mounting strap: a strip of thicker steel behind the set, welded and bolted
-   through the panel in a later decade — its rust runs down from the bolts */
-.zk-mount {
-  position: relative; min-width: 0; flex: none; padding: 4px 7px 4px;   /* critic S0 r1: 14 px trimmed off the housing (strap 7/9 → 4/4, bezel 13 → 11, chin 7/8 → 5/6) so the column ends with the bargraph at 860 */
-  border-radius: 4px; border: 1px solid #08080a;
-  background:
-    radial-gradient(40% 55% at 6% 6%,  rgba(140, 78, 36, 0.28), transparent 70%),
-    radial-gradient(30% 80% at 96% 20%, rgba(120, 66, 30, 0.22), transparent 70%),
-    radial-gradient(60% 30% at 50% 100%, rgba(24, 18, 12, 0.6), transparent 80%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, rgba(0,0,0,0.12) 1px 3px),
-    linear-gradient(180deg, #3a3a42, #2b2b32 45%, #1c1c22);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -2px 6px rgba(0,0,0,0.6), 0 5px 14px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.04);
-  transform: rotate(0.45deg);
-  transform-origin: 50% 40%;
-}
-/* rust weep under the top bolts */
-.zk-mount::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 4px;
-  background:
-    linear-gradient(178deg, rgba(150, 82, 34, 0.32) 0, rgba(150, 82, 34, 0.1) 26px, transparent 56px) 10px 14px / 9px 100% no-repeat,
-    linear-gradient(182deg, rgba(150, 82, 34, 0.26) 0, rgba(150, 82, 34, 0.08) 34px, transparent 70px) calc(100% - 12px) 16px / 7px 100% no-repeat;
-}
-/* hex bolts through the strap */
+/* The mounting strap is gone (owner §C). It wrapped the set in a second
+   housing — a striped steel strip with four bolts through it — and the set is
+   now the casing that holds the tube and nothing around it. Its padding and
+   border, 8 px a side and 5 px top and bottom, go to the tube.
+   .zk-bolt survives below: the transport plate still uses it. */
+.zk-set2 { flex: none; }
+
 .zk-bolt {
   position: absolute; z-index: 4; width: 13px; height: 13px; border-radius: 50%;
   background: radial-gradient(circle at 36% 30%, #7a7a86, #34343c 55%, #0a0a0d);
@@ -1120,8 +1122,9 @@
 
   /* the bank stacks: scope, bargraph, then the second set at full width */
   .zk-bank { grid-template-columns: 1fr; gap: 14px 0; }
-  .zk-mount { transform: rotate(0.25deg); padding: 6px 6px 8px; }
-  .zk-set2 { padding: 9px 9px 0; }
+  /* the strap carried the set's slight crookedness at narrow widths; with the
+     strap gone the set keeps it itself, so the tube is not suddenly true */
+  .zk-set2 { transform: rotate(0.25deg); padding: 9px 9px 0; }
 }
 @media (max-width: 380px) {
   .zk-unit-vol .zk-unit-meta { display: none; }
