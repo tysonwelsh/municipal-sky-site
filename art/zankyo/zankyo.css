@@ -72,29 +72,49 @@
     0 1px 0 rgba(255, 255, 255, 0.04),
     0 28px 90px rgba(0, 0, 0, 0.75);
   overflow: hidden;
+  /* WEBKIT: THE FRAME MUST BE ITS OWN STACKING CONTEXT (owner, Safari, rc.51).
+     The frame's ::after grain carries mix-blend-mode: overlay. `position:
+     relative` with `z-index: auto` is NOT a stacking context, so the blending
+     group resolved to some ancestor and WebKit had to hoist this element's own
+     BACKGROUND into that group — where it composited above the in-flow panels.
+     Chrome does not do this, which is why rc.45 read as fixed and was not.
+     `isolation: isolate` makes the blend group this element, so the background
+     paints where it belongs: behind its children. */
+  isolation: isolate;
 }
 /* Scratch strokes + scuffs — on the CHASSIS, not over the panels.
-   These sat at z-index 5 and the film grain at 6, while every panel is pinned
-   to z-index 1 by the `.zankyo-frame > *` rule below, so both layers painted
-   ACROSS the monitor housings, the bargraph, the module and the transport
-   plate. That is what read as the housings being translucent and the chassis
-   showing through them: the panels' own gradients are fully opaque (measured —
-   .zk-bargraph and .zk-module have zero rgba stops), so nothing was ever
-   showing THROUGH. A texture was being drawn ON TOP.
-   The effect looked width-dependent because at a narrow window the console
-   fills more of the frame, so more of a fixed-size scratch tile lands on a
-   panel rather than on bare chassis. It was never far-night-specific: home and
-   far render identically, and so does rc.38.
-   Dropping both layers below the panels keeps the scuffed chassis between the
-   panels, which is where the frame's own material belongs. */
+   These sat at z-index 5 and the film grain at 6, and dropping both to 0 (rc.45)
+   is right on its own terms: chassis wear belongs under the panels.
+   BUT THE STATED MECHANISM WAS WRONG, and the owner's Safari kept showing the
+   stripes for four more release candidates because of it. Corrected in rc.51
+   from the owner's own screenshot: the marks on the housings are NOT these two
+   tiles. Measured at the brushed-metal period (7 CSS px), the bezel, the
+   bargraph face and the module face all carry the stripes in CONTINUOUS PHASE
+   with the bare chassis — each band exactly where the 91° tilt puts it (−1.06 /
+   +5.67 / +4.36 / +1.51 px measured against −0.77 / +5.3 / +4.47 / +1.6 px
+   predicted). One unbroken gradient across the whole frame. These pseudo-
+   elements are 560 px and 140 px SVG tiles with no 91° drift and could not
+   produce that. What was painting over the panels was the FRAME'S OWN
+   BACKGROUND, hoisted by the ::after blend — see isolation on .zankyo-frame.
+   Also corrected: it is not width-dependent. It reproduces in the owner's
+   screenshot at a 827 px frame, and the pre-rc.45 z-index does NOT reproduce
+   in WKWebView at that same width, so the tile-coverage story does not hold
+   either. It was never far-night-specific: home and far render identically. */
 .zankyo-frame::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   opacity: 0.9;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.28' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.2' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.22' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23c9c4b4' stroke-opacity='0.22' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23c9c4b4' stroke-opacity='0.18' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23c9c4b4' stroke-opacity='0.14' stroke-width='1.8'/></g></svg>");
 }
-/* static film grain (inline SVG fractal noise) over the whole machine */
+/* Static film grain (inline SVG fractal noise) over the whole machine.
+   NO mix-blend-mode any more. It was `overlay` at 0.05, and the blend was the
+   thing that dragged the frame's background into a compositing group it had no
+   business being in (see isolation on .zankyo-frame). Plain alpha at 0.045
+   reads the same on this chassis — the panels are all dark, where overlay is
+   near-linear anyway — and needs no blending group at all, so there is nothing
+   left for an engine to get wrong. Belt and braces with the isolation above:
+   either alone should fix it, and the pair costs nothing. */
 .zankyo-frame::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.05; mix-blend-mode: overlay;
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.045;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 .zankyo-frame > * { position: relative; z-index: 1; }

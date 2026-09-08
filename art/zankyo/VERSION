@@ -1,1 +1,1 @@
-2.1.0-rc.50 — a fourth Bluetooth switch: ?capture=off takes 室's tap off ctx.destination (measured silent, but it is the only thing on the destination all night), and ?bt=1 now means direct route + decoded reels + no 室 capture — the latency hint drops out of the union because WebKit ignores it
+2.1.0-rc.51 — the frame stops painting itself over its own panels in Safari; the glide writes spread over a second with two guards; the Bluetooth test switches (?route=direct, ?reels=buffer, ?capture=off, ?bt=1) stay
