@@ -1,1 +1,1 @@
-2.1.0-rc.38 — the jo keeps its slow entrance: about one broadcast in five now opens a cycle, where the last build let most of them land there simply because the opening is the longest stretch of a night
+2.1.0-rc.39 — a broadcast no longer goes missing when its scene is full: it moves to the other half of the cycle instead of being lost, so far more cycles carry their pair, and no broadcast now opens a cycle sooner than the receiver can tune to it

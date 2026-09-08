@@ -2030,6 +2030,12 @@ window.ZankyoAudio = (function () {
   // changing one alone silently breaks the other.
   var BC_JO_P = 0.20;                            // one broadcast in five opens a cycle — the same in every kind
   var bcPlace = {};                              // dev: where the drawn broadcasts landed, by scene type
+  // dev: WHY a seating attempt fell through, per group per reason. The critic
+  // reads these: a per-kind jo share alone supports a story either way, and a
+  // story is what both of us have been wrong with. Four reasons and a group tag
+  // turn "storm loses its jo picks to short scenes" into arithmetic.
+  var bcRej = { jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
+                ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, overflow: 0, lost: 0 };
   var BC_ARM_LEAD_S = 55;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
@@ -2228,10 +2234,24 @@ window.ZankyoAudio = (function () {
     // guest's seat. Nothing that can collide with a broadcast is drawn later.
     var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
     var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
+    // A BROADCAST CANNOT SIT CLOSER TO THE CYCLE START THAN THE RECEIVER NEEDS
+    // TO ARM. arm() was scheduled at Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) —
+    // clamped, not rejected — so an early broadcast armed with whatever lead
+    // was left, and §12's whole argument is max(commitLead) < armLead. Measured
+    // on 40 seeds at 1 h, that inequality FAILED on 4 of them before this
+    // change (worst -3.58 s) and on 8 (worst -12.01 s) once overflow began
+    // seating more broadcasts in the jo, where positions are earliest. No note
+    // ever actually landed inside a hold, so the outcome gate stayed green
+    // throughout: the guarantee was already broken and passing on luck.
+    // Making the first BC_ARM_LEAD_S of a cycle illegal restores the lead by
+    // construction, so the clamp can never engage.
     var legal = [], acc = 0, li;
     for (li = 0; li < scenes.length; li++) {
       var sc0 = scenes[li];
-      if (LEGAL[sc0.type] && sc0.durS > BC_EDGE_S * 2) legal.push([acc + BC_EDGE_S, acc + sc0.durS - BC_EDGE_S, sc0.type]);
+      if (LEGAL[sc0.type] && sc0.durS > BC_EDGE_S * 2) {
+        var a0 = Math.max(acc + BC_EDGE_S, BC_ARM_LEAD_S + 0.05), b0 = acc + sc0.durS - BC_EDGE_S;
+        if (b0 > a0) legal.push([a0, b0, sc0.type]);
+      }
       acc += sc0.durS;
     }
     // THE SCENE IS DRAWN FIRST, THEN THE POSITION IN IT (orchestrator's ruling
@@ -2268,6 +2288,17 @@ window.ZankyoAudio = (function () {
     var BR = rng.fork("bc:" + Math.max(0, cyc.n + 1));
     var want = legalS >= 180 ? 2 : 1, picks = [], tries;
     for (var pk = 0; pk < want; pk++) {
+      // OVERFLOW, NOT SPACING (orchestrator's ruling). P(jo) = 0.20 is the
+      // preference for where a broadcast WANTS to be; it is not a quota that
+      // can cost the broadcast its existence. Weighting 80 % of picks into the
+      // ha concentrated both into roughly 40 % of the cycle, and the 95 s
+      // spacing then had far less room to clear: the pair rate fell 81 % → 53 %
+      // and cycles with no broadcast at all went 1-in-200 to 14-in-200. The
+      // constraint that was easy across the whole legal span is hard inside a
+      // smaller one. So when the drawn group cannot seat it, the broadcast
+      // overflows to the other group rather than being lost. The jo share will
+      // rise above 20 % as a result: that is the honest price of the guarantee
+      // and the owner can see it in getPlacement().
       // THE GROUP IS DRAWN ONCE PER BROADCAST, OUTSIDE THE RETRY. Drawing it
       // inside biased the result badly and subtly: the second pick must clear
       // 95 s of the first, so when the first lands in the ha a second ha
@@ -2277,21 +2308,40 @@ window.ZankyoAudio = (function () {
       // delivered 0.22 to 0.45 depending on how the ha was split. Drawn once,
       // the constant means what it says and only the POSITION is retried.
       var wantJo = BR.chance(BC_JO_P);
-      var grp = (wantJo && joSegs.length) ? joSegs : (otherSegs.length ? otherSegs : joSegs);
-      var grpS = (grp === joSegs) ? joS : otherS;
-      for (tries = 0; tries < 24; tries++) {
-        // …then uniformly within it, so position inside a scene stays even
-        var u = BR.next() * grpS, seg = 0, off = 0, hit = grp[0];
-        for (li = 0; li < grp.length; li++) {
-          var w = grp[li][1] - grp[li][0];
-          if (u <= seg + w) { hit = grp[li]; off = grp[li][0] + (u - seg); break; }
-          seg += w;
+      var order = wantJo ? ["jo", "ha"] : ["ha", "jo"], placed = false;
+      for (var oi = 0; oi < order.length && !placed; oi++) {
+        var isJo = order[oi] === "jo", tag = order[oi];
+        var grp = isJo ? joSegs : otherSegs, grpS = isJo ? joS : otherS;
+        // The scene cannot host at all: no legal window of its type in this
+        // cycle (a scene shorter than 2·BC_EDGE_S never enters `legal`).
+        if (!grp.length) { bcRej[tag].short++; continue; }
+        var nGuest = 0, nBc = 0;
+        for (tries = 0; tries < 24; tries++) {
+          // …then uniformly within it, so position inside a scene stays even
+          var u = BR.next() * grpS, seg = 0, off = 0, hit = grp[0];
+          for (li = 0; li < grp.length; li++) {
+            var w = grp[li][1] - grp[li][0];
+            if (u <= seg + w) { hit = grp[li]; off = grp[li][0] + (u - seg); break; }
+            seg += w;
+          }
+          var okG = !(guestT != null && Math.abs(off - guestT) < BC_GAP_S), okB = true;
+          for (var qi = 0; qi < picks.length; qi++) if (Math.abs(off - picks[qi]) < BC_GAP_S) okB = false;
+          if (okG && okB) {
+            picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1;
+            if (oi > 0) bcRej.overflow++;                 // seated in the group it did NOT draw
+            placed = true; break;
+          }
+          if (!okG) nGuest++; else nBc++;
         }
-        var ok = true;
-        if (guestT != null && Math.abs(off - guestT) < BC_GAP_S) ok = false;
-        for (var qi = 0; qi < picks.length; qi++) if (Math.abs(off - picks[qi]) < BC_GAP_S) ok = false;
-        if (ok) { picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1; break; }
+        // Attribute a failed ATTEMPT (not each retry) to the constraint that
+        // rejected most of its positions; nGuest/nBc are the retry tallies.
+        if (!placed) {
+          if (!nGuest && !nBc) bcRej[tag].noT0++;
+          else if (nGuest > nBc) bcRej[tag].spaceGuest++;
+          else bcRej[tag].spaceBc++;
+        }
       }
+      if (!placed) bcRej.lost++;                          // both groups refused it
     }
     picks.sort(function (a, b) { return a - b; });
     pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
@@ -2583,7 +2633,14 @@ window.ZankyoAudio = (function () {
           for (var bi = 0; bi < times.length; bi++) {
             (function (off) {
               var at = t0c + off;
-              lane("form").at(Math.max(t0c + 0.05, at - BC_ARM_LEAD_S), function () {
+              // The arm is CLAMPED to the cycle start, not rejected, so a
+              // broadcast early in the cycle arms with less than BC_ARM_LEAD_S
+              // of lead. Record the lead actually used: the §12 argument rests
+              // on max(commitLead) < armLead, and asserting against the
+              // CONSTANT 55 cannot see this clamp at all.
+              var armAt = Math.max(t0c + 0.05, at - BC_ARM_LEAD_S);
+              if (faults.armLeadMin == null || (at - armAt) < faults.armLeadMin) faults.armLeadMin = at - armAt;
+              lane("form").at(armAt, function () {
                 try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide }); } catch (e) {}
               });
               lane("form").at(at, function (t) {
@@ -5163,10 +5220,11 @@ window.ZankyoAudio = (function () {
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
     getPlacement: function () { var o = {}, k, n = 0; for (k in bcPlace) { o[k] = bcPlace[k]; n += bcPlace[k]; }
-      o.total = n; o.joShare = n ? +(( bcPlace.jo || 0) / n).toFixed(4) : 0; o.joP = BC_JO_P; return o; },
+      o.total = n; o.joShare = n ? +(( bcPlace.jo || 0) / n).toFixed(4) : 0; o.joP = BC_JO_P;
+      o.reject = { jo: bcRej.jo, ha: bcRej.ha }; o.overflow = bcRej.overflow; o.lost = bcRej.lost; return o; },
     // the gates' handle on the two fault classes (rc.21)
     getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
-      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S }; },
+      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.

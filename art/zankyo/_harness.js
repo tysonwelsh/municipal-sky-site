@@ -456,10 +456,20 @@ if (FAULTS.lanes || FAULTS.notes) {
 // when a slower body or a further-reaching time departure is added, and §12
 // would re-open silently on the nights that draw it. Compared against the
 // ENGINE'S OWN constant rather than a copy, so the two cannot disagree.
+// THE CONSTANT IS NOT THE LEAD. arm() is scheduled at
+// Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) — CLAMPED to the cycle start, not
+// rejected — so a broadcast early in its cycle arms with less than 55 s of
+// lead. Measured on 14 seeds at 1 h, 48.1 % of broadcasts sit closer than 55 s
+// to their cycle start, the earliest at 8.2 s. Asserting against the engine's
+// CONSTANT could not see that: it is the shape of gate that cannot fail.
+// armLeadMinS is the smallest lead ACTUALLY used, and the assertion below now
+// binds on it.
+const ARM_EFF = FAULTS.armLeadMinS != null ? FAULTS.armLeadMinS : FAULTS.armLeadS;
 if (FAULTS.armLeadS && FAULTS.maxLead) {
-  const marg = FAULTS.armLeadS - FAULTS.maxLead;
+  const marg = ARM_EFF - FAULTS.maxLead;
   console.log("commit lead: worst " + FAULTS.maxLead.toFixed(2) + "s (" + FAULTS.maxLeadLayer +
-    ") against an arm lead of " + FAULTS.armLeadS + "s — margin " + marg.toFixed(2) + "s" + (marg > 0 ? " ✓" : " ✗") +
+    ") against the SMALLEST arm lead actually used " + ARM_EFF.toFixed(2) + "s (constant " + FAULTS.armLeadS +
+    "s) — margin " + marg.toFixed(2) + "s" + (marg > 0 ? " ✓" : " ✗") +
     (FAULTS.paLead > FAULTS.armLeadS ? "   [PA reaches " + FAULTS.paLead.toFixed(1) + "s — 回線 bulk-schedules; not asserted, see §12 note]" : ""));
 }
 
@@ -467,9 +477,10 @@ if (FAULTS.armLeadS && FAULTS.maxLead) {
 const fails = [];
 if (FAULTS.lanes) fails.push(FAULTS.lanes + " lane throw(s) — " + FAULTS.lane.map((f) => f.lane + ": " + f.msg).slice(0, 3).join(" | "));
 if (FAULTS.notes) fails.push(FAULTS.notes + " note(s) scheduled with a non-finite freq/time/duration");
-if (FAULTS.armLeadS && FAULTS.maxLead >= FAULTS.armLeadS)
+if (FAULTS.armLeadS && FAULTS.maxLead >= ARM_EFF)
   fails.push("a voice committed " + FAULTS.maxLead.toFixed(2) + "s ahead (" + FAULTS.maxLeadLayer +
-    "), beyond the " + FAULTS.armLeadS + "s arm lead — the air hold cannot refuse a note that early (plan §12)");
+    "), beyond the SMALLEST arm lead actually used (" + ARM_EFF.toFixed(2) + "s; constant " + FAULTS.armLeadS +
+    "s) — the air hold cannot refuse a note that early (plan §12)");
 // Scale adherence is a HOME gate. 耳 bends the koto off the grid by ear, 減
 // narrows semitone pairs toward quarter-tones, 螺 spirals the whole field —
 // leaving the scale is what the far tail IS, so the check only binds at home.
