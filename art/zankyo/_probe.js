@@ -150,14 +150,52 @@ function runOnce(seed, runS, jitterSeed) {
     };
     this.createBufferSource = function () { return source("bufsrc", { buffer: null, loop: false, loopStart: 0, loopEnd: 0, playbackRate: param(1), detune: param(0) }); };
     this.createPeriodicWave = function () { return {}; };
+    // Required by the receiver: without it ensureMediaSource() returns null and
+    // every broadcast falls back with "no media element" even when the pool is
+    // ready and a reel is drawn.
+    this.createMediaElementSource = function (el) { return node("mediaelementsource", { mediaElement: el }); };
     this.decodeAudioData = function (buf, ok, err) { var p = { then: function (f) { return p; }, catch: function (f) { return p; } }; return p; };
+  }
+  // ---- the receiver's world: the real manifest and a <video>, on the virtual
+  // clock. ZK_SIGNAL_MOCK=ready (default: the reel is ready 0.3 s after
+  // prefetch) | slow (never ready -> the gagaku fallback) | none (fetch fails).
+  //
+  // THIS PROBE USED TO SERVE NEITHER. fetch was { then: () => this } -- a
+  // thenable whose callback is never invoked -- and createElement returned the
+  // same inert stub for every tag, so the manifest never arrived and there was
+  // no element to play it. Every broadcast fell back and NOT ONE held the air:
+  // seed 104 over 1800 s logged seven 受信, seven "fallback", zero 消失. That
+  // made the probe blind to the whole broadcast half of the engine. The
+  // air-hold is worth 0.7-13.2 % of melodic notes, so any density- or
+  // timing-derived component was measuring a build the owner never runs, and a
+  // re-base run to price two broadcasts a cycle was run on an instrument where
+  // two broadcasts cost nothing.
+  //
+  // Promises would only settle when the JS stack empties (after the whole run),
+  // so the mocks are synchronous thenables, as in _harness.js.
+  var SIGNAL_MOCK = process.env.ZK_SIGNAL_MOCK || "ready";
+  var MANIFEST_TEXT = (function () { try { return fs.readFileSync(path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; } })();
+  function thenableOf(v) { return { then: function (f) { var r; try { r = f(v); } catch (e) { return failing(e); } return (r && typeof r.then === "function") ? r : thenableOf(r); }, catch: function () { return this; } }; }
+  function failing(err) { return { then: function () { return this; }, catch: function (f) { try { f(err); } catch (e) {} return this; } }; }
+  function mockVideo() {
+    var latencyS = SIGNAL_MOCK === "slow" ? 600 : 0.3;
+    var v = { src: "", preload: "none", muted: false, volume: 1, playsInline: false, crossOrigin: null, readyState: 0, duration: 96, paused: true, style: {}, _l: {}, _ct: 0, _plays: 0 };
+    v.setAttribute = function () {}; v.appendChild = function () {};
+    v.addEventListener = function (n, f) { (v._l[n] = v._l[n] || []).push(f); };
+    v.removeEventListener = function (n, f) { if (v._l[n]) v._l[n] = v._l[n].filter(function (g) { return g !== f; }); };
+    function fire(n) { var L = v._l[n] || []; v._l[n] = []; for (var i = 0; i < L.length; i++) { try { L[i]({ type: n }); } catch (e) {} } }
+    Object.defineProperty(v, "currentTime", { get: function () { return v._ct; }, set: function (x) { v._ct = x; setTimeout(function () { fire("seeked"); }, 40); } });
+    v.load = function () { v.readyState = 0; setTimeout(function () { v.readyState = 1; fire("loadedmetadata"); setTimeout(function () { v.readyState = 4; fire("canplay"); }, 200); }, latencyS * 1000); };
+    v.play = function () { v.paused = false; v._plays++; return thenableOf(undefined); };
+    v.pause = function () { v.paused = true; };
+    return v;
   }
   var doc = {
     visibilityState: "visible", hidden: false, _ls: {},
     addEventListener: function (type, fn) { (doc._ls[type] = doc._ls[type] || []).push(fn); },
     removeEventListener: function () {},
     getElementById: function () { return null; }, querySelector: function () { return null; }, querySelectorAll: function () { return []; },
-    createElement: function () { return { style: {}, setAttribute: function () {}, appendChild: function () {}, addEventListener: function () {}, play: function () { return { catch: function () {} }; }, pause: function () {} }; },
+    createElement: function (tag) { return String(tag).toLowerCase() === "video" ? mockVideo() : { style: {}, setAttribute: function () {}, appendChild: function () {}, addEventListener: function () {}, play: function () { return { catch: function () {} }; }, pause: function () {} }; },
     body: { appendChild: function () {} },
   };
   var W = {};
@@ -166,7 +204,7 @@ function runOnce(seed, runS, jitterSeed) {
   W.addEventListener = function () {}; W.removeEventListener = function () {};
   W.location = { search: FAR != null ? "?far=" + FAR : "", href: "http://127.0.0.1/art/zankyo/", pathname: "/art/zankyo/" };
   W.navigator = { userAgent: "probe", mediaSession: null };
-  W.fetch = function () { return { then: function () { return this; }, catch: function () { return this; } }; };
+  W.fetch = function () { return SIGNAL_MOCK === "none" ? failing(new Error("offline")) : thenableOf({ ok: true, json: function () { return thenableOf(JSON.parse(MANIFEST_TEXT)); } }); };
   W.console = console;
   global.window = W; global.document = doc; global.PJ2 = W.PJ2 = {};
   global.location = W.location; try { Object.defineProperty(global, "navigator", { value: W.navigator, configurable: true, writable: true }); } catch (e) {}
@@ -777,7 +815,7 @@ if (args[0] === "batch") {
     if (!homeOk.length) homeOk = ok;
     DIST_KEYS.forEach(function (k) { var vals = homeOk.map(function (r) { return r.C[k]; }); var med = q(vals, 0.5); var mad = q(vals.map(function (v) { return Math.abs(v - med); }), 0.5); stats[k] = { median: +med.toFixed(4), mad: +mad.toFixed(4), min: +Math.min.apply(null, vals).toFixed(4), max: +Math.max.apply(null, vals).toFixed(4) }; });
     var useBase = base;
-    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, homeSeeds: homeOk.length, runS: bRun, seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
+    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, homeSeeds: homeOk.length, runS: bRun, signalMock: process.env.ZK_SIGNAL_MOCK || "ready", seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
     ok.forEach(function (r) { r.DS = distanceScalar(r.C, useBase); });
     var Ds = ok.map(function (r) { return r.DS.D; });
     var p50 = +q(Ds, 0.5).toFixed(2), p95 = +q(Ds, 0.95).toFixed(2);
