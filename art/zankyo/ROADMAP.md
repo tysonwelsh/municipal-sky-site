@@ -67,3 +67,6 @@ ambient one-shots. In priority order:
 - **A mobile listen** of the second set and the button on a real iPhone
   (media-element priming inside the PLAY gesture is unverified on a device).
 - **2.2.0 release**: drop the -rc, semver from there.
+- **390 px overflow:** the panel overflows a 390 px viewport by 116 px
+  (predates the far tail; unchanged by rc.47). Fix if a phone width is a
+  real target — it is, since the second set is "the event" on a phone.
