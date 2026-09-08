@@ -323,6 +323,7 @@ function runOnce(seed, runS, jitterSeed) {
     randomPlayCount: randomPlayCount, randomDuringPlay: randomDuringPlay,
     motifStats: Z.getMotifStats ? Z.getMotifStats() : null,
     airInfo: (function () { try { var a = Z.getAir ? Z.getAir() : null; return a && a.info ? a.info() : (Z.getAirInfo ? Z.getAirInfo() : null); } catch (e) { return null; } })(),
+    placement: (function () { try { return Z.getPlacement ? Z.getPlacement() : null; } catch (e) { return null; } })(),
     layers: Z.LAYERS ? Z.LAYERS.slice() : [],
     far: (function () { try { return Z.getFar ? Z.getFar() : null; } catch (e) { return null; } })(),   // W0+: {d, name, departures…} when the engine exposes it
     api: Object.keys(Z).sort(),
@@ -509,7 +510,7 @@ function analyze(R) {
   }
 
   // ---- technical ----
-  A.airInfo = R.airInfo;
+  A.airInfo = R.airInfo; A.placement = R.placement;
   // ---- Phase 1 gate summary (plan §7): half the baseline density, ≥3 kinds, ≥2 seatings in 1 h ----
   var BASE_MELODIC_30 = 5075;   // baseline seed 3042 (see baseline-critic.md)
   // ---- Phase 4: visitations per cycle (≥ 1 per 3 cycles over a long run; never two in one cycle) ----
@@ -529,6 +530,17 @@ function analyze(R) {
     nodesPerMin: Math.round(R.counts.nodes / (runS / 60)), peakSources: R.counts.peakSources,
     visitPer3Cycles: A.visitRatePer3, visitMaxPerCycle: A.visitMaxPerCycle,
     signals: A.signals.length, signalFallbacks: A.signalFallbacks, signalPer3Cycles: A.signalRatePer3, signalMaxPerCycle: A.signalMaxPerCycle, signalPerKind: A.signalPerKind,
+    // Broadcast placement and WHY a seating attempt fell through (rc.39). The
+    // counters live on the engine's getPlacement(); the probe never called it,
+    // so they were built and unreadable.
+    placement: A.placement, placeJoShare: A.placement ? A.placement.joShare : undefined,
+    placeOverflow: A.placement ? A.placement.overflow : undefined,
+    placeLost: A.placement ? A.placement.lost : undefined,
+    placeReject: A.placement ? A.placement.reject : undefined,
+    tooShort: A.placement ? A.placement.tooShort : undefined,
+    spacing: A.placement ? A.placement.spacing : undefined,
+    guest: A.placement ? A.placement.guest : undefined,
+    overflow: A.placement ? A.placement.overflow : undefined,
     tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.far = R.far;
@@ -732,6 +744,7 @@ function report(A) {
   line("  shō voicings: " + A.shoVoicings.clusters + " clusters · " + A.shoVoicings.distinct + " distinct (semitones above the lowest) · " + A.shoVoicings.top.join(" | "));
   if (A.airInfo) line("  air: " + JSON.stringify(A.airInfo));
   line("  GATES: " + JSON.stringify(A.gates));
+  if (A.placement) line("  placement: " + JSON.stringify(A.placement));
   line("  per cycle:");
   line("  " + pad("c", 3) + lpad("start", 6) + lpad("len", 5) + lpad("maxV", 5) + lpad("3+%", 6) + "  notes · info");
   A.perCycle.forEach(function (r) {

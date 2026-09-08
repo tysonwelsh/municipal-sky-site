@@ -2035,7 +2035,13 @@ window.ZankyoAudio = (function () {
   // story is what both of us have been wrong with. Four reasons and a group tag
   // turn "storm loses its jo picks to short scenes" into arithmetic.
   var bcRej = { jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
-                ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, overflow: 0, lost: 0 };
+                ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, overflow: 0, lost: 0,
+                ovToJo: 0, ovToHa: 0 };
+  // dev: one record per SEATED broadcast — which pick (0 = first of the
+  // cycle, 1 = second), which group took it, whether it got there by
+  // overflow, and the cycle kind. The per-kind jo share is a share; this is
+  // what makes the mechanism behind it a count.
+  var bcSeats = [], bcGeom = [];
   var BC_ARM_LEAD_S = 55;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
@@ -2234,6 +2240,7 @@ window.ZankyoAudio = (function () {
     // guest's seat. Nothing that can collide with a broadcast is drawn later.
     var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
     var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
+    var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search
     // A BROADCAST CANNOT SIT CLOSER TO THE CYCLE START THAN THE RECEIVER NEEDS
     // TO ARM. arm() was scheduled at Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) —
     // clamped, not rejected — so an early broadcast armed with whatever lead
@@ -2315,23 +2322,53 @@ window.ZankyoAudio = (function () {
         // The scene cannot host at all: no legal window of its type in this
         // cycle (a scene shorter than 2·BC_EDGE_S never enters `legal`).
         if (!grp.length) { bcRej[tag].short++; continue; }
-        var nGuest = 0, nBc = 0;
-        for (tries = 0; tries < 24; tries++) {
-          // …then uniformly within it, so position inside a scene stays even
-          var u = BR.next() * grpS, seg = 0, off = 0, hit = grp[0];
-          for (li = 0; li < grp.length; li++) {
-            var w = grp[li][1] - grp[li][0];
-            if (u <= seg + w) { hit = grp[li]; off = grp[li][0] + (u - seg); break; }
-            seg += w;
+        // OVERFLOW IS A LAST RESORT (orchestrator). The drawn scene is searched
+        // SYSTEMATICALLY before crossing, not sampled. 24 random draws could
+        // miss a narrow feasible window and cross for want of looking, and the
+        // counters showed why more draws would not have helped: every rejected
+        // attempt failed on SPACING (ha spaceBc 40) with noT0 at 0, so the
+        // retries were not running out — the positions they found were genuinely
+        // blocked. Scanning the legal span at BC_SCAN_S finds a feasible offset
+        // if one exists at that resolution, so a cross now means the scene truly
+        // has no room rather than that the sampler was unlucky. Position is then
+        // drawn uniformly over the feasible set, which keeps position-inside-a-
+        // scene even, and the whole search still costs ONE draw on BR.
+        var nGuest = 0, nBc = 0, feas = [], scanX, qi;
+        for (li = 0; li < grp.length; li++) {
+          for (scanX = grp[li][0]; scanX <= grp[li][1]; scanX += BC_SCAN_S) {
+            if (guestT != null && Math.abs(scanX - guestT) < BC_GAP_S) { nGuest++; continue; }
+            var free = true;
+            for (qi = 0; qi < picks.length; qi++) if (Math.abs(scanX - picks[qi]) < BC_GAP_S) free = false;
+            if (free) feas.push([scanX, grp[li][2]]); else nBc++;
           }
-          var okG = !(guestT != null && Math.abs(off - guestT) < BC_GAP_S), okB = true;
-          for (var qi = 0; qi < picks.length; qi++) if (Math.abs(off - picks[qi]) < BC_GAP_S) okB = false;
-          if (okG && okB) {
+        }
+        // THE FIRST PICK MUST NOT STRAND THE SECOND. Placed uniformly, the
+        // opening broadcast often lands mid-scene and leaves no point BC_GAP_S
+        // away inside the same group, so the pair is broken by where the FIRST
+        // one went rather than by the scene being too small. Measured: the ha
+        // can hold two 95 s apart in 87 % of cycles, but only 76 % got the pair.
+        // So when this is the first of two, prefer feasible positions that still
+        // leave room for a second. Overflow stays the last resort and P(jo) is
+        // untouched — the group was already drawn, this only chooses WHERE.
+        var pool = feas;
+        if (pk === 0 && want > 1 && feas.length > 1) {
+          var roomy = [];
+          for (var ai = 0; ai < feas.length; ai++) {
+            for (var bi2 = 0; bi2 < feas.length; bi2++) {
+              if (Math.abs(feas[ai][0] - feas[bi2][0]) >= BC_GAP_S) { roomy.push(feas[ai]); break; }
+            }
+          }
+          if (roomy.length) pool = roomy;
+        }
+        if (pool.length) {
+          var fi = Math.min(pool.length - 1, Math.floor(BR.next() * pool.length));
+          var off = pool[fi][0], hit = [0, 0, pool[fi][1]];
+          {
             picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1;
-            if (oi > 0) bcRej.overflow++;                 // seated in the group it did NOT draw
+            if (oi > 0) { bcRej.overflow++; if (isJo) bcRej.ovToJo++; else bcRej.ovToHa++; }
+            if (bcSeats.length < 4000) bcSeats.push({ n: pk, grp: tag, ov: oi > 0, kind: kind, cyc: cyc.n });
             placed = true; break;
           }
-          if (!okG) nGuest++; else nBc++;
         }
         // Attribute a failed ATTEMPT (not each retry) to the constraint that
         // rejected most of its positions; nGuest/nBc are the retry tallies.
@@ -2342,6 +2379,20 @@ window.ZankyoAudio = (function () {
         }
       }
       if (!placed) bcRej.lost++;                          // both groups refused it
+      // dev: the GEOMETRY behind the outcome — can the ha alone hold two
+      // broadcasts BC_GAP_S apart in this cycle? If it usually cannot, then
+      // "pair near 80 %" and "jo near 20 %" are not jointly reachable at this
+      // spacing and no placement rule can deliver both.
+      if (pk === 0 && bcGeom.length < 4000) {
+        var haLo = null, haHi = null;
+        for (var gi = 0; gi < otherSegs.length; gi++) {
+          if (haLo === null || otherSegs[gi][0] < haLo) haLo = otherSegs[gi][0];
+          if (haHi === null || otherSegs[gi][1] > haHi) haHi = otherSegs[gi][1];
+        }
+        bcGeom.push({ kind: kind, joS: Math.round(joS), haS: Math.round(otherS),
+          haSpan: (haLo === null ? 0 : Math.round(haHi - haLo)),
+          haPairable: (haLo !== null && (haHi - haLo) >= BC_GAP_S) });
+      }
     }
     picks.sort(function (a, b) { return a - b; });
     pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
@@ -5221,7 +5272,16 @@ window.ZankyoAudio = (function () {
     getSeed: function () { return seed; },
     getPlacement: function () { var o = {}, k, n = 0; for (k in bcPlace) { o[k] = bcPlace[k]; n += bcPlace[k]; }
       o.total = n; o.joShare = n ? +(( bcPlace.jo || 0) / n).toFixed(4) : 0; o.joP = BC_JO_P;
-      o.reject = { jo: bcRej.jo, ha: bcRej.ha }; o.overflow = bcRej.overflow; o.lost = bcRej.lost; return o; },
+      // The ruling names the reasons tooShort / spacing / guest / overflow; the
+      // internal keys are older. Both are emitted so a gate can find either.
+      o.reject = { jo: bcRej.jo, ha: bcRej.ha,
+        tooShort: bcRej.jo.short + bcRej.ha.short,
+        spacing: bcRej.jo.spaceBc + bcRej.ha.spaceBc,
+        guest: bcRej.jo.spaceGuest + bcRej.ha.spaceGuest,
+        noT0: bcRej.jo.noT0 + bcRej.ha.noT0 };
+      o.tooShort = o.reject.tooShort; o.spacing = o.reject.spacing; o.guest = o.reject.guest;
+      o.overflow = bcRej.overflow; o.lost = bcRej.lost;
+      o.ovToJo = bcRej.ovToJo; o.ovToHa = bcRej.ovToHa; o.seats = bcSeats; o.geom = bcGeom; return o; },
     // the gates' handle on the two fault classes (rc.21)
     getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
       maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin }; },
