@@ -2042,6 +2042,22 @@ window.ZankyoAudio = (function () {
   // overflow, and the cycle kind. The per-kind jo share is a share; this is
   // what makes the mechanism behind it a count.
   var bcSeats = [], bcGeom = [];
+  // dev: the same four reasons broken out PER CYCLE KIND, so the storm-vs-rite
+  // spread is arithmetic rather than a share with a story attached.
+  var bcRejKind = {};
+  function rejBump(kind, grp, why) {
+    bcRej[grp][why]++;
+    var k = bcRejKind[kind] || (bcRejKind[kind] = {
+      jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
+      ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, seated: 0, joSeated: 0, overflow: 0, lost: 0 });
+    k[grp][why]++;
+  }
+  function seatBump(kind, grp, ov) {
+    var k = bcRejKind[kind] || (bcRejKind[kind] = {
+      jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
+      ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, seated: 0, joSeated: 0, overflow: 0, lost: 0 });
+    k.seated++; if (grp === "jo") k.joSeated++; if (ov) k.overflow++;
+  }
   var BC_ARM_LEAD_S = 55;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
@@ -2240,7 +2256,9 @@ window.ZankyoAudio = (function () {
     // guest's seat. Nothing that can collide with a broadcast is drawn later.
     var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
     var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
-    var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search
+    var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search;
+                                        // 0.5 s was measured and changed nothing at all —
+                                        // the search is exhaustive, the blocks are geometric                  // resolution of the systematic in-scene search
     // A BROADCAST CANNOT SIT CLOSER TO THE CYCLE START THAN THE RECEIVER NEEDS
     // TO ARM. arm() was scheduled at Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) —
     // clamped, not rejected — so an early broadcast armed with whatever lead
@@ -2321,7 +2339,7 @@ window.ZankyoAudio = (function () {
         var grp = isJo ? joSegs : otherSegs, grpS = isJo ? joS : otherS;
         // The scene cannot host at all: no legal window of its type in this
         // cycle (a scene shorter than 2·BC_EDGE_S never enters `legal`).
-        if (!grp.length) { bcRej[tag].short++; continue; }
+        if (!grp.length) { rejBump(kind, tag, "short"); continue; }
         // OVERFLOW IS A LAST RESORT (orchestrator). The drawn scene is searched
         // SYSTEMATICALLY before crossing, not sampled. 24 random draws could
         // miss a narrow feasible window and cross for want of looking, and the
@@ -2352,10 +2370,34 @@ window.ZankyoAudio = (function () {
         // untouched — the group was already drawn, this only chooses WHERE.
         var pool = feas;
         if (pk === 0 && want > 1 && feas.length > 1) {
+          // The partner must be sought across ALL legal time, not just this
+          // group. The BC_GAP_S exclusion is on absolute offset, so a first pick
+          // sitting late in the jo blocks the EARLY HA as surely as it blocks
+          // the rest of the jo — and a same-group test cannot see that. It then
+          // reports "roomy" for a position that has stranded the second
+          // broadcast in the group the second will most likely draw, which is
+          // the ha four times in five. Widening the partner search is still the
+          // SEARCH: P(jo) is untouched and the group was already drawn.
+          // Measured, after trying it the other way: the partner must be sought
+          // in the HA, not across all legal time and not merely in the drawn
+          // group. Widening it to all legal time made things WORSE — opening
+          // with a broadcast went 39.5 % to 50.5 % and overflow into the jo more
+          // than doubled — because a first pick in the ha then only needed a
+          // partner SOMEWHERE, so it could sit where it consumed the ha's room
+          // and strand the second, which draws the ha four times in five. The
+          // same-group test had been protecting the ha by accident. Requiring
+          // the partner in the ha protects it on purpose.
+          var all = [], gi2, sx;
+          for (gi2 = 0; gi2 < otherSegs.length; gi2++) {
+            for (sx = otherSegs[gi2][0]; sx <= otherSegs[gi2][1]; sx += BC_SCAN_S) {
+              if (guestT != null && Math.abs(sx - guestT) < BC_GAP_S) continue;
+              all.push(sx);
+            }
+          }
           var roomy = [];
           for (var ai = 0; ai < feas.length; ai++) {
-            for (var bi2 = 0; bi2 < feas.length; bi2++) {
-              if (Math.abs(feas[ai][0] - feas[bi2][0]) >= BC_GAP_S) { roomy.push(feas[ai]); break; }
+            for (var bi2 = 0; bi2 < all.length; bi2++) {
+              if (Math.abs(feas[ai][0] - all[bi2]) >= BC_GAP_S) { roomy.push(feas[ai]); break; }
             }
           }
           if (roomy.length) pool = roomy;
@@ -2366,6 +2408,7 @@ window.ZankyoAudio = (function () {
           {
             picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1;
             if (oi > 0) { bcRej.overflow++; if (isJo) bcRej.ovToJo++; else bcRej.ovToHa++; }
+            seatBump(kind, tag, oi > 0);
             if (bcSeats.length < 4000) bcSeats.push({ n: pk, grp: tag, ov: oi > 0, kind: kind, cyc: cyc.n });
             placed = true; break;
           }
@@ -2373,12 +2416,12 @@ window.ZankyoAudio = (function () {
         // Attribute a failed ATTEMPT (not each retry) to the constraint that
         // rejected most of its positions; nGuest/nBc are the retry tallies.
         if (!placed) {
-          if (!nGuest && !nBc) bcRej[tag].noT0++;
-          else if (nGuest > nBc) bcRej[tag].spaceGuest++;
-          else bcRej[tag].spaceBc++;
+          if (!nGuest && !nBc) rejBump(kind, tag, "noT0");
+          else if (nGuest > nBc) rejBump(kind, tag, "spaceGuest");
+          else rejBump(kind, tag, "spaceBc");
         }
       }
-      if (!placed) bcRej.lost++;                          // both groups refused it
+      if (!placed) { bcRej.lost++; if (bcRejKind[kind]) bcRejKind[kind].lost++; }   // both groups refused it
       // dev: the GEOMETRY behind the outcome — can the ha alone hold two
       // broadcasts BC_GAP_S apart in this cycle? If it usually cannot, then
       // "pair near 80 %" and "jo near 20 %" are not jointly reachable at this
@@ -5280,7 +5323,7 @@ window.ZankyoAudio = (function () {
         guest: bcRej.jo.spaceGuest + bcRej.ha.spaceGuest,
         noT0: bcRej.jo.noT0 + bcRej.ha.noT0 };
       o.tooShort = o.reject.tooShort; o.spacing = o.reject.spacing; o.guest = o.reject.guest;
-      o.overflow = bcRej.overflow; o.lost = bcRej.lost;
+      o.overflow = bcRej.overflow; o.lost = bcRej.lost; o.reject.byKind = bcRejKind;
       o.ovToJo = bcRej.ovToJo; o.ovToHa = bcRej.ovToHa; o.seats = bcSeats; o.geom = bcGeom; return o; },
     // the gates' handle on the two fault classes (rc.21)
     getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
