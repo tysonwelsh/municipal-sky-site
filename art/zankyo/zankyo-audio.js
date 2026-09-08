@@ -129,17 +129,26 @@ window.ZankyoAudio = (function () {
   //                     the picture and is given no voice at all — muted,
   //                     volume 0, its audio tracks disabled, and NEVER passed
   //                     to createMediaElementSource.
-  //   ?latency=playback the context asks for the large buffer.
-  //   ?bt=1             all three.
+  //   ?capture=off      室 does not build its ScriptProcessor. On a reelrm
+  //                     night that node is, for two seconds in the middle of
+  //                     a reel, the ONLY thing connected to ctx.destination —
+  //                     see zk-broadcast.js farRoomCapture for why that is
+  //                     worth suspecting even at zero gain.
+  //   ?latency=playback the context asks for the large buffer. MEASURED INERT
+  //                     IN WEBKIT (rc.48) — kept because it is live in Chrome,
+  //                     and NOT part of ?bt=1 for the same reason.
+  //   ?bt=1             direct route + decoded reels + no 室 capture. The
+  //                     three that do something in Safari.
   //
   // Read back at any time with ZankyoAudio.getRoute().
   var ROUTE = (function () {
-    var q = { route: "stream", reels: "element", latency: "default", bt: false };
+    var q = { route: "stream", reels: "element", capture: "on", latency: "default", bt: false };
     try {
       var s = (typeof location !== "undefined" && location.search) || "";
-      if (/[?&]bt=1(&|$)/.test(s)) { q.bt = true; q.route = "direct"; q.reels = "buffer"; q.latency = "playback"; }
+      if (/[?&]bt=1(&|$)/.test(s)) { q.bt = true; q.route = "direct"; q.reels = "buffer"; q.capture = "off"; }
       var m = s.match(/[?&]route=([a-z]+)/);   if (m && m[1] === "direct") q.route = "direct";
       m = s.match(/[?&]reels=([a-z]+)/);       if (m && m[1] === "buffer") q.reels = "buffer";
+      m = s.match(/[?&]capture=([a-z]+)/);     if (m && (m[1] === "off" || m[1] === "on")) q.capture = m[1];
       m = s.match(/[?&]latency=([a-z]+)/);     if (m && (m[1] === "playback" || m[1] === "balanced" || m[1] === "interactive")) q.latency = m[1];
     } catch (e) {}
     return q;
@@ -150,6 +159,7 @@ window.ZankyoAudio = (function () {
     var p = [];
     if (ROUTE.route === "direct") p.push("direct route");
     if (ROUTE.reels === "buffer") p.push("reels decoded");
+    if (ROUTE.capture === "off") p.push("no 室 capture");
     if (ROUTE.latency !== "default") p.push("latency " + ROUTE.latency);
     return p.join(" · ");
   }
@@ -5005,6 +5015,7 @@ window.ZankyoAudio = (function () {
     if (rlab) emitEvent({ cat: "mode", label: "経路 · " + rlab, detail:
       "out " + (bg && bg.routed ? "mediastream → <audio>" : "ctx.destination") +
       " · reels " + ROUTE.reels +
+      " · 室 capture " + ROUTE.capture +
       " · latencyHint " + ROUTE.latency +
       " · base " + (ctx.baseLatency != null ? (ctx.baseLatency * 1000).toFixed(1) + " ms" : "n/a") +
       " · out " + (ctx.outputLatency != null ? (ctx.outputLatency * 1000).toFixed(1) + " ms" : "n/a") +
@@ -5537,8 +5548,9 @@ window.ZankyoAudio = (function () {
         // is "not yet", not the default the null handle would imply
         route: !ctx ? null : ((bg && bg.routed) ? "stream" : "direct"),
         reelsMode: ROUTE.reels,
+        capture: ROUTE.capture,
         latencyHint: ROUTE.latency,
-        asked: { route: ROUTE.route, reels: ROUTE.reels, latency: ROUTE.latency, bt: ROUTE.bt },
+        asked: { route: ROUTE.route, reels: ROUTE.reels, capture: ROUTE.capture, latency: ROUTE.latency, bt: ROUTE.bt },
         label: routeLabel(),
         baseLatency: ctx && ctx.baseLatency != null ? ctx.baseLatency : null,
         outputLatency: ctx && ctx.outputLatency != null ? ctx.outputLatency : null,
