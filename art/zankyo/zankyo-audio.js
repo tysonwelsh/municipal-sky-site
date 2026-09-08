@@ -158,12 +158,15 @@ window.ZankyoAudio = (function () {
   //   · at d < ZK_FAR.D_HOME the night is `home` and every accessor answers
   //     false / identity, so the only reachable code is the code that was
   //     already there.
-  var farNight = null;                         // tonight, drawn at play()
+  var farNight = null;                         // the CYCLE's view — what all 31 read sites see
+  var farNightDrawn = null;                    // the night as drawn at play(), which never changes
+  var farCycleD = 0;                           // W4: this cycle's own distance after the meta-tide's lift
   var FAR_NONE = { d: 0, home: true, ids: [], dep: {}, kana: "家", name: "home", label: "家 home" };
   function farDraw() {
     var M = window.ZK_FAR;
     if (!M || !S || !S.far) { farNight = FAR_NONE; return farNight; }
-    try { farNight = M.night(S.far, farForced); } catch (e) { farNight = FAR_NONE; }
+    try { farNightDrawn = M.night(S.far, farForced); } catch (e) { farNightDrawn = FAR_NONE; }
+    farNight = farNightDrawn; farCycleD = farNight.d;
     return farNight;
   }
   var FAR = {
@@ -503,7 +506,7 @@ window.ZankyoAudio = (function () {
     }
     emitNote("shakuhachi", f, t0, holdS);
     // it holds the air: nobody talks over a minute-long held tone
-    airHold.shakuhachi = { from: t0 - 0.2, until: t0 + holdS };
+    airHoldAdd("shakuhachi", t0 - 0.2, t0 + holdS, "freeze");
     emitEvent({ cat: "far", label: "凍 the note freezes", detail: Math.round(holdS) + "s · " + noteName(f) + " · ±" + p.jitterC.toFixed(1) + " cents" }, t0);
     return holdS;
   }
@@ -673,6 +676,16 @@ window.ZankyoAudio = (function () {
     if (!farMirror || !phrase || phrase.length < 3 || !sched || !sched.length) return;
     var ans = FAR_MIRROR_ANSWER[voice];
     if (!ans || !seated(ans, now)) return;
+    // 鏡 DOES NOT ANSWER INSIDE AN ENSEMBLE GESTURE. Under 重 all five voices
+    // play the same phrase, so every one of them called for its own answer and
+    // five answers landed on a gesture that was already five voices deep. Seed
+    // 19 at d 0.90 (崩 重 多 鏡) peaked at 113 concurrent sources against the
+    // cap of 110 that §10 kept hard — 94 at d 0.85, where the same night draws
+    // no 鏡. It is the right musical answer as well as the affordable one: an
+    // answer is a SHAPE, and a shape inside a five-voice heterophony is not
+    // audible as one. That is the same reason this function holds the
+    // answerer's air at all. Between gestures 鏡 answers exactly as before.
+    if (farSubject && farEnsemble() && now < farSubject.at + (FAR_ENS_GAP[farSubject.mode] || 4)) return;
     var axisDeg = farMirror.axis === "tonic" ? scaleIndexOf(0)
                 : farMirror.axis === "fifth" ? scaleIndexOf(3)
                 : phrase[phrase.length - 1].deg;
@@ -685,14 +698,23 @@ window.ZankyoAudio = (function () {
     var t0 = t;
     for (var i = 0; i < m.length; i++) {
       var d = Math.max(0.12, m[i].durBeats * beat);
-      note(SCALE[m[i].deg].freq, t, d, { gain: 0.7 });
+      // 鏡 DOES NOT ANSWER OVER THE BROADCAST. The answer renders directly and
+      // never claims the air — that is deliberate, since it is the answering
+      // voice's own utterance rather than a new turn — but "never claims" also
+      // meant "never denied", so a mirror answer played straight through a
+      // signal's hold. Measured at two per cycle: seed 7 at far 0.9 put four
+      // consecutive koto notes 3.7 to 10.5 s inside a hold, on a 鏡 night.
+      // Skipped, not rescheduled, exactly as 崩's groove is (rc.24): an answer
+      // is a shape and a shape with a hole in it is still recognisable, where
+      // an answer that arrives late is a different gesture.
+      if (!signalUp(t)) note(SCALE[m[i].deg].freq, t, d, { gain: 0.7 });
       t += d;
     }
     // The answer is that voice's utterance: hold its air across the span so it
     // does not play its own phrase over its own answer. Without this the answer
     // was there in the stream and inaudible as a shape, because the answering
     // voice was talking across it.
-    airHold[ans] = { from: t0 - 0.2, until: t + 0.3 };
+    airHoldAdd(ans, t0 - 0.2, t + 0.3, "mirror");
     emitEvent({ cat: "far", label: "鏡 answered", detail: voice + " → " + ans + " · " + m.length + " notes · axis " + farMirror.axis + " · lag " + lag.toFixed(2) + "s after the phrase" }, last.t + last.dur);
   }
 
@@ -812,7 +834,54 @@ window.ZankyoAudio = (function () {
     return plain;
   }
 
-  function farTimeSetup() {
+  // ==========================================================================
+  // 逸脱 W4 — THE META-TIDE'S PER-CYCLE LIFT
+  //
+  // One cycle may sit further out than the rest of its night, or closer in.
+  // The night's MEMBERSHIP never changes — a 崩 night that stopped being one
+  // for a cycle would be two nights — only how far out those departures are
+  // pushed, and whether the ones with the highest thresholds are in reach at
+  // all. A cycle that falls below D_HOME has every departure stand down, which
+  // is the plan's calm cycle, and it costs nothing to express because
+  // farTimeSetup already returns early on a home view.
+  //
+  // farNight IS THE CYCLE'S VIEW and farNightDrawn is the night. That is
+  // deliberate: thirty-one places read farNight.dep, and threading a second
+  // object through all of them is the shape of fault this crew has now been
+  // caught by five times. Re-pointing one variable is immune to it.
+  //
+  // The naming travels from the drawn night — the VFD names what tonight IS,
+  // not what this cycle is doing — and the lift is announced as its own line
+  // when it happens.
+  function farLiftCycle(cycleN, t) {
+    if (!farNightDrawn || !window.ZK_FAR || !S || !S.far) return;
+    if (farNightDrawn.home && !farNightDrawn.homeLift) return;    // the eleven nights in twelve: nothing to do, nothing touched
+    var M = window.ZK_FAR, dp;
+    try { dp = M.lift(S.far, cycleN, farNightDrawn.d); } catch (e) { return; }
+    if (!(dp >= 0)) return;
+    farCycleD = dp;
+    if (Math.abs(dp - farNightDrawn.d) < 1e-9) { farNight = farNightDrawn; return; }
+    var v;
+    try {
+      // A HOME night has no drawn departures, so there is nothing to re-derive:
+      // its one strange cycle draws a night of its own at d′, on its own fork,
+      // and that draw is what the cycle plays. A FAR night re-derives, because
+      // its membership is its identity and must not change.
+      v = farNightDrawn.home ? M.night(S.far.fork("homelift-draw"), dp)
+                             : M.relift(S.far, farNightDrawn, dp);
+    } catch (e) { return; }
+    // the night's identity rides along; only the distance and the parameters move
+    v.kana = farNightDrawn.kana; v.name = farNightDrawn.name; v.band = farNightDrawn.band;
+    v.label = farNightDrawn.label; v.detail = farNightDrawn.detail; v.u = farNightDrawn.u;
+    farNight = v;
+    var away = dp > farNightDrawn.d;
+    emitEvent({ cat: "far", label: away ? "潮 further out" : "潮 closer in",
+      detail: "cycle " + cycleN + " · d " + farNightDrawn.d.toFixed(2) + " → " + dp.toFixed(2) +
+        (v.home ? " · the departures stand down for this cycle" :
+          " · " + (v.ids.length ? v.ids.map(function (x) { return v.dep[x].kana; }).join(" ") : "—")) }, t);
+  }
+
+  function farTimeSetup(setupT) {
     farTimeOn = false; farDilate = null; farCanon = null; farCycleRate = 1;
     farHetero = null; farHocket = null; farSwarm = null; farSubject = null; farPoly = null; farMirror = null; farClouds = null; farRev = null; farMetal = null; farNlead = null; farMetalMod = null; farMetalAmp = null;
     if (!farNight || farNight.home) return;
@@ -849,6 +918,15 @@ window.ZankyoAudio = (function () {
     if ((p = farNight.dep.metal)) farMetal = p;
     if ((p = farNight.dep.nlead)) farNlead = p;
     farTimeOn = !!(farDilate || farCanon || farVari);
+    // THE SCHEDULED TIME, NEVER ctx.currentTime. These lines carry a timestamp
+    // and a "now" read makes it depend on when the tick happened to run — which
+    // is exactly what the REPRO-under-jitter gate exists to catch, and did:
+    // 386.327 against 386.301 for the same 重 line on two jitter seeds. Latent
+    // since rc.31, and invisible to a jitter run on a HOME seed because a home
+    // night has no departures to announce.
+    var tt = (setupT != null) ? setupT : (ctx ? ctx.currentTime : 0);
+    farSay("canon", tt); farSay("hetero", tt); farSay("poly", tt); farSay("hocket", tt);
+    farSay("erode", tt); farSay("mainv", tt); farSay("metal", tt); farSay("rev", tt);
   }
   // 遅 — one cycle glacial (a forty-minute jo made of single notes) or frantic,
   // drawn per cycle from the night's own band on the cycle's own sub-fork, so
@@ -979,8 +1057,8 @@ window.ZankyoAudio = (function () {
     for (i = 0; i < frag.length; i++) farGroove.alive.push(true);
     // the crew stops playing for the duration — the station is stuck, not busy
     var holdUntil = t0 + totalS + 2;
-    for (var vi = 0; vi < MELODIC_LANES.length; vi++) airHold[MELODIC_LANES[vi]] = { from: t0, until: holdUntil };
-    airHold.pa = { from: t0, until: holdUntil };
+    for (var vi = 0; vi < MELODIC_LANES.length; vi++) airHoldAdd(MELODIC_LANES[vi], t0, holdUntil, "disint");
+    airHoldAdd("pa", t0, holdUntil, "disint");
     emitEvent({ cat: "far", label: "崩 the station sticks", detail: th.name + " · " + frag.length + " notes · " + p.passes + " passes · " + Math.round(totalS) + "s · " + voice }, t0);
     var note = voice === "koto" ? kotoNote : voice === "shamisen" ? shamisenNote : function (f, tt, d, o) { stringNote("biwa", f, tt, d, o); };
     function pass(t) {
@@ -993,7 +1071,21 @@ window.ZankyoAudio = (function () {
         if (k > 0 && R.chance(p.lossPer)) { farGroove.alive[j] = false; continue; }   // gone for good
         var d = Math.max(0.14, frag[j].durBeats * beat);
         var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, frag[j].deg))].freq * mul;
-        note(f, tt, d, { gain: 0.35 + 0.5 * decay, vel: 0.35 + 0.45 * decay });
+        // 崩 DOES NOT PLAY OVER THE BROADCAST. The stuck groove holds the air
+        // against the other five voices and then played straight through a
+        // signal's hold itself — measured on seven far seeds, 7 to 59 melodic
+        // notes inside a hold, and every one of them was this loop: one voice,
+        // perfectly regular spacing, spanning the whole hold. The hold exists
+        // so that nothing talks over the broadcast, and "nothing" has to
+        // include the departure that set the hold.
+        //
+        // The note is SKIPPED, not rescheduled: a stuck tape does not wait its
+        // turn, and the loop keeps its own timing so it comes back exactly
+        // where it would have been. It also keeps ageing — the pass counter and
+        // the loss draws are untouched — so the disintegration is the same
+        // length whether a broadcast crossed it or not, which is what keeps a
+        // 崩 night reproducible.
+        if (!signalUp(tt)) { note(f, tt, d, { gain: 0.35 + 0.5 * decay, vel: 0.35 + 0.45 * decay }); }
         tt += d; any = true;
       }
       // the grit rises as the music leaves: what is left is the room. formPulse
@@ -1131,8 +1223,58 @@ window.ZankyoAudio = (function () {
   }
   // Read tonight's pitch departures into the machinery above. Called once at
   // play(), after the night is drawn; every value here is already seeded.
-  function farPitchSetup(t0) {
-    farT0 = t0;
+  // THE STORY, TOLD AS IT HAPPENS (W4). The plan asks that "the VFD tells the
+  // story as it happens", and until this commit fourteen of the twenty-four
+  // departures never said a word: all six pitch departures, all four ensemble
+  // ones, 金 and 逆. Seed 61 draws 螺 蝕 金 and produced a night name, two lift
+  // lines, and silence from its three departures for a full hour.
+  //
+  // The ones that ACT AT MOMENTS already speak each time (崩, 騒, 群, 相, 室,
+  // 凍, 雲, 鏡, 遅, 未斬). The ones that TRANSFORM THE WHOLE WORLD cannot speak
+  // per note without drowning the log, so they speak when they TAKE HOLD —
+  // once at the start of a night, and again whenever a lifted cycle changes
+  // what they are doing, which is exactly when a listener wants to be told.
+  // Deduplicated on the rendered line, so a lift that leaves a departure
+  // unchanged says nothing about it.
+  // null = "not announcing yet". play() runs the setups BEFORE the night names
+  // itself, and a departure introducing itself above the night it belongs to
+  // reads backwards; so the setups stay quiet until play() opens the story.
+  var farSaid = null;
+  var FAR_SAY = {
+    sag:    function (p) { return "the octave is " + Math.round(p.cents) + " cents, not 1200 — the whole field is somewhere else"; },
+    ear:    function (p) { return "the plucked bodies tuned by ear, the winds left tempered · depth " + p.depth.toFixed(2); },
+    meri:   function (p) { return "the semitone pairs narrow toward a quarter-tone · " + p.which; },
+    bito:   function (p) { return "two modes at once · " + (p.modes || []).slice(0, 2).join(" against ") + " · share " + p.share.toFixed(2); },
+    spiral: function (p) { return "the tonic glides " + p.centsPerS.toFixed(1) + " cents a second — a key that never arrives"; },
+    vari:   function (p) { return "the tape sags " + Math.round(-p.semis * 100) + " cents over " + Math.round(p.overS) + "s, then " + (p.snap ? "snaps" : "crawls") + " back"; },
+    canon:  function (p) { return "the plucked trio in a tempo canon · " + (p.ratios || []).join(":"); },
+    hetero: function (p) { return "all five melodic voices on one line, each a hair sharp and a breath behind · lag " + p.lagS.toFixed(2) + "s"; },
+    poly:   function (p) { return "each voice keeps its own meter · " + (p.meters || []).join(" / "); },
+    hocket: function (p) { return "one melody split note by note across the voices" + (p.strict ? ", strictly" : ""); },
+    erode:  function (p) { return "the arc erodes · " + p.shape; },
+    mainv:  function (p) { return "間 inverted: the rests are the music · rest ×" + p.restMul.toFixed(1) + (p.singleton ? " · one voice at a time" : ""); },
+    metal:  function (p) { return "ring modulation on " + (p.targets || []).join(" and ") + " · mix " + p.ringMix.toFixed(2) + " · FM index " + p.fmIndex.toFixed(1); },
+    rev:    function (p) { return "envelopes played backwards · " + Math.round(p.share * 100) + "% of them · swell " + p.swellS.toFixed(1) + "s"; },
+  };
+  function farSay(id, t) {
+    if (!farSaid) return;
+    var p = farNight && farNight.dep && farNight.dep[id];
+    if (!p || !FAR_SAY[id]) return;
+    var line;
+    try { line = FAR_SAY[id](p); } catch (e) { return; }
+    if (farSaid[id] === line) return;                 // unchanged by this cycle: nothing to tell
+    farSaid[id] = line;
+    emitEvent({ cat: "far", label: p.kana + " " + p.name, detail: line }, t);
+  }
+
+  // `keepOrigin` — a lifted cycle rebuilds the pitch departures at its own
+  // distance, but must NOT move farT0. That is the glide's phase origin, and
+  // resetting it every cycle would make 螺 restart from zero each time instead
+  // of being the slow continuous drift it is named for. Found while wiring the
+  // announcements: the lift was rebuilding the TIME departures and leaving the
+  // pitch ones on the night's values entirely.
+  function farPitchSetup(t0, keepOrigin) {
+    if (!keepOrigin) farT0 = t0;
     farWarpK = 1; farEar = null; farBito = null; farBitoField = null; farSpiral = null; farVari = null;
     farPitchOn = false; farGlideOn = false;
     if (!farNight || farNight.home) return;
@@ -1152,6 +1294,9 @@ window.ZankyoAudio = (function () {
     }
     farPitchOn = !!(farWarpK !== 1 || farEar || farBito || farSpiral || farVari);
     farGlideOn = !!(farSpiral || farVari);
+    var pt = t0 != null ? t0 : (ctx ? ctx.currentTime : 0);
+    farSay("sag", pt); farSay("ear", pt); farSay("meri", pt); farSay("bito", pt);
+    farSay("spiral", pt); farSay("vari", pt);
   }
   // 減 — the semitone pairs narrow toward a quarter-tone. Applied to a mode's
   // steps as setMode builds its custom-mode object, so field.size never
@@ -1284,7 +1429,12 @@ window.ZankyoAudio = (function () {
   var GRIT_LAYERS = { subDrone: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
-  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.7, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.62, noise: 0.5, ambient: 0.55, pa: 0.6, broadcast: 0.7 };
+  // hichiriki 0.35 — HALVED from 0.7 at the owner's ask (2026-09-07). The
+  // console DEFAULT only: the slider now opens at half of what it did and the
+  // owner can raise it again from the faceplate. Its body, its trims and the
+  // mix pass's presence work are deliberately untouched — this is a level
+  // decision about how loud the reed sits in the ensemble, not a voicing one.
+  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.35, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.62, noise: 0.5, ambient: 0.9625, pa: 0.6, broadcast: 0.7 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
   var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, broadcast: 1 };
   var DEFAULT_LAYER_VOL = 0.7;
@@ -1346,12 +1496,20 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // LISTENERS / LOG
   // ==========================================================================
+  // The five melodic bodies, and NOT the PA. The PA is held by a broadcast like
+  // the rest, but 回線 bulk-schedules a whole conversation across its own span
+  // (visitLine walks `t` forward through the visitation), so its commit lead
+  // reaches 105 s and would swamp this measurement while telling us nothing
+  // about the five voices the relation exists to protect. The PA's own lead is
+  // reported separately, because it is a gap rather than a non-issue: see
+  // paLead below.
+  var MEL_LEAD = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };
   var noteListeners = [], eventListeners = [];
   // THE FAULT TALLY (rc.21). Two classes the gates could not see: a lane that
   // threw, and a note scheduled with a non-finite frequency, time or duration.
   // Counting only — no behaviour changes, no RNG is touched, so home nights
   // stay byte-identical. _harness.js reads it and fails on any.
-  var faults = { lanes: 0, notes: 0, lane: [], note: [] };
+  var faults = { lanes: 0, notes: 0, lane: [], note: [], maxLead: 0, maxLeadLayer: null, paLead: 0 };
   // EVERY SCHEDULED NOTE IS FINITE. The companion tripwire to the lane tally:
   // a non-finite frequency reaches an oscillator as "non-finite float" and, via
   // N = round(sr / freq), a non-finite frame count in createBuffer — both throw
@@ -1360,6 +1518,24 @@ window.ZankyoAudio = (function () {
   // the owner's night must not break because a gate wants to be loud. The
   // harness fails on a single one.
   function emitNote(layer, freq, startTime, duration) {
+    // HOW FAR AHEAD DID THIS VOICE COMMIT? The air hold is written
+    // BC_ARM_LEAD_S before a broadcast; a body that commits FURTHER ahead than
+    // that schedules a note the hold cannot yet refuse, which is plan §12
+    // exactly. The relation "arm lead > commit lead" was written in a comment
+    // and justified by a measured maximum — and a measured maximum drifts the
+    // moment somebody adds a slower body or a time departure that reaches
+    // further. Nothing would fail; §12 would quietly re-open on the nights
+    // that draw it. So the relation is recorded here and ASSERTED by the
+    // harness against the engine's own constant, never a copy of it.
+    //
+    // Diagnostic only: it reads ctx.currentTime, which is a "now", but it
+    // feeds no musical decision and no stream. The note and event signatures
+    // REPRO compares are untouched by it.
+    if (ctx && isFinite(startTime)) {
+      var lead = startTime - ctx.currentTime;
+      if (MEL_LEAD[layer]) { if (lead > faults.maxLead) { faults.maxLead = lead; faults.maxLeadLayer = layer; } }
+      else if (layer === "pa" && lead > faults.paLead) faults.paLead = lead;
+    }
     if (!(isFinite(freq) && isFinite(startTime) && isFinite(duration || 0))) {
       faults.notes++;
       if (faults.note.length < 12) faults.note.push({ layer: layer, freq: freq, t: startTime, dur: duration });
@@ -1816,11 +1992,77 @@ window.ZankyoAudio = (function () {
   // air at all — pj2-air's limit floor is 1, so the hold lives here as a
   // per-voice window {from, until}; a claim inside it is denied (counted).
   // The drones, shō, noise and ambient never ask, so they continue.
+  // THE AIR HOLD IS A LIST PER LAYER, NOT A SLOT. It has five writers — the
+  // broadcast through the tools, 凍 on the shakuhachi, 鏡's answer, 崩's stuck
+  // groove and 騒's wall — and it used to be one object per layer written by
+  // assignment, so the last writer silently erased everyone else's claim. That
+  // is the same shape as 継's dropped field and arm()'s dropped fields: a
+  // shared structure one writer overwrites instead of composing with.
+  //
+  // Entries carry WHO set them, which is what makes signalUp answerable: "is a
+  // BROADCAST holding the air" is a different question from "is anything
+  // holding it", and 崩 has to be able to ask the first while itself holding
+  // the second.
   var airHold = {}, airHoldDenials = 0;
+  function airHoldAdd(layer, from, until, who) {
+    var a = airHold[layer] || (airHold[layer] = []);
+    for (var i = a.length - 1; i >= 0; i--) if (a[i].until < from - 30) a.splice(i, 1);   // long expired
+    a.push({ from: from, until: until, who: who || "?" });
+  }
+  function airHoldDrop(who) {
+    for (var k in airHold) {
+      var a = airHold[k]; if (!a) continue;
+      for (var i = a.length - 1; i >= 0; i--) if (!who || a[i].who === who) a.splice(i, 1);
+    }
+  }
+  var kiruAt = -1e9, kiruHushUntil = -1e9;       // §11.3: when the last KIRU cut, and when its hush is over
+  // THE ARM LEAD MUST EXCEED THE LONGEST BODY LOOKAHEAD, not merely the
+  // prefetch. The hold is written at arm, and plan §12 measured the long-note
+  // bodies committing 33 to 46 s ahead of the audio clock — so an arm 20 s
+  // before t0 leaves a claim made at t0−40 uncaught, which is the §12 defect
+  // reintroduced. It showed immediately: seed 7 put an 11.2 s hichiriki note
+  // 3.5 s inside a hold on the first measured run.
+  //
+  // 55 s clears the 46 s lookahead. The minimum spacing between two broadcasts
+  // must then clear lead + footprint — 55 + 29.2 = 84.2 — so BC_GAP_S is 95,
+  // and the receiver's single armed slot is never asked to hold two at once.
+  // The two constants are related and the relation is written here because
+  // changing one alone silently breaks the other.
+  var BC_JO_P = 0.20;                            // one broadcast in five opens a cycle — the same in every kind
+  var bcPlace = {};                              // dev: where the drawn broadcasts landed, by scene type
+  // dev: WHY a seating attempt fell through, per group per reason. The critic
+  // reads these: a per-kind jo share alone supports a story either way, and a
+  // story is what both of us have been wrong with. Four reasons and a group tag
+  // turn "storm loses its jo picks to short scenes" into arithmetic.
+  var bcRej = { jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
+                ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, overflow: 0, lost: 0,
+                ovToJo: 0, ovToHa: 0 };
+  // dev: one record per SEATED broadcast — which pick (0 = first of the
+  // cycle, 1 = second), which group took it, whether it got there by
+  // overflow, and the cycle kind. The per-kind jo share is a share; this is
+  // what makes the mechanism behind it a count.
+  var bcSeats = [], bcGeom = [];
+  // dev: the same four reasons broken out PER CYCLE KIND, so the storm-vs-rite
+  // spread is arithmetic rather than a share with a story attached.
+  var bcRejKind = {};
+  function rejBump(kind, grp, why) {
+    bcRej[grp][why]++;
+    var k = bcRejKind[kind] || (bcRejKind[kind] = {
+      jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
+      ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, seated: 0, joSeated: 0, overflow: 0, lost: 0 });
+    k[grp][why]++;
+  }
+  function seatBump(kind, grp, ov) {
+    var k = bcRejKind[kind] || (bcRejKind[kind] = {
+      jo: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 },
+      ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, seated: 0, joSeated: 0, overflow: 0, lost: 0 });
+    k.seated++; if (grp === "jo") k.joSeated++; if (ov) k.overflow++;
+  }
+  var BC_ARM_LEAD_S = 55;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
-    var h = airHold[voice];
+    var a = airHold[voice] || [];
     // The claim's whole FOOTPRINT must clear the hold, not just its start. A
     // phrase claiming a moment before a signal's hold and running into it was
     // always able to talk over the broadcast; at one signal in three cycles it
@@ -1831,11 +2073,21 @@ window.ZankyoAudio = (function () {
     // be. Testing the estimate alone took the intrusions from six to one over
     // two hours; the pad takes the last one. Better to let a voice miss a turn
     // than to talk over the broadcast, which is the whole point of the hold.
-    if (h && t < h.until && (t + (span > 0 ? span : 0) + AIR_HOLD_PAD) > h.from) { airHoldDenials++; return null; }
+    for (var hi = 0; hi < a.length; hi++) {
+      var h = a[hi];
+      if (t < h.until && (t + (span > 0 ? span : 0) + AIR_HOLD_PAD) > h.from) { airHoldDenials++; return null; }
+    }
     return air.tryClaim(voice, span, margin);
   }
   var signalProvider = null;                     // zk-broadcast.js installs itself here (S1)
-  function signalUp(t) { for (var k in airHold) { var h = airHold[k]; if (h && t >= h.from && t < h.until) return true; } return false; }   // a signal holds the air at t
+  // "A SIGNAL holds the air at t" — the broadcast only. 崩 and 騒 hold the air
+  // too, and answering yes for them made every caller think a broadcast was up
+  // whenever the station was merely stuck.
+  function signalUp(t) {
+    for (var k in airHold) { var a = airHold[k] || [];
+      for (var i = 0; i < a.length; i++) if (a[i].who === "signal" && t >= a[i].from && t < a[i].until) return true; }
+    return false;
+  }
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null, visit2: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -1977,7 +2229,217 @@ window.ZankyoAudio = (function () {
       visit.sceneIdx = vi2 < 0 ? 0 : vi2;
       visit.scene = scenes[visit.sceneIdx].type;
     }
-    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate, sceneDurS: scenes.map(function (sc) { return sc.durS; }) };
+    // ==========================================================================
+    // THE BROADCASTS' OWN TIMES (owner, 2 per cycle) — drawn HERE, at plan
+    // ==========================================================================
+    // Two changes in one, and they depend on each other. The owner asked for
+    // two broadcasts a cycle instead of one; the orchestrator asked that the
+    // planned air hold EQUAL the real one. The second is only possible if t0
+    // is known when the receiver arms — so t0 stops being `sceneStart +
+    // rnd(8, 25)` drawn at the scene event and becomes an absolute time drawn
+    // here, carried on the plan, and used unchanged at fire().
+    //
+    // With t0 known at arm the plan and the hold are the same object: 18.0 to
+    // 29.2 s instead of 41.0 to 46.2, and the over-denial is not reduced but
+    // ELIMINATED. At two a cycle that is 11 % of the night occupied rather
+    // than 20 %, and none of the 11 % is air the broadcast does not use.
+    //
+    // PLACEMENT IS FREE ACROSS ALL LEGAL TIME (the orchestrator's ruling, after
+    // "one in each half" turned out to force a jo broadcast the description
+    // never promised). Legal is jo, ha and the sub-scenes; never kyū, never
+    // oroshi, never release — the kyū→release joint is where the KIRU lives,
+    // and that is the one place a broadcast must never be. Minimum 90 s between
+    // the two and from any guest. Under 180 s of legal time, one broadcast.
+    //
+    // Everything the receiver commits against is fixed before it commits: the
+    // scene list above, the KIRU's position at the kyū→release joint, and the
+    // guest's seat. Nothing that can collide with a broadcast is drawn later.
+    var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
+    var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
+    var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search;
+                                        // 0.5 s was measured and changed nothing at all —
+                                        // the search is exhaustive, the blocks are geometric                  // resolution of the systematic in-scene search
+    // A BROADCAST CANNOT SIT CLOSER TO THE CYCLE START THAN THE RECEIVER NEEDS
+    // TO ARM. arm() was scheduled at Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) —
+    // clamped, not rejected — so an early broadcast armed with whatever lead
+    // was left, and §12's whole argument is max(commitLead) < armLead. Measured
+    // on 40 seeds at 1 h, that inequality FAILED on 4 of them before this
+    // change (worst -3.58 s) and on 8 (worst -12.01 s) once overflow began
+    // seating more broadcasts in the jo, where positions are earliest. No note
+    // ever actually landed inside a hold, so the outcome gate stayed green
+    // throughout: the guarantee was already broken and passing on luck.
+    // Making the first BC_ARM_LEAD_S of a cycle illegal restores the lead by
+    // construction, so the clamp can never engage.
+    var legal = [], acc = 0, li;
+    for (li = 0; li < scenes.length; li++) {
+      var sc0 = scenes[li];
+      if (LEGAL[sc0.type] && sc0.durS > BC_EDGE_S * 2) {
+        var a0 = Math.max(acc + BC_EDGE_S, BC_ARM_LEAD_S + 0.05), b0 = acc + sc0.durS - BC_EDGE_S;
+        if (b0 > a0) legal.push([a0, b0, sc0.type]);
+      }
+      acc += sc0.durS;
+    }
+    // THE SCENE IS DRAWN FIRST, THEN THE POSITION IN IT (orchestrator's ruling
+    // on the jo share; the critic's on how to implement it, and the second half
+    // matters as much as the first).
+    //
+    // Drawing uniformly over legal SECONDS put most broadcasts in the jo
+    // because the jo is simply the longest scene — measured on this build,
+    // 0.69 / 0.38 / 0.45 across three seeds. Weighting jo seconds down would
+    // fix the average and nothing else: the jo's share of legal time runs from
+    // 28.6 % on a storm to 66.3 % on a rite, so one global weight tuned to the
+    // average gives 8.3 % on a storm and 30.7 % on a rite. Right on average and
+    // wrong in every kind, and nobody would have chosen that.
+    //
+    // So P(jo) is the constant, not a weight on it: one broadcast in five opens
+    // a cycle, in EVERY kind, and the listener-facing number is the number in
+    // the code rather than something that emerges from six duration tables.
+    // The owner moves one value after listening and it means the same thing on
+    // every night.
+    var legalS = 0, joSegs = [], otherSegs = [], joS = 0, otherS = 0;
+    for (li = 0; li < legal.length; li++) {
+      var wlen = legal[li][1] - legal[li][0];
+      legalS += wlen;
+      if (legal[li][2] === "jo") { joSegs.push(legal[li]); joS += wlen; }
+      else { otherSegs.push(legal[li]); otherS += wlen; }
+    }
+    var guestT = null;
+    if (visit && visit.name !== "the broadcast") {
+      guestT = 0; for (li = 0; li < visit.sceneIdx; li++) guestT += scenes[li].durS;
+      guestT += 16;                                  // the guest fires 8–25 s into its scene; take the middle
+    }
+    // The draw is on the form stream's own per-cycle fork, so however many
+    // times it is taken it cannot move anything else in the plan.
+    var BR = rng.fork("bc:" + Math.max(0, cyc.n + 1));
+    var want = legalS >= 180 ? 2 : 1, picks = [], tries;
+    for (var pk = 0; pk < want; pk++) {
+      // OVERFLOW, NOT SPACING (orchestrator's ruling). P(jo) = 0.20 is the
+      // preference for where a broadcast WANTS to be; it is not a quota that
+      // can cost the broadcast its existence. Weighting 80 % of picks into the
+      // ha concentrated both into roughly 40 % of the cycle, and the 95 s
+      // spacing then had far less room to clear: the pair rate fell 81 % → 53 %
+      // and cycles with no broadcast at all went 1-in-200 to 14-in-200. The
+      // constraint that was easy across the whole legal span is hard inside a
+      // smaller one. So when the drawn group cannot seat it, the broadcast
+      // overflows to the other group rather than being lost. The jo share will
+      // rise above 20 % as a result: that is the honest price of the guarantee
+      // and the owner can see it in getPlacement().
+      // THE GROUP IS DRAWN ONCE PER BROADCAST, OUTSIDE THE RETRY. Drawing it
+      // inside biased the result badly and subtly: the second pick must clear
+      // 95 s of the first, so when the first lands in the ha a second ha
+      // position is usually rejected while a jo one is not — rejection
+      // sampling quietly re-weights toward whichever group is FAR from what is
+      // already placed. Measured with the draw inside the loop, P(jo) = 0.20
+      // delivered 0.22 to 0.45 depending on how the ha was split. Drawn once,
+      // the constant means what it says and only the POSITION is retried.
+      var wantJo = BR.chance(BC_JO_P);
+      var order = wantJo ? ["jo", "ha"] : ["ha", "jo"], placed = false;
+      for (var oi = 0; oi < order.length && !placed; oi++) {
+        var isJo = order[oi] === "jo", tag = order[oi];
+        var grp = isJo ? joSegs : otherSegs, grpS = isJo ? joS : otherS;
+        // The scene cannot host at all: no legal window of its type in this
+        // cycle (a scene shorter than 2·BC_EDGE_S never enters `legal`).
+        if (!grp.length) { rejBump(kind, tag, "short"); continue; }
+        // OVERFLOW IS A LAST RESORT (orchestrator). The drawn scene is searched
+        // SYSTEMATICALLY before crossing, not sampled. 24 random draws could
+        // miss a narrow feasible window and cross for want of looking, and the
+        // counters showed why more draws would not have helped: every rejected
+        // attempt failed on SPACING (ha spaceBc 40) with noT0 at 0, so the
+        // retries were not running out — the positions they found were genuinely
+        // blocked. Scanning the legal span at BC_SCAN_S finds a feasible offset
+        // if one exists at that resolution, so a cross now means the scene truly
+        // has no room rather than that the sampler was unlucky. Position is then
+        // drawn uniformly over the feasible set, which keeps position-inside-a-
+        // scene even, and the whole search still costs ONE draw on BR.
+        var nGuest = 0, nBc = 0, feas = [], scanX, qi;
+        for (li = 0; li < grp.length; li++) {
+          for (scanX = grp[li][0]; scanX <= grp[li][1]; scanX += BC_SCAN_S) {
+            if (guestT != null && Math.abs(scanX - guestT) < BC_GAP_S) { nGuest++; continue; }
+            var free = true;
+            for (qi = 0; qi < picks.length; qi++) if (Math.abs(scanX - picks[qi]) < BC_GAP_S) free = false;
+            if (free) feas.push([scanX, grp[li][2]]); else nBc++;
+          }
+        }
+        // THE FIRST PICK MUST NOT STRAND THE SECOND. Placed uniformly, the
+        // opening broadcast often lands mid-scene and leaves no point BC_GAP_S
+        // away inside the same group, so the pair is broken by where the FIRST
+        // one went rather than by the scene being too small. Measured: the ha
+        // can hold two 95 s apart in 87 % of cycles, but only 76 % got the pair.
+        // So when this is the first of two, prefer feasible positions that still
+        // leave room for a second. Overflow stays the last resort and P(jo) is
+        // untouched — the group was already drawn, this only chooses WHERE.
+        var pool = feas;
+        if (pk === 0 && want > 1 && feas.length > 1) {
+          // The partner must be sought across ALL legal time, not just this
+          // group. The BC_GAP_S exclusion is on absolute offset, so a first pick
+          // sitting late in the jo blocks the EARLY HA as surely as it blocks
+          // the rest of the jo — and a same-group test cannot see that. It then
+          // reports "roomy" for a position that has stranded the second
+          // broadcast in the group the second will most likely draw, which is
+          // the ha four times in five. Widening the partner search is still the
+          // SEARCH: P(jo) is untouched and the group was already drawn.
+          // Measured, after trying it the other way: the partner must be sought
+          // in the HA, not across all legal time and not merely in the drawn
+          // group. Widening it to all legal time made things WORSE — opening
+          // with a broadcast went 39.5 % to 50.5 % and overflow into the jo more
+          // than doubled — because a first pick in the ha then only needed a
+          // partner SOMEWHERE, so it could sit where it consumed the ha's room
+          // and strand the second, which draws the ha four times in five. The
+          // same-group test had been protecting the ha by accident. Requiring
+          // the partner in the ha protects it on purpose.
+          var all = [], gi2, sx;
+          for (gi2 = 0; gi2 < otherSegs.length; gi2++) {
+            for (sx = otherSegs[gi2][0]; sx <= otherSegs[gi2][1]; sx += BC_SCAN_S) {
+              if (guestT != null && Math.abs(sx - guestT) < BC_GAP_S) continue;
+              all.push(sx);
+            }
+          }
+          var roomy = [];
+          for (var ai = 0; ai < feas.length; ai++) {
+            for (var bi2 = 0; bi2 < all.length; bi2++) {
+              if (Math.abs(feas[ai][0] - all[bi2]) >= BC_GAP_S) { roomy.push(feas[ai]); break; }
+            }
+          }
+          if (roomy.length) pool = roomy;
+        }
+        if (pool.length) {
+          var fi = Math.min(pool.length - 1, Math.floor(BR.next() * pool.length));
+          var off = pool[fi][0], hit = [0, 0, pool[fi][1]];
+          {
+            picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1;
+            if (oi > 0) { bcRej.overflow++; if (isJo) bcRej.ovToJo++; else bcRej.ovToHa++; }
+            seatBump(kind, tag, oi > 0);
+            if (bcSeats.length < 4000) bcSeats.push({ n: pk, grp: tag, ov: oi > 0, kind: kind, cyc: cyc.n });
+            placed = true; break;
+          }
+        }
+        // Attribute a failed ATTEMPT (not each retry) to the constraint that
+        // rejected most of its positions; nGuest/nBc are the retry tallies.
+        if (!placed) {
+          if (!nGuest && !nBc) rejBump(kind, tag, "noT0");
+          else if (nGuest > nBc) rejBump(kind, tag, "spaceGuest");
+          else rejBump(kind, tag, "spaceBc");
+        }
+      }
+      if (!placed) { bcRej.lost++; if (bcRejKind[kind]) bcRejKind[kind].lost++; }   // both groups refused it
+      // dev: the GEOMETRY behind the outcome — can the ha alone hold two
+      // broadcasts BC_GAP_S apart in this cycle? If it usually cannot, then
+      // "pair near 80 %" and "jo near 20 %" are not jointly reachable at this
+      // spacing and no placement rule can deliver both.
+      if (pk === 0 && bcGeom.length < 4000) {
+        var haLo = null, haHi = null;
+        for (var gi = 0; gi < otherSegs.length; gi++) {
+          if (haLo === null || otherSegs[gi][0] < haLo) haLo = otherSegs[gi][0];
+          if (haHi === null || otherSegs[gi][1] > haHi) haHi = otherSegs[gi][1];
+        }
+        bcGeom.push({ kind: kind, joS: Math.round(joS), haS: Math.round(otherS),
+          haSpan: (haLo === null ? 0 : Math.round(haHi - haLo)),
+          haPairable: (haLo !== null && (haHi - haLo) >= BC_GAP_S) });
+      }
+    }
+    picks.sort(function (a, b) { return a - b; });
+    pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
+      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS };
     return scenes;
   }
   // 客 VISITATIONS (Phase 4) — rare seeded guests. Each rolls its OWN die every
@@ -2037,9 +2499,10 @@ window.ZankyoAudio = (function () {
     var name = v.name;
     emitEvent({ cat: "form", label: "客 " + VISIT_KANA[name] + " " + name, detail: "begins · " + scn.type + " · " + Math.round(scn.durS) + "s" }, t);
     if (name === "the broadcast") {
-      var took = false;
-      if (signalProvider) { try { took = !!signalProvider.fire(t); } catch (e) { took = false; } }   // S1: the receiver takes it when it can (it decides at t0 − 1 and falls back itself)
-      if (!took) visitBroadcast(t);
+      // The broadcast is no longer fired from the visitation seam: it has its
+      // own drawn times on the form lane (see the cycle handler). Firing here
+      // as well would seat a third.
+      return;
     }
     else if (name === "the festival") visitActive = { name: name, until: scn.startT + scn.durS };
     else if (name === "the line") visitLine(t);
@@ -2222,6 +2685,13 @@ window.ZankyoAudio = (function () {
       var p = pendingPlan || { kind: "ordinary", mode: "hirajoshi", seating: drawSeating(S.form, "ordinary"), durS: evt.durS };
       pendingPlan = null;
       cyc.n = evt.n - 1; cyc.kind = p.kind; cyc.seating = p.seating; cyc.durS = evt.durS; cyc.startT = evt.t; cyc.mode = p.mode;
+      // 逸脱 W4 — the meta-tide lifts this cycle before anything in it reads
+      // how far out the night is, and the time departures are rebuilt on the
+      // new view. FIRST, deliberately: farTimeSetup caches sixteen departures'
+      // parameters, so a lift applied after it would be read by nothing.
+      farLiftCycle(cyc.n, evt.t);
+      farTimeSetup(evt.t);
+      farPitchSetup(evt.t, true);            // …and the tuning departures, without moving the glide's origin
       arcStartTime = evt.t; ARC_PERIOD = evt.durS;
       var pm = p.pitch, fromName = noteName(field.tonicHz);
       cyclesSinceSea++;
@@ -2248,10 +2718,33 @@ window.ZankyoAudio = (function () {
       if (cyc.visit2) emitEvent({ cat: "form", label: "客 " + VISIT_KANA[cyc.visit2.name] + " " + cyc.visit2.name, detail: "visitation: " + cyc.visit2.name + " · seated in " + cyc.visit2.scene + " (" + (cyc.visit2.sceneIdx + 1) + "/" + evt.scenes.length + ")" }, evt.t);
       // S1: the receiver is ARMED at plan time — it draws the reel and schedules
       // its prefetch from the hosting scene's start (≥ 20 s before any t0)
-      var bcSeat = (p.visit && p.visit.name === "the broadcast") ? p.visit : ((p.visit && p.visit.second) || null);
-      if (bcSeat && signalProvider && p.sceneDurS) {
-        var hostStart = evt.t; for (var hi = 0; hi < bcSeat.sceneIdx; hi++) hostStart += p.sceneDurS[hi];
-        try { signalProvider.arm({ cycle: cyc.n, kind: p.kind, hostStartT: hostStart, hostDurS: p.sceneDurS[bcSeat.sceneIdx], tidePos: evt.tidePos }); } catch (e) {}
+      // The broadcasts no longer ride a scene seat: each has an absolute time
+      // drawn at plan, and each arms ARM_LEAD_S before it so the receiver can
+      // prefetch. arm() is given the exact t0, which is what lets the planned
+      // hold BE the real hold instead of covering the guess.
+      if (signalProvider && p.bcAt && p.bcAt.length) {
+        (function (times, kind, tide, cyN, t0c) {
+          for (var bi = 0; bi < times.length; bi++) {
+            (function (off) {
+              var at = t0c + off;
+              // The arm is CLAMPED to the cycle start, not rejected, so a
+              // broadcast early in the cycle arms with less than BC_ARM_LEAD_S
+              // of lead. Record the lead actually used: the §12 argument rests
+              // on max(commitLead) < armLead, and asserting against the
+              // CONSTANT 55 cannot see this clamp at all.
+              var armAt = Math.max(t0c + 0.05, at - BC_ARM_LEAD_S);
+              if (faults.armLeadMin == null || (at - armAt) < faults.armLeadMin) faults.armLeadMin = at - armAt;
+              lane("form").at(armAt, function () {
+                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide }); } catch (e) {}
+              });
+              lane("form").at(at, function (t) {
+                var took = false;
+                try { took = !!signalProvider.fire(at); } catch (e) { took = false; }
+                if (!took) { try { visitBroadcast(at); } catch (e2) {} }   // abandoned to the fallback rather than forced
+              });
+            })(times[bi]);
+          }
+        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t);
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
@@ -3231,6 +3724,20 @@ window.ZankyoAudio = (function () {
   // tongue-less ATARI re-attacks on repeated pitches (a dip, not a strike).
   // The weather's breath channel breathes the noise and the vowel.
   function shakuhachiNote(freq, t, dur, opts) {
+    // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
+    // with an ESTIMATE of the phrase's length — the last phrase's — and a
+    // 4 s pad; a phrase that turns out far longer runs into a hold its claim
+    // legitimately cleared. Raising the pad does not close it (measured: 4 s
+    // gives 4 intrusions, 12 s gives 3, and costs 4 % of the melodic density),
+    // because the shortfall is tens of seconds, not units.
+    //
+    // This works now and did NOT before rc.37: the hold is written at arm,
+    // 55 s ahead of t0, so by the time a note is scheduled the hold it would
+    // land in already exists. That is the difference between this and plan
+    // §12, where no render-time test could help because the hold did not yet
+    // exist. Same one-line shape 崩's groove and 鏡's answer already use.
+    if (signalUp(t)) return;
+
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("shakuhachi", freq, t);   // 逸脱 the pitch choke point (identity at home)
     var R = S.shakuhachi, wx = wxAt(t);
@@ -3324,6 +3831,20 @@ window.ZankyoAudio = (function () {
     return cv;
   }
   function hichirikiNote(freq, t, dur, opts) {
+    // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
+    // with an ESTIMATE of the phrase's length — the last phrase's — and a
+    // 4 s pad; a phrase that turns out far longer runs into a hold its claim
+    // legitimately cleared. Raising the pad does not close it (measured: 4 s
+    // gives 4 intrusions, 12 s gives 3, and costs 4 % of the melodic density),
+    // because the shortfall is tens of seconds, not units.
+    //
+    // This works now and did NOT before rc.37: the hold is written at arm,
+    // 55 s ahead of t0, so by the time a note is scheduled the hold it would
+    // land in already exists. That is the difference between this and plan
+    // §12, where no render-time test could help because the hold did not yet
+    // exist. Same one-line shape 崩's groove and 鏡's answer already use.
+    if (signalUp(t)) return;
+
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("hichiriki", freq, t);    // 逸脱 the pitch choke point (identity at home)
     var R = S.hichiriki, wx = wxAt(t);
@@ -3489,6 +4010,20 @@ window.ZankyoAudio = (function () {
     biwa:     { plectrum: "bachi", peak: 0.14, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
   };
   function stringNote(layer, freq, t, dur, opts) {
+    // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
+    // with an ESTIMATE of the phrase's length — the last phrase's — and a
+    // 4 s pad; a phrase that turns out far longer runs into a hold its claim
+    // legitimately cleared. Raising the pad does not close it (measured: 4 s
+    // gives 4 intrusions, 12 s gives 3, and costs 4 % of the melodic density),
+    // because the shortfall is tens of seconds, not units.
+    //
+    // This works now and did NOT before rc.37: the hold is written at arm,
+    // 55 s ahead of t0, so by the time a note is scheduled the hold it would
+    // land in already exists. That is the difference between this and plan
+    // §12, where no render-time test could help because the hold did not yet
+    // exist. Same one-line shape 崩's groove and 鏡's answer already use.
+    if (signalUp(t)) return;
+
     var c = ctx, K = STRING_KIT[layer], R = S[layer]; opts = opts || {};
     freq = FAR.pitch(layer, freq, t);          // 逸脱 the pitch choke point — koto, shamisen, biwa (identity at home)
     var wx = wxAt(t);
@@ -3948,6 +4483,49 @@ window.ZankyoAudio = (function () {
     var wx = wxAt(now), body = noiseBody();
     var dur = 2 + S.noise.next() * 5 + arc * 4;
     var peak = (0.05 + arc * 0.22) * (0.4 + density) * K().noiseMul;   // the storm's wall, the drift's hiss
+    // ------------------------------------------------------------------
+    // 騒 NOISE LEADS (W3). "The japanoise vocabulary becomes the soloist,
+    // claims the air, and the melodic voices become the texture behind it."
+    //
+    // The soloist is made by TAKING THE AIR, not by turning the noise up. The
+    // master loudness ceiling stayed hard in §10 while the roughness gate was
+    // tiered, so a departure that leads by getting louder is a departure that
+    // fails a gate the owner deliberately did not move. The melodic voices
+    // standing down is what frees the room, and it is the same seam the
+    // broadcast uses to hold the air — proven, and already watched by the
+    // harness's "melodic notes inside a hold" count.
+    //
+    // ONE VOICE IS LEFT PLAYING, drawn on the departure's own sub-fork. "The
+    // melodic voices become the texture behind it" is not "the melodic voices
+    // stop": a single body murmuring under a fifty-second wall is the texture,
+    // and five bodies silent is just a noise track.
+    //
+    // The decision is a time-keyed sub-fork of the far stream, the same idiom
+    // 凍 uses, so it costs the far stream nothing and no draw moves.
+    var nlead = null;
+    if (farNlead) {
+      var NR = S.far.fork("nlead:" + Math.round(now));
+      var takes = NR.chance(farNlead.share);                       // drawn unconditionally: the fork's position never depends on the outcome
+      var spare = MELODIC_LANES[Math.floor(NR.next() * MELODIC_LANES.length) % MELODIC_LANES.length];
+      var stretch = NR.rnd(0.7, 1.3);
+      if (takes) nlead = { spare: spare, holdS: farNlead.holdS * stretch, bite: farNlead.bite || 0 };
+    }
+    if (nlead) {
+      dur = nlead.holdS;
+      // THE LEVEL LIFT IS ENTIRELY THE TIER'S. At and below 0.70 — the band
+      // §10 left on the tripwire as ruled — this is ×1 exactly: 騒 leads there
+      // by taking the air and by nothing else, which is a change in who is
+      // speaking rather than in how loud the room is. The lift arrives only
+      // across the loosened band and is full where there is no roughness gate
+      // at all. The master ceiling is unmoved either way; the headroom comes
+      // from the four voices that stood down.
+      peak *= 1 + 0.5 * nlead.bite;
+      for (var nli = 0; nli < MELODIC_LANES.length; nli++) {
+        if (MELODIC_LANES[nli] === nlead.spare) continue;
+        airHoldAdd(MELODIC_LANES[nli], now - 0.2, now + dur + 0.4, "nlead");
+      }
+      emitEvent({ cat: "far", label: "騒 the noise takes the lead", detail: body + " · " + dur.toFixed(0) + "s · " + nlead.spare + " left behind it" }, now);
+    }
     if (body === "screech" && arc > 0.3) {
       // excite a short burst into the loop; the centre sweeps up then down
       var nz0 = noiseSource(), exg = c.createGain(), dl = c.createDelay(0.05), bpq = c.createBiquadFilter(), fb = c.createGain(), og = c.createGain();
@@ -4012,6 +4590,10 @@ window.ZankyoAudio = (function () {
     }
 
     var gap = (6 + S.noise.next() * 10) * (1 - arc * 0.6) / (0.4 + density) / K().noiseMul;
+    // 騒: a set, not an interjection — the next wall begins before this one has
+    // finished. Keyed to the gesture rather than the ordinary gap, because a
+    // 6–16 s gap under a fifty-second wall would stack walls without bound.
+    if (nlead) gap = Math.max(2, dur * 0.8);
     after("noise", now, gap, noiseEvent);
   }
 
@@ -4264,9 +4846,10 @@ window.ZankyoAudio = (function () {
     pulse.active = false;                        // no grid until the taiko speaks
     lastAitake = null; visitActive = null; cyc.visit = null; cyc.visit2 = null; airHold = {}; airHoldDenials = 0;
     Motif.reset();                               // the Conductor's first performance builds cycle 0's working set
+    farSaid = null;                              // quiet until the night has named itself
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded
-    farTimeSetup(); farPlanN = 0; farCycleRate = 1;   // …and what its time departures do
+    farTimeSetup(t0); farPlanN = 0; farCycleRate = 1;   // …and what its time departures do
     // The opening field, re-read through tonight's tuning: 減 narrows the
     // semitone pairs (the opening modulate above goes straight to MODES, not
     // through setMode, so it needs saying here), 撓 restretches the octave.
@@ -4275,7 +4858,17 @@ window.ZankyoAudio = (function () {
     if (farNight.dep.meri) field.modulate({ mode: { name: currentMode, steps: farMeriSteps(MODES[currentMode].offsets) } });
     if (farWarpK !== 1 || farNight.dep.meri) rebuildScale();
     emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed }, t0);
-    if (!farNight.home) emitEvent({ cat: "far", label: farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);   // the VFD tag already says 逸脱
+    if (!farNight.home) {
+      // The night names itself FIRST and its departures introduce themselves
+      // after — the setups run before this line, so without holding their
+      // lines back the log opened with three departures explaining themselves
+      // and only then said what night it was. The story has an order.
+      emitEvent({ cat: "far", label: farNight.kana + " " + farNight.name, detail: farNight.detail }, t0);   // the VFD tag already says 逸脱
+      farSaid = {};
+      var sayIds = ["sag", "ear", "meri", "bito", "spiral", "vari", "canon", "hetero",
+                    "poly", "hocket", "erode", "mainv", "metal", "rev"];
+      for (var syi = 0; syi < sayIds.length; syi++) farSay(sayIds[syi], t0);
+    }
     masterGain.gain.cancelScheduledValues(t0);
     masterGain.gain.setValueAtTime(masterVolume, t0);
     for (var i = 0; i < LAYERS.length; i++) { applyLayerGain(LAYERS[i]); lane(LAYERS[i]).rate = layerRate[LAYERS[i]] || 1; }
@@ -4353,6 +4946,13 @@ window.ZankyoAudio = (function () {
     var sev = metaSeverity();
     var dip = 0.3 - 0.22 * sev;                                           // hush depth: 0.3 → 0.08 of the landscape
     var hold = 3 + 6 * sev;                                               // held silence: ~3 s → ~9 s
+    // §11.3's hush gate needs the hush to be a FACT and not an inference.
+    // Signals already never fire in a KIRU or its hush — the visitation
+    // planner refuses them and the harness counts it as "near a KIRU 0" — so
+    // a sea change riding a signal's tune-in inherits that guard. But
+    // inheriting a guard is not the same as having one, and the owner named
+    // this gate explicitly, so the moment is recorded and seaToward tests it.
+    kiruAt = t; kiruHushUntil = t + hold + 2;
     var twice = sev > 0.45 && S.form.chance(0.4 + sev * 0.5);            // the bell tolls again near the peak
     var paHush = S.form.chance(0.2);                                      // unconditional draws
     var cutsSomething = cyc.kind !== "silence" && cyc.seating && cyc.seating.named !== "dead station";
@@ -4652,8 +5252,55 @@ window.ZankyoAudio = (function () {
           getArc: getArc, arcPhase: arcPhase, scene: function () { return { type: scn.type, activity: scn.activity, startT: scn.startT, durS: scn.durS }; },
           cycle: function () { return { n: cyc.n, kind: cyc.kind, startT: cyc.startT, durS: cyc.durS, visit: cyc.visit ? cyc.visit.name : null }; },
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
-          airHold: function (map) { for (var k in map) airHold[k] = map[k]; }, airHoldClear: function () { airHold = {}; },
+          // `who` lets the receiver declare an INTENDED hold at arm time and
+          // replace it with the exact one at fire (W4 §12).
+          airHold: function (map, who) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, who || "signal"); },
+          airHoldClear: function (who) { airHoldDrop(who === undefined ? "signal" : who); },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
+          // §11.2 asks for "the window nearest the current tonic or fifth", and
+          // CURRENT has to mean tonight's. 撓 warps every interval about the
+          // tonic — farWarp(f) = T·(f/T)^k with k = the drawn octave over 1200
+          // — so on a sagging night the fifth the station actually sounds is
+          // 700·k cents, measured across 370 撓 nights as 690.4 to 716.8. The
+          // receiver was aiming at the tempered 700.0, which is up to 16.8
+          // cents adrift: 1.7× the ±10 cent gate the whole feature is held to.
+          // The TONIC is exact for any k, since farWarp(T) = T, so only reels
+          // that land on the fifth were affected.
+          //
+          // Identity at home (k = 1) and on every night that does not draw 撓,
+          // so this moves nothing the re-base did not already move. It covers
+          // the FIELD-level warp only; 減 and 螺 do their own work on the mode
+          // steps and I have not measured whether the fifth moves under them.
+          degreeHz: function (cents) { return farWarp(field.tonicHz * Math.pow(2, (+cents || 0) / 1200)); },
+          // 螺 AND 弛 ARE TRANSPOSITION, NOT TUNING — the engine's own rule, and
+          // the reason `degreeHz` above deliberately does NOT carry them: they
+          // multiply last, over everything, and they are a function of TIME.
+          // A reel is part of the station's world, so it rides them like every
+          // other voice; the receiver multiplies its playback rate by this
+          // across the hold. 1 at home and on any night without 螺 or 弛, so
+          // the receiver schedules nothing at all on those nights.
+          glideMul: function (t) { return farGlideOn ? farGlideMul(t) : 1; },
+          gliding: function () { return !!farGlideOn; },
+          // §11.3 TUNED SIGNALS — the station tunes to the REEL. On a far
+          // night (d ≥ 0.5) a reel that holds a pitch may pull the field to it
+          // as it tunes in, and then plays unbent: the tape is not warped, the
+          // station moves. The tonic is folded into the field's own register,
+          // so a 587 Hz time signal becomes a tonic near D3 rather than a
+          // tonic three octaves up. Refused in a KIRU's hush, which is the
+          // owner's gate, and refused at home and below 0.5, which are §11.3's
+          // own two conditions — all three tested HERE so the receiver cannot
+          // forget one of them.
+          seaToward: function (hz, t) {
+            if (!playing || !(hz > 0)) return null;
+            if (FAR.home() || FAR.d() < 0.5) return null;
+            var now = t != null ? t : (ctx ? ctx.currentTime : 0);
+            if (now < kiruHushUntil) return null;
+            var target = foldTonic(hz);
+            if (Math.abs(1200 * Math.log(target / field.tonicHz) / Math.LN2) < 15) return target;  // already there
+            setMode(currentMode, "同調 · the station tunes to the signal", now, target);
+            return target;
+          },
+          fieldMode: function () { return currentMode; },
           // 室 (W3): the reel becomes the room. The receiver needs the station's
           // dry sum to feed a convolver and the master to return it to; both are
           // the engine's, so the engine hands them over rather than the receiver
@@ -4666,8 +5313,21 @@ window.ZankyoAudio = (function () {
     getRooms: function () { return { hull: roomHull, corridor: roomCorridor, blend: roomBlend, farWall: farWall, halo: halo }; },
     getWeather: function () { return weather; },
     getSeed: function () { return seed; },
+    getPlacement: function () { var o = {}, k, n = 0; for (k in bcPlace) { o[k] = bcPlace[k]; n += bcPlace[k]; }
+      o.total = n; o.joShare = n ? +(( bcPlace.jo || 0) / n).toFixed(4) : 0; o.joP = BC_JO_P;
+      // The ruling names the reasons tooShort / spacing / guest / overflow; the
+      // internal keys are older. Both are emitted so a gate can find either.
+      o.reject = { jo: bcRej.jo, ha: bcRej.ha,
+        tooShort: bcRej.jo.short + bcRej.ha.short,
+        spacing: bcRej.jo.spaceBc + bcRej.ha.spaceBc,
+        guest: bcRej.jo.spaceGuest + bcRej.ha.spaceGuest,
+        noT0: bcRej.jo.noT0 + bcRej.ha.noT0 };
+      o.tooShort = o.reject.tooShort; o.spacing = o.reject.spacing; o.guest = o.reject.guest;
+      o.overflow = bcRej.overflow; o.lost = bcRej.lost; o.reject.byKind = bcRejKind;
+      o.ovToJo = bcRej.ovToJo; o.ovToHa = bcRej.ovToHa; o.seats = bcSeats; o.geom = bcGeom; return o; },
     // the gates' handle on the two fault classes (rc.21)
-    getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice() }; },
+    getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
+      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.
@@ -4676,7 +5336,22 @@ window.ZankyoAudio = (function () {
     // play() this is the home sentinel, not null: a caller never has to guard.
     getFar: function () {
       var n = FAR.night();
-      return { d: n.d, home: !!n.home, kana: n.kana, name: n.name, label: n.label, detail: n.detail || "",
+      var dn = farNightDrawn || n;
+      // `d` and `home` are THE NIGHT'S, not this cycle's. rc.29 made farNight
+      // the cycle view, which silently changed what this field meant for every
+      // caller — the critic's dist-json reads far.d, and seed 1024 started
+      // reporting 0.56 for a night drawn at 0.73 purely because the last cycle
+      // had leaned in. A field whose MEANING changes under a reader is worse
+      // than one that changes value, which is the lesson engineSig taught an
+      // hour ago. The cycle's own distance is cycleD, next to it.
+      return { d: dn.d, home: !!dn.home, kana: n.kana, name: n.name, label: n.label, detail: n.detail || "",
+        // §13 — enough to RE-DERIVE, not just lifted:true. "Byte-identical to
+        // its own baseline" only says that SOMETHING moved; with the cycle and
+        // d′ visible, a lift that shifted from cycle 3 to cycle 5, one that
+        // changed d′, and one that stopped firing are three different faults
+        // instead of one bisect.
+        nightD: dn.d, cycleD: farCycleD, lifted: Math.abs(farCycleD - dn.d) > 1e-9,
+        homeLift: dn.homeLift ? { cycle: dn.homeLift.cycle, d: dn.homeLift.d } : null,
         band: n.band ? n.band.label : "home", ids: n.ids.slice(), dep: n.dep, forced: farForced };
     },
     far: {

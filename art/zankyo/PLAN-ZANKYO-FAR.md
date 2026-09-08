@@ -215,3 +215,91 @@ every phase. The far target is therefore PINNED at the original numbers:
 far p95 17.4 (3× the 2.1.0-rc.1 home p95) and the W4 1-in-50 at 29.0 (5×).
 Identity re-bases and home-only calibration continue; only the target is
 fixed.
+
+## 10. Owner ruling: a little pain is allowed (2026-09-07)
+
+The owner, having heard far nights from the crew's captures: "I'm okay with a
+little bit of pain … some noise is good … let's not go overboard." So the
+harshness gate is TIERED by distance, and the loudness ceiling stays hard
+everywhere (nothing gets louder to sound stranger):
+
+- d < 0.15 (home): unchanged — byte-identical, the tripwire as it stands.
+- 0.15 ≤ d < 0.7: the roughness tripwire as ruled (≤ 0.25 absolute, ≤ home
+  + 0.07).
+- 0.7 ≤ d < 0.85 (far): the tripwire loosens to ≤ 0.35 absolute, ≤ home
+  + 0.15. 騒 noise-leads and 金 metal are expressly allowed to be abrasive
+  here; the centroid gate stays (darker, not brighter).
+- d ≥ 0.85 (interstellar): no roughness gate at all — only the master
+  loudness ceiling, the peak cap and the owner's ear at the W4 listen.
+  This is where the noise is meant to live.
+
+Nothing above changes how OFTEN far nights occur.
+
+## 11. Owner addition: tuned signals (deliver with W3's 室, before W4)
+
+Reels that carry a sustained pitch — chant, drones, horns, tones, hums —
+should sound IN TUNE with the station when they are picked up.
+
+1. **Measure at cut time.** `make-reel.sh` gains a pitch pass: for each
+   window, the dominant sustained pitch (a simple autocorrelation or
+   ffmpeg-side estimate is enough; only windows with a stable pitch get a
+   value) is written to the manifest window as `pitchHz`, and the reel gains
+   `tuned: true|false`. The librarian back-fills the existing pool.
+2. **Bend the reel to the station** (the default). When a tuned signal is
+   seated, the receiver chooses the window whose pitch is nearest the
+   current field's tonic or fifth, then sets the media element's
+   playbackRate so that pitch lands exactly on that degree — capped at
+   ±4 semitones (a rate of 0.79–1.26); beyond the cap the window plays
+   unbent. Tape-style: pitch and time move together, which is the
+   receiver's own idiom. Log 「同調 · tuned +2.1 st → D」.
+3. **Bend the station to the reel** (far nights only, d ≥ 0.5): for reels
+   tagged `tone: drone` or `sung`, the engine may instead schedule a sea
+   change toward the reel's pitch as the signal tunes in, so the
+   shakuhachi and the shō answer the chant in its key; the reel then plays
+   unbent. Never during a KIRU hush; never on home nights.
+4. Untuned reels (speech, noise, static) are untouched.
+
+## 12. Known open defect, accepted on the record (2026-09-07)
+
+On ~8 % of seeds (2 of 25 measured), 2–6 melodic notes sound over a
+broadcast the air hold exists to protect. Mechanism: long-note bodies
+(hichiriki, biwa) commit notes 33–46 s ahead, while the receiver writes its
+hold only ~15.5 s before t0 (HOLD_LEAD_S 6 + the fire lead); the claim was
+valid when made. Pre-existing, bounded, live since the receiver shipped.
+Any fix changes the byte-identical home stream, so it is deferred to the
+next DELIBERATE re-base, which is declared here: **the first commit of W4**
+(W4's per-cycle meta-tide lift already touches home nights, so W4 opens
+with a re-base by construction). Fix at that point: the hold written far
+enough ahead to cover the longest lookahead (≥ 50 s) or the claim path
+checking planned holds, whichever the coder judges cleaner; the critic
+re-derives the base at that commit. Seeds and signatures are in the coder's
+W3 handoff.
+
+## 13. Ruling: the W4 home lift (2026-09-07)
+
+The per-cycle lift on HOME nights is gated at **one night in twelve**
+(≈ 1.04 % of home cycles), never more than one lifted cycle per night, and
+a lifted night is FLAGGED in getFar() so the identity gate partitions:
+unlifted home nights stay byte-identical (≈ 91.7 % of home nights); lifted
+nights are checked against their own recorded baseline. Removing the
+guard entirely was measured (4 000 seeds) to lift a cycle on 82 % of home
+nights — that is the removal of the invariant, not a frequency, and is
+refused. Far nights keep lift() as declared.
+
+**§12 correction:** the air-hold fix rides W4's re-base because the
+PLANNED HOLD required a re-base (rc.25 moved eleven home seeds by −4.1 %
+to +5.6 %), and because the 207-reel pool merge moved the receiver's
+draws — not because the lift touches home nights by construction (at
+1-in-12 with the flag, it touches the flagged twelfth only). The action
+stands; the reason is corrected.
+
+**§12 CLOSED (2026-09-07, W4).** Mechanism, not count: rc.25's planned hold
+covered the arm-to-fire gap; rc.37's guaranteed 55 s arm lead exceeds the
+measured worst commit lead of any melodic lane (35.55 s at ?far=0.95 across
+the departure-covering set; dilated nights are NOT the worst), and a
+render-time refusal in the note functions catches the remainder (4–9 notes
+per 30 min of 1 600–2 400, every one of which would have sounded over a
+broadcast). Guarded by an assertion in the fault tally:
+max(commitLead) < ARM_LEAD on the covering set, so a future body or time
+departure that reaches further ahead fails by name instead of re-opening
+§12 as an intermittent intrusion.

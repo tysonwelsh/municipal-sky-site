@@ -41,6 +41,7 @@ for (var ai = 2; ai < args.length; ai++) {
   else if (args[ai] === "--jitter") JITTER = parseInt(args[++ai], 10) || 0;   // timer jitter seed (0 = exact)
 }
 
+var LOADED_FROM = null;      // which file each script was actually read from (set by runOnce)
 var LANDSCAPE = { subDrone: 1, sho: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, weather: 1 };   // never "melodic voices" (new melodic bodies — hichiriki, biwa — count automatically)
 function isMelodic(layer) { return !LANDSCAPE[layer]; }
 
@@ -149,14 +150,52 @@ function runOnce(seed, runS, jitterSeed) {
     };
     this.createBufferSource = function () { return source("bufsrc", { buffer: null, loop: false, loopStart: 0, loopEnd: 0, playbackRate: param(1), detune: param(0) }); };
     this.createPeriodicWave = function () { return {}; };
+    // Required by the receiver: without it ensureMediaSource() returns null and
+    // every broadcast falls back with "no media element" even when the pool is
+    // ready and a reel is drawn.
+    this.createMediaElementSource = function (el) { return node("mediaelementsource", { mediaElement: el }); };
     this.decodeAudioData = function (buf, ok, err) { var p = { then: function (f) { return p; }, catch: function (f) { return p; } }; return p; };
+  }
+  // ---- the receiver's world: the real manifest and a <video>, on the virtual
+  // clock. ZK_SIGNAL_MOCK=ready (default: the reel is ready 0.3 s after
+  // prefetch) | slow (never ready -> the gagaku fallback) | none (fetch fails).
+  //
+  // THIS PROBE USED TO SERVE NEITHER. fetch was { then: () => this } -- a
+  // thenable whose callback is never invoked -- and createElement returned the
+  // same inert stub for every tag, so the manifest never arrived and there was
+  // no element to play it. Every broadcast fell back and NOT ONE held the air:
+  // seed 104 over 1800 s logged seven 受信, seven "fallback", zero 消失. That
+  // made the probe blind to the whole broadcast half of the engine. The
+  // air-hold is worth 0.7-13.2 % of melodic notes, so any density- or
+  // timing-derived component was measuring a build the owner never runs, and a
+  // re-base run to price two broadcasts a cycle was run on an instrument where
+  // two broadcasts cost nothing.
+  //
+  // Promises would only settle when the JS stack empties (after the whole run),
+  // so the mocks are synchronous thenables, as in _harness.js.
+  var SIGNAL_MOCK = process.env.ZK_SIGNAL_MOCK || "ready";
+  var MANIFEST_TEXT = (function () { try { return fs.readFileSync(path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; } })();
+  function thenableOf(v) { return { then: function (f) { var r; try { r = f(v); } catch (e) { return failing(e); } return (r && typeof r.then === "function") ? r : thenableOf(r); }, catch: function () { return this; } }; }
+  function failing(err) { return { then: function () { return this; }, catch: function (f) { try { f(err); } catch (e) {} return this; } }; }
+  function mockVideo() {
+    var latencyS = SIGNAL_MOCK === "slow" ? 600 : 0.3;
+    var v = { src: "", preload: "none", muted: false, volume: 1, playsInline: false, crossOrigin: null, readyState: 0, duration: 96, paused: true, style: {}, _l: {}, _ct: 0, _plays: 0 };
+    v.setAttribute = function () {}; v.appendChild = function () {};
+    v.addEventListener = function (n, f) { (v._l[n] = v._l[n] || []).push(f); };
+    v.removeEventListener = function (n, f) { if (v._l[n]) v._l[n] = v._l[n].filter(function (g) { return g !== f; }); };
+    function fire(n) { var L = v._l[n] || []; v._l[n] = []; for (var i = 0; i < L.length; i++) { try { L[i]({ type: n }); } catch (e) {} } }
+    Object.defineProperty(v, "currentTime", { get: function () { return v._ct; }, set: function (x) { v._ct = x; setTimeout(function () { fire("seeked"); }, 40); } });
+    v.load = function () { v.readyState = 0; setTimeout(function () { v.readyState = 1; fire("loadedmetadata"); setTimeout(function () { v.readyState = 4; fire("canplay"); }, 200); }, latencyS * 1000); };
+    v.play = function () { v.paused = false; v._plays++; return thenableOf(undefined); };
+    v.pause = function () { v.paused = true; };
+    return v;
   }
   var doc = {
     visibilityState: "visible", hidden: false, _ls: {},
     addEventListener: function (type, fn) { (doc._ls[type] = doc._ls[type] || []).push(fn); },
     removeEventListener: function () {},
     getElementById: function () { return null; }, querySelector: function () { return null; }, querySelectorAll: function () { return []; },
-    createElement: function () { return { style: {}, setAttribute: function () {}, appendChild: function () {}, addEventListener: function () {}, play: function () { return { catch: function () {} }; }, pause: function () {} }; },
+    createElement: function (tag) { return String(tag).toLowerCase() === "video" ? mockVideo() : { style: {}, setAttribute: function () {}, appendChild: function () {}, addEventListener: function () {}, play: function () { return { catch: function () {} }; }, pause: function () {} }; },
     body: { appendChild: function () {} },
   };
   var W = {};
@@ -165,7 +204,7 @@ function runOnce(seed, runS, jitterSeed) {
   W.addEventListener = function () {}; W.removeEventListener = function () {};
   W.location = { search: FAR != null ? "?far=" + FAR : "", href: "http://127.0.0.1/art/zankyo/", pathname: "/art/zankyo/" };
   W.navigator = { userAgent: "probe", mediaSession: null };
-  W.fetch = function () { return { then: function () { return this; }, catch: function () { return this; } }; };
+  W.fetch = function () { return SIGNAL_MOCK === "none" ? failing(new Error("offline")) : thenableOf({ ok: true, json: function () { return thenableOf(JSON.parse(MANIFEST_TEXT)); } }); };
   W.console = console;
   global.window = W; global.document = doc; global.PJ2 = W.PJ2 = {};
   global.location = W.location; try { Object.defineProperty(global, "navigator", { value: W.navigator, configurable: true, writable: true }); } catch (e) {}
@@ -189,11 +228,30 @@ function runOnce(seed, runS, jitterSeed) {
   scripts = scripts.filter(function (s) { return !/background-audio|zankyo-ui|zankyo-viz|page-event/.test(s); });
   if (!scripts.length) scripts = ["zankyo-audio.js"];
   var loadErrors = [];
+  // ZK_SRCDIR — swap the WHOLE ZANKYŌ script set, not just the engine.
+  //
+  // ZK_ENGINE below replaces zankyo-audio.js alone, which is what
+  // _far-identity.js used, and it meant the home-identity gate compared two
+  // engines across ONE shared receiver: zk-broadcast.js was the working tree's
+  // in both runs. Every receiver change in §11, the planned hold, degreeHz and
+  // the tone tables therefore went through a gate that could not see them.
+  // With ZK_SRCDIR set, any script the page loads is taken from that directory
+  // when a file of the same name is there, so the comparison is between two
+  // BUILDS. The PJ2 substrate is deliberately not swapped: it is frozen by
+  // policy and never modified from ZANKYŌ, so both sides should share it.
+  var srcDir = process.env.ZK_SRCDIR ? path.resolve(process.env.ZK_SRCDIR) : null;
+  var loadedFrom = {};
   scripts.forEach(function (s) {
-    var full = path.resolve(dir, s);
+    var full = path.resolve(dir, s), base = path.basename(s);
+    if (srcDir && /^(zankyo-audio|zk-[a-z0-9-]+)\.js$/.test(base)) {
+      var alt = path.join(srcDir, base);
+      if (fs.existsSync(alt)) full = alt;
+    }
     if (/zankyo-audio\.js$/.test(s) && process.env.ZK_ENGINE) full = path.resolve(process.env.ZK_ENGINE);   // A/B an alternate engine build
+    loadedFrom[base] = full;
     try { (0, eval)(fs.readFileSync(full, "utf8")); } catch (e) { loadErrors.push(s + ": " + (e && e.message)); }
   });
+  LOADED_FROM = loadedFrom;
   var Z = W.ZankyoAudio;
   if (!Z) return { fatal: "ZankyoAudio not defined; loaded " + JSON.stringify(scripts) + " errors " + JSON.stringify(loadErrors) };
 
@@ -265,6 +323,7 @@ function runOnce(seed, runS, jitterSeed) {
     randomPlayCount: randomPlayCount, randomDuringPlay: randomDuringPlay,
     motifStats: Z.getMotifStats ? Z.getMotifStats() : null,
     airInfo: (function () { try { var a = Z.getAir ? Z.getAir() : null; return a && a.info ? a.info() : (Z.getAirInfo ? Z.getAirInfo() : null); } catch (e) { return null; } })(),
+    placement: (function () { try { return Z.getPlacement ? Z.getPlacement() : null; } catch (e) { return null; } })(),
     layers: Z.LAYERS ? Z.LAYERS.slice() : [],
     far: (function () { try { return Z.getFar ? Z.getFar() : null; } catch (e) { return null; } })(),   // W0+: {d, name, departures…} when the engine exposes it
     api: Object.keys(Z).sort(),
@@ -295,6 +354,22 @@ function analyze(R) {
   A.notesPer30 = {}; for (var k in byLayer) A.notesPer30[k] = Math.round(byLayer[k] * per30);
   var mel = R.notes.filter(function (n) { return isMelodic(n.layer); }).sort(function (a, b) { return a.t - b.t; });
   A.melodicNotes = mel.length; A.melodicPer30 = Math.round(mel.length * per30); A.melodicPerSec = mel.length / runS;
+  // CRITIC, §12 closure check: the COMMIT LEAD — how far ahead of the audio
+  // clock a note is committed. This is the number the 55 s guaranteed arm lead
+  // must exceed, and the coder's 33-46 s was measured on nights without the
+  // time departures. 遅 dilate and 弛 vari SCALE a lane's delays, so the lead
+  // is a function of the night, not a constant. `at` (virtual now at commit)
+  // and `t` (scheduled start) are both already recorded; the lead is their
+  // difference and nothing new had to be instrumented.
+  A.commitLead = {};
+  (function () {
+    var by = {};
+    R.notes.forEach(function (n) { if (!isMelodic(n.layer)) return; var d = n.t - n.at; if (!(d >= 0)) return; (by[n.layer] = by[n.layer] || []).push(d); });
+    Object.keys(by).forEach(function (k) {
+      var a = by[k].sort(function (x, y) { return x - y; });
+      A.commitLead[k] = { n: a.length, p50: +a[Math.floor(a.length * 0.5)].toFixed(2), p99: +a[Math.floor(a.length * 0.99)].toFixed(2), max: +a[a.length - 1].toFixed(2) };
+    });
+  })();
   A.totalNotes = R.notes.length; A.totalPer30 = Math.round(R.notes.length * per30);
 
   // ---- phase durations ----
@@ -383,7 +458,7 @@ function analyze(R) {
   var modeEvents = R.events.filter(function (e) { return e.cat === "mode" || e.cat === "form" || e.cat === "plan" || e.cat === "scene" || e.cat === "visit" || e.cat === "visitation" || e.cat === "pitch" || e.cat === "far"; });   // "far" (W1): the 逸脱 lines were in the stream but invisible in a printout — the critic's free note, r2
   A.kirus = R.events.filter(function (e) { return /KIRU/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
   A.cycles = R.events.filter(function (e) { return /cycle \d+/.test(e.detail) && /mode/.test(e.label); }).map(function (e) { return { t: Math.round(e.t), detail: e.detail }; });
-  A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null; A.signals = []; A.signalFallbacks = 0;
+  A.kinds = {}; A.seatings = {}; A.seaChanges = []; A.visitations = []; A.scenes = {}; A.joints = 0; A.airInfo = null; A.signals = []; A.signalFallbacks = 0; A.sceneSpans = []; A.signalTimes = [];
   R.events.forEach(function (e) {
     var txt = e.label + " · " + e.detail;
     var km = /(?:kind|活動|cycle kind)[:\s]+([^\s·,]+)/i.exec(txt); if (km) A.kinds[km[1]] = (A.kinds[km[1]] || 0) + 1;
@@ -392,7 +467,12 @@ function analyze(R) {
     if (/visit(ation)?:/i.test(txt) && e.cat !== "ambient") A.visitations.push({ t: Math.round(e.t), txt: txt.slice(0, 120) });   // the plan-time token only (one per hosting cycle); "begins"/"goes dead" are not counted
     if (e.cat === "rx" && e.label === "受信") A.signals.push({ t: Math.round(e.t), txt: e.detail });          // S3: the receiver's signals (受信 = a reel played; the fallback and the scan are not counted)
     if (e.cat === "rx" && e.label === "受信 fallback") A.signalFallbacks++;
-    var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1;
+    var scm = /scene[:\s]+([^\s·,]+)/i.exec(txt); if (scm) { A.scenes[scm[1]] = (A.scenes[scm[1]] || 0) + 1; A.sceneSpans.push({ t: +e.t.toFixed(2), type: scm[1] }); }
+    // CRITIC: the orchestrator wants the JO SHARE of broadcasts. signalFallbacks
+    // was a bare counter, so a seating could not be located in the cycle at all.
+    // Record every seating's TIME — real or fallback — and bucket it against
+    // sceneSpans in analysis. (Dev-only, my file, no VERSION bump.)
+    if (e.cat === "rx" && (e.label === "受信" || e.label === "受信 fallback")) A.signalTimes.push({ t: +e.t.toFixed(2), real: e.label === "受信" });
     if (/joint/i.test(txt)) A.joints++;
   });
   // ---- Phase 2: tonic trace (sea changes) and shō voicings (aitake) ----
@@ -430,7 +510,7 @@ function analyze(R) {
   }
 
   // ---- technical ----
-  A.airInfo = R.airInfo;
+  A.airInfo = R.airInfo; A.placement = R.placement;
   // ---- Phase 1 gate summary (plan §7): half the baseline density, ≥3 kinds, ≥2 seatings in 1 h ----
   var BASE_MELODIC_30 = 5075;   // baseline seed 3042 (see baseline-critic.md)
   // ---- Phase 4: visitations per cycle (≥ 1 per 3 cycles over a long run; never two in one cycle) ----
@@ -450,6 +530,17 @@ function analyze(R) {
     nodesPerMin: Math.round(R.counts.nodes / (runS / 60)), peakSources: R.counts.peakSources,
     visitPer3Cycles: A.visitRatePer3, visitMaxPerCycle: A.visitMaxPerCycle,
     signals: A.signals.length, signalFallbacks: A.signalFallbacks, signalPer3Cycles: A.signalRatePer3, signalMaxPerCycle: A.signalMaxPerCycle, signalPerKind: A.signalPerKind,
+    // Broadcast placement and WHY a seating attempt fell through (rc.39). The
+    // counters live on the engine's getPlacement(); the probe never called it,
+    // so they were built and unreadable.
+    placement: A.placement, placeJoShare: A.placement ? A.placement.joShare : undefined,
+    placeOverflow: A.placement ? A.placement.overflow : undefined,
+    placeLost: A.placement ? A.placement.lost : undefined,
+    placeReject: A.placement ? A.placement.reject : undefined,
+    tooShort: A.placement ? A.placement.tooShort : undefined,
+    spacing: A.placement ? A.placement.spacing : undefined,
+    guest: A.placement ? A.placement.guest : undefined,
+    overflow: A.placement ? A.placement.overflow : undefined,
     tonicsSeen: A.tonicTrace.length, seedPoolAuthentic: Object.keys(A.seedPoolAuthentic).length, seedPoolBorn: Object.keys(A.seedPoolBorn).length, shoVoicings: A.shoVoicings.distinct,
   };
   A.far = R.far;
@@ -466,13 +557,32 @@ function analyze(R) {
 }
 
 function signature(R) {
+  // TRIM AT THE RUN BOUNDARY BEFORE HASHING. A run is cut at runS, but the
+  // scheduler commits a whole phrase at once, so a tick landing a few
+  // milliseconds inside the window emits notes scheduled AFTER it. Whether
+  // that last tick lands inside is a function of timer jitter, so a signature
+  // that includes those notes reports DIFFERENT for two runs whose music is
+  // identical.
+  //
+  // This was a permanent intermittent FALSE POSITIVE in the REPRO gate,
+  // firing on whichever seed happened to tick near the cut. It cost the crew a
+  // held tree: seed 1 at far 0.50 failed under jitter 301/302 and 401/402,
+  // passed at 501/502 and with exact timers, and had a clean boundary at
+  // 0.49/0.50 — every one of which reads as a "now" read in a musical
+  // decision. The streams were identical for all 3314 shared notes; run 302
+  // simply had five more, scheduled at t = 1800.3 to 1800.9 against a run
+  // ending at 1800, committed at ctx 1799.9952.
+  //
+  // A note the run never intended to contain does not belong in its signature.
+  // Events need the same trim — three of them sat past the boundary too.
   var crypto = require("crypto");
-  var h = crypto.createHash("sha1");
-  R.notes.forEach(function (n) { h.update(n.layer + "|" + n.freq.toFixed(4) + "|" + n.t.toFixed(4) + "|" + (+n.dur).toFixed(4) + "\n"); });
+  var end = R.runS != null ? R.runS : RUN;
+  var h = crypto.createHash("sha1"), notes = R.notes.filter(function (n) { return n.t < end; });
+  notes.forEach(function (n) { h.update(n.layer + "|" + n.freq.toFixed(4) + "|" + n.t.toFixed(4) + "|" + (+n.dur).toFixed(4) + "\n"); });
   var hn = h.digest("hex");
-  var h2 = crypto.createHash("sha1");
-  R.events.forEach(function (e) { h2.update(e.t.toFixed(3) + "|" + e.cat + "|" + e.label + "|" + e.detail + "\n"); });
-  return { notes: hn, events: h2.digest("hex"), noteCount: R.notes.length, eventCount: R.events.length };
+  var h2 = crypto.createHash("sha1"), events = R.events.filter(function (e) { return e.t < end; });
+  events.forEach(function (e) { h2.update(e.t.toFixed(3) + "|" + e.cat + "|" + e.label + "|" + e.detail + "\n"); });
+  return { notes: hn, events: h2.digest("hex"), noteCount: notes.length, eventCount: events.length };
 }
 
 
@@ -634,6 +744,7 @@ function report(A) {
   line("  shō voicings: " + A.shoVoicings.clusters + " clusters · " + A.shoVoicings.distinct + " distinct (semitones above the lowest) · " + A.shoVoicings.top.join(" | "));
   if (A.airInfo) line("  air: " + JSON.stringify(A.airInfo));
   line("  GATES: " + JSON.stringify(A.gates));
+  if (A.placement) line("  placement: " + JSON.stringify(A.placement));
   line("  per cycle:");
   line("  " + pad("c", 3) + lpad("start", 6) + lpad("len", 5) + lpad("maxV", 5) + lpad("3+%", 6) + "  notes · info");
   A.perCycle.forEach(function (r) {
@@ -717,7 +828,7 @@ if (args[0] === "batch") {
     if (!homeOk.length) homeOk = ok;
     DIST_KEYS.forEach(function (k) { var vals = homeOk.map(function (r) { return r.C[k]; }); var med = q(vals, 0.5); var mad = q(vals.map(function (v) { return Math.abs(v - med); }), 0.5); stats[k] = { median: +med.toFixed(4), mad: +mad.toFixed(4), min: +Math.min.apply(null, vals).toFixed(4), max: +Math.max.apply(null, vals).toFixed(4) }; });
     var useBase = base;
-    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, homeSeeds: homeOk.length, runS: bRun, seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
+    if (calibrate || !base) { useBase = { meta: { seeds: ok.length, homeSeeds: homeOk.length, runS: bRun, signalMock: process.env.ZK_SIGNAL_MOCK || "ready", seedList: ok.map(function (r) { return r.seed; }), engine: ok[0] && ok[0].engineSig, written: new Date().toISOString() }, stats: stats }; }
     ok.forEach(function (r) { r.DS = distanceScalar(r.C, useBase); });
     var Ds = ok.map(function (r) { return r.DS.D; });
     var p50 = +q(Ds, 0.5).toFixed(2), p95 = +q(Ds, 0.95).toFixed(2);
@@ -786,7 +897,20 @@ if (JSON_OUT) {
   console.log("wrote " + JSON_OUT);
 }
 if (DIST_JSON) {
-  var engineSig = (function () { try { return require("crypto").createHash("sha1").update(fs.readFileSync(path.join(__dirname, "zankyo-audio.js"))).digest("hex").slice(0, 12); } catch (e) { return null; } })();
+  // The signature of what was ACTUALLY LOADED, not of the file in the tree —
+  // under ZK_SRCDIR or ZK_ENGINE those differ, and a signature that names the
+  // wrong build is worse than none.
+  var engineSig = (function () {
+    try {
+      var h = require("crypto").createHash("sha1");
+      var lf = LOADED_FROM || {};
+      var names = Object.keys(lf).sort();
+      if (!names.length) names = null;
+      if (names) { for (var i = 0; i < names.length; i++) h.update(names[i]).update(fs.readFileSync(lf[names[i]])); }
+      else h.update(fs.readFileSync(path.join(__dirname, "zankyo-audio.js")));
+      return h.digest("hex").slice(0, 12);
+    } catch (e) { return null; }
+  })();
   fs.writeFileSync(DIST_JSON, JSON.stringify({ seed: SEED, runS: RUN, far: A1.far, C: A1.distance, sig: sig1, engineSig: engineSig, errors: A1.tech.errors.length + A1.tech.loadErrors.length || undefined, gates: A1.gates }));
 }
 process.exit(A1.tech.errors.length || A1.tech.loadErrors.length || reproOk === false ? 1 : 0);

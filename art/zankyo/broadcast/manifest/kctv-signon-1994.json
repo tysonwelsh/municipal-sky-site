@@ -14,7 +14,7 @@
   "picture": null,
   "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0]],
   "srcWindows": [[30.0, 42], [198.0, 210], [245.0, 257], [348.0, 360], [372.0, 384], [682.0, 694]],
-  "pitchHz": [null, 752.75, null, null, null, null],
+  "pitchHz": [null, 755.62, null, null, null, null],
   "tuned": true,
   "notes": "test card with Pochonbo Electronic Ensemble; the two-bar interval signal (Song of General Kim Il Sung); Aegukka over Mount Paektu; the anchor's greeting and the day's schedule read aloud",
   "takedown": false

@@ -39,6 +39,27 @@
   var MANIFEST_URL = "broadcast/manifest.json", REEL_DIR = "broadcast/reels/";
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var HOLD_LEAD_S = 6, STATIC_LEAD_S = 4, DECIDE_LEAD_S = 1, PREFETCH_LEAD_S = 12;   // from the hosting scene's start (t0 ≥ start + 8)
+  var PLAN_REL_MAX = 6;                              // the largest per-voice release offset weather() can draw
+
+  // ---- the tone vocabulary, in ONE place ------------------------------------
+  // `tone` was tested by open-coded string comparison in two places, and when
+  // the pool went from 52 reels to 207 it gained a value neither of them knew:
+  // `drone`, carried by exactly one reel — cham-tashi-lhunpo-ignca, a Tibetan
+  // ritual horn drone, tuned, four measured pitches, the most drone-like thing
+  // in the pool. It matched NEITHER tide arm, so alone of 207 reels it got no
+  // tide multiplier at all; and it failed §11.3's eligibility test, so the one
+  // reel the sea-change path was designed for was the one excluded from it.
+  //
+  // The orchestrator's ruling: drone is handled exactly as tone is, everywhere.
+  // The tables are here so that "everywhere" is one edit and not three, and so
+  // an unknown value is LOUD rather than silently unweighted — the librarian
+  // will add more reels, and this is a data-shape assumption about a file that
+  // is not ours.
+  var RAGGED_WINDOW_S = 0.25;                            // the tuned reels sit at 0.090 s today; the pool reaches 2.0
+  var TONE_DARK = { voice: 1, noise: 1, tone: 1, drone: 1 };
+  var TONE_LIGHT = { music: 1, sung: 1 };
+  var TONE_PITCHED = { tone: 1, sung: 1, drone: 1 };     // §11.3: the kinds that may pull the field to themselves
+  function toneKnown(t) { return !!(TONE_DARK[t] || TONE_LIGHT[t]); }
   var RECENT_CYCLES = 3;
   var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
@@ -51,7 +72,8 @@
   function db2lin(db) { return Math.pow(10, (+db || 0) / 20); }
 
   // ---- the pool ----
-  var pool = null, poolState = "idle", poolError = null;   // idle | loading | ready | failed
+  var armedT0 = null;                                   // the t0 arm() was given, if any
+  var pool = null, poolState = "idle", poolError = null, poolUnknownTones = {};   // idle | loading | ready | failed
   function loadPool() {
     if (poolState === "loading" || poolState === "ready") return;
     if (!hasFetch) { poolState = "failed"; poolError = "no fetch"; return; }
@@ -60,7 +82,49 @@
       fetch(MANIFEST_URL).then(function (r) { return r.json(); }).then(function (m) {
         var arr = Array.isArray(m) ? m : (m && m.reels) || [];
         var out = [];
-        for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) out.push(e); }
+        var unknown = {}, ragged = [];
+        for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) {
+          if (!toneKnown(e.tone)) unknown[e.tone] = (unknown[e.tone] || 0) + 1;
+          // A TUNED REEL'S WINDOWS MUST BE THE SAME LENGTH, near enough.
+          // §11.2 re-aims a tuned reel onto whichever window sits nearest the
+          // field, and holdS is derived from THAT window's length — so on a
+          // reel whose windows differ, re-aiming changes the hold, which
+          // changes the air hold, which denies a different melodic claim, and
+          // HOME NIGHTS MOVE. Today they do not, because the tuned reels vary
+          // by at most 0.090 s (tvdx-pik1-cyprus) which is under a percent of
+          // a hold. But the pool's true spread is 2.000 s — gbc-accra
+          // alternates 12 s and 10 s windows — and TEN reels over 0.2 s are
+          // untuned only because no pitch was found in them. The bound is a
+          // property of a neighbouring fact, not of anything here, exactly like
+          // §11's cap being unreachable only because there are two degrees a
+          // fifth apart. One `tuned: true` from the librarian on any of those
+          // ten and byte-identity starts failing with no visible cause, so the
+          // assumption says so out loud instead of resting quietly.
+          if (e.tuned && e.windows.length > 1) {
+            var wlo = 1e9, whi = -1e9;
+            for (var wj = 0; wj < e.windows.length; wj++) {
+              var wln = e.windows[wj][1] - e.windows[wj][0];
+              if (wln < wlo) wlo = wln; if (wln > whi) whi = wln;
+            }
+            if (whi - wlo > RAGGED_WINDOW_S) ragged.push(e.id + " (" + (whi - wlo).toFixed(2) + "s)");
+          }
+          out.push(e);
+        } }
+        // LOUD, not silent. A tone the receiver does not know gets no tide
+        // weighting and no §11.3 eligibility, which is invisible in every gate
+        // we own — it is simply a reel that never quite behaves.
+        var uk = Object.keys(unknown);
+        if (uk.length && typeof console !== "undefined" && console.error) {
+          console.error("ZankyoBroadcast: manifest carries " + uk.length + " UNKNOWN tone value(s) — " +
+            uk.map(function (k) { return k + "×" + unknown[k]; }).join(", ") +
+            ". They get no tide weighting and cannot sea-change. Add them to TONE_DARK/TONE_LIGHT/TONE_PITCHED in zk-broadcast.js.");
+        }
+        if (ragged.length && typeof console !== "undefined" && console.error) {
+          console.error("ZankyoBroadcast: " + ragged.length + " TUNED reel(s) have windows of differing length — " +
+            ragged.slice(0, 6).join(", ") + ". §11.2 re-aims across windows and derives the hold from the one it picks, " +
+            "so this moves home nights. Either give the reel equal windows or leave it untuned.");
+        }
+        poolUnknownTones = unknown;
         pool = out; poolState = out.length ? "ready" : "failed"; if (!out.length) poolError = "empty manifest";
       }).catch(function (e) { poolState = "failed"; poolError = String(e && e.message || e); });
     } catch (e) { poolState = "failed"; poolError = String(e && e.message || e); }
@@ -129,17 +193,104 @@
     for (i = 0; i < cands.length; i++) {
       var e = cands[i], x = +e.weight > 0 ? +e.weight : 1, tone = e.tone;
       if (!e.audioOnly) x *= VIDEO_WEIGHT;                                                        // §8.1: a reel with a picture is three times as likely to be the one
-      if (tone === "voice" || tone === "noise" || tone === "tone") x *= 0.7 + 0.6 * dark;          // the dark tide leans to voices and noise
-      else if (tone === "music" || tone === "sung") x *= 0.7 + 0.6 * (1 - dark);                  // the light tide to music
+      if (TONE_DARK[tone]) x *= 0.7 + 0.6 * dark;                                                // the dark tide leans to voices, noise, tones and drones
+      else if (TONE_LIGHT[tone]) x *= 0.7 + 0.6 * (1 - dark);                                     // the light tide to music and singing
       w.push(x); tot += x;
     }
     var r = rReel * tot, reel = cands[cands.length - 1];
     for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; break; } }
-    var win = reel.windows[Math.floor(rWin * reel.windows.length)], wl = win[1] - win[0];
+    // §11.2 TUNED SIGNALS. The drawn window is still DRAWN — rWin is consumed
+    // above whatever happens here, so the signal stream never moves — but on a
+    // reel that holds a pitch the receiver prefers the window it can land on
+    // the field with, and bends it there tape-style.
+    //
+    // windows stay [start, end] ARRAYS. pitchHz is a PARALLEL array, index for
+    // index, because five call sites index a window positionally and a
+    // half-converted window would read win[0] as undefined and put NaN into
+    // inS — the same shape as the fault that cost the crew a phase.
+    var wi = Math.floor(rWin * reel.windows.length);
+    var tune = farTune(reel, wi);
+    if (tune.wi !== wi) wi = tune.wi;
+    var win = reel.windows[wi], wl = win[1] - win[0];
+    // THE HOLD IS DECIDED ON THE UNBENT WINDOW, DELIBERATELY. At rate r a
+    // window of wl source seconds lasts wl / r on the wall clock, so the
+    // "honest" test is need > wl / r — and it moves holdS by a tenth of a
+    // second on a bent reel, which moves the air hold, which denies a melodic
+    // claim that was granted before, which moves the note stream on a HOME
+    // night. Measured: seeds 3042 and 7 both changed their note counts, and
+    // §11.2 is the default path so it fires at home. Byte-identity is worth
+    // more than a tenth of a second of hold, so the decision stays on wl and
+    // the rate is spent on the in-point instead.
     var need = TUNE_S + holdS + lossD;
     if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
-    c.reel = reel; c.win = win; c.holdS = holdS; c.inS = win[0] + rIn * Math.max(0, wl - need);
+    c.reel = reel; c.win = win; c.holdS = holdS;
+    // The in-point does carry the rate: `need` wall seconds eat need × r
+    // SOURCE seconds, so a sped-up reel starts nearer the window's head. When
+    // need × r exceeds the window the in-point pins to the head and the last
+    // fraction of a second runs past the edge — inside the loss ramp, where
+    // the signal is already under 6 % of peak.
+    c.inS = win[0] + rIn * Math.max(0, wl - need * tune.rate);
+    c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents;
     return c;
+  }
+
+  // ---- §11 the bend ---------------------------------------------------------
+  // Given a reel and the window the draw landed on, decide which window is
+  // actually seated and at what playback rate.
+  //
+  // THE CAP IS A REFUSAL, NOT A CLAMP. Past ±4 semitones the reel plays at
+  // rate EXACTLY 1 and unbent — clamping would leave it still bent and still
+  // wrong, which is worse than not trying: a reel a fifth away from the field
+  // dragged four semitones toward it is out of tune with both.
+  // THE CAP IS INSURANCE AGAINST A CHANGE TO THE DEGREE SET, NOT AGAINST THE
+  // REELS, and it is unreachable as the code stands. Two degrees a fifth apart
+  // divide the octave into a 700-cent gap and a 500-cent one, so the furthest
+  // any pitch can sit from the NEARER of them — octave-free, as the search
+  // below computes it — is half the larger gap: 350 cents, tonic-independent.
+  // 350 < 400, so the refusal below has never executed and cannot. The largest
+  // bend the pool actually needs is 244.3 cents.
+  //
+  // Do NOT delete it on the strength of "it never fires". The 350-cent bound is
+  // a property of the DEGREE SET on the line above and of nothing here: narrow
+  // the field to the tonic alone and the worst case jumps to 600 cents, the cap
+  // starts binding, and this becomes live code that has never once run. (The
+  // warped fifth keeps the bound too — at 690.4 to 716.8 cents the worst case
+  // is 345.2 to 358.4.) The comment is the protection, not the code.
+  var TUNE_CAP_CENTS = 400;
+  function farTune(reel, wi) {
+    var flat = { wi: wi, rate: 1, pitchHz: null, degHz: 0, cents: 0 };
+    var T = tl();
+    if (!reel || !reel.tuned || !reel.pitchHz || !T.fieldTonic) return flat;
+    var tonic = T.fieldTonic(); if (!(tonic > 0)) return flat;
+    // the degrees a signal may land on: the tonic and its fifth (§11.2)
+    // The degrees a signal may land on: the tonic and its fifth AS THE STATION
+    // IS SOUNDING THEM TONIGHT. Under 撓 the fifth is 700·k cents rather than
+    // 700, up to 16.8 cents from tempered, which is 1.7× the gate this feature
+    // is held to; the tonic is unaffected for any k. Falls back to the
+    // tempered fifth if the engine is too old to answer.
+    var degs = [tonic, (T.degreeHz ? T.degreeHz(700) : tonic * 1.4983070768766815)];
+    var best = null;
+    for (var i = 0; i < reel.pitchHz.length && i < reel.windows.length; i++) {
+      var p = reel.pitchHz[i]; if (!(p > 0)) continue;
+      for (var k = 0; k < degs.length; k++) {
+        // octave-free: a 587 Hz tone may land on the tonic three octaves down
+        var c = 1200 * Math.log(degs[k] / p) / Math.LN2;
+        c = c - 1200 * Math.round(c / 1200);
+        if (!best || Math.abs(c) < Math.abs(best.cents)) best = { wi: i, cents: c, pitchHz: p, degHz: degs[k] };
+      }
+    }
+    if (!best) return flat;
+    if (Math.abs(best.cents) > TUNE_CAP_CENTS) { flat.pitchHz = best.pitchHz; return flat; }
+    // §11.3's decision is NOT made here. It lives at the one site that acts on
+    // it, in the graph build, where the night and the reel's tag are both to
+    // hand. A `sea` flag here was computed, never copied by arm() and never
+    // read by anything — dead, and worse than absent, because the day someone
+    // simplifies that site to read it, it is undefined, the branch goes falsy
+    // and §11.3 stops firing in silence. (The critic's static field-contract
+    // check found it on rc.23; it is the precondition for a fourth instance of
+    // a fault we have now had three times.)
+    return { wi: best.wi, rate: Math.pow(2, best.cents / 1200), pitchHz: best.pitchHz,
+             degHz: best.degHz, cents: best.cents };
   }
   // the dropout schedule (relative to t0) and the voices' return offsets, on the cycle's own fork
   function weather(R, cycle, holdS, lossD) {
@@ -164,10 +315,72 @@
     var R = rng || T.S.signal; if (!R) return false;
     loadPool();
     var c = choose(R, info.cycle, info.tidePos || 0), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    // §11's four fields ride here too, and the reason they are called out is
+    // that this literal is EXACTLY the shape that cost the crew a phase: a
+    // fresh object built field by field from a contract declared somewhere
+    // else, which silently drops whatever the author forgot. It dropped them
+    // on the first pass — 同調 never fired once and the harness output was
+    // byte-identical to the old build, which reads like a pass. Anything
+    // choose() adds must be added here in the same commit.
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
-      ready: false, t0: null, decided: false, bench: !!rng };
+      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0,
+      ready: false, t0: null, decided: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     stats.armed++;
+    // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
+    // commit notes 33–46 s ahead of the audio clock, and the real hold was only
+    // written at fire(), ~15.5 s before t0. The claim was legitimate when it
+    // was made and no render-time guard could have caught it — measured with
+    // the engine printing its own state: `NOTE hichiriki t=322.13 dur=8.54
+    // ctxNow=275.68 holds=[] signalUp=false`.
+    //
+    // So the receiver declares its INTENT as soon as it has one. It does not
+    // know t0 yet — the visitation fires at hostStartT + rnd(8, 25), drawn at
+    // the scene boundary — so the planned window covers the whole of that
+    // uncertainty, about 46 s against the real 21 s. That over-denial for the
+    // arm→fire gap is the price, and it is what the deliberate re-base buys.
+    //
+    // It is a separate owner from the real hold, which matters twice over:
+    // fire() replaces it exactly rather than leaving two overlapping claims,
+    // and signalUp() ignores it — a PLAN must not silence 崩's groove or
+    // trigger §11.3, because a plan can still fall back to the gagaku and then
+    // nothing was ever on the air.
+    T.airHoldClear();
+    // THE PLANNED HOLD IS NOW THE REAL HOLD. t0 arrives WITH the arm — every
+    // broadcast's time is drawn at plan now — so there is nothing left to be
+    // uncertain about and nothing to over-deny: 18.0 to 29.2 s where it was
+    // 41.0 to 46.2, and the difference was never air a broadcast used. The
+    // WRITE stays at arm, which is what catches the long-note bodies that
+    // commit 33 to 46 s ahead (plan §12): narrowing the window is safe,
+    // moving the write would put that defect straight back.
+    //
+    // Two things that had to agree have become one thing, which matters more
+    // than the seconds do.
+    armedT0 = (info.t0 != null) ? info.t0 : null;
+    var t0k = (info.t0 != null) ? info.t0 : (info.hostStartT + 16);
+    var pFrom = t0k - HOLD_LEAD_S;
+    var pUntil = t0k + TUNE_S + c.holdS + c.lossD + 2;
+    // THE PLAN'S LANES ARE DERIVED FROM THE SAME OBJECT THE REAL HOLD USES,
+    // never from a second list. fire() builds its hold by looping over a.rel
+    // and bolting on the PA; if the plan looped over a constant instead, the
+    // two would agree only by inspection — and the day a sixth melodic body
+    // joins `rel` (this crew has added TWO in this program, the hichiriki and
+    // the biwa) that voice would get the real hold and not the planned one.
+    // That is exactly the pre-W4 defect, reintroduced for one voice, invisible
+    // on every seed where it does not happen to sing over a broadcast. Derived
+    // here, the two lists cannot drift: anything added to weather()'s `rel` is
+    // held both at arm and at fire, in the same commit, without anyone
+    // remembering to.
+    var plan = {}, pk = Object.keys(wx.rel);
+    for (var pv = 0; pv < pk.length; pv++) plan[pk[pv]] = { from: pFrom, until: pUntil + wx.rel[pk[pv]] };
+    plan.pa = { from: pFrom, until: pUntil };                 // the PA is held too, and for the same reason fire() holds it
+    // Written as the SIGNAL'S hold, not as a "plan" — because it is not a plan
+    // any more, it is the exact window. That also makes signalUp() see it,
+    // which is what lets 崩, 鏡 and the melodic bodies yield to a broadcast
+    // that has not aired yet: signalUp asks about a TIME, so a note scheduled
+    // 40 s early and landing inside the window is refused now rather than
+    // after the fact.
+    T.airHold(plan, "signal");
     var when = Math.max(T.ctx ? T.ctx.currentTime + 0.05 : 0, info.hostStartT - PREFETCH_LEAD_S);
     T.lane("broadcast").at(when, prefetch);
     return true;
@@ -207,7 +420,12 @@
     // again. (No new draw: it borrows the shakuhachi's zero offset rather than
     // taking one of its own, so the signal stream is untouched.)
     hold.pa = { from: from, until: cut + 2 };
-    T.airHold(hold);
+    // NOT WRITTEN AGAIN HERE. arm() already wrote this exact window, 55 s ago,
+    // from the same t0 and the same wx.rel — writing it a second time would
+    // restore precisely the two-things-that-must-agree shape this change
+    // removed, and the second copy would be the one nobody updated. `hold` is
+    // still built above because the descriptor below reads its span.
+    if (armedT0 == null) T.airHold(hold);    // only if this signal never went through a t0-bearing arm
     T.lane("broadcast").at(t0 - STATIC_LEAD_S, function (t) { staticRise(t, t0); });
     T.lane("broadcast").at(t0 - DECIDE_LEAD_S, function () { decide(t0); });
     return true;
@@ -222,7 +440,7 @@
     else if (!a.ready) reason = "reel not ready · " + a.reel.id;
     if (reason) {
       stats.fallbacks++; stats.lastReason = reason;
-      T.airHoldClear();
+      T.airHoldClear(); T.airHoldClear("signal-planned");   // a fallback releases the intent too
       T.emitEvent({ cat: "rx", label: "受信 fallback", detail: reason }, t0);
       armed = null;
       try { T.fallback(t0); } catch (e) {}
@@ -459,7 +677,27 @@
     var T = tl(), c = T.ctx, v = video, ms = mediaSrc;
     var band = T.getLayerParam("broadcast", "band", 0.5), flutter = T.getLayerParam("broadcast", "flutter", 0.5), grit = T.getLayerParam("broadcast", "grit", 0.5);
     var holdS = a.holdS, lossD = a.lossD, lossStart = t0 + TUNE_S + holdS, cut = lossStart + lossD, burstAt = cut + COLLAPSE_S, end = burstAt + BURST_S + DEAD_S;
-    var hpHold = 200 + 120 * band, lpHold = 6000 - 2600 * band;
+    // §11.3 THE STATION TUNES TO THE SIGNAL. On a far night at d ≥ 0.5, a reel
+    // that is TAGGED as holding a pitch (TONE_PITCHED: tone, sung and drone —
+    // `drone` arrived with the 207-reel pool and this comment used to say it
+    // did not exist, which was true of 52 reels and false of 207) and MEASURED
+    // as holding one may pull the field to itself instead of being pulled. Tag
+    // and measurement both, because a tag is an assertion and the flag is a
+    // fact. The engine refuses in a KIRU's hush, at home, and below 0.5 — all
+    // three tested there rather than here, so this cannot forget one.
+    var rate = a.rate || 1, seaHz = 0;
+    if (a.pitchHz > 0 && TONE_PITCHED[a.reel.tone] && T.seaToward) {
+      var got = T.seaToward(a.pitchHz, t0 + TUNE_S);
+      if (got) { seaHz = got; rate = 1; }                 // the tape is not warped; the station moves
+    }
+    // The live band must open low enough to PASS the fundamental the tool
+    // measured. A tuned reel whose pitch is 97 Hz played behind a 300 Hz
+    // highpass is a reel tuned to something the listener cannot hear — the
+    // bend would be arithmetically perfect and inaudible. So the floor drops
+    // for a tuned reel and the band knob still narrows above it; an untuned
+    // reel keeps exactly the band it had, which is also why no untuned
+    // broadcast changes by a sample here.
+    var hpHold = (a.reel.tuned ? 80 + 60 * band : 200 + 120 * band), lpHold = 6000 - 2600 * band;
     var nodes = [];
     function N(n) { nodes.push(n); return n; }
     try {
@@ -516,7 +754,39 @@
       var phased = farPhaseTap(sg, t0, holdS, lossD, N);
       (phased || sg).connect(T.lg("broadcast"));
       farRoomCapture(sg, t0 + TUNE_S + 1.0);      // 室: two seconds of the reel, once it is properly tuned in
-      // the burst after the collapse: pure static, then the afterglow
+      // 螺 / 弛 — THE REEL RIDES THE GLIDE. The station's whole field slides
+    // under a spiral or a varispeed: 螺 reaches 200–700 cents, 弛 100–400, and
+    // together up to 1100. The air hold silences the five melodic voices and
+    // the PA, but NOT the sub-drone and NOT the shō — and both follow the
+    // glide explicitly through glidePartial. So a reel that held still would
+    // be the one thing in the room not moving, against precisely the two
+    // sustained pitched voices left sounding under it.
+    //
+    // Evaluating the degree once at "air time" does not fix this and is the
+    // wrong shape of answer: 螺's drawn slope is 0.6–4.0 cents/s, so the field
+    // moves up to 48 cents across a 12 s hold — five times the gate — and a
+    // snapshot is in tune for one instant. Tracking dissolves the question of
+    // WHICH instant to snapshot, which is also why it is the right design and
+    // not merely the thorough one.
+    //
+    // The tuning bend stays unglided and stays capped; the glide multiplies on
+    // top, exactly as it does for every voice. It is always downward, so the
+    // reel runs SLOWER and consumes less of its window than `need × rate`
+    // reserved — the in-point stays conservative. Nothing is scheduled at all
+    // unless the night glides, so home nights add no events.
+    // The reel must SOUND at degreeHz × glide(t); its rate is degreeHz/pitchHz,
+    // so the playback rate is simply rate × glide(t) — no reference value and
+    // nothing to divide out.
+    if (T.gliding && T.gliding() && T.glideMul) {
+      for (var gt = t0 + 0.5; gt < cut; gt += 0.5) {
+        (function (tt) {
+          T.lane("broadcast").at(tt - 0.05, function () {
+            try { if (video && !video.paused) video.playbackRate = rate * T.glideMul(tt); } catch (e) {}
+          });
+        })(gt);
+      }
+    }
+    // the burst after the collapse: pure static, then the afterglow
       var bn = N(T.noiseSource()), bh = N(c.createBiquadFilter()), bg = N(c.createGain());
       bh.type = "highpass"; bh.frequency.setValueAtTime(1800, burstAt);
       bn.connect(bh); bh.connect(bg); bg.connect(T.lg("broadcast"));
@@ -525,7 +795,7 @@
     } catch (e) {
       for (i = 0; i < nodes.length; i++) { try { nodes[i].disconnect(); } catch (e2) {} }
       stats.fallbacks++; stats.lastReason = "graph: " + (e && e.message);
-      T.airHoldClear(); armed = null;
+      T.airHoldClear(); T.airHoldClear("signal-planned"); armed = null;
       try { T.fallback(t0); } catch (e3) {}
       return;
     }
@@ -539,13 +809,39 @@
     // the element starts on the audio clock's cue (a setTimeout for the lookahead lead)
     T.lane("broadcast").at(t0 - 0.12, function (t) {
       var lead = Math.max(0, (t - c.currentTime) * 1000);
-      setTimeout(function () { try { if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }, lead);
+      setTimeout(function () { try {
+        if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS;
+        // TAPE-STYLE: the pitch and the speed move together, which is the
+        // whole idiom — a reel bent to the field also runs slow or fast, and
+        // that is the sound of a machine, not a pitch-shifter.
+        try { v.preservesPitch = false; v.mozPreservesPitch = false; v.webkitPreservesPitch = false; } catch (e2) {}
+        v.playbackRate = rate * (T.glideMul ? T.glideMul(t0) : 1);
+        var p = v.play(); if (p && p.catch) p.catch(function () {});
+      } catch (e) {} }, lead);
     });
     // the descriptor for the set and the VFD line 「受信 · title · year」
     var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v };
     T.lane("broadcast").at(t0 - 0.15, function () {
       T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year, signal: desc, link: a.reel.src || null }, t0);
     });
+    // 同調 — the tuning line, and the critic's arithmetic gate reads it. It is
+    // emitted ONLY when something was actually tuned: an untuned reel, and a
+    // reel past the ±4 semitone cap, play at rate exactly 1 and say nothing,
+    // so the absence of this line is itself a claim that can be checked.
+    if (seaHz) {
+      T.emitEvent({ cat: "rx", label: "同調", detail: "the station tunes to the signal · reel " + a.pitchHz.toFixed(2) +
+        " Hz · tonic → " + seaHz.toFixed(2) + " Hz · reel unbent" }, t0 + TUNE_S);
+    } else if (rate !== 1 && a.pitchHz > 0) {
+      // The line must describe what is SOUNDING, not what was drawn. On a
+      // gliding night the element's rate is rate × glide(t) and the reel
+      // follows the field down all through the hold, so a reader comparing
+      // this line against the element — or against an FFT — would otherwise
+      // find a discrepancy that is the glide doing its job. Say so.
+      var gl = (T.gliding && T.gliding()) ? T.glideMul(t0 + TUNE_S) : 1;
+      T.emitEvent({ cat: "rx", label: "同調", detail: "reel " + a.pitchHz.toFixed(2) + " Hz → " + (a.pitchHz * rate).toFixed(2) +
+        " Hz · " + (a.cents > 0 ? "+" : "") + a.cents.toFixed(1) + " cents · rate " + rate.toFixed(4) +
+        (gl !== 1 ? " · riding the glide, ×" + gl.toFixed(4) + " at air (" + (1200 * Math.log(gl) / Math.LN2).toFixed(1) + " cents) and tracking" : "") }, t0 + TUNE_S);
+    }
     T.lane("broadcast").at(cut, function () {
       T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" }, cut);
     });

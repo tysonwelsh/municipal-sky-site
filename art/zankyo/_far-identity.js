@@ -33,25 +33,60 @@ const NSEEDS = parseInt(process.argv[3] || "20", 10) || 20;
 const BASE_REF = process.argv[4] || "main";
 const DIR = __dirname;
 
-// The base engine, straight out of git — never a file in the tree, so the
-// gate cannot be fooled by a stale copy someone forgot to refresh.
+// THE WHOLE BUILD, straight out of git — never a file in the tree, so the gate
+// cannot be fooled by a stale copy someone forgot to refresh.
+//
+// It used to be one file. ZK_ENGINE swapped zankyo-audio.js and zk-broadcast.js
+// stayed the working tree's IN BOTH RUNS, so this compared two engines across
+// one shared receiver — and §11's tuned signals, the planned hold, degreeHz and
+// the tone tables are all receiver work that went through a gate structurally
+// unable to see them. It is a BUILD identity gate now: every zankyo-audio.js
+// and zk-*.js the page loads is taken from the base ref. The PJ2 substrate is
+// not swapped, deliberately — it is frozen and never modified from ZANKYŌ, so
+// both sides share it.
+//
+// The other half of the old blindness is NOT fixed here and must not be
+// forgotten: _probe.js mocks fetch with a thenable that never settles, so the
+// reel pool never loads and no signal ever fires under this gate. A receiver
+// change that only shows when a broadcast is on the air still needs the
+// harness, which serves a real manifest. This gate now sees the receiver's
+// CODE; it still does not see the receiver's AIR.
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "zk-ident-"));
-const baseEngine = path.join(tmp, "base-engine.js");
+const baseDir = path.join(tmp, "base");
+fs.mkdirSync(baseDir, { recursive: true });
+const SWAPPED = [];
 try {
-  const src = execFileSync("git", ["show", BASE_REF + ":art/zankyo/zankyo-audio.js"],
-    { cwd: DIR, encoding: "utf8", maxBuffer: 64 << 20 });
-  fs.writeFileSync(baseEngine, src);
+  // ANCHORED AT THE REPO ROOT. `git show <ref>:art/zankyo/f` works from this
+  // directory, but `git ls-tree <ref>:art/zankyo` does NOT — ls-tree applies
+  // the cwd prefix to a tree-ish path, so from in here it resolves to
+  // art/zankyo/art/zankyo and returns an empty list with exit code 0. An empty
+  // list read as "no files" is exactly the silent-wrong-answer shape, so the
+  // listing is taken from the top level where the path means what it says.
+  const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"],
+    { cwd: DIR, encoding: "utf8" }).trim();
+  const listed = execFileSync("git", ["ls-tree", "--name-only", BASE_REF + ":art/zankyo"],
+    { cwd: ROOT, encoding: "utf8", maxBuffer: 16 << 20 }).split("\n").map((x) => x.trim());
+  const want = listed.filter((f) => /^(zankyo-audio|zk-[a-z0-9-]+)\.js$/.test(f));
+  if (!want.length) throw new Error("no engine or zk-*.js at that ref");
+  for (const f of want) {
+    const src = execFileSync("git", ["show", BASE_REF + ":art/zankyo/" + f],
+      { cwd: DIR, encoding: "utf8", maxBuffer: 64 << 20 });
+    fs.writeFileSync(path.join(baseDir, f), src);
+    SWAPPED.push(f);
+  }
 } catch (e) {
-  console.error("could not read the base engine at " + BASE_REF + ": " + e.message);
+  console.error("could not read the base build at " + BASE_REF + ": " + e.message);
   process.exit(1);
 }
+const baseEngine = baseDir;
 
-// One batch run of the critic's probe. ZK_ENGINE swaps the engine underneath
-// it; zk-far.js still loads either way (the base engine simply never asks it
-// anything), so the two runs differ in exactly one file.
-function batch(engine) {
+// One batch run of the critic's probe. ZK_SRCDIR swaps the whole ZANKYŌ script
+// set underneath it, so the two runs differ in every file that differs between
+// the base ref and the tree — and in nothing else.
+function batch(dir) {
   const env = Object.assign({}, process.env);
-  if (engine) env.ZK_ENGINE = engine; else delete env.ZK_ENGINE;
+  delete env.ZK_ENGINE;
+  if (dir) env.ZK_SRCDIR = dir; else delete env.ZK_SRCDIR;
   const out = execFileSync(process.execPath,
     ["_probe.js", "batch", String(RUN), "--nseeds", String(NSEEDS), "--out", fs.mkdtempSync(path.join(tmp, "b-"))],
     { cwd: DIR, encoding: "utf8", env: env, maxBuffer: 256 << 20 });
@@ -65,6 +100,12 @@ function batch(engine) {
   return rows;
 }
 
+// Name the build being compared, and name what this gate can and cannot see.
+// A reader who takes "18/18 identical" for a whole-build guarantee is the
+// person this line exists for.
+console.log("base " + BASE_REF + " — swapping " + SWAPPED.length + " file(s): " + SWAPPED.join(", "));
+console.log("  (code only: _probe.js mocks fetch, so no reel loads and no signal fires under this gate —");
+console.log("   a receiver change that only shows on the air still needs _harness.js, which serves a manifest)");
 process.stdout.write("running " + NSEEDS + " seeds × " + RUN + " s against the working tree… ");
 const cur = batch(null);
 process.stdout.write("and against " + BASE_REF + "… ");

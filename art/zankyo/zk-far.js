@@ -237,7 +237,47 @@ window.ZK_FAR = (function () {
     { id: "metal", kana: "金", name: "metal", family: "音色", d: 0.35, w: 2.6, phase: "W3",
       // Ring modulation of the shō by the sub-drone; the bells and the koto
       // through FM. Inharmonic, gong-like, still pitched.
-      params: function (R, d, amt) { return { ringMix: 0.2 + 0.5 * amt, fmIndex: 0.5 + 3 * amt, targets: R.pick([["sho"], ["sho", "koto"], ["koto"]]) }; } },
+      // §10 (owner, 2026-09-07): the roughness gate is TIERED by distance and
+      // 金 is named as allowed to be abrasive above 0.7. `bite` is that ruling
+      // as a number — nothing at or below 0.70, rising across the loosened
+      // 0.70–0.85 band, full where there is no roughness gate at all. Below
+      // 0.70 every value here is exactly what it was, because that band was
+      // ruled unchanged.
+      params: function (R, d, amt) {
+        var bite = d <= 0.70 ? 0 : d >= 0.85 ? 1 : (d - 0.70) / 0.15;
+        var targets = R.pick([["sho"], ["sho", "koto"], ["koto"]]);   // the draw is kept, and kept FIRST, so the low band is untouched
+        if (bite > 0) {
+          // In the loosened band both of the pitched targets are metal; at the
+          // top the plucked trio goes with them and the ensemble is struck
+          // rather than blown. Widening, never narrowing, so a night that drew
+          // ["sho"] keeps its shō.
+          if (targets.indexOf("sho") < 0) targets = targets.concat(["sho"]);
+          if (targets.indexOf("koto") < 0) targets = targets.concat(["koto"]);
+          // NO FURTHER, and the reason is the peak cap, which §10 kept hard.
+          // FM costs an oscillator and a gain PER NOTE and the strings are the
+          // dense bodies: adding shamisen and biwa took seed 810 from 107
+          // concurrent sources to 116, and shamisen alone still left only one
+          // source of headroom on seeds 810 and 122 (108 and 109 against 110).
+          // A gate with a margin of one is a gate that an unsampled seed
+          // breaches. So the whole of the top tier's escalation goes into the
+          // RING, which costs nothing per note — one modulator serves the
+          // night — and into the FM index on the two targets already there.
+        }
+        return {
+          // THE RING IS THE DARKENING TERM and it is the one to push. dry is
+          // 1 - ringMix, so ringMix 1 leaves no pipe at all — only its own
+          // sidebands, which sit symmetrically about each partial with the
+          // carrier multiplied away. That is a struck bell instead of a blown
+          // pipe, and it costs the centroid nothing: the critic measured the
+          // ratio at 0.85 over 900 s, DARKER than home. The centroid gate is
+          // not tiered and does not need to be.
+          ringMix: Math.min(1, 0.2 + 0.5 * amt + 0.30 * bite),
+          // FM is the term that BRIGHTENS — index buys sidebands and width —
+          // so it rises far less. This is the one place 金 can still fail a
+          // gate that stayed hard everywhere.
+          fmIndex: 0.5 + 3 * amt + 1.5 * bite,
+          targets: targets, bite: bite };
+      } },
     { id: "rev", kana: "逆", name: "reverse", family: "音色", d: 0.40, w: 2.2, phase: "W3",
       // Envelopes reversed: plucks that swell, breaths that end in the attack.
       // A tape played backwards.
@@ -249,7 +289,14 @@ window.ZK_FAR = (function () {
     { id: "nlead", kana: "騒", name: "noise leads", family: "音色", d: 0.60, w: 1.8, phase: "W3",
       // The japanoise vocabulary becomes the soloist, claims the air, and the
       // melodic voices become the texture behind it.
-      params: function (R, d, amt) { return { share: 0.3 + 0.5 * amt, holdS: 12 + 40 * amt }; } },
+      // §10 (owner, 2026-09-07): above 0.85 there is no roughness gate at all
+      // and 騒 is named as allowed to be abrasive. `bite` carries that the same
+      // way 金's does — nothing at or below 0.70, so the band the ruling left
+      // alone is left alone.
+      params: function (R, d, amt) {
+        var bite = d <= 0.70 ? 0 : d >= 0.85 ? 1 : (d - 0.70) / 0.15;
+        return { share: 0.3 + 0.5 * amt, holdS: 12 + 40 * amt, bite: bite };
+      } },
     { id: "phase", kana: "相", name: "phasing", family: "音色", d: 0.60, w: 1.6, phase: "W3",
       // Two copies of a signal's two-second window drift out of phase (Reich)
       // instead of the receiver's usual tune-in / hold / loss.
@@ -315,7 +362,17 @@ window.ZK_FAR = (function () {
     var b = band(d);
     var out = { d: d, u: u, home: d < D_HOME, band: b, ids: [], dep: {},
       kana: b.kana, name: b.label, detail: "", label: "" };
-    if (out.home) { out.detail = "d " + d.toFixed(2); out.label = "家 home · d " + d.toFixed(2); return out; }
+    if (out.home) {
+      // §13: a home night that will lift one cycle says so, so getFar() can
+      // flag it and the identity gate can PARTITION — byte-identity on the
+      // unlifted, a recorded baseline on the lifted. A lifted night that the
+      // gate cannot tell from a regression is a feature indistinguishable from
+      // a bug, which is the critic's condition for allowing this at all.
+      out.homeLift = homeLift(rng);
+      out.detail = "d " + d.toFixed(2) + (out.homeLift ? " · one cycle adrift" : "");
+      out.label = "家 home · d " + d.toFixed(2) + (out.homeLift ? " · 潮 cycle " + out.homeLift.cycle : "");
+      return out;
+    }
 
     // the pool: everything this distance unlocks
     var pool = [], i;
@@ -386,16 +443,127 @@ window.ZK_FAR = (function () {
   // what makes "the median is byte-identical" true rather than nearly true.
   // Declared here from W0; the engine calls it from W4.
   // ==========================================================================
+  // §13 (orchestrator, 2026-09-07): ONE HOME NIGHT IN TWELVE has exactly ONE
+  // strange cycle. The plan's prose always said a home night could have one;
+  // its table always said home nights are byte-identical; and simply removing
+  // the guard below would have given 82.2 % of home nights a crossing cycle,
+  // which is not "one strange cycle" but the end of the invariant. Twelve is
+  // the ruled frequency and it lives here, alone, so the owner can move it
+  // after listening without touching anything else.
+  //
+  // Every draw is taken UNCONDITIONALLY on a night-level sub-fork, so whether
+  // a night lifts, which cycle, and how far are all independent of each other
+  // and of everything else in the night — and forking by label never advances
+  // the parent, so a home night that does NOT lift is untouched to the byte.
+  // THE CYCLE IS POISSON λ=5 (orchestrator). Not a range and not a geometric:
+  // an event that ARRIVES somewhere in the night rather than a lean toward
+  // either end. P(0) = 0.67 %, mode at 4 and 5 together, CDF(4) = 0.4405,
+  // CDF(5) = 0.6160, median 5 — verified independently rather than taken. It
+  // beats the geometric on exactly the property that bothered the owner:
+  // cycle 0 falls from 12 % to two thirds of one percent.
+  //
+  // THE CYCLE IS SAMPLED ON ITS OWN SUB-FORK, and that is not tidiness. Knuth's
+  // method multiplies uniforms until the product drops under e^−λ — about six
+  // draws at λ=5, sometimes three, sometimes twelve. A VARIABLE-LENGTH MIDDLE
+  // would move `d` on every lifted night, and worse, would COUPLE d to the
+  // sampler's internals forever: a different rejection bound or an early exit,
+  // years from now, would silently move d on all 371 lifted nights. Forking
+  // costs the parent nothing — pj2-rand derives a fork from seed0 without
+  // advancing it — so the sampler may take as many uniforms as it likes and d
+  // never notices. The critic caught this before I wrote the sampler.
+  //
+  // Drawing d first would also work and is worse: it leaves the coupling one
+  // refactor away from returning.
+  var HOME_LIFT_ODDS = 1 / 12, HOME_LIFT_LAMBDA = 5, HOME_LIFT_CAP = 200;
+  function homeLift(rng) {
+    var R = rng.fork("homelift");
+    var on = R.chance(HOME_LIFT_ODDS);
+    var C = R.fork("cycle");                           // its own stream — see above
+    var d = 0.15 + R.rnd(0, 0.20);
+    var L = Math.exp(-HOME_LIFT_LAMBDA), which = 0, prod = 1;
+    do { which++; prod *= C.next(); } while (prod > L && which <= HOME_LIFT_CAP);
+    which -= 1;
+    return on ? { cycle: which, d: d } : null;
+  }
+
   function lift(rng, cycleN, d) {
-    if (!(d >= D_HOME)) return 0;
+    if (!(d >= D_HOME)) {
+      // A home night lifts only on the one cycle it drew, and only if it drew
+      // one. RETURNS THE NIGHT'S d WHEN IT DOES NOT LIFT, not 0 — the far
+      // branch below already returns d for an unlifted cycle, and the two
+      // disagreeing meant the engine read "no lift" as "this cycle is at
+      // distance zero". Seed 250 announced 潮 closer in · d 0.03 → 0.00 on
+      // every one of its seven unlifted cycles, and getFar().lifted was true
+      // on every ordinary home cycle — the flag the whole partition rests on.
+      // One contract: this returns the CYCLE'S DISTANCE, always.
+      var h = homeLift(rng);
+      return (h && h.cycle === cycleN) ? h.d : d;
+    }
     var R = rng.fork("cycle:" + cycleN);
     var u = R.next(), mag = R.rnd(0.10, 0.32), out = R.chance(0.5);
     if (u >= 0.40) return d;
     return clamp01(d + (out ? mag : -mag));
   }
 
+  // ==========================================================================
+  // relift(farStream, night, dPrime) → the same night's departures, re-derived
+  // at a DIFFERENT distance (W4)
+  //
+  // The per-cycle lift changes how far out a cycle sits, not who is playing.
+  // Membership is the night's identity — a 崩 night that stopped being a 崩
+  // night for one cycle would be two nights, not one — so this re-runs each
+  // DRAWN departure's own params function at d′, on the same "dep:<id>"
+  // sub-fork it was drawn on. Same members, same jitter stream, different
+  // intensity, and reproducible: forking is by label, so the same fork gives
+  // the same numbers however many times it is taken.
+  //
+  // A departure whose threshold sits ABOVE d′ falls silent for that cycle
+  // rather than being re-derived at a distance it does not reach. That is
+  // exactly what the plan's "calm cycle" is: not a different night, the same
+  // night with its furthest-out voices standing down for a while.
+  //
+  // W0 built FAR.amt()/FAR.on() so a cycle could re-read its own distance, and
+  // then every one of the sixteen departures cached its parameters once per
+  // night in farTimeSetup and never asked again — the accessors have zero call
+  // sites. So the lift has to work by re-deriving the parameters, which is
+  // this, rather than by the departures politely asking.
+  // ==========================================================================
+  function relift(rng, night, dPrime) {
+    var d = clamp01(dPrime), out = { d: d, home: d < D_HOME, ids: [], dep: {} };
+    if (!night || !night.ids) return out;
+    for (var i = 0; i < night.ids.length; i++) {
+      var id = night.ids[i], r = BY_ID[id];
+      if (!r || d < r.d) continue;                       // out of reach this cycle: it stands down
+      var F = rng.fork("dep:" + id);
+      var span = clamp01((d - r.d) / Math.max(0.05, 1 - r.d));
+      var amt = clamp01(0.4 + 0.6 * span + F.rnd(-0.12, 0.12));
+      var p = {};
+      try { p = r.params(F, d, amt) || {}; } catch (e) { p = {}; }
+      p.id = r.id; p.kana = r.kana; p.name = r.name; p.family = r.family; p.amt = amt;
+      out.dep[id] = p; out.ids.push(id);
+    }
+    // The night's own composition rule travels with it: 雲 against a GLACIAL
+    // dilation is mud at any distance.
+    if (out.dep.clouds && out.dep.dilate) { out.dep.dilate.slowMul = 1; out.dep.dilate.slow = false; }
+    // MEMBERSHIP MUST NOT GROW — the critic's requirement, asserted here and
+    // not only in a test. A lift may SILENCE a departure whose threshold is out
+    // of reach this cycle; it must never INTRODUCE one the night did not draw,
+    // because then the night has quietly become a different night and every
+    // distance component moves for a reason that is not the lift. The loop
+    // above only walks night.ids, so this cannot fail as written — which is
+    // exactly why it is worth stating: the next person to edit that loop is
+    // the one this catches.
+    for (var k = 0; k < out.ids.length; k++) {
+      if (night.ids.indexOf(out.ids[k]) < 0) {
+        out.ids.splice(k, 1); k--;
+        if (typeof console !== "undefined" && console.error) console.error("ZK_FAR.relift: membership grew — dropping " + out.ids[k]);
+      }
+    }
+    return out;
+  }
+
   return {
-    D_HOME: D_HOME, D_MIN: D_MIN,
+    D_HOME: D_HOME, D_MIN: D_MIN, relift: relift,
     law: law, dForSeed: dForSeed, seek: seek, band: band,
     REGISTRY: REGISTRY, BY_ID: BY_ID, COMPAT: COMPAT, NAMES: NAMES,
     night: night, lift: lift, count: count,

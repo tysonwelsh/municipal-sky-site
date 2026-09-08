@@ -449,16 +449,49 @@ if (FAULTS.lanes || FAULTS.notes) {
   FAULTS.lane.forEach((f) => console.log("  lane " + f.lane + " @" + f.t + "s — " + f.msg));
   FAULTS.note.forEach((f) => console.log("  note " + f.layer + " freq=" + f.freq + " t=" + f.t + " dur=" + f.dur));
 } else console.log("faults: no lane threw, every scheduled note finite ✓");
+// THE ARM LEAD MUST OUTREACH THE VOICES. A body that commits a note further
+// ahead than the air hold is written schedules something the hold cannot yet
+// refuse — plan §12, exactly. The relation was a comment justified by a
+// measured maximum (35.55 s worst, against a 55 s lead); measured maxima drift
+// when a slower body or a further-reaching time departure is added, and §12
+// would re-open silently on the nights that draw it. Compared against the
+// ENGINE'S OWN constant rather than a copy, so the two cannot disagree.
+// THE CONSTANT IS NOT THE LEAD. arm() is scheduled at
+// Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) — CLAMPED to the cycle start, not
+// rejected — so a broadcast early in its cycle arms with less than 55 s of
+// lead. Measured on 14 seeds at 1 h, 48.1 % of broadcasts sit closer than 55 s
+// to their cycle start, the earliest at 8.2 s. Asserting against the engine's
+// CONSTANT could not see that: it is the shape of gate that cannot fail.
+// armLeadMinS is the smallest lead ACTUALLY used, and the assertion below now
+// binds on it.
+const ARM_EFF = FAULTS.armLeadMinS != null ? FAULTS.armLeadMinS : FAULTS.armLeadS;
+if (FAULTS.armLeadS && FAULTS.maxLead) {
+  const marg = ARM_EFF - FAULTS.maxLead;
+  console.log("commit lead: worst " + FAULTS.maxLead.toFixed(2) + "s (" + FAULTS.maxLeadLayer +
+    ") against the SMALLEST arm lead actually used " + ARM_EFF.toFixed(2) + "s (constant " + FAULTS.armLeadS +
+    "s) — margin " + marg.toFixed(2) + "s" + (marg > 0 ? " ✓" : " ✗") +
+    (FAULTS.paLead > FAULTS.armLeadS ? "   [PA reaches " + FAULTS.paLead.toFixed(1) + "s — 回線 bulk-schedules; not asserted, see §12 note]" : ""));
+}
 
 // ---- verdicts ----
 const fails = [];
 if (FAULTS.lanes) fails.push(FAULTS.lanes + " lane throw(s) — " + FAULTS.lane.map((f) => f.lane + ": " + f.msg).slice(0, 3).join(" | "));
 if (FAULTS.notes) fails.push(FAULTS.notes + " note(s) scheduled with a non-finite freq/time/duration");
+if (FAULTS.armLeadS && FAULTS.maxLead >= ARM_EFF)
+  fails.push("a voice committed " + FAULTS.maxLead.toFixed(2) + "s ahead (" + FAULTS.maxLeadLayer +
+    "), beyond the SMALLEST arm lead actually used (" + ARM_EFF.toFixed(2) + "s; constant " + FAULTS.armLeadS +
+    "s) — the air hold cannot refuse a note that early (plan §12)");
 // Scale adherence is a HOME gate. 耳 bends the koto off the grid by ear, 減
 // narrows semitone pairs toward quarter-tones, 螺 spirals the whole field —
 // leaving the scale is what the far tail IS, so the check only binds at home.
-if (FARD == null && notes.length > 50 && inScale < notes.length) fails.push("scale adherence < 100%");
-else if (FARD != null && notes.length > 50 && inScale < notes.length) console.log("scale adherence: " + inScale + "/" + notes.length + " (far night — off-grid is the departure, not a fault)");
+//
+// AND "HOME" MEANS THE NIGHT, NOT THE FLAG. rc.21 keyed this to whether --far
+// was passed, which is wrong for the obvious reason: a seed can be far without
+// being told to be. Seed 19 draws d 0.94 naturally (崩 重 多 鏡) and was failing
+// this gate on its own lottery, with no flag in sight.
+const NIGHT_HOME = (() => { try { return !!(runA && runA.Z && runA.Z.getFar && runA.Z.getFar().home); } catch (e) { return FARD == null; } })();
+if (NIGHT_HOME && notes.length > 50 && inScale < notes.length) fails.push("scale adherence < 100%");
+else if (!NIGHT_HOME && notes.length > 50 && inScale < notes.length) console.log("scale adherence: " + inScale + "/" + notes.length + " (far night — off-grid is the departure, not a fault)");
 if (RUN >= 700 && stats.transforms.length < 6) fails.push("only " + stats.transforms.length + " transform types used");
 if (RUN >= 700 && answers < 1) fails.push("no cross-voice answers");
 if (RUN >= 700 && maxGen < 3) fails.push("max generation " + maxGen + " < 3");
@@ -468,24 +501,111 @@ if (RUN >= 1500 && kirus < 1) fails.push("no KIRU");
 // Phase 1 gates (plan §7): melodic density ≈ half the baseline (4 600–5 780 / 30 min → 2 300–2 900 ±);
 // ≥ 3 cycle kinds and ≥ 2 seatings seen in an hour
 const melPer30 = melodicNotes * 1800 / RUN;
-// floor 1700 (Phase 3): with five melodic voices and the seating lottery resting each about one cycle in
-// four, an hour can draw three sparse seatings in a row (seed 17: drift koto+biwa, ordinary without the
-// shakuhachi, storm shamisen-only → ~1 850) — that is the design, not a fault; the ceiling stays
-// S1 RE-BASE (orchestrator ruling, 2026-09-05): the 1700–3300 floor predated the Air and counted three of the five
-// melodic voices; at 4 h the base engine (a96f592) failed it on seed 3042 with or without the receiver. Measured the
-// same way — all five voices — on the base: 1 800 s seeds 3042 / 17 / 7 → 2 808 / 2 437 / 2 444; 14 400 s seeds
-// 3042 / 17 → 1 838 / 2 154 (the critic adds 2 626 at 1 800 / 8891 and 2 512 at 7 200 / 7). Floor = the lowest − 10 % ≈ 1 650; the 3 300 ceiling stays (the critic's ruling).
-// REGRESSION BOUND, seeds 3042 and 7 only — not an engine invariant. The
-// critic measured the base's own spread over the 36 home nights of the 40-seed
-// batch: melodic notes/30 min runs 1084–4191, and TWELVE of the thirty-six sit
-// outside this band. The shipped engine fails it on seed 134 (4261) playing an
-// ordinary home night. It is still a good tripwire on the two seeds the
-// harness habitually runs — on 3042 a move outside this band really would mean
-// something changed — but read as an invariant it sends people chasing
-// phantoms, or teaches them to ignore a red VERDICT. So it is scoped to its
-// seeds and the number is reported on every other one.
+// HISTORY. The floor has been 1700, then 1650, then my proportional 1500,
+// each calibrated against a handful of seeds. I briefly wrote here that the
+// critic's two probe distributions (1084–4191 before the re-base, 1015–4019
+// after) corroborated the 6–8 % melodic cost of the second broadcast, because
+// the numbers fell by about the right amount. THAT WAS WRONG AND IS WITHDRAWN:
+// the probe's fetch mock never resolves, so in every probe run all seven
+// broadcasts fall back and NOT ONE holds the air. A second broadcast costs
+// essentially nothing there, so that drop cannot be evidence for its cost. I
+// read a real-looking number as confirmation of a mechanism the instrument is
+// structurally unable to show — the same fault as a band that cannot fail.
+//
+// CANON_SEED survives the density rewrite because the NODE BUDGET below still
+// uses it, and for the same reason the old density band did: it is a
+// regression bound on the two seeds the harness habitually runs, not an engine
+// invariant. On 3042 a move really would mean something changed; read as an
+// invariant across all seeds it sends people chasing phantoms.
 var CANON_SEED = (SEED === 3042 || SEED === 7);
-if (RUN >= 1500 && CANON_SEED && (melPer30 < 1650 || melPer30 > 3300)) fails.push("melodic notes/30 min " + Math.round(melPer30) + " outside 1650–3300 (regression bound, seeds 3042/7; base spread 1084–4191)");
+// ============================================================================
+// MELODIC DENSITY — MEASURED ON THIS INSTRUMENT, WITH THE REELS PLAYING
+// ============================================================================
+// The critic derived a floor from their 36 home nights (min 1015, p5 1280,
+// median 2246, max 4019) and handed it to me to set here. It does not
+// transfer, and finding out why is the most important thing in this block.
+//
+// THEIR PROBE AND THIS HARNESS WERE MEASURING DIFFERENT BUILDS. _probe.js
+// mocks fetch as { then: () => this }, a thenable whose callback is never
+// invoked, so the reel manifest never arrives: every broadcast falls back and
+// none holds the air. Over 1800 s on seed 104 the probe logs seven 受信, all
+// seven "fallback", and zero 消失. This harness serves the real manifest, so
+// the same seven broadcasts play and hold. Setting ZK_SIGNAL_MOCK=none here
+// reproduces the probe EXACTLY on all five seeds tried — 104, 132, 107, 3042,
+// 7 give 1015 / 1280 / 1488 / 2402 / 2204 against the probe's identical
+// figures — which isolates the manifest as the only difference between the two
+// instruments and confirms this engine has not drifted from their base.
+//
+// The air-hold is therefore worth 0.7–13.2 % of melodic notes, and the probe
+// cannot see any of it. That is a live blind spot in the critic's base, not a
+// point about this floor: the re-base was run to price two broadcasts a cycle,
+// and on that instrument two broadcasts cost nothing.
+//
+// So the numbers below are mine, measured with reels playing on the critic's
+// own 40-seed list at 1800 s. The home/far split agrees with theirs exactly —
+// 36 home, 4 far — so we are classifying the same nights. Home density runs
+// 895 to 3980, median 1986. The floor is 800: about ten percent below the
+// observed minimum, the same margin they reasoned for. Their 900 would fail
+// seed 104 at 895, an honest sparse home night.
+//
+// THE LENGTH IS PART OF THE GATE. Seed 3042 reads 2385 at 1800 s and 1647 at
+// 7200 s; a bound without its length compares two things that were never
+// comparable. So does the reel state, for exactly the reason above — the gate
+// binds only when both match the base and merely reports otherwise.
+//
+// THE PER-SEED BAND IS THE DISCRIMINATING GATE, and _harness-base.json carries
+// the per-seed densities for it. A single floor cannot work across a fourfold
+// honest spread: it is either too low to catch a regression on a dense seed or
+// too high to pass a sparse one.
+//
+// ±20 % IS NOT AN ERROR BAR. This instrument is exactly repeatable — three
+// runs each on seeds 104, 3042 and 7 returned identical counts, spread zero —
+// so the width is a policy choice about how large a musical change should stop
+// a build, and a uniform 15 % drop would pass on every seed. Because the
+// instrument is exact, any deviation at all is reported even when it passes;
+// silence means the number is unchanged to the note.
+const DENS_FLOOR = 800, DENS_CEIL = 4400, DENS_BAND = 0.20;
+// The ceiling is mine and nobody ruled it: a runaway density is as much a
+// regression as a stalled one, but 4400 is only the observed max of 3980 plus
+// about ten percent. It is a number chosen to sit above the data I have, which
+// is the shape of constant we have agreed to name rather than let pass as a
+// measurement. The per-seed band bounds both directions honestly.
+let dBase = null;
+try { dBase = JSON.parse(fs.readFileSync(path.join(__dirname, "_harness-base.json"), "utf8")); } catch (e) {}
+if (notes.length > 50) {
+  const bm = dBase && dBase.meta;
+  const sameLen = bm && Math.abs(RUN - bm.runS) < 1;
+  const sameReels = bm && SIGNAL_MOCK === bm.signalMock;
+  const banked = dBase && dBase.seedDensity ? dBase.seedDensity[String(SEED)] : null;
+  const d = Math.round(melPer30);
+  // A --far override is a different night from the one banked, and on a far
+  // night an extreme density IS the departure: seed 89 at d 0.95 draws 19
+  // melodic notes (沈) and seed 1047 draws 8316 (群). Both are the work
+  // succeeding. The home distribution has no authority over them, exactly as
+  // the scale-adherence gate above defers on a far night.
+  const why = !sameLen ? RUN + "s vs the base's " + (bm ? bm.runS : "?") + "s"
+    : !sameReels ? "reels '" + SIGNAL_MOCK + "' vs the base's '" + (bm ? bm.signalMock : "?") + "'"
+    : FARD != null ? "--far " + FARD + " is not the night the base drew for this seed" : null;
+  if (why) {
+    console.log("melodic density: " + d + " — not asserted (" + why +
+      "); a bound from the base would not be comparing like with like");
+  } else if (banked != null) {
+    const off = (d - banked) / banked;
+    if (d === banked) console.log("melodic density: " + d + " — exactly this seed's banked value ✓");
+    else console.log("melodic density: " + d + " vs this seed's banked " + banked + " (" +
+      (off >= 0 ? "+" : "") + (off * 100).toFixed(1) + "%) — this instrument is exactly repeatable, so something changed" +
+      (Math.abs(off) > DENS_BAND ? " ✗" : " (inside the ±" + Math.round(DENS_BAND * 100) + "% band)"));
+    if (Math.abs(off) > DENS_BAND)
+      fails.push("melodic notes/30 min " + d + " is " + (off >= 0 ? "+" : "") + (off * 100).toFixed(1) +
+        "% from seed " + SEED + "'s banked " + banked + " at " + RUN + "s (band ±" + Math.round(DENS_BAND * 100) + "%)");
+  } else {
+    console.log("melodic density: " + d + " at " + RUN + "s — seed not in the base, floor only " +
+      "(home spread " + bm.homeMin + "-" + bm.homeMax + " over " + bm.homeSeeds + " seeds)" +
+      (NIGHT_HOME ? "" : " — far night, reported not asserted"));
+    if (NIGHT_HOME && (d < DENS_FLOOR || d > DENS_CEIL))
+      fails.push("melodic notes/30 min " + d + " outside " + DENS_FLOOR + "-" + DENS_CEIL + " at " + RUN + "s");
+  }
+}
 if (RUN >= 3600 && formVocab.nKind < 3) fails.push("only " + formVocab.nKind + " cycle kind(s) in " + RUN + "s");
 if (RUN >= 3600 && formVocab.nSeat < 2) fails.push("only " + formVocab.nSeat + " seating(s) in " + RUN + "s");
 // Phase 2 gates (plan §7): ≥ 1 sea change per hour; seed pool ≥ 12 over a long run; ≥ 8 distinct aitake voicings
@@ -510,7 +630,11 @@ if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push
 if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not on the landscape cut");
 // S1 gates (PLAN-SIGNAL-INTEGRATION §1 S1): never two per cycle, never in a KIRU, the melodic voices silent for the hold,
 // ≈ 1 per 3 cycles over 4 h (0.7–1.6) when the reel is ready; the fallback fires when it is not
-if (signalVocab.maxPer > 1) fails.push("two signals in one cycle");
+// The owner asked for TWO broadcasts a cycle (was one). Three is still a
+// fault: the plan draws at most two, so a third means the visitation seam is
+// firing one as well as the drawn times, which is exactly what happened on the
+// first pass of this change.
+if (signalVocab.maxPer > 2) fails.push("more than two signals in one cycle");
 if (signalVocab.nearKiru > 0) fails.push(signalVocab.nearKiru + " signal(s) within a KIRU's reach");
 if (signalVocab.notSilent > 0) fails.push(signalVocab.notSilent + " melodic note(s) inside a signal's hold");
 // §8.1 (the owner, after the rc.9 listen) raised the seating rate from about
