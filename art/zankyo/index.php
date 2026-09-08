@@ -178,7 +178,7 @@ include '../../includes/header.php';
         <div class="zk-mod-zone zk-mod-mode">
           <span class="zk-mod-head">旋法 &middot; MODE</span>
           <div class="zk-mod-lamp">
-            <span class="zankyo-scale-name" id="zankyo-mode-name"><b>Hirajoshi</b> &middot; D</span>
+            <span class="zankyo-scale-name" id="zankyo-mode-name"><b>Hirajoshi</b> &middot; <span class="zk-tonic">D</span></span>
             <span class="zankyo-scale-mood" id="zankyo-mode-mood">haunted &middot; derelict &middot; neon-rust</span>
           </div>
         </div>

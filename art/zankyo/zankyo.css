@@ -426,6 +426,11 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .zankyo-scale-name b { color: var(--red); }
+/* The tonic is a SINGLE letter and must be unambiguous. Orbitron's D and O are
+   squares with rectangular counters — at 13px a D reads as a tofu box, which is
+   exactly how it was reported. The face stays on the mode name; the letter that
+   has to be legible gets the mono face. */
+.zk-tonic { font-family: "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.04em; }
 /* mood words: demoted to a screen-printed spec line */
 .zankyo-scale-mood {
   font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.7;
