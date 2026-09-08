@@ -1209,17 +1209,68 @@ window.ZankyoAudio = (function () {
   // that everywhere — a few anchors across a slow spiral, a dense burst only
   // while the tape is snapping back. Nothing is written at all when nothing
   // glides, which is every home night.
-  var FAR_GLIDE_EPS = 0.6, FAR_GLIDE_MAX = 800, FAR_GLIDE_MAX_DT = 0.5;   // 0.6 ¢ per anchor holds the worst drawable glide (弛 at overS 60, snapping back) to 0.72 ¢ against the voices; below 0.6 the 50 ms sampling floor binds and nothing more is bought
+  // THE COST OF THIS RULE IS MEASURED AND THE CONSTANTS ARE UNCHANGED —
+  // see the numbers before touching them.
+  // On a 弛 night every sounding voice writes its OWN copy of the same curve,
+  // and the whole of a note's glide is written in the lookahead tick that
+  // schedules it. Seed 42 at far 0.95 (耳+遅+弛+群) peaks at 16 116 AudioParam
+  // calls in one second, 14 926 of them Oscillator.frequency ramps, roughly
+  // fifty notes each writing 308 anchors in the same burst. Home peaks 1 873
+  // during play. Nothing faults, but a main-thread burst that size is the one
+  // load that could bite a phone.
+  //
+  // COARSENING THE ANCHOR RULE CANNOT FIX IT, measured across seeds 42, 23 and
+  // 65 with ZK_GLIDE_AUDIT (worst error against the true curve / worst play
+  // peak): 0.6¢/0.5s → 0.728 ¢ / 16 116, which is the bound the design asks
+  // for. 1.2¢/0.5s → 1.06 ¢ / 9 742. 2¢/1s → 2.03 ¢ / 7 500. 10¢/3s → 8.85 ¢ /
+  // 3 432. The error is past budget long before the peak is near 2 500, because
+  // the load is not anchor density — it is N voices carrying ONE curve. Tuned
+  // on seed 42 alone the numbers look fine (0.310 ¢ at 10¢/3s); seed 23 is the
+  // seed that tells the truth, and a threshold chosen on the convenient seed
+  // would have shipped a twelvefold error regression.
+  //
+  // FAR_GLIDE_MAX IS NOT A LEVER EITHER: capping anchors per glide makes the
+  // loop break mid-snap and cover the rest with one straight line, which took
+  // the error to 9-16 ¢. It stays at 800 as a runaway guard, where it never
+  // binds.
+  //
+  // The fix that would work is structural: drive every voice's detune from ONE
+  // ConstantSourceNode carrying the glide, so the curve is written once per
+  // epoch instead of once per voice, or write each note's anchors in chunks as
+  // the lookahead advances instead of all at schedule time. Either is its own
+  // piece of work with the discontinuity tap on it, not a constant to retune.
+  var FAR_GLIDE_EPS = 0.6, FAR_GLIDE_MAX = 800, FAR_GLIDE_MAX_DT = 0.5;
+  // dev audit (ZK_GLIDE_AUDIT): the worst error, in cents, between the anchor
+  // polyline actually written and the true glide curve, sampled at the midpoint
+  // of every span. This is what says whether a coarser anchor rule is audible.
+  var GLIDE_AUDIT = (typeof process !== "undefined" && process.env && process.env.ZK_GLIDE_AUDIT) ? { maxC: 0, anchors: 0, calls: 0, maxN: 0 } : null;
   function farGlideRamps(param, base, t, durS) {
     var step = 0.05, last = farGlideMul(t), n = 0, x, lastX = 0;
+    var aud = GLIDE_AUDIT ? [[0, last]] : null;
     for (x = step; x < durS; x += step) {
       var m = farGlideMul(t + x);
       if (Math.abs(1200 * Math.log(m / last) / Math.LN2) < FAR_GLIDE_EPS && x - lastX < FAR_GLIDE_MAX_DT) continue;
       param.linearRampToValueAtTime(base * m, t + x);
+      if (aud) aud.push([x, m]);
       last = m; lastX = x;
       if (++n >= FAR_GLIDE_MAX) break;
     }
     param.linearRampToValueAtTime(base * farGlideMul(t + durS), t + durS);
+    if (aud) {
+      aud.push([durS, farGlideMul(t + durS)]);
+      GLIDE_AUDIT.calls++; GLIDE_AUDIT.anchors += aud.length;
+      if (aud.length > GLIDE_AUDIT.maxN) GLIDE_AUDIT.maxN = aud.length;
+      for (var i = 0; i + 1 < aud.length; i++) {
+        var x0 = aud[i][0], x1 = aud[i + 1][0], m0 = aud[i][1], m1 = aud[i + 1][1];
+        if (!(x1 > x0)) continue;
+        for (var f = 0.25; f < 0.99; f += 0.25) {
+          var xm = x0 + (x1 - x0) * f;
+          var lin = m0 + (m1 - m0) * f, tru = farGlideMul(t + xm);
+          var e = Math.abs(1200 * Math.log(lin / tru) / Math.LN2);
+          if (e > GLIDE_AUDIT.maxC) GLIDE_AUDIT.maxC = e;
+        }
+      }
+    }
   }
   // Read tonight's pitch departures into the machinery above. Called once at
   // play(), after the night is drawn; every value here is already seeded.
@@ -1429,15 +1480,19 @@ window.ZankyoAudio = (function () {
   var GRIT_LAYERS = { subDrone: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
-  // hichiriki 0.35 — HALVED from 0.7 at the owner's ask (2026-09-07). The
-  // console DEFAULT only: the slider now opens at half of what it did and the
-  // owner can raise it again from the faceplate. Its body, its trims and the
-  // mix pass's presence work are deliberately untouched — this is a level
-  // decision about how loud the reed sits in the ensemble, not a voicing one.
-  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, hichiriki: 0.2625, koto: 0.6, shamisen: 0.75, biwa: 0.7, taiko: 0.434, noise: 0.5, ambient: 0.9625, pa: 0.6, broadcast: 0.7 };
+  // EVERY KNOB READS 50 (owner, 2026-09-08). The console defaults used to carry
+  // half the mix decision and LAYER_VOL_TRIM the other half, so no two knobs
+  // started in the same place and none of them had the same room above the
+  // detent. Now the console opens dead centre on every channel and the whole
+  // level decision lives in LAYER_VOL_TRIM below, where it is written down and
+  // commented. What the owner HEARS is unchanged: each layer's old
+  // default x old trim was folded into the new trim (see the table there).
+  // Consequence, and it is the point: from 50 every knob is worth exactly
+  // +6.02 dB up and silence down, the same gesture on every channel.
+  var layerVolumes = { subDrone: 0.5, sho: 0.5, shakuhachi: 0.5, hichiriki: 0.5, koto: 0.5, shamisen: 0.5, biwa: 0.5, taiko: 0.5, noise: 0.5, ambient: 0.5, pa: 0.5, broadcast: 0.5 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
   var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, broadcast: 1 };
-  var DEFAULT_LAYER_VOL = 0.7;
+  var DEFAULT_LAYER_VOL = 0.5;   // the fallback for a layer not in the table above — centred like the rest (unreachable for every shipped layer)
 
   var LAYER_PARAM_DEFAULTS = {
     subDrone:   { cutoff: 220, drive: 0.5, sub: 0.6, movement: 0.18 },
@@ -1462,19 +1517,43 @@ window.ZankyoAudio = (function () {
   // 0.9 on the main instruments: ~10% more air between phrases by default —
   // ambient and noise keep their pace (they're the weather, not the band).
   var LAYER_RATE_TRIM = { shakuhachi: 0.9, koto: 0.9, shamisen: 0.9, taiko: 0.9, hichiriki: 0.9, biwa: 0.9 };
-  // Volume trim: shakuhachi + koto sit ~10% louder than their slider implies, so
-  // they read more clearly in the mix without changing the displayed values.
-  // shamisen 2.2: makes up the level it lost coming off the grit bus (which was
-  // boosting it ~5-10x via the grit curve's makeup) so it sits in the mix again.
-  // koto 1.25 / shamisen 2.5 (ZANKYŌ 2, Phase 1): +1.1 dB each — with the air
-  // they are often the only line for 20–40 s and read under the drone bed
-  // at the old trims (critic's real-audio measurement; owner may revert).
-  // Phase M (the mix pass, the last lever, within the +3 dB budget): koto 1.25 → 1.6 (+2.1; the
-  // pick burst rides its peak rows, the two together land at +3),
-  // shamisen 2.5 → 3.0 (+1.6),
-  // biwa 2.0 → 2.8, hichiriki and PA 1 → 1.4 (+2.9 dB each) — the bodies the owner
-  // heard buried; the shakuhachi and the shamisen already read.
-  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.6, shamisen: 3.0, biwa: 2.55, hichiriki: 1.4, pa: 1.4 };   // biwa 2.8 → 2.55 (round 2): its strums' picks summed per row pushed the peak to +3.4
+  // Volume trim — THE WHOLE LEVEL DECISION, one number per layer. Effective
+  // gain is knob x trim, and every knob now opens at 0.5, so a layer's shipped
+  // level is trim/2 and a layer's ceiling (knob 100) is the trim itself.
+  //
+  // 2026-09-08, the centring: each entry below is the layer's old console
+  // default x its old trim x 2, so the mix did not move a decibel. The history
+  // that produced those old trims, kept because it is the reasoning and not
+  // just the numbers: shakuhachi + koto sat ~10 % louder than their slider
+  // implied so they read in the mix; shamisen made up the level it lost coming
+  // off the grit bus (which had been boosting it ~5–10x via the grit curve's
+  // makeup); ZANKYŌ 2 Phase 1 gave koto and shamisen +1.1 dB each, since with
+  // the air they are often the only line for 20–40 s and read under the drone
+  // bed; Phase M (the mix pass, within a +3 dB budget) lifted koto again (+2.1,
+  // its pick burst rides the peak rows so the two land at +3), shamisen (+1.6),
+  // biwa (to 2.8, then 2.55 in round 2 — its strums' picks summed per row pushed
+  // the peak to +3.4), and hichiriki and PA (+2.9 dB each) for bodies the owner
+  // heard buried. Then the owner halved the hichiriki (2026-09-07): a level
+  // decision about how loud the reed sits, never touching its body or presence.
+  //
+  //   layer        old knob x old trim   = shipped level   -> trim (2x)
+  //   subDrone     0.6      x 1          = 0.6               1.2
+  //   sho          0.62     x 1          = 0.62              1.24
+  //   shakuhachi   0.85     x 1.1        = 0.935             1.87
+  //   hichiriki    0.2625   x 1.4        = 0.3675            0.735
+  //   koto         0.6      x 1.6        = 0.96              1.92
+  //   shamisen     0.75     x 3.0        = 2.25              4.5
+  //   biwa         0.7      x 2.55       = 1.785             3.57
+  //   taiko        0.434    x 1          = 0.434             0.868
+  //   noise        0.5      x 1          = 0.5               1
+  //   ambient      0.9625   x 1          = 0.9625 x2         3.85   <- the one deliberate move
+  //   pa           0.6      x 1.4        = 0.84              1.68
+  //   broadcast    0.7      x 1          = 0.7               1.4
+  //
+  // AMBIENT x2 (+6.02 dB, owner): the layer underneath the knob, doubled. Only
+  // the ambient SOURCES double — the receiver's radioBus joins at sumAmb, past
+  // this gain, so the broadcast is untouched by it.
+  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, pa: 1.68, broadcast: 1.4 };
   // PRESENCE (Phase M): a peaking boost on each body's defining band, chosen
   // from the masker map — the band where the landscape is weakest against the
   // voice — pre-attenuated (pre) so the compressor sees no new peak. Measured:
@@ -5327,7 +5406,7 @@ window.ZankyoAudio = (function () {
       o.ovToJo = bcRej.ovToJo; o.ovToHa = bcRej.ovToHa; o.seats = bcSeats; o.geom = bcGeom; return o; },
     // the gates' handle on the two fault classes (rc.21)
     getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
-      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin }; },
+      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin , glide: GLIDE_AUDIT }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.
