@@ -117,12 +117,10 @@ include '../../includes/header.php';
            the receiver sub-panel (owner refinement §4.3: S0 leaves the plate,
            S1 fills it with band / flutter / grit and the 選局 TUNE control) -->
       <div class="zk-bank-side">
-      <div class="zk-mount">
-        <span class="zk-bolt zk-bolt-tl" style="--hex:12deg" aria-hidden="true"></span>
-        <span class="zk-bolt zk-bolt-tr" style="--hex:-20deg" aria-hidden="true"></span>
-        <span class="zk-bolt zk-bolt-bl" style="--hex:40deg" aria-hidden="true"></span>
-        <span class="zk-bolt zk-bolt-br" style="--hex:5deg" aria-hidden="true"></span>
-        <div class="zk-set2" id="zankyo-set2">
+      <!-- owner §C: the mounting strap and its four bolts are gone. The set is
+           the casing that holds the tube and nothing around it; the width they
+           occupied goes to the tube, which keeps 4:3 and the column's edges. -->
+      <div class="zk-set2" id="zankyo-set2">
           <div class="zk-set2-tubewrap">
             <div class="zk-tube" id="zankyo-tube">
               <canvas id="zankyo-set" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
@@ -143,8 +141,7 @@ include '../../includes/header.php';
             <span class="zk-rx-label">受信</span>
             <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
           </div>
-          <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
-        </div>
+        <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
       </div>
       <!-- the transport plate (owner §4.5): PLAY · STOP · master volume, moved
            here from the control rail; the ids are the same, zankyo-ui.js binds
