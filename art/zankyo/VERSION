@@ -1,1 +1,1 @@
-2.1.0-rc.39 — a broadcast no longer goes missing when its scene is full: it moves to the other half of the cycle instead of being lost, so far more cycles carry their pair, and no broadcast now opens a cycle sooner than the receiver can tune to it
+2.1.0-rc.40 — the weather comes forward: bells, wind chimes, rain and the other environmental events sit about three-quarters louder in the mix, where before they hid under the instruments
