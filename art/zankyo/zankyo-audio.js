@@ -1352,7 +1352,15 @@ window.ZankyoAudio = (function () {
   function glideAnchor(job, v, when) {
     var now = ctx.currentTime;
     glideSpent++;
-    if (job.lastT != null && now > job.lastT && when > now) job.param.setValueAtTime(job.lastV, now);
+    // THE FAILURE THIS COMMIT CREATED, and the one it has to answer for: every
+    // anchor used to be written at schedule time and so was always in the
+    // future. A deferred one is not, if the main thread stalls longer than the
+    // pump's runway — and Web Audio treats a ramp to a past time as a ramp to
+    // NOW, which is a jump. So an anchor whose moment has gone is DROPPED, not
+    // written late: the chain carries on to the next one as a slightly longer
+    // straight line, which is continuous. A flattened half-second beats a click.
+    if (!(when > now)) return;
+    if (job.lastT != null && now > job.lastT) job.param.setValueAtTime(job.lastV, now);
     job.param.linearRampToValueAtTime(v, when);
     job.lastT = when; job.lastV = v;
   }
@@ -1388,6 +1396,20 @@ window.ZankyoAudio = (function () {
   // Started with the transport and stopped with it. The queue holds AudioParam
   // references, so it MUST be dropped on stop — a pending chain would otherwise
   // keep writing into a stopped performance's oscillators (and hold them alive).
+  // Idempotent, and called from the queue push as well as from play(), because
+  // play() can only start the pump for departures the night had ALREADY drawn.
+  // farPitchSetup runs again at every performance begin, and on a home night
+  // with a lift it draws a night of its own at d′ — so farGlideOn can in
+  // principle turn true with the pump not running, and a chain would then be
+  // queued and never drained: the glide silently absent for that cycle, with no
+  // fault, no throw and no note-stream change, because a glide is pitch-bend
+  // and not scheduling. Every symbolic gate would pass. (The critic raised this
+  // as a hypothesis; it is NOT reachable today — homeLift draws d′ in
+  // [0.15, 0.35] (zk-far.js:482) while 弛 needs 0.50 and 螺 needs 0.75, so a
+  // home lift cannot carry a glide. But that is a coincidence of three
+  // constants in two files, and the failure it guards is invisible. Starting
+  // the pump where the work appears costs one line and does not depend on any
+  // of them.)
   function glidePumpStart() { if (glidePumpId == null) glidePumpId = setInterval(glidePump, GLIDE_PUMP_MS); }
   function glidePumpStop() {
     if (glidePumpId != null) { clearInterval(glidePumpId); glidePumpId = null; }
@@ -1408,6 +1430,7 @@ window.ZankyoAudio = (function () {
     // 1 506 calls in one tick on seed 65 — three times home — because a drone
     // arms its partials together and 0.25 s is five anchors each.
     glideQ.push(job);
+    glidePumpStart();   // A JOB IN THE QUEUE IMPLIES A RUNNING PUMP. See the note at glidePumpStart.
   }
   // Read tonight's pitch departures into the machinery above. Called once at
   // play(), after the night is drawn; every value here is already seeded.
