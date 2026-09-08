@@ -1209,17 +1209,68 @@ window.ZankyoAudio = (function () {
   // that everywhere — a few anchors across a slow spiral, a dense burst only
   // while the tape is snapping back. Nothing is written at all when nothing
   // glides, which is every home night.
-  var FAR_GLIDE_EPS = 0.6, FAR_GLIDE_MAX = 800, FAR_GLIDE_MAX_DT = 0.5;   // 0.6 ¢ per anchor holds the worst drawable glide (弛 at overS 60, snapping back) to 0.72 ¢ against the voices; below 0.6 the 50 ms sampling floor binds and nothing more is bought
+  // THE COST OF THIS RULE IS MEASURED AND THE CONSTANTS ARE UNCHANGED —
+  // see the numbers before touching them.
+  // On a 弛 night every sounding voice writes its OWN copy of the same curve,
+  // and the whole of a note's glide is written in the lookahead tick that
+  // schedules it. Seed 42 at far 0.95 (耳+遅+弛+群) peaks at 16 116 AudioParam
+  // calls in one second, 14 926 of them Oscillator.frequency ramps, roughly
+  // fifty notes each writing 308 anchors in the same burst. Home peaks 1 873
+  // during play. Nothing faults, but a main-thread burst that size is the one
+  // load that could bite a phone.
+  //
+  // COARSENING THE ANCHOR RULE CANNOT FIX IT, measured across seeds 42, 23 and
+  // 65 with ZK_GLIDE_AUDIT (worst error against the true curve / worst play
+  // peak): 0.6¢/0.5s → 0.728 ¢ / 16 116, which is the bound the design asks
+  // for. 1.2¢/0.5s → 1.06 ¢ / 9 742. 2¢/1s → 2.03 ¢ / 7 500. 10¢/3s → 8.85 ¢ /
+  // 3 432. The error is past budget long before the peak is near 2 500, because
+  // the load is not anchor density — it is N voices carrying ONE curve. Tuned
+  // on seed 42 alone the numbers look fine (0.310 ¢ at 10¢/3s); seed 23 is the
+  // seed that tells the truth, and a threshold chosen on the convenient seed
+  // would have shipped a twelvefold error regression.
+  //
+  // FAR_GLIDE_MAX IS NOT A LEVER EITHER: capping anchors per glide makes the
+  // loop break mid-snap and cover the rest with one straight line, which took
+  // the error to 9-16 ¢. It stays at 800 as a runaway guard, where it never
+  // binds.
+  //
+  // The fix that would work is structural: drive every voice's detune from ONE
+  // ConstantSourceNode carrying the glide, so the curve is written once per
+  // epoch instead of once per voice, or write each note's anchors in chunks as
+  // the lookahead advances instead of all at schedule time. Either is its own
+  // piece of work with the discontinuity tap on it, not a constant to retune.
+  var FAR_GLIDE_EPS = 0.6, FAR_GLIDE_MAX = 800, FAR_GLIDE_MAX_DT = 0.5;
+  // dev audit (ZK_GLIDE_AUDIT): the worst error, in cents, between the anchor
+  // polyline actually written and the true glide curve, sampled at the midpoint
+  // of every span. This is what says whether a coarser anchor rule is audible.
+  var GLIDE_AUDIT = (typeof process !== "undefined" && process.env && process.env.ZK_GLIDE_AUDIT) ? { maxC: 0, anchors: 0, calls: 0, maxN: 0 } : null;
   function farGlideRamps(param, base, t, durS) {
     var step = 0.05, last = farGlideMul(t), n = 0, x, lastX = 0;
+    var aud = GLIDE_AUDIT ? [[0, last]] : null;
     for (x = step; x < durS; x += step) {
       var m = farGlideMul(t + x);
       if (Math.abs(1200 * Math.log(m / last) / Math.LN2) < FAR_GLIDE_EPS && x - lastX < FAR_GLIDE_MAX_DT) continue;
       param.linearRampToValueAtTime(base * m, t + x);
+      if (aud) aud.push([x, m]);
       last = m; lastX = x;
       if (++n >= FAR_GLIDE_MAX) break;
     }
     param.linearRampToValueAtTime(base * farGlideMul(t + durS), t + durS);
+    if (aud) {
+      aud.push([durS, farGlideMul(t + durS)]);
+      GLIDE_AUDIT.calls++; GLIDE_AUDIT.anchors += aud.length;
+      if (aud.length > GLIDE_AUDIT.maxN) GLIDE_AUDIT.maxN = aud.length;
+      for (var i = 0; i + 1 < aud.length; i++) {
+        var x0 = aud[i][0], x1 = aud[i + 1][0], m0 = aud[i][1], m1 = aud[i + 1][1];
+        if (!(x1 > x0)) continue;
+        for (var f = 0.25; f < 0.99; f += 0.25) {
+          var xm = x0 + (x1 - x0) * f;
+          var lin = m0 + (m1 - m0) * f, tru = farGlideMul(t + xm);
+          var e = Math.abs(1200 * Math.log(lin / tru) / Math.LN2);
+          if (e > GLIDE_AUDIT.maxC) GLIDE_AUDIT.maxC = e;
+        }
+      }
+    }
   }
   // Read tonight's pitch departures into the machinery above. Called once at
   // play(), after the night is drawn; every value here is already seeded.
@@ -5327,7 +5378,7 @@ window.ZankyoAudio = (function () {
       o.ovToJo = bcRej.ovToJo; o.ovToHa = bcRej.ovToHa; o.seats = bcSeats; o.geom = bcGeom; return o; },
     // the gates' handle on the two fault classes (rc.21)
     getFaults: function () { return { lanes: faults.lanes, notes: faults.notes, lane: faults.lane.slice(), note: faults.note.slice(),
-      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin }; },
+      maxLead: faults.maxLead, maxLeadLayer: faults.maxLeadLayer, paLead: faults.paLead, armLeadS: BC_ARM_LEAD_S, armLeadMinS: faults.armLeadMin , glide: GLIDE_AUDIT }; },
     reseed: function (s) { seed = (s >>> 0) || 3042; if (S) forkStreams(); },
     // 逸脱 W0 — the far tail's surface. setFar(d) is ?far= by another door
     // (the probe uses it); pass null to return to the lottery.
