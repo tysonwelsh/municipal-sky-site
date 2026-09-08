@@ -1183,23 +1183,38 @@ window.ZankyoAudio = (function () {
   // per-partial amplitude crossfading, which the drones do not have), and
   // downward-biased because this station sinks, it does not rise. 弛 is the
   // tape: down over minutes, then a snap or a crawl back.
-  function farGlideMul(t) {
-    var c = 0, x = t - farT0;
-    if (farSpiral) c += -farSpiral.amp * (1 - Math.cos(2 * Math.PI * x / farSpiral.periodS)) / 2;
-    if (farVari) {
+  // Evaluated against an EXPLICIT curve rather than the module's current one,
+  // because the module's current one is not stable for the length of a note:
+  // farPitchSetup nulls and redraws farSpiral/farVari at every performance
+  // begin (onConductorEvent), lifted or not, so the curve in force changes at
+  // each cycle boundary. Today a note writes its whole glide at schedule time
+  // and therefore rides the curve that existed WHEN IT STARTED, all the way
+  // out, even across a boundary — the critic measured the consequence, two
+  // sounding voices up to 1.87 ¢ apart for eleven seconds past a cycle line,
+  // which is the engine's own behaviour and not this commit's business to
+  // change. The write pump defers anchors, so it MUST carry the note's curve
+  // with it or those late anchors would silently be written against the new
+  // one and snap a sounding note mid-flight. Hence the snapshot: farSpiral and
+  // farVari are replaced wholesale, never mutated, so holding the references
+  // is a true snapshot.
+  function farGlideMulAt(t, sp, va, t0) {
+    var c = 0, x = t - t0;
+    if (sp) c += -sp.amp * (1 - Math.cos(2 * Math.PI * x / sp.periodS)) / 2;
+    if (va) {
       // SMOOTHSTEP BOTH WAYS, and it matters: a linear return leaves a CORNER
       // in the envelope, and no ramp chain placed on travel can find a corner —
       // the drone ran 45 ¢ away from the voices for half a second while the
       // tape snapped back (measured). Smoothstep has zero slope at both ends,
       // so the sag is C¹ everywhere and the chain's error is pure curvature.
       // It also sounds better: a tape does not change speed instantaneously.
-      var u = (x % farVari.cycleS) / farVari.cycleS, v;
-      if (u < farVari.downFrac) v = smooth(u / farVari.downFrac);
-      else { var b = (u - farVari.downFrac) / farVari.retFrac; v = b >= 1 ? 0 : 1 - smooth(b); }
-      c += farVari.cents * v;
+      var u = (x % va.cycleS) / va.cycleS, v;
+      if (u < va.downFrac) v = smooth(u / va.downFrac);
+      else { var b = (u - va.downFrac) / va.retFrac; v = b >= 1 ? 0 : 1 - smooth(b); }
+      c += va.cents * v;
     }
     return Math.pow(2, c / 1200);
   }
+  function farGlideMul(t) { return farGlideMulAt(t, farSpiral, farVari, farT0); }
   // The ramp chain that carries a sustained voice along the glide. Anchors are
   // placed BY PITCH MOVEMENT, not on a fixed grid — an even grid was the first
   // thing I wrote and it fails on 弛's snap: the tape's return is a CORNER in
@@ -1244,33 +1259,155 @@ window.ZankyoAudio = (function () {
   // polyline actually written and the true glide curve, sampled at the midpoint
   // of every span. This is what says whether a coarser anchor rule is audible.
   var GLIDE_AUDIT = (typeof process !== "undefined" && process.env && process.env.ZK_GLIDE_AUDIT) ? { maxC: 0, anchors: 0, calls: 0, maxN: 0 } : null;
-  function farGlideRamps(param, base, t, durS) {
-    var step = 0.05, last = farGlideMul(t), n = 0, x, lastX = 0;
-    var aud = GLIDE_AUDIT ? [[0, last]] : null;
-    for (x = step; x < durS; x += step) {
-      var m = farGlideMul(t + x);
-      if (Math.abs(1200 * Math.log(m / last) / Math.LN2) < FAR_GLIDE_EPS && x - lastX < FAR_GLIDE_MAX_DT) continue;
-      param.linearRampToValueAtTime(base * m, t + x);
-      if (aud) aud.push([x, m]);
-      last = m; lastX = x;
-      if (++n >= FAR_GLIDE_MAX) break;
-    }
-    param.linearRampToValueAtTime(base * farGlideMul(t + durS), t + durS);
-    if (aud) {
-      aud.push([durS, farGlideMul(t + durS)]);
-      GLIDE_AUDIT.calls++; GLIDE_AUDIT.anchors += aud.length;
-      if (aud.length > GLIDE_AUDIT.maxN) GLIDE_AUDIT.maxN = aud.length;
-      for (var i = 0; i + 1 < aud.length; i++) {
-        var x0 = aud[i][0], x1 = aud[i + 1][0], m0 = aud[i][1], m1 = aud[i + 1][1];
-        if (!(x1 > x0)) continue;
-        for (var f = 0.25; f < 0.99; f += 0.25) {
-          var xm = x0 + (x1 - x0) * f;
-          var lin = m0 + (m1 - m0) * f, tru = farGlideMul(t + xm);
-          var e = Math.abs(1200 * Math.log(lin / tru) / Math.LN2);
-          if (e > GLIDE_AUDIT.maxC) GLIDE_AUDIT.maxC = e;
-        }
+  // ==========================================================================
+  // THE GLIDE WRITE PUMP (rc.49) — the SAME anchors, written when they are
+  // needed instead of all at once.
+  //
+  // WHAT WAS ACTUALLY WRONG, because the first three attempts at this aimed at
+  // the wrong number. Measured on two independent mocks (the coder's on
+  // _harness.js, the critic's on _probe.js, agreeing to the digit), a far
+  // night's automation DENSITY — calls bucketed by the time the value is
+  // NEEDED — peaks at 1 610/s across every seed either of us ran. It has never
+  // been over the owner's ~2 500/s. What was over it, by four times, is the
+  // main thread being asked to WRITE a note's whole glide in one lookahead
+  // callback: seed 34 at far 0.95 put 11 011 of its 11 333 calls that second
+  // into ONE tick, 98 % of them this function's Oscillator.frequency ramps.
+  // The median tick is 78 calls. It was never a rate; it was one burst.
+  //
+  // So the fix does not touch the anchor rule, and could not: coarsening buys
+  // density (which was never the problem) at a price the critic has now
+  // MEASURED as audible — the inter-voice spread, which is the quantity a
+  // listener actually hears, is 0.659 ¢ worst at the shipped constants and
+  // 8.623 ¢ at 10 ¢/3 s, where 2.31 % of all instants exceed 1 ¢. The
+  // constants stay exactly where they were.
+  //
+  // Instead each glide keeps its place in the loop and writes only as far as
+  // GLIDE_AHEAD_S beyond the audio clock, resuming on the next pump. Every
+  // anchor is the same value at the same time; only the moment of the WRITE
+  // moves, and it only ever moves LATER. That is why this needs no listening
+  // test to be safe: it is not inaudible by measurement, it is identical by
+  // construction. Simulated from the recorded call log before it was written
+  // and then confirmed on the instrument: worst tick 11 011 -> 292, worst
+  // written second 11 333 -> 1 721, tick median 78 -> 10.
+  //
+  // THE ONE INVARIANT: a linearRamp interpolates from the PREVIOUS scheduled
+  // event, so the next anchor must be written before the audio clock passes
+  // the last one, or the param jumps to the middle of the new line. The
+  // horizon gives 0.5 s of runway at the worst legal anchor spacing
+  // (GLIDE_AHEAD_S 1.0 − FAR_GLIDE_MAX_DT 0.5) against a 25 ms pump — 20
+  // pumps of margin. A hidden tab clamps timers to ~1 Hz, so the horizon
+  // widens there exactly as PJ2.Clock widens its own lookahead, and
+  // glideStep re-anchors on the held value if it is ever late anyway, so an
+  // underrun costs a slightly different slope rather than a click.
+  //
+  // WHY THERE IS A BUDGET AS WELL AS A HORIZON, since the horizon alone looks
+  // like enough and measured as not: a horizon spreads ONE chain's writes, but
+  // fifty chains registered in the same lookahead tick each still fill their
+  // first second at once. Horizon-only took the worst tick to 1 506 (seed 65) —
+  // a 7× win and still three times home's 476. So each pump does two passes: an
+  // URGENT one that every chain always gets, which in the steady state is only
+  // the 25 ms of new anchors the clock just uncovered, and a DISCRETIONARY one
+  // that fills toward the horizon until a call budget is spent and resumes next
+  // pump from a rotating cursor, so no chain starves. The budget can only ever
+  // delay a write that was already a second early; it cannot delay an urgent
+  // one. 300 discretionary writes per 25 ms is 12 000/s of fill against a
+  // measured density of at most 1 610/s, so the queue drains many times faster
+  // than it fills and the horizon stays full.
+  var GLIDE_AHEAD_S = 1.0, GLIDE_HIDDEN_AHEAD_S = 4.0, GLIDE_PUMP_MS = 25;
+  // URGENT is the floor the budget may never delay: four pump intervals of
+  // runway, enough that a chain cannot be overtaken by the audio clock even if
+  // the discretionary pass is starved for three pumps running.
+  var GLIDE_URGENT_S = 0.1, GLIDE_TICK_BUDGET = 300;
+  var glideQ = [], glidePumpId = null, glideRR = 0, glideSpent = 0;
+  function glideHorizon() {
+    var hidden = (typeof document !== "undefined" && document.hidden);
+    return ctx.currentTime + (hidden ? GLIDE_HIDDEN_AHEAD_S : GLIDE_AHEAD_S);
+  }
+  // Write one chain as far as untilT. Loop state lives on the job, so this
+  // produces exactly the anchor sequence the un-chunked loop produced.
+  function glideStep(job, untilT, budgeted) {
+    var p = job.param, base = job.base, t = job.t, durS = job.durS;
+    if (!job.capped) {
+      for (; job.x < durS; job.x += 0.05) {
+        if (t + job.x > untilT) return;
+        if (budgeted && glideSpent >= GLIDE_TICK_BUDGET) return;
+        var m = farGlideMulAt(t + job.x, job.sp, job.va, job.t0);
+        if (Math.abs(1200 * Math.log(m / job.last) / Math.LN2) < FAR_GLIDE_EPS && job.x - job.lastX < FAR_GLIDE_MAX_DT) continue;
+        glideAnchor(job, base * m, t + job.x);
+        if (job.aud) job.aud.push([job.x, m]);
+        job.last = m; job.lastX = job.x;
+        if (++job.n >= FAR_GLIDE_MAX) { job.capped = true; break; }
       }
     }
+    if (t + durS > untilT) return;
+    glideAnchor(job, base * farGlideMulAt(t + durS, job.sp, job.va, job.t0), t + durS);
+    job.done = true;
+    if (job.aud) { job.aud.push([durS, farGlideMulAt(t + durS, job.sp, job.va, job.t0)]); glideAudit(job); }
+  }
+  // The write, plus the late guard. job.lastT is the last anchor's time; if the
+  // audio clock has already passed it the param has been holding job.lastV, so
+  // say so explicitly before ramping — continuous instead of a jump. Never
+  // fires under the harness's virtual clock (the pump cannot be late there),
+  // so it costs the gates nothing.
+  function glideAnchor(job, v, when) {
+    var now = ctx.currentTime;
+    glideSpent++;
+    if (job.lastT != null && now > job.lastT && when > now) job.param.setValueAtTime(job.lastV, now);
+    job.param.linearRampToValueAtTime(v, when);
+    job.lastT = when; job.lastV = v;
+  }
+  function glideAudit(job) {
+    var aud = job.aud, t = job.t;
+    GLIDE_AUDIT.calls++; GLIDE_AUDIT.anchors += aud.length;
+    if (aud.length > GLIDE_AUDIT.maxN) GLIDE_AUDIT.maxN = aud.length;
+    for (var i = 0; i + 1 < aud.length; i++) {
+      var x0 = aud[i][0], x1 = aud[i + 1][0], m0 = aud[i][1], m1 = aud[i + 1][1];
+      if (!(x1 > x0)) continue;
+      for (var f = 0.25; f < 0.99; f += 0.25) {
+        var xm = x0 + (x1 - x0) * f;
+        var lin = m0 + (m1 - m0) * f, tru = farGlideMulAt(t + xm, job.sp, job.va, job.t0);
+        var e = Math.abs(1200 * Math.log(lin / tru) / Math.LN2);
+        if (e > GLIDE_AUDIT.maxC) GLIDE_AUDIT.maxC = e;
+      }
+    }
+  }
+  function glidePump() {
+    if (!ctx || !glideQ.length) return;
+    var now = ctx.currentTime, urgent = now + GLIDE_URGENT_S, until = glideHorizon(), n = glideQ.length, i, k;
+    glideSpent = 0;
+    for (i = 0; i < n; i++) glideStep(glideQ[i], urgent, false);        // pass 1: never budgeted, never late
+    if (glideRR >= n) glideRR = 0;
+    for (i = 0; i < n && glideSpent < GLIDE_TICK_BUDGET; i++) {          // pass 2: fill toward the horizon, round-robin
+      k = (glideRR + i) % n;
+      if (!glideQ[k].done) glideStep(glideQ[k], until, true);
+    }
+    glideRR = (glideRR + i) % n;
+    for (i = 0, k = 0; i < n; i++) if (!glideQ[i].done) glideQ[k++] = glideQ[i];
+    glideQ.length = k;
+  }
+  // Started with the transport and stopped with it. The queue holds AudioParam
+  // references, so it MUST be dropped on stop — a pending chain would otherwise
+  // keep writing into a stopped performance's oscillators (and hold them alive).
+  function glidePumpStart() { if (glidePumpId == null) glidePumpId = setInterval(glidePump, GLIDE_PUMP_MS); }
+  function glidePumpStop() {
+    if (glidePumpId != null) { clearInterval(glidePumpId); glidePumpId = null; }
+    if (GLIDE_AUDIT) for (var i = 0; i < glideQ.length; i++) if (glideQ[i].aud) glideAudit(glideQ[i]);   // spans still in flight still count for the audit
+    glideQ.length = 0;
+  }
+  function farGlideRamps(param, base, t, durS) {
+    var job = { param: param, base: base, t: t, durS: durS,
+                sp: farSpiral, va: farVari, t0: farT0,   // the curve as it stands NOW; deferred writes must not drift onto a rebuilt one
+                x: 0.05, last: farGlideMul(t), lastX: 0, n: 0, capped: false, done: false,
+                lastT: null, lastV: 0, aud: GLIDE_AUDIT ? [[0, farGlideMul(t)]] : null };
+    // NOTHING IS WRITTEN HERE. This is the line that takes the burst out of the
+    // lookahead callback: a tick that arms a drone's forty partials now costs
+    // forty pushes instead of forty anchor chains. glidePartial has already put
+    // the note's opening setValueAtTime on the param, so the chain is anchored;
+    // the pump extends it within 25 ms, and the note does not sound for ~250 ms
+    // (the clock's aheadS). Writing even a quarter-second here was measured at
+    // 1 506 calls in one tick on seed 65 — three times home — because a drone
+    // arms its partials together and 0.25 s is five anchors each.
+    glideQ.push(job);
   }
   // Read tonight's pitch departures into the machinery above. Called once at
   // play(), after the night is drawn; every value here is already seeded.
@@ -4929,6 +5066,11 @@ window.ZankyoAudio = (function () {
     farDraw();                                   // 逸脱 tonight's distance from home — one draw, before any body sounds
     farPitchSetup(t0);                           // …and what its tuning departures do; every value already seeded
     farTimeSetup(t0); farPlanN = 0; farCycleRate = 1;   // …and what its time departures do
+    // The glide pump exists only for nights that glide. A home night must not
+    // gain so much as a no-op timer: four nights in five are the engine as it
+    // shipped, and that promise is kept by not starting things, not by them
+    // doing nothing. Placed after farPitchSetup because that is what decides.
+    if (farGlideOn) glidePumpStart();
     // The opening field, re-read through tonight's tuning: 減 narrows the
     // semitone pairs (the opening modulate above goes straight to MODES, not
     // through setMode, so it needs saying here), 撓 restretches the octave.
@@ -5155,6 +5297,7 @@ window.ZankyoAudio = (function () {
     if (signalProvider) { try { signalProvider.stop(); } catch (e) {} }
     farGroove = null; farStuck = false;          // 逸脱 崩: the groove dies with the clock; the grit goes back to the arc
     if (farMetalMod) { try { farMetalMod.stop(ctx ? ctx.currentTime : 0); } catch (e) {} farMetalMod = null; farMetalAmp = null; }   // 金: one modulator, and it stops here
+    glidePumpStop();                             // 逸脱: drop every pending glide chain BEFORE the lanes go — it holds AudioParam references (rc.49)
     if (clock) clock.stop();                     // every lane's pending events die here
     while (liveRings.length) ringDown(liveRings[0]);   // screech loops in flight lose their lane teardown with the clock — tear them down here
     if (ctx) {

@@ -58,6 +58,31 @@ global.clearTimeout = vClear;
 global.performance = { now: () => vnow * 1000 };
 
 let errors = [];
+// ---- AudioParam LOAD (rc.49) ----
+// The instrument that was missing, and whose absence is why the wrong quantity
+// was nearly capped. "AudioParam calls per second" is ambiguous and the two
+// readings differ by an order of magnitude on a far night:
+//   TARGET-second  — bucketed by the time the value is NEEDED. This is the
+//                    automation density the audio graph carries, and it is the
+//                    reading the owner's ~2 500/s cap is about. GATED below.
+//   WRITTEN-second — bucketed by when the main thread made the call.
+//   SINGLE TICK    — one timer callback. This is what stutters a phone, and
+//                    before rc.49 a far night put 11 011 calls in ONE of them
+//                    while the median tick held 78. Reported, not gated: the
+//                    glide burst is gone, and what is left is note CONSTRUCTION
+//                    (seed 65 far 0.95 peaks at 1 506, of which 778 are
+//                    Gain.gain), which is a real number nobody has attacked yet
+//                    and which a threshold here would only hide.
+const PL = { tick: 0, cur: 0, curBy: null, perTick: [], byTarget: new Map(), byWritten: new Map(), worst: null, total: 0 };
+function plHit(label, targetT) {
+  PL.total++; PL.cur++;
+  if (!PL.curBy) PL.curBy = new Map();
+  PL.curBy.set(label, (PL.curBy.get(label) || 0) + 1);
+  const tt = Math.floor(targetT != null && isFinite(targetT) ? targetT : vnow);
+  PL.byTarget.set(tt, (PL.byTarget.get(tt) || 0) + 1);
+  const wt = Math.floor(vnow);
+  PL.byWritten.set(wt, (PL.byWritten.get(wt) || 0) + 1);
+}
 function vAdvance(untilS, onStep) {
   let guard = 0;
   for (;;) {
@@ -68,7 +93,9 @@ function vAdvance(untilS, onStep) {
     vnow = bestT;
     const tm = vtimers[bestId];
     if (tm.once) delete vtimers[bestId]; else tm.next = vnow + tm.period;
+    PL.cur = 0; PL.curBy = null;
     try { tm.fn(); } catch (e) { errors.push("timer@" + vnow.toFixed(1) + "s: " + (e && e.message)); if (errors.length > 40) return; }
+    if (PL.cur) { PL.perTick.push(PL.cur); if (!PL.worst || PL.cur > PL.worst.n) PL.worst = { n: PL.cur, t: vnow, by: PL.curBy }; }
     if (onStep) onStep();
   }
 }
@@ -77,19 +104,21 @@ function vAdvance(untilS, onStep) {
 const VIOLATIONS = [];
 function mkParam(ownerKind, label, initV) {
   const p = { value: initV != null ? initV : 0, _label: ownerKind + "." + label, _anchored: false, _lastV: initV != null ? initV : 0 };
-  p.setValueAtTime = function (v, t) { p._anchored = true; p._lastV = v; p.value = v; return p; };
+  p.setValueAtTime = function (v, t) { plHit(p._label, t); p._anchored = true; p._lastV = v; p.value = v; return p; };
   p.linearRampToValueAtTime = function (v, t) {
+    plHit(p._label, t);
     if (!p._anchored) VIOLATIONS.push({ kind: "linearRamp without anchor", param: p._label, v, t });
     p._anchored = true; p._lastV = v; p.value = v; return p;
   };
   p.exponentialRampToValueAtTime = function (v, t) {
+    plHit(p._label, t);
     if (!p._anchored) VIOLATIONS.push({ kind: "exponentialRamp without anchor", param: p._label, v, t });
     if (!(v > 0)) VIOLATIONS.push({ kind: "exponentialRamp target <= 0", param: p._label, v, t });
     else if (!(p._lastV > 0)) VIOLATIONS.push({ kind: "exponentialRamp departing from <= 0", param: p._label, v: p._lastV, t });
     p._anchored = true; p._lastV = v; p.value = v; return p;
   };
-  p.setTargetAtTime = function (v) { p._anchored = true; p._lastV = v; return p; };
-  p.setValueCurveAtTime = function (curve) { p._anchored = true; if (curve && curve.length) p._lastV = curve[curve.length - 1]; return p; };
+  p.setTargetAtTime = function (v, t) { plHit(p._label, t); p._anchored = true; p._lastV = v; return p; };
+  p.setValueCurveAtTime = function (curve, t) { plHit(p._label, t); p._anchored = true; if (curve && curve.length) p._lastV = curve[curve.length - 1]; return p; };
   p.cancelScheduledValues = function () { p._anchored = false; return p; };
   return p;
 }
@@ -253,7 +282,9 @@ function nearestCents(freq, tonic) {
 // THE RUNS: A (the one under the microscope), B (same seed — REPRO), C (a
 // different seed, shorter — must differ).
 // ============================================================================
+PL.tick = 0; PL.total = 0; PL.perTick.length = 0; PL.byTarget.clear(); PL.byWritten.clear(); PL.worst = null;
 const runA = runOnce(SEED, RUN);
+const PL_A = { total: PL.total, perTick: PL.perTick.slice(), byTarget: new Map(PL.byTarget), byWritten: new Map(PL.byWritten), worst: PL.worst };
 const runB = runOnce(SEED, RUN);
 const CRUN = Math.min(RUN, 600);
 const runC = runOnce(SEED + 1, CRUN);
@@ -646,6 +677,22 @@ if (SIGNAL_MOCK === "ready" && RUN >= 14000) { const r3 = 3 * signalVocab.n / Ma
 if (SIGNAL_MOCK === "ready" && RUN >= 14000 && signalVocab.fallbacks > 0) fails.push(signalVocab.fallbacks + " fallback(s) with the reel ready");
 if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.n > 0) fails.push("a signal played with the reel unavailable");
 if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.fallbacks < 1) fails.push("no fallback fired with the reel unavailable");
+// ---- the param-load line + the density gate ----
+{
+  const mx = (m) => Math.max(0, ...m.values());
+  // t=0 is construction, not play: the whole graph is built in one go there and
+  // it has always been so. The gate is about a performance.
+  const tgt = [...PL_A.byTarget.entries()].filter(([k]) => k > 0), wr = [...PL_A.byWritten.entries()].filter(([k]) => k > 0);
+  const tgtPeak = Math.max(0, ...tgt.map((e) => e[1])), wrPeak = Math.max(0, ...wr.map((e) => e[1]));
+  const pt = PL_A.perTick.slice().sort((a, b) => a - b);
+  const q = (f) => pt.length ? pt[Math.min(pt.length - 1, Math.floor(pt.length * f))] : 0;
+  const w = PL_A.worst;
+  const wby = w && w.by ? [...w.by.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + " " + v).join(", ") : "";
+  console.log("param load: density (by time-of-need) peak " + tgtPeak + "/s ≤ 2500 " + (tgtPeak <= 2500 ? "✓" : "✗") +
+    " · written peak " + wrPeak + "/s · worst single tick " + (w ? w.n : 0) + " @" + (w ? w.t.toFixed(1) : "0") + "s [" + wby + "]" +
+    " · tick p50 " + q(0.5) + " p99 " + q(0.99));
+  if (tgtPeak > 2500) fails.push("AudioParam density " + tgtPeak + "/s over 2500 (measured by time-of-need)");
+}
 if (!reproSame) fails.push("REPRO gate failed");
 if (errors.length) fails.push(errors.length + " runtime errors");
 console.log(fails.length ? "VERDICT: FAIL — " + fails.join("; ") : "VERDICT: PASS ✓");
