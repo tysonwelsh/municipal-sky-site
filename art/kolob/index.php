@@ -72,7 +72,7 @@ include '../../includes/header.php';
     </div>
 
     <!-- The running head, as a hymnal's: two fixed slots on one line. Left,
-         the meeting number, the day, the meter dots (during a hymn) and the
+         the day, the meter dots (during a hymn) and the
          mode; right, the direction line — the event flag printed as a
          performance direction (stillness, fuging, the question, two bands,
          the steeples answer, the whole tune), italic and gilt, empty when
@@ -81,7 +81,7 @@ include '../../includes/header.php';
          stack as two short lines. The section is not named here — the wheel
          names it. Seated beneath the staff, in the room between the plates
          and the console band. -->
-    <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: meeting, day, meter, mode and the performance direction">
+    <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: day, meter, mode and the performance direction">
       <span class="kolob-rh-left" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</span>
       <span class="kolob-rh-right kolob-direction" id="kolob-direction" aria-label="performance direction"></span>
     </div>
