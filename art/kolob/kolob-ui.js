@@ -462,13 +462,13 @@
   // Running head + order of service + hymn board (polled ~300ms)
   // ==========================================================================
   var SECTION_ORDER = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
-  function pad3(n) { n = Math.max(0, n | 0); return (n < 10 ? "00" : n < 100 ? "0" : "") + n; }
 
   // The running head — two fixed slots beneath the staff, as a hymnal's:
-  //   left   MEETING 001 · ORDINARY · 8.6.8.6 · IONIAN   (the meter dots only during a hymn)
+  //   left   ORDINARY · 8.6.8.6 · IONIAN   (the meter dots only during a hymn)
   //   right  the direction line (updateDirection below)
   // Idle, the left slot alone says the valley is still. The section is not
-  // named here: the wheel names it. The pitch in hertz is no longer shown.
+  // named here: the wheel names it. The meeting number and the pitch in hertz
+  // are no longer shown (the minutes still log the meeting's number).
   var SEP = '<span class="t-sep">·</span>';
   function joinParts(parts) { return parts.filter(Boolean).join(SEP); }
   function updateRunningHead(c, playing) {
@@ -481,7 +481,6 @@
       return;
     }
     left.innerHTML = joinParts([
-      TT(STR, STR_EN).meeting + " " + pad3(c.meeting),
       TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "",
       c.section === "hymn" && c.meter ? metersDots(c.meter) : "",
       TT(MODES_DS, MODES_EN)[c.mode] || "",
