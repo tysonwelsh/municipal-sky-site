@@ -45,12 +45,24 @@ const DIR = __dirname;
 // not swapped, deliberately — it is frozen and never modified from ZANKYŌ, so
 // both sides share it.
 //
-// The other half of the old blindness is NOT fixed here and must not be
-// forgotten: _probe.js mocks fetch with a thenable that never settles, so the
-// reel pool never loads and no signal ever fires under this gate. A receiver
-// change that only shows when a broadcast is on the air still needs the
-// harness, which serves a real manifest. This gate now sees the receiver's
-// CODE; it still does not see the receiver's AIR.
+// THIS GATE SEES THE RECEIVER ON THE AIR. It is worth saying plainly, because
+// the paragraph that stood here said the opposite for months and was believed:
+// it claimed _probe.js mocks fetch with a thenable that never settles, so the
+// pool never loads and no signal ever fires. THAT WAS FALSE. _probe.js reads
+// the real broadcast/manifest.json off disk (:177) and serves it from its fetch
+// mock (:207); the pool loads, choose() runs in full, and signals fire with
+// real reel ids. Only the reel's MP4 is stubbed — the picture and the media
+// element, not the seating.
+//
+// The consequence, and the reason this correction is in the header rather than
+// buried next to a console.log: the false version was emphatic ("must not be
+// forgotten"), so it got quoted into two commit messages as a reason a receiver
+// change COULD NOT have moved a night. A difference in this gate after a
+// receiver change is a FINDING. Treat it as one.
+//
+// (rc.56 is the worked example: home identity read 13/14 and the one night that
+// moved, seed 106, was the night that drew the Cage reel and held it whole.
+// Correct, deliberate, and invisible if you believe the old paragraph.)
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "zk-ident-"));
 const baseDir = path.join(tmp, "base");
 fs.mkdirSync(baseDir, { recursive: true });
@@ -104,16 +116,8 @@ function batch(dir) {
 // A reader who takes "18/18 identical" for a whole-build guarantee is the
 // person this line exists for.
 console.log("base " + BASE_REF + " — swapping " + SWAPPED.length + " file(s): " + SWAPPED.join(", "));
-// CORRECTED at rc.56. This line used to say "_probe.js mocks fetch, so no reel
-// loads and no signal fires under this gate", and that is FALSE and was quoted
-// in two commit messages as a reason a receiver change could not have moved a
-// night. _probe.js reads the REAL broadcast/manifest.json off disk (:177) and
-// serves it from its fetch mock (:207), so the pool loads, choose() runs in
-// full and signals fire. What the probe does not do is fetch the MP4 — the
-// picture and the element are stubbed. So a receiver change absolutely can move
-// a night here, and a difference in this gate is a finding, not noise.
-console.log("  (_probe.js serves the REAL manifest, so the pool loads and signals fire — a receiver");
-console.log("   change CAN move a night here. Only the reel's mp4 is stubbed, not its seating.)");
+console.log("  (_probe.js serves the REAL manifest: the pool loads and signals fire, so a receiver");
+console.log("   change CAN move a night here — see the header. Only the reel's mp4 is stubbed.)");
 process.stdout.write("running " + NSEEDS + " seeds × " + RUN + " s against the working tree… ");
 const cur = batch(null);
 process.stdout.write("and against " + BASE_REF + "… ");

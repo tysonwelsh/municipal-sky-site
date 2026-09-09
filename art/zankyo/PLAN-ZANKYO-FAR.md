@@ -330,6 +330,17 @@ Consequences on the record:
   so the crew is silent longer and the night's notes move. It is a deliberate
   change, partitioned like a lift — not a regression to chase.
 
+### How often the Cage reel is actually drawn (keep this current)
+
+Weight 5 of a **671 raw-weight, 208-reel** pool, ×1.5 for carrying a picture and
+×(0.7+0.6·dark) for a dark tone: **1 signal in 121–136** depending on the tide
+(0.73–0.83 %). An earlier note in this repo said 1 in 210 — that was computed at
+weight 3, before the owner raised it, and is stale. The number matters because
+it is what "a clean real-pool run means something" rests on: at ~1.7 broadcasts
+a cycle, twelve seeds of an hour is roughly 100 signals, so **a real-pool run
+that draws the reel zero times is the expected outcome, not evidence.** Force a
+single-reel pool to test whole-window behaviour.
+
 ### §14's own gates, for whoever changes the seating next
 
 - **KIRU reach 0** and **§12 sweep 0** on twelve seeds, on the REAL pool *and* on
@@ -339,7 +350,12 @@ Consequences on the record:
 - **Placement is the real-pool gate**, and it must be compared against a
   BASELINE MEASURED ON THE SAME SEEDS — not against the figures banked in
   STATUS, which come from an older pool. At rc.56: 1.68 broadcasts/cycle, pair
-  74 %, empty 5.8 %, identical to the digit against rc.55.
+  74 %, empty 5.8 %, identical to the digit against rc.55. **That comparison was
+  ONE-VARIABLE and it has to be:** the baseline was taken by checking out only
+  `zk-broadcast.js` and `zankyo-audio.js` from the previous commit into a tree
+  that ALREADY carried the re-cut reel, so both sides ran the same manifest and
+  only the code differed. Comparing the two COMMITS instead would span the code
+  change and the reel re-cut together and prove much less.
 - **Density on a forced whole-thought pool is expected to fail the ±20 % band**
   (seed 17: −21.5 %). Accepted by ruling: long holds silence the crew while they
   play. The real pool is the gate.
