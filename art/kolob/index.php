@@ -69,25 +69,21 @@ include '../../includes/header.php';
     <!-- The page (shape-note engraving) -->
     <div class="kolob-viz-wrap">
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
-      <!-- The direction line: the event flag printed as a performance
-           direction at the foot of the staff, set left beneath the clefs —
-           where the ink fade keeps the notes away (stillness, fuging, the
-           question, two bands, the steeples answer, the whole tune). It
-           takes no line of its own. -->
-      <div class="kolob-direction" id="kolob-direction" aria-label="performance direction"></div>
     </div>
 
     <!-- The running head, as a hymnal's: two fixed slots on one line. Left,
-         the meeting number and the day; right, the meter dots (during a
-         hymn), the mode and the pitch. Idle, the left slot alone says the
-         valley is still. The slots never reflow as the values change; on a
-         narrow page they stack as two short lines. The section is not named
-         here — the wheel names it. Seated beneath the staff, in the room
-         between the plates and the console band (it stood under the title
-         until v0.15; moving it down lets the wheel rise to the title rule). -->
-    <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: meeting, day, meter, mode and pitch">
+         the meeting number, the day, the meter dots (during a hymn) and the
+         mode; right, the direction line — the event flag printed as a
+         performance direction (stillness, fuging, the question, two bands,
+         the steeples answer, the whole tune), italic and gilt, empty when
+         nothing fires. Idle, the left slot alone says the valley is still.
+         The slots never reflow as the values change; on a narrow page they
+         stack as two short lines. The section is not named here — the wheel
+         names it. Seated beneath the staff, in the room between the plates
+         and the console band. -->
+    <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: meeting, day, meter, mode and the performance direction">
       <span class="kolob-rh-left" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</span>
-      <span class="kolob-rh-right" id="kolob-rh-right"></span>
+      <span class="kolob-rh-right kolob-direction" id="kolob-direction" aria-label="performance direction"></span>
     </div>
 
     <!-- The console: one ruled band like the masthead — PLAY and STOP at the
@@ -106,10 +102,12 @@ include '../../includes/header.php';
       <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
-    <!-- Hymn board + broadside -->
+    <!-- Hymn board + broadside. Neither carries a section head any more
+         (dropped in v0.18 with their rules, to tighten the page): the board is
+         self-evidently a hymn board, and the broadside verse sits beside it,
+         centred on its height. -->
     <div class="kolob-columns">
-      <div class="kolob-board-block">
-        <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
+      <div class="kolob-board-block" aria-label="the hymn board">
         <div class="kolob-board">
           <div class="kolob-seed-row">
             <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
@@ -123,8 +121,7 @@ include '../../includes/header.php';
           <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
         </div>
       </div>
-      <div class="kolob-broadside-block">
-        <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+      <div class="kolob-broadside-block" aria-label="the broadside">
         <div class="kolob-broadside-line" id="kolob-broadside-line" aria-label="the broadside verse">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
       </div>
     </div>
