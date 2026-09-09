@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOLOB hymn board mockups — four ways</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — HYMN BOARD MOCKUPS · FOUR WAYS
+   The running head (the day, the meter, the mode) and the direction line
+   (fuging, two bands, the steeples answer …) move off the page and INTO the
+   green hymn board, which is redrawn to hold them. Four boards, each shown in
+   its place on the page: between the console band and the clerk's minutes,
+   the broadside verse beside or beneath it. Latin labels throughout, for
+   reading; the real page sets them in Deseret.
+   ========================================================================== */
+:root {
+  --cover: #14382c; --cover-hi: #1a4536; --cover-lo: #0e2a21;
+  --paper: #f5f0e4; --paper-lo: #ece5d3;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;
+  --gilt-hi: #c9b66e;          /* gilt as it reads on the dark board */
+  --pp: rgba(245, 240, 228, 1);
+  --pp-70: rgba(245, 240, 228, 0.7);
+  --pp-55: rgba(245, 240, 228, 0.55);
+  --pp-30: rgba(245, 240, 228, 0.3);
+  --pp-16: rgba(245, 240, 228, 0.16);
+  --pp-09: rgba(245, 240, 228, 0.09);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding: 2.6rem 1rem 4rem; color: var(--ink); }
+.mock-label { max-width: 860px; margin: 3rem auto 0.8rem; font-size: 0.7rem; letter-spacing: 0.24em; color: #888; text-transform: uppercase; }
+.mock-label:first-child { margin-top: 0; }
+.mock-label b { color: #333; font-weight: 500; }
+.mock-note { max-width: 860px; margin: 0.8rem auto 0; font-size: 0.9rem; font-style: italic; color: #666; line-height: 1.5; }
+
+.kolob-mat {
+  position: relative; max-width: 860px; margin: 0 auto; padding: 34px; border-radius: 3px;
+  background: radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+}
+.kolob-mat::after {
+  content: ""; position: absolute; inset: 0; border-radius: 3px; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.kolob-mat::before { content: ""; position: absolute; inset: 13px; pointer-events: none; z-index: 1; border: 1px solid var(--gilt); opacity: 0.75; }
+.kolob-page {
+  position: relative; z-index: 2;
+  background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink); border-radius: 1px; padding: 1.6rem 2.8rem 1.8rem;
+  box-shadow: 0 1px 0 rgba(255,250,235,0.1) inset, 0 6px 18px rgba(0,0,0,0.35);
+}
+.kolob-page::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+}
+.kolob-page > * { position: relative; z-index: 1; }
+
+/* ---- page furniture for context: the foot of the staff, the console band,
+        the minutes head (all as on the live page) ---- */
+.ctx-staff { height: 62px; position: relative; margin: 0 0 0.6rem; }
+.ctx-staff::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 40px;
+  background: repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 10px); }
+.ctx-console { display: flex; align-items: center; gap: 1.2rem; margin: 0 0 2.8rem; padding: 0.6rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.kolob-btn { font-family: "EB Garamond", serif; font-size: 0.95rem; letter-spacing: 0.16em; color: var(--ink); background: var(--paper); border: 1px solid var(--ink-soft); border-radius: 2px; padding: 0.55rem 1.4rem; box-shadow: 0 1.5px 0 var(--ink-faint); }
+.ctx-spacer { flex: 1; }
+.ctx-label { font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-soft); }
+.ctx-range { width: 130px; height: 1px; background: var(--ink-soft); position: relative; }
+.ctx-range::after { content: ""; position: absolute; left: 60%; top: -5px; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); }
+.ctx-dial { width: 64px; height: 64px; flex: 0 0 auto; }
+.ctx-minutes { margin: 2rem 0 0; font-size: 0.8rem; letter-spacing: 0.22em; color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding-bottom: 0.6rem; }
+.ctx-minutes + p { font-size: 0.9rem; color: var(--ink-faint); padding: 0.6rem 0 0; letter-spacing: 0.08em; }
+
+.kolob-columns { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 2.8rem; }
+.kolob-columns.is-wide { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
+.kolob-columns > * { min-width: 0; }
+.kolob-broadside { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 1.06rem; line-height: 2; letter-spacing: 0.06em; color: var(--ink); opacity: 0.82; }
+.kolob-columns.is-wide .kolob-broadside { padding: 0.2rem 0 0; }
+
+/* ---- the board, shared ---- */
+.board {
+  position: relative;
+  background: linear-gradient(175deg, var(--cover-hi), var(--cover));
+  border-radius: 3px;
+  box-shadow: inset 0 1px 6px rgba(0,0,0,0.4);
+  color: var(--pp);
+}
+.caps { font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.caps-sm { font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; }
+.dir { font-style: italic; color: var(--gilt-hi); letter-spacing: 0.04em; font-size: 1rem; text-transform: none; }
+.sep { margin: 0 0.45em; color: var(--pp-30); }
+.card { display: inline-block; background: var(--paper); color: var(--cover); padding: 0.22rem 0.6rem; border-radius: 1px; font-size: 1.02rem; box-shadow: 0 1px 2px rgba(0,0,0,0.5); font-family: "EB Garamond", serif; line-height: 1.4; }
+.seed-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: nowrap; }
+.seed-row .k { color: var(--pp-55); }
+.seed-row .v { font-size: 0.95rem; letter-spacing: 0.06em; white-space: nowrap; }
+.seed-input { width: 6em; flex: 1 1 4em; min-width: 0; height: 1.9rem; background: var(--pp-09); border: 1px solid var(--pp-30); border-radius: 2px; }
+.gather { flex: 0 0 auto; white-space: nowrap; background: transparent; color: var(--pp); border: 1px solid rgba(245,240,228,0.45); border-radius: 2px; font-size: 0.82rem; letter-spacing: 0.16em; padding: 0.35rem 0.9rem; }
+
+/* ======================= 1 · THE LEDGER ================================== */
+/* Two columns on one wide board. Left, a register: four labelled rows (DAY,
+   METER, MODE, DIRECTION), each a hairline apart, value set right — the
+   running head and the direction as a clerk would rule them. Right, the
+   seed line and the three cards, captioned. The verse moves beneath. */
+.b1 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0 2rem; padding: 1rem 1.3rem 1.1rem; }
+.b1 .reg { border-right: 1px solid var(--pp-16); padding-right: 2rem; }
+.b1 .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.42rem 0; border-bottom: 1px solid var(--pp-09); }
+.b1 .row:last-child { border-bottom: 0; }
+.b1 .row .k { color: var(--pp-55); }
+.b1 .row .v { color: var(--pp); text-align: right; }
+.b1 .right { display: flex; flex-direction: column; justify-content: space-between; gap: 0.8rem; }
+.b1 .cards { display: flex; gap: 1.1rem; align-items: flex-end; }
+.b1 .cards figure { display: flex; flex-direction: column; align-items: center; gap: 0.32rem; }
+.b1 .cards figcaption { color: var(--pp-55); }
+
+/* ======================= 2 · THE PLATE =================================== */
+/* The running head, set into the board's top edge exactly as it read on the
+   page: the day · meter · mode at the left in letterspaced capitals, the
+   direction at the right in gilt italic; a hairline beneath. Then the three
+   cards, captioned; then the seed line, quieter, at the foot. The board keeps
+   its width and the verse stays beside it. */
+.b2 { padding: 0.9rem 1.1rem 1rem; }
+.b2 .head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--pp-16); }
+.b2 .head .l { color: var(--pp); white-space: nowrap; }
+.b2 .cards { display: flex; gap: 1.2rem; align-items: flex-end; margin: 0.9rem 0 0.9rem; }
+.b2 .cards figure { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.b2 .cards figcaption { color: var(--pp-55); }
+.b2 .seed-row { padding-top: 0.75rem; border-top: 1px solid var(--pp-09); }
+.b2 .seed-row .v { color: var(--pp-70); }
+
+/* ======================= 3 · THE CARD RACK =============================== */
+/* A hymn board as a chapel keeps one: a framed plate with a name-plate
+   across the top and a rack of slots, each slot recessed into the board
+   with an ivory card hung in it and a small brass label beneath. The day is
+   the name-plate; the direction is a gilt ribbon pinned across the corner;
+   the seed line is the brass plaque at the foot. More furniture, more
+   character; a touch taller than the others. */
+.b3 { padding: 1.1rem 1.2rem 1rem; }
+.b3::before { content: ""; position: absolute; inset: 7px; border: 1px solid var(--gilt); opacity: 0.55; border-radius: 2px; pointer-events: none; }
+.b3 .plate { display: flex; justify-content: center; margin: 0 auto 1rem; }
+.b3 .plate span { background: var(--paper); color: var(--cover); padding: 0.3rem 1.4rem; font-size: 0.82rem; letter-spacing: 0.26em; text-transform: uppercase; box-shadow: 0 1px 2px rgba(0,0,0,0.5); border-radius: 1px; position: relative; }
+.b3 .plate span::before, .b3 .plate span::after { content: "✧"; color: var(--gilt); font-size: 0.7rem; position: absolute; top: 50%; transform: translateY(-50%); }
+.b3 .plate span::before { left: 0.45rem; } .b3 .plate span::after { right: 0.45rem; }
+.b3 .rack { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem; }
+.b3 .slot { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.b3 .well { width: 100%; background: var(--cover-lo); box-shadow: inset 0 2px 5px rgba(0,0,0,0.55), 0 1px 0 var(--pp-09); border-radius: 2px; padding: 0.5rem 0.4rem 0.35rem; display: flex; justify-content: center; }
+.b3 .well .card { box-shadow: 0 2px 3px rgba(0,0,0,0.6); min-width: 2.4em; text-align: center; }
+.b3 .brass { color: var(--gilt-hi); }
+.b3 .ribbon { position: absolute; top: 14px; right: -9px; transform: rotate(6deg); background: var(--gilt); color: var(--paper); font-style: italic; font-size: 0.92rem; letter-spacing: 0.06em; padding: 0.18rem 0.9rem 0.2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.45); }
+.b3 .ribbon::after { content: ""; position: absolute; right: 0; bottom: -6px; border-left: 9px solid #5c5030; border-bottom: 6px solid transparent; }
+.b3 .foot { margin: 1rem -0.2rem 0; padding: 0.55rem 0.8rem; background: rgba(0,0,0,0.18); border-radius: 2px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); }
+
+/* ======================= 4 · THE PROGRAMME =============================== */
+/* A printed programme card pinned to the board — the day's particulars set
+   on paper, as a hymnal prints them: the day in small capitals under a
+   short double rule, the mode and the meter in italic beneath, the direction
+   as a rubric in gilt, and the three numbers in one printed line. The green
+   holds only the seed line beneath the card. Quiet and typographic. */
+.b4 { padding: 0.9rem 1rem 1rem; }
+.b4 .prog { background: var(--paper); color: var(--ink); border-radius: 1px; padding: 0.8rem 1rem 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.5); text-align: center; position: relative; }
+.b4 .prog::before { content: ""; position: absolute; left: 50%; top: 5px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--gilt); box-shadow: 0 1px 1px rgba(0,0,0,0.5); }
+.b4 .prog .day { font-size: 0.8rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink); margin: 0.35rem 0 0.35rem; }
+.b4 .prog .rule { height: 5px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 24% 0.5rem; }
+.b4 .prog .mm { font-style: italic; font-size: 1.05rem; color: var(--ink); }
+.b4 .prog .mm .dir { color: var(--gilt); font-size: 1.05rem; }
+.b4 .prog .nums { margin-top: 0.45rem; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+.b4 .prog .nums b { font-weight: 500; color: var(--ink); letter-spacing: 0.06em; font-size: 0.9rem; }
+.b4 .prog .nums i { font-style: normal; margin: 0 0.5em; color: var(--ink-faint); }
+.b4 .seed-row { margin-top: 0.85rem; }
+.b4 .seed-row .v { color: var(--pp-70); }
+
+@media (max-width: 700px) {
+  .kolob-mat { padding: 18px; }
+  .kolob-page { padding: 1.4rem 1.2rem; }
+  .kolob-columns { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
+  .b1 { grid-template-columns: minmax(0, 1fr); gap: 0.9rem 0; }
+  .b1 > * { min-width: 0; }
+  .seed-input { flex: 1 1 1em; width: 3em; }
+  .b3 .foot { margin: 1rem 0 0; }
+  .b1 .reg { border-right: 0; padding-right: 0; border-bottom: 1px solid var(--pp-16); padding-bottom: 0.6rem; }
+  .b2 .head { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+  .b3 .rack { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .b3 .well .card { min-width: 0; padding: 0.22rem 0.4rem; font-size: 0.95rem; }
+  .ctx-console { display: grid; grid-template-columns: auto auto 1fr 64px; column-gap: 0.6rem; }
+  .ctx-spacer, .ctx-label, .ctx-range { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>1 · The Ledger</b> — a register ruled on the board, the cards beside it</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="ctx-console">
+    <span class="kolob-btn">▶&nbsp; PLAY</span><span class="kolob-btn">■&nbsp; STOP</span>
+    <span class="ctx-spacer"></span><span class="ctx-label">VOL</span><span class="ctx-range"></span>
+    <svg class="ctx-dial" viewBox="0 0 64 64" fill="none" stroke="rgba(30,77,59,0.55)"><polygon points="32,4 56,18 56,46 32,60 8,46 8,18"/><polygon points="32,8 52,20 52,44 32,56 12,44 12,20"/><circle cx="32" cy="32" r="2" fill="#1e4d3b" stroke="none"/></svg>
+  </div>
+
+  <div class="kolob-columns is-wide">
+    <div class="board b1">
+      <div class="reg caps">
+        <div class="row"><span class="k">Day</span><span class="v">Fast Day</span></div>
+        <div class="row"><span class="k">Meter</span><span class="v">8.6.8.6</span></div>
+        <div class="row"><span class="k">Mode</span><span class="v">Dorian</span></div>
+        <div class="row"><span class="k">Direction</span><span class="v dir">fuging</span></div>
+      </div>
+      <div class="right">
+        <div class="seed-row caps"><span class="k">Seed</span><span class="v" style="text-transform:none">2275180344</span><span class="seed-input"></span><span class="gather">GATHER</span></div>
+        <div class="cards">
+          <figure><span class="card">K·2</span><figcaption class="caps-sm">Theme</figcaption></figure>
+          <figure><span class="card">3</span><figcaption class="caps-sm">Develops</figcaption></figure>
+          <figure><span class="card">1</span><figcaption class="caps-sm">Answers</figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="kolob-broadside">the valley is still, and the steeples answer one another</div>
+  </div>
+
+  <div class="ctx-minutes">CLERK'S MINUTES</div><p>PRESS PLAY</p>
+</div></div>
+<p class="mock-note">The most “professional” of the four: everything labelled, everything in a column, the direction the one italic gilt line in a ruled register. The board goes full width and the verse sits beneath it (one line, centred), so the page gains a little height back here but loses the two-column step.</p>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>2 · The Plate</b> — the running head set into the board’s top edge</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="ctx-console">
+    <span class="kolob-btn">▶&nbsp; PLAY</span><span class="kolob-btn">■&nbsp; STOP</span>
+    <span class="ctx-spacer"></span><span class="ctx-label">VOL</span><span class="ctx-range"></span>
+    <svg class="ctx-dial" viewBox="0 0 64 64" fill="none" stroke="rgba(30,77,59,0.55)"><polygon points="32,4 56,18 56,46 32,60 8,46 8,18"/><polygon points="32,8 52,20 52,44 32,56 12,44 12,20"/><circle cx="32" cy="32" r="2" fill="#1e4d3b" stroke="none"/></svg>
+  </div>
+
+  <div class="kolob-columns">
+    <div class="board b2">
+      <div class="head caps">
+        <span class="l">Fast Day<span class="sep">·</span>8.6.8.6<span class="sep">·</span>Dorian</span>
+        <span class="dir">fuging</span>
+      </div>
+      <div class="cards">
+        <figure><span class="card">K·2</span><figcaption class="caps-sm">Theme</figcaption></figure>
+        <figure><span class="card">3</span><figcaption class="caps-sm">Develops</figcaption></figure>
+        <figure><span class="card">1</span><figcaption class="caps-sm">Answers</figcaption></figure>
+      </div>
+      <div class="seed-row caps"><span class="k">Seed</span><span class="v" style="text-transform:none">2275180344</span><span class="seed-input"></span><span class="gather">GATHER</span></div>
+    </div>
+    <div class="kolob-broadside">the valley is still, and the steeples answer one another</div>
+  </div>
+
+  <div class="ctx-minutes">CLERK'S MINUTES</div><p>PRESS PLAY</p>
+</div></div>
+<p class="mock-note">The smallest change: the line that is on the page now simply moves inside the board and becomes its heading, the cards get captions, and the seed line drops to the foot as the quieter, administrative row. Keeps the two columns and the verse beside.</p>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>3 · The Card Rack</b> — a chapel’s hymn board, with more character</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="ctx-console">
+    <span class="kolob-btn">▶&nbsp; PLAY</span><span class="kolob-btn">■&nbsp; STOP</span>
+    <span class="ctx-spacer"></span><span class="ctx-label">VOL</span><span class="ctx-range"></span>
+    <svg class="ctx-dial" viewBox="0 0 64 64" fill="none" stroke="rgba(30,77,59,0.55)"><polygon points="32,4 56,18 56,46 32,60 8,46 8,18"/><polygon points="32,8 52,20 52,44 32,56 12,44 12,20"/><circle cx="32" cy="32" r="2" fill="#1e4d3b" stroke="none"/></svg>
+  </div>
+
+  <div class="kolob-columns is-wide">
+    <div class="board b3">
+      <span class="ribbon">fuging</span>
+      <div class="plate"><span>Fast Day</span></div>
+      <div class="rack">
+        <div class="slot"><div class="well"><span class="card">8.6.8.6</span></div><span class="brass caps-sm">Meter</span></div>
+        <div class="slot"><div class="well"><span class="card">Dorian</span></div><span class="brass caps-sm">Mode</span></div>
+        <div class="slot"><div class="well"><span class="card">K·2</span></div><span class="brass caps-sm">Theme</span></div>
+        <div class="slot"><div class="well"><span class="card">3</span></div><span class="brass caps-sm">Develops</span></div>
+        <div class="slot"><div class="well"><span class="card">1</span></div><span class="brass caps-sm">Answers</span></div>
+      </div>
+      <div class="foot seed-row caps"><span class="k">Seed</span><span class="v" style="text-transform:none">2275180344</span><span class="seed-input"></span><span class="gather">GATHER</span></div>
+    </div>
+    <div class="kolob-broadside">the valley is still, and the steeples answer one another</div>
+  </div>
+
+  <div class="ctx-minutes">CLERK'S MINUTES</div><p>PRESS PLAY</p>
+</div></div>
+<p class="mock-note">The one with character: a framed board with a name-plate for the day, five recessed slots with ivory cards hung in them and small brass labels beneath, the direction pinned across the corner as a gilt ribbon (absent when nothing fires), and the seed line as the brass plaque at the foot. Full width, the verse beneath. The tallest of the four by about a line.</p>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>4 · The Programme</b> — a printed card pinned to the board</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="ctx-console">
+    <span class="kolob-btn">▶&nbsp; PLAY</span><span class="kolob-btn">■&nbsp; STOP</span>
+    <span class="ctx-spacer"></span><span class="ctx-label">VOL</span><span class="ctx-range"></span>
+    <svg class="ctx-dial" viewBox="0 0 64 64" fill="none" stroke="rgba(30,77,59,0.55)"><polygon points="32,4 56,18 56,46 32,60 8,46 8,18"/><polygon points="32,8 52,20 52,44 32,56 12,44 12,20"/><circle cx="32" cy="32" r="2" fill="#1e4d3b" stroke="none"/></svg>
+  </div>
+
+  <div class="kolob-columns">
+    <div class="board b4">
+      <div class="prog">
+        <div class="day">Fast Day</div>
+        <div class="rule"></div>
+        <div class="mm">Dorian · 8.6.8.6 &nbsp;—&nbsp; <span class="dir">fuging</span></div>
+        <div class="nums">Theme <b>K·2</b><i>·</i>Develops <b>3</b><i>·</i>Answers <b>1</b></div>
+      </div>
+      <div class="seed-row caps"><span class="k">Seed</span><span class="v" style="text-transform:none">2275180344</span><span class="seed-input"></span><span class="gather">GATHER</span></div>
+    </div>
+    <div class="kolob-broadside">the valley is still, and the steeples answer one another</div>
+  </div>
+
+  <div class="ctx-minutes">CLERK'S MINUTES</div><p>PRESS PLAY</p>
+</div></div>
+<p class="mock-note">Typographic and quiet: the day’s particulars printed on a paper programme card (a hymnal’s own idiom), the direction as a gilt rubric on the same line as the mode and meter, and the three numbers as one printed line rather than hanging cards. The green board holds only the card and the seed line; the two columns and the verse beside are kept.</p>
+
+</body>
+</html>
