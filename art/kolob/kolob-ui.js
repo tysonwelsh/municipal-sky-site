@@ -464,40 +464,36 @@
   var SECTION_ORDER = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
   function pad3(n) { n = Math.max(0, n | 0); return (n < 10 ? "00" : n < 100 ? "0" : "") + n; }
 
-  // The running head — two fixed slots under the title, as a hymnal's:
-  //   left   MEETING 001 · ORDINARY
-  //   right  8.6.8.6 · IONIAN · 65.4 HERTZ   (the meter dots only during a hymn)
+  // The running head — two fixed slots beneath the staff, as a hymnal's:
+  //   left   MEETING 001 · ORDINARY · 8.6.8.6 · IONIAN   (the meter dots only during a hymn)
+  //   right  the direction line (updateDirection below)
   // Idle, the left slot alone says the valley is still. The section is not
-  // named here: the wheel names it.
+  // named here: the wheel names it. The pitch in hertz is no longer shown.
   var SEP = '<span class="t-sep">·</span>';
   function joinParts(parts) { return parts.filter(Boolean).join(SEP); }
   function updateRunningHead(c, playing) {
     var left = document.getElementById("kolob-rh-left");
-    var right = document.getElementById("kolob-rh-right");
-    if (!left || !right) return;
+    if (!left) return;
     var head = document.getElementById("kolob-running-head");
     if (head) head.classList.toggle("is-live", !!playing);
     if (!playing) {
       left.textContent = TT(STR, STR_EN).idle;
-      right.textContent = "";
       return;
     }
     left.innerHTML = joinParts([
       TT(STR, STR_EN).meeting + " " + pad3(c.meeting),
       TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "",
-    ]);
-    right.innerHTML = joinParts([
       c.section === "hymn" && c.meter ? metersDots(c.meter) : "",
       TT(MODES_DS, MODES_EN)[c.mode] || "",
-      (typeof c.f0 === "number" ? c.f0.toFixed(1) : "—") + " " + TT(STR, STR_EN).hertz,
     ]);
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
   function metersDots(m) { return METER_DOTS[m] || m; }
 
-  // The direction line — the event flag printed as a performance direction
-  // under the staff: stillness, fuging, the question, two bands, the steeples
-  // answer, the whole tune. Empty (but its line reserved) when nothing fires.
+  // The direction line — the event flag printed as a performance direction in
+  // the running head's right slot: stillness, fuging, the question, two bands,
+  // the steeples answer, the whole tune. Empty (the slot keeps its place) when
+  // nothing fires.
   var VISIT_FLAG = { question: "theQuestion", bands: "twoBands", steeples: "theSteeples", assembly: "wholeFlag" };
   function directionFor(c, playing) {
     if (!playing) return "";
@@ -639,10 +635,8 @@
     var S = TT(STR, STR_EN), ST = TT(STATIC_DS, STATIC_EN);
     function setText(sel, txt) { var el = document.querySelector(sel); if (el) el.textContent = txt; }
     setText(".kolob-title", ST.title);
-    setText(".kolob-board-block .kolob-sec-head", S.hymnBoard);
     setText(".kolob-stops-block .kolob-sec-head-label", S.theStops);
     setText("#kolob-copy-params .kolob-copy-label", S.copyParams);
-    setText(".kolob-broadside-block .kolob-sec-head", S.broadside);
     setText(".kolob-log-block .kolob-sec-head", S.minutes);
     setText("#kolob-art-link", ST.art);
     var ivesBtn = document.getElementById("kolob-ives");
@@ -663,7 +657,6 @@
     // the running head and the direction line: idle text now; poll() re-sets
     // them in the current script from the conductor (or the preview) at once
     setText("#kolob-rh-left", S.idle);
-    setText("#kolob-rh-right", "");
     setText("#kolob-direction", "");
     var dir = document.getElementById("kolob-direction");
     if (dir) dir.classList.toggle("is-deseret", !latinMode);

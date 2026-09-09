@@ -204,13 +204,14 @@
   font-size: 0.72rem;
 }
 
-/* the running head — as a hymnal's: one line of letterspaced capitals in two
-   FIXED slots, left and right. It sits beneath the staff plate, in the room
-   between the plates and the console band (a hymnal's running head is at the
-   top of the page; ours moved to the foot in v0.15 so the wheel could rise to
-   the title rule). The slots are sized by the line, not by their text, so the
-   head never reflows as the values change; the right slot holds its place
-   even when empty. */
+/* the running head — as a hymnal's: one line in two FIXED slots. Left, the
+   letterspaced capitals (meeting, day, meter, mode); right, the direction
+   line (see below). It sits beneath the staff plate, in the room between the
+   plates and the console band (a hymnal's running head is at the top of the
+   page; ours moved to the foot in v0.15 so the wheel could rise to the title
+   rule). The slots are sized by the line, not by their text, so the head
+   never reflows as the values change; the right slot holds its place even
+   when empty. */
 .kolob-running-head {
   display: flex;
   justify-content: space-between;
@@ -256,22 +257,16 @@
 }
 
 /* ============================ the direction line ========================= */
-/* the event flag printed as a performance direction in the margin under the
-   staff — right-aligned, italic, gilt (the one colour for what moves or
-   fires). A fixed one-line height, so the console beneath never shifts. */
+/* the event flag printed as a performance direction — the running head's
+   right slot: right-aligned, italic, gilt (the one colour for what moves or
+   fires), a size up from the head's capitals and without their tracking.
+   (Until v0.17 it sat at the foot of the staff plate under the clefs.) */
 .kolob-direction {
-  position: absolute;               /* at the staff plate's foot, under the clefs, in the note-free fade zone */
-  left: 22px;
-  bottom: 3px;
-  line-height: 1.2rem;
-  pointer-events: none;
-  text-align: left;
   font-family: "EB Garamond", "Noto Sans Deseret", Georgia, serif;
   font-style: italic;
   font-size: 0.95rem;
   letter-spacing: 0.04em;
   color: var(--gilt);
-  white-space: nowrap;
   overflow: hidden;
 }
 .kolob-direction.is-deseret { font-family: "Noto Sans Deseret", "EB Garamond", serif; }
@@ -415,7 +410,8 @@
 }
 
 /* ======================= the boards: hymn board + broadside ============== */
-/* the boards share one block margin (2rem) and one section head */
+/* the boards share one block margin (2rem); neither has a section head (they
+   were dropped in v0.18 to tighten the page) */
 .kolob-columns {
   display: grid;
   grid-template-columns: 1.25fr 1fr;
@@ -596,12 +592,15 @@
 .kolob-stop:has(.kolob-drawknob.is-off) .kolob-stop-name { color: var(--ink-faint); }
 
 /* ============================== broadside ================================ */
-/* seated in the right column beneath the hymn board */
+/* seated in the right column beside the hymn board, the verse centred on
+   the board's height */
 .kolob-broadside-block {
   margin: 0;                       /* beside the board now, not beneath it */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
-.kolob-broadside-block .kolob-sec-head { text-align: left; }
 .kolob-broadside-line {
   font-family: "Noto Sans Deseret", serif;
   font-size: 1.06rem;
@@ -731,7 +730,7 @@
   .kolob-scene { margin: 0.9rem auto 2rem; padding: 18px; }
   .kolob-scene::before { inset: 8px; }
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
-  .kolob-columns { grid-template-columns: 1fr; gap: 2rem; }
+  .kolob-columns { grid-template-columns: 1fr; gap: 1.2rem; }   /* the board, then the verse beneath, one plate step apart */
   #kolob-layers { grid-template-columns: 1fr; }
   /* the running head stacks: two short lines, both set to the left edge */
   .kolob-running-head {
