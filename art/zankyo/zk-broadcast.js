@@ -120,6 +120,17 @@
             uk.map(function (k) { return k + "×" + unknown[k]; }).join(", ") +
             ". They get no tide weighting and cannot sea-change. Add them to TONE_DARK/TONE_LIGHT/TONE_PITCHED in zk-broadcast.js.");
         }
+        // A typo in ?reel= would otherwise be a night that quietly ignores the
+        // owner: the pin never matches and the lottery runs as if the lever
+        // were not there. Say so.
+        (function () {
+          var pid = pinnedId(); if (!pid) return;
+          for (var pi = 0; pi < out.length; pi++) if (out[pi].id === pid) return;
+          if (typeof console !== "undefined" && console.error) {
+            console.error("ZankyoBroadcast: ?reel=" + pid + " matches no reel in the manifest — the pin is ignored and " +
+              "the lottery runs as usual. Check the id against broadcast/manifest.json.");
+          }
+        })();
         if (wholeTuned.length && typeof console !== "undefined" && console.error) {
           console.error("ZankyoBroadcast: " + wholeTuned.length + " reel(s) are BOTH whole and tuned — " +
             wholeTuned.slice(0, 6).join(", ") + ". §14 decides the hold on the UNBENT window length (as §11.2 does, " +
@@ -162,6 +173,23 @@
   // It is not free — the whole reel is decoded (a 72-120 s file is 30-45 MB of
   // float) and fetched a second time for the picture. Two buffers are kept.
   // That is the price of an answer.
+  // ---- ?reel=<id> — the owner's pin (2026-09-09) ----------------------------
+  // The night's FIRST SEATED broadcast is this reel; the lottery resumes after
+  // it. "Seated" means ON THE AIR, not merely armed: the pin is spent where
+  // stats.signals++ is, so an arm that falls back to the gagaku does not eat
+  // it. While stopped, 選局 auditions the pinned reel on every press.
+  // No new draws anywhere: choose() takes its six as always and the pin only
+  // replaces the reel the weighting landed on, so the signal stream is
+  // untouched and a pinned night is still reproducible from its seed.
+  var pinUsed = false;
+  function pinnedId() {
+    try { return (window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().pinnedReel) || null; } catch (e) { return null; }
+  }
+  function pinnedReel() {
+    var id = pinnedId(); if (!id || !pool) return null;
+    for (var i = 0; i < pool.length; i++) if (pool[i].id === id) return pool[i];
+    return null;
+  }
   function reelsBuffered() {
     try { return !!(window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().reelsMode === "buffer"); } catch (e) { return false; }
   }
@@ -237,6 +265,7 @@
   }
   function onPlay() {
     loadPool();
+    pinUsed = false;          // one pin per night, re-armed by ▶ play
 
     var v = ensureVideo(); if (!v) return;
     ensureMediaSource(tl().ctx);
@@ -332,6 +361,10 @@
     }
     var r = rReel * tot, reel = cands[cands.length - 1];
     for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; break; } }
+    // THE PIN, applied after the weighting and before anything reads `reel`:
+    // rReel is already spent, so this costs no randomness and moves no stream.
+    var pinR = pinUsed ? null : pinnedReel();
+    if (pinR) { reel = pinR; c.pinned = true; }
     // §11.2 TUNED SIGNALS. The drawn window is still DRAWN — rWin is consumed
     // above whatever happens here, so the signal stream never moves — but on a
     // reel that holds a pitch the receiver prefers the window it can land on
@@ -480,7 +513,7 @@
     // choose() adds must be added here in the same commit.
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
-      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0, whole: !!c.whole,
+      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0, whole: !!c.whole, pinned: !!c.pinned,
       ready: false, t0: null, decided: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     stats.armed++;
     // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
@@ -1034,6 +1067,10 @@
     }
     live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc };
     stats.signals++;
+    if (a.pinned && !pinUsed) {
+      pinUsed = true;   // spent ON AIR, not at arm: a fallback must not eat it
+      T.emitEvent({ cat: "rx", label: "受信 pinned", detail: a.reel.id + (a.whole ? " · whole · " : " · ") + a.holdS.toFixed(1) + "s · the lottery resumes" }, t0);
+    }
     remember(a.reel.id, a.cycle);
     // the crew's duck and notch for the signal's span
     try { T.roomSpeak("broadcast", t0, TUNE_S + holdS + lossD, 800); } catch (e) {}
@@ -1160,7 +1197,11 @@
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
     var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S;
     if (poolState !== "ready" || !v || (!buffered && !ms) || !pool.length) { staticRise(t, t + 1.0); return true; }   // the dial turns, nothing found
-    var reel = pool[Math.floor(rReel * pool.length)];
+    // ?reel= pins the audition too, and on EVERY press — unlike the on-air pin,
+    // which is spent once. rReel is still drawn above, so the sample stream is
+    // where it would have been.
+    var pinA = pinnedReel();
+    var reel = pinA || pool[Math.floor(rReel * pool.length)];
     var awi = Math.floor(rWin * reel.windows.length);
     // §14 in the audition too: a whole reel is auditioned whole, so the button
     // plays what the air would play.
@@ -1181,6 +1222,7 @@
     if (awhole) { holdS = Math.min(wl, WHOLE_MAX_HOLD_S); need = TUNE_S + holdS + lossD; }
     else if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
     var inS = awhole ? win[0] : win[0] + rIn * Math.max(0, wl - need - 0.5);
+    if (pinA) T.emitEvent({ cat: "rx", label: "受信 pinned", detail: reel.id + (awhole ? " · whole · " : " · ") + holdS.toFixed(1) + "s · audition" }, t);
     // the same dropout plan a real signal gets, so the picture stutters
     var adrops = [], dt = TUNE_S + 0.6;
     while (dt < TUNE_S + holdS) { dt += 1.2 + R.next() * 3.2; if (dt < TUNE_S + holdS) adrops.push([dt, 0.12 + R.next() * 0.25]); }
