@@ -63,17 +63,6 @@ include '../../includes/header.php';
 
       <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
       <div class="kolob-rule" aria-hidden="true"></div>
-
-      <!-- The running head, as a hymnal's: two fixed slots on one line. Left,
-           the meeting number and the day; right, the meter dots (during a
-           hymn), the mode and the pitch. Idle, the left slot alone says the
-           valley is still. The slots never reflow as the values change; on a
-           narrow page they stack as two short lines. The section is not named
-           here — the wheel names it. -->
-      <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: meeting, day, meter, mode and pitch">
-        <span class="kolob-rh-left" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</span>
-        <span class="kolob-rh-right" id="kolob-rh-right"></span>
-      </div>
     </header>
 
     <!-- The plates: two engravings in one column, at one rhythm — the wheel
@@ -104,6 +93,19 @@ include '../../includes/header.php';
            question, two bands, the steeples answer, the whole tune). It
            takes no line of its own. -->
       <div class="kolob-direction" id="kolob-direction" aria-label="performance direction"></div>
+    </div>
+
+    <!-- The running head, as a hymnal's: two fixed slots on one line. Left,
+         the meeting number and the day; right, the meter dots (during a
+         hymn), the mode and the pitch. Idle, the left slot alone says the
+         valley is still. The slots never reflow as the values change; on a
+         narrow page they stack as two short lines. The section is not named
+         here — the wheel names it. Seated beneath the staff, in the room
+         between the plates and the console band (it stood under the title
+         until v0.15; moving it down lets the wheel rise to the title rule). -->
+    <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: meeting, day, meter, mode and pitch">
+      <span class="kolob-rh-left" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</span>
+      <span class="kolob-rh-right" id="kolob-rh-right"></span>
     </div>
 
     <!-- The console: one ruled band like the masthead — PLAY and STOP at the

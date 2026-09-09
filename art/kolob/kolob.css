@@ -178,7 +178,7 @@
 /* ============================== title page ============================== */
 .kolob-header {
   text-align: center;
-  margin: 0 0 1.2rem;               /* the running head belongs to the plates; the 2rem step is for the boards */
+  margin: 0 0 1.2rem;               /* the double rule, then one plate step to the wheel's sky */
 }
 .kolob-title {
   font-family: "Noto Sans Deseret", serif;
@@ -208,15 +208,18 @@
 }
 
 /* the running head — as a hymnal's: one line of letterspaced capitals in two
-   FIXED slots, left and right, under the title's double rule. The slots are
-   sized by the line, not by their text, so the head never reflows as the
-   values change; the right slot holds its place even when empty. */
+   FIXED slots, left and right. It sits beneath the staff plate, in the room
+   between the plates and the console band (a hymnal's running head is at the
+   top of the page; ours moved to the foot in v0.15 so the wheel could rise to
+   the title rule). The slots are sized by the line, not by their text, so the
+   head never reflows as the values change; the right slot holds its place
+   even when empty. */
 .kolob-running-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 1.2rem;
-  margin: 1.2rem 0 0;
+  margin: 0 0 0.6rem;               /* the staff plate's 0.6rem above, the same beneath to the console band */
   font-family: "Noto Sans Deseret", "EB Garamond", serif;
   font-size: 0.78rem;
   letter-spacing: 0.18em;
@@ -241,8 +244,9 @@
   /* The staff and the wheel are almost one plate: the staff's top ledger room
      (33px above the first rule) is laid over the foot of the wheel band, so the
      first rule sits about 17px beneath the wheel's horizon (12px on a phone).
-     Notes above the staff may drift over the wheel — by design. The bottom
-     step to the console is a scale step less than the plates above. */
+     Notes above the staff may drift over the wheel — by design. Beneath, a
+     0.6rem step to the running head, which sits between the plate and the
+     console band. */
   margin: -20px 0 0.6rem;
   z-index: 2;                       /* over the wheel band (both are z-index 1 by the frame rule) */
 }
