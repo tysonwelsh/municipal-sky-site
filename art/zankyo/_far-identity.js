@@ -104,8 +104,16 @@ function batch(dir) {
 // A reader who takes "18/18 identical" for a whole-build guarantee is the
 // person this line exists for.
 console.log("base " + BASE_REF + " — swapping " + SWAPPED.length + " file(s): " + SWAPPED.join(", "));
-console.log("  (code only: _probe.js mocks fetch, so no reel loads and no signal fires under this gate —");
-console.log("   a receiver change that only shows on the air still needs _harness.js, which serves a manifest)");
+// CORRECTED at rc.56. This line used to say "_probe.js mocks fetch, so no reel
+// loads and no signal fires under this gate", and that is FALSE and was quoted
+// in two commit messages as a reason a receiver change could not have moved a
+// night. _probe.js reads the REAL broadcast/manifest.json off disk (:177) and
+// serves it from its fetch mock (:207), so the pool loads, choose() runs in
+// full and signals fire. What the probe does not do is fetch the MP4 — the
+// picture and the element are stubbed. So a receiver change absolutely can move
+// a night here, and a difference in this gate is a finding, not noise.
+console.log("  (_probe.js serves the REAL manifest, so the pool loads and signals fire — a receiver");
+console.log("   change CAN move a night here. Only the reel's mp4 is stubbed, not its seating.)");
 process.stdout.write("running " + NSEEDS + " seeds × " + RUN + " s against the working tree… ");
 const cur = batch(null);
 process.stdout.write("and against " + BASE_REF + "… ");

@@ -2606,12 +2606,19 @@ window.ZankyoAudio = (function () {
       bcGapChecked = true;
       try {
         var lim = window.ZankyoBroadcast && window.ZankyoBroadcast.limits && window.ZankyoBroadcast.limits();
-        if (lim && lim.maxReachPastT0S > BC_GAP_S - BC_ARM_LEAD_S) {
+        // THE ORDINARY reach is what this global gap has to cover. A whole
+        // thought's reach is no longer bounded by it: the spacing is
+        // footprint-dependent now (orchestrator, 2026-09-09), so a 42 s hold is
+        // simply refused by the receiver wherever the room is not there and
+        // BC_GAP_S is left alone — which is what keeps W4's 1.69 broadcasts a
+        // cycle intact on every night that plays no whole reel.
+        if (lim && lim.ordinaryReachPastT0S > BC_GAP_S - BC_ARM_LEAD_S) {
           if (typeof console !== "undefined" && console.error) {
-            console.error("ZANKYŌ: the receiver's hold can reach " + lim.maxReachPastT0S.toFixed(1) +
+            console.error("ZANKYŌ: an ORDINARY hold can reach " + lim.ordinaryReachPastT0S.toFixed(1) +
               " s past t0, but a broadcast only owns BC_GAP_S − BC_ARM_LEAD_S = " + (BC_GAP_S - BC_ARM_LEAD_S) +
               " s before the NEXT arm calls airHoldClear(). A live broadcast's hold would be dropped and melodic " +
-              "notes could land inside it (§12). Raise BC_GAP_S here, or lower WHOLE_MAX_HOLD_S in zk-broadcast.js.");
+              "notes could land inside it (§12). Raise BC_GAP_S here, or lower the ordinary hold draw in zk-broadcast.js. " +
+              "(Whole thoughts are NOT covered by this: they are checked per position at arm by fitsRoom.)");
           }
         }
       } catch (e) {}
@@ -2799,7 +2806,13 @@ window.ZankyoAudio = (function () {
     }
     picks.sort(function (a, b) { return a - b; });
     pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
-      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS };
+      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS,
+      // §14 footprint-aware legality: the receiver decides its own footprint at
+      // arm, 55 s after this plan is written, so it needs the cycle's shape to
+      // know what it must clear. Types (for the kyū→release seam, where the
+      // KIRU falls) and the guest's offset are the two things it cannot derive
+      // from durations alone.
+      sceneTypes: scenes.map(function (sc) { return sc.type; }), guestAt: guestT };
     return scenes;
   }
   // 客 VISITATIONS (Phase 4) — rare seeded guests. Each rolls its OWN die every
@@ -3083,9 +3096,30 @@ window.ZankyoAudio = (function () {
       // prefetch. arm() is given the exact t0, which is what lets the planned
       // hold BE the real hold instead of covering the guess.
       if (signalProvider && p.bcAt && p.bcAt.length) {
-        (function (times, kind, tide, cyN, t0c) {
+        // §14 — THE DEADLINES A FOOTPRINT MUST CLEAR, computed once for the
+        // cycle and handed to each arm. The receiver picks its window (and so
+        // its hold) 55 s after this, and a whole thought can now run 42 s, so
+        // "is this position legal" is no longer a question the seating can
+        // answer alone: it depends on a choice that has not been made yet.
+        // So the seating still places t0, and the receiver refuses a footprint
+        // that will not fit — falling back to a shorter window of the same reel,
+        // then to another reel, never to a slice of a whole one.
+        //
+        // THE KIRU is the one that bit us: it falls on the kyū→release seam, so
+        // its time is the sum of the scene durations up to and including the
+        // kyū. 未斬 can cancel it on a far night, which we cannot know here, so
+        // the deadline assumes it comes — the conservative direction.
+        var kiruOff = null;
+        if (p.sceneTypes && p.sceneDurS) {
+          var accK = 0;
+          for (var sk = 0; sk < p.sceneTypes.length; sk++) {
+            accK += p.sceneDurS[sk];
+            if (p.sceneTypes[sk] === "kyu" && p.sceneTypes[sk + 1] === "release") { kiruOff = accK; break; }
+          }
+        }
+        (function (times, kind, tide, cyN, t0c, kOff, gOff, cycDur) {
           for (var bi = 0; bi < times.length; bi++) {
-            (function (off) {
+            (function (off, nextOff) {
               var at = t0c + off;
               // The arm is CLAMPED to the cycle start, not rejected, so a
               // broadcast early in the cycle arms with less than BC_ARM_LEAD_S
@@ -3095,16 +3129,22 @@ window.ZankyoAudio = (function () {
               var armAt = Math.max(t0c + 0.05, at - BC_ARM_LEAD_S);
               if (faults.armLeadMin == null || (at - armAt) < faults.armLeadMin) faults.armLeadMin = at - armAt;
               lane("form").at(armAt, function () {
-                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide }); } catch (e) {}
+                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide,
+                  // absolute times, or null when there is nothing to clear
+                  kiruT: kOff == null ? null : t0c + kOff,
+                  guestT: gOff == null ? null : t0c + gOff,
+                  nextBcT: nextOff == null ? null : t0c + nextOff,
+                  cycleEndT: t0c + cycDur,
+                  armLeadS: BC_ARM_LEAD_S }); } catch (e) {}
               });
               lane("form").at(at, function (t) {
                 var took = false;
                 try { took = !!signalProvider.fire(at); } catch (e) { took = false; }
                 if (!took) { try { visitBroadcast(at); } catch (e2) {} }   // abandoned to the fallback rather than forced
               });
-            })(times[bi]);
+            })(times[bi], bi + 1 < times.length ? times[bi + 1] : null);
           }
-        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t);
+        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t, kiruOff, p.guestAt, evt.durS);
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {

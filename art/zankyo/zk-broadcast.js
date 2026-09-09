@@ -321,7 +321,17 @@
   // sweep's whole subject. Every window on the only whole reel today is
   // 18–25 s, so nothing is lost. To raise this, raise BC_GAP_S in the same
   // commit and re-derive both numbers together.
-  var WHOLE_MAX_HOLD_S = 27.8;
+  // 42 s — the owner's three Cage thoughts are 40.0 / 32.4 / 33.0 s. This is no
+  // longer bounded by BC_GAP_S, because the spacing is no longer a single
+  // global number: see fitsRoom(). A footprint this big is simply refused
+  // wherever it does not fit, which is most places when a cycle carries two
+  // broadcasts, and allowed where it does.
+  var WHOLE_MAX_HOLD_S = 42;
+  // The KIRU margin the harness gate uses: a signal is "within a KIRU's reach"
+  // if the cut falls between t0 − 20 and the loss ramp's end + 15. t0 is the
+  // seating's to choose; the tail is ours, so this is the number a footprint
+  // must clear.
+  var KIRU_CLEAR_S = 15;
   // THE DRAWS' OWN BOUNDS, named so the reach below cannot drift from them.
   // mulberry32 returns [0, 1), so these are STRICT upper bounds, not typical
   // values: lossD < 2.8 and rel < 6, always. Anyone retuning a draw retunes
@@ -341,9 +351,45 @@
     return !!reel.whole;
   }
   function wholeFits(reel, i) { return (reel.windows[i][1] - reel.windows[i][0]) <= WHOLE_MAX_HOLD_S; }
+  // ---- §14 FOOTPRINT-AWARE LEGALITY ----------------------------------------
+  // THE SPACING IS FOOTPRINT-DEPENDENT (orchestrator, 2026-09-09), not a wider
+  // global gap: an ordinary 8–12 s hold needs what it always needed and W4's
+  // 1.69 broadcasts a cycle is untouched on every night that plays no whole
+  // reel; a 40 s thought needs ~113 s of room and simply does not get seated
+  // where that is not there. BC_GAP_S stays 95.
+  //
+  // Two different reaches matter and they are not the same number:
+  //   the HOLD reaches TUNE_S + holdS + lossD + tail + max(rel) past t0 — that
+  //     is what the next broadcast's arm would clear out from under it;
+  //   the SIGNAL reaches TUNE_S + holdS + lossD, and the KIRU gate wants
+  //     KIRU_CLEAR_S beyond THAT.
+  // Both are checked, against whichever deadlines the engine handed us. A null
+  // deadline is "nothing to clear", not "zero".
+  var ORDINARY_MAX_HOLD_S = 12;      // the 8 + r*4 draw's ceiling; the global spacing is still sized for THIS
+  // FAIL SAFE WHEN THE ENGINE PASSES NO DEADLINES. seatScan (the 選局 button)
+  // and any future caller that does not know the cycle's shape get the OLD
+  // single-gap ceiling instead of a free pass: a hold may reach 40 s past t0,
+  // which allows a whole thought up to 28.8 s and refuses the 32–40 s ones.
+  // That is a real limit on the manual path and it is deliberate — a footprint
+  // nobody has checked against a KIRU is exactly what caused this regression.
+  function noContract(info) { return !info || (info.cycleEndT == null && info.nextBcT == null && info.kiruT == null); }
+  function fitsRoom(info, holdS, lossD) {
+    if (!info) return true;
+    var t0 = info.t0; if (t0 == null) return true;
+    if (noContract(info)) {
+      return TUNE_S + holdS + lossD + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) <= 40;
+    }
+    var sigEnd = t0 + TUNE_S + holdS + lossD;
+    var holdEnd = sigEnd + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S);
+    if (info.kiruT != null && info.kiruT > t0 && sigEnd + KIRU_CLEAR_S > info.kiruT) return false;
+    if (info.nextBcT != null && holdEnd > info.nextBcT - (info.armLeadS || 55)) return false;
+    if (info.guestT != null && info.guestT > t0 && holdEnd > info.guestT) return false;
+    if (info.cycleEndT != null && holdEnd > info.cycleEndT) return false;
+    return true;
+  }
 
   // ---- the choice (arm time): six draws, always ----
-  function choose(R, cycle, tidePos) {
+  function choose(R, cycle, tidePos, info) {
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next(), rBell = R.next();
     var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S, bell = rBell < 0.25;
     var c = { reel: null, win: null, inS: 0, holdS: holdS, lossD: lossD, bell: bell };
@@ -359,12 +405,12 @@
       else if (TONE_LIGHT[tone]) x *= 0.7 + 0.6 * (1 - dark);                                     // the light tide to music and singing
       w.push(x); tot += x;
     }
-    var r = rReel * tot, reel = cands[cands.length - 1];
-    for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; break; } }
+    var r = rReel * tot, reel = cands[cands.length - 1], reelIdx = cands.length - 1;
+    for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; reelIdx = i; break; } }
     // THE PIN, applied after the weighting and before anything reads `reel`:
     // rReel is already spent, so this costs no randomness and moves no stream.
     var pinR = pinUsed ? null : pinnedReel();
-    if (pinR) { reel = pinR; c.pinned = true; }
+    if (pinR) { reel = pinR; c.pinned = true; for (i = 0; i < cands.length; i++) if (cands[i] === pinR) { reelIdx = i; break; } }
     // §11.2 TUNED SIGNALS. The drawn window is still DRAWN — rWin is consumed
     // above whatever happens here, so the signal stream never moves — but on a
     // reel that holds a pitch the receiver prefers the window it can land on
@@ -377,21 +423,50 @@
     var wi = Math.floor(rWin * reel.windows.length);
     var tune = farTune(reel, wi);
     if (tune.wi !== wi) wi = tune.wi;
-    // §14: prefer a whole window that FITS the room a broadcast owns; if none
-    // fits, take the shortest whole one. The scan starts at the drawn index and
-    // is deterministic — NO new draws, so the signal stream does not move.
+    // §14 WINDOW SELECTION, now against the ROOM and not just the ceiling.
+    // Order, and it is the orchestrator's: the drawn window if it fits; else
+    // the LONGEST whole window that fits (a shorter thought rather than a
+    // shorter reach); else another reel — NEVER a slice of a whole window.
+    // Deterministic from the drawn index, NO new draws.
     var whole = wholeAt(reel, wi);
-    if (whole && !wholeFits(reel, wi)) {
-      var alt = -1, shortest = wi, sl = 1e9, ww, wj2, l2;
-      for (ww = 0; ww < reel.windows.length; ww++) {
-        wj2 = (wi + ww) % reel.windows.length;
-        if (!wholeAt(reel, wj2)) continue;
-        l2 = reel.windows[wj2][1] - reel.windows[wj2][0];
-        if (l2 < sl) { sl = l2; shortest = wj2; }
-        if (alt < 0 && wholeFits(reel, wj2)) alt = wj2;
+    if (whole) {
+      var okHere = wholeFits(reel, wi) && fitsRoom(info, Math.min(reel.windows[wi][1] - reel.windows[wi][0], WHOLE_MAX_HOLD_S), lossD);
+      if (!okHere) {
+        var best = -1, bestL = -1, ww, wj2, l2;
+        for (ww = 0; ww < reel.windows.length; ww++) {
+          wj2 = (wi + ww) % reel.windows.length;
+          if (!wholeAt(reel, wj2) || !wholeFits(reel, wj2)) continue;
+          l2 = reel.windows[wj2][1] - reel.windows[wj2][0];
+          if (fitsRoom(info, Math.min(l2, WHOLE_MAX_HOLD_S), lossD) && l2 > bestL) { bestL = l2; best = wj2; }
+        }
+        if (best >= 0) wi = best;
+        else {
+          // NOTHING OF THIS REEL FITS HERE. Take the next candidate reel that
+          // can be seated at all — a whole reel whose thoughts all overrun, or
+          // an ordinary reel, whichever comes first walking from the drawn
+          // index. The alternative would be a mid-sentence slice, which is the
+          // one thing §14 exists to prevent.
+          var swapped = false;
+          for (var ci = 1; ci < cands.length && !swapped; ci++) {
+            var cand = cands[(reelIdx + ci) % cands.length];
+            if (!cand || !cand.windows || !cand.windows.length) continue;
+            for (var cw = 0; cw < cand.windows.length; cw++) {
+              var cl = cand.windows[cw][1] - cand.windows[cw][0];
+              var chold = wholeAt(cand, cw) ? Math.min(cl, WHOLE_MAX_HOLD_S) : Math.min(8 + rHold * 4, Math.max(3, cl - TUNE_S - lossD));
+              if (fitsRoom(info, chold, lossD)) { reel = cand; wi = cw; swapped = true; break; }
+            }
+          }
+          // AND IF NOTHING FITS, REFUSE. Falling through would seat the
+          // over-long window anyway — which is exactly what it did on a
+          // one-reel pool, where the swap loop has nothing to walk to, and is
+          // how a 32.4 s thought ran straight through the KIRU at 641 s on
+          // seed 34. A position that cannot hold a whole thought is not a
+          // position for this reel; the caller falls back to the gagaku, which
+          // is the graceful path that already exists.
+          if (!swapped) { c.unfit = true; c.reel = null; return c; }
+        }
+        whole = wholeAt(reel, wi);
       }
-      wi = alt >= 0 ? alt : shortest;
-      whole = wholeAt(reel, wi);
     }
     var win = reel.windows[wi], wl = win[1] - win[0];
     // THE HOLD IS DECIDED ON THE UNBENT WINDOW, DELIBERATELY. At rate r a
@@ -503,7 +578,11 @@
     var T = tl(); if (!T.S) return false;
     var R = rng || T.S.signal; if (!R) return false;
     loadPool();
-    var c = choose(R, info.cycle, info.tidePos || 0), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    var c = choose(R, info.cycle, info.tidePos || 0, info), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    // THE DRAWS ARE ABOVE THIS LINE, deliberately: weather() must take its
+    // stream whether or not the position turns out to be unusable, or a
+    // refusal here would shift every later signal on the night.
+    if (c.unfit) { stats.lastReason = "no reel fits this position (footprint)"; return false; }
     // §11's four fields ride here too, and the reason they are called out is
     // that this literal is EXACTLY the shape that cost the crew a phase: a
     // fresh object built field by field from a contract declared somewhere
@@ -1282,7 +1361,12 @@
     // The spacing contract, computed rather than written down twice. See
     // BC_GAP_S in zankyo-audio.js, which asserts against this at play.
     limits: function () { return { tuneS: TUNE_S, wholeMaxHoldS: WHOLE_MAX_HOLD_S, lossMaxS: LOSS_MIN_S + LOSS_SPAN_S,
-      relMaxS: REL_MIN_S + REL_SPAN_S, tailS: HOLD_TAIL_S, maxReachPastT0S: maxReachPastT0() }; },
+      relMaxS: REL_MIN_S + REL_SPAN_S, tailS: HOLD_TAIL_S, maxReachPastT0S: maxReachPastT0(),
+      // What the GLOBAL spacing still has to cover: an ordinary hold, seated by
+      // BC_GAP_S alone. A whole thought's reach is checked per-position at arm
+      // (fitsRoom), not against this.
+      ordinaryMaxHoldS: ORDINARY_MAX_HOLD_S,
+      ordinaryReachPastT0S: TUNE_S + ORDINARY_MAX_HOLD_S + (LOSS_MIN_S + LOSS_SPAN_S) + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) }; },
     getState: function () {
       return { pool: poolState, poolSize: pool ? pool.length : 0, poolError: poolError, primed: primed, video: !!video, mediaSource: !!mediaSrc,
         // 経路 — what the reel path actually is, read from the objects. `muted`
