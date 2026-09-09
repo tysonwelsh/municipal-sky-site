@@ -303,3 +303,74 @@ broadcast). Guarded by an assertion in the fault tally:
 max(commitLead) < ARM_LEAD on the covering set, so a future body or time
 departure that reaches further ahead fails by name instead of re-opening
 §12 as an intermittent intrusion.
+
+## 15. What each gate actually sees (2026-09-09, correcting the record)
+
+Written down because a WRONG caveat was quoted twice in commit messages as a
+reason a receiver change "could not" have moved a night, and a caveat that is
+believed is worse than one nobody reads.
+
+| instrument | serves the manifest? | signals fire? | so a receiver change… |
+|---|---|---|---|
+| `_harness.js` | yes, reads `broadcast/manifest.json` | yes | shows up here |
+| `_probe.js` (via `_far-identity.js`) | **YES** — reads the real file and serves it from its fetch mock | **YES** | **shows up here too** |
+| neither | — | — | — |
+
+`_far-identity.js` used to print "*_probe.js mocks fetch, so no reel loads and no
+signal fires under this gate*". **That was false.** The probe stubs the reel's
+**mp4** — the picture and the element — not the manifest, not the pool, not
+`choose()`, not the seating. A difference in the home-identity gate after a
+receiver change is a FINDING, not noise. The banner now says so.
+
+Consequences on the record:
+- rc.53 and rc.55 both carried the wrong caveat. Their gate results stand; the
+  reasoning attached to them does not.
+- **rc.56 reports home identity 13/14 and that is CORRECT, not a failure:** seed
+  106 draws `john-cage-interview` at 930 s and holds it whole, so the crew is
+  silent longer and the night's notes move. A deliberate change, partitioned
+  like a lift — not a regression to chase.
+- **And it moves for TWO deliberate reasons, not one** (critic, measured with a
+  pin of rc.55 CODE on rc.56 DATA — the control neither of us could infer):
+
+  | build | notes / events | what it isolates |
+  |---|---|---|
+  | rc.55 (old data, old code) | 2083 / 734 | — |
+  | rc.55 code + rc.56 data | 2011 / 731 | the weight raise + re-cut alone: **−72** |
+  | rc.56 | 1932 / 720 | §14 holding it whole alone: **−79** |
+
+  Total −151 (−7.3 %). My first account said the night moves "because §14 holds
+  the Cage reel whole"; that is a little over half of it. Raising the weight
+  from 3 to 5 — which is what makes the reel drawn at all — is the rest.
+  The same control also showed the signal TIMES identical to the second between
+  rc.55-code and rc.56 on that night: **§14 does not move placement even where
+  the reel is drawn.**
+
+### How often the Cage reel is actually drawn (keep this current)
+
+Weight 5 of a **671 raw-weight, 208-reel** pool, ×1.5 for carrying a picture and
+×(0.7+0.6·dark) for a dark tone: **1 signal in 121–136** depending on the tide
+(0.73–0.83 %). An earlier note in this repo said 1 in 210 — that was computed at
+weight 3, before the owner raised it, and is stale. The number matters because
+it is what "a clean real-pool run means something" rests on: at ~1.7 broadcasts
+a cycle, twelve seeds of an hour is roughly 100 signals, so **a real-pool run
+that draws the reel zero times is the expected outcome, not evidence.** Force a
+single-reel pool to test whole-window behaviour.
+
+### §14's own gates, for whoever changes the seating next
+
+- **KIRU reach 0** and **§12 sweep 0** on twelve seeds, on the REAL pool *and* on
+  a forced single-reel pool. The forced pool is the one that catches a fall-
+  through: with one reel there is no other reel to swap to, and code that
+  "prefers a different reel" quietly seats the illegal window instead.
+- **Placement is the real-pool gate**, and it must be compared against a
+  BASELINE MEASURED ON THE SAME SEEDS — not against the figures banked in
+  STATUS, which come from an older pool. At rc.56: 1.68 broadcasts/cycle, pair
+  74 %, empty 5.8 %, identical to the digit against rc.55. **That comparison was
+  ONE-VARIABLE and it has to be:** the baseline was taken by checking out only
+  `zk-broadcast.js` and `zankyo-audio.js` from the previous commit into a tree
+  that ALREADY carried the re-cut reel, so both sides ran the same manifest and
+  only the code differed. Comparing the two COMMITS instead would span the code
+  change and the reel re-cut together and prove much less.
+- **Density on a forced whole-thought pool is expected to fail the ±20 % band**
+  (seed 17: −21.5 %). Accepted by ruling: long holds silence the crew while they
+  play. The real pool is the gate.

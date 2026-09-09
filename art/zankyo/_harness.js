@@ -406,6 +406,20 @@ const signalVocab = (() => {
     for (const k of kiruTs) if (k > t0 - 20 && k < tEnd + 15) nearKiru++;
     for (const n of notes) if ((MEL[n.layer] || n.layer === "pa") && n.t >= t0 + 1 && n.t <= tEnd) notSilent++;   // the PA counts too (critic S1 r1)
   }
+  // W4's placement numbers, printed because they are the gate on any change to
+  // the seating or the footprint: broadcasts per cycle, how often a cycle gets
+  // the PAIR it wanted, and how often it gets none at all.
+  {
+    const counts = [];
+    for (let ci = 0; ci < cycleStarts.length; ci++) counts.push(perCycle[ci] || 0);
+    const nPair = counts.filter((x) => x >= 2).length, nEmpty = counts.filter((x) => x === 0).length;
+    const per = counts.length ? (counts.reduce((a, b) => a + b, 0) / counts.length) : 0;
+    console.log("placement: " + per.toFixed(2) + " broadcasts/cycle · pair " + nPair + "/" + counts.length +
+      (counts.length ? " (" + Math.round(100 * nPair / counts.length) + "%)" : "") +
+      " · empty " + nEmpty + "/" + counts.length +
+      (counts.length ? " (" + Math.round(100 * nEmpty / counts.length) + "%)" : "") +
+      " · per-cycle " + JSON.stringify(counts));
+  }
   const hosted = events.filter((e) => /visitation: the broadcast/.test(e.detail || "")).length;
   const scans = events.filter((e) => e.cat === "rx" && e.label === "選局 scanning");
   if (runA.tunePressed != null) console.log("tune: pressed at " + Math.round(runA.tunePressed) + "s → " + runA.tuneResult + " · " + scans.map((e) => Math.round(e.t) + "s " + e.detail).join(" | ") + " · signals after the press: " + sigs.filter((x) => x.sig.t0 > runA.tunePressed).map((x) => Math.round(x.sig.t0) + "s " + x.sig.id).join(" | "));

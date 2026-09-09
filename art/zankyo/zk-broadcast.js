@@ -82,7 +82,7 @@
       fetch(MANIFEST_URL).then(function (r) { return r.json(); }).then(function (m) {
         var arr = Array.isArray(m) ? m : (m && m.reels) || [];
         var out = [];
-        var unknown = {}, ragged = [];
+        var unknown = {}, ragged = [], wholeTuned = [];
         for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) {
           if (!toneKnown(e.tone)) unknown[e.tone] = (unknown[e.tone] || 0) + 1;
           // A TUNED REEL'S WINDOWS MUST BE THE SAME LENGTH, near enough.
@@ -100,6 +100,7 @@
           // fifth apart. One `tuned: true` from the librarian on any of those
           // ten and byte-identity starts failing with no visible cause, so the
           // assumption says so out loud instead of resting quietly.
+          if (e.tuned && (e.whole || e.wholeWindows)) wholeTuned.push(e.id);
           if (e.tuned && e.windows.length > 1) {
             var wlo = 1e9, whi = -1e9;
             for (var wj = 0; wj < e.windows.length; wj++) {
@@ -118,6 +119,23 @@
           console.error("ZankyoBroadcast: manifest carries " + uk.length + " UNKNOWN tone value(s) — " +
             uk.map(function (k) { return k + "×" + unknown[k]; }).join(", ") +
             ". They get no tide weighting and cannot sea-change. Add them to TONE_DARK/TONE_LIGHT/TONE_PITCHED in zk-broadcast.js.");
+        }
+        // A typo in ?reel= would otherwise be a night that quietly ignores the
+        // owner: the pin never matches and the lottery runs as if the lever
+        // were not there. Say so.
+        (function () {
+          var pid = pinnedId(); if (!pid) return;
+          for (var pi = 0; pi < out.length; pi++) if (out[pi].id === pid) return;
+          if (typeof console !== "undefined" && console.error) {
+            console.error("ZankyoBroadcast: ?reel=" + pid + " matches no reel in the manifest — the pin is ignored and " +
+              "the lottery runs as usual. Check the id against broadcast/manifest.json.");
+          }
+        })();
+        if (wholeTuned.length && typeof console !== "undefined" && console.error) {
+          console.error("ZankyoBroadcast: " + wholeTuned.length + " reel(s) are BOTH whole and tuned — " +
+            wholeTuned.slice(0, 6).join(", ") + ". §14 decides the hold on the UNBENT window length (as §11.2 does, " +
+            "deliberately), so at rate ≠ 1 the hold would not cover the thought on the wall clock. Untested: " +
+            "either untune the reel or teach §14 the rate, in a commit that measures it.");
         }
         if (ragged.length && typeof console !== "undefined" && console.error) {
           console.error("ZankyoBroadcast: " + ragged.length + " TUNED reel(s) have windows of differing length — " +
@@ -155,6 +173,30 @@
   // It is not free — the whole reel is decoded (a 72-120 s file is 30-45 MB of
   // float) and fetched a second time for the picture. Two buffers are kept.
   // That is the price of an answer.
+  // ---- ?reel=<id> — the owner's pin (2026-09-09) ----------------------------
+  // The night's FIRST SEATED broadcast is this reel; the lottery resumes after
+  // it. "Seated" means ON THE AIR, not merely armed: the pin is spent where
+  // stats.signals++ is, so an arm that falls back to the gagaku does not eat
+  // it. While stopped, 選局 auditions the pinned reel on every press.
+  // No new draws anywhere: choose() takes its six as always and the pin only
+  // replaces the reel the weighting landed on, so the signal stream is
+  // untouched and a pinned night is still reproducible from its seed.
+  var pinUsed = false;
+  // ---- the reel bench (reel-lab.php) ---------------------------------------
+  // A forced choice for ONE seating: this reel, this window, whole or sliced.
+  // It bypasses the LOTTERY and the cooldown and NOTHING ELSE — legality, the
+  // footprint check, the deadlines, the hold, the AIR and the tube are all the
+  // production path, because a bench that takes a shortcut past those is a
+  // bench that agrees with itself and tells the owner nothing.
+  var benchForce = null, benchQueued = null, benchWholeOverride = null;
+  function pinnedId() {
+    try { return (window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().pinnedReel) || null; } catch (e) { return null; }
+  }
+  function pinnedReel() {
+    var id = pinnedId(); if (!id || !pool) return null;
+    for (var i = 0; i < pool.length; i++) if (pool[i].id === id) return pool[i];
+    return null;
+  }
   function reelsBuffered() {
     try { return !!(window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().reelsMode === "buffer"); } catch (e) { return false; }
   }
@@ -230,6 +272,8 @@
   }
   function onPlay() {
     loadPool();
+    pinUsed = false;          // one pin per night, re-armed by ▶ play
+
     var v = ensureVideo(); if (!v) return;
     ensureMediaSource(tl().ctx);
     if (primed) return;
@@ -259,10 +303,116 @@
   // weights WHICH real reel is chosen, never whether a real one is.
   var VIDEO_WEIGHT = 1.5;
 
+  // ---- §14 WHOLE-THOUGHT WINDOWS (owner, 2026-09-09) ------------------------
+  // A reel cut on complete sentences says so with "whole": true, and then a
+  // window is not a field to take a slice out of — it IS the thought, and the
+  // receiver plays it from its start to its end. john-cage-interview is the
+  // first: five windows, 18–25 s, each a finished sentence.
+  //
+  // A per-window override rides in an OPTIONAL PARALLEL ARRAY `wholeWindows`,
+  // index for index, exactly as pitchHz does — and for the same reason. Five
+  // call sites index a window positionally; a window that had grown a third
+  // element or turned into an object would read win[0] as undefined and put
+  // NaN into inS, which is the shape of the fault that cost this crew a phase.
+  // `windows` stays [start, end] and nothing else, forever.
+  //
+  // THE CEILING IS NOT TASTE, IT IS THE SPACING. Two broadcasts sit
+  // BC_GAP_S = 95 s apart (zankyo-audio.js) and each arms BC_ARM_LEAD_S = 55 s
+  // early, so a broadcast owns exactly 40 s before the NEXT one's arm calls
+  // airHoldClear() and drops its hold out from under it. The planned hold
+  // reaches TUNE_S + holdS + lossD + 2 + max(rel) past t0 — with lossD ≤ 2.8
+  // and rel ≤ 6 that is holdS + 11.2 — so holdS ≤ 28.8, and 27.8 leaves a
+  // second of margin. The owner asked for a 40 s cap: 40 IS NOT REACHABLE
+  // without widening BC_GAP_S, and a 40 s hold would let the next arm clear a
+  // live broadcast's hold and put melodic notes inside it, which is the §12
+  // sweep's whole subject. Every window on the only whole reel today is
+  // 18–25 s, so nothing is lost. To raise this, raise BC_GAP_S in the same
+  // commit and re-derive both numbers together.
+  // 42 s — the owner's three Cage thoughts are 40.0 / 32.4 / 33.0 s. This is no
+  // longer bounded by BC_GAP_S, because the spacing is no longer a single
+  // global number: see fitsRoom(). A footprint this big is simply refused
+  // wherever it does not fit, which is most places when a cycle carries two
+  // broadcasts, and allowed where it does.
+  var WHOLE_MAX_HOLD_S = 42;
+  // The KIRU margin the harness gate uses: a signal is "within a KIRU's reach"
+  // if the cut falls between t0 − 20 and the loss ramp's end + 15. t0 is the
+  // seating's to choose; the tail is ours, so this is the number a footprint
+  // must clear.
+  var KIRU_CLEAR_S = 15;
+  // THE DRAWS' OWN BOUNDS, named so the reach below cannot drift from them.
+  // mulberry32 returns [0, 1), so these are STRICT upper bounds, not typical
+  // values: lossD < 2.8 and rel < 6, always. Anyone retuning a draw retunes
+  // the constant beside it and the exported reach follows for free.
+  var LOSS_MIN_S = 1.6, LOSS_SPAN_S = 1.2;      // lossD = LOSS_MIN_S + r * LOSS_SPAN_S
+  var REL_MIN_S = 3, REL_SPAN_S = 3;            // rel   = REL_MIN_S  + r * REL_SPAN_S (the four plucked/reed voices)
+  var HOLD_TAIL_S = 2;                          // the flat +2 the planned and real holds both add past the cut
+  // How far past t0 the receiver's hold can ever reach. zankyo-audio.js checks
+  // this against BC_GAP_S − BC_ARM_LEAD_S at play, so the two files cannot
+  // disagree the way a comment did.
+  function maxReachPastT0() {
+    return TUNE_S + WHOLE_MAX_HOLD_S + (LOSS_MIN_S + LOSS_SPAN_S) + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S);
+  }
+  function wholeAt(reel, i) {
+    var wa = reel.wholeWindows;
+    if (wa && wa[i] != null) return !!wa[i];
+    return !!reel.whole;
+  }
+  function wholeFits(reel, i) { return (reel.windows[i][1] - reel.windows[i][0]) <= WHOLE_MAX_HOLD_S; }
+  // ---- §14 FOOTPRINT-AWARE LEGALITY ----------------------------------------
+  // THE SPACING IS FOOTPRINT-DEPENDENT (orchestrator, 2026-09-09), not a wider
+  // global gap: an ordinary 8–12 s hold needs what it always needed and W4's
+  // 1.69 broadcasts a cycle is untouched on every night that plays no whole
+  // reel; a 40 s thought needs ~113 s of room and simply does not get seated
+  // where that is not there. BC_GAP_S stays 95.
+  //
+  // Two different reaches matter and they are not the same number:
+  //   the HOLD reaches TUNE_S + holdS + lossD + tail + max(rel) past t0 — that
+  //     is what the next broadcast's arm would clear out from under it;
+  //   the SIGNAL reaches TUNE_S + holdS + lossD, and the KIRU gate wants
+  //     KIRU_CLEAR_S beyond THAT.
+  // Both are checked, against whichever deadlines the engine handed us. A null
+  // deadline is "nothing to clear", not "zero".
+  var ORDINARY_MAX_HOLD_S = 12;      // the 8 + r*4 draw's ceiling; the global spacing is still sized for THIS
+  // FAIL SAFE WHEN THE ENGINE PASSES NO DEADLINES. seatScan (the 選局 button)
+  // and any future caller that does not know the cycle's shape get the OLD
+  // single-gap ceiling instead of a free pass: a hold may reach 40 s past t0,
+  // which allows a whole thought up to 28.8 s and refuses the 32–40 s ones.
+  // That is a real limit on the manual path and it is deliberate — a footprint
+  // nobody has checked against a KIRU is exactly what caused this regression.
+  // §14 (rc.57): the manual paths get the SAME deadlines the plan path is
+  // handed, whenever there is a cycle to clear. Without this they fell to the
+  // stopped-path fail-safe and could not seat the owner's 32–40 s thoughts on
+  // air at all — the 選局 knob and the ♪ button being exactly where they would
+  // want to hear them. When the station is STOPPED there is no cycle, no KIRU
+  // and no neighbour, so the fail-safe stays: nothing to clear, nothing known.
+  function withDeadlines(base, t0) {
+    base.t0 = t0;
+    try {
+      var d = tl().bcDeadlines && tl().bcDeadlines(t0);
+      if (d) { base.kiruT = d.kiruT; base.guestT = d.guestT; base.nextBcT = d.nextBcT; base.cycleEndT = d.cycleEndT; base.armLeadS = d.armLeadS; }
+    } catch (e) {}
+    return base;
+  }
+  function noContract(info) { return !info || (info.cycleEndT == null && info.nextBcT == null && info.kiruT == null); }
+  function fitsRoom(info, holdS, lossD) {
+    if (!info) return true;
+    var t0 = info.t0; if (t0 == null) return true;
+    if (noContract(info)) {
+      return TUNE_S + holdS + lossD + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) <= 40;
+    }
+    var sigEnd = t0 + TUNE_S + holdS + lossD;
+    var holdEnd = sigEnd + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S);
+    if (info.kiruT != null && info.kiruT > t0 && sigEnd + KIRU_CLEAR_S > info.kiruT) return false;
+    if (info.nextBcT != null && holdEnd > info.nextBcT - (info.armLeadS || 55)) return false;
+    if (info.guestT != null && info.guestT > t0 && holdEnd > info.guestT) return false;
+    if (info.cycleEndT != null && holdEnd > info.cycleEndT) return false;
+    return true;
+  }
+
   // ---- the choice (arm time): six draws, always ----
-  function choose(R, cycle, tidePos) {
+  function choose(R, cycle, tidePos, info) {
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next(), rBell = R.next();
-    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2, bell = rBell < 0.25;
+    var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S, bell = rBell < 0.25;
     var c = { reel: null, win: null, inS: 0, holdS: holdS, lossD: lossD, bell: bell };
     if (!pool || !pool.length) return c;
     var skip = recentIds(cycle), cands = [];
@@ -276,8 +426,19 @@
       else if (TONE_LIGHT[tone]) x *= 0.7 + 0.6 * (1 - dark);                                     // the light tide to music and singing
       w.push(x); tot += x;
     }
-    var r = rReel * tot, reel = cands[cands.length - 1];
-    for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; break; } }
+    var r = rReel * tot, reel = cands[cands.length - 1], reelIdx = cands.length - 1;
+    for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; reelIdx = i; break; } }
+    // THE BENCH'S FORCED CHOICE, ahead of the pin and the lottery. Same rule:
+    // rReel is already spent, so this costs no randomness.
+    if (benchForce) {
+      for (var bfi = 0; bfi < cands.length; bfi++) if (cands[bfi].id === benchForce.reelId) { reel = cands[bfi]; reelIdx = bfi; break; }
+      if (reel.id !== benchForce.reelId) { for (var bpi = 0; bpi < pool.length; bpi++) if (pool[bpi].id === benchForce.reelId) { reel = pool[bpi]; reelIdx = 0; break; } }
+      c.bench = true;
+    }
+    // THE PIN, applied after the weighting and before anything reads `reel`:
+    // rReel is already spent, so this costs no randomness and moves no stream.
+    var pinR = pinUsed ? null : pinnedReel();
+    if (pinR) { reel = pinR; c.pinned = true; for (i = 0; i < cands.length; i++) if (cands[i] === pinR) { reelIdx = i; break; } }
     // §11.2 TUNED SIGNALS. The drawn window is still DRAWN — rWin is consumed
     // above whatever happens here, so the signal stream never moves — but on a
     // reel that holds a pitch the receiver prefers the window it can land on
@@ -290,6 +451,55 @@
     var wi = Math.floor(rWin * reel.windows.length);
     var tune = farTune(reel, wi);
     if (tune.wi !== wi) wi = tune.wi;
+    // §14 WINDOW SELECTION, now against the ROOM and not just the ceiling.
+    // Order, and it is the orchestrator's: the drawn window if it fits; else
+    // the LONGEST whole window that fits (a shorter thought rather than a
+    // shorter reach); else another reel — NEVER a slice of a whole window.
+    // Deterministic from the drawn index, NO new draws.
+    if (benchForce && reel.id === benchForce.reelId) {
+      if (benchForce.wi >= 0 && benchForce.wi < reel.windows.length) wi = benchForce.wi;
+      benchWholeOverride = benchForce.whole;   // false = "slice instead", for the owner's A/B
+    } else benchWholeOverride = null;
+    var whole = benchWholeOverride == null ? wholeAt(reel, wi) : !!benchWholeOverride;
+    if (whole) {
+      var okHere = wholeFits(reel, wi) && fitsRoom(info, Math.min(reel.windows[wi][1] - reel.windows[wi][0], WHOLE_MAX_HOLD_S), lossD);
+      if (!okHere) {
+        var best = -1, bestL = -1, ww, wj2, l2;
+        for (ww = 0; ww < reel.windows.length; ww++) {
+          wj2 = (wi + ww) % reel.windows.length;
+          if (!wholeAt(reel, wj2) || !wholeFits(reel, wj2)) continue;
+          l2 = reel.windows[wj2][1] - reel.windows[wj2][0];
+          if (fitsRoom(info, Math.min(l2, WHOLE_MAX_HOLD_S), lossD) && l2 > bestL) { bestL = l2; best = wj2; }
+        }
+        if (best >= 0) wi = best;
+        else {
+          // NOTHING OF THIS REEL FITS HERE. Take the next candidate reel that
+          // can be seated at all — a whole reel whose thoughts all overrun, or
+          // an ordinary reel, whichever comes first walking from the drawn
+          // index. The alternative would be a mid-sentence slice, which is the
+          // one thing §14 exists to prevent.
+          var swapped = false;
+          for (var ci = 1; ci < cands.length && !swapped; ci++) {
+            var cand = cands[(reelIdx + ci) % cands.length];
+            if (!cand || !cand.windows || !cand.windows.length) continue;
+            for (var cw = 0; cw < cand.windows.length; cw++) {
+              var cl = cand.windows[cw][1] - cand.windows[cw][0];
+              var chold = wholeAt(cand, cw) ? Math.min(cl, WHOLE_MAX_HOLD_S) : Math.min(8 + rHold * 4, Math.max(3, cl - TUNE_S - lossD));
+              if (fitsRoom(info, chold, lossD)) { reel = cand; wi = cw; swapped = true; break; }
+            }
+          }
+          // AND IF NOTHING FITS, REFUSE. Falling through would seat the
+          // over-long window anyway — which is exactly what it did on a
+          // one-reel pool, where the swap loop has nothing to walk to, and is
+          // how a 32.4 s thought ran straight through the KIRU at 641 s on
+          // seed 34. A position that cannot hold a whole thought is not a
+          // position for this reel; the caller falls back to the gagaku, which
+          // is the graceful path that already exists.
+          if (!swapped) { c.unfit = true; c.reel = null; return c; }
+        }
+        whole = wholeAt(reel, wi);
+      }
+    }
     var win = reel.windows[wi], wl = win[1] - win[0];
     // THE HOLD IS DECIDED ON THE UNBENT WINDOW, DELIBERATELY. At rate r a
     // window of wl source seconds lasts wl / r on the wall clock, so the
@@ -301,14 +511,21 @@
     // more than a tenth of a second of hold, so the decision stays on wl and
     // the rate is spent on the in-point instead.
     var need = TUNE_S + holdS + lossD;
-    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
-    c.reel = reel; c.win = win; c.holdS = holdS;
+    if (whole) {
+      // The thought sets the hold, not the draw. rHold and rIn are still
+      // CONSUMED above — six draws, always — so a whole reel entering the pool
+      // moves no other night's stream.
+      holdS = Math.min(wl, WHOLE_MAX_HOLD_S);
+      need = TUNE_S + holdS + lossD;
+    } else if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
+    c.reel = reel; c.win = win; c.holdS = holdS; c.whole = whole;
     // The in-point does carry the rate: `need` wall seconds eat need × r
     // SOURCE seconds, so a sped-up reel starts nearer the window's head. When
     // need × r exceeds the window the in-point pins to the head and the last
     // fraction of a second runs past the edge — inside the loss ramp, where
     // the signal is already under 6 % of peak.
-    c.inS = win[0] + rIn * Math.max(0, wl - need * tune.rate);
+    // From the window's START on a whole reel — there is no slice to place.
+    c.inS = whole ? win[0] : win[0] + rIn * Math.max(0, wl - need * tune.rate);
     c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents;
     return c;
   }
@@ -380,7 +597,7 @@
       if (t >= end - 0.1) break;
       drops.push([t, 0.12 + D.next() * 0.25]);
     }
-    var rel = { shakuhachi: 0, koto: 3 + D.next() * 3, shamisen: 3 + D.next() * 3, hichiriki: 3 + D.next() * 3, biwa: 3 + D.next() * 3 };
+    var rel = { shakuhachi: 0, koto: REL_MIN_S + D.next() * REL_SPAN_S, shamisen: REL_MIN_S + D.next() * REL_SPAN_S, hichiriki: REL_MIN_S + D.next() * REL_SPAN_S, biwa: REL_MIN_S + D.next() * REL_SPAN_S };
     return { drops: drops, rel: rel, lfoHz: 0.4 + D.next() * 2.6, seed: D.next() * 1000 };
   }
 
@@ -393,7 +610,11 @@
     var T = tl(); if (!T.S) return false;
     var R = rng || T.S.signal; if (!R) return false;
     loadPool();
-    var c = choose(R, info.cycle, info.tidePos || 0), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    var c = choose(R, info.cycle, info.tidePos || 0, info), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    // THE DRAWS ARE ABOVE THIS LINE, deliberately: weather() must take its
+    // stream whether or not the position turns out to be unusable, or a
+    // refusal here would shift every later signal on the night.
+    if (c.unfit) { stats.lastReason = "no reel fits this position (footprint)"; return false; }
     // §11's four fields ride here too, and the reason they are called out is
     // that this literal is EXACTLY the shape that cost the crew a phase: a
     // fresh object built field by field from a contract declared somewhere
@@ -403,7 +624,7 @@
     // choose() adds must be added here in the same commit.
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
-      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0,
+      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0, whole: !!c.whole, pinned: !!c.pinned,
       ready: false, t0: null, decided: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     stats.armed++;
     // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
@@ -647,7 +868,7 @@
     // must always DO something.
     var got = false;
     for (var attempt = 0; attempt < 6; attempt++) {
-      if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R.fork("try:" + attempt))) return "snow";
+      if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R.fork("try:" + attempt))) return "snow";
       if (!armed || !armed.reel || !armed.reel.audioOnly) { got = true; break; }
     }
     if (!got && !armed) return "snow";
@@ -957,6 +1178,10 @@
     }
     live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc };
     stats.signals++;
+    if (a.pinned && !pinUsed) {
+      pinUsed = true;   // spent ON AIR, not at arm: a fallback must not eat it
+      T.emitEvent({ cat: "rx", label: "受信 pinned", detail: a.reel.id + (a.whole ? " · whole · " : " · ") + a.holdS.toFixed(1) + "s · the lottery resumes" }, t0);
+    }
     remember(a.reel.id, a.cycle);
     // the crew's duck and notch for the signal's span
     try { T.roomSpeak("broadcast", t0, TUNE_S + holdS + lossD, 800); } catch (e) {}
@@ -1041,7 +1266,7 @@
     var T = tl(), now = T.ctx.currentTime, t0 = legalT0(sc, now);
     if (t0 == null) return false;
     var R = T.S.signal.fork("scan:" + cy.n);
-    if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R)) return false;
+    if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R)) return false;
     if (!fire(t0)) { armed = null; return false; }
     scanWanted = false; scanCycle = cy.n; stats.scans++;
     T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "a signal in " + Math.round(t0 - now) + " s" }, now);
@@ -1057,7 +1282,34 @@
     scanWanted = true; T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "not now (" + (sc.type || "—") + ") · at the next scene" }, now);
     return true;
   }
+  // ONE ATTEMPT at the bench's request, at the next legal moment. benchForce is
+  // live only for the duration of the attempt — never across it — so a failed
+  // bench seat cannot leak into the next ordinary broadcast.
+  function benchTry() {
+    var T = tl();
+    if (!benchQueued) return { ok: false, state: "idle" };
+    if (!T.ctx || !T.playing() || !T.S) return { ok: false, state: "queued", why: "the station is stopped" };
+    if (live || (armed && armed.t0 != null)) return { ok: false, state: "queued", why: "a signal is already up" };
+    var now = T.ctx.currentTime, sc = T.scene(), cy = T.cycle();
+    var t0 = legalT0(sc, now);
+    if (t0 == null) return { ok: false, state: "queued", why: "the " + ((sc && sc.type) || "—") + " cannot host one" };
+    var R = T.S.signal.fork("bench:" + Math.floor(now * 1000));
+    benchForce = benchQueued;
+    var ok = false, why = "";
+    try {
+      if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R)) why = "the footprint does not fit here";
+      else if (!fire(t0)) { armed = null; why = "the seat was refused"; }
+      else ok = true;
+    } catch (e) { why = String(e && e.message || e); }
+    benchForce = null;
+    if (!ok) return { ok: false, state: "queued", why: why };
+    var a = armed || {};
+    benchQueued = null;
+    return { ok: true, state: "seated", t0: +t0.toFixed(2), inS: +(a.inS || 0).toFixed(2),
+      holdS: +(a.holdS || 0).toFixed(2), whole: !!a.whole, reel: a.reel && a.reel.id, inS_s: a.inS };
+  }
   function onScene(sc) {
+    if (benchQueued) { var br = benchTry(); if (br.ok) return; }
     if (!scanWanted) return;
     var T = tl(); if (!T.playing()) return;
     var cy = T.cycle();
@@ -1081,12 +1333,34 @@
     var v = ensureVideo(), ms = ensureMediaSource(c);
     var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
-    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2;
+    var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S;
     if (poolState !== "ready" || !v || (!buffered && !ms) || !pool.length) { staticRise(t, t + 1.0); return true; }   // the dial turns, nothing found
-    var reel = pool[Math.floor(rReel * pool.length)], win = reel.windows[Math.floor(rWin * reel.windows.length)];
+    // ?reel= pins the audition too, and on EVERY press — unlike the on-air pin,
+    // which is spent once. rReel is still drawn above, so the sample stream is
+    // where it would have been.
+    var pinA = pinnedReel();
+    var reel = pinA || pool[Math.floor(rReel * pool.length)];
+    var awi = Math.floor(rWin * reel.windows.length);
+    // §14 in the audition too: a whole reel is auditioned whole, so the button
+    // plays what the air would play.
+    var awhole = wholeAt(reel, awi);
+    if (awhole && !wholeFits(reel, awi)) {
+      var aAlt = -1, aShort = awi, aSl = 1e9, aw, aj, al;
+      for (aw = 0; aw < reel.windows.length; aw++) {
+        aj = (awi + aw) % reel.windows.length;
+        if (!wholeAt(reel, aj)) continue;
+        al = reel.windows[aj][1] - reel.windows[aj][0];
+        if (al < aSl) { aSl = al; aShort = aj; }
+        if (aAlt < 0 && wholeFits(reel, aj)) aAlt = aj;
+      }
+      awi = aAlt >= 0 ? aAlt : aShort; awhole = wholeAt(reel, awi);
+    }
+    var win = reel.windows[awi];
     var wl = (win[1] - win[0]), need = TUNE_S + holdS + lossD;
-    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
-    var inS = win[0] + rIn * Math.max(0, wl - need - 0.5);
+    if (awhole) { holdS = Math.min(wl, WHOLE_MAX_HOLD_S); need = TUNE_S + holdS + lossD; }
+    else if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
+    var inS = awhole ? win[0] : win[0] + rIn * Math.max(0, wl - need - 0.5);
+    if (pinA) T.emitEvent({ cat: "rx", label: "受信 pinned", detail: reel.id + (awhole ? " · whole · " : " · ") + holdS.toFixed(1) + "s · audition" }, t);
     // the same dropout plan a real signal gets, so the picture stutters
     var adrops = [], dt = TUNE_S + 0.6;
     while (dt < TUNE_S + holdS) { dt += 1.2 + R.next() * 3.2; if (dt < TUNE_S + holdS) adrops.push([dt, 0.12 + R.next() * 0.25]); }
@@ -1143,6 +1417,15 @@
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {
+    // The spacing contract, computed rather than written down twice. See
+    // BC_GAP_S in zankyo-audio.js, which asserts against this at play.
+    limits: function () { return { tuneS: TUNE_S, wholeMaxHoldS: WHOLE_MAX_HOLD_S, lossMaxS: LOSS_MIN_S + LOSS_SPAN_S,
+      relMaxS: REL_MIN_S + REL_SPAN_S, tailS: HOLD_TAIL_S, maxReachPastT0S: maxReachPastT0(),
+      // What the GLOBAL spacing still has to cover: an ordinary hold, seated by
+      // BC_GAP_S alone. A whole thought's reach is checked per-position at arm
+      // (fitsRoom), not against this.
+      ordinaryMaxHoldS: ORDINARY_MAX_HOLD_S,
+      ordinaryReachPastT0S: TUNE_S + ORDINARY_MAX_HOLD_S + (LOSS_MIN_S + LOSS_SPAN_S) + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) }; },
     getState: function () {
       return { pool: poolState, poolSize: pool ? pool.length : 0, poolError: poolError, primed: primed, video: !!video, mediaSource: !!mediaSrc,
         // 経路 — what the reel path actually is, read from the objects. `muted`
@@ -1198,11 +1481,39 @@
         if (delayS < 8) delayS = 8;
         var now = T.ctx.currentTime, cy = T.cycle();
         var R = T.S.signal.fork("bench:" + Math.floor(now * 1000));
-        if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: now + delayS - 8, hostDurS: 60, tidePos: 0.5 }, R)) return false;
+        if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: now + delayS - 8, hostDurS: 60, tidePos: 0.5 }, now + delayS), R)) return false;
         return fire(now + delayS);
       },
       loadPool: loadPool,
       scan: scan,
+      // ---- reel-lab.php ----
+      // Seat ONE named window as a real broadcast at the next legal moment,
+      // through the production path. Bypasses the lottery and the cooldown;
+      // never the legality, the footprint, the hold or the AIR. Returns
+      // {ok, state: "seated"|"queued", why} — "queued" means it did not fit
+      // yet and will be retried at the next scene.
+      seatWindow: function (reelId, wi, opts) {
+        opts = opts || {};
+        benchQueued = { reelId: String(reelId), wi: (wi == null ? -1 : +wi), whole: opts.whole !== false };
+        var r = benchTry();
+        if (!r.ok && r.state !== "queued") benchQueued = null;
+        return r;
+      },
+      benchCancel: function () { benchQueued = null; benchForce = null; return true; },
+      benchState: function () {
+        var T = tl(), now = null;
+        try { now = T.ctx ? T.ctx.currentTime : null; } catch (e) {}
+        var a = armed;
+        return {
+          queued: benchQueued ? { reel: benchQueued.reelId, wi: benchQueued.wi, whole: benchQueued.whole } : null,
+          armed: a ? { reel: a.reel && a.reel.id, inS: a.inS, holdS: a.holdS, whole: !!a.whole, t0: a.t0,
+                       inS_left: (a.t0 != null && now != null) ? +(a.t0 - now).toFixed(1) : null } : null,
+          live: !!live, playing: (function () { try { return tl().playing(); } catch (e) { return false; } })(),
+          scene: (function () { try { var sc = tl().scene(); return sc ? sc.type : null; } catch (e) { return null; } })(),
+          pool: poolState, poolSize: pool ? pool.length : 0,
+          limits: { wholeMaxHoldS: WHOLE_MAX_HOLD_S }
+        };
+      },
     },
   };
 })();

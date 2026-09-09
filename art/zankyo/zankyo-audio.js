@@ -142,7 +142,7 @@ window.ZankyoAudio = (function () {
   //
   // Read back at any time with ZankyoAudio.getRoute().
   var ROUTE = (function () {
-    var q = { route: "stream", reels: "element", capture: "on", latency: "default", bt: false };
+    var q = { route: "stream", reels: "element", capture: "on", latency: "default", bt: false, reel: null };
     try {
       var s = (typeof location !== "undefined" && location.search) || "";
       if (/[?&]bt=1(&|$)/.test(s)) { q.bt = true; q.route = "direct"; q.reels = "buffer"; q.capture = "off"; }
@@ -150,6 +150,14 @@ window.ZankyoAudio = (function () {
       m = s.match(/[?&]reels=([a-z]+)/);       if (m && m[1] === "buffer") q.reels = "buffer";
       m = s.match(/[?&]capture=([a-z]+)/);     if (m && (m[1] === "off" || m[1] === "on")) q.capture = m[1];
       m = s.match(/[?&]latency=([a-z]+)/);     if (m && (m[1] === "playback" || m[1] === "balanced" || m[1] === "interactive")) q.latency = m[1];
+      // ?reel=<id> — the owner's lever on the receiver. The night's FIRST
+      // seated broadcast is this reel (played whole if the reel is flagged),
+      // and the lottery resumes after it; while stopped, 選局 auditions it.
+      // Parsed here with the other switches rather than in zk-broadcast.js,
+      // because the receiver already reads its configuration through
+      // getRoute() and a module reading location on its own would be the
+      // second place URL levers live.
+      m = s.match(/[?&]reel=([A-Za-z0-9._-]+)/); if (m) q.reel = m[1];
     } catch (e) {}
     return q;
   })();
@@ -1163,6 +1171,7 @@ window.ZankyoAudio = (function () {
   var farWarpK = 1;                              // 撓 the octave, as an exponent on the ratio to the tonic
   var farEar = null, farBito = null, farBitoField = null;
   var farSpiral = null, farVari = null, farT0 = 0;
+  var bcGapChecked = false;   // the receiver-spacing assertion runs once per load
   // 撓 — one monotone map about the tonic. Every interval scales by the same
   // exponent, so the field stays perfectly consistent with itself: nothing is
   // "out of tune", the whole world is somewhere else. Invertible, which is
@@ -1254,6 +1263,32 @@ window.ZankyoAudio = (function () {
   // one and snap a sounding note mid-flight. Hence the snapshot: farSpiral and
   // farVari are replaced wholesale, never mutated, so holding the references
   // is a true snapshot.
+  // §14 — where the KIRU falls in a cycle: the kyū→release seam. 未斬 can
+  // cancel it on a far night, which the plan cannot know, so this assumes it
+  // comes — the conservative direction for anything sizing a footprint.
+  function kiruOffOf(p) {
+    if (!p || !p.sceneTypes || !p.sceneDurS) return null;
+    var acc = 0;
+    for (var i = 0; i < p.sceneTypes.length; i++) {
+      acc += p.sceneDurS[i];
+      if (p.sceneTypes[i] === "kyu" && p.sceneTypes[i + 1] === "release") return acc;
+    }
+    return null;
+  }
+  // The deadlines a broadcast starting at t0 must clear, for the CURRENT cycle.
+  // The plan path gets these at arm; this is the same set for the manual paths
+  // (選局, the dial, the bench) so the owner's long thoughts can be auditioned
+  // on air instead of being refused by the stopped-path fail-safe.
+  function bcDeadlinesAt(t0) {
+    if (!playing || cyc.startT == null) return null;
+    var next = null;
+    if (cyc.bcAt) for (var i = 0; i < cyc.bcAt.length; i++) {
+      var abs = cyc.startT + cyc.bcAt[i];
+      if (abs > t0 + 0.001 && (next == null || abs < next)) next = abs;
+    }
+    return { kiruT: cyc.kiruT != null ? cyc.kiruT : null, guestT: cyc.guestT != null ? cyc.guestT : null,
+      nextBcT: next, cycleEndT: cyc.endT != null ? cyc.endT : (cyc.startT + cyc.durS), armLeadS: BC_ARM_LEAD_S };
+  }
   function farGlideMulAt(t, sp, va, t0) {
     var c = 0, x = t - t0;
     if (sp) c += -sp.amp * (1 - Math.cos(2 * Math.PI * x / sp.periodS)) / 2;
@@ -2565,7 +2600,55 @@ window.ZankyoAudio = (function () {
     // scene list above, the KIRU's position at the kyū→release joint, and the
     // guest's seat. Nothing that can collide with a broadcast is drawn later.
     var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
-    var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
+    // BC_GAP_S vs the receiver's footprint — RE-DERIVED at rc.54, because the
+    // old note ("95 > 55 + 29.2") compared the wrong two things and now
+    // understates the risk by ten seconds.
+    //
+    // 29.2 was the planned hold's total SPAN, t0−6 to t0+23.2 (HOLD_LEAD_S 6 +
+    // TUNE_S 0.4 + holdS 12 + lossD 2.8 + 2 + rel 6). But the quantity that
+    // matters is the REACH PAST t0, because what a hold has to survive is the
+    // NEXT broadcast's arm calling airHoldClear() — and that lands
+    // BC_GAP_S − BC_ARM_LEAD_S = 40 s after this t0, no matter what happened
+    // before it. The six seconds of lead-in are on the wrong side of t0 to
+    // count.
+    //
+    //   reach past t0 = TUNE_S + holdS + lossD + 2 + max(rel)
+    //   before §14 (holdS ≤ 12):   0.4 + 12   + 2.8 + 2 + 6 = 23.2  → 16.8 s spare
+    //   with  §14 (holdS ≤ 27.8):  0.4 + 27.8 + 2.8 + 2 + 6 = 39.0  →  1.0 s spare
+    //
+    // So this still holds, and it is now within a second of binding. lossD and
+    // rel are strict upper bounds (mulberry32 returns [0,1)), so 39.0 is a real
+    // ceiling and not a typical value. ANYONE RAISING WHOLE_MAX_HOLD_S IN
+    // zk-broadcast.js MUST RAISE BC_GAP_S HERE IN THE SAME COMMIT — the two
+    // numbers are one decision living in two files, which is why they are
+    // written out here rather than left to be re-derived.
+    var BC_GAP_S = 95, BC_EDGE_S = 8;
+    // …AND CHECKED, not just described. The receiver computes its own reach
+    // from its own constants (ZankyoBroadcast.limits()), so this cannot go
+    // stale the way the old "29.2" did: widen a window, raise the whole-hold
+    // ceiling or retune the loss ramp and this says so on the first cycle
+    // instead of on the night the owner hears a hold vanish mid-broadcast.
+    if (!bcGapChecked) {
+      bcGapChecked = true;
+      try {
+        var lim = window.ZankyoBroadcast && window.ZankyoBroadcast.limits && window.ZankyoBroadcast.limits();
+        // THE ORDINARY reach is what this global gap has to cover. A whole
+        // thought's reach is no longer bounded by it: the spacing is
+        // footprint-dependent now (orchestrator, 2026-09-09), so a 42 s hold is
+        // simply refused by the receiver wherever the room is not there and
+        // BC_GAP_S is left alone — which is what keeps W4's 1.69 broadcasts a
+        // cycle intact on every night that plays no whole reel.
+        if (lim && lim.ordinaryReachPastT0S > BC_GAP_S - BC_ARM_LEAD_S) {
+          if (typeof console !== "undefined" && console.error) {
+            console.error("ZANKYŌ: an ORDINARY hold can reach " + lim.ordinaryReachPastT0S.toFixed(1) +
+              " s past t0, but a broadcast only owns BC_GAP_S − BC_ARM_LEAD_S = " + (BC_GAP_S - BC_ARM_LEAD_S) +
+              " s before the NEXT arm calls airHoldClear(). A live broadcast's hold would be dropped and melodic " +
+              "notes could land inside it (§12). Raise BC_GAP_S here, or lower the ordinary hold draw in zk-broadcast.js. " +
+              "(Whole thoughts are NOT covered by this: they are checked per position at arm by fitsRoom.)");
+          }
+        }
+      } catch (e) {}
+    }
     var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search;
                                         // 0.5 s was measured and changed nothing at all —
                                         // the search is exhaustive, the blocks are geometric                  // resolution of the systematic in-scene search
@@ -2749,7 +2832,13 @@ window.ZankyoAudio = (function () {
     }
     picks.sort(function (a, b) { return a - b; });
     pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
-      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS };
+      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS,
+      // §14 footprint-aware legality: the receiver decides its own footprint at
+      // arm, 55 s after this plan is written, so it needs the cycle's shape to
+      // know what it must clear. Types (for the kyū→release seam, where the
+      // KIRU falls) and the guest's offset are the two things it cannot derive
+      // from durations alone.
+      sceneTypes: scenes.map(function (sc) { return sc.type; }), guestAt: guestT };
     return scenes;
   }
   // 客 VISITATIONS (Phase 4) — rare seeded guests. Each rolls its OWN die every
@@ -3033,9 +3122,30 @@ window.ZankyoAudio = (function () {
       // prefetch. arm() is given the exact t0, which is what lets the planned
       // hold BE the real hold instead of covering the guess.
       if (signalProvider && p.bcAt && p.bcAt.length) {
-        (function (times, kind, tide, cyN, t0c) {
+        // §14 — THE DEADLINES A FOOTPRINT MUST CLEAR, computed once for the
+        // cycle and handed to each arm. The receiver picks its window (and so
+        // its hold) 55 s after this, and a whole thought can now run 42 s, so
+        // "is this position legal" is no longer a question the seating can
+        // answer alone: it depends on a choice that has not been made yet.
+        // So the seating still places t0, and the receiver refuses a footprint
+        // that will not fit — falling back to a shorter window of the same reel,
+        // then to another reel, never to a slice of a whole one.
+        //
+        // THE KIRU is the one that bit us: it falls on the kyū→release seam, so
+        // its time is the sum of the scene durations up to and including the
+        // kyū. 未斬 can cancel it on a far night, which we cannot know here, so
+        // the deadline assumes it comes — the conservative direction.
+        var kiruOff = kiruOffOf(p);
+        // Remembered on the cycle so the MANUAL paths — 選局, the dial, the
+        // bench — can ask for the same deadlines the arm path uses instead of
+        // deriving them a second time. One derivation, two callers.
+        cyc.kiruT = kiruOff == null ? null : evt.t + kiruOff;
+        cyc.guestT = p.guestAt == null ? null : evt.t + p.guestAt;
+        cyc.bcAt = p.bcAt.slice();
+        cyc.endT = evt.t + evt.durS;
+        (function (times, kind, tide, cyN, t0c, kOff, gOff, cycDur) {
           for (var bi = 0; bi < times.length; bi++) {
-            (function (off) {
+            (function (off, nextOff) {
               var at = t0c + off;
               // The arm is CLAMPED to the cycle start, not rejected, so a
               // broadcast early in the cycle arms with less than BC_ARM_LEAD_S
@@ -3045,16 +3155,22 @@ window.ZankyoAudio = (function () {
               var armAt = Math.max(t0c + 0.05, at - BC_ARM_LEAD_S);
               if (faults.armLeadMin == null || (at - armAt) < faults.armLeadMin) faults.armLeadMin = at - armAt;
               lane("form").at(armAt, function () {
-                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide }); } catch (e) {}
+                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide,
+                  // absolute times, or null when there is nothing to clear
+                  kiruT: kOff == null ? null : t0c + kOff,
+                  guestT: gOff == null ? null : t0c + gOff,
+                  nextBcT: nextOff == null ? null : t0c + nextOff,
+                  cycleEndT: t0c + cycDur,
+                  armLeadS: BC_ARM_LEAD_S }); } catch (e) {}
               });
               lane("form").at(at, function (t) {
                 var took = false;
                 try { took = !!signalProvider.fire(at); } catch (e) { took = false; }
                 if (!took) { try { visitBroadcast(at); } catch (e2) {} }   // abandoned to the fallback rather than forced
               });
-            })(times[bi]);
+            })(times[bi], bi + 1 < times.length ? times[bi + 1] : null);
           }
-        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t);
+        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t, kiruOff, p.guestAt, evt.durS);
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {
@@ -5645,6 +5761,8 @@ window.ZankyoAudio = (function () {
           getArc: getArc, arcPhase: arcPhase, scene: function () { return { type: scn.type, activity: scn.activity, startT: scn.startT, durS: scn.durS }; },
           cycle: function () { return { n: cyc.n, kind: cyc.kind, startT: cyc.startT, durS: cyc.durS, visit: cyc.visit ? cyc.visit.name : null }; },
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
+          // §14: the same deadlines the arm path is handed, for a manual seat.
+          bcDeadlines: bcDeadlinesAt,
           // `who` lets the receiver declare an INTENDED hold at arm time and
           // replace it with the exact one at fire (W4 §12).
           airHold: function (map, who) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, who || "signal"); },
@@ -5779,9 +5897,10 @@ window.ZankyoAudio = (function () {
         // is "not yet", not the default the null handle would imply
         route: !ctx ? null : ((bg && bg.routed) ? "stream" : "direct"),
         reelsMode: ROUTE.reels,
+        pinnedReel: ROUTE.reel,
         capture: ROUTE.capture,
         latencyHint: ROUTE.latency,
-        asked: { route: ROUTE.route, reels: ROUTE.reels, capture: ROUTE.capture, latency: ROUTE.latency, bt: ROUTE.bt },
+        asked: { route: ROUTE.route, reels: ROUTE.reels, capture: ROUTE.capture, latency: ROUTE.latency, bt: ROUTE.bt, reel: ROUTE.reel },
         label: routeLabel(),
         baseLatency: ctx && ctx.baseLatency != null ? ctx.baseLatency : null,
         outputLatency: ctx && ctx.outputLatency != null ? ctx.outputLatency : null,
