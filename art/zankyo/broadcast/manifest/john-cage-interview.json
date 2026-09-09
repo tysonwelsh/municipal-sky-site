@@ -6,66 +6,48 @@
   "license": "unknown (interview excerpt from Miroslav Sebestik's 'Listen', 1992; YouTube upload)",
   "tier": "B",
   "tone": "voice",
-  "weight": 3,
-  "gain": 0.6,
-  "durS": 104.05,
-  "bytes": 915920,
+  "weight": 5,
+  "gain": 0.5,
+  "durS": 105.42,
+  "bytes": 925900,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
   "windows": [
     [
       0.0,
-      19.0
+      40.0
     ],
     [
-      19.0,
-      41.0
+      40.0,
+      72.42
     ],
     [
-      41.0,
-      61.0
-    ],
-    [
-      61.0,
-      86.0
-    ],
-    [
-      86.0,
-      104.01
+      72.42,
+      105.42
     ]
   ],
   "srcWindows": [
     [
-      14.0,
-      33.0
+      13.6,
+      53.6
     ],
     [
-      85.0,
-      107.0
+      186.6,
+      219.0
     ],
     [
-      166.0,
-      186.0
-    ],
-    [
-      195.0,
-      220.0
-    ],
-    [
-      224.0,
-      242.0
+      223.6,
+      256.6
     ]
   ],
   "pitchHz": [
     null,
     null,
-    null,
-    null,
     null
   ],
   "tuned": false,
-  "notes": "cut on complete thoughts, variable length: traffic / sound is acting (0:14); Duchamp's Sculpture Musicale (1:25); not a bucket, not a president, just a sound (2:46); Kant — music and laughter (3:15); the sound I prefer is silence, and silence now is traffic (3:44). Windows are whole thoughts — play them whole.",
+  "notes": "three whole thoughts, the owner's cut: traffic on Sixth Avenue — sound is acting, I don't need sound to talk to me (0:14–0:54); Kant — music and laughter don't have to mean anything (3:07–3:39); the sound I prefer is silence, and silence now is traffic; Beethoven is always the same, traffic always different (3:44–4:17). Play whole.",
   "takedown": false,
   "whole": true
 }
