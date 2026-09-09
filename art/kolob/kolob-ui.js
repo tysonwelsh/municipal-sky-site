@@ -463,36 +463,42 @@
   // ==========================================================================
   var SECTION_ORDER = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
 
-  // The running head — two fixed slots beneath the staff, as a hymnal's:
-  //   left   ORDINARY · 8.6.8.6 · IONIAN   (the meter dots only during a hymn)
-  //   right  the direction line (updateDirection below)
-  // Idle, the left slot alone says the valley is still. The section is not
-  // named here: the wheel names it. The meeting number and the pitch in hertz
-  // are no longer shown (the minutes still log the meeting's number).
+  // The programme card on the hymn board — what the running head used to say:
+  //   day    ORDINARY           (letterspaced capitals; idle: THE VALLEY IS STILL)
+  //   line   Ionian · 8.6.8.6   (the meter dots only during a hymn), then the
+  //          direction as a gilt rubric (updateDirection below)
+  // The section is not named here: the wheel names it. Latin mode sets the
+  // mode in title case, as a hymnal prints it; Deseret has no case.
   var SEP = '<span class="t-sep">·</span>';
   function joinParts(parts) { return parts.filter(Boolean).join(SEP); }
+  function titleCase(s) { return s ? s.charAt(0) + s.slice(1).toLowerCase() : s; }
   function updateRunningHead(c, playing) {
-    var left = document.getElementById("kolob-rh-left");
-    if (!left) return;
-    var head = document.getElementById("kolob-running-head");
-    if (head) head.classList.toggle("is-live", !!playing);
+    var day = document.getElementById("kolob-rh-left");
+    var mm = document.getElementById("kolob-rh-mm");
+    if (!day || !mm) return;
+    var prog = document.getElementById("kolob-running-head");
+    if (prog) {
+      prog.classList.toggle("is-live", !!playing);
+      prog.classList.toggle("is-deseret", !latinMode);
+    }
     if (!playing) {
-      left.textContent = TT(STR, STR_EN).idle;
+      day.textContent = TT(STR, STR_EN).idle;
+      mm.textContent = "";
       return;
     }
-    left.innerHTML = joinParts([
-      TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "",
+    day.textContent = TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
+    var mode = TT(MODES_DS, MODES_EN)[c.mode] || "";
+    mm.innerHTML = joinParts([
+      latinMode ? titleCase(mode) : mode,
       c.section === "hymn" && c.meter ? metersDots(c.meter) : "",
-      TT(MODES_DS, MODES_EN)[c.mode] || "",
     ]);
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
   function metersDots(m) { return METER_DOTS[m] || m; }
 
-  // The direction line — the event flag printed as a performance direction in
-  // the running head's right slot: stillness, fuging, the question, two bands,
-  // the steeples answer, the whole tune. Empty (the slot keeps its place) when
-  // nothing fires.
+  // The direction line — the event flag printed as a rubric on the programme
+  // card, after the mode · meter line: stillness, fuging, the question, two
+  // bands, the steeples answer, the whole tune. Empty when nothing fires.
   var VISIT_FLAG = { question: "theQuestion", bands: "twoBands", steeples: "theSteeples", assembly: "wholeFlag" };
   function directionFor(c, playing) {
     if (!playing) return "";
@@ -508,7 +514,6 @@
     // lower case, as a direction is set (rit., a tempo); Deseret keeps its capitals
     if (latinMode) txt = txt.toLowerCase();
     if (el.textContent !== txt) el.textContent = txt;
-    el.classList.toggle("is-deseret", !latinMode);
   }
 
   // The order of service is the wheel (kolob-viz.js drawWheel); it reads the
@@ -536,12 +541,13 @@
         // gesture takes "&", the schoolroom's own 27th letter (the alphabet
         // was recited "...X, Y, Z, and per se and" in the pioneers' day).
         var themeCard = latinMode ? gestureLatin(w.letter) : (w.letter || "—");
+        var S = TT(STR, STR_EN);
         numsEl.innerHTML =
-          '<span class="kolob-board-card" title="' + (w.gesture || "") + '">' + themeCard + (w.gen ? "·" + w.gen : "") + '</span>' +
-          '<span class="kolob-board-card">' + (ms.developments || 0) + '</span>' +
-          '<span class="kolob-board-card">' + (ms.answers || 0) + '</span>';
+          '<span class="kolob-board-n" title="' + (w.gesture || "") + '">' + S.theme + '<b>' + themeCard + (w.gen ? "·" + w.gen : "") + '</b></span>' +
+          '<span class="kolob-board-n">' + S.develops + '<b>' + (ms.developments || 0) + '</b></span>' +
+          '<span class="kolob-board-n">' + S.answers + '<b>' + (ms.answers || 0) + '</b></span>';
       } else {
-        numsEl.innerHTML = '<span class="kolob-board-card">—</span>';
+        numsEl.innerHTML = '<span class="kolob-board-n">—</span>';
       }
     }
   }
@@ -656,9 +662,10 @@
     // the running head and the direction line: idle text now; poll() re-sets
     // them in the current script from the conductor (or the preview) at once
     setText("#kolob-rh-left", S.idle);
+    setText("#kolob-rh-mm", "");
     setText("#kolob-direction", "");
-    var dir = document.getElementById("kolob-direction");
-    if (dir) dir.classList.toggle("is-deseret", !latinMode);
+    var prog = document.getElementById("kolob-running-head");
+    if (prog) prog.classList.toggle("is-deseret", !latinMode);
     updateWheelLabels();
     var tog = document.getElementById("kolob-latin");
     if (tog) {
