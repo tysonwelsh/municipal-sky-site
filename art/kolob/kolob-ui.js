@@ -710,10 +710,9 @@
   function initViz() {
     var canvas = document.getElementById("kolob-viz");
     var dial = document.getElementById("kolob-dial");
-    var organ = document.getElementById("kolob-organ");
-    var wheel = document.getElementById("kolob-wheel");
+    var wheel = document.getElementById("kolob-wheel");            // the organ facade rides inside the wheel
     if (window.KolobViz && typeof window.KolobViz.init === "function") {
-      try { window.KolobViz.init(canvas, dial, organ, wheel); }
+      try { window.KolobViz.init(canvas, dial, wheel); }
       catch (e) { if (window.console) console.error("Kolob viz init failed", e); }
       // The canvases are measured at init, which can run before the page has
       // its final width (a pending webfont stylesheet, a late layout). The viz
