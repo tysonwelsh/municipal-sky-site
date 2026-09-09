@@ -1163,6 +1163,7 @@ window.ZankyoAudio = (function () {
   var farWarpK = 1;                              // 撓 the octave, as an exponent on the ratio to the tonic
   var farEar = null, farBito = null, farBitoField = null;
   var farSpiral = null, farVari = null, farT0 = 0;
+  var bcGapChecked = false;   // the receiver-spacing assertion runs once per load
   // 撓 — one monotone map about the tonic. Every interval scales by the same
   // exponent, so the field stays perfectly consistent with itself: nothing is
   // "out of tune", the whole world is somewhere else. Invertible, which is
@@ -2565,7 +2566,48 @@ window.ZankyoAudio = (function () {
     // scene list above, the KIRU's position at the kyū→release joint, and the
     // guest's seat. Nothing that can collide with a broadcast is drawn later.
     var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
-    var BC_GAP_S = 95, BC_EDGE_S = 8;   // 95 > BC_ARM_LEAD_S + the longest footprint (55 + 29.2)
+    // BC_GAP_S vs the receiver's footprint — RE-DERIVED at rc.54, because the
+    // old note ("95 > 55 + 29.2") compared the wrong two things and now
+    // understates the risk by ten seconds.
+    //
+    // 29.2 was the planned hold's total SPAN, t0−6 to t0+23.2 (HOLD_LEAD_S 6 +
+    // TUNE_S 0.4 + holdS 12 + lossD 2.8 + 2 + rel 6). But the quantity that
+    // matters is the REACH PAST t0, because what a hold has to survive is the
+    // NEXT broadcast's arm calling airHoldClear() — and that lands
+    // BC_GAP_S − BC_ARM_LEAD_S = 40 s after this t0, no matter what happened
+    // before it. The six seconds of lead-in are on the wrong side of t0 to
+    // count.
+    //
+    //   reach past t0 = TUNE_S + holdS + lossD + 2 + max(rel)
+    //   before §14 (holdS ≤ 12):   0.4 + 12   + 2.8 + 2 + 6 = 23.2  → 16.8 s spare
+    //   with  §14 (holdS ≤ 27.8):  0.4 + 27.8 + 2.8 + 2 + 6 = 39.0  →  1.0 s spare
+    //
+    // So this still holds, and it is now within a second of binding. lossD and
+    // rel are strict upper bounds (mulberry32 returns [0,1)), so 39.0 is a real
+    // ceiling and not a typical value. ANYONE RAISING WHOLE_MAX_HOLD_S IN
+    // zk-broadcast.js MUST RAISE BC_GAP_S HERE IN THE SAME COMMIT — the two
+    // numbers are one decision living in two files, which is why they are
+    // written out here rather than left to be re-derived.
+    var BC_GAP_S = 95, BC_EDGE_S = 8;
+    // …AND CHECKED, not just described. The receiver computes its own reach
+    // from its own constants (ZankyoBroadcast.limits()), so this cannot go
+    // stale the way the old "29.2" did: widen a window, raise the whole-hold
+    // ceiling or retune the loss ramp and this says so on the first cycle
+    // instead of on the night the owner hears a hold vanish mid-broadcast.
+    if (!bcGapChecked) {
+      bcGapChecked = true;
+      try {
+        var lim = window.ZankyoBroadcast && window.ZankyoBroadcast.limits && window.ZankyoBroadcast.limits();
+        if (lim && lim.maxReachPastT0S > BC_GAP_S - BC_ARM_LEAD_S) {
+          if (typeof console !== "undefined" && console.error) {
+            console.error("ZANKYŌ: the receiver's hold can reach " + lim.maxReachPastT0S.toFixed(1) +
+              " s past t0, but a broadcast only owns BC_GAP_S − BC_ARM_LEAD_S = " + (BC_GAP_S - BC_ARM_LEAD_S) +
+              " s before the NEXT arm calls airHoldClear(). A live broadcast's hold would be dropped and melodic " +
+              "notes could land inside it (§12). Raise BC_GAP_S here, or lower WHOLE_MAX_HOLD_S in zk-broadcast.js.");
+          }
+        }
+      } catch (e) {}
+    }
     var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search;
                                         // 0.5 s was measured and changed nothing at all —
                                         // the search is exhaustive, the blocks are geometric                  // resolution of the systematic in-scene search

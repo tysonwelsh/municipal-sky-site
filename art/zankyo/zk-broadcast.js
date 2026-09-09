@@ -237,6 +237,7 @@
   }
   function onPlay() {
     loadPool();
+
     var v = ensureVideo(); if (!v) return;
     ensureMediaSource(tl().ctx);
     if (primed) return;
@@ -292,6 +293,19 @@
   // 18–25 s, so nothing is lost. To raise this, raise BC_GAP_S in the same
   // commit and re-derive both numbers together.
   var WHOLE_MAX_HOLD_S = 27.8;
+  // THE DRAWS' OWN BOUNDS, named so the reach below cannot drift from them.
+  // mulberry32 returns [0, 1), so these are STRICT upper bounds, not typical
+  // values: lossD < 2.8 and rel < 6, always. Anyone retuning a draw retunes
+  // the constant beside it and the exported reach follows for free.
+  var LOSS_MIN_S = 1.6, LOSS_SPAN_S = 1.2;      // lossD = LOSS_MIN_S + r * LOSS_SPAN_S
+  var REL_MIN_S = 3, REL_SPAN_S = 3;            // rel   = REL_MIN_S  + r * REL_SPAN_S (the four plucked/reed voices)
+  var HOLD_TAIL_S = 2;                          // the flat +2 the planned and real holds both add past the cut
+  // How far past t0 the receiver's hold can ever reach. zankyo-audio.js checks
+  // this against BC_GAP_S − BC_ARM_LEAD_S at play, so the two files cannot
+  // disagree the way a comment did.
+  function maxReachPastT0() {
+    return TUNE_S + WHOLE_MAX_HOLD_S + (LOSS_MIN_S + LOSS_SPAN_S) + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S);
+  }
   function wholeAt(reel, i) {
     var wa = reel.wholeWindows;
     if (wa && wa[i] != null) return !!wa[i];
@@ -302,7 +316,7 @@
   // ---- the choice (arm time): six draws, always ----
   function choose(R, cycle, tidePos) {
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next(), rBell = R.next();
-    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2, bell = rBell < 0.25;
+    var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S, bell = rBell < 0.25;
     var c = { reel: null, win: null, inS: 0, holdS: holdS, lossD: lossD, bell: bell };
     if (!pool || !pool.length) return c;
     var skip = recentIds(cycle), cands = [];
@@ -443,7 +457,7 @@
       if (t >= end - 0.1) break;
       drops.push([t, 0.12 + D.next() * 0.25]);
     }
-    var rel = { shakuhachi: 0, koto: 3 + D.next() * 3, shamisen: 3 + D.next() * 3, hichiriki: 3 + D.next() * 3, biwa: 3 + D.next() * 3 };
+    var rel = { shakuhachi: 0, koto: REL_MIN_S + D.next() * REL_SPAN_S, shamisen: REL_MIN_S + D.next() * REL_SPAN_S, hichiriki: REL_MIN_S + D.next() * REL_SPAN_S, biwa: REL_MIN_S + D.next() * REL_SPAN_S };
     return { drops: drops, rel: rel, lfoHz: 0.4 + D.next() * 2.6, seed: D.next() * 1000 };
   }
 
@@ -1144,12 +1158,29 @@
     var v = ensureVideo(), ms = ensureMediaSource(c);
     var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
-    var holdS = 8 + rHold * 4, lossD = 1.6 + rLoss * 1.2;
+    var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S;
     if (poolState !== "ready" || !v || (!buffered && !ms) || !pool.length) { staticRise(t, t + 1.0); return true; }   // the dial turns, nothing found
-    var reel = pool[Math.floor(rReel * pool.length)], win = reel.windows[Math.floor(rWin * reel.windows.length)];
+    var reel = pool[Math.floor(rReel * pool.length)];
+    var awi = Math.floor(rWin * reel.windows.length);
+    // §14 in the audition too: a whole reel is auditioned whole, so the button
+    // plays what the air would play.
+    var awhole = wholeAt(reel, awi);
+    if (awhole && !wholeFits(reel, awi)) {
+      var aAlt = -1, aShort = awi, aSl = 1e9, aw, aj, al;
+      for (aw = 0; aw < reel.windows.length; aw++) {
+        aj = (awi + aw) % reel.windows.length;
+        if (!wholeAt(reel, aj)) continue;
+        al = reel.windows[aj][1] - reel.windows[aj][0];
+        if (al < aSl) { aSl = al; aShort = aj; }
+        if (aAlt < 0 && wholeFits(reel, aj)) aAlt = aj;
+      }
+      awi = aAlt >= 0 ? aAlt : aShort; awhole = wholeAt(reel, awi);
+    }
+    var win = reel.windows[awi];
     var wl = (win[1] - win[0]), need = TUNE_S + holdS + lossD;
-    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
-    var inS = win[0] + rIn * Math.max(0, wl - need - 0.5);
+    if (awhole) { holdS = Math.min(wl, WHOLE_MAX_HOLD_S); need = TUNE_S + holdS + lossD; }
+    else if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
+    var inS = awhole ? win[0] : win[0] + rIn * Math.max(0, wl - need - 0.5);
     // the same dropout plan a real signal gets, so the picture stutters
     var adrops = [], dt = TUNE_S + 0.6;
     while (dt < TUNE_S + holdS) { dt += 1.2 + R.next() * 3.2; if (dt < TUNE_S + holdS) adrops.push([dt, 0.12 + R.next() * 0.25]); }
@@ -1206,6 +1237,10 @@
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {
+    // The spacing contract, computed rather than written down twice. See
+    // BC_GAP_S in zankyo-audio.js, which asserts against this at play.
+    limits: function () { return { tuneS: TUNE_S, wholeMaxHoldS: WHOLE_MAX_HOLD_S, lossMaxS: LOSS_MIN_S + LOSS_SPAN_S,
+      relMaxS: REL_MIN_S + REL_SPAN_S, tailS: HOLD_TAIL_S, maxReachPastT0S: maxReachPastT0() }; },
     getState: function () {
       return { pool: poolState, poolSize: pool ? pool.length : 0, poolError: poolError, primed: primed, video: !!video, mediaSource: !!mediaSrc,
         // 経路 — what the reel path actually is, read from the objects. `muted`
