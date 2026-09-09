@@ -204,33 +204,6 @@
   font-size: 0.72rem;
 }
 
-/* the running head — as a hymnal's: one line in two FIXED slots. Left, the
-   letterspaced capitals (day, meter, mode); right, the direction
-   line (see below). It sits beneath the staff plate, in the room between the
-   plates and the console band (a hymnal's running head is at the top of the
-   page; ours moved to the foot in v0.15 so the wheel could rise to the title
-   rule). The slots are sized by the line, not by their text, so the head
-   never reflows as the values change; the right slot holds its place even
-   when empty. */
-.kolob-running-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1.2rem;
-  margin: 0 0 0.6rem;               /* the staff plate's 0.6rem above, the same beneath to the console band */
-  font-family: "Noto Sans Deseret", "EB Garamond", serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-  line-height: 1.6;
-  color: var(--ink-soft);
-}
-.kolob-rh-left  { flex: 1 1 0; min-width: 0; text-align: left; white-space: nowrap; }
-.kolob-rh-right { flex: 1 1 0; min-width: 0; text-align: right; white-space: nowrap; margin-right: -0.18em; }  /* the trailing tracking, so the last glyph meets the edge */
-.kolob-rh-right:empty::before { content: "\00a0"; }   /* the slot keeps its line */
-/* ink for the current meeting; ink-soft when the valley is still */
-.kolob-running-head.is-live { color: var(--ink); }
-.kolob-running-head .t-sep { margin: 0 0.45em; color: var(--ink-faint); }
-
 /* ============================== the page (viz) =========================== */
 /* The grand staff — two five-line staves, a brace, and the two clefs — is now
    drawn entirely on the canvas (kolob-viz.js buildStaffLayer), so the strip is
@@ -243,8 +216,8 @@
      (33px above the first rule) is laid over the foot of the wheel band, so the
      first rule sits about 17px beneath the wheel's horizon (12px on a phone).
      Notes above the staff may drift over the wheel — by design. Beneath, a
-     0.6rem step to the running head, which sits between the plate and the
-     console band. */
+     0.6rem step to the console band (the running head that sat there moved
+     into the hymn board's programme card in v0.20). */
   margin: -20px 0 0.6rem;
   z-index: 2;                       /* over the wheel band (both are z-index 1 by the frame rule) */
 }
@@ -255,21 +228,6 @@
   height: 100%;
   display: block;
 }
-
-/* ============================ the direction line ========================= */
-/* the event flag printed as a performance direction — the running head's
-   right slot: right-aligned, italic, gilt (the one colour for what moves or
-   fires), a size up from the head's capitals and without their tracking.
-   (Until v0.17 it sat at the foot of the staff plate under the clefs.) */
-.kolob-direction {
-  font-family: "EB Garamond", "Noto Sans Deseret", Georgia, serif;
-  font-style: italic;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  color: var(--gilt);
-  overflow: hidden;
-}
-.kolob-direction.is-deseret { font-family: "Noto Sans Deseret", "EB Garamond", serif; }
 
 /* ====================== the console: transport + liahona ================= */
 /* one ruled band, like the masthead: hairlines above and below, the transport
@@ -428,38 +386,102 @@
   margin: 0 0 1.2rem;
 }
 
-/* the hymn board: dark green board, ivory number cards */
+/* the hymn board: dark green board with a printed programme card pinned to
+   it (v0.20), the seed row on the green beneath. The card carries what the
+   running head and the direction line used to: the day in small capitals
+   under a short double rule; the mode · meter line in italic with the
+   direction as a gilt rubric after a dash; the day's numbers as one printed
+   line. Every line keeps its height when empty, so the board never shifts. */
 .kolob-board {
   background: linear-gradient(175deg, var(--cover-hi), var(--cover));
   border-radius: 3px;
-  padding: 1.1rem 1.1rem 1.2rem;
+  padding: 0.9rem 1rem 1rem;
   box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 .kolob-board .kolob-ctl-label { color: rgba(245, 240, 228, 0.6); }
-/* the number cards: their own line beneath the seed row, set to the LEFT edge
-   so both lines share the SEED edge (a hymn board's cards hang from one side),
-   one line tall — a fixed plate, the same in both scripts and both widths */
-.kolob-board-nums {
-  display: flex;
-  justify-content: flex-start;
-  gap: 0.4rem;
-  margin: 0.6rem 0 0;
-  min-height: 2.1rem;
-  align-items: center;
-}
-.kolob-board-card {
-  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+.kolob-prog {
+  position: relative;
   background: var(--paper);
-  color: var(--cover);
-  padding: 0.22rem 0.6rem;
+  color: var(--ink);
   border-radius: 1px;
-  font-size: 1.02rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  padding: 0.8rem 1rem 0.85rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-align: center;
 }
+/* the pin */
+.kolob-prog::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 5px;
+  width: 6px; height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--gilt);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+/* the day — letterspaced capitals; ink for the current meeting, ink-soft
+   when the valley is still */
+.kolob-prog-day {
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.24em;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0.35rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kolob-prog.is-live .kolob-prog-day { color: var(--ink); }
+/* the short double rule, as under the title */
+.kolob-prog-rule {
+  height: 5px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 0 24% 0.5rem;
+}
+/* the mode · meter line, italic, with the direction as a gilt rubric */
+.kolob-prog-line {
+  font-family: "EB Garamond", "Noto Sans Deseret", Georgia, serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  min-height: 1.5rem;
+  color: var(--ink);
+}
+.kolob-prog.is-deseret .kolob-prog-line {
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  font-style: normal;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+.kolob-prog-mm .t-sep { margin: 0 0.4em; color: var(--ink-faint); }
+.kolob-direction { color: var(--gilt); }
+.kolob-direction:not(:empty)::before { content: "\2009—\2009"; color: var(--ink-faint); }
+.kolob-prog-mm:empty + .kolob-direction:not(:empty)::before { content: none; }
+/* the day's numbers: THEME K·2 · DEVELOPS 3 · ANSWERS 1, one printed line */
+.kolob-board-nums {
+  margin: 0.45rem 0 0;
+  min-height: 1.3rem;
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+}
+.kolob-board-n b {
+  font-family: "EB Garamond", "Noto Sans Deseret", serif;
+  font-weight: 500;
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  margin-left: 0.3em;
+}
+.kolob-board-n + .kolob-board-n::before { content: "·"; margin: 0 0.55em; color: var(--ink-faint); }
 .kolob-seed-row {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  margin: 0.85rem 0 0;             /* on the green, beneath the card */
   flex-wrap: nowrap;               /* one fixed line: SEED, the value, the input, GATHER — the input gives way */
 }
 .kolob-seed-current {
@@ -732,14 +754,6 @@
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.2rem; }   /* the board, then the verse beneath, one plate step apart */
   #kolob-layers { grid-template-columns: 1fr; }
-  /* the running head stacks: two short lines, both set to the left edge */
-  .kolob-running-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
-    letter-spacing: 0.14em;
-  }
-  .kolob-rh-left, .kolob-rh-right { flex: 0 0 auto; width: 100%; text-align: left; margin-right: 0; }
   /* the console band re-lays as a grid: the buttons and the dial keep the
      first line, the slider takes the whole line beneath — still inside the
      band, between its two hairlines. The transport's children become items of

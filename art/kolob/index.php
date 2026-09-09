@@ -71,21 +71,6 @@ include '../../includes/header.php';
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
     </div>
 
-    <!-- The running head, as a hymnal's: two fixed slots on one line. Left,
-         the day, the meter dots (during a hymn) and the
-         mode; right, the direction line — the event flag printed as a
-         performance direction (stillness, fuging, the question, two bands,
-         the steeples answer, the whole tune), italic and gilt, empty when
-         nothing fires. Idle, the left slot alone says the valley is still.
-         The slots never reflow as the values change; on a narrow page they
-         stack as two short lines. The section is not named here — the wheel
-         names it. Seated beneath the staff, in the room between the plates
-         and the console band. -->
-    <div class="kolob-running-head" id="kolob-running-head" aria-label="the running head: day, meter, mode and the performance direction">
-      <span class="kolob-rh-left" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</span>
-      <span class="kolob-rh-right kolob-direction" id="kolob-direction" aria-label="performance direction"></span>
-    </div>
-
     <!-- The console: one ruled band like the masthead — PLAY and STOP at the
          left, the volume slider after a spacer, the Liahona dial at the right
          end, all on one line between two hairlines. On a narrow page the
@@ -102,23 +87,29 @@ include '../../includes/header.php';
       <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
-    <!-- Hymn board + broadside. Neither carries a section head any more
-         (dropped in v0.18 with their rules, to tighten the page): the board is
-         self-evidently a hymn board, and the broadside verse sits beside it,
-         centred on its height. -->
+    <!-- Hymn board + broadside. The board holds a printed PROGRAMME card
+         (v0.20): the day in small capitals under a short double rule; the
+         mode and the meter (during a hymn) beneath, with the direction line
+         (stillness, fuging, the question, two bands, the steeples answer, the
+         whole tune) as a gilt rubric on the same line; and the day's numbers
+         (theme, develops, answers) as one printed line. Idle, the card says
+         the valley is still. The seed row sits on the green beneath the card.
+         The broadside verse sits beside, centred on the board's height. -->
     <div class="kolob-columns">
       <div class="kolob-board-block" aria-label="the hymn board">
         <div class="kolob-board">
+          <div class="kolob-prog" id="kolob-running-head" aria-label="the programme: day, mode, meter, direction and the day's numbers">
+            <div class="kolob-prog-day" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
+            <div class="kolob-prog-rule" aria-hidden="true"></div>
+            <div class="kolob-prog-line"><span class="kolob-prog-mm" id="kolob-rh-mm"></span><span class="kolob-direction" id="kolob-direction" aria-label="performance direction"></span></div>
+            <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-n">—</span></div>
+          </div>
           <div class="kolob-seed-row">
             <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
             <span class="kolob-seed-current" id="kolob-seed-current">—</span>
             <input type="text" inputmode="numeric" class="kolob-seed-input" id="kolob-seed-input" aria-label="seed for a new gathering" />
             <button type="button" class="kolob-btn kolob-btn-board" id="kolob-gather" aria-label="reseed and restart">𐐘𐐈𐐜𐐊𐐡</button>
           </div>
-          <!-- the number cards: their own line beneath, set to the left edge
-               with the seed row, so the board is a fixed plate in both scripts
-               and both widths -->
-          <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
         </div>
       </div>
       <div class="kolob-broadside-block" aria-label="the broadside">
