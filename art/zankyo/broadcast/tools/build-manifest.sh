@@ -4,7 +4,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; BC="$(cd "$HERE/.." && pwd)"
 python3 - "$BC" <<'PY'
-import glob, json, os, sys
+import glob, hashlib, json, os, sys
 bc = sys.argv[1]
 TONES = {"voice", "music", "noise", "sung", "tone", "drone"}
 MAX_BYTES = 2 * 1024 * 1024
@@ -56,6 +56,16 @@ for f in files:
         if sz > MAX_BYTES: err(f, f"reels/{stem}.mp4 is {sz/1048576:.2f} MB (max 2 MB)")
         if sz < 20000: err(f, f"reels/{stem}.mp4 is suspiciously small ({sz} bytes)")
         e["bytes"] = sz
+        # THE REEL'S OWN VERSION. Reels are cached hard (they are immutable
+        # content at a fixed name), so a RE-CUT reel — same name, new bytes —
+        # stayed stale in the owner's browser for hours. Every reel URL carries
+        # ?v=<rev>, so a re-cut changes the URL and is fetched fresh, while an
+        # unchanged reel keeps its long cache. First 8 hex of the file's sha256:
+        # short enough to read in a network log, wide enough not to collide.
+        h = hashlib.sha256()
+        with open(reel, "rb") as rfh:
+            for chunk in iter(lambda: rfh.read(1 << 20), b""): h.update(chunk)
+        e["rev"] = h.hexdigest()[:8]
     entries.append(e)
 if errors:
     print("build-manifest: %d problem(s):" % len(errors), file=sys.stderr)

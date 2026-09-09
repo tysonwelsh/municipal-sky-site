@@ -37,6 +37,35 @@
   var hasFetch = typeof fetch === "function";
 
   var MANIFEST_URL = "broadcast/manifest.json", REEL_DIR = "broadcast/reels/";
+  // ---- CACHE BUSTING (2026-09-09) ------------------------------------------
+  // The manifest is served with a long max-age by the host, and both it and the
+  // reels were fetched with NO version. So a RE-CUT reel — same file name, new
+  // bytes and new windows — stayed stale in the owner's browser for six hours:
+  // the Cage reel went five windows to three and Safari kept showing five.
+  // Two different problems, two different keys:
+  //   the MANIFEST is one file that changes whenever anything does, so it rides
+  //     the page's own asset fingerprint (window.ZK_ASSET_V, set by index.php);
+  //   a REEL is immutable content at a fixed name, so it rides its OWN rev —
+  //     the first 8 hex of its sha256, written into the manifest by
+  //     build-manifest.sh. An unchanged reel keeps its long cache; a re-cut one
+  //     gets a new URL and is fetched fresh.
+  // Both fall back to no query at all if the field is missing, so an old
+  // manifest or a page that does not set the global still works.
+  function manifestUrl() {
+    var v = null;
+    try { v = window.ZK_ASSET_V || null; } catch (e) {}
+    return v ? MANIFEST_URL + "?v=" + encodeURIComponent(v) : MANIFEST_URL;
+  }
+  function reelUrl(reelOrId) {
+    var id = (reelOrId && reelOrId.id) ? reelOrId.id : String(reelOrId);
+    var rev = (reelOrId && reelOrId.rev) ? reelOrId.rev : revOf(id);
+    return REEL_DIR + id + ".mp4" + (rev ? "?v=" + encodeURIComponent(rev) : "");
+  }
+  function revOf(id) {
+    if (!pool) return null;
+    for (var i = 0; i < pool.length; i++) if (pool[i].id === id) return pool[i].rev || null;
+    return null;
+  }
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var HOLD_LEAD_S = 6, STATIC_LEAD_S = 4, DECIDE_LEAD_S = 1, PREFETCH_LEAD_S = 12;   // from the hosting scene's start (t0 ≥ start + 8)
   var PLAN_REL_MAX = 6;                              // the largest per-voice release offset weather() can draw
@@ -79,7 +108,7 @@
     if (!hasFetch) { poolState = "failed"; poolError = "no fetch"; return; }
     poolState = "loading";
     try {
-      fetch(MANIFEST_URL).then(function (r) { return r.json(); }).then(function (m) {
+      fetch(manifestUrl()).then(function (r) { return r.json(); }).then(function (m) {
         var arr = Array.isArray(m) ? m : (m && m.reels) || [];
         var out = [];
         var unknown = {}, ragged = [], wholeTuned = [];
@@ -189,6 +218,13 @@
   // production path, because a bench that takes a shortcut past those is a
   // bench that agrees with itself and tells the owner nothing.
   var benchForce = null, benchQueued = null, benchWholeOverride = null;
+  // 1.5 s, not 2.0. MEASURED: at a 2.0 s lead the press-to-SOUND latency in
+  // WebKit was 2.97 s — the lead plus the tune-in ramp climbing to audibility —
+  // which passes a 3 s gate by thirty milliseconds, i.e. by luck. The element is
+  // pre-warmed by prefetchReel when the reel is chosen and after every seat, so
+  // the lead only has to cover fire()'s scheduling and the lane's 0.25 s
+  // lookahead. 1.5 s lands it near 2.4 s with real margin.
+  var BENCH_NOW_LEAD_S = 1.5;   // press → tune-in, the bench default
   function pinnedId() {
     try { return (window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().pinnedReel) || null; } catch (e) { return null; }
   }
@@ -221,7 +257,7 @@
     if (bufCache[id]) return Promise.resolve(bufCache[id]);
     if (bufPending[id]) return bufPending[id];
     if (!hasFetch || !ctx || typeof ctx.decodeAudioData !== "function") return Promise.reject(new Error("no decoder"));
-    var pr = fetch(REEL_DIR + id + ".mp4").then(function (r) {
+    var pr = fetch(reelUrl(id)).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.arrayBuffer();
     }).then(function (ab) {
@@ -396,6 +432,13 @@
   function noContract(info) { return !info || (info.cycleEndT == null && info.nextBcT == null && info.kiruT == null); }
   function fitsRoom(info, holdS, lossD) {
     if (!info) return true;
+    // THE BENCH'S "PLAY NOW", and the ONLY thing that can set this is
+    // _dev.seatWindowNow on reel-lab.php. It says: the owner pressed a button
+    // and wants to hear this thought in two seconds, so do not look for a legal
+    // position — there isn't time. A bench-now signal may overlap a guest or
+    // run into the kyū, and the page says so above the buttons. Nothing on the
+    // production path sets benchNow, so the seating rules are untouched by it.
+    if (info.benchNow) return true;
     var t0 = info.t0; if (t0 == null) return true;
     if (noContract(info)) {
       return TUNE_S + holdS + lossD + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) <= 40;
@@ -688,7 +731,7 @@
   function prefetch() {
     var a = armed; if (!a || !a.reel) return;
     var v = ensureVideo(); if (!v) return;
-    var url = REEL_DIR + a.reel.id + ".mp4";
+    var url = reelUrl(a.reel);
     // 経路 buffer mode: the AUDIO's readiness is the decode, not the seek. The
     // picture below still loads and seeks exactly as it always did — but it is
     // decoration now, and a picture that stalls must not deny the signal.
@@ -1388,7 +1431,7 @@
       } catch (e) { return false; }
       staticRise(tt, t0);
       var startMs = Math.max(0, (t0 - c.currentTime) * 1000);
-      var url = REEL_DIR + reel.id + ".mp4", srcChanged = videoSrcId !== reel.id;
+      var url = reelUrl(reel), srcChanged = videoSrcId !== reel.id;
       videoSrcId = reel.id;
       try {
         if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
@@ -1498,6 +1541,50 @@
         var r = benchTry();
         if (!r.ok && r.state !== "queued") benchQueued = null;
         return r;
+      },
+      // PLAY NOW (the bench's default): tune in ~2 s from the press. Ignores the
+      // seating deadlines — legality is what makes a real signal wait, and the
+      // owner is not waiting 55 s to hear a window. Everything else is the
+      // production path: the same arm(), the same fire(), the same hold, AIR,
+      // tube and VFD. If a signal is already up, its LOSS is allowed to finish
+      // and this one follows it rather than cutting it off.
+      seatWindowNow: function (reelId, wi, opts) {
+        opts = opts || {};
+        var T = tl();
+        if (!T.ctx || !T.playing() || !T.S) return { ok: false, state: "stopped", why: "press PLAY first" };
+        var now = T.ctx.currentTime, cy = T.cycle(), lead = BENCH_NOW_LEAD_S;
+        if (live && live.a && live.a.t0 != null) {
+          var lossEnd = live.a.t0 + TUNE_S + live.a.holdS + live.a.lossD;
+          if (lossEnd + 0.4 - now > lead) lead = lossEnd + 0.4 - now;   // let the one on the air finish its fade
+        }
+        var t0 = now + lead;
+        benchForce = { reelId: String(reelId), wi: (wi == null ? -1 : +wi), whole: opts.whole !== false };
+        var ok = false, why = "";
+        try {
+          var R = T.S.signal.fork("benchnow:" + Math.floor(now * 1000));
+          if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: 60, tidePos: 0.5, t0: t0, benchNow: true }, R)) why = "the receiver refused the choice";
+          else {
+            try { prefetch(); } catch (e0) {}     // the element is usually already warm; this covers a cold one
+            if (!fire(t0)) { armed = null; why = "the seat was refused"; } else ok = true;
+          }
+        } catch (e) { why = String((e && e.message) || e); }
+        benchForce = null;
+        if (!ok) return { ok: false, state: "refused", why: why };
+        var a = armed || {};
+        return { ok: true, state: "seated", now: true, t0: +t0.toFixed(2), inS: +(a.inS || 0).toFixed(2),
+          holdS: +(a.holdS || 0).toFixed(2), whole: !!a.whole, reel: a.reel && a.reel.id, leadS: +lead.toFixed(2) };
+      },
+      // Warm the element for a reel the owner is about to press, so "2 s" is
+      // two seconds of tune-in and not two seconds of loading.
+      prefetchReel: function (reelId, inS) {
+        var v = ensureVideo(); if (!v) return false;
+        var id = String(reelId);
+        try {
+          if (videoSrcId !== id) { videoSrcId = id; v.src = reelUrl(id); v.preload = "auto"; v.load(); }
+          var seek = function () { try { v.currentTime = +inS || 0; warmPicture(v); } catch (e) {} };
+          if (v.readyState >= 3) seek(); else v.addEventListener("canplay", function once() { try { v.removeEventListener("canplay", once); } catch (e) {} seek(); }, { once: true });
+        } catch (e) { return false; }
+        return true;
       },
       benchCancel: function () { benchQueued = null; benchForce = null; return true; },
       benchState: function () {

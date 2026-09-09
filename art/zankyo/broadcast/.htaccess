@@ -4,3 +4,19 @@ Options -Indexes
 <IfModule mod_headers.c>
   Header set X-Robots-Tag "noindex, nofollow"
 </IfModule>
+
+# CACHING (2026-09-09). The manifest is the index of everything else, so it must
+# never be the stale thing: it revalidates on every load. The reels do not need
+# to — every reel URL now carries ?v=<rev>, the first 8 hex of the file's own
+# sha256, written by build-manifest.sh. A re-cut reel changes its rev and so its
+# URL, and is fetched fresh; an unchanged reel keeps a long cache and costs
+# nothing. Before this, a re-cut reel (the Cage reel went five windows to three)
+# stayed stale in Safari for six hours.
+<IfModule mod_headers.c>
+  <Files "manifest.json">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </Files>
+  <FilesMatch "\.mp4$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>

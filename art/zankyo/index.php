@@ -227,6 +227,10 @@ include '../../includes/header.php';
 
 <!-- shared site helper: keeps the engine sounding under a locked screen /
      backgrounded mobile browser, with lock-screen media controls. -->
+<!-- The page's asset fingerprint, exposed for the receiver: it fetches the
+     manifest with ?v=<this> so a rebuilt manifest is never served from a
+     six-hour cache. The reels carry their own per-reel rev instead. -->
+<script>window.ZK_ASSET_V = "<?php echo $zk_build; ?>";</script>
 <script src="../background-audio.js?v=<?php echo zkv('../background-audio.js'); ?>"></script>
 <!-- THE SUBSTRATE (ZANKYŌ 2): the Prospero's Jukebox v2 modules, shared by
      relative path and never modified from here — in the REQUIRED order:
