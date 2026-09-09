@@ -39,28 +39,10 @@ include '../../includes/header.php';
  <div class="kolob-scene">
   <div class="content-frame kolob-frame">
 
-    <!-- Title page. The edition controls ride a masthead at the head of the
-         page — a ruled band in the flow, not pinned to a corner — so they read
-         as page furniture the title page was set around, then the title, its
-         double rule, and the running head below. -->
+    <!-- Title page: the title and its double rule. The edition switches that
+         once rode a masthead above the title now sit in the colophon at the
+         foot of the page (v0.16). -->
     <header class="kolob-header">
-
-      <!-- The masthead: the three edition switches, right-justified on their
-           own ruled band. A flex row, so each button spaces itself however
-           wide its label renders (the script toggle grows in Deseret). -->
-      <div class="kolob-toggles">
-        <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
-             (solid gilt) / natural 8% (outline) / never (struck). A cumulative
-             meeting withholds the tune until the doxology sings it whole. -->
-        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
-        <!-- The Ives switch: while on, every meeting is guaranteed a visitation
-             (the unanswered question or the two bands). Checking it restarts the
-             meeting so the guarantee begins at once. -->
-        <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
-        <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
-        <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
-      </div>
-
       <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
       <div class="kolob-rule" aria-hidden="true"></div>
     </header>
@@ -171,14 +153,33 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- Colophon -->
-    <p class="kolob-note">
-      <a href="/art/" id="kolob-art-link" aria-label="the generative art series">𐐂𐐡𐐓</a>
-      &nbsp;·&nbsp;
-      <a href="/art/zankyo/" aria-label="sibling engine ZANKYO">&#27531;&#38911;</a>
-      &nbsp;·&nbsp;
-      <a href="/art/bardo/" aria-label="sibling engine BARDO">&#3926;&#3928;&#3921;&#3964;</a>
-    </p>
+    <!-- Colophon: one ruled line at the foot of the page — the series links at
+         the left, the three edition switches at the right. On a narrow page
+         the switches drop to a line of their own beneath the links. -->
+    <div class="kolob-colophon">
+      <p class="kolob-note">
+        <a href="/art/" id="kolob-art-link" aria-label="the generative art series">𐐂𐐡𐐓</a>
+        &nbsp;·&nbsp;
+        <a href="/art/zankyo/" aria-label="sibling engine ZANKYO">&#27531;&#38911;</a>
+        &nbsp;·&nbsp;
+        <a href="/art/bardo/" aria-label="sibling engine BARDO">&#3926;&#3928;&#3921;&#3964;</a>
+      </p>
+
+      <!-- The edition switches: a flex row, so each button spaces itself
+           however wide its label renders (the script toggle grows in Deseret). -->
+      <div class="kolob-toggles">
+        <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
+             (solid gilt) / natural 8% (outline) / never (struck). A cumulative
+             meeting withholds the tune until the doxology sings it whole. -->
+        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
+        <!-- The Ives switch: while on, every meeting is guaranteed a visitation
+             (the unanswered question or the two bands). Checking it restarts the
+             meeting so the guarantee begins at once. -->
+        <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
+        <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
+        <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
+      </div>
+    </div>
 
     <!-- Build stamp: version · content fingerprint · deploy time. A quiet way
          to confirm which build is actually live. -->
