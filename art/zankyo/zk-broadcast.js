@@ -182,6 +182,13 @@
   // replaces the reel the weighting landed on, so the signal stream is
   // untouched and a pinned night is still reproducible from its seed.
   var pinUsed = false;
+  // ---- the reel bench (reel-lab.php) ---------------------------------------
+  // A forced choice for ONE seating: this reel, this window, whole or sliced.
+  // It bypasses the LOTTERY and the cooldown and NOTHING ELSE — legality, the
+  // footprint check, the deadlines, the hold, the AIR and the tube are all the
+  // production path, because a bench that takes a shortcut past those is a
+  // bench that agrees with itself and tells the owner nothing.
+  var benchForce = null, benchQueued = null, benchWholeOverride = null;
   function pinnedId() {
     try { return (window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().pinnedReel) || null; } catch (e) { return null; }
   }
@@ -421,6 +428,13 @@
     }
     var r = rReel * tot, reel = cands[cands.length - 1], reelIdx = cands.length - 1;
     for (i = 0; i < cands.length; i++) { r -= w[i]; if (r <= 0) { reel = cands[i]; reelIdx = i; break; } }
+    // THE BENCH'S FORCED CHOICE, ahead of the pin and the lottery. Same rule:
+    // rReel is already spent, so this costs no randomness.
+    if (benchForce) {
+      for (var bfi = 0; bfi < cands.length; bfi++) if (cands[bfi].id === benchForce.reelId) { reel = cands[bfi]; reelIdx = bfi; break; }
+      if (reel.id !== benchForce.reelId) { for (var bpi = 0; bpi < pool.length; bpi++) if (pool[bpi].id === benchForce.reelId) { reel = pool[bpi]; reelIdx = 0; break; } }
+      c.bench = true;
+    }
     // THE PIN, applied after the weighting and before anything reads `reel`:
     // rReel is already spent, so this costs no randomness and moves no stream.
     var pinR = pinUsed ? null : pinnedReel();
@@ -442,7 +456,11 @@
     // the LONGEST whole window that fits (a shorter thought rather than a
     // shorter reach); else another reel — NEVER a slice of a whole window.
     // Deterministic from the drawn index, NO new draws.
-    var whole = wholeAt(reel, wi);
+    if (benchForce && reel.id === benchForce.reelId) {
+      if (benchForce.wi >= 0 && benchForce.wi < reel.windows.length) wi = benchForce.wi;
+      benchWholeOverride = benchForce.whole;   // false = "slice instead", for the owner's A/B
+    } else benchWholeOverride = null;
+    var whole = benchWholeOverride == null ? wholeAt(reel, wi) : !!benchWholeOverride;
     if (whole) {
       var okHere = wholeFits(reel, wi) && fitsRoom(info, Math.min(reel.windows[wi][1] - reel.windows[wi][0], WHOLE_MAX_HOLD_S), lossD);
       if (!okHere) {
@@ -1264,7 +1282,34 @@
     scanWanted = true; T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "not now (" + (sc.type || "—") + ") · at the next scene" }, now);
     return true;
   }
+  // ONE ATTEMPT at the bench's request, at the next legal moment. benchForce is
+  // live only for the duration of the attempt — never across it — so a failed
+  // bench seat cannot leak into the next ordinary broadcast.
+  function benchTry() {
+    var T = tl();
+    if (!benchQueued) return { ok: false, state: "idle" };
+    if (!T.ctx || !T.playing() || !T.S) return { ok: false, state: "queued", why: "the station is stopped" };
+    if (live || (armed && armed.t0 != null)) return { ok: false, state: "queued", why: "a signal is already up" };
+    var now = T.ctx.currentTime, sc = T.scene(), cy = T.cycle();
+    var t0 = legalT0(sc, now);
+    if (t0 == null) return { ok: false, state: "queued", why: "the " + ((sc && sc.type) || "—") + " cannot host one" };
+    var R = T.S.signal.fork("bench:" + Math.floor(now * 1000));
+    benchForce = benchQueued;
+    var ok = false, why = "";
+    try {
+      if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R)) why = "the footprint does not fit here";
+      else if (!fire(t0)) { armed = null; why = "the seat was refused"; }
+      else ok = true;
+    } catch (e) { why = String(e && e.message || e); }
+    benchForce = null;
+    if (!ok) return { ok: false, state: "queued", why: why };
+    var a = armed || {};
+    benchQueued = null;
+    return { ok: true, state: "seated", t0: +t0.toFixed(2), inS: +(a.inS || 0).toFixed(2),
+      holdS: +(a.holdS || 0).toFixed(2), whole: !!a.whole, reel: a.reel && a.reel.id, inS_s: a.inS };
+  }
   function onScene(sc) {
+    if (benchQueued) { var br = benchTry(); if (br.ok) return; }
     if (!scanWanted) return;
     var T = tl(); if (!T.playing()) return;
     var cy = T.cycle();
@@ -1441,6 +1486,34 @@
       },
       loadPool: loadPool,
       scan: scan,
+      // ---- reel-lab.php ----
+      // Seat ONE named window as a real broadcast at the next legal moment,
+      // through the production path. Bypasses the lottery and the cooldown;
+      // never the legality, the footprint, the hold or the AIR. Returns
+      // {ok, state: "seated"|"queued", why} — "queued" means it did not fit
+      // yet and will be retried at the next scene.
+      seatWindow: function (reelId, wi, opts) {
+        opts = opts || {};
+        benchQueued = { reelId: String(reelId), wi: (wi == null ? -1 : +wi), whole: opts.whole !== false };
+        var r = benchTry();
+        if (!r.ok && r.state !== "queued") benchQueued = null;
+        return r;
+      },
+      benchCancel: function () { benchQueued = null; benchForce = null; return true; },
+      benchState: function () {
+        var T = tl(), now = null;
+        try { now = T.ctx ? T.ctx.currentTime : null; } catch (e) {}
+        var a = armed;
+        return {
+          queued: benchQueued ? { reel: benchQueued.reelId, wi: benchQueued.wi, whole: benchQueued.whole } : null,
+          armed: a ? { reel: a.reel && a.reel.id, inS: a.inS, holdS: a.holdS, whole: !!a.whole, t0: a.t0,
+                       inS_left: (a.t0 != null && now != null) ? +(a.t0 - now).toFixed(1) : null } : null,
+          live: !!live, playing: (function () { try { return tl().playing(); } catch (e) { return false; } })(),
+          scene: (function () { try { var sc = tl().scene(); return sc ? sc.type : null; } catch (e) { return null; } })(),
+          pool: poolState, poolSize: pool ? pool.length : 0,
+          limits: { wholeMaxHoldS: WHOLE_MAX_HOLD_S }
+        };
+      },
     },
   };
 })();

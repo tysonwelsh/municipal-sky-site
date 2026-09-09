@@ -326,9 +326,24 @@ Consequences on the record:
 - rc.53 and rc.55 both carried the wrong caveat. Their gate results stand; the
   reasoning attached to them does not.
 - **rc.56 reports home identity 13/14 and that is CORRECT, not a failure:** seed
-  106 draws `john-cage-interview` at 930 s and holds it 33.0 s instead of ~9 s,
-  so the crew is silent longer and the night's notes move. It is a deliberate
-  change, partitioned like a lift — not a regression to chase.
+  106 draws `john-cage-interview` at 930 s and holds it whole, so the crew is
+  silent longer and the night's notes move. A deliberate change, partitioned
+  like a lift — not a regression to chase.
+- **And it moves for TWO deliberate reasons, not one** (critic, measured with a
+  pin of rc.55 CODE on rc.56 DATA — the control neither of us could infer):
+
+  | build | notes / events | what it isolates |
+  |---|---|---|
+  | rc.55 (old data, old code) | 2083 / 734 | — |
+  | rc.55 code + rc.56 data | 2011 / 731 | the weight raise + re-cut alone: **−72** |
+  | rc.56 | 1932 / 720 | §14 holding it whole alone: **−79** |
+
+  Total −151 (−7.3 %). My first account said the night moves "because §14 holds
+  the Cage reel whole"; that is a little over half of it. Raising the weight
+  from 3 to 5 — which is what makes the reel drawn at all — is the rest.
+  The same control also showed the signal TIMES identical to the second between
+  rc.55-code and rc.56 on that night: **§14 does not move placement even where
+  the reel is drawn.**
 
 ### How often the Cage reel is actually drawn (keep this current)
 
