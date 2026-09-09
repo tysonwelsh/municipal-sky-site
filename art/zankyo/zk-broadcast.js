@@ -372,6 +372,20 @@
   // which allows a whole thought up to 28.8 s and refuses the 32–40 s ones.
   // That is a real limit on the manual path and it is deliberate — a footprint
   // nobody has checked against a KIRU is exactly what caused this regression.
+  // §14 (rc.57): the manual paths get the SAME deadlines the plan path is
+  // handed, whenever there is a cycle to clear. Without this they fell to the
+  // stopped-path fail-safe and could not seat the owner's 32–40 s thoughts on
+  // air at all — the 選局 knob and the ♪ button being exactly where they would
+  // want to hear them. When the station is STOPPED there is no cycle, no KIRU
+  // and no neighbour, so the fail-safe stays: nothing to clear, nothing known.
+  function withDeadlines(base, t0) {
+    base.t0 = t0;
+    try {
+      var d = tl().bcDeadlines && tl().bcDeadlines(t0);
+      if (d) { base.kiruT = d.kiruT; base.guestT = d.guestT; base.nextBcT = d.nextBcT; base.cycleEndT = d.cycleEndT; base.armLeadS = d.armLeadS; }
+    } catch (e) {}
+    return base;
+  }
   function noContract(info) { return !info || (info.cycleEndT == null && info.nextBcT == null && info.kiruT == null); }
   function fitsRoom(info, holdS, lossD) {
     if (!info) return true;
@@ -836,7 +850,7 @@
     // must always DO something.
     var got = false;
     for (var attempt = 0; attempt < 6; attempt++) {
-      if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R.fork("try:" + attempt))) return "snow";
+      if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R.fork("try:" + attempt))) return "snow";
       if (!armed || !armed.reel || !armed.reel.audioOnly) { got = true; break; }
     }
     if (!got && !armed) return "snow";
@@ -1234,7 +1248,7 @@
     var T = tl(), now = T.ctx.currentTime, t0 = legalT0(sc, now);
     if (t0 == null) return false;
     var R = T.S.signal.fork("scan:" + cy.n);
-    if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, R)) return false;
+    if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R)) return false;
     if (!fire(t0)) { armed = null; return false; }
     scanWanted = false; scanCycle = cy.n; stats.scans++;
     T.emitEvent({ cat: "rx", label: "選局 scanning", detail: "a signal in " + Math.round(t0 - now) + " s" }, now);
@@ -1422,7 +1436,7 @@
         if (delayS < 8) delayS = 8;
         var now = T.ctx.currentTime, cy = T.cycle();
         var R = T.S.signal.fork("bench:" + Math.floor(now * 1000));
-        if (!arm({ cycle: cy.n, kind: cy.kind, hostStartT: now + delayS - 8, hostDurS: 60, tidePos: 0.5 }, R)) return false;
+        if (!arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: now + delayS - 8, hostDurS: 60, tidePos: 0.5 }, now + delayS), R)) return false;
         return fire(now + delayS);
       },
       loadPool: loadPool,

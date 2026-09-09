@@ -1263,6 +1263,32 @@ window.ZankyoAudio = (function () {
   // one and snap a sounding note mid-flight. Hence the snapshot: farSpiral and
   // farVari are replaced wholesale, never mutated, so holding the references
   // is a true snapshot.
+  // §14 — where the KIRU falls in a cycle: the kyū→release seam. 未斬 can
+  // cancel it on a far night, which the plan cannot know, so this assumes it
+  // comes — the conservative direction for anything sizing a footprint.
+  function kiruOffOf(p) {
+    if (!p || !p.sceneTypes || !p.sceneDurS) return null;
+    var acc = 0;
+    for (var i = 0; i < p.sceneTypes.length; i++) {
+      acc += p.sceneDurS[i];
+      if (p.sceneTypes[i] === "kyu" && p.sceneTypes[i + 1] === "release") return acc;
+    }
+    return null;
+  }
+  // The deadlines a broadcast starting at t0 must clear, for the CURRENT cycle.
+  // The plan path gets these at arm; this is the same set for the manual paths
+  // (選局, the dial, the bench) so the owner's long thoughts can be auditioned
+  // on air instead of being refused by the stopped-path fail-safe.
+  function bcDeadlinesAt(t0) {
+    if (!playing || cyc.startT == null) return null;
+    var next = null;
+    if (cyc.bcAt) for (var i = 0; i < cyc.bcAt.length; i++) {
+      var abs = cyc.startT + cyc.bcAt[i];
+      if (abs > t0 + 0.001 && (next == null || abs < next)) next = abs;
+    }
+    return { kiruT: cyc.kiruT != null ? cyc.kiruT : null, guestT: cyc.guestT != null ? cyc.guestT : null,
+      nextBcT: next, cycleEndT: cyc.endT != null ? cyc.endT : (cyc.startT + cyc.durS), armLeadS: BC_ARM_LEAD_S };
+  }
   function farGlideMulAt(t, sp, va, t0) {
     var c = 0, x = t - t0;
     if (sp) c += -sp.amp * (1 - Math.cos(2 * Math.PI * x / sp.periodS)) / 2;
@@ -3109,14 +3135,14 @@ window.ZankyoAudio = (function () {
         // its time is the sum of the scene durations up to and including the
         // kyū. 未斬 can cancel it on a far night, which we cannot know here, so
         // the deadline assumes it comes — the conservative direction.
-        var kiruOff = null;
-        if (p.sceneTypes && p.sceneDurS) {
-          var accK = 0;
-          for (var sk = 0; sk < p.sceneTypes.length; sk++) {
-            accK += p.sceneDurS[sk];
-            if (p.sceneTypes[sk] === "kyu" && p.sceneTypes[sk + 1] === "release") { kiruOff = accK; break; }
-          }
-        }
+        var kiruOff = kiruOffOf(p);
+        // Remembered on the cycle so the MANUAL paths — 選局, the dial, the
+        // bench — can ask for the same deadlines the arm path uses instead of
+        // deriving them a second time. One derivation, two callers.
+        cyc.kiruT = kiruOff == null ? null : evt.t + kiruOff;
+        cyc.guestT = p.guestAt == null ? null : evt.t + p.guestAt;
+        cyc.bcAt = p.bcAt.slice();
+        cyc.endT = evt.t + evt.durS;
         (function (times, kind, tide, cyN, t0c, kOff, gOff, cycDur) {
           for (var bi = 0; bi < times.length; bi++) {
             (function (off, nextOff) {
@@ -5735,6 +5761,8 @@ window.ZankyoAudio = (function () {
           getArc: getArc, arcPhase: arcPhase, scene: function () { return { type: scn.type, activity: scn.activity, startT: scn.startT, durS: scn.durS }; },
           cycle: function () { return { n: cyc.n, kind: cyc.kind, startT: cyc.startT, durS: cyc.durS, visit: cyc.visit ? cyc.visit.name : null }; },
           getLayerParam: getLayerParam, bonsho: function (t) { ambBonsho(t, { halo: true }); },
+          // §14: the same deadlines the arm path is handed, for a manual seat.
+          bcDeadlines: bcDeadlinesAt,
           // `who` lets the receiver declare an INTENDED hold at arm time and
           // replace it with the exact one at fire (W4 §12).
           airHold: function (map, who) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, who || "signal"); },

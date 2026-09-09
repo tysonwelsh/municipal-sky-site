@@ -303,3 +303,43 @@ broadcast). Guarded by an assertion in the fault tally:
 max(commitLead) < ARM_LEAD on the covering set, so a future body or time
 departure that reaches further ahead fails by name instead of re-opening
 §12 as an intermittent intrusion.
+
+## 15. What each gate actually sees (2026-09-09, correcting the record)
+
+Written down because a WRONG caveat was quoted twice in commit messages as a
+reason a receiver change "could not" have moved a night, and a caveat that is
+believed is worse than one nobody reads.
+
+| instrument | serves the manifest? | signals fire? | so a receiver change… |
+|---|---|---|---|
+| `_harness.js` | yes, reads `broadcast/manifest.json` | yes | shows up here |
+| `_probe.js` (via `_far-identity.js`) | **YES** — reads the real file and serves it from its fetch mock | **YES** | **shows up here too** |
+| neither | — | — | — |
+
+`_far-identity.js` used to print "*_probe.js mocks fetch, so no reel loads and no
+signal fires under this gate*". **That was false.** The probe stubs the reel's
+**mp4** — the picture and the element — not the manifest, not the pool, not
+`choose()`, not the seating. A difference in the home-identity gate after a
+receiver change is a FINDING, not noise. The banner now says so.
+
+Consequences on the record:
+- rc.53 and rc.55 both carried the wrong caveat. Their gate results stand; the
+  reasoning attached to them does not.
+- **rc.56 reports home identity 13/14 and that is CORRECT, not a failure:** seed
+  106 draws `john-cage-interview` at 930 s and holds it 33.0 s instead of ~9 s,
+  so the crew is silent longer and the night's notes move. It is a deliberate
+  change, partitioned like a lift — not a regression to chase.
+
+### §14's own gates, for whoever changes the seating next
+
+- **KIRU reach 0** and **§12 sweep 0** on twelve seeds, on the REAL pool *and* on
+  a forced single-reel pool. The forced pool is the one that catches a fall-
+  through: with one reel there is no other reel to swap to, and code that
+  "prefers a different reel" quietly seats the illegal window instead.
+- **Placement is the real-pool gate**, and it must be compared against a
+  BASELINE MEASURED ON THE SAME SEEDS — not against the figures banked in
+  STATUS, which come from an older pool. At rc.56: 1.68 broadcasts/cycle, pair
+  74 %, empty 5.8 %, identical to the digit against rc.55.
+- **Density on a forced whole-thought pool is expected to fail the ±20 % band**
+  (seed 17: −21.5 %). Accepted by ruling: long holds silence the crew while they
+  play. The real pool is the gate.
