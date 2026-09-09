@@ -82,7 +82,7 @@
       fetch(MANIFEST_URL).then(function (r) { return r.json(); }).then(function (m) {
         var arr = Array.isArray(m) ? m : (m && m.reels) || [];
         var out = [];
-        var unknown = {}, ragged = [];
+        var unknown = {}, ragged = [], wholeTuned = [];
         for (var i = 0; i < arr.length; i++) { var e = arr[i]; if (e && e.id && !e.takedown && e.windows && e.windows.length) {
           if (!toneKnown(e.tone)) unknown[e.tone] = (unknown[e.tone] || 0) + 1;
           // A TUNED REEL'S WINDOWS MUST BE THE SAME LENGTH, near enough.
@@ -100,6 +100,7 @@
           // fifth apart. One `tuned: true` from the librarian on any of those
           // ten and byte-identity starts failing with no visible cause, so the
           // assumption says so out loud instead of resting quietly.
+          if (e.tuned && (e.whole || e.wholeWindows)) wholeTuned.push(e.id);
           if (e.tuned && e.windows.length > 1) {
             var wlo = 1e9, whi = -1e9;
             for (var wj = 0; wj < e.windows.length; wj++) {
@@ -118,6 +119,12 @@
           console.error("ZankyoBroadcast: manifest carries " + uk.length + " UNKNOWN tone value(s) — " +
             uk.map(function (k) { return k + "×" + unknown[k]; }).join(", ") +
             ". They get no tide weighting and cannot sea-change. Add them to TONE_DARK/TONE_LIGHT/TONE_PITCHED in zk-broadcast.js.");
+        }
+        if (wholeTuned.length && typeof console !== "undefined" && console.error) {
+          console.error("ZankyoBroadcast: " + wholeTuned.length + " reel(s) are BOTH whole and tuned — " +
+            wholeTuned.slice(0, 6).join(", ") + ". §14 decides the hold on the UNBENT window length (as §11.2 does, " +
+            "deliberately), so at rate ≠ 1 the hold would not cover the thought on the wall clock. Untested: " +
+            "either untune the reel or teach §14 the rate, in a commit that measures it.");
         }
         if (ragged.length && typeof console !== "undefined" && console.error) {
           console.error("ZankyoBroadcast: " + ragged.length + " TUNED reel(s) have windows of differing length — " +
@@ -259,6 +266,39 @@
   // weights WHICH real reel is chosen, never whether a real one is.
   var VIDEO_WEIGHT = 1.5;
 
+  // ---- §14 WHOLE-THOUGHT WINDOWS (owner, 2026-09-09) ------------------------
+  // A reel cut on complete sentences says so with "whole": true, and then a
+  // window is not a field to take a slice out of — it IS the thought, and the
+  // receiver plays it from its start to its end. john-cage-interview is the
+  // first: five windows, 18–25 s, each a finished sentence.
+  //
+  // A per-window override rides in an OPTIONAL PARALLEL ARRAY `wholeWindows`,
+  // index for index, exactly as pitchHz does — and for the same reason. Five
+  // call sites index a window positionally; a window that had grown a third
+  // element or turned into an object would read win[0] as undefined and put
+  // NaN into inS, which is the shape of the fault that cost this crew a phase.
+  // `windows` stays [start, end] and nothing else, forever.
+  //
+  // THE CEILING IS NOT TASTE, IT IS THE SPACING. Two broadcasts sit
+  // BC_GAP_S = 95 s apart (zankyo-audio.js) and each arms BC_ARM_LEAD_S = 55 s
+  // early, so a broadcast owns exactly 40 s before the NEXT one's arm calls
+  // airHoldClear() and drops its hold out from under it. The planned hold
+  // reaches TUNE_S + holdS + lossD + 2 + max(rel) past t0 — with lossD ≤ 2.8
+  // and rel ≤ 6 that is holdS + 11.2 — so holdS ≤ 28.8, and 27.8 leaves a
+  // second of margin. The owner asked for a 40 s cap: 40 IS NOT REACHABLE
+  // without widening BC_GAP_S, and a 40 s hold would let the next arm clear a
+  // live broadcast's hold and put melodic notes inside it, which is the §12
+  // sweep's whole subject. Every window on the only whole reel today is
+  // 18–25 s, so nothing is lost. To raise this, raise BC_GAP_S in the same
+  // commit and re-derive both numbers together.
+  var WHOLE_MAX_HOLD_S = 27.8;
+  function wholeAt(reel, i) {
+    var wa = reel.wholeWindows;
+    if (wa && wa[i] != null) return !!wa[i];
+    return !!reel.whole;
+  }
+  function wholeFits(reel, i) { return (reel.windows[i][1] - reel.windows[i][0]) <= WHOLE_MAX_HOLD_S; }
+
   // ---- the choice (arm time): six draws, always ----
   function choose(R, cycle, tidePos) {
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next(), rBell = R.next();
@@ -290,6 +330,22 @@
     var wi = Math.floor(rWin * reel.windows.length);
     var tune = farTune(reel, wi);
     if (tune.wi !== wi) wi = tune.wi;
+    // §14: prefer a whole window that FITS the room a broadcast owns; if none
+    // fits, take the shortest whole one. The scan starts at the drawn index and
+    // is deterministic — NO new draws, so the signal stream does not move.
+    var whole = wholeAt(reel, wi);
+    if (whole && !wholeFits(reel, wi)) {
+      var alt = -1, shortest = wi, sl = 1e9, ww, wj2, l2;
+      for (ww = 0; ww < reel.windows.length; ww++) {
+        wj2 = (wi + ww) % reel.windows.length;
+        if (!wholeAt(reel, wj2)) continue;
+        l2 = reel.windows[wj2][1] - reel.windows[wj2][0];
+        if (l2 < sl) { sl = l2; shortest = wj2; }
+        if (alt < 0 && wholeFits(reel, wj2)) alt = wj2;
+      }
+      wi = alt >= 0 ? alt : shortest;
+      whole = wholeAt(reel, wi);
+    }
     var win = reel.windows[wi], wl = win[1] - win[0];
     // THE HOLD IS DECIDED ON THE UNBENT WINDOW, DELIBERATELY. At rate r a
     // window of wl source seconds lasts wl / r on the wall clock, so the
@@ -301,14 +357,21 @@
     // more than a tenth of a second of hold, so the decision stays on wl and
     // the rate is spent on the in-point instead.
     var need = TUNE_S + holdS + lossD;
-    if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
-    c.reel = reel; c.win = win; c.holdS = holdS;
+    if (whole) {
+      // The thought sets the hold, not the draw. rHold and rIn are still
+      // CONSUMED above — six draws, always — so a whole reel entering the pool
+      // moves no other night's stream.
+      holdS = Math.min(wl, WHOLE_MAX_HOLD_S);
+      need = TUNE_S + holdS + lossD;
+    } else if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
+    c.reel = reel; c.win = win; c.holdS = holdS; c.whole = whole;
     // The in-point does carry the rate: `need` wall seconds eat need × r
     // SOURCE seconds, so a sped-up reel starts nearer the window's head. When
     // need × r exceeds the window the in-point pins to the head and the last
     // fraction of a second runs past the edge — inside the loss ramp, where
     // the signal is already under 6 % of peak.
-    c.inS = win[0] + rIn * Math.max(0, wl - need * tune.rate);
+    // From the window's START on a whole reel — there is no slice to place.
+    c.inS = whole ? win[0] : win[0] + rIn * Math.max(0, wl - need * tune.rate);
     c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents;
     return c;
   }
@@ -403,7 +466,7 @@
     // choose() adds must be added here in the same commit.
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
-      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0,
+      rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0, whole: !!c.whole,
       ready: false, t0: null, decided: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     stats.armed++;
     // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
