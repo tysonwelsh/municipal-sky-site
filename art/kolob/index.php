@@ -76,24 +76,22 @@ include '../../includes/header.php';
       </div>
     </header>
 
-    <!-- The plates: three engravings in one column, at one rhythm — the organ
-         facade, the wheel, the staff. -->
-
-    <!-- The organ: the tabernacle facade as a spectrum analyzer -->
-    <div class="kolob-organ-wrap">
-      <canvas id="kolob-organ" class="kolob-organ" aria-label="the tabernacle organ pipes, breathing with the music"></canvas>
-    </div>
+    <!-- The plates: two engravings in one column, at one rhythm — the wheel
+         (with the organ facade standing inside it), then the staff. -->
 
     <!-- Order of service: the crown of a wheel. The seven sections are seated
          round the rim of one great wheel and the page shows only its crown, a
          sun low on the horizon. The section now playing is lettered at the
          crown beneath ONE fixed gilt arc that fills as the section plays; when
          it is full the wheel turns anticlockwise a seat beneath it and the arc
-         fills again. Drawn by kolob-viz.js (drawWheel); its horizon rule is
-         the divider between this plate and the staff beneath. The live region
-         speaks the seat and its progress for readers who cannot see it. -->
+         fills again. Inside the wheel's hour ring, standing on the horizon,
+         the tabernacle organ facade — a spectrum analyzer as black pipe
+         silhouettes — breathes with the music. Drawn by kolob-viz.js
+         (drawWheel, drawFacade); the horizon rule is the divider between this
+         plate and the staff beneath. The live region speaks the seat and its
+         progress for readers who cannot see it. -->
     <div class="kolob-wheel-wrap">
-      <canvas id="kolob-wheel" class="kolob-wheel" aria-label="the order of service — a wheel turning beneath one arc"></canvas>
+      <canvas id="kolob-wheel" class="kolob-wheel" aria-label="the order of service — a wheel turning beneath one arc, the tabernacle organ pipes breathing inside it"></canvas>
       <div id="kolob-wheel-live" class="kolob-visually-hidden" aria-live="polite"></div>
     </div>
 

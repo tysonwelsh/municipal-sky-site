@@ -3,11 +3,12 @@
 //
 // Three instruments of seeing, all printed things:
 //  · THE ORGAN — the black pipe silhouettes of the tabernacle facade, standing
-//    on their impost line, breathing with the actual sound: a spectrum
-//    analyzer racked the way real pipes are racked (gravest in the middle,
-//    alternating outward), each with the paper-colored mouth near its foot.
-//    Fed by an AnalyserNode on the master bus; at rest it settles into the
-//    quiet stepped skyline of the hymnbook cover.
+//    on the wheel's horizon INSIDE the wheel, under the arch of its hour ring
+//    the way a case's pipes stand under an arch, breathing with the actual
+//    sound: a spectrum analyzer racked the way real pipes are racked (gravest
+//    in the middle, alternating outward), each with the paper-colored mouth
+//    near its foot. Fed by an AnalyserNode on the master bus; at rest it
+//    settles into the quiet stepped skyline of the hymnbook cover.
 //  · THE PAGE — a scrolling engraving on a GRAND STAFF: two five-line staves
 //    joined by a brace, a treble clef and a bass clef (baked as outlines, no
 //    font needed). Melodic notes print as 4-shape SHAPE-NOTE heads (fa △, sol ○,
@@ -27,11 +28,12 @@
 //    gilt arc fixed to the page, which fills as the section plays; when it
 //    is full the wheel turns anticlockwise a seat beneath it and the arc
 //    fills again. Spokes and hour-marks beneath the banner make the turning
-//    visible. Postlude turns into the next meeting's prelude like any other
-//    seat — the cycle is the picture.
+//    visible; the disc inside the hour ring is left clear for the organ.
+//    Postlude turns into the next meeting's prelude like any other seat — the
+//    cycle is the picture.
 //
 // No neon, no glitch, no CRT. A printed thing with one soft glow in it.
-// Public surface: window.KolobViz = { init(canvas, dialCanvas, organCanvas, wheelCanvas),
+// Public surface: window.KolobViz = { init(canvas, dialCanvas, wheelCanvas),
 //   setConductor, setWheelLabels, wheelSeatAt }
 // ============================================================================
 
@@ -45,9 +47,8 @@ window.KolobViz = (function () {
   var fadeCanvas = null, fadeCtx = null, fadeGrad = null;  // left-edge ink fade
   var fadeX0 = 90, fadeX1 = 150;                    // ink: ~0 at x≤fadeX0, full at x≥fadeX1
   var dial = null, dctx = null;
-  var organ = null, octx = null;                   // the facade
-  var wheel = null, xctx = null;                   // the order of service
-  var W = 0, H = 0, DW = 0, DH = 0, OW = 0, OH = 0, XW = 0, XH = 0, dpr = 1;
+  var wheel = null, xctx = null;                   // the order of service, with the facade inside it
+  var W = 0, H = 0, DW = 0, DH = 0, XW = 0, XH = 0, dpr = 1;
   var running = false;
 
   var cond = { section: null, local: 0, intensity: 0, f0: 65, mode: "ionian", hush: false, fuging: false };
@@ -129,8 +130,9 @@ window.KolobViz = (function () {
     c.fill();
   }
 
-  function drawOrgan(dt) {
-    if (!octx) return;
+  // sample the spectrum into the 21 bands, with an analyzer's feel: quick to
+  // rise, slower to fall. Silent (every band settling to 0) when not playing.
+  function updateBands(dt) {
     if (playing) ensureAnalyser();
     var live = playing && analyser;
     if (live) analyser.getByteFrequencyData(freqData);
@@ -143,31 +145,39 @@ window.KolobViz = (function () {
         }
         target = Math.pow(peak / 255, 1.3);
       }
-      // analyzer feel: quick to rise, slower to fall
       bands[k] += (target - bands[k]) * Math.min(1, dt * (target > bands[k] ? 9 : 2.4));
     }
-
-    octx.clearRect(0, 0, OW, OH);
-    var baseY = OH - 16;
-    var span2 = Math.min(OW * 0.86, 640);
-    var step = span2 / NPIPES;
-    var x0 = (OW - span2) / 2 + step / 2;
-    for (var k2 = 0; k2 < NPIPES; k2++) {
-      var seat = seatOf[k2];
-      // wider, graver pipes toward the center of the facade; at rest the
-      // minimum heights alone draw the stepped skyline of the hymnbook cover
+  }
+  // The facade stands INSIDE the wheel: the pipes' feet on the horizon (the
+  // impost is the horizon rule), seated across the hour ring's chord, with the
+  // ring's curve above each pipe for its ceiling — so live, the facade fills
+  // the crown of the wheel the way a case's pipes fill an arch, the gravest
+  // pipes reaching highest where the arch is highest. At rest the minimum
+  // heights alone draw the stepped skyline of the hymnbook cover. Drawn on
+  // the wheel canvas by drawWheel, before the horizon rule.
+  function drawFacade(c, g) {
+    var baseY = g.horizonY, cx = g.cx, cy = g.cy, rIn = g.rHour;
+    var dy = cy - baseY;                                       // the wheel's centre is this far below the horizon
+    var halfChord = Math.sqrt(Math.max(0, rIn * rIn - dy * dy)); // the hour ring's half-width at the horizon
+    var span = Math.max(60, (halfChord - 8) * 2);
+    var step = span / NPIPES;
+    var x0 = cx - span / 2 + step / 2;
+    var CEIL = 6;                                              // paper between a pipe's cap and the ring
+    for (var k = 0; k < NPIPES; k++) {
+      var seat = seatOf[k];
+      var x = x0 + seat * step;
+      // wider, graver pipes toward the center of the facade
       var centerness = 1 - Math.abs(seat - (NPIPES - 1) / 2) / ((NPIPES - 1) / 2);
       var w = step * (0.5 + centerness * 0.34);
-      var minH = 20 + centerness * 22;
-      var maxH = OH - 10;
-      var h = minH + bands[k2] * (maxH - minH) * (0.55 + centerness * 0.45);
-      drawPipe(octx, x0 + seat * step, baseY, w, h);
+      var minH = 18 + centerness * 22;
+      // the ceiling: the ring's height over the pipe's OUTER shoulder, where
+      // the arch is lowest above it
+      var dx = Math.abs(x - cx) + w * 0.4;
+      var ringY = cy - Math.sqrt(Math.max(0, rIn * rIn - dx * dx));
+      var maxH = Math.max(minH + 4, baseY - ringY - CEIL);
+      var h = minH + bands[k] * (maxH - minH) * (0.55 + centerness * 0.45);
+      drawPipe(c, x, baseY, w, Math.min(h, maxH));
     }
-    // the impost — the case line the pipes stand on: one hairline at the
-    // page's rule weight, margin to margin, like every other rule
-    octx.strokeStyle = "rgba(30, 77, 59, 0.42)";
-    octx.lineWidth = 1;
-    octx.beginPath(); octx.moveTo(0, baseY + 0.5); octx.lineTo(OW, baseY + 0.5); octx.stroke();
   }
 
   // ---- pitch → staff position -----------------------------------------------
@@ -557,9 +567,8 @@ window.KolobViz = (function () {
       ctx2d.drawImage(page, 0, 0);
     }
 
-    drawOrgan(dt);
     drawDial(dt);
-    drawWheel(dt);
+    drawWheel(dt);                                 // the facade rides inside the wheel
   }
 
   // ---- the Liahona dial — a hexagonal case -----------------------------------
@@ -666,17 +675,20 @@ window.KolobViz = (function () {
   }
   function wheelGeom() {
     var fontPx = Math.max(14, Math.min(24, XW * 0.03));     // the type scales with the wheel
-    var crownY = XH * 0.20;                                 // the sky above the crown, a fifth of the plate
+    var crownY = Math.round(XH * 0.14);                     // the sky above the crown: a breath under the running head
     // the horizon is pinned to the plate (4px above its foot) so the divider
     // before the staff sits at one height at every width; the wheel's radius
-    // follows from it — the crown shows 0.44 R above the horizon — capped so a
+    // follows from it — the crown shows 0.52 R above the horizon, deep enough
+    // that the organ stands inside the hour ring with headroom — capped so a
     // narrow page still sees the neighbouring seats
     var horizonY = XH - 4;                                  // at the band's foot: the staff plate is drawn up over it
-    var R = Math.min((horizonY - crownY) / 0.44, XW * 0.62);
+    var R = Math.min((horizonY - crownY) / 0.52, XW * 0.62);
+    var rBanner = R - fontPx * 2.35;                        // the banner's inner rule
     return {
       fontPx: fontPx, R: R, cx: XW / 2, cy: crownY + R, crownY: crownY,
       horizonY: horizonY,
-      rBanner: R - fontPx * 2.35,                            // the banner's inner rule
+      rBanner: rBanner,
+      rHour: rBanner - fontPx * 1.3,                         // the hour ring: the arch the organ stands under
     };
   }
   // Set a string along a circle: glyph by glyph, each rotated to the tangent at
@@ -757,15 +769,17 @@ window.KolobViz = (function () {
     c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = inkA(0.3);
     c.beginPath(); c.arc(cx, cy, g.rBanner, 0, Math.PI * 2); c.stroke();
-    // beneath the banner: the dial. A spoke to every seat, a faint hour ring
-    // with quarter-marks between the seats — the turning made visible.
-    var rHour = g.rBanner - fontPx * 1.3;
+    // beneath the banner: the dial. A faint hour ring, a spoke to every seat
+    // across the band between the ring and the banner, quarter-marks standing
+    // out from the ring between the seats — the turning made visible. Nothing
+    // is drawn inside the ring: that disc is the organ's.
+    var rHour = g.rHour;
     c.strokeStyle = inkA(0.12);
     c.beginPath(); c.arc(cx, cy, rHour, 0, Math.PI * 2); c.stroke();
     for (var q = 0; q < NSEAT * 4; q++) {
       var qa = -Math.PI / 2 + (q / 4 - wh.offset) * SEAT_STEP;
-      if (q % 4 === 0) { c.strokeStyle = inkA(0.2); radial(c, cx, cy, qa, 0, g.rBanner); }
-      else { var half = q % 4 === 2; c.strokeStyle = inkA(half ? 0.3 : 0.2); radial(c, cx, cy, qa, rHour, rHour - (half ? 9 : 5)); }
+      if (q % 4 === 0) { c.strokeStyle = inkA(0.2); radial(c, cx, cy, qa, rHour, g.rBanner); }
+      else { var half = q % 4 === 2; c.strokeStyle = inkA(half ? 0.3 : 0.2); radial(c, cx, cy, qa, rHour, rHour + (half ? 9 : 5)); }
     }
     // the seats: a tick on the rim, the label lettered round the banner
     for (var i = 0; i < NSEAT; i++) {
@@ -780,6 +794,9 @@ window.KolobViz = (function () {
       c.fillStyle = inkA(alpha);
       curvedText(c, seatLabels[i] || SEATS[i], cx, cy, R - fontPx * 1.6, a, TRACK);
     }
+    // the organ, standing on the horizon inside the hour ring
+    updateBands(dt);
+    drawFacade(c, g);
     // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
     // It runs from the left neighbour's tick to the right neighbour's: the whole
     // crown of the wheel is the bar, and each section refills it.
@@ -802,8 +819,9 @@ window.KolobViz = (function () {
     }
     c.restore();
 
-    // the horizon: the letterpress rule the wheel sets behind — one hairline;
-    // the double rule stays unique to the title
+    // the horizon: the letterpress rule the wheel sets behind and the organ
+    // stands on (its impost) — one hairline; the double rule stays unique to
+    // the title
     c.strokeStyle = inkA(0.42);
     c.beginPath(); c.moveTo(0, g.horizonY + 0.5); c.lineTo(XW, g.horizonY + 0.5); c.stroke();
 
@@ -875,14 +893,6 @@ window.KolobViz = (function () {
       dctx = dial.getContext("2d");
       dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    if (organ) {
-      var or = organ.getBoundingClientRect();
-      OW = Math.max(60, Math.round(or.width));
-      OH = Math.max(60, Math.round(or.height));
-      organ.width = OW * dpr; organ.height = OH * dpr;
-      octx = organ.getContext("2d");
-      octx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
     if (wheel) {
       var xr = wheel.getBoundingClientRect();
       XW = Math.max(60, Math.round(xr.width));
@@ -893,12 +903,11 @@ window.KolobViz = (function () {
     }
   }
 
-  function init(mainCanvas, dialCanvas, organCanvas, wheelCanvas) {
+  function init(mainCanvas, dialCanvas, wheelCanvas) {
     canvas = mainCanvas || null;
     dial = dialCanvas || null;
-    organ = organCanvas || null;
     wheel = wheelCanvas || null;
-    if (!canvas && !dial && !organ && !wheel) return;
+    if (!canvas && !dial && !wheel) return;
     resize();
     window.addEventListener("resize", resize);
     if (K) {

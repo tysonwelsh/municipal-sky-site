@@ -166,11 +166,9 @@
 
 /* the hush: the page holds its breath with the music */
 .kolob-scene.is-hush .kolob-viz-wrap,
-.kolob-scene.is-hush .kolob-wheel-wrap,
-.kolob-scene.is-hush .kolob-organ-wrap { opacity: 0.7; transition: opacity 2.5s ease; }
+.kolob-scene.is-hush .kolob-wheel-wrap { opacity: 0.7; transition: opacity 2.5s ease; }
 .kolob-scene .kolob-viz-wrap,
-.kolob-scene .kolob-wheel-wrap,
-.kolob-scene .kolob-organ-wrap { transition: opacity 2.5s ease; }
+.kolob-scene .kolob-wheel-wrap { transition: opacity 2.5s ease; }
 
 /* ===================== the spacing scale — 0.6 / 1.2 / 2 / 2.8 rem ==========
    Every block margin on the page is one of these four. 0.6 inside a band or
@@ -231,22 +229,6 @@
 /* ink for the current meeting; ink-soft when the valley is still */
 .kolob-running-head.is-live { color: var(--ink); }
 .kolob-running-head .t-sep { margin: 0 0.45em; color: var(--ink-faint); }
-
-/* ============================== the organ ================================ */
-/* the tabernacle facade as a spectrum analyzer — black pipe silhouettes on
-   their impost line, drawn entirely by the canvas */
-.kolob-organ-wrap {
-  position: relative;
-  height: 120px;                    /* pipes at rest fill the bottom ~45px; live pipes have OH-10 = 110px of headroom. 120 puts the running head 89px above the pipe tops — the same step as impost-to-crown and horizon-to-staff (76) plus a breath */
-  margin: 0 0 1.2rem;
-}
-.kolob-organ {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
 
 /* ============================== the page (viz) =========================== */
 /* The grand staff — two five-line staves, a brace, and the two clefs — is now
@@ -403,13 +385,16 @@
 
 /* ============================== the wheel ================================ */
 /* the order of service: the crown of a wheel, drawn by the canvas
-   (kolob-viz.js drawWheel) — the middle plate, between the organ and the
-   staff. Its horizon rule is the divider before the staff, so the band ends
-   just beneath it. The live region speaks the seat and its progress for
-   readers who cannot see the wheel. */
+   (kolob-viz.js drawWheel) — the first plate, directly under the running
+   head, with the organ facade standing inside it on the horizon (the pipes
+   were their own plate above the wheel until v0.14; seating them in the
+   wheel's clear inner disc saves the page ~120px of height). Its horizon rule
+   is the divider before the staff, so the band ends just beneath it. The live
+   region speaks the seat and its progress for readers who cannot see the
+   wheel. */
 .kolob-wheel-wrap {
   position: relative;
-  height: 210px;                    /* crown at 20%, horizon pinned 4px above the bottom (kolob-viz.js wheelGeom) */
+  height: 230px;                    /* crown at 14%, horizon pinned 4px above the bottom (kolob-viz.js wheelGeom); deep enough that the organ has ~110px of headroom under the hour ring */
   margin: 0;                        /* the staff plate is drawn up over this band's foot — see .kolob-viz-wrap */
 }
 .kolob-wheel {
@@ -771,7 +756,6 @@
   .kolob-transport .kolob-btn { padding: 0.5rem 0.7rem; }
   /* the slider is self-evident (and keeps its aria-label) — drop the "VOL" caption */
   .kolob-transport .kolob-ctl-label { display: none; }
-  .kolob-organ-wrap { height: 110px; }
-  .kolob-wheel-wrap { height: 165px; }
+  .kolob-wheel-wrap { height: 185px; }
   .kolob-viz-wrap { height: 184px; }
 }
