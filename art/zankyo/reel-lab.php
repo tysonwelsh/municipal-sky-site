@@ -62,12 +62,18 @@ if ($zk_a0 === false || $zk_b0 === false) {
 ?>
 <div class="zrl">
   <h1>残響 · REEL LAB <span class="zrl-sub">§14 whole-thought windows</span></h1>
-  <p>Press <b>PLAY</b> above — the station runs normally. Then press a window below: it is seated as a
-     real broadcast at the next legal moment, through the production path. If it cannot fit where the
-     station is, the button says <b>QUEUED</b> and it is retried at the next legal moment.</p>
+  <p>Press <b>PLAY</b> above — the station runs normally. Then press a window below and it tunes in
+     <b>within about two seconds</b>, through the production path: the same hold, the same AIR silencing
+     the crew, the same tune-in and loss on the tube.</p>
+  <p class="zrl-warn"><b>PLAY NOW ignores the seating deadlines.</b> A real signal waits for a legal
+     position — clear of the KIRU, the guest and the next broadcast — and that wait is why it would take
+     up to a minute to hear one. Pressed here it does not wait, so a bench signal <b>may overlap a guest
+     or run into the kyū</b>. That is the bench being a bench. To hear what a listener would actually get,
+     turn on <b>seat as a real signal would</b> and it goes back to waiting for a legal moment.</p>
   <div class="zrl-row">
     <label>reel <select id="zrl-reel"></select></label>
     <label class="zrl-toggle"><input type="checkbox" id="zrl-slice" /> slice instead of whole <i>(for comparison)</i></label>
+    <label class="zrl-toggle"><input type="checkbox" id="zrl-legal" /> seat as a real signal would <i>(waits for a legal moment)</i></label>
     <button type="button" id="zrl-next">next window ▸</button>
     <button type="button" id="zrl-cancel">cancel queued</button>
   </div>
@@ -85,6 +91,10 @@ if ($zk_a0 === false || $zk_b0 === false) {
 .zrl-row select, .zrl-row button { font: inherit; font-size: 0.78rem; background: #1a1620; color: #e6dff0; border: 1px solid #4a3f5a; border-radius: 4px; padding: 0.35rem 0.5rem; cursor: pointer; }
 .zrl-row button:hover, .zrl-win:hover { border-color: #a58cff; }
 .zrl-toggle i { color: #6f6880; font-style: normal; }
+.zrl-warn { color: #c9a35a; border-left: 2px solid #6b5326; padding-left: 0.7rem; }
+.zrl-warn b { color: #e0bd72; }
+.zrl-win.is-now { border-color: #6fd88a; box-shadow: 0 0 0 1px rgba(111,216,138,0.25); }
+.zrl-count { color: #6fd88a; font-weight: 500; }
 .zrl-windows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; margin: 0.6rem 0; }
 .zrl-win { font: inherit; font-size: 0.75rem; text-align: left; padding: 0.65rem 0.75rem; background: #1a1620; color: #e6dff0; border: 1px solid #4a3f5a; border-radius: 4px; cursor: pointer; line-height: 1.45; }
 .zrl-win b { display: block; font-size: 0.85rem; letter-spacing: 0.05em; }
@@ -94,6 +104,10 @@ if ($zk_a0 === false || $zk_b0 === false) {
 .zrl-state { font-size: 0.75rem; color: #b7aec6; background: #0e0b12; border: 1px solid #2c2536; padding: 0.5rem 0.6rem; border-radius: 4px; white-space: pre-wrap; }
 .zrl-log { font-size: 0.72rem; color: #8f879c; white-space: pre-wrap; margin-top: 0.5rem; max-height: 12em; overflow: auto; }
 </style>
+<!-- The page's asset fingerprint, exposed for the receiver: it fetches the
+     manifest with ?v=<this> so a rebuilt manifest is never served from a
+     six-hour cache. The reels carry their own per-reel rev instead. -->
+<script>window.ZK_ASSET_V = "<?php echo $zk_build; ?>";</script>
 <script src="../background-audio.js?v=<?php echo zkv('../background-audio.js'); ?>"></script>
 <?php foreach (['pj2-rand','pj2-pitch','pj2-clock','pj2-voice','pj2-fx','pj2-air','pj2-conductor'] as $m): ?>
 <script src="../prosperos-jukebox-v2/<?php echo $m; ?>.js?v=<?php echo zkv('../prosperos-jukebox-v2/' . $m . '.js'); ?>"></script>
@@ -109,7 +123,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
   var DEFAULT_REEL = "john-cage-interview";
   var sel = document.getElementById("zrl-reel"), host = document.getElementById("zrl-windows");
   var stateEl = document.getElementById("zrl-state"), logEl = document.getElementById("zrl-log");
-  var sliceEl = document.getElementById("zrl-slice");
+  var sliceEl = document.getElementById("zrl-slice"), legalEl = document.getElementById("zrl-legal");
   var pool = [], cur = null, nextWi = 0;
 
   function log(msg) { logEl.textContent = (new Date().toISOString().slice(11, 19) + "  " + msg + "\n" + logEl.textContent).slice(0, 4000); }
@@ -117,7 +131,11 @@ if ($zk_a0 === false || $zk_b0 === false) {
   function dev() { try { return window.ZankyoBroadcast && window.ZankyoBroadcast._dev; } catch (e) { return null; } }
 
   // The manifest is the receiver's own — read it the same way it does.
-  fetch("broadcast/manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+  // Versioned exactly as the receiver fetches it — a bench showing stale
+  // windows would be the owner's bug wearing the costume of the tool built to
+  // find it.
+  var MANIFEST = "broadcast/manifest.json" + (window.ZK_ASSET_V ? "?v=" + encodeURIComponent(window.ZK_ASSET_V) : "");
+  fetch(MANIFEST).then(function (r) { return r.json(); }).then(function (m) {
     pool = (Array.isArray(m) ? m : (m && m.reels) || []).filter(function (e) { return e && e.id && e.windows && e.windows.length; });
     pool.sort(function (a, b) {
       var aw = (a.whole || a.wholeWindows) ? 0 : 1, bw = (b.whole || b.wholeWindows) ? 0 : 1;
@@ -132,7 +150,8 @@ if ($zk_a0 === false || $zk_b0 === false) {
     });
     sel.value = pool.some(function (e) { return e.id === DEFAULT_REEL; }) ? DEFAULT_REEL : (pool[0] && pool[0].id);
     render();
-    log("manifest: " + pool.length + " reels · ◆ = cut on complete thoughts");
+    warmFirst();
+    log("manifest: " + pool.length + " reels · ◆ = cut on complete thoughts · PLAY NOW is the default");
   }).catch(function (e) { log("manifest failed: " + e.message); });
 
   // The notes field carries the owner's own description of each thought,
@@ -161,21 +180,36 @@ if ($zk_a0 === false || $zk_b0 === false) {
       host.appendChild(b);
     });
   }
+  var countdownTo = null;
   function seat(i, btn) {
     var d = dev();
-    if (!d || !d.seatWindow) { log("the receiver is not loaded"); return; }
-    [].forEach.call(host.children, function (c) { c.classList.remove("is-queued", "is-seated"); });
-    var r = d.seatWindow(cur.id, i, { whole: !sliceEl.checked });
+    if (!d) { log("the receiver is not loaded"); return; }
+    [].forEach.call(host.children, function (c) { c.classList.remove("is-queued", "is-seated", "is-now"); });
+    var wantWhole = !sliceEl.checked, legal = legalEl.checked;
+    var r = legal ? d.seatWindow(cur.id, i, { whole: wantWhole })
+                  : d.seatWindowNow(cur.id, i, { whole: wantWhole });
     nextWi = (i + 1) % cur.windows.length;
     if (r && r.ok) {
-      btn.classList.add("is-seated");
-      log("SEATED window " + i + " · " + (r.whole ? "whole" : "slice") + " · in " + r.inS.toFixed(1) + "s · hold " + r.holdS.toFixed(1) + "s · t0 " + r.t0 + "s");
-    } else {
+      btn.classList.add(r.now ? "is-now" : "is-seated");
+      countdownTo = r.now ? r.t0 : null;
+      log((r.now ? "PLAYING NOW" : "SEATED") + " window " + i + " · " + (r.whole ? "whole" : "slice") +
+          " · in " + r.inS.toFixed(1) + "s · hold " + r.holdS.toFixed(1) + "s" +
+          (r.now ? " · tunes in in " + r.leadS.toFixed(1) + "s" : " · t0 " + r.t0 + "s"));
+    } else if (legal) {
       btn.classList.add("is-queued");
-      log("QUEUED window " + i + " — " + ((r && r.why) || "not now") + " · it will be retried at the next legal moment");
+      log("QUEUED window " + i + " — " + ((r && r.why) || "not now") + " · retried at the next legal moment");
+    } else {
+      log("REFUSED window " + i + " — " + ((r && r.why) || "not now"));
     }
+    // warm the NEXT window's in-point so the next press is two seconds too
+    var nx = cur.windows[nextWi];
+    if (d.prefetchReel && nx) setTimeout(function () { d.prefetchReel(cur.id, nx[0]); }, 1200);
   }
-  sel.addEventListener("change", render);
+  sel.addEventListener("change", function () { render(); warmFirst(); });
+  function warmFirst() {
+    var d = dev();
+    if (d && d.prefetchReel && cur && cur.windows[0]) d.prefetchReel(cur.id, cur.windows[0][0]);
+  }
   document.getElementById("zrl-next").addEventListener("click", function () {
     if (!cur) return;
     var b = host.querySelector('[data-wi="' + nextWi + '"]');
@@ -198,6 +232,13 @@ if ($zk_a0 === false || $zk_b0 === false) {
       (s.armed.whole ? " · whole" : "") + (s.armed.inS_left != null ? " · t0 in " + s.armed.inS_left + "s" : ""));
     if (s.live) bits.push("ON THE AIR");
     bits.push("whole cap " + s.limits.wholeMaxHoldS + "s");
+    if (countdownTo != null) {
+      var left = countdownTo - (s.armed && s.armed.t0 != null && s.armed.inS_left != null ? countdownTo - s.armed.inS_left : 0);
+      var secs = (s.armed && s.armed.inS_left != null) ? s.armed.inS_left : null;
+      if (secs != null && secs > -0.2) bits.unshift("TUNING IN " + Math.max(0, secs).toFixed(1) + "s");
+      else if (s.live) { bits.unshift("ON THE AIR"); }
+      else countdownTo = null;
+    }
     stateEl.textContent = bits.join("   ·   ");
   }, 400);
 })();
