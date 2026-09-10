@@ -83,3 +83,4 @@
 0.9.122 — the analytics folder is back in the drawer, and it holds two bar graphs now: what a drawing costs per model, and the average overall grade per model
 0.9.123 — the analytics folder gains two more cards: who takes first (first place on ranked four-model turns) and the four axes (a small multiple per axis, each its own ruler); four cards, two by two
 0.9.124 — the analytics folder settles on three cards: cost and grade side by side, and the four axes running the full width in one row (who takes first is off again)
+0.9.125 — the four-axes panels lose the 1…4 / 1…3 labels under each ruler and the "of 4" / "of 3" in their headings, and close up the room the labels took
