@@ -82,3 +82,4 @@
 0.9.121 — a random device code, made in the browser the first time a turn is sent, rides each turn so one device's turns and grades can be studied together (named in the consent text, explained on the privacy page); the ledger shows it per turn and gathers a device's turns on a press
 0.9.122 — the analytics folder is back in the drawer, and it holds two bar graphs now: what a drawing costs per model, and the average overall grade per model
 0.9.123 — the analytics folder gains two more cards: who takes first (first place on ranked four-model turns) and the four axes (a small multiple per axis, each its own ruler); four cards, two by two
+0.9.124 — the analytics folder settles on three cards: cost and grade side by side, and the four axes running the full width in one row (who takes first is off again)
