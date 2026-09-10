@@ -71,13 +71,13 @@ include '../../includes/header.php';
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
     </div>
 
-    <!-- The console: a rail of the board's green (v0.21), the way an organ's
-         stops sit on a jamb — two paper drawknobs, PLAY and STOP, glyph only
-         (play turns gilt while drawn), and the volume as a swell lever: a
-         brass hexagon, the beehive of the Deseret theme, sliding in a dark
-         slot. One row at every width; the VOL caption drops on a phone. The
-         Liahona dial that sat at the row's end is gone — the wheel does its
-         work. -->
+    <!-- The console (v0.22): one row on the paper — PLAY a solid ink dot,
+         STOP a ringed one, glyph only (play turns gilt while the meeting
+         runs); then the volume slider, an ink line with a brass hexagon for
+         its thumb, the beehive of the Deseret theme. One hairline beneath.
+         One row at every width; the VOL caption drops on a phone. The
+         Liahona dial that once sat at the row's end is gone — the wheel
+         does its work. -->
     <div class="kolob-console">
       <div class="kolob-transport">
         <button type="button" class="kolob-knob play-btn" id="kolob-play" aria-label="play"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.4v11.2L13.4 8z" fill="currentColor"/></svg></button>
