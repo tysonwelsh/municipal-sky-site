@@ -69,4 +69,4 @@
 0.9.108 — hide and show: the admin card's HIDE FROM DRAWER takes an object out of the drawer on the spot (turns and the curated collection alike, no deploy), SHOW IN DRAWER puts it back, and the admin strip lists everything hidden
 0.9.109 — the admin card's hide is a checkbox on the save row, filed with the grades; the little gauges stand beside the scales again and follow the pick; and the grades table's column is GRADE, not verdict
 0.9.110 — the drawer has layers: extra-large objects lie on the floor, large ones on those, and everything smaller on top — at load and however you dig; a lifted object comes back to the top of its own layer
-0.9.111 — on a phone, swipe the report card's photograph to turn to the next or previous drawing; and REPLAY is a small round-again arrow now, so the photograph keeps its room
+0.9.111 — on a phone, swipe the report card's photograph to turn to the next or previous drawing; REPLAY is a small round-again arrow now, so the photograph keeps its room; and in admin mode a saved card comes down on its own

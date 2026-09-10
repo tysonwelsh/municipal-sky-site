@@ -1074,10 +1074,12 @@
     }).then(function (res) {
       saving = false;
       if (res === undefined) return;       /* the ratings failed; said so */
+      /* saved whole: the card comes down (owner, 2026-09-10 — a saved card
+         has nothing more to say). Only a hide that failed keeps it up, with
+         the reason on the status line. */
+      if (res === true) { close(); return; }
       render(false);
-      setStatus(res === true
-        ? ('✓ saved' + (curEntry.hidden ? ' · hidden from the drawer' : ''))
-        : '✓ ratings saved · ⚠ hide not changed (' + res + ')');
+      setStatus('✓ ratings saved · ⚠ hide not changed (' + res + ')');
     }, function () {
       saving = false;
       setStatus('⚠ not saved (network)');
