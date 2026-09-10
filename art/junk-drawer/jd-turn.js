@@ -191,7 +191,8 @@
          never torn down and never needs rebinding. */
       '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
-      '<span aria-hidden="true">✕</span></button></header>' +
+      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>' +
       '<div class="jd-turn-scroll"></div></div>';
     document.body.appendChild(scrim);
     card = scrim.querySelector('.jd-turn');
@@ -554,7 +555,10 @@
       '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="5" ' +
       'data-role="prompt" data-autofocus spellcheck="true" ' +
       'aria-label="describe an object for the drawer" ' +
-      'placeholder="a brass fish that is also a whistle">' + esc(draft) + '</textarea>' +
+      /* the placeholder INSTRUCTS rather than suggests (owner, 2026-09-10):
+         the sample object it used to show ("a brass fish that is also a
+         whistle") read as strange to a first visitor */
+      'placeholder="Describe an object you would like to see drawn as an SVG.">' + esc(draft) + '</textarea>' +
       '<p class="jd-turn-count' + (n > MAX_PROMPT ? ' is-over' : '') +
       '" aria-live="polite">' + n + ' / ' + MAX_PROMPT + '</p></div>' +
       /* the honeypot: off-screen rather than display:none (which most bots

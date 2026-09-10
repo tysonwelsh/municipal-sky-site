@@ -317,6 +317,12 @@
    own rule — and a reload deals the sheet back on top. Its load rotation
    is capped at a small tilt — a sheet you are meant to read arrives
    readable, not at the pile's full ±34°. */
+/* REWRITTEN FOR A FIRST VISIT (owner, 2026-09-10): four steps, one sentence
+   each, none assuming the reader knows what a specimen tag or a report card
+   is. And a CLOSE MARK in the paper's corner (.ins-close in the asset): a
+   press takes the sheet out of the drawer until the next load, so it stops
+   taking up room once it has been read. Nothing persists — every refresh
+   deals the sheet back. */
 (function () {
   var ID = 'jd-instructions';
   var ASSET = '/art/junk-drawer/instructions-object.svg';
@@ -335,10 +341,9 @@
      aria-hidden with the rest of the svg, and this one string is what the
      wrapper actually says */
   var SHEET_TEXT = 'Instructions. 1: Dig around — drag the junk; twist it ' +
-    'while held. 2: Tap an object for its specimen tag; REPORT CARD opens ' +
-    'its full grades. 3: Press PUSH 4 MORE JUNK and four AIs draw your idea — ' +
-    'grade them blind, rank them, see who drew what; your pick joins the ' +
-    'drawer.';
+    'while held. 2: Tap any object to see more about it. 3: Press PUSH 4 ' +
+    'MORE JUNK and four AIs draw an object you describe. 4: Grade their ' +
+    'drawings and decide who won.';
 
   /* fetched like the turn object's artwork, but with NO inline fallback: a
      drawer without its instructions still works — the sheet is furniture,
@@ -373,17 +378,41 @@
     el.dataset.sheet = 'instructions';   /* the one flag the tap path branches on */
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
-    el.setAttribute('aria-label', 'Instructions — press to enlarge');
+    el.setAttribute('aria-label', 'Instructions — press to enlarge; Delete removes the sheet');
     el.innerHTML = window.JD_svgInst(art, 'jio_') +
       '<span class="jd-vh">' + SHEET_TEXT + '</span>';
     var svg = el.querySelector('svg');
     if (svg) svg.setAttribute('aria-hidden', 'true');
+    /* THE CLOSE MARK (owner, 2026-09-10): the × drawn in the paper's top
+       corner takes the sheet out of the drawer for the rest of this load —
+       nothing is remembered, a refresh deals it back. The mark is part of
+       the artwork (rotates, tilts and enlarges with the paper), so the pile's
+       grip must not see the press: pointerdown stops here, and the release
+       on the mark is the dismissal. */
+    var closeMark = el.querySelector('.ins-close');
+    if (closeMark) {
+      closeMark.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        e.stopPropagation();
+        if (e.pointerType === 'mouse') e.preventDefault();
+      });
+      closeMark.addEventListener('pointerup', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        e.stopPropagation();
+        dismiss();
+      });
+    }
     pile.appendChild(el);
     /* NO fitView: controlled repo art, frame honest by construction (the
        turn object's rule) — sized on the shared ruler like everything else */
     window.JD_applySize(el, box, ID, 1);
     seat(el, pile);
     el.addEventListener('keydown', function (e) {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();          /* the keyboard's close mark */
+        dismiss();
+        return;
+      }
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
         /* the keyboard reads as the tap does: larger, or back down. One
@@ -399,6 +428,17 @@
     /* ordinary pile plumbing — drag, twist, settle; the tap branch in
        wireItem is what routes a press here instead of pick() */
     if (window.JD_wirePile) window.JD_wirePile();
+  }
+
+  /* out of the drawer until the next load. An enlarged sheet is put down
+     first so the pile's dim and pick state clear with it; the node then
+     leaves the DOM — its seat in the scatter map is kept, so the next load
+     deals it back to the same spot. */
+  function dismiss() {
+    if (!el) return;
+    if (el.classList.contains('is-picked') && window.JD_hideTag) window.JD_hideTag();
+    if (el.parentNode) el.parentNode.removeChild(el);
+    el = null;
   }
 
   /* the seat: stable per session through the shared scatter map (layoutFor
@@ -1101,7 +1141,8 @@
           '<div class="jd-folder-tabrow">' +
             '<span class="jd-folder-tab">ANALYTICS</span></div>' +
           '<button type="button" class="jd-folder-close" aria-label="close">' +
-          '<span>✕</span></button>' +
+          '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+          '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
         '</div>' +
         '<div class="jd-folder-scroll"></div>' +
       '</div>';
