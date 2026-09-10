@@ -166,11 +166,7 @@ html { scroll-behavior: smooth; }
     filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
     z-index: 999999 !important;
   }
-  /* THE LAYERS (owner, 2026-09-10): a hovered large or extra-large object
-     rises to the top of ITS layer only — never over the smaller junk lying
-     on it. Bands: xl 0–9999, l 10000–19999, the rest 20000+ (JD_zBase). */
-  .jd-item[data-tier="l"]:not(.jd-item--turn):hover { z-index: 19999 !important; }
-  .jd-item[data-tier="xl"]:not(.jd-item--turn):hover { z-index: 9999 !important; }
+
   /* :not(.is-picked) — the fix for a specificity break (owner report,
      2026-08-28): when :not(.jd-item--turn) joined this selector it began
      outscoring .jd-item.is-picked svg, so a freshly-clicked item HELD ITS
@@ -188,9 +184,6 @@ html { scroll-behavior: smooth; }
   cursor: grabbing;
   z-index: 999999 !important;
 }
-/* …and held, the same: a dragged large object slides UNDER the smaller junk */
-.jd-item[data-tier="l"].is-held { z-index: 19999 !important; }
-.jd-item[data-tier="xl"].is-held { z-index: 9999 !important; }
 .jd-item.is-held svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
 
 /* picked = SELECTED: the lift persists for as long as the tag is attached

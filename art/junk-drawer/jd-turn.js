@@ -2618,7 +2618,9 @@
     el.style.left = (p.x * 100) + '%';
     el.style.top = (p.y * 100) + '%';
     el.style.setProperty('--rot', p.rot + 'deg');
-    el.style.zIndex = JD_zBase(el) + (p.z || 100);   /* its size's layer */
+    /* a won item lands on TOP of the pile, whatever its size — the layers
+       are dealt at load (JD_zBase), and this is a drop, not a load */
+    el.style.zIndex = window.JD_zRaise ? JD_zRaise() : JD_zBase(el) + (p.z || 100);
     if (animate) {
       el.classList.add('is-dropped');
       JD_haptic('drop');
