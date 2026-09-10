@@ -105,9 +105,10 @@ include 'includes/header.php';
                 <blockquote>
                     <p>When you take a turn, the words you type are sent to four AI providers &mdash; Anthropic
                         (Claude), OpenAI (GPT), Moonshot AI (Kimi), and Google (Gemini) &mdash; which each
-                        draw an object from them. Your prompt, the drawings that come back, your ratings, and an
-                        anonymous daily-rotating visitor code are stored so the results can be studied and the feature
-                        kept honest. Nothing you type here is shown to other visitors.</p>
+                        draw an object from them. Your prompt, the drawings that come back, your ratings, an
+                        anonymous daily-rotating visitor code, and a random device code your browser keeps (so the
+                        turns and grades from one device can be studied together) are stored so the results can be
+                        studied and the feature kept honest. Nothing you type here is shown to other visitors.</p>
                 </blockquote>
 
                 <p><strong>What is stored, in the categories app stores use:</strong></p>
@@ -124,6 +125,14 @@ include 'includes/header.php';
                         the code changes every day at midnight UTC: it can group one visitor&rsquo;s turns within a
                         single day &mdash; which is how the daily limits work &mdash; and it cannot be used to follow
                         you from one day to the next.</li>
+                    <li><strong>Identifiers</strong> &mdash; a <strong>random device code</strong> (since 10 September
+                        2026). The first time you send a turn &mdash; never on a mere visit &mdash; the page makes a
+                        random code, keeps it in your browser&rsquo;s local storage for this site, and sends it with
+                        each turn you take, so the turns and grades that came from one browser can be studied together
+                        even across days. It is a random number: it is not made from your IP address or from anything
+                        about you or your device, it is not shared with anyone, and it is not used for advertising.
+                        Clearing this site&rsquo;s data in your browser removes it; a new one is made only if you take
+                        another turn.</li>
                     <li><strong>Diagnostics</strong> &mdash; which model drew which side, the exact model version and
                         settings used, how long each drawing took, the provider&rsquo;s token counts, and whether the
                         drawing arrived cleanly, failed, or was refused by the site&rsquo;s safety check on generated
@@ -139,7 +148,8 @@ include 'includes/header.php';
 
                 <p><strong>What stays on your device:</strong> your agreement to the disclosure above, the turn you have
                     in progress, and the drawings you keep are held in your browser&rsquo;s own session storage. That is
-                    local to your device and is not sent to me. <strong>Drawings made from visitor prompts are never
+                    local to your device and is not sent to me. The random device code described above is also held in
+                    your browser (local storage), and that one is sent with each turn. <strong>Drawings made from visitor prompts are never
                         shown to other visitors</strong> &mdash; the ones you keep appear only in your own copy of the
                     drawer.</p>
 
@@ -147,9 +157,11 @@ include 'includes/header.php';
                     AI models draw the same brief, so prompts, drawings, ratings, and preferences are kept
                     <strong>indefinitely</strong> as research data, including the ones where a model failed or produced
                     something unusable. To ask for yours to be deleted, email
-                    <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a>; because no account and no lasting
-                    identifier is stored, please include the approximate date and time you took the turn and roughly
-                    what you typed, so I can find it.</p>
+                    <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a>; because no account is stored,
+                    please include the approximate date and time you took the turn and roughly what you typed, so I
+                    can find it. If you can, include your device code &mdash; in your browser&rsquo;s developer tools it
+                    is the local-storage entry named <code>jd-device</code> for this site &mdash; and I can find every
+                    turn from that browser at once.</p>
 
                 <h2>5. Legal basis (for EU/UK/EEA users)</h2>
                 <p>Where the GDPR or UK GDPR applies, I process this information on the basis of <strong>legitimate

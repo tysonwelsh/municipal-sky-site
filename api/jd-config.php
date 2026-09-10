@@ -219,8 +219,9 @@ const JD_PROVIDER_CONNECT_TIMEOUT = 10;
 // C5.2 / APP §4.5 — the consent of record. Must match JD_CONSENT.version in
 // junk-drawer.js and the copy quoted in privacy.php. jd-consent-4 (2026-08-14,
 // a few hours after -3): the rotation wording ("three of which") gave way to
-// the fact — all four providers draw every turn.
-const JD_CONSENT_VERSION = 'jd-consent-4';
+// the fact — all four providers draw every turn. jd-consent-5 (2026-09-10):
+// the random device code the browser keeps joins the list of what is stored.
+const JD_CONSENT_VERSION = 'jd-consent-5';
 
 // C1.2 step 7 — cost controls, tunable in one place post-launch.
 //

@@ -57,6 +57,7 @@ Every primary key is an app-generated ULID (`CHAR(26)`, time-ordered), so
 | `created` | filing time (UTC) |
 | `prompt` | verbatim |
 | `visitor_hash` | salted, daily-rotating visitor hash; never a raw identifier |
+| `device_ref` | (2026-09-10) the random UUID the browser made on its first turn and keeps in localStorage (`jd-device`), sent as `device_ref`; groups one device's turns across days. `NULL` for turns before that date, for curated rows, and when the browser refused storage. Random — not derived from the IP or the device. Named in `JD_CONSENT` (jd-consent-5) and privacy.php §4 |
 | `client` | who filed it: `web` (a visitor), `bench`, `seed`, `curated` |
 | `pair_order` | 0–23, the permutation the four models were dealt in, drawn at filing so model identity never correlates with slot letter |
 | `ai_consent_at`, `ai_consent_version` | the consent record the turn was filed under |
@@ -68,7 +69,7 @@ Every primary key is an app-generated ULID (`CHAR(26)`, time-ordered), so
 | `rerun_requested_at` | curator pressed RERUN; same convention |
 
 Indexes: `uq_client_ref`, `idx_visitor_created (visitor_hash, created)` for the
-daily quota, `idx_created`, `idx_jds_item`.
+daily quota, `idx_created`, `idx_jds_item`, `idx_jds_device`.
 
 **Who writes what.** `jd-generate.php` inserts the row (status `pending`,
 then `generated`). `jd-rate.php` claims it (`status = 'rated'`) and in the

@@ -30,6 +30,15 @@ if (!is_string($clientRef)
     jd_fail(400, 'bad_request', 'A client_ref in UUID form is required.');
 }
 
+// The device code (2026-09-10): optional, UUID-shaped or ignored. The
+// browser makes it on its first turn and keeps it (JD_deviceRef); it is
+// what lets the turns and grades from one device be studied together.
+$deviceRef = $body['device_ref'] ?? null;
+if (!is_string($deviceRef)
+    || !preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $deviceRef)) {
+    $deviceRef = null;
+}
+
 $slot = $body['slot'] ?? null;
 if ($slot !== 'a' && $slot !== 'b' && $slot !== 'c' && $slot !== 'd') {
     jd_fail(400, 'bad_request', 'slot must be "a", "b", "c" or "d".');
@@ -96,25 +105,29 @@ try {
     }
 
     if ($submission === null) {
-        $insert = $db->prepare(
-            jd_insert_ignore($db) . ' jd_submissions
-                (id, client_ref, created, prompt, visitor_hash, client, pair_order,
-                 ai_consent_at, ai_consent_version, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
+        $subId = jd_ulid();
         $now = jd_now();
-        $insert->execute([
-            jd_ulid(),
-            $clientRef,
-            $now,
-            $prompt,
-            $visitorHash,
-            $client,
-            random_int(0, 23),
-            $now,
-            JD_CONSENT_VERSION,
-            'pending',
-        ]);
+        $cols = 'id, client_ref, created, prompt, visitor_hash, client, pair_order, ai_consent_at, ai_consent_version, status';
+        $vals = [$subId, $clientRef, $now, $prompt, $visitorHash, $client, random_int(0, 23), $now, JD_CONSENT_VERSION, 'pending'];
+        try {
+            // device_ref rides along (2026-09-10); a table the migration has
+            // not reached yet refuses the column, and the turn must not fail
+            // for it — file without, as before
+            $insert = $db->prepare(
+                jd_insert_ignore($db) . ' jd_submissions (' . $cols . ', device_ref)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $insert->execute(array_merge($vals, [$deviceRef]));
+        } catch (PDOException $e) {
+            if (!jd_missing_column($e)) {
+                throw $e;
+            }
+            $insert = $db->prepare(
+                jd_insert_ignore($db) . ' jd_submissions (' . $cols . ')
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $insert->execute($vals);
+        }
 
         // The loser of the parallel-slot race had its INSERT ignored; both
         // callers read back the one row the unique key allowed through.

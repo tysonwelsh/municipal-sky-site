@@ -29,9 +29,11 @@ try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    $hasDevice = jd_has_column($db, 'jd_submissions', 'device_ref');   // 2026-09-10
     $subs = $db->query(
         'SELECT id, item_id, prompt, created, status, client, title, size_class,
-                suppressed, retire_requested_at, rerun_requested_at
+                suppressed, retire_requested_at, rerun_requested_at' .
+                ($hasDevice ? ', device_ref' : ', NULL AS device_ref') . '
            FROM jd_submissions ORDER BY created'
     )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -130,6 +132,7 @@ foreach ($subs as $s) {
         'created'             => $s['created'],
         'status'              => $s['status'],
         'client'              => $s['client'],
+        'device_ref'          => $s['device_ref'] ?? null,
         'prompt'              => (string) $s['prompt'],
         'title'               => $s['title'],
         'size_class'          => $s['size_class'],

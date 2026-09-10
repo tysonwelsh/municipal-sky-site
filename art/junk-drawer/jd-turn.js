@@ -579,7 +579,8 @@
          are unchanged and still what gets recorded on submission — this is
          a change to what the card SHOWS, not what the visitor agrees to. */
       '<p class="jd-turn-fine">Sent to Anthropic, OpenAI, Moonshot AI and ' +
-      'Google to be drawn and studied — see our <a class="jd-turn-link" ' +
+      'Google to be drawn and studied; a random code kept in your browser ' +
+      'links your turns — see our <a class="jd-turn-link" ' +
       'href="/privacy.php">privacy</a> page.</p>';
   }
 
@@ -2305,6 +2306,9 @@
           prompt: text,
           client: JD_CLIENT,
           consent: { version: JD_CONSENT.version },
+          /* the device code, made now if this is the browser's first turn
+             (JD_deviceRef in jd-core.js, owner 2026-09-10) */
+          device_ref: window.JD_deviceRef ? JD_deviceRef(true) : null,
           website: honey
         })
       }).then(function (r) {
