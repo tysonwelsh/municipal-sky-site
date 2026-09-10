@@ -55,7 +55,11 @@
       if (btn) btn.outerHTML = paperBtnHTML();
     }
     var fig = document.querySelector('.rc-zoom-fig');
-    if (fig) fig.classList.toggle('is-blueprint', paper === 'blueprint');
+    if (fig) {
+      fig.classList.toggle('is-blueprint', paper === 'blueprint');
+      var zb = fig.querySelector('.rc-paper');
+      if (zb) zb.outerHTML = paperBtnHTML().replace('class="rc-paper"', 'class="rc-paper rc-zoom-keep"');
+    }
   }
   /* turn to the next (+1) / previous (−1) response, the strip's own move;
      the ends stop rather than wrap */
@@ -617,10 +621,35 @@
        states them — after a reload too. Only visitor responses carry these
        fields; curated items omit the lines entirely, and an unpriced model
        loses just the Cost line (the house rule: omit, never print null). */
+    var notes = notesHTML(resp);
+    /* (the note lines, the button row and the file number are shared with
+       the enlargement — see notesHTML / plateBtnsHTML / fileNoHTML) */
+    h += '<div class="rc-col-l">' +
+      '<div class="rc-block rc-plate' + paperCls() + '" role="button" tabindex="0" ' +
+      'aria-label="Enlarge the artwork">' +
+      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      paperBtnHTML() +
+      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
+      '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
+      svgInst(artSrc, 'jr' + curIdx + '_') +
+      '</div>' +
+      '<div class="rc-notes">' + notes + '</div>' +
+      plateBtnsHTML(entry, resp, false) +
+      fileNoHTML(entry) +
+      '</div></div>';
+    return h + paperworkHTML(entry, resp, curIdx);
+  }
+
+  /* the margin notes: MODEL and DATE always; TOKENS and COST when the
+     response carries them (a visitor's own drawing); PROCESS only when it
+     was refined — one-shot is the default story and doesn't need saying
+     (owner call, 2026-08-13). The house rule: omit, never print null. */
+  function notesHTML(resp) {
+    var m = modelOf(resp.model);
+    var gen = resp.generation || {};
     var tkTotal = resp.tokens && isFinite(+resp.tokens.total) ? +resp.tokens.total : null;
     var tkCost = resp.cost_usd != null && isFinite(+resp.cost_usd) ? +resp.cost_usd : null;
-    var notes =
-      '<span class="rc-note-line"><span class="rc-note-l">Model</span>' +
+    return '<span class="rc-note-line"><span class="rc-note-l">Model</span>' +
       '<span class="rc-note-v">' + esc(m.label) + '</span></span>' +
       '<span class="rc-note-line"><span class="rc-note-l">Date</span>' +
       '<span class="rc-note-v">' + esc(fmtDate(resp.date)) + '</span></span>' +
@@ -636,46 +665,37 @@
         ? '<span class="rc-note-line"><span class="rc-note-l">Process</span>' +
           '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
         : '');
-    /* the photograph stays the enlarge control (role/tabindex, whole
-       surface); its corner carries the DOWNLOAD SVG button — the "⤢
-       enlarge" hint retired for it (owner rev, 2026-08-13). The click/key
-       handlers in build() exempt .rc-dl so a download never also zooms.
-       The file number prints beneath the button (owner rev, 2026-08-15 —
-       it used to tail the notes, a line too many once Tokens/Cost
-       joined). */
-    h += '<div class="rc-col-l">' +
-      '<div class="rc-block rc-plate' + paperCls() + '" role="button" tabindex="0" ' +
-      'aria-label="Enlarge the artwork">' +
-      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
-      paperBtnHTML() +
-      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
-      '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
-      svgInst(artSrc, 'jr' + curIdx + '_') +
-      '</div>' +
-      '<div class="rc-notes">' + notes + '</div>' +
-      /* the photograph's button row (owner rev, 2026-08-16: REPLAY joined
-         DOWNLOAD on one row): REPLAY plays the drawing again on request —
-         the click/key handlers exempt both buttons from the plate's zoom.
-         The row is one positioned flex box, so the buttons never need to
-         guess each other's widths. */
-      '<div class="rc-plate-btns">' +
-      /* REPLAY is an icon alone since 2026-09-10 (owner: the word took too
-         much of the photograph, on a phone especially): a small round-again
-         arrow in the same tailoring as DOWNLOAD, the tooltip and the
-         accessible name carrying the words */
+  }
+  /* the photograph's button row (owner rev, 2026-08-16: REPLAY joined
+     DOWNLOAD on one row): REPLAY plays the drawing again on request — the
+     click/key handlers exempt both buttons from the plate's zoom. The row is
+     one positioned flex box, so the buttons never need to guess each other's
+     widths. REPLAY is an icon alone on the card since 2026-09-10 (owner: the
+     word took too much of the photograph, on a phone especially); the
+     enlargement has the room, so there it carries the word REDRAW (`big`). */
+  function plateBtnsHTML(entry, resp, big) {
+    return '<div class="rc-plate-btns rc-zoom-keep">' +
       '<button type="button" class="rc-draw" ' +
       'title="watch the drawing draw itself again" ' +
       'aria-label="Replay the drawing">' +
       '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
       '<path d="M13.4 8a5.4 5.4 0 1 1-1.7-3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
       '<path d="M13.6 2.4v3.4h-3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '</svg></button>' +
+      '</svg>' + (big ? '<span>REDRAW</span>' : '') + '</button>' +
       '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
       esc(entry.id) + '.svg" title="download the SVG as generated">' +
       'DOWNLOAD SVG ⤓</a>' +
-      '</div>' +
-      '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
-      '</div></div>';
+      '</div>';
+  }
+  /* the file number prints beneath the buttons (owner rev, 2026-08-15 — it
+     used to tail the notes, a line too many once Tokens/Cost joined) */
+  function fileNoHTML(entry) {
+    return '<span class="rc-note-no">' + esc(entry.id) + '</span>';
+  }
+
+  /* the paperwork column: prompt, grades, the strip */
+  function paperworkHTML(entry, resp, curIdx) {
+    var h = '';
     /* the prompt renders foldable; render() measures it after paint and
        strips the fold when it actually fits three lines — so the expander
        only ever appears on prompts that need it */
@@ -705,11 +725,23 @@
      is still in the card underneath it. */
   function zoomHTML(entry, resp, curIdx) {
     var m = modelOf(resp.model);
+    /* THE WHOLE PHOTOGRAPH, held closer (owner, 2026-09-10): the margin
+       notes, the button row (REDRAW spelled out, at reading size), the
+       file number and the paper swap all come up with the artwork. Each
+       control is .rc-zoom-keep, which the layer's own press-to-close
+       (JD_zoomLayer) leaves alone; the record wires their clicks itself in
+       openZoom(). The art yields the bottom band to the notes, as on the
+       plate — see the fig's padding in the stylesheet. */
     return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
-      '</div></div>' +
+      '</div>' +
+      paperBtnHTML().replace('class="rc-paper"', 'class="rc-paper rc-zoom-keep"') +
+      '<div class="rc-notes">' + notesHTML(resp) + '</div>' +
+      plateBtnsHTML(entry, resp, true) +
+      fileNoHTML(entry) +
+      '</div>' +
       '<div class="rc-zoom-cap">' +
       '<span class="rc-zoom-cap-t">' + esc(entry.title) + ' · ' + esc(m.label) +
       '</span>' +
@@ -904,9 +936,27 @@
     return zoomHTML(curEntry, resp, curResp);
   }
   function plateEl() { return scrollEl ? scrollEl.querySelector('.rc-plate') : null; }
+  var zoomWired = false;
   function openZoom(from) {
     if (!isOpen || zoom.isOn() || !curEntry) return;
     zoom.open(from || null, zoomBody(), plateEl());
+    /* the layer is built once by JD_zoomLayer; its controls are ours */
+    var layer = document.querySelector('.jd-record-zoom');
+    if (layer && !zoomWired) {
+      zoomWired = true;
+      layer.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t.closest) return;
+        if (t.closest('.rc-draw')) {
+          /* REDRAW, on the enlargement's own copy of the artwork */
+          var svg = layer.querySelector('.rc-zoom-art svg');
+          if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
+        } else if (t.closest('.rc-paper')) {
+          togglePaper();
+        }
+        /* .rc-dl is a real download link: the UA takes it, the layer stays */
+      });
+    }
   }
   function closeZoom(silent) { zoom.close(silent); }
 

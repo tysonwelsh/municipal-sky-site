@@ -279,9 +279,14 @@ function JD_zoomLayer() {
     el.setAttribute('aria-modal', 'true');
     el.setAttribute('aria-label', 'enlarged artwork');
     document.body.appendChild(el);
-    el.addEventListener('click', function () { close(); });
+    /* .rc-zoom-keep: a control the owner put ON the enlargement (the
+       record's REDRAW / DOWNLOAD / paper swap, 2026-09-10) — a press on it
+       is its own, never the layer's dismissal */
+    function kept(e) { return !!(e.target && e.target.closest && e.target.closest('.rc-zoom-keep')); }
+    el.addEventListener('click', function (e) { if (!kept(e)) close(); });
     el.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      if (kept(e)) return;
       e.preventDefault();
       close();
     });

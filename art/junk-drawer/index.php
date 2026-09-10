@@ -12,7 +12,7 @@ function jd_v($file)
     return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
 }
 
-// Build/version stamp (printed small in the colophon) — a way to tell at a
+// Build/version stamp (printed small at the foot of the notes) — a way to tell at a
 // glance whether the page being served is the latest deploy:
 //   · VERSION  — a hand-set marker, bumped when the app changes (0.1.0, …)
 //   · build    — derived from the ACTUAL bytes of the served assets, so it
@@ -134,8 +134,8 @@ include '../../includes/header.php';
 
   <!-- ============ FIELD NOTES ============
        The wall label, a one-paragraph intro, the taxonomy legend, and the
-       colophon (pared down 2026-08-28, owner call — the full inventory list
-       and two intro paragraphs went with it). The legend renders from
+       bare foot (the colophon was pared down 2026-08-28 and removed
+       2026-09-10, owner calls — the series link and build stamp remain). The legend renders from
        data.php's payload (junk-drawer.js); everything else is static copy. -->
   <section class="jd-notes" id="notes">
 
@@ -162,20 +162,17 @@ include '../../includes/header.php';
       <div class="jd-axes" id="jd-axes"></div>
     </section>
 
-    <section class="jd-colophon" aria-label="colophon">
-      <h2>Colophon</h2>
-      <p>Flat files in a git repository, assembled at request time by
-      <code>data.php</code> &mdash; no build step, and for the curated
-      objects a commit is the entire publishing act. Objects drawn by
-      visitors join the drawer from the database the moment their grades are
-      filed.</p>
+    <!-- The COLOPHON section and its paragraph went 2026-09-10 (owner call).
+         What stays is the bare foot of the notes: the series link and the
+         build stamp — version · content fingerprint · deploy time, the quiet
+         way to confirm which build is actually live (the same stamp the
+         bench strip shows). Same class, so the foot keeps its tailoring. -->
+    <footer class="jd-colophon" aria-label="build and series">
       <p><a href="/art/" aria-label="the generative art series">the generative art series</a></p>
-      <!-- Build stamp: version · content fingerprint · deploy time. A quiet
-           way to confirm which build is actually live. -->
       <p class="jd-build" aria-label="build version">
         <?php echo htmlspecialchars($jd_version); ?><span class="jd-build-sep">·</span><?php echo $jd_build; ?><?php if ($jd_deployed): ?><span class="jd-build-sep">·</span><?php echo $jd_deployed; ?><?php endif; ?>
       </p>
-    </section>
+    </footer>
 
     <p class="jd-back"><a href="#drawer">THE DRAWER &#8593;</a></p>
 
