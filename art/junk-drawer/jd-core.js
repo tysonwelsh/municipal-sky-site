@@ -183,14 +183,15 @@ function JD_xorshift(seed) {
   };
 }
 
-/* THE LAYERS (owner, 2026-09-10): the extra-large objects lie on the
-   drawer's floor, the large ones on those, and everything smaller on top —
-   whatever order the smaller ones take among themselves. Every z the pile
-   hands an item is a BAND base plus its own number: the scatter's stack
-   order at load, the raise counter on a drag, drop or return. The bands
-   are far apart so a session of dragging never climbs out of one. The
-   pile is its own stacking context (z 2 in the well), so these numbers
-   never compete with the tag / elastic / picked-item sandwich (70–72). */
+/* THE LAYERS AT LOAD (owner, 2026-09-10; clarified the same day): when the
+   drawer opens, the extra-large objects lie on the floor, the large ones on
+   those, and everything smaller on top — whatever order the smaller ones
+   take among themselves. That is the DEAL, not a rule of play: anything the
+   visitor lifts comes to the very top like it always did (the raise counter
+   sits above every band), and the next load deals the layers afresh. Every
+   scatter z is a BAND base plus the item's own stack number. The pile is
+   its own stacking context (z 2 in the well), so these numbers never
+   compete with the tag / elastic / picked-item sandwich (70–72). */
 var JD_Z_BAND = { xl: 0, l: 10000, other: 20000 };
 function JD_zBand(el) {
   var t = el && el.dataset ? el.dataset.tier : '';
@@ -1172,10 +1173,11 @@ var JD_admin = (function () {
      scroll (then a page-flip) on device — owner report, 2026-07-26 */
   var SLOP = 8, TOUCH_SLOP = 14, CLEAR = 6;
   var tapSlop = SLOP;
-  /* one raise counter per band — see JD_zBand: a lifted object comes to
-     the top of ITS layer, never above the layers over it */
-  var zTops = { xl: 1000, l: 11000, other: 21000 };
-  function zRaise(item) { return ++zTops[JD_zBand(item)]; }
+  /* the raise counter starts above every band's scatter (JD_Z_BAND), so a
+     lifted object — any size — comes to the very top of the pile */
+  var zTop = JD_Z_BAND.other + 1000;
+  function zRaise() { return ++zTop; }
+  window.JD_zRaise = zRaise;   /* the won turn item lands on top the same way */
   var pend = null, held = null, drag = false;
   var sx = 0, sy = 0, ox = 0, oy = 0;
   var pid = -1, fx = 0, fy = 0, twist = null;

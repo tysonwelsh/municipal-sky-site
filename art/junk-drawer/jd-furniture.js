@@ -604,7 +604,6 @@
     node.style.top = (a.y * 100) + '%';
     node.style.setProperty('--rot', (p.rot || 0) + 'deg');
     node.style.zIndex = Z_FOLDER;
-    node.dataset.tier = 'l';             /* raised within the large layer */
   }
 
   /* ---- the data ----------------------------------------------------------

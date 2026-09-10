@@ -60,10 +60,11 @@ great on a phone. See PLAN-MOBILE.md.
 
 ## Status
 
-**Layers (2026-09-10, v0.9.110)**: the pile stacks by size tier — `xl`
-on the floor, `l` above, everything smaller on top in any order — at load
-and on every drag, drop and return (`JD_zBase` in `jd-core.js`: a z band
-per tier plus the item's own number; one raise counter per band).
+**Layers at load (2026-09-10, v0.9.110–112)**: the drawer opens with the
+pile stacked by size tier — `xl` on the floor, `l` above, everything
+smaller on top in any order (`JD_zBase` in `jd-core.js`: a z band per
+tier plus the item's scatter number). That is the deal only: anything the
+visitor lifts comes to the very top, and the next load deals afresh.
 
 **Hide and show (2026-09-10, v0.9.108–109)**: a HIDE FROM DRAWER checkbox
 on the admin card's save row, filed with the ratings, live for turns and
