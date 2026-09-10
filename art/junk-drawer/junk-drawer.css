@@ -4236,6 +4236,32 @@ html.jd-folder-open { overflow: hidden; }
 }
 .rc-save:hover { background: #e5c06b; }
 .rc-save:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+/* the hide switch wears the same hand, outlined: a second act, not the main one */
+.rc-hide {
+  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #6d5426; background: none; border: 1px solid #c9a84c; border-radius: 2px;
+  padding: 3px 9px; cursor: pointer;
+}
+.rc-hide:hover { background: rgba(201, 168, 76, 0.18); }
+.rc-hide:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+/* a specimen the admin hid leaves the pile on the spot (data.php holds it
+   back on the next load); !important because .jd-item sets its own display */
+.jd-item.jd-item--hidden { display: none !important; }
+/* the admin strip's hidden-items list rides the prompt sheet's paper */
+.jd-bench-sheet .jd-bench-hidden-row {
+  display: flex; align-items: center; gap: 10px; padding: 4px 0;
+  border-top: 1px dashed rgba(48, 38, 20, 0.25);
+}
+.jd-bench-sheet .jd-bench-hidden-row:first-of-type { border-top: 0; }
+.jd-bench-sheet .jd-bench-hidden-row b { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jd-bench-sheet .jd-bench-show {
+  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
+  padding: 3px 8px; cursor: pointer; white-space: nowrap;
+}
+.jd-bench-sheet .jd-bench-show:hover { background: #e5c06b; }
 .rc-edit-status {
   font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
   text-transform: uppercase; color: #8c8676;

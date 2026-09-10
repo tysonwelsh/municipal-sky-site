@@ -64,7 +64,7 @@ Every primary key is an app-generated ULID (`CHAR(26)`, time-ordered), so
 | `title` | the object's tag title, as `jd-title.php` proposed and the visitor accepted (≤ 80 chars) |
 | `size_class` | a `taxonomy.json` `sizeTiers` id (`xs`/`s`/`m`/`l`/`xl`), as filed by the visitor's size card or the bench |
 | `suppressed` | 1 = the visitor ticked "keep this one out of the drawer" |
-| `retire_requested_at` | curator pressed SCRAP at the bench; `NULL` = not requested (a later UNSCRAP clears it) |
+| `retire_requested_at` | **the hide switch.** Set by SCRAP at the bench or HIDE FROM DRAWER on the admin card; cleared by SHOW IN DRAWER. `NULL` = shown. Live for turns and curated items since 2026-09-10 |
 | `rerun_requested_at` | curator pressed RERUN; same convention |
 
 Indexes: `uq_client_ref`, `idx_visitor_created (visitor_hash, created)` for the
@@ -77,11 +77,13 @@ last card. `jd-item-rate.php` files `size_class` for the bench. `jd-curate.php`
 sets and clears the two `*_requested_at` intents. Nothing else writes it.
 
 **Who reads what.** `data.php` shows a turn in the drawer only when
-`item_id IS NULL AND status = 'rated' AND suppressed = 0 AND retire_requested_at IS NULL`.
-The intents are not enforced against the filesystem by the server: a curated
-item's `retire_requested_at` is carried out later by `scripts/apply-scraps.py`
-(sets `"retired": true` in its `entry.json`), and `rerun_requested_at` is
-consumed by the bench's own rerun, which files a fresh turn.
+`item_id IS NULL AND status = 'rated' AND suppressed = 0 AND retire_requested_at IS NULL`,
+and holds a curated item back from the manifest when its submission carries
+`retire_requested_at` (single-item mode still answers, marked `hidden`).
+`scripts/apply-scraps.py` may still carry a curated hide into its
+`entry.json` (`"retired": true`) for the permanent record; that file-level
+retirement needs a commit to undo. `rerun_requested_at` is consumed by the
+bench's own rerun, which files a fresh turn.
 
 ### jd_generations — one row per model per submission
 
