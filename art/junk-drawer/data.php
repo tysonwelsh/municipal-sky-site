@@ -42,8 +42,8 @@ try {
         $dbStamp .= '|no-ranks';
     }
     $sizes = '';
-    foreach ($dbc->query("SELECT id, size_class FROM jd_submissions WHERE item_id IS NOT NULL AND size_class IS NOT NULL ORDER BY id") as $sz) {
-        $sizes .= $sz['id'] . '=' . $sz['size_class'] . ',';
+    foreach ($dbc->query("SELECT id, size_class, retire_requested_at FROM jd_submissions WHERE item_id IS NOT NULL AND (size_class IS NOT NULL OR retire_requested_at IS NOT NULL) ORDER BY id") as $sz) {
+        $sizes .= $sz['id'] . '=' . $sz['size_class'] . '/' . $sz['retire_requested_at'] . ',';
     }
     $dbStamp .= '|' . md5($sizes);
 } catch (Throwable $e) {
@@ -163,6 +163,11 @@ function jd_best_graded(array $responses): ?string
 //   · rank rides along as `rank`
 //   · the size the bench filed (jd_submissions.size_class) replaces the
 //     entry's sizeClass
+//   · a curated item the curator HID (retire_requested_at set — SCRAP at
+//     the bench, HIDE FROM DRAWER on the admin card) is held back from the
+//     manifest like a hidden turn, live, no commit (2026-09-10); it still
+//     answers in single-item mode, marked `hidden`, so the admin card can
+//     put it back
 //   · which response the drawer SHOWS: the bench's 1st place whenever the
 //     bench has ranked EVERY served response (owner, 2026-09-05: a re-rank
 //     re-points the drawer without a harvest, over any `primary` the entry
@@ -186,7 +191,7 @@ try {
     $cLive = jd_live_axes($taxonomy);
 
     $subByItem = [];
-    foreach ($cdb->query('SELECT id, item_id, size_class FROM jd_submissions WHERE item_id IS NOT NULL') as $row) {
+    foreach ($cdb->query('SELECT id, item_id, size_class, retire_requested_at FROM jd_submissions WHERE item_id IS NOT NULL') as $row) {
         $subByItem[(string) $row['item_id']] = $row;
     }
     $cgens = [];
@@ -256,6 +261,9 @@ try {
         }
         if (!empty($sub['size_class'])) {
             $entry['sizeClass'] = (string) $sub['size_class'];
+        }
+        if (!empty($sub['retire_requested_at'])) {
+            $entry['hidden'] = true;
         }
         $first = null;
         if ($allRanked) {
@@ -466,9 +474,9 @@ if (isset($_GET['item'])) {
     exit();
 }
 
-// Full manifest: retired items excluded, newest first.
+// Full manifest: retired and hidden items excluded, newest first.
 $items = array_values(array_filter($items, function ($e) {
-    return empty($e['retired']);
+    return empty($e['retired']) && empty($e['hidden']);
 }));
 usort($items, function ($a, $b) {
     return strcmp($b['created'], $a['created']) ?: strcmp($b['id'], $a['id']);

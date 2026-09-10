@@ -60,6 +60,11 @@ great on a phone. See PLAN-MOBILE.md.
 
 ## Status
 
+**Hide and show (2026-09-10, v0.9.108)**: the admin card carries HIDE FROM
+DRAWER / SHOW IN DRAWER, live for turns and curated items alike, and the
+admin strip lists everything hidden with a SHOW for each. The bench's SCRAP
+is the same switch; nothing needs a commit any more to leave or return.
+
 **Admin mode, in place (2026-09-10, v0.9.107)**: the report card is the
 editor. With the key verified its grades table renders as the scales
 themselves, holding the values on file, and SAVE RATINGS files the shown

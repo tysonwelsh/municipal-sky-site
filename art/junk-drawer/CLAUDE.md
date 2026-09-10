@@ -161,8 +161,13 @@ code change — which is the test a future rubric edit should still pass.
   server first brings its database rows level with `entry.json`
   (`api/jd-curated-sync.php`, sixteen slots since 2026-09-10), so a
   harvested response the backfill never saw is rateable the moment it is
-  saved. The overlay in `data.php` serves the change at once. Ranks and
-  sizes are still the bench's (`?bench`) business.
+  saved. The overlay in `data.php` serves the change at once. The card
+  also carries HIDE FROM DRAWER / SHOW IN DRAWER — the item's
+  `retire_requested_at`, set or cleared through `jd-curate.php`, which
+  `data.php` honours LIVE for turns and curated items alike (no commit);
+  the strip's HIDDEN ITEMS lists everything hidden with a SHOW for each.
+  An entry retired IN ITS FILE (`apply-scraps.py` wrote it) needs a commit
+  to return. Ranks and sizes are still the bench's (`?bench`) business.
 - **THE GATE IS ON (2026-09-05).** `JD_BENCH_REQUIRE_KEY = true`: every
   curator endpoint wants the bench key (`jd_bench_key` in
   `private_config/secrets.php`, falling back to `jd_setup_key`) as

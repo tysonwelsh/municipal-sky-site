@@ -378,7 +378,10 @@
       (edit
         ? '<div class="rc-edit-row">' +
           '<button type="button" class="rc-save" data-rc="save">save ratings</button>' +
-          '<span class="rc-edit-status" aria-live="polite"></span></div>'
+          '<button type="button" class="rc-hide" data-rc="hide">' +
+          (curEntry.hidden ? 'show in drawer' : 'hide from drawer') + '</button>' +
+          '<span class="rc-edit-status" aria-live="polite">' +
+          (curEntry.hidden ? 'hidden from the drawer' : '') + '</span></div>'
         : '');
   }
 
@@ -709,6 +712,10 @@
         saveRatings();
         return;
       }
+      if (e.target.closest && e.target.closest('[data-rc="hide"]')) {
+        toggleHidden();
+        return;
+      }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
       /* REPLAY rides the plate too: it redraws, never zooms. An explicit
@@ -1004,6 +1011,42 @@
     }, function () {
       saving = false;
       setStatus('⚠ not saved (network)');
+    });
+  }
+  /* HIDE FROM DRAWER / SHOW IN DRAWER (owner, 2026-09-10): the item's
+     retire_requested_at, set or cleared through jd-curate.php — the same
+     switch the bench's SCRAP throws, now reversible, and live for curated
+     items too (data.php holds a hidden item back at request time). The
+     pile loses or regains the specimen on the spot; the card stays open
+     so the press can be undone. */
+  function toggleHidden() {
+    if (!curEntry || saving || !editable(curEntry)) return;
+    var hide = !curEntry.hidden;
+    var body = curEntry.fromTurn
+      ? { submission_id: curEntry.submission_id, retire: hide }
+      : { item_id: curEntry.id, retire: hide };
+    saving = true;
+    setStatus(hide ? 'hiding…' : 'showing…');
+    fetch(JD_API + '/api/jd-curate.php', {
+      method: 'POST',
+      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
+    }).then(function (j) {
+      saving = false;
+      if (!j || !j.ok) {
+        setStatus('⚠ not changed (' + (((j || {}).error || {}).code || 'network') + ')');
+        return;
+      }
+      curEntry.hidden = hide;
+      var el = document.querySelector('.jd-item[data-id="' + curEntry.id.replace(/"/g, '') + '"]');
+      if (el) el.classList.toggle('jd-item--hidden', hide);
+      render(false);
+      setStatus(hide ? 'hidden from the drawer' : '✓ back in the drawer');
+    }, function () {
+      saving = false;
+      setStatus('⚠ not changed (network)');
     });
   }
   /* the specimen tag reads its grade off the pile item's dataset — keep it

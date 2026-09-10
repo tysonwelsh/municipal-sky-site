@@ -3,11 +3,13 @@
 
     python3 scripts/apply-scraps.py [--dry-run]
 
-Pressing SCRAP at the bench sets retire_requested_at on the item's
-submission — an INTENT, on the database, where the drawer cannot see it.
-This is the step that carries it out: every scrapped item gets
-`"retired": true` in its entry.json, which drops it from data.php's manifest.
-Files and rows stay; retirement is display-side.
+Pressing SCRAP at the bench (or HIDE FROM DRAWER on the admin card) sets
+retire_requested_at on the item's submission. Since 2026-09-10 data.php
+honours that LIVE — the item is already out of the drawer — so this step is
+the PERMANENT RECORD, not the mechanism: every scrapped item gets
+`"retired": true` in its entry.json. Mind that a file-level retirement can
+no longer be undone from the admin card (SHOW IN DRAWER clears the column
+only); run this for items you are sure about. Files and rows stay.
 
 THE EXCEPTIONS ARE HONOURED: an entry carrying a `display_note` that says the
 owner kept it on display despite the flag (the Saturn fadograph, the pencil

@@ -19,12 +19,14 @@
    TWO MODES, ONE STRIP (owner, 2026-09-05):
      ?bench — the backlog walk: the queue seats the next item that still
               needs the curator, and the strip carries skip / prev.
-     ?admin — the key and nothing else: with it verified, every REPORT
+     ?admin — the key and the hidden list: with it verified, every REPORT
               CARD renders its grades as scales the owner can change and
-              save in place (jd-record.js owns that editor, 2026-09-10; the
-              2026-09-05 version seated the item on this bench instead,
-              which the owner found roundabout). The strip here only holds
-              the gate, the build stamp and SIGN OUT.
+              save in place, and carries HIDE FROM DRAWER (jd-record.js owns
+              that editor, 2026-09-10; the 2026-09-05 version seated the
+              item on this bench instead, which the owner found
+              roundabout). The strip here holds the gate, HIDDEN ITEMS (the
+              items retire-requested, each with a SHOW that clears the flag
+              and reloads), the build stamp and SIGN OUT.
    Both stand behind JD_admin (jd-core.js): the bench key, remembered per
    device, verified before anything paints, sent as X-Bench-Key on every
    keyed request. The server throttles wrong keys per address (429).
@@ -361,6 +363,8 @@
       if (back) openItem(back);
     } else if (kind === 'prompt') {
       toggleSheet();
+    } else if (kind === 'hidden') {
+      hiddenList();
     }
   }
 
@@ -372,6 +376,10 @@
     sheet.className = 'jd-bench-sheet';
     sheet.hidden = true;
     document.body.appendChild(sheet);
+    sheet.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-show]') : null;
+      if (b) showAgain(b.getAttribute('data-show'), b);
+    });
     bar = document.createElement('div');
     bar.className = 'jd-bench-bar';
     bar.setAttribute('role', 'toolbar');
@@ -393,6 +401,41 @@
       (it.responses.length === 1 ? ' response' : ' responses') +
       '<p>' + esc(it.prompt) + '</p>';
     sheet.hidden = false;
+  }
+  /* ---------- ADMIN: the hidden list ------------------------------------- */
+  /* every item retire-requested that is not retired IN ITS FILE (that one
+     needs a commit to return — apply-scraps.py wrote it), from a fresh
+     queue; SHOW clears the flag and reloads so the pile takes it back */
+  function hiddenList() {
+    if (!sheet) return;
+    if (!sheet.hidden) { sheet.hidden = true; return; }
+    sheet.innerHTML = '<b>hidden items</b> · loading…';
+    sheet.hidden = false;
+    fetchQueue().then(function (q) {
+      var rows = (q.items || []).filter(function (it) { return it.retire_requested && !it.retired; });
+      var filed = (q.items || []).filter(function (it) { return it.retired; }).length;
+      var h = '<b>hidden items</b> · ' + rows.length +
+        (filed ? ' <span class="jd-bench-note">(+' + filed + ' retired in their entry — a commit brings those back)</span>' : '');
+      rows.forEach(function (it) {
+        h += '<div class="jd-bench-hidden-row"><b>' + esc(it.title) + '</b>' +
+          '<span>' + esc(String(it.created).slice(0, 10)) + '</span>' +
+          '<button type="button" class="jd-bench-show" data-show="' + esc(it.item_id) + '">show in drawer</button></div>';
+      });
+      if (!rows.length) h += '<p>nothing is hidden</p>';
+      sheet.innerHTML = h;
+    }, function (code) {
+      sheet.innerHTML = '<b>hidden items</b> · ⚠ ' + esc(code || 'network');
+    });
+  }
+  function showAgain(itemId, btn) {
+    var it = itemById(itemId);
+    if (!it) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'showing…'; }
+    post(API_C, { submission_id: it.submission_id, retire: false }).then(function () {
+      location.reload();
+    }, function (err) {
+      if (btn) { btn.disabled = false; btn.textContent = '⚠ ' + ((err && err.code) || 'failed'); }
+    });
   }
   function syncHTML() {
     if (sync.state === 'saving') return '<span class="jd-bench-sync is-saving">saving…</span>';
@@ -431,7 +474,8 @@
         'title="the item’s prompt">' + esc(it.title) + '</button>' +
         (!open ? '<button type="button" data-bench="resume">resume</button>' : '');
     } else if (ADMIN) {
-      left = '<span class="jd-bench-note">open any report card — its grades are yours to change and save</span>';
+      left = '<span class="jd-bench-note">open any report card — its grades are yours to change and save</span>' +
+        '<button type="button" data-bench="hidden" title="items hidden from the drawer">hidden items</button>';
     } else {
       left = '<span class="jd-bench-note">backlog clear — ' + c.respDone + '/' +
         c.resp + ' responses filed' +

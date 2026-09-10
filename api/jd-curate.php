@@ -9,18 +9,25 @@
 // not (or withdrawn) — and this is the one endpoint that writes them.
 //
 // Request:  { "submission_id": "<ulid>", "retire": true|false, "rerun": true|false }
+//       or  { "item_id": "<entry id>", ... }   a curated item by entry id
+//           (2026-09-10, admin mode): its rows are synced from entry.json
+//           first, so an item the backfill never filed can be hidden too.
 //           Only the keys present are touched.
 // Response: the submission's current standing.
 //
-// These are INTENTS. The drawer honours retire_requested_at at request time
-// (data.php holds a scrapped turn back), and a session carries a curated
-// item's scrap into its entry.json (scripts/apply-scraps.py). A rerun is a
-// real turn the bench starts the moment the flag is filed; the queue reports
-// whether it landed (rerun_landed), so an abandoned rerun comes back.
+// retire_requested_at is the LIVE hide switch since 2026-09-10: data.php
+// holds back a turn OR a curated item that carries it, and clearing it
+// (retire:false — the report card's SHOW IN DRAWER, the admin strip's hidden
+// list) puts the item straight back. scripts/apply-scraps.py still carries
+// a curated scrap into its entry.json for the permanent record; an entry
+// retired IN THE FILE needs a commit to return. A rerun is a real turn the
+// bench starts the moment the flag is filed; the queue reports whether it
+// landed (rerun_landed), so an abandoned rerun comes back.
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
+require_once __DIR__ . '/jd-curated-sync.php';
 
 jd_require_allowed_origin();
 jd_require_post();
@@ -29,8 +36,23 @@ jd_require_bench_key();
 $body = jd_read_json_body();
 
 $submissionId = $body['submission_id'] ?? null;
+if ($submissionId === null && isset($body['item_id'])) {
+    $entry = jd_curated_entry(is_string($body['item_id']) ? $body['item_id'] : '');
+    if ($entry === null) {
+        jd_fail(404, 'not_found', 'No such curated item.');
+    }
+    try {
+        $sdb = jd_db();
+        $sdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $sync = jd_curated_sync($sdb, $entry, jd_taxonomy_required('jd-curate'));
+        $submissionId = $sync['submission_id'];
+    } catch (PDOException $e) {
+        error_log('jd-curate: curated sync failed — ' . $e->getMessage());
+        jd_fail(500, 'server_error', 'The item could not be filed.');
+    }
+}
 if (!jd_is_ulid($submissionId)) {
-    jd_fail(400, 'bad_request', 'A submission_id is required.');
+    jd_fail(400, 'bad_request', 'A submission_id or item_id is required.');
 }
 
 $sets = [];
