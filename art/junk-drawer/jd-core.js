@@ -183,6 +183,21 @@ function JD_xorshift(seed) {
   };
 }
 
+/* THE LAYERS (owner, 2026-09-10): the extra-large objects lie on the
+   drawer's floor, the large ones on those, and everything smaller on top —
+   whatever order the smaller ones take among themselves. Every z the pile
+   hands an item is a BAND base plus its own number: the scatter's stack
+   order at load, the raise counter on a drag, drop or return. The bands
+   are far apart so a session of dragging never climbs out of one. The
+   pile is its own stacking context (z 2 in the well), so these numbers
+   never compete with the tag / elastic / picked-item sandwich (70–72). */
+var JD_Z_BAND = { xl: 0, l: 10000, other: 20000 };
+function JD_zBand(el) {
+  var t = el && el.dataset ? el.dataset.tier : '';
+  return t === 'xl' || t === 'l' ? t : 'other';
+}
+function JD_zBase(el) { return JD_Z_BAND[JD_zBand(el)]; }
+
 /* has the visitor asked for stillness? (a fresh read every call — the
    preference can change while the page is open) */
 function JD_reduced() {
@@ -1012,6 +1027,7 @@ var JD_admin = (function () {
         el.dataset.rank = item._rank;
         el.dataset.steps = item._steps;
         el.dataset.size = item._sizeLabel;
+        el.dataset.tier = item.sizeClass || 'm';     /* the z band (JD_zBase) */
         el.dataset.url = item._url;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
@@ -1053,7 +1069,9 @@ var JD_admin = (function () {
         el.style.left = (a.x * 100) + '%';
         el.style.top = (a.y * 100) + '%';
         el.style.setProperty('--rot', p.rot + 'deg');
-        el.style.zIndex = p.z;
+        /* the stack order within its band: a stored scatter from before the
+           bands (z alone) lands in them the same way */
+        el.style.zIndex = JD_zBase(el) + p.z;
       });
       if (window.JD_wirePile) window.JD_wirePile();
       /* the drawer's own hardware goes in on top of the collection: the
@@ -1154,7 +1172,10 @@ var JD_admin = (function () {
      scroll (then a page-flip) on device — owner report, 2026-07-26 */
   var SLOP = 8, TOUCH_SLOP = 14, CLEAR = 6;
   var tapSlop = SLOP;
-  var zTop = 100;
+  /* one raise counter per band — see JD_zBand: a lifted object comes to
+     the top of ITS layer, never above the layers over it */
+  var zTops = { xl: 1000, l: 11000, other: 21000 };
+  function zRaise(item) { return ++zTops[JD_zBand(item)]; }
   var pend = null, held = null, drag = false;
   var sx = 0, sy = 0, ox = 0, oy = 0;
   var pid = -1, fx = 0, fy = 0, twist = null;
@@ -1741,7 +1762,7 @@ var JD_admin = (function () {
   function returnToPile(item) {
     if (item.parentNode === well && pileEl) {
       pileEl.appendChild(item);
-      item.style.zIndex = ++zTop;
+      item.style.zIndex = zRaise(item);
     }
   }
   function hideTag() {
@@ -1805,7 +1826,7 @@ var JD_admin = (function () {
   }
 
   function pick(item) {
-    item.style.zIndex = ++zTop;
+    item.style.zIndex = zRaise(item);
     if (picked && picked !== item) {
       picked.classList.remove('is-picked');
       returnToPile(picked);
@@ -1990,7 +2011,7 @@ var JD_admin = (function () {
   function settle(item, moved) {
     item.classList.remove('is-held');
     /* the turn button settles into nothing: it never moved (place() refuses),
-       it keeps its fixed z instead of riding zTop, and it gets no landing
+       it keeps its fixed z instead of riding the raise counter, and it gets no landing
        jostle — its seat is not the visitor's to change any more */
     if (item.dataset.turn === 'object') {
       item.style.removeProperty('--dx');
@@ -1999,9 +2020,9 @@ var JD_admin = (function () {
     }
     if (pendingReturn === item) { returnToPile(item); pendingReturn = null; }
     /* the picked item keeps its place in the z-sandwich (tag 70 < rope 71 <
-       item 72) instead of riding the zTop counter — it is still selected and
+       item 72) instead of riding the raise counter — it is still selected and
        the elastic must still pass under it */
-    item.style.zIndex = item === picked ? 72 : ++zTop;
+    item.style.zIndex = item === picked ? 72 : zRaise(item);
     if (moved) {                                 /* bake position, then rest */
       var w = well.getBoundingClientRect();
       item.style.left = (dropX / w.width * 100).toFixed(2) + '%';

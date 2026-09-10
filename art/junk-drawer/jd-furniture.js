@@ -63,10 +63,12 @@
      (loader: turnRect / JD_avoidTurn). aspect is the asset's 240×300
      viewBox — keep in step if the artwork's proportions ever change. */
   var GEOM = { id: 'jd-turn-object', fine: FINE, aspect: 240 / 300, inset: CORNER.inset };
-  var Z_FIXED = 99;   /* over every scattered item (their z runs 1..N) and
-                         under zTop (100+), where anything the visitor drags
-                         goes — junk deliberately dropped on the button still
-                         covers it, but a fresh scatter never buries it */
+  var Z_FIXED = JD_Z_BAND.other + 99;   /* over every scattered item (their
+                         z runs band + 1..N — the top band since the layers,
+                         2026-09-10) and under the raise counter (band +
+                         1000+), where anything the visitor drags goes — junk
+                         deliberately dropped on the button still covers it,
+                         but a fresh scatter never buries it */
   var PRESS_MS = 640, PRESS_MS_CALM = 320, OPEN_MS = 200;
 
   var calm = window.matchMedia
@@ -316,9 +318,10 @@
   var ASSET = '/art/junk-drawer/instructions-object.svg';
   var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
   var FALLBACK_BOX = 30;               /* = BASE.xl, if the drawer never loaded */
-  var Z_SHEET_MIN = 101;               /* floor: over scatter (1..N), the turn
-                                          button (99) and restored wins (100)
-                                          even if the pile reads empty */
+  var Z_SHEET_MIN = JD_Z_BAND.other + 101;   /* floor: over the top band's
+                                          scatter (1..N), the turn button (+99)
+                                          and restored wins (+100) even if the
+                                          pile reads empty (bands: 2026-09-10) */
   var ROT = 7;                         /* load tilt, ± degrees */
   var INSET = 0.012;                   /* same wall clearance as the scatter */
 
@@ -487,8 +490,10 @@
   var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
   var FALLBACK_BOX = 22;               /* = BASE.l, if the drawer never loaded */
   var ROT = 34;                        /* the pile's own scatter range, ± deg */
-  var Z_FOLDER = 50;                   /* above nothing in particular: it is
-                                          ordinary junk, and it says so */
+  var Z_FOLDER = JD_Z_BAND.l + 50;     /* above nothing in particular: it is
+                                          ordinary junk, and it says so — LARGE
+                                          junk, so it lies in the large layer
+                                          (bands: 2026-09-10) */
   var INSET = 0.012;                   /* same wall clearance as the scatter */
 
   var art = null, box = null, armed = false, el = null;
@@ -599,6 +604,7 @@
     node.style.top = (a.y * 100) + '%';
     node.style.setProperty('--rot', (p.rot || 0) + 'deg');
     node.style.zIndex = Z_FOLDER;
+    node.dataset.tier = 'l';             /* raised within the large layer */
   }
 
   /* ---- the data ----------------------------------------------------------
