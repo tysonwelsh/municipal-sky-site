@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOLOB console mockups — four ways</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — CONSOLE MOCKUPS · FOUR WAYS
+   The console band redrawn as ONE row: play and stop as icon-only buttons,
+   the volume slider beside them, the Liahona dial gone (the wheel does its
+   work now). Four treatments, each shown in place between the staff's foot
+   and the hymn board, with the button states (idle · playing · pressed)
+   beside. The sliders are live: drag them.
+   ========================================================================== */
+:root {
+  --cover: #14382c; --cover-hi: #1a4536; --cover-lo: #0e2a21;
+  --paper: #f5f0e4; --paper-lo: #ece5d3; --paper-hi: #faf6ec;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --ink-hair: rgba(30, 77, 59, 0.14);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45; --gilt-hi: #c9b66e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding: 2.6rem 1rem 4rem; color: var(--ink); }
+.mock-label { max-width: 860px; margin: 3rem auto 0.8rem; font-size: 0.7rem; letter-spacing: 0.24em; color: #888; text-transform: uppercase; }
+.mock-label:first-child { margin-top: 0; }
+.mock-label b { color: #333; font-weight: 500; }
+.mock-note { max-width: 860px; margin: 0.8rem auto 0; font-size: 0.9rem; font-style: italic; color: #666; line-height: 1.5; }
+.mock-states { max-width: 860px; margin: 0.9rem auto 0; display: flex; gap: 2.2rem; align-items: center; flex-wrap: wrap; padding: 0.9rem 1.2rem; background: var(--paper); border-radius: 2px; }
+.mock-states .st { display: flex; align-items: center; gap: 0.6rem; }
+.mock-states .st > span:first-child { font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: #888; width: 4.6em; }
+
+.kolob-mat { position: relative; max-width: 860px; margin: 0 auto; padding: 34px; border-radius: 3px;
+  background: radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22); }
+.kolob-mat::after { content: ""; position: absolute; inset: 0; border-radius: 3px; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E"); }
+.kolob-mat::before { content: ""; position: absolute; inset: 13px; pointer-events: none; z-index: 1; border: 1px solid var(--gilt); opacity: 0.75; }
+.kolob-page { position: relative; z-index: 2; background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink); border-radius: 1px; padding: 1.6rem 2.8rem 1.8rem; box-shadow: 0 1px 0 rgba(255,250,235,0.1) inset, 0 6px 18px rgba(0,0,0,0.35); }
+.kolob-page::after { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E"); }
+.kolob-page > * { position: relative; z-index: 1; }
+
+/* ---- context: the staff's foot above, the programme board below ---- */
+.ctx-staff { height: 62px; position: relative; margin: 0 0 0.6rem; }
+.ctx-staff::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 40px;
+  background: repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 10px); }
+.ctx-cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 2.8rem; margin-top: 2.8rem; }
+.ctx-board { background: linear-gradient(175deg, var(--cover-hi), var(--cover)); border-radius: 3px; padding: 0.9rem 1rem 1rem; box-shadow: inset 0 1px 6px rgba(0,0,0,0.4); }
+.ctx-prog { background: var(--paper); border-radius: 1px; padding: 0.8rem 1rem 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.5); text-align: center; position: relative; }
+.ctx-prog::before { content: ""; position: absolute; left: 50%; top: 5px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--gilt); }
+.ctx-prog .day { font-size: 0.8rem; letter-spacing: 0.24em; text-transform: uppercase; margin: 0.35rem 0; }
+.ctx-prog .rule { height: 5px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 24% 0.5rem; }
+.ctx-prog .mm { font-style: italic; font-size: 1.05rem; }
+.ctx-prog .mm i { color: var(--gilt); }
+.ctx-prog .nums { margin-top: 0.45rem; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+.ctx-prog .nums b { font-weight: 500; color: var(--ink); letter-spacing: 0.06em; font-size: 0.92rem; }
+.ctx-seed { display: flex; align-items: center; gap: 0.55rem; margin-top: 0.85rem; color: rgba(245,240,228,0.7); font-size: 0.95rem; }
+.ctx-seed .k { font-size: 0.78rem; letter-spacing: 0.14em; color: rgba(245,240,228,0.55); }
+.ctx-seed .in { flex: 1 1 4em; min-width: 0; height: 1.9rem; background: rgba(245,240,228,0.09); border: 1px solid rgba(245,240,228,0.3); border-radius: 2px; }
+.ctx-seed .g { border: 1px solid rgba(245,240,228,0.45); border-radius: 2px; padding: 0.35rem 0.9rem; font-size: 0.82rem; letter-spacing: 0.16em; color: var(--paper); }
+.ctx-verse { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 1.06rem; line-height: 2; letter-spacing: 0.06em; opacity: 0.82; }
+
+/* ---- shared: the row, the glyphs, the range reset ---- */
+.console { display: flex; align-items: center; gap: 0.6rem; }
+.console .sp { flex: 1; }
+.glyph { display: block; width: 1em; height: 1em; }
+.vol { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
+input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; margin: 0; touch-action: pan-y; --v: 60%; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; }
+button { font: inherit; cursor: pointer; }
+
+/* ======================= 1 · LETTERPRESS ================================ */
+/* The page's own idiom, tidied: two square paper stamps with a hairline
+   border and the 1.5px letterpress shadow, the glyph alone; the play stamp
+   inks solid while playing. The slider is a hairline with the ink filled to
+   the bead and a small ring bead. The band keeps its two rules. */
+.c1 { padding: 0.55rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.c1 .btn { width: 44px; height: 36px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); background: var(--paper); border: 1px solid var(--ink-soft); border-radius: 2px; box-shadow: 0 1.5px 0 var(--ink-faint); transition: background 200ms, color 200ms; }
+.c1 .btn:hover { background: var(--paper-hi); }
+.c1 .btn:active, .c1 .btn.is-pressed { transform: translateY(1px); box-shadow: 0 0 0 var(--ink-faint); }
+.c1 .btn.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.c1 .btn .glyph { font-size: 15px; }
+.c1 input[type=range] { width: 180px; height: 22px; }
+.c1 input[type=range]::-webkit-slider-runnable-track { height: 1px; background: linear-gradient(to right, var(--ink) var(--v), var(--ink-faint) var(--v)); }
+.c1 input[type=range]::-webkit-slider-thumb { width: 13px; height: 13px; margin-top: -6px; border-radius: 50%; background: var(--paper); border: 1.2px solid var(--ink); box-shadow: 0 1px 1px rgba(0,0,0,0.2); }
+.c1 input[type=range]::-moz-range-track { height: 1px; background: var(--ink-faint); }
+.c1 input[type=range]::-moz-range-progress { height: 1px; background: var(--ink); }
+.c1 input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 1.2px solid var(--ink); }
+
+/* ======================= 2 · THE SWITCH ================================= */
+/* Play and stop as ONE segmented control — two keys in a single outlined
+   case, a hairline between them; the key that is engaged fills with ink.
+   The slider runs in an engraved groove (a recessed track with a paper knob
+   ringed in ink). The band loses its rules: the row sits on the page with
+   only the plates' rhythm around it. */
+.c2 { padding: 0.2rem 0; }
+.c2 .seg { display: inline-flex; border: 1px solid var(--ink-soft); border-radius: 3px; overflow: hidden; background: var(--paper); box-shadow: 0 1px 0 var(--ink-hair); }
+.c2 .seg .btn { width: 46px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); background: transparent; border: 0; transition: background 200ms, color 200ms; }
+.c2 .seg .btn + .btn { border-left: 1px solid var(--ink-soft); }
+.c2 .seg .btn:hover { background: var(--paper-hi); }
+.c2 .seg .btn.is-on { background: var(--ink); color: var(--paper); }
+.c2 .seg .btn.is-pressed { background: var(--paper-lo); }
+.c2 .seg .btn .glyph { font-size: 14px; }
+.c2 input[type=range] { width: 200px; height: 24px; }
+.c2 input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--ink-soft) var(--v), var(--paper-lo) var(--v)); box-shadow: inset 0 1px 2px rgba(0,0,0,0.22); }
+.c2 input[type=range]::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -5px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.c2 input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--paper-lo); box-shadow: inset 0 1px 2px rgba(0,0,0,0.22); }
+.c2 input[type=range]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--ink-soft); }
+.c2 input[type=range]::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); }
+
+/* ======================= 3 · THE INK DOTS =============================== */
+/* Round buttons, as an interface has them: play a solid ink disc with a
+   paper triangle, stop a ring with an ink square — the one you press most
+   is the one that is filled. Playing, the disc turns gilt. The slider is a
+   2px ink line with a solid ink bead. One rule beneath the row only. */
+.c3 { padding: 0.35rem 0 0.7rem; border-bottom: 1px solid var(--rule); gap: 0.75rem; }
+.c3 .btn { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1.2px solid var(--ink); background: var(--paper); color: var(--ink); transition: background 200ms, color 200ms, transform 120ms; }
+.c3 .btn.primary { background: var(--ink); color: var(--paper); }
+.c3 .btn:hover { transform: translateY(-1px); }
+.c3 .btn.is-pressed { transform: translateY(1px); }
+.c3 .btn.primary.is-on { background: var(--gilt); border-color: var(--gilt); color: var(--paper); }
+.c3 .btn .glyph { font-size: 14px; }
+.c3 .btn.primary .glyph { margin-left: 2px; }
+.c3 input[type=range] { width: 200px; height: 24px; }
+.c3 input[type=range]::-webkit-slider-runnable-track { height: 2px; border-radius: 1px; background: linear-gradient(to right, var(--ink) var(--v), var(--ink-faint) var(--v)); }
+.c3 input[type=range]::-webkit-slider-thumb { width: 14px; height: 14px; margin-top: -6px; border-radius: 50%; background: var(--ink); border: 2px solid var(--paper); box-shadow: 0 0 0 1.2px var(--ink); }
+.c3 input[type=range]::-moz-range-track { height: 2px; background: var(--ink-faint); }
+.c3 input[type=range]::-moz-range-progress { height: 2px; background: var(--ink); }
+.c3 input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); border: 2px solid var(--paper); box-shadow: 0 0 0 1.2px var(--ink); }
+
+/* ======================= 4 · THE RAIL =================================== */
+/* The controls on a rail of the board's green, the way an organ's stops sit
+   on a jamb: two paper drawknobs, each with an engraved ring and the glyph
+   cut into it (play turns gilt while drawn), and the volume as a swell
+   lever — a brass slide in a dark slot. The rail is one bounded strip, no
+   rules; more furniture, more character. */
+.c4 { padding: 0.55rem 0.9rem; border-radius: 3px; background: linear-gradient(175deg, var(--cover-hi), var(--cover)); box-shadow: inset 0 1px 6px rgba(0,0,0,0.4); gap: 0.8rem; }
+.c4 .knob { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: radial-gradient(circle at 40% 35%, #fbf7ec, var(--paper) 55%, var(--paper-lo)); color: var(--cover); border: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(30,77,59,0.35), inset 0 0 0 4px var(--paper), inset 0 0 0 5px rgba(30,77,59,0.22); transition: background 250ms, transform 120ms; }
+.c4 .knob:hover { transform: translateY(-1px); }
+.c4 .knob.is-pressed { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(30,77,59,0.35), inset 0 0 0 4px var(--paper), inset 0 0 0 5px rgba(30,77,59,0.22); }
+.c4 .knob.is-on { background: radial-gradient(circle at 40% 35%, #d9c986, var(--gilt) 60%, #6e6136); color: var(--paper); box-shadow: 0 2px 4px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(0,0,0,0.25), inset 0 0 0 4px var(--gilt), inset 0 0 0 5px rgba(245,240,228,0.35); }
+.c4 .knob .glyph { font-size: 13px; }
+.c4 .vol { color: rgba(245,240,228,0.55); }
+.c4 input[type=range] { width: 210px; height: 26px; }
+.c4 input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 2px; background: linear-gradient(to right, rgba(201,182,110,0.35) var(--v), var(--cover-lo) var(--v)); box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(245,240,228,0.08); }
+.c4 input[type=range]::-webkit-slider-thumb { width: 12px; height: 22px; margin-top: -7px; border-radius: 2px; background: linear-gradient(to bottom, #d9c986, var(--gilt) 55%, #6e6136); border: 1px solid #3f3720; box-shadow: 0 2px 3px rgba(0,0,0,0.6); }
+.c4 input[type=range]::-moz-range-track { height: 8px; border-radius: 2px; background: var(--cover-lo); box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); }
+.c4 input[type=range]::-moz-range-progress { height: 8px; border-radius: 2px; background: rgba(201,182,110,0.35); }
+.c4 input[type=range]::-moz-range-thumb { width: 11px; height: 21px; border-radius: 2px; background: linear-gradient(to bottom, #d9c986, var(--gilt) 55%, #6e6136); border: 1px solid #3f3720; }
+
+@media (max-width: 700px) {
+  .kolob-mat { padding: 18px; }
+  .kolob-page { padding: 1.4rem 1.2rem; }
+  .ctx-cols { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
+  .console .sp { flex: 0 0 0.4rem; }
+  .console input[type=range] { flex: 1 1 auto; width: auto; min-width: 0; }
+  .c1 .vol, .c2 .vol, .c3 .vol, .c4 .vol { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- the two glyphs, once -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="g-play" viewBox="0 0 16 16"><path d="M3.5 2.2v11.6L13.2 8z" fill="currentColor"/></symbol>
+  <symbol id="g-stop" viewBox="0 0 16 16"><rect x="3.4" y="3.4" width="9.2" height="9.2" fill="currentColor"/></symbol>
+</svg>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>1 · Letterpress</b> — the page’s own stamps, glyph only, the band kept</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="console c1">
+    <button class="btn" aria-label="play"><svg class="glyph"><use href="#g-play"/></svg></button>
+    <button class="btn" aria-label="stop"><svg class="glyph"><use href="#g-stop"/></svg></button>
+    <span class="sp"></span>
+    <span class="vol">Vol</span>
+    <input type="range" min="0" max="100" value="60" aria-label="master volume" />
+  </div>
+  <div class="ctx-cols">
+    <div class="ctx-board"><div class="ctx-prog"><div class="day">Fast Day</div><div class="rule"></div><div class="mm">Dorian · 8.6.8.6 — <i>fuging</i></div><div class="nums">Theme <b>K·2</b> · Develops <b>3</b> · Answers <b>1</b></div></div>
+      <div class="ctx-seed"><span class="k">SEED</span><span>2275180344</span><span class="in"></span><span class="g">GATHER</span></div></div>
+    <div class="ctx-verse">the valley is still, and the steeples answer one another</div>
+  </div>
+</div></div>
+<div class="mock-states c1" style="border:0">
+  <div class="st"><span>idle</span><button class="btn"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+  <div class="st"><span>playing</span><button class="btn is-on"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+  <div class="st"><span>pressed</span><button class="btn is-pressed"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn is-pressed"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+</div>
+<p class="mock-note">The least change: the same paper stamps and letterpress shadow the page already has, squared up and reduced to the glyph, with a filled play while the meeting runs. The slider gains an ink fill up to the bead so the level reads at a glance. Keeps the band’s two rules. Row height about 50px (was ~85 with the dial).</p>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>2 · The Switch</b> — play and stop as one segmented control, a grooved slider, no rules</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="console c2">
+    <span class="seg"><button class="btn" aria-label="play"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn" aria-label="stop"><svg class="glyph"><use href="#g-stop"/></svg></button></span>
+    <span class="sp"></span>
+    <span class="vol">Vol</span>
+    <input type="range" min="0" max="100" value="60" aria-label="master volume" />
+  </div>
+  <div class="ctx-cols">
+    <div class="ctx-board"><div class="ctx-prog"><div class="day">Fast Day</div><div class="rule"></div><div class="mm">Dorian · 8.6.8.6 — <i>fuging</i></div><div class="nums">Theme <b>K·2</b> · Develops <b>3</b> · Answers <b>1</b></div></div>
+      <div class="ctx-seed"><span class="k">SEED</span><span>2275180344</span><span class="in"></span><span class="g">GATHER</span></div></div>
+    <div class="ctx-verse">the valley is still, and the steeples answer one another</div>
+  </div>
+</div></div>
+<div class="mock-states c2">
+  <div class="st"><span>idle</span><span class="seg"><button class="btn"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></span></div>
+  <div class="st"><span>playing</span><span class="seg"><button class="btn is-on"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></span></div>
+  <div class="st"><span>pressed</span><span class="seg"><button class="btn is-pressed"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></span></div>
+</div>
+<p class="mock-note">Play and stop become one object — a two-key switch in a single outlined case, the engaged key inked — which reads as a transport control rather than two loose buttons. The slider runs in a recessed groove with a ringed paper knob. The band’s two rules go, so the row costs only its own height (~40px) plus the plates’ rhythm; the tightest of the four.</p>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>3 · The Ink Dots</b> — round buttons, a filled primary, a rule beneath only</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="console c3">
+    <button class="btn primary" aria-label="play"><svg class="glyph"><use href="#g-play"/></svg></button>
+    <button class="btn" aria-label="stop"><svg class="glyph"><use href="#g-stop"/></svg></button>
+    <span class="sp"></span>
+    <span class="vol">Vol</span>
+    <input type="range" min="0" max="100" value="60" aria-label="master volume" />
+  </div>
+  <div class="ctx-cols">
+    <div class="ctx-board"><div class="ctx-prog"><div class="day">Fast Day</div><div class="rule"></div><div class="mm">Dorian · 8.6.8.6 — <i>fuging</i></div><div class="nums">Theme <b>K·2</b> · Develops <b>3</b> · Answers <b>1</b></div></div>
+      <div class="ctx-seed"><span class="k">SEED</span><span>2275180344</span><span class="in"></span><span class="g">GATHER</span></div></div>
+    <div class="ctx-verse">the valley is still, and the steeples answer one another</div>
+  </div>
+</div></div>
+<div class="mock-states c3" style="border:0">
+  <div class="st"><span>idle</span><button class="btn primary"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+  <div class="st"><span>playing</span><button class="btn primary is-on"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+  <div class="st"><span>pressed</span><button class="btn primary is-pressed"><svg class="glyph"><use href="#g-play"/></svg></button><button class="btn is-pressed"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+</div>
+<p class="mock-note">The most “interface” of the four: a solid ink play disc as the primary action and a ringed stop as the secondary, the way a media player sets them; the disc turns gilt while the meeting runs (gilt is the page’s colour for what moves). A 2px ink slider with a solid bead. One hairline beneath the row, none above, so the row sits close under the staff.</p>
+
+<!-- ======================================================================= -->
+<div class="mock-label"><b>4 · The Rail</b> — drawknobs and a swell lever on a strip of the board’s green</div>
+<div class="kolob-mat"><div class="kolob-page">
+  <div class="ctx-staff"></div>
+  <div class="console c4">
+    <button class="knob" aria-label="play"><svg class="glyph"><use href="#g-play"/></svg></button>
+    <button class="knob" aria-label="stop"><svg class="glyph"><use href="#g-stop"/></svg></button>
+    <span class="sp"></span>
+    <span class="vol">Vol</span>
+    <input type="range" min="0" max="100" value="60" aria-label="master volume" />
+  </div>
+  <div class="ctx-cols">
+    <div class="ctx-board"><div class="ctx-prog"><div class="day">Fast Day</div><div class="rule"></div><div class="mm">Dorian · 8.6.8.6 — <i>fuging</i></div><div class="nums">Theme <b>K·2</b> · Develops <b>3</b> · Answers <b>1</b></div></div>
+      <div class="ctx-seed"><span class="k">SEED</span><span>2275180344</span><span class="in"></span><span class="g">GATHER</span></div></div>
+    <div class="ctx-verse">the valley is still, and the steeples answer one another</div>
+  </div>
+</div></div>
+<div class="mock-states c4" style="border-radius:3px">
+  <div class="st"><span style="color:rgba(245,240,228,.55)">idle</span><button class="knob"><svg class="glyph"><use href="#g-play"/></svg></button><button class="knob"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+  <div class="st"><span style="color:rgba(245,240,228,.55)">playing</span><button class="knob is-on"><svg class="glyph"><use href="#g-play"/></svg></button><button class="knob"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+  <div class="st"><span style="color:rgba(245,240,228,.55)">pressed</span><button class="knob is-pressed"><svg class="glyph"><use href="#g-play"/></svg></button><button class="knob is-pressed"><svg class="glyph"><use href="#g-stop"/></svg></button></div>
+</div>
+<p class="mock-note">The one with character: the controls sit on a rail of the board’s green — two paper drawknobs with engraved rings and the glyph cut in (play turns gilt while drawn), and the volume as a swell lever, a brass slide in a dark slot. It answers the hymn board beneath it in colour, so the page reads as paper plates with green furniture. The tallest of the four (~52px) but still ~30px shorter than the present band.</p>
+
+<script>
+// the sliders' ink fill follows the bead
+document.querySelectorAll('input[type=range]').forEach(function (r) {
+  function set() { r.style.setProperty('--v', ((r.value - r.min) / (r.max - r.min) * 100) + '%'); }
+  r.addEventListener('input', set); set();
+});
+</script>
+</body>
+</html>
