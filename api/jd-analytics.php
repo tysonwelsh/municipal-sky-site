@@ -83,8 +83,10 @@ try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    // the turn table (2026-09-10) needs the turn's own facts as well
     $subs = $db->query(
-        'SELECT id, item_id FROM jd_submissions'
+        'SELECT id, item_id, prompt, created, status, suppressed, retire_requested_at
+           FROM jd_submissions'
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $gens = $db->query(
@@ -94,7 +96,7 @@ try {
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $rates = $db->query(
-        'SELECT generation_id, kind, axis_id, value, taxonomy_version
+        'SELECT generation_id, kind, axis_id, value, taxonomy_version, client
            FROM jd_ratings'
     )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -128,9 +130,11 @@ try {
 // --- population 1: which submissions are visitor turns ---------------------
 // The predicate is `item_id IS NULL`, exactly as setup-jd-tables.php spells it.
 $turnSubs = [];
+$subById = [];
 foreach ($subs as $s) {
     if (($s['item_id'] ?? null) === null) {
         $turnSubs[(string) $s['id']] = true;
+        $subById[(string) $s['id']] = $s;
     }
 }
 
@@ -224,6 +228,7 @@ foreach ($gens as $g) {
 const JD_ANALYTICS_RUBRIC_SINCE = 17;
 
 $ratedGenIds = [];
+$turnGrade = [];      // turn submission_id => model_id => the grade shown in the turn table
 $gradeByModel = [];   // model_id => ['sum', 'n']
 $axisByModel  = [];   // axis_id => model_id => ['sum', 'n']
 
@@ -266,6 +271,13 @@ foreach ($rates as $r) {
         }
         $gradeByModel[$modelId]['sum'] += $value;
         $gradeByModel[$modelId]['n']++;
+        // the turn table's cell: ONE grade per model per turn — the bench's
+        // when the curator re-graded it, else the visitor's own
+        $tsub = (string) $gen['submission_id'];
+        $prev = $turnGrade[$tsub][$modelId] ?? null;
+        if ($prev === null || ($r['client'] ?? '') === 'bench') {
+            $turnGrade[$tsub][$modelId] = $value;
+        }
         continue;
     }
 
@@ -454,6 +466,33 @@ foreach ($spendByDate as $date => $day) {
 // $running is now the whole priced spend, and totals.cost_usd below is that
 // same value — so the last cum_usd and the ledger figure agree to the byte.
 
+// --- the turn table (owner, 2026-09-10) ------------------------------------
+// One row per four-model turn ON DISPLAY, newest first: the date, the prompt,
+// and each model's overall grade. ON DISPLAY is jd-gen-svg.php's own rule —
+// status 'rated', not suppressed by the visitor, not hidden by the curator —
+// so nothing appears here that the drawer does not already show: a prompt
+// the visitor kept out stays out. Grades are current-rubric rows only (the
+// era gate above), the bench's over the visitor's. A model that failed the
+// turn has no cell. Capped at the newest 200 turns; the folder is a reading,
+// not an export.
+$turnRows = [];
+foreach ($subById as $sid => $s) {
+    if (($s['status'] ?? '') !== 'rated' || (int) ($s['suppressed'] ?? 0) === 1
+        || ($s['retire_requested_at'] ?? null) !== null) {
+        continue;
+    }
+    if (empty($turnGrade[$sid])) {
+        continue;
+    }
+    $turnRows[] = [
+        'date'   => substr((string) $s['created'], 0, 10),
+        'prompt' => (string) $s['prompt'],
+        'grades' => $turnGrade[$sid],
+    ];
+}
+usort($turnRows, static fn($a, $b) => strcmp($b['date'], $a['date']));
+$turnRows = array_slice($turnRows, 0, 200);
+
 jd_json_out(200, [
     'ok'        => true,
     'generated' => gmdate('c'),
@@ -476,4 +515,5 @@ jd_json_out(200, [
     'grades' => $grades,
     'axes'   => $axes,
     'spend'  => $spend,
+    'turns'  => $turnRows,
 ]);
