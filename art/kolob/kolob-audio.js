@@ -274,8 +274,8 @@ window.KolobAudio = (function () {
       title: "KOLOB 𐐗𐐄𐐢𐐉𐐒",
       artist: "Municipal Sky",
       artwork: "/images/kolob-share.png",
-      onPlay: play,
-      onPause: stop,
+      onPlay: play,                                  // resumes a held meeting, or calls one
+      onPause: pause,                                // the lock screen holds the meeting; it does not end it
     }) : null;
     if (!bg || !bg.routed) compressorNode.connect(ctx.destination);
 
@@ -345,17 +345,28 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // SCHEDULING + HELPERS
   // ==========================================================================
-  var timers = new Set();
-  function scheduleLayer(fn, baseMs, layer) {
-    var ms = baseMs / (getRate(layer) || 1);
-    var id = setTimeout(function () { timers.delete(id); if (playing) fn(); }, ms);
-    timers.add(id);
+  // Every cue the meeting schedules goes through here, so the meeting can be
+  // HELD: pause() clears the live timers but keeps each one's function and
+  // the time it had left, and suspends the AudioContext (which freezes the
+  // clock every section, hush, fuging spell and visit is measured against);
+  // resume() lets the clock run and re-arms the held timers with the time
+  // they had left. Nothing is pre-generated: the meeting simply stands still.
+  var timers = new Map();          // id → { fn, due }   (due on the performance clock, ms)
+  var paused = false;
+  var held = [];                   // while paused: [{ fn, remaining }]
+  function nowMs() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function arm(fn, ms) {
+    var id = setTimeout(function () {
+      timers.delete(id);
+      if (!playing) return;
+      if (paused) { held.push({ fn: fn, remaining: 0 }); return; }   // never lose a cue to a race
+      fn();
+    }, ms);
+    timers.set(id, { fn: fn, due: nowMs() + ms });
   }
-  function scheduleRaw(fn, ms) {
-    var id = setTimeout(function () { timers.delete(id); if (playing) fn(); }, ms);
-    timers.add(id);
-  }
-  function clearAllTimers() { timers.forEach(function (id) { clearTimeout(id); }); timers.clear(); }
+  function scheduleLayer(fn, baseMs, layer) { arm(fn, baseMs / (getRate(layer) || 1)); }
+  function scheduleRaw(fn, ms) { arm(fn, ms); }
+  function clearAllTimers() { timers.forEach(function (t, id) { clearTimeout(id); }); timers.clear(); held = []; }
 
   var panPool = {};
   function panAt(layer, p) {
@@ -3515,7 +3526,7 @@ window.KolobAudio = (function () {
   // ==========================================================================
   function play() {
     init();
-    if (playing) return;
+    if (playing) { if (paused) resume(); return; }   // PLAY on a held meeting lets it go on
     if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     playing = true;
     if (bg) bg.started();
@@ -3547,10 +3558,34 @@ window.KolobAudio = (function () {
     scheduleRaw(conductorTick, 1000);
     emitEvent({ cat: "transport", label: "▶ the meeting is called", detail: "seed " + seed });
   }
+  // HOLD the meeting where it stands — see the scheduling notes above. The
+  // page's transport and the lock-screen pause both come here; PLAY, the
+  // pause button again, or the lock-screen play resume it.
+  function pause() {
+    if (!playing || paused) return;
+    paused = true;
+    var now = nowMs();
+    timers.forEach(function (t, id) { clearTimeout(id); held.push({ fn: t.fn, remaining: Math.max(0, t.due - now) }); });
+    timers.clear();
+    try { if (ctx && ctx.state === "running") ctx.suspend(); } catch (e) {}
+    if (bg) bg.stopped();                            // the lock screen shows paused; the element rests
+  }
+  function resume() {
+    if (!playing || !paused) return;
+    paused = false;
+    try { if (ctx && ctx.state !== "running") ctx.resume(); } catch (e) {}
+    var list = held; held = [];
+    list.forEach(function (h) { arm(h.fn, h.remaining); });
+    if (bg) bg.started();
+  }
   function stop() {
     playing = false;
     if (bg) bg.stopped();
     clearAllTimers();
+    if (paused) {                                    // a stop from a hold: let the clock run so the fade can
+      paused = false;
+      try { if (ctx && ctx.state !== "running") ctx.resume(); } catch (e) {}
+    }
     if (voicesBus && ctx) {
       var t = ctx.currentTime;
       // fade the voices bus to zero and LEAVE it there — the drone's
@@ -3584,8 +3619,11 @@ window.KolobAudio = (function () {
   return {
     init: init,
     play: play,
+    pause: pause,
+    resume: resume,
     stop: stop,
     isPlaying: function () { return playing; },
+    isPaused: function () { return playing && paused; },
     sample: sample,
     setMasterVolume: function (v) { masterVolume = v; if (masterGain && ctx && playing) masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.1); },
     setLayerVolume: function (layer, v) { layerVolumes[layer] = v; if (ctx) applyLayerGain(layer); },

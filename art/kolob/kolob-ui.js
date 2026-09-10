@@ -21,6 +21,7 @@
   // ==========================================================================
   var STR = {
     play: "𐐑𐐢𐐁",                        // PLAY
+    pause: "𐐑𐐃𐐞",                        // PAUSE
     stop: "𐐝𐐓𐐉𐐑",                       // STOP
     vol: "𐐚𐐉𐐢",                          // VOL
     seed: "𐐝𐐀𐐔",                         // SEED
@@ -126,7 +127,7 @@
   // the owner can debug. Persisted in localStorage.
   // ==========================================================================
   var STR_EN = {
-    play: "PLAY", stop: "STOP", vol: "VOL", seed: "SEED", gather: "GATHER",
+    play: "PLAY", pause: "PAUSE", stop: "STOP", vol: "VOL", seed: "SEED", gather: "GATHER",
     meeting: "MEETING", hertz: "HERTZ", idle: "THE VALLEY IS STILL",
     listening: "THE MINUTES BEGIN", stillness: "STILLNESS", fuging: "FUGING",
     reprise: "REPRISE", develops: "DEVELOPS", disperses: "DISPERSES",
@@ -554,8 +555,11 @@
 
   function poll() {
     var playing = !!(K.isPlaying && K.isPlaying());
+    var paused = playing && !!(K.isPaused && K.isPaused());
     var playBtn = document.getElementById("kolob-play");
-    if (playBtn) playBtn.classList.toggle("is-playing", playing);
+    if (playBtn) { playBtn.classList.toggle("is-playing", playing); playBtn.classList.toggle("is-held", paused); }
+    var pauseBtn = document.getElementById("kolob-pause");
+    if (pauseBtn) { pauseBtn.classList.toggle("is-paused", paused); pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false"); }
     var scene = document.querySelector(".kolob-scene");
     var c = (K.getConductor && K.getConductor()) || {};
     if (scene) {
@@ -571,7 +575,7 @@
     updateDirection(cc, shown);
     updateBoard(c, playing);
     flushPhraseLog();
-    if (window.KolobViz && window.KolobViz.setConductor) window.KolobViz.setConductor(c, playing);
+    if (window.KolobViz && window.KolobViz.setConductor) window.KolobViz.setConductor(c, playing, paused);
   }
   setInterval(poll, 300);
 
@@ -580,24 +584,39 @@
   // ==========================================================================
   function wireTransport() {
     var playBtn = document.getElementById("kolob-play");
+    var pauseBtn = document.getElementById("kolob-pause");
     var stopBtn = document.getElementById("kolob-stop");
     var vol = document.getElementById("kolob-master-vol");
+    var leverWrap = vol ? vol.parentNode : null;
     var gather = document.getElementById("kolob-gather");
     var seedInput = document.getElementById("kolob-seed-input");
 
     if (playBtn) playBtn.addEventListener("click", function () {
+      // a held meeting resumes; otherwise a meeting is called
+      if (K.isPlaying && K.isPlaying()) { if (K.resume) K.resume(); poll(); return; }
       clearLog(); K.play(); playBtn.classList.add("is-playing");
       if (window.KolobText) window.KolobText.init(K.getSeed());
       if (broadsideTimer) clearTimeout(broadsideTimer);
       broadsideTimer = setTimeout(broadsideTick, 12000);
     });
+    // pause holds the meeting where it stands (the clock and every scheduled
+    // cue freeze with it); a second press, or PLAY, lets it go on
+    if (pauseBtn) pauseBtn.addEventListener("click", function () {
+      if (!(K.isPlaying && K.isPlaying()) || !K.pause) return;
+      if (K.isPaused && K.isPaused()) K.resume(); else K.pause();
+      poll();
+    });
     if (stopBtn) stopBtn.addEventListener("click", function () {
       K.stop(); if (playBtn) playBtn.classList.remove("is-playing");
       if (broadsideTimer) { clearTimeout(broadsideTimer); broadsideTimer = null; }
     });
-    // the swell lever: the engine follows it, and its slot's gilt fill (--v,
-    // read by kolob.css) follows the hexagon
-    function leverFill() { vol.style.setProperty("--v", ((parseInt(vol.value, 10) - vol.min) / (vol.max - vol.min) * 100) + "%"); }
+    // the volume slider: the engine follows it, and the ink fill and the
+    // hexagon thumb (--f, 0..1, read by kolob.css on the wrap) follow the
+    // invisible native thumb
+    function leverFill() {
+      var f = (parseInt(vol.value, 10) - vol.min) / (vol.max - vol.min);
+      (leverWrap || vol).style.setProperty("--f", String(Math.max(0, Math.min(1, f))));
+    }
     if (vol) {
       leverFill();
       vol.addEventListener("input", function () {
@@ -661,6 +680,8 @@
     // the drawknobs carry a glyph only; the words go to their labels
     var playBtn = document.getElementById("kolob-play");
     if (playBtn) playBtn.setAttribute("aria-label", latinMode ? "play" : S.play);
+    var pauseBtn = document.getElementById("kolob-pause");
+    if (pauseBtn) pauseBtn.setAttribute("aria-label", latinMode ? "pause" : S.pause);
     var stopBtn = document.getElementById("kolob-stop");
     if (stopBtn) stopBtn.setAttribute("aria-label", latinMode ? "stop" : S.stop);
     var empty = document.querySelector("#kolob-log .kolob-log-empty");
