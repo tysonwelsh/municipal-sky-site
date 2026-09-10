@@ -554,7 +554,10 @@
       '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="5" ' +
       'data-role="prompt" data-autofocus spellcheck="true" ' +
       'aria-label="describe an object for the drawer" ' +
-      'placeholder="a brass fish that is also a whistle">' + esc(draft) + '</textarea>' +
+      /* the placeholder INSTRUCTS rather than suggests (owner, 2026-09-10):
+         the sample object it used to show ("a brass fish that is also a
+         whistle") read as strange to a first visitor */
+      'placeholder="Describe an object you would like to see drawn as an SVG.">' + esc(draft) + '</textarea>' +
       '<p class="jd-turn-count' + (n > MAX_PROMPT ? ' is-over' : '') +
       '" aria-live="polite">' + n + ' / ' + MAX_PROMPT + '</p></div>' +
       /* the honeypot: off-screen rather than display:none (which most bots

@@ -726,22 +726,23 @@
      is still in the card underneath it. */
   function zoomHTML(entry, resp, curIdx) {
     var m = modelOf(resp.model);
-    /* THE WHOLE PHOTOGRAPH, held closer (owner, 2026-09-10): the margin
-       notes, the button row (REDRAW spelled out, at reading size), the
-       file number and the paper swap all come up with the artwork. Each
-       control is .rc-zoom-keep, which the layer's own press-to-close
-       (JD_zoomLayer) leaves alone; the record wires their clicks itself in
-       openZoom(). The art yields the bottom band to the notes, as on the
-       plate — see the fig's padding in the stylesheet. */
+    /* THE ARTWORK AND ITS TWO BUTTONS (owner, 2026-09-10, revised the same
+       day): the enlargement carries the button row — REDRAW spelled out,
+       DOWNLOAD SVG — in a band of its own under the art, and the paper swap
+       in the corner. The margin notes and the file number came up here for
+       a few hours and were sent back down: on a phone they overlapped the
+       drawing, and they are on the plate anyway. Each control is
+       .rc-zoom-keep, which the layer's own press-to-close (JD_zoomLayer)
+       leaves alone; the record wires their clicks itself in openZoom(). The
+       band is the fig's bottom padding in the stylesheet — the art never
+       reaches into it, at any width. */
     return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
       '</div>' +
       paperBtnHTML().replace('class="rc-paper"', 'class="rc-paper rc-zoom-keep"') +
-      '<div class="rc-notes">' + notesHTML(resp) + '</div>' +
       plateBtnsHTML(entry, resp, true) +
-      fileNoHTML(entry) +
       '</div>' +
       '<div class="rc-zoom-cap">' +
       '<span class="rc-zoom-cap-t">' + esc(entry.title) + ' · ' + esc(m.label) +
