@@ -2559,6 +2559,7 @@
     el.dataset.steps = (tax().grades || []).length || 5;
     el.dataset.size = window.JD_sizeLabel(tax(),
       { sizeClass: rec.sizeClass || VISITOR_TIER }) || '';
+    el.dataset.tier = rec.sizeClass || VISITOR_TIER;   /* the z band (JD_zBase) */
   }
 
   function dropIntoPile(rec, animate) {
@@ -2617,7 +2618,7 @@
     el.style.left = (p.x * 100) + '%';
     el.style.top = (p.y * 100) + '%';
     el.style.setProperty('--rot', p.rot + 'deg');
-    el.style.zIndex = p.z || 100;
+    el.style.zIndex = JD_zBase(el) + (p.z || 100);   /* its size's layer */
     if (animate) {
       el.classList.add('is-dropped');
       JD_haptic('drop');
