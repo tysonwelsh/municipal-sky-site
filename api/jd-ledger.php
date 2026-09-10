@@ -52,9 +52,12 @@ foreach ($liveAxes as $id => $axis) {
 try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // device_ref (2026-09-10) may not have reached this table yet
+    $hasDevice = jd_has_column($db, 'jd_submissions', 'device_ref');
     $subs = $db->query(
         'SELECT id, item_id, prompt, created, status, client, title, size_class,
-                suppressed, retire_requested_at, rerun_requested_at
+                suppressed, retire_requested_at, rerun_requested_at' .
+                ($hasDevice ? ', device_ref' : ', NULL AS device_ref') . '
            FROM jd_submissions ORDER BY created, id'
     )->fetchAll(PDO::FETCH_ASSOC);
     $gens = $db->query(
@@ -451,6 +454,9 @@ foreach ($turns as $s) {
             'rerun_requested'   => $s['rerun_requested_at'] !== null,
             'rerun_of'          => $rerunOf,
             'offered'           => $isOffered,
+            // the random per-device code the browser keeps (2026-09-10) —
+            // the handle that groups one visitor's turns across days
+            'device'            => $s['device_ref'] ?? null,
         ],
         'drawer'         => $drawer,
         // a shown turn's drawer id is its winning generation (data.php)

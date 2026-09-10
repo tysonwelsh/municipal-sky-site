@@ -81,6 +81,7 @@
   .st.done { color: var(--green); } .st.open { color: var(--gold); } .st.blocked { color: var(--red); } .st.off { color: var(--dim); }
   .why { color: var(--dim); font-size: 11px; }
   .why li { margin: 0; }
+  .devbtn { font: inherit; font-size: 10px; color: var(--blue); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted; }
   ul.why { margin: 2px 0 0; padding-left: 14px; }
   .resp { display: flex; flex-wrap: wrap; gap: 3px 6px; }
   .resp span { font-size: 10px; border: 1px solid var(--line); border-radius: 2px; padding: 0 4px; white-space: nowrap; background: rgba(255,255,255,0.4); }
@@ -174,7 +175,7 @@
     else if (filter === 'curated' || filter === 'turn') { if (it.kind !== filter) return false; }
     if (query) {
       var q = query.toLowerCase();
-      var hay = (it.title + ' ' + it.prompt + ' ' + it.key + ' ' + it.responses.map(function (r) { return r.model_label + ' ' + r.model; }).join(' ')).toLowerCase();
+      var hay = (it.title + ' ' + it.prompt + ' ' + it.key + ' ' + (it.flags.device || '') + ' ' + it.responses.map(function (r) { return r.model_label + ' ' + r.model; }).join(' ')).toLowerCase();
       if (hay.indexOf(q) < 0) return false;
     }
     return true;
@@ -240,7 +241,9 @@
       var open = openKey === it.key;
       h += '<tr class="item' + (open ? ' is-open' : '') + (it._groupStart ? ' group-start' : '') + '" data-key="' + esc(it.key) + '">';
       h += '<td class="title"><b>' + esc(it.title) + '</b><small>' + esc(it.key) + (it._groupN > 1 ? ' · ' + it._groupN + ' on this prompt' : '') + '</small></td>';
-      h += '<td><span class="kind ' + it.kind + '">' + it.kind + '</span>' + (it.kind === 'turn' ? '<div class="why">' + esc(it.flags.status) + (it.flags.suppressed ? ' · suppressed' : '') + '</div>' : '') + '</td>';
+      h += '<td><span class="kind ' + it.kind + '">' + it.kind + '</span>' + (it.kind === 'turn' ? '<div class="why">' + esc(it.flags.status) + (it.flags.suppressed ? ' · suppressed' : '') +
+        /* the device code: press it to gather every turn from that browser */
+        (it.flags.device ? '<br><button type="button" class="devbtn" data-q="' + esc(it.flags.device) + '" title="every turn from this device">device ' + esc(it.flags.device.slice(0, 8)) + '</button>' : '') + '</div>' : '') + '</td>';
       h += '<td>' + esc(String(it.created).slice(0, 10)) + '</td>';
       h += '<td>' + esc(it.size.filed || it.size.entry || '—') + (it.size.filed && it.size.entry && it.size.filed !== it.size.entry ? '<div class="why">entry ' + esc(it.size.entry) + '</div>' : '') + (it.size.scale && it.size.scale !== 1 ? '<div class="why">× ' + esc(it.size.scale) + '</div>' : '') + '</td>';
       h += '<td><div class="resp">' + it.responses.map(function (r) { return respChip(it, r); }).join('') + '</div></td>';
@@ -277,6 +280,7 @@
       });
     });
     app.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', function () { act(b); }); });
+    app.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () { query = b.getAttribute('data-q'); filter = 'all'; render(); }); });
   }
 
   /* ---------- the detail ---------- */
@@ -288,7 +292,8 @@
       (it.flags.primary ? ' · pinned ' + esc(it.flags.primary) : '') +
       (it.flags.rerun_requested ? ' · rerun requested' + (it.flags.rerun_landed ? ' (landed)' : ' (not landed)') : '') +
       (it.flags.rerun_of ? ' · rerun of ' + esc(it.flags.rerun_of) : '') +
-      (it.flags.client ? ' · via ' + esc(it.flags.client) : '') + '</div>';
+      (it.flags.client ? ' · via ' + esc(it.flags.client) : '') +
+      (it.flags.device ? ' · device ' + esc(it.flags.device) : (it.kind === 'turn' ? ' · no device code (before 2026-09-10, or storage refused)' : '')) + '</div>';
     h += '<div class="row-acts">';
     var canToggle = it.submission_id || it.kind === 'curated';
     if (it.drawer.state === 'hidden') h += '<button type="button" data-act="show" data-key="' + esc(it.key) + '">show in the drawer</button>';

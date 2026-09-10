@@ -150,6 +150,37 @@ if (!$hadItemId) {
     }
 }
 
+// THE DEVICE CODE (owner, 2026-09-10): a random UUID the browser makes on
+// its first turn and keeps, filed with each turn so the turns and grades
+// from one device can be studied together across days — the daily-rotating
+// visitor_hash cannot, by design. Nullable: every turn before this date has
+// none, and a browser that refuses storage sends none. jd-generate.php files
+// it when the column exists and without it otherwise, so the code may deploy
+// before this runs.
+try {
+    $hadDevice = jd_has_column($db, 'jd_submissions', 'device_ref');
+} catch (PDOException $e) {
+    $failed++;
+    $hadDevice = true;
+    jd_setup_line('jd_submissions.device_ref', 'FAILED: ' . $e->getMessage());
+}
+jd_ensure_column($db, 'jd_submissions', 'device_ref',
+    'CHAR(36) NULL AFTER visitor_hash', 'TEXT NULL');
+// (the index is NOT in the SQLite DDL string: on a database made before the
+// column, that string's index statement would run before the column exists —
+// so SQLite creates it here every time, idempotently)
+if (!$hadDevice || $sqlite) {
+    try {
+        $db->exec($sqlite
+            ? 'CREATE INDEX IF NOT EXISTS idx_jds_device ON jd_submissions (device_ref)'
+            : 'CREATE INDEX idx_jds_device ON jd_submissions (device_ref)');
+        jd_setup_line('idx_jds_device', 'added');
+    } catch (PDOException $e) {
+        $failed++;
+        jd_setup_line('idx_jds_device', 'FAILED: ' . $e->getMessage());
+    }
+}
+
 // THE SUBMISSION'S OWN FACTS (2026-09-05). Until this migration, five things
 // about a SUBMISSION were stored as `kind='flag'` rows in jd_ratings, hung
 // off whichever generation came first, with the value encoded in the note
@@ -276,6 +307,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
     created             DATETIME     NOT NULL,
     prompt              TEXT         NOT NULL,
     visitor_hash        CHAR(64)     NOT NULL,
+    device_ref          CHAR(36)     NULL,           -- random per-device code the browser keeps (2026-09-10)
     client              VARCHAR(16)  NOT NULL DEFAULT 'web',
     pair_order          TINYINT      NOT NULL,
     ai_consent_at       DATETIME     NULL,
@@ -289,7 +321,8 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
     UNIQUE KEY uq_client_ref (client_ref),
     KEY idx_visitor_created (visitor_hash, created),
     KEY idx_created (created),
-    KEY idx_jds_item (item_id)
+    KEY idx_jds_item (item_id),
+    KEY idx_jds_device (device_ref)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
         'jd_generations' => "
@@ -389,6 +422,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
     created             TEXT     NOT NULL,
     prompt              TEXT     NOT NULL,
     visitor_hash        TEXT     NOT NULL,
+    device_ref          TEXT     NULL,
     client              TEXT     NOT NULL DEFAULT 'web',
     pair_order          INTEGER  NOT NULL,
     ai_consent_at       TEXT     NULL,

@@ -56,16 +56,44 @@ var JD_CLIENT = 'web';
    repeating it) — JD_CONSENT.text/.version stay exactly as filed regardless,
    because they are still what gets recorded against the visitor's turn. */
 var JD_CONSENT = {
-  version: 'jd-consent-4',
+  /* jd-consent-5 (2026-09-10): the device code joins the list of what is
+     stored — see JD_deviceRef below and privacy.php §4 */
+  version: 'jd-consent-5',
   text: 'When you take a turn, the words you type are sent to four AI ' +
     'providers — Anthropic (Claude), OpenAI (GPT), Moonshot AI (Kimi), and ' +
     'Google (Gemini) — which each draw an object from them. Your prompt, ' +
-    'the drawings that come back, your ratings, and an anonymous ' +
-    'daily-rotating visitor code are stored so the results can be studied ' +
-    'and the feature kept honest. Nothing you type here is shown to other ' +
-    'visitors.',
+    'the drawings that come back, your ratings, an anonymous ' +
+    'daily-rotating visitor code, and a random device code your browser ' +
+    'keeps (so the turns and grades from one device can be studied ' +
+    'together) are stored so the results can be studied and the feature ' +
+    'kept honest. Nothing you type here is shown to other visitors.',
   check: 'I understand — send my words to Anthropic, OpenAI, Moonshot AI and Google'
 };
+
+/* THE DEVICE CODE (owner, 2026-09-10): one random UUID per browser, made
+   the FIRST TIME a turn is sent — never on a page view — and kept in
+   localStorage, sent with each turn as device_ref so the turns and grades
+   from one device can be studied together across days (the daily-rotating
+   visitor hash cannot do that, by design). Random, not derived from the IP
+   or anything else about the visitor; clearing the site's data removes it
+   and a new one is made only by another turn. JD_CONSENT.text names it and
+   privacy.php §4 explains it. `create` false reads without making one. */
+var JD_DEVICE_KEY = 'jd-device';
+function JD_deviceRef(create) {
+  var v = null;
+  try { v = localStorage.getItem(JD_DEVICE_KEY); } catch (e) {}
+  if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(v)) return v;
+  if (!create) return null;
+  var b = new Uint8Array(16);
+  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
+  else for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  var h = Array.prototype.map.call(b, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+  v = h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  try { localStorage.setItem(JD_DEVICE_KEY, v); } catch (e) {}
+  return v;
+}
+window.JD_deviceRef = JD_deviceRef;
 
 /* one slot per pool chair — every model draws every turn (four chairs,
    2026-08-14; the brief draw-3-of-4 rotation lasted a few hours before the
