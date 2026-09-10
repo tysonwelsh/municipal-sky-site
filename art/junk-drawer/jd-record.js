@@ -69,7 +69,8 @@
     var i = Math.max(0, Math.min(n - 1, curResp + dir));
     if (i === curResp) return;
     curResp = i;
-    drawNext = true;  /* the incoming response draws itself on */
+    /* a flip no longer draws the incoming response on (owner, 2026-09-10):
+       the card draws when it OPENS, and REDRAW is there for the rest */
     render(false);
   }
   /* (the alternatives strip's window index retired 2026-08-15 — the strip
@@ -877,8 +878,7 @@
       var i = parseInt(b.getAttribute('data-resp'), 10);
       if (isNaN(i) || i === curResp) return;
       curResp = i;
-      drawNext = true;  /* the incoming response draws itself on */
-      render(false);
+      render(false);   /* no draw-on for a flip (owner, 2026-09-10) — see stepResp */
     });
     /* SWIPE THE PLATE (owner, 2026-09-10): on a touch screen a horizontal
        swipe across the photograph turns to the next / previous response —
@@ -960,9 +960,9 @@
   }
   function closeZoom(silent) { zoom.close(silent); }
 
-  /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens —
-     and again when the visitor flips to another model's response, or
-     presses REPLAY — the photograph doesn't just appear: the artwork draws
+  /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens, or
+     the visitor presses REDRAW — no longer on a flip to another model's
+     response (owner, 2026-09-10) — the photograph doesn't just appear: the artwork draws
      itself onto the plate via window.JD_drawOn (the shared engine at the
      top of this file; the turn's reveal drinks from the same well). Scope
      here is the card's plate ONLY — the enlargement is the same photograph
