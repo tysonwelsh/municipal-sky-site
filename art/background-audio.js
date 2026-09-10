@@ -144,6 +144,16 @@ window.MskyBackgroundAudio = (function () {
           }, 1500);
         }
       },
+      // a HOLD — the engine's pause, with its own fade already done: the
+      // element rests at once (no 1.5s grace, which would leave it pulling
+      // on a stalled stream) and the lock screen shows paused. started()
+      // brings it back. Additive; engines that never call this are unchanged.
+      hold: function () {
+        shouldPlay = false;
+        if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+        if (ms) { try { ms.playbackState = "paused"; } catch (e) {} }
+        if (routed && el) { try { el.pause(); } catch (e) {} }
+      },
       // one-shot auditions while stopped still need the element live
       poke: playElement,
       // live now-playing updates (title / artwork) — additive; engines that
