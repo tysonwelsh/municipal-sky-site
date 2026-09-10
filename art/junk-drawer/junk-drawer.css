@@ -1191,6 +1191,38 @@ html.jd-record-open { overflow: hidden; }
 @keyframes jdDrawOn { to { stroke-dashoffset: 0; } }
 @keyframes jdFillOn { from { fill-opacity: 0; } to { fill-opacity: var(--jdfo, 1); } }
 @keyframes jdFadeOn { from { opacity: 0; }      to { opacity: var(--jdo, 1); } }
+/* THE PAPER SWAP (owner, 2026-09-10): a small button in the photograph's
+   top-right corner, clear of the kraft corner's hypotenuse (26px), in the
+   plate buttons' tailoring; it repaints the paper only — the artwork's
+   frame (.rc-plate-art) never moves. The swatch on it shows both papers. */
+.rc-paper {
+  position: absolute; top: 15px; right: 15px; z-index: 3;
+  padding: 3px; line-height: 0; cursor: pointer;
+  color: #46505e;
+  border: 1px solid var(--form-rule); border-radius: 3px;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+}
+.rc-paper svg { display: block; width: 12px; height: 12px; }
+.rc-paper:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+.rc-paper:active { box-shadow: none; transform: translateY(1px); }
+.rc-paper:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+/* BLUEPRINT: the same rules, pale on deep blue, and the margin ink turns
+   pale with them (its halo goes blue so it still lifts off the grid) */
+.rc-plate.is-blueprint {
+  background:
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
+    #1b4a8a;
+  border-color: rgba(10, 28, 56, 0.6);
+}
+.rc-plate.is-blueprint .rc-note-l { color: rgba(214, 230, 255, 0.78); text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a; }
+.rc-plate.is-blueprint .rc-note-v { color: #f2f6ff; text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a, 0 0 7px #1b4a8a; }
+.rc-plate.is-blueprint .rc-note-no { color: rgba(214, 230, 255, 0.6); text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a; }
+.rc-plate.is-blueprint .rc-paper { color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85); }
+.rc-plate.is-blueprint .rc-paper:hover { background: #f2f6ff; color: #1b4a8a; }
 /* the kraft photo corners */
 .rc-corner {
   position: absolute; width: 26px; height: 26px; z-index: 2;
@@ -1309,6 +1341,16 @@ html.jd-record-open { overflow: hidden; }
   cursor: zoom-out;
 }
 .rc-zoom-fig:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+/* the enlargement wears the plate's paper, blueprint included */
+.rc-zoom-fig.is-blueprint {
+  background:
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
+    #1b4a8a;
+  border-color: rgba(10, 28, 56, 0.7);
+}
 .rc-zoom-art { position: relative; height: 100%; }
 .rc-zoom-art svg { display: block; width: 100%; height: 100%; }
 .rc-zoom-cap {

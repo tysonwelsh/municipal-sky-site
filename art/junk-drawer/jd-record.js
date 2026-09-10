@@ -23,6 +23,40 @@
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
   var swiped = false;   /* a plate swipe just turned the response — see build() */
+  /* THE PAPER (owner, 2026-09-10): the photograph's swatch is graph paper
+     by default; a small button in its top-right corner swaps it for
+     BLUEPRINT — dark blue, pale rules — for artwork too light to read on
+     the cream (the dandelion was the case in point). A viewer's choice,
+     remembered per device; the artwork's frame does not move a pixel
+     either way (the class only repaints the paper and its margin ink). */
+  var K_PAPER = 'jd-paper';
+  var paper = 'graph';
+  try { if (localStorage.getItem(K_PAPER) === 'blueprint') paper = 'blueprint'; } catch (e) {}
+  function paperCls() { return paper === 'blueprint' ? ' is-blueprint' : ''; }
+  function paperBtnHTML() {
+    var blue = paper === 'blueprint';
+    return '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="' +
+      (blue ? 'true' : 'false') + '" title="' +
+      (blue ? 'back to graph paper' : 'blueprint paper — for light artwork') +
+      '" aria-label="' + (blue ? 'Switch to graph paper' : 'Switch to blueprint paper') + '">' +
+      '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+      '<rect x="1.5" y="1.5" width="13" height="13" rx="1.5" fill="#f8f3e2" stroke="currentColor" stroke-width="1"/>' +
+      '<path d="M14.5 1.5v13h-13z" fill="#1b4a8a"/>' +
+      '<path d="M5.5 1.5v13M10.5 1.5v13M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-opacity="0.38" stroke-width="0.8"/>' +
+      '</svg></button>';
+  }
+  function togglePaper() {
+    paper = paper === 'blueprint' ? 'graph' : 'blueprint';
+    try { localStorage.setItem(K_PAPER, paper); } catch (e) {}
+    var plate = scrollEl && scrollEl.querySelector('.rc-plate');
+    if (plate) {
+      plate.classList.toggle('is-blueprint', paper === 'blueprint');
+      var btn = plate.querySelector('.rc-paper');
+      if (btn) btn.outerHTML = paperBtnHTML();
+    }
+    var fig = document.querySelector('.rc-zoom-fig');
+    if (fig) fig.classList.toggle('is-blueprint', paper === 'blueprint');
+  }
   /* turn to the next (+1) / previous (−1) response, the strip's own move;
      the ends stop rather than wrap */
   function stepResp(dir) {
@@ -610,9 +644,10 @@
        it used to tail the notes, a line too many once Tokens/Cost
        joined). */
     h += '<div class="rc-col-l">' +
-      '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
+      '<div class="rc-block rc-plate' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Enlarge the artwork">' +
       '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      paperBtnHTML() +
       '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
       '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(artSrc, 'jr' + curIdx + '_') +
@@ -670,7 +705,7 @@
      is still in the card underneath it. */
   function zoomHTML(entry, resp, curIdx) {
     var m = modelOf(resp.model);
-    return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
+    return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
@@ -748,6 +783,11 @@
         saveRatings();
         return;
       }
+      /* the PAPER button rides the plate's top-right corner: swap, never zoom */
+      if (e.target.closest && e.target.closest('.rc-paper')) {
+        togglePaper();
+        return;
+      }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
       /* REPLAY rides the plate too: it redraws, never zooms. An explicit
@@ -821,7 +861,7 @@
       sw = null;
       if (e.pointerType === 'mouse') return;
       var p = e.target.closest ? e.target.closest('.rc-plate') : null;
-      if (!p || e.target.closest('.rc-plate-btns')) return;
+      if (!p || e.target.closest('.rc-plate-btns') || e.target.closest('.rc-paper')) return;
       sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
     });
     scrollEl.addEventListener('pointerup', function (e) {
@@ -843,6 +883,7 @@
          click — the handler above redraws, nothing here should zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
       if (e.target.closest && e.target.closest('.rc-draw')) return;
+      if (e.target.closest && e.target.closest('.rc-paper')) return;   /* a real <button>: its own click */
       var p = e.target.closest ? e.target.closest('.rc-plate') : null;
       if (!p) return;
       e.preventDefault();
