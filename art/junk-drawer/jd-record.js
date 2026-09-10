@@ -22,6 +22,18 @@
   var payload = null, svgCache = {};
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
+  var swiped = false;   /* a plate swipe just turned the response — see build() */
+  /* turn to the next (+1) / previous (−1) response, the strip's own move;
+     the ends stop rather than wrap */
+  function stepResp(dir) {
+    if (!curEntry || !curEntry.responses) return;
+    var n = curEntry.responses.length;
+    var i = Math.max(0, Math.min(n - 1, curResp + dir));
+    if (i === curResp) return;
+    curResp = i;
+    drawNext = true;  /* the incoming response draws itself on */
+    render(false);
+  }
   /* (the alternatives strip's window index retired 2026-08-15 — the strip
      is a scroll port now and its position IS its scrollLeft. See altsHTML.) */
   /* THE ARTWORK'S KEY for the shared display frame (see fitView). One string
@@ -612,9 +624,17 @@
          The row is one positioned flex box, so the buttons never need to
          guess each other's widths. */
       '<div class="rc-plate-btns">' +
+      /* REPLAY is an icon alone since 2026-09-10 (owner: the word took too
+         much of the photograph, on a phone especially): a small round-again
+         arrow in the same tailoring as DOWNLOAD, the tooltip and the
+         accessible name carrying the words */
       '<button type="button" class="rc-draw" ' +
       'title="watch the drawing draw itself again" ' +
-      'aria-label="Replay the drawing">REPLAY ✎</button>' +
+      'aria-label="Replay the drawing">' +
+      '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+      '<path d="M13.4 8a5.4 5.4 0 1 1-1.7-3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+      '<path d="M13.6 2.4v3.4h-3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg></button>' +
       '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
       esc(entry.id) + '.svg" title="download the SVG as generated">' +
       'DOWNLOAD SVG ⤓</a>' +
@@ -737,6 +757,7 @@
         return;
       }
       if (e.target.closest && e.target.closest('.rc-plate')) {
+        if (swiped) { swiped = false; return; }   /* the swipe's own click */
         openZoom(e.target.closest('.rc-plate'));
         return;
       }
@@ -787,6 +808,32 @@
       drawNext = true;  /* the incoming response draws itself on */
       render(false);
     });
+    /* SWIPE THE PLATE (owner, 2026-09-10): on a touch screen a horizontal
+       swipe across the photograph turns to the next / previous response —
+       the strip below still works, but a thumb on the picture is the
+       natural gesture on a phone. Touch and pen only: a mouse drag stays a
+       click. The plate's touch-action is pan-y, so the card still scrolls
+       under a vertical thumb and only a sideways one reaches here. A swipe's
+       own pointerup is followed by a click the plate would take as a zoom;
+       `swiped` eats that one click. */
+    var sw = null;
+    scrollEl.addEventListener('pointerdown', function (e) {
+      sw = null;
+      if (e.pointerType === 'mouse') return;
+      var p = e.target.closest ? e.target.closest('.rc-plate') : null;
+      if (!p || e.target.closest('.rc-plate-btns')) return;
+      sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    });
+    scrollEl.addEventListener('pointerup', function (e) {
+      if (!sw || e.pointerId !== sw.id) return;
+      var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      sw = null;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      swiped = true;
+      window.setTimeout(function () { swiped = false; }, 400);
+      stepResp(dx < 0 ? 1 : -1);
+    });
+    scrollEl.addEventListener('pointercancel', function () { sw = null; });
     /* the plate answers Enter/Space like the button it claims to be; Space is
        preventDefault'd or the card scrolls out from under the enlargement */
     scrollEl.addEventListener('keydown', function (e) {
@@ -1027,10 +1074,12 @@
     }).then(function (res) {
       saving = false;
       if (res === undefined) return;       /* the ratings failed; said so */
+      /* saved whole: the card comes down (owner, 2026-09-10 — a saved card
+         has nothing more to say). Only a hide that failed keeps it up, with
+         the reason on the status line. */
+      if (res === true) { close(); return; }
       render(false);
-      setStatus(res === true
-        ? ('✓ saved' + (curEntry.hidden ? ' · hidden from the drawer' : ''))
-        : '✓ ratings saved · ⚠ hide not changed (' + res + ')');
+      setStatus('✓ ratings saved · ⚠ hide not changed (' + res + ')');
     }, function () {
       saving = false;
       setStatus('⚠ not saved (network)');

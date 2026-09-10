@@ -1218,7 +1218,7 @@ html.jd-record-open { overflow: hidden; }
    the layer (the art, the caption, the surround) or by Escape — which peels
    this layer before it peels the card (junk-drawer.js). The corner hint
    carries the affordance on touch, where nothing hovers. */
-.rc-plate { cursor: zoom-in; }
+.rc-plate { cursor: zoom-in; touch-action: pan-y; }   /* pan-y: a sideways thumb is the swipe (jd-record.js) */
 .rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 /* the DOWNLOAD button rides the photograph's lower-right corner (owner rev,
    2026-08-13 — it replaced the "⤢ enlarge" hint, and the card's footer with
@@ -1252,6 +1252,10 @@ html.jd-record-open { overflow: hidden; }
   box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
   cursor: pointer;
 }
+/* REPLAY as an icon alone (owner, 2026-09-10): the same tailoring, square,
+   the arrow drawn in currentColor so the hover inversion carries it */
+.rc-draw { padding: 0.36em 0.42em; line-height: 0; }
+.rc-draw svg { display: block; width: 13px; height: 13px; }
 .rc-dl:hover, .rc-draw:hover {
   background: #37414f; color: var(--card); border-color: #37414f; }
 .rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
