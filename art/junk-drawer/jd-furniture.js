@@ -520,13 +520,14 @@
    fun lives in the folder, the tab and the paper cards; the marks stay
    flat. */
 (function () {
-  /* BENCHED, not deleted (owner call, 2026-08-28, the darkroom pool's own
-     terms): the folder does not appear in the drawer for now. Everything
-     stands — the module, the dialog, the charts, analytics-folder.svg,
-     api/jd-analytics.php, the tap branch, the loader's ready() calls —
-     and flipping this ONE flag to false puts it back in the pile; nothing
-     else needs touching. While true, the artwork is never even fetched. */
-  var BENCHED = true;
+  /* BENCHED from 2026-08-28 (owner call, the darkroom pool's own terms)
+     to 2026-09-10, when the owner asked for it back with a smaller brief:
+     TWO CHARTS, cost and quality — see render(). Everything else stands
+     (the ledger, first places, the axes and the spend line are still built
+     here, just not rendered); flipping this flag to true benches the folder
+     again with nothing else to touch, and while true the artwork is never
+     even fetched. */
+  var BENCHED = false;
 
   var ID = 'jd-analytics';
   var ASSET = '/art/junk-drawer/analytics-folder.svg';
@@ -878,8 +879,8 @@
                tail: 'n ' + num(c.n) };
     });
     return cardHTML('fx-cost', 'What a drawing costs',
-      'average provider cost per surviving response, every harness, the ' +
-      'curated bench included',
+      'average provider cost per drawing, by model — every drawing that ' +
+      'came back whole, the curated bench included',
       barsSVG(rows, altOf('Average cost per surviving response', rows)));
   }
 
@@ -935,7 +936,14 @@
       if ((+g.n || 0) < MIN_N) dropped.push({ id: g.model_id, n: +g.n || 0 });
       else rows.push(g);
     });
-    if (!rows.length) return '';
+    if (!rows.length) {
+      /* the card stays even when no model has earned a bar yet (2026-09-10,
+         with the folder's return): a missing chart reads as a broken
+         folder, a stated shortfall reads as the truth */
+      return cardHTML('fx-grades', 'How the drawings graded',
+        'no model has ' + MIN_N + ' grades on visitor turns under the ' +
+        'current rubric yet' + notPlotted(dropped), '');
+    }
     var s = '', alt = [];
     rows.forEach(function (g, i) {
       var v = Math.max(1, Math.min(STEPS, +g.avg || 1));
@@ -970,13 +978,13 @@
     var svg = '<svg class="fx-chart" viewBox="0 0 ' + W + ' ' +
       (rows.length * ROWH + 6) + '" role="img" aria-label="' +
       esc('Average overall grade. ' + alt.join('. ')) + '">' + s + '</svg>';
-    return cardHTML('fx-grades', 'The grade book',
+    return cardHTML('fx-grades', 'How the drawings graded',
       /* "current rubric" = the v17 rework onward — the endpoint's era gate
          (owner call, 2026-08-28): pre-v17 grades are the old demo era and
          re-enter by being re-rated, never by being grandfathered */
-      'average overall grade on the 1–5 scale, every rating filed under ' +
-      'the current rubric, n ' + MIN_N + ' and up' +
-      notPlotted(dropped), svg);
+      'average overall grade on the 1–5 scale, by model — every grade ' +
+      'filed on a visitor turn under the current rubric, n ' + MIN_N +
+      ' and up' + notPlotted(dropped), svg);
   }
 
   /* THE FOUR AXES — small multiples. models[] arrives in the global models[]
@@ -1164,8 +1172,12 @@
         'numbers load from jd-analytics.php, which did not answer</p>';
       return;
     }
-    bodyEl.innerHTML = ledgerHTML() + costHTML() + firstsHTML() +
-      gradesHTML() + axesHTML() + spendHTML();
+    /* TWO CHARTS (owner, 2026-09-10, the folder's return brief): what a
+       drawing costs per model, and the average overall grade per model —
+       one bar graph each, nothing else. The ledger figures, first places,
+       the four axes and the spend line stay built (ledgerHTML, firstsHTML,
+       axesHTML, spendHTML) for the day they are wanted back. */
+    bodyEl.innerHTML = costHTML() + gradesHTML();
   }
 
   function open() {
