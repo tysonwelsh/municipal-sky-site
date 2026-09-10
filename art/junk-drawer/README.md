@@ -60,6 +60,14 @@ great on a phone. See PLAN-MOBILE.md.
 
 ## Status
 
+**Admin mode, in place (2026-09-10, v0.9.107)**: the report card is the
+editor. With the key verified its grades table renders as the scales
+themselves, holding the values on file, and SAVE RATINGS files the shown
+response; the ADJUST RATINGS hand-off to the bench card is gone. The
+generations table holds sixteen slots, and a curated item's rows are
+brought level with its entry on demand, so rerun sets (21 items the old
+four-slot cap refused) are rateable everywhere.
+
 **Admin mode (2026-09-05, v0.9.106)**: `?admin` on the drawer, behind the
 bench key (remembered per device, verified before anything paints, wrong
 keys throttled), puts ADJUST RATINGS on every report card: the item is

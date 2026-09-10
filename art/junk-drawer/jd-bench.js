@@ -19,12 +19,12 @@
    TWO MODES, ONE STRIP (owner, 2026-09-05):
      ?bench — the backlog walk: the queue seats the next item that still
               needs the curator, and the strip carries skip / prev.
-     ?admin — the roving edit: nothing is seated until the owner opens an
-              item's REPORT CARD and presses ADJUST RATINGS; the item then
-              comes to the bench with everything on file prefilled and the
-              machines NAMED (a first-pass bench deal stays blind), and when
-              the card comes down the page reloads onto that card so the
-              change is on view at once.
+     ?admin — the key and nothing else: with it verified, every REPORT
+              CARD renders its grades as scales the owner can change and
+              save in place (jd-record.js owns that editor, 2026-09-10; the
+              2026-09-05 version seated the item on this bench instead,
+              which the owner found roundabout). The strip here only holds
+              the gate, the build stamp and SIGN OUT.
    Both stand behind JD_admin (jd-core.js): the bench key, remembered per
    device, verified before anything paints, sent as X-Bench-Key on every
    keyed request. The server throttles wrong keys per address (429).
@@ -52,9 +52,7 @@
      one item on the bench whatever its flags say — the door back onto the
      bench for a LEGACY response the owner wants to keep in the drawer (rate
      it under the current rubric here, then scripts/keep-legacy.py applies
-     the ratings and pins it). The queue only backs an item's ORIGINAL
-     responses with generations, so exactly those are what get seated.
-     ?admin&item=<item_id> does the same as an adjustment. */
+     the ratings and pins it). Responses the entry retired are not seated. */
   var directM = /[?&]item=([^&]+)/.exec(location.search);
   var directId = directM ? decodeURIComponent(directM[1]) : null;
 
@@ -67,11 +65,9 @@
   var curId = null;         /* the item on (or awaiting) the bench */
   var visited = [];         /* item_ids opened this session — prev walks it */
   var filedNow = {};        /* item_id -> true once its batch filed */
-  var topGen = {};          /* item_id -> the generation the last filing ranked 1st */
   var svgCache = {};        /* svg path -> document text */
   var intent = null;        /* why the card is coming down: scrap|skip|prev|rerun */
   var rerunFor = null;      /* item_id whose rerun turn holds the stage */
-  var adjusting = null;     /* admin: { key, id, curated } while an adjustment is up */
   var stale = false;        /* a deploy landed since this page loaded */
   var sync = { state: 'idle', detail: '' };
   var bar = null, sheet = null;
@@ -94,9 +90,10 @@
   /* the intents arrive on the item itself (retire_requested /
      rerun_requested, read off the submission's columns by the queue) */
   function itemDone(it) {
-    var multi = it.responses.length > 1;
-    for (var i = 0; i < it.responses.length; i++) {
-      var r = it.responses[i];
+    var live = it.responses.filter(function (r) { return !r.retired; });
+    var multi = live.length > 1;
+    for (var i = 0; i < live.length; i++) {
+      var r = live[i];
       if (!r.complete) return false;
       if (multi && !(r.rank >= 1)) return false;
     }
@@ -127,9 +124,16 @@
   function rerunPending(it) {
     return !!it.rerun_requested && it.rerun_landed === false;
   }
+  /* the responses the card can seat: on disk or in the database, and not
+     retired by the entry (a rerun set's retired originals stay on file for
+     the record — jd-curated-sync — but never come to the bench) */
+  function seatable(it) {
+    return it.responses.filter(function (r) { return !!(r.svg || r.svg_url) && !r.retired; });
+  }
   function workable(it) {
     if (it.retired || it.retire_requested) return false;
-    if (!it.responses.some(function (r) { return !!(r.svg || r.svg_url); })) return false;
+    var n = seatable(it).length;
+    if (!n || n > 4) return false;           /* the card seats four at most */
     if (rerunPending(it)) return true;      /* unfinished business, always */
     return !itemDone(it) && !it.rerun_requested;
   }
@@ -156,6 +160,7 @@
       if (it.rerun_requested && !rerunPending(it)) { c.rerun++; return; }
       if (rerunPending(it) || !itemDone(it)) c.left++;
       it.responses.forEach(function (r) {
+        if (r.retired) return;
         c.resp++;
         if (r.complete) c.respDone++;
       });
@@ -208,11 +213,6 @@
     return post(API_R, body).then(function () {
       if (size) it.size_filed = size;      /* the queue copy learns it now */
       filedNow[it.item_id] = true;
-      /* the drawing that now stands first: the reload after an adjustment
-         lands on its card (a turn's item id IS its 1st-place drawing) */
-      var top = null;
-      per.forEach(function (p) { if (p.rank === 1) top = p.generation_id; });
-      topGen[it.item_id] = top || (per.length === 1 ? per[0].generation_id : null);
       /* fold the answers back into the queue copy, so done/left arithmetic
          and any revisit read what the server now holds */
       it.responses.forEach(function (r) {
@@ -245,8 +245,7 @@
   }
 
   /* ---------- seating an item on the bench ------------------------------- */
-  function openItem(it, opts) {
-    opts = opts || {};
+  function openItem(it) {
     if (!it) { curId = null; paintBar(); return; }
     curId = it.item_id;
     if (visited[visited.length - 1] !== it.item_id) visited.push(it.item_id);
@@ -255,7 +254,7 @@
     /* a curated response's artwork is a file under the item; a TURN's lives
        in the database and comes from jd-gen-svg.php (2026-08-30). One cache,
        keyed on whichever address the response carries. */
-    var usable = it.responses.filter(function (r) { return !!(r.svg || r.svg_url); });
+    var usable = seatable(it);
     Promise.all(usable.map(function (r) {
       var key = r.svg || r.svg_url;
       if (svgCache[key]) return null;
@@ -274,8 +273,6 @@
            the bench's own last word first, else the entry's (2026-08-30) */
         sizeTiers: (Q && Q.size_tiers) || [],
         size: it.size_filed || it.size_class || null,
-        /* an ADJUSTMENT names the machines on the card (owner, 2026-09-05) */
-        reveal: !!opts.reveal,
         responses: usable.map(function (r) {
           /* the bench's own answers outrank the seeds: a turn arrives
              carrying the judgment its visitor pass filed under today's
@@ -304,59 +301,11 @@
     });
   }
 
-  /* ---------- ADMIN MODE: the adjustment ---------------------------------- */
-  /* the report card names the item (a curated entry id, or turn:<submission>)
-     and the card it was showing; the queue is fetched on demand — it holds
-     every rateable item, finished or not, with the bench's answers on it */
-  function adjust(key, cardId) {
-    if (!ADMIN) return;
-    setSync('idle');
-    fetchQueue().then(function () {
-      var it = itemById(key);
-      if (!it) { setSync('failed', 'not on the bench'); return; }
-      adjusting = { key: key, id: cardId, curated: it.source === 'curated' };
-      whenRecordClosed(function () { openItem(it, { reveal: true }); });
-    }, function (code) {
-      if (code === 'forbidden' || code === 'too_many_attempts') gate(gateMsg(code));
-      else setSync('failed', code || 'network');
-    });
-  }
-  /* the record card closes through history (Android back symmetry), so its
-     teardown lands a tick later than the press */
-  function whenRecordClosed(cb) {
-    var tries = 0;
-    (function poll() {
-      if (!window.JD_record || !window.JD_record.isOpen() || tries++ > 40) { cb(); return; }
-      window.setTimeout(poll, 50);
-    })();
-  }
-  /* the change is on view at once: reload onto the card that was open — a
-     turn's card is its 1st-place drawing, which the filing may have moved */
-  function reloadOnto(a) {
-    var id = a.curated ? a.id : (topGen[a.key] || a.id);
-    var url = location.pathname + location.search + (id ? '#' + id : '');
-    try { history.replaceState(null, '', url); } catch (e) {}
-    location.reload();
-  }
-
   /* ---------- the card coming down --------------------------------------- */
   window.addEventListener('jd-turn-close', function () {
     var why = intent;
     intent = null;
-    if (ADMIN) {
-      var a = adjusting;
-      adjusting = null;
-      curId = null;
-      if (why === 'scrap' || (a && filedNow[a.key])) { reloadOnto(why === 'scrap' ? { curated: true, id: '' } : a); return; }
-      if (why === 'rerun') {
-        var ar = itemById(rerunFor);
-        if (ar && window.JD_turn.rerun(ar.prompt)) { paintBar(); return; }
-        rerunFor = null;
-      }
-      if (rerunFor) { rerunFor = null; location.reload(); return; }
-      paintBar();                        /* set aside — nothing changed */
-      return;
-    }
+    if (ADMIN) { paintBar(); return; }   /* nothing is ever seated in admin mode */
     if (why === 'rerun') {
       var rr = itemById(rerunFor);
       if (rr && window.JD_turn.rerun(rr.prompt)) { paintBar(); return; }
@@ -394,7 +343,6 @@
       if (!it) return;
       fileIntent(it, 'retire');
       if (open) { intent = 'scrap'; window.JD_turn.close(); }
-      else if (ADMIN) location.reload();
       else openItem(firstWorkable(curId));
     } else if (kind === 'rerun') {
       if (!it) return;
@@ -404,7 +352,7 @@
       else if (!window.JD_turn.rerun(it.prompt)) { rerunFor = null; }
       paintBar();
     } else if (kind === 'resume') {
-      if (!open) openItem(it || firstWorkable(null), { reveal: ADMIN });
+      if (!open) openItem(it || firstWorkable(null));
     } else if (kind === 'prev') {
       if (visited.length < 2) return;
       visited.pop();
@@ -483,17 +431,17 @@
         'title="the item’s prompt">' + esc(it.title) + '</button>' +
         (!open ? '<button type="button" data-bench="resume">resume</button>' : '');
     } else if (ADMIN) {
-      left = '<span class="jd-bench-note">open any report card to adjust its ratings</span>';
+      left = '<span class="jd-bench-note">open any report card — its grades are yours to change and save</span>';
     } else {
       left = '<span class="jd-bench-note">backlog clear — ' + c.respDone + '/' +
         c.resp + ' responses filed' +
         (c.scrapped ? ', ' + c.scrapped + ' scrapped' : '') +
         (c.rerun ? ', ' + c.rerun + ' sent to rerun' : '') + '</span>';
     }
-    var acts = (it && !rerunFor)
+    var acts = (it && !rerunFor && !ADMIN)
       ? '<div class="jd-bench-acts">' +
-        (!ADMIN && visited.length > 1 ? '<button type="button" data-bench="prev" title="previous item">&larr;</button>' : '') +
-        (!ADMIN ? '<button type="button" data-bench="skip" title="set this item aside for now">skip &rarr;</button>' : '') +
+        (visited.length > 1 ? '<button type="button" data-bench="prev" title="previous item">&larr;</button>' : '') +
+        '<button type="button" data-bench="skip" title="set this item aside for now">skip &rarr;</button>' +
         '<button type="button" class="jd-bench-scrap" data-bench="scrap" ' +
         'title="flag this item to be retired from the drawer">scrap ✕</button>' +
         '<button type="button" class="jd-bench-rerun" data-bench="rerun" ' +
@@ -575,9 +523,9 @@
       if (!res.ok) { gate(gateMsg(res.code, res.retry_after)); return; }
       if (!ADMIN) { loadQueue(false); return; }
       paintBar();
-      /* a card deep-linked by the reload painted before the key verified */
+      /* a deep-linked card may have painted before the key verified: repaint
+         so its grades come up as the editor */
       if (window.JD_record && window.JD_record.refresh) window.JD_record.refresh();
-      if (directId) { var d = directId; directId = null; adjust(d, d); }
     });
   }
 
@@ -588,8 +536,6 @@
   document.addEventListener('visibilitychange', function () {
     if (!ADMIN && document.visibilityState === 'visible' && Q) loadQueue(true);
   });
-
-  window.JD_bench = { adjust: adjust, mode: MODE };
 
   buildBar();
   boot();
