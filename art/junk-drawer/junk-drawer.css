@@ -1401,7 +1401,7 @@ html.jd-record-open { overflow: hidden; }
 .rc-can-fold.is-open .rc-pv-more { display: none; }
 .rc-can-fold:not(.is-open) .rc-pv-less { display: none; }
 
-/* ---- the annotations table (AXIS | VERDICT + OVERALL GRADE footer) ------ */
+/* ---- the annotations table (AXIS | GRADE + OVERALL GRADE footer) -------- */
 table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
 table.rc-subj th {
   font-family: var(--form); font-weight: 400;
@@ -1477,7 +1477,7 @@ tr.rc-axdesc td {
 }
 .rc-mark.sm { font-size: 0.84rem; }
 .rc-mark-word { position: relative; display: inline-block; }
-/* the graded pencils (owner, 2026-08-11): the verdict is inked in the
+/* the graded pencils (owner, 2026-08-11): the grade is inked in the
    pencil it earned — dark green when clean, deep red when broken, and a
    warm ramp between. The label text still says the word; the colour
    seconds it, never carries it alone. r* = the 3-step axes, q* = the
@@ -1492,7 +1492,7 @@ tr.rc-axdesc td {
 .rc-mark.rc-q2, .rc-bar.rc-q2 { color: #a06200; }   /* misread it / out of order — ochre */
 .rc-mark.rc-q1, .rc-bar.rc-q1 { color: #8f1d12; }   /* wrote its own brief / fifty-two pickup — deep red */
 
-/* the verdict cell: ONE segmented bar gauge ahead of the pencilled word
+/* the grade cell: ONE segmented bar gauge ahead of the pencilled word
    (owner pick, mockup 11 option C — it replaced the dot sparkline whose
    unequal meter widths left an awkward gap someone always noticed).
    Every gauge spans the same fixed width, filled to rank/steps of its
@@ -1500,7 +1500,7 @@ tr.rc-axdesc td {
    3-step axis and the 5-tier grade honestly distinguishable, and a full
    bar carries none. The gauge inherits the rating pencil's colour and
    stays decoration — aria-hidden, the word carries the meaning. */
-.rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
+.rc-grade-cell { display: inline-flex; align-items: center; gap: 0.6rem; }
 .rc-bar {
   position: relative; width: 47px; height: 8px; flex: 0 0 auto;
   border: 1.5px solid currentColor; border-radius: 2px;
@@ -4214,7 +4214,7 @@ html.jd-folder-open { overflow: hidden; }
    marks and never as part of the form */
 .jd-bench-bar .jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
 .jd-bench-acts + .jd-bench-out, .jd-bench-build + .jd-bench-out { margin-left: 0; }
-/* the report card's inline editor (owner, 2026-09-10): the verdict cells
+/* the report card's inline editor (owner, 2026-09-10): the grade cells
    become the scales themselves, in the form's own hand, and one gold button
    files them — the only bench-palette mark on the form */
 .rc-subj select.rc-edit {
@@ -4236,15 +4236,16 @@ html.jd-folder-open { overflow: hidden; }
 }
 .rc-save:hover { background: #e5c06b; }
 .rc-save:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
-/* the hide switch wears the same hand, outlined: a second act, not the main one */
-.rc-hide {
-  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: #6d5426; background: none; border: 1px solid #c9a84c; border-radius: 2px;
-  padding: 3px 9px; cursor: pointer;
+/* the edit cell: the gauge stays ahead of the scale, the scale takes the rest */
+.rc-editcell { display: flex; width: 100%; }
+.rc-subj .rc-editcell select.rc-edit { flex: 1 1 auto; width: auto; min-width: 0; }
+/* the hide box rides the save row and files with the button */
+.rc-hide-check {
+  display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  text-transform: uppercase; color: #6d5426;
 }
-.rc-hide:hover { background: rgba(201, 168, 76, 0.18); }
-.rc-hide:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+.rc-hide-check input { margin: 0; accent-color: #c9a84c; }
 /* a specimen the admin hid leaves the pile on the spot (data.php holds it
    back on the next load); !important because .jd-item sets its own display */
 .jd-item.jd-item--hidden { display: none !important; }

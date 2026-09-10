@@ -83,15 +83,17 @@
       '<span class="rc-mark-word">' +
       esc(word).replace(/_([^_]+)_/g, '<i>$1</i>') + '</span></span>';
   }
-  /* the verdict gauge (owner pick, mockup 11 option C, 2026-08-11 —
-     replacing the dot sparkline): ONE segmented bar per verdict, every
+  /* the grade gauge (owner pick, mockup 11 option C, 2026-08-11 —
+     replacing the dot sparkline): ONE segmented bar per grade, every
      row the same fixed span, filled to rank/steps of ITS OWN scale.
      The step dividers are paper-coloured and drawn OVER the fill (owner
      rev, 2026-08-11), battery-style — so a 100% bar still reads as its
      segments, and a 3-step axis and the 5-tier grade stay honestly
      distinguishable. aria-hidden; the word carries the meaning. */
   function barHTML(rank, total, cls) {
-    var full = Math.max(1, Math.min(total, rank));
+    /* rank 0 = an empty track (the editor's unassessed axis); a filed
+       rank always fills at least one segment */
+    var full = rank > 0 ? Math.max(1, Math.min(total, rank)) : 0;
     var h = '<span class="rc-bar ' + cls + '" aria-hidden="true">' +
       '<span class="rc-bar-fill" style="width:' +
       (100 * full / total).toFixed(1) + '%"></span>';
@@ -330,9 +332,15 @@
       var a = annOf(resp, axis.id);
       var cell;
       if (edit) {
-        cell = scaleSelect(axis.values, a ? a.value : null,
-          'data-axis="' + esc(axis.id) + '" aria-label="' + esc(axis.label || axis.id) + '"',
-          '— not assessed');
+        /* the gauge stays ahead of the scale (owner, 2026-09-10) and follows
+           the pick live — see the change handler in build() */
+        var v0 = a ? window.JD_byRank(axis.values, a.value) : null;
+        var steps0 = (axis.values || []).length || 3;
+        cell = '<span class="rc-grade-cell rc-editcell">' +
+          barHTML(v0 ? Math.round(v0.rank) : 0, steps0, v0 ? window.JD_axisCls(axis, v0.rank) : '') +
+          scaleSelect(axis.values, a ? a.value : null,
+            'data-axis="' + esc(axis.id) + '" aria-label="' + esc(axis.label || axis.id) + '"',
+            '— not assessed') + '</span>';
       } else if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
@@ -342,7 +350,7 @@
         var v = window.JD_byRank(axis.values, a.value);
         var steps = (axis.values || []).length || 3;
         var cls = v ? window.JD_axisCls(axis, v.rank) : '';
-        cell = '<span class="rc-verdict">' +
+        cell = '<span class="rc-grade-cell">' +
           (v ? barHTML(Math.round(v.rank), steps, cls) : '') +
           mark(v ? v.label : String(a.value), cls) + '</span>';
       }
@@ -360,26 +368,32 @@
     var gDesc = 'The drawer’s own five-tier scale, best to worst.' +
       (g.description ? ' ' + g.label + ': ' + g.description : '');
     return '<table class="rc-subj"><thead><tr>' +
-      /* 52/48 → 44/56 → 47/53 (owner, 2026-08-12): the verdict column
+      /* 52/48 → 44/56 → 47/53 (owner, 2026-08-12): the grade column
          carries the gauge AND the pencilled word, the axis column only a
-         name — but 44% squeezed the axis names a touch too hard */
-      '<th style="width:47%">Axis</th><th style="width:53%">Verdict</th>' +
+         name — but 44% squeezed the axis names a touch too hard.
+         "Grade", not "Verdict" (owner, 2026-09-10). */
+      '<th style="width:47%">Axis</th><th style="width:53%">Grade</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td>' +
       axisBtn('<span class="rc-avg-l">Overall grade</span>', 'rc-axd-g') +
       '</td><td>' +
       (edit
-        ? scaleSelect((payload.taxonomy || {}).grades, resp.grade,
-            'data-grade aria-label="Overall grade"', '— ungraded')
-        : '<span class="rc-verdict">' +
+        ? '<span class="rc-grade-cell rc-editcell">' +
+          barHTML(g.rank ? Math.round(g.rank) : 0, 5, gCls) +
+          scaleSelect((payload.taxonomy || {}).grades, resp.grade,
+            'data-grade aria-label="Overall grade"', '— ungraded') + '</span>'
+        : '<span class="rc-grade-cell">' +
           (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
           mark(g.label, gCls) + '</span>') +
       '</td></tr>' + descRow('rc-axd-g', gDesc) + '</tfoot></table>' +
+      /* the save row: one button files the scales above AND the hide box
+         beside it (owner, 2026-09-10 — a checkbox saved with the rest, not
+         a second act) */
       (edit
         ? '<div class="rc-edit-row">' +
           '<button type="button" class="rc-save" data-rc="save">save ratings</button>' +
-          '<button type="button" class="rc-hide" data-rc="hide">' +
-          (curEntry.hidden ? 'show in drawer' : 'hide from drawer') + '</button>' +
+          '<label class="rc-hide-check"><input type="checkbox" data-rc="hidecheck"' +
+          (curEntry.hidden ? ' checked' : '') + '> hide from drawer</label>' +
           '<span class="rc-edit-status" aria-live="polite">' +
           (curEntry.hidden ? 'hidden from the drawer' : '') + '</span></div>'
         : '');
@@ -705,15 +719,13 @@
     });
     scrim.querySelector('.jd-record-close').addEventListener('click', close);
     scrollEl.addEventListener('change', function (e) {
-      if (e.target.classList && e.target.classList.contains('rc-edit')) setStatus('unsaved changes');
+      var t = e.target;
+      if (t.classList && t.classList.contains('rc-edit')) { syncBar(t); setStatus('unsaved changes'); }
+      else if (t.matches && t.matches('[data-rc="hidecheck"]')) setStatus('unsaved changes');
     });
     scrollEl.addEventListener('click', function (e) {
       if (e.target.closest && e.target.closest('[data-rc="save"]')) {
         saveRatings();
-        return;
-      }
-      if (e.target.closest && e.target.closest('[data-rc="hide"]')) {
-        toggleHidden();
         return;
       }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
@@ -949,7 +961,7 @@
   /* ADMIN MODE — THE INLINE EDITOR (owner, 2026-09-10; it replaced the
      2026-09-05 ADJUST RATINGS hand-off to the bench card, which the owner
      found roundabout). With the key verified, the grades table renders its
-     verdicts as the scales themselves, each holding the value on file, and
+     grades as the scales themselves, each holding the value on file, and
      one button files the shown response's grade and axes through
      jd-item-rate.php — a curated item by entry id + rid (the server files
      any response the database never held), a turn by submission +
@@ -994,7 +1006,7 @@
       saving = false;
       if (!j || !j.ok) {
         setStatus('⚠ not saved (' + (((j || {}).error || {}).code || 'network') + ')');
-        return;
+        return undefined;
       }
       /* the payload learns what the server now serves */
       if (grade != null) resp.grade = grade;
@@ -1005,49 +1017,66 @@
           ? { value: axes[a], note: cur.note }
           : axes[a];
       });
-      render(false);
-      setStatus('✓ saved');
       if (resp.rid === curEntry.primary) pileTag(curEntry, resp);
+      /* the hide box, only if it moved */
+      var box = scrollEl.querySelector('[data-rc="hidecheck"]');
+      var wantHidden = !!(box && box.checked);
+      if (wantHidden === !!curEntry.hidden) return true;
+      saving = true;
+      return fileHidden(wantHidden);
+    }).then(function (res) {
+      saving = false;
+      if (res === undefined) return;       /* the ratings failed; said so */
+      render(false);
+      setStatus(res === true
+        ? ('✓ saved' + (curEntry.hidden ? ' · hidden from the drawer' : ''))
+        : '✓ ratings saved · ⚠ hide not changed (' + res + ')');
     }, function () {
       saving = false;
       setStatus('⚠ not saved (network)');
     });
   }
-  /* HIDE FROM DRAWER / SHOW IN DRAWER (owner, 2026-09-10): the item's
-     retire_requested_at, set or cleared through jd-curate.php — the same
-     switch the bench's SCRAP throws, now reversible, and live for curated
-     items too (data.php holds a hidden item back at request time). The
-     pile loses or regains the specimen on the spot; the card stays open
-     so the press can be undone. */
-  function toggleHidden() {
-    if (!curEntry || saving || !editable(curEntry)) return;
-    var hide = !curEntry.hidden;
+  /* the gauge ahead of a scale follows the pick, in the scale's own colour */
+  function syncBar(sel) {
+    var cell = sel.parentNode;
+    var old = cell && cell.querySelector ? cell.querySelector('.rc-bar') : null;
+    if (!old) return;
+    var rank = sel.value === '' ? 0 : Math.round(+sel.value);
+    var html;
+    if (sel.hasAttribute('data-grade')) {
+      html = barHTML(rank, 5, rank ? 'rc-g' + rank : '');
+    } else {
+      var axis = byId((payload.taxonomy || {}).axes, sel.getAttribute('data-axis')) || {};
+      var steps = (axis.values || []).length || 3;
+      html = barHTML(rank, steps, rank ? window.JD_axisCls(axis, rank) : '');
+    }
+    var tmp = document.createElement('span');
+    tmp.innerHTML = html;
+    cell.replaceChild(tmp.firstChild, old);
+  }
+  /* HIDE FROM DRAWER (owner, 2026-09-10): the item's retire_requested_at,
+     set or cleared through jd-curate.php — the switch the bench's SCRAP
+     throws, now reversible, and live for curated items too (data.php holds
+     a hidden item back at request time). Filed by SAVE RATINGS with the
+     scales, only when the box changed. The pile loses or regains the
+     specimen on the spot. Resolves true on success. */
+  function fileHidden(hide) {
     var body = curEntry.fromTurn
       ? { submission_id: curEntry.submission_id, retire: hide }
       : { item_id: curEntry.id, retire: hide };
-    saving = true;
-    setStatus(hide ? 'hiding…' : 'showing…');
-    fetch(JD_API + '/api/jd-curate.php', {
+    return fetch(JD_API + '/api/jd-curate.php', {
       method: 'POST',
       headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body)
     }).then(function (r) {
       return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
     }).then(function (j) {
-      saving = false;
-      if (!j || !j.ok) {
-        setStatus('⚠ not changed (' + (((j || {}).error || {}).code || 'network') + ')');
-        return;
-      }
+      if (!j || !j.ok) return (((j || {}).error || {}).code || 'network');
       curEntry.hidden = hide;
       var el = document.querySelector('.jd-item[data-id="' + curEntry.id.replace(/"/g, '') + '"]');
       if (el) el.classList.toggle('jd-item--hidden', hide);
-      render(false);
-      setStatus(hide ? 'hidden from the drawer' : '✓ back in the drawer');
-    }, function () {
-      saving = false;
-      setStatus('⚠ not changed (network)');
-    });
+      return true;
+    }, function () { return 'network'; });
   }
   /* the specimen tag reads its grade off the pile item's dataset — keep it
      honest without rebuilding the pile */
