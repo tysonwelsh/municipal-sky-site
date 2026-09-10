@@ -4483,7 +4483,16 @@ html.jd-folder-open { overflow: hidden; }
    both modes; the model's name on the bench head and the report card's one
    write control wear the bench palette, so they read as the curator's
    marks and never as part of the form */
-.jd-bench-bar .jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
+.jd-bench-bar /* the admin strip's link out to the ledger page (2026-09-10) — dressed as
+   the strip's buttons are, since it sits among them */
+.jd-bench-link {
+  display: inline-block; text-decoration: none; font: inherit; color: inherit;
+  border: 1px solid rgba(230, 217, 180, 0.35); border-radius: 2px;
+  padding: 3px 9px; white-space: nowrap;
+}
+.jd-bench-link:hover { border-color: #e6d9b4; }
+.jd-bench-link:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
+.jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
 .jd-bench-acts + .jd-bench-out, .jd-bench-build + .jd-bench-out { margin-left: 0; }
 /* the report card's inline editor (owner, 2026-09-10): the grade cells
    become the scales themselves, in the form's own hand, and one gold button

@@ -35,6 +35,18 @@ data files are `.json`, art is `.svg`.
   taxonomy accessors, the ratings fold (`jd_fold_ratings` / `jd_pick_rating`),
   the key gate, the schema probes. Schema doc: `db/junk-drawer-schema.md`.
 - `scripts/validate-junk-drawer.py` (repo root `scripts/`) — the validator.
+- `ledger.html` — THE LEDGER (owner ask, 2026-09-10): the curator's
+  overview, one row per item — every entry on disk (retired ones included)
+  and every visitor turn — stating whether it is in the drawer and WHY NOT
+  if it isn't, which response the drawer shows and by which rule, how far
+  each response's rating has got (whose word: bench / seed / visitor), and
+  whether the bench would offer it (and why not). A row opens into the
+  prompt, every drawing, the ratings, and HIDE / SHOW plus links to the
+  admin report card and the bench. Reads `api/jd-ledger.php` (bench-key
+  gated; it applies `data.php`'s and the bench's own rules server-side, so
+  the page never re-derives them) and writes through `api/jd-curate.php`.
+  Same key slot as admin mode (`jd-admin-key`); linked from the `?admin`
+  strip only; noindex.
 - `sizing-desk.html` — owner-only curatorial harness (unlinked, noindex):it
   steps through the items previewing size tiers with the live pile math and
   exports decisions as JSON (`{sizingDesk: 1, changes: {id: {sizeClass,
@@ -214,6 +226,22 @@ code change — which is the test a future rubric edit should still pass.
   ones already there) through `api/jd-curated-sync.php`, the same sync the
   admin editor runs on demand — so the bulk run is a convenience for the
   queue, not a prerequisite.
+- **SEEDS CARRY THE ENTRY'S LIVE-AXIS ANNOTATIONS AND HARVEST RANKS
+  (2026-09-10).** The owner found the bench dealing back items already
+  annotated: a harvested rerun set arrives in `entry.json` with the owner's
+  answers on the live axes and a "filed rank N of M" note per response, but
+  its database rows carried only a seed GRADE, so the queue — which reads
+  the database alone — counted them unrated and unranked. The sync now
+  files a `seed` axis row per live-axis annotation and `seed` rank rows when
+  every served response carries the harvest's rank note, and LEVELS rows
+  already on file the same way; the queue counts seed axes and seed ranks
+  toward `complete`/ranked (the bench's own word still outranks a seed).
+  **After deploying a sync change, re-run the backfill once** —
+  `api/jd-backfill-curated.php?key=<jd_setup_key>` (dry-run first with
+  `&dry-run=1`) — it reports what it levelled per item. Defunct-axis
+  annotations are never seeded. A legacy keep beside a rerun set has no
+  consistent rank note, so it seeds no ranks and, with five served
+  responses, the bench cannot seat it anyway — the ledger says so.
 
 **`## The one rule` above is now narrower than it reads.** Committing is still
 the whole publishing act for ARTWORK and item METADATA — the `.svg`, the

@@ -475,7 +475,11 @@
         (!open ? '<button type="button" data-bench="resume">resume</button>' : '');
     } else if (ADMIN) {
       left = '<span class="jd-bench-note">open any report card — its grades are yours to change and save</span>' +
-        '<button type="button" data-bench="hidden" title="items hidden from the drawer">hidden items</button>';
+        '<button type="button" data-bench="hidden" title="items hidden from the drawer">hidden items</button>' +
+        /* THE LEDGER (owner, 2026-09-10): the whole collection as a table —
+           what is in the drawer and why not, how far each rating has got,
+           what the bench would offer. Its own page, same key. */
+        '<a class="jd-bench-link" href="ledger.html" title="every item as a table — drawer state, ratings, the bench\'s view">ledger</a>';
     } else {
       left = '<span class="jd-bench-note">backlog clear — ' + c.respDone + '/' +
         c.resp + ' responses filed' +

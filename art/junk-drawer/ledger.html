@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>The Ledger — Junk Drawer curator's overview</title>
+<!-- ==========================================================================
+  THE LEDGER — the curator's overview of the whole collection (owner ask,
+  2026-09-10: "a table where I can get an overview of objects … which ones
+  can be included, click on the prompt to pull up more info").
+
+  One plain table, one row per item — every curated entry on disk and every
+  visitor turn in the database, newest first, rows on the same prompt kept
+  together — with, for each: whether it is in the drawer right now and WHY
+  NOT if it isn't, which response the drawer shows, how far each response's
+  rating has got, and whether the bench would offer it (and why not). A row
+  opens into its detail: the prompt verbatim, every response with its
+  drawing, its grade and axis answers (whose word: the bench's, the entry's
+  seed, the visitor's), its rank, its notes; and the acts — HIDE / SHOW,
+  open the report card in admin mode, open the item on the bench.
+
+  Reads api/jd-ledger.php, which applies data.php's and the bench's own rules
+  server-side, so this page states them and never re-derives them. Writes go
+  through api/jd-curate.php, the same switch the admin card and the bench
+  use. The key is the bench key, remembered per device in the same
+  localStorage slot the drawer's JD_admin uses (jd-admin-key), so signing in
+  on either signs in on both. Not linked from anywhere public; noindex; the
+  admin strip carries the one link.
+========================================================================== -->
+<style>
+  :root {
+    --ink: #3a2a12; --dim: rgba(58, 42, 18, 0.62); --faint: rgba(58, 42, 18, 0.35);
+    --paper: #efe6cd; --card: #f6efd9; --line: rgba(74, 53, 18, 0.35);
+    --red: #b3402f; --green: #3f6b2a; --gold: #c9a84c; --blue: #1b4a8a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Courier Prime", "Courier New", Courier, monospace;
+    font-size: 12px; line-height: 1.45;
+    padding: 14px clamp(10px, 2vw, 24px) 60px;
+  }
+  h1 { font-size: 1.05rem; letter-spacing: 0.14em; text-transform: uppercase; margin: 0; }
+  .sub { color: var(--dim); font-size: 0.72rem; margin: 4px 0 12px; }
+  .sub a { color: inherit; }
+  .gate { max-width: 420px; margin: 40px auto; background: var(--card); border: 1px solid var(--line); padding: 16px; }
+  .gate input { width: 100%; font: inherit; padding: 6px 8px; margin: 8px 0; border: 1px solid var(--line); background: #fff; }
+  .gate button, .acts button, .acts a, .chip, .row-acts button, .row-acts a {
+    font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
+    background: none; color: var(--ink); border: 1px solid var(--line); border-radius: 2px; padding: 3px 9px;
+    text-decoration: none; display: inline-block; white-space: nowrap;
+  }
+  .gate button:hover, .chip:hover, .row-acts button:hover, .row-acts a:hover { border-color: var(--ink); }
+  .chip.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 0 0 10px; position: sticky; top: 0; background: var(--paper); padding: 6px 0; z-index: 3; border-bottom: 1px solid var(--line); }
+  .toolbar input[type=search] { font: inherit; padding: 4px 8px; border: 1px solid var(--line); background: #fff; min-width: 200px; flex: 1 1 200px; }
+  .counts { color: var(--dim); font-size: 11px; white-space: nowrap; }
+  .counts b { color: var(--ink); }
+  .msg { color: var(--red); margin: 8px 0; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 960px; background: var(--card); }
+  th, td { text-align: left; vertical-align: top; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  /* not sticky: the table sits in an overflow-x wrapper, and a sticky
+     header inside a scroll container pins to THAT box — it sat over the
+     first row */
+  th { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); background: var(--paper); cursor: pointer; }
+  th.sorted::after { content: " ▾"; }
+  th.sorted.asc::after { content: " ▴"; }
+  tr.item { cursor: pointer; }
+  tr.item:hover td { background: rgba(255, 255, 255, 0.45); }
+  tr.item.is-open td { background: rgba(255, 255, 255, 0.6); }
+  tr.group-start td { border-top: 2px solid var(--line); }
+  td.title b { display: block; }
+  td.title small { color: var(--dim); }
+  .kind { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 1px 5px; border: 1px solid var(--line); border-radius: 2px; color: var(--dim); }
+  .kind.turn { color: var(--blue); border-color: var(--blue); }
+  .st { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
+  .st.shown { color: var(--green); } .st.hidden { color: var(--red); } .st.absent { color: var(--dim); }
+  .st.done { color: var(--green); } .st.open { color: var(--gold); } .st.blocked { color: var(--red); } .st.off { color: var(--dim); }
+  .why { color: var(--dim); font-size: 11px; }
+  .why li { margin: 0; }
+  ul.why { margin: 2px 0 0; padding-left: 14px; }
+  .resp { display: flex; flex-wrap: wrap; gap: 3px 6px; }
+  .resp span { font-size: 10px; border: 1px solid var(--line); border-radius: 2px; padding: 0 4px; white-space: nowrap; background: rgba(255,255,255,0.4); }
+  .resp span.ok { border-color: var(--green); }
+  .resp span.part { border-color: var(--gold); }
+  .resp span.none { color: var(--dim); }
+  .resp span.retired { text-decoration: line-through; color: var(--faint); }
+  .resp span.shows { box-shadow: 0 0 0 1px var(--ink); font-weight: 700; }
+  tr.detail td { background: #fff; padding: 12px 14px 16px; border-bottom: 2px solid var(--line); }
+  .detail-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .prompt { white-space: pre-wrap; font-style: italic; border-left: 3px solid var(--line); padding-left: 10px; margin: 0; }
+  .ids { color: var(--dim); font-size: 11px; }
+  .row-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .row-acts .note { color: var(--dim); font-size: 11px; }
+  table.rt { min-width: 0; background: none; margin-top: 4px; }
+  table.rt th { position: static; background: none; cursor: default; }
+  table.rt td { font-size: 11px; }
+  .thumb { width: 84px; height: 84px; border: 1px solid var(--line); background:
+    repeating-linear-gradient(0deg, rgba(74,98,138,.14) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.14) 0 1px, transparent 1px 12px), #f8f3e2;
+    display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .thumb img, .thumb svg { max-width: 100%; max-height: 100%; display: block; }
+  .thumb.none { color: var(--faint); font-size: 10px; }
+  .who { color: var(--dim); font-size: 10px; }
+  .axes { margin: 0; padding: 0; list-style: none; }
+  .axes li { white-space: nowrap; }
+  .axes .l { color: var(--dim); }
+  .notes { color: var(--dim); font-size: 10px; max-width: 34em; white-space: pre-wrap; }
+  .hint { color: var(--dim); font-size: 11px; margin: 10px 0 0; }
+  @media (max-width: 700px) { body { font-size: 11px; } }
+</style>
+</head>
+<body>
+<h1>The Ledger</h1>
+<p class="sub">Every object the drawer has ever held — the entries on disk and the visitor turns — with its standing in the drawer, its ratings, and the bench's view. <a href="index.php?admin">admin</a> · <a href="index.php?bench">bench</a> · <a href="index.php">the drawer</a> <span id="build"></span></p>
+<div id="app"></div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY_SLOT = 'jd-admin-key';           /* shared with JD_admin (jd-core.js) */
+  var API = '/api/jd-ledger.php', API_CURATE = '/api/jd-curate.php', API_CHECK = '/api/jd-admin-check.php';
+  var app = document.getElementById('app');
+  var D = null;                            /* the ledger payload */
+  var filter = 'all', query = '', sortKey = 'created', sortAsc = false;
+  var openKey = null;
+  var svgCache = {};
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function key() { try { return localStorage.getItem(KEY_SLOT) || ''; } catch (e) { return ''; } }
+  function setKey(k) { try { if (k) localStorage.setItem(KEY_SLOT, k); else localStorage.removeItem(KEY_SLOT); } catch (e) {} }
+  function headers(extra) { var h = extra || {}; var k = key(); if (k) h['X-Bench-Key'] = k; return h; }
+
+  /* ---------- the gate ---------- */
+  function gate(msg) {
+    app.innerHTML = '<div class="gate"><b>bench key</b>' + (msg ? '<p class="msg">' + esc(msg) + '</p>' : '') +
+      '<p class="hint">The same key the drawer\'s admin mode asks for. Remembered on this device.</p>' +
+      '<input type="password" autocomplete="off" id="keyin"><button type="button" id="keygo">open the ledger</button></div>';
+    var input = document.getElementById('keyin');
+    input.focus();
+    function go() { setKey(input.value.trim()); load(); }
+    document.getElementById('keygo').addEventListener('click', go);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+  }
+  function load() {
+    app.innerHTML = '<p class="hint">reading the ledger…</p>';
+    fetch(API + '?t=' + Date.now(), { headers: headers() }).then(function (r) {
+      return r.json().then(function (j) { return { status: r.status, j: j }; });
+    }).then(function (res) {
+      if (res.status === 403 || res.status === 429 || !res.j.ok) {
+        var code = res.j && res.j.error ? res.j.error.code : 'error';
+        gate(code === 'too_many_attempts' ? 'too many wrong keys — wait ' + ((res.j.error.retry_after || 0) + 's') :
+             code === 'forbidden' ? (key() ? 'the key was refused' : '') : 'the ledger could not be read (' + code + ')');
+        return;
+      }
+      D = res.j;
+      document.getElementById('build').textContent = '· ' + (D.build.version || '') + ' · ' + D.build.build + ' · tax v' + D.taxonomy_version;
+      render();
+    }, function () { gate('network error'); });
+  }
+
+  /* ---------- the table ---------- */
+  var FILTERS = [
+    ['all', 'all'], ['shown', 'in the drawer'], ['hidden', 'hidden'], ['absent', 'not in the drawer'],
+    ['bench', 'bench would offer'], ['blocked', 'bench cannot offer'], ['curated', 'curated'], ['turn', 'turns']
+  ];
+  function passes(it) {
+    if (filter === 'shown' || filter === 'hidden' || filter === 'absent') { if (it.drawer.state !== filter) return false; }
+    else if (filter === 'bench') { if (it.bench.state !== 'open') return false; }
+    else if (filter === 'blocked') { if (it.bench.state !== 'blocked') return false; }
+    else if (filter === 'curated' || filter === 'turn') { if (it.kind !== filter) return false; }
+    if (query) {
+      var q = query.toLowerCase();
+      var hay = (it.title + ' ' + it.prompt + ' ' + it.key + ' ' + it.responses.map(function (r) { return r.model_label + ' ' + r.model; }).join(' ')).toLowerCase();
+      if (hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  }
+  function norm(p) { return String(p || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function sortVal(it) {
+    switch (sortKey) {
+      case 'title': return it.title.toLowerCase();
+      case 'kind': return it.kind;
+      case 'drawer': return it.drawer.state;
+      case 'bench': return it.bench.state;
+      case 'size': return (it.size.filed || it.size.entry || '');
+      case 'n': return it.bench.served;
+      default: return it.created;
+    }
+  }
+  function ordered() {
+    var list = D.items.filter(passes);
+    /* rows on the same prompt stay together: the group takes the newest
+       member's sort value, members sort inside it by kind then date */
+    var groups = {};
+    list.forEach(function (it) { var g = norm(it.prompt); (groups[g] = groups[g] || []).push(it); });
+    var keys = Object.keys(groups);
+    keys.sort(function (a, b) {
+      var va = groups[a].map(sortVal).sort().slice(-1)[0], vb = groups[b].map(sortVal).sort().slice(-1)[0];
+      var c = va < vb ? -1 : va > vb ? 1 : 0;
+      return sortAsc ? c : -c;
+    });
+    var out = [];
+    keys.forEach(function (k) {
+      var g = groups[k].slice().sort(function (a, b) {
+        if (a.kind !== b.kind) return a.kind === 'curated' ? -1 : 1;
+        return a.created < b.created ? 1 : -1;
+      });
+      g.forEach(function (it, i) { it._groupStart = i === 0 && g.length > 1; it._groupN = g.length; out.push(it); });
+    });
+    return out;
+  }
+  function gradeLabel(v) { return v == null ? '—' : (D.grades[String(Number(v))] || v); }
+  function respChip(it, r) {
+    var cls = r.retired ? 'retired' : (r.complete ? 'ok' : (r.standing && (r.standing.axes_n || r.standing.grade != null) ? 'part' : 'none'));
+    if (it.drawer.shows === r.rid) cls += ' shows';
+    var st = r.standing;
+    var txt = r.rid + ' ' + r.model_label + ' · ' + (st && st.grade != null ? gradeLabel(st.grade) : (r.entry && r.entry.grade != null ? gradeLabel(r.entry.grade) + '*' : '—')) +
+      ' · ' + (st ? st.axes_n : 0) + '/' + D.axes.length + (r.rank ? ' · #' + r.rank : '');
+    return '<span class="' + cls + '" title="' + esc(r.rid + ' · ' + r.model_label + (r.retired ? ' · retired' : '') + (st ? '' : ' · no database row')) + '">' + esc(txt) + '</span>';
+  }
+  function render() {
+    var c = D.counts;
+    var h = '<div class="toolbar">';
+    FILTERS.forEach(function (f) { h += '<button type="button" class="chip' + (filter === f[0] ? ' is-on' : '') + '" data-filter="' + f[0] + '">' + f[1] + '</button>'; });
+    h += '<input type="search" id="q" placeholder="search title, prompt, id, model" value="' + esc(query) + '">';
+    h += '<span class="counts"><b>' + c.curated + '</b> curated · <b>' + c.turns + '</b> turns · <b>' + c.shown + '</b> in the drawer · <b>' + c.hidden + '</b> hidden · <b>' + c.absent + '</b> not in it · <b>' + c.bench_open + '</b> the bench would offer</span>';
+    h += '<button type="button" class="chip" id="reload">reload</button><button type="button" class="chip" id="signout">sign out</button></div>';
+    var list = ordered();
+    h += '<div class="wrap"><table><thead><tr>';
+    [['title', 'item'], ['kind', 'kind'], ['created', 'created'], ['size', 'size'], ['n', 'responses'], ['drawer', 'in the drawer?'], ['bench', 'the bench']].forEach(function (col) {
+      h += '<th data-sort="' + col[0] + '" class="' + (sortKey === col[0] ? 'sorted' + (sortAsc ? ' asc' : '') : '') + '">' + col[1] + '</th>';
+    });
+    h += '</tr></thead><tbody>';
+    if (!list.length) h += '<tr><td colspan="7" class="hint">nothing matches</td></tr>';
+    list.forEach(function (it) {
+      var open = openKey === it.key;
+      h += '<tr class="item' + (open ? ' is-open' : '') + (it._groupStart ? ' group-start' : '') + '" data-key="' + esc(it.key) + '">';
+      h += '<td class="title"><b>' + esc(it.title) + '</b><small>' + esc(it.key) + (it._groupN > 1 ? ' · ' + it._groupN + ' on this prompt' : '') + '</small></td>';
+      h += '<td><span class="kind ' + it.kind + '">' + it.kind + '</span>' + (it.kind === 'turn' ? '<div class="why">' + esc(it.flags.status) + (it.flags.suppressed ? ' · suppressed' : '') + '</div>' : '') + '</td>';
+      h += '<td>' + esc(String(it.created).slice(0, 10)) + '</td>';
+      h += '<td>' + esc(it.size.filed || it.size.entry || '—') + (it.size.filed && it.size.entry && it.size.filed !== it.size.entry ? '<div class="why">entry ' + esc(it.size.entry) + '</div>' : '') + (it.size.scale && it.size.scale !== 1 ? '<div class="why">× ' + esc(it.size.scale) + '</div>' : '') + '</td>';
+      h += '<td><div class="resp">' + it.responses.map(function (r) { return respChip(it, r); }).join('') + '</div></td>';
+      h += '<td><span class="st ' + it.drawer.state + '">' + (it.drawer.state === 'shown' ? 'in the drawer' : it.drawer.state === 'hidden' ? 'hidden' : 'not in it') + '</span>' +
+        (it.drawer.shows ? '<div class="why">shows ' + esc(it.drawer.shows) + ' — ' + esc(it.drawer.rule) + '</div>' : '') +
+        (it.drawer.why ? '<div class="why">' + esc(it.drawer.why) + '</div>' : '') + '</td>';
+      h += '<td><span class="st ' + it.bench.state + '">' + ({ done: 'done', open: 'would offer', blocked: 'cannot offer', off: 'skips it' })[it.bench.state] + '</span>' +
+        (it.bench.needs.length ? '<ul class="why">' + it.bench.needs.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') + '</td>';
+      h += '</tr>';
+      if (open) h += '<tr class="detail"><td colspan="7">' + detailHTML(it) + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    h += '<p class="hint">A chip per response: rid, model, grade (an asterisk = the entry\'s grade, no database row yet), axes answered / live axes, and #rank. Green = fully rated; gold = partly; struck = retired. The boxed chip is the one the drawer shows. Ratings the bench filed outrank an entry\'s seed, which outranks a visitor\'s.</p>';
+    app.innerHTML = h;
+    app.querySelectorAll('[data-filter]').forEach(function (b) { b.addEventListener('click', function () { filter = b.getAttribute('data-filter'); render(); }); });
+    var q = document.getElementById('q');
+    q.addEventListener('input', function () { query = q.value; render(); document.getElementById('q').focus(); var qq = document.getElementById('q'); qq.setSelectionRange(qq.value.length, qq.value.length); });
+    document.getElementById('reload').addEventListener('click', load);
+    document.getElementById('signout').addEventListener('click', function () { setKey(''); gate(''); });
+    app.querySelectorAll('th[data-sort]').forEach(function (th) {
+      th.addEventListener('click', function () {
+        var k = th.getAttribute('data-sort');
+        if (sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = k === 'title'; }
+        render();
+      });
+    });
+    app.querySelectorAll('tr.item').forEach(function (tr) {
+      tr.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('a, button')) return;
+        var k = tr.getAttribute('data-key');
+        openKey = openKey === k ? null : k;
+        render();
+        if (openKey) { var d = app.querySelector('tr.detail'); if (d) { loadThumbs(d); } }
+      });
+    });
+    app.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', function () { act(b); }); });
+  }
+
+  /* ---------- the detail ---------- */
+  function detailHTML(it) {
+    var h = '<div class="detail-grid">';
+    h += '<p class="prompt">' + esc(it.prompt) + '</p>';
+    h += '<div class="ids">' + esc(it.kind === 'curated' ? 'entry ' + it.item_id : 'turn ' + it.submission_id) +
+      (it.submission_id && it.kind === 'curated' ? ' · submission ' + esc(it.submission_id) : '') +
+      (it.flags.primary ? ' · pinned ' + esc(it.flags.primary) : '') +
+      (it.flags.rerun_requested ? ' · rerun requested' + (it.flags.rerun_landed ? ' (landed)' : ' (not landed)') : '') +
+      (it.flags.rerun_of ? ' · rerun of ' + esc(it.flags.rerun_of) : '') +
+      (it.flags.client ? ' · via ' + esc(it.flags.client) : '') + '</div>';
+    h += '<div class="row-acts">';
+    var canToggle = it.submission_id || it.kind === 'curated';
+    if (it.drawer.state === 'hidden') h += '<button type="button" data-act="show" data-key="' + esc(it.key) + '">show in the drawer</button>';
+    else if (it.drawer.state === 'shown' && canToggle) h += '<button type="button" data-act="hide" data-key="' + esc(it.key) + '">hide from the drawer</button>';
+    if (it.kind === 'curated' && !it.flags.retired_file) h += '<a href="index.php?admin&item=' + encodeURIComponent(it.drawer_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
+    if (it.kind === 'turn' && it.drawer.state === 'shown' && it.drawer_id) h += '<a href="index.php?admin&item=' + encodeURIComponent(it.drawer_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
+    if (it.bench.state === 'open' || it.bench.state === 'done') h += '<a href="index.php?bench&item=' + encodeURIComponent(it.item_id) + '" target="_blank" rel="noopener">open on the bench</a>';
+    h += '<span class="note" data-note></span></div>';
+    h += '<table class="rt"><thead><tr><th>drawing</th><th>response</th><th>grade</th><th>axes</th><th>rank</th><th>notes</th></tr></thead><tbody>';
+    it.responses.forEach(function (r) {
+      var st = r.standing;
+      h += '<tr' + (r.retired ? ' style="opacity:.55"' : '') + '>';
+      h += '<td>' + (r.url ? '<div class="thumb" data-url="' + esc(r.url) + '" data-kind="' + it.kind + '"></div>' : '<div class="thumb none">no drawing' + (r.reject ? '<br>' + esc(r.reject) : '') + '</div>') + '</td>';
+      h += '<td><b>' + esc(r.rid) + '</b> ' + esc(r.model_label) + '<div class="who">' + esc(r.model) + (r.slot ? ' · slot ' + esc(r.slot) : ' · no database row') + (r.date ? ' · ' + esc(r.date) : '') +
+        (r.retired ? (it.kind === 'turn' ? ' · ' + esc(r.status) : ' · retired in the entry') : '') + (it.drawer.shows === r.rid ? ' · <b>the drawer shows this one</b>' : '') + '</div></td>';
+      h += '<td>' + (st && st.grade != null ? esc(gradeLabel(st.grade)) : '—') + '<div class="who">' + who(r, 'grade') + '</div></td>';
+      h += '<td><ul class="axes">' + D.axes.map(function (a) {
+        var v = st && st.axes && st.axes[a.id] != null ? st.axes[a.id] : (r.entry && r.entry.axes && r.entry.axes[a.id] != null ? r.entry.axes[a.id] : null);
+        var fromEntryOnly = !(st && st.axes && st.axes[a.id] != null) && v != null;
+        return '<li><span class="l">' + esc(a.label) + ':</span> ' + (v == null ? '—' : esc(a.values[String(Number(v))] || v) + (fromEntryOnly ? '*' : '')) +
+          (st && st.notes && st.notes[a.id] ? ' <span class="who">' + esc(st.notes[a.id]) + '</span>' : '') + '</li>';
+      }).join('') + '</ul><div class="who">' + who(r, 'axes') + '</div></td>';
+      h += '<td>' + (r.rank ? '#' + r.rank + '<div class="who">' + esc(r.rank_by) + '</div>' : '—') + '</td>';
+      h += '<td class="notes">' + esc((st && st.note) || '') + (r.entry && r.entry.notes ? (st && st.note ? '\n' : '') + esc(r.entry.notes) : '') + '</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    if (it.kind === 'curated') h += '<p class="hint">* = the entry file\'s word, not yet in the database (a re-run of the backfill seeds it).</p>';
+    h += '</div>';
+    return h;
+  }
+  function who(r, what) {
+    var st = r.standing; if (!st) return 'entry only';
+    var parts = [];
+    ['bench', 'seed', 'visitor'].forEach(function (c) {
+      var b = st.by[c]; if (!b) return;
+      if (what === 'grade' && b.grade != null) parts.push(c + ' ' + gradeLabel(b.grade));
+      if (what === 'axes' && b.axes_n) parts.push(c + ' ' + b.axes_n + '/' + D.axes.length);
+    });
+    return parts.length ? parts.join(' · ') : (what === 'grade' ? 'no grade filed' : 'no axes filed');
+  }
+  function loadThumbs(root) {
+    root.querySelectorAll('.thumb[data-url]').forEach(function (el) {
+      var url = el.getAttribute('data-url');
+      if (svgCache[url]) { el.innerHTML = svgCache[url]; return; }
+      /* a turn's drawing may be off display (unrated) — only the keyed
+         request gets it, so every drawing is fetched with the key and
+         inlined rather than pointed at with an <img> */
+      fetch(url, { headers: headers() }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        if (!/<svg/i.test(t)) { el.className = 'thumb none'; el.textContent = 'not available'; return; }
+        t = t.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/\son[a-z]+="[^"]*"/gi, '');
+        svgCache[url] = t;
+        el.innerHTML = t;
+        var s = el.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); s.style.width = '100%'; s.style.height = '100%'; }
+      }, function () { el.className = 'thumb none'; el.textContent = 'not available'; });
+    });
+  }
+
+  /* ---------- the acts ---------- */
+  function act(btn) {
+    var k = btn.getAttribute('data-key'), what = btn.getAttribute('data-act');
+    var it = D.items.filter(function (i) { return i.key === k; })[0];
+    if (!it) return;
+    var body = it.submission_id ? { submission_id: it.submission_id } : { item_id: it.item_id };
+    body.retire = what === 'hide';
+    btn.disabled = true; btn.textContent = what === 'hide' ? 'hiding…' : 'showing…';
+    fetch(API_CURATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { btn.disabled = false; btn.textContent = '⚠ ' + ((res.j.error && res.j.error.code) || 'failed'); return; }
+        load();                                  /* the ledger re-reads: the server's word */
+      }, function () { btn.disabled = false; btn.textContent = '⚠ network'; });
+  }
+
+  if (key()) load(); else gate('');
+})();
+</script>
+</body>
+</html>

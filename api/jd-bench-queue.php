@@ -204,15 +204,24 @@ function jdq_response(array $g, array $byClient, array $rank, int $axisCount, bo
             if ($s['grade'] !== null && ($s['grade_version'] ?? 0) >= JD_QUEUE_RUBRIC_SINCE) {
                 $gradeSeed = $s['grade'];
             }
-        } elseif ($client === 'seed' && $s['grade'] !== null) {
-            $gradeSeed = $s['grade'];
+        } elseif ($client === 'seed') {
+            // the entry's word: its grade, and (since 2026-09-10) the
+            // live-axis annotations a harvest wrote — the owner's own
+            // answers from the rerun's turn, carried by jd-curated-sync
+            if ($s['grade'] !== null) {
+                $gradeSeed = $s['grade'];
+            }
+            foreach ($s['axes'] as $axis => $v) {
+                $axesSeed[$axis] = $v;
+            }
         }
     }
 
-    // A response is complete when every live axis is answered AND it carries
-    // a grade — the curator's own, or a seed. The turn card's own gate
+    // A response is complete when every live axis is answered — by the
+    // curator at the bench or by a seed the entry carried — AND it carries
+    // a grade, the curator's own or a seed. The turn card's own gate
     // requires a grade, so completeness has to as well.
-    $isComplete = count($axisValues) === $axisCount
+    $isComplete = count($axisValues + $axesSeed) === $axisCount
         && ($gradeBench !== null || $gradeSeed !== null);
     $totalResponses++;
     if ($isComplete) {
@@ -229,11 +238,13 @@ function jdq_response(array $g, array $byClient, array $rank, int $axisCount, bo
         'note'          => $note,
         'grade'         => $gradeBench,
         'grade_seed'    => $gradeSeed,
-        'rank'          => ($rank && $rank['client'] === 'bench') ? $rank['pos'] : null,
+        // the bench's rank, or the harvest's seed rank (2026-09-10 — a rerun
+        // set the owner ranked at its turn is ranked); a visitor's stays a seed
+        'rank'          => ($rank && in_array($rank['client'], ['bench', 'seed'], true)) ? $rank['pos'] : null,
         'complete'      => $isComplete,
+        'axes_seed'     => $axesSeed,
     ];
     if ($isTurn) {
-        $out['axes_seed'] = $axesSeed;
         $out['rank_seed'] = $rank ? $rank['pos'] : null;
     }
     return $out;

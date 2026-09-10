@@ -95,6 +95,7 @@ if (!jd_has_column($db, 'jd_submissions', 'item_id')) {
 }
 
 $filedItems = 0; $appended = 0; $current = 0; $filedGens = 0; $filedSeeds = 0;
+$filedAxes = 0; $leveled = 0; $leveledItems = 0;
 $skipRetired = 0; $overflow = [];
 
 foreach ($entries as $path) {
@@ -111,6 +112,13 @@ foreach ($entries as $path) {
     } catch (PDOException $ex) {
         fwrite(STDERR, "backfill: FAILED on $itemId — " . $ex->getMessage() . "\n");
         exit(1);
+    }
+    // the seeds levelled onto rows already on file (2026-09-10) — reported
+    // per item, because this is what a re-run of the backfill is FOR now
+    $filedAxes += $r['filed_axes'] ?? 0;
+    if (!empty($r['leveled'])) {
+        $leveled += $r['leveled']; $leveledItems++;
+        echo sprintf("%s  %-36s %d seed row(s) onto rows already filed\n", $dryRun ? 'would level' : 'leveled    ', $itemId, $r['leveled']);
     }
     switch ($r['status']) {
         case 'filed':
@@ -138,6 +146,7 @@ echo "  items appended   : $appended\n";
 echo "  already current  : $current\n";
 echo "  generations      : $filedGens\n";
 echo "  seed grade rows  : $filedSeeds\n";
+echo "  seed axis rows   : $filedAxes (with the new rows) + $leveled leveled onto $leveledItems item(s) already on file (axes and ranks)\n";
 echo "  skipped retired  : $skipRetired" . ($includeRetired ? " (--include-retired was set)" : "") . "\n";
 if ($overflow) {
     echo "\n  !! REFUSED — more responses than the " . strlen(JD_SLOT_LETTERS) . " slots hold:\n";
