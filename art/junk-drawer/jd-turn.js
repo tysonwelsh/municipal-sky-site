@@ -191,7 +191,8 @@
          never torn down and never needs rebinding. */
       '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
-      '<span aria-hidden="true">✕</span></button></header>' +
+      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>' +
       '<div class="jd-turn-scroll"></div></div>';
     document.body.appendChild(scrim);
     card = scrim.querySelector('.jd-turn');

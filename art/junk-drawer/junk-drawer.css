@@ -45,17 +45,38 @@ html { scroll-behavior: smooth; }
                    title a band-centred ✕ floats between the lines instead
                    of sitting in the corner where a corner ✕ belongs.)
      --jd-x-gap    the clear air between the title's box and the target
-     --jd-x-size   the glyph, a size up from the old 1.1/1.15rem
+     --jd-x-ink    the DRAWN MARK, edge to edge
+
+   THE MARK IS DRAWN, NOT TYPED (owner, 2026-09-10, second pass). It was the
+   ✕ character in the house mono, and a mono's ✕ is a small mark in a large
+   em: at 1.5rem it still inked barely 11px across — about 1.3× the title's
+   cap height, which is not the bigger X the owner asked for. Raising the
+   font-size to chase it makes the ✕ dependent on whichever mono actually
+   loads, and each dialog sets a different one. So the four closes now carry
+   the same two-stroke SVG instead, sized in px: the path runs corner to
+   corner of an 18-unit box at 18px, so the ink measures --jd-x-ink exactly,
+   in every dialog, on every device, whatever the font does.
 
    The matching half of the contract is on the heads: each one reserves
    `--jd-x-w + --jd-x-gap` of right-hand room (symmetric padding where the
    title is centred, so the centring survives), and clamps its title to two
-   lines. Neither half works alone. */
+   lines — BALANCED (`text-wrap: balance`), so a two-line title splits into
+   two comparable lines instead of a full line and one orphaned word.
+   Neither half works alone. */
 :root {
   --jd-x-w: 48px;
   --jd-x-band: 44px;
   --jd-x-gap: 8px;
-  --jd-x-size: 1.5rem;
+  --jd-x-ink: 18px;
+}
+/* the mark, shared by all four closes. stroke-linecap:round is what makes a
+   2px stroke read as a drawn mark rather than a hairline cross; the path is
+   inset 1 unit so the round caps land ON the box edge and the ink measures
+   the full --jd-x-ink. currentColor, so each dialog's own ink and its red
+   hover carry through untouched. */
+.jd-x-mark {
+  display: block;
+  width: var(--jd-x-ink); height: var(--jd-x-ink);
 }
 
 /* ---------------- the stage: drawer as object on the page ---------------- */
@@ -1081,7 +1102,7 @@ html.jd-record-open { overflow: hidden; }
    box retired, glyph up a size, a 40px target holding the old visual seat */
 /* ONE MEASUREMENT (owner, 2026-09-10 — see the :root note at the top of the
    file): the 40px target grows to the shared --jd-x-w × --jd-x-band and the
-   glyph to --jd-x-size, and it seats flush in the card's corner so its band
+   mark to the shared drawn ✕, and it seats flush in the card's corner so its band
    starts at the card's top edge — which is where the masthead's first line
    is. Unlike the turn and folder closes this one hangs off the CARD, not
    off a head, because the masthead scrolls (the ≤700px portrait flow) and
@@ -1093,7 +1114,6 @@ html.jd-record-open { overflow: hidden; }
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none;
   cursor: pointer;
-  font-family: var(--rc-mono); font-size: var(--jd-x-size); line-height: 1;
   color: var(--form-ink); padding: 0;
 }
 .jd-record-close:hover { color: var(--red); }
@@ -1157,6 +1177,15 @@ html.jd-record-open { overflow: hidden; }
 .rc-item {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
   overflow: hidden;
+  /* BALANCED (owner, 2026-09-10, second pass): left to itself the browser
+     fills line one to the measure and drops whatever is left onto line two,
+     which on a phone made "Holographic alien header / sticker" and
+     "Chairman Mao enamel pin / badge" — a full line and an orphan. Balance
+     splits the two lines evenly instead. It applies alongside the clamp;
+     a title long enough to overrun two lines is left unbalanced by the
+     engine, which is right — that one wants a full first line and the
+     ellipsis, not two short lines and a cut. */
+  text-wrap: balance;
   font-family: var(--form); font-size: 0.75rem; font-weight: 700;
   letter-spacing: 0.19em; text-transform: uppercase; line-height: 1.35;
   color: #2f3846;
@@ -1451,7 +1480,6 @@ html.jd-record-open { overflow: hidden; }
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; padding: 0;
   cursor: pointer;   /* the fig around it is zoom-out; this one is a button */
-  font-family: var(--rc-mono); font-size: var(--jd-x-size); line-height: 1;
   color: #37414f;
 }
 .rc-zoom-close:hover { color: var(--red); }
@@ -1991,17 +2019,15 @@ html.jd-turn-open { overflow: hidden; }
    top, and .jd-turn-head's block padding is computed so that ONE line of
    heading measures exactly one band — so on a one-line head nothing moved
    at all, and on a two-line head the ✕ stays in the corner it belongs in
-   while the second line runs on underneath it. The glyph steps up to the
-   shared --jd-x-size with the other three. */
+   while the second line runs on underneath it. The mark is the shared
+   drawn ✕ (.jd-x-mark), the same in all four dialogs. */
 .jd-turn-close {
   position: absolute; top: 0; right: 0; z-index: 8;
   width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--tmono); font-size: var(--jd-x-size); line-height: 1;
   color: var(--tink);
 }
-.jd-turn-close span { display: block; }
 .jd-turn-close:hover { color: var(--tred); }
 .jd-turn-close:focus-visible { outline: 2px solid var(--tred); outline-offset: -8px; }
 
@@ -2053,7 +2079,7 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-title {
   flex: 1 1 auto; min-width: 0; margin: 0;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  overflow: hidden;
+  overflow: hidden; text-wrap: balance;
   font-family: var(--tform); font-weight: 700; font-size: var(--t-title);
   letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.3;
   color: var(--tink);
@@ -4163,7 +4189,10 @@ html.jd-folder-open { overflow: hidden; }
    of running under it. */
 .jd-folder-tabrow {
   flex: 1 1 auto; min-width: 0;
-  padding: 9px calc(var(--jd-x-w) + var(--jd-x-gap)) 0 15px;
+  /* the ✕ is a flex SIBLING here, not an overlay (see .jd-folder-close), so
+     the row reserves only the GAP — the target's own width is already out of
+     this box and double-reserving it would cost the tab 48px of measure */
+  padding: 9px var(--jd-x-gap) 0 15px;
 }
 /* the tab reproduced from the artwork: a raised manila flag, house mono,
    heavily letterspaced. text-indent cancels the trailing letter-space so the
@@ -4173,7 +4202,7 @@ html.jd-folder-open { overflow: hidden; }
    display still lays out as an inline-block flag; only its overflow changes) */
 .jd-folder-tab {
   display: -webkit-inline-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  overflow: hidden; max-width: 100%;
+  overflow: hidden; max-width: 100%; text-wrap: balance;
   padding: 4px 13px 3px;
   background: var(--fmanila-hi);
   border: 1px solid var(--frule);
@@ -4188,15 +4217,23 @@ html.jd-folder-open { overflow: hidden; }
    in a 44px target, pinned to the band's top-right corner so the box lands
    9px in from the card's edges (the record card's exact seat) */
 /* the bare-✕ idiom (owner, 2026-08-29 — see the note at .jd-turn-close) */
+/* THE FOLDER IS THE ONE EXCEPTION to "the ✕ centres on the first line"
+   (owner, 2026-09-10, second pass), and it earns it: the other three heads
+   hold loose type, but this one holds a PLATE — a bordered manila tab you
+   can see the edges of — and a ✕ that ignores it reads as misaligned even
+   when it is square with the first line. So here the ✕ is a flex sibling of
+   the tab row rather than an overlay pinned to the corner, and align-self
+   centres it on the band the tab row makes: within ~2px of the tab's own
+   centre on one line, within half a pixel on two (it used to miss by six).
+   Being in the flow is also what lets the row reserve just the gap. */
 .jd-folder-close {
-  position: absolute; top: 0; right: 0; z-index: 3;
+  position: relative; z-index: 3;
+  flex: 0 0 auto; align-self: center;
   width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--fmono); font-size: var(--jd-x-size); line-height: 1;
   color: var(--fink);
 }
-.jd-folder-close span { display: block; }
 .jd-folder-close:hover { color: var(--fred, #a8332a); }
 /* focus moves here programmatically when the folder opens, and the UA's own
    ring drew a large blue rectangle over the head — keep :focus quiet and

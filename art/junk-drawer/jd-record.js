@@ -745,8 +745,9 @@
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
       '</div>' +
-      '<button type="button" class="rc-zoom-close rc-zoom-keep" ' +
-      'aria-label="close"><span aria-hidden="true">✕</span></button>' +
+      '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
+      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
       plateBtnsHTML(entry, resp, true) +
       '</div>' +
       '<div class="rc-zoom-cap">' +
@@ -803,7 +804,9 @@
     scrim.className = 'jd-record-scrim';
     scrim.innerHTML = '<div class="jd-record" role="dialog" aria-modal="true" ' +
       'aria-label="report card">' +
-      '<button type="button" class="jd-record-close" aria-label="close">✕</button>' +
+      '<button type="button" class="jd-record-close" aria-label="close">' +
+      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
       '<div class="rc-scroll"></div></div>';
     document.body.appendChild(scrim);
     cardEl = scrim.querySelector('.jd-record');

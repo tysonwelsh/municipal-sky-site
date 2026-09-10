@@ -1141,7 +1141,8 @@
           '<div class="jd-folder-tabrow">' +
             '<span class="jd-folder-tab">ANALYTICS</span></div>' +
           '<button type="button" class="jd-folder-close" aria-label="close">' +
-          '<span>✕</span></button>' +
+          '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+          '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
         '</div>' +
         '<div class="jd-folder-scroll"></div>' +
       '</div>';
