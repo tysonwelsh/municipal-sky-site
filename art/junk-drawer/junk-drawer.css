@@ -4341,7 +4341,8 @@ html.jd-folder-open { overflow: hidden; }
 .fx-turns-t th { position: sticky; top: 0; z-index: 1; height: 25px; background: var(--fpaper); font-family: var(--fform); font-weight: 700; font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fink-3); }
 .fx-turns-t td { font-family: var(--fmono); font-size: 0.62rem; color: var(--fink); }
 .fx-th-date, .fx-td-date { width: 84px; color: var(--fink-3); }
-.fx-th-model, .fx-td-grade { width: 92px; }
+.fx-th-model, .fx-td-grade { width: 108px; }
+.fx-th-model { letter-spacing: 0.06em; }
 .fx-td-grade { display: table-cell; }
 .fx-td-num { display: inline-block; width: 1.1em; font-weight: 700; }
 .fx-td-none { color: var(--fink-3); }
