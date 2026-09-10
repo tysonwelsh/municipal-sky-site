@@ -1,15 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img"
-     aria-label="A backlit arcade credit button: a charcoal coin-door housing around a glowing blue lens printed PUSH FOR JUNK">
+     aria-label="A backlit arcade credit button: a charcoal coin-door housing around a glowing blue lens printed PUSH 4 MORE JUNK">
   <!-- THE TAKE-A-TURN OBJECT — candidate 9a, "the credit window" (owner's pick,
        PLAN-TURN-OBJECT round 9, 2026-08-11), shipped BLUE with PUSH FOR JUNK
        printed on the lens. Lifted from mockups/mockup-9a-credit-window.html;
        only the shipping colour (amber → blue) and the label wording changed.
+       RELETTERED 2026-09-10 (owner): the lens now reads PUSH / 4 MORE / JUNK
+       on three lines of one size, and the reference hardware's two thick
+       bars above the label are gone — the words are the whole print.
 
        A backlit coin-door credit button in plan view: the charcoal housing
        steps down through a bevel to a dark well; the translucent blue lens
-       rides one step proud of it, lit from behind; PUSH FOR JUNK is printed
-       on the lens in dark ink so the backlight silhouettes it, under the
-       reference hardware's two thick bars.
+       rides one step proud of it, lit from behind; PUSH / 4 MORE / JUNK is
+       printed on the lens in dark ink, three lines edge to edge, so the
+       backlight silhouettes it.
 
        Ink is edge to edge: the housing spans x 20..220 / y 25..275 (83% of
        the box both axes — the size math measures hardware) and the light
@@ -153,21 +156,21 @@
        font-weight="700" text-anchor="middle">
       <!-- screened-ink impression: same art, nudged, warm dark, faint -->
       <g fill="#7c4a08" opacity="0.38" transform="translate(1.6 1.6)">
-        <rect x="78" y="88"  width="84" height="10" rx="2"/>
-        <rect x="78" y="104" width="84" height="10" rx="2"/>
-        <text x="120" y="164" font-size="31" letter-spacing="1"
-              textLength="104" lengthAdjust="spacingAndGlyphs">PUSH FOR</text>
-        <text x="120" y="216" font-size="50" letter-spacing="2"
-              textLength="100" lengthAdjust="spacingAndGlyphs">JUNK</text>
+        <text x="120" y="115" font-size="48" letter-spacing="2"
+              textLength="106" lengthAdjust="spacingAndGlyphs">PUSH</text>
+        <text x="120" y="167" font-size="48" letter-spacing="2"
+              textLength="112" lengthAdjust="spacingAndGlyphs">4 MORE</text>
+        <text x="120" y="219" font-size="48" letter-spacing="2"
+              textLength="106" lengthAdjust="spacingAndGlyphs">JUNK</text>
       </g>
       <!-- the ink itself: near-black, warm, variant-independent -->
       <g fill="#241505">
-        <rect x="78" y="88"  width="84" height="10" rx="2"/>
-        <rect x="78" y="104" width="84" height="10" rx="2"/>
-        <text x="120" y="164" font-size="31" letter-spacing="1"
-              textLength="104" lengthAdjust="spacingAndGlyphs">PUSH FOR</text>
-        <text x="120" y="216" font-size="50" letter-spacing="2"
-              textLength="100" lengthAdjust="spacingAndGlyphs">JUNK</text>
+        <text x="120" y="115" font-size="48" letter-spacing="2"
+              textLength="106" lengthAdjust="spacingAndGlyphs">PUSH</text>
+        <text x="120" y="167" font-size="48" letter-spacing="2"
+              textLength="112" lengthAdjust="spacingAndGlyphs">4 MORE</text>
+        <text x="120" y="219" font-size="48" letter-spacing="2"
+              textLength="106" lengthAdjust="spacingAndGlyphs">JUNK</text>
       </g>
     </g>
 

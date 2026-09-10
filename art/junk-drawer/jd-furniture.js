@@ -12,7 +12,7 @@
    The Take-a-Turn trigger is HARDWARE IN THE DRAWER: candidate 9a won mockup
    round 9 (2026-08-11, replacing round 8's doorbell, which camouflaged too
    well) — a backlit arcade credit button, charcoal coin-door housing, glowing
-   blue lens with PUSH FOR JUNK printed on the glass, throwing a pool of light
+   blue lens with PUSH / 4 MORE / JUNK printed on the glass, throwing a pool of light
    on the wood. The artwork is a static asset (turn-object.svg) fetched
    alongside data.php and injected as a .jd-item, which buys the whole gesture
    layer for free: silhouette hit-testing and the tap path in particular.
@@ -50,8 +50,12 @@
      corner reservation all carry over unchanged. Only 83% of that width is
      pressable housing (the outer band is halo light, pointer-events:none in
      the CSS), which is why the CSS touch floor rose 44 → 53px: 53px of
-     element is 44px of plastic. */
-  var FINE = 1.15;
+     element is 44px of plastic.
+     RAISED 1.15 → 1.5 on 2026-09-10 (owner: "bigger", with the relettered
+     PUSH / 4 MORE / JUNK lens): ~30% more on each side, so the phone
+     measurement above reads ~76×95px now. GEOM carries the same dial, so
+     the corner the scatter reserves grows with it. */
+  var FINE = 1.5;
   /* FIXED HARDWARE (owner revision, 2026-08-10): the turn button is screwed to
      the bottom-left corner of the drawer floor. It no longer scatters, drags,
      rotates, or persists a seat — same spot, every session, every device.
@@ -103,11 +107,11 @@
     '</g>',
     '<g fill="#0a1626" font-weight="700" text-anchor="middle"',
     ' font-family="\'Arial Narrow\', \'Franklin Gothic Medium\', Impact, sans-serif">',
-    '<rect x="78" y="88" width="84" height="10" rx="2"/>',
-    '<rect x="78" y="104" width="84" height="10" rx="2"/>',
-    '<text x="120" y="164" font-size="31" letter-spacing="1" textLength="104"',
-    ' lengthAdjust="spacingAndGlyphs">PUSH FOR</text>',
-    '<text x="120" y="216" font-size="50" letter-spacing="2" textLength="100"',
+    '<text x="120" y="115" font-size="48" letter-spacing="2" textLength="106"',
+    ' lengthAdjust="spacingAndGlyphs">PUSH</text>',
+    '<text x="120" y="167" font-size="48" letter-spacing="2" textLength="112"',
+    ' lengthAdjust="spacingAndGlyphs">4 MORE</text>',
+    '<text x="120" y="219" font-size="48" letter-spacing="2" textLength="106"',
     ' lengthAdjust="spacingAndGlyphs">JUNK</text>',
     '</g>',
     '<rect class="cw-flash" x="54" y="62" width="132" height="176" rx="10"',
@@ -332,7 +336,7 @@
      wrapper actually says */
   var SHEET_TEXT = 'Instructions. 1: Dig around — drag the junk; twist it ' +
     'while held. 2: Tap an object for its specimen tag; REPORT CARD opens ' +
-    'its full grades. 3: Press PUSH FOR JUNK and four AIs draw your idea — ' +
+    'its full grades. 3: Press PUSH 4 MORE JUNK and four AIs draw your idea — ' +
     'grade them blind, rank them, see who drew what; your pick joins the ' +
     'drawer.';
 
