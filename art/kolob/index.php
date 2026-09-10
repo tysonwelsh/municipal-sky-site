@@ -72,19 +72,29 @@ include '../../includes/header.php';
     </div>
 
     <!-- The console (v0.22): one row on the paper — PLAY a solid ink dot,
-         STOP a ringed one, glyph only (play turns gilt while the meeting
-         runs); then the volume slider, an ink line with a brass hexagon for
-         its thumb, the beehive of the Deseret theme. One hairline beneath.
-         One row at every width; the VOL caption drops on a phone. The
-         Liahona dial that once sat at the row's end is gone — the wheel
-         does its work. -->
+         PAUSE and STOP ringed ones, glyph only (play turns gilt while the
+         meeting runs; pause fills while the meeting is held); then the
+         volume slider, an ink line with a brass hexagon for its thumb, the
+         beehive of the Deseret theme. The hexagon is not the browser's thumb
+         (every browser paints its own box behind that) but an SVG laid over
+         the slider and moved with it by kolob-ui.js; the real thumb is
+         invisible and only takes the pointer. One hairline beneath. One row
+         at every width; the VOL caption drops on a phone. -->
     <div class="kolob-console">
       <div class="kolob-transport">
         <button type="button" class="kolob-knob play-btn" id="kolob-play" aria-label="play"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.4v11.2L13.4 8z" fill="currentColor"/></svg></button>
+        <button type="button" class="kolob-knob pause-btn" id="kolob-pause" aria-label="pause" aria-pressed="false"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.4" y="2.8" width="3.4" height="10.4" fill="currentColor"/><rect x="9.2" y="2.8" width="3.4" height="10.4" fill="currentColor"/></svg></button>
         <button type="button" class="kolob-knob stop-btn" id="kolob-stop" aria-label="stop"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.6" y="3.6" width="8.8" height="8.8" fill="currentColor"/></svg></button>
         <div class="kolob-transport-spacer"></div>
         <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
-        <input type="range" min="0" max="100" value="60" class="kolob-range kolob-lever" id="kolob-master-vol" aria-label="master volume" />
+        <span class="kolob-lever-wrap">
+          <input type="range" min="0" max="100" value="60" class="kolob-range kolob-lever" id="kolob-master-vol" aria-label="master volume" />
+          <svg class="kolob-lever-thumb" viewBox="0 0 20 22" aria-hidden="true">
+            <defs><linearGradient id="kolob-brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c986"/><stop offset="0.55" stop-color="#8a7a45"/><stop offset="1" stop-color="#6e6136"/></linearGradient></defs>
+            <polygon points="10,0.8 18.9,5.9 18.9,16.1 10,21.2 1.1,16.1 1.1,5.9" fill="url(#kolob-brass)" stroke="#3f3720" stroke-width="1"/>
+            <polygon points="10,4.6 15.6,7.8 15.6,14.2 10,17.4 4.4,14.2 4.4,7.8" fill="none" stroke="#f5f0e4" stroke-opacity="0.45" stroke-width="0.9"/>
+          </svg>
+        </span>
       </div>
     </div>
 

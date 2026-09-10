@@ -49,6 +49,7 @@ window.KolobViz = (function () {
 
   var cond = { section: null, local: 0, intensity: 0, f0: 65, mode: "ionian", hush: false, fuging: false };
   var playing = false;
+  var paused = false;                              // the meeting held: the page stops turning and drying
   var curGen = 0;                                  // engraving wear follows the working generation
 
   var INK = "#1e4d3b";                             // hymnbook green
@@ -486,8 +487,9 @@ window.KolobViz = (function () {
     var dt = lastFrame ? Math.min(0.1, (ts - lastFrame) / 1000) : 0.016;
     lastFrame = ts;
 
-    // scroll the ink leftward (whole pixels only; sub-pixel drift blurs ink)
-    scrollAcc += SCROLL_PX_S * dt;
+    // scroll the ink leftward (whole pixels only; sub-pixel drift blurs ink);
+    // a held meeting holds the page too
+    if (!paused) scrollAcc += SCROLL_PX_S * dt;
     var shift = Math.floor(scrollAcc);
     if (shift > 0) {
       scrollAcc -= shift;
@@ -501,7 +503,7 @@ window.KolobViz = (function () {
     // sacrament blanks the page in a few seconds; the postlude dries faster.
     pctx.save();
     pctx.globalCompositeOperation = "destination-out";
-    pctx.globalAlpha = 0.0006 + (cond.section === "sacrament" ? 0.02 : 0) + (cond.section === "postlude" ? 0.004 : 0);
+    pctx.globalAlpha = paused ? 0 : 0.0006 + (cond.section === "sacrament" ? 0.02 : 0) + (cond.section === "postlude" ? 0.004 : 0);
     pctx.fillRect(0, 0, W, H);
     pctx.restore();
 
@@ -828,9 +830,10 @@ window.KolobViz = (function () {
     running = true;
     requestAnimationFrame(frame);
   }
-  function setConductor(c, isPlaying) {
+  function setConductor(c, isPlaying, isPaused) {
     if (c) cond = c;
     playing = !!isPlaying;
+    paused = !!isPaused;
   }
 
   return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt };

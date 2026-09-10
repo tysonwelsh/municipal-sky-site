@@ -215,10 +215,10 @@
   /* The staff and the wheel are almost one plate: the staff's top ledger room
      (33px above the first rule) is laid over the foot of the wheel band, so the
      first rule sits about 17px beneath the wheel's horizon (12px on a phone).
-     Notes above the staff may drift over the wheel — by design. Beneath, a
-     0.6rem step to the console band (the running head that sat there moved
-     into the hymn board's programme card in v0.20). */
-  margin: -20px 0 0.6rem;
+     Notes above the staff may drift over the wheel — by design. Beneath, the
+     console is drawn up 12px into the bottom ledger room (the canvas takes
+     no pointer, so the dots stay pressable there). */
+  margin: -20px 0 -12px;
   z-index: 2;                       /* over the wheel band (both are z-index 1 by the frame rule) */
 }
 .kolob-viz {
@@ -227,21 +227,22 @@
   width: 100%;
   height: 100%;
   display: block;
+  pointer-events: none;             /* the console's dots rise into this plate's foot */
 }
 
 /* ========================= the console: the ink dots ==================== */
 /* One row on the paper, the way a player sets its controls: PLAY a solid ink
    disc with a paper glyph (the action pressed most is the one filled; it
-   turns gilt while the meeting runs), STOP a ring with an ink glyph, then a
-   spacer, the VOL caption and the volume slider with its beehive-hexagon
-   thumb. One hairline beneath the row, none above, so it sits close under
+   turns gilt while the meeting runs), PAUSE and STOP rings with ink glyphs
+   (pause fills with ink while the meeting is held), then a spacer, the VOL
+   caption and the volume slider with its beehive-hexagon thumb. One hairline beneath the row, none above, so it sits close under
    the staff. (v0.21 set these on a green rail; v0.22 took the rail away.) */
 .kolob-console {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   margin: 0 0 2.8rem;
-  padding: 0.35rem 0 0.7rem;
+  padding: 0 0 0.6rem;
   border-bottom: 1px solid var(--rule);
 }
 .kolob-transport {
@@ -275,6 +276,9 @@
 .play-btn .kolob-knob-glyph { margin-left: 2px; }
 /* the meeting runs: the play dot turns gilt — the page's colour for what moves */
 .kolob-knob.play-btn.is-playing { background: var(--gilt); border-color: var(--gilt); color: var(--paper); }
+/* the meeting held: the pause dot fills with ink; the play dot waits in ink */
+.kolob-knob.pause-btn.is-paused { background: var(--ink); color: var(--paper); }
+.kolob-knob.play-btn.is-playing.is-held { background: var(--ink); border-color: var(--ink); }
 .kolob-transport-spacer { flex: 1; }
 .kolob-ctl-label {
   font-family: "Noto Sans Deseret", serif;
@@ -332,39 +336,68 @@
   border: 1px solid var(--ink);
 }
 
-/* the volume slider — a 2px ink line, inked up to the thumb (--v, set by
-   kolob-ui.js) and faint beyond it; and for the thumb a brass HEXAGON,
-   pointy-top — the beehive of the Deseret theme, the one thing kept from the
-   Liahona dial's case. The hexagon is an SVG so its edges stay crisp at any
-   size; the double rule inside it is the dial's engraved rim. */
-.kolob-lever {
-  --v: 60%;
+/* the volume slider — a 2px ink line, inked up to the thumb and faint beyond
+   it; and for the thumb a brass HEXAGON, pointy-top — the beehive of the
+   Deseret theme, the one thing kept from the Liahona dial's case. The hexagon
+   is NOT the browser's thumb: browsers paint their own box behind a styled
+   thumb (a white square on some), so the native thumb is made invisible and
+   keeps only the pointer, and an SVG hexagon (.kolob-lever-thumb) is laid
+   over the slider and moved with it — kolob-ui.js sets --f (0..1) on the
+   wrap; the fill and the hexagon both follow it. The thumb's centre travels
+   from half its width in to half its width short of the end, as the native
+   thumb does, so the two stay together. */
+.kolob-lever-wrap {
+  --f: 0.6;
+  --thumb: 20px;
+  position: relative;
+  display: inline-block;
   width: 210px;
   height: 26px;
+  flex: 0 0 auto;
+}
+.kolob-lever {
+  display: block;
+  width: 100%;
+  height: 26px;
+  --fill: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--f));
 }
 .kolob-lever::-webkit-slider-runnable-track {
   height: 2px;
   border-radius: 1px;
-  background: linear-gradient(to right, var(--ink) var(--v), var(--ink-faint) var(--v));
+  background: linear-gradient(to right, var(--ink) var(--fill), var(--ink-faint) var(--fill));
 }
 .kolob-lever::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px; height: 22px;
+  appearance: none;
+  width: var(--thumb); height: 22px;
   margin-top: -10px;
   border: 0;
   border-radius: 0;
-  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 22'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23d9c986'/%3E%3Cstop offset='0.55' stop-color='%238a7a45'/%3E%3Cstop offset='1' stop-color='%236e6136'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='10,0.8 18.9,5.9 18.9,16.1 10,21.2 1.1,16.1 1.1,5.9' fill='url(%23g)' stroke='%233f3720' stroke-width='1'/%3E%3Cpolygon points='10,4.6 15.6,7.8 15.6,14.2 10,17.4 4.4,14.2 4.4,7.8' fill='none' stroke='%23f5f0e4' stroke-opacity='0.45' stroke-width='0.9'/%3E%3C/svg%3E") center / contain no-repeat;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
 }
 .kolob-lever::-moz-range-track { height: 2px; border-radius: 1px; background: var(--ink-faint); }
 .kolob-lever::-moz-range-progress { height: 2px; border-radius: 1px; background: var(--ink); }
 .kolob-lever::-moz-range-thumb {
-  width: 20px; height: 22px;
+  width: var(--thumb); height: 22px;
   border: 0;
   border-radius: 0;
-  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 22'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23d9c986'/%3E%3Cstop offset='0.55' stop-color='%238a7a45'/%3E%3Cstop offset='1' stop-color='%236e6136'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='10,0.8 18.9,5.9 18.9,16.1 10,21.2 1.1,16.1 1.1,5.9' fill='url(%23g)' stroke='%233f3720' stroke-width='1'/%3E%3Cpolygon points='10,4.6 15.6,7.8 15.6,14.2 10,17.4 4.4,14.2 4.4,7.8' fill='none' stroke='%23f5f0e4' stroke-opacity='0.45' stroke-width='0.9'/%3E%3C/svg%3E") center / contain no-repeat;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+}
+.kolob-lever-thumb {
+  position: absolute;
+  top: 50%;
+  left: calc((100% - var(--thumb)) * var(--f));
+  width: var(--thumb);
+  height: 22px;
+  margin-top: -11px;
+  pointer-events: none;             /* the invisible native thumb beneath takes the drag */
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
 }
+.kolob-lever:focus-visible + .kolob-lever-thumb { filter: drop-shadow(0 0 2px var(--gilt)); }
 
 /* On touch (coarse pointers) the hairline-and-bead is too small to hit: the
    thumb is 11px and the input only 18px tall, so a fingertip lands beside it.
@@ -375,8 +408,11 @@
   .kolob-range { height: 44px; }
   .kolob-range::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -8.5px; }
   .kolob-range::-moz-range-thumb { width: 18px; height: 18px; }
-  .kolob-lever::-webkit-slider-thumb { width: 24px; height: 26px; margin-top: -12px; }
-  .kolob-lever::-moz-range-thumb { width: 24px; height: 26px; }
+  .kolob-lever-wrap { --thumb: 24px; height: 44px; }
+  .kolob-lever { height: 44px; }
+  .kolob-lever::-webkit-slider-thumb { height: 26px; margin-top: -12px; }
+  .kolob-lever::-moz-range-thumb { height: 26px; }
+  .kolob-lever-thumb { height: 26px; margin-top: -13px; }
 }
 
 /* ============================== the wheel ================================ */
@@ -802,7 +838,7 @@
   .kolob-transport { gap: 0.6rem; }
   .kolob-transport-spacer { flex: 0 0 0.2rem; }
   .kolob-transport .kolob-ctl-label { display: none; }
-  .kolob-console .kolob-lever { flex: 1 1 auto; width: auto; min-width: 0; }
+  .kolob-console .kolob-lever-wrap { flex: 1 1 auto; width: auto; min-width: 0; }
   .kolob-wheel-wrap { height: 185px; }
   .kolob-viz-wrap { height: 184px; }
 }
