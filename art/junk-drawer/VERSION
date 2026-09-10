@@ -73,3 +73,5 @@
 0.9.112 — the layers are the deal at load only: the drawer opens with extra-large objects on the floor and large ones on those, and anything you lift comes to the very top again, as it always did
 0.9.113 — blueprint paper: a small button in the photograph's top-right corner swaps the report card's graph paper for blueprint (pale rules on deep blue) so light artwork reads, and back; the enlargement follows and the choice is remembered on the device
 0.9.114 — the enlargement is the whole photograph now: model, date, tokens, cost, the file number, DOWNLOAD SVG and a full-size REDRAW that works up there, plus the paper swap; and the colophon paragraph under the drawer is gone (the series link and build stamp stay)
+0.9.115 — the report card draws its photograph on when it opens; flipping to another model's drawing just shows it (REDRAW is there when you want the show)
+0.9.116 — the credit button is bigger and its lens reads PUSH / 4 MORE / JUNK on three lines; the two black bars above the label are gone (the instructions sheet and the button's spoken name say the new words too)

@@ -126,7 +126,8 @@ include '../../includes/header.php';
          sit on this front band was retired on 2026-08-10 for a doorbell in
          the pile (candidate 8e); on 2026-08-11 the doorbell was re-skinned
          in turn as candidate 9a — a backlit blue arcade credit button
-         printed PUSH FOR JUNK, the drawer's one light source. Same wiring
+         printed PUSH / 4 MORE / JUNK (relettered and enlarged 2026-09-10),
+         the drawer's one light source. Same wiring
          either way: injected into .jd-pile by junk-drawer.js from
          turn-object.svg, fixed in the bottom-left corner and labelled from
          JD_STRINGS.turnButton. Nothing about the modal it opens changed. -->

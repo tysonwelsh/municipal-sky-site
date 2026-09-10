@@ -8,7 +8,7 @@
                       drag/rotate gesture script, the immersive chrome and
                       the draw-on engine
      jd-furniture.js  the three pieces of furniture in the pile: the turn
-                      object (PUSH FOR JUNK), the instructions sheet, the
+                      object (PUSH 4 MORE JUNK), the instructions sheet, the
                       analytics folder
      jd-record.js     the report card
      jd-darkroom.js   the wait indicators the turn's darkroom deals per turn
@@ -77,7 +77,7 @@ var JD_STRINGS = {
   /* the owner's pick, mockup-9a-labels tasting, 2026-08-11 — it is also the
      wording PRINTED ON the button's lens in turn-object.svg: change the two
      together or the accessible name and the artwork disagree */
-  turnButton: 'PUSH FOR JUNK',
+  turnButton: 'PUSH 4 MORE JUNK',   /* the lens reads PUSH / 4 MORE / JUNK on three lines (owner, 2026-09-10) */
   visitorTag: 'YOURS'          /* the paper tag on an item the visitor won */
 };
 
