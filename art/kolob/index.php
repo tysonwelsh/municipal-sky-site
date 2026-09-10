@@ -71,20 +71,21 @@ include '../../includes/header.php';
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
     </div>
 
-    <!-- The console: one ruled band like the masthead — PLAY and STOP at the
-         left, the volume slider after a spacer, the Liahona dial at the right
-         end, all on one line between two hairlines. On a narrow page the
-         buttons and the dial keep the line and the slider drops beneath them,
-         still inside the band. -->
+    <!-- The console: a rail of the board's green (v0.21), the way an organ's
+         stops sit on a jamb — two paper drawknobs, PLAY and STOP, glyph only
+         (play turns gilt while drawn), and the volume as a swell lever: a
+         brass hexagon, the beehive of the Deseret theme, sliding in a dark
+         slot. One row at every width; the VOL caption drops on a phone. The
+         Liahona dial that sat at the row's end is gone — the wheel does its
+         work. -->
     <div class="kolob-console">
       <div class="kolob-transport">
-        <button type="button" class="kolob-btn play-btn" id="kolob-play" aria-label="play"><span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
-        <button type="button" class="kolob-btn stop-btn" id="kolob-stop" aria-label="stop"><span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+        <button type="button" class="kolob-knob play-btn" id="kolob-play" aria-label="play"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.4v11.2L13.4 8z" fill="currentColor"/></svg></button>
+        <button type="button" class="kolob-knob stop-btn" id="kolob-stop" aria-label="stop"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.6" y="3.6" width="8.8" height="8.8" fill="currentColor"/></svg></button>
         <div class="kolob-transport-spacer"></div>
         <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
-        <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
+        <input type="range" min="0" max="100" value="60" class="kolob-range kolob-lever" id="kolob-master-vol" aria-label="master volume" />
       </div>
-      <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
     <!-- Hymn board + broadside. The board holds a printed PROGRAMME card

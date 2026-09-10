@@ -19,9 +19,6 @@
 //    Deeper motif generations print worn — double-struck, spread. The ink dries
 //    and pales as the page scrolls on. In the sacrament the page goes almost
 //    blank; ink returns with the doxology.
-//  · THE LIAHONA — a small engraved dial in a hexagonal case. One needle
-//    walks the section, a second leans with the intensity; it glints when
-//    the oracle points.
 //  · THE WHEEL — the order of service seated round the rim of one great
 //    wheel, of which the page shows only the crown: a sun low on a far
 //    horizon. The section now playing is lettered at the crown beneath ONE
@@ -32,8 +29,8 @@
 //    Postlude turns into the next meeting's prelude like any other seat — the
 //    cycle is the picture.
 //
-// No neon, no glitch, no CRT. A printed thing with one soft glow in it.
-// Public surface: window.KolobViz = { init(canvas, dialCanvas, wheelCanvas),
+// No neon, no glitch, no CRT. A printed thing.
+// Public surface: window.KolobViz = { init(canvas, wheelCanvas),
 //   setConductor, setWheelLabels, wheelSeatAt }
 // ============================================================================
 
@@ -46,20 +43,17 @@ window.KolobViz = (function () {
   var staffLayer = null;                           // static: the staves + clefs
   var fadeCanvas = null, fadeCtx = null, fadeGrad = null;  // left-edge ink fade
   var fadeX0 = 90, fadeX1 = 150;                    // ink: ~0 at x≤fadeX0, full at x≥fadeX1
-  var dial = null, dctx = null;
   var wheel = null, xctx = null;                   // the order of service, with the facade inside it
-  var W = 0, H = 0, DW = 0, DH = 0, XW = 0, XH = 0, dpr = 1;
+  var W = 0, H = 0, XW = 0, XH = 0, dpr = 1;
   var running = false;
 
   var cond = { section: null, local: 0, intensity: 0, f0: 65, mode: "ionian", hush: false, fuging: false };
   var playing = false;
   var curGen = 0;                                  // engraving wear follows the working generation
-  var liahonaGlint = 0;                            // seconds of glint remaining
 
   var INK = "#1e4d3b";                             // hymnbook green
   var INK_SOFT = "rgba(30, 77, 59, 0.55)";
   var RULE = "rgba(30, 77, 59, 0.42)";            // the printed staff rules
-  var GOLD = "#8a7a45";                            // a restrained gilt for the dial
   var PIPE = "#17201a";                            // the black of the facade
   var PAPER = "#f5f0e4";                           // cream, for the pipe mouths
 
@@ -298,7 +292,6 @@ window.KolobViz = (function () {
       var m = /·g(\d+)/.exec(ev.label || "");
       if (m) curGen = parseInt(m[1], 10);
     }
-    if (ev.cat === "liahona") liahonaGlint = 2.2;
     if (ev.cat === "fuging") stampFuging();
     if (ev.cat === "meeting") curGen = 0;
   }
@@ -567,81 +560,8 @@ window.KolobViz = (function () {
       ctx2d.drawImage(page, 0, 0);
     }
 
-    drawDial(dt);
     drawWheel(dt);                                 // the facade rides inside the wheel
   }
-
-  // ---- the Liahona dial — a hexagonal case -----------------------------------
-  function hexPathAt(c, x, y, s) {
-    c.beginPath();
-    for (var i = 0; i < 6; i++) {
-      var a = Math.PI / 180 * (60 * i - 90);       // pointy-top
-      c[i === 0 ? "moveTo" : "lineTo"](x + Math.cos(a) * s, y + Math.sin(a) * s);
-    }
-    c.closePath();
-  }
-  // radius of that hexagon's boundary at angle a — so the section ticks land
-  // exactly on the case, corner or edge alike
-  function hexR(a, s) {
-    var deg = (a * 180 / Math.PI % 60 + 60) % 60;  // fold to one 60° sector
-    if (deg > 30) deg = 60 - deg;                  // distance to nearest edge-center
-    return s * Math.cos(Math.PI / 6) / Math.cos(deg * Math.PI / 180);
-  }
-  function drawDial(dt) {
-    if (!dctx) return;
-    var w = DW, h = DH;
-    var cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.44;
-    dctx.clearRect(0, 0, w, h);
-    dctx.save();
-    dctx.translate(0.5, 0.5);
-    // engraved rim, double rule
-    dctx.strokeStyle = INK_SOFT;
-    dctx.lineWidth = 1;
-    hexPathAt(dctx, cx, cy, R); dctx.stroke();
-    hexPathAt(dctx, cx, cy, R * 0.86); dctx.stroke();
-    // ticks — seven, one per section of the order, rim to rim
-    for (var i = 0; i < 7; i++) {
-      var a = -Math.PI / 2 + (i / 7) * Math.PI * 2;
-      var tr0 = hexR(a, R * 0.86), tr1 = hexR(a, R);
-      dctx.beginPath();
-      dctx.moveTo(cx + Math.cos(a) * tr0, cy + Math.sin(a) * tr0);
-      dctx.lineTo(cx + Math.cos(a) * tr1, cy + Math.sin(a) * tr1);
-      dctx.stroke();
-    }
-    if (playing) {
-      // the section needle — walks the whole order of service
-      var prog = ((cond.sectionIndex || 0) + Math.max(0, Math.min(1, cond.local || 0))) / Math.max(1, cond.planLength || 7);
-      var na = -Math.PI / 2 + prog * Math.PI * 2;
-      // the one soft glow in the whole interface (it is named Kolob, after all)
-      var glow = liahonaGlint > 0 ? 0.6 + 0.4 * Math.sin(liahonaGlint * 9) : 0.18;
-      dctx.save();
-      dctx.shadowColor = "rgba(138, 160, 90, " + glow.toFixed(2) + ")";
-      dctx.shadowBlur = liahonaGlint > 0 ? 9 : 4;
-      dctx.strokeStyle = GOLD;
-      dctx.lineWidth = 1.6;
-      dctx.beginPath();
-      dctx.moveTo(cx - Math.cos(na) * R * 0.14, cy - Math.sin(na) * R * 0.14);
-      dctx.lineTo(cx + Math.cos(na) * R * 0.78, cy + Math.sin(na) * R * 0.78);
-      dctx.stroke();
-      dctx.restore();
-      // the intensity pointer — a short inner leaf
-      var ia = -Math.PI / 2 + (cond.intensity || 0) * Math.PI * 2;
-      dctx.strokeStyle = INK;
-      dctx.globalAlpha = 0.7;
-      dctx.lineWidth = 1.1;
-      dctx.beginPath();
-      dctx.moveTo(cx, cy);
-      dctx.lineTo(cx + Math.cos(ia) * R * 0.42, cy + Math.sin(ia) * R * 0.42);
-      dctx.stroke();
-      dctx.globalAlpha = 1;
-    }
-    // hub
-    dctx.fillStyle = INK;
-    dctx.beginPath(); dctx.arc(cx, cy, 2.2, 0, Math.PI * 2); dctx.fill();
-    dctx.restore();
-    if (liahonaGlint > 0) liahonaGlint = Math.max(0, liahonaGlint - dt);
-  }
-
 
   // ---- the wheel — the order of service round the crown -----------------------
   var SEATS = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
@@ -885,14 +805,6 @@ window.KolobViz = (function () {
     fadeGrad = fadeCtx.createLinearGradient(fadeX0, 0, fadeX1, 0);
     fadeGrad.addColorStop(0, "rgba(0,0,0,0)");
     fadeGrad.addColorStop(1, "rgba(0,0,0,1)");
-    if (dial) {
-      var dr = dial.getBoundingClientRect();
-      DW = Math.max(40, Math.round(dr.width));
-      DH = Math.max(40, Math.round(dr.height));
-      dial.width = DW * dpr; dial.height = DH * dpr;
-      dctx = dial.getContext("2d");
-      dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
     if (wheel) {
       var xr = wheel.getBoundingClientRect();
       XW = Math.max(60, Math.round(xr.width));
@@ -903,11 +815,10 @@ window.KolobViz = (function () {
     }
   }
 
-  function init(mainCanvas, dialCanvas, wheelCanvas) {
+  function init(mainCanvas, wheelCanvas) {
     canvas = mainCanvas || null;
-    dial = dialCanvas || null;
     wheel = wheelCanvas || null;
-    if (!canvas && !dial && !wheel) return;
+    if (!canvas && !wheel) return;
     resize();
     window.addEventListener("resize", resize);
     if (K) {

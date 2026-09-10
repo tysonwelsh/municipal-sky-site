@@ -2,14 +2,15 @@
    KOLOB 𐐗𐐄𐐢𐐉𐐒 — ink and paper
    The 1985 hymnbook: cream stock, deep green ink, letterpress rules, cloth
    cover. Green academia — classical sheet music, liner notes, a chapel
-   library. Airy, open, minimal. NO neon, NO chrome, NO CRT. The one glow in
-   the whole interface lives in the Liahona dial (drawn by the canvas).
+   library. Airy, open, minimal. NO neon, NO chrome, NO CRT. The one bit of
+   brass is the swell lever's beehive hexagon on the console rail.
    ========================================================================== */
 
 .kolob-scene {
   /* the book */
   --cover: #14382c;          /* cloth cover green */
   --cover-hi: #1a4536;
+  --cover-lo: #0e2a21;       /* the slot of the swell lever */
   --paper: #f5f0e4;          /* cream stock */
   --paper-lo: #ece5d3;
   --ink: #1e4d3b;            /* hymnbook green ink */
@@ -17,6 +18,7 @@
   --ink-faint: rgba(30, 77, 59, 0.28);
   --rule: rgba(30, 77, 59, 0.42);
   --gilt: #8a7a45;           /* restrained gold, the cover stamping */
+  --gilt-hi: #c9b66e;        /* gilt as it reads on the green */
 
   /* the cover is a MAT now, not a backdrop: a bounded green cloth rectangle
      lying on the site's white page, the way the hymnbook lies on a table */
@@ -229,35 +231,69 @@
   display: block;
 }
 
-/* ====================== the console: transport + liahona ================= */
-/* one ruled band, like the masthead: hairlines above and below, the transport
-   (PLAY, STOP, a spacer, the VOL slider) filling the line and the Liahona dial
-   seated at its right end, everything centred on one line. */
+/* ========================= the console: the rail ======================== */
+/* One row on a rail of the board's green, the way an organ's stops sit on a
+   jamb: two paper drawknobs (PLAY, STOP — glyph only; play turns gilt while
+   drawn), a spacer, the VOL caption and the swell lever. No hairlines: the
+   rail is its own bounded strip, and it answers the hymn board beneath it in
+   colour. (Until v0.21 this was a ruled band with worded buttons and the
+   Liahona dial at its end.) */
 .kolob-console {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 0.8rem;
   margin: 0 0 2.8rem;
-  padding: 0.6rem 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  padding: 0.55rem 0.9rem;
+  border-radius: 3px;
+  background: linear-gradient(175deg, var(--cover-hi), var(--cover));
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
 }
-.kolob-dial {
-  width: 64px;
-  height: 64px;
-  flex: 0 0 auto;
-  display: block;
-}
-
-/* ============================== transport ================================ */
 .kolob-transport {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.8rem;
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0;                        /* the console band owns the outer spacing */
+  margin: 0;
 }
+/* the drawknob: a round paper knob with an engraved double ring and the
+   glyph cut into it in the board's green */
+.kolob-knob {
+  width: 36px; height: 36px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--cover);
+  background: radial-gradient(circle at 40% 35%, #fbf7ec, var(--paper) 55%, var(--paper-lo));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(30, 77, 59, 0.35), inset 0 0 0 4px var(--paper), inset 0 0 0 5px rgba(30, 77, 59, 0.22);
+  cursor: pointer;
+  transition: background 250ms, transform 120ms, box-shadow 120ms;
+}
+.kolob-knob:hover { transform: translateY(-1px); }
+.kolob-knob:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(30, 77, 59, 0.35), inset 0 0 0 4px var(--paper), inset 0 0 0 5px rgba(30, 77, 59, 0.22); }
+.kolob-knob:focus-visible { outline: 1px solid var(--gilt-hi, #c9b66e); outline-offset: 2px; }
+.kolob-knob-glyph { display: block; width: 13px; height: 13px; }
+.play-btn .kolob-knob-glyph { margin-left: 1px; }
+/* drawn: the play knob turns gilt while the meeting runs */
+.kolob-knob.play-btn.is-playing {
+  color: var(--paper);
+  background: radial-gradient(circle at 40% 35%, #d9c986, var(--gilt) 60%, #6e6136);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.25), inset 0 0 0 4px var(--gilt), inset 0 0 0 5px rgba(245, 240, 228, 0.35);
+}
+.kolob-transport-spacer { flex: 1; }
+.kolob-ctl-label {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+.kolob-console .kolob-ctl-label { color: rgba(245, 240, 228, 0.55); }
+
+/* the page's general button (GATHER on the board, COPY under the stops) */
 .kolob-btn {
   font-family: "Noto Sans Deseret", serif;
   font-size: 0.95rem;
@@ -272,29 +308,9 @@
   transition: box-shadow 120ms, transform 120ms, background 300ms;
 }
 .kolob-btn:hover { background: #faf6ec; }
-/* transport glyphs render tiny in text fonts — size them like real controls */
-.kolob-btn-glyph {
-  display: inline-block;
-  font-family: Georgia, serif;
-  font-size: 1.15em;
-  line-height: 0;
-  vertical-align: -0.06em;
-}
-.kolob-glyph-stop { font-size: 1.45em; vertical-align: -0.1em; }
 .kolob-btn:active { transform: translateY(1px); box-shadow: 0 0 0 var(--ink-faint); }
-.kolob-btn.play-btn.is-playing {
-  background: var(--ink);
-  color: var(--paper);
-}
-.kolob-transport-spacer { flex: 1; }
-.kolob-ctl-label {
-  font-family: "Noto Sans Deseret", serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  color: var(--ink-soft);
-}
 
-/* sliders — a hairline and a small round bead */
+/* sliders — a hairline and a small round bead (the instrument stops) */
 .kolob-range {
   -webkit-appearance: none;
   appearance: none;
@@ -326,15 +342,57 @@
   border: 1px solid var(--ink);
 }
 
+/* the swell lever — the master volume on the rail: a dark slot with a faint
+   gilt fill up to the thumb (--v, set by kolob-ui.js), and for the thumb a
+   brass HEXAGON, pointy-top — the beehive of the Deseret theme, the one thing
+   kept from the Liahona dial's case. The hexagon is an SVG so its edges stay
+   crisp at any size; the double rule inside it is the dial's engraved rim. */
+.kolob-lever {
+  --v: 60%;
+  width: 210px;
+  height: 26px;
+}
+.kolob-lever::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 2px;
+  background: linear-gradient(to right, rgba(201, 182, 110, 0.35) var(--v), var(--cover-lo, #0e2a21) var(--v));
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(245, 240, 228, 0.08);
+}
+.kolob-lever::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 22px;
+  margin-top: -7px;
+  border: 0;
+  border-radius: 0;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 22'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23d9c986'/%3E%3Cstop offset='0.55' stop-color='%238a7a45'/%3E%3Cstop offset='1' stop-color='%236e6136'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='10,0.8 18.9,5.9 18.9,16.1 10,21.2 1.1,16.1 1.1,5.9' fill='url(%23g)' stroke='%233f3720' stroke-width='1'/%3E%3Cpolygon points='10,4.6 15.6,7.8 15.6,14.2 10,17.4 4.4,14.2 4.4,7.8' fill='none' stroke='%23f5f0e4' stroke-opacity='0.45' stroke-width='0.9'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+}
+.kolob-lever::-moz-range-track {
+  height: 8px;
+  border-radius: 2px;
+  background: var(--cover-lo, #0e2a21);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.kolob-lever::-moz-range-progress { height: 8px; border-radius: 2px; background: rgba(201, 182, 110, 0.35); }
+.kolob-lever::-moz-range-thumb {
+  width: 20px; height: 22px;
+  border: 0;
+  border-radius: 0;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 22'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23d9c986'/%3E%3Cstop offset='0.55' stop-color='%238a7a45'/%3E%3Cstop offset='1' stop-color='%236e6136'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='10,0.8 18.9,5.9 18.9,16.1 10,21.2 1.1,16.1 1.1,5.9' fill='url(%23g)' stroke='%233f3720' stroke-width='1'/%3E%3Cpolygon points='10,4.6 15.6,7.8 15.6,14.2 10,17.4 4.4,14.2 4.4,7.8' fill='none' stroke='%23f5f0e4' stroke-opacity='0.45' stroke-width='0.9'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+}
+
 /* On touch (coarse pointers) the hairline-and-bead is too small to hit: the
    thumb is 11px and the input only 18px tall, so a fingertip lands beside it.
    Keep the desktop look, but give touch a full-height target and a bigger bead.
    The track stays a hairline (it's vertically centred), so only the invisible
-   hit area and the thumb grow. */
+   hit area and the thumb grow. The lever's hexagon grows a little too. */
 @media (pointer: coarse) {
   .kolob-range { height: 44px; }
   .kolob-range::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -8.5px; }
   .kolob-range::-moz-range-thumb { width: 18px; height: 18px; }
+  .kolob-lever::-webkit-slider-thumb { width: 24px; height: 26px; margin-top: -9px; }
+  .kolob-lever::-moz-range-thumb { width: 24px; height: 26px; }
 }
 
 /* ============================== the wheel ================================ */
@@ -754,33 +812,13 @@
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.2rem; }   /* the board, then the verse beneath, one plate step apart */
   #kolob-layers { grid-template-columns: 1fr; }
-  /* the console band re-lays as a grid: the buttons and the dial keep the
-     first line, the slider takes the whole line beneath — still inside the
-     band, between its two hairlines. The transport's children become items of
-     the band's grid (display: contents) so the dial can share their line. */
-  .kolob-console {
-    display: grid;
-    grid-template-columns: auto auto 1fr 64px;
-    grid-template-areas:
-      "play stop . dial"
-      "vol vol vol vol";
-    column-gap: 0.6rem;
-    row-gap: 0.6rem;
-    align-items: center;
-  }
-  .kolob-transport { display: contents; }
-  .kolob-console .play-btn { grid-area: play; }
-  .kolob-console .stop-btn { grid-area: stop; }
-  .kolob-console .kolob-dial { grid-area: dial; justify-self: end; }
-  /* the slider on its own line, bounded and centred — 200px of track with paper
-     either side, so it reads as a control and not as a third rule in the band.
-     The 2.8rem height is the coarse-pointer height, reserved on every pointer,
-     so the band is one size everywhere */
-  .kolob-console .kolob-range { grid-area: vol; width: 200px; height: 2.8rem; justify-self: center; }
-  .kolob-transport-spacer { display: none; }
-  .kolob-transport .kolob-btn { padding: 0.5rem 0.7rem; }
-  /* the slider is self-evident (and keeps its aria-label) — drop the "VOL" caption */
+  /* the rail keeps its one row: the knobs, a short gap, the lever taking
+     the rest of the line. The VOL caption drops (the lever keeps its aria-label). */
+  .kolob-console { gap: 0.6rem; padding: 0.5rem 0.7rem; }
+  .kolob-transport { gap: 0.6rem; }
+  .kolob-transport-spacer { flex: 0 0 0.2rem; }
   .kolob-transport .kolob-ctl-label { display: none; }
+  .kolob-console .kolob-lever { flex: 1 1 auto; width: auto; min-width: 0; }
   .kolob-wheel-wrap { height: 185px; }
   .kolob-viz-wrap { height: 184px; }
 }

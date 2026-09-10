@@ -595,9 +595,16 @@
       K.stop(); if (playBtn) playBtn.classList.remove("is-playing");
       if (broadsideTimer) { clearTimeout(broadsideTimer); broadsideTimer = null; }
     });
-    if (vol) vol.addEventListener("input", function () {
-      K.setMasterVolume(parseInt(vol.value, 10) / 100);
-    });
+    // the swell lever: the engine follows it, and its slot's gilt fill (--v,
+    // read by kolob.css) follows the hexagon
+    function leverFill() { vol.style.setProperty("--v", ((parseInt(vol.value, 10) - vol.min) / (vol.max - vol.min) * 100) + "%"); }
+    if (vol) {
+      leverFill();
+      vol.addEventListener("input", function () {
+        K.setMasterVolume(parseInt(vol.value, 10) / 100);
+        leverFill();
+      });
+    }
     if (gather) gather.addEventListener("click", function () {
       var v = seedInput ? parseInt(seedInput.value, 10) : NaN;
       if (isNaN(v)) v = Math.floor(Math.random() * 4294967295);
@@ -651,10 +658,11 @@
     setText("#kolob-gather", S.gather);
     setText(".kolob-transport .kolob-ctl-label", S.vol);
     setText(".kolob-board .kolob-ctl-label", S.seed);
+    // the drawknobs carry a glyph only; the words go to their labels
     var playBtn = document.getElementById("kolob-play");
-    if (playBtn) playBtn.innerHTML = '<span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; ' + S.play;
+    if (playBtn) playBtn.setAttribute("aria-label", latinMode ? "play" : S.play);
     var stopBtn = document.getElementById("kolob-stop");
-    if (stopBtn) stopBtn.innerHTML = '<span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; ' + S.stop;
+    if (stopBtn) stopBtn.setAttribute("aria-label", latinMode ? "stop" : S.stop);
     var empty = document.querySelector("#kolob-log .kolob-log-empty");
     if (empty) empty.textContent = ST.pressPlay;
     if (lastBroadside) setBroadside(lastBroadside, false);
@@ -708,10 +716,9 @@
   // ==========================================================================
   function initViz() {
     var canvas = document.getElementById("kolob-viz");
-    var dial = document.getElementById("kolob-dial");
-    var wheel = document.getElementById("kolob-wheel");            // the organ facade rides inside the wheel
+    var wheel = document.getElementById("kolob-wheel");            // the organ facade rides inside the wheel; the Liahona dial is gone (v0.21)
     if (window.KolobViz && typeof window.KolobViz.init === "function") {
-      try { window.KolobViz.init(canvas, dial, wheel); }
+      try { window.KolobViz.init(canvas, wheel); }
       catch (e) { if (window.console) console.error("Kolob viz init failed", e); }
       // The canvases are measured at init, which can run before the page has
       // its final width (a pending webfont stylesheet, a late layout). The viz
