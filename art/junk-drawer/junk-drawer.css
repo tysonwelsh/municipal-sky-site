@@ -26,6 +26,38 @@
 
 html { scroll-behavior: smooth; }
 
+/* ---------------- THE CORNER ✕, AS ONE MEASUREMENT ------------------------
+   (owner, 2026-09-10.) Four dialogs wear a bare ✕ in their top-right corner
+   — the report card, the enlargement, the turn card, the analytics folder —
+   and the owner asked for the same ✕ in all of them: bigger, always legible,
+   and never sat on by a long title. So the geometry is stated ONCE here and
+   every close reads it, instead of four hand-tuned corners drifting apart
+   again (they already had: 40px here, 48px there, 1.1rem against 1.15rem).
+
+     --jd-x-w      the hit target's width  (≥44px, the touch floor)
+     --jd-x-band   the hit target's height AND the height of the head's
+                   FIRST LINE BAND. This is the load-bearing one: the ✕ is
+                   pinned to the top of its head and is exactly one band
+                   tall, so it centres on the title's FIRST LINE and stays
+                   there when the title wraps to a second — the head grows
+                   downward underneath it and the glyph never drifts out of
+                   the band. (First line, not band centre: on a two-line
+                   title a band-centred ✕ floats between the lines instead
+                   of sitting in the corner where a corner ✕ belongs.)
+     --jd-x-gap    the clear air between the title's box and the target
+     --jd-x-size   the glyph, a size up from the old 1.1/1.15rem
+
+   The matching half of the contract is on the heads: each one reserves
+   `--jd-x-w + --jd-x-gap` of right-hand room (symmetric padding where the
+   title is centred, so the centring survives), and clamps its title to two
+   lines. Neither half works alone. */
+:root {
+  --jd-x-w: 48px;
+  --jd-x-band: 44px;
+  --jd-x-gap: 8px;
+  --jd-x-size: 1.5rem;
+}
+
 /* ---------------- the stage: drawer as object on the page ---------------- */
 .jd-stage {
   /* thinned ~30% on every side (owner, 2026-08-11): was clamp(28px, 9vw,
@@ -1047,13 +1079,21 @@ html.jd-record-open { overflow: hidden; }
    the axis expanders and the download button) */
 /* the bare-✕ idiom (owner, 2026-08-29 — see the note at .jd-turn-close):
    box retired, glyph up a size, a 40px target holding the old visual seat */
+/* ONE MEASUREMENT (owner, 2026-09-10 — see the :root note at the top of the
+   file): the 40px target grows to the shared --jd-x-w × --jd-x-band and the
+   glyph to --jd-x-size, and it seats flush in the card's corner so its band
+   starts at the card's top edge — which is where the masthead's first line
+   is. Unlike the turn and folder closes this one hangs off the CARD, not
+   off a head, because the masthead scrolls (the ≤700px portrait flow) and
+   the ✕ must not scroll away with it; .rc-masthead pays the other half of
+   the contract by reserving the room, below. */
 .jd-record-close {
-  position: absolute; top: 2px; right: 2px; z-index: 5;
-  width: 40px; height: 40px;
+  position: absolute; top: 0; right: 0; z-index: 5;
+  width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none;
   cursor: pointer;
-  font-family: var(--rc-mono); font-size: 1.1rem; line-height: 1;
+  font-family: var(--rc-mono); font-size: var(--jd-x-size); line-height: 1;
   color: var(--form-ink); padding: 0;
 }
 .jd-record-close:hover { color: var(--red); }
@@ -1091,15 +1131,34 @@ html.jd-record-open { overflow: hidden; }
 }
 
 /* ---- masthead: the item title, once, across both columns ----------------- */
+/* THE TITLE KEEPS OFF THE ✕ (owner bug report, 2026-09-10): a long item
+   title used to run the masthead's full width and straight under the close
+   ✕ in the corner — "Chipped porcelain shepherdess with a lamb" ended in a
+   ✕. The room the ✕ needs is reserved here, and reserved on BOTH sides:
+   the masthead is centred type, and a one-sided padding would shove the
+   title off the card's centreline to buy the clearance. --rc-mast-side is
+   the shared target plus its gap, less the scroller's own side padding —
+   the ✕ hangs off the card, the masthead sits inside the scroller, so the
+   two boxes are measured from different edges and the difference has to be
+   subtracted somewhere. It is subtracted here, once, and the ≤700/≤480
+   blocks restate only the padding they change. */
 .rc-masthead {
+  --rc-mast-pad: 20px;   /* .rc-scroll's own side padding, per breakpoint */
+  --rc-mast-side: max(0px, calc(var(--jd-x-w) + var(--jd-x-gap) - var(--rc-mast-pad)));
   grid-area: mast; text-align: center;
-  padding: 0.2em 0 0.4em;
+  padding: 0.2em var(--rc-mast-side) 0.4em;
   border-bottom: 1px solid var(--form-rule-2);
   margin-bottom: 8px;
 }
+/* two lines, then the ellipsis. A title long enough to need a third line is
+   a title nobody reads to the end of anyway, and the third line would push
+   the photograph down the card on a phone. line-height 1.35 gives the two
+   lines air without letting one line's band swallow the ✕'s. */
 .rc-item {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
   font-family: var(--form); font-size: 0.75rem; font-weight: 700;
-  letter-spacing: 0.19em; text-transform: uppercase;
+  letter-spacing: 0.19em; text-transform: uppercase; line-height: 1.35;
   color: #2f3846;
 }
 
@@ -1339,11 +1398,16 @@ html.jd-record-open { overflow: hidden; }
   position: relative; overflow: hidden;
   flex: 0 1 auto; min-height: 0;
   width: min(1040px, 100%); height: 100%;
-  /* the bottom band is the two buttons' alone (owner, 2026-09-10, revised
-     the same day: the notes and file number went back down to the plate —
-     on a phone they overlapped the drawing). The art is the content box,
-     so it can never reach into the band, at any width. */
-  padding: 16px 18px 62px;   /* one button row + its clearance */
+  /* TWO BANDS, AND THE ART BETWEEN THEM (owner, 2026-09-10, revised twice
+     the same day). The bottom band is the two buttons' alone — the notes
+     and file number came up here and went back down to the plate, because
+     on a phone they overlapped the drawing. The TOP band is the close ✕'s,
+     added when the ✕ took the corner from the paper swap: the ✕ needs a
+     44px target, and a 44px target in a 16px margin would have sat on the
+     artwork. The art is the content box, so it can never reach into either
+     band, at any width — which is the whole reason both are padding and not
+     an overlay. */
+  padding: calc(var(--jd-x-band) + 8px) 18px 62px;
   background:
     repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
     repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
@@ -1356,8 +1420,9 @@ html.jd-record-open { overflow: hidden; }
 }
 .rc-zoom-fig:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
 /* the enlargement's own copies of the plate's buttons, at reading size,
-   centred in the band under the art with REDRAW spelled out; the paper
-   swap top-right */
+   centred in the band under the art with REDRAW spelled out; the close ✕
+   holds the band above (the paper swap that used to sit there went back
+   down to the plate — owner, 2026-09-10) */
 .rc-zoom-fig .rc-plate-btns {
   left: 18px; right: 18px; bottom: 16px;
   display: flex; justify-content: center; align-items: center; gap: 12px;
@@ -1369,10 +1434,30 @@ html.jd-record-open { overflow: hidden; }
   line-height: 1; padding: 0.55em 0.9em 0.5em;
 }
 .rc-zoom-fig .rc-draw svg { width: 15px; height: 15px; }
-.rc-zoom-fig .rc-paper { top: 14px; right: 14px; padding: 4px; }
-.rc-zoom-fig .rc-paper svg { width: 16px; height: 16px; }
-.rc-zoom-fig.is-blueprint .rc-paper { color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85); }
-.rc-zoom-fig.is-blueprint .rc-paper:hover { background: #f2f6ff; color: #1b4a8a; }
+/* THE ENLARGEMENT'S ✕ (owner, 2026-09-10): the enlargement used to be the
+   one dialog you could only leave by pressing the picture (or Esc) — true,
+   documented in the caption, and still not what a visitor's eye looks for.
+   It gets the same bare glyph as the other three closes, at the same shared
+   size, in the corner the paper swap used to hold (that button is back down
+   on the plate in the card, where it always also was). It sits IN the top
+   band, so it never covers a stroke of the artwork.
+
+   TWO PAPERS, ONE GLYPH: the fig is cream graph paper or deep blue
+   blueprint, so the ink flips with it — the same pale-on-blue move the
+   margin notes and the swap button already make. */
+.rc-zoom-close {
+  position: absolute; top: 2px; right: 6px; z-index: 4;
+  width: var(--jd-x-w); height: var(--jd-x-band);
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; padding: 0;
+  cursor: pointer;   /* the fig around it is zoom-out; this one is a button */
+  font-family: var(--rc-mono); font-size: var(--jd-x-size); line-height: 1;
+  color: #37414f;
+}
+.rc-zoom-close:hover { color: var(--red); }
+.rc-zoom-close:focus-visible { outline: 2px solid var(--red); outline-offset: -6px; }
+.rc-zoom-fig.is-blueprint .rc-zoom-close { color: #dce8ff; }
+.rc-zoom-fig.is-blueprint .rc-zoom-close:hover { color: #ffc9c0; }
 /* the enlargement wears the plate's paper, blueprint included */
 .rc-zoom-fig.is-blueprint {
   background:
@@ -1707,7 +1792,9 @@ tr.rc-axdesc td {
   .jd-record { width: min(560px, 100%); }
   .rc-scroll { display: flex; flex-direction: column; padding: 12px 14px 11px; }
   .rc-col-l, .rc-col-r { display: contents; }
-  .rc-masthead { margin-bottom: 6px; }
+  /* the scroller's side padding narrows here, so the masthead has more of
+     the ✕'s room to make up itself (see --rc-mast-side, above) */
+  .rc-masthead { --rc-mast-pad: 14px; margin-bottom: 6px; }
   /* still vh-clamped — a landscape phone can't blow the card out */
   .rc-plate { width: min(100%, 52dvh, 420px); margin: 0 auto 0.55rem; }
   .rc-head { margin-top: 0.55rem; }
@@ -1735,12 +1822,15 @@ tr.rc-axdesc td {
 @media (max-width: 480px) {
   .jd-record-scrim { padding: 10px 8px; }
   .rc-scroll { padding: 12px 12px 10px; }
+  .rc-masthead { --rc-mast-pad: 12px; }
   /* on a phone the enlargement IS the point — give it nearly the whole
      screen and keep only enough chrome to say what it is and how to leave */
   .jd-record-zoom { padding: 10px 8px; gap: 7px; }
   /* the buttons keep their band here too (it was this rule zeroing the
      bottom padding that put the art under the buttons on phones) */
-  .rc-zoom-fig { padding: 9px 10px 56px; }
+  /* the top band holds its full height on a phone too — it is a touch
+     target, and the one place a thumb reaches for first */
+  .rc-zoom-fig { padding: calc(var(--jd-x-band) + 4px) 10px 56px; }
   .rc-zoom-fig .rc-plate-btns { left: 10px; right: 10px; bottom: 12px; gap: 10px; }
   .rc-zoom-cap-t { font-size: 0.55rem; letter-spacing: 0.16em; }
 }
@@ -1893,12 +1983,22 @@ html.jd-turn-open { overflow: hidden; }
    centres on the title's own line whatever the band measures — the 26px
    box never quite did (the owner could see it riding high). Clickability
    is carried by the cursor, the red hover ink, and the focus ring. */
+/* ONE MEASUREMENT, AND IT IS THE FIRST LINE'S (owner, 2026-09-10 — see the
+   :root note at the top of the file): the ✕ no longer spans the head's full
+   height. Full height was right while a heading was always one line; the
+   moment the head grows to two, a full-height ✕ slides down to float
+   between them. It is now exactly --jd-x-band tall, pinned to the head's
+   top, and .jd-turn-head's block padding is computed so that ONE line of
+   heading measures exactly one band — so on a one-line head nothing moved
+   at all, and on a two-line head the ✕ stays in the corner it belongs in
+   while the second line runs on underneath it. The glyph steps up to the
+   shared --jd-x-size with the other three. */
 .jd-turn-close {
   position: absolute; top: 0; right: 0; z-index: 8;
-  width: 48px; height: 100%; min-height: 44px;
+  width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--tmono); font-size: 1.15rem; line-height: 1;
+  font-family: var(--tmono); font-size: var(--jd-x-size); line-height: 1;
   color: var(--tink);
 }
 .jd-turn-close span { display: block; }
@@ -1917,18 +2017,28 @@ html.jd-turn-open { overflow: hidden; }
    row's one static, never-replaced child, so a future edit to the head's
    content can never orphan its click handler. */
 .jd-turn-head {
+  /* the heading's own line box, and the block padding that makes ONE of
+     them measure exactly --jd-x-band — which is the ✕'s height, pinned to
+     this head's top edge. Stated as arithmetic rather than a tuned number
+     so a change to --t-title or the band re-solves itself instead of
+     quietly unseating the glyph (owner, 2026-09-10). */
+  --jd-head-line: calc(1.3 * var(--t-title));
+  --jd-head-pad: max(0px, calc((var(--jd-x-band) - var(--jd-head-line)) / 2));
   position: relative; z-index: 4; flex: 0 0 auto;
-  display: flex; align-items: center; gap: 10px;
-  /* right padding clears the cornered 44px close target (44 + a hair);
+  /* flex-start, not center: the heading is anchored to the first line's
+     band and grows DOWNWARD out of it, so the ✕ and the first line stay
+     locked together whatever the heading measures */
+  display: flex; align-items: flex-start; gap: 10px;
+  /* right padding clears the cornered close target plus its gap;
      min-height guarantees the band contains it, title short or absent */
-  box-sizing: border-box; min-height: 44px;
-  padding: var(--sp-2) 48px var(--sp-2) 16px;
+  box-sizing: border-box; min-height: var(--jd-x-band);
+  padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap)) var(--jd-head-pad) 16px;
   border-bottom: 1.5px solid var(--trule);
   background: linear-gradient(180deg, rgba(255, 250, 232, 0.46), rgba(255, 250, 232, 0) 85%);
 }
 .jd-turn-headline {
   flex: 1 1 auto; min-width: 0;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: flex-start; gap: 10px;
 }
 /* (the boxed FORM JD-1 §n badge that used to open this row was retired
    2026-08-16, owner call — the heading is the whole headline now) */
@@ -1936,8 +2046,14 @@ html.jd-turn-open { overflow: hidden; }
    also the dialog's accessible name and the focus target for every state
    with no field of its own; focused programmatically (never a tab stop), so
    the ring would be noise rather than a keyboard cue. */
+/* two lines and then the ellipsis, same rule as the report card's item
+   title (owner, 2026-09-10) — no state's heading is that long today, but
+   the head is the one row that must not reflow the sheet under a visitor's
+   hands, and a heading is the easiest string on the card to lengthen. */
 .jd-turn-title {
   flex: 1 1 auto; min-width: 0; margin: 0;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
   font-family: var(--tform); font-weight: 700; font-size: var(--t-title);
   letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.3;
   color: var(--tink);
@@ -2112,8 +2228,15 @@ html.jd-turn-open { overflow: hidden; }
    symmetric side padding clears it while keeping the phrase truly centred. */
 .jd-turn[data-view="darkroom"] .jd-turn-head,
 .jd-turn[data-view="plates"] .jd-turn-head {
+  /* the announcement is set a size up, so the head restates the size its
+     first-line band is measured from — the ✕ sits in that band and would
+     ride high against a bigger line otherwise (owner, 2026-09-10). The side
+     padding stays SYMMETRIC, which is what keeps the phrase truly centred
+     with a ✕ in one corner and nothing in the other. */
+  --jd-head-line: calc(1.3 * 0.98rem);
   position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-  padding: 0 48px; border-bottom: 0; background: none;
+  padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap));
+  border-bottom: 0; background: none;
 }
 .jd-turn[data-view="darkroom"] .jd-turn-headline,
 .jd-turn[data-view="plates"] .jd-turn-headline { justify-content: center; }
@@ -3797,12 +3920,24 @@ body.jd-pod-drag, body.jd-pod-drag * {
   .jd-bench-r .jd-turn-actions { margin-top: var(--sp-3); }
 }
 @media (max-width: 600px) {
-  .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }
-  .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }
+  /* the heading steps down on a phone by moving --t-title, NOT by setting
+     font-size on the heading itself (owner, 2026-09-10): --t-title is what
+     the head's first-line band — and so the ✕ seated in it — is computed
+     from, and a heading that shrank behind the band's back would leave the
+     glyph riding high. The right padding stays the shared reservation. */
+  .jd-turn-head {
+    --t-title: 0.76rem;
+    padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap)) var(--jd-head-pad) 12px;
+    gap: 8px;
+  }
+  .jd-turn-title { letter-spacing: 0.1em; }
   /* the darkroom/reveal announcement heading steps down with the sheet, or
      the reveal's longer counts ("Four drawings came back") wrap the band */
   .jd-turn[data-view="darkroom"] .jd-turn-head,
-  .jd-turn[data-view="plates"] .jd-turn-head { padding: 0 48px; }
+  .jd-turn[data-view="plates"] .jd-turn-head {
+    --jd-head-line: calc(1.3 * 0.8rem);
+    padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap));
+  }
   .jd-turn[data-view="darkroom"] .jd-turn-title,
   .jd-turn[data-view="plates"] .jd-turn-title {
     font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
@@ -4009,19 +4144,36 @@ html.jd-folder-open { overflow: hidden; }
    band left the ✕ floating over the ledger's figures — so the band returned
    at tab height. The tab keeps the folder's identity on the open card; the
    fold-edge border keeps it reading as the folder's cut edge. */
+/* min-height (owner, 2026-09-10): the band used to measure ~29px — the tab
+   and its 9px of air — while the ✕ pinned to it insisted on a 44px touch
+   target, so the target hung out of the bottom of its own head and over the
+   ledger's first figures. The band now holds the target it carries, which
+   is the same first-line-band contract the turn card's head keeps. */
 .jd-folder-head {
   position: relative; flex: 0 0 auto;
+  box-sizing: border-box; min-height: var(--jd-x-band);
+  display: flex; align-items: flex-end;
   background: linear-gradient(180deg, var(--fmanila-hi), var(--fmanila) 70%);
   border-bottom: 1px solid var(--frule);
 }
 /* bottom padding closes the band under the tab now that no title row
-   follows; the tab still sits flush on the band's bottom edge */
-.jd-folder-tabrow { padding: 9px 56px 0 15px; }
+   follows; the tab still sits flush on the band's bottom edge. The right
+   padding is the shared ✕ reservation, so a longer tab word (or a second
+   tab, should the folder ever grow one) wraps clear of the glyph instead
+   of running under it. */
+.jd-folder-tabrow {
+  flex: 1 1 auto; min-width: 0;
+  padding: 9px calc(var(--jd-x-w) + var(--jd-x-gap)) 0 15px;
+}
 /* the tab reproduced from the artwork: a raised manila flag, house mono,
    heavily letterspaced. text-indent cancels the trailing letter-space so the
    word still reads optically centred in its box. */
+/* the tab holds two lines at most, then the ellipsis — the report card's
+   own title rule, kept here so all four dialogs behave alike (the -webkit-box
+   display still lays out as an inline-block flag; only its overflow changes) */
 .jd-folder-tab {
-  display: inline-block;
+  display: -webkit-inline-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; max-width: 100%;
   padding: 4px 13px 3px;
   background: var(--fmanila-hi);
   border: 1px solid var(--frule);
@@ -4038,10 +4190,10 @@ html.jd-folder-open { overflow: hidden; }
 /* the bare-✕ idiom (owner, 2026-08-29 — see the note at .jd-turn-close) */
 .jd-folder-close {
   position: absolute; top: 0; right: 0; z-index: 3;
-  width: 48px; height: 100%; min-height: 44px;
+  width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--fmono); font-size: 1.1rem; line-height: 1;
+  font-family: var(--fmono); font-size: var(--jd-x-size); line-height: 1;
   color: var(--fink);
 }
 .jd-folder-close span { display: block; }

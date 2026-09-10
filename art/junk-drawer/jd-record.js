@@ -54,12 +54,11 @@
       var btn = plate.querySelector('.rc-paper');
       if (btn) btn.outerHTML = paperBtnHTML();
     }
+    /* the enlargement still WEARS whichever paper the plate has — it just no
+       longer carries the switch (owner, 2026-09-10: the corner is the ✕'s
+       now). So the class travels and nothing else does. */
     var fig = document.querySelector('.rc-zoom-fig');
-    if (fig) {
-      fig.classList.toggle('is-blueprint', paper === 'blueprint');
-      var zb = fig.querySelector('.rc-paper');
-      if (zb) zb.outerHTML = paperBtnHTML().replace('class="rc-paper"', 'class="rc-paper rc-zoom-keep"');
-    }
+    if (fig) fig.classList.toggle('is-blueprint', paper === 'blueprint');
   }
   /* turn to the next (+1) / previous (−1) response, the strip's own move;
      the ends stop rather than wrap */
@@ -726,22 +725,28 @@
      is still in the card underneath it. */
   function zoomHTML(entry, resp, curIdx) {
     var m = modelOf(resp.model);
-    /* THE ARTWORK AND ITS TWO BUTTONS (owner, 2026-09-10, revised the same
-       day): the enlargement carries the button row — REDRAW spelled out,
-       DOWNLOAD SVG — in a band of its own under the art, and the paper swap
-       in the corner. The margin notes and the file number came up here for
-       a few hours and were sent back down: on a phone they overlapped the
-       drawing, and they are on the plate anyway. Each control is
-       .rc-zoom-keep, which the layer's own press-to-close (JD_zoomLayer)
-       leaves alone; the record wires their clicks itself in openZoom(). The
-       band is the fig's bottom padding in the stylesheet — the art never
-       reaches into it, at any width. */
+    /* THE ARTWORK, ITS BUTTON ROW, AND THE ✕ (owner, 2026-09-10, revised
+       twice the same day): the enlargement carries the button row — REDRAW
+       spelled out, DOWNLOAD SVG — in a band of its own under the art, and a
+       close ✕ in a band of its own above it. The paper swap USED to hold
+       that corner; the owner gave the corner to the ✕ instead, and the swap
+       stays down on the plate in the card (the enlargement still wears
+       whichever paper the plate has — see paperCls() above and togglePaper,
+       which travels the class up here but no longer a button). The margin
+       notes and the file number came up here for a few hours and were sent
+       back down: on a phone they overlapped the drawing, and they are on
+       the plate anyway. Each control is .rc-zoom-keep, which the layer's own
+       press-to-close (JD_zoomLayer) leaves alone — so the ✕, which closes
+       the layer, has to say so itself: openZoom() wires it. Both bands are
+       the fig's padding in the stylesheet — the art never reaches into
+       either, at any width. */
     return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
       '</div>' +
-      paperBtnHTML().replace('class="rc-paper"', 'class="rc-paper rc-zoom-keep"') +
+      '<button type="button" class="rc-zoom-close rc-zoom-keep" ' +
+      'aria-label="close"><span aria-hidden="true">✕</span></button>' +
       plateBtnsHTML(entry, resp, true) +
       '</div>' +
       '<div class="rc-zoom-cap">' +
@@ -952,8 +957,13 @@
           /* REDRAW, on the enlargement's own copy of the artwork */
           var svg = layer.querySelector('.rc-zoom-art svg');
           if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
-        } else if (t.closest('.rc-paper')) {
-          togglePaper();
+        } else if (t.closest('.rc-zoom-close')) {
+          /* the corner ✕ (owner, 2026-09-10). It is .rc-zoom-keep like every
+             other control up here, so the layer's press-to-close skips it —
+             which means the one control whose whole job IS closing has to be
+             the one that says so explicitly. It shrinks the enlargement and
+             stops there: the report card underneath stays open. */
+          closeZoom();
         }
         /* .rc-dl is a real download link: the UA takes it, the layer stays */
       });
