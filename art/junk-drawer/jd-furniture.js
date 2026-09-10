@@ -1068,13 +1068,12 @@
       s += '<text x="' + PX0 + '" y="' + base + '" class="fx-t-scale">1</text>' +
            '<text x="' + (PX0 + PXW) + '" y="' + base +
            '" text-anchor="end" class="fx-t-scale">' + pts + '</text>';
-      /* the panels sit TWO BY TWO since 2026-09-10 (the card is half the
-         folder's width now, beside "who takes first"): the left panel of
-         each row keeps the whole box, key gutter and all; the right one
-         starts its viewBox at the gutter's right edge, which shows the
-         identical ruler and simply never renders the key it carries */
-      var vb = pi % 2 === 0 ? '0 0 ' + PW + ' ' + h
-                            : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
+      /* the lead panel keeps the whole box, key gutter and all; every panel
+         after it starts its viewBox at the gutter's right edge, which shows
+         the identical ruler and simply never renders the key it carries
+         (one row of four across the full card, owner 2026-09-10) */
+      var vb = pi === 0 ? '0 0 ' + PW + ' ' + h
+                        : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
       return '<div class="fx-panel"><h4>' + esc(ax.label) +
         ' <span class="fx-of">of ' + pts + '</span></h4>' +
         '<svg viewBox="' + vb + '" role="img" aria-label="' +
@@ -1184,12 +1183,13 @@
         'numbers load from jd-analytics.php, which did not answer</p>';
       return;
     }
-    /* FOUR CARDS, two by two (owner, 2026-09-10 — the folder's return
-       brief was cost and grade; first places and the four axes came back
-       the same evening): what a drawing costs, how the drawings graded,
-       who takes first, the four axes. The ledger figures and the spend
-       line stay built (ledgerHTML, spendHTML) for the day they are wanted. */
-    bodyEl.innerHTML = costHTML() + gradesHTML() + firstsHTML() + axesHTML();
+    /* THREE CARDS (owner, 2026-09-10, settled the same evening the folder
+       returned): what a drawing costs and how the drawings graded side by
+       side, then the four axes running the full width, its panels in one
+       row. Who takes first was on for an hour and taken off again; it, the
+       ledger figures and the spend line stay built (firstsHTML, ledgerHTML,
+       spendHTML) for the day they are wanted. */
+    bodyEl.innerHTML = costHTML() + gradesHTML() + axesHTML();
   }
 
   function open() {

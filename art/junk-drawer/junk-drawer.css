@@ -4280,10 +4280,10 @@ html.jd-folder-open { overflow: hidden; }
   border: 1px solid var(--frule-2);
   box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
 }
-.fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-axes { grid-column: span 1; }
+.fx-cost, .fx-firsts, .fx-grades, .fx-spend { grid-column: span 1; }
 @media (max-width: 700px) {
   .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
-  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-axes { grid-column: span 1; }
+  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend { grid-column: span 1; }
 }
 
 .fx-title {
@@ -4383,13 +4383,11 @@ html.jd-folder-open { overflow: hidden; }
    on a reflowed panel the way it was at 900px and 560px — the lead panel
    labels the row order for the whole card at every width, and each panel's
    aria-label still names every model in full. */
-/* TWO BY TWO since 2026-09-10: the axes card is a half-width card now (it
-   sits beside "who takes first"), so the four panels take two rows. The
-   lead-panel rule becomes a lead panel PER ROW — the left panel keeps the
-   key gutter, the right panel is cropped to the ruler (odd/even below, and
-   the matching pi % 2 crop in axesHTML). Same 1.25px per unit either way. */
+/* ONE ROW OF FOUR across the full-width card (owner, 2026-09-10 — a
+   two-by-two beside "who takes first" lasted an hour): the lead panel
+   carries the key, the three after it are cropped to the ruler. */
 .fx-axgrid {
-  display: grid; grid-template-columns: 1.32fr 1fr;
+  display: grid; grid-template-columns: 1.32fr 1fr 1fr 1fr;
   gap: 12px 8px;
 }
 .fx-panel { min-width: 0; }
@@ -4406,8 +4404,11 @@ html.jd-folder-open { overflow: hidden; }
 /* the lead panel's cap: 215px across a 172-unit box. Every other panel's is
    the same scale over its cropped box, so the two must move together. */
 .fx-panel svg { display: block; width: 100%; max-width: 215px; height: auto; }
-.fx-panel:nth-child(even) svg { max-width: 137.5px; }
-.fx-panel:nth-child(even) .fx-key { display: none; }
+.fx-panel:nth-child(n + 2) svg { max-width: 137.5px; }
+.fx-panel:nth-child(n + 2) .fx-key { display: none; }
+@media (max-width: 900px) {
+  .fx-axgrid { grid-template-columns: 1.32fr 1fr; }
+}
 @media (max-width: 560px) {
   .fx-axgrid { grid-template-columns: 1fr; }
 }
