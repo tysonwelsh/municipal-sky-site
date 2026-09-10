@@ -893,15 +893,18 @@
      so it moves to the tail column, in the cost card's "n 86" seat. */
   function firstsHTML() {
     var src = data.firsts || [];
-    if (!src.length) return '';
+    if (!src.length) {
+      return cardHTML('fx-firsts', 'Who takes first',
+        'no four-model turn has been ranked yet', '');
+    }
     var rows = src.map(function (f) {
       return { id: f.model_id, v: +f.rate || 0,
                value: Math.round((+f.rate || 0) * 100) + '%',
                tail: num(f.firsts) + ' of ' + num(f.judged) };
     });
     return cardHTML('fx-firsts', 'Who takes first',
-      'first place on judged visitor turns; the denominator is the turns ' +
-      'that model survived',
+      'first place on ranked four-model turns, visitor and bench alike; ' +
+      'the denominator is the turns that model survived',
       barsSVG(rows, altOf('First place on judged visitor turns', rows)));
   }
 
@@ -1032,7 +1035,14 @@
     var anyRow = axes.some(function (ax) {
       return (ax.models || []).some(function (r) { return (+r.n || 0) >= MIN_N; });
     });
-    if (!anyRow) return '';
+    if (!anyRow) {
+      /* stays up with the shortfall stated (2026-09-10, the folder's
+         return) — four bare rulers would read as a failure, no card at all
+         reads as a missing chart; a sentence reads as the truth */
+      return cardHTML('fx-axes', 'The four axes',
+        'no model has ' + MIN_N + ' axis ratings on four-model turns under ' +
+        'the current rubric yet' + notPlotted(dropped), '');
+    }
     var panels = axes.map(function (ax, pi) {
       var pts = +ax.points || 3;
       var rows = (ax.models || []).filter(function (r) {
@@ -1058,11 +1068,13 @@
       s += '<text x="' + PX0 + '" y="' + base + '" class="fx-t-scale">1</text>' +
            '<text x="' + (PX0 + PXW) + '" y="' + base +
            '" text-anchor="end" class="fx-t-scale">' + pts + '</text>';
-      /* the lead panel keeps the whole box, key gutter and all; every panel
-         after it starts its viewBox at the gutter's right edge, which shows
-         the identical ruler and simply never renders the key it carries */
-      var vb = pi === 0 ? '0 0 ' + PW + ' ' + h
-                        : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
+      /* the panels sit TWO BY TWO since 2026-09-10 (the card is half the
+         folder's width now, beside "who takes first"): the left panel of
+         each row keeps the whole box, key gutter and all; the right one
+         starts its viewBox at the gutter's right edge, which shows the
+         identical ruler and simply never renders the key it carries */
+      var vb = pi % 2 === 0 ? '0 0 ' + PW + ' ' + h
+                            : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
       return '<div class="fx-panel"><h4>' + esc(ax.label) +
         ' <span class="fx-of">of ' + pts + '</span></h4>' +
         '<svg viewBox="' + vb + '" role="img" aria-label="' +
@@ -1070,8 +1082,8 @@
         '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
     }).join('');
     return cardHTML('fx-axes', 'The four axes',
-      'average per axis, every rating filed under the current rubric, ' +
-      'live axes only, n ' + MIN_N +
+      'average per axis on four-model turns, every rating filed under the ' +
+      'current rubric, live axes only, n ' + MIN_N +
       ' and up — each panel is its own ruler and the scales are never ' +
       'pooled' + notPlotted(dropped),
       '<div class="fx-axgrid">' + panels + '</div>');
@@ -1172,12 +1184,12 @@
         'numbers load from jd-analytics.php, which did not answer</p>';
       return;
     }
-    /* TWO CHARTS (owner, 2026-09-10, the folder's return brief): what a
-       drawing costs per model, and the average overall grade per model —
-       one bar graph each, nothing else. The ledger figures, first places,
-       the four axes and the spend line stay built (ledgerHTML, firstsHTML,
-       axesHTML, spendHTML) for the day they are wanted back. */
-    bodyEl.innerHTML = costHTML() + gradesHTML();
+    /* FOUR CARDS, two by two (owner, 2026-09-10 — the folder's return
+       brief was cost and grade; first places and the four axes came back
+       the same evening): what a drawing costs, how the drawings graded,
+       who takes first, the four axes. The ledger figures and the spend
+       line stay built (ledgerHTML, spendHTML) for the day they are wanted. */
+    bodyEl.innerHTML = costHTML() + gradesHTML() + firstsHTML() + axesHTML();
   }
 
   function open() {
