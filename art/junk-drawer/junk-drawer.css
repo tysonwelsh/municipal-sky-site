@@ -4214,16 +4214,32 @@ html.jd-folder-open { overflow: hidden; }
    marks and never as part of the form */
 .jd-bench-bar .jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
 .jd-bench-acts + .jd-bench-out, .jd-bench-build + .jd-bench-out { margin-left: 0; }
-.jd-row-model { font-weight: 700; margin-left: 0.4em; }
-.rc-adjust {
-  display: inline-block; margin-top: 6px;
+/* the report card's inline editor (owner, 2026-09-10): the verdict cells
+   become the scales themselves, in the form's own hand, and one gold button
+   files them — the only bench-palette mark on the form */
+.rc-subj select.rc-edit {
+  width: 100%; min-height: 26px; box-sizing: border-box;
+  padding: 0.15rem 1.5rem 0.15rem 0.45rem;
+  font-family: var(--rc-mono); font-size: 0.6rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--form-ink-2, #2f3846);
+  background: rgba(255, 252, 240, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238c8676' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 0.5rem center / 9px 6px;
+  border: 1px solid var(--form-rule-2, #b8b09a); border-radius: 2px;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+}
+.rc-subj select.rc-edit:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
+.rc-edit-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.rc-save {
   font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
-  padding: 3px 8px; cursor: pointer;
+  padding: 4px 10px; cursor: pointer;
 }
-.rc-adjust:hover { background: #e5c06b; }
-.rc-adjust:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+.rc-save:hover { background: #e5c06b; }
+.rc-save:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+.rc-edit-status {
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  text-transform: uppercase; color: #8c8676;
+}
 .jd-bench-gate { display: flex; align-items: center; gap: 8px; }
 .jd-bench-gate input {
   font: inherit; color: inherit; width: 200px;

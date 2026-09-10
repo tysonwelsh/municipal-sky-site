@@ -11,10 +11,16 @@
 //
 // Request:
 //   {
-//     "submission_id": "<ulid>",                 the item's submission
+//     "submission_id": "<ulid>",                 the item's submission — OR
+//     "item_id": "<entry id>",                   a curated item by its entry id
+//                                                (2026-09-10, admin mode): the
+//                                                database rows are brought level
+//                                                with entry.json first, so a
+//                                                response never filed before can
+//                                                be rated
 //     "size": "m" | null,                        optional — the item's tier
 //     "responses": [
-//       { "generation_id": "<ulid>",
+//       { "generation_id": "<ulid>",             — OR "rid": "r3" with item_id
 //         "grade": 4 | null,                     null = leave the grade alone
 //         "axes": { "<axis_id>": 3, ... },       only the axes sent are replaced
 //         "rank": 1 | null,                      all responses ranked, or none
@@ -39,6 +45,7 @@
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
+require_once __DIR__ . '/jd-curated-sync.php';
 
 jd_require_allowed_origin();
 jd_require_post();
@@ -53,9 +60,38 @@ $gradeRanks = jd_grade_ranks($taxonomy);
 $sizeTiers = jd_size_tiers($taxonomy);
 
 // --- Parse ----------------------------------------------------------------
+// A curated item may be named by its entry id (admin mode, 2026-09-10). Its
+// database rows are synced from entry.json BEFORE anything else — that is
+// what makes a harvested response rateable — and its responses may then be
+// named by rid, resolved through the same position join every reader uses.
 $submissionId = $body['submission_id'] ?? null;
+$ridToGen = [];
+if ($submissionId === null && isset($body['item_id'])) {
+    $itemId = is_string($body['item_id']) ? $body['item_id'] : '';
+    $entry = jd_curated_entry($itemId);
+    if ($entry === null) {
+        jd_fail(404, 'not_found', 'No such curated item.');
+    }
+    try {
+        $sdb = jd_db();
+        $sdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $sync = jd_curated_sync($sdb, $entry, jd_taxonomy_required('jd-item-rate'));
+        if ($sync['status'] === 'overflow' || $sync['submission_id'] === null) {
+            jd_fail(400, 'bad_request', 'That item has more responses than the database can hold.');
+        }
+        $submissionId = $sync['submission_id'];
+        $q = $sdb->prepare('SELECT id, slot FROM jd_generations WHERE submission_id = ? ORDER BY slot');
+        $q->execute([$submissionId]);
+        foreach (jd_curated_positions($entry['responses'] ?? [], $q->fetchAll(PDO::FETCH_ASSOC)) as $p) {
+            $ridToGen[$p['rid']] = (string) $p['gen']['id'];
+        }
+    } catch (PDOException $e) {
+        error_log('jd-item-rate: curated sync failed — ' . $e->getMessage());
+        jd_fail(500, 'server_error', 'The item could not be filed.');
+    }
+}
 if (!jd_is_ulid($submissionId)) {
-    jd_fail(400, 'bad_request', 'A submission_id is required.');
+    jd_fail(400, 'bad_request', 'A submission_id or item_id is required.');
 }
 
 $size = $body['size'] ?? null;
@@ -67,8 +103,8 @@ $responses = $body['responses'] ?? [];
 if (!is_array($responses) || !array_is_list($responses)) {
     jd_fail(400, 'bad_request', 'responses must be a list.');
 }
-if (count($responses) > 4) {
-    jd_fail(400, 'bad_request', 'An item carries at most four responses.');
+if (count($responses) > strlen(JD_SLOT_LETTERS)) {
+    jd_fail(400, 'bad_request', 'An item carries at most ' . strlen(JD_SLOT_LETTERS) . ' responses.');
 }
 if (!$responses && $size === null) {
     jd_fail(400, 'bad_request', 'Nothing to file.');
@@ -84,8 +120,14 @@ foreach ($responses as $r) {
         jd_fail(400, 'bad_request', 'Each response must be an object.');
     }
     $gid = $r['generation_id'] ?? null;
+    if ($gid === null && isset($r['rid']) && $ridToGen) {
+        $gid = $ridToGen[(string) $r['rid']] ?? null;
+        if ($gid === null) {
+            jd_fail(400, 'bad_request', 'No such response on that item: ' . var_export($r['rid'], true));
+        }
+    }
     if (!jd_is_ulid($gid)) {
-        jd_fail(400, 'bad_request', 'Each response needs a generation_id.');
+        jd_fail(400, 'bad_request', 'Each response needs a generation_id (or a rid with item_id).');
     }
     if (isset($clean[$gid])) {
         jd_fail(400, 'bad_request', 'A generation was listed twice.');
@@ -114,8 +156,9 @@ foreach ($responses as $r) {
     $rank = null;
     if (array_key_exists('rank', $r) && $r['rank'] !== null) {
         $v = $r['rank'];
-        if (is_bool($v) || !is_numeric($v) || (float) $v != (int) $v || (int) $v < 1 || (int) $v > 4) {
-            jd_fail(400, 'rating_invalid', 'A rank must be a whole number from 1 to 4.');
+        $maxRank = strlen(JD_SLOT_LETTERS);
+        if (is_bool($v) || !is_numeric($v) || (float) $v != (int) $v || (int) $v < 1 || (int) $v > $maxRank) {
+            jd_fail(400, 'rating_invalid', 'A rank must be a whole number from 1 to ' . $maxRank . '.');
         }
         $rank = (int) $v;
         $ranked++;

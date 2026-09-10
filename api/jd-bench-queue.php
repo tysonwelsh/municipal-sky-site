@@ -256,6 +256,9 @@ foreach ($curated as $sub) {
         $file = $p['src']['file'] ?? null;
         $r = jdq_response($g, $fold[(string) $g['id']] ?? [], $rankByGen[(string) $g['id']] ?? [], $axisCount, false);
         $r['rid'] = $p['rid'];
+        // a response the entry retired stays on file (the position join
+        // needs it) but the bench never seats it
+        $r['retired'] = !empty($p['src']['retired']);
         // relative to /art/junk-drawer/ — the drawer builds the same URL
         $r['svg'] = $file ? ('items/' . $itemId . '/' . $file) : null;
         $responses[] = $r;

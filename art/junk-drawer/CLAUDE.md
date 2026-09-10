@@ -151,14 +151,18 @@ endpoint filters `defunct`, the write endpoint validates against the live ranks,
 and the bench binds keys by POSITION. A taxonomy change of this shape needs no
 code change — which is the test a future rubric edit should still pass.
 
-- **`index.php?admin` — ADMIN MODE (owner, 2026-09-05).** The same strip
-  as `?bench`, idle: open any item's REPORT CARD and it carries ADJUST
-  RATINGS, which seats the item in the turn card's curate mode with
-  everything on file prefilled and the machines NAMED, opening on the first
-  drawing with every step reachable from the docket; filing goes through
-  `jd-item-rate.php` as one batch and the page reloads onto that card so
-  the change is on view. `?admin&item=<item_id>` opens the adjustment
-  directly. SIGN OUT forgets the key on the device.
+- **`index.php?admin` — ADMIN MODE (owner, 2026-09-05; reworked
+  2026-09-10).** The same strip as `?bench`, holding only the key gate,
+  the build stamp and SIGN OUT. With the key verified, every REPORT CARD
+  renders its grades table as the scales themselves — each axis and the
+  overall grade a select holding the value on file — and SAVE RATINGS
+  files the shown response through `jd-item-rate.php` (`jd-record.js`
+  owns the editor). A curated item is addressed by entry id + rid: the
+  server first brings its database rows level with `entry.json`
+  (`api/jd-curated-sync.php`, sixteen slots since 2026-09-10), so a
+  harvested response the backfill never saw is rateable the moment it is
+  saved. The overlay in `data.php` serves the change at once. Ranks and
+  sizes are still the bench's (`?bench`) business.
 - **THE GATE IS ON (2026-09-05).** `JD_BENCH_REQUIRE_KEY = true`: every
   curator endpoint wants the bench key (`jd_bench_key` in
   `private_config/secrets.php`, falling back to `jd_setup_key`) as
@@ -198,8 +202,11 @@ code change — which is the test a future rubric edit should still pass.
   ranked before bench mode counts the item done.
 - `api/jd-backfill-curated.php` — files each curated item as a synthetic
   `jd_submissions` row (keyed by `item_id`) with one `jd_generations` row per
-  response, so a rating has something to hang off. Idempotent; run it after
-  adding items so the new ones become rateable.
+  response, so a rating has something to hang off. Idempotent and, since
+  2026-09-10, INCREMENTAL (responses appended to an entry get rows after the
+  ones already there) through `api/jd-curated-sync.php`, the same sync the
+  admin editor runs on demand — so the bulk run is a convenience for the
+  queue, not a prerequisite.
 
 **`## The one rule` above is now narrower than it reads.** Committing is still
 the whole publishing act for ARTWORK and item METADATA — the `.svg`, the

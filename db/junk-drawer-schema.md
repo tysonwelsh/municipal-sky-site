@@ -26,12 +26,11 @@ Each line of its output names a table or migration and says `ok`, `added`,
 JD_DEV_MOCK=1 php api/setup-jd-tables.php
 ```
 
-**2026-09-05 (this branch):** the run adds five columns to `jd_submissions`
-and folds the legacy flag rows into them (see *History* at the end). Run it
-**immediately after** the deploy lands: until it has run, `data.php` and the
-bench endpoints select columns the live table does not yet have and will
-answer 500. Nothing is lost while that window is open (no writer touches the
-new columns before the reader can see them), but the drawer is down for it.
+**2026-09-10:** the run widens `jd_generations.slot` to sixteen letters.
+Until it has run, saving a rating on a curated item with more than four
+responses fails (the sync cannot file slot `e`); everything else is
+unaffected. Then, optionally, run `api/jd-backfill-curated.php?key=…` once so
+the bench queue sees every rerun set without waiting for a save.
 
 ## The shape in one paragraph
 
@@ -90,7 +89,7 @@ consumed by the bench's own rerun, which files a fresh turn.
 | --- | --- |
 | `id` | ULID |
 | `submission_id` | FK |
-| `slot` | `a`–`d`; `UNIQUE (submission_id, slot)`. **Hard cap of four per submission** |
+| `slot` | `a`–`p` (sixteen since 2026-09-10; `a`–`d` before); `UNIQUE (submission_id, slot)`. A visitor turn uses four; a curated item one per `entry.json` response, retired ones included, so a rerun set fits |
 | `model_id`, `model_version`, `provider` | from the `taxonomy.json` model registry |
 | `harness`, `params` | how it was called (`one-shot`; the request parameters as JSON text) |
 | `raw_response` | the provider's body, kept for the record |
@@ -100,7 +99,10 @@ consumed by the bench's own rerun, which files a fresh turn.
 | `latency_ms`, `usage_tokens` | timing and the provider's usage object (JSON text; each provider's own key names — `jd_generation_cost()` prices it) |
 
 Curated items backfill one row per `entry.json` response, in file order,
-`status = 'generated'`, with the SVG left on disk.
+`status = 'ok'`, with the SVG left on disk. `api/jd-curated-sync.php` is the
+one writer (the backfill's bulk run and `jd-item-rate.php`'s on-demand call
+when admin mode names a curated item by entry id): it appends rows for
+responses past the ones already filed and never rewrites a row that exists.
 
 ### jd_ratings — one row per judgment about a generation
 
@@ -161,8 +163,8 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
 - **The bench outranks the turn**; a seed grade is a fallback only.
 - **The rubric is `taxonomy.json`.** No axis id, grade label or model name is
   hard-coded in SQL or PHP; a taxonomy edit needs no schema change.
-- **Slot cap is four.** A curated item with more than four responses cannot be
-  backfilled (`jd-backfill-curated.php` refuses it) — see *Candidates*.
+- **Slots are sixteen.** A curated item with more responses than that is
+  refused by the sync, never truncated; none exists (the largest holds eight).
 
 ## History
 
@@ -173,6 +175,9 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
 - 2026-08-18 — `jd_submissions.item_id` + the curated backfill; bench ratings
   live in `jd_ratings` under `client = 'bench'`.
 - 2026-08-22 — `jd_ranks`.
+- 2026-09-10 — `jd_generations.slot` widened to `a`–`p` (MySQL `MODIFY`;
+  a SQLite dev database is recreated). Run the setup script once after the
+  deploy; nothing reads the new letters until a sync writes them.
 - 2026-09-05 — `title`, `size_class`, `suppressed`, `retire_requested_at`,
   `rerun_requested_at` on `jd_submissions`. Before this, those five facts were
   `kind = 'flag'` rows in `jd_ratings`, hung off whichever generation was
@@ -202,10 +207,5 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
 - `jd_comparisons` is now redundant with `jd_ranks` for ranked submissions.
   Dropping the double-write would change what `export-jd-evals.py` and the
   analytics comparison series see; left for a deliberate decision.
-- The four-slot cap means a curated item that has accumulated more than four
-  responses on disk (a rerun set plus a legacy keep) cannot be re-backfilled
-  from scratch. Live rows are unaffected (the backfill is idempotent and skips
-  existing items), but a fresh database would need either a wider slot ENUM or
-  a backfill that files only the responses the drawer shows.
 - `jd_ratings.kind` still lists `flag`. Removing it is a `MODIFY COLUMN` on a
   live table for no functional gain.

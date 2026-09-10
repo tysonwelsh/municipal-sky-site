@@ -102,23 +102,26 @@ function jd_ensure_column(PDO $db, string $table, string $column, string $mysql,
 jd_ensure_column($db, 'jd_comparisons', 'strength',
     'VARCHAR(8) NULL AFTER winner_gen_id', 'TEXT NULL');
 
-// jd_generations.slot gains 'd' (fourth model per turn, 2026-08-14). MySQL
-// only — SQLite's CHECK lives in the CREATE.
+// jd_generations.slot: 'd' arrived 2026-08-14 (four models per turn), and
+// the column widened to SIXTEEN on 2026-09-10 so a curated item that has been
+// rerun (four responses appended per rerun) can be filed whole — the old
+// four-slot ceiling refused 21 of 67 items. MySQL only — SQLite's CHECK lives
+// in the CREATE (delete local-dev/jd-dev.sqlite and re-run to widen a dev DB).
 try {
     if ($sqlite) {
-        jd_setup_line('jd_generations.slot d', 'n/a in this dialect');
+        jd_setup_line('jd_generations.slot a–p', 'n/a in this dialect');
     } else {
         $q = $db->query("SHOW COLUMNS FROM jd_generations LIKE 'slot'");
         $col = $q !== false ? $q->fetch() : false;
-        $widened = is_array($col) && strpos((string) ($col['Type'] ?? ''), "'d'") !== false;
+        $widened = is_array($col) && strpos((string) ($col['Type'] ?? ''), "'p'") !== false;
         if (!$widened) {
-            $db->exec("ALTER TABLE jd_generations MODIFY COLUMN slot ENUM('a','b','c','d') NOT NULL");
+            $db->exec("ALTER TABLE jd_generations MODIFY COLUMN slot ENUM('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p') NOT NULL");
         }
-        jd_setup_line('jd_generations.slot d', $widened ? 'already present' : 'added');
+        jd_setup_line('jd_generations.slot a–p', $widened ? 'already present' : 'widened');
     }
 } catch (PDOException $e) {
     $failed++;
-    jd_setup_line('jd_generations.slot d', 'FAILED: ' . $e->getMessage());
+    jd_setup_line('jd_generations.slot a–p', 'FAILED: ' . $e->getMessage());
 }
 
 // jd_submissions.item_id — the curated backfill (2026-08-18). item_id is the
@@ -293,7 +296,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
 CREATE TABLE IF NOT EXISTS jd_generations (
     id             CHAR(26)     NOT NULL PRIMARY KEY,
     submission_id  CHAR(26)     NOT NULL,
-    slot           ENUM('a','b','c','d') NOT NULL,
+    slot           ENUM('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p') NOT NULL, -- 16 (2026-09-10; a rerun appends four)
     model_id       VARCHAR(64)  NOT NULL,
     model_version  VARCHAR(64)  NOT NULL,
     provider       VARCHAR(32)  NOT NULL,
@@ -408,7 +411,7 @@ CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)",
 CREATE TABLE IF NOT EXISTS jd_generations (
     id             TEXT     NOT NULL PRIMARY KEY,
     submission_id  TEXT     NOT NULL,
-    slot           TEXT     NOT NULL CHECK (slot IN ('a','b','c','d')),
+    slot           TEXT     NOT NULL CHECK (slot IN ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p')),
     model_id       TEXT     NOT NULL,
     model_version  TEXT     NOT NULL,
     provider       TEXT     NOT NULL,

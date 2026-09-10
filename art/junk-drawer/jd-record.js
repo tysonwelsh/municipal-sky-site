@@ -305,8 +305,23 @@
     return '<tr class="rc-axdesc" id="' + descId + '" hidden>' +
       '<td colspan="2">' + esc(text) + '</td></tr>';
   }
+  /* one scale as a select, best first, the value on file selected — the
+     admin editor's cell (labels through JD_labelText: a select's option
+     text is a plain-text surface) */
+  function scaleSelect(values, value, attrs, empty) {
+    var vals = (values || []).slice().sort(function (x, y) { return y.rank - x.rank; });
+    var h = '<select class="rc-edit" ' + attrs + '>' +
+      '<option value=""' + (value == null ? ' selected' : '') + '>' + esc(empty) + '</option>';
+    vals.forEach(function (v) {
+      var sel = value != null && Math.round(+value) === Math.round(v.rank);
+      h += '<option value="' + v.rank + '"' + (sel ? ' selected' : '') + '>' +
+        esc(window.JD_labelText ? JD_labelText(v.label) : v.label) + '</option>';
+    });
+    return h + '</select>';
+  }
   function subjectsHTML(resp) {
     var rows = '', di = 0;
+    var edit = editable(curEntry);
     ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
       /* defunct axes never appear on the report card (owner, 2026-07-29);
          their filed gradings live on in the data and the legend still
@@ -314,7 +329,11 @@
       if (axis.defunct) return;
       var a = annOf(resp, axis.id);
       var cell;
-      if (!a) {
+      if (edit) {
+        cell = scaleSelect(axis.values, a ? a.value : null,
+          'data-axis="' + esc(axis.id) + '" aria-label="' + esc(axis.label || axis.id) + '"',
+          '— not assessed');
+      } else if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
         /* the bar fills against the axis's OWN step count — 3- and 4-point
@@ -348,10 +367,19 @@
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td>' +
       axisBtn('<span class="rc-avg-l">Overall grade</span>', 'rc-axd-g') +
-      '</td><td><span class="rc-verdict">' +
-      (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
-      mark(g.label, gCls) +
-      '</span></td></tr>' + descRow('rc-axd-g', gDesc) + '</tfoot></table>';
+      '</td><td>' +
+      (edit
+        ? scaleSelect((payload.taxonomy || {}).grades, resp.grade,
+            'data-grade aria-label="Overall grade"', '— ungraded')
+        : '<span class="rc-verdict">' +
+          (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
+          mark(g.label, gCls) + '</span>') +
+      '</td></tr>' + descRow('rc-axd-g', gDesc) + '</tfoot></table>' +
+      (edit
+        ? '<div class="rc-edit-row">' +
+          '<button type="button" class="rc-save" data-rc="save">save ratings</button>' +
+          '<span class="rc-edit-status" aria-live="polite"></span></div>'
+        : '');
   }
 
   /* THE STRIP IS A SCROLLER (owner, 2026-08-15: "I'd also like to be able to
@@ -505,13 +533,7 @@
     var m = modelOf(resp.model);
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
-      '<div class="rc-item">' + esc(entry.title) + '</div>' +
-      /* ADMIN MODE (owner, 2026-09-05): the card's one write control, and
-         only once the key has verified — a visitor's card never carries it */
-      (window.JD_admin && JD_admin.isVerified() && window.JD_bench
-        ? '<button type="button" class="rc-adjust" data-rc="adjust">adjust ratings</button>'
-        : '') +
-      '</header>';
+      '<div class="rc-item">' + esc(entry.title) + '</div></header>';
     /* the plate is the enlargement's handle: role/tabindex make it a real
        button for keyboard and screen readers without wrapping the artwork in
        a <button>, whose UA box model would fight the absolutely-positioned
@@ -679,9 +701,12 @@
       if (e.target === scrim) close();
     });
     scrim.querySelector('.jd-record-close').addEventListener('click', close);
+    scrollEl.addEventListener('change', function (e) {
+      if (e.target.classList && e.target.classList.contains('rc-edit')) setStatus('unsaved changes');
+    });
     scrollEl.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('[data-rc="adjust"]')) {
-        adjust();
+      if (e.target.closest && e.target.closest('[data-rc="save"]')) {
+        saveRatings();
         return;
       }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
@@ -914,19 +939,81 @@
     JD_track('item_open', id);
   }
 
-  /* ADMIN MODE: hand the item to the bench driver, which seats it in the
-     turn card with everything on file prefilled and names on the slots. A
-     turn is named by its submission (data.php carries submission_id since
-     2026-09-05); a curated item by its entry id. The card comes down first
-     — two aria-modal dialogs on one page is the trap open() guards against. */
-  function adjust() {
-    if (!curEntry || !window.JD_bench) return;
-    var key = curEntry.fromTurn
-      ? 'turn:' + (curEntry.submission_id || '')
-      : curEntry.id;
-    var id = curEntry.id;
-    close();
-    window.JD_bench.adjust(key, id);
+  /* ADMIN MODE — THE INLINE EDITOR (owner, 2026-09-10; it replaced the
+     2026-09-05 ADJUST RATINGS hand-off to the bench card, which the owner
+     found roundabout). With the key verified, the grades table renders its
+     verdicts as the scales themselves, each holding the value on file, and
+     one button files the shown response's grade and axes through
+     jd-item-rate.php — a curated item by entry id + rid (the server files
+     any response the database never held), a turn by submission +
+     generation. On success the payload learns the values, the card repaints
+     from it, and the pile tag follows if the shown response is the one the
+     drawer displays. Ranks and sizes stay the bench's business. */
+  function editable(entry) {
+    return !!(window.JD_admin && JD_admin.isVerified() && entry && !entry.visitor);
+  }
+  var saving = false;
+  function setStatus(text) {
+    var el = scrollEl && scrollEl.querySelector('.rc-edit-status');
+    if (el) el.textContent = text || '';
+  }
+  function saveRatings() {
+    if (!curEntry || saving || !editable(curEntry)) return;
+    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    var axes = {}, grade = null;
+    scrollEl.querySelectorAll('select.rc-edit[data-axis]').forEach(function (sel) {
+      if (sel.value !== '') axes[sel.getAttribute('data-axis')] = +sel.value;
+    });
+    var g = scrollEl.querySelector('select.rc-edit[data-grade]');
+    if (g && g.value !== '') grade = +g.value;
+    var one = { grade: grade, axes: axes };
+    var body;
+    if (curEntry.fromTurn) {
+      one.generation_id = resp.gen_id;
+      body = { submission_id: curEntry.submission_id, responses: [one] };
+    } else {
+      one.rid = resp.rid;
+      body = { item_id: curEntry.id, responses: [one] };
+    }
+    saving = true;
+    setStatus('saving…');
+    fetch(JD_API + '/api/jd-item-rate.php', {
+      method: 'POST',
+      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
+    }).then(function (j) {
+      saving = false;
+      if (!j || !j.ok) {
+        setStatus('⚠ not saved (' + (((j || {}).error || {}).code || 'network') + ')');
+        return;
+      }
+      /* the payload learns what the server now serves */
+      if (grade != null) resp.grade = grade;
+      resp.annotations = resp.annotations || {};
+      Object.keys(axes).forEach(function (a) {
+        var cur = resp.annotations[a];
+        resp.annotations[a] = (cur && typeof cur === 'object' && cur.note)
+          ? { value: axes[a], note: cur.note }
+          : axes[a];
+      });
+      render(false);
+      setStatus('✓ saved');
+      if (resp.rid === curEntry.primary) pileTag(curEntry, resp);
+    }, function () {
+      saving = false;
+      setStatus('⚠ not saved (network)');
+    });
+  }
+  /* the specimen tag reads its grade off the pile item's dataset — keep it
+     honest without rebuilding the pile */
+  function pileTag(entry, resp) {
+    var el = document.querySelector('.jd-item[data-id="' + entry.id.replace(/"/g, '') + '"]');
+    if (!el) return;
+    var gr = gradeOf(resp.grade);
+    el.setAttribute('data-grade', gr.label || '');
+    el.setAttribute('data-rank', gr.rank ? String(Math.round(gr.rank)) : '');
   }
 
   function teardown() {
