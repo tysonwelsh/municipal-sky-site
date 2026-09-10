@@ -1095,6 +1095,61 @@
       '<div class="fx-axgrid">' + panels + '</div>');
   }
 
+  /* THE TURN TABLE (owner, 2026-09-10): one row per four-model turn on
+     display, newest first — the date, the prompt cut to its first PROMPT_CUT
+     characters, and each model's overall grade as the number and the grade
+     book's five-segment gauge at cell size. Five rows show; the rest scroll
+     inside the card (the CSS fixes the row height and caps the scroll box
+     at five rows plus the header, which stays put). The model columns are
+     the models that graded on any listed turn, in the payload's order, so
+     a column means the same model all the way down. */
+  var PROMPT_CUT = 48;
+  function gaugeSVG(v) {
+    var STEPS = 5, TW = 40, TH = 8;
+    v = Math.max(1, Math.min(STEPS, +v || 1));
+    var ink = RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))];
+    var w = TW * v / STEPS, s = '';
+    s += '<rect x="0.5" y="0.5" width="' + w.toFixed(1) + '" height="' + TH + '" fill="' + ink + '"/>';
+    for (var t = 1; t < STEPS; t++) {
+      var tx = 0.5 + TW * t / STEPS;
+      s += '<line x1="' + tx.toFixed(1) + '" y1="0.5" x2="' + tx.toFixed(1) + '" y2="' + (TH + 0.5) +
+           '" class="' + (tx <= 0.5 + w ? 'fx-seg' : 'fx-seg-out') + '"/>';
+    }
+    s += '<rect x="0.5" y="0.5" width="' + TW + '" height="' + TH +
+         '" fill="none" stroke="rgba(74,53,18,0.28)" stroke-width="1"/>';
+    return '<svg class="fx-gauge" viewBox="0 0 ' + (TW + 1) + ' ' + (TH + 1) + '" aria-hidden="true">' + s + '</svg>';
+  }
+  function turnsHTML() {
+    var rows = data.turns || [];
+    if (!rows.length) {
+      return cardHTML('fx-turns', 'Turn by turn',
+        'no four-model turn is on display yet', '');
+    }
+    /* the columns: every model that graded on a listed turn, payload order */
+    var present = {};
+    rows.forEach(function (r) { Object.keys(r.grades || {}).forEach(function (m) { present[m] = true; }); });
+    var cols = (data.models || []).map(function (m) { return m.model_id; }).filter(function (id) { return present[id]; });
+    Object.keys(present).forEach(function (id) { if (cols.indexOf(id) < 0) cols.push(id); });
+    var h = '<div class="fx-turns-wrap"><table class="fx-turns-t"><thead><tr>' +
+      '<th class="fx-th-date">date</th><th class="fx-th-prompt">prompt</th>';
+    cols.forEach(function (id) { h += '<th class="fx-th-model">' + esc(mLabel(id)) + '</th>'; });
+    h += '</tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var p = String(r.prompt || '').replace(/\s+/g, ' ').trim();
+      var cut = p.length > PROMPT_CUT ? p.slice(0, PROMPT_CUT - 1).replace(/\s+\S*$/, '') + '…' : p;
+      h += '<tr><td class="fx-td-date">' + esc(r.date) + '</td>' +
+           '<td class="fx-td-prompt" title="' + esc(p) + '">' + esc(cut) + '</td>';
+      cols.forEach(function (id) {
+        var g = r.grades && r.grades[id];
+        h += '<td class="fx-td-grade">' + (g == null ? '<span class="fx-td-none">—</span>'
+          : '<span class="fx-td-num">' + esc(String(+g)) + '</span>' + gaugeSVG(g)) + '</td>';
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+    return cardHTML('fx-turns', 'Turn by turn', '', h);
+  }
+
   /* THE METER RUNS — one ink line, cumulative, x spaced by real DATE (not by
      row index: the drawer is not used every day, and index spacing would
      quietly redraw a quiet fortnight as steady work). No y axis, no
@@ -1196,7 +1251,7 @@
        row. Who takes first was on for an hour and taken off again; it, the
        ledger figures and the spend line stay built (firstsHTML, ledgerHTML,
        spendHTML) for the day they are wanted. */
-    bodyEl.innerHTML = costHTML() + gradesHTML() + axesHTML();
+    bodyEl.innerHTML = costHTML() + gradesHTML() + axesHTML() + turnsHTML();
   }
 
   function open() {

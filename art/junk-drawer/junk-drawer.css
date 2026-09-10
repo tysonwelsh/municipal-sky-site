@@ -4330,6 +4330,27 @@ html.jd-folder-open { overflow: hidden; }
 .fx-t-lab  { font-family: var(--fmono); font-size: 9px;   fill: var(--fink); }
 /* one step down for the long model names — see labFor() in junk-drawer.js */
 .fx-t-lab.is-long { font-size: 7px; }
+/* THE TURN TABLE (2026-09-10): a full-width card under the axes. Fixed row
+   height and a scroll box capped at the header plus five rows — the header
+   sticks inside the box (a scroll container of its own, so sticky binds to
+   it, unlike the ledger page's mistake). The prompt column takes what the
+   grade columns leave. */
+.fx-turns-wrap { max-height: calc(5 * 26px + 25px); overflow-y: auto; border: 1px solid var(--frule-2); background: rgba(255, 255, 255, 0.25); }
+.fx-turns-t { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.fx-turns-t th, .fx-turns-t td { height: 26px; box-sizing: border-box; padding: 0 8px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid var(--frule-2); }
+.fx-turns-t th { position: sticky; top: 0; z-index: 1; height: 25px; background: var(--fpaper); font-family: var(--fform); font-weight: 700; font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fink-3); }
+.fx-turns-t td { font-family: var(--fmono); font-size: 0.62rem; color: var(--fink); }
+.fx-th-date, .fx-td-date { width: 84px; color: var(--fink-3); }
+.fx-th-model, .fx-td-grade { width: 108px; }
+.fx-th-model { letter-spacing: 0.06em; }
+.fx-td-grade { display: table-cell; }
+.fx-td-num { display: inline-block; width: 1.1em; font-weight: 700; }
+.fx-td-none { color: var(--fink-3); }
+.fx-gauge { width: 41px; height: 9px; vertical-align: -1px; margin-left: 4px; }
+@media (max-width: 700px) {
+  .fx-turns-t { table-layout: auto; min-width: 560px; }
+  .fx-turns-wrap { overflow-x: auto; }
+}
 .fx-t-val  { font-family: var(--fmono); font-size: 9.5px; fill: var(--fink); font-weight: 700; }
 .fx-t-tail { font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
 .fx-t-scale{ font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
