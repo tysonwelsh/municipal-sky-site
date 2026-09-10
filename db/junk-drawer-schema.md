@@ -162,7 +162,11 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
   (`jd-inventory.php`) split on it.
 - **A submission's own facts are columns.** Do not file "TITLE …"/"SIZE x"/
   "RETIRE …" notes in `jd_ratings` again; the readers no longer parse them.
-- **The bench outranks the turn**; a seed grade is a fallback only.
+- **The bench outranks the turn**; a seed is a fallback only. Since
+  2026-09-10 a `client='seed'` row can be a grade, a live-axis value (the
+  entry's annotation, filed by `jd-curated-sync.php`) or a `jd_ranks` row
+  (the harvest's "filed rank N of M"); the queue counts them toward complete
+  and ranked, `jd_pick_rating(['bench', '*'])` still lets the bench's win.
 - **The rubric is `taxonomy.json`.** No axis id, grade label or model name is
   hard-coded in SQL or PHP; a taxonomy edit needs no schema change.
 - **Slots are sixteen.** A curated item with more responses than that is
