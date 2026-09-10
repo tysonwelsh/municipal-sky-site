@@ -71,3 +71,4 @@
 0.9.110 — the drawer has layers: extra-large objects lie on the floor, large ones on those, and everything smaller on top — at load and however you dig; a lifted object comes back to the top of its own layer
 0.9.111 — on a phone, swipe the report card's photograph to turn to the next or previous drawing; REPLAY is a small round-again arrow now, so the photograph keeps its room; and in admin mode a saved card comes down on its own
 0.9.112 — the layers are the deal at load only: the drawer opens with extra-large objects on the floor and large ones on those, and anything you lift comes to the very top again, as it always did
+0.9.113 — blueprint paper: a small button in the photograph's top-right corner swaps the report card's graph paper for blueprint (pale rules on deep blue) so light artwork reads, and back; the enlargement follows and the choice is remembered on the device
