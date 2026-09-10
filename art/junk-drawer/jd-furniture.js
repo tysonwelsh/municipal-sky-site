@@ -783,10 +783,16 @@
   }
   function day(iso) { return String(iso || '').slice(0, 10); }
 
+  /* TITLES ONLY (owner, 2026-09-10): the population line under each title
+     is no longer printed with a chart — the title and the marks are the
+     card. The sentence is still composed by every card, and it is what a
+     card with NOTHING TO PLOT shows in place of its chart (a bare title
+     would read as a rendering failure), so the shortfall and the models
+     left off are still stated there. */
   function cardHTML(cls, title, sub, inner) {
     return '<section class="fx-card ' + cls + '">' +
       '<h3 class="fx-title">' + esc(title) + '</h3>' +
-      '<p class="fx-sub">' + esc(sub) + '</p>' + inner + '</section>';
+      (inner ? inner : '<p class="fx-sub">' + esc(sub) + '</p>') + '</section>';
   }
 
   /* the footnote a MIN_N drop owes the reader: the models left off this
