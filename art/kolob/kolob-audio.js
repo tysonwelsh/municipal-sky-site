@@ -3561,27 +3561,56 @@ window.KolobAudio = (function () {
   // HOLD the meeting where it stands — see the scheduling notes above. The
   // page's transport and the lock-screen pause both come here; PLAY, the
   // pause button again, or the lock-screen play resume it.
+  //
+  // The clock is not stopped outright: a suspend mid-wave is a click, and a
+  // suspend under the lock-screen route (a live stream feeding an <audio>
+  // element) is a stutter while the element pulls on a stalled stream. So
+  // the master fades to nothing over a short breath first; then the element
+  // rests, then the clock stops. Resume runs the same in reverse.
+  var PAUSE_FADE = 0.16;                           // seconds
+  var pauseTimer = null;
   function pause() {
     if (!playing || paused) return;
     paused = true;
     var now = nowMs();
     timers.forEach(function (t, id) { clearTimeout(id); held.push({ fn: t.fn, remaining: Math.max(0, t.due - now) }); });
     timers.clear();
-    try { if (ctx && ctx.state === "running") ctx.suspend(); } catch (e) {}
-    if (bg) bg.stopped();                            // the lock screen shows paused; the element rests
+    var t = ctx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+    masterGain.gain.linearRampToValueAtTime(0, t + PAUSE_FADE);
+    pauseTimer = setTimeout(function () {
+      pauseTimer = null;
+      if (!paused) return;                         // resumed during the fade
+      if (bg) { if (bg.hold) bg.hold(); else bg.stopped(); }   // the element rests, the lock screen shows paused
+      try { if (ctx.state === "running") ctx.suspend(); } catch (e) {}
+    }, PAUSE_FADE * 1000 + 40);
   }
   function resume() {
     if (!playing || !paused) return;
     paused = false;
-    try { if (ctx && ctx.state !== "running") ctx.resume(); } catch (e) {}
-    var list = held; held = [];
-    list.forEach(function (h) { arm(h.fn, h.remaining); });
-    if (bg) bg.started();
+    if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+    var go = function () {
+      if (!playing || paused) return;              // stopped, or held again, while the clock woke
+      if (bg) bg.started();
+      var t = ctx.currentTime;
+      masterGain.gain.cancelScheduledValues(t);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+      masterGain.gain.linearRampToValueAtTime(masterVolume, t + PAUSE_FADE);
+      var list = held; held = [];
+      list.forEach(function (h) { arm(h.fn, h.remaining); });
+    };
+    if (ctx.state !== "running") {
+      var p = null;
+      try { p = ctx.resume(); } catch (e) {}
+      if (p && p.then) p.then(go, go); else go();
+    } else go();
   }
   function stop() {
     playing = false;
     if (bg) bg.stopped();
     clearAllTimers();
+    if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
     if (paused) {                                    // a stop from a hold: let the clock run so the fade can
       paused = false;
       try { if (ctx && ctx.state !== "running") ctx.resume(); } catch (e) {}
