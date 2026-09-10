@@ -1048,7 +1048,11 @@
       var rows = (ax.models || []).filter(function (r) {
         return (+r.n || 0) >= MIN_N;
       });
-      var h = 8 + rows.length * PROWH + 14, s = '', key = '', alt = [];
+      /* no scale labels under the rulers and no "of 4" in the heading
+         (owner, 2026-09-10): the dots and their printed values are the
+         reading, so the box ends 4 units under the last row instead of
+         leaving 14 for a line of type */
+      var h = 8 + rows.length * PROWH + 4, s = '', key = '', alt = [];
       rows.forEach(function (r, i) {
         var y = 8 + i * PROWH + PROWH / 2;
         var v = Math.max(1, Math.min(pts, +r.avg || 1));
@@ -1064,18 +1068,15 @@
                esc(keyFor(r.model_id)) + '</text>';
         alt.push(mLabel(r.model_id) + ' ' + v.toFixed(1));
       });
-      var base = 8 + rows.length * PROWH + 9;
-      s += '<text x="' + PX0 + '" y="' + base + '" class="fx-t-scale">1</text>' +
-           '<text x="' + (PX0 + PXW) + '" y="' + base +
-           '" text-anchor="end" class="fx-t-scale">' + pts + '</text>';
       /* the lead panel keeps the whole box, key gutter and all; every panel
          after it starts its viewBox at the gutter's right edge, which shows
          the identical ruler and simply never renders the key it carries
          (one row of four across the full card, owner 2026-09-10) */
       var vb = pi === 0 ? '0 0 ' + PW + ' ' + h
                         : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
-      return '<div class="fx-panel"><h4>' + esc(ax.label) +
-        ' <span class="fx-of">of ' + pts + '</span></h4>' +
+      /* the heading is the axis name alone (owner, 2026-09-10 — the "of 4"
+         went with the scale labels); the aria-label still states the ruler */
+      return '<div class="fx-panel"><h4>' + esc(ax.label) + '</h4>' +
         '<svg viewBox="' + vb + '" role="img" aria-label="' +
         esc(ax.label + ', 1 to ' + pts + '. ' + alt.join('. ')) + '">' +
         '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
