@@ -88,3 +88,4 @@
 0.9.127 — the analytics folder gains a turn-by-turn table under the axes: date, the prompt's first words, and each model's overall grade with a small gauge; five rows tall, the rest scroll
 0.9.128 — on a phone the drawing being graded is as large as the report card shows it: the full width of the sheet, the survey scrolling under it
 0.9.129 — the grading step's enlargement carries REDRAW and a close ✕, as the report card's does
+0.9.130 — the analytics folder's grade card is titled Overall grade, and on a phone or tablet every one of the four axis panels carries the model names
