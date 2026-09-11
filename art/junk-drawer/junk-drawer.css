@@ -3896,12 +3896,18 @@ body.jd-pod-drag, body.jd-pod-drag * {
      has work to do below the floor, where scrolling returns.) */
   .jd-turn[data-view="bench"] { height: 100%; }
   .jd-turn[data-view="bench"] .jd-turn-scroll { display: flex; flex-direction: column; }
+  /* THE EXHIBIT AT FULL WIDTH (owner, 2026-09-11): on a phone the drawing
+     is as large as the report card shows it — the whole width of the
+     sheet, square, so its height follows — and the survey scrolls under
+     it. That retires the one-screen design of rounds 17–26 (a flex
+     exhibit sized by the height left over, 128px floor, 46dvh cap, the
+     pin sticky over the rows): the owner's call is that scrolling to the
+     rows is fine and a thumbnail-sized exhibit is not. The pin is an
+     ordinary flow child now — not sticky, because a plate the width of
+     the sheet pinned at the top would leave a 667px phone a hand's
+     breadth for the rows. */
   .jd-turn[data-view="bench"] .jd-turn-pin {
-    /* the floor is 128px CONTENT (+ the pin's own ~9px padding ≈ 137 in
-       the flow): measured, that is what zero-scroll at a 660px viewport
-       leaves the exhibit — 144 kept 15px of scroll alive at the very
-       heights the floor was meant to serve */
-    flex: 1 1 auto; min-height: 128px; align-items: center;
+    flex: 0 0 auto; min-height: 0; align-items: center;
   }
   /* (the call needs no clamp here: since the podium it is 462px at every
      width — see .jd-turn[data-view="call"] above) */
@@ -3917,7 +3923,7 @@ body.jd-pod-drag, body.jd-pod-drag * {
      216px square at a 748px viewport. */
   .jd-bench, .jd-bench-l, .jd-bench-r { display: contents; }
   .jd-turn-pin {
-    position: sticky; top: 0; z-index: 4;
+    position: static; z-index: 4;   /* was sticky — see the note above */
     padding: 0.1rem 0 0.45rem; margin: 0 0 0.15rem;
     background: var(--tpaper) var(--tgrain);
     /* R2-F3 (round-17), reasoning updated (owner directive r4 — grade moved
@@ -3936,8 +3942,8 @@ body.jd-pod-drag, body.jd-pod-drag * {
      square via its own aspect-ratio, capped so an outlandishly tall
      viewport doesn't turn the survey into a poster with a footnote */
   .jd-turn-pin .jd-turn-plate {
-    flex: 0 1 auto; width: auto; height: 100%;
-    max-height: min(46dvh, 340px); max-width: 100%;
+    flex: 0 0 auto; width: 100%; height: auto;
+    max-height: none; max-width: 100%;
     aspect-ratio: 1 / 1;
   }
   .jd-turn-pin .jd-turn-corner { width: 15px; height: 15px; }
@@ -4507,16 +4513,16 @@ html.jd-folder-open { overflow: hidden; }
    both modes; the model's name on the bench head and the report card's one
    write control wear the bench palette, so they read as the curator's
    marks and never as part of the form */
-.jd-bench-bar /* the admin strip's link out to the ledger page (2026-09-10) — dressed as
+/* the admin strip's link out to the ledger page (2026-09-10) — dressed as
    the strip's buttons are, since it sits among them */
-.jd-bench-link {
+.jd-bench-bar .jd-bench-link {
   display: inline-block; text-decoration: none; font: inherit; color: inherit;
   border: 1px solid rgba(230, 217, 180, 0.35); border-radius: 2px;
   padding: 3px 9px; white-space: nowrap;
 }
-.jd-bench-link:hover { border-color: #e6d9b4; }
-.jd-bench-link:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
-.jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
+.jd-bench-bar .jd-bench-link:hover { border-color: #e6d9b4; }
+.jd-bench-bar .jd-bench-link:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
+.jd-bench-bar .jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
 .jd-bench-acts + .jd-bench-out, .jd-bench-build + .jd-bench-out { margin-left: 0; }
 /* the report card's inline editor (owner, 2026-09-10): the grade cells
    become the scales themselves, in the form's own hand, and one gold button
