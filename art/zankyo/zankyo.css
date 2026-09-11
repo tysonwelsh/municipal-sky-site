@@ -35,6 +35,9 @@
   --print:     #918c9c;      /* silk-screened panel text */
   --print-dim: #6a6572;
 
+  width: 100%;               /* never wider than the site wrapper (a flex item with auto margins
+                                sizes to its content otherwise, and a phone then grows its layout
+                                viewport to fit — the page shows "zoomed in" and pans sideways) */
   max-width: 860px;
   margin: 0 auto;
   padding: 8px 16px 56px;
@@ -878,7 +881,10 @@
 .zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
 /* the second set (S0+): 受信 / 消失 — the signal's own amber tag */
 .zankyo-log-tag.rx         { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.7); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.5); }
-.zankyo-log-text { color: var(--ink); }
+/* a line may carry one long unbreakable token (a seating like
+   shakuhachi+koto(ha)+biwa+taiko+sho, a scene chain jo>ha>kyu>release); on a
+   phone it must break inside that token rather than push the page wide */
+.zankyo-log-text { color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 .zk-log-src { margin-left: auto; font-size: 9px; color: rgba(var(--amber-rgb), 0.7); text-decoration: none; padding: 0 4px; border: 1px solid rgba(var(--amber-rgb), 0.35); border-radius: 2px; }   /* S2: the signal's attribution ▶ */
 .zk-log-src:hover, .zk-log-src:focus-visible { color: var(--amber); border-color: var(--amber); outline: none; }
 
