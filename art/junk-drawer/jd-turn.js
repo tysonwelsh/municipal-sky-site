@@ -881,11 +881,28 @@
      JD_fitAll reframes the copy exactly as it framed the plate. */
   function zoomHTML(slot, fit) {
     var s = work.slots[slot];
+    /* REDRAW and the ✕ ride the enlargement here as they do on the report
+       card's (owner, 2026-09-11: "the button to redraw isn't there when I
+       enlarge"). Same classes, same bands (.rc-zoom-fig's CSS is shared),
+       same .rc-zoom-keep exemption from the layer's press-to-close; the
+       clicks are wired in openZoom(). No DOWNLOAD — a drawing under
+       judgment is not yet anyone's to keep. */
     return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fit) + '">' +
       window.JD_svgInst(s.svg, 'juz' + slot + (instSeq++) + '_') +
-      '</div></div>' +
+      '</div>' +
+      '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
+      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      '<div class="rc-plate-btns rc-zoom-keep">' +
+      '<button type="button" class="rc-draw" title="watch the drawing draw itself again" ' +
+      'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
+      '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+      '<path d="M13.4 8a5.4 5.4 0 1 1-1.7-3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+      '<path d="M13.6 2.4v3.4h-3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg><span>REDRAW</span></button></div>' +
+      '</div>' +
       '<div class="rc-zoom-cap">' +
       '<span class="rc-zoom-cap-t">' + esc(shortTitle(work.prompt)) +
       ' · drawing ' + slot.toUpperCase() + '</span>' +
@@ -904,7 +921,24 @@
     if (!s || s.status !== 'ok') return;
     var artIn = from.querySelector('.jd-turn-art-in');
     zoom.open(from, zoomHTML(slot, artIn ? artIn.getAttribute('data-fit') : ''));
+    /* the enlargement's kept controls, wired once on this dialog's own
+       layer: REDRAW draws the enlargement's copy on again; the ✕ shrinks
+       the enlargement and stops there — the bench underneath stays */
+    if (!zoomWired) {
+      zoomWired = true;
+      zoom.el().addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t.closest) return;
+        if (t.closest('.rc-draw')) {
+          var svg = zoom.el().querySelector('.rc-zoom-art svg');
+          if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
+        } else if (t.closest('.rc-zoom-close')) {
+          closeZoom();
+        }
+      });
+    }
   }
+  var zoomWired = false;
   function closeZoom(silent) { zoom.close(silent); }
   /* REPLAY's half of the pair: find the plate's own svg and hand it to the
      shared draw-on engine with force — see the block comment above. Each

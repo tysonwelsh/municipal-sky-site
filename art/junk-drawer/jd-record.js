@@ -949,8 +949,9 @@
   function openZoom(from) {
     if (!isOpen || zoom.isOn() || !curEntry) return;
     zoom.open(from || null, zoomBody(), plateEl());
-    /* the layer is built once by JD_zoomLayer; its controls are ours */
-    var layer = document.querySelector('.jd-record-zoom');
+    /* the layer is built once by JD_zoomLayer; its controls are ours (and
+       it is THIS instance's element — the turn card builds one too) */
+    var layer = zoom.el();
     if (layer && !zoomWired) {
       zoomWired = true;
       layer.addEventListener('click', function (e) {
