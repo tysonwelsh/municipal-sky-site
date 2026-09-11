@@ -21,9 +21,13 @@
   /* the cover is a MAT now, not a backdrop: a bounded green cloth rectangle
      lying on the site's white page, the way the hymnbook lies on a table */
   position: relative;
+  width: 100%;               /* never wider than the site wrapper: a flex item with auto margins is
+                                otherwise sized to its content, and a phone then grows its layout
+                                viewport to fit — the page loads "zoomed in" and pans sideways */
   max-width: 860px;
   margin: 2.4rem auto 3.5rem;
   padding: 34px;
+  overflow-x: clip;          /* and whatever still pokes out is cut at the mat's edge, not the page's */
   border-radius: 3px;
   background:
     radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
@@ -357,6 +361,7 @@
 }
 .kolob-lever {
   display: block;
+  margin: 0;                        /* browsers give a range input 2px of margin; that slid the native thumb 2px off the hexagon and past the wrap's end */
   width: 100%;
   height: 26px;
   --fill: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--f));
@@ -454,6 +459,11 @@
   gap: 2.8rem;
   margin: 0 0 2rem;
 }
+/* a grid item will not shrink below its content unless told to; the board's
+   one-line seed row (SEED · value · input · GATHER) is wider than a phone
+   column, and without this it pushed the whole page past the screen's edge.
+   Now the column holds and the seed input gives way instead. */
+.kolob-columns > * { min-width: 0; }
 .kolob-sec-head {
   font-family: "Noto Sans Deseret", serif;
   font-size: 0.8rem;
