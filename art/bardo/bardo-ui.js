@@ -194,7 +194,10 @@
 
   function updateTelemetry(c, playing) {
     var el = document.getElementById("bardo-telemetry"); if (!el) return;
-    var SEP = '<span class="t-sep">·</span>';
+    // the parts are nowrap and nothing sits between them, so a phone could not break the
+    // line anywhere and the page grew past the screen; a zero-width space after each
+    // separator gives the line one place to wrap per part, invisible on a wide page
+    var SEP = '<span class="t-sep">·</span>\u200b';
     if (!playing) {
       el.innerHTML = '<span class="t-gold">CEREMONY ———</span>' + SEP + 'THE VESSEL IS STILL';
       return;
