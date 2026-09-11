@@ -4431,8 +4431,10 @@ html.jd-folder-open { overflow: hidden; }
 /* the lead panel's cap: 215px across a 172-unit box. Every other panel's is
    the same scale over its cropped box, so the two must move together. */
 .fx-panel svg { display: block; width: 100%; max-width: 215px; height: auto; }
-.fx-panel:nth-child(n + 2) svg { max-width: 137.5px; }
-.fx-panel:nth-child(n + 2) .fx-key { display: none; }
+/* the crop is a CLASS since 2026-09-11 (set at render): below 900px every
+   panel keeps its key and its full box, so nth-child no longer knows */
+.fx-panel--cropped svg { max-width: 137.5px; }
+.fx-panel--cropped .fx-key { display: none; }
 @media (max-width: 900px) {
   .fx-axgrid { grid-template-columns: 1.32fr 1fr; }
 }

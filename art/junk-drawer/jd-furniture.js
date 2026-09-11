@@ -949,7 +949,7 @@
       /* the card stays even when no model has earned a bar yet (2026-09-10,
          with the folder's return): a missing chart reads as a broken
          folder, a stated shortfall reads as the truth */
-      return cardHTML('fx-grades', 'How the drawings graded',
+      return cardHTML('fx-grades', 'Overall grade',
         'no model has ' + MIN_N + ' grades on visitor turns under the ' +
         'current rubric yet' + notPlotted(dropped), '');
     }
@@ -987,7 +987,7 @@
     var svg = '<svg class="fx-chart" viewBox="0 0 ' + W + ' ' +
       (rows.length * ROWH + 6) + '" role="img" aria-label="' +
       esc('Average overall grade. ' + alt.join('. ')) + '">' + s + '</svg>';
-    return cardHTML('fx-grades', 'How the drawings graded',
+    return cardHTML('fx-grades', 'Overall grade',   /* owner, 2026-09-11 */
       /* "current rubric" = the v17 rework onward — the endpoint's era gate
          (owner call, 2026-08-28): pre-v17 grades are the old demo era and
          re-enter by being re-rated, never by being grandfathered */
@@ -1049,8 +1049,18 @@
         'no model has ' + MIN_N + ' axis ratings on four-model turns under ' +
         'the current rubric yet' + notPlotted(dropped), '');
     }
+    /* KEYS ON EVERY PANEL BELOW 900px (owner, 2026-09-11): the crop that
+       pays for the key gutter once only reads when the four panels sit in
+       one row and the lead panel labels the rest. Reflowed two-up or
+       stacked, a panel without names is four dots and a guess — so each
+       panel carries its own key there. The crop is a class the CSS follows
+       (fx-panel--cropped), decided here at render, and the folder
+       re-renders when the width crosses the line (see the media listener
+       below render()). Desktop is unchanged. */
+    var keysEverywhere = !!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
     var panels = axes.map(function (ax, pi) {
       var pts = +ax.points || 3;
+      var cropped = pi > 0 && !keysEverywhere;
       var rows = (ax.models || []).filter(function (r) {
         return (+r.n || 0) >= MIN_N;
       });
@@ -1078,11 +1088,11 @@
          after it starts its viewBox at the gutter's right edge, which shows
          the identical ruler and simply never renders the key it carries
          (one row of four across the full card, owner 2026-09-10) */
-      var vb = pi === 0 ? '0 0 ' + PW + ' ' + h
+      var vb = !cropped ? '0 0 ' + PW + ' ' + h
                         : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
       /* the heading is the axis name alone (owner, 2026-09-10 — the "of 4"
          went with the scale labels); the aria-label still states the ruler */
-      return '<div class="fx-panel"><h4>' + esc(ax.label) + '</h4>' +
+      return '<div class="fx-panel' + (cropped ? ' fx-panel--cropped' : '') + '"><h4>' + esc(ax.label) + '</h4>' +
         '<svg viewBox="' + vb + '" role="img" aria-label="' +
         esc(ax.label + ', 1 to ' + pts + '. ' + alt.join('. ')) + '">' +
         '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
@@ -1252,6 +1262,15 @@
        ledger figures and the spend line stay built (firstsHTML, ledgerHTML,
        spendHTML) for the day they are wanted. */
     bodyEl.innerHTML = costHTML() + gradesHTML() + axesHTML() + turnsHTML();
+  }
+
+  /* the axes panels change shape at 900px (keys on every panel below it):
+     an open folder re-renders from cache when the width crosses the line */
+  if (window.matchMedia) {
+    var axesMQ = window.matchMedia('(max-width: 900px)');
+    var onMQ = function () { if (isOpen && data) render(); };
+    if (axesMQ.addEventListener) axesMQ.addEventListener('change', onMQ);
+    else if (axesMQ.addListener) axesMQ.addListener(onMQ);
   }
 
   function open() {
