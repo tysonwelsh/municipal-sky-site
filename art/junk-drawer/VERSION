@@ -87,3 +87,4 @@
 0.9.126 — the analytics cards are title and chart only; the line under each title is gone (a card with nothing to plot still says so)
 0.9.127 — the analytics folder gains a turn-by-turn table under the axes: date, the prompt's first words, and each model's overall grade with a small gauge; five rows tall, the rest scroll
 0.9.128 — on a phone the drawing being graded is as large as the report card shows it: the full width of the sheet, the survey scrolling under it
+0.9.129 — the grading step's enlargement carries REDRAW and a close ✕, as the report card's does

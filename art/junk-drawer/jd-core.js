@@ -364,7 +364,11 @@ function JD_zoomLayer() {
   return {
     open: open, close: close, fill: fill, gridScale: gridScale,
     isOn: function () { return on; },
-    setFrom: function (f) { from = f || null; }
+    setFrom: function (f) { from = f || null; },
+    /* the layer's own element, for the owner to wire its kept controls on
+       (2026-09-11) — two dialogs each build a layer, so a document-wide
+       query for .jd-record-zoom could find the other one's */
+    el: function () { build(); return el; }
   };
 }
 
