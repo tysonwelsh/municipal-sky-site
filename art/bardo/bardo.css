@@ -20,6 +20,9 @@
   --red:        #9d2f33;
   --red-rgb:    157, 47, 51;
 
+  width: 100%;               /* never wider than the site wrapper (a flex item with auto margins
+                                sizes to its content otherwise, and a phone then grows its layout
+                                viewport to fit — the page shows "zoomed in" and pans sideways) */
   max-width: 860px;
   margin: 0 auto;
   padding: 16px 18px 72px;
