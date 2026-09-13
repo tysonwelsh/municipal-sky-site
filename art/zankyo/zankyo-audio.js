@@ -5687,7 +5687,12 @@ window.ZankyoAudio = (function () {
       case "biwa": biwaStrum(SCALE[scaleIndexOf(0)].freq, t, {}); stringNote("biwa", SCALE[scaleIndexOf(3)].freq, t + 1.2, 1.4, { vel: 0.8 }); stringNote("biwa", SCALE[scaleIndexOf(0)].freq, t + 2.4, 2, { vel: 0.7 }); break;
       case "taiko": taikoPattern(t, "matsuri", 0.5, 1); taikoHit(t + 2.2, true, "odaiko"); taikoHit(t + 2.6, false, "shime"); taikoHit(t + 2.8, false, "ka"); break;
       case "noise": sampleNoise(t, variant); break;
-      case "ambient": var e = AMBIENT_POOL[Math.floor(S.sample.next() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
+      case "ambient":
+        // the draw is taken whether or not a name is given, so a named
+        // audition (the bench) leaves the sample stream where a blind one would
+        var e = AMBIENT_POOL[Math.floor(S.sample.next() * AMBIENT_POOL.length)];
+        if (variant) for (var ai = 0; ai < AMBIENT_POOL.length; ai++) if (AMBIENT_POOL[ai].name === variant) { e = AMBIENT_POOL[ai]; break; }
+        try { e.fn(t); } catch (x) {} break;
       case "broadcast": if (signalProvider && signalProvider.sample) { try { signalProvider.sample(t); } catch (x2) {} } break;
     }
     for (bi = 0; bi < borrowed.length; bi++) S[borrowed[bi]] = saved[borrowed[bi]];
@@ -5720,6 +5725,9 @@ window.ZankyoAudio = (function () {
     setMasterVolume: setMasterVolume, setLayerVolume: setLayerVolume, setLayerRate: setLayerRate,
     setLayerParam: setLayerParam, getLayerParam: getLayerParam, resetLayerParams: resetLayerParams,
     toggleLayer: toggleLayer, getState: getState, sample: sample,
+    // the ambient pool's names, in pool order — the bench builds one button per
+    // entry from this so a new one-shot gets a button without editing the lab
+    ambientNames: function () { return AMBIENT_POOL.map(function (e) { return e.name; }); },
     // 選局 TUNE (S2): playing → ask the receiver to seat a signal at the next legal moment (one per cycle); stopped → the layer's ♪ tune-in
     tune: function () { if (!signalProvider) return false; if (playing) return !!(signalProvider.scan && signalProvider.scan()); sample("broadcast"); return true; },
     // 掃引 THE TUNING DIAL (plan §7). The page hands over how hard the hand is
