@@ -53,8 +53,21 @@ include '../../includes/header.php';
     ["noise", "雑音 noise · static", "bit-crushed, gated bursts", "static"],
     ["noise", "雑音 noise · rumble", "contact-mic: half the sub root through the grit bus, LFO", "rumble"],
     ["subDrone", "重低音 sub-drone", "the hull in its 64–128 Hz register"],
-    ["ambient", "環境 ambient", "one pool event"],
+    ["ambient", "環境 ambient · any", "one pool event, drawn blind as a night would"],
   ];
+  // one button per ambient one-shot, from the engine's own pool (the road map's
+  // candidates for promotion — fūrin, comms vox — are heard here by name)
+  var AMBIENT_NOTES = {
+    "Temple bell": "bonshō — deep, long, inharmonic",
+    "Wind chime": "fūrin — a few tiny high pings in the mode (road map §3: promote to a voice)",
+    "Static glitch": "a digital burst of the 3042 grit",
+    "Water drip": "suikinkutsu — a drip's resonance",
+    "Distant taiko": "a lone far drum hit",
+    "Koto sweep": "a fast koto-ish glissando flourish",
+    "Comms vox": "the broken intercom — stuttered vowel-formant syllables (road map §4: promote to a voice)",
+    "Geiger hum": "dying machinery — a sagging drone and thinning clicks"
+  };
+  (Z.ambientNames ? Z.ambientNames() : []).forEach(function (n) { BODIES.push(["ambient", "環境 " + n, AMBIENT_NOTES[n] || "one-shot", n]); });
   Z.setEventListener(function (ev) { log.textContent = (ev.label + (ev.detail ? " · " + ev.detail : "")) + "\n" + log.textContent.split("\n").slice(0, 12).join("\n"); });
   BODIES.forEach(function (b) {
     var btn = document.createElement("button");
