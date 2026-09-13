@@ -91,6 +91,25 @@
   function toneKnown(t) { return !!(TONE_DARK[t] || TONE_LIGHT[t]); }
   var RECENT_CYCLES = 3;
   var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
+  // ---- the dropout holes: a duck under static, not a mute (the owner's ear, 2026-09-13) ----
+  // The seeded holes (weather(): one every 1.2–4.5 s, each 0.12–0.37 s, denser
+  // through the loss) are what the picture stutters on — the set drops its
+  // strength by 0.45 in a hole, so the snow rises. The gate under the reel used
+  // to ramp its gain to EXACTLY ZERO for the same span, and 120–370 ms of
+  // nothing is a syllable or a whole word: Cage would say "silence" and the
+  // set would hand you "si—ce". A hard mute is also the one thing a receiver
+  // losing its signal does not do — the carrier weakens and the noise floor
+  // comes up over what is left of the voice. So a hole is now two things at
+  // once: the reel DUCKS to DROP_FLOOR of its level (still there, buried),
+  // and a burst of band-limited static rises for exactly the hole the picture
+  // shows, so the ear hears static swelling, not a gap. The holes' timing is
+  // untouched: same draws, same picture, same stream.
+  //   DROP_FLOOR — the reel under a hole, as a fraction of its level (0 would
+  //                be the old mute; 1 would be no hole at all)
+  //   DROP_HISS  — the static in a hole, relative to the reel's own tuning
+  //                envelope (it rides sg, so it fades through the loss and
+  //                scales with the reel's gain like everything else)
+  var DROP_FLOOR = 0.35, DROP_HISS = 0.5;
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
   // gesture (the ▶ play event is emitted synchronously from the click), so
   // later timer-driven play() calls are allowed where autoplay policy would
@@ -1125,15 +1144,28 @@
       var lfo = N(c.createOscillator()); lfo.type = "sine"; lfo.frequency.setValueAtTime(a.lfoHz, t0);
       var dg = N(c.createGain()); dg.gain.setValueAtTime(depth / 2, t0); dg.gain.setValueAtTime(depth / 2, lossStart); dg.gain.linearRampToValueAtTime(Math.min(0.5, depth), cut);
       lfo.connect(dg); dg.connect(fl.gain); lfo.start(t0); lfo.stop(end);
-      // the dropout gate: the same seeded holes the picture shows
+      // the dropout gate: the same seeded holes the picture shows. A hole is a
+      // DUCK to DROP_FLOOR, never a mute (see the constants) — the voice stays
+      // under the static that rises in the same span, from the hiss branch
+      // below, which is built here so the two share one loop and one clock.
       var gate = N(c.createGain()); gate.gain.setValueAtTime(1, t0);
+      var hn = N(T.noiseSource()), hb = N(c.createBiquadFilter()), hz = N(c.createGain());
+      hb.type = "bandpass"; hb.Q.setValueAtTime(1.6, t0);
+      hz.gain.setValueAtTime(0, t0);
       var absDrops = [];
       for (i = 0; i < a.drops.length; i++) {
         var da = t0 + a.drops[i][0], dd = a.drops[i][1];
-        gate.gain.setValueAtTime(1, da); gate.gain.linearRampToValueAtTime(0, da + 0.004);
-        gate.gain.setValueAtTime(0, da + dd); gate.gain.linearRampToValueAtTime(1, da + dd + 0.004);
+        gate.gain.setValueAtTime(1, da); gate.gain.linearRampToValueAtTime(DROP_FLOOR, da + 0.006);
+        gate.gain.setValueAtTime(DROP_FLOOR, da + dd); gate.gain.linearRampToValueAtTime(1, da + dd + 0.006);
+        // the static swells in over the head of the hole and drops out with
+        // it; its band wanders hole to hole on the signal's own seed (no draw)
+        var hf = 700 + 1900 * (((a.seed || 0) * 0.618 * (i + 1)) % 1);
+        hb.frequency.setValueAtTime(hf, da); hb.frequency.exponentialRampToValueAtTime(hf * 1.4, da + dd);
+        hz.gain.setValueAtTime(0, da); hz.gain.linearRampToValueAtTime(DROP_HISS, da + Math.min(0.03, dd * 0.25));
+        hz.gain.setValueAtTime(DROP_HISS, da + dd); hz.gain.linearRampToValueAtTime(0, da + dd + 0.03);
         absDrops.push([da, dd]);
       }
+      hn.connect(hb); hb.connect(hz); hn.start(t0, 11); hn.stop(cut + 0.3);
       // the 3042 codec: a staircase, coarser with the grit. A whisper of dither
       // (texture, unseeded) rides in ahead of it so the quiet between words
       // hisses instead of gating to digital silence — the critic's softener
@@ -1164,6 +1196,7 @@
         bufSrc.stop(cut + 0.2);
       }
       head.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
+      hz.connect(sg);   // the holes' static joins past the staircase, under the same envelope as the reel
       // 相 PHASING (W3): two copies of the same window drifting apart. Reich
       // ran two tape loops at almost the same speed; here one copy goes through
       // a delay whose time ramps from nothing to driftMs × passes across the
