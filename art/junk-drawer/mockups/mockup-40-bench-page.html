@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Junk Drawer Bench &mdash; page proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* ============================================================================
+   JUNK DRAWER BENCH — page proposal (mockup 40/41, 2026-09-13). NOT BUILT.
+   Design proposal, so the CSS is hand-written here — but every token below is
+   copied from css/style.css (:root, lines 48–120) and junk-drawer.css so the
+   measures are honest: Courier Prime chrome, Spectral running text, the 8px
+   grid, --banner-h 56px, the site's ink/paper/plot-red, the report card's
+   graph-paper ruling (junk-drawer.css .jd-turn-art, line 2806) and the
+   analytics folder's per-model inks and grade ramp (jd-furniture.js 646–657).
+   The drawer itself is a STILL of the live drawer (2026-09-13, furniture
+   hidden: instructions slip, PUSH button, analytics folder, bail pull) —
+   the built page composes the real .jd-stage here instead.
+   ========================================================================== */
+:root{
+  --ink:#111111; --ink-soft:#444444; --ink-mute:#6a6a6a;
+  --paper:#ffffff; --paper-pure:#fafaf7; --rule:#111111; --rule-soft:#cfc9bb;
+  --plot-red:#b22222; --plot-blue:#1e3a8a; --plot-amber:#b8860b;
+  --font-mono:"Courier Prime","Courier New",Courier,monospace;
+  --font-body:"Spectral",Georgia,"Times New Roman",serif;
+  --fs-xs:11px; --fs-sm:13px; --fs-base:15px; --fs-md:17px; --fs-lg:20px; --fs-xl:24px; --fs-2xl:32px;
+  --lh-tight:1.2; --lh-base:1.55; --lh-loose:1.7;
+  --s-1:8px; --s-2:16px; --s-3:24px; --s-4:32px; --s-5:48px; --s-6:64px;
+  --max-narrow:600px; --max-wide:960px; --max-bench:1400px;
+  --banner-h:56px; --banner-h-mobile:48px;
+  /* the record's graph paper — junk-drawer.css .jd-turn-art */
+  --gp-cream:#f8f3e2; --gp-rule:rgba(74,98,138,.17); --gp-rule-fine:rgba(74,98,138,.07); --gp-edge:rgba(55,65,79,.30);
+  /* one fixed ink per model, everywhere (jd-furniture.js PALETTE, in panel order) */
+  --m-opus:#b8541f; --m-gpt:#1f7a63; --m-kimi:#2b5aa3; --m-gemini:#7a3b66;
+  /* the grade ramp, Utility → Prime (jd-furniture.js RAMP) */
+  --g1:#8f1d12; --g2:#b0490f; --g3:#a06200; --g4:#46761a; --g5:#0b6a1f;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:16px;line-height:var(--lh-base);-webkit-text-size-adjust:100%}
+body{margin:0;padding-top:var(--banner-h);font-family:var(--font-body);font-size:var(--fs-base);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+/* ---- site banner, as css/style.css ships it ---- */
+.site-banner{position:fixed;top:0;left:0;right:0;height:var(--banner-h);background:var(--paper);border-bottom:1px solid var(--ink);z-index:1000}
+.site-banner-inner{max-width:var(--max-bench);height:100%;margin:0 auto;padding:0 var(--s-3);display:flex;align-items:center;justify-content:space-between}
+.site-title{font-family:var(--font-mono);font-size:var(--fs-md);font-weight:700;letter-spacing:-.01em;text-decoration:none;padding-left:14px;position:relative}
+.site-title::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:4px;background:var(--plot-blue)}
+.site-navigation{display:flex;gap:var(--s-4);font-family:var(--font-mono);font-size:var(--fs-sm);letter-spacing:.06em;text-transform:uppercase}
+.site-navigation a{text-decoration:none;color:var(--ink)}
+@media (max-width:768px){body{padding-top:0}.site-banner{display:none}}
+
+/* ---- the composition ---- */
+.bench{max-width:var(--max-bench);margin:0 auto;padding:var(--s-2) var(--s-3) 0}
+.bench-grid{display:grid;grid-template-columns:minmax(0,58fr) minmax(0,42fr);gap:var(--s-4);align-items:start}
+.bench-left{position:relative;display:flex;justify-content:center;align-items:flex-start}
+.bench-stage{position:relative;aspect-ratio:808/1010;max-height:calc(100vh - var(--banner-h) - var(--s-4));max-width:100%;width:auto}
+.bench-stage img{display:block;width:100%;height:100%;object-fit:cover;box-shadow:0 22px 40px -18px rgba(20,10,2,.55)}
+.bench-stage .stage-note{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-family:var(--font-mono);font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+/* the plain specimen popover that replaces the manila tag on the bench page (§3) */
+.spec{position:absolute;left:47%;top:73.5%;width:220px;background:var(--paper-pure);border:1px solid var(--ink);padding:10px 12px 10px;font-family:var(--font-mono);font-size:var(--fs-xs);line-height:1.5;box-shadow:0 8px 18px -8px rgba(0,0,0,.45);z-index:3}
+.spec::after{content:"";position:absolute;left:38px;bottom:-9px;width:16px;height:16px;background:var(--paper-pure);border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);transform:rotate(45deg)}
+.spec .t{font-weight:700;font-size:var(--fs-sm);letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px}
+.spec .m{color:var(--ink-soft);margin:0}
+.spec .g{margin:6px 0 0;display:flex;align-items:center;gap:8px}
+.spec .g i{display:inline-block;width:10px;height:10px;background:var(--g4)}
+.spec .o{margin:8px 0 0;letter-spacing:.08em;text-transform:uppercase}
+.spec .o a{text-decoration:none;border-bottom:1px solid var(--ink)}
+
+/* ---- the document beside the drawer ---- */
+.bench-right{position:sticky;top:calc(var(--banner-h) + var(--s-2));max-height:calc(100vh - var(--banner-h) - var(--s-2));overflow-y:auto;overscroll-behavior:contain;padding-right:4px;font-family:var(--font-mono);font-size:var(--fs-sm);line-height:var(--lh-base)}
+.bench-right h1{font-family:var(--font-mono);font-size:var(--fs-lg);letter-spacing:.3em;text-transform:uppercase;margin:0 0 4px;text-wrap:balance}
+.pitch{font-family:var(--font-body);font-size:var(--fs-md);line-height:var(--lh-tight);margin:0 0 4px;color:var(--ink)}
+.pitch em{font-style:normal;border-bottom:2px solid var(--plot-red);padding-bottom:1px}
+.count{margin:0;color:var(--ink-mute);font-size:var(--fs-xs);letter-spacing:.06em;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.blk{border-top:1px solid var(--ink);margin-top:12px;padding-top:8px}
+.blk h2{font-family:var(--font-mono);font-size:var(--fs-xs);letter-spacing:.22em;text-transform:uppercase;margin:0 0 6px;color:var(--ink)}
+.blk h2 .n{color:var(--ink-mute);letter-spacing:.06em;margin-left:8px;text-transform:none}
+.steps{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.steps li{display:grid;grid-template-columns:18px 1fr;gap:6px;font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.4}
+.steps b{font-family:var(--font-mono);font-weight:400;color:var(--ink-mute)}
+.grades{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:0 0 8px}
+.grades div{padding:4px 0 0;border-top:3px solid;font-size:var(--fs-xs);line-height:1.3}
+.grades b{display:block;letter-spacing:.06em;text-transform:uppercase}
+.grades span{color:var(--ink-soft);font-family:var(--font-body)}
+.axes{margin:0;padding:0;list-style:none}
+.axes li{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:3px 0;border-top:1px dotted var(--rule-soft);font-family:var(--font-body);font-size:var(--fs-sm);line-height:1.35}
+.axes li:first-child{border-top:0}
+.axes b{font-family:var(--font-mono);font-weight:400;font-size:var(--fs-xs);letter-spacing:.06em;text-transform:uppercase;line-height:1.4}
+.axes b small{display:block;color:var(--ink-mute);letter-spacing:.04em}
+.axes i{display:block;color:var(--ink-soft);font-style:italic}
+/* the numbers panel: Tufte data-ink, no graph paper behind marks (PLAN-ANALYTICS) */
+.ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 10px;font-variant-numeric:tabular-nums}
+.ledger div{border-left:1px solid var(--rule-soft);padding-left:8px}
+.ledger b{display:block;font-size:var(--fs-lg);font-weight:400;line-height:1.1}
+.ledger span{font-size:var(--fs-xs);color:var(--ink-mute);letter-spacing:.06em;text-transform:uppercase}
+.chart{margin:0 0 6px}
+.chart h3{font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin:6px 0 4px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.chart text.mute{fill:var(--ink-mute)}
+.chart .lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-xs);color:var(--ink-soft);margin:4px 0 0}
+.chart .lg i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px}
+.foot{font-size:var(--fs-xs);color:var(--ink-mute);margin:6px 0 0;line-height:1.4}
+.foot a{color:var(--ink-soft)}
+.cta{display:flex;align-items:center;gap:var(--s-2);margin-top:var(--s-2);padding:12px 0 var(--s-2)}
+.cta button{font-family:var(--font-mono);font-size:var(--fs-sm);letter-spacing:.18em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:1px solid var(--ink);padding:10px 18px;cursor:pointer}
+.cta button:focus-visible{outline:2px solid var(--plot-red);outline-offset:2px}
+.cta p{margin:0;font-size:var(--fs-xs);color:var(--ink-soft);line-height:1.4}
+
+/* ---- below the composition: field notes ---- */
+.notes{max-width:var(--max-wide);margin:var(--s-5) auto 0;padding:var(--s-4) var(--s-3) var(--s-6);border-top:1px solid var(--ink);font-family:var(--font-body);font-size:var(--fs-base);line-height:var(--lh-loose)}
+.notes h2{font-family:var(--font-mono);font-size:var(--fs-sm);letter-spacing:.22em;text-transform:uppercase;margin:0 0 var(--s-1)}
+.notes .two{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-5)}
+.notes p{margin:0 0 var(--s-2);max-width:62ch}
+.notes .sm{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-2)}
+.notes .sm h3{font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:400;letter-spacing:.12em;text-transform:uppercase;margin:0 0 4px;color:var(--ink-soft)}
+.notes .sm svg{display:block;width:100%;height:auto;overflow:visible}
+.notes .sm text{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.notes .sm text.mute{fill:var(--ink-mute)}
+.colophon{font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--ink-mute);margin-top:var(--s-4);display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-4)}
+.colophon a{color:var(--ink-soft)}
+
+/* ---- stacked (tablet + phone) ---- */
+@media (max-width:1099px){
+  .bench{padding:0 var(--s-2)}
+  .bench-grid{grid-template-columns:minmax(0,1fr);gap:var(--s-3)}
+  .bench-left,.bench-right{min-width:0}
+  .bench-stage{max-height:none;width:min(100%,808px)}
+  .bench-right{position:static;max-height:none;overflow:visible;max-width:var(--max-narrow);margin:0 auto}
+  .notes .two{grid-template-columns:1fr}
+  .notes .sm{grid-template-columns:1fr 1fr}
+}
+/* phone: the drawer owns the first viewport (PLAN-MOBILE), text below */
+@media (max-width:768px){
+  .bench{padding:0}
+  .bench-stage{margin:0;aspect-ratio:auto;height:100vh;height:100svh;min-height:420px;width:100%}
+  .bench-stage img{box-shadow:none}
+  .bench-stage .stage-note{display:none}
+  .spec{left:auto;right:12px;top:auto;bottom:16%}
+  .spec::after{left:auto;right:28px}
+  .bench-right{padding:var(--s-3) var(--s-2) 0}
+  .steps{grid-template-columns:1fr}
+  .grades{grid-template-columns:1fr;gap:6px}
+  .grades div{border-top:0;border-left:3px solid;padding:0 0 0 8px}
+  .grades b{display:inline;margin-right:6px}
+  .axes li{grid-template-columns:1fr;gap:2px}
+  .ledger{grid-template-columns:1fr 1fr}
+  .notes{padding:var(--s-4) var(--s-2) var(--s-5)}
+  .notes .sm{grid-template-columns:1fr}
+  html{scroll-snap-type:y proximity}
+  .bench-stage,.bench-right{scroll-snap-align:start}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style></head><body>
+
+<div class="site-banner"><div class="site-banner-inner">
+  <a class="site-title" href="/">Municipal Sky</a>
+  <nav class="site-navigation"><a href="/information-graphics/">Information Graphics</a><a href="/art/">Art</a><a href="/about.php">About</a></nav>
+</div></div>
+
+<main class="bench">
+<div class="bench-grid">
+
+  <div class="bench-left">
+    <div class="bench-stage">
+      <picture>
+        <source media="(max-width:768px)" srcset="bench-drawer-mobile.jpg">
+        <img src="bench-drawer-desktop.jpg" alt="The Junk Drawer: a painted wooden drawer holding a pile of machine-drawn objects" width="808" height="1010">
+      </picture>
+      <!-- the specimen popover (§3: plain and fast; the manila tag stays on the art page) -->
+      <aside class="spec" aria-label="specimen: fish skeleton">
+        <p class="t">Fish skeleton</p>
+        <p class="m">Claude Opus 5 &middot; Anthropic &middot; one-shot</p>
+        <p class="g"><i aria-hidden="true"></i>Choice &middot; 4 of 5 &middot; 5 responses on file</p>
+        <p class="o"><a href="#record">Open the record &rarr;</a></p>
+      </aside>
+      <p class="stage-note">drag to dig &middot; twist while held &middot; tap any object</p>
+    </div>
+  </div>
+
+  <div class="bench-right" id="doc">
+    <h1>Junk Drawer Bench</h1>
+    <p class="pitch">One prompt. Two models. Blind grades, <em>on the record.</em></p>
+    <p class="count" id="count">49 prompts &middot; 200 drawings in the drawer &middot; 4 models on the panel</p>
+
+    <section class="blk" aria-labelledby="h-how">
+      <h2 id="h-how">How it works</h2>
+      <ol class="steps">
+        <li><b>1</b><span>A prompt goes to every model on the panel verbatim, one shot each.</span></li>
+        <li><b>2</b><span>The SVG comes back and is filed as written. Nothing is cleaned up.</span></li>
+        <li><b>3</b><span>Each drawing is graded blind on the rubric, then the set is ranked.</span></li>
+        <li><b>4</b><span>The record keeps model, version, tokens and cost. Visitors take turns too.</span></li>
+      </ol>
+    </section>
+
+    <section class="blk" aria-labelledby="h-rubric">
+      <h2 id="h-rubric">The rubric <span class="n">taxonomy v21</span></h2>
+      <div class="grades" role="list" aria-label="overall grade, five tiers">
+        <div style="border-color:var(--g5)"><b>Prime</b><span>Would ship as-is.</span></div>
+        <div style="border-color:var(--g4)"><b>Choice</b><span>Strong; minor blemishes on inspection.</span></div>
+        <div style="border-color:var(--g3)"><b>Select</b><span>Competent and recognizable; noticeable flaws.</span></div>
+        <div style="border-color:var(--g2)"><b>Standard</b><span>Gets the idea across despite real defects.</span></div>
+        <div style="border-color:var(--g1)"><b>Utility</b><span>Barely fit for purpose. Kept for the record.</span></div>
+      </div>
+      <ul class="axes">
+        <li><b>Understanding Assignment<small>4-point</small></b><span>Did the model grasp what was asked, the intent behind the words, and what the prompt left unsaid? Filling gaps is the job; additions count against it only when they crowd or contradict the ask.<i>Lands here if the fix is a different drawing.</i></span></li>
+        <li><b>Structural Coherence<small>3-point</small></b><span>Is the object possible? Parts attach, anatomy works, proportions and viewpoint agree with themselves.<i>Lands here if the fix means redrawing geometry.</i></span></li>
+        <li><b>Layering<small>3-point</small></b><span>Is the picture of it sound? Stacking order, fills and strokes, framing on the canvas.<i>Lands here if the fix moves no path: reorder, repaint, reframe.</i></span></li>
+        <li><b>Je ne sais quoi<small>3-point</small></b><span>Whatever makes a drawing more than the sum of its axes. Not captured elsewhere; graded anyway.<i>Lands here if nothing else explains why you like it.</i></span></li>
+      </ul>
+    </section>
+
+    <section class="blk" aria-labelledby="h-num">
+      <h2 id="h-num">The numbers <span class="n">as of 2026-09-13</span></h2>
+      <div class="ledger">
+        <div><b>142</b><span>visitor turns</span></div>
+        <div><b>528</b><span>drawings</span></div>
+        <div><b>322</b><span>graded</span></div>
+        <div><b>$25.50</b><span>spent, total</span></div>
+      </div>
+      <div class="chart" id="c-grades">
+        <h3>Overall grade, by model &middot; drawings on file</h3>
+        <svg viewBox="0 0 400 96" role="img" aria-label="Stacked bars of grade distribution per model"></svg>
+        <p class="lg"><span><i style="background:var(--g5)"></i>Prime</span><span><i style="background:var(--g4)"></i>Choice</span><span><i style="background:var(--g3)"></i>Select</span><span><i style="background:var(--g2)"></i>Standard</span><span><i style="background:var(--g1)"></i>Utility</span></p>
+      </div>
+      <div class="chart" id="c-firsts">
+        <h3>Ranked first, share of judged sets &middot; visitor turns</h3>
+        <svg viewBox="0 0 400 96" role="img" aria-label="First-place rate per model, with n"></svg>
+      </div>
+      <p class="foot">Cost per drawing: Opus 5 $0.091 &middot; Gemini 3.1 Pro $0.047 &middot; GPT-5.1 $0.030 &middot; Kimi K3 $0.022. One rater; counts derive from the data, never typed. <a href="#numbers">Axis means and the full ledger &darr;</a></p>
+    </section>
+
+    <div class="cta">
+      <button type="button" id="take-turn">Take a turn</button>
+      <p>Two models draw your prompt. You grade them blind, then the names come off. Three turns an hour.</p>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<section class="notes" id="numbers">
+  <h2>The numbers, in full</h2>
+  <div class="sm" id="axes-sm">
+    <div><h3>Understanding Assignment &middot; of 4</h3><svg viewBox="0 0 220 84"></svg></div>
+    <div><h3>Structural Coherence &middot; of 3</h3><svg viewBox="0 0 220 84"></svg></div>
+    <div><h3>Layering &middot; of 3</h3><svg viewBox="0 0 220 84"></svg></div>
+    <div><h3>Je ne sais quoi &middot; of 3</h3><svg viewBox="0 0 220 84"></svg></div>
+  </div>
+  <p class="foot" style="margin-top:12px">Mean axis score across every rated drawing on the four-model panel (n per model 85&ndash;91). Axes are never normalized across their 3- and 4-point scales. Ranked-first counts a drawing placed first in its set by whoever judged it, author or visitor; ties are not firsts.</p>
+
+  <div class="two" style="margin-top:var(--s-4)">
+    <div>
+      <h2>How grading works</h2>
+      <p>The author grades every drawing without knowing which model drew it; the names come off only after the grades and the ranking are filed. The rubric is versioned. When an axis is retired its old scores stay on the record, marked as such, and are never surveyed again.</p>
+      <p>Visitor turns are graded on the same rubric by the visitor and stored separately from the author&rsquo;s grades. The two populations are never pooled without saying so.</p>
+    </div>
+    <div>
+      <h2>Why this exists</h2>
+      <p>The author runs evaluations like this for a living, under NDA. This is the public version of that discipline: an instrument, a rubric, and a record anyone can inspect. <a href="/about.php">About the author &rarr;</a></p>
+      <h2>Limitations</h2>
+      <p>One rater. A small visitor sample. Drawing an SVG is one narrow capability, not a verdict on a model.</p>
+    </div>
+  </div>
+
+  <p class="colophon">
+    <span>Every drawing is downloadable as the SVG the model wrote &middot; CC BY 4.0 <em>(owner decision pending)</em></span>
+    <a href="/art/junk-drawer/">The drawer, art version &rarr;</a>
+    <span>0.9.106 &middot; build &middot; deployed</span>
+  </p>
+</section>
+
+<script>
+/* Real numbers, 2026-09-13. Distribution: the drawer's live responses on
+   file (entry.json, 49 prompts). Firsts, axis means, cost: api/jd-analytics.php
+   (rated visitor + bench population). The built page reads both live. */
+(function () {
+  var M = [
+    {id:'opus',   label:'Claude Opus 5',  ink:'#b8541f', dist:[11,14,20, 8, 2], firsts:38, judged:95, ax:[3.167,2.144,2.578,2.100]},
+    {id:'gemini', label:'Gemini 3.1 Pro', ink:'#7a3b66', dist:[ 5,13,15,12, 2], firsts:27, judged:89, ax:[3.253,2.077,2.615,1.901]},
+    {id:'kimi',   label:'Kimi K3',        ink:'#2b5aa3', dist:[ 3,13,11,14, 4], firsts:21, judged:86, ax:[3.071,1.929,2.553,1.753]},
+    {id:'gpt',    label:'GPT-5.1',        ink:'#1f7a63', dist:[ 0, 2, 3,15,27], firsts: 6, judged:94, ax:[2.326,1.404,2.079,1.371]}
+  ];
+  var RAMP = ['#0b6a1f','#46761a','#a06200','#b0490f','#8f1d12']; /* Prime → Utility */
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(n, a, t) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; return e; }
+  var LX = 118, W = 400, RW = W - LX - 40, RH = 14, GAP = 22;
+
+  /* stacked grade distribution, 100% bars, 2px gaps between segments */
+  var s1 = document.querySelector('#c-grades svg');
+  M.forEach(function (m, i) {
+    var y = 4 + i * GAP, n = m.dist.reduce(function (a, b) { return a + b; }, 0), x = LX;
+    s1.appendChild(el('text', {x: 0, y: y + 11}, m.label));
+    m.dist.forEach(function (c, g) {
+      var w = c / n * RW; if (!c) return;
+      var r = el('rect', {x: x, y: y, width: Math.max(0, w - 2), height: RH, fill: RAMP[g]});
+      r.appendChild(el('title', {}, m.label + ' · ' + ['Prime','Choice','Select','Standard','Utility'][g] + ': ' + c + ' of ' + n));
+      s1.appendChild(r); x += w;
+    });
+    s1.appendChild(el('text', {x: LX + RW + 6, y: y + 11, 'class': 'mute'}, 'n ' + n));
+  });
+
+  /* first-place rate, one bar per model, direct label */
+  var s2 = document.querySelector('#c-firsts svg');
+  M.forEach(function (m, i) {
+    var y = 4 + i * GAP, r = m.firsts / m.judged, w = r * RW;
+    s2.appendChild(el('text', {x: 0, y: y + 11}, m.label));
+    s2.appendChild(el('line', {x1: LX, x2: LX + RW, y1: y + RH / 2, y2: y + RH / 2, stroke: '#cfc9bb', 'stroke-width': 1}));
+    var b = el('rect', {x: LX, y: y, width: w, height: RH, fill: m.ink});
+    b.appendChild(el('title', {}, m.label + ': first in ' + m.firsts + ' of ' + m.judged + ' judged sets'));
+    s2.appendChild(b);
+    s2.appendChild(el('text', {x: LX + w + 5, y: y + 11}, Math.round(r * 100) + '%'));
+    s2.appendChild(el('text', {x: LX + RW + 6, y: y + 11, 'class': 'mute'}, 'n ' + m.judged));
+  });
+
+  /* axis small multiples, one per axis, same model order, same inks */
+  var svgs = document.querySelectorAll('#axes-sm svg'), MAX = [4, 3, 3, 3];
+  Array.prototype.forEach.call(svgs, function (s, a) {
+    var lx = 96, rw = 220 - lx - 30;
+    M.forEach(function (m, i) {
+      var y = 4 + i * 20, v = m.ax[a], w = (v / MAX[a]) * rw;
+      s.appendChild(el('text', {x: 0, y: y + 10}, m.label.replace('Claude ', '').replace(' Pro', '')));
+      s.appendChild(el('line', {x1: lx, x2: lx + rw, y1: y + 6, y2: y + 6, stroke: '#cfc9bb', 'stroke-width': 1}));
+      var b = el('rect', {x: lx, y: y, width: w, height: 12, fill: m.ink});
+      b.appendChild(el('title', {}, m.label + ': ' + v.toFixed(2) + ' of ' + MAX[a]));
+      s.appendChild(b);
+      s.appendChild(el('text', {x: lx + rw + 4, y: y + 10}, v.toFixed(2)));
+    });
+  });
+})();
+</script>
+</body></html>
