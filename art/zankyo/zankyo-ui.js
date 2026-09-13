@@ -9,7 +9,7 @@
   var Z = window.ZankyoAudio;
   if (!Z) { if (window.console) console.error("Zankyo UI: engine missing"); return; }
 
-  var RATE_LAYERS = { shakuhachi: true, hichiriki: true, koto: true, shamisen: true, biwa: true, taiko: true, noise: true, ambient: true, pa: true };
+  var RATE_LAYERS = { shakuhachi: true, hichiriki: true, koto: true, shamisen: true, biwa: true, taiko: true, noise: true, ambient: true, furin: true, pa: true };
   var LAYER_META = {
     subDrone:   { label: "Sub-drone", kana: "重低音" },
     sho:        { label: "Shō",        kana: "笙" },
@@ -21,6 +21,7 @@
     taiko:      { label: "Taiko",      kana: "太鼓" },
     noise:      { label: "Noise",      kana: "雑音" },
     ambient:    { label: "Ambient",    kana: "環境" },
+    furin:      { label: "Fūrin",      kana: "風鈴" },   // the chime as a voice (2026-09-13)
     pa:         { label: "PA",         kana: "放送" },
     broadcast:  { label: "Broadcast",  kana: "受信" },   // S1: the receiver — an ordinary console row (owner §4.6)
   };
@@ -35,6 +36,7 @@
     taiko:      { punch: [0, 1, 0.05, 2, ""], drive: [0, 1, 0.05, 2, ""], lowTune: [0.5, 2, 0.05, 2, "×"], kakegoe: [0, 1, 0.05, 2, ""] },
     noise:      { density: [0, 1, 0.05, 2, ""], color: [0, 1, 0.05, 2, ""], crush: [0, 1, 0.05, 2, ""] },
     ambient:    {},
+    furin:      { wind: [0, 1, 0.05, 2, ""], tubes: [3, 7, 1, 0, ""], shimmer: [0, 1, 0.05, 2, ""], decay: [0.3, 2, 0.05, 2, "×"] },
     pa:         { presence: [0, 1, 0.05, 2, ""], static: [0, 1, 0.05, 2, ""] },
     broadcast:  { band: [0, 1, 0.05, 2, ""], flutter: [0, 1, 0.05, 2, ""], grit: [0, 1, 0.05, 2, ""] },
   };
@@ -367,7 +369,7 @@
   }
 
   // ---- Activity log (VFD display; content logic unchanged) ----
-  var CAT_TAG = { far: "逸脱 ITSU", shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
+  var CAT_TAG = { far: "逸脱 ITSU", shakuhachi: "尺八 SHAKU", koto: "箏 KOTO", shamisen: "三味線 SHAMI", taiko: "太鼓 TAIKO", noise: "雑音 NOISE", ambient: "環境 AMB", furin: "風鈴 FŪRIN", mode: "旋法 MODE", form: "序破急 FORM", sho: "笙 SHŌ", hichiriki: "篳篥 HICHI", biwa: "琵琶 BIWA", pa: "放送 PA", rx: "受信 RX", broadcast: "受信 RX" };
   var logStart = null;
   function fmtTime(t) { if (logStart === null) logStart = t; var s = Math.max(0, Math.floor(t - logStart)); var m = Math.floor(s / 60); return (m < 10 ? "0" : "") + m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
   function clearLog() { logStart = null; var l = document.getElementById("zankyo-log"); if (l) l.innerHTML = '<div class="zankyo-log-empty">listening…</div>'; }

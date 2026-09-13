@@ -42,7 +42,7 @@ for (var ai = 2; ai < args.length; ai++) {
 }
 
 var LOADED_FROM = null;      // which file each script was actually read from (set by runOnce)
-var LANDSCAPE = { subDrone: 1, sho: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, weather: 1 };   // never "melodic voices" (new melodic bodies — hichiriki, biwa — count automatically)
+var LANDSCAPE = { subDrone: 1, sho: 1, taiko: 1, noise: 1, ambient: 1, furin: 1, pa: 1, weather: 1 };   // never "melodic voices" (new melodic bodies — hichiriki, biwa — count automatically)
 function isMelodic(layer) { return !LANDSCAPE[layer]; }
 
 // ============================================================================

@@ -41,6 +41,9 @@ ambient one-shots. In priority order:
 3. **The fūrin (wind chime) promoted to a voice.** A small set of tuned
    tubes in the current mode, driven by the weather field (a wind parameter
    for density), a landscape voice with its own console row, no air claim.
+   *Shipped 2026-09-13 (rc.63): the weather gained a `wind` channel, the
+   chime its own stream and row; the ambient one-shot left the pool with
+   it. No re-base — nothing already seeded moved.*
 4. **The comms vox promoted to a voice — the broken intercom.** A second
    speaker beside the PA: stuttered formant syllables that follow the motif
    engine's contours, seated in the air and the ledger like a melodic voice,

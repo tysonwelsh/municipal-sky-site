@@ -181,7 +181,8 @@ window.ZankyoAudio = (function () {
     "conductor", "air", "rooms", "fx",                                    // Phase 1: the form, the air, the rooms
     "hichiriki", "biwa", "pa", "halo",                                    // Phase 3: the new bodies
     "signal",                                                              // S1: the receiver — reel choice, window, in-point, the dropouts (zk-broadcast.js)
-    "far"];                                                                // W0: 逸脱 — the night's distance from home, its departures, their parameters (zk-far.js)
+    "far",                                                                 // W0: 逸脱 — the night's distance from home, its departures, their parameters (zk-far.js)
+    "furin"];                                                              // 風鈴 the chime as a voice (2026-09-13) — forked by label, so it moved nothing
   var S = null;                                // the streams, forked per play
   function forkStreams() {
     var master = PJ.Rand.stream(seed);
@@ -202,8 +203,9 @@ window.ZankyoAudio = (function () {
     gritColor:  { period1: 293, period2: 557, depth: 0.45 },
     gapMul:     { period1: 173, period2: 443, depth: 0.35 },
     roomTilt:   { period1: 257, period2: 521, depth: 0.45 },
+    wind:       { period1: 197, period2: 613, depth: 0.5 },   // 風鈴: the wind on the chime — LAST, so its four draws come after every channel that was already seeded
   };
-  var WX_STILL = { brightness: 0.5, breath: 0.5, gritColor: 0.5, gapMul: 0.5, roomTilt: 0.5 };
+  var WX_STILL = { brightness: 0.5, breath: 0.5, gritColor: 0.5, gapMul: 0.5, roomTilt: 0.5, wind: 0.5 };
   function wxAt(t) { return weather ? weather.at(t) : WX_STILL; }
 
   // ==========================================================================
@@ -1725,7 +1727,7 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // LAYERS + STATE
   // ==========================================================================
-  var LAYERS = ["subDrone", "sho", "shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "taiko", "noise", "ambient", "pa", "broadcast"];   // broadcast (S1): the receiver — a real reel from the past, heard in the hull
+  var LAYERS = ["subDrone", "sho", "shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "taiko", "noise", "ambient", "furin", "pa", "broadcast"];   // furin (2026-09-13): the chime as a landscape voice   // broadcast (S1): the receiver — a real reel from the past, heard in the hull
   // Shamisen is deliberately NOT routed through the grit bus: the grit curve's
   // ~27x small-signal makeup spikes its plucked onset into an audible click.
   // Its own sawari buzz + the master saturator keep it abrasive without that.
@@ -1741,9 +1743,9 @@ window.ZankyoAudio = (function () {
   // default x old trim was folded into the new trim (see the table there).
   // Consequence, and it is the point: from 50 every knob is worth exactly
   // +6.02 dB up and silence down, the same gesture on every channel.
-  var layerVolumes = { subDrone: 0.5, sho: 0.5, shakuhachi: 0.5, hichiriki: 0.5, koto: 0.5, shamisen: 0.5, biwa: 0.5, taiko: 0.5, noise: 0.5, ambient: 0.5, pa: 0.5, broadcast: 0.5 };
+  var layerVolumes = { subDrone: 0.5, sho: 0.5, shakuhachi: 0.5, hichiriki: 0.5, koto: 0.5, shamisen: 0.5, biwa: 0.5, taiko: 0.5, noise: 0.5, ambient: 0.5, furin: 0.5, pa: 0.5, broadcast: 0.5 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
-  var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, pa: 1, broadcast: 1 };
+  var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, furin: 1, pa: 1, broadcast: 1 };
   var DEFAULT_LAYER_VOL = 0.5;   // the fallback for a layer not in the table above — centred like the rest (unreachable for every shipped layer)
 
   var LAYER_PARAM_DEFAULTS = {
@@ -1757,6 +1759,7 @@ window.ZankyoAudio = (function () {
     taiko:      { punch: 0.6, drive: 0.5, lowTune: 1.0, kakegoe: 0.5 },
     noise:      { density: 0.4, color: 0.5, crush: 0.4 },
     ambient:    {},
+    furin:      { wind: 0.5, tubes: 5, shimmer: 0.5, decay: 1.0 },   // 風鈴: wind offsets the weather's channel; tubes hung; shimmer detunes the second mode; decay scales the ring
     pa:         { presence: 0.5, static: 0.5 },
     broadcast:  { band: 0.5, flutter: 0.5, grit: 0.5 },   // S1: how narrow the radio band, how deep the fading, how much the receiver distorts
   };
@@ -1805,7 +1808,7 @@ window.ZankyoAudio = (function () {
   // AMBIENT x2 (+6.02 dB, owner): the layer underneath the knob, doubled. Only
   // the ambient SOURCES double — the receiver's radioBus joins at sumAmb, past
   // this gain, so the broadcast is untouched by it.
-  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, pa: 1.68, broadcast: 1.4 };
+  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, furin: 3.2, pa: 1.68, broadcast: 1.4 };
   // PRESENCE (Phase M): a peaking boost on each body's defining band, chosen
   // from the masker map — the band where the landscape is weakest against the
   // voice — pre-attenuated (pre) so the compressor sees no new peak. Measured:
@@ -2144,7 +2147,7 @@ window.ZankyoAudio = (function () {
       else if (GRIT_LAYERS[layer] && effectsReady && gritShaper) { node.connect(gritShaper); if (gritShaperB) node.connect(gritShaperB); }   // Phase M: the second curve finally HAS an input (see the makeup note)
       else if (layer === "shamisen" && effectsReady && shamEdge) node.connect(shamEdge);
       else if (layer === "sho" && effectsReady && sumSho) node.connect(sumSho);
-      else if (layer === "ambient" && effectsReady && sumAmb) node.connect(sumAmb);
+      else if ((layer === "ambient" || layer === "furin") && effectsReady && sumAmb) node.connect(sumAmb);   // the chime is landscape: the ambient's room, the KIRU's cut
       else if (layer === "broadcast" && effectsReady && roomBlend) {
         // THE RECEIVER (S1): the reel is heard IN the reactor hall — registered
         // with the blend a step deeper than the ambient (+0.3), into the dry
@@ -5358,9 +5361,10 @@ window.ZankyoAudio = (function () {
     { fn: ambNumbers,   name: "Numbers station" },
     { fn: ambPipeKnock, name: "Pipe knock" },
   ];
+  // ("Wind chime" left this pool 2026-09-13 when the fūrin became a voice — as
+  // the biwa's one-shot did at its promotion; the scene-joint chime stays.)
   var AMBIENT_POOL = [
     { fn: ambBonsho,       w: 4, name: "Temple bell" },
-    { fn: ambFurin,        w: 4, name: "Wind chime" },
     { fn: ambGlitch,       w: 4, name: "Static glitch" },
     { fn: ambSuikinkutsu,  w: 3, name: "Water drip" },
     { fn: ambDistantTaiko, w: 3, name: "Distant taiko" },
@@ -5377,8 +5381,8 @@ window.ZankyoAudio = (function () {
   // storm crackles. (Multipliers on the flat weights above.)
   var AMBIENT_KIND_W = {
     broadcast: { "Static glitch": 3, "Comms vox": 5, "Geiger hum": 2, "Koto sweep": 0.5, "Distant thunder": 0.4, "Relay chatter": 2.5 },
-    drift:     { "Water drip": 2, "Temple bell": 1.5, "Wind chime": 2, "Static glitch": 0.5, "Distant thunder": 1.8, "Relay chatter": 0.3 },
-    silence:   { "Temple bell": 2, "Wind chime": 0.6, "Static glitch": 0.4, "Distant taiko": 0.4, "Koto sweep": 0.3, "Comms vox": 0.5, "Geiger hum": 0.6, "Distant thunder": 0.6, "Relay chatter": 0.3 },
+    drift:     { "Water drip": 2, "Temple bell": 1.5, "Static glitch": 0.5, "Distant thunder": 1.8, "Relay chatter": 0.3 },
+    silence:   { "Temple bell": 2, "Static glitch": 0.4, "Distant taiko": 0.4, "Koto sweep": 0.3, "Comms vox": 0.5, "Geiger hum": 0.6, "Distant thunder": 0.6, "Relay chatter": 0.3 },
     storm:     { "Static glitch": 2, "Distant taiko": 2, "Geiger hum": 1.5, "Water drip": 0.5, "Distant thunder": 2.5, "Relay chatter": 1.5 },
     rite:      { "Temple bell": 2, "Distant thunder": 0.5, "Relay chatter": 0.4 },
   };
@@ -5394,6 +5398,74 @@ window.ZankyoAudio = (function () {
     emitEvent({ cat: "ambient", label: entry.name }, now);
     var gap = (12 + S.ambient.next() * 22) * (1 - getArc(now) * 0.35) * K().ambGap;
     after("ambient", now, gap, ambientEvent);
+  }
+
+  // ==========================================================================
+  // 風鈴 FŪRIN — the wind chime as a landscape voice (road map §3, 2026-09-13)
+  // ==========================================================================
+  // A few tuned tubes hung in the current mode, high, and a clapper the wind
+  // moves. THE WIND is the weather field's sixth channel — the same slow
+  // deterministic drift brightness and breath ride — offset by the console's
+  // wind knob and scaled by the cycle's kind: a storm's chime rattles, a
+  // silence's barely stirs. A landscape voice: no seat in the lottery, no air
+  // claim, it enters through the ambient sum (so the KIRU hushes it with the
+  // rest of the landscape and the reactor hall hears it where it hears the
+  // bell), and a strike follows the glide like the drones do. Its own stream,
+  // S.furin, forked by label, so adding it moved nothing already seeded; the
+  // wind channel was appended LAST to the weather for the same reason.
+  //
+  // The gesture is the gust, not the strike. Each tick of the loop is the
+  // wind's breath; on a gust the clapper is thrown into one to five tubes,
+  // mostly neighbours (a clapper swings, it does not jump), spaced as the
+  // wind is fast. Between gusts a still chime says nothing at all — that is
+  // what makes a gust a gust.
+  var FURIN_KIND_WIND = { ordinary: 1, rite: 0.8, drift: 1.3, storm: 1.6, silence: 0.45, broadcast: 0.9 };
+  function furinWind(t) {
+    var w = wxAt(t).wind + (getLayerParam("furin", "wind", 0.5) - 0.5) * 1.2;
+    return clamp01(w * (FURIN_KIND_WIND[cyc.kind] || 1));
+  }
+  function furinTubes() {                          // the tubes: the mode from degree 7, two octaves up — the fūrin's register
+    var n = Math.round(getLayerParam("furin", "tubes", 5)), out = [], base = scaleIndexOf(7);
+    for (var i = 0; i < n; i++) out.push(SCALE[Math.min(SCALE.length - 1, base + i)].freq * 2);
+    return out;
+  }
+  function furinStrike(f, t, vel, R) {
+    var c = ctx, out = panAt("furin", (R.next() * 2 - 1) * 0.7);
+    var decay = getLayerParam("furin", "decay", 1.0), shimmer = getLayerParam("furin", "shimmer", 0.5);
+    var dur = (1.1 + R.next() * 1.5) * decay, peak = 0.05 * vel;
+    // the tube: a fundamental and a free tube's second mode near 2.76×, the
+    // mode detuned a hair by the shimmer so no two strikes beat alike, and
+    // ringing shorter — the tick of the clapper is the mode, the note is the fundamental
+    var o = c.createOscillator(), g = c.createGain(); o.type = "sine";
+    var f0 = FAR.glidePartial(o.frequency, f, t, dur);
+    o.connect(g); g.connect(out);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.05);
+    var m = c.createOscillator(), mg = c.createGain(); m.type = "sine";
+    FAR.glidePartial(m.frequency, f * (2.76 + (R.next() * 2 - 1) * 0.06 * shimmer), t, dur * 0.4);
+    m.connect(mg); mg.connect(out);
+    mg.gain.setValueAtTime(0.0001, t); mg.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.002); mg.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.4);
+    m.start(t); m.stop(t + dur * 0.4 + 0.05);
+    emitNote("furin", f0, t, dur);
+  }
+  function furinGust(t, w, R) {                    // one gust: the clapper thrown across the tubes
+    var tubes = furinTubes(), n = 1 + Math.floor(R.next() * (1 + 4 * w)), k = Math.floor(R.next() * tubes.length), tt = t;
+    for (var i = 0; i < n; i++) {
+      furinStrike(tubes[k], tt, 0.45 + 0.55 * R.next() * (0.4 + 0.6 * w), R);
+      tt += 0.05 + R.next() * (0.34 - 0.22 * w);
+      var step = R.next() < 0.72 ? (R.next() < 0.5 ? -1 : 1) : Math.floor(R.next() * tubes.length) - k;   // a swing, mostly to a neighbour
+      k = Math.max(0, Math.min(tubes.length - 1, k + step));
+    }
+    return n;
+  }
+  function furinCycle(t) {
+    if (!playing) return;
+    var w = furinWind(t);
+    if (S.furin.next() < 0.05 + 0.6 * w * w) {    // a gust: rarer than the wind's own value — a still day has a chime that mostly waits
+      var n = furinGust(t, w, S.furin);
+      if (n >= 4) emitEvent({ cat: "furin", label: "風鈴 gust", detail: n + " tubes · wind " + w.toFixed(2) }, t);
+    }
+    after("furin", t, (2.5 + S.furin.next() * 4.5) * (1.4 - 0.8 * w), furinCycle);   // the breath between gusts shortens as the wind rises
   }
 
   // ==========================================================================
@@ -5478,6 +5550,7 @@ window.ZankyoAudio = (function () {
     after("biwa", t0, 26, startBiwa);
     after("noise", t0, 8, noiseEvent);
     after("ambient", t0, 7, startAmbient);
+    after("furin", t0, 12, furinCycle);           // 風鈴: the chime hangs from the start; whether it speaks is the wind's
     lane("form").every(formPulse);
     roomReset(t0);
     lane("room").every(roomPulse);               // Phase M: the crew listens for who speaks
@@ -5816,7 +5889,7 @@ window.ZankyoAudio = (function () {
     auditionPrep(layer);
     // The audition draws from its own stream: while it plays, every body
     // borrows S.sample so a ♪ press mid-performance re-rolls nothing.
-    var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone", "hichiriki", "biwa", "pa"], saved = {}, bi;
+    var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone", "hichiriki", "biwa", "pa", "furin"], saved = {}, bi;
     for (bi = 0; bi < borrowed.length; bi++) { saved[borrowed[bi]] = S[borrowed[bi]]; S[borrowed[bi]] = S.sample; }
     var t = ctx.currentTime + 0.05;
     switch (layer) {
@@ -5827,6 +5900,7 @@ window.ZankyoAudio = (function () {
       case "shamisen": samplePhrase(shamisenNote, t, [0, 2, 0, 3, 0], 0.3); break;
       case "hichiriki": samplePhrase(hichirikiNote, t, [3, 4, 3, 0], 1.4); break;
       case "pa": paSpeak(t, 4, {}); break;
+      case "furin": furinGust(t, 0.8, S.sample); break;   // 風鈴: one good gust across the tubes
       case "biwa": biwaStrum(SCALE[scaleIndexOf(0)].freq, t, {}); stringNote("biwa", SCALE[scaleIndexOf(3)].freq, t + 1.2, 1.4, { vel: 0.8 }); stringNote("biwa", SCALE[scaleIndexOf(0)].freq, t + 2.4, 2, { vel: 0.7 }); break;
       case "taiko": taikoPattern(t, "matsuri", 0.5, 1); taikoHit(t + 2.2, true, "odaiko"); taikoHit(t + 2.6, false, "shime"); taikoHit(t + 2.8, false, "ka"); break;
       case "noise": sampleNoise(t, variant); break;

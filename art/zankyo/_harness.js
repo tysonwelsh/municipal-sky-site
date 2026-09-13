@@ -668,7 +668,7 @@ if (CANON_SEED && runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget 
 // over the same 36 nights is 100, and nothing in the far tail may exceed 110.
 // It is the constraint 群 and 雲 were designed against.
 if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
-if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
+if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa", "furin"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
 // Phase 4 gates (plan §7): ≥ 1 visitation per 3 cycles over 4 h; never two in one cycle; the KIRU lives on the landscape cut
 if (visitVocab.maxPer > 1) fails.push("two of a kind in one cycle (two broadcasts, or two guests)");
 if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push("visitations " + visitVocab.total + " < " + Math.floor(cycles.length / 3) + " (one per 3 cycles)");
