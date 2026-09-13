@@ -146,76 +146,8 @@ include '../includes/header.php';
           is entirely Kamil's. His paper with Gábor Csányi and Michele Simoncelli, <em>Bond-network entropy governs
           heat transport in coordination-disordered solids</em>, is in
           <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Physical Review X</a>,
-          and the structures you're rotating above come from it. The rest of this page is a guide to using the
-          dashboard, followed by a note on where the data comes from and how it was processed.</p>
-      </section>
-    </div>
-
-    <!-- Introduction -->
-    <div class="post-container">
-      <section class="prose-flow">
-        <h2>Using the dashboard</h2>
-        <p>Twenty-seven simulated carbon structures in five classes: amorphous carbon (ρ&nbsp;1.5–2.9&nbsp;g/cm³),
-          carbide-derived carbon (synthesized at 800 and 1200&nbsp;°C, plus an annealed variant), irradiated
-          graphite (four damage stages), variable-porosity carbon, and a phase-separated phase. Atoms draw as
-          points colored by coordination number; bonds join atoms within 1.8&nbsp;Å.</p>
-        <p>Drag to rotate. Shift-drag to pan. Ctrl/⌘&nbsp;+&nbsp;scroll to zoom. Hover an atom for its
-          coordination, rings, local topology, and coordinates; click it to spotlight it and every ring through
-          it. <strong>Reset view</strong> restores the camera and clears every selection and filter.</p>
-      </section>
-    </div>
-
-    <!-- Controls -->
-    <div class="post-container">
-      <section class="prose-flow">
-        <h2>Controls</h2>
-        <ul>
-          <li><strong>Structure</strong> — one of the 27 models, grouped by class.</li>
-          <li><strong>Theme</strong> — four palettes for the same data.</li>
-          <li><strong>Color by</strong> — coordination number, or bond-network entropy (below).</li>
-          <li><strong>Bonds</strong>, <strong>Rings</strong>, <strong>Bond strain</strong> — toggle bond lines;
-            overlay shortest-path rings (sizes 3–10); color bonds on a compressed-red → stretched-blue ramp
-            about the median length.</li>
-          <li><strong>Hide gridlines</strong>, <strong>Spin</strong>, <strong>Point size</strong> — cell box and
-            axes; slow auto-rotation; dot radius.</li>
-          <li><strong>Fly (WASD)</strong> — first-person camera inside the cell: W/A/S/D to move, Q/E to
-            descend/climb, Shift for speed, drag to look, Ctrl/⌘&nbsp;+&nbsp;scroll to dolly, Esc to exit.</li>
-          <li><strong>Sequence</strong> — ordered series (irradiation damage, CDC annealing, AC densification,
-            VPC density). ◀&nbsp;▶ and Play step the stages, the camera holds still between them, and the other
-            stages draw as gray ghost curves in the charts.</li>
-        </ul>
-        <h2>Panels</h2>
-        <p>Panel filters compose — every active selection ANDs with the others. The <em>i</em> badge beside each
-          heading holds that panel's full explanation. On phones the g(r) and bond-length panels are hidden.</p>
-        <ul>
-          <li><strong>Coordination number</strong> — click a class to isolate those atoms; shift-click adds
-            more.</li>
-          <li><strong>Radial distribution g(r)</strong> — brush a range of r to highlight every atom pair at
-            that separation (out to 5&nbsp;Å); click outside the band to clear.</li>
-          <li><strong>Bond lengths</strong> — brush to select bonds by length; bars share the strain ramp.</li>
-          <li><strong>Rings by size</strong> — click a size to isolate those rings; solid bars are rings drawn
-            in the cloud, faded bars cross the cell boundary.</li>
-        </ul>
-      </section>
-    </div>
-
-    <!-- Bond-network entropy -->
-    <div class="post-container">
-      <section class="prose-flow">
-        <h2>Bond-network entropy</h2>
-        <p>The paper's disorder descriptor. Each atom's local environment — its n nearest atoms and the bonds
-          among them — is classified by ring topology (its H<sub>1</sub> barcode); BNE(n) is the Shannon entropy
-          of that classification over all atoms, and the per-structure number is the growth rate: the mean of
-          BNE(n)/n for n&nbsp;=&nbsp;14–30. A perfect crystal scores zero; the more distinct local topologies a
-          structure contains, the higher it scores.</p>
-        <p>Set <strong>Color by</strong> to bond-network entropy to shade each atom by the rarity (surprisal) of
-          its environment; the average of the shading equals BNE(n) exactly. In the panel, the
-          <strong>Environment n</strong> slider sets the environment size; the barcode rows list the commonest
-          topologies — click one to isolate its atoms, shift-click to add; the curve plots BNE(n) with the
-          14–30 band shaded; the tick strip places this structure's growth rate among all 27.</p>
-        <p>A worked example: Sequence → <em>Irradiation damage — IRG T2→T9</em>, Color by → bond-network
-          entropy, then step the stages. The pristine graphitic class falls from 79% of atoms to 59% while the
-          entropy curve lifts.</p>
+          and the structures you're rotating above come from it. Below is a short note on where the data comes
+          from and how it was processed.</p>
       </section>
     </div>
 
