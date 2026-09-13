@@ -17,7 +17,7 @@ function kolob_v($file)
 //                shifts the instant any JS/CSS/markup ships, with no upkeep
 //   · deployed — the newest asset's mtime; the server stamps this at upload,
 //                so it reads as the moment the live files landed (UTC)
-$kolob_assets  = ['kolob-audio.js', 'kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php'];
+$kolob_assets  = ['kolob-audio.js', 'kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '../prosperos-jukebox-v2/pj2-fx.js'];
 $kolob_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $kolob_build   = substr(md5(implode('', array_map('kolob_v', $kolob_assets))), 0, 6);
 $kolob_mtime   = 0;
@@ -191,6 +191,10 @@ include '../../includes/header.php';
 </div>
 
 <script src="../background-audio.js?v=<?php echo kolob_v('../background-audio.js'); ?>"></script>
+<!-- The Jukebox v2 substrate's room-blend crossfader (PJ2.Fx.roomBlend), shared
+     by relative path the way ZANKYŌ shares it — never modified from here. The
+     engine degrades to one room if it is missing. -->
+<script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo kolob_v('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
 <script src="kolob-audio.js?v=<?php echo kolob_v('kolob-audio.js'); ?>"></script>
 <script>if(!window.KolobAudio)console.error("KOLOB AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
