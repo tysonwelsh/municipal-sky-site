@@ -34,8 +34,11 @@
 //    META-SEASONS (ordinary / fast day / conference / jubilee).
 //  · Everything seeded (mulberry32): a meeting is reproducible and shareable.
 //
-// Layers: organ, drone, choir, clarinet, bagpipe, harmonium, strings, bells,
-// voice, telegraph, ambient.   Public surface: window.KolobAudio
+// Layers: organ, drone, choir, clarinet, harmonium, strings, bells, voice,
+// telegraph, ambient — and the bagpipe, SHELVED (owner, 2026-09-13: "just
+// kind of obnoxious"): its voice, params and cycle stay in the file, but it
+// is never scheduled, never shown on the desk, and its layer gain is pinned
+// at zero. See SHELVED below.   Public surface: window.KolobAudio
 // ============================================================================
 
 window.KolobAudio = (function () {
@@ -152,6 +155,12 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // NOTE: "tuba" is RESERVED FOR THE RASPBERRY AMEN ONLY — see tubaBlat().
   var LAYERS = ["organ", "drone", "choir", "clarinet", "bagpipe", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
+  // SHELVED layers keep their code, their graph node and their defaults so a
+  // change of heart is one line here — but they never sound: their cycle is
+  // not scheduled, the desk does not list them (getLayers/getVolumes filter
+  // them out), and applyLayerGain pins their gain at zero, so even an
+  // audition or a stray Motif hand-off comes out silent.
+  var SHELVED = { bagpipe: true };
   var PARLOR_SPACE = { harmonium: true, telegraph: true };  // close and warm; the rest sing in the tabernacle
   var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
 
@@ -395,7 +404,7 @@ window.KolobAudio = (function () {
     var node = layerGains[layer];
     if (!node) return;
     var trim = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1;
-    node.gain.setValueAtTime(layerMuted[layer] ? 0 : layerVolumes[layer] * trim, ctx.currentTime);
+    node.gain.setValueAtTime((layerMuted[layer] || SHELVED[layer]) ? 0 : layerVolumes[layer] * trim, ctx.currentTime);
   }
   function applyFieldGain(key) {
     var fg = fieldGains[key];
@@ -2827,7 +2836,8 @@ window.KolobAudio = (function () {
   }
 
   // ==========================================================================
-  // VOICE: BAGPIPE — the piper on the bluff. A double-reed CHANTER: a detuned
+  // VOICE: BAGPIPE — SHELVED (see SHELVED, top of file): kept whole, never
+  // scheduled, gain pinned at zero. The piper on the bluff. A double-reed CHANTER: a detuned
   // sawtooth pair driven through a waveshaper's reed-BUZZ, coloured by two
   // fixed nasal FORMANTS and a breath of filtered air — the one voice with
   // grain against the meetinghouse's smooth organs and drones. (The Highland
@@ -2962,7 +2972,7 @@ window.KolobAudio = (function () {
     }
   }
   function bagpipeCycle() {
-    if (!playing) return;
+    if (!playing || SHELVED.bagpipe) return;     // shelved: the piper never comes down off the bluff
     var pres = bagpipePresence();
     if (pres <= 0.001 || C.section === "sacrament") {
       scheduleLayer(bagpipeCycle, rnd(6, 12) * 1000, "bagpipe"); return;
@@ -3552,7 +3562,7 @@ window.KolobAudio = (function () {
     scheduleRaw(stringsCycle, 24000);
     scheduleRaw(harmoniumCycle, 30000);
     scheduleRaw(clarinetPhrase, 34000);
-    scheduleRaw(bagpipeCycle, 30000);
+    if (!SHELVED.bagpipe) scheduleRaw(bagpipeCycle, 30000);
     scheduleRaw(tineCycle, 42000);
     scheduleRaw(telegraphCycle, 55000);
     scheduleRaw(conductorTick, 1000);
@@ -3661,8 +3671,12 @@ window.KolobAudio = (function () {
     setLayerParam: function (layer, key, v) { if (!layerParams[layer]) layerParams[layer] = {}; layerParams[layer][key] = v; },
     getLayerParam: getLayerParam,
     getLayerDefaults: function () { return JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS)); },
-    getLayers: function () { return LAYERS.slice(); },
-    getVolumes: function () { return JSON.parse(JSON.stringify(layerVolumes)); },
+    getLayers: function () { return LAYERS.filter(function (l) { return !SHELVED[l]; }); },
+    getVolumes: function () {
+      var out = {};
+      for (var k in layerVolumes) if (!SHELVED[k]) out[k] = layerVolumes[k];
+      return out;
+    },
     getFieldKeys: function () { return FIELD_KEYS.slice(); },
     getFieldVolumes: function () { return JSON.parse(JSON.stringify(fieldVolumes)); },
     setFieldVolume: function (key, v) { fieldVolumes[key] = v; applyFieldGain(key); },
