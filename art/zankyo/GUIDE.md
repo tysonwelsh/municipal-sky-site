@@ -33,8 +33,13 @@ next.
    cut — and a hush. The bargraph shows where you are. The **air** decides
    who may speak: one voice at a time in the jo, more as the kyū builds;
    the drones never claim it. The **motif engine** decides what they say:
-   three ideas per cycle, developed, answered, mirrored, ghosted into the
-   next cycle.
+   three ideas per cycle — an authentic gesture from a pool of forty across
+   eight traditions (honkyoku, danmono, jiuta, Tsugaru, gagaku, min'yō,
+   kagura, shōmyō), weighted to the cycle's mode; an inherited line; a
+   newborn from a per-mode improviser with a contour plan and a cadence —
+   developed, answered, mirrored, re-rhythmed in another tradition's time,
+   ghosted into the next cycle. The rests between phrases walk a small ma
+   pattern drawn per cycle. The 遺伝 dna line in the log says which.
 5. **Guests and signals.** About one cycle in three carries a guest (§4);
    about two broadcasts a cycle arrive from the reel pool (§5). On far
    nights, the **departures** (§2) are layered over all of this.
@@ -130,6 +135,12 @@ minutes. A reel rests three cycles after it plays. The log line reads
 - The small knob on the CRT-9 chin — scan for a signal while playing; audition a full reel window while stopped.
 - The square button beside it — a video reel now, then cold for 45–60 s.
 - Console rows — each instrument's volume, mute, rate and character knobs.
+- The 風鈴 fūrin row (since rc.63) — the wind chime as a voice: tubes hung
+  in the current mode, struck in gusts by the weather's wind. Its `wind`
+  knob offsets that wind (storms rattle it, silence stills it), `tubes`
+  hangs three to seven, `shimmer` detunes the clapper's ring, `decay`
+  lengthens the ring. A landscape voice: no seat in the lottery, no air
+  claim, hushed by the KIRU with the rest of the landscape.
 
 **In the code (say the word and I move them)**, the listener-facing constants:
 | what | today | what it changes |
@@ -157,6 +168,7 @@ tuned to the key, 祭 無 回線 鐘 the guests.
 
 - **KIRU** 斬 — the cut at the end of the kyū: the landscape drops, the hush, a bell.
 - **ma** 間 — the silence between; structural, not empty.
+- **fūrin** 風鈴 — the wind chime; a landscape voice since rc.63, driven by the weather's wind.
 - **jo / ha / kyū** — slow entrance / scattering and building / the rush.
 - **the air** — the rule for who may speak at once.
 - **seating** — which voices are present this cycle; also where a broadcast or guest is placed.

@@ -871,6 +871,7 @@
 .zankyo-log-tag.taiko      { color: #fff;           border: 1px solid var(--border); }
 .zankyo-log-tag.noise      { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.4); }
 .zankyo-log-tag.ambient    { color: var(--ink);     border: 1px dashed var(--ink-dim); }
+.zankyo-log-tag.furin      { color: var(--ink);     border: 1px dotted var(--cyan); }
 .zankyo-log-tag.mode       { color: var(--amber);   border: 1px dashed var(--amber); }
 /* ZANKYŌ 2 vocabulary: the form (kinds, seatings, scenes, joints, visitations), the shō's aitake, the new bodies, the PA */
 .zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }

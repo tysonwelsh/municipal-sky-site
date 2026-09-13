@@ -32,6 +32,12 @@ ambient one-shots. In priority order:
    rhythm DNA (ma patterns, breath lengths, taiko-derived cells) so the
    melodies differ in time as well as pitch. Measure it: distinct-phrase
    counts per hour, and a listener-facing "have I heard this before" gate.
+   *Shipped 2026-09-13 (rc.64, PLAN-MELODIC-DNA.md): forty gestures across
+   eight traditions, mode-aware lottery and improviser with contour plans
+   and cadences, rhythm cells (taiko-derived ones included), `rerhythm`,
+   ma patterns; the harness measures shapes/h and heard-before; a
+   deliberate re-base (`_harness-bank.js`). Breath-length DNA per night
+   is the part left open.*
 2. **A family of bodies per instrument.** Each voice gets several
    incarnations drawn per night from the seed — pluck material, string age,
    register, decay, breath, reed — so the koto is a different koto on
@@ -41,6 +47,9 @@ ambient one-shots. In priority order:
 3. **The fūrin (wind chime) promoted to a voice.** A small set of tuned
    tubes in the current mode, driven by the weather field (a wind parameter
    for density), a landscape voice with its own console row, no air claim.
+   *Shipped 2026-09-13 (rc.63): the weather gained a `wind` channel, the
+   chime its own stream and row; the ambient one-shot left the pool with
+   it. No re-base — nothing already seeded moved.*
 4. **The comms vox promoted to a voice — the broken intercom.** A second
    speaker beside the PA: stuttered formant syllables that follow the motif
    engine's contours, seated in the air and the ledger like a melodic voice,
@@ -50,10 +59,9 @@ ambient one-shots. In priority order:
 5. **The ambient pool grown** with the station sounds Phase 3 promised and
    never built: hull groans, airlock hiss, a numbers-station murmur, distant
    thunder, more of the derelict's own noises; phase- and kind-gated, rarer
-   ones rarer. *Pulled forward 2026-09-13: six candidates are on the Bodies
-   Lab (hull groan, airlock, numbers station, distant thunder, pipe knock,
-   relay chatter), bench-only — none is in the pool until the owner's
-   listen seats it.*
+   ones rarer. *Pulled forward 2026-09-13: six candidates went to the Bodies
+   Lab; the owner seated distant thunder and relay chatter (rc.62). Hull
+   groan, airlock, numbers station and pipe knock stay on the bench.*
 
 ## Later
 
