@@ -57,10 +57,22 @@ window.KolobAudio = (function () {
   // for up to 90s after a stop, and the siblings' pattern of restoring the
   // master gain after the fade let them come back from the dead. Not here.
   var voicesBus = null;
-  // Two spaces: the TABERNACLE (vast, bright, famous pin-drop hall) and the
-  // PARLOR (close, warm, a front room with a pump organ).
-  var tabSend = null, tabDry = null, tabWet = null, tabConv = null, tabPre = null;
-  var parSend = null, parDry = null, parWet = null, parConv = null, parPre = null;
+  // ROOMS — one space, staged in depth (PLAN-ONE-ROOM phases A/B, v0.27).
+  // Two rooms, and EVERY layer sings in both: the CLOSE room is the
+  // meetinghouse itself (short; early reflections you can almost see), the
+  // WIDE room is the tabernacle (long, breathing). A per-layer depth bias
+  // seats each voice nearer or farther in the same building, and one
+  // balance knob — set by the section, ramped — moves the whole gathering
+  // deeper into the hall or closer to the ear. The equal-power crossfade is
+  // Jukebox v2's PJ2.Fx.roomBlend, loaded by relative path (the ZANKYŌ
+  // pattern: shared substrate, never modified from here). Before v0.27 each
+  // layer was hard-assigned to ONE of two rooms — a parlor for the harmonium
+  // and the wire, the tabernacle for the rest, the voice nearly dry — which
+  // is exactly what "separate recordings layered on each other" sounds like.
+  var roomClose = null, roomWide = null, roomBlend = null;
+  var roomBalance = 0.45;          // where the gathering sits now (0 = all close … 1 = all wide)
+  var roomBalanceHeld = false;     // dev (room lab): the sections stop moving it
+  var roomRampNext = 0.05;         // the first section of a meeting lands at once
   var sharedNoiseBuf = null;
   var NOISE_BUF_DURATION = 30;
 
@@ -161,8 +173,12 @@ window.KolobAudio = (function () {
   // them out), and applyLayerGain pins their gain at zero, so even an
   // audition or a stray Motif hand-off comes out silent.
   var SHELVED = { bagpipe: true };
-  var PARLOR_SPACE = { harmonium: true, telegraph: true };  // close and warm; the rest sing in the tabernacle
-  var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
+  // Depth bias per layer — added to the room balance before the equal-power
+  // law (negative = nearer the ear). The still small voice stays close, but
+  // in the room now; the wire is on the table; the deacon's parlor organ is
+  // in the same building as the choir; the landscape and the field are at
+  // the back, under the windows.
+  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20 };
 
   var layerGains = {};
   var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
@@ -205,12 +221,25 @@ window.KolobAudio = (function () {
   // while the sliders still read their usual positions.
   var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, bagpipe: 0.44, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
 
-  // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
-  // breathes slowly; the parlor is small, warm, and quick to forgive.
-  // The wet is up from the pin-drop original: a fuller shared tail is the main
-  // glue that seats every voice in ONE room instead of side by side in the dry.
-  var TAB_REVERB = { decay: 7.6, preDelay: 55, wet: 0.44, hfDamp: 0.8 };
-  var PAR_REVERB = { decay: 1.6, preDelay: 18, wet: 0.30, hfDamp: 1.6 };
+  // The rooms. CLOSE: the meetinghouse — a plain plastered hall, quick and a
+  // little bright, its early reflections doing the seating. WIDE: the
+  // tabernacle — 5.5 s (down from the old 7.6 s wash), pre-delay 30 ms (down
+  // from 55: the first reflections must arrive while the note is still being
+  // sung, or the room reads as an effect on a send). Both are POURED —
+  // decaying noise under a handful of discrete early taps — unless irUrl
+  // names a MEASURED impulse response, which replaces the pour when it
+  // decodes (the pour stays the fallback). The room lab (room-lab.php,
+  // unlinked) auditions the candidates in ../prosperos-jukebox-v2/ir/.
+  //   brightness — HF-damping exponent: LOWER = brighter tail
+  //   ripple     — a slow amplitude swell on the tail (the hall inhaling)
+  var ROOM_CLOSE = { decayS: 1.4, preDelayS: 0.012, wet: 0.28, brightness: 1.2, ripple: 0, irUrl: null };
+  var ROOM_WIDE  = { decayS: 5.5, preDelayS: 0.030, wet: 0.40, brightness: 0.8, ripple: { depth: 0.07, hz: 0.5 }, irUrl: null };
+  // Where each section seats the gathering (0 = all meetinghouse, 1 = all
+  // tabernacle), ramped at the boundary: the empty hall before and after;
+  // the hymns a step forward; testimony close; the stillness has more room
+  // in it.
+  var ROOM_BALANCE = { prelude: 0.55, invocation: 0.45, hymn: 0.40, interlude: 0.45, testimony: 0.30, sacrament: 0.60, doxology: 0.50, postlude: 0.55 };
+  var ROOM_RAMP_S = 15;
 
   // ==========================================================================
   // LISTENERS / LOG
@@ -232,8 +261,9 @@ window.KolobAudio = (function () {
 
   // ==========================================================================
   // INIT — signal chain
-  //   layers → layerGain → tabSend or parSend → dry + (preDelay→convolver→wet)
-  //   → master → masterSat (gentle tanh) → compressor → out.
+  //   layers → layerGain → roomBlend (cos/sin pair per layer, depth-biased)
+  //   → CLOSE room and WIDE room (each: dry + preDelay→convolver→wet)
+  //   → voicesBus → glue → master → masterSat (gentle tanh) → compressor → out.
   //   NO grit bus in Zion: brightness comes from voicing and the hall, not
   //   saturation. (The one dangerous component of the siblings, deleted.)
   // ==========================================================================
@@ -288,23 +318,16 @@ window.KolobAudio = (function () {
     }) : null;
     if (!bg || !bg.routed) compressorNode.connect(ctx.destination);
 
-    var effectsReady = false;
     try {
-      tabSend = ctx.createGain(); tabDry = ctx.createGain(); tabWet = ctx.createGain();
-      tabConv = ctx.createConvolver(); tabPre = ctx.createDelay(0.25);
-      tabSend.connect(tabDry); tabSend.connect(tabPre); tabPre.connect(tabConv); tabConv.connect(tabWet);
-      tabDry.connect(voicesBus); tabWet.connect(voicesBus);
-      buildIR(tabConv, tabPre, tabWet, TAB_REVERB, true);
-
-      parSend = ctx.createGain(); parDry = ctx.createGain(); parWet = ctx.createGain();
-      parConv = ctx.createConvolver(); parPre = ctx.createDelay(0.25);
-      parSend.connect(parDry); parSend.connect(parPre); parPre.connect(parConv); parConv.connect(parWet);
-      parDry.connect(voicesBus); parWet.connect(voicesBus);
-      buildIR(parConv, parPre, parWet, PAR_REVERB, false);
-
-      effectsReady = true;
+      roomClose = makeRoom(ROOM_CLOSE);
+      roomWide = makeRoom(ROOM_WIDE);
+      roomClose.output.connect(voicesBus);
+      roomWide.output.connect(voicesBus);
+      if (window.PJ2 && window.PJ2.Fx && window.PJ2.Fx.roomBlend) {
+        roomBlend = window.PJ2.Fx.roomBlend(ctx, { close: roomClose.send, wide: roomWide.send, balance: roomBalance });
+      } else if (window.console) console.warn("Kolob: pj2-fx.js missing — every voice sings from the tabernacle alone");
     } catch (e) {
-      tabSend = ctx.createGain(); tabSend.connect(voicesBus); parSend = tabSend;
+      roomClose = roomWide = roomBlend = null;
       if (window.console) console.warn("Kolob effects init failed, dry fallback:", e);
     }
 
@@ -312,43 +335,185 @@ window.KolobAudio = (function () {
       var layer = LAYERS[li];
       var node = ctx.createGain();
       node.gain.setValueAtTime(1, ctx.currentTime);
+      var out = node;
       if (layer === "drone") {
         droneDuck = ctx.createGain();
         droneDuck.gain.setValueAtTime(1, ctx.currentTime);
         node.connect(droneDuck);
-        droneDuck.connect(tabSend);
+        out = droneDuck;                                       // the stillness dips the drone BEFORE the rooms
       }
-      else if (DRY_CLOSE[layer] && effectsReady) {
-        node.connect(voicesBus);                               // intimate: mostly dry…
-        var whisper = ctx.createGain();
-        whisper.gain.setValueAtTime(0.3, ctx.currentTime);
-        node.connect(whisper); whisper.connect(tabSend);       // …with a breath of the hall
-      }
-      else if (PARLOR_SPACE[layer] && effectsReady) node.connect(parSend);
-      else node.connect(tabSend);
+      seatLayer(layer, out);
       layerGains[layer] = node;
       applyLayerGain(layer);
     }
   }
+  // Every layer sings in both rooms; its depth bias seats it.
+  function seatLayer(name, src) {
+    if (roomBlend) roomBlend.register(name, src, ROOM_DEPTH[name] || 0);
+    else if (roomWide) src.connect(roomWide.send);
+    else src.connect(voicesBus);
+  }
+  function wideSend() { return roomWide ? roomWide.send : voicesBus; }
 
-  function buildIR(conv, pre, wet, R, breathe) {
-    var len = Math.floor(ctx.sampleRate * R.decay);
-    var buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  // ==========================================================================
+  // THE ROOMS — one reverb unit per room:
+  //   send → dry(1) ──────────────────────────→ output   (→ voicesBus)
+  //     └──→ preDelay → convolver → wet(w) ──↗
+  // The wet chain is REPLACEABLE: a convolver's buffer is set once, so a new
+  // impulse (a measured file that just decoded, or a room-lab swap) goes in
+  // as a fresh pre→conv→wet chain crossfaded against the old one over 0.6 s.
+  // ==========================================================================
+  function makeRoom(spec) {
+    var t = ctx.currentTime;
+    var r = { spec: spec, send: ctx.createGain(), dry: ctx.createGain(), output: ctx.createGain(), chain: null, loaded: null, loading: null, error: null };
+    r.send.gain.setValueAtTime(1, t); r.dry.gain.setValueAtTime(1, t); r.output.gain.setValueAtTime(1, t);
+    r.send.connect(r.dry); r.dry.connect(r.output);
+    r.chain = wetChain(r, pourIR(spec), 0);
+    if (spec.irUrl) loadRoomIR(r, spec.irUrl);
+    return r;
+  }
+  function wetChain(r, buffer, fadeS) {
+    var t = ctx.currentTime;
+    var pre = ctx.createDelay(0.25);
+    pre.delayTime.setValueAtTime(r.spec.preDelayS, t);
+    var conv = ctx.createConvolver(); conv.buffer = buffer;
+    var wg = ctx.createGain();
+    if (fadeS > 0) { wg.gain.setValueAtTime(0, t); wg.gain.linearRampToValueAtTime(r.spec.wet, t + fadeS); }
+    else wg.gain.setValueAtTime(r.spec.wet, t);
+    r.send.connect(pre); pre.connect(conv); conv.connect(wg); wg.connect(r.output);
+    return { pre: pre, conv: conv, wet: wg };
+  }
+  function setRoomBuffer(r, buffer) {
+    var old = r.chain;
+    r.chain = wetChain(r, buffer, 0.6);
+    if (!old) return;
+    var t = ctx.currentTime;
+    old.wet.gain.cancelScheduledValues(t);
+    old.wet.gain.setValueAtTime(old.wet.gain.value != null ? old.wet.gain.value : r.spec.wet, t);
+    old.wet.gain.linearRampToValueAtTime(0, t + 0.6);
+    setTimeout(function () {
+      try { r.send.disconnect(old.pre); old.pre.disconnect(); old.conv.disconnect(); old.wet.disconnect(); } catch (e) {}
+    }, 800);
+  }
+  // The pour: decaying noise under eight discrete EARLY TAPS. The taps are
+  // the seating — the first 8–60 ms after a note is where the ear decides an
+  // instrument stands IN a room rather than wearing reverb on a send; a bare
+  // noise tail (the pre-v0.27 pour) has no such moment, so it read as a wash
+  // behind close-miked tracks. The diffuse tail rises over 60 ms beneath the
+  // taps, the way a real hall's does. Unseeded Math.random on purpose: this
+  // is texture, not music (the zankyo rule) — the meeting replays from its
+  // seed even though every room is a fresh pour.
+  var EARLY_TAPS = [[0.008, 0.9], [0.013, 0.7], [0.019, 0.62], [0.026, 0.5], [0.033, 0.42], [0.041, 0.34], [0.052, 0.27], [0.064, 0.2]];
+  function pourIR(spec) {
+    var sr = ctx.sampleRate;
+    var len = Math.max(2, Math.floor(sr * spec.decayS));
+    var buf = ctx.createBuffer(2, len, sr);
+    var rippleDepth = 0, rippleHz = 0.5;
+    if (typeof spec.ripple === "number") rippleDepth = spec.ripple;
+    else if (spec.ripple) { rippleDepth = spec.ripple.depth || 0; rippleHz = spec.ripple.hz || 0.5; }
+    var tapScale = 0.45 + 0.55 * Math.min(1, spec.decayS / 5.5);   // a small room's walls are nearer
+    var fadeStart = Math.floor(len * 0.95);                          // no truncation click at the edge
+    var burst = Math.max(4, Math.floor(sr * 0.0015));
     for (var ch = 0; ch < 2; ch++) {
       var data = buf.getChannelData(ch);
-      var ph1 = Math.random() * Math.PI * 2;
+      var ph = Math.random() * Math.PI * 2;
       for (var i = 0; i < len; i++) {
-        var t = i / ctx.sampleRate;
-        var env = Math.exp(-2.2 * t / R.decay);
-        var hf = Math.exp(-(R.hfDamp * 2.6) * t / R.decay);
-        // The tabernacle breathes — a slow swell ripple, the hall inhaling.
-        var color = breathe ? 1 + 0.07 * Math.sin(2 * Math.PI * 0.5 * t + ph1) : 1;
-        data[i] = (Math.random() * 2 - 1) * env * hf * color;
+        var t = i / sr;
+        var env = Math.exp(-2.2 * t / spec.decayS);
+        var hf = Math.exp(-(spec.brightness * 2.6) * t / spec.decayS);
+        var color = rippleDepth ? 1 + rippleDepth * Math.sin(2 * Math.PI * rippleHz * t + ph) : 1;
+        var edge = i >= fadeStart ? (len - i) / (len - fadeStart) : 1;
+        var rise = t < 0.06 ? t / 0.06 : 1;
+        data[i] = (Math.random() * 2 - 1) * 0.5 * env * hf * color * edge * rise;
+      }
+      for (var k = 0; k < EARLY_TAPS.length; k++) {
+        // each channel hears the wall a hair apart — decorrelated, so it reads as a SPACE
+        var at = EARLY_TAPS[k][0] * tapScale + (ch ? 0.0011 : -0.0007) + Math.random() * 0.0015;
+        var i0 = Math.floor(at * sr);
+        for (var j = 0; j < burst && i0 + j < len; j++) {
+          data[i0 + j] += EARLY_TAPS[k][1] * (Math.random() * 2 - 1) * Math.exp(-j / (sr * 0.0004));
+        }
       }
     }
-    conv.buffer = buf;
-    pre.delayTime.setValueAtTime(R.preDelay / 1000, ctx.currentTime);
-    wet.gain.setValueAtTime(R.wet, ctx.currentTime);
+    return buf;
+  }
+  // A measured impulse response: fetched and decoded once per URL, poured in
+  // as a new wet chain when it lands. Any failure — no fetch (the harness),
+  // a missing file, undecodable bytes — leaves the pour in place: the
+  // meeting can never lose its room to a network hiccup.
+  var irCache = {};
+  function fetchIR(url) {
+    if (!irCache[url]) {
+      irCache[url] = fetch(url).then(function (res) {
+        if (!res || !res.ok) throw new Error("HTTP " + (res && res.status));
+        return res.arrayBuffer();
+      }).then(function (ab) {
+        return new Promise(function (res, rej) {
+          var done = false;
+          function ok(b) { if (!done) { done = true; res(b); } }
+          function bad(e) { if (!done) { done = true; rej(e || new Error("decode failed")); } }
+          try {
+            var p = ctx.decodeAudioData(ab, ok, bad);         // callback form first: old Safari
+            if (p && p.then) p.then(ok, bad);
+          } catch (e) { bad(e); }
+        });
+      }).catch(function (e) { delete irCache[url]; throw e; });
+    }
+    return irCache[url];
+  }
+  function loadRoomIR(r, url) {
+    r.loading = url; r.error = null;
+    if (typeof fetch !== "function" || typeof ctx.decodeAudioData !== "function") {
+      r.loading = null; r.error = "no fetch/decode here"; return;
+    }
+    fetchIR(url).then(function (buf) {
+      if (r.spec.irUrl !== url) return;                   // superseded meanwhile
+      r.loading = null; r.loaded = url;
+      setRoomBuffer(r, buf);
+    }, function (e) {
+      if (r.spec.irUrl !== url) return;
+      r.loading = null; r.error = String((e && e.message) || e);   // r.loaded keeps naming what still plays
+      if (window.console) console.warn("Kolob: room IR failed, the room that was playing stays:", url, e);
+    });
+  }
+  // ---- room controls (the sections drive the balance; the room lab drives everything) ----
+  function setRoomBalance(x, rampS, hold) {
+    roomBalance = x < 0 ? 0 : x > 1 ? 1 : x;
+    if (hold != null) roomBalanceHeld = !!hold;
+    if (roomBlend) roomBlend.setBalance(roomBalance, rampS);
+  }
+  function setLayerDepth(layer, bias) {
+    ROOM_DEPTH[layer] = bias;
+    if (!roomBlend) return;
+    for (var i = 0; i < roomBlend.layers.length; i++) if (roomBlend.layers[i].name === layer) roomBlend.layers[i].bias = bias;
+    roomBlend.setBalance(roomBalance, 0.3);                // re-seat at the current balance
+  }
+  function setRoom(which, patch) {
+    init();
+    var r = which === "close" ? roomClose : roomWide;
+    if (!r) return;
+    var spec = r.spec;
+    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) spec[k] = patch[k];
+    var t = ctx.currentTime;
+    if ("wet" in patch && r.chain) {
+      var g = r.chain.wet.gain;
+      g.cancelScheduledValues(t); g.setValueAtTime(g.value != null ? g.value : spec.wet, t);
+      g.linearRampToValueAtTime(spec.wet, t + 0.15);
+    }
+    if ("preDelayS" in patch && r.chain) r.chain.pre.delayTime.setValueAtTime(spec.preDelayS, t);
+    if ("irUrl" in patch) {
+      if (spec.irUrl) loadRoomIR(r, spec.irUrl);
+      else { r.loaded = null; r.loading = null; r.error = null; setRoomBuffer(r, pourIR(spec)); }
+    } else if (("decayS" in patch || "brightness" in patch || "ripple" in patch) && !r.loaded) {
+      setRoomBuffer(r, pourIR(spec));
+    }
+  }
+  function roomInfo(r) {
+    if (!r) return null;
+    var o = {};
+    for (var k in r.spec) o[k] = r.spec[k];
+    o.loaded = r.loaded; o.loading = r.loading; o.error = r.error;
+    return o;
   }
 
   // ==========================================================================
@@ -988,6 +1153,9 @@ window.KolobAudio = (function () {
       });
     }
     emitEvent({ cat: "section", label: "§ " + s.type.toUpperCase(), detail: (s.type === "hymn" ? C.meter + " · " : "") + Math.round(s.dur) + "s" });
+    // the gathering moves in the room with the section — unless the room lab holds it
+    if (!roomBalanceHeld) setRoomBalance(ROOM_BALANCE[s.type] != null ? ROOM_BALANCE[s.type] : 0.45, roomRampNext);
+    roomRampNext = ROOM_RAMP_S;
     Motif.onSection(s.type);
   }
 
@@ -2268,7 +2436,7 @@ window.KolobAudio = (function () {
     pan.pan.setValueAtTime(fromLeft ? -0.95 : 0.95, t);
     pan.pan.linearRampToValueAtTime(fromLeft ? 0.95 : -0.95, t + dur);
     bus.connect(pan);
-    pan.connect(tabSend || voicesBus);
+    pan.connect(wideSend());                    // outside the windows: all tabernacle
     // approach — cross — recede
     bus.gain.linearRampToValueAtTime(0.4, t + dur * 0.45);
     bus.gain.setValueAtTime(0.4, t + dur * 0.6);
@@ -2368,7 +2536,7 @@ window.KolobAudio = (function () {
       lp.frequency.setValueAtTime(2400, t);
       var pan = ctx.createStereoPanner();
       pan.pan.setValueAtTime((v % 2 === 0 ? 1 : -1) * rnd(0.7, 0.95), t);
-      g.connect(lp); lp.connect(pan); pan.connect(tabSend || voicesBus);
+      g.connect(lp); lp.connect(pan); pan.connect(wideSend());                   // a far steeple: all tabernacle
       visitors.push({ base: base, dest: g, period: rnd(5.5, 11), gain: homeGain * rnd(0.35, 0.5) });
     }
 
@@ -2487,7 +2655,7 @@ window.KolobAudio = (function () {
     var g = ctx.createGain();
     var pn = ctx.createStereoPanner(); pn.pan.setValueAtTime(side, t);
     o.connect(lp); o2.connect(g2); g2.connect(lp);
-    lp.connect(g); g.connect(pn); pn.connect(tabSend || voicesBus);
+    lp.connect(g); g.connect(pn); pn.connect(wideSend());                    // the memory, at the field's edge: all tabernacle
     var tt = t, total = 0, prevF = 0;
     for (var i = 0; i < notes.length; i++) {
       var f = degFreq(projDeg(notes[i].deg) + colN()) * det;
@@ -3552,6 +3720,7 @@ window.KolobAudio = (function () {
       droneDuck.gain.setValueAtTime(1, ctx.currentTime);
     }
     LAYERS.forEach(applyLayerGain);
+    roomRampNext = 0.05;
     planMeeting();
     // staggered assembly — the valley wakes the way a Sunday begins
     droneCycle();
@@ -3710,6 +3879,15 @@ window.KolobAudio = (function () {
     // lab and engine can never drift apart
     getOldTunes: function () { return JSON.parse(JSON.stringify(OLD_TUNES)); },
     isForceVisitation: function () { return forceVisitation; },
+    // the rooms (dev — the room lab drives these; the sections drive the balance)
+    getRooms: function () {
+      var depth = {}; for (var k in ROOM_DEPTH) depth[k] = ROOM_DEPTH[k];
+      var sb = {}; for (var s2 in ROOM_BALANCE) sb[s2] = ROOM_BALANCE[s2];
+      return { close: roomInfo(roomClose), wide: roomInfo(roomWide), blend: !!roomBlend, balance: roomBalance, held: roomBalanceHeld, depth: depth, sectionBalance: sb };
+    },
+    setRoom: setRoom,
+    setRoomBalance: setRoomBalance,
+    setLayerDepth: setLayerDepth,
     attachAnalyser: function () {
       if (!ctx || !masterGain) return null;
       var an = ctx.createAnalyser(); an.fftSize = 1024;

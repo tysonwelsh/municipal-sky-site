@@ -7,6 +7,15 @@ be." Their memory: Prospero's Jukebox v2 does something about this that
 Kolob does not. This document is the diagnosis and the plan. Nothing in it
 is built yet; the bagpipe shelving (v0.26) landed alongside it.
 
+> **Status (v0.27):** Phase A is built — both rooms, every layer in both,
+> the depth table, the section balances — and Phase B's machinery is in
+> (Kolob's own pour now has early reflections; a measured file loads by
+> `irUrl` with the pour as fallback). The **room lab** (`room-lab.php`,
+> unlinked) auditions every candidate. Still pending: the owner's choice
+> of room, then baking that file in (trimmed, with the CC BY-SA credit in
+> the colophon). Phases C–E not started. The engine loads `pj2-fx.js` by
+> relative path (decision 1 below, taken); decision 3 the owner accepted.
+
 Companion: the bagpipe is SHELVED in v0.26 — `SHELVED = { bagpipe: true }`
 near the top of `kolob-audio.js`. The voice, its params and its cycle are
 all still there; it is never scheduled, the desk does not list it, and its
