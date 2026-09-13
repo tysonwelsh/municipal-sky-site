@@ -151,20 +151,6 @@ include '../includes/header.php';
       </section>
     </div>
 
-    <!-- Introduction -->
-    <div class="post-container">
-      <section class="prose-flow">
-        <h2>Using the dashboard</h2>
-        <p>Twenty-seven simulated carbon structures in five classes: amorphous carbon (ρ&nbsp;1.5–2.9&nbsp;g/cm³),
-          carbide-derived carbon (synthesized at 800 and 1200&nbsp;°C, plus an annealed variant), irradiated
-          graphite (four damage stages), variable-porosity carbon, and a phase-separated phase. Atoms draw as
-          points colored by coordination number; bonds join atoms within 1.8&nbsp;Å.</p>
-        <p>Drag to rotate. Shift-drag to pan. Ctrl/⌘&nbsp;+&nbsp;scroll to zoom. Hover an atom for its
-          coordination, rings, local topology, and coordinates; click it to spotlight it and every ring through
-          it. <strong>Reset view</strong> restores the camera and clears every selection and filter.</p>
-      </section>
-    </div>
-
     <!-- Controls -->
     <div class="post-container">
       <section class="prose-flow">
