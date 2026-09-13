@@ -5352,13 +5352,11 @@ window.ZankyoAudio = (function () {
     hg.gain.setValueAtTime(0.0001, t); hg.gain.exponentialRampToValueAtTime(0.012, t + 0.05); hg.gain.setValueAtTime(0.012, tt - 0.1); hg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.1);
     hum.start(t); hum.stop(tt + 0.15);
   }
-  var AMBIENT_CANDIDATES = [
+  var AMBIENT_CANDIDATES = [                        // (thunder and the relay were seated from here, 2026-09-13)
     { fn: ambHullGroan, name: "Hull groan" },
     { fn: ambAirlock,   name: "Airlock" },
     { fn: ambNumbers,   name: "Numbers station" },
-    { fn: ambThunder,   name: "Distant thunder" },
     { fn: ambPipeKnock, name: "Pipe knock" },
-    { fn: ambRelay,     name: "Relay chatter" },
   ];
   var AMBIENT_POOL = [
     { fn: ambBonsho,       w: 4, name: "Temple bell" },
@@ -5369,16 +5367,20 @@ window.ZankyoAudio = (function () {
     { fn: ambKotoSweep,    w: 2, name: "Koto sweep" },
     { fn: ambCommsVox,     w: 2, name: "Comms vox" },
     { fn: ambGeigerHum,    w: 3, name: "Geiger hum" },
+    // seated 2026-09-13 from the bench (road map §5): rarer than the old eight,
+    // and the kind table below keeps each to the weather it belongs to
+    { fn: ambThunder,      w: 2, name: "Distant thunder" },
+    { fn: ambRelay,        w: 2, name: "Relay chatter" },
   ];
   // The kind gates the pool: a broadcast cycle is static and comms; drift is
   // water, bells and chimes; silence keeps the bell and little else; the
   // storm crackles. (Multipliers on the flat weights above.)
   var AMBIENT_KIND_W = {
-    broadcast: { "Static glitch": 3, "Comms vox": 5, "Geiger hum": 2, "Koto sweep": 0.5 },
-    drift:     { "Water drip": 2, "Temple bell": 1.5, "Wind chime": 2, "Static glitch": 0.5 },
-    silence:   { "Temple bell": 2, "Wind chime": 0.6, "Static glitch": 0.4, "Distant taiko": 0.4, "Koto sweep": 0.3, "Comms vox": 0.5, "Geiger hum": 0.6 },
-    storm:     { "Static glitch": 2, "Distant taiko": 2, "Geiger hum": 1.5, "Water drip": 0.5 },
-    rite:      { "Temple bell": 2 },
+    broadcast: { "Static glitch": 3, "Comms vox": 5, "Geiger hum": 2, "Koto sweep": 0.5, "Distant thunder": 0.4, "Relay chatter": 2.5 },
+    drift:     { "Water drip": 2, "Temple bell": 1.5, "Wind chime": 2, "Static glitch": 0.5, "Distant thunder": 1.8, "Relay chatter": 0.3 },
+    silence:   { "Temple bell": 2, "Wind chime": 0.6, "Static glitch": 0.4, "Distant taiko": 0.4, "Koto sweep": 0.3, "Comms vox": 0.5, "Geiger hum": 0.6, "Distant thunder": 0.6, "Relay chatter": 0.3 },
+    storm:     { "Static glitch": 2, "Distant taiko": 2, "Geiger hum": 1.5, "Water drip": 0.5, "Distant thunder": 2.5, "Relay chatter": 1.5 },
+    rite:      { "Temple bell": 2, "Distant thunder": 0.5, "Relay chatter": 0.4 },
   };
   function startAmbient(t) { if (playing) ambientEvent(t); }
   function ambientEvent(t) {

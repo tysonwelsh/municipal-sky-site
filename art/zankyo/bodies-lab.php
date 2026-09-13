@@ -69,7 +69,9 @@ include '../../includes/header.php';
     "Distant taiko": "a lone far drum hit",
     "Koto sweep": "a fast koto-ish glissando flourish",
     "Comms vox": "the broken intercom — stuttered vowel-formant syllables (road map §4: promote to a voice)",
-    "Geiger hum": "dying machinery — a sagging drone and thinning clicks"
+    "Geiger hum": "dying machinery — a sagging drone and thinning clicks",
+    "Distant thunder": "a low rumble that rolls two or three times and goes (seated 2026-09-13)",
+    "Relay chatter": "clicks in bursts over a coil's buzz (seated 2026-09-13)"
   };
   (Z.ambientNames ? Z.ambientNames() : []).forEach(function (n) { BODIES.push(["ambient", "環境 " + n, AMBIENT_NOTES[n] || "one-shot", n]); });
   var CAND_NOTES = {
