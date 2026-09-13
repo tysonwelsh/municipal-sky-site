@@ -48,14 +48,27 @@
    135,
    136
   ],
-  "commit": "08bcf2e",
-  "engine": "42d84578f706",
-  "written": "2026-09-07T22:50:10.161Z",
-  "repeatability": "exact — 3 runs x 3 seeds returned identical counts; the band below is a policy threshold, not an error bar",
-  "homeMin": 895,
-  "homeP5": 1186,
-  "homeMedian": 1986,
-  "homeMax": 3980
+  "commit": "f01b7f5",
+  "engine": "9e5b36706b54",
+  "written": "2026-09-13T18:24:13.613Z",
+  "repeatability": "exact — the instrument is deterministic per seed; the ±20 % band is a policy threshold, not an error bar",
+  "rebase": "re-derived by _harness-bank.js; the commit that re-banked says why",
+  "homeMin": 819,
+  "homeP5": 1179,
+  "homeMedian": 2012,
+  "homeMax": 3671,
+  "crossNight": {
+   "homeNights": 36,
+   "unionShapes": 7039,
+   "meanJaccard": 0.02,
+   "everyNightShare": 0.0165,
+   "commonest": [
+    "0,0@27",
+    "-5,0@23",
+    "-4,4@22",
+    "1,-1@19"
+   ]
+  }
  },
  "home": {
   "7": true,
@@ -100,45 +113,207 @@
   "8891": true
  },
  "seedDensity": {
-  "7": 1971,
-  "17": 1587,
-  "101": 1251,
-  "102": 2051,
-  "103": 3068,
-  "104": 895,
-  "105": 3177,
-  "106": 1501,
-  "107": 1291,
-  "108": 1431,
-  "109": 2518,
-  "110": 1730,
-  "111": 1986,
-  "112": 3274,
-  "113": 1969,
-  "114": 3647,
-  "115": 1885,
-  "116": 2416,
-  "117": 1865,
-  "118": 3176,
-  "119": 1681,
-  "120": 2030,
-  "121": 1731,
-  "122": 2410,
-  "123": 1971,
-  "124": 2947,
-  "125": 1312,
-  "126": 1975,
-  "127": 1878,
-  "128": 2078,
-  "129": 2685,
-  "130": 1692,
-  "131": 1610,
-  "132": 1186,
-  "133": 2953,
-  "134": 3980,
-  "135": 2391,
-  "136": 2447,
-  "3042": 2385,
-  "8891": 2378
+  "7": 2012,
+  "17": 1466,
+  "101": 1006,
+  "102": 1927,
+  "103": 3103,
+  "104": 819,
+  "105": 3092,
+  "106": 1282,
+  "107": 1179,
+  "108": 1476,
+  "109": 2699,
+  "110": 1459,
+  "111": 2102,
+  "112": 3179,
+  "113": 1788,
+  "114": 2994,
+  "115": 1915,
+  "116": 2327,
+  "117": 2077,
+  "118": 2735,
+  "119": 1664,
+  "120": 1941,
+  "121": 1839,
+  "122": 2389,
+  "123": 1830,
+  "124": 2663,
+  "125": 1425,
+  "126": 1696,
+  "127": 1823,
+  "128": 2135,
+  "129": 3167,
+  "130": 1514,
+  "131": 1703,
+  "132": 1242,
+  "133": 2950,
+  "134": 3671,
+  "135": 2050,
+  "136": 2280,
+  "3042": 2086,
+  "8891": 2017
+ },
+ "phrases": {
+  "7": {
+   "shapesPerHour": 432,
+   "shapeHeardBefore": 0.122
+  },
+  "17": {
+   "shapesPerHour": 362,
+   "shapeHeardBefore": 0.037
+  },
+  "101": {
+   "shapesPerHour": 276,
+   "shapeHeardBefore": 0.132
+  },
+  "102": {
+   "shapesPerHour": 402,
+   "shapeHeardBefore": 0.107
+  },
+  "103": {
+   "shapesPerHour": 712,
+   "shapeHeardBefore": 0.138
+  },
+  "104": {
+   "shapesPerHour": 212,
+   "shapeHeardBefore": 0.197
+  },
+  "105": {
+   "shapesPerHour": 688,
+   "shapeHeardBefore": 0.095
+  },
+  "106": {
+   "shapesPerHour": 312,
+   "shapeHeardBefore": 0.161
+  },
+  "107": {
+   "shapesPerHour": 340,
+   "shapeHeardBefore": 0.175
+  },
+  "108": {
+   "shapesPerHour": 366,
+   "shapeHeardBefore": 0.137
+  },
+  "109": {
+   "shapesPerHour": 592,
+   "shapeHeardBefore": 0.149
+  },
+  "110": {
+   "shapesPerHour": 364,
+   "shapeHeardBefore": 0.169
+  },
+  "111": {
+   "shapesPerHour": 484,
+   "shapeHeardBefore": 0.171
+  },
+  "112": {
+   "shapesPerHour": 754,
+   "shapeHeardBefore": 0.125
+  },
+  "113": {
+   "shapesPerHour": 430,
+   "shapeHeardBefore": 0.195
+  },
+  "114": {
+   "shapesPerHour": 712,
+   "shapeHeardBefore": 0.121
+  },
+  "115": {
+   "shapesPerHour": 456,
+   "shapeHeardBefore": 0.186
+  },
+  "116": {
+   "shapesPerHour": 522,
+   "shapeHeardBefore": 0.153
+  },
+  "117": {
+   "shapesPerHour": 480,
+   "shapeHeardBefore": 0.111
+  },
+  "118": {
+   "shapesPerHour": 600,
+   "shapeHeardBefore": 0.138
+  },
+  "119": {
+   "shapesPerHour": 408,
+   "shapeHeardBefore": 0.184
+  },
+  "120": {
+   "shapesPerHour": 448,
+   "shapeHeardBefore": 0.125
+  },
+  "121": {
+   "shapesPerHour": 420,
+   "shapeHeardBefore": 0.103
+  },
+  "122": {
+   "shapesPerHour": 558,
+   "shapeHeardBefore": 0.152
+  },
+  "123": {
+   "shapesPerHour": 468,
+   "shapeHeardBefore": 0.13
+  },
+  "124": {
+   "shapesPerHour": 632,
+   "shapeHeardBefore": 0.115
+  },
+  "125": {
+   "shapesPerHour": 272,
+   "shapeHeardBefore": 0.303
+  },
+  "126": {
+   "shapesPerHour": 396,
+   "shapeHeardBefore": 0.154
+  },
+  "127": {
+   "shapesPerHour": 424,
+   "shapeHeardBefore": 0.135
+  },
+  "128": {
+   "shapesPerHour": 444,
+   "shapeHeardBefore": 0.047
+  },
+  "129": {
+   "shapesPerHour": 442,
+   "shapeHeardBefore": 0.464
+  },
+  "130": {
+   "shapesPerHour": 392,
+   "shapeHeardBefore": 0.101
+  },
+  "131": {
+   "shapesPerHour": 388,
+   "shapeHeardBefore": 0.098
+  },
+  "132": {
+   "shapesPerHour": 294,
+   "shapeHeardBefore": 0.155
+  },
+  "133": {
+   "shapesPerHour": 640,
+   "shapeHeardBefore": 0.19
+  },
+  "134": {
+   "shapesPerHour": 816,
+   "shapeHeardBefore": 0.123
+  },
+  "135": {
+   "shapesPerHour": 486,
+   "shapeHeardBefore": 0.138
+  },
+  "136": {
+   "shapesPerHour": 552,
+   "shapeHeardBefore": 0.124
+  },
+  "3042": {
+   "shapesPerHour": 500,
+   "shapeHeardBefore": 0.158
+  },
+  "8891": {
+   "shapesPerHour": 458,
+   "shapeHeardBefore": 0.179
+  }
  }
 }

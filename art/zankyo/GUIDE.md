@@ -33,8 +33,13 @@ next.
    cut — and a hush. The bargraph shows where you are. The **air** decides
    who may speak: one voice at a time in the jo, more as the kyū builds;
    the drones never claim it. The **motif engine** decides what they say:
-   three ideas per cycle, developed, answered, mirrored, ghosted into the
-   next cycle.
+   three ideas per cycle — an authentic gesture from a pool of forty across
+   eight traditions (honkyoku, danmono, jiuta, Tsugaru, gagaku, min'yō,
+   kagura, shōmyō), weighted to the cycle's mode; an inherited line; a
+   newborn from a per-mode improviser with a contour plan and a cadence —
+   developed, answered, mirrored, re-rhythmed in another tradition's time,
+   ghosted into the next cycle. The rests between phrases walk a small ma
+   pattern drawn per cycle. The 遺伝 dna line in the log says which.
 5. **Guests and signals.** About one cycle in three carries a guest (§4);
    about two broadcasts a cycle arrive from the reel pool (§5). On far
    nights, the **departures** (§2) are layered over all of this.

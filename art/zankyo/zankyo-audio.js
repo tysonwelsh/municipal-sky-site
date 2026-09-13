@@ -3363,8 +3363,8 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // Replaces the old 24-slot motif soup + single lastCall. Each jo-ha-kyū
   // cycle works THREE ideas deeply — a theme and two subsidiaries, named by
-  // katakana iroha (イ ロ ハ), drawn from the six authentic seed gestures
-  // below (the cultural DNA). A motif carries identity + genealogy:
+  // katakana iroha (イ ロ ハ), drawn from the forty authentic seed gestures
+  // below (the cultural DNA; twelve at ZANKYŌ 2, forty since road map §1). A motif carries identity + genealogy:
   //   { name, gen, chain[], notes: [{ deg (SCALE index), durBeats }] }.
   // Development ACCUMULATES: it continues from the most-developed living
   // descendant instead of restarting from the seed; an identity tether grafts
@@ -3406,21 +3406,67 @@ window.ZankyoAudio = (function () {
 
   var Motif = (function () {
     var NAMES = ["イ", "ロ", "ハ"];                // katakana iroha — the working set's names
-    var SEED_PHRASES = [                           // the twelve authentic gestures — the ancestor pool
-      { name: "honkyoku descent", degs: [3, 2, 1, 0], durs: [1, 1, 1, 2] },            // → tonic (shakuhachi, jo)
-      { name: "sakura sigh",      degs: [1, 2, 1],    durs: [1, 1.5, 2] },             // the most recognizably-Japanese turn
-      { name: "kumoi cadence",    degs: [4, 3, 0],    durs: [1, 1, 2] },
-      { name: "tsugaru run",      degs: [0, 1, 2, 3, 4], durs: [0.5, 0.5, 0.5, 0.5, 1.5] },  // hammer run
-      { name: "midare leaps",     degs: [0, 4, 1, 3, 0], durs: [1, 0.5, 1, 0.5, 2] },  // scattered (kyū)
-      { name: "kakegoe answer",   degs: [0, 1, 2],    durs: [0.5, 0.5, 1.5] },         // retrograde-pairs with the sigh
-      // ZANKYŌ 2 (Phase 2): the pool grows — each a real idiom's contour, none a quotation
-      { name: "netori tuning",    degs: [0, 1, 0, 3, 3], durs: [3, 1, 2, 1, 4] },       // the gagaku tuning-in: tonic tried, the fifth held
-      { name: "sugagaki figure",  degs: [3, 3, 2, 3, 0], durs: [0.5, 0.5, 1, 0.5, 2] }, // koto: the repeated-note strum figure
-      { name: "rokudan opening",  degs: [0, 0, 4, 3, 5, 3], durs: [1, 1, 1, 0.5, 2, 2] }, // danmono: the tonic twice, then the rise
-      { name: "jongara lick",     degs: [5, 4, 3, 4, 3, 2, 0], durs: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.5] }, // Tsugaru: the fast fall
-      { name: "kagura call",      degs: [0, 3, 3, 5, 3], durs: [1, 1.5, 0.5, 2, 2] },   // the shrine flute's rising call
-      { name: "yatai-bayashi",    degs: [0, 0, 1, 0, 3, 0], durs: [0.5, 0.25, 0.25, 0.5, 0.5, 1] }, // the festival drum's don-doko-don, sung
+    // THE ANCESTOR POOL — the authentic gestures. Each is a real idiom's
+    // CONTOUR, none a quotation, in degree classes of the pentatonic (0 the
+    // tonic, 3 the fifth, 5 the octave) and beats. Twelve shipped with
+    // ZANKYŌ 2; road map §1 (2026-09-13, PLAN-MELODIC-DNA.md) grows them to
+    // forty across eight traditions, each TAGGED: `trad` names the rhythm
+    // family a born phrase borrows and keeps a working set from drawing two
+    // of a kind; `modes` says which modes it belongs to — an in-sen phrase is
+    // not a hirajoshi phrase: the semitone gestures lean into in-sen and
+    // iwato, the major-sixth ones into kumoi, and the lottery at each cycle
+    // weighs them so (a mode not named weighs 1).
+    var SEED_PHRASES = [
+      // — honkyoku 本曲 (the shakuhachi's own repertoire): breath-long, descending, the meri dip
+      { name: "honkyoku descent", trad: "honkyoku", degs: [3, 2, 1, 0],    durs: [1, 1, 1, 2] },
+      { name: "sakura sigh",      trad: "honkyoku", degs: [1, 2, 1],       durs: [1, 1.5, 2] },
+      { name: "meri sink",        trad: "honkyoku", degs: [2, 1, 0],       durs: [2, 1, 4],      modes: { insen: 1.8, iwato: 1.6, hirajoshi: 0.7 } },
+      { name: "kan cry",          trad: "honkyoku", degs: [5, 4, 5, 3],    durs: [3, 1, 2, 4] },
+      { name: "breath ladder",    trad: "honkyoku", degs: [0, 2, 3, 5],    durs: [2, 2, 2, 5] },
+      { name: "ro hold",          trad: "honkyoku", degs: [0, 0, 1, 0],    durs: [4, 1, 1, 5] },
+      { name: "insen sink",       trad: "honkyoku", degs: [3, 1, 0, 1, 0], durs: [2, 1, 2, 1, 4], modes: { insen: 2.2, iwato: 1.4, hirajoshi: 0.5, kumoi: 0.4 } },
+      // — sōkyoku 箏曲 / danmono (the koto's instrumental pieces): figuration, alternating strings, the shan
+      { name: "kumoi cadence",    trad: "danmono",  degs: [4, 3, 0],       durs: [1, 1, 2],      modes: { kumoi: 1.6 } },
+      { name: "midare leaps",     trad: "danmono",  degs: [0, 4, 1, 3, 0], durs: [1, 0.5, 1, 0.5, 2] },
+      { name: "sugagaki figure",  trad: "danmono",  degs: [3, 3, 2, 3, 0], durs: [0.5, 0.5, 1, 0.5, 2] },
+      { name: "rokudan opening",  trad: "danmono",  degs: [0, 0, 4, 3, 5, 3], durs: [1, 1, 1, 0.5, 2, 2] },
+      { name: "danmono rise",     trad: "danmono",  degs: [0, 2, 3, 4, 5], durs: [1, 1, 1, 1, 3] },
+      { name: "kakezume pairs",   trad: "danmono",  degs: [3, 5, 2, 4, 1, 3], durs: [0.5, 0.5, 0.5, 0.5, 0.5, 2] },
+      { name: "shan strum",       trad: "danmono",  degs: [0, 3, 0, 3, 5], durs: [0.25, 0.75, 0.25, 0.75, 3] },
+      // — jiuta 地歌 (the sung koto-and-shamisen chamber music): turns, the links between verses
+      { name: "jiuta turn",       trad: "jiuta",    degs: [2, 3, 2, 1, 0], durs: [1, 0.5, 0.5, 1, 3] },
+      { name: "ai-no-te link",    trad: "jiuta",    degs: [3, 4, 3, 2, 3], durs: [0.5, 0.5, 1, 0.5, 2], modes: { kumoi: 1.4 } },
+      { name: "utamono sigh",     trad: "jiuta",    degs: [4, 3, 3, 2],    durs: [1.5, 1, 0.5, 3] },
+      // — Tsugaru 津軽 (the northern shamisen): hammered, fast, the break
+      { name: "tsugaru run",      trad: "tsugaru",  degs: [0, 1, 2, 3, 4], durs: [0.5, 0.5, 0.5, 0.5, 1.5] },
+      { name: "jongara lick",     trad: "tsugaru",  degs: [5, 4, 3, 4, 3, 2, 0], durs: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.5] },
+      { name: "tataki hammer",    trad: "tsugaru",  degs: [0, 0, 0, 1, 0], durs: [0.25, 0.25, 0.25, 0.25, 1] },
+      { name: "yosare break",     trad: "tsugaru",  degs: [3, 4, 3, 1, 0, 1], durs: [0.5, 0.25, 0.25, 0.5, 0.5, 2] },
+      // — gagaku 雅楽: tōgaku (the court's left music) — the tuning-in, the plateau, Etenraku's turn; komagaku (the right, the dances) — squarer, stepping
+      { name: "netori tuning",    trad: "gagaku",   degs: [0, 1, 0, 3, 3], durs: [3, 1, 2, 1, 4] },
+      { name: "etenraku turn",    trad: "gagaku",   degs: [3, 4, 3, 2, 3], durs: [2, 1, 1, 2, 4],  modes: { kumoi: 1.4, hirajoshi: 1.2 } },
+      { name: "togaku plateau",   trad: "gagaku",   degs: [2, 2, 3, 3, 2], durs: [3, 1, 3, 1, 4] },
+      { name: "komagaku call",    trad: "gagaku",   degs: [0, 3, 5, 3],    durs: [1, 1, 3, 4] },
+      { name: "ryoo stride",      trad: "gagaku",   degs: [0, 2, 0, 3, 2, 0], durs: [1.5, 0.5, 1.5, 0.5, 1, 3] },
+      { name: "iwato hover",      trad: "gagaku",   degs: [2, 3, 2, 3, 4, 3], durs: [1, 1, 1, 1, 2, 4], modes: { iwato: 2.4, insen: 1.2, hirajoshi: 0.5, kumoi: 0.5 } },
+      // — min'yō 民謡 (folk song): the kobushi shake, the haul, the free melisma, the answering shout
+      { name: "kobushi swell",    trad: "minyo",    degs: [3, 4, 3, 4, 3, 2], durs: [1, 0.5, 0.5, 0.5, 1, 3] },
+      { name: "soran haul",       trad: "minyo",    degs: [0, 3, 3, 0, 2, 0], durs: [1, 1, 1, 1, 1, 3] },
+      { name: "oiwake drift",     trad: "minyo",    degs: [4, 5, 4, 3, 4, 3, 2], durs: [2, 1, 3, 1, 1, 1, 4] },
+      { name: "yagi-bushi turn",  trad: "minyo",    degs: [3, 2, 3, 5, 3, 2], durs: [0.5, 0.5, 1, 1, 1, 2] },
+      { name: "kakegoe answer",   trad: "minyo",    degs: [0, 1, 2],       durs: [0.5, 0.5, 1.5] },
+      // — kagura 神楽 (the shrine's flute and drum): the call, the circling, the step
+      { name: "kagura call",      trad: "kagura",   degs: [0, 3, 3, 5, 3], durs: [1, 1.5, 0.5, 2, 2] },
+      { name: "kagura circling",  trad: "kagura",   degs: [3, 2, 3, 4, 3, 2, 0], durs: [1, 1, 1, 1, 1, 1, 2] },
+      { name: "torimono step",    trad: "kagura",   degs: [0, 1, 0, 1, 3], durs: [1, 1, 1, 1, 3],  modes: { insen: 1.5, iwato: 1.5 } },
+      { name: "yatai-bayashi",    trad: "kagura",   degs: [0, 0, 1, 0, 3, 0], durs: [0.5, 0.25, 0.25, 0.5, 0.5, 1] },
+      // — shōmyō 声明 (Buddhist chant): recitation on one tone, the yuri wave, the slow ascent, the fall into the nembutsu
+      { name: "shomyo recitation", trad: "shomyo",  degs: [0, 0, 0, 1, 0], durs: [1, 1, 1, 2, 4],  modes: { insen: 1.4, hirajoshi: 1.2 } },
+      { name: "yuri wave",        trad: "shomyo",   degs: [1, 2, 1, 0, 1, 0], durs: [2, 1, 2, 1, 2, 4] },
+      { name: "shomyo ascent",    trad: "shomyo",   degs: [0, 1, 2, 3],    durs: [4, 2, 4, 6] },
+      { name: "nembutsu fall",    trad: "shomyo",   degs: [3, 3, 2, 1, 0], durs: [2, 2, 1, 1, 6],  modes: { iwato: 1.4, insen: 1.3 } },
     ];
+    var TRAD_LIST = ["honkyoku", "danmono", "jiuta", "tsugaru", "gagaku", "minyo", "kagura", "shomyo", "taiko"];
     // ---- THE IMPROVISER (ported in spirit from the Jukebox's motif improviser):
     // a first-order Markov walk in degree-class space with JAPANESE-IDIOM
     // transition tables and tendency rules — the semitone above the tonic
@@ -3429,43 +3475,166 @@ window.ZankyoAudio = (function () {
     // (the final note carries a meri tag the shakuhachi honours as a bend).
     // Each cycle's working set gains one NEWBORN from here; the pool of names
     // grows all night. All draws on the motif stream.
-    var BORN_ROWS = [
-      [1,   3,   2,   3,   1  ],   // from the tonic: to the 2nd or the 5th
-      [4,   0.5, 2.5, 1,   0.5],   // from the 2nd: falls to the tonic
-      [2,   3,   1,   3,   1  ],   // from the 3rd
-      [3,   1,   2.5, 1,   3  ],   // from the 5th: to the tonic (the leap), the 6th, the 3rd
-      [1,   0.5, 2,   4,   1  ],   // from the 6th: back to the fifth
-    ];
-    var BORN_DURS = [[0.5, 3], [1, 5], [1.5, 3], [2, 1.5]];
+    //
+    // Road map §1 (2026-09-13): the tables are PER MODE now — an in-sen second
+    // sinks harder than a hirajoshi second, kumoi's major sixth rises to the
+    // octave, iwato's tritone will not settle — a born phrase follows a
+    // CONTOUR PLAN across its whole length instead of tossing a coin at every
+    // note, it closes on a PHRASE-FINAL FORMULA of its mode, and its time
+    // comes from a RHYTHM CELL of a tradition rather than a bag of durations.
+    var BORN_ROWS_BY_MODE = {
+      hirajoshi: [
+        [1,   3,   2,   3,   1  ],   // from the tonic: to the 2nd or the 5th
+        [4,   0.5, 2.5, 1,   0.5],   // from the 2nd: falls to the tonic
+        [2,   3,   1,   3,   1  ],   // from the 3rd
+        [3,   1,   2.5, 1,   3  ],   // from the 5th: to the tonic (the leap), the 6th, the 3rd
+        [1,   0.5, 2,   4,   1  ],   // from the 6th: back to the fifth
+      ],
+      insen: [
+        [1,   2,   3,   3,   1  ],   // from the tonic: to the fourth or the fifth
+        [5,   0.3, 1.5, 1,   0.3],   // from the semitone: falls, hard
+        [2.5, 1,   1,   3,   0.5],   // from the fourth: to the fifth
+        [3,   1.5, 2,   1,   2  ],   // from the fifth: to the tonic, or the second (the sink is coming)
+        [1,   0.5, 1,   4,   1  ],   // from the sixth: back to the fifth
+      ],
+      kumoi: [
+        [1,   3,   2,   3,   1.5],
+        [4,   0.5, 2.5, 1,   0.5],
+        [2,   3,   1,   3,   1  ],
+        [3,   1,   2,   1,   3.5],   // from the fifth: on to the major sixth
+        [3,   0.5, 1,   2.5, 1  ],   // from the major sixth: up to the octave, or back to the fifth
+      ],
+      iwato: [
+        [1,   2.5, 3,   2,   1  ],
+        [5,   0.3, 1.5, 0.8, 0.3],   // the semitone falls
+        [2,   1,   1,   3,   1.5],   // the fourth: to the tritone
+        [1.5, 1,   3,   1,   3  ],   // the tritone: will not settle — to the fourth or the seventh
+        [3,   0.5, 1,   2.5, 1  ],   // the minor seventh: to the octave
+      ],
+    };
+    var CADENCES_BY_MODE = {   // the last notes of a born phrase, by class (5 = the octave above); weighted
+      hirajoshi: [[[1, 0], 3], [[3, 0], 2], [[2, 1, 0], 2], [[4, 3], 1], [[3, 5], 1]],
+      insen:     [[[1, 0], 4], [[3, 1, 0], 2], [[2, 0], 1], [[4, 3], 1]],
+      kumoi:     [[[4, 5], 2], [[1, 0], 2], [[4, 3, 0], 2], [[3, 0], 1]],
+      iwato:     [[[1, 0], 4], [[3, 2, 0], 2], [[4, 3, 1, 0], 1], [[4, 5], 1]],
+    };
+    var CONTOURS = [["arch", 3], ["descent", 3], ["ascent", 1.5], ["valley", 1.5], ["plateau", 1]];
+    function contourUp(kind, p, R) {             // does the next step go UP, at position p (0..1) along the phrase?
+      var b = kind === "arch" ? (p < 0.5 ? 0.82 : 0.18) : kind === "descent" ? 0.2 : kind === "ascent" ? 0.8 :
+              kind === "valley" ? (p < 0.5 ? 0.2 : 0.8) : 0.5;
+      return R.next() < b;
+    }
+    // ---- RHYTHM DNA (road map §1): cells in beats, by tradition. A born
+    // phrase takes one; `rerhythm` lays one over a motif in development; a
+    // fresh walk borrows one half the time. The taiko's are read off the
+    // drum's own patterns at first use (a hit's distance to the next, one
+    // tatum = half a beat, the last hit held to the bar's end) — the same
+    // don-doko-don the kit plays, sung.
+    var RHYTHM_CELLS = {
+      honkyoku: [[3, 1, 4], [2, 1, 1, 5], [4, 2, 6], [1, 3, 1, 4]],
+      danmono:  [[0.5, 0.5, 0.5, 0.5, 2], [1, 1, 0.5, 0.5, 2], [0.5, 0.5, 1, 2], [0.25, 0.75, 0.5, 0.5, 2]],
+      jiuta:    [[1, 0.5, 0.5, 1, 3], [1.5, 0.5, 1, 2], [0.5, 1, 0.5, 1, 3]],
+      tsugaru:  [[0.5, 0.25, 0.25, 0.5, 1], [0.25, 0.25, 0.5, 0.25, 0.25, 1.5], [0.5, 0.5, 0.25, 0.25, 0.5, 2]],
+      gagaku:   [[2, 2, 2, 4], [3, 1, 4], [4, 4, 2, 6], [2, 1, 1, 2, 4]],
+      minyo:    [[1.5, 0.5, 1, 1, 2], [1, 0.5, 0.5, 2, 3], [2, 1, 3, 1, 4]],
+      kagura:   [[1, 1, 1, 1, 2], [1, 0.5, 0.5, 1, 3], [0.5, 0.5, 1, 1, 1, 2]],
+      shomyo:   [[2, 2, 4], [1, 1, 1, 2, 4], [4, 2, 4, 6]],
+      taiko:    null,
+    };
+    function taikoCells() {
+      if (RHYTHM_CELLS.taiko) return RHYTHM_CELLS.taiko;
+      var out = [];
+      for (var k in TAIKO_PATTERNS) for (var i = 0; i < TAIKO_PATTERNS[k].length; i++) {
+        var str = TAIKO_PATTERNS[k][i][0], hits = [], j, cell = [];
+        for (j = 0; j < str.length; j++) if (str[j] !== ".") hits.push(j);
+        if (hits.length < 3) continue;
+        for (j = 0; j < hits.length; j++) cell.push(((j + 1 < hits.length ? hits[j + 1] : str.length) - hits[j]) * 0.5);
+        out.push(cell);
+      }
+      RHYTHM_CELLS.taiko = out.length ? out : [[1, 1, 1, 1]];
+      return RHYTHM_CELLS.taiko;
+    }
+    function cellFor(trad, R) { var cells = trad === "taiko" ? taikoCells() : (RHYTHM_CELLS[trad] || RHYTHM_CELLS.honkyoku); return R.pick(cells); }
+    function fitCell(cell, n, meanBeats) {        // n durations from a cell: the body repeats, the cell's own last is the phrase's last
+      // A CELL CARRIES A SHAPE, NOT A SPEED: the result is scaled to the mean
+      // the caller names (a born phrase's ~1.15 beats a note, a motif's own
+      // mean under `rerhythm`, a walk's own), because the voice's pace already
+      // sets how slow gagaku is — measured unscaled, the long cells cut a
+      // night's notes by a tenth and held the air for the rest.
+      var out = [], body = cell.slice(0, -1), last = cell[cell.length - 1], sum = 0, i;
+      if (!body.length) body = [last];
+      for (i = 0; i < n - 1; i++) out.push(body[i % body.length]);
+      out.push(last);
+      for (i = 0; i < out.length; i++) sum += out[i];
+      var k = (meanBeats || 1.15) * out.length / sum;
+      for (i = 0; i < out.length; i++) out[i] = +(out[i] * k).toFixed(3);
+      return out;
+    }
+    function meanBeatsOf(notes) { var b = 0; for (var i = 0; i < notes.length; i++) b += notes[i].durBeats; return notes.length ? b / notes.length : 1; }
+    function tradDraw(R) {                        // a tradition for a born phrase or a walk: the theme's own, mostly
+      var th = working.theme && working.theme.trad, pool = [];
+      for (var i = 0; i < TRAD_LIST.length; i++) pool.push([TRAD_LIST[i], (TRAD_LIST[i] === th ? 3 : 1) * (TRAD_LIST[i] === "taiko" ? 0.6 : 1)]);
+      return R.pickW(pool);
+    }
+    // MA PATTERNS: the rests between a voice's phrases follow a small cycle
+    // drawn per working set instead of one flat range — short, short, long is
+    // a breath; the five voices each walk the pattern at their own pace.
+    // Each pattern is normalised to a mean of ONE, so the pattern moves the
+    // rests' shape and not a night's density (measured unnormalised: 12 %
+    // fewer phrases an hour, which was the pattern's average of 1.15 and not
+    // a musical decision).
+    var MA_PATTERNS = [[1, 1, 1], [1, 0.6, 1.6], [0.7, 0.7, 1.9], [1.4, 0.8, 0.8, 1.6], [1, 1.8], [0.6, 1, 1.5, 2.2], [1.2, 1.2, 0.5]].map(function (p) {
+      var m = 0; for (var i = 0; i < p.length; i++) m += p[i]; m /= p.length;
+      return p.map(function (v) { return +(v / m).toFixed(3); });
+    });
+    var maPattern = MA_PATTERNS[0], maIdx = {}, recentThemes = [];
+    function maMul(voice) { var i = maIdx[voice] || 0; maIdx[voice] = i + 1; return maPattern[i % maPattern.length]; }
     var SYL_A = ["ka", "shi", "to", "mi", "yu", "ha", "ne", "sa", "ku", "ri"];
     var SYL_B = ["ge", "ro", "n", "ki", "ma", "zu", "te", "yo", "ru", "e"];
     var bornSerial = 0, bornNames = {};
     function birth() {
-      var R = S.motif, n = R.rint(4, 7), notes = [], cls = R.pickW([[0, 3], [3, 2], [1, 1], [2, 1], [4, 1]]);
-      var N = field.size, deg = scaleIndexOf(cls) + N * R.rint(0, 1);   // absolute degree index in the mid band
-      for (var i = 0; i < n; i++) {
-        var last = i === n - 1;
-        var row = BORN_ROWS[((cls % N) + N) % N] || BORN_ROWS[0];
-        var pool = [];
-        for (var c = 0; c < N; c++) pool.push([c, (row[c] || 1) * (last && c === 0 ? 3 : 1)]);   // descents end on the tonic
+      var R = S.motif, mode = currentMode, N = field.size;
+      var rows = BORN_ROWS_BY_MODE[mode] || BORN_ROWS_BY_MODE.hirajoshi;
+      var contour = R.pickW(CONTOURS), cad = R.pickW(CADENCES_BY_MODE[mode] || CADENCES_BY_MODE.hirajoshi);
+      if (R.next() < 0.3) cad = [0];             // three in ten close on the tonic by the walk's own road, so the tails do not all rhyme
+      var trad = tradDraw(R), cell = cellFor(trad, R);
+      var n = R.rint(4, 8), body = Math.max(2, n - cad.length), notes = [];
+      var cls = R.pickW([[0, 3], [3, 2], [1, 1], [2, 1], [4, 1]]);
+      var deg = scaleIndexOf(cls) + N * R.rint(0, 1);   // absolute degree index in the mid band
+      function toward(d, c, up) { var cur = ((d % N) + N) % N, delta = ((c - cur) % N + N) % N; if (delta === 0) return d; return up ? d + delta : d - (N - delta); }
+      // the body: a walk on the mode's own table, steered by the contour
+      for (var i = 0; i < body; i++) {
+        var row = rows[((cls % N) + N) % N] || rows[0], pool = [];
+        for (var c = 0; c < N; c++) pool.push([c, row[c] || 1]);
         var next = R.pickW(pool);
-        var up = R.next() < 0.5, dirDraw = R.next();
-        // tendency rules
-        if (cls === 1 && next === 0) up = false;                                   // the second falls
-        else if (cls === 3 && next === 0) up = dirDraw < 0.6;                      // the fifth leaps to the octave
-        else if (cls === 4 && next === 3) up = false;                              // the sixth sinks
-        var cur = ((deg % N) + N) % N, delta = ((next - cur) % N + N) % N;         // steps up to reach `next`
+        var up = contourUp(contour, i / body, R), dirDraw = R.next();
+        // the tendency tones, by mode
+        if (cls === 1 && next === 0) up = false;                                              // the second falls — in in-sen and iwato it is a semitone and falls hardest
+        else if (cls === 3 && next === 0) up = dirDraw < (mode === "kumoi" ? 0.7 : 0.6);      // the fifth leaps to the octave
+        else if (cls === 4 && next === 3) up = false;                                         // the sixth sinks
+        else if (cls === 4 && next === 0 && (mode === "kumoi" || mode === "iwato")) up = true; // the major sixth and the seventh rise to the octave
+        else if (cls === 3 && next === 2 && mode === "iwato") up = false;                     // the tritone drops to the fourth
+        var cur = ((deg % N) + N) % N, delta = ((next - cur) % N + N) % N;                    // steps up to reach `next`
         deg = up ? deg + delta : deg - (N - delta) % N;
-        if (delta === 0) deg += up ? N : -N;                                       // same class → the octave
+        if (delta === 0) deg += up ? N : -N;                                                  // same class → the octave
         deg = foldDeg(deg);
         cls = next;
-        var dur = R.pickW(BORN_DURS) * (last ? 1.6 : 1);
-        notes.push({ deg: deg, durBeats: dur, meri: !!(last && cls === 0) });
+        notes.push({ deg: deg, durBeats: 1, meri: false });
       }
+      // the cadence: the mode's phrase-final formula, laid downward from where the body ended (the octave, when named, upward)
+      for (var k = 0; k < cad.length; k++) {
+        var tc = cad[k];
+        if (tc >= N) { var nd = toward(deg, tc - N, true); deg = nd === deg ? deg + N : nd; }   // the octave: always a rise, even from the tonic itself
+        else deg = toward(deg, tc, false);
+        deg = foldDeg(deg);
+        notes.push({ deg: deg, durBeats: 1, meri: k === cad.length - 1 && tc === 0 });
+      }
+      var durs = fitCell(cell, notes.length, 1.15);   // the old bag's mean, so a born phrase is as long as it was
+      for (var q = 0; q < notes.length; q++) notes[q].durBeats = durs[q] * (q === notes.length - 1 ? 1.3 : 1);
       var nm = R.pick(SYL_A) + R.pick(SYL_B);
       if (bornNames[nm]) nm = nm + "·" + (++bornSerial);
       bornNames[nm] = 1;
-      return { name: "born: " + nm, degs: null, notes: notes };
+      return { name: "born: " + nm, degs: null, notes: notes, trad: trad, contour: contour };
     }
     var working = { theme: null, subs: [] };       // the whole cycle works ≤3 ideas
     var ledger = [];                               // [{from, to, motif, type, deadline}]
@@ -3479,7 +3648,7 @@ window.ZankyoAudio = (function () {
     function fromSeed(i, name) {
       var s = SEED_PHRASES[i], notes = [];
       for (var k = 0; k < s.degs.length; k++) notes.push({ deg: scaleIndexOf(s.degs[k]), durBeats: s.durs[k] });
-      return { name: name, gen: 0, chain: [], notes: notes, src: s.name };   // src: the gesture this line descends from
+      return { name: name, gen: 0, chain: [], notes: notes, src: s.name, trad: s.trad };   // src: the gesture this line descends from; trad: its rhythm family
     }
 
     // ---- the transform algebra (each mutates a clone; chain appended by develop) ----
@@ -3513,6 +3682,12 @@ window.ZankyoAudio = (function () {
         m.notes = m.notes.concat(rep).slice(0, 12);            // runaway guard
         return m;
       },
+      rerhythm: function (m) {                     // the same notes in another tradition's time — a rhythm cell laid over them (road map §1)
+        var trad = tradDraw(S.motif), durs = fitCell(cellFor(trad, S.motif), m.notes.length, meanBeatsOf(m.notes));   // the motif keeps its length, changes its shape
+        for (var i = 0; i < m.notes.length; i++) m.notes[i].durBeats = Math.max(0.25, Math.min(6, durs[i]));
+        m.rhythm = trad;
+        return m;
+      },
       ornament: function (m) {                     // neighbor-tone turns — koto kazashi / shakuhachi ornaments
         var res = [];
         for (var i = 0; i < m.notes.length; i++) {
@@ -3532,20 +3707,20 @@ window.ZankyoAudio = (function () {
     // differently by each instrument, and differently in jo than in kyū.
     var VOICE_WEIGHTS = {
       // the shakuhachi works contour: ornament, augmentation, mirrors
-      shakuhachi: { ornament: 3.5, augment: 3, invert: 2.5, transpose: 2.5, fragmentTail: 1.5, fragmentHead: 1.5, retrograde: 1.5, sequence: 1, diminish: 1 },
+      shakuhachi: { ornament: 3.5, augment: 3, invert: 2.5, transpose: 2.5, fragmentTail: 1.5, fragmentHead: 1.5, retrograde: 1.5, sequence: 1, diminish: 1, rerhythm: 1.5 },
       // the koto sequences and fragments — danmono figuration
-      koto: { sequence: 3.5, fragmentHead: 2.5, fragmentTail: 2.5, transpose: 2.5, invert: 2, ornament: 2, diminish: 1.5, augment: 1.5, retrograde: 1.5 },
+      koto: { sequence: 3.5, fragmentHead: 2.5, fragmentTail: 2.5, transpose: 2.5, invert: 2, ornament: 2, diminish: 1.5, augment: 1.5, retrograde: 1.5, rerhythm: 2 },
       // the shamisen diminishes and splinters — fast Tsugaru fragmentation
-      shamisen: { diminish: 3.5, fragmentHead: 3, fragmentTail: 2.5, sequence: 2.5, transpose: 2, retrograde: 1.5, invert: 1.5, ornament: 1, augment: 0.5 },
+      shamisen: { diminish: 3.5, fragmentHead: 3, fragmentTail: 2.5, sequence: 2.5, transpose: 2, retrograde: 1.5, invert: 1.5, ornament: 1, augment: 0.5, rerhythm: 2.5 },
       // the hichiriki stretches and mirrors (the reed holds a line); the biwa splinters and reverses (the narrator's fragments)
-      hichiriki: { augment: 3.5, invert: 2.5, transpose: 2.5, fragmentHead: 2, fragmentTail: 1.5, retrograde: 1, ornament: 0.5, sequence: 0.5, diminish: 0.3 },
-      biwa: { fragmentHead: 3, fragmentTail: 3, retrograde: 2, augment: 2, transpose: 2, invert: 1.5, diminish: 1, sequence: 0.5, ornament: 0.3 },
+      hichiriki: { augment: 3.5, invert: 2.5, transpose: 2.5, fragmentHead: 2, fragmentTail: 1.5, retrograde: 1, ornament: 0.5, sequence: 0.5, diminish: 0.3, rerhythm: 0.8 },
+      biwa: { fragmentHead: 3, fragmentTail: 3, retrograde: 2, augment: 2, transpose: 2, invert: 1.5, diminish: 1, sequence: 0.5, ornament: 0.3, rerhythm: 1.5 },
     };
     var PHASE_TILT = {
-      jo:      { augment: 1.7, transpose: 1.4, ornament: 0.6, sequence: 0.4, fragmentHead: 0.5, fragmentTail: 0.5, diminish: 0.4 },   // state plainly, stretch
-      ha:      { invert: 1.4, sequence: 1.3, ornament: 1.4, transpose: 1.1 },                                                          // explore widely
-      "kyū":   { diminish: 1.8, fragmentHead: 1.5, fragmentTail: 1.4, sequence: 1.6, retrograde: 1.2, augment: 0.4 },                  // drive — stretto
-      release: { augment: 1.6, fragmentTail: 1.4, ornament: 0.4, sequence: 0.3, diminish: 0.4 },                                       // the ma decomposes
+      jo:      { augment: 1.7, transpose: 1.4, ornament: 0.6, sequence: 0.4, fragmentHead: 0.5, fragmentTail: 0.5, diminish: 0.4, rerhythm: 0.6 },   // state plainly, stretch
+      ha:      { invert: 1.4, sequence: 1.3, ornament: 1.4, transpose: 1.1, rerhythm: 1.3 },                                                          // explore widely — in time too
+      "kyū":   { diminish: 1.8, fragmentHead: 1.5, fragmentTail: 1.4, sequence: 1.6, retrograde: 1.2, augment: 0.4, rerhythm: 1.2 },                  // drive — stretto
+      release: { augment: 1.6, fragmentTail: 1.4, ornament: 0.4, sequence: 0.3, diminish: 0.4, rerhythm: 0.4 },                                       // the ma decomposes
     };
     var AFFINITY = {                               // pairs that compose well lean into each other
       fragmentHead: { sequence: 2.4, ornament: 1.6 },
@@ -3553,6 +3728,7 @@ window.ZankyoAudio = (function () {
       invert:       { augment: 1.7, transpose: 1.5 },
       sequence:     { diminish: 1.6 },
       ornament:     { augment: 1.4 },
+      rerhythm:     { sequence: 1.5, transpose: 1.3 },   // a new time asks for the notes again
     };
     function beatsOf(m) { var b = 0; m.notes.forEach(function (n) { b += n.durBeats; }); return b; }
     function isPalindromic(m) {
@@ -3790,9 +3966,22 @@ window.ZankyoAudio = (function () {
       // living line, or its deepest, carried with its generation and chain — the
       // work continues), ハ one NEWBORN from the improviser. Cycle 0, with nothing
       // to inherit, draws two authentics.
-      var order = [], i; for (i = 0; i < SEED_PHRASES.length; i++) order.push(i);
-      var picks = [];
-      while (picks.length < 2) picks.push(order.splice(Math.floor(S.motif.next() * order.length), 1)[0]);
+      // THE LOTTERY (road map §1): weighted by the cycle's mode — a gesture
+      // tagged for in-sen is likelier on an in-sen cycle and rarer on a
+      // hirajoshi one — the last two cycles' themes held back so a night walks
+      // the pool, and the second pick leaning away from the first's tradition.
+      var picks = [], pool = [], i;
+      for (i = 0; i < SEED_PHRASES.length; i++) {
+        var sp = SEED_PHRASES[i], wgt = (sp.modes && sp.modes[currentMode] != null) ? sp.modes[currentMode] : 1;
+        if (recentThemes.indexOf(i) >= 0) wgt *= 0.1;   // the last four cycles' picks, both of them
+        pool.push([i, wgt]);
+      }
+      picks.push(S.motif.pickW(pool));
+      var pool2 = [];
+      for (i = 0; i < pool.length; i++) if (pool[i][0] !== picks[0]) pool2.push([pool[i][0], pool[i][1] * (SEED_PHRASES[pool[i][0]].trad === SEED_PHRASES[picks[0]].trad ? 0.3 : 1)]);
+      picks.push(S.motif.pickW(pool2));
+      recentThemes.push(picks[0], picks[1]); while (recentThemes.length > 8) recentThemes.shift();
+      maPattern = S.motif.pick(MA_PATTERNS); maIdx = {};
       working.theme = fromSeed(picks[0], NAMES[0]);
       var inherit = second || deepest, names = [SEED_PHRASES[picks[0]].name];
       var sub1;
@@ -3801,7 +3990,7 @@ window.ZankyoAudio = (function () {
         sub1.gen = Math.min(inherit.gen, 3);            // room to develop: at its old g8–9 the line renewed to itself and froze
         names.push("inherited: " + (inherit.src || inherit.name) + "·g" + inherit.gen);
       } else { sub1 = fromSeed(picks[1], NAMES[1]); names.push(SEED_PHRASES[picks[1]].name); }
-      var born = birth(), bornMotif = { name: NAMES[2], gen: 0, chain: [], notes: born.notes, src: born.name };
+      var born = birth(), bornMotif = { name: NAMES[2], gen: 0, chain: [], notes: born.notes, src: born.name, trad: born.trad };
       names.push(born.name);
       working.subs = [sub1, bornMotif];
       // the authentic subsidiary may enter pre-transposed — pitch variety, not novelty churn
@@ -3815,10 +4004,14 @@ window.ZankyoAudio = (function () {
         cat: "mode", label: "❁ working set",
         detail: NAMES[0] + " " + names[0] + " · " + NAMES[1] + " " + names[1] + " · " + NAMES[2] + " " + names[2],
       }, t);
+      // 遺伝 — the set's DNA line: the theme's tradition, the newborn's time and contour, the ma pattern, in which mode
+      emitEvent({ cat: "mode", label: "遺伝 dna", detail: SEED_PHRASES[picks[0]].trad + " theme · born in " + born.trad + " time, " + born.contour +
+        " · ma " + maPattern.join("/") + " · " + currentMode }, t);
     }
     function reset() {
       working.theme = null; working.subs = [];
       ledger.length = 0; lineage = {}; ghost = null; reprised = false; plainCounts = {};
+      recentThemes = []; maPattern = MA_PATTERNS[0]; maIdx = {};
     }
 
     // The guaranteed kyū reprise outranks even ledger obligations — the voice
@@ -3830,11 +4023,14 @@ window.ZankyoAudio = (function () {
     return {
       reset: reset, newCycle: newCycle, wantsReprise: wantsReprise, setDialogue: setDialogue,
       request: request, claim: claim, overdueFor: overdueFor, postFrom: postFrom,
+      maMul: maMul,                                             // rhythm DNA: the voice's next rest, as a multiple of its range
+      walkDurs: function (R, n, meanBeats) { return fitCell(cellFor(tradDraw(R), R), n, meanBeats); },   // rhythm DNA for a fresh walk, on the walking voice's own stream
       theme: function () { return working.theme || null; },   // 逸脱 崩: what the locked groove locks onto
       stats: function () {
         return {
           developments: stats.developments, answers: stats.answers,
           transforms: Object.keys(stats.transformsUsed),
+          gestures: SEED_PHRASES.length, traditions: TRAD_LIST.length,
           working: { theme: working.theme && working.theme.name, themeGen: working.theme && working.theme.gen },
         };
       },
@@ -3857,6 +4053,12 @@ window.ZankyoAudio = (function () {
     }
     state.idx = pullTo(state.idx, REST_DEG);
     notes.push({ deg: state.idx, durBeats: 1.4 + R.next() * 1.2 });
+    // rhythm DNA (road map §1): half the walks take a tradition's cell for their time instead of the bag above
+    if (R.next() < 0.5) {
+      var wsum = 0, wi; for (wi = 0; wi < notes.length; wi++) wsum += notes[wi].durBeats;
+      var cd = Motif.walkDurs(R, notes.length, wsum / notes.length);   // the walk keeps its length, takes the cell's shape
+      for (wi = 0; wi < notes.length; wi++) notes[wi].durBeats = cd[wi];
+    }
     return farTruncate(notes);                   // 逸脱 間
   }
   function pullTo(idx, flags) {
@@ -4139,7 +4341,7 @@ window.ZankyoAudio = (function () {
     // MA — breathing space between phrases (more in jo, less in kyū; the meta
     // journey tilts overall density ±12% — the shakuhachi stays UNLOCKED from
     // the pulse but still breathes with the long form)
-    var ma = (1.8 + S.shakuhachi.next() * 4) * (1 - arc * 0.55) * metaRestMul() * gapMulAt(t) / trimOf("shakuhachi");
+    var ma = (1.8 + S.shakuhachi.next() * 4) * (1 - arc * 0.55) * metaRestMul() * gapMulAt(t) * Motif.maMul("shakuhachi") / trimOf("shakuhachi");   // rhythm DNA: the ma walks the set's pattern
     afterSpan("shakuhachi", now, (t - now) + ma * farTimeMul("shakuhachi", now), shakuhachiPhrase);   // 逸脱: the phrase is already dilated, the ma is not
   }
   // The shakuhachi body (Phase 3): two REGISTERS with different bodies —
@@ -4351,7 +4553,7 @@ window.ZankyoAudio = (function () {
     }
     hichiState.lastSpan = t - now;
     tok.until = t + margin;
-    var rest = (5 + R.next() * 8) * (1 - arc * 0.5) * metaRestMul() * gapMulAt(t) / trimOf("hichiriki");
+    var rest = (5 + R.next() * 8) * (1 - arc * 0.5) * metaRestMul() * gapMulAt(t) * Motif.maMul("hichiriki") / trimOf("hichiriki");
     afterSpan("hichiriki", now, (t - now) + rest * farTimeMul("hichiriki", now), hichirikiPhrase);
   }
 
@@ -4413,7 +4615,7 @@ window.ZankyoAudio = (function () {
     if (strummed) emitEvent({ cat: "biwa", label: "琵琶 strum", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") }, now);
     biwaState.lastSpan = t - now;
     tok.until = t + margin;
-    var rest = (8 + R.next() * 12) * (1 - arc * 0.3) * metaRestMul() * gapMulAt(t) / trimOf("biwa");
+    var rest = (8 + R.next() * 12) * (1 - arc * 0.3) * metaRestMul() * gapMulAt(t) * Motif.maMul("biwa") / trimOf("biwa");
     afterSpan("biwa", now, (t - now) + rest * farTimeMul("biwa", now), biwaPhrase);
   }
 
@@ -4616,7 +4818,7 @@ window.ZankyoAudio = (function () {
     farMirrorAnswer("koto", phrase, sched, now, beat);         // 鏡
     kotoState.lastSpan = t - now;
     tok.until = t + margin;
-    var rest = (1.6 + S.koto.next() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() * gapMulAt(t) / trimOf("koto");  // sparse in jo; meta tilts density ±12%
+    var rest = (1.6 + S.koto.next() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() * gapMulAt(t) * Motif.maMul("koto") / trimOf("koto");  // sparse in jo; meta tilts density ±12%; the ma walks the set's pattern
     afterSpan("koto", now, (t - now) + rest * farTimeMul("koto", now), kotoPhrase);
   }
   function kotoNote(freq, t, dur, opts) { stringNote("koto", freq, t, dur, opts); }
@@ -4675,7 +4877,7 @@ window.ZankyoAudio = (function () {
     }
     shamiState.lastSpan = t - now;
     tok.until = t + margin;
-    var rest = (2.2 + S.shamisen.next() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) * metaRestMul() * gapMulAt(t) / trimOf("shamisen");  // mostly absent in jo; meta tilts density ±12%
+    var rest = (2.2 + S.shamisen.next() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) * metaRestMul() * gapMulAt(t) * Motif.maMul("shamisen") / trimOf("shamisen");  // mostly absent in jo; meta tilts density ±12%; the ma walks the set's pattern
     afterSpan("shamisen", now, (t - now) + rest * farTimeMul("shamisen", now), shamisenPhrase);
   }
   function shamisenNote(freq, t, dur, opts) { stringNote("shamisen", freq, t, dur, opts); }

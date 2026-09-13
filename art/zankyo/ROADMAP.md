@@ -32,6 +32,12 @@ ambient one-shots. In priority order:
    rhythm DNA (ma patterns, breath lengths, taiko-derived cells) so the
    melodies differ in time as well as pitch. Measure it: distinct-phrase
    counts per hour, and a listener-facing "have I heard this before" gate.
+   *Shipped 2026-09-13 (rc.64, PLAN-MELODIC-DNA.md): forty gestures across
+   eight traditions, mode-aware lottery and improviser with contour plans
+   and cadences, rhythm cells (taiko-derived ones included), `rerhythm`,
+   ma patterns; the harness measures shapes/h and heard-before; a
+   deliberate re-base (`_harness-bank.js`). Breath-length DNA per night
+   is the part left open.*
 2. **A family of bodies per instrument.** Each voice gets several
    incarnations drawn per night from the seed — pluck material, string age,
    register, decay, breath, reed — so the koto is a different koto on

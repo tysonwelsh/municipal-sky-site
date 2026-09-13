@@ -365,6 +365,52 @@ const pitchVocab = (() => {
   return { seas: seas.length, pool: Object.keys(pool).length, voicings: Object.keys(voicings).length };
 })();
 
+// ---- melodic DNA (road map §1, 2026-09-13): distinct phrases per hour, and the "have I heard this before" rate ----
+// A phrase is a run of one melodic voice's notes with no gap over 0.9 s; its
+// signature is the interval sequence in semitones plus each note's length as
+// a multiple of the phrase's shortest note (half-steps), so a transposition
+// or a re-registering is the same phrase and a re-rhythming is not. Only
+// phrases of three notes or more count — two notes are not a thing to have
+// heard before. HEARD-BEFORE is the share of phrases whose signature has
+// already sounded earlier in the same run: the listener's question.
+const phraseVocab = (() => {
+  const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };
+  const byLayerSeq = {};
+  for (const n of notes) if (MEL[n.layer]) (byLayerSeq[n.layer] = byLayerSeq[n.layer] || []).push(n);
+  const sigs = [], seen = {}, seenShape = {}; let repeats = 0, shapeRepeats = 0, longest = 0;
+  for (const L in byLayerSeq) {
+    const seq = byLayerSeq[L].sort((a, b) => a.t - b.t);
+    let cur = [];
+    const flush = () => {
+      if (cur.length >= 3) {
+        const minD = Math.max(0.05, Math.min(...cur.map((n) => n.dur)));
+        const iv = [], rh = [];
+        for (let i = 0; i < cur.length; i++) {
+          if (i) iv.push(Math.round(12 * Math.log2(cur[i].freq / cur[i - 1].freq)));
+          rh.push(Math.round(2 * cur[i].dur / minD) / 2);
+        }
+        const shape = iv.join(","), sig = shape + "|" + rh.join(",");
+        if (seenShape[shape]) shapeRepeats++; seenShape[shape] = (seenShape[shape] || 0) + 1;   // the SHAPE: intervals alone — what a listener recognises across a re-rhythming
+        if (seen[sig]) repeats++; seen[sig] = (seen[sig] || 0) + 1;
+        sigs.push(sig); if (cur.length > longest) longest = cur.length;
+      }
+      cur = [];
+    };
+    for (let i = 0; i < seq.length; i++) {
+      if (cur.length && seq[i].t - (cur[cur.length - 1].t + cur[cur.length - 1].dur) > 0.9) flush();
+      cur.push(seq[i]);
+    }
+    flush();
+  }
+  const distinct = Object.keys(seen).length, perHour = distinct * 3600 / RUN, heardBefore = sigs.length ? repeats / sigs.length : 0;
+  const shapes = Object.keys(seenShape).length, shapesPerHour = shapes * 3600 / RUN, shapeHeardBefore = sigs.length ? shapeRepeats / sigs.length : 0;
+  const top = Object.keys(seenShape).sort((a, b) => seenShape[b] - seenShape[a]).slice(0, 3).map((k) => k + "×" + seenShape[k]);
+  console.log("phrases: " + sigs.length + " (≥3 notes) · shapes " + shapes + " distinct (" + shapesPerHour.toFixed(0) + "/h) · heard-before by shape " + (100 * shapeHeardBefore).toFixed(1) +
+    "% · with rhythm " + distinct + " distinct, heard-before " + (100 * heardBefore).toFixed(1) + "% · longest " + longest + " · most repeated shapes " + top.join(" ; "));
+  if (process.env.ZK_SHAPES) { try { fs.writeFileSync(process.env.ZK_SHAPES, JSON.stringify({ seed: SEED, n: sigs.length, shapes: seenShape })); } catch (e) {} }   // for _harness-bank.js's cross-night measure
+  return { n: sigs.length, distinct, perHour, heardBefore, shapes, shapesPerHour, shapeHeardBefore };
+})();
+
 // ---- visitations (Phase 4; §8.1 follow-up): never two BROADCASTS and never
 // two GUESTS in a cycle — but a broadcast and one guest may share one, seated
 // in different scenes. The broadcast became its own kind of visitation when
@@ -669,6 +715,17 @@ if (CANON_SEED && runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget 
 // It is the constraint 群 and 雲 were designed against.
 if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
 if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa", "furin"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
+// The bank line: `ZK_BANK=1 node _harness.js 1800 <seed>` prints one JSON line
+// for _harness-bank.js to gather into _harness-base.json (the deliberate re-base).
+if (process.env.ZK_BANK) console.log("BANK " + JSON.stringify({ seed: SEED, home: NIGHT_HOME, density: Math.round(melPer30), shapesPerHour: Math.round(phraseVocab.shapesPerHour), shapeHeardBefore: +phraseVocab.shapeHeardBefore.toFixed(3) }));
+// Road map §1's gate, at an hour on a home night: the vocabulary must not
+// collapse — ≥ 250 distinct shapes an hour and under a third of phrases a
+// shape already heard tonight. Measured before the DNA work: ~490–560 shapes/h
+// and 5–6 % by full signature; the shape rate is the listener's number.
+if (RUN >= 3600 && NIGHT_HOME && phraseVocab.n > 50) {
+  if (phraseVocab.shapesPerHour < 250) fails.push("only " + Math.round(phraseVocab.shapesPerHour) + " distinct phrase shapes/h (< 250)");
+  if (phraseVocab.shapeHeardBefore > 0.34) fails.push("heard-before by shape " + Math.round(100 * phraseVocab.shapeHeardBefore) + "% (> 34%)");
+}
 // Phase 4 gates (plan §7): ≥ 1 visitation per 3 cycles over 4 h; never two in one cycle; the KIRU lives on the landscape cut
 if (visitVocab.maxPer > 1) fails.push("two of a kind in one cycle (two broadcasts, or two guests)");
 if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push("visitations " + visitVocab.total + " < " + Math.floor(cycles.length / 3) + " (one per 3 cycles)");
