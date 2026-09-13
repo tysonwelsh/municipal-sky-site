@@ -50,7 +50,10 @@ ambient one-shots. In priority order:
 5. **The ambient pool grown** with the station sounds Phase 3 promised and
    never built: hull groans, airlock hiss, a numbers-station murmur, distant
    thunder, more of the derelict's own noises; phase- and kind-gated, rarer
-   ones rarer.
+   ones rarer. *Pulled forward 2026-09-13: six candidates are on the Bodies
+   Lab (hull groan, airlock, numbers station, distant thunder, pipe knock,
+   relay chatter), bench-only — none is in the pool until the owner's
+   listen seats it.*
 
 ## Later
 

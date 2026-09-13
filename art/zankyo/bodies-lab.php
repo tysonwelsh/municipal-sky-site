@@ -17,6 +17,7 @@ include '../../includes/header.php';
 <style>
 .zbl { max-width: 900px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; font-family: "JetBrains Mono", ui-monospace, monospace; color: #cfc8d8; }
 .zbl h1 { font-size: 1.4rem; letter-spacing: 0.12em; margin: 0 0 0.3rem; }
+.zbl h2 { font-size: 1rem; letter-spacing: 0.12em; margin: 1.6rem 0 0.2rem; color: #a58cff; }
 .zbl p { color: #8f879c; font-size: 0.85rem; max-width: 66ch; }
 .zbl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.6rem; margin: 1rem 0; }
 .zbl button { font: inherit; font-size: 0.8rem; padding: 0.7rem 0.8rem; background: #1a1620; color: #e6dff0; border: 1px solid #4a3f5a; border-radius: 4px; cursor: pointer; text-align: left; }
@@ -28,6 +29,9 @@ include '../../includes/header.php';
   <h1>残響 · BODIES LAB</h1>
   <p>Each button auditions one body through the real engine graph (rooms, grit bus, master chain) while the station is stopped. Open the console page for the full performance.</p>
   <div class="zbl-grid" id="zbl-buttons"></div>
+  <h2>候補 · CANDIDATES</h2>
+  <p>The station sounds the road map promised (item 5). Heard here only — none is in the night's pool until it is seated, so nothing on the air has changed.</p>
+  <div class="zbl-grid" id="zbl-cands"></div>
   <div class="zbl-log" id="zbl-log">ready — press a body</div>
 </div>
 <script src="../background-audio.js?v=<?php echo zkv('../background-audio.js'); ?>"></script>
@@ -68,6 +72,21 @@ include '../../includes/header.php';
     "Geiger hum": "dying machinery — a sagging drone and thinning clicks"
   };
   (Z.ambientNames ? Z.ambientNames() : []).forEach(function (n) { BODIES.push(["ambient", "環境 " + n, AMBIENT_NOTES[n] || "one-shot", n]); });
+  var CAND_NOTES = {
+    "Hull groan": "the plate under stress — a stick-slip creak sliding down, grinding",
+    "Airlock": "a clunk, the pressure hiss opening and closing, two clicks as it seats",
+    "Numbers station": "a heterodyne whistle, then groups of five read flat through a shortwave band",
+    "Distant thunder": "a low rumble that rolls two or three times and goes",
+    "Pipe knock": "a few taps down the corridor, ringing on a bar's modes",
+    "Relay chatter": "clicks in bursts over a coil's buzz"
+  };
+  var cands = document.getElementById("zbl-cands");
+  (Z.ambientCandidateNames ? Z.ambientCandidateNames() : []).forEach(function (n) {
+    var btn = document.createElement("button");
+    btn.innerHTML = "<b>候補 " + n + "</b>" + (CAND_NOTES[n] || "candidate");
+    btn.addEventListener("click", function () { Z.sample("ambient", n); });
+    cands.appendChild(btn);
+  });
   Z.setEventListener(function (ev) { log.textContent = (ev.label + (ev.detail ? " · " + ev.detail : "")) + "\n" + log.textContent.split("\n").slice(0, 12).join("\n"); });
   BODIES.forEach(function (b) {
     var btn = document.createElement("button");
