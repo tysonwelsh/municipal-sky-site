@@ -3886,6 +3886,8 @@ window.KolobAudio = (function () {
       return { close: roomInfo(roomClose), wide: roomInfo(roomWide), blend: !!roomBlend, balance: roomBalance, held: roomBalanceHeld, depth: depth, sectionBalance: sb };
     },
     setRoom: setRoom,
+    // warm a measured room before it is asked for, so an A/B flip is a crossfade, not a wait
+    preloadRoomIR: function (url) { init(); return (typeof fetch === "function" && url) ? fetchIR(url) : Promise.reject(new Error("no fetch")); },
     setRoomBalance: setRoomBalance,
     setLayerDepth: setLayerDepth,
     attachAnalyser: function () {
