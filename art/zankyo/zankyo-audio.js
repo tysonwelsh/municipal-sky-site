@@ -5219,6 +5219,147 @@ window.ZankyoAudio = (function () {
       }
     }
   }
+  // ---- CANDIDATES (road map §5, 2026-09-13): the station sounds Phase 3 promised ----
+  // Heard ONLY on the Bodies Lab until the owner seats them: none is in
+  // AMBIENT_POOL, so no night draws one and no stream moves. Promotion is one
+  // entry in AMBIENT_POOL with a weight and a row in AMBIENT_KIND_W for the
+  // kinds it belongs to (the road map: phase- and kind-gated, rarer ones
+  // rarer). Every draw is on S.ambient like the pool's own, so a promoted one
+  // is seeded the same way — and on the bench it borrows S.sample like the rest.
+  function ambHullGroan(t) {                        // the hull under stress — a metal stick-slip, sliding down, grinding
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.5), dur = 2.6 + S.ambient.next() * 2.4;
+    var f0 = subRoot() * (1.5 + S.ambient.next() * 1.2);                       // 96–216 Hz: the plate, not the sub
+    var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.Q.setValueAtTime(7, t);
+    lp.frequency.setValueAtTime(f0 * 4, t); lp.frequency.exponentialRampToValueAtTime(f0 * 1.6, t + dur);
+    var creak = c.createGain(); creak.gain.setValueAtTime(0.55, t);           // the stick-slip: an LFO at 5–11 Hz, deeper as it slides
+    var lfo = c.createOscillator(), lg2 = c.createGain(); lfo.type = "triangle"; lfo.frequency.setValueAtTime(5 + S.ambient.next() * 6, t);
+    lfo.frequency.linearRampToValueAtTime(3 + S.ambient.next() * 3, t + dur); lg2.gain.setValueAtTime(0.45, t); lfo.connect(lg2); lg2.connect(creak.gain);
+    var env = c.createGain(); lp.connect(creak); creak.connect(env); env.connect(out);
+    env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(0.06, t + 0.5); env.gain.setValueAtTime(0.06, t + dur * 0.6); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    [-9, 9].forEach(function (det) {
+      var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * 0.82, t + dur); o.detune.setValueAtTime(det, t);
+      o.connect(lp); o.start(t); o.stop(t + dur + 0.1);
+    });
+    if (sharedNoiseBuf) {                            // the grinding: a narrow band of noise riding the same slide
+      var nz = noiseSource(), bp = c.createBiquadFilter(), ng = c.createGain(); bp.type = "bandpass"; bp.Q.setValueAtTime(12, t);
+      bp.frequency.setValueAtTime(f0 * 2.5, t); bp.frequency.exponentialRampToValueAtTime(f0 * 1.9, t + dur);
+      nz.connect(bp); bp.connect(ng); ng.connect(creak); ng.gain.setValueAtTime(0.5, t); nz.start(t, S.ambient.next() * 10); nz.stop(t + dur + 0.1);
+    }
+    lfo.start(t); lfo.stop(t + dur + 0.1);
+  }
+  function ambAirlock(t) {                          // an airlock cycling — the clunk, the pressure hiss opening and closing, the latch
+    if (!sharedNoiseBuf) return;
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.6), dur = 2.4 + S.ambient.next() * 1.6;
+    var th = c.createOscillator(), tg = c.createGain(); th.type = "sine"; th.frequency.setValueAtTime(75, t); th.frequency.exponentialRampToValueAtTime(38, t + 0.16);
+    th.connect(tg); tg.connect(out); tg.gain.setValueAtTime(0.0001, t); tg.gain.exponentialRampToValueAtTime(0.11, t + 0.004); tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    th.start(t); th.stop(t + 0.4);
+    var nz = noiseSource(), lp = c.createBiquadFilter(), g = c.createGain(); lp.type = "lowpass"; lp.Q.setValueAtTime(0.8, t);
+    var t1 = t + 0.12, open = t1 + dur * 0.35, shut = t1 + dur;
+    lp.frequency.setValueAtTime(250, t1); lp.frequency.exponentialRampToValueAtTime(3800, open); lp.frequency.exponentialRampToValueAtTime(500, shut);
+    nz.connect(lp); lp.connect(g); g.connect(out);
+    g.gain.setValueAtTime(0.0001, t1); g.gain.exponentialRampToValueAtTime(0.05, open); g.gain.exponentialRampToValueAtTime(0.0001, shut);
+    nz.start(t1, S.ambient.next() * 10); nz.stop(shut + 0.1);
+    var tt = shut - 0.05;                            // the latch: two metal clicks as it seats
+    for (var i = 0; i < 2; i++) {
+      var cz = noiseSource(), hp = c.createBiquadFilter(), cg = c.createGain(); hp.type = "highpass"; hp.frequency.setValueAtTime(1800, tt);
+      cz.connect(hp); hp.connect(cg); cg.connect(out); cg.gain.setValueAtTime(0.07, tt); cg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.03);
+      cz.start(tt, S.ambient.next() * 10); cz.stop(tt + 0.05); tt += 0.09;
+    }
+  }
+  function ambNumbers(t) {                          // a numbers station, far off — a heterodyne whistle, then groups of five read flat
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.7);
+    var hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), bus = c.createGain();  // the shortwave band
+    hp.type = "highpass"; hp.frequency.setValueAtTime(320, t); lp.type = "lowpass"; lp.frequency.setValueAtTime(2700, t);
+    hp.connect(lp); lp.connect(bus); bus.connect(out); bus.gain.setValueAtTime(1, t);
+    var groups = 2 + Math.floor(S.ambient.next() * 2), tt = t + 0.5, f0 = 190 + S.ambient.next() * 40;   // a woman's voice, one pitch, read flat
+    var VOWELS = [[730, 1090], [270, 2290], [530, 1840], [570, 840], [440, 1020], [660, 1700]];
+    var vox = c.createOscillator(); vox.type = "sawtooth"; vox.frequency.setValueAtTime(f0, t);
+    var vca = c.createGain(); vca.gain.setValueAtTime(0.0001, t);
+    var f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter(); f1.type = "bandpass"; f2.type = "bandpass"; f1.Q.setValueAtTime(9, t); f2.Q.setValueAtTime(11, t);
+    vox.connect(f1); vox.connect(f2); f1.connect(vca); f2.connect(vca); vca.connect(hp);
+    for (var gi = 0; gi < groups; gi++) {
+      for (var d = 0; d < 5; d++) {                  // five digits, the cadence exactly even — that is the tell against the comms vox
+        var v = VOWELS[Math.floor(S.ambient.next() * VOWELS.length)], len = 0.13 + S.ambient.next() * 0.05;
+        f1.frequency.setValueAtTime(v[0], tt); f2.frequency.setValueAtTime(v[1], tt);
+        vox.frequency.setValueAtTime(f0 * (d === 4 ? 0.94 : 1), tt);          // the last digit of a group falls
+        vca.gain.setValueAtTime(0.0001, tt); vca.gain.exponentialRampToValueAtTime(0.045, tt + 0.02); vca.gain.setValueAtTime(0.045, tt + len - 0.03); vca.gain.exponentialRampToValueAtTime(0.0001, tt + len);
+        tt += len + 0.11;
+      }
+      tt += 0.55;
+    }
+    var end = tt + 0.3;
+    vox.start(t); vox.stop(end);
+    var het = c.createOscillator(), hg = c.createGain(); het.type = "sine"; het.frequency.setValueAtTime(1100 + S.ambient.next() * 900, t);   // the carrier's whistle, drifting
+    het.frequency.linearRampToValueAtTime(1100 + S.ambient.next() * 900, end); het.connect(hg); hg.connect(hp);
+    hg.gain.setValueAtTime(0.0001, t); hg.gain.exponentialRampToValueAtTime(0.008, t + 0.4); hg.gain.setValueAtTime(0.008, end - 0.5); hg.gain.exponentialRampToValueAtTime(0.0001, end);
+    het.start(t); het.stop(end + 0.05);
+    if (sharedNoiseBuf) {                            // the band's own hiss under it
+      var nz = noiseSource(), ng = c.createGain(); nz.connect(ng); ng.connect(hp);
+      ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.012, t + 0.4); ng.gain.setValueAtTime(0.012, end - 0.5); ng.gain.exponentialRampToValueAtTime(0.0001, end);
+      nz.start(t, S.ambient.next() * 10); nz.stop(end + 0.05);
+    }
+  }
+  function ambThunder(t) {                          // distant thunder — a rumble that rolls two or three times and goes
+    if (!sharedNoiseBuf) return;
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.8), dur = 3.5 + S.ambient.next() * 3;
+    var nz = noiseSource(), lp = c.createBiquadFilter(), g = c.createGain(); lp.type = "lowpass"; lp.Q.setValueAtTime(1.2, t);
+    lp.frequency.setValueAtTime(90, t); lp.frequency.exponentialRampToValueAtTime(220, t + 0.6); lp.frequency.exponentialRampToValueAtTime(70, t + dur);
+    nz.connect(lp); lp.connect(g); g.connect(out);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.4 + S.ambient.next() * 0.5);
+    var rolls = 2 + Math.floor(S.ambient.next() * 2), tt = t + 0.9, lvl = 0.5;
+    for (var i = 0; i < rolls; i++) {                // each roll: a dip, then a smaller crest
+      var gap = 0.5 + S.ambient.next() * 0.9; lvl *= 0.55 + S.ambient.next() * 0.2;
+      g.gain.exponentialRampToValueAtTime(lvl * 0.35, tt); g.gain.exponentialRampToValueAtTime(lvl, tt + gap * 0.6); tt += gap;
+    }
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    nz.start(t, S.ambient.next() * 10); nz.stop(t + dur + 0.1);
+    var o = c.createOscillator(), og = c.createGain(); o.type = "sine"; o.frequency.setValueAtTime(42, t); o.frequency.exponentialRampToValueAtTime(34, t + dur);   // the weight under it
+    o.connect(og); og.connect(out); og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.07, t + 0.6); og.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.1);
+  }
+  function ambPipeKnock(t) {                        // a pipe knocked somewhere down the corridor — a few taps ringing on bar modes
+    if (!sharedNoiseBuf) return;
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.7);
+    var n = 2 + Math.floor(S.ambient.next() * 4), tt = t, f = 280 + S.ambient.next() * 600;
+    for (var i = 0; i < n; i++) {
+      var nz = noiseSource(), ng = c.createGain(); ng.gain.setValueAtTime(0.9, tt); ng.gain.setValueAtTime(0.0001, tt + 0.006); nz.connect(ng);   // the tap
+      [[1, 0.7, 0.35], [2.76, 0.4, 0.22], [5.4, 0.18, 0.12]].forEach(function (m) {                  // a free bar's modes, each ringing shorter
+        var bp = c.createBiquadFilter(), g = c.createGain(); bp.type = "bandpass"; bp.frequency.setValueAtTime(f * m[0], tt); bp.Q.setValueAtTime(40, tt);
+        ng.connect(bp); bp.connect(g); g.connect(out); g.gain.setValueAtTime(0.09 * m[1], tt); g.gain.exponentialRampToValueAtTime(0.0001, tt + m[2] + S.ambient.next() * 0.4);
+      });
+      nz.start(tt, S.ambient.next() * 10); nz.stop(tt + 0.02);
+      tt += 0.14 + S.ambient.next() * 0.5;
+    }
+  }
+  function ambRelay(t) {                            // a relay bank chattering — clicks in bursts over a mains buzz
+    if (!sharedNoiseBuf) return;
+    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.6);
+    var bursts = 2 + Math.floor(S.ambient.next() * 3), tt = t + 0.05;
+    for (var b = 0; b < bursts; b++) {
+      var k = 2 + Math.floor(S.ambient.next() * 4);
+      for (var i = 0; i < k; i++) {
+        var nz = noiseSource(), hp = c.createBiquadFilter(), g = c.createGain(); hp.type = "highpass"; hp.frequency.setValueAtTime(2200, tt);
+        nz.connect(hp); hp.connect(g); g.connect(out); g.gain.setValueAtTime(0.06, tt); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.012);
+        nz.start(tt, S.ambient.next() * 10); nz.stop(tt + 0.02);
+        var o = c.createOscillator(), og = c.createGain(); o.type = "sine"; o.frequency.setValueAtTime(2800 + S.ambient.next() * 2500, tt);   // the armature's ring
+        o.connect(og); og.connect(out); og.gain.setValueAtTime(0.02, tt); og.gain.exponentialRampToValueAtTime(0.0001, tt + 0.02); o.start(tt); o.stop(tt + 0.03);
+        tt += 0.035 + S.ambient.next() * 0.07;
+      }
+      tt += 0.15 + S.ambient.next() * 0.35;
+    }
+    var hum = c.createOscillator(), hl = c.createBiquadFilter(), hg = c.createGain(); hum.type = "sawtooth"; hum.frequency.setValueAtTime(100, t);   // the coil's buzz while it works
+    hl.type = "lowpass"; hl.frequency.setValueAtTime(420, t); hum.connect(hl); hl.connect(hg); hg.connect(out);
+    hg.gain.setValueAtTime(0.0001, t); hg.gain.exponentialRampToValueAtTime(0.012, t + 0.05); hg.gain.setValueAtTime(0.012, tt - 0.1); hg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.1);
+    hum.start(t); hum.stop(tt + 0.15);
+  }
+  var AMBIENT_CANDIDATES = [
+    { fn: ambHullGroan, name: "Hull groan" },
+    { fn: ambAirlock,   name: "Airlock" },
+    { fn: ambNumbers,   name: "Numbers station" },
+    { fn: ambThunder,   name: "Distant thunder" },
+    { fn: ambPipeKnock, name: "Pipe knock" },
+    { fn: ambRelay,     name: "Relay chatter" },
+  ];
   var AMBIENT_POOL = [
     { fn: ambBonsho,       w: 4, name: "Temple bell" },
     { fn: ambFurin,        w: 4, name: "Wind chime" },
@@ -5691,7 +5832,7 @@ window.ZankyoAudio = (function () {
         // the draw is taken whether or not a name is given, so a named
         // audition (the bench) leaves the sample stream where a blind one would
         var e = AMBIENT_POOL[Math.floor(S.sample.next() * AMBIENT_POOL.length)];
-        if (variant) for (var ai = 0; ai < AMBIENT_POOL.length; ai++) if (AMBIENT_POOL[ai].name === variant) { e = AMBIENT_POOL[ai]; break; }
+        if (variant) { var apool = AMBIENT_POOL.concat(AMBIENT_CANDIDATES); for (var ai = 0; ai < apool.length; ai++) if (apool[ai].name === variant) { e = apool[ai]; break; } }
         try { e.fn(t); } catch (x) {} break;
       case "broadcast": if (signalProvider && signalProvider.sample) { try { signalProvider.sample(t); } catch (x2) {} } break;
     }
@@ -5728,6 +5869,7 @@ window.ZankyoAudio = (function () {
     // the ambient pool's names, in pool order — the bench builds one button per
     // entry from this so a new one-shot gets a button without editing the lab
     ambientNames: function () { return AMBIENT_POOL.map(function (e) { return e.name; }); },
+    ambientCandidateNames: function () { return AMBIENT_CANDIDATES.map(function (e) { return e.name; }); },   // bench-only until the owner seats them
     // 選局 TUNE (S2): playing → ask the receiver to seat a signal at the next legal moment (one per cycle); stopped → the layer's ♪ tune-in
     tune: function () { if (!signalProvider) return false; if (playing) return !!(signalProvider.scan && signalProvider.scan()); sample("broadcast"); return true; },
     // 掃引 THE TUNING DIAL (plan §7). The page hands over how hard the hand is
