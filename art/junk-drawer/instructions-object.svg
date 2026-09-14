@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 460">
   <defs>
     <radialGradient id="ins_stain1" cx="0.5" cy="0.5" r="0.5">
       <stop offset="0" stop-color="#c9a86a" stop-opacity="0.14"/>
@@ -11,11 +11,15 @@
       <stop offset="1" stop-color="#e9dcb4"/>
     </linearGradient>
   </defs>
-  <path d="M5.0 5.6 L14.1 6.5 L23.1 6.9 L32.2 3.0 L41.3 4.8 L50.3 4.3 L59.4 5.1 L68.4 6.0 L77.5 4.3 L86.6 5.2 L95.6 4.2 L104.7 4.8 L113.8 4.0 L122.8 6.1 L131.9 7.7 L140.9 7.8 L150.0 4.8 L159.1 7.8 L168.1 5.3 L177.2 5.6 L186.2 8.5 L195.3 4.8 L204.4 8.8 L213.5 4.5 L222.5 4.7 L231.6 8.0 L240.6 5.4 L249.7 5.5 L258.7 8.7 L267.8 5.9 L276.9 8.8 L286.0 4.8 L296.0 7.0 L297.5 16.0 L292.6 25.0 L294.0 34.1 L295.5 43.1 L295.4 52.1 L293.2 61.1 L296.9 70.2 L296.6 79.2 L293.8 88.2 L292.9 97.2 L295.6 106.3 L294.2 115.3 L295.5 124.3 L294.6 133.3 L294.1 142.3 L292.1 151.4 L292.7 160.4 L294.4 169.4 L295.7 178.4 L294.1 187.5 L295.8 196.5 L294.7 205.5 L296.4 214.5 L295.2 223.6 L293.5 232.6 L292.5 241.6 L292.1 250.6 L292.0 259.6 L296.2 268.7 L296.3 277.7 L295.6 286.7 L292.2 295.7 L295.1 304.8 L292.3 313.8 L296.2 322.8 L295.0 331.8 L295.4 340.9 L294.7 349.9 L293.7 358.9 L295.9 367.9 L296.4 377.0 L292.7 386.0 L294.0 394.7 L285.0 396.2 L276.0 395.8 L267.0 394.3 L258.0 394.5 L249.0 397.1 L240.0 393.5 L231.0 393.1 L222.0 395.5 L213.0 393.3 L204.0 396.4 L195.0 393.4 L186.0 396.5 L177.0 393.6 L168.0 396.1 L159.0 395.4 L150.0 395.2 L141.0 392.5 L132.0 392.1 L123.0 391.4 L114.0 392.1 L105.0 394.6 L96.0 391.4 L87.0 392.2 L78.0 393.8 L69.0 391.6 L60.0 392.5 L51.0 391.9 L42.0 394.2 L33.0 391.2 L24.0 395.7 L15.0 393.6 L4.9 393.0 L5.7 384.0 L6.0 375.0 L3.5 365.9 L3.9 356.9 L4.2 347.9 L8.3 338.9 L5.4 329.8 L3.5 320.8 L5.1 311.8 L5.7 302.8 L5.0 293.7 L7.4 284.7 L4.5 275.7 L4.2 266.7 L7.9 257.6 L5.6 248.6 L5.1 239.6 L6.4 230.6 L4.6 221.6 L3.3 212.5 L3.4 203.5 L6.5 194.5 L7.3 185.5 L3.6 176.4 L4.8 167.4 L3.7 158.4 L3.5 149.4 L6.5 140.3 L4.9 131.3 L6.3 122.3 L3.7 113.3 L4.3 104.3 L6.6 95.2 L5.2 86.2 L4.7 77.2 L6.6 68.2 L6.8 59.1 L5.3 50.1 L7.3 41.1 L5.1 32.1 L2.8 23.1 L3.3 14.0 Z" fill="url(#ins_paper)" stroke="#b9a678" stroke-width="1"/>
-  <ellipse cx="238" cy="70" rx="72" ry="52" fill="url(#ins_stain1)"/>
-  <ellipse cx="72" cy="342" rx="88" ry="60" fill="url(#ins_stain1)"/>
-  <text x="146.0" y="60" text-anchor="middle" font-family="'Courier Prime','Courier New',Courier,monospace"
-    font-size="27" font-weight="700" letter-spacing="3"
+  <!-- torn-edge outline: the original 300x400 hand-torn silhouette, scaled
+       1.1x/1.15x (owner ask, 2026-09-14 — wider and a bit taller so the
+       five-step rewrite reads at a comfortable size) rather than redrawn;
+       the jaggedness scales with the sheet so its texture stays consistent. -->
+  <path d="M5.5 6.4 L15.5 7.5 L25.4 7.9 L35.4 3.4 L45.4 5.5 L55.3 4.9 L65.3 5.9 L75.2 6.9 L85.2 4.9 L95.3 6.0 L105.2 4.8 L115.2 5.5 L125.2 4.6 L135.1 7.0 L145.1 8.9 L155.0 9.0 L165.0 5.5 L175.0 9.0 L184.9 6.1 L194.9 6.4 L204.8 9.8 L214.8 5.5 L224.8 10.1 L234.9 5.2 L244.8 5.4 L254.8 9.2 L264.7 6.2 L274.7 6.3 L284.6 10.0 L294.6 6.8 L304.6 10.1 L314.6 5.5 L325.6 8.0 L327.2 18.4 L321.9 28.7 L323.4 39.2 L325.1 49.6 L324.9 59.9 L322.5 70.3 L326.6 80.7 L326.3 91.1 L323.2 101.4 L322.2 111.8 L325.2 122.2 L323.6 132.6 L325.1 142.9 L324.1 153.3 L323.5 163.6 L321.3 174.1 L322.0 184.5 L323.8 194.8 L325.3 205.2 L323.5 215.6 L325.4 226.0 L324.2 236.3 L326.0 246.7 L324.7 257.1 L322.9 267.5 L321.8 277.8 L321.3 288.2 L321.2 298.5 L325.8 309.0 L325.9 319.4 L325.2 329.7 L321.4 340.1 L324.6 350.5 L321.5 360.9 L325.8 371.2 L324.5 381.6 L324.9 392.0 L324.2 402.4 L323.1 412.7 L325.5 423.1 L326.0 433.5 L322.0 443.9 L323.4 453.9 L313.5 455.6 L303.6 455.2 L293.7 453.4 L283.8 453.7 L273.9 456.7 L264.0 452.5 L254.1 452.1 L244.2 454.8 L234.3 452.3 L224.4 455.9 L214.5 452.4 L204.6 456.0 L194.7 452.6 L184.8 455.5 L174.9 454.7 L165.0 454.5 L155.1 451.4 L145.2 450.9 L135.3 450.1 L125.4 450.9 L115.5 453.8 L105.6 450.1 L95.7 451.0 L85.8 452.9 L75.9 450.3 L66.0 451.4 L56.1 450.7 L46.2 453.3 L36.3 449.9 L26.4 455.1 L16.5 452.6 L5.4 451.9 L6.3 441.6 L6.6 431.2 L3.9 420.8 L4.3 410.4 L4.6 400.1 L9.1 389.7 L5.9 379.3 L3.9 368.9 L5.6 358.6 L6.3 348.2 L5.5 337.8 L8.1 327.4 L5.0 317.1 L4.6 306.7 L8.7 296.2 L6.2 285.9 L5.6 275.5 L7.0 265.2 L5.1 254.8 L3.6 244.4 L3.7 234.0 L7.2 223.7 L8.0 213.3 L4.0 202.9 L5.3 192.5 L4.1 182.2 L3.9 171.8 L7.2 161.3 L5.4 151.0 L6.9 140.6 L4.1 130.3 L4.7 119.9 L7.3 109.5 L5.7 99.1 L5.2 88.8 L7.3 78.4 L7.5 68.0 L5.8 57.6 L8.0 47.3 L5.6 36.9 L3.1 26.6 L3.6 16.1 Z" fill="url(#ins_paper)" stroke="#b9a678" stroke-width="1"/>
+  <ellipse cx="261.8" cy="80.5" rx="79.2" ry="59.8" fill="url(#ins_stain1)"/>
+  <ellipse cx="79.2" cy="393.3" rx="96.8" ry="69.0" fill="url(#ins_stain1)"/>
+  <text x="160.6" y="69.0" text-anchor="middle" font-family="'Courier Prime','Courier New',Courier,monospace"
+    font-size="30" font-weight="700" letter-spacing="3"
     fill="#33240f">INSTRUCTIONS</text>
   <!-- the close mark (owner, 2026-09-10): a press here takes the sheet out
        of the drawer until the next load. The group is the hit target —
@@ -24,22 +28,22 @@
        (pointer-events: visiblePainted) catches the whole button, not just
        the two strokes. -->
   <g class="ins-close">
-    <circle cx="271" cy="29" r="12.5" fill="#e6d8ad" stroke="#33240f" stroke-width="1.5"/>
-    <path d="M265.5 23.5 L276.5 34.5 M276.5 23.5 L265.5 34.5" fill="none" stroke="#33240f" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="298.1" cy="33.3" r="14.1" fill="#e6d8ad" stroke="#33240f" stroke-width="1.5"/>
+    <path d="M292.1 27.0 L304.2 39.7 M304.2 27.0 L292.1 39.7" fill="none" stroke="#33240f" stroke-width="2.2" stroke-linecap="round"/>
   </g>
-  <line x1="34" y1="78" x2="266" y2="78" stroke="#33240f" stroke-width="1.6"/>
-  <line x1="34" y1="82" x2="266" y2="82" stroke="#33240f" stroke-width="0.7"/>
-<text x="30" y="124" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">1.  feel free to dig around and</text>
-<text x="30" y="142" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    look at stuff. click an item</text>
-<text x="30" y="160" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    for a closer look.</text>
-<text x="30" y="189" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">2.  press the big blue button</text>
-<text x="30" y="207" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    and help yourself if you</text>
-<text x="30" y="225" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    want something new.</text>
-<text x="30" y="254" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">3.  each prompt returns four</text>
-<text x="30" y="272" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    drawing from different large</text>
-<text x="30" y="290" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    language models.</text>
-<text x="30" y="319" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">4.  you're not done until you</text>
-<text x="30" y="337" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    leave a grade and rank them!</text>
-<text x="30" y="366" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">5.  and it's all free of charge</text>
-<text x="30" y="384" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="13" fill="#3a2a12" xml:space="preserve">    (you are the product!)</text>
+  <line x1="37.4" y1="89.7" x2="292.6" y2="89.7" stroke="#33240f" stroke-width="1.6"/>
+  <line x1="37.4" y1="94.3" x2="292.6" y2="94.3" stroke="#33240f" stroke-width="0.7"/>
+<text x="30" y="132" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">1.  feel free to dig around and</text>
+<text x="30" y="151" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    look at stuff. click an item</text>
+<text x="30" y="170" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    for a closer look.</text>
+<text x="30" y="200" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">2.  press the big blue button</text>
+<text x="30" y="219" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    and help yourself if you</text>
+<text x="30" y="238" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    want something new.</text>
+<text x="30" y="268" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">3.  each prompt returns four</text>
+<text x="30" y="287" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    drawing from different large</text>
+<text x="30" y="306" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    language models.</text>
+<text x="30" y="336" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">4.  you're not done until you</text>
+<text x="30" y="355" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    leave a grade and rank them!</text>
+<text x="30" y="385" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">5.  and it's all free of charge</text>
+<text x="30" y="404" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    (you are the product!)</text>
 </svg>
