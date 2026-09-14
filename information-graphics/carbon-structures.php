@@ -124,11 +124,10 @@ include '../includes/header.php';
           visualizations, and I worked with Claude Code to give them a D3 makeover. To be honest, I don't fully
           understand the science behind these data, but saw the project more as an exercise in data storytelling.
           My goal was to make something beautiful and interesting to interact with. However, along the way we did
-          end up making something genuinely useful that adds value beyond what Kamil's existing tools could do.
-          Those tools could tell him how many rings of each size a structure contained, but not where those rings
-          sit. Here you can click a ring size and watch every ring of that size light up in place, or click a
-          single atom and see every ring that passes through it. That, Kamil told me, was genuinely new information
-          for him.</p>
+          end up making something genuinely useful that adds value beyond Kamil's previous dashboards. Those could
+          show the count of rings of each size in a structure, but not their position. Here you can click a ring
+          size and watch every ring of that size light up in place, or click a single atom and see every ring that
+          passes through it.</p>
         <p>I'm sharing this as a portfolio piece about data storytelling rather than physics. The science is
           entirely Kamil's. His paper with Gábor Csányi and Michele Simoncelli, <em>Bond-network entropy governs
           heat transport in coordination-disordered solids</em>, is in
