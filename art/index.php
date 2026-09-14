@@ -28,7 +28,7 @@ include '../includes/header.php';
                         <span class="entry-description">A neverending torrent of meaningless
                             characters from seventy-three writing systems. An art piece expressing
                             anxiety about how LLMs will transform our relationship to the written
-                            word.</span>
+                            word or something like that.</span>
                     </div>
                 </div>
                 <div class="entry">
