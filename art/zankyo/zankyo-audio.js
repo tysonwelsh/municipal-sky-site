@@ -1174,7 +1174,13 @@ window.ZankyoAudio = (function () {
   var farWarpK = 1;                              // 撓 the octave, as an exponent on the ratio to the tonic
   var farEar = null, farBito = null, farBitoField = null;
   var farSpiral = null, farVari = null, farT0 = 0;
-  var bcGapChecked = false;   // the receiver-spacing assertion runs once per load
+  // THE SPACING CONTRACT, STILL CHECKED — but it is a different contract now.
+  // BC_GAP_S is gone; what the two files must agree about is that the RECEIVER
+  // never plans a reception longer than the placement reserved for it, and that
+  // the arm lead still clears the bodies' lookahead. Both are asserted once per
+  // load against the receiver's own exported numbers, so neither can go stale
+  // the way the old "29.2" did.
+  var bcGapChecked = false;   // the receiver-contract assertion runs once per load
   // 撓 — one monotone map about the tonic. Every interval scales by the same
   // exponent, so the field stays perfectly consistent with itself: nothing is
   // "out of tune", the whole world is somewhere else. Invertible, which is
@@ -2423,7 +2429,21 @@ window.ZankyoAudio = (function () {
   var airHold = {}, airHoldDenials = 0;
   function airHoldAdd(layer, from, until, who) {
     var a = airHold[layer] || (airHold[layer] = []);
-    for (var i = a.length - 1; i >= 0; i--) if (a[i].until < from - 30) a.splice(i, 1);   // long expired
+    // PRUNE AGAINST THE CLOCK, NOT AGAINST THE NEW ENTRY'S `from`. The list is
+    // trimmed of holds that have long passed, and "long passed" used to be
+    // measured from the hold being written — which was the same thing as now
+    // while a hold was written at the moment it began. It is not: a reception
+    // ARMS 55 s ahead of itself, so a hold written at 1887 for a signal at 1942
+    // would delete every hold ending before 1906, INCLUDING THE ONE ON THE AIR
+    // AT 1889. Measured exactly that way: six melodic notes five seconds inside
+    // a live broadcast on seed 3042, with the hold correct and simply gone.
+    //
+    // This is the global airHoldClear() defect in a new costume, and it is the
+    // reason the fix for that one had to come with this line. The audio clock
+    // is the only honest "now"; where there is no context (a construction-time
+    // call) fall back to the entry's own start.
+    var nowT = ctx ? ctx.currentTime : from;
+    for (var i = a.length - 1; i >= 0; i--) if (a[i].until < nowT - 30) a.splice(i, 1);   // long expired
     a.push({ from: from, until: until, who: who || "?" });
   }
   function airHoldDrop(who) {
@@ -2440,12 +2460,45 @@ window.ZankyoAudio = (function () {
   // reintroduced. It showed immediately: seed 7 put an 11.2 s hichiriki note
   // 3.5 s inside a hold on the first measured run.
   //
-  // 55 s clears the 46 s lookahead. The minimum spacing between two broadcasts
-  // must then clear lead + footprint — 55 + 29.2 = 84.2 — so BC_GAP_S is 95,
-  // and the receiver's single armed slot is never asked to hold two at once.
-  // The two constants are related and the relation is written here because
-  // changing one alone silently breaks the other.
+  // 55 s clears the 46 s lookahead, and that is the whole of what this constant
+  // has to do now. It used to carry a second job: the spacing between two
+  // broadcasts had to clear lead + footprint, because the receiver had ONE
+  // armed slot and the next arm cleared the live one's hold. Both of those are
+  // gone (PLAN-SIGNAL-SHAPES §4.2 — a queue, a pair of elements, per-reception
+  // holds), so the spacing is the drawn quiet in BC_SIL_* and nothing here
+  // constrains it. What must still hold is armLead > max(body lookahead), and
+  // the harness asserts exactly that ("commit lead").
   var BC_JO_P = 0.20;                            // one broadcast in five opens a cycle — the same in every kind
+  // §4.1 HOW OFTEN, AND HOW LONG THE QUIET IS (PLAN-SIGNAL-SHAPES.md §3.6).
+  // The owner asked for signals about 75 % more frequent than today and
+  // accepted the spacing cost. Two constants carry it, and both are
+  // listener-facing — move one value and it means the same thing on every
+  // night:
+  //   BC_PER_S     one reception per this much LEGAL time in the cycle, so the
+  //                count follows the cycle's length instead of being 1 or 2.
+  //                Tuned against the harness's SIGNALS PER HOUR, not per cycle:
+  //                cycles run five to ten minutes, so per-cycle is not the
+  //                quantity the owner hears. MEASURED at 3600 s over six seeds:
+  //                rc.68 seats 88 signals, and 1.75× that is 154. BC_PER_S 96
+  //                gives 122, 66 gives 140, 44 gives 152. What SATURATES is not
+  //                this constant — it is the drawn quiet below: at today's reel
+  //                lengths a reception spans about 13 s and the quiet averages
+  //                52 s, so the period is ~71 s however many the seating asks
+  //                for. So the seating asks for MORE than the cycle can hold
+  //                and the drawn quiet decides, which is also the irregularity
+  //                the owner described (§3.4). BC_MAX_PER_CYCLE is a rail, not
+  //                a target. When the reels are re-cut (§5) receptions get
+  //                longer, the period grows and this constant starts binding
+  //                again — it is the knob to move then, and the harness's
+  //                signals-per-hour line is what to move it against.
+  //   BC_SIL_*     the quiet between the DEAD TUBE of one reception and the
+  //                static rise of the next, drawn per reception. It replaces
+  //                BC_GAP_S, which was one number sized for a 12 s hold.
+  var BC_PER_S = 44, BC_MAX_PER_CYCLE = 8;
+  var BC_EDGE_S = 8;                             // a reception keeps this clear of a scene's two edges
+  var BC_SIL_MIN_S = 15, BC_SIL_SPAN_S = 75;     // 15–90 s, drawn
+  var BC_KIRU_CLEAR_S = 20;                      // a reception stays this far from the cut on both sides
+  var BC_GUEST_S = 90;                           // …and this far from a guest
   var bcPlace = {};                              // dev: where the drawn broadcasts landed, by scene type
   // dev: WHY a seating attempt fell through, per group per reason. The critic
   // reads these: a per-kind jo share alone supports a story either way, and a
@@ -2502,9 +2555,18 @@ window.ZankyoAudio = (function () {
   // whenever the station was merely stuck.
   function signalUp(t) {
     for (var k in airHold) { var a = airHold[k] || [];
-      for (var i = 0; i < a.length; i++) if (a[i].who === "signal" && t >= a[i].from && t < a[i].until) return true; }
+      for (var i = 0; i < a.length; i++) if (isSignalWho(a[i].who) && t >= a[i].from && t < a[i].until) return true; }
     return false;
   }
+  // A RECEPTION'S HOLD IS NAMED AFTER THE RECEPTION (PLAN-SIGNAL-SHAPES §4.2):
+  // "signal:<cycle>:<n>", not the bare "signal" it was while there could only
+  // ever be one. This test is the reason that rename is not free — an exact
+  // comparison here silently answered NO for every broadcast, and every body
+  // that asks signalUp() before it plays (the koto's sweep, the shamisen, the
+  // taiko's kakegoe, the PA, 崩's groove, 鏡's answer) would have played
+  // straight over the signal. Measured when it happened: ten melodic notes
+  // inside a hold on seed 3042 over an hour, where there had been none.
+  function isSignalWho(w) { return w === "signal" || (typeof w === "string" && w.lastIndexOf("signal:", 0) === 0); }
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null, visit2: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -2673,68 +2735,46 @@ window.ZankyoAudio = (function () {
     // scene list above, the KIRU's position at the kyū→release joint, and the
     // guest's seat. Nothing that can collide with a broadcast is drawn later.
     var LEGAL = { jo: 1, ha: 1, kakeai: 1, solo: 1 };
-    // BC_GAP_S vs the receiver's footprint — RE-DERIVED at rc.54, because the
-    // old note ("95 > 55 + 29.2") compared the wrong two things and now
-    // understates the risk by ten seconds.
+    // ======================================================================
+    // 受信の席 THE SEATING, REWRITTEN AROUND FOOTPRINTS (PLAN-SIGNAL-SHAPES §4.1)
+    // ======================================================================
+    // WHAT WENT: BC_GAP_S. A single 95 s spacing, sized for a 12 s hold and for
+    // one fact that is no longer true — the next broadcast's arm called
+    // airHoldClear() and dropped the live one's hold, so a broadcast owned
+    // exactly BC_GAP_S − BC_ARM_LEAD_S = 40 s past its t0 whatever it was
+    // doing. Holds are per reception now (zk-broadcast.js §4.2), the receiver
+    // keeps a queue and a pair of media elements, and the spacing that is left
+    // is the one the listener actually hears: the quiet between the dead tube
+    // and the next station's static, drawn per reception at 15–90 s.
     //
-    // 29.2 was the planned hold's total SPAN, t0−6 to t0+23.2 (HOLD_LEAD_S 6 +
-    // TUNE_S 0.4 + holdS 12 + lossD 2.8 + 2 + rel 6). But the quantity that
-    // matters is the REACH PAST t0, because what a hold has to survive is the
-    // NEXT broadcast's arm calling airHoldClear() — and that lands
-    // BC_GAP_S − BC_ARM_LEAD_S = 40 s after this t0, no matter what happened
-    // before it. The six seconds of lead-in are on the wrong side of t0 to
-    // count.
+    // WHAT ARRIVED: every reception draws its SHAPE here, before it is seated —
+    // the on-air budget from §2's table, the body, the entry, the exit, the
+    // gaps between its pieces and the holes inside them — so its span is an
+    // exact number and not a ceiling. The receiver refines it at arm (which
+    // reel, which window, where the pieces fall) and may shrink it, never grow
+    // it, so a seat that fits here fits there.
     //
-    //   reach past t0 = TUNE_S + holdS + lossD + 2 + max(rel)
-    //   before §14 (holdS ≤ 12):   0.4 + 12   + 2.8 + 2 + 6 = 23.2  → 16.8 s spare
-    //   with  §14 (holdS ≤ 27.8):  0.4 + 27.8 + 2.8 + 2 + 6 = 39.0  →  1.0 s spare
+    // HOW MANY: round(legalS / BC_PER_S), clamped to 1–BC_MAX_PER_CYCLE. The
+    // cycle's length then decides, which it never did before — a ten-minute
+    // cycle used to get the same two broadcasts as a five-minute one.
     //
-    // So this still holds, and it is now within a second of binding. lossD and
-    // rel are strict upper bounds (mulberry32 returns [0,1)), so 39.0 is a real
-    // ceiling and not a typical value. ANYONE RAISING WHOLE_MAX_HOLD_S IN
-    // zk-broadcast.js MUST RAISE BC_GAP_S HERE IN THE SAME COMMIT — the two
-    // numbers are one decision living in two files, which is why they are
-    // written out here rather than left to be re-derived.
-    var BC_GAP_S = 95, BC_EDGE_S = 8;
-    // …AND CHECKED, not just described. The receiver computes its own reach
-    // from its own constants (ZankyoBroadcast.limits()), so this cannot go
-    // stale the way the old "29.2" did: widen a window, raise the whole-hold
-    // ceiling or retune the loss ramp and this says so on the first cycle
-    // instead of on the night the owner hears a hold vanish mid-broadcast.
-    if (!bcGapChecked) {
-      bcGapChecked = true;
-      try {
-        var lim = window.ZankyoBroadcast && window.ZankyoBroadcast.limits && window.ZankyoBroadcast.limits();
-        // THE ORDINARY reach is what this global gap has to cover. A whole
-        // thought's reach is no longer bounded by it: the spacing is
-        // footprint-dependent now (orchestrator, 2026-09-09), so a 42 s hold is
-        // simply refused by the receiver wherever the room is not there and
-        // BC_GAP_S is left alone — which is what keeps W4's 1.69 broadcasts a
-        // cycle intact on every night that plays no whole reel.
-        if (lim && lim.ordinaryReachPastT0S > BC_GAP_S - BC_ARM_LEAD_S) {
-          if (typeof console !== "undefined" && console.error) {
-            console.error("ZANKYŌ: an ORDINARY hold can reach " + lim.ordinaryReachPastT0S.toFixed(1) +
-              " s past t0, but a broadcast only owns BC_GAP_S − BC_ARM_LEAD_S = " + (BC_GAP_S - BC_ARM_LEAD_S) +
-              " s before the NEXT arm calls airHoldClear(). A live broadcast's hold would be dropped and melodic " +
-              "notes could land inside it (§12). Raise BC_GAP_S here, or lower the ordinary hold draw in zk-broadcast.js. " +
-              "(Whole thoughts are NOT covered by this: they are checked per position at arm by fitsRoom.)");
-          }
-        }
-      } catch (e) {}
-    }
+    // WHAT IS UNCHANGED: P(jo) = 0.20 is still the constant and still drawn
+    // once per broadcast outside the retry (drawing it inside re-weights toward
+    // whichever group is far from what is already placed — measured, 0.22 to
+    // 0.45). Overflow to the other group is still the last resort. The
+    // systematic scan at BC_SCAN_S is still exhaustive rather than sampled. The
+    // KIRU is now excluded HERE as well as refused at arm: a footprint that can
+    // run 90 s is far too likely to reach the cut for the receiver's refusal to
+    // be the only guard, and every refusal is a broadcast the owner does not
+    // hear.
     var BC_SCAN_S = 2;                  // resolution of the systematic in-scene search;
                                         // 0.5 s was measured and changed nothing at all —
-                                        // the search is exhaustive, the blocks are geometric                  // resolution of the systematic in-scene search
+                                        // the search is exhaustive, the blocks are geometric
     // A BROADCAST CANNOT SIT CLOSER TO THE CYCLE START THAN THE RECEIVER NEEDS
     // TO ARM. arm() was scheduled at Math.max(t0c + 0.05, at - BC_ARM_LEAD_S) —
     // clamped, not rejected — so an early broadcast armed with whatever lead
-    // was left, and §12's whole argument is max(commitLead) < armLead. Measured
-    // on 40 seeds at 1 h, that inequality FAILED on 4 of them before this
-    // change (worst -3.58 s) and on 8 (worst -12.01 s) once overflow began
-    // seating more broadcasts in the jo, where positions are earliest. No note
-    // ever actually landed inside a hold, so the outcome gate stayed green
-    // throughout: the guarantee was already broken and passing on luck.
-    // Making the first BC_ARM_LEAD_S of a cycle illegal restores the lead by
+    // was left, and §12's whole argument is max(commitLead) < armLead. Making
+    // the first BC_ARM_LEAD_S of a cycle illegal restores the lead by
     // construction, so the clamp can never engage.
     var legal = [], acc = 0, li;
     for (li = 0; li < scenes.length; li++) {
@@ -2746,22 +2786,11 @@ window.ZankyoAudio = (function () {
       acc += sc0.durS;
     }
     // THE SCENE IS DRAWN FIRST, THEN THE POSITION IN IT (orchestrator's ruling
-    // on the jo share; the critic's on how to implement it, and the second half
-    // matters as much as the first).
-    //
-    // Drawing uniformly over legal SECONDS put most broadcasts in the jo
-    // because the jo is simply the longest scene — measured on this build,
-    // 0.69 / 0.38 / 0.45 across three seeds. Weighting jo seconds down would
-    // fix the average and nothing else: the jo's share of legal time runs from
-    // 28.6 % on a storm to 66.3 % on a rite, so one global weight tuned to the
-    // average gives 8.3 % on a storm and 30.7 % on a rite. Right on average and
-    // wrong in every kind, and nobody would have chosen that.
-    //
-    // So P(jo) is the constant, not a weight on it: one broadcast in five opens
-    // a cycle, in EVERY kind, and the listener-facing number is the number in
-    // the code rather than something that emerges from six duration tables.
-    // The owner moves one value after listening and it means the same thing on
-    // every night.
+    // on the jo share; the critic's on how to implement it). Drawing uniformly
+    // over legal SECONDS put most broadcasts in the jo because the jo is simply
+    // the longest scene; weighting jo seconds down would be right on average
+    // and wrong in every kind, because the jo's share of legal time runs from
+    // 28.6 % on a storm to 66.3 % on a rite. So P(jo) is the constant.
     var legalS = 0, joSegs = [], otherSegs = [], joS = 0, otherS = 0;
     for (li = 0; li < legal.length; li++) {
       var wlen = legal[li][1] - legal[li][0];
@@ -2774,138 +2803,131 @@ window.ZankyoAudio = (function () {
       guestT = 0; for (li = 0; li < visit.sceneIdx; li++) guestT += scenes[li].durS;
       guestT += 16;                                  // the guest fires 8–25 s into its scene; take the middle
     }
+    // THE KIRU falls on the kyū→release seam, so its offset is the sum of the
+    // scene durations up to and including the kyū. 未斬 can cancel it on a far
+    // night, which cannot be known here, so the deadline assumes it comes — the
+    // conservative direction.
+    var kiruOff = null, kAcc = 0;
+    for (li = 0; li < scenes.length; li++) { kAcc += scenes[li].durS; if (scenes[li].type === "kyu" && scenes[li + 1] && scenes[li + 1].type === "release") { kiruOff = kAcc; break; } }
     // The draw is on the form stream's own per-cycle fork, so however many
     // times it is taken it cannot move anything else in the plan.
     var BR = rng.fork("bc:" + Math.max(0, cyc.n + 1));
-    var want = legalS >= 180 ? 2 : 1, picks = [], tries;
+    // THE SHAPE IS DRAWN BY THE RECEIVER'S OWN TABLE, from numbers taken here.
+    // §3.6's weights live in ONE block in zk-broadcast.js and this file never
+    // holds a copy of them. A fixed count of numbers is taken per broadcast
+    // whether or not it is ever seated, so a refusal cannot shift the night;
+    // and if the receiver is not loaded at all, the fallback is today's clip,
+    // which is what the station sounded like before this plan.
+    var BX = (typeof window !== "undefined" && window.ZankyoBroadcast) || null;
+    var SHAPE_N = (BX && BX.SHAPE_DRAWS) || 9;
+    function drawShapeHere() {
+      var r = [], i;
+      for (i = 0; i < SHAPE_N; i++) r.push(BR.next());
+      var silS = BC_SIL_MIN_S + BR.next() * BC_SIL_SPAN_S;
+      var sh;
+      if (BX && BX.drawShape) { try { sh = BX.drawShape(r); } catch (e) { sh = null; } }
+      if (!sh) sh = { budgetS: 10, body: "jou", entry: "soku", exit: "setsu", entryS: 0.4, exitS: 2.2,
+                      gaps: [], holes: [], pieces: 1, lockS: 0, spanS: 12.6, leadS: 4, holdLeadS: 6, tailS: 2.34, reachS: 20.6 };
+      sh.silS = silS;
+      return sh;
+    }
+    var want = Math.max(1, Math.min(BC_MAX_PER_CYCLE, Math.round(legalS / BC_PER_S)));
+    var picks = [], shapes = [];
+    // Does a reception of shape `sh` fit at offset x, given what is already
+    // placed? Everything the receiver will check at arm is checked here too,
+    // because a refusal at arm is a broadcast the owner does not hear.
+    function seats(x, sh) {
+      if (x + sh.reachS > durS - 1) return "room";                       // the hold must close inside the cycle
+      if (guestT != null && Math.abs(x - guestT) < BC_GUEST_S) return "guest";
+      if (kiruOff != null && !(x + sh.spanS + BC_KIRU_CLEAR_S < kiruOff || x - BC_KIRU_CLEAR_S > kiruOff)) return "kiru";
+      for (var qi = 0; qi < picks.length; qi++) {
+        var px = picks[qi], ps = shapes[qi];
+        if (x > px) { if (x - sh.leadS - (px + ps.spanS + ps.tailS) < sh.silS) return "bc"; }
+        else { if (px - ps.leadS - (x + sh.spanS + sh.tailS) < ps.silS) return "bc"; }
+      }
+      return null;
+    }
     for (var pk = 0; pk < want; pk++) {
-      // OVERFLOW, NOT SPACING (orchestrator's ruling). P(jo) = 0.20 is the
-      // preference for where a broadcast WANTS to be; it is not a quota that
-      // can cost the broadcast its existence. Weighting 80 % of picks into the
-      // ha concentrated both into roughly 40 % of the cycle, and the 95 s
-      // spacing then had far less room to clear: the pair rate fell 81 % → 53 %
-      // and cycles with no broadcast at all went 1-in-200 to 14-in-200. The
-      // constraint that was easy across the whole legal span is hard inside a
-      // smaller one. So when the drawn group cannot seat it, the broadcast
-      // overflows to the other group rather than being lost. The jo share will
-      // rise above 20 % as a result: that is the honest price of the guarantee
-      // and the owner can see it in getPlacement().
-      // THE GROUP IS DRAWN ONCE PER BROADCAST, OUTSIDE THE RETRY. Drawing it
-      // inside biased the result badly and subtly: the second pick must clear
-      // 95 s of the first, so when the first lands in the ha a second ha
-      // position is usually rejected while a jo one is not — rejection
-      // sampling quietly re-weights toward whichever group is FAR from what is
-      // already placed. Measured with the draw inside the loop, P(jo) = 0.20
-      // delivered 0.22 to 0.45 depending on how the ha was split. Drawn once,
-      // the constant means what it says and only the POSITION is retried.
+      var sh = drawShapeHere();
+      // THE GROUP IS DRAWN ONCE PER BROADCAST, OUTSIDE THE RETRY.
       var wantJo = BR.chance(BC_JO_P);
       var order = wantJo ? ["jo", "ha"] : ["ha", "jo"], placed = false;
       for (var oi = 0; oi < order.length && !placed; oi++) {
         var isJo = order[oi] === "jo", tag = order[oi];
-        var grp = isJo ? joSegs : otherSegs, grpS = isJo ? joS : otherS;
-        // The scene cannot host at all: no legal window of its type in this
-        // cycle (a scene shorter than 2·BC_EDGE_S never enters `legal`).
+        var grp = isJo ? joSegs : otherSegs;
         if (!grp.length) { rejBump(kind, tag, "short"); continue; }
-        // OVERFLOW IS A LAST RESORT (orchestrator). The drawn scene is searched
-        // SYSTEMATICALLY before crossing, not sampled. 24 random draws could
-        // miss a narrow feasible window and cross for want of looking, and the
-        // counters showed why more draws would not have helped: every rejected
-        // attempt failed on SPACING (ha spaceBc 40) with noT0 at 0, so the
-        // retries were not running out — the positions they found were genuinely
-        // blocked. Scanning the legal span at BC_SCAN_S finds a feasible offset
-        // if one exists at that resolution, so a cross now means the scene truly
-        // has no room rather than that the sampler was unlucky. Position is then
-        // drawn uniformly over the feasible set, which keeps position-inside-a-
-        // scene even, and the whole search still costs ONE draw on BR.
-        var nGuest = 0, nBc = 0, feas = [], scanX, qi;
+        var nGuest = 0, nBc = 0, nKiru = 0, nRoom = 0, feas = [], scanX;
         for (li = 0; li < grp.length; li++) {
           for (scanX = grp[li][0]; scanX <= grp[li][1]; scanX += BC_SCAN_S) {
-            if (guestT != null && Math.abs(scanX - guestT) < BC_GAP_S) { nGuest++; continue; }
-            var free = true;
-            for (qi = 0; qi < picks.length; qi++) if (Math.abs(scanX - picks[qi]) < BC_GAP_S) free = false;
-            if (free) feas.push([scanX, grp[li][2]]); else nBc++;
+            var why = seats(scanX, sh);
+            if (!why) feas.push([scanX, grp[li][2]]);
+            else if (why === "guest") nGuest++;
+            else if (why === "bc") nBc++;
+            else if (why === "kiru") nKiru++;
+            else nRoom++;
           }
         }
-        // THE FIRST PICK MUST NOT STRAND THE SECOND. Placed uniformly, the
-        // opening broadcast often lands mid-scene and leaves no point BC_GAP_S
-        // away inside the same group, so the pair is broken by where the FIRST
-        // one went rather than by the scene being too small. Measured: the ha
-        // can hold two 95 s apart in 87 % of cycles, but only 76 % got the pair.
-        // So when this is the first of two, prefer feasible positions that still
-        // leave room for a second. Overflow stays the last resort and P(jo) is
-        // untouched — the group was already drawn, this only chooses WHERE.
-        var pool = feas;
-        if (pk === 0 && want > 1 && feas.length > 1) {
-          // The partner must be sought across ALL legal time, not just this
-          // group. The BC_GAP_S exclusion is on absolute offset, so a first pick
-          // sitting late in the jo blocks the EARLY HA as surely as it blocks
-          // the rest of the jo — and a same-group test cannot see that. It then
-          // reports "roomy" for a position that has stranded the second
-          // broadcast in the group the second will most likely draw, which is
-          // the ha four times in five. Widening the partner search is still the
-          // SEARCH: P(jo) is untouched and the group was already drawn.
-          // Measured, after trying it the other way: the partner must be sought
-          // in the HA, not across all legal time and not merely in the drawn
-          // group. Widening it to all legal time made things WORSE — opening
-          // with a broadcast went 39.5 % to 50.5 % and overflow into the jo more
-          // than doubled — because a first pick in the ha then only needed a
-          // partner SOMEWHERE, so it could sit where it consumed the ha's room
-          // and strand the second, which draws the ha four times in five. The
-          // same-group test had been protecting the ha by accident. Requiring
-          // the partner in the ha protects it on purpose.
-          var all = [], gi2, sx;
-          for (gi2 = 0; gi2 < otherSegs.length; gi2++) {
-            for (sx = otherSegs[gi2][0]; sx <= otherSegs[gi2][1]; sx += BC_SCAN_S) {
-              if (guestT != null && Math.abs(sx - guestT) < BC_GAP_S) continue;
-              all.push(sx);
-            }
-          }
-          var roomy = [];
+        // THE FIRST PICK MUST NOT STRAND THE NEXT. Placed uniformly, an early
+        // broadcast often lands where nothing else can follow it in the ha —
+        // and the ha is where four picks in five want to be. So while there are
+        // more to come, prefer positions that still leave a seat for one of
+        // them. Measured the other way in W4: widening the partner search to
+        // all legal time made things worse (opening with a broadcast went
+        // 39.5 % → 50.5 %), because the ha was being protected by accident.
+        // Requiring the partner in the ha protects it on purpose.
+        var pool2 = feas;
+        if (pk + 1 < want && feas.length > 1) {
+          var roomy = [], probe = { spanS: sh.spanS, tailS: sh.tailS, leadS: sh.leadS, silS: BC_SIL_MIN_S, reachS: sh.reachS };
           for (var ai = 0; ai < feas.length; ai++) {
-            for (var bi2 = 0; bi2 < all.length; bi2++) {
-              if (Math.abs(feas[ai][0] - all[bi2]) >= BC_GAP_S) { roomy.push(feas[ai]); break; }
+            var saveX = picks.length, ok2 = false;
+            picks.push(feas[ai][0]); shapes.push(sh);
+            for (var gi2 = 0; gi2 < otherSegs.length && !ok2; gi2++) {
+              for (var sx = otherSegs[gi2][0]; sx <= otherSegs[gi2][1]; sx += BC_SCAN_S) {
+                if (!seats(sx, probe)) { ok2 = true; break; }
+              }
             }
+            picks.length = saveX; shapes.length = saveX;
+            if (ok2) roomy.push(feas[ai]);
           }
-          if (roomy.length) pool = roomy;
+          if (roomy.length) pool2 = roomy;
         }
-        if (pool.length) {
-          var fi = Math.min(pool.length - 1, Math.floor(BR.next() * pool.length));
-          var off = pool[fi][0], hit = [0, 0, pool[fi][1]];
-          {
-            picks.push(off); bcPlace[hit[2]] = (bcPlace[hit[2]] || 0) + 1;
-            if (oi > 0) { bcRej.overflow++; if (isJo) bcRej.ovToJo++; else bcRej.ovToHa++; }
-            seatBump(kind, tag, oi > 0);
-            if (bcSeats.length < 4000) bcSeats.push({ n: pk, grp: tag, ov: oi > 0, kind: kind, cyc: cyc.n });
-            placed = true; break;
-          }
+        if (pool2.length) {
+          var fi = Math.min(pool2.length - 1, Math.floor(BR.next() * pool2.length));
+          var off = pool2[fi][0];
+          picks.push(off); shapes.push(sh); bcPlace[pool2[fi][1]] = (bcPlace[pool2[fi][1]] || 0) + 1;
+          if (oi > 0) { bcRej.overflow++; if (isJo) bcRej.ovToJo++; else bcRej.ovToHa++; }
+          seatBump(kind, tag, oi > 0);
+          if (bcSeats.length < 4000) bcSeats.push({ n: pk, grp: tag, ov: oi > 0, kind: kind, cyc: cyc.n, budgetS: +sh.budgetS.toFixed(1), body: sh.body, spanS: +sh.spanS.toFixed(1) });
+          placed = true; break;
         }
         // Attribute a failed ATTEMPT (not each retry) to the constraint that
-        // rejected most of its positions; nGuest/nBc are the retry tallies.
+        // rejected most of its positions.
         if (!placed) {
-          if (!nGuest && !nBc) rejBump(kind, tag, "noT0");
-          else if (nGuest > nBc) rejBump(kind, tag, "spaceGuest");
+          if (!nGuest && !nBc && !nKiru && !nRoom) rejBump(kind, tag, "noT0");
+          else if (nGuest >= nBc && nGuest >= nKiru && nGuest >= nRoom) rejBump(kind, tag, "spaceGuest");
           else rejBump(kind, tag, "spaceBc");
         }
       }
       if (!placed) { bcRej.lost++; if (bcRejKind[kind]) bcRejKind[kind].lost++; }   // both groups refused it
-      // dev: the GEOMETRY behind the outcome — can the ha alone hold two
-      // broadcasts BC_GAP_S apart in this cycle? If it usually cannot, then
-      // "pair near 80 %" and "jo near 20 %" are not jointly reachable at this
-      // spacing and no placement rule can deliver both.
+      // dev: the GEOMETRY behind the outcome.
       if (pk === 0 && bcGeom.length < 4000) {
         var haLo = null, haHi = null;
         for (var gi = 0; gi < otherSegs.length; gi++) {
           if (haLo === null || otherSegs[gi][0] < haLo) haLo = otherSegs[gi][0];
           if (haHi === null || otherSegs[gi][1] > haHi) haHi = otherSegs[gi][1];
         }
-        bcGeom.push({ kind: kind, joS: Math.round(joS), haS: Math.round(otherS),
+        bcGeom.push({ kind: kind, joS: Math.round(joS), haS: Math.round(otherS), want: want,
           haSpan: (haLo === null ? 0 : Math.round(haHi - haLo)),
-          haPairable: (haLo !== null && (haHi - haLo) >= BC_GAP_S) });
+          haPairable: (haLo !== null && (haHi - haLo) >= 2 * sh.spanS + BC_SIL_MIN_S) });
       }
     }
+    // the shapes travel with their positions, in the same order
+    (function () { var ord = picks.map(function (x, i) { return i; }).sort(function (a, b) { return picks[a] - picks[b]; });
+      var np = [], ns = []; for (var i = 0; i < ord.length; i++) { np.push(picks[ord[i]]); ns.push(shapes[ord[i]]); }
+      picks = np; shapes = ns; })();
     picks.sort(function (a, b) { return a - b; });
     pendingPlan = { kind: kind, mode: mode, seating: seating, durS: durS, pitch: pitch, visit: visit, cycleRate: crate,
-      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, legalS: legalS,
+      sceneDurS: scenes.map(function (sc) { return sc.durS; }), bcAt: picks, bcShape: shapes, legalS: legalS,
       // §14 footprint-aware legality: the receiver decides its own footprint at
       // arm, 55 s after this plan is written, so it needs the cycle's shape to
       // know what it must clear. Types (for the kyū→release seam, where the
@@ -3216,9 +3238,9 @@ window.ZankyoAudio = (function () {
         cyc.guestT = p.guestAt == null ? null : evt.t + p.guestAt;
         cyc.bcAt = p.bcAt.slice();
         cyc.endT = evt.t + evt.durS;
-        (function (times, kind, tide, cyN, t0c, kOff, gOff, cycDur) {
+        (function (times, shapes, kind, tide, cyN, t0c, kOff, gOff, cycDur) {
           for (var bi = 0; bi < times.length; bi++) {
-            (function (off, nextOff) {
+            (function (off, nextOff, sh, n) {
               var at = t0c + off;
               // The arm is CLAMPED to the cycle start, not rejected, so a
               // broadcast early in the cycle arms with less than BC_ARM_LEAD_S
@@ -3228,7 +3250,11 @@ window.ZankyoAudio = (function () {
               var armAt = Math.max(t0c + 0.05, at - BC_ARM_LEAD_S);
               if (faults.armLeadMin == null || (at - armAt) < faults.armLeadMin) faults.armLeadMin = at - armAt;
               lane("form").at(armAt, function () {
-                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide,
+                try { signalProvider.arm({ cycle: cyN, kind: kind, t0: at, hostStartT: at - 8, hostDurS: 60, tidePos: tide, n: n,
+                  // §4.1 — the shape the SEATING drew and reserved room for. The
+                  // receiver fills it with a reel and may shrink it; it never
+                  // grows it, so what fits here fits there.
+                  shape: sh,
                   // absolute times, or null when there is nothing to clear
                   kiruT: kOff == null ? null : t0c + kOff,
                   guestT: gOff == null ? null : t0c + gOff,
@@ -3241,9 +3267,9 @@ window.ZankyoAudio = (function () {
                 try { took = !!signalProvider.fire(at); } catch (e) { took = false; }
                 if (!took) { try { visitBroadcast(at); } catch (e2) {} }   // abandoned to the fallback rather than forced
               });
-            })(times[bi], bi + 1 < times.length ? times[bi + 1] : null);
+            })(times[bi], bi + 1 < times.length ? times[bi + 1] : null, shapes[bi] || null, bi);
           }
-        })(p.bcAt.slice(), p.kind, evt.tidePos, cyc.n, evt.t, kiruOff, p.guestAt, evt.durS);
+        })(p.bcAt.slice(), (p.bcShape || []).slice(), p.kind, evt.tidePos, cyc.n, evt.t, kiruOff, p.guestAt, evt.durS);
       }
       Motif.newCycle(evt.t);
     } else if (evt.type === "scene") {

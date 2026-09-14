@@ -165,7 +165,27 @@ function mkCtx() {
 // when the JS stack empties (after the whole run), so the mocks are
 // synchronous thenables. ----
 const SIGNAL_MOCK = process.env.ZK_SIGNAL_MOCK || "ready";
-const MANIFEST_TEXT = (() => { try { return fs.readFileSync(path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; } })();
+// ZK_REELS trims the pool to the named reels (comma-separated ids), or to the
+// first N with ZK_REELS=n:<count>. §6's R1 gate wants the §12 sweep run on a
+// FORCED SINGLE-REEL POOL as well as on the real one: with one reel the recent
+// ring has nothing to fall back on, every candidate filter empties, and the
+// degrade paths that are rarely reached become the only paths. That is exactly
+// where a hold has previously been written for a reception that then could not
+// be seated.
+const MANIFEST_TEXT = (() => {
+  let raw;
+  try { raw = fs.readFileSync(path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; }
+  const want = process.env.ZK_REELS;
+  if (!want) return raw;
+  try {
+    const m = JSON.parse(raw), arr = Array.isArray(m) ? m : m.reels;
+    let keep;
+    if (/^n:\d+$/.test(want)) keep = arr.slice(0, parseInt(want.slice(2), 10));
+    else { const ids = want.split(","); keep = arr.filter((e) => ids.indexOf(e.id) >= 0); }
+    if (!keep.length) keep = arr.slice(0, 1);
+    return JSON.stringify(Array.isArray(m) ? keep : Object.assign({}, m, { reels: keep }));
+  } catch (e) { return raw; }
+})();
 function thenableOf(v) { return { then(f) { let r; try { r = f(v); } catch (e) { return failing(e); } return (r && typeof r.then === "function") ? r : thenableOf(r); }, catch() { return this; } }; }
 function failing(err) { return { then() { return this; }, catch(f) { try { f(err); } catch (e) {} return this; } }; }
 function mockVideo() {
@@ -226,7 +246,7 @@ function runOnce(seed, simS, opts) {
   if (FARD != null && Z.setFar) Z.setFar(FARD);
   const R = { seed, simS, notes: [], events: [], arcSamples: [], metaByCycle: new Map(), t0: 0 };
   Z.setNoteListener((n) => { const F = Z.getField ? Z.getField() : null; R.notes.push({ t: n.startTime, layer: n.layer, freq: n.freq, dur: n.duration, tonic: F ? F.tonicHz : 146.83, steps: F ? (Z.getMode().offsets) : null }); });
-  Z.setEventListener((e) => R.events.push({ t: e.t, cat: e.cat, label: e.label, detail: e.detail, sig: e.signal ? { t0: e.signal.t0, holdS: e.signal.holdS, lossD: e.signal.lossD, id: e.signal.id } : null }));
+  Z.setEventListener((e) => R.events.push({ t: e.t, cat: e.cat, label: e.label, detail: e.detail, sig: e.signal ? { t0: e.signal.t0, holdS: e.signal.holdS, lossD: e.signal.lossD, id: e.signal.id, rx: e.signal.rx || null } : null }));
   const SAMPLE_EVERY = 15;
   let nextSample = 0;
   const origCE = console.error;
@@ -446,11 +466,42 @@ const signalVocab = (() => {
   const kiruTs = events.filter((e) => e.label.indexOf("KIRU") >= 0).map((e) => e.t);
   const perCycle = {}; for (const s of sigs) { const ci = cycleOf(s.sig.t0); perCycle[ci] = (perCycle[ci] || 0) + 1; }
   const maxPer = Math.max(0, ...Object.values(perCycle));
-  let nearKiru = 0, notSilent = 0; const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1, vox: 1 };
+  let nearKiru = 0, notSilent = 0, overlaps = 0; const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1, vox: 1 };
+  const intruders = [];
   for (const s of sigs) {
-    const t0 = s.sig.t0, tEnd = t0 + 0.4 + s.sig.holdS + s.sig.lossD;
+    // THE SPAN IS THE PLAN'S, not tune + hold + loss. A reception can carry an
+    // entry of up to ten seconds and an exit of twelve now, so the old
+    // arithmetic understated the window it was checking by up to twenty
+    // seconds — which is exactly the part of a reception a gate must not miss.
+    const t0 = s.sig.t0, rx = s.sig.rx || null;
+    const tEnd = t0 + (rx ? rx.spanS : 0.4 + s.sig.holdS + s.sig.lossD);
     for (const k of kiruTs) if (k > t0 - 20 && k < tEnd + 15) nearKiru++;
-    for (const n of notes) if ((MEL[n.layer] || n.layer === "pa") && n.t >= t0 + 1 && n.t <= tEnd) notSilent++;   // the PA counts too (critic S1 r1)
+    // §3.5 THE POROUS HOLD: one melodic voice may be left OUT of the hold and
+    // play over the signal. Its notes are PERMITTED, not intrusions — but the
+    // exemption is for that one named voice and no other, which is what makes
+    // the count still worth reading.
+    const por = rx && rx.porous;
+    for (const n of notes) {
+      if (!(MEL[n.layer] || n.layer === "pa")) continue;
+      if (n.t < t0 + 1 || n.t > tEnd) continue;
+      if (por && n.layer === por) continue;
+      notSilent++;
+      if (intruders.length < 6) intruders.push(n.layer + " @" + n.t.toFixed(1) + " (" + (n.t - t0).toFixed(1) + "s into " + Math.round(t0) + "s" + (rx ? " · " + rx.body + "/" + rx.entry + "/" + rx.exit : "") + ")");
+    }
+  }
+  // NO TWO RECEPTIONS ON THE AIR AT ONCE — the placement's job, asserted here
+  // because the spacing is a drawn number now and not a constant.
+  {
+    const spans = sigs.map((s) => [s.sig.t0, s.sig.t0 + (s.sig.rx ? s.sig.rx.spanS : 0.4 + s.sig.holdS + s.sig.lossD)]).sort((a, b) => a[0] - b[0]);
+    for (let q = 1; q < spans.length; q++) if (spans[q][0] < spans[q - 1][1]) overlaps++;
+  }
+  if (intruders.length) console.log("signal intrusions: " + intruders.join(" | "));
+  if (process.env.ZK_INTRUDE && intruders.length) {
+    const s0 = sigs.find((x) => notes.some((n) => (MEL[n.layer] || n.layer === "pa") && n.t >= x.sig.t0 + 1 && n.t <= x.sig.t0 + (x.sig.rx ? x.sig.rx.spanS : 13)));
+    const t0 = s0.sig.t0, rx = s0.sig.rx;
+    console.log("  intrusion context: t0 " + t0.toFixed(2) + " span " + (rx ? rx.spanS : "?") + " budget " + (rx ? rx.budgetS : "?"));
+    for (const n of notes) if (n.t > t0 - 60 && n.t < t0 + 30 && (MEL[n.layer] || n.layer === "pa"))
+      console.log("    " + n.layer + " t=" + n.t.toFixed(2) + " (" + (n.t - t0).toFixed(2) + ") dur=" + (n.dur || 0).toFixed(2));
   }
   // W4's placement numbers, printed because they are the gate on any change to
   // the seating or the footprint: broadcasts per cycle, how often a cycle gets
@@ -466,13 +517,22 @@ const signalVocab = (() => {
       (counts.length ? " (" + Math.round(100 * nEmpty / counts.length) + "%)" : "") +
       " · per-cycle " + JSON.stringify(counts));
   }
+  // §4.1 — WHERE THE SEATING LOST ITS PICKS. The count per cycle is drawn from
+  // the cycle's legal time now, so "wanted 4, seated 2" is the number that says
+  // whether the frequency constant is doing anything or whether the room is.
+  {
+    const pl = runA.Z.getPlacement ? runA.Z.getPlacement() : null;
+    if (pl) console.log("seating: " + pl.total + " seated · lost " + pl.lost + " · overflow " + pl.overflow +
+      " · jo " + Math.round(100 * pl.joShare) + "% (P " + pl.joP + ") · refused by: spacing " + pl.spacing + " guest " + pl.guest + " short " + pl.tooShort + " noT0 " + pl.noT0 +
+      (pl.geom && pl.geom.length ? " · wanted/cycle " + JSON.stringify(pl.geom.map((g) => g.want)) : ""));
+  }
   const hosted = events.filter((e) => /visitation: the broadcast/.test(e.detail || "")).length;
   const scans = events.filter((e) => e.cat === "rx" && e.label === "選局 scanning");
   if (runA.tunePressed != null) console.log("tune: pressed at " + Math.round(runA.tunePressed) + "s → " + runA.tuneResult + " · " + scans.map((e) => Math.round(e.t) + "s " + e.detail).join(" | ") + " · signals after the press: " + sigs.filter((x) => x.sig.t0 > runA.tunePressed).map((x) => Math.round(x.sig.t0) + "s " + x.sig.id).join(" | "));
   const ai = runA.Z.getAirInfo ? runA.Z.getAirInfo() : null;
   console.log("signal (" + SIGNAL_MOCK + "): " + sigs.length + " signals + " + fallbacks.length + " fallbacks in " + cycleStarts.length + " cycles (" + hosted + " hosted the broadcast) · " + (cycleStarts.length ? (3 * sigs.length / cycleStarts.length).toFixed(2) : "—") + " per 3 cycles · max per cycle " + maxPer + " · near a KIRU " + nearKiru + " · melodic/PA notes inside a hold " + notSilent + (ai ? " · hold denials " + ai.holdDenials : "") +
     (sigs.length ? " · " + sigs.slice(0, 5).map((s) => Math.round(s.sig.t0) + "s " + s.sig.id + " " + s.sig.holdS.toFixed(1) + "s").join(" | ") : "") + (fallbacks.length ? " · fallback: " + fallbacks[0].detail : ""));
-  return { n: sigs.length, fallbacks: fallbacks.length, cycles: cycleStarts.length, maxPer, nearKiru, notSilent, hosted };
+  return { n: sigs.length, fallbacks: fallbacks.length, cycles: cycleStarts.length, maxPer, nearKiru, notSilent, hosted, overlaps, sigs };
 })();
 
 // ---- node budget: creations per simulated minute + peak concurrent sources ----
@@ -732,19 +792,59 @@ if (RUN >= 14000 && visitVocab.total < Math.floor(cycles.length / 3)) fails.push
 if (visitVocab.kiruMaster > 0) fails.push(visitVocab.kiruMaster + " KIRU(s) not on the landscape cut");
 // S1 gates (PLAN-SIGNAL-INTEGRATION §1 S1): never two per cycle, never in a KIRU, the melodic voices silent for the hold,
 // ≈ 1 per 3 cycles over 4 h (0.7–1.6) when the reel is ready; the fallback fires when it is not
-// The owner asked for TWO broadcasts a cycle (was one). Three is still a
-// fault: the plan draws at most two, so a third means the visitation seam is
-// firing one as well as the drawn times, which is exactly what happened on the
-// first pass of this change.
-if (signalVocab.maxPer > 2) fails.push("more than two signals in one cycle");
+// PER CYCLE IS NO LONGER THE QUANTITY (PLAN-SIGNAL-SHAPES §4.1, §6). The count
+// is drawn from the cycle's LEGAL TIME now, and cycles run five to ten minutes,
+// so "max two a cycle" was a gate on a design that no longer exists: a
+// ten-minute cycle legitimately holds six receptions where a five-minute one
+// holds three. What is still a fault is a count the seating could not have
+// produced — that would mean the visitation seam is firing broadcasts as well
+// as the drawn times, which is exactly what happened on the first pass of §8.1.
+// So the rail is the seating's own ceiling and the REAL gate is the per-hour
+// rate below.
+const BC_RAIL = 8;
+if (signalVocab.maxPer > BC_RAIL) fails.push(signalVocab.maxPer + " signals in one cycle (the seating's ceiling is " + BC_RAIL + ")");
 if (signalVocab.nearKiru > 0) fails.push(signalVocab.nearKiru + " signal(s) within a KIRU's reach");
 if (signalVocab.notSilent > 0) fails.push(signalVocab.notSilent + " melodic note(s) inside a signal's hold");
-// §8.1 (the owner, after the rc.9 listen) raised the seating rate from about
-// one signal in three cycles to about one per cycle, so this gate's old
-// 0.7–1.6 per 3 cycles encodes a design that no longer exists. Re-stated as
-// the new intent: 2.2–3.6 per 3 cycles, i.e. 0.73–1.2 per cycle around the
-// measured 0.97.
-if (SIGNAL_MOCK === "ready" && RUN >= 14000) { const r3 = 3 * signalVocab.n / Math.max(1, signalVocab.cycles); if (r3 < 2.2 || r3 > 3.6) fails.push("signals " + r3.toFixed(2) + " per 3 cycles outside 2.2–3.6"); }
+// NO TWO RECEPTIONS ON THE AIR AT ONCE. The spacing is a drawn 15–90 s now
+// rather than a constant 95, and two overlapping receptions would mean one
+// media element playing two reels — audible as a cut, and invisible to every
+// other gate here.
+if (signalVocab.overlaps > 0) fails.push(signalVocab.overlaps + " overlapping reception(s)");
+// §2 THE FLOOR: a reception is at least 8 s on air, summed over its pieces.
+// It can only be broken by a reel whose longest window cannot serve it, and
+// choose() filters those out of the candidate set — so this is the gate on that
+// filter. It reports rather than fails where the pool genuinely cannot serve
+// the floor (a one-reel bench pool), because then the floor yielding is the
+// right answer and a silent night is not.
+{
+  const pres = signalVocab.sigs.map((x) => x.sig.rx ? x.sig.rx.presenceS : x.sig.holdS);
+  if (pres.length) {
+    const lo = Math.min(...pres), hi = Math.max(...pres);
+    const sorted = pres.slice().sort((a, b) => a - b), med = sorted[sorted.length >> 1];
+    const asked = signalVocab.sigs.map((x) => (x.sig.rx && x.sig.rx.budgetS) || null).filter((x) => x != null);
+    const askMed = asked.length ? asked.slice().sort((a, b) => a - b)[asked.length >> 1] : null;
+    // §2's table, ASKED against ACHIEVED. Until the reels are re-cut (§5) every
+    // budget over about 11.6 s degrades to what a 12 s window can serve, so
+    // these two columns are the measure of how far the pool is from the owner's
+    // spread — reported, never gated, because the reels are the answer.
+    const BUCKETS = [[8, 12], [12, 18], [18, 25], [25, 32], [32, 41]];
+    const cnt = (arr) => BUCKETS.map(([lo2, hi2]) => arr.filter((v) => v >= lo2 && v < hi2).length);
+    console.log("on air: " + pres.length + " receptions · min " + lo.toFixed(1) + " median " + med.toFixed(1) + " max " + hi.toFixed(1) + " s" +
+      (askMed != null ? " · asked median " + askMed.toFixed(1) + " s" : "") +
+      " · achieved " + JSON.stringify(cnt(pres)) + " vs asked " + JSON.stringify(cnt(asked)) + " over [8–12, 12–18, 18–25, 25–32, 32–40]");
+    if (lo < 8.0 - 0.05) fails.push("a reception held the air for only " + lo.toFixed(1) + " s (the §2 floor is 8.0)");
+  }
+}
+// THE FREQUENCY, AS A RATE PER HOUR. §7 q3: "signals 75 % more frequent than
+// today". rc.68 seats 88 over six seeds at an hour (3042 16, 17 13, 7 14,
+// 8891 15, 101 15, 102 15) — a mean of 14.7 — so 1.75× is 25.7 an hour, and
+// §6's gate is that ± 15 %: 21.8 to 29.5. Per-seed, because the spread across
+// seeds is real (13 to 16 on rc.68) and a mean over one seed is not a mean.
+if (SIGNAL_MOCK === "ready" && RUN >= 3600) {
+  const perH = signalVocab.n * 3600 / RUN;
+  console.log("signals/hour: " + perH.toFixed(1) + " (rc.68 mean 14.7 · 1.75× = 25.7 · gate 21.8–29.5)");
+  if (perH < 21.8 || perH > 29.5) fails.push("signals " + perH.toFixed(1) + "/hour outside 21.8–29.5 (1.75× rc.68 ± 15 %)");
+}
 if (SIGNAL_MOCK === "ready" && RUN >= 14000 && signalVocab.fallbacks > 0) fails.push(signalVocab.fallbacks + " fallback(s) with the reel ready");
 if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.n > 0) fails.push("a signal played with the reel unavailable");
 if (SIGNAL_MOCK !== "ready" && signalVocab.hosted > 0 && signalVocab.fallbacks < 1) fails.push("no fallback fired with the reel unavailable");
