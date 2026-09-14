@@ -233,7 +233,16 @@ window.KolobAudio = (function () {
   //   brightness — HF-damping exponent: LOWER = brighter tail
   //   ripple     — a slow amplitude swell on the tail (the hall inhaling)
   var ROOM_CLOSE = { decayS: 1.4, preDelayS: 0.012, wet: 0.28, brightness: 1.2, ripple: 0, irUrl: null };
-  var ROOM_WIDE  = { decayS: 5.5, preDelayS: 0.030, wet: 0.40, brightness: 0.8, ripple: { depth: 0.07, hz: 0.5 }, irUrl: null };
+  // The tabernacle is a REAL room (owner, 2026-09-14, chosen on the room
+  // lab): St Margaret's Church, York — the National Centre for Early Music's
+  // nave, measured 11 m back (OpenAIR, AudioLab, University of York,
+  // CC BY-SA 3.0; provenance in ../prosperos-jukebox-v2/ir/README.md). The
+  // shipped file is the stereo take of that same position, as the Library
+  // ships it; the owner auditioned the mono take, which carries its 39 ms of
+  // travel time inside the file — the pre-delay here (63 ms, not the pour's
+  // 30) reproduces the arrival they chose. The pour below is the FALLBACK if
+  // the file can't load.
+  var ROOM_WIDE  = { decayS: 5.5, preDelayS: 0.063, wet: 0.40, brightness: 0.8, ripple: { depth: 0.07, hz: 0.5 }, irUrl: "../prosperos-jukebox-v2/ir/rooms/library-wide-st-margarets.wav" };
   // Where each section seats the gathering (0 = all meetinghouse, 1 = all
   // tabernacle), ramped at the boundary: the empty hall before and after;
   // the hymns a step forward; testimony close; the stillness has more room

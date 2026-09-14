@@ -22,8 +22,9 @@
   // ---- the candidate rooms (OpenAIR, University of York, CC BY-SA 3.0) -------
   var IR = "../prosperos-jukebox-v2/ir/";
   var ROOMS = [
-    { key: "pour", file: null, name: "Kolob's own synthetic room", desc: "what the page plays today" },
-    { key: "st-margarets", file: IR + "candidates/st-margarets-ncem.wav", name: "St Margaret's church, York", desc: "a warm long nave (3 MB)" },
+    { key: "st-margarets-stereo", file: IR + "rooms/library-wide-st-margarets.wav", name: "St Margaret's church, York — stereo take", desc: "what the page plays since v0.28: the same nave, stereo, trimmed (0.3 MB)" },
+    { key: "st-margarets", file: IR + "candidates/st-margarets-ncem.wav", name: "St Margaret's church, York — mono take", desc: "the warm long nave you chose, mono, full-length (3 MB)" },
+    { key: "pour", file: null, name: "Kolob's own synthetic room", desc: "the engine's fallback if a file can't load" },
     { key: "lady-chapel", file: IR + "candidates/lady-chapel-st-albans.wav", name: "Lady Chapel, St Albans", desc: "a gothic stone chapel (1.5 MB)" },
     { key: "elveden", file: IR + "candidates/elveden-marble-hall.wav", name: "Elveden marble hall", desc: "an abandoned ornate hall, ghostly (1.4 MB)" },
     { key: "hamilton", file: IR + "candidates/ariel-hamilton-mausoleum.wav", name: "Hamilton Mausoleum", desc: "a stone dome with a 15-second bloom (4 MB)" },
@@ -39,7 +40,7 @@
   function roomByKey(key) { for (var i = 0; i < ROOMS.length; i++) if (ROOMS[i].key === key) return ROOMS[i]; return ROOMS[0]; }
 
   // ---- state -------------------------------------------------------------------
-  var slot = { A: "pour", B: "st-margarets" };   // which room each side holds
+  var slot = { A: "st-margarets-stereo", B: "st-margarets" };   // which room each side holds
   var lit = "A";                                   // which side you are hearing
   var ready = {};                                  // file → "ok" | "loading" | "failed"
 
@@ -50,9 +51,11 @@
     K.preloadRoomIR(r.file).then(function () { ready[r.file] = "ok"; paint(); }, function () { ready[r.file] = "failed"; paint(); });
   }
   function apply() {
-    // the LIT room becomes the tabernacle; the meetinghouse stays the pour
+    // the LIT room becomes the tabernacle; the meetinghouse stays the pour.
+    // A candidate file carries its own travel time (the mono take: 39 ms), so
+    // it takes the pour's 30 ms; the shipped stereo take keeps the engine's 63.
     var r = roomByKey(slot[lit]);
-    K.setRoom("wide", { irUrl: r.file });
+    K.setRoom("wide", { irUrl: r.file, preDelayS: r.key === "st-margarets-stereo" ? 0.063 : 0.030 });
     paint();
   }
   function light(side) { lit = side; apply(); }
