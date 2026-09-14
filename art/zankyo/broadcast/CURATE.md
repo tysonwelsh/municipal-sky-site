@@ -64,7 +64,29 @@ third at 18–25 s, a third at 25–32 s, a third at 32–40 s.
 - Cost: about +0.5 MB a reel, so the pool goes from 144 MB to roughly 250 MB.
   `scripts/publish.sh` already skips `reels/`; the Actions deploy ships them.
 
-**Propose, then append:**
+**Propose the whole pool at once** — `propose-long.py` reads each reel's
+CACHED analysis log and picks one long window per reel: clear of the windows
+the reel already plays (a long window beside them is a new moment of the
+source; one on top of them is the same broadcast twice), and scored on its
+WORST five seconds rather than its mean, because a 34 s stretch carried by its
+loudest ten is the reception the owner said was too short, stretched. The
+length is drawn across §5's bands from the reel's id, so the pool ends up able
+to serve the whole of §2's table and a re-run proposes the same thing.
+
+```
+tools/propose-long.py --all                    # the proposals, best first
+tools/propose-long.py --all --json > batch.json
+tools/cut-long-batch.sh --plan 24              # the next 24 as commands
+tools/cut-long-batch.sh --plan 24 --run        # …and cut them
+tools/preview.sh <slug>                        # AUDITION, by ear
+```
+
+`--plan N` takes the best N spread across tiers, tones and length bands rather
+than the top N of one list — §5's order, so no bucket is served by one kind of
+material. A reel with no cached analysis is skipped and says so; re-run the
+analysis by cutting it once with `--force-analyze`, or let `make-reel.sh` do it.
+
+**Or one reel at a time:**
 
 ```
 tools/make-reel.sh <src-or-url> --id <slug> --propose --window-len 30
