@@ -659,7 +659,8 @@
       if (t >= end - 0.1) break;
       drops.push([t, 0.12 + D.next() * 0.25]);
     }
-    var rel = { shakuhachi: 0, koto: REL_MIN_S + D.next() * REL_SPAN_S, shamisen: REL_MIN_S + D.next() * REL_SPAN_S, hichiriki: REL_MIN_S + D.next() * REL_SPAN_S, biwa: REL_MIN_S + D.next() * REL_SPAN_S };
+    var rel = { shakuhachi: 0, koto: REL_MIN_S + D.next() * REL_SPAN_S, shamisen: REL_MIN_S + D.next() * REL_SPAN_S, hichiriki: REL_MIN_S + D.next() * REL_SPAN_S, biwa: REL_MIN_S + D.next() * REL_SPAN_S,
+      vox: REL_MIN_S + REL_SPAN_S };   // 内線 (2026-09-14): the intercom is the LAST to speak again after a signal — the full span, no draw, so the reel's own draws stay where they were
     return { drops: drops, rel: rel, lfoHz: 0.4 + D.next() * 2.6, seed: D.next() * 1000 };
   }
 

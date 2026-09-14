@@ -55,7 +55,12 @@ ambient one-shots. In priority order:
    engine's contours, seated in the air and the ledger like a melodic voice,
    as sophisticated in what it plays as the others; knobs for band, stutter,
    how much of a word survives; a natural carrier for 相 phasing and 騒
-   noise-leads on far nights.
+   noise-leads on far nights. *Shipped 2026-09-14 (rc.66 the body, rc.67
+   the voice; PLAN-COMMS-VOX.md): 内線 Intercom — sung formant syllables
+   on the motif engine's contours, band / stutter / survive, the newborn's
+   name for its vowels, seated in broadcast cycles, the 回線 line's second
+   speaker, a 相 comb on far nights; the one-shot left the pool; a declared
+   re-base.*
 5. **The ambient pool grown** with the station sounds Phase 3 promised and
    never built: hull groans, airlock hiss, a numbers-station murmur, distant
    thunder, more of the derelict's own noises; phase- and kind-gated, rarer

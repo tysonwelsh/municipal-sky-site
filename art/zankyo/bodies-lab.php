@@ -53,6 +53,7 @@ include '../../includes/header.php';
     ["taiko", "太鼓 taiko", "a matsuri pattern, then ō-daiko / shime / ka"],
     ["pa", "放送 PA", "a wordless announcement decaying into static"],
     ["furin", "風鈴 fūrin", "a gust across the tubes, hung in the mode (a voice since 2026-09-13)"],
+    ["vox", "内線 intercom", "the comms vox as a voice: five sung syllables saying \"kage\" down the line — band, stutter and survive from the console's knobs"],
     ["noise", "雑音 noise · wall", "the filtered-noise swell", "wall"],
     ["noise", "雑音 noise · screech", "the feedback loop (gain 0.9), swept — rings out and tears down", "screech"],
     ["noise", "雑音 noise · static", "bit-crushed, gated bursts", "static"],
@@ -68,7 +69,6 @@ include '../../includes/header.php';
     "Water drip": "suikinkutsu — a drip's resonance",
     "Distant taiko": "a lone far drum hit",
     "Koto sweep": "a fast koto-ish glissando flourish",
-    "Comms vox": "the broken intercom — stuttered vowel-formant syllables (road map §4: promote to a voice)",
     "Geiger hum": "dying machinery — a sagging drone and thinning clicks",
     "Distant thunder": "a low rumble that rolls two or three times and goes (seated 2026-09-13)",
     "Relay chatter": "clicks in bursts over a coil's buzz (seated 2026-09-13)"

@@ -182,7 +182,8 @@ window.ZankyoAudio = (function () {
     "hichiriki", "biwa", "pa", "halo",                                    // Phase 3: the new bodies
     "signal",                                                              // S1: the receiver — reel choice, window, in-point, the dropouts (zk-broadcast.js)
     "far",                                                                 // W0: 逸脱 — the night's distance from home, its departures, their parameters (zk-far.js)
-    "furin"];                                                              // 風鈴 the chime as a voice (2026-09-13) — forked by label, so it moved nothing
+    "furin",                                                               // 風鈴 the chime as a voice (2026-09-13) — forked by label, so it moved nothing
+    "vox"];                                                                // 内線 the intercom as a voice (2026-09-14, PLAN-COMMS-VOX.md)
   var S = null;                                // the streams, forked per play
   function forkStreams() {
     var master = PJ.Rand.stream(seed);
@@ -1727,7 +1728,7 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // LAYERS + STATE
   // ==========================================================================
-  var LAYERS = ["subDrone", "sho", "shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "taiko", "noise", "ambient", "furin", "pa", "broadcast"];   // furin (2026-09-13): the chime as a landscape voice   // broadcast (S1): the receiver — a real reel from the past, heard in the hull
+  var LAYERS = ["subDrone", "sho", "shakuhachi", "hichiriki", "koto", "shamisen", "biwa", "taiko", "noise", "ambient", "furin", "pa", "vox", "broadcast"];   // furin (2026-09-13): the chime as a landscape voice; vox (2026-09-14): the intercom as a melodic voice   // broadcast (S1): the receiver — a real reel from the past, heard in the hull
   // Shamisen is deliberately NOT routed through the grit bus: the grit curve's
   // ~27x small-signal makeup spikes its plucked onset into an audible click.
   // Its own sawari buzz + the master saturator keep it abrasive without that.
@@ -1743,9 +1744,9 @@ window.ZankyoAudio = (function () {
   // default x old trim was folded into the new trim (see the table there).
   // Consequence, and it is the point: from 50 every knob is worth exactly
   // +6.02 dB up and silence down, the same gesture on every channel.
-  var layerVolumes = { subDrone: 0.5, sho: 0.5, shakuhachi: 0.5, hichiriki: 0.5, koto: 0.5, shamisen: 0.5, biwa: 0.5, taiko: 0.5, noise: 0.5, ambient: 0.5, furin: 0.5, pa: 0.5, broadcast: 0.5 };
+  var layerVolumes = { subDrone: 0.5, sho: 0.5, shakuhachi: 0.5, hichiriki: 0.5, koto: 0.5, shamisen: 0.5, biwa: 0.5, taiko: 0.5, noise: 0.5, ambient: 0.5, furin: 0.5, pa: 0.5, vox: 0.5, broadcast: 0.5 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
-  var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, furin: 1, pa: 1, broadcast: 1 };
+  var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, furin: 1, pa: 1, vox: 1, broadcast: 1 };
   var DEFAULT_LAYER_VOL = 0.5;   // the fallback for a layer not in the table above — centred like the rest (unreachable for every shipped layer)
 
   var LAYER_PARAM_DEFAULTS = {
@@ -1761,6 +1762,7 @@ window.ZankyoAudio = (function () {
     ambient:    {},
     furin:      { wind: 0.5, tubes: 5, shimmer: 0.5, decay: 1.0 },   // 風鈴: wind offsets the weather's channel; tubes hung; shimmer detunes the second mode; decay scales the ring
     pa:         { presence: 0.5, static: 0.5 },
+    vox:        { band: 0.5, stutter: 0.5, survive: 0.65, pace: 1.0 },   // 内線: how narrow the line, how much the relay chatters, how much of a word survives
     broadcast:  { band: 0.5, flutter: 0.5, grit: 0.5 },   // S1: how narrow the radio band, how deep the fading, how much the receiver distorts
   };
   var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
@@ -1808,7 +1810,7 @@ window.ZankyoAudio = (function () {
   // AMBIENT x2 (+6.02 dB, owner): the layer underneath the knob, doubled. Only
   // the ambient SOURCES double — the receiver's radioBus joins at sumAmb, past
   // this gain, so the broadcast is untouched by it.
-  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, furin: 3.2, pa: 1.68, broadcast: 1.4 };
+  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, furin: 3.2, pa: 1.68, vox: 1.7, broadcast: 1.4 };
   // PRESENCE (Phase M): a peaking boost on each body's defining band, chosen
   // from the masker map — the band where the landscape is weakest against the
   // voice — pre-attenuated (pre) so the compressor sees no new peak. Measured:
@@ -1825,6 +1827,7 @@ window.ZankyoAudio = (function () {
     biwa:      { f: 2500, db: 3.0, q: 0.8, pre: 0.95 },
     hichiriki: { f: 2400, db: 2.5, q: 1.2, pre: 0.92 },
     pa:        { f: 1500, db: 3.0, q: 1.0, pre: 0.92 },   // the PA's band as measured, 0.8–3.2 kHz (F2 and the static), where the shō masks it
+    vox:       { f: 1500, db: 3.0, q: 1.0, pre: 0.92 },   // the intercom sits in the PA's band, for the same reason
   };
 
   // ==========================================================================
@@ -2160,7 +2163,7 @@ window.ZankyoAudio = (function () {
       else if (layer === "biwa" && effectsReady && shamEdge) node.connect(shamEdge);      // the biwa shares the shamisen's saturator (stateless)
       else if (effectsReady && sumVoices) {
         node.connect(sumVoices);
-        if ((layer === "koto" || layer === "pa") && farWall) node.connect(farWall.send);   // the corridor answers the koto and the PA
+        if ((layer === "koto" || layer === "pa" || layer === "vox") && farWall) node.connect(farWall.send);   // the corridor answers the koto, the PA and the intercom
         if ((layer === "shakuhachi" || layer === "shamisen") && haloSend) node.connect(haloSend);   // the koto's strings hear them
       }
       else node.connect(reverbSend);
@@ -2478,7 +2481,7 @@ window.ZankyoAudio = (function () {
   function modePool(d) {
     return [["hirajoshi", 4 - 2 * d], ["insen", 2 + 2 * d], ["kumoi", 3 - 1.5 * d], ["iwato", 1.5 + 2.5 * d]];
   }
-  var MELODIC = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa"];
+  var MELODIC = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa", "vox"];   // vox (2026-09-14): the intercom, sixth of the melodic voices
   // SEATING — every draw is taken unconditionally (stream discipline), the
   // named seating then overrides, the kind tilts, and a guarantee keeps at
   // least one melodic voice unless the station is dead.
@@ -2489,11 +2492,12 @@ window.ZankyoAudio = (function () {
     if (lastCycleEmpty && named === "dead station") named = "free";   // never two empty cycles in a row (critic, Phase 4)
     var s = { shakuhachi: rng.chance(0.78), koto: rng.chance(0.75), shamisen: rng.chance(0.72), taiko: rng.chance(0.75), sho: rng.chance(0.8), entry: {}, named: named,
       // Phase 3: the hichiriki lives in the rite (always) and visits elsewhere; the biwa belongs to drift and silence
-      hichiriki: rng.chance(kind === "rite" ? 1 : 0.3), biwa: rng.chance(kind === "drift" || kind === "silence" ? 0.65 : 0.15) };
+      hichiriki: rng.chance(kind === "rite" ? 1 : 0.3), biwa: rng.chance(kind === "drift" || kind === "silence" ? 0.65 : 0.15),
+      vox: rng.chance(kind === "broadcast" ? 0.7 : 0.35) };   // the intercom lives in the broadcast cycles and visits elsewhere (PLAN-COMMS-VOX §2.2; 0.35 measured, 0.25 was ten syllables an hour on seed 7)
     if (named === "shakuhachi alone") { s.shakuhachi = true; s.entry.koto = "ha"; s.entry.shamisen = "ha"; }
     else if (named === "danmono") { s.koto = true; s.shamisen = false; }
     else if (named === "taiko-led") { s.taiko = true; s.shakuhachi = true; s.entry.shakuhachi = "reprise"; if (!s.koto && !s.shamisen) s.koto = true; }   // the plucked voices carry a taiko-led cycle
-    else if (named === "dead station") { s.shakuhachi = s.koto = s.shamisen = s.taiko = s.hichiriki = s.biwa = false; s.sho = true; }   // dead, not switched off: the shō is a drone here
+    else if (named === "dead station") { s.shakuhachi = s.koto = s.shamisen = s.taiko = s.hichiriki = s.biwa = s.vox = false; s.sho = true; }   // dead, not switched off: the shō is a drone here
     if (kind === "rite") s.sho = true;
     if (kind === "storm") s.taiko = true;
     if (kind === "silence" && s.shakuhachi && s.koto && s.shamisen) s.shamisen = false;
@@ -2965,7 +2969,7 @@ window.ZankyoAudio = (function () {
     var who = 0;
     while (t < t0 + dur - 4) {
       if (who === 0) { var d = 1.5 + R.rnd(0, 2); paSpeak(t, d, { gain: 0.8 }); t += d + 0.6 + R.rnd(0, 1.2); }
-      else { ambCommsVox(t); t += 1.2 + R.rnd(0, 1.5); }
+      else { t += voxFragment(t, R) + 0.4 + R.rnd(0, 1.2); }   // the intercom sings a fragment of what the cycle is working (2026-09-14)
       who = 1 - who;
       if (R.next() < 0.15) t += 2 + R.rnd(0, 3);   // a long pause on the line
     }
@@ -3715,6 +3719,8 @@ window.ZankyoAudio = (function () {
       // the hichiriki stretches and mirrors (the reed holds a line); the biwa splinters and reverses (the narrator's fragments)
       hichiriki: { augment: 3.5, invert: 2.5, transpose: 2.5, fragmentHead: 2, fragmentTail: 1.5, retrograde: 1, ornament: 0.5, sequence: 0.5, diminish: 0.3, rerhythm: 0.8 },
       biwa: { fragmentHead: 3, fragmentTail: 3, retrograde: 2, augment: 2, transpose: 2, invert: 1.5, diminish: 1, sequence: 0.5, ornament: 0.3, rerhythm: 1.5 },
+      // the intercom splinters and re-times (the stutter is its ornament, so `ornament` is near nothing)
+      vox: { fragmentHead: 3, fragmentTail: 3, rerhythm: 2.5, diminish: 2, retrograde: 1.5, transpose: 1.5, invert: 1, augment: 0.5, sequence: 0.5, ornament: 0.2 },
     };
     var PHASE_TILT = {
       jo:      { augment: 1.7, transpose: 1.4, ornament: 0.6, sequence: 0.4, fragmentHead: 0.5, fragmentTail: 0.5, diminish: 0.4, rerhythm: 0.6 },   // state plainly, stretch
@@ -3895,13 +3901,14 @@ window.ZankyoAudio = (function () {
     }
 
     // ---- dialogue ledger: real obligations between voices, with deadlines ----
-    var POST_P = { shakuhachi: 0.45, koto: 0.4, shamisen: 0.35, hichiriki: 0.3, biwa: 0.25 };   // ≈ the old per-voice answer densities
+    var POST_P = { shakuhachi: 0.45, koto: 0.4, shamisen: 0.35, hichiriki: 0.3, biwa: 0.25, vox: 0.3 };   // ≈ the old per-voice answer densities
     var POST_TO = {
-      shakuhachi: [["koto", 3], ["shamisen", 2], ["hichiriki", 1]],
-      koto: [["shakuhachi", 3], ["shamisen", 2], ["biwa", 1]],
+      shakuhachi: [["koto", 3], ["shamisen", 2], ["hichiriki", 1], ["vox", 1]],
+      koto: [["shakuhachi", 3], ["shamisen", 2], ["biwa", 1], ["vox", 1]],
       shamisen: [["koto", 3], ["shakuhachi", 2]],
       hichiriki: [["shakuhachi", 3], ["koto", 1]],
       biwa: [["koto", 2], ["shakuhachi", 1]],
+      vox: [["shakuhachi", 2], ["koto", 1]],       // the intercom asks the winds and the koto; they answer it now and then
     };
     function post(fromVoice, toVoice, motif, type, t) {
       ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: t + S.motif.rnd(6, 16) });
@@ -5308,6 +5315,162 @@ window.ZankyoAudio = (function () {
   }
 
   // ==========================================================================
+  // 内線 THE INTERCOM — the comms vox as a voice (road map §4, PLAN-COMMS-VOX.md, 2026-09-14)
+  // ==========================================================================
+  // A second speaker beside the PA. Where the PA speaks wordlessly on one
+  // reciting tone, the intercom SINGS: its carrier sits on the phrase's note
+  // in a speaking register, two formants shape a vowel per syllable, a fixed
+  // third gives the box its presence, and the whole thing goes down a LINE —
+  // a band the `band` knob narrows toward a telephone, a codec staircase, a
+  // noise floor squelched open with the voice. `stutter` is the relay
+  // chattering the key: a syllable re-triggers two to four times at
+  // 60–140 ms, same pitch, fresh attacks — the intercom's ornament, where
+  // the shakuhachi has its bends. `survive` is how much of a word survives:
+  // a syllable is dropped with chance (1 − survive), and the hole KEEPS ITS
+  // TIME so the phrase's rhythm still reads, with the static rising in it
+  // rather than the line going dead (rc.61's lesson: never a bare mute).
+  //
+  // What it says: a born motif's syllables — the improviser names them,
+  // ka·ge, shi·ro — give the vowels, so the intercom is heard saying the
+  // newborn's name whenever that idea is worked; an authentic gesture gets
+  // vowels drawn on the vox stream. A syllable-final n is a hum.
+  //
+  // One carrier per phrase, re-pitched and re-keyed by gain per syllable —
+  // never a node per syllable, so a stutter costs automation, not sources.
+  var VOX_VOWELS = { a: [730, 1090], i: [270, 2290], u: [300, 870], e: [530, 1840], o: [570, 840], n: [250, 700] };
+  var VOX_VOWEL_LIST = ["a", "i", "u", "e", "o"];
+  function voxVowelsOf(name) {   // "born: kage" → ["a", "e"]; "born: shin" → ["i", "n"]; anything without a born name → null
+    if (!/^born: /.test(String(name || ""))) return null;
+    var m = String(name).replace(/^born: /, "").replace(/·\d+$/, "").match(/[aeiou]|n(?![aeiou])/g);
+    return m && m.length ? m : null;
+  }
+  // syls: [{ f, t, dur, vowel }] in audio seconds; opts: { R, gain, pan }. Returns the number of syllables that sounded.
+  function voxSay(syls, opts) {
+    if (!ctx || !syls.length) return 0;
+    var c = ctx, R = (opts && opts.R) || S.vox;
+    var band = getLayerParam("vox", "band", 0.5), stutter = getLayerParam("vox", "stutter", 0.5), survive = getLayerParam("vox", "survive", 0.65);
+    var out = panAt("vox", opts && opts.pan != null ? opts.pan : (R.next() * 2 - 1) * 0.35);
+    var t0 = syls[0].t, end = syls[syls.length - 1].t + syls[syls.length - 1].dur;
+    var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(syls[0].f, t0);
+    var pre = c.createGain(); pre.gain.setValueAtTime(0.6, t0); o.connect(pre);
+    var f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter(), f3 = c.createBiquadFilter();
+    f1.type = "bandpass"; f1.Q.setValueAtTime(7, t0); f2.type = "bandpass"; f2.Q.setValueAtTime(8, t0); f3.type = "bandpass"; f3.Q.setValueAtTime(8, t0); f3.frequency.setValueAtTime(2600, t0);
+    var f2g = c.createGain(), f3g = c.createGain(); f2g.gain.setValueAtTime(0.7, t0); f3g.gain.setValueAtTime(0.25, t0);
+    var gate = c.createGain(); gate.gain.setValueAtTime(0, t0);
+    pre.connect(f1); f1.connect(gate); pre.connect(f2); f2.connect(f2g); f2g.connect(gate); pre.connect(f3); f3.connect(f3g); f3g.connect(gate);
+    var body = c.createBiquadFilter(); body.type = "lowpass"; body.frequency.setValueAtTime(800, t0); body.Q.setValueAtTime(0.7, t0);
+    var bodyG = c.createGain(); bodyG.gain.setValueAtTime(0.15, t0); pre.connect(body); body.connect(bodyG); bodyG.connect(gate);
+    // the line: the band, the codec, the level
+    var hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), cr = c.createWaveShaper(), og = c.createGain();
+    hp.type = "highpass"; hp.frequency.setValueAtTime(200 + 200 * band, t0); hp.Q.setValueAtTime(0.7, t0);
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(5000 - 2600 * band, t0); lp.Q.setValueAtTime(0.7, t0);
+    var steps = 22, cc = new Float32Array(1024); for (var ci = 0; ci < 1024; ci++) { var cx = (ci / 1023) * 2 - 1; cc[ci] = Math.round(cx * steps) / steps; } cr.curve = cc;
+    gate.connect(hp); hp.connect(lp); lp.connect(cr); cr.connect(og); og.connect(out);
+    var peak = 0.55 * ((opts && opts.gain) || 1);
+    og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(peak, t0 + 0.02); og.gain.setValueAtTime(peak, end); og.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
+    // 相 PHASING on a far night: a second copy of the line drifting behind the
+    // first (the departure's own driftMs × passes across the phrase) — two
+    // intercoms on one wire is exactly what a bad line does.
+    var ph = farNight && farNight.dep && farNight.dep.phase;
+    if (ph) {
+      var dly = c.createDelay(1.5), dg = c.createGain(); dg.gain.setValueAtTime(0.7, t0);
+      dly.delayTime.setValueAtTime(0.001, t0); dly.delayTime.linearRampToValueAtTime(Math.min(1.4, ph.driftMs * ph.passes / 1000), end);
+      cr.connect(dly); dly.connect(dg); dg.connect(og);
+    }
+    // the squelch: a noise floor keyed with the voice, up in the holes
+    var nz = null, ng = null;
+    if (sharedNoiseBuf) {
+      nz = noiseSource(); var nhp = c.createBiquadFilter(); nhp.type = "highpass"; nhp.frequency.setValueAtTime(1800, t0);
+      ng = c.createGain(); ng.gain.setValueAtTime(0.0001, t0); nz.connect(nhp); nhp.connect(ng); ng.connect(out);
+    }
+    var pv1 = VOX_VOWELS.u[0], pv2 = VOX_VOWELS.u[1], sounded = 0;
+    for (var i = 0; i < syls.length; i++) {
+      var sy = syls[i], st = sy.t, dur = Math.max(0.08, sy.dur);
+      if (signalUp(st)) continue;                                        // nothing melodic sounds inside a broadcast's hold
+      if (sy.hole) continue;                                             // 継 a hocket's silent slot: no draw, the time kept
+      var dropped = R.next() > survive;                                  // drawn for every syllable, sounded or not
+      if (ng) {                                                          // the floor: open under a syllable, up in a hole
+        var fl = dropped ? 0.035 : 0.012;
+        ng.gain.setValueAtTime(0.0001, st); ng.gain.exponentialRampToValueAtTime(fl, st + 0.02); ng.gain.setValueAtTime(fl, st + dur - 0.03); ng.gain.exponentialRampToValueAtTime(0.0001, st + dur);
+      }
+      if (dropped) continue;                                             // the hole keeps its time
+      var f = farGlideOn ? sy.f * farGlideMul(st) : sy.f;               // the carrier rides the glide like every voice
+      o.frequency.setValueAtTime(f, st);
+      var v = VOX_VOWELS[sy.vowel] || VOX_VOWELS.a;
+      f1.frequency.setValueAtTime(pv1, st); f1.frequency.linearRampToValueAtTime(v[0], st + 0.03);
+      f2.frequency.setValueAtTime(pv2, st); f2.frequency.linearRampToValueAtTime(v[1], st + 0.03);
+      pv1 = v[0]; pv2 = v[1];
+      var reps = R.next() < stutter * 0.7 ? 2 + Math.floor(R.next() * 3) : 1, seg = dur / reps;   // the relay chatters the key
+      for (var k = 0; k < reps; k++) {
+        var kt = st + k * seg, on = Math.min(0.012, seg * 0.15), hold = seg * (reps > 1 ? 0.55 : 0.78);
+        gate.gain.setValueAtTime(0, kt); gate.gain.linearRampToValueAtTime(1, kt + on); gate.gain.setValueAtTime(1, kt + on + hold); gate.gain.linearRampToValueAtTime(0, kt + Math.min(seg, on + hold + 0.025));
+      }
+      emitNote("vox", f, st, dur);
+      sounded++;
+    }
+    o.start(t0); o.stop(end + 0.3);
+    if (nz) { nz.start(t0, R.next() * 10); nz.stop(end + 0.3); }
+    return sounded;
+  }
+  // notes [{ deg, durBeats }] → syllables, with vowels from a born name or drawn on R
+  function voxSyllables(notes, t, beat, name, R, sharp) {
+    var vowels = voxVowelsOf(name), syls = [], tt = t;
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i], dur = Math.max(0.12, n.durBeats * beat);
+      var vw = vowels ? vowels[i % vowels.length] : VOX_VOWEL_LIST[Math.floor(R.next() * VOX_VOWEL_LIST.length)];
+      syls.push({ f: SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq * (sharp || 1), t: tt, dur: dur, vowel: vw });
+      tt += dur + R.next() * 0.06;
+    }
+    return syls;
+  }
+  // THE VOICE: seated, claiming the air, in the ledger — the hichiriki's
+  // pattern (a sparse voice with a wide margin), in the speaking register.
+  var voxState = { idx: 5, dir: 1, center: 5, lastSpan: 0 };
+  function startVox(t) { if (playing) voxPhrase(t); }
+  function voxPhrase(t0) {
+    if (!playing) return;
+    var now = t0, arc = getArc(now), R = S.vox;
+    if (!seated("vox", now)) { afterRaw("vox", now, R.rnd(8, 14), voxPhrase); return; }
+    var margin = airMargin(R, now) * 0.8;      // a small footprint: the intercom is short, and a wide margin was costing the other five a tenth of their notes
+    var tok = airClaimAt(now, "vox", voxState.lastSpan || 2.5, margin);
+    if (!tok) { afterRaw("vox", now, R.rnd(3, 6), voxPhrase); return; }
+    var pace = getLayerParam("vox", "pace", 1.0) * (1 + arc * 0.4);
+    voxState.center = Math.round(scaleIndexOf(3) + arc * 2);   // the speaking range
+    var phrase, motif = null;
+    if (Motif.overdueFor("vox", now)) motif = Motif.claim("vox", now);
+    if (!motif && R.chance(0.65)) motif = Motif.request("vox", now);   // mostly the cycle's own ideas — a walk's short fragments were the same on every night
+    if (motif) { phrase = fitToRegister(motif.notes, voxState.center).slice(0, 6); Motif.postFrom("vox", motif, now); }
+    else {
+      phrase = walk(R, voxState, 3 + Math.floor(R.next() * 3), 6, arc);
+      emitEvent({ cat: "vox", label: "fresh", detail: phrase.length + " syllables · " + arcPhase(now) }, now);
+    }
+    if (phrase.length) voxState.idx = phrase[phrase.length - 1].deg;
+    var ownBeat = 0.5 / pace * farTimeMul("vox", now);
+    var cn = farCanonTake("vox", phrase, now, voxState.center, ownBeat);   // 重 継: the intercom joins the ensemble departures
+    phrase = cn.phrase;
+    var syls = voxSyllables(phrase, cn.t0, ownBeat * cn.cs, motif ? motif.src : null, R, cn.sharp);
+    if (cn.kind === "hocket") for (var hi = 0; hi < syls.length; hi++) if ((hi % cn.of) !== cn.slot) syls[hi].hole = true;   // 継: the line exists only in the sum
+    voxSay(syls, { R: R });
+    var t = syls.length ? syls[syls.length - 1].t + syls[syls.length - 1].dur : now + 0.5;
+    voxState.lastSpan = t - now;
+    tok.until = t + margin;
+    var rest = (4 + R.next() * 7) * (1 - arc * 0.4) * metaRestMul() * gapMulAt(t) * Motif.maMul("vox") / trimOf("vox");
+    afterSpan("vox", now, (t - now) + rest * farTimeMul("vox", now), voxPhrase);
+  }
+  // 回線 the line's second speaker: a fragment of what the cycle is working,
+  // no air claim (the line holds it) and no ledger post — a conversation
+  // about the music. Returns the fragment's length in seconds.
+  function voxFragment(t, R) {
+    var m = Motif.request("vox", t), notes;
+    if (m && m.notes && m.notes.length) notes = fitToRegister(m.notes, voxState.center).slice(0, 2 + Math.floor(R.next() * 3));
+    else { notes = []; var n = 2 + Math.floor(R.next() * 3); for (var i = 0; i < n; i++) notes.push({ deg: scaleIndexOf(Math.floor(R.next() * 5)), durBeats: 1 }); }
+    var syls = voxSyllables(notes, t, 0.45, m ? m.src : null, R);
+    voxSay(syls, { R: R, gain: 0.8 });
+    var last = syls[syls.length - 1];
+    return last.t + last.dur - t;
+  }
+
+  // ==========================================================================
   // AMBIENT — quirky events (derelict orbital station incidentals)
   // ==========================================================================
   function ambBonsho(t, opts) {                    // temple bell (bonshō) — deep, long, inharmonic
@@ -5390,21 +5553,7 @@ window.ZankyoAudio = (function () {
       o.start(tt); o.stop(tt + 0.65); tt += 0.06;
     }
   }
-  function ambCommsVox(t) {                         // malfunctioning comms — stuttered vowel-formant glitch
-    var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.6);
-    var carrier = c.createOscillator(); carrier.type = "sawtooth"; carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(2)].freq * 2, t);
-    var vca = c.createGain(); vca.connect(out); vca.gain.setValueAtTime(0.0001, t);
-    [700, 1100, 2600].forEach(function (ff) { var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(ff, t); bp.Q.setValueAtTime(8, t); carrier.connect(bp); bp.connect(vca); });
-    var syl = 3 + Math.floor(S.ambient.next() * 4), tt = t;
-    for (var i = 0; i < syl; i++) {
-      var d = 0.05 + S.ambient.next() * 0.12;
-      carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(Math.floor(S.ambient.next() * 5))].freq * 2, tt);
-      vca.gain.setValueAtTime(0.05, tt); vca.gain.setValueAtTime(0.0001, tt + d);
-      tt += d + 0.04 + S.ambient.next() * 0.08;
-    }
-    carrier.start(t); carrier.stop(tt + 0.1);
-    if (sharedNoiseBuf) { var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2000, t); var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out); ng.gain.setValueAtTime(0.02, t); ng.gain.exponentialRampToValueAtTime(0.0001, tt); nz.start(t, S.ambient.next() * 10); nz.stop(tt + 0.1); }
-  }
+  // (ambCommsVox left here 2026-09-14: the comms vox is a voice, 内線 — see THE INTERCOM above and PLAN-COMMS-VOX.md)
   function ambGeigerHum(t) {                        // dying machinery — sagging drone + thinning radiation clicks
     var c = ctx, out = panAt("ambient", (S.ambient.next() * 2 - 1) * 0.3), dur = 3 + S.ambient.next() * 3, base = subRoot() / 2;
     [-8, 8].forEach(function (det) {
@@ -5563,15 +5712,15 @@ window.ZankyoAudio = (function () {
     { fn: ambNumbers,   name: "Numbers station" },
     { fn: ambPipeKnock, name: "Pipe knock" },
   ];
-  // ("Wind chime" left this pool 2026-09-13 when the fūrin became a voice — as
-  // the biwa's one-shot did at its promotion; the scene-joint chime stays.)
+  // ("Wind chime" left this pool 2026-09-13 when the fūrin became a voice, and
+  // "Comms vox" 2026-09-14 when the intercom did — as the biwa's one-shot did
+  // at its promotion; the scene-joint chime stays.)
   var AMBIENT_POOL = [
     { fn: ambBonsho,       w: 4, name: "Temple bell" },
     { fn: ambGlitch,       w: 4, name: "Static glitch" },
     { fn: ambSuikinkutsu,  w: 3, name: "Water drip" },
     { fn: ambDistantTaiko, w: 3, name: "Distant taiko" },
     { fn: ambKotoSweep,    w: 2, name: "Koto sweep" },
-    { fn: ambCommsVox,     w: 2, name: "Comms vox" },
     { fn: ambGeigerHum,    w: 3, name: "Geiger hum" },
     // seated 2026-09-13 from the bench (road map §5): rarer than the old eight,
     // and the kind table below keeps each to the weather it belongs to
@@ -5582,9 +5731,9 @@ window.ZankyoAudio = (function () {
   // water, bells and chimes; silence keeps the bell and little else; the
   // storm crackles. (Multipliers on the flat weights above.)
   var AMBIENT_KIND_W = {
-    broadcast: { "Static glitch": 3, "Comms vox": 5, "Geiger hum": 2, "Koto sweep": 0.5, "Distant thunder": 0.4, "Relay chatter": 2.5 },
+    broadcast: { "Static glitch": 3, "Geiger hum": 2, "Koto sweep": 0.5, "Distant thunder": 0.4, "Relay chatter": 2.5 },
     drift:     { "Water drip": 2, "Temple bell": 1.5, "Static glitch": 0.5, "Distant thunder": 1.8, "Relay chatter": 0.3 },
-    silence:   { "Temple bell": 2, "Static glitch": 0.4, "Distant taiko": 0.4, "Koto sweep": 0.3, "Comms vox": 0.5, "Geiger hum": 0.6, "Distant thunder": 0.6, "Relay chatter": 0.3 },
+    silence:   { "Temple bell": 2, "Static glitch": 0.4, "Distant taiko": 0.4, "Koto sweep": 0.3, "Geiger hum": 0.6, "Distant thunder": 0.6, "Relay chatter": 0.3 },
     storm:     { "Static glitch": 2, "Distant taiko": 2, "Geiger hum": 1.5, "Water drip": 0.5, "Distant thunder": 2.5, "Relay chatter": 1.5 },
     rite:      { "Temple bell": 2, "Distant thunder": 0.5, "Relay chatter": 0.4 },
   };
@@ -5753,6 +5902,7 @@ window.ZankyoAudio = (function () {
     after("noise", t0, 8, noiseEvent);
     after("ambient", t0, 7, startAmbient);
     after("furin", t0, 12, furinCycle);           // 風鈴: the chime hangs from the start; whether it speaks is the wind's
+    after("vox", t0, 34, startVox);               // 内線: the intercom, last of the melodic voices to enter
     lane("form").every(formPulse);
     roomReset(t0);
     lane("room").every(roomPulse);               // Phase M: the crew listens for who speaks
@@ -5798,9 +5948,9 @@ window.ZankyoAudio = (function () {
   // the tide: at the trough a passing hush, at the peak a devastating cut,
   // the bell tolling twice. In a silence or dead-station cycle the KIRU cuts
   // nothing: no roll, no swell — the hush deepens and the bell speaks.
-  var MELODIC_LANES = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa"];
+  var MELODIC_LANES = ["shakuhachi", "koto", "shamisen", "hichiriki", "biwa", "vox"];
   var MELODIC_RESTART = { shakuhachi: function (t) { shakuhachiPhrase(t); }, koto: function (t) { kotoPhrase(t); }, shamisen: function (t) { shamisenPhrase(t); },
-    hichiriki: function (t) { hichirikiPhrase(t); }, biwa: function (t) { biwaPhrase(t); } };
+    hichiriki: function (t) { hichirikiPhrase(t); }, biwa: function (t) { biwaPhrase(t); }, vox: function (t) { voxPhrase(t); } };
   function cutEnvelope(g, t, dip, hold) {
     g.cancelScheduledValues(t);
     g.setValueAtTime(1, t + 0.52);
@@ -6091,7 +6241,7 @@ window.ZankyoAudio = (function () {
     auditionPrep(layer);
     // The audition draws from its own stream: while it plays, every body
     // borrows S.sample so a ♪ press mid-performance re-rolls nothing.
-    var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone", "hichiriki", "biwa", "pa", "furin"], saved = {}, bi;
+    var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone", "hichiriki", "biwa", "pa", "furin", "vox"], saved = {}, bi;
     for (bi = 0; bi < borrowed.length; bi++) { saved[borrowed[bi]] = S[borrowed[bi]]; S[borrowed[bi]] = S.sample; }
     var t = ctx.currentTime + 0.05;
     switch (layer) {
@@ -6103,6 +6253,11 @@ window.ZankyoAudio = (function () {
       case "hichiriki": samplePhrase(hichirikiNote, t, [3, 4, 3, 0], 1.4); break;
       case "pa": paSpeak(t, 4, {}); break;
       case "furin": furinGust(t, 0.8, S.sample); break;   // 風鈴: one good gust across the tubes
+      case "vox": {                                        // 内線: a five-syllable fragment saying "kage", stutter and survive from the knobs
+        var vd = [3, 4, 3, 1, 0].map(function (d, i) { return { deg: scaleIndexOf(d), durBeats: i === 4 ? 2 : 1 }; });
+        voxSay(voxSyllables(vd, t, 0.45, "born: kage", S.sample), { R: S.sample });
+        break;
+      }
       case "biwa": biwaStrum(SCALE[scaleIndexOf(0)].freq, t, {}); stringNote("biwa", SCALE[scaleIndexOf(3)].freq, t + 1.2, 1.4, { vel: 0.8 }); stringNote("biwa", SCALE[scaleIndexOf(0)].freq, t + 2.4, 2, { vel: 0.7 }); break;
       case "taiko": taikoPattern(t, "matsuri", 0.5, 1); taikoHit(t + 2.2, true, "odaiko"); taikoHit(t + 2.6, false, "shime"); taikoHit(t + 2.8, false, "ka"); break;
       case "noise": sampleNoise(t, variant); break;
