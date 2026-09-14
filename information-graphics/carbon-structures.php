@@ -119,8 +119,8 @@ include '../includes/header.php';
         <p>I suggested he try D3.js, a JavaScript library for bespoke data visualization, to show his work. I
           shared a few of the visualizations I've built in D3 to demonstrate the interactive features that set the
           library apart, and we agreed to meet up one afternoon to build this dashboard together.</p>
-        <p>Kamil wanted to collaborate, so we met up again on a Sunday. He brought screenshots of his existing
-          plots and a folder of his structures, and I treated him the way I'd treat any client: he supplied the data
+        <p>He brought screenshots of his existing plots and a folder of his structures, and I treated him the way
+          I'd treat any client: he supplied the data
           and the domain knowledge, and my job was the storytelling side, turning the data into something engaging
           and, ideally, beautiful. I wrote the first prompts, worked with Claude to build the viewer in D3, and then
           spent the session refining it: adding interactive features, rearranging the layout, changing what each
