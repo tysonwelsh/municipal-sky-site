@@ -144,12 +144,15 @@ window.KolobViz = (function () {
     }
   }
   // The facade stands INSIDE the wheel: the pipes' feet on the horizon (the
-  // impost is the horizon rule), seated across the hour ring's chord, with the
-  // ring's curve above each pipe for its ceiling — so live, the facade fills
-  // the crown of the wheel the way a case's pipes fill an arch, the gravest
-  // pipes reaching highest where the arch is highest. At rest the minimum
-  // heights alone draw the stepped skyline of the hymnbook cover. Drawn on
-  // the wheel canvas by drawWheel, before the horizon rule.
+  // impost is the horizon rule), seated across the hour ring's chord. Every
+  // pipe may rise to the same ceiling — the crown of the hour ring — so the
+  // outer pipes are no longer pinned under the arch where it bends down to
+  // the horizon (v0.30, owner: "let the pipes ignore the arc for now"); a
+  // tall outer pipe simply crosses the ring. The travel still favours the
+  // centre (the outer seats reach ~55% of the crown), so the facade keeps
+  // its shape. At rest the minimum heights alone draw the stepped skyline of
+  // the hymnbook cover. Drawn on the wheel canvas by drawWheel, after the
+  // ring and the seat labels and before the fixed arc and the horizon rule.
   function drawFacade(c, g) {
     var baseY = g.horizonY, cx = g.cx, cy = g.cy, rIn = g.rHour;
     var dy = cy - baseY;                                       // the wheel's centre is this far below the horizon
@@ -157,7 +160,8 @@ window.KolobViz = (function () {
     var span = Math.max(60, (halfChord - 8) * 2);
     var step = span / NPIPES;
     var x0 = cx - span / 2 + step / 2;
-    var CEIL = 6;                                              // paper between a pipe's cap and the ring
+    var CEIL = 6;                                              // paper between the tallest cap and the ring's crown
+    var maxH = Math.max(50, baseY - (cy - rIn) - CEIL);        // one ceiling for every pipe: the crown of the hour ring
     for (var k = 0; k < NPIPES; k++) {
       var seat = seatOf[k];
       var x = x0 + seat * step;
@@ -165,11 +169,6 @@ window.KolobViz = (function () {
       var centerness = 1 - Math.abs(seat - (NPIPES - 1) / 2) / ((NPIPES - 1) / 2);
       var w = step * (0.5 + centerness * 0.34);
       var minH = 18 + centerness * 22;
-      // the ceiling: the ring's height over the pipe's OUTER shoulder, where
-      // the arch is lowest above it
-      var dx = Math.abs(x - cx) + w * 0.4;
-      var ringY = cy - Math.sqrt(Math.max(0, rIn * rIn - dx * dx));
-      var maxH = Math.max(minH + 4, baseY - ringY - CEIL);
       var h = minH + bands[k] * (maxH - minH) * (0.55 + centerness * 0.45);
       drawPipe(c, x, baseY, w, Math.min(h, maxH));
     }
