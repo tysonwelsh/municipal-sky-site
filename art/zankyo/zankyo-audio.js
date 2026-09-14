@@ -1876,7 +1876,7 @@ window.ZankyoAudio = (function () {
   // AMBIENT x2 (+6.02 dB, owner): the layer underneath the knob, doubled. Only
   // the ambient SOURCES double — the receiver's radioBus joins at sumAmb, past
   // this gain, so the broadcast is untouched by it.
-  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, furin: 3.2, pa: 1.68, vox: 1.7, broadcast: 1.4 };
+  var LAYER_VOL_TRIM = { subDrone: 1.2, sho: 1.24, shakuhachi: 1.87, hichiriki: 0.735, koto: 1.92, shamisen: 4.5, biwa: 3.57, taiko: 0.868, noise: 1, ambient: 3.85, furin: 5.76, pa: 1.68, vox: 1.7, broadcast: 1.4 };   // furin 3.2 → 5.76 (×1.8, +5.1 dB): the owner, 2026-09-14
   // PRESENCE (Phase M): a peaking boost on each body's defining band, chosen
   // from the masker map — the band where the landscape is weakest against the
   // voice — pre-attenuated (pre) so the compressor sees no new peak. Measured:
