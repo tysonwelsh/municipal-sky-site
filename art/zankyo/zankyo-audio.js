@@ -2460,7 +2460,19 @@ window.ZankyoAudio = (function () {
   // reintroduced. It showed immediately: seed 7 put an 11.2 s hichiriki note
   // 3.5 s inside a hold on the first measured run.
   //
-  // 55 s clears the 46 s lookahead, and that is the whole of what this constant
+  // THE LEAD IS 75 s, AND IT IS A MEASURED NUMBER (2026-09-14). 55 cleared the
+  // 46 s lookahead plan §12 measured on HOME nights, and it passed — on a far
+  // night, by 9.3 s on seed 3042, which is the shape of margin the comment
+  // below warns about. 遅 stretches a hichiriki note and the lookahead follows;
+  // with the receptions of PLAN-SIGNAL-SHAPES it reached 58.9 s on that same
+  // seed and the guarantee broke outright. Measured again at 75: the worst
+  // commit across sixteen far seeds at d 0.9 is 58.1 s, so the margin is 16.9 s
+  // rather than 9.3, and the harness asserts it against the lead ACTUALLY USED
+  // on every run — which is the only reason this is a bound and not a hope.
+  // The cost is the first 75 s of a cycle being illegal for a reception: 150
+  // signals over six seeds at an hour against 154 at 55 s. Worth it.
+  //
+  // 55 s cleared the 46 s lookahead, and that is the whole of what this constant
   // has to do now. It used to carry a second job: the spacing between two
   // broadcasts had to clear lead + footprint, because the receiver had ONE
   // armed slot and the next arm cleared the live one's hold. Both of those are
@@ -2528,7 +2540,7 @@ window.ZankyoAudio = (function () {
       ha: { short: 0, spaceBc: 0, spaceGuest: 0, noT0: 0 }, seated: 0, joSeated: 0, overflow: 0, lost: 0 });
     k.seated++; if (grp === "jo") k.joSeated++; if (ov) k.overflow++;
   }
-  var BC_ARM_LEAD_S = 55;
+  var BC_ARM_LEAD_S = 75;
   var AIR_HOLD_PAD = 4;                          // seconds of slack on an estimated span, before a signal's hold
   function airClaimAt(t, voice, span, margin) {
     airT = t;
