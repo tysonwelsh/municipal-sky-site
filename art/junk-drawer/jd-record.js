@@ -23,34 +23,30 @@
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
   var swiped = false;   /* a plate swipe just turned the response — see build() */
-  /* THE PAPER (owner, 2026-09-10): the photograph's swatch is graph paper
-     by default; a small button in its top-right corner swaps it for
-     BLUEPRINT — dark blue, pale rules — for artwork too light to read on
-     the cream (the dandelion was the case in point). A viewer's choice,
-     remembered per device; the artwork's frame does not move a pixel
-     either way (the class only repaints the paper and its margin ink). */
-  var K_PAPER = 'jd-paper';
-  var paper = 'graph';
-  try { if (localStorage.getItem(K_PAPER) === 'blueprint') paper = 'blueprint'; } catch (e) {}
-  function paperCls() { return paper === 'blueprint' ? ' is-blueprint' : ''; }
+  /* THE PAPER (owner, 2026-09-10; shared 2026-09-14): the photograph's
+     swatch is graph paper by default; a small button in its top-right
+     corner swaps it for BLUEPRINT — dark blue, pale rules — for artwork
+     too light to read on the cream (the dandelion was the case in point).
+     A viewer's choice, remembered per device via window.JD_paper
+     (jd-core.js — the rating instrument shares it too, so a swap on
+     either surface is what the other shows next time it opens); the
+     artwork's frame does not move a pixel either way (the class only
+     repaints the paper and its margin ink). */
+  function paperCls() { return window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : ''; }
   function paperBtnHTML() {
-    var blue = paper === 'blueprint';
+    var blue = window.JD_paper.get() === 'blueprint';
     return '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="' +
       (blue ? 'true' : 'false') + '" title="' +
       (blue ? 'back to graph paper' : 'blueprint paper — for light artwork') +
       '" aria-label="' + (blue ? 'Switch to graph paper' : 'Switch to blueprint paper') + '">' +
-      '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
-      '<rect x="1.5" y="1.5" width="13" height="13" rx="1.5" fill="#f8f3e2" stroke="currentColor" stroke-width="1"/>' +
-      '<path d="M14.5 1.5v13h-13z" fill="#1b4a8a"/>' +
-      '<path d="M5.5 1.5v13M10.5 1.5v13M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-opacity="0.38" stroke-width="0.8"/>' +
-      '</svg></button>';
+      window.JD_paper.icon() + '</button>';
   }
   function togglePaper() {
-    paper = paper === 'blueprint' ? 'graph' : 'blueprint';
-    try { localStorage.setItem(K_PAPER, paper); } catch (e) {}
+    var next = window.JD_paper.get() === 'blueprint' ? 'graph' : 'blueprint';
+    window.JD_paper.set(next);
     var plate = scrollEl && scrollEl.querySelector('.rc-plate');
     if (plate) {
-      plate.classList.toggle('is-blueprint', paper === 'blueprint');
+      plate.classList.toggle('is-blueprint', next === 'blueprint');
       var btn = plate.querySelector('.rc-paper');
       if (btn) btn.outerHTML = paperBtnHTML();
     }
@@ -58,7 +54,7 @@
        longer carries the switch (owner, 2026-09-10: the corner is the ✕'s
        now). So the class travels and nothing else does. */
     var fig = document.querySelector('.rc-zoom-fig');
-    if (fig) fig.classList.toggle('is-blueprint', paper === 'blueprint');
+    if (fig) fig.classList.toggle('is-blueprint', next === 'blueprint');
   }
   /* turn to the next (+1) / previous (−1) response, the strip's own move;
      the ends stop rather than wrap */

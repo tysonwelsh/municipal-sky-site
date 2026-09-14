@@ -213,6 +213,7 @@
     bodyEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       if (e.target.closest && e.target.closest('.jd-turn-draw')) return;
+      if (e.target.closest && e.target.closest('.jd-turn-paper')) return;
       var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
       if (!p || p.getAttribute('role') !== 'button') return;
       e.preventDefault();
@@ -779,24 +780,58 @@
     '<path d="M11 18.2 L19.8 5.8 L22.8 7.9 L14 20.3 Z"/>' +
     '<path d="M11 18.2 L10 21.6 L14 20.3 Z" fill="currentColor"/></svg>';
 
+  /* THE PAPER, on the bench (owner ask, 2026-09-14): the report card has
+     carried the graph/blueprint swap since 2026-09-10; the exhibit being
+     graded gets the same button now — grading a light drawing on cream
+     graph paper has the same readability problem the report card's swap
+     was built for. window.JD_paper (jd-core.js) is the one shared
+     preference; the button and its toggle mirror jd-record.js's rc-paper
+     exactly, down to the markup, so the mark is the same wherever a
+     viewer meets it — only the wrapping class differs, for this card's
+     own paper/ink tokens. */
+  function paperBtnHTML() {
+    var blue = window.JD_paper.get() === 'blueprint';
+    return '<button type="button" class="jd-turn-paper" data-act="paper" aria-pressed="' +
+      (blue ? 'true' : 'false') + '" title="' +
+      (blue ? 'back to graph paper' : 'blueprint paper — for light artwork') +
+      '" aria-label="' + (blue ? 'Switch to graph paper' : 'Switch to blueprint paper') + '">' +
+      window.JD_paper.icon() + '</button>';
+  }
+  /* `figEl` is the currently rendered plate (there is only ever one on the
+     bench — see benchPanel); the enlargement, if standing, wears the same
+     paper as the report card's does (see zoomHTML). */
+  function togglePaper(figEl) {
+    var next = window.JD_paper.get() === 'blueprint' ? 'graph' : 'blueprint';
+    window.JD_paper.set(next);
+    var art = figEl && figEl.querySelector('.jd-turn-art');
+    if (art) {
+      art.classList.toggle('is-blueprint', next === 'blueprint');
+      var btn = art.querySelector('.jd-turn-paper');
+      if (btn) btn.outerHTML = paperBtnHTML();
+    }
+    var fig = document.querySelector('.rc-zoom-fig');
+    if (fig) fig.classList.toggle('is-blueprint', next === 'blueprint');
+  }
   function plate(slot, opts) {
     var s = work.slots[slot];
     if (!s || s.status !== 'ok') return '';
     opts = opts || {};
-    /* two optional fittings, both worn only by the RATE plates (bench +
+    /* three optional fittings, all worn only by the RATE plates (bench +
        call) — the reveal's stay plain, since its drawings just drew
        themselves on arrival and grading hasn't begun. `zoom` makes the
        whole figure the enlarge control, the record card's plate idiom
        (role/tabindex on the photograph, handlers at onClick and the
        anonymous plate keydown wired in build()); `replay` mounts the
-       report photograph's REPLAY button on the print's own corner. The
+       report photograph's REPLAY button on the print's own corner; `paper`
+       mounts its graph/blueprint swap (bench only — see benchPanel). The
        figure's data-slot is how the delegated handlers learn which drawing
        a press belongs to. */
     return '<figure class="jd-turn-plate"' +
       (opts.zoom ? ' role="button" tabindex="0" data-slot="' + slot + '"' +
         ' aria-label="Enlarge the artwork"' : '') + '>' +
-      '<div class="jd-turn-art">' +
+      '<div class="jd-turn-art' + (opts.paper && window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : '') + '">' +
       '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      (opts.paper ? paperBtnHTML() : '') +
       '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
       /* the generation id keys the frame: the reveal's big plate and the
          bench's pinned one are the same drawing and must be framed alike.
@@ -886,8 +921,11 @@
        enlarge"). Same classes, same bands (.rc-zoom-fig's CSS is shared),
        same .rc-zoom-keep exemption from the layer's press-to-close; the
        clicks are wired in openZoom(). No DOWNLOAD — a drawing under
-       judgment is not yet anyone's to keep. */
-    return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
+       judgment is not yet anyone's to keep. Wears the current paper
+       (2026-09-14) the same unconditional way the report card's does —
+       whichever plate opened it, an enlarged drawing gets the readability
+       swap if the viewer has it on. */
+    return '<div class="rc-zoom-fig' + (window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : '') + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fit) + '">' +
       window.JD_svgInst(s.svg, 'juz' + slot + (instSeq++) + '_') +
@@ -1470,7 +1508,7 @@
       '<div class="jd-rowhead" data-act="def">' +
       '<button type="button" class="jd-defx" aria-expanded="false" ' +
       'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
-      ' means"><span aria-hidden="true">+</span></button>' +
+      ' means"></button>' +
       '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
@@ -1654,7 +1692,7 @@
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      plate(slot, { pin: true, zoom: true, replay: true }) + '</div></div>' +
+      plate(slot, { pin: true, zoom: true, replay: true, paper: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
       /* the prompt OPENS the paperwork column, above the rows (owner,
          2026-08-28) — and, the wrappers being display:contents in the
@@ -2233,11 +2271,13 @@
         exp.hidden = !exp.hidden;
         caret.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
         caret.classList.toggle('is-open', !exp.hidden);
-        /* the boxed mark reads + closed, − open (round 9; U+2212, a real
-           minus, so the two glyphs sit on the same optical centre) */
-        var glyph = caret.querySelector('span');
-        if (glyph) glyph.textContent = exp.hidden ? '+' : '−';
+        /* the boxed mark reads + closed, − open — drawn in CSS off
+           aria-expanded (junk-drawer.css .jd-defx), so there's no glyph
+           to write here any more */
       }
+    } else if (act === 'paper') {
+      /* the plate's own graph/blueprint swap — see togglePaper() above */
+      togglePaper(b.closest('.jd-turn-plate'));
     }
   }
 

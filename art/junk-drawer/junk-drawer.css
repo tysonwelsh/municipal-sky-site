@@ -1525,7 +1525,7 @@ html.jd-record-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .jd-record-zoom.is-on,
   .jd-record-zoom.is-on .rc-zoom-fig { animation: none; }
-  .rc-axcaret { transition: none; }
+  .rc-axcaret::before, .rc-axcaret::after { transition: none; }
 }
 
 /* ---- THE PROMPT (verbatim) -----------------------------------------------
@@ -1629,19 +1629,33 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   border: 0; background: none; padding: 0; margin: 0;
   text-align: left; cursor: pointer;
 }
-/* the boxed +/− ahead of the name (owner rev, 2026-08-13): the index-mark
-   of a form's appendix, not a dropdown arrow. − replaces + while open. */
+/* the boxed +/− ahead of the name (owner rev, 2026-08-13; redrawn 2026-09-14
+   to match .jd-defx in the survey instrument — see the note there). − is a
+   pair of bars drawn with ::before/::after rather than a "+"/"−" text
+   glyph: a font's own metrics rarely center a "+" glyph on its true visual
+   middle (the discrepancy varies by font AND by device, which is exactly
+   why the boxed mark read low on some screens), while two bars pinned to
+   the box's geometric center via absolute positioning + translate(-50%,
+   -50%) can't drift regardless of font or platform. The vertical bar
+   scales away to leave the minus while a row is open; both bars paint in
+   currentColor, so the existing hover/expanded color rules keep working
+   unchanged. */
 .rc-axcaret {
+  position: relative;
   flex: 0 0 auto;
-  width: 11px; height: 11px;
-  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px;
   border: 1px solid var(--form-rule);
   background: rgba(255, 250, 232, 0.5);
-  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1;
   color: var(--form-ink-2);
 }
-.rc-axcaret::before { content: "+"; }
-.rc-axbtn[aria-expanded="true"] .rc-axcaret::before { content: "−"; }
+.rc-axcaret::before, .rc-axcaret::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  background: currentColor;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.rc-axcaret::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
+.rc-axcaret::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+.rc-axbtn[aria-expanded="true"] .rc-axcaret::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
 .rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l { color: var(--red); }
 .rc-axbtn:hover .rc-axcaret { color: var(--red); border-color: var(--red); }
 .rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
@@ -3047,6 +3061,37 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-turn-art-in { position: absolute; inset: 7%; }
 .jd-turn-art-in svg { display: block; width: 100%; height: 100%; }
+/* THE PAPER SWAP, on the bench (owner ask, 2026-09-14): the report card's
+   .rc-paper / .rc-plate.is-blueprint pair (2026-09-10), reused at the
+   drawing measure — same corner, same geometry, same swatch icon
+   (window.JD_paper.icon(), jd-core.js) — only the tokens are this card's
+   own (--trule/--tred in place of --form-rule/--red), the same split
+   .jd-defx already draws from .rc-axcaret. */
+.jd-turn-paper {
+  position: absolute; top: 15px; right: 15px; z-index: 3;
+  padding: 3px; line-height: 0; cursor: pointer;
+  color: #46505e;
+  border: 1px solid var(--trule); border-radius: 3px;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+}
+.jd-turn-paper svg { display: block; width: 12px; height: 12px; }
+.jd-turn-paper:hover { background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
+.jd-turn-paper:active { box-shadow: none; transform: translateY(1px); }
+.jd-turn-paper:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-turn-art.is-blueprint {
+  background:
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
+    #1b4a8a;
+  border-color: rgba(10, 28, 56, 0.6);
+}
+.jd-turn-art.is-blueprint .jd-turn-paper {
+  color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85);
+}
+.jd-turn-art.is-blueprint .jd-turn-paper:hover { background: #f2f6ff; color: #1b4a8a; }
 .jd-turn-corner {
   position: absolute; width: 22px; height: 22px; z-index: 2;
   background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
@@ -3410,17 +3455,36 @@ html.jd-turn-open { overflow: hidden; }
 /* the disclosure mark: LEADS the label since round 5 (owner: left of the
    text); a PLUS since round 8, and since round 9 a small BOXED plus — a
    printed form-control square in the selects' own chrome, quiet but
-   legibly pressable — whose glyph swaps to a minus while the explanation
-   stands open (the JS toggle writes the glyph; nothing rotates any more).
-   Its own press just bubbles into the rowhead's, which carries data-act. */
+   legibly pressable — whose mark swaps to a minus while the explanation
+   stands open. Its own press just bubbles into the rowhead's, which
+   carries data-act. Redrawn 2026-09-14 to match .rc-axcaret in the report
+   card (same owner complaint there: a "+" TEXT glyph never centers on its
+   true visual middle — the discrepancy rides on font metrics, which vary
+   by platform, which is why the boxed mark read off-center on some
+   screens and not others). Two bars pinned to the box's geometric center
+   via absolute positioning + translate(-50%, -50%) can't drift regardless
+   of font or device; the vertical bar scales away to leave the minus. The
+   two icons now share one size (15px) and drawing method — only the
+   paper-specific border/background tokens differ, same as every other
+   shared mark between the report card and the survey instrument. */
 .jd-defx {
-  flex: 0 0 auto; width: 17px; height: 17px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
+  position: relative;
+  flex: 0 0 auto; width: 15px; height: 15px; padding: 0;
   border: 1px solid var(--trule); border-radius: 2px;
   background: rgba(255, 250, 232, 0.7); cursor: pointer;
-  font-size: 0.78rem; line-height: 1; color: var(--tink-2);
+  color: var(--tink-2);
 }
-.jd-defx > span { display: block; }
+.jd-defx::before, .jd-defx::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  background: currentColor;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.jd-defx::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
+.jd-defx::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+.jd-defx[aria-expanded="true"]::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .jd-defx::before, .jd-defx::after { transition: none; }
+}
 .jd-defx:hover { color: var(--tred); }
 .jd-defx:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
 /* the unfolded explanation: the tooltip's words, now printed on the sheet —
