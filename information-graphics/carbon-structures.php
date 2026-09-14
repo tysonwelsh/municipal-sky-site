@@ -112,13 +112,14 @@ include '../includes/header.php';
       <section class="prose-flow">
         <p>I made this dashboard in collaboration with
           <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Kamil Iwanowski</a>, a
-          PhD candidate in physics at NYU whose research is on the design of materials. I met Kamil at an event in
-          Brooklyn, where we connected over a shared interest in data visualization. He showed me some of the 3D
-          visualizations he had made for his past research, which I found visually compelling even if I didn't
-          fully understand the science behind them.</p>
-        <p>I suggested he try D3.js, a JavaScript library for bespoke data visualization, to show his work. I
-          shared a few of the visualizations I've built in D3 to demonstrate the interactive features that set the
-          library apart, and we agreed to meet up one afternoon to build this dashboard together.</p>
+          researcher and PhD candidate in physics at NYU whose work is on the design of materials. I met Kamil at an
+          event in Brooklyn, where we connected over our shared interest in data visualizations. He showed me some
+          of the 3D visualizations he had made for his past research, which I found to be visually compelling even
+          if I didn't fully understand the science behind them.</p>
+        <p>I suggested he consider using D3.js, a JavaScript library used for bespoke data visualizations, to show
+          his work. I shared some of the other visualizations I've made using D3, and showed some of the powerful
+          interactive features that set D3 apart from other tools. Kamil liked what he saw, and we met up again on
+          a Sunday afternoon to give his visualizations a D3 makeover.</p>
         <p>He brought screenshots of his existing plots and a folder of his structures, and I treated him the way
           I'd treat any client: he supplied the data
           and the domain knowledge, and my job was the storytelling side, turning the data into something engaging
