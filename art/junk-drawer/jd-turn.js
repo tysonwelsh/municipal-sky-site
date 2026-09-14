@@ -1470,7 +1470,7 @@
       '<div class="jd-rowhead" data-act="def">' +
       '<button type="button" class="jd-defx" aria-expanded="false" ' +
       'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
-      ' means"><span aria-hidden="true">+</span></button>' +
+      ' means"></button>' +
       '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
@@ -2233,10 +2233,9 @@
         exp.hidden = !exp.hidden;
         caret.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
         caret.classList.toggle('is-open', !exp.hidden);
-        /* the boxed mark reads + closed, − open (round 9; U+2212, a real
-           minus, so the two glyphs sit on the same optical centre) */
-        var glyph = caret.querySelector('span');
-        if (glyph) glyph.textContent = exp.hidden ? '+' : '−';
+        /* the boxed mark reads + closed, − open — drawn in CSS off
+           aria-expanded (junk-drawer.css .jd-defx), so there's no glyph
+           to write here any more */
       }
     }
   }

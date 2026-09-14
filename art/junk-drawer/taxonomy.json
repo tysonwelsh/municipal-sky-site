@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 21,
-  "updated": "2026-08-29",
+  "version": 22,
+  "updated": "2026-09-14",
   "grades": [
     {
       "id": "prime",
@@ -272,7 +272,7 @@
     {
       "id": "understanding-assignment",
       "label": "Understanding Assignment",
-      "description": "Did the model grasp the brief — each explicit ask, the evident intent behind it, and the brief's negative space? Prompts underspecify and filling the gaps is the job; additions are charged here only when they crowd, contradict, or upstage what was asked. Judged on what it TRIED to draw; whether the drawing itself holds up belongs to the axes below.",
+      "description": "Did the model appear to understand the intent behind the user's request? Did it attempt to render the objects specified in the prompt? Setting aside any issues related to execution, does the drawing resemble what you would expect given the prompt?",
       "values": [
         {
           "id": "read-the-brief",
@@ -601,6 +601,11 @@
       "date": "2026-08-29",
       "version": 21,
       "note": "Owner call: understanding-assignment's LABEL shortened from 'Understanding the Assignment' to 'Understanding Assignment' — the full phrase truncated in the bench's desktop subject column. Label only; the axis id, ranks, values and description are unchanged, so nothing filed is affected and no code changes are needed."
+    },
+    {
+      "date": "2026-09-14",
+      "version": 22,
+      "note": "Owner call: understanding-assignment's DESCRIPTION reworded to plain rater-facing questions — intent, attempted subject matter, and overall resemblance to the prompt, execution issues set aside. Description only; the axis id, ranks and value labels/descriptions are unchanged, so nothing filed is affected. Every instrument renders this text from this file (report card disclosure row, turn survey row), so no code changes are needed."
     }
   ]
 }
