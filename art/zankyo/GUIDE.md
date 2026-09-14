@@ -141,6 +141,14 @@ minutes. A reel rests three cycles after it plays. The log line reads
   hangs three to seven, `shimmer` detunes the clapper's ring, `decay`
   lengthens the ring. A landscape voice: no seat in the lottery, no air
   claim, hushed by the KIRU with the rest of the landscape.
+- The 内線 intercom row (since rc.67) — the comms vox as a voice: a second
+  speaker beside the PA that SINGS fragments of what the cycle is working,
+  vowel by vowel, down a bad line. `band` narrows the line toward a
+  telephone, `stutter` is the relay chattering the key, `survive` is how
+  much of a word survives (a dropped syllable keeps its time and the static
+  rises in it), `pace` its speed. A melodic voice: seated in the lottery
+  (at home in broadcast cycles), claiming the air, in the ledger, stopped
+  by the KIRU. When it sings a newborn motif it says the newborn's name.
 
 **In the code (say the word and I move them)**, the listener-facing constants:
 | what | today | what it changes |
@@ -169,6 +177,7 @@ tuned to the key, 祭 無 回線 鐘 the guests.
 - **KIRU** 斬 — the cut at the end of the kyū: the landscape drops, the hush, a bell.
 - **ma** 間 — the silence between; structural, not empty.
 - **fūrin** 風鈴 — the wind chime; a landscape voice since rc.63, driven by the weather's wind.
+- **intercom** 内線 — the comms vox as a melodic voice since rc.67; it sings the working set's ideas and the newborn's name.
 - **jo / ha / kyū** — slow entrance / scattering and building / the rush.
 - **the air** — the rule for who may speak at once.
 - **seating** — which voices are present this cycle; also where a broadcast or guest is placed.

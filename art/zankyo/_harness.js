@@ -309,7 +309,7 @@ const reprises = events.filter((e) => e.label.indexOf("reprise") >= 0).length;
 const ghosts = events.filter((e) => e.label.indexOf("ghost") >= 0).length;
 const shadows = events.filter((e) => e.label.indexOf("shadows") >= 0).length;
 const decomposes = events.filter((e) => e.label.indexOf("decomposes") >= 0).length;
-const MELODIC = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };   // all five melodic voices (S1 re-base, orchestrator ruling)
+const MELODIC = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1, vox: 1 };   // the melodic voices: five at the S1 re-base, six with the intercom (2026-09-14 re-base)
 const melodicNotes = notes.filter((n) => MELODIC[n.layer]).length;
 
 console.log("=== ZANKYŌ harness ===  (simulated " + RUN + "s, seed " + SEED + ")");
@@ -374,7 +374,7 @@ const pitchVocab = (() => {
 // heard before. HEARD-BEFORE is the share of phrases whose signature has
 // already sounded earlier in the same run: the listener's question.
 const phraseVocab = (() => {
-  const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };
+  const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1, vox: 1 };
   const byLayerSeq = {};
   for (const n of notes) if (MEL[n.layer]) (byLayerSeq[n.layer] = byLayerSeq[n.layer] || []).push(n);
   const sigs = [], seen = {}, seenShape = {}; let repeats = 0, shapeRepeats = 0, longest = 0;
@@ -446,7 +446,7 @@ const signalVocab = (() => {
   const kiruTs = events.filter((e) => e.label.indexOf("KIRU") >= 0).map((e) => e.t);
   const perCycle = {}; for (const s of sigs) { const ci = cycleOf(s.sig.t0); perCycle[ci] = (perCycle[ci] || 0) + 1; }
   const maxPer = Math.max(0, ...Object.values(perCycle));
-  let nearKiru = 0, notSilent = 0; const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1 };
+  let nearKiru = 0, notSilent = 0; const MEL = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1, vox: 1 };
   for (const s of sigs) {
     const t0 = s.sig.t0, tEnd = t0 + 0.4 + s.sig.holdS + s.sig.lossD;
     for (const k of kiruTs) if (k > t0 - 20 && k < tEnd + 15) nearKiru++;
@@ -714,7 +714,7 @@ if (CANON_SEED && runA.nodes.total / (RUN / 60) > 1500) fails.push("node budget 
 // over the same 36 nights is 100, and nothing in the far tail may exceed 110.
 // It is the constraint 群 and 雲 were designed against.
 if (runA.peakSources > 110) fails.push("peak concurrent sources " + runA.peakSources + " > 110");
-if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa", "furin"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
+if (RUN >= 3600) for (const L of ["hichiriki", "biwa", "pa", "furin", "vox"]) if (!byLayer[L]) fails.push("no " + L + " notes in " + RUN + "s");
 // The bank line: `ZK_BANK=1 node _harness.js 1800 <seed>` prints one JSON line
 // for _harness-bank.js to gather into _harness-base.json (the deliberate re-base).
 if (process.env.ZK_BANK) console.log("BANK " + JSON.stringify({ seed: SEED, home: NIGHT_HOME, density: Math.round(melPer30), shapesPerHour: Math.round(phraseVocab.shapesPerHour), shapeHeardBefore: +phraseVocab.shapeHeardBefore.toFixed(3) }));

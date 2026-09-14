@@ -1,8 +1,22 @@
 # ZANKYŌ — the comms vox as a voice (road map §4)
 
 *Plan written 2026-09-14 at the owner's ask, after the fūrin (rc.63) and
-the melodic DNA (rc.64) shipped. Nothing here is built yet; the owner sees
-the plan first, as the road map says. The bodies family (road map §2) is
+the melodic DNA (rc.64) shipped. Approved the same day (name 内線 Intercom;
+it sings the newborn's name; broadcast cycles 0.7, elsewhere 0.35 — 0.25
+measured too sparse) and built: rc.66 the body on the bench, rc.67 the
+voice with its re-base. Seeds 3042 / 7 at one hour: 92 and 94 syllables,
+every gate green.*
+
+*Measured honestly at the re-base (36 home nights, 1800 s): the home mean
+density is 1970 notes / 30 min against 2102 before the intercom — a sixth
+voice claiming the air costs the other five about 7 %, as §2.3 declared.
+The cross-night every-night share rose from 1.7 % to 4.6 %, and the split
+(the same engine measured with the intercom's notes excluded: 2.9 %) says
+where it comes from: the intercom's fragments are three-note phrases by
+nature, and three-note shapes are generic in any night — a property of the
+measure, not of the voice. Two tunings were tried against it (a smaller air
+footprint; more of the cycle's own ideas and longer walks) and kept for
+their own sake; neither moved the number, so it is reported and not gated. The bodies family (road map §2) is
 not built either — the vox does not need it, and its body knobs fold into
 that family when it comes.*
 

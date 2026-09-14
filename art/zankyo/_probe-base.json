@@ -46,68 +46,68 @@
    135,
    136
   ],
-  "engine": "a61c0bdc3bca",
-  "written": "2026-09-13T18:25:43.448Z",
-  "p50": 1.92,
-  "p95": 5.53,
-  "pmax": 5.61,
-  "p50AllDrawn": 2.02,
-  "p95AllDrawn": 6.49
+  "engine": "4ebb14c8bf94",
+  "written": "2026-09-14T01:11:25.788Z",
+  "p50": 2.05,
+  "p95": 5.34,
+  "pmax": 5.81,
+  "p50AllDrawn": 2.39,
+  "p95AllDrawn": 5.81
  },
  "stats": {
   "pcEntropy": {
-   "median": 2.787,
-   "mad": 0.1793,
-   "min": 2.3333,
-   "max": 3.0919
+   "median": 2.7948,
+   "mad": 0.191,
+   "min": 2.2879,
+   "max": 3.091
   },
   "tetDev": {
-   "median": 0.333,
-   "mad": 0.07,
+   "median": 0.291,
+   "mad": 0.088,
    "min": 0,
-   "max": 3.51
+   "max": 0.59
   },
   "offMode": {
    "median": 0,
    "mad": 0,
    "min": 0,
-   "max": 0.0071
+   "max": 0
   },
   "ioiVar": {
-   "median": 1.36,
-   "mad": 0.0426,
-   "min": 1.1839,
-   "max": 1.4751
+   "median": 1.3865,
+   "mad": 0.0409,
+   "min": 1.193,
+   "max": 1.5186
   },
   "rateExc": {
-   "median": 1.4745,
-   "mad": 0.2429,
-   "min": 0.6816,
-   "max": 2.8661
+   "median": 1.5828,
+   "mad": 0.2442,
+   "min": 0.9477,
+   "max": 2.2892
   },
   "densVar": {
-   "median": 0.2355,
-   "mad": 0.0379,
-   "min": 0.1607,
-   "max": 0.6468
+   "median": 0.2437,
+   "mad": 0.0604,
+   "min": 0.1547,
+   "max": 0.7052
   },
   "formDev": {
-   "median": 0.0088,
-   "mad": 0.0062,
+   "median": 0.0104,
+   "mad": 0.0039,
    "min": 0,
-   "max": 0.0337
+   "max": 0.0344
   },
   "coinc": {
-   "median": 0.0887,
-   "mad": 0.0178,
-   "min": 0.0179,
-   "max": 0.1472
+   "median": 0.0909,
+   "mad": 0.0244,
+   "min": 0.0146,
+   "max": 0.1522
   },
   "polyMean": {
-   "median": 1.3187,
-   "mad": 0.0842,
-   "min": 1.1478,
-   "max": 1.4372
+   "median": 1.3548,
+   "mad": 0.0645,
+   "min": 1.1195,
+   "max": 1.5459
   }
  }
 }
