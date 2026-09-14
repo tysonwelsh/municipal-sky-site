@@ -226,3 +226,13 @@ is robots-disallowed; Aparat is effectively unreachable to tools.
   the source is undated; the note says so.
 - The Luce reels are pillarboxed (1.04 and 1.11) after cropping two opposite
   corner bugs; the NO-DO reels lost 130 px a side to two bugs.
+
+**Owner's rulings on the listen (2026-09-14, 2.1.0-rc.75):** the two Turkish
+reels are on ice (`takedown: true`, files kept) until their licence is
+settled; `nl-polygoon-kunstmaan-1957` is dropped because the pool's Polygoon
+compilation already carries the item (raw kept); `za-cvet-rooftops-crossroads-1985`
+re-cut at `--band low`; the Hindustan loader film stays as industrial film;
+the Talometer, Pivalliajut, KHET, Inukshuk and Polish tone calls stand as
+cut (the cutters' measurements supported each). The NCAA catalogue title
+"Hindustan 2021" was a mis-transcription of "Front End Loader" — there is no
+"India imagining 2021" on that tape.

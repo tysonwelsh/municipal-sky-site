@@ -18,5 +18,5 @@
   "pitchHz": [null, null, null, null, null, null, null, null, null, null],
   "tuned": false,
   "notes": "Türkiye, Turkish: the Devlet İstatistik Enstitüsü films its own 1970 machine room — the survey form, the Hollerith card, a hall of keypunch operators, a UNIVAC, the plotter and the tape drives. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove baked pillarbox (crop=508:440:178:16). A faint centred ministry watermark is in the picture and cannot be cropped out; at 192x144 it reads as an emulsion stain.",
-  "takedown": false
+  "takedown": true
 }
