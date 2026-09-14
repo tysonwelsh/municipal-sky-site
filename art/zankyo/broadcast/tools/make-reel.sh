@@ -24,6 +24,17 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
   --windows t1,t2,…      window START times in the source (seconds, m:ss or h:mm:ss;
                          "83-95" gives an explicit range). Without this the tool
                          PROPOSES windows (scene changes + loudness gate) and prints them.
+  --add-windows a-b,…   §5 of PLAN-SIGNAL-SHAPES: ADD long windows to a reel that
+                         already exists. Reads the reel's own manifest for its current
+                         source windows, appends these ranges, and re-cuts the whole reel
+                         from the cached source — same id, same metadata, NEW rev, so the
+                         browser fetches it fresh. Every other flag is taken from the
+                         existing manifest unless you override it. The reel's existing
+                         windows are NOT re-proposed or moved: a re-cut that shuffled the
+                         old windows would change what every night already sounds like.
+                         Ranges are explicit ("83-110"), in SOURCE seconds — read them
+                         off the reel's srcWindows or off --propose --window-len 30.
+                         Tier A may reach 40 s, Tier B 30 s (the owner's ruling).
   --window-len N         seconds per window (default 12; music ≤ 10)
   --max-windows N        cap on proposed windows (default 8; Tier B is capped at 6)
   --audio-only           source is audio (or use its audio only); a picture is generated
@@ -85,24 +96,27 @@ YTDLP="$(command -v yt-dlp || true)"; [ -n "$YTDLP" ] || YTDLP="$HOME/anaconda3/
 INPUT=""; ID=""; WINDOWS=""; WLEN=12; MAXW=""; AUDIO_ONLY=0; PICTURE="line"; TIER="A"
 TITLE=""; YEAR=""; LICENSE="unknown"; TONE="voice"; WEIGHT=3; NOTES=""; PROPOSE=0; FORCE_AN=0
 WHOLE=0; WHOLE_WINDOWS=""   # §14: play a window start-to-end instead of slicing inside it
+ADD_WINDOWS=""              # §5: long windows appended to an existing reel
+TIER_SET=0; TONE_SET=0; TITLE_SET=0; YEAR_SET=0; LICENSE_SET=0; WEIGHT_SET=0; NOTES_SET=0; BAND_SET=0
 BAND=""   # empty = not set explicitly; resolved from --tone below
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
     --id) ID="${2:?}"; shift 2 ;;
     --windows) WINDOWS="${2:?}"; shift 2 ;;
+    --add-windows) ADD_WINDOWS="${2:?}"; shift 2 ;;
     --window-len) WLEN="${2:?}"; shift 2 ;;
     --max-windows) MAXW="${2:?}"; shift 2 ;;
     --audio-only) AUDIO_ONLY=1; shift ;;
     --picture) PICTURE="${2:?}"; shift 2 ;;
-    --tier) TIER="${2:?}"; shift 2 ;;
-    --title) TITLE="${2:?}"; shift 2 ;;
-    --year) YEAR="${2:?}"; shift 2 ;;
-    --license) LICENSE="${2:?}"; shift 2 ;;
-    --tone) TONE="${2:?}"; shift 2 ;;
-    --band) BAND="${2:?}"; shift 2 ;;
-    --weight) WEIGHT="${2:?}"; shift 2 ;;
-    --notes) NOTES="${2:?}"; shift 2 ;;
+    --tier) TIER="${2:?}"; TIER_SET=1; shift 2 ;;
+    --title) TITLE="${2:?}"; TITLE_SET=1; shift 2 ;;
+    --year) YEAR="${2:?}"; YEAR_SET=1; shift 2 ;;
+    --license) LICENSE="${2:?}"; LICENSE_SET=1; shift 2 ;;
+    --tone) TONE="${2:?}"; TONE_SET=1; shift 2 ;;
+    --band) BAND="${2:?}"; BAND_SET=1; shift 2 ;;
+    --weight) WEIGHT="${2:?}"; WEIGHT_SET=1; shift 2 ;;
+    --notes) NOTES="${2:?}"; NOTES_SET=1; shift 2 ;;
     --whole) WHOLE=1; shift ;;
     --whole-windows) WHOLE_WINDOWS="${2:?}"; WHOLE=1; shift 2 ;;
     --distort) DISTORT="${2:?}"; shift 2 ;;
@@ -115,6 +129,37 @@ done
 [ -n "$INPUT" ] || { usage >&2; die "an input URL or file is required"; }
 [ -n "$ID" ] || die "--id <slug> is required"
 [[ "$ID" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "--id must be lowercase letters, digits, hyphens: '$ID'"
+
+# ---- §5 --add-windows: a re-cut of a reel that already exists ----------------
+# THE EXISTING WINDOWS ARE NOT TOUCHED. They are read back out of the reel's own
+# manifest and passed through verbatim; only the new ranges are appended. A
+# re-cut that re-proposed the old windows would change what every night that has
+# already drawn this reel sounds like, for no reason anyone asked for, and the
+# new rev would make the browser fetch the difference.
+#
+# The reel's METADATA is read back too — title, year, licence, tier, tone, band,
+# weight, notes, audio-only, picture — so the flag can be used on its own and a
+# re-cut cannot silently drop a field nobody remembered to re-type. An explicit
+# flag still wins.
+if [ -n "$ADD_WINDOWS" ]; then
+  [ -z "$WINDOWS" ] || die "--add-windows and --windows are the same decision twice; use one"
+  EXIST="$MANI/$ID.json"
+  [ -s "$EXIST" ] || die "--add-windows needs an existing reel: $EXIST not found"
+  EVALS="$(python3 "$HERE/reel-addwin.py" "$EXIST" "$ADD_WINDOWS")" || exit 1
+  eval "$EVALS"
+  [ "$TITLE_SET" = 1 ] || TITLE="$EX_TITLE"
+  [ "$YEAR_SET" = 1 ] || YEAR="$EX_YEAR"
+  [ "$LICENSE_SET" = 1 ] || LICENSE="$EX_LICENSE"
+  [ "$TIER_SET" = 1 ] || TIER="$EX_TIER"
+  [ "$TONE_SET" = 1 ] || TONE="$EX_TONE"
+  [ "$BAND_SET" = 1 ] || BAND="$EX_BAND"
+  [ "$WEIGHT_SET" = 1 ] || WEIGHT="$EX_WEIGHT"
+  [ "$NOTES_SET" = 1 ] || NOTES="$EX_NOTES"
+  [ "$EX_AUDIO_ONLY" = 1 ] && AUDIO_ONLY=1
+  PICTURE="$EX_PICTURE"
+  WINDOWS="$ADD_WIN_SPEC"
+  log "--add-windows: re-cutting $ID with $ADD_WIN_N window(s), tier $TIER"
+fi
 [[ "$TIER" =~ ^[AB]$ ]] || die "--tier must be A or B"
 [[ "$TONE" =~ ^(voice|music|noise|sung|tone|drone)$ ]] || die "--tone must be voice|music|noise|sung|tone|drone"
 [ -z "$BAND" ] || [[ "$BAND" =~ ^(normal|low)$ ]] || die "--band must be normal or low"
@@ -138,6 +183,11 @@ SRC=""
 if [ -f "$INPUT" ]; then
   SRC="$(cd "$(dirname "$INPUT")" && pwd)/$(basename "$INPUT")"
   SRC_REF="$(basename "$INPUT")"
+  # §5 A RE-CUT KEEPS ITS PROVENANCE. --add-windows runs against the CACHED
+  # source file, so without this the manifest's `src` — the link the VFD offers
+  # to where the broadcast came from — would become a filename on somebody's
+  # laptop. Caught by reading the diff of the first re-cut.
+  [ -z "${EX_SRC:-}" ] || SRC_REF="$EX_SRC"
   log "source: local file $SRC"
 else
   SRC_REF="$INPUT"

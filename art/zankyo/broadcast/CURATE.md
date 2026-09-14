@@ -38,6 +38,65 @@ tools/make-reel.sh <url-or-file> --id <slug> --title "…" --year 1951 --license
   picture: `--picture line` (one line of light, Paik's *Zen for TV*),
   `static` (a slow noise field) or `wave` (the line drawn by the audio).
 
+## Long windows (PLAN-SIGNAL-SHAPES §5)
+
+A reception's ON-AIR time is drawn from the owner's spread — 8–12 s 15 %,
+12–18 s 25 %, 18–25 s 25 %, 25–32 s 20 %, 32–40 s 15 % — and a hold longer
+than a window would run across a window boundary, which is a hard cut to
+another moment of the source. So the receiver degrades every budget to what the
+window can serve, and with 12 s windows that is about 8.8 s on air. Until the
+reels carry long windows, **the owner's spread is unreachable and the harness's
+"achieved" column says so**.
+
+**The recipe.** Each reel keeps its 12 s windows and gains **one or two long
+windows**, contiguous, chosen for a stretch that stays interesting that long —
+a countdown, a sign-off, a chant, a lecture, a news package, a jingle package.
+Spread the lengths across the reels so the whole table is servable: roughly a
+third at 18–25 s, a third at 25–32 s, a third at 32–40 s.
+
+- **Tier A** (free to use): up to **40 s**.
+- **Tier B** (copyrighted): up to **30 s**, speech or picture material, never a
+  whole song and never a whole scene. The owner's ruling, 2026-09-14:
+  transformative, degraded, randomly surfaced, no substitute for the original.
+  The six-window cap stays and a long window COUNTS toward it, so a Tier B reel
+  with six 12 s windows drops one to gain a long one (`--add-windows` does this
+  and says so).
+- Cost: about +0.5 MB a reel, so the pool goes from 144 MB to roughly 250 MB.
+  `scripts/publish.sh` already skips `reels/`; the Actions deploy ships them.
+
+**Propose, then append:**
+
+```
+tools/make-reel.sh <src-or-url> --id <slug> --propose --window-len 30
+tools/make-reel.sh <src-or-url> --id <slug> --add-windows 1320-1354
+tools/preview.sh <slug>                 # and the reel lab, by ear
+tools/build-manifest.sh
+```
+
+`--add-windows` reads the reel's own manifest for its current source windows
+and its metadata, appends the ranges, re-cuts the whole reel from the cached
+source and writes a new `rev` so browsers fetch it fresh. **The existing windows
+are passed through verbatim** — a re-cut that re-proposed them would change what
+every night that has already drawn this reel sounds like. Ranges are explicit
+and in SOURCE seconds; read them off `srcWindows` or off `--propose`. A range
+under 13 s is refused (that is just another ordinary window), as is one over
+its tier's cap, and so is one that overlaps a window the reel already has.
+
+**What the pool can serve, as a number:**
+
+```
+tools/pool-shapes.py                 # per bucket: how many reels reach it
+tools/pool-shapes.py --by tone       # …or by tier / country
+tools/pool-shapes.py --csv           # one row per reel, longest first
+```
+
+Read it against the harness's `on air:` line, which prints ACHIEVED against
+ASKED for the same buckets. The gap between them is the work left.
+
+**Order.** A first batch of 60–80 across tiers, tones and countries — so no
+bucket is served by one kind of material — then the rest. The owner's ear is
+the gate: audition every long window before it lands.
+
 ## Audition
 
 ```

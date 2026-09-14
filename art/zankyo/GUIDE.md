@@ -115,14 +115,47 @@ rests about one cycle in four.
 - 鐘 **the tolling** — the temple bell every ~20 s across the whole opening.
 - **The lost broadcast** — the synthesized gagaku fallback, heard only when a real reel has not loaded.
 
-## 5. Signals (the broadcasts)
+## 5. Signals (the receptions)
 
-About two per cycle, never during the cut or the hush, never on top of a
-guest, at least 90 s apart, about one in five landing in the opening. The
-pool is 207 reels from 81 countries; pictures are favored 1.5× over audio-
-only reels, so a numbers station or the Buzzer surfaces roughly every fifty
-minutes. A reel rests three cycles after it plays. The log line reads
-「受信 · title · year」 and 「消失 · signal lost」.
+**About 25 an hour** — never during the cut or the hush, never on top of a
+guest, and the quiet between one dead tube and the next station's static is
+drawn at **15–90 s**, so signals come in quick succession and then leave a long
+silence. The pool is 208 reels from 81 countries; pictures are favored 1.5×
+over audio-only reels, so a numbers station or the Buzzer surfaces roughly
+every fifty minutes. A reel rests three cycles after it plays — unless the
+station **keeps the frequency** (同, one time in four), and a minute later the
+same voice is back.
+
+**A reception has a shape** (rc.70). Its ON-AIR time — the seconds you actually
+hear the signal, summed over its pieces — is drawn from 8 s to 40 s, and how it
+spends them is drawn too:
+
+| | |
+|---|---|
+| 常 the ordinary | one piece, the whole budget — two receptions in three |
+| 戻 the return | a few seconds, the carrier lost for 6–15 s, then the same broadcast again **later in the source**: the transmission went on while we lost it |
+| 断 the broken carrier | one piece with real losses of 1–3 s — the band narrows, the voice ducks under rising static, and it comes back where it would be |
+| 走 the scan | two stations in one reception, the dial sweeping between them |
+| 即 探 浮 | it snaps in · the dial hunts for it through the snow · it surfaces slowly from under the static |
+| 切 残 絶 | it is lost over a couple of seconds · the loss lingers for 6–12 · it is cut mid-word at full strength |
+
+Most receptions still silence the crew. **Three in ten are porous**: one melodic
+voice — usually one of the sparse ones — is left out of the hold and may play
+over the signal. And where a return loses its carrier, the air is **released**:
+the crew may come in for the length of the gap, and is quiet again before the
+station returns.
+
+The log line reads 「受信 · title · year · 浮 drifting in 7.0s · 絶 cut mid-word
+· 尺 shakuhachi over it」 and 「消失 · signal lost · 9.0 s on air」.
+
+**What you will hear today, and why it is shorter than the table above.** A
+window of the pool is twelve seconds, and after the arrival and the loss that
+serves about nine seconds on air. So the budget is DEGRADED, and the shapes
+lose their parts in order — the second return, the lingering exit, the hunt,
+the shape itself — until what is left fits. The reels are being re-cut with
+long windows (`broadcast/CURATE.md`); as they land, receptions lengthen toward
+the table and the shapes stop being stripped. `tools/pool-shapes.py` prints how
+far the pool reaches today.
 
 ## 6. The levers you can pull
 
@@ -132,7 +165,7 @@ minutes. A reel rests three cycles after it plays. The log line reads
 
 **On the panel**
 - The odd slat in the bottom-left vent — the hidden switch: restart on a far night, seed written to the address.
-- The small knob on the CRT-9 chin — scan for a signal while playing; audition a full reel window while stopped.
+- The small knob on the CRT-9 chin — scan for a signal while playing; audition a whole reception while stopped, shape and all (the ♪ button plays what the air plays).
 - The square button beside it — a video reel now, then cold for 45–60 s.
 - Console rows — each instrument's volume, mute, rate and character knobs.
 - The 風鈴 fūrin row (since rc.63) — the wind chime as a voice: tubes hung
@@ -155,7 +188,13 @@ minutes. A reel rests three cycles after it plays. The log line reads
 |---|---|---|
 | far-night frequency | 80 % home / 15 % moderate / 5 % far / 2 % interstellar | how often a night goes strange |
 | home lift | 1 night in 12, one cycle, Poisson mean 5 | how often an ordinary night has one strange cycle, and how early |
-| broadcasts per cycle | ~2 (1.7 achieved) | how often the set lights up |
+| signals per hour | ~25 (1.7× rc.68) | how often the set lights up |
+| quiet between signals | 15–90 s, drawn | how long the station is silent between receptions |
+| on-air spread | 8–12 s 15 %, 12–18 25 %, 18–25 25 %, 25–32 20 %, 32–40 15 % | how long a reception lasts |
+| shape weights | 常 0.67 · 戻 0.16 · 断 0.09 · 走 0.08 | how often a reception is more than one piece |
+| entry / exit | 即 0.65 · 探 0.20 · 浮 0.15 / 切 0.65 · 残 0.25 · 絶 0.10 | how it arrives and how it leaves |
+| porous hold | 0.30 | how often one voice may play over the signal |
+| callback 同 | 0.25 | how often a later reception is the same station again |
 | opening share P(jo) | 0.20 | how often a cycle opens with a signal (about 4 in 10 cycles today) |
 | video weight | 1.5× | pictures vs audio-only reels |
 | reel rest | 3 cycles | how soon a reel can repeat |
@@ -186,7 +225,9 @@ tuned to the key, 祭 無 回線 鐘 the guests.
 - **distance (d)** — how far a night is from home, 0 to 1.
 - **departure** — one of the 24 far-night behaviors above.
 - **lift** — one cycle of an ordinary night pulled out, or of a far night pulled back.
-- **reel / window** — a stored broadcast source / one 12-second piece of it that the station plays.
+- **reel / window** — a stored broadcast source / one piece of it the station can play; twelve seconds today, longer as the pool is re-cut.
+- **reception** — one whole arrival: the static rising, the tune-in, the pieces, the gaps between them, the loss, the dead tube.
+- **budget / on air** — what a reception ASKS for in seconds of audible signal / what it ACHIEVED after the window it landed on.
 - **Tier A / B** — free to use / copyrighted, played under the fair-use posture with the takedown flag.
 - **home identity / byte-identical** — the promise that ordinary nights do not change unless we decide they do.
 - **re-base** — re-taking that promise's reference after a deliberate change.

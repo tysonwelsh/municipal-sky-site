@@ -69,6 +69,41 @@ ambient one-shots. In priority order:
    the owner seated distant thunder and relay chatter (rc.62) and dropped
    hull groan, airlock, numbers station and pipe knock (removed).*
 
+## Shipped since: the shapes of a reception (2026-09-14)
+
+PLAN-SIGNAL-SHAPES.md. The owner's observation — every signal the same
+length, one with no relation to the next — answered in four phases:
+
+- **R0** a reception became one plan object, proved by changing nothing
+  (32/32 home nights byte-identical).
+- **R1 (rc.69)** the on-air budget, the frequency (1.7×: ~25 signals an hour
+  against rc.68's ~15), the drawn 15–90 s quiet, per-reception air holds, a
+  receiver queue and a pair of media elements. A declared re-base.
+- **R2 + R3 (rc.70)** the shapes — 常 戻 断 走, 即 探 浮, 切 残 絶, the 同
+  callback — and the air that opens between the pieces and over three
+  receptions in ten. A declared re-base.
+- **R4** the tooling: `make-reel.sh --add-windows`, `tools/pool-shapes.py`,
+  the §5 recipe in `broadcast/CURATE.md`, and one reel re-cut as a proof.
+
+**What is left, and it is the owner's ear that decides it:**
+
+1. **The long windows.** The machinery is finished and the pool is the
+   limit: 1 164 of the pool's 1 349 windows are twelve seconds, which after
+   an arrival and a loss serves about nine seconds on air. Measured against
+   a SIMULATED re-cut pool (`ZK_MANIFEST=`), the degrade ladder never runs,
+   the median on air is 19 s and the achieved distribution matches the
+   owner's table. So R4's batch — 60–80 reels first, across tiers, tones and
+   countries, then the rest — is what makes §2's spread real. Every long
+   window wants auditioning before it lands.
+2. **R5, the listen.** Seeds 3042 / 7 / 17 through the console and the reel
+   lab; the weights in §3.6 and the table in §2 moved to taste. They are all
+   in one block at the top of `zk-broadcast.js`, beside `BC_PER_S` and
+   `BC_SIL_*` in `zankyo-audio.js`.
+3. **Peak concurrent sources is at 104 against a bound of 110** (main was
+   100). Six of headroom on the tightest budget the station has — the price
+   of 1.7× the receptions. The next change to the receiver's graph should
+   read that number first.
+
 ## Later
 
 - **Audio signals and video signals as two kinds of visitation** (the
