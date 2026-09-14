@@ -145,12 +145,8 @@ include '../includes/header.php';
             coordination-disordered solids</em> (<a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp"
             target="_blank">Phys. Rev. X 15, 041041 (2025)</a>), relaxed with the GAP potential. Bonds are drawn
           between atoms within 1.8&nbsp;Å.</p>
-        <p>The bond-network entropy is computed with the authors' own reference implementation, the
-          <a href="https://github.com/MPA2suite/smooth-disorder" target="_blank">smooth-disorder</a> package, with
-          every atom of every structure catalogued — no sampling. The values here reproduce the paper's
-          (amorphous carbon at 2.9&nbsp;g/cm³ and 8,000 atoms: 0.240 against Fig.&nbsp;2c's&nbsp;≈0.24).
-          Cells of a few hundred atoms are small enough that nearly every neighborhood in them is unique, which
-          caps the entropy and understates their disorder; the panel flags this when it happens.</p>
+        <p>The bond-network entropy shown in the dashboard is computed with the authors' own
+          <a href="https://github.com/MPA2suite/smooth-disorder" target="_blank">smooth-disorder</a> package.</p>
       </section>
     </div>
 
