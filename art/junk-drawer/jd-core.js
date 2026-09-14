@@ -137,6 +137,34 @@ var JD_store = (function () {
   };
 })();
 
+/* THE PAPER (owner, 2026-09-10; shared 2026-09-14): the artwork's swatch is
+   graph paper by default; a small button swaps it for BLUEPRINT — dark
+   blue, pale rules — for artwork too light to read on the cream. One
+   device preference, not JD_store's session scope (the choice should
+   survive a restart, so it's plain localStorage), shared by the report
+   card and the rating instrument: both read it fresh rather than caching
+   their own copy, so a swap on either surface is what the other shows the
+   next time it opens. The icon is identical everywhere it prints (a
+   two-tone swatch drawn in fixed colors, no surface tokens involved); only
+   the wrapping button carries each surface's own paper/ink tokens for its
+   border and hover state. */
+var JD_PAPER_KEY = 'jd-paper';
+function JD_paperGet() {
+  try { return localStorage.getItem(JD_PAPER_KEY) === 'blueprint' ? 'blueprint' : 'graph'; }
+  catch (e) { return 'graph'; }
+}
+function JD_paperSet(v) {
+  try { localStorage.setItem(JD_PAPER_KEY, v); } catch (e) {}
+}
+function JD_paperIcon() {
+  return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<rect x="1.5" y="1.5" width="13" height="13" rx="1.5" fill="#f8f3e2" stroke="currentColor" stroke-width="1"/>' +
+    '<path d="M14.5 1.5v13h-13z" fill="#1b4a8a"/>' +
+    '<path d="M5.5 1.5v13M10.5 1.5v13M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-opacity="0.38" stroke-width="0.8"/>' +
+    '</svg>';
+}
+window.JD_paper = { get: JD_paperGet, set: JD_paperSet, icon: JD_paperIcon };
+
 /* the haptics shim (APP constraint 8): one site to route through, silent
    where the API is absent (iOS Safari has no vibrate at all) */
 function JD_haptic(kind) {

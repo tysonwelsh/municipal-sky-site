@@ -3061,6 +3061,37 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-turn-art-in { position: absolute; inset: 7%; }
 .jd-turn-art-in svg { display: block; width: 100%; height: 100%; }
+/* THE PAPER SWAP, on the bench (owner ask, 2026-09-14): the report card's
+   .rc-paper / .rc-plate.is-blueprint pair (2026-09-10), reused at the
+   drawing measure — same corner, same geometry, same swatch icon
+   (window.JD_paper.icon(), jd-core.js) — only the tokens are this card's
+   own (--trule/--tred in place of --form-rule/--red), the same split
+   .jd-defx already draws from .rc-axcaret. */
+.jd-turn-paper {
+  position: absolute; top: 15px; right: 15px; z-index: 3;
+  padding: 3px; line-height: 0; cursor: pointer;
+  color: #46505e;
+  border: 1px solid var(--trule); border-radius: 3px;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+}
+.jd-turn-paper svg { display: block; width: 12px; height: 12px; }
+.jd-turn-paper:hover { background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
+.jd-turn-paper:active { box-shadow: none; transform: translateY(1px); }
+.jd-turn-paper:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-turn-art.is-blueprint {
+  background:
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
+    #1b4a8a;
+  border-color: rgba(10, 28, 56, 0.6);
+}
+.jd-turn-art.is-blueprint .jd-turn-paper {
+  color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85);
+}
+.jd-turn-art.is-blueprint .jd-turn-paper:hover { background: #f2f6ff; color: #1b4a8a; }
 .jd-turn-corner {
   position: absolute; width: 22px; height: 22px; z-index: 2;
   background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
