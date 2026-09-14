@@ -95,3 +95,4 @@
 0.9.134 — the instructions sheet is rewritten in the owner's own voice, five steps instead of four (dig around and click for a closer look; press the button and help yourself; four LLMs per prompt; grading and ranking aren't optional; it's free because you're the product) — the aria mirror text carries the same words
 0.9.135 — the instructions sheet grows: the torn-paper note is 10% wider and 15% taller (the hand-torn outline scaled up, not redrawn) so the five-step rewrite reads at 14px instead of last round's cramped 13px, with real margin on every side
 0.9.136 — tapping the instructions sheet zooms it further than an ordinary pick (2x instead of the shared 1.6x): it's the one object in the drawer meant to be read, not glanced at
+0.9.137 — step 2 reworded: "if you want something new just press the big blue button. help yourself." — the aria mirror carries the same words

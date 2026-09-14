@@ -341,8 +341,8 @@
      aria-hidden with the rest of the svg, and this one string is what the
      wrapper actually says */
   var SHEET_TEXT = 'Instructions. 1: feel free to dig around and look at ' +
-    'stuff. click an item for a closer look. 2: press the big blue button ' +
-    'and help yourself if you want something new. 3: each prompt returns ' +
+    'stuff. click an item for a closer look. 2: if you want something new ' +
+    'just press the big blue button. help yourself. 3: each prompt returns ' +
     'four drawing from different large language models. 4: you\'re ' +
     'not done until you leave a grade and rank them! 5: and it\'s ' +
     'all free of charge (you are the product!)';
