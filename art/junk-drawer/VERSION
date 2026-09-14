@@ -89,3 +89,4 @@
 0.9.128 — on a phone the drawing being graded is as large as the report card shows it: the full width of the sheet, the survey scrolling under it
 0.9.129 — the grading step's enlargement carries REDRAW and a close ✕, as the report card's does
 0.9.130 — the analytics folder's grade card is titled Overall grade, and on a phone or tablet every one of the four axis panels carries the model names
+0.9.131 — a second page for the drawer, /art/junk-drawer/about/: the same drawer with an explanation column beside it (drawer left, method right on a desktop; drawer first on a phone), for a reader who wants the method before the dig — placeholder copy for now; the art page itself is unchanged

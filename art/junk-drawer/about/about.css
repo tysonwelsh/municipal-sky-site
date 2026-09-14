@@ -1,0 +1,88 @@
+/* ============================================================================
+   THE JUNK DRAWER — /about/ : layout only (PLAN-PORTFOLIO v2 §2, §6.3).
+   The sub-page mounts the SAME drawer as the art page (_stage.php, the six
+   jd-*.js files, junk-drawer.css) and reuses the field-notes column's type
+   (.jd-notes and its children) for the explanation. Nothing in this file
+   re-skins the drawer, the tag, the card or the button; it only places the
+   two columns side by side above 768px and leaves the phone layout to
+   junk-drawer.css (full-viewport drawer, notes below, page snap).
+   Every rule is scoped to .jd-about, the page's wrapper class.
+   ========================================================================== */
+
+/* HOW IT WORKS — the four steps, in the notes column's own voice: the step
+   names set like .jd-axis-label (small caps, tracked), the body in the
+   column's mono. A list, because it is one. */
+.jd-about .jd-about-steps {
+  margin: 0 0 var(--s-3);
+  padding: 0 0 0 1.6em;
+}
+.jd-about .jd-about-steps li { margin: 0 0 var(--s-2); }
+.jd-about .jd-about-steps b {
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* a second live line under the count: "N drawings · N models", filled from
+   the same data.php payload the drawer loads (inline script in index.php) */
+.jd-about .jd-about-tally:empty { display: none; }
+/* the foot carries two links (the drawer's own page, the series) */
+.jd-about .jd-colophon .jd-about-sep { margin: 0 0.5em; opacity: 0.5; }
+
+/* ---------------- desktop: drawer left, explanation right ----------------
+   min-width 769px is the complement of junk-drawer.css's mobile query, so
+   no rule here can outrank the phone layout (a .jd-about .jd-stage rule
+   outside this block WOULD — specificity — which is why the block exists). */
+@media (min-width: 769px) {
+  .jd-about .jd-about-grid {
+    display: grid;
+    /* ~58/42 (PLAN-PORTFOLIO §2: left 55–60%). Wider than the art page's
+       centered --max-wide column, on purpose; still gutters at the edges. */
+    grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+    column-gap: var(--s-5);
+    align-items: start;
+    width: 100%;
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 0 var(--s-4);
+    box-sizing: border-box;
+  }
+  /* the DRAWER is the sticky column: it is one viewport tall by design, so
+     pinning it keeps the object in view while the reader scrolls the
+     explanation beside it (the plan's "stays visible while digging",
+     achieved from the drawer's side — a sticky text column taller than the
+     viewport would pin nothing). Sticky sits on the wrapper, not on the
+     stage, so the stage's own compositing transform stays untouched. */
+  .jd-about .jd-about-drawer {
+    position: sticky;
+    top: calc(var(--banner-h) + var(--s-1));
+    /* an inline-size container, so the stage below can read the column's
+       width as cqw and keep 4:5 when the COLUMN, not the viewport, is the
+       binding constraint (a narrow desktop window) */
+    container-type: inline-size;
+  }
+  .jd-about .jd-stage {
+    /* the art page's height-driven 4:5 drawer, refit to its column: never
+       wider than the column, and short enough that the drawer AND its pull
+       sit inside the viewport under the banner while pinned. The 1000px cap
+       (art page: --max-wide × 1.25 = 1200) keeps a 4:5 drawer inside a
+       58% column on a 1480px grid, so a wide monitor never has to clamp
+       its width and distort the aspect. */
+    max-width: 100%;
+    /* three ceilings: the viewport (drawer + pull under the banner), the
+       1000px cap, and the column's width × 5/4 — whichever is lowest, the
+       drawer stays 4:5 instead of clamping its width and going tall */
+    height: min(calc(100vh - var(--banner-h) - var(--jd-pull-drop) - var(--s-4)), 1000px, calc(100cqw * 1.25));
+    margin: var(--s-1) auto calc(var(--jd-pull-drop) + var(--s-2));
+  }
+  /* the explanation column: the notes' own type, no longer centered in a
+     600px column — it IS the column now */
+  .jd-about .jd-about-notes {
+    max-width: none;
+    margin: 0;
+    padding: var(--s-2) 0 var(--s-6);
+  }
+  /* the ↑ back-link exists for the phone, where the drawer is off-screen
+     while reading; beside a pinned drawer it points at nothing */
+  .jd-about .jd-back { display: none; }
+}

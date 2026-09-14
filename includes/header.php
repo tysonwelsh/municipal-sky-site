@@ -19,10 +19,12 @@ $is_home = $request_uri === '/' || $request_uri === '' || $request_uri === '/ind
 $is_blog = $current_dir === 'blog' || strpos($request_uri, '/blog') !== false;
 $is_genart = strpos($request_uri, '/art/') === 0 || rtrim($request_uri, '/') === '/art' || strpos($request_uri, '/chatbots') !== false;
 $is_graphics = strpos($request_uri, '/information-graphics') !== false;
+// The About link lights for the site's About page only (/about, /about.php),
+// anchored at the root: a substring test used to light it for any URL that
+// merely contains "/about", such as /art/junk-drawer/about/ (2026-09-13).
 $is_about = $current_page === 'about.php' ||
     $current_page === 'about' ||
-    strpos($request_uri, '/about') !== false ||
-    strpos($request_uri, 'about.php') !== false;
+    (bool) preg_match('#^/about(?:\.php)?/?(?:[?\#]|$)#', $request_uri);
 ?>
 <!DOCTYPE html>
 <html lang="en">
