@@ -118,27 +118,19 @@ include '../includes/header.php';
           if I didn't fully understand the science behind them.</p>
         <p>I suggested he consider using D3.js, a JavaScript library used for bespoke data visualizations, to show
           his work. I shared some of the other visualizations I've made using D3, and showed some of the powerful
-          interactive features that set D3 apart from other tools. Kamil liked what he saw, and we met up again on
-          a Sunday afternoon to give his visualizations a D3 makeover.</p>
-        <p>He brought screenshots of his existing plots and a folder of his structures, and I treated him the way
-          I'd treat any client: he supplied the data
-          and the domain knowledge, and my job was the storytelling side, turning the data into something engaging
-          and, ideally, beautiful. I wrote the first prompts, worked with Claude to build the viewer in D3, and then
-          spent the session refining it: adding interactive features, rearranging the layout, changing what each
-          control highlighted and how, until it became the dashboard on this page.</p>
-        <p>My goal going in was mostly to make something beautiful to interact with. Along the way we ended up
-          making something useful, too. The tools Kamil had been using could tell him how many rings of each size a
-          structure contained (the closed loops that bonds form between atoms, which are part of how a material's
-          disorder is described). What they couldn't show was <em>where</em> those rings sit. Here you can click a
-          ring size and watch every ring of that size light up in place inside the structure, or click a single atom
-          and see every ring that passes through it. Kamil told me that was genuinely new information for him. That
-          is the thing I find most interesting about D3: interactivity isn't decoration. Letting someone select,
-          filter, and brush their own data unlocks views of it that a static figure, however well made, can't
-          offer.</p>
-        <p>I'm sharing this as a portfolio piece about data storytelling rather than physics. If I can build a
-          dashboard for a physicist working at the frontier of materials research, I can build one for a marketing
-          team, a government office, or anyone else with data and a story that isn't getting through. The science
-          is entirely Kamil's. His paper with Gábor Csányi and Michele Simoncelli, <em>Bond-network entropy governs
+          interactive features that set D3 apart from other tools. Kamil liked what he saw, and we met up again to
+          make this dashboard on a Sunday afternoon.</p>
+        <p>He shared some of the data from his published work and a few screenshots of his existing
+          visualizations, and I worked with Claude Code to give them a D3 makeover. To be honest, I don't fully
+          understand the science behind these data, but saw the project more as an exercise in data storytelling.
+          My goal was to make something beautiful and interesting to interact with. However, along the way we did
+          end up making something genuinely useful that adds value beyond what Kamil's existing tools could do.
+          Those tools could tell him how many rings of each size a structure contained, but not where those rings
+          sit. Here you can click a ring size and watch every ring of that size light up in place, or click a
+          single atom and see every ring that passes through it. That, Kamil told me, was genuinely new information
+          for him.</p>
+        <p>I'm sharing this as a portfolio piece about data storytelling rather than physics. The science is
+          entirely Kamil's. His paper with Gábor Csányi and Michele Simoncelli, <em>Bond-network entropy governs
           heat transport in coordination-disordered solids</em>, is in
           <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Physical Review X</a>,
           and the structures you're rotating above come from it. Below is a short note on where the data comes
