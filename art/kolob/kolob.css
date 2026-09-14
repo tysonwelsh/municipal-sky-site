@@ -777,34 +777,18 @@
 .kolob-log-row.cat-motif .kolob-log-text { color: var(--ink); }
 
 /* ============================== colophon ================================= */
-/* one ruled line: the series links set left, the edition switches set right,
-   both centred on the line. A narrow page wraps the switches to a second
-   line beneath the links, still set right. */
+/* one ruled line: the edition switches, centred (the series links that once
+   sat at the left were struck in v0.29; the credit and the build stamp below
+   are centred too, so the foot of the page reads as one column). */
 .kolob-colophon {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem 1.2rem;
   border-top: 1px solid var(--rule);
   padding-top: 1.2rem;
 }
-.kolob-note {
-  font-family: "Noto Sans Deseret", serif;
-  font-size: 0.86rem;
-  line-height: 2.1;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
-  text-align: left;
-  margin: 0;
-  flex: 1 1 auto;
-}
-.kolob-note a {
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 1px dotted var(--ink-soft);
-}
-.kolob-note a:hover { color: var(--gilt); border-bottom-color: var(--gilt); }
 
 /* the room's credit — a licence condition (CC BY-SA), set as an imprint line:
    Latin, small, the soft ink, under the colophon and above the build stamp */
