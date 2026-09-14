@@ -43,7 +43,8 @@ ambient one-shots. In priority order:
    register, decay, breath, reed — so the koto is a different koto on
    different nights and the shakuhachi a different flute. Not new
    instruments; the existing ones with more than one body. Audition bench
-   per family.
+   per family. *Plan written 2026-09-14: PLAN-BODIES.md (synthesis only, so
+   no re-base; strings first, then winds, shō and kit, then the intercom).*
 3. **The fūrin (wind chime) promoted to a voice.** A small set of tuned
    tubes in the current mode, driven by the weather field (a wind parameter
    for density), a landscape voice with its own console row, no air claim.
@@ -64,9 +65,9 @@ ambient one-shots. In priority order:
 5. **The ambient pool grown** with the station sounds Phase 3 promised and
    never built: hull groans, airlock hiss, a numbers-station murmur, distant
    thunder, more of the derelict's own noises; phase- and kind-gated, rarer
-   ones rarer. *Pulled forward 2026-09-13: six candidates went to the Bodies
-   Lab; the owner seated distant thunder and relay chatter (rc.62). Hull
-   groan, airlock, numbers station and pipe knock stay on the bench.*
+   ones rarer. *Done 2026-09-13/14: six candidates went to the Bodies Lab;
+   the owner seated distant thunder and relay chatter (rc.62) and dropped
+   hull groan, airlock, numbers station and pipe knock (removed).*
 
 ## Later
 
