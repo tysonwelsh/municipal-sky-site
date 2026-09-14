@@ -112,28 +112,28 @@ include '../includes/header.php';
       <section class="prose-flow">
         <p>I made this dashboard in collaboration with
           <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Kamil Iwanowski</a>, a
-          researcher and PhD candidate in physics at NYU whose work is on the design of materials. I met Kamil at an
-          event in Brooklyn, where we connected over our shared interest in data visualizations. He showed me some
-          of the 3D visualizations he had made for his past research, which I found to be visually compelling even
-          if I didn't fully understand the science behind them.</p>
-        <p>I suggested he consider using D3.js, a JavaScript library used for bespoke data visualizations, to show
-          his work. I shared some of the other visualizations I've made using D3, and showed some of the powerful
-          interactive features that set D3 apart from other tools. Kamil liked what he saw, and we met up again to
-          make this dashboard on a Sunday afternoon.</p>
-        <p>He shared some of the data from his published work and a few screenshots of his existing
-          visualizations, and I worked with Claude Code to give them a D3 makeover. To be honest, I don't fully
-          understand the science behind these data, but saw the project more as an exercise in data storytelling.
-          My goal was to make something beautiful and interesting to interact with. However, along the way we did
-          end up making something genuinely useful that adds value beyond Kamil's previous dashboards. Those could
-          show the count of rings of each size in a structure, but not their position. Here you can click a ring
-          size and watch every ring of that size light up in place, or click a single atom and see every ring that
-          passes through it.</p>
-        <p>I'm sharing this as a portfolio piece about data storytelling rather than physics. The science is
-          entirely Kamil's. His paper with Gábor Csányi and Michele Simoncelli, <em>Bond-network entropy governs
-          heat transport in coordination-disordered solids</em>, is in
-          <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Physical Review X</a>,
-          and the structures you're rotating above come from it. Below is a short note on where the data comes
-          from and how it was processed.</p>
+          researcher and PhD candidate in physics at NYU whose work is on the design of materials.</p>
+        <p>I met Kamil at an event in Brooklyn, where we connected over our shared interest in data visualizations.
+          When he showed me some of the visualizations he had made for his research, I asked if he had considered
+          using D3.js, a JavaScript library for making bespoke data visualizations. I shared some of the other
+          visualizations I've made to show what sets D3 apart from other tools, and Kamil liked what he saw. We met
+          up again on a Sunday afternoon and built this dashboard using Claude Code.</p>
+        <p>To be honest, I don't fully understand the science behind these data. My interest in making it was
+          primarily as an exercise in data storytelling, in addition to exploring how well Claude could handle
+          processing and visualizing data used in actual frontier research. In other words, I wanted to make
+          something that looks cool by giving Kamil's existing research visualizations an interactive makeover with
+          D3.js.</p>
+        <p>However, along the way we ended up making something that adds value beyond Kamil's previous dashboards.
+          Specifically, with this dashboard the user can filter the main visualization by selecting a ring size in
+          the <em>Rings by size</em> panel on the right. Doing so highlights those rings in the 3D diagram, showing
+          their position relative to the other rings in the structure. Although Kamil's previous dashboards
+          depicted the counts of different types of rings, they did not allow for this kind of interactive
+          filtering that displays the rings' positions.</p>
+        <p>You can read more about Kamil's research
+          <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">here</a>, or view the
+          source code for this dashboard on
+          <a href="https://github.com/tysonwelsh/municipal-sky-site/tree/main/information-graphics/carbon-point-cloud"
+            target="_blank">GitHub</a>.</p>
       </section>
     </div>
 
