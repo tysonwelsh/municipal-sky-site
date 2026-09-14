@@ -85,13 +85,13 @@ include '../../includes/header.php';
             <div class="zankyo-scanlines" aria-hidden="true"></div>
             <div class="zk-glass" aria-hidden="true"></div>
           </div>
+          <!-- the chin carries only the power lamp now (owner, 2026-09-14: no
+               text under the monitor — the brand line, the 電源 label and the
+               inspection sticker are gone) -->
           <div class="zk-monitor-chin">
-            <span class="zk-monitor-brand">映像管 &middot; MSHI CRT-19</span>
             <span class="zk-chin-spacer"></span>
-            <span class="zk-led-label">電源</span>
             <span class="zk-led" aria-hidden="true"></span>
           </div>
-          <span class="zk-sticker" aria-hidden="true"><b>検査済</b>3042.04<i></i></span>
         </div>
 
         <!-- 段階 DEVELOPMENT — segmented LED bargraph, full display width.
@@ -106,10 +106,7 @@ include '../../includes/header.php';
             <span class="zk-bar-tick" style="left:80%" aria-hidden="true"></span>
             <span class="zk-bar-glass" aria-hidden="true"></span>
           </div>
-          <div class="zk-bar-foot" aria-hidden="true">
-            <span class="zk-bar-label">段階 &middot; DEVELOPMENT</span>
-            <span class="zk-bar-serial">LM-3814 &middot; 56&nbsp;SEG</span>
-          </div>
+          <!-- no foot: just the bar (owner, 2026-09-14) -->
         </div>
       </div>
 
@@ -189,8 +186,15 @@ include '../../includes/header.php';
     </div>
 
     <!-- console -->
-    <div class="zankyo-mixer">
-      <div class="zankyo-mixer-title"><span>卓 &middot; CONSOLE</span><span class="zk-warn-small" aria-hidden="true">機動注意</span></div>
+    <!-- the title strip is the console's own latch: press it and the whole
+         console folds to the strip, the way a row's name plate folds its cavity
+         (owner, 2026-09-14). Remembered per browser. -->
+    <div class="zankyo-mixer" id="zankyo-mixer">
+      <div class="zankyo-mixer-title" id="zankyo-mixer-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="zankyo-layers" aria-label="Console: fold or unfold">
+        <span>卓 &middot; CONSOLE</span>
+        <span class="zk-warn-small" aria-hidden="true">機動注意</span>
+        <span class="zk-name-latch zk-mixer-latch" aria-hidden="true"></span>
+      </div>
       <div id="zankyo-layers"></div>
     </div>
 
