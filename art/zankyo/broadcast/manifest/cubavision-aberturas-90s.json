@@ -7,64 +7,14 @@
   "tier": "B",
   "tone": "music",
   "weight": 3,
-  "gain": -0.3,
-  "durS": 60.0,
-  "bytes": 473970,
+  "gain": -0.4,
+  "durS": 79.6,
+  "bytes": 826336,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      10.0
-    ],
-    [
-      10.0,
-      20.0
-    ],
-    [
-      20.0,
-      30.0
-    ],
-    [
-      30.0,
-      40.0
-    ],
-    [
-      40.0,
-      50.0
-    ],
-    [
-      50.0,
-      60.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      4.0,
-      14
-    ],
-    [
-      808.0,
-      818
-    ],
-    [
-      1030.0,
-      1040
-    ],
-    [
-      1303.0,
-      1313
-    ],
-    [
-      1620.0,
-      1630
-    ],
-    [
-      1976.0,
-      1986
-    ]
-  ],
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 49.6], [49.6, 59.6], [59.6, 69.6], [69.6, 79.6]],
+  "srcWindows": [[4.0, 14.0], [808.0, 818.0], [961.0, 990.6], [1030.0, 1040.0], [1303.0, 1313.0], [1620.0, 1630.0]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
   "notes": "Havana programme openings made on nothing: the NTV title, a painted rainbow, credit crawls, a face, and the Televisión Cubana card; archivist's caption bar and flag cropped off the source",

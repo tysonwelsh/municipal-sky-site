@@ -7,64 +7,15 @@
   "tier": "B",
   "tone": "sung",
   "weight": 4,
-  "gain": -0.2,
-  "durS": 72.0,
-  "bytes": 555360,
+  "gain": 0.0,
+  "durS": 84.11,
+  "bytes": 618770,
+  "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      4.0,
-      16.0
-    ],
-    [
-      25.0,
-      37.0
-    ],
-    [
-      70.0,
-      82.0
-    ],
-    [
-      124.0,
-      136.0
-    ],
-    [
-      196.0,
-      208.0
-    ],
-    [
-      250.0,
-      262.0
-    ]
-  ],
-  "pitchHz": [null, null, 281.0, null, null, null],
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 48.1], [48.1, 60.1], [60.1, 72.1], [72.1, 84.11]],
+  "srcWindows": [[4.0, 16.0], [25.0, 37.0], [41.0, 65.1], [70.0, 82.0], [124.0, 136.0], [196.0, 208.0]],
+  "pitchHz": [null, null, null, 280.95, null, null],
   "tuned": true,
   "notes": "Egyptian Channel 1: the clock with Arabic numerals, bands of dropout, the sunburst card, the call to prayer, blue pages of Quranic text",
   "takedown": false

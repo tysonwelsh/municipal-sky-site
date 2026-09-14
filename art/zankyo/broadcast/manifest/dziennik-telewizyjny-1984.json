@@ -7,64 +7,14 @@
   "tier": "B",
   "tone": "voice",
   "weight": 3,
-  "gain": -0.3,
-  "durS": 72.03,
-  "bytes": 623612,
+  "gain": -0.4,
+  "durS": 87.36,
+  "bytes": 818511,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.01
-    ]
-  ],
-  "srcWindows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      386.0,
-      398.0
-    ],
-    [
-      646.0,
-      658.0
-    ],
-    [
-      698.0,
-      710.0
-    ],
-    [
-      1818.0,
-      1830.0
-    ],
-    [
-      1845.0,
-      1857.0
-    ]
-  ],
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 75.34], [75.34, 87.34]],
+  "srcWindows": [[0.0, 12.0], [386.0, 398.0], [646.0, 658.0], [698.0, 710.0], [1587.0, 1614.3], [1818.0, 1830.0]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
   "notes": "the evening news of the Polish People's Republic on its national holiday: the DTV logo assembling over the map of Poland, the reader and his red telephone, the MOSKWA / BERLIN / PARYŻ correspondent cards, the weather map, and the closing DZIENNIK sting",

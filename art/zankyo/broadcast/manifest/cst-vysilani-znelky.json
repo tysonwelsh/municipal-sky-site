@@ -8,63 +8,13 @@
   "tone": "voice",
   "weight": 3,
   "gain": -0.3,
-  "durS": 72.0,
-  "bytes": 497698,
+  "durS": 86.5,
+  "bytes": 591624,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      16.0,
-      28.0
-    ],
-    [
-      32.0,
-      44.0
-    ],
-    [
-      52.0,
-      64.0
-    ],
-    [
-      74.0,
-      86.0
-    ],
-    [
-      220.0,
-      232.0
-    ]
-  ],
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 86.5]],
+  "srcWindows": [[0.0, 12.0], [16.0, 28.0], [32.0, 44.0], [52.0, 64.0], [74.0, 86.0], [141.0, 167.5]],
   "pitchHz": [1012.14, null, null, null, null, null],
   "tuned": true,
   "notes": "Czechoslovak Television opening up: the TV2 test card, the ČS monogram assembling itself, ČESKOSLOVENSKÁ TELEVIZE, the announcer Miloš Frýba, the Zprávy TN title and the reader mid-bulletin. Undated off-air recording; the ident and test card are ČST's 1970s–80s set, so the year is an estimate",

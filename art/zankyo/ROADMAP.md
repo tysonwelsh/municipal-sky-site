@@ -87,22 +87,34 @@ length, one with no relation to the next — answered in four phases:
 
 **What is left, and it is the owner's ear that decides it:**
 
-1. **The long windows.** The machinery is finished and the pool is the
-   limit: 1 164 of the pool's 1 349 windows are twelve seconds, which after
-   an arrival and a loss serves about nine seconds on air. Measured against
-   a SIMULATED re-cut pool (`ZK_MANIFEST=`), the degrade ladder never runs,
-   the median on air is 19 s and the achieved distribution matches the
-   owner's table. So R4's batch — 60–80 reels first, across tiers, tones and
-   countries, then the rest — is what makes §2's spread real. Every long
-   window wants auditioning before it lands.
+1. ~~**The long windows.**~~ **Done 2026-09-14 (rc.73):** 183 of 208 reels
+   re-cut with one long window each (18–40 s, Tier B capped at 30). The owner
+   waived the audition — "an element of chance and randomness is to be
+   expected (and desired)". Two reels refused by name, both densely encoded
+   enough that the 2 MB cap would have cost them more material than the long
+   window gained; 23 had no cached analysis to propose from. The pool went
+   1 349 → 1 392 windows and 144 → 166 MB. What it did to the sound: the
+   median reception went from 9.0–9.6 s on air to 16.6–20.6 s, the degrade
+   ladder stopped running (`degraded {}` on five of six seeds), and the
+   achieved spread now tracks §2's table instead of collapsing into its first
+   bucket. The 32–40 s bucket is the one still thin — 14 reels against a 15 %
+   ask — because Tier B is capped at 30 s and is three quarters of the pool.
+   That is the owner's own ruling, so it is a ceiling rather than a defect.
 2. **R5, the listen.** Seeds 3042 / 7 / 17 through the console and the reel
    lab; the weights in §3.6 and the table in §2 moved to taste. They are all
    in one block at the top of `zk-broadcast.js`, beside `BC_PER_S` and
    `BC_SIL_*` in `zankyo-audio.js`.
-3. **Peak concurrent sources is at 104 against a bound of 110** (main was
-   100). Six of headroom on the tightest budget the station has — the price
-   of 1.7× the receptions. The next change to the receiver's graph should
-   read that number first.
+3. **Peak concurrent sources.** Home nights peak at 102 across twelve seeds,
+   against a bound of 110 (rc.68 was 100). Eight of headroom on the tightest
+   budget the station has — the price of 1.7× the receptions. The next change
+   to the receiver's graph should read that number first.
+4. **A PRE-EXISTING FAULT, still open: seed 3042 at d 0.9 peaks at 112
+   concurrent sources, over the hard bound of 110.** rc.68 reads 113 on the
+   same seed, so this predates the reception work and is marginally improved
+   by it, not caused by it. One seed of fourteen far nights; every other far
+   seed is under 100. It belongs to the far tail's node budget rather than to
+   the receiver, which is why it was not fixed here — but it is a failing
+   invariant and the harness says so on every run of that seed.
 
 ## Later
 

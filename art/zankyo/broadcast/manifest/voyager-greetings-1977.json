@@ -7,80 +7,15 @@
   "tier": "A",
   "tone": "voice",
   "weight": 3,
-  "gain": 0.1,
-  "durS": 97.75,
-  "bytes": 470116,
+  "gain": 0.0,
+  "durS": 123.92,
+  "bytes": 597250,
+  "band": "normal",
   "audioOnly": true,
   "picture": "line",
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ],
-    [
-      72.0,
-      84.0
-    ],
-    [
-      84.0,
-      96.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      0.0,
-      12
-    ],
-    [
-      43.42,
-      55.42
-    ],
-    [
-      101.35,
-      113.35
-    ],
-    [
-      113.52,
-      125.52
-    ],
-    [
-      160.2,
-      172.2
-    ],
-    [
-      190.81,
-      202.81
-    ],
-    [
-      205.5,
-      217.5
-    ],
-    [
-      244.51,
-      256.51
-    ]
-  ],
-  "pitchHz": [null, null, null, null, null, null, null, null],
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 74.1], [74.1, 86.1], [86.1, 98.1], [98.1, 110.1], [110.1, 122.1]],
+  "srcWindows": [[0.0, 12.0], [43.42, 55.42], [101.35, 113.35], [113.52, 125.52], [129.0, 155.1], [160.2, 172.2], [190.81, 202.81], [205.5, 217.5], [244.51, 256.51]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null],
   "tuned": false,
   "notes": "NASA's 55 greetings from the Voyager Golden Record, concatenated in NASA's order from soundcloud.com/nasa/sets/golden-record-greetings-to-the (also archive.org/details/voyager_202608); Akkadian, Amoy, Arabic… English 'Hello from the children of planet Earth', Japanese, Latin, Persian, Russian, Sumerian, Vietnamese, Welsh, Wu",
   "takedown": false

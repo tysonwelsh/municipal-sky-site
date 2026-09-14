@@ -8,62 +8,13 @@
   "tone": "voice",
   "weight": 4,
   "gain": 0.0,
-  "durS": 72.0,
-  "bytes": 532196,
+  "durS": 89.25,
+  "bytes": 595618,
+  "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      50.0,
-      62.0
-    ],
-    [
-      88.0,
-      100.0
-    ],
-    [
-      172.0,
-      184.0
-    ],
-    [
-      206.0,
-      218.0
-    ],
-    [
-      250.0,
-      262.0
-    ],
-    [
-      340.0,
-      352.0
-    ]
-  ],
+  "windows": [[0.0, 29.25], [29.25, 41.25], [41.25, 53.25], [53.25, 65.25], [65.25, 77.25], [77.25, 89.26]],
+  "srcWindows": [[15.0, 44.2], [50.0, 62.0], [88.0, 100.0], [172.0, 184.0], [206.0, 218.0], [250.0, 262.0]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
   "notes": "February 1979: the station clock ident, announcers reading to camera off a blue chroma wall, tanks in the street, the interlude card of red geraniums",

@@ -8,63 +8,13 @@
   "tone": "voice",
   "weight": 4,
   "gain": 0.0,
-  "durS": 72.0,
-  "bytes": 675148,
+  "durS": 85.42,
+  "bytes": 833684,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      100.0,
-      112
-    ],
-    [
-      124.0,
-      136
-    ],
-    [
-      150.0,
-      162
-    ],
-    [
-      190.0,
-      202
-    ],
-    [
-      218.0,
-      230
-    ],
-    [
-      248.0,
-      260
-    ]
-  ],
+  "windows": [[0.0, 25.33], [25.33, 37.33], [37.33, 49.33], [49.33, 61.42], [61.42, 73.42], [73.42, 85.42]],
+  "srcWindows": [[59.0, 84.3], [100.0, 112.0], [124.0, 136.0], [150.0, 162.0], [190.0, 202.0], [218.0, 230.0]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
   "notes": "Colombian state television between programmes: the Colombiana de Television ident, the PSA that asks where your children are right now, the Ministerio de Comunicaciones card, a school's public notice, the Cadena Uno ident, and tape dropout",

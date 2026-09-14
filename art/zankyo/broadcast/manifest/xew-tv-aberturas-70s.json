@@ -7,64 +7,14 @@
   "tier": "B",
   "tone": "music",
   "weight": 3,
-  "gain": -0.3,
-  "durS": 60.0,
-  "bytes": 484469,
+  "gain": -0.2,
+  "durS": 77.92,
+  "bytes": 849048,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      10.0
-    ],
-    [
-      10.0,
-      20.0
-    ],
-    [
-      20.0,
-      30.0
-    ],
-    [
-      30.0,
-      40.0
-    ],
-    [
-      40.0,
-      50.0
-    ],
-    [
-      50.0,
-      60.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      155.0,
-      165
-    ],
-    [
-      315.0,
-      325
-    ],
-    [
-      403.0,
-      413
-    ],
-    [
-      475.0,
-      485
-    ],
-    [
-      535.0,
-      545
-    ],
-    [
-      755.0,
-      765
-    ]
-  ],
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 77.92]],
+  "srcWindows": [[155.0, 165.0], [315.0, 325.0], [403.0, 413.0], [475.0, 485.0], [535.0, 545.0], [657.0, 684.9]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
   "notes": "Mexico City programme openings and cortinillas: a street, a libretto credit, the Canal 2 numeral, cartoons, the Mundo de Juguetes card; archivist's caption bar and flag cropped off the source",

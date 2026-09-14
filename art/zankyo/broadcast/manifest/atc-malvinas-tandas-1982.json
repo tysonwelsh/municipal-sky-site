@@ -7,64 +7,14 @@
   "tier": "B",
   "tone": "voice",
   "weight": 4,
-  "gain": -0.3,
-  "durS": 72.0,
-  "bytes": 551187,
+  "gain": -0.1,
+  "durS": 88.2,
+  "bytes": 682936,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      4.0,
-      16
-    ],
-    [
-      178.0,
-      190
-    ],
-    [
-      718.0,
-      730
-    ],
-    [
-      1138.0,
-      1150
-    ],
-    [
-      1378.0,
-      1390
-    ],
-    [
-      1918.0,
-      1930
-    ]
-  ],
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 88.21]],
+  "srcWindows": [[4.0, 16.0], [178.0, 190.0], [718.0, 730.0], [1138.0, 1150.0], [1378.0, 1390.0], [1591.0, 1619.2]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
   "notes": "Argentina Televisora Color, 9 May 1982: the telethon host at the microphone, a detergent ad, then 'SOLUVEL EN LAS MALVINAS 2-4-82' over the islands and the flag — a country at war selling soap",

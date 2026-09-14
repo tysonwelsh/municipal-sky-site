@@ -8,64 +8,14 @@
   "tone": "voice",
   "weight": 4,
   "gain": -0.2,
-  "durS": 72.0,
-  "bytes": 609005,
+  "durS": 96.08,
+  "bytes": 713274,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      12.0
-    ],
-    [
-      12.0,
-      24.0
-    ],
-    [
-      24.0,
-      36.0
-    ],
-    [
-      36.0,
-      48.0
-    ],
-    [
-      48.0,
-      60.0
-    ],
-    [
-      60.0,
-      72.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      8.0,
-      20
-    ],
-    [
-      60.0,
-      72
-    ],
-    [
-      150.0,
-      162
-    ],
-    [
-      196.0,
-      208
-    ],
-    [
-      210.0,
-      222
-    ],
-    [
-      228.0,
-      240
-    ]
-  ],
-  "pitchHz": [null, null, null, null, null, null],
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 60.08], [60.08, 72.08], [72.08, 84.08], [84.08, 96.08]],
+  "srcWindows": [[8.0, 20.0], [60.0, 72.0], [150.0, 162.0], [165.0, 189.0], [196.0, 208.0], [210.0, 222.0], [228.0, 240.0]],
+  "pitchHz": [null, null, null, null, null, null, null],
   "tuned": false,
   "notes": "A provincial Argentine station closing for the night: the 'Un instante para la reflexion' card, the priest reading to camera, the TeleNueva Canal 9 logo, then colour bars",
   "takedown": false
