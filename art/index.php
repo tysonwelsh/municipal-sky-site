@@ -25,11 +25,10 @@ include '../includes/header.php';
                 <div class="entry">
                     <div class="entry-content">
                         <a href="/art/rain-of-babel/" class="entry-title">Rain of Babel</a>
-                        <span class="entry-description">A rain of characters from seventy-three
-                            writing systems &mdash; Greek, Cherokee, Deseret, Devanagari, Tibetan,
-                            Chinese, Linear B &mdash; struck one to a printed square on engineering
-                            paper. It falls, it lands, it drifts. No column ever repeats and none of
-                            it means anything.</span>
+                        <span class="entry-description">A neverending torrent of meaningless
+                            characters from seventy-three writing systems. An art piece expressing
+                            anxiety about how LLMs will transform our relationship to the written
+                            word.</span>
                     </div>
                 </div>
                 <div class="entry">
