@@ -235,6 +235,25 @@
   // rocker switch (mute), VOL knob, RATE knob, and a service hatch (整備口)
   // holding the fine trim faders.
   // ==========================================================================
+  // The console folds to its title strip (owner, 2026-09-14) — the whole
+  // console, over and above the rows' own cavities. Remembered per browser;
+  // the rows are untouched, so unfolding shows them as they were.
+  function wireMixerToggle() {
+    var box = document.getElementById("zankyo-mixer"), btn = document.getElementById("zankyo-mixer-toggle");
+    if (!box || !btn) return;
+    var KEY = "zankyo.console.folded";
+    function set(folded, remember) {
+      box.classList.toggle("is-collapsed", folded);
+      btn.setAttribute("aria-expanded", folded ? "false" : "true");
+      if (remember) { try { localStorage.setItem(KEY, folded ? "1" : "0"); } catch (e) {} }
+    }
+    var saved = null; try { saved = localStorage.getItem(KEY); } catch (e) {}
+    if (saved === "1") set(true, false);
+    btn.addEventListener("click", function () { set(!box.classList.contains("is-collapsed"), true); });
+    btn.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); set(!box.classList.contains("is-collapsed"), true); }
+    });
+  }
   function renderMixer() {
     var host = document.getElementById("zankyo-layers"); if (!host) return;
     var state = Z.getState(); host.innerHTML = "";
@@ -254,7 +273,7 @@
       name.setAttribute("aria-label", meta.label + " controls");
       name.innerHTML = '<span class="zankyo-layer-kana">' + meta.kana + '</span>' +
         '<span class="zk-name-label">' + meta.label + '</span>' +
-        '<i class="zk-ch">CH·0' + (li + 1) + '</i><span class="zk-name-latch" aria-hidden="true"></span>';
+        '<i class="zk-ch">CH·' + (li + 1 < 10 ? "0" : "") + (li + 1) + '</i><span class="zk-name-latch" aria-hidden="true"></span>';   // two digits: CH·01 … CH·13, not CH·013
       name.addEventListener("click", function () {
         var open = row.classList.toggle("is-open");
         name.setAttribute("aria-expanded", open ? "true" : "false");
@@ -655,5 +674,5 @@
     }
   }
 
-  renderScale(); renderMixer(); wireTransport(); wireFarSwitch(); wirePush(); pollArc();
+  renderScale(); renderMixer(); wireMixerToggle(); wireTransport(); wireFarSwitch(); wirePush(); pollArc();
 })();

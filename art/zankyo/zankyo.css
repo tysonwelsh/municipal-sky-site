@@ -291,12 +291,7 @@
   position: relative; display: flex; align-items: center; gap: 8px;
   padding: 7px 6px 8px;
 }
-.zk-monitor-brand {
-  font-size: 8px; letter-spacing: 0.26em; color: #5f5b68;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05); /* engraved */
-}
 .zk-chin-spacer { flex: 1; }
-.zk-led-label { font-size: 7px; letter-spacing: 0.2em; color: #55515e; }
 .zk-led {
   width: 7px; height: 7px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
@@ -305,21 +300,6 @@
 .zankyo-scene.is-on .zk-led {
   background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
   box-shadow: 0 0 8px rgba(var(--red-rgb), 0.8), 0 0 2px rgba(var(--red-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5);
-}
-/* inspection sticker — half peeled */
-.zk-sticker {
-  position: absolute; right: 74px; bottom: 5px; z-index: 3; width: 46px; padding: 3px 4px 4px;
-  transform: rotate(-3.5deg);
-  background: linear-gradient(160deg, #cfc5ac, #b3a88d 65%, #9d9177);
-  color: #55492f; font-size: 7px; letter-spacing: 0.08em; line-height: 1.5; text-align: center;
-  border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-  clip-path: polygon(0 0, 100% 0, 100% 74%, 86% 100%, 0 100%);
-  opacity: 0.92;
-}
-.zk-sticker b { display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9.5px; letter-spacing: 0.2em; color: #83291c; }
-.zk-sticker i { /* lifted, curling corner */
-  position: absolute; right: 1px; bottom: 0; width: 11px; height: 11px;
-  background: linear-gradient(315deg, transparent 44%, #e9e1cb 48%, #d8cfb4 62%, rgba(60, 48, 30, 0.55) 100%);
 }
 
 /* ---------------------------------------------------------------------------
@@ -380,15 +360,6 @@
 .zankyo-scene.is-kyu .zk-seg-kyu.on:nth-child(2n) { animation-duration: 0.22s; animation-delay: 0.08s; }
 /* 斬 KIRU — the whole bar dies to black for the hush, relights with the jo */
 .zk-bargraph.is-dead .zk-seg { background: #030304; box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.9); }
-.zk-bar-foot { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; padding: 1px 1px 0; }
-.zk-bar-label {
-  font-size: 8.5px; letter-spacing: 0.18em; color: var(--print-dim);
-  text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1);
-}
-.zk-bar-serial {
-  font-size: 6.5px; letter-spacing: 0.24em; color: #56525f;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05);   /* engraved */
-}
 
 /* ---------------------------------------------------------------------------
    CONTROL RAIL — one compact row: arcade transport, the pitch-management
@@ -661,6 +632,13 @@
   font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.3em;
   color: rgba(var(--amber-rgb), 0.55); transform: rotate(0.8deg); text-transform: none;
 }
+/* the console's own latch: the title strip folds the whole console (2026-09-14) */
+.zankyo-mixer-title { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.zankyo-mixer-title:focus-visible { outline: 1px dashed rgba(var(--amber-rgb), 0.7); outline-offset: -4px; }
+.zankyo-mixer-title .zk-warn-small { margin-left: auto; }
+.zankyo-mixer:not(.is-collapsed) .zk-mixer-latch::after { transform: rotate(90deg); }
+.zankyo-mixer.is-collapsed #zankyo-layers { display: none; }
+.zankyo-mixer.is-collapsed .zankyo-mixer-title { border-bottom: none; box-shadow: none; }
 .zankyo-layer { padding: 13px 16px 12px; border-bottom: 1px solid #050507; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.035); }
 .zankyo-layer:last-child { border-bottom: none; box-shadow: none; }
 .zankyo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
@@ -929,7 +907,6 @@
 .zk-bank-side { min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }
 .zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
 .zk-bank-main .zk-bargraph { margin-bottom: 0; }
-.zk-bank-main .zk-sticker { right: 62px; }
 
 /* The mounting strap is gone (owner §C). It wrapped the set in a second
    housing — a striped steel strip with four bolts through it — and the set is
@@ -1107,7 +1084,7 @@
   .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
   .zankyo-frame { padding: 20px 13px 30px; }
   .zankyo-title { letter-spacing: 0.06em; }
-  .zk-vent, .zk-warn, .zk-sticker, .zk-warn-small { display: none; }
+  .zk-vent, .zk-warn, .zk-warn-small { display: none; }
   /* 逸脱: the long vents go on a small panel, but the switch needs something to
      hide in — so a three-slat stub of the bottom-left vent stays, just wide
      enough to hold the slot and read as louvre, clear of the corner screw. */
@@ -1121,7 +1098,6 @@
   /* bargraph: slimmer cells, drop the serial print */
   .zk-bargraph { padding: 7px 9px 5px; gap: 3px 8px; }
   .zk-bar-cells { gap: 1px; height: 13px; }
-  .zk-bar-serial { display: none; }
 
   /* control rail wraps: transport + master share a row, module beneath */
   .zk-console-top { flex-wrap: wrap; gap: 12px; justify-content: space-between; }
