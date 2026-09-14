@@ -29,6 +29,9 @@ include '../../includes/header.php';
   <h1>残響 · BODIES LAB</h1>
   <p>Each button auditions one body through the real engine graph (rooms, grit bus, master chain) while the station is stopped. Open the console page for the full performance.</p>
   <div class="zbl-grid" id="zbl-buttons"></div>
+  <h2>身 · BODIES</h2>
+  <p>Three incarnations per voice (PLAN-BODIES.md) — the same instrument built differently. 標 is the instrument as it plays tonight; the others are heard here only until the owner seats them. Each button auditions that voice in that body.</p>
+  <div class="zbl-grid" id="zbl-bodies"></div>
   <div class="zbl-log" id="zbl-log">ready — press a body</div>
 </div>
 <script src="../background-audio.js?v=<?php echo zkv('../background-audio.js'); ?>"></script>
@@ -71,6 +74,26 @@ include '../../includes/header.php';
     "Relay chatter": "clicks in bursts over a coil's buzz (seated 2026-09-13)"
   };
   (Z.ambientNames ? Z.ambientNames() : []).forEach(function (n) { BODIES.push(["ambient", "環境 " + n, AMBIENT_NOTES[n] || "one-shot", n]); });
+  var FAMILY_KANA = { koto: "箏 koto", shamisen: "三味線 shamisen", biwa: "琵琶 biwa", shakuhachi: "尺八 shakuhachi", hichiriki: "篳篥 hichiriki", sho: "笙 shō", taiko: "太鼓 taiko", vox: "内線 intercom" };
+  var BODY_NOTES = {
+    koto: { "old strings": "dulled, plucked nearer the middle, little sparkle", "hard tsume": "a hard pick near the bridge: thin, bright, ringing" },
+    shamisen: { "Tsugaru": "the northern instrument: hard, a loud buzz, the bachi's slap", "nagauta": "the theatre's: lighter, cleaner, longer" },
+    biwa: { "chikuzen": "gentler, brighter, shorter", "heike": "the narrator's: dark, long, the buzz huge" },
+    shakuhachi: { "long bore": "二尺三寸: dark, the kan lower, the yuri wider", "jinashi": "an unlined bore: more breath than tone" },
+    hichiriki: { "hard reed": "more buzz, higher formants, steadier", "old reed": "softer, lower, wider, breathier" },
+    sho: { "dark": "the reed under, the partials back", "old pipes": "uneven pipes, each a few cents off" },
+    taiko: { "slack skins": "lower, longer, a softer ka", "tight skins": "higher, drier, sharper" },
+    vox: { "bad line": "narrower, coarser, chattering, more lost", "distant": "far down the corridor: quiet, thin, mostly static" }
+  };
+  var bodiesHost = document.getElementById("zbl-bodies"), fams = Z.bodyFamilies ? Z.bodyFamilies() : {};
+  Object.keys(fams).forEach(function (layer) {
+    fams[layer].forEach(function (b, bi) {
+      var btn = document.createElement("button");
+      btn.innerHTML = "<b>" + (FAMILY_KANA[layer] || layer) + " · " + b.kana + " " + b.name + "</b>" + (bi === 0 ? "tonight's instrument" : ((BODY_NOTES[layer] || {})[b.name] || ""));
+      btn.addEventListener("click", function () { Z.sample(layer, b.name); });
+      bodiesHost.appendChild(btn);
+    });
+  });
   Z.setEventListener(function (ev) { log.textContent = (ev.label + (ev.detail ? " · " + ev.detail : "")) + "\n" + log.textContent.split("\n").slice(0, 12).join("\n"); });
   BODIES.forEach(function (b) {
     var btn = document.createElement("button");

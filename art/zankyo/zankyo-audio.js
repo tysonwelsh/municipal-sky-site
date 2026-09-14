@@ -1766,6 +1766,72 @@ window.ZankyoAudio = (function () {
     broadcast:  { band: 0.5, flutter: 0.5, grit: 0.5 },   // S1: how narrow the radio band, how deep the fading, how much the receiver distorts
   };
   var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
+  // ==========================================================================
+  // 身 BODIES — a family of bodies per instrument (road map §2, PLAN-BODIES.md, 2026-09-14)
+  // ==========================================================================
+  // Three incarnations per voice: the same instrument built differently. The
+  // first of each family IS today's instrument — every multiplier 1, every
+  // shift 0 — so a night that draws none sounds exactly as it did. A body
+  // touches SYNTHESIS ONLY: filter frequencies, partial weights, envelope
+  // levels, decay lengths, the sawari's colour. Never a note's time, never a
+  // draw on a seeded stream — the biwa's tremolo rate and the shō's entry
+  // spacing are deliberately not here, because they would move notes. So the
+  // note stream of every seed is byte-identical whatever the bodies, and the
+  // harness's bank does not move. The console's knobs stay offsets on top.
+  //
+  // Step 1 (this commit): the tables, applied in the note functions, and the
+  // Bodies Lab auditions each incarnation by name — nights keep the standard
+  // body until the owner has listened. Step 2 draws one per voice at play
+  // and again at a sea change, and shows the kana on the row's name plate.
+  var BODIES = {
+    koto: [
+      { kana: "標", name: "standard",     bright: 1,    decay: 1,    pos: 0,     sparkle: 1,   pick: 1,   dull: 1 },
+      { kana: "古", name: "old strings",  bright: 0.72, decay: 0.8,  pos: 0.06,  sparkle: 0.4, pick: 0.8, dull: 0.75 },   // dulled, plucked nearer the middle, little sparkle
+      { kana: "硬", name: "hard tsume",   bright: 1.35, decay: 1.1,  pos: -0.04, sparkle: 1.6, pick: 1.4, dull: 1.1 },    // a hard pick near the bridge: thin, bright, ringing
+    ],
+    shamisen: [
+      { kana: "標", name: "standard",     bright: 1,    decay: 1,    sawari: 1,   slap: 1,   pick: 1 },
+      { kana: "津", name: "Tsugaru",      bright: 1.2,  decay: 0.9,  sawari: 1.6, slap: 1.5, pick: 1.3 },   // the northern instrument: hard, loud buzz, the bachi's slap
+      { kana: "唄", name: "nagauta",      bright: 0.9,  decay: 1.2,  sawari: 0.5, slap: 0.7, pick: 0.9 },   // the theatre's: lighter, cleaner, longer
+    ],
+    biwa: [
+      { kana: "標", name: "standard",     bright: 1,    decay: 1,    sawari: 1 },
+      { kana: "筑", name: "chikuzen",     bright: 1.15, decay: 0.85, sawari: 0.6 },   // gentler, brighter, shorter
+      { kana: "平", name: "heike",        bright: 0.8,  decay: 1.5,  sawari: 1.3 },   // the narrator's: dark, long, the buzz huge
+    ],
+    shakuhachi: [
+      { kana: "標", name: "standard",     cut: 1,    kanHz: 440, vowel: 0,    yuri: 1,   breath: 1,   tone: 1 },
+      { kana: "長", name: "long bore",    cut: 0.75, kanHz: 392, vowel: -400, yuri: 1.2, breath: 0.9, tone: 1.1 },   // 二尺三寸: dark, the kan lower, the yuri wider
+      { kana: "地", name: "jinashi",      cut: 0.85, kanHz: 440, vowel: 300,  yuri: 0.7, breath: 1.8, tone: 0.85 },  // an unlined bore: more breath than tone
+    ],
+    hichiriki: [
+      { kana: "標", name: "standard",     curve: 0.45, formant: 0,    detune: 4, lp: 1,    breath: 1 },
+      { kana: "硬", name: "hard reed",    curve: 0.6,  formant: 300,  detune: 3, lp: 1.1,  breath: 0.8 },   // more buzz, higher formants, steadier
+      { kana: "古", name: "old reed",     curve: 0.3,  formant: -250, detune: 7, lp: 0.85, breath: 1.5 },   // softer, lower, wider, breathier
+    ],
+    sho: [
+      { kana: "標", name: "standard",     cutoff: 1,   reed: 1,   p5: 1,   p7: 1,   pipeDetune: 0 },
+      { kana: "暗", name: "dark",         cutoff: 0.7, reed: 1.2, p5: 0.6, p7: 0.5, pipeDetune: 0 },   // the reed under, the partials back
+      { kana: "古", name: "old pipes",    cutoff: 0.9, reed: 1,   p5: 1,   p7: 1.4, pipeDetune: 9 },   // uneven pipes: each a few cents off, fixed per pipe
+    ],
+    taiko: [
+      { kana: "標", name: "standard",     pitch: 1,    decay: 1,    ka: 1,   punch: 1 },
+      { kana: "緩", name: "slack skins",  pitch: 0.85, decay: 1.3,  ka: 0.8, punch: 0.9 },   // lower, longer, softer ka
+      { kana: "締", name: "tight skins",  pitch: 1.15, decay: 0.75, ka: 1.2, punch: 1.1 },   // higher, drier, sharper
+    ],
+    vox: [
+      { kana: "標", name: "clean line",   band: 0,   steps: 22, floor: 1,   gain: 1,   stutter: 0,   survive: 0 },
+      { kana: "古", name: "bad line",     band: 0.3, steps: 12, floor: 2,   gain: 1,   stutter: 0.2, survive: -0.1 },    // narrower, coarser, chattering, more lost
+      { kana: "遠", name: "distant",      band: 0.4, steps: 16, floor: 2.5, gain: 0.6, stutter: 0,   survive: -0.15 },   // far down the corridor: quiet, thin, mostly static
+    ],
+  };
+  var bodyNow = {};                                  // layer → the incarnation in use; absent = the standard
+  function bodyOf(layer) { return bodyNow[layer] || BODIES[layer][0]; }
+  function bodyByName(layer, name) {
+    var fam = BODIES[layer]; if (!fam) return null;
+    for (var i = 0; i < fam.length; i++) if (fam[i].name === name || fam[i].kana === name) return fam[i];
+    return null;
+  }
 
   // Dark, long, slightly metallic reverb.
   var REVERB = { decay: 6.5, preDelay: 60, wet: 0.34, hfDamp: 1.1 };
@@ -4181,8 +4247,8 @@ window.ZankyoAudio = (function () {
   function shoCycle(t) {
     if (!playing) return;
     if (!seated("sho", t)) { afterRaw("sho", t, 12, shoCycle); return; }   // rested this cycle — ask again later
-    var c = ctx, now = t, out = lg("sho");
-    var cutoff = getLayerParam("sho", "cutoff", 1400) * (0.8 + 0.4 * wxAt(t).brightness);   // the weather breathes the shō's cutoff
+    var c = ctx, now = t, out = lg("sho"), B = bodyOf("sho");   // 身: the night's shō
+    var cutoff = getLayerParam("sho", "cutoff", 1400) * B.cutoff * (0.8 + 0.4 * wxAt(t).brightness);   // the weather breathes the shō's cutoff
     var voices = Math.round(getLayerParam("sho", "voices", 5));
     var shimmer = getLayerParam("sho", "shimmer", 0.4);
     var drift = getLayerParam("sho", "drift", 0.5);
@@ -4224,7 +4290,7 @@ window.ZankyoAudio = (function () {
         shoSounding.push(fBase);
       }
       o.type = "sawtooth"; var fSound = FAR.glidePartial(o.frequency, fBase, now, dur + 0.2);
-      o.detune.setValueAtTime((S.sho.next() * 2 - 1) * 6 * drift, now);
+      o.detune.setValueAtTime((S.sho.next() * 2 - 1) * 6 * drift + B.pipeDetune * (((v * 7) % 5) - 2) / 2, now);   // 身: old pipes are each a few cents off, fixed per pipe (no draw)
       var dl = c.createOscillator(), dlg = c.createGain();
       dl.type = "sine"; dl.frequency.setValueAtTime(0.05 + S.sho.next() * 0.08, now);
       dlg.gain.setValueAtTime(5 * drift, now); dl.connect(dlg); dlg.connect(o.detune);
@@ -4232,7 +4298,7 @@ window.ZankyoAudio = (function () {
       o.connect(g); g.connect(lp); PJ.Voice.env(g.gain, vIn, [[2.5, 0.045], [Math.max(0.1, now + dur - vIn - 2.5), 0.045]]);
       o.start(vIn); o.stop(now + dur + 0.2);
       // nasal free-reed character: square reed sub + 5th/7th partials
-      [[1, "square", 0.018], [5, "sine", 0.014], [7, "sine", 0.008]].forEach(function (pr) {
+      [[1, "square", 0.018 * B.reed], [5, "sine", 0.014 * B.p5], [7, "sine", 0.008 * B.p7]].forEach(function (pr) {   // 身: the partial set
         var po = c.createOscillator(), pg = c.createGain();
         po.type = pr[1]; FAR.glidePartial(po.frequency, fBase * pr[0], vIn, now + dur + 0.2 - vIn);
         po.connect(pg); pg.connect(lp); PJ.Voice.env(pg.gain, vIn, [[2.5, pr[2]], [Math.max(0.1, now + dur - vIn - 2.5), pr[2]]]);
@@ -4378,8 +4444,8 @@ window.ZankyoAudio = (function () {
 
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("shakuhachi", freq, t);   // 逸脱 the pitch choke point (identity at home)
-    var R = S.shakuhachi, wx = wxAt(t);
-    var kan = freq >= 440;
+    var R = S.shakuhachi, wx = wxAt(t), B = bodyOf("shakuhachi");   // 身: the night's flute
+    var kan = freq >= B.kanHz;
     var out = opts.out || panAt("shakuhachi", (R.next() * 2 - 1) * 0.25);
     var o = c.createOscillator(), o2 = c.createOscillator();
     o.type = "sine"; o2.type = kan ? "sine" : "triangle";
@@ -4390,7 +4456,7 @@ window.ZankyoAudio = (function () {
       o2.frequency.setValueAtTime(opts.glideFrom * f2mul, t); o2.frequency.exponentialRampToValueAtTime(freq * f2mul, t + gt);
     } else { o.frequency.setValueAtTime(freq, t); o2.frequency.setValueAtTime(freq * f2mul, t); }
     var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.Q.setValueAtTime(0.7, t);
-    var cut = Math.min(16000, freq * (kan ? 10 : 6));
+    var cut = Math.min(16000, freq * (kan ? 10 : 6) * B.cut);   // 身: the bore
     lp.frequency.setValueAtTime(cut, t);
     if (opts.bend) {                               // meri: the pitch dips AND the tone darkens
       // 逸脱 減: the mode's semitone pairs have already narrowed; here the
@@ -4418,7 +4484,7 @@ window.ZankyoAudio = (function () {
       g.gain.setValueAtTime(peak, t + Math.max(0.1, dur - 0.22));
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     }
-    var p2 = peak * (kan ? 0.18 : 0.25);
+    var p2 = peak * (kan ? 0.18 : 0.25) * B.tone;   // 身
     g2.gain.setValueAtTime(0.0001, t);
     g2.gain.exponentialRampToValueAtTime(p2, t + 0.1);
     g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -4428,17 +4494,17 @@ window.ZankyoAudio = (function () {
     if (dur > 1.2) {
       var lfo = c.createOscillator(), lg0 = c.createGain();
       lfo.type = "sine"; lfo.frequency.setValueAtTime(4.8 + R.next() * 1.2, t);
-      var depth = freq * 0.007;                                 // ≈ ±12 cents at full bloom
+      var depth = freq * 0.007 * B.yuri;                        // ≈ ±12 cents at full bloom (身: the body's yuri)
       PJ.Voice.env(lg0.gain, t, [[dur * 0.45, 0], [dur * 0.4, depth], [dur * 0.15, 0]]);
       lfo.connect(lg0); lg0.connect(o.frequency);
       lfo.start(t); lfo.stop(t + dur + 0.05);
     }
     // breath noise through two formants + muraiki (the gritty explosive attack)
-    var br = (opts.breath == null ? 0.5 : opts.breath) * (0.7 + 0.6 * wx.breath) * (kan ? 1.6 : 1);
+    var br = (opts.breath == null ? 0.5 : opts.breath) * (0.7 + 0.6 * wx.breath) * (kan ? 1.6 : 1) * B.breath;   // 身
     if (br > 0.01 && sharedNoiseBuf) {
       var nz = noiseSource(), ng = c.createGain();
       var bpf = c.createBiquadFilter(); bpf.type = "bandpass"; bpf.frequency.setValueAtTime(freq * 2.4, t); bpf.Q.setValueAtTime(1.4, t);
-      var vow = c.createBiquadFilter(); vow.type = "bandpass"; vow.frequency.setValueAtTime(2200 + 1200 * wx.breath, t); vow.Q.setValueAtTime(3, t);
+      var vow = c.createBiquadFilter(); vow.type = "bandpass"; vow.frequency.setValueAtTime(Math.max(800, 2200 + 1200 * wx.breath + B.vowel), t); vow.Q.setValueAtTime(3, t);   // 身: the vowel
       var vg = c.createGain(); vg.gain.setValueAtTime(0.5, t);
       nz.connect(bpf); bpf.connect(ng); nz.connect(vow); vow.connect(vg); vg.connect(ng); ng.connect(out);
       var bpeak = 0.02 * br + 0.14 * (opts.muraiki || 0);      // muraiki: the breath leads
@@ -4485,8 +4551,8 @@ window.ZankyoAudio = (function () {
 
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("hichiriki", freq, t);    // 逸脱 the pitch choke point (identity at home)
-    var R = S.hichiriki, wx = wxAt(t);
-    var reed = getLayerParam("hichiriki", "reed", 0.5), enbai = getLayerParam("hichiriki", "enbai", 0.6), breathAmt = getLayerParam("hichiriki", "breath", 0.35) * (0.7 + 0.6 * wx.breath);
+    var R = S.hichiriki, wx = wxAt(t), B = bodyOf("hichiriki");   // 身: the night's reed
+    var reed = getLayerParam("hichiriki", "reed", 0.5), enbai = getLayerParam("hichiriki", "enbai", 0.6), breathAmt = getLayerParam("hichiriki", "breath", 0.35) * (0.7 + 0.6 * wx.breath) * B.breath;
     var out = opts.out || panAt("hichiriki", (R.next() * 2 - 1) * 0.3);
     var mix = c.createGain(); mix.gain.setValueAtTime(0.5, t);
     var slideFrom = opts.glideFrom || freq * Math.pow(2, -(0.4 + enbai * 0.6) / 12);   // the enbai: from below, always
@@ -4495,19 +4561,19 @@ window.ZankyoAudio = (function () {
       var o = c.createOscillator(); o.type = "sawtooth";
       o.frequency.setValueAtTime(slideFrom, t); o.frequency.exponentialRampToValueAtTime(freq, t + Math.min(slideT, dur * 0.4));
       if (opts.bend) { o.frequency.exponentialRampToValueAtTime(freq * 0.975, t + dur * 0.6); o.frequency.exponentialRampToValueAtTime(freq, t + dur * 0.85); }
-      FAR.glideDetune(o.detune, t, dur + 0.5, d ? 4 : -4);   // 逸脱 螺/弛, on top of the reed's own ±4 ¢
+      FAR.glideDetune(o.detune, t, dur + 0.5, d ? B.detune : -B.detune);   // 逸脱 螺/弛, on top of the reed's own ±4 ¢ (身: the body's spread)
       o.connect(mix); o.start(t); o.stop(t + dur + 0.5);
     }
     var pre = c.createGain(); pre.gain.setValueAtTime(0.22, t);     // pre-attenuate before the buzz + the formants
-    var shaper = c.createWaveShaper(); shaper.curve = reedCurve(0.45);
+    var shaper = c.createWaveShaper(); shaper.curve = reedCurve(B.curve);   // 身: the reed
     mix.connect(pre); pre.connect(shaper);
     var fmix = c.createGain(); fmix.gain.setValueAtTime(1, t);
     var dry = c.createGain(); dry.gain.setValueAtTime(0.5, t); shaper.connect(dry); dry.connect(fmix);
-    var bp1 = c.createBiquadFilter(); bp1.type = "bandpass"; bp1.frequency.setValueAtTime(1900 + reed * 700, t); bp1.Q.setValueAtTime(6, t);
+    var bp1 = c.createBiquadFilter(); bp1.type = "bandpass"; bp1.frequency.setValueAtTime(1900 + reed * 700 + B.formant, t); bp1.Q.setValueAtTime(6, t);
     var g1 = c.createGain(); g1.gain.setValueAtTime(0.8, t); shaper.connect(bp1); bp1.connect(g1); g1.connect(fmix);
-    var bp2 = c.createBiquadFilter(); bp2.type = "bandpass"; bp2.frequency.setValueAtTime(3100 + reed * 800, t); bp2.Q.setValueAtTime(7, t);
+    var bp2 = c.createBiquadFilter(); bp2.type = "bandpass"; bp2.frequency.setValueAtTime(3100 + reed * 800 + B.formant, t); bp2.Q.setValueAtTime(7, t);
     var g2 = c.createGain(); g2.gain.setValueAtTime(0.5, t); shaper.connect(bp2); bp2.connect(g2); g2.connect(fmix);
-    var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(3600 + reed * 2000, t);
+    var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime((3600 + reed * 2000) * B.lp, t);
     var og = c.createGain(); fmix.connect(lp); lp.connect(og); og.connect(out);
     if (breathAmt > 0.02 && sharedNoiseBuf) {
       var nz = noiseSource(), nbp = c.createBiquadFilter(), ng = c.createGain();
@@ -4662,7 +4728,7 @@ window.ZankyoAudio = (function () {
     // exist. Same one-line shape 崩's groove and 鏡's answer already use.
     if (signalUp(t)) return;
 
-    var c = ctx, K = STRING_KIT[layer], R = S[layer]; opts = opts || {};
+    var c = ctx, K = STRING_KIT[layer], R = S[layer], B = bodyOf(layer); opts = opts || {};   // 身: the night's body for this string
     freq = FAR.pitch(layer, freq, t);          // 逸脱 the pitch choke point — koto, shamisen, biwa (identity at home)
     var wx = wxAt(t);
     var vel = opts.vel != null ? opts.vel : (0.55 + R.next() * 0.45);
@@ -4671,6 +4737,7 @@ window.ZankyoAudio = (function () {
     var N = Math.max(8, Math.round(sr / freq)), rate = freq * N / sr;
     var pos = 0.12 + R.next() * 0.25;                          // pluck position, as a fraction of the string
     if (layer === "koto") pos = 0.1 + getLayerParam("koto", "pluck", 0.5) * 0.3 + (R.next() - 0.5) * 0.08;
+    pos = Math.max(0.05, Math.min(0.45, pos + (B.pos || 0)));   // 身: the body's pluck position
     var buf = c.createBuffer(1, N, sr), d = buf.getChannelData(0), k = Math.max(1, Math.round(pos * N));
     var raw = new Float32Array(N);
     for (var i = 0; i < N; i++) raw[i] = Math.random() * 2 - 1;                 // texture, not music
@@ -4694,12 +4761,12 @@ window.ZankyoAudio = (function () {
     // register-dependent decay: low strings ring, high strings snap
     var regMul = freq < 200 ? 1.6 : freq < 400 ? 1.2 : freq < 800 ? 0.9 : 0.65;
     var sustain = layer === "koto" ? getLayerParam("koto", "sustain", 1.0) : 1;
-    var dec = Math.max(0.12, dur * sustain * K.decay * regMul * (0.9 + 0.2 * vel));
+    var dec = Math.max(0.12, dur * sustain * K.decay * B.decay * regMul * (0.9 + 0.2 * vel));   // 身
     var brightKnob = layer === "koto" ? getLayerParam("koto", "brightness", 7) : 6;
-    var bright = (K.brightBase + brightKnob * K.brightK) * (0.8 + 0.4 * wx.brightness) * (0.8 + 0.4 * vel);
+    var bright = (K.brightBase + brightKnob * K.brightK) * B.bright * (0.8 + 0.4 * wx.brightness) * (0.8 + 0.4 * vel);   // 身
     var lp = c.createBiquadFilter(); lp.type = "lowpass";
     lp.frequency.setValueAtTime(Math.min(16000, freq * bright), t);
-    lp.frequency.exponentialRampToValueAtTime(Math.max(freq * 0.8, 120), t + dec * 0.8);   // the string dulls
+    lp.frequency.exponentialRampToValueAtTime(Math.max(freq * 0.8 * (B.dull || 1), 120), t + dec * 0.8);   // the string dulls (身: an old string dulls further)
     lp.Q.setValueAtTime(0.7, t);
     var g = c.createGain(); src.connect(lp); lp.connect(g); g.connect(out);
     var peak = K.peak * (opts.gain == null ? 1 : opts.gain) * (0.4 + 0.6 * vel);
@@ -4725,14 +4792,14 @@ window.ZankyoAudio = (function () {
       var pn = noiseSource(), pf = c.createBiquadFilter(), pg = c.createGain();
       pf.type = "bandpass"; pf.frequency.setValueAtTime((tsume ? 3000 : 2500) * Math.pow(2, (Math.random() - 0.5) * 0.7), t); pf.Q.setValueAtTime(1.0, t);   // 2.4–3.8 kHz tsume, 2.0–3.2 kHz bachi
       pn.connect(pf); pf.connect(pg); pg.connect(out);
-      var pd = 0.007 + Math.random() * 0.0035, pp = (tsume ? 0.17 : 0.12) * gmul;                                       // 7–10.5 ms body of the burst; ≤ 15 ms in all (measured: 0.11 read +4.8 at the koto's onset in the jo, −0.6 in the ha — the noise bodies own that band there)
+      var pd = 0.007 + Math.random() * 0.0035, pp = (tsume ? 0.17 : 0.12) * gmul * (B.pick || 1);   // 身: the pick                                       // 7–10.5 ms body of the burst; ≤ 15 ms in all (measured: 0.11 read +4.8 at the koto's onset in the jo, −0.6 in the ha — the noise bodies own that band there)
       PJ.Voice.env(pg.gain, t, [[0.0015, pp], [pd, pp * 0.3], [0.003, 0]]);
       pn.start(t, R.next() * 10); pn.stop(t + pd + 0.02);
       if (!tsume) {                                                                                                 // the bachi's slap: the old lowpassed thud, as it was
         var sn2 = noiseSource(), sf2 = c.createBiquadFilter(), sg2 = c.createGain();
         sf2.type = "lowpass"; sf2.frequency.setValueAtTime(900, t);
         sn2.connect(sf2); sf2.connect(sg2); sg2.connect(out);
-        var sp2 = 0.05 * gmul;
+        var sp2 = 0.05 * gmul * (B.slap || 1);   // 身: the slap
         PJ.Voice.env(sg2.gain, t, [[0.0015, sp2], [0.012, sp2 * 0.3], [0.006, 0]]);
         sn2.start(t, (pos * 7) % 10); sn2.stop(t + 0.04);                                                       // offset from a value already drawn — no new seeded draw
       }
@@ -4744,13 +4811,13 @@ window.ZankyoAudio = (function () {
       var bo = c.createOscillator(); bo.type = "sawtooth"; bo.frequency.setValueAtTime(freq * 1.005, t);
       var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(Math.min(12000, freq * 7), t); bp.Q.setValueAtTime(6, t);
       var bg = c.createGain(); bo.connect(bp); bp.connect(bg); bg.connect(out);   // a bandpass peaks at unity: the pre-attenuation lives in sp
-      var sawIn = Math.min(0.014, dec * 0.4), sp = 0.05 * sawAmt * K.sawari * vel;
+      var sawIn = Math.min(0.014, dec * 0.4), sp = 0.05 * sawAmt * K.sawari * (B.sawari || 1) * vel;   // 身: the buzz
       PJ.Voice.env(bg.gain, t, [[sawIn, sp], [dec * 0.7 - sawIn, sp * 0.1], [dec * 0.4, 0]]);
       bo.start(t); bo.stop(t + dec * 1.2 + 0.05);
     }
     if (K.sparkle > 0) {                                     // the koto's octave sparkle
       var sh = c.createOscillator(), shg = c.createGain(); sh.type = "sine"; sh.frequency.setValueAtTime(freq * 2, t); sh.connect(shg); shg.connect(out);
-      PJ.Voice.env(shg.gain, t, [[0.04, K.sparkle * (0.7 + 0.6 * wx.brightness) * vel], [Math.max(0.05, dec - 0.04), 0.001], [0.05, 0]]);
+      PJ.Voice.env(shg.gain, t, [[0.04, K.sparkle * (B.sparkle || 1) * (0.7 + 0.6 * wx.brightness) * vel], [Math.max(0.05, dec - 0.04), 0.001], [0.05, 0]]);   // 身
       sh.start(t); sh.stop(t + dec + 0.15);
     }
     emitNote(layer, freq, t, dur);
@@ -4899,15 +4966,15 @@ window.ZankyoAudio = (function () {
   //            resonance around 1.2 kHz, short
   //   ka:      the rim click — a 15 ms highpassed tick
   function taikoHit(t, accent, drum) {
-    var c = ctx, R = S.taiko, out = panAt("taiko", (R.next() * 2 - 1) * 0.2);
-    var lowTune = getLayerParam("taiko", "lowTune", 1.0), punch = getLayerParam("taiko", "punch", 0.6);
+    var c = ctx, R = S.taiko, out = panAt("taiko", (R.next() * 2 - 1) * 0.2), B = bodyOf("taiko");   // 身: the night's skins
+    var lowTune = getLayerParam("taiko", "lowTune", 1.0) * B.pitch, punch = getLayerParam("taiko", "punch", 0.6) * B.punch;
     drum = drum || "odaiko";
     if (drum === "ka") {
       if (!sharedNoiseBuf) return;
       var kn = noiseSource(), kh = c.createBiquadFilter(), kg = c.createGain();
       kh.type = "highpass"; kh.frequency.setValueAtTime(3500, t);
       kn.connect(kh); kh.connect(kg); kg.connect(out);
-      var kp = (0.05 + punch * 0.04) * (accent ? 1.2 : 0.8);
+      var kp = (0.05 + punch * 0.04) * (accent ? 1.2 : 0.8) * B.ka;   // 身
       PJ.Voice.env(kg.gain, t, [[0.001, kp], [0.012, kp * 0.2], [0.008, 0]]);
       kn.start(t, R.next() * 10); kn.stop(t + 0.05);
       var ko = c.createOscillator(), kog = c.createGain(); ko.type = "sine"; ko.frequency.setValueAtTime(2100, t);
@@ -4919,7 +4986,7 @@ window.ZankyoAudio = (function () {
       o.frequency.setValueAtTime(240 * lowTune, t); o.frequency.exponentialRampToValueAtTime(180 * lowTune, t + 0.06);
       o.connect(g); g.connect(out);
       var sp = (0.10 + punch * 0.06) * (accent ? 1.2 : 0.8);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(sp, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(sp, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14 * B.decay);   // 身
       o.start(t); o.stop(t + 0.2);
       if (sharedNoiseBuf) {                                  // the body resonance
         var sn = noiseSource(), sb = c.createBiquadFilter(), sg = c.createGain();
@@ -4933,7 +5000,7 @@ window.ZankyoAudio = (function () {
     o.frequency.setValueAtTime(95 * lowTune, t); o.frequency.exponentialRampToValueAtTime(45 * lowTune, t + 0.16);
     o.connect(g); g.connect(out);
     var peak = (0.14 + punch * 0.1) * (accent ? 1.2 : 0.8);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + (accent ? 0.55 : 0.4));
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + (accent ? 0.55 : 0.4) * B.decay);   // 身
     o.start(t); o.stop(t + 0.6);
     if (sharedNoiseBuf) {
       var nz = noiseSource(); var bp = c.createBiquadFilter(); bp.type = "lowpass"; bp.frequency.setValueAtTime(800, t);
@@ -5348,7 +5415,8 @@ window.ZankyoAudio = (function () {
   function voxSay(syls, opts) {
     if (!ctx || !syls.length) return 0;
     var c = ctx, R = (opts && opts.R) || S.vox;
-    var band = getLayerParam("vox", "band", 0.5), stutter = getLayerParam("vox", "stutter", 0.5), survive = getLayerParam("vox", "survive", 0.65);
+    var B = bodyOf("vox");   // 身: the night's line
+    var band = clamp01(getLayerParam("vox", "band", 0.5) + B.band), stutter = clamp01(getLayerParam("vox", "stutter", 0.5) + B.stutter), survive = clamp01(getLayerParam("vox", "survive", 0.65) + B.survive);
     var out = panAt("vox", opts && opts.pan != null ? opts.pan : (R.next() * 2 - 1) * 0.35);
     var t0 = syls[0].t, end = syls[syls.length - 1].t + syls[syls.length - 1].dur;
     var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(syls[0].f, t0);
@@ -5364,9 +5432,9 @@ window.ZankyoAudio = (function () {
     var hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), cr = c.createWaveShaper(), og = c.createGain();
     hp.type = "highpass"; hp.frequency.setValueAtTime(200 + 200 * band, t0); hp.Q.setValueAtTime(0.7, t0);
     lp.type = "lowpass"; lp.frequency.setValueAtTime(5000 - 2600 * band, t0); lp.Q.setValueAtTime(0.7, t0);
-    var steps = 22, cc = new Float32Array(1024); for (var ci = 0; ci < 1024; ci++) { var cx = (ci / 1023) * 2 - 1; cc[ci] = Math.round(cx * steps) / steps; } cr.curve = cc;
+    var steps = B.steps, cc = new Float32Array(1024); for (var ci = 0; ci < 1024; ci++) { var cx = (ci / 1023) * 2 - 1; cc[ci] = Math.round(cx * steps) / steps; } cr.curve = cc;
     gate.connect(hp); hp.connect(lp); lp.connect(cr); cr.connect(og); og.connect(out);
-    var peak = 0.55 * ((opts && opts.gain) || 1);
+    var peak = 0.55 * ((opts && opts.gain) || 1) * B.gain;   // 身
     og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(peak, t0 + 0.02); og.gain.setValueAtTime(peak, end); og.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
     // 相 PHASING on a far night: a second copy of the line drifting behind the
     // first (the departure's own driftMs × passes across the phrase) — two
@@ -5390,7 +5458,7 @@ window.ZankyoAudio = (function () {
       if (sy.hole) continue;                                             // 継 a hocket's silent slot: no draw, the time kept
       var dropped = R.next() > survive;                                  // drawn for every syllable, sounded or not
       if (ng) {                                                          // the floor: open under a syllable, up in a hole
-        var fl = dropped ? 0.035 : 0.012;
+        var fl = (dropped ? 0.035 : 0.012) * B.floor;   // 身: a bad line's floor
         ng.gain.setValueAtTime(0.0001, st); ng.gain.exponentialRampToValueAtTime(fl, st + 0.02); ng.gain.setValueAtTime(fl, st + dur - 0.03); ng.gain.exponentialRampToValueAtTime(0.0001, st + dur);
       }
       if (dropped) continue;                                             // the hole keeps its time
@@ -6087,10 +6155,13 @@ window.ZankyoAudio = (function () {
     var so = ctx.createOscillator(), sg = ctx.createGain(); so.type = "sine"; so.frequency.setValueAtTime(subRoot() / 2, t); so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08, t); so.start(t); so.stop(t + dur + 0.1);
   }
   function sampleSho(t) {
-    var dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("sho", "cutoff", 1400), t);
+    var B = bodyOf("sho"), dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("sho", "cutoff", 1400) * B.cutoff, t);   // 身
     var bus = ctx.createGain(); lp.connect(bus); bus.connect(lg("sho"));
     bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(0.5, t + 0.8); bus.gain.setValueAtTime(0.5, t + dur - 1); bus.gain.linearRampToValueAtTime(0, t + dur);
-    chooseAitake(S.sample, 6).freqs.forEach(function (f) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, t); o.start(t); o.stop(t + dur + 0.1); });
+    chooseAitake(S.sample, 6).freqs.forEach(function (f, v) {
+      var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, t); o.detune.setValueAtTime(B.pipeDetune * (((v * 7) % 5) - 2) / 2, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, t); o.start(t); o.stop(t + dur + 0.1);
+      [[1, "square", 0.018 * B.reed], [5, "sine", 0.014 * B.p5], [7, "sine", 0.008 * B.p7]].forEach(function (pr) { var po = ctx.createOscillator(), pg = ctx.createGain(); po.type = pr[1]; po.frequency.setValueAtTime(f * pr[0], t); po.connect(pg); pg.connect(lp); pg.gain.setValueAtTime(pr[2], t); po.start(t); po.stop(t + dur + 0.1); });   // 身: the audition carries the partial set the cycle does
+    });
   }
   function sampleNoise(t, kind) {
     if (kind && kind !== "wall") {
@@ -6142,6 +6213,11 @@ window.ZankyoAudio = (function () {
   }
   function sample(layer, variant) {
     auditionPrep(layer);
+    // 身: a variant that names one of the layer's bodies is heard in that
+    // body — set for the call (every note is scheduled synchronously) and
+    // restored after, so a night in progress keeps its own.
+    var bodyVariant = BODIES[layer] ? bodyByName(layer, variant) : null, bodySaved = bodyNow[layer];
+    if (bodyVariant) { bodyNow[layer] = bodyVariant; variant = undefined; }
     // The audition draws from its own stream: while it plays, every body
     // borrows S.sample so a ♪ press mid-performance re-rolls nothing.
     var borrowed = ["shakuhachi", "koto", "shamisen", "taiko", "ambient", "noise", "sho", "subDrone", "hichiriki", "biwa", "pa", "furin", "vox"], saved = {}, bi;
@@ -6173,7 +6249,8 @@ window.ZankyoAudio = (function () {
       case "broadcast": if (signalProvider && signalProvider.sample) { try { signalProvider.sample(t); } catch (x2) {} } break;
     }
     for (bi = 0; bi < borrowed.length; bi++) S[borrowed[bi]] = saved[borrowed[bi]];
-    emitEvent({ cat: "mode", label: "♪ sample", detail: layer + (variant ? " · " + variant : "") });
+    if (bodyVariant) { if (bodySaved) bodyNow[layer] = bodySaved; else delete bodyNow[layer]; }
+    emitEvent({ cat: "mode", label: "♪ sample", detail: layer + (variant ? " · " + variant : "") + (bodyVariant ? " · 身 " + bodyVariant.kana + " " + bodyVariant.name : "") });
   }
 
   // ==========================================================================
@@ -6205,6 +6282,9 @@ window.ZankyoAudio = (function () {
     // the ambient pool's names, in pool order — the bench builds one button per
     // entry from this so a new one-shot gets a button without editing the lab
     ambientNames: function () { return AMBIENT_POOL.map(function (e) { return e.name; }); },
+    // 身: the families and their incarnations (the bench builds its rows from this), and the bodies in use
+    bodyFamilies: function () { var out = {}; for (var k in BODIES) out[k] = BODIES[k].map(function (b) { return { kana: b.kana, name: b.name }; }); return out; },
+    getBodies: function () { var out = {}; for (var k in BODIES) out[k] = bodyOf(k).name; return out; },
     // 選局 TUNE (S2): playing → ask the receiver to seat a signal at the next legal moment (one per cycle); stopped → the layer's ♪ tune-in
     tune: function () { if (!signalProvider) return false; if (playing) return !!(signalProvider.scan && signalProvider.scan()); sample("broadcast"); return true; },
     // 掃引 THE TUNING DIAL (plan §7). The page hands over how hard the hand is
