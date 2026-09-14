@@ -110,23 +110,18 @@ include '../includes/header.php';
     <!-- The story: how the dashboard came to be (draft — 2026-09-12) -->
     <div class="post-container">
       <section class="prose-flow">
-        <p>Every dot in the cloud above is a carbon atom, and every line is a bond between two of them. The
-          twenty-seven structures are simulated models of disordered carbon from the research of
+        <p>I made this dashboard in collaboration with
           <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Kamil Iwanowski</a>, a
-          PhD candidate in physics at NYU whose work is on the design of materials. I don't understand the science
-          behind these data, and this page isn't going to try to explain it. What I can explain is how the dashboard
-          came to be, and why I built it.</p>
-        <p>I met Kamil at a Fractal Collective event. I told him I design data visualizations and asked whether he
-          makes any for his work. He showed me some, and they were genuinely beautiful: the dense, glowing point
-          clouds of atoms you'd find in any materials-science paper, plotted in the standard research tooling. I
-          asked if he'd ever used D3, and he hadn't. So I pulled up a few of the bespoke, interactive pieces I've
-          built with it and made a pitch I find myself making often. People in research and data science have
-          serious quantitative training, but the appearance of the chart and the way it communicates to a wider
-          audience is rarely part of the job. That's not a criticism. It's an opening. Once in a while it's worth
-          treating a dataset as a design and storytelling problem, so that people outside the field get interested
-          and excited about it too.</p>
-        <p>Kamil wanted to collaborate, so we met up again on a Sunday. He brought screenshots of his existing
-          plots and a folder of his structures, and I treated him the way I'd treat any client: he supplied the data
+          researcher and PhD candidate in physics at NYU whose work is on the design of materials. I met Kamil at an
+          event in Brooklyn, where we connected over our shared interest in data visualizations. He showed me some
+          of the 3D visualizations he had made for his past research, which I found to be visually compelling even
+          if I didn't fully understand the science behind them.</p>
+        <p>I suggested he consider using D3.js, a JavaScript library used for bespoke data visualizations, to show
+          his work. I shared some of the other visualizations I've made using D3, and showed some of the powerful
+          interactive features that set D3 apart from other tools. Kamil liked what he saw, and we met up again on
+          a Sunday afternoon to give his visualizations a D3 makeover.</p>
+        <p>He brought screenshots of his existing plots and a folder of his structures, and I treated him the way
+          I'd treat any client: he supplied the data
           and the domain knowledge, and my job was the storytelling side, turning the data into something engaging
           and, ideally, beautiful. I wrote the first prompts, worked with Claude to build the viewer in D3, and then
           spent the session refining it: adding interactive features, rearranging the layout, changing what each
