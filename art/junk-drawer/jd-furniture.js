@@ -340,10 +340,12 @@
   /* the full text, for assistive tech: the artwork's <text> runs are
      aria-hidden with the rest of the svg, and this one string is what the
      wrapper actually says */
-  var SHEET_TEXT = 'Instructions. 1: Dig around — drag the junk; twist it ' +
-    'while held. 2: Tap any object to see more about it. 3: Press PUSH 4 ' +
-    'MORE JUNK and four AIs draw an object you describe. 4: Grade their ' +
-    'drawings and decide who won.';
+  var SHEET_TEXT = 'Instructions. 1: feel free to dig around and look at ' +
+    'stuff. click an item for a closer look. 2: press the big blue button ' +
+    'and help yourself if you want something new. 3: each prompt returns ' +
+    'four drawing from different large language models. 4: you\'re ' +
+    'not done until you leave a grade and rank them! 5: and it\'s ' +
+    'all free of charge (you are the product!)';
 
   /* fetched like the turn object's artwork, but with NO inline fallback: a
      drawer without its instructions still works — the sheet is furniture,
