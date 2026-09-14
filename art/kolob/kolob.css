@@ -806,6 +806,20 @@
 }
 .kolob-note a:hover { color: var(--gilt); border-bottom-color: var(--gilt); }
 
+/* the room's credit — a licence condition (CC BY-SA), set as an imprint line:
+   Latin, small, the soft ink, under the colophon and above the build stamp */
+.kolob-credit {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 1.1rem 0 0;
+}
+.kolob-credit a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+.kolob-credit a:hover { color: var(--gilt); border-bottom-color: var(--gilt); }
+
 /* build stamp — dev/ops furniture, deliberately quiet: version · fingerprint ·
    deploy time. Latin + monospace on purpose; it is a marginer's note, not part
    of the piece. */

@@ -180,6 +180,16 @@ include '../../includes/header.php';
       </div>
     </div>
 
+    <!-- The room's credit. The tabernacle is a measured impulse response of
+         St Margaret's Church, York (OpenAIR, University of York), licensed
+         CC BY-SA 3.0 — attribution is a condition of the licence, so it is
+         printed here in Latin, small, like an imprint. -->
+    <p class="kolob-credit">
+      the hall: St Margaret's Church, York &mdash; an impulse response from
+      <a href="https://www.openair.hosted.york.ac.uk/" rel="license noopener">OpenAIR</a>, AudioLab, University of York
+      (<a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="license noopener">CC BY-SA 3.0</a>)
+    </p>
+
     <!-- Build stamp: version · content fingerprint · deploy time. A quiet way
          to confirm which build is actually live. -->
     <p class="kolob-build" aria-label="build version">

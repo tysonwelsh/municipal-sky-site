@@ -11,9 +11,9 @@ is built yet; the bagpipe shelving (v0.26) landed alongside it.
 > the depth table, the section balances — and Phase B's machinery is in
 > (Kolob's own pour now has early reflections; a measured file loads by
 > `irUrl` with the pour as fallback). The **room lab** (`room-lab.php`,
-> unlinked) auditions every candidate. Still pending: the owner's choice
-> of room, then baking that file in (trimmed, with the CC BY-SA credit in
-> the colophon). Phases C–E not started. The engine loads `pj2-fx.js` by
+> unlinked) is an A/B bench. **v0.28: the owner chose St Margaret's
+> Church, York** for the tabernacle; the stereo take ships as `ROOM_WIDE`
+> with the CC BY-SA credit in the colophon. Phases C–E not started. The engine loads `pj2-fx.js` by
 > relative path (decision 1 below, taken); decision 3 the owner accepted.
 
 Companion: the bagpipe is SHELVED in v0.26 — `SHELVED = { bagpipe: true }`
