@@ -77,7 +77,14 @@ PY
   cmd=("$HERE/make-reel.sh" "$src" --id "$id" --add-windows "$rng")
   if [ "$RUN" = 1 ]; then
     echo "▸ $id  $rng"
-    "${cmd[@]}" >/dev/null 2>&1 || echo "  FAILED $id" >&2
+    # KEEP THE REASON. The first batch run reported ten FAILED reels with no
+    # reason attached, and six of the ten had busted a cap while four were
+    # collateral — build-manifest.sh validates the WHOLE POOL, so one over-cap
+    # reel fails every reel cut after it. A failure has to carry its own words.
+    if ! out="$("${cmd[@]}" 2>&1)"; then
+      echo "  FAILED $id" >&2
+      printf '%s\n' "$out" | grep -E "make-reel:|build-manifest:|\u2717" | tail -3 | sed 's/^/    /' >&2
+    fi
   else
     printf '%q ' "${cmd[@]}"; echo
   fi
