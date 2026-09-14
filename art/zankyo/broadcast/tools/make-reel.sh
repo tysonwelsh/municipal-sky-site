@@ -41,6 +41,12 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
                          allowed explicitly anywhere (the owner's rule: sung, chant, music).
   --weight 1..5          lottery weight (default 3)
   --notes "…"            one line for the manifest
+  --whole                §14: this reel is cut on COMPLETE THOUGHTS — the receiver plays each
+                         window from its start to its end and holds the crew silent for all of
+                         it, instead of taking an 8–12 s slice from inside it. Cut the windows
+                         on sentence boundaries or the flag is a lie. Windows may run to 42 s.
+  --whole-windows i,j    only these window indexes are whole (writes the wholeWindows parallel
+                         array); implies --whole for the rest being ordinary
   --distort 0..1         bake extra receiver distortion into the reel (narrow band, drive
                          and soft clip, bit-crush, flutter); 0 = none. Use for material
                          that must arrive already broken (the owner's Tier B music)
@@ -78,6 +84,7 @@ YTDLP="$(command -v yt-dlp || true)"; [ -n "$YTDLP" ] || YTDLP="$HOME/anaconda3/
 # ---- args -------------------------------------------------------------------
 INPUT=""; ID=""; WINDOWS=""; WLEN=12; MAXW=""; AUDIO_ONLY=0; PICTURE="line"; TIER="A"
 TITLE=""; YEAR=""; LICENSE="unknown"; TONE="voice"; WEIGHT=3; NOTES=""; PROPOSE=0; FORCE_AN=0
+WHOLE=0; WHOLE_WINDOWS=""   # §14: play a window start-to-end instead of slicing inside it
 BAND=""   # empty = not set explicitly; resolved from --tone below
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -96,6 +103,8 @@ while [ $# -gt 0 ]; do
     --band) BAND="${2:?}"; shift 2 ;;
     --weight) WEIGHT="${2:?}"; shift 2 ;;
     --notes) NOTES="${2:?}"; shift 2 ;;
+    --whole) WHOLE=1; shift ;;
+    --whole-windows) WHOLE_WINDOWS="${2:?}"; WHOLE=1; shift 2 ;;
     --distort) DISTORT="${2:?}"; shift 2 ;;
     --propose) PROPOSE=1; shift ;;
     --force-analyze) FORCE_AN=1; shift ;;
@@ -387,9 +396,9 @@ d=json.loads(sys.argv[1]); n=sum(1 for p in d["pitchHz"] if p)
 print("▸ pitch  %d/%d windows carry a stable pitch%s" % (n, len(d["pitchHz"]), "  (tuned)" if d["tuned"] else ""))' "$PITCH" >&2
 
 python3 - "$MANI/$ID.json" "$ID" "$TITLE" "$YEAR" "$SRC_REF" "$LICENSE" "$TIER" "$TONE" "$WEIGHT" "$GAIN" \
-  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" "$PITCH" <<'PY'
+  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" "$PITCH" "$WHOLE" "$WHOLE_WINDOWS" <<'PY'
 import json,sys
-(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band, pitch) = sys.argv
+(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band, pitch, whole, wholewins) = sys.argv
 P = json.loads(pitch)
 e = {
   "id": id_,
@@ -413,6 +422,16 @@ e = {
   "notes": notes,
   "takedown": False,
 }
+# §14. "whole" is per REEL; wholeWindows is a PARALLEL ARRAY, index for index
+# with windows, exactly as pitchHz is — never a third element in a window and
+# never an object, because five call sites in zk-broadcast.js index a window
+# positionally and a reshaped one puts NaN into inS.
+if whole == "1":
+    e["whole"] = True
+    if wholewins.strip():
+        idx = set(int(x) for x in wholewins.replace(" ", "").split(",") if x != "")
+        e["wholeWindows"] = [i in idx for i in range(len(json.loads(reelwin)))]
+
 # one window per line, everything else one field per line
 lines = ["{"]
 keys = list(e)
@@ -434,6 +453,20 @@ printf '▸ reel   %s  (%d windows, %.1f s, %d KB, integrated %s LUFS, gain %s d
   "${OUT#$REPO/}" "$NWIN" "$RDUR" "$((BYTES/1024))" "$MEAS" "$GAIN" >&2
 echo "▸ entry  ${MANI#$REPO/}/$ID.json" >&2
 if [ "$BYTES" -gt 2097152 ]; then log "WARNING: reel is over 2 MB — fewer/shorter windows, please"; fi
+# REBUILD THE MANIFEST, ALWAYS. broadcast/.htaccess caches reels for a year as
+# immutable, which is only safe because every reel URL carries ?v=<rev> — the
+# first 8 hex of the file's sha256, computed by build-manifest.sh. A reel cut or
+# re-cut without that rebuild ships a stale rev, the year-long cache honours it,
+# and the owner sees the OLD reel for as long as their browser feels like it.
+# That is the six-hour bug we just fixed, made worse. So the rebuild is not a
+# step anyone has to remember.
+echo "▸ manifest: rebuilding so this reel's rev is current…" >&2
+if ! "$HERE/build-manifest.sh"; then
+  log "build-manifest FAILED — reels/$ID.mp4 and manifest/$ID.json are written, but"
+  log "manifest.json is NOT updated. Fix the entry and re-run tools/build-manifest.sh,"
+  log "or the site will serve a stale rev for this reel."
+  exit 1
+fi
 echo "▸ audition: $(dirname "${HERE#$REPO/}")/tools/preview.sh $ID" >&2
 exit 0
 } # end of the parse-first wrapper — nothing may follow this line

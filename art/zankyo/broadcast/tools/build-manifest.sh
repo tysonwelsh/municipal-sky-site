@@ -3,9 +3,15 @@
 # id) after validating every entry and its reel. Exits non-zero on any bad entry.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; BC="$(cd "$HERE/.." && pwd)"
-python3 - "$BC" <<'PY'
+# --check verifies the COMMITTED manifest.json against the reel files and writes
+# nothing. Use it before committing (or from a hook): broadcast/.htaccess caches
+# reels for a year as immutable, which is only safe while every rev matches its
+# file, so a stale rev in a commit is a reel the owner cannot be served.
+MODE="build"; [ "${1:-}" = "--check" ] && MODE="check"
+python3 - "$BC" "$MODE" <<'PY'
 import glob, hashlib, json, os, sys
 bc = sys.argv[1]
+mode = sys.argv[2] if len(sys.argv) > 2 else "build"
 TONES = {"voice", "music", "noise", "sung", "tone", "drone"}
 MAX_BYTES = 2 * 1024 * 1024
 entries, errors = [], []
@@ -73,10 +79,42 @@ if errors:
     sys.exit(1)
 entries.sort(key=lambda e: e["id"])
 out = os.path.join(bc, "manifest.json")
+if mode == "check":
+    # Every reel's recorded rev must equal its file's sha256 prefix, and every
+    # reel must HAVE one. `entries` already carries the freshly computed revs,
+    # so the comparison is against what is committed in manifest.json.
+    try:
+        have = {e["id"]: e for e in json.load(open(out))}
+    except Exception as ex:
+        print("build-manifest --check: cannot read manifest.json (%s)" % ex, file=sys.stderr); sys.exit(1)
+    bad = []
+    for e in entries:
+        rec = have.get(e["id"])
+        if rec is None: bad.append(f"{e['id']}: in manifest/ but not in manifest.json")
+        elif not rec.get("rev"): bad.append(f"{e['id']}: manifest.json carries no rev")
+        elif rec["rev"] != e["rev"]: bad.append(f"{e['id']}: rev {rec['rev']} but the reel hashes to {e['rev']} — STALE")
+    for i in set(have) - set(x["id"] for x in entries):
+        bad.append(f"{i}: in manifest.json but has no manifest/ entry")
+    if bad:
+        print("build-manifest --check: %d stale or missing rev(s):" % len(bad), file=sys.stderr)
+        for m in bad: print("  ✗ " + m, file=sys.stderr)
+        print("  reels are cached for a YEAR as immutable and keyed on the rev, so a stale one", file=sys.stderr)
+        print("  means the owner is served the old reel. Run tools/build-manifest.sh.", file=sys.stderr)
+        sys.exit(1)
+    print("build-manifest --check: %d reels, every rev matches its file ✓" % len(entries))
+    sys.exit(0)
+# a rebuild that CHANGES a rev is worth saying out loud — it is the moment the
+# cache key moves and the reason the owner will finally hear the new cut
+try:
+    prev = {e["id"]: e.get("rev") for e in json.load(open(out))}
+except Exception:
+    prev = {}
+moved = [e["id"] for e in entries if prev.get(e["id"]) and prev[e["id"]] != e["rev"]]
 with open(out, "w") as fh:
     fh.write("[\n" + ",\n".join(json.dumps(e, ensure_ascii=False, separators=(",", ":")) for e in entries) + "\n]\n")
 total = sum(e["bytes"] for e in entries); nwin = sum(len(e["windows"]) for e in entries)
 tiers = {t: sum(1 for e in entries if e["tier"] == t) for t in "AB"}
+if moved: print("build-manifest: rev CHANGED for %d reel(s) — they will be re-fetched: %s" % (len(moved), ", ".join(moved[:8])))
 print(f"build-manifest: {len(entries)} reels ({tiers['A']} Tier A, {tiers['B']} Tier B), {nwin} windows, "
       f"{total/1048576:.1f} MB of reels, manifest.json {os.path.getsize(out)/1024:.1f} KB")
 for e in entries:
