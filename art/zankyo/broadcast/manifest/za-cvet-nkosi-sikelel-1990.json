@@ -1,0 +1,22 @@
+{
+  "id": "za-cvet-nkosi-sikelel-1990",
+  "title": "Nkosi sikelel' iAfrika (God Bless Africa)",
+  "year": 1990,
+  "src": "https://cvet.org.za/displayvideo.php/vid=207-784-7/",
+  "license": "© CVET; reuse with attribution, non-commercial educational use only",
+  "tier": "B",
+  "tone": "sung",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 80.0,
+  "bytes": 866703,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 40.0], [40.0, 50.0], [50.0, 60.0], [60.0, 70.0], [70.0, 80.0]],
+  "srcWindows": [[42.0, 52.0], [72.0, 102.0], [480.0, 490.0], [540.0, 550.0], [968.0, 978.0], [1016.0, 1026.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "South Africa / Zambia, c. 1989-90; isiXhosa, isiZulu, English. A freedom song and toyi-toyi from the stands at Soccer City, Walter Sisulu held at the microphone, a Soweto community hall welcoming him with song, his black-power salute over Nkosi sikelel' iAfrika, then the Zambian anthem sung by Kenneth Kaunda in Lusaka and the South African anthem on Govan Mbeki's face. Every sung window is 10 s and the reel is baked with --distort 0.5 under the Tier B music rule; the 30 s long window is Sisulu SPEAKING, not a song. Fetched from the page's flat MP4, recordFiles/207-784-7/05x022-H.264LAN.mp4.",
+  "takedown": false
+}

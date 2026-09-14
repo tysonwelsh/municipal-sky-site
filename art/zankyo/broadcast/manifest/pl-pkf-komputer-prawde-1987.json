@@ -1,0 +1,22 @@
+{
+  "id": "pl-pkf-komputer-prawde-1987",
+  "title": "Komputer prawdę ci powie (PKF 16/87) / The computer will tell you the truth",
+  "year": 1987,
+  "src": "https://repozytorium.fn.org.pl/?q=pl/node/9105",
+  "license": "WFDiF, all rights reserved (FINA Regulamin: \"Wszelkie kopiowanie materiałów jest zabronione\")",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 69.0,
+  "bytes": 698814,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 34.0], [34.0, 44.0], [44.0, 69.0]],
+  "srcWindows": [[6.0, 18.0], [28.0, 40.0], [46.0, 56.0], [58.0, 68.0], [71.0, 96.0]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
+  "notes": "Polska Kronika Filmowa 16/1987, Polish narration from the Infosystem computer fair in the Hala Ludowa, Wrocław: a hall of mainframes, a boy at a plotter, a computer that recites the tongue-twister 'chrząszcz brzmi w trzcinie' with a New York accent (window 3), symmetrical dot patterns on a CRT (window 4), and the long window's printers making portraits from a video camera, then copiers photocopying dollar bills. PL, Polish. Fetched from the page's own file sites/default/files/video/PL3d6414eb…/7.mp4; cut from local-dev/broadcast-src/_crop/ (FINA corner watermark cropped off, 832x624+128+96).",
+  "takedown": false
+}

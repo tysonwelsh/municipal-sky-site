@@ -1,0 +1,22 @@
+{
+  "id": "us-khon2-off-air-1990-01-31",
+  "title": "Televised broadcast footage of KHON-TV2, Honolulu — off air, 31 January 1990",
+  "year": 1990,
+  "src": "https://uluulu.recollectcms.com/nodes/view/48637",
+  "license": "This work is copyright protected and not available for download. Please contact the archive for more information. (ʻUluʻulu, Hawaiʻi state moving-image archive)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 77.0,
+  "bytes": 634323,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 25.0], [25.0, 35.0], [35.0, 45.0], [45.0, 57.0], [57.0, 67.0], [67.0, 77.0]],
+  "srcWindows": [[12.0, 37.0], [88.0, 98.0], [112.0, 122.0], [138.0, 150.0], [192.0, 202.0], [268.0, 278.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "USA (Hawaiʻi), English. KHON-TV2 Honolulu recorded off air: the anchor at the world-map desk and the cut out of it, a reporter in the CHANNEL 2 NEWS room, Senator Spark Matsunaga under a chyron, an over-the-shoulder WAIHEE box, Executive Chambers, a State Capitol hearing. Fetched from the archive's public preview asset (uluulu.recollectcms.com/assets/show/1/32123) — the archive serves 5:11 of the 4:07:51 tape, so the advert pods and the clock in the scout's note are not reachable. Pre-cropped to remove the ʻuluʻulu watermark; the modern copyright card at 0-11 s is excluded.",
+  "takedown": false
+}

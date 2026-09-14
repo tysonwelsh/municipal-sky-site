@@ -1,0 +1,22 @@
+{
+  "id": "us-khet-uh-today-synthesizer-1971",
+  "title": "UH Today #18 — Prof. Peter Coraggio demonstrates an electronic synthesizer (KHET)",
+  "year": 1971,
+  "src": "https://uluulu.recollectcms.com/nodes/view/47492",
+  "license": "This work is copyright protected and not available for download. Please contact the archive for more information. (ʻUluʻulu, Hawaiʻi state moving-image archive)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 52.83,
+  "bytes": 574496,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 48.0], [48.0, 52.83]],
+  "srcWindows": [[15.0, 35.0], [35.5, 45.5], [46.0, 56.0], [57.0, 65.0], [65.5, 70.3]],
+  "pitchHz": [null, null, 347.65, null, null],
+  "tuned": true,
+  "notes": "USA (Hawaiʻi), English, B&W. KHET public television, 4 Feb 1971: a university music professor at a modular synthesizer, patching and playing it to camera between sentences; the last window is the machine alone. Fetched from the archive's public preview asset (uluulu.recollectcms.com/assets/show/1/30269) — the archive serves 70 s of the 20:31 tape. Pre-cropped to remove the ʻuluʻulu watermark; the modern copyright card at 0-13 s is excluded.",
+  "takedown": false
+}

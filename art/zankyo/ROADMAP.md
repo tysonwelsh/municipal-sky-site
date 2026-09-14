@@ -120,6 +120,21 @@ length, one with no relation to the next — answered in four phases:
 
 - **Audio signals and video signals as two kinds of visitation** (the
   owner's stated intent; today one lottery, video-weighted 1.5×).
+- **Letters to five archives whose newsreel answers correspondence, not
+  fetches** (found by the reels-4 source scouts, 2026-09-14; the owner said
+  yes to writing): the Thai Film Archive (fapot.or.th — tens of thousands of
+  newsreels, ads, home movies, educational films, reachable only at Salaya or
+  by letter); Indonesia's *Gelora Indonesia* 1951–1976 weekly newsreel at
+  ANRI (anri.go.id — catalogued item by item, no player); Zimbabwe's
+  National Archives (archives.gov.zw — 250 digitised hours of Central African
+  Film Unit newsreel, 1948–63); the Uganda National Media Archive at UBC
+  (ubc.go.ug — UNESCO-listed, 1947–86); and Angola's Tchiweka archive
+  (tchiweka.org — liberation-era film on its own portal, in Portuguese,
+  small enough that a polite email would probably open it). Draft the
+  letters in the archive's language, state what ZANKYŌ is and how a reel
+  is used (4–40 s, 192×144, degraded, credited, takedown on request), and
+  ask for viewing copies of the newsreel runs. Register rows and the
+  scouts' notes: `broadcast/sources/sea.md`, `sources/africa.md`.
 - **Reels round 4:** the ~200 unused African shortwave airchecks; Italy
   deeper; the beats' banked candidates in the reels-3 queues; Kaesong TV if
   a recording ever surfaces; the Voice of Kenya 1982 broadcast if the pool

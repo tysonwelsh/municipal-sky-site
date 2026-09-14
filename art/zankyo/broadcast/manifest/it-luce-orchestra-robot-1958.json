@@ -1,0 +1,22 @@
+{
+  "id": "it-luce-orchestra-robot-1958",
+  "title": "Parigi: il concerto di un'orchestra di «robot» / Paris: concert by an orchestra of robots",
+  "year": 1958,
+  "src": "https://patrimonio.archivioluce.com/luce-web/detail/IL5000033635/2/parigi-concerto-orchestra-robot-costruiti-due-ex-prigionieri-guerra.html",
+  "license": "no terms stated on the detail page; Istituto Luce–Cinecittà asserts commercial rights",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 35.0,
+  "bytes": 313506,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 9.0], [9.0, 18.0], [18.0, 27.0], [27.0, 35.0]],
+  "srcWindows": [[6.0, 15.0], [17.0, 26.0], [28.0, 37.0], [39.0, 47.0]],
+  "pitchHz": [null, null, null, null],
+  "tuned": false,
+  "notes": "La Settimana Incom 01642, 17/04/1958: an orchestra of mechanical robots — accordion, saxophone, drums — built by two former prisoners of war, playing to a crowd in a Paris pavilion; Italian narration over the band. Italy/Italian. Fetched via yt-dlp from the detail page, which embeds https://www.youtube.com/embed/lDrV6sMH3ks; cut from a pre-crop (crop=398:384:6:0) that removes the LUCE watermark and the burned-in timecode. The modern Luce title card (0-3.5 s, silent) is excluded.",
+  "takedown": false
+}

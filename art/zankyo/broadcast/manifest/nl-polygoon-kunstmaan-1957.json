@@ -1,0 +1,88 @@
+{
+  "id": "nl-polygoon-kunstmaan-1957",
+  "title": "Nederland hoort de kunstmaan (Weeknummer 57-42) / The Netherlands hears the artificial moon",
+  "year": 1957,
+  "src": "https://openbeelden.nl/media/22876/Nederland_hoort_de_kunstmaan",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 107.67,
+  "bytes": 787605,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.17
+    ],
+    [
+      12.17,
+      24.17
+    ],
+    [
+      24.17,
+      36.25
+    ],
+    [
+      36.25,
+      48.33
+    ],
+    [
+      48.33,
+      60.33
+    ],
+    [
+      60.33,
+      72.42
+    ],
+    [
+      72.42,
+      107.67
+    ]
+  ],
+  "srcWindows": [
+    [
+      19.3,
+      31.3
+    ],
+    [
+      45.0,
+      57.0
+    ],
+    [
+      60.0,
+      72.0
+    ],
+    [
+      78.0,
+      90.0
+    ],
+    [
+      95.0,
+      107.0
+    ],
+    [
+      118.0,
+      130.0
+    ],
+    [
+      143.0,
+      178.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, 7 Oct 1957. The PTT radio station at Nederhorst den Berg picks up Sputnik's signal — a pulsed 780 Hz tone runs under the commentary — then ir. Wegener and radio-astronomer drs. De Feiter explain the sound at a press conference; animation of the satellite the USA is about to launch. Commentary Philip Bloemendal. Source MPG rendition from openbeelden.nl; first 17 s of the reel-can is another story and is not used.",
+  "takedown": false
+}

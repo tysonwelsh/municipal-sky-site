@@ -1,0 +1,22 @@
+{
+  "id": "pl-pkf-ruch-i-dzwiek-1972",
+  "title": "Ruch i dźwięk. Urządzenia elektroniczne w muzyce (PKF 51A/72) / Movement and sound. Electronic devices in music",
+  "year": 1972,
+  "src": "https://repozytorium.fn.org.pl/?q=pl/node/11449",
+  "license": "WFDiF, all rights reserved (FINA Regulamin: \"Wszelkie kopiowanie materiałów jest zabronione\"); PKF foreign-exchange material, shot in Berlin",
+  "tier": "B",
+  "tone": "music",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 32.0,
+  "bytes": 464383,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 8.0], [8.0, 16.0], [16.0, 24.0], [24.0, 32.0]],
+  "srcWindows": [[4.0, 12.0], [17.0, 25.0], [32.0, 40.0], [44.0, 52.0]],
+  "pitchHz": [null, null, null, null],
+  "tuned": false,
+  "notes": "Polska Kronika Filmowa 51A/1972, an item whose subject is electronic devices in music: an oil-projection liquid light show, op-art concentric squares and starbursts thrown on a wall, a light-drawn squiggle, a synthesizer on screen, a fisheye face, cut against a corn harvest. Shot in Berlin, PL newsreel, Polish. Fetched from the page's own file sites/default/files/video/PL185944fc…/Kronika_PKF_72-51A_5.mp4; cut from local-dev/broadcast-src/_crop/ (FINA corner watermark cropped off, 832x624+128+96). Tier B music: 8 s windows, --distort 0.5, so no long window.",
+  "takedown": false
+}

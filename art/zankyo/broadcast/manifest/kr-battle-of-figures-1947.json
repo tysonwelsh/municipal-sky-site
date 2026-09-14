@@ -1,0 +1,22 @@
+{
+  "id": "kr-battle-of-figures-1947",
+  "title": "암산의 천재 배성진 씨 경기회 / The Battle of Figures",
+  "year": 1947,
+  "src": "https://archive.much.go.kr/archive/userrecordimage/recordImageView.do?idnbr=2023006534&jobdirSeq=1949",
+  "license": "저작권처 한국방송공사(KBS) — all rights reserved (무단 복제·전재·재배포 금지)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 88.17,
+  "bytes": 678543,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.08], [36.08, 64.17], [64.17, 76.17], [76.17, 88.17]],
+  "srcWindows": [[4.0, 16.0], [18.0, 30.0], [32.0, 44.0], [58.0, 86.0], [88.0, 100.0], [102.0, 114.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Seoul 1947 newsreel, Korean narration: the mental-arithmetic prodigy Bae Sŏng-jin against eight abacus champions and a calculating machine, billed in English on the hall banner as THE BATTLE OF FIGURES. Shot by USAMGIK 공보부; held by 대한민국역사박물관 현대사 기록영상 아카이브, copyright KBS. Fetched from the site's own HLS (vod.much.go.kr, movieinfo.gm.jsp cid=6310); pre-cropped to the right of frame to drop the KBS watermark.",
+  "takedown": false
+}

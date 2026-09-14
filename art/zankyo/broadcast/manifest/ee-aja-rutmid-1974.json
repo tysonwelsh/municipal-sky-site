@@ -1,0 +1,22 @@
+{
+  "id": "ee-aja-rutmid-1974",
+  "title": "Ритмы времени / Aja rütmid / Rhythms of Time",
+  "year": 1974,
+  "src": "https://arhiiv.err.ee/video/vaata/aja-rutmid",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 90.0,
+  "bytes": 982102,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[12.0, 24.0], [60.0, 72.0], [262.0, 274.0], [440.0, 452.0], [874.0, 904.0], [985.0, 997.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Russian-language ETV science film made in Soviet Estonia: a male announcer over photographs of children, an Academy of Sciences presidium, gears and ball-bearings taken from a heap, the Narva power station, and the long window — numbers on a tableau, punched tape running through a reader, a control desk and a calculating machine — then the Tartu University computing centre. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox removed, ERR corner bug cropped off the top, square-pixel 4:3)",
+  "takedown": false
+}

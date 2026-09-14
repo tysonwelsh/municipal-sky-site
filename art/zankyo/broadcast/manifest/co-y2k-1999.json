@@ -1,0 +1,22 @@
+{
+  "id": "co-y2k-1999",
+  "title": "Y2K: el temido cambio de milenio digital — \"Y2K: the feared digital turn of the millennium\"",
+  "year": 1999,
+  "src": "https://www.senalmemoria.co/piezas/y2k-el-temido-cambio-de-milenio-digital",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 72.25,
+  "bytes": 586259,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 48.17], [48.17, 60.25], [60.25, 72.25]],
+  "srcWindows": [[14.0, 26.0], [30.0, 42.0], [53.0, 77.0], [98.0, 110.0], [141.0, 153.0]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
+  "notes": "Colombia, Spanish: Señal Colombia's 'Anverso y reverso', 23 Nov 1999 — a Bogotá systems adviser explains the two-digit year on air six weeks before the century turns; period computer room, Compaq monitors, a blue globe, a second higher voice at the 98 s window. Fetched from RTVC's own Señal Memoria YouTube channel (https://www.youtube.com/watch?v=uNyk7J7G1JA); cut from a de-watermarked crop (crop=506:380:364:44) that removes the modern Señal Memoria bug and the modern burned-in caption bar",
+  "takedown": false
+}

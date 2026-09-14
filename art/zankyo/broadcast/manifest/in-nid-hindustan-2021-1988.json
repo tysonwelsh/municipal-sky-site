@@ -1,0 +1,79 @@
+{
+  "id": "in-nid-hindustan-2021-1988",
+  "title": "Hindustan 2021: Front End Loader — Operation and Maintenance (NID diploma film)",
+  "year": 1988,
+  "src": "https://ncaa.gov.in/repository/search/displaySearchRecordPreview/NID-BC0133-BC/Diploma%20Films",
+  "license": "National Institute of Design (item Rights; no reuse statement)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.08,
+  "bytes": 758758,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      54.0
+    ],
+    [
+      54.0,
+      66.0
+    ],
+    [
+      66.0,
+      78.0
+    ],
+    [
+      78.0,
+      90.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      47.0,
+      59.0
+    ],
+    [
+      73.0,
+      85.0
+    ],
+    [
+      125.0,
+      155.0
+    ],
+    [
+      827.0,
+      839.0
+    ],
+    [
+      998.0,
+      1010.0
+    ],
+    [
+      1180.0,
+      1192.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Industrial film for the Hindustan Motors 2021 front end loader, dir. Akhil Succena, NID diploma film 1988, English; the first of five films on Betacam compilation NID-BC0133-BC, running roughly 0:40-20:00 of the tape. Windows: the loader against palms as the Hindustan Motors mark forms, the main title, the GAUGES sequence with its captions and pointing arrows (long), the loader filling a dump truck, the MAINTENANCE caution-and-serial plate, and OIL LEVEL CHECKS over a wheel hub. NOT a film about the year 2021 - 2021 is the machine's model number. Cut from spans fetched over ncaa.gov.in's iOS HLS path (iPhone User-Agent required); the un-fetched spans of the source are black filler, so srcWindows match the original tape.",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "pl-pkf-rachuj-kolego-1964",
+  "title": "Rachuj kolego… (PKF 9A/64) / Count, comrade…",
+  "year": 1964,
+  "src": "https://repozytorium.fn.org.pl/?q=pl/node/11352",
+  "license": "WFDiF, all rights reserved (FINA Regulamin: \"Wszelkie kopiowanie materiałów jest zabronione\")",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 73.5,
+  "bytes": 781167,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 25.5], [25.5, 37.5], [37.5, 49.5], [49.5, 61.5], [61.5, 73.5]],
+  "srcWindows": [[4.5, 30.0], [34.0, 46.0], [50.0, 62.0], [78.0, 90.0], [98.0, 110.0]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
+  "notes": "Polska Kronika Filmowa 9A/1964, Polish narration over the whole history of counting: pebbles in sand, an abacus, a Triumphator arithmometer, an electric calculator, a rocket launch, a satellite, then the Soviet Ural 2 at the PAN Computing Centre and women at calculating machines in Łódź. PL, Polish. Fetched from the page's own file sites/default/files/video/PL0dca641b…/Kronika_PKF_64-09A_1.mp4; cut from local-dev/broadcast-src/_crop/ (FINA corner watermark cropped off, 832x624+128+96); long window starts at 4.5 s so the superimposed title has cleared.",
+  "takedown": false
+}

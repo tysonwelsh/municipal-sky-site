@@ -1,0 +1,79 @@
+{
+  "id": "in-surabhi-electronic-talometer-1991",
+  "title": "Conversation about Electronic Talometer (Vol. I) — सुरभि / Surabhi (Doordarshan)",
+  "year": 1991,
+  "src": "https://ncaa.gov.in/repository/search/displaySearchRecordPreview/CVI-SUR_R_258-UMLB/Conversation%20about%20Electronic%20Talometer%20%28Vol.%20I%29",
+  "license": "Cinema Vision India — all rights reserved (as found)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 88.0,
+  "bytes": 832788,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      34.0
+    ],
+    [
+      34.0,
+      44.0
+    ],
+    [
+      44.0,
+      74.0
+    ],
+    [
+      74.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      129.0,
+      141.0
+    ],
+    [
+      330.0,
+      342.0
+    ],
+    [
+      602.0,
+      612.0
+    ],
+    [
+      946.0,
+      956.0
+    ],
+    [
+      1285.0,
+      1315.0
+    ],
+    [
+      1326.0,
+      1340.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    236.41,
+    1052.89,
+    null,
+    null
+  ],
+  "tuned": true,
+  "notes": "Doordarshan magazine programme Surabhi, unedited U-matic low-band master, 24.04.1991, Hindi: a feature on the RADEL Talometer, a programmable Carnatic taala machine built by a computer engineer. Windows 1-2 the interview in a garden, 3 a bansuri played beside the machine's amplifier boxes, 4 the Talometer's front panel clicking the cycle alone, 5-6 the machine on its stand keeping taala under speech. Fetched over ncaa.gov.in's iOS HLS path (/vol2/.../<id>-IOS.m3u8 — an iPhone User-Agent is required or the segments 403/404); src is the repository record page.",
+  "takedown": false
+}

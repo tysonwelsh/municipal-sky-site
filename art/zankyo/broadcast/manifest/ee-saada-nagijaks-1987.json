@@ -1,0 +1,22 @@
+{
+  "id": "ee-saada-nagijaks-1987",
+  "title": "Saada nägijaks / Made Seeing",
+  "year": 1987,
+  "src": "https://arhiiv.err.ee/video/vaata/saada-nagijaks",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 60.0,
+  "bytes": 781442,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
+  "srcWindows": [[29.0, 39.0], [165.0, 175.0], [378.0, 388.0], [504.0, 514.0], [635.0, 645.0], [715.0, 725.0]],
+  "pitchHz": [null, null, 166.26, null, null, null],
+  "tuned": true,
+  "notes": "Estonian, almost wordless: four Sven Grünberg electronic compositions realised as television — synthesizer and hand drums in Kaarel Kurismaa's designed room of kinetic objects, a man singing inside a circle of light, a green scan-line moiré, a frame drum against a painted mandala. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (ERR corner bug cropped off the top, non-square SAR 3:4 normalised to square-pixel 4:3). All-music item: every window 10 s, no long window (my brief allows one only on a non-musical stretch)",
+  "takedown": false
+}

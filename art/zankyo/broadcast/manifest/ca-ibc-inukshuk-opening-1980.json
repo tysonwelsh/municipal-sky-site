@@ -1,0 +1,22 @@
+{
+  "id": "ca-ibc-inukshuk-opening-1980",
+  "title": "Inukshuk Broadcasting System Grand Opening (IBC 00677IQ, Igloolik)",
+  "year": 1980,
+  "src": "https://www.isuma.tv/ibc-2/00677iqinuk-80-76-inuk-inukshuk-grand-opening",
+  "license": "no reuse licence; IBC item page carries only the access note: made available on the Internet for your enjoyment through funding provided by the Government of Canada and the Government of Nunavut",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 93.0,
+  "bytes": 724948,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 39.0], [39.0, 51.0], [51.0, 65.0], [65.0, 79.0], [79.0, 93.0]],
+  "srcWindows": [[18.0, 30.0], [293.0, 320.0], [702.0, 714.0], [1717.0, 1731.0], [1756.0, 1770.0], [2022.0, 2036.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Canada (Nunavut/NWT), Inuktut, no subtitles. Igloolik 1980, the Anik B satellite switched on: a float helicopter hovering over the sea, an IBC studio speaker cutting to a man held on a monitor under an Inuktut chyron (the teleconference), the white earth-station dome on the tundra, the racks of broadcast gear brought north, a woman at the console, and games in the community gym. Fetched from the page's SD source https://s3.amazonaws.com/isuma.video.mp4_sd/00677iqinuk-80-76-inuk_inukshuk_grand_opening.mp4.mp4 (yt-dlp cannot read isuma.tv item pages).",
+  "takedown": false
+}

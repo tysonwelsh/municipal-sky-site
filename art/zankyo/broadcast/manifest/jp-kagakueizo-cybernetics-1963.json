@@ -1,0 +1,22 @@
+{
+  "id": "jp-kagakueizo-cybernetics-1963",
+  "title": "みんな技術者シリーズ サイバネティックス －舵をとる人－ / Cybernetics — the one who steers",
+  "year": 1963,
+  "src": "https://www.kagakueizo.org/movie/industrial/460/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 企画 文部省 / 製作 日映科学映画製作所 / 協力 日本アイ・ビー・エム. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 90.25,
+  "bytes": 758159,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 54.17], [54.17, 66.17], [66.17, 78.17], [78.17, 90.25]],
+  "srcWindows": [[226.0, 238.0], [330.0, 342.0], [480.0, 510.0], [1194.0, 1206.0], [1274.0, 1286.0], [1332.0, 1344.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan 1963, ja narration and sync interviews: the Ministry of Education's cybernetics lesson, supervised by 渡辺茂 and 池原止戈夫 and made with IBM Japan. Windows: 'サイバネティックスとは?' over a face; a blindfolded schoolboy walking a painted line — the feedback experiment; the long window is the 情報→通信(光)→判断→制御 control-loop animation; an IBM lamp panel; a tele-processing hall and tape decks; the TOKYO 1964 IBM OLYMPIC TELE-PROCESSING SYSTEM plate. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/cybernetics.mp4); pre-cropped to drop the NPO caption strip. The print opens with a MODERN silent NPO restoration card (0–33 s) — every window is past it, in the 1963 material.",
+  "takedown": false
+}

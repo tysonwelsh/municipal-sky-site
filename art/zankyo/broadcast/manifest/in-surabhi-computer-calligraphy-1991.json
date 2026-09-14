@@ -1,0 +1,79 @@
+{
+  "id": "in-surabhi-computer-calligraphy-1991",
+  "title": "Conversation about Computer Calligraphy (Vol. I) — सुरभि / Surabhi (Doordarshan)",
+  "year": 1991,
+  "src": "https://ncaa.gov.in/repository/search/displaySearchRecordPreview/CVI-SUR_R_113-UMHB/Conversation%20about%20Computer%20Calligraphy%20%28Vol.%20I%29",
+  "license": "Cinema Vision India — all rights reserved (as found)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 90.0,
+  "bytes": 750463,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      78.0
+    ],
+    [
+      78.0,
+      90.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      504.0,
+      516.0
+    ],
+    [
+      654.0,
+      666.0
+    ],
+    [
+      766.0,
+      778.0
+    ],
+    [
+      788.0,
+      800.0
+    ],
+    [
+      1035.0,
+      1065.0
+    ],
+    [
+      1105.0,
+      1117.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Surabhi feature on Prof. R. K. Joshi (IDC, IIT Bombay) and computer-generated Devanagari, U-matic hi-band master, 26.04.1991, English. Windows 1-2 modular grid letterforms and a drawn SHRI held on a green rostrum, 3-4 a hand lettering with a brush pen beside a font-editor CRT, 5-6 Joshi in interview (5 is the long window). The tape's first eight minutes and its off-tube screen sequence carry NO audio; every window here is taken from the parts that do. Cut from the spans fetched over ncaa.gov.in's iOS HLS path (iPhone User-Agent required); un-fetched spans are black filler so the timeline - and srcWindows - match the original tape.",
+  "takedown": false
+}

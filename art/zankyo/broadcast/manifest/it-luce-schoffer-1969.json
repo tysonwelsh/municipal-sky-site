@@ -1,0 +1,22 @@
+{
+  "id": "it-luce-schoffer-1969",
+  "title": "Arte contemporanea: le opere di Nicolas Schöffer / Contemporary art: the works of Nicolas Schöffer",
+  "year": 1969,
+  "src": "https://patrimonio.archivioluce.com/luce-web/detail/IL5000085533/2/arte-contemporanea-opere-nicolas-schoffer.html",
+  "license": "no terms stated on the detail page; Istituto Luce–Cinecittà asserts commercial rights",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 52.0,
+  "bytes": 528546,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 18.0], [18.0, 44.0], [44.0, 52.0]],
+  "srcWindows": [[2.0, 12.0], [16.0, 24.0], [30.0, 56.0], [60.0, 68.0]],
+  "pitchHz": [null, null, null, null],
+  "tuned": false,
+  "notes": "Italian newsreel item, 1969: Schöffer's spatio-dynamic sculptures turning under light, the artist himself, then the project for a cybernetic tower of nearly 400 m with its beacon, and city projects — a vertical university and a money-box building. Italian narration throughout. Italy/Italian. Fetched with yt-dlp (generic extractor) from the detail page; cut from a pre-crop (crop=310:278:4:2) that removes the LUCE watermark and the burned-in TCR timecode strip.",
+  "takedown": false
+}

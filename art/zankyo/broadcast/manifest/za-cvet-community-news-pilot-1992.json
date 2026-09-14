@@ -1,0 +1,22 @@
+{
+  "id": "za-cvet-community-news-pilot-1992",
+  "title": "Community News Program — pilot episode (CVET, Woodstock)",
+  "year": 1992,
+  "src": "https://cvet.org.za/displayvideo.php/vid=207-784-287/",
+  "license": "© CVET; reuse with attribution, non-commercial educational use only",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 90.0,
+  "bytes": 864427,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[30.0, 42.0], [74.0, 86.0], [160.0, 172.0], [248.0, 278.0], [374.0, 386.0], [436.0, 448.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "South Africa, English. CVET's unaired community-television news pilot, Woodstock, Cape Town, 3 Jan 1992: studio anchor at a COMMUNITY NEWS desk describing the area it transmits to, then Chris Hani (SACP) and Allan Boesak (ANC Western Cape) addressing 500 people on CODESA, jobs, housing and a two-year transitional government. Fetched from the page's flat MP4, recordFiles/207-784-287/31x009-H.264LAN.mp4.",
+  "takedown": false
+}

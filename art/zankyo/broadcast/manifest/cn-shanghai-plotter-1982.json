@@ -1,0 +1,79 @@
+{
+  "id": "cn-shanghai-plotter-1982",
+  "title": "計算機自動繪圖 (Computer-Automated Plotting)",
+  "year": 1982,
+  "src": "https://www.bilibili.com/video/BV19841167Lz/",
+  "license": "unknown (uploader-asserted; 上海科學教育電影製片廠 state science-education film)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 88.0,
+  "bytes": 628423,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      28.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      1148.0,
+      1176.0
+    ],
+    [
+      180.0,
+      192.0
+    ],
+    [
+      398.0,
+      410.0
+    ],
+    [
+      500.0,
+      512.0
+    ],
+    [
+      668.0,
+      680.0
+    ],
+    [
+      2112.0,
+      2124.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1982 PRC science-education film, Mandarin: the plotter pen drawing by itself in real time, tape reels loading, the algorithm animated on a CRT, the machine plotting a map of China. Fetched from bilibili BV19841167Lz with a full browser header set; cut from a copy cropped top and bottom (archivist's brand block and burnt-in timecode removed; a faint centre transcription watermark remains).",
+  "takedown": false
+}

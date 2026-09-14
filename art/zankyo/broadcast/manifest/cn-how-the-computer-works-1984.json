@@ -1,0 +1,79 @@
+{
+  "id": "cn-how-the-computer-works-1984",
+  "title": "電子計算機怎樣工作 (How the Electronic Computer Works)",
+  "year": 1984,
+  "src": "https://www.bilibili.com/video/BV1sVzWBuE8f/",
+  "license": "unknown (uploader-asserted; 北京科學教育電影製片廠 state science-education film)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 88.0,
+  "bytes": 816511,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      28.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      72.0,
+      100.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      46.0,
+      58.0
+    ],
+    [
+      113.0,
+      125.0
+    ],
+    [
+      126.0,
+      138.0
+    ],
+    [
+      158.0,
+      170.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1984 PRC science-education film, Mandarin: machine rooms, an LED numeric display, computer animation (an elephant, a checkered globe), a CRT terminal, wire-wrap backplanes, an animated circuit. Fetched from bilibili BV1sVzWBuE8f with a full browser header set — the item is 充电专属 and only its free 2:59 preview is served, so every window is inside that preview; cut from a top-cropped copy (uploader corner bug removed).",
+  "takedown": false
+}

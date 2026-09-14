@@ -1,0 +1,22 @@
+{
+  "id": "ca-ibc-pivalliajut-1982",
+  "title": "Pivalliajut ᐱᕙᓪᓕᐊᔪᑦ 00603IQ ('Developments') — Igloolik on whether to let television in",
+  "year": 1982,
+  "src": "https://www.isuma.tv/ibc-2/00603iq-82-inuk",
+  "license": "no reuse licence; IBC item page carries only the access note: made available on the Internet for your enjoyment through funding provided by the Government of Canada and the Government of Nunavut",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 92.0,
+  "bytes": 738728,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 28.0], [28.0, 40.0], [40.0, 52.0], [52.0, 64.0], [64.0, 76.0], [76.0, 92.0]],
+  "srcWindows": [[5.0, 33.0], [34.0, 46.0], [111.0, 123.0], [863.0, 875.0], [1215.0, 1227.0], [1562.0, 1578.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Canada (Nunavut), Inuktut, no subtitles. Igloolik 1982, the town arguing over the Yes-or-No vote on allowing a television channel: the Pivalliajut title sequence in syllabics over snow with an MP's name caption, the host at a desk with a television set standing beside her, a shot OF a television set carrying a man in a suit, a studio two-shot under the station's inuksuk bug, the studio wide with two monitors, and the IBC (c) 1982 end card drawn with a satellite dish. Fetched from the page's SD source https://s3.amazonaws.com/isuma.video.mp4_sd/00603iq-82-inuk.mp4.mp4 (yt-dlp cannot read isuma.tv item pages).",
+  "takedown": false
+}

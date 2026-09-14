@@ -1,0 +1,88 @@
+{
+  "id": "nl-polygoon-staatsloterij-1976",
+  "title": "Jubileumtrekking Staatsloterij (Weeknummer 76-08) / Jubilee draw of the State Lottery",
+  "year": 1976,
+  "src": "https://openbeelden.nl/media/650224/Jubileumtrekking_Staatsloterij",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 109.0,
+  "bytes": 1126797,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.08
+    ],
+    [
+      12.08,
+      24.25
+    ],
+    [
+      24.25,
+      36.25
+    ],
+    [
+      36.25,
+      48.5
+    ],
+    [
+      48.5,
+      60.67
+    ],
+    [
+      60.67,
+      96.83
+    ],
+    [
+      96.83,
+      109.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      6.0,
+      18.0
+    ],
+    [
+      20.0,
+      32.0
+    ],
+    [
+      32.0,
+      44.0
+    ],
+    [
+      44.0,
+      56.0
+    ],
+    [
+      56.0,
+      68.0
+    ],
+    [
+      70.0,
+      106.0
+    ],
+    [
+      106.0,
+      118.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, 1976 — the State Lottery's 250th-anniversary draw. Jubilee posters, the ticket counter, vox pops on what half a million guilders would buy, an eighteenth-century lot document, then the long window: the drum used until about 1950 demonstrated by hand, the Rolzaal in the Ridderzaal complex, and the machine that draws the numbers now. Commentary Philip Bloemendal. Source MPG rendition from openbeelden.nl.",
+  "takedown": false
+}

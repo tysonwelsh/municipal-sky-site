@@ -1,0 +1,22 @@
+{
+  "id": "ee-eetrikunst-1980",
+  "title": "Eetrikunst / The Art of the Ether",
+  "year": 1980,
+  "src": "https://arhiiv.err.ee/video/vaata/eetrikunst",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.2,
+  "durS": 90.0,
+  "bytes": 808724,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 90.0]],
+  "srcWindows": [[8.0, 20.0], [152.0, 164.0], [530.0, 542.0], [1225.0, 1237.0], [2250.0, 2262.0], [2312.0, 2342.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian, made for ETV's 25th birthday and about the electronic image itself: the prop store under music; Hagi Šein alone against a huge blue chroma cloth, then composited standing among the ruins of Pirita monastery, into the EETRIKUNST title over a sound bed; a camera panning across the station's own hand-lettered programme title cards; an excerpt of the video play Soolo tornikellale; director Jüri Tallinn on electronic design with a chroma tree behind him; and the long window — the engineers' explosion of the tree into glitter, then one face lit several ways as a voice names each (horror light, mysterious light, light full of inner drama). Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox removed, ERR corner bug cropped off the top, square-pixel 4:3)",
+  "takedown": false
+}

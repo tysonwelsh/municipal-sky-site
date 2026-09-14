@@ -1,0 +1,79 @@
+{
+  "id": "at-scope-computergraphik-1985",
+  "title": "TRICK FILME – Vom Zeichentrick zur Computergraphik (Scope 15/1985) / Animated films – from cel animation to computer graphics",
+  "year": 1985,
+  "src": "https://www.filmarchiv.at/de/filmarchiv-on/video/f_030grKpSPCjSNvGPMJYCHg",
+  "license": "Austria Wochenschau; restaurierte Fassung: Filmarchiv Austria © 2025 (rights reserved)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 90.0,
+  "bytes": 1036989,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      78.0
+    ],
+    [
+      78.0,
+      90.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      108.0,
+      120.0
+    ],
+    [
+      150.0,
+      162.0
+    ],
+    [
+      178.0,
+      190.0
+    ],
+    [
+      232.0,
+      244.0
+    ],
+    [
+      246.0,
+      276.0
+    ],
+    [
+      276.0,
+      288.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Austria, German: Austria Wochenschau 'Scope' 15/1985 from Maria Lassnig's animation studio at the Angewandte. Lassnig to camera and the rostrum stand, drawn animation, then Leopold Pohorely, Computer-Animations-Fachmann, at his CRT workstation with a stylus on the tablet, and the turn the title promises — colour vector buildings on a wireframe grid — closing on hand-drawn chalk titles. Fetched with yt-dlp (FilmArchiv extractor, format 1100 + audio); the burned-in FILM ARCHIV AUSTRIA corner logo and the lower-left 'Maria Lassnigs Trickfilm-Studio' caption were pre-cropped out (crop=400:300:84:0) before cutting; the modern Filmarchiv title and end cards (0-12 s, 290-317 s) are not used.",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "za-cvet-abdullah-ibrahim-1990",
+  "title": "Abdullah Ibrahim (Dollar Brand) returns from exile",
+  "year": 1990,
+  "src": "https://cvet.org.za/displayvideo.php/vid=207-784-332/",
+  "license": "© CVET; reuse with attribution, non-commercial educational use only",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 90.0,
+  "bytes": 765401,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[4.0, 16.0], [180.0, 192.0], [285.0, 315.0], [545.0, 557.0], [840.0, 852.0], [1108.0, 1120.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "South Africa, English. Cape Town International, 6 Sept 1990: the pianist walks off the aircraft after years of exile, then sits at a press table under a jazz banner and speaks; the reel closes on his raised salute and the crowd. No piano is played on the tape — all speech and room. Fetched from the page's flat MP4, recordFiles/207-784-332/34x007-H.264LAN.mp4.",
+  "takedown": false
+}

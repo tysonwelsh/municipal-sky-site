@@ -1,0 +1,22 @@
+{
+  "id": "pl-pkf-sygnaly-z-kosmosu-1987",
+  "title": "Sygnały z kosmosu (PKF 31/87) / Signals from space",
+  "year": 1987,
+  "src": "https://repozytorium.fn.org.pl/?q=pl/node/8902",
+  "license": "WFDiF, all rights reserved (FINA Regulamin: \"Wszelkie kopiowanie materiałów jest zabronione\")",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 50.0,
+  "bytes": 472004,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 28.0], [28.0, 40.0], [40.0, 50.0]],
+  "srcWindows": [[5.0, 33.0], [35.0, 47.0], [48.0, 58.0]],
+  "pitchHz": [null, null, null],
+  "tuned": false,
+  "notes": "Polska Kronika Filmowa 31/1987, Polish narration: a radio telescope (the Effelsberg dish) held in one slow continuous travelling shot, then the control room where operators read what it hears. PL, Polish. Fetched from the page's own file sites/default/files/video/PL958ba317…/5.mp4; cut from local-dev/broadcast-src/_crop/ (black frame edge trimmed, 702x540+8+18); no watermark on this transfer.",
+  "takedown": false
+}

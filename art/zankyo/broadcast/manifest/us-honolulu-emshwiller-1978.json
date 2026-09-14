@@ -1,0 +1,22 @@
+{
+  "id": "us-honolulu-emshwiller-1978",
+  "title": "Ed Emshwiller Excerpts (Honolulu public access) — the studio interview",
+  "year": 1978,
+  "src": "https://uluulu.recollectcms.com/nodes/view/1893",
+  "license": "This work is copyright protected and not available for download. Please contact the archive for more information. (ʻUluʻulu, Hawaiʻi state moving-image archive)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 87.08,
+  "bytes": 760354,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 35.08], [35.08, 47.08], [47.08, 59.08], [59.08, 71.08], [71.08, 87.08]],
+  "srcWindows": [[19.0, 29.0], [30.0, 55.0], [60.0, 72.0], [95.0, 107.0], [135.0, 147.0], [150.0, 166.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "USA (Hawaiʻi), English, colour. February 1978, Honolulu public access: the video-synthesis artist Ed Emshwiller and an interviewer on a curtained set, one hand mic passed between them, a monitor playing his work at the edge of frame. Fetched from the archive's public preview asset (uluulu.recollectcms.com/assets/show/1/13514) — the archive serves 2:46 of the 30:07 tape, and that 2:46 is the interview only: Scape Mates and Crossings and Meetings are NOT in the reachable material. Pre-cropped to remove the ʻuluʻulu watermark; the modern copyright card at 0-18 s is excluded.",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "ee-akadeemikud-tougu-1981",
+  "title": "Akadeemikud 16: Enn Tõugu / Academicians 16: Enn Tõugu",
+  "year": 1981,
+  "src": "https://arhiiv.err.ee/video/vaata/akadeemikud-enn-tougu",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 783485,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[8.0, 20.0], [114.0, 126.0], [235.0, 265.0], [375.0, 387.0], [566.0, 578.0], [688.0, 700.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian, ETV talk show: a pocket microcomputer on the studio table says hello and asks your name, then types back TEHISMÕISTUS ON OLEMAS (artificial mind exists); cyberneticist Enn Tõugu on the limits of the machine, schoolchildren at terminals, chess. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (ERR corner bug cropped off the top, non-square SAR 3:4 normalised to square-pixel 4:3)",
+  "takedown": false
+}

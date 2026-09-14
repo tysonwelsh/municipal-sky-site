@@ -1,0 +1,22 @@
+{
+  "id": "ee-valgusmuusika-filmid-1989",
+  "title": "Filmiõhtu 16: Valgusmuusika filmid / Film Evening 16: Light-Music Films",
+  "year": 1989,
+  "src": "https://arhiiv.err.ee/video/vaata/filmiohtu-valgusmuusika-filmid",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "music",
+  "weight": 4,
+  "gain": -0.6,
+  "durS": 82.0,
+  "bytes": 748897,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 22.0], [22.0, 52.0], [52.0, 62.0], [62.0, 72.0], [72.0, 82.0]],
+  "srcWindows": [[70.0, 82.0], [600.0, 610.0], [1322.0, 1352.0], [1700.0, 1710.0], [2508.0, 2518.0], [3240.0, 3250.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian with a Russian seam: ETV's light-music film evening. Bulat Galeyev of the Prometheus colour-music laboratory in Kazan talking (Russian, burnt-in Estonian subtitles and a period name super), then excerpts of four abstract light-films — Väike triptühhon (Sviridov, dir. Galeyev, Prometheus, Kazan 1975: dark flame forms), the LONG window from Perpetuum mobile (music Arvo Pärt, dir. Jüri Tallinn, laser by Tõnis Mägi, ETV 1979: a luminous ring and bursts of white on black), Klaasikillumäng (Erkki-Sven Tüür, Tallinnfilm 1985: cracked glass) and Hingus (Sven Grünberg, Riga 1987: white sparks scattering on black) — closing on a 1989 computer-video showreel. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (ERR corner bug cropped off the top, non-square SAR 3:4 normalised to square-pixel 4:3)",
+  "takedown": false
+}

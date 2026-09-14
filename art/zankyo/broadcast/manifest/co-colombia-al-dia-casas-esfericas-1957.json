@@ -1,0 +1,22 @@
+{
+  "id": "co-colombia-al-dia-casas-esfericas-1957",
+  "title": "Noticiero cinematográfico Colombia al día: casas esféricas, erradicación de la malaria, VIII Vuelta a Colombia — \"…spherical houses, malaria eradication, 8th Tour of Colombia\"",
+  "year": 1957,
+  "src": "https://www.senalmemoria.co/piezas/noticiero-cinematografico-colombia-al-dia-casas-esfericas-erradicacion-de-la-malaria-viii",
+  "license": "unknown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 90.0,
+  "bytes": 778381,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[6.0, 18.0], [24.0, 36.0], [108.0, 120.0], [158.0, 188.0], [296.0, 308.0], [534.0, 546.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Colombia, Spanish: DINAPE state newsreel, 21 Nov 1957. Windows: the Colombia al Día masthead and 'Noticias de la semana'; the Avianca arrival at San Andrés; a film crew's camera at Zipaquirá; LONG — the German spherical houses, 4.5 m domes being bought by the Belgian Congo, craned down, entered, lived in (a man takes coffee and a newspaper inside one); the Tepexpan skull; the VIII Vuelta a Colombia on the road. Fetched from RTVC's own Señal Memoria YouTube channel (https://www.youtube.com/watch?v=m36XxYB43AY); cut from a de-watermarked crop (crop=667:500:317:90) removing the Señal Memoria bug and the burned-in ARCHIVO CINEMATECA INRAVISION caption bar",
+  "takedown": false
+}

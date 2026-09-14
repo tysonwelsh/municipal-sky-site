@@ -1,0 +1,79 @@
+{
+  "id": "in-surabhi-computer-art-1991",
+  "title": "Conversation on Computer Art — सुरभि / Surabhi (Doordarshan)",
+  "year": 1991,
+  "src": "https://ncaa.gov.in/repository/search/displaySearchRecordPreview/CVI-SUR_R_173-UMHB/Conversation%20on%20Computer%20Art",
+  "license": "Cinema Vision India — all rights reserved (as found)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.1,
+  "durS": 90.0,
+  "bytes": 770618,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      78.0
+    ],
+    [
+      78.0,
+      90.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      44.0,
+      56.0
+    ],
+    [
+      102.0,
+      114.0
+    ],
+    [
+      636.0,
+      648.0
+    ],
+    [
+      783.0,
+      795.0
+    ],
+    [
+      1059.0,
+      1089.0
+    ],
+    [
+      819.0,
+      831.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Surabhi feature, U-matic hi-band master, 21.04.1991, English: Luku Sanyal with the painter Akbar Padamsee and Atul on what a computer does to a painting. Windows 1-2 Padamsee in the computer room, then a burst of video breakup and his own portrait resolving on a CRT; 3 more breakup over a paint-program figure study; 4 and 6 the operator at the workstation; 5 (long) Sanyal to camera. The red-painting sequence and the tape's last two minutes carry no audio and are not used. Cut from spans fetched over ncaa.gov.in's iOS HLS path (iPhone User-Agent required); un-fetched spans are black filler so the timeline - and srcWindows - match the original tape.",
+  "takedown": false
+}

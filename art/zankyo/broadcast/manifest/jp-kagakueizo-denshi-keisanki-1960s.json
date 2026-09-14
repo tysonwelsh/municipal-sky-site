@@ -1,0 +1,22 @@
+{
+  "id": "jp-kagakueizo-denshi-keisanki-1960s",
+  "title": "科学技術教育シリーズ 電子計算機 ―機能と構成のあらまし― / Science & Technology Education Series: The Electronic Computer — an outline of its function and construction",
+  "year": 1965,
+  "src": "https://www.kagakueizo.org/movie/industrial/7667/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 日本科学技術映画社 / 企画 全国工業高等学校長協会 / 協賛 富士通信機製造. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 82.17,
+  "bytes": 649924,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 58.08], [58.08, 70.08], [70.08, 82.17]],
+  "srcWindows": [[55.0, 67.0], [176.0, 188.0], [358.0, 370.0], [558.0, 580.0], [768.0, 780.0], [966.0, 978.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japanese sponsored教育 film, ja narration: the mainframe explained to technical-high-school students — machine room, paper-tape reader, binary pulse arithmetic, the コアマトリックス core plane in macro, an oscilloscope trace, a river-control telemetry panel, tape decks. 文部省選定; Fujitsu-sponsored. NO YEAR IS STATED by the source (科学映像館 files it under 不明); the machine is transistor-and-core, so 1960s. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/denshikeisanki.mp4); pre-cropped to drop the NPO caption strip burned across the top of every frame. — year estimated: source undated (site files it under 不明), transistor-and-core machine, Fujitsu-sponsored, so mid-1960s.",
+  "takedown": false
+}
