@@ -77,6 +77,32 @@ if ($zk_a0 === false || $zk_b0 === false) {
     <button type="button" id="zrl-next">next window ▸</button>
     <button type="button" id="zrl-cancel">cancel queued</button>
   </div>
+  <!-- 形 THE SHAPE OF THE RECEPTION (PLAN-SIGNAL-SHAPES §4.3). The lab's reason
+       for existing is A/B on the SAME material: 戻 against 常 on one window, a
+       lingering loss against a cut, eight seconds on air against thirty. The
+       controls below force one reception's shape and nothing else — the
+       lottery, the ladder, the hold, the tube and the VFD are all the
+       production path. "as drawn" hands it back to the night's own draw. -->
+  <div class="zrl-row zrl-shape">
+    <label>body <select id="zrl-body">
+      <option value="">as drawn</option>
+      <option value="jou">常 ordinary — one piece</option>
+      <option value="modori">戻 return — lost, then back later</option>
+      <option value="dan">断 broken carrier — holes</option>
+      <option value="sou">走 scan — two stations</option>
+    </select></label>
+    <label>entry <select id="zrl-entry">
+      <option value="soku">即 snap</option>
+      <option value="tan">探 hunt</option>
+      <option value="fu">浮 drift in</option>
+    </select></label>
+    <label>exit <select id="zrl-exit">
+      <option value="setsu">切 cut</option>
+      <option value="zan">残 lingering</option>
+      <option value="zetsu">絶 mid-word</option>
+    </select></label>
+    <label>on air <input type="range" id="zrl-budget" min="8" max="40" step="1" value="20" /> <b id="zrl-budget-v">20 s</b></label>
+  </div>
   <div class="zrl-windows" id="zrl-windows"></div>
   <div class="zrl-state" id="zrl-state">—</div>
   <div class="zrl-log" id="zrl-log">ready</div>
@@ -88,6 +114,8 @@ if ($zk_a0 === false || $zk_b0 === false) {
 .zrl-sub { color: #8f879c; font-size: 0.7rem; letter-spacing: 0.08em; }
 .zrl p { color: #8f879c; font-size: 0.8rem; max-width: 74ch; line-height: 1.5; }
 .zrl-row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin: 1rem 0 0.6rem; font-size: 0.78rem; }
+.zrl-shape { border-top: 1px solid #2c2734; padding-top: 0.7rem; }
+.zrl-shape input[type=range] { width: 9rem; vertical-align: middle; }
 .zrl-row select, .zrl-row button { font: inherit; font-size: 0.78rem; background: #1a1620; color: #e6dff0; border: 1px solid #4a3f5a; border-radius: 4px; padding: 0.35rem 0.5rem; cursor: pointer; }
 .zrl-row button:hover, .zrl-win:hover { border-color: #a58cff; }
 .zrl-toggle i { color: #6f6880; font-style: normal; }
@@ -124,6 +152,10 @@ if ($zk_a0 === false || $zk_b0 === false) {
   var sel = document.getElementById("zrl-reel"), host = document.getElementById("zrl-windows");
   var stateEl = document.getElementById("zrl-state"), logEl = document.getElementById("zrl-log");
   var sliceEl = document.getElementById("zrl-slice"), legalEl = document.getElementById("zrl-legal");
+  var bodyEl = document.getElementById("zrl-body"), entryEl = document.getElementById("zrl-entry"),
+      exitEl = document.getElementById("zrl-exit"), budgetEl = document.getElementById("zrl-budget"),
+      budgetVEl = document.getElementById("zrl-budget-v");
+  if (budgetEl) budgetEl.addEventListener("input", function () { budgetVEl.textContent = budgetEl.value + " s"; });
   var pool = [], cur = null, nextWi = 0;
 
   function log(msg) { logEl.textContent = (new Date().toISOString().slice(11, 19) + "  " + msg + "\n" + logEl.textContent).slice(0, 4000); }
@@ -186,13 +218,18 @@ if ($zk_a0 === false || $zk_b0 === false) {
     if (!d) { log("the receiver is not loaded"); return; }
     [].forEach.call(host.children, function (c) { c.classList.remove("is-queued", "is-seated", "is-now"); });
     var wantWhole = !sliceEl.checked, legal = legalEl.checked;
-    var r = legal ? d.seatWindow(cur.id, i, { whole: wantWhole })
-                  : d.seatWindowNow(cur.id, i, { whole: wantWhole });
+    // 形: null hands the shape back to the night's own draw
+    var bodyV = bodyEl ? bodyEl.value : "";
+    var shape = bodyV && d.shapeFor ? d.shapeFor({ body: bodyV, entry: entryEl.value, exit: exitEl.value, budgetS: +budgetEl.value }) : null;
+    var opts = { whole: wantWhole, shape: shape };
+    var r = legal ? d.seatWindow(cur.id, i, opts)
+                  : d.seatWindowNow(cur.id, i, opts);
     nextWi = (i + 1) % cur.windows.length;
     if (r && r.ok) {
       btn.classList.add(r.now ? "is-now" : "is-seated");
       countdownTo = r.now ? r.t0 : null;
       log((r.now ? "PLAYING NOW" : "SEATED") + " window " + i + " · " + (r.whole ? "whole" : "slice") +
+          (shape ? " · " + shape.body + "/" + shape.entry + "/" + shape.exit + " · asked " + shape.budgetS + "s" : "") +
           " · in " + r.inS.toFixed(1) + "s · hold " + r.holdS.toFixed(1) + "s" +
           (r.now ? " · tunes in in " + r.leadS.toFixed(1) + "s" : " · t0 " + r.t0 + "s"));
     } else if (legal) {

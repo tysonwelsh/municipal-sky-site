@@ -174,7 +174,9 @@ const SIGNAL_MOCK = process.env.ZK_SIGNAL_MOCK || "ready";
 // be seated.
 const MANIFEST_TEXT = (() => {
   let raw;
-  try { raw = fs.readFileSync(path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; }
+  // ZK_MANIFEST points at another manifest — the way to hear what the pool
+  // WOULD do once §5's long windows exist, without cutting a single reel.
+  try { raw = fs.readFileSync(process.env.ZK_MANIFEST || path.join(__dirname, "broadcast", "manifest.json"), "utf8"); } catch (e) { return "[]"; }
   const want = process.env.ZK_REELS;
   if (!want) return raw;
   try {
@@ -481,10 +483,27 @@ const signalVocab = (() => {
     // exemption is for that one named voice and no other, which is what makes
     // the count still worth reading.
     const por = rx && rx.porous;
+    // §3.5 — TWO EXEMPTIONS, AND ONLY TWO. The hold used to be one block from
+    // the first static to the last, so any melodic note inside it was an
+    // intrusion. A reception that breaks and returns RELEASES the air where the
+    // carrier is lost, and a porous reception leaves one named voice out of the
+    // hold altogether — both deliberate, both the owner's ask. Everything else
+    // inside a reception is still a fault, which is what keeps this gate worth
+    // reading: the exemptions are for a named voice and for a named span, never
+    // for "it was a shaped reception".
+    const gapAt = (e) => {
+      if (!rx) return false;
+      for (let gi = 0; gi < rx.gaps.length; gi++) {
+        const g = rx.gaps[gi], seg = rx.segments[gi + 1], gEnd = seg ? seg.atS : g.atS + g.durS;
+        if (e >= g.atS && e < gEnd) return true;
+      }
+      return false;
+    };
     for (const n of notes) {
       if (!(MEL[n.layer] || n.layer === "pa")) continue;
       if (n.t < t0 + 1 || n.t > tEnd) continue;
       if (por && n.layer === por) continue;
+      if (gapAt(n.t - t0)) continue;
       notSilent++;
       if (intruders.length < 6) intruders.push(n.layer + " @" + n.t.toFixed(1) + " (" + (n.t - t0).toFixed(1) + "s into " + Math.round(t0) + "s" + (rx ? " · " + rx.body + "/" + rx.entry + "/" + rx.exit : "") + ")");
     }
@@ -522,6 +541,8 @@ const signalVocab = (() => {
   // whether the frequency constant is doing anything or whether the room is.
   {
     const pl = runA.Z.getPlacement ? runA.Z.getPlacement() : null;
+    if (pl && pl.seats) { const b = {}; for (const s2 of pl.seats) b[s2.body] = (b[s2.body] || 0) + 1;
+      console.log("seating bodies (as SEATED, before the receiver's window): " + JSON.stringify(b)); }
     if (pl) console.log("seating: " + pl.total + " seated · lost " + pl.lost + " · overflow " + pl.overflow +
       " · jo " + Math.round(100 * pl.joShare) + "% (P " + pl.joP + ") · refused by: spacing " + pl.spacing + " guest " + pl.guest + " short " + pl.tooShort + " noT0 " + pl.noT0 +
       (pl.geom && pl.geom.length ? " · wanted/cycle " + JSON.stringify(pl.geom.map((g) => g.want)) : ""));
@@ -833,6 +854,63 @@ if (signalVocab.overlaps > 0) fails.push(signalVocab.overlaps + " overlapping re
       (askMed != null ? " · asked median " + askMed.toFixed(1) + " s" : "") +
       " · achieved " + JSON.stringify(cnt(pres)) + " vs asked " + JSON.stringify(cnt(asked)) + " over [8–12, 12–18, 18–25, 25–32, 32–40]");
     if (lo < 8.0 - 0.05) fails.push("a reception held the air for only " + lo.toFixed(1) + " s (the §2 floor is 8.0)");
+  }
+}
+// §6 R2 — THE SHAPES LINE. What ARRIVED, by body, entry and exit, against the
+// weights in §3.6; which rungs of the degrade ladder were taken and how often;
+// and the two structural assertions a shaped reception can fail silently.
+if (signalVocab.sigs.length) {
+  const rx = signalVocab.sigs.map((x) => x.sig.rx).filter(Boolean);
+  if (rx.length) {
+    const tally = (f) => { const o = {}; for (const r of rx) o[f(r)] = (o[f(r)] || 0) + 1; return o; };
+    const fell = {}; for (const r of rx) for (const f of (r.fell || [])) fell[f] = (fell[f] || 0) + 1;
+    const nCall = rx.filter((r) => r.callback).length, nPor = rx.filter((r) => r.porous).length;
+    console.log("shapes: body " + JSON.stringify(tally((r) => r.body)) + " · entry " + JSON.stringify(tally((r) => r.entry)) +
+      " · exit " + JSON.stringify(tally((r) => r.exit)) + " · 同 callback " + nCall + " · 尺 porous " + nPor +
+      " · degraded " + JSON.stringify(fell) + " of " + rx.length);
+    // A PIECE MUST NOT OVERLAP THE ONE BEFORE IT, and a gap must sit between
+    // them. Cheap to assert, impossible to hear as anything but a glitch.
+    let badSeg = 0;
+    for (const r of rx) for (let i = 1; i < r.segments.length; i++) {
+      const prev = r.segments[i - 1];
+      if (r.segments[i].atS < prev.atS + prev.onS + (prev.holeS || 0) - 1e-6) badSeg++;
+    }
+    if (badSeg) fails.push(badSeg + " reception(s) with overlapping pieces");
+    // 戻 THE RETURN IS ALWAYS LATER IN THE SOURCE. This is the promise the body
+    // makes — "the transmission went on while we lost it" — and the one thing
+    // that would make it a lie is an in-point that went backwards.
+    let badBack = 0;
+    for (const r of rx) if (r.body === "modori") for (let i = 1; i < r.segments.length; i++) {
+      const a2 = r.segments[i - 1], b2 = r.segments[i];
+      if (a2.reel === b2.reel && b2.inS <= a2.inS) badBack++;
+    }
+    if (badBack) fails.push(badBack + " return(s) whose second piece was not later in the source");
+    // §3.5 — DOES THE AIR ACTUALLY OPEN? Two counts, because both are claims
+    // this phase makes and neither is visible in the silence gate above:
+    //   OVER   the permitted voice's notes over a porous signal. If this is 0
+    //          the feature is declared and inert.
+    //   IN-GAP notes by any melodic voice inside a carrier-lost gap — the crew
+    //          coming in where the station is not.
+    //   RAN-IN a note that started in a gap and was still sounding when the
+    //          signal came back. The footprint test is supposed to make this
+    //          impossible; it is counted rather than assumed, so §3.5's
+    //          fallback would be a measured decision and not a guess.
+    let over = 0, inGap = 0, ranIn = 0;
+    const MELP = { shakuhachi: 1, koto: 1, shamisen: 1, hichiriki: 1, biwa: 1, vox: 1, pa: 1 };
+    for (const s of signalVocab.sigs) {
+      const t0 = s.sig.t0, r = s.sig.rx; if (!r) continue;
+      for (const n of notes) {
+        if (!MELP[n.layer]) continue;
+        const e = n.t - t0; if (e < 0 || e > r.spanS) continue;
+        if (r.porous && n.layer === r.porous) over++;
+        for (let gi = 0; gi < r.gaps.length; gi++) {
+          const g = r.gaps[gi], seg = r.segments[gi + 1], gEnd = seg ? seg.atS : g.atS + g.durS;
+          if (e >= g.atS && e < gEnd) { inGap++; if (e + (n.dur || 0) > gEnd) ranIn++; }
+        }
+      }
+    }
+    console.log("the air: 尺 " + over + " note(s) over a porous signal · " + inGap + " in a carrier-lost gap · " + ranIn + " ran into the relock");
+    if (ranIn > 0) fails.push(ranIn + " note(s) ran from a gap into the relock");
   }
 }
 // THE FREQUENCY, AS A RATE PER HOUR. §7 q3: "signals 75 % more frequent than

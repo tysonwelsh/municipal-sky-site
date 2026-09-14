@@ -165,7 +165,7 @@
   // owner hears ONE change at a time and the harness measures one variable
   // against the same seeds. The draws are taken either way, so turning this on
   // does not move the stream by itself; it changes what the numbers MEAN.
-  var SHAPES_ON = false;
+  var SHAPES_ON = true;
 
   // ---- §4.1 THE DRAW AT PLAN TIME ------------------------------------------
   // WHO DRAWS WHAT, and why the line falls here. The placement in
@@ -216,6 +216,43 @@
       acc += b[2];
     }
     return BUDGET_MIN_S;
+  }
+  // §7 q5 — THE MANUAL PATHS DRAW A SHAPE TOO. The ♪ audition, the 選局 scan
+  // and the tuning dial are how the owner finds out what a signal is, and what
+  // a signal is has changed. They draw from the same table on whatever stream
+  // they already use, so a manual seat is as reproducible as a planned one.
+  function manualShape(R) {
+    var r = [], i;
+    for (i = 0; i < SHAPE_DRAWS; i++) r.push(R.next());
+    return drawShape(r);
+  }
+  // §4.1 THE LADDER AT PLAN TIME. A shaped reception needs more room than a
+  // plain one — 戻's two gaps alone are six to thirty seconds — so a seating
+  // that simply LOSES what will not fit ends up seating mostly 常, and the
+  // owner's "one reception in three is shaped" quietly becomes one in six.
+  // MEASURED before this existed: 24 shaped draws of 144 seated receptions,
+  // 17 %, against the 33 % §3.6 asks for. So the seating walks the same ladder
+  // the receiver walks: the shape gives up its parts in order rather than
+  // giving up its seat. Returns null when there is nothing left to give.
+  function shrinkShape(sh) {
+    var s2 = { budgetS: sh.budgetS, body: sh.body, entry: sh.entry, exit: sh.exit, entryS: sh.entryS, exitS: sh.exitS,
+      gaps: sh.gaps.slice(), holes: sh.holes.slice(), pieces: sh.pieces, lockS: sh.lockS,
+      leadS: sh.leadS, holdLeadS: sh.holdLeadS, tailS: sh.tailS, silS: sh.silS, fell: (sh.fell || []).slice() };
+    var what = null;
+    if (s2.pieces > 2) { s2.pieces = 2; s2.gaps = s2.gaps.slice(0, 1); what = "second return"; }
+    else if (s2.holes.length > 1) { s2.holes = s2.holes.slice(0, 1); what = "second hole"; }
+    else if (s2.exit === "zan") { s2.exit = "setsu"; s2.exitS = LOSS_MIN_S + LOSS_SPAN_S * 0.5; what = "the lingering exit"; }
+    else if (s2.entry !== "soku") { s2.entry = "soku"; s2.entryS = TUNE_S; what = "the hunt"; }
+    else if (s2.body !== "jou") { s2.body = "jou"; s2.gaps = []; s2.holes = []; s2.pieces = 1; what = "the shape"; }
+    else if (s2.budgetS > BUDGET_MIN_S + 2) { s2.budgetS = Math.max(BUDGET_MIN_S, s2.budgetS * 0.7); what = "some of the budget"; }
+    else return null;
+    s2.fell.push(what);
+    var gapS = 0, i;
+    for (i = 0; i < s2.gaps.length; i++) gapS += s2.gaps[i] + (s2.body === "modori" ? MOD_RELOCK_S : 0);
+    var holeS = 0; for (i = 0; i < s2.holes.length; i++) holeS += s2.holes[i];
+    s2.spanS = s2.entryS + s2.budgetS + gapS + holeS + s2.exitS;
+    s2.reachS = s2.spanS + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S);
+    return s2;
   }
   // The shape, and the room it needs. Everything the placement has to know.
   function drawShape(r) {
@@ -270,16 +307,40 @@
   //
   // planTimes() is the ONE place the timeline is derived, so the graph, the
   // tube and the air hold cannot disagree about when a piece starts.
+  // WHAT THE ARRIVAL AND THE DEPARTURE COST THE WINDOW. A reception's entry and
+  // exit are wall time; only part of them is time the REEL is running, and that
+  // part is all the window has to pay for.
+  //   即 the snap  — 0.4 s, as it always was: the reel is under the tune-in.
+  //   浮 the drift — the last three seconds. The signal surfaces over six to
+  //     ten, but below a tenth of peak there is nothing on the window to hear,
+  //     so the reel joins for the audible part and the static carries the rest.
+  //   探 the hunt  — 0.4 s. The hunt is the DIAL, not the station: the glimpses
+  //     are bursts of the band's own noise and the picture tearing out of the
+  //     snow, and the station itself arrives at the lock. Paying for the whole
+  //     hunt out of a 12 s window would cost eight seconds of broadcast to hear
+  //     four bursts of static, which is the wrong trade in both directions.
+  // The EXIT is capped at three seconds for the same reason: past that the
+  // envelope is under 20 % of peak and falling, and the reel running off the
+  // end of its window there is the tolerance §11.2 already documents for the
+  // loss ramp — stated here rather than discovered later.
+  var ENTRY_COST = { soku: TUNE_S, tan: TUNE_S, fu: 3 }, EXIT_MAX_COST_S = 3;
+  function entryCostOf(P) { return Math.min(P.entryS, ENTRY_COST[P.entry] != null ? ENTRY_COST[P.entry] : TUNE_S); }
+  function exitCostOf(P) { return Math.min(P.exitS, EXIT_MAX_COST_S); }
   function planTimes(P) {
     var cur = P.entryS, on = 0, i;
     for (i = 0; i < P.segments.length; i++) {
       var s = P.segments[i];
       if (i > 0) { P.gaps[i - 1].atS = cur; cur += P.gaps[i - 1].durS; }
       s.lockAtS = cur; cur += (s.lockS || 0);
-      s.atS = cur; cur += s.onS; on += s.onS;
-      // the source runs under the entry for the first piece (the tune-in is
-      // heard OVER the reel, as it always was) and from the relock after that
-      s.srcFromS = (i === 0) ? 0 : s.lockAtS;
+      s.atS = cur;
+      // 断 A HOLE IS WALL TIME THAT IS NOT ON-AIR TIME. The reel keeps running
+      // through it — no seek, honest time, it comes back where it would be — so
+      // the piece OCCUPIES onS + its holes and CONTRIBUTES onS.
+      cur += s.onS + (s.holeS || 0); on += s.onS;
+      // The source joins where the reel becomes audible — under the tune-in for
+      // a snap, three seconds into a drift, at the lock after a hunt — and at
+      // the relock for every piece after the first.
+      s.srcFromS = (i === 0) ? Math.max(0, P.entryS - entryCostOf(P)) : s.lockAtS;
     }
     P.lossAtS = cur;
     P.spanS = cur + P.exitS;
@@ -289,16 +350,154 @@
     }
     return P;
   }
-  // A RECEPTION FROM ITS SHAPE. At R1 every shape is still 常 the ordinary —
-  // one piece, the whole budget — because SHAPES_ON is false and drawShape
-  // forces it; R2 turns that on and this is where the pieces are cut.
-  function planFor(sh, reel, inS, onS, exitS) {
-    if (!sh || sh.body === "jou") {
+  // §3 THE SHAPE, CUT FROM THE REEL. The seating drew what the reception DOES
+  // (§4.1); this is where the doing meets a particular window of a particular
+  // reel, which is the only place it can be decided. F is a FORK of the signal
+  // stream — pj2-rand derives a fork from the ORIGINAL seed and consumes
+  // nothing from its parent — so every draw here is free: the six draws
+  // choose() has always taken, and weather()'s schedule, stay exactly where
+  // they were. What moves a night is the SHAPE, which is the point, and not a
+  // shift in the stream, which would not be.
+  //
+  // DEGRADE, NEVER REFUSE (§4.1). A budget too small to carry its body, a
+  // window with no later moment left in it, a pool with no second reel for a
+  // scan — each loses the part it cannot have and keeps the rest, down to a
+  // plain hold. A reception always happens.
+  function planShaped(sh, F, o) {
+    var reel = o.reel, win = o.win, rate = o.rate || 1, onS = o.onS, exitS = o.exitS;
+    var body = sh.body, entry = sh.entry;
+    var P = { body: body, entry: entry, exit: sh.exit, entryS: sh.entryS, exitS: exitS,
+      segments: [], gaps: [], holes: [], porous: null, callback: false, glimpses: null, reel2: null };
+    // 探 THE HUNT: two to four glimpses of the picture and a syllable flickering
+    // out of the snow before it locks. Not on-air time — they are the arrival.
+    if (entry === "tan" && P.entryS > 1) {
+      var ng = HUNT_GLIMPSE_MIN + Math.floor(F.next() * (HUNT_GLIMPSE_MAX - HUNT_GLIMPSE_MIN + 1));
+      P.glimpses = [];
+      for (var gj = 0; gj < ng; gj++) {
+        var gd = 0.3 + F.next() * 0.5;
+        var gat = 0.25 + ((gj + F.next() * 0.7) / ng) * Math.max(0.1, P.entryS - gd - 0.4);
+        P.glimpses.push([+gat.toFixed(3), +gd.toFixed(3)]);
+      }
+      P.glimpses.sort(function (a, b) { return a[0] - b[0]; });
+    }
+    if (body === "modori") {
+      // 戻 THE RETURN. A piece of three to ten seconds, the carrier lost, then
+      // the SAME broadcast again LATER IN THE SOURCE — the in-point advances by
+      // the gap × 1–3 (time collapsing: the transmission went on while we lost
+      // it), or, when the window has no room left, the reel's NEXT window,
+      // which is a genuinely later moment because the windows are cut in source
+      // order. If neither is available this is a plain hold instead, which is
+      // also what makes the "always later" assertion in the harness true by
+      // construction rather than by luck.
+      // HOW THE BUDGET IS CUT. Each piece has to fit its own window, so the
+      // ceiling on a piece is what the window can carry after that piece's own
+      // ends (the entry for the first, the relock for the rest, the exit for
+      // the last). Within that, the FIRST piece is the owner's example — "a
+      // piece of 3–10 s, then the carrier lost" — and what is left is shared
+      // across the pieces that follow, evenly enough that none of them is a
+      // fragment and the sum is still the budget.
+      var want = Math.min(sh.pieces, 1 + sh.gaps.length), cuts = [], leftOn = onS, k;
+      var wlHere = win[1] - win[0], ecHere = entryCostOf(P), xcHere = Math.min(exitS, EXIT_MAX_COST_S);
+      var capFirst = Math.max(MOD_PIECE_MIN_S, wlHere - ecHere);
+      var capMid = Math.max(MOD_PIECE_MIN_S, wlHere - MOD_RELOCK_S);
+      var capLast = Math.max(MOD_PIECE_MIN_S, wlHere - MOD_RELOCK_S - xcHere);
+      var p0 = Math.min(capFirst, MOD_PIECE_MIN_S + F.next() * (MOD_PIECE_MAX_S - MOD_PIECE_MIN_S));
+      // …but never so small that what follows cannot fit in the windows it has
+      var restCap = capLast + Math.max(0, want - 2) * capMid;
+      if (leftOn - p0 > restCap) p0 = Math.min(capFirst, leftOn - restCap);
+      p0 = Math.max(MOD_PIECE_MIN_S, Math.min(p0, leftOn - MOD_PIECE_MIN_S * (want - 1)));
+      cuts.push(p0); leftOn -= p0;
+      for (k = 1; k < want; k++) {
+        var share = (k === want - 1) ? leftOn : leftOn / (want - k);
+        var capK = (k === want - 1) ? capLast : capMid;
+        var pc = Math.max(MOD_PIECE_MIN_S, Math.min(capK, share));
+        cuts.push(pc); leftOn -= pc;
+      }
+      if (leftOn > 0.05) cuts[cuts.length - 1] += Math.min(leftOn, Math.max(0, capLast - cuts[cuts.length - 1]));
+      var wi = o.wi, ok = true;
+      for (k = 0; k < cuts.length; k++) {
+        var lockS = k === 0 ? 0 : MOD_RELOCK_S;
+        var needK = (k === 0 ? P.entryS : lockS) + cuts[k] + (k === cuts.length - 1 ? exitS : 0);
+        if (k === 0) { P.segments.push({ inS: o.inS, onS: cuts[k], reel: reel, lockS: 0 }); continue; }
+        var gapS = sh.gaps[k - 1], adv = MOD_ADV_MIN + F.next() * (MOD_ADV_MAX - MOD_ADV_MIN);
+        var prev = P.segments[k - 1];
+        var used = (k - 1 === 0 ? P.entryS : MOD_RELOCK_S) + prev.onS + (prev.holeS || 0);
+        var nextIn = prev.inS + (used + gapS * adv) * rate;
+        if (nextIn + needK * rate <= win[1]) {
+          P.segments.push({ inS: nextIn, onS: cuts[k], reel: reel, lockS: lockS, laterS: +(gapS * adv).toFixed(1), sameWindow: true });
+        } else {
+          var nj = -1, nb = -1, wq, lq;
+          for (wq = wi + 1; wq < reel.windows.length; wq++) {
+            if (wholeAt(reel, wq)) continue;
+            lq = reel.windows[wq][1] - reel.windows[wq][0];
+            if (lq >= needK * rate && lq > nb) { nb = lq; nj = wq; }
+          }
+          if (nj < 0) { ok = false; break; }
+          var laterS = null;
+          try { if (reel.srcWindows && reel.srcWindows[nj] && reel.srcWindows[wi]) laterS = +(reel.srcWindows[nj][0] - reel.srcWindows[wi][1]).toFixed(0); } catch (e) {}
+          P.segments.push({ inS: reel.windows[nj][0], onS: cuts[k], reel: reel, lockS: lockS, laterS: laterS, sameWindow: false });
+          wi = nj; win = reel.windows[nj];
+        }
+      }
+      if (!ok || P.segments.length < 2) return planOne(reel, o.inS, onS, exitS);
+      for (k = 0; k < P.segments.length - 1; k++) P.gaps.push({ durS: sh.gaps[k], sweep: false });
+    } else if (body === "sou") {
+      // 走 THE SCAN: the first station is lost, the dial sweeps, a second locks.
+      // The second reel is drawn from the SAME candidate list the first came
+      // from, so it takes the recent ring and the tide weighting too. Each
+      // piece is at least SCAN_PIECE_MIN_S; a budget that cannot carry two
+      // locks stays one.
+      var wlS = win[1] - win[0], ecS = entryCostOf(P), xcS = Math.min(exitS, EXIT_MAX_COST_S);
+      var capA = Math.max(SCAN_PIECE_MIN_S, wlS - ecS);
+      var half = Math.min(capA, SCAN_PIECE_MIN_S + F.next() * Math.max(0, onS - 2 * SCAN_PIECE_MIN_S));
+      if (onS - half > capA) half = Math.max(SCAN_PIECE_MIN_S, onS - capA);
+      var r2 = o.pickOther ? o.pickOther(F.next()) : null;
+      var need2 = onS - half + xcS;
+      var w2 = -1, w2b = -1, v2, l2b;
+      if (r2) for (v2 = 0; v2 < r2.windows.length; v2++) {
+        if (wholeAt(r2, v2)) continue;
+        l2b = r2.windows[v2][1] - r2.windows[v2][0];
+        if (l2b >= need2 && l2b > w2b) { w2b = l2b; w2 = v2; }
+      }
+      if (onS < 2 * SCAN_PIECE_MIN_S || !r2 || w2 < 0) return planOne(reel, o.inS, onS, exitS);
+      P.segments.push({ inS: o.inS, onS: half, reel: reel, lockS: 0 });
+      P.segments.push({ inS: r2.windows[w2][0] + F.next() * Math.max(0, w2b - need2), onS: onS - half, reel: r2, lockS: 0 });
+      P.gaps.push({ durS: sh.gaps[0], sweep: true });
+      P.reel2 = r2;
+    } else if (body === "dan") {
+      // 断 THE BROKEN CARRIER: one piece with one or two real losses in it. Not
+      // a dropout — the band narrows, the voice ducks under rising static, the
+      // picture tears and rolls, and it comes back WHERE IT WOULD BE.
+      var hs = sh.holes.slice(), tot = 0, hz;
+      for (hz = 0; hz < hs.length; hz++) tot += hs[hz];
+      if (onS < 6 || !hs.length) return planOne(reel, o.inS, onS, exitS);
+      P.segments.push({ inS: o.inS, onS: onS, reel: reel, lockS: 0, holeS: tot });
+      // placed inside the piece, in order, never within 1.5 s of an end or of
+      // each other — a hole at the very edge reads as the entry or the exit
+      var room = onS + tot - 3, at = 1.5;
+      for (hz = 0; hz < hs.length; hz++) {
+        var slot = room / hs.length;
+        var pos = at + F.next() * Math.max(0, slot - hs[hz] - 1.5);
+        P.holes.push({ durS: hs[hz], relS: pos });
+        at = pos + hs[hz] + 1.5;
+      }
+    } else {
+      P.segments.push({ inS: o.inS, onS: onS, reel: reel, lockS: 0 });
+    }
+    planTimes(P);
+    for (var hh = 0; hh < P.holes.length; hh++) P.holes[hh].atS = +(P.segments[0].atS + P.holes[hh].relS).toFixed(3);
+    return P;
+  }
+  // A RECEPTION FROM ITS SHAPE.
+  function planFor(sh, reel, inS, onS, exitS, F, o) {
+    if (!sh) return planOne(reel, inS, onS, exitS);
+    if (sh.body === "jou" || !F) {
       var P = planOne(reel, inS, onS, exitS);
-      if (sh) { P.entry = sh.entry; P.entryS = sh.entryS; P.exit = sh.exit; planTimes(P); }
+      P.entry = sh.entry; P.entryS = sh.entryS; P.exit = sh.exit; planTimes(P);
+      if (F && sh.entry === "tan") { var Q = planShaped(sh, F, o); return Q; }
       return P;
     }
-    return planOne(reel, inS, onS, exitS);   // R2 fills this in
+    return planShaped(sh, F, o);
   }
   // today's clip, exactly: one piece, a snap in, a cut out
   function planOne(reel, inS, onS, exitS) {
@@ -316,16 +515,67 @@
     return false;
   }
   function planReels(P) { var o = [], i; for (i = 0; i < P.segments.length; i++) if (P.segments[i].reel && o.indexOf(P.segments[i].reel) < 0) o.push(P.segments[i].reel); return o; }
+  // THE TUNING ENVELOPE AS A LIST OF DURATIONS, walked from the plan. One
+  // builder for the air and for the ♪ audition, because the audition's whole
+  // job is to show what a signal IS (§7 q5) and an audition with its own
+  // envelope would drift away from the thing it is auditioning.
+  function planEnv(P, peak) {
+    var env = [], eAcc = 0, eg, i;
+    if (P.entry === "tan" && P.glimpses && P.glimpses.length) {
+      // 探 THE HUNT: the dial hunting. Each glimpse is a syllable out of the
+      // snow — a short rise to a fraction of peak and straight back down — and
+      // then the station locks at the end of the entry.
+      for (eg = 0; eg < P.glimpses.length; eg++) {
+        var ga = P.glimpses[eg][0], gdur = P.glimpses[eg][1];
+        env.push([Math.max(0.01, ga - eAcc), 0]);
+        env.push([0.05, peak * 0.55]);
+        env.push([Math.max(0.02, gdur - 0.1), peak * 0.5]);
+        env.push([0.05, 0]);
+        eAcc = ga + gdur;
+      }
+      env.push([Math.max(0.02, P.entryS - eAcc), 0]);
+      env.push([0.25, peak * 0.85]);
+      env.push([Math.max(0, P.segments[0].onS - 0.25 - 1.0), peak]);
+      env.push([1.0, peak]);
+    } else if (P.entry === "fu") {
+      // 浮 THE DRIFT-IN: no snap at all. The signal surfaces from under the
+      // static over the whole entry, a curve rather than a ramp.
+      env.push([P.entryS * 0.45, peak * 0.10]);
+      env.push([P.entryS * 0.35, peak * 0.42]);
+      env.push([P.entryS * 0.20, peak * 0.85]);
+      env.push([1.0, peak]);
+      env.push([Math.max(0, P.segments[0].onS - 1.0), peak]);
+    } else {
+      env.push([P.entryS, peak * 0.85]);
+      env.push([1.0, peak]);
+      env.push([Math.max(0, P.segments[0].onS - 1.0), peak]);
+    }
+    for (i = 1; i < P.segments.length; i++) {
+      var gseg = P.segments[i], ggap = P.gaps[i - 1];
+      env.push([0.12, peak * GAP_FLOOR]);                              // the carrier goes
+      env.push([Math.max(0, ggap.durS - 0.12), peak * GAP_FLOOR]);     // …and stays gone
+      env.push([Math.max(0.02, gseg.lockS), peak]);                    // the relock: found again, short
+      env.push([gseg.onS, peak]);
+    }
+    if (P.exitS > 0.05) {
+      env.push([P.exitS * 0.5, peak * 0.75]); env.push([P.exitS * 0.25, peak * 0.44]);
+      env.push([P.exitS * 0.15, peak * 0.19]); env.push([P.exitS * 0.1, peak * 0.06]);
+    }
+    env.push([0.02, 0]);                                               // 絶 mid-word is this line alone
+    return env;
+  }
   // What the set and the harness are handed: the shape, in plain numbers, with
   // no reel objects in it.
   function planWire(P) {
     var segs = [], i;
-    for (i = 0; i < P.segments.length; i++) segs.push({ atS: +P.segments[i].atS.toFixed(3), onS: +P.segments[i].onS.toFixed(3), lockS: P.segments[i].lockS || 0 });
+    for (i = 0; i < P.segments.length; i++) segs.push({ atS: +P.segments[i].atS.toFixed(3), onS: +P.segments[i].onS.toFixed(3), lockS: P.segments[i].lockS || 0,
+      inS: +P.segments[i].inS.toFixed(3), laterS: P.segments[i].laterS != null ? P.segments[i].laterS : null,
+      reel: (P.segments[i].reel && P.segments[i].reel.id) || null, holeS: P.segments[i].holeS || 0 });
     var gaps = []; for (i = 0; i < P.gaps.length; i++) gaps.push({ atS: +P.gaps[i].atS.toFixed(3), durS: +P.gaps[i].durS.toFixed(3), sweep: !!P.gaps[i].sweep });
     var holes = []; for (i = 0; i < P.holes.length; i++) holes.push({ atS: +P.holes[i].atS.toFixed(3), durS: +P.holes[i].durS.toFixed(3) });
     return { body: P.body, entry: P.entry, exit: P.exit, entryS: +P.entryS.toFixed(3), exitS: +P.exitS.toFixed(3),
       lossAtS: +P.lossAtS.toFixed(3), spanS: +P.spanS.toFixed(3), presenceS: +P.presenceS.toFixed(3),
-      budgetS: P.budgetS != null ? +P.budgetS.toFixed(2) : null, segments: segs, gaps: gaps, holes: holes,
+      budgetS: P.budgetS != null ? +P.budgetS.toFixed(2) : null, fell: P.fell || null, segments: segs, gaps: gaps, holes: holes,
       glimpses: P.glimpses || null, porous: P.porous || null, callback: !!P.callback };
   }
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
@@ -453,7 +703,7 @@
   // footprint check, the deadlines, the hold, the AIR and the tube are all the
   // production path, because a bench that takes a shortcut past those is a
   // bench that agrees with itself and tells the owner nothing.
-  var benchForce = null, benchQueued = null, benchWholeOverride = null;
+  var benchForce = null, benchQueued = null, benchWholeOverride = null, benchShape = null;
   // 1.5 s, not 2.0. MEASURED: at a 2.0 s lead the press-to-SOUND latency in
   // WebKit was 2.97 s — the lead plus the tune-in ramp climbing to audibility —
   // which passes a 3 s gate by thirty milliseconds, i.e. by luck. The element is
@@ -584,6 +834,15 @@
   var recent = [];   // [{ id, cycle }]
   function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
   function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); lastCycleSeen = cycle; while (recent.length > 12) recent.shift(); }
+  // 同 the callback: the last station heard in THIS cycle, if there was one
+  function recentInCycle(cycle) {
+    for (var i = recent.length - 1; i >= 0; i--) if (recent[i].cycle === cycle) {
+      if (!pool) return null;
+      for (var j = 0; j < pool.length; j++) if (pool[j].id === recent[i].id) return pool[j];
+      return null;
+    }
+    return null;
+  }
   var lastCycleSeen = 0;
 
   // §8.1: reels WITH a picture are weighted in the lottery, and 85 % of
@@ -651,6 +910,71 @@
     return !!reel.whole;
   }
   function wholeFits(reel, i) { return (reel.windows[i][1] - reel.windows[i][0]) <= WHOLE_MAX_HOLD_S; }
+  // HOW MUCH ON-AIR TIME A WINDOW CAN SERVE FOR THIS SHAPE — and this is where
+  // the shapes stop being decoration and start being the answer to §2.
+  //
+  // A plain hold is bounded by ONE window: twelve seconds, less the entry and
+  // the exit, is 8.8 s of broadcast and that is the whole of what today's pool
+  // can give a 常. But 戻 takes its pieces from DIFFERENT in-points of the same
+  // window (or from a later window), and 走 takes its second piece from another
+  // reel entirely — so each piece is bounded separately and the reception's
+  // capacity is the SUM. Two pieces of a twelve-second window carry about
+  // 20 s on air; three carry about 32. The owner's spread of 8 to 40 seconds is
+  // partly reachable on today's reels after all, through the shapes rather than
+  // through the re-cut, and the re-cut (§5) then widens 常 to match.
+  //
+  // 断 is the one that costs: it keeps a single piece and the reel runs through
+  // its holes, so its holes come out of the same window.
+  function windowServes(sh, wl, ec, xc) {
+    if (!sh || sh.body === "jou") return wl - ec - xc;
+    var i, holeS = 0;
+    for (i = 0; i < sh.holes.length; i++) holeS += sh.holes[i];
+    if (sh.body === "dan") return wl - ec - holeS - xc;
+    if (sh.body === "sou") return (wl - ec) + (wl - xc);
+    var n = Math.max(2, Math.min(sh.pieces, 1 + sh.gaps.length));
+    var cap = (wl - ec) + (wl - MOD_RELOCK_S - xc);
+    for (i = 2; i < n; i++) cap += wl - MOD_RELOCK_S;
+    return cap;
+  }
+  // §4.1 DEGRADE, NEVER REFUSE — AND IN THIS ORDER. The seating reserved room
+  // for the whole shape; what it could not know is which window the reel would
+  // turn out to have. When the window cannot hold the reception at the §2 floor
+  // of eight seconds on air, the shape gives up its parts one at a time: the
+  // second return, then the lingering exit, then the hunt or the drift, then
+  // the return itself. A plain hold of 8.8 s fits any 12 s window, so the
+  // ladder always ends somewhere.
+  //
+  // Today this ladder runs often, because 1 164 of the pool's 1 349 windows are
+  // twelve seconds long and an 18 s budget with a 9 s exit needs thirty. As the
+  // reels are re-cut (§5) it runs less, and the shapes the owner tuned are the
+  // shapes the owner hears. The harness counts how often each rung is taken.
+  function degradeShape(sh, wl, lossD) {
+    if (!sh) return sh;
+    var s2 = { budgetS: sh.budgetS, body: sh.body, entry: sh.entry, exit: sh.exit, entryS: sh.entryS, exitS: sh.exitS,
+      gaps: sh.gaps.slice(), holes: sh.holes.slice(), pieces: sh.pieces, lockS: sh.lockS, spanS: sh.spanS, fell: [] };
+    var ec = function () { return Math.min(s2.entryS, ENTRY_COST[s2.entry] != null ? ENTRY_COST[s2.entry] : TUNE_S); };
+    var xc = function () { return Math.min(s2.exitS, EXIT_MAX_COST_S); };
+    var served = function () { return windowServes(s2, wl, ec(), xc()); };
+    var rungs = [
+      function () { if (s2.pieces > 2) { s2.pieces = 2; s2.gaps = s2.gaps.slice(0, 1); return "second return"; } if (s2.holes.length > 1) { s2.holes = s2.holes.slice(0, 1); return "second hole"; } return null; },
+      function () { if (s2.exit !== "setsu") { s2.exit = "setsu"; s2.exitS = lossD; return "the lingering exit"; } return null; },
+      function () { if (s2.entry !== "soku") { s2.entry = "soku"; s2.entryS = TUNE_S; return "the hunt"; } return null; },
+      // 断's holes come out of the SAME window as its piece — the reel runs
+      // through them, honestly — so on a twelve-second window a three-second
+      // loss is three seconds of broadcast the reception cannot have. Shorten
+      // the losses before giving up the body: a one-second break in the carrier
+      // is still a break in the carrier, and 断 at all is worth more than 断 at
+      // its drawn length. (Without this rung 断 was seated four times an hour
+      // and aired once: the pool, not the design, was refusing it.)
+      function () { if (s2.holes.length && s2.holes[0] > HOLE_MIN_S) { for (var q = 0; q < s2.holes.length; q++) s2.holes[q] = HOLE_MIN_S; return "the losses shortened"; } return null; },
+      function () { if (s2.body !== "jou") { s2.body = "jou"; s2.gaps = []; s2.holes = []; s2.pieces = 1; return "the shape"; } return null; }
+    ];
+    for (var r = 0; r < rungs.length; r++) {
+      if (served() >= BUDGET_MIN_S) break;
+      var name = rungs[r](); if (name) s2.fell.push(name);
+    }
+    return s2;
+  }
   function longestWindow(reel) { var m = 0; for (var i = 0; i < reel.windows.length; i++) { var l = reel.windows[i][1] - reel.windows[i][0]; if (l > m) m = l; } return m; }
   // ---- §14 FOOTPRINT-AWARE LEGALITY ----------------------------------------
   // THE SPACING IS FOOTPRINT-DEPENDENT (orchestrator, 2026-09-09), not a wider
@@ -749,6 +1073,17 @@
               for (gi0 = 0; gi0 < sh.gaps.length; gi0++) gapS += sh.gaps[gi0] + (sh.lockS || 0); }
     var budgetS = sh ? sh.budgetS : holdS;             // what was ASKED for
     var askedS = budgetS;
+    var entryCostS = Math.min(entryS, ENTRY_COST[sh ? sh.entry : "soku"] != null ? ENTRY_COST[sh ? sh.entry : "soku"] : TUNE_S);
+    var exitCostS = Math.min(exitS, EXIT_MAX_COST_S);
+    // §3 THE SHAPE'S OWN STREAM. A fork is derived from the ORIGINAL seed and
+    // takes nothing from its parent, so everything the receiver drew before the
+    // shapes existed — the six draws above, weather()'s schedule in arm() — is
+    // exactly where it was. The fork is named for the reception, so two
+    // receptions in a cycle get different shapes and the same seed gets the
+    // same ones. Its first draw is always the callback, taken whether or not it
+    // can be used, so the draws after it never shift.
+    var F = R.fork ? R.fork("shape:" + cycle + ":" + Math.round((info && info.t0 != null ? info.t0 : 0) * 10) + ":" + (info && info.n != null ? info.n : 0)) : null;
+    var rCall = F ? F.next() : 1;
     var c = { reel: null, win: null, inS: 0, holdS: holdS, lossD: lossD, bell: bell, budgetS: askedS, shape: sh };
     if (!pool || !pool.length) return c;
     var skip = recentIds(cycle), cands = [];
@@ -769,7 +1104,7 @@
     // for the day its windows are re-cut (§5). The test is on the LONGEST window
     // and costs no draw; if it ever empties the candidate set (a one-reel bench
     // pool) the floor yields rather than the night going silent.
-    var need0 = entryS + BUDGET_MIN_S + holeS + exitS, served = [];
+    var need0 = TUNE_S + BUDGET_MIN_S + (LOSS_MIN_S + LOSS_SPAN_S), served = [];
     for (i = 0; i < cands.length; i++) { if (wholeAt(cands[i], 0) || longestWindow(cands[i]) >= need0) served.push(cands[i]); }
     if (served.length && served.length < cands.length) {
       var w2 = [], t2 = 0;
@@ -789,6 +1124,17 @@
     // rReel is already spent, so this costs no randomness and moves no stream.
     var pinR = pinUsed ? null : pinnedReel();
     if (pinR) { reel = pinR; c.pinned = true; for (i = 0; i < cands.length; i++) if (cands[i] === pinR) { reelIdx = i; break; } }
+    // 同 THE CALLBACK (§3.4). The most direct answer to "one signal has no
+    // relation to the next": when a cycle carries more than one reception, a
+    // later one is the SAME station with a later window, one time in four. The
+    // station kept the frequency, and a minute later the same voice is back.
+    // The recent ring has already excluded this reel from the candidates —
+    // that is the ring doing its job — so the callback overrides it the way the
+    // pin does, and costs no draw beyond the one already taken.
+    if (SHAPES_ON && !c.pinned && !benchForce && rCall < CALLBACK_P) {
+      var back = recentInCycle(cycle);
+      if (back && back !== reel) { reel = back; c.callback = true; for (i = 0; i < cands.length; i++) if (cands[i] === back) { reelIdx = i; break; } }
+    }
     // §11.2 TUNED SIGNALS. The drawn window is still DRAWN — rWin is consumed
     // above whatever happens here, so the signal stream never moves — but on a
     // reel that holds a pitch the receiver prefers the window it can land on
@@ -810,15 +1156,16 @@
     // A whole reel is exempt — §14 decides its window on the thought, and a
     // thought is never sliced to fit a budget.
     if (!wholeAt(reel, wi)) {
-      var needW = entryS + budgetS + holeS + exitS, wiBest = wi, wiLong = wi, wl0 = -1, wq, wjj, lq;
+      var wiBest = -1, wiLong = wi, wl0 = -1, wq, wjj, lq;
+      var here = reel.windows[wi][1] - reel.windows[wi][0];
       for (wq = 0; wq < reel.windows.length; wq++) {
         wjj = (wi + wq) % reel.windows.length;
         if (wholeAt(reel, wjj)) continue;
         lq = reel.windows[wjj][1] - reel.windows[wjj][0];
         if (lq > wl0) { wl0 = lq; wiLong = wjj; }
-        if (lq >= needW && wiBest === wi && (reel.windows[wi][1] - reel.windows[wi][0]) < needW) { wiBest = wjj; }
+        if (wiBest < 0 && windowServes(sh, lq, entryCostS, exitCostS) >= budgetS) wiBest = wjj;
       }
-      if ((reel.windows[wi][1] - reel.windows[wi][0]) < needW) wi = (wiBest !== wi) ? wiBest : wiLong;
+      if (windowServes(sh, here, entryCostS, exitCostS) < budgetS) wi = (wiBest >= 0) ? wiBest : wiLong;
     }
     // §14 WINDOW SELECTION, now against the ROOM and not just the ceiling.
     // Order, and it is the orchestrator's: the drawn window if it fits; else
@@ -853,7 +1200,7 @@
             if (!cand || !cand.windows || !cand.windows.length) continue;
             for (var cw = 0; cw < cand.windows.length; cw++) {
               var cl = cand.windows[cw][1] - cand.windows[cw][0];
-              var chold = wholeAt(cand, cw) ? Math.min(cl, WHOLE_MAX_HOLD_S) : Math.min(budgetS, Math.max(3, cl - entryS - holeS - exitS));
+              var chold = wholeAt(cand, cw) ? Math.min(cl, WHOLE_MAX_HOLD_S) : Math.min(budgetS, Math.max(3, cl - entryCostS - holeS - exitCostS));
               if (fitsHold(info, chold, lossD, sh)) { reel = cand; wi = cw; swapped = true; break; }
             }
           }
@@ -887,15 +1234,32 @@
     // longest this window can carry and the harness reports ASKED against
     // ACHIEVED, so the gap between the owner's table and the pool is a number
     // and not an impression. It closes as the long windows arrive.
+    // §4.1 THE LADDER, walked before the budget is cut. A shape that cannot
+    // reach the §2 floor on this window gives up its parts in order rather than
+    // giving up its seconds; only when it is a plain hold does the budget
+    // itself shrink.
+    if (sh && !whole) {
+      sh = degradeShape(sh, wl, lossD);
+      entryS = sh.entryS; exitS = sh.exitS;
+      entryCostS = Math.min(entryS, ENTRY_COST[sh.entry] != null ? ENTRY_COST[sh.entry] : TUNE_S);
+      exitCostS = Math.min(exitS, EXIT_MAX_COST_S);
+      holeS = 0; for (var hq = 0; hq < sh.holes.length; hq++) holeS += sh.holes[hq];
+      c.fell = sh.fell;
+    }
     holdS = budgetS;
-    var need = entryS + holdS + holeS + exitS;
+    var canServe = windowServes(sh, wl, entryCostS, exitCostS);
     if (whole) {
       // The thought sets the hold, not the budget. rHold and rIn are still
       // CONSUMED above — six draws, always — so a whole reel entering the pool
       // moves no other night's stream.
       holdS = Math.min(wl, WHOLE_MAX_HOLD_S);
-      need = entryS + holdS + holeS + exitS;
-    } else if (need > wl) { holdS = Math.max(3, wl - entryS - holeS - exitS); need = entryS + holdS + holeS + exitS; }
+    } else if (holdS > canServe) {
+      holdS = Math.max(3, canServe);
+    }
+    // the FIRST piece's share of the window, which is what the in-point below
+    // has to leave room for
+    var need = entryCostS + (sh && sh.body !== "jou" && sh.body !== "dan" ? Math.min(holdS, wl - entryCostS) : holdS) + (sh && sh.body === "dan" ? holeS : 0) + ((!sh || sh.body === "jou" || sh.body === "dan") ? exitCostS : 0);
+    if (need > wl) need = wl;
     c.reel = reel; c.win = win; c.holdS = holdS; c.whole = whole; c.degraded = +(askedS - holdS).toFixed(3);
     // The in-point does carry the rate: `need` wall seconds eat need × r
     // SOURCE seconds, so a sped-up reel starts nearer the window's head. When
@@ -904,14 +1268,42 @@
     // the signal is already under 6 % of peak.
     // From the window's START on a whole reel — there is no slice to place.
     c.inS = whole ? win[0] : win[0] + rIn * Math.max(0, wl - need * tune.rate);
+    if (sh) { c.shape = sh; }
     c.entryS = entryS; c.exitS = exitS;
     c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents;
     // THE RECEPTION PLAN. At R0 it is today's clip said in the new grammar —
     // one piece, a snap in, a cut out — and everything downstream reads it
     // instead of the three loose numbers. The shapes of §3 fill it in later
     // without a second code path anywhere.
-    c.rx = planFor(sh, reel, c.inS, holdS, exitS);
+    // §3 THE SHAPE'S OWN DRAWS, on a fork of the signal stream. A fork is
+    // derived from the ORIGINAL seed and takes nothing from its parent, so
+    // everything above this line — the six draws, and weather()'s schedule in
+    // arm() — is exactly where it was before the shapes existed.
+    var self = reel;
+    c.rx = planFor(sh, reel, c.inS, holdS, exitS, F, {
+      reel: reel, win: win, wi: wi, rate: tune.rate || 1, inS: c.inS, onS: holdS, exitS: exitS,
+      // 走 draws its second station from the SAME candidate list, so the recent
+      // ring and the tide weighting apply to it too. Never the reel it is
+      // leaving — a scan that lands back on the same station is not a scan.
+      pickOther: function (u) {
+        if (cands.length < 2) return null;
+        var j = Math.floor(u * cands.length); if (cands[j] === self) j = (j + 1) % cands.length;
+        return cands[j];
+      }
+    });
     c.rx.budgetS = askedS;
+    c.rx.fell = (c.fell && c.fell.length) ? c.fell : null;
+    // §3.5 THE POROUS HOLD and §3.4 THE CALLBACK are drawn here and USED later:
+    // the porous voice by arm(), which leaves it out of the hold; the callback
+    // by the reel choice above, through recentInCycle().
+    if (F && SHAPES_ON) {
+      if (F.next() < POROUS_P && !c.rx.porous) {
+        var pu = F.next(), pacc = 0, pv = POROUS_VOICES[0];
+        for (var pq = 0; pq < POROUS_VOICES.length; pq++) { pacc += POROUS_W[pq]; if (pu < pacc) { pv = POROUS_VOICES[pq]; break; } }
+        c.rx.porous = pv;
+      }
+      c.rx.callback = !!c.callback;
+    }
     c.lossD = c.rx.exitS;
     return c;
   }
@@ -1116,8 +1508,41 @@
     // held both at arm and at fire, in the same commit, without anyone
     // remembering to.
     var plan = {}, pk = Object.keys(wx.rel);
-    for (var pv = 0; pv < pk.length; pv++) plan[pk[pv]] = { from: pFrom, until: pUntil + wx.rel[pk[pv]] };
-    plan.pa = { from: pFrom, until: pUntil };                 // the PA is held too, and for the same reason fire() holds it
+    // §3.5 THE GAPS ARE RELEASED. A reception's hold is the SPANS its pieces
+    // occupy, not one block from the first static to the last: where the
+    // carrier is lost for six to fifteen seconds the crew may come in, and
+    // because a claim is tested against its whole footprint a phrase only lands
+    // there if it fits in the gap and is finished before the station returns.
+    // The relock keeps a second of margin either side so a note cannot be
+    // playing into the moment the signal comes back.
+    var GAP_EDGE_S = 1.0;
+    var spans = null, P0 = c.rx;
+    if (P0 && P0.gaps.length) {
+      spans = []; var cursor = pFrom;
+      for (var gq = 0; gq < P0.gaps.length; gq++) {
+        var gStart = t0k + P0.gaps[gq].atS, gEnd = t0k + (P0.segments[gq + 1] ? P0.segments[gq + 1].atS : P0.gaps[gq].atS + P0.gaps[gq].durS);
+        if (gEnd - gStart > 2 * GAP_EDGE_S + 1.5) { spans.push({ from: cursor, until: gStart + GAP_EDGE_S }); cursor = gEnd - GAP_EDGE_S; }
+      }
+      spans.push({ from: cursor, until: pUntil });
+    }
+    var spansFor = function (rel) {
+      if (!spans) return { from: pFrom, until: pUntil + rel };
+      var out = [], sq;
+      for (sq = 0; sq < spans.length; sq++) out.push({ from: spans[sq].from, until: spans[sq].until + (sq === spans.length - 1 ? rel : 0) });
+      return out;
+    };
+    for (var pv = 0; pv < pk.length; pv++) {
+      // §3.5 THE POROUS HOLD: thirty receptions in a hundred leave ONE melodic
+      // voice out of the hold altogether, drawn toward the sparse ones — the
+      // shakuhachi, the biwa, the hichiriki — and never the intercom, which is
+      // a second speaker and would read as part of the broadcast. It is not
+      // asked to play over the signal; it is simply not forbidden to, so what
+      // the listener hears is the crew occasionally deciding the transmission
+      // is worth answering. Most receptions still silence them all.
+      if (P0 && P0.porous === pk[pv]) continue;
+      plan[pk[pv]] = spansFor(wx.rel[pk[pv]]);
+    }
+    plan.pa = spansFor(0);                 // the PA is held too, and for the same reason fire() holds it
     // Written as the SIGNAL'S hold, not as a "plan" — because it is not a plan
     // any more, it is the exact window. That also makes signalUp() see it,
     // which is what lets 崩, 鏡 and the melodic bodies yield to a broadcast
@@ -1345,7 +1770,7 @@
     var got = false, da = null;
     for (var attempt = 0; attempt < 6; attempt++) {
       if (da) { da.dead = true; qDrop(da); try { tl().airHoldClear(da.holdId); } catch (e) {} }   // each retry is a whole reception; the ones not taken leave no claim behind
-      da = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R.fork("try:" + attempt));
+      da = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5, shape: manualShape(R.fork("shape:" + attempt)) }, t0), R.fork("try:" + attempt));
       if (!da) return "snow";
       if (!da.reel || !da.reel.audioOnly) { got = true; break; }
     }
@@ -1586,6 +2011,58 @@
         absDrops.push([da, dd]);
       }
       hn.connect(hb); hb.connect(hz); hn.start(t0, 11); hn.stop(cut + 0.3);
+      // 無信号 THE CARRIER LOST — the sound of a gap and of a hole (§3.1). The
+      // seeded dropouts above duck the reel under a burst of static; this is the
+      // other thing, and it has to be louder and wider, because the station is
+      // actually GONE for six to fifteen seconds and the receiver is left with
+      // the band's own noise. It is its own branch and not the holes' louder
+      // cousin for one reason: it joins BEFORE the tuning envelope so the gap's
+      // static does not fade with the reel, which is what makes a gap sound
+      // like a lost carrier rather than like a fade-out.
+      //
+      // 走's gap is the 掃引 sweep: the same noise with its band swept across
+      // the dial, which is what the ear reads as a hand on the knob.
+      var lostSpans = [], lz = null;
+      for (i = 0; i < P.gaps.length; i++) {
+        var seg1 = P.segments[i + 1];
+        lostSpans.push({ at: P.gaps[i].atS, dur: (seg1 ? seg1.atS : P.gaps[i].atS + P.gaps[i].durS) - P.gaps[i].atS, sweep: !!P.gaps[i].sweep, deep: true });
+      }
+      for (i = 0; i < P.holes.length; i++) lostSpans.push({ at: P.holes[i].atS, dur: P.holes[i].durS, sweep: false, deep: false });
+      if (lostSpans.length) {
+        // ONE NOISE SOURCE, TWO BRANCHES. `hn` above already runs from t0 to
+        // cut + 0.3, which is exactly the span this needs, and the critic's
+        // ceiling of 110 concurrent sources is the tightest budget the station
+        // has — measured at 104 on seed 3042 with a second source here, six
+        // short of the bound. A BufferSource is not free and a second copy of
+        // the same white noise is not a different sound; the two branches get
+        // their own filter and their own gain, which is where the difference
+        // actually lives.
+        var lb = N(c.createBiquadFilter());
+        lz = N(c.createGain());
+        lb.type = "bandpass"; lb.Q.setValueAtTime(0.9, t0);
+        lb.frequency.setValueAtTime(1400, t0);
+        lz.gain.setValueAtTime(0, t0);
+        hn.connect(lb); lb.connect(lz); lz.connect(T.lg("broadcast"));
+        for (i = 0; i < lostSpans.length; i++) {
+          var LS = lostSpans[i], la = t0 + LS.at, ld = Math.max(0.1, LS.dur);
+          var lvl = (LS.deep ? 0.16 : 0.09) * db2lin(a.reel.gain);
+          lz.gain.setValueAtTime(0, la);
+          lz.gain.linearRampToValueAtTime(lvl, la + Math.min(0.5, ld * 0.25));
+          lz.gain.setValueAtTime(lvl, la + ld - Math.min(0.35, ld * 0.25));
+          lz.gain.linearRampToValueAtTime(0, la + ld);
+          if (LS.sweep) {
+            // the dial crossing the band: 400 Hz to 3.2 kHz and back down onto
+            // the station it finds
+            lb.frequency.setValueAtTime(420, la);
+            lb.frequency.exponentialRampToValueAtTime(3200, la + ld * 0.6);
+            lb.frequency.exponentialRampToValueAtTime(1100, la + ld);
+          } else {
+            var lf = 800 + 1400 * (((a.seed || 0) * 0.318 * (i + 1)) % 1);
+            lb.frequency.setValueAtTime(lf, la);
+            lb.frequency.exponentialRampToValueAtTime(lf * 0.7, la + ld);
+          }
+        }
+      }
       // the 3042 codec: a staircase, coarser with the grit. A whisper of dither
       // (texture, unseeded) rides in ahead of it so the quiet between words
       // hisses instead of gating to digital silence — the critic's softener
@@ -1602,20 +2079,24 @@
       // literally — in over 0.4 + 1.0, hold, the four-step loss, the 0.02 cut.
       var sg = N(c.createGain());
       var peak = 0.35 * db2lin(a.reel.gain);
-      var env = [[P.entryS, peak * 0.85], [1.0, peak], [Math.max(0, P.segments[0].onS - 1.0), peak]];
-      for (i = 1; i < P.segments.length; i++) {
-        var gseg = P.segments[i], ggap = P.gaps[i - 1];
-        env.push([0.12, peak * GAP_FLOOR]);                              // the carrier goes
-        env.push([Math.max(0, ggap.durS - 0.12), peak * GAP_FLOOR]);     // …and stays gone
-        env.push([Math.max(0.02, gseg.lockS), peak]);                    // the relock: found again, short
-        env.push([gseg.onS, peak]);
-      }
-      if (P.exitS > 0.05) {
-        env.push([P.exitS * 0.5, peak * 0.75]); env.push([P.exitS * 0.25, peak * 0.44]);
-        env.push([P.exitS * 0.15, peak * 0.19]); env.push([P.exitS * 0.1, peak * 0.06]);
-      }
-      env.push([0.02, 0]);                                               // 絶 mid-word is this line alone
+      var env = planEnv(P, peak);
       PJ.Voice.env(sg.gain, t0, env);
+      // 断 THE HOLES, written over the envelope rather than into it: a hole can
+      // fall anywhere inside a piece and the envelope is a list of durations, so
+      // scheduling them absolutely is both simpler and impossible to get out of
+      // step with the picture, which reads the same numbers. A hole is a real
+      // loss — HOLE_FLOOR is well below DROP_FLOOR — and the band closes over it.
+      for (i = 0; i < P.holes.length; i++) {
+        var ha = t0 + P.holes[i].atS, hd = P.holes[i].durS;
+        sg.gain.setValueAtTime(peak, ha);
+        sg.gain.linearRampToValueAtTime(peak * HOLE_FLOOR, ha + 0.18);
+        sg.gain.setValueAtTime(peak * HOLE_FLOOR, ha + hd - 0.12);
+        sg.gain.linearRampToValueAtTime(peak, ha + hd + 0.22);
+        hp.frequency.setValueAtTime(hpHold, ha); hp.frequency.exponentialRampToValueAtTime(hpHold * 2.2, ha + 0.18);
+        lp.frequency.setValueAtTime(lpHold, ha); lp.frequency.exponentialRampToValueAtTime(Math.max(900, lpHold * 0.3), ha + 0.18);
+        hp.frequency.setValueAtTime(hpHold * 2.2, ha + hd - 0.12); hp.frequency.exponentialRampToValueAtTime(hpHold, ha + hd + 0.22);
+        lp.frequency.setValueAtTime(Math.max(900, lpHold * 0.3), ha + hd - 0.12); lp.frequency.exponentialRampToValueAtTime(lpHold, ha + hd + 0.22);
+      }
       // THE HEAD OF THE CHAIN, and the whole of the ?reels=buffer difference.
       // Everything downstream — band, receiver, flutter, dropouts, staircase,
       // envelope, phasing, room tap — is the same graph on the same schedule;
@@ -1753,8 +2234,23 @@
     // the descriptor for the set and the VFD line 「受信 · title · year」
     var wire = planWire(P);
     var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v, rx: wire };
+    // §4.3 THE VFD SAYS WHAT SHAPE ARRIVED. 「受信 · title · year · 戻 47 s later
+    // · 尺 over it」— the kanji is the log line, as it is everywhere else in this
+    // station, and the plain words after it say what it means.
+    var shapeLine = "";
+    if (P.body !== "jou" || P.entry !== "soku" || P.exit !== "setsu" || P.porous || P.callback) {
+      var bits = [];
+      if (P.callback) bits.push("同 the same station again");
+      if (P.entry !== "soku") bits.push(KANA[P.entry] + (P.entry === "tan" ? " hunting " : " drifting in ") + P.entryS.toFixed(1) + "s");
+      if (P.body === "modori") { var lt = P.segments[1] && P.segments[1].laterS; bits.push(KANA.modori + " " + P.segments.length + " pieces" + (lt != null ? " · " + lt + " s later" : "")); }
+      else if (P.body === "dan") bits.push(KANA.dan + " " + P.holes.length + " carrier loss" + (P.holes.length > 1 ? "es" : ""));
+      else if (P.body === "sou") bits.push(KANA.sou + " scanning to " + (P.segments[1] && P.segments[1].reel ? shortTitle(P.segments[1].reel.title) : "another"));
+      if (P.exit !== "setsu") bits.push(KANA[P.exit] + (P.exit === "zan" ? " lingering " + P.exitS.toFixed(1) + "s" : " cut mid-word"));
+      if (P.porous) bits.push("尺 " + P.porous + " over it");
+      shapeLine = bits.length ? " · " + bits.join(" · ") : "";
+    }
     T.lane("broadcast").at(t0 - 0.15, function () {
-      T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year, signal: desc, link: a.reel.src || null }, t0);
+      T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year + shapeLine, signal: desc, link: a.reel.src || null }, t0);
     });
     // 同調 — the tuning line, and the critic's arithmetic gate reads it. It is
     // emitted ONLY when something was actually tuned: an untuned reel, and a
@@ -1775,7 +2271,8 @@
         (gl !== 1 ? " · riding the glide, ×" + gl.toFixed(4) + " at air (" + (1200 * Math.log(gl) / Math.LN2).toFixed(1) + " cents) and tracking" : "") }, t0 + TUNE_S);
     }
     T.lane("broadcast").at(cut, function () {
-      T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" + (P.segments.length > 1 || P.body !== "jou" ? " on air · " + P.spanS.toFixed(1) + " s" : "") }, cut);
+      T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s on air" +
+        (P.spanS - holdS > 4 ? " · " + P.spanS.toFixed(1) + " s from the first static" : "") }, cut);
     });
     T.lane("broadcast").at(end + 0.5, function () { teardown(); });
   }
@@ -1816,7 +2313,7 @@
     var T = tl(), now = T.ctx.currentTime, t0 = legalT0(sc, now);
     if (t0 == null) return false;
     var R = T.S.signal.fork("scan:" + cy.n);
-    var sa = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R);
+    var sa = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5, shape: manualShape(R.fork("shape")) }, t0), R);
     if (!sa) return false;
     if (!fire(t0)) { sa.dead = true; qDrop(sa); return false; }
     scanWanted = false; scanCycle = cy.n; stats.scans++;
@@ -1848,7 +2345,7 @@
     benchForce = benchQueued;
     var ok = false, why = "";
     try {
-      var ba = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5 }, t0), R);
+      var ba = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5, shape: benchShape || manualShape(R.fork("shape")) }, t0), R);
       if (!ba) why = "the footprint does not fit here";
       else if (!fire(t0)) { ba.dead = true; qDrop(ba); why = "the seat was refused"; }
       else ok = true;
@@ -1908,20 +2405,42 @@
       awi = aAlt >= 0 ? aAlt : aShort; awhole = wholeAt(reel, awi);
     }
     var win = reel.windows[awi];
-    var wl = (win[1] - win[0]), need = TUNE_S + holdS + lossD;
-    if (awhole) { holdS = Math.min(wl, WHOLE_MAX_HOLD_S); need = TUNE_S + holdS + lossD; }
-    else if (need > wl) { holdS = Math.max(3, wl - TUNE_S - lossD); need = TUNE_S + holdS + lossD; }
+    var wl = (win[1] - win[0]);
+    // §7 q5 — THE ♪ BUTTON PLAYS THE NEW SHAPES. The audition's job is to show
+    // what a signal IS, and what a signal is has changed: a budget from §2's
+    // table, a body, an entry and an exit, and the same degrade ladder when
+    // this window cannot carry them. It draws on the SAMPLE stream, so the
+    // button is reproducible from the seed like everything else, and it walks
+    // the same planShaped() the air walks — an audition with its own idea of a
+    // reception would be an audition of something the station never plays.
+    var aSh = SHAPES_ON ? manualShape(R.fork("shape:" + dialPresses + ":" + Math.floor(t * 100))) : null;
+    var aEc = TUNE_S, aXc = lossD;
+    if (aSh && !awhole) {
+      aSh = degradeShape(aSh, wl, lossD);
+      aEc = Math.min(aSh.entryS, ENTRY_COST[aSh.entry] != null ? ENTRY_COST[aSh.entry] : TUNE_S);
+      aXc = Math.min(aSh.exitS, EXIT_MAX_COST_S);
+      lossD = aSh.exitS;
+      holdS = Math.min(aSh.budgetS, Math.max(3, windowServes(aSh, wl, aEc, aXc)));
+    }
+    var need = aEc + holdS + aXc;
+    if (awhole) { holdS = Math.min(wl, WHOLE_MAX_HOLD_S); need = TUNE_S + holdS + lossD; aSh = null; }
+    else if (need > wl) need = wl;
     var inS = awhole ? win[0] : win[0] + rIn * Math.max(0, wl - need - 0.5);
+    var aP = aSh ? planShaped(aSh, R.fork("apieces:" + dialPresses + ":" + Math.floor(t * 100)), {
+      reel: reel, win: win, wi: awi, rate: 1, inS: inS, onS: holdS, exitS: lossD,
+      pickOther: function (u) { if (pool.length < 2) return null; var j = Math.floor(u * pool.length); if (pool[j] === reel) j = (j + 1) % pool.length; return pool[j]; }
+    }) : planOne(reel, inS, holdS, lossD);
+    holdS = aP.presenceS; lossD = aP.exitS;
     if (pinA) T.emitEvent({ cat: "rx", label: "受信 pinned", detail: reel.id + (awhole ? " · whole · " : " · ") + holdS.toFixed(1) + "s · audition" }, t);
     // the same dropout plan a real signal gets, so the picture stutters
-    var adrops = [], dt = TUNE_S + 0.6;
-    while (dt < TUNE_S + holdS) { dt += 1.2 + R.next() * 3.2; if (dt < TUNE_S + holdS) adrops.push([dt, 0.12 + R.next() * 0.25]); }
+    var adrops = [], dt = aP.entryS + 0.6;
+    while (dt < aP.lossAtS) { dt += 1.2 + R.next() * 3.2; if (dt < aP.lossAtS && !inGap(aP, dt)) adrops.push([dt, 0.12 + R.next() * 0.25]); }
     // EVERY DRAW IS ABOVE THIS LINE. build() may run now or a fetch later, and
     // it takes no draws of its own — so a deferred audition is the same
     // audition, just further down the clock, and the sample stream is left
     // exactly where an undeferred one would leave it.
     function build(tt) {
-      var t0 = tt + 1.0, tuneEnd = t0 + TUNE_S + holdS + lossD;
+      var t0 = tt + 1.0, tuneEnd = t0 + aP.spanS;
       var nodes = [], hp, lp, pre, sh, sg, bufSrc = null;
       try {
         hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(700, t0); hp.frequency.linearRampToValueAtTime(260, t0 + 0.8);
@@ -1929,14 +2448,22 @@
         pre = c.createGain(); pre.gain.setValueAtTime(0.5, t0);
         sh = c.createWaveShaper(); var cv = new Float32Array(1024); for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; cv[i] = Math.tanh(x * 3.5) / Math.tanh(3.5); } sh.curve = cv;
         sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6;
-        PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak], [lossD * 0.6, peak * 0.4], [lossD * 0.4, 0]]);
+        PJ.Voice.env(sg.gain, t0, planEnv(aP, peak));
         nodes = [hp, lp, pre, sh, sg];
         var head = ms;
         if (buffered) {
-          head = bufSrc = c.createBufferSource(); bufSrc.buffer = bufCache[reel.id];
-          nodes.push(bufSrc); bufSrc.start(t0, inS); bufSrc.stop(tuneEnd + 0.2);
+          // one source per piece, exactly as the air does it
+          for (var aq = 0; aq < aP.segments.length; aq++) {
+            var asg = aP.segments[aq], abuf = bufCache[(asg.reel && asg.reel.id) || reel.id] || bufCache[reel.id];
+            if (!abuf) continue;
+            var abs = c.createBufferSource(); abs.buffer = abuf;
+            nodes.push(abs); abs.start(t0 + asg.srcFromS, asg.inS); abs.stop(t0 + asg.srcToS);
+            abs.connect(hp); if (!bufSrc) bufSrc = abs;
+          }
+          head = null;
         }
-        head.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
+        if (head) head.connect(hp);
+        hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
       } catch (e) { return false; }
       staticRise(tt, t0);
       var startMs = Math.max(0, (t0 - c.currentTime) * 1000);
@@ -1944,13 +2471,19 @@
       videoSrcIds[0] = reel.id;
       try {
         if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
-        var go = function () { try { if (buffered) hushElement(v); v.currentTime = inS; warmPicture(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
+        var go = function () { try { if (buffered) hushElement(v); v.currentTime = aP.segments[0].inS; warmPicture(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
+        for (var sq = 1; sq < aP.segments.length; sq++) (function (sgm) {
+          setTimeout(function () { try { v.currentTime = sgm.inS; var p3 = v.play(); if (p3 && p3.catch) p3.catch(function () {}); } catch (e) {} },
+            Math.max(0, (t0 + sgm.lockAtS - c.currentTime) * 1000));
+        })(aP.segments[sq]);
         if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
         else setTimeout(go, startMs);
       } catch (e) {}
       lastSampleAudioOnly = !!reel.audioOnly;
-      var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v };
-      T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year, signal: desc, link: reel.src || null }, t0);
+      var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v, rx: planWire(aP) };
+      T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year +
+        (aP.body !== "jou" || aP.entry !== "soku" || aP.exit !== "setsu" ? " · " + KANA[aP.entry] + KANA[aP.body] + KANA[aP.exit] + " · " + aP.presenceS.toFixed(1) + "s on air" : ""),
+        signal: desc, link: reel.src || null }, t0);
       setTimeout(function () { try { if (bufSrc) bufSrc.stop(); } catch (e0) {} try { if (mediaSrcs[0] && hp) mediaSrcs[0].disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
       return true;
     }
@@ -1978,6 +2511,7 @@
     // thing on every night, in both files.
     SHAPE_DRAWS: SHAPE_DRAWS,
     drawShape: drawShape,
+    shrinkShape: shrinkShape,
     drawBudget: drawBudget,
     limits: function () { return { tuneS: TUNE_S, wholeMaxHoldS: WHOLE_MAX_HOLD_S, lossMaxS: LOSS_MIN_S + LOSS_SPAN_S,
       budgetMinS: BUDGET_MIN_S, budgetMaxS: BUDGET_MAX_S, shapeDraws: SHAPE_DRAWS,
@@ -2056,8 +2590,36 @@
       // never the legality, the footprint, the hold or the AIR. Returns
       // {ok, state: "seated"|"queued", why} — "queued" means it did not fit
       // yet and will be retried at the next scene.
+      // §4.3 THE BENCH SEATS A SHAPE. The owner asks for a body, a budget, an
+      // entry and an exit by name and hears exactly that reception on exactly
+      // that window — the only way to A/B 戻 against 常 on the same material,
+      // which is the whole reason the lab exists. Everything else is still the
+      // production path: the same choose(), the same ladder when the window is
+      // too short, the same hold, tube and VFD.
+      shapeFor: function (opts) {
+        opts = opts || {};
+        var b = opts.budgetS != null ? Math.max(BUDGET_MIN_S, Math.min(BUDGET_MAX_S, +opts.budgetS)) : 20;
+        var body = opts.body || "jou", entry = opts.entry || "soku", exit = opts.exit || "setsu";
+        var entryS = entry === "soku" ? TUNE_S : entry === "tan" ? (HUNT_MIN_S + HUNT_MAX_S) / 2 : (DRIFT_MIN_S + DRIFT_MAX_S) / 2;
+        var exitS = exit === "setsu" ? (LOSS_MIN_S + LOSS_SPAN_S * 0.5) : exit === "zan" ? (ZAN_MIN_S + ZAN_MAX_S) / 2 : ZETSU_S;
+        var gaps = [], holes = [], pieces = 1;
+        if (body === "modori") { pieces = opts.pieces === 3 ? 3 : 2; for (var g = 0; g < pieces - 1; g++) gaps.push((MOD_GAP_MIN_S + MOD_GAP_MAX_S) / 2); }
+        else if (body === "sou") { pieces = 2; gaps.push((SCAN_SWEEP_MIN_S + SCAN_SWEEP_MAX_S) / 2); }
+        else if (body === "dan") { holes = [(HOLE_MIN_S + HOLE_MAX_S) / 2]; }
+        var lockS = body === "modori" ? MOD_RELOCK_S : 0, gapS = 0, i;
+        for (i = 0; i < gaps.length; i++) gapS += gaps[i] + lockS;
+        var holeS = 0; for (i = 0; i < holes.length; i++) holeS += holes[i];
+        var spanS = entryS + b + gapS + holeS + exitS;
+        return { budgetS: b, body: body, entry: entry, exit: exit, entryS: entryS, exitS: exitS, gaps: gaps, holes: holes,
+          pieces: pieces, lockS: lockS, spanS: spanS, leadS: STATIC_LEAD_S, holdLeadS: HOLD_LEAD_S,
+          tailS: COLLAPSE_S + BURST_S + DEAD_S, reachS: spanS + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) };
+      },
+      setBenchShape: function (sh) { benchShape = sh || null; return true; },
+      bodies: function () { return { body: Object.keys(BODY_W), entry: Object.keys(ENTRY_W), exit: Object.keys(EXIT_W), kana: KANA,
+        budget: [BUDGET_MIN_S, BUDGET_MAX_S] }; },
       seatWindow: function (reelId, wi, opts) {
         opts = opts || {};
+        if (opts.shape !== undefined) benchShape = opts.shape;
         benchQueued = { reelId: String(reelId), wi: (wi == null ? -1 : +wi), whole: opts.whole !== false };
         var r = benchTry();
         if (!r.ok && r.state !== "queued") benchQueued = null;
@@ -2071,6 +2633,7 @@
       // and this one follows it rather than cutting it off.
       seatWindowNow: function (reelId, wi, opts) {
         opts = opts || {};
+        if (opts.shape !== undefined) benchShape = opts.shape;
         var T = tl();
         if (!T.ctx || !T.playing() || !T.S) return { ok: false, state: "stopped", why: "press PLAY first" };
         var now = T.ctx.currentTime, cy = T.cycle(), lead = BENCH_NOW_LEAD_S;
@@ -2083,7 +2646,7 @@
         var ok = false, why = "";
         try {
           var R = T.S.signal.fork("benchnow:" + Math.floor(now * 1000));
-          var na = arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: 60, tidePos: 0.5, t0: t0, benchNow: true }, R);
+          var na = arm({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: 60, tidePos: 0.5, t0: t0, benchNow: true, shape: benchShape || manualShape(R.fork("shape")) }, R);
           if (!na) why = "the receiver refused the choice";
           else {
             try { prefetch(na); } catch (e0) {}     // the element is usually already warm; this covers a cold one
@@ -2108,7 +2671,7 @@
         } catch (e) { return false; }
         return true;
       },
-      benchCancel: function () { benchQueued = null; benchForce = null; return true; },
+      benchCancel: function () { benchQueued = null; benchForce = null; benchShape = null; return true; },
       benchState: function () {
         var T = tl(), now = null;
         try { now = T.ctx ? T.ctx.currentTime : null; } catch (e) {}

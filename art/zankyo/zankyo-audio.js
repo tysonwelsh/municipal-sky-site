@@ -2567,6 +2567,25 @@ window.ZankyoAudio = (function () {
   // straight over the signal. Measured when it happened: ten melodic notes
   // inside a hold on seed 3042 over an hour, where there had been none.
   function isSignalWho(w) { return w === "signal" || (typeof w === "string" && w.lastIndexOf("signal:", 0) === 0); }
+  // "IS A SIGNAL HOLDING *THIS VOICE* AT t" — which is a different question from
+  // signalUp() now, and the render-time guards want this one. Two receptions in
+  // three still silence the whole crew, but a POROUS reception (§3.5) leaves one
+  // melodic voice out of its hold on purpose, and a reception that breaks and
+  // returns releases every voice in the gaps between its pieces. A guard that
+  // asks the global question would refuse the very note the owner asked for —
+  // measured exactly that way: six porous receptions an hour and not one note
+  // over any of them, the feature declared and inert.
+  //
+  // signalUp() keeps its global meaning for the things that are about the
+  // STATION rather than about a voice: 崩's stuck groove, 鏡's answer, §11.3's
+  // refusal. Those stay quiet through a porous signal, deliberately — a
+  // disintegrating groove answering a broadcast is a different idea and not
+  // this one.
+  function signalHolds(t, layer) {
+    var a = airHold[layer] || [];
+    for (var i = 0; i < a.length; i++) if (isSignalWho(a[i].who) && t >= a[i].from && t < a[i].until) return true;
+    return false;
+  }
   var cyc = { n: -1, kind: "ordinary", seating: null, seatingLabel: "", durS: 420, startT: 0, mode: "hirajoshi", visit: null, visit2: null };
   var scn = { type: null, activity: null, startT: 0, durS: 1 };
   var pendingPlan = null;                        // written by DRAM.plan(), consumed at performance-begin
@@ -2852,6 +2871,13 @@ window.ZankyoAudio = (function () {
       // THE GROUP IS DRAWN ONCE PER BROADCAST, OUTSIDE THE RETRY.
       var wantJo = BR.chance(BC_JO_P);
       var order = wantJo ? ["jo", "ha"] : ["ha", "jo"], placed = false;
+      // §4.1 THE LADDER, HERE TOO. A shaped reception asks for more room than a
+      // plain one, so losing what will not fit seats mostly 常 — measured, 17 %
+      // shaped against the 33 % §3.6 asks for. The shape gives up its parts in
+      // order (the second return, the lingering exit, the hunt, the shape, then
+      // seconds off the budget) rather than giving up its seat, which is the
+      // same rule the receiver follows when the window turns out to be short.
+      for (var rung = 0; rung < 8 && !placed; rung++) {
       for (var oi = 0; oi < order.length && !placed; oi++) {
         var isJo = order[oi] === "jo", tag = order[oi];
         var grp = isJo ? joSegs : otherSegs;
@@ -2902,11 +2928,13 @@ window.ZankyoAudio = (function () {
         }
         // Attribute a failed ATTEMPT (not each retry) to the constraint that
         // rejected most of its positions.
-        if (!placed) {
+        if (!placed && rung === 0) {
           if (!nGuest && !nBc && !nKiru && !nRoom) rejBump(kind, tag, "noT0");
           else if (nGuest >= nBc && nGuest >= nKiru && nGuest >= nRoom) rejBump(kind, tag, "spaceGuest");
           else rejBump(kind, tag, "spaceBc");
         }
+      }
+      if (!placed) { var sm = (BX && BX.shrinkShape) ? BX.shrinkShape(sh) : null; if (!sm) break; sm.silS = sh.silS; sh = sm; }
       }
       if (!placed) { bcRej.lost++; if (bcRejKind[kind]) bcRejKind[kind].lost++; }   // both groups refused it
       // dev: the GEOMETRY behind the outcome.
@@ -4454,6 +4482,7 @@ window.ZankyoAudio = (function () {
   // tongue-less ATARI re-attacks on repeated pitches (a dip, not a strike).
   // The weather's breath channel breathes the noise and the vowel.
   function shakuhachiNote(freq, t, dur, opts) {
+    var SIG_LAYER = "shakuhachi";
     // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
     // with an ESTIMATE of the phrase's length — the last phrase's — and a
     // 4 s pad; a phrase that turns out far longer runs into a hold its claim
@@ -4466,7 +4495,9 @@ window.ZankyoAudio = (function () {
     // land in already exists. That is the difference between this and plan
     // §12, where no render-time test could help because the hold did not yet
     // exist. Same one-line shape 崩's groove and 鏡's answer already use.
-    if (signalUp(t)) return;
+    // PER VOICE (§3.5), not global: a porous reception leaves ONE voice out of
+    // its hold, and the gaps of a return are released for all of them.
+    if (signalHolds(t, SIG_LAYER)) return;
 
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("shakuhachi", freq, t);   // 逸脱 the pitch choke point (identity at home)
@@ -4561,6 +4592,7 @@ window.ZankyoAudio = (function () {
     return cv;
   }
   function hichirikiNote(freq, t, dur, opts) {
+    var SIG_LAYER = "hichiriki";
     // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
     // with an ESTIMATE of the phrase's length — the last phrase's — and a
     // 4 s pad; a phrase that turns out far longer runs into a hold its claim
@@ -4573,7 +4605,9 @@ window.ZankyoAudio = (function () {
     // land in already exists. That is the difference between this and plan
     // §12, where no render-time test could help because the hold did not yet
     // exist. Same one-line shape 崩's groove and 鏡's answer already use.
-    if (signalUp(t)) return;
+    // PER VOICE (§3.5), not global: a porous reception leaves ONE voice out of
+    // its hold, and the gaps of a return are released for all of them.
+    if (signalHolds(t, SIG_LAYER)) return;
 
     var c = ctx; opts = opts || {};
     freq = FAR.pitch("hichiriki", freq, t);    // 逸脱 the pitch choke point (identity at home)
@@ -4740,6 +4774,7 @@ window.ZankyoAudio = (function () {
     biwa:     { plectrum: "bachi", peak: 0.14, decay: 1.3,  brightK: 0.3,  brightBase: 1.3, sawari: 1.6, sparkle: 0 },
   };
   function stringNote(layer, freq, t, dur, opts) {
+    var SIG_LAYER = layer;
     // NOTHING MELODIC SOUNDS INSIDE A BROADCAST'S HOLD. The air claim is made
     // with an ESTIMATE of the phrase's length — the last phrase's — and a
     // 4 s pad; a phrase that turns out far longer runs into a hold its claim
@@ -4752,7 +4787,9 @@ window.ZankyoAudio = (function () {
     // land in already exists. That is the difference between this and plan
     // §12, where no render-time test could help because the hold did not yet
     // exist. Same one-line shape 崩's groove and 鏡's answer already use.
-    if (signalUp(t)) return;
+    // PER VOICE (§3.5), not global: a porous reception leaves ONE voice out of
+    // its hold, and the gaps of a return are released for all of them.
+    if (signalHolds(t, SIG_LAYER)) return;
 
     var c = ctx, K = STRING_KIT[layer], R = S[layer], B = bodyOf(layer); opts = opts || {};   // 身: the night's body for this string
     freq = FAR.pitch(layer, freq, t);          // 逸脱 the pitch choke point — koto, shamisen, biwa (identity at home)
@@ -5400,7 +5437,7 @@ window.ZankyoAudio = (function () {
     if (!playing) return;
     var now = t0, R = S.pa;
     if (cyc.kind !== "broadcast") { afterRaw("pa", now, 15 + R.next() * 10, paCycle); return; }   // only a broadcast cycle announces
-    if (signalUp(now + 0.05)) { afterRaw("pa", now, 8, paCycle); return; }                          // S1 (critic r1): the tannoy does not talk over a signal — try again after the hold (no draw)
+    if (signalHolds(now + 0.05, "pa")) { afterRaw("pa", now, 8, paCycle); return; }                          // S1 (critic r1): the tannoy does not talk over a signal — try again after the hold (no draw)
     var dur = 4 + R.next() * 5;
     paSpeak(now + 0.05, dur, {});
     emitEvent({ cat: "pa", label: "放送 announcement", detail: dur.toFixed(1) + "s · " + arcPhase(now) }, now);
@@ -5480,7 +5517,7 @@ window.ZankyoAudio = (function () {
     var pv1 = VOX_VOWELS.u[0], pv2 = VOX_VOWELS.u[1], sounded = 0;
     for (var i = 0; i < syls.length; i++) {
       var sy = syls[i], st = sy.t, dur = Math.max(0.08, sy.dur);
-      if (signalUp(st)) continue;                                        // nothing melodic sounds inside a broadcast's hold
+      if (signalHolds(st, "vox")) continue;                              // nothing melodic sounds inside a broadcast's hold — per voice (§3.5)
       if (sy.hole) continue;                                             // 継 a hocket's silent slot: no draw, the time kept
       var dropped = R.next() > survive;                                  // drawn for every syllable, sounded or not
       if (ng) {                                                          // the floor: open under a syllable, up in a hole
@@ -6356,7 +6393,22 @@ window.ZankyoAudio = (function () {
           bcDeadlines: bcDeadlinesAt,
           // `who` lets the receiver declare an INTENDED hold at arm time and
           // replace it with the exact one at fire (W4 §12).
-          airHold: function (map, who) { for (var k in map) airHoldAdd(k, map[k].from, map[k].until, who || "signal"); },
+          // A VOICE'S HOLD IS A LIST OF SPANS, not one span (PLAN-SIGNAL-SHAPES
+          // §3.5). A reception that breaks and returns holds the air for its
+          // PIECES and releases it in the gaps between them, so the crew may
+          // come in where the carrier is lost and be quiet again before it
+          // returns — and because airClaimAt tests a note's whole footprint
+          // against every span, a phrase only lands in a gap if it FITS in the
+          // gap. A ten-second gap takes a phrase of about six seconds and
+          // refuses a longer one. That falls out of machinery that was already
+          // here; nothing new had to be invented for it.
+          airHold: function (map, who) {
+            for (var k in map) {
+              var v = map[k]; if (!v) continue;
+              if (v.length != null && typeof v.length === "number") { for (var i = 0; i < v.length; i++) airHoldAdd(k, v[i].from, v[i].until, who || "signal"); }
+              else airHoldAdd(k, v.from, v.until, who || "signal");
+            }
+          },
           airHoldClear: function (who) { airHoldDrop(who === undefined ? "signal" : who); },
           fallback: visitBroadcast, fieldTonic: function () { return field.tonicHz; },
           // §11.2 asks for "the window nearest the current tonic or fifth", and
