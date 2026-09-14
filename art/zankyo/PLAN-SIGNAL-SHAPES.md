@@ -15,6 +15,34 @@ builds it — on the owner's Mac, because the reels' sources live there.*
 
 ---
 
+## STATUS (2026-09-14) — R0 through R4's tooling are shipped
+
+| | |
+|---|---|
+| **R0** | the reception plan object, proved by changing nothing (32/32 home nights byte-identical to main) |
+| **R1** rc.69 | the budget, the frequency (1.70×), the drawn 15–90 s quiet, per-reception holds, the receiver's queue and its pair of media elements. A declared re-base. |
+| **R2 + R3** rc.70 | the bodies, entries, exits, the 同 callback, the porous hold and the released gaps. A declared re-base. |
+| rc.72 | the arm lead raised to 75 s — a far night's long note was committing 58.9 s ahead of a 55 s lead, breaking §12's guarantee. A declared re-base. |
+| **R4** rc.71 + | `make-reel.sh --add-windows`, `tools/propose-long.py`, `tools/cut-long-batch.sh`, `tools/pool-shapes.py`, the §5 recipe in `broadcast/CURATE.md`. ONE reel re-cut as a proof; 185 of 208 reels have a proposed long window waiting. |
+| **R4's batch** | NOT CUT. §5's order and §6's R4 gate both say the owner's ear decides; `tools/cut-long-batch.sh --plan N --run` is one command when it does. |
+| **R5** | the owner's listen. The constants are in one block at the top of `zk-broadcast.js` and beside `BC_JO_P` in `zankyo-audio.js`; `GUIDE.md` §5–§6 are rewritten around receptions. |
+
+**What the plan said would happen, and did.** §4.1's worst-case footprint
+reservation was replaced by drawing the shape AT PLAN TIME — measured, the
+worst case reserves 45 s for an 8 s budget and 92 s for a 40 s one, and a
+seven-minute cycle then holds two receptions where the owner asked for nearly
+three times that. §3.5's hoped-for gap release works exactly as hoped: the
+footprint test means a phrase only lands in a gap if it fits, and 0 notes ran
+into a relock across every seed, so the fallback is not needed.
+
+**What the plan could not know.** The pool is the limit, not the design. With
+12 s windows the degrade ladder strips about half the shapes and the median
+reception is 9.3 s against an asked 21 s. Against a SIMULATED re-cut pool
+(`ZK_MANIFEST=`) the ladder never runs, the median is 19 s and the achieved
+distribution matches §2's table. §5 is the whole of what is left.
+
+---
+
 ## 1. The audit — the observation is correct, and here is exactly why
 
 Read against `zk-broadcast.js`, `zankyo-audio.js`, `zk-set.js`, the cutter
