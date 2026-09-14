@@ -849,6 +849,17 @@ blockquote {
 .prose-flow h3:first-child {
   margin-top: 0;
 }
+/* ...unless the block itself follows another block. Pages compose content
+   as repeated .post-container > .prose-flow blocks, and a block's last <p>
+   carries no bottom margin, so a heading that opens the next block would
+   otherwise sit flush against the previous paragraph (0px instead of the
+   48/32px it gets mid-flow). Mirrors the global `* + h2` rule above. */
+* + .post-container > .prose-flow > h2:first-child {
+  margin-top: var(--s-5);
+}
+* + .post-container > .prose-flow > h3:first-child {
+  margin-top: var(--s-4);
+}
 
 .prose-flow ul,
 .prose-flow ol {

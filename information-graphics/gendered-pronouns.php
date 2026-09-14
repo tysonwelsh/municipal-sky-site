@@ -353,7 +353,7 @@ include '../includes/header.php';
     <!-- Transition to Ulysses chart -->
     <div class="post-container">
       <section class="prose-flow">
-        <h2 style="margin-top: 48px;">A Closer Look at <em>Ulysses</em></h2>
+        <h2>A Closer Look at <em>Ulysses</em></h2>
         <p>I was somewhat surprised to see such a masculine balance for <em>Ulysses</em>, with the novel just a few
           percentage points behind Joyce's famously macho <a
             href="https://www.openculture.com/2024/06/james-joyce-picked-drunken-fights-then-hid-behind-hemingway.html"
