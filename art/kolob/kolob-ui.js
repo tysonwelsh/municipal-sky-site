@@ -669,7 +669,6 @@
     setText(".kolob-stops-block .kolob-sec-head-label", S.theStops);
     setText("#kolob-copy-params .kolob-copy-label", S.copyParams);
     setText(".kolob-log-block .kolob-sec-head", S.minutes);
-    setText("#kolob-art-link", ST.art);
     var ivesBtn = document.getElementById("kolob-ives");
     if (ivesBtn) { ivesBtn.textContent = ST.ives; ivesBtn.classList.toggle("is-deseret", !latinMode); }
     var cumBtn = document.getElementById("kolob-cumulative");

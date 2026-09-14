@@ -152,18 +152,10 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- Colophon: one ruled line at the foot of the page — the series links at
-         the left, the three edition switches at the right. On a narrow page
-         the switches drop to a line of their own beneath the links. -->
+    <!-- Colophon: one ruled line at the foot of the page carrying the three
+         edition switches, centred. (The series links — the art index and the
+         sibling engines — were struck in v0.29 at the owner's request.) -->
     <div class="kolob-colophon">
-      <p class="kolob-note">
-        <a href="/art/" id="kolob-art-link" aria-label="the generative art series">𐐂𐐡𐐓</a>
-        &nbsp;·&nbsp;
-        <a href="/art/zankyo/" aria-label="sibling engine ZANKYO">&#27531;&#38911;</a>
-        &nbsp;·&nbsp;
-        <a href="/art/bardo/" aria-label="sibling engine BARDO">&#3926;&#3928;&#3921;&#3964;</a>
-      </p>
-
       <!-- The edition switches: a flex row, so each button spaces itself
            however wide its label renders (the script toggle grows in Deseret). -->
       <div class="kolob-toggles">
