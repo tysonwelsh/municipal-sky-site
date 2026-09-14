@@ -55,7 +55,8 @@ ambient one-shots. In priority order:
    engine's contours, seated in the air and the ledger like a melodic voice,
    as sophisticated in what it plays as the others; knobs for band, stutter,
    how much of a word survives; a natural carrier for 相 phasing and 騒
-   noise-leads on far nights.
+   noise-leads on far nights. *Plan written 2026-09-14: PLAN-COMMS-VOX.md
+   (body on the bench first, then the voice with a declared re-base).*
 5. **The ambient pool grown** with the station sounds Phase 3 promised and
    never built: hull groans, airlock hiss, a numbers-station murmur, distant
    thunder, more of the derelict's own noises; phase- and kind-gated, rarer
