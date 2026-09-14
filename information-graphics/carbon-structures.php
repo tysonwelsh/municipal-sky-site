@@ -140,7 +140,7 @@ include '../includes/header.php';
     <!-- Methodology note -->
     <div class="post-container">
       <section class="prose-flow">
-        <h2>Method</h2>
+        <h2>About the data</h2>
         <p>Structures from Iwanowski, Csányi &amp; Simoncelli, <em>Bond-network entropy governs heat transport in
             coordination-disordered solids</em> (<a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp"
             target="_blank">Phys. Rev. X 15, 041041 (2025)</a>), relaxed with the GAP potential. Bonds are drawn
