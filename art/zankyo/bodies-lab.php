@@ -29,9 +29,6 @@ include '../../includes/header.php';
   <h1>残響 · BODIES LAB</h1>
   <p>Each button auditions one body through the real engine graph (rooms, grit bus, master chain) while the station is stopped. Open the console page for the full performance.</p>
   <div class="zbl-grid" id="zbl-buttons"></div>
-  <h2>候補 · CANDIDATES</h2>
-  <p>The station sounds the road map promised (item 5). Heard here only — none is in the night's pool until it is seated, so nothing on the air has changed.</p>
-  <div class="zbl-grid" id="zbl-cands"></div>
   <div class="zbl-log" id="zbl-log">ready — press a body</div>
 </div>
 <script src="../background-audio.js?v=<?php echo zkv('../background-audio.js'); ?>"></script>
@@ -74,21 +71,6 @@ include '../../includes/header.php';
     "Relay chatter": "clicks in bursts over a coil's buzz (seated 2026-09-13)"
   };
   (Z.ambientNames ? Z.ambientNames() : []).forEach(function (n) { BODIES.push(["ambient", "環境 " + n, AMBIENT_NOTES[n] || "one-shot", n]); });
-  var CAND_NOTES = {
-    "Hull groan": "the plate under stress — a stick-slip creak sliding down, grinding",
-    "Airlock": "a clunk, the pressure hiss opening and closing, two clicks as it seats",
-    "Numbers station": "a heterodyne whistle, then groups of five read flat through a shortwave band",
-    "Distant thunder": "a low rumble that rolls two or three times and goes",
-    "Pipe knock": "a few taps down the corridor, ringing on a bar's modes",
-    "Relay chatter": "clicks in bursts over a coil's buzz"
-  };
-  var cands = document.getElementById("zbl-cands");
-  (Z.ambientCandidateNames ? Z.ambientCandidateNames() : []).forEach(function (n) {
-    var btn = document.createElement("button");
-    btn.innerHTML = "<b>候補 " + n + "</b>" + (CAND_NOTES[n] || "candidate");
-    btn.addEventListener("click", function () { Z.sample("ambient", n); });
-    cands.appendChild(btn);
-  });
   Z.setEventListener(function (ev) { log.textContent = (ev.label + (ev.detail ? " · " + ev.detail : "")) + "\n" + log.textContent.split("\n").slice(0, 12).join("\n"); });
   BODIES.forEach(function (b) {
     var btn = document.createElement("button");
