@@ -544,6 +544,14 @@ html { scroll-behavior: smooth; }
      the medium specimen it is. */
   min-width: 53px;
 }
+/* THE INSTRUCTIONS SHEET'S OWN PICK ZOOM (owner ask, 2026-09-14): a
+   five-step note reads better held up close than the shared --pick-scale
+   (1.6, above) leaves it — everything else in the pile is read at a
+   glance, but this is the one object a visitor is meant to actually READ,
+   so it gets its own larger zoom. Overrides the custom property alone;
+   .jd-item.is-picked svg still just reads whatever --pick-scale resolves
+   to, so no other rule needs touching. */
+.jd-item--sheet { --pick-scale: 2; }
 /* THE INSTRUCTIONS SHEET'S CLOSE MARK (owner, 2026-09-10): the × drawn in
    the paper's corner (instructions-object.svg, .ins-close). It is ink like
    the rest of the sheet — the generic visiblePainted rule already lets it
