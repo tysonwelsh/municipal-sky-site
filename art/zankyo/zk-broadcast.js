@@ -110,6 +110,121 @@
   //                envelope (it rides sg, so it fades through the loss and
   //                scales with the reel's gain like everything else)
   var DROP_FLOOR = 0.35, DROP_HISS = 0.5;
+
+  // ==========================================================================
+  // 形 THE SHAPES OF A RECEPTION — the owner's constants, in ONE block
+  // ==========================================================================
+  // PLAN-SIGNAL-SHAPES.md §3.6. Every weight the owner tunes by ear is here, so
+  // moving one value means the same thing on every night. The frequency and the
+  // silence between receptions live beside BC_JO_P in zankyo-audio.js, because
+  // they are decisions the PLACEMENT makes and this file never sees.
+  //
+  // §2 THE LENGTH RULE. A reception's ON-AIR time — the sum of the seconds you
+  // actually hear the signal, summed over its pieces — is at least 8 s and at
+  // most the Cage reel's 40 s. The budget is drawn at plan time from this
+  // table; the receiver then fills it with a shape. Where the pool cannot serve
+  // a budget the budget DEGRADES to the longest the pool can serve, which until
+  // the reels are re-cut (§5) is 12 s on every reel but Cage — so the spread
+  // below is only reachable as the long windows arrive, and the harness's
+  // achieved-distribution line is the measure of the gap.
+  var BUDGET_TABLE = [   // [lo, hi, share]
+    [8, 12, 0.15],       // today's clip
+    [12, 18, 0.25],
+    [18, 25, 0.25],
+    [25, 32, 0.20],
+    [32, 40, 0.15]       // the Cage thoughts' range
+  ];
+  var BUDGET_MIN_S = 8, BUDGET_MAX_S = 40;   // §7 q1/q6: 8 s is the floor, there is no glimpse
+  // §3.1 THE BODIES — what the signal DOES.
+  var BODY_W = { jou: 0.67, modori: 0.16, dan: 0.09, sou: 0.08 };   // 常 · 戻 · 断 · 走
+  var ENTRY_W = { soku: 0.65, tan: 0.20, fu: 0.15 };                // 即 · 探 · 浮
+  var EXIT_W  = { setsu: 0.65, zan: 0.25, zetsu: 0.10 };            // 切 · 残 · 絶
+  var KANA = { jou: "常", modori: "戻", dan: "断", sou: "走", soku: "即", tan: "探", fu: "浮", setsu: "切", zan: "残", zetsu: "絶" };
+  var POROUS_P = 0.30;                       // §3.5: one melodic voice left OUT of the hold, and it may play over the signal
+  var POROUS_VOICES = ["shakuhachi", "biwa", "hichiriki", "koto", "shamisen"];   // weighted to the sparse ones; NEVER vox — the intercom is a second speaker and would read as part of the broadcast
+  var POROUS_W      = [0.30, 0.25, 0.25, 0.10, 0.10];
+  var CALLBACK_P = 0.25;                     // 同: a later reception in the same cycle is the SAME reel, a later window
+  // 戻 the return: the piece lengths, the carrier-lost gap, the relock
+  var MOD_PIECE_MIN_S = 3, MOD_PIECE_MAX_S = 10;
+  var MOD_GAP_MIN_S = 6, MOD_GAP_MAX_S = 15;
+  var MOD_RELOCK_S = 0.2;                    // the same frequency, found again — no 4 s static rise
+  var MOD_ADV_MIN = 1, MOD_ADV_MAX = 3;      // the in-point advances by the gap × this (time collapsing while the carrier was lost)
+  var MOD_TWO_BUDGET_S = 26;                 // two returns only on a budget this large
+  // 断 the broken carrier: real losses of 1–3 s inside one piece
+  var HOLE_MIN_S = 1, HOLE_MAX_S = 3, HOLE_FLOOR = 0.12;   // below DROP_FLOOR: this is a loss, not a duck
+  // 走 the scan: two different reels, the dial sweeping between them
+  var SCAN_SWEEP_MIN_S = 2, SCAN_SWEEP_MAX_S = 3, SCAN_PIECE_MIN_S = 4;
+  // 探 the hunt / 浮 the drift-in
+  var HUNT_MIN_S = 3, HUNT_MAX_S = 8, HUNT_GLIMPSE_MIN = 2, HUNT_GLIMPSE_MAX = 4;
+  var DRIFT_MIN_S = 6, DRIFT_MAX_S = 10;
+  // 残 the lingering loss / 絶 mid-word
+  var ZAN_MIN_S = 6, ZAN_MAX_S = 12, ZETSU_S = 0.02;
+  var GAP_FLOOR = 0;                         // the carrier IS lost in a gap — not ducked, gone
+
+  // ---- the plan object -----------------------------------------------------
+  // ONE object describes a reception — today's clip and every shape §3 adds —
+  // and everything downstream reads it: the graph, the air hold, the tube, the
+  // VFD, the harness. A reception with a gap in it is then not a special case
+  // anywhere. Times are WALL SECONDS RELATIVE TO t0.
+  //
+  //   entryS    the arrival, before the first piece sounds (即 0.4 · 探 3–8 · 浮 6–10)
+  //   segments  [{ inS, onS, reel, lockS }] the pieces in order; lockS is the
+  //             relock in front of a piece that follows a gap (0 for the first)
+  //   gaps      [{ durS, sweep }] the carrier lost BETWEEN pieces, one per join
+  //   holes     [{ atS, durS }] the carrier lost INSIDE a piece (断)
+  //   exitS     the loss ramp (切 1.6–2.8 · 残 6–12 · 絶 ~0)
+  //   presenceS Σ onS — the ON-AIR time, §2's budget as achieved
+  //   spanS     t0 to the cut
+  //
+  // planTimes() is the ONE place the timeline is derived, so the graph, the
+  // tube and the air hold cannot disagree about when a piece starts.
+  function planTimes(P) {
+    var cur = P.entryS, on = 0, i;
+    for (i = 0; i < P.segments.length; i++) {
+      var s = P.segments[i];
+      if (i > 0) { P.gaps[i - 1].atS = cur; cur += P.gaps[i - 1].durS; }
+      s.lockAtS = cur; cur += (s.lockS || 0);
+      s.atS = cur; cur += s.onS; on += s.onS;
+      // the source runs under the entry for the first piece (the tune-in is
+      // heard OVER the reel, as it always was) and from the relock after that
+      s.srcFromS = (i === 0) ? 0 : s.lockAtS;
+    }
+    P.lossAtS = cur;
+    P.spanS = cur + P.exitS;
+    P.presenceS = on;
+    for (i = 0; i < P.segments.length; i++) {
+      P.segments[i].srcToS = (i === P.segments.length - 1) ? P.spanS + 0.2 : P.segments[i].atS + P.segments[i].onS + 0.05;
+    }
+    return P;
+  }
+  // today's clip, exactly: one piece, a snap in, a cut out
+  function planOne(reel, inS, onS, exitS) {
+    return planTimes({ body: "jou", entry: "soku", exit: "setsu", entryS: TUNE_S, exitS: exitS,
+      segments: [{ inS: inS, onS: onS, reel: reel, lockS: 0 }], gaps: [], holes: [], porous: null, callback: false });
+  }
+  // is t (relative to t0) inside a carrier-lost gap, an entry or an exit —
+  // anywhere the reel is not sounding?
+  function inGap(P, t) {
+    if (t < P.entryS || t >= P.lossAtS) return false;
+    for (var i = 0; i < P.gaps.length; i++) {
+      var g = P.gaps[i], seg = P.segments[i + 1];
+      if (t >= g.atS && t < (seg ? seg.atS : g.atS + g.durS)) return true;   // the relock counts as lost too
+    }
+    return false;
+  }
+  function planReels(P) { var o = [], i; for (i = 0; i < P.segments.length; i++) if (P.segments[i].reel && o.indexOf(P.segments[i].reel) < 0) o.push(P.segments[i].reel); return o; }
+  // What the set and the harness are handed: the shape, in plain numbers, with
+  // no reel objects in it.
+  function planWire(P) {
+    var segs = [], i;
+    for (i = 0; i < P.segments.length; i++) segs.push({ atS: +P.segments[i].atS.toFixed(3), onS: +P.segments[i].onS.toFixed(3), lockS: P.segments[i].lockS || 0 });
+    var gaps = []; for (i = 0; i < P.gaps.length; i++) gaps.push({ atS: +P.gaps[i].atS.toFixed(3), durS: +P.gaps[i].durS.toFixed(3), sweep: !!P.gaps[i].sweep });
+    var holes = []; for (i = 0; i < P.holes.length; i++) holes.push({ atS: +P.holes[i].atS.toFixed(3), durS: +P.holes[i].durS.toFixed(3) });
+    return { body: P.body, entry: P.entry, exit: P.exit, entryS: +P.entryS.toFixed(3), exitS: +P.exitS.toFixed(3),
+      lossAtS: +P.lossAtS.toFixed(3), spanS: +P.spanS.toFixed(3), presenceS: +P.presenceS.toFixed(3),
+      budgetS: P.budgetS != null ? +P.budgetS.toFixed(2) : null, segments: segs, gaps: gaps, holes: holes,
+      glimpses: P.glimpses || null, porous: P.porous || null, callback: !!P.callback };
+  }
   // a 50 ms silent MP4: the media element is "primed" with it inside the PLAY
   // gesture (the ▶ play event is emitted synchronously from the click), so
   // later timer-driven play() calls are allowed where autoplay policy would
@@ -449,7 +564,14 @@
     return base;
   }
   function noContract(info) { return !info || (info.cycleEndT == null && info.nextBcT == null && info.kiruT == null); }
-  function fitsRoom(info, holdS, lossD) {
+  // A reception's SPAN is the quantity the room has to hold — t0 to the cut —
+  // and since §14 it has been the only thing fitsRoom needed. It used to be
+  // handed the hold and the loss and add TUNE_S itself, which was correct while
+  // every reception was tune + hold + loss and wrong the moment one of them
+  // could carry an entry, a gap or a lingering exit. Callers that still think
+  // in holds go through fitsHold.
+  function fitsHold(info, holdS, lossD) { return fitsRoom(info, TUNE_S + holdS + lossD); }
+  function fitsRoom(info, spanS) {
     if (!info) return true;
     // THE BENCH'S "PLAY NOW", and the ONLY thing that can set this is
     // _dev.seatWindowNow on reel-lab.php. It says: the owner pressed a button
@@ -460,9 +582,9 @@
     if (info.benchNow) return true;
     var t0 = info.t0; if (t0 == null) return true;
     if (noContract(info)) {
-      return TUNE_S + holdS + lossD + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) <= 40;
+      return spanS + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S) <= 40;
     }
-    var sigEnd = t0 + TUNE_S + holdS + lossD;
+    var sigEnd = t0 + spanS;
     var holdEnd = sigEnd + HOLD_TAIL_S + (REL_MIN_S + REL_SPAN_S);
     if (info.kiruT != null && info.kiruT > t0 && sigEnd + KIRU_CLEAR_S > info.kiruT) return false;
     if (info.nextBcT != null && holdEnd > info.nextBcT - (info.armLeadS || 55)) return false;
@@ -524,14 +646,14 @@
     } else benchWholeOverride = null;
     var whole = benchWholeOverride == null ? wholeAt(reel, wi) : !!benchWholeOverride;
     if (whole) {
-      var okHere = wholeFits(reel, wi) && fitsRoom(info, Math.min(reel.windows[wi][1] - reel.windows[wi][0], WHOLE_MAX_HOLD_S), lossD);
+      var okHere = wholeFits(reel, wi) && fitsHold(info, Math.min(reel.windows[wi][1] - reel.windows[wi][0], WHOLE_MAX_HOLD_S), lossD);
       if (!okHere) {
         var best = -1, bestL = -1, ww, wj2, l2;
         for (ww = 0; ww < reel.windows.length; ww++) {
           wj2 = (wi + ww) % reel.windows.length;
           if (!wholeAt(reel, wj2) || !wholeFits(reel, wj2)) continue;
           l2 = reel.windows[wj2][1] - reel.windows[wj2][0];
-          if (fitsRoom(info, Math.min(l2, WHOLE_MAX_HOLD_S), lossD) && l2 > bestL) { bestL = l2; best = wj2; }
+          if (fitsHold(info, Math.min(l2, WHOLE_MAX_HOLD_S), lossD) && l2 > bestL) { bestL = l2; best = wj2; }
         }
         if (best >= 0) wi = best;
         else {
@@ -547,7 +669,7 @@
             for (var cw = 0; cw < cand.windows.length; cw++) {
               var cl = cand.windows[cw][1] - cand.windows[cw][0];
               var chold = wholeAt(cand, cw) ? Math.min(cl, WHOLE_MAX_HOLD_S) : Math.min(8 + rHold * 4, Math.max(3, cl - TUNE_S - lossD));
-              if (fitsRoom(info, chold, lossD)) { reel = cand; wi = cw; swapped = true; break; }
+              if (fitsHold(info, chold, lossD)) { reel = cand; wi = cw; swapped = true; break; }
             }
           }
           // AND IF NOTHING FITS, REFUSE. Falling through would seat the
@@ -589,6 +711,11 @@
     // From the window's START on a whole reel — there is no slice to place.
     c.inS = whole ? win[0] : win[0] + rIn * Math.max(0, wl - need * tune.rate);
     c.rate = tune.rate; c.pitchHz = tune.pitchHz; c.degHz = tune.degHz; c.cents = tune.cents;
+    // THE RECEPTION PLAN. At R0 it is today's clip said in the new grammar —
+    // one piece, a snap in, a cut out — and everything downstream reads it
+    // instead of the three loose numbers. The shapes of §3 fill it in later
+    // without a second code path anywhere.
+    c.rx = planOne(reel, c.inS, holdS, lossD);
     return c;
   }
 
@@ -651,13 +778,23 @@
              degHz: best.degHz, cents: best.cents };
   }
   // the dropout schedule (relative to t0) and the voices' return offsets, on the cycle's own fork
-  function weather(R, cycle, holdS, lossD) {
-    var D = R.fork("signal:" + cycle), drops = [], t = TUNE_S + 0.6, end = TUNE_S + holdS + lossD;
+  // The dropout schedule now runs across the PLAN'S WHOLE SPAN rather than
+  // across "the tune-in, the hold and the loss": an entry that hunts for eight
+  // seconds and an exit that lingers for twelve are both weather, and a
+  // schedule that stopped at a fixed 0.4 + hold would have left them dry. The
+  // draws are unchanged — two per step, taken whether or not the step is kept —
+  // so a one-piece reception gets exactly the schedule it always got, and a
+  // drop that would fall inside a carrier-lost gap is simply not kept (there is
+  // no signal there to drop out).
+  function weather(R, cycle, P) {
+    var D = R.fork("signal:" + cycle), drops = [], t = P.entryS + 0.6, end = P.spanS;
+    var lossAt = P.lossAtS, exitS = P.exitS;
     while (true) {
-      var k = t < TUNE_S + holdS ? 0 : (t - TUNE_S - holdS) / lossD;
+      var k = (exitS > 0 && t >= lossAt) ? Math.min(1, (t - lossAt) / exitS) : 0;
       t += (1.2 + D.next() * 3.3) * (1 - 0.8 * k);
       if (t >= end - 0.1) break;
-      drops.push([t, 0.12 + D.next() * 0.25]);
+      var d = 0.12 + D.next() * 0.25;
+      if (!inGap(P, t)) drops.push([t, d]);
     }
     var rel = { shakuhachi: 0, koto: REL_MIN_S + D.next() * REL_SPAN_S, shamisen: REL_MIN_S + D.next() * REL_SPAN_S, hichiriki: REL_MIN_S + D.next() * REL_SPAN_S, biwa: REL_MIN_S + D.next() * REL_SPAN_S,
       vox: REL_MIN_S + REL_SPAN_S };   // 内線 (2026-09-14): the intercom is the LAST to speak again after a signal — the full span, no draw, so the reel's own draws stay where they were
@@ -673,7 +810,8 @@
     var T = tl(); if (!T.S) return false;
     var R = rng || T.S.signal; if (!R) return false;
     loadPool();
-    var c = choose(R, info.cycle, info.tidePos || 0, info), wx = weather(R, info.cycle, c.holdS, c.lossD);
+    var c = choose(R, info.cycle, info.tidePos || 0, info);
+    var wx = weather(R, info.cycle, c.rx || planOne(null, 0, c.holdS, c.lossD));
     // THE DRAWS ARE ABOVE THIS LINE, deliberately: weather() must take its
     // stream whether or not the position turns out to be unusable, or a
     // refusal here would shift every later signal on the night.
@@ -688,6 +826,7 @@
     armed = { cycle: info.cycle, kind: info.kind, hostStartT: info.hostStartT, hostDurS: info.hostDurS, tidePos: info.tidePos || 0,
       reel: c.reel, win: c.win, inS: c.inS, holdS: c.holdS, lossD: c.lossD, bell: c.bell, drops: wx.drops, rel: wx.rel, lfoHz: wx.lfoHz, seed: wx.seed,
       rate: c.rate || 1, pitchHz: c.pitchHz || 0, degHz: c.degHz || 0, cents: c.cents || 0, whole: !!c.whole, pinned: !!c.pinned,
+      rx: c.rx || null,
       ready: false, t0: null, decided: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     stats.armed++;
     // W4 §12 — THE PLANNED HOLD. The defect this repairs: the long-note bodies
@@ -722,7 +861,7 @@
     armedT0 = (info.t0 != null) ? info.t0 : null;
     var t0k = (info.t0 != null) ? info.t0 : (info.hostStartT + 16);
     var pFrom = t0k - HOLD_LEAD_S;
-    var pUntil = t0k + TUNE_S + c.holdS + c.lossD + 2;
+    var pUntil = t0k + (c.rx ? c.rx.spanS : TUNE_S + c.holdS + c.lossD) + 2;
     // THE PLAN'S LANES ARE DERIVED FROM THE SAME OBJECT THE REAL HOLD USES,
     // never from a second list. fire() builds its hold by looping over a.rel
     // and bolting on the PA; if the plan looped over a constant instead, the
@@ -747,6 +886,14 @@
     var when = Math.max(T.ctx ? T.ctx.currentTime + 0.05 : 0, info.hostStartT - PREFETCH_LEAD_S);
     T.lane("broadcast").at(when, prefetch);
     return true;
+  }
+  // 経路 buffer mode: which decoded buffer a piece plays from. 走 puts two
+  // different reels in one reception, so this is a lookup by id rather than
+  // the single `a.buf` it used to be.
+  function bufFor(a, reel) {
+    var id = (reel && reel.id) || (a.reel && a.reel.id);
+    if (a.bufs && a.bufs[id]) return a.bufs[id];
+    return a.buf || null;
   }
   function prefetch() {
     var a = armed; if (!a || !a.reel) return;
@@ -781,7 +928,7 @@
     var a = armed; if (!a || a.t0 != null) return false;
     var T = tl(); if (!T.ctx || !T.playing()) return false;
     a.t0 = t0; stats.fired++;
-    var cut = t0 + TUNE_S + a.holdS + a.lossD;
+    var cut = t0 + (a.rx ? a.rx.spanS : TUNE_S + a.holdS + a.lossD);
     // the hold is time-based, so it is set now and applies to claims from t0 − 6
     var hold = {}, from = t0 - HOLD_LEAD_S;
     for (var vname in a.rel) hold[vname] = { from: from, until: cut + 2 + a.rel[vname] };
@@ -949,7 +1096,7 @@
   function farDep(id) {
     try { var f = Z.getFar && Z.getFar(); return (f && !f.home && f.dep && f.dep[id]) || null; } catch (e) { return null; }
   }
-  function farPhaseTap(src, t0, holdS, lossD, N) {
+  function farPhaseTap(src, t0, cut, N) {
     var p = farDep("phase"); if (!p) return null;
     // N is the caller's node registrar: the comb has to be torn down with the
     // signal that made it. Without it the three nodes outlive every broadcast
@@ -959,7 +1106,7 @@
     var T = tl(), c = T.ctx, sum = N(c.createGain()), dly = N(c.createDelay(1.5)), wet = N(c.createGain());
     var total = (p.driftMs / 1000) * p.passes;                 // where the two copies end up
     dly.delayTime.setValueAtTime(0.0005, t0);
-    dly.delayTime.linearRampToValueAtTime(Math.min(1.4, total), t0 + TUNE_S + holdS + lossD);
+    dly.delayTime.linearRampToValueAtTime(Math.min(1.4, total), cut);
     wet.gain.setValueAtTime(0.85, t0);                          // near-equal copies: the comb is deep
     src.connect(sum);                                           // the first loop
     src.connect(dly); dly.connect(wet); wet.connect(sum);       // the second, sliding behind it
@@ -1098,9 +1245,13 @@
   // ---- the signal itself ----
   function startSignal(a, t0) {
     var T = tl(), c = T.ctx, v = video, ms = mediaSrc;
-    var buffered = reelsBuffered(), bufSrc = null;   // 経路: the reel's first node is the only thing this switch moves
+    var buffered = reelsBuffered(), bufSrc = null, bufSrcs = [];   // 経路: the reel's first node is the only thing this switch moves
     var band = T.getLayerParam("broadcast", "band", 0.5), flutter = T.getLayerParam("broadcast", "flutter", 0.5), grit = T.getLayerParam("broadcast", "grit", 0.5);
-    var holdS = a.holdS, lossD = a.lossD, lossStart = t0 + TUNE_S + holdS, cut = lossStart + lossD, burstAt = cut + COLLAPSE_S, end = burstAt + BURST_S + DEAD_S;
+    // THE PLAN IS THE TIMELINE. Every time below is derived from it, so a
+    // reception with an eight-second hunt in front of it, a hole in the middle
+    // and a lingering loss at the end is the same code path as today's clip.
+    var P = a.rx || planOne(a.reel, a.inS, a.holdS, a.lossD);
+    var holdS = P.presenceS, lossD = P.exitS, lossStart = t0 + P.lossAtS, cut = t0 + P.spanS, burstAt = cut + COLLAPSE_S, end = burstAt + BURST_S + DEAD_S;
     // §11.3 THE STATION TUNES TO THE SIGNAL. On a far night at d ≥ 0.5, a reel
     // that is TAGGED as holding a pitch (TONE_PITCHED: tone, sung and drone —
     // `drone` arrived with the 207-reel pool and this comment used to say it
@@ -1129,8 +1280,8 @@
       var hp = N(c.createBiquadFilter()); hp.type = "highpass"; hp.Q.setValueAtTime(0.7, t0);
       var lp = N(c.createBiquadFilter()); lp.type = "lowpass"; lp.Q.setValueAtTime(0.7, t0);
       // exponential Hz ramps (S3, critic S1 §2.7c): a band opening in pitch, not in Hz
-      hp.frequency.setValueAtTime(800, t0); hp.frequency.exponentialRampToValueAtTime(hpHold, t0 + TUNE_S + 1.0);
-      lp.frequency.setValueAtTime(1600, t0); lp.frequency.exponentialRampToValueAtTime(lpHold, t0 + TUNE_S + 1.0);
+      hp.frequency.setValueAtTime(800, t0); hp.frequency.exponentialRampToValueAtTime(hpHold, t0 + P.entryS + 1.0);
+      lp.frequency.setValueAtTime(1600, t0); lp.frequency.exponentialRampToValueAtTime(lpHold, t0 + P.entryS + 1.0);
       hp.frequency.setValueAtTime(hpHold, lossStart); hp.frequency.exponentialRampToValueAtTime(900, cut);
       lp.frequency.setValueAtTime(lpHold, lossStart); lp.frequency.exponentialRampToValueAtTime(1500, cut);
       // the receiver: pre-attenuated tanh, makeup after (the grit knob is the drive)
@@ -1176,11 +1327,27 @@
       cr.curve = cc;
       var dn = N(T.noiseSource()), dg2 = N(c.createGain()); dg2.gain.setValueAtTime(db2lin(DITHER_DB) / steps, t0);
       dn.connect(dg2); dg2.connect(cr); dn.start(t0, 7); dn.stop(end);
-      // the tuning envelope: in over 0.4 + 1.0 s, out as (1 − k²) through the loss, a hard cut
+      // THE TUNING ENVELOPE, WALKED FROM THE PLAN. In over the entry + 1.0 s,
+      // flat across each piece, to nothing in each carrier-lost gap and back up
+      // over the relock, out as (1 − k²) through the exit, a hard cut. A
+      // one-piece reception produces exactly the list this used to hold
+      // literally — in over 0.4 + 1.0, hold, the four-step loss, the 0.02 cut.
       var sg = N(c.createGain());
       var peak = 0.35 * db2lin(a.reel.gain);
-      PJ.Voice.env(sg.gain, t0, [[TUNE_S, peak * 0.85], [1.0, peak], [holdS - 1.0, peak],
-        [lossD * 0.5, peak * 0.75], [lossD * 0.25, peak * 0.44], [lossD * 0.15, peak * 0.19], [lossD * 0.1, peak * 0.06], [0.02, 0]]);
+      var env = [[P.entryS, peak * 0.85], [1.0, peak], [Math.max(0, P.segments[0].onS - 1.0), peak]];
+      for (i = 1; i < P.segments.length; i++) {
+        var gseg = P.segments[i], ggap = P.gaps[i - 1];
+        env.push([0.12, peak * GAP_FLOOR]);                              // the carrier goes
+        env.push([Math.max(0, ggap.durS - 0.12), peak * GAP_FLOOR]);     // …and stays gone
+        env.push([Math.max(0.02, gseg.lockS), peak]);                    // the relock: found again, short
+        env.push([gseg.onS, peak]);
+      }
+      if (P.exitS > 0.05) {
+        env.push([P.exitS * 0.5, peak * 0.75]); env.push([P.exitS * 0.25, peak * 0.44]);
+        env.push([P.exitS * 0.15, peak * 0.19]); env.push([P.exitS * 0.1, peak * 0.06]);
+      }
+      env.push([0.02, 0]);                                               // 絶 mid-word is this line alone
+      PJ.Voice.env(sg.gain, t0, env);
       // THE HEAD OF THE CHAIN, and the whole of the ?reels=buffer difference.
       // Everything downstream — band, receiver, flutter, dropouts, staircase,
       // envelope, phasing, room tap — is the same graph on the same schedule;
@@ -1188,15 +1355,30 @@
       // in-point becomes start()'s offset and the tape rate becomes the
       // source's playbackRate, which are the two things v.currentTime and
       // v.playbackRate were doing.
+      // ONE SOURCE PER PIECE. In buffer mode each piece of the plan is its own
+      // BufferSource, started at its own moment with its own in-point — which
+      // is what makes 戻's "the same broadcast, later in the source" and 走's
+      // second reel fall out of the plan rather than needing a mechanism. In
+      // element mode there is still ONE head (the media element cannot be in
+      // two places at once) and the pieces are seeks, scheduled below.
       var head = ms;
       if (buffered) {
-        head = bufSrc = N(c.createBufferSource());
-        bufSrc.buffer = a.buf;
-        bufSrc.playbackRate.setValueAtTime(rate * (T.glideMul ? T.glideMul(t0) : 1), t0);
-        bufSrc.start(t0, a.inS);
-        bufSrc.stop(cut + 0.2);
+        for (i = 0; i < P.segments.length; i++) {
+          var sgi = P.segments[i], bi = bufFor(a, sgi.reel);
+          if (!bi) continue;
+          var bs = N(c.createBufferSource());
+          bs.buffer = bi;
+          bs.playbackRate.setValueAtTime(rate * (T.glideMul ? T.glideMul(t0) : 1), t0 + sgi.srcFromS);
+          bs.start(t0 + sgi.srcFromS, sgi.inS);
+          bs.stop(t0 + sgi.srcToS);
+          bufSrcs.push(bs);
+          bs.connect(hp);
+        }
+        bufSrc = bufSrcs[0] || null;
+        head = null;
       }
-      head.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
+      if (head) head.connect(hp);
+      hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
       hz.connect(sg);   // the holes' static joins past the staircase, under the same envelope as the reel
       // 相 PHASING (W3): two copies of the same window drifting apart. Reich
       // ran two tape loops at almost the same speed; here one copy goes through
@@ -1204,7 +1386,7 @@
       // hold, which is the same relationship expressed as a comb that sweeps —
       // and it is the comb, not the delay, that is the sound. It costs one
       // delay and one gain, and only while a signal is up.
-      var phased = farPhaseTap(sg, t0, holdS, lossD, N);
+      var phased = farPhaseTap(sg, t0, cut, N);
       (phased || sg).connect(T.lg("broadcast"));
       farRoomCapture(sg, t0 + TUNE_S + 1.0);      // 室: two seconds of the reel, once it is properly tuned in
       // 螺 / 弛 — THE REEL RIDES THE GLIDE. The station's whole field slides
@@ -1235,7 +1417,7 @@
         (function (tt) {
           T.lane("broadcast").at(tt - 0.05, function () {
             try { if (video && !video.paused) video.playbackRate = rate * T.glideMul(tt); } catch (e) {}
-            try { if (bufSrc) bufSrc.playbackRate.setValueAtTime(rate * T.glideMul(tt), tt); } catch (e) {}
+            try { for (var bq = 0; bq < bufSrcs.length; bq++) bufSrcs[bq].playbackRate.setValueAtTime(rate * T.glideMul(tt), tt); } catch (e) {}
           });
         })(gt);
       }
@@ -1253,7 +1435,7 @@
       try { T.fallback(t0); } catch (e3) {}
       return;
     }
-    live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc };
+    live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc, bufSrcs: bufSrcs };
     stats.signals++;
     if (a.pinned && !pinUsed) {
       pinUsed = true;   // spent ON AIR, not at arm: a fallback must not eat it
@@ -1261,16 +1443,18 @@
     }
     remember(a.reel.id, a.cycle);
     // the crew's duck and notch for the signal's span
-    try { T.roomSpeak("broadcast", t0, TUNE_S + holdS + lossD, 800); } catch (e) {}
+    try { T.roomSpeak("broadcast", t0, P.spanS, 800); } catch (e) {}
     // one bonshō may ring under it in a rite cycle (the machine answering the past)
-    if (a.bell && a.kind === "rite") { try { T.bonsho(t0 + TUNE_S + holdS * 0.45); } catch (e) {} }
+    // — under the FIRST piece, at its midpoint, so a reception that breaks and
+    // returns does not ring in the silence where the carrier was lost.
+    if (a.bell && a.kind === "rite") { try { T.bonsho(t0 + P.segments[0].atS + P.segments[0].onS * 0.45); } catch (e) {} }
     // the element starts on the audio clock's cue (a setTimeout for the lookahead lead)
     T.lane("broadcast").at(t0 - 0.12, function (t) {
       var lead = Math.max(0, (t - c.currentTime) * 1000);
       setTimeout(function () { try {
         if (!v) return;                                     // 経路 buffer mode with no DOM: the sound is already away
         if (buffered) hushElement(v);                       // …and the picture stays voiceless right up to the moment it moves
-        if (Math.abs(v.currentTime - a.inS) > 0.5) v.currentTime = a.inS;
+        if (Math.abs(v.currentTime - P.segments[0].inS) > 0.5) v.currentTime = P.segments[0].inS;
         // TAPE-STYLE: the pitch and the speed move together, which is the
         // whole idiom — a reel bent to the field also runs slow or fast, and
         // that is the sound of a machine, not a pitch-shifter.
@@ -1279,8 +1463,28 @@
         var p = v.play(); if (p && p.catch) p.catch(function () {});
       } catch (e) {} }, lead);
     });
+    // THE PIECES AFTER THE FIRST, in element mode: the reception returns to the
+    // same frequency at a later moment of the source (戻) or crosses to another
+    // reel entirely (走), and either way that is a src change and/or a seek on
+    // the one element. Scheduled on the lane at the RELOCK, under an envelope
+    // that is already at the carrier-lost floor, so the seek itself is silent.
+    for (i = 1; i < P.segments.length; i++) {
+      (function (sgm) {
+        T.lane("broadcast").at(t0 + sgm.lockAtS - 0.12, function (t) {
+          var lead2 = Math.max(0, (t - c.currentTime) * 1000);
+          setTimeout(function () { try {
+            if (!v) return;
+            var rid = (sgm.reel && sgm.reel.id) || (a.reel && a.reel.id);
+            if (videoSrcId !== rid) { videoSrcId = rid; v.src = reelUrl(sgm.reel || a.reel); v.preload = "auto"; v.load(); }
+            v.currentTime = sgm.inS;
+            var p2 = v.play(); if (p2 && p2.catch) p2.catch(function () {});
+          } catch (e) {} }, lead2);
+        });
+      })(P.segments[i]);
+    }
     // the descriptor for the set and the VFD line 「受信 · title · year」
-    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v };
+    var wire = planWire(P);
+    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v, rx: wire };
     T.lane("broadcast").at(t0 - 0.15, function () {
       T.emitEvent({ cat: "rx", label: "受信", detail: shortTitle(a.reel.title) + " · " + a.reel.year, signal: desc, link: a.reel.src || null }, t0);
     });
@@ -1303,7 +1507,7 @@
         (gl !== 1 ? " · riding the glide, ×" + gl.toFixed(4) + " at air (" + (1200 * Math.log(gl) / Math.LN2).toFixed(1) + " cents) and tracking" : "") }, t0 + TUNE_S);
     }
     T.lane("broadcast").at(cut, function () {
-      T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" }, cut);
+      T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s" + (P.segments.length > 1 || P.body !== "jou" ? " on air · " + P.spanS.toFixed(1) + " s" : "") }, cut);
     });
     T.lane("broadcast").at(end + 0.5, function () { teardown(); });
   }
@@ -1313,7 +1517,7 @@
     var L = live; live = null;
     if (video) { try { video.pause(); } catch (e) {} }
     if (!L) return;
-    try { if (L.bufSrc) L.bufSrc.stop(); } catch (e) {}
+    if (L.bufSrcs) for (var bs2 = 0; bs2 < L.bufSrcs.length; bs2++) { try { L.bufSrcs[bs2].stop(); } catch (e) {} }
     try { if (mediaSrc && L.hp) mediaSrc.disconnect(L.hp); } catch (e) {}
     for (var i = 0; i < L.nodes.length; i++) { try { L.nodes[i].disconnect(); } catch (e2) {} }
     if (armed === L.a) armed = null;

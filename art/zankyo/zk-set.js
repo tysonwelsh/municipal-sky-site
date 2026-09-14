@@ -243,17 +243,51 @@
   var sig = null;             // { t0, holdS, lossD, drops: [[t, d], …], id, title, year, video?, lossD }
   var S = { phase: "idle", phaseAt: 0, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0 };
   var chDeg = -40;
+  // 形 THE SHAPE OF A RECEPTION (PLAN-SIGNAL-SHAPES.md §4.3). The tube used to
+  // derive its phase from three numbers — tune, hold, loss — which was the
+  // whole of what a reception could be. It is handed the reception PLAN now and
+  // walks it: the arrival (a snap, a hunt through the snow, a slow surfacing),
+  // each piece, each carrier-lost gap between pieces with its relock, and the
+  // exit. A one-piece plan gives back exactly the five phases it always gave,
+  // at exactly the same moments, which is what R0's identity gate rests on.
+  //
+  // THE ENTRY IS DRAWN AS ONE OF THREE. 即 the snap is today's 0.4 s tune-in;
+  // 探 the hunt is the dial hunting 3–8 s, with glimpses of a picture flickering
+  // out of the snow at times the plan names; 浮 the drift-in is the signal
+  // surfacing over 6–10 s with no snap at all.
   function phaseOf(a) {
     if (!sig) return ["idle", 0];
-    var e = a - sig.t0;
+    var P = sig.rx, e = a - sig.t0;
     if (e < 0) return ["idle", 0];
-    if (e < TUNE_S) return ["tuning", e];
-    e -= TUNE_S; if (e < sig.holdS) return ["hold", e];
-    e -= sig.holdS; if (e < sig.lossD) return ["loss", e];
-    e -= sig.lossD; if (e < COLLAPSE_S) return ["collapse", e];
+    if (e < P.entryS) return [P.entry === "tan" ? "hunting" : P.entry === "fu" ? "drifting" : "tuning", e];
+    var segs = P.segments, gaps = P.gaps;
+    for (var i = 0; i < segs.length; i++) {
+      if (i > 0) {
+        var g = gaps[i - 1];
+        if (e < g.atS + g.durS) return [g.sweep ? "sweeping" : "lost", e - g.atS];   // 走's dial sweep, or 戻's dead carrier
+      }
+      if (e < segs[i].atS) return ["relock", e - segs[i].lockAtS];
+      if (e < segs[i].atS + segs[i].onS) return ["hold", e - segs[i].atS];
+    }
+    if (e < P.spanS) return ["loss", e - P.lossAtS];
+    e -= P.spanS; if (e < COLLAPSE_S) return ["collapse", e];
     e -= COLLAPSE_S; if (e < BURST_S) return ["burst", e];
     e -= BURST_S; if (e < DEAD_S) return ["dead", e];
     return ["over", e];
+  }
+  // today's clip, in the plan's grammar — for a descriptor that carries no
+  // plan (an old caller, or the ♪ audition before §4.3 reached it)
+  function planOne(holdS, lossD) {
+    return { body: "jou", entry: "soku", exit: "setsu", entryS: TUNE_S, exitS: lossD,
+      lossAtS: TUNE_S + holdS, spanS: TUNE_S + holdS + lossD, presenceS: holdS,
+      segments: [{ atS: TUNE_S, onS: holdS, lockS: 0, lockAtS: TUNE_S }], gaps: [], holes: [], glimpses: null, porous: null, callback: false };
+  }
+  // is the picture inside a 断 hole — a real loss and recovery inside a piece?
+  function inHole(e) {
+    var h = sig && sig.rx && sig.rx.holes;
+    if (!h) return 0;
+    for (var i = 0; i < h.length; i++) { if (e >= h[i].atS && e < h[i].atS + h[i].durS) return Math.min(1, (e - h[i].atS) / 0.35); if (h[i].atS > e) break; }
+    return 0;
   }
   function stepTunePointer() {
     chDeg += 30 + rnd() * 25; if (chDeg > 135) chDeg = -135 + (chDeg - 135);
@@ -262,7 +296,9 @@
   function enterPhase(ph, t) {
     S.phase = ph; S.phaseAt = t;
     if (!rx) return;
-    if (ph === "tuning") { rx.classList.add("is-flicker"); rx.classList.remove("is-lit"); stepTunePointer(); }
+    if (ph === "tuning" || ph === "hunting" || ph === "sweeping") { rx.classList.add("is-flicker"); rx.classList.remove("is-lit"); stepTunePointer(); }
+    else if (ph === "drifting" || ph === "lost") { rx.classList.add("is-flicker"); rx.classList.remove("is-lit"); }
+    else if (ph === "relock") { rx.classList.add("is-flicker"); }
     else if (ph === "hold") { rx.classList.remove("is-flicker"); rx.classList.add("is-lit"); }
     else if (ph === "loss") { rx.classList.add("is-flicker"); }
     else if (ph === "collapse") { rx.classList.remove("is-lit"); }
@@ -311,14 +347,42 @@
     if (ph !== S.phase) enterPhase(ph, t);
     if (ph === "tuning") {
       S.strength = clamp01(el / TUNE_S) * 0.85;
+    } else if (ph === "hunting") {
+      // 探 THE HUNT: the dial hunting through the snow. The picture resolves for
+      // a glimpse at each of the times the plan drew and loses again — the
+      // vertical hold slipping every time it nearly catches. The glimpses are
+      // not on-air time and the audio is only a syllable, so the tube is the
+      // instrument that sells this one.
+      var gl = sig.rx.glimpses, str = 0;
+      if (gl) for (var gi = 0; gi < gl.length; gi++) {
+        var gk = (el - gl[gi][0]) / gl[gi][1];
+        if (gk >= 0 && gk < 1) { str = Math.max(str, 0.78 * Math.sin(Math.PI * gk)); if (gk < 0.12) S.rollV += 1.4; }
+      }
+      S.strength = str;
+    } else if (ph === "drifting") {
+      // 浮 THE DRIFT-IN: no snap at all. The signal surfaces from under the
+      // static, condensing out of snow over the whole entry.
+      var dk = clamp01(el / Math.max(0.01, sig.rx.entryS));
+      S.strength = 0.85 * dk * dk;
+    } else if (ph === "lost" || ph === "sweeping") {
+      // 戻 / 走: the carrier is GONE. Snow, the last frame ghosting away, the
+      // hold rolling. A sweep rolls harder — the dial is moving.
+      S.strength = 0;
+      if (rnd() < (ph === "sweeping" ? 0.5 : 0.18)) S.rollV += (rnd() - 0.35) * (ph === "sweeping" ? 4 : 2);
+    } else if (ph === "relock") {
+      S.strength = clamp01(el / Math.max(0.05, sig.rx.segments[0].lockS || 0.2)) * 0.85;
     } else if (ph === "hold") {
       var breath = 0.82 + 0.13 * Math.sin(el * 1.1 + S.seed) + 0.05 * Math.sin(el * 4.3 + S.seed * 2);
       var dropping = inDrop(a);
       if (dropping && S.drop <= 0 && rnd() < 0.3) S.holdFrame = t + 100 + rnd() * 200;   // a frame-hold rides some dropouts
       S.drop = dropping ? 1 : 0;
-      S.strength = clamp01(breath - (dropping ? 0.45 : 0));
+      // 断 A HOLE is not a dropout: the picture tears and rolls through a real
+      // loss of one to three seconds and comes back where it would be.
+      var hk = inHole(a - sig.t0);
+      if (hk > 0) { S.rollV += (rnd() - 0.4) * 2.2; if (rnd() < 0.25) S.holdFrame = t + 90 + rnd() * 180; }
+      S.strength = clamp01(breath - (dropping ? 0.45 : 0) - hk * 0.75);
     } else if (ph === "loss") {
-      var k = clamp01(el / sig.lossD);                       // 0..1 through the loss
+      var k = clamp01(el / Math.max(0.02, sig.rx.exitS));    // 0..1 through the loss
       S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
       if (rnd() < k * 0.25) S.holdFrame = t + 80 + rnd() * 160;
       S.rollV += (rnd() - 0.4) * k * 3;                      // the hold slips
@@ -352,7 +416,13 @@
   function renderSource(t) {
     var ph = S.phase;
     scx.globalAlpha = 1;
-    if (ph === "tuning" || ph === "hold" || ph === "loss" || ph === "collapse") {
+    // The picture is drawn for every phase in which there is a picture to draw
+    // — including the ones where its strength is zero, because a carrier-lost
+    // gap should show the last frame ghosting away under the snow rather than
+    // cutting to the idle raster (the tube has not been switched off; it has
+    // lost the station). burst and dead are black by design.
+    if (ph === "tuning" || ph === "hold" || ph === "loss" || ph === "collapse" ||
+        ph === "hunting" || ph === "drifting" || ph === "relock" || ph === "lost" || ph === "sweeping") {
       if (t < S.holdFrame) { /* frame hold: keep the last picture */ }
       else if (sig.video) { try { scx.drawImage(sig.video, 0, 0, SW, SH); } catch (e) { scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH); } }
       else drawTestCard(0.9, Math.sin(t / 700) * 3);          // the bench: the test card stands in for a reel
@@ -559,6 +629,7 @@
     if (sig && phaseOf(a)[0] !== "idle") return false;        // never two at once
     var c = Z.getAudioContext && Z.getAudioContext();
     sig = { t0: +desc.t0, holdS: Math.max(1, +desc.holdS || 10), lossD: Math.max(0.5, +desc.lossD || 2.2), drops: (desc.drops || []).slice(), id: desc.id || null, title: desc.title || "", year: desc.year || "", video: desc.video || null, wall: !c };
+    sig.rx = desc.rx || planOne(sig.holdS, sig.lossD);
     sig.drops.sort(function (p, q) { return p[0] - q[0]; });
     S.seed = (desc.seed != null ? +desc.seed : Ridle.next() * 1000); S.drop = 0; S.holdFrame = 0; S.strength = 0;
     return true;
