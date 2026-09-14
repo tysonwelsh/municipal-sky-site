@@ -1,15 +1,17 @@
 # ZANKYŌ — the shapes of a reception (受信の形)
 
-*Plan written 2026-09-14 at the owner's ask, against 2.1.0-rc.68. The owner's
-observation: every signal the set picks up is about the same length, and one
-signal has no relation to the next — a clip, a long pause, another clip. The
-ask: confirm that, keep today's length as the floor, and add variety — some
-longer, some shaped differently (a signal that plays a few seconds, drops
-out, and returns later in the same broadcast as though time passed while the
-carrier was lost), so that receptions feel organic and unpredictable. This
-document is the audit (§1), the vocabulary proposed (§3), the mechanism (§4),
-the storage question (§5), the phases and gates (§6), and the decisions the
-owner has to make before an agent builds it (§7).*
+*Plan written 2026-09-14 at the owner's ask, against 2.1.0-rc.68, and
+revised the same day with the owner's answers (§7). The observation: every
+signal the set picks up is about the same length, and one signal has no
+relation to the next — a clip, a long pause, another clip. The ask: keep
+today's length as the floor, spread lengths widely up to the Cage reel's
+maximum, add shapes (a signal that plays a few seconds, drops out, and
+returns later in the same broadcast as though time passed while the carrier
+was lost), let the instruments sometimes play over and between the pieces,
+and make signals about 75 % more frequent than today. §1 is the audit; §2
+the length rule; §3 the vocabulary; §4 the mechanism; §5 the reels; §6 the
+phases and gates; §7 the owner's decisions; §8 the brief for the agent that
+builds it — on the owner's Mac, because the reels' sources live there.*
 
 ---
 
@@ -56,46 +58,71 @@ independently (the only memory is the three-cycle rest), and nothing in the
 receiver knows what the previous one was. The owner's "one clip, a long pause,
 another clip, no connection" is precisely what the code does.
 
+**How often, today:** 1.69 broadcasts a cycle (W4, rc.56), cycles of five to
+ten minutes, so roughly 12–16 signals an hour, and about 4 % of the night
+with a clip on the air.
+
 **Where the constraints come from, so the redesign respects them:**
 
 - **The air.** A broadcast holds the AIR from t0 − 6 to the loss + 2 + 3–6 s
   per voice; the melodic bodies commit notes up to 46 s ahead, so the hold is
-  written at arm, 55 s before t0 (`BC_ARM_LEAD_S`). The next broadcast's arm
-  calls `airHoldClear()`, so an *ordinary* reception owns exactly
-  `BC_GAP_S − BC_ARM_LEAD_S = 40 s` past t0; today it reaches 23.2 s. Anything
-  longer must go through `fitsRoom()` (the KIRU, the guest, the next arm, the
-  cycle end), which is what whole thoughts already do.
+  written at arm, 55 s before t0 (`BC_ARM_LEAD_S`). Today the next
+  broadcast's arm calls `airHoldClear()` — a GLOBAL clear — so an ordinary
+  reception owns exactly `BC_GAP_S − BC_ARM_LEAD_S = 40 s` past t0, and the
+  95 s spacing exists to protect that. The receiver has ONE armed slot and
+  ONE `<video>` element, so it cannot prefetch the next reel while one plays.
 - **The KIRU.** A signal must end 15 s before the cut and start 20 s after.
 - **The picture.** `zk-set.js` derives its phase every frame from one
   descriptor `{ t0, holdS, lossD, drops }` and knows exactly the sequence
   tuning → hold → loss → collapse → burst → dead. A reception with a gap in
   it needs a descriptor with segments.
 - **The draws.** Every draw comes off the signal stream whether or not it is
-  used, so the network never moves a night; a new shape must draw a fixed
-  count too. Any change to the draws moves every home night — that is a
-  **declared re-base** (`_harness-bank.js`), which the owner has accepted.
+  used, so the network never moves a night; new shapes must draw a fixed
+  count too. Any change to the draws moves every home night — a **declared
+  re-base** (`_harness-bank.js`), which the owner has accepted.
 - **The harness gates** (`_harness.js`): ≤ 2 signals a cycle, none within a
   KIRU's reach, no melodic or PA note inside a hold, 2.2–3.6 signals per
   3 cycles, placement (1.68 broadcasts/cycle, pair 74 %, empty 5.8 % at
-  rc.56), and per-seed melodic density ±20 % against the bank.
+  rc.56), and per-seed melodic density ±20 % against the bank. Several of
+  these are re-derived by this plan (§6).
 - **The reels are immutable and the raw sources are not in the repo.** A
   re-cut reel gets a new `rev`; the sources live in `local-dev/broadcast-src/`
   on the owner's Mac (gitignored) or are re-fetched from each entry's `src`.
-  So any change to what is *stored* is a step for the owner's machine, and the
-  code must not depend on it having happened.
+  So the re-cut is a step on the owner's machine, and the code must not
+  depend on it having happened (§5).
 
 ---
 
-## 2. The floor, as this plan reads it
+## 2. The length rule (the owner, §7 q1 and q6)
 
-"Today's length is the minimum." Read as: **a reception is never shorter than
-today's** — the signal's total on-air time (the sum of its audible segments)
-is at least 8 s, and a single-segment reception is exactly today's 8–12 s.
-Segments *inside* a longer reception may be short (the owner's own example:
-5 s, a 10 s gap, 5 s more), because the reception as a whole is longer than
-anything today. Nothing in this plan proposes a lone 3 s glimpse; if the
-owner wants one, it is one more body in §3 with its own weight, and it is
-marked there as *below the floor, opt-in*.
+**A reception's on-air time — the sum of the seconds you actually hear the
+signal — is at least 8 s and at most the Cage reel's 40 s.** Pieces inside a
+reception may be short (5 s, a gap, 3 s more: on air 8 s); a lone piece under
+8 s never happens. There is no "glimpse".
+
+**The spread is wide and today's length is uncommon, not rare.** The on-air
+time is drawn from this distribution — the constant the owner tunes:
+
+| on air | share | what it is |
+|---|---|---|
+| 8–12 s | 15 % | today's clip |
+| 12–18 s | 25 % | |
+| 18–25 s | 25 % | |
+| 25–32 s | 20 % | |
+| 32–40 s | 15 % | the Cage thoughts' range |
+
+Median about 20 s. The draw is made at PLAN time, per broadcast (§4.1), so
+the cycle can be laid out around it; the receiver then fills that budget with
+a shape (§3). Where the pool cannot serve a budget (no reel with a window long
+enough that has not played in the last three cycles), the budget degrades to
+the longest the pool can serve — which, until the reels are re-cut (§5), is
+12 s on every reel but Cage. **So the distribution above is only reachable
+once the re-cut has happened; the code ships first and the spread appears as
+the reels arrive.** A harness line reports the achieved distribution so the
+gap between the two is a number.
+
+Plain receptions (§3.1 常) take the whole budget as one hold — "two-thirds
+stay plain, though of varying length" (§7 q7). Shaped ones split it.
 
 ---
 
@@ -103,37 +130,33 @@ marked there as *below the floor, opt-in*.
 
 A reception is composed of **a body, an entry and an exit**, each drawn from
 the signal stream. The body decides what the signal *does*; the entry and exit
-decide how it arrives and how it leaves. A grammar gives 4 × 3 × 3 shapes from
-ten parts, and the ear hears a different reception every time without any one
-part being rare enough to feel like a set piece. Every kanji below is the log
-line (「受信 · title · year · 戻」).
+decide how it arrives and how it leaves. Every kanji is the log line
+(「受信 · title · year · 戻」).
 
 ### 3.1 The bodies
 
-- **常 the ordinary** — today's: one segment, hold 8–12 s. The floor, and
-  still the most common thing the set does.
-- **戻 the return** (the owner's example) — a segment of 4–8 s, the carrier
-  lost for 6–15 s (low static, the tube rolling snow, the crew still
-  listening), then the SAME broadcast again for 4–10 s, **later in the
-  source**: the in-point advances by the gap × 1–3 (time collapsing — the
-  transmission went on while we lost it), or, when the window has no room
-  left, the reel's *next* window, which is a genuinely later moment of the
-  same source (the windows are cut in source order and `srcWindows` says how
-  far apart: the log can say 「戻 · 47 s later」). Return lock is short
-  (0.2 s), no 4 s static rise — it is the same frequency, found again. One
-  return usually; two with a small probability. Total on air 8–18 s, total
-  span 18–35 s.
-- **断 the broken carrier** — one segment of 10–16 s with one or two holes of
-  1–3 s in it — not the 120–370 ms dropouts of today but a real loss and
-  recovery: the band narrows, the voice ducks under rising static, the
-  picture tears and rolls, and it comes back where it *would* be (no seek —
-  honest time; the element keeps running). Total on air 10–16 s.
-- **長 the long hold** — 15–30 s continuous, on a window long enough to carry
-  it (§5). Until long windows exist this body is only ever satisfied by the
-  Cage reel, so it degrades to 常 on any reel without one — which is exactly
-  today's behaviour, so nothing is lost while the pool catches up.
-- *(opt-in, below the floor)* **瞬 the glimpse** — 2–4 s, gone. Not proposed;
-  listed because the owner asked for "some shorter". Weight 0 unless chosen.
+- **常 the ordinary** — one segment, the whole budget: 8 s to 40 s of the
+  reel, continuous. Two receptions in three (§7 q7). Not "today's clip" any
+  more — today's clip is the 8–12 s end of it.
+- **戻 the return** (the owner's example) — a piece of 3–10 s, the carrier
+  lost for 6–15 s (low static, the tube rolling snow), then the SAME
+  broadcast again, **later in the source**: the in-point advances by the
+  gap × 1–3 (time collapsing — the transmission went on while we lost it),
+  or, when the window has no room left, the reel's *next* window, a
+  genuinely later moment of the same source (the windows are cut in source
+  order and `srcWindows` says how far: the log can say 「戻 · 47 s later」).
+  The relock is short (0.2 s), no 4 s static rise — the same frequency,
+  found again. One return usually; two on a large budget. The pieces sum to
+  the budget.
+- **断 the broken carrier** — one piece with one or two holes of 1–3 s: not
+  today's 120–370 ms dropouts but a real loss and recovery — the band
+  narrows, the voice ducks under rising static, the picture tears and rolls,
+  and it comes back where it *would* be (no seek; honest time). Holes do not
+  count as on-air time.
+- **走 the scan** — two different reels in one reception: the first is lost,
+  the dial sweeps (the 掃引 static, 2–3 s), a second locks. The budget is
+  split between them (each piece ≥ 4 s); both take the recent ring and the
+  tide weighting. Plan §2.4 imagined this and it was never built.
 
 ### 3.2 The entries
 
@@ -141,7 +164,7 @@ line (「受信 · title · year · 戻」).
 - **探 the hunt** — the dial hunting 3–8 s: two to four glimpses of the
   picture and a syllable (0.3–0.8 s each) flickering out of the snow before
   it locks. On the tube: the vertical hold slipping, the picture resolving
-  and losing again.
+  and losing again. The glimpses are not on-air time.
 - **浮 the drift-in** — the signal surfaces from under the static over
   6–10 s: strength climbing, the band opening slowly (the highpass sliding
   down from 800 Hz), the picture condensing out of snow. No snap at all.
@@ -151,219 +174,319 @@ line (「受信 · title · year · 戻」).
 - **切 the cut** — today's: loss 1.6–2.8 s, collapse, burst.
 - **残 the lingering loss** — the loss stretched to 6–12 s: dropouts
   thickening, flutter deepening, the voice surfacing through static two or
-  three times before the cut. The tube tears and rolls the whole way.
+  three times before the cut; the tube tears and rolls the whole way.
 - **絶 mid-word** — no loss ramp: a hard cut at full strength, the burst,
-  dead. The rarest, and the one that makes the others feel like a loss
-  rather than a fade.
+  dead. The rarest, and the one that makes the others feel like a loss.
 
-### 3.4 Relations between receptions (the "no connection" part)
+### 3.4 Relations between receptions
 
-- **同 the callback** — when a cycle carries two broadcasts, the second is
-  the SAME reel with a later window, with probability ~0.25: the station kept
-  the frequency, and a minute or two later the same voice is back. This is
-  the cheapest change in the plan (one preference in `choose()`), and it is
-  the one that most directly answers "one clip, a pause, another clip".
-- **走 the scan** — two different reels back to back in one reception: the
-  first is lost, the dial sweeps (the 掃引 static, 2–3 s), a second locks for
-  its own hold. Both take the recent ring and the tide weighting. Plan §2.4
-  imagined this ("放送 cycles may chain two signals") and it was never built.
-  Its footprint is two ordinary holds plus the sweep, so it seats only where
-  there is room.
+- **同 the callback** — when a cycle carries more than one broadcast, a later
+  one is the SAME reel with a later window, with probability 0.25: the
+  station kept the frequency, and a minute later the same voice is back.
+  One preference in `choose()`; the most direct answer to "no connection".
+- **The silence between receptions is drawn, not fixed.** Today it is
+  whatever ≥ 95 s the placement found. It becomes a draw of **15–90 s**
+  between the end of one reception and the static rise of the next (§4.1),
+  so signals sometimes come in quick succession and sometimes leave a long
+  quiet — the same organic irregularity the shapes give inside a reception.
 
-### 3.5 Weights (a first proposal, for the owner to tune by ear)
+### 3.5 The air — who plays over and between the pieces (§7 q2)
 
-| part | weight | on-air time it adds |
+- **Most receptions silence the melodic voices, as today: 70 %.**
+- **30 % are porous:** one melodic voice, drawn (weighted toward the sparse
+  ones — shakuhachi, biwa, hichiriki; never the intercom, which is a second
+  speaker and would read as part of the broadcast), is left OUT of the hold
+  and may claim the air over the signal. The log says which (「受信 … · 尺
+  over it」). The harness counts its notes as *permitted*, not as intrusions.
+- **The gaps inside a return are released.** The hold becomes a LIST of
+  spans per voice (the air already keeps an array per voice), one span per
+  piece, so the crew may come in between the pieces. `airClaimAt()` tests a
+  note's whole footprint against every span, so a phrase only lands in a gap
+  if it FITS in the gap — a 10 s gap takes a phrase of up to ~6 s and refuses
+  a longer one. That is the "play a little in the silence and be quiet before
+  it comes back" the owner described as the sophisticated version, and it
+  falls out of the existing machinery; if it does not in practice (the bodies
+  commit 33–46 s ahead and claim with an estimate), the fallback is a plain
+  release with the return's relock allowed to land on a note.
+- **Between receptions the crew plays, as today.**
+
+### 3.6 Weights (a first setting, for the owner to tune by ear)
+
+| part | weight | notes |
 |---|---|---|
-| body 常 ordinary | 0.42 | — |
-| body 戻 return | 0.22 | +4–10 s on air, +6–15 s of gap |
-| body 断 broken | 0.14 | +2–4 s |
-| body 長 long | 0.12 (degrades to 常 until §5) | +5–18 s |
-| body 走 scan | 0.06 | +8–12 s and a sweep |
-| body 瞬 glimpse | 0 (opt-in) | below the floor |
-| entry 即 / 探 / 浮 | 0.65 / 0.20 / 0.15 | 0 / +3–8 / +6–10 |
-| exit 切 / 残 / 絶 | 0.65 / 0.25 / 0.10 | 0 / +4–9 / −2 |
-| relation 同 callback | 0.25 of second broadcasts | — |
+| body 常 ordinary | 0.67 | the whole budget in one hold |
+| body 戻 return | 0.16 | |
+| body 断 broken | 0.09 | |
+| body 走 scan | 0.08 | needs room for two locks |
+| entry 即 / 探 / 浮 | 0.65 / 0.20 / 0.15 | |
+| exit 切 / 残 / 絶 | 0.65 / 0.25 / 0.10 | |
+| porous hold | 0.30 | one voice over the signal |
+| 同 callback | 0.25 of later broadcasts in a cycle | |
+| silence between receptions | 15–90 s, drawn | |
+| frequency | 1.75 × today (§4.1) | |
 
-Rough result: on-air time from the 8 s floor to ~35 s, median about 13 s;
-the whole event from today's 17 s to about 55 s; about **one reception in
-three** something other than today's snap-hold-cut. The entries and exits
-combine with every body, so 残 on a 戻 (a return that then lingers) and 探
-before a 長 both happen without being designed.
+Entries and exits combine with every body, so 残 on a 戻 and 探 before a
+30 s 常 both happen without being designed. Every number in this table lives
+in ONE block at the top of `zk-broadcast.js` (the frequency and the silence
+in `zankyo-audio.js` beside `BC_JO_P`), so the owner moves one value and it
+means the same thing on every night.
 
 ---
 
-## 4. The mechanism — one object, the reception plan
+## 4. The mechanism
 
-The change that makes all of §3 one implementation instead of ten: replace
-the receiver's `{ holdS, lossD }` with a **reception plan**,
+### 4.1 The budget is drawn at plan, the shape at arm
 
-```
-{ reel, segments: [ { inS, onS, lockS }, … ], gaps: [ … ],
-  entry: { kind, durS }, exit: { kind, lossD },
-  body: "常"|"戻"|"断"|"長"|"走", presenceS, spanS }
-```
+Today the engine places two broadcasts a cycle at plan time and the receiver
+decides the hold 55 s before t0; the engine protects itself with one global
+spacing sized for a 12 s hold. That cannot carry a 40 s hold three times a
+cycle. The change:
 
-where `presenceS` is the sum of on-air seconds (the thing the floor is about)
-and `spanS` runs from the first lock to the last cut. Everything downstream
-reads the plan instead of two numbers:
+- **At plan** (`zankyo-audio.js`, the broadcast placement), each broadcast
+  draws its **on-air budget** from §2's table and its **silence before it**
+  (15–90 s), on the form stream's per-cycle fork as the positions are today.
+  The footprint of a broadcast is then known at plan: static lead 4 s +
+  entry (≤ 10) + budget + gaps (≤ 15 per return) + exit (≤ 12) + tail — the
+  receiver exports the worst case per budget via `ZankyoBroadcast.limits()`
+  so the two files cannot disagree. Placement walks the legal time (jo, ha,
+  the sub-scenes; never kyū, oroshi, release; ≥ 55 s from the cycle start
+  for the arm lead; 20 s clear of the KIRU on both sides; 90 s from a guest)
+  and seats as many as fit: the target count is `round(legalS / 125)`
+  clamped to 1–4, which lands about 3 a cycle on a 7-minute cycle, i.e.
+  **1.75 × today's 1.69** (§7 q3). The number is tuned against the harness's
+  per-hour count, not per cycle. P(jo) = 0.20 stays.
+- **At arm** (55 s before t0, as today), the receiver draws the body, entry,
+  exit, porous voice and callback — a fixed count of draws, always — picks a
+  reel whose windows can serve the budget (the lottery's candidate set is
+  filtered by longest window ≥ the budget's need; a whole reel keeps §14's
+  rule: never sliced, served only when the budget covers a thought), and
+  builds the **reception plan**:
 
-- **`choose()`** draws the body, entry and exit AFTER the six draws it takes
-  today (a fixed count — twelve draws, always, so the stream never moves for
-  the network), then builds the plan against the window it landed on:
-  segments that fit inside the window, or across the reel's windows for a
-  return. **Degrade, never refuse:** a shape that does not fit the room
-  (`fitsRoom()`, extended to take `spanS` and the exit's reach) loses its
-  parts in order — the second return, the lingering exit, the hunt, the
-  return itself — down to 常, which always fits where the plan seated it
-  because the global spacing is still sized for it. A whole reel keeps §14's
-  rule (a thought is never sliced) and simply takes body 長.
-- **`fitsRoom()` and the reach.** `maxReachPastT0()` and the ordinary reach
-  stay as they are for 常; every other body is footprint-checked per position
-  the way whole thoughts are. `BC_GAP_S` does not move. The re-derivation
-  note in `zankyo-audio.js` gains one line: "shaped receptions are checked
-  by fitsRoom, like whole thoughts."
-- **The air** is held across the whole span, gaps included (the crew stays
-  quiet while the set hunts for the carrier — §7 asks the owner whether a
-  long gap should let the shakuhachi comment). The planned hold at arm and
-  the real hold at fire read `spanS + exit reach`, so they stay one object.
-- **`startSignal()`** schedules the same graph once (band, receiver, flutter,
-  gate, staircase, envelope, phasing, room tap) and walks the segments: the
-  envelope `sg` and the band ramps are scheduled per segment; between
-  segments the gate ducks to a carrier-lost floor (below `DROP_FLOOR`) with
-  the hole static rising, the band narrowed. The **seek** between segments is
-  `v.currentTime = inS` in element mode (a keyframe every second, so it
-  costs one) and a second `BufferSource.start(t, inS)` in `?reels=buffer`
-  mode. The hunt and the drift-in are entries scheduled before the first
-  segment on the same nodes; the lingering loss is a longer exit envelope
-  with a denser dropout schedule from `weather()`.
-- **`weather()`** draws its dropouts across the plan's span, denser in the
-  gaps and in a lingering loss, exactly as it densifies through today's loss.
+  ```
+  { id, reel, reel2?, budgetS, presenceS, spanS, body, entry, exit,
+    segments: [ { inS, onS, lockS, reel } … ], gaps: [ … ],
+    holes: [ … ], porous: voice|null, callback: bool }
+  ```
+
+  Everything downstream reads this object. **Degrade, never refuse:** if the
+  pool cannot serve the budget the budget shrinks to what it can; if the room
+  is short (the plan's footprint was worst-case; `fitsRoom()` re-checks the
+  actual one) the shape loses its parts in order — the second return, the
+  lingering exit, the hunt, the return itself — down to a plain hold.
+
+### 4.2 Holds are per signal; the receiver keeps a queue
+
+- **No global clear.** Each reception's air hold is written under its own
+  owner id (`signal:<cycle>:<n>`) and cleared by that id at teardown or
+  fallback. `airHoldClear()` without an argument is retired from the signal
+  path. This removes the reason `BC_GAP_S` existed; the spacing becomes the
+  drawn silence plus the footprint.
+- **Two armed slots.** `armed` becomes a short queue so the next reception
+  can arm (and write its hold 55 s out) while one is on the air.
+- **Two media elements**, A and B, alternating, so the next reel prefetches
+  while the current plays (one element cannot). The set's descriptor already
+  carries `video: v`, so the tube draws whichever is live. In `?reels=buffer`
+  mode the decode is independent and nothing changes.
+- **The re-derivation note** in `zankyo-audio.js` (the `BC_GAP_S` block) is
+  rewritten to describe the new contract; the play-time assertion against
+  `ZankyoBroadcast.limits()` checks the new one (arm lead > body lookahead
+  still holds: 55 > 46).
+
+### 4.3 The graph, the seeks, the set, the log
+
+- **`startSignal()`** builds the same graph once (band, receiver, flutter,
+  gate, staircase, envelope, phasing, room tap) and walks the plan: the
+  envelope and the band ramps are scheduled per piece; in a gap the gate
+  ducks to a carrier-lost floor (below `DROP_FLOOR`) with the hole static
+  rising and the band narrowed; a hole is the same at 1–3 s. The seek
+  between pieces is `v.currentTime = inS` (a keyframe every second, so one
+  keyframe) or a second `BufferSource.start(t, inS)`. 走 hands off to the
+  other element for its second reel. The hunt and the drift-in are scheduled
+  before the first piece on the same nodes; 残 is a longer exit envelope with
+  a denser dropout schedule from `weather()`, which now draws across the
+  plan's whole span.
 - **The set** (`zk-set.js`) takes the plan in the descriptor: `phaseOf()`
-  walks segments and gaps — a gap is a new phase, *lost* (snow, the roll,
-  the last frame ghosting), a return is a short *relock*, the hunt is
-  *hunting* (glimpses at the plan's times), the drift-in ramps `strength`
-  over its length instead of 0.4 s. The rx lamp follows.
-- **The VFD** line gains the shape: 「受信 · title · year · 戻 47 s later」,
-  「消失 · signal lost · 21.4 s on air · 34 s」. The `sig` the harness records
-  carries `presenceS`, `spanS` and `body`.
-- **The manual paths.** The 選局 scan and the tuning dial draw from the full
-  vocabulary (a listener turning the dial should get the station's whole
-  range). The ♪ audition stays 常 — the owner's rule is that an audition
-  shows what a signal *is*, and the short form is the one to demonstrate —
-  unless §7 decides otherwise. `reel-lab.php` gains one button row per body
-  so a shape can be seated on demand for A/B.
+  walks pieces, gaps and holes — *lost* (snow, the roll, the last frame
+  ghosting), *relock* (0.2 s), *hunting* (glimpses at the plan's times),
+  *drifting* (strength ramps over the entry's length) — and the rx lamp
+  follows.
+- **The VFD** gains the shape: 「受信 · title · year · 戻 47 s later · 尺
+  over it」, 「消失 · signal lost · 21.4 s on air · 34 s」. The `sig` the
+  harness records carries `budgetS`, `presenceS`, `spanS`, `body`, `entry`,
+  `exit`, `porous`.
+- **The manual paths.** The ♪ audition, the 選局 scan and the tuning dial
+  all draw a budget from §2 and a shape from §3 (§7 q5) — the audition
+  shows what a signal *is*, and what it is has changed. `reel-lab.php` gains
+  a row of body buttons and a budget slider so a shape can be seated on
+  demand for A/B.
 - **Nothing in the shared substrate moves.** `pj2-*.js` is untouched; the
-  air's `hold` API already takes arbitrary spans.
+  air's hold API already takes arbitrary spans per voice.
+
+### 4.4 What this costs the night, said plainly
+
+About three receptions a cycle at a 20 s median with entries, exits and gaps
+puts a clip on the air roughly **15 % of the night, against 4 % today**, and
+the melodic crew silent for most of that (70 %). The re-base will show it as
+a drop in melodic density on home nights; §6 declares it. This is the owner's
+intent (§7 q3), stated so nobody reads the density line as a regression.
 
 ---
 
-## 5. Storage — what needs to change in the reels, and what does not
+## 5. The reels — a re-cut on the owner's Mac
 
-**Nothing in the manifest's shape changes.** `windows` stays `[start, end]`
-(§14's rule, for the five positional readers), `srcWindows` already carries
-what the return needs, and `whole` / `wholeWindows` keep their meaning. The
-receiver reads window lengths it already reads.
+**The manifest's shape does not change.** `windows` stays `[start, end]`
+(§14's rule, for the five positional readers); `srcWindows` already carries
+what the return needs; `whole` / `wholeWindows` keep their meaning.
 
-**戻, 断, 走, 同 and every entry and exit work on today's reels.** A return
-inside a 12 s window is 4–5 s + a gap + 4–5 s further in; a return across
-windows is the next window. The broken carrier and the lingering loss are
-envelope changes. Nothing in §3 waits on a re-cut except 長.
+**戻, 断, 走, 同, every entry and exit, the porous hold and the frequency
+work on today's reels.** Only the SPREAD of lengths (§2) waits on longer
+windows — and until they exist every budget over 12 s degrades to 12 s on
+every reel but Cage, so the first build sounds like today's lengths with the
+new shapes and frequency, and the lengths open up as reels are re-cut.
 
-**長 needs long windows, and that is a re-cut on the owner's Mac.**
-`make-reel.sh` already takes explicit ranges (`--windows 83-110`) and
-`--window-len`, and reuses the source in `local-dev/broadcast-src/`. The
-proposal:
+**The recipe** (`CURATE.md` gains it; the owner ruled on tiers in §7 q4):
 
-- A **long-window recipe** in `CURATE.md`: each chosen reel keeps its 12 s
-  windows and gains **one or two windows of 20–30 s** (contiguous, a scene
-  that stays interesting for that long — a countdown, a sign-off, a chant, a
-  lecture), so the reel serves 常 and 長 both. About +0.4 MB per reel.
-- **Tier A first.** The 53 free-to-use reels (PD, CC, US government: the
-  Apollo audio, the COI and Bureau of Mines films, Coronet and Centron, the
-  Bell System, the Conet numbers stations, the Voyager greetings) have no
-  fair-use ceiling. Twenty to thirty of them with long windows lights 長 up
-  at its full weight. Tier B stays as it is: a 20 s fragment of a copyrighted
-  broadcast is a bigger fragment than the posture was written for; if the
-  owner wants any, at most one 20 s speech window per reel, never music,
-  never a whole scene — the owner's call, one reel at a time.
-- `make-reel.sh --long-windows a-b,c-d` as a convenience that appends to an
-  existing reel's windows and re-encodes (a new `rev`, so the cache is
-  busted); `build-manifest.sh` validates as it does. A `pool-shapes.py` tool
-  prints how many reels can serve each body, so "長 available on 27 reels"
-  is a number in the log rather than a guess.
-- **The code does not wait for this.** 長 is weighted 0.12 from day one and
-  degrades to 常 on every reel without a long window; as reels are re-cut the
-  body appears on its own.
+- Each reel keeps its 12 s windows and gains **one or two long windows**,
+  contiguous, chosen for a stretch that stays interesting that long — a
+  countdown, a sign-off, a chant, a lecture, a news package, a jingle
+  package. Lengths spread across the reels so §2's distribution is servable:
+  roughly a third at 18–25 s, a third at 25–32 s, a third at 32–40 s.
+- **Tier A** (53 reels, free to use): up to **40 s**.
+- **Tier B** (155 reels, copyrighted): up to **30 s**, speech or picture
+  material, never a whole song, never a whole scene — the owner's ruling:
+  transformative, degraded, randomly surfaced, no substitute for the
+  original. The 6-window cap stays; the long windows count toward it, so a
+  Tier B reel with six 12 s windows drops one to gain a long one.
+- **Cost:** about +0.5 MB a reel, so the pool goes from 144 MB to roughly
+  250 MB. GitHub and Bluehost are fine with it; `scripts/publish.sh` already
+  skips `reels/`; the Actions deploy ships them once.
+- **Tooling:** `make-reel.sh --add-windows a-b,c-d` appends long windows to
+  an existing reel from its cached source (`local-dev/broadcast-src/`,
+  re-fetched from `src` if absent), re-encodes, writes a new `rev`; the pitch
+  pass runs on the new windows as on any. `build-manifest.sh` validates as
+  today. A new `tools/pool-shapes.py` prints, per budget bucket, how many
+  reels can serve it and which tiers/tones they are, so "32–40 s: 41 reels"
+  is a number in the log and the harness's achieved-distribution line has a
+  ceiling to be read against.
+- **Order:** a first batch of 60–80 reels across tiers, tones and countries
+  (so no bucket is served by one kind of material), then the rest. The
+  agent proposes each reel's long windows from the source's scene changes
+  and loudness (`--propose` with `--window-len 30` already does most of
+  this) and the owner auditions by ear with `preview.sh` and the reel lab.
 
 ---
 
 ## 6. Phases and gates
 
-Each phase is one agent, one commit series, one VERSION bump where the owner
-can hear the difference, and the harness run on the crew's seeds (3042, 17,
-7, 8891 at one hour; the forty banked seeds at 30 min for a re-base).
+Each phase is one commit series, one VERSION bump where the owner can hear
+the difference, and the harness on the crew's seeds (3042, 17, 7, 8891 at
+one hour; the forty banked seeds at 30 min for a re-base). The probe
+(`_probe.js`) runs beside it as today.
 
-**R0 — the plan object, no new shapes** (dev-visible). `choose()`,
-`fitsRoom()`, `arm()` / `fire()` / `startSignal()`, `weather()`, the set and
-the harness read a one-segment plan that is today's 常 exactly. *Gate:* home
-identity 36/36 and the probe's note/event streams byte-identical on every
-seed — the refactor proves itself by changing nothing. No bump if identity
-holds (nothing the owner hears moved); bumps with R1 otherwise.
+**R0 — the plan object, no new behaviour.** `choose()`, `fitsRoom()`,
+`arm()` / `fire()` / `startSignal()`, `weather()`, the set and the harness
+read a one-piece reception plan that is today's clip exactly; holds gain an
+owner id but are still cleared as today. *Gate:* home identity 36/36 and
+the probe's note/event streams byte-identical — the refactor proves itself
+by changing nothing. No bump if identity holds.
 
-**R1 — 戻 the return and 同 the callback** (rc.69). The shape draws (twelve,
-always), the return body inside and across windows, the callback preference
-for the second broadcast, the set's *lost* / *relock* phases, the VFD lines,
-`reel-lab.php`'s body buttons. **A declared re-base** in the same commit.
-*Gates:* KIRU reach 0 and §12 sweep 0 on the real pool and on a forced
-single-reel pool (the fall-through trap §14 documented); no melodic or PA
-note inside any segment or gap; placement within the accepted cost (§7);
-a new harness line — *shapes:* count by body / entry / exit per hour,
-presence min / median / max, share ≥ 20 s — with **presence min ≥ 8.0 s on
-every seed** as the floor gate; the return's second segment always lands
-later in the source (asserted from `srcWindows` and the in-points).
+**R1 — the budget, the frequency, the silence between, the queue**
+(rc.69). §4.1 and §4.2: the placement rewritten around budgets and drawn
+silences, per-signal holds, two armed slots, two elements. Shapes still 常
+only; budgets degrade to 12 s on today's reels. **A declared re-base.**
+*Gates:* KIRU reach 0; §12 sweep 0 (no melodic or PA note inside any
+hold) on the real pool and on a forced single-reel pool; signals per hour
+= 1.75 × the same seeds on rc.68 (measured one-variable, ±15 %); no
+reception overlaps another; every hold's arm lead ≥ 55 s; the harness's
+"max 2 a cycle" gate becomes ≤ 4 and "2.2–3.6 per 3 cycles" is retired for
+the per-hour target; **presence min ≥ 8.0 s on every seed** (the floor).
 
-**R2 — the entries, the exits and 断** (rc.70). Hunt, drift-in, lingering
-loss, mid-word, the broken carrier. *Gates:* as R1; plus the AudioParam load
-line stays under the owner's ~2 500/s cap (a hunt schedules more ramps than
-a snap; measure it) and the node budget holds.
+**R2 — the shapes** (rc.70). §3.1–3.4 and the set's new phases, the VFD
+lines, the manual paths, the reel lab's buttons. *Gates:* as R1; a new
+*shapes* line — count by body / entry / exit per hour, the achieved
+on-air distribution against §2's table and against `pool-shapes.py`'s
+ceiling; a return's second piece always later in the source (asserted from
+`srcWindows` and the in-points); pieces within a reception never overlap;
+the AudioParam load stays under the ~2 500/s cap (a hunt schedules more
+ramps than a snap) and the node budget holds.
 
-**R3 — 長 and the long windows.** Code: the long body, the degrade path
-tested on a forced pool of reels that have no long window. Reels: the
-recipe, the tool flags, and the owner's re-cut of the first Tier A batch on
-the Mac — the one step no agent can do from here (the sources are not in the
-repo). *Gates:* as R1; density on a forced long-window pool may fail the
-±20 % band and that is accepted by the same ruling as §14 (long holds silence
-the crew); the real pool is the gate.
+**R3 — the air** (rc.71). §3.5: porous holds and released gaps. *Gates:*
+notes over a porous signal are only ever the permitted voice (the §12 sweep
+learns the exemption and still reports 0 for every other voice); a note in
+a return's gap never runs into the relock (the footprint test), reported as
+a count so the fallback in §3.5 is a measured decision.
 
-**R4 — 走 the scan, the weights, the owner's listen.** The two-reel body,
-then a listening pass on seeds 3042 / 7 / 17 and the weights moved to taste;
-`GUIDE.md` §5 and its table of levers rewritten (the "reel / window" gloss
-gains "reception" and "presence"). The listener-facing constants — every
-weight in §3.5, the callback probability, the long-window lengths — live in
-one table at the top of `zk-broadcast.js` so the owner moves one number and
-it means the same thing on every night.
+**R4 — the reels** (no code bump; a manifest commit per batch). The recipe,
+`--add-windows`, `pool-shapes.py`, the first batch of 60–80 re-cut reels,
+then the rest. *Gates:* `build-manifest.sh` clean; every long window inside
+its tier's cap; the harness's achieved distribution moving toward §2 as
+batches land (reported, not gated — the owner's ear is the gate).
+
+**R5 — the owner's listen.** Seeds 3042 / 7 / 17 through the console and
+the reel lab; the weights in §3.6 and the table in §2 moved to taste; the
+listener-facing constants gathered into one block; `GUIDE.md` §5 and §6
+rewritten ("reel / window" gains "reception", "budget", "on air").
 
 ---
 
-## 7. Decisions for the owner before R1 starts
+## 7. The owner's decisions (2026-09-14)
 
-1. **The floor.** §2's reading — presence ≥ 8 s per reception, short
-   segments allowed inside a longer one — or a stricter one where every
-   segment is ≥ 8 s (which makes the return 8 + gap + 8, a 30 s event at the
-   least, and rarer).
-2. **The air in a return's gap.** Held throughout (proposed: the crew stays
-   quiet, the reception is one event), or released in gaps over ~8 s so the
-   shakuhachi may comment between the two halves (more alive, more risk of a
-   note landing on the relock — it would need the §12 lead re-derived).
-3. **The placement cost.** Longer footprints will lower the pair rate a
-   little (74 % today). Proposed acceptance: pair ≥ 65 %, empty ≤ 8 %,
-   broadcasts/cycle ≥ 1.55. Or hold today's numbers and let the shapes
-   degrade more often.
-4. **Long windows.** Tier A only at first (proposed), 20–30 s, one or two per
-   reel, twenty to thirty reels in the first batch. Any Tier B at all?
-5. **The ♪ audition.** Stays 常 (proposed) or draws the full vocabulary.
-6. **The glimpse.** Off (proposed) or a small weight.
-7. **The weights** in §3.5 — a first setting to listen to, not a final one.
+1. **The floor is the reception's total.** On-air time ≥ 8 s summed over
+   its pieces; pieces may be 5 s and 3 s. Widest possible spread from 8 s to
+   the Cage maximum (40 s); 8 s clips uncommon, not rare. → §2.
+2. **The instruments do not stay quiet in the gaps**, and sometimes play
+   over the clip itself; most of the time the clip still silences them. The
+   sophisticated version (play in the gap, quiet before the return) is not
+   required — it is taken where the air machinery gives it for free. → §3.5.
+3. **Signals 75 % more frequent than today**, independent of the shapes;
+   the spacing cost is accepted. → §4.1.
+4. **Long windows from every reel, both tiers.** Up to 30 s of a copyrighted
+   broadcast is fine (transformative, degraded, random, no substitute for
+   the original); Tier A to 40 s. The re-cut runs on the Mac. → §5.
+5. **The ♪ sample button plays the new shapes.** → §4.3.
+6. **8 s is the minimum. No glimpse.** → §2.
+7. **Two receptions in three stay plain (of varying length); one in three
+   is shaped.** The weights in §3.6 are the first setting. → §3.6.
 
-With 1–3 answered, R0 and R1 can be launched as one agent; R2 follows on the
-same branch; R3's code half can run in parallel with the owner's re-cut.
+---
+
+## 8. Brief for the agent that builds it (on the owner's Mac)
+
+The code phases can run anywhere; R4 needs the Mac because the raw sources
+are in `local-dev/broadcast-src/` (gitignored) and `ffmpeg` / `yt-dlp` are
+installed there. Work on the branch this plan was pushed on
+(`claude/zankyo-clip-variation-nidfn8`) or a fresh one from `main`.
+
+**Read first:** this file; `zk-broadcast.js` in full (the receiver; every
+constraint has a comment beside it); `zankyo-audio.js` from the `BC_JO_P`
+line through the placement (`pendingPlan`) and `airClaimAt` /
+`airHoldClear`; `zk-set.js` (`phaseOf`, `tickSignal`, `renderSource`);
+`_harness.js`'s `signalVocab` and the gate list at its end; `_harness-bank.js`;
+`PLAN-ZANKYO-FAR.md` §14–15 (the whole-thought rules and what each gate
+actually sees); `broadcast/CURATE.md`; `CLAUDE.md` (the VERSION rule).
+
+**Rules that do not move:** `windows` stays `[start, end]`; a whole window
+is never sliced; every draw is taken whether or not it is used; the Jukebox
+substrate (`../prosperos-jukebox-v2/pj2-*.js`) is never edited from here;
+no signal within a KIRU's reach; the arm lead exceeds the bodies' 46 s
+lookahead; VERSION bumps in the same commit as anything the owner hears or
+sees; a re-base is declared in the commit that needs it.
+
+**Commands:**
+
+```
+cd art/zankyo
+node _harness.js 3600 3042          # one seed, one hour (also 17, 7, 8891)
+node _harness.js 3600 3042 --far 0.9
+node _probe.js                      # the home-identity gate across the banked seeds
+node _harness-bank.js               # THE RE-BASE: rewrites _harness-base.json (declare it)
+broadcast/tools/make-reel.sh <src-or-url> --id <slug> --propose --window-len 30
+broadcast/tools/make-reel.sh <src-or-url> --id <slug> --add-windows 83-110,201-236   # new flag, R4
+broadcast/tools/preview.sh <slug>
+broadcast/tools/build-manifest.sh
+```
+
+**Order:** R0 → R1 → R2 → R3 in code, each with its gates green before the
+next; R4 in batches whenever the owner's ear is available; R5 last. Report
+each phase with the harness lines it changed and the numbers, not a story
+about them (`PLAN-ZANKYO-FAR.md` §15 is the standard for why).
