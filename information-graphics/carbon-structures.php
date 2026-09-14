@@ -1,5 +1,5 @@
 <?php
-$page_title = 'The Hidden Structure of Amorphous Carbon - Municipal Sky';
+$page_title = 'Visualizing the Structure of Amorphous Carbon - Municipal Sky';
 $page_description = 'Interactive 3D point clouds of simulated carbon atomic structures — coordination numbers, ring statistics, radial distribution functions, and bond-network entropy across amorphous, carbide-derived, and irradiated carbons.';
 $page_type = 'article';
 // share card: the VPC(T) 1.5 structure rendered in the viewer's Oppenheimer
@@ -102,7 +102,7 @@ include '../includes/header.php';
     <!-- Page Header -->
     <div class="post-container">
       <header>
-        <h1>The Hidden Structure of Amorphous Carbon</h1>
+        <h1>Visualizing the Structure of Amorphous Carbon</h1>
         <p class="post-date">2026.08.17</p>
       </header>
     </div>

@@ -17,7 +17,7 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.08.17</span>
                     <div class="entry-content">
-                        <a href="carbon-structures" class="entry-title">The Hidden Structure of Amorphous Carbon</a>
+                        <a href="carbon-structures" class="entry-title">Visualizing the Structure of Amorphous Carbon</a>
                         <span class="entry-description">Interactive 3D point clouds of simulated carbon atomic structures.</span>
                     </div>
                 </div>
