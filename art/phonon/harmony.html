@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phonon Harmony Mockups</title>
+<style>
+  body{background:#101010;color:#ddd;font-family:system-ui,sans-serif;max-width:720px;margin:26px auto;padding:0 16px}
+  h1{font-size:20px}
+  h2{font-size:15px;margin:0 0 4px}
+  p.note{color:#999;font-size:13px;line-height:1.55}
+  .panel{background:#1a1a19;border:1px solid #333;border-radius:10px;padding:18px;margin:16px 0}
+  button{font:inherit;font-size:13px;background:#242423;color:#ddd;border:1px solid #444;border-radius:6px;padding:6px 14px;cursor:pointer}
+  button.on{background:#3987e5;border-color:#3987e5;color:#fff}
+  button.root{width:44px}
+  button.root.cur{background:#8a6d2f;border-color:#c9a24a;color:#fff}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;font-size:13px}
+  .row label{color:#bbb;display:flex;align-items:center;gap:6px}
+  input[type=range]{accent-color:#3987e5;width:120px}
+  input[type=checkbox]{accent-color:#3987e5}
+  .read{color:#8ab4e8;font-size:12px;font-variant-numeric:tabular-nums;margin-top:8px;line-height:1.6}
+  .scale{color:#c9a24a;font-size:12px;font-variant-numeric:tabular-nums}
+  .tag{font-size:10px;letter-spacing:.1em;color:#777;text-transform:uppercase}
+</style>
+</head>
+<body>
+<h1>Phonon × harmony — two integration mockups</h1>
+<p class="note">Both use the irradiated-graphite-T9 mode spectrum (6 picked peaks). They demonstrate opposite
+directions of control: in <b>Level&nbsp;1</b> the app's harmony steers the material; in <b>Level&nbsp;3</b> the material
+tunes the app's instruments. Starting one stops the other.</p>
+
+<div class="panel">
+  <div class="tag">Level 1</div>
+  <h2>Anchored transposition — the drone follows the harmony</h2>
+  <p class="note">The spectrum's dominant peak is declared the fundamental; choosing a root transposes the
+  <i>entire</i> spectrum by one ratio (all internal ratios untouched — the data stays rigid). New roots
+  crossfade in the way an overlapping-cycle drone would take a modulation: the old chord dies in the old key.</p>
+  <div class="row">
+    <button id="l1play">▶ Play</button>
+    <span style="color:#777;font-size:12px">root:</span>
+    <span id="l1roots"></span>
+    <label><input type="checkbox" id="l1auto"> auto-progress (D → F → C → G)</label>
+  </div>
+  <div class="read" id="l1read"></div>
+</div>
+
+<div class="panel">
+  <div class="tag">Level 3</div>
+  <h2>Material intonation — the instruments play the material's scale</h2>
+  <p class="note">The peak ratios are octave-folded into a scale (below). A seeded music-box improvises in that
+  tuning over the untransposed drone — the melody instrument is <i>tuned by graphite</i>. Flip the toggle to hear
+  the same melody quantized to 12-TET and back: the difference is the material's intonation.</p>
+  <div class="row">
+    <button id="l3play">▶ Play</button>
+    <label><input type="checkbox" id="l3mat" checked> material tuning (off = 12-TET)</label>
+    <label>density <input type="range" id="l3dens" min="0.2" max="2" step="0.1" value="1"></label>
+  </div>
+  <div class="scale" id="l3scale"></div>
+  <div class="read" id="l3read"></div>
+</div>
+
+<div class="row" style="justify-content:flex-end"><label>master <input type="range" id="vol" min="0" max="1" step="0.02" value="0.65"></label></div>
+
+<script src="modes.js"></script>
+<script>
+"use strict";
+const MODES = window.PHONON_DATA.irg_t9_216.freqs;
+const TOP_HZ = 1900, SENS = 0.04, DETUNE_CAP = 45, TILT = 0.7, BREATHE = 0.45;
+
+// ---------- peak picking (same as the laboratory) ----------
+function pickVoices() {
+  const NB = 256, hist = new Float64Array(NB), sm = new Float64Array(NB);
+  for (const fn of MODES) hist[Math.min(NB - 1, Math.floor(fn * NB))]++;
+  const kern = []; let ks = 0;
+  for (let j = -8; j <= 8; j++) { const v = Math.exp(-0.5 * (j / 3) ** 2); kern.push(v); ks += v; }
+  for (let i = 0; i < NB; i++) {
+    let s = 0;
+    for (let j = -8; j <= 8; j++) s += hist[Math.min(NB - 1, Math.max(0, i + j))] * kern[j + 8];
+    sm[i] = s / ks;
+  }
+  const smax = Math.max(...sm), binHz = TOP_HZ / NB, out = [];
+  for (let i = 1; i < NB - 1; i++) {
+    if (sm[i] < sm[i - 1] || sm[i] <= sm[i + 1]) continue;
+    let lmin = sm[i], rmin = sm[i], j;
+    for (j = i - 1; j >= 0 && sm[j] <= sm[i]; j--) lmin = Math.min(lmin, sm[j]);
+    for (j = i + 1; j < NB && sm[j] <= sm[i]; j++) rmin = Math.min(rmin, sm[j]);
+    const prom = sm[i] - Math.max(lmin, rmin);
+    if (prom < smax * SENS) continue;
+    const half = sm[i] - prom / 2; let lo = i, hi = i;
+    while (lo > 0 && sm[lo] > half) lo--;
+    while (hi < NB - 1 && sm[hi] > half) hi++;
+    const f0 = (i + 0.5) * binHz;
+    if (f0 < 40) continue;
+    let w = 0;
+    for (j = lo; j <= hi; j++) w += sm[j];
+    out.push({ f0, weight: w,
+      width: Math.min(DETUNE_CAP, 1200 * Math.log2(((hi + 0.5) * binHz) / Math.max(1, (lo + 0.5) * binHz))) });
+  }
+  out.sort((a, b) => b.weight - a.weight);
+  return out.slice(0, 8).sort((a, b) => a.f0 - b.f0);
+}
+const VOICES = pickVoices();
+const REF = VOICES.reduce((a, b) => (b.weight > a.weight ? b : a), VOICES[0]); // dominant peak
+const FMIN = VOICES[0].f0;
+let NORM = 0;
+for (const v of VOICES) NORM += v.weight / Math.pow(v.f0 / FMIN, TILT);
+
+// ---------- shared audio ----------
+let ctx = null, master = null, convOut = null;
+function ensureCtx() {
+  if (ctx) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC();
+  master = ctx.createGain();
+  master.gain.value = +document.getElementById("vol").value;
+  const conv = ctx.createConvolver();
+  const n = Math.floor(3.6 * ctx.sampleRate);
+  const ir = ctx.createBuffer(2, n, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < n; i++) {
+      const t = i / ctx.sampleRate;
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-3 * t / 3.6) * Math.exp(-4 * t / 3.6);
+    }
+  }
+  conv.buffer = ir;
+  const dry = ctx.createGain(), wet = ctx.createGain();
+  dry.gain.value = 0.62; wet.gain.value = 0.38;
+  master.connect(dry); master.connect(conv); conv.connect(wet);
+  dry.connect(ctx.destination); wet.connect(ctx.destination);
+}
+document.getElementById("vol").addEventListener("input", e => { if (master) master.gain.value = +e.target.value; });
+
+function droneBank(transpose, t0, level) {
+  // one incarnation of the spectral chord; caller crossfades incarnations
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(level, t0 + 2.2);
+  g.connect(master);
+  const nodes = [];
+  for (const v of VOICES) {
+    const amp = (v.weight / Math.pow(v.f0 / FMIN, TILT)) / NORM;
+    const vg = ctx.createGain();
+    const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if (pan) { pan.pan.value = Math.random() * 1.2 - 0.6; vg.connect(pan); pan.connect(g); }
+    else vg.connect(g);
+    const lfo = ctx.createOscillator(), lg = ctx.createGain();
+    lfo.frequency.value = 1 / (9 + Math.random() * 21);
+    lg.gain.value = amp * BREATHE / 2;
+    vg.gain.value = amp * (1 - BREATHE / 2);
+    lfo.connect(lg); lg.connect(vg.gain); lfo.start(t0); nodes.push(lfo);
+    for (let e = 0; e < 5; e++) {
+      const cents = (e / 4 - 0.5) * v.width;
+      const o = ctx.createOscillator();
+      o.frequency.value = v.f0 * transpose * Math.pow(2, cents / 1200);
+      const og = ctx.createGain(); og.gain.value = 0.2;
+      o.connect(og); og.connect(vg); o.start(t0); nodes.push(o);
+    }
+  }
+  return { gain: g, nodes };
+}
+function killBank(b, t) {
+  if (!b) return;
+  b.gain.gain.cancelScheduledValues(t);
+  b.gain.gain.setValueAtTime(b.gain.gain.value, t);
+  b.gain.gain.linearRampToValueAtTime(0, t + 2.4);
+  setTimeout(() => { for (const n of b.nodes) { try { n.stop(); } catch (e) {} } try { b.gain.disconnect(); } catch (e) {} }, 2800);
+}
+
+// ================= LEVEL 1 =================
+const L1 = { playing: false, bank: null, root: "D", timer: null };
+const ROOTS = { D: 146.83, E: 164.81, F: 174.61, G: 196.0, A: 220.0, C: 261.63 };
+const PROG = ["D", "F", "C", "G"];
+function l1Transpose(rootName) {
+  // anchor: REF peak becomes an octave-equivalent of the root, nearest register
+  const root = ROOTS[rootName];
+  const raw = root / REF.f0;
+  const k = Math.round(-Math.log2(raw));                 // octave that keeps the drone in place
+  return raw * Math.pow(2, k);
+}
+function l1Set(rootName) {
+  L1.root = rootName;
+  document.querySelectorAll("#l1roots button").forEach(b => b.classList.toggle("cur", b.textContent === rootName));
+  if (L1.playing) {
+    const t = ctx.currentTime;
+    const old = L1.bank;
+    L1.bank = droneBank(l1Transpose(rootName), t, 0.5);
+    killBank(old, t);
+  }
+  const tr = l1Transpose(rootName);
+  document.getElementById("l1read").textContent =
+    `ref peak ${REF.f0.toFixed(0)} Hz anchored to ${rootName} · transpose ×${tr.toFixed(3)} ` +
+    `(${(1200 * Math.log2(tr)).toFixed(0)} cents) · all ${VOICES.length} peaks move together, ratios exact`;
+}
+const rootsWrap = document.getElementById("l1roots");
+for (const r of Object.keys(ROOTS)) {
+  const b = document.createElement("button");
+  b.className = "root"; b.textContent = r;
+  b.addEventListener("click", () => l1Set(r));
+  rootsWrap.appendChild(b);
+}
+document.getElementById("l1auto").addEventListener("change", e => {
+  clearInterval(L1.timer);
+  if (e.target.checked) {
+    let i = PROG.indexOf(L1.root); if (i < 0) i = 0;
+    L1.timer = setInterval(() => { i = (i + 1) % PROG.length; l1Set(PROG[i]); }, 11000);
+  }
+});
+document.getElementById("l1play").addEventListener("click", () => {
+  ensureCtx();
+  if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+  if (L1.playing) { stopL1(); return; }
+  stopL3();
+  L1.playing = true;
+  document.getElementById("l1play").textContent = "■ Stop";
+  document.getElementById("l1play").classList.add("on");
+  L1.bank = droneBank(l1Transpose(L1.root), ctx.currentTime, 0.5);
+});
+function stopL1() {
+  if (!L1.playing) return;
+  L1.playing = false;
+  clearInterval(L1.timer);
+  document.getElementById("l1auto").checked = false;
+  document.getElementById("l1play").textContent = "▶ Play";
+  document.getElementById("l1play").classList.remove("on");
+  killBank(L1.bank, ctx.currentTime); L1.bank = null;
+}
+l1Set("D");
+
+// ================= LEVEL 3 =================
+// Scale derivation: octave-fold every peak's ratio to the dominant peak.
+function materialScale() {
+  const steps = [];
+  for (const v of VOICES) {
+    let c = 1200 * Math.log2(v.f0 / REF.f0);
+    c = ((c % 1200) + 1200) % 1200;
+    if (!steps.some(s => Math.abs(s - c) < 30 || Math.abs(s - c) > 1170)) steps.push(c);
+  }
+  steps.sort((a, b) => a - b);
+  return steps;
+}
+const SCALE = materialScale();
+document.getElementById("l3scale").textContent =
+  "material scale (cents above tonic): " + SCALE.map(c => c.toFixed(0)).join(" · ") +
+  "   — 12-TET comparison: " + SCALE.map(c => (Math.round(c / 100) * 100)).join(" · ");
+
+const L3 = { playing: false, bank: null, timer: null, deg: 0, oct: 1, count: 0 };
+const L3_TONIC = REF.f0 / 4;   // melody register: two octaves under the dominant peak
+function mulberry(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+let l3rng = mulberry(0xC0FFEE);
+function l3Freq(deg, oct) {
+  const cents = document.getElementById("l3mat").checked
+    ? SCALE[deg] : Math.round(SCALE[deg] / 100) * 100;
+  return L3_TONIC * Math.pow(2, oct + cents / 1200);
+}
+function pluck(t, f, amp) {
+  const g = ctx.createGain(); g.connect(master);
+  const dur = 1.2 + l3rng() * 1.6;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(amp, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0004, t + dur);
+  const o = ctx.createOscillator(); o.frequency.value = f;
+  const o2 = ctx.createOscillator(); o2.frequency.value = f * 2;
+  const g2 = ctx.createGain(); g2.gain.value = 0.25;
+  o.connect(g); o2.connect(g2); g2.connect(g);
+  o.start(t); o2.start(t); o.stop(t + dur + 0.1); o2.stop(t + dur + 0.1);
+}
+function l3Step() {
+  if (!L3.playing) return;
+  const dens = +document.getElementById("l3dens").value;
+  const gap = (0.35 + l3rng() * 1.1) / dens;
+  // drunken walk over the material scale, octaves 0-2
+  const move = l3rng();
+  if (move < 0.45) L3.deg = Math.min(SCALE.length - 1, L3.deg + 1);
+  else if (move < 0.85) L3.deg = Math.max(0, L3.deg - 1);
+  else { L3.oct = Math.max(0, Math.min(2, L3.oct + (l3rng() < 0.5 ? -1 : 1))); }
+  if (l3rng() < 0.85) {
+    pluck(ctx.currentTime + 0.05, l3Freq(L3.deg, L3.oct), 0.10 + l3rng() * 0.07);
+    L3.count++;
+  }
+  document.getElementById("l3read").textContent =
+    `tonic ${L3_TONIC.toFixed(1)} Hz (= dominant peak / 4) · degree ${L3.deg} · ${L3.count} notes · ` +
+    (document.getElementById("l3mat").checked ? "material intonation" : "12-TET quantized");
+  L3.timer = setTimeout(l3Step, gap * 1000);
+}
+document.getElementById("l3play").addEventListener("click", () => {
+  ensureCtx();
+  if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+  if (L3.playing) { stopL3(); return; }
+  stopL1();
+  L3.playing = true; L3.count = 0; l3rng = mulberry(0xC0FFEE);
+  document.getElementById("l3play").textContent = "■ Stop";
+  document.getElementById("l3play").classList.add("on");
+  L3.bank = droneBank(1, ctx.currentTime, 0.34);   // untransposed drone bed, a little quieter
+  l3Step();
+});
+function stopL3() {
+  if (!L3.playing) return;
+  L3.playing = false;
+  clearTimeout(L3.timer);
+  document.getElementById("l3play").textContent = "▶ Play";
+  document.getElementById("l3play").classList.remove("on");
+  killBank(L3.bank, ctx.currentTime); L3.bank = null;
+}
+</script>
+</body>
+</html>
