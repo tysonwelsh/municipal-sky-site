@@ -551,18 +551,33 @@
 
 /* --- the demo bench: not part of the machine, but the brief asks for a way
        to reach the two special cases without waiting for the lottery ------- */
-.zk-bench { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+/* Touch: every button is a real 44 x 44 target. The <button> itself is the
+   target and is 44 px tall; a negative margin-block gives it back to the
+   layout, so the row still costs 23 px and the ribbon above pays nothing.
+   The visible cap is the ::before, which is what :active and the focus ring
+   are retargeted at, so the ring hugs the cap and not the invisible box.
+   The row gap is opened to 22 px so two rows of 44 px targets never overlap. */
+.zk-bench { display: flex; align-items: center; column-gap: 6px; row-gap: 22px; flex-wrap: wrap; margin-top: 9px; }
 .zk-bench-k { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.22em; color: #5f5a6b; margin-right: 2px; }
 .zk-bench button {
+  position: relative; z-index: 0; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 44px; height: 44px; margin-block: -10.5px;
+  padding: 0 9px; border: 0; background: none; box-shadow: none;
   font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: 0.14em;
-  padding: 5px 8px; cursor: pointer; color: #b3adc0;
-  border: 1px solid #000; border-radius: 3px;
+  white-space: nowrap; cursor: pointer; color: #b3adc0;
+  -webkit-tap-highlight-color: transparent;
+}
+.zk-bench button::before {
+  content: ""; position: absolute; inset: 10.5px 0; z-index: -1; border-radius: 3px;
+  border: 1px solid #000;
   background: linear-gradient(180deg, #2e2e36, #202028 60%, #17171d);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.6);
 }
 .zk-bench button:hover { color: #e8e3f0; }
-.zk-bench button:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); transform: translateY(1px); }
-.zk-bench button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.zk-bench button:active::before { box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); inset: 11.5px 0 9.5px; }
+.zk-bench button:focus { outline: none; }
+.zk-bench button:focus-visible::before { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .zk-bench button b { font-family: "Shippori Mincho", serif; font-weight: 700; color: #ff2d55; margin-right: 5px; letter-spacing: 0.18em; }
 
 /* ------------------------------ mockup spec sheet (not part of the machine) ------------------------------ */
@@ -589,7 +604,9 @@
 }
 .zk-toggle strong { font-weight: 400; color: #26262d; letter-spacing: 0.2em; margin-right: 6px; }
 .zk-toggle button {
-  font: inherit; letter-spacing: inherit; padding: 6px 12px; cursor: pointer;
+  font: inherit; letter-spacing: inherit; padding: 6px 14px; cursor: pointer;
+  min-width: 44px; min-height: 44px;                       /* touch minimum */
+  -webkit-tap-highlight-color: transparent;
   border: 1px solid #cbc6d0; border-radius: 3px; background: #f4f2f6; color: #3a3640;
 }
 .zk-toggle button[aria-pressed="true"] { background: #26262d; color: #f4f2f6; border-color: #26262d; }
@@ -625,12 +642,16 @@
 
   /* SETTLED (PLAN §2.2): television → spectrum scope → 段階 progress bar →
      PLAY / STOP / volume. The ribbon travels with the television, because it
-     is part of the same set. */
+     is part of the same set. The two column wrappers are re-ordered rather
+     than dissolved with display:contents — a dissolved wrapper loses its
+     min-width: 0 and the scope's canvas then forces the grid track wider than
+     the frame, which is a horizontal overflow at 390. */
   .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
-  .zk-bank-main, .zk-bank-side { display: contents; }
-  .zk-set2    { order: 1; }
-  .zk-monitor { order: 2; margin-bottom: 0; }
-  .zk-bargraph { order: 3; margin: 0; }
+  .zk-bank-side { order: 1; min-width: 0; }
+  .zk-bank-main { order: 2; min-width: 0; gap: 14px; }
+  .zk-bank-main .zk-monitor { margin-bottom: 0; }
+  .zk-bank-main .zk-bargraph { margin: 0; }
+  .zk-bank-main .zankyo-log-block { margin-top: 0 !important; }
 
   .zk-set2 { padding: 9px 9px 10px; }
   .zk-tube { border-radius: 16px / 20px; }
@@ -644,7 +665,7 @@
 @container zk (max-width: 430px) {
   .zk-fix-coord { font-size: 8px; }
   .zk-fix-key { display: none; }
-  .zk-bench button { font-size: 7.5px; padding: 5px 6px; }
+  .zk-bench button { font-size: 7.5px; padding: 0 7px; }   /* the 44 px target is kept */
 }
 </style>
 </head>
@@ -840,9 +861,9 @@
   <p><b>Half the pool is country-level only</b> (<span id="cov-inline">…</span>). A reel that names a broadcaster and nothing else — NHK, SABC, TRT, Egyptian Channel 1 — is placed on that broadcaster's home city, and drawing it as a pinprick over that city would be a lie about roughly every second reel. So the three confidences get three <i>different marks</i>, and the difference is enforced in the renderer, not by eye:</p>
   <table class="zk-cov">
     <tr><th style="width:96px">conf</th><th style="width:130px">mark</th><th>what it means, and the rule</th></tr>
-    <tr><td><span class="zk-swatch" id="sw-city"></span><code>city</code></td><td>a <b>1-cell pinprick</b> + 4 half-lit neighbours</td><td>a place actually named in the title or notes. One cell = 1.5°, ≈ 160 km — the only mark allowed to reach the white core of the phosphor ramp.</td></tr>
-    <tr><td><span class="zk-swatch" id="sw-region"></span><code>region</code></td><td>a <b>3-cell bloom</b>, no core</td><td>a sub-national area; the city is inferred. Capped at 0.72 of the ramp, so it never whitens.</td></tr>
-    <tr><td><span class="zk-swatch" id="sw-country"></span><code>country</code></td><td>a <b>wide soft bloom</b>, no core at all</td><td>only the nation is evidenced. A Gaussian of radius 5 cells (≈ 800 km) stretched by 1/cos φ so it is a circle <i>on the globe</i>, hard-capped at <b>0.46</b> of the ramp — it is numerically impossible for a country-confident reel to draw a bright dot. It reads as a glow over a region, which is what the data is.</td></tr>
+    <tr><td><span class="zk-swatch" id="sw-city"></span><code>city</code></td><td>a <b>1-cell pinprick</b>, a tight halo, edge crosshairs</td><td>a place actually named in the title or notes. One cell = 1.5°, ≈ 160 km — the only mark allowed to reach the white core of the phosphor ramp, and (with <code>region</code>) the only one given crosshair ticks at the ribbon's edges, which is the plotting board saying <i>this column, this row</i>.</td></tr>
+    <tr><td><span class="zk-swatch" id="sw-region"></span><code>region</code></td><td>a <b>3-cell bloom</b>, no core</td><td>a sub-national area; the city is inferred. Capped at 0.72 of the ramp, so it never whitens; it keeps the edge crosshairs, because a region still has a column and a row.</td></tr>
+    <tr><td><span class="zk-swatch" id="sw-country"></span><code>country</code></td><td>a <b>wide soft bloom</b>, no core at all</td><td>only the nation is evidenced. A Gaussian of radius 5 cells (≈ 800 km) stretched by 1/cos φ so it is a circle <i>on the globe</i>, hard-capped at <b>0.46</b> of the ramp — it is numerically impossible for a country-confident reel to draw a bright dot. No core, no crosshair, no column, no row: it reads as a glow over a region, which is what the data is.</td></tr>
     <tr><td><span class="zk-swatch" id="sw-unknown"></span><code>unknown</code></td><td><b>nothing</b></td><td>one reel (a Nyingmapa ritual, site unrecorded). Its coordinates are a cultural anchor, not a location, so the ribbon draws no mark and the plate reads 位置不明 NO FIX. Drawing it would be the worst thing this map could do.</td></tr>
   </table>
 
@@ -1126,22 +1147,47 @@
   // --- the marks. conf decides the mark, and the caps are enforced here, not
   //     by eye: a country-confident reel CANNOT reach the white core. --------
   var CAP = { city: 1.0, region: 0.72, country: 0.46, unknown: 0 };
+  var MPULSE = 1;
+  // the plotting-board crosshair: edge ticks at the fix's column and row.
+  // Only a city- or region-confident fix gets them — a country-only fix has
+  // no column and no row worth pointing at, and must not be given one.
+  function edgeTicks(buf, cx, cy, v) {
+    for (var k = 0; k < 2; k++) {
+      var a = idxOf(cx, k), b = idxOf(cx, GH - 1 - k);
+      var c = idxOf(k, cy), d = idxOf(GW - 1 - k, cy);
+      var vv = v * (k ? 0.5 : 1);
+      if (a >= 0 && buf[a] < vv) buf[a] = vv;
+      if (b >= 0 && buf[b] < vv) buf[b] = vv;
+      if (c >= 0 && buf[c] < vv) buf[c] = vv;
+      if (d >= 0 && buf[d] < vv) buf[d] = vv;
+    }
+  }
   function paintMark(buf, lat, lon, conf, amp) {
     if (conf === "unknown") return;                    // never drawn. Not once.
     var fx = cellX(lon), fy = cellY(lat);
     if (fy < 0) fy = 0.5; if (fy > GH - 0.5) fy = GH - 0.5;
     var cx = fx | 0, cy = fy | 0, peak = CAP[conf] * amp, i;
     if (conf === "city") {
-      i = idxOf(cx, cy); if (i >= 0 && buf[i] < peak) buf[i] = peak;
+      i = idxOf(cx, cy); if (i >= 0 && buf[i] < peak * MPULSE) buf[i] = peak * MPULSE;
       var nb = [[1, 0], [-1, 0], [0, 1], [0, -1]];
       for (var k = 0; k < 4; k++) {
         i = idxOf(cx + nb[k][0], cy + nb[k][1]);
         if (i >= 0 && buf[i] < peak * 0.34) buf[i] = peak * 0.34;
       }
+      // a tight halo under the pinprick, so a one-cell fix is findable from
+      // across the room. It has a core, so it can never be read as a bloom.
+      for (var hy = -2; hy <= 2; hy++) for (var hx = -2; hx <= 2; hx++) {
+        var hd = hx * hx + hy * hy; if (hd < 1 || hd > 5) continue;
+        i = idxOf(cx + hx, cy + hy);
+        var hv = peak * 0.13 * (1 - hd / 6);
+        if (i >= 0 && buf[i] < hv) buf[i] = hv;
+      }
+      edgeTicks(buf, cx, cy, peak * 0.4);
       return;
     }
     // region and country are blooms with no core. The radius is in cells on
     // the GLOBE: stretched by 1/cos φ so it is a circle there, an ellipse here.
+    if (conf === "region") edgeTicks(buf, cx, cy, peak * 0.34);
     var R = conf === "region" ? 1.55 : 5.0;
     var cosf = Math.cos(lat * Math.PI / 180); if (cosf < 0.34) cosf = 0.34;
     var rx = R / cosf; if (rx > R * 3) rx = R * 3;
@@ -1241,6 +1287,7 @@
     var fix = M.fix, amp = M.amp;
 
     // ---- the mark -----------------------------------------------------------
+    MPULSE = 0.84 + 0.16 * Math.sin(t / 265);
     if (fix && amp > 0.004) {
       paintMark(bufR, fix.lat, fix.lon, fix.conf, amp);
       // TV-DX with a known receiver: the arc, rasterised into cells
@@ -1773,7 +1820,14 @@
       c.width = W * 3; c.height = H * 3; c.style.width = "34px"; c.style.height = "9px"; c.style.verticalAlign = "-1px"; c.style.borderRadius = "2px";
       var x = c.getContext("2d"), img = x.createImageData(W, H), d = img.data;
       var buf = new Float32Array(W * H);
-      if (pair[1] === "city") { buf[4 * W + 6] = 1; buf[4 * W + 5] = 0.34; buf[4 * W + 7] = 0.34; buf[3 * W + 6] = 0.34; buf[5 * W + 6] = 0.34; }
+      if (pair[1] === "city") {
+        for (var hy = -2; hy <= 2; hy++) for (var hx = -2; hx <= 2; hx++) {
+          var hd = hx * hx + hy * hy; if (hd < 1 || hd > 5) continue;
+          var yy0 = 4 + hy, xx0 = 6 + hx; if (yy0 < 0 || yy0 >= H || xx0 < 0 || xx0 >= W) continue;
+          buf[yy0 * W + xx0] = 0.13 * (1 - hd / 6);
+        }
+        buf[4 * W + 6] = 1; buf[4 * W + 5] = 0.34; buf[4 * W + 7] = 0.34; buf[3 * W + 6] = 0.34; buf[5 * W + 6] = 0.34;
+      }
       else if (pair[1] !== "unknown") {
         var R = pair[1] === "region" ? 1.55 : 3.4, peak = pair[1] === "region" ? 0.72 : 0.46;
         for (var yy = 0; yy < H; yy++) for (var xx = 0; xx < W; xx++) {
@@ -1841,7 +1895,8 @@
   requestAnimationFrame(loop);
   lastAuto = now() - 16000;              // the first signal ~9 s in, so the idle is seen first
   M.rollNext = now() + 5000;
-  window.ZKM = { S: S, M: M, tune: tuneTo, cov: function () { return COV; }, perf: perf, perfM: perfM, visited: visited };
+  window.ZKM = { S: S, M: M, tune: tuneTo, cov: function () { return COV; }, perf: perf, perfM: perfM, visited: visited,
+                 draw: function (t) { drawMap(t || now()); }, grid: function () { return { GW: GW, GH: GH, DPC: DPC }; } };
 
   var scene = document.getElementById("scene"), playBtn = document.getElementById("zankyo-play");
   playBtn.addEventListener("click", function () { scene.classList.add("is-on"); playBtn.classList.add("is-playing"); });

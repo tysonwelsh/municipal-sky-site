@@ -4828,6 +4828,9 @@ html.jd-bench-on .jd-turn-scrim {
   --tb-rule-2:rgba(55,65,79,.20); --tb-red:#b02a24;
   --tb-mono:"Courier Prime","Courier New",Courier,monospace; --tb-paper:#efe4c6;
   --tb-red-soft:var(--tb-red);
+  /* the cell height, and so the whole control's: FIXED, never a function of
+     how many cells there are (owner, 2026-09-16 — see .fs-cell) */
+  --fs-h:26px;
   position:relative;z-index:4;
   display:flex;align-items:center;gap:10px;
   width:100%;margin-top:12px;color:var(--tb-ink);
@@ -4862,10 +4865,9 @@ html.jd-bench-on .jd-turn-scrim {
 .fs-play:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
 
 /* THE STRIP: the whole hit target (::before pads it to a finger's band).
-   Its height is the cells' own proportion — the plate's 84:74 at one nth of
-   the track's width — so the control is ONE row tall, no drawing is squashed,
-   and the cell count IS the height dial. Twelve cells under a 380px plate
-   come to ~23px, where 45's two rows came to ~62px. */
+   Its height is --fs-h and nothing else — 26px, which puts the control at the
+   play button's own 28px and keeps it there whatever the mark count does.
+   (45's two rows came to ~62px.) */
 .fs-strip{
   flex:1 1 auto;position:relative;min-width:80px;
   border:1px solid var(--tb-rule);border-radius:2px;
@@ -4877,7 +4879,17 @@ html.jd-bench-on .jd-turn-scrim {
 .fs-cells{display:flex;width:100%;overflow:hidden;border-radius:2px;position:relative}
 .fs-cell{
   flex:1 1 0;min-width:0;position:relative;line-height:0;
-  aspect-ratio:84 / 74;background:rgba(255,250,232,.55)}
+  height:var(--fs-h);background:rgba(255,250,232,.55)}
+/* the CELL widens with the track; the THUMBNAIL does not grow with it. The
+   cells used to carry the plate's 84:74, so a drawing with few marks got wide
+   cells and the whole control got taller with them — the row's height moved
+   card to card (owner, 2026-09-16: "I don't want the overall height of the
+   container to change based on how many squares are in the timeline"). Now the
+   cell is a fixed-height box the drawing is fitted INTO: the svg's own
+   xMidYMid meet holds its proportion and centres it, so a wide cell gets the
+   same thumbnail with the card's paper either side, and a narrow one gets a
+   thumbnail fitted to the width. Nothing is ever squashed, and the row is
+   26px whether the strip holds four cells or twelve. */
 .fs-cell-art{display:block;width:100%;height:100%}
 .fs-cell-art svg{display:block;width:100%;height:100%}
 /* the cell the pen is in keeps 45's red mark, at a hairline, inset so it

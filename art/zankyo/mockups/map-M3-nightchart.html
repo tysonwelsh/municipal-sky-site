@@ -141,7 +141,7 @@
 .zankyo-header { text-align: center; }
 .zankyo-title {
   font-family: "Orbitron", sans-serif; font-weight: 900;
-  font-size: clamp(34px, 9vw, 64px); letter-spacing: 0.12em;
+  font-size: clamp(34px, 6.7cqi, 64px); letter-spacing: 0.12em;   /* cqi, not vw: the simulator is a container, and a vw-sized title forces the frame wider than the host */
   margin: 0; color: #fff; position: relative; display: inline-block;
   text-shadow: 0 0 16px rgba(var(--red-rgb), 0.5), 0 0 40px rgba(var(--red-rgb), 0.25);
 }
@@ -404,6 +404,12 @@
    strip: a folded-steel case holding a 488 x 157 ribbon tube.
    =========================================================================== */
 .zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
+/* A <canvas> carries its attribute size as an intrinsic width, so a grid item
+   holding one has a min-content floor of whatever the canvas was last sized
+   to — which pins the whole frame open when the container narrows. Every item
+   in the bank gets min-width: 0, and the scope canvas is capped at 100 %. */
+.zk-bank > *, .zk-monitor, .zk-bargraph, .zk-set2, .zk-chart, .zk-rail { min-width: 0; }
+.zankyo-viz { max-width: 100%; }
 .zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
 .zk-bank-side { order: -1; min-width: 0; }         /* the set takes column 1 */
 .zk-bank-main .zk-bargraph { margin-bottom: 0; }
@@ -598,33 +604,54 @@
   padding: 2px 7px; box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.9); text-shadow: 0 0 6px rgba(var(--cyan-rgb), 0.55);
 }
 .zk-chart-count em { font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 7px; color: #4d7e86; letter-spacing: 0.18em; margin-left: 5px; }
+/* Every key on this machine is a 44 px touch target that LOOKS 34 px tall:
+   the <button> is the full 44, pulled back into its old height with a
+   negative margin-block, and the visible cap is painted by ::before at a
+   5 px inset. :active and the focus ring move to ::before with it. */
 .zk-ckey {
-  flex: none; cursor: pointer; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 10px; letter-spacing: 0.14em;
-  padding: 5px 9px 4px; border-radius: 2px; border: 1px solid #07070a; color: #b9b3c2;
+  position: relative; z-index: 0; flex: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; min-width: 44px; margin-block: -5px; padding: 0 10px;
+  border: none; background: none; color: #b9b3c2;
+  font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 10.5px; letter-spacing: 0.14em;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
+  -webkit-tap-highlight-color: transparent;
+}
+.zk-ckey::before {
+  content: ""; position: absolute; inset: 5px 0; z-index: -1; border-radius: 2px; border: 1px solid #07070a;
   background: linear-gradient(180deg, #4a4a55, #32323b 52%, #24242b);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -2px 3px rgba(0, 0, 0, 0.6), 0 2px 0 rgba(0, 0, 0, 0.6);
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
 }
-.zk-ckey:hover { background: linear-gradient(180deg, #55555f, #3a3a44 52%, #2a2a31); }
-.zk-ckey:active, .zk-ckey.is-armed { transform: translateY(2px); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8); }
-.zk-ckey.is-armed { color: #ffd9e0; border-color: rgba(var(--red-rgb), 0.7); text-shadow: 0 0 8px rgba(var(--red-rgb), 0.8); }
-.zk-ckey:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.zk-ckey:hover::before { background: linear-gradient(180deg, #55555f, #3a3a44 52%, #2a2a31); }
+.zk-ckey:active::before, .zk-ckey.is-armed::before { transform: translateY(2px); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8); }
+.zk-ckey.is-armed { color: #ffd9e0; text-shadow: 0 0 8px rgba(var(--red-rgb), 0.8); }
+.zk-ckey.is-armed::before { border-color: rgba(var(--red-rgb), 0.7); }
+.zk-ckey:focus-visible { outline: none; }
+.zk-ckey:focus-visible::before { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 /* the operating rail under the chart: the buttons that bring a signal in */
-.zk-rail { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 12px 0 0; padding: 9px 11px 10px; border-radius: 4px; border: 1px solid #000;
+.zk-rail { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 7px; margin: 12px 0 0; padding: 9px 11px 10px; border-radius: 4px; border: 1px solid #000;
   background: linear-gradient(180deg, #22222a, #17171d 72%, #121218);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -3px 7px rgba(0,0,0,0.6), 0 3px 8px rgba(0,0,0,0.45); }
 .zk-rail-head { font-size: 7.5px; letter-spacing: 0.24em; color: var(--print-dim); margin-right: 3px; }
 .zk-rkey {
-  cursor: pointer; font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: 0.16em;
-  padding: 7px 10px; border-radius: 3px; border: 1px solid #000; color: #c3bdcd;
+  position: relative; z-index: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; min-width: 44px; margin-block: -5px; padding: 0 11px;
+  border: none; background: none; color: #c3bdcd;
+  font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: 0.16em;
+  -webkit-tap-highlight-color: transparent;
+}
+.zk-rkey::before {
+  content: ""; position: absolute; inset: 5px 0; z-index: -1; border-radius: 3px; border: 1px solid #000;
   background: linear-gradient(180deg, #3b3b45, #292930 55%, #1e1e25);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 2px 0 rgba(0,0,0,0.6);
 }
 .zk-rkey b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 10px; letter-spacing: 0.14em; color: rgba(var(--amber-rgb), 0.8); margin-right: 6px; }
-.zk-rkey:hover { background: linear-gradient(180deg, #47474f, #31313a 55%, #24242b); }
-.zk-rkey:active { transform: translateY(2px); box-shadow: inset 0 1px 3px rgba(0,0,0,0.8); }
-.zk-rkey:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.zk-rkey:hover::before { background: linear-gradient(180deg, #47474f, #31313a 55%, #24242b); }
+.zk-rkey:active::before { transform: translateY(2px); box-shadow: inset 0 1px 3px rgba(0,0,0,0.8); }
+.zk-rkey:focus-visible { outline: none; }
+.zk-rkey:focus-visible::before { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .zk-rkey-hot b { color: var(--cyan); }
 .zk-rail-gap { flex: 1; }
 .zk-rail-cov { font-size: 7px; letter-spacing: 0.14em; color: #5f5b6b; white-space: nowrap; }
@@ -688,8 +715,9 @@
   .zk-chart-read { font-size: 8px; padding: 3px 5px; }
   .zk-chart-count { font-size: 10px; padding: 2px 5px; }
   .zk-chart-count em { display: none; }
-  .zk-rail { gap: 6px; padding: 8px 8px 9px; }
-  .zk-rkey { padding: 6px 7px; font-size: 7px; letter-spacing: 0.1em; }
+  .zk-rail { gap: 10px 6px; padding: 8px 8px 9px; }
+  .zk-rkey { padding: 0 8px; font-size: 7px; letter-spacing: 0.1em; }
+  .zk-rkey b { font-size: 9px; margin-right: 4px; }
   .zk-rail-cov { flex: 1 1 100%; }
 }
 
@@ -707,6 +735,26 @@
 .zk-spec th { color: #26262d; letter-spacing: 0.12em; font-size: 9px; }
 .zk-spec-tag { float: right; font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 0.18em; color: #8d8898; }
 .zk-swatch { display: inline-block; width: 22px; height: 9px; border-radius: 1px; vertical-align: -1px; margin-right: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }
+/* ---------------------------------------------------------------------------
+   TOUCH MINIMUM on the console furniture copied from the live faceplate. The
+   three mixer controls measure 32, 26 and 27 px on the live page too; they are
+   brought up to 44 here by the same trick the bench keys use, because a mockup
+   that fails the minimum cannot be judged on a phone. Flagged as a finding for
+   zankyo.css rather than a change this option needs.
+   --------------------------------------------------------------------------- */
+.zankyo-layer-name { min-height: 44px; }
+.zk-switch { min-width: 44px; }
+.zankyo-layer-sample {
+  width: 44px; height: 44px; margin: -9px; border-radius: 50%; flex: none;
+  background: none; box-shadow: none; -webkit-tap-highlight-color: transparent;
+}
+.zankyo-layer-sample::before {
+  content: ""; position: absolute; inset: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #8a2f7e, #571a4f 48%, #2b0d28 88%);
+  box-shadow: 0 0 0 3px #23232b, 0 0 0 4px #000, 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 -3px 5px rgba(20, 0, 18, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+.zankyo-layer-sample .tri { left: 52%; z-index: 1; }
+
 .zk-toggle {
   max-width: 960px; margin: 0 auto; padding: 26px 16px 14px;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -714,7 +762,7 @@
 }
 .zk-toggle strong { font-weight: 400; color: #26262d; letter-spacing: 0.2em; margin-right: 6px; }
 .zk-toggle button {
-  font: inherit; letter-spacing: inherit; padding: 6px 12px; cursor: pointer;
+  font: inherit; letter-spacing: inherit; padding: 0 14px; cursor: pointer; min-height: 44px; min-width: 44px;
   border: 1px solid #cbc6d0; border-radius: 3px; background: #f4f2f6; color: #3a3640;
 }
 .zk-toggle button[aria-pressed="true"] { background: #26262d; color: #f4f2f6; border-color: #26262d; }

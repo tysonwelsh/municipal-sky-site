@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — map option M2 · 選地 THE REGION TUNER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   MAP OPTION M2 — 選地 THE REGION TUNER
+   A second tube, 3:1, bolted under the television: an equirectangular world
+   ribbon drawn as a 180 × 60 dot-matrix of phosphor cells. A dot shows where
+   the reel now playing came from. Drag a finger across the world and the
+   station BIASES what it receives toward that region — the map is the control.
+   The faceplate below is the real ZANKYŌ 2 faceplate (markup + CSS lifted
+   from index.php / zankyo.css) at the settled 960: the set takes column 1 at
+   3fr (tube 488 × 366), the scope + bargraph stack column 2 at 2fr.
+   =========================================================================== */
+/* ------------------------------ zankyo.css / index.php, verbatim ------------------------------ */
+.content-frame { max-width: 960px; margin: 0 auto; padding: 48px 24px 64px; background: transparent; }
+
+/* ------------------------------ zankyo.css (verbatim) ------------------------------ */
+.zankyo-scene {
+  --bg:        #050507;
+  --surface:   #0a0a0f;
+  --surface-2: #0f0f17;
+  --border:    #241a22;
+  --grid:      #15101a;
+  --ink:       #d6d2dc;
+  --ink-dim:   #6b6473;
+  --ink-label: #8a7e92;
+  --red:       #ff2d55;
+  --red-rgb:   255, 45, 85;
+  --cyan:      #16e0e0;
+  --cyan-rgb:  22, 224, 224;
+  --magenta:   #ff3df0;
+  --magenta-rgb:255, 61, 240;
+  --amber:     #ffb000;
+  --amber-rgb: 255, 176, 0;
+  --panel-hi:  #32323b;
+  --panel:     #26262d;
+  --panel-lo:  #191920;
+  --steel-hi:  #4a4a52;
+  --steel:     #2a2a31;
+  --steel-lo:  #0c0c0f;
+  --print:     #918c9c;
+  --print-dim: #6a6572;
+  max-width: 960px;   /* SETTLED 2026-09-14: the site's own --max-wide */
+  margin: 0 auto;
+  padding: 8px 16px 56px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--ink);
+}
+.zankyo-frame {
+  position: relative;
+  background:
+    radial-gradient(55% 7% at 14% 0%,  rgba(136, 82, 44, 0.24), transparent 75%),
+    radial-gradient(34% 9% at 90% 100%, rgba(124, 70, 38, 0.28), transparent 72%),
+    radial-gradient(26% 22% at 100% 26%, rgba(108, 62, 34, 0.18), transparent 70%),
+    radial-gradient(18% 14% at 0% 74%,  rgba(84, 52, 30, 0.2), transparent 75%),
+    radial-gradient(14% 8% at 78% 0%,  rgba(96, 58, 32, 0.16), transparent 75%),
+    radial-gradient(42% 5% at 40% 100%, rgba(24, 18, 12, 0.5), transparent 80%),
+    radial-gradient(130% 60% at 50% -8%, rgba(var(--red-rgb), 0.05), transparent 55%),
+    radial-gradient(120% 80% at 82% 118%, rgba(var(--cyan-rgb), 0.04), transparent 60%),
+    repeating-linear-gradient(91deg, rgba(255, 255, 255, 0.028) 0 2px, rgba(0, 0, 0, 0.16) 2px 3px, rgba(255, 255, 255, 0.012) 3px 5px, rgba(0, 0, 0, 0.05) 5px 7px),
+    linear-gradient(180deg, var(--panel-hi), var(--panel) 40%, var(--panel-lo) 88%);
+  border: 1px solid #000;
+  border-radius: 6px;
+  padding: 30px 26px 42px;
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.65),
+    inset 4px 0 10px rgba(0, 0, 0, 0.3),
+    inset -2px 0 8px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 90px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+.zankyo-frame::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  opacity: 0.9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.28' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.2' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.22' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23c9c4b4' stroke-opacity='0.22' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23c9c4b4' stroke-opacity='0.18' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23c9c4b4' stroke-opacity='0.14' stroke-width='1.8'/></g></svg>");
+}
+.zankyo-frame::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.zankyo-frame > * { position: relative; z-index: 1; }
+.zk-screw {
+  position: absolute; z-index: 7; width: 17px; height: 17px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #6e6e7a, #30303a 55%, #0c0c0f);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -2px 3px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+.zk-screw::before {
+  content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 2.5px; margin-top: -1.25px;
+  background: linear-gradient(180deg, #050506, #3d3d45); border-radius: 2px;
+  transform: rotate(var(--slot, 20deg));
+}
+.zk-screw-tl { top: 9px; left: 10px; }
+.zk-screw-tr { top: 9px; right: 10px; }
+.zk-screw-bl { bottom: 9px; left: 10px; }
+.zk-screw-br { bottom: 9px; right: 10px; filter: sepia(0.5) brightness(0.85); }
+.zk-vent {
+  position: absolute; z-index: 7; height: 13px; width: 118px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #050506 0 5px, #34343e 5px 7px, #1c1c22 7px 12px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.zk-vent-tr { top: 12px; right: 58px; }
+.zk-vent-bl { bottom: 12px; left: 58px; transform: rotate(0.4deg); }
+.zk-print {
+  font-size: 9px; letter-spacing: 0.22em; color: var(--print);
+  text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.12), -0.5px 0 0 rgba(var(--cyan-rgb), 0.1);
+}
+@keyframes zk-led-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.zk-marquee {
+  position: relative; margin: 0 6px 22px; padding: 16px 12px 13px;
+  border-radius: 5px; border: 1px solid #08080a;
+  background:
+    radial-gradient(70% 130% at 50% 55%, rgba(var(--red-rgb), 0.09), transparent 72%),
+    linear-gradient(180deg, rgba(8, 6, 11, 0.94), rgba(15, 11, 18, 0.82) 45%, rgba(6, 5, 9, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 34px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-marquee::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px;
+  background: linear-gradient(107deg, transparent 12%, rgba(255, 255, 255, 0.045) 20%, rgba(255, 255, 255, 0.012) 27%, transparent 34%);
+}
+.zk-marquee-screw {
+  position: absolute; top: 50%; left: 7px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%);
+  box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.zk-marquee-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(35deg); }
+.zk-marquee-screw-r { left: auto; right: 7px; }
+.zk-marquee-screw-r::before { transform: rotate(-58deg); }
+.zankyo-header { text-align: center; }
+.zankyo-title {
+  font-family: "Orbitron", sans-serif; font-weight: 900;
+  font-size: clamp(34px, 9vw, 64px); letter-spacing: 0.12em;
+  margin: 0; color: #fff; position: relative; display: inline-block;
+  text-shadow: 0 0 16px rgba(var(--red-rgb), 0.5), 0 0 40px rgba(var(--red-rgb), 0.25);
+}
+.zankyo-title .zankyo-kanji {
+  font-family: "Shippori Mincho", serif; font-weight: 700;
+  font-size: 0.42em; letter-spacing: 0.1em; color: var(--cyan);
+  margin-left: 0.35em; vertical-align: 0.5em;
+  text-shadow: 0 0 14px rgba(var(--cyan-rgb), 0.6);
+}
+.zankyo-title::before, .zankyo-title::after {
+  content: attr(data-glitch); position: absolute; left: 0; top: 0;
+  width: 100%; overflow: hidden; opacity: 0.6;
+}
+.zankyo-title::before { color: var(--cyan); animation: zk-glitch 3.6s infinite steps(2); clip-path: inset(0 0 62% 0); }
+.zankyo-title::after  { color: var(--magenta); animation: zk-glitch 2.7s infinite steps(2) reverse; clip-path: inset(58% 0 0 0); }
+@keyframes zk-glitch { 0%,92%,100% { transform: translate(0,0); } 93% { transform: translate(-2px,1px); } 96% { transform: translate(2px,-1px); } }
+.zankyo-subtitle { margin: 7px 0 0; font-size: 11px; letter-spacing: 0.18em; color: var(--ink-dim); }
+
+.zk-monitor {
+  position: relative; margin-bottom: 18px; padding: 13px 13px 0;
+  border-radius: 9px; border: 1px solid #000;
+  background: radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%), linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -5px 12px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.zk-screen {
+  position: relative; overflow: hidden;
+  border-radius: 14px / 18px;
+  background: #020204;
+  border: 1px solid #030305;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.9), inset 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.zankyo-viz { display: block; width: 100%; height: 200px; }
+.zankyo-scanlines {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px);
+  mix-blend-mode: multiply; opacity: 0.62;
+}
+.zk-glass {
+  position: absolute; inset: 0; pointer-events: none; z-index: 6; border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 16%, transparent 28%, transparent 70%, rgba(255, 255, 255, 0.02) 86%),
+    radial-gradient(135% 96% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.42) 96%);
+}
+.zk-glass::after {
+  content: ""; position: absolute; right: 8%; bottom: 6%; width: 60px; height: 34px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(190, 200, 210, 0.045), transparent 75%);
+  transform: rotate(-18deg);
+}
+.zk-monitor-chin { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 6px 8px; }
+.zk-monitor-brand { font-size: 8px; letter-spacing: 0.26em; color: #5f5b68; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-chin-spacer { flex: 1; }
+.zk-led-label { font-size: 7px; letter-spacing: 0.2em; color: #55515e; }
+.zk-led {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.zankyo-scene.is-on .zk-led {
+  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
+  box-shadow: 0 0 8px rgba(var(--red-rgb), 0.8), 0 0 2px rgba(var(--red-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5);
+}
+.zk-sticker {
+  position: absolute; right: 74px; bottom: 5px; z-index: 3; width: 46px; padding: 3px 4px 4px;
+  transform: rotate(-3.5deg);
+  background: linear-gradient(160deg, #cfc5ac, #b3a88d 65%, #9d9177);
+  color: #55492f; font-size: 7px; letter-spacing: 0.08em; line-height: 1.5; text-align: center;
+  border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  clip-path: polygon(0 0, 100% 0, 100% 74%, 86% 100%, 0 100%);
+  opacity: 0.92;
+}
+.zk-sticker b { display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9.5px; letter-spacing: 0.2em; color: #83291c; }
+.zk-sticker i { position: absolute; right: 1px; bottom: 0; width: 11px; height: 11px; background: linear-gradient(315deg, transparent 44%, #e9e1cb 48%, #d8cfb4 62%, rgba(60, 48, 30, 0.55) 100%); }
+
+.zk-bargraph {
+  position: relative; margin: -4px 0 16px;
+  display: grid; grid-template-columns: 1fr; gap: 4px 10px; align-items: center;
+  padding: 8px 12px 6px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #1d1d24, #111116 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-bar-scale { grid-column: 1; position: relative; height: 13px; }
+.zk-bar-zl {
+  position: absolute; bottom: 1px; transform: translateX(-50%); white-space: nowrap;
+  font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.14em; color: #7d7887;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-zl-jo  { left: 12.5%; color: rgba(var(--cyan-rgb), 0.6); }
+.zk-bar-zl-ha  { left: 52.5%; color: rgba(var(--amber-rgb), 0.6); }
+.zk-bar-zl-kyu { left: 90%;   color: rgba(var(--red-rgb), 0.7); }
+.zk-bar-tick { position: absolute; bottom: 0; width: 1px; height: 5px; background: #5a5563; box-shadow: 1px 0 0 rgba(0, 0, 0, 0.7); }
+.zk-bar-housing {
+  grid-column: 1; position: relative; padding: 5px 6px; border-radius: 3px; border: 1px solid #030305;
+  background: linear-gradient(180deg, #050507, #0b0b0f);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), inset 0 -1px 1px rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-glass { position: absolute; inset: 0; pointer-events: none; border-radius: 3px; background: linear-gradient(105deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 22%, transparent 34%); }
+.zk-bar-cells { display: flex; gap: 2px; height: 16px; }
+.zk-seg { flex: 1 1 0; min-width: 0; border-radius: 1px; background: linear-gradient(180deg, rgba(var(--c), 0.11), rgba(var(--c), 0.05) 55%, rgba(0, 0, 0, 0.4)); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.85); }
+.zk-seg-jo  { --c: var(--cyan-rgb); }
+.zk-seg-ha  { --c: var(--amber-rgb); }
+.zk-seg-kyu { --c: var(--red-rgb); }
+.zk-seg.on { background: linear-gradient(180deg, rgba(var(--c), 1), rgba(var(--c), 0.72)); box-shadow: 0 0 5px rgba(var(--c), 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 2px rgba(0, 0, 0, 0.3); }
+.zk-seg.is-head { box-shadow: 0 0 9px rgba(var(--c), 0.95), 0 0 18px rgba(var(--c), 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+.zk-seg.is-peak { background: linear-gradient(180deg, rgba(var(--c), 0.95), rgba(var(--c), 0.6)); box-shadow: 0 0 6px rgba(var(--c), 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+.zk-bar-foot { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; padding: 1px 1px 0; }
+.zk-bar-label { font-size: 8.5px; letter-spacing: 0.18em; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-bar-serial { font-size: 6.5px; letter-spacing: 0.24em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); }
+
+.zk-console-top { display: flex; gap: 18px; align-items: center; margin-bottom: 16px; }
+.zk-transport-cluster { position: relative; display: flex; align-items: center; gap: 14px; flex: none; }
+.zk-transport-cluster::before { content: ""; position: absolute; inset: -10px -12px; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side at 30% 46%, rgba(26, 18, 10, 0.5), transparent 72%); }
+.zk-module {
+  position: relative; flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 13px;
+  padding: 9px 14px 15px 16px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-module::before { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px; background: radial-gradient(34% 52% at 2% 100%, rgba(96, 58, 32, 0.24), transparent 74%), radial-gradient(16% 30% at 97% 4%, rgba(20, 14, 10, 0.55), transparent 78%); }
+.zk-mod-screw { position: absolute; z-index: 2; top: 7px; left: 6px; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-mod-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(var(--slot, 20deg)); }
+.zk-mod-screw-r { top: auto; left: auto; bottom: 7px; right: 6px; filter: sepia(0.4) brightness(0.9); }
+.zk-mod-stamp { position: absolute; right: 22px; bottom: 3px; pointer-events: none; white-space: nowrap; font-size: 6.5px; letter-spacing: 0.24em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); transform: rotate(-0.4deg); }
+.zk-mod-zone { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.zk-mod-zone + .zk-mod-zone { border-left: 1px solid rgba(0, 0, 0, 0.6); box-shadow: -1px 0 0 rgba(255, 255, 255, 0.045); padding-left: 13px; }
+.zk-mod-head { font-size: 8px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-mod-mode { flex: 1; }
+.zk-mod-lamp {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 8px 11px; border-radius: 4px; border: 1px solid #030305;
+  background: radial-gradient(90% 100% at 50% 0%, rgba(var(--cyan-rgb), 0.05), transparent 70%), linear-gradient(180deg, #0b0b10, #08080c);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zankyo-scale-name { font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #fff; text-shadow: 0 0 10px rgba(var(--red-rgb), 0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zankyo-scale-name b { color: var(--red); }
+.zankyo-scale-mood { font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.7; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--magenta-rgb), 0.14); }
+.zk-deg-row { display: flex; gap: 4px; margin-top: 5px; }
+.zk-deg {
+  width: 23px; height: 27px; display: flex; align-items: center; justify-content: center;
+  font-family: "Shippori Mincho", serif; font-size: 15px; line-height: 1;
+  color: rgba(var(--cyan-rgb), 0.26);
+  background: linear-gradient(180deg, #020608, #04090b);
+  border: 1px solid #000; border-radius: 2px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: color 0.45s ease, text-shadow 0.45s ease, background 0.45s ease;
+}
+.zk-deg.is-lit { color: #dbfbfb; text-shadow: 0 0 9px rgba(var(--cyan-rgb), 0.9), 0 0 3px rgba(var(--cyan-rgb), 1); background: linear-gradient(180deg, #072224, #04181a); transition-duration: 0.04s; }
+.zk-testpoints { width: 58px; height: 5px; margin: auto 0 4px 2px; border-radius: 1px; background: repeating-linear-gradient(90deg, #6f5a2e 0 4px, #0c0c0f 4px 9px); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05); opacity: 0.85; }
+
+.zk-knob { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; flex: none; }
+.zk-knob::before {
+  content: ""; position: absolute; inset: -8px; pointer-events: none; opacity: 0.85;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><g stroke='%23a9a3b6' stroke-width='2' stroke-linecap='round' opacity='0.9'><line x1='40' y1='3' x2='40' y2='8' transform='rotate(-135 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-108 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-27 40 40)'/><line x1='40' y1='3' x2='40' y2='8'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(27 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(108 40 40)'/><line x1='40' y1='3' x2='40' y2='8' transform='rotate(135 40 40)'/></g></svg>") center / contain no-repeat;
+}
+.zk-knob::after { content: ""; position: absolute; inset: -12px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 60% 68%, transparent 42%, rgba(22, 15, 9, 0.5) 60%, transparent 78%); opacity: 0.55; }
+.zk-knob-cap {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%), conic-gradient(from 210deg, #34343c, #17171b 22%, #2b2b32 47%, #101014 74%, #34343c), #1d1d22;
+  border: 1px solid #08080a;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65), 0 1px 1px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+}
+.zk-knob-cap::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 255, 255, 0.07) 0deg 4deg, rgba(0, 0, 0, 0.28) 4deg 8deg); -webkit-mask: radial-gradient(circle, transparent 60%, #000 65%); mask: radial-gradient(circle, transparent 60%, #000 65%); }
+.zk-knob-cap::after { content: ""; position: absolute; inset: 16%; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #303038, #16161b 72%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.65); }
+.zk-knob-rot { position: absolute; inset: 0; z-index: 2; will-change: transform; pointer-events: none; }
+.zk-knob-ind { position: absolute; left: 50%; top: 8%; width: 3px; height: 36%; margin-left: -1.5px; border-radius: 2px; background: linear-gradient(#f4f0e4, #b6b0a0); box-shadow: 0 0 3px rgba(255, 255, 255, 0.25), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-wear-1 .zk-knob-cap { filter: brightness(0.92) saturate(0.9); }
+.zk-wear-1 .zk-knob-ind { opacity: 0.82; }
+.zk-wear-2 .zk-knob-cap { filter: brightness(1.07); }
+.zk-wear-2::after { opacity: 0.8; transform: rotate(50deg); }
+.zk-wear-3 .zk-knob-cap { filter: brightness(0.86) sepia(0.14); }
+.zk-wear-3 .zk-knob-ind { background: linear-gradient(#d5cfbe, #8e897a); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-wear-3::before { opacity: 0.6; }
+.zk-knob-master { width: 58px; height: 58px; }
+.zk-knob-rate { width: 34px; height: 34px; }
+.zk-knob-rate .zk-knob-ind { width: 2.5px; margin-left: -1.25px; }
+.zk-unit { display: flex; align-items: center; gap: 10px; }
+.zk-unit-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.zankyo-vol-label { font-size: 8px; letter-spacing: 0.22em; color: var(--print-dim); }
+.zankyo-val-readout { font-size: 11px; color: var(--cyan); font-variant-numeric: tabular-nums; background: rgba(2, 8, 10, 0.92); border: 1px solid #000; border-radius: 2px; padding: 1px 5px; min-width: 34px; text-align: right; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.85); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.5); }
+.zk-unit-rate .zankyo-val-readout { color: var(--magenta); text-shadow: 0 0 5px rgba(var(--magenta-rgb), 0.5); }
+
+.zk-arcade {
+  position: relative; width: 78px; height: 78px; border-radius: 50%; border: 1px solid #000; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 32% 26%, #3e3e47, #1a1a20 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -3px 5px rgba(0, 0, 0, 0.85), 0 3px 8px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-arcade-cap { position: absolute; inset: 9px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: "Orbitron", sans-serif; font-size: 19px; transition: transform 0.06s, box-shadow 0.06s; }
+.play-btn .zk-arcade-cap { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); background: radial-gradient(circle at 35% 27%, #ff90a8, var(--red) 42%, #900f2c 84%, #560a1b); box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35); }
+.stop-btn { width: 62px; height: 62px; }
+.stop-btn .zk-arcade-cap { inset: 8px; font-size: 26px; color: var(--magenta); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.4); background: radial-gradient(circle at 35% 27%, #3a3a43, #202027 46%, #0e0e12 88%); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 -5px 9px rgba(0, 0, 0, 0.8), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.zk-arcade:active .zk-arcade-cap { transform: translateY(3px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.7), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.play-btn.is-playing .zk-arcade-cap { box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35), 0 0 24px rgba(var(--red-rgb), 0.55), inset 0 0 16px rgba(255, 130, 160, 0.45); animation: zk-play-breathe 2.4s ease-in-out infinite; }
+@keyframes zk-play-breathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+.zk-master { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: none; }
+.zk-knob-mount { display: flex; justify-content: center; }
+.zk-master-meta { display: flex; align-items: center; gap: 6px; }
+
+.zankyo-mixer { border: 1px solid #000; border-radius: 5px; background: linear-gradient(180deg, #16161b, #0f0f14 80%); box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.04); }
+.zankyo-mixer-title { display: flex; align-items: center; justify-content: space-between; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); padding: 9px 16px; border-bottom: 1px solid #030305; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-warn-small { font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.3em; color: rgba(var(--amber-rgb), 0.55); transform: rotate(0.8deg); text-transform: none; }
+.zankyo-layer { padding: 13px 16px 12px; border-bottom: 1px solid #050507; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.035); }
+.zankyo-layer:last-child { border-bottom: none; box-shadow: none; }
+.zankyo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
+.zankyo-layer-name {
+  display: flex; align-items: center; text-align: left; cursor: pointer;
+  font-family: "Orbitron", sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #eee;
+  flex: 1; min-width: 132px; padding: 7px 11px;
+  background: linear-gradient(180deg, #24242b, #191920);
+  border: 1px solid #0a0a0d; border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+.zankyo-layer-kana { font-family: "Shippori Mincho", serif; color: var(--red); margin-right: 7px; text-shadow: 0 0 7px rgba(var(--red-rgb), 0.45); }
+.zk-name-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zk-ch { font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 7.5px; letter-spacing: 0.2em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); padding-top: 2px; flex: none; }
+.zk-name-latch { margin-left: 10px; width: 11px; height: 11px; border-radius: 50%; position: relative; flex: none; background: radial-gradient(circle at 35% 30%, #55555e, #1c1c21 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.85), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-name-latch::after { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1.5px; margin-left: -0.75px; background: #060608; }
+.zankyo-layer-sample { position: relative; width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none; background: radial-gradient(circle at 34% 28%, #8a2f7e, #571a4f 48%, #2b0d28 88%); box-shadow: 0 0 0 3px #23232b, 0 0 0 4px #000, 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 -3px 5px rgba(20, 0, 18, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.3); }
+.zankyo-layer-sample .tri { position: absolute; left: 55%; top: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 7px solid rgba(255, 210, 250, 0.9); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+.zk-switch { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; background: none; border: none; padding: 2px 5px; cursor: pointer; font-family: "JetBrains Mono", monospace; }
+.zk-switch i { font-style: normal; font-size: 6.5px; letter-spacing: 0.16em; }
+.zk-switch .zk-switch-on { color: var(--cyan); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6); }
+.zk-switch .zk-switch-off { color: #4d4956; }
+.zk-switch-slot { position: relative; width: 17px; height: 34px; border-radius: 8px; background: linear-gradient(180deg, #040405, #121216); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-switch-lever { position: absolute; left: 2px; right: 2px; top: 2px; height: 15px; border-radius: 6px; background: linear-gradient(180deg, #6e6e7a, #3a3a44 62%, #23232b); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+
+.zankyo-log-block { position: relative; margin-top: 18px; padding: 9px 10px 10px; border-radius: 5px; border: 1px solid #000; background: linear-gradient(180deg, #1d1d23, #111116 70%, #0d0d11); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5); }
+.zankyo-log-label { display: flex; align-items: center; justify-content: space-between; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); margin: 0 2px 8px; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-vfd-tag { font-size: 7px; letter-spacing: 0.2em; color: #59555f; }
+.zankyo-log { background: radial-gradient(rgba(var(--cyan-rgb), 0.05) 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(180deg, #04100f, #030a0a); border: 1px solid #000; border-radius: 4px; height: 230px; overflow-y: auto; padding: 5px 0; box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85), inset 0 0 70px rgba(var(--cyan-rgb), 0.03); }
+.zankyo-log-block::after { content: ""; position: absolute; left: 11px; right: 11px; bottom: 11px; top: 27px; pointer-events: none; border-radius: 4px; background: linear-gradient(108deg, rgba(190, 255, 250, 0.045), transparent 26%); }
+.zankyo-log-row { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid rgba(var(--cyan-rgb), 0.04); font-size: 12px; animation: zk-logfade 0.3s ease; }
+.zankyo-log-row:last-child { border-bottom: none; }
+@keyframes zk-logfade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.zankyo-log-time { color: var(--ink-dim); font-size: 10px; min-width: 36px; }
+.zankyo-log-tag { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 2px; min-width: 66px; text-align: center; }
+.zankyo-log-tag.shakuhachi { color: var(--cyan);    border: 1px solid rgba(var(--cyan-rgb), 0.4); }
+.zankyo-log-tag.koto       { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.4); }
+.zankyo-log-tag.noise      { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.4); }
+.zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }
+.zankyo-log-tag.sho        { color: var(--ink);     border: 1px solid rgba(var(--cyan-rgb), 0.35); }
+.zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
+.zankyo-log-tag.rx         { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.7); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.5); }
+.zankyo-log-text { color: var(--ink); }
+
+.zk-plate-row { display: flex; justify-content: center; margin-top: 20px; }
+.zk-build { margin: 8px 0 0; text-align: center; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-dim); opacity: 0.7; }
+.zk-build-sep { margin: 0 0.5em; }
+.zk-plate { position: relative; padding: 6px 26px; border-radius: 2px; background: linear-gradient(180deg, #3b3b43, #26262c 60%, #1e1e24); border: 1px solid #0a0a0c; font-size: 8.5px; letter-spacing: 0.2em; color: #9d99a6; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 3px rgba(0, 0, 0, 0.6); transform: rotate(-0.3deg); }
+.zk-plate::before, .zk-plate::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5a5a63, #1e1e23 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-plate::before { left: 7px; }
+.zk-plate::after { right: 7px; }
+.zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 4px 0; }
+.zankyo-note strong { color: var(--red); font-weight: 500; }
+
+/* ===========================================================================
+   OPTION A — 磁石 THE MAGNET SET
+   The bank at 960: the set takes column 1 (3fr, 516 px → tube 488 × 366), the
+   scope + bargraph stack column 2 (2fr, 344 px → viz 314 × 200 measured —
+   PLAN §2.1 says 316; the monitor's 13 px padding and 1 px border take 30).
+   The casing is a 1970s moulded-ABS portable television: yellowed cream
+   plastic, a parting line down each side wall where the two halves of the
+   mould met, a draft angle on every face, vent slots up both walls, a
+   chromed-wire carry bail folded flat into its channel on the top, four
+   rubber feet peeking under the bottom edge, and a control bay — a wide
+   moulded shelf angled 12° toward the viewer — instead of a chin.
+   On the cabinet, a horseshoe magnet you can pick up and put anywhere.
+   =========================================================================== */
+.zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
+.zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
+.zk-bank-side { order: -1; min-width: 0; }         /* the set takes column 1 */
+.zk-bank-main .zk-bargraph { margin-bottom: 0; }
+.zk-bank-main .zk-sticker { right: 62px; }
+
+/* ---------------------------------------------------------------------------
+   THE CABINET. Everything here is drawn in light and shadow, no borders:
+   the walls are darker because they are drafted away from you, the top is
+   lighter because the room's light is above, the lower third is dirtier
+   because that is where hands go.
+   --------------------------------------------------------------------------- */
+.zk-set2 {
+  position: relative; box-sizing: border-box; min-width: 0;
+  padding: 30px 14px 0;                      /* 14 px of wall each side → tube 488 at a 516 column */
+  border-radius: 12px 12px 8px 8px;
+  background:
+    /* the parting line: the seam where the front moulding meets the back shell,
+       6 px in from each wall — a groove (dark) with its lit lower lip */
+    linear-gradient(90deg, transparent 5px, rgba(40, 30, 14, 0.55) 5px 6px, rgba(255, 252, 232, 0.6) 6px 7px, transparent 7px,
+                            transparent calc(100% - 7px), rgba(40, 30, 14, 0.55) calc(100% - 7px) calc(100% - 6px), rgba(255, 252, 232, 0.55) calc(100% - 6px) calc(100% - 5px), transparent calc(100% - 5px)),
+    /* the draft angle: both walls fall away from the viewer */
+    linear-gradient(90deg, rgba(58, 44, 20, 0.5) 0 2px, rgba(58, 44, 20, 0.22) 2px 9px, rgba(255, 250, 225, 0.16) 9px 15px, transparent 15px,
+                            transparent calc(100% - 15px), rgba(90, 70, 34, 0.14) calc(100% - 15px) calc(100% - 9px), rgba(58, 44, 20, 0.3) calc(100% - 9px) calc(100% - 2px), rgba(44, 32, 14, 0.55) calc(100% - 2px)),
+    /* age: the yellowing is not even — it is worst where the sun and the hands were */
+    radial-gradient(52% 26% at 18% 4%, rgba(255, 253, 236, 0.5), transparent 72%),
+    radial-gradient(40% 30% at 88% 92%, rgba(122, 92, 40, 0.3), transparent 74%),
+    radial-gradient(30% 18% at 62% 100%, rgba(96, 72, 32, 0.28), transparent 76%),
+    linear-gradient(180deg, #d7cbab, #c6b994 42%, #b3a481 78%, #a3946f);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 253, 238, 0.75),
+    inset 0 -3px 10px rgba(72, 54, 24, 0.35),
+    0 3px 0 rgba(96, 78, 44, 0.9),
+    0 14px 30px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+/* the moulding grain: ABS from a textured tool, fine and directionless */
+.zk-set2::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; border-radius: inherit;
+  opacity: 0.4; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23g)' opacity='0.5'/></svg>");
+}
+.zk-set2 > * { position: relative; z-index: 1; }
+/* the model line, silk-screened above the glass */
+.zk-set2-top { display: flex; align-items: baseline; gap: 14px; padding: 0 4px 9px; }
+.zk-set2-model { font-size: 7.5px; letter-spacing: 0.24em; color: #6d6045; text-shadow: 0 1px 0 rgba(255, 253, 238, 0.7); }
+.zk-set2-model b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9px; letter-spacing: 0.2em; color: #584c33; margin-right: 7px; }
+.zk-set2-stock { margin-left: auto; font-size: 6.5px; letter-spacing: 0.2em; color: #7b6d50; transform: rotate(-0.8deg); text-shadow: 0 1px 0 rgba(255, 253, 238, 0.6); }
+
+/* ---------------------------------------------------------------------------
+   THE BEZEL. A real compound curve: the plastic rolls inward over the glass,
+   the glass stands proud of it, and there is a shadow all round where it beds
+   into its gasket. Drawn with three rings and no border.
+   --------------------------------------------------------------------------- */
+.zk-set2-tubewrap { position: relative; }
+.zk-tube {
+  position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden;
+  border-radius: 26px / 32px;
+  background: #030503;
+  box-shadow:
+    0 0 0 2px rgba(255, 253, 240, 0.72),        /* the arris where the roll ends — the brightest line on the set */
+    0 0 0 5px rgba(150, 132, 92, 0.8),          /* the roll itself, in shadow */
+    0 0 0 6px rgba(52, 38, 16, 0.55),
+    0 5px 12px rgba(46, 32, 12, 0.45);
+}
+.zk-tube canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* the gasket the glass beds into, and the glass standing proud of the plastic */
+.zk-bed {
+  position: absolute; inset: 0; z-index: 8; pointer-events: none; border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 5px rgba(6, 9, 6, 0.95),
+    inset 0 0 0 6px rgba(30, 26, 18, 0.9),
+    inset 0 3px 7px rgba(0, 0, 0, 0.9),
+    inset 0 0 22px 8px rgba(0, 0, 0, 0.55);
+}
+.zk-bed::after {             /* the light that gets under the proud edge, top-left */
+  content: ""; position: absolute; inset: 3px; border-radius: inherit;
+  box-shadow: inset 2px 2px 0 rgba(210, 226, 214, 0.1);
+}
+/* the crack survives: the same fracture the live set carries */
+.zk-crack { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; }
+.zk-tube .zk-glass {
+  z-index: 9;
+  background:
+    linear-gradient(118deg, rgba(255, 250, 235, 0.1) 0%, rgba(255, 250, 235, 0.03) 14%, transparent 26%, transparent 66%, rgba(255, 255, 255, 0.022) 84%),
+    radial-gradient(120% 100% at 50% 50%, transparent 56%, rgba(0, 0, 0, 0.46) 96%);
+}
+.zk-tube .zk-glass::after { right: auto; left: 10%; bottom: 10%; width: 52px; height: 30px; transform: rotate(22deg); background: radial-gradient(closest-side, rgba(200, 205, 190, 0.06), transparent 75%); }
+.zk-tube .zk-glass::before {   /* a thumbprint, top-right, where the set gets carried by the bezel */
+  content: ""; position: absolute; right: 12%; top: 12%; width: 34px; height: 34px; border-radius: 50%;
+  background: repeating-radial-gradient(circle at 50% 50%, rgba(210, 215, 200, 0.05) 0 1px, transparent 1px 3px);
+  transform: rotate(-30deg) scaleX(0.8); opacity: 0.8;
+}
+
+/* yellowed tape on the bezel, holding the cracked glass — the yard's repair */
+.zk-tape {
+  position: absolute; z-index: 12; height: 16px; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(222, 198, 138, 0.82), rgba(206, 180, 118, 0.86) 50%, rgba(186, 158, 96, 0.84));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 240, 200, 0.14);
+  clip-path: polygon(0 12%, 3% 0, 97% 4%, 100% 20%, 98% 100%, 95% 88%, 2% 96%, 0 70%);
+  font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.24em; line-height: 16px; text-align: center;
+  color: rgba(48, 32, 18, 0.85); white-space: nowrap; overflow: hidden;
+}
+.zk-tape-1 { width: 74px; left: -6px; top: 74px; transform: rotate(-46deg); }
+.zk-tape-3 { width: 44px; right: 26px; top: 47%; transform: rotate(6deg); height: 13px; line-height: 13px; font-size: 7px; opacity: 0.85; }
+/* --- the feet: four rubber pads, seen only as the bit that peeks out --- */
+.zk-foot { position: absolute; z-index: 0; bottom: -6px; width: 30px; height: 8px; border-radius: 0 0 5px 5px; background: linear-gradient(180deg, #2f2a24, #16130f); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.55); }
+.zk-foot-1 { left: 20px; }
+.zk-foot-2 { left: 26%; width: 22px; }
+.zk-foot-3 { right: 26%; width: 22px; }
+.zk-foot-4 { right: 20px; }
+
+/* ===========================================================================
+   M2's OWN CSS
+   =========================================================================== */
+
+/* --- THE TUBE, 4:3, THE WAY BOTH ENGINES AGREE ON --------------------------
+   `aspect-ratio` on a shrinkable grid/flex item is honoured by Blink and
+   IGNORED by WebKit — a sibling mockup shipped a tube squashed to 488 × 274
+   that looked perfect in Chrome and stretched every reel in Safari. Percentage
+   padding is resolved against the INLINE size in both engines, so this is the
+   only construction that is 4:3 everywhere. Verified: 488 × 366 in WebKit. */
+.zk-tube-wrap { position: relative; height: 0; padding-bottom: 75%; }
+.zk-tube { position: absolute; inset: 0; width: auto; height: auto; aspect-ratio: auto; }
+
+/* ---------------------------------------------------------------------------
+   選地 THE REGION TUNER — the second screen. Steel, not ABS: a monitor the
+   yard bolted under the set in a later decade, four bolts through the flange,
+   its own bezel and its own glass. 3 : 1, so it is a ribbon and not a map.
+   --------------------------------------------------------------------------- */
+.zk-map {
+  position: relative; margin: 13px -6px 0; padding: 9px 11px 8px;
+  border-radius: 3px 3px 5px 5px;
+  background:
+    radial-gradient(38% 60% at 6% 0%, rgba(120, 120, 136, 0.16), transparent 70%),
+    repeating-linear-gradient(91deg, rgba(255,255,255,0.022) 0 2px, rgba(0,0,0,0.13) 2px 3px, transparent 3px 6px),
+    linear-gradient(180deg, #40404a, #2c2c35 34%, #202028 80%, #191920);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 7px rgba(0, 0, 0, 0.62),
+    0 0 0 1px #08080a,
+    0 3px 7px rgba(0, 0, 0, 0.6);
+}
+.zk-map-bolt { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5b5b65, #191920 68%); box-shadow: inset 0 -1px 1px rgba(0,0,0,0.85), 0 1px 1px rgba(0,0,0,0.55); }
+.zk-map-bolt::before { content: ""; position: absolute; left: 17%; right: 17%; top: 50%; height: 1.5px; background: #050506; transform: rotate(var(--slot, 20deg)); }
+.zk-map-bolt-tl { top: 4px; left: 4px; } .zk-map-bolt-tr { top: 4px; right: 4px; }
+.zk-map-bolt-bl { bottom: 4px; left: 4px; } .zk-map-bolt-br { bottom: 4px; right: 4px; }
+
+.zk-map-head { display: flex; align-items: center; gap: 9px; padding: 0 12px 7px; min-height: 19px; }
+.zk-map-title { font-size: 7.5px; letter-spacing: 0.24em; color: #79737f; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.05); }
+.zk-map-title b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 10px; letter-spacing: 0.18em; color: #a9a3b3; margin-right: 6px; }
+.zk-map-hint { font-size: 7px; letter-spacing: 0.18em; color: #6b6473; transition: opacity 0.5s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zk-map.is-used .zk-map-hint { opacity: 0; }
+
+/* the armed readout: a small amber window, above the glass so a thumb on the
+   ribbon never covers the one thing you need to read while dragging */
+.zk-chip { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }
+.zk-chip-box {
+  display: flex; align-items: center; gap: 7px; padding: 2px 8px 3px; border-radius: 2px;
+  border: 1px solid #000; background: rgba(2, 7, 9, 0.94);
+  box-shadow: inset 0 0 7px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.05);
+}
+.zk-chip-ja { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 10.5px; letter-spacing: 0.12em; color: #5d6b70; white-space: nowrap; }
+.zk-chip-en { font-size: 6.5px; letter-spacing: 0.2em; color: #4e5257; white-space: nowrap; }
+.zk-chip.is-armed .zk-chip-ja { color: var(--amber); text-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8), 0 0 2px rgba(var(--amber-rgb), 0.9); }
+.zk-chip.is-armed .zk-chip-en { color: #8d7a4a; }
+.zk-chip.is-live .zk-chip-ja { color: var(--cyan); text-shadow: 0 0 8px rgba(var(--cyan-rgb), 0.8); }
+.zk-pips { display: flex; gap: 2px; align-items: center; }
+.zk-pip { width: 3px; height: 9px; border-radius: 1px; background: #16161c; box-shadow: inset 0 0 0 1px #000; }
+.zk-pip.on { background: linear-gradient(180deg, #ffd479, var(--amber)); box-shadow: 0 0 5px rgba(var(--amber-rgb), 0.85); }
+.zk-chip-clear {
+  font: inherit; font-size: 7px; letter-spacing: 0.16em; color: #8b8595; cursor: pointer;
+  padding: 4px 7px; min-height: 22px; border: none; border-radius: 2px;
+  background: linear-gradient(180deg, #44444f, #2a2a33 60%, #202027);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 1px 2px rgba(0,0,0,0.6);
+}
+.zk-chip-clear:disabled { opacity: 0.32; cursor: default; }
+.zk-chip-clear:not(:disabled):active { background: linear-gradient(180deg, #232329, #2e2e37); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+.zk-chip-clear b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9px; letter-spacing: 0.1em; color: #c6c0d0; margin-right: 4px; }
+
+/* the screen itself: the rail (圏外) sits inside the same glass as the map,
+   because a thing that was not on Earth still belongs to the same instrument */
+.zk-map-screen {
+  position: relative; border-radius: 2px; overflow: hidden; background: #01060a;
+  touch-action: none; cursor: crosshair; -webkit-user-select: none; user-select: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 253, 240, 0.3),
+    inset 0 0 0 3px rgba(18, 16, 11, 0.92),
+    inset 0 2px 9px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(0,0,0,0.9);
+}
+.zk-map-screen:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.zk-rail { position: relative; height: 13px; }
+.zk-rail-label { position: absolute; z-index: 4; left: 5px; top: 2px; font-family: "Shippori Mincho", serif; font-size: 7.5px; letter-spacing: 0.14em; line-height: 1; color: rgba(150, 200, 170, 0.55); pointer-events: none; }
+.zk-ribbon { position: relative; height: 0; padding-bottom: 33.3333%; }
+#map-cells { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
+#map-fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 3; pointer-events: none; }
+.zk-map-scan {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0,0,0,0.42) 0 1px, transparent 1px 3px);
+}
+.zk-map-glass {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  background:
+    linear-gradient(112deg, rgba(222, 255, 238, 0.075), rgba(222,255,238,0.018) 15%, transparent 30%, transparent 72%, rgba(255,255,255,0.02) 88%),
+    radial-gradient(128% 165% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.6) 100%);
+}
+.zk-map-glass::after {   /* a thumb smudge, low left — this glass gets touched */
+  content: ""; position: absolute; left: 14%; bottom: 8%; width: 38px; height: 20px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(205, 215, 200, 0.07), transparent 76%); transform: rotate(14deg);
+}
+
+/* the readout strip under the glass */
+.zk-map-foot { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; padding: 7px 12px 0; font-size: 8px; letter-spacing: 0.12em; color: #7c7686; }
+.zk-map-foot .k { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9px; letter-spacing: 0.14em; color: #a49eb0; margin-right: 5px; }
+.zk-map-foot .v { color: var(--cyan); text-shadow: 0 0 6px rgba(var(--cyan-rgb), 0.35); }
+.zk-map-foot .w { color: var(--amber); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.35); }
+.zk-map-foot .r { color: var(--red); }
+.zk-map-foot .d { color: #57525f; }
+.zk-map-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex: 1 1 100%; }
+.zk-map-row .zk-map-cov { margin-left: auto; font-size: 6.5px; letter-spacing: 0.16em; color: #545060; white-space: nowrap; }
+.zk-map-now { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the chin: the only two hard controls on the whole set */
+.zk-set2-chin { display: flex; align-items: center; gap: 12px; padding: 13px 4px 15px; }
+.zk-btn {
+  position: relative; font: inherit; cursor: pointer; flex: none;
+  min-width: 78px; min-height: 44px; padding: 7px 14px 8px; border: none; border-radius: 3px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: linear-gradient(180deg, #f3ecd6 0 6px, #e2d7b7 6px 54%, #cabc97 86%, #b9ab88);
+  box-shadow: 0 3px 0 rgba(120, 100, 60, 0.9), 0 5px 8px rgba(40, 28, 10, 0.45), inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+.zk-btn b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 14px; letter-spacing: 0.08em; color: #463c2c; text-shadow: 0 1px 0 rgba(255,255,250,0.8); }
+.zk-btn i { font-style: normal; font-size: 6px; letter-spacing: 0.2em; color: #7c6e51; }
+.zk-btn:active, .zk-btn.is-down { transform: translateY(3px); box-shadow: 0 0 0 rgba(120,100,60,0.9), 0 2px 4px rgba(40,28,10,0.5), inset 0 1px 0 rgba(255,255,250,0.85); }
+.zk-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.zk-btn-band { position: absolute; left: 14px; right: 14px; bottom: 4px; height: 2.5px; border-radius: 2px; background: rgba(90, 76, 46, 0.35); }
+.zk-btn.is-armed .zk-btn-band { background: linear-gradient(180deg, #ff5f74, #cc1430); box-shadow: 0 0 7px rgba(var(--red-rgb), 0.65); }
+.zk-chin-spacer2 { flex: 1; }
+.zk-chin-note { font-size: 6.5px; letter-spacing: 0.2em; color: #7b6d50; text-align: right; line-height: 1.7; text-shadow: 0 1px 0 rgba(255, 253, 238, 0.55); }
+.zk-chin-note b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 8.5px; color: #55492f; letter-spacing: 0.14em; }
+.zk-lampwrap { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: none; }
+.zk-rxlamp { width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 34% 28%, #6a5a34, #2e2712 62%, #14110a); box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 0 0 2px rgba(58, 44, 18, 0.5); }
+.zk-rxlamp.is-lit { background: radial-gradient(circle at 34% 28%, #fff0c4, var(--amber) 58%, #a06400); box-shadow: 0 0 13px rgba(var(--amber-rgb), 0.9), 0 0 3px rgba(var(--amber-rgb), 0.9), inset 0 0 3px rgba(255,255,255,0.6), 0 0 0 2px rgba(58,44,18,0.55); }
+.zk-rxlamp.is-flicker { animation: zk-led-flicker 0.11s infinite; }
+.zk-lampwrap span { font-size: 6px; letter-spacing: 0.22em; color: #6e6045; text-shadow: 0 1px 0 rgba(255, 253, 238, 0.6); }
+.zk-lampwrap span b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9px; color: #4d4230; }
+
+/* the now-playing module in the console row */
+.zk-src { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.zk-src-place { font-family: "Orbitron", sans-serif; font-size: 12px; letter-spacing: 0.08em; color: #fff; text-shadow: 0 0 10px rgba(var(--amber-rgb), 0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zk-src-place b { color: var(--amber); }
+.zk-src-meta { font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--print-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- 解除 CLEAR. The painted cap is small because the machine wants it small;
+   the TOUCH TARGET is 52 × 44 regardless, an invisible box pulled back with
+   negative margin so it does not inflate the head row. Same trick everywhere
+   a control looks smaller than a thumb. --- */
+.zk-chip-clear {
+  width: 52px; height: 44px; min-width: 52px; min-height: 44px; margin: -11px -6px -11px -2px;
+  padding: 0; border: none; background: none; box-shadow: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.zk-chip-clear .cap {
+  display: flex; align-items: baseline; gap: 4px; padding: 4px 7px 5px; border-radius: 2px;
+  font-size: 7px; letter-spacing: 0.16em; color: #8b8595;
+  background: linear-gradient(180deg, #44444f, #2a2a33 60%, #202027);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 1px 2px rgba(0,0,0,0.6);
+}
+.zk-chip-clear .cap b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9px; letter-spacing: 0.1em; color: #c6c0d0; }
+.zk-chip-clear:disabled { opacity: 0.3; cursor: default; }
+.zk-chip-clear:not(:disabled):active .cap { background: linear-gradient(180deg, #232329, #2e2e37); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+.zk-chip-clear:focus-visible { outline: 2px solid var(--cyan); outline-offset: -4px; }
+
+/* --- 地域票 THE REGION RAIL. This is the legend before it is a control: it is
+   where the honest pool numbers live (the brief asks for the archive's real
+   shape, and the real shape is 66 reels in Europe and 7 in Russia). It is also
+   the guaranteed 44 px path — a 3 : 1 ribbon at 390 px cannot offer ten 44 px
+   regions, and pretending otherwise would be the lie this round exists to kill.
+   Ten flat silk-screened keys, no moulding, no hardware. --- */
+.zk-regrail { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; margin: 8px 0 0; }
+.zk-rkey {
+  position: relative; min-height: 44px; min-width: 44px; padding: 4px 1px; border: none; border-radius: 2px;
+  font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: linear-gradient(180deg, #30303a, #23232a 62%, #1b1b21);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.zk-rkey b { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.02em; line-height: 1.2; color: #8e889a; text-align: center; }
+.zk-rkey i { font-style: normal; font-size: 8px; letter-spacing: 0.06em; color: #5f5a68; font-variant-numeric: tabular-nums; }
+.zk-rkey.is-hot { background: linear-gradient(180deg, #3a3a46, #2a2a33 62%, #202028); }
+.zk-rkey.is-hot b { color: #cfc9da; }
+.zk-rkey.is-armed { background: linear-gradient(180deg, #4b3a17, #2f2410 62%, #241c0c); box-shadow: inset 0 1px 0 rgba(255, 220, 150, 0.16), 0 1px 0 rgba(0,0,0,0.6); }
+.zk-rkey.is-armed b { color: var(--amber); text-shadow: 0 0 7px rgba(var(--amber-rgb), 0.7); }
+.zk-rkey.is-armed i { color: #bb9140; }
+.zk-rkey.is-empty b, .zk-rkey.is-empty i { color: #494551; }
+.zk-rkey:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; z-index: 2; }
+
+/* ---------------------------------------------------------------------------
+   THE WIDTH SIMULATOR. The live page's breakpoints are viewport media queries;
+   here they are container queries on the same numbers, so the toggle at the top
+   shows the real stack without resizing the window. NO `transition` on the
+   resized element — a transition on width makes every measurement a lie.
+   --------------------------------------------------------------------------- */
+.zk-sim { container-type: inline-size; container-name: zk; width: 960px; max-width: 100%; margin: 0 auto; }
+@container zk (max-width: 700px) {
+  .content-frame { padding: 24px 12px 48px; }
+  .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
+  .zankyo-frame { padding: 20px 13px 30px; }
+  .zankyo-sub-long { display: none; }
+  .zankyo-title { letter-spacing: 0.06em; }
+  .zk-vent, .zk-sticker, .zk-warn-small { display: none; }
+  .zk-marquee { margin: 0 0 16px; padding: 12px 8px 10px; }
+  .zankyo-viz { height: 160px; }
+  .zk-monitor { padding: 9px 9px 0; }
+  .zk-bargraph { padding: 7px 9px 5px; gap: 3px 8px; }
+  .zk-bar-cells { gap: 1px; height: 13px; }
+  .zk-bar-serial { display: none; }
+  .zk-console-top { flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+  .zk-module { order: 2; flex: 1 1 100%; }
+  .zk-master { order: 1; }
+  .zk-module { flex-wrap: wrap; gap: 10px 13px; padding: 9px 12px 15px 14px; }
+  .zk-mod-mode { flex: 1 1 100%; }
+  .zk-mod-scale { border-left: none; box-shadow: none; padding-left: 0; }
+  .zk-testpoints { display: none; }
+  .zk-arcade { width: 66px; height: 66px; }
+  .stop-btn { width: 56px; height: 56px; }
+  .zk-knob-master { width: 50px; height: 50px; }
+  .zankyo-layer-sample { display: none; }
+  .zankyo-layer { padding: 10px 12px 9px; }
+  .zankyo-layer-head { gap: 8px 12px; flex-wrap: nowrap; }
+  .zankyo-layer-name { min-width: 0; font-size: 10px; padding: 6px 9px; }
+  .zk-knob-vol { width: 38px; height: 38px; }
+  .zankyo-log { height: 180px; }
+
+  /* SETTLED (PLAN §2.2): television → spectrum scope → 段階 progress bar →
+     PLAY / STOP / volume. display: contents dissolves the two column wrappers
+     so the four things are direct grid items and take an explicit order; the
+     transport already follows the bank in the markup. */
+  .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
+  .zk-bank-main, .zk-bank-side { display: contents; }
+  .zk-set2    { order: 1; }
+  .zk-monitor { order: 2; margin-bottom: 0; }
+  .zk-bargraph { order: 3; margin: 0; }
+
+  /* the map unit on a phone: the ribbon keeps its 3 : 1 and its full width —
+     it is the control, so it is the last thing that may be shrunk. What goes
+     is the print around it. */
+  .zk-set2 { padding: 12px 10px 0; }
+  .zk-set2-top { padding: 0 2px 7px; }
+  .zk-map { margin: 11px -7px 0; padding: 8px 8px 7px; }
+  .zk-map-head { padding: 0 8px 6px; gap: 7px; }
+  .zk-map-hint { display: none; }
+  .zk-map-foot { padding: 6px 8px 0; font-size: 7.5px; gap: 3px 9px; }
+  .zk-map-foot .zk-map-cov { flex: 1 1 100%; margin-left: 0; text-align: left; }
+  .zk-rail { height: 12px; }
+  .zk-set2-chin { padding: 11px 2px 13px; gap: 9px; }
+  .zk-btn { min-width: 70px; }
+  .zk-chin-note { display: none; }
+  .zk-regrail { grid-template-columns: repeat(5, 1fr); gap: 3px; }
+  .zk-foot-2, .zk-foot-3 { display: none; }
+}
+@container zk (max-width: 430px) {
+  .zk-map-title span { display: none; }
+  .zk-chip-box { padding: 2px 6px 3px; gap: 5px; }
+  .zk-chip-en { display: none; }
+  .zk-btn { min-width: 62px; padding: 7px 9px 8px; }
+}
+
+/* ------------------------------ the page's own furniture ------------------------------ */
+.zk-spec { max-width: 960px; margin: 22px auto 0; padding: 0 16px; font-size: 11px; line-height: 1.7; color: #4a4650; }
+.zk-spec h2 { font-family: "Orbitron", sans-serif; font-size: 12px; letter-spacing: 0.18em; color: #26262d; margin: 26px 0 8px; }
+.zk-spec h2:first-child { margin-top: 0; }
+.zk-spec p { margin: 0 0 9px; }
+.zk-spec b { color: #ff2d55; font-weight: 500; }
+.zk-spec i { color: #6a6572; }
+.zk-spec code { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: #26262d; }
+.zk-spec .zk-spec-k { font-family: "Shippori Mincho", serif; color: #26262d; }
+.zk-spec-tag { float: right; font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 0.18em; color: #8d8898; }
+.zk-tbl { width: 100%; border-collapse: collapse; margin: 4px 0 14px; font-size: 10.5px; }
+.zk-tbl th { text-align: left; font-weight: 400; font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #8d8898; border-bottom: 1px solid #d8d4de; padding: 4px 8px 4px 0; }
+.zk-tbl td { padding: 3px 8px 3px 0; border-bottom: 1px solid #eceaf0; font-variant-numeric: tabular-nums; }
+.zk-tbl td:first-child { font-family: "Shippori Mincho", serif; color: #26262d; white-space: nowrap; }
+.zk-tbl .n { text-align: right; }
+.zk-tbl .bar { width: 34%; }
+.zk-tbl .bar i { display: block; height: 7px; background: #26262d; }
+.zk-toggle {
+  max-width: 960px; margin: 0 auto; padding: 26px 16px 14px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.16em; color: #6a6572;
+}
+.zk-toggle strong { font-weight: 400; color: #26262d; letter-spacing: 0.2em; margin-right: 6px; }
+.zk-toggle button {
+  font: inherit; letter-spacing: inherit; padding: 6px 14px; min-height: 44px; min-width: 44px; cursor: pointer;
+  border: 1px solid #cbc6d0; border-radius: 3px; background: #f4f2f6; color: #3a3640;
+}
+.zk-toggle button[aria-pressed="true"] { background: #26262d; color: #f4f2f6; border-color: #26262d; }
+.zk-toggle button:focus-visible { outline: 2px solid #0e9fb4; outline-offset: 2px; }
+.zk-toggle em { font-style: normal; color: #948fa0; }
+.zk-harness { max-width: 960px; margin: 0 auto; padding: 10px 16px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.14em; color: #6a6572; }
+.zk-harness strong { font-weight: 400; color: #26262d; letter-spacing: 0.2em; margin-right: 6px; }
+.zk-harness button { font: inherit; letter-spacing: inherit; padding: 6px 13px; min-height: 44px; cursor: pointer; border: 1px solid #cbc6d0; border-radius: 3px; background: #f4f2f6; color: #3a3640; }
+.zk-harness button:active { background: #26262d; color: #f4f2f6; }
+.zk-harness button:focus-visible { outline: 2px solid #0e9fb4; outline-offset: 2px; }
+video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -10px; top: 0; }
+</style>
+</head>
+<body>
+
+<div class="zk-toggle" role="group" aria-label="simulated viewport width">
+  <strong>幅 WIDTH</strong>
+  <button type="button" data-w="390" aria-pressed="false">390</button>
+  <button type="button" data-w="700" aria-pressed="false">700</button>
+  <button type="button" data-w="960" aria-pressed="true">960</button>
+  <em id="wread">— achieved …</em>
+</div>
+
+<div class="zk-harness" role="group" aria-label="mockup harness">
+  <strong>実験 HARNESS</strong>
+  <button type="button" id="h-rx">受信 receive now</button>
+  <button type="button" id="h-dx">a TV-DX catch</button>
+  <button type="button" id="h-arc">one with an arc</button>
+  <button type="button" id="h-off">off-Earth</button>
+  <button type="button" id="h-thin">arm a thin region (ロシア)</button>
+  <button type="button" id="h-clear">release</button>
+</div>
+
+<div class="main-wrapper">
+ <div class="zk-sim" id="sim">
+ <div class="zankyo-scene is-on" id="scene">
+  <div class="content-frame zankyo-frame">
+
+    <span class="zk-screw zk-screw-tl" style="--slot:23deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-tr" style="--slot:74deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-bl" style="--slot:-15deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-br" style="--slot:51deg" aria-hidden="true"></span>
+    <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
+    <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
+
+    <div class="zk-marquee">
+      <span class="zk-marquee-screw" aria-hidden="true"></span>
+      <div class="zankyo-header">
+        <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
+        <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a derelict noise-engine &middot; 3042 //</p>
+      </div>
+      <span class="zk-marquee-screw zk-marquee-screw-r" aria-hidden="true"></span>
+    </div>
+
+    <div class="zk-bank">
+      <div class="zk-bank-main">
+        <div class="zk-monitor">
+          <div class="zk-screen zankyo-viz-wrap">
+            <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
+            <div class="zankyo-scanlines" aria-hidden="true"></div>
+            <div class="zk-glass" aria-hidden="true"></div>
+          </div>
+          <div class="zk-monitor-chin">
+            <span class="zk-monitor-brand">映像管 &middot; MSHI CRT-19</span>
+            <span class="zk-chin-spacer"></span>
+            <span class="zk-led-label">電源</span>
+            <span class="zk-led" aria-hidden="true"></span>
+          </div>
+          <span class="zk-sticker" aria-hidden="true"><b>検査済</b>3042.04<i></i></span>
+        </div>
+
+        <div class="zk-bargraph" id="zankyo-bargraph">
+          <div class="zk-bar-scale" aria-hidden="true">
+            <span class="zk-bar-zl zk-bar-zl-jo">序 jo</span>
+            <span class="zk-bar-zl zk-bar-zl-ha">破 ha</span>
+            <span class="zk-bar-zl zk-bar-zl-kyu">急 kyū</span>
+            <span class="zk-bar-tick" style="left:25%"></span>
+            <span class="zk-bar-tick" style="left:80%"></span>
+          </div>
+          <div class="zk-bar-housing">
+            <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
+            <span class="zk-bar-glass" aria-hidden="true"></span>
+          </div>
+          <div class="zk-bar-foot" aria-hidden="true">
+            <span class="zk-bar-label">段階 &middot; DEVELOPMENT</span>
+            <span class="zk-bar-serial">LM-3814 &middot; 56&nbsp;SEG</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 選地 THE REGION TUNER — the television, and under it the world -->
+      <div class="zk-bank-side" id="side">
+        <div class="zk-set2" id="set2">
+
+          <div class="zk-set2-top">
+            <span class="zk-set2-model"><b>受信機</b>MSHI CRT-9 &middot; TYPE 9-B &middot; 受信専用</span>
+            <span class="zk-set2-stock">No. 2887-R</span>
+          </div>
+
+          <div class="zk-set2-tubewrap">
+            <div class="zk-tube-wrap">
+              <div class="zk-tube" id="tube">
+                <canvas id="tube-canvas" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
+                <div class="zk-bed" aria-hidden="true"></div>
+                <div class="zk-glass" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- THE MAP. It is not a legend under the picture: it is the control. -->
+          <div class="zk-map" id="map">
+            <span class="zk-map-bolt zk-map-bolt-tl" style="--slot:18deg" aria-hidden="true"></span>
+            <span class="zk-map-bolt zk-map-bolt-tr" style="--slot:-40deg" aria-hidden="true"></span>
+            <span class="zk-map-bolt zk-map-bolt-bl" style="--slot:63deg" aria-hidden="true"></span>
+            <span class="zk-map-bolt zk-map-bolt-br" style="--slot:-8deg" aria-hidden="true"></span>
+
+            <div class="zk-map-head">
+              <span class="zk-map-title"><b>選地</b>REGION<span> &middot; MSHI RM-2</span></span>
+              <span class="zk-map-hint" id="map-hint">なぞって選ぶ &middot; DRAG THE WORLD</span>
+              <span class="zk-chip" id="chip">
+                <span class="zk-chip-box">
+                  <span class="zk-chip-ja" id="chip-ja">全球</span>
+                  <span class="zk-chip-en" id="chip-en">ALL EARTH</span>
+                  <span class="zk-pips" id="pips" aria-hidden="true"></span>
+                </span>
+                <button type="button" class="zk-chip-clear" id="clear" disabled aria-label="解除 release the armed region"><span class="cap"><b>解除</b>CLEAR</span></button>
+              </span>
+            </div>
+
+            <div class="zk-map-screen" id="screen" tabindex="0" role="application"
+                 aria-label="選地 the region tuner — a world ribbon. Drag across it to arm a region; the station then biases what it receives toward there. Left and right arrows step through the regions, Enter arms, Escape releases.">
+              <div class="zk-rail" aria-hidden="true"><span class="zk-rail-label">圏外</span></div>
+              <div class="zk-ribbon"><canvas id="map-cells" aria-hidden="true"></canvas></div>
+              <canvas id="map-fx" aria-hidden="true"></canvas>
+              <div class="zk-map-scan" aria-hidden="true"></div>
+              <div class="zk-map-glass" aria-hidden="true"></div>
+            </div>
+
+            <div class="zk-map-foot">
+              <div class="zk-map-row">
+                <span class="zk-map-now" id="arm-read"><span class="k">全球</span>ALL EARTH</span>
+                <span class="zk-map-cov" id="cov-read">測地 …</span>
+              </div>
+              <div class="zk-map-row">
+                <span class="zk-map-now" id="now-read"><span class="k">待機</span><span class="d">standby &middot; no signal</span></span>
+              </div>
+            </div>
+
+            <div class="zk-regrail" id="regrail" role="group" aria-label="地域票 region rail — the pool in each region, and a 44 px key for each"></div>
+          </div>
+
+          <div class="zk-set2-chin">
+            <button type="button" class="zk-btn" id="rx-btn"><b>受信</b><i>RECEIVE</i><span class="zk-btn-band" aria-hidden="true"></span></button>
+            <div class="zk-lampwrap">
+              <span class="zk-rxlamp" id="rx" aria-hidden="true"></span>
+              <span><b>受信</b></span>
+            </div>
+            <span class="zk-chin-spacer2"></span>
+            <span class="zk-chin-note"><b>選地</b>THE MAP IS THE TUNER<br>受信は世界に従う &middot; RECEPTION FOLLOWS THE ARMED REGION</span>
+          </div>
+
+          <span class="zk-foot zk-foot-1" aria-hidden="true"></span>
+          <span class="zk-foot zk-foot-2" aria-hidden="true"></span>
+          <span class="zk-foot zk-foot-3" aria-hidden="true"></span>
+          <span class="zk-foot zk-foot-4" aria-hidden="true"></span>
+
+          <span class="zk-tape zk-tape-1" aria-hidden="true">ヒビ注意</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="zk-console-top">
+      <div class="zk-transport-cluster">
+        <button type="button" class="zk-arcade play-btn is-playing" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
+        <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+      </div>
+      <div class="zk-module">
+        <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
+        <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
+        <div class="zk-mod-zone zk-mod-mode">
+          <span class="zk-mod-head">発信地 &middot; ORIGIN</span>
+          <div class="zk-mod-lamp">
+            <div class="zk-src">
+              <span class="zk-src-place" id="src-place"><b>—</b></span>
+              <span class="zk-src-meta" id="src-meta">the second set is dark</span>
+            </div>
+          </div>
+        </div>
+        <div class="zk-mod-zone zk-mod-scale">
+          <span class="zk-mod-head">音階 &middot; SCALE</span>
+          <div class="zk-deg-row" id="zankyo-degrees"></div>
+          <span class="zk-testpoints" aria-hidden="true"></span>
+        </div>
+        <span class="zk-mod-stamp" aria-hidden="true">受信管理 &middot; MODULE 07</span>
+      </div>
+      <div class="zk-master">
+        <div id="zankyo-master-knob" class="zk-knob-mount"></div>
+        <div class="zk-master-meta">
+          <span class="zk-print">主音量 &middot; VOL</span>
+          <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="zankyo-log-block">
+      <div class="zankyo-log-label"><span>活動 &middot; ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
+      <div id="zankyo-log" class="zankyo-log"></div>
+    </div>
+
+    <div class="zk-plate-row">
+      <span class="zk-plate">残響-3042 &middot; MUNICIPAL SKY HEAVY INDUSTRIES &middot; 製造番号 3042-0117</span>
+    </div>
+    <p class="zk-build" aria-label="build version">2.1.0-rc.75<span class="zk-build-sep">&middot;</span>mockup M2<span class="zk-build-sep">&middot;</span>選地 region tuner</p>
+
+  </div>
+ </div>
+ </div>
+</div>
+
+<section class="zk-spec">
+  <h2>MAP OPTION M2 · <span class="zk-spec-k">選地</span> THE REGION TUNER <span class="zk-spec-tag">the map is the control</span></h2>
+
+  <p><b>The argument, in one paragraph.</b> ZANKYŌ has just rejected four sets of hardware for crowding the screen, and the honest reason is that a machine which plays itself does not need operating — it needs <i>leaning</i>. The map is the only control that earns its place on this faceplate, because it is the only one that answers a question the owner actually has while the thing is running: <i>where is this from, and can I have more of that?</i> A dot tells you where the signal came from; a thumb dragged across the same strip tells the station where to look tonight. Nothing else is added — one <span class="zk-spec-k">受信</span> key and one <span class="zk-spec-k">解除</span> release, and that is the whole control surface. It works because a world map is a control everybody already knows how to read, and because the archive's real geography is genuinely interesting: 66 reels from Europe, 58 from East Asia, <b>seven from all of Russia and Central Asia</b>, seven that were not on the Earth at all. Arming a region is not a filter and never pretends to be — it takes 80 % of the receptions and leaves 20 % to the rest of the world, so the night still surprises you, and so the one reel that cannot be placed at all is never locked out.</p>
+
+  <h2>THE PROJECTION</h2>
+  <p>Equirectangular, cropped to <b>+62° … −58°</b> of latitude. 360° by 120° is exactly <b>3 : 1</b> — a ribbon, not a map — and the asymmetric crop is the honest one, because the broadcasters are northern: it keeps Helsinki (60.2 N), Tallinn, Oslo and St Petersburg inside the frame and loses only empty ice. The two <span class="zk-spec-k">Igloolik</span> reels (69.4 N, Inuit Broadcasting Corporation) are the only ones above the top edge; they are drawn <i>pinned to it</i> with a hollow caret, which says "further north than this ribbon goes" rather than quietly moving them. The grid is <b>2° per cell — 180 × 60 = 10,800 cells</b>, drawn as a real dot-matrix into a 180 × 60 backing store and scaled up with <code>image-rendering: pixelated</code>, so the cells stay hard squares at every width. Coastlines are hand-traced polygons rasterised into the grid at run time, which is also what makes region shading free: the same point-in-region test lights the cells and decides the pool. Islands too small for a 2° cell (Taiwan, Singapore, Cyprus, Hawai'i, Sakhalin, Zanzibar…) get one forced cell each — a dot-matrix world cannot draw Malta, but it can admit it.</p>
+
+  <h2>HOW SELECTION WORKS ON A PHONE — and why it is not by point</h2>
+  <p><b>Never by point, and never by reel.</b> At 390 px the ribbon is about 336 × 112 CSS px, and three facts make point-selection impossible <i>and</i> dishonest: (1) <b>126 of 252 reels are placed only to the country</b> — the coordinate is the broadcaster's front door, not the shot; (2) reels stack hard — <b>13 at Pyongyang, 10 at Tokyo, 6 at London</b> — so at this width they are literally the same pixel; (3) a thumb is 44 px and a country at 2°/cell is not. So the unit of selection is a <b>region</b>, and the gesture is a <b>drag</b>: put a thumb anywhere on the world and slide. The region under the thumb lights up and its name appears in the amber window <i>above</i> the glass — deliberately above, so your own hand never covers the one thing you need to read while dragging — and it commits when you lift. <b>Nothing has to be hit.</b> You slide until the right name is showing. A tap is the same gesture with no travel; a lift inside the region that is already armed releases it. Regions are a multi-anchor Voronoi (each region owns several anchor points, which is what lets Tunis be North Africa while Rome is Europe, and Lhasa be East Asia while Kathmandu is South Asia), and the same one rule decides which cells light, which region your thumb is in, and which reels are in the pool — so <i>the shape you see lit is exactly the shape that is armed</i>.</p>
+  <p><b>And a guaranteed 44 px path.</b> A 3 : 1 ribbon at 390 px cannot offer ten 44 × 44 targets — ten times 44 is 440 px and the ribbon is 336 — and pretending otherwise is the failure this round exists to fix. So under the glass sits the <span class="zk-spec-k">地域票</span> <b>region rail</b>: ten flat silk-screened keys, five across on a phone and ten across on the desktop, each measured at run time and printed in the readout below. The rail is <i>the legend first</i> — it is where the honest pool count for every region lives, which the brief asks for anyway — and a control second. Keyboard: the screen is focusable, ← and → step through the regions west-to-east like a dial, Escape releases.</p>
+
+  <h2>WHAT IS ARMED, WHAT IT COSTS, AND HOW IT ENDS</h2>
+  <p><b>Shown without covering the map.</b> The armed region reads in the window above the glass (kanji + latin + six burn-down pips) and in the strip below it (<i>pool · share · decay</i>). The map itself carries only light: the region's land cells lift, its sea cells lift a third as much so you can see the extent over water, and a one-pixel amber border traces it.</p>
+  <p><b>Thin regions are shown as thin, not hidden.</b> Arm <span class="zk-spec-k">露・中央アジア</span> RUSSIA &amp; CENTRAL ASIA and the readout says <b>7 reels · 8/10 of receptions · 反復注意 thin — you will hear them again</b>. That is the truth about this archive and it is worth knowing. A region with nothing in it arms anyway and says <b>選局不能 — the bias has nothing to act on</b>; it does not silently refuse.</p>
+  <p><b>It decays.</b> An armed region survives <b>six receptions</b> and then releases itself back to 全球 ALL EARTH — the six pips burn down one per signal. The machine is a receiver, not a playlist: you lean it, and it drifts back. This is also why there is no state to clean up and only one release control.</p>
+
+  <h2>CONFIDENCE IS DRAWN, NOT HIDDEN</h2>
+  <p>Half this archive is placed only to the nation, so half of it must not be drawn as a pinprick. The dot is drawn <b>by <code>conf</code></b>: <span class="zk-spec-k">市</span> <i>city</i> → one hard cell with a 1 px halo; <span class="zk-spec-k">地域</span> <i>region</i> → a soft patch about 3 cells across; <span class="zk-spec-k">国</span> <i>country</i> → a <b>bloom about 7 cells wide and no hard centre at all</b>, which reads as "this country, and the point is the broadcaster's door"; <span class="zk-spec-k">不明</span> <i>unknown</i> → <b>no dot</b>. <code>tibetan-ritual-nyingmapa-1971</code> is the one unplaceable reel: its coordinates are a cultural anchor, so it is never drawn and it belongs to no region — it can only ever arrive out of the 20 % the world keeps when something is armed. The <i>census</i> in the resting map is built the same way: point-confident reels make a hard hot cell, country-confident ones spread, so the stacking at Pyongyang and Tokyo shows up as brightness and never as a hit target.</p>
+
+  <h2>THE TWO SPECIAL CASES</h2>
+  <p><b>Long-distance catches (15).</b> Fifteen reels carry <code>dx: true</code>, but <b>only six name a receiver</b>. So <code>dx</code> is a <i>style on the single dot</i> — three rings expanding outward from it, the visual of something arriving from further away than it should have — and the arc is the rarer case, not the default. No receiver has been invented for the thirteen that say only "caught off air"; the readout says <i>遠距離受信 caught at distance, receiver not on record</i>, which is the true statement.</p>
+  <p><b>The six arcs.</b> Where <code>heard</code> exists (Quezon City → Tokyo; the Murree transmitter → Islamabad; Fort Collins → Rockford; Red Square → Brisbane; Moscow → Ontario; Jerusalem → the eastern United States), a dotted quadratic arc is drawn from transmitter to receiver, taking the short way round the antimeridian, with a pip running it over and over in the direction the signal travelled, and a <b>hollow square</b> at the receiving end — hollow because nothing was transmitted there. Four of the six are shortwave rather than TV-DX; the notes name the listening post, so it is the same gesture.</p>
+  <p><b>Off Earth (7).</b> There is no honest place on a world map for a signal that was not on the world, so it gets <b>its own register</b>: a 13 px rail above the top edge, inside the same glass, silk-screened <span class="zk-spec-k">圏外</span>. A reel with <code>realm</code> lights a berth on that rail over the <i>longitude of the ground station it came down to</i>, with a dotted tether to that station's dot on the map below — Apollo 11 hangs over Houston, Buran over Baikonur, Dongfanghong-1 over Beijing, Explorer 1 over the Cape. The marker says which: a crescent for <code>moon</code>, a ringed body for <code>orbit</code>, and for <code>deep-space</code> a chevron pinned to the <b>far right edge with an arrow pointing out of the frame</b> — Voyager is not at a longitude, it is <i>leaving</i>. The rail is also the tenth selectable region: a thumb above the top edge, or the <span class="zk-spec-k">圏外</span> key on the rail, arms all seven. <code>nasa-mercury-redstone-1-1960</code> deliberately has no <code>realm</code> — that flight never left the pad — and is simply Cape Canaveral, which is the joke the data is already making.</p>
+
+  <h2>THE IDLE — which is most of the night</h2>
+  <p>The signal is a visitation; the ribbon has to be worth looking at when there is none. Three things, all cheap, all true. <b>The census</b> is permanent: every cell carries <code>log₂(1 + reels placed there)</code>, so the resting map <i>is</i> the archive's own weight drawn as light — Pyongyang is the brightest cell on the world, Tokyo next, then London, and the emptiness of the Sahel and the Pacific is real emptiness. <b>The terminator</b> is computed from the actual UTC clock and the actual solar declination, so the day side of the world really is the day side, and it really does move. <b>The sweep</b> is a receiving column that crawls west-to-east every 11 s and excites the phosphor it passes, which then decays on a P39 tail — the continents light up behind it like a radar and fade. Plus the occasional fleck at a cell that holds reels: the archive twitching in its sleep. The ribbon is treated as a second tube throughout — same P39 ramp as CRT-9, its own scanlines, its own bloom, its own glass with a thumb smudge low-left, because this glass gets touched.</p>
+
+  <h2>THE POOL, DERIVED AT RUN TIME</h2>
+  <p>Joined from <code>../broadcast/manifest.json</code> ⋈ <code>../broadcast/geo.json</code>, with the two <code>takedown</code> reels filtered out <i>against the manifest</i>, so a region's count never includes a reel that can never play. Live numbers below; if the fetch fails the page falls back to a 36-entry inline seed and the coverage line says so.</p>
+  <table class="zk-tbl"><tbody id="cov-table"><tr><td colspan="5">counting…</td></tr></tbody></table>
+
+  <h2>MEASURED, LIVE, IN THIS BROWSER</h2>
+  <p><span id="measure">…</span></p>
+  <p><b>Tube geometry.</b> <code>aspect-ratio</code> on a shrinkable grid item is honoured by Blink and <i>ignored</i> by WebKit. The tube here is a wrapper with <code>height: 0; padding-bottom: 75%</code> and an absolutely-positioned child — percentage padding resolves against the inline size in both engines — so the tube is 488 × 366 in Safari as well as Chrome. The assertion is printed above and fails loudly if it is ever not.</p>
+
+  <h2>WHAT I WOULD FLAG AS WEAK</h2>
+  <p>(1) <b>The region rail is one more thing on the faceplate</b>, and the owner has just rejected four mockups for exactly that. My defence is that it is the legend the brief asked for and the only way to hit 44 px at 390 — but if he wants it gone, the drag gesture alone still works and the pool numbers move into the strip below the glass. (2) <b>Nine regions is a judgement call</b> and some of the boundaries will surprise people: Turkey is Middle East, Ukraine is Europe, Hawai'i is North America, Vietnam is South-East Asia. They are argued but not neutral. (3) <b>The coastlines are hand-drawn</b> at about 2° and will not survive a cartographer; at 2.7 screen px per cell nobody can tell, but a bigger ribbon would expose it. (4) <b>Six pips is a guess.</b> Six receptions is about two and a half minutes at the demo's 25 s timer and maybe twenty minutes on the live machine — the right number is whatever the owner finds himself re-arming at. (5) <b>80/20 is also a guess</b>, and it is the number most worth arguing about: at 90/10 a thin region becomes a loop, at 60/40 arming barely registers.</p>
+</section>
+
+<video id="v0" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="v1" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="v2" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<script>
+(function () {
+  "use strict";
+  var rnd = Math.random;
+  var now = function () { return performance.now(); };
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  // ==========================================================================
+  // 1. THE LOCATIONS
+  //    ../broadcast/geo.json is the truth. The object below is a LAST RESORT
+  //    only — 36 entries lifted verbatim from that file so the page still
+  //    works if the fetch fails; the coverage readout says which one is live.
+  // ==========================================================================
+  var SEED = {"bbc1-testcard-news-1979":{"country":"GB","place":"London","lat":51.51,"lon":-0.13,"conf":"city"},"nhk-joak-closedown-1982":{"country":"JP","place":"Tokyo (NHK / JOAK-TV)","lat":35.68,"lon":139.69,"conf":"country"},"fuji-jocx-signoff-1988":{"country":"JP","place":"Tokyo (Fuji TV / JOCX-TV)","lat":35.68,"lon":139.69,"conf":"country"},"prelinger-duck-and-cover-1951":{"country":"US","place":"United States (Federal Civil Defense Administration)","lat":38.9,"lon":-77.04,"conf":"country"},"prelinger-design-for-dreaming-1956":{"country":"US","place":"New York (GM Motorama, Waldorf-Astoria)","lat":40.76,"lon":-73.97,"conf":"country"},"es-tvdx-tve2-catala-1984":{"country":"ES","place":"Barcelona (TVE-2 transmitter)","lat":41.39,"lon":2.17,"conf":"city","dx":true},"nl-tros-closedown-1992":{"country":"NL","place":"Hilversum (TROS / NOS)","lat":52.22,"lon":5.18,"conf":"country"},"th-sahaviriya-computer-1992":{"country":"TH","place":"Bangkok (Sahaviriya OA)","lat":13.76,"lon":100.5,"conf":"country"},"etv-cairo-clock-1980s":{"country":"EG","place":"Cairo (Egyptian Channel 1)","lat":30.04,"lon":31.24,"conf":"country"},"ph-dzmm-signon-1987":{"country":"PH","place":"Manila (DZMM 630 kHz)","lat":14.6,"lon":120.98,"conf":"city"},"ph-tvdx-abscbn-1990":{"country":"PH","place":"Quezon City (ABS-CBN Channel 2 transmitter)","lat":14.65,"lon":121.05,"conf":"city","dx":true,"heard":{"place":"Tokyo (western suburbs)","lat":35.68,"lon":139.69,"country":"JP"}},"kctv-signoff-1994":{"country":"KP","place":"Pyongyang (KCTV)","lat":39.02,"lon":125.75,"conf":"city"},"ct2-testcard-1994":{"country":"CZ","place":"Prague (ČT2 transmitter; Slovak STV in the same catch)","lat":50.08,"lon":14.44,"conf":"city","dx":true},"sabc-closedown-1977":{"country":"ZA","place":"Johannesburg (SABC/SAUK)","lat":-26.2,"lon":28.05,"conf":"country"},"tvri-jakarta-1980":{"country":"ID","place":"Jakarta (TVRI)","lat":-6.21,"lon":106.85,"conf":"city"},"arutz-1-signoff-1985":{"country":"IL","place":"Jerusalem (IBA Channel 1)","lat":31.78,"lon":35.22,"conf":"country"},"aba-amdo-tibetan-news":{"country":"CN","place":"Barkam (Ngawa/Aba prefecture), Sichuan","lat":31.9,"lon":102.22,"conf":"region"},"ddr-programmstart-1983":{"country":"DE","place":"Berlin-Adlershof (Fernsehen der DDR)","lat":52.43,"lon":13.54,"conf":"country"},"iraq-tv-iftitah-1982":{"country":"IQ","place":"Baghdad","lat":33.31,"lon":44.37,"conf":"city"},"apollo-11-lunar-liftoff-1969":{"country":"US","place":"Tranquility Base → Houston","lat":29.56,"lon":-95.09,"conf":"city","realm":"moon"},"nara-apollo-13-houston-1972":{"country":"US","place":"Apollo 13, cislunar space → Houston","lat":29.56,"lon":-95.09,"conf":"city","realm":"moon"},"sputnik-1-shortwave-1957":{"country":"US","place":"Sputnik 1 in orbit → Minneapolis (WTCN-AM)","lat":44.98,"lon":-93.27,"conf":"city","realm":"orbit"},"voyager-greetings-1977":{"country":"US","place":"Voyager, interstellar space → Goldstone DSN","lat":35.43,"lon":-116.89,"conf":"city","realm":"deep-space"},"cn-dongfanghong-1-1970":{"country":"CN","place":"Dongfanghong-1 in orbit → Jiuquan","lat":40.96,"lon":100.29,"conf":"city","realm":"orbit"},"energiya-buran-1988":{"country":"KZ","place":"Buran in orbit → Baikonur","lat":45.92,"lon":63.34,"conf":"city","realm":"orbit"},"universal-newsreel-explorer-1958":{"country":"US","place":"Explorer 1 in orbit → Cape Canaveral","lat":28.49,"lon":-80.57,"conf":"city","realm":"orbit"},"kol-israel-9009-1969":{"country":"IL","place":"Jerusalem (Kol Israel)","lat":31.78,"lon":35.22,"conf":"city","heard":{"place":"eastern United States","lat":40.0,"lon":-75.5,"country":"US"}},"pk-tvdx-ptv-1994":{"country":"PK","place":"Murree transmitter (PTV Islamabad, channel E8)","lat":33.91,"lon":73.39,"conf":"city","dx":true,"heard":{"place":"Islamabad","lat":33.69,"lon":73.06,"country":"PK"}},"radio-moscow-parade-1969":{"country":"RU","place":"Moscow (Red Square)","lat":55.75,"lon":37.62,"conf":"city","heard":{"place":"Brisbane","lat":-27.47,"lon":153.03,"country":"AU"}},"sovetskie-kv-stantsii-1970":{"country":"RU","place":"Moscow (Soviet shortwave services)","lat":55.76,"lon":37.62,"conf":"country","heard":{"place":"Ontario, Canada","lat":44.5,"lon":-79.0,"country":"CA"}},"wwv-fort-collins-1991":{"country":"US","place":"Fort Collins, Colorado (NIST WWV)","lat":40.68,"lon":-105.04,"conf":"city","heard":{"place":"Rockford, Illinois","lat":42.27,"lon":-89.09,"country":"US"}},"tibetan-ritual-nyingmapa-1971":{"country":"XX","place":"Tibetan Nyingmapa ritual — recording site not stated","lat":29.65,"lon":91.12,"conf":"unknown"},"au-tvw7-perth-1993":{"country":"AU","place":"Perth, Western Australia","lat":-31.95,"lon":115.86,"conf":"city"},"canal13-uctv-tanda-1982":{"country":"CL","place":"Santiago","lat":-33.45,"lon":-70.67,"conf":"city"},"hk-tv-continuity-1979":{"country":"HK","place":"Hong Kong (TVB Pearl / RTV-2)","lat":22.32,"lon":114.17,"conf":"city"},"rte-news-angelus-1983":{"country":"IE","place":"Dublin (RTÉ)","lat":53.35,"lon":-6.26,"conf":"country"}}
+;
+  var GEO = SEED, GEOSRC = "inline seed (36 of 252 — geo.json not reached)";
+  var MAN = null, MANSRC = "none";
+
+  // ==========================================================================
+  // 2. THE REGIONS
+  //    Nine ground regions and 圏外 OFF-EARTH. A region is defined by a SET of
+  //    anchor points; a place belongs to the region whose nearest anchor is
+  //    nearest. That single rule does three jobs at once — it decides which
+  //    region a reel is in, which cells light up when a region is armed, and
+  //    which region your thumb is over — so the shape you see lit is exactly
+  //    the shape that is armed. Multi-anchor (rather than one centroid each)
+  //    is what lets Tunis be North Africa and Lhasa be East Asia.
+  // ==========================================================================
+  var REGIONS = [
+    { k: "NA", ja: "北米", s: "北米", en: "NORTH AMERICA",     a: [[-100,42],[-80,50],[-84,32],[-120,38],[-157,21],[-65,47]] },
+    { k: "LA", ja: "中南米", s: "中南米", en: "LATIN AMERICA",     a: [[-90,15],[-80,20],[-75,0],[-72,-15],[-68,-30],[-58,-34],[-45,-15],[-62,-12],[-55,5]] },
+    { k: "EU", ja: "欧州", s: "欧州", en: "EUROPE",            a: [[14,52],[-3,52],[-4,41],[25,47],[22,40],[16,60],[2,47]] },
+    { k: "RU", ja: "露・中央アジア", s: "露中亜", en: "RUSSIA & C. ASIA", a: [[40,57],[62,50],[80,55],[100,55],[130,55],[70,42]] },
+    { k: "ME", ja: "中東・北ア", s: "中東北ア", en: "MIDDLE EAST & N. AFRICA", a: [[5,32],[35,27],[34,38],[50,33],[20,28],[45,20],[-6,31]] },
+    { k: "AF", ja: "アフリカ", s: "アフリカ", en: "AFRICA",           a: [[-5,8],[20,-5],[37,0],[30,-20],[20,-30],[5,10],[47,-19]] },
+    { k: "SA", ja: "南アジア", s: "南アジア", en: "SOUTH ASIA",       a: [[78,22],[75,30],[85,27],[68,25],[80,10]] },
+    { k: "EA", ja: "東アジア", s: "東アジア", en: "EAST ASIA",        a: [[118,33],[114,24],[138,36],[105,30],[92,30],[128,40],[130,45]] },
+    { k: "SE", ja: "東南ア・大洋州", s: "東南ア", en: "SE ASIA & OCEANIA", a: [[105,12],[107,16],[121,12],[110,-5],[118,-28],[133,-25],[148,-32],[174,-40],[160,-8],[100,5]] },
+    { k: "OFF", ja: "圏外", s: "圏外", en: "OFF-EARTH", rail: true, a: [] }
+  ];
+  var R_OFF = 9;
+  function regionAt(lon, lat) {
+    var best = -1, bd = 1e12;
+    for (var i = 0; i < 9; i++) {
+      var A = REGIONS[i].a;
+      for (var j = 0; j < A.length; j++) {
+        var dx = lon - A[j][0];
+        if (dx > 180) dx -= 360; else if (dx < -180) dx += 360;
+        var dy = lat - A[j][1], d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = i; }
+      }
+    }
+    return best;
+  }
+  // a reel's region: off-Earth first, then the unplaceable one, then geometry
+  function regionOfEntry(g) {
+    if (!g) return -1;
+    if (g.realm) return R_OFF;
+    if (g.conf === "unknown") return -1;          // on the map as a fact: no
+    return regionAt(g.lon, g.lat);
+  }
+
+  // ==========================================================================
+  // 3. THE PROJECTION AND THE LAND
+  //    Equirectangular, cropped to +62 … −58 of latitude. 360 by 120 degrees
+  //    is exactly 3 : 1 — a ribbon, not a map — and the asymmetric crop is the
+  //    honest one: the broadcasters are northern. Two reels (Igloolik, 69.4 N)
+  //    sit above the top edge and are drawn pinned to it, hollow, with a caret.
+  //    The grid is 2° per cell: 180 × 60 = 10,800 phosphor cells.
+  // ==========================================================================
+  var GW = 180, GH = 60, LAT_T = 62, LAT_B = -58;
+  function xOfLon(lon) { return (lon + 180) / 360 * GW; }
+  function yOfLat(lat) { return (LAT_T - lat) / (LAT_T - LAT_B) * GH; }
+  function lonOfX(x) { return x / GW * 360 - 180; }
+  function latOfY(y) { return LAT_T - y / GH * (LAT_T - LAT_B); }
+
+  // Coarse hand-drawn coastlines, ~2° of resolution — which is the cell size,
+  // so nothing finer would survive anyway. Written as "lon lat, lon lat, …".
+  var COAST = [
+    // AFRICA
+    "-9.8 32,-5.5 36,3 37,10 37,13 32.9,20 32.1,25 31.6,29 31.2,32.6 29.9,34 28,35 24,37 22,39 15,43 11.6,51.4 11.8,48 6,45.3 2,41 -2,39.7 -4,39.3 -6.8,40.5 -14,35 -24,32.6 -25.9,31 -29.9,27 -33.5,25.6 -34,18.4 -34.4,17 -32,14.5 -22.9,12 -19,11.7 -15.9,13.2 -8.8,12.2 -5.9,9.3 -1,8.5 3.8,5 5.5,3.4 6.4,-1 5.3,-4 5.2,-7.5 4.4,-13.3 8.5,-16.5 12.5,-17.4 14.7,-16 19,-13 23,-12.9 27.7",
+    // MADAGASCAR
+    "43.2 -12.3,49.5 -13.5,50.5 -15.5,50.2 -25.5,45.2 -25.6,43.3 -21.5",
+    // EURASIA
+    "-9.5 38.7,-9 43.2,-1.8 43.4,-4.5 48.4,-1.5 49.3,3 51.1,4.3 52.4,8.2 53.7,8.2 55.4,10.6 57.7,10 54.5,13 54.5,19 54.5,21 55.5,24 57.5,24.8 59.4,28 60,30 60,25 65,21 64,18 62,18.5 59.3,16 57,12 56,11 58.5,10 59,5.3 60.4,12 65.5,18 69.5,25 71.1,31 70,40 68,60 70,75 73,90 75,110 74,140 72,160 70,170 68.8,180 66,180 62,163 61,160 54,156 51,158 57,150 59,142 54,140 53,135 48,131 43,128 40,129 38,129 35,126 37.5,125 39.5,122 39,119 37.5,121 31.2,117 24,113.5 22.2,108.5 21.5,106 20.8,109 15,109 11,105 8.6,103 10.5,100.5 13.5,99 8,103.5 1.3,100 6,98 8,97 16,94 20,90 22,88 21.5,80 15,80 13,77.5 8.1,73 15,72.8 19,68.8 23.7,66 25,61 25,57 25.5,56.4 26.6,50 29,48 30,48.5 28,50 26.5,55 25,59 22,54 17,52 15,45 12.8,43 12.7,39 21,35 28,34 29.5,34.3 31.3,35 36.2,36 36.6,30 36.3,26.5 38.5,26 40.5,29 41,35 42,39 43,37 45,33 45.3,30 46.5,29 45.3,28.5 43.5,23.5 40,20 40,19 42,13.5 45.6,12.3 45.4,14 42,18.5 40.1,16 38,15.5 40,12.5 41.9,10 44,8.5 44.4,3 43.2,0.7 41,0 39,-0.5 38,-2 36.8,-5.6 36,-6.9 37.2,-8.9 37",
+    // BRITAIN
+    "-5.7 50.1,-3 51.4,-5.2 51.7,-4.7 53.3,-3.1 54.1,-3.5 55,-5.5 55.3,-5.8 58.6,-3 58.6,-2 57.7,-2.1 56.5,-1.3 54.7,0.3 53.5,1.7 52.7,1.4 51.4,0.7 50.8,-1.9 50.7,-3.5 50.2",
+    // IRELAND
+    "-10 51.6,-6 52.2,-6 53.4,-5.5 54.7,-8 55.3,-10 54.3,-9.9 53.1",
+    // HONSHU / SHIKOKU
+    "130.9 33.9,132 34.3,135 33.5,137 34.6,140 35,140.9 35.7,141.5 38.3,141 41.5,140.3 41.5,139.9 40,137 37,135 35.5,132 35.5",
+    // HOKKAIDO
+    "140 41.8,141.5 42.5,145.5 43.3,145.3 44.3,141.5 45.5,140 42.6",
+    // KYUSHU
+    "129.5 33.5,131.8 33.6,131.8 31.5,130.2 31",
+    // SUMATRA
+    "95.3 5.5,98 3.5,102 -1,105.9 -5.9,104 -5.9,100 -2,96 4",
+    // JAVA
+    "105.2 -6,114.5 -8.2,114.5 -8.7,106 -7.5",
+    // BORNEO
+    "109 1.8,110 -0.8,114 -3.5,117 -4,119 -3,117.5 0,119 5,117 6.5,113 3,109.5 2.5",
+    // SULAWESI
+    "119 -5.5,120.5 -2.5,123 -1,125 1.5,124 1,122 -1,121 -4,120 -5.5",
+    // NEW GUINEA
+    "131 -1,141 -2.5,150.8 -10.2,147 -8,140 -8.5,134 -6",
+    // LUZON
+    "120.5 18.5,122 17,122 14,121 13.5,120 15,120 16.5",
+    // MINDANAO
+    "122 7,126 7,126.3 9.5,123 9.8",
+    // AUSTRALIA
+    "113.2 -22,114 -26,115.7 -32,118 -34.5,123 -34,129 -31.7,134 -32.8,137.5 -35,139.5 -38,143 -38.9,146 -39,147 -38,150 -37.5,153 -31,153.5 -28,152 -24,149 -21,145.5 -15,142.5 -10.7,141 -12.5,140 -17,136 -12,132 -11,130 -12.5,129 -15,125 -14,122 -17,118 -20,114 -21.8",
+    // NEW ZEALAND — north, south
+    "172.7 -34.4,176 -37,178.5 -37.6,177 -39.5,174.8 -41.3,173 -41",
+    "173 -41.5,171 -42.5,168 -44.5,166.5 -46,168.5 -46.6,172.5 -43.5,174 -41.5",
+    // NORTH AMERICA
+    "-168 65.7,-166 60.3,-162 58,-158 56.5,-153 57.5,-149 60,-145 60.5,-140 59.5,-135 57,-131 52.5,-128 50.5,-124.7 48.4,-124 43,-122 37,-118 34,-117 32.5,-114.5 30,-112 27,-109.5 23,-105.7 20,-101 16.5,-95 15.5,-92 14,-87 13,-83 9,-79.5 9,-77.5 7.5,-77 8.5,-82 8.9,-83.5 11,-86 12,-88 15.8,-90 16,-91 18.5,-87 21.5,-90 21,-92 18.6,-95 18.7,-97 21,-97.5 25.9,-94 29.7,-90 29.1,-88 30.4,-84 29.7,-82.5 27,-80 25.2,-80.5 28.5,-81.5 31,-79 33,-76 35,-75.5 37,-74 40.5,-70 41.5,-67 44.7,-64 45.5,-60 46.5,-59 47.5,-64 52,-78 62,-95 64,-125 70,-141 70,-155 71,-165 68.5",
+    // CUBA, HISPANIOLA
+    "-84.9 21.9,-80 23.1,-77 20.7,-74.1 20.2,-77.5 22,-82 22.4",
+    "-74.5 20,-68.3 19.9,-68.3 18.3,-74 18.2",
+    // SOUTH AMERICA
+    "-81 -6,-80 -4,-79.5 -2,-80.5 0,-78 1.5,-77 3.5,-75 5.5,-72 12.3,-71 11.5,-68 10.5,-62 10.5,-60 8.5,-58 6.8,-54 5.5,-51 4,-50 0,-48 -1,-44 -2.5,-38 -5,-35 -6,-35 -9,-38 -13,-39 -17,-41 -22,-45 -24,-48 -25.5,-53 -33,-56 -36,-57 -38,-62 -39,-62 -42,-65 -45,-68 -50,-69 -52.5,-71 -54,-74 -52,-75 -48,-73 -44,-73 -40,-73 -36,-71 -30,-70 -23,-70 -18,-76 -14,-79 -8",
+    // GREENLAND (only its southern tip is inside the crop)
+    "-43 59.8,-52 64,-20 64"
+  ].map(function (s) {
+    return s.split(",").map(function (p) { var q = p.trim().split(/\s+/); return [parseFloat(q[0]), parseFloat(q[1])]; });
+  });
+
+  // islands too small for a 2° cell get one lit cell each — an honest lo-fi
+  // compromise: a dot-matrix world cannot draw Malta, but it can admit it.
+  var ISLES = [[121,23.7],[121.2,25],[109.8,19.2],[80.7,7.9],[33.2,35.1],[24.8,35.2],[14.2,37.6],[9.1,40.1],[9.1,42.2],
+    [-77.3,18.1],[-66.5,18.2],[-61.3,10.4],[-155.5,19.6],[-157.9,21.3],[178,-17.8],[165.5,-21.5],[147,-42],[127.8,26.3],
+    [142.8,50],[115.2,-8.4],[125.5,-9],[118.7,9.8],[123.9,10.3],[103.8,1.35],[-15.6,28.3],[-23.6,15],[-25.7,37.7],
+    [57.5,-20.3],[50.6,26.2],[-59,-51.7],[-90.5,-0.7],[-56,48.5],[-176,52],[-170,52.8],[73.5,4.2],[55.5,-4.6],[159,-8.5]];
+
+  var LAND = new Uint8Array(GW * GH);
+  var CELLR = new Int8Array(GW * GH);
+  var BASE = new Float32Array(GW * GH);
+  var ARMM = new Float32Array(GW * GH);
+  var E = new Float32Array(GW * GH);
+  var DAY = new Float32Array(GW * GH);
+
+  function inPoly(poly, lon, lat) {
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  (function buildLand() {
+    for (var y = 0; y < GH; y++) {
+      var lat = latOfY(y + 0.5);
+      for (var x = 0; x < GW; x++) {
+        var lon = lonOfX(x + 0.5), hit = 0;
+        for (var p = 0; p < COAST.length && !hit; p++) if (inPoly(COAST[p], lon, lat)) hit = 1;
+        LAND[y * GW + x] = hit;
+        CELLR[y * GW + x] = regionAt(lon, lat);
+      }
+    }
+    ISLES.forEach(function (p) {
+      var x = clamp(xOfLon(p[0]) | 0, 0, GW - 1), y = clamp(yOfLat(p[1]) | 0, 0, GH - 1);
+      LAND[y * GW + x] = 1;
+    });
+  })();
+
+  // ==========================================================================
+  // 4. THE PHOSPHOR — the ribbon is a second tube, so it gets the tube's ramp.
+  // ==========================================================================
+  var M_R = new Uint8Array(256), M_G = new Uint8Array(256), M_B = new Uint8Array(256);
+  (function () {
+    var stops = [[0, 2, 6, 3], [0.2, 4, 20, 9], [0.45, 12, 72, 30], [0.7, 40, 152, 72], [0.88, 120, 226, 146], [1, 222, 255, 226]];
+    for (var i = 0; i < 256; i++) {
+      var v = i / 255, a = stops[0], b = stops[stops.length - 1];
+      for (var s = 0; s < stops.length - 1; s++) if (v >= stops[s][0] && v <= stops[s + 1][0]) { a = stops[s]; b = stops[s + 1]; break; }
+      var k = (v - a[0]) / Math.max(1e-6, b[0] - a[0]);
+      M_R[i] = a[1] + (b[1] - a[1]) * k; M_G[i] = a[2] + (b[2] - a[2]) * k; M_B[i] = a[3] + (b[3] - a[3]) * k;
+    }
+  })();
+
+  var cellCv = document.getElementById("map-cells"), ccx = cellCv.getContext("2d");
+  cellCv.width = GW; cellCv.height = GH;
+  var cimg = ccx.createImageData(GW, GH), cdat = cimg.data;
+  var fxCv = document.getElementById("map-fx"), fcx2 = fxCv.getContext("2d");
+  var screenEl = document.getElementById("screen"), mapEl = document.getElementById("map");
+  var MW = 0, MH = 0, RAILH = 13, SCRH = 0;      // CSS px of the ribbon and the screen
+
+  // the archive's own shape, written into the resting light: a cell carries
+  // log2(1 + how many reels are placed in it). Point-confident reels (city,
+  // region) make a hard cell; country-confident ones spread over a soft patch,
+  // because the coordinate is the broadcaster's front door, not the shot.
+  var CEN_PT = new Float32Array(GW * GH), CEN_AR = new Float32Array(GW * GH);
+  var POOL = [];       // playable reels, joined to a location
+  var STAT = null;
+
+  function buildBase() {
+    var i;
+    for (i = 0; i < GW * GH; i++) { CEN_PT[i] = 0; CEN_AR[i] = 0; }
+    POOL.forEach(function (r) {
+      var g = r.g;
+      if (!g || g.conf === "unknown") return;
+      var x = clamp(Math.round(xOfLon(g.lon) - 0.5), 0, GW - 1), y = clamp(Math.round(yOfLat(g.lat) - 0.5), 0, GH - 1);
+      if (g.conf === "country") {
+        for (var dy = -3; dy <= 3; dy++) for (var dx = -4; dx <= 4; dx++) {
+          var xx = x + dx, yy = y + dy; if (yy < 0 || yy >= GH) continue; if (xx < 0) xx += GW; if (xx >= GW) xx -= GW;
+          CEN_AR[yy * GW + xx] += Math.exp(-(dx * dx / 7 + dy * dy / 4)) * 0.5;
+        }
+      } else {
+        CEN_PT[y * GW + x] += 1;
+        LAND[y * GW + x] = 1;                    // no dot is allowed to float at sea
+      }
+    });
+    for (i = 0; i < GW * GH; i++) {
+      var land = LAND[i], x2 = i % GW, y2 = (i / GW) | 0;
+      var v = land ? 0.15 : 0.018;
+      // the sea is a punched-tape ground, not a flat black
+      v += ((x2 * 73856093 ^ y2 * 19349663) % 37) / 37 * (land ? 0.035 : 0.022);
+      // graticule every 30°, and the equator a shade brighter
+      if ((x2 % 15) === 0) v += 0.014;
+      if (y2 === Math.round(yOfLat(0) - 0.5)) v += 0.026; else if (((LAT_T - latOfY(y2 + 0.5)) % 30) < 2) v += 0.012;
+      v += Math.min(0.42, Math.log(1 + CEN_PT[i]) / Math.LN2 * 0.15);
+      v += Math.min(0.13, CEN_AR[i] * 0.075);
+      BASE[i] = v;
+    }
+  }
+
+  // ==========================================================================
+  // 5. THE IDLE — what the ribbon does when nothing is being received, which
+  //    is most of the night. Three things, all cheap, all true:
+  //      · the CENSUS, already in BASE: the archive's own weight as light.
+  //        Pyongyang is 13 reels and is the brightest cell on the map.
+  //      · the TERMINATOR, computed from the real UTC clock and the real
+  //        solar declination — the day side of the world is a little warmer.
+  //      · the SWEEP: a receiving column crawls west→east every 11 s and
+  //        excites the phosphor it passes, which then decays on the P39 tail.
+  //    Plus the occasional fleck at a cell that holds reels: the archive
+  //    twitching in its sleep.
+  // ==========================================================================
+  var sunT = 0;
+  function updateTerminator() {
+    var d = new Date();
+    var doy = (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 0)) / 86400000;
+    var dec = -23.44 * Math.cos(2 * Math.PI / 365 * (doy + 10)) * Math.PI / 180;
+    var utc = d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600;
+    var lonSun = (180 - utc * 15) * Math.PI / 180;
+    var sd = Math.sin(dec), cd = Math.cos(dec);
+    var cosH = new Float32Array(GW);
+    for (var x = 0; x < GW; x++) cosH[x] = Math.cos(lonOfX(x + 0.5) * Math.PI / 180 - lonSun);
+    for (var y = 0; y < GH; y++) {
+      var lr = latOfY(y + 0.5) * Math.PI / 180, sl = Math.sin(lr), cl = Math.cos(lr), row = y * GW;
+      for (var x2 = 0; x2 < GW; x2++) DAY[row + x2] = clamp01((sl * sd + cl * cd * cosH[x2]) * 6);
+    }
+  }
+  updateTerminator();
+
+  var sweepX = 0, flecks = [];
+  function tickRibbon(t, dt) {
+    var i;
+    if (t - sunT > 20000) { sunT = t; updateTerminator(); }
+    // decay: the long tail is what makes this read as a tube and not a table
+    for (i = 0; i < GW * GH; i++) { var e = E[i]; if (e > 0.0015) E[i] = e * 0.945; else if (e) E[i] = 0; }
+    // the sweep
+    var prev = sweepX; sweepX = (sweepX + dt / 11000 * GW) % GW;
+    var from = prev | 0, to = sweepX | 0;
+    if (to < from) to += GW;
+    for (var c = from; c <= to; c++) {
+      var xc = c % GW;
+      for (var y = 0; y < GH; y++) { var k = y * GW + xc; E[k] += LAND[k] ? 0.5 : 0.1; }
+    }
+    // flecks: a cell that holds reels twitches now and then
+    if (rnd() < 0.05 && POOL.length) {
+      var r = POOL[(rnd() * POOL.length) | 0];
+      if (r.g && r.g.conf !== "unknown") {
+        var fx = clamp(Math.round(xOfLon(r.g.lon) - 0.5), 0, GW - 1), fy = clamp(Math.round(yOfLat(r.g.lat) - 0.5), 0, GH - 1);
+        E[fy * GW + fx] += 0.55;
+      }
+    }
+    // the armed region breathes
+    var ag = armed >= 0 && armed !== R_OFF ? 0.19 + 0.07 * Math.sin(t / 620) : 0;
+    var hg = hover >= 0 && hover !== armed && hover !== R_OFF ? 0.13 : 0;
+    var hm = hover;
+    // the dot of the reel now playing
+    var dot = liveDot();
+    for (i = 0; i < GW * GH; i++) {
+      var v = BASE[i] + E[i] + DAY[i] * (LAND[i] ? 0.05 : 0.022);
+      if (ag && CELLR[i] === armed) v += LAND[i] ? ag : ag * 0.28;
+      if (hg && CELLR[i] === hm) v += LAND[i] ? hg : hg * 0.3;
+      var l = v > 1 ? 255 : (v * 255) | 0, p = i << 2;
+      cdat[p] = M_R[l]; cdat[p + 1] = M_G[l]; cdat[p + 2] = M_B[l]; cdat[p + 3] = 255;
+    }
+    if (dot) {
+      // the dot is drawn by CONFIDENCE, because half this archive is placed
+      // only to the country and a pinprick would be a lie half the time
+      var g = dot.g, cx = xOfLon(g.lon) - 0.5, cy = yOfLat(g.lat) - 0.5;
+      var pulse = 0.55 + 0.45 * Math.sin(t / 260);
+      var spread = g.conf === "city" ? 0 : g.conf === "region" ? 1.4 : 3.2;
+      var peak = g.conf === "city" ? 1 : g.conf === "region" ? 0.62 : 0.34;
+      var R = Math.ceil(spread) + 2;
+      for (var dy = -R; dy <= R; dy++) for (var dx = -R; dx <= R; dx++) {
+        var xx = Math.round(cx) + dx, yy = Math.round(cy) + dy;
+        if (yy < 0 || yy >= GH) continue; if (xx < 0) xx += GW; if (xx >= GW) xx -= GW;
+        var d2 = dx * dx + dy * dy, a;
+        if (spread === 0) a = d2 === 0 ? 1 : d2 <= 1 ? 0.3 : 0;
+        else a = Math.exp(-d2 / (spread * spread * 0.9));
+        if (a < 0.02) continue;
+        var k2 = (yy * GW + xx) << 2, add = a * peak * (0.55 + 0.45 * pulse) * 255;
+        cdat[k2] = Math.min(255, cdat[k2] + add * 0.75);
+        cdat[k2 + 1] = Math.min(255, cdat[k2 + 1] + add);
+        cdat[k2 + 2] = Math.min(255, cdat[k2 + 2] + add * 0.8);
+      }
+    }
+    ccx.putImageData(cimg, 0, 0);
+  }
+
+  // ==========================================================================
+  // 6. THE FX PASS — everything that must be finer than a 2° cell: the arcs,
+  //    the DX rings, the crosshair, the 圏外 rail, the armed region's border.
+  //    Drawn at device resolution over the cells, which stay chunky.
+  // ==========================================================================
+  var armPath = null;
+  function buildArmPath() {
+    armPath = null;
+    if (armed < 0 || armed === R_OFF) return;
+    var p = new Path2D(), sx = MW / GW, sy = MH / GH;
+    for (var y = 0; y < GH; y++) for (var x = 0; x < GW; x++) {
+      var i = y * GW + x, a = CELLR[i] === armed;
+      var rgt = x < GW - 1 ? CELLR[i + 1] === armed : false;
+      var bot = y < GH - 1 ? CELLR[i + GW] === armed : false;
+      if (a !== rgt) { p.moveTo((x + 1) * sx, y * sy); p.lineTo((x + 1) * sx, (y + 1) * sy); }
+      if (a !== bot) { p.moveTo(x * sx, (y + 1) * sy); p.lineTo((x + 1) * sx, (y + 1) * sy); }
+      if (x === 0 && a) { p.moveTo(0, y * sy); p.lineTo(0, (y + 1) * sy); }
+      if (y === 0 && a) { p.moveTo(x * sx, 0); p.lineTo((x + 1) * sx, 0); }
+    }
+    armPath = p;
+  }
+  function mx(lon) { return (lon + 180) / 360 * MW; }
+  function my(lat) { return RAILH + (LAT_T - lat) / (LAT_T - LAT_B) * MH; }
+  function drawFx(t) {
+    fcx2.clearRect(0, 0, MW, SCRH);
+    // --- the 圏外 rail: the register for a signal that was not on the Earth
+    var railOn = armed === R_OFF, railHot = hover === R_OFF;
+    fcx2.fillStyle = railOn ? "rgba(26,60,42,0.85)" : railHot ? "rgba(20,44,32,0.8)" : "rgba(10,22,18,0.75)";
+    fcx2.fillRect(0, 0, MW, RAILH - 1);
+    fcx2.fillStyle = "rgba(120,210,160,0.13)";
+    for (var gx = 0; gx <= 12; gx++) fcx2.fillRect(Math.round(gx / 12 * (MW - 1)), RAILH - 5, 1, 3);
+    fcx2.fillStyle = railOn ? "rgba(180,255,205,0.5)" : "rgba(90,170,125,0.22)";
+    fcx2.fillRect(0, RAILH - 1, MW, 1);
+
+    // --- the armed region's border
+    if (armPath) {
+      fcx2.save(); fcx2.translate(0, RAILH);
+      fcx2.strokeStyle = "rgba(255,196,64,0.5)"; fcx2.lineWidth = 1; fcx2.stroke(armPath);
+      fcx2.restore();
+    }
+    var d = liveDot();
+    if (!d) return;
+    var g = d.g;
+    var X = mx(g.lon), Y = my(g.lat);
+    var above = g.lat > LAT_T;                 // Igloolik lives up here
+    if (above) Y = RAILH + 3;
+
+    // --- a long-distance catch wears rings, whether or not we know where it
+    //     was heard: 15 reels are marked dx, only 6 name their receiver.
+    if (g.dx) {
+      for (var r = 0; r < 3; r++) {
+        var ph = ((t / 1500 + r / 3) % 1);
+        fcx2.strokeStyle = "rgba(120,235,170," + (0.4 * (1 - ph)).toFixed(3) + ")";
+        fcx2.lineWidth = 1;
+        fcx2.beginPath(); fcx2.arc(X, Y, 3 + ph * 26, 0, 7); fcx2.stroke();
+      }
+    }
+    // --- the arc: transmitter → the place the recordist actually sat
+    if (g.heard) {
+      var X2 = mx(g.heard.lon), Y2 = my(g.heard.lat);
+      if (Math.abs(X2 - X) > MW / 2) X2 += (X2 < X ? MW : -MW);   // take the short way round
+      var midX = (X + X2) / 2, midY = (Y + Y2) / 2 - Math.abs(X2 - X) * 0.28 - 6;
+      fcx2.save();
+      fcx2.setLineDash([2, 3]); fcx2.lineWidth = 1;
+      fcx2.strokeStyle = "rgba(255,196,64,0.62)";
+      fcx2.beginPath(); fcx2.moveTo(X, Y); fcx2.quadraticCurveTo(midX, midY, X2, Y2); fcx2.stroke();
+      fcx2.setLineDash([]);
+      // a pip running the path, transmitter to receiver, over and over
+      var u = (t / 2600) % 1, iu = 1 - u;
+      var px = iu * iu * X + 2 * iu * u * midX + u * u * X2, py = iu * iu * Y + 2 * iu * u * midY + u * u * Y2;
+      fcx2.fillStyle = "rgba(255,230,170,0.95)"; fcx2.fillRect(px - 1, py - 1, 2.5, 2.5);
+      // the receiving end: a hollow square, because nothing was transmitted there
+      fcx2.strokeStyle = "rgba(255,196,64,0.85)"; fcx2.lineWidth = 1;
+      fcx2.strokeRect(Math.round(X2) - 2.5, Math.round(Y2) - 2.5, 5, 5);
+      fcx2.restore();
+    }
+    // --- the 圏外 marker: a thing that was not on the Earth gets a berth on
+    //     the rail above the world, over the longitude of the ground station
+    //     it came down to, with a tether to that station.
+    if (g.realm) {
+      var rx = g.realm === "deep-space" ? MW - 7 : X;
+      fcx2.strokeStyle = "rgba(150,240,190,0.35)"; fcx2.lineWidth = 1;
+      fcx2.setLineDash([1, 2]);
+      fcx2.beginPath(); fcx2.moveTo(rx, RAILH - 2); fcx2.lineTo(X, Y); fcx2.stroke();
+      fcx2.setLineDash([]);
+      var bl = 0.65 + 0.35 * Math.sin(t / 200);
+      fcx2.fillStyle = "rgba(210,255,225," + bl.toFixed(2) + ")";
+      if (g.realm === "deep-space") {
+        fcx2.beginPath(); fcx2.moveTo(rx - 4, 3); fcx2.lineTo(rx + 3, 6.5); fcx2.lineTo(rx - 4, 10); fcx2.closePath(); fcx2.fill();
+        fcx2.fillRect(rx + 4, 6, 3, 1);
+      } else if (g.realm === "moon") {
+        fcx2.beginPath(); fcx2.arc(rx, 6.5, 3.4, 0, 7); fcx2.fill();
+        fcx2.fillStyle = "rgba(6,18,12,0.95)"; fcx2.beginPath(); fcx2.arc(rx + 1.8, 5.6, 2.8, 0, 7); fcx2.fill();
+      } else {
+        fcx2.fillRect(rx - 1.5, 5, 3, 3);
+        fcx2.strokeStyle = "rgba(210,255,225,0.7)"; fcx2.lineWidth = 1;
+        fcx2.beginPath(); fcx2.ellipse(rx, 6.5, 6, 2.6, -0.4, 0, 7); fcx2.stroke();
+      }
+    }
+    // --- the crosshair: ticks in the margins, never a label over the map
+    fcx2.fillStyle = "rgba(255,196,64,0.5)";
+    fcx2.fillRect(Math.round(X), RAILH, 1, 3); fcx2.fillRect(Math.round(X), RAILH + MH - 3, 1, 3);
+    fcx2.fillRect(0, Math.round(Y), 3, 1); fcx2.fillRect(MW - 3, Math.round(Y), 3, 1);
+    if (above) {                                 // off the top of the crop
+      fcx2.fillStyle = "rgba(255,230,170,0.9)";
+      fcx2.beginPath(); fcx2.moveTo(X - 3, RAILH + 5); fcx2.lineTo(X + 3, RAILH + 5); fcx2.lineTo(X, RAILH + 1); fcx2.closePath(); fcx2.fill();
+    }
+  }
+
+  // ==========================================================================
+  // 7. SELECTION — the part that decides whether this option is any good.
+  //
+  //    On a 390 px phone the ribbon is about 336 × 112 CSS px. You cannot hit
+  //    a country in that, and you should not be asked to: HALF this archive is
+  //    placed only to the nation (city 116 · region 9 · country 126 · unknown 1),
+  //    so a point-accurate interface would be promising a precision the data
+  //    has not got. So selection is never by point. It is by REGION, and the
+  //    gesture is a DRAG: put a thumb anywhere on the world and slide. The
+  //    region under the thumb lights up and its name appears in the window
+  //    ABOVE the glass — where your own hand is not — and it commits when you
+  //    lift. Nothing has to be hit; you slide until the right name is showing.
+  //    That also answers the stacking problem (13 reels at Pyongyang, 10 at
+  //    Tokyo, 6 at London): no reel is ever a hit target.
+  //    A tap is the same gesture with no travel. A tap inside the region that
+  //    is already armed releases it.
+  // ==========================================================================
+  var armed = -1, hover = -1, armLeft = 0, ARM_LIFE = 6;
+  var chipEl = document.getElementById("chip"), chipJa = document.getElementById("chip-ja"),
+      chipEn = document.getElementById("chip-en"), pipsEl = document.getElementById("pips"),
+      clearBtn = document.getElementById("clear"), armRead = document.getElementById("arm-read"),
+      covRead = document.getElementById("cov-read"), nowRead = document.getElementById("now-read");
+
+  function regionFromPoint(cx, cy) {
+    if (cy < RAILH) return R_OFF;
+    var lon = (cx / MW) * 360 - 180, lat = LAT_T - ((cy - RAILH) / MH) * (LAT_T - LAT_B);
+    return regionAt(clamp(lon, -180, 180), clamp(lat, LAT_B, LAT_T));
+  }
+  function setHover(r) { if (r !== hover) { hover = r; renderChip(); } }
+  function setArmed(r, quiet) {
+    if (r === armed) return;
+    armed = r; armLeft = r >= 0 ? ARM_LIFE : 0;
+    buildArmPath(); renderChip(); renderArm();
+    if (!quiet) {
+      if (r < 0) log("解除", "form", "region released · the whole Earth again");
+      else {
+        var p = poolOf(r);
+        log("選地", "rx", REGIONS[r].ja + " " + REGIONS[r].en + " armed · " + p.n + (p.n === 1 ? " reel" : " reels") +
+          " · " + Math.round(p.share * 10) + " of the next 10" + (p.n === 0 ? " — nothing here, the bias is inert" : p.n < 8 ? " — thin: repeats likely" : ""));
+      }
+    }
+  }
+  function renderChip() {
+    var show = hover >= 0 ? hover : armed;
+    chipEl.classList.toggle("is-armed", armed >= 0 && hover < 0);
+    chipEl.classList.toggle("is-live", hover >= 0);
+    if (show < 0) { chipJa.textContent = "全球"; chipEn.textContent = "ALL EARTH"; }
+    else { chipJa.textContent = REGIONS[show].ja; chipEn.textContent = REGIONS[show].en; }
+    var html = "";
+    for (var i = 0; i < ARM_LIFE; i++) html += '<span class="zk-pip' + (armed >= 0 && i < armLeft ? " on" : "") + '"></span>';
+    pipsEl.innerHTML = html;
+    clearBtn.disabled = armed < 0;
+    renderRail();
+  }
+
+  (function drag() {
+    var held = false;
+    function pt(e) { var r = screenEl.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    screenEl.addEventListener("pointerdown", function (e) {
+      held = true; mapEl.classList.add("is-used");
+      try { screenEl.setPointerCapture(e.pointerId); } catch (err) {}
+      var p = pt(e); setHover(regionFromPoint(p[0], p[1])); e.preventDefault();
+    });
+    screenEl.addEventListener("pointermove", function (e) {
+      var p = pt(e);
+      if (held) setHover(regionFromPoint(p[0], p[1]));
+      else if (e.pointerType === "mouse") { var r = regionFromPoint(p[0], p[1]); if (r !== hover) { hover = r; renderChip(); } }
+    });
+    function drop(e) {
+      if (!held) return; held = false;
+      try { screenEl.releasePointerCapture(e.pointerId); } catch (err) {}
+      var p = pt(e), r = regionFromPoint(p[0], p[1]);
+      hover = -1;
+      setArmed(r === armed ? -1 : r);            // lift inside the armed region releases it
+    }
+    screenEl.addEventListener("pointerup", drop);
+    screenEl.addEventListener("pointercancel", function () { held = false; hover = -1; renderChip(); });
+    screenEl.addEventListener("pointerleave", function () { if (!held) { hover = -1; renderChip(); } });
+    // keyboard: the regions are ordered west → east, so the arrows are a dial
+    screenEl.addEventListener("keydown", function (e) {
+      var k = e.key;
+      if (k === "ArrowRight" || k === "ArrowDown") { setArmed(armed < 0 ? 0 : (armed + 1) % REGIONS.length); }
+      else if (k === "ArrowLeft" || k === "ArrowUp") { setArmed(armed < 0 ? REGIONS.length - 1 : (armed + REGIONS.length - 1) % REGIONS.length); }
+      else if (k === "Escape" || k === "Backspace") { setArmed(-1); }
+      else if (k === "Enter" || k === " ") { if (armed >= 0) { armLeft = ARM_LIFE; renderChip(); } }
+      else return;
+      mapEl.classList.add("is-used"); e.preventDefault();
+    });
+  })();
+  clearBtn.addEventListener("click", function () { setArmed(-1); });
+
+  // ==========================================================================
+  // 8. THE POOLS — derived at runtime from manifest.json ⋈ geo.json, and the
+  //    takedowns filtered out AGAINST THE MANIFEST, so a region's count never
+  //    includes a reel that can never play.
+  //
+  //    Arming does not filter, it leans: the armed region takes 80 % of the
+  //    receptions and the rest of the world keeps 20 %. That is why the
+  //    honest number to print is not "58 reels" but "8 of the next 10" — and
+  //    why a thin region is shown as thin rather than hidden.
+  // ==========================================================================
+  var BIAS = 0.8;
+  function poolOf(r) {
+    var n = 0, w = 0, tot = 0;
+    POOL.forEach(function (x) { tot += x.w; if (x.r === r) { n++; w += x.w; } });
+    return { n: n, w: w, share: n === 0 ? 0 : (POOL.length === n ? 1 : BIAS) };
+  }
+  function rebuild() {
+    POOL = [];
+    var list = MAN || Object.keys(GEO).filter(function (k) { return k !== "_meta"; }).map(function (k) { return { id: k, title: k, year: 0, weight: 3, windows: [[0, 10], [10, 20]] }; });
+    list.forEach(function (e) {
+      if (e.takedown) return;                      // never in a pool, never counted
+      var g = GEO[e.id];
+      POOL.push({ id: e.id, meta: e, g: g || null, w: Math.max(1, e.weight || 3), r: regionOfEntry(g) });
+    });
+    var byConf = { city: 0, region: 0, country: 0, unknown: 0, none: 0 };
+    var dx = 0, arcs = 0, realm = 0;
+    POOL.forEach(function (x) {
+      if (!x.g) { byConf.none++; return; }
+      byConf[x.g.conf] = (byConf[x.g.conf] || 0) + 1;
+      if (x.g.dx) dx++;
+      if (x.g.heard) arcs++;
+      if (x.g.realm) realm++;
+    });
+    STAT = { n: POOL.length, byConf: byConf, dx: dx, arcs: arcs, realm: realm };
+    buildBase(); buildArmPath(); renderArm(); renderCov(); renderRail();
+  }
+  function renderCov() {
+    if (!STAT) return;
+    var c = STAT.byConf;
+    covRead.textContent = "測地 " + (STAT.n - c.none) + "/" + STAT.n + " · 市 " + c.city + " · 地域 " + c.region +
+      " · 国 " + c.country + " · 不明 " + c.unknown + " · 圏外 " + STAT.realm + " · 遠距離 " + STAT.dx + " (弧 " + STAT.arcs + ")";
+    covRead.title = "coverage: located " + (STAT.n - c.none) + " of " + STAT.n + " playable reels — " + c.city +
+      " to the city, " + c.region + " to a region, " + c.country + " only to the country, " + c.unknown +
+      " not placeable at all. " + STAT.realm + " were not on the Earth. " + STAT.dx + " are long-distance catches, of which " +
+      STAT.arcs + " name where they were heard. Source: " + GEOSRC + ".";
+  }
+  function renderArm() {
+    if (armed < 0) {
+      armRead.innerHTML = '<span class="k">全球</span>ALL EARTH · <span class="v">' + (STAT ? STAT.n : "…") + '</span> reels, unweighted by place';
+      return;
+    }
+    var R = REGIONS[armed], p = poolOf(armed);
+    var s = '<span class="k">' + R.ja + '</span>' + R.en + ' · <span class="' + (p.n ? "w" : "r") + '">' + p.n + '</span> reel' + (p.n === 1 ? "" : "s");
+    if (p.n === 0) s += ' · <span class="r">選局不能 nothing here — the bias has nothing to act on</span>';
+    else {
+      s += ' · <span class="w">' + Math.round(p.share * 10) + '/10</span> of receptions';
+      if (p.n < 8) s += ' · <span class="r">反復注意 thin — you will hear them again</span>';
+    }
+    s += ' · <span class="d">残 ' + armLeft + '</span>';
+    armRead.innerHTML = s;
+  }
+
+  // ==========================================================================
+  // 9. LOADING. geo.json is the truth; the manifest is what can actually play.
+  // ==========================================================================
+  Promise.all([
+    fetch("../broadcast/manifest.json").then(function (r) { return r.json(); }).catch(function () { return null; }),
+    fetch("../broadcast/geo.json").then(function (r) { return r.json(); }).catch(function () { return null; })
+  ]).then(function (res) {
+    if (res[0]) { MAN = res[0]; MANSRC = "manifest.json · " + MAN.length + " reels"; }
+    if (res[1]) {
+      GEO = res[1]; delete GEO._meta;
+      GEOSRC = "geo.json · " + Object.keys(GEO).length + " placed";
+    }
+    rebuild();
+    log("目録", "form", MANSRC + " · " + GEOSRC);
+    var spec = document.getElementById("cov-table"); if (spec) fillTable(spec);
+  });
+
+  // ==========================================================================
+  // 10. THE SET — CRT-9 at 192 × 144, the reels' own raster. Source → P39 LUT
+  //     → frame (persistence, bloom, tear, roll, ghost, scanlines) → glass.
+  // ==========================================================================
+  var SW = 192, SH = 144, BAND = SH / 9;
+  var src = document.createElement("canvas"); src.width = SW; src.height = SH;
+  var scx = src.getContext("2d", { willReadFrequently: true });
+  var phos = document.createElement("canvas"); phos.width = SW; phos.height = SH; var pcx = phos.getContext("2d");
+  var pimg = pcx.createImageData(SW, SH), pdata = pimg.data;
+  var glow = document.createElement("canvas"); glow.width = SW; glow.height = SH; var gcx = glow.getContext("2d");
+  var frame = document.createElement("canvas"), fcx = frame.getContext("2d");
+  var tcv = document.getElementById("tube-canvas"), tcx = tcv.getContext("2d");
+  var TW = 0, TH = 0, dpr = 1;
+  var LUT_R = M_R, LUT_G = M_G, LUT_B = M_B;
+
+  var rxLamp = document.getElementById("rx");
+  var vids = [document.getElementById("v0"), document.getElementById("v1"), document.getElementById("v2")];
+  var vslot = 0;
+  var S = { phase: "idle", t: 0, reel: null, video: null, ready: false, holdS: 9, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0, lossD: 2 };
+  var lastAuto = now(), lastId = "";
+
+  function liveDot() {
+    var ph = S.phase;
+    if (ph !== "tuning" && ph !== "hold" && ph !== "loss" && ph !== "collapse") return null;
+    var r = S.reel; if (!r || !r.g || r.g.conf === "unknown") return null;
+    return r;
+  }
+  function shortTitle(t) { var i = t.indexOf(" ("); if (i > 0) t = t.slice(0, i); i = t.indexOf(","); if (i > 0) t = t.slice(0, i); return t; }
+  function wpick(list) {
+    var tot = 0, i; for (i = 0; i < list.length; i++) tot += list[i].w;
+    var k = rnd() * tot; for (i = 0; i < list.length; i++) { k -= list[i].w; if (k <= 0) return list[i]; }
+    return list[list.length - 1];
+  }
+  function pickReel(filter) {
+    var list = POOL;
+    if (filter) list = POOL.filter(filter);
+    if (!list.length) return null;
+    var cand = list.length > 1 ? list.filter(function (x) { return x.id !== lastId; }) : list;
+    if (!cand.length) cand = list;
+    if (!filter && armed >= 0) {
+      var inR = [], out = [];
+      cand.forEach(function (x) { (x.r === armed ? inR : out).push(x); });
+      if (inR.length && out.length) return rnd() < BIAS ? wpick(inR) : wpick(out);
+      if (inR.length) return wpick(inR);
+    }
+    return wpick(cand);
+  }
+  function tuneTo(r) {
+    if (!r || (S.phase !== "idle" && S.phase !== "dead")) return;
+    var v = vids[vslot]; vslot = (vslot + 1) % vids.length;
+    var win = (r.meta.windows && r.meta.windows.length) ? r.meta.windows[(rnd() * r.meta.windows.length) | 0] : [0, 10];
+    var span = Math.max(3, win[1] - win[0]);
+    S.holdS = Math.min(span, 8 + rnd() * 4);
+    var inS = win[0] + Math.max(0, rnd() * (span - S.holdS));
+    S.phase = "tuning"; S.t = now(); S.reel = r; S.video = v; S.ready = false;
+    S.seed = rnd() * 1000; S.drop = 0; S.strength = 0; S.rollV = 2 + rnd() * 3;
+    lastId = r.id; lastAuto = now();
+    rxLamp.classList.add("is-flicker");
+    function go() { if (S.video !== v) return; try { v.currentTime = inS; } catch (e) {} var p = v.play(); if (p && p.catch) p.catch(function () {}); S.ready = true; }
+    if (v.getAttribute("data-id") === r.id && v.readyState >= 2) go();
+    else {
+      v.setAttribute("data-id", r.id);
+      v.src = "../broadcast/reels/" + r.id + ".mp4"; v.load();
+      var onl = function () { v.removeEventListener("loadeddata", onl); go(); };
+      v.addEventListener("loadeddata", onl);
+    }
+    if (armed >= 0) {
+      armLeft--;
+      if (armLeft <= 0) { setArmed(-1, true); log("解除", "form", "the region has run out · released to the whole Earth"); }
+      renderChip(); renderArm();
+    }
+    renderNow();
+    var g = r.g;
+    log("受信", "rx", shortTitle(r.meta.title || r.id) + (g ? " · " + g.place : " · 発信地不明"));
+  }
+  function stopReel() { if (S.video) { try { S.video.pause(); } catch (e) {} } }
+
+  var srcPlace = document.getElementById("src-place"), srcMeta = document.getElementById("src-meta");
+  function renderNow() {
+    var r = S.reel;
+    if (!r) {
+      nowRead.innerHTML = '<span class="k">待機</span><span class="d">standby · no signal</span>';
+      srcPlace.innerHTML = "<b>—</b>"; srcMeta.textContent = "the second set is dark";
+      return;
+    }
+    var g = r.g;
+    if (!g) {
+      nowRead.innerHTML = '<span class="k">不明</span><span class="r">no location on file</span>';
+      srcPlace.innerHTML = "<b>不明</b>"; srcMeta.textContent = shortTitle(r.meta.title || r.id);
+      return;
+    }
+    var conf = g.conf === "city" ? "市 city-level" : g.conf === "region" ? "地域 region-level" : g.conf === "country" ? "国 country-level — the broadcaster's door, not the shot" : "不明 not placeable — no dot drawn";
+    var extra = "";
+    if (g.realm) extra += " · 圏外 " + (g.realm === "moon" ? "from the Moon" : g.realm === "deep-space" ? "from interstellar space" : "from orbit");
+    if (g.heard) extra += " · 受信地 heard at " + g.heard.place;
+    else if (g.dx) extra += " · 遠距離受信 caught at distance, receiver not on record";
+    nowRead.innerHTML = '<span class="k">受信中</span><span class="v">' + esc(g.place) + "</span> " + esc(g.country) +
+      ' · <span class="d">' + conf + esc(extra) + "</span>";
+    srcPlace.innerHTML = "<b>" + esc(g.place.split(" (")[0]) + "</b>";
+    srcMeta.textContent = shortTitle(r.meta.title || r.id) + (r.meta.year ? " · " + r.meta.year : "");
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  var idle = { nextCard: now() + 6000 + rnd() * 8000, cardAt: -1, nextLine: now() + 9000 + rnd() * 10000, lineAt: -1, lineMode: 0, lineHold: 1 };
+  function tickSignal(t) {
+    var el = (t - S.t) / 1000;
+    if (S.phase === "tuning") {
+      S.strength = clamp01(el / 0.4) * 0.85;
+      if (S.ready && el >= 0.4) { S.phase = "hold"; S.t = t; rxLamp.classList.remove("is-flicker"); rxLamp.classList.add("is-lit"); }
+      else if (!S.ready && el > 5) { S.phase = "loss"; S.t = t; S.lossD = 1.2; log("不能", "pa", "no lock · the reel would not load"); }
+    } else if (S.phase === "hold") {
+      var breath = 0.82 + 0.13 * Math.sin(el * 1.1 + S.seed) + 0.05 * Math.sin(el * 4.3 + S.seed * 2);
+      if (S.drop > 0) S.drop -= 1 / 60; else if (rnd() < 0.006) S.drop = 0.12 + rnd() * 0.25;
+      S.strength = clamp01(breath - (S.drop > 0 ? 0.45 : 0));
+      if (S.drop > 0 && rnd() < 0.3) S.holdFrame = t + 100 + rnd() * 200;
+      if (el >= S.holdS) { S.phase = "loss"; S.t = t; S.lossD = 1.6 + rnd() * 1.2; rxLamp.classList.add("is-flicker"); }
+    } else if (S.phase === "loss") {
+      var k = clamp01(el / S.lossD);
+      S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
+      if (rnd() < k * 0.25) S.holdFrame = t + 80 + rnd() * 160;
+      S.rollV += (rnd() - 0.4) * k * 3;
+      if (el >= S.lossD) { S.phase = "collapse"; S.t = t; rxLamp.classList.remove("is-lit"); }
+    } else if (S.phase === "collapse") {
+      S.strength = 0.9;
+      if (el >= 0.42) { S.phase = "burst"; S.t = t; stopReel(); }
+    } else if (S.phase === "burst") {
+      S.strength = 0;
+      if (el >= 0.32) { S.phase = "dead"; S.t = t; rxLamp.classList.remove("is-flicker"); log("消失", "pa", "signal lost · " + S.holdS.toFixed(1) + " s"); }
+    } else if (S.phase === "dead") {
+      if (el >= 1.6) { S.phase = "idle"; S.t = t; S.reel = null; S.video = null; S.roll = 0; S.rollV = 0; renderNow(); idle.nextCard = t + 6000 + rnd() * 10000; idle.nextLine = t + 8000 + rnd() * 12000; }
+    } else if (S.phase === "idle") {
+      if (t - lastAuto > 25000 && document.visibilityState === "visible" && POOL.length) tuneTo(pickReel(null));
+    }
+  }
+
+  var sdata = null;
+  function drawTestCard(alpha) {
+    var K = SW / 96;
+    scx.save(); scx.globalAlpha = alpha; scx.scale(K, K);
+    scx.fillStyle = "#3a3a3a"; scx.fillRect(0, 0, 96, 72);
+    for (var i = 0; i < 8; i++) { scx.fillStyle = "rgb(" + (i * 32) + "," + (i * 32) + "," + (i * 32) + ")"; scx.fillRect(i * 12, 6, 12, 10); }
+    scx.strokeStyle = "#cfcfcf"; scx.lineWidth = 0.7;
+    scx.beginPath(); scx.arc(48, 40, 26, 0, Math.PI * 2); scx.stroke();
+    scx.beginPath(); scx.moveTo(48, 14); scx.lineTo(48, 66); scx.moveTo(22, 40); scx.lineTo(74, 40); scx.stroke();
+    scx.strokeStyle = "#8a8a8a"; scx.lineWidth = 0.5;
+    for (var g = 0; g < 96; g += 6) { scx.beginPath(); scx.moveTo(g + 0.5, 18); scx.lineTo(g + 0.5, 62); scx.stroke(); }
+    scx.fillStyle = "#e8e8e8"; scx.fillRect(38, 32, 20, 12); scx.fillStyle = "#101010"; scx.fillRect(39, 33, 18, 10);
+    scx.fillStyle = "#e0e0e0"; scx.font = '700 7px "Orbitron", sans-serif'; scx.fillText("MSHI", 37, 41.5);
+    scx.font = '6px "Shippori Mincho", serif'; scx.fillStyle = "#cfcfcf"; scx.fillText("映像管 試験", 34, 58);
+    scx.fillStyle = "#0a0a0a"; scx.fillRect(0, 64, 96, 8); scx.fillStyle = "#d0d0d0"; scx.fillRect(4, 66, 30, 4); scx.fillRect(62, 66, 30, 4);
+    scx.restore();
+  }
+  function renderSource(t) {
+    var ph = S.phase;
+    scx.globalAlpha = 1; scx.setTransform(1, 0, 0, 1, 0, 0);
+    if ((ph === "tuning" && S.ready) || ph === "hold" || ph === "loss" || ph === "collapse") {
+      var v = S.video;
+      if (t < S.holdFrame) { /* frame hold */ }
+      else { try { scx.drawImage(v, 0, 0, SW, SH); } catch (e) { scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH); } }
+    } else if (ph === "burst" || ph === "dead" || ph === "tuning") {
+      scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH);
+    } else {
+      scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH);
+      var card = idle.cardAt >= 0 ? (t - idle.cardAt) / 1000 : -1;
+      if (card >= 0 && card < 1.3) { var ca = card < 0.3 ? card / 0.3 : card > 0.9 ? (1.3 - card) / 0.4 : 1; drawTestCard(0.32 * ca); }
+      else if (card >= 1.3) { idle.cardAt = -1; idle.nextCard = t + 14000 + rnd() * 12000; }
+      if (idle.cardAt < 0 && t > idle.nextCard) { idle.cardAt = t; S.rollV = 2.5 + rnd() * 3; }
+    }
+    sdata = scx.getImageData(0, 0, SW, SH).data;
+    var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? 0 : clamp01(1 - strength);
+    var idleGlow = ph === "idle" ? 9 + 3 * Math.sin(t / 2300) : 0, crawl = t / 240;
+    for (var i = 0, p = 0, y = 0; y < SH; y++) {
+      var rowGlow = idleGlow > 0 ? idleGlow + 3.5 * Math.sin(y * 0.55 - crawl) : 0;
+      var vign = 1 - Math.abs(y - SH / 2) / SH * 0.7;
+      for (var x = 0; x < SW; x++, i += 4, p += 4) {
+        var l = 0.299 * sdata[i] + 0.587 * sdata[i + 1] + 0.114 * sdata[i + 2];
+        if (ph === "idle") { l = l * 0.9 + (rnd() < 0.002 ? 30 + rnd() * 50 : 0); }
+        else if (ph === "dead") { l = 0; }
+        else {
+          l = (l - 18) * 1.22;
+          if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());
+        }
+        l = l < 0 ? 0 : l > 255 ? 255 : l | 0;
+        if (ph === "idle") {
+          var gg = rowGlow * vign * (1 - Math.abs(x - SW / 2) / SW * 0.6);
+          pdata[p] = LUT_R[l] + gg * 0.22; pdata[p + 1] = LUT_G[l] + gg; pdata[p + 2] = LUT_B[l] + gg * 0.42; pdata[p + 3] = 255;
+        } else { pdata[p] = LUT_R[l]; pdata[p + 1] = LUT_G[l]; pdata[p + 2] = LUT_B[l]; pdata[p + 3] = 255; }
+      }
+    }
+    pcx.putImageData(pimg, 0, 0);
+  }
+  // the tear bands: source-y and source-height are b * (SH / 9), never a
+  // hardcoded 8 — that 8 was 72 / 9, from the old 96 × 72 raster.
+  function drawBands(dy, sy, tearAmt, t) {
+    var bh = TH / 9;
+    for (var b = 0; b < 9; b++) {
+      var off = tearAmt * (Math.sin(t / 170 + b * 1.9) * 3 + (rnd() < tearAmt * 0.25 ? (rnd() - 0.5) * 26 : 0));
+      fcx.drawImage(phos, 0, b * BAND, SW, BAND, off, dy + b * bh * sy, TW, bh * sy + 0.5);
+    }
+  }
+  function drawScanlines() {
+    var period = 3, n = (TH / period) | 0;
+    fcx.fillStyle = "rgba(0,0,0,0.3)";
+    for (var j = 0; j < n; j++) fcx.fillRect(0, j * period, TW, 1.25);
+  }
+  function drawFrame(t) {
+    var ph = S.phase, strength = S.strength;
+    fcx.globalCompositeOperation = "source-over";
+    var decay = ph === "idle" ? 0.5 : ph === "dead" ? 0.11 : ph === "burst" ? 0.7 : 0.62;
+    fcx.fillStyle = "rgba(3,5,3," + decay + ")"; fcx.fillRect(0, 0, TW, TH);
+    if (ph === "dead") return;
+    fcx.imageSmoothingEnabled = false;
+    if (ph !== "idle" || S.rollV !== 0) {
+      S.roll += S.rollV; S.rollV *= (ph === "loss" ? 0.985 : 0.9);
+      if (Math.abs(S.rollV) < 0.05) S.rollV = 0;
+      S.roll = ((S.roll % TH) + TH) % TH; if (S.rollV === 0 && ph !== "loss") S.roll += (0 - S.roll) * 0.2;
+    }
+    var roll = S.roll | 0, sy = 1;
+    if (ph === "collapse") { var ck = clamp01((t - S.t) / 1000 / 0.42); sy = Math.max(0.01, 1 - Math.pow(ck, 1.6)); }
+    var tearAmt = ph === "tuning" ? 0.6 : ph === "hold" ? clamp01(1 - strength) * 0.8 + (S.drop > 0 ? 0.4 : 0.05) : ph === "loss" ? 0.5 + clamp01((t - S.t) / 1000 / S.lossD) : 0;
+    var dyBase = (TH - TH * sy) / 2;
+    gcx.clearRect(0, 0, SW, SH);
+    gcx.filter = "blur(" + (1.1 + strength * 0.8).toFixed(2) + "px)"; gcx.drawImage(phos, 0, 0); gcx.filter = "none";
+    fcx.globalCompositeOperation = "lighter";
+    fcx.globalAlpha = ph === "idle" ? 0.35 : 0.22 + strength * 0.14;
+    fcx.drawImage(glow, 0, dyBase + roll * sy, TW, TH * sy); if (roll) fcx.drawImage(glow, 0, dyBase + (roll - TH) * sy, TW, TH * sy);
+    fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
+    drawBands(dyBase + roll * sy, sy, tearAmt, t);
+    if (roll) { drawBands(dyBase + (roll - TH) * sy, sy, tearAmt, t); fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * sy - 6, TW, 7); }
+    if (ph === "hold" || ph === "loss" || ph === "tuning") {
+      fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = 0.16 + 0.14 * (1 - strength);
+      fcx.drawImage(phos, 0, 0, SW, SH, 5 + 3 * Math.sin(t / 900), dyBase + roll * sy + 1, TW, TH * sy);
+      fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
+    }
+    var lineK = 0, dotK = 0;
+    if (ph === "collapse") lineK = clamp01(((t - S.t) / 1000 - 0.22) / 0.2);
+    if (ph === "burst") lineK = 1 - clamp01((t - S.t) / 1000 / 0.12);
+    if (ph === "idle") {
+      if (idle.lineAt < 0 && t > idle.nextLine) { idle.lineAt = t; idle.lineMode = rnd() < 0.5 ? 1 : 0; idle.lineHold = 0.6 + rnd() * 1.6; }
+      if (idle.lineAt >= 0) {
+        var le = (t - idle.lineAt) / 1000, H = idle.lineHold;
+        if (le < 0.15) lineK = le / 0.15;
+        else if (le < 0.15 + H) lineK = 1;
+        else if (idle.lineMode === 1 && le < 0.15 + H + 0.35) { lineK = 1 - (le - 0.15 - H) / 0.35; dotK = 1; }
+        else if (le < 0.15 + H + 0.6) { lineK = 0; dotK = idle.lineMode === 1 ? 1 - (le - 0.15 - H - 0.35) / 0.25 : 0; }
+        else { idle.lineAt = -1; idle.nextLine = t + 12000 + rnd() * 18000; }
+        if (lineK > 0 || dotK > 0) { fcx.fillStyle = "rgba(3,5,3,0.9)"; fcx.fillRect(0, 0, TW, TH); }
+      }
+    }
+    if (lineK > 0) {
+      var lw = TW * (dotK > 0 ? lineK : 1) * 0.94, lx = (TW - lw) / 2, ly = TH / 2 + Math.sin(t / 60) * 0.4;
+      fcx.globalCompositeOperation = "lighter";
+      fcx.filter = "blur(6px)"; fcx.fillStyle = "rgba(120,240,150," + (0.55 * (dotK > 0 ? 1 : lineK)).toFixed(2) + ")"; fcx.fillRect(lx, ly - 5, lw, 10); fcx.filter = "none";
+      fcx.fillStyle = "rgba(225,255,230," + (0.95 * (dotK > 0 ? 1 : lineK)).toFixed(2) + ")"; fcx.fillRect(lx, ly - 1, lw, 2);
+      fcx.globalCompositeOperation = "source-over";
+    } else if (dotK > 0) {
+      fcx.globalCompositeOperation = "lighter";
+      fcx.filter = "blur(4px)"; fcx.fillStyle = "rgba(160,255,190," + (0.8 * dotK).toFixed(2) + ")"; fcx.beginPath(); fcx.arc(TW / 2, TH / 2, 5, 0, 7); fcx.fill(); fcx.filter = "none";
+      fcx.fillStyle = "rgba(240,255,245," + dotK.toFixed(2) + ")"; fcx.beginPath(); fcx.arc(TW / 2, TH / 2, 1.6, 0, 7); fcx.fill();
+      fcx.globalCompositeOperation = "source-over";
+    }
+    if (ph === "idle" && lineK === 0) {
+      var sw = (t / 1000 * 22) % (TH + 40) - 20;
+      fcx.fillStyle = "rgba(90,220,120,0.045)"; fcx.fillRect(0, sw, TW, 3);
+    }
+    if (lineK === 0 && dotK === 0) drawScanlines();
+  }
+  function compose() {
+    tcx.clearRect(0, 0, TW, TH);
+    tcx.fillStyle = "#030503"; tcx.fillRect(0, 0, TW, TH);
+    tcx.drawImage(frame, 0, 0, TW, TH);
+  }
+
+  // ==========================================================================
+  // 11. THE REGION RAIL — the legend, which is also the guaranteed 44 px path.
+  // ==========================================================================
+  var railHost = document.getElementById("regrail"), rkeys = [];
+  (function buildRail() {
+    var frag = document.createDocumentFragment();
+    REGIONS.forEach(function (R, i) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "zk-rkey";
+      b.setAttribute("aria-pressed", "false");
+      b.innerHTML = "<b>" + R.s + "</b><i>—</i>";
+      b.title = R.ja + " " + R.en;
+      b.addEventListener("click", function () { mapEl.classList.add("is-used"); setArmed(armed === i ? -1 : i); });
+      b.addEventListener("pointerenter", function () { if (armed !== i) { hover = i; renderChip(); renderRail(); } });
+      b.addEventListener("pointerleave", function () { if (hover === i) { hover = -1; renderChip(); renderRail(); } });
+      frag.appendChild(b); rkeys.push(b);
+    });
+    railHost.appendChild(frag);
+  })();
+  function renderRail() {
+    REGIONS.forEach(function (R, i) {
+      var b = rkeys[i], p = STAT ? poolOf(i) : { n: 0 };
+      b.classList.toggle("is-armed", armed === i);
+      b.classList.toggle("is-hot", hover === i && armed !== i);
+      b.classList.toggle("is-empty", STAT && p.n === 0);
+      b.setAttribute("aria-pressed", armed === i ? "true" : "false");
+      b.lastChild.textContent = STAT ? p.n : "—";
+      b.setAttribute("aria-label", R.ja + " " + R.en + " — " + (STAT ? p.n + " reels" : "counting"));
+    });
+  }
+
+  // ==========================================================================
+  // 12. THE REST OF THE FACEPLATE — the scope, the 段階 bargraph, the VFD log.
+  //     Lifted from the live page so the map can be judged in its real company.
+  // ==========================================================================
+  var degRow = document.getElementById("zankyo-degrees");
+  degRow.innerHTML = ["一", "二", "三", "四", "五"].map(function (k) { return '<span class="zk-deg">' + k + '</span>'; }).join("");
+  var degs = degRow.children, degUntil = [0, 0, 0, 0, 0], nextDeg = 0;
+  var BAR_N = 56, BAR_JO = 14, BAR_HA = 45, segs = [];
+  (function () {
+    var host = document.getElementById("zankyo-bar-cells"), frag = document.createDocumentFragment();
+    for (var i = 0; i < BAR_N; i++) { var s = document.createElement("span"); s.className = "zk-seg " + (i < BAR_JO ? "zk-seg-jo" : i < BAR_HA ? "zk-seg-ha" : "zk-seg-kyu"); frag.appendChild(s); segs.push(s); }
+    host.appendChild(frag);
+  })();
+  var barLit = -1, barPeak = -1, barPeakAt = 0;
+  function setBar(level) {
+    var n = Math.round(clamp01(level) * BAR_N);
+    if (n !== barLit) {
+      for (var i = 0; i < BAR_N; i++) { segs[i].classList.toggle("on", i < n); segs[i].classList.toggle("is-head", i === n - 1); }
+      barLit = n;
+    }
+    if (n - 1 >= barPeak) { if (barPeak >= 0) segs[barPeak].classList.remove("is-peak"); barPeak = n - 1; barPeakAt = now(); }
+    else if (now() - barPeakAt > 900 && barPeak > n - 1) { segs[barPeak].classList.remove("is-peak"); barPeak--; barPeakAt = now() - 820; if (barPeak > n - 1) segs[barPeak].classList.add("is-peak"); }
+    else if (barPeak > n - 1) segs[barPeak].classList.add("is-peak");
+  }
+  var logEl = document.getElementById("zankyo-log"), t0 = now();
+  function stamp() { var s = Math.floor((now() - t0) / 1000); return (Math.floor(s / 60) + "").padStart(2, "0") + ":" + (s % 60 + "").padStart(2, "0"); }
+  function log(tag, cls, text) {
+    var row = document.createElement("div"); row.className = "zankyo-log-row";
+    row.innerHTML = '<span class="zankyo-log-time">' + stamp() + '</span><span class="zankyo-log-tag ' + cls + '">' + tag + '</span><span class="zankyo-log-text">' + esc(text) + '</span>';
+    logEl.insertBefore(row, logEl.firstChild);
+    while (logEl.children.length > 60) logEl.removeChild(logEl.lastChild);
+  }
+  function arcAt(t) { var p = (t / 100000) % 1; var lvl = p < 0.45 ? Math.pow(p / 0.45, 1.6) * 0.25 : p < 0.82 ? 0.25 + (p - 0.45) / 0.37 * 0.55 : p < 0.9 ? 0.8 + (p - 0.82) / 0.08 * 0.2 : 1 - (p - 0.9) / 0.1; return clamp01(lvl); }
+
+  var vcv = document.getElementById("zankyo-viz"), vcx = vcv.getContext("2d"), VW = 0, VH = 0;
+  var freq = new Float32Array(64), wave = new Float32Array(512);
+  function synth(t, arc) {
+    var s = t / 1000, i;
+    for (i = 0; i < 64; i++) {
+      var base = Math.exp(-i / (9 + arc * 22)) * (0.55 + arc * 0.45);
+      var wob = 0.5 + 0.5 * Math.sin(s * (0.7 + i * 0.13) + i * 1.7) * Math.sin(s * 0.21 + i);
+      var peak = (i === 3 || i === 7 || i === 12 || i === 19) ? 0.25 + 0.2 * Math.sin(s * 1.3 + i) : 0;
+      freq[i] = clamp01(base * (0.55 + wob * 0.6) + peak * (0.6 + arc) + rnd() * 0.16 * (0.4 + arc));
+    }
+    for (var k = 0; k < 512; k++) {
+      var x = k / 512;
+      wave[k] = 0.32 * Math.sin(x * 12.6 + s * 2.1) + 0.2 * Math.sin(x * 37 + s * 3.7) + 0.12 * Math.sin(x * 91 + s * 9) * arc + (rnd() - 0.5) * (0.06 + arc * 0.28);
+    }
+  }
+  function strokeWave(xoff, arc) {
+    vcx.beginPath(); var tear = 0;
+    for (var sx = 0; sx < VW; sx++) {
+      if (arc > 0.6 && rnd() < 0.012) tear = (rnd() * 2 - 1) * arc * 16;
+      var y = VH * 0.5 + wave[(sx * 512 / VW) | 0] * VH * 0.4 + tear;
+      if (sx === 0) vcx.moveTo(sx + xoff, y); else vcx.lineTo(sx + xoff, y);
+    }
+    vcx.stroke();
+  }
+  function drawScope(t, arc) {
+    vcx.fillStyle = "rgba(3,3,5,0.35)"; vcx.fillRect(0, 0, VW, VH);
+    synth(t, arc);
+    var bw = VW / 64;
+    for (var i = 0; i < 64; i++) {
+      var v = freq[i], h = v * VH * 0.62, mix = i / 64;
+      vcx.fillStyle = "rgba(" + Math.round(255 * (1 - mix * 0.4)) + "," + Math.round(45 + mix * 120) + "," + Math.round(85 + mix * 150) + "," + (0.35 + v * 0.5).toFixed(2) + ")";
+      vcx.fillRect(i * bw, VH - h, Math.max(1, bw - 1.5), h);
+    }
+    var off = arc * 6;
+    vcx.globalCompositeOperation = "lighter"; vcx.lineWidth = 1.3;
+    vcx.strokeStyle = "rgba(255,45,85," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(-off, arc);
+    vcx.strokeStyle = "rgba(22,224,224," + (0.5 + arc * 0.4).toFixed(2) + ")"; strokeWave(0, arc);
+    vcx.strokeStyle = "rgba(255,61,240," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(off, arc);
+    vcx.globalCompositeOperation = "source-over";
+    var sweep = (t / 1000 * 40) % VW; vcx.fillStyle = "rgba(255,61,240,0.06)"; vcx.fillRect(sweep, 0, 2, VH);
+  }
+
+  // ==========================================================================
+  // 13. GEOMETRY — and the assertion this whole round exists for.
+  // ==========================================================================
+  var sideEl = document.getElementById("side"), simEl = document.getElementById("sim");
+  var ribbonEl = screenEl.querySelector(".zk-ribbon"), railEl = screenEl.querySelector(".zk-rail");
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    var vr = vcv.getBoundingClientRect(); VW = vr.width; VH = vr.height;
+    if (VW > 0) { vcv.width = Math.floor(VW * dpr); vcv.height = Math.floor(VH * dpr); vcx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    var tdpr = Math.min(1.5, dpr);
+    var tr = tcv.getBoundingClientRect(); TW = tr.width; TH = tr.height;
+    if (TW > 0) {
+      tcv.width = Math.floor(TW * tdpr); tcv.height = Math.floor(TH * tdpr); tcx.setTransform(tdpr, 0, 0, tdpr, 0, 0);
+      frame.width = tcv.width; frame.height = tcv.height; fcx.setTransform(tdpr, 0, 0, tdpr, 0, 0);
+      fcx.fillStyle = "#030503"; fcx.fillRect(0, 0, TW, TH);
+    }
+    var sr = screenEl.getBoundingClientRect(), rr = ribbonEl.getBoundingClientRect(), ar = railEl.getBoundingClientRect();
+    MW = rr.width; MH = rr.height; RAILH = ar.height; SCRH = sr.height;
+    if (MW > 0) {
+      fxCv.width = Math.floor(MW * dpr); fxCv.height = Math.floor(SCRH * dpr);
+      fcx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildArmPath();
+    }
+    report();
+  }
+  window.addEventListener("resize", resize);
+
+  function report() {
+    var el = document.getElementById("measure"); if (!el) return;
+    var simW = simEl.getBoundingClientRect().width, setW = sideEl.getBoundingClientRect().width;
+    var tr = tcv.getBoundingClientRect();
+    var ok = Math.abs(tr.width - 488) < 1.5 && Math.abs(tr.height - 366) < 1.5;
+    el.innerHTML = "simulated width <b>" + Math.round(simW) + "</b> px · set column " + Math.round(setW) +
+      " px → tube <b>" + tr.width.toFixed(1) + " × " + tr.height.toFixed(1) + "</b> CSS px" +
+      (Math.round(simW) === 960 ? (ok ? " — <b>488 × 366 ✓</b>" : " — <b>NOT 488 × 366</b>") : "") +
+      " at a " + SW + " × " + SH + " raster (" + (tr.width / SW).toFixed(2) + " screen px per source pixel)" +
+      " · ribbon <b>" + MW.toFixed(1) + " × " + MH.toFixed(1) + "</b> px over " + GW + " × " + GH + " cells (" +
+      (MW / GW).toFixed(2) + " px per cell) · smallest region key " + smallestKey();
+    var wr = document.getElementById("wread");
+    if (wr) wr.innerHTML = "— achieved <b>" + Math.round(simW) + " px</b>; the ribbon is " + Math.round(MW) + " × " + Math.round(MH);
+  }
+  function smallestKey() {
+    var w = 1e9, h = 1e9;
+    rkeys.forEach(function (b) { var r = b.getBoundingClientRect(); if (r.width < w) w = r.width; if (r.height < h) h = r.height; });
+    return w > 1e8 ? "—" : w.toFixed(1) + " × " + h.toFixed(1) + " px" + (w >= 44 && h >= 44 ? " ✓" : " ✗");
+  }
+
+  // ==========================================================================
+  // 14. THE LOOP
+  // ==========================================================================
+  var lowPower = (navigator.hardwareConcurrency || 4) <= 2, frameN = 0, lastReport = 0, lastT = now();
+  function loop() {
+    var t = now(), dt = Math.min(64, t - lastT); lastT = t;
+    frameN++;
+    var arc = arcAt(t);
+    if (VW > 0) drawScope(t, arc);
+    if (frameN % 16 === 0) setBar(arc + (rnd() - 0.5) * 0.03);
+    if (t > nextDeg) { var d = (rnd() * 5) | 0; degs[d].classList.add("is-lit"); degUntil[d] = t + 380; nextDeg = t + 300 + rnd() * 1400 * (1.2 - arc); }
+    for (var i = 0; i < 5; i++) if (degUntil[i] && t > degUntil[i]) { degs[i].classList.remove("is-lit"); degUntil[i] = 0; }
+    tickSignal(t);
+    if ((!lowPower || frameN % 2 === 0) && document.visibilityState === "visible") {
+      if (TW > 0) { renderSource(t); drawFrame(t); compose(); }
+      if (MW > 0) { tickRibbon(t, dt); drawFx(t); }
+    }
+    if (t - lastReport > 600) { lastReport = t; report(); }
+    requestAnimationFrame(loop);
+  }
+
+  // ==========================================================================
+  // 15. THE PAGE'S OWN FURNITURE
+  // ==========================================================================
+  (function widthToggle() {
+    var btns = [].slice.call(document.querySelectorAll(".zk-toggle button"));
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        btns.forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+        simEl.style.width = b.getAttribute("data-w") + "px";
+        resize(); setTimeout(resize, 60);
+      });
+    });
+  })();
+  function jump(filter, miss) {
+    if (S.phase !== "idle" && S.phase !== "dead") { S.phase = "idle"; S.t = now(); stopReel(); S.reel = null; S.video = null; }
+    var r = pickReel(filter);
+    if (!r) { log("不能", "pa", miss); return; }
+    tuneTo(r);
+  }
+  document.getElementById("h-rx").addEventListener("click", function () { jump(null, "the pool is empty"); });
+  document.getElementById("h-dx").addEventListener("click", function () { jump(function (x) { return x.g && x.g.dx && !x.g.heard; }, "no dx reel in the pool"); });
+  document.getElementById("h-arc").addEventListener("click", function () { jump(function (x) { return x.g && x.g.heard; }, "no reel with a receiver on file"); });
+  document.getElementById("h-off").addEventListener("click", function () { jump(function (x) { return x.g && x.g.realm; }, "no off-Earth reel in the pool"); });
+  document.getElementById("h-thin").addEventListener("click", function () { mapEl.classList.add("is-used"); setArmed(3); });
+  document.getElementById("h-clear").addEventListener("click", function () { setArmed(-1); });
+  var rxBtn = document.getElementById("rx-btn");
+  rxBtn.addEventListener("click", function () { if (S.phase === "idle") tuneTo(pickReel(null)); });
+  var scene = document.getElementById("scene"), playBtn = document.getElementById("zankyo-play");
+  playBtn.addEventListener("click", function () { scene.classList.add("is-on"); playBtn.classList.add("is-playing"); });
+  document.getElementById("zankyo-stop").addEventListener("click", function () { scene.classList.remove("is-on"); playBtn.classList.remove("is-playing"); });
+
+  function fillTable(host) {
+    var rows = REGIONS.map(function (R, i) { var p = poolOf(i); return [R.ja + " " + R.en, p.n, p.w]; });
+    var unp = POOL.filter(function (x) { return x.r < 0; }).length;
+    rows.push(["— 地図外 not on the map", unp, POOL.filter(function (x) { return x.r < 0; }).reduce(function (a, b) { return a + b.w; }, 0)]);
+    var max = Math.max.apply(null, rows.map(function (r) { return r[1]; }));
+    host.innerHTML = '<tr><th>region</th><th class="n">reels</th><th class="n">weight</th><th class="bar">share of the archive</th><th>if armed</th></tr>' +
+      rows.map(function (r) {
+        var thin = r[1] > 0 && r[1] < 8;
+        return "<tr><td>" + esc(r[0]) + '</td><td class="n">' + r[1] + '</td><td class="n">' + r[2] +
+          '</td><td class="bar"><i style="width:' + (r[1] / max * 100).toFixed(1) + '%"></i></td><td>' +
+          (r[1] === 0 ? "nothing to lean on" : (r[0].indexOf("地図外") === 0 ? "unreachable by arming — it arrives only out of the 20 % the world keeps" : "8 of the next 10" + (thin ? " — thin, repeats likely" : ""))) +
+          "</td></tr>";
+      }).join("");
+  }
+
+  // ==========================================================================
+  // 16. GO
+  // ==========================================================================
+  rebuild(); renderChip(); renderRail(); renderNow();
+  log("❁ cycle", "form", "放送 broadcast · 序 jo · Hirajoshi · D");
+  log("選地", "form", "region tuner armed to 全球 — drag the ribbon to lean the night somewhere");
+  document.fonts && document.fonts.ready.then(resize);
+  resize(); setTimeout(resize, 120);
+  requestAnimationFrame(loop);
+  lastAuto = now() - 16000;
+  // a hand crank for the harness: one frame, on demand. Measurement rigs run
+  // this page in panes where requestAnimationFrame never fires.
+  function step() {
+    var t = now();
+    tickSignal(t);
+    if (TW > 0) { renderSource(t); drawFrame(t); compose(); }
+    if (MW > 0) { tickRibbon(t, 16); drawFx(t); }
+    report();
+  }
+  window.ZKM = { S: S, POOL: function () { return POOL; }, STAT: function () { return STAT; }, arm: setArmed, tune: tuneTo, pick: pickReel, regionAt: regionAt, resize: resize, step: step, LAND: LAND, CELLR: CELLR, GW: GW, GH: GH, REGIONS: REGIONS };
+})();
+</script>
+</body>
+</html>

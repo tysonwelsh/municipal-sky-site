@@ -99,6 +99,9 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
      the ruler and the frames stay in register at any frame count. */
   --tb-tick:var(--tb-rule); --tb-tick-2:var(--tb-rule-2);
   --tb-period:calc(100% / var(--nf));
+  /* the cell height, and so the whole control's: FIXED, never a function of
+     the frame count (owner, 2026-09-16 — see .mk-cell) */
+  --fs-h:26px;
   position:relative;z-index:4;
   display:flex;align-items:center;gap:10px;
   width:100%;margin-top:12px;color:var(--tb-ink);
@@ -131,9 +134,9 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
 .mk-play:active{box-shadow:none;transform:translateY(1px)}
 .mk-play:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
 
-/* THE STRIP: the whole hit target. Height comes from the cells' own
-   proportion (the plate's 84:74, so no drawing is squashed), so the control
-   is ONE row tall — no bar graph underneath. */
+/* THE STRIP: the whole hit target. Its height is --fs-h and nothing else, so
+   the control is ONE row tall and STAYS that row whatever the frame count
+   does — no bar graph underneath, and no height dial either. */
 .mk-strip{
   flex:1 1 auto;min-width:80px;position:relative;
   cursor:ew-resize;touch-action:none}
@@ -145,8 +148,15 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
 .mk-cells{display:flex;width:100%;overflow:hidden;border-radius:2px;position:relative}
 .mk-cell{
   flex:1 1 0;min-width:0;position:relative;line-height:0;
-  aspect-ratio:84 / 74;
+  height:var(--fs-h);
   background:rgba(255,250,232,.55)}
+/* the CELL widens with the track; the THUMBNAIL does not grow with it. The
+   cells carried the plate's 84:74 until 2026-09-16, which made the frame
+   count a height dial — four frames bought a 68px row, twelve a 23px one, and
+   the control's height moved card to card. Now the cell is a fixed-height box
+   the drawing is fitted INTO: the svg's own xMidYMid meet holds its proportion
+   and centres it, so a wide cell gets the SAME thumbnail with paper either
+   side. Nothing is squashed, and the row is 26px at any count. */
 .mk-cell-art{display:block;width:100%;height:100%}
 .mk-cell-art svg{display:block;width:100%;height:100%}
 /* the current cell keeps 45's red mark, at the thinned weight the owner
@@ -275,7 +285,7 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
   and, under it, a bar per mark &mdash; for 60&ndash;70px of the card. So the graph is
   <b>cut</b> and the frames <b>become</b> the track: one container, the thumbnails butted across it,
   the red caret scrubbing over the top of the pictures, and ruling to keep it reading as a timeline.
-  One row, <b>34&ndash;48px</b> by frame count. The axis is still the <b>mark</b> &mdash; element
+  One row, a <b>fixed 26px</b> whatever the frame count. The axis is still the <b>mark</b> &mdash; element
   order, first to last &mdash; and dragging anywhere on the strip seeks; each cell shows the drawing
   at the <b>end</b> of its own stretch, so cell <i>k</i> and the stretch under it are the same
   span of the run and the last cell is the finished drawing.</p>
@@ -369,13 +379,17 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
       explain). Everything else &mdash; arming, the per-mark start/end walk, the cumulative
       <i>T<sub>i</sub></i> axis, play-only-what-is-ahead, the frame builder &mdash; is 45&rsquo;s
       code unchanged.</li>
-    <li><b>Height.</b> The strip&rsquo;s height is the cells&rsquo; own: the plate&rsquo;s 84:74 at
-      one <i>n</i>th of the track&rsquo;s width, so nothing is squashed and the number of frames
-      <i>is</i> the height dial. Under a 420px plate: 12 frames &rarr; 23px, 8 &rarr; 34px,
-      6 &rarr; 46px, 4 &rarr; 68px. <b>Twelve is the owner&rsquo;s pick</b> (2026-09-16): the most
-      stages the strip will show, and the shortest row &mdash; 23px against 45&rsquo;s 62px stack.
-      The dial at the top of this sheet rebuilds all four exhibits live; try 4 against 12 to see what
-      twelve costs in thumbnail size.</li>
+    <li><b>Height &mdash; fixed, since rev c (owner, 2026-09-16).</b> The cells used to carry the
+      plate&rsquo;s 84:74, which made the frame count a <i>height dial</i>: four frames meant wide
+      cells and a 68px row, twelve meant 23px, and a card&rsquo;s control was a different height from
+      the next card&rsquo;s because the two drawings had different mark counts. Now the cell is a
+      fixed <code>--fs-h</code> box (26px) that the drawing is fitted <i>into</i> &mdash; the
+      svg&rsquo;s own <code>xMidYMid meet</code> holds its proportion and centres it, so a wide cell
+      gets the same thumbnail with the card&rsquo;s paper either side, and a narrow one gets one
+      fitted to its width. Nothing is ever squashed. The control is <b>28px</b> &mdash; the play
+      button&rsquo;s own height &mdash; at four frames or at twelve. <b>Twelve is the owner&rsquo;s
+      pick</b>: the count now buys stages rather than costing millimetres. The dial at the top of
+      this sheet rebuilds all four exhibits live; try 4 against 12 and watch the row hold still.</li>
     <li><b>The wash (A, C).</b> <code>.mk-veil</code> is the card&rsquo;s own
       <code>--tb-paper</code> at .58, clipped to the stretch ahead of the caret &mdash; a
       continuous reading laid over discrete cells, so progress is smooth even though the pictures

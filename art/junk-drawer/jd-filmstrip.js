@@ -143,9 +143,9 @@
   function filmstrip(svg, after, opts) {
     opts = opts || {};
     var pfx = opts.pfx || 'fs_';
-    /* twelve cells (owner, 2026-09-16): the most stages the strip will show,
-       and the shortest row — the cells' own 84:74 at one twelfth of the track
-       makes it ~23px under a 380px plate */
+    /* twelve cells (owner, 2026-09-16): the most stages the strip will show.
+       It no longer sets the row's height — --fs-h does, fixed — so the count
+       buys stages rather than costing millimetres. */
     var NF = 12;
     after.insertAdjacentHTML('afterend', controlHTML(opts.label || 'Replay the drawing', NF));
     var bar = after.nextElementSibling;

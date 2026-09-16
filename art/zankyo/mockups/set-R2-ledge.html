@@ -526,11 +526,44 @@
     0 1px 0 rgba(255, 244, 220, 0.075);          /* the lip on the ledge face */
 }
 
+/* ---------------------------------------------------------------------------
+   THE TOUCH TARGET, AND THE MOULDING IT HIDES BEHIND.
+
+   The moulding needs a 36 px cap: any taller and the ledge stops being a
+   shallow band. A finger needs 44 px. So the two are separated — every
+   control in the well is a 44 × 44 (minimum) button that reports 44 to the
+   hand, and the plastic it paints is a 36 px cap inside it:
+
+     · the BUTTONS are 44 px tall with margin-block: −4 px, so they occupy the
+       36 px the row needs while measuring 44; the painted cap is ::before,
+       inset 4 px top and bottom, carrying the background, the shadows, the
+       radius and the 2 px of travel.
+     · the ROCKER ENDS cannot do that — their cap is a percentage of the
+       rocker and would be 34 px wide at 960, so the target has to be wider
+       than the paint as well as taller. The cap is therefore a plain span in
+       the flex row, and the button is an invisible box absolutely positioned
+       over it at max(44px, 30%) — it laps over the indicator window, which is
+       decorative and has nothing to hit.
+     · :active, the latch and the focus ring are all retargeted at the cap, so
+       the ring hugs the plastic and not the invisible box, and iOS gets
+       -webkit-tap-highlight-color: transparent so it paints no rectangle over
+       the part of the target that is not the control.
+
+   NOT ONE PAINTED PIXEL MOVES. The cap is 36 px tall and sits exactly where
+   it sat; only the boxes around it grew.
+   --------------------------------------------------------------------------- */
+.zk-face {
+  position: relative; box-sizing: border-box; border: 0; padding: 0;
+  background: none; cursor: pointer; font: inherit; color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  height: 44px;              /* ← the finger */
+  margin-block: -4px;        /* ← the moulding: 44 − 8 = the 36 px the row keeps */
+}
+
 /* --- the shared plastic of every face in the well: the same tool, the same
        ejection direction, so they all catch the light on their top arris --- */
-.zk-face {
-  position: relative; box-sizing: border-box; height: 36px; border: 0; padding: 0; margin: 0;
-  border-radius: 2px 2px 3px 3px; cursor: pointer; font: inherit; color: inherit;
+.zk-btn::before, .zk-cap {
+  border-radius: 2px 2px 3px 3px;
   background: linear-gradient(180deg, #423c37 0 1px, #38322e 1px 46%, #272320 46%, #1c1917);
   box-shadow:
     0 1px 0 rgba(255, 246, 224, 0.11),
@@ -541,9 +574,13 @@
     inset 0 -3px 4px rgba(0, 0, 0, 0.6);
   transition: transform 0.07s ease-out, box-shadow 0.07s ease-out, background 0.12s;
 }
-.zk-face:hover { background: linear-gradient(180deg, #4a443e 0 1px, #3e3833 1px 46%, #2b2724 46%, #1f1c19); }
-.zk-face:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; z-index: 6; }
-.zk-face.is-down, .zk-face:active {
+.zk-btn::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; bottom: 4px; }
+.zk-btn:hover::before, .zk-rocker:hover .zk-cap { background: linear-gradient(180deg, #4a443e 0 1px, #3e3833 1px 46%, #2b2724 46%, #1f1c19); }
+.zk-btn:focus-visible { outline: none; }
+.zk-btn:focus-visible::before { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+/* the 2 px of travel, on the cap — never on the box that holds it */
+.zk-btn:active::before, .zk-btn.is-down::before, .zk-btn.is-latched::before {
   transform: translateY(2px);
   box-shadow:
     0 0 0 rgba(0, 0, 0, 0),
@@ -551,14 +588,14 @@
     inset 0 3px 5px rgba(0, 0, 0, 0.88),
     inset 0 -1px 0 rgba(255, 246, 224, 0.06);
 }
-.zk-face-k { display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 11.5px; letter-spacing: 0.06em; line-height: 1; color: #b8ac9c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.07); }
-.zk-face-l { display: block; margin-top: 3px; font-size: 5.5px; letter-spacing: 0.2em; line-height: 1; color: #7d7468; }
+.zk-face-k { position: relative; z-index: 1; display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 11.5px; letter-spacing: 0.06em; line-height: 1; color: #b8ac9c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.07); }
+.zk-face-l { position: relative; z-index: 1; display: block; margin-top: 3px; font-size: 5.5px; letter-spacing: 0.2em; line-height: 1; color: #7d7468; }
 
 /* --- the lit buttons: a lens bar let into the bottom of the face. Dark it is
        a moulded slot; lit it is the only colour on the ledge. --- */
 .zk-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 6px; }
 .zk-lens {
-  position: absolute; left: 50%; bottom: 4px; width: 38%; max-width: 36px; height: 3px; transform: translateX(-50%); border-radius: 1px;
+  position: absolute; z-index: 2; left: 50%; bottom: 8px; width: 38%; max-width: 36px; height: 3px; transform: translateX(-50%); border-radius: 1px;
   background: linear-gradient(180deg, #17130f, #221d17);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.9), 0 -1px 0 rgba(255, 246, 224, 0.05);
   transition: background 0.18s, box-shadow 0.18s;
@@ -568,14 +605,13 @@
   box-shadow: 0 0 7px var(--lens, #ffb000), 0 0 2px rgba(255, 255, 255, 0.8), inset 0 0 2px rgba(255, 255, 255, 0.6);
 }
 .zk-btn.is-flicker .zk-lens { animation: zk-led-flicker 0.11s infinite; }
-/* 常時 HOLD latches: the face stays down in its well and the lens stays red */
-.zk-btn.is-latched { transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,0), 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(255, 246, 224, 0.06); }
+/* 常時 HOLD latches: the cap stays down in its well and the lens stays red */
 .zk-btn.is-latched .zk-face-k { color: #d8cdbd; }
 
 /* --- THE ROCKERS. One moulded see-saw plate over a pivot rib, with a window
        in the middle of it. Press an end: that end goes down into the well and
        the other lifts on the pivot. Two ends is the whole interface, which is
-       the point — on a phone they are 45 px of thumb each. --- */
+       the point — and each end answers to a 44 px box of thumb. --- */
 .zk-rocker {
   position: relative; display: flex; align-items: stretch; gap: 0;
   height: 36px; border-radius: 2px 2px 3px 3px;
@@ -586,15 +622,46 @@
   content: ""; position: absolute; z-index: 5; left: 0; right: 0; top: 50%; height: 1px; margin-top: -0.5px; pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.5) 18%, rgba(0, 0, 0, 0.5) 82%, transparent);
 }
-.zk-rock-end {
+/* the painted end of the see-saw — a span, because the thing you press is bigger than it is */
+.zk-cap {
   flex: 0 0 30%; min-width: 0; display: flex; align-items: center; justify-content: center;
-  height: 100%; border-radius: 2px 2px 3px 3px;
+  height: 100%; box-sizing: border-box;
 }
-.zk-rock-end i { font-style: normal; font-size: 11px; line-height: 1; color: #c2b6a4; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.1); }
-.zk-rock-l { border-radius: 3px 1px 1px 3px; }
-.zk-rock-r { border-radius: 1px 3px 3px 1px; }
+.zk-cap i { font-style: normal; font-size: 11px; line-height: 1; color: #c2b6a4; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.1); }
+.zk-cap-l { border-radius: 3px 1px 1px 3px; }
+.zk-cap-r { border-radius: 1px 3px 3px 1px; }
+/* the invisible end-stop: 44 px minimum, never narrower than the cap it covers,
+   and never wide enough to meet its opposite number (2 × 44 = 88 < the rocker
+   at every width this page reaches, 390 included) */
+.zk-hit {
+  position: absolute; z-index: 6; top: 50%; height: 44px; margin: -22px 0 0;
+  width: max(44px, 30%);
+  background: none;
+}
+.zk-hit-l { left: 0; }
+.zk-hit-r { right: 0; }
+.zk-hit:focus-visible { outline: 2px solid var(--cyan); outline-offset: -3px; }
 /* the see-saw: while one end is down the other rides up on the pivot */
-.zk-rocker.tilt-l .zk-rock-r, .zk-rocker.tilt-r .zk-rock-l { transform: translateY(-1.5px); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 246, 224, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.5); }
+.zk-rocker.tilt-l .zk-cap-l, .zk-rocker.tilt-r .zk-cap-r {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0), 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(255, 246, 224, 0.06);
+}
+.zk-rocker.tilt-l .zk-cap-r, .zk-rocker.tilt-r .zk-cap-l { transform: translateY(-1.5px); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 246, 224, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.5); }
+/* …and where :has() exists, the press and the focus ring land on the plastic
+   rather than on the invisible box, so the ring hugs the cap. Kept in its own
+   rule: one unsupported :has() would invalidate a whole selector list. */
+@supports selector(:has(*)) {
+  .zk-hit:focus-visible { outline: none; }
+  .zk-rocker:has(.zk-hit-l:focus-visible) .zk-cap-l,
+  .zk-rocker:has(.zk-hit-r:focus-visible) .zk-cap-r { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  .zk-rocker:has(.zk-hit-l:active) .zk-cap-l,
+  .zk-rocker:has(.zk-hit-r:active) .zk-cap-r {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0), 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(255, 246, 224, 0.06);
+  }
+  .zk-rocker:has(.zk-hit-l:active) .zk-cap-r,
+  .zk-rocker:has(.zk-hit-r:active) .zk-cap-l { transform: translateY(-1.5px); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 246, 224, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.5); }
+}
 .zk-rock-win {
   flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   margin: 2px 1px; border-radius: 2px;
@@ -666,11 +733,14 @@
    columns each, the three buttons take two each. Both rows fill the width
    exactly; there is no spare space anywhere on the ledge. */
 @container zk (max-width: 430px) {
-  .zk-well { grid-template-columns: repeat(6, 1fr); gap: 5px; }
-  .zk-rocker { grid-column: span 3; height: 35px; }
-  .zk-btn { grid-column: span 2; height: 35px; }
+  /* row-gap 9, not 5: each row's controls report 44 px against a 36 px cap, so
+     they overhang their row by 4 px top and bottom. At a 5 px gap the two rows'
+     touch targets would overlap by 3 px and the boundary would be a coin toss.
+     9 px is the smallest gap that keeps them apart, and it costs the ledge 4 px. */
+  .zk-well { grid-template-columns: repeat(6, 1fr); column-gap: 5px; row-gap: 9px; }
+  .zk-rocker { grid-column: span 3; }
+  .zk-btn { grid-column: span 2; }
   .zk-face-k { font-size: 11px; }
-  .zk-rock-end { flex-basis: 30%; }
   .zk-ledge-brand em { display: none; }
 }
 /* ------------------------------ mockup spec sheet (not part of the machine) ------------------------------ */
@@ -798,23 +868,27 @@
 
               <!-- 輝度 BRIGHT — a 4-step rocker → bloom alpha + gain -->
               <div class="zk-rocker" id="rock-bri" role="group" aria-label="輝度 &middot; brightness, four steps">
-                <button type="button" class="zk-face zk-rock-end zk-rock-l" data-d="-1" aria-label="輝度を下げる &middot; brightness down"><i>&#9662;</i></button>
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&#9662;</i></span>
                 <span class="zk-rock-win">
                   <span class="zk-rock-k">輝度</span>
                   <span class="zk-rock-steps" id="bri-steps" aria-hidden="true"></span>
                 </span>
-                <button type="button" class="zk-face zk-rock-end zk-rock-r" data-d="1" aria-label="輝度を上げる &middot; brightness up"><i>&#9652;</i></button>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>&#9652;</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="輝度を下げる &middot; brightness down"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="輝度を上げる &middot; brightness up"></button>
                 <span class="zk-sr" id="bri-read" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></span>
               </div>
 
               <!-- 焦点 FOCUS — a 3-step rocker, 鋭 / 中 / 粗 → the raster -->
               <div class="zk-rocker" id="rock-foc" role="group" aria-label="焦点 &middot; focus: 鋭 sharp, 中 medium, 粗 coarse">
-                <button type="button" class="zk-face zk-rock-end zk-rock-l" data-d="-1" aria-label="焦点を鋭く &middot; focus sharper"><i>&#9662;</i></button>
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&#9662;</i></span>
                 <span class="zk-rock-win">
                   <span class="zk-rock-k">焦点</span>
                   <span class="zk-rock-steps is-kanji" id="foc-steps" aria-hidden="true"><b>鋭</b><b>中</b><b>粗</b></span>
                 </span>
-                <button type="button" class="zk-face zk-rock-end zk-rock-r" data-d="1" aria-label="焦点を粗く &middot; focus coarser"><i>&#9652;</i></button>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>&#9652;</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="焦点を鋭く &middot; focus sharper"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="焦点を粗く &middot; focus coarser"></button>
                 <span class="zk-sr" id="foc-read" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></span>
               </div>
 
@@ -1260,7 +1334,7 @@
   // ---- the rockers' hand: pointer, keyboard, and the see-saw ----
   function wireRocker(id, apply, get, max) {
     var host = document.getElementById(id);
-    var ends = [].slice.call(host.querySelectorAll(".zk-rock-end"));
+    var ends = [].slice.call(host.querySelectorAll(".zk-hit"));
     var tilt = 0;
     function fire(d) {
       var v = get() + d;
