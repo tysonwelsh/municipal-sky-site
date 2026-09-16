@@ -1,88 +1,661 @@
 /* ============================================================================
-   THE JUNK DRAWER — /about/ : layout only (PLAN-PORTFOLIO v2 §2, §6.3).
-   The sub-page mounts the SAME drawer as the art page (_stage.php, the six
-   jd-*.js files, junk-drawer.css) and reuses the field-notes column's type
-   (.jd-notes and its children) for the explanation. Nothing in this file
-   re-skins the drawer, the tag, the card or the button; it only places the
-   two columns side by side above 768px and leaves the phone layout to
-   junk-drawer.css (full-viewport drawer, notes below, page snap).
-   Every rule is scoped to .jd-about, the page's wrapper class.
+   THE JUNK DRAWER — /about/ : the walkthrough's layout (PLAN-PORTFOLIO v3).
+
+   A sticky-graphic scrollytelling page. ONE pinned visual pane holding four
+   scenes (drawer, instrument, report card, analytics) and a column of steps
+   that scrolls beside it; about-scenes.js switches the pane as each step
+   arrives. This file places the two columns and teaches the three modal
+   cards to flow INLINE in the pane instead of covering the screen.
+
+   Every rule is scoped to .jd-about, the page wrapper — except the one
+   documented override on html.jd-about-page, which has to outrank a rule the
+   turn card sets on the root element. Nothing here re-skins the drawer, the
+   card or the turn.
+
+   Desktop (>=769px): pane left ~58%, steps right ~42%.
+   Phone (<=768px):   pane PINNED TOP (~55vh), steps scrolling beneath it —
+                      the NYT treatment for a graphic with fine detail.
+                      Scene 1 is the exception and runs text-over-graphic.
    ========================================================================== */
 
-/* HOW IT WORKS — the four steps, in the notes column's own voice: the step
-   names set like .jd-axis-label (small caps, tracked), the body in the
-   column's mono. A list, because it is one. */
-.jd-about .jd-about-steps {
-  margin: 0 0 var(--s-3);
-  padding: 0 0 0 1.6em;
-}
+/* ---- things that survive from v2 ---------------------------------------- */
+.jd-about .jd-about-steps { margin: 0 0 var(--s-3); padding: 0 0 0 1.6em; }
 .jd-about .jd-about-steps li { margin: 0 0 var(--s-2); }
 .jd-about .jd-about-steps b {
-  font-weight: 400;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 400; font-size: var(--fs-xs);
+  letter-spacing: 0.14em; text-transform: uppercase;
 }
-/* a second live line under the count: "N drawings · N models", filled from
-   the same data.php payload the drawer loads (inline script in index.php) */
 .jd-about .jd-about-tally:empty { display: none; }
-/* the foot carries two links (the drawer's own page, the series) */
 .jd-about .jd-colophon .jd-about-sep { margin: 0 0.5em; opacity: 0.5; }
 
-/* ---------------- desktop: drawer left, explanation right ----------------
-   min-width 769px is the complement of junk-drawer.css's mobile query, so
-   no rule here can outrank the phone layout (a .jd-about .jd-stage rule
-   outside this block WOULD — specificity — which is why the block exists). */
+/* ---- the steps ---------------------------------------------------------- */
+/* Each step is a block of prose tall enough to own a stretch of the scroll.
+   Not a full viewport: a step that fills the screen makes the reader scroll
+   blind between ideas, and this page is read fast or not at all. */
+.jd-about .jd-step {
+  margin: 0 0 var(--s-6);
+  transition: opacity 0.3s ease;
+}
+.jd-about--live .jd-step { opacity: 0.42; }
+.jd-about--live .jd-step.is-on { opacity: 1; }
+.jd-about .jd-step > h2 { margin-top: 0; }
+/* the eyebrow: which scene this step belongs to, set like an axis label */
+.jd-about .jd-step-eyebrow {
+  font-family: var(--mono, monospace);
+  font-size: var(--fs-xs); letter-spacing: 0.18em; text-transform: uppercase;
+  opacity: 0.6; margin: 0 0 var(--s-1);
+}
+/* the demo notice — under the drawing, beside the controls, stated plainly */
+.jd-about .jd-demo-note {
+  margin: var(--s-2) 0 0;
+  padding: var(--s-2);
+  border: 1px dashed currentColor;
+  font-size: var(--fs-xs); line-height: 1.5; opacity: 0.85;
+}
+
+/* ---- the pane and its scenes -------------------------------------------- */
+/* SCROLL ANCHORING OFF. The browser re-anchors the scroll position when
+   content resizes, which is right for a growing comment thread and wrong for
+   a page whose pinned pane swaps a whole card on every scene change. Traced
+   on desktop: the page jumped BACKWARD by exactly 505px each time a card
+   mounted (document height constant at 12377, so not a reflow), the stepper
+   re-ran at the earlier position, re-activated an earlier step, and drove the
+   turn card's rail back to the wrong drawing — the prose said Gemini while
+   the card showed A. The page's scroll position is the story's playhead
+   here; nothing may move it but the reader. */
+.jd-about .jd-about-grid,
+.jd-about .jd-about-pane,
+.jd-about .jd-about-notes { overflow-anchor: none; }
+.jd-about .jd-about-pane { position: relative; }
+/* SCENES TRAVEL WITH THE TEXT. A cross-fade made the graphic dissolve in
+   place, which reads as a swap rather than movement. Each scene now LEAVES
+   the way the page is going — scrolling down, the outgoing graphic rides up
+   and off while the next arrives from below, the same direction the prose
+   beside it is moving; scrolling back up, both reverse.
+
+   THE POSITION IS A FUNCTION OF THE SCROLL OFFSET, set from about-scenes.js
+   on every scroll tick — not a transition, not a keyframe, not a WAAPI
+   animation. Two CSS approaches were tried and neither ran (a transition
+   needs a previously-rendered start value, and these scenes are display:none
+   until they come on), but the deeper reason is that a clock-driven version
+   of this is the wrong thing: "the image should scroll up with the text" is
+   a position, not a tween that fires at a boundary. Nothing here may declare
+   a transition on transform or opacity — it would fight the scroll, lagging
+   the graphic behind the reader's own hand.
+
+   The resting state below is what matters to CSS: a scene that is on is
+   visible, full stop, so a page with the script disabled is still correct. */
+.jd-about--live .jd-scene {
+  display: none;
+  /* the card is scaled by a transform, which does NOT shrink its layout box —
+     about-scenes.js sets the host's height to the scaled size, so the host
+     has to clip what the untransformed box still claims */
+  overflow: hidden;
+  will-change: transform;
+}
+.jd-about--live .jd-scene.is-on { display: block; position: relative; z-index: 1; }
+/* GHOSTS (2026-09-15): a static clone of a card, kept in the card's own
+   host, shown while the real card is closed (leaving) or not yet rendered
+   (arriving). It carries the real card's own transform, so it sits exactly
+   where the real one sat; the real card is hidden under it until fitted. */
+.jd-about--live .jd-scene-ghost {
+  position: absolute; top: 0; left: 0;
+  pointer-events: none;
+}
+.jd-about--live .jd-scene.has-ghost > .jd-inline-card:not(.jd-scene-ghost) { visibility: hidden; }
+.jd-about--live .jd-scene-ghost { visibility: visible; }
+/* the pre-render: a host laid out but invisible, so a card can be opened,
+   fitted and cloned before the reader ever reaches it */
+.jd-about--live .jd-scene.is-prerender {
+  display: block; position: absolute; top: 0; left: 0; right: 0;
+  visibility: hidden; pointer-events: none; z-index: 0;
+}
+/* the cards' own entrance animations (a rise-and-settle on every open)
+   would play under the ghost swap and read as a stutter; here a card
+   arrives on the scroll, not on a spring */
+.jd-about .jd-inline-card .jd-record.is-enter,
+.jd-about .jd-inline-card .jd-folder-card.is-enter { animation: none; }
+/* THE OUTGOING SCENE LEAVES THE FLOW. Both scenes are display:block for the
+   length of the handover, and the pane is a centring flex column — in flow
+   they both claimed height, so the incoming card was shoved down the pane
+   (and clipped by the pane's own overflow) for a quarter of a second on
+   every single scene change. about-scenes.js captures the outgoing scene's
+   position in the pane before adding this class, so going absolute moves it
+   by nothing at all; it then keeps travelling on the scroll. */
+.jd-about--live .jd-scene.is-out {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+/* without the engine there is no pane to switch: the drawer stands alone and
+   every step reads as ordinary prose beneath it */
+.jd-about:not(.jd-about--live) .jd-scene:not([data-scene-pane="drawer"]) {
+  display: none;
+}
+
+/* ---- the timeline -------------------------------------------------------
+   A metro line, and nothing else: one station per step on a single
+   continuous rule, with the four scenes told apart by SPACING alone. No
+   scene names, no station labels — the rail's whole job is to say "this
+   scrolls, here is where you are, press to go back", and every word it
+   carried was width taken from the prose beside it. 112px of column became
+   40px, and the text got the difference. */
+.jd-timeline { display: none; }
+.jd-about--live .jd-timeline {
+  display: block;
+  position: relative;
+  padding: 4px 0;
+}
+/* THE THROUGH LINE. Drawn once on the container, from the first station to
+   the last, so it runs unbroken behind every dot and straight through the
+   gaps that separate the scenes — the gaps group the stations without
+   cutting the line. */
+.jd-about--live .jd-timeline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  margin-left: -0.5px;
+  background: currentColor;
+  opacity: 0.22;
+}
+.jd-tl-scene {
+  position: relative;
+  padding: 0;
+  margin: 0 0 15px;          /* the gap that reads as a scene break */
+}
+.jd-tl-scene:last-child { margin-bottom: 0; }
+.jd-tl-name { display: none; }
+.jd-tl-label { display: none; }
+
+.jd-tl-stop {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 17px;              /* the stations were nearly touching at 7px */
+  padding: 0;
+  margin: 0;
+  border: 0; background: none; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.jd-tl-dot {
+  position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  background: var(--paper, #fff);
+  opacity: 0.4;
+  transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
+}
+.jd-tl-stop:hover .jd-tl-dot { opacity: 0.85; transform: scale(1.3); }
+.jd-tl-stop:focus-visible { outline: 2px solid var(--red, #b02a24); outline-offset: 1px; }
+.jd-tl-stop.is-done .jd-tl-dot { opacity: 0.55; background: currentColor; }
+.jd-tl-stop.is-on .jd-tl-dot {
+  opacity: 1; background: currentColor; transform: scale(1.7);
+}
+
+/* ---- the three cards, flowed inline -------------------------------------
+   Each card normally mounts as a fixed, full-screen scrim over a dark
+   backdrop. In the pane it becomes an ordinary block: no fixed position, no
+   backdrop, no z-index of its own, no reserved band for the site banner. */
+.jd-about .jd-inline-card {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  padding: 0;
+  background: none;
+  display: block;
+  width: 100%;
+  max-height: none;
+}
+.jd-about .jd-inline-card.is-on { display: block; }
+/* the cards' own close controls point at a modal that isn't one here */
+.jd-about .jd-inline-card .jd-turn-close,
+.jd-about .jd-inline-card .jd-record-close,
+.jd-about .jd-inline-card .jd-folder-close { display: none; }
+
+/* THE COLLAPSE. `.jd-record` and `.jd-folder-card` are `max-height: 100%`
+   column flexboxes whose scroll area is `flex: 1 1 auto; min-height: 0`.
+   Against a fixed, full-screen scrim that resolves to the viewport and the
+   card fills it; against an auto-height block it resolves to nothing and the
+   card measures 0. Inline, the cards flow at their natural height and the
+   PANE does the scrolling instead (it has the max-height, above). */
+.jd-about .jd-inline-card .jd-record,
+.jd-about .jd-inline-card .jd-folder-card,
+.jd-about .jd-inline-card .jd-turn {
+  max-height: none;
+  height: auto;
+  width: 100%;
+  margin: 0;
+}
+.jd-about .jd-inline-card .rc-scroll,
+.jd-about .jd-inline-card .jd-folder-scroll,
+/* the turn card's scroller belongs on the list too: `flex: 1 1 auto;
+   min-height: 0; overflow-y: auto` resolves to the content height against an
+   auto-height card and is harmless — until the card acquires a definite
+   height for any reason, at which point it quietly SCROLLS its own contents
+   instead of growing. The host would then be cut to a card that never
+   changed size, no observer would fire, and the reader would be looking at
+   the top of a card with no way to reach the rest of it: the exact failure
+   this page has to make impossible. */
+.jd-about .jd-inline-card .jd-turn-scroll {
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+/* THE CARDS RENDER AT FULL SIZE, THEN SCALE.
+   First attempt re-armed the cards' PHONE layouts against the pane width
+   (container queries), because the pane was 770px and the report card's
+   two-column grid wants 924px. That fixed the clipping and broke the point
+   of the page: the phone layout is one column with full-width artwork, so
+   the succulent came out enormous, the card grew too tall to see at once,
+   and the survey's labels were cut — none of it looking like the instrument
+   the drawer actually shows.
+
+   Measured on the live drawer: the report card is 924x496 in two columns of
+   420px + 436px, and the turn card's bench is `min(960px, 100%)`. So the
+   card is given its full 960px to lay out in — exactly the desktop layout a
+   visitor sees — and about-scenes.js then scales the whole thing to fit the
+   pane. Same card, same proportions, just smaller. */
+.jd-about .jd-inline-card {
+  width: 960px;
+  transform-origin: top left;
+  will-change: transform;
+}
+
+/* THE INSTRUMENT STANDS UP (owner, 2026-09-15). In the drawer the turn card
+   is landscape — drawing on the left, paperwork on the right — which needs
+   960px and, scaled into this pane, left the questions cramped. Here it is
+   rebuilt PORTRAIT: the drawing, then the prompt, then the questions,
+   stacked down a 660px card. That is the drawer's own phone arrangement,
+   and it is reached the drawer's own way — the three bench wrappers go
+   display:contents and the DOM's source order IS the portrait order — but
+   keyed to this page rather than to a narrow viewport, because the
+   viewport here is wide and only the pane is narrow.
+
+   (A side-by-side band — drawing left, prompt right, half each — was tried
+   the same day and taken back: the owner wanted the drawing larger and the
+   prompt under it, as before, "just a little better positioned". So the
+   plate is a step bigger than the first cut's 330px, centred, and the
+   prompt panel runs the full width beneath it.) */
+.jd-about [data-scene-pane="instrument"] .jd-inline-card { width: 660px; }
+.jd-about .jd-inline-card .jd-turn[data-view="bench"] {
+  width: 100%;
+  height: auto;
+}
+.jd-about .jd-inline-card .jd-bench,
+.jd-about .jd-inline-card .jd-bench-l,
+.jd-about .jd-inline-card .jd-bench-r { display: contents; }
+.jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
+  display: flex;
+  flex-direction: column;
+}
+.jd-about .jd-inline-card .jd-turn-pin {
+  position: static;
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 var(--sp-3);
+  justify-content: center;
+}
+/* THE PLATE NEEDS A DEFINITE WIDTH. `width: auto` with `max-width` looks
+   like the same cap and is not: the plate is a flex item of the pin, so
+   auto means CONTENT-sized, and its content is an svg that sizes off the
+   plate. The circle collapses — measured here at 2x2px, the artwork gone
+   from the card altogether, which is the very speck junk-drawer.css's phone
+   note records WebKit producing for the same reason. A definite width
+   breaks the circle; .jd-turn-art's own 1/1 aspect ratio then sets the
+   height, and the pin (display:flex, justify-content:center) centres it. */
+.jd-about .jd-inline-card .jd-turn-pin .jd-turn-plate {
+  flex: 0 0 auto;
+  width: min(380px, 100%);
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+.jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-assign {
+  flex: 0 0 auto;
+  margin: 0 0 var(--sp-3);
+}
+
+/* THE REPORT CARD TAKES THE SAME PORTRAIT (owner, 2026-09-15). In the
+   drawer the record is landscape at 960px — the photograph in a 420px
+   column, the paperwork beside it. Here it stands the way the instrument
+   stands: the same 660px card, the photograph centred on top, the prompt
+   beneath it, then the grades table and the sibling strip. The drawer's
+   own phone layout is the source of the move (the column wrappers go
+   display:contents, source order is the portrait order), keyed to this
+   page instead of to a narrow viewport. */
+.jd-about [data-scene-pane="record"] .jd-inline-card { width: 660px; }
+.jd-about .jd-inline-card .rc-scroll {
+  display: flex;
+  flex-direction: column;
+}
+.jd-about .jd-inline-card .rc-col-l,
+.jd-about .jd-inline-card .rc-col-r { display: contents; }
+.jd-about .jd-inline-card .rc-masthead { margin-bottom: 8px; }
+.jd-about .jd-inline-card .rc-col-l > .rc-plate {
+  width: min(380px, 100%);
+  margin: 0 auto 0.65rem;
+}
+.jd-about .jd-inline-card .rc-col-r > .rc-head:first-child { margin-top: 0; }
+/* the drawer's LANDSCAPE fold rule (min-width 701px: the prompt as the
+   right column's springy row) would apply here because the viewport is
+   wide; in a stacked column there is no slack to spring into, so the prompt
+   goes back to its plain fold — three lines, the cut over the last one,
+   SHOW FULL PROMPT to unfold */
+.jd-about .jd-inline-card .rc-col-r > .rc-assign.rc-can-fold:not(.is-open) {
+  display: block;
+  flex: 0 0 auto;
+}
+.jd-about .jd-inline-card .rc-col-r > .rc-assign.rc-can-fold:not(.is-open) p {
+  flex: none;
+  min-height: 0;
+  max-height: 4.5em;
+}
+.jd-about .jd-inline-card .rc-col-r > .rc-head:not(:first-child) { margin-top: 0.55rem; }
+
+/* THE ANALYSIS, THREE CARDS (owner, 2026-09-15). The folder renders every
+   card into one 920px sheet — the grade book, the spend, the four axes in
+   a row, the turn-by-turn table — and scaled into the pane it read as one
+   dense dashboard. Here the folder is the width of the other two cards and
+   shows ONE card at a time, named by the scene host's data-fx (set from
+   the step by about-scenes.js): the overall grade, then the cost, then the
+   four axes — laid two by two instead of in a row, each panel its full
+   box with its own key (jd-furniture.js treats this page as it treats a
+   narrow viewport for that). The turn-by-turn table is left off. */
+.jd-about [data-scene-pane="analytics"] .jd-inline-card { width: 660px; }
+.jd-about .jd-inline-card .jd-folder-card { width: 100%; }
+.jd-about .jd-inline-card .jd-folder-scroll {
+  display: block;
+  padding: 14px;
+}
+.jd-about .jd-inline-card .fx-card { display: none; }
+.jd-about [data-scene-pane="analytics"][data-fx="grades"] .fx-grades,
+.jd-about [data-scene-pane="analytics"][data-fx="cost"] .fx-cost,
+.jd-about [data-scene-pane="analytics"][data-fx="axes"] .fx-axes { display: block; }
+.jd-about .jd-inline-card .fx-turns { display: none; }
+/* one chart, centred in the card, and a little larger than the folder's
+   440px cap now that it has the sheet to itself */
+.jd-about .jd-inline-card .fx-chart { margin: 0 auto; max-width: 520px; }
+.jd-about .jd-inline-card .fx-axgrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+}
+.jd-about .jd-inline-card .fx-panel svg { max-width: 270px; margin: 0 auto; }
+
+/* THE FOLDER LOOKS LIKE A FOLDER (owner, 2026-09-16). In the drawer the
+   open folder is a card with a slim manila band across its top holding the
+   tab and the ✕; scaled into the pane, the band read as a title bar and
+   the tab as a label on it — not a folder. Here the band is gone: the tab
+   is a raised flag standing on the folder's top edge, joined to it (it
+   overlaps the body's top rule by a pixel), and the BODY is the manila —
+   grain, edge and shadow moved from the card to the sheet the paper card
+   lies in. The sheet is a FIXED HEIGHT, the same for all three cards, and
+   closer to square than the strip it was; a card shorter than the sheet
+   (the cost chart, the grade book) sits at its vertical centre. */
+.jd-about .jd-inline-card .jd-folder-card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: none;
+}
+.jd-about .jd-inline-card .jd-folder-head {
+  min-height: 0;
+  background: none;
+  border-bottom: 0;
+  align-items: flex-end;
+}
+.jd-about .jd-inline-card .jd-folder-tabrow { padding: 0 0 0 30px; }
+/* A REAL TAB (owner, 2026-09-16): bigger, and its word bigger with it, the
+   way a manila folder's tab stands proud of the sheet. It reaches DOWN
+   INTO the sheet by four pixels — over the sheet's top rule and past it —
+   so that at any scale factor the join is covered by the tab's own opaque
+   manila: a one-pixel overlap left a hairline of light showing through
+   under the word once the card was scaled, and read as the tab sitting on
+   the folder rather than being part of it. The inset highlight is gone for
+   the same reason. */
+.jd-about .jd-inline-card .jd-folder-tab {
+  position: relative;
+  top: 4px;
+  z-index: 1;
+  padding: 12px 30px 14px;
+  font-size: 0.92rem;
+  letter-spacing: 0.3em; text-indent: 0.3em;
+  background: var(--fmanila) var(--fgrain);
+  border: 1px solid rgba(48, 38, 20, 0.6);
+  border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+  box-shadow: none;
+}
+.jd-about .jd-inline-card .jd-folder-scroll {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;       /* the paper card at the sheet's centre */
+  height: 560px;
+  box-sizing: border-box;
+  padding: 24px;
+  background: var(--fmanila) var(--fgrain);
+  border: 1px solid rgba(48, 38, 20, 0.6);
+  border-radius: 0 6px 6px 6px;  /* square where the tab stands on it */
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+  overflow: hidden;
+}
+.jd-about .jd-inline-card .fx-card { flex: 0 0 auto; }
+
+/* THE SCROLL LOCK. Opening the turn card sets html.jd-turn-open { overflow:
+   hidden } so a modal turn cannot be scrolled behind — correct everywhere
+   else, fatal here, where the card IS the page's furniture and the page must
+   keep scrolling. Scoped to this page by a class set on <html> before the
+   modules load, so no other page is affected. */
+html.jd-about-page.jd-turn-open,
+html.jd-about-page.jd-record-open,
+html.jd-about-page.jd-folder-open { overflow: visible; }
+
+/* ---------------- desktop: pane left, steps right ----------------------- */
 @media (min-width: 769px) {
   .jd-about .jd-about-grid {
     display: grid;
-    /* ~58/42 (PLAN-PORTFOLIO §2: left 55–60%). Wider than the art page's
-       centered --max-wide column, on purpose; still gutters at the edges. */
-    grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
-    column-gap: var(--s-5);
+    /* graphic | prose | timeline. The graphic takes the larger share because
+       the cards are 960px at full size and every point of scale costs
+       legibility; the timeline is a fixed thin rail, not a column. */
+    grid-template-columns: minmax(0, 66fr) minmax(0, 34fr) 40px;
+    column-gap: var(--s-4);
     align-items: start;
     width: 100%;
-    max-width: 1480px;
+    /* wider than v2's 1480: at 1640 a 1920 monitor renders both cards at
+       scale 1, i.e. pixel-identical to the drawer */
+    max-width: 1640px;
     margin: 0 auto;
     padding: 0 var(--s-4);
     box-sizing: border-box;
   }
-  /* the DRAWER is the sticky column: it is one viewport tall by design, so
-     pinning it keeps the object in view while the reader scrolls the
-     explanation beside it (the plan's "stays visible while digging",
-     achieved from the drawer's side — a sticky text column taller than the
-     viewport would pin nothing). Sticky sits on the wrapper, not on the
-     stage, so the stage's own compositing transform stays untouched. */
-  .jd-about .jd-about-drawer {
+  /* the timeline pins beside the prose */
+  .jd-about .jd-timeline {
+    position: sticky;
+    top: calc(var(--banner-h) + var(--s-4));
+    padding: var(--s-2) 0;
+  }
+  .jd-about .jd-about-pane {
     position: sticky;
     top: calc(var(--banner-h) + var(--s-1));
-    /* an inline-size container, so the stage below can read the column's
-       width as cqw and keep 4:5 when the COLUMN, not the viewport, is the
-       binding constraint (a narrow desktop window) */
     container-type: inline-size;
+    /* the tallest scene decides the pinned height; the cards scroll inside
+       themselves rather than pushing the pane past the viewport. The card
+       is CENTRED in the column: left top-aligned, the report card ended
+       halfway up a pane twice its height while the prose beside it sat
+       vertically centred, and the two never lined up. */
+    /* a FIXED height, not a max: with max-height the pane shrank to the
+       card, so a short card (the report card is only ~424px scaled) sat at
+       the top of the column while the prose beside it stayed centred far
+       below — the graphic and the words never lined up. Fixed height plus
+       safe centring puts the card's middle on the prose's middle. */
+    height: calc(100vh - var(--banner-h) - var(--s-3));
+    max-height: calc(100vh - var(--banner-h) - var(--s-3));
+    /* hidden, not auto: a scene mid-travel sits ±52px outside the pane and
+       would otherwise arm a scrollbar on the pinned graphic every time the
+       scene changed. The card is fitted to the pane, so nothing that belongs
+       on screen is ever cut. */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    /* SAFE centring. A card shorter than the pane should sit in the middle,
+       beside the prose. A card TALLER than the pane must start at the top —
+       plain `center` centres the overflow too, which clipped the report card
+       at BOTH ends: the drawing lost its leaves off the top and the sibling
+       strip fell off the bottom, with no way to reach either. `safe` keeps
+       the centring only while it costs nothing; the flex-start line before
+       it is the fallback where `safe` is not understood. */
+    justify-content: flex-start;
+    justify-content: safe center;
   }
   .jd-about .jd-stage {
-    /* the art page's height-driven 4:5 drawer, refit to its column: never
-       wider than the column, and short enough that the drawer AND its pull
-       sit inside the viewport under the banner while pinned. The 1000px cap
-       (art page: --max-wide × 1.25 = 1200) keeps a 4:5 drawer inside a
-       58% column on a 1480px grid, so a wide monitor never has to clamp
-       its width and distort the aspect. */
     max-width: 100%;
-    /* three ceilings: the viewport (drawer + pull under the banner), the
-       1000px cap, and the column's width × 5/4 — whichever is lowest, the
-       drawer stays 4:5 instead of clamping its width and going tall */
-    height: min(calc(100vh - var(--banner-h) - var(--jd-pull-drop) - var(--s-4)), 1000px, calc(100cqw * 1.25));
+    /* the stage's MARGIN BOX has to fit the pane's max-height, not just its
+       border box: --s-1 above and --s-2 below ride outside the height, and
+       the pane subtracts --s-3 where this subtracted --s-4. That 16px
+       mismatch was constant at every width and turned the pinned graphic
+       into a scroller that ate a wheel notch before the page moved. */
+    height: min(
+      calc(100vh - var(--banner-h) - var(--s-3) - var(--s-1) - var(--s-2) - var(--jd-pull-drop)),
+      1000px,
+      calc(100cqw * 1.25));
     margin: var(--s-1) auto calc(var(--jd-pull-drop) + var(--s-2));
   }
-  /* the explanation column: the notes' own type, no longer centered in a
-     600px column — it IS the column now */
-  .jd-about .jd-about-notes {
-    max-width: none;
-    margin: 0;
-    padding: var(--s-2) 0 var(--s-6);
+  /* the drawer scene owns its own overflow: the stage is sized to fit and a
+     sub-pixel rounding must not re-arm the pane's scrollbar */
+  .jd-about .jd-scene[data-scene-pane="drawer"] { overflow: hidden; }
+  .jd-about .jd-about-notes { max-width: none; margin: 0; padding: var(--s-2) 0 var(--s-6); }
+  /* EACH STEP OWNS A SCREEN. Without this the steps set at their natural
+     prose height — 106 to 229px — and a single wheel-flick crosses five of
+     them, so the pane strobes through three scenes and no step ever gets its
+     moment. ~82vh is the standard: a little less than a viewport, so the
+     next step's first line is visible and the reader knows to keep going. */
+  .jd-about--live .jd-step {
+    min-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-bottom: 0;
   }
-  /* the ↑ back-link exists for the phone, where the drawer is off-screen
-     while reading; beside a pinned drawer it points at nothing */
+  /* the first and last steps get room so the pane has something to pin
+     against at both ends of the scroll */
+  .jd-about--live .jd-step:first-of-type { margin-top: 6vh; }
+  .jd-about--live .jd-step:last-of-type { margin-bottom: 30vh; }
   .jd-about .jd-back { display: none; }
+}
+
+/* ---------------- phone: pane pinned top, steps beneath -----------------
+   Rebuilt after the phone audit (2026-09-15). The first cut pinned the pane
+   at 55vh for scenes 2-4 and made scene 1 an 82vh establishing shot with the
+   prose riding over it. Three things broke:
+
+   1. THE FEEDBACK LOOP. A pane whose height depends on the active scene
+      makes the DOCUMENT height depend on it too — and the active scene is a
+      function of scroll position. Crossing the scene-1 boundary moved the
+      page 633px under the reader, which re-ran the stepper at a position
+      that could select a drawer step again. Steps oscillated and `premise`
+      never activated at all. The pane height is now CONSTANT across all four
+      scenes; that is what closes the loop, and it is why scene 2 does not
+      get a taller pane of its own however much its card would like one.
+   2. The overlay prose rendered BEHIND the pane (opaque, z-index 2), so on a
+      phone the h1, the dek and the live tally were invisible. The overlay is
+      gone; the steps flow under the pinned graphic like every other scene.
+   3. junk-drawer.css's phone scroll-snap put a 250px dead band over scene 1
+      that a fling could not cross. Neutralised below.
+   ------------------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .jd-about .jd-about-grid { display: block; padding: 0 var(--s-3); }
+
+  .jd-about--live .jd-about-pane {
+    position: sticky;
+    top: var(--banner-h);
+    z-index: 2;
+    /* ONE height, every scene. See note 1 above. 66vh rather than 55vh buys
+       the report card ~90px and the turn card ~95px of the height they were
+       losing, without starving the prose below. */
+    height: 66vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    justify-content: safe center;
+    /* the pinned graphic needs its own ground: the steps scroll UNDER it.
+       --paper is #ffffff site-wide, which is not the warm ground the drawer
+       sits on, so the colour is stated here rather than inherited. */
+    background: #f4efe2;
+    box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.45);
+  }
+  /* the card is scaled to fit by about-scenes.js, so it no longer needs its
+     own scroller here — which also retires the three-stacked-scroll-contexts
+     problem the phone audit found (a scrub that ran off the end of the card
+     used to chain into the page and move the story on) */
+  .jd-about--live .jd-about-pane .jd-inline-card { overscroll-behavior: contain; }
+
+  /* THE TIMELINE ON A PHONE: the grid is display:block here, so the rail
+     would otherwise stack at the foot of the page where it can say nothing
+     about progress. Fixed against the right edge, tighter than on a desktop. */
+  .jd-about--live .jd-timeline {
+    position: fixed;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 18px;
+    padding: 6px 0;
+    border-radius: 9px;
+    background: rgba(244, 239, 226, 0.78);
+    backdrop-filter: blur(3px);
+  }
+  .jd-about--live .jd-tl-scene { margin-bottom: 11px; }
+  .jd-about--live .jd-tl-stop { height: 13px; }
+  .jd-about--live .jd-tl-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; }
+  .jd-about--live .jd-stage { height: 62vh; margin: 0 auto; }
+
+  .jd-about--live .jd-step {
+    min-height: 42vh;
+    display: flex; flex-direction: column; justify-content: center;
+    margin-bottom: var(--s-5);
+  }
+  .jd-about--live .jd-step:last-of-type { margin-bottom: 30vh; }
+
+  /* the drawer's own phone page-snap is written for the art page, where the
+     stage IS the viewport and the notes are a second landing. Here the stage
+     lives inside a sticky pane, so its snap point sat mid-page and pinned a
+     250px band no fling could cross. */
+  html.jd-about-page { scroll-snap-type: none; }
+  .jd-about .jd-stage,
+  .jd-about #notes { scroll-snap-align: none; scroll-snap-stop: normal; }
+}
+
+/* ---- reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .jd-about .jd-step { transition: none; }
+  .jd-about--live .jd-step { opacity: 1; }
+}
+
+/* ============================================================================
+   THE FILMSTRIP, on the walkthrough. The control itself — markup, tokens and
+   every .fs-* part — lives in junk-drawer.css and jd-filmstrip.js, shared
+   with the drawer proper since 2026-09-16. All that is page-specific is where
+   it sits and how wide: the inline cards are transform-scaled copies of the
+   real ones, so the control takes the plate's drawn width rather than the
+   column's. Mounted by about-scenes.js (see ensureFilmstrip).
+   ========================================================================== */
+.jd-about .jd-inline-card .rc-col-l > .jd-filmstrip {
+  width: min(380px, 100%); margin: -0.15rem auto 0.8rem;
+}
+.jd-about .jd-inline-card .jd-turn-plate > .jd-filmstrip {
+  width: min(380px, 100%); margin: 8px auto 0;
 }

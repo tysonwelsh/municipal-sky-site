@@ -1039,7 +1039,11 @@ html { scroll-behavior: smooth; }
   /* the report card's paper + ink, scoped */
   --card: #efe4c6;
   --form-ink: #37414f;
-  --form-ink-2: #6a7280;
+  /* the secondary ink darkened (owner, 2026-09-14): #6a7280 read at only
+     3.8:1 on this card stock — under AA for text this small, and the axis
+     definitions are the longest run of it. 5.9:1 now, still clearly a step
+     back from --form-ink so the hierarchy survives. */
+  --form-ink-2: #4d5563;
   --form-rule: rgba(55, 65, 79, 0.42);
   --form-rule-2: rgba(55, 65, 79, 0.20);
   --typed: #3a3428;
@@ -1543,9 +1547,14 @@ html.jd-record-open { overflow: hidden; }
    prompt foldable; render() measures after paint and strips rc-can-fold
    when the prompt fits its three lines, which also hides the expander. */
 .rc-assign {
-  border-top: 1px solid var(--form-rule);
-  border-bottom: 1px solid var(--form-rule);
-  padding: 0.36rem 0.1rem 0.3rem;
+  /* a PANEL (owner, 2026-09-16, standardising the two cards): the prompt
+     sits in a bordered, lighter box on the form the way it does on the
+     rating instrument (.jd-turn-assign) — the selects' own lighter beige
+     and hairline, in this card's tokens — instead of between two bare
+     rules. Same words, same fold; only the container changed. */
+  border: 1px solid var(--form-rule);
+  background: rgba(255, 250, 232, 0.55);
+  padding: 0.42rem 0.6rem 0.38rem;
 }
 .rc-assign p {
   margin: 0;   /* the site sheet gives every p a 1rem tail (css/style.css) —
@@ -1669,7 +1678,9 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 .rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 tr.rc-axdesc td {
   padding: 0.12em 0.5em 0.5em;
-  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1.6;
+  /* a size up (owner, 2026-09-14) — this is running prose in a mono face at
+     the card's smallest size; 0.56rem was a glance, not a read */
+  font-family: var(--rc-mono); font-size: 0.63rem; line-height: 1.62;
   letter-spacing: 0.02em; color: var(--form-ink-2);
 }
 .rc-skip {
@@ -1858,7 +1869,7 @@ tr.rc-axdesc td {
   .rc-masthead { padding: 0.15em 0 0.3em; margin-bottom: 6px; }
   .rc-col-r .rc-head + .rc-head, .rc-assign + .rc-head,
   .rc-col-r .rc-block + .rc-head { margin-top: 0.42rem; }
-  .rc-assign { padding: 0.3rem 0.1rem 0.26rem; }
+  .rc-assign { padding: 0.3rem 0.6rem 0.26rem; }
   table.rc-subj td, table.rc-subj tfoot td { padding: 0.13em 0.5em 0.17em; }
   /* a short viewport buys its vertical back by narrowing the thumbnail, not
      by squashing it: the box keeps the plate's proportion (see .rc-alt-art)
@@ -1930,7 +1941,9 @@ tr.rc-axdesc td {
   --tpaper: #ece0bf;
   --tpaper-hi: #f4ead0;
   --tink: #33240f;
-  --tink-2: rgba(51, 36, 15, 0.68);
+  /* darkened 0.68 -> 0.82 (owner, 2026-09-14): 4.7:1 on this paper was thin
+     for the row definitions; ~7:1 now, and still short of solid --tink. */
+  --tink-2: rgba(51, 36, 15, 0.82);
   --tink-3: rgba(51, 36, 15, 0.44);
   --trule: rgba(74, 53, 18, 0.40);
   --trule-2: rgba(74, 53, 18, 0.19);
@@ -3400,14 +3413,21 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(170px, 1.13fr);
-  gap: 2px 10px; align-items: center;
+  /* STYLED AFTER THE REPORT CARD'S TABLE (owner, 2026-09-16): the two
+     instruments are meant to read as one system, and the record's
+     annotations table (table.rc-subj) is the reference — a ruled column
+     divider running the height of every row, a tinted column head ruled
+     top and bottom, serif title-case subject names, and the overall grade
+     as a tinted footer row under a heavy rule. The column gap goes to
+     zero so the divider is a cell edge, as it is in a table; each side
+     carries its own inset instead. */
+  gap: 2px 0; align-items: stretch;
   border-bottom: 1px solid var(--trule-2);
-  /* a hairline of padding returns (critic round, 2026-08-27): with the
-     selects compacted to 28px the zero-padding rows sat literally 1px
-     apart — a dense island in a column that had 100px of air above and
-     below it. 3px a side puts the air back INSIDE the table. */
   padding: 3px 0;
 }
+/* the last axis row rules off harder above the total, as the record's
+   last tbody row does above its tfoot */
+.jd-row:has(+ .jd-row--grade) { border-bottom-color: var(--trule); }
 /* OVERALL GRADE outranks the axes, the way the report card's tfoot grade
    row outranks the axis rows above it: a 2px rule (not the row's usual
    1px) sets it off from whatever came before it. It now sits LAST (owner
@@ -3415,22 +3435,33 @@ html.jd-turn-open { overflow: hidden; }
    see benchPanel), so this rule finally separates what it looks like it
    separates, rather than sitting above the very first row. */
 .jd-row--grade {
+  /* the record's tfoot: a 2px rule above, a full rule below, the row
+     tinted — hard against the last axis row's own hairline, so the two
+     rules read as the accountant's double rule over a total (the 6px
+     stand-off of 2026-08-27 went with the standardisation of 2026-09-16) */
   border-top: 2px solid var(--trule);
-  /* stood off from the last axis row (critic round, 2026-08-27): with the
-     rows compacted the 2px rule sat 1px under JE NE SAIS QUOI's select and
-     read as that row's underline; 6px of stand-off lets the previous row's
-     own hairline + this rule read as an accountant's double rule above the
-     total, which is what the grade row is */
-  margin-top: 6px;
+  border-bottom: 1px solid var(--trule);
+  background: rgba(51, 36, 15, 0.03);
+  margin-top: 0;
 }
 /* the column head above the rows (owner directive r4): same grid as the
    rows below it so the two labels land over their columns, set in the
    report card's own <th> voice — small form caps, not the row's mono. */
 .jd-row--head {
-  padding: 0.3em 0 0.35em; border-bottom: 1px solid var(--trule);
-  font-family: var(--tform); font-size: var(--t-micro); font-weight: 400;
-  letter-spacing: 0.17em; text-transform: uppercase; color: var(--tink-2);
+  padding: 0; margin-top: 2px;
+  border-top: 1px solid var(--trule);
+  border-bottom: 1px solid var(--trule);
+  background: rgba(51, 36, 15, 0.055);
+  font-family: var(--tform); font-size: 0.5rem; font-weight: 400;
+  letter-spacing: 0.19em; text-transform: uppercase; color: var(--tink-2);
 }
+.jd-row--head > span { display: block; padding: 0.3em 0.5em; min-width: 0; }
+.jd-row--head > span + span { border-left: 1px solid var(--trule-2); }
+/* the row's two cells: the subject inset from the left edge, the control
+   column divided off and inset — the divider runs the row's full height
+   because the row's items stretch */
+.jd-rowhead { padding: 0 0.5em 0 0.35em; }
+.jd-row-ctrl { border-left: 1px solid var(--trule-2); padding-left: 10px; }
 /* the whole head is the disclosure's press target (owner, round 5): pointer
    cursor, no text selection — a label you can press must not sprout an
    I-beam and start selecting itself under the finger */
@@ -3452,11 +3483,20 @@ html.jd-turn-open { overflow: hidden; }
    select's aria-describedby survives untouched — see .jd-vh below. */
 .jd-def {
   display: inline-flex; align-items: center; min-width: 0;
+  /* the record's subject name (.rc-subj-name): serif, title case, lightly
+     tracked, in the full ink — not the tracked small caps the rail labels
+     wear (owner, 2026-09-16) */
   font-family: var(--tform);
-  font-size: var(--t-label); letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--tink-2); text-align: left;
+  font-size: 0.62rem; letter-spacing: 0.05em; text-transform: none;
+  line-height: 1.26;
+  color: var(--tink); text-align: left;
 }
-.jd-row--grade .jd-def { color: var(--tink); }
+/* the total's label: the record's footer word (.rc-avg-l) — small caps,
+   tracked wide, in the quieter ink */
+.jd-row--grade .jd-def {
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--tink-2);
+}
 .jd-def > span {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -3501,7 +3541,10 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row-exp {
   grid-column: 1 / -1;
   padding: 1px 2px 5px;
-  font-size: var(--t-label); line-height: 1.55; color: var(--tink-2);
+  /* off the --t-label rung (owner, 2026-09-14): the rung is sized for one-
+     or two-word rail and row labels, but this row carries whole sentences,
+     so it takes its own reading size rather than dragging the ladder up. */
+  font-size: 0.63rem; line-height: 1.6; color: var(--tink-2);
 }
 
 /* the picked-value gauge sits ahead of the select (owner directive r4):
@@ -4763,3 +4806,158 @@ html.jd-bench-on .jd-turn-scrim {
   font-size: var(--t-label); color: var(--tink-2);
 }
 .jd-suppress input { accent-color: var(--graphite); }
+
+/* ============================================================================
+   THE FILMSTRIP (owner's pick from mockup 46 rev b, variant B — "the same,
+   unwashed" — 2026-09-16): the replay/scrub control under a drawing, in ONE
+   row where 45's sheet-and-bar took two. The bar graph is
+   cut and the frames ARE the track — twelve paused copies of the drawing
+   butted across one bordered container, the red caret scrubbing over the
+   pictures, the ruler overprinted on the floor — with play/pause at the left
+   and the mark set over the count, diagonally, at the right. Built by
+   jd-filmstrip.js and mounted by jd-record.js (under the report card's
+   plate), jd-turn.js (inside the rating bench's pinned plate) and
+   about-scenes.js (both, on the walkthrough). It REPLACES the replay
+   affordances it lands next to — the record's ↻ and the bench plate's pencil
+   — rather than sitting beside them. Styling ported from the mockup: five
+   tokens, each scrim maps its own, plus --nf (the cell count) which
+   jd-filmstrip.js writes inline and the ruling is keyed off.
+   ========================================================================== */
+.jd-filmstrip{
+  --tb-ink:#37414f; --tb-ink-2:#4d5563; --tb-rule:rgba(55,65,79,.42);
+  --tb-rule-2:rgba(55,65,79,.20); --tb-red:#b02a24;
+  --tb-mono:"Courier Prime","Courier New",Courier,monospace; --tb-paper:#efe4c6;
+  --tb-red-soft:var(--tb-red);
+  position:relative;z-index:4;
+  display:flex;align-items:center;gap:10px;
+  width:100%;margin-top:12px;color:var(--tb-ink);
+  user-select:none;-webkit-user-select:none}
+.jd-record-scrim .jd-filmstrip{
+  --tb-ink:var(--form-ink); --tb-ink-2:var(--form-ink-2); --tb-rule:var(--form-rule);
+  --tb-rule-2:var(--form-rule-2); --tb-red:var(--red); --tb-mono:var(--rc-mono);
+  --tb-paper:var(--card)}
+.jd-turn-scrim .jd-filmstrip{
+  --tb-ink:var(--tink); --tb-ink-2:var(--tink-2); --tb-rule:var(--trule);
+  --tb-rule-2:var(--trule-2); --tb-red:var(--tred); --tb-mono:var(--tmono);
+  --tb-paper:var(--tpaper);
+  --form-rule:var(--trule); --form-rule-2:var(--trule-2)}
+@supports (color:color-mix(in srgb,red,transparent)){
+  .jd-filmstrip{--tb-red-soft:color-mix(in srgb,var(--tb-red) 52%,transparent)}}
+
+/* play/pause: the print's button tailoring, a 28px square, the outline
+   triangle / two bars at the corner ✕'s 2px round-cap line weight */
+.fs-play{
+  flex:0 0 auto;width:28px;height:28px;padding:5px;line-height:0;
+  color:var(--tb-ink);
+  border:1px solid var(--tb-rule);border-radius:3px;
+  background:rgba(255,250,232,.82);
+  box-shadow:0 1px 0 rgba(58,42,18,.18);
+  cursor:pointer;font:inherit}
+.fs-play svg{display:block;width:16px;height:16px}
+.fs-play .g-pause{display:none}
+.jd-filmstrip.is-playing .fs-play .g-play{display:none}
+.jd-filmstrip.is-playing .fs-play .g-pause{display:block}
+.fs-play:hover{background:var(--tb-ink);color:var(--tb-paper);border-color:var(--tb-ink)}
+.fs-play:active{box-shadow:none;transform:translateY(1px)}
+.fs-play:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
+
+/* THE STRIP: the whole hit target (::before pads it to a finger's band).
+   Its height is the cells' own proportion — the plate's 84:74 at one nth of
+   the track's width — so the control is ONE row tall, no drawing is squashed,
+   and the cell count IS the height dial. Twelve cells under a 380px plate
+   come to ~23px, where 45's two rows came to ~62px. */
+.fs-strip{
+  flex:1 1 auto;position:relative;min-width:80px;
+  border:1px solid var(--tb-rule);border-radius:2px;
+  cursor:ew-resize;touch-action:none}
+.fs-strip::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}
+.fs-strip:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
+/* the clip lives on the cells, not on the strip: the strip must let the
+   caret's pointer flag stand above it */
+.fs-cells{display:flex;width:100%;overflow:hidden;border-radius:2px;position:relative}
+.fs-cell{
+  flex:1 1 0;min-width:0;position:relative;line-height:0;
+  aspect-ratio:84 / 74;background:rgba(255,250,232,.55)}
+.fs-cell-art{display:block;width:100%;height:100%}
+.fs-cell-art svg{display:block;width:100%;height:100%}
+/* the cell the pen is in keeps 45's red mark, at a hairline, inset so it
+   never shifts the row */
+.fs-cell.is-cur::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 0 1px var(--tb-red-soft)}
+
+/* THE RULING: a hairline the full height at every cell boundary, and the
+   ruler's ticks printed over the pictures along the floor — majors at the
+   frame boundaries, three minors between. No paper band, no baseline: the
+   ticks alone, so the ruler costs the strip no height at all. Both repeats
+   are keyed off --nf, so the ruler and the filmstrip agree by construction
+   at any cell count. The ruler sits ABOVE the inked run. */
+.fs-grid{position:absolute;inset:0;pointer-events:none;z-index:3}
+.fs-grid::before{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,
+    var(--tb-rule-2) 0 1px,transparent 1px calc(100% / var(--nf)))}
+.fs-grid::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:9px;
+  background-image:
+    repeating-linear-gradient(90deg,var(--tb-rule) 0 1px,transparent 1px calc(100% / var(--nf))),
+    repeating-linear-gradient(90deg,var(--tb-rule-2) 0 1px,transparent 1px calc(100% / var(--nf) / 4));
+  background-size:100% 100%,100% 4px;
+  background-repeat:no-repeat;
+  background-position:left bottom,left bottom}
+
+/* HOW FAR ALONG, the unwashed reading: the photographs are left alone and
+   the elapsed run is inked along the strip's floor, the way a gauge does it */
+.fs-fill{
+  position:absolute;left:0;bottom:0;height:2px;background:var(--tb-ink-2);
+  pointer-events:none;z-index:4}
+
+/* the playhead: a red-pencil caret over the pictures, given a paper halo
+   because it now crosses ink rather than an empty gauge */
+.fs-caret{
+  position:absolute;top:-3px;bottom:-3px;left:0;width:2px;margin-left:-1px;z-index:5;
+  background:var(--tb-red);pointer-events:none;border-radius:1px;
+  box-shadow:0 0 0 1px rgba(255,250,232,.62)}
+.fs-caret::before{
+  content:"";position:absolute;left:50%;top:-5px;margin-left:-4.5px;
+  border-left:4.5px solid transparent;border-right:4.5px solid transparent;
+  border-top:6px solid var(--tb-red)}
+.fs-strip.is-scrubbing .fs-caret,.fs-strip:hover .fs-caret{width:3px;margin-left:-1.5px}
+
+/* the readout: a printed fraction, the mark over the count, thrown off a
+   slanted solidus — nothing boxing it in. No label and no "of" either: the
+   strip's aria-valuetext still says "mark 14 of 31" in full, so nothing is
+   lost to a screen reader. Setting it diagonally holds 24px off the strip's
+   right end where 45's MARK / N of M block held ~48, at a LARGER type size
+   (.62rem against .56) and 16px tall against that block's 23. */
+.fs-read{
+  flex:0 0 auto;position:relative;
+  font-family:var(--tb-mono);font-size:.62rem;letter-spacing:0;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--tb-ink-2);white-space:nowrap}
+.fs-read .fs-read-n,.fs-read .fs-read-d{display:block}
+.fs-read .fs-read-n{text-align:left;padding-right:1.25em}
+.fs-read .fs-read-d{text-align:right;padding-left:1.25em;margin-top:-.18em}
+/* the solidus, set at a printer's angle rather than flat. The throw has to
+   clear a two-digit numeral (1.2em in this mono) or the stroke lands on a
+   glyph — 1.25em is the tightest that still leaves it a clean lane. */
+.fs-read::after{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:var(--tb-rule);transform:translateX(-50%) rotate(22deg)}
+.fs-read b{font-weight:400;color:var(--tb-red)}
+
+/* a phone: nothing to re-flow — the row is [play] [strip] [fraction] and
+   the strip absorbs whatever is left */
+@media (max-width:480px){
+  .jd-filmstrip{gap:8px}
+}
+
+/* ---- where it sits, and the affordance it replaces ----------------------
+   The report card: under the plate block, the left column's full width (the
+   column IS the plate's width). The bench: inside the plate figure, under the
+   artwork, so the sticky pin and its grid are untouched. /about/ overrides
+   both widths for its scaled inline copies. ------------------------------- */
+.rc-col-l > .jd-filmstrip { width: 100%; margin: 8px 0 0; }
+.jd-turn-plate > .jd-filmstrip { width: 100%; margin: 8px 0 0; }
+/* the ↻ on the card's plate is what the filmstrip's play button now does —
+   the ENLARGEMENT keeps its REDRAW (.rc-zoom-fig carries no filmstrip) */
+.rc-col-l > .rc-plate .rc-draw { display: none; }

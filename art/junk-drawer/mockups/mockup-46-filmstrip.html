@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The Filmstrip &mdash; the thumbnails ARE the track</title>
+<!-- ==========================================================================
+     MOCKUP 46 — "The filmstrip": the owner's call on 45 (2026-09-16) — the
+     bar graph is cut and the THUMBNAILS become the track. One container, the
+     frames butted across it, the red caret scrubbing over the top, and some
+     ruling to say "timeline".
+     REV b (2026-09-16, owner) — A and B are merged: the ruled cells keep the
+     container and the frame divisions, and B's ruler is OVERPRINTED on the
+     pictures as ticks alone — no band, no baseline, so the ruler costs the
+     strip no height. The readout loses the word MARK and becomes a bare
+     printed fraction — 14 over 31, stacked with a rule between — kept at the
+     right of the strip where the old block was, but ~2em wide instead of
+     ~5.4em. Three readings, A/B/C, on one engine; everything else is 45's,
+     verbatim.
+     Loads the LIVE junk-drawer.css and jd-core.js; the plate is the card's
+     own markup (jd-record.js cardHTML). The only new CSS is the control's.
+     ========================================================================== -->
+<link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css">
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --tred:#b3402f;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:48px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;line-height:2;
+  color:var(--tink-3);margin:0 auto 20px;max-width:560px}
+.row{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+figure{margin:0;max-width:100%}
+figcaption{margin-top:12px;font-size:.52rem;letter-spacing:.12em;line-height:2;
+  text-transform:uppercase;color:var(--tink-3);text-align:center;max-width:380px;margin-left:auto;margin-right:auto}
+figcaption b{color:var(--tink-2);letter-spacing:.16em}
+.notes{max-width:600px;margin:14px auto 0;font-size:.62rem;line-height:1.85;color:var(--tink-2);padding-left:1.2em}
+.notes li{margin:0 0 .7em}
+.notes code{font-family:var(--tmono);color:var(--tink);font-size:.95em}
+.notes b{color:var(--tink);font-weight:400}
+footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
+  color:var(--tink-3);text-transform:uppercase;line-height:2.2}
+
+/* the sheet's own furniture: a live frame-count dial, so the density
+   trade-off is felt rather than argued. NOT part of the design. */
+.dial{max-width:600px;margin:26px auto 0;display:flex;align-items:center;
+  justify-content:center;gap:10px;font-size:.54rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tink-3);flex-wrap:wrap}
+.dial button{font:inherit;letter-spacing:inherit;color:var(--tink-2);cursor:pointer;
+  background:rgba(255,250,232,.5);border:1px solid var(--trule-2);border-radius:2px;
+  padding:4px 9px}
+.dial button:hover{border-color:var(--trule);color:var(--tink)}
+.dial button.on{background:var(--tink);color:var(--tpaper);border-color:var(--tink)}
+
+/* ---- the scrims, un-fixed: each card's LIVE tokens without its overlay --- */
+.mk-scrim.jd-record-scrim,.mk-scrim.jd-turn-scrim{
+  position:static;inset:auto;display:block;padding:0;background:none;z-index:auto}
+.mk-card.jd-record{width:calc(var(--plate) + 40px);max-width:100%;padding:18px 20px 16px}
+.mk-card .rc-plate{margin:0}
+.mk-tcard.jd-turn{width:calc(var(--plate,320px) + 32px);max-width:100%;padding:16px;
+  --plate:clamp(240px,min(52dvh,42vw),420px)}
+.mk-tcard .jd-turn-plate{width:100%;flex:none}
+
+/* ==========================================================================
+   THE FILMSTRIP — one row under the plate: [play] [strip] [14 over 31].
+   The strip is the track: the thumbnails span it, the caret rides over them,
+   and an overprinted ruler says timeline. All three variants now carry the
+   SAME ruler — majors at the frame boundaries, three minors between, drawn
+   straight onto the pictures along the strip's floor. They differ only in
+   how the frames are ruled and in what carries "how far": A and C wash the
+   undeveloped stretch of picture, B leaves the pictures alone and inks the
+   elapsed run along the floor. Same five tokens as 42/45; each card maps
+   its own.
+   ========================================================================== */
+.mk-bar{
+  --tb-ink:#37414f; --tb-ink-2:#4d5563; --tb-rule:rgba(55,65,79,.42);
+  --tb-rule-2:rgba(55,65,79,.20); --tb-red:#b02a24;
+  --tb-mono:"Courier Prime","Courier New",Courier,monospace; --tb-paper:#efe4c6;
+  /* the focus ring is a faint pencil line, not an alarm (owner, 2026-09-16) */
+  --tb-red-soft:var(--tb-red);
+  /* the ruler's own two weights, and the tick period: one frame. C butts its
+     cells with a 2px paper gap, so its period is (W + gap)/n — which is how
+     the ruler and the frames stay in register at any frame count. */
+  --tb-tick:var(--tb-rule); --tb-tick-2:var(--tb-rule-2);
+  --tb-period:calc(100% / var(--nf));
+  position:relative;z-index:4;
+  display:flex;align-items:center;gap:10px;
+  width:100%;margin-top:12px;color:var(--tb-ink);
+  user-select:none;-webkit-user-select:none}
+.jd-record-scrim .mk-bar{
+  --tb-ink:var(--form-ink); --tb-ink-2:var(--form-ink-2); --tb-rule:var(--form-rule);
+  --tb-rule-2:var(--form-rule-2); --tb-red:var(--red); --tb-mono:var(--rc-mono);
+  --tb-paper:var(--card)}
+.jd-turn-scrim .mk-bar{
+  --tb-ink:var(--tink); --tb-ink-2:var(--tink-2); --tb-rule:var(--trule);
+  --tb-rule-2:var(--trule-2); --tb-red:var(--tred); --tb-mono:var(--tmono);
+  --tb-paper:var(--tpaper);
+  --form-rule:var(--trule); --form-rule-2:var(--trule-2)}
+@supports (color:color-mix(in srgb,red,transparent)){
+  .mk-bar{--tb-red-soft:color-mix(in srgb,var(--tb-red) 52%,transparent)}}
+
+/* the play/pause: unchanged from 42/45 — the print's button tailoring */
+.mk-play{
+  flex:0 0 auto;width:28px;height:28px;padding:5px;line-height:0;
+  color:var(--tb-ink);
+  border:1px solid var(--tb-rule);border-radius:3px;
+  background:rgba(255,250,232,.82);
+  box-shadow:0 1px 0 rgba(58,42,18,.18);
+  cursor:pointer;font:inherit}
+.mk-play svg{display:block;width:16px;height:16px}
+.mk-play .g-pause{display:none}
+.mk-bar.is-playing .mk-play .g-play{display:none}
+.mk-bar.is-playing .mk-play .g-pause{display:block}
+.mk-play:hover{background:var(--tb-ink);color:var(--tb-paper);border-color:var(--tb-ink)}
+.mk-play:active{box-shadow:none;transform:translateY(1px)}
+.mk-play:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
+
+/* THE STRIP: the whole hit target. Height comes from the cells' own
+   proportion (the plate's 84:74, so no drawing is squashed), so the control
+   is ONE row tall — no bar graph underneath. */
+.mk-strip{
+  flex:1 1 auto;min-width:80px;position:relative;
+  cursor:ew-resize;touch-action:none}
+.mk-strip::before{content:"";position:absolute;left:0;right:0;top:-7px;bottom:-7px}
+.mk-strip:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
+/* the clip lives here, not on the strip: the strip must let the caret's
+   pointer flag stand above it (an overflow:hidden strip cut the flag off in
+   A and B, and only unbordered C kept it) */
+.mk-cells{display:flex;width:100%;overflow:hidden;border-radius:2px;position:relative}
+.mk-cell{
+  flex:1 1 0;min-width:0;position:relative;line-height:0;
+  aspect-ratio:84 / 74;
+  background:rgba(255,250,232,.55)}
+.mk-cell-art{display:block;width:100%;height:100%}
+.mk-cell-art svg{display:block;width:100%;height:100%}
+/* the current cell keeps 45's red mark, at the thinned weight the owner
+   asked for — a hairline, inside the cell so it never shifts the layout */
+.mk-cell.is-cur::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 0 1px var(--tb-red-soft)}
+
+/* THE UNDEVELOPED STRETCH (A and C): the bar graph's "map vs fill" reading,
+   moved into the pictures — everything ahead of the pen sits under a wash of
+   the card's own paper, so how far along you are is read off the photograph
+   instead of off a second graph. */
+.mk-veil{
+  position:absolute;top:0;bottom:0;right:0;left:0;pointer-events:none;
+  background:var(--tb-paper);opacity:.58;
+  clip-path:inset(0 0 0 0)}
+
+/* THE RULER, OVERPRINTED (all three variants) — B's rule with everything
+   but the ticks taken away: no paper band, no baseline, nothing added under
+   the strip. Majors stand 9px off the floor at every frame boundary, three
+   minors of 4px between them, printed straight over the photographs. The
+   ruler sits ABOVE the wash, so it reads continuously end to end while the
+   pictures develop underneath it. */
+.mk-grid{position:absolute;inset:0;pointer-events:none;z-index:3}
+.mk-grid::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:9px;
+  background-image:
+    repeating-linear-gradient(90deg,var(--tb-tick) 0 1px,transparent 1px var(--tb-period)),
+    repeating-linear-gradient(90deg,var(--tb-tick-2) 0 1px,transparent 1px calc(var(--tb-period) / 4));
+  background-size:100% 100%,100% 4px;
+  background-repeat:no-repeat;
+  background-position:left bottom,left bottom}
+
+/* the playhead: 45's red-pencil caret, given a paper halo because it now
+   crosses ink rather than an empty gauge */
+.mk-caret{
+  position:absolute;top:-3px;bottom:-3px;left:0;width:2px;margin-left:-1px;z-index:5;
+  background:var(--tb-red);pointer-events:none;border-radius:1px;
+  box-shadow:0 0 0 1px rgba(255,250,232,.62)}
+.mk-caret::before{
+  content:"";position:absolute;left:50%;top:-5px;margin-left:-4.5px;
+  border-left:4.5px solid transparent;border-right:4.5px solid transparent;
+  border-top:6px solid var(--tb-red)}
+.mk-strip.is-scrubbing .mk-caret,.mk-strip:hover .mk-caret{width:3px;margin-left:-1.5px}
+
+/* ---------- A · RULED CELLS, RULER OVERPRINTED ------------------------
+   The owner's merge of A and B (2026-09-16). One bordered container, the
+   frames butted edge to edge, a hairline the full height at every cell
+   boundary — and the ruler's ticks printed over the pictures along the
+   floor. The frame divisions and the majors land on the same x by
+   construction, so the ruler is the grid, read twice: faintly all the way
+   up, firmly where a ruler's ticks would be. The stretch ahead of the pen
+   stays washed in the card's own paper. ------------------------------- */
+.mk-bar--A .mk-strip{border:1px solid var(--tb-rule);border-radius:2px}
+.mk-bar--A .mk-grid::before{     /* the cell divisions, full height */
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,
+    var(--tb-rule-2) 0 1px, transparent 1px var(--tb-period))}
+
+/* ---------- B · THE SAME, UNWASHED -------------------------------------
+   Identical to A — same container, same divisions, same overprinted ruler —
+   with the one question the merge did not settle put the other way: the
+   photographs are left alone and the elapsed run is inked along the floor
+   instead, the way a gauge does it. The only thing that differs from A is
+   what carries "how far". ---------------------------------------------- */
+.mk-bar--B .mk-strip{border:1px solid var(--tb-rule);border-radius:2px}
+.mk-bar--B .mk-grid::before{     /* the cell divisions, full height */
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,
+    var(--tb-rule-2) 0 1px, transparent 1px var(--tb-period))}
+.mk-bar--B .mk-fill{             /* the elapsed run, inked on the floor */
+  position:absolute;left:0;bottom:0;height:2px;background:var(--tb-ink-2);
+  pointer-events:none;z-index:4}
+
+/* ---------- C · CONTACT SHEET ------------------------------------------
+   No container border at all: the frames are separated by the card's own
+   paper, each in its own hairline, the way a contact sheet's frames sit on
+   the sheet. The gaps are the grid, with the same ruler overprinted; its
+   period is widened by the gap so the majors still land in them. The most
+   compact of the three, and the only one that reads as photographs rather
+   than as a widget. ---------------------------------------------------- */
+.mk-bar--C{--tb-period:calc((100% + 2px) / var(--nf))}
+.mk-bar--C .mk-cells{gap:2px}
+.mk-bar--C .mk-cell{border:1px solid var(--tb-rule-2);background:rgba(255,250,232,.55)}
+.mk-bar--C .mk-cell.is-cur{border-color:transparent}
+.mk-bar--C .mk-veil{left:-1px;right:-1px}
+
+/* the readout: a PRINTED FRACTION at the right of the strip — the mark over
+   the count, thrown off a slanted solidus. The word MARK and the word "of" are
+   gone from the print (the strip's aria-valuetext still says "mark 14 of 31"
+   in full, so nothing is lost to a screen reader), and stacking the two
+   numbers diagonally holds 24px off the strip's right end where 45's
+   MARK / N of M block held ~48px, at a LARGER type size (.62rem against .56)
+   and no box around it. It stands 16px — under the play button's 28px — so
+   the row's height floor is the button and only the strip can make the
+   control taller. No seconds anywhere. */
+.mk-read{
+  flex:0 0 auto;position:relative;
+  font-family:var(--tb-mono);font-size:.62rem;letter-spacing:0;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--tb-ink-2);white-space:nowrap}
+/* the two numbers sit off the diagonal, not stacked square on it: the mark
+   up and left, the count down and right, overlapping by half a line so the
+   whole fraction stands ~14px instead of the square form's 23px */
+.mk-read .mk-read-n,.mk-read .mk-read-d{display:block}
+.mk-read .mk-read-n{text-align:left;padding-right:1.25em}
+.mk-read .mk-read-d{text-align:right;padding-left:1.25em;margin-top:-.18em}
+/* the solidus, set at a printer's angle rather than flat. The throw has to
+   clear a two-digit numeral (1.2em in this mono) or the stroke lands on a
+   glyph — 1.25em is the tightest that still leaves it a clean lane. */
+.mk-read::after{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:var(--tb-rule);transform:translateX(-50%) rotate(22deg)}
+.mk-read b{font-weight:400;color:var(--tb-red)}
+
+/* a phone: nothing to re-flow any more — the head is already a column and
+   the strip already has everything else */
+@media (max-width:480px){
+  .mk-bar{gap:8px}
+}
+</style></head><body>
+<div class="sheet">
+  <h1>The Filmstrip</h1>
+  <p class="no">mockup 46b &middot; the thumbnails ARE the track &middot; the ruler overprinted &middot; 2026-09-16</p>
+  <hr class="rule">
+  <p class="dek">Mockup 45 stacked two things that said the same thing twice &mdash; a row of frames
+  and, under it, a bar per mark &mdash; for 60&ndash;70px of the card. So the graph is
+  <b>cut</b> and the frames <b>become</b> the track: one container, the thumbnails butted across it,
+  the red caret scrubbing over the top of the pictures, and ruling to keep it reading as a timeline.
+  One row, <b>34&ndash;48px</b> by frame count. The axis is still the <b>mark</b> &mdash; element
+  order, first to last &mdash; and dragging anywhere on the strip seeks; each cell shows the drawing
+  at the <b>end</b> of its own stretch, so cell <i>k</i> and the stretch under it are the same
+  span of the run and the last cell is the finished drawing.</p>
+
+  <p class="dek"><b>Rev b</b> settles two of 46&rsquo;s open questions. The ruling is now A and B
+  <b>merged</b>: the ruled cells keep their container and their frame divisions, and B&rsquo;s ruler
+  is <b>overprinted</b> on the pictures &mdash; the ticks alone, majors at the frame boundaries and
+  three minors between, standing 9px off the strip&rsquo;s floor, with no paper band and no baseline
+  under them. It reads as a timeline the way B did and costs the <b>zero</b> extra height A did. And
+  the readout drops the word MARK, and the word <i>of</i>, for a <b>printed fraction</b> &mdash; 14
+  over 31, set diagonally across a slanted solidus, unboxed &mdash; kept at the right of the strip
+  where 45&rsquo;s block was, but <b>24px</b> wide against its ~48 and <b>16px</b> tall against the
+  square form&rsquo;s 23, at a larger type size than either.
+  What is still unsettled is what carries <i>how far along</i>: <b>A</b> and <b>C</b> wash the
+  not-yet-drawn stretch of picture in the card&rsquo;s own paper, so the strip develops left to right
+  as it plays; <b>B</b> is A exactly, unwashed, with the elapsed run inked along the floor instead.
+  Use &larr; &rarr; (a mark a step; PageUp/Down a frame; Home/End; Space plays).</p>
+
+  <div class="dial" id="dial">
+    <span>frames</span>
+    <button type="button" data-nf="4">4</button>
+    <button type="button" data-nf="6">6</button>
+    <button type="button" data-nf="8">8</button>
+    <button type="button" data-nf="10">10</button>
+    <button type="button" data-nf="12">12</button>
+    <span>&larr; sheet furniture, not part of the design</span>
+  </div>
+
+  <h2>A &middot; Ruled cells, ruler overprinted</h2>
+  <div class="sub">one bordered container &middot; a hairline the full height at each frame boundary
+  &middot; the ruler&rsquo;s ticks printed over the pictures along the floor &middot; the stretch
+  ahead of the pen washed in the card&rsquo;s paper</div>
+  <div class="row"><figure>
+    <div class="jd-record-scrim mk-scrim" id="ex-a"></div>
+    <figcaption><b>A</b> &mdash; the merge. the grid is read twice: faintly all the way up, firmly
+    where a ruler&rsquo;s ticks would be. no height bought, and unmistakably a timeline.</figcaption>
+  </figure></div>
+
+  <h2>B &middot; The same, unwashed</h2>
+  <div class="sub">A exactly &mdash; same container, same divisions, same overprinted ruler &middot;
+  the photographs left alone, the elapsed run inked along the floor instead</div>
+  <div class="row"><figure>
+    <div class="jd-record-scrim mk-scrim" id="ex-b"></div>
+    <figcaption><b>B</b> &mdash; the one thing the merge did not settle, put the other way: the
+    photographs stay photographs and a 2px line carries how far. costs nothing over A.</figcaption>
+  </figure></div>
+
+  <h2>C &middot; Contact sheet</h2>
+  <div class="sub">no container border at all &middot; the frames separated by the card&rsquo;s own
+  paper, each in its own hairline &middot; the gaps are the grid, with the same ruler overprinted</div>
+  <div class="row"><figure>
+    <div class="jd-record-scrim mk-scrim" id="ex-c"></div>
+    <figcaption><b>C</b> &mdash; the most compact and the least widget-like: it reads as
+    photographs laid on the card rather than as a control. its tick period is widened by the 2px gap
+    so the majors still land in them.</figcaption>
+  </figure></div>
+
+  <h2>The instrument&rsquo;s plate &middot; variant A</h2>
+  <div class="sub">the same control re-tokened by the scrim it sits in &middot; a denser specimen
+  (claude-fable-5, 33 marks) as a control</div>
+  <div class="row"><figure>
+    <div class="jd-turn-scrim mk-scrim" id="ex-turn"></div>
+    <figcaption><b>the instrument</b> &mdash; one markup, one stylesheet block; only the tokens
+    change.</figcaption>
+  </figure></div>
+
+  <h2>Notes for the build</h2>
+  <ol class="notes">
+    <li><b>What changed in rev b.</b> Three things, all cheap. (a) The <b>ruler is overprinted</b>:
+      one <code>.mk-grid::after</code>, two repeating gradients keyed off <code>--tb-period</code>,
+      absolutely positioned on the strip&rsquo;s floor and painted ABOVE the wash so it reads
+      continuously while the pictures develop underneath. B&rsquo;s 12px band and its
+      <code>border-top</code> baseline are gone; the strip&rsquo;s height is the cells&rsquo; own in
+      every variant now. (b) The <b>readout</b> stays where 45 put it &mdash; at the right of the
+      strip &mdash; but is set as a fraction, the mark over the count with a <code>border-top</code>
+      between: no label, no &ldquo;of&rdquo;, and <code>aria-hidden</code>, because the strip&rsquo;s
+      <code>aria-valuetext</code> already says &ldquo;mark n of M&rdquo; in full. The two numbers are
+      thrown off a <b>slanted solidus</b> &mdash; the mark up and left, the count down and right,
+      each 1.25em off centre and overlapping vertically by .18em &mdash; with nothing boxing them in.
+      The throw has to clear a two-digit numeral (1.2em in this mono) or the stroke lands on a glyph;
+      1.25em is the tightest that still leaves a clean lane. It comes to <b>24px &times; 16px</b> at
+      .62rem, against 45&rsquo;s ~48 &times; 23 at .56rem &mdash; bigger type in a smaller footprint.
+      The strip gains roughly <b>24px</b> of track on a 380px plate for nothing, and at 16px tall it
+      is well under the play button&rsquo;s 28px &mdash; the row&rsquo;s height floor is the
+      button, and only the strip can make the control taller. A four-digit count (M &gt; 999) is the
+      one case that widens the column.</li>
+    <li><b>What changed from 45.</b> <code>barsSVG()</code> and the <code>.mk-prof</code> pair are
+      deleted outright; the frames stop being buttons and become the track&rsquo;s own content
+      (<code>pointer-events</code> stay on the strip, so a press anywhere scrubs continuously rather
+      than jumping to a frame&rsquo;s end &mdash; strictly more control, one less gesture to
+      explain). Everything else &mdash; arming, the per-mark start/end walk, the cumulative
+      <i>T<sub>i</sub></i> axis, play-only-what-is-ahead, the frame builder &mdash; is 45&rsquo;s
+      code unchanged.</li>
+    <li><b>Height.</b> The strip&rsquo;s height is the cells&rsquo; own: the plate&rsquo;s 84:74 at
+      one <i>n</i>th of the track&rsquo;s width, so nothing is squashed and the number of frames
+      <i>is</i> the height dial. Under a 420px plate: 12 frames &rarr; 23px, 8 &rarr; 34px,
+      6 &rarr; 46px, 4 &rarr; 68px. <b>Twelve is the owner&rsquo;s pick</b> (2026-09-16): the most
+      stages the strip will show, and the shortest row &mdash; 23px against 45&rsquo;s 62px stack.
+      The dial at the top of this sheet rebuilds all four exhibits live; try 4 against 12 to see what
+      twelve costs in thumbnail size.</li>
+    <li><b>The wash (A, C).</b> <code>.mk-veil</code> is the card&rsquo;s own
+      <code>--tb-paper</code> at .58, clipped to the stretch ahead of the caret &mdash; a
+      continuous reading laid over discrete cells, so progress is smooth even though the pictures
+      step. It is the bar graph&rsquo;s <code>--done</code> clip, moved onto the photographs. It
+      costs one absolutely-positioned div and no extra height. Open question: on the blueprint
+      paper the wash is a blue veil over blue line-work &mdash; check it before committing (the
+      paper button on each exhibit switches).</li>
+    <li><b>The ruler (all three).</b> Two repeating gradients keyed off <code>--nf</code>, which the
+      control writes onto <code>.mk-bar</code> as an inline custom property. Majors at the frame
+      boundaries mean the ruler and the filmstrip agree by construction at any frame count &mdash;
+      including in C, whose 2px paper gaps widen the period to
+      <code>calc((100% + 2px) / var(--nf))</code> so the majors land in the gaps rather than
+      drifting into the pictures. The three minors are decoration, not a unit &mdash; a mark is not
+      divisible, so no tick can honestly stand for a quarter of one. If that bothers us, the minors
+      go and the majors stay. Weights are <code>--tb-tick</code> / <code>--tb-tick-2</code>, which
+      default to the card&rsquo;s own rule colours; if the ticks read thin over dark line-work those
+      are the two knobs.</li>
+    <li><b>The red mark.</b> The current cell keeps 45&rsquo;s red outline at the thinned weight
+      (1px, ~52%, inset so it never shifts the row). With the caret standing on the strip it is
+      arguably redundant &mdash; but it is the thing that survives when the caret is parked on a
+      boundary, and the owner asked to keep it.</li>
+    <li><b>Cost, unchanged.</b> <i>n</i> &times; (elements + 1&ndash;2 CSSAnimations each), built
+      in place and never moved (re-inserting an element restarts its animations from zero and the
+      frame loses its moment). Build time prints to the console as <code>[mk46]</code>. Fewer
+      frames than 45 by default, so the phone spike on a 600-mark drawing gets smaller, not
+      bigger.</li>
+    <li><b>Still open.</b> (0) A or B &mdash; the wash on the photographs, or the inked line on the
+      floor. They are now identical in everything else, so this is the whole remaining call. (a) Does the last cell &mdash; always the finished drawing, always
+      identical to the plate above it &mdash; earn its width, or should the strip run 1&hellip;n&minus;1
+      and let the plate be its own last frame? (b) A hover preview on the strip (show that moment on
+      the plate without moving the caret) is nearly free here and would make the strip a browser as
+      well as a scrubber. (c) On a phone the strip is the plate&rsquo;s width minus 38px; at 6
+      frames that is ~46px tall &mdash; readable, but the cells are ~52px wide, which is about the
+      smallest a thumbnail of this line-work survives.</li>
+  </ol>
+
+  <footer>live junk-drawer.css + jd-core.js &middot; the plate is cardHTML&rsquo;s markup &middot;
+  the strip is the track &middot; the axis is the mark &middot; seeking through the web animations api</footer>
+</div>
+
+<!-- jd-core.js expects the drawer's stage to exist; the gallery harness's
+     hidden stub, copied verbatim -->
+<div class="jd-stage" style="display:none" aria-hidden="true">
+  <div class="jd-frame"><div class="jd-well"><div class="jd-pile"></div></div></div>
+</div>
+<script src="/art/junk-drawer/jd-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
+  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
+
+  var PLAY_G = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<path class="g-play" d="M4 2.6 13.4 8 4 13.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path class="g-pause" d="M5 2.6v10.8M11 2.6v10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>';
+
+  /* the marks: the engine's element walk (same selector, same skips, same
+     visibility test) so the list is exactly what JD_drawOn schedules —
+     45's marksOf, verbatim */
+  function marksOf(svg) {
+    var all = svg.querySelectorAll(SEL), out = [], i, el, cs, L, stroked, filled;
+    for (i = 0; i < all.length; i++) {
+      el = all[i];
+      if (el.closest(SKIP)) continue;
+      cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      L = 0;
+      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
+      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
+        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' && L > 0;
+      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
+      if (!stroked && !filled) continue;
+      out.push({ el: el, L: Math.max(L, 4), start: 0, end: 0 });
+    }
+    return out;
+  }
+
+  function controlHTML(variant, label, svgText, pfx, NF) {
+    var h = '<div class="mk-bar mk-bar--' + variant + '" role="group" aria-label="' + label +
+      '" style="--nf:' + NF + '">' +
+      '<button type="button" class="mk-play" title="play / pause the drawing" aria-label="Play the drawing" aria-pressed="false">' + PLAY_G + '</button>' +
+      '<div class="mk-strip" role="slider" tabindex="0" aria-label="Drawing timeline, one step per mark" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">' +
+      '<div class="mk-cells">';
+    for (var k = 0; k < NF; k++) {
+      h += '<span class="mk-cell"><span class="mk-cell-art">' +
+        window.JD_svgInst(svgText, pfx + 'f' + k + '_') + '</span></span>';
+    }
+    /* the wash first, then the ruler over it, then the caret over both */
+    h += '</div>' +
+      (variant === 'B' ? '<div class="mk-fill"></div>' : '<div class="mk-veil"></div>') +
+      '<div class="mk-grid"></div>' +
+      '<div class="mk-caret"></div>' +
+      '</div>' +
+      '<div class="mk-read" aria-hidden="true">' +
+      '<span class="mk-read-n"><b class="mk-n">0</b></span>' +
+      '<span class="mk-read-d"><span class="mk-m">0</span></span></div>' +
+      '</div>';
+    return h;
+  }
+
+  /* =====================================================================
+     THE CONTROL. 45's sheetbar with the graph cut and the strip promoted
+     to the track: svg = the plate's drawing (in the DOM), host = where the
+     control goes, svgText/pfx = the source, re-instanced per cell.
+     ===================================================================== */
+  function filmstrip(svg, host, svgText, pfx, label, variant, NFwant) {
+    var NF = NFwant || 12;
+    host.insertAdjacentHTML('beforeend', controlHTML(variant, label, svgText, pfx, NF));
+    var bar = host.lastElementChild;
+    var play = bar.querySelector('.mk-play'), strip = bar.querySelector('.mk-strip');
+    var veil = bar.querySelector('.mk-veil'), fill = bar.querySelector('.mk-fill');
+    var caret = bar.querySelector('.mk-caret');
+    var rN = bar.querySelector('.mk-n'), rM = bar.querySelector('.mk-m');
+    var cells = Array.prototype.slice.call(bar.querySelectorAll('.mk-cell'));
+    var anims = [], clock = null, marks = [], T = [0], M = 0, total = 0, secs = 0;
+    var u = 0, playing = false, raf = 0, armed = false, framesBuilt = false, frameC = [];
+
+    /* ARM the plate: run the engine, park the run, read each mark's start and
+       end off its own animations, build the cumulative end times T[i] */
+    function arm() {
+      var old = svg.querySelectorAll(SEL);
+      for (var oi = 0; oi < old.length; oi++) {
+        old[oi].style.animation = ''; old[oi].style.strokeDasharray = '';
+        old[oi].style.strokeDashoffset = '';
+        old[oi].style.removeProperty('--jdfo'); old[oi].style.removeProperty('--jdo');
+      }
+      secs = window.JD_drawOn(svg, { force: true });
+      if (!secs) { armed = false; return false; }
+      svg.__jdDrawSeq = -1;
+      anims = svg.getAnimations({ subtree: true });
+      if (!anims.length) { armed = false; return false; }
+      marks = marksOf(svg);
+      var byEl = new Map();
+      marks.forEach(function (m) { byEl.set(m.el, m); m.start = Infinity; m.end = 0; });
+      clock = null; var cEnd = -1;
+      anims.forEach(function (a) {
+        var tm = a.effect.getTiming();
+        var s = (+tm.delay || 0) / 1000, e = s + (+tm.duration || 0) / 1000;
+        var m = byEl.get(a.effect.target);
+        if (m) { if (s < m.start) m.start = s; if (e > m.end) m.end = e; }
+        if (e > cEnd) { cEnd = e; clock = a; }
+      });
+      marks = marks.filter(function (m) { return m.end > 0; });
+      M = marks.length;
+      T = [0];
+      for (var i = 0; i < M; i++) T[i + 1] = Math.max(T[i], marks[i].end);
+      total = T[M];
+      /* each cell shows the END of its own stretch: frame and stretch are
+         then the same span, and the last cell is the finished drawing */
+      frameC = [];
+      for (var k = 0; k < NF; k++) frameC.push(Math.round((k + 1) * M / NF));
+      cells.forEach(function (c, k) {
+        c.title = 'marks 1 to ' + frameC[k] + ' of ' + M;
+      });
+      strip.setAttribute('aria-valuemax', M);
+      rM.textContent = M;
+      armed = true;
+      if (!framesBuilt) buildFrames();
+      return true;
+    }
+    /* the cells: paused copies, each held at its stretch's end forever */
+    function buildFrames() {
+      var t0 = performance.now(), n = 0;
+      cells.forEach(function (c, k) {
+        var fs = c.querySelector('svg');
+        if (!fs) return;
+        window.JD_drawOn(fs, { force: true, secs: secs });
+        fs.__jdDrawSeq = -1;
+        var fa = fs.getAnimations({ subtree: true });
+        n += fa.length;
+        var ms = T[frameC[k]] * 1000;
+        fa.forEach(function (a) { a.pause(); a.currentTime = ms; });
+      });
+      framesBuilt = true;
+      console.log('[mk46] ' + pfx + ' ' + variant + ' · ' + NF + ' cells, ' + M + ' marks, ' + n +
+        ' paused animations, built in ' + (performance.now() - t0).toFixed(1) + ' ms');
+    }
+    function live() {
+      return armed && anims.length && clock && clock.playState !== 'idle' && document.contains(svg);
+    }
+    function ensure() { if (!live()) arm(); return armed; }
+
+    /* the mark axis <-> time */
+    function tOf(uu) {
+      uu = Math.max(0, Math.min(M, uu));
+      var i = Math.ceil(uu - 1e-9);
+      if (i <= 0) return 0;
+      return T[i - 1] + (uu - (i - 1)) * (T[i] - T[i - 1]);
+    }
+    function uOf(tt) {
+      if (tt <= 0) return 0;
+      for (var i = 1; i <= M; i++) {
+        if (tt <= T[i] + 1e-9) {
+          var span = T[i] - T[i - 1];
+          return span > 0 ? (i - 1) + (tt - T[i - 1]) / span : i;
+        }
+      }
+      return M;
+    }
+    function markN(uu) { return Math.max(0, Math.ceil(uu - 1e-9)); }
+    function curFrame(uu) {
+      if (uu <= 0) return 0;
+      var n = markN(uu), k = 0;
+      while (k < NF - 1 && n > frameC[k]) k++;
+      return k;
+    }
+
+    function paint() {
+      var p = M ? u / M : 0;
+      caret.style.left = (p * 100) + '%';
+      /* the undeveloped stretch (A, C) / the inked baseline (B) */
+      if (veil) veil.style.clipPath = 'inset(0 0 0 ' + (p * 100).toFixed(3) + '%)';
+      if (fill) fill.style.width = (p * 100).toFixed(3) + '%';
+      var n = markN(u);
+      rN.textContent = n;
+      strip.setAttribute('aria-valuenow', n);
+      strip.setAttribute('aria-valuetext', 'mark ' + n + ' of ' + M);
+      var cf = curFrame(u);
+      cells.forEach(function (c, k) { c.classList.toggle('is-cur', k === cf); });
+    }
+    function setPlaying(on) {
+      playing = on;
+      bar.classList.toggle('is-playing', on);
+      play.setAttribute('aria-pressed', on ? 'true' : 'false');
+      play.setAttribute('aria-label', on ? 'Pause the drawing' : 'Play the drawing');
+    }
+    function seekU(uu) {
+      if (!ensure()) return;
+      u = Math.max(0, Math.min(M, uu));
+      var ms = tOf(u) * 1000;
+      anims.forEach(function (a) { a.pause(); a.currentTime = ms; });
+      if (playing) { setPlaying(false); cancelAnimationFrame(raf); }
+      paint();
+    }
+    function tick() {
+      if (!playing) return;
+      var tt = Math.min(total, (clock.currentTime || 0) / 1000);
+      u = uOf(tt);
+      paint();
+      if (clock.playState === 'finished' || tt >= total) { finish(); return; }
+      raf = requestAnimationFrame(tick);
+    }
+    function finish() {
+      u = M; setPlaying(false); cancelAnimationFrame(raf);
+      anims.forEach(function (a) { a.pause(); a.currentTime = total * 1000; });
+      paint();
+    }
+    function start() {
+      if (!ensure()) return;
+      if (u >= M - 1e-6) u = 0;
+      var tt = tOf(u), ms = tt * 1000;
+      /* play only what is still ahead: play() on a finished animation
+         rewinds it to zero and the element vanishes mid-run */
+      anims.forEach(function (a) {
+        var tm = a.effect.getTiming();
+        var end = ((+tm.delay || 0) + (+tm.duration || 0)) / 1000;
+        a.currentTime = ms;
+        if (end > tt + 1e-6) a.play(); else a.pause();
+      });
+      clock.onfinish = function () { if (playing) finish(); };
+      setPlaying(true);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(tick);
+    }
+    function pause() {
+      if (!playing) return;
+      u = uOf(Math.min(total, (clock.currentTime || 0) / 1000));
+      anims.forEach(function (a) { a.pause(); });
+      setPlaying(false); cancelAnimationFrame(raf); paint();
+    }
+    function toggle() { if (playing) pause(); else start(); }
+
+    /* the strip: pointer scrub with capture; keyboard per the slider pattern */
+    function posU(e) {
+      var r = strip.getBoundingClientRect();
+      var x = (e.clientX - r.left) / (r.width || 1);
+      return Math.max(0, Math.min(1, x)) * M;
+    }
+    var dragging = false;
+    strip.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      e.preventDefault();
+      try { strip.setPointerCapture(e.pointerId); } catch (x) {}
+      dragging = true; strip.classList.add('is-scrubbing');
+      ensure(); seekU(posU(e)); strip.focus({ preventScroll: true });
+    });
+    strip.addEventListener('pointermove', function (e) { if (dragging) seekU(posU(e)); });
+    function drop(e) {
+      if (!dragging) return;
+      dragging = false; strip.classList.remove('is-scrubbing');
+      try { strip.releasePointerCapture(e.pointerId); } catch (x) {}
+    }
+    strip.addEventListener('pointerup', drop);
+    strip.addEventListener('pointercancel', drop);
+    strip.addEventListener('click', function (e) { if (e.clientX || e.clientY) seekU(posU(e)); });
+    strip.addEventListener('keydown', function (e) {
+      var k = e.key, step = M / NF;
+      if (k === 'ArrowLeft' || k === 'ArrowDown') seekU(Math.ceil(u - 1e-9) - 1);
+      else if (k === 'ArrowRight' || k === 'ArrowUp') seekU(Math.floor(u + 1e-9) + 1);
+      else if (k === 'PageDown') seekU(u - step);
+      else if (k === 'PageUp') seekU(u + step);
+      else if (k === 'Home') seekU(0);
+      else if (k === 'End') seekU(M);
+      else if (k === ' ' || k === 'Enter') toggle();
+      else return;
+      e.preventDefault();
+    });
+    play.addEventListener('click', toggle);
+
+    if (arm()) {
+      if (window.JD_reduced && window.JD_reduced()) seekU(M);
+      else { u = 0; start(); }
+    }
+    return {
+      bar: bar, seekMark: seekU, play: start, pause: pause, toggle: toggle,
+      get: function () { return { u: u, mark: markN(u), M: M, t: tOf(u), total: total, playing: playing,
+        anims: anims.length, playState: clock ? clock.playState : null, frame: curFrame(u), frames: NF,
+        variant: variant, frameC: frameC.slice() }; },
+      destroy: function () { cancelAnimationFrame(raf); anims.forEach(function (a) { a.cancel(); }); bar.remove(); }
+    };
+  }
+  window.MK_filmstrip = filmstrip;
+
+  /* ---------------------------------------------------------------------
+     THE EXHIBITS
+     --------------------------------------------------------------------- */
+  var esc = window.JD_esc || function (s) { return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  function paperBtn() {
+    return '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="false" ' +
+      'title="blueprint paper — for light artwork" aria-label="Switch to blueprint paper">' +
+      (window.JD_paper ? window.JD_paper.icon() : '') + '</button>';
+  }
+  /* the report card plate: cardHTML's .rc-col-l markup (jd-record.js), with
+     plateBtnsHTML's REPLAY button removed */
+  function recordPlate(svgText, entry, resp, pfx) {
+    return '<div class="jd-record mk-card">' +
+      '<div class="rc-col-l">' +
+      '<div class="rc-block rc-plate">' +
+      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      paperBtn() +
+      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
+      '<div class="rc-plate-art">' + window.JD_svgInst(svgText, pfx + '_') + '</div>' +
+      '<div class="rc-notes">' +
+      '<span class="rc-note-line"><span class="rc-note-l">Model</span><span class="rc-note-v">' + esc(resp.model) + '</span></span>' +
+      '<span class="rc-note-line"><span class="rc-note-l">Date</span><span class="rc-note-v">' + esc(resp.date) + '</span></span>' +
+      '</div>' +
+      '<div class="rc-plate-btns rc-zoom-keep">' +
+      '<a class="rc-dl" href="' + esc(resp.url) + '" download="' + esc(entry.id) + '.svg" title="download the SVG as generated">DOWNLOAD SVG ⤓</a>' +
+      '</div>' +
+      '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
+      '</div>' +
+      '</div></div>';
+  }
+  /* the instrument's plate: plate() in jd-turn.js minus .jd-turn-draw--icon */
+  function turnPlate(svgText, slot) {
+    return '<div class="jd-turn mk-tcard">' +
+      '<figure class="jd-turn-plate">' +
+      '<div class="jd-turn-art">' +
+      '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
+      '<div class="jd-turn-art-in" role="img" aria-label="drawing ' + slot + '">' +
+      window.JD_svgInst(svgText, 'mkt_') + '</div>' +
+      '</div>' +
+      '<figcaption>Model ' + slot + '</figcaption>' +
+      '</figure></div>';
+  }
+
+  var BASE = '/art/junk-drawer/items/2026-07-28-desktop-succulent/';
+  function fetchText(u) { return fetch(u).then(function (r) { return r.text(); }); }
+
+  /* the three report-card exhibits, and the instrument, all rebuilt by the
+     frame dial — the control is built IN PLACE and never moved (re-inserting
+     an element restarts its CSS animations and every cell loses its moment) */
+  var NF = 12;
+  var RECS = [{ id: 'ex-a', v: 'A', pfx: 'mka' },
+              { id: 'ex-b', v: 'B', pfx: 'mkb' },
+              { id: 'ex-c', v: 'C', pfx: 'mkc' }];
+  var recTxt = null, turnTxt = null;
+  window.MK = {};
+
+  function buildRecord(spec) {
+    var host = document.getElementById(spec.id);
+    if (!host || !recTxt) return;
+    if (window.MK[spec.v]) { try { window.MK[spec.v].destroy(); } catch (e) {} }
+    host.innerHTML = recordPlate(recTxt, { id: '2026-07-28-desktop-succulent' },
+      { model: 'Kimi K3', date: '28 Jul 2026', url: BASE + 'kimi-k3.svg' }, spec.pfx);
+    var plate = host.querySelector('.rc-plate');
+    plate.querySelector('.rc-paper').addEventListener('click', function () {
+      var on = plate.classList.toggle('is-blueprint');
+      this.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    window.MK[spec.v] = filmstrip(plate.querySelector('.rc-plate-art svg'),
+      host.querySelector('.rc-col-l'), recTxt, spec.pfx,
+      'Replay controls, report card, variant ' + spec.v, spec.v, NF);
+  }
+  function buildTurn() {
+    var host = document.getElementById('ex-turn');
+    if (!host || !turnTxt) return;
+    if (window.MK.T) { try { window.MK.T.destroy(); } catch (e) {} }
+    host.innerHTML = turnPlate(turnTxt, 'A');
+    var art = host.querySelector('.jd-turn-art');
+    var mount = document.createElement('div');
+    mount.className = 'mk-mount';
+    art.insertAdjacentElement('afterend', mount);
+    window.MK.T = filmstrip(art.querySelector('svg'), mount, turnTxt, 'mkt',
+      'Replay controls, drawing A', 'A', NF);
+  }
+  function buildAll() { RECS.forEach(buildRecord); buildTurn(); }
+
+  var dial = document.getElementById('dial');
+  function markDial() {
+    Array.prototype.forEach.call(dial.querySelectorAll('button'), function (b) {
+      b.classList.toggle('on', +b.dataset.nf === NF);
+    });
+  }
+  dial.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-nf]');
+    if (!b) return;
+    NF = +b.dataset.nf; markDial(); buildAll();
+  });
+  markDial();
+
+  fetchText(BASE + 'kimi-k3.svg').then(function (txt) {
+    recTxt = txt; RECS.forEach(buildRecord);
+  }).catch(function (e) { console.error('record exhibits', e); });
+
+  fetchText(BASE + 'claude-fable-5.svg').then(function (txt) {
+    turnTxt = txt; buildTurn();
+  }).catch(function (e) { console.error('turn exhibit', e); });
+})();
+</script>
+</body></html>

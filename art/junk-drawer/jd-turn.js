@@ -300,6 +300,8 @@
     stopSlowTimer();
     scrim.classList.remove('is-on');
     document.documentElement.classList.remove('jd-turn-open');
+    /* the bar goes with the innerHTML below; its parked animations do not */
+    if (filmstrip) { try { filmstrip.destroy(); } catch (e) {} filmstrip = null; }
     bodyEl.innerHTML = '';
     if (lastFocus && document.contains(lastFocus)) {
       try { lastFocus.focus(); } catch (e) {}
@@ -495,6 +497,33 @@
      declared, the body, the dialog's accessible name, and the card's
      data-view — the one hook the landscape bench's width and grid ride on
      (see .jd-turn[data-view="bench"] in junk-drawer.css). */
+  /* THE FILMSTRIP (owner, 2026-09-16): the replay/scrub control goes INSIDE
+     the bench's pinned plate, under the artwork, so the sticky pin and the
+     landscape grid are untouched. Only the bench gets one: the reveal and the
+     call show several plates at once, and n × twelve parked animation sets is
+     a cost the bench's single plate does not pay. Every write to the card goes
+     through paint, so mounting here is mounting once per view — and the old
+     control is destroyed first, since its bar goes with the innerHTML but its
+     parked animations would not. */
+  var filmstrip = null, fsSeq = 0;
+  function mountFilmstrip() {
+    if (filmstrip) { try { filmstrip.destroy(); } catch (e) {} filmstrip = null; }
+    if (!window.JD_filmstrip || !bodyEl) return;
+    var art = bodyEl.querySelector('.jd-bench .jd-turn-pin .jd-turn-plate .jd-turn-art');
+    var svg = art && art.querySelector('.jd-turn-art-in > svg');
+    if (!svg) return;
+    try {
+      filmstrip = window.JD_filmstrip(svg, art, {
+        /* autoplay:false — the bench's plate never drew itself on arrival
+           (the pencil was the only way), and the play button is that pencil
+           now; the control parks at the finished drawing instead */
+        autoplay: false,
+        pfx: 'fst' + (++fsSeq) + '_',
+        label: 'Replay this drawing'
+      });
+    } catch (e) {}
+  }
+
   function paint(h) {
     /* an open enlargement belongs to the plate it was lifted from, and this
        paint is about to replace that plate — peel the layer (silently: the
@@ -517,6 +546,7 @@
        clears any drift left running from the previous paint — those live on
        timers, not on the elements, so dropping the DOM would not stop them. */
     if (window.JD_dark) window.JD_dark.mount(bodyEl);
+    mountFilmstrip();
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
@@ -1692,7 +1722,10 @@
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      plate(slot, { pin: true, zoom: true, replay: true, paper: true }) + '</div></div>' +
+      /* replay:false since 2026-09-16 — the filmstrip mounted under this
+         plate by paint() carries the replay now, and the pencil beside it
+         would be a second button doing the same thing */
+      plate(slot, { pin: true, zoom: true, replay: false, paper: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
       /* the prompt OPENS the paperwork column, above the rows (owner,
          2026-08-28) — and, the wrappers being display:contents in the
@@ -2900,9 +2933,16 @@
          filed, else the one the entry carries today (owner, 2026-08-30) */
       work.size = job.size || null;
       var order = job.responses.slice();
-      for (var i = order.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var t = order[i]; order[i] = order[j]; order[j] = t;
+      /* the deal is BLIND: slots are shuffled so the curator cannot know
+         which model drew which print. `fixedOrder` opts out — the only
+         caller is the /about/ walkthrough, which has to be able to say
+         "this one is Kimi's" and drive the rail to it. The bench never
+         sets it, so its blind deal is untouched (2026-09-14). */
+      if (!job.fixedOrder) {
+        for (var i = order.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = order[i]; order[i] = order[j]; order[j] = t;
+        }
       }
       order.forEach(function (resp, k) {
         var slot = JD_SLOTS[k];

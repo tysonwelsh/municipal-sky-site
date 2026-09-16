@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The ruler on the plate&rsquo;s edge &mdash; replay as a scale</title>
+<!-- ==========================================================================
+     MOCKUP 43 — the ruler on the plate's edge. A replay/scrub control for the
+     drawer's draw-on animation, printed as a RULER along the bottom edge of
+     the photograph, inside the margin band the artwork already leaves clear.
+     Loads the LIVE stylesheet + jd-core.js; the plate is composed from the
+     card's own classes. The only new CSS is the ruler (.jd-ruler) and this
+     sheet's layout. Runs under the dev server:
+       JD_DEV_MOCK=1 php -S 127.0.0.1:8000 router.php
+       http://127.0.0.1:8000/art/junk-drawer/mockups/mockup-43-edge-ruler.html
+     ========================================================================== -->
+<script>
+  /* jd-core.js boots the pile on load; this page has no drawer, so data.php
+     is answered with an empty item list (card-gallery.html's trick) and the
+     loader stands down quietly. Every other request passes through. */
+  (function () {
+    var orig = window.fetch.bind(window);
+    window.fetch = function (u, o) {
+      if (String(u).indexOf('data.php') >= 0) {
+        return orig(u, o).then(function (r) {
+          return r.json().then(function (d) {
+            d.items = [];
+            return { ok: true, json: function () { return Promise.resolve(d); } };
+          });
+        });
+      }
+      return orig(u, o);
+    };
+  })();
+</script>
+<link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css">
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:48px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;line-height:2;
+  color:var(--tink-3);margin:0 auto 20px;max-width:560px}
+.row{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+figure{margin:0;max-width:100%}
+figcaption{margin-top:10px;font-size:.52rem;letter-spacing:.12em;line-height:2;
+  text-transform:uppercase;color:var(--tink-3);text-align:center;max-width:420px}
+figcaption b{color:var(--tink-2);letter-spacing:.16em}
+.notes{max-width:600px;margin:22px auto 0;font-size:.62rem;line-height:1.9;color:var(--tink-2);
+  padding-left:1.2em}
+.notes li{margin:0 0 .5em}
+.notes code{font-family:var(--tmono);color:var(--tink);font-size:.6rem}
+.notes b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
+  color:var(--tink-3);text-transform:uppercase;line-height:2.2}
+kbd{font-family:var(--tmono);font-size:.58rem;border:1px solid var(--trule);border-radius:2px;
+  padding:0 .35em;color:var(--tink)}
+
+/* ---- the report card's tokens, copied off .jd-record-scrim (which is a
+   fixed, display:none layer and can't be used as a wrapper here) ---------- */
+.mk-card{
+  --card:#efe4c6; --form-ink:#37414f; --form-ink-2:#4d5563;
+  --form-rule:rgba(55,65,79,.42); --form-rule-2:rgba(55,65,79,.20);
+  --typed:#3a3428; --red:#b02a24;
+  --form:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --hand:"Bradley Hand","Segoe Print","Chalkboard SE","Chalkboard",cursive;
+  --rc-mono:"Courier Prime","Courier New",Courier,monospace;
+  width:min(420px,100%);margin:0 auto;color:var(--form-ink)}
+/* the rating instrument's, off .jd-turn-scrim */
+.mk-turn{
+  --tpaper:#ece0bf; --tink:#33240f; --tink-2:rgba(51,36,15,.82);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19); --tred:#b3402f;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --thand:"Bradley Hand","Segoe Print","Chalkboard SE","Chalkboard",cursive;
+  --t-body:.66rem;
+  width:min(360px,100%);margin:0 auto;color:var(--tink)}
+
+/* ==========================================================================
+   THE RULER (.jd-ruler) — the one new control, shared by both cards.
+   A scale printed along the plate's bottom edge in the graph paper's own
+   blue, with a red-pencil caret marking the moment. Three rows, top down:
+   the caret's readout ("14 of 35 · 1.3 s", in the pencilled hand), the
+   element marks (one hairline per drawn element at its start time — dark
+   once drawn, faint while pending), and the scale itself (fine ticks every
+   2%, medium every 10%, numbered every 10 / 20). The play tab at the left
+   end is the ruler's end cap; the track is the slider.
+   Tokens: --rl-ink (the scale), --rl-red (the caret), --rl-paper (the halo
+   behind the numbers), --rl-h (the box height, read by the plate's margin
+   furniture to move up out of its way). Each card sets --rl-red from its
+   own red; blueprint paper re-tints all three.
+   ========================================================================== */
+.rc-plate, .jd-turn-art{ --rl-h:32px; }
+.rc-plate.is-compact, .jd-turn-art.is-compact{ --rl-h:26px; }
+.jd-ruler{
+  --rl-ink:#4a628a; --rl-red:var(--red, var(--tred, #b02a24)); --rl-paper:#f8f3e2;
+  --rl-red-soft:var(--rl-red);
+  --rl-btn-ink:#46505e; --rl-btn-rule:var(--form-rule, var(--trule, rgba(55,65,79,.42)));
+  --rl-btn-hover:var(--form-ink, var(--tink, #37414f)); --rl-btn-hover-ink:var(--card, var(--tpaper, #efe4c6));
+  position:absolute;left:8%;right:8%;bottom:3px;height:var(--rl-h);z-index:3;
+  display:flex;align-items:flex-end;gap:7px;
+  font-family:var(--rc-mono, var(--tmono));
+}
+.is-blueprint .jd-ruler{
+  --rl-ink:rgba(214,230,255,.88); --rl-red:#ffb3a7; --rl-paper:#1b4a8a;
+  --rl-btn-ink:#dce8ff; --rl-btn-rule:rgba(214,230,255,.45);
+  --rl-btn-hover:#f2f6ff; --rl-btn-hover-ink:#1b4a8a;
+}
+/* the play tab: the ruler's end cap, in the plate buttons' tailoring
+   (hairline border, 3px radius, cream fill, 1px press shadow) so it reads
+   as the same family as DOWNLOAD SVG. The glyph is a DRAWN mark in the ✕
+   idiom — round-capped 1.7px strokes in currentColor: an open triangle
+   (play) that becomes two bars (pause). No arrows, no pencil. */
+.jd-ruler-play{
+  flex:0 0 auto;width:22px;height:22px;padding:0;line-height:0;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--rl-btn-ink);
+  border:1px solid var(--rl-btn-rule);border-radius:3px;
+  background:rgba(255,250,232,.82);
+  box-shadow:0 1px 0 rgba(58,42,18,.18);
+}
+.is-blueprint .jd-ruler-play{background:rgba(27,74,138,.85)}
+.jd-ruler-play svg{display:block;width:13px;height:13px}
+.jd-ruler-play .g-pause{display:none}
+.jd-ruler.is-playing .jd-ruler-play .g-play{display:none}
+.jd-ruler.is-playing .jd-ruler-play .g-pause{display:block}
+.jd-ruler-play:hover{background:var(--rl-btn-hover);color:var(--rl-btn-hover-ink);border-color:var(--rl-btn-hover)}
+.jd-ruler-play:active{box-shadow:none;transform:translateY(1px)}
+/* the focus ring is a faint pencil line, not an alarm (owner, 2026-09-16):
+   1px of the card's own red at about half strength — color-mix where it is
+   understood, the solid red at 1px elsewhere. */
+.jd-ruler-play:focus-visible{outline:1px solid var(--rl-red-soft);outline-offset:2px}
+@supports (color:color-mix(in srgb,red,transparent)){
+  .jd-ruler{--rl-red-soft:color-mix(in srgb,var(--rl-red) 52%,transparent)}}
+/* the track: the whole scale is the slider. touch-action none overrides the
+   plate's pan-y so a sideways thumb scrubs instead of swiping the record. */
+.jd-ruler-track{
+  flex:1 1 auto;min-width:0;height:100%;position:relative;
+  cursor:col-resize;touch-action:none;user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.jd-ruler-track:focus{outline:none}
+.jd-ruler-track:focus-visible{outline:1px solid var(--rl-red-soft);outline-offset:2px}
+.jd-ruler-track svg{display:block;position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.jd-ruler-track .rl-base{stroke:var(--rl-ink);stroke-width:1}
+.jd-ruler-track .rl-tick{stroke:var(--rl-ink);stroke-width:1}
+.jd-ruler-track .rl-tick.fine{stroke-opacity:.55}
+.jd-ruler-track .rl-num{fill:var(--rl-ink);font-family:var(--rc-mono, var(--tmono));
+  font-size:7px;letter-spacing:.04em;paint-order:stroke;stroke:var(--rl-paper);stroke-width:2.5px;
+  stroke-linejoin:round}
+.jd-ruler-track.is-compact .rl-num{font-size:6px}
+.jd-ruler-track .rl-mark{stroke:var(--form-ink, var(--tink, #37414f));stroke-width:1}
+.jd-ruler-track .rl-marks-pend .rl-mark{stroke-opacity:.22}
+.jd-ruler-track .rl-marks-done .rl-mark{stroke-opacity:.8}
+.is-blueprint .jd-ruler-track .rl-mark{stroke:#f2f6ff}
+/* the caret: red pencil. a hairline through the whole box, a small filled
+   triangle at its head, the readout beside it in the hand */
+.jd-ruler-track .rl-caret line{stroke:var(--rl-red);stroke-width:1}
+.jd-ruler-track .rl-caret path{fill:var(--rl-red)}
+.jd-ruler-track .rl-read{fill:var(--rl-red);font-family:var(--hand, var(--thand, cursive));
+  font-size:10.5px;letter-spacing:.01em;paint-order:stroke;stroke:var(--rl-paper);stroke-width:3px;
+  stroke-linejoin:round}
+.jd-ruler-track.is-compact .rl-read{font-size:9px}
+.jd-ruler-track .rl-read .rl-secs{font-size:8.5px;opacity:.85}
+.jd-ruler-track.is-compact .rl-read .rl-secs{font-size:7.5px}
+/* a hover ghost: where a press would land */
+.jd-ruler-track .rl-ghost{stroke:var(--rl-red);stroke-width:1;stroke-opacity:.35;display:none}
+.jd-ruler-track:hover .rl-ghost{display:block}
+.jd-ruler.is-scrubbing .jd-ruler-track .rl-ghost{display:none}
+
+/* ---- the margin band, rearranged around the ruler (report card) ----------
+   The ruler takes the very bottom edge; the notes, DOWNLOAD SVG and the
+   file number each move up by the ruler's height, and REPLAY leaves the
+   button row — the play tab is its replacement. The artwork's frame
+   (.rc-plate-art, inset 6% 8% 20%) does not move. */
+.mk-card .rc-notes{bottom:calc(var(--rl-h) + 9px)}
+.mk-card .rc-plate-btns{bottom:calc(var(--rl-h) + 20px)}
+.mk-card .rc-note-no{bottom:calc(var(--rl-h) + 7px)}
+/* the instrument's plate has no margin band today (its art is inset 7% all
+   round): here the frame yields its bottom 17% to the ruler, the record
+   card's own arrangement */
+.mk-turn .jd-turn-art-in{inset:7% 7% 17%}
+.mk-turn .jd-ruler{left:7%;right:7%}
+</style></head><body>
+<div class="sheet">
+  <h1>The Ruler on the Plate&rsquo;s Edge</h1>
+  <p class="no">mockup 43 &middot; replay &amp; scrub for the drawings &middot; 2026-09-16</p>
+  <hr class="rule">
+  <p class="dek">The replay control becomes a <b>ruler printed along the photograph&rsquo;s bottom
+  edge</b>, in the graph paper&rsquo;s own blue, inside the margin band the artwork already leaves
+  clear &mdash; so nothing sits over the drawing and the plate&rsquo;s footprint does not change.
+  A <b>red-pencil caret</b> marks the moment; beside it, in the pencilled hand, a count of
+  <b>which element is being drawn</b> (&ldquo;14 of 35&rdquo;) and the elapsed seconds, and a row of
+  hairline marks above the scale shows where every element starts &mdash; dark once drawn, faint
+  while pending, so the crowded stretches are visible before you scrub into them. Press and drag
+  anywhere on the scale to scrub, click to jump, <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> to step one
+  element at a time (<kbd>Home</kbd>/<kbd>End</kbd> for the ends, <kbd>space</kbd> to play);
+  the small tab at the ruler&rsquo;s left end plays and pauses, its glyph a drawn open triangle
+  that closes into two bars. The margin furniture <b>moves up one ruler-height</b> rather than
+  sharing a line: MODEL/DATE keep their lower-left seat, DOWNLOAD SVG and the file number keep
+  their lower-right stack, and the old REPLAY button simply leaves the row &mdash; the ruler runs
+  under all of them along the very edge, where a scale on a lab print belongs. Trade-offs: the
+  band is fixed at 20% of the plate, so below roughly a 320px plate the ruler drops to a compact
+  cut (26px, numbered every 20) and the stack gets tight; the instrument&rsquo;s plate has no
+  margin band today and must yield its bottom 17% to get one.</p>
+
+  <h2>A &middot; The report card&rsquo;s photograph</h2>
+  <div class="sub">the Kimi succulent &middot; the leaves are drawn correctly, then buried behind the
+  pot &mdash; scrub to about 60 and hold &middot; the paper swap re-tints the scale (try it)</div>
+  <div class="row">
+    <figure class="mk-card">
+      <div class="rc-block rc-plate" id="plate-a">
+        <span class="rc-corner tl"></span><span class="rc-corner tr"></span>
+        <button type="button" class="rc-paper" data-rc="paper" aria-pressed="false"
+          title="blueprint paper — for light artwork" aria-label="Switch to blueprint paper"></button>
+        <span class="rc-corner bl"></span><span class="rc-corner br"></span>
+        <div class="rc-plate-art" id="art-a"></div>
+        <div class="rc-notes">
+          <span class="rc-note-line"><span class="rc-note-l">Model</span><span class="rc-note-v">Kimi K3</span></span>
+          <span class="rc-note-line"><span class="rc-note-l">Date</span><span class="rc-note-v">28 Jul 2026</span></span>
+        </div>
+        <div class="rc-plate-btns rc-zoom-keep">
+          <a class="rc-dl" href="/art/junk-drawer/items/2026-07-28-desktop-succulent/kimi-k3.svg"
+            download="2026-07-28-desktop-succulent.svg" title="download the SVG as generated">DOWNLOAD SVG ⤓</a>
+        </div>
+        <span class="rc-note-no">2026-07-28-desktop-succulent</span>
+        <!-- THE RULER -->
+        <div class="jd-ruler rc-zoom-keep" id="ruler-a" role="group" aria-label="Drawing timeline"></div>
+      </div>
+      <figcaption><b>the ruler, on the record</b> &mdash; 0 to 100 is the run; the marks above the
+      scale are the 31 elements at their start times. the count beside the caret is the element
+      under the pen.</figcaption>
+    </figure>
+  </div>
+
+  <h2>B &middot; The rating instrument&rsquo;s plate</h2>
+  <div class="sub">the same control, the instrument&rsquo;s tokens (its red, its rule) &middot; the
+  Claude drawing, denser, as a control &middot; the frame yields its bottom band to the ruler</div>
+  <div class="row">
+    <figure class="mk-turn">
+      <div class="jd-turn-art" id="plate-b">
+        <span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>
+        <span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>
+        <div class="jd-turn-art-in" role="img" aria-label="drawing A" id="art-b"></div>
+        <div class="jd-ruler" id="ruler-b" role="group" aria-label="Drawing timeline"></div>
+      </div>
+      <figcaption><b>on the instrument</b> &mdash; one control, two cards. --rl-red takes the
+      instrument&rsquo;s --tred; the tab wears .jd-turn-draw&rsquo;s tailoring by the same tokens.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Notes for the build</h2>
+  <ul class="notes">
+    <li><b>jd-core.js</b> &mdash; the engine needs one addition: a way to HOLD a run. Today
+      <code>JD_drawOn</code> strips its inline animations <code>(secs + 0.4)</code>s after it
+      starts; the ruler defeats that here by bumping <code>svg.__jdDrawSeq</code> right after the
+      call, then drives every <code>CSSAnimation</code> from <code>svg.getAnimations({subtree:true})</code>
+      itself &mdash; all paused, <code>currentTime</code> set from its own clock (a
+      <code>requestAnimationFrame</code> loop while playing). Ship it as
+      <code>JD_drawOn(svg, {force:true, hold:true})</code> returning <code>{secs, anims, starts}</code>,
+      plus an exported <code>JD_drawOff(svg)</code> (the private <code>strip</code>) so a re-arm
+      can clear the held styles first &mdash; without that, a second <code>JD_drawOn</code> reads
+      the held dasharray as &ldquo;pre-dashed&rdquo; and demotes every stroke to a fade.
+      Note <code>anim.play()</code> is NOT usable for resume: a finished element&rsquo;s animation
+      auto-rewinds to 0 on play(), so mid-run resume must stay clock-driven.</li>
+    <li><b>jd-record.js</b> &mdash; <code>plateBtnsHTML</code> drops the REPLAY button (the word
+      REDRAW on the enlargement goes with it, or the enlargement gets the same ruler);
+      <code>cardHTML</code> / <code>zoomHTML</code> append <code>rulerHTML()</code> to the plate;
+      the plate&rsquo;s click/key handlers exempt <code>.jd-ruler</code> from the zoom as they do
+      <code>.rc-plate-btns</code> (it carries <code>rc-zoom-keep</code>); the open / response-flip
+      draw-on runs go through the ruler so it owns the clock; a response flip re-arms on the new svg.
+      The swipe-to-flip gesture on the plate must ignore pointerdowns inside the ruler.</li>
+    <li><b>jd-turn.js</b> &mdash; <code>plate()</code> mounts the ruler where it mounts
+      <code>.jd-turn-draw</code> today (<code>opts.replay</code>); the delegated
+      <code>data-act="replay"</code> handler becomes the ruler&rsquo;s. The bench&rsquo;s pinned
+      plate and the pod prints (15px corners) want the compact cut.</li>
+    <li><b>junk-drawer.css</b> &mdash; one shared <code>.jd-ruler</code> block (the tokens
+      <code>--rl-ink / --rl-red / --rl-paper / --rl-h</code>, the tab, the track, the SVG classes,
+      the blueprint re-tint) beside the draw-on keyframes; <code>.rc-notes</code>,
+      <code>.rc-plate-btns</code>, <code>.rc-note-no</code> take their new bottoms in terms of
+      <code>--rl-h</code>; <code>.jd-turn-art-in</code> goes to <code>inset: 7% 7% 17%</code>
+      when a ruler is mounted (the bench plate without one keeps 7%). The <code>.rc-draw</code>
+      rules retire.</li>
+    <li><b>Open questions</b> &mdash; (1) should the ruler read 0&ndash;100 (scale-free, the same
+      print on every plate, as here) or seconds (true to the clock, a different ruler per
+      drawing)? (2) DOWNLOAD SVG could become the ruler&rsquo;s RIGHT end cap (a ⤓ tab), which
+      frees the lower-right stack entirely and puts the file number back on its own line
+      &mdash; against the standing call that the word stays on the card. (3) The
+      element marks: keep, or reserve for the enlargement, where there is room to hover them
+      for an element&rsquo;s tag name? (4) On open, the card still draws itself once
+      (the caret rides along and parks at 100); under reduced motion it parks at 100 without
+      playing and the ruler is the explicit way in.</li>
+  </ul>
+
+  <footer>live stylesheet + jd-core.js &middot; the plate is the card&rsquo;s own markup &middot;
+  new css: .jd-ruler only, plus three bottoms &middot; scrub works before, during and after a run</footer>
+</div>
+
+<!-- jd-core.js expects the drawer's stage to boot against; hidden and empty -->
+<div class="jd-stage" style="display:none" aria-hidden="true">
+  <div class="jd-frame"><div class="jd-well"><div class="jd-pile"></div></div></div>
+</div>
+<script src="/art/junk-drawer/jd-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var PLAY_GLYPH =
+    '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path class="g-play" d="M4.4 2.8 13 8 4.4 13.2Z"/>' +
+    '<path class="g-pause" d="M5.2 3v10M10.8 3v10"/></svg>';
+
+  /* ---- the ruler -------------------------------------------------------
+     host: the .jd-ruler box (empty); plate: the element carrying --rl-h and
+     the is-compact class; svg: the inlined artwork. */
+  function Ruler(host, plate, svg) {
+    var self = this;
+    this.host = host; this.plate = plate; this.svg = svg;
+    this.secs = 0; this.t = 0; this.n = 0; this.starts = []; this.anims = [];
+    this.playing = false; this.raf = 0; this.wall = 0;
+    this.W = 0; this.H = 32; this.compact = false;
+
+    host.innerHTML =
+      '<button type="button" class="jd-ruler-play" aria-label="Play the drawing" ' +
+      'title="play / pause the drawing" aria-pressed="false">' + PLAY_GLYPH + '</button>' +
+      '<div class="jd-ruler-track" role="slider" tabindex="0" aria-label="Scrub the drawing" ' +
+      'aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="not started">' +
+      '<svg xmlns="http://www.w3.org/2000/svg"></svg></div>';
+    this.btn = host.querySelector('.jd-ruler-play');
+    this.track = host.querySelector('.jd-ruler-track');
+    this.scale = this.track.querySelector('svg');
+
+    /* the animations are set up (and held) once; every interaction goes
+       through ensure() so a lost run is re-armed on the spot */
+    this.arm();
+    this.layout();
+
+    var ro = new ResizeObserver(function () { self.layout(); });
+    ro.observe(this.track);
+
+    this.btn.addEventListener('click', function () { self.toggle(); });
+
+    var drag = false;
+    this.track.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      drag = true;
+      self.track.setPointerCapture(e.pointerId);
+      self.host.classList.add('is-scrubbing');
+      self.pause();
+      self.seekX(e.clientX);
+      self.track.focus({ preventScroll: true });
+      e.preventDefault();
+    });
+    this.track.addEventListener('pointermove', function (e) {
+      if (drag) { self.seekX(e.clientX); return; }
+      var r = self.track.getBoundingClientRect();
+      var x = Math.max(0, Math.min(r.width, e.clientX - r.left));
+      self.ghost.setAttribute('x1', x); self.ghost.setAttribute('x2', x);
+    });
+    function up(e) {
+      if (!drag) return;
+      drag = false;
+      self.host.classList.remove('is-scrubbing');
+      try { self.track.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+    this.track.addEventListener('pointerup', up);
+    this.track.addEventListener('pointercancel', up);
+    this.track.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowUp') { self.pause(); self.step(1); }
+      else if (k === 'ArrowLeft' || k === 'ArrowDown') { self.pause(); self.step(-1); }
+      else if (k === 'Home') { self.pause(); self.seek(0); }
+      else if (k === 'End') { self.pause(); self.seek(self.secs); }
+      else if (k === 'PageUp') { self.pause(); self.seek(self.t + self.secs / 10); }
+      else if (k === 'PageDown') { self.pause(); self.seek(self.t - self.secs / 10); }
+      else if (k === ' ' || k === 'Enter') { self.toggle(); }
+      else return;
+      e.preventDefault();
+    });
+  }
+
+  /* clear a held run's inline styles — the engine's private strip(), so a
+     re-arm reads the artwork's true paint, not the held dasharray */
+  Ruler.prototype.unarm = function () {
+    var els = this.svg.querySelectorAll('path,line,polyline,polygon,circle,ellipse,rect,text,use');
+    for (var i = 0; i < els.length; i++) {
+      els[i].style.animation = '';
+      els[i].style.strokeDasharray = '';
+      els[i].style.strokeDashoffset = '';
+      els[i].style.removeProperty('--jdfo');
+      els[i].style.removeProperty('--jdo');
+    }
+    this.anims = [];
+  };
+  Ruler.prototype.arm = function () {
+    this.unarm();
+    var secs = window.JD_drawOn(this.svg, { force: true });
+    if (!secs) return false;
+    /* HOLD: the engine's strip timer checks this stamp; bumping it makes
+       the timer a no-op, so the animations stay to be scrubbed forever */
+    this.svg.__jdDrawSeq = (this.svg.__jdDrawSeq || 0) + 1;
+    var anims = this.svg.getAnimations({ subtree: true });
+    var seen = new Map(), i, a, tg, d;
+    for (i = 0; i < anims.length; i++) {
+      a = anims[i];
+      a.pause();
+      tg = a.effect.target;
+      d = a.effect.getTiming().delay / 1000;
+      if (!seen.has(tg) || seen.get(tg) > d) seen.set(tg, d);
+    }
+    this.anims = anims;
+    this.starts = Array.from(seen.values()).sort(function (x, y) { return x - y; });
+    this.n = this.starts.length;
+    this.secs = secs;
+    return true;
+  };
+  /* a lost run (something stripped it, the svg was swapped) is re-armed and
+     re-seeked to where the caret was */
+  Ruler.prototype.ensure = function () {
+    if (this.anims.length && this.anims[0].effect.target.isConnected &&
+        this.svg.getAnimations({ subtree: true }).length === this.anims.length) return;
+    var t = this.t;
+    if (this.arm()) { this.layout(); this.seek(t); }
+  };
+
+  /* the printed scale, rebuilt at the track's measured width so every tick
+     is a crisp device pixel */
+  Ruler.prototype.layout = function () {
+    var W = this.track.clientWidth;
+    if (!W) return;
+    this.compact = W < 230;
+    this.plate.classList.toggle('is-compact', this.compact);
+    this.track.classList.toggle('is-compact', this.compact);
+    var H = this.compact ? 26 : 32;
+    this.W = W; this.H = H;
+    var base = H - 0.5;                       /* the baseline, on a pixel */
+    var maj = this.compact ? 6 : 8, med = this.compact ? 4 : 5, fine = 3;
+    var numY = base - maj - 2;
+    var f = this.compact ? 6 : 7;
+    var mkTop = numY - f - 2, mkH = 4;         /* the element marks' row */
+    var readY = mkTop - 3;                     /* the readout's baseline */
+    var every = W < 300 ? 20 : 10;
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" ' +
+      'width="' + W + '" height="' + H + '">';
+    s += '<line class="rl-base" x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '"/>';
+    var i, x, cls, h;
+    for (i = 0; i <= 50; i++) {
+      x = Math.round(i / 50 * W); if (i === 50) x = W - 1; x += 0.5;
+      if (i % 5 === 0) { h = maj; cls = 'rl-tick'; }
+      else { h = fine; cls = 'rl-tick fine'; }
+      s += '<line class="' + cls + '" x1="' + x + '" y1="' + (base - h) + '" x2="' + x + '" y2="' + base + '"/>';
+    }
+    /* medium ticks at the 5s */
+    for (i = 5; i < 100; i += 10) {
+      x = Math.round(i / 100 * W) + 0.5;
+      s += '<line class="rl-tick" x1="' + x + '" y1="' + (base - med) + '" x2="' + x + '" y2="' + base + '"/>';
+    }
+    for (i = 0; i <= 100; i += every) {
+      x = Math.round(i / 100 * W); if (i === 100) x = W - 1;
+      var anchor = i === 0 ? 'start' : i === 100 ? 'end' : 'middle';
+      var dx = i === 0 ? 1 : i === 100 ? 0 : 0;
+      s += '<text class="rl-num" x="' + (x + dx) + '" y="' + numY + '" text-anchor="' + anchor + '">' + i + '</text>';
+    }
+    /* the element marks: one hairline per element at its start time, drawn
+       twice — faint for pending, dark under a clip that follows the caret */
+    var cid = 'rlclip_' + (this.host.id || Math.random().toString(36).slice(2));
+    var marks = '';
+    for (i = 0; i < this.starts.length; i++) {
+      x = Math.round(this.starts[i] / (this.secs || 1) * (W - 1)) + 0.5;
+      marks += '<line class="rl-mark" x1="' + x + '" y1="' + mkTop + '" x2="' + x + '" y2="' + (mkTop + mkH) + '"/>';
+    }
+    s += '<g class="rl-marks-pend">' + marks + '</g>';
+    s += '<clipPath id="' + cid + '"><rect class="rl-doneclip" x="0" y="0" width="0" height="' + H + '"/></clipPath>';
+    s += '<g class="rl-marks-done" clip-path="url(#' + cid + ')">' + marks + '</g>';
+    s += '<line class="rl-ghost" x1="-9" y1="' + (mkTop - 2) + '" x2="-9" y2="' + base + '"/>';
+    /* the caret: hairline + head + readout, moved as one group */
+    s += '<g class="rl-caret">' +
+      '<line x1="0.5" y1="' + (readY + 2) + '" x2="0.5" y2="' + base + '"/>' +
+      '<path d="M-3 ' + (readY + 1) + 'h7l-3.5 5z"/>' +
+      '<text class="rl-read" x="0" y="' + readY + '">' +
+      '<tspan class="rl-count"></tspan><tspan class="rl-secs" dx="5"></tspan></text></g>';
+    s += '</svg>';
+    this.scale.outerHTML = s;
+    this.scale = this.track.querySelector('svg');
+    this.caret = this.scale.querySelector('.rl-caret');
+    this.read = this.scale.querySelector('.rl-read');
+    this.readCount = this.scale.querySelector('.rl-count');
+    this.readSecs = this.scale.querySelector('.rl-secs');
+    this.doneClip = this.scale.querySelector('.rl-doneclip');
+    this.ghost = this.scale.querySelector('.rl-ghost');
+    this.paint();
+  };
+
+  Ruler.prototype.countAt = function (t) {
+    var c = 0;
+    for (var i = 0; i < this.starts.length; i++) { if (this.starts[i] <= t + 1e-6) c++; else break; }
+    return c;
+  };
+  Ruler.prototype.paint = function () {
+    if (!this.caret) return;
+    var W = this.W, frac = this.secs ? this.t / this.secs : 0;
+    var x = Math.round(frac * (W - 1));
+    this.caret.setAttribute('transform', 'translate(' + x + ' 0)');
+    this.doneClip.setAttribute('width', x + 1);
+    var c = this.countAt(this.t);
+    this.readCount.textContent = c + ' of ' + this.n;
+    this.readSecs.textContent = '· ' + this.t.toFixed(1) + ' s';
+    /* the readout hangs to the right of the caret until the right end,
+       then flips to hang left so it stays on the ruler */
+    var flip = x > W * 0.68;
+    this.read.setAttribute('text-anchor', flip ? 'end' : 'start');
+    this.read.setAttribute('x', flip ? -6 : 6);
+    var pct = Math.round(frac * 100);
+    this.track.setAttribute('aria-valuenow', pct);
+    this.track.setAttribute('aria-valuetext', 'element ' + c + ' of ' + this.n + ', ' +
+      this.t.toFixed(1) + ' of ' + this.secs.toFixed(1) + ' seconds');
+    this.host.classList.toggle('is-playing', this.playing);
+    this.btn.setAttribute('aria-pressed', this.playing ? 'true' : 'false');
+    this.btn.setAttribute('aria-label', this.playing ? 'Pause the drawing' : 'Play the drawing');
+  };
+
+  Ruler.prototype.seek = function (t) {
+    this.ensure();
+    t = Math.max(0, Math.min(this.secs, t));
+    this.t = t;
+    var ms = t * 1000;
+    for (var i = 0; i < this.anims.length; i++) this.anims[i].currentTime = ms;
+    this.paint();
+  };
+  Ruler.prototype.seekX = function (clientX) {
+    var r = this.track.getBoundingClientRect();
+    var frac = r.width ? (clientX - r.left) / r.width : 0;
+    this.seek(Math.max(0, Math.min(1, frac)) * this.secs);
+  };
+  /* one element at a time: to the next start after the pen, or the last
+     start before it */
+  Ruler.prototype.step = function (dir) {
+    var i, s = this.starts, t = this.t;
+    if (dir > 0) {
+      for (i = 0; i < s.length; i++) if (s[i] > t + 1e-4) return this.seek(s[i]);
+      return this.seek(this.secs);
+    }
+    for (i = s.length - 1; i >= 0; i--) if (s[i] < t - 1e-4) return this.seek(s[i]);
+    return this.seek(0);
+  };
+  Ruler.prototype.play = function () {
+    this.ensure();
+    if (this.t >= this.secs - 1e-3) this.seek(0);
+    this.playing = true;
+    this.wall = performance.now() - this.t * 1000;
+    var self = this;
+    cancelAnimationFrame(this.raf);
+    var tick = function (now) {
+      if (!self.playing) return;
+      var t = (now - self.wall) / 1000;
+      if (t >= self.secs) { self.playing = false; self.seek(self.secs); return; }
+      self.seek(t);
+      self.raf = requestAnimationFrame(tick);
+    };
+    this.raf = requestAnimationFrame(tick);
+    this.paint();
+  };
+  Ruler.prototype.pause = function () {
+    if (!this.playing) return;
+    this.playing = false;
+    cancelAnimationFrame(this.raf);
+    this.paint();
+  };
+  Ruler.prototype.toggle = function () { if (this.playing) this.pause(); else this.play(); };
+  /* for the harness: the state in one read */
+  Ruler.prototype.state = function () {
+    return { t: this.t, secs: this.secs, n: this.n, count: this.countAt(this.t),
+      playing: this.playing, anims: this.anims.length,
+      playState: this.anims.length ? this.anims[0].playState : null,
+      compact: this.compact, W: this.W };
+  };
+
+  /* ---- mount the two exhibits ------------------------------------------ */
+  window.MK = {};
+  function mount(key, artId, plateId, hostId, url, pfx) {
+    return fetch(url).then(function (r) { return r.text(); }).then(function (txt) {
+      var art = document.getElementById(artId);
+      art.innerHTML = window.JD_svgInst(txt, pfx);
+      var svg = art.querySelector('svg');
+      var ruler = new Ruler(document.getElementById(hostId), document.getElementById(plateId), svg);
+      window.MK[key] = ruler;
+      /* like the card on open: one run through, the caret riding along and
+         parking at 100 — unless the visitor asked for less motion, in which
+         case it parks at the end and the ruler is the explicit way in */
+      if (window.JD_reduced()) ruler.seek(ruler.secs); else ruler.play();
+      return ruler;
+    });
+  }
+  mount('a', 'art-a', 'plate-a', 'ruler-a',
+    '/art/junk-drawer/items/2026-07-28-desktop-succulent/kimi-k3.svg', 'mka_');
+  mount('b', 'art-b', 'plate-b', 'ruler-b',
+    '/art/junk-drawer/items/2026-07-28-desktop-succulent/claude-fable-5.svg', 'mkb_');
+
+  /* the paper swap on exhibit A — local to the page (no localStorage) */
+  var pb = document.querySelector('#plate-a .rc-paper');
+  pb.innerHTML = window.JD_paper.icon();
+  pb.addEventListener('click', function () {
+    var p = document.getElementById('plate-a');
+    var on = p.classList.toggle('is-blueprint');
+    pb.setAttribute('aria-pressed', on ? 'true' : 'false');
+    pb.setAttribute('title', on ? 'back to graph paper' : 'blueprint paper — for light artwork');
+  });
+})();
+</script>
+</body></html>

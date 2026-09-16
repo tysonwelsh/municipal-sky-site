@@ -418,7 +418,10 @@
          carries the gauge AND the pencilled word, the axis column only a
          name — but 44% squeezed the axis names a touch too hard.
          "Grade", not "Verdict" (owner, 2026-09-10). */
-      '<th style="width:47%">Axis</th><th style="width:53%">Grade</th>' +
+      /* SUBJECT, not Axis (owner, 2026-09-16): the rating instrument's
+         word — a school report card's — carried over so the two cards'
+         tables read as one system. "Axis" stays the taxonomy's word. */
+      '<th style="width:47%">Subject</th><th style="width:53%">Grade</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td>' +
       axisBtn('<span class="rc-avg-l">Overall grade</span>', 'rc-axd-g') +
@@ -988,6 +991,17 @@
      a paperclip sketches in a moment, a portrait takes its time). */
   function drawOn(force) {
     if (!scrollEl || !curEntry || !window.JD_drawOn) return;
+    /* the filmstrip owns the plate's run wherever it is mounted: a second
+       JD_drawOn on the same svg cancels the animations the control parked,
+       and the drawing would draw itself behind a control stuck at mark 0 */
+    if (filmstrip) {
+      try {
+        filmstrip.play();
+        var t = filmstrip.get().total;
+        if (t) drawUntil = Date.now() + (t + 0.4) * 1000;
+      } catch (e) {}
+      return;
+    }
     var holder = scrollEl.querySelector('.rc-plate-art');
     var svg = holder ? holder.querySelector('svg') : null;
     var secs = svg && window.JD_drawOn(svg, { force: !!force });
@@ -997,6 +1011,39 @@
       drawUntil = Date.now() + (secs + 0.4) * 1000;
     }
   }
+
+  /* THE FILMSTRIP (owner, 2026-09-16): the replay/scrub control goes under
+     the plate, and takes over from the ↻ it stands next to (hidden in
+     junk-drawer.css — the ENLARGEMENT keeps its REDRAW, having no filmstrip
+     of its own). A render replaces the plate node wholesale, so the control
+     made for the old one is destroyed first: its bar goes with the innerHTML,
+     but its parked Web Animations would not, and twelve cells' worth of them
+     per abandoned render is not free. Held here, one per open card. */
+  var filmstrip = null;
+  function dropFilmstrip() {
+    if (!filmstrip) return;
+    try { filmstrip.destroy(); } catch (e) {}
+    filmstrip = null;
+  }
+  function mountFilmstrip() {
+    dropFilmstrip();
+    if (!window.JD_filmstrip || !scrollEl) return;
+    var plate = scrollEl.querySelector('.rc-col-l > .rc-plate');
+    var svg = plate && plate.querySelector('.rc-plate-art > svg');
+    if (!svg) return;
+    try {
+      filmstrip = window.JD_filmstrip(svg, plate, {
+        /* autoplay:false — the control parks at the finished drawing and
+           drawOn() below decides when the run happens, so the existing rule
+           holds: opening draws the photograph on, a plain re-render (the
+           strip filling in) does not */
+        autoplay: false,
+        pfx: 'fsr' + (++fsSeq) + '_',
+        label: 'Replay the drawing'
+      });
+    } catch (e) {}
+  }
+  var fsSeq = 0;
 
   function render(animate) {
     markSeq = 0;
@@ -1019,6 +1066,7 @@
        holder carries the ARTWORK's key, so a 46px thumbnail is handed the
        frame the 350px plate resolved rather than measuring its own. */
     if (window.JD_fitAll) window.JD_fitAll(scrollEl);
+    mountFilmstrip();
     /* the strip is a fresh node after every render, so its scrub listeners
        are wired here rather than delegated (scroll doesn't bubble anyway),
        and the shown response is brought under the eye without animating —
@@ -1242,6 +1290,9 @@
   function teardown() {
     if (!isOpen) return;
     closeZoom(true);
+    /* the card's DOM outlives a close (the scrim just loses is-on), so the
+       control's parked animations would tick along behind a shut card */
+    dropFilmstrip();
     isOpen = false;
     if (scrim) scrim.classList.remove('is-on');
     document.documentElement.classList.remove('jd-record-open');

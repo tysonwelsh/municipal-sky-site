@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — set option R2 · 操作段 THE CONTROL LEDGE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   SET OPTION R2 — 操作段 THE CONTROL LEDGE
+   The casing is the LIVE .zk-set2, unchanged: the same dark yellowed plastic
+   (#2b2826 → #100f0e with the amber bloom at 62% 0%), the same 11 px corner
+   radius, the same 13 px of wall, the same cracked glass, the same piece of
+   tape. The single licensed change: the 30 px chin becomes a properly moulded
+   control ledge — one piece with the casing, with a parting line, a draft
+   angle on both ends, and a recess whose button faces sit BELOW the
+   surrounding plastic.  Five controls, no knobs, one shallow band.
+   =========================================================================== */
+.content-frame { max-width: 960px; margin: 0 auto; padding: 48px 24px 64px; background: transparent; }
+
+/* ------------------------------ zankyo.css (verbatim) ------------------------------ */
+.zankyo-scene {
+  --bg:        #050507;
+  --surface:   #0a0a0f;
+  --surface-2: #0f0f17;
+  --border:    #241a22;
+  --grid:      #15101a;
+  --ink:       #d6d2dc;
+  --ink-dim:   #6b6473;
+  --ink-label: #8a7e92;
+  --red:       #ff2d55;
+  --red-rgb:   255, 45, 85;
+  --cyan:      #16e0e0;
+  --cyan-rgb:  22, 224, 224;
+  --magenta:   #ff3df0;
+  --magenta-rgb:255, 61, 240;
+  --amber:     #ffb000;
+  --amber-rgb: 255, 176, 0;
+  --panel-hi:  #32323b;
+  --panel:     #26262d;
+  --panel-lo:  #191920;
+  --steel-hi:  #4a4a52;
+  --steel:     #2a2a31;
+  --steel-lo:  #0c0c0f;
+  --print:     #918c9c;
+  --print-dim: #6a6572;
+  max-width: 960px;   /* SETTLED 2026-09-14: the site's own --max-wide */
+  margin: 0 auto;
+  padding: 8px 16px 56px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--ink);
+}
+.zankyo-frame {
+  position: relative;
+  background:
+    radial-gradient(55% 7% at 14% 0%,  rgba(136, 82, 44, 0.24), transparent 75%),
+    radial-gradient(34% 9% at 90% 100%, rgba(124, 70, 38, 0.28), transparent 72%),
+    radial-gradient(26% 22% at 100% 26%, rgba(108, 62, 34, 0.18), transparent 70%),
+    radial-gradient(18% 14% at 0% 74%,  rgba(84, 52, 30, 0.2), transparent 75%),
+    radial-gradient(14% 8% at 78% 0%,  rgba(96, 58, 32, 0.16), transparent 75%),
+    radial-gradient(42% 5% at 40% 100%, rgba(24, 18, 12, 0.5), transparent 80%),
+    radial-gradient(130% 60% at 50% -8%, rgba(var(--red-rgb), 0.05), transparent 55%),
+    radial-gradient(120% 80% at 82% 118%, rgba(var(--cyan-rgb), 0.04), transparent 60%),
+    repeating-linear-gradient(91deg, rgba(255, 255, 255, 0.028) 0 2px, rgba(0, 0, 0, 0.16) 2px 3px, rgba(255, 255, 255, 0.012) 3px 5px, rgba(0, 0, 0, 0.05) 5px 7px),
+    linear-gradient(180deg, var(--panel-hi), var(--panel) 40%, var(--panel-lo) 88%);
+  border: 1px solid #000;
+  border-radius: 6px;
+  padding: 30px 26px 42px;
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.65),
+    inset 4px 0 10px rgba(0, 0, 0, 0.3),
+    inset -2px 0 8px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 90px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+.zankyo-frame::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  opacity: 0.9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.28' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.2' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.22' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23c9c4b4' stroke-opacity='0.22' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23c9c4b4' stroke-opacity='0.18' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23c9c4b4' stroke-opacity='0.14' stroke-width='1.8'/></g></svg>");
+}
+.zankyo-frame::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.zankyo-frame > * { position: relative; z-index: 1; }
+.zk-screw {
+  position: absolute; z-index: 7; width: 17px; height: 17px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #6e6e7a, #30303a 55%, #0c0c0f);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -2px 3px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+.zk-screw::before {
+  content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 2.5px; margin-top: -1.25px;
+  background: linear-gradient(180deg, #050506, #3d3d45); border-radius: 2px;
+  transform: rotate(var(--slot, 20deg));
+}
+.zk-screw-tl { top: 9px; left: 10px; }
+.zk-screw-tr { top: 9px; right: 10px; }
+.zk-screw-bl { bottom: 9px; left: 10px; }
+.zk-screw-br { bottom: 9px; right: 10px; filter: sepia(0.5) brightness(0.85); }
+.zk-vent {
+  position: absolute; z-index: 7; height: 13px; width: 118px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #050506 0 5px, #34343e 5px 7px, #1c1c22 7px 12px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.zk-vent-tr { top: 12px; right: 58px; }
+.zk-vent-bl { bottom: 12px; left: 58px; transform: rotate(0.4deg); }
+.zk-print {
+  font-size: 9px; letter-spacing: 0.22em; color: var(--print);
+  text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.12), -0.5px 0 0 rgba(var(--cyan-rgb), 0.1);
+}
+@keyframes zk-led-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.zk-marquee {
+  position: relative; margin: 0 6px 22px; padding: 16px 12px 13px;
+  border-radius: 5px; border: 1px solid #08080a;
+  background:
+    radial-gradient(70% 130% at 50% 55%, rgba(var(--red-rgb), 0.09), transparent 72%),
+    linear-gradient(180deg, rgba(8, 6, 11, 0.94), rgba(15, 11, 18, 0.82) 45%, rgba(6, 5, 9, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 34px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-marquee::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px;
+  background: linear-gradient(107deg, transparent 12%, rgba(255, 255, 255, 0.045) 20%, rgba(255, 255, 255, 0.012) 27%, transparent 34%);
+}
+.zk-marquee-screw {
+  position: absolute; top: 50%; left: 7px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%);
+  box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.zk-marquee-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(35deg); }
+.zk-marquee-screw-r { left: auto; right: 7px; }
+.zk-marquee-screw-r::before { transform: rotate(-58deg); }
+.zankyo-header { text-align: center; }
+.zankyo-title {
+  font-family: "Orbitron", sans-serif; font-weight: 900;
+  font-size: clamp(34px, 9vw, 64px); letter-spacing: 0.12em;
+  margin: 0; color: #fff; position: relative; display: inline-block;
+  text-shadow: 0 0 16px rgba(var(--red-rgb), 0.5), 0 0 40px rgba(var(--red-rgb), 0.25);
+}
+.zankyo-title .zankyo-kanji {
+  font-family: "Shippori Mincho", serif; font-weight: 700;
+  font-size: 0.42em; letter-spacing: 0.1em; color: var(--cyan);
+  margin-left: 0.35em; vertical-align: 0.5em;
+  text-shadow: 0 0 14px rgba(var(--cyan-rgb), 0.6);
+}
+.zankyo-title::before, .zankyo-title::after {
+  content: attr(data-glitch); position: absolute; left: 0; top: 0;
+  width: 100%; overflow: hidden; opacity: 0.6;
+}
+.zankyo-title::before { color: var(--cyan); animation: zk-glitch 3.6s infinite steps(2); clip-path: inset(0 0 62% 0); }
+.zankyo-title::after  { color: var(--magenta); animation: zk-glitch 2.7s infinite steps(2) reverse; clip-path: inset(58% 0 0 0); }
+@keyframes zk-glitch { 0%,92%,100% { transform: translate(0,0); } 93% { transform: translate(-2px,1px); } 96% { transform: translate(2px,-1px); } }
+.zankyo-subtitle { margin: 7px 0 0; font-size: 11px; letter-spacing: 0.18em; color: var(--ink-dim); }
+
+.zk-monitor {
+  position: relative; margin-bottom: 18px; padding: 13px 13px 0;
+  border-radius: 9px; border: 1px solid #000;
+  background: radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%), linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -5px 12px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.zk-screen {
+  position: relative; overflow: hidden;
+  border-radius: 14px / 18px;
+  background: #020204;
+  border: 1px solid #030305;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.9), inset 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.zankyo-viz { display: block; width: 100%; height: 200px; }
+.zankyo-scanlines {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px);
+  mix-blend-mode: multiply; opacity: 0.62;
+}
+.zk-glass {
+  position: absolute; inset: 0; pointer-events: none; z-index: 6; border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 16%, transparent 28%, transparent 70%, rgba(255, 255, 255, 0.02) 86%),
+    radial-gradient(135% 96% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.42) 96%);
+}
+.zk-glass::after {
+  content: ""; position: absolute; right: 8%; bottom: 6%; width: 60px; height: 34px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(190, 200, 210, 0.045), transparent 75%);
+  transform: rotate(-18deg);
+}
+.zk-monitor-chin { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 6px 8px; }
+.zk-monitor-brand { font-size: 8px; letter-spacing: 0.26em; color: #5f5b68; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-chin-spacer { flex: 1; }
+.zk-led-label { font-size: 7px; letter-spacing: 0.2em; color: #55515e; }
+.zk-led {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.zankyo-scene.is-on .zk-led {
+  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
+  box-shadow: 0 0 8px rgba(var(--red-rgb), 0.8), 0 0 2px rgba(var(--red-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5);
+}
+.zk-sticker {
+  position: absolute; right: 74px; bottom: 5px; z-index: 3; width: 46px; padding: 3px 4px 4px;
+  transform: rotate(-3.5deg);
+  background: linear-gradient(160deg, #cfc5ac, #b3a88d 65%, #9d9177);
+  color: #55492f; font-size: 7px; letter-spacing: 0.08em; line-height: 1.5; text-align: center;
+  border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  clip-path: polygon(0 0, 100% 0, 100% 74%, 86% 100%, 0 100%);
+  opacity: 0.92;
+}
+.zk-sticker b { display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 9.5px; letter-spacing: 0.2em; color: #83291c; }
+.zk-sticker i { position: absolute; right: 1px; bottom: 0; width: 11px; height: 11px; background: linear-gradient(315deg, transparent 44%, #e9e1cb 48%, #d8cfb4 62%, rgba(60, 48, 30, 0.55) 100%); }
+
+.zk-bargraph {
+  position: relative; margin: -4px 0 16px;
+  display: grid; grid-template-columns: 1fr; gap: 4px 10px; align-items: center;
+  padding: 8px 12px 6px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #1d1d24, #111116 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-bar-scale { grid-column: 1; position: relative; height: 13px; }
+.zk-bar-zl {
+  position: absolute; bottom: 1px; transform: translateX(-50%); white-space: nowrap;
+  font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.14em; color: #7d7887;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-zl-jo  { left: 12.5%; color: rgba(var(--cyan-rgb), 0.6); }
+.zk-bar-zl-ha  { left: 52.5%; color: rgba(var(--amber-rgb), 0.6); }
+.zk-bar-zl-kyu { left: 90%;   color: rgba(var(--red-rgb), 0.7); }
+.zk-bar-tick { position: absolute; bottom: 0; width: 1px; height: 5px; background: #5a5563; box-shadow: 1px 0 0 rgba(0, 0, 0, 0.7); }
+.zk-bar-housing {
+  grid-column: 1; position: relative; padding: 5px 6px; border-radius: 3px; border: 1px solid #030305;
+  background: linear-gradient(180deg, #050507, #0b0b0f);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), inset 0 -1px 1px rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-glass { position: absolute; inset: 0; pointer-events: none; border-radius: 3px; background: linear-gradient(105deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 22%, transparent 34%); }
+.zk-bar-cells { display: flex; gap: 2px; height: 16px; }
+.zk-seg { flex: 1 1 0; min-width: 0; border-radius: 1px; background: linear-gradient(180deg, rgba(var(--c), 0.11), rgba(var(--c), 0.05) 55%, rgba(0, 0, 0, 0.4)); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.85); }
+.zk-seg-jo  { --c: var(--cyan-rgb); }
+.zk-seg-ha  { --c: var(--amber-rgb); }
+.zk-seg-kyu { --c: var(--red-rgb); }
+.zk-seg.on { background: linear-gradient(180deg, rgba(var(--c), 1), rgba(var(--c), 0.72)); box-shadow: 0 0 5px rgba(var(--c), 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 2px rgba(0, 0, 0, 0.3); }
+.zk-seg.is-head { box-shadow: 0 0 9px rgba(var(--c), 0.95), 0 0 18px rgba(var(--c), 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+.zk-seg.is-peak { background: linear-gradient(180deg, rgba(var(--c), 0.95), rgba(var(--c), 0.6)); box-shadow: 0 0 6px rgba(var(--c), 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+.zk-bar-foot { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; padding: 1px 1px 0; }
+.zk-bar-label { font-size: 8.5px; letter-spacing: 0.18em; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-bar-serial { font-size: 6.5px; letter-spacing: 0.24em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); }
+
+.zk-console-top { display: flex; gap: 18px; align-items: center; margin-bottom: 16px; }
+.zk-transport-cluster { position: relative; display: flex; align-items: center; gap: 14px; flex: none; }
+.zk-transport-cluster::before { content: ""; position: absolute; inset: -10px -12px; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side at 30% 46%, rgba(26, 18, 10, 0.5), transparent 72%); }
+.zk-module {
+  position: relative; flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 13px;
+  padding: 9px 14px 15px 16px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-module::before { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px; background: radial-gradient(34% 52% at 2% 100%, rgba(96, 58, 32, 0.24), transparent 74%), radial-gradient(16% 30% at 97% 4%, rgba(20, 14, 10, 0.55), transparent 78%); }
+.zk-mod-screw { position: absolute; z-index: 2; top: 7px; left: 6px; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-mod-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(var(--slot, 20deg)); }
+.zk-mod-screw-r { top: auto; left: auto; bottom: 7px; right: 6px; filter: sepia(0.4) brightness(0.9); }
+.zk-mod-stamp { position: absolute; right: 22px; bottom: 3px; pointer-events: none; white-space: nowrap; font-size: 6.5px; letter-spacing: 0.24em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); transform: rotate(-0.4deg); }
+.zk-mod-zone { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.zk-mod-zone + .zk-mod-zone { border-left: 1px solid rgba(0, 0, 0, 0.6); box-shadow: -1px 0 0 rgba(255, 255, 255, 0.045); padding-left: 13px; }
+.zk-mod-head { font-size: 8px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-mod-mode { flex: 1; }
+.zk-mod-lamp {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 8px 11px; border-radius: 4px; border: 1px solid #030305;
+  background: radial-gradient(90% 100% at 50% 0%, rgba(var(--cyan-rgb), 0.05), transparent 70%), linear-gradient(180deg, #0b0b10, #08080c);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zankyo-scale-name { font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #fff; text-shadow: 0 0 10px rgba(var(--red-rgb), 0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zankyo-scale-name b { color: var(--red); }
+.zankyo-scale-mood { font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.7; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--magenta-rgb), 0.14); }
+.zk-deg-row { display: flex; gap: 4px; margin-top: 5px; }
+.zk-deg {
+  width: 23px; height: 27px; display: flex; align-items: center; justify-content: center;
+  font-family: "Shippori Mincho", serif; font-size: 15px; line-height: 1;
+  color: rgba(var(--cyan-rgb), 0.26);
+  background: linear-gradient(180deg, #020608, #04090b);
+  border: 1px solid #000; border-radius: 2px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: color 0.45s ease, text-shadow 0.45s ease, background 0.45s ease;
+}
+.zk-deg.is-lit { color: #dbfbfb; text-shadow: 0 0 9px rgba(var(--cyan-rgb), 0.9), 0 0 3px rgba(var(--cyan-rgb), 1); background: linear-gradient(180deg, #072224, #04181a); transition-duration: 0.04s; }
+.zk-testpoints { width: 58px; height: 5px; margin: auto 0 4px 2px; border-radius: 1px; background: repeating-linear-gradient(90deg, #6f5a2e 0 4px, #0c0c0f 4px 9px); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05); opacity: 0.85; }
+
+.zk-knob { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; flex: none; }
+.zk-knob::before {
+  content: ""; position: absolute; inset: -8px; pointer-events: none; opacity: 0.85;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><g stroke='%23a9a3b6' stroke-width='2' stroke-linecap='round' opacity='0.9'><line x1='40' y1='3' x2='40' y2='8' transform='rotate(-135 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-108 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-27 40 40)'/><line x1='40' y1='3' x2='40' y2='8'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(27 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(108 40 40)'/><line x1='40' y1='3' x2='40' y2='8' transform='rotate(135 40 40)'/></g></svg>") center / contain no-repeat;
+}
+.zk-knob::after { content: ""; position: absolute; inset: -12px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 60% 68%, transparent 42%, rgba(22, 15, 9, 0.5) 60%, transparent 78%); opacity: 0.55; }
+.zk-knob-cap {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%), conic-gradient(from 210deg, #34343c, #17171b 22%, #2b2b32 47%, #101014 74%, #34343c), #1d1d22;
+  border: 1px solid #08080a;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65), 0 1px 1px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+}
+.zk-knob-cap::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 255, 255, 0.07) 0deg 4deg, rgba(0, 0, 0, 0.28) 4deg 8deg); -webkit-mask: radial-gradient(circle, transparent 60%, #000 65%); mask: radial-gradient(circle, transparent 60%, #000 65%); }
+.zk-knob-cap::after { content: ""; position: absolute; inset: 16%; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #303038, #16161b 72%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.65); }
+.zk-knob-rot { position: absolute; inset: 0; z-index: 2; will-change: transform; pointer-events: none; }
+.zk-knob-ind { position: absolute; left: 50%; top: 8%; width: 3px; height: 36%; margin-left: -1.5px; border-radius: 2px; background: linear-gradient(#f4f0e4, #b6b0a0); box-shadow: 0 0 3px rgba(255, 255, 255, 0.25), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-knob-master { width: 58px; height: 58px; }
+.zk-unit-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.zankyo-val-readout { font-size: 11px; color: var(--cyan); font-variant-numeric: tabular-nums; background: rgba(2, 8, 10, 0.92); border: 1px solid #000; border-radius: 2px; padding: 1px 5px; min-width: 34px; text-align: right; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.85); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.5); }
+
+.zk-arcade {
+  position: relative; width: 78px; height: 78px; border-radius: 50%; border: 1px solid #000; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 32% 26%, #3e3e47, #1a1a20 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -3px 5px rgba(0, 0, 0, 0.85), 0 3px 8px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-arcade-cap { position: absolute; inset: 9px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: "Orbitron", sans-serif; font-size: 19px; transition: transform 0.06s, box-shadow 0.06s; }
+.play-btn .zk-arcade-cap { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); background: radial-gradient(circle at 35% 27%, #ff90a8, var(--red) 42%, #900f2c 84%, #560a1b); box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35); }
+.stop-btn { width: 62px; height: 62px; }
+.stop-btn .zk-arcade-cap { inset: 8px; font-size: 26px; color: var(--magenta); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.4); background: radial-gradient(circle at 35% 27%, #3a3a43, #202027 46%, #0e0e12 88%); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 -5px 9px rgba(0, 0, 0, 0.8), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.zk-arcade:active .zk-arcade-cap { transform: translateY(3px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.7), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.play-btn.is-playing .zk-arcade-cap { box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35), 0 0 24px rgba(var(--red-rgb), 0.55), inset 0 0 16px rgba(255, 130, 160, 0.45); animation: zk-play-breathe 2.4s ease-in-out infinite; }
+@keyframes zk-play-breathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+.zk-master { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: none; }
+.zk-knob-mount { display: flex; justify-content: center; }
+.zk-master-meta { display: flex; align-items: center; gap: 6px; }
+
+.zankyo-mixer { border: 1px solid #000; border-radius: 5px; background: linear-gradient(180deg, #16161b, #0f0f14 80%); box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.04); }
+.zankyo-mixer-title { display: flex; align-items: center; justify-content: space-between; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); padding: 9px 16px; border-bottom: 1px solid #030305; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-warn-small { font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.3em; color: rgba(var(--amber-rgb), 0.55); transform: rotate(0.8deg); text-transform: none; }
+.zankyo-layer { padding: 13px 16px 12px; border-bottom: 1px solid #050507; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.035); }
+.zankyo-layer:last-child { border-bottom: none; box-shadow: none; }
+.zankyo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
+.zankyo-layer-name {
+  display: flex; align-items: center; text-align: left; cursor: pointer;
+  font-family: "Orbitron", sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #eee;
+  flex: 1; min-width: 132px; padding: 7px 11px;
+  background: linear-gradient(180deg, #24242b, #191920);
+  border: 1px solid #0a0a0d; border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+.zankyo-layer-kana { font-family: "Shippori Mincho", serif; color: var(--red); margin-right: 7px; text-shadow: 0 0 7px rgba(var(--red-rgb), 0.45); }
+.zk-name-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zk-ch { font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 7.5px; letter-spacing: 0.2em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); padding-top: 2px; flex: none; }
+.zk-name-latch { margin-left: 10px; width: 11px; height: 11px; border-radius: 50%; position: relative; flex: none; background: radial-gradient(circle at 35% 30%, #55555e, #1c1c21 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.85), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-name-latch::after { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1.5px; margin-left: -0.75px; background: #060608; }
+.zankyo-layer-sample { position: relative; width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none; background: radial-gradient(circle at 34% 28%, #8a2f7e, #571a4f 48%, #2b0d28 88%); box-shadow: 0 0 0 3px #23232b, 0 0 0 4px #000, 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 -3px 5px rgba(20, 0, 18, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.3); }
+.zankyo-layer-sample .tri { position: absolute; left: 55%; top: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 7px solid rgba(255, 210, 250, 0.9); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+.zk-switch { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; background: none; border: none; padding: 2px 5px; cursor: pointer; font-family: "JetBrains Mono", monospace; }
+.zk-switch i { font-style: normal; font-size: 6.5px; letter-spacing: 0.16em; }
+.zk-switch .zk-switch-on { color: var(--cyan); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6); }
+.zk-switch .zk-switch-off { color: #4d4956; }
+.zk-switch-slot { position: relative; width: 17px; height: 34px; border-radius: 8px; background: linear-gradient(180deg, #040405, #121216); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-switch-lever { position: absolute; left: 2px; right: 2px; top: 2px; height: 15px; border-radius: 6px; background: linear-gradient(180deg, #6e6e7a, #3a3a44 62%, #23232b); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+
+.zankyo-log-block { position: relative; margin-top: 18px; padding: 9px 10px 10px; border-radius: 5px; border: 1px solid #000; background: linear-gradient(180deg, #1d1d23, #111116 70%, #0d0d11); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5); }
+.zankyo-log-label { display: flex; align-items: center; justify-content: space-between; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); margin: 0 2px 8px; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-vfd-tag { font-size: 7px; letter-spacing: 0.2em; color: #59555f; }
+.zankyo-log { background: radial-gradient(rgba(var(--cyan-rgb), 0.05) 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(180deg, #04100f, #030a0a); border: 1px solid #000; border-radius: 4px; height: 230px; overflow-y: auto; padding: 5px 0; box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85), inset 0 0 70px rgba(var(--cyan-rgb), 0.03); }
+.zankyo-log-block::after { content: ""; position: absolute; left: 11px; right: 11px; bottom: 11px; top: 27px; pointer-events: none; border-radius: 4px; background: linear-gradient(108deg, rgba(190, 255, 250, 0.045), transparent 26%); }
+.zankyo-log-row { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid rgba(var(--cyan-rgb), 0.04); font-size: 12px; animation: zk-logfade 0.3s ease; }
+.zankyo-log-row:last-child { border-bottom: none; }
+@keyframes zk-logfade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.zankyo-log-time { color: var(--ink-dim); font-size: 10px; min-width: 36px; }
+.zankyo-log-tag { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 2px; min-width: 66px; text-align: center; }
+.zankyo-log-tag.shakuhachi { color: var(--cyan);    border: 1px solid rgba(var(--cyan-rgb), 0.4); }
+.zankyo-log-tag.koto       { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.4); }
+.zankyo-log-tag.noise      { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.4); }
+.zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }
+.zankyo-log-tag.sho        { color: var(--ink);     border: 1px solid rgba(var(--cyan-rgb), 0.35); }
+.zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
+.zankyo-log-tag.rx         { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.7); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.5); }
+.zankyo-log-text { color: var(--ink); }
+
+.zk-plate-row { display: flex; justify-content: center; margin-top: 20px; }
+.zk-build { margin: 8px 0 0; text-align: center; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-dim); opacity: 0.7; }
+.zk-build-sep { margin: 0 0.5em; }
+.zk-plate { position: relative; padding: 6px 26px; border-radius: 2px; background: linear-gradient(180deg, #3b3b43, #26262c 60%, #1e1e24); border: 1px solid #0a0a0c; font-size: 8.5px; letter-spacing: 0.2em; color: #9d99a6; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 3px rgba(0, 0, 0, 0.6); transform: rotate(-0.3deg); }
+.zk-plate::before, .zk-plate::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5a5a63, #1e1e23 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-plate::before { left: 7px; }
+.zk-plate::after { right: 7px; }
+.zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 4px 0; }
+.zankyo-note strong { color: var(--red); font-weight: 500; }
+
+/* ===========================================================================
+   OPTION R2 — 操作段 THE CONTROL LEDGE
+   The bank at 960: the set takes column 1 (3fr, 516 px → tube 488 × 366), the
+   scope + bargraph stack column 2 (2fr, 344 px → viz 314 × 200).
+   =========================================================================== */
+.zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
+.zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
+.zk-bank-side { order: -1; min-width: 0; }         /* the set takes column 1 */
+.zk-bank-main .zk-bargraph { margin-bottom: 0; }
+.zk-bank-main .zk-sticker { right: 62px; }
+
+/* ---------------------------------------------------------------------------
+   THE CASING — the live .zk-set2, copied out of zankyo.css and not touched.
+   Same plastic, same 11 px radius, same 13 px wall, same 1 px black edge.
+   The only line changed is the bottom padding, which the ledge now owns.
+   --------------------------------------------------------------------------- */
+.zk-set2 {
+  position: relative; box-sizing: border-box; min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 11px 13px 0; border-radius: 11px; border: 1px solid #000;
+  background:
+    radial-gradient(70% 26% at 62% 0%, rgba(255, 240, 200, 0.06), transparent 70%),
+    radial-gradient(30% 40% at 100% 100%, rgba(110, 66, 32, 0.22), transparent 70%),
+    linear-gradient(180deg, #2b2826, #1a1817 55%, #100f0e);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 220, 0.1), inset 0 -5px 12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.55);
+}
+/* the tool's own texture — a fine spark-eroded grain, the reason this plastic
+   never looks wet. Kept very low: it is felt, not seen. */
+.zk-set2::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; border-radius: inherit;
+  opacity: 0.22; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23g)' opacity='0.55'/></svg>");
+}
+.zk-set2 > * { position: relative; z-index: 1; }
+
+/* THE TUBE. Percentage padding, NOT aspect-ratio: WebKit resolves a flex row
+   height before it resolves a ratio and squashes the tube to 488 × 274
+   (PLAN §9.1). Percentage padding resolves against the wrap's own width in
+   every engine and cannot be shrunk. */
+.zk-set2-tubewrap { display: block; flex: none; }
+.zk-tube-wrap { position: relative; display: block; height: 0; padding-bottom: 75%; }
+.zk-tube {
+  position: absolute; inset: 0; box-sizing: border-box; overflow: hidden;
+  border-radius: 18px / 22px;
+  background: #030503;
+  border: 1px solid #020302;
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.95),
+    inset 0 0 26px rgba(0, 0, 0, 0.95),
+    inset 0 3px 10px rgba(0, 0, 0, 0.85),
+    inset 0 0 60px rgba(30, 90, 40, 0.05);
+}
+.zk-tube canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.zk-crack { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; }
+.zk-tube .zk-glass {
+  background:
+    linear-gradient(118deg, rgba(255, 250, 235, 0.11) 0%, rgba(255, 250, 235, 0.03) 14%, transparent 26%, transparent 66%, rgba(255, 255, 255, 0.025) 84%),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 96%);
+}
+.zk-tube .zk-glass::after { right: auto; left: 10%; bottom: 10%; width: 44px; height: 26px; transform: rotate(22deg); background: radial-gradient(closest-side, rgba(200, 205, 190, 0.06), transparent 75%); }
+.zk-tube .zk-glass::before {
+  content: ""; position: absolute; right: 12%; top: 12%; width: 30px; height: 30px; border-radius: 50%;
+  background: repeating-radial-gradient(circle at 50% 50%, rgba(210, 215, 200, 0.05) 0 1px, transparent 1px 3px);
+  transform: rotate(-30deg) scaleX(0.8); opacity: 0.8;
+}
+/* the tape survives, unmoved: .zk-tape-2 off the right edge of the bezel */
+.zk-tape {
+  position: absolute; z-index: 9; height: 17px; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(222, 198, 138, 0.78), rgba(206, 180, 118, 0.82) 50%, rgba(186, 158, 96, 0.8));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 240, 200, 0.12);
+  clip-path: polygon(0 12%, 3% 0, 97% 4%, 100% 20%, 98% 100%, 95% 88%, 2% 96%, 0 70%);
+  font-family: "Shippori Mincho", serif; font-size: 8.5px; letter-spacing: 0.24em; line-height: 17px; text-align: center;
+  color: rgba(48, 32, 18, 0.85); white-space: nowrap; overflow: hidden;
+}
+.zk-tape-2 { width: 58px; right: -8px; top: 46%; transform: rotate(9deg); opacity: 0.86; }
+.zk-tape-2::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 14px; background: linear-gradient(90deg, transparent, rgba(255, 246, 220, 0.5)); }
+
+/* ===========================================================================
+   THE LEDGE. The chin, moulded properly. It runs to the casing's own edges
+   (margin −13 px, the wall's width) and carries the casing's bottom radius,
+   so it is one piece of plastic with the cabinet and not a strip bolted on.
+   Four pieces of moulding, all load-bearing:
+
+     1. THE PARTING LINE at the top — 1 px of groove, 1 px of lit lower lip.
+        It is where the bezel face steps back to the ledge face; without it
+        the ledge is a painted rectangle.
+     2. THE DRAFT — 8 px at each end falling away from the viewer, so the
+        ledge reads as a face that was pulled out of a tool, not a plane.
+     3. THE WELL — a recess with a dark upper wall (the ledge above it casts
+        into it) and a lit lower lip (the front wall of the recess catches
+        the room). The controls live INSIDE it.
+     4. THE EJECTOR PINS — two faint discs on the face where the tool pushed
+        the part off. Nobody notices them; the plastic looks wrong without.
+   =========================================================================== */
+.zk-ledge {
+  position: relative; margin: 9px -13px 0; padding: 3px 7px 4px;
+  border-radius: 0 0 10px 10px;
+  background:
+    /* the ledge face is drafted: it catches more of the room's light at its
+       top edge, and falls into the cabinet's own shadow at the front */
+    radial-gradient(80% 120% at 30% 0%, rgba(255, 240, 205, 0.05), transparent 72%),
+    linear-gradient(180deg, #35302c 0 1px, #2c2724 1px 44%, #201c1a 78%, #171412);
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 244, 220, 0.07),   /* the front arris, lit */
+    inset 0 -9px 14px rgba(0, 0, 0, 0.42);
+}
+.zk-ledge::before {                              /* 1. the parting line */
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 3; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0 1px, rgba(255, 244, 220, 0.14) 1px 2px);
+}
+.zk-ledge::after {                               /* 2. the draft at both ends */
+  content: ""; position: absolute; inset: 2px 0 0; z-index: 2; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(90deg,
+    rgba(0, 0, 0, 0.52) 0 2px, rgba(0, 0, 0, 0.22) 2px 9px, transparent 9px,
+    transparent calc(100% - 9px), rgba(0, 0, 0, 0.22) calc(100% - 9px) calc(100% - 2px), rgba(0, 0, 0, 0.52) calc(100% - 2px));
+}
+.zk-ledge > * { position: relative; z-index: 4; }
+.zk-pin {                                        /* 4. an ejector-pin witness */
+  position: absolute; z-index: 1; width: 13px; height: 13px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 42% 38%, rgba(255, 244, 220, 0.045), rgba(0, 0, 0, 0.14) 70%, transparent 78%);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.3);
+}
+.zk-pin-l { left: 16px; bottom: 5px; }
+.zk-pin-r { right: 16px; bottom: 5px; }
+
+/* the model line, silk-screened on the ledge face above the well — where a
+   1970s set put it, because it is the only flat the tool left for print */
+.zk-ledge-brand { display: flex; align-items: baseline; gap: 10px; padding: 2px 3px 3px; line-height: 1; }
+.zk-ledge-brand span { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); }
+.zk-ledge-brand i { font-style: normal; color: #574f47; }
+.zk-ledge-brand em { margin-left: auto; font-style: normal; font-size: 6px; letter-spacing: 0.24em; color: #514a44; transform: rotate(-0.5deg); white-space: nowrap; }
+
+/* 3. THE WELL. Everything in the row sits below the ledge's own face. */
+.zk-well {
+  position: relative; display: grid; gap: 5px;
+  grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr;
+  padding: 4px; border-radius: 4px;
+  background: linear-gradient(180deg, #131110, #1b1816 62%, #221e1b);
+  box-shadow:
+    inset 0 3px 5px rgba(0, 0, 0, 0.92),         /* the ledge above casts in */
+    inset 0 -1px 0 rgba(255, 244, 220, 0.09),    /* the well's front wall, lit */
+    0 1px 0 rgba(255, 244, 220, 0.075);          /* the lip on the ledge face */
+}
+
+/* --- the shared plastic of every face in the well: the same tool, the same
+       ejection direction, so they all catch the light on their top arris --- */
+.zk-face {
+  position: relative; box-sizing: border-box; height: 36px; border: 0; padding: 0; margin: 0;
+  border-radius: 2px 2px 3px 3px; cursor: pointer; font: inherit; color: inherit;
+  background: linear-gradient(180deg, #423c37 0 1px, #38322e 1px 46%, #272320 46%, #1c1917);
+  box-shadow:
+    0 1px 0 rgba(255, 246, 224, 0.11),
+    0 2px 4px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 246, 224, 0.17),
+    inset -1px 0 2px rgba(0, 0, 0, 0.45),
+    inset 1px 0 1px rgba(255, 246, 224, 0.045),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.6);
+  transition: transform 0.07s ease-out, box-shadow 0.07s ease-out, background 0.12s;
+}
+.zk-face:hover { background: linear-gradient(180deg, #4a443e 0 1px, #3e3833 1px 46%, #2b2724 46%, #1f1c19); }
+.zk-face:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; z-index: 6; }
+.zk-face.is-down, .zk-face:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 0 0 rgba(0, 0, 0, 0),
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 3px 5px rgba(0, 0, 0, 0.88),
+    inset 0 -1px 0 rgba(255, 246, 224, 0.06);
+}
+.zk-face-k { display: block; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 11.5px; letter-spacing: 0.06em; line-height: 1; color: #b8ac9c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.07); }
+.zk-face-l { display: block; margin-top: 3px; font-size: 5.5px; letter-spacing: 0.2em; line-height: 1; color: #7d7468; }
+
+/* --- the lit buttons: a lens bar let into the bottom of the face. Dark it is
+       a moulded slot; lit it is the only colour on the ledge. --- */
+.zk-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 6px; }
+.zk-lens {
+  position: absolute; left: 50%; bottom: 4px; width: 38%; max-width: 36px; height: 3px; transform: translateX(-50%); border-radius: 1px;
+  background: linear-gradient(180deg, #17130f, #221d17);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.9), 0 -1px 0 rgba(255, 246, 224, 0.05);
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.zk-btn.is-lit .zk-lens {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0 1px, var(--lens, #ffb000) 1px);
+  box-shadow: 0 0 7px var(--lens, #ffb000), 0 0 2px rgba(255, 255, 255, 0.8), inset 0 0 2px rgba(255, 255, 255, 0.6);
+}
+.zk-btn.is-flicker .zk-lens { animation: zk-led-flicker 0.11s infinite; }
+/* 常時 HOLD latches: the face stays down in its well and the lens stays red */
+.zk-btn.is-latched { transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,0), 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(255, 246, 224, 0.06); }
+.zk-btn.is-latched .zk-face-k { color: #d8cdbd; }
+
+/* --- THE ROCKERS. One moulded see-saw plate over a pivot rib, with a window
+       in the middle of it. Press an end: that end goes down into the well and
+       the other lifts on the pivot. Two ends is the whole interface, which is
+       the point — on a phone they are 45 px of thumb each. --- */
+.zk-rocker {
+  position: relative; display: flex; align-items: stretch; gap: 0;
+  height: 36px; border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, #0f0d0c, #161311);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
+}
+.zk-rocker::before {          /* the pivot rib, moulded across the plate */
+  content: ""; position: absolute; z-index: 5; left: 0; right: 0; top: 50%; height: 1px; margin-top: -0.5px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.5) 18%, rgba(0, 0, 0, 0.5) 82%, transparent);
+}
+.zk-rock-end {
+  flex: 0 0 30%; min-width: 0; display: flex; align-items: center; justify-content: center;
+  height: 100%; border-radius: 2px 2px 3px 3px;
+}
+.zk-rock-end i { font-style: normal; font-size: 11px; line-height: 1; color: #c2b6a4; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.1); }
+.zk-rock-l { border-radius: 3px 1px 1px 3px; }
+.zk-rock-r { border-radius: 1px 3px 3px 1px; }
+/* the see-saw: while one end is down the other rides up on the pivot */
+.zk-rocker.tilt-l .zk-rock-r, .zk-rocker.tilt-r .zk-rock-l { transform: translateY(-1.5px); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 246, 224, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.5); }
+.zk-rock-win {
+  flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  margin: 2px 1px; border-radius: 2px;
+  background: linear-gradient(180deg, #0b0a09, #121010);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(255, 244, 220, 0.07);
+}
+.zk-rock-k { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.08em; line-height: 1; color: #877d70; white-space: nowrap; }
+.zk-rock-steps { display: flex; gap: 2.5px; align-items: center; }
+.zk-step { width: 6px; height: 4px; border-radius: 1px; background: #241f1b; box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.85); transition: background 0.1s, box-shadow 0.1s; }
+.zk-step.on { background: linear-gradient(180deg, #ffe6ae, var(--amber)); box-shadow: 0 0 5px rgba(var(--amber-rgb), 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+.zk-rock-steps.is-kanji { gap: 4px; }
+.zk-rock-steps.is-kanji b { font-family: "Shippori Mincho", serif; font-weight: 500; font-size: 8px; line-height: 1; color: #4f4840; transition: color 0.12s, text-shadow 0.12s; }
+.zk-rock-steps.is-kanji b.on { color: #ffdc9a; text-shadow: 0 0 7px rgba(var(--amber-rgb), 0.85); }
+
+/* ---------------------------------------------------------------------------
+   THE WIDTH SIMULATOR. The live page's breakpoints are viewport media
+   queries; here they are container queries on the same numbers. No transition
+   on the resized element — the readout must be the width, not an animation.
+   --------------------------------------------------------------------------- */
+.zk-sim { container-type: inline-size; container-name: zk; width: 960px; max-width: 100%; margin: 0 auto; }
+
+@container zk (max-width: 700px) {
+  .content-frame { padding: 24px 12px 48px; }
+  .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
+  .zankyo-frame { padding: 20px 13px 30px; }
+  .zankyo-sub-long { display: none; }
+  .zankyo-title { letter-spacing: 0.06em; }
+  .zk-vent, .zk-sticker, .zk-warn-small { display: none; }
+  .zk-marquee { margin: 0 0 16px; padding: 12px 8px 10px; }
+  .zankyo-viz { height: 160px; }
+  .zk-monitor { padding: 9px 9px 0; }
+  .zk-bargraph { padding: 7px 9px 5px; gap: 3px 8px; }
+  .zk-bar-cells { gap: 1px; height: 13px; }
+  .zk-bar-serial { display: none; }
+  .zk-console-top { flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+  .zk-module { order: 2; flex: 1 1 100%; flex-wrap: wrap; gap: 10px 13px; padding: 9px 12px 15px 14px; }
+  .zk-master { order: 1; }
+  .zk-mod-mode { flex: 1 1 100%; }
+  .zk-mod-scale { border-left: none; box-shadow: none; padding-left: 0; }
+  .zk-testpoints { display: none; }
+  .zk-arcade { width: 66px; height: 66px; }
+  .stop-btn { width: 56px; height: 56px; }
+  .zk-knob-master { width: 50px; height: 50px; }
+  .zankyo-layer-sample { display: none; }
+  .zankyo-layer { padding: 10px 12px 9px; }
+  .zankyo-layer-head { gap: 8px 12px; flex-wrap: nowrap; }
+  .zankyo-layer-name { min-width: 0; font-size: 10px; padding: 6px 9px; }
+  .zankyo-log { height: 180px; }
+
+  /* SETTLED (PLAN §2.2): television → spectrum scope → 段階 progress bar →
+     PLAY / STOP / volume. display: contents dissolves the two column wrappers
+     so the three things are direct grid items and take an explicit order; the
+     transport already follows the bank in the markup. */
+  .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
+  .zk-bank-main, .zk-bank-side { display: contents; }
+  .zk-set2    { order: 1; }
+  .zk-monitor { order: 2; margin-bottom: 0; }
+  .zk-bargraph { order: 3; margin: 0; }
+
+  /* the live casing's own phone rule, kept: a hair of rotation, thinner walls */
+  .zk-set2 { transform: rotate(0.25deg); padding: 9px 9px 0; }
+  .zk-ledge { margin: 8px -9px 0; padding: 3px 6px 5px; border-radius: 0 0 10px 10px; }
+  .zk-pin-l { left: 12px; } .zk-pin-r { right: 12px; }
+}
+
+/* THE PHONE. Five controls will not sit in one row at 390 px without giving
+   each of them 62 px — a rocker end of 26 px, which is not a thumb. So the
+   well goes to two rows on a six-column grid: the two rockers take three
+   columns each, the three buttons take two each. Both rows fill the width
+   exactly; there is no spare space anywhere on the ledge. */
+@container zk (max-width: 430px) {
+  .zk-well { grid-template-columns: repeat(6, 1fr); gap: 5px; }
+  .zk-rocker { grid-column: span 3; height: 35px; }
+  .zk-btn { grid-column: span 2; height: 35px; }
+  .zk-face-k { font-size: 11px; }
+  .zk-rock-end { flex-basis: 30%; }
+  .zk-ledge-brand em { display: none; }
+}
+/* ------------------------------ mockup spec sheet (not part of the machine) ------------------------------ */
+.zk-spec { max-width: 960px; margin: 22px auto 0; padding: 0 16px; font-size: 11px; line-height: 1.7; color: #4a4650; }
+.zk-spec h2 { font-family: "Orbitron", sans-serif; font-size: 12px; letter-spacing: 0.18em; color: #26262d; margin: 0 0 8px; }
+.zk-spec h3 { font-family: "Orbitron", sans-serif; font-size: 10px; letter-spacing: 0.18em; color: #26262d; margin: 16px 0 6px; }
+.zk-spec p { margin: 0 0 9px; }
+.zk-spec b { color: #ff2d55; font-weight: 500; }
+.zk-spec code { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: #26262d; }
+.zk-spec .zk-spec-k { font-family: "Shippori Mincho", serif; color: #26262d; }
+.zk-spec ul { margin: 0 0 9px; padding-left: 18px; }
+.zk-spec li { margin: 0 0 3px; }
+.zk-spec-tag { float: right; font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 0.18em; color: #8d8898; }
+.zk-spec i { color: #6a6572; }
+.zk-toggle {
+  max-width: 960px; margin: 0 auto; padding: 26px 16px 14px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.16em; color: #6a6572;
+}
+.zk-toggle strong { font-weight: 400; color: #26262d; letter-spacing: 0.2em; margin-right: 6px; }
+.zk-toggle button {
+  font: inherit; letter-spacing: inherit; padding: 6px 12px; cursor: pointer;
+  border: 1px solid #cbc6d0; border-radius: 3px; background: #f4f2f6; color: #3a3640;
+}
+.zk-toggle button[aria-pressed="true"] { background: #26262d; color: #f4f2f6; border-color: #26262d; box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5); }
+.zk-toggle button:focus-visible { outline: 2px solid #0e9fb4; outline-offset: 2px; }
+.zk-toggle em { font-style: normal; color: #948fa0; }
+.zk-toggle .zk-wread { font-style: normal; color: #26262d; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+
+<div class="zk-toggle" role="group" aria-label="simulated viewport width">
+  <strong>幅 WIDTH</strong>
+  <button type="button" data-w="390" aria-pressed="false">390</button>
+  <button type="button" data-w="700" aria-pressed="false">700</button>
+  <button type="button" data-w="960" aria-pressed="true">960</button>
+  <em class="zk-wread" id="wread" aria-live="polite">—</em>
+</div>
+
+<div class="main-wrapper">
+ <div class="zk-sim" id="sim">
+ <div class="zankyo-scene is-on" id="scene">
+  <div class="content-frame zankyo-frame">
+
+    <span class="zk-screw zk-screw-tl" style="--slot:23deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-tr" style="--slot:74deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-bl" style="--slot:-15deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-br" style="--slot:51deg" aria-hidden="true"></span>
+    <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
+    <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
+
+    <div class="zk-marquee">
+      <span class="zk-marquee-screw" aria-hidden="true"></span>
+      <div class="zankyo-header">
+        <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
+        <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a derelict noise-engine &middot; 3042 //</p>
+      </div>
+      <span class="zk-marquee-screw zk-marquee-screw-r" aria-hidden="true"></span>
+    </div>
+
+    <!-- THE BANK: the second set (60) · scope + bargraph (40) -->
+    <div class="zk-bank">
+      <div class="zk-bank-main">
+        <div class="zk-monitor">
+          <div class="zk-screen zankyo-viz-wrap">
+            <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
+            <div class="zankyo-scanlines" aria-hidden="true"></div>
+            <div class="zk-glass" aria-hidden="true"></div>
+          </div>
+          <div class="zk-monitor-chin">
+            <span class="zk-monitor-brand">映像管 &middot; MSHI CRT-19</span>
+            <span class="zk-chin-spacer"></span>
+            <span class="zk-led-label">電源</span>
+            <span class="zk-led" aria-hidden="true"></span>
+          </div>
+          <span class="zk-sticker" aria-hidden="true"><b>検査済</b>3042.04<i></i></span>
+        </div>
+
+        <div class="zk-bargraph" id="zankyo-bargraph">
+          <div class="zk-bar-scale" aria-hidden="true">
+            <span class="zk-bar-zl zk-bar-zl-jo">序 jo</span>
+            <span class="zk-bar-zl zk-bar-zl-ha">破 ha</span>
+            <span class="zk-bar-zl zk-bar-zl-kyu">急 kyū</span>
+            <span class="zk-bar-tick" style="left:25%"></span>
+            <span class="zk-bar-tick" style="left:80%"></span>
+          </div>
+          <div class="zk-bar-housing">
+            <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
+            <span class="zk-bar-glass" aria-hidden="true"></span>
+          </div>
+          <div class="zk-bar-foot" aria-hidden="true">
+            <span class="zk-bar-label">段階 &middot; DEVELOPMENT</span>
+            <span class="zk-bar-serial">LM-3814 &middot; 56&nbsp;SEG</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作段 THE CONTROL LEDGE — the live casing, with the chin moulded
+           out into a 63 px ledge. 516 px of column, 13 px of wall each side,
+           so the tube is the settled 488 × 366 and the ledge is 490 across. -->
+      <div class="zk-bank-side" id="side">
+        <div class="zk-set2" id="set2">
+
+          <div class="zk-set2-tubewrap">
+            <div class="zk-tube-wrap">
+              <div class="zk-tube" id="tube">
+                <canvas id="tube-canvas" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
+                <svg class="zk-crack" id="crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+                <div class="zk-glass" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="zk-ledge">
+            <span class="zk-pin zk-pin-l" aria-hidden="true"></span>
+            <span class="zk-pin zk-pin-r" aria-hidden="true"></span>
+
+            <div class="zk-ledge-brand" aria-hidden="true">
+              <span>映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
+              <em>操作段 &middot; LEDGE 01</em>
+            </div>
+
+            <div class="zk-well">
+
+              <!-- 輝度 BRIGHT — a 4-step rocker → bloom alpha + gain -->
+              <div class="zk-rocker" id="rock-bri" role="group" aria-label="輝度 &middot; brightness, four steps">
+                <button type="button" class="zk-face zk-rock-end zk-rock-l" data-d="-1" aria-label="輝度を下げる &middot; brightness down"><i>&#9662;</i></button>
+                <span class="zk-rock-win">
+                  <span class="zk-rock-k">輝度</span>
+                  <span class="zk-rock-steps" id="bri-steps" aria-hidden="true"></span>
+                </span>
+                <button type="button" class="zk-face zk-rock-end zk-rock-r" data-d="1" aria-label="輝度を上げる &middot; brightness up"><i>&#9652;</i></button>
+                <span class="zk-sr" id="bri-read" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></span>
+              </div>
+
+              <!-- 焦点 FOCUS — a 3-step rocker, 鋭 / 中 / 粗 → the raster -->
+              <div class="zk-rocker" id="rock-foc" role="group" aria-label="焦点 &middot; focus: 鋭 sharp, 中 medium, 粗 coarse">
+                <button type="button" class="zk-face zk-rock-end zk-rock-l" data-d="-1" aria-label="焦点を鋭く &middot; focus sharper"><i>&#9662;</i></button>
+                <span class="zk-rock-win">
+                  <span class="zk-rock-k">焦点</span>
+                  <span class="zk-rock-steps is-kanji" id="foc-steps" aria-hidden="true"><b>鋭</b><b>中</b><b>粗</b></span>
+                </span>
+                <button type="button" class="zk-face zk-rock-end zk-rock-r" data-d="1" aria-label="焦点を粗く &middot; focus coarser"><i>&#9652;</i></button>
+                <span class="zk-sr" id="foc-read" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></span>
+              </div>
+
+              <!-- 蛍光体 TUBE — a lit cycle button → the phosphor LUT -->
+              <button type="button" class="zk-face zk-btn is-lit" id="btn-tube" aria-label="蛍光体 &middot; phosphor: press to change the tube type">
+                <span class="zk-face-k">蛍光体</span><span class="zk-face-l" id="tube-l">P39</span>
+                <span class="zk-lens" aria-hidden="true"></span>
+              </button>
+
+              <!-- 受信 RECEIVE — momentary → a signal now -->
+              <button type="button" class="zk-face zk-btn" id="btn-rx" aria-label="受信 &middot; receive: pick up a signal now">
+                <span class="zk-face-k">受信</span><span class="zk-face-l">RECEIVE</span>
+                <span class="zk-lens" aria-hidden="true"></span>
+              </button>
+
+              <!-- 常時 HOLD — latching, with a lamp → the picture never leaves -->
+              <button type="button" class="zk-face zk-btn" id="btn-hold" aria-pressed="false" aria-label="常時 &middot; hold: latch, and the picture stays until you unlatch it">
+                <span class="zk-face-k">常時</span><span class="zk-face-l">HOLD</span>
+                <span class="zk-lens" aria-hidden="true"></span>
+              </button>
+
+            </div>
+          </div>
+
+          <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="zk-console-top">
+      <div class="zk-transport-cluster">
+        <button type="button" class="zk-arcade play-btn is-playing" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
+        <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+      </div>
+      <div class="zk-module">
+        <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
+        <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
+        <div class="zk-mod-zone zk-mod-mode">
+          <span class="zk-mod-head">旋法 &middot; MODE</span>
+          <div class="zk-mod-lamp">
+            <span class="zankyo-scale-name" id="zankyo-mode-name"><b>Hirajoshi</b> &middot; D</span>
+            <span class="zankyo-scale-mood" id="zankyo-mode-mood">haunted &middot; derelict &middot; neon-rust</span>
+          </div>
+        </div>
+        <div class="zk-mod-zone zk-mod-scale">
+          <span class="zk-mod-head">音階 &middot; SCALE</span>
+          <div class="zk-deg-row" id="zankyo-degrees"></div>
+          <span class="zk-testpoints" aria-hidden="true"></span>
+        </div>
+        <span class="zk-mod-stamp" aria-hidden="true">音程管理 &middot; MODULE 04</span>
+      </div>
+      <div class="zk-master">
+        <div id="zankyo-master-knob" class="zk-knob-mount"></div>
+        <div class="zk-master-meta">
+          <span class="zk-print">主音量 &middot; VOL</span>
+          <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="zankyo-mixer">
+      <div class="zankyo-mixer-title"><span>卓 &middot; CONSOLE</span><span class="zk-warn-small" aria-hidden="true">機動注意</span></div>
+      <div id="zankyo-layers"></div>
+    </div>
+
+    <div class="zankyo-log-block">
+      <div class="zankyo-log-label"><span>活動 &middot; ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
+      <div id="zankyo-log" class="zankyo-log"></div>
+    </div>
+
+    <div class="zk-plate-row">
+      <span class="zk-plate">残響-3042 &middot; MUNICIPAL SKY HEAVY INDUSTRIES &middot; 製造番号 3042-0117</span>
+    </div>
+    <p class="zk-build" aria-label="build version">2.1.0-rc.75<span class="zk-build-sep">&middot;</span>mockup R2<span class="zk-build-sep">&middot;</span>操作段 control ledge</p>
+
+    <p class="zankyo-note">
+      Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
+      <strong>jo-ha-kyū</strong> (序破急) — a slow spacious opening that accelerates into a noise-wall climax,
+      then dissolves. Each cycle is planned anew (a rite, a drift, a storm, a silence, a broadcast), the voices take turns and rest,
+      the key drifts, themes are born and inherited, and rare guests visit. Nothing repeats; the voices answer one another.
+      Add <code>?seed=</code> to the address to share a night.
+    </p>
+
+  </div>
+ </div>
+ </div>
+</div>
+
+<section class="zk-spec">
+  <h2>OPTION R2 · <span class="zk-spec-k">操作段</span> THE CONTROL LEDGE <span class="zk-spec-tag">restrained round</span></h2>
+
+  <p><b>The argument.</b> The screen is the event; everything below it is a servant. So this option changes exactly one thing about the set you already have: the 30 px chin, which was never moulded — it was a row of leftovers — becomes a properly moulded ledge of 63 px. Nothing else moves. The plastic is the same plastic, the corner radius is the same 11 px, the wall is the same 13 px, the crack and the tape are untouched, and a visitor who has seen the live set will not notice that the casing changed at all until they look at the bottom. The bet is that <i>a ledge can be beautiful without being big</i>: that the difference between a control strip that looks bolted on and one that looks injection-moulded is four details worth about eight pixels each — a parting line, a draft angle, a recess with a lit front lip, and button faces that sit below the plastic around them — and that once those are right, sixty-three pixels is plenty of room for five controls and there is nothing to apologise for.</p>
+
+  <h3>WHAT CHANGED FROM THE LIVE CASING</h3>
+  <ul>
+    <li><b>The chin became a ledge.</b> <code>.zk-set2-chin</code> (30 px, <code>display:flex</code>, four things at 7 px gaps) is replaced by <code>.zk-ledge</code>, which runs to the casing's own edges (<code>margin: 0 −13px</code>) and carries the cabinet's bottom radius, so it is one piece of plastic with the cabinet.</li>
+    <li><b>Four pieces of moulding, all load-bearing.</b> (1) A <i>parting line</i> across the top: 1 px of groove and 1 px of lit lower lip, where the bezel face steps back to the ledge face. (2) A <i>draft angle</i>: 9 px at each end falling away from the viewer, so the ledge reads as a face pulled out of a tool rather than a plane. (3) A <i>recess</i> — the well — whose upper wall is dark because the ledge above casts into it and whose front wall is lit because it faces the room; every control face sits <i>inside</i> it, 4 px below the surrounding plastic. (4) Two <i>ejector-pin witnesses</i> on the face, where the tool pushed the part off the core. Nobody notices them; the plastic looks wrong without them.</li>
+    <li><b>The controls.</b> 選局 (a 20 px knob) is gone — no rotary on the ledge at all. 受信 survives as one of five, folded into the row. The master volume knob on the console below is now the <i>only</i> rotary on the whole faceplate, and it is the one control where a knob is the honest answer.</li>
+    <li><b>The tube geometry.</b> Unchanged at every width: 488 × 366 at 960, full width on a phone. The ledge costs 33 px of faceplate height, not one pixel of picture.</li>
+  </ul>
+
+  <h3>THE FIVE CONTROLS, WIRED FOR REAL</h3>
+  <ul>
+    <li><b><span class="zk-spec-k">輝度</span> BRIGHT</b> — a 4-step rocker. Drives the shader's black lift and gain (<code>(l − lift) × gain</code>, 25/1.03 → 6/1.70) and the bloom pass's alpha and blur radius together, which is what brightness on a CRT actually was: not a multiply, but how hard the beam is driven and how much the phosphor spreads.</li>
+    <li><b><span class="zk-spec-k">焦点</span> FOCUS</b> — a 3-step rocker, 鋭 / 中 / 粗. Reallocates the raster live: <b>192 × 144 → 96 × 72 → 48 × 36</b>. 鋭 is the reels' native size; 粗 is a Paik mush of moving blocks. The source, phosphor, glow and bloom canvases are all resized on the step, so the cost goes with it.</li>
+    <li><b><span class="zk-spec-k">蛍光体</span> TUBE</b> — a lit cycle button. Swaps the LUT: <b>P39</b> long-persistence yellow-green (the live tube), <b>P3</b> amber, <b>P4</b> blue-white. The crack's own glow, the Paik line, the idle sweep and the decay colour all follow the phosphor, so the swap reads instantly. The button's lens takes the tube's colour, which is how you know which one you are on without reading anything.</li>
+    <li><b><span class="zk-spec-k">受信</span> RECEIVE</b> — momentary. A real reel, tuned in now.</li>
+    <li><b><span class="zk-spec-k">常時</span> HOLD</b> — latching, with a red lamp. The picture stops leaving: the hold phase never expires, so the set becomes a continuous television instead of a visitation. Latch it while the tube is dark and it receives at once. Unlatch it and the current picture gets a second and a half of grace, then loses the way it always did.</li>
+  </ul>
+
+  <h3>MOBILE</h3>
+  <p>At ≤ 700 px the two column wrappers dissolve with <code>display: contents</code> and the four things take an explicit order: <b>television → spectrum scope → 段階 progress bar → PLAY / STOP / volume</b>. The tube stays full width and the ledge thins its walls to 9 px with the casing.</p>
+  <p><b>At ≤ 430 px the well goes to two rows, and the reason is arithmetic.</b> Five controls across a 308 px well is 62 px each; a rocker that wide has 26 px ends, which is not a thumb. So the well runs on a six-column grid: the two rockers take three columns each (measured 160 px, ends of 48 px) and the three buttons take two each (measured 105 px). Both rows fill the width exactly — <b>there is no spare space anywhere on the ledge at any width</b>, which was the complaint about the last round. The ledge is 105 px on a 390 px phone under a 327 × 246 picture, and every pixel of it is a control; at every width above 430 px it is one row and 63 px.</p>
+
+  <h3>KEYBOARD</h3>
+  <p>Every control is a real <code>&lt;button&gt;</code> with a visible focus ring. Tab reaches all seven elements of the row; on a rocker, ← and → step it from either end; Enter and Space work everywhere. The rockers announce their step through a live region (<i>輝度 3 / 4</i>, <i>焦点 中 · 96 × 72</i>).</p>
+
+  <p><b>Measured, live, in this browser.</b> <span id="measure">…</span></p>
+  <p><b>Frame cost of the shader at the current raster</b> (source → LUT → frame → compose, the scope excluded): <span id="perf">warming up…</span></p>
+
+  <p><b>Idle.</b> The tube is dark and never still: a faint raster crawls with a slow vignette and thermal sparks, the MSHI test card surfaces out of the depth about every twenty seconds with the hold slipping, and every so often the whole raster folds into Paik's one line and goes out or shrinks to a dot. A signal arrives on its own about every 25 seconds; 受信 brings one now.</p>
+</section>
+
+<video id="v0" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="v1" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="v2" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="v3" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="v4" muted playsinline preload="auto" crossorigin="anonymous"></video>
+<style>video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -10px; top: 0; }</style>
+
+<script>
+(function () {
+  "use strict";
+  var now = function () { return performance.now(); };
+  var clamp01 = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
+  var rnd = Math.random;
+
+  // ==========================================================================
+  // FACEPLATE FURNITURE — the real UI builders, static (no engine here)
+  // ==========================================================================
+  (function masterKnob() {
+    var el = document.createElement("div");
+    el.className = "zk-knob zk-knob-master";
+    el.setAttribute("role", "slider"); el.setAttribute("aria-label", "主音量 · master volume"); el.tabIndex = 0;
+    el.innerHTML = '<span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform:rotate(27deg)"><span class="zk-knob-ind"></span></span>';
+    document.getElementById("zankyo-master-knob").appendChild(el);
+  })();
+  var LAYERS = [
+    ["subDrone", "Sub-drone", "重低音"], ["sho", "Shō", "笙"], ["shakuhachi", "Shakuhachi", "尺八"],
+    ["hichiriki", "Hichiriki", "篳篥"], ["koto", "Koto", "箏"], ["shamisen", "Shamisen", "三味線"],
+    ["biwa", "Biwa", "琵琶"], ["taiko", "Taiko", "太鼓"], ["noise", "Noise", "雑音"],
+    ["ambient", "Ambient", "環境"], ["pa", "PA", "放送"]
+  ];
+  (function mixer() {
+    var host = document.getElementById("zankyo-layers");
+    LAYERS.forEach(function (L, li) {
+      var row = document.createElement("div"); row.className = "zankyo-layer";
+      var head = document.createElement("div"); head.className = "zankyo-layer-head";
+      head.innerHTML = '<button type="button" class="zankyo-layer-name" aria-expanded="false"><span class="zankyo-layer-kana">' + L[2] + '</span><span class="zk-name-label">' + L[1] + '</span><i class="zk-ch">CH·' + (li < 9 ? "0" : "") + (li + 1) + '</i><span class="zk-name-latch" aria-hidden="true"></span></button>' +
+        '<button type="button" class="zankyo-layer-sample" aria-label="sample"><span class="tri"></span></button>' +
+        '<button type="button" class="zk-switch" aria-label="mute"><i class="zk-switch-on">ON</i><span class="zk-switch-slot"><span class="zk-switch-lever"></span></span><i class="zk-switch-off">OFF</i></button>';
+      row.appendChild(head); host.appendChild(row);
+    });
+  })();
+  var degRow = document.getElementById("zankyo-degrees");
+  degRow.innerHTML = ["一", "二", "三", "四", "五"].map(function (k) { return '<span class="zk-deg">' + k + '</span>'; }).join("");
+  var degs = degRow.children, degUntil = [0, 0, 0, 0, 0], nextDeg = 0;
+  var BAR_N = 56, BAR_JO = 14, BAR_HA = 45, segs = [];
+  (function () {
+    var host = document.getElementById("zankyo-bar-cells"), frag = document.createDocumentFragment();
+    for (var i = 0; i < BAR_N; i++) { var s = document.createElement("span"); s.className = "zk-seg " + (i < BAR_JO ? "zk-seg-jo" : i < BAR_HA ? "zk-seg-ha" : "zk-seg-kyu"); frag.appendChild(s); segs.push(s); }
+    host.appendChild(frag);
+  })();
+  var barLit = -1, barPeak = -1, barPeakAt = 0;
+  function setBar(level) {
+    var n = Math.round(clamp01(level) * BAR_N);
+    if (n !== barLit) {
+      for (var i = 0; i < BAR_N; i++) { segs[i].classList.toggle("on", i < n); segs[i].classList.toggle("is-head", i === n - 1); }
+      barLit = n;
+    }
+    if (n - 1 >= barPeak) { if (barPeak >= 0) segs[barPeak].classList.remove("is-peak"); barPeak = n - 1; barPeakAt = now(); }
+    else if (now() - barPeakAt > 900 && barPeak > n - 1) { segs[barPeak].classList.remove("is-peak"); barPeak--; barPeakAt = now() - 820; if (barPeak > n - 1) segs[barPeak].classList.add("is-peak"); }
+    else if (barPeak > n - 1) segs[barPeak].classList.add("is-peak");
+  }
+  var logEl = document.getElementById("zankyo-log");
+  var t0 = now();
+  function stamp() { var s = Math.floor((now() - t0) / 1000); return (Math.floor(s / 60) + "").padStart(2, "0") + ":" + (s % 60 + "").padStart(2, "0"); }
+  function log(tag, cls, text) {
+    var row = document.createElement("div"); row.className = "zankyo-log-row";
+    row.innerHTML = '<span class="zankyo-log-time">' + stamp() + '</span><span class="zankyo-log-tag ' + cls + '">' + tag + '</span><span class="zankyo-log-text">' + text + '</span>';
+    logEl.insertBefore(row, logEl.firstChild);
+    while (logEl.children.length > 60) logEl.removeChild(logEl.lastChild);
+  }
+  log("❁ cycle", "form", "放送 broadcast · 序 jo · Hirajoshi · D");
+  log("笙", "sho", "aitake 乙 · held");
+  log("○ stated", "shakuhachi", "イ stated plain · g0");
+  log("環境", "noise", "hull creak · seeded 0x3a1f");
+
+  function arcAt(t) { var p = (t / 100000) % 1; var lvl = p < 0.45 ? Math.pow(p / 0.45, 1.6) * 0.25 : p < 0.82 ? 0.25 + (p - 0.45) / 0.37 * 0.55 : p < 0.9 ? 0.8 + (p - 0.82) / 0.08 * 0.2 : 1 - (p - 0.9) / 0.1; return clamp01(lvl); }
+
+  // ==========================================================================
+  // THE SCOPE (CRT-19) — the real viz drawing, on a synthetic signal
+  // ==========================================================================
+  var vcv = document.getElementById("zankyo-viz"), vcx = vcv.getContext("2d"), VW = 0, VH = 0, dpr = 1;
+  var freq = new Float32Array(64), wave = new Float32Array(512);
+  function synth(t, arc) {
+    var s = t / 1000;
+    for (var i = 0; i < 64; i++) {
+      var base = Math.exp(-i / (9 + arc * 22)) * (0.55 + arc * 0.45);
+      var wob = 0.5 + 0.5 * Math.sin(s * (0.7 + i * 0.13) + i * 1.7) * Math.sin(s * 0.21 + i);
+      var flick = rnd() * 0.16 * (0.4 + arc);
+      var peak = (i === 3 || i === 7 || i === 12 || i === 19) ? 0.25 + 0.2 * Math.sin(s * 1.3 + i) : 0;
+      freq[i] = clamp01(base * (0.55 + wob * 0.6) + peak * (0.6 + arc) + flick);
+    }
+    for (var k = 0; k < 512; k++) {
+      var x = k / 512;
+      wave[k] = 0.32 * Math.sin(x * 12.6 + s * 2.1) + 0.2 * Math.sin(x * 37 + s * 3.7) + 0.12 * Math.sin(x * 91 + s * 9) * arc + (rnd() - 0.5) * (0.06 + arc * 0.28);
+    }
+  }
+  function strokeWave(xoff, arc) {
+    vcx.beginPath(); var tear = 0;
+    for (var sx = 0; sx < VW; sx++) {
+      if (arc > 0.6 && rnd() < 0.012) tear = (rnd() * 2 - 1) * arc * 16;
+      var y = VH * 0.5 + wave[(sx * 512 / VW) | 0] * VH * 0.4 + tear;
+      if (sx === 0) vcx.moveTo(sx + xoff, y); else vcx.lineTo(sx + xoff, y);
+    }
+    vcx.stroke();
+  }
+  function drawScope(t, arc) {
+    if (arc > 0.55 && rnd() < arc * 0.1) {
+      vcx.save(); vcx.setTransform(1, 0, 0, 1, 0, 0);
+      var bandH = (16 + rnd() * 70) * dpr, bandY = rnd() * (VH * dpr - bandH), jit = (rnd() * 2 - 1) * 40 * dpr * arc;
+      vcx.globalAlpha = 0.85; vcx.drawImage(vcv, 0, bandY, VW * dpr, bandH, jit, bandY, VW * dpr, bandH); vcx.restore();
+    }
+    vcx.fillStyle = "rgba(3,3,5,0.35)"; vcx.fillRect(0, 0, VW, VH);
+    synth(t, arc);
+    var bw = VW / 64;
+    for (var i = 0; i < 64; i++) {
+      var v = freq[i], h = v * VH * 0.62;
+      var glitch = (arc > 0.5 && rnd() < arc * 0.07) ? (rnd() * 2 - 1) * 12 * arc : 0;
+      var x = i * bw + glitch, mix = i / 64;
+      vcx.fillStyle = "rgba(" + Math.round(255 * (1 - mix * 0.4)) + "," + Math.round(45 + mix * 120) + "," + Math.round(85 + mix * 150) + "," + (0.35 + v * 0.5).toFixed(2) + ")";
+      vcx.fillRect(x, VH - h, Math.max(1, bw - 1.5), h);
+    }
+    var off = arc * 6;
+    vcx.globalCompositeOperation = "lighter"; vcx.lineWidth = 1.3;
+    vcx.strokeStyle = "rgba(255,45,85," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(-off, arc);
+    vcx.strokeStyle = "rgba(22,224,224," + (0.5 + arc * 0.4).toFixed(2) + ")"; strokeWave(0, arc);
+    vcx.strokeStyle = "rgba(255,61,240," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(off, arc);
+    vcx.globalCompositeOperation = "source-over";
+    var energy = 0; for (var e = 0; e < 64; e += 2) energy += freq[e]; energy /= 32;
+    vcx.fillStyle = "rgba(255,45,85," + (0.05 + energy * 0.18).toFixed(3) + ")"; vcx.fillRect(0, VH * 0.5 - 1, VW, 2);
+    if (arc > 0.5) { var nb = Math.floor(rnd() * arc * 3); vcx.fillStyle = "rgba(0,0,0,0.7)"; for (var b = 0; b < nb; b++) vcx.fillRect(0, rnd() * VH, VW, 1 + rnd() * 3); }
+    var sweep = (t / 1000 * 40) % VW; vcx.fillStyle = "rgba(255,61,240,0.06)"; vcx.fillRect(sweep, 0, 2, VH);
+  }
+
+  // ==========================================================================
+  // THE SET — CRT-9. The raster starts at 192 × 144, the reels' own size, and
+  // 焦点 FOCUS moves it: 192×144 → 96×72 → 48×36, reallocating every buffer.
+  //
+  //   source (SW×SH greyscale) → LUT (the tube type 蛍光体 chose) → frame at
+  //   full resolution (persistence, bloom scaled by 輝度, tear, roll, ghost)
+  //   → composed through the cracked glass into four slipped shards.
+  // ==========================================================================
+  var SW = 192, SH = 144, BAND = SH / 9;
+  var src = document.createElement("canvas"), scx = src.getContext("2d", { willReadFrequently: true });
+  var phos = document.createElement("canvas"), pcx = phos.getContext("2d");
+  var glow = document.createElement("canvas"), gcx = glow.getContext("2d");
+  var pimg = null, pdata = null;
+  var frame = document.createElement("canvas"), fcx = frame.getContext("2d");
+  var tcv = document.getElementById("tube-canvas"), tcx = tcv.getContext("2d");
+  var TW = 0, TH = 0;
+
+  function allocRaster(w, h) {
+    SW = w; SH = h; BAND = SH / 9;
+    src.width = SW; src.height = SH;
+    phos.width = SW; phos.height = SH;
+    glow.width = SW; glow.height = SH;
+    pimg = pcx.createImageData(SW, SH); pdata = pimg.data;
+  }
+  allocRaster(192, 144);
+
+  // ---- 蛍光体 THE TUBE TYPES. Each is a ramp plus the colours everything
+  //      else on the glass borrows from it: the crack's glow, Paik's line,
+  //      the idle sweep, and the colour the persistence decays toward. ----
+  var PHOS = [
+    { id: "P39", latin: "P39", jp: "緑 長残光",
+      stops: [[0, 2, 6, 3], [0.2, 4, 20, 9], [0.45, 12, 72, 30], [0.7, 40, 152, 72], [0.88, 120, 226, 146], [1, 222, 255, 226]],
+      base: [3, 5, 3], glow: [150, 255, 180], hi: [230, 255, 235], line: [225, 255, 230], halo: [120, 240, 150], sweep: [90, 220, 120], lens: "#5cf08a" },
+    { id: "P3", latin: "P3", jp: "琥珀",
+      stops: [[0, 6, 3, 1], [0.2, 28, 12, 2], [0.45, 96, 48, 6], [0.7, 182, 108, 18], [0.88, 240, 174, 62], [1, 255, 236, 188]],
+      base: [5, 3, 2], glow: [255, 190, 110], hi: [255, 234, 196], line: [255, 236, 202], halo: [240, 160, 60], sweep: [220, 150, 60], lens: "#ffb000" },
+    { id: "P4", latin: "P4", jp: "白青",
+      stops: [[0, 3, 4, 7], [0.2, 12, 17, 27], [0.45, 54, 66, 90], [0.7, 122, 142, 174], [0.88, 198, 214, 238], [1, 248, 252, 255]],
+      base: [3, 4, 6], glow: [180, 215, 255], hi: [236, 246, 255], line: [240, 248, 255], halo: [140, 190, 250], sweep: [120, 180, 235], lens: "#b9d8ff" }
+  ];
+  var phosV = 0, PH = PHOS[0];
+  var LUT_R = new Uint8Array(256), LUT_G = new Uint8Array(256), LUT_B = new Uint8Array(256);
+  function buildLUT(stops) {
+    for (var i = 0; i < 256; i++) {
+      var t = Math.pow(i / 255, 1.3), a = stops[0], b = stops[1];
+      for (var k = 1; k < stops.length; k++) { if (t <= stops[k][0]) { a = stops[k - 1]; b = stops[k]; break; } }
+      var u = (t - a[0]) / (b[0] - a[0] || 1);
+      LUT_R[i] = a[1] + (b[1] - a[1]) * u; LUT_G[i] = a[2] + (b[2] - a[2]) * u; LUT_B[i] = a[3] + (b[3] - a[3]) * u;
+    }
+  }
+  buildLUT(PH.stops);
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+
+  // ---- the crack: point data in a 400×300 space; shards are the polygons it cuts ----
+  var P0 = [296, 74];
+  var CRACKS = [
+    [[322, -2], [312, 28], [310, 40], P0],
+    [P0, [262, 118], [250, 130], [228, 160], [215, 175], [200, 214], [190, 240], [178, 272], [170, 302]],
+    [P0, [318, 82], [340, 90], [366, 92], [402, 105]],
+    [[215, 175], [186, 170], [160, 168], [136, 176], [110, 180], [84, 172], [60, 176], [30, 186], [-2, 190]],
+    [[250, 130], [258, 146], [262, 150], [259, 162], [258, 172]],
+    [[340, 90], [346, 108], [343, 122]],
+    [[110, 180], [104, 196], [108, 212]]
+  ];
+  var CHIP = [[0, 262], [16, 268], [26, 282], [40, 288], [48, 302], [-2, 302]];
+  var SHARDS = [
+    { poly: [[0, 0], [322, 0], [312, 28], [310, 40], P0, [262, 118], [250, 130], [228, 160], [215, 175], [186, 170], [160, 168], [136, 176], [110, 180], [84, 172], [60, 176], [30, 186], [0, 190]], dx: 0, dy: 0, a: 1 },
+    { poly: [[322, 0], [400, 0], [400, 105], [366, 92], [340, 90], [318, 82], P0, [310, 40], [312, 28]], dx: 3, dy: -2, a: 0.93 },
+    { poly: [P0, [318, 82], [340, 90], [366, 92], [400, 105], [400, 300], [170, 300], [178, 272], [190, 240], [200, 214], [215, 175], [228, 160], [250, 130], [262, 118]], dx: -4, dy: 3, a: 1 },
+    { poly: [[0, 190], [30, 186], [60, 176], [84, 172], [110, 180], [136, 176], [160, 168], [186, 170], [215, 175], [200, 214], [190, 240], [178, 272], [170, 300], [0, 300]], dx: 2, dy: 5, a: 0.96 }
+  ];
+  var CRACK_W = [1.1, 1.4, 1.0, 1.1, 0.5, 0.45, 0.5];
+  var CRACK_DASH = ["11 7 4 15 19 5", "16 6 9 13 5 21 12 4", "8 10 14 5 6 17", "13 9 6 4 18 7 10 12", "6 9 4 11", "5 8", "7 6 3 9"];
+  (function buildCrackSVG() {
+    var svg = document.getElementById("crack");
+    var paths = CRACKS.map(function (pl) { return "M" + pl.map(function (p) { return p[0] + " " + p[1]; }).join(" L"); });
+    var d = paths.join(" ");
+    var chip = "M" + CHIP.map(function (p) { return p[0] + " " + p[1]; }).join(" L") + " Z";
+    var star = "";
+    for (var i = 0; i < 7; i++) { var a = -0.4 + i * 0.93, r0 = 2 + (i % 3), r1 = 7 + ((i * 5) % 9); star += "M" + (P0[0] + Math.cos(a) * r0).toFixed(1) + " " + (P0[1] + Math.sin(a) * r0).toFixed(1) + " L" + (P0[0] + Math.cos(a + 0.1) * r1).toFixed(1) + " " + (P0[1] + Math.sin(a + 0.1) * r1).toFixed(1) + " "; }
+    var html =
+      '<defs><filter id="ck-blur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>' +
+      '<path d="' + chip + '" fill="#040605"/>' +
+      '<path d="' + chip + '" fill="none" stroke="rgba(120,140,120,0.32)" stroke-width="2.4" vector-effect="non-scaling-stroke"/>' +
+      '<path d="' + chip + '" fill="none" stroke="rgba(230,255,235,0.5)" stroke-width="0.8" vector-effect="non-scaling-stroke" stroke-dasharray="9 4 14 3"/>' +
+      '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="2" vector-effect="non-scaling-stroke" transform="translate(1.1 1.3)" filter="url(#ck-blur)"/>';
+    CRACKS.forEach(function (pl, i) {
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(190,215,200,0.2)" stroke-width="' + (CRACK_W[i] * 1.7).toFixed(2) + '" vector-effect="non-scaling-stroke" filter="url(#ck-blur)"/>';
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(235,250,240,' + (i < 4 ? 0.34 : 0.22) + ')" stroke-width="' + CRACK_W[i].toFixed(2) + '" vector-effect="non-scaling-stroke" stroke-linecap="round"/>';
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(255,255,250,' + (i < 4 ? 0.7 : 0.45) + ')" stroke-width="' + (CRACK_W[i] * 0.8).toFixed(2) + '" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-dasharray="' + CRACK_DASH[i] + '"/>';
+    });
+    html += '<path d="' + star + '" fill="none" stroke="rgba(240,255,245,0.55)" stroke-width="0.6" vector-effect="non-scaling-stroke"/>' +
+      '<circle cx="' + P0[0] + '" cy="' + P0[1] + '" r="2.2" fill="rgba(240,255,245,0.3)" filter="url(#ck-blur)"/>';
+    svg.innerHTML = html;
+  })();
+  var shardPaths = null, chipPath = null, crackPath = null;
+  function buildPaths() {
+    var sx = TW / 400, sy = TH / 300;
+    shardPaths = SHARDS.map(function (s) { var p = new Path2D(); s.poly.forEach(function (pt, i) { if (i) p.lineTo(pt[0] * sx, pt[1] * sy); else p.moveTo(pt[0] * sx, pt[1] * sy); }); p.closePath(); return p; });
+    chipPath = new Path2D(); CHIP.forEach(function (pt, i) { if (i) chipPath.lineTo(pt[0] * sx, pt[1] * sy); else chipPath.moveTo(pt[0] * sx, pt[1] * sy); }); chipPath.closePath();
+    crackPath = new Path2D(); CRACKS.forEach(function (pl) { pl.forEach(function (pt, i) { if (i) crackPath.lineTo(pt[0] * sx, pt[1] * sy); else crackPath.moveTo(pt[0] * sx, pt[1] * sy); }); });
+  }
+
+  var setEl = document.getElementById("set2"), tubeEl = document.getElementById("tube");
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    var r = vcv.getBoundingClientRect(); VW = r.width; VH = r.height;
+    vcv.width = Math.floor(VW * dpr); vcv.height = Math.floor(VH * dpr); vcx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var tdpr = Math.min(1.5, dpr);
+    var tr = tcv.getBoundingClientRect(); TW = tr.width; TH = tr.height;
+    tcv.width = Math.floor(TW * tdpr); tcv.height = Math.floor(TH * tdpr); tcx.setTransform(tdpr, 0, 0, tdpr, 0, 0);
+    frame.width = tcv.width; frame.height = tcv.height; fcx.setTransform(tdpr, 0, 0, tdpr, 0, 0);
+    fcx.fillStyle = "#030503"; fcx.fillRect(0, 0, TW, TH);
+    buildPaths();
+    report();
+  }
+  window.addEventListener("resize", resize);
+
+  // ==========================================================================
+  // THE LEDGE — five controls, all of them wired into the shader above.
+  // ==========================================================================
+
+  // ---- 輝度 BRIGHT: a 4-step rocker → the beam's drive and the phosphor's spread
+  var BRI = [
+    { lift: 25, gain: 1.03, bloom: 0.55, blur: -0.30, idle: 0.55 },
+    { lift: 18, gain: 1.22, bloom: 1.00, blur: 0.00, idle: 1.00 },
+    { lift: 12, gain: 1.44, bloom: 1.45, blur: 0.30, idle: 1.35 },
+    { lift: 6,  gain: 1.70, bloom: 1.95, blur: 0.62, idle: 1.70 }
+  ];
+  var briV = 1, B = BRI[1];
+  var briSteps = document.getElementById("bri-steps");
+  briSteps.innerHTML = "<i class='zk-step'></i><i class='zk-step'></i><i class='zk-step'></i><i class='zk-step'></i>";
+  function setBright(v, quiet) {
+    briV = v < 0 ? 0 : v > 3 ? 3 : v; B = BRI[briV];
+    for (var i = 0; i < 4; i++) briSteps.children[i].classList.toggle("on", i <= briV);
+    document.getElementById("bri-read").textContent = "輝度 " + (briV + 1) + " / 4";
+    if (!quiet) log("輝度", "rx", "brightness " + (briV + 1) + " / 4 · 利得 " + B.gain.toFixed(2) + " · 発光 ×" + B.bloom.toFixed(2));
+  }
+
+  // ---- 焦点 FOCUS: a 3-step rocker → the raster itself
+  var FOC = [[192, 144, "鋭"], [96, 72, "中"], [48, 36, "粗"]];
+  var focV = 0;
+  var focSteps = document.getElementById("foc-steps");
+  function setFocus(v, quiet) {
+    focV = v < 0 ? 0 : v > 2 ? 2 : v;
+    var f = FOC[focV];
+    allocRaster(f[0], f[1]);
+    for (var i = 0; i < 3; i++) focSteps.children[i].classList.toggle("on", i === focV);
+    document.getElementById("foc-read").textContent = "焦点 " + f[2] + " · " + f[0] + " × " + f[1];
+    if (!quiet) log("焦点", "sho", "raster " + f[0] + " × " + f[1] + " · " + f[2]);
+    report();
+  }
+
+  // ---- 蛍光体 TUBE: a lit cycle button → the LUT and everything it tints
+  var tubeBtn = document.getElementById("btn-tube"), tubeL = document.getElementById("tube-l");
+  function setPhosphor(v, quiet) {
+    phosV = ((v % PHOS.length) + PHOS.length) % PHOS.length;
+    PH = PHOS[phosV]; buildLUT(PH.stops);
+    tubeL.textContent = PH.latin;
+    tubeBtn.style.setProperty("--lens", PH.lens);
+    tubeBtn.setAttribute("aria-label", "蛍光体 · phosphor: " + PH.latin + " " + PH.jp + " — press to change the tube type");
+    if (!quiet) log("蛍光体", "koto", "映像管 " + PH.latin + " · " + PH.jp);
+  }
+  tubeBtn.addEventListener("click", function () { setPhosphor(phosV + 1); });
+
+  // ---- 受信 RECEIVE: momentary
+  var rxBtn = document.getElementById("btn-rx");
+  rxBtn.addEventListener("click", function () { tuneNext(); });
+
+  // ---- 常時 HOLD: latching, with a lamp
+  var holdBtn = document.getElementById("btn-hold"), HOLD = false;
+  holdBtn.style.setProperty("--lens", "#ff2d55");
+  holdBtn.addEventListener("click", function () {
+    HOLD = !HOLD;
+    holdBtn.classList.toggle("is-latched", HOLD);
+    holdBtn.classList.toggle("is-lit", HOLD);
+    holdBtn.setAttribute("aria-pressed", HOLD ? "true" : "false");
+    log("常時", HOLD ? "rx" : "pa", HOLD ? "hold latched · the picture stays" : "hold released · the picture will go");
+    if (HOLD && (S.phase === "idle" || S.phase === "dead")) { S.phase = "idle"; tuneNext(); }
+    else if (!HOLD && S.phase === "hold") {
+      var el = (now() - S.t) / 1000;
+      if (el >= S.holdS - 1.5) S.t = now() - (S.holdS - 1.5) * 1000;   // a second and a half of grace
+    }
+  });
+
+  // ---- the rockers' hand: pointer, keyboard, and the see-saw ----
+  function wireRocker(id, apply, get, max) {
+    var host = document.getElementById(id);
+    var ends = [].slice.call(host.querySelectorAll(".zk-rock-end"));
+    var tilt = 0;
+    function fire(d) {
+      var v = get() + d;
+      if (v < 0 || v > max) { // the end of travel: the plate still moves, nothing else does
+        host.classList.add(d < 0 ? "tilt-l" : "tilt-r");
+        clearTimeout(tilt); tilt = setTimeout(function () { host.classList.remove("tilt-l", "tilt-r"); }, 140);
+        return;
+      }
+      apply(v);
+      host.classList.remove("tilt-l", "tilt-r");
+      host.classList.add(d < 0 ? "tilt-l" : "tilt-r");
+      clearTimeout(tilt); tilt = setTimeout(function () { host.classList.remove("tilt-l", "tilt-r"); }, 140);
+    }
+    ends.forEach(function (b) {
+      var d = parseInt(b.getAttribute("data-d"), 10);
+      b.addEventListener("click", function () { fire(d); });
+      b.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowLeft" || e.key === "ArrowDown") { fire(-1); e.preventDefault(); }
+        else if (e.key === "ArrowRight" || e.key === "ArrowUp") { fire(1); e.preventDefault(); }
+      });
+    });
+  }
+  wireRocker("rock-bri", function (v) { setBright(v); }, function () { return briV; }, 3);
+  wireRocker("rock-foc", function (v) { setFocus(v); }, function () { return focV; }, 2);
+
+  setBright(1, true); setFocus(0, true); setPhosphor(0, true);
+
+  // ==========================================================================
+  // THE REELS, and the gesture
+  // ==========================================================================
+  var PICK = ["prelinger-duck-and-cover-1951", "nhk-joak-closedown-1982", "es-tvdx-tve2-catala-1984", "prelinger-design-for-dreaming-1956", "nl-tros-closedown-1992"];
+  var FALLBACK = {};
+  PICK.forEach(function (id) { FALLBACK[id] = { title: id, year: 0, windows: [[0, 12], [12, 24], [24, 36]] }; });
+  var reels = PICK.map(function (id, i) { var v = document.getElementById("v" + i); v.src = "../broadcast/reels/" + id + ".mp4"; v.load(); return { id: id, meta: FALLBACK[id], video: v }; });
+  fetch("../broadcast/manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    m.forEach(function (e) { reels.forEach(function (r) { if (r.id === e.id) r.meta = { title: e.title, year: e.year, windows: e.windows }; }); });
+    log("目録", "form", "manifest · " + m.length + " reels on the host");
+  }).catch(function () {});
+  function shortTitle(t) { var i = t.indexOf(" ("); if (i > 0) t = t.slice(0, i); i = t.indexOf(","); if (i > 0) t = t.slice(0, i); return t; }
+
+  var S = { phase: "idle", t: 0, reel: null, holdS: 10, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0, lossD: 2 };
+  var reelIdx = -1, lastAuto = now();
+
+  function tuneNext() {
+    if (S.phase !== "idle") return;
+    reelIdx = (reelIdx + 1) % reels.length;
+    var r = reels[reelIdx], win = r.meta.windows[(rnd() * r.meta.windows.length) | 0];
+    var holdS = Math.min(win[1] - win[0], 8 + rnd() * 4);
+    var inS = win[0] + Math.max(0, rnd() * (win[1] - win[0] - holdS));
+    try { r.video.currentTime = inS; } catch (e) {}
+    var p = r.video.play(); if (p && p.catch) p.catch(function () {});
+    S.phase = "tuning"; S.t = now(); S.reel = r; S.holdS = holdS; S.seed = rnd() * 1000; S.drop = 0; S.strength = 0;
+    rxBtn.classList.add("is-flicker", "is-lit");
+    log("受信", "rx", shortTitle(r.meta.title) + (r.meta.year ? " · " + r.meta.year : ""));
+    lastAuto = now();
+  }
+  function stopReel() { if (S.reel) { try { S.reel.video.pause(); } catch (e) {} } }
+
+  var idle = { nextCard: now() + 6000 + rnd() * 8000, cardAt: -1, nextLine: now() + 9000 + rnd() * 10000, lineAt: -1, lineMode: 0, lineHold: 1 };
+
+  function tickSignal(t) {
+    var el = (t - S.t) / 1000;
+    if (S.phase === "tuning") {
+      S.strength = clamp01(el / 0.4) * 0.85;
+      if (el >= 0.4) { S.phase = "hold"; S.t = t; rxBtn.classList.remove("is-flicker"); }
+    } else if (S.phase === "hold") {
+      var breath = 0.82 + 0.13 * Math.sin(el * 1.1 + S.seed) + 0.05 * Math.sin(el * 4.3 + S.seed * 2);
+      if (S.drop > 0) S.drop -= 1 / 60; else if (rnd() < 0.006) S.drop = 0.12 + rnd() * 0.25;
+      S.strength = clamp01(breath - (S.drop > 0 ? 0.45 : 0));
+      if (S.drop > 0 && rnd() < 0.3) S.holdFrame = t + 100 + rnd() * 200;
+      // 常時 HOLD: the picture stops leaving. It stays until you unlatch.
+      if (el >= S.holdS && !HOLD) { S.phase = "loss"; S.t = t; S.lossD = 1.6 + rnd() * 1.2; rxBtn.classList.add("is-flicker"); }
+    } else if (S.phase === "loss") {
+      var k = clamp01(el / S.lossD);
+      S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
+      if (rnd() < k * 0.25) S.holdFrame = t + 80 + rnd() * 160;
+      S.rollV += (rnd() - 0.4) * k * 3;
+      if (el >= S.lossD) { S.phase = "collapse"; S.t = t; rxBtn.classList.remove("is-lit"); }
+    } else if (S.phase === "collapse") {
+      S.strength = 0.9;
+      if (el >= 0.42) { S.phase = "burst"; S.t = t; stopReel(); }
+    } else if (S.phase === "burst") {
+      S.strength = 0;
+      if (el >= 0.32) { S.phase = "dead"; S.t = t; rxBtn.classList.remove("is-flicker"); log("消失", "pa", "signal lost · " + S.holdS.toFixed(1) + " s"); }
+    } else if (S.phase === "dead") {
+      if (el >= 1.6) { S.phase = "idle"; S.t = t; S.reel = null; S.roll = 0; S.rollV = 0; idle.nextCard = t + 6000 + rnd() * 10000; idle.nextLine = t + 8000 + rnd() * 12000; }
+    } else if (S.phase === "idle") {
+      if ((HOLD || t - lastAuto > 25000) && document.visibilityState === "visible") tuneNext();
+    }
+  }
+
+  // ---- the source picture at the current raster ----
+  var sdata = null;
+  function drawTestCard(alpha) {
+    var K = SW / 96;
+    scx.save(); scx.globalAlpha = alpha; scx.scale(K, K);
+    scx.fillStyle = "#3a3a3a"; scx.fillRect(0, 0, 96, 72);
+    for (var i = 0; i < 8; i++) { scx.fillStyle = "rgb(" + (i * 32) + "," + (i * 32) + "," + (i * 32) + ")"; scx.fillRect(i * 12, 6, 12, 10); }
+    scx.strokeStyle = "#cfcfcf"; scx.lineWidth = 0.7;
+    scx.beginPath(); scx.arc(48, 40, 26, 0, Math.PI * 2); scx.stroke();
+    scx.beginPath(); scx.moveTo(48, 14); scx.lineTo(48, 66); scx.moveTo(22, 40); scx.lineTo(74, 40); scx.stroke();
+    scx.strokeStyle = "#8a8a8a"; scx.lineWidth = 0.5;
+    for (var g = 0; g < 96; g += 6) { scx.beginPath(); scx.moveTo(g + 0.5, 18); scx.lineTo(g + 0.5, 62); scx.stroke(); }
+    scx.fillStyle = "#e8e8e8"; scx.fillRect(38, 32, 20, 12); scx.fillStyle = "#101010"; scx.fillRect(39, 33, 18, 10);
+    scx.fillStyle = "#e0e0e0"; scx.font = '700 7px "Orbitron", sans-serif'; scx.fillText("MSHI", 37, 41.5);
+    scx.font = '6px "Shippori Mincho", serif'; scx.fillStyle = "#cfcfcf"; scx.fillText("映像管 試験", 34, 58);
+    scx.fillStyle = "#0a0a0a"; scx.fillRect(0, 64, 96, 8); scx.fillStyle = "#d0d0d0"; scx.fillRect(4, 66, 30, 4); scx.fillRect(62, 66, 30, 4);
+    scx.restore();
+  }
+  function renderSource(t) {
+    var ph = S.phase;
+    scx.globalAlpha = 1; scx.setTransform(1, 0, 0, 1, 0, 0);
+    if (ph === "tuning" || ph === "hold" || ph === "loss" || ph === "collapse") {
+      var v = S.reel.video;
+      if (t < S.holdFrame) { /* frame hold: keep the last one */ }
+      else { try { scx.drawImage(v, 0, 0, SW, SH); } catch (e) { scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH); } }
+    } else if (ph === "burst" || ph === "dead") {
+      scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH);
+    } else {
+      scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH);
+      var card = idle.cardAt >= 0 ? (t - idle.cardAt) / 1000 : -1;
+      if (card >= 0 && card < 1.3) { var ca = card < 0.3 ? card / 0.3 : card > 0.9 ? (1.3 - card) / 0.4 : 1; drawTestCard(0.32 * ca); }
+      else if (card >= 1.3) { idle.cardAt = -1; idle.nextCard = t + 14000 + rnd() * 12000; }
+      if (idle.cardAt < 0 && t > idle.nextCard) { idle.cardAt = t; S.rollV = 2.5 + rnd() * 3; }
+    }
+    sdata = scx.getImageData(0, 0, SW, SH).data;
+
+    var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? 0 : clamp01(1 - strength);
+    var idleGlow = ph === "idle" ? (9 + 3 * Math.sin(t / 2300)) * B.idle : 0;
+    var crawl = t / 240;
+    for (var i = 0, p = 0, y = 0; y < SH; y++) {
+      var rowGlow = idleGlow > 0 ? idleGlow + 3.5 * B.idle * Math.sin(y * 0.55 - crawl) : 0;
+      var vign = 1 - Math.abs(y - SH / 2) / SH * 0.7;
+      for (var x = 0; x < SW; x++, i += 4, p += 4) {
+        var l = 0.299 * sdata[i] + 0.587 * sdata[i + 1] + 0.114 * sdata[i + 2];
+        if (ph === "idle") { l = l * 0.9 + (rnd() < 0.002 ? 30 + rnd() * 50 : 0); }
+        else if (ph === "dead") { l = 0; }
+        else {
+          l = (l - B.lift) * B.gain;                      // 輝度: the beam's drive
+          if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());
+        }
+        l = l < 0 ? 0 : l > 255 ? 255 : l | 0;
+        if (ph === "idle") {
+          var g = rowGlow * vign * (1 - Math.abs(x - SW / 2) / SW * 0.6);
+          pdata[p] = LUT_R[l] + g * 0.22; pdata[p + 1] = LUT_G[l] + g; pdata[p + 2] = LUT_B[l] + g * 0.42; pdata[p + 3] = 255;
+        } else { pdata[p] = LUT_R[l]; pdata[p + 1] = LUT_G[l]; pdata[p + 2] = LUT_B[l]; pdata[p + 3] = 255; }
+      }
+    }
+    pcx.putImageData(pimg, 0, 0);
+  }
+
+  // ---- the frame: persistence, bloom, tear, roll, ghost ----
+  function drawBands(dy, sy, tearAmt, t) {
+    var bh = TH / 9;
+    for (var b = 0; b < 9; b++) {
+      var off = tearAmt * (Math.sin(t / 170 + b * 1.9) * 3 + (rnd() < tearAmt * 0.25 ? (rnd() - 0.5) * 26 : 0));
+      fcx.drawImage(phos, 0, b * BAND, SW, BAND, off, dy + b * bh * sy, TW, bh * sy + 0.5);
+    }
+  }
+  function drawFrame(t) {
+    var ph = S.phase, strength = S.strength;
+    fcx.globalCompositeOperation = "source-over";
+    var decay = ph === "idle" ? 0.5 : ph === "dead" ? 0.11 : ph === "burst" ? 0.7 : 0.62;
+    fcx.fillStyle = rgba(PH.base, decay); fcx.fillRect(0, 0, TW, TH);
+    if (ph === "dead") return;
+
+    fcx.imageSmoothingEnabled = false;
+    if (ph !== "idle" || S.rollV !== 0) {
+      S.roll += S.rollV; S.rollV *= (ph === "loss" ? 0.985 : 0.9);
+      if (Math.abs(S.rollV) < 0.05) S.rollV = 0;
+      S.roll = ((S.roll % TH) + TH) % TH; if (S.rollV === 0 && ph !== "loss") S.roll += (0 - S.roll) * 0.2;
+    }
+    var roll = S.roll | 0, sy = 1;
+    if (ph === "collapse") { var ck = clamp01((t - S.t) / 1000 / 0.42); sy = Math.max(0.01, 1 - Math.pow(ck, 1.6)); }
+    var tearAmt = ph === "tuning" ? 0.6 : ph === "hold" ? clamp01(1 - strength) * 0.8 + (S.drop > 0 ? 0.4 : 0.05) : ph === "loss" ? 0.5 + clamp01((t - S.t) / 1000 / S.lossD) : 0;
+    var dyBase = (TH - TH * sy) / 2;
+
+    // the bloom: blurred at the raster's own size and upscaled. 輝度 owns both
+    // its radius and its alpha, which is what a brightness control really did.
+    gcx.clearRect(0, 0, SW, SH);
+    gcx.filter = "blur(" + Math.max(0.3, 1.1 + strength * 0.8 + B.blur).toFixed(2) + "px)"; gcx.drawImage(phos, 0, 0); gcx.filter = "none";
+    fcx.globalCompositeOperation = "lighter";
+    fcx.globalAlpha = Math.min(0.92, (ph === "idle" ? 0.35 : 0.22 + strength * 0.14) * B.bloom);
+    fcx.drawImage(glow, 0, dyBase + roll * sy, TW, TH * sy); if (roll) fcx.drawImage(glow, 0, dyBase + (roll - TH) * sy, TW, TH * sy);
+    fcx.globalAlpha = 1;
+    fcx.globalCompositeOperation = "source-over";
+    drawBands(dyBase + roll * sy, sy, tearAmt, t);
+    if (roll) { drawBands(dyBase + (roll - TH) * sy, sy, tearAmt, t); fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * sy - 6, TW, 7); }
+    if (ph === "hold" || ph === "loss" || ph === "tuning") {
+      fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = 0.16 + 0.14 * (1 - strength);
+      fcx.drawImage(phos, 0, 0, SW, SH, 5 + 3 * Math.sin(t / 900), dyBase + roll * sy + 1, TW, TH * sy);
+      fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
+    }
+    // Paik's line — the loss collapse, and now and then in the idle
+    var lineK = 0, dotK = 0;
+    if (ph === "collapse") lineK = clamp01(((t - S.t) / 1000 - 0.22) / 0.2);
+    if (ph === "burst") lineK = 1 - clamp01((t - S.t) / 1000 / 0.12);
+    if (ph === "idle") {
+      if (idle.lineAt < 0 && t > idle.nextLine) { idle.lineAt = t; idle.lineMode = rnd() < 0.5 ? 1 : 0; idle.lineHold = 0.6 + rnd() * 1.6; }
+      if (idle.lineAt >= 0) {
+        var le = (t - idle.lineAt) / 1000, H = idle.lineHold;
+        if (le < 0.15) lineK = le / 0.15;
+        else if (le < 0.15 + H) lineK = 1;
+        else if (idle.lineMode === 1 && le < 0.15 + H + 0.35) { lineK = 1 - (le - 0.15 - H) / 0.35; dotK = 1; }
+        else if (le < 0.15 + H + 0.6) { lineK = 0; dotK = idle.lineMode === 1 ? 1 - (le - 0.15 - H - 0.35) / 0.25 : 0; }
+        else { idle.lineAt = -1; idle.nextLine = t + 12000 + rnd() * 18000; }
+        if (lineK > 0 || dotK > 0) { fcx.fillStyle = rgba(PH.base, 0.9); fcx.fillRect(0, 0, TW, TH); }
+      }
+    }
+    if (lineK > 0) {
+      var lw = TW * (dotK > 0 ? lineK : 1) * 0.94, lx = (TW - lw) / 2, ly = TH / 2 + Math.sin(t / 60) * 0.4;
+      fcx.globalCompositeOperation = "lighter";
+      fcx.filter = "blur(6px)"; fcx.fillStyle = rgba(PH.halo, (0.55 * (dotK > 0 ? 1 : lineK) * B.idle).toFixed(2)); fcx.fillRect(lx, ly - 5, lw, 10); fcx.filter = "none";
+      fcx.fillStyle = rgba(PH.line, (0.95 * (dotK > 0 ? 1 : lineK)).toFixed(2)); fcx.fillRect(lx, ly - 1, lw, 2);
+      fcx.globalCompositeOperation = "source-over";
+    } else if (dotK > 0) {
+      fcx.globalCompositeOperation = "lighter";
+      fcx.filter = "blur(4px)"; fcx.fillStyle = rgba(PH.halo, (0.8 * dotK).toFixed(2)); fcx.beginPath(); fcx.arc(TW / 2, TH / 2, 5, 0, 7); fcx.fill(); fcx.filter = "none";
+      fcx.fillStyle = rgba(PH.line, dotK.toFixed(2)); fcx.beginPath(); fcx.arc(TW / 2, TH / 2, 1.6, 0, 7); fcx.fill();
+      fcx.globalCompositeOperation = "source-over";
+    }
+    if (ph === "idle" && lineK === 0) {
+      var sw = (t / 1000 * 22) % (TH + 40) - 20;
+      fcx.fillStyle = rgba(PH.sweep, (0.045 * B.idle).toFixed(3)); fcx.fillRect(0, sw, TW, 3);
+    }
+    if (lineK === 0 && dotK === 0) {
+      var period = 3, n = (TH / period) | 0;
+      fcx.fillStyle = "rgba(0,0,0,0.3)";
+      for (var j = 0; j < n; j++) fcx.fillRect(0, j * period, TW, 1.25);
+    }
+  }
+
+  // ---- compose through the crack ----
+  function compose() {
+    tcx.clearRect(0, 0, TW, TH);
+    tcx.fillStyle = rgba(PH.base, 1); tcx.fillRect(0, 0, TW, TH);
+    var lit = S.phase === "idle" ? 0.08 : S.phase === "dead" ? 0.02 : 0.3 + S.strength * 0.7;
+    for (var i = 0; i < SHARDS.length; i++) {
+      var s = SHARDS[i];
+      tcx.save(); tcx.clip(shardPaths[i]);
+      tcx.globalAlpha = s.a;
+      tcx.drawImage(frame, s.dx * (0.6 + lit * 0.6), s.dy * (0.6 + lit * 0.6), TW, TH);
+      tcx.restore();
+    }
+    tcx.globalCompositeOperation = "lighter";
+    tcx.lineWidth = 2.4; tcx.strokeStyle = rgba(PH.glow, (0.02 + lit * 0.3).toFixed(2)); tcx.stroke(crackPath);
+    tcx.lineWidth = 0.8; tcx.strokeStyle = rgba(PH.hi, (0.01 + lit * 0.34).toFixed(2)); tcx.stroke(crackPath);
+    tcx.globalCompositeOperation = "source-over";
+    tcx.fillStyle = "#040605"; tcx.fill(chipPath);
+  }
+
+  // ==========================================================================
+  // THE LOOP, and the measurement the page prints on itself
+  // ==========================================================================
+  var perf = { n: 0, ms: 0, worst: 0, ring: new Float32Array(240), ri: 0, filled: 0, warm: 0 };
+  function pushPerf(c) {
+    perf.warm++;
+    if (perf.warm < 25) return;
+    perf.n++; perf.ms += c; if (c > perf.worst) perf.worst = c;
+    perf.ring[perf.ri] = c; perf.ri = (perf.ri + 1) % perf.ring.length; if (perf.filled < perf.ring.length) perf.filled++;
+  }
+  function recentMean() { var s = 0; for (var i = 0; i < perf.filled; i++) s += perf.ring[i]; return perf.filled ? s / perf.filled : 0; }
+  function report() {
+    var w = document.getElementById("sim").getBoundingClientRect().width;
+    var set = document.getElementById("side").getBoundingClientRect().width;
+    var ledge = document.querySelector(".zk-ledge").getBoundingClientRect();
+    var el = document.getElementById("measure");
+    var tb = tubeEl.getBoundingClientRect();
+    if (el) el.textContent = "simulated width " + Math.round(w) + " px · set column " + Math.round(set) + " px → tube " +
+      Math.round(tb.width) + " × " + Math.round(tb.height) + " CSS px (glass " + Math.round(TW) + " × " + Math.round(TH) +
+      " inside the 1 px bezel edge) at a " + SW + " × " + SH + " raster — " + (TW / SW).toFixed(2) +
+      " screen px per source pixel · ledge " + Math.round(ledge.width) + " × " + Math.round(ledge.height) + " px · scope " + Math.round(VW) + " × " + Math.round(VH) + " px";
+    var wr = document.getElementById("wread");
+    if (wr) wr.textContent = "→ achieved " + Math.round(w) + " px · tube " + Math.round(tb.width) + " × " + Math.round(tb.height) + " · ledge " + Math.round(ledge.height) + " px tall";
+    var pe = document.getElementById("perf");
+    if (pe && perf) pe.textContent = perf.n
+      ? recentMean().toFixed(2) + " ms mean over the last " + perf.filled + " frames at " + SW + " × " + SH + " (session mean " + (perf.ms / perf.n).toFixed(2) + " ms, worst " + perf.worst.toFixed(2) + " ms)"
+      : "warming up…";
+  }
+  var lowPower = (navigator.hardwareConcurrency || 4) <= 2, frameN = 0, lastReport = 0;
+  function loop() {
+    var t = now();
+    frameN++;
+    var arc = arcAt(t);
+    drawScope(t, arc);
+    if (frameN % 16 === 0) setBar(arc + (rnd() - 0.5) * 0.03);
+    if (t > nextDeg) { var d = (rnd() * 5) | 0; degs[d].classList.add("is-lit"); degUntil[d] = t + 380; nextDeg = t + 300 + rnd() * 1400 * (1.2 - arc); }
+    for (var i = 0; i < 5; i++) if (degUntil[i] && t > degUntil[i]) { degs[i].classList.remove("is-lit"); degUntil[i] = 0; }
+
+    tickSignal(t);
+    if ((!lowPower || frameN % 2 === 0) && document.visibilityState === "visible") {
+      var t1 = now();
+      renderSource(t);
+      drawFrame(t);
+      compose();
+      pushPerf(now() - t1);
+    }
+    if (t - lastReport > 600) { lastReport = t; report(); }
+    requestAnimationFrame(loop);
+  }
+
+  // the width toggle: container queries on the live breakpoints. No transition
+  // on the resized element — the readout must be the width, not an animation.
+  (function widthToggle() {
+    var sim = document.getElementById("sim"), btns = [].slice.call(document.querySelectorAll(".zk-toggle button"));
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        btns.forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+        sim.style.width = b.getAttribute("data-w") + "px";
+        resize();
+        requestAnimationFrame(resize);
+      });
+    });
+  })();
+
+  document.fonts && document.fonts.ready.then(resize);
+  resize();
+  requestAnimationFrame(loop);
+  lastAuto = now() - 16000;          // the first signal ~9 s in, so the idle is seen first
+  window.ZKR2 = { S: S, idle: idle, tune: tuneNext, perf: perf, setBright: setBright, setFocus: setFocus, setPhosphor: setPhosphor, report: report };
+
+  var scene = document.getElementById("scene"), playBtn = document.getElementById("zankyo-play");
+  playBtn.addEventListener("click", function () { scene.classList.add("is-on"); playBtn.classList.add("is-playing"); });
+  document.getElementById("zankyo-stop").addEventListener("click", function () { scene.classList.remove("is-on"); playBtn.classList.remove("is-playing"); });
+})();
+</script>
+</body>
+</html>

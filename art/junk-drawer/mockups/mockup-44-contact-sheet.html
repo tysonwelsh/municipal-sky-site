@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The Contact Sheet &mdash; replay as a filmstrip</title>
+<link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css">
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --blue:#4a628a;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:48px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;line-height:2;
+  color:var(--tink-3);margin:0 auto 20px;max-width:560px}
+figure{margin:0}
+figcaption{margin-top:10px;font-size:.52rem;letter-spacing:.12em;line-height:2;
+  text-transform:uppercase;color:var(--tink-3);text-align:center;max-width:560px;margin-inline:auto}
+figcaption b{color:var(--tink-2);letter-spacing:.16em}
+.exhibit{display:flex;justify-content:center}
+.notes{max-width:640px;margin:18px auto 0;font-size:.6rem;line-height:1.9;color:var(--tink-2);padding-left:1.2em}
+.notes li{margin:0 0 .5em}
+.notes code{font-family:var(--tmono);color:var(--tink);font-size:.95em}
+.notes b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
+  color:var(--tink-3);text-transform:uppercase;line-height:2.2}
+
+/* ---- the live cards, seated on the sheet instead of over a scrim -------
+   Both dialogs' scrims are fixed, hidden layers; here they are ordinary
+   blocks so their scoped tokens (--card, --form-*, --t*) reach the markup
+   beneath — nothing else about the cards is restyled. */
+.jd-record-scrim.mk-static,.jd-turn-scrim.mk-static{
+  position:static;inset:auto;display:flex;padding:0;background:none;z-index:auto;
+  justify-content:center}
+.jd-record.mk-static{max-height:none}
+.jd-record.mk-static .rc-scroll{overflow:visible}
+/* the strip below borrows the thumbnails' tailoring; the frames are
+   numbers, not models, so the strip is not paged and never scrolls */
+.mk-alts-note{font-size:.5rem;letter-spacing:.1em;color:var(--form-ink-2);
+  font-family:var(--rc-mono);margin:.4rem 0 0;line-height:1.7}
+
+/* ============================================================================
+   THE CONTACT SHEET — the only new CSS. One block under the photograph:
+   PLAY at the left end, the frames, then the ruled scrubber and its readout.
+   Everything it wears is the card's: rc-head for its title line, rc-alt-port
+   / rc-alt / rc-alt-art / rc-alt-cap / rc-alt.is-cur for the frames, the
+   rc-alt-nav tailoring for PLAY. It reads a handful of the report card's
+   tokens; the rating instrument maps its own onto them (see .mk-turn).
+   ========================================================================== */
+.mk-sheet{margin-top:.75rem;padding-bottom:.35rem;user-select:none;-webkit-user-select:none}
+.mk-head{margin-bottom:.35rem}
+.mk-head .mk-head-n{font-family:var(--rc-mono);letter-spacing:.06em;text-transform:none;
+  color:var(--form-ink-2);font-size:.5rem;margin-left:.1em}
+.mk-head::after{order:2}
+.mk-head .mk-head-n{order:3}
+.mk-strip{display:flex;gap:6px;align-items:stretch}
+.mk-play{width:24px;flex:0 0 24px;display:flex;align-items:center;justify-content:center;
+  color:var(--form-ink-2)}
+.mk-play svg{display:block;width:12px;height:12px}
+.mk-play .mk-g-pause{display:none}
+.mk-play[aria-pressed="true"] .mk-g-play{display:none}
+.mk-play[aria-pressed="true"] .mk-g-pause{display:block}
+/* the focus ring is a faint pencil line, not an alarm (owner, 2026-09-16):
+   1px of the card's own red at about half strength — color-mix where it is
+   understood, the solid red at 1px elsewhere. */
+.mk-play:focus-visible{outline:1px solid var(--red);outline-offset:2px}
+/* the frames: a contact sheet's frames touch, so the gap closes to 4px and
+   the padding to 3px; otherwise rc-alt as printed on the siblings strip */
+.mk-frames{gap:4px;overflow:visible}
+.mk-frame{padding:3px 3px 4px}
+.mk-frame .rc-alt-cap{margin-top:3px;font-family:var(--rc-mono);font-size:.5rem;letter-spacing:.04em}
+.mk-frame:focus-visible{outline:1px solid var(--red);outline-offset:1px}
+/* the scrubber: a ruled track — the paper's own hairline as its baseline,
+   fine ticks every tenth of a second, taller ones at the frames' moments —
+   and a red caret, the one red thing on the strip besides the current
+   frame's border, so the two say "here" together */
+.mk-scrub{position:relative;height:22px;margin:8px 0 0 30px;cursor:col-resize;
+  touch-action:none;border-bottom:1px solid var(--form-rule)}
+.mk-scrub:focus-visible{outline:1px solid var(--red);outline-offset:2px}
+@supports (color:color-mix(in srgb,red,transparent)){
+  .mk-play:focus-visible,.mk-frame:focus-visible,.mk-scrub:focus-visible{
+    outline-color:color-mix(in srgb,var(--red) 52%,transparent)}}
+.mk-tick{position:absolute;bottom:0;width:1px;height:4px;background:var(--form-rule-2);pointer-events:none}
+.mk-tick.is-half{height:7px;background:var(--form-rule)}
+.mk-tick.is-frame{height:12px;background:var(--form-ink-2)}
+.mk-tick-l{position:absolute;bottom:-11px;transform:translateX(-50%);font-family:var(--rc-mono);
+  font-size:.42rem;letter-spacing:.04em;color:var(--form-ink-2);line-height:1;pointer-events:none}
+.mk-caret{position:absolute;top:-2px;bottom:-5px;width:1px;margin-left:-.5px;background:var(--red);
+  pointer-events:none}
+.mk-caret::before{content:"";position:absolute;top:-1px;left:-4px;width:0;height:0;
+  border-left:4.5px solid transparent;border-right:4.5px solid transparent;border-top:6px solid var(--red)}
+.mk-readout{display:flex;justify-content:space-between;gap:1em;margin:15px 0 0 30px;
+  font-family:var(--rc-mono);font-size:.52rem;letter-spacing:.06em;color:var(--form-ink-2)}
+.mk-readout b{font-weight:400;color:var(--typed)}
+.mk-readout .mk-ro-layer{color:var(--red)}
+
+/* the instrument's plate: the same control, its tokens mapped onto the
+   report card's names so every rule above resolves — one control, two
+   papers */
+.mk-turn{--card:var(--tpaper);--form-ink:var(--tink);--form-ink-2:var(--tink-2);
+  --form-rule:var(--trule);--form-rule-2:var(--trule-2);--typed:var(--tink);
+  --red:var(--tred);--form:var(--tform);--hand:var(--thand);--rc-mono:var(--tmono)}
+.mk-turn .jd-turn-scroll{padding:14px 18px 16px;overflow:visible}
+.mk-turn .jd-turn-plate{width:min(100%,360px);margin:0 auto}
+.mk-turn .jd-turn-plate figcaption{text-align:left;max-width:none;letter-spacing:.22em;margin-inline:0}
+.mk-turn .mk-frame .rc-alt-cap{color:var(--tink-2)}
+.mk-turn .rc-alt.is-cur .rc-alt-cap{color:var(--tink)}
+
+@media (max-width:700px){
+  .mk-scrub,.mk-readout{margin-left:0}
+}
+</style></head><body>
+<div class="sheet">
+  <h1>The Contact Sheet</h1>
+  <p class="no">mockup 44 &middot; replay as a filmstrip under the photograph &middot; 2026-09-16</p>
+  <hr class="rule">
+  <p class="dek">The replay leaves the photograph and becomes a <b>contact sheet</b> printed
+  beneath it: eight small frames of the same drawing at successive moments of the draw-on,
+  each labelled with <b>how many elements have been begun</b> by then &mdash; so the strip
+  reads the stacking order at a glance (the leaves are all down by frame 3; the pot arrives
+  in frame 4 and buries them). PLAY / PAUSE sits at the strip&rsquo;s left end, a sketched
+  &#9655; in the pagers&rsquo; own box. Click a frame to jump the photograph to that moment;
+  the <b>ruled scrubber</b> under the frames reaches every moment between them &mdash;
+  drag, click, or arrow one element at a time &mdash; and the readout says which element
+  the pen is on. The frames cost DOM: eight paused copies of the drawing (fine at 31
+  elements, a real bill at 600 &mdash; see the notes).</p>
+
+  <h2>A &middot; The report card</h2>
+  <p class="sub">The Kimi K3 succulent &mdash; leaves drawn correctly, then buried behind the pot.
+  The REPLAY icon has left the button row on the photograph; DOWNLOAD SVG keeps the corner.</p>
+  <figure>
+    <div class="exhibit" id="ex-record"></div>
+    <figcaption><b>frames</b> click to jump &middot; <b>scrubber</b> drag / click / &larr; &rarr; one element
+    &middot; shift+&larr; &rarr; five &middot; pgup / pgdn a frame &middot; home / end &middot; space plays
+    <br>the grades table is left off this mockup; the prompt and the siblings strip are shown so the frames can be read against the thumbnails they borrow from</figcaption>
+  </figure>
+
+  <h2>B &middot; The rating instrument</h2>
+  <p class="sub">The same control under a bench plate (Claude Fable 5, the same prompt), the instrument&rsquo;s
+  tokens mapped onto the control&rsquo;s. The pencil-and-squiggle button is gone from the print.</p>
+  <figure>
+    <div class="exhibit" id="ex-turn"></div>
+    <figcaption>one control, two papers &mdash; the frames wear <b>.rc-alt</b> on both; only the tokens change</figcaption>
+  </figure>
+
+  <h2>Notes for the build</h2>
+  <ol class="notes">
+    <li><b>A shared module</b>, <code>jd-core.js</code>: <code>JD_sheet(svg, mount, opts)</code> returning
+      <code>{seek, play, pause, destroy}</code>. It arms the drawing once with <code>JD_drawOn(svg, {force:true})</code>,
+      then <b>defeats the strip timer</b> by setting <code>svg.__jdDrawSeq</code> to a value no run will
+      ever stamp, so the inline animations live as long as the sheet does; <code>svg.getAnimations({subtree:true})</code>
+      is its handle on every element. Seek = pause + <code>currentTime</code> on all; play = <code>play()</code> on the
+      animations whose end is still ahead (a finished one must stay paused, or <code>play()</code> auto-rewinds it to
+      zero and the element vanishes mid-run). The element index comes from each animation&rsquo;s
+      <code>effect.getTiming().delay</code>, sorted in DOM order &mdash; the same order the engine scheduled.
+      <code>destroy()</code> calls the engine&rsquo;s strip so the DOM goes back to plain when the card closes.</li>
+    <li><b>jd-record.js</b>: <code>plateBtnsHTML</code> drops the <code>.rc-draw</code> button (the enlargement keeps its
+      REDRAW word, or takes the sheet too &mdash; owner&rsquo;s call); <code>cardHTML</code> appends the sheet&rsquo;s mount
+      after <code>.rc-plate</code> inside <code>.rc-col-l</code>, which in the &le;700px portrait flow puts it under the
+      photograph on its own. The card already draws on open; that run becomes the sheet&rsquo;s first play.
+      The response flip and paper swap must call <code>destroy()</code> then re-mount on the new svg.</li>
+    <li><b>jd-turn.js</b>: the bench and reveal plates drop <code>.jd-turn-draw--icon</code> and mount the sheet under
+      <code>figure.jd-turn-plate</code>&rsquo;s caption. Its <code>data-act="replay"</code> handler becomes the sheet&rsquo;s play.</li>
+    <li><b>junk-drawer.css</b>: the <code>.mk-*</code> rules on this page, renamed <code>.jd-sheet-*</code>, placed beside the
+      alternatives strip. The frames reuse <code>.rc-alt-port / .rc-alt / .rc-alt-art / .rc-alt-cap / .is-cur</code>
+      verbatim and PLAY reuses <code>.rc-alt-nav</code>; those rules read <code>--form-rule(-2)</code>, <code>--form</code>,
+      <code>--red</code>, <code>--rc-mono</code>, which the turn card maps from <code>--trule</code>, <code>--tform</code>, <code>--tred</code>,
+      <code>--tmono</code> on its scrim (the <code>.mk-turn</code> block here) &mdash; the same trick <code>.jd-turn</code> already
+      plays with <code>--card</code>.</li>
+    <li><b>Cost.</b> The frames are real paused copies: 8 &times; (elements + 1&ndash;2 CSSAnimations each).
+      This specimen is 31 elements (&asymp;8 ms to build the sheet on this machine, printed in the console);
+      a 600-element drawing means ~4,800 extra nodes and ~7,000 paused animations per card &mdash; still
+      idle once paused (a paused animation costs no frame time), but the build spike and memory are real
+      on a phone. Mitigations, in order: build the frames lazily one per animation frame after the first
+      play starts; six frames under 480px instead of eight; and, if a monster shows up, rasterise each
+      frame to a canvas once its clone is seeked (<code>drawImage</code> of a serialised clone with the
+      animated properties written into attributes) and drop the clone.</li>
+    <li><b>Frame moments</b> are placed at equal ELEMENT counts, not equal time (the engine packs starts by
+      &radic;length, so equal-time frames would bunch the little strokes): frame k sits halfway between
+      element <i>c<sub>k</sub></i> beginning and <i>c<sub>k+1</sub></i> beginning, with <i>c<sub>k</sub> = k&middot;M/7</i>.
+      The frame ticks on the ruler are therefore unevenly spaced, which is itself a reading of the pacing.
+      &ldquo;Element N of M&rdquo; means the Nth element in document order has begun &mdash; elements 1&hellip;N&minus;1
+      are beneath it in the stack.</li>
+    <li><b>Open questions.</b> (1) Is &ldquo;begun&rdquo; the right count, or should the label be
+      &ldquo;completed&rdquo;? Begun matches what the eye sees start to appear; completed matches what is
+      fully painted over. (2) Should the frames be evenly spaced in time instead, for a truer film feel?
+      (3) Eight frames at ~45px under a 420px plate: legible for this specimen, tight for fine line-work;
+      six is the alternative. (4) Should the enlargement carry the sheet too (it has the room, and the
+      enlargement is where analysis happens)?</li>
+  </ol>
+
+  <footer>mockup 44 &middot; the contact sheet &middot; built on the live junk-drawer.css and jd-core.js</footer>
+</div>
+
+<!-- the minimal stage jd-core.js expects (hidden) -->
+<div class="jd-stage" style="display:none" aria-hidden="true">
+  <div class="jd-frame"><div class="jd-well"><div class="jd-pile"></div></div></div>
+</div>
+<script src="/art/junk-drawer/jd-core.js"></script>
+<script>
+(function () {
+  var ITEM = '/art/junk-drawer/items/2026-07-28-desktop-succulent/';
+  var esc = window.JD_esc, inst = window.JD_svgInst;
+  var NFRAMES = 8;
+
+  /* ---- the glyphs: drawn strokes in currentColor, the house's ✕ idiom ---- */
+  var G_PLAY = '<svg class="mk-g-play" viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<path d="M5 3.4 L12.6 8 L5 12.6 L5 5.6" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var G_PAUSE = '<svg class="mk-g-pause" viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<path d="M5.6 3.6v8.8M10.4 3.6v8.8" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round"/></svg>';
+
+  /* ======================================================================
+     THE SHEET. svg: the big drawing, already in the DOM and rendered.
+     mount: where the sheet goes. svgText/pfx: the source, re-instanced
+     per frame (svgInst-prefixed ids — cloneNode would share defs with the
+     photograph and the other frames).
+     ====================================================================== */
+  function makeSheet(svg, mount, svgText, pfx, opts) {
+    opts = opts || {};
+    var anims = [], starts = [], T = 0, M = 0, secs = 0, clockAnim = null;
+    var raf = 0, playing = false, t = 0;
+    var frames = [], frameT = [];
+
+    /* arm the photograph: one run, owned by the sheet from here on */
+    secs = window.JD_drawOn(svg, { force: true });
+    if (!secs) return null;
+    svg.__jdDrawSeq = -1;                        /* no strip while the sheet lives */
+    anims = svg.getAnimations({ subtree: true });
+    anims.forEach(function (a) { a.pause(); });
+    /* per-element start times, document order */
+    var byEl = new Map();
+    anims.forEach(function (a) {
+      var el = a.effect.target, tm = a.effect.getTiming();
+      var s = tm.delay, e = tm.delay + Number(tm.duration) + (tm.endDelay || 0);
+      var r = byEl.get(el);
+      if (!r) byEl.set(el, { el: el, s: s, e: e }); else { r.s = Math.min(r.s, s); r.e = Math.max(r.e, e); }
+      if (!clockAnim || e > clockAnim.__mkEnd) { a.__mkEnd = e; clockAnim = a; }
+      a.__mkEnd = e;
+    });
+    var rows = Array.from(byEl.values()).sort(function (a, b) {
+      return (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+    });
+    rows.forEach(function (r) { starts.push(r.s / 1000); T = Math.max(T, r.e / 1000); });
+    M = starts.length;
+
+    function countAt(tt) { var c = 0; while (c < M && starts[c] < tt - 1e-6) c++; return c; }
+    function timeForCount(c) {
+      if (c <= 0) return 0;
+      if (c >= M) return T;
+      return (starts[c - 1] + starts[c]) / 2;
+    }
+
+    /* ---- markup ---- */
+    var h = '<div class="mk-sheet rc-block">' +
+      '<div class="rc-head mk-head">Draw-on<span class="mk-head-n">' + M + ' elements &middot; ' +
+      T.toFixed(1) + ' s</span></div>' +
+      '<div class="mk-strip">' +
+      '<button type="button" class="rc-alt-nav mk-play" aria-pressed="false" ' +
+      'aria-label="Play the drawing" title="play the draw-on">' + G_PLAY + G_PAUSE + '</button>' +
+      '<div class="rc-alt-port mk-frames">';
+    for (var k = 0; k < NFRAMES; k++) {
+      var c = Math.round(k * M / (NFRAMES - 1));
+      var tk = timeForCount(c);
+      frameT.push(tk);
+      h += '<button type="button" class="rc-alt mk-frame" data-k="' + k + '" ' +
+        'title="jump to element ' + countAt(tk) + ' of ' + M + '" ' +
+        'aria-label="Frame ' + (k + 1) + ': ' + countAt(tk) + ' of ' + M + ' elements">' +
+        '<span class="rc-alt-art">' + inst(svgText, pfx + 'f' + k + '_') + '</span>' +
+        '<span class="rc-alt-cap">' + countAt(tk) + '</span></button>';
+    }
+    h += '</div></div>' +
+      '<div class="mk-scrub" role="slider" tabindex="0" aria-label="Draw-on timeline, one step per element" ' +
+      'aria-valuemin="0" aria-valuemax="' + M + '" aria-valuenow="0"><span class="mk-caret"></span></div>' +
+      '<div class="mk-readout"><span><span class="mk-ro-layer">element <b class="mk-ro-n">0</b> of ' + M +
+      '</span> <span class="mk-ro-under"></span></span>' +
+      '<span><b class="mk-ro-t">0.00</b> / ' + T.toFixed(2) + ' s</span></div></div>';
+    mount.insertAdjacentHTML('beforeend', h);
+    var root = mount.lastElementChild;
+    var playBtn = root.querySelector('.mk-play');
+    var scrub = root.querySelector('.mk-scrub');
+    var caret = root.querySelector('.mk-caret');
+    var roN = root.querySelector('.mk-ro-n'), roT = root.querySelector('.mk-ro-t'),
+        roU = root.querySelector('.mk-ro-under');
+    frames = Array.from(root.querySelectorAll('.mk-frame'));
+
+    /* the ruler: a fine tick per 0.1 s, a taller one per 0.5 s (labelled),
+       the tallest at each frame's moment */
+    var tk2 = '';
+    for (var s10 = 1; s10 * 0.1 < T; s10++) {
+      var half = s10 % 5 === 0;
+      tk2 += '<span class="mk-tick' + (half ? ' is-half' : '') + '" style="left:' +
+        (s10 * 0.1 / T * 100).toFixed(2) + '%"></span>';
+      if (half) tk2 += '<span class="mk-tick-l" style="left:' + (s10 * 0.1 / T * 100).toFixed(2) + '%">' +
+        (s10 / 10).toFixed(1) + '</span>';
+    }
+    frameT.forEach(function (ft) {
+      tk2 += '<span class="mk-tick is-frame" style="left:' + (ft / T * 100).toFixed(2) + '%"></span>';
+    });
+    scrub.insertAdjacentHTML('afterbegin', tk2);
+
+    /* ---- the frames: paused copies, each held at its moment forever ---- */
+    var t0 = performance.now(), nAnim = 0;
+    frames.forEach(function (fb, k) {
+      var fs = fb.querySelector('svg');
+      if (!fs) return;
+      window.JD_drawOn(fs, { force: true, secs: secs });
+      fs.__jdDrawSeq = -1;                       /* the strip never fires on a frame */
+      var fa = fs.getAnimations({ subtree: true });
+      nAnim += fa.length;
+      fa.forEach(function (a) { a.pause(); a.currentTime = frameT[k] * 1000; });
+    });
+    console.log('[mk44] ' + pfx + ' sheet: ' + NFRAMES + ' frames, ' + M + ' elements, ' + nAnim +
+      ' paused animations, built in ' + (performance.now() - t0).toFixed(1) + ' ms');
+
+    /* ---- state ---- */
+    function curFrame(tt) {
+      var k = 0;
+      for (var i = 0; i < NFRAMES; i++) if (frameT[i] <= tt + 1e-6) k = i;
+      return k;
+    }
+    function paint() {
+      var c = countAt(t);
+      caret.style.left = (t / T * 100).toFixed(3) + '%';
+      roN.textContent = c;
+      roT.textContent = t.toFixed(2);
+      roU.textContent = c > 1 ? '\u00b7 ' + (c - 1) + ' beneath it' : '';
+      scrub.setAttribute('aria-valuenow', c);
+      scrub.setAttribute('aria-valuetext', 'element ' + c + ' of ' + M + ', ' + t.toFixed(2) + ' seconds');
+      var k = curFrame(t);
+      frames.forEach(function (f, i) { f.classList.toggle('is-cur', i === k); });
+      playBtn.setAttribute('aria-pressed', playing ? 'true' : 'false');
+      playBtn.setAttribute('aria-label', playing ? 'Pause the drawing' : 'Play the drawing');
+      playBtn.title = playing ? 'pause' : (t >= T - 1e-6 ? 'play again' : 'play from here');
+    }
+    function seek(tt) {
+      t = Math.max(0, Math.min(T, tt));
+      anims.forEach(function (a) { a.pause(); a.currentTime = t * 1000; });
+      paint();
+    }
+    function stopRaf() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+    function pause() {
+      playing = false; stopRaf();
+      var now = clockAnim ? clockAnim.currentTime / 1000 : t;
+      anims.forEach(function (a) { a.pause(); });
+      t = Math.max(0, Math.min(T, now));
+      paint();
+    }
+    function play() {
+      if (t >= T - 1e-6) { seek(0); }
+      playing = true;
+      anims.forEach(function (a) {
+        /* a finished animation stays paused at its end: play() would
+           auto-rewind it to zero and the element would vanish mid-run */
+        if (a.currentTime < a.__mkEnd) a.play();
+      });
+      var tick = function () {
+        t = Math.min(T, clockAnim.currentTime / 1000);
+        if (t >= T - 1e-6) { t = T; playing = false; anims.forEach(function (a) { a.pause(); }); paint(); raf = 0; return; }
+        paint();
+        raf = requestAnimationFrame(tick);
+      };
+      paint();
+      raf = requestAnimationFrame(tick);
+    }
+    function toggle() { if (playing) pause(); else play(); }
+
+    /* ---- wiring ---- */
+    playBtn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    frames.forEach(function (fb, k) {
+      fb.addEventListener('click', function (e) { e.stopPropagation(); pause(); seek(frameT[k]); scrub.focus({ preventScroll: true }); });
+    });
+    function xToT(e) {
+      var r = scrub.getBoundingClientRect();
+      var x = Math.max(0, Math.min(r.width, e.clientX - r.left));
+      return r.width ? x / r.width * T : 0;
+    }
+    var down = false;
+    scrub.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      down = true; e.preventDefault(); e.stopPropagation();
+      try { scrub.setPointerCapture(e.pointerId); } catch (err) {}
+      pause(); seek(xToT(e)); scrub.focus({ preventScroll: true });
+    });
+    scrub.addEventListener('pointermove', function (e) { if (down) { e.preventDefault(); seek(xToT(e)); } });
+    var up = function (e) { if (!down) return; down = false; try { scrub.releasePointerCapture(e.pointerId); } catch (err) {} };
+    scrub.addEventListener('pointerup', up);
+    scrub.addEventListener('pointercancel', up);
+    scrub.addEventListener('click', function (e) { e.stopPropagation(); });
+    scrub.addEventListener('keydown', function (e) {
+      var c = countAt(t), step = e.shiftKey ? 5 : 1, k;
+      switch (e.key) {
+        case 'ArrowRight': case 'ArrowUp': pause(); seek(timeForCount(Math.min(M, c + step))); break;
+        case 'ArrowLeft': case 'ArrowDown': pause(); seek(timeForCount(Math.max(0, c - step))); break;
+        case 'Home': pause(); seek(0); break;
+        case 'End': pause(); seek(T); break;
+        case 'PageUp': k = curFrame(t); pause(); seek(frameT[Math.min(NFRAMES - 1, k + 1)]); break;
+        case 'PageDown': k = curFrame(t); pause(); seek(frameT[Math.max(0, (frameT[k] < t - 1e-6) ? k : k - 1)]); break;
+        case ' ': case 'Enter': toggle(); break;
+        default: return;
+      }
+      e.preventDefault(); e.stopPropagation();
+    });
+
+    /* first showing: the card draws on open; under reduced motion the
+       sheet just shows the finished plate and waits for an explicit play */
+    if (window.JD_reduced() || opts.still) seek(T); else play();
+
+    var api = { seek: seek, play: play, pause: pause, T: T, M: M, starts: starts, frameT: frameT,
+      anims: anims, get t() { return t; }, get playing() { return playing; }, root: root };
+    return api;
+  }
+  window.MK_sheets = {};
+
+  /* ---- exhibit A: the report card ---- */
+  function fetchText(u) { return fetch(u).then(function (r) { return r.text(); }); }
+  var SIBS = [
+    { model: 'Claude Fable 5', file: 'claude-fable-5.svg', g: 'Prime', gr: 5 },
+    { model: 'Kimi K3', file: 'kimi-k3.svg', g: 'Select', gr: 3, cur: true },
+    { model: 'GPT-5.1', file: 'gpt-5-1.svg', g: 'Utility', gr: 1 }
+  ];
+  Promise.all([fetch(ITEM + 'entry.json').then(function (r) { return r.json(); })]
+    .concat(SIBS.map(function (s) { return fetchText(ITEM + s.file); })))
+  .then(function (res) {
+    var entry = res[0], kimi = res[2], fable = res[1];
+    var h = '<div class="jd-record-scrim mk-static"><div class="jd-record mk-static"><div class="rc-scroll">' +
+      '<header class="rc-block rc-masthead"><div class="rc-item">' + esc(entry.title) + '</div></header>' +
+      '<div class="rc-col-l">' +
+      '<div class="rc-block rc-plate" role="button" tabindex="0" aria-label="Enlarge the artwork">' +
+      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="false" title="blueprint paper — for light artwork" aria-label="Switch to blueprint paper">' + window.JD_paper.icon() + '</button>' +
+      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
+      '<div class="rc-plate-art" data-fit="2026-07-28-desktop-succulent/kimi-k3.svg">' + inst(kimi, 'mk_') + '</div>' +
+      '<div class="rc-notes">' +
+      '<span class="rc-note-line"><span class="rc-note-l">Model</span><span class="rc-note-v">Kimi K3</span></span>' +
+      '<span class="rc-note-line"><span class="rc-note-l">Date</span><span class="rc-note-v">30 August 2026</span></span>' +
+      '</div>' +
+      /* the button row, REPLAY gone: DOWNLOAD keeps the corner alone */
+      '<div class="rc-plate-btns rc-zoom-keep">' +
+      '<a class="rc-dl" href="' + ITEM + 'kimi-k3.svg" download="2026-07-28-desktop-succulent.svg" title="download the SVG as generated">DOWNLOAD SVG ⤓</a>' +
+      '</div>' +
+      '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
+      '</div>' +
+      '<div id="mk-mount-a"></div>' +
+      '</div>' +
+      '<div class="rc-col-r">' +
+      '<div class="rc-block rc-head">The prompt</div>' +
+      '<div class="rc-block rc-assign"><p>“' + esc(entry.prompt) + '”</p></div>' +
+      '<div class="rc-block rc-head">Other models, same prompt</div>' +
+      '<div class="rc-block rc-alts-block"><div class="rc-alts"><div class="rc-alt-port">';
+    SIBS.forEach(function (s, i) {
+      h += '<button type="button" class="rc-alt' + (s.cur ? ' is-cur' : '') + '" data-resp="' + i + '">' +
+        '<span class="rc-alt-art">' + inst(res[1 + i], 'jt' + i + '_') + '</span>' +
+        '<span class="rc-alt-cap">' + esc(s.model) + '<span class="rc-alt-grade rc-g' + s.gr + '">' + s.g + '</span></span></button>';
+    });
+    h += '</div></div>' +
+      '<p class="mk-alts-note">↑ the strip the contact sheet borrows its frames from: same box, same paper, same current mark</p>' +
+      '</div></div></div></div></div>';
+    document.getElementById('ex-record').innerHTML = h;
+    var plate = document.querySelector('#ex-record .rc-plate');
+    /* the paper swap works here too (the sheet's frames stay on the card's paper — a frame is a print, not a plate) */
+    plate.querySelector('.rc-paper').addEventListener('click', function (e) {
+      e.stopPropagation();
+      var on = plate.classList.toggle('is-blueprint');
+      e.currentTarget.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var svgA = plate.querySelector('.rc-plate-art svg');
+    window.MK_sheets.a = makeSheet(svgA, document.getElementById('mk-mount-a'), kimi, 'mka');
+
+    /* ---- exhibit B: the rating instrument's plate ---- */
+    var hb = '<div class="jd-turn-scrim mk-static mk-turn"><div class="jd-turn"><div class="jd-turn-scroll">' +
+      '<figure class="jd-turn-plate" role="button" tabindex="0" data-slot="a" aria-label="Enlarge the artwork">' +
+      '<div class="jd-turn-art">' +
+      '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
+      '<div class="jd-turn-art-in" role="img" aria-label="drawing A" data-fit="gen:mk44:a">' + inst(fable, 'mkb_') + '</div>' +
+      '</div>' +
+      '<figcaption>A</figcaption>' +
+      '<div id="mk-mount-b"></div>' +
+      '</figure></div></div></div>';
+    document.getElementById('ex-turn').innerHTML = hb;
+    var svgB = document.querySelector('#ex-turn .jd-turn-art-in svg');
+    window.MK_sheets.b = makeSheet(svgB, document.getElementById('mk-mount-b'), fable, 'mkb', { still: true });
+  }).catch(function (err) { console.error('[mk44]', err); });
+})();
+</script>
+</body></html>

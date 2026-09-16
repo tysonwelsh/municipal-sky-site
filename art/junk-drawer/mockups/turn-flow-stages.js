@@ -21,19 +21,19 @@
         { rank: 2, label: 'Somewhat Understands' },
         { rank: 1, label: 'Barely Understands' }] },
     { id: 'structural-coherence', label: 'Structural Coherence',
-      desc: 'Errors of the object: parts attach, anatomy is possible, proportions and viewpoint stay self-consistent. If fixing it means redrawing geometry, it lands here.',
+      desc: 'Are the constituent parts that make up the item well assembled, and do they connect to each other correctly? Does the drawing correctly depict anatomy, proportions, and point of view? If fixing the drawing means repositioning parts of the item on the x or y-axis, it is an issue with Structural Coherence.',
       values: [
         { rank: 3, label: 'No problems' },
         { rank: 2, label: 'Small problems' },
         { rank: 1, label: 'Big problems' }] },
     { id: 'layering', label: 'Layering',
-      desc: 'Errors of the picture: stacking order and occlusion as rendered, fill, stroke and gradient work, framing and use of the canvas. The test — if it could be fixed without moving a single path (reorder, repaint, reframe), it lands here.',
+      desc: 'Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing an undesired part of the background, it is an issue with Layering.',
       values: [
         { rank: 3, label: 'No problems' },
         { rank: 2, label: 'Small problems' },
         { rank: 1, label: 'Big problems' }] },
     { id: 'jnsq', label: 'Je ne sais quoi',
-      desc: 'The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.',
+      desc: 'The intangible. Does it have style or is it a dud? Is it tasteful or is it tacky? You know it when you see it. Feel free to rely on your own subjective judgment.',
       values: [
         { rank: 3, label: 'Has it' },
         { rank: 2, label: 'Just a hint' },

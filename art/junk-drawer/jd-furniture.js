@@ -1059,7 +1059,11 @@
        (fx-panel--cropped), decided here at render, and the folder
        re-renders when the width crosses the line (see the media listener
        below render()). Desktop is unchanged. */
-    var keysEverywhere = !!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+    var keysEverywhere = !!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches) ||
+      /* the /about/ walkthrough lays the four panels two by two in a 660px
+         card whatever the viewport, and wants every panel whole and keyed
+         (2026-09-15) — the same shape a narrow viewport gets */
+      document.documentElement.classList.contains('jd-about-page');
     var panels = axes.map(function (ax, pi) {
       var pts = +ax.points || 3;
       var cropped = pi > 0 && !keysEverywhere;

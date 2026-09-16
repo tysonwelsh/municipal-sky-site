@@ -38,7 +38,7 @@ function jd_v($file)
 // The script is six files since 2026-09-05 (one per module; see the file
 // map in CLAUDE.md), loaded synchronously in dependency order below. Each
 // carries its own ?v= token; all six move the build fingerprint.
-$jd_scripts = ['jd-core.js', 'jd-furniture.js', 'jd-record.js',
+$jd_scripts = ['jd-core.js', 'jd-filmstrip.js', 'jd-furniture.js', 'jd-record.js',
                'jd-darkroom.js', 'jd-turn.js', 'jd-bench.js'];
 $jd_assets  = array_merge(['junk-drawer.css'], $jd_scripts,
               ['turn-object.svg', 'instructions-object.svg',

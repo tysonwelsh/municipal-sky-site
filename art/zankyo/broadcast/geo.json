@@ -1,0 +1,1843 @@
+{
+ "_meta": {
+  "built": "2026-09-16",
+  "reels": 252,
+  "byConf": {
+   "city": 116,
+   "region": 9,
+   "country": 126,
+   "unknown": 1
+  },
+  "countries": 77,
+  "heard": 6,
+  "dx": 15,
+  "realm": {
+   "deep-space": 1,
+   "moon": 2,
+   "orbit": 4
+  },
+  "note": "One entry per reel in manifest.json, keyed by reel id. A reel is placed where its pictures and sound were MADE: the studio or transmitter city for a broadcast, the location shot for a newsreel item filmed abroad (so the Spanish NO-DO item on a Berlin cybernetics show sits on Berlin, with the producer named in `place`). `conf` is how precisely the evidence places it: \"city\" = point-level, a place actually named in the title/notes (also used for a precise named non-urban site, e.g. a test range or a transmitter); \"region\" = a sub-national area or a named region with the city inferred; \"country\" = only the nation is evidenced, coordinates are the broadcaster's or producer's home city as a best guess; \"unknown\" = not placeable, coordinates are a cultural-region anchor only and should not be drawn as a fact. country \"XX\" means genuinely unplaceable. `dx: true` marks a long-distance (TV-DX) catch: the main entry is the TRANSMITTER; where the recordist's location is documented, `heard` carries the receiving point for an arc. `heard` also appears on shortwave reels whose notes name where the listener sat. `realm` (orbit | moon | deep-space) marks reels whose sound did not originate on Earth; their lat/lon is the Earth anchor (ground station, relay or launch site) named after the arrow in `place`. Two reels (tr-sivil-savunma-alarm-1960s, tr-yasayan-sayilar-1970) are flagged takedown in the manifest but are included here for completeness."
+ },
+ "aba-amdo-tibetan-news": {
+  "country": "CN",
+  "place": "Barkam (Ngawa/Aba prefecture), Sichuan",
+  "lat": 31.9,
+  "lon": 102.22,
+  "conf": "region"
+ },
+ "apollo-11-lunar-liftoff-1969": {
+  "country": "US",
+  "place": "Tranquility Base → Houston",
+  "lat": 29.56,
+  "lon": -95.09,
+  "conf": "city",
+  "realm": "moon"
+ },
+ "arutz-1-signoff-1985": {
+  "country": "IL",
+  "place": "Jerusalem (IBA Channel 1)",
+  "lat": 31.78,
+  "lon": 35.22,
+  "conf": "country"
+ },
+ "at-orf1-sendeschluss-1992": {
+  "country": "AT",
+  "place": "Vienna (ORF)",
+  "lat": 48.21,
+  "lon": 16.37,
+  "conf": "country"
+ },
+ "at-scope-computergraphik-1985": {
+  "country": "AT",
+  "place": "Vienna (Angewandte, Maria Lassnig's studio)",
+  "lat": 48.21,
+  "lon": 16.37,
+  "conf": "city"
+ },
+ "atc-malvinas-tandas-1982": {
+  "country": "AR",
+  "place": "Buenos Aires (ATC)",
+  "lat": -34.6,
+  "lon": -58.38,
+  "conf": "country"
+ },
+ "au-tvw7-perth-1993": {
+  "country": "AU",
+  "place": "Perth, Western Australia",
+  "lat": -31.95,
+  "lon": 115.86,
+  "conf": "city"
+ },
+ "bbc1-ni-closedown-1973": {
+  "country": "GB",
+  "place": "Belfast, Northern Ireland (BBC NI)",
+  "lat": 54.6,
+  "lon": -5.93,
+  "conf": "region"
+ },
+ "bbc1-testcard-news-1979": {
+  "country": "GB",
+  "place": "London",
+  "lat": 51.51,
+  "lon": -0.13,
+  "conf": "city"
+ },
+ "be-brtn-eedaflegging-1993": {
+  "country": "BE",
+  "place": "Brussels",
+  "lat": 50.85,
+  "lon": 4.35,
+  "conf": "city"
+ },
+ "bell-operator-toll-dialing-1949": {
+  "country": "US",
+  "place": "United States (Bell System)",
+  "lat": 40.71,
+  "lon": -74.01,
+  "conf": "country"
+ },
+ "bell-speeding-speech-1950": {
+  "country": "US",
+  "place": "United States (Bell System)",
+  "lat": 40.71,
+  "lon": -74.01,
+  "conf": "country"
+ },
+ "best-ten-jokr-1988": {
+  "country": "JP",
+  "place": "Tokyo (TBS / JOKR-TV)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "city"
+ },
+ "bureau-of-mines-drama-of-steel-1946": {
+  "country": "US",
+  "place": "United States (US Bureau of Mines)",
+  "lat": 38.9,
+  "lon": -77.04,
+  "conf": "country"
+ },
+ "ca-ibc-inukshuk-opening-1980": {
+  "country": "CA",
+  "place": "Igloolik, Nunavut",
+  "lat": 69.38,
+  "lon": -81.8,
+  "conf": "city"
+ },
+ "ca-ibc-pivalliajut-1982": {
+  "country": "CA",
+  "place": "Igloolik, Nunavut",
+  "lat": 69.38,
+  "lon": -81.8,
+  "conf": "city"
+ },
+ "canal13-uctv-tanda-1982": {
+  "country": "CL",
+  "place": "Santiago",
+  "lat": -33.45,
+  "lon": -70.67,
+  "conf": "city"
+ },
+ "canal9-bahia-blanca-cierre-1994": {
+  "country": "AR",
+  "place": "Bahía Blanca",
+  "lat": -38.72,
+  "lon": -62.27,
+  "conf": "city"
+ },
+ "cbc-nagoya-closedown-1984": {
+  "country": "JP",
+  "place": "Nagoya",
+  "lat": 35.18,
+  "lon": 136.91,
+  "conf": "city"
+ },
+ "cccp-zastavki-1952-1991": {
+  "country": "RU",
+  "place": "Moscow (Ostankino, ЦТ СССР)",
+  "lat": 55.82,
+  "lon": 37.61,
+  "conf": "city"
+ },
+ "centron-shake-hands-with-danger-1970": {
+  "country": "US",
+  "place": "Lawrence, Kansas (Centron Corporation)",
+  "lat": 38.97,
+  "lon": -95.24,
+  "conf": "country"
+ },
+ "cfu-dollar-bill-1966": {
+  "country": "AU",
+  "place": "Australia (Commonwealth Film Unit, Sydney)",
+  "lat": -33.87,
+  "lon": 151.21,
+  "conf": "country"
+ },
+ "ch-srgdrs-sendeschluss-1982": {
+  "country": "CH",
+  "place": "Zurich (SRG DRS)",
+  "lat": 47.37,
+  "lon": 8.54,
+  "conf": "country"
+ },
+ "cham-tashi-lhunpo-ignca": {
+  "country": "IN",
+  "place": "Tibetan exile settlement, India (Tashi Lhunpo, Bylakuppe)",
+  "lat": 12.4,
+  "lon": 76.0,
+  "conf": "country"
+ },
+ "cn-dongfanghong-1-1970": {
+  "country": "CN",
+  "place": "Dongfanghong-1 in orbit → Jiuquan",
+  "lat": 40.96,
+  "lon": 100.29,
+  "conf": "city",
+  "realm": "orbit"
+ },
+ "cn-how-the-computer-works-1984": {
+  "country": "CN",
+  "place": "China (PRC science-education film)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "country"
+ },
+ "cn-shanghai-plotter-1982": {
+  "country": "CN",
+  "place": "Shanghai (science-education film studio)",
+  "lat": 31.23,
+  "lon": 121.47,
+  "conf": "city"
+ },
+ "cn-tv-set-ads-80s90s": {
+  "country": "CN",
+  "place": "Beijing (CCTV-1; brands from Hebei and Xinxiang)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "country"
+ },
+ "cn-xiankong-dianziqin-1979": {
+  "country": "CN",
+  "place": "China (PRC science-education film)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "country"
+ },
+ "co-colombia-al-dia-casas-esfericas-1957": {
+  "country": "CO",
+  "place": "Bogotá (DINAPE newsreel; San Andrés, Zipaquirá)",
+  "lat": 4.71,
+  "lon": -74.07,
+  "conf": "country"
+ },
+ "co-y2k-1999": {
+  "country": "CO",
+  "place": "Bogotá",
+  "lat": 4.71,
+  "lon": -74.07,
+  "conf": "city"
+ },
+ "coi-moslems-cardiff-1961": {
+  "country": "GB",
+  "place": "Cardiff (Tiger Bay)",
+  "lat": 51.48,
+  "lon": -3.18,
+  "conf": "city"
+ },
+ "coi-operation-hurricane-1952": {
+  "country": "AU",
+  "place": "Monte Bello Islands, Western Australia",
+  "lat": -20.44,
+  "lon": 115.55,
+  "conf": "city"
+ },
+ "conet-atencion": {
+  "country": "CU",
+  "place": "Cuba (¡Atención! numbers station)",
+  "lat": 23.11,
+  "lon": -82.37,
+  "conf": "country"
+ },
+ "conet-gong-and-e10": {
+  "country": "IL",
+  "place": "Israel (E10); the Gong Station is unlocated",
+  "lat": 32.08,
+  "lon": 34.78,
+  "conf": "country"
+ },
+ "conet-lincolnshire-poacher": {
+  "country": "CY",
+  "place": "Cyprus (RAF Akrotiri, attributed)",
+  "lat": 34.59,
+  "lon": 32.99,
+  "conf": "country"
+ },
+ "conet-swedish-rhapsody": {
+  "country": "PL",
+  "place": "Poland (attributed)",
+  "lat": 52.23,
+  "lon": 21.01,
+  "conf": "country"
+ },
+ "coronet-self-conscious-guy-1951": {
+  "country": "US",
+  "place": "Glenview, Illinois (Coronet Instructional Films)",
+  "lat": 42.07,
+  "lon": -87.82,
+  "conf": "country"
+ },
+ "cst-vysilani-znelky": {
+  "country": "CZ",
+  "place": "Prague (ČST)",
+  "lat": 50.08,
+  "lon": 14.44,
+  "conf": "country"
+ },
+ "ct2-testcard-1994": {
+  "country": "CZ",
+  "place": "Prague (ČT2 transmitter; Slovak STV in the same catch)",
+  "lat": 50.08,
+  "lon": 14.44,
+  "conf": "city",
+  "dx": true
+ },
+ "cubavision-aberturas-90s": {
+  "country": "CU",
+  "place": "Havana",
+  "lat": 23.11,
+  "lon": -82.37,
+  "conf": "city"
+ },
+ "daehan-news-1970": {
+  "country": "KR",
+  "place": "Seoul (Korean government newsreel)",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "country"
+ },
+ "ddr-programmstart-1983": {
+  "country": "DE",
+  "place": "Berlin-Adlershof (Fernsehen der DDR)",
+  "lat": 52.43,
+  "lon": 13.54,
+  "conf": "country"
+ },
+ "ddr1-aktuelle-kamera-1986": {
+  "country": "DE",
+  "place": "Berlin-Adlershof (Fernsehen der DDR)",
+  "lat": 52.43,
+  "lon": 13.54,
+  "conf": "country"
+ },
+ "de-ard-abend-1976": {
+  "country": "DE",
+  "place": "Hamburg (ARD Tagesschau)",
+  "lat": 53.55,
+  "lon": 9.99,
+  "conf": "country"
+ },
+ "dff1-sendeschluss-1990": {
+  "country": "DE",
+  "place": "Berlin-Adlershof (DFF)",
+  "lat": 52.43,
+  "lon": 13.54,
+  "conf": "city"
+ },
+ "dk-dr-tv-avisen-1986": {
+  "country": "DK",
+  "place": "Copenhagen (Danmarks Radio)",
+  "lat": 55.68,
+  "lon": 12.57,
+  "conf": "country"
+ },
+ "dziennik-telewizyjny-1984": {
+  "country": "PL",
+  "place": "Warsaw (TVP)",
+  "lat": 52.23,
+  "lon": 21.01,
+  "conf": "country"
+ },
+ "eb-sound-recording-1943": {
+  "country": "US",
+  "place": "Wilmette, Illinois (Encyclopaedia Britannica Films)",
+  "lat": 42.08,
+  "lon": -87.71,
+  "conf": "country"
+ },
+ "ee-aja-rutmid-1974": {
+  "country": "EE",
+  "place": "Tallinn (ETV; Narva and Tartu in the film)",
+  "lat": 59.44,
+  "lon": 24.75,
+  "conf": "country"
+ },
+ "ee-akadeemikud-tougu-1981": {
+  "country": "EE",
+  "place": "Tallinn (ETV)",
+  "lat": 59.44,
+  "lon": 24.75,
+  "conf": "country"
+ },
+ "ee-eetrikunst-1980": {
+  "country": "EE",
+  "place": "Tallinn (ETV; Pirita monastery)",
+  "lat": 59.44,
+  "lon": 24.75,
+  "conf": "city"
+ },
+ "ee-saada-nagijaks-1987": {
+  "country": "EE",
+  "place": "Tallinn (ETV)",
+  "lat": 59.44,
+  "lon": 24.75,
+  "conf": "country"
+ },
+ "ee-valgusmuusika-filmid-1989": {
+  "country": "EE",
+  "place": "Tallinn (ETV; Kazan and Riga films shown)",
+  "lat": 59.44,
+  "lon": 24.75,
+  "conf": "country"
+ },
+ "egypt-tv-fasil-1983": {
+  "country": "EG",
+  "place": "Cairo (Egyptian television)",
+  "lat": 30.04,
+  "lon": 31.24,
+  "conf": "country"
+ },
+ "energiya-buran-1988": {
+  "country": "KZ",
+  "place": "Buran in orbit → Baikonur",
+  "lat": 45.92,
+  "lon": 63.34,
+  "conf": "city",
+  "realm": "orbit"
+ },
+ "ert-roloi-1985": {
+  "country": "GR",
+  "place": "Athens (ERT)",
+  "lat": 37.98,
+  "lon": 23.73,
+  "conf": "country"
+ },
+ "es-nodo-bombos-loteria-1962": {
+  "country": "ES",
+  "place": "Madrid (Colegio de San Ildefonso)",
+  "lat": 40.42,
+  "lon": -3.7,
+  "conf": "city"
+ },
+ "es-nodo-computadores-y-arte-1968": {
+  "country": "DE",
+  "place": "Berlin (NO-DO newsreel item, Spain)",
+  "lat": 52.52,
+  "lon": 13.4,
+  "conf": "city"
+ },
+ "es-nodo-corticalart-1971": {
+  "country": "FR",
+  "place": "Paris (NO-DO newsreel item, Spain)",
+  "lat": 48.86,
+  "lon": 2.35,
+  "conf": "city"
+ },
+ "es-tvdx-tve2-catala-1984": {
+  "country": "ES",
+  "place": "Barcelona (TVE-2 transmitter)",
+  "lat": 41.39,
+  "lon": 2.17,
+  "conf": "city",
+  "dx": true
+ },
+ "esa-meteosat-1980": {
+  "country": "DE",
+  "place": "ESOC Darmstadt (ESA; Lannion and Villafranca ground stations)",
+  "lat": 49.87,
+  "lon": 8.65,
+  "conf": "country"
+ },
+ "etv-cairo-clock-1980s": {
+  "country": "EG",
+  "place": "Cairo (Egyptian Channel 1)",
+  "lat": 30.04,
+  "lon": 31.24,
+  "conf": "country"
+ },
+ "fdi-space-and-india-1971": {
+  "country": "IN",
+  "place": "Thumba, Thiruvananthapuram",
+  "lat": 8.53,
+  "lon": 76.87,
+  "conf": "city"
+ },
+ "fi-yle-mtv-1985": {
+  "country": "FI",
+  "place": "Finland (YLE TV2 Tampere / MTV Helsinki)",
+  "lat": 60.17,
+  "lon": 24.94,
+  "conf": "country"
+ },
+ "fr-antenne2-continuite-1991": {
+  "country": "FR",
+  "place": "Paris (Antenne 2)",
+  "lat": 48.86,
+  "lon": 2.35,
+  "conf": "country"
+ },
+ "fr-fr3-fin-de-soiree-1989": {
+  "country": "FR",
+  "place": "Paris (FR3)",
+  "lat": 48.86,
+  "lon": 2.35,
+  "conf": "country"
+ },
+ "fuji-jocx-signoff-1988": {
+  "country": "JP",
+  "place": "Tokyo (Fuji TV / JOCX-TV)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "country"
+ },
+ "garda-bus-safety-1960s": {
+  "country": "IE",
+  "place": "Bray, Co. Wicklow (Silverpine Studios)",
+  "lat": 53.2,
+  "lon": -6.11,
+  "conf": "city"
+ },
+ "gbc-accra-shortwave-1977-1987": {
+  "country": "GH",
+  "place": "Accra (Ghana Broadcasting Corporation)",
+  "lat": 5.6,
+  "lon": -0.19,
+  "conf": "city"
+ },
+ "gling-rgyal-klu-rol-1996": {
+  "country": "CN",
+  "place": "Gling rgyal village, Rebgong (Amdo), Qinghai",
+  "lat": 35.52,
+  "lon": 102.02,
+  "conf": "region"
+ },
+ "globo-intervalo-festival-1984": {
+  "country": "BR",
+  "place": "Rio de Janeiro (Rede Globo)",
+  "lat": -22.91,
+  "lon": -43.17,
+  "conf": "country"
+ },
+ "grazhdanskaya-oborona-1982": {
+  "country": "UA",
+  "place": "Kyiv (Киевнаучфильм)",
+  "lat": 50.45,
+  "lon": 30.52,
+  "conf": "city"
+ },
+ "hk-atv-dx-1993": {
+  "country": "HK",
+  "place": "Hong Kong (ATV transmitter)",
+  "lat": 22.32,
+  "lon": 114.17,
+  "conf": "city",
+  "dx": true
+ },
+ "hk-tv-continuity-1979": {
+  "country": "HK",
+  "place": "Hong Kong (TVB Pearl / RTV-2)",
+  "lat": 22.32,
+  "lon": 114.17,
+  "conf": "city"
+ },
+ "hk-tv-news-1986": {
+  "country": "HK",
+  "place": "Hong Kong",
+  "lat": 22.32,
+  "lon": 114.17,
+  "conf": "city"
+ },
+ "hk-tvb-pearl-weather-1987": {
+  "country": "HK",
+  "place": "Hong Kong (TVB Pearl; Macau relay bug on the tape)",
+  "lat": 22.32,
+  "lon": 114.17,
+  "conf": "city"
+ },
+ "hk-tvc-70s-90s": {
+  "country": "HK",
+  "place": "Hong Kong",
+  "lat": 22.32,
+  "lon": 114.17,
+  "conf": "city"
+ },
+ "htv-wales-closedown-1982": {
+  "country": "GB",
+  "place": "Wales (HTV, Cardiff)",
+  "lat": 51.48,
+  "lon": -3.18,
+  "conf": "region"
+ },
+ "iba-arabic-continuity-1988": {
+  "country": "IL",
+  "place": "Jerusalem (IBA Arabic service)",
+  "lat": 31.78,
+  "lon": 35.22,
+  "conf": "country"
+ },
+ "ibm-sage-on-guard-1956": {
+  "country": "US",
+  "place": "United States (IBM Military Products, Kingston NY; SAGE)",
+  "lat": 41.93,
+  "lon": -73.99,
+  "conf": "country"
+ },
+ "id-tvri-berita-1989": {
+  "country": "ID",
+  "place": "Jakarta (TVRI)",
+  "lat": -6.21,
+  "lon": 106.85,
+  "conf": "country"
+ },
+ "in-fdi-telephones-1982": {
+  "country": "IN",
+  "place": "Mumbai (Films Division of India)",
+  "lat": 19.08,
+  "lon": 72.88,
+  "conf": "country"
+ },
+ "in-nid-hindustan-2021-1988": {
+  "country": "IN",
+  "place": "Ahmedabad (National Institute of Design)",
+  "lat": 23.03,
+  "lon": 72.58,
+  "conf": "country"
+ },
+ "in-surabhi-computer-art-1991": {
+  "country": "IN",
+  "place": "Mumbai (Doordarshan Surabhi / Cinema Vision India)",
+  "lat": 19.08,
+  "lon": 72.88,
+  "conf": "country"
+ },
+ "in-surabhi-computer-calligraphy-1991": {
+  "country": "IN",
+  "place": "Mumbai (IDC, IIT Bombay)",
+  "lat": 19.13,
+  "lon": 72.92,
+  "conf": "city"
+ },
+ "in-surabhi-electronic-talometer-1991": {
+  "country": "IN",
+  "place": "Mumbai (Doordarshan Surabhi; RADEL Talometer)",
+  "lat": 19.08,
+  "lon": 72.88,
+  "conf": "country"
+ },
+ "inravision-mensajes-1987": {
+  "country": "CO",
+  "place": "Bogotá (Inravisión)",
+  "lat": 4.71,
+  "lon": -74.07,
+  "conf": "country"
+ },
+ "inside-tibet-1943": {
+  "country": "CN",
+  "place": "Lhasa, Tibet",
+  "lat": 29.65,
+  "lon": 91.12,
+  "conf": "city"
+ },
+ "interval-signals-1976-77": {
+  "country": "CA",
+  "place": "Kingston, Ontario — shortwave log of many transmitters",
+  "lat": 44.23,
+  "lon": -76.48,
+  "conf": "city"
+ },
+ "iraq-tv-iftitah-1982": {
+  "country": "IQ",
+  "place": "Baghdad",
+  "lat": 33.31,
+  "lon": 44.37,
+  "conf": "city"
+ },
+ "it-carosello-anni-60": {
+  "country": "IT",
+  "place": "Italy (RAI — Carosello)",
+  "lat": 41.9,
+  "lon": 12.5,
+  "conf": "country"
+ },
+ "it-giornale-luce-340-1943": {
+  "country": "IT",
+  "place": "Rome (Istituto Luce)",
+  "lat": 41.9,
+  "lon": 12.5,
+  "conf": "country"
+ },
+ "it-luce-orchestra-robot-1958": {
+  "country": "FR",
+  "place": "Paris (La Settimana Incom newsreel item, Italy)",
+  "lat": 48.86,
+  "lon": 2.35,
+  "conf": "city"
+ },
+ "it-luce-schoffer-1969": {
+  "country": "FR",
+  "place": "Paris (Nicolas Schöffer; Italian newsreel item)",
+  "lat": 48.86,
+  "lon": 2.35,
+  "conf": "country"
+ },
+ "itv-schools-c4-1987": {
+  "country": "GB",
+  "place": "London (ITV Schools on Channel 4)",
+  "lat": 51.51,
+  "lon": -0.13,
+  "conf": "country"
+ },
+ "jamhandy-from-dawn-to-sunset-1937": {
+  "country": "US",
+  "place": "Detroit, Michigan (Jam Handy for Chevrolet)",
+  "lat": 42.33,
+  "lon": -83.05,
+  "conf": "country"
+ },
+ "jjy-last-morning-2001": {
+  "country": "JP",
+  "place": "Koganei, Tokyo (JJY 8 MHz transmitter)",
+  "lat": 35.7,
+  "lon": 139.51,
+  "conf": "country"
+ },
+ "john-cage-interview": {
+  "country": "US",
+  "place": "New York (Sixth Avenue)",
+  "lat": 40.74,
+  "lon": -73.99,
+  "conf": "city"
+ },
+ "jordan-tv-fasil-musiqi": {
+  "country": "JO",
+  "place": "Amman (Jordan TV)",
+  "lat": 31.95,
+  "lon": 35.93,
+  "conf": "country"
+ },
+ "jp-kagakueizo-cybernetics-1963": {
+  "country": "JP",
+  "place": "Tokyo (Ministry of Education / IBM Japan)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "country"
+ },
+ "jp-kagakueizo-denshi-keisanki-1960s": {
+  "country": "JP",
+  "place": "Tokyo (Fujitsu-sponsored educational film)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "country"
+ },
+ "jpcm31-jocx-1981": {
+  "country": "JP",
+  "place": "Tokyo (Fuji TV / JOCX-TV)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "city"
+ },
+ "jpcm35-joex-1980": {
+  "country": "JP",
+  "place": "Tokyo (TV Asahi / JOEX-TV)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "city"
+ },
+ "jrt-jugoslavija-spice": {
+  "country": "RS",
+  "place": "Belgrade (JRT, Yugoslav television)",
+  "lat": 44.79,
+  "lon": 20.45,
+  "conf": "country"
+ },
+ "kabc7-signoff-1989": {
+  "country": "US",
+  "place": "Los Angeles",
+  "lat": 34.05,
+  "lon": -118.24,
+  "conf": "city"
+ },
+ "kcbs-japanese-1974": {
+  "country": "KP",
+  "place": "Pyongyang (KCBS)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-bodo-1989": {
+  "country": "KP",
+  "place": "Pyongyang (Sunan)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-massgames-1989": {
+  "country": "KP",
+  "place": "Pyongyang",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-ryongrihan-noguri": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "country"
+ },
+ "kctv-signoff-1994": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-signon-1994": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-special-notice-2011": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-testcard-thaicom-2003": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV, taken off Thaicom 5)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kctv-tvdx-terrestrial": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV ch.11 transmitter)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city",
+  "dx": true
+ },
+ "kctv-weather-2003": {
+  "country": "KP",
+  "place": "Pyongyang (KCTV)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "kol-israel-9009-1969": {
+  "country": "IL",
+  "place": "Jerusalem (Kol Israel)",
+  "lat": 31.78,
+  "lon": 35.22,
+  "conf": "city",
+  "heard": {
+   "place": "eastern United States",
+   "lat": 40.0,
+   "lon": -75.5,
+   "country": "US"
+  }
+ },
+ "kosmos-kievnauchfilm": {
+  "country": "UA",
+  "place": "Kyiv (Киевнаучфильм)",
+  "lat": 50.45,
+  "lon": 30.52,
+  "conf": "country"
+ },
+ "kr-battle-of-figures-1947": {
+  "country": "KR",
+  "place": "Seoul",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "city"
+ },
+ "kr-kbs1-closedown-1997": {
+  "country": "KR",
+  "place": "Seoul (KBS)",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "country"
+ },
+ "kr-mbc-siho-clock-1980s": {
+  "country": "KR",
+  "place": "Seoul (MBC)",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "country"
+ },
+ "ktv-kuwait-programmes-80s": {
+  "country": "KW",
+  "place": "Kuwait City (Kuwait TV)",
+  "lat": 29.38,
+  "lon": 47.99,
+  "conf": "country"
+ },
+ "lhasa-soundscape-2010": {
+  "country": "CN",
+  "place": "Lhasa (Sera, the Jokhang)",
+  "lat": 29.65,
+  "lon": 91.12,
+  "conf": "city"
+ },
+ "lk-rupavahini-nutan-1982": {
+  "country": "LK",
+  "place": "Colombo (Rupavahini)",
+  "lat": 6.93,
+  "lon": 79.86,
+  "conf": "country"
+ },
+ "macau-tdm-02": {
+  "country": "MO",
+  "place": "Macau (TDM)",
+  "lat": 22.2,
+  "lon": 113.55,
+  "conf": "city"
+ },
+ "macau-tdm-falar-1984": {
+  "country": "MO",
+  "place": "Macau (Igreja de S. Domingos)",
+  "lat": 22.19,
+  "lon": 113.54,
+  "conf": "city"
+ },
+ "mbs-osaka-1986-02": {
+  "country": "JP",
+  "place": "Osaka (MBS; Manila feed relayed)",
+  "lat": 34.69,
+  "lon": 135.5,
+  "conf": "city"
+ },
+ "mexico-comerciales-70s80s": {
+  "country": "MX",
+  "place": "Mexico (Spanish-language commercials)",
+  "lat": 19.43,
+  "lon": -99.13,
+  "conf": "country"
+ },
+ "mezhdunarodnaya-panorama-1976": {
+  "country": "RU",
+  "place": "Moscow (ЦТ СССР)",
+  "lat": 55.76,
+  "lon": 37.62,
+  "conf": "country"
+ },
+ "moody-electric-eel-1954": {
+  "country": "US",
+  "place": "United States (Moody Institute of Science)",
+  "lat": 41.88,
+  "lon": -87.63,
+  "conf": "country"
+ },
+ "mtv1-musorzaras-1989": {
+  "country": "HU",
+  "place": "Budapest",
+  "lat": 47.5,
+  "lon": 19.04,
+  "conf": "city"
+ },
+ "my-rtm-tv1-dx-1991": {
+  "country": "MY",
+  "place": "Kuala Lumpur (RTM TV1)",
+  "lat": 3.14,
+  "lon": 101.69,
+  "conf": "city",
+  "dx": true
+ },
+ "nara-apollo-13-houston-1972": {
+  "country": "US",
+  "place": "Apollo 13, cislunar space → Houston",
+  "lat": 29.56,
+  "lon": -95.09,
+  "conf": "city",
+  "realm": "moon"
+ },
+ "nasa-mercury-redstone-1-1960": {
+  "country": "US",
+  "place": "Cape Canaveral, Florida",
+  "lat": 28.49,
+  "lon": -80.57,
+  "conf": "city"
+ },
+ "never-gonna-give-you-up-1987": {
+  "country": "GB",
+  "place": "United Kingdom (PWL, London)",
+  "lat": 51.51,
+  "lon": -0.13,
+  "conf": "country"
+ },
+ "nhk-joak-closedown-1982": {
+  "country": "JP",
+  "place": "Tokyo (NHK / JOAK-TV)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "country"
+ },
+ "night-mail-1936": {
+  "country": "GB",
+  "place": "United Kingdom — GPO Film Unit, the London–Glasgow mail train",
+  "lat": 51.51,
+  "lon": -0.13,
+  "conf": "country"
+ },
+ "nirt-tehran-ads-1970s": {
+  "country": "IR",
+  "place": "Tehran (NIRT)",
+  "lat": 35.69,
+  "lon": 51.39,
+  "conf": "city"
+ },
+ "nirt-tehran-final-1979": {
+  "country": "IR",
+  "place": "Tehran (NIRT)",
+  "lat": 35.69,
+  "lon": 51.39,
+  "conf": "city"
+ },
+ "nl-polygoon-computerkunst-1986": {
+  "country": "NL",
+  "place": "Netherlands (Polygoon Hollands Nieuws, Hilversum)",
+  "lat": 52.22,
+  "lon": 5.18,
+  "conf": "country"
+ },
+ "nl-polygoon-staatsloterij-1976": {
+  "country": "NL",
+  "place": "The Hague (the Rolzaal, Ridderzaal complex)",
+  "lat": 52.08,
+  "lon": 4.31,
+  "conf": "city"
+ },
+ "nl-tros-closedown-1992": {
+  "country": "NL",
+  "place": "Hilversum (TROS / NOS)",
+  "lat": 52.22,
+  "lon": 5.18,
+  "conf": "country"
+ },
+ "nodo-noticiario-espanol": {
+  "country": "ES",
+  "place": "Madrid (NO-DO)",
+  "lat": 40.42,
+  "lon": -3.7,
+  "conf": "country"
+ },
+ "noticiero-icaic-1969": {
+  "country": "CU",
+  "place": "Havana (ICAIC)",
+  "lat": 23.11,
+  "lon": -82.37,
+  "conf": "country"
+ },
+ "now-artist-jokr-1991": {
+  "country": "JP",
+  "place": "Tokyo (TBS / JOKR-TV; Shinjuku)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "city"
+ },
+ "nta2-lagos-continuity-1985": {
+  "country": "NG",
+  "place": "Lagos (NTA2 Channel 5)",
+  "lat": 6.52,
+  "lon": 3.38,
+  "conf": "city"
+ },
+ "ntv-ohayo-tenki-1989": {
+  "country": "JP",
+  "place": "Tokyo (NTV / JOAX-TV)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "country"
+ },
+ "nz-tvnz-tv2-breaks-1983": {
+  "country": "NZ",
+  "place": "New Zealand (TVNZ; ads from Petone, Wellington)",
+  "lat": -41.29,
+  "lon": 174.78,
+  "conf": "country"
+ },
+ "oracle-pages-1981": {
+  "country": "GB",
+  "place": "United Kingdom (ORACLE teletext, ITV/ATV)",
+  "lat": 51.51,
+  "lon": -0.13,
+  "conf": "country"
+ },
+ "pantel-trampolin-1984": {
+  "country": "PE",
+  "place": "Lima (Panamericana Televisión)",
+  "lat": -12.05,
+  "lon": -77.04,
+  "conf": "city"
+ },
+ "pbs-xizang-4920khz": {
+  "country": "CN",
+  "place": "Lhasa (PBS Xizang; All India Radio Chennai co-channel)",
+  "lat": 29.65,
+  "lon": 91.12,
+  "conf": "city"
+ },
+ "ph-dzmm-signon-1987": {
+  "country": "PH",
+  "place": "Manila (DZMM 630 kHz)",
+  "lat": 14.6,
+  "lon": 120.98,
+  "conf": "city"
+ },
+ "ph-tvdx-abscbn-1990": {
+  "country": "PH",
+  "place": "Quezon City (ABS-CBN Channel 2 transmitter)",
+  "lat": 14.65,
+  "lon": 121.05,
+  "conf": "city",
+  "dx": true,
+  "heard": {
+   "place": "Tokyo (western suburbs)",
+   "lat": 35.68,
+   "lon": 139.69,
+   "country": "JP"
+  }
+ },
+ "pk-tvdx-ptv-1994": {
+  "country": "PK",
+  "place": "Murree transmitter (PTV Islamabad, channel E8)",
+  "lat": 33.91,
+  "lon": 73.39,
+  "conf": "city",
+  "dx": true,
+  "heard": {
+   "place": "Islamabad",
+   "lat": 33.69,
+   "lon": 73.06,
+   "country": "PK"
+  }
+ },
+ "pl-non-camerowa-nr8-1985": {
+  "country": "PL",
+  "place": "Kraków and Warsaw (Antonisz; Polish Radio Experimental Studio)",
+  "lat": 50.06,
+  "lon": 19.94,
+  "conf": "country"
+ },
+ "pl-pkf-komputer-prawde-1987": {
+  "country": "PL",
+  "place": "Wrocław (Hala Ludowa, Infosystem fair)",
+  "lat": 51.11,
+  "lon": 17.08,
+  "conf": "city"
+ },
+ "pl-pkf-rachuj-kolego-1964": {
+  "country": "PL",
+  "place": "Warsaw (PAN Computing Centre) and Łódź",
+  "lat": 52.23,
+  "lon": 21.01,
+  "conf": "city"
+ },
+ "pl-pkf-ruch-i-dzwiek-1972": {
+  "country": "DE",
+  "place": "Berlin (Polish newsreel item, shot in Berlin)",
+  "lat": 52.52,
+  "lon": 13.4,
+  "conf": "city"
+ },
+ "pl-pkf-sygnaly-z-kosmosu-1987": {
+  "country": "DE",
+  "place": "Effelsberg radio telescope (Polish newsreel item)",
+  "lat": 50.53,
+  "lon": 6.88,
+  "conf": "city"
+ },
+ "polygoon-signalen-1933-1974": {
+  "country": "NL",
+  "place": "Netherlands (Polygoon-Profilti newsreels)",
+  "lat": 52.22,
+  "lon": 5.18,
+  "conf": "country"
+ },
+ "pottery-in-the-gold-coast-1945": {
+  "country": "GH",
+  "place": "Achimota and Alajo, Accra (Gold Coast)",
+  "lat": 5.62,
+  "lon": -0.22,
+  "conf": "city"
+ },
+ "prelinger-a-day-called-x-1955": {
+  "country": "US",
+  "place": "Portland, Oregon",
+  "lat": 45.52,
+  "lon": -122.68,
+  "conf": "city"
+ },
+ "prelinger-a-is-for-atom-1953": {
+  "country": "US",
+  "place": "United States (General Electric)",
+  "lat": 42.81,
+  "lon": -73.94,
+  "conf": "country"
+ },
+ "prelinger-design-for-dreaming-1956": {
+  "country": "US",
+  "place": "New York (GM Motorama, Waldorf-Astoria)",
+  "lat": 40.76,
+  "lon": -73.97,
+  "conf": "country"
+ },
+ "prelinger-duck-and-cover-1951": {
+  "country": "US",
+  "place": "United States (Federal Civil Defense Administration)",
+  "lat": 38.9,
+  "lon": -77.04,
+  "conf": "country"
+ },
+ "prelinger-operation-cue-1964": {
+  "country": "US",
+  "place": "Nevada Test Site",
+  "lat": 37.02,
+  "lon": -116.05,
+  "conf": "city"
+ },
+ "prelinger-tv-commercials-1960s": {
+  "country": "US",
+  "place": "United States (network TV spots)",
+  "lat": 40.71,
+  "lon": -74.01,
+  "conf": "country"
+ },
+ "protect-and-survive-1980": {
+  "country": "GB",
+  "place": "London (Home Office / COI)",
+  "lat": 51.51,
+  "lon": -0.13,
+  "conf": "country"
+ },
+ "pt-rtp-sumario-intervalo-1989": {
+  "country": "PT",
+  "place": "Lisbon (RTP)",
+  "lat": 38.72,
+  "lon": -9.14,
+  "conf": "country"
+ },
+ "radio-caroline-1966": {
+  "country": "GB",
+  "place": "At sea off the Essex coast (Radio Caroline South)",
+  "lat": 51.78,
+  "lon": 1.3,
+  "conf": "region"
+ },
+ "radio-habana-cuba-1974": {
+  "country": "CU",
+  "place": "Havana (Radio Habana Cuba)",
+  "lat": 23.11,
+  "lon": -82.37,
+  "conf": "city"
+ },
+ "radio-moscow-parade-1969": {
+  "country": "RU",
+  "place": "Moscow (Red Square)",
+  "lat": 55.75,
+  "lon": 37.62,
+  "conf": "city",
+  "heard": {
+   "place": "Brisbane",
+   "lat": -27.47,
+   "lon": 153.03,
+   "country": "AU"
+  }
+ },
+ "radio-moscow-soyuz-26-1977": {
+  "country": "RU",
+  "place": "Moscow (Radio Moscow World Service)",
+  "lat": 55.76,
+  "lon": 37.62,
+  "conf": "country"
+ },
+ "radio-nacional-angola-mocambique-1979-1988": {
+  "country": "AO",
+  "place": "Luanda (with Maputo and Beira, Mozambique)",
+  "lat": -8.84,
+  "lon": 13.23,
+  "conf": "city"
+ },
+ "radio-peking-1970": {
+  "country": "CN",
+  "place": "Beijing (Radio Peking)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "city"
+ },
+ "radio-pyongyang-mandarin-1999": {
+  "country": "KP",
+  "place": "Pyongyang (Radio Pyongyang)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "city"
+ },
+ "radio-rsa-1982": {
+  "country": "ZA",
+  "place": "Johannesburg (Radio RSA; Meyerton transmitter)",
+  "lat": -26.2,
+  "lon": 28.05,
+  "conf": "country"
+ },
+ "radio-senegal-afrique-occidentale-1979-1983": {
+  "country": "SN",
+  "place": "Dakar (with Niamey, Lomé, Bamako, Nouakchott, Abidjan)",
+  "lat": 14.72,
+  "lon": -17.47,
+  "conf": "city"
+ },
+ "radio-tanzania-zanzibar-1980-1990": {
+  "country": "TZ",
+  "place": "Zanzibar Town (with Dar es Salaam)",
+  "lat": -6.16,
+  "lon": 39.2,
+  "conf": "city"
+ },
+ "radio-vilnius-1991-01-13": {
+  "country": "LT",
+  "place": "Vilnius",
+  "lat": 54.69,
+  "lon": 25.28,
+  "conf": "city"
+ },
+ "rctv-tandas-1982": {
+  "country": "VE",
+  "place": "Caracas (Radio Caracas Televisión)",
+  "lat": 10.49,
+  "lon": -66.88,
+  "conf": "city"
+ },
+ "reb-gong-ritual-2010": {
+  "country": "CN",
+  "place": "Reb gong (Tongren), Qinghai",
+  "lat": 35.52,
+  "lon": 102.02,
+  "conf": "city"
+ },
+ "rta-algerie-pubs-archive": {
+  "country": "DZ",
+  "place": "Algiers (RTA)",
+  "lat": 36.75,
+  "lon": 3.06,
+  "conf": "country"
+ },
+ "rtbf-testcard-1994": {
+  "country": "BE",
+  "place": "Brussels (RTBF 1 transmitter)",
+  "lat": 50.85,
+  "lon": 4.35,
+  "conf": "country",
+  "dx": true
+ },
+ "rte-news-angelus-1983": {
+  "country": "IE",
+  "place": "Dublin (RTÉ)",
+  "lat": 53.35,
+  "lon": -6.26,
+  "conf": "country"
+ },
+ "rte-testcard-405-vhf": {
+  "country": "IE",
+  "place": "Dublin (RTÉ)",
+  "lat": 53.35,
+  "lon": -6.26,
+  "conf": "country"
+ },
+ "rtsh-lajmeve-1986": {
+  "country": "AL",
+  "place": "Tirana (RTSH)",
+  "lat": 41.33,
+  "lon": 19.82,
+  "conf": "country"
+ },
+ "rtt-tunisie-generiques-1980": {
+  "country": "TN",
+  "place": "Tunis (Télévision Tunisienne)",
+  "lat": 36.81,
+  "lon": 10.18,
+  "conf": "country"
+ },
+ "ryongnamsan-tv-russian": {
+  "country": "KP",
+  "place": "Pyongyang (Ryongnamsan TV)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "country"
+ },
+ "sabc-closedown-1977": {
+  "country": "ZA",
+  "place": "Johannesburg (SABC/SAUK)",
+  "lat": -26.2,
+  "lon": 28.05,
+  "conf": "country"
+ },
+ "sabc-tv1-nuus-1984": {
+  "country": "ZA",
+  "place": "Johannesburg (SABC TV1)",
+  "lat": -26.2,
+  "lon": 28.05,
+  "conf": "country"
+ },
+ "sabc-tv1-opening-1985": {
+  "country": "ZA",
+  "place": "Johannesburg (SAUK SABC JHB card)",
+  "lat": -26.2,
+  "lon": 28.05,
+  "conf": "city"
+ },
+ "se-anslagstavlan-1985": {
+  "country": "SE",
+  "place": "Stockholm (SVT)",
+  "lat": 59.33,
+  "lon": 18.07,
+  "conf": "country"
+ },
+ "sg-rediffusion-hokkien": {
+  "country": "SG",
+  "place": "Singapore (Rediffusion)",
+  "lat": 1.35,
+  "lon": 103.82,
+  "conf": "city"
+ },
+ "sg-sbc5-dx-1991": {
+  "country": "SG",
+  "place": "Singapore (SBC 5 transmitter)",
+  "lat": 1.35,
+  "lon": 103.82,
+  "conf": "city",
+  "dx": true
+ },
+ "shigatse-tibetan-news-weather": {
+  "country": "CN",
+  "place": "Shigatse (Rikaze), Tibet",
+  "lat": 29.27,
+  "lon": 88.88,
+  "conf": "city"
+ },
+ "sovetskie-kv-stantsii-1970": {
+  "country": "RU",
+  "place": "Moscow (Soviet shortwave services)",
+  "lat": 55.76,
+  "lon": 37.62,
+  "conf": "country",
+  "heard": {
+   "place": "Ontario, Canada",
+   "lat": 44.5,
+   "lon": -79.0,
+   "country": "CA"
+  }
+ },
+ "sovetskoe-tv-efir-1970s": {
+  "country": "RU",
+  "place": "Moscow (ЦТ СССР; the Kremlin clock)",
+  "lat": 55.75,
+  "lon": 37.62,
+  "conf": "city"
+ },
+ "spokoynoy-nochi-1964": {
+  "country": "RU",
+  "place": "Moscow (ЦТ СССР)",
+  "lat": 55.76,
+  "lon": 37.62,
+  "conf": "country"
+ },
+ "springbok-radio-clips": {
+  "country": "ZA",
+  "place": "Johannesburg (SABC Springbok Radio)",
+  "lat": -26.2,
+  "lon": 28.05,
+  "conf": "country"
+ },
+ "sputnik-1-shortwave-1957": {
+  "country": "US",
+  "place": "Sputnik 1 in orbit → Minneapolis (WTCN-AM)",
+  "lat": 44.98,
+  "lon": -93.27,
+  "conf": "city",
+  "realm": "orbit"
+ },
+ "tele-liban-news-1985": {
+  "country": "LB",
+  "place": "Beirut (Télé Liban)",
+  "lat": 33.89,
+  "lon": 35.5,
+  "conf": "country"
+ },
+ "tele-zaire-ozrt-souvenir": {
+  "country": "CD",
+  "place": "Kinshasa (OZRT / Télé Zaïre)",
+  "lat": -4.32,
+  "lon": 15.31,
+  "conf": "country"
+ },
+ "th-sahaviriya-computer-1992": {
+  "country": "TH",
+  "place": "Bangkok (Sahaviriya OA)",
+  "lat": 13.76,
+  "lon": 100.5,
+  "conf": "country"
+ },
+ "tibet-tv-dharamsala-2016": {
+  "country": "IN",
+  "place": "Dharamsala (Tibet TV, Tibetan exile)",
+  "lat": 32.22,
+  "lon": 76.32,
+  "conf": "city"
+ },
+ "tibetan-ritual-nyingmapa-1971": {
+  "country": "XX",
+  "place": "Tibetan Nyingmapa ritual — recording site not stated",
+  "lat": 29.65,
+  "lon": 91.12,
+  "conf": "unknown"
+ },
+ "tokyo-station-1993": {
+  "country": "JP",
+  "place": "Tokyo Station (Yamanote and Keihin-Tohoku platforms)",
+  "lat": 35.68,
+  "lon": 139.77,
+  "conf": "city"
+ },
+ "tr-sivil-savunma-alarm-1960s": {
+  "country": "TR",
+  "place": "Ankara (Ministry of the Interior, Civil Defence)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "tr-yasayan-sayilar-1970": {
+  "country": "TR",
+  "place": "Ankara (Devlet İstatistik Enstitüsü)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "trt-istiklal-marsi-1982": {
+  "country": "TR",
+  "place": "Ankara (TRT)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "trt1-kapanis-1986": {
+  "country": "TR",
+  "place": "Ankara (TRT 1)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "tvdx-irib2-tehran-1994": {
+  "country": "IR",
+  "place": "Tehran (IRIB-2, caught via Intelsat 63°E)",
+  "lat": 35.69,
+  "lon": 51.39,
+  "conf": "city",
+  "dx": true
+ },
+ "tvdx-joax-1992": {
+  "country": "JP",
+  "place": "Tokyo (NTV / JOAX-TV transmitter)",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "country",
+  "dx": true
+ },
+ "tvdx-pik1-cyprus-1992": {
+  "country": "CY",
+  "place": "Nicosia (RIK 1 / CyBC)",
+  "lat": 35.17,
+  "lon": 33.36,
+  "conf": "country",
+  "dx": true
+ },
+ "tvdx-qtv-qatar-1993": {
+  "country": "QA",
+  "place": "Doha (Qatar TV, off Arabsat)",
+  "lat": 25.29,
+  "lon": 51.53,
+  "conf": "city",
+  "dx": true
+ },
+ "tvdx-srt-syria-1984": {
+  "country": "SY",
+  "place": "Damascus (Syrian Arab TV, channel E05)",
+  "lat": 33.51,
+  "lon": 36.29,
+  "conf": "country",
+  "dx": true
+ },
+ "tvn-chile-tandas-1985": {
+  "country": "CL",
+  "place": "Santiago (TVN)",
+  "lat": -33.45,
+  "lon": -70.67,
+  "conf": "country"
+ },
+ "tvr-22-decembrie-1989": {
+  "country": "RO",
+  "place": "Bucharest",
+  "lat": 44.43,
+  "lon": 26.1,
+  "conf": "city"
+ },
+ "tvri-jakarta-1980": {
+  "country": "ID",
+  "place": "Jakarta (TVRI)",
+  "lat": -6.21,
+  "lon": 106.85,
+  "conf": "city"
+ },
+ "tvtupi-ultima-transmissao-1980": {
+  "country": "BR",
+  "place": "São Paulo (TV Tupi)",
+  "lat": -23.55,
+  "lon": -46.63,
+  "conf": "country"
+ },
+ "tw-cts-morning-news-1980": {
+  "country": "TW",
+  "place": "Taipei (CTS)",
+  "lat": 25.03,
+  "lon": 121.57,
+  "conf": "country"
+ },
+ "tw-nuclear-plant-one-1979": {
+  "country": "TW",
+  "place": "Chinshan nuclear station, Shimen, northern Taiwan",
+  "lat": 25.29,
+  "lon": 121.59,
+  "conf": "region"
+ },
+ "tw-ttv-commercials-1982": {
+  "country": "TW",
+  "place": "Taipei (TTV)",
+  "lat": 25.03,
+  "lon": 121.57,
+  "conf": "country"
+ },
+ "tw-ttv-dx-1991": {
+  "country": "TW",
+  "place": "Taipei (TTV transmitter)",
+  "lat": 25.03,
+  "lon": 121.57,
+  "conf": "country",
+  "dx": true
+ },
+ "ueno-station-1991": {
+  "country": "JP",
+  "place": "Ueno Station, Tokyo (platforms 16 and 17)",
+  "lat": 35.71,
+  "lon": 139.78,
+  "conf": "city"
+ },
+ "unconquerable-tibet-1959": {
+  "country": "CN",
+  "place": "Lhasa and the road into India",
+  "lat": 29.65,
+  "lon": 91.12,
+  "conf": "region"
+ },
+ "universal-newsreel-explorer-1958": {
+  "country": "US",
+  "place": "Explorer 1 in orbit → Cape Canaveral",
+  "lat": 28.49,
+  "lon": -80.57,
+  "conf": "city",
+  "realm": "orbit"
+ },
+ "us-honolulu-emshwiller-1978": {
+  "country": "US",
+  "place": "Honolulu, Hawaiʻi (public access)",
+  "lat": 21.31,
+  "lon": -157.86,
+  "conf": "city"
+ },
+ "us-khet-uh-today-synthesizer-1971": {
+  "country": "US",
+  "place": "Honolulu, Hawaiʻi (KHET / University of Hawaiʻi)",
+  "lat": 21.31,
+  "lon": -157.86,
+  "conf": "city"
+ },
+ "us-khon2-off-air-1990-01-31": {
+  "country": "US",
+  "place": "Honolulu, Hawaiʻi (KHON-TV2)",
+  "lat": 21.31,
+  "lon": -157.86,
+  "conf": "city"
+ },
+ "usaf-power-of-decision-1958": {
+  "country": "US",
+  "place": "United States (Strategic Air Command, Offutt AFB, Nebraska)",
+  "lat": 41.12,
+  "lon": -95.92,
+  "conf": "country"
+ },
+ "usia-answering-soviet-propaganda-1964": {
+  "country": "US",
+  "place": "Washington, D.C. (USIA)",
+  "lat": 38.9,
+  "lon": -77.04,
+  "conf": "country"
+ },
+ "uvb-76-buzzer-2024": {
+  "country": "RU",
+  "place": "Pskov oblast (UVB-76 transmitter; formerly Povarovo)",
+  "lat": 57.82,
+  "lon": 28.33,
+  "conf": "region"
+ },
+ "vn-vtv-hinhhieu-1980s": {
+  "country": "VN",
+  "place": "Hanoi (VTV)",
+  "lat": 21.03,
+  "lon": 105.85,
+  "conf": "country"
+ },
+ "voice-of-revolutionary-ethiopia-1978-1991": {
+  "country": "ET",
+  "place": "Addis Ababa",
+  "lat": 9.03,
+  "lon": 38.74,
+  "conf": "country"
+ },
+ "vok-interval-signal-2021": {
+  "country": "KP",
+  "place": "Pyongyang (Voice of Korea)",
+  "lat": 39.02,
+  "lon": 125.75,
+  "conf": "country"
+ },
+ "vok-kenya-mambo-leo": {
+  "country": "KE",
+  "place": "Nairobi (Voice of Kenya)",
+  "lat": -1.29,
+  "lon": 36.82,
+  "conf": "country"
+ },
+ "voyager-greetings-1977": {
+  "country": "US",
+  "place": "Voyager, interstellar space → Goldstone DSN",
+  "lat": 35.43,
+  "lon": -116.89,
+  "conf": "city",
+  "realm": "deep-space"
+ },
+ "vx-tape-70s-tv": {
+  "country": "JP",
+  "place": "Japan — station unknown (slide ads name Sōunkyō, Hokkaidō)",
+  "lat": 43.06,
+  "lon": 141.35,
+  "conf": "country"
+ },
+ "westinghouse-on-the-air-1944": {
+  "country": "US",
+  "place": "Pittsburgh (KDKA / Westinghouse)",
+  "lat": 40.44,
+  "lon": -80.0,
+  "conf": "country"
+ },
+ "wfld32-limbo-signoff-1983": {
+  "country": "US",
+  "place": "Chicago (WFLD Channel 32)",
+  "lat": 41.88,
+  "lon": -87.63,
+  "conf": "city"
+ },
+ "wgn9-five-minutes-to-live-by-1979": {
+  "country": "US",
+  "place": "Chicago (WGN Channel 9)",
+  "lat": 41.88,
+  "lon": -87.63,
+  "conf": "city"
+ },
+ "wwv-fort-collins-1991": {
+  "country": "US",
+  "place": "Fort Collins, Colorado (NIST WWV)",
+  "lat": 40.68,
+  "lon": -105.04,
+  "conf": "city",
+  "heard": {
+   "place": "Rockford, Illinois",
+   "lat": 42.27,
+   "lon": -89.09,
+   "country": "US"
+  }
+ },
+ "xew-tv-aberturas-70s": {
+  "country": "MX",
+  "place": "Mexico City (XEW-TV Canal 2)",
+  "lat": 19.43,
+  "lon": -99.13,
+  "conf": "city"
+ },
+ "xz-tibetan-channel-song": {
+  "country": "CN",
+  "place": "Lhasa (Xizang Tibetan-language channel)",
+  "lat": 29.65,
+  "lon": 91.12,
+  "conf": "country"
+ },
+ "yened-diafimiseis-1980": {
+  "country": "GR",
+  "place": "Athens (YENED)",
+  "lat": 37.98,
+  "lon": 23.73,
+  "conf": "country"
+ },
+ "za-cvet-a-new-way-of-life-1996": {
+  "country": "ZA",
+  "place": "Western Cape (around Cape Town)",
+  "lat": -33.92,
+  "lon": 18.42,
+  "conf": "region"
+ },
+ "za-cvet-abdullah-ibrahim-1990": {
+  "country": "ZA",
+  "place": "Cape Town International Airport",
+  "lat": -33.97,
+  "lon": 18.6,
+  "conf": "city"
+ },
+ "za-cvet-community-news-pilot-1992": {
+  "country": "ZA",
+  "place": "Woodstock, Cape Town (CVET)",
+  "lat": -33.93,
+  "lon": 18.45,
+  "conf": "city"
+ },
+ "za-cvet-nkosi-sikelel-1990": {
+  "country": "ZA",
+  "place": "Soweto and Soccer City, Johannesburg (with Lusaka)",
+  "lat": -26.23,
+  "lon": 27.98,
+  "conf": "city"
+ },
+ "za-cvet-rooftops-crossroads-1985": {
+  "country": "ZA",
+  "place": "Crossroads squatter camp, Cape Town",
+  "lat": -33.99,
+  "lon": 18.63,
+  "conf": "city"
+ },
+ "ztv-zimbabwe-news-1984": {
+  "country": "ZW",
+  "place": "Harare (ZBC)",
+  "lat": -17.83,
+  "lon": 31.05,
+  "conf": "country"
+ }
+}

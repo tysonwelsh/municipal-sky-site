@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — set D · 座 THE PEDESTAL SET</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   SET D — 座 THE PEDESTAL SET (variable-first)
+   The faceplate is the real ZANKYŌ 2 faceplate (markup + CSS from index.php /
+   zankyo.css) at the SETTLED layout: 960 frame, bank 3fr 2fr, the set in
+   column 1 (.zk-bank-side { order: -1 }), tube 488 × 366, viz 316 × 200.
+   The set is no longer bolted into the panel: it is a small spun-aluminium
+   drum cabinet standing on its own turned pedestal in FRONT of the steel,
+   casting a shadow on it (Paik, TV Buddha, 1974). The pedestal carries a
+   quarter-round control bank with four concentric dual knobs — FOCUS, HOLD,
+   PERSISTENCE, BRIGHTNESS — a tube-type strap, and one momentary paddle.
+   All nine controls are wired to the real shader.
+   =========================================================================== */
+html, body { margin: 0; padding: 0; }
+body { background: #ffffff; font-family: "JetBrains Mono", monospace; -webkit-font-smoothing: antialiased; }
+.main-wrapper { width: 100%; display: flex; flex-direction: column; }
+#stage { width: min(100%, var(--stage-w, 960px)); margin: 0 auto; container-type: inline-size; container-name: stage; }
+
+/* the mockup's own width toggle (not part of the machine) */
+.zk-wbar { max-width: 960px; margin: 22px auto 2px; padding: 0 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 10px; letter-spacing: 0.14em; color: #6a6572; }
+.zk-wbar b { font-family: "Orbitron", sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #26262d; font-weight: 700; margin-right: 4px; }
+.zk-wbtn { font: inherit; font-size: 10px; letter-spacing: 0.14em; padding: 5px 11px; border: 1px solid #c7c3cd; border-radius: 2px; background: #f4f2f6; color: #4a4650; cursor: pointer; }
+.zk-wbtn.is-on { background: #26262d; border-color: #26262d; color: #f4f2f6; }
+.zk-wbtn:focus-visible { outline: 2px solid #16a0a0; outline-offset: 2px; }
+.zk-wnote { color: #9b96a4; }
+
+/* ------------------------------ zankyo.css (verbatim, trimmed to what this page shows) ------------------------------ */
+.zankyo-scene {
+  --bg:        #050507;
+  --surface:   #0a0a0f;
+  --surface-2: #0f0f17;
+  --border:    #241a22;
+  --grid:      #15101a;
+  --ink:       #d6d2dc;
+  --ink-dim:   #6b6473;
+  --ink-label: #8a7e92;
+  --red:       #ff2d55;
+  --red-rgb:   255, 45, 85;
+  --cyan:      #16e0e0;
+  --cyan-rgb:  22, 224, 224;
+  --magenta:   #ff3df0;
+  --magenta-rgb:255, 61, 240;
+  --amber:     #ffb000;
+  --amber-rgb: 255, 176, 0;
+  --panel-hi:  #32323b;
+  --panel:     #26262d;
+  --panel-lo:  #191920;
+  --steel-hi:  #4a4a52;
+  --steel:     #2a2a31;
+  --steel-lo:  #0c0c0f;
+  --print:     #918c9c;
+  --print-dim: #6a6572;
+  max-width: 960px;          /* SETTLED, owner 2026-09-14: the site's own --max-wide */
+  margin: 0 auto;
+  padding: 8px 16px 56px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--ink);
+}
+.zankyo-frame {
+  position: relative;
+  background:
+    radial-gradient(55% 7% at 14% 0%,  rgba(136, 82, 44, 0.24), transparent 75%),
+    radial-gradient(34% 9% at 90% 100%, rgba(124, 70, 38, 0.28), transparent 72%),
+    radial-gradient(26% 22% at 100% 26%, rgba(108, 62, 34, 0.18), transparent 70%),
+    radial-gradient(18% 14% at 0% 74%,  rgba(84, 52, 30, 0.2), transparent 75%),
+    radial-gradient(14% 8% at 78% 0%,  rgba(96, 58, 32, 0.16), transparent 75%),
+    radial-gradient(42% 5% at 40% 100%, rgba(24, 18, 12, 0.5), transparent 80%),
+    radial-gradient(130% 60% at 50% -8%, rgba(var(--red-rgb), 0.05), transparent 55%),
+    radial-gradient(120% 80% at 82% 118%, rgba(var(--cyan-rgb), 0.04), transparent 60%),
+    repeating-linear-gradient(91deg, rgba(255, 255, 255, 0.028) 0 2px, rgba(0, 0, 0, 0.16) 2px 3px, rgba(255, 255, 255, 0.012) 3px 5px, rgba(0, 0, 0, 0.05) 5px 7px),
+    linear-gradient(180deg, var(--panel-hi), var(--panel) 40%, var(--panel-lo) 88%);
+  border: 1px solid #000;
+  border-radius: 6px;
+  padding: 30px 26px 42px;
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.65),
+    inset 4px 0 10px rgba(0, 0, 0, 0.3),
+    inset -2px 0 8px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 90px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+.zankyo-frame::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  opacity: 0.9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.28' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.2' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.22' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23c9c4b4' stroke-opacity='0.22' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23c9c4b4' stroke-opacity='0.18' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23c9c4b4' stroke-opacity='0.14' stroke-width='1.8'/></g></svg>");
+}
+.zankyo-frame::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.zankyo-frame > * { position: relative; z-index: 1; }
+.zk-screw {
+  position: absolute; z-index: 7; width: 17px; height: 17px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #6e6e7a, #30303a 55%, #0c0c0f);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -2px 3px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+.zk-screw::before {
+  content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 2.5px; margin-top: -1.25px;
+  background: linear-gradient(180deg, #050506, #3d3d45); border-radius: 2px;
+  transform: rotate(var(--slot, 20deg));
+}
+.zk-screw-tl { top: 9px; left: 10px; }
+.zk-screw-tr { top: 9px; right: 10px; }
+.zk-screw-bl { bottom: 9px; left: 10px; }
+.zk-screw-br { bottom: 9px; right: 10px; filter: sepia(0.5) brightness(0.85); }
+.zk-vent {
+  position: absolute; z-index: 7; height: 13px; width: 118px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #050506 0 5px, #34343e 5px 7px, #1c1c22 7px 12px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.zk-vent-tr { top: 12px; right: 58px; }
+.zk-vent-bl { bottom: 12px; left: 58px; transform: rotate(0.4deg); }
+.zk-print { font-size: 9px; letter-spacing: 0.22em; color: var(--print); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.12), -0.5px 0 0 rgba(var(--cyan-rgb), 0.1); }
+@keyframes zk-led-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.zk-monitor {
+  position: relative; margin-bottom: 18px; padding: 13px 13px 0;
+  border-radius: 9px; border: 1px solid #000;
+  background: radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%), linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -5px 12px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.zk-screen {
+  position: relative; overflow: hidden;
+  border-radius: 14px / 18px;
+  background: #020204;
+  border: 1px solid #030305;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.9), inset 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.zankyo-viz { display: block; width: 100%; height: 200px; }
+.zankyo-scanlines {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px);
+  mix-blend-mode: multiply; opacity: 0.62;
+}
+.zk-glass {
+  position: absolute; inset: 0; pointer-events: none; z-index: 6; border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 16%, transparent 28%, transparent 70%, rgba(255, 255, 255, 0.02) 86%),
+    radial-gradient(135% 96% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.42) 96%);
+}
+.zk-glass::after {
+  content: ""; position: absolute; right: 8%; bottom: 6%; width: 60px; height: 34px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(190, 200, 210, 0.045), transparent 75%);
+  transform: rotate(-18deg);
+}
+.zk-monitor-chin { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 6px 8px; }
+.zk-chin-spacer { flex: 1; }
+.zk-led {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.zankyo-scene.is-on .zk-led {
+  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
+  box-shadow: 0 0 8px rgba(var(--red-rgb), 0.8), 0 0 2px rgba(var(--red-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5);
+}
+.zk-boot { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; pointer-events: none; }
+.zankyo-title { font-family: "Orbitron", sans-serif; font-weight: 900; font-size: clamp(26px, 6cqw, 46px); letter-spacing: 0.12em; margin: 0; color: rgba(225,255,235,0.88); text-shadow: 0 0 16px rgba(120,240,150,0.45), 0 0 40px rgba(120,240,150,0.2); }
+.zankyo-title .zankyo-kanji { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 0.42em; letter-spacing: 0.1em; color: rgba(160,255,190,0.8); margin-left: 0.35em; vertical-align: 0.5em; }
+.zk-boot-line { margin: 0; font-size: 10px; letter-spacing: 0.18em; color: rgba(140,220,160,0.5); }
+
+.zk-bargraph {
+  position: relative; margin: -4px 0 16px;
+  display: grid; grid-template-columns: 1fr; gap: 4px 10px; align-items: center;
+  padding: 8px 12px 6px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #1d1d24, #111116 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-bar-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,0.75); box-shadow: 1px 0 0 rgba(255,255,255,0.07); z-index: 2; }
+.zk-bar-housing {
+  grid-column: 1; position: relative; padding: 5px 6px; border-radius: 3px; border: 1px solid #030305;
+  background: linear-gradient(180deg, #050507, #0b0b0f);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), inset 0 -1px 1px rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-bar-glass { position: absolute; inset: 0; pointer-events: none; border-radius: 3px; background: linear-gradient(105deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 22%, transparent 34%); }
+.zk-bar-cells { display: flex; gap: 2px; height: 16px; }
+.zk-seg { flex: 1 1 0; min-width: 0; border-radius: 1px; background: linear-gradient(180deg, rgba(var(--c), 0.11), rgba(var(--c), 0.05) 55%, rgba(0, 0, 0, 0.4)); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.85); }
+.zk-seg-jo  { --c: var(--cyan-rgb); }
+.zk-seg-ha  { --c: var(--amber-rgb); }
+.zk-seg-kyu { --c: var(--red-rgb); }
+.zk-seg.on { background: linear-gradient(180deg, rgba(var(--c), 1), rgba(var(--c), 0.72)); box-shadow: 0 0 5px rgba(var(--c), 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 2px rgba(0, 0, 0, 0.3); }
+.zk-seg.is-head { box-shadow: 0 0 9px rgba(var(--c), 0.95), 0 0 18px rgba(var(--c), 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+
+.zk-console-top { display: flex; gap: 18px; align-items: center; margin-bottom: 16px; }
+.zk-transport-cluster { position: relative; display: flex; align-items: center; gap: 14px; flex: none; }
+.zk-module {
+  position: relative; flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 13px;
+  padding: 9px 14px 15px 16px; border-radius: 5px; border: 1px solid #000;
+  background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-module::before { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 5px; background: radial-gradient(34% 52% at 2% 100%, rgba(96, 58, 32, 0.24), transparent 74%), radial-gradient(16% 30% at 97% 4%, rgba(20, 14, 10, 0.55), transparent 78%); }
+.zk-mod-screw { position: absolute; z-index: 2; top: 7px; left: 6px; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4d4d55, #1c1c21 65%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-mod-screw::before { content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 1.5px; background: #060608; transform: rotate(var(--slot, 20deg)); }
+.zk-mod-screw-r { top: auto; left: auto; bottom: 7px; right: 6px; filter: sepia(0.4) brightness(0.9); }
+.zk-mod-stamp { position: absolute; right: 22px; bottom: 3px; pointer-events: none; white-space: nowrap; font-size: 6.5px; letter-spacing: 0.24em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); transform: rotate(-0.4deg); }
+.zk-mod-zone { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.zk-mod-zone + .zk-mod-zone { border-left: 1px solid rgba(0, 0, 0, 0.6); box-shadow: -1px 0 0 rgba(255, 255, 255, 0.045); padding-left: 13px; }
+.zk-mod-head { font-size: 8px; letter-spacing: 0.2em; color: var(--print-dim); white-space: nowrap; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-mod-mode { flex: 1; }
+.zk-mod-lamp {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 8px 11px; border-radius: 4px; border: 1px solid #030305;
+  background: radial-gradient(90% 100% at 50% 0%, rgba(var(--cyan-rgb), 0.05), transparent 70%), linear-gradient(180deg, #0b0b10, #08080c);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zankyo-scale-name { font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #fff; text-shadow: 0 0 10px rgba(var(--red-rgb), 0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zankyo-scale-name b { color: var(--red); }
+.zankyo-scale-mood { font-size: 7.5px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.7; color: var(--print-dim); text-shadow: 0.5px 0.5px 0 rgba(var(--magenta-rgb), 0.14); }
+.zk-deg-row { display: flex; gap: 4px; margin-top: 5px; }
+.zk-deg {
+  width: 23px; height: 27px; display: flex; align-items: center; justify-content: center;
+  font-family: "Shippori Mincho", serif; font-size: 15px; line-height: 1;
+  color: rgba(var(--cyan-rgb), 0.26);
+  background: linear-gradient(180deg, #020608, #04090b);
+  border: 1px solid #000; border-radius: 2px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: color 0.45s ease, text-shadow 0.45s ease, background 0.45s ease;
+}
+.zk-deg.is-lit { color: #dbfbfb; text-shadow: 0 0 9px rgba(var(--cyan-rgb), 0.9), 0 0 3px rgba(var(--cyan-rgb), 1); background: linear-gradient(180deg, #072224, #04181a); transition-duration: 0.04s; }
+.zk-testpoints { width: 58px; height: 5px; margin: auto 0 4px 2px; border-radius: 1px; background: repeating-linear-gradient(90deg, #6f5a2e 0 4px, #0c0c0f 4px 9px); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05); opacity: 0.85; }
+
+.zk-knob { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; flex: none; }
+.zk-knob::before {
+  content: ""; position: absolute; inset: -8px; pointer-events: none; opacity: 0.85;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><g stroke='%23a9a3b6' stroke-width='2' stroke-linecap='round' opacity='0.9'><line x1='40' y1='3' x2='40' y2='8' transform='rotate(-135 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-108 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-27 40 40)'/><line x1='40' y1='3' x2='40' y2='8'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(27 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(108 40 40)'/><line x1='40' y1='3' x2='40' y2='8' transform='rotate(135 40 40)'/></g></svg>") center / contain no-repeat;
+}
+.zk-knob-cap {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%), conic-gradient(from 210deg, #34343c, #17171b 22%, #2b2b32 47%, #101014 74%, #34343c), #1d1d22;
+  border: 1px solid #08080a;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65), 0 1px 1px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+}
+.zk-knob-cap::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 255, 255, 0.07) 0deg 4deg, rgba(0, 0, 0, 0.28) 4deg 8deg); -webkit-mask: radial-gradient(circle, transparent 60%, #000 65%); mask: radial-gradient(circle, transparent 60%, #000 65%); }
+.zk-knob-cap::after { content: ""; position: absolute; inset: 16%; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #303038, #16161b 72%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.65); }
+.zk-knob-rot { position: absolute; inset: 0; z-index: 2; will-change: transform; pointer-events: none; }
+.zk-knob-ind { position: absolute; left: 50%; top: 8%; width: 3px; height: 36%; margin-left: -1.5px; border-radius: 2px; background: linear-gradient(#f4f0e4, #b6b0a0); box-shadow: 0 0 3px rgba(255, 255, 255, 0.25), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-knob:focus-visible { outline: 2px solid var(--cyan); outline-offset: 5px; }
+.zk-knob-master { width: 44px; height: 44px; }
+.zk-knob-mount { display: flex; justify-content: center; }
+.zankyo-val-readout { font-size: 11px; color: var(--cyan); font-variant-numeric: tabular-nums; background: rgba(2, 8, 10, 0.92); border: 1px solid #000; border-radius: 2px; padding: 1px 5px; min-width: 34px; text-align: right; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.85); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.5); }
+
+.zk-arcade {
+  position: relative; width: 78px; height: 78px; border-radius: 50%; border: 1px solid #000; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 32% 26%, #3e3e47, #1a1a20 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -3px 5px rgba(0, 0, 0, 0.85), 0 3px 8px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-arcade:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+.zk-arcade-cap { position: absolute; inset: 9px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: "Orbitron", sans-serif; font-size: 19px; transition: transform 0.06s, box-shadow 0.06s; }
+.play-btn .zk-arcade-cap { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); background: radial-gradient(circle at 35% 27%, #ff90a8, var(--red) 42%, #900f2c 84%, #560a1b); box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35); }
+.stop-btn .zk-arcade-cap { color: var(--magenta); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.4); background: radial-gradient(circle at 35% 27%, #3a3a43, #202027 46%, #0e0e12 88%); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 -5px 9px rgba(0, 0, 0, 0.8), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.zk-arcade:active .zk-arcade-cap { transform: translateY(3px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.7), inset 0 2px 3px rgba(255, 255, 255, 0.2); }
+.play-btn.is-playing .zk-arcade-cap { box-shadow: 0 5px 9px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(70, 0, 15, 0.85), inset 0 2px 3px rgba(255, 255, 255, 0.35), 0 0 24px rgba(var(--red-rgb), 0.55), inset 0 0 16px rgba(255, 130, 160, 0.45); animation: zk-play-breathe 2.4s ease-in-out infinite; }
+@keyframes zk-play-breathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+.zk-master { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: none; }
+
+.zankyo-mixer { border: 1px solid #000; border-radius: 5px; background: linear-gradient(180deg, #16161b, #0f0f14 80%); box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.04); }
+.zankyo-mixer-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); padding: 9px 16px; border-bottom: 1px solid #030305; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04); text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-warn-small { font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.3em; color: rgba(var(--amber-rgb), 0.55); transform: rotate(0.8deg); text-transform: none; }
+.zankyo-layer { padding: 13px 16px 12px; border-bottom: 1px solid #050507; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.035); }
+.zankyo-layer:last-child { border-bottom: none; box-shadow: none; }
+.zankyo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
+.zankyo-layer-name {
+  display: flex; align-items: center; text-align: left; cursor: pointer;
+  font-family: "Orbitron", sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #eee;
+  flex: 1; min-width: 132px; padding: 7px 11px;
+  background: linear-gradient(180deg, #24242b, #191920);
+  border: 1px solid #0a0a0d; border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+.zankyo-layer-kana { font-family: "Shippori Mincho", serif; color: var(--red); margin-right: 7px; text-shadow: 0 0 7px rgba(var(--red-rgb), 0.45); }
+.zk-name-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zk-ch { font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 7.5px; letter-spacing: 0.2em; color: #56525f; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); padding-top: 2px; flex: none; }
+.zk-name-latch { margin-left: 10px; width: 11px; height: 11px; border-radius: 50%; position: relative; flex: none; background: radial-gradient(circle at 35% 30%, #55555e, #1c1c21 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.85), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-name-latch::after { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1.5px; margin-left: -0.75px; background: #060608; }
+.zankyo-layer-sample { position: relative; width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none; background: radial-gradient(circle at 34% 28%, #8a2f7e, #571a4f 48%, #2b0d28 88%); box-shadow: 0 0 0 3px #23232b, 0 0 0 4px #000, 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 -3px 5px rgba(20, 0, 18, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.3); }
+.zankyo-layer-sample .tri { position: absolute; left: 55%; top: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 7px solid rgba(255, 210, 250, 0.9); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+.zk-switch { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; background: none; border: none; padding: 2px 5px; cursor: pointer; font-family: "JetBrains Mono", monospace; }
+.zk-switch i { font-style: normal; font-size: 6.5px; letter-spacing: 0.16em; }
+.zk-switch .zk-switch-on { color: var(--cyan); text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6); }
+.zk-switch .zk-switch-off { color: #4d4956; }
+.zk-switch-slot { position: relative; width: 17px; height: 34px; border-radius: 8px; background: linear-gradient(180deg, #040405, #121216); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.06), 0 1px 0 rgba(255, 255, 255, 0.05); }
+.zk-switch-lever { position: absolute; left: 2px; right: 2px; top: 2px; height: 15px; border-radius: 6px; background: linear-gradient(180deg, #6e6e7a, #3a3a44 62%, #23232b); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+.zk-switch.muted .zk-switch-lever { top: 17px; }
+.zk-switch:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.zankyo-log-block { position: relative; margin-top: 18px; padding: 9px 10px 10px; border-radius: 5px; border: 1px solid #000; background: linear-gradient(180deg, #1d1d23, #111116 70%, #0d0d11); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5); }
+.zankyo-log-label { display: flex; align-items: center; justify-content: space-between; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--print); margin: 0 2px 8px; text-shadow: 0.5px 0.5px 0 rgba(var(--red-rgb), 0.1); }
+.zk-vfd-tag { font-size: 7px; letter-spacing: 0.2em; color: #59555f; }
+.zankyo-log { background: radial-gradient(rgba(var(--cyan-rgb), 0.05) 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(180deg, #04100f, #030a0a); border: 1px solid #000; border-radius: 4px; height: 178px; overflow-y: auto; padding: 5px 0; box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85), inset 0 0 70px rgba(var(--cyan-rgb), 0.03); }
+.zankyo-log-block::after { content: ""; position: absolute; left: 11px; right: 11px; bottom: 11px; top: 27px; pointer-events: none; border-radius: 4px; background: linear-gradient(108deg, rgba(190, 255, 250, 0.045), transparent 26%); }
+.zankyo-log-row { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid rgba(var(--cyan-rgb), 0.04); font-size: 12px; animation: zk-logfade 0.3s ease; }
+.zankyo-log-row:last-child { border-bottom: none; }
+@keyframes zk-logfade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.zankyo-log-time { color: var(--ink-dim); font-size: 10px; min-width: 36px; }
+.zankyo-log-tag { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 2px; min-width: 66px; text-align: center; }
+.zankyo-log-tag.shakuhachi { color: var(--cyan);    border: 1px solid rgba(var(--cyan-rgb), 0.4); }
+.zankyo-log-tag.koto       { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.4); }
+.zankyo-log-tag.noise      { color: var(--magenta); border: 1px solid rgba(var(--magenta-rgb), 0.4); }
+.zankyo-log-tag.form       { color: var(--cyan);    border: 1px dashed var(--cyan); }
+.zankyo-log-tag.sho        { color: var(--ink);     border: 1px solid rgba(var(--cyan-rgb), 0.35); }
+.zankyo-log-tag.pa         { color: var(--magenta); border: 1px dashed rgba(var(--magenta-rgb), 0.6); }
+.zankyo-log-tag.rx         { color: var(--amber);   border: 1px solid rgba(var(--amber-rgb), 0.7); text-shadow: 0 0 6px rgba(var(--amber-rgb), 0.5); }
+.zankyo-log-text { color: var(--ink); }
+
+.zk-plate-row { display: flex; justify-content: center; margin-top: 20px; }
+.zk-build { margin: 8px 0 0; text-align: center; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-dim); opacity: 0.7; }
+.zk-build-sep { margin: 0 0.5em; }
+.zk-plate { position: relative; padding: 6px 26px; border-radius: 2px; background: linear-gradient(180deg, #3b3b43, #26262c 60%, #1e1e24); border: 1px solid #0a0a0c; font-size: 8.5px; letter-spacing: 0.2em; color: #9d99a6; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 3px rgba(0, 0, 0, 0.6); transform: rotate(-0.3deg); }
+.zk-plate::before, .zk-plate::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5a5a63, #1e1e23 70%); box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(0, 0, 0, 0.5); }
+.zk-plate::before { left: 7px; }
+.zk-plate::after { right: 7px; }
+.zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 4px 0; }
+.zankyo-note strong { color: var(--red); font-weight: 500; }
+
+/* ---------------------------------------------------------------------------
+   THE BANK — SETTLED layout: 3fr 2fr, the set in column 1.
+--------------------------------------------------------------------------- */
+.zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
+.zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
+.zk-bank-main .zk-bargraph { margin-bottom: 14px; }
+.zk-bank-side { order: -1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }
+
+/* the transport plate — PLAY · STOP · master volume. On this option it does NOT
+   ride on the pedestal (you do not bolt the station's transport to a sculpture):
+   it sits under the scope, in column 2, and is still last in the mobile stack. */
+.zk-rxpanel {
+  position: relative; min-height: 60px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 16px 3px 14px; border-radius: 5px; border: 1px solid #000;
+  background:
+    radial-gradient(30% 60% at 4% 100%, rgba(96, 58, 32, 0.22), transparent 74%),
+    radial-gradient(18% 34% at 96% 6%, rgba(20, 14, 10, 0.5), transparent 78%),
+    linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.zk-bolt {
+  position: absolute; z-index: 4; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #7a7a86, #34343c 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -2px 2px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.8), 0 0 0 2px rgba(0,0,0,0.4);
+}
+.zk-bolt::before { content: ""; position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; background: #060608; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); transform: rotate(var(--hex, 0deg)); }
+.zk-bolt-tl { top: 4px; left: 4px; }
+.zk-bolt-tr { top: 4px; right: 4px; filter: sepia(0.6) brightness(0.8); }
+.zk-bolt-bl { bottom: 4px; left: 4px; filter: sepia(0.3) brightness(0.9); }
+.zk-bolt-br { bottom: 4px; right: 4px; }
+.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }
+.zk-rxpanel .zk-transport-cluster { gap: 10px; margin-left: 4px; }
+.zk-rxpanel .zk-arcade { width: 54px; height: 54px; }
+.zk-rxpanel .zk-arcade-cap { inset: 7px; font-size: 14px; }
+.zk-rxpanel .stop-btn { width: 46px; height: 46px; }
+.zk-rxpanel .stop-btn .zk-arcade-cap { inset: 6px; font-size: 19px; }
+.zk-rxpanel .zk-master { position: relative; flex-direction: column; gap: 0; margin-right: 6px; }
+.zk-rxpanel .zk-master-meta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.zk-rxpanel .zk-master-meta .zankyo-val-readout { background: transparent; border: 0; box-shadow: none; min-width: 0; padding: 0; font-size: 8.5px; letter-spacing: 0.04em; text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6), 0 0 1px #000; }
+
+/* the steel the object is taller than: left bare, with one stencil on it. */
+.pd-void { position: relative; min-height: 96px; flex: 1; display: flex; align-items: flex-end; padding: 0 4px 6px; }
+.pd-void-stencil { font-family: "Shippori Mincho", serif; font-size: 9px; letter-spacing: 0.34em; color: rgba(255, 176, 0, 0.2); transform: rotate(-0.6deg); text-shadow: 0 1px 0 rgba(0,0,0,0.6); }
+
+/* ===========================================================================
+   座 THE PEDESTAL SET — a spun-aluminium drum on a turned base, standing on
+   the floor of the panel rather than screwed into it.
+   =========================================================================== */
+.pd-object { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; padding-bottom: 6px; }
+/* the shadow it throws on the steel behind: the object is IN FRONT of the panel */
+.pd-object::before {
+  content: ""; position: absolute; z-index: 0; left: 14px; right: -12px; top: 22px; bottom: -6px;
+  border-radius: 60px 60px 40% 40%;
+  background: radial-gradient(60% 46% at 42% 30%, rgba(0,0,0,0.62), rgba(0,0,0,0.28) 62%, transparent 82%);
+  filter: blur(9px);
+  pointer-events: none;
+}
+.pd-object > * { position: relative; z-index: 1; }
+
+/* ---- the cabinet: spun aluminium, two halves, one weld bead ---- */
+.pd-cab {
+  position: relative; width: 100%; box-sizing: border-box;
+  padding: 13px; border: 1px solid #222426;
+  border-radius: 46px / 40px;
+  background:
+    repeating-radial-gradient(circle at 50% 44%, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0.055) 1px 2.4px, rgba(255,255,255,0.012) 2.4px 3.8px),
+    linear-gradient(118deg, rgba(255,255,255,0.16) 0 10%, rgba(255,255,255,0.035) 22%, transparent 40%, transparent 62%, rgba(255,255,255,0.06) 82%, transparent 96%),
+    radial-gradient(62% 26% at 50% 106%, rgba(126, 118, 100, 0.4), transparent 74%),
+    radial-gradient(13% 19% at 87% 84%, rgba(0,0,0,0.3), transparent 72%),
+    radial-gradient(9% 14% at 17% 22%, rgba(0,0,0,0.22), transparent 72%),
+    linear-gradient(180deg, #a9abae 0%, #8e9093 24%, #6f7175 60%, #4e5053 87%, #3c3e41 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -3px 9px rgba(0,0,0,0.5),
+    inset 3px 0 8px rgba(0,0,0,0.16),
+    inset -3px 0 8px rgba(0,0,0,0.2),
+    0 12px 22px rgba(0,0,0,0.55),
+    0 2px 3px rgba(0,0,0,0.5);
+}
+/* the circular seam where the two spun halves meet, and the weld that closed it */
+.pd-seam {
+  position: absolute; inset: 6px; border-radius: 41px / 35px; pointer-events: none;
+  border: 1px solid rgba(24, 26, 28, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16), 0 0 0 1px rgba(255,255,255,0.05);
+}
+.pd-weld {
+  position: absolute; left: 28%; bottom: 3.5px; width: 34px; height: 5px; border-radius: 3px; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 1.5px, rgba(120,122,124,0.5) 1.5px 3px, rgba(40,42,44,0.45) 3px 4.5px, rgba(190,192,195,0.3) 4.5px 6px),
+    linear-gradient(180deg, #a2a4a7, #6c6e72 60%, #46484b);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+  transform: rotate(-0.8deg);
+  filter: saturate(0.7);
+}
+/* the tube: round-cornered, nearly square, deeply recessed behind a rubber gasket */
+/* 4:3 by percentage padding, never by aspect-ratio: a shrinkable flex item with
+   aspect-ratio is squashed by WebKit (measured 488 × 274 in a real WKWebView),
+   which would stretch every reel. Percentage padding resolves against the
+   element's own width and no parent can shrink it. */
+.pd-tubewrap { position: relative; display: block; height: 0; padding-bottom: 75%; }
+.zk-tube {
+  position: absolute; inset: 0; box-sizing: border-box; overflow: hidden;
+  border-radius: 38px / 32px;
+  background: #030503;
+  border: 1px solid #020302;
+  box-shadow:
+    0 0 0 2px #191a16,                                 /* the gasket the glass sits in */
+    0 -1px 0 rgba(255,255,255,0.4),                    /* the bezel's inner fillet, catching the light */
+    0 3px 5px rgba(0,0,0,0.6),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.95),
+    inset 0 9px 14px rgba(0, 0, 0, 0.95),              /* the set is DEEP: the top bezel throws a shadow on the glass */
+    inset 0 -4px 10px rgba(0, 0, 0, 0.8),
+    inset 0 0 30px rgba(0, 0, 0, 0.9),
+    inset 0 0 70px rgba(var(--ph-rgb, 30 90 40), 0.06);
+}
+.zk-tube canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.zk-tube .zankyo-scanlines { opacity: 0.7; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.24) 3px); }
+.zk-crack { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 7; pointer-events: none; }
+/* the glass is DOMED and grubby: a broad curvature highlight, a thumbprint, a smear */
+.zk-tube .zk-glass {
+  background:
+    radial-gradient(120% 108% at 33% 18%, rgba(255,255,255,0.11), rgba(255,255,255,0.03) 32%, transparent 52%),
+    linear-gradient(118deg, rgba(255, 250, 235, 0.07) 0%, transparent 24%, transparent 70%, rgba(255, 255, 255, 0.03) 88%),
+    radial-gradient(118% 104% at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.55) 97%);
+}
+.zk-tube .zk-glass::after { right: auto; left: 11%; bottom: 11%; width: 58px; height: 22px; transform: rotate(16deg); background: radial-gradient(closest-side, rgba(205, 210, 196, 0.075), transparent 74%); }
+.zk-tube .zk-glass::before {
+  content: ""; position: absolute; right: 13%; top: 14%; width: 38px; height: 44px; border-radius: 50%;
+  background: repeating-radial-gradient(ellipse at 50% 50%, rgba(212, 218, 202, 0.07) 0 1px, transparent 1px 3.4px);
+  transform: rotate(-26deg) scaleX(0.82); opacity: 0.9;
+}
+/* the one surviving piece of tape (the glass is held in with it) */
+.zk-tape {
+  position: absolute; z-index: 9; height: 17px; width: 58px; right: -6px; top: 44%; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(222, 198, 138, 0.78), rgba(206, 180, 118, 0.82) 50%, rgba(186, 158, 96, 0.8));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 240, 200, 0.12);
+  clip-path: polygon(0 12%, 3% 0, 97% 4%, 100% 20%, 98% 100%, 95% 88%, 2% 96%, 0 70%);
+  transform: rotate(9deg); opacity: 0.86;
+}
+.zk-tape::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 14px; background: linear-gradient(90deg, transparent, rgba(255, 246, 220, 0.5)); }
+
+/* ---- the collar: where the drum meets the pedestal. Carries the plate. ---- */
+.pd-collar {
+  position: relative; width: 58%; height: 19px; margin-top: -3px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border-radius: 0 0 6px 6px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, rgba(0,0,0,0.05) 2px 4px),
+    linear-gradient(90deg, #3b3d40, #7f8184 18%, #96989b 34%, #6e7074 64%, #3a3c3f 92%, #2c2e31),
+    linear-gradient(180deg, #8b8d90, #63656a 60%, #45474a);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 3px 6px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.4);
+}
+.pd-collar-plate { font-size: 6px; letter-spacing: 0.2em; color: #2e3033; text-shadow: 0 1px 0 rgba(255,255,255,0.28); white-space: nowrap; }
+.pd-collar-screw { position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #cfd1d4, #6a6c70 62%, #3a3c3f); box-shadow: inset 0 -1px 1px rgba(0,0,0,0.5), 0 1px 1px rgba(0,0,0,0.4); }
+.pd-collar-screw::before { content: ""; position: absolute; left: 16%; right: 16%; top: 50%; height: 1px; background: #2a2c2f; transform: rotate(var(--slot, 30deg)); }
+.pd-collar-screw-l { left: 9px; }
+.pd-collar-screw-r { right: 9px; }
+
+/* ---- the quarter-round control bank, cast into the pedestal ---- */
+.pd-bank {
+  position: relative; width: 100%; box-sizing: border-box;
+  padding: 11px 14px 9px;
+  border-radius: 8px 8px 4px 4px;
+  border: 1px solid #2b2d30; border-bottom: none;
+  background:
+    repeating-radial-gradient(circle at 50% -40%, rgba(255,255,255,0.02) 0 1px, rgba(0,0,0,0.04) 1px 3px),
+    linear-gradient(180deg, #c3c5c8 0 2px, #a4a6a9 2px 9px, #8d8f92 26%, #74767a 56%, #5b5d60 82%, #4a4c4f 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.62), inset 3px 0 7px rgba(0,0,0,0.18), inset -3px 0 7px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.4);
+}
+/* the quarter-round's front roll: the surface turns under and goes dark */
+.pd-roll {
+  position: relative; width: 100%; height: 13px; box-sizing: border-box;
+  border: 1px solid #232528; border-top: none;
+  border-radius: 0 0 26px 26px / 0 0 13px 13px;
+  background: linear-gradient(180deg, #4b4d50 0%, #3a3c3f 34%, #26282b 72%, #1a1c1e 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 7px 12px rgba(0,0,0,0.5);
+}
+/* the surface itself tips up toward you — real geometry, not a gradient */
+.pd-surface {
+  /* the row wraps: below ~925 px of scene the four knobs + the wafer + the
+     paddle no longer fit on one line, and an un-wrapped row pushed the paddle
+     37 px outside the bank and off the pedestal. Wrapping drops the wafer and
+     the paddle onto a second line together — the same pairing the narrow
+     layout uses — instead of overflowing. */
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 6px;
+  transform: perspective(760px) rotateX(13deg); transform-origin: 50% 100%;
+}
+.pd-cell { position: relative; flex: 0 0 74px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pd-cap { font-family: "Shippori Mincho", serif; font-size: 9.5px; letter-spacing: 0.12em; color: #2f3134; line-height: 1.1; white-space: nowrap; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+.pd-cap i { font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 6px; letter-spacing: 0.16em; color: #4b4d50; }
+.pd-read { font-size: 8px; letter-spacing: 0.04em; margin-top: 2px; color: #1f2124; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+/* the engraved scale plate the knob stands on: a milled recess, marks cut into it */
+.pd-plate {
+  position: relative; width: 74px; height: 74px; border-radius: 50%;
+  background: radial-gradient(circle at 42% 34%, #9a9c9f, #7e8083 54%, #64666a 82%, #55575a);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.42), inset 0 -1px 0 rgba(255,255,255,0.3), 0 1px 0 rgba(255,255,255,0.28);
+}
+.pd-plate svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+/* the knobs: a fluted outer ring with a knurled inner shaft at its centre */
+.pd-knob { position: absolute; left: 50%; top: 50%; border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pd-knob:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.pd-out {
+  width: 50px; height: 50px; margin: -25px 0 0 -25px; z-index: 2;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.10) 0deg 3deg, rgba(0,0,0,0.34) 3deg 7.5deg),
+    radial-gradient(circle at 34% 26%, #4a4a52, #2b2b31 52%, #15151a 88%);
+  box-shadow: 0 5px 8px rgba(0,0,0,0.6), 0 1px 1px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.26), inset 0 -3px 5px rgba(0,0,0,0.75);
+}
+.pd-out::after {   /* the dished top, so the inner shaft reads as sunk into it */
+  content: ""; position: absolute; inset: 8px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, #33333a, #1b1b20 74%);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.1);
+}
+.pd-in {
+  width: 26px; height: 26px; margin: -13px 0 0 -13px; z-index: 3;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.16) 0deg 2deg, rgba(0,0,0,0.42) 2deg 5deg),
+    radial-gradient(circle at 36% 28%, #8d8477, #5a5349 56%, #322e28 92%);
+  box-shadow: 0 2px 3px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.32), inset 0 -2px 3px rgba(0,0,0,0.6);
+}
+.pd-rot { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
+.pd-rot.is-snap { transition: transform 0.14s cubic-bezier(.34,1.8,.5,1); }
+/* the pointer: milled bright metal, and it casts a real shadow on the plate */
+.pd-ptr { position: absolute; left: 50%; top: -5px; width: 3px; height: 20px; margin-left: -1.5px; border-radius: 1px; background: linear-gradient(180deg, #f6f2e6, #b9b3a2); filter: drop-shadow(1.5px 3px 1.5px rgba(0,0,0,0.6)); }
+.pd-ptr-in { position: absolute; left: 50%; top: -3px; width: 2px; height: 11px; margin-left: -1px; border-radius: 1px; background: linear-gradient(180deg, #fff6df, #c8b98f); filter: drop-shadow(1px 2px 1px rgba(0,0,0,0.6)); }
+/* the detent: it flashes when the pointer drops into centre */
+.pd-detent { position: absolute; left: 50%; top: 1px; width: 2px; height: 8px; margin-left: -1px; border-radius: 1px; background: rgba(28,30,32,0.55); box-shadow: 0 1px 0 rgba(255,255,255,0.35); transition: background 0.22s, box-shadow 0.22s; }
+.pd-cell.is-detented .pd-detent { background: rgba(var(--amber-rgb), 0.95); box-shadow: 0 0 6px rgba(var(--amber-rgb), 0.8); }
+
+/* 蛍光体 the tube-type strap: a small wafer switch, set once, deliberately not
+   one of the four you touch */
+.pd-cell-wafer { flex: 0 0 46px; }
+.pd-cell-wafer .pd-cap { font-size: 8.5px; }
+.pd-wafer-plate { position: relative; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 40% 32%, #939598, #74767a 58%, #5a5c5f); box-shadow: inset 0 2px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.26); }
+.pd-wafer-plate svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.pd-wafer {
+  position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%;
+  cursor: pointer; touch-action: none; z-index: 2;
+  background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.1) 0deg 4deg, rgba(0,0,0,0.4) 4deg 9deg), radial-gradient(circle at 36% 28%, #3e3e46, #1d1d22 78%);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.22);
+}
+.pd-wafer:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.pd-wafer-ind { position: absolute; left: 50%; top: 2px; width: 2px; height: 11px; margin-left: -1px; border-radius: 1px; background: linear-gradient(180deg, #f6f2e6, #b9b3a2); filter: drop-shadow(1px 2px 1px rgba(0,0,0,0.6)); }
+
+/* 受信 the paddle: momentary, big enough to hit with a thumb */
+.pd-cell-paddle { flex: 1 1 96px; min-width: 0; align-items: stretch; text-align: center; }
+.pd-paddle {
+  position: relative; width: 100%; height: 58px; box-sizing: border-box;
+  border: 1px solid #1c1e20; border-radius: 6px 6px 8px 8px; padding: 0; cursor: pointer;
+  font-family: "Shippori Mincho", serif; font-size: 15px; letter-spacing: 0.24em; color: #cfd3d6;
+  background: linear-gradient(180deg, #5e6165 0%, #4a4d51 28%, #35383b 70%, #25282b 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), inset 0 -4px 7px rgba(0,0,0,0.6), 0 5px 0 #1d1f22, 0 8px 12px rgba(0,0,0,0.55);
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.1);
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+.pd-paddle::after { content: ""; position: absolute; left: 12%; right: 12%; top: 8px; height: 1px; background: rgba(255,255,255,0.1); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+.pd-paddle:active, .pd-paddle.is-down { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -2px 5px rgba(0,0,0,0.6), 0 1px 0 #1d1f22, 0 3px 6px rgba(0,0,0,0.5); }
+.pd-paddle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+.pd-paddle-sub { display: block; font-family: "JetBrains Mono", monospace; font-size: 6px; letter-spacing: 0.2em; color: #8d9195; margin-top: 3px; }
+.pd-paddle.is-cold { color: #7b7f83; }
+.pd-lamp { position: absolute; right: 8px; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #3a2a10, #1c1408 70%); box-shadow: inset 0 1px 1px rgba(0,0,0,0.8), 0 0 0 2px rgba(0,0,0,0.4); transition: background 0.12s, box-shadow 0.12s; }
+.pd-lamp.is-lit { background: radial-gradient(circle at 35% 30%, #ffe2a0, var(--amber) 60%); box-shadow: 0 0 9px rgba(var(--amber-rgb), 0.85), inset 0 0 2px rgba(255,255,255,0.5); }
+.pd-lamp.is-flicker { animation: zk-led-flicker 0.11s infinite; }
+
+/* ---- the turned base ---- */
+.pd-plinth { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+.pd-step { --w: 50%; width: var(--w); height: var(--h, 10px); box-sizing: border-box;
+  background: linear-gradient(90deg, #2a2c2f 0%, #6e7074 14%, #9b9da0 30%, #8a8c8f 44%, #66686c 66%, #3c3e41 88%, #24262a 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.45);
+}
+.pd-step-fillet { box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.5); }
+.pd-foot { width: 78%; height: 15px; border-radius: 0 0 5px 5px;
+  background: linear-gradient(90deg, #202225 0%, #5e6064 13%, #8d8f92 29%, #7b7d80 46%, #5a5c60 68%, #34363a 88%, #1e2023 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), inset 0 -3px 5px rgba(0,0,0,0.6), 0 3px 4px rgba(0,0,0,0.5); }
+/* the contact shadow: the object is standing on the panel */
+.pd-plinth::after { content: ""; position: absolute; left: 4%; right: 4%; bottom: -9px; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.7), transparent 78%); filter: blur(3px); }
+
+/* ===========================================================================
+   MOBILE — container queries, so the page's own width toggle behaves exactly
+   like a narrow viewport. SETTLED order: television · scope · 段階 · transport.
+   =========================================================================== */
+@container stage (max-width: 700px) {
+  .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
+  .zankyo-frame { padding: 20px 13px 30px; }
+  .zk-vent, .zk-warn-small { display: none; }
+  .zankyo-viz { height: 160px; }
+  .zk-monitor { padding: 9px 9px 0; margin-bottom: 0; }
+  .zk-bargraph { padding: 7px 9px 5px; gap: 3px 8px; margin: 0; }
+  .zk-bar-cells { gap: 1px; height: 13px; }
+  .zankyo-layer-sample { display: none; }
+  .zankyo-layer { padding: 10px 12px 9px; }
+  .zankyo-layer-head { gap: 8px 12px; flex-wrap: nowrap; }
+  .zankyo-layer-name { min-width: 0; font-size: 10px; padding: 6px 9px; }
+  .zankyo-log { height: 150px; }
+  .zk-console-top { flex-wrap: wrap; gap: 12px; }
+  .zk-module { flex-wrap: wrap; gap: 10px 13px; padding: 9px 12px 15px 14px; }
+  .zk-mod-mode { flex: 1 1 100%; }
+  .zk-mod-scale { border-left: none; box-shadow: none; padding-left: 0; }
+  .zk-testpoints { display: none; }
+  .zk-plate { font-size: 7.5px; letter-spacing: 0.12em; padding: 6px 18px; }
+  .zankyo-log-tag { min-width: 54px; }
+
+  /* the stack, in the owner's own order */
+  .zk-bank { grid-template-columns: 1fr; row-gap: 14px; }
+  .zk-bank-main, .zk-bank-side { display: contents; }
+  .pd-object   { order: 1; }
+  .zk-monitor  { order: 2; }
+  .zk-bargraph { order: 3; }
+  .zk-rxpanel  { order: 4; }
+  .pd-void     { display: none; }
+
+  /* the pedestal loses its base; the bank flattens to two rows of two */
+  .pd-plinth { display: none; }
+  .pd-object::before { left: 10px; right: -8px; bottom: 4px; }
+  .pd-collar { width: 52%; }
+  .pd-surface { flex-wrap: wrap; row-gap: 10px; transform: perspective(700px) rotateX(9deg); }
+  .pd-cell { flex: 1 1 calc(50% - 6px); order: 1; }
+  .pd-cell-wafer { flex: 0 0 46px; order: 2; }
+  .pd-cell-wafer .pd-cap { font-size: 7.5px; letter-spacing: 0.04em; }
+  .pd-cell-paddle { flex: 1 1 140px; min-width: 0; order: 3; }
+  .pd-cab { border-radius: 34px / 30px; padding: 10px; }
+  .zk-tube { border-radius: 28px / 24px; }
+  .pd-bank { padding: 10px 10px 8px; }
+  .pd-roll { height: 11px; }
+}
+
+/* ------------------------------ the mockup's own sheet (not part of the machine) ------------------------------ */
+.zk-spec { max-width: 960px; margin: 26px auto 60px; padding: 0 16px; font-size: 11px; line-height: 1.7; color: #4a4650; }
+.zk-spec h2 { font-family: "Orbitron", sans-serif; font-size: 12px; letter-spacing: 0.18em; color: #26262d; margin: 0 0 10px; }
+.zk-spec h3 { font-family: "Orbitron", sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #26262d; margin: 20px 0 6px; }
+.zk-spec p { margin: 0 0 9px; }
+.zk-spec b { color: #ff2d55; font-weight: 500; }
+.zk-spec code { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: #26262d; }
+.zk-spec .zk-spec-k { font-family: "Shippori Mincho", serif; color: #26262d; }
+.zk-tbl { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10.5px; margin: 4px 0 10px; }
+.zk-tbl td, .zk-tbl th { overflow-wrap: anywhere; }
+.zk-tbl th, .zk-tbl td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid #e4e1e8; vertical-align: top; }
+.zk-tbl th { font-weight: 500; color: #26262d; letter-spacing: 0.08em; }
+.zk-tbl td.n { font-variant-numeric: tabular-nums; }
+.zk-tbl tr.is-now td { background: #f6f4f8; }
+.zk-mbtn { font: inherit; font-size: 10px; letter-spacing: 0.14em; padding: 5px 11px; border: 1px solid #c7c3cd; border-radius: 2px; background: #f4f2f6; color: #4a4650; cursor: pointer; }
+.zk-mbtn:focus-visible { outline: 2px solid #16a0a0; outline-offset: 2px; }
+video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -10px; top: 0; }
+</style>
+</head>
+<body>
+
+<div class="zk-wbar">
+  <b>WIDTH</b>
+  <button type="button" class="zk-wbtn" data-w="390">390</button>
+  <button type="button" class="zk-wbtn" data-w="700">700</button>
+  <button type="button" class="zk-wbtn is-on" data-w="960">960</button>
+  <span class="zk-wnote" id="wnote">960 · desktop · set in column 1</span>
+</div>
+
+<div class="main-wrapper">
+ <div id="stage">
+  <div class="zankyo-scene is-on" id="scene">
+   <div class="zankyo-frame">
+
+    <span class="zk-screw zk-screw-tl" style="--slot:23deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-tr" style="--slot:74deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-bl" style="--slot:-15deg" aria-hidden="true"></span>
+    <span class="zk-screw zk-screw-br" style="--slot:51deg" aria-hidden="true"></span>
+    <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
+    <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
+
+    <!-- THE BANK — 3fr 2fr; .zk-bank-side carries the set and takes column 1 -->
+    <div class="zk-bank">
+      <div class="zk-bank-main">
+        <div class="zk-monitor">
+          <div class="zk-screen">
+            <canvas id="zankyo-viz" class="zankyo-viz"></canvas>
+            <div class="zk-boot" id="boot" aria-hidden="true">
+              <div class="zankyo-title">ZANKYŌ<span class="zankyo-kanji">残響</span></div>
+              <p class="zk-boot-line">// awaiting signal, press play</p>
+            </div>
+            <div class="zankyo-scanlines" aria-hidden="true"></div>
+            <div class="zk-glass" aria-hidden="true"></div>
+          </div>
+          <div class="zk-monitor-chin">
+            <span class="zk-chin-spacer"></span>
+            <span class="zk-led" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="zk-bargraph">
+          <div class="zk-bar-housing">
+            <div class="zk-bar-cells" id="bar-cells" aria-hidden="true"></div>
+            <span class="zk-bar-tick" style="left:25%" aria-hidden="true"></span>
+            <span class="zk-bar-tick" style="left:80%" aria-hidden="true"></span>
+            <span class="zk-bar-glass" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <!-- the transport plate: beside the object, not on it -->
+        <div class="zk-rxpanel">
+          <span class="zk-bolt zk-bolt-tl" style="--hex:33deg" aria-hidden="true"></span>
+          <span class="zk-bolt zk-bolt-tr" style="--hex:-8deg" aria-hidden="true"></span>
+          <span class="zk-bolt zk-bolt-bl" style="--hex:17deg" aria-hidden="true"></span>
+          <span class="zk-bolt zk-bolt-br" style="--hex:-41deg" aria-hidden="true"></span>
+          <div class="zk-transport-cluster">
+            <button type="button" class="zk-arcade play-btn is-playing" id="play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
+            <button type="button" class="zk-arcade stop-btn" id="stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+          </div>
+          <span class="zk-rxpanel-gap" aria-hidden="true"></span>
+          <div class="zk-master">
+            <div id="master-knob" class="zk-knob-mount"></div>
+            <div class="zk-master-meta"><span class="zankyo-val-readout" id="vol-val" aria-label="master volume">60</span></div>
+          </div>
+        </div>
+
+        <!-- the object is taller than the instrument stack: this steel stays bare -->
+        <div class="pd-void" aria-hidden="true"><span class="pd-void-stencil">空白 &middot; 用途未定</span></div>
+      </div>
+
+      <!-- 座 THE PEDESTAL SET -->
+      <div class="zk-bank-side">
+        <div class="pd-object" id="object">
+
+          <div class="pd-cab">
+            <span class="pd-seam" aria-hidden="true"></span>
+            <span class="pd-weld" aria-hidden="true"></span>
+            <div class="pd-tubewrap">
+              <div class="zk-tube" id="tube">
+                <canvas id="tube-canvas" aria-label="座 the pedestal set: a receive-only tube, dark until a signal is picked up"></canvas>
+                <div class="zankyo-scanlines" aria-hidden="true"></div>
+                <svg class="zk-crack" id="crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+                <div class="zk-glass" aria-hidden="true"></div>
+              </div>
+            </div>
+            <span class="zk-tape" aria-hidden="true"></span>
+          </div>
+
+          <div class="pd-collar">
+            <span class="pd-collar-screw pd-collar-screw-l" style="--slot:28deg" aria-hidden="true"></span>
+            <span class="pd-collar-plate">映像管 MSHI CRT-9 &middot; 製造番号 3042-0117</span>
+            <span class="pd-collar-screw pd-collar-screw-r" style="--slot:-51deg" aria-hidden="true"></span>
+          </div>
+
+          <div class="pd-bank">
+            <div class="pd-surface" id="surface"></div>
+          </div>
+          <div class="pd-roll" aria-hidden="true"></div>
+
+          <div class="pd-plinth" aria-hidden="true">
+            <span class="pd-step pd-step-fillet" style="--w:54%;--h:7px"></span>
+            <span class="pd-step" style="--w:38%;--h:9px"></span>
+            <span class="pd-step pd-step-fillet" style="--w:33%;--h:13px"></span>
+            <span class="pd-step" style="--w:48%;--h:8px"></span>
+            <span class="pd-foot"></span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="zk-console-top">
+      <div class="zk-module">
+        <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
+        <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
+        <div class="zk-mod-zone zk-mod-mode">
+          <span class="zk-mod-head">旋法 &middot; MODE</span>
+          <div class="zk-mod-lamp">
+            <span class="zankyo-scale-name"><b>Hirajoshi</b> &middot; D</span>
+            <span class="zankyo-scale-mood">haunted &middot; derelict &middot; neon-rust</span>
+          </div>
+        </div>
+        <div class="zk-mod-zone zk-mod-scale">
+          <span class="zk-mod-head">音階 &middot; SCALE</span>
+          <div class="zk-deg-row" id="degrees"></div>
+          <span class="zk-testpoints" aria-hidden="true"></span>
+        </div>
+        <span class="zk-mod-stamp" aria-hidden="true">音程管理 &middot; MODULE 04</span>
+      </div>
+    </div>
+
+    <div class="zankyo-mixer">
+      <div class="zankyo-mixer-title"><span>卓 &middot; CONSOLE</span><span class="zk-warn-small" aria-hidden="true">機動注意</span><span class="zk-name-latch" aria-hidden="true"></span></div>
+      <div id="layers"></div>
+    </div>
+
+    <div class="zankyo-log-block">
+      <div class="zankyo-log-label"><span>活動 &middot; ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
+      <div id="log" class="zankyo-log"></div>
+    </div>
+
+    <div class="zk-plate-row">
+      <span class="zk-plate">残響-3042 &middot; MUNICIPAL SKY HEAVY INDUSTRIES &middot; 製造番号 3042-0117</span>
+    </div>
+    <p class="zk-build" aria-label="build version">2.1.0-rc.75<span class="zk-build-sep">&middot;</span>set-D<span class="zk-build-sep">&middot;</span>座 the pedestal set</p>
+
+    <p class="zankyo-note">
+      Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
+      <strong>jo-ha-kyū</strong> (序破急). Now and then the station picks up a <strong>broadcast</strong> from the distant past
+      — for a machine in 3042, our time — on the set standing in front of the panel, and loses it again.
+    </p>
+
+   </div>
+  </div>
+ </div>
+</div>
+
+<section class="zk-spec">
+  <h2>SET D · <span class="zk-spec-k">座</span> THE PEDESTAL SET <span style="color:#9b96a4">(variable-first)</span></h2>
+
+  <p><b>Argument.</b> The other three options ask what kind of equipment the set is. This one asks what kind of
+  <em>object</em> it is, and then hands you the four knobs that object actually had. It is <span class="zk-spec-k">TV Buddha</span>, 1974:
+  a spun-aluminium drum on a turned base, standing on the floor of the panel rather than screwed into it, throwing a shadow
+  on the steel behind. Nothing bolts it down — the transport plate stays over with the scope, because you do not fasten the
+  station's PLAY button to a sculpture. And because the cabinet is the whole of the object, the pedestal can carry a control
+  bay that would look absurd on a chin: a quarter-round shelf tipped up toward you with four concentric dual knobs on it.
+  Those knobs are the argument. <b>焦点 FOCUS</b> sweeps the raster from 192 × 144 — the sharpest the archive holds — down to
+  48 × 36, where the picture is moving blocks of phosphor and nothing else; it turns the plan's §1 finding into the single
+  most powerful control on the faceplate. <b>同期 HOLD</b> knocks off its centre detent and the frame rolls, continuously,
+  faster the further you go, with the blanking bar sweeping up the glass. That is <em>Magnet TV</em> with a knob instead of a
+  magnet, and every television ever built had it. <b>残光 PERSISTENCE</b> takes the phosphor from a fast P4 wipe to a smear
+  where a hand leaves a comet trail. <b>輝度 BRIGHTNESS</b> makes the other three legible. All nine controls — four outer
+  shafts, four inner verniers, one tube-type strap — are wired to the real shader. None of them is a mock.</p>
+
+  <h3>THE CONTROLS</h3>
+  <table class="zk-tbl">
+    <tr><th style="width:23%">control</th><th style="width:30%">outer ring (large, fluted)</th><th>inner shaft (small, knurled)</th></tr>
+    <tr><td><span class="zk-spec-k">焦点</span> FOCUS</td><td><code>SW</code>/<code>SH</code> — 192×144 · 144×108 · 120×90 · 96×72 · 72×54 · 48×36, six detents, ImageData and every dependent buffer reallocated on the click</td><td>beam defocus — a real blur on the sharp pass, so you can have a soft <em>large</em> raster or a hard small one</td></tr>
+    <tr><td><span class="zk-spec-k">同期</span> HOLD</td><td><code>S.roll</code> — centre detent locked; off it the picture rolls continuously, ±1.4 frame-heights/s at the stops</td><td>horizontal hold — a progressive line shear with a wrap, the other half of the pair every set had</td></tr>
+    <tr><td><span class="zk-spec-k">残光</span> PERSISTENCE</td><td>the <code>decay</code> alpha in <code>drawFrame</code> — 0.95 (P4 wipe) to 0.08 (comet trails). Centre = the value the live set ships, 0.62</td><td>gamma on the phosphor LUT, 0.85–1.75 (centre = the shipped 1.3): where the mid-tones sit</td></tr>
+    <tr><td><span class="zk-spec-k">輝度</span> BRIGHTNESS</td><td><code>drawBloom</code> alpha ×0.25–1.75 and blur radius ×0.55–1.45</td><td>contrast — the source gain, 0.72–1.72 (centre = the shipped 1.22). Brightness + contrast on one spindle is the canonical pair</td></tr>
+    <tr><td><span class="zk-spec-k">蛍光体</span> PHOSPHOR</td><td colspan="2">a four-position wafer strap — P39 yellow-green (shipped) · P4 blue-white · P3 amber · P1 green. It swaps the LUT and the tube's own ambient glow, the line of light and the refraction along the crack all follow it. Deliberately the smallest control on the bank: a tube type is set once, at the bench, not turned while you listen.</td></tr>
+    <tr><td><span class="zk-spec-k">受信</span> RECEIVE</td><td colspan="2">one momentary paddle, 58 px tall, with its own lamp. Tunes a real reel now; cold for 6 s after.</td></tr>
+  </table>
+  <p>FOCUS detents at all six raster steps and HOLD detents at centre: the pointer snaps with a little overshoot and the
+  plate's index mark lights amber for the moment it drops in, which is as close as a page gets to a click you can feel.
+  Every control is a <code>role="slider"</code> with arrows, Home/End, wheel and drag, a visible cyan focus ring, and a
+  label in the machine's register (「焦点 FOCUS — 走査線」).</p>
+
+  <h3>PHOSPHOR</h3>
+  <p>Default <b>P39</b>, the live set's own LUT, unchanged: black → <code>#0c4820</code> → <code>#28985c</code> →
+  <code>#78e292</code> → pale mint at white, gamma 1.3, and real persistence — the previous frame decays under the new one.
+  The strap exists because the LUT is the cheapest place in the whole machine to change the picture's century: P4 makes it a
+  1955 monitor, P3 an airport departure board, P1 a radar repeater. The crack survives (pattern A, the upper-right impact,
+  verbatim from <code>zk-set.js</code>) — a Paik set is junk by definition, and the refraction along the fracture is the one
+  effect that reads better on an object than in a bezel.</p>
+
+  <h3>IDLE</h3>
+  <p>The tube is <b>dark</b>. No raster crawl, no test card, no retrace — the most restrained idle of the four. Every so
+  often a single line of light <b>opens</b> across the glass, holds for a beat and closes: <em>Zen for TV</em>, 1963. It does
+  not run on a timer of its own — it fires on the station's own clock, at the three places the jo-ha-kyū arc turns over
+  (序→破 at 0.45, 破→急 at 0.82, and the fold back to 序), so the dark set is still telling you where the night is.
+  Watch the 段階 bar: the line arrives when the bar crosses a tick.</p>
+
+  <h3>MOBILE</h3>
+  <p>At ≤ 700 px the pedestal <b>loses its base</b> (the plinth goes; the cabinet, collar and control bank stay, and the
+  object still throws its shadow), and the quarter-round bank <b>flattens into two rows of two knobs</b> with the wafer and
+  the paddle on a third row. The tube stays full width — ≈ 318 px at a 390 px phone, and <em>sharper</em> than today at that
+  size, not bigger. Order is the owner's own: television, spectrum scope, 段階 progress bar, PLAY/STOP/volume, via
+  <code>display: contents</code> plus explicit <code>order</code>. The width toggle at the top of this page drives a CSS
+  container query, so 390 here behaves exactly as a 390 px phone does.</p>
+
+  <h3>MEASURED FRAME COST — the plan's §1.1 question</h3>
+  <p>The shader loop only (<code>renderSource</code> + <code>drawFrame</code> + <code>compose</code>, i.e. the per-pixel
+  LUT pass, the bloom, nine tear bands, the ghost, and the four-shard crack composite), timed in place on the real tube at
+  this viewport, during a signal <em>hold</em> — the most expensive phase. Each raster is held for 1.2 s and the mean and
+  worst of its frames recorded. <span id="msweep-state" style="color:#9b96a4"></span></p>
+  <table class="zk-tbl" id="msweep">
+    <tr><th style="width:22%">raster</th><th style="width:16%">px/frame</th><th style="width:16%">mean ms</th><th style="width:16%">worst ms</th><th>frames</th></tr>
+  </table>
+  <p><button type="button" class="zk-mbtn" id="msweep-run">RUN THE FOCUS SWEEP AGAIN</button>
+  &nbsp; <span id="mnow" style="color:#9b96a4"></span></p>
+
+  <h3>WIDTHS, MEASURED LIVE</h3>
+  <p><span id="measure">…</span></p>
+
+  <h3>THE GESTURE</h3>
+  <p>Tune-in 0.4 s of snow resolving → hold 8–12 s with weather (flutter, ghost, frame-holds, dropouts) → loss 1.6–2.8 s
+  (dropouts thicken, the hold slips, the picture tears) → collapse to a line 0.42 s → snow burst 0.32 s → dead 1.6 s.
+  On the <span class="zk-spec-k">受信</span> paddle, and on a self-running timer every 25 s, so the page can be left alone.
+  Reels: BBC1 Test Card and lunchtime news (1979), NHK JOAK closedown (1982), Fuji JOCX sign-off (1988), Arirang mass games
+  (1989), ČT2 test card to sign-off (1994) — real files from <code>broadcast/reels/</code>, 192 × 144 grayscale 12 fps,
+  their windows read from the real <code>manifest.json</code>.</p>
+</section>
+
+<video id="v0" muted playsinline preload="auto"></video>
+<video id="v1" muted playsinline preload="auto"></video>
+<video id="v2" muted playsinline preload="auto"></video>
+<video id="v3" muted playsinline preload="auto"></video>
+<video id="v4" muted playsinline preload="auto"></video>
+
+<script>
+(function () {
+  "use strict";
+  var now = function () { return performance.now(); };
+  var clamp01 = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
+  var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  var rnd = Math.random;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // =========================================================================
+  // 0. THE WIDTH TOGGLE
+  // =========================================================================
+  var stage = $("stage");
+  Array.prototype.forEach.call(document.querySelectorAll(".zk-wbtn"), function (b) {
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll(".zk-wbtn"), function (o) { o.classList.toggle("is-on", o === b); });
+      stage.style.setProperty("--stage-w", b.getAttribute("data-w") + "px");
+      requestAnimationFrame(function () { resize(); reportWidth(); });
+    });
+  });
+
+  function reportWidth() {
+    // report the width actually achieved, not the width asked for
+    var w = Math.round(stage.getBoundingClientRect().width);
+    var sideDisp = getComputedStyle(document.querySelector(".zk-bank-side")).display;
+    var t = document.getElementById("tube").getBoundingClientRect();
+    $("wnote").textContent = w + " px achieved · " + (sideDisp === "contents"
+      ? "the mobile stack: television · scope · 段階 · transport"
+      : "desktop · the set in column 1") +
+      " · tube " + Math.round(t.width) + " × " + Math.round(t.height) + " (" + (t.width / t.height).toFixed(4) + ")";
+  }
+
+  // =========================================================================
+  // 1. FACEPLATE FURNITURE (static — no engine on this page)
+  // =========================================================================
+  (function masterKnob() {
+    var el = document.createElement("div");
+    el.className = "zk-knob zk-knob-master";
+    el.setAttribute("role", "slider"); el.tabIndex = 0;
+    el.setAttribute("aria-label", "主音量 master volume"); el.setAttribute("aria-valuenow", "60");
+    el.innerHTML = '<span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform:rotate(27deg)"><span class="zk-knob-ind"></span></span>';
+    $("master-knob").appendChild(el);
+  })();
+  var LAYERS = [["Sub-drone", "重低音"], ["Shō", "笙"], ["Shakuhachi", "尺八"], ["Koto", "箏"], ["Taiko", "太鼓"], ["Noise", "雑音"]];
+  (function mixer() {
+    var host = $("layers");
+    LAYERS.forEach(function (L, li) {
+      var row = document.createElement("div"); row.className = "zankyo-layer";
+      row.innerHTML = '<div class="zankyo-layer-head">' +
+        '<button type="button" class="zankyo-layer-name" aria-expanded="false"><span class="zankyo-layer-kana">' + L[1] + '</span><span class="zk-name-label">' + L[0] + '</span><i class="zk-ch">CH&middot;0' + (li + 1) + '</i><span class="zk-name-latch" aria-hidden="true"></span></button>' +
+        '<button type="button" class="zankyo-layer-sample" aria-label="sample ' + L[0] + '"><span class="tri"></span></button>' +
+        '<button type="button" class="zk-switch" aria-label="mute ' + L[0] + '"><i class="zk-switch-on">ON</i><span class="zk-switch-slot"><span class="zk-switch-lever"></span></span><i class="zk-switch-off">OFF</i></button></div>';
+      row.querySelector(".zk-switch").addEventListener("click", function () { this.classList.toggle("muted"); });
+      host.appendChild(row);
+    });
+  })();
+  var degRow = $("degrees");
+  degRow.innerHTML = ["一", "二", "三", "四", "五"].map(function (k) { return '<span class="zk-deg">' + k + '</span>'; }).join("");
+  var degs = degRow.children, degUntil = [0, 0, 0, 0, 0], nextDeg = 0;
+
+  var BAR_N = 56, BAR_JO = 14, BAR_HA = 45, segs = [];
+  (function () {
+    var host = $("bar-cells"), frag = document.createDocumentFragment();
+    for (var i = 0; i < BAR_N; i++) { var s = document.createElement("span"); s.className = "zk-seg " + (i < BAR_JO ? "zk-seg-jo" : i < BAR_HA ? "zk-seg-ha" : "zk-seg-kyu"); frag.appendChild(s); segs.push(s); }
+    host.appendChild(frag);
+  })();
+  var barLit = -1;
+  function setBar(level) {
+    var n = Math.round(clamp01(level) * BAR_N);
+    if (n === barLit) return;
+    for (var i = 0; i < BAR_N; i++) { segs[i].classList.toggle("on", i < n); segs[i].classList.toggle("is-head", i === n - 1); }
+    barLit = n;
+  }
+
+  var logEl = $("log"), t0 = now();
+  function stamp() { var s = Math.floor((now() - t0) / 1000); return (Math.floor(s / 60) + "").padStart(2, "0") + ":" + (s % 60 + "").padStart(2, "0"); }
+  function log(tag, cls, text) {
+    var row = document.createElement("div"); row.className = "zankyo-log-row";
+    row.innerHTML = '<span class="zankyo-log-time">' + stamp() + '</span><span class="zankyo-log-tag ' + cls + '">' + tag + '</span><span class="zankyo-log-text">' + text + '</span>';
+    logEl.insertBefore(row, logEl.firstChild);
+    while (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+  }
+  log("❁ cycle", "form", "放送 broadcast · 序 jo · Hirajoshi · D");
+  log("笙", "sho", "aitake 乙 · held");
+  log("環境", "noise", "hull creak · seeded 0x3a1f");
+
+  // the station's own clock: a jo-ha-kyū arc over 100 s, looping
+  var ARC_MS = 100000;
+  function arcPos(t) { return (t / ARC_MS) % 1; }
+  function arcAt(t) { var p = arcPos(t); return clamp01(p < 0.45 ? Math.pow(p / 0.45, 1.6) * 0.25 : p < 0.82 ? 0.25 + (p - 0.45) / 0.37 * 0.55 : p < 0.9 ? 0.8 + (p - 0.82) / 0.08 * 0.2 : 1 - (p - 0.9) / 0.1); }
+
+  // =========================================================================
+  // 2. THE SCOPE (CRT-19) — the real viz drawing on a synthetic signal
+  // =========================================================================
+  var vcv = $("zankyo-viz"), vcx = vcv.getContext("2d"), VW = 0, VH = 0, dpr = 1;
+  var freq = new Float32Array(64), wave = new Float32Array(512);
+  function synth(t, arc) {
+    var s = t / 1000;
+    for (var i = 0; i < 64; i++) {
+      var base = Math.exp(-i / (9 + arc * 22)) * (0.55 + arc * 0.45);
+      var wob = 0.5 + 0.5 * Math.sin(s * (0.7 + i * 0.13) + i * 1.7) * Math.sin(s * 0.21 + i);
+      var peak = (i === 3 || i === 7 || i === 12 || i === 19) ? 0.25 + 0.2 * Math.sin(s * 1.3 + i) : 0;
+      freq[i] = clamp01(base * (0.55 + wob * 0.6) + peak * (0.6 + arc) + rnd() * 0.16 * (0.4 + arc));
+    }
+    for (var k = 0; k < 512; k++) {
+      var x = k / 512;
+      wave[k] = 0.32 * Math.sin(x * 12.6 + s * 2.1) + 0.2 * Math.sin(x * 37 + s * 3.7) + 0.12 * Math.sin(x * 91 + s * 9) * arc + (rnd() - 0.5) * (0.06 + arc * 0.28);
+    }
+  }
+  function strokeWave(xoff, arc) {
+    vcx.beginPath(); var tear = 0;
+    for (var sx = 0; sx < VW; sx++) {
+      if (arc > 0.6 && rnd() < 0.012) tear = (rnd() * 2 - 1) * arc * 16;
+      var y = VH * 0.5 + wave[(sx * 512 / VW) | 0] * VH * 0.4 + tear;
+      if (sx === 0) vcx.moveTo(sx + xoff, y); else vcx.lineTo(sx + xoff, y);
+    }
+    vcx.stroke();
+  }
+  function drawScope(t, arc) {
+    vcx.fillStyle = "rgba(3,3,5,0.35)"; vcx.fillRect(0, 0, VW, VH);
+    synth(t, arc);
+    var bw = VW / 64;
+    for (var i = 0; i < 64; i++) {
+      var v = freq[i], h = v * VH * 0.62, mix = i / 64;
+      vcx.fillStyle = "rgba(" + Math.round(255 * (1 - mix * 0.4)) + "," + Math.round(45 + mix * 120) + "," + Math.round(85 + mix * 150) + "," + (0.35 + v * 0.5).toFixed(2) + ")";
+      vcx.fillRect(i * bw, VH - h, Math.max(1, bw - 1.5), h);
+    }
+    var off = arc * 6;
+    vcx.globalCompositeOperation = "lighter"; vcx.lineWidth = 1.3;
+    vcx.strokeStyle = "rgba(255,45,85," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(-off, arc);
+    vcx.strokeStyle = "rgba(22,224,224," + (0.5 + arc * 0.4).toFixed(2) + ")"; strokeWave(0, arc);
+    vcx.strokeStyle = "rgba(255,61,240," + (0.4 + arc * 0.4).toFixed(2) + ")"; strokeWave(off, arc);
+    vcx.globalCompositeOperation = "source-over";
+    var sweep = (t / 1000 * 40) % VW; vcx.fillStyle = "rgba(255,61,240,0.06)"; vcx.fillRect(sweep, 0, 2, VH);
+  }
+
+  // =========================================================================
+  // 3. THE SHADER — every raster-dependent buffer is driven off SW/SH.
+  // =========================================================================
+  var RASTERS = [[192, 144], [144, 108], [120, 90], [96, 72], [72, 54], [48, 36]];   // all 4:3, all heights divisible by 9 (the tear bands)
+  var SW = 192, SH = 144;
+  var src = document.createElement("canvas"), scx = null;
+  var phos = document.createElement("canvas"), pcx = null;
+  var pimg = null, pdata = null;
+  var frame = document.createElement("canvas"), fcx = frame.getContext("2d");
+  var tcv = $("tube-canvas"), tcx = tcv.getContext("2d");
+  var hasFilter = (typeof fcx.filter === "string");
+  var TW = 0, TH = 0;
+  var pendingRaster = -1;
+
+  function allocRaster(w, h) {
+    SW = w; SH = h;
+    src.width = SW; src.height = SH; scx = src.getContext("2d", { willReadFrequently: true });
+    phos.width = SW; phos.height = SH; pcx = phos.getContext("2d");
+    pimg = pcx.createImageData(SW, SH); pdata = pimg.data;
+  }
+  allocRaster(192, 144);
+
+  // ---- the phosphors: the LUT, and the colours the rest of the tube borrows ----
+  var PHOS = [
+    { id: "P39", cap: "P39 黄緑", stops: [[0, 2, 6, 3], [0.2, 4, 20, 9], [0.45, 12, 72, 30], [0.7, 40, 152, 72], [0.88, 120, 226, 146], [1, 222, 255, 226]], glow: [30, 90, 40], soft: [120, 240, 150], hot: [225, 255, 230] },
+    { id: "P4",  cap: "P4 青白",  stops: [[0, 3, 3, 5], [0.2, 14, 14, 20], [0.45, 60, 62, 76], [0.7, 132, 136, 152], [0.88, 206, 210, 224], [1, 248, 250, 255]], glow: [40, 50, 80], soft: [150, 180, 245], hot: [235, 242, 255] },
+    { id: "P3",  cap: "P3 琥珀",  stops: [[0, 5, 3, 1], [0.2, 22, 12, 2], [0.45, 86, 46, 6], [0.7, 168, 104, 16], [0.88, 232, 170, 58], [1, 255, 226, 160]], glow: [90, 54, 8], soft: [245, 170, 60], hot: [255, 232, 180] },
+    { id: "P1",  cap: "P1 緑",    stops: [[0, 2, 6, 2], [0.2, 6, 30, 8], [0.45, 24, 104, 26], [0.7, 66, 186, 62], [0.88, 150, 238, 140], [1, 226, 255, 220]], glow: [26, 100, 26], soft: [110, 250, 120], hot: [230, 255, 226] }
+  ];
+  var phIdx = 0;
+  var LUT_R = new Uint8Array(256), LUT_G = new Uint8Array(256), LUT_B = new Uint8Array(256);
+  function buildLUT() {
+    var stops = PHOS[phIdx].stops, gm = V.gamma;
+    for (var i = 0; i < 256; i++) {
+      var t = Math.pow(i / 255, gm), a = stops[0], b = stops[1];
+      for (var k = 1; k < stops.length; k++) { if (t <= stops[k][0]) { a = stops[k - 1]; b = stops[k]; break; } }
+      var u = (t - a[0]) / (b[0] - a[0] || 1);
+      LUT_R[i] = a[1] + (b[1] - a[1]) * u; LUT_G[i] = a[2] + (b[2] - a[2]) * u; LUT_B[i] = a[3] + (b[3] - a[3]) * u;
+    }
+    var g = PHOS[phIdx].glow;
+    $("tube").style.setProperty("--ph-rgb", g[0] + " " + g[1] + " " + g[2]);
+  }
+
+  // ---- the crack: pattern A from zk-set.js, verbatim ----
+  var P0 = [296, 74];
+  var CRACKS = [
+    [[322, -2], [312, 28], [310, 40], P0],
+    [P0, [262, 118], [250, 130], [228, 160], [215, 175], [200, 214], [190, 240], [178, 272], [170, 302]],
+    [P0, [318, 82], [340, 90], [366, 92], [402, 105]],
+    [[215, 175], [186, 170], [160, 168], [136, 176], [110, 180], [84, 172], [60, 176], [30, 186], [-2, 190]],
+    [[250, 130], [258, 146], [262, 150], [259, 162], [258, 172]],
+    [[340, 90], [346, 108], [343, 122]],
+    [[110, 180], [104, 196], [108, 212]]
+  ];
+  var CHIP = [[0, 262], [16, 268], [26, 282], [40, 288], [48, 302], [-2, 302]];
+  var SHARDS = [
+    { poly: [[0, 0], [322, 0], [312, 28], [310, 40], P0, [262, 118], [250, 130], [228, 160], [215, 175], [186, 170], [160, 168], [136, 176], [110, 180], [84, 172], [60, 176], [30, 186], [0, 190]], dx: 0, dy: 0, a: 1 },
+    { poly: [[322, 0], [400, 0], [400, 105], [366, 92], [340, 90], [318, 82], P0, [310, 40], [312, 28]], dx: 3, dy: -2, a: 0.93 },
+    { poly: [P0, [318, 82], [340, 90], [366, 92], [400, 105], [400, 300], [170, 300], [178, 272], [190, 240], [200, 214], [215, 175], [228, 160], [250, 130], [262, 118]], dx: -4, dy: 3, a: 1 },
+    { poly: [[0, 190], [30, 186], [60, 176], [84, 172], [110, 180], [136, 176], [160, 168], [186, 170], [215, 175], [200, 214], [190, 240], [178, 272], [170, 300], [0, 300]], dx: 2, dy: 5, a: 0.96 }
+  ];
+  var CRACK_W = [1.1, 1.4, 1.0, 1.1, 0.5, 0.45, 0.5];
+  var CRACK_DASH = ["11 7 4 15 19 5", "16 6 9 13 5 21 12 4", "8 10 14 5 6 17", "13 9 6 4 18 7 10 12", "6 9 4 11", "5 8", "7 6 3 9"];
+  (function buildCrackSVG() {
+    var svg = $("crack");
+    var paths = CRACKS.map(function (pl) { return "M" + pl.map(function (p) { return p[0] + " " + p[1]; }).join(" L"); });
+    var d = paths.join(" ");
+    var chip = "M" + CHIP.map(function (p) { return p[0] + " " + p[1]; }).join(" L") + " Z";
+    var star = "";
+    for (var i = 0; i < 7; i++) { var a = -0.4 + i * 0.93, r0 = 2 + (i % 3), r1 = 7 + ((i * 5) % 9); star += "M" + (P0[0] + Math.cos(a) * r0).toFixed(1) + " " + (P0[1] + Math.sin(a) * r0).toFixed(1) + " L" + (P0[0] + Math.cos(a + 0.1) * r1).toFixed(1) + " " + (P0[1] + Math.sin(a + 0.1) * r1).toFixed(1) + " "; }
+    var html =
+      '<defs><filter id="ck-blur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>' +
+      '<path d="' + chip + '" fill="#040605"/>' +
+      '<path d="' + chip + '" fill="none" stroke="rgba(120,140,120,0.32)" stroke-width="2.4" vector-effect="non-scaling-stroke"/>' +
+      '<path d="' + chip + '" fill="none" stroke="rgba(230,255,235,0.5)" stroke-width="0.8" vector-effect="non-scaling-stroke" stroke-dasharray="9 4 14 3"/>' +
+      '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="2" vector-effect="non-scaling-stroke" transform="translate(1.1 1.3)" filter="url(#ck-blur)"/>';
+    CRACKS.forEach(function (pl, i) {
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(190,215,200,0.2)" stroke-width="' + (CRACK_W[i] * 1.7).toFixed(2) + '" vector-effect="non-scaling-stroke" filter="url(#ck-blur)"/>';
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(235,250,240,' + (i < 4 ? 0.34 : 0.22) + ')" stroke-width="' + CRACK_W[i].toFixed(2) + '" vector-effect="non-scaling-stroke" stroke-linecap="round"/>';
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(255,255,250,' + (i < 4 ? 0.7 : 0.45) + ')" stroke-width="' + (CRACK_W[i] * 0.8).toFixed(2) + '" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-dasharray="' + CRACK_DASH[i] + '"/>';
+    });
+    html += '<path d="' + star + '" fill="none" stroke="rgba(240,255,245,0.55)" stroke-width="0.6" vector-effect="non-scaling-stroke"/>' +
+      '<circle cx="' + P0[0] + '" cy="' + P0[1] + '" r="2.2" fill="rgba(240,255,245,0.3)" filter="url(#ck-blur)"/>';
+    svg.innerHTML = html;
+  })();
+  var shardPaths = null, chipPath = null, crackPath = null;
+  function buildPaths() {
+    var sx = TW / 400, sy = TH / 300;
+    shardPaths = SHARDS.map(function (s) { var p = new Path2D(); s.poly.forEach(function (pt, i) { if (i) p.lineTo(pt[0] * sx, pt[1] * sy); else p.moveTo(pt[0] * sx, pt[1] * sy); }); p.closePath(); return p; });
+    chipPath = new Path2D(); CHIP.forEach(function (pt, i) { if (i) chipPath.lineTo(pt[0] * sx, pt[1] * sy); else chipPath.moveTo(pt[0] * sx, pt[1] * sy); }); chipPath.closePath();
+    crackPath = new Path2D(); CRACKS.forEach(function (pl) { pl.forEach(function (pt, i) { if (i) crackPath.lineTo(pt[0] * sx, pt[1] * sy); else crackPath.moveTo(pt[0] * sx, pt[1] * sy); }); });
+  }
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    var r = vcv.getBoundingClientRect(); VW = r.width; VH = r.height;
+    if (VW > 8) { vcv.width = Math.floor(VW * dpr); vcv.height = Math.floor(VH * dpr); vcx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    var tr = tcv.getBoundingClientRect(); TW = tr.width; TH = tr.height;
+    if (TW < 8 || TH < 8) return;
+    tcv.width = Math.floor(TW * dpr); tcv.height = Math.floor(TH * dpr); tcx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    frame.width = tcv.width; frame.height = tcv.height; fcx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fcx.fillStyle = "#030503"; fcx.fillRect(0, 0, TW, TH);
+    buildPaths();
+    var m = $("measure");
+    if (m) m.textContent = "viewport " + Math.round(window.innerWidth) + " px · stage " + Math.round(stage.getBoundingClientRect().width) +
+      " px · tube " + Math.round(TW) + " × " + Math.round(TH) + " px · scope " + Math.round(VW) + " × " + Math.round(VH) +
+      " px · " + (TW / SW).toFixed(2) + " screen px per source pixel at " + SW + " × " + SH + ".";
+  }
+  window.addEventListener("resize", function () { resize(); reportWidth(); });
+
+  // =========================================================================
+  // 4. THE VARIABLES — what the nine controls actually set
+  // =========================================================================
+  var V = {
+    focus: 1,        // 0..1 → raster index 5..0 (1 = 192×144)
+    defocus: 0,      // 0..1 → beam blur px on the sharp pass
+    hold: 0,         // -1..1, 0 = the detent (locked)
+    hhold: 0,        // -1..1, 0 = the detent
+    persist: 0.5,    // 0..1 → the decay alpha (0.5 = the shipped 0.62)
+    gamma: 1.3,      // the LUT gamma
+    bright: 0.5,     // 0..1 → bloom alpha × and blur ×
+    contrast: 1.22   // the source gain
+  };
+  function rasterIdx() { return Math.round((1 - V.focus) * (RASTERS.length - 1)); }
+  function decayNow() {
+    var p = V.persist;
+    return p <= 0.5 ? 0.95 + (0.62 - 0.95) * (p / 0.5) : 0.62 + (0.08 - 0.62) * ((p - 0.5) / 0.5);
+  }
+  function bloomMul() { return 0.25 + V.bright * 1.5; }
+  function blurMul() { return 0.55 + V.bright * 0.9; }
+
+  // =========================================================================
+  // 5. THE SIGNAL
+  // =========================================================================
+  var PICK = ["bbc1-testcard-news-1979", "nhk-joak-closedown-1982", "fuji-jocx-signoff-1988", "kctv-massgames-1989", "ct2-testcard-1994"];
+  var FALLBACK = {
+    "bbc1-testcard-news-1979": { title: "BBC1 — Test Card, music, lunchtime news", year: 1979, windows: [[0, 12], [12, 24], [24, 36], [36, 48], [48, 60], [60, 89.2]] },
+    "nhk-joak-closedown-1982": { title: "NHK General TV closedown (JOAK-TV)", year: 1982, windows: [[0, 10.5], [10.5, 20.5], [20.5, 30.5]] },
+    "fuji-jocx-signoff-1988": { title: "Fuji TV (JOCX-TV) last 20 minutes and sign-off", year: 1988, windows: [[0, 12], [12, 24], [24, 36], [36, 48], [48, 60], [60, 90]] },
+    "kctv-massgames-1989": { title: "Arirang mass games, Pyongyang", year: 1989, windows: [[0, 10], [10, 20], [20, 30], [30, 40], [40, 50], [50, 60]] },
+    "ct2-testcard-1994": { title: "TV-DX: ČT2 / STV, test card to sign-off", year: 1994, windows: [[0, 12], [12, 24], [24, 36], [36, 48], [48, 60], [60, 83]] }
+  };
+  var reels = PICK.map(function (id, i) { var v = $("v" + i); v.src = "../broadcast/reels/" + id + ".mp4"; v.load(); return { id: id, meta: FALLBACK[id], video: v }; });
+  fetch("../broadcast/manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    m.forEach(function (e) { reels.forEach(function (r) { if (r.id === e.id) r.meta = { title: e.title, year: e.year, windows: e.windows }; }); });
+  }).catch(function () {});
+  function shortTitle(t) { var i = t.indexOf(" ("); if (i > 0) t = t.slice(0, i); i = t.indexOf(","); if (i > 0) t = t.slice(0, i); return t; }
+
+  var S = { phase: "idle", t: 0, reel: null, holdS: 10, lossD: 2.2, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0 };
+  var reelIdx = -1, lastAuto = now(), AUTO_MS = 25000;
+  var lamp = $("lamp-rx"), paddle = null, paddleCold = 0;
+
+  function tuneNext(opts) {
+    if (S.phase !== "idle") return false;
+    opts = opts || {};
+    reelIdx = (reelIdx + 1) % reels.length;
+    var r = reels[reelIdx], win = r.meta.windows[(rnd() * r.meta.windows.length) | 0];
+    var holdS = opts.holdS != null ? opts.holdS : Math.min(win[1] - win[0], 8 + rnd() * 4);
+    var inS = win[0] + Math.max(0, rnd() * (win[1] - win[0] - holdS));
+    try { r.video.currentTime = inS; } catch (e) {}
+    var p = r.video.play(); if (p && p.catch) p.catch(function () {});
+    S.phase = "tuning"; S.t = now(); S.reel = r; S.holdS = holdS; S.seed = rnd() * 1000; S.drop = 0; S.strength = 0;
+    setLamp("flicker");
+    log("受信", "rx", shortTitle(r.meta.title) + " · " + r.meta.year);
+    lastAuto = now();
+    return true;
+  }
+  function setLamp(m) {
+    if (!lamp) return;
+    lamp.classList.toggle("is-lit", m === "lit");
+    lamp.classList.toggle("is-flicker", m === "flicker");
+  }
+  function tickSignal(t) {
+    var el = (t - S.t) / 1000;
+    if (S.phase === "tuning") {
+      S.strength = clamp01(el / 0.4) * 0.85;
+      if (el >= 0.4) { S.phase = "hold"; S.t = t; setLamp("lit"); }
+    } else if (S.phase === "hold") {
+      var breath = 0.82 + 0.13 * Math.sin(el * 1.1 + S.seed) + 0.05 * Math.sin(el * 4.3 + S.seed * 2);
+      if (S.drop > 0) S.drop -= 1 / 60; else if (rnd() < 0.006) S.drop = 0.12 + rnd() * 0.25;
+      S.strength = clamp01(breath - (S.drop > 0 ? 0.45 : 0));
+      if (S.drop > 0 && rnd() < 0.3) S.holdFrame = t + 100 + rnd() * 200;
+      if (el >= S.holdS) { S.phase = "loss"; S.t = t; S.lossD = 1.6 + rnd() * 1.2; setLamp("flicker"); }
+    } else if (S.phase === "loss") {
+      var k = clamp01(el / S.lossD);
+      S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
+      if (rnd() < k * 0.25) S.holdFrame = t + 80 + rnd() * 160;
+      S.rollV += (rnd() - 0.4) * k * 3;
+      if (el >= S.lossD) { S.phase = "collapse"; S.t = t; setLamp("off"); }
+    } else if (S.phase === "collapse") {
+      S.strength = 0.9;
+      if (el >= 0.42) { S.phase = "burst"; S.t = t; if (S.reel) { try { S.reel.video.pause(); } catch (e) {} } }
+    } else if (S.phase === "burst") {
+      S.strength = 0;
+      if (el >= 0.32) { S.phase = "dead"; S.t = t; setLamp("off"); log("消失", "pa", "signal lost · " + S.holdS.toFixed(1) + " s"); }
+    } else if (S.phase === "dead") {
+      if (el >= 1.6) { S.phase = "idle"; S.t = t; S.reel = null; S.rollV = 0; }
+    } else if (S.phase === "idle") {
+      if (t - lastAuto > AUTO_MS && document.visibilityState === "visible" && !sweep.active) tuneNext();
+    }
+  }
+
+  // 一線 the idle line — on the STATION's clock, not a timer of its own:
+  // it opens at the three places the jo-ha-kyū arc turns over.
+  var lineGates = [0.0, 0.45, 0.82], lastGate = -1, lineAt = -1, lineHold = 1.4;
+  function tickIdleLine(t) {
+    if (S.phase !== "idle") { lineAt = -1; return; }
+    var p = arcPos(t), g = -1;
+    for (var i = lineGates.length - 1; i >= 0; i--) { if (p >= lineGates[i]) { g = i; break; } }
+    if (g < 0) g = 0;
+    if (g !== lastGate) { lastGate = g; if (lineAt < 0) { lineAt = t; lineHold = 1.0 + rnd() * 1.2; } }
+  }
+
+  // =========================================================================
+  // 6. THE SOURCE PICTURE — every coordinate scales off SW/SH
+  // =========================================================================
+  function drawTestCard(alpha) {
+    scx.save(); scx.globalAlpha = alpha; scx.setTransform(SW / 96, 0, 0, SH / 72, 0, 0);
+    scx.fillStyle = "#3a3a3a"; scx.fillRect(0, 0, 96, 72);
+    for (var i = 0; i < 8; i++) { scx.fillStyle = "rgb(" + (i * 32) + "," + (i * 32) + "," + (i * 32) + ")"; scx.fillRect(i * 12, 6, 12, 10); }
+    scx.strokeStyle = "#cfcfcf"; scx.lineWidth = 1.2;
+    scx.beginPath(); scx.arc(48, 40, 26, 0, Math.PI * 2); scx.stroke();
+    scx.beginPath(); scx.moveTo(48, 14); scx.lineTo(48, 66); scx.moveTo(22, 40); scx.lineTo(74, 40); scx.stroke();
+    scx.fillStyle = "#e8e8e8"; scx.fillRect(38, 34, 20, 12); scx.fillStyle = "#101010"; scx.fillRect(40, 36, 16, 8);
+    scx.fillStyle = "#e0e0e0"; scx.font = '700 7px "Orbitron", sans-serif'; scx.fillText("MSHI", 36, 62);
+    scx.restore(); scx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  function renderSource(t) {
+    var ph = S.phase;
+    scx.globalAlpha = 1;
+    if (ph === "tuning" || ph === "hold" || ph === "loss" || ph === "collapse") {
+      if (t < S.holdFrame) { /* frame hold */ }
+      else if (S.reel && S.reel.video.readyState >= 2) { try { scx.drawImage(S.reel.video, 0, 0, SW, SH); } catch (e) { drawTestCard(0.85); } }
+      else drawTestCard(0.85);
+    } else {
+      // burst / dead / IDLE: the tube is dark. Nothing else. (座's idle.)
+      scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH);
+    }
+    var sdata = scx.getImageData(0, 0, SW, SH).data;
+    var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? 0 : clamp01(1 - strength);
+    var gain = V.contrast, dark = ph === "idle" || ph === "dead";
+    for (var i = 0, p = 0, n = SW * SH; i < n; i++, p += 4) {
+      var q = i << 2, l;
+      if (dark) l = 0;
+      else {
+        l = (0.299 * sdata[q] + 0.587 * sdata[q + 1] + 0.114 * sdata[q + 2] - 18) * gain;
+        if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());
+      }
+      l = l < 0 ? 0 : l > 255 ? 255 : l | 0;
+      pdata[p] = LUT_R[l]; pdata[p + 1] = LUT_G[l]; pdata[p + 2] = LUT_B[l]; pdata[p + 3] = 255;
+    }
+    pcx.putImageData(pimg, 0, 0);
+  }
+
+  // =========================================================================
+  // 7. THE FRAME — persistence, bloom, tear, roll (vertical AND horizontal)
+  // =========================================================================
+  function drawBloom(dy, sy, alpha, blurPx) {
+    fcx.globalAlpha = alpha;
+    if (hasFilter) { fcx.filter = "blur(" + blurPx.toFixed(1) + "px)"; fcx.drawImage(phos, 0, dy, TW, TH * sy); fcx.filter = "none"; }
+    else { fcx.imageSmoothingEnabled = true; fcx.drawImage(phos, 0, dy, TW, TH * sy); fcx.imageSmoothingEnabled = false; }
+    fcx.globalAlpha = 1;
+  }
+  function drawBands(dy, sy, tearAmt, t) {
+    var bh = TH / 9, srcH = SH / 9;                       // NOT 8: the band height follows the raster
+    var hh = V.hhold * TW * 0.22;
+    var creep = hh ? hh * ((t / 1000 * 0.7) % 1) : 0;
+    for (var b = 0; b < 9; b++) {
+      var off = tearAmt * (Math.sin(t / 170 + b * 1.9) * 3 + (rnd() < tearAmt * 0.25 ? (rnd() - 0.5) * 26 : 0));
+      if (hh) off += hh * (b - 4) * 0.22 + creep;
+      var y = dy + b * bh * sy, h = bh * sy + 0.5;
+      fcx.drawImage(phos, 0, b * srcH, SW, srcH, off, y, TW, h);
+      if (off > 0.5) fcx.drawImage(phos, 0, b * srcH, SW, srcH, off - TW, y, TW, h);
+      else if (off < -0.5) fcx.drawImage(phos, 0, b * srcH, SW, srcH, off + TW, y, TW, h);
+    }
+  }
+  function drawFrame(t, dt) {
+    var ph = S.phase, strength = S.strength, PH = PHOS[phIdx];
+    fcx.globalCompositeOperation = "source-over";
+    var decay = ph === "dead" ? Math.max(0.11, decayNow()) : ph === "burst" ? Math.min(0.9, decayNow() + 0.1) : decayNow();
+    fcx.fillStyle = "rgba(3,5,3," + decay.toFixed(3) + ")"; fcx.fillRect(0, 0, TW, TH);
+
+    fcx.imageSmoothingEnabled = V.defocus > 0.08;
+    // 同期 vertical hold: the knob's continuous roll, plus the gesture's slips
+    if (V.hold !== 0) S.roll += V.hold * Math.abs(V.hold) * TH * 1.4 * Math.min(0.05, dt / 1000);
+    if (ph !== "idle" || S.rollV !== 0) {
+      S.roll += S.rollV; S.rollV *= (ph === "loss" ? 0.985 : 0.9);
+      if (Math.abs(S.rollV) < 0.05) S.rollV = 0;
+    }
+    if (TH > 0) S.roll = ((S.roll % TH) + TH) % TH;
+    if (V.hold === 0 && S.rollV === 0 && ph !== "loss") S.roll += (0 - S.roll) * 0.2;    // the detent pulls the frame home
+    var roll = S.roll | 0, sy = 1;
+    var pel = (t - S.t) / 1000;
+    if (ph === "collapse") { var ck = clamp01(pel / 0.42); sy = Math.max(0.01, 1 - Math.pow(ck, 1.6)); }
+    var tearAmt = ph === "tuning" ? 0.6 : ph === "hold" ? clamp01(1 - strength) * 0.8 + (S.drop > 0 ? 0.4 : 0.05) : ph === "loss" ? 0.5 + clamp01(pel / S.lossD) : 0;
+    var dyBase = (TH - TH * sy) / 2;
+    var bright = ph === "idle" || ph === "dead" ? 0 : 1;
+
+    if (bright) {
+      fcx.globalCompositeOperation = "lighter";
+      var ba = (0.22 + strength * 0.14) * bloomMul(), bp = (3 + strength * 2) * blurMul();
+      drawBloom(dyBase + roll * sy, sy, ba, bp);
+      if (roll) drawBloom(dyBase + (roll - TH) * sy, sy, ba, bp);
+      fcx.globalCompositeOperation = "source-over";
+      // 焦点 the vernier: a real beam defocus on the sharp pass
+      if (hasFilter && V.defocus > 0.05) fcx.filter = "blur(" + (V.defocus * 2.6).toFixed(2) + "px)";
+      drawBands(dyBase + roll * sy, sy, tearAmt, t);
+      if (roll) { drawBands(dyBase + (roll - TH) * sy, sy, tearAmt, t); }
+      if (hasFilter) fcx.filter = "none";
+      if (roll) { fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * sy - 6, TW, 7); }   // the blanking bar
+      if (ph === "hold" || ph === "loss" || ph === "tuning") {
+        fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = (0.16 + 0.14 * (1 - strength)) * bloomMul();
+        fcx.drawImage(phos, 0, 0, SW, SH, 5 + 3 * Math.sin(t / 900), dyBase + roll * sy + 1, TW, TH * sy);
+        fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
+      }
+    }
+
+    // the line of light — the collapse, and 座's idle
+    var lineK = 0, dotK = 0;
+    if (ph === "collapse") lineK = clamp01((pel - 0.22) / 0.2);
+    if (ph === "burst") lineK = 1 - clamp01(pel / 0.12);
+    if (ph === "idle" && lineAt >= 0) {
+      var le = (t - lineAt) / 1000;
+      if (le < 0.5) lineK = le / 0.5;                            // it OPENS across the glass
+      else if (le < 0.5 + lineHold) lineK = 1;
+      else if (le < 1.0 + lineHold) lineK = 1 - (le - 0.5 - lineHold) / 0.5;
+      else { lineAt = -1; lineK = 0; }
+      if (lineK > 0) { dotK = 0; fcx.fillStyle = "rgba(3,5,3,0.92)"; fcx.fillRect(0, 0, TW, TH); }
+    }
+    if (lineK > 0) {
+      var lw = TW * 0.94 * (ph === "idle" ? lineK : 1), lx = (TW - lw) / 2, ly = TH / 2 + Math.sin(t / 60) * 0.4;
+      var soft = PH.soft, hot = PH.hot, ga = 0.35 + V.bright * 0.9;
+      fcx.globalCompositeOperation = "lighter";
+      if (hasFilter) fcx.filter = "blur(6px)";
+      fcx.fillStyle = "rgba(" + soft[0] + "," + soft[1] + "," + soft[2] + "," + (0.55 * ga * (ph === "idle" ? 1 : lineK)).toFixed(2) + ")";
+      fcx.fillRect(lx, ly - (hasFilter ? 5 : 3), lw, hasFilter ? 10 : 6);
+      if (hasFilter) fcx.filter = "none";
+      fcx.fillStyle = "rgba(" + hot[0] + "," + hot[1] + "," + hot[2] + "," + (0.95 * (ph === "idle" ? 1 : lineK)).toFixed(2) + ")";
+      fcx.fillRect(lx, ly - 1, lw, 2);
+      fcx.globalCompositeOperation = "source-over";
+    }
+  }
+
+  function compose() {
+    var PH = PHOS[phIdx];
+    tcx.clearRect(0, 0, TW, TH);
+    tcx.fillStyle = "#030503"; tcx.fillRect(0, 0, TW, TH);
+    var lit = S.phase === "idle" ? 0.06 : S.phase === "dead" ? 0.02 : 0.3 + S.strength * 0.7;
+    for (var i = 0; i < SHARDS.length; i++) {
+      var s = SHARDS[i];
+      tcx.save(); tcx.clip(shardPaths[i]); tcx.globalAlpha = s.a;
+      tcx.drawImage(frame, s.dx * (0.6 + lit * 0.6), s.dy * (0.6 + lit * 0.6), TW, TH);
+      tcx.restore();
+    }
+    tcx.globalCompositeOperation = "lighter";
+    var soft = PH.soft, hot = PH.hot;
+    tcx.lineWidth = 2.4; tcx.strokeStyle = "rgba(" + soft[0] + "," + soft[1] + "," + soft[2] + "," + (0.02 + lit * 0.3).toFixed(2) + ")"; tcx.stroke(crackPath);
+    tcx.lineWidth = 0.8; tcx.strokeStyle = "rgba(" + hot[0] + "," + hot[1] + "," + hot[2] + "," + (0.01 + lit * 0.34).toFixed(2) + ")"; tcx.stroke(crackPath);
+    tcx.globalCompositeOperation = "source-over";
+    tcx.fillStyle = "#040605"; tcx.fill(chipPath);
+  }
+
+  // =========================================================================
+  // 8. THE CONTROL BANK — built in JS so the plates can be engraved per control
+  // =========================================================================
+  var CTRLS = [
+    { key: "focus", kanji: "焦点", rom: "FOCUS", aria: "焦点 FOCUS — 走査線 raster resolution",
+      marks: ["48", "", "", "", "", "192"], allMajor: true, detent: "steps",
+      inner: { key: "defocus", aria: "焦点 微調 — beam defocus vernier", min: 0, max: 1, def: 0 } },
+    { key: "hold", kanji: "同期", rom: "V-HOLD", aria: "同期 HOLD — vertical hold, detented at centre",
+      marks: ["−", "", "0", "", "+"], detent: "centre", bipolar: true,
+      inner: { key: "hhold", aria: "同期 水平 — horizontal hold, detented at centre", min: -1, max: 1, def: 0, detent: true } },
+    { key: "persist", kanji: "残光", rom: "PERSIST", aria: "残光 PERSISTENCE — phosphor decay",
+      marks: ["短", "", "", "", "長"],
+      inner: { key: "gammaN", aria: "残光 階調 — phosphor gamma", min: 0, max: 1, def: 0.5 } },
+    { key: "bright", kanji: "輝度", rom: "BRIGHT", aria: "輝度 BRIGHTNESS — bloom and gain",
+      marks: ["暗", "", "", "", "明"],
+      inner: { key: "contrastN", aria: "輝度 対比 — contrast", min: 0, max: 1, def: 0.5 } }
+  ];
+  // the two inner knobs whose variable is a mapped range keep a normalised twin
+  V.gammaN = 0.5; V.contrastN = 0.5;
+
+  var CELL = {};   // key → { out, in, rotOut, rotIn, read, cell }
+  function svgArc(marks, bipolar, allMajor) {
+    // the engraved scale: ticks cut into the plate (a dark line with a light lower lip)
+    var n = marks.length, s = "";
+    var mk = "";
+    for (var i = 0; i < n; i++) {
+      var a = (-135 + i * (270 / (n - 1))) * Math.PI / 180;
+      var cx = 50 + Math.sin(a) * 35.5, cy = 50 - Math.cos(a) * 35.5;
+      var ix = 50 + Math.sin(a) * 41, iy = 50 - Math.cos(a) * 41;
+      var maj = allMajor || marks[i] !== "";
+      s += '<line x1="' + cx.toFixed(1) + '" y1="' + cy.toFixed(1) + '" x2="' + ix.toFixed(1) + '" y2="' + iy.toFixed(1) + '" stroke="rgba(16,18,20,0.8)" stroke-width="' + (maj ? 2.3 : 1.3) + '" stroke-linecap="round"/>';
+      s += '<line x1="' + (cx + 0.5).toFixed(1) + '" y1="' + (cy + 0.9).toFixed(1) + '" x2="' + (ix + 0.5).toFixed(1) + '" y2="' + (iy + 0.9).toFixed(1) + '" stroke="rgba(255,255,255,0.46)" stroke-width="' + (maj ? 1.1 : 0.7) + '" stroke-linecap="round"/>';
+      if (maj) {
+        var tx = 50 + Math.sin(a) * 48, ty = 50 - Math.cos(a) * 48 + 2.3;
+        mk += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="rgba(16,18,20,0.85)">' + marks[i] + '</text>';
+      }
+    }
+    if (bipolar) s += '<path d="M50 6 l-3.4 6 h6.8 Z" fill="rgba(22,24,26,0.5)"/>';
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">' + s + mk + '</svg>';
+  }
+  (function buildBank() {
+    var host = $("surface"), frag = document.createDocumentFragment();
+    CTRLS.forEach(function (C) {
+      var cell = document.createElement("div"); cell.className = "pd-cell"; cell.setAttribute("data-c", C.key);
+      cell.innerHTML =
+        '<span class="pd-cap">' + C.kanji + ' <i>' + C.rom + '</i></span>' +
+        '<div class="pd-plate">' + svgArc(C.marks, !!C.bipolar, !!C.allMajor) +
+          '<span class="pd-detent" aria-hidden="true"></span>' +
+          '<div class="pd-knob pd-out" role="slider" tabindex="0" aria-label="' + C.aria + '"><span class="pd-rot"><span class="pd-ptr"></span></span></div>' +
+          '<div class="pd-knob pd-in" role="slider" tabindex="0" aria-label="' + C.inner.aria + '"><span class="pd-rot"><span class="pd-ptr-in"></span></span></div>' +
+        '</div>' +
+        '<span class="pd-read">—</span>';
+      frag.appendChild(cell);
+      CELL[C.key] = { cell: cell, out: cell.querySelector(".pd-out"), inn: cell.querySelector(".pd-in"),
+        rotOut: cell.querySelector(".pd-out .pd-rot"), rotIn: cell.querySelector(".pd-in .pd-rot"),
+        read: cell.querySelector(".pd-read"), C: C };
+    });
+    // 蛍光体 the tube-type strap
+    var wc = document.createElement("div"); wc.className = "pd-cell pd-cell-wafer";
+    var ws = "";
+    for (var i = 0; i < 4; i++) {
+      var a = (-60 + i * 40) * Math.PI / 180;
+      ws += '<line x1="' + (50 + Math.sin(a) * 35).toFixed(1) + '" y1="' + (50 - Math.cos(a) * 35).toFixed(1) + '" x2="' + (50 + Math.sin(a) * 44).toFixed(1) + '" y2="' + (50 - Math.cos(a) * 44).toFixed(1) + '" stroke="rgba(16,18,20,0.8)" stroke-width="2.4" stroke-linecap="round"/>';
+    }
+    wc.innerHTML = '<span class="pd-cap">蛍光体 <i>TUBE</i></span>' +
+      '<div class="pd-wafer-plate"><svg viewBox="0 0 100 100" aria-hidden="true">' + ws + '</svg>' +
+      '<div class="pd-wafer" id="wafer" role="slider" tabindex="0" aria-label="蛍光体 PHOSPHOR — tube type" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0" aria-valuetext="P39"><span class="pd-wafer-ind"></span></div></div>' +
+      '<span class="pd-read" id="wafer-read">P39</span>';
+    frag.appendChild(wc);
+    // 受信 the paddle
+    var pc = document.createElement("div"); pc.className = "pd-cell pd-cell-paddle";
+    pc.innerHTML = '<button type="button" class="pd-paddle" id="paddle" aria-label="受信 RECEIVE — tune a signal now">' +
+      '<span class="pd-lamp" id="lamp-rx" aria-hidden="true"></span>受信<span class="pd-paddle-sub">RECEIVE · MOMENTARY</span></button>' +
+      '<span class="pd-read" id="paddle-read">READY</span>';
+    frag.appendChild(pc);
+    host.appendChild(frag);
+  })();
+  lamp = $("lamp-rx"); paddle = $("paddle");
+
+  // ---- the knob driver: drag, wheel, keyboard, detents ----
+  function snap(rot) { rot.classList.add("is-snap"); setTimeout(function () { rot.classList.remove("is-snap"); }, 170); }
+  function flashDetent(key) {
+    var c = CELL[key]; if (!c) return;
+    c.cell.classList.add("is-detented");
+    setTimeout(function () { c.cell.classList.remove("is-detented"); }, 320);
+  }
+  function applyFocus(v) {
+    var before = rasterIdx();
+    V.focus = clamp01(v);
+    var idx = rasterIdx();
+    V.focus = 1 - idx / (RASTERS.length - 1);          // the knob sits IN its detent
+    if (idx !== before) { pendingRaster = idx; snap(CELL.focus.rotOut); flashDetent("focus"); }
+    paint("focus");
+  }
+  function applyHold(v) {
+    var was = V.hold;
+    v = clamp(v, -1, 1);
+    if (Math.abs(v) < 0.07) { v = 0; if (was !== 0) { snap(CELL.hold.rotOut); flashDetent("hold"); } }
+    V.hold = v; paint("hold");
+  }
+  function paint(key) {
+    var c = CELL[key]; if (!c) return;
+    var C = c.C, v, ang, txt, an, av;
+    if (key === "focus") {
+      var idx = rasterIdx(), R = RASTERS[idx];
+      ang = -135 + V.focus * 270;
+      txt = R[0] + "×" + R[1];
+      an = idx; av = txt;
+      c.out.setAttribute("aria-valuemin", "0"); c.out.setAttribute("aria-valuemax", "5");
+      c.out.setAttribute("aria-valuenow", String(5 - idx)); c.out.setAttribute("aria-valuetext", txt + " 走査線");
+    } else if (key === "hold") {
+      ang = V.hold * 135;
+      txt = V.hold === 0 ? "LOCKED" : (V.hold > 0 ? "+" : "−") + (Math.abs(V.hold) * 100).toFixed(0) + "% roll";
+      c.out.setAttribute("aria-valuemin", "-100"); c.out.setAttribute("aria-valuemax", "100");
+      c.out.setAttribute("aria-valuenow", (V.hold * 100).toFixed(0)); c.out.setAttribute("aria-valuetext", txt);
+    } else if (key === "persist") {
+      ang = -135 + V.persist * 270;
+      txt = "decay " + decayNow().toFixed(2);
+      c.out.setAttribute("aria-valuemin", "0"); c.out.setAttribute("aria-valuemax", "100");
+      c.out.setAttribute("aria-valuenow", (V.persist * 100).toFixed(0)); c.out.setAttribute("aria-valuetext", txt);
+    } else {
+      ang = -135 + V.bright * 270;
+      txt = (bloomMul()).toFixed(2) + "× gain";
+      c.out.setAttribute("aria-valuemin", "0"); c.out.setAttribute("aria-valuemax", "100");
+      c.out.setAttribute("aria-valuenow", (V.bright * 100).toFixed(0)); c.out.setAttribute("aria-valuetext", txt);
+    }
+    c.rotOut.style.transform = "rotate(" + ang.toFixed(1) + "deg)";
+    // the inner shaft
+    var ik = C.inner.key, iv = V[ik], imin = C.inner.min, imax = C.inner.max;
+    var inorm = (iv - imin) / (imax - imin);
+    c.rotIn.style.transform = "rotate(" + (-135 + inorm * 270).toFixed(1) + "deg)";
+    c.inn.setAttribute("aria-valuemin", "0"); c.inn.setAttribute("aria-valuemax", "100");
+    c.inn.setAttribute("aria-valuenow", (inorm * 100).toFixed(0));
+    var isub = ik === "defocus" ? "defocus " + (V.defocus * 2.6).toFixed(1) + "px"
+      : ik === "hhold" ? (V.hhold === 0 ? "H LOCKED" : "H " + (V.hhold * 100).toFixed(0) + "%")
+      : ik === "gammaN" ? "γ " + V.gamma.toFixed(2)
+      : "×" + V.contrast.toFixed(2);
+    c.inn.setAttribute("aria-valuetext", isub);
+    c.read.textContent = txt;
+    c.inn.title = C.inner.aria + " — " + isub;
+    c.out.title = C.aria + " — " + txt;
+  }
+  function setInner(C, norm) {
+    var ik = C.inner.key, imin = C.inner.min, imax = C.inner.max;
+    norm = clamp01(norm);
+    var v = imin + norm * (imax - imin);
+    if (C.inner.detent && Math.abs(v) < 0.07) { if (V[ik] !== 0) { snap(CELL[C.key].rotIn); flashDetent(C.key); } v = 0; }
+    V[ik] = v;
+    if (ik === "gammaN") { V.gamma = 0.85 + v * 0.9; buildLUT(); }
+    if (ik === "contrastN") { V.contrast = 0.72 + v * 1.0; }
+    paint(C.key);
+  }
+  function outerNorm(key) { return key === "hold" ? (V.hold + 1) / 2 : V[key]; }
+  function setOuter(key, norm) {
+    norm = clamp01(norm);
+    if (key === "focus") applyFocus(norm);
+    else if (key === "hold") applyHold(norm * 2 - 1);
+    else { V[key] = norm; paint(key); }
+  }
+  function bindKnob(el, getNorm, setNorm, step, bigStep) {
+    var dragging = false, startY = 0, startX = 0, startV = 0;
+    el.addEventListener("pointerdown", function (e) {
+      e.stopPropagation(); dragging = true; startY = e.clientY; startX = e.clientX; startV = getNorm();
+      el.setPointerCapture && el.setPointerCapture(e.pointerId); el.style.cursor = "grabbing"; e.preventDefault();
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      setNorm(startV + ((startY - e.clientY) + (e.clientX - startX)) / 180);
+    });
+    function up() { dragging = false; el.style.cursor = ""; }
+    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+    el.addEventListener("wheel", function (e) { e.preventDefault(); setNorm(getNorm() - Math.sign(e.deltaY) * step); }, { passive: false });
+    el.addEventListener("keydown", function (e) {
+      var k = e.key, d = 0;
+      if (k === "ArrowUp" || k === "ArrowRight") d = step;
+      else if (k === "ArrowDown" || k === "ArrowLeft") d = -step;
+      else if (k === "PageUp") d = bigStep;
+      else if (k === "PageDown") d = -bigStep;
+      else if (k === "Home") { setNorm(0); e.preventDefault(); return; }
+      else if (k === "End") { setNorm(1); e.preventDefault(); return; }
+      else return;
+      setNorm(getNorm() + d); e.preventDefault();
+    });
+  }
+  CTRLS.forEach(function (C) {
+    var c = CELL[C.key];
+    bindKnob(c.out, function () { return outerNorm(C.key); }, function (n) { setOuter(C.key, n); }, C.key === "focus" ? 0.2 : 0.05, 0.2);
+    bindKnob(c.inn, function () { var ik = C.inner.key; return (V[ik] - C.inner.min) / (C.inner.max - C.inner.min); }, function (n) { setInner(C, n); }, 0.05, 0.2);
+  });
+
+  // 蛍光体 the wafer: four positions, detented
+  var wafer = $("wafer");
+  function setPhos(i) {
+    phIdx = ((i % PHOS.length) + PHOS.length) % PHOS.length;
+    buildLUT();
+    wafer.querySelector(".pd-wafer-ind").style.transform = "rotate(" + (-60 + phIdx * 40) + "deg)";
+    wafer.setAttribute("aria-valuenow", String(phIdx));
+    wafer.setAttribute("aria-valuetext", PHOS[phIdx].cap);
+    $("wafer-read").textContent = PHOS[phIdx].id;
+    log("蛍光体", "sho", "tube type → " + PHOS[phIdx].cap);
+  }
+  wafer.addEventListener("click", function () { setPhos(phIdx + 1); });
+  wafer.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") { setPhos(phIdx + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") { setPhos(phIdx - 1); e.preventDefault(); }
+    else if (e.key === "Enter" || e.key === " ") { setPhos(phIdx + 1); e.preventDefault(); }
+  });
+
+  // 受信 the paddle
+  paddle.addEventListener("click", function () {
+    if (now() < paddleCold) return;
+    if (tuneNext()) { paddleCold = now() + 6000; paddle.classList.add("is-cold"); $("paddle-read").textContent = "COLD"; }
+  });
+
+  // =========================================================================
+  // 9. THE MEASUREMENT — the plan's §1.1 question, answered on the page
+  // =========================================================================
+  var perf = { n: 0, ms: 0, worst: 0 };
+  function resetPerf() { perf.n = 0; perf.ms = 0; perf.worst = 0; }
+  var sweep = { active: false, i: 0, until: 0, saveFocus: 1, rows: [], warm: 0 };
+  function sweepStart() {
+    if (sweep.active) return;
+    sweep.active = true; sweep.i = -1; sweep.rows = []; sweep.saveFocus = V.focus;
+    $("msweep-state").textContent = "running — the tube is being driven through all six rasters…";
+    // run it on a real signal: the hold phase is the expensive one
+    if (S.phase === "idle") tuneNext({ holdS: 12.5 });
+    sweep.waitHold = true;
+  }
+  function sweepTick(t) {
+    if (!sweep.active) return;
+    if (sweep.waitHold) {
+      if (S.phase !== "hold") { if (S.phase === "idle") tuneNext({ holdS: 12.5 }); return; }
+      sweep.waitHold = false; sweep.i = -1; sweep.until = 0;
+    }
+    if (t < sweep.until) return;
+    if (sweep.i >= 0) {
+      var R = RASTERS[sweep.i];
+      sweep.rows.push({ w: R[0], h: R[1], px: R[0] * R[1], mean: perf.n ? perf.ms / perf.n : 0, worst: perf.worst, n: perf.n });
+    }
+    sweep.i++;
+    if (sweep.i >= RASTERS.length) {
+      sweep.active = false;
+      V.focus = sweep.saveFocus; pendingRaster = rasterIdx(); paint("focus");
+      sweepPrint(true);
+      $("msweep-state").textContent = "";
+      resetPerf();
+      return;
+    }
+    // hold each raster 1.2 s, discarding the first 0.25 s while the buffers settle
+    V.focus = 1 - sweep.i / (RASTERS.length - 1); pendingRaster = sweep.i; paint("focus");
+    sweep.until = t + 1350;
+    setTimeout(resetPerf, 250);
+    sweepPrint(false);
+  }
+  function sweepPrint(done) {
+    var tb = $("msweep");
+    while (tb.rows.length > 1) tb.deleteRow(1);
+    sweep.rows.forEach(function (r) {
+      var tr = tb.insertRow(-1);
+      if (r.w === 192) tr.className = "is-now";
+      tr.innerHTML = '<td>' + r.w + ' × ' + r.h + '</td><td class="n">' + r.px.toLocaleString() + '</td><td class="n">' + r.mean.toFixed(2) + '</td><td class="n">' + r.worst.toFixed(2) + '</td><td class="n">' + r.n + '</td>';
+    });
+    if (done && sweep.rows.length) {
+      var top = sweep.rows[0], bot = sweep.rows[sweep.rows.length - 1];
+      var tr = tb.insertRow(-1);
+      tr.innerHTML = '<td colspan="5" style="color:#6a6572;border-bottom:none;padding-top:7px">' +
+        '192 × 144 costs <b style="color:#ff2d55">' + top.mean.toFixed(2) + ' ms</b> a frame (worst ' + top.worst.toFixed(2) +
+        ') against a 16.7 ms budget — ' + (top.mean / 16.7 * 100).toFixed(0) + '% of one frame at 60 Hz. ' +
+        'At the far detent, 48 × 36, it is ' + bot.mean.toFixed(2) + ' ms (' + (top.mean / Math.max(0.01, bot.mean)).toFixed(1) +
+        '× cheaper). The per-pixel LUT pass scales with the raster; the bloom, the nine tear bands and the four-shard crack ' +
+        'composite are fixed costs in TUBE pixels and do not.</td>';
+    }
+  }
+  $("msweep-run").addEventListener("click", sweepStart);
+
+  // =========================================================================
+  // 10. THE LOOP
+  // =========================================================================
+  var lastT = now(), frameN = 0, lowPower = (navigator.hardwareConcurrency || 4) <= 2;
+  function loop() {
+    var t = now(), dt = Math.min(64, t - lastT); lastT = t;
+    frameN++;
+    if (pendingRaster >= 0) { var R = RASTERS[pendingRaster]; pendingRaster = -1; if (R[0] !== SW) { allocRaster(R[0], R[1]); resetPerf(); } }
+
+    var arc = arcAt(t);
+    drawScope(t, arc);
+    if (frameN % 12 === 0) setBar(arc);
+    if (t > nextDeg) { var d = (rnd() * 5) | 0; degs[d].classList.add("is-lit"); degUntil[d] = t + 380; nextDeg = t + 300 + rnd() * 1400 * (1.2 - arc); }
+    for (var i = 0; i < 5; i++) if (degUntil[i] && t > degUntil[i]) { degs[i].classList.remove("is-lit"); degUntil[i] = 0; }
+
+    tickSignal(t);
+    tickIdleLine(t);
+    if (paddle && paddleCold && t > paddleCold) { paddleCold = 0; paddle.classList.remove("is-cold"); $("paddle-read").textContent = "READY"; }
+
+    if (TW > 8 && document.visibilityState === "visible" && (!lowPower || frameN % 2 === 0)) {
+      var t1 = now();
+      renderSource(t); drawFrame(t, dt); compose();
+      var c = now() - t1;
+      perf.n++; perf.ms += c; if (c > perf.worst) perf.worst = c;
+      if (frameN % 30 === 0) {
+        var R2 = RASTERS[rasterIdx()];
+        $("mnow").textContent = "live, at the current setting (" + R2[0] + " × " + R2[1] + "): mean " +
+          (perf.ms / perf.n).toFixed(2) + " ms · worst " + perf.worst.toFixed(2) + " ms over " + perf.n + " frames.";
+      }
+    }
+    sweepTick(t);
+    requestAnimationFrame(loop);
+  }
+
+  // ---- boot ----
+  CTRLS.forEach(function (C) { paint(C.key); });
+  buildLUT();
+  setPhos(0);
+  resize(); reportWidth();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { resize(); reportWidth(); }, function () {});
+  setTimeout(function () { resize(); reportWidth(); }, 400);
+  requestAnimationFrame(loop);
+  // the first line of light comes early, so the idle is seen moving; then the
+  // arc's own gates take over.
+  setTimeout(function () { if (S.phase === "idle" && lineAt < 0) { lineAt = now(); lineHold = 1.4; } }, 2600);
+  // the measurement runs itself once, so the page carries numbers unattended
+  setTimeout(sweepStart, 7000);
+  lastAuto = now() - (AUTO_MS - 21000);
+
+  $("play").addEventListener("click", function () {
+    $("scene").classList.add("is-on"); $("play").classList.add("is-playing");
+    var b = $("boot"); if (b) b.style.display = "none";
+  });
+  $("stop").addEventListener("click", function () { $("scene").classList.remove("is-on"); $("play").classList.remove("is-playing"); });
+
+  window.ZKD = { S: S, V: V, RASTERS: RASTERS, tune: tuneNext, sweep: sweepStart, perf: perf, setPhos: setPhos,
+    raster: function () { return [SW, SH]; }, tube: function () { return [TW, TH]; } };
+})();
+</script>
+</body>
+</html>

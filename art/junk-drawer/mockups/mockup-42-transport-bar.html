@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The Transport Bar &mdash; replay as a strip under the print</title>
+<!-- ==========================================================================
+     MOCKUP 42 — "The transport bar". A slim play / scrub / readout strip UNDER
+     the photograph, the full width of the plate, shared by the report card
+     and the rating instrument. Loads the LIVE junk-drawer.css and jd-core.js
+     (JD_drawOn, JD_svgInst); the plate below is the card's own markup
+     (jd-record.js cardHTML / plateBtnsHTML) — nothing about the print is
+     redrawn. The only new CSS is the bar's own and this sheet's layout.
+     ========================================================================== -->
+<link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css">
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate-bg:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:48px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;line-height:2;
+  color:var(--tink-3);margin:0 auto 20px;max-width:560px}
+.row{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+figure{margin:0;max-width:100%}
+figcaption{margin-top:12px;font-size:.52rem;letter-spacing:.12em;line-height:2;
+  text-transform:uppercase;color:var(--tink-3);text-align:center;max-width:360px;margin-left:auto;margin-right:auto}
+figcaption b{color:var(--tink-2);letter-spacing:.16em}
+.notes{max-width:600px;margin:14px auto 0;font-size:.62rem;line-height:1.85;color:var(--tink-2);padding-left:1.2em}
+.notes li{margin:0 0 .7em}
+.notes code{font-family:var(--tmono);color:var(--tink);font-size:.95em}
+.notes b{color:var(--tink);font-weight:400}
+footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
+  color:var(--tink-3);text-transform:uppercase;line-height:2.2}
+
+/* ---- the scrims, un-fixed: each card's LIVE tokens without its overlay ---
+   .jd-record-scrim / .jd-turn-scrim declare the paper + ink tokens the card's
+   classes reach for, but they are fixed full-viewport overlays. Here they are
+   made static blocks so the plate below inherits the real values. */
+.mk-scrim.jd-record-scrim,.mk-scrim.jd-turn-scrim{
+  position:static;inset:auto;display:block;padding:0;background:none;z-index:auto}
+/* a CUT of the card: the plate column on its own card stock. --plate is the
+   card's own clamp; the width follows it plus the card's side padding. */
+.mk-card.jd-record{width:calc(var(--plate) + 40px);max-width:100%;padding:18px 20px 16px}
+.mk-card .rc-plate{margin:0}
+.mk-tcard.jd-turn{width:calc(var(--plate,320px) + 32px);max-width:100%;padding:16px;
+  --plate:clamp(240px,min(52dvh,42vw),420px)}
+.mk-tcard .jd-turn-plate{width:100%;flex:none}
+
+/* ==========================================================================
+   THE TRANSPORT BAR — the one new control. One markup, one stylesheet block;
+   each card maps the bar's five tokens onto its own (below), so it prints in
+   the report card's form ink on the report card and in the instrument's ink
+   on the instrument. Layout: [play/pause] [track ......] [readout]. It sits
+   in flow directly beneath the plate, full plate width, so the track is the
+   photograph's own width and time reads left-to-right across the print.
+   ========================================================================== */
+.mk-bar{
+  --tb-ink:#37414f; --tb-ink-2:#4d5563; --tb-rule:rgba(55,65,79,.42);
+  --tb-rule-2:rgba(55,65,79,.20); --tb-red:#b02a24;
+  --tb-mono:"Courier Prime","Courier New",Courier,monospace; --tb-paper:#efe4c6;
+  /* the focus ring is a faint pencil line, not an alarm (owner, 2026-09-16):
+     1px of the card's own red at about half strength. color-mix where it is
+     understood; the solid red at 1px elsewhere. */
+  --tb-red-soft:var(--tb-red);
+  position:relative;z-index:4;              /* above the card's mottle layer */
+  display:flex;align-items:center;gap:10px;
+  width:100%;margin-top:12px;
+  color:var(--tb-ink)}
+.jd-record-scrim .mk-bar{
+  --tb-ink:var(--form-ink); --tb-ink-2:var(--form-ink-2); --tb-rule:var(--form-rule);
+  --tb-rule-2:var(--form-rule-2); --tb-red:var(--red); --tb-mono:var(--rc-mono);
+  --tb-paper:var(--card)}
+.jd-turn-scrim .mk-bar{
+  --tb-ink:var(--tink); --tb-ink-2:var(--tink-2); --tb-rule:var(--trule);
+  --tb-rule-2:var(--trule-2); --tb-red:var(--tred); --tb-mono:var(--tmono);
+  --tb-paper:var(--tpaper)}
+@supports (color:color-mix(in srgb,red,transparent)){
+  .mk-bar{--tb-red-soft:color-mix(in srgb,var(--tb-red) 52%,transparent)}}
+
+/* the play/pause button: the print's button tailoring (.rc-dl/.rc-draw —
+   hairline border, 3px radius, cream fill, 1px press shadow), a 28px square.
+   The glyph is an OUTLINE triangle / two bars at the corner ✕'s line weight
+   (2 units in a 16-box at 16px = 2px, round caps), so it reads as drawn on the
+   form rather than a media-player icon. */
+.mk-play{
+  flex:0 0 auto;width:28px;height:28px;padding:5px;line-height:0;
+  color:var(--tb-ink);
+  border:1px solid var(--tb-rule);border-radius:3px;
+  background:rgba(255,250,232,.82);
+  box-shadow:0 1px 0 rgba(58,42,18,.18);
+  cursor:pointer;font:inherit}
+.mk-play svg{display:block;width:16px;height:16px}
+.mk-play .g-pause{display:none}
+.mk-bar.is-playing .mk-play .g-play{display:none}
+.mk-bar.is-playing .mk-play .g-pause{display:block}
+.mk-play:hover{background:var(--tb-ink);color:var(--tb-paper);border-color:var(--tb-ink)}
+.mk-play:active{box-shadow:none;transform:translateY(1px)}
+.mk-play:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
+
+/* the track: .rc-bar's language — 1.5px currentColor border, 2px radius, the
+   fill in currentColor — taller (12px) so it can carry the ink profile and a
+   thumb. The whole strip is the hit target; ::before pads it to a 28px band
+   for fingers without changing the drawn height. */
+.mk-track{
+  flex:1 1 auto;min-width:60px;position:relative;height:12px;
+  border:1.5px solid var(--tb-ink-2);border-radius:2px;
+  color:var(--tb-ink);
+  cursor:ew-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+.mk-track::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+.mk-track:focus-visible{outline:1px solid var(--tb-red-soft);outline-offset:2px}
+/* THE INK-DENSITY PROFILE: how much drawing happens per slice of the run,
+   from the same sqrt(length) weights the engine schedules with. Two prints of
+   the same profile: a faint one across the whole track (the map), and a solid
+   one clipped to the elapsed portion (the fill), so "how far" and "how busy"
+   are one reading. */
+.mk-prof{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.mk-prof svg{display:block;width:100%;height:100%;fill:currentColor}
+.mk-prof--map{opacity:.26}
+.mk-prof--done{clip-path:inset(0 100% 0 0)}
+/* the playhead: a red-pencil caret — a 2px red line through the track with a
+   small pointer above it, the mark a hand makes on a gauge */
+.mk-caret{
+  position:absolute;top:-4px;bottom:-4px;left:0;width:2px;margin-left:-1px;
+  background:var(--tb-red);pointer-events:none;border-radius:1px}
+.mk-caret::before{
+  content:"";position:absolute;left:50%;top:-6px;margin-left:-4.5px;
+  border-left:4.5px solid transparent;border-right:4.5px solid transparent;
+  border-top:6px solid var(--tb-red)}
+.mk-track.is-scrubbing .mk-caret,.mk-track:hover .mk-caret{width:3px;margin-left:-1.5px}
+
+/* the readout, in the card's mono: elapsed / total on the line, and the mark
+   count in the file number's fine print beneath */
+.mk-read{
+  flex:0 0 auto;min-width:7.6em;text-align:right;
+  font-family:var(--tb-mono);font-size:.56rem;letter-spacing:.04em;line-height:1.35;
+  font-variant-numeric:tabular-nums;color:var(--tb-ink);white-space:nowrap}
+.mk-read small{display:block;font-size:.46rem;letter-spacing:.06em;color:var(--tb-ink-2);opacity:.85}
+
+/* the report card's own button row keeps DOWNLOAD SVG and loses REPLAY; no
+   rule changes — the row is simply one button shorter */
+</style></head><body>
+<div class="sheet">
+  <h1>The Transport Bar</h1>
+  <p class="no">mockup 42 &middot; replay as a strip under the print &middot; 2026-09-16</p>
+  <hr class="rule">
+  <p class="dek">The replay leaves the photograph and becomes a <b>transport bar</b>: a slim
+  strip printed directly beneath the plate, the plate&rsquo;s full width, outside the artwork
+  &mdash; play/pause at the left, a scrub track ruled like the card&rsquo;s own grade gauge in
+  the middle, and a mono readout at the right (<b>elapsed / total</b>, with <b>mark N of M</b>
+  beneath it, so a moment on the track names the element the pen is on). Drag the red-pencil
+  caret, click anywhere on the track, or focus it and use &larr; &rarr; (Shift for coarse
+  steps, Home/End, Space to play) to hold the drawing at any instant and read its layering.
+  Inside the track a faint <b>ink-density profile</b> &mdash; how much drawing lands in each
+  slice of time, from the same weights the engine schedules with &mdash; shows where the busy
+  stretches are; the elapsed portion prints the same profile solid, so &ldquo;how far&rdquo;
+  and &ldquo;how busy&rdquo; are one reading. It sits <b>beneath the plate rather than in the
+  <code>.rc-plate-btns</code> corner</b> because the corner is on the print (the owner&rsquo;s
+  objection), because a scrub track is only useful at the plate&rsquo;s full width and the
+  print&rsquo;s bottom band already belongs to the margin notes, and because a track the width
+  of the photograph makes time read left-to-right across the picture it describes. DOWNLOAD
+  SVG stays where it is on the print with the file number under it &mdash; it is a file
+  operation, not a viewing control, and the row is one button shorter now. Trade-offs: the
+  card grows about 40px taller (on a phone that is a real cost against the 52dvh plate clamp),
+  and the bar keeps the engine&rsquo;s inline animations parked instead of stripping them after
+  the run, so the DOM is no longer &ldquo;exactly what was rendered&rdquo; while the card is
+  open.</p>
+
+  <h2>1 &middot; The report card plate</h2>
+  <div class="sub">the card&rsquo;s own plate markup on its own card stock &middot; kimi-k3&rsquo;s
+  succulent, whose leaves are drawn correctly and then buried behind the pot &middot; the
+  pot lands in the last stretch &mdash; scrub to just before it to see the leaves whole</div>
+  <div class="row">
+    <figure>
+      <div class="jd-record-scrim mk-scrim" id="ex-record"></div>
+      <figcaption><b>the report card</b> &mdash; play/pause, track and readout in the form ink;
+      the caret in the card&rsquo;s red. the print keeps DOWNLOAD SVG and the file number in
+      their corner. (enlargement on press is not wired on this sheet.)</figcaption>
+    </figure>
+  </div>
+
+  <h2>2 &middot; The rating instrument&rsquo;s plate</h2>
+  <div class="sub">the same bar, re-tokened onto the instrument&rsquo;s paper by the scrim it sits
+  in &middot; a denser specimen (claude-fable-5) as a control &mdash; the profile shows its busy
+  middle</div>
+  <div class="row">
+    <figure>
+      <div class="jd-turn-scrim mk-scrim" id="ex-turn"></div>
+      <figcaption><b>the instrument</b> &mdash; one markup, one stylesheet block; only the five
+      tokens change (<code>--tink</code>, <code>--trule</code>, <code>--tred</code>,
+      <code>--tmono</code>, <code>--tpaper</code>). the pencil-and-squiggle icon is gone from
+      the print.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Notes for the build</h2>
+  <ol class="notes">
+    <li><b><code>jd-record.js</code></b>: <code>plateBtnsHTML</code> drops the
+      <code>.rc-draw</code> button (keep <code>.rc-dl</code>); <code>cardHTML</code> appends a
+      new <code>transportHTML()</code> after the plate inside <code>.rc-col-l</code>. A small
+      shared module (<code>JD_transport(svg, host)</code>, proposed for <code>jd-core.js</code>
+      beside the engine) builds the bar, arms the animations and owns play/seek/readout; the
+      card calls it on open and on every response flip, and calls its
+      <code>.destroy()</code> (which strips the svg) on close. The click/key handlers&rsquo;
+      <code>.rc-draw</code> exemptions become <code>.mk-bar</code> exemptions.</li>
+    <li><b><code>jd-turn.js</code></b>: <code>plate()</code> with <code>opts.replay</code> emits
+      the bar after the <code>.jd-turn-art</code> div (before the figcaption) instead of the
+      <code>.jd-turn-draw--icon</code> button; the delegated <code>data-act="replay"</code>
+      handler goes, the module handles its own presses. <code>SKETCH_ICON</code> retires.</li>
+    <li><b><code>junk-drawer.css</code></b>: the <code>.mk-bar</code> block on this sheet, renamed
+      (<code>.jd-tbar</code>), plus the two token maps (<code>.jd-record-scrim .jd-tbar</code>,
+      <code>.jd-turn-scrim .jd-tbar</code>). Delete <code>.rc-draw</code> and
+      <code>.jd-turn-draw</code> rules and their zoom-fig variants. The enlargement
+      (<code>.rc-zoom-fig</code>) should carry the same bar in its bottom band in place of
+      REDRAW &mdash; same module, its own svg.</li>
+    <li><b>Engine contract</b>: the bar relies on <code>JD_drawOn</code>&rsquo;s inline
+      animations being seekable through <code>getAnimations()</code>, and it parks them by
+      setting <code>svg.__jdDrawSeq = -1</code> so the strip timer skips. Cleaner: give
+      <code>JD_drawOn</code> an <code>opts.hold</code> that suppresses the strip and returns
+      the schedule (<code>{secs, items:[{el,start,dur,w}]}</code>) so the bar does not
+      re-measure every element for the profile.</li>
+    <li><b>Reduced motion</b>: the bar always arms with <code>force:true</code> but does not
+      autoplay under <code>JD_reduced()</code>; it parks at the end (drawing complete) and
+      scrubbing is the explicit request. This sheet autoplays once on load otherwise, as the
+      card does.</li>
+    <li><b>Open questions</b>: (a) Phone height &mdash; the bar adds ~40px under a plate
+      clamped to 52dvh; accept, or shrink the plate clamp to 48dvh when the bar is present?
+      (b) The mark count says &ldquo;mark N of M&rdquo; (elements begun); should it count
+      elements <em>finished</em> instead, or name the element&rsquo;s tag
+      (&ldquo;path 27&rdquo;)? (c) Should DOWNLOAD SVG move to the bar&rsquo;s right end on
+      wide cards, leaving the print bare but for the notes and file number? (d) The profile is
+      the engine&rsquo;s weight per slice; a per-element tick row (one hairline per start time)
+      is the more literal layering map &mdash; worth a variant?</li>
+  </ol>
+
+  <footer>live junk-drawer.css + jd-core.js &middot; the plate is cardHTML&rsquo;s markup &middot;
+  the only new css is the bar&rsquo;s &middot; seeking through the web animations api</footer>
+</div>
+
+<!-- jd-core.js expects the drawer's stage to exist; the gallery harness's
+     hidden stub, copied verbatim -->
+<div class="jd-stage" style="display:none" aria-hidden="true">
+  <div class="jd-frame"><div class="jd-well"><div class="jd-pile"></div></div></div>
+</div>
+<script src="/art/junk-drawer/jd-core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------------
+     THE TRANSPORT — one factory for both cards. transport(svg, host):
+     builds the bar into host, arms the engine, and returns the controller.
+     --------------------------------------------------------------------- */
+  var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
+  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
+  var SLICES = 72;
+
+  /* the engine's schedule, re-derived: the same element walk, the same
+     sqrt(length) weights, the same 0.9 / 1.7 packing — so the profile and
+     the mark count agree with what is actually animating */
+  function schedule(svg, secs) {
+    var els = svg.querySelectorAll(SEL), items = [], i, el, cs, L, stroked, filled;
+    for (i = 0; i < els.length; i++) {
+      el = els[i];
+      if (el.closest && el.closest(SKIP)) continue;
+      cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      L = 0;
+      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
+      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
+        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' && L > 0;
+      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
+      if (!stroked && !filled) continue;
+      items.push({ el: el, L: Math.max(L, 4) });
+    }
+    var totalW = 0;
+    for (i = 0; i < items.length; i++) totalW += Math.sqrt(items[i].L);
+    var acc = 0;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i], w = Math.sqrt(it.L) / (totalW || 1);
+      var startF = acc * 0.9; acc += w;
+      var durF = Math.min(w * 1.7, 1 - startF);
+      it.w = w; it.start = startF * secs; it.dur = Math.max(durF * secs, 0.12);
+    }
+    return items;
+  }
+
+  /* ink per slice of time: each element spreads its weight evenly over its
+     own [start, start+dur]; heights normalised to the busiest slice */
+  function profileSVG(items, total) {
+    var bins = new Array(SLICES), k, i;
+    for (k = 0; k < SLICES; k++) bins[k] = 0;
+    var sw = total / SLICES;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i], a = it.start, b = Math.min(it.start + it.dur, total);
+      if (b <= a) continue;
+      var k0 = Math.max(0, Math.floor(a / sw)), k1 = Math.min(SLICES - 1, Math.floor((b - 1e-9) / sw));
+      for (k = k0; k <= k1; k++) {
+        var s0 = k * sw, s1 = s0 + sw;
+        var ov = Math.min(b, s1) - Math.max(a, s0);
+        if (ov > 0) bins[k] += it.w * (ov / (b - a));
+      }
+    }
+    var max = 0;
+    for (k = 0; k < SLICES; k++) if (bins[k] > max) max = bins[k];
+    var h = '<svg viewBox="0 0 ' + SLICES + ' 100" preserveAspectRatio="none" aria-hidden="true">';
+    for (k = 0; k < SLICES; k++) {
+      var hh = max ? Math.max(8, Math.round(100 * bins[k] / max)) : 8;
+      h += '<rect x="' + k + '" y="' + (100 - hh) + '" width="1" height="' + hh + '"/>';
+    }
+    return h + '</svg>';
+  }
+
+  var PLAY_G = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<path class="g-play" d="M4 2.6 13.4 8 4 13.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path class="g-pause" d="M5 2.6v10.8M11 2.6v10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>';
+
+  function barHTML(label) {
+    return '<div class="mk-bar" role="group" aria-label="' + label + '">' +
+      '<button type="button" class="mk-play" title="play / pause the drawing" aria-label="Play the drawing" aria-pressed="false">' + PLAY_G + '</button>' +
+      '<div class="mk-track" role="slider" tabindex="0" aria-label="Drawing timeline" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-valuetext="not armed">' +
+      '<div class="mk-prof mk-prof--map"></div><div class="mk-prof mk-prof--done"></div>' +
+      '<div class="mk-caret"></div></div>' +
+      '<div class="mk-read"><span class="mk-time">0.0 s / 0.0 s</span><small class="mk-mark">&nbsp;</small></div>' +
+      '</div>';
+  }
+
+  function transport(svg, host, label) {
+    host.insertAdjacentHTML('beforeend', barHTML(label));
+    var bar = host.lastElementChild;
+    var play = bar.querySelector('.mk-play'), track = bar.querySelector('.mk-track');
+    var map = bar.querySelector('.mk-prof--map'), done = bar.querySelector('.mk-prof--done');
+    var caret = bar.querySelector('.mk-caret');
+    var rTime = bar.querySelector('.mk-time'), rMark = bar.querySelector('.mk-mark');
+    var anims = [], clock = null, items = [], total = 0, secs = 0, t = 0;
+    var playing = false, raf = 0, armed = false;
+
+    /* ARM: run the engine, take its animations, park them (bump the strip
+       guard so the run's strip timer skips — the bar owns the artwork now),
+       and derive the schedule. Idempotent; re-arms if the animations went. */
+    function arm() {
+      secs = window.JD_drawOn(svg, { force: true });
+      if (!secs) { armed = false; return false; }
+      svg.__jdDrawSeq = -1;
+      anims = svg.getAnimations({ subtree: true });
+      total = 0; clock = null;
+      anims.forEach(function (a) {
+        var tm = a.effect.getTiming();
+        var end = ((+tm.delay || 0) + (+tm.duration || 0)) / 1000;
+        if (end > total) { total = end; clock = a; }
+      });
+      if (!anims.length || !clock) { armed = false; return false; }
+      items = schedule(svg, secs);
+      var prof = profileSVG(items, total);
+      map.innerHTML = prof; done.innerHTML = prof;
+      track.setAttribute('aria-valuemax', total.toFixed(1));
+      armed = true;
+      return true;
+    }
+    function live() {
+      return armed && anims.length && clock && clock.playState !== 'idle' &&
+        document.contains(svg);
+    }
+    function ensure() { if (!live()) arm(); return armed; }
+
+    function markAt(tt) {
+      var n = 0;
+      for (var i = 0; i < items.length; i++) { if (items[i].start <= tt + 1e-6) n = i + 1; else break; }
+      return n;
+    }
+    function paint() {
+      var p = total ? Math.max(0, Math.min(1, t / total)) : 0;
+      caret.style.left = (p * 100) + '%';
+      done.style.clipPath = 'inset(0 ' + ((1 - p) * 100).toFixed(2) + '% 0 0)';
+      rTime.textContent = t.toFixed(1) + ' s / ' + total.toFixed(1) + ' s';
+      var n = markAt(t);
+      rMark.textContent = 'mark ' + n + ' of ' + items.length;
+      track.setAttribute('aria-valuenow', t.toFixed(1));
+      track.setAttribute('aria-valuetext', t.toFixed(1) + ' of ' + total.toFixed(1) +
+        ' seconds, mark ' + n + ' of ' + items.length);
+    }
+    function setPlaying(on) {
+      playing = on;
+      bar.classList.toggle('is-playing', on);
+      play.setAttribute('aria-pressed', on ? 'true' : 'false');
+      play.setAttribute('aria-label', on ? 'Pause the drawing' : 'Play the drawing');
+    }
+    function seek(tt) {
+      if (!ensure()) return;
+      t = Math.max(0, Math.min(total, tt));
+      var ms = t * 1000;
+      anims.forEach(function (a) { a.pause(); a.currentTime = ms; });
+      if (playing) { setPlaying(false); cancelAnimationFrame(raf); }
+      paint();
+    }
+    function tick() {
+      if (!playing) return;
+      t = Math.min(total, (clock.currentTime || 0) / 1000);
+      paint();
+      if (clock.playState === 'finished' || t >= total) { finish(); return; }
+      raf = requestAnimationFrame(tick);
+    }
+    function finish() {
+      t = total; setPlaying(false); cancelAnimationFrame(raf);
+      anims.forEach(function (a) { a.pause(); a.currentTime = total * 1000; });
+      paint();
+    }
+    function start() {
+      if (!ensure()) return;
+      if (t >= total - 0.02) t = 0;
+      var ms = t * 1000;
+      /* play only what is still ahead: play() on a finished animation
+         rewinds it to zero and the element vanishes mid-run */
+      anims.forEach(function (a) {
+        var tm = a.effect.getTiming();
+        var end = ((+tm.delay || 0) + (+tm.duration || 0)) / 1000;
+        a.currentTime = ms;
+        if (end > t + 1e-6) a.play(); else a.pause();
+      });
+      clock.onfinish = function () { if (playing) finish(); };
+      setPlaying(true);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(tick);
+    }
+    function pause() {
+      if (!playing) return;
+      t = Math.min(total, (clock.currentTime || 0) / 1000);
+      anims.forEach(function (a) { a.pause(); });
+      setPlaying(false); cancelAnimationFrame(raf); paint();
+    }
+    function toggle() { if (playing) pause(); else start(); }
+
+    /* the track: pointer scrub (capture, so a drag can leave the strip),
+       and keyboard per the slider pattern */
+    function posT(e) {
+      var r = track.getBoundingClientRect();
+      var x = (e.clientX - r.left) / (r.width || 1);
+      return Math.max(0, Math.min(1, x)) * total;
+    }
+    var dragging = false;
+    track.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      e.preventDefault();
+      try { track.setPointerCapture(e.pointerId); } catch (x) {}
+      dragging = true; track.classList.add('is-scrubbing');
+      ensure(); seek(posT(e)); track.focus({ preventScroll: true });
+    });
+    track.addEventListener('pointermove', function (e) { if (dragging) seek(posT(e)); });
+    function drop(e) {
+      if (!dragging) return;
+      dragging = false; track.classList.remove('is-scrubbing');
+      try { track.releasePointerCapture(e.pointerId); } catch (x) {}
+    }
+    track.addEventListener('pointerup', drop);
+    /* a plain click (assistive tech, synthetic events) seeks too; after a
+       real pointer drag it lands where the drag already left the head */
+    track.addEventListener('click', function (e) { if (e.clientX || e.clientY) seek(posT(e)); });
+    track.addEventListener('pointercancel', drop);
+    track.addEventListener('keydown', function (e) {
+      var fine = total / 60, coarse = total / 10, k = e.key;
+      if (k === 'ArrowLeft' || k === 'ArrowDown') { seek(t - (e.shiftKey ? coarse : fine)); }
+      else if (k === 'ArrowRight' || k === 'ArrowUp') { seek(t + (e.shiftKey ? coarse : fine)); }
+      else if (k === 'PageDown') seek(t - coarse);
+      else if (k === 'PageUp') seek(t + coarse);
+      else if (k === 'Home') seek(0);
+      else if (k === 'End') seek(total);
+      else if (k === ' ' || k === 'Enter') toggle();
+      else return;
+      e.preventDefault();
+    });
+    play.addEventListener('click', toggle);
+
+    if (arm()) {
+      /* the card plays its drawing once on open; under reduced motion it
+         parks complete and the bar is the explicit request */
+      if (window.JD_reduced && window.JD_reduced()) { seek(total); }
+      else { t = 0; start(); }
+    }
+    var api = {
+      bar: bar, seek: seek, play: start, pause: pause, toggle: toggle,
+      get: function () { return { t: t, total: total, playing: playing, marks: items.length,
+        mark: markAt(t), anims: anims.length, playState: clock ? clock.playState : null }; },
+      markStart: function (n) { return items[n - 1] ? items[n - 1].start : null; },
+      destroy: function () { cancelAnimationFrame(raf); anims.forEach(function (a) { a.cancel(); }); bar.remove(); }
+    };
+    return api;
+  }
+  window.MK_transport = transport;
+
+  /* ---------------------------------------------------------------------
+     THE EXHIBITS
+     --------------------------------------------------------------------- */
+  var esc = window.JD_esc || function (s) { return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  function paperBtn() {
+    return '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="false" ' +
+      'title="blueprint paper — for light artwork" aria-label="Switch to blueprint paper">' +
+      (window.JD_paper ? window.JD_paper.icon() : '') + '</button>';
+  }
+
+  /* the report card plate: cardHTML's .rc-col-l markup (jd-record.js), with
+     plateBtnsHTML's REPLAY button removed — DOWNLOAD SVG and the file number
+     keep their corner. (role/tabindex for the enlargement are left off: the
+     enlargement is not on this sheet.) */
+  function recordPlate(svgText, entry, resp) {
+    return '<div class="jd-record mk-card">' +
+      '<div class="rc-col-l">' +
+      '<div class="rc-block rc-plate">' +
+      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      paperBtn() +
+      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
+      '<div class="rc-plate-art">' + window.JD_svgInst(svgText, 'mk_') + '</div>' +
+      '<div class="rc-notes">' +
+      '<span class="rc-note-line"><span class="rc-note-l">Model</span><span class="rc-note-v">' + esc(resp.model) + '</span></span>' +
+      '<span class="rc-note-line"><span class="rc-note-l">Date</span><span class="rc-note-v">' + esc(resp.date) + '</span></span>' +
+      '</div>' +
+      '<div class="rc-plate-btns rc-zoom-keep">' +
+      '<a class="rc-dl" href="' + esc(resp.url) + '" download="' + esc(entry.id) + '.svg" title="download the SVG as generated">DOWNLOAD SVG ⤓</a>' +
+      '</div>' +
+      '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
+      '</div>' +
+      '</div></div>';
+  }
+
+  /* the instrument's plate: plate() in jd-turn.js, minus the
+     .jd-turn-draw--icon button; the bar goes between the art and the caption */
+  function turnPlate(svgText, slot) {
+    return '<div class="jd-turn mk-tcard">' +
+      '<figure class="jd-turn-plate">' +
+      '<div class="jd-turn-art">' +
+      '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
+      '<div class="jd-turn-art-in" role="img" aria-label="drawing ' + slot + '">' +
+      window.JD_svgInst(svgText, 'mkt_') + '</div>' +
+      '</div>' +
+      '<figcaption>Model ' + slot + '</figcaption>' +
+      '</figure></div>';
+  }
+
+  var BASE = '/art/junk-drawer/items/2026-07-28-desktop-succulent/';
+  function fetchText(u) { return fetch(u).then(function (r) { return r.text(); }); }
+
+  fetchText(BASE + 'kimi-k3.svg').then(function (txt) {
+    var host = document.getElementById('ex-record');
+    host.innerHTML = recordPlate(txt, { id: '2026-07-28-desktop-succulent' },
+      { model: 'Kimi K3', date: '28 Jul 2026', url: BASE + 'kimi-k3.svg' });
+    var plate = host.querySelector('.rc-plate');
+    /* the paper swap, locally (no JD_paper.set — this sheet should not
+       write the visitor's preference) */
+    plate.querySelector('.rc-paper').addEventListener('click', function () {
+      var on = plate.classList.toggle('is-blueprint');
+      this.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    window.MK_rec = transport(plate.querySelector('.rc-plate-art svg'), host.querySelector('.rc-col-l'),
+      'Replay controls, report card');
+  }).catch(function (e) { console.error('record exhibit', e); });
+
+  fetchText(BASE + 'claude-fable-5.svg').then(function (txt) {
+    var host = document.getElementById('ex-turn');
+    host.innerHTML = turnPlate(txt, 'A');
+    var fig = host.querySelector('.jd-turn-plate');
+    var art = fig.querySelector('.jd-turn-art');
+    /* the bar between the art and the caption: insert a holder after the art */
+    var holder = document.createElement('div');
+    art.insertAdjacentElement('afterend', holder);
+    window.MK_turn = transport(art.querySelector('svg'), holder, 'Replay controls, drawing A');
+    /* the holder is layout-only; lift the bar out of it */
+    holder.replaceWith(window.MK_turn.bar);
+  }).catch(function (e) { console.error('turn exhibit', e); });
+})();
+</script>
+</body></html>
