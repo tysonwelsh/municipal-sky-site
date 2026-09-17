@@ -212,15 +212,26 @@ try {
           WHERE s.item_id IS NOT NULL AND r.client = 'bench'
           ORDER BY r.rated_at, r.id"
     )->fetchAll(PDO::FETCH_ASSOC), $cLive);
+    /* THE RANK FOLLOWS THE GENERATION, not the submission it was filed under
+       (owner, 2026-09-17). A rank is filed against a GENERATION — a single
+       drawing — and that drawing can move: a visitor's turn on a prompt that
+       matches a curated item is a RERUN, and harvesting it hangs its drawings
+       on the curated item. The grades came across; the ranking did not, because
+       this query asked for rows whose SUBMISSION already carried the item_id,
+       and a rerun's submission never does. That is how 281 filed ranks — 163
+       of them visitors' — reached exactly nothing in the drawer.
+       Keyed on generation_id alone, the join is unnecessary: whichever
+       submission a drawing was ranked under, it is the same drawing. The
+       bench's order still outranks a turn's, as it does for turns below. */
     $cranks = [];
     try {
         foreach ($cdb->query(
-            "SELECT r.generation_id, r.rank_pos
-               FROM jd_ranks r
-               JOIN jd_submissions s ON s.id = r.submission_id
-              WHERE s.item_id IS NOT NULL AND r.client = 'bench'"
+            "SELECT r.generation_id, r.rank_pos, r.client FROM jd_ranks r"
         ) as $r) {
-            $cranks[(string) $r['generation_id']] = (int) $r['rank_pos'];
+            $gid = (string) $r['generation_id'];
+            if ($r['client'] === 'bench' || !isset($cranks[$gid])) {
+                $cranks[$gid] = (int) $r['rank_pos'];
+            }
         }
     } catch (PDOException $e) { /* no ranks table: no re-pointing */ }
 

@@ -324,6 +324,7 @@
    step away from the picture as the record card's */
 .jd-about .jd-inline-card .jd-turn-plate > .jd-filmstrip {
   margin-top: var(--ab-gap-row);
+  margin-bottom: 2px;      /* a floor: the strip stopped flush on the edge */
 }
 .jd-about .jd-inline-card .jd-bench-l,
 .jd-about .jd-inline-card .jd-bench-r { display: contents; }
@@ -395,7 +396,7 @@
      as belonging to whatever came next instead of to the picture it scrubs.
      It wants more room above than it had and less below than the seam gave
      it, so the two numbers move toward each other. */
-  --ab-gap-row: 22px;
+  --ab-gap-row: 15px;
   /* the seam. Going from two columns to full width is the single biggest
      structural change on the card, and at 20px it read as just another gap —
      the eye had no stop before the table. It gets its own, larger step. */
@@ -421,19 +422,42 @@
    underneath. The plate spans the prompt's two rows so the filmstrip can sit
    under it on a row of its own; align-self keeps the plate its natural
    height rather than stretching it to whatever the prompt needs. */
-.jd-about .jd-inline-card .rc-col-l,
+/* THE DRAWING COLUMN IS A BOX AGAIN, not display:contents. With the plate
+   and the filmstrip as separate grid items on rows 2 and 3, their spacing
+   was at the mercy of how the grid sized those tracks — and it got it wrong:
+   the plate (a 1/1 square whose height the row did not fully account for)
+   ran 2px PAST its track and the filmstrip, sitting at the top of the next
+   one, landed on top of it. The two belong together, so they go in one cell
+   and stack in ordinary flow, where a margin means what it says.
+   .rc-col-r stays display:contents — its children are placed individually. */
+.jd-about .jd-inline-card .rc-col-l {
+  grid-column: 1; grid-row: 2; align-self: start;
+  display: flex; flex-direction: column; min-width: 0;
+}
 .jd-about .jd-inline-card .rc-col-r { display: contents; }
-.jd-about .jd-inline-card .rc-scroll > *,
-.jd-about .jd-inline-card .rc-col-l > *,
+
+/* THE PLATE'S BOTTOM BAND IS FREE NOW. junk-drawer.css insets the artwork
+   `6% 8% 20%` — "the artwork yields its bottom band to the margin notes" —
+   and on this page those notes have moved off the photograph into the
+   specimen block. The reservation stayed behind: a fifth of the plate, 38px
+   of empty graph paper under every drawing, which is what pushed the
+   scrubber down to the plate's edge. Given back to the artwork, which is
+   also the larger drawing the owner has been asking for. */
+.jd-about .jd-inline-card .rc-col-l > .rc-plate .rc-plate-art { inset: 7% 8%; }
+/* the default: anything not explicitly placed spans the card. .rc-col-l is
+   excluded by name — it IS explicitly placed (column 1, above) and at equal
+   specificity this later rule would otherwise win and hand the drawing
+   column the full width, collapsing the card to one column. Its children are
+   no longer grid items at all, so they are out of the list too. */
+.jd-about .jd-inline-card .rc-scroll > *:not(.rc-col-l),
 .jd-about .jd-inline-card .rc-col-r > * { grid-column: 1 / -1; }
 .jd-about .jd-inline-card .rc-masthead { grid-row: 1; margin-bottom: 8px; }
 .jd-about .jd-inline-card .rc-col-l > .rc-plate {
-  grid-column: 1; grid-row: 2; align-self: start;
-  width: 100%; margin: 0;
+  flex: 0 0 auto; width: 100%; margin: 0;
 }
 .jd-about .jd-inline-card .rc-col-l > .jd-filmstrip {
-  grid-column: 1; grid-row: 3;
-  margin-top: var(--ab-gap-row);   /* was 8px — it read as touching the grid */
+  flex: 0 0 auto;
+  margin-top: var(--ab-gap-row);
 }
 /* the band's own floor: the full-width rows start a clear step below it */
 .jd-about .jd-inline-card .rc-col-r > .rc-head:not(:first-of-type) {
@@ -447,6 +471,25 @@
 .jd-about .jd-inline-card .rc-subj td:first-child {
   width: calc(var(--plate) + var(--ab-gap-col)) !important;
 }
+
+/* ---- THE SCRUBBER, A SIZE DOWN (owner, 2026-09-17) ---------------------
+   On this page the control is a label on a specimen, not a working transport
+   — nobody is scrubbing through a drawing here the way they would in the
+   drawer — so it can afford to be quieter. The cells come down from 26px to
+   22 and the play button from 28 to 24 (it was the taller of the two, so
+   shrinking the cells alone would have changed nothing: the button set the
+   row's height).
+
+   And the caret's flag comes DOWN into the strip. It used to float clear
+   above it — flag bottom 2px shy of the strip's top edge — which read as a
+   marker hovering over the timeline rather than a pen resting on it. Now it
+   overlaps the top by 2px, so the point and the thing it points at touch.
+   All of it scoped to this page; the drawer's control is untouched. */
+.jd-about .jd-inline-card .jd-filmstrip { --fs-h: 22px; }
+.jd-about .jd-inline-card .fs-play { width: 24px; height: 24px; padding: 4px; }
+.jd-about .jd-inline-card .fs-play svg { width: 14px; height: 14px; }
+.jd-about .jd-inline-card .fs-caret { top: -2px; bottom: -2px; }
+.jd-about .jd-inline-card .fs-caret::before { top: -1px; }
 
 /* ---- THE RATING ROWS, COMPACTED (owner, 2026-09-17) --------------------
    "They're way too tall and it's kind of awkward." In the drawer these rows
@@ -500,7 +543,7 @@
    the specimen closes it level with the filmstrip, and the slack sits BETWEEN
    them where it reads as breathing room rather than as a run-out. */
 .jd-about .jd-inline-card .rc-col-r > .jd-about-aside {
-  grid-column: 2; grid-row: 2 / 4; align-self: stretch; min-width: 0;
+  grid-column: 2; grid-row: 2; align-self: stretch; min-width: 0;
   display: flex; flex-direction: column; justify-content: space-between;
   gap: var(--ab-gap-band);
 }
@@ -864,9 +907,13 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    real ones, so the control takes the plate's drawn width rather than the
    column's. Mounted by about-scenes.js (see ensureFilmstrip).
    ========================================================================== */
-.jd-about .jd-inline-card .rc-col-l > .jd-filmstrip {
-  width: min(380px, 100%); margin: -0.15rem auto 0.8rem;
-}
-.jd-about .jd-inline-card .jd-turn-plate > .jd-filmstrip {
-  width: min(380px, 100%); margin: 8px auto 0;
-}
+/* THESE TWO RULES ARE DELIBERATELY EMPTY OF SPACING (2026-09-17). They are
+   what is left of the stacked-portrait layout, where the filmstrip was a
+   centred 380px block under a centred plate — hence the `auto` side margins,
+   and hence `-0.15rem` above to close the gap that centring left. In the
+   two-column layout the column sets the width and the spacing scale sets the
+   air, and this block — sitting LATER in the file than those rules, at equal
+   specificity — was quietly winning: every attempt to give the scrubber room
+   above it was overridden back to a NEGATIVE margin, which is why the control
+   kept landing on the plate's bottom edge however often the gap was "fixed".
+   Width and margin belong to the layout now; nothing to say here. */

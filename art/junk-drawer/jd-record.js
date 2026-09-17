@@ -462,6 +462,24 @@
      a fact about the DOM rather than a number we have to keep in step with
      it, and every thumbnail is reachable by Tab now instead of only the
      three currently framed. */
+  /* THE PLACING, AS A MEDAL (owner, 2026-09-17). Where a drawing came in the
+     visitor's ranking of its siblings — first to fourth — in the corner of its
+     thumbnail. Emoji rather than drawn marks: they carry the meaning at 11px,
+     where a drawn medal would be a smudge, and they cost nothing to ship.
+     Held back from full strength (the owner's ask) so the placing annotates
+     the picture instead of competing with it.
+     Fifth place and beyond, and anything never ranked — a curated original
+     that was never in a ranked turn — get nothing at all rather than a
+     consolation mark, because silence is honest and a mark would not be. */
+  var MEDALS = { 1: '\uD83E\uDD47', 2: '\uD83E\uDD48', 3: '\uD83E\uDD49', 4: '\uD83C\uDF97\uFE0F' };
+  function medalHTML(rank) {
+    var m = MEDALS[Math.round(+rank)];
+    if (!m) { return ''; }
+    var word = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth' }[Math.round(+rank)];
+    return '<span class="rc-alt-medal" title="' + word + ' in the ranking" ' +
+      'aria-label="' + word + ' in the ranking">' + m + '</span>';
+  }
+
   function altsHTML(entry, curIdx) {
     if (!entry.responses || entry.responses.length < 2) return '';
     var n = entry.responses.length, paged = n > 3;
@@ -482,6 +500,7 @@
            shows the drawing the plate shows, at the frame the plate uses */
         '<span class="rc-alt-art" data-fit="' + esc(fitKey(entry, r)) + '">' +
         svgInst(svgCache[entry.id + '/' + r.file] || '', 'jt' + i + '_') +
+        medalHTML(r.rank) +
         '</span>' +
         '<span class="rc-alt-cap">' + esc(m.label) +
         /* the strip's little grades wear the same coloured pencils as the
