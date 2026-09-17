@@ -543,3 +543,58 @@ Three ways out, for the owner to pick when the casing is settled:
   answer to reels stacking 13 deep at Pyongyang, 10 at Tokyo, 6 at London.
 - 6 arcs (reels with a known receiver), 15 `dx` styled as single dots, 7 `realm`
   reels handled off-map.
+
+---
+
+## 11. LANDED — the casing, 2026-09-17 (rc.76)
+
+**R2 won and was re-cut.** The owner picked `mockups/set-R2-ledge.html` for its
+ledge, its rockers and its moulding detail, and rejected how it joined the
+cabinet: *"it looks like the ledge is a different colour than the rest of the
+frame… it's kind of clear that we just sort of tacked the ledge on… let's start
+fresh on how we would do it if we started here from square one."*
+
+So the live `.zk-set2` is now authored as one injection moulding. The rule that
+makes it hold, and the one to keep if any of this is touched again: **only the
+cabinet paints a colour.** The ledge, the well, the tube's aperture lip and the
+blanking plate paint nothing but rgba white and rgba black over the cabinet's
+own gradient, so there is no second hex value that can drift. The end-draft and
+the tool's parting line are laid down once, full height, by `.zk-set2::before`,
+and the ledge's ends are the same pull as the bezel's walls. One radius (11 px
+out, 10 px in) top and bottom; one spark-eroded grain over the whole part.
+
+**The ledge carries three stations and nothing else** (§2 of the owner's brief):
+
+| | control | wired to |
+|---|---|---|
+| left | 輝度 BRIGHT, 4 steps | `zk-set.js` `BRI[]` — lift/gain in the LUT pass, bloom alpha and blur, idle glow |
+| middle | an unlabelled rocker with a two-digit readout, 00…10 | `zk-broadcast.js` `setLocale()` |
+| right | reserved blank plastic (a blanking plate with an unused boss) | nothing, on purpose |
+
+R2's 焦点 FOCUS, 蛍光体 TUBE, 受信 RECEIVE and 常時 HOLD are **not** on the live
+ledge, and neither are the old chin's 選局 knob, 受信 push-switch and lamp. The
+`getElementById` lookups for those ids are all null-guarded and now find nothing.
+
+**The number is never explained.** No label, no legend, no tooltip, no VFD line.
+`aria-label` is factual only ("選局番号 · channel number, 00 to 10").
+
+**What the number does:** 00 is the whole pool and the receiver is bit-for-bit
+what it was. 01–10 narrow `choose()`'s candidate list to one locale, in one
+place, before the weights are computed; the footprint check, the cooldown, the
+recent ring, the callback, the pin and the tide weighting all run over the
+narrowed set unchanged. If the locale is empty, holds nothing that could serve a
+reception, or `broadcast/geo.json` did not load, the full set stands.
+
+**Measured in WebKit, 2026-09-17:** 960 → scene 960, set column 516, tube
+**488 × 366** (1.3333), viz 314 × 200, ledge 514 × 64, three stations 160 × 36,
+four rocker ends 48 × 44. 701 (the narrowest desktop) → tube 332.6 × 249.4,
+ends 44 × 44. 390 → tube 327.1 × 245.9 (4:3), ends 44.2 × 44.2, stack order
+set → scope → 段階 → transport, `scrollWidth` 390, nothing past the frame.
+Tube at 60 fps, 0.58 ms mean / 2.0 ms worst at 192 × 144.
+
+**Still open:** §9.4's imbalance is now visible — the set column runs to 560 px
+and the scope column stops at 328, leaving ≈ 230 px of bare faceplate under the
+段階 bar. §9.4's fix (`display: contents` at every width, column 2 carrying
+scope → 段階 → transport) would move PLAY/STOP/volume out from under the set,
+which §4.5 settled the other way. Owner's call. §10's map ribbon is still on
+ice.

@@ -192,9 +192,15 @@
   }
 
   // ==========================================================================
-  // CANVASES — source 96×72 → phosphor 96×72 → frame (full res) → the tube
+  // CANVASES — source 192×144 → phosphor 192×144 → frame (full res) → the tube
+  //
+  // SETTLED (PLAN-MONITOR-2 §1): the reels on disk are 192 × 144 and the shader
+  // was throwing three quarters of every one of them away. Raising the raster
+  // to the files' own size costs no new bytes and no downloads, and it more
+  // than pays for the bigger tube: at 488 px wide this is 2.5 screen px per
+  // source pixel — FINER than the 96 × 72 raster was at the old 276 px tube.
   // ==========================================================================
-  var SW = 96, SH = 72;
+  var SW = 192, SH = 144;
   var src = document.createElement("canvas"); src.width = SW; src.height = SH;
   var scx = src.getContext("2d", { willReadFrequently: true });
   var phos = document.createElement("canvas"); phos.width = SW; phos.height = SH; var pcx = phos.getContext("2d");
@@ -217,6 +223,21 @@
       LUT_R[i] = a[1] + (b[1] - a[1]) * u; LUT_G[i] = a[2] + (b[2] - a[2]) * u; LUT_B[i] = a[3] + (b[3] - a[3]) * u;
     }
   })();
+
+  // ==========================================================================
+  // 輝度 BRIGHT — the ledge's left rocker, four steps.
+  // Not a multiply. On a real tube brightness is how hard the beam is driven
+  // and how far the phosphor spreads, so one step moves the black lift and the
+  // gain the LUT is fed ((l − lift) × gain), the bloom pass's alpha and blur
+  // radius, and how warm the idle raster glows — together.
+  // ==========================================================================
+  var BRI = [
+    { lift: 25, gain: 1.03, bloom: 0.55, blur: -0.30, idle: 0.55 },
+    { lift: 18, gain: 1.22, bloom: 1.00, blur: 0.00, idle: 1.00 },   // ← the live tube's settings before the ledge existed
+    { lift: 12, gain: 1.44, bloom: 1.45, blur: 0.30, idle: 1.35 },
+    { lift: 6,  gain: 1.70, bloom: 1.95, blur: 0.62, idle: 1.70 }
+  ];
+  var briV = 1, B = BRI[1];
 
   var shardPaths = null, chipPath = null, crackPath = null;
   function buildPaths() {
@@ -400,17 +421,23 @@
   function drawTestCard(alpha, drift) {
     // an MSHI test card: circle, crosshair, greyscale steps, the yard's mark
     scx.save(); scx.globalAlpha = alpha;
+    // The card is laid out in the 96 × 72 coordinates it was drawn for. The
+    // raster is 192 × 144 now, so the card is SCALED onto it rather than
+    // re-typed — every figure below still means what it meant, and the drift
+    // still moves the card exactly as far as it used to.
+    var CW = 96, CH = 72;
+    scx.scale(SW / CW, SH / CH);
     if (drift) scx.translate(drift, 0);
-    scx.fillStyle = "#3a3a3a"; scx.fillRect(-4, 0, SW + 8, SH);
+    scx.fillStyle = "#3a3a3a"; scx.fillRect(-4, 0, CW + 8, CH);
     for (var i = 0; i < 8; i++) { scx.fillStyle = "rgb(" + (i * 32) + "," + (i * 32) + "," + (i * 32) + ")"; scx.fillRect(i * 12, 6, 12, 10); }
     scx.strokeStyle = "#cfcfcf"; scx.lineWidth = 1.2;
     scx.beginPath(); scx.arc(48, 40, 26, 0, Math.PI * 2); scx.stroke();
     scx.beginPath(); scx.moveTo(48, 14); scx.lineTo(48, 66); scx.moveTo(22, 40); scx.lineTo(74, 40); scx.stroke();
-    scx.strokeStyle = "#8a8a8a"; for (var g = 0; g < SW; g += 12) { scx.beginPath(); scx.moveTo(g + 0.5, 18); scx.lineTo(g + 0.5, 62); scx.stroke(); }
+    scx.strokeStyle = "#8a8a8a"; for (var g = 0; g < CW; g += 12) { scx.beginPath(); scx.moveTo(g + 0.5, 18); scx.lineTo(g + 0.5, 62); scx.stroke(); }
     scx.fillStyle = "#e8e8e8"; scx.fillRect(38, 34, 20, 12); scx.fillStyle = "#101010"; scx.fillRect(40, 36, 16, 8);
     scx.fillStyle = "#e0e0e0"; scx.font = '700 7px "Orbitron", sans-serif'; scx.fillText("MSHI", 36, 62);
     scx.font = '6px "Shippori Mincho", serif'; scx.fillText("映像管 試験", 60, 56);
-    scx.fillStyle = "#0a0a0a"; scx.fillRect(0, 64, SW, 8); scx.fillStyle = "#d0d0d0"; scx.fillRect(4, 66, 30, 4); scx.fillRect(62, 66, 30, 4);
+    scx.fillStyle = "#0a0a0a"; scx.fillRect(0, 64, CW, 8); scx.fillStyle = "#d0d0d0"; scx.fillRect(4, 66, 30, 4); scx.fillRect(62, 66, 30, 4);
     scx.restore();
   }
   function renderSource(t) {
@@ -441,10 +468,10 @@
     var sw = (ph === "idle" || ph === "dead") ? sweepNow() : 0;   // 掃引: the dial's snow
     var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? sw : clamp01(1 - strength);
     // idle: a faint raster glow added under the LUT — the tube is warm, not lit
-    var idleGlow = ph === "idle" ? 9 + 3 * Math.sin(t / 2300) : 0;
+    var idleGlow = ph === "idle" ? (9 + 3 * Math.sin(t / 2300)) * B.idle : 0;
     var crawl = t / 240;
     for (var i = 0, p = 0, y = 0; y < SH; y++) {
-      var rowGlow = idleGlow > 0 ? idleGlow + 3.5 * Math.sin(y * 0.55 - crawl) : 0;
+      var rowGlow = idleGlow > 0 ? idleGlow + 3.5 * B.idle * Math.sin(y * 0.55 - crawl) : 0;
       var vign = 1 - Math.abs(y - SH / 2) / SH * 0.7;
       for (var x = 0; x < SW; x++, i += 4, p += 4) {
         var l = 0.299 * sdata[i] + 0.587 * sdata[i + 1] + 0.114 * sdata[i + 2];
@@ -454,7 +481,7 @@
         }
         else if (ph === "dead") { l = snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08 ? rnd() * 255 * (0.45 + 0.55 * rnd()) : 0; }
         else {
-          l = (l - 18) * 1.22;
+          l = (l - B.lift) * B.gain;                      // 輝度: the beam's drive
           // snow: a pixel is either the picture or a spark — density grows with the square of (1 − strength)
           if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());
         }
@@ -472,9 +499,9 @@
   // THE FRAME: persistence, bloom, tear, roll, ghost, the line
   // ==========================================================================
   function drawBloom(dy, sy, alpha, blurPx) {
-    fcx.globalAlpha = alpha;
+    fcx.globalAlpha = Math.min(0.92, alpha * B.bloom);        // 輝度: how hard the phosphor is driven
     if (hasFilter) {
-      fcx.filter = "blur(" + blurPx.toFixed(1) + "px)";
+      fcx.filter = "blur(" + Math.max(0.5, blurPx + B.blur * 2.7).toFixed(1) + "px)";
       fcx.drawImage(phos, 0, dy, TW, TH * sy);
       fcx.filter = "none";
     } else {
@@ -484,11 +511,13 @@
     fcx.globalAlpha = 1;
   }
   function drawBands(dy, sy, tearAmt, t) {
-    // 9 bands of 8 source rows, each row-offset — the picture "tears"
-    var bh = TH / 9;
+    // 9 bands, each row-offset — the picture "tears". The SOURCE slice is a
+    // ninth of the raster, not a hard-coded 8 rows: at 192 × 144 that is 16,
+    // and a literal 8 would have drawn the top half of the picture nine times.
+    var bh = TH / 9, sbh = SH / 9;
     for (var b = 0; b < 9; b++) {
       var off = tearAmt * (Math.sin(t / 170 + b * 1.9) * 3 + (rnd() < tearAmt * 0.25 ? (rnd() - 0.5) * 26 : 0));
-      fcx.drawImage(phos, 0, b * 8, SW, 8, off, dy + b * bh * sy, TW, bh * sy + 0.5);
+      fcx.drawImage(phos, 0, b * sbh, SW, sbh, off, dy + b * bh * sy, TW, bh * sy + 0.5);
     }
   }
   function drawFrame(t) {
@@ -545,7 +574,7 @@
       var lw = TW * (dotK > 0 ? lineK : 1) * 0.94, lx = (TW - lw) / 2, ly = TH / 2 + Math.sin(t / 60) * 0.4;
       fcx.globalCompositeOperation = "lighter";
       if (hasFilter) fcx.filter = "blur(6px)";
-      fcx.fillStyle = "rgba(120,240,150," + (0.55 * (dotK > 0 ? 1 : lineK)).toFixed(2) + ")"; fcx.fillRect(lx, ly - (hasFilter ? 5 : 3), lw, hasFilter ? 10 : 6);
+      fcx.fillStyle = "rgba(120,240,150," + (0.55 * (dotK > 0 ? 1 : lineK) * B.idle).toFixed(2) + ")"; fcx.fillRect(lx, ly - (hasFilter ? 5 : 3), lw, hasFilter ? 10 : 6);
       if (hasFilter) fcx.filter = "none";
       fcx.fillStyle = "rgba(225,255,230," + (0.95 * (dotK > 0 ? 1 : lineK)).toFixed(2) + ")"; fcx.fillRect(lx, ly - 1, lw, 2);
       fcx.globalCompositeOperation = "source-over";
@@ -560,7 +589,7 @@
     // idle retrace — the scope's sweep, echoed in green, slower
     if (ph === "idle" && lineK === 0) {
       var sw = (t / 1000 * 22) % (TH + 40) - 20;
-      fcx.fillStyle = "rgba(90,220,120,0.045)"; fcx.fillRect(0, sw, TW, 3);
+      fcx.fillStyle = "rgba(90,220,120," + (0.045 * B.idle).toFixed(3) + ")"; fcx.fillRect(0, sw, TW, 3);
     }
   }
 
@@ -636,9 +665,29 @@
   }
   if (Z.setEventListener) { try { Z.setEventListener(function (ev) { if (ev && ev.cat === "rx" && ev.signal) signal(ev.signal); }); } catch (e) {} }   // 受信 and ♪ 受信 both carry a descriptor
 
+  // ---- 輝度 BRIGHT: the ledge's left rocker. The plastic is wired in
+  //      zankyo-ui.js (one hand for both rockers); what a step MEANS is here,
+  //      with the shader that answers it. ----
+  var briSteps = document.getElementById("zankyo-bri-steps");
+  var briRead = document.getElementById("zankyo-bri-read");
+  if (briSteps && !briSteps.children.length) {
+    briSteps.innerHTML = "<i class='zk-step'></i><i class='zk-step'></i><i class='zk-step'></i><i class='zk-step'></i>";
+  }
+  function setBright(v) {
+    briV = v < 0 ? 0 : v > 3 ? 3 : v | 0;
+    B = BRI[briV];
+    if (briSteps) for (var bi = 0; bi < 4; bi++) if (briSteps.children[bi]) briSteps.children[bi].classList.toggle("on", bi <= briV);
+    if (briRead) briRead.textContent = "輝度 " + (briV + 1) + " / 4";
+    return briV;
+  }
+  setBright(briV);
+
   // ---- public surface ----
   window.ZankyoSet = {
     signal: signal,
+    setBright: setBright,
+    getBright: function () { return briV; },
+    brightSteps: BRI.length,
     sweep: sweep,                                            // 掃引 (plan §7): the tuning dial's snow, 0..1, follows the hand
     warm: function (v) { try { scx.drawImage(v, 0, 0, SW, SH); } catch (e) {} },   // S3: a first drawImage off-screen at prefetch (the decoder's first frame stalled ~250 ms)
     getState: function () { return { phase: S.phase, strength: S.strength, pattern: patternIdx, patternName: P.name, seed: seed, tube: [TW, TH], fps: perf.n > 1 ? +((perf.n - 1) * 1000 / Math.max(1, perf.last - perf.first)).toFixed(1) : 0, frameMs: perf.n ? +(perf.ms / perf.n).toFixed(2) : 0, worstMs: +perf.worst.toFixed(2), lowPower: lowPower, hasFilter: hasFilter }; },

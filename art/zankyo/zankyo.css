@@ -38,7 +38,7 @@
   width: 100%;               /* never wider than the site wrapper (a flex item with auto margins
                                 sizes to its content otherwise, and a phone then grows its layout
                                 viewport to fit — the page shows "zoomed in" and pans sideways) */
-  max-width: 860px;
+  max-width: 960px;          /* SETTLED 2026-09-14: the site's own --max-wide; 860 made the panel narrower than the page for no reason but history */
   margin: 0 auto;
   padding: 8px 16px 56px;
   font-family: "JetBrains Mono", monospace;
@@ -201,7 +201,7 @@
 /* The document's heading, off-screen in every state: the tube's title is a
    decoration that leaves on the first PLAY, and a page should not lose its
    only h1 when somebody presses play. */
-.zk-sr-title { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.zk-sr-title, .zk-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 /* THE TITLE ON THE TUBE (the owner): the marquee container is gone entirely
    and the title shows on the scope until the station is played. It sits
@@ -905,7 +905,7 @@
    receiver sub-panel), stretched to the row so the plate takes the room the
    housing no longer does */
 .zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
-.zk-bank-side { min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }
+.zk-bank-side { order: -1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }   /* SETTLED (PLAN-MONITOR-2 §2.1): the set takes column 1 — 516 px → tube 488 × 366 */
 .zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
 .zk-bank-main .zk-bargraph { margin-bottom: 0; }
 
@@ -931,11 +931,42 @@
 .zk-bolt-bl { bottom: 2px; left: 3px; filter: sepia(0.3) brightness(0.9); }
 .zk-bolt-br { bottom: 2px; right: 3px; }
 
-/* the set: older, yellowed plastic, a heavier bezel, deeper radius; the
-   housing HUGS the tube with the scope's bezel proportions (13 px), the chin
-   directly beneath — owner refinement §4.2 */
+/* ===========================================================================
+   隣 THE SECOND SET — ONE MOULDING (settled 2026-09-17, from mockups/set-R2-ledge)
+
+   The owner on R2: "it looks like the ledge is a different colour than the rest
+   of the frame… it's kind of clear that we just sort of tacked the ledge on…
+   let's start fresh on how we would do it if we started here from square one."
+
+   So the casing is re-cut as ONE injection moulding that was always going to
+   carry a control ledge, rather than a bezel with a strip added under it:
+
+     · ONE MATERIAL. The cabinet is the only thing in here that paints a
+       COLOUR. The ledge, the well, the aperture lip and the blanking plate
+       paint nothing but light and shadow — rgba white and rgba black over the
+       cabinet's own gradient — so every face IS the cabinet's plastic seen at
+       a different angle, and no two of them can drift apart. There is no
+       second hex value to keep in sync, which is what went wrong in R2.
+     · ONE DRAFT. `.zk-set2::before` lays the same end-draft down the WHOLE
+       height: the bezel's walls and the ledge's ends are one pull out of one
+       tool and the shading does not restart at the chin.
+     · ONE PARTING LINE. It runs the full height of both walls and turns across
+       the face where the bezel steps back to the ledge. That corner is the
+       whole trick — a moulded step has a groove and a lit lower lip; a strip
+       bolted on has neither.
+     · ONE RADIUS. 11 px outside, 10 px inside (11 − the 1 px border), top and
+       bottom, so the ledge's bottom corners come off the same tool as the
+       bezel's top ones.
+     · ONE SKIN. The spark-eroded tool grain runs over the whole part, ledge
+       included — the reason this plastic never looks wet.
+     · TWO OPENINGS, ONE VOCABULARY. The tube aperture and the control well are
+       both holes in the same faceplate and are lipped the same way: the
+       plastic above each casts into it, the plastic below each catches the
+       room. A detail used twice is what says "one tool"; used once it says
+       "decoration".
+   =========================================================================== */
 .zk-set2 {
-  position: relative; box-sizing: border-box;
+  position: relative; box-sizing: border-box; min-width: 0;
   display: flex; flex-direction: column;
   padding: 11px 13px 0; border-radius: 11px; border: 1px solid #000;
   background:
@@ -944,9 +975,37 @@
     linear-gradient(180deg, #2b2826, #1a1817 55%, #100f0e);
   box-shadow: inset 0 1px 0 rgba(255, 244, 220, 0.1), inset 0 -5px 12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.55);
 }
-.zk-set2-tubewrap { flex: none; display: flex; align-items: center; justify-content: center; min-height: 0; }
+/* THE DRAFT AND THE PARTING LINE, full height. Both walls fall away from the
+   viewer at the same angle from the top arris to the bottom corner, and the
+   tool's split runs down them. The ledge inherits both because this is the
+   same overlay, not a second one. Drawn UNDER the children so the tube — an
+   aperture, a hole in the part — covers it, exactly as a hole would. */
+.zk-set2::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit;
+  background:
+    linear-gradient(90deg,
+      rgba(0, 0, 0, 0.5) 0 2px, rgba(0, 0, 0, 0.24) 2px 9px, transparent 9px,
+      transparent calc(100% - 9px), rgba(0, 0, 0, 0.24) calc(100% - 9px) calc(100% - 2px), rgba(0, 0, 0, 0.5) calc(100% - 2px)),
+    linear-gradient(90deg,
+      transparent 4px, rgba(255, 244, 216, 0.06) 4px 5px, transparent 5px,
+      transparent calc(100% - 5px), rgba(255, 244, 216, 0.045) calc(100% - 5px) calc(100% - 4px), transparent calc(100% - 4px));
+}
+.zk-set2::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit;
+  opacity: 0.22; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23g)' opacity='0.55'/></svg>");
+}
+.zk-set2 > * { position: relative; z-index: 1; }
+
+/* THE APERTURE. Percentage padding, NOT aspect-ratio: WebKit resolves a flex
+   row's height before it resolves a ratio and squashed the tube to 488 × 274
+   in the build round (PLAN-MONITOR-2 §9.1) — perfect in Chrome, broken in
+   Safari. Percentage padding resolves against the wrap's own width in every
+   engine and cannot be shrunk. */
+.zk-set2-tubewrap { display: block; flex: none; min-width: 0; }
+.zk-tube-wrap { position: relative; display: block; height: 0; padding-bottom: 75%; }
 .zk-tube {
-  position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden;
+  position: absolute; inset: 0; box-sizing: border-box; overflow: hidden;
   border-radius: 18px / 22px;
   background: #030503;
   border: 1px solid #020302;
@@ -954,7 +1013,10 @@
     inset 0 0 0 2px rgba(0, 0, 0, 0.95),
     inset 0 0 26px rgba(0, 0, 0, 0.95),
     inset 0 3px 10px rgba(0, 0, 0, 0.85),
-    inset 0 0 60px rgba(30, 90, 40, 0.05);
+    inset 0 0 60px rgba(30, 90, 40, 0.05),
+    /* the aperture's moulded lip — the same two lines the control well gets */
+    0 -1px 2px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 244, 216, 0.07);
 }
 .zk-tube canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .zk-tube .zankyo-scanlines { opacity: 0.7; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.24) 3px); }
@@ -973,56 +1035,221 @@
   transform: rotate(-30deg) scaleX(0.8); opacity: 0.8;
 }
 
-/* chin: brand plate · 選局 tune button · 受信 lamp */
-.zk-set2-chin { position: relative; display: flex; align-items: center; gap: 7px; padding: 5px 6px 6px; }
-.zk-set2-brand { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); white-space: nowrap; }
-.zk-set2-brand i { font-style: normal; color: #574f47; }
-.zk-tune {
-  position: relative; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; border: none; padding: 0; cursor: pointer; flex: none;   /* §4.4: on the chin, no label (it cost a row) */
-  background: radial-gradient(circle at 34% 28%, #5c5c66, #2a2a31 50%, #101014 90%);
-  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -3px 4px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.28);
-}
-.zk-tune::after { content: ""; position: absolute; left: 50%; top: 18%; width: 2px; height: 34%; margin-left: -1px; background: #d8d2c2; border-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.7); transform-origin: 50% 94%; transform: rotate(var(--ch, -40deg)); transition: transform 0.18s cubic-bezier(.5,1.6,.6,1); }
-.zk-tune:active { transform: translateY(1px); box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.2); }
-.zk-tune:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+/* ---------------------------------------------------------------------------
+   操作段 THE CONTROL LEDGE (owner's pick: mockups/set-R2-ledge.html).
+   R2's detailing kept — the recess, the well lip, faces that sit BELOW the
+   surrounding plastic, the ejector-pin witnesses — but re-cut as part of the
+   shell rather than hung under it. It runs to the casing's own edges (margin
+   −13 px, the wall's width) and carries the shell's inner radius.
 
-/* 受信 THE PUSH BUTTON (plan §8.2) — a worn square push-switch with a lens,
-   the same 20 px footprint as 選局 next to it, no print. It travels when
-   pressed, and its lens is lit only while the receiver will actually answer:
-   dark for the cooldown, so the panel tells you the truth without a word. */
-.zk-push {
-  position: relative; width: 20px; height: 20px; margin-right: 6px; flex: none;
-  padding: 0; border: 0; border-radius: 2px; cursor: default; -webkit-appearance: none; appearance: none;
-  background: linear-gradient(180deg, #3a3a44 0%, #23232b 55%, #14141a 100%);
-  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 2px 3px rgba(0, 0, 0, 0.75),
-              inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -2px 3px rgba(0, 0, 0, 0.8);
-  transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
+   It paints NO COLOUR OF ITS OWN. Every value below is white or black over the
+   cabinet's gradient, which is why it cannot read as a different plastic:
+     1. the parting line — 1 px of groove, 1 px of lit lower lip, where the
+        bezel face steps back to the ledge face;
+     2. the bezel's own shadow cast eight pixels down the new face;
+     3. the face picking the room back up as it drafts forward, and the lit
+        front arris along the bottom edge;
+     4. two ejector-pin witnesses, because the tool had to push the part off.
+   The ends' draft is not here at all — it comes from `.zk-set2::before`, which
+   runs the full height, so the ledge's ends and the bezel's walls are one pull.
+   --------------------------------------------------------------------------- */
+.zk-ledge {
+  position: relative; margin: 10px -13px 0; padding: 3px 7px 5px;
+  border-radius: 0 0 10px 10px;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.62) 0 1px,                 /* 1. the groove */
+      rgba(255, 244, 216, 0.11) 1px 2px,         /*    the step's lit lower lip */
+      rgba(0, 0, 0, 0.34) 2px 5px,               /* 2. the bezel casting down */
+      rgba(0, 0, 0, 0.16) 5px 10px,
+      rgba(0, 0, 0, 0.04) 24%,
+      rgba(255, 244, 216, 0.028) 62%,            /* 3. the face, drafting forward */
+      rgba(255, 244, 216, 0.05) 88%,
+      rgba(0, 0, 0, 0.1));
+  box-shadow: inset 0 -1px 0 rgba(255, 244, 216, 0.09);   /* the front arris, lit */
 }
-.zk-push-lens {
-  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 1px;
-  background: linear-gradient(180deg, #26221a 0%, #17140f 100%);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.06);
-  transition: background 0.25s ease-out, box-shadow 0.25s ease-out;
+.zk-pin {                                        /* 4. an ejector-pin witness */
+  position: absolute; z-index: 0; width: 13px; height: 13px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 42% 38%, rgba(255, 244, 220, 0.045), rgba(0, 0, 0, 0.14) 70%, transparent 78%);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.3);
 }
-.zk-push.is-ready .zk-push-lens {   /* "a faint glow", per the owner — lit enough to read as ready, not a warning lamp */
-  background: linear-gradient(180deg, rgba(var(--amber-rgb), 0.30) 0%, rgba(var(--amber-rgb), 0.15) 100%);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.6), 0 0 3px rgba(var(--amber-rgb), 0.22);
+.zk-pin-l { left: 16px; bottom: 5px; }
+.zk-pin-r { right: 16px; bottom: 5px; }
+
+/* the model line, silk-screened on the only flat the tool left for print —
+   where a 1970s set put it. The set keeps its name: 映像管 MSHI CRT-9, 受信専用. */
+.zk-ledge-brand { position: relative; display: flex; align-items: baseline; gap: 10px; padding: 2px 3px 3px; line-height: 1; }
+.zk-ledge-brand span { font-size: 7px; letter-spacing: 0.17em; color: #6d655c; white-space: nowrap; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 245, 225, 0.06); }
+.zk-ledge-brand i { font-style: normal; color: #574f47; }
+.zk-ledge-brand em { margin-left: auto; font-style: normal; font-size: 6px; letter-spacing: 0.24em; color: #514a44; transform: rotate(-0.5deg); white-space: nowrap; }
+
+/* THE WELL — the second opening in the faceplate, lipped like the first.
+   Three stations on one bar: 輝度, the unlabelled stepper, and a reserved
+   blank. Everything in it sits BELOW the ledge's own face. */
+.zk-well {
+  --cap: 36px;                 /* the moulding's height — the touch target is hung around it */
+  position: relative; display: grid; gap: 6px; grid-template-columns: 1fr 1fr 1fr;
+  padding: 4px; border-radius: 4px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.26) 60%, rgba(0, 0, 0, 0.06));
+  box-shadow:
+    inset 0 3px 5px rgba(0, 0, 0, 0.82),          /* the ledge above casts in */
+    inset 0 -1px 0 rgba(255, 244, 216, 0.09),     /* the well's front wall, lit */
+    0 1px 0 rgba(255, 244, 216, 0.075);           /* the lip on the ledge face */
 }
-.zk-push:active, .zk-push.is-down {
-  transform: translateY(1px);
-  box-shadow: 0 0 0 2px #1a1917, 0 0 0 3px #000, 0 1px 1px rgba(0, 0, 0, 0.7),
-              inset 0 2px 4px rgba(0, 0, 0, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+
+/* ---------------------------------------------------------------------------
+   THE TOUCH TARGET, AND THE MOULDING IT HIDES BEHIND (ported from R2).
+   The moulding needs a 36 px cap or the ledge stops being a shallow band; a
+   finger needs 44. So the two are separated: the <button> is an invisible
+   44 px box, the visible plastic is painted by a sibling span, and :active and
+   the focus ring are retargeted at the plastic so the ring hugs the cap and
+   not the box. NOT ONE PAINTED PIXEL MOVES.
+   --------------------------------------------------------------------------- */
+.zk-face {
+  --up: 4px; --down: 4px;    /* the overhang above and below the cap */
+  position: relative; box-sizing: border-box; border: 0; padding: 0;
+  background: none; cursor: pointer; font: inherit; color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  height: calc(var(--cap) + var(--up) + var(--down));   /* the finger: 44 px */
+  margin-top: calc(0px - var(--up));                    /* the moulding: the row */
+  margin-bottom: calc(0px - var(--down));               /*   still measures the cap */
 }
-.zk-push:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
-.zk-rx-label { font-family: "Shippori Mincho", serif; font-size: 8px; letter-spacing: 0.16em; color: #5f5851; white-space: nowrap; }
-.zk-rx {
-  width: 7px; height: 7px; border-radius: 50%; flex: none;
-  background: radial-gradient(circle at 35% 30%, #3a2a10, #1c1408 70%);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
-  transition: background 0.12s, box-shadow 0.12s;
+
+/* THE ROCKERS. One moulded see-saw plate over a pivot rib with a window in the
+   middle of it. Press an end: that end goes down into the well and the other
+   lifts on the pivot. Two ends is the whole interface. */
+.zk-rocker {
+  position: relative; display: flex; align-items: stretch; gap: 0; min-width: 0;
+  height: var(--cap); border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, #0f0d0c, #161311);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
 }
-.zk-rx.is-lit { background: radial-gradient(circle at 35% 30%, #ffe2a0, var(--amber) 60%); box-shadow: 0 0 9px rgba(var(--amber-rgb), 0.85), 0 0 2px rgba(var(--amber-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5); }
-.zk-rx.is-flicker { animation: zk-led-flicker 0.11s infinite; }
+.zk-rocker::before {          /* the pivot rib, moulded across the plate */
+  content: ""; position: absolute; z-index: 5; left: 0; right: 0; top: 50%; height: 1px; margin-top: -0.5px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.5) 18%, rgba(0, 0, 0, 0.5) 82%, transparent);
+}
+/* the painted end of the see-saw — a span, because what you press is bigger */
+.zk-cap {
+  flex: 0 0 30%; min-width: 0; display: flex; align-items: center; justify-content: center;
+  height: 100%; box-sizing: border-box;
+  border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, #37312c 0 1px, #2f2925 1px 46%, #221e1a 46%, #171413);
+  box-shadow:
+    0 1px 0 rgba(255, 246, 224, 0.09),
+    0 2px 4px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 246, 224, 0.13),
+    inset -1px 0 2px rgba(0, 0, 0, 0.45),
+    inset 1px 0 1px rgba(255, 246, 224, 0.045),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.6);
+  transition: transform 0.07s ease-out, box-shadow 0.07s ease-out, background 0.12s;
+}
+.zk-cap i { font-style: normal; font-size: 11px; line-height: 1; color: #ada192; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 246, 224, 0.1); }
+.zk-cap-l { border-radius: 3px 1px 1px 3px; }
+.zk-cap-r { border-radius: 1px 3px 3px 1px; }
+.zk-rocker:hover .zk-cap { background: linear-gradient(180deg, #3f3833 0 1px, #36302b 1px 46%, #27221e 46%, #1b1816); }
+/* the invisible end-stop: 44 px minimum, never narrower than the cap it covers,
+   and never wide enough to meet its opposite number (2 × 44 = 88 < the rocker
+   at every width this page reaches, 390 included) */
+.zk-hit {
+  position: absolute; z-index: 6; margin: 0;
+  top: calc(0px - var(--up)); height: calc(var(--cap) + var(--up) + var(--down));
+  width: max(44px, 30%);
+  background: none;
+}
+.zk-hit-l { left: 0; }
+.zk-hit-r { right: 0; }
+.zk-hit:focus-visible { outline: 2px solid var(--cyan); outline-offset: -3px; }
+/* the see-saw: while one end is down the other rides up on the pivot */
+.zk-rocker.tilt-l .zk-cap-l, .zk-rocker.tilt-r .zk-cap-r {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0), 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(255, 246, 224, 0.06);
+}
+.zk-rocker.tilt-l .zk-cap-r, .zk-rocker.tilt-r .zk-cap-l { transform: translateY(-1.5px); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 246, 224, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.5); }
+/* …and where :has() exists, the press and the focus ring land on the plastic
+   rather than on the invisible box. Kept in its own rule: one unsupported
+   :has() would invalidate a whole selector list. */
+@supports selector(:has(*)) {
+  .zk-hit:focus-visible { outline: none; }
+  .zk-rocker:has(.zk-hit-l:focus-visible) .zk-cap-l,
+  .zk-rocker:has(.zk-hit-r:focus-visible) .zk-cap-r { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  .zk-rocker:has(.zk-hit-l:active) .zk-cap-l,
+  .zk-rocker:has(.zk-hit-r:active) .zk-cap-r {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0), 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(255, 246, 224, 0.06);
+  }
+  .zk-rocker:has(.zk-hit-l:active) .zk-cap-r,
+  .zk-rocker:has(.zk-hit-r:active) .zk-cap-l { transform: translateY(-1.5px); box-shadow: 0 3px 5px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 246, 224, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.5); }
+}
+.zk-rock-win {
+  flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  margin: 2px 1px; border-radius: 2px;
+  background: linear-gradient(180deg, #0b0a09, #121010);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(255, 244, 220, 0.07);
+}
+.zk-rock-k { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.08em; line-height: 1; color: #877d70; white-space: nowrap; }
+.zk-rock-steps { display: flex; gap: 2.5px; align-items: center; }
+.zk-step { width: 6px; height: 4px; border-radius: 1px; background: #241f1b; box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.85); transition: background 0.1s, box-shadow 0.1s; }
+.zk-step.on { background: linear-gradient(180deg, #ffe6ae, var(--amber)); box-shadow: 0 0 5px rgba(var(--amber-rgb), 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+
+/* ---------------------------------------------------------------------------
+   THE MIDDLE STATION — a rocker with a two-digit readout between its arrows.
+   No label, no legend, no print, no log line: the owner asked that it not be
+   explained. The readout is in the machine's existing digital register — a
+   glass window with the unlit segments showing behind the lit ones, the way a
+   VFD gives itself away. The only thing a screen reader is told is what the
+   control factually is, which is a different thing from explaining it.
+   --------------------------------------------------------------------------- */
+.zk-rock-win-num { gap: 0; padding: 0 2px; }
+.zk-num {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-width: 0; width: 100%; height: 19px; border-radius: 2px; overflow: hidden;
+  background: linear-gradient(180deg, #03090a, #06100f 60%, #040c0c);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(255, 244, 220, 0.045), inset 0 0 8px rgba(var(--cyan-rgb), 0.05);
+  font-family: "Orbitron", sans-serif; font-weight: 700; font-size: 13px; line-height: 1; letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+.zk-num::after {                      /* the window glass over the segments */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(106deg, rgba(190, 255, 250, 0.055), transparent 30%);
+}
+.zk-num i, .zk-num b { font-style: normal; font-weight: inherit; }
+.zk-num-ghost { color: rgba(var(--cyan-rgb), 0.055); }   /* the segments that are not lit */
+.zk-num-v {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  color: var(--cyan); text-shadow: 0 0 7px rgba(var(--cyan-rgb), 0.7), 0 0 2px rgba(var(--cyan-rgb), 0.9);
+}
+
+/* ---------------------------------------------------------------------------
+   THE THIRD STATION — reserved, and moulded as if it always was.
+   The owner: "the other buttons I think I'll replace with some kind of knob or
+   some other sort of control or indicator light. I don't know what yet. So
+   just leave that kind of a blank space where we can add something as we go
+   forward." So the tool cut a station here and nothing has been fitted to it:
+   a blanking plate of the same plastic at cap height, drilled for a mounting
+   boss the yard never used, with its own pin witness. It is not a gap — a gap
+   would read as a control that fell out.
+   --------------------------------------------------------------------------- */
+.zk-blank {
+  position: relative; min-width: 0; height: var(--cap); border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, #322c28 0 1px, #2a2521 1px 46%, #1f1b18 46%, #151312);
+  box-shadow:
+    0 1px 0 rgba(255, 246, 224, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 246, 224, 0.1),
+    inset -1px 0 2px rgba(0, 0, 0, 0.45),
+    inset 1px 0 1px rgba(255, 246, 224, 0.03),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.55);
+}
+.zk-blank::before {                   /* the unused mounting boss, moulded in */
+  content: ""; position: absolute; left: 50%; top: 50%; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 36%, rgba(255, 246, 224, 0.05), rgba(0, 0, 0, 0.26) 66%, rgba(0, 0, 0, 0.08));
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 246, 224, 0.05);
+}
+.zk-blank::after {                    /* its own pin witness, low and off-centre */
+  content: ""; position: absolute; right: 9px; bottom: 5px; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, rgba(255, 244, 220, 0.04), rgba(0, 0, 0, 0.12) 70%, transparent 78%);
+}
 
 /* yellowed tape on the bezel — the glass is held in with it (one piece, the
    right-side one: owner refinement §4.1) */
@@ -1124,11 +1351,30 @@
   .zk-knob-vol { width: 38px; height: 38px; }
   .zankyo-log { height: 180px; }
 
-  /* the bank stacks: scope, bargraph, then the second set at full width */
-  .zk-bank { grid-template-columns: 1fr; gap: 14px 0; }
+  /* THE BANK STACKS — SETTLED (owner, 2026-09-14; PLAN-MONITOR-2 §2.2), in his
+     own enumeration: the television, then the spectrum scope, then the 段階
+     progress bar, then PLAY / STOP / volume at the bottom. `display: contents`
+     dissolves the two column wrappers so all four are direct grid items and can
+     take an explicit order without index.php moving. The wrappers' own
+     `min-width: 0` stops applying when they are dissolved, so the four
+     grandchildren carry it themselves — otherwise a canvas's intrinsic width
+     pushes the grid column wider than the frame. */
+  .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
+  .zk-bank-main, .zk-bank-side { display: contents; }
+  .zk-set2    { order: 1; }   /* the television */
+  .zk-monitor { order: 2; margin-bottom: 0; }   /* the spectrum scope */
+  .zk-bargraph { order: 3; margin: 0; }         /* 段階 */
+  .zk-rxpanel { order: 4; }                     /* PLAY · STOP · volume */
+  .zk-set2, .zk-monitor, .zk-bargraph, .zk-rxpanel { min-width: 0; }
+  .zankyo-viz { max-width: 100%; }
   /* the strap carried the set's slight crookedness at narrow widths; with the
      strap gone the set keeps it itself, so the tube is not suddenly true */
   .zk-set2 { transform: rotate(0.25deg); padding: 9px 9px 0; }
+  /* the ledge follows the thinner wall out to the casing's edges */
+  .zk-ledge { margin: 9px -9px 0; padding: 3px 6px 5px; }
+  .zk-pin-l { left: 12px; }
+  .zk-pin-r { right: 12px; }
+  .zk-ledge-brand em { display: none; }
 }
 @media (max-width: 380px) {
   .zk-unit-vol .zk-unit-meta { display: none; }

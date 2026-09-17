@@ -15,7 +15,7 @@ function zkv($file)
 // live build is legible. The footer shows only the version NUMBER; the
 // "— summary" tail in VERSION stays for git history and the bump rule.
 $zk_assets = [
-    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'zankyo.css', 'index.php',
+    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'broadcast/geo.json', 'zankyo.css', 'index.php',
     '../prosperos-jukebox-v2/pj2-rand.js', '../prosperos-jukebox-v2/pj2-pitch.js',
     '../prosperos-jukebox-v2/pj2-clock.js', '../prosperos-jukebox-v2/pj2-voice.js',
     '../prosperos-jukebox-v2/pj2-fx.js', '../prosperos-jukebox-v2/pj2-air.js',
@@ -110,33 +110,85 @@ include '../../includes/header.php';
         </div>
       </div>
 
-      <!-- 隣 THE SECOND SET — MSHI CRT-9, receive only, on its strap; under it
-           the receiver sub-panel (owner refinement §4.3: S0 leaves the plate,
-           S1 fills it with band / flutter / grit and the 選局 TUNE control) -->
+      <!-- 隣 THE SECOND SET — 映像管 MSHI CRT-9, 受信専用: the older receive-only
+           tube the yard bolted on later, cracked glass and a strip of yellowed
+           tape, now in a casing re-cut as ONE injection moulding with a 操作段
+           control ledge (owner's pick: mockups/set-R2-ledge.html, re-worked
+           2026-09-17 so the ledge is part of the tool and not tacked on).
+           SETTLED: the set takes column 1 — at 960 that is 516 px of column,
+           13 px of wall each side, so the tube is 488 × 366. -->
       <div class="zk-bank-side">
-      <!-- owner §C: the mounting strap and its four bolts are gone. The set is
-           the casing that holds the tube and nothing around it; the width they
-           occupied goes to the tube, which keeps 4:3 and the column's edges. -->
       <div class="zk-set2" id="zankyo-set2">
+          <!-- the aperture. Its 4:3 comes from percentage padding, not
+               aspect-ratio: WebKit squashes a ratio on a shrinkable flex item
+               (PLAN-MONITOR-2 §9.1) and shipped a 488 × 274 tube that looked
+               perfect in Chrome. -->
           <div class="zk-set2-tubewrap">
-            <div class="zk-tube" id="zankyo-tube">
-              <canvas id="zankyo-set" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
-              <div class="zankyo-scanlines" aria-hidden="true"></div>
-              <svg class="zk-crack" id="zankyo-crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"></svg>
-              <div class="zk-glass" aria-hidden="true"></div>
+            <div class="zk-tube-wrap">
+              <div class="zk-tube" id="zankyo-tube">
+                <canvas id="zankyo-set" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
+                <div class="zankyo-scanlines" aria-hidden="true"></div>
+                <svg class="zk-crack" id="zankyo-crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+                <div class="zk-glass" aria-hidden="true"></div>
+              </div>
             </div>
           </div>
-          <div class="zk-set2-chin">
-            <span class="zk-set2-brand">映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
-            <span class="zk-chin-spacer"></span>
-            <button type="button" class="zk-tune" id="zankyo-tune" aria-label="選局 · tune: scan for a signal" title="選局 &middot; tune"></button>
-            <!-- 受信 (plan §8.2): a worn square push-switch with a lens, the
-                 same footprint as 選局 beside it, unlabeled. Press it and the
-                 set finds a real broadcast at once; then it is cold for the
-                 best part of a minute and the lens goes out. -->
-            <button type="button" class="zk-push" id="zankyo-push" aria-label="受信" aria-disabled="false"><span class="zk-push-lens" aria-hidden="true"></span></button>
-            <span class="zk-rx-label">受信</span>
-            <span class="zk-rx" id="zankyo-rx" aria-hidden="true"></span>
+
+          <!-- 操作段 THE CONTROL LEDGE. Three stations on one moulded bar:
+               輝度, the unlabelled stepper, and a station the tool cut and
+               nothing has been fitted to yet. -->
+          <div class="zk-ledge">
+            <span class="zk-pin zk-pin-l" aria-hidden="true"></span>
+            <span class="zk-pin zk-pin-r" aria-hidden="true"></span>
+
+            <div class="zk-ledge-brand" aria-hidden="true">
+              <span>映像管 &middot; MSHI CRT-9 &middot; <i>受信専用</i></span>
+              <em>操作段 &middot; LEDGE 01</em>
+            </div>
+
+            <div class="zk-well">
+
+              <!-- 輝度 BRIGHT — a four-step rocker driving the beam's drive and
+                   the phosphor's spread together, which is what brightness on a
+                   CRT actually was. -->
+              <div class="zk-rocker" id="zankyo-rock-bri" role="group" aria-label="輝度 &middot; brightness, four steps">
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&#9662;</i></span>
+                <span class="zk-rock-win">
+                  <span class="zk-rock-k">輝度</span>
+                  <span class="zk-rock-steps" id="zankyo-bri-steps" aria-hidden="true"></span>
+                </span>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>&#9652;</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="輝度を下げる &middot; brightness down"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="輝度を上げる &middot; brightness up"></button>
+                <span class="zk-sr" id="zankyo-bri-read" role="status"></span>
+              </div>
+
+              <!-- THE MIDDLE STATION: two arrows and a two-digit readout, and
+                   nothing else. No label on the panel, no legend, no tooltip and
+                   no line in the VFD — the owner asked that it not be explained
+                   ("part of the appeal of this app is just kind of mysterious
+                   and you just have to figure out yourself whether it's actually
+                   controlling"). The screen reader is told what the control
+                   factually IS, which is a different thing from explaining it
+                   on the faceplate. -->
+              <div class="zk-rocker" id="zankyo-rock-loc" role="group" aria-label="選局番号 &middot; channel number, 00 to 10">
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&#9662;</i></span>
+                <span class="zk-rock-win zk-rock-win-num">
+                  <span class="zk-num" aria-hidden="true"><i class="zk-num-ghost">88</i><b class="zk-num-v" id="zankyo-loc-read">00</b></span>
+                </span>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>&#9652;</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="番号を下げる &middot; channel number down"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="番号を上げる &middot; channel number up"></button>
+                <span class="zk-sr" id="zankyo-loc-sr" role="status"></span>
+              </div>
+
+              <!-- THE THIRD STATION: reserved blank plastic. A blanking plate
+                   with the mounting boss the yard never used — moulded as if the
+                   tool always had this station, not a gap where something was
+                   ripped out. Something goes here later. -->
+              <div class="zk-blank" aria-hidden="true"></div>
+
+            </div>
           </div>
         <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
       </div>

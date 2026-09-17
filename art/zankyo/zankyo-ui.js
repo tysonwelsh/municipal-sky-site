@@ -640,6 +640,69 @@
     setInterval(paintLens, 250);                 // the lens follows readiness; the cooldown is tens of seconds
   }
 
+  // ==========================================================================
+  // 操作段 THE CONTROL LEDGE — the hand on both rockers
+  // ==========================================================================
+  // One moulded see-saw plate, two ends, and an invisible 44 px box over each
+  // end; the painted cap is 36 px and never moves, so the ledge stays a shallow
+  // band and a thumb still gets a thumb's worth of target. Pointer and
+  // keyboard. The plate tilts even at the end of travel, because a control that
+  // gives nothing back feels broken.
+  function wireRocker(id, apply, get, max) {
+    var host = document.getElementById(id);
+    if (!host) return;
+    var ends = [].slice.call(host.querySelectorAll(".zk-hit"));
+    var tilt = 0;
+    function fire(d) {
+      var v = get() + d;
+      host.classList.remove("tilt-l", "tilt-r");
+      host.classList.add(d < 0 ? "tilt-l" : "tilt-r");
+      clearTimeout(tilt);
+      tilt = setTimeout(function () { host.classList.remove("tilt-l", "tilt-r"); }, 140);
+      if (v < 0 || v > max) return;          // the end of travel: the plate moves, nothing else does
+      apply(v);
+    }
+    ends.forEach(function (b) {
+      var d = parseInt(b.getAttribute("data-d"), 10) < 0 ? -1 : 1;
+      b.addEventListener("click", function () { fire(d); });
+      b.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowLeft" || e.key === "ArrowDown") { fire(-1); e.preventDefault(); }
+        else if (e.key === "ArrowRight" || e.key === "ArrowUp") { fire(1); e.preventDefault(); }
+      });
+    });
+  }
+
+  function wireLedge() {
+    // 輝度 — four steps into the tube's own shader. What a step MEANS lives in
+    // zk-set.js with the pixels it moves; the plastic lives here.
+    wireRocker("zankyo-rock-bri",
+      function (v) { try { if (window.ZankyoSet && ZankyoSet.setBright) ZankyoSet.setBright(v); } catch (e) {} },
+      function () { try { return (window.ZankyoSet && ZankyoSet.getBright) ? ZankyoSet.getBright() : 0; } catch (e) { return 0; } },
+      3);
+
+    // THE MIDDLE STATION. It steps a number, 00 to 10, and NOTHING is said
+    // about it — no label on the panel, no legend, no tooltip, and no line in
+    // the 活動 log. The two digits are the only feedback there is, which is the
+    // owner's whole ask for this control. The lottery reads the number in
+    // zk-broadcast.js; if broadcast/geo.json never loads it reads it and means
+    // nothing, silently.
+    var read = document.getElementById("zankyo-loc-read");
+    var sr = document.getElementById("zankyo-loc-sr");
+    var BC = window.ZankyoBroadcast;
+    var locMax = (BC && BC.localeMax) || 10;
+    var locN = 0;
+    function paintLoc() {
+      var two = (locN < 10 ? "0" : "") + locN;
+      if (read) read.textContent = two;
+      if (sr) sr.textContent = two;
+    }
+    wireRocker("zankyo-rock-loc",
+      function (v) { locN = v; try { if (BC && BC.setLocale) BC.setLocale(v); } catch (e) {} paintLoc(); },
+      function () { return locN; },
+      locMax);
+    paintLoc();
+  }
+
   // ---- Transport (arcade buttons + master volume knob) ----
   function wireTransport() {
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
@@ -676,5 +739,5 @@
     }
   }
 
-  renderScale(); renderMixer(); wireMixerToggle(); wireTransport(); wireFarSwitch(); wirePush(); pollArc();
+  renderScale(); renderMixer(); wireMixerToggle(); wireTransport(); wireFarSwitch(); wirePush(); wireLedge(); pollArc();
 })();

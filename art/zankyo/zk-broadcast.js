@@ -37,6 +37,7 @@
   var hasFetch = typeof fetch === "function";
 
   var MANIFEST_URL = "broadcast/manifest.json", REEL_DIR = "broadcast/reels/";
+  var GEO_URL = "broadcast/geo.json";
   // ---- CACHE BUSTING (2026-09-09) ------------------------------------------
   // The manifest is served with a long max-age by the host, and both it and the
   // reels were fetched with NO version. So a RE-CUT reel — same file name, new
@@ -55,6 +56,13 @@
     var v = null;
     try { v = window.ZK_ASSET_V || null; } catch (e) {}
     return v ? MANIFEST_URL + "?v=" + encodeURIComponent(v) : MANIFEST_URL;
+  }
+  // geo.json rides the page's asset fingerprint the way the manifest does: it
+  // is one file, rebuilt whenever the pool is, and index.php lists it.
+  function geoUrl() {
+    var v = null;
+    try { v = window.ZK_ASSET_V || null; } catch (e) {}
+    return v ? GEO_URL + "?v=" + encodeURIComponent(v) : GEO_URL;
   }
   function reelUrl(reelOrId) {
     var id = (reelOrId && reelOrId.id) ? reelOrId.id : String(reelOrId);
@@ -830,6 +838,100 @@
   try { Z.setEventListener(function (ev) { if (ev && ev.label === "▶ play") onPlay(); }); } catch (e) {}
   loadPool();   // the manifest is the one thing fetched at page load (plan §2.1) — so the first ♪ or 選局 finds a reel (critic S2 r1)
 
+  // ==========================================================================
+  // 選局番号 — THE NUMBER ON THE LEDGE (2026-09-17)
+  // ==========================================================================
+  // The set's middle rocker steps a two-digit readout 00…10 and says nothing
+  // about itself, on the faceplate or in the log — that is the owner's whole
+  // brief for it. What it does here is narrow, on purpose:
+  //
+  //   00  the whole pool. The receiver behaves EXACTLY as it did before this
+  //       control existed — same weighting, same cooldown, same legality, same
+  //       tide. Nothing below runs.
+  //   01–10  the lottery's candidate set is filtered to one locale and the
+  //       EXISTING weighting runs over what is left. The footprint check, the
+  //       cooldown, the recent ring, the callback, the pin and the tide
+  //       weighting are untouched — this is one narrowing, in one place, before
+  //       the weights are computed.
+  //
+  // If the narrowed set is empty, or holds nothing that could serve a reception
+  // at all, the full set stands: the station must never go silent because of
+  // this control. Same if broadcast/geo.json does not load — the number then
+  // steps and means nothing, silently, which is exactly today's behaviour.
+  //
+  // The table is DATA, in one place, keyed by the ISO-3166-1 alpha-2 `country`
+  // in geo.json; a reel carrying a `realm` (orbit, moon, deep space) is 10
+  // whatever its country says. Verified against the live pool 2026-09-17: of
+  // 250 playable reels, 249 place and exactly one — tibetan-ritual-nyingmapa-1971,
+  // country "XX" — belongs to no locale and so is reachable only at 00. There
+  // is deliberately NO fallback bucket: a country that turns up in a later
+  // curation round without a home here becomes unreachable by number, which is
+  // a thing the next round should see rather than have folded into a neighbour.
+  var LOCALE_MAX = 10, REALM_LOCALE = 10;
+  var LOCALE_OF = (function () {
+    var t = {
+      1: "US CA",                                                                     // NORTH AMERICA
+      2: "MX CU BR AR CL CO PE VE",                                                   // LATIN AMERICA
+      3: "GB DE FR NL BE AT CH IT ES PT IE DK SE FI GR CY PL CZ HU RO RS AL EE LT UA",// EUROPE
+      4: "RU KZ",                                                                     // RUSSIA & CENTRAL ASIA
+      5: "IL IR TR IQ JO KW LB SY QA EG DZ TN",                                       // MIDDLE EAST & NORTH AFRICA
+      6: "ZA GH NG AO SN TZ CD ET KE ZW",                                             // AFRICA
+      7: "IN PK LK",                                                                  // SOUTH ASIA
+      8: "JP CN KP KR TW HK MO",                                                      // EAST ASIA
+      9: "ID PH SG MY TH VN AU NZ"                                                    // SE ASIA & OCEANIA
+    }, out = {}, n, cc, i;
+    for (n in t) if (Object.prototype.hasOwnProperty.call(t, n)) {
+      cc = t[n].split(" ");
+      for (i = 0; i < cc.length; i++) out[cc[i]] = +n;
+    }
+    return out;                                                                       // 10 = OFF-EARTH, by `realm`
+  })();
+
+  var localeN = 0;                       // the number on the readout
+  var geoLoc = null, geoState = "idle";  // reel id → locale number; idle | loading | ready | failed
+  function loadGeo() {
+    if (geoState !== "idle") return;
+    if (!hasFetch) { geoState = "failed"; return; }
+    geoState = "loading";
+    try {
+      fetch(geoUrl()).then(function (r) { return r.json(); }).then(function (g) {
+        var m = {}, n = 0, id, e, loc;
+        for (id in g) {
+          if (!Object.prototype.hasOwnProperty.call(g, id) || id === "_meta") continue;
+          e = g[id]; if (!e) continue;
+          loc = e.realm ? REALM_LOCALE : LOCALE_OF[e.country];
+          if (loc) { m[id] = loc; n++; }
+        }
+        geoLoc = n ? m : null;
+        geoState = n ? "ready" : "failed";
+      }).catch(function () { geoLoc = null; geoState = "failed"; });      // silent: the number simply means nothing
+    } catch (e) { geoLoc = null; geoState = "failed"; }
+  }
+  function setLocale(n) {
+    n = n | 0; if (n < 0) n = 0; if (n > LOCALE_MAX) n = LOCALE_MAX;
+    localeN = n;
+    loadGeo();                           // a no-op unless the page-load fetch never started
+    return localeN;
+  }
+  // The narrowing. null means "leave the candidates exactly as they are".
+  function localeNarrow(cands) {
+    if (!localeN || !geoLoc) return null;
+    var need = TUNE_S + BUDGET_MIN_S + (LOSS_MIN_S + LOSS_SPAN_S), out = [], ok = false, i, e;
+    for (i = 0; i < cands.length; i++) {
+      e = cands[i];
+      if (geoLoc[e.id] !== localeN) continue;
+      out.push(e);
+      if (!ok && (wholeAt(e, 0) || longestWindow(e) >= need)) ok = true;   // could this one actually hold a reception?
+    }
+    return ok ? out : null;
+  }
+  // …and the file is fetched at page load beside the manifest, so the number
+  // bites on the very first press. 40 KB; a failure leaves the number inert and
+  // everything else exactly as it was. (It sits HERE, below the vars it reads —
+  // a call up beside loadPool() would run before `geoState` was assigned and
+  // return silently on its own guard.)
+  loadGeo();
+
   // ---- the recent ring: reels heard in the last RECENT_CYCLES cycles ----
   var recent = [];   // [{ id, cycle }]
   function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
@@ -1089,6 +1191,11 @@
     var skip = recentIds(cycle), cands = [];
     for (var i = 0; i < pool.length; i++) if (!skip[pool[i].id]) cands.push(pool[i]);
     if (!cands.length) cands = pool;
+    // 選局番号: the ledge's number, and the only thing it touches. At 00 this is
+    // a no-op; otherwise everything below runs on the narrowed set exactly as
+    // it ran on the wide one.
+    var narrowed = localeNarrow(cands);
+    if (narrowed) cands = narrowed;
     var dark = tidePos, w = [], tot = 0;
     for (i = 0; i < cands.length; i++) {
       var e = cands[i], x = +e.weight > 0 ? +e.weight : 1, tone = e.tone;
@@ -2510,6 +2617,12 @@
     // which is the point: the owner moves a value here and it means the same
     // thing on every night, in both files.
     SHAPE_DRAWS: SHAPE_DRAWS,
+    // 選局番号 — the ledge's unlabelled stepper. zankyo-ui.js owns the plastic;
+    // what a number MEANS lives here, with the lottery that answers it.
+    setLocale: setLocale,
+    getLocale: function () { return localeN; },
+    localeMax: LOCALE_MAX,
+    localeState: function () { return { n: localeN, geo: geoState, placed: geoLoc ? Object.keys(geoLoc).length : 0 }; },
     drawShape: drawShape,
     shrinkShape: shrinkShape,
     drawBudget: drawBudget,
