@@ -300,6 +300,29 @@
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
   display: block;
 }
+/* ONLY THE PROMPT RIDES BESIDE THE DRAWING (owner, 2026-09-17). The whole
+   right column beside the plate was the first cut of this; the ratings and
+   the buttons go back under the pair, spanning the card as they did. So the
+   two wrappers flatten to display:contents and every grandchild becomes an
+   item of ONE grid: the plate takes row 2 column 1, the prompt row 2 column
+   2, and everything after them is placed full width, which lands it on row 3
+   and down in source order. */
+.jd-about .jd-inline-card .jd-bench {
+  display: grid;
+  grid-template-columns: var(--plate) minmax(0, 1fr);
+  column-gap: 20px;
+  align-items: start;
+}
+.jd-about .jd-inline-card .jd-bench-l,
+.jd-about .jd-inline-card .jd-bench-r { display: contents; }
+.jd-about .jd-inline-card .jd-bench-l > *,
+.jd-about .jd-inline-card .jd-bench-r > * { grid-column: 1 / -1; }
+.jd-about .jd-inline-card .jd-bench-l > .jd-turn-pin {
+  grid-column: 1; grid-row: 1; align-self: start;
+}
+.jd-about .jd-inline-card .jd-bench-r > .jd-turn-assign {
+  grid-column: 2; grid-row: 1; align-self: start; margin-bottom: 0;
+}
 .jd-about .jd-inline-card .jd-turn-pin {
   position: static;
   flex: 0 0 auto;
@@ -352,21 +375,28 @@
 .jd-about .jd-inline-card .rc-scroll {
   display: grid;
   grid-template-columns: var(--plate) minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas: "mast mast" "left right";
   column-gap: 20px;
 }
-.jd-about .jd-inline-card .rc-col-l {
-  grid-area: left; min-width: 0; display: flex; flex-direction: column;
-}
-.jd-about .jd-inline-card .rc-col-r {
-  grid-area: right; min-width: 0; display: flex; flex-direction: column;
-  border-left: 1px solid var(--form-rule-2); padding-left: 18px;
-}
-.jd-about .jd-inline-card .rc-masthead { grid-area: mast; margin-bottom: 8px; }
+/* same shape as the bench above: ONE grid, the plate and its filmstrip in
+   column 1, the prompt (its rule and its text) in column 2 beside them, and
+   the grades table and the sibling strip back to the card's full width
+   underneath. The plate spans the prompt's two rows so the filmstrip can sit
+   under it on a row of its own; align-self keeps the plate its natural
+   height rather than stretching it to whatever the prompt needs. */
+.jd-about .jd-inline-card .rc-col-l,
+.jd-about .jd-inline-card .rc-col-r { display: contents; }
+.jd-about .jd-inline-card .rc-scroll > *,
+.jd-about .jd-inline-card .rc-col-l > *,
+.jd-about .jd-inline-card .rc-col-r > * { grid-column: 1 / -1; }
+.jd-about .jd-inline-card .rc-masthead { grid-row: 1; margin-bottom: 8px; }
 .jd-about .jd-inline-card .rc-col-l > .rc-plate {
-  width: 100%;
-  margin: 0 0 0.65rem;
+  grid-column: 1; grid-row: 2; align-self: start;
+  width: 100%; margin: 0;
+}
+.jd-about .jd-inline-card .rc-col-l > .jd-filmstrip { grid-column: 1; grid-row: 3; }
+/* the box about-scenes.js lifts the prompt's rule and text into */
+.jd-about .jd-inline-card .rc-col-r > .jd-about-prompt {
+  grid-column: 2; grid-row: 2; align-self: start; min-width: 0;
 }
 .jd-about .jd-inline-card .rc-col-r > .rc-head:first-child { margin-top: 0; }
 /* the plate column's width: --plate is what .rc-scroll's grid is built on,

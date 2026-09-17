@@ -351,6 +351,32 @@
      render. Keyed on the plate's own svg node: a fresh render is a fresh
      node, and the control made for the old one went with it. */
   var sbSeq = 0;
+  /* THE PROMPT, LIFTED INTO A BOX OF ITS OWN (owner, 2026-09-17). On this
+     page only the PROMPT rides beside the drawing — the grades and the
+     sibling strip go back under the pair at the card's full width. The record
+     card writes its prompt as TWO siblings, the rule that says THE PROMPT and
+     the block that holds the text, and two siblings cannot share one grid
+     cell: placed on consecutive rows, the tall plate in the column beside
+     them sets the first row's height and the text lands a hundred-odd pixels
+     below its own heading. Lifting the pair into one box gives the grid one
+     thing to place. The bench needs none of this — its .jd-turn-assign is
+     already a single block. Idempotent: the box is made once per render, and
+     a re-render replaces the card and its box together. */
+  function ensurePromptBox(host) {
+    var card = realCard(host);
+    if (!card) return;
+    var colR = card.querySelector('.rc-col-r');
+    if (!colR || colR.querySelector(':scope > .jd-about-prompt')) return;
+    var head = colR.querySelector(':scope > .rc-head');
+    var assign = colR.querySelector(':scope > .rc-assign');
+    if (!head || !assign || head.nextElementSibling !== assign) return;
+    var box = document.createElement('div');
+    box.className = 'jd-about-prompt';
+    colR.insertBefore(box, head);
+    box.appendChild(head);
+    box.appendChild(assign);
+  }
+
   function ensureFilmstrip(host) {
     if (!window.JD_filmstrip) return;
     var card = realCard(host);
@@ -405,6 +431,7 @@
     if (!host) return false;
     var card = realCard(host);
     if (!card || !hasContent(card)) return false;
+    ensurePromptBox(host);
     ensureFilmstrip(host);
 
     var natW = card.offsetWidth;
