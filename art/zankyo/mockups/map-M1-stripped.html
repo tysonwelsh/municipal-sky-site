@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ZANKYŌ — map option M1 · 標 THE TALLY</title>
+<title>STRIPPED · ZANKYŌ — map option M1 · 標 THE TALLY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -667,6 +667,22 @@
   .zk-fix-key { display: none; }
   .zk-bench button { font-size: 7.5px; padding: 0 7px; }   /* the 44 px target is kept */
 }
+
+/* ===========================================================================
+   STRIPPED PREVIEW (2026-09-17, owner: "just the map").
+   Nothing is deleted here — the rail and the plate are hidden so the ribbon
+   can be judged alone, and the demo bench is relocated OUTSIDE the faceplate.
+   The real build removes all three outright; this file exists only to look at.
+   =========================================================================== */
+.zk-rail { display: none !important; }              /* the 経度 compass — owner: remove */
+.zk-fix  { display: none !important; }              /* the 位置 readout plate — OPEN QUESTION */
+.zk-map-unit { gap: 0; }
+.zk-toggle-bench { margin-top: -6px; }
+.zk-toggle-bench .zk-bench { margin-top: 6px; background: none; }
+.zk-toggle-bench .zk-bench button { color: #3a3746; border-color: #c7c3cd; }
+.zk-toggle-bench .zk-bench button::before { background: #efedf3; box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,0.12); }
+.zk-toggle-bench .zk-bench button b { color: #b3243f; }
+.zk-toggle-bench .zk-bench-k { display: none; }
 </style>
 </head>
 <body>
@@ -677,6 +693,20 @@
   <button type="button" data-w="700" aria-pressed="false">700</button>
   <button type="button" data-w="960" aria-pressed="true">960</button>
   <em>— the live breakpoints, run as container queries. Achieved: <span id="wid">…</span></em>
+</div>
+
+<div class="zk-toggle zk-toggle-bench" role="group" aria-label="demo bench (not part of the design)">
+  <strong>卓上 BENCH</strong>
+  <em>— mockup only; outside the machine. The shipped ribbon has no controls.</em>
+<div class="zk-bench">
+            <span class="zk-bench-k">卓上 BENCH</span>
+            <button type="button" id="b-tune"><b>受信</b>TUNE NEXT</button>
+            <button type="button" id="b-country"><b>国</b>COUNTRY-ONLY</button>
+            <button type="button" id="b-dx"><b>遠</b>TV-DX + ARC</button>
+            <button type="button" id="b-arc"><b>弧</b>LONG ARC</button>
+            <button type="button" id="b-space"><b>軌</b>OFF-EARTH</button>
+            <button type="button" id="b-roll"><b>点呼</b>ROLL-CALL</button>
+          </div>
 </div>
 
 <div class="main-wrapper">
@@ -792,16 +822,6 @@
             </div>
           </div>
 
-          <!-- the demo bench (mockup only — the shipped ribbon has no controls) -->
-          <div class="zk-bench">
-            <span class="zk-bench-k">卓上 BENCH</span>
-            <button type="button" id="b-tune"><b>受信</b>TUNE NEXT</button>
-            <button type="button" id="b-country"><b>国</b>COUNTRY-ONLY</button>
-            <button type="button" id="b-dx"><b>遠</b>TV-DX + ARC</button>
-            <button type="button" id="b-arc"><b>弧</b>LONG ARC</button>
-            <button type="button" id="b-space"><b>軌</b>OFF-EARTH</button>
-            <button type="button" id="b-roll"><b>点呼</b>ROLL-CALL</button>
-          </div>
 
         </div>
       </div>

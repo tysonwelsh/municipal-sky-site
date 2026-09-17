@@ -516,6 +516,7 @@
 
 /* 3. THE WELL. Everything in the row sits below the ledge's own face. */
 .zk-well {
+  --cap: 36px;                 /* the moulding's own height — the target is hung around it */
   position: relative; display: grid; gap: 5px;
   grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr;
   padding: 4px; border-radius: 4px;
@@ -553,11 +554,13 @@
    it sat; only the boxes around it grew.
    --------------------------------------------------------------------------- */
 .zk-face {
+  --up: 4px; --down: 4px;    /* the overhang above and below the cap */
   position: relative; box-sizing: border-box; border: 0; padding: 0;
   background: none; cursor: pointer; font: inherit; color: inherit;
   -webkit-tap-highlight-color: transparent;
-  height: 44px;              /* ← the finger */
-  margin-block: -4px;        /* ← the moulding: 44 − 8 = the 36 px the row keeps */
+  height: calc(var(--cap) + var(--up) + var(--down));   /* ← the finger: 44 px */
+  margin-top: calc(0px - var(--up));                    /* ← the moulding: the row */
+  margin-bottom: calc(0px - var(--down));               /*    still measures the cap */
 }
 
 /* --- the shared plastic of every face in the well: the same tool, the same
@@ -574,7 +577,7 @@
     inset 0 -3px 4px rgba(0, 0, 0, 0.6);
   transition: transform 0.07s ease-out, box-shadow 0.07s ease-out, background 0.12s;
 }
-.zk-btn::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; bottom: 4px; }
+.zk-btn::before { content: ""; position: absolute; left: 0; right: 0; top: var(--up); bottom: var(--down); }
 .zk-btn:hover::before, .zk-rocker:hover .zk-cap { background: linear-gradient(180deg, #4a443e 0 1px, #3e3833 1px 46%, #2b2724 46%, #1f1c19); }
 .zk-btn:focus-visible { outline: none; }
 .zk-btn:focus-visible::before { outline: 2px solid var(--cyan); outline-offset: 3px; }
@@ -593,9 +596,11 @@
 
 /* --- the lit buttons: a lens bar let into the bottom of the face. Dark it is
        a moulded slot; lit it is the only colour on the ledge. --- */
-.zk-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 6px; }
+/* padding-bottom = 14 − 2×up keeps the kanji 3 px above the CAP's centre — the
+   lift the lens needs — no matter how the target is hung around it */
+.zk-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: calc(14px - 2 * var(--up)); }
 .zk-lens {
-  position: absolute; z-index: 2; left: 50%; bottom: 8px; width: 38%; max-width: 36px; height: 3px; transform: translateX(-50%); border-radius: 1px;
+  position: absolute; z-index: 2; left: 50%; bottom: calc(4px + var(--down)); width: 38%; max-width: 36px; height: 3px; transform: translateX(-50%); border-radius: 1px;
   background: linear-gradient(180deg, #17130f, #221d17);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.9), 0 -1px 0 rgba(255, 246, 224, 0.05);
   transition: background 0.18s, box-shadow 0.18s;
@@ -614,7 +619,7 @@
        the point — and each end answers to a 44 px box of thumb. --- */
 .zk-rocker {
   position: relative; display: flex; align-items: stretch; gap: 0;
-  height: 36px; border-radius: 2px 2px 3px 3px;
+  height: var(--cap); border-radius: 2px 2px 3px 3px;
   background: linear-gradient(180deg, #0f0d0c, #161311);
   box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
 }
@@ -634,7 +639,8 @@
    and never wide enough to meet its opposite number (2 × 44 = 88 < the rocker
    at every width this page reaches, 390 included) */
 .zk-hit {
-  position: absolute; z-index: 6; top: 50%; height: 44px; margin: -22px 0 0;
+  position: absolute; z-index: 6; margin: 0;
+  top: calc(0px - var(--up)); height: calc(var(--cap) + var(--up) + var(--down));
   width: max(44px, 30%);
   background: none;
 }
@@ -733,13 +739,20 @@
    columns each, the three buttons take two each. Both rows fill the width
    exactly; there is no spare space anywhere on the ledge. */
 @container zk (max-width: 430px) {
-  /* row-gap 9, not 5: each row's controls report 44 px against a 36 px cap, so
-     they overhang their row by 4 px top and bottom. At a 5 px gap the two rows'
-     touch targets would overlap by 3 px and the boundary would be a coin toss.
-     9 px is the smallest gap that keeps them apart, and it costs the ledge 4 px. */
-  .zk-well { grid-template-columns: repeat(6, 1fr); column-gap: 5px; row-gap: 9px; }
+  .zk-well { grid-template-columns: repeat(6, 1fr); gap: 5px; }
   .zk-rocker { grid-column: span 3; }
   .zk-btn { grid-column: span 2; }
+  /* Two rows of 44 px targets over 35 px caps at a 5 px gap would overlap by
+     4 px and the boundary between 輝度 and 蛍光体 would be a coin toss. Widening
+     the gap fixes it and costs the ledge height the owner has not agreed to
+     spend. So the targets LEAN instead: the top row hangs 7 px up and 2 px
+     down, the bottom row 2 px up and 7 px down. Both are still 44 px, they
+     clear each other by 1 px, the caps do not move, and the ledge stays exactly
+     as built at 105 px. The cost is 2.5 px of bias away from the cap's centre
+     on each row — under a fingertip, nothing. */
+  .zk-well { --cap: 35px; }
+  .zk-well .zk-rocker .zk-hit { --up: 7px; --down: 2px; }
+  .zk-well .zk-btn { --up: 2px; --down: 7px; }
   .zk-face-k { font-size: 11px; }
   .zk-ledge-brand em { display: none; }
 }
@@ -1003,8 +1016,17 @@
   <p>At ≤ 700 px the two column wrappers dissolve with <code>display: contents</code> and the four things take an explicit order: <b>television → spectrum scope → 段階 progress bar → PLAY / STOP / volume</b>. The tube stays full width and the ledge thins its walls to 9 px with the casing.</p>
   <p><b>At ≤ 430 px the well goes to two rows, and the reason is arithmetic.</b> Five controls across a 308 px well is 62 px each; a rocker that wide has 26 px ends, which is not a thumb. So the well runs on a six-column grid: the two rockers take three columns each (measured 160 px, ends of 48 px) and the three buttons take two each (measured 105 px). Both rows fill the width exactly — <b>there is no spare space anywhere on the ledge at any width</b>, which was the complaint about the last round. The ledge is 105 px on a 390 px phone under a 327 × 246 picture, and every pixel of it is a control; at every width above 430 px it is one row and 63 px.</p>
 
+  <h3>THE TOUCH TARGET, AND THE MOULDING IT HIDES BEHIND</h3>
+  <p>The moulding needs a <b>36 px cap</b> — any taller and the ledge stops being a shallow band. A finger needs <b>44 px</b>. Those are different numbers, so they are different boxes. Every control in the well measures <b>at least 44 × 44</b> at every width while the plastic it paints stays exactly 36 px (35 on a phone) and does not move a pixel:</p>
+  <ul>
+    <li><b>The three buttons</b> are 44 px tall with <code>margin-block</code> pulled back by the overhang, so the grid row still measures the cap; the painted face is <code>::before</code>, inset by the overhang, and it carries the background, the shadows, the radius and the 2 px of travel.</li>
+    <li><b>The four rocker ends</b> could not do that — their cap is 30 % of the rocker, which is 34 px wide at 960, so the target has to be wider than the paint as well as taller. The cap is a plain span in the flex row and the button is an invisible box laid over it at <code>max(44px, 30%)</code>, lapping into the indicator window, which is decorative and has nothing to hit. Two of them never meet: 2 × 44 = 88 px against a rocker that is 114 px at its narrowest here.</li>
+    <li><b>On the phone the two rows lean apart</b> instead of paying for a wider gap. A 44 px target over a 35 px cap overhangs its row; at the 5 px row gap two rows would overlap by 4 px and the boundary between 輝度 and 蛍光体 would be a coin toss. Widening the gap would cost the ledge 4 px of height. So the top row hangs 7 px up and 2 px down and the bottom row 2 px up and 7 px down — both still 44 px, clearing each other by 1 px, <b>and the ledge stays exactly 105 px</b>. The cost is 2.5 px of bias off the cap's centre, which is nothing under a fingertip.</li>
+    <li><code>:active</code>, the latch and the focus ring are all retargeted at the cap, so the ring hugs the plastic and not the invisible box, and <code>-webkit-tap-highlight-color: transparent</code> stops iOS painting a rectangle over the part of the target that is not the control.</li>
+  </ul>
+
   <h3>KEYBOARD</h3>
-  <p>Every control is a real <code>&lt;button&gt;</code> with a visible focus ring. Tab reaches all seven elements of the row; on a rocker, ← and → step it from either end; Enter and Space work everywhere. The rockers announce their step through a live region (<i>輝度 3 / 4</i>, <i>焦点 中 · 96 × 72</i>).</p>
+  <p>Every control is a real <code>&lt;button&gt;</code> with a visible focus ring that hugs the cap. Tab reaches all seven elements of the row; on a rocker, ← and → step it from either end; Enter and Space work everywhere. The rockers announce their step through a live region (<i>輝度 3 / 4</i>, <i>焦点 中 · 96 × 72</i>).</p>
 
   <p><b>Measured, live, in this browser.</b> <span id="measure">…</span></p>
   <p><b>Frame cost of the shader at the current raster</b> (source → LUT → frame → compose, the scope excluded): <span id="perf">warming up…</span></p>

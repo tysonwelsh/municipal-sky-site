@@ -42,6 +42,17 @@
   var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
   var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
 
+  /* THE FRACTION IS PARKED (owner, 2026-09-16): "I think it's kind of a
+     distraction." The readout — the mark set over the count across a slanted
+     solidus — is not drawn on any surface. Everything that makes it is still
+     here: flip this to true and it comes back exactly as it was, markup and
+     all, and its styling is waiting untouched in junk-drawer.css under
+     ".fs-read". Nothing is lost to a screen reader either way: the strip's
+     own aria-valuetext has always carried "mark 14 of 31" in full, and it
+     still does. Parking it also hands the strip the ~34px the fraction and
+     its gap were holding off the right end. */
+  var SHOW_READ = false;
+
   var PLAY_G = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
     '<path class="g-play" d="M4 2.6 13.4 8 4 13.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
     '<path class="g-pause" d="M5 2.6v10.8M11 2.6v10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
@@ -133,9 +144,11 @@
       '<div class="fs-grid"></div>' +
       '<div class="fs-caret"></div>' +
       '</div>' +
-      '<div class="fs-read" aria-hidden="true">' +
-      '<span class="fs-read-n"><b class="fs-n">0</b></span>' +
-      '<span class="fs-read-d"><span class="fs-m">0</span></span></div>' +
+      (SHOW_READ
+        ? '<div class="fs-read" aria-hidden="true">' +
+          '<span class="fs-read-n"><b class="fs-n">0</b></span>' +
+          '<span class="fs-read-d"><span class="fs-m">0</span></span></div>'
+        : '') +
       '</div>';
     return h;
   }
@@ -210,7 +223,7 @@
         f.title = 'marks 1 to ' + frameC[k] + ' of ' + M;
       });
       strip.setAttribute('aria-valuemax', M);
-      rM.textContent = M;
+      if (rM) rM.textContent = M;
       armed = true;
       if (!framesBuilt) buildFrames();
       return true;
@@ -265,7 +278,7 @@
          run is inked along the strip's floor */
       fill.style.width = (p * 100).toFixed(3) + '%';
       var n = markN(u);
-      rN.textContent = n;
+      if (rN) rN.textContent = n;
       strip.setAttribute('aria-valuenow', n);
       strip.setAttribute('aria-valuetext', 'mark ' + n + ' of ' + M);
       var cf = curFrame(u);

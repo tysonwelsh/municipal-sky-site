@@ -494,3 +494,52 @@ as user-facing as a change gets.
    1990s 45 · 2000s 3 · 2010s 8 · 2020s 5`; tones `voice 198 · music 21 ·
    tone 15 · sung 11 · noise 4 · drone 1`. The counts in §5 C above include the
    takedowns and are superseded by these.
+
+---
+
+## 10. THE MAP — settled, 2026-09-16
+
+**M1 · 標 THE TALLY wins.** M2 (region tuner) and M3 (night chart) are deleted,
+locally and from the live host. They remain recoverable from commit `f1fdc50`,
+and their final verified versions are kept in this session's scratchpad under
+`retired-maps/`.
+
+### The strip-down (owner: "just the map")
+
+Not yet built — the monitor casing is settled first. When it is, from
+`mockups/map-M1-tally.html` keep **only** the ribbon and remove the furniture:
+
+| element | what it is | disposition |
+|---|---|---|
+| `.zk-ribbon-wrap` → `#map-canvas`, `.zk-bed`, `.zk-glass`, `.zk-ribbon-brand` | the ribbon itself: 488 × 146 at 960, aspect 3.33, holding to 326 × 98 at 390 | **KEEP** |
+| `.zk-rail` (`#rail`) | the "compass" — the 経度 longitude scale above the ribbon, with its travelling mark and label | **REMOVE** (owner) |
+| `.zk-bench` | six demo buttons (受信 / 国 / 遠 / 弧 / 軌 / 点呼) | **REMOVE** — mockup-only; its own comment already says "the shipped ribbon has no controls" |
+| `.zk-fix` (`#fix`) | the 位置 readout plate: country code, place name, coordinates, confidence, tally | **OPEN — ask the owner.** See below. |
+
+### The one open question: the 位置 plate
+
+"All the other controls" and "just the map" read as removing this too, but the
+plate is a **readout, not a control**, and M1's own declared weakness was that
+with no interaction *the plate is the only way to learn a place name*. Strip it
+and a dot glows over the Nile and the viewer never learns it is Cairo.
+
+Three ways out, for the owner to pick when the casing is settled:
+1. **Remove it.** The map becomes pure ambient indication — you see *that*
+   somewhere is transmitting, never *where*. Cleanest, and consistent with the
+   station's existing reticence.
+2. **Keep one line.** Drop the plate to just the place name, set in the VFD
+   register, under or beside the ribbon.
+3. **Move it into the VFD.** The 活動 ACTIVITY log already prints a 受信 line per
+   reception ("受信 · Duck and Cover · 1951"); append the place to it and the map
+   needs no caption at all. **Recommended** — it costs no faceplate height and
+   puts the fact where the machine already keeps its record.
+
+### What carries forward regardless
+
+- Confidence must stay the grammar: `CAP = { city: 1.0, region: 0.72, country: 0.46, unknown: 0 }`.
+  126 of 252 reels are country-confident; a country-level reel must remain
+  numerically incapable of drawing a sharp dot, and `unknown` draws nothing.
+- The tally: a repeat reception brightens its cell logarithmically. This is the
+  answer to reels stacking 13 deep at Pyongyang, 10 at Tokyo, 6 at London.
+- 6 arcs (reels with a known receiver), 15 `dx` styled as single dots, 7 `realm`
+  reels handled off-map.

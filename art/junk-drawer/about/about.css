@@ -285,24 +285,27 @@
    prompt under it, as before, "just a little better positioned". So the
    plate is a step bigger than the first cut's 330px, centred, and the
    prompt panel runs the full width beneath it.) */
-.jd-about [data-scene-pane="instrument"] .jd-inline-card { width: 660px; }
+.jd-about [data-scene-pane="instrument"] .jd-inline-card { width: 740px; }
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] {
   width: 100%;
   height: auto;
 }
-.jd-about .jd-inline-card .jd-bench,
-.jd-about .jd-inline-card .jd-bench-l,
-.jd-about .jd-inline-card .jd-bench-r { display: contents; }
+/* SIDE BY SIDE AGAIN (owner, 2026-09-17): "the prompt is to the right of the
+   SVG image … the SVG image and the timeline on the left". The wrappers went
+   display:contents on 2026-09-15 to stack the card into a portrait; taking
+   that off hands the bench back its OWN landscape grid from junk-drawer.css
+   (`grid-template-columns: var(--plate) minmax(280px, 1fr)`), which is this
+   layout already. Only the plate width is set here. */
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn { --plate: 330px; }
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
-  display: flex;
-  flex-direction: column;
+  display: block;
 }
 .jd-about .jd-inline-card .jd-turn-pin {
   position: static;
   flex: 0 0 auto;
   width: 100%;
   padding: 0;
-  margin: 0 0 var(--sp-3);
+  margin: 0;
   justify-content: center;
 }
 /* THE PLATE NEEDS A DEFINITE WIDTH. `width: auto` with `max-width` looks
@@ -315,11 +318,15 @@
    height, and the pin (display:flex, justify-content:center) centres it. */
 .jd-about .jd-inline-card .jd-turn-pin .jd-turn-plate {
   flex: 0 0 auto;
-  width: min(380px, 100%);
+  width: 100%;
   max-width: 100%;
   height: auto;
   max-height: none;
-  aspect-ratio: 1 / 1;
+  /* NO aspect-ratio here. The square used to be forced onto the plate to give
+     it a height; .jd-turn-art carries its own 1/1 and sizes itself, and since
+     2026-09-16 the plate also holds the filmstrip under the art — a forced
+     square left the control hanging off the plate's bottom edge with nowhere
+     to sit. Height comes from the contents now: art, then control. */
   margin: 0 auto;
 }
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-assign {
@@ -335,19 +342,37 @@
    own phone layout is the source of the move (the column wrappers go
    display:contents, source order is the portrait order), keyed to this
    page instead of to a narrow viewport. */
-.jd-about [data-scene-pane="record"] .jd-inline-card { width: 660px; }
+.jd-about [data-scene-pane="record"] .jd-inline-card { width: 740px; }
+/* SIDE BY SIDE AGAIN (owner, 2026-09-17) — same move as the bench above: the
+   flex column and the display:contents wrappers are dropped, and the record
+   gets its own landscape grid back ("mast mast" / "left right", the plate
+   column beside the paperwork). The prompt opens the right column, so it
+   lands beside the drawing; the grades and the sibling strip follow it down
+   that column exactly as they do in the drawer. */
 .jd-about .jd-inline-card .rc-scroll {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: var(--plate) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "mast mast" "left right";
+  column-gap: 20px;
 }
-.jd-about .jd-inline-card .rc-col-l,
-.jd-about .jd-inline-card .rc-col-r { display: contents; }
-.jd-about .jd-inline-card .rc-masthead { margin-bottom: 8px; }
+.jd-about .jd-inline-card .rc-col-l {
+  grid-area: left; min-width: 0; display: flex; flex-direction: column;
+}
+.jd-about .jd-inline-card .rc-col-r {
+  grid-area: right; min-width: 0; display: flex; flex-direction: column;
+  border-left: 1px solid var(--form-rule-2); padding-left: 18px;
+}
+.jd-about .jd-inline-card .rc-masthead { grid-area: mast; margin-bottom: 8px; }
 .jd-about .jd-inline-card .rc-col-l > .rc-plate {
-  width: min(380px, 100%);
-  margin: 0 auto 0.65rem;
+  width: 100%;
+  margin: 0 0 0.65rem;
 }
 .jd-about .jd-inline-card .rc-col-r > .rc-head:first-child { margin-top: 0; }
+/* the plate column's width: --plate is what .rc-scroll's grid is built on,
+   and what .rc-plate-art's 8% inset (and so the filmstrip's alignment) is
+   measured inside. 330px against the card's 740 leaves the paperwork ~330. */
+.jd-about [data-scene-pane="record"] .jd-inline-card .jd-record { --plate: 330px; }
 /* the drawer's LANDSCAPE fold rule (min-width 701px: the prompt as the
    right column's springy row) would apply here because the viewport is
    wide; in a stacked column there is no slack to spring into, so the prompt

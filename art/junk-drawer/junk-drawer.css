@@ -4936,7 +4936,12 @@ html.jd-bench-on .jd-turn-scrim {
   border-top:6px solid var(--tb-red)}
 .fs-strip.is-scrubbing .fs-caret,.fs-strip:hover .fs-caret{width:3px;margin-left:-1.5px}
 
-/* the readout: a printed fraction, the mark over the count, thrown off a
+/* PARKED (owner, 2026-09-16) — the readout is not drawn on any surface:
+   jd-filmstrip.js holds SHOW_READ = false and emits no .fs-read at all. Every
+   rule below is kept, untouched and ready: flipping that one flag restores the
+   fraction exactly as it looked. Do not delete this block to tidy up.
+
+   the readout: a printed fraction, the mark over the count, thrown off a
    slanted solidus — nothing boxing it in. No label and no "of" either: the
    strip's aria-valuetext still says "mark 14 of 31" in full, so nothing is
    lost to a screen reader. Setting it diagonally holds 24px off the strip's
@@ -4970,6 +4975,27 @@ html.jd-bench-on .jd-turn-scrim {
    both widths for its scaled inline copies. ------------------------------- */
 .rc-col-l > .jd-filmstrip { width: 100%; margin: 8px 0 0; }
 .jd-turn-plate > .jd-filmstrip { width: 100%; margin: 8px 0 0; }
+/* …but lined up with the ARTWORK, not with the plate that holds it (owner,
+   2026-09-16: "it should be sort of lined up well underneath the image").
+   Both plates inset their picture — the report card's .rc-plate-art sits at
+   `inset: 6% 8% 20%` of the plate's padding box, the bench's .jd-turn-art-in
+   at `inset: 7%` — while the control spans the plate's whole width, so the
+   play button overhung the picture's left edge by ~20px and the strip's right
+   end overhung its right by the same. Padding the control by the plate's own
+   fraction (plus the 1px border the percentage is measured inside of) drops
+   its ends underneath the artwork's. This is keyed to those two rules: if
+   either inset changes, this changes with it.
+
+   Done with a percentage MARGIN on the two flex children rather than padding
+   on the control, because padding resolves against the containing block and
+   .rc-col-l is display:contents — the percentage escaped it and landed on an
+   ancestor half again as wide. A flex item's percentage margin resolves
+   against its flex container's inline size, which is the control itself, and
+   the control is the plate's width. */
+.rc-col-l > .jd-filmstrip > .fs-play { margin-inline-start: calc(8% + 1px); }
+.rc-col-l > .jd-filmstrip > .fs-strip { margin-inline-end: calc(8% + 1px); }
+.jd-turn-plate > .jd-filmstrip > .fs-play { margin-inline-start: calc(7% + 1px); }
+.jd-turn-plate > .jd-filmstrip > .fs-strip { margin-inline-end: calc(7% + 1px); }
 /* the ↻ on the card's plate is what the filmstrip's play button now does —
    the ENLARGEMENT keeps its REDRAW (.rc-zoom-fig carries no filmstrip) */
 .rc-col-l > .rc-plate .rc-draw { display: none; }

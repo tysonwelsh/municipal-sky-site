@@ -443,6 +443,10 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
   var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
   var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
 
+  /* the fraction is PARKED (owner, 2026-09-16): "kind of a distraction". The
+     sheet matches what ships — flip this to true to see it again. */
+  var SHOW_READ = false;
+
   var PLAY_G = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
     '<path class="g-play" d="M4 2.6 13.4 8 4 13.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
     '<path class="g-pause" d="M5 2.6v10.8M11 2.6v10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
@@ -485,9 +489,11 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
       '<div class="mk-grid"></div>' +
       '<div class="mk-caret"></div>' +
       '</div>' +
-      '<div class="mk-read" aria-hidden="true">' +
-      '<span class="mk-read-n"><b class="mk-n">0</b></span>' +
-      '<span class="mk-read-d"><span class="mk-m">0</span></span></div>' +
+      (SHOW_READ
+        ? '<div class="mk-read" aria-hidden="true">' +
+          '<span class="mk-read-n"><b class="mk-n">0</b></span>' +
+          '<span class="mk-read-d"><span class="mk-m">0</span></span></div>'
+        : '') +
       '</div>';
     return h;
   }
@@ -547,7 +553,7 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
         c.title = 'marks 1 to ' + frameC[k] + ' of ' + M;
       });
       strip.setAttribute('aria-valuemax', M);
-      rM.textContent = M;
+      if (rM) rM.textContent = M;
       armed = true;
       if (!framesBuilt) buildFrames();
       return true;
@@ -606,7 +612,7 @@ footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
       if (veil) veil.style.clipPath = 'inset(0 0 0 ' + (p * 100).toFixed(3) + '%)';
       if (fill) fill.style.width = (p * 100).toFixed(3) + '%';
       var n = markN(u);
-      rN.textContent = n;
+      if (rN) rN.textContent = n;
       strip.setAttribute('aria-valuenow', n);
       strip.setAttribute('aria-valuetext', 'mark ' + n + ' of ' + M);
       var cf = curFrame(u);
