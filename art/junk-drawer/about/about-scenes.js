@@ -63,6 +63,14 @@
   if (!root || !pane) return;
 
   var stepEls = [].slice.call(root.querySelectorAll('.jd-step[data-scene]'));
+  /* every step gets an anchor of its own, built from the two data attributes
+     it already carries — #step-record-cost, #step-instrument-ranking. The
+     walkthrough is long and scroll-driven, so without these there is no way
+     to point anyone (or anything) at one part of it. Set here rather than in
+     the markup so the two never drift apart. */
+  stepEls.forEach(function (el) {
+    if (!el.id) el.id = 'step-' + el.getAttribute('data-scene') + '-' + el.getAttribute('data-step');
+  });
   if (!stepEls.length) return;
 
   var API = window.JD_API || '';
@@ -351,30 +359,63 @@
      render. Keyed on the plate's own svg node: a fresh render is a fresh
      node, and the control made for the old one went with it. */
   var sbSeq = 0;
-  /* THE PROMPT, LIFTED INTO A BOX OF ITS OWN (owner, 2026-09-17). On this
-     page only the PROMPT rides beside the drawing — the grades and the
-     sibling strip go back under the pair at the card's full width. The record
-     card writes its prompt as TWO siblings, the rule that says THE PROMPT and
-     the block that holds the text, and two siblings cannot share one grid
-     cell: placed on consecutive rows, the tall plate in the column beside
-     them sets the first row's height and the text lands a hundred-odd pixels
-     below its own heading. Lifting the pair into one box gives the grid one
-     thing to place. The bench needs none of this — its .jd-turn-assign is
-     already a single block. Idempotent: the box is made once per render, and
-     a re-render replaces the card and its box together. */
-  function ensurePromptBox(host) {
+  /* THE PAPERWORK ASIDE (owner, 2026-09-17). Beside the drawing this page
+     shows the PROMPT and, under it, the SPECIMEN details; the grades table
+     and the sibling strip go back under the pair at the card's full width.
+
+     Two reasons this is done in JS rather than CSS. The prompt is written as
+     TWO siblings — the rule that says THE PROMPT and the block holding the
+     text — and two siblings cannot share one grid cell; placed on consecutive
+     rows, the tall plate in the column beside them sets the first row's
+     height and the text lands a hundred-odd pixels below its own heading. And
+     the specimen details (Model / Date / Tokens / Cost, the file number, the
+     DOWNLOAD button) are absolutely positioned ON the photograph in the
+     drawer's own design — printed on the paper, in its corners. Here they are
+     wanted as a read-down block in the column, which means lifting them off
+     the plate, not restyling them in place.
+
+     One <div> holds both, so the pair reads top-down under one another with
+     the plate's height irrelevant to where the specimen block starts. Made
+     once per render; a re-render replaces the card and this with it. */
+  function ensureAside(host) {
     var card = realCard(host);
     if (!card) return;
     var colR = card.querySelector('.rc-col-r');
-    if (!colR || colR.querySelector(':scope > .jd-about-prompt')) return;
+    var plate = card.querySelector('.rc-col-l > .rc-plate');
+    if (!colR || colR.querySelector(':scope > .jd-about-aside')) return;
     var head = colR.querySelector(':scope > .rc-head');
     var assign = colR.querySelector(':scope > .rc-assign');
     if (!head || !assign || head.nextElementSibling !== assign) return;
-    var box = document.createElement('div');
-    box.className = 'jd-about-prompt';
-    colR.insertBefore(box, head);
-    box.appendChild(head);
-    box.appendChild(assign);
+
+    var aside = document.createElement('div');
+    aside.className = 'jd-about-aside';
+    colR.insertBefore(aside, head);
+
+    var prompt = document.createElement('div');
+    prompt.className = 'jd-about-prompt';
+    aside.appendChild(prompt);
+    prompt.appendChild(head);
+    prompt.appendChild(assign);
+
+    /* the specimen block, in the card's own heading idiom */
+    if (!plate) return;
+    var notes = plate.querySelector(':scope > .rc-notes');
+    var no = plate.querySelector(':scope > .rc-note-no');
+    var btns = plate.querySelector(':scope > .rc-plate-btns');
+    if (!notes && !no && !btns) return;
+    var spec = document.createElement('div');
+    spec.className = 'jd-about-specimen';
+    var h = document.createElement('div');
+    h.className = 'rc-block rc-head';
+    h.textContent = 'Specimen';
+    spec.appendChild(h);
+    var body = document.createElement('div');
+    body.className = 'jd-about-specimen-body';
+    spec.appendChild(body);
+    if (notes) body.appendChild(notes);
+    if (btns) body.appendChild(btns);
+    if (no) body.appendChild(no);
+    aside.appendChild(spec);
   }
 
   function ensureFilmstrip(host) {
@@ -431,7 +472,7 @@
     if (!host) return false;
     var card = realCard(host);
     if (!card || !hasContent(card)) return false;
-    ensurePromptBox(host);
+    ensureAside(host);
     ensureFilmstrip(host);
 
     var natW = card.offsetWidth;
@@ -450,10 +491,41 @@
     if (availH) k = Math.min(k, availH / natH);
     k = Math.max(k, 0.45);            /* past this it stops being readable */
 
+    /* A CARD THAT GREW DOES NOT GET SMALLER (owner bug, 2026-09-17: "when I
+       click to expand one of the rows … it seems to shrink the width of the
+       overall container"). Opening an axis definition makes the card taller;
+       the ResizeObserver refits; availH/natH falls; k falls — and k scales
+       BOTH axes, so a height change came out as the whole card, width and
+       all, shrinking away from the reader at the exact moment they asked to
+       read something. Expanding to read and being given smaller type is the
+       wrong answer to the gesture.
+
+       So the height term only ever sets the scale on the FIRST fit, and while
+       the pane itself is unchanged. Grow the content afterwards and the scale
+       is held: the card keeps its size and the host below simply gets taller
+       to match. A real pane resize (a window drag, an orientation change)
+       still refits from scratch, because availW or availH moves with it.
+
+       TWO GUARDS, both found by this going wrong: the scale is only held for
+       the SAME card node (a re-render is a new node and must be measured
+       afresh), and only across a modest growth. Without them the very first
+       fit — which runs before the card has any content, when it is short
+       enough to need no scaling at all — was cached at k=1 and then held
+       forever, so the finished card rendered at full size in a pane too small
+       for it and was clipped out of sight. An axis opening adds a tenth of
+       the card's height; an empty card filling adds many times its own. */
+    var prev = host.__jdFit;
+    if (prev && prev.card === card &&
+        prev.availW === availW && prev.availH === availH &&
+        Math.abs(prev.natW - natW) < 0.5 &&
+        natH > prev.natH && natH < prev.natH * 1.6) {
+      k = prev.k;
+    }
+
     var left = Math.max(0, (availW - natW * k) / 2);
     card.style.transform = 'translateX(' + left.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
     host.style.height = Math.ceil(natH * k) + 'px';
-    host.__jdFit = { natW: natW, natH: natH, k: k };
+    host.__jdFit = { natW: natW, natH: natH, k: k, availW: availW, availH: availH, card: card };
     spanCache = null;
     /* the real card is whole and sized: its ghost, if one was standing in
        for it, has done its job — but only while this scene is the current

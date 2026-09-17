@@ -299,6 +299,7 @@
 .jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn { --plate: 330px; }
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
   display: block;
+  padding: var(--ab-pad);
 }
 /* ONLY THE PROMPT RIDES BESIDE THE DRAWING (owner, 2026-09-17). The whole
    right column beside the plate was the first cut of this; the ratings and
@@ -310,8 +311,19 @@
 .jd-about .jd-inline-card .jd-bench {
   display: grid;
   grid-template-columns: var(--plate) minmax(0, 1fr);
-  column-gap: 20px;
+  column-gap: var(--ab-gap-col);
+  /* NO row-gap. Every rating row is a grid row of its own, so a row-gap here
+     is not the band's seam — it is 40px inserted between every pair of rows,
+     which is exactly the "way too tall and awkward" the owner reported. The
+     seam is a margin on the one element that starts the full-width zone. */
+  row-gap: 0;
   align-items: start;
+}
+.jd-about .jd-inline-card .jd-bench-r > .jd-row--head { margin-top: var(--ab-gap-band); }
+/* the bench keeps its control INSIDE the plate, under the artwork — same
+   step away from the picture as the record card's */
+.jd-about .jd-inline-card .jd-turn-plate > .jd-filmstrip {
+  margin-top: var(--ab-gap-row);
 }
 .jd-about .jd-inline-card .jd-bench-l,
 .jd-about .jd-inline-card .jd-bench-r { display: contents; }
@@ -320,8 +332,11 @@
 .jd-about .jd-inline-card .jd-bench-l > .jd-turn-pin {
   grid-column: 1; grid-row: 1; align-self: start;
 }
+/* the bench carries no specimen block, so there is nothing to close its
+   column with; the prompt is centred on the drawing instead, which spreads
+   the slack above and below it rather than leaving it all at the foot */
 .jd-about .jd-inline-card .jd-bench-r > .jd-turn-assign {
-  grid-column: 2; grid-row: 1; align-self: start; margin-bottom: 0;
+  grid-column: 2; grid-row: 1; align-self: center; margin-bottom: 0;
 }
 .jd-about .jd-inline-card .jd-turn-pin {
   position: static;
@@ -365,6 +380,28 @@
    own phone layout is the source of the move (the column wrappers go
    display:contents, source order is the portrait order), keyed to this
    page instead of to a narrow viewport. */
+/* ---- ONE SPACING SCALE FOR BOTH CARDS ----------------------------------
+   The two-column band was arrived at by moving pieces around rather than by
+   designing it, and it showed: the filmstrip sat 8px under the plate, close
+   enough to read as touching the artwork's grid. These are the three gaps
+   the layout actually has — between the columns, between blocks stacked in a
+   column, and between the band and the full-width rows under it — set once
+   and referred to everywhere below, so a change lands in one place. */
+.jd-about .jd-inline-card {
+  --ab-gap-col: 22px;
+  /* the step between blocks stacked in a column — and specifically the air
+     ABOVE the filmstrip. At 14px the scrubber's top all but touched the box
+     holding the drawing while 40px of nothing sat under it: the control read
+     as belonging to whatever came next instead of to the picture it scrubs.
+     It wants more room above than it had and less below than the seam gave
+     it, so the two numbers move toward each other. */
+  --ab-gap-row: 22px;
+  /* the seam. Going from two columns to full width is the single biggest
+     structural change on the card, and at 20px it read as just another gap —
+     the eye had no stop before the table. It gets its own, larger step. */
+  --ab-gap-band: 26px;
+  --ab-pad: 18px;
+}
 .jd-about [data-scene-pane="record"] .jd-inline-card { width: 740px; }
 /* SIDE BY SIDE AGAIN (owner, 2026-09-17) — same move as the bench above: the
    flex column and the display:contents wrappers are dropped, and the record
@@ -373,9 +410,10 @@
    lands beside the drawing; the grades and the sibling strip follow it down
    that column exactly as they do in the drawer. */
 .jd-about .jd-inline-card .rc-scroll {
+  padding: var(--ab-pad) var(--ab-pad) var(--ab-pad);
   display: grid;
   grid-template-columns: var(--plate) minmax(0, 1fr);
-  column-gap: 20px;
+  column-gap: var(--ab-gap-col);
 }
 /* same shape as the bench above: ONE grid, the plate and its filmstrip in
    column 1, the prompt (its rule and its text) in column 2 beside them, and
@@ -393,10 +431,128 @@
   grid-column: 1; grid-row: 2; align-self: start;
   width: 100%; margin: 0;
 }
-.jd-about .jd-inline-card .rc-col-l > .jd-filmstrip { grid-column: 1; grid-row: 3; }
-/* the box about-scenes.js lifts the prompt's rule and text into */
-.jd-about .jd-inline-card .rc-col-r > .jd-about-prompt {
-  grid-column: 2; grid-row: 2; align-self: start; min-width: 0;
+.jd-about .jd-inline-card .rc-col-l > .jd-filmstrip {
+  grid-column: 1; grid-row: 3;
+  margin-top: var(--ab-gap-row);   /* was 8px — it read as touching the grid */
+}
+/* the band's own floor: the full-width rows start a clear step below it */
+.jd-about .jd-inline-card .rc-col-r > .rc-head:not(:first-of-type) {
+  margin-top: var(--ab-gap-band);
+}
+/* ONE COLUMN GRID FOR THE WHOLE CARD. The grades table splits itself 47/53
+   inline, which put its GRADE column ~12px off the prompt's left edge — two
+   things stacked in the same region of the card, not quite lining up. Pinned
+   to the band's own column instead so the card has ONE vertical seam. */
+.jd-about .jd-inline-card .rc-subj th:first-child,
+.jd-about .jd-inline-card .rc-subj td:first-child {
+  width: calc(var(--plate) + var(--ab-gap-col)) !important;
+}
+
+/* ---- THE RATING ROWS, COMPACTED (owner, 2026-09-17) --------------------
+   "They're way too tall and it's kind of awkward." In the drawer these rows
+   are a working form — you are filling them in, one drawing at a time, and
+   the 28px scale boxes are sized for that. On this page the card is a
+   SPECIMEN being shown, not a form being used: nobody picks a grade here, and
+   at 46px a row the ratings stood nearly twice the pitch of the report card's
+   own grades table (~26px) sitting on the facing page. The two are meant to
+   read as one system, so here they are brought to the same rhythm.
+
+   EVERY RULE IN THIS BLOCK IS SCOPED TO .jd-about .jd-inline-card, which
+   exists on this page and nowhere else. The drawer's instrument keeps its
+   working height untouched — that is the whole point of the scoping, and it
+   is why the compaction is done here rather than on .jd-row itself. */
+/* ONE ROW RHYTHM ACROSS THE TWO CARDS. The first pass overshot: the
+   instrument came down to ~24px a row while the record's grades table sat at
+   ~31px, so the compaction swapped one mismatch for its mirror image. Both
+   are brought to the same pitch instead — the instrument loosened a little,
+   the record's table tightened a little, meeting in the middle. */
+.jd-about .jd-inline-card .jd-row { padding: 2px 0; }
+.jd-about .jd-inline-card .jd-turn-select {
+  min-height: 25px;
+  padding: 0.12rem 1.5rem 0.12rem 0.5rem;
+}
+.jd-about .jd-inline-card table.rc-subj td { padding: 0.16em 0.5em 0.2em; }
+.jd-about .jd-inline-card .jd-row--head > span { padding: 0.2em 0.5em; }
+
+/* ---- THE SIBLING STRIP, SMALLER (owner, 2026-09-17) --------------------
+   In the drawer the strip is the paperwork column's width and each thumbnail
+   flexes to fill it. Here the strip spans the whole 740px card, so five
+   siblings came out ~140px wide and the row stood taller than the grades
+   table above it — the loudest thing on the card, for the least important.
+   Fixed-width thumbnails instead: they stay the plate's 84:74 scale model,
+   at a size that reads as a reference strip rather than a gallery. */
+.jd-about .jd-inline-card .rc-alt {
+  /* wide enough that "Claude Opus 5" sets on one line — at 76px it broke
+     after "Opus" and the caption went to three lines while the row had
+     room to spare */
+  flex: 0 0 auto; width: 104px;
+  padding: 4px 4px 5px;
+}
+.jd-about .jd-inline-card .rc-alts,
+.jd-about .jd-inline-card .rc-alt-port { gap: 6px; }
+
+/* the aside about-scenes.js builds: the prompt, then the specimen block */
+/* THE VOID BESIDE THE DRAWING. The prompt is three lines and the drawing is
+   tall, so the right column ran out ~150px before the left one did and left a
+   dangling gap just above the seam — the last thing the eye met before the
+   grades table was empty paper. The column is stretched to the band's height
+   and its two blocks pushed to the ends instead: the prompt opens the column,
+   the specimen closes it level with the filmstrip, and the slack sits BETWEEN
+   them where it reads as breathing room rather than as a run-out. */
+.jd-about .jd-inline-card .rc-col-r > .jd-about-aside {
+  grid-column: 2; grid-row: 2 / 4; align-self: stretch; min-width: 0;
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: var(--ab-gap-band);
+}
+
+/* ---- THE SPECIMEN BLOCK ------------------------------------------------
+   Model / Date / Tokens / Cost, the file number and the DOWNLOAD button. In
+   the drawer these are printed ON the photograph, absolutely placed in its
+   corners with a paper glow behind the type so they read over artwork. Off
+   the plate they are ordinary text in a column, so every one of those
+   devices is undone here: no absolute placement, no glow, no ellipsis, and
+   the label column can be narrower because nothing is dodging a button. */
+/* the specimen block reads ACROSS (owner, 2026-09-17): the notes on the
+   left, the download on the right of the same band, the file number under
+   them. Stacked, the three cost three lines of height for two lines of
+   content; side by side the block is as short as its tallest part. */
+.jd-about .jd-inline-card .jd-about-specimen-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 10px; row-gap: 4px;
+}
+.jd-about .jd-inline-card .jd-about-specimen .rc-notes { grid-column: 1; grid-row: 1; }
+.jd-about .jd-inline-card .jd-about-specimen .rc-plate-btns {
+  grid-column: 2; grid-row: 1; align-self: start;
+}
+.jd-about .jd-inline-card .jd-about-specimen .rc-note-no {
+  grid-column: 1 / -1; grid-row: 2;
+}
+.jd-about .jd-inline-card .jd-about-specimen .rc-notes {
+  position: static; max-width: none; left: auto; bottom: auto;
+  pointer-events: auto; gap: 2px; width: 100%;
+}
+.jd-about .jd-inline-card .jd-about-specimen .rc-note-l {
+  min-width: 4.2em; text-shadow: none;
+}
+.jd-about .jd-inline-card .jd-about-specimen .rc-note-v {
+  white-space: normal; overflow: visible; text-overflow: clip;
+  text-shadow: none;
+}
+.jd-about .jd-inline-card .jd-about-specimen .rc-note-no {
+  position: static; right: auto; bottom: auto; max-width: none;
+  pointer-events: auto; text-shadow: none; opacity: 0.75;
+}
+/* the ↻ comes back when the buttons leave the plate: junk-drawer.css hides
+   it with `.rc-col-l > .rc-plate .rc-draw`, and these are no longer inside a
+   plate. The filmstrip's play button is the replay on this page, so the same
+   reasoning applies wherever the row ends up. */
+.jd-about .jd-inline-card .jd-about-specimen .rc-draw { display: none; }
+.jd-about .jd-inline-card .jd-about-specimen .rc-plate-btns {
+  position: static; right: auto; bottom: auto;
+  justify-content: flex-start; flex-wrap: wrap;
+  margin-top: 2px;
 }
 .jd-about .jd-inline-card .rc-col-r > .rc-head:first-child { margin-top: 0; }
 /* the plate column's width: --plate is what .rc-scroll's grid is built on,
