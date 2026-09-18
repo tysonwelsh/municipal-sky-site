@@ -225,24 +225,17 @@ include '../../includes/header.php';
           <span class="zk-tally" id="zankyo-tally" aria-hidden="true"></span>
         </div>
         <span class="zk-rxpanel-gap" aria-hidden="true"></span>
-        <!-- MASTER VOLUME (owner, 2026-09-18): a drum thumbwheel turned on a
-             VERTICAL axle and read through a slot in the panel. The scale is
-             printed ON THE DRUM every 10, so the numbers travel with the wheel
-             and the fixed 指標 pointer above the slot reads off whichever one
-             has come round to it. No separate numeric readout — the value is
-             the print under the arrow, the way a dial works. The drum's faces
-             and knurl are drawn by zankyo-ui.js so they can foreshorten
-             correctly against the barrel. -->
+        <!-- MASTER VOLUME (owner, 2026-09-18, second pass): the printed drum
+             is gone. This is the ribbed roller off the Onomatopoeia Machine's
+             temperature control, laid on its side — a plain knurled wheel that
+             turns under the finger, nothing printed on it. The ribs scroll with
+             the value, which is the whole of the feedback: no scale, no
+             pointer, no numeric readout. -->
         <div class="zk-master">
-          <div class="zk-drum" id="zankyo-master-drum">
-            <span class="zk-drum-pointer" aria-hidden="true"></span>
-            <div class="zk-drum-slot">
-              <div class="zk-drum-ribs" aria-hidden="true"></div>
-              <div class="zk-drum-scale" aria-hidden="true"></div>
-              <div class="zk-drum-ribs zk-drum-ribs-b" aria-hidden="true"></div>
-              <span class="zk-drum-barrel" aria-hidden="true"></span>
-            </div>
-            <input type="range" class="zk-drum-input" id="zankyo-master-vol"
+          <div class="zk-wheel" id="zankyo-master-wheel">
+            <span class="zk-wheel-ribs" aria-hidden="true"></span>
+            <span class="zk-wheel-sheen" aria-hidden="true"></span>
+            <input type="range" class="zk-wheel-input" id="zankyo-master-vol"
                    min="0" max="100" step="1" value="60" aria-label="Master volume" />
           </div>
         </div>

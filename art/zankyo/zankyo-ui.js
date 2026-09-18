@@ -752,82 +752,31 @@
       setTimeout(function () { stopBtn.classList.remove("is-hit"); }, 260);
     });
 
-    wireMasterDrum();
+    wireMasterWheel();
   }
 
   // ==========================================================================
-  // 音量 THE MASTER DRUM — a wheel on a vertical axle, read through a slot.
-  // The scale is printed ON the drum every 10 and the fixed pointer above the
-  // slot reads whichever number has come round to it, so the wheel is its own
-  // display and there is no separate readout.
-  //
-  // Faces and knurl are placed with a sine projection — x = R·sin(θ) with the
-  // face foreshortened by cos(θ) — which is what makes the marks bunch towards
-  // the edges the way a real drum's do. A plain linear strip looks flat and
-  // wrong; this is the whole trick.
+  // 音量 THE MASTER ROLLER — the Onomatopoeia Machine's ribbed temperature
+  // wheel, laid on its side. Nothing is printed on it: the knurl scrolling
+  // under the finger is the entire readout. Dragging right turns the volume
+  // up, which is the convention for a wheel lying across the panel.
   // ==========================================================================
-  var DRUM_DEG_PER_UNIT = 1.55;   // 0 → 100 sweeps ~155° of drum
-  var DRUM_WINDOW       = 66;     // degrees either side of the pointer still cut by the slot
-  function wireMasterDrum() {
-    var drum = document.getElementById("zankyo-master-drum");
-    if (!drum) return;
+  var ROLLER_PX_PER_UNIT = 2.2;   // rib travel per volume point (ribs repeat every 8 px)
+  var ROLLER_DRAG_GAIN   = 0.55;  // volume points per pixel of finger travel
+  function wireMasterWheel() {
+    var wheel = document.getElementById("zankyo-master-wheel");
+    if (!wheel) return;
     var input = document.getElementById("zankyo-master-vol");
-    var slot  = drum.querySelector(".zk-drum-slot");
-    var scale = drum.querySelector(".zk-drum-scale");
-    var ribEls = [];
+    var ribs  = wheel.querySelector(".zk-wheel-ribs");
 
     var initial = 60;
     var st = Z.getState && Z.getState();
     if (st && st.masterVolume != null) initial = pct(st.masterVolume);
-    if (input) input.value = initial;
 
-    // the printed faces: a number every 10, a minor tick every 2 between them
-    var faces = [], ticks = [];
-    for (var v = 0; v <= 100; v += 10) {
-      var f = document.createElement("span");
-      f.className = "zk-drum-face"; f.textContent = v;
-      scale.appendChild(f); faces.push({ el: f, v: v });
-    }
-    for (var t = 0; t <= 100; t += 2) {
-      if (t % 10 === 0) continue;
-      var tk = document.createElement("span");
-      tk.className = "zk-drum-tick";
-      scale.appendChild(tk); ticks.push({ el: tk, v: t });
-    }
-    // the knurl on both rims: a rib every 2° of drum, so they crowd at the
-    // edges exactly as the printed faces do
-    drum.querySelectorAll(".zk-drum-ribs").forEach(function (rim) {
-      for (var d = -DRUM_WINDOW; d <= DRUM_WINDOW; d += 2) {
-        var r = document.createElement("span");
-        r.className = "zk-drum-rib";
-        rim.appendChild(r); ribEls.push({ el: r, deg: d });
-      }
-    });
-
-    var RAD = Math.PI / 180;
     function draw(val) {
-      var halfW = slot.clientWidth / 2;
-      if (!halfW) return;
-      var R = halfW / Math.sin(DRUM_WINDOW * RAD);   // radius that puts the window edge at the slot edge
-      function place(el, deg, isFace) {
-        var a = deg * RAD, c = Math.cos(a);
-        if (Math.abs(deg) > DRUM_WINDOW || c <= 0.02) { el.style.opacity = 0; return; }
-        var x = halfW + R * Math.sin(a);
-        // fully faded by ~63°, i.e. BEFORE the slot's edge cuts at 66° — a face
-        // that is still visible when it is clipped reads as broken text, not
-        // as print turning away round the barrel
-        el.style.opacity = Math.max(0, Math.min(1, (c - 0.45) / 0.30));
-        el.style.left = x + "px";
-        // faces foreshorten across their own width; ribs are hairlines and only fade
-        if (isFace) el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
-      }
-      faces.forEach(function (f) { place(f.el, (f.v - val) * DRUM_DEG_PER_UNIT, true); });
-      ticks.forEach(function (t) { place(t.el, (t.v - val) * DRUM_DEG_PER_UNIT, false); });
-      // the knurl turns with the wheel: its ribs are fixed to the drum, not the slot
-      var phase = (val * DRUM_DEG_PER_UNIT) % 2;
-      ribEls.forEach(function (r) { place(r.el, r.deg - phase, false); });
+      // negative so the knurl travels the same way the finger does
+      ribs.style.setProperty("--roller-position", (-val * ROLLER_PX_PER_UNIT).toFixed(1) + "px");
     }
-
     function set(val, fromInput) {
       val = Math.max(0, Math.min(100, Math.round(val)));
       if (input && !fromInput) input.value = val;
@@ -835,36 +784,23 @@
       draw(val);
     }
 
-    // drag the wheel: horizontal travel maps to drum rotation, so the wheel
-    // turns under the finger rather than jumping to where it was tapped
-    // the grab surface is the whole drum block, not just the 34 px slot: the
-    // slot is too short to be a touch target, and the casing around it is part
-    // of the same piece of hardware
     var lastX = null;
-    drum.addEventListener("pointerdown", function (e) {
-      drum.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
+    wheel.addEventListener("pointerdown", function (e) {
+      wheel.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
     });
-    drum.addEventListener("pointermove", function (e) {
+    wheel.addEventListener("pointermove", function (e) {
       if (lastX === null) return;
       var dx = e.clientX - lastX;
       if (!dx) return;
       lastX = e.clientX;
-      var R = (slot.clientWidth / 2) / Math.sin(DRUM_WINDOW * RAD);
-      // dragging right brings LOWER numbers round to the pointer, the way a
-      // drum whose scale climbs left-to-right actually behaves
-      set(Number(input.value) - (dx / R) / RAD / DRUM_DEG_PER_UNIT);
+      set(Number(input.value) + dx * ROLLER_DRAG_GAIN);
     });
-    function release(e) { if (lastX !== null) { lastX = null; try { drum.releasePointerCapture(e.pointerId); } catch (_) {} } }
-    drum.addEventListener("pointerup", release);
-    drum.addEventListener("pointercancel", release);
+    function release(e) { if (lastX !== null) { lastX = null; try { wheel.releasePointerCapture(e.pointerId); } catch (_) {} } }
+    wheel.addEventListener("pointerup", release);
+    wheel.addEventListener("pointercancel", release);
 
-    // the hidden range is the keyboard and screen-reader control
     if (input) input.addEventListener("input", function () { set(Number(input.value), true); });
-
     set(initial);
-    // the slot has no width until layout settles; redraw once it does, and on resize
-    requestAnimationFrame(function () { draw(Number(input.value)); });
-    window.addEventListener("resize", function () { draw(Number(input.value)); });
   }
 
   renderScale(); renderMixer(); wireMixerToggle(); wireTransport(); wireFarSwitch(); wirePush(); wireLedge(); pollArc();

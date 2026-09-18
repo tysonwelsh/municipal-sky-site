@@ -269,7 +269,12 @@
     inset 0 0 30px rgba(0, 0, 0, 0.9),
     inset 0 2px 8px rgba(0, 0, 0, 0.8);
 }
-.zankyo-viz { display: block; width: 100%; height: 200px; }
+/* Owner 2026-09-18: the tube was mostly empty air above the spectrum. The
+   canvas loses 50 px and the bars are scaled to use what is left (see
+   zankyo-viz.js), so the headroom over the bar tops closes up. The waveform
+   stays on the vertical centre line and therefore crosses further down into
+   the bars — accepted, and the point of the change. */
+.zankyo-viz { display: block; width: 100%; height: 150px; }
 /* CRT scanlines — part of the tube now */
 .zankyo-scanlines {
   position: absolute; inset: 0; pointer-events: none; z-index: 5;
@@ -641,72 +646,61 @@
 }
 .zankyo-scene.is-kyu .zk-tally { animation: zk-led-flicker 0.3s infinite; }
 
-/* --- 音量 THE DRUM ---------------------------------------------------------
-   A wheel turned on a vertical axle, sunk into the panel so only the strip
-   facing the room shows. The scale is printed on the drum every 10 and the
-   fixed pointer above the slot reads whichever number has come round to it,
-   so there is no separate numeric display: the value is the print under the
-   arrow. Faces and knurl are positioned by zankyo-ui.js with a sine
-   projection, which is what makes the marks bunch at the edges and sells the
-   curve; the CSS here is the well, the glass and the barrel shading. */
-/* the drum is allowed to SHRINK rather than push out of the panel: below the
-   narrowest breakpoint there is simply not enough panel left for a fixed
-   width, and the drum redraws itself at whatever width it ends up with */
+/* --- 音量 THE ROLLER ------------------------------------------------------
+   Owner, second pass: the printed drum is out. This is the ribbed roller from
+   the Onomatopoeia Machine's temperature control (chatbots/onomatopoeia-bot.css,
+   .temp-roller-wheel) turned on its side — same idea, same construction: a
+   capsule with a scrolling rib pattern and a sheen down the middle, sunk into
+   the panel. Nothing is printed on it. The ribs travelling under the finger
+   are the whole of the feedback; there is no scale, pointer or readout.
+   The one thing changed from the original: the barrel is shaded with a real
+   gradient rather than a flat grey, because on this machine it sits in metal
+   and has to read as a turned steel part. */
 .zk-master { position: relative; display: flex; align-items: center; flex: 0 1 auto; min-width: 0; }
-/* the padding is symmetric so the SLOT — the thing the eye reads — centres on
-   the same line as the keys, and so the pointer has casing above it to be
-   printed on rather than resting on the glass */
-.zk-drum { position: relative; width: 150px; max-width: 100%; padding: 14px 0; cursor: ew-resize; touch-action: pan-y; }
-.zk-drum-slot {
-  position: relative; height: 34px; border-radius: 3px; overflow: hidden;
-  background: linear-gradient(180deg, #0c0c10, #060608);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.08);
+.zk-wheel {
+  position: relative; width: 150px; max-width: 100%; height: 30px;
+  border-radius: 8px; overflow: hidden;
+  cursor: ew-resize; touch-action: pan-y;
+  /* the curl of the barrel: dark where the wheel turns away at top and
+     bottom, bright across the middle where it faces the room */
+  background: linear-gradient(180deg, #0f0f13 0%, #3a3a44 16%, #5f5f6b 44%, #4a4a55 58%, #26262e 82%, #0d0d11 100%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.75),
+    0 2px 5px rgba(0, 0, 0, 0.7),
+    inset 0 2px 3px rgba(0, 0, 0, 0.55),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.6);
 }
-/* the knurled rims above and below the printed band */
-.zk-drum-ribs { position: absolute; left: 0; right: 0; top: 0; height: 8px; }
-.zk-drum-ribs-b { top: auto; bottom: 0; }
-.zk-drum-rib {
-  position: absolute; top: 0; bottom: 0; width: 1px; margin-left: -0.5px;
-  background: rgba(214, 210, 220, 0.5);
-}
-/* the printed band */
-.zk-drum-scale { position: absolute; left: 0; right: 0; top: 8px; bottom: 8px; }
-.zk-drum-face {
-  position: absolute; top: 50%; left: 0; transform-origin: 50% 50%;
-  font-family: "Orbitron", sans-serif; font-size: 10px; line-height: 1;
-  color: #cdc7d6; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
-  white-space: nowrap; pointer-events: none;
-}
-.zk-drum-tick {
-  position: absolute; top: 50%; width: 1px; height: 4px; margin: -2px 0 0 -0.5px;
-  background: rgba(190, 184, 200, 0.45); pointer-events: none;
-}
-/* barrel shading + the shadow the panel's cut edge throws across the drum:
-   bright down the middle where the wheel faces the room, dark where it turns
-   away at either side */
-.zk-drum-barrel {
+/* the knurl. background-position is driven from zankyo-ui.js, so the ribs
+   travel with the value and the wheel reads as turning rather than sliding. */
+.zk-wheel-ribs {
   position: absolute; inset: 0; pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.80) 7%, rgba(0,0,0,0.35) 17%, rgba(255,255,255,0.05) 46%, rgba(255,255,255,0.03) 54%, rgba(0,0,0,0.35) 83%, rgba(0,0,0,0.80) 93%, rgba(0,0,0,0.98) 100%),
-    linear-gradient(180deg, rgba(0,0,0,0.55), transparent 26%, transparent 74%, rgba(0,0,0,0.6));
+  background-image: repeating-linear-gradient(90deg,
+    transparent 0px, transparent 2px,
+    rgba(0, 0, 0, 0.45) 2px, rgba(0, 0, 0, 0.45) 4px,
+    transparent 4px, transparent 6px,
+    rgba(255, 255, 255, 0.16) 6px, rgba(255, 255, 255, 0.16) 8px);
+  background-size: 8px 100%;
+  background-position: var(--roller-position, 0px) 0;
 }
-/* 指標 — the pointer printed on the casing, aimed down at the drum */
-.zk-drum-pointer {
-  position: absolute; top: 0; left: 50%; margin-left: -5px; width: 0; height: 0;
-  border-left: 5px solid transparent; border-right: 5px solid transparent;
-  border-top: 7px solid var(--amber);
-  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.6));
+/* the specular band along the crown of the wheel */
+.zk-wheel-sheen {
+  position: absolute; left: 0; right: 0; top: 50%; height: 5px; margin-top: -2.5px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.13) 50%, transparent 100%);
 }
-/* The range input carries the value for the keyboard and the screen reader,
-   but it must NOT take the pointer: a native range jumps to wherever it is
-   clicked, which is the opposite of a wheel that turns under the finger. So
-   it is transparent to pointer events and the slot below does the dragging;
-   the input is still reachable by tab. */
-.zk-drum-input {
-  position: absolute; inset: 14px 0; width: 100%; height: 34px; margin: 0;
+/* the ends of the wheel disappear into the panel's cut edge */
+.zk-wheel::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(90deg, rgba(0,0,0,0.75) 0%, transparent 9%, transparent 91%, rgba(0,0,0,0.75) 100%);
+}
+/* the range carries the value for the keyboard and the screen reader, but must
+   not take the pointer: a native range jumps to the click, and a wheel turns
+   under the finger. It stays tabbable. */
+.zk-wheel-input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
   opacity: 0; pointer-events: none; -webkit-appearance: none; appearance: none;
 }
-.zk-drum:focus-within .zk-drum-slot { outline: 2px solid var(--cyan); outline-offset: 1px; }   /* 1 px: a 3 px ring cut straight through the pointer above */
+.zk-wheel:focus-within { outline: 2px solid var(--cyan); outline-offset: 3px; }
 
 /* ---------------------------------------------------------------------------
    MIXER CONSOLE — machined strips, switches, service hatches
@@ -1474,7 +1468,7 @@
   .zk-far-sw { left: 43px; bottom: 10px; }
   .zk-boot { gap: 6px; }
   .zk-boot-line { font-size: 10px; }
-  .zankyo-viz { height: 160px; }
+  .zankyo-viz { height: 128px; }
   .zk-monitor { padding: 9px 9px 0; }
 
   /* bargraph: slimmer cells, and a tighter gutter to the tube above */
@@ -1497,11 +1491,11 @@
      silently keeps the desktop size (it did, until 2026-09-18).
      The keys grow to a 44 px+ touch target, and the drum grows too — below 700
      the bank stacks to one column, so the panel is WIDER here than on desktop
-     and the scale has room to be read rather than chopped. */
+     and the wheel has room to be a proper thumb target. */
   .zk-rxpanel .zk-key { width: 52px; height: 56px; }
   .zk-rxpanel .zk-key-play .zk-key-glyph { font-size: 20px; }
   .zk-rxpanel .zk-key-stop .zk-key-glyph { font-size: 24px; }
-  .zk-rxpanel .zk-drum { width: 200px; }
+  .zk-rxpanel .zk-wheel { width: 200px; height: 34px; }
 
   /* reduced control strip: expandable plate + switch (sample hidden) */
   .zankyo-layer-sample { display: none; }
@@ -1537,10 +1531,10 @@
   .zk-ledge-brand em { display: none; }
 }
 @media (max-width: 430px) {
-  /* the 200 px drum stops fitting beside the grown keys here, so it steps
+  /* the 200 px wheel stops fitting beside the grown keys here, so it steps
      back down before it would be pushed out of the panel */
   .zk-rxpanel { padding: 7px 12px; }
-  .zk-rxpanel .zk-drum { width: 150px; }
+  .zk-rxpanel .zk-wheel { width: 150px; }
 }
 @media (max-width: 380px) {
   .zk-unit-vol .zk-unit-meta { display: none; }
