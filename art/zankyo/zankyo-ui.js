@@ -774,8 +774,10 @@
     if (st && st.masterVolume != null) initial = pct(st.masterVolume);
 
     function draw(val) {
-      // negative so the knurl travels the same way the finger does
-      ribs.style.setProperty("--roller-position", (-val * ROLLER_PX_PER_UNIT).toFixed(1) + "px");
+      // POSITIVE: a rising value comes from dragging right, and the surface of
+      // a wheel travels with the finger that pushes it. A negative offset
+      // scrolls the knurl left, i.e. backwards against the drag.
+      ribs.style.setProperty("--roller-position", (val * ROLLER_PX_PER_UNIT).toFixed(1) + "px");
     }
     function set(val, fromInput) {
       val = Math.max(0, Math.min(100, Math.round(val)));
