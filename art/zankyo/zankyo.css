@@ -304,17 +304,20 @@
 
 /* ---------------------------------------------------------------------------
    段階 DEVELOPMENT — segmented LED bargraph, full display width, directly
-   below the CRT. 56 machined cells in a recessed housing; lit fill = the
-   jo-ha-kyū arc level. Zone tints follow the machine's grammar (jo cyan,
+   below the CRT and in the same casing. 56 machined cells in a recessed
+   housing; lit fill = the jo-ha-kyū arc level. Zone tints follow the machine's grammar (jo cyan,
    ha amber, kyū red) with the splits placed where the engine's phase cuts
    land on the level curve: pos 0.45 → level 0.25, pos 0.82 → level 0.80.
 --------------------------------------------------------------------------- */
+/* The bar now lives INSIDE .zk-monitor (owner, 2026-09-18), so it no longer
+   carries a plastic panel of its own — the monitor's moulding IS its casing.
+   What stays is .zk-bar-housing, the recessed well, which reads as a second
+   screen let into the same face as the tube. The 12 px top margin is the
+   gutter of bare plastic that parts the two screens. */
 .zk-bargraph {
-  position: relative; margin: -4px 0 16px;
+  position: relative; margin: 12px 0 0;
   display: grid; grid-template-columns: 1fr; gap: 4px 10px; align-items: center;
-  padding: 8px 12px 6px; border-radius: 5px; border: 1px solid #000;
-  background: linear-gradient(180deg, #1d1d24, #111116 70%, #0d0d11);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+  padding: 0;
 }
 /* The 序/破/急 zone scale is gone (the owner, for vertical compactness before
    sharing): its 13 px row went with it. The two phase-split ticks moved INSIDE
@@ -907,7 +910,7 @@
 .zk-bank { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; margin-bottom: 16px; }
 .zk-bank-side { order: -1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }   /* SETTLED (PLAN-MONITOR-2 §2.1): the set takes column 1 — 516 px → tube 488 × 366 */
 .zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
-.zk-bank-main .zk-bargraph { margin-bottom: 0; }
+.zk-bank-main .zk-monitor { margin-bottom: 0; }   /* the bar rides inside it now */
 
 /* The mounting strap is gone (owner §C). It wrapped the set in a second
    housing — a striped steel strip with four bolts through it — and the set is
@@ -1383,8 +1386,8 @@
   .zankyo-viz { height: 160px; }
   .zk-monitor { padding: 9px 9px 0; }
 
-  /* bargraph: slimmer cells, drop the serial print */
-  .zk-bargraph { padding: 7px 9px 5px; gap: 3px 8px; }
+  /* bargraph: slimmer cells, and a tighter gutter to the tube above */
+  .zk-bargraph { margin-top: 9px; padding: 0; gap: 3px 8px; }
   .zk-bar-cells { gap: 1px; height: 13px; }
 
   /* control rail wraps: transport + master share a row, module beneath */
@@ -1422,8 +1425,7 @@
   .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
   .zk-bank-main, .zk-bank-side { display: contents; }
   .zk-set2    { order: 1; }   /* the television */
-  .zk-monitor { order: 2; margin-bottom: 0; }   /* the spectrum scope */
-  .zk-bargraph { order: 3; margin: 0; }         /* 段階 */
+  .zk-monitor { order: 2; margin-bottom: 0; }   /* the scope + 段階, one casing */
   .zk-rxpanel { order: 4; }                     /* PLAY · STOP · volume */
   .zk-set2, .zk-monitor, .zk-bargraph, .zk-rxpanel { min-width: 0; }
   .zankyo-viz { max-width: 100%; }
