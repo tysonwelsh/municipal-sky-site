@@ -85,29 +85,33 @@ include '../../includes/header.php';
             <div class="zankyo-scanlines" aria-hidden="true"></div>
             <div class="zk-glass" aria-hidden="true"></div>
           </div>
-          <!-- the chin carries only the power lamp now (owner, 2026-09-14: no
-               text under the monitor — the brand line, the 電源 label and the
-               inspection sticker are gone) -->
+          <!-- 段階 DEVELOPMENT — segmented LED bargraph, in the SAME casing as
+               the tube (owner, 2026-09-18): the scope and the bar read as two
+               separate screens let into one moulding, parted only by a gutter
+               of the casing's own plastic. Fill = jo-ha-kyū arc level; zone
+               splits sit where the engine's phase cuts land on the level curve
+               (pos 0.45 → level 0.25, pos 0.82 → 0.80). -->
+          <div class="zk-bargraph" id="zankyo-bargraph">
+            <div class="zk-bar-housing">
+              <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
+              <!-- the jo/ha/kyū splits, moved INSIDE the housing when the scale
+                   row came off: the marks survive and cost no height of their own -->
+              <span class="zk-bar-tick" style="left:25%" aria-hidden="true"></span>
+              <span class="zk-bar-tick" style="left:80%" aria-hidden="true"></span>
+              <span class="zk-bar-glass" aria-hidden="true"></span>
+            </div>
+            <!-- no foot: just the bar (owner, 2026-09-14) -->
+          </div>
+
+          <!-- the chin carries only the power lamp, and now sits below BOTH
+               screens — it is the casing's foot, not the tube's (owner,
+               2026-09-18) -->
           <div class="zk-monitor-chin">
             <span class="zk-chin-spacer"></span>
             <span class="zk-led" aria-hidden="true"></span>
           </div>
         </div>
 
-        <!-- 段階 DEVELOPMENT — segmented LED bargraph, full display width.
-             Fill = jo-ha-kyū arc level; zone splits sit where the engine's phase
-             cuts land on the level curve (pos 0.45 → level 0.25, pos 0.82 → 0.80). -->
-        <div class="zk-bargraph" id="zankyo-bargraph">
-          <div class="zk-bar-housing">
-            <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"></div>
-            <!-- the jo/ha/kyū splits, moved INSIDE the housing when the scale
-                 row came off: the marks survive and cost no height of their own -->
-            <span class="zk-bar-tick" style="left:25%" aria-hidden="true"></span>
-            <span class="zk-bar-tick" style="left:80%" aria-hidden="true"></span>
-            <span class="zk-bar-glass" aria-hidden="true"></span>
-          </div>
-          <!-- no foot: just the bar (owner, 2026-09-14) -->
-        </div>
       </div>
 
       <!-- 隣 THE SECOND SET — 映像管 MSHI CRT-9, 受信専用: the older receive-only
