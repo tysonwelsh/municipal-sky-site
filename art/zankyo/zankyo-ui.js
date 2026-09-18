@@ -482,12 +482,12 @@
     if (barSegs.length) setBar(info.level, Date.now(), info.phase !== "—");
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
     if (Z.getMode) { var m = Z.getMode(); var mk = m.name + "@" + (m.tonic || ""); if (mk !== lastMode) { lastMode = mk; renderScale(); } }   // live modal modulation + sea changes
-    // transport state can change outside the buttons (lock-screen pause via
-    // the media session) — keep the arcade button and power LED honest
+    // transport state can change outside the keys (lock-screen pause via the
+    // media session) — keep the PLAY key's latch and the power LED honest
     if (Z.getState) {
       var on = !!Z.getState().playing;
       var pb = document.getElementById("zankyo-play");
-      if (pb) pb.classList.toggle("is-playing", on);
+      if (pb) { pb.classList.toggle("is-down", on); pb.setAttribute("aria-pressed", on ? "true" : "false"); }
       if (sceneEl) sceneEl.classList.toggle("is-on", on);
     }
   }
@@ -592,7 +592,7 @@
       Z.stop();
       farHunt();
       clearLog(); Z.play();
-      if (playBtn) playBtn.classList.add("is-playing");
+      if (playBtn) { playBtn.classList.add("is-down"); playBtn.setAttribute("aria-pressed", "true"); }
       if (sceneEl) sceneEl.classList.add("is-on");
     });
   }
@@ -734,7 +734,7 @@
     else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
     clearLog(); Z.play();
     var pb = document.getElementById("zankyo-play");
-    if (pb) pb.classList.add("is-playing");
+    if (pb) { pb.classList.add("is-down"); pb.setAttribute("aria-pressed", "true"); }   // the key latches down for the run
     if (sceneEl) sceneEl.classList.add("is-on");   // power LED
   }
   function wireTransport() {
@@ -742,24 +742,123 @@
     if (playBtn) playBtn.addEventListener("click", startStation);
     if (stopBtn) stopBtn.addEventListener("click", function () {
       Z.stop();
-      if (playBtn) playBtn.classList.remove("is-playing");
+      // STOP releases the PLAY key: the latch pops back up, which is the
+      // machine saying it has stopped even with every lamp dark
+      if (playBtn) { playBtn.classList.remove("is-down"); playBtn.setAttribute("aria-pressed", "false"); }
       if (sceneEl) sceneEl.classList.remove("is-on");
+      // STOP is momentary, so its red only flashes under the finger; hold it
+      // a beat so a quick tap still reads
+      stopBtn.classList.add("is-hit");
+      setTimeout(function () { stopBtn.classList.remove("is-hit"); }, 260);
     });
 
-    var mount = document.getElementById("zankyo-master-knob");
-    var volVal = document.getElementById("zankyo-master-vol-val");
-    if (mount) {
-      var initial = 60;
-      var st = Z.getState && Z.getState();
-      if (st && st.masterVolume != null) initial = pct(st.masterVolume);
-      if (volVal) volVal.textContent = initial;
-      mount.appendChild(makeKnob({
-        min: 0, max: 100, step: 1, value: initial,
-        label: "Master volume", cls: "zk-knob-master",
-        format: function (v) { return v + " %"; },
-        onInput: function (v) { Z.setMasterVolume(v / 100); if (volVal) volVal.textContent = v; },
-      }));
+    wireMasterDrum();
+  }
+
+  // ==========================================================================
+  // 音量 THE MASTER DRUM — a wheel on a vertical axle, read through a slot.
+  // The scale is printed ON the drum every 10 and the fixed pointer above the
+  // slot reads whichever number has come round to it, so the wheel is its own
+  // display and there is no separate readout.
+  //
+  // Faces and knurl are placed with a sine projection — x = R·sin(θ) with the
+  // face foreshortened by cos(θ) — which is what makes the marks bunch towards
+  // the edges the way a real drum's do. A plain linear strip looks flat and
+  // wrong; this is the whole trick.
+  // ==========================================================================
+  var DRUM_DEG_PER_UNIT = 1.55;   // 0 → 100 sweeps ~155° of drum
+  var DRUM_WINDOW       = 66;     // degrees either side of the pointer still cut by the slot
+  function wireMasterDrum() {
+    var drum = document.getElementById("zankyo-master-drum");
+    if (!drum) return;
+    var input = document.getElementById("zankyo-master-vol");
+    var slot  = drum.querySelector(".zk-drum-slot");
+    var scale = drum.querySelector(".zk-drum-scale");
+    var ribEls = [];
+
+    var initial = 60;
+    var st = Z.getState && Z.getState();
+    if (st && st.masterVolume != null) initial = pct(st.masterVolume);
+    if (input) input.value = initial;
+
+    // the printed faces: a number every 10, a minor tick every 2 between them
+    var faces = [], ticks = [];
+    for (var v = 0; v <= 100; v += 10) {
+      var f = document.createElement("span");
+      f.className = "zk-drum-face"; f.textContent = v;
+      scale.appendChild(f); faces.push({ el: f, v: v });
     }
+    for (var t = 0; t <= 100; t += 2) {
+      if (t % 10 === 0) continue;
+      var tk = document.createElement("span");
+      tk.className = "zk-drum-tick";
+      scale.appendChild(tk); ticks.push({ el: tk, v: t });
+    }
+    // the knurl on both rims: a rib every 2° of drum, so they crowd at the
+    // edges exactly as the printed faces do
+    drum.querySelectorAll(".zk-drum-ribs").forEach(function (rim) {
+      for (var d = -DRUM_WINDOW; d <= DRUM_WINDOW; d += 2) {
+        var r = document.createElement("span");
+        r.className = "zk-drum-rib";
+        rim.appendChild(r); ribEls.push({ el: r, deg: d });
+      }
+    });
+
+    var RAD = Math.PI / 180;
+    function draw(val) {
+      var halfW = slot.clientWidth / 2;
+      if (!halfW) return;
+      var R = halfW / Math.sin(DRUM_WINDOW * RAD);   // radius that puts the window edge at the slot edge
+      function place(el, deg, isFace) {
+        var a = deg * RAD, c = Math.cos(a);
+        if (Math.abs(deg) > DRUM_WINDOW || c <= 0.02) { el.style.opacity = 0; return; }
+        var x = halfW + R * Math.sin(a);
+        el.style.opacity = Math.max(0, Math.min(1, (c - 0.28) / 0.5));
+        el.style.left = x + "px";
+        // faces foreshorten across their own width; ribs are hairlines and only fade
+        if (isFace) el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
+      }
+      faces.forEach(function (f) { place(f.el, (f.v - val) * DRUM_DEG_PER_UNIT, true); });
+      ticks.forEach(function (t) { place(t.el, (t.v - val) * DRUM_DEG_PER_UNIT, false); });
+      // the knurl turns with the wheel: its ribs are fixed to the drum, not the slot
+      var phase = (val * DRUM_DEG_PER_UNIT) % 2;
+      ribEls.forEach(function (r) { place(r.el, r.deg - phase, false); });
+    }
+
+    function set(val, fromInput) {
+      val = Math.max(0, Math.min(100, Math.round(val)));
+      if (input && !fromInput) input.value = val;
+      if (Z.setMasterVolume) Z.setMasterVolume(val / 100);
+      draw(val);
+    }
+
+    // drag the wheel: horizontal travel maps to drum rotation, so the wheel
+    // turns under the finger rather than jumping to where it was tapped
+    var lastX = null;
+    slot.addEventListener("pointerdown", function (e) {
+      slot.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
+    });
+    slot.addEventListener("pointermove", function (e) {
+      if (lastX === null) return;
+      var dx = e.clientX - lastX;
+      if (!dx) return;
+      lastX = e.clientX;
+      var R = (slot.clientWidth / 2) / Math.sin(DRUM_WINDOW * RAD);
+      // dragging right brings LOWER numbers round to the pointer, the way a
+      // drum whose scale climbs left-to-right actually behaves
+      set(Number(input.value) - (dx / R) / RAD / DRUM_DEG_PER_UNIT);
+    });
+    function release(e) { if (lastX !== null) { lastX = null; try { slot.releasePointerCapture(e.pointerId); } catch (_) {} } }
+    slot.addEventListener("pointerup", release);
+    slot.addEventListener("pointercancel", release);
+
+    // the hidden range is the keyboard and screen-reader control
+    if (input) input.addEventListener("input", function () { set(Number(input.value), true); });
+
+    set(initial);
+    // the slot has no width until layout settles; redraw once it does, and on resize
+    requestAnimationFrame(function () { draw(Number(input.value)); });
+    window.addEventListener("resize", function () { draw(Number(input.value)); });
   }
 
   renderScale(); renderMixer(); wireMixerToggle(); wireTransport(); wireFarSwitch(); wirePush(); wireLedge(); pollArc();

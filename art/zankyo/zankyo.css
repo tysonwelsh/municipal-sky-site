@@ -24,6 +24,8 @@
   --magenta-rgb:255, 61, 240;
   --amber:     #ffb000;
   --amber-rgb: 255, 176, 0;
+  --green:     #3ddc84;      /* transport only: PLAY and the run tally */
+  --green-rgb: 61, 220, 132;
 
   /* machine materials */
   --panel-hi:  #32323b;
@@ -539,7 +541,6 @@
 .zk-wear-3::before { opacity: 0.6; }
 
 /* knob sizes */
-.zk-knob-master { width: 58px; height: 58px; }
 .zk-knob-rate { width: 34px; height: 34px; }
 .zk-knob-rate .zk-knob-ind { width: 2.5px; margin-left: -1.25px; }
 .zk-knob-rate.is-drag .zk-knob-ind, .zk-knob-rate:focus-visible .zk-knob-ind {
@@ -561,60 +562,138 @@
 .zk-unit-rate .zankyo-val-readout { color: var(--magenta); text-shadow: 0 0 5px rgba(var(--magenta-rgb), 0.5); }
 
 /* ---------------------------------------------------------------------------
-   TRANSPORT — arcade buttons + master knob (live in the control rail)
+   TRANSPORT — 鍵 DECK KEYS + 音量 DRUM (live in the receive panel)
+   Owner's pick 2026-09-18, from mockups/transport-1-options.html: the arcade
+   domes and the master knob are gone. PLAY and STOP are mechanical deck keys
+   in a recessed bed — PLAY latches down for as long as the station runs, so
+   the state is carried by a physical position and not only by a glow — and
+   the master volume is a drum thumbwheel read through a slot, with its scale
+   printed on the drum itself.
 --------------------------------------------------------------------------- */
-.zk-arcade {
-  position: relative; width: 78px; height: 78px; border-radius: 50%; border: 1px solid #000; padding: 0; cursor: pointer;
-  background: radial-gradient(circle at 32% 26%, #3e3e47, #1a1a20 55%, #0a0a0d);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.16),
-    inset 0 -3px 5px rgba(0, 0, 0, 0.85),
-    0 3px 8px rgba(0, 0, 0, 0.6),
-    0 1px 0 rgba(255, 255, 255, 0.05);
-}
-.zk-arcade:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
-.zk-arcade-cap {
-  position: absolute; inset: 9px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: "Orbitron", sans-serif; font-size: 19px;
-  transition: transform 0.06s, box-shadow 0.06s;
-}
-.play-btn .zk-arcade-cap {
-  color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-  background: radial-gradient(circle at 35% 27%, #ff90a8, var(--red) 42%, #900f2c 84%, #560a1b);
-  box-shadow:
-    0 5px 9px rgba(0, 0, 0, 0.6),
-    inset 0 -6px 10px rgba(70, 0, 15, 0.85),
-    inset 0 2px 3px rgba(255, 255, 255, 0.35);
-}
-.stop-btn { width: 62px; height: 62px; }
-.stop-btn .zk-arcade-cap {
-  inset: 8px; font-size: 26px; color: var(--magenta); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.4);
-  background: radial-gradient(circle at 35% 27%, #3a3a43, #202027 46%, #0e0e12 88%);
-  box-shadow:
-    0 4px 8px rgba(0, 0, 0, 0.6),
-    inset 0 -5px 9px rgba(0, 0, 0, 0.8),
-    inset 0 2px 3px rgba(255, 255, 255, 0.2);
-}
-.zk-arcade:active .zk-arcade-cap {
-  transform: translateY(3px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.7), inset 0 2px 3px rgba(255, 255, 255, 0.2);
-}
-.play-btn.is-playing .zk-arcade-cap {
-  box-shadow:
-    0 5px 9px rgba(0, 0, 0, 0.6),
-    inset 0 -6px 10px rgba(70, 0, 15, 0.85),
-    inset 0 2px 3px rgba(255, 255, 255, 0.35),
-    0 0 24px rgba(var(--red-rgb), 0.55),
-    inset 0 0 16px rgba(255, 130, 160, 0.45);
-  animation: zk-play-breathe 2.4s ease-in-out infinite;
-}
-@keyframes zk-play-breathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+.zk-transport-cluster { position: relative; display: flex; align-items: center; gap: 11px; flex: none; }
 
-/* master volume: knob stacked over its label + readout — a tall, narrow unit */
-.zk-master { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: none; }
-.zk-knob-mount { display: flex; justify-content: center; }
-.zk-master-meta { display: flex; align-items: center; gap: 6px; }
+/* the bed the keys are let into: a shallow well, so the key tops sit level
+   with the panel rather than standing proud of it */
+.zk-keybed {
+  display: flex; gap: 3px; padding: 5px 5px 4px; border-radius: 3px;
+  background: linear-gradient(180deg, #0a0a0d, #131318);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-key {
+  position: relative; width: 44px; height: 50px; padding: 0 0 7px; cursor: pointer;
+  border: 1px solid #08080a; border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, #4b4b55 0%, #33333c 12%, #2a2a32 60%, #1b1b21 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -4px 6px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+/* the finger ribs moulded across the key top */
+.zk-key::before {
+  content: ""; position: absolute; left: 6px; right: 6px; top: 8px; height: 14px; border-radius: 1px;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0 1px, rgba(0, 0, 0, 0.3) 1px 3px);
+}
+.zk-key:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+/* ▶ and ■ do not have the same optical weight at the same font-size — the
+   square reads small — so STOP's glyph is set larger than PLAY's to match it.
+   Both are up on the arcade caps they replaced (owner, 2026-09-18). */
+.zk-key-glyph {
+  position: relative; line-height: 1;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); transition: color 0.18s, text-shadow 0.18s;
+}
+.zk-key-play .zk-key-glyph { font-size: 18px; }
+.zk-key-stop .zk-key-glyph { font-size: 22px; }
+/* the keys travel: a press pushes the cap into the bed */
+.zk-key:active { transform: translateY(5px); }
+.zk-key.is-down {
+  transform: translateY(5px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 4px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+/* PLAY is green and STOP is red at rest — painted colour, the way a deck's
+   keys are printed — and the glyph is what lights, not the cap. PLAY's green
+   comes up to full and blooms while the key is latched down; STOP's red does
+   the same under the finger. */
+.zk-key-play .zk-key-glyph { color: #3f8a5c; }
+.zk-key-play.is-down .zk-key-glyph {
+  color: var(--green); text-shadow: 0 0 8px rgba(var(--green-rgb), 0.75), 0 0 16px rgba(var(--green-rgb), 0.35);
+}
+.zk-key-stop .zk-key-glyph { color: #a33448; }
+.zk-key-stop:active .zk-key-glyph,
+.zk-key-stop.is-hit .zk-key-glyph {
+  color: var(--red); text-shadow: 0 0 8px rgba(var(--red-rgb), 0.75), 0 0 16px rgba(var(--red-rgb), 0.35);
+}
+/* the tally beside the bed, the way a deck shows it is running */
+.zk-tally {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #123a1c, #0a1d0f 70%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4);
+}
+.zankyo-scene.is-on .zk-tally {
+  background: radial-gradient(circle at 35% 30%, #a8ffc0, var(--green) 60%);
+  box-shadow: 0 0 9px rgba(var(--green-rgb), 0.8), inset 0 0 2px rgba(255, 255, 255, 0.5);
+}
+.zankyo-scene.is-kyu .zk-tally { animation: zk-led-flicker 0.3s infinite; }
+
+/* --- 音量 THE DRUM ---------------------------------------------------------
+   A wheel turned on a vertical axle, sunk into the panel so only the strip
+   facing the room shows. The scale is printed on the drum every 10 and the
+   fixed pointer above the slot reads whichever number has come round to it,
+   so there is no separate numeric display: the value is the print under the
+   arrow. Faces and knurl are positioned by zankyo-ui.js with a sine
+   projection, which is what makes the marks bunch at the edges and sells the
+   curve; the CSS here is the well, the glass and the barrel shading. */
+.zk-master { position: relative; display: flex; align-items: center; flex: none; }
+.zk-drum { position: relative; width: 150px; padding-top: 9px; }
+.zk-drum-slot {
+  position: relative; height: 34px; border-radius: 3px; overflow: hidden;
+  background: linear-gradient(180deg, #0c0c10, #060608);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: ew-resize; touch-action: pan-y;
+}
+/* the knurled rims above and below the printed band */
+.zk-drum-ribs { position: absolute; left: 0; right: 0; top: 0; height: 8px; }
+.zk-drum-ribs-b { top: auto; bottom: 0; }
+.zk-drum-rib {
+  position: absolute; top: 0; bottom: 0; width: 1px; margin-left: -0.5px;
+  background: rgba(214, 210, 220, 0.5);
+}
+/* the printed band */
+.zk-drum-scale { position: absolute; left: 0; right: 0; top: 8px; bottom: 8px; }
+.zk-drum-face {
+  position: absolute; top: 50%; left: 0; transform-origin: 50% 50%;
+  font-family: "Orbitron", sans-serif; font-size: 10px; line-height: 1;
+  color: #cdc7d6; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
+  white-space: nowrap; pointer-events: none;
+}
+.zk-drum-tick {
+  position: absolute; top: 50%; width: 1px; height: 4px; margin: -2px 0 0 -0.5px;
+  background: rgba(190, 184, 200, 0.45); pointer-events: none;
+}
+/* barrel shading + the shadow the panel's cut edge throws across the drum:
+   bright down the middle where the wheel faces the room, dark where it turns
+   away at either side */
+.zk-drum-barrel {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 12%, rgba(255,255,255,0.05) 46%, rgba(255,255,255,0.03) 54%, rgba(0,0,0,0.45) 88%, rgba(0,0,0,0.92) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.55), transparent 26%, transparent 74%, rgba(0,0,0,0.6));
+}
+/* 指標 — the pointer printed on the casing, aimed down at the drum */
+.zk-drum-pointer {
+  position: absolute; top: 0; left: 50%; margin-left: -5px; width: 0; height: 0;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 7px solid var(--amber);
+  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.6));
+}
+/* The range input carries the value for the keyboard and the screen reader,
+   but it must NOT take the pointer: a native range jumps to wherever it is
+   clicked, which is the opposite of a wheel that turns under the finger. So
+   it is transparent to pointer events and the slot below does the dragging;
+   the input is still reachable by tab. */
+.zk-drum-input {
+  position: absolute; inset: 9px 0 0; width: 100%; height: 34px; margin: 0;
+  opacity: 0; pointer-events: none; -webkit-appearance: none; appearance: none;
+}
+.zk-drum:focus-within .zk-drum-slot { outline: 2px solid var(--cyan); outline-offset: 3px; }
 
 /* ---------------------------------------------------------------------------
    MIXER CONSOLE — machined strips, switches, service hatches
@@ -1352,21 +1431,18 @@
 .zk-rxpanel .zk-bolt-bl, .zk-rxpanel .zk-bolt-br { bottom: 4px; }
 .zk-rxpanel .zk-bolt-tl, .zk-rxpanel .zk-bolt-bl { left: 4px; }
 .zk-rxpanel .zk-bolt-tr, .zk-rxpanel .zk-bolt-br { right: 4px; }
-/* owner §4.7: the buttons and the knob speak for themselves — PLAY 54, STOP 46,
-   the knob 44 (the console's VOL size); no print in the volume container; the
-   numeric readout sits INSIDE the knob's footprint (over the dome, no row
-   added). The head and the stamp are centred in the gap between STOP and the
-   knob, where no button sits (critic). */
-.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }   /* the gap between STOP and the knob: bare metal since the print came off (plan §6), and still the spacer that keeps STOP off the knob at every width */
+/* owner §4.7, re-cut 2026-09-18 for the deck keys and the drum: the controls
+   still speak for themselves — keys 42 x 46 in their bed, the drum 150 wide
+   (the width the owner asked for, the attenuator's) — and the volume carries
+   no numeric readout at all now: the scale is printed on the wheel and the
+   pointer over it is the display. The gap between the bed and the drum is
+   still bare metal. */
+.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }   /* the gap between STOP and the drum: bare metal since the print came off (plan §6), and still the spacer that keeps the keys off the wheel at every width */
 .zk-rxpanel .zk-transport-cluster { gap: 10px; margin-left: 4px; }
-.zk-rxpanel .zk-arcade { width: 54px; height: 54px; }
-.zk-rxpanel .zk-arcade-cap { inset: 7px; font-size: 14px; }
-.zk-rxpanel .stop-btn { width: 46px; height: 46px; }
-.zk-rxpanel .stop-btn .zk-arcade-cap { inset: 6px; font-size: 19px; }
-.zk-rxpanel .zk-master { position: relative; flex-direction: column; gap: 0; margin-right: 6px; }
-.zk-rxpanel .zk-knob-master { width: 44px; height: 44px; }
-.zk-rxpanel .zk-master-meta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-.zk-rxpanel .zk-master-meta .zankyo-val-readout { background: transparent; border: 0; box-shadow: none; min-width: 0; padding: 0; font-size: 8.5px; letter-spacing: 0.04em; text-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.6), 0 0 1px #000; }
+.zk-rxpanel .zk-key { width: 42px; height: 46px; }
+.zk-rxpanel .zk-key-play .zk-key-glyph { font-size: 17px; }
+.zk-rxpanel .zk-key-stop .zk-key-glyph { font-size: 21px; }
+.zk-rxpanel .zk-master { margin-right: 6px; }
 
 /* ---------------------------------------------------------------------------
    MOBILE — the machine simplifies: monitor + transport + reduced strip
@@ -1401,9 +1477,12 @@
   .zk-mod-scale { border-left: none; box-shadow: none; padding-left: 0; }
   .zk-testpoints { display: none; }
 
-  .zk-arcade { width: 66px; height: 66px; }
-  .stop-btn { width: 56px; height: 56px; }
-  .zk-knob-master { width: 50px; height: 50px; }
+  /* the keys grow for a thumb; the drum narrows so the pair still fits the
+     receive panel side by side on a phone */
+  .zk-key { width: 50px; height: 54px; }
+  .zk-key-play .zk-key-glyph { font-size: 20px; }
+  .zk-key-stop .zk-key-glyph { font-size: 24px; }
+  .zk-drum { width: 116px; }
 
   /* reduced control strip: expandable plate + switch (sample hidden) */
   .zankyo-layer-sample { display: none; }

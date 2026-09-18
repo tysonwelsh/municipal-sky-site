@@ -208,15 +208,42 @@ include '../../includes/header.php';
         <span class="zk-bolt zk-bolt-tr" style="--hex:-8deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-bl" style="--hex:17deg" aria-hidden="true"></span>
         <span class="zk-bolt zk-bolt-br" style="--hex:-41deg" aria-hidden="true"></span>
+        <!-- TRANSPORT (owner's pick, 2026-09-18: mockups/transport-1-options.html
+             option B3): mechanical deck keys in their own recessed bed. PLAY
+             LATCHES DOWN and stays down while the station runs — the machine's
+             state is a physical position, so it still reads with the lamp off —
+             and STOP releases it. Green on PLAY, red on STOP. -->
         <div class="zk-transport-cluster">
-          <button type="button" class="zk-arcade play-btn" id="zankyo-play" aria-label="Play"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
-          <button type="button" class="zk-arcade stop-btn" id="zankyo-stop" aria-label="Stop"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+          <div class="zk-keybed">
+            <button type="button" class="zk-key zk-key-play" id="zankyo-play" aria-label="Play" aria-pressed="false">
+              <span class="zk-key-glyph" aria-hidden="true">&#9654;&#xFE0E;</span>
+            </button>
+            <button type="button" class="zk-key zk-key-stop" id="zankyo-stop" aria-label="Stop">
+              <span class="zk-key-glyph" aria-hidden="true">&#9632;&#xFE0E;</span>
+            </button>
+          </div>
+          <span class="zk-tally" id="zankyo-tally" aria-hidden="true"></span>
         </div>
         <span class="zk-rxpanel-gap" aria-hidden="true"></span>
+        <!-- MASTER VOLUME (owner, 2026-09-18): a drum thumbwheel turned on a
+             VERTICAL axle and read through a slot in the panel. The scale is
+             printed ON THE DRUM every 10, so the numbers travel with the wheel
+             and the fixed 指標 pointer above the slot reads off whichever one
+             has come round to it. No separate numeric readout — the value is
+             the print under the arrow, the way a dial works. The drum's faces
+             and knurl are drawn by zankyo-ui.js so they can foreshorten
+             correctly against the barrel. -->
         <div class="zk-master">
-          <div id="zankyo-master-knob" class="zk-knob-mount"></div>
-          <div class="zk-master-meta">
-            <span class="zankyo-val-readout" id="zankyo-master-vol-val" aria-label="master volume">60</span>
+          <div class="zk-drum" id="zankyo-master-drum">
+            <span class="zk-drum-pointer" aria-hidden="true"></span>
+            <div class="zk-drum-slot">
+              <div class="zk-drum-ribs" aria-hidden="true"></div>
+              <div class="zk-drum-scale" aria-hidden="true"></div>
+              <div class="zk-drum-ribs zk-drum-ribs-b" aria-hidden="true"></div>
+              <span class="zk-drum-barrel" aria-hidden="true"></span>
+            </div>
+            <input type="range" class="zk-drum-input" id="zankyo-master-vol"
+                   min="0" max="100" step="1" value="60" aria-label="Master volume" />
           </div>
         </div>
       </div>
