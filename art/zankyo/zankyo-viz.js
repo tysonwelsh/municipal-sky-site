@@ -460,7 +460,10 @@
       var bins = 64, bw = W / bins;
       for (var i = 0; i < bins; i++) {
         var v = freqData[(i * freqData.length / bins) | 0] / 255;
-        var h = v * H * 0.62;
+        // 0.62 left a third of the tube empty over the bar tops even at peak,
+        // and typical bins sat far lower than that. 0.9 lets a full-scale bin
+        // run nearly to the top of the shortened canvas (owner, 2026-09-18).
+        var h = v * H * 0.9;
         var glitch = (arc > 0.5 && Math.random() < arc * 0.07) ? (Math.random() * 2 - 1) * 12 * arc : 0;
         var x = i * bw + glitch, mix = i / bins;
         var r = Math.round(255 * (1 - mix * 0.4)), g = Math.round(45 + mix * 120), b = Math.round(85 + mix * 150);
