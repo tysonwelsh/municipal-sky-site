@@ -813,7 +813,10 @@
         var a = deg * RAD, c = Math.cos(a);
         if (Math.abs(deg) > DRUM_WINDOW || c <= 0.02) { el.style.opacity = 0; return; }
         var x = halfW + R * Math.sin(a);
-        el.style.opacity = Math.max(0, Math.min(1, (c - 0.28) / 0.5));
+        // fully faded by ~63°, i.e. BEFORE the slot's edge cuts at 66° — a face
+        // that is still visible when it is clipped reads as broken text, not
+        // as print turning away round the barrel
+        el.style.opacity = Math.max(0, Math.min(1, (c - 0.45) / 0.30));
         el.style.left = x + "px";
         // faces foreshorten across their own width; ribs are hairlines and only fade
         if (isFace) el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
@@ -834,11 +837,14 @@
 
     // drag the wheel: horizontal travel maps to drum rotation, so the wheel
     // turns under the finger rather than jumping to where it was tapped
+    // the grab surface is the whole drum block, not just the 34 px slot: the
+    // slot is too short to be a touch target, and the casing around it is part
+    // of the same piece of hardware
     var lastX = null;
-    slot.addEventListener("pointerdown", function (e) {
-      slot.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
+    drum.addEventListener("pointerdown", function (e) {
+      drum.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
     });
-    slot.addEventListener("pointermove", function (e) {
+    drum.addEventListener("pointermove", function (e) {
       if (lastX === null) return;
       var dx = e.clientX - lastX;
       if (!dx) return;
@@ -848,9 +854,9 @@
       // drum whose scale climbs left-to-right actually behaves
       set(Number(input.value) - (dx / R) / RAD / DRUM_DEG_PER_UNIT);
     });
-    function release(e) { if (lastX !== null) { lastX = null; try { slot.releasePointerCapture(e.pointerId); } catch (_) {} } }
-    slot.addEventListener("pointerup", release);
-    slot.addEventListener("pointercancel", release);
+    function release(e) { if (lastX !== null) { lastX = null; try { drum.releasePointerCapture(e.pointerId); } catch (_) {} } }
+    drum.addEventListener("pointerup", release);
+    drum.addEventListener("pointercancel", release);
 
     // the hidden range is the keyboard and screen-reader control
     if (input) input.addEventListener("input", function () { set(Number(input.value), true); });
