@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — transport + volume options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   TRANSPORT + VOLUME OPTIONS — five button treatments, five volume controls.
+   Every option sits on the LIVE .zk-rxpanel substrate, verbatim from
+   zankyo.css, so each is judged against the metal it would actually live on
+   and not against a white page. The current arcade buttons and the master
+   knob are reproduced first, unchanged, as the control.
+   Nothing here is wired to the engine: this is a look decision only.
+   =========================================================================== */
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 40px 20px 90px;
+  background: radial-gradient(90% 60% at 50% 0%, #17171d, #08080b 70%);
+  font-family: "JetBrains Mono", monospace; color: #d6d2dc;
+}
+.wrap { max-width: 960px; margin: 0 auto; }
+
+/* ------------------------------ zankyo.css (verbatim) ------------------------------ */
+.zankyo-scene {
+  --red:       #ff2d55;  --red-rgb:   255, 45, 85;
+  --cyan:      #16e0e0;  --cyan-rgb:  22, 224, 224;
+  --magenta:   #ff3df0;  --magenta-rgb: 255, 61, 240;
+  --amber:     #ffb000;  --amber-rgb: 255, 176, 0;
+  --panel-hi:  #32323b;  --panel:     #26262d;  --panel-lo:  #191920;
+  --steel-hi:  #4a4a52;  --steel:     #2a2a31;  --steel-lo:  #0c0c0f;
+  --print:     #918c9c;  --print-dim: #6a6572;
+  --ink: #d6d2dc; --ink-dim: #6b6473;
+}
+.zk-rxpanel {
+  position: relative; min-height: 48px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 16px 3px 14px; border-radius: 5px; border: 1px solid #000;
+  background:
+    radial-gradient(30% 60% at 4% 100%, rgba(96, 58, 32, 0.22), transparent 74%),
+    radial-gradient(18% 34% at 96% 6%, rgba(20, 14, 10, 0.5), transparent 78%),
+    linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+/* the panel is taller in this sheet than on the machine: the options need the
+   room to be seen. On the machine they would be cut back to the live height. */
+.zk-rxpanel { min-height: 92px; padding: 12px 18px 12px 16px; }
+.zk-bolt {
+  position: absolute; z-index: 4; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #7a7a86, #34343c 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -2px 2px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.8), 0 0 0 2px rgba(0,0,0,0.4);
+}
+.zk-bolt::before {
+  content: ""; position: absolute; left: 30%; top: 30%; width: 40%; height: 40%;
+  background: #060608; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  transform: rotate(var(--hex, 0deg));
+}
+.zk-bolt-tl { top: 4px; left: 4px; }
+.zk-bolt-tr { top: 4px; right: 4px; filter: sepia(0.6) brightness(0.8); }
+.zk-bolt-bl { bottom: 4px; left: 4px; filter: sepia(0.3) brightness(0.9); }
+.zk-bolt-br { bottom: 4px; right: 4px; filter: sepia(0.5) brightness(0.85); }
+.zk-rxpanel-gap { flex: 1; min-width: 0; }
+.zk-print { font-size: 9px; letter-spacing: 0.22em; color: var(--print); }
+
+/* ------------------------------ page chrome ------------------------------ */
+h1 { font-family: "Orbitron", sans-serif; font-size: 20px; letter-spacing: 0.16em; margin: 0 0 6px; }
+.lede { font-size: 12px; line-height: 1.7; color: #8d8797; margin: 0 0 34px; max-width: 70ch; }
+h2 {
+  font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.22em;
+  margin: 44px 0 4px; padding-bottom: 8px; border-bottom: 1px solid #26262d; color: #b9b3c4;
+}
+h2 span { color: #6a6572; letter-spacing: 0.1em; }
+.opt { margin: 26px 0 0; }
+.opt-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; flex-wrap: wrap; }
+.opt-id {
+  font-family: "Orbitron", sans-serif; font-size: 11px; letter-spacing: 0.18em;
+  color: #0b0b0e; background: #8d8797; padding: 3px 7px 2px; border-radius: 2px;
+}
+.opt-name { font-family: "Shippori Mincho", serif; font-size: 15px; color: #d6d2dc; }
+.opt-note { font-size: 11.5px; line-height: 1.65; color: #857f90; margin: 9px 0 0; max-width: 78ch; }
+.opt-note b { color: #b9b3c4; font-weight: 500; }
+.is-current .opt-id { background: #4a4a52; color: #cfcad8; }
+
+/* ===========================================================================
+   CONTROL — what is on the machine today
+   =========================================================================== */
+.zk-transport-cluster { display: flex; align-items: center; gap: 10px; flex: none; }
+.zk-arcade {
+  position: relative; width: 54px; height: 54px; border-radius: 50%; border: 1px solid #000; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 32% 26%, #3e3e47, #1a1a20 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.16), inset 0 -3px 5px rgba(0,0,0,0.85), 0 3px 8px rgba(0,0,0,0.6);
+}
+.zk-arcade-cap {
+  position: absolute; inset: 7px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Orbitron", sans-serif; font-size: 14px; transition: transform 0.06s, box-shadow 0.06s;
+}
+.play-btn .zk-arcade-cap {
+  color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  background: radial-gradient(circle at 35% 27%, #ff90a8, var(--red) 42%, #900f2c 84%, #560a1b);
+  box-shadow: 0 5px 9px rgba(0,0,0,0.6), inset 0 -6px 10px rgba(70,0,15,0.85), inset 0 2px 3px rgba(255,255,255,0.35);
+}
+.stop-btn { width: 46px; height: 46px; }
+.stop-btn .zk-arcade-cap {
+  inset: 6px; font-size: 19px; color: var(--magenta); text-shadow: 0 0 6px rgba(var(--magenta-rgb), 0.4);
+  background: radial-gradient(circle at 35% 27%, #3a3a43, #202027 46%, #0e0e12 88%);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 -5px 9px rgba(0,0,0,0.8), inset 0 2px 3px rgba(255,255,255,0.2);
+}
+.zk-arcade:active .zk-arcade-cap { transform: translateY(3px); }
+.zk-knob {
+  position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 0; cursor: grab;
+  background: radial-gradient(circle at 34% 28%, #45454f, #22222a 58%, #0b0b0e);
+  box-shadow: 0 3px 7px rgba(0,0,0,0.65), inset 0 1px 1px rgba(255,255,255,0.18);
+}
+.zk-knob-cap {
+  position: absolute; inset: 5px; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, #3a3a44 0 3deg, #2a2a33 3deg 6deg);
+  box-shadow: inset 0 2px 3px rgba(255,255,255,0.14), inset 0 -3px 5px rgba(0,0,0,0.7);
+}
+.zk-knob-ind {
+  position: absolute; left: 50%; top: 5px; width: 3px; height: 13px; margin-left: -1.5px; border-radius: 2px;
+  background: linear-gradient(#e9e4f2, #9a94a6); box-shadow: 0 0 5px rgba(255,255,255,0.35);
+}
+
+/* ===========================================================================
+   BUTTON OPTION B1 — 押釦 ANTI-VANDAL, machined stainless
+   =========================================================================== */
+.b1 { display: flex; align-items: center; gap: 13px; }
+.b1-btn {
+  position: relative; width: 52px; height: 52px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: conic-gradient(from 210deg, #6e6e78, #3a3a43 16%, #7e7e88 32%, #2e2e36 52%, #71717c 70%, #35353d 86%, #6e6e78);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.7), 0 0 0 1px #000, inset 0 0 0 1px rgba(255,255,255,0.12);
+}
+.b1-face {
+  position: absolute; inset: 5px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 26%, #23232a, #131318 60%, #08080b);
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.9), inset 0 -1px 1px rgba(255,255,255,0.07);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.06s;
+}
+/* the lit ring is etched through the face, not printed on it */
+.b1-ring {
+  position: absolute; inset: 9px; border-radius: 50%;
+  border: 1.5px solid rgba(var(--rc, var(--red-rgb)), 0.16);
+  box-shadow: 0 0 0 0 rgba(var(--rc, var(--red-rgb)), 0);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.b1-btn.is-lit .b1-ring {
+  border-color: rgba(var(--rc, var(--red-rgb)), 0.95);
+  box-shadow: 0 0 9px rgba(var(--rc, var(--red-rgb)), 0.6), inset 0 0 7px rgba(var(--rc, var(--red-rgb)), 0.35);
+}
+.b1-glyph { font-size: 13px; color: #7d7786; line-height: 1; }
+.b1-btn.is-lit .b1-glyph { color: rgba(var(--rc, var(--red-rgb)), 1); text-shadow: 0 0 7px rgba(var(--rc, var(--red-rgb)), 0.7); }
+.b1-btn:active .b1-face { transform: translateY(2px) scale(0.985); }
+.b1-stop { --rc: var(--magenta-rgb); width: 46px; height: 46px; }
+
+/* ===========================================================================
+   BUTTON OPTION B2 — 銘板 ILLUMINATED LEGEND, broadcast-desk
+   =========================================================================== */
+.b2 { display: flex; align-items: center; gap: 10px; }
+.b2-btn {
+  position: relative; width: 78px; height: 44px; padding: 0; cursor: pointer;
+  border-radius: 3px; border: 1px solid #000;
+  background: linear-gradient(180deg, #43434d, #26262e 40%, #17171d);
+  box-shadow: 0 3px 7px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.b2-cap {
+  position: absolute; inset: 4px; border-radius: 2px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: linear-gradient(180deg, #1b1b21, #101015 60%, #0a0a0d);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.1), inset 0 -3px 6px rgba(0,0,0,0.8);
+  transition: transform 0.06s, background 0.25s, box-shadow 0.25s;
+}
+.b2-legend {
+  font-family: "Shippori Mincho", serif; font-size: 13px; letter-spacing: 0.1em;
+  color: #6f6979; transition: color 0.25s, text-shadow 0.25s;
+}
+.b2-sub { font-size: 7px; letter-spacing: 0.2em; color: #514b59; transition: color 0.25s; }
+.b2-btn.is-lit .b2-cap {
+  background: linear-gradient(180deg, rgba(var(--rc, var(--red-rgb)), 0.5), rgba(var(--rc, var(--red-rgb)), 0.22) 55%, rgba(var(--rc, var(--red-rgb)), 0.1));
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.22), inset 0 -3px 8px rgba(0,0,0,0.5), 0 0 12px rgba(var(--rc, var(--red-rgb)), 0.35);
+}
+.b2-btn.is-lit .b2-legend { color: #fff; text-shadow: 0 0 8px rgba(var(--rc, var(--red-rgb)), 0.9); }
+.b2-btn.is-lit .b2-sub { color: rgba(255,255,255,0.7); }
+.b2-btn:active .b2-cap { transform: translateY(2px); }
+.b2-stop { --rc: var(--magenta-rgb); }
+/* the diffuser grain that makes a lamp button read as lit plastic, not paint */
+.b2-cap::after {
+  content: ""; position: absolute; inset: 0; border-radius: 2px; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 3px);
+}
+
+/* ===========================================================================
+   BUTTON OPTION B3 — 鍵 TAPE-DECK KEYS, latching
+   =========================================================================== */
+.b3 { display: flex; align-items: center; gap: 11px; }
+.b3-deck {
+  display: flex; gap: 3px; padding: 5px 5px 4px; border-radius: 3px;
+  background: linear-gradient(180deg, #0a0a0d, #131318);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.05);
+}
+.b3-key {
+  position: relative; width: 44px; height: 50px; padding: 0; cursor: pointer;
+  border: 1px solid #08080a; border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, #4b4b55 0%, #33333c 12%, #2a2a32 60%, #1b1b21 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -4px 6px rgba(0,0,0,0.6), 0 4px 6px rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 7px;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+/* the moulded finger ribs across the key top */
+.b3-key::before {
+  content: ""; position: absolute; left: 6px; right: 6px; top: 8px; height: 14px; border-radius: 1px;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,0.09) 0 1px, rgba(0,0,0,0.3) 1px 3px);
+}
+.b3-glyph { font-size: 12px; color: #9a94a6; text-shadow: 0 -1px 0 rgba(0,0,0,0.8); line-height: 1; }
+.b3-key.is-down { transform: translateY(5px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.6); }
+.b3-key:active { transform: translateY(5px); }
+.b3-key.is-down .b3-glyph { color: var(--red); text-shadow: 0 0 7px rgba(var(--red-rgb), 0.7); }
+/* the tally lamp above the key bed, the way a deck shows it is running */
+.b3-tally {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.8), 0 0 0 2px rgba(0,0,0,0.4);
+}
+.b3.is-run .b3-tally {
+  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
+  box-shadow: 0 0 9px rgba(var(--red-rgb), 0.8), inset 0 0 2px rgba(255,255,255,0.5);
+}
+
+/* ===========================================================================
+   BUTTON OPTION B4 — 木口 BAKELITE DOME, painted and worn
+   =========================================================================== */
+.b4 { display: flex; align-items: center; gap: 14px; }
+.b4-btn {
+  position: relative; width: 54px; height: 54px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 36% 24%, #6a6259, #3b352f 46%, #211d19 78%, #14110f);
+  box-shadow: 0 4px 9px rgba(0,0,0,0.7), 0 0 0 1px #000, inset 0 -3px 6px rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.07s;
+}
+.b4-red { background: radial-gradient(circle at 36% 24%, #b8474f, #8c2530 46%, #55131c 80%, #350d12); }
+/* the parting line the mould leaves around the equator of a bakelite dome */
+.b4-btn::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.13);
+}
+/* paint worn off the high side of the moulding */
+.b4-btn::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(38% 26% at 66% 20%, rgba(255,245,230,0.12), transparent 70%),
+              radial-gradient(22% 14% at 26% 76%, rgba(0,0,0,0.3), transparent 72%);
+}
+.b4-glyph { position: relative; z-index: 2; font-size: 15px; color: rgba(236,226,208,0.62); text-shadow: 0 1px 1px rgba(0,0,0,0.7); }
+.b4-btn:active { transform: translateY(3px); box-shadow: 0 1px 3px rgba(0,0,0,0.7), 0 0 0 1px #000; }
+.b4-stop { width: 46px; height: 46px; }
+.b4-lampwell {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; margin-left: 2px;
+}
+.b4-lamp {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.85), 0 0 0 2px rgba(0,0,0,0.45);
+}
+.b4.is-run .b4-lamp {
+  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
+  box-shadow: 0 0 10px rgba(var(--red-rgb), 0.85), inset 0 0 2px rgba(255,255,255,0.5);
+}
+.b4-lamplabel { font-size: 6.5px; letter-spacing: 0.2em; color: #6a6572; }
+
+/* ===========================================================================
+   BUTTON OPTION B5 — 保護板 BEHIND A PUNCHED GUARD PLATE
+   =========================================================================== */
+.b5 { position: relative; display: flex; align-items: center; }
+.b5-plate {
+  position: relative; display: flex; align-items: center; gap: 16px; padding: 8px 18px;
+  border-radius: 3px; border: 1px solid #08080a;
+  background:
+    repeating-linear-gradient(94deg, rgba(255,255,255,0.03) 0 2px, rgba(0,0,0,0.14) 2px 3px, rgba(255,255,255,0.012) 3px 5px),
+    linear-gradient(180deg, #4a4a53, #33333b 45%, #23232a);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -2px 5px rgba(0,0,0,0.5);
+}
+.b5-hole {
+  position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: #050507;
+  /* the plate's cut edge: bright on the lit side, dark below */
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.95), 0 1px 0 rgba(255,255,255,0.2), 0 -1px 0 rgba(0,0,0,0.6);
+}
+.b5-pad {
+  position: absolute; inset: 4px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 28%, #2b2b33, #17171d 58%, #0b0b0e);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), inset 0 -1px 1px rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.07s;
+}
+.b5-glyph { font-size: 12px; color: #6f6979; transition: color 0.25s, text-shadow 0.25s; }
+.b5-hole.is-lit .b5-pad {
+  background: radial-gradient(circle at 38% 28%, rgba(var(--rc, var(--red-rgb)), 0.42), rgba(var(--rc, var(--red-rgb)), 0.14) 58%, #0b0b0e);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 0 14px rgba(var(--rc, var(--red-rgb)), 0.3);
+}
+.b5-hole.is-lit .b5-glyph { color: #fff; text-shadow: 0 0 8px rgba(var(--rc, var(--red-rgb)), 0.9); }
+.b5-hole:active .b5-pad { transform: translateY(2px); }
+.b5-stop { --rc: var(--magenta-rgb); }
+.b5-stamp { font-size: 7px; letter-spacing: 0.24em; color: #6a6572; writing-mode: vertical-rl; }
+
+/* ===========================================================================
+   VOLUME V1 — 縦 VERTICAL SLIDE FADER
+   =========================================================================== */
+.v-unit { display: flex; align-items: center; gap: 14px; }
+.v-readout {
+  font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.06em;
+  color: var(--cyan); text-shadow: 0 0 7px rgba(var(--cyan-rgb), 0.5); min-width: 26px; text-align: right;
+}
+.v-caption { font-size: 7px; letter-spacing: 0.22em; color: #6a6572; }
+.v1-slot {
+  position: relative; width: 34px; height: 68px; border-radius: 3px; cursor: pointer;
+  background: linear-gradient(180deg, #17171c, #0c0c10);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.07);
+}
+/* the machined travel slot the cap rides in */
+.v1-slot::before {
+  content: ""; position: absolute; left: 50%; top: 7px; bottom: 7px; width: 5px; margin-left: -2.5px; border-radius: 3px;
+  background: linear-gradient(90deg, #030304, #101015 50%, #030304);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.95);
+}
+/* the scale the yard etched beside the slot */
+.v1-slot::after {
+  content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 5px;
+  background: repeating-linear-gradient(180deg, rgba(180,174,192,0.34) 0 1px, transparent 1px 10px);
+}
+.v1-cap {
+  position: absolute; left: 4px; right: 4px; height: 15px; border-radius: 2px;
+  background: linear-gradient(180deg, #55555f 0%, #3a3a43 34%, #22222a 66%, #34343d 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.6);
+  transform: translateY(-50%);
+}
+/* the cap's pointer line, the thing you actually read the level off */
+.v1-cap::after {
+  content: ""; position: absolute; left: 3px; right: 3px; top: 50%; height: 1.5px; margin-top: -0.75px; border-radius: 1px;
+  background: linear-gradient(90deg, transparent, #e4dff0 25%, #e4dff0 75%, transparent);
+  box-shadow: 0 0 5px rgba(228,223,240,0.45);
+}
+
+/* ===========================================================================
+   VOLUME V2 — 横 FLUSH HORIZONTAL FADER
+   =========================================================================== */
+.v2-slot {
+  position: relative; width: 168px; height: 26px; border-radius: 3px; cursor: pointer;
+  background: linear-gradient(180deg, #131318, #0a0a0d);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.08);
+}
+.v2-slot::before {
+  content: ""; position: absolute; left: 9px; right: 9px; top: 50%; height: 4px; margin-top: -2px; border-radius: 3px;
+  background: linear-gradient(180deg, #030304, #14141a);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.95);
+}
+/* travelled portion of the slot glows: the only lit element in this option */
+.v2-fill {
+  position: absolute; left: 9px; top: 50%; height: 4px; margin-top: -2px; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(var(--cyan-rgb), 0.25), rgba(var(--cyan-rgb), 0.85));
+  box-shadow: 0 0 7px rgba(var(--cyan-rgb), 0.45);
+}
+.v2-cap {
+  position: absolute; top: 3px; bottom: 3px; width: 13px; border-radius: 2px; margin-left: -6.5px;
+  background: linear-gradient(90deg, #4f4f59, #32323b 40%, #22222a 60%, #44444e);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.28);
+}
+.v2-cap::after {
+  content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 1.5px; margin-left: -0.75px;
+  background: #e4dff0; box-shadow: 0 0 5px rgba(228,223,240,0.5);
+}
+
+/* ===========================================================================
+   VOLUME V3 — 段 LED LADDER + ▲▼ PADS  (echoes the 段階 bargraph)
+   =========================================================================== */
+.v3 { display: flex; align-items: center; gap: 10px; }
+.v3-ladder {
+  display: flex; gap: 2px; padding: 5px 6px; border-radius: 3px; border: 1px solid #030305;
+  background: linear-gradient(180deg, #050507, #0b0b0f);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.05);
+}
+.v3-seg {
+  width: 7px; height: 20px; border-radius: 1px;
+  background: linear-gradient(180deg, rgba(var(--cyan-rgb), 0.1), rgba(0,0,0,0.4));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.85);
+}
+.v3-seg.on {
+  background: linear-gradient(180deg, rgba(var(--cyan-rgb), 1), rgba(var(--cyan-rgb), 0.7));
+  box-shadow: 0 0 5px rgba(var(--cyan-rgb), 0.55), inset 0 1px 1px rgba(255,255,255,0.35);
+}
+.v3-pads { display: flex; flex-direction: column; gap: 3px; }
+.v3-pad {
+  width: 26px; height: 17px; padding: 0; cursor: pointer; border: 1px solid #000; border-radius: 2px;
+  background: linear-gradient(180deg, #3d3d46, #24242b 50%, #16161b);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 4px rgba(0,0,0,0.6);
+  color: #9a94a6; font-size: 8px; line-height: 1;
+}
+.v3-pad:active { transform: translateY(1px); box-shadow: inset 0 1px 2px rgba(0,0,0,0.7); }
+
+/* ===========================================================================
+   VOLUME V4 — 送り THUMBWHEEL, edge-exposed
+   =========================================================================== */
+.v4-well {
+  position: relative; width: 42px; height: 58px; border-radius: 3px; overflow: hidden; cursor: ns-resize;
+  background: linear-gradient(180deg, #101015, #07070a);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.07);
+}
+/* only the rim of the wheel clears the panel; the rest is inside the machine */
+.v4-wheel {
+  position: absolute; left: -16px; right: -16px; top: 5px; bottom: 5px; border-radius: 50%;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.13) 0 1px, rgba(0,0,0,0.4) 1px 4px),
+    linear-gradient(180deg, #0d0d11 0%, #3f3f49 18%, #63636f 42%, #4a4a55 58%, #26262e 80%, #0b0b0e 100%);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+}
+.v4-well::after {   /* the shadow the panel's cut edge throws on the wheel */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.75), transparent 22%, transparent 78%, rgba(0,0,0,0.75));
+}
+
+/* ===========================================================================
+   VOLUME V5 — 減衰 STEPPED ATTENUATOR LEVER
+   =========================================================================== */
+.v5-track {
+  position: relative; width: 150px; height: 34px; border-radius: 3px; cursor: pointer;
+  background: linear-gradient(180deg, #17171c, #0b0b0e);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.07);
+}
+/* the detent notches the lever drops into */
+.v5-track::before {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 6px; height: 7px;
+  background: repeating-linear-gradient(90deg, rgba(150,144,162,0.4) 0 1.5px, transparent 1.5px 17.5px);
+}
+.v5-lever {
+  position: absolute; top: 4px; width: 11px; height: 21px; margin-left: -5.5px; border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(180deg, #5c5c67 0%, #3a3a44 40%, #26262e 100%);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.v5-lever::after {   /* the amber pip on the lever nose, lit by the machine */
+  content: ""; position: absolute; left: 50%; top: 3px; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%;
+  background: var(--amber); box-shadow: 0 0 6px rgba(var(--amber-rgb), 0.85);
+}
+
+.foot { margin-top: 56px; padding-top: 18px; border-top: 1px solid #26262d; font-size: 11px; color: #6a6572; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap zankyo-scene">
+
+  <h1>TRANSPORT &amp; VOLUME — options</h1>
+  <p class="lede">
+    Five treatments for PLAY/STOP and five for the master volume, each sitting on the
+    real receive-panel metal so it is judged against the surface it would live on.
+    Everything is clickable and draggable — press the buttons, drag the faders, spin the
+    wheel. Nothing is wired to the engine; this is a look decision only.
+  </p>
+
+  <!-- ===================== CONTROL ===================== -->
+  <h2>NOW <span>— what is on the machine today</span></h2>
+  <div class="opt is-current">
+    <div class="opt-head"><span class="opt-id">CURRENT</span><span class="opt-name">Arcade domes + knurled knob</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="zk-transport-cluster">
+        <button class="zk-arcade play-btn"><span class="zk-arcade-cap">&#9654;&#xFE0E;</span></button>
+        <button class="zk-arcade stop-btn"><span class="zk-arcade-cap">&#9632;&#xFE0E;</span></button>
+      </div>
+      <span class="zk-rxpanel-gap"></span>
+      <button class="zk-knob"><span class="zk-knob-cap"></span><span class="zk-knob-ind"></span></button>
+    </div>
+    <p class="opt-note">
+      The glossy candy dome and the pure saturated red are the tell — they read as a
+      <b>game cabinet</b>, an object designed to be attractive, while everything around
+      them now reads as equipment built to be serviced. The knob is closer in spirit but
+      its knurl is regular and clean where the rest of the panel is worn.
+    </p>
+  </div>
+
+  <!-- ===================== BUTTONS ===================== -->
+  <h2>押釦 BUTTONS <span>— five treatments</span></h2>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">B1</span><span class="opt-name">Anti-vandal, machined stainless</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="b1">
+        <button class="b1-btn js-latch is-lit" data-group="b1"><span class="b1-face"><span class="b1-glyph">&#9654;&#xFE0E;</span></span><span class="b1-ring"></span></button>
+        <button class="b1-btn b1-stop js-unlatch" data-group="b1"><span class="b1-face"><span class="b1-glyph">&#9632;&#xFE0E;</span></span><span class="b1-ring"></span></button>
+      </div>
+    </div>
+    <p class="opt-note">
+      The real 19&nbsp;mm vandal-resistant switch: a turned stainless collar, a flush black
+      face, and the symbol <b>etched through</b> the face so the lamp behind it shows as a
+      ring of light rather than a coloured plastic cap. Nothing is glossy. This is the most
+      literal match for the rest of the machine — it is the same family of part as the bolts.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">B2</span><span class="opt-name">Illuminated legend, broadcast-desk</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="b2">
+        <button class="b2-btn js-latch is-lit" data-group="b2"><span class="b2-cap"><span class="b2-legend">再生</span><span class="b2-sub">PLAY</span></span></button>
+        <button class="b2-btn b2-stop js-unlatch" data-group="b2"><span class="b2-cap"><span class="b2-legend">停止</span><span class="b2-sub">STOP</span></span></button>
+      </div>
+    </div>
+    <p class="opt-note">
+      The rectangular lamp button off a studio desk: a translucent cap that is dim and grey
+      until it is live, then lights <b>from inside</b> with the legend floating in it. Brings
+      Japanese type onto the control surface, which the machine otherwise only does on the
+      screens. The largest, most legible target of the five.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">B3</span><span class="opt-name">Tape-deck keys, latching</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="b3">
+        <div class="b3-deck">
+          <button class="b3-key js-key is-down" data-group="b3"><span class="b3-glyph">&#9654;&#xFE0E;</span></button>
+          <button class="b3-key js-unkey" data-group="b3"><span class="b3-glyph">&#9632;&#xFE0E;</span></button>
+        </div>
+        <span class="b3-tally"></span>
+      </div>
+    </div>
+    <p class="opt-note">
+      Mechanical piano keys out of a cassette deck, in their own recessed bed. The played key
+      <b>stays down</b> until STOP releases it, so the machine's state is carried by a physical
+      position rather than by a glow — the most tactile option, and the only one that reads
+      correctly with the lamp off. Tallest of the five; it wants the panel's full height.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">B4</span><span class="opt-name">Bakelite dome, painted and worn</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="b4 is-run">
+        <button class="b4-btn b4-red js-run" data-group="b4"><span class="b4-glyph">&#9654;&#xFE0E;</span></button>
+        <button class="b4-btn b4-stop js-unrun" data-group="b4"><span class="b4-glyph">&#9632;&#xFE0E;</span></button>
+        <span class="b4-lampwell"><span class="b4-lamp"></span><span class="b4-lamplabel">運転</span></span>
+      </div>
+    </div>
+    <p class="opt-note">
+      Keeps the round shape you already have but remakes it as <b>moulded phenolic</b>: matte,
+      a visible parting line round the equator, paint gone off the high side, a dulled oxblood
+      instead of the neon red. The buttons stop glowing entirely — a separate 運転 lamp beside
+      them carries the running state, which is how a machine of this vintage would actually do it.
+      The smallest change from today's silhouette.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">B5</span><span class="opt-name">Behind a punched guard plate</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="b5">
+        <div class="b5-plate">
+          <span class="b5-stamp">操作</span>
+          <button class="b5-hole js-latch is-lit" data-group="b5"><span class="b5-pad"><span class="b5-glyph">&#9654;&#xFE0E;</span></span></button>
+          <button class="b5-hole b5-stop js-unlatch" data-group="b5"><span class="b5-pad"><span class="b5-glyph">&#9632;&#xFE0E;</span></span></button>
+        </div>
+      </div>
+    </div>
+    <p class="opt-note">
+      The buttons sit <b>below</b> a brushed guard plate, reachable only through punched holes —
+      the pads never rise above the panel, so a sleeve cannot catch them. The plate is its own
+      piece of hardware with its own lit cut edge, which adds a layer of depth the flat panel
+      currently lacks. The most severe and industrial of the five, and the one that reads least
+      like a "button" at a glance.
+    </p>
+  </div>
+
+  <!-- ===================== VOLUME ===================== -->
+  <h2>音量 VOLUME <span>— five approaches, only one of them rotary</span></h2>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">V1</span><span class="opt-name">Vertical slide fader</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="v-unit">
+        <div class="v1-slot js-v1"><span class="v1-cap"></span></div>
+        <div><div class="v-readout js-v1-out">60</div><div class="v-caption">音量</div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      A short-throw mixer fader in a machined slot, with the scale etched into the panel beside
+      it. The level is readable <b>at a glance from across the room</b> — a knob's angle is not.
+      Physically the closest relative to the 段階 bargraph already above it: both are
+      linear, both are read by position.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">V2</span><span class="opt-name">Flush horizontal fader, lit travel</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="v-unit">
+        <div class="v2-slot js-v2"><span class="v2-fill"></span><span class="v2-cap"></span></div>
+        <div><div class="v-readout js-v2-out">60</div><div class="v-caption">音量</div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      The same idea laid on its side and sunk flush, with the travelled part of the slot lit in
+      cyan so the setting is visible without reading the cap. <b>Costs almost no height</b>,
+      which matters on a panel that is already short — the one option that would let the receive
+      panel get thinner rather than taller.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">V3</span><span class="opt-name">LED ladder + ▲▼ pads</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="v-unit">
+        <div class="v3">
+          <div class="v3-ladder js-v3-ladder"></div>
+          <div class="v3-pads">
+            <button class="v3-pad js-v3-up">&#9650;</button>
+            <button class="v3-pad js-v3-dn">&#9660;</button>
+          </div>
+        </div>
+        <div><div class="v-readout js-v3-out">60</div><div class="v-caption">音量</div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      No moving part at all: a segmented ladder in a recessed well, stepped by two pads. Speaks
+      <b>exactly the same language as the 段階 bargraph</b> — same cells, same recess, same
+      glow — so the panel gains a second lit readout instead of a lone mechanical outlier.
+      Stepped rather than continuous, which is either honest or coarse depending on your taste.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">V4</span><span class="opt-name">Edge-exposed thumbwheel</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="v-unit">
+        <div class="v4-well js-v4"><span class="v4-wheel"></span></div>
+        <div><div class="v-readout js-v4-out">60</div><div class="v-caption">音量</div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      A ribbed wheel mounted <b>inside</b> the machine with only its rim clearing the panel —
+      the transistor-radio volume wheel. Keeps rotary feel while removing the knob entirely:
+      nothing protrudes, and the cut edge of the panel throws a shadow across the wheel that
+      sells the depth. Drag it up and down. No absolute position, so it needs the numeric readout.
+    </p>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><span class="opt-id">V5</span><span class="opt-name">Stepped attenuator lever</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <div class="v-unit">
+        <div class="v5-track js-v5"><span class="v5-lever"></span></div>
+        <div><div class="v-readout js-v5-out">60</div><div class="v-caption">減衰</div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      A lab-bench attenuator: a stubby lever that <b>drops into nine detents</b> along an etched
+      track, with an amber pip on its nose. Feels like setting an instrument rather than turning
+      a volume up, and the discrete stops match a machine that thinks in 序/破/急 stages. The
+      most characterful and the least conventional — the one that most changes the panel's
+      personality.
+    </p>
+  </div>
+
+  <p class="foot">
+    Dev-only mockup — not linked from the machine and not loaded by <code>index.php</code>.<br />
+    Substrate (<code>.zk-rxpanel</code>, <code>.zk-bolt</code>) copied verbatim from
+    <code>zankyo.css</code>; the CURRENT row reproduces the live arcade buttons and knob.
+  </p>
+</div>
+
+<script>
+/* Interactions are deliberately thin — just enough that the owner can feel the
+   difference between a latching key, a fader and a detented lever. */
+(function () {
+  "use strict";
+
+  /* --- buttons: lamp-style options latch on PLAY, clear on STOP --- */
+  function group(el) { return el.getAttribute("data-group"); }
+  document.querySelectorAll(".js-latch").forEach(function (b) {
+    b.addEventListener("click", function () { b.classList.add("is-lit"); });
+  });
+  document.querySelectorAll(".js-unlatch").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll('.js-latch[data-group="' + group(b) + '"]').forEach(function (p) {
+        p.classList.remove("is-lit");
+      });
+    });
+  });
+
+  /* --- B3: the key physically stays down, and drives the tally --- */
+  document.querySelectorAll(".js-key").forEach(function (k) {
+    k.addEventListener("click", function () {
+      k.classList.add("is-down");
+      k.closest(".b3").classList.add("is-run");
+    });
+  });
+  document.querySelectorAll(".js-unkey").forEach(function (s) {
+    s.addEventListener("click", function () {
+      var deck = s.closest(".b3");
+      deck.querySelectorAll(".js-key").forEach(function (k) { k.classList.remove("is-down"); });
+      deck.classList.remove("is-run");
+    });
+  });
+
+  /* --- B4: the buttons never glow; the separate 運転 lamp carries state --- */
+  document.querySelectorAll(".js-run").forEach(function (b) {
+    b.addEventListener("click", function () { b.closest(".b4").classList.add("is-run"); });
+  });
+  document.querySelectorAll(".js-unrun").forEach(function (b) {
+    b.addEventListener("click", function () { b.closest(".b4").classList.remove("is-run"); });
+  });
+
+  function clamp(v) { return Math.max(0, Math.min(100, v)); }
+
+  /* --- generic drag helper: maps a pointer to 0-100 along one axis --- */
+  function draggable(el, axis, onValue) {
+    if (!el) return;
+    function read(e) {
+      var r = el.getBoundingClientRect();
+      var v = axis === "y"
+        ? (1 - (e.clientY - r.top) / r.height) * 100
+        : ((e.clientX - r.left) / r.width) * 100;
+      onValue(clamp(v));
+    }
+    el.addEventListener("pointerdown", function (e) {
+      el.setPointerCapture(e.pointerId); read(e); e.preventDefault();
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (el.hasPointerCapture(e.pointerId)) read(e);
+    });
+  }
+
+  /* V1 — vertical fader */
+  var v1 = document.querySelector(".js-v1");
+  if (v1) {
+    var v1cap = v1.querySelector(".v1-cap"), v1out = document.querySelector(".js-v1-out");
+    var setV1 = function (v) {
+      v1cap.style.top = (7 + (1 - v / 100) * (v1.offsetHeight - 14)) + "px";
+      v1out.textContent = Math.round(v);
+    };
+    draggable(v1, "y", setV1); setV1(60);
+  }
+
+  /* V2 — horizontal fader, with the travelled slot lit behind it */
+  var v2 = document.querySelector(".js-v2");
+  if (v2) {
+    var v2cap = v2.querySelector(".v2-cap"), v2fill = v2.querySelector(".v2-fill"),
+        v2out = document.querySelector(".js-v2-out");
+    var setV2 = function (v) {
+      var travel = v2.offsetWidth - 18, x = 9 + (v / 100) * travel;
+      v2cap.style.left = x + "px";
+      v2fill.style.width = (x - 9) + "px";
+      v2out.textContent = Math.round(v);
+    };
+    draggable(v2, "x", setV2); setV2(60);
+  }
+
+  /* V3 — 12-cell ladder, stepped by the pads */
+  var lad = document.querySelector(".js-v3-ladder");
+  if (lad) {
+    var CELLS = 12, v3 = 60, v3out = document.querySelector(".js-v3-out");
+    for (var i = 0; i < CELLS; i++) { lad.appendChild(document.createElement("span")).className = "v3-seg"; }
+    var segs = lad.querySelectorAll(".v3-seg");
+    var drawV3 = function () {
+      var lit = Math.round((v3 / 100) * CELLS);
+      segs.forEach(function (s, i) { s.classList.toggle("on", i < lit); });
+      v3out.textContent = v3;
+    };
+    document.querySelector(".js-v3-up").addEventListener("click", function () { v3 = clamp(v3 + 100 / CELLS); v3 = Math.round(v3); drawV3(); });
+    document.querySelector(".js-v3-dn").addEventListener("click", function () { v3 = clamp(v3 - 100 / CELLS); v3 = Math.round(v3); drawV3(); });
+    drawV3();
+  }
+
+  /* V4 — thumbwheel: relative drag, so it spins rather than jumps */
+  var v4 = document.querySelector(".js-v4");
+  if (v4) {
+    var wheel = v4.querySelector(".v4-wheel"), v4out = document.querySelector(".js-v4-out");
+    var v4v = 60, spin = 0, lastY = null;
+    var drawV4 = function () { wheel.style.backgroundPosition = "0 " + spin + "px, 0 0"; v4out.textContent = Math.round(v4v); };
+    v4.addEventListener("pointerdown", function (e) { v4.setPointerCapture(e.pointerId); lastY = e.clientY; e.preventDefault(); });
+    v4.addEventListener("pointerup", function () { lastY = null; });
+    v4.addEventListener("pointermove", function (e) {
+      if (lastY === null) return;
+      var dy = lastY - e.clientY; lastY = e.clientY;
+      v4v = clamp(v4v + dy * 0.8); spin -= dy; drawV4();
+    });
+    drawV4();
+  }
+
+  /* V5 — lever that snaps to nine detents */
+  var v5 = document.querySelector(".js-v5");
+  if (v5) {
+    var lever = v5.querySelector(".v5-lever"), v5out = document.querySelector(".js-v5-out"), STOPS = 9;
+    var setV5 = function (v) {
+      var step = Math.round((v / 100) * (STOPS - 1));
+      var travel = v5.offsetWidth - 20;
+      lever.style.left = (10 + (step / (STOPS - 1)) * travel) + "px";
+      v5out.textContent = Math.round((step / (STOPS - 1)) * 100);
+    };
+    draggable(v5, "x", setV5); setV5(60);
+  }
+})();
+</script>
+</body>
+</html>
