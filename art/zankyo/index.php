@@ -232,9 +232,15 @@ include '../../includes/header.php';
              the value, which is the whole of the feedback: no scale, no
              pointer, no numeric readout. -->
         <div class="zk-master">
+          <!-- .zk-wheel is the GRAB area, padded out to a 44 px touch target;
+               .zk-wheel-barrel is the 30 px of wheel you actually see. The two
+               are separate because the barrel clips its own knurl, so the hit
+               area cannot be a pseudo-element hanging outside it. -->
           <div class="zk-wheel" id="zankyo-master-wheel">
-            <span class="zk-wheel-ribs" aria-hidden="true"></span>
-            <span class="zk-wheel-sheen" aria-hidden="true"></span>
+            <span class="zk-wheel-barrel" aria-hidden="true">
+              <span class="zk-wheel-ribs"></span>
+              <span class="zk-wheel-sheen"></span>
+            </span>
             <input type="range" class="zk-wheel-input" id="zankyo-master-vol"
                    min="0" max="100" step="1" value="60" aria-label="Master volume" />
           </div>

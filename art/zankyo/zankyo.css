@@ -569,8 +569,7 @@
    domes and the master knob are gone. PLAY and STOP are mechanical deck keys
    in a recessed bed — PLAY latches down for as long as the station runs, so
    the state is carried by a physical position and not only by a glow — and
-   the master volume is a drum thumbwheel read through a slot, with its scale
-   printed on the drum itself.
+   the master volume is a ribbed roller you turn with a thumb.
 --------------------------------------------------------------------------- */
 .zk-transport-cluster { position: relative; display: flex; align-items: center; gap: 11px; flex: none; }
 
@@ -657,18 +656,27 @@
    gradient rather than a flat grey, because on this machine it sits in metal
    and has to read as a turned steel part. */
 .zk-master { position: relative; display: flex; align-items: center; flex: 0 1 auto; min-width: 0; }
+/* the grab area: 7 px of padding either side of the barrel takes the target to
+   44 px, the touch minimum. The barrel clips its own knurl, so the hit area
+   has to be a real parent rather than a pseudo-element hanging outside it. */
 .zk-wheel {
-  position: relative; width: 150px; max-width: 100%; height: 30px;
-  border-radius: 8px; overflow: hidden;
-  cursor: ew-resize; touch-action: pan-y;
+  position: relative; width: 150px; max-width: 100%;
+  padding: 7px 0; cursor: ew-resize; touch-action: pan-y;
+}
+/* the wheel proper, sunk into the plate. Straight-sided (3 px, not a capsule)
+   and with NO outer drop shadow: a shadow under it would read as a part glued
+   onto the panel, and everything else on this plate is let into it. */
+.zk-wheel-barrel {
+  position: relative; display: block; height: 30px;
+  border-radius: 3px; overflow: hidden;
   /* the curl of the barrel: dark where the wheel turns away at top and
      bottom, bright across the middle where it faces the room */
   background: linear-gradient(180deg, #0f0f13 0%, #3a3a44 16%, #5f5f6b 44%, #4a4a55 58%, #26262e 82%, #0d0d11 100%);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.75),
-    0 2px 5px rgba(0, 0, 0, 0.7),
-    inset 0 2px 3px rgba(0, 0, 0, 0.55),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.6);
+    0 0 0 1px #000,
+    inset 0 2px 4px rgba(0, 0, 0, 0.85),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.7),
+    0 1px 0 rgba(255, 255, 255, 0.08);
 }
 /* the knurl. background-position is driven from zankyo-ui.js, so the ribs
    travel with the value and the wheel reads as turning rather than sliding. */
@@ -689,7 +697,7 @@
   background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.13) 50%, transparent 100%);
 }
 /* the ends of the wheel disappear into the panel's cut edge */
-.zk-wheel::after {
+.zk-wheel-barrel::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background: linear-gradient(90deg, rgba(0,0,0,0.75) 0%, transparent 9%, transparent 91%, rgba(0,0,0,0.75) 100%);
 }
@@ -697,10 +705,10 @@
    not take the pointer: a native range jumps to the click, and a wheel turns
    under the finger. It stays tabbable. */
 .zk-wheel-input {
-  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  position: absolute; inset: 7px 0; width: 100%; margin: 0;
   opacity: 0; pointer-events: none; -webkit-appearance: none; appearance: none;
 }
-.zk-wheel:focus-within { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.zk-wheel:focus-within .zk-wheel-barrel { outline: 2px solid var(--cyan); outline-offset: 3px; }
 
 /* ---------------------------------------------------------------------------
    MIXER CONSOLE — machined strips, switches, service hatches
@@ -1427,7 +1435,7 @@
   position: relative; flex: 1; min-height: 70px; box-sizing: border-box;
   display: flex; align-items: center; gap: 8px;
   /* 7 px top and bottom so the key bed sits IN the casing with the same
-     surround the drum has, and 20 px either side so the two controls are
+     surround the wheel has, and 20 px either side so the two controls are
      inset equally and the corner bolts clear both by the same margin */
   padding: 7px 20px; border-radius: 5px; border: 1px solid #000;
   background:
@@ -1441,13 +1449,12 @@
 .zk-rxpanel .zk-bolt-bl, .zk-rxpanel .zk-bolt-br { bottom: 4px; }
 .zk-rxpanel .zk-bolt-tl, .zk-rxpanel .zk-bolt-bl { left: 4px; }
 .zk-rxpanel .zk-bolt-tr, .zk-rxpanel .zk-bolt-br { right: 4px; }
-/* owner §4.7, re-cut 2026-09-18 for the deck keys and the drum: the controls
-   still speak for themselves — keys 42 x 46 in their bed, the drum 150 wide
-   (the width the owner asked for, the attenuator's) — and the volume carries
-   no numeric readout at all now: the scale is printed on the wheel and the
-   pointer over it is the display. The gap between the bed and the drum is
-   still bare metal. */
-.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }   /* the gap between STOP and the drum: bare metal since the print came off (plan §6), and still the spacer that keeps the keys off the wheel at every width */
+/* owner §4.7, re-cut 2026-09-18 for the deck keys and the roller: the controls
+   still speak for themselves — keys 42 x 46 in their bed, the wheel 150 wide —
+   and the volume carries no readout at all: the knurl turning under the finger
+   is the whole of it. The gap between the bed and the wheel is still bare
+   metal. */
+.zk-rxpanel-gap { position: relative; flex: 1; align-self: stretch; min-width: 0; }   /* the gap between STOP and the wheel: bare metal since the print came off (plan §6), and still the spacer that keeps the keys off the wheel at every width */
 .zk-rxpanel .zk-transport-cluster { gap: 7px; }   /* the tally sits close enough to belong to the bed */
 .zk-rxpanel .zk-key { width: 42px; height: 46px; }
 .zk-rxpanel .zk-key-play .zk-key-glyph { font-size: 17px; }
@@ -1489,13 +1496,14 @@
   /* These MUST stay scoped to .zk-rxpanel: the panel's own sizing rules are
      two-class selectors, so a bare `.zk-key` here loses to them and the phone
      silently keeps the desktop size (it did, until 2026-09-18).
-     The keys grow to a 44 px+ touch target, and the drum grows too — below 700
-     the bank stacks to one column, so the panel is WIDER here than on desktop
-     and the wheel has room to be a proper thumb target. */
+     The keys grow to a 44 px+ touch target, and the wheel grows too — below
+     700 the bank stacks to one column, so the panel is WIDER here than on
+     desktop and the wheel has room to be a proper thumb target. */
   .zk-rxpanel .zk-key { width: 52px; height: 56px; }
   .zk-rxpanel .zk-key-play .zk-key-glyph { font-size: 20px; }
   .zk-rxpanel .zk-key-stop .zk-key-glyph { font-size: 24px; }
-  .zk-rxpanel .zk-wheel { width: 200px; height: 34px; }
+  .zk-rxpanel .zk-wheel { width: 200px; }
+  .zk-rxpanel .zk-wheel-barrel { height: 34px; }
 
   /* reduced control strip: expandable plate + switch (sample hidden) */
   .zankyo-layer-sample { display: none; }
@@ -1533,7 +1541,9 @@
 @media (max-width: 430px) {
   /* the 200 px wheel stops fitting beside the grown keys here, so it steps
      back down before it would be pushed out of the panel */
-  .zk-rxpanel { padding: 7px 12px; }
+  /* 17 px, not 12: at 12 the corner bolts (4 px in, 10 px wide) overlapped
+     the key bed and the wheel by 2 px. 17 restores 3 px of clearance. */
+  .zk-rxpanel { padding: 7px 17px; }
   .zk-rxpanel .zk-wheel { width: 150px; }
 }
 @media (max-width: 380px) {
