@@ -40,10 +40,9 @@ include '../includes/header.php';
                 </div>
                 <div class="entry">
                     <div class="entry-content">
-                        <a href="/art/prosperos-jukebox-v2/" class="entry-title">Prospero&rsquo;s Jukebox</a>
-                        <span class="entry-description">An aleatoric music generator inspired by John Cage and Brian
-                            Eno. Generative chamber music that never repeats. Three different tracks, each loosely
-                            based on a character from Shakespeare&rsquo;s Tempest.</span>
+                        <a href="/art/zankyo/" class="entry-title">ZANKY&#332; &#27531;&#38911;</a>
+                        <span class="entry-description">Japanese aleatoric noise-engine. A derelict orbital station
+                            in the year 3042, eroded by Japanoise grit.</span>
                     </div>
                 </div>
                 <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
@@ -58,9 +57,10 @@ include '../includes/header.php';
                 </div>
                 <div class="entry">
 <div class="entry-content">
-                        <a href="/art/zankyo/" class="entry-title">ZANKY&#332; &#27531;&#38911;</a>
-                        <span class="entry-description">Japanese aleatoric noise-engine. A derelict orbital station
-                            in the year 3042, eroded by Japanoise grit.</span>
+                        <a href="/art/prosperos-jukebox-v2/" class="entry-title">Prospero&rsquo;s Jukebox</a>
+                        <span class="entry-description">An aleatoric music generator inspired by John Cage and Brian
+                            Eno. Generative chamber music that never repeats. Three different tracks, each loosely
+                            based on a character from Shakespeare&rsquo;s Tempest.</span>
                     </div>
                 </div>
                 <div class="entry">
