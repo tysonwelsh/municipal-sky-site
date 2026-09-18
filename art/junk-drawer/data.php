@@ -421,6 +421,15 @@ try {
                     'rid' => 'r' . ($i + 1),
                     'file' => $r['gen_id'] . '.svg',
                     'gen_id' => $r['gen_id'],
+                    /* the placing, carried OUT and not just used on the way
+                       (owner, 2026-09-17). The rank has always been read here,
+                       required here, and sorted on here — and then dropped,
+                       because the ORDER was the whole answer: r1 is first
+                       place and nothing downstream had to ask. The thumbnails
+                       wear their placing now, so the number itself has to
+                       survive the trip. 114 filed placings on 29 turn items
+                       reached the drawer as nothing until this line. */
+                    'rank' => $r['rank'],
                     'model' => $r['model'],
                     'model_version' => $r['model_version'],
                     'date' => substr((string) $sub['created'], 0, 10),

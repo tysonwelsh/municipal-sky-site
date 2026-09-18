@@ -597,51 +597,59 @@
     });
   }
   // ==========================================================================
-  // 受信 THE PUSH BUTTON (plan §8.2)
+  // 受信 THE PUSH BUTTON — back on the ledge, rc.77
   // ==========================================================================
-  // §7's tuning dial became this: a worn square push-switch with a lens, the
-  // same footprint, still unlabeled. Press it and the set finds a real
-  // broadcast AT ONCE — waiting for the next legal moment is 選局's manners,
-  // and the point of a button under the thumb is that it does not wait. Then
-  // it is cold for 45–60 s (drawn with seeded jitter, so a press schedule
-  // replays like everything else here) and presses in that window get a click
-  // and a flicker of snow, which is the honest thing for a receiver to do.
+  // The owner: "let's add a button that when pressed plays a clip … have it
+  // play a clip 100% when pushed right when pushed." So this is not §8.2's
+  // rate-limited dial any more. There is NO cooldown, NO lottery gate and NO
+  // probability: one press, one clip, every time.
   //
-  // The lens carries the whole state: lit when the receiver will actually
-  // answer, dark while it will not. No print, no tooltip — the panel tells the
-  // truth and you learn it by pressing once.
+  //   1. a stopped set cannot answer, so the press STARTS the station first
+  //      — the same start PLAY performs, not a subset of it;
+  //   2. then the deliberate press, force = true. zk-broadcast.js seats a real
+  //      broadcast through the production path — the same choose(), narrowed
+  //      by the number on the station to its left, the same footprint check,
+  //      the same whole-window hold — and where this scene cannot host one
+  //      (a reel already armed, the kyū's wall, no room before the scene
+  //      turns) it auditions a full window instead. Either way a reel sounds.
   //
-  // Refusals stay where the knowledge is: the receiver refuses when a signal
-  // is up, when one is ARMED AND WAITING (the D1 guard, which matters three
-  // times as much now that broadcasts come every cycle — a press must never
-  // seat over the reel the plan drew), or when the scene has no room; the
-  // engine refuses inside the KIRU's hush. In every refusal the snow still
-  // plays, so the tube always answers the hand.
+  // The lens is the only thing the plastic says, and it says one thing: a
+  // reception is on the air. It follows the TUBE's phase rather than the
+  // receiver's `live` flag, because an audition is on the air as far as the
+  // ear and the picture are concerned even though nothing was seated.
+  // No print, no tooltip, no line in the 活動 log.
   function wirePush() {
     var b = document.getElementById("zankyo-push");
     if (!b || !Z.dial) return;
     b.addEventListener("click", function () {
+      if (!isPlaying()) startStation();
       var got = "snow";
-      try { got = Z.dial(1, true); } catch (e) {}
+      try { got = Z.dial(1, true, true); } catch (e) {}
       // the click and the flicker happen whatever the answer — a dead press is
       // still a press, and a button that does nothing at all feels broken
-      try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(got === "locked" ? 1 : 0.45); } catch (e2) {}
+      try { if (window.ZankyoSet && ZankyoSet.sweep) ZankyoSet.sweep(got === "snow" ? 0.45 : 1); } catch (e2) {}
       b.classList.add("is-down");
       setTimeout(function () { b.classList.remove("is-down"); }, 90);
       paintLens();
     });
-    function paintLens() {
-      var ready = true;
-      try { ready = Z.dialReady ? !!Z.dialReady() : true; } catch (e) {}
-      b.classList.toggle("is-ready", ready);
-      b.setAttribute("aria-disabled", ready ? "false" : "true");
+    function onAir() {
+      try {
+        var st = window.ZankyoSet && ZankyoSet.getState && ZankyoSet.getState();
+        if (st && st.phase && st.phase !== "idle") return true;
+      } catch (e) {}
+      try {
+        var bs = window.ZankyoBroadcast && ZankyoBroadcast.getState && ZankyoBroadcast.getState();
+        if (bs && bs.live) return true;
+      } catch (e2) {}
+      return false;
     }
+    function paintLens() { b.classList.toggle("is-on", onAir()); }
     paintLens();
-    setInterval(paintLens, 250);                 // the lens follows readiness; the cooldown is tens of seconds
+    setInterval(paintLens, 250);                 // the lamp follows the air
   }
 
   // ==========================================================================
-  // 操作段 THE CONTROL LEDGE — the hand on both rockers
+  // 操作段 THE CONTROL LEDGE — the hand on the rockers
   // ==========================================================================
   // One moulded see-saw plate, two ends, and an invisible 44 px box over each
   // end; the painted cap is 36 px and never moves, so the ledge stays a shallow
@@ -673,14 +681,19 @@
   }
 
   function wireLedge() {
-    // 輝度 — four steps into the tube's own shader. What a step MEANS lives in
-    // zk-set.js with the pixels it moves; the plastic lives here.
+    // 輝度 — NOT ON THE PANEL since rc.77: the owner took the left station for
+    // the number and the middle one for the 受信 button. The implementation is
+    // untouched — zk-set.js still owns setBright()/getBright() and the tube
+    // still runs at its default step — and this call still stands, because the
+    // owner said he will pick a variable for these stations later and a control
+    // that is only missing its plastic should not also be missing its hand.
+    // wireRocker no-ops on a null host.
     wireRocker("zankyo-rock-bri",
       function (v) { try { if (window.ZankyoSet && ZankyoSet.setBright) ZankyoSet.setBright(v); } catch (e) {} },
       function () { try { return (window.ZankyoSet && ZankyoSet.getBright) ? ZankyoSet.getBright() : 0; } catch (e) { return 0; } },
       3);
 
-    // THE MIDDLE STATION. It steps a number, 00 to 10, and NOTHING is said
+    // THE LEFT STATION. It steps a number, 00 to 10, and NOTHING is said
     // about it — no label on the panel, no legend, no tooltip, and no line in
     // the 活動 log. The two digits are the only feedback there is, which is the
     // owner's whole ask for this control. The lottery reads the number in
@@ -704,19 +717,29 @@
   }
 
   // ---- Transport (arcade buttons + master volume knob) ----
+  // THE START, in one place. PLAY is not the only thing that starts the
+  // station any more — the ledge's 受信 button starts it too, because a press
+  // on a stopped set has to make a sound and not a silent picture — and both
+  // must leave the page in the same state: the boot card gone, the log cleared,
+  // 逸脱 honoured, the arcade cap lit and the power LED on.
+  function isPlaying() {
+    try { var st = Z.getState && Z.getState(); return !!(st && st.playing); } catch (e) { return false; }
+  }
+  function startStation() {
+    // the tube stops being a title card the moment the station plays, and
+    // does not go back to one for the session (a STOP leaves the scope as
+    // it has always been)
+    clearBoot();
+    if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
+    else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
+    clearLog(); Z.play();
+    var pb = document.getElementById("zankyo-play");
+    if (pb) pb.classList.add("is-playing");
+    if (sceneEl) sceneEl.classList.add("is-on");   // power LED
+  }
   function wireTransport() {
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
-    if (playBtn) playBtn.addEventListener("click", function () {
-      // the tube stops being a title card the moment the station plays, and
-      // does not go back to one for the session (a STOP leaves the scope as
-      // it has always been)
-      clearBoot();
-      if (farArmed) farHunt();                 // 逸脱: while the switch is thrown, every restart is far
-      else if (farRestore) farGoHome();        // …and the first restart after it is thrown back is not
-      clearLog(); Z.play();
-      playBtn.classList.add("is-playing");
-      if (sceneEl) sceneEl.classList.add("is-on");   // power LED
-    });
+    if (playBtn) playBtn.addEventListener("click", startStation);
     if (stopBtn) stopBtn.addEventListener("click", function () {
       Z.stop();
       if (playBtn) playBtn.classList.remove("is-playing");

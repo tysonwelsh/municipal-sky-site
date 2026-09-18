@@ -6367,7 +6367,12 @@ window.ZankyoAudio = (function () {
     // receiver makes the noise either way and only locks when asked to. The
     // KIRU's hush is the engine's to know about, so it is refused here rather
     // than in the receiver: during the cut the dial makes snow and nothing else.
-    dial: function (amt, wantLock) {
+    // `force` is the ledge's 受信 button (rc.77): a deliberate press, answered
+    // every time. It skips the receiver's cooldown and, here, the KIRU's hush
+    // — the hush is the station's manners toward ITSELF, and a hand on the
+    // button outranks it. Everything the receiver knows about legality still
+    // applies inside dialLock().
+    dial: function (amt, wantLock, force) {
       if (!signalProvider) return "snow";
       // Stopped and never played: there is no context yet, the master may be
       // where stop() left it and the broadcast layer is muted. The button's
@@ -6376,10 +6381,10 @@ window.ZankyoAudio = (function () {
       auditionPrep("broadcast");
       try { if (signalProvider.dialNoise) signalProvider.dialNoise(Math.max(0, Math.min(1, +amt || 0))); } catch (e) {}
       if (!wantLock || !signalProvider.dialLock) return "snow";
-      if (playing && ctx && cutGrit) {                        // inside the KIRU's hush the station is listening to itself
+      if (!force && playing && ctx && cutGrit) {              // inside the KIRU's hush the station is listening to itself
         try { if (cutGrit.gain.value < 0.9) return "snow"; } catch (e2) {}
       }
-      try { return signalProvider.dialLock() || "snow"; } catch (e3) { return "snow"; }
+      try { return signalProvider.dialLock(!!force) || "snow"; } catch (e3) { return "snow"; }
     },
     // §8.2: is the button's lens lit? Read every frame by the page.
     dialReady: function () {

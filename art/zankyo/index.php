@@ -135,8 +135,11 @@ include '../../includes/header.php';
           </div>
 
           <!-- 操作段 THE CONTROL LEDGE. Three stations on one moulded bar:
-               輝度, the unlabelled stepper, and a station the tool cut and
-               nothing has been fitted to yet. -->
+               the unlabelled stepper, the 受信 push, and a station the tool cut
+               and nothing has been fitted to yet. (rc.77: 輝度 came off the
+               panel — the owner wanted the number under his left thumb and the
+               button back. setBright()/getBright() stay in zk-set.js at their
+               default step, waiting for a control.) -->
           <div class="zk-ledge">
             <span class="zk-pin zk-pin-l" aria-hidden="true"></span>
             <span class="zk-pin zk-pin-r" aria-hidden="true"></span>
@@ -148,29 +151,14 @@ include '../../includes/header.php';
 
             <div class="zk-well">
 
-              <!-- 輝度 BRIGHT — a four-step rocker driving the beam's drive and
-                   the phosphor's spread together, which is what brightness on a
-                   CRT actually was. -->
-              <div class="zk-rocker" id="zankyo-rock-bri" role="group" aria-label="輝度 &middot; brightness, four steps">
-                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&#9662;</i></span>
-                <span class="zk-rock-win">
-                  <span class="zk-rock-k">輝度</span>
-                  <span class="zk-rock-steps" id="zankyo-bri-steps" aria-hidden="true"></span>
-                </span>
-                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>&#9652;</i></span>
-                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="輝度を下げる &middot; brightness down"></button>
-                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="輝度を上げる &middot; brightness up"></button>
-                <span class="zk-sr" id="zankyo-bri-read" role="status"></span>
-              </div>
-
-              <!-- THE MIDDLE STATION: two arrows and a two-digit readout, and
+              <!-- THE LEFT STATION: two arrows and a two-digit readout, and
                    nothing else. No label on the panel, no legend, no tooltip and
                    no line in the VFD — the owner asked that it not be explained
                    ("part of the appeal of this app is just kind of mysterious
                    and you just have to figure out yourself whether it's actually
                    controlling"). The screen reader is told what the control
                    factually IS, which is a different thing from explaining it
-                   on the faceplate. -->
+                   on the faceplate. The digits are amber (rc.77). -->
               <div class="zk-rocker" id="zankyo-rock-loc" role="group" aria-label="選局番号 &middot; channel number, 00 to 10">
                 <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&#9662;</i></span>
                 <span class="zk-rock-win zk-rock-win-num">
@@ -181,6 +169,22 @@ include '../../includes/header.php';
                 <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="番号を上げる &middot; channel number up"></button>
                 <span class="zk-sr" id="zankyo-loc-sr" role="status"></span>
               </div>
+
+              <!-- THE MIDDLE STATION: 受信, the momentary push, back on the
+                   panel (rc.77). One press seats a real broadcast AT ONCE —
+                   no cooldown, no lottery gate, no probability — through the
+                   production path, narrowed by the number to its left. The
+                   plate carries the set's own word and NOTHING ELSE: no
+                   legend, no tooltip, no line of help. The lamp is the whole
+                   readout — lit while a reception is on the air. The
+                   aria-label states what the control factually does, which is
+                   what a screen reader needs and not what the plastic says. -->
+              <button type="button" class="zk-face zk-push" id="zankyo-push" aria-label="受信 &middot; receive a broadcast now">
+                <span class="zk-push-cap" aria-hidden="true">
+                  <span class="zk-push-k">受信</span>
+                  <span class="zk-push-lens"></span>
+                </span>
+              </button>
 
               <!-- THE THIRD STATION: reserved blank plastic. A blanking plate
                    with the mounting boss the yard never used — moulded as if the

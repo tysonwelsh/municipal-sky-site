@@ -1843,11 +1843,32 @@
     return true;
   }
   var lastSampleAudioOnly = false;
-  function dialLock() {
+  // A DELIBERATE PRESS (force = true) — the 受信 button on the ledge, rc.77.
+  // It bypasses the COOLDOWN and NOTHING ELSE on the way in: the legality (the
+  // scene, the KIRU, the D1 guard), the footprint check, choose()'s narrowing
+  // by 選局番号, the whole-window hold, the AIR and the tube are all the
+  // production path, unchanged. What force DOES add is on the way out: where an
+  // ordinary dial press gives up and returns "snow", a deliberate press falls
+  // back to the audition — the same full window the stopped press gives, on the
+  // same tube, through the same receiver chain — because the owner's rule for
+  // this button is that a press is never a no-op. A press therefore always
+  // sounds a reel; whether it was SEATED as a broadcast is what the return
+  // value tells the caller ("locked" vs "audition").
+  // …and it does not stack. An audition holds the air for its whole window,
+  // so a second press inside one is a press onto a clip that is ALREADY
+  // playing: it answers "live" rather than laying a second reel over the
+  // first. (A seated broadcast is covered by `live` a few lines down; this is
+  // the audition's own version of the same courtesy.)
+  var auditionEnd = -1e9;
+  function forceFallback(now) {
+    if (now < auditionEnd) return "live";
+    return dialAudition(now) ? "audition" : "snow";
+  }
+  function dialLock(force) {
     var T = tl(), c = T.ctx;
     if (!c) return "snow";
     var now = c.currentTime;
-    if (now - dialLast < dialCold) return "wait";            // §8.2: cold for the drawn 45–60 s
+    if (!force && now - dialLast < dialCold) return "wait";  // §8.2: cold for the drawn 45–60 s (the ledge button has none)
     if (!T.playing()) {                                      // stopped: the audition, a full window
       if (!dialAudition(now)) return "snow";
       dialLast = now; dialPresses++; dialCold = dialDrawCold(); stats.dial = (stats.dial || 0) + 1;
@@ -1859,14 +1880,18 @@
     // refuses and the engine falls back to the synthesized Etenraku: the cycle
     // keeps a broadcast but silently loses the reel the plan drew. 選局 has
     // this guard; the dial did not. (Critic W1 r2, D1.)
-    if (live || armed) return "snow";
+    // …and a deliberate press does not shout over the reel that is already
+    // there: while one is ON THE AIR the press has its clip already, and while
+    // one is merely ARMED the fallback audition answers the hand.
+    if (live) return force ? "live" : "snow";
+    if (armed) return force ? forceFallback(now) : "snow";
     var sc = T.scene(), cy = T.cycle();
-    if (!sc || sc.type === "kyu" || sc.type === "release" || sc.type === "oroshi") return "snow";   // the wall and the hush are not the dial's to interrupt
+    if (!sc || sc.type === "kyu" || sc.type === "release" || sc.type === "oroshi") return force ? forceFallback(now) : "snow";   // the wall and the hush are not the dial's to interrupt
     // IMMEDIATELY, not at the next legal moment: t0 is now + the static lead,
     // and the window is trimmed to whatever room the scene has left.
     var t0 = now + STATIC_LEAD_S + 0.5;
     var room = (sc.startT + sc.durS - 3) - (t0 + TUNE_S + 2.8 + COLLAPSE_S + BURST_S);
-    if (room < 4) return "snow";                             // no room before the scene turns
+    if (room < 4) return force ? forceFallback(now) : "snow";  // no room before the scene turns
     var R = T.S.signal.fork("button:" + dialPresses + ":" + Math.max(0, cy.n));
     // §8.2, the owner's words: "a real reel WITH A PICTURE". The lottery is
     // already weighted 3× toward video by §8.1; a deliberate press asks for one
@@ -1878,12 +1903,12 @@
     for (var attempt = 0; attempt < 6; attempt++) {
       if (da) { da.dead = true; qDrop(da); try { tl().airHoldClear(da.holdId); } catch (e) {} }   // each retry is a whole reception; the ones not taken leave no claim behind
       da = arm(withDeadlines({ cycle: cy.n, kind: cy.kind, hostStartT: t0 - 8, hostDurS: sc.durS, tidePos: 0.5, shape: manualShape(R.fork("shape:" + attempt)) }, t0), R.fork("try:" + attempt));
-      if (!da) return "snow";
+      if (!da) return force ? forceFallback(now) : "snow";
       if (!da.reel || !da.reel.audioOnly) { got = true; break; }
     }
-    if (!got && !da) return "snow";
+    if (!got && !da) return force ? forceFallback(now) : "snow";
     if (da.rx && da.rx.spanS > room) rxShrinkTo(da, room);
-    if (!fire(t0)) { da.dead = true; qDrop(da); return "snow"; }
+    if (!fire(t0)) { da.dead = true; qDrop(da); return force ? forceFallback(now) : "snow"; }
     dialLast = now; dialPresses++; dialCold = dialDrawCold(); stats.dial = (stats.dial || 0) + 1;
     T.emitEvent({ cat: "rx", label: "受信 locked on", detail: "the set finds one · " + Math.round(t0 - now) + " s" }, now);
     return "locked";
@@ -2490,12 +2515,21 @@
     var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
     var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S;
-    if (poolState !== "ready" || !v || (!buffered && !ms) || !pool.length) { staticRise(t, t + 1.0); return true; }   // the dial turns, nothing found
+    // how long this audition owns the air: the ledge's button reads it so a
+    // second press inside the window does not lay a second reel over this one
+    auditionEnd = t + TUNE_S + holdS + lossD + COLLAPSE_S + BURST_S;
+    if (poolState !== "ready" || !v || (!buffered && !ms) || !pool.length) { auditionEnd = t + 1.0; staticRise(t, t + 1.0); return true; }   // the dial turns, nothing found
     // ?reel= pins the audition too, and on EVERY press — unlike the on-air pin,
     // which is spent once. rReel is still drawn above, so the sample stream is
     // where it would have been.
     var pinA = pinnedReel();
-    var reel = pinA || pool[Math.floor(rReel * pool.length)];
+    // 選局番号 bites on the audition as well (rc.77): the button on the ledge
+    // reaches this path whenever a real seat cannot be had, and a press at 08
+    // that came back with a Brazilian reel would make the number a liar. ONE
+    // narrowing, the SAME localeNarrow() the lottery uses — and the same
+    // retreat to the whole pool when the number holds nothing usable.
+    var cands = localeNarrow(pool) || pool;
+    var reel = pinA || cands[Math.floor(rReel * cands.length)];
     var awi = Math.floor(rWin * reel.windows.length);
     // §14 in the audition too: a whole reel is auditioned whole, so the button
     // plays what the air would play.
