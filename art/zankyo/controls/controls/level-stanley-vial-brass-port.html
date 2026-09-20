@@ -67,10 +67,10 @@
   if (customElements.get("sk-level-vial")) return;
   const W = 180, H = 70;
   const MID = 90;                  // the vial's centre, in px
-  const K = 26;                    // px of bubble travel per unit of value
-  const PIN = 28;                  // the bubble pins here, against the end of the bore
-  const BRX = 14, BRY = 7;         // the bubble at the centre of its travel
-  const LINE = 27;                 // the etched lines: the bubble touches them at +/- 0.5
+  const K = 27.5;                  // px of bubble travel per unit of value
+  const PIN = 27.5;                // the bubble pins here, against the end of the bore
+  const BRX = 12.5, BRY = 7;       // the bubble at the centre of its travel
+  const LINE = 26.25;              // the etched lines: the bubble touches them at +/- 0.5
 
   const BORE = "M 50 35 Q 50 28.4 57.5 27.3 Q 90 24.6 122.5 27.3 Q 130 28.4 130 35 " +
                "Q 130 41.6 122.5 43.0 Q 90 44.6 57.5 43.0 Q 50 41.6 50 35 Z";
@@ -85,7 +85,7 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     .mk { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; font-weight: 600;
-          font-size: 5px; letter-spacing: 0.3em; text-anchor: middle; }
+          font-size: 5.6px; letter-spacing: 0.3em; text-anchor: middle; }
   </style>
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
@@ -126,6 +126,7 @@
           <stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#f3f7e8"/>
           <stop offset="0.85" stop-color="#e2ecc9"/><stop offset="1" stop-color="#c9daa4"/>
         </radialGradient>
+        <clipPath id="beam"><rect x="0" y="4" width="${W}" height="62" rx="3"/></clipPath>
         <clipPath id="bore"><path d="${BORE}"/></clipPath>
         <clipPath id="bubclip"><ellipse class="bc" cx="90" cy="33" rx="14" ry="7"/></clipPath>
         <filter id="s05" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.55"/></filter>
@@ -134,7 +135,7 @@
       </defs>
 
       <!-- the beam: a scrap of the level body -->
-      <g class="wood">
+      <g class="wood" clip-path="url(#beam)">
         <rect x="0" y="4" width="${W}" height="62" rx="3" fill="url(#rose)"/>
         <g opacity="0.3" stroke="#2c1509" stroke-width="0.8" fill="none">
           <path d="M -4 14 Q 60 11 184 16"/><path d="M -4 24 Q 70 21 184 25"/>
@@ -144,13 +145,13 @@
           <path d="M -4 19 Q 64 16 184 20"/><path d="M -4 46 Q 66 43 184 47"/><path d="M -4 58 Q 60 55 184 60"/>
         </g>
       </g>
-      <g class="metal" style="display:none">
+      <g class="metal" clip-path="url(#beam)" style="display:none">
         <rect x="0" y="4" width="${W}" height="62" rx="3" fill="url(#alu)"/>
-        <g opacity="0.5" stroke="#ffffff" stroke-width="0.5" fill="none">
+        <g opacity="0.3" stroke="#ffffff" stroke-width="0.5" fill="none">
           <path d="M 0 12 H 180"/><path d="M 0 20 H 180"/><path d="M 0 30 H 180"/>
           <path d="M 0 42 H 180"/><path d="M 0 52 H 180"/><path d="M 0 60 H 180"/>
         </g>
-        <g opacity="0.3" stroke="#6f7270" stroke-width="0.5" fill="none">
+        <g opacity="0.2" stroke="#6f7270" stroke-width="0.5" fill="none">
           <path d="M 0 16 H 180"/><path d="M 0 26 H 180"/><path d="M 0 37 H 180"/>
           <path d="M 0 47 H 180"/><path d="M 0 57 H 180"/>
         </g>
@@ -179,25 +180,28 @@
         <!-- the spirit -->
         <path d="${BORE}" fill="url(#fluid)"/>
         <path d="${BORE}" fill="url(#fdep)"/>
+        <!-- the fluid deepens and darkens toward the ends of the bore -->
+        <path d="${BORE}" fill="none" stroke="#5f7d18" stroke-opacity="0.55" stroke-width="3.5" filter="url(#s12)"/>
         <!-- the bubble's shadow on the fluid -->
-        <ellipse class="sh" cx="90" cy="40" rx="11" ry="2.2" fill="#4a6612" opacity="0.4" filter="url(#s12)"/>
-        <!-- the bubble -->
-        <ellipse class="bu" cx="90" cy="33" rx="${BRX}" ry="${BRY}" fill="url(#bub)" stroke="#6f8f22" stroke-width="0.9"/>
-        <ellipse class="hi" cx="85" cy="30" rx="4.8" ry="1.5" fill="#ffffff" opacity="0.9" filter="url(#s05)"/>
+        <ellipse class="sh" cx="90" cy="40" rx="11" ry="2.2" fill="#3f5a10" opacity="0.45" filter="url(#s12)"/>
+        <!-- the bubble: a bright meniscus, a dark green rim, a crescent at the top-left -->
+        <ellipse class="bu" cx="90" cy="33" rx="${BRX}" ry="${BRY}" fill="url(#bub)" stroke="#65861c" stroke-width="1.1"/>
+        <ellipse class="bu2" cx="90" cy="33" rx="${BRX - 1.6}" ry="${BRY - 1}" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.8" filter="url(#s05)"/>
+        <ellipse class="hi" cx="85" cy="30" rx="4.8" ry="1.5" fill="#ffffff" opacity="0.95" filter="url(#s05)"/>
         <!-- the two etched lines, and their refraction across the bubble -->
         <g class="etch">
-          <ellipse cx="${MID - LINE}" cy="35" rx="2.7" ry="8.6" fill="none" stroke="#111" stroke-width="1.4"/>
-          <ellipse cx="${MID + LINE}" cy="35" rx="2.7" ry="8.6" fill="none" stroke="#111" stroke-width="1.4"/>
+          <ellipse cx="${MID - LINE}" cy="35" rx="2.8" ry="8.8" fill="none" stroke="#0e0e0e" stroke-width="1.6"/>
+          <ellipse cx="${MID + LINE}" cy="35" rx="2.8" ry="8.8" fill="none" stroke="#0e0e0e" stroke-width="1.6"/>
         </g>
         <g clip-path="url(#bubclip)">
-          <ellipse cx="${MID - LINE}" cy="35" rx="2.9" ry="8.8" fill="none" stroke="#0c0c0c" stroke-width="2.2"/>
-          <ellipse cx="${MID + LINE}" cy="35" rx="2.9" ry="8.8" fill="none" stroke="#0c0c0c" stroke-width="2.2"/>
+          <ellipse cx="${MID - LINE}" cy="35" rx="3.0" ry="9.0" fill="none" stroke="#080808" stroke-width="2.4"/>
+          <ellipse cx="${MID + LINE}" cy="35" rx="3.0" ry="9.0" fill="none" stroke="#080808" stroke-width="2.4"/>
         </g>
         <!-- the glass: one long glint along the top, a cooler one below -->
-        <path d="M 58 28.6 Q 90 26.0 122 28.6" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="1.5" filter="url(#s05)"/>
-        <path d="M 66 41.6 Q 90 43.2 114 41.6" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1" filter="url(#s05)"/>
+        <path d="M 58 28.4 Q 90 25.8 122 28.4" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.5" filter="url(#s05)"/>
+        <path d="M 66 41.8 Q 90 43.4 114 41.8" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1" filter="url(#s05)"/>
         <!-- the dark inner shadow the chamfer throws on the glass -->
-        <path d="${GLASS}" fill="none" stroke="#1a1405" stroke-opacity="0.55" stroke-width="3" filter="url(#s12)"/>
+        <path d="${GLASS}" fill="none" stroke="#1a1405" stroke-opacity="0.6" stroke-width="3.2" filter="url(#s12)"/>
       </g>
       <!-- the glass tube's own edge, and the dark ends of the vial in the port -->
       <path d="${GLASS}" fill="none" stroke="#e9f2c8" stroke-opacity="0.3" stroke-width="0.8"/>
@@ -214,8 +218,8 @@
          <rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#3a2a0c" transform="translate(144.4 34.7) rotate(-68)"/></g>
 
       <!-- the maker's line, engraved into the brass -->
-      <text class="mk" x="90" y="55.4" fill="#f0dfa8" opacity="0.5">LEVEL &#183; No. 30</text>
-      <text class="mk lg" x="90" y="54.8" fill="#4a360f">LEVEL &#183; No. 30</text>
+      <text class="mk" x="90" y="55.6" fill="#ffeeb6" opacity="0.6">LEVEL &#183; No. 30</text>
+      <text class="mk lg" x="90" y="54.9" fill="#3d2c0a">LEVEL &#183; No. 30</text>
     </svg>
   </div>`;
 
@@ -227,7 +231,7 @@
       this._v = 0; this._x = 0; this._vel = 0; this._scale = 1; this._lock = false;
       this._raf = 0; this._last = 0; this._t = 0; this._px = -999;
       const $ = s => this.shadowRoot.querySelector(s);
-      this._wrap = $(".wrap"); this._bu = $(".bu"); this._hi = $(".hi"); this._sh = $(".sh"); this._bc = $(".bc");
+      this._wrap = $(".wrap"); this._bu = $(".bu"); this._bu2 = $(".bu2"); this._hi = $(".hi"); this._sh = $(".sh"); this._bc = $(".bc");
       this._wood = $(".wood"); this._metal = $(".metal");
       this._lg = $(".lg"); this._lgs = this.shadowRoot.querySelectorAll(".mk")[0];
       this._tick = this._tick.bind(this);
@@ -300,13 +304,16 @@
       if (Math.abs(off - this._px) < 0.02) return;
       this._px = off;
       const u = Math.min(1, Math.abs(off) / PIN);
-      const rx = BRX - 4.2 * u * u, ry = BRY - 1.4 * u * u;
+      const rx = BRX - 3.6 * u * u, ry = BRY - 1.4 * u * u;
       const cx = MID + off;
       const boreTop = 27.3 - 1.5 * (1 - Math.min(1, Math.pow((cx - MID) / 40, 2)));
       const cy = boreTop + ry + 0.55;
       const b = this._bu;
       b.setAttribute("cx", cx.toFixed(2)); b.setAttribute("cy", cy.toFixed(2));
       b.setAttribute("rx", rx.toFixed(2)); b.setAttribute("ry", ry.toFixed(2));
+      const b2 = this._bu2;
+      b2.setAttribute("cx", cx.toFixed(2)); b2.setAttribute("cy", cy.toFixed(2));
+      b2.setAttribute("rx", (rx - 1.6).toFixed(2)); b2.setAttribute("ry", Math.max(0.6, ry - 1).toFixed(2));
       const c2 = this._bc;
       c2.setAttribute("cx", cx.toFixed(2)); c2.setAttribute("cy", cy.toFixed(2));
       c2.setAttribute("rx", (rx + 0.6).toFixed(2)); c2.setAttribute("ry", (ry + 0.6).toFixed(2));

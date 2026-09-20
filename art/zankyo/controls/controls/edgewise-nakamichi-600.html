@@ -115,9 +115,9 @@
           <stop offset="0" stop-color="#0a0b0c"/><stop offset="0.55" stop-color="#0c0d0e"/><stop offset="1" stop-color="#101112"/>
         </linearGradient>
         <linearGradient id="lamp" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0" stop-color="#ffcf82" stop-opacity="0.5"/>
-          <stop offset="0.35" stop-color="#ffbc5e" stop-opacity="0.19"/>
-          <stop offset="0.7" stop-color="#ff9f3a" stop-opacity="0.05"/>
+          <stop offset="0" stop-color="#ffcf82" stop-opacity="0.52"/>
+          <stop offset="0.3" stop-color="#ffbc5e" stop-opacity="0.15"/>
+          <stop offset="0.66" stop-color="#ff9f3a" stop-opacity="0.035"/>
           <stop offset="1" stop-color="#ff9f3a" stop-opacity="0"/>
         </linearGradient>
         <linearGradient id="lampx" x1="0" y1="0" x2="1" y2="0">
@@ -149,7 +149,8 @@
         <rect x="3" y="10" width="194" height="50" rx="2.5" fill="url(#panel)"/>
         <rect x="3" y="10" width="194" height="50" rx="2.5" filter="url(#grain2)" opacity="0.05" style="mix-blend-mode:overlay"/>
         <rect x="3.5" y="10.5" width="193" height="49" rx="2.2" fill="none" stroke="#3a3b3d" stroke-opacity="0.45" stroke-width="0.7"/>
-        <rect x="3.5" y="10.5" width="193" height="49" rx="2.2" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="0.7" stroke-dasharray="0 96 193 999"/>
+        <rect x="5" y="59.1" width="190" height="0.8" fill="#000" opacity="0.55"/>
+        <rect x="195.4" y="13" width="0.9" height="45" fill="#000" opacity="0.45"/>
         <g class="slots"></g>
       </g>
     </svg>
@@ -241,7 +242,7 @@
         mk(s, "rect", { x: SX, y: y, width: SW, height: SH, fill: "url(#card)" });
         // the lamp, washing up from the bottom of the slot, uneven along its length
         mk(s, "rect", { "class": "glow", x: SX, y: y + 7.5, width: SW, height: SH - 7.5, fill: "url(#lamp)", mask: "url(#lampmask)" });
-        mk(s, "ellipse", { "class": "glow", cx: SX + 84, cy: y + SH + 2, rx: 46, ry: 5.5, fill: "#ffcf82", opacity: 0.12, filter: "url(#soft)" });
+        mk(s, "ellipse", { "class": "glow", cx: SX + 84, cy: y + SH + 3.4, rx: 46, ry: 5, fill: "#ffcf82", opacity: 0.16, filter: "url(#soft)" });
         // the scale, printed on the card along the top edge of the slot
         const red = mk(s, "g", {});
         mk(red, "rect", { x: X0 + T0 * TRV, y: y + 8.6, width: X1 - (X0 + T0 * TRV) + 3, height: 1.1, fill: "#d13a2b" });

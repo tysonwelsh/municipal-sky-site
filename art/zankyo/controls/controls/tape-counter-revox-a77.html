@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revox A77 tape counter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "tape-counter-revox-a77",
+  "element": "sk-tape-counter-revox",
+  "name": "Revox A77 tape counter",
+  "kind": "output",
+  "code": "G2",
+  "type": "Tape counter",
+  "source": "Studer-Revox A77 four-digit tape counter on the head block, Regensdorf",
+  "era": "1960s",
+  "origin": "Switzerland",
+  "materials": ["brushed aluminium", "chrome", "black drums", "plastic button"],
+  "tags": ["tape", "reel-to-reel", "counter", "drum", "reset button", "head block"],
+  "value": { "model": "digits", "min": 0, "max": 9999, "step": 1, "unit": "" },
+  "attributes": ["value", "transport", "legend", "scale"],
+  "events": ["change"],
+  "size": { "w": 150, "h": 60 },
+  "notes": "0000 stopped, 1247 rolling at play speed, and 3989 caught during a rewind with the drums smeared. The black button zeroes it — click it, or press Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium-black">
+    <sk-tape-counter-revox value="0"></sk-tape-counter-revox>
+    <sk-tape-counter-revox value="1247.4" transport="play"></sk-tape-counter-revox>
+    <sk-tape-counter-revox value="3989.55" transport="rewind" scale="1.5"></sk-tape-counter-revox>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Revox A77</b> carries its counter on the head block, between the reels: a small rectangular chrome
+  frame no bigger than a postage stamp, standing about a millimetre proud of the brushed aluminium plate, with
+  four black drums and white figures behind it, and a shallow black button in a chrome collar beside it that
+  zeroes the whole thing with a click you can feel through the deck.</p>
+  <p><b>The tells kept here:</b> the frame is thin — two pixels — with two-pixel corner radii, and its chrome has a
+  <i>hard horizon</i>, sky above and plate below, rather than a soft sheen; the plate's brush runs horizontally and
+  catches one broad highlight across the grain; the drums are white-on-black and read very small and precise,
+  with a one-pixel gap and the frame's inner shadow between them and the chrome; every figure is placed on its
+  cylinder by angle and squashed by <code>cos θ</code>, so the units drum rolls through the window instead of
+  sliding; on rewind it spins fast and smears — a second copy of the drums at thirty per cent, three pixels above;
+  the reset button is unmistakably a button and not a knob, a shallow dome with one highlight up and to the left;
+  a small engraved COUNTER below the frame; and the whole assembly drops a one-pixel shadow onto the plate.
+  Reset spins the drums to 0000 in 300 ms and the button goes down two pixels for eighty.</p>
+  <p><b>Left out:</b> the mechanical linkage to the supply reel, the maker's name (the legend here is generic), and
+  the tape path either side of the block.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-tape-counter-revox> — chrome-framed four-drum tape counter with a black reset button ====
+   attributes: value transport(stop|play|rewind) legend scale
+   events: "change" {value:0} only when a user presses the reset button; setting .value never emits.
+   self-contained: paste this block into any page and use
+   <sk-tape-counter-revox value="1247"></sk-tape-counter-revox> */
+(function () {
+  if (customElements.get("sk-tape-counter-revox")) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 150, H = 60, N = 4;
+  const DX = 13.5, DY = 15.5, DW = 81, DH = 28;      // the drum window inside the chrome frame
+  const CY = DY + DH / 2;
+  const R = 41;                                      // apparent drum radius
+  const STEP = 36;
+  const BX = 122, BY = 29.5;                         // the reset button
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; outline: none; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .fig { font-size: 16px; font-weight: 500; text-anchor: middle; fill: #f3f3ee; }
+    .leg { font-size: 5px; font-weight: 500; letter-spacing: 0.2em; text-anchor: middle; }
+    .btn { cursor: pointer; }
+    .btng { transition: transform 80ms ease-out; }
+    :host([pressed]) .btng { transform: translate(0.5px, 2px); }
+    .ring { display: none; }
+    :host(:focus-visible) .ring { display: block; }
+  </style>
+  <div class="wrap">
+  <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">
+   <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="0.15" y2="1">
+     <stop offset="0" stop-color="#e2e4e1"/><stop offset="0.22" stop-color="#cdcfcc"/>
+     <stop offset="0.55" stop-color="#c9cbc8"/><stop offset="0.85" stop-color="#b0b2af"/><stop offset="1" stop-color="#9ea09d"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.3">
+     <stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.35" stop-color="#fff" stop-opacity="0.06"/>
+     <stop offset="0.7" stop-color="#fff" stop-opacity="0.14"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- chrome: a hard horizon, sky above and the plate below -->
+    <linearGradient id="chrome" x1="0" y1="0" x2="0.08" y2="1">
+     <stop offset="0" stop-color="#fdfdfc"/><stop offset="0.28" stop-color="#dcdedb"/>
+     <stop offset="0.5" stop-color="#f4f5f3"/><stop offset="0.505" stop-color="#84867f"/>
+     <stop offset="0.78" stop-color="#aeb0ac"/><stop offset="1" stop-color="#6e706c"/>
+    </linearGradient>
+    <linearGradient id="collar" x1="0.1" y1="0" x2="0.3" y2="1">
+     <stop offset="0" stop-color="#fbfbfa"/><stop offset="0.3" stop-color="#d2d4d1"/>
+     <stop offset="0.5" stop-color="#eceeeb"/><stop offset="0.51" stop-color="#7e807b"/>
+     <stop offset="0.82" stop-color="#b6b8b4"/><stop offset="1" stop-color="#63655f"/>
+    </linearGradient>
+    <linearGradient id="drum" x1="0" y1="0" x2="0" y2="1">
+     <stop offset="0" stop-color="#242424"/><stop offset="0.12" stop-color="#3a3a3a"/>
+     <stop offset="0.45" stop-color="#1c1c1c"/><stop offset="0.8" stop-color="#121212"/><stop offset="1" stop-color="#040404"/>
+    </linearGradient>
+    <radialGradient id="dome" cx="34%" cy="26%" r="78%">
+     <stop offset="0" stop-color="#4a4a4a"/><stop offset="0.35" stop-color="#232323"/>
+     <stop offset="0.82" stop-color="#101010"/><stop offset="1" stop-color="#232323"/>
+    </radialGradient>
+    <pattern id="brush" width="6" height="3" patternUnits="userSpaceOnUse">
+     <rect width="6" height="0.8" fill="#d8dad7" opacity="0.55"/>
+     <rect y="1.6" width="6" height="0.6" fill="#b3b5b2" opacity="0.5"/>
+    </pattern>
+    <filter id="streak" x="0" y="0" width="100%" height="100%">
+     <feTurbulence type="fractalNoise" baseFrequency="0.012 1.6" numOctaves="2" seed="5"/>
+     <feColorMatrix type="saturate" values="0"/>
+     <feComponentTransfer><feFuncA type="linear" slope="0.16"/></feComponentTransfer>
+    </filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <filter id="tight" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.7"/></filter>
+    <clipPath id="win"><rect x="${DX}" y="${DY}" width="${DW}" height="${DH}" rx="1"/></clipPath>
+    <clipPath id="plateclip"><rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="2.5"/></clipPath>
+   </defs>
+
+   <!-- the scrap of head-block plate: brushed aluminium, the brush running horizontally -->
+   <rect x="2.5" y="3" width="${W - 3}" height="${H - 3}" rx="2.5" fill="#000" opacity="0.5" filter="url(#soft)"/>
+   <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="2.5" fill="url(#plate)" stroke="#83857f" stroke-width="0.7"/>
+   <g clip-path="url(#plateclip)">
+    <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" fill="url(#brush)" opacity="0.5"/>
+    <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" filter="url(#streak)"/>
+    <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" fill="url(#sheen)"/>
+   </g>
+   <path d="M 4 2.1 h ${W - 8}" fill="none" stroke="#fdfefd" stroke-opacity="0.75" stroke-width="0.8"/>
+   <path d="M 4 ${H - 2.1} h ${W - 8}" fill="none" stroke="#6f716c" stroke-opacity="0.8" stroke-width="0.8"/>
+
+   <!-- the assembly's shadow on the plate -->
+   <rect x="11.5" y="14.2" width="86" height="33" rx="3" fill="#000" opacity="0.42" filter="url(#tight)"/>
+   <ellipse cx="${BX}" cy="${BY + 1.6}" rx="13.6" ry="13.6" fill="#000" opacity="0.4" filter="url(#tight)"/>
+
+   <!-- the chrome frame, 2 px thick with 2 px corners -->
+   <rect x="11" y="13" width="86" height="33" rx="3" fill="url(#chrome)" stroke="#5f615c" stroke-width="0.5"/>
+   <rect x="12" y="14" width="84" height="31" rx="2.4" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.5"/>
+
+   <!-- the window: rebate, drums, the drums' own cast shadow under the frame -->
+   <rect x="${DX - 0.9}" y="${DY - 0.9}" width="${DW + 1.8}" height="${DH + 1.8}" rx="1.4" fill="#0e0e0e"/>
+   <rect x="${DX}" y="${DY}" width="${DW}" height="${DH}" rx="1" fill="url(#drum)"/>
+   <g clip-path="url(#win)">
+    <g id="whg" class="wheels"></g>
+    <use class="ghost" href="#whg" y="-3" opacity="0"/>
+    <g class="seams"></g>
+    <rect x="${DX - 1}" y="${DY - 1}" width="${DW + 2}" height="${DH + 2}" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.6" filter="url(#tight)"/>
+    <path d="M ${DX} ${DY} L ${DX + 34} ${DY} L ${DX + 8} ${DY + DH} L ${DX} ${DY + DH} Z" fill="#fff" opacity="0.045"/>
+   </g>
+
+   <!-- the reset button: a shallow black dome in a chrome collar -->
+   <g class="btn">
+    <g class="btng">
+     <circle cx="${BX}" cy="${BY}" r="13.4" fill="url(#collar)" stroke="#5f615c" stroke-width="0.5"/>
+     <circle cx="${BX}" cy="${BY}" r="10.4" fill="#17171a" opacity="0.85"/>
+     <circle cx="${BX}" cy="${BY}" r="9.6" fill="url(#dome)"/>
+     <ellipse cx="${BX - 3.1}" cy="${BY - 3.6}" rx="3.4" ry="2.3" fill="#fff" opacity="0.2" transform="rotate(-28 ${BX - 3.1} ${BY - 3.6})"/>
+     <path d="M ${BX - 7.4} ${BY + 5.6} a 9.6 9.6 0 0 0 14.6 -1.6" fill="none" stroke="#6a6a6a" stroke-opacity="0.45" stroke-width="1.1"/>
+    </g>
+    <circle class="hit" cx="${BX}" cy="${BY}" r="14.5" fill="transparent"/>
+    <circle class="ring" cx="${BX}" cy="${BY}" r="16" fill="none" stroke="#49d5e8" stroke-width="1.6"/>
+   </g>
+
+   <!-- engraved legend -->
+   <text class="leg" x="54" y="53.9" fill="#eceeeb" opacity="0.6"></text>
+   <text class="leg" x="54" y="53.4" fill="#63655f"></text>
+  </svg>
+  </div>`;
+
+  const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+  class SkTapeCounterRevox extends HTMLElement {
+    static get observedAttributes() { return ["value", "transport", "legend", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._disp = 0; this._vel = 0; this._scale = 1;
+      this._raf = 0; this._last = 0; this._rs = 0; this._from = null; this._lab = "";
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._gW = this.shadowRoot.querySelector(".wheels");
+      this._gS = this.shadowRoot.querySelector(".seams");
+      this._ghost = this.shadowRoot.querySelector(".ghost");
+      this._wheels = [];
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+      this._build();
+      this._read();
+      this._disp = this._v; this._vel = 0;
+      this._paint();
+      if (!this._bound) {
+        this._bound = true;
+        const btn = this.shadowRoot.querySelector(".btn");
+        btn.addEventListener("pointerdown", e => { e.preventDefault(); this.setAttribute("pressed", ""); });
+        btn.addEventListener("pointerup", () => { this.removeAttribute("pressed"); this.zero(true); });
+        btn.addEventListener("pointerleave", () => this.removeAttribute("pressed"));
+        this.addEventListener("keydown", e => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+            e.preventDefault(); this.setAttribute("pressed", "");
+            clearTimeout(this._kt); this._kt = setTimeout(() => this.removeAttribute("pressed"), 90);
+            this.zero(true);
+          }
+        });
+      }
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._kt); }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "value") this._kick(); else this._paint();
+    }
+
+    get value() { return Math.floor(this._v); }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = ((v % 10000) + 10000) % 10000;
+      this.setAttribute("value", String(Math.round(this._v * 100) / 100));
+      this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    /* the idle demo: tape at play speed, the units drum turning */
+    demo(t) { return (t * 4.2) % 10000; }
+
+    zero(fromUser) {
+      if (this._rs) return;
+      this._from = this._drumPos().map(Math.floor);
+      this._rs = 1e-4; this._v = 0; this._disp = 0; this._vel = 0;
+      this.setAttribute("value", "0");
+      this._kick();
+      if (fromUser) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: 0 } }));
+    }
+
+    _read() {
+      const num = (s, d) => { const x = parseFloat(s); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num(this.getAttribute("scale"), 1));
+      const v = num(this.getAttribute("value"), this._v);
+      this._v = ((v % 10000) + 10000) % 10000;
+      this._tp = this.getAttribute("transport") || "stop";
+      const leg = this.getAttribute("legend") || "COUNTER";
+      this.shadowRoot.querySelectorAll(".leg").forEach(t => { if (t.textContent !== leg) t.textContent = leg; });
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+
+    _build() {
+      const g = this._gW, s = this._gS;
+      while (g.firstChild) g.removeChild(g.firstChild);
+      while (s.firstChild) s.removeChild(s.firstChild);
+      this._wheels = [];
+      const cw = DW / N;
+      for (let k = 0; k < N; k++) {
+        const col = N - 1 - k;
+        const slots = []; slots.cx = DX + cw * (col + 0.5);
+        const gw = mk("g", {});
+        for (let j = -1; j <= 1; j++) {
+          const t = mk("text", { x: 0, y: 5.6, class: "fig" });
+          t._d = -1; gw.appendChild(t); slots.push(t);
+        }
+        g.appendChild(gw); this._wheels.push(slots);
+        if (k < N - 1) s.appendChild(mk("rect", { x: (DX + cw * col).toFixed(2), y: DY, width: 0.6, height: DH, fill: "#000", opacity: 0.75 }));
+      }
+    }
+
+    _drumPos() {
+      const out = [], v = this._disp;
+      for (let k = 0; k < N; k++) {
+        const x = v / Math.pow(10, k);
+        const fl = Math.floor(x), f = x - fl;
+        const r = (k === 0) ? f : (f > 0.9 ? (f - 0.9) * 10 : 0);
+        out.push((fl % 10) + r);
+      }
+      return out;
+    }
+
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      if (this._rs) {
+        this._rs = Math.min(1, this._rs + dt / 0.3);
+        this._paint();
+        if (this._rs >= 1) { this._rs = 0; this._from = null; this._paint(); this._raf = 0; return; }
+        this._raf = requestAnimationFrame(this._tick); return;
+      }
+      let diff = this._v - this._disp;
+      if (Math.abs(diff) > 5000) diff += diff > 0 ? -10000 : 10000;   // the drums take the short way round
+      if (Math.abs(diff) > 1.2) {
+        const sp = Math.min(46, 6 + Math.abs(diff) * 3) * (diff < 0 ? -1 : 1);
+        this._vel = sp; this._disp = ((this._disp + sp * dt) % 10000 + 10000) % 10000;
+      } else {
+        this._vel += (1200 * diff - 52 * this._vel) * dt;             // 100 ms per digit, a light drum
+        this._disp += this._vel * dt;
+        if (Math.abs(this._v - this._disp) < 0.0015 && Math.abs(this._vel) < 0.03) {
+          this._disp = this._v; this._vel = 0; this._paint(); this._raf = 0; return;
+        }
+      }
+      this._paint();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+
+    _paint() {
+      let pos;
+      if (this._rs && this._from) {
+        const e = 1 - Math.pow(1 - this._rs, 3);
+        const back = Math.sin(this._rs * Math.PI) * 0.12;              // a touch of overshoot on the way to zero
+        pos = this._from.map(d => Math.max(0, d * (1 - e) - back));
+      } else pos = this._drumPos();
+      for (let k = 0; k < N; k++) {
+        const p = Math.max(0, pos[k] || 0);
+        const fl = Math.floor(p), r = p - fl, d = fl % 10;
+        const slots = this._wheels[k];
+        for (let j = -1; j <= 1; j++) {
+          const t = slots[j + 1];
+          const th = (r + j) * STEP * Math.PI / 180;
+          const c = Math.cos(th), y = CY - R * Math.sin(th);
+          const dg = ((d - j) % 10 + 10) % 10;
+          if (t._d !== dg) { t.textContent = String(dg); t._d = dg; }
+          t.setAttribute("transform", `translate(${slots.cx.toFixed(2)},${y.toFixed(2)}) scale(1,${Math.max(0, c).toFixed(3)})`);
+          t.style.opacity = c > 0.12 ? "1" : "0";
+        }
+      }
+      // fast spin smears: a second copy of the drums at 30 %, three pixels above
+      const fast = this._tp === "rewind" || (this._rs > 0 && this._rs < 0.9) || Math.abs(this._vel) > 6;
+      this._ghost.setAttribute("opacity", fast ? "0.3" : "0");
+      let s = String(Math.floor(this._rs ? 0 : this._disp));
+      while (s.length < N) s = "0" + s;
+      if (s !== this._lab) { this._lab = s; this.setAttribute("aria-label", "tape counter " + s); }
+    }
+  }
+  customElements.define("sk-tape-counter-revox", SkTapeCounterRevox);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

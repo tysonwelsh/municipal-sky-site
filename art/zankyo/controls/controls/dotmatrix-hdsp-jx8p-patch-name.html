@@ -33,9 +33,9 @@
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="black">
+  <main class="sk-stage" data-panel="aluminium-black">
     <sk-dotmatrix-hdsp value="BRASS SECTION 1" chars="16" label="PATCH NAME" sublabel="JX-8P"></sk-dotmatrix-hdsp>
-    <sk-dotmatrix-hdsp value="MATRIX 12|PAGE  2" chars="8" rows="2" colour="green" label="EDIT" sublabel="M-12"></sk-dotmatrix-hdsp>
+    <sk-dotmatrix-hdsp value="MATRIX 12|PAGE   2" chars="9" rows="2" colour="green" label="EDIT" sublabel="M-12"></sk-dotmatrix-hdsp>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -94,10 +94,10 @@
 
   var CSS = `
     :host { display: inline-block; position: relative; font-size: 10px; line-height: 1;
-      --lit: url(#ledR); --off: #2a0b09; --win: #170404; --pkg: #120a0a; --bloom: #ff1a0a; }
+      --lit: url(#ledR); --off: #2a0b09; --win: #180404; --pkg: #120909; --wash: #7a0d05; }
     :host([hidden]) { display: none; }
-    :host([colour="green"]) { --lit: url(#ledG); --off: #07240e; --win: #04120a; --pkg: #04170c; --bloom: #19ff55; }
-    :host([colour="amber"]) { --lit: url(#ledA); --off: #2a1704; --win: #150c02; --pkg: #120b03; --bloom: #ff9a10; }
+    :host([colour="green"]) { --lit: url(#ledG); --off: #07270f; --win: #04130a; --pkg: #05180c; --wash: #0a6a22; }
+    :host([colour="amber"]) { --lit: url(#ledA); --off: #2c1905; --win: #160d02; --pkg: #130c03; --wash: #7a4a02; }
     .wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
     svg { display: block; overflow: visible; }
     .d { fill: var(--off); }
@@ -181,11 +181,11 @@
         '<linearGradient id="pan" x1="0" y1="0" x2="0.25" y2="1">' +
           '<stop offset="0" stop-color="#2a2a2a"/><stop offset="0.35" stop-color="#1a1a1a"/><stop offset="1" stop-color="#101010"/></linearGradient>' +
         '<radialGradient id="ledR" cx="36%" cy="32%" r="66%">' +
-          '<stop offset="0" stop-color="#ff9c8a"/><stop offset="0.42" stop-color="#ff3a1e"/><stop offset="1" stop-color="#cf0d04"/></radialGradient>' +
+          '<stop offset="0" stop-color="#ffd0c2"/><stop offset="0.3" stop-color="#ff6a44"/><stop offset="0.6" stop-color="#ff2a12"/><stop offset="1" stop-color="#cf0d04"/></radialGradient>' +
         '<radialGradient id="ledG" cx="36%" cy="32%" r="66%">' +
-          '<stop offset="0" stop-color="#c8ffb4"/><stop offset="0.42" stop-color="#3bf05a"/><stop offset="1" stop-color="#0a9c22"/></radialGradient>' +
+          '<stop offset="0" stop-color="#e2ffd4"/><stop offset="0.3" stop-color="#84ff86"/><stop offset="0.6" stop-color="#2ae84a"/><stop offset="1" stop-color="#0a9c22"/></radialGradient>' +
         '<radialGradient id="ledA" cx="36%" cy="32%" r="66%">' +
-          '<stop offset="0" stop-color="#ffe2a8"/><stop offset="0.42" stop-color="#ffa41a"/><stop offset="1" stop-color="#c86402"/></radialGradient>' +
+          '<stop offset="0" stop-color="#fff0d2"/><stop offset="0.3" stop-color="#ffc45a"/><stop offset="0.6" stop-color="#ff9e14"/><stop offset="1" stop-color="#c86402"/></radialGradient>' +
         '<linearGradient id="refl" x1="0" y1="0" x2="0.6" y2="1">' +
           '<stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
         '<linearGradient id="winedge" x1="0" y1="0" x2="0.3" y2="1">' +
@@ -197,6 +197,7 @@
         '<clipPath id="win"><rect x="' + BORD + '" y="' + TOP + '" width="' + WW + '" height="' + WH + '" rx="2"/></clipPath>' +
       '</defs>' +
       /* panel */
+      '<rect x="2.5" y="4" width="' + (W - 5) + '" height="' + (H - 4) + '" rx="4" fill="#000" opacity="0.6" filter="url(#soft)"/>' +
       '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="3" fill="url(#pan)"/>' +
       '<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="2.5" fill="none" stroke="#3b3b3b" stroke-opacity="0.8" stroke-width="1"/>' +
       '<path d="M 3 0.6 L ' + (W - 3) + ' 0.6" stroke="#5a5a5a" stroke-opacity="0.55" stroke-width="0.8" fill="none"/>' +
@@ -206,6 +207,7 @@
         '<rect x="' + BORD + '" y="' + TOP + '" width="' + WW + '" height="' + WH + '" fill="var(--win)"/>' +
         '<g>' + pkgs + '</g>' +
         '<g class="dots" filter="url(#bloom)">' + dots + '</g>' +
+        '<rect x="' + BORD + '" y="' + TOP + '" width="' + WW + '" height="' + WH + '" fill="var(--wash)" opacity="0.30"/>' +
         /* the filter window is glass: one broad diagonal reflection, not the shape of the text */
         '<path d="M ' + BORD + ' ' + TOP + ' L ' + (BORD + WW * 0.42) + ' ' + TOP + ' L ' + (BORD + WW * 0.10) + ' ' + (TOP + WH) + ' L ' + BORD + ' ' + (TOP + WH) + ' Z" fill="url(#refl)"/>' +
         '<path d="M ' + (BORD + WW * 0.63) + ' ' + TOP + ' L ' + (BORD + WW * 0.70) + ' ' + TOP + ' L ' + (BORD + WW * 0.47) + ' ' + (TOP + WH) + ' L ' + (BORD + WW * 0.40) + ' ' + (TOP + WH) + ' Z" fill="#fff" opacity="0.035"/>' +
