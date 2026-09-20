@@ -120,10 +120,10 @@
         </filter>
       </defs>
       <g filter="url(#fpaint)">
-        <circle cx="${C + 2}" cy="${C + 3}" r="81" fill="#000" opacity="0.4" filter="url(#fsh0)"/>
-        <circle cx="${C}" cy="${C}" r="81" fill="url(#flange)" stroke="#3c4144" stroke-width="1"/>
-        <circle cx="${C}" cy="${C}" r="79.5" fill="none" stroke="#9aa0a3" stroke-width="0.8" opacity="0.45"/>
-        <circle cx="${C}" cy="${C}" r="81" fill="url(#halo)"/>
+        <circle cx="${C + 2}" cy="${C + 2}" r="79.5" fill="#000" opacity="0.4" filter="url(#fsh0)"/>
+        <circle cx="${C}" cy="${C - 1}" r="79.5" fill="url(#flange)" stroke="#3c4144" stroke-width="1"/>
+        <circle cx="${C}" cy="${C - 1}" r="78" fill="none" stroke="#9aa0a3" stroke-width="0.8" opacity="0.45"/>
+        <circle cx="${C}" cy="${C - 1}" r="79.5" fill="url(#halo)"/>
         <!-- rust weep at the lower right of the bonnet -->
         <ellipse cx="${C + 14}" cy="${C + 33}" rx="9" ry="4" fill="#7a3d1e" opacity="0.35" filter="url(#fsoft)"/>
         <!-- bonnet: the cast boss the wheel sits on -->
@@ -131,7 +131,7 @@
         <circle cx="${C}" cy="${C}" r="29" fill="url(#bonnet)" stroke="#2a2d2f" stroke-width="0.8"/>
         <!-- four flange bolts in the corners -->
         ${[45, 135, 225, 315].map(a => {
-          const [x, y] = P(74.5, a).split(" ").map(Number);
+          const [x, y] = P(72.5, a).split(" ").map(Number);
           return `<circle cx="${(x + 1.5).toFixed(1)}" cy="${(y + 2).toFixed(1)}" r="6" fill="#000" opacity="0.45" filter="url(#fsoft)"/>
             <path d="${hex(5.6, a * 0.7).replace(/[-\d.]+ [-\d.]+/g, m => { const [px, py] = m.split(" ").map(Number); return (px + x - C).toFixed(2) + " " + (py + y - C).toFixed(2); })}" fill="url(#bolt)" stroke="#26292b" stroke-width="0.7" stroke-linejoin="round"/>
             <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="none" stroke="#2d3133" stroke-width="0.9" opacity="0.8"/>`;

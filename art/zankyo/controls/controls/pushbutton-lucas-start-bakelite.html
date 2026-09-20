@@ -96,9 +96,9 @@
       <defs>
         <!-- chrome: sky above a hard horizon, ground below, a little bounce at the bottom edge -->
         <linearGradient id="chrome" x1="0.22" y1="0" x2="0.58" y2="1">
-          <stop offset="0" stop-color="#eef3f6"/>
-          <stop offset="0.22" stop-color="#d2d9de"/>
-          <stop offset="0.40" stop-color="#9aa2a9"/>
+          <stop offset="0" stop-color="#e9edf0"/>
+          <stop offset="0.18" stop-color="#c3cbd1"/>
+          <stop offset="0.40" stop-color="#8d959c"/>
           <stop offset="0.498" stop-color="#6d7379"/>
           <stop offset="0.502" stop-color="#1e2225"/>
           <stop offset="0.62" stop-color="#2b2f33"/>
@@ -106,26 +106,28 @@
           <stop offset="1" stop-color="#8d959b"/>
         </linearGradient>
         <radialGradient id="cone" cx="50%" cy="50%" r="50%">
-          <stop offset="0.6" stop-color="#000" stop-opacity="0.42"/>
-          <stop offset="0.78" stop-color="#000" stop-opacity="0.1"/>
-          <stop offset="0.93" stop-color="#fff" stop-opacity="0.12"/>
-          <stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+          <stop offset="0.55" stop-color="#000" stop-opacity="0.55"/>
+          <stop offset="0.7" stop-color="#000" stop-opacity="0.3"/>
+          <stop offset="0.86" stop-color="#000" stop-opacity="0.06"/>
+          <stop offset="0.95" stop-color="#fff" stop-opacity="0.14"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.34"/>
         </radialGradient>
         <linearGradient id="throat" x1="0.3" y1="0" x2="0.7" y2="1">
           <stop offset="0" stop-color="#0a0c0d"/><stop offset="0.5" stop-color="#1a1e21"/><stop offset="1" stop-color="#5f666c"/>
         </linearGradient>
         <!-- the phenolic dome -->
         <radialGradient id="dome" cx="32%" cy="25%" r="86%">
-          <stop offset="0" stop-color="#6a5f4e"/>
-          <stop offset="0.14" stop-color="#443a2c"/>
-          <stop offset="0.40" stop-color="#2c2419"/>
-          <stop offset="0.72" stop-color="#17140f"/>
-          <stop offset="0.93" stop-color="#0b0906"/>
-          <stop offset="1" stop-color="#050403"/>
+          <stop offset="0" stop-color="#4a4033"/>
+          <stop offset="0.10" stop-color="#332b20"/>
+          <stop offset="0.26" stop-color="#2c2419"/>
+          <stop offset="0.50" stop-color="#1a1610"/>
+          <stop offset="0.72" stop-color="#12100b"/>
+          <stop offset="0.90" stop-color="#0a0806"/>
+          <stop offset="1" stop-color="#040302"/>
         </radialGradient>
-        <radialGradient id="polish" cx="50%" cy="28%" r="55%">
-          <stop offset="0" stop-color="#7a6952" stop-opacity="0.46"/>
-          <stop offset="0.55" stop-color="#3e3325" stop-opacity="0.2"/>
+        <radialGradient id="polish" cx="50%" cy="34%" r="58%">
+          <stop offset="0" stop-color="#6b5a41" stop-opacity="0.34"/>
+          <stop offset="0.5" stop-color="#3a2f21" stop-opacity="0.14"/>
           <stop offset="1" stop-color="#2c2419" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="hi" cx="50%" cy="50%" r="50%">
@@ -170,7 +172,7 @@
         <path d="M ${CX - 19} ${CY + 15.5} A ${R_DOME} ${R_DOME} 0 0 0 ${CX + 17.5} ${CY + 17.3}"
               fill="none" stroke="#9a8b72" stroke-opacity="0.34" stroke-width="1.7" filter="url(#b1)"/>
         <!-- thumb polish on the crown: browner and glossier -->
-        <ellipse cx="${CX}" cy="${CY - 6}" rx="15" ry="11.5" fill="url(#polish)"/>
+        <ellipse cx="${CX - 1}" cy="${CY - 9}" rx="11.5" ry="8.5" fill="url(#polish)"/>
         <!-- the moulded legend, in relief: shadow below-right, lit edge above-left -->
         <g class="legend">
           <text class="lg-sh" x="${CX + 0.8}" y="${CY + 3.6}" fill="#050403" fill-opacity="0.95"></text>

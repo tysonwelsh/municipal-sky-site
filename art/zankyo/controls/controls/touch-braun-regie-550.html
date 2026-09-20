@@ -132,7 +132,9 @@
     .plate.hot { filter: brightness(1.035); transition: none; }
     .cell.smudge .plate::after {
       content: ""; position: absolute; inset: 0;
-      background: radial-gradient(52% 40% at 58% 66%, rgba(255,255,255,0.13), rgba(210,220,225,0.06) 55%, rgba(255,255,255,0) 76%);
+      background:
+        radial-gradient(30% 24% at 61% 64%, rgba(255,255,255,0.20), rgba(255,255,255,0) 80%),
+        radial-gradient(46% 36% at 57% 69%, rgba(236,240,242,0.16), rgba(190,200,205,0.10) 58%, rgba(255,255,255,0) 82%);
     }
     .plate:focus-visible { box-shadow: inset 0 1px 0 rgba(255,255,255,0.20), 0 0 0 2px #16e0e0, 0 0 9px rgba(22,224,224,0.6); }
     :host([disabled]) .plate { cursor: default; }

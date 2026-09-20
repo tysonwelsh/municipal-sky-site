@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GMT "Pepsi" red-and-blue 24-hour bezel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "bezel-gmt-pepsi-24h",
+  "element": "sk-bezel-pepsi",
+  "name": "GMT \"Pepsi\" red-and-blue 24-hour bezel",
+  "kind": "input",
+  "code": "A16",
+  "type": "Rotating bezel",
+  "source": "Rolex GMT-Master 6542 / 1675 two-colour 24-hour bezel, 1955→: bakelite then anodised aluminium insert, red for day, blue for night, bidirectional with 24 clicks",
+  "era": "1950s",
+  "origin": "Switzerland",
+  "materials": ["steel", "bakelite insert", "lume", "acrylic crystal"],
+  "tags": ["watch", "GMT", "bezel", "24-hour", "two-colour", "coin edge", "bidirectional"],
+  "value": { "model": "steps", "min": 0, "max": 23, "step": 1, "unit": "h" },
+  "attributes": ["value", "half", "faded", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 144, "h": 144 },
+  "notes": "Fresh at 0 (the triangle at 12) and a faded one set 5 hours back for New York, at scale 0.8. Drag around the centre either way, wheel or arrows; 24 clicks a turn, 48 with half."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-bezel-pepsi value="0" label="GMT OFFSET"></sk-bezel-pepsi>
+    <sk-bezel-pepsi value="19" label="GMT OFFSET (New York, faded)" scale="0.8" faded></sk-bezel-pepsi>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>GMT-Master</b> bezel of 1955 was made for Pan Am crews: a steel ring with a coin-edge carrying a
+  24-hour insert split into two colours, red for the daylight hours from 6 to 18 and blue for the night, so a
+  second hand pointing at the bezel gives a second time zone and tells you whether it is day or night there.
+  The 6542 insert was bakelite with the numerals lume-filled from behind, later replaced by anodised aluminium
+  because the bakelite cracked; both fade with the sun to a pink and a soft blue. The bezel turns both ways with
+  24 clicks, so you set the offset by turning the 24 triangle to the hour hand.</p>
+  <p><b>The tells kept here:</b> the red/blue split with the boundary exactly at 6 and 18; even numerals only,
+  set radially in Barlow so the 12 at the bottom is upside down, and the lume triangle at 24; a coin-edge of 96
+  teeth, each with two facets lit from above-left so the ring is bright at the top-left and dark at the
+  bottom-right; the insert set below the steel lip with an inner shadow and a domed sheen that is the shape of
+  the room's light, not of the numerals; a fixed lume index on the dial's rehaut to read the offset against.
+  The value is the hour that stands at 12 o'clock (0 is the triangle; 19 is New York, five hours back). Drag
+  follows the pointer's angle around the centre, clicking either way; the wheel and the arrows click one hour,
+  Shift-arrows ten, Home turns it round to the triangle, End to 23. <code>half</code> gives the 48-click
+  half-hour bezel; <code>faded</code> the sun-bleached one.</p>
+  <p><b>Left out:</b> the case, crown and crown guards, the hands and the dial printing (an empty dial keeps the
+  bezel the subject), the cracks in the bakelite.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-bezel-pepsi> — GMT-Master two-colour 24-hour bezel, bidirectional, 24 (or 48) clicks ====
+   attributes: value(0…23, the hour at 12 o'clock) half faded label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-bezel-pepsi value="19"></sk-bezel-pepsi> */
+(function () {
+  if (customElements.get("sk-bezel-pepsi")) return;
+  const W = 144, H = 144, C = 72;
+  const R_TEETH = 72, R_RING = 65.5, R_INS_O = 61.5, R_INS_I = 47, R_DIAL = 45;
+  const TEETH = 96;
+  const NS = "http://www.w3.org/2000/svg";
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px;
+      --red: #b2242c; --red2: #8c161f; --blue: #1e3f8e; --blue2: #142a66; --lume: #f4f2ea; --lume2: #e9e0b0; }
+    :host([faded]) { --red: #c4646a; --red2: #a44e55; --blue: #4a5f8e; --blue2: #38486e; --lume: #ece4c8; --lume2: #dccf9c; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .ins { transform-origin: ${C}px ${C}px; transform-box: view-box; transition: transform 80ms cubic-bezier(.2,.9,.3,1.18); }
+    text { font-family: "Barlow", "Roboto Condensed", "Arial Narrow", sans-serif; font-weight: 600; fill: var(--lume); }
+    .num { font-size: 7.2px; text-anchor: middle; dominant-baseline: central; letter-spacing: -0.01em; }
+    .day { fill: var(--red); } .night { fill: var(--blue); }
+    .lume { fill: var(--lume); } .lume2 { fill: var(--lume2); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f4f5f3"/><stop offset="0.3" stop-color="#d4d6d3"/><stop offset="0.55" stop-color="#8e908d"/><stop offset="0.8" stop-color="#b9bbb8"/><stop offset="1" stop-color="#5e605d"/>
+        </linearGradient>
+        <linearGradient id="lip" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#6a6c69"/><stop offset="0.5" stop-color="#c8cac7"/><stop offset="1" stop-color="#eeefec"/>
+        </linearGradient>
+        <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.1"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="0.75" stop-color="#000" stop-opacity="0.12"/><stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+        </linearGradient>
+        <radialGradient id="domeIns" cx="50%" cy="50%" r="50%">
+          <stop offset="0.62" stop-color="#000" stop-opacity="0.22"/><stop offset="0.7" stop-color="#000" stop-opacity="0"/><stop offset="0.8" stop-color="#fff" stop-opacity="0.06"/><stop offset="0.88" stop-color="#000" stop-opacity="0.08"/><stop offset="1" stop-color="#000" stop-opacity="0.34"/>
+        </radialGradient>
+        <radialGradient id="dial" cx="40%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#17171b"/><stop offset="0.7" stop-color="#0a0a0c"/><stop offset="1" stop-color="#050506"/>
+        </radialGradient>
+        <linearGradient id="crystal" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.02"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.4"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4.5"/></filter>
+        <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <clipPath id="insClip"><path class="insPath"/></clipPath>
+      </defs>
+
+      <!-- the bezel's shadow on the panel -->
+      <circle cx="${C + 3}" cy="${C + 5}" r="${R_TEETH}" fill="#000" opacity="0.6" filter="url(#softer)"/>
+      <!-- coin edge: a ring of teeth, each with two facets lit from above-left -->
+      <g class="teeth"></g>
+      <!-- the flat steel top of the bezel ring -->
+      <circle cx="${C}" cy="${C}" r="${R_RING}" fill="url(#ring)" stroke="#3a3c3a" stroke-width="0.5"/>
+      <circle cx="${C}" cy="${C}" r="${R_RING - 0.9}" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.5"/>
+      <!-- the insert well -->
+      <circle cx="${C}" cy="${C}" r="${R_INS_O + 0.6}" fill="#2a2a29"/>
+
+      <!-- the insert: rotates -->
+      <g class="ins">
+        <g clip-path="url(#insClip)">
+          <rect x="0" y="0" width="${W}" height="${H}" class="night"/>
+          <path class="day" d="M ${C + R_INS_O} ${C} A ${R_INS_O} ${R_INS_O} 0 0 1 ${C - R_INS_O} ${C} L ${C - R_INS_I} ${C} A ${R_INS_I} ${R_INS_I} 0 0 0 ${C + R_INS_I} ${C} Z"/>
+          <!-- the half-boundary hairlines at 6 and 18 -->
+          <line x1="${C - R_INS_O}" y1="${C}" x2="${C - R_INS_I}" y2="${C}" stroke="#000" stroke-opacity="0.35" stroke-width="0.5"/>
+          <line x1="${C + R_INS_I}" y1="${C}" x2="${C + R_INS_O}" y2="${C}" stroke="#000" stroke-opacity="0.35" stroke-width="0.5"/>
+          <g class="marks"></g>
+        </g>
+      </g>
+      <!-- the domed sheen and the shadow of the lip, over the insert, fixed to the room -->
+      <g clip-path="url(#insClip)">
+        <circle cx="${C}" cy="${C}" r="${R_INS_O}" fill="url(#domeIns)"/>
+        <circle cx="${C}" cy="${C}" r="${R_INS_O}" fill="url(#sheen)"/>
+        <circle cx="${C}" cy="${C}" r="${R_INS_O + 1}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="3" filter="url(#soft)"/>
+      </g>
+      <!-- inner lip and the dial -->
+      <circle cx="${C}" cy="${C}" r="${R_INS_I}" fill="none" stroke="url(#lip)" stroke-width="2"/>
+      <circle cx="${C}" cy="${C}" r="${R_DIAL}" fill="url(#dial)" stroke="#000" stroke-width="0.8"/>
+      <circle cx="${C}" cy="${C}" r="${R_DIAL - 3.5}" fill="none" stroke="#1e1e22" stroke-width="0.6"/>
+      <!-- the fixed index at 12 on the rehaut -->
+      <path d="M ${C - 2.2} ${C - R_DIAL + 0.5} L ${C + 2.2} ${C - R_DIAL + 0.5} L ${C} ${C - R_DIAL + 5} Z" class="lume" stroke="#000" stroke-opacity="0.5" stroke-width="0.4"/>
+      <circle cx="${C}" cy="${C}" r="1.6" fill="#2a2a2e" stroke="#000" stroke-width="0.5"/>
+      <!-- the crystal: one wide reflection from the window -->
+      <path d="M ${C - R_DIAL} ${C} A ${R_DIAL} ${R_DIAL} 0 0 1 ${C + 8} ${C - R_DIAL + 0.7} L ${C - 20} ${C + 12} Z" fill="url(#crystal)"/>
+      <circle cx="${C}" cy="${C}" r="${R_DIAL}" fill="none" stroke="#fff" stroke-opacity="0.08" stroke-width="1"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkBezelPepsi extends HTMLElement {
+    static get observedAttributes() { return ["value", "half", "faded", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._step = 1; this._scale = 1; this._ang = 0;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._ins = q(".ins"); this._grab = q(".grab"); this._wrap = q(".wrap"); this._marks = q(".marks"); this._teeth = q(".teeth");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._built = false;
+    }
+    connectedCallback() {
+      if (!this._built) { this._build(); this._built = true; }
+      this._readAttrs(); this._ang = -this._v * 15; this._render();
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._v = this._norm(v); this.setAttribute("value", String(this._v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _norm(v) { v = Math.round(v / this._step) * this._step; v = ((v % 24) + 24) % 24; return Math.round(v * 100) / 100; }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._step = this.hasAttribute("half") ? 0.5 : 1;
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._norm(num("value", this._v));
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "24-hour bezel");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", String(24 - this._step));
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _mk(t, a, parent) { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); parent.appendChild(e); return e; }
+    _pt(deg, r) { const a = deg * Math.PI / 180; return [C + r * Math.sin(a), C - r * Math.cos(a)]; }
+    _build() {
+      // the insert's clip: an annulus
+      this.shadowRoot.querySelector(".insPath").setAttribute("d",
+        `M ${C - R_INS_O} ${C} A ${R_INS_O} ${R_INS_O} 0 1 0 ${C + R_INS_O} ${C} A ${R_INS_O} ${R_INS_O} 0 1 0 ${C - R_INS_O} ${C} Z ` +
+        `M ${C - R_INS_I} ${C} A ${R_INS_I} ${R_INS_I} 0 1 1 ${C + R_INS_I} ${C} A ${R_INS_I} ${R_INS_I} 0 1 1 ${C - R_INS_I} ${C} Z`);
+      // coin edge: each tooth is two facets whose brightness follows the angle between its normal and the light (above-left)
+      const tg = this._teeth, light = -45, half = 180 / TEETH;
+      const shade = (normal) => { const c = Math.cos((normal - light) * Math.PI / 180); const l = Math.round(88 + 82 * c); return `rgb(${l},${l + 1},${l - 1})`; };
+      for (let i = 0; i < TEETH; i++) {
+        const a = i * 360 / TEETH;
+        const [ax, ay] = this._pt(a - half, R_RING - 0.5), [bx, by] = this._pt(a, R_TEETH), [cx, cy] = this._pt(a + half, R_RING - 0.5);
+        this._mk("path", { d: `M ${ax.toFixed(2)} ${ay.toFixed(2)} L ${bx.toFixed(2)} ${by.toFixed(2)} L ${C} ${C} Z`, fill: shade(a - 40) }, tg);
+        this._mk("path", { d: `M ${bx.toFixed(2)} ${by.toFixed(2)} L ${cx.toFixed(2)} ${cy.toFixed(2)} L ${C} ${C} Z`, fill: shade(a + 40) }, tg);
+      }
+      this._mk("circle", { cx: C, cy: C, r: R_TEETH, fill: "none", stroke: "#000", "stroke-opacity": 0.45, "stroke-width": 0.6 }, tg);
+      // the numerals: even hours only, radial, lume-filled; a triangle at 24
+      const mg = this._marks, rN = (R_INS_O + R_INS_I) / 2 + 0.3;
+      for (let h = 2; h <= 22; h += 2) {
+        const a = h * 15, [x, y] = this._pt(a, rN);
+        const glow = this._mk("text", { x: x.toFixed(2), y: (y + 0.2).toFixed(2), class: "num lume2", transform: `rotate(${a} ${x.toFixed(2)} ${y.toFixed(2)})`, filter: "url(#glow)", opacity: 0.5 }, mg);
+        glow.textContent = String(h);
+        const t = this._mk("text", { x: x.toFixed(2), y: y.toFixed(2), class: "num", transform: `rotate(${a} ${x.toFixed(2)} ${y.toFixed(2)})` }, mg);
+        t.textContent = String(h);
+      }
+      const tri = `M ${C - 4.2} ${C - R_INS_O + 2.2} L ${C + 4.2} ${C - R_INS_O + 2.2} L ${C} ${C - R_INS_I - 2.4} Z`;
+      this._mk("path", { d: tri, class: "lume2", filter: "url(#glow)", opacity: 0.6 }, mg);
+      this._mk("path", { d: tri, class: "lume", stroke: "#000", "stroke-opacity": 0.4, "stroke-width": 0.4, "stroke-linejoin": "round" }, mg);
+    }
+    _render() {
+      // show the shortest way round from wherever the insert is now
+      const target = -this._v * 15;
+      let d = ((target - this._ang) % 360 + 540) % 360 - 180;
+      this._ang += d;
+      this._ins.style.transform = "rotate(" + this._ang.toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", this._v === 0 ? "24 at 12 o'clock" : this._v + " at 12 o'clock");
+    }
+    _turn(k, settle) {
+      // k clicks: positive brings a higher hour to 12 (the bezel turns anticlockwise)
+      if (!k) { if (settle) this._emit("change"); return false; }
+      this._v = this._norm(this._v + k * this._step);
+      this._ang -= k * this._step * 15;
+      this.setAttribute("value", String(this._v));
+      this._ins.style.transform = "rotate(" + this._ang.toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", this._v === 0 ? "24 at 12 o'clock" : this._v + " at 12 o'clock");
+      this._emit("input"); if (settle) this._emit("change");
+      return true;
+    }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this._v } })); }
+    _pa(e) { return Math.atan2(e.clientY - this._cy, e.clientX - this._cx) * 180 / Math.PI; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      const r = this._grab.getBoundingClientRect(); this._cx = r.left + r.width / 2; this._cy = r.top + r.height / 2;
+      this._drag = { a: this._pa(e), acc: 0, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const a = this._pa(e), ca = 15 * this._step;
+      d.acc += ((a - d.a + 540) % 360) - 180;                  // screen angle: clockwise positive
+      d.a = a;
+      const k = d.acc > 0 ? Math.floor(d.acc / ca) : Math.ceil(d.acc / ca);
+      if (k) { d.acc -= k * ca; d.moved = true; this._turn(-k, false); }   // clockwise drag lowers the hour at 12
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      this._drag = null;
+      if (d.moved) this._emit("change");
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      if (this._turn(dir * (e.shiftKey ? 10 : 1), false)) { clearTimeout(this._wt); this._wt = setTimeout(() => this._emit("change"), 220); }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const s = e.shiftKey ? 10 : 1;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": this._turn(s, true); break;
+        case "ArrowDown": case "ArrowLeft": this._turn(-s, true); break;
+        case "PageUp": this._turn(6 / this._step, true); break;
+        case "PageDown": this._turn(-6 / this._step, true); break;
+        case "Home": this._turn(-this._v / this._step, true); break;
+        case "End": this._turn((24 - this._step - this._v) / this._step, true); break;
+        default: return;
+      }
+      e.preventDefault();
+    }
+  }
+  customElements.define("sk-bezel-pepsi", SkBezelPepsi);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

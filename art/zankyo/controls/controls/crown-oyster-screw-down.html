@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screw-down dive crown with guards — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "crown-oyster-screw-down",
+  "element": "sk-crown-oyster",
+  "name": "Screw-down dive crown with guards",
+  "kind": "input",
+  "code": "A17",
+  "type": "Watch crown",
+  "source": "Rolex Oyster / Submariner screw-down crown between its crown guards, 1953 onward (a generic stamped dot on the end, no coronet)",
+  "era": "1960s",
+  "origin": "Switzerland",
+  "materials": ["brushed steel", "polished steel", "knurled steel crown", "black bezel insert"],
+  "tags": ["watch", "dive", "crown", "knurl", "endless", "positions", "screw-down"],
+  "value": { "model": "delta", "min": -1000, "max": 1000, "step": 1, "unit": "clicks" },
+  "attributes": ["value", "position", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 120, "h": 84 },
+  "notes": "Left: screwed in (position 0). Right, at scale 1.3: pulled to position 2 (date). Drag or wheel turns the crown; click or Space pulls it a position; past 3 it screws back down."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-crown-oyster value="0" label="CROWN"></sk-crown-oyster>
+    <sk-crown-oyster value="14" position="2" label="CROWN" scale="1.3"></sk-crown-oyster>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Oyster screw-down crown</b>, and the two <b>crown guards</b> the Submariner grew in 1959, is the most copied
+  silhouette in watchmaking: a fat knurled crown seated on a threaded tube at three o'clock, hugged above and
+  below by two horns of case metal. Screwed in it is flush and sealed; unscrew it and it springs to the winding
+  position, then pulls out one click for the date and another for the time. This is the view looking down at
+  the three o'clock edge of the case, with the black bezel insert and its serrated edge at the far left.</p>
+  <p><b>The tells kept here:</b> the guards as the silhouette, polished with one hard reflection and a scratch on
+  the upper one; the brushed case with a horizontal grain and a broad soft highlight; the knurl seen edge-on,
+  ridges placed by angle so they crowd at the top and bottom of the crown and scroll as it turns; each pull
+  moves the crown out 1.2 mm and shows more of the bright tube; the domed end with one highlight and a tiny
+  stamped dot; a hairline seal shadow where the crown meets the tube. Drag up and down or wheel to turn
+  (events carry <code>delta</code> in clicks); click, Space or <code>]</code> pulls the next position; past
+  three it screws back down with three turns; <code>[</code> pushes in a step; Home screws down; End pulls to time.</p>
+  <p><b>Left out:</b> the Triplock gasket rings under the crown, the coronet (a plain dot instead), the lugs.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-crown-oyster> — screw-down dive crown between crown guards, seen from above the 3 o'clock edge ====
+   attributes: value (accumulated clicks) position (0 screwed in · 1 wind · 2 date · 3 time) label scale disabled
+   events: input {value, delta, position} while turning, change {value, delta, position} when the gesture or pull settles
+   self-contained: paste this block into any page and use <sk-crown-oyster></sk-crown-oyster> */
+(function () {
+  if (customElements.get("sk-crown-oyster")) return;
+  const W = 120, H = 84, CY = 42;
+  const N = 30;                       // ridges around the crown
+  const CR = 13, CX0 = 44, CLEN = 16; // crown radius, inner face x at position 0, cylinder length
+  const PULL = 4.5;                   // px per position (1.2 mm)
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 38px; top: 24px; width: 54px; height: 36px; border-radius: 6px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .crown { transition: transform 130ms cubic-bezier(.2,.9,.3,1.15); }
+    .crown.turning { transition: none; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="caseg" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#e2e4e1"/><stop offset="0.35" stop-color="#cfd1ce"/><stop offset="0.75" stop-color="#b4b6b3"/><stop offset="1" stop-color="#9c9e9b"/>
+        </linearGradient>
+        <pattern id="grain" width="2" height="2" patternUnits="userSpaceOnUse">
+          <rect width="2" height="1" fill="#fff" fill-opacity="0.14"/><rect y="1" width="2" height="1" fill="#000" fill-opacity="0.10"/>
+        </pattern>
+        <linearGradient id="polish" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.28" stop-color="#eeeeec"/><stop offset="0.42" stop-color="#a5a6a3"/>
+          <stop offset="0.55" stop-color="#d8d9d6"/><stop offset="0.8" stop-color="#8a8b88"/><stop offset="1" stop-color="#5f605d"/>
+        </linearGradient>
+        <linearGradient id="polish2" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#f4f4f2"/><stop offset="0.3" stop-color="#c9cac7"/><stop offset="0.5" stop-color="#eeeeec"/>
+          <stop offset="0.7" stop-color="#8a8b88"/><stop offset="1" stop-color="#4f504d"/>
+        </linearGradient>
+        <linearGradient id="crownv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7d7e7b"/><stop offset="0.08" stop-color="#c5c6c3"/><stop offset="0.24" stop-color="#f1f1ef"/>
+          <stop offset="0.5" stop-color="#d9dad7"/><stop offset="0.8" stop-color="#8e8f8c"/><stop offset="0.94" stop-color="#65665f"/><stop offset="1" stop-color="#9a9b98"/>
+        </linearGradient>
+        <linearGradient id="tubev" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6d6e6b"/><stop offset="0.2" stop-color="#e9e9e6"/><stop offset="0.45" stop-color="#b3b4b1"/><stop offset="0.8" stop-color="#5d5e5b"/><stop offset="1" stop-color="#8a8b88"/>
+        </linearGradient>
+        <radialGradient id="dome" cx="30%" cy="30%" r="80%">
+          <stop offset="0" stop-color="#fbfbf9"/><stop offset="0.35" stop-color="#d9dad7"/><stop offset="0.75" stop-color="#8f908d"/><stop offset="1" stop-color="#5a5b58"/>
+        </radialGradient>
+        <radialGradient id="insert" cx="80%" cy="50%" r="90%">
+          <stop offset="0" stop-color="#2a2a2a"/><stop offset="0.6" stop-color="#151515"/><stop offset="1" stop-color="#0a0a0a"/>
+        </radialGradient>
+        <clipPath id="crownclip"><rect x="${CX0}" y="${CY - CR}" width="${CLEN}" height="${CR * 2}"/></clipPath>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- the case: a big circle whose 3 o'clock edge is at x≈38; brushed with a horizontal grain -->
+      <circle cx="-40" cy="${CY}" r="80" fill="#000" opacity="0.5" filter="url(#softer)" transform="translate(3 3)"/>
+      <circle cx="-40" cy="${CY}" r="78" fill="url(#caseg)"/>
+      <circle cx="-40" cy="${CY}" r="78" fill="url(#grain)"/>
+      <path d="M 14 -6 A 78 78 0 0 1 38 ${CY} A 78 78 0 0 1 14 90" fill="none" stroke="#f6f6f4" stroke-opacity="0.55" stroke-width="0.8" transform="translate(-0.6 0)"/>
+      <path d="M 14 -6 A 78 78 0 0 1 38 ${CY} A 78 78 0 0 1 14 90" fill="none" stroke="#3e3f3c" stroke-opacity="0.7" stroke-width="0.8"/>
+      <!-- the bezel: serrated steel edge, then the black insert, a step above the case -->
+      <circle cx="-40" cy="${CY}" r="63" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="3" filter="url(#soft)"/>
+      <circle cx="-40" cy="${CY}" r="61.5" fill="url(#polish2)"/>
+      <circle cx="-40" cy="${CY}" r="61" fill="none" stroke="#2a2b28" stroke-opacity="0.75" stroke-width="2.2" stroke-dasharray="1.2 2.1"/>
+      <circle cx="-40" cy="${CY}" r="63" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6"/>
+      <circle cx="-40" cy="${CY}" r="57.5" fill="url(#insert)"/>
+      <circle cx="-40" cy="${CY}" r="57.5" fill="none" stroke="#5a5a58" stroke-opacity="0.6" stroke-width="0.6"/>
+      <path d="M 12 12 A 57.5 57.5 0 0 1 17.5 ${CY}" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="1.4"/>
+
+      <!-- the tube the crown seats on -->
+      <rect x="34" y="${CY - 7}" width="40" height="14" rx="1" fill="url(#tubev)"/>
+      <rect x="34" y="${CY - 7}" width="40" height="14" fill="none" stroke="#3a3a38" stroke-opacity="0.5" stroke-width="0.5"/>
+
+      <!-- the two crown guards: polished horns from the case -->
+      <g class="guards">
+        <path d="M 30 8 C 42 6.5 57 11 63 20 C 66 24.5 64 28.5 58 29 L 46 29 C 42 29 40 27.5 37 25.5 L 35 12 Z" fill="#000" opacity="0.5" filter="url(#soft)" transform="translate(2 2.5)"/>
+        <path class="guardTop" d="M 30 8 C 42 6.5 57 11 63 20 C 66 24.5 64 28.5 58 29 L 46 29 C 42 29 40 27.5 37 25.5 L 35 12 Z" fill="url(#polish)" stroke="#2f302d" stroke-width="0.6" stroke-linejoin="round"/>
+        <path d="M 31.5 9 C 42 7.8 55 11.5 60.5 19" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="0.7"/>
+        <!-- the scratch -->
+        <path d="M 45 14.5 L 56.5 21.5" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="0.45"/>
+        <path d="M 45.3 15.1 L 56.8 22.1" fill="none" stroke="#4a4b48" stroke-opacity="0.55" stroke-width="0.4"/>
+        <path d="M 30 76 C 42 77.5 57 73 63 64 C 66 59.5 64 55.5 58 55 L 46 55 C 42 55 40 56.5 37 58.5 L 35 72 Z" fill="#000" opacity="0.5" filter="url(#soft)" transform="translate(2 2.5)"/>
+        <path d="M 30 76 C 42 77.5 57 73 63 64 C 66 59.5 64 55.5 58 55 L 46 55 C 42 55 40 56.5 37 58.5 L 35 72 Z" fill="url(#polish)" stroke="#2f302d" stroke-width="0.6" stroke-linejoin="round"/>
+        <path d="M 46 55.5 L 58 55.5 C 63 55.5 64.5 59 62.5 63" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+      </g>
+
+      <!-- the crown: cylinder, knurl, dome -->
+      <g class="crown">
+        <ellipse cx="${CX0 + 10}" cy="${CY + 15}" rx="14" ry="3.5" fill="#000" opacity="0.45" filter="url(#soft)"/>
+        <rect x="${CX0}" y="${CY - CR}" width="${CLEN}" height="${CR * 2}" fill="url(#crownv)"/>
+        <g class="knurl" clip-path="url(#crownclip)"></g>
+        <!-- smooth rims at both ends of the knurl -->
+        <rect x="${CX0}" y="${CY - CR}" width="1.6" height="${CR * 2}" fill="url(#crownv)"/>
+        <rect x="${CX0 + CLEN - 1.6}" y="${CY - CR}" width="1.6" height="${CR * 2}" fill="url(#crownv)"/>
+        <rect x="${CX0 + 1.4}" y="${CY - CR}" width="0.5" height="${CR * 2}" fill="#000" opacity="0.25"/>
+        <rect x="${CX0 + CLEN - 1.9}" y="${CY - CR}" width="0.5" height="${CR * 2}" fill="#000" opacity="0.25"/>
+        <!-- the seal shadow where the crown meets the tube -->
+        <rect x="${CX0 - 0.8}" y="${CY - CR + 1}" width="0.9" height="${CR * 2 - 2}" fill="#3a3a38"/>
+        <!-- the domed end -->
+        <path d="M ${CX0 + CLEN} ${CY - CR + 0.5} Q ${CX0 + CLEN + 9} ${CY} ${CX0 + CLEN} ${CY + CR - 0.5} Z" fill="url(#dome)" stroke="#3a3b38" stroke-width="0.5"/>
+        <path d="M ${CX0 + CLEN} ${CY - CR + 2} Q ${CX0 + CLEN + 6} ${CY - 6} ${CX0 + CLEN + 6.2} ${CY - 2}" fill="none" stroke="#fff" stroke-opacity="0.8" stroke-width="0.8"/>
+        <ellipse cx="${CX0 + CLEN + 3.6}" cy="${CY + 0.5}" rx="0.7" ry="1.3" fill="#7a7b78"/>
+        <ellipse cx="${CX0 + CLEN + 3.9}" cy="${CY + 0.8}" rx="0.5" ry="1.1" fill="#fff" fill-opacity="0.35"/>
+        <rect x="${CX0}" y="${CY - CR}" width="${CLEN}" height="${CR * 2}" fill="none" stroke="#2c2d2a" stroke-opacity="0.8" stroke-width="0.5"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkCrownOyster extends HTMLElement {
+    static get observedAttributes() { return ["value", "position", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._pos = 0; this._scale = 1; this._spin = 0; this._raf = 0;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab"); this._crown = $(".crown"); this._knurl = $(".knurl");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._buildKnurl();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      if (!this.hasAttribute("position")) this.setAttribute("position", "0");
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = Math.round(parseFloat(v)); if (isNaN(v)) return; this._v = v; this._reflect(); this._render(); }
+    get position() { return this._pos; }
+    set position(p) { p = Math.min(3, Math.max(0, Math.round(parseFloat(p)) || 0)); this._pos = p; this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _reflect() {
+      if (this.getAttribute("value") !== String(this._v)) this.setAttribute("value", String(this._v));
+      if (this.getAttribute("position") !== String(this._pos)) this.setAttribute("position", String(this._pos));
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.round(num("value", this._v));
+      this._pos = Math.min(3, Math.max(0, Math.round(num("position", this._pos))));
+      const g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", this.getAttribute("label") || "crown");
+      g.setAttribute("aria-valuemin", "-1000000"); g.setAttribute("aria-valuemax", "1000000");
+      g.setAttribute("tabindex", dis ? "-1" : "0"); g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _buildKnurl() {
+      const ns = "http://www.w3.org/2000/svg";
+      this._ridges = [];
+      for (let i = 0; i < N; i++) {
+        const hi = document.createElementNS(ns, "rect"), lo = document.createElementNS(ns, "rect");
+        hi.setAttribute("x", CX0 + 1.6); hi.setAttribute("width", CLEN - 3.2); hi.setAttribute("fill", "#fff");
+        lo.setAttribute("x", CX0 + 1.6); lo.setAttribute("width", CLEN - 3.2); lo.setAttribute("fill", "#000");
+        this._knurl.appendChild(lo); this._knurl.appendChild(hi);
+        this._ridges.push({ hi, lo });
+      }
+    }
+    _render() {
+      // ridges placed by angle around the crown's axis; phase from the clicks plus the screw-down spin
+      const phase = (this._v + this._spin) * (2 * Math.PI / N), pitch = 2 * Math.PI * CR / N;
+      for (let i = 0; i < N; i++) {
+        const a = i * 2 * Math.PI / N + phase, c = Math.cos(a), s = Math.sin(a);
+        const { hi, lo } = this._ridges[i];
+        if (c <= 0.02) { hi.setAttribute("opacity", "0"); lo.setAttribute("opacity", "0"); continue; }
+        const y = CY - CR * s, w = Math.max(0.5, pitch * c * 0.42);
+        const lit = 0.5 - 0.5 * s;                                    // the top of the cylinder faces the light
+        hi.setAttribute("y", (y - w).toFixed(2)); hi.setAttribute("height", w.toFixed(2));
+        hi.setAttribute("opacity", (0.06 + 0.3 * c * lit + (s < -0.55 && s > -0.9 ? 0.12 : 0)).toFixed(3));
+        lo.setAttribute("y", y.toFixed(2)); lo.setAttribute("height", (w * 1.1).toFixed(2));
+        lo.setAttribute("opacity", (0.10 + 0.22 * c * (1 - lit)).toFixed(3));
+      }
+      this._crown.style.transform = "translate(" + (this._pos * PULL + this._out).toFixed(2) + "px, 0)";
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", ["screwed down", "winding", "date", "time"][this._pos] + ", " + this._v + " clicks");
+    }
+    get _out() { return this._pullAnim || 0; }
+    _emit(type, delta) {
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this._v, delta, position: this._pos } }));
+    }
+    _turn(clicks, settle) {
+      if (!clicks && !settle) return;
+      if (clicks) { this._v += clicks; this._reflect(); this._render(); this._emit("input", clicks); }
+      if (settle) this._emit("change", this._gestureDelta || clicks);
+    }
+    _pull(dir) {                                                       // +1 pull out, -1 push in
+      let p = this._pos + dir;
+      if (p > 3) return this._screwDown();
+      if (p < 0) p = 0;
+      if (p === this._pos) return;
+      this._pos = p; this._reflect(); this._render(); this._emit("change", 0);
+    }
+    _setPosition(p) {
+      p = Math.min(3, Math.max(0, p));
+      if (p === this._pos) return;
+      if (p === 0) return this._screwDown();
+      this._pos = p; this._reflect(); this._render(); this._emit("change", 0);
+    }
+    _screwDown() {                                                     // three turns in over ~700 ms while it seats
+      cancelAnimationFrame(this._raf);
+      const from = this._pos * PULL, t0 = performance.now(), D = 700;
+      this._pos = 0; this._reflect(); this._crown.classList.add("turning");
+      const step = now => {
+        const t = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - t, 3);
+        this._spin = -3 * N * e;                                       // three full turns of ridges
+        this._pullAnim = from * (1 - e);
+        this._render();
+        if (t < 1) this._raf = requestAnimationFrame(step);
+        else { this._raf = 0; this._spin = 0; this._pullAnim = 0; this._crown.classList.remove("turning"); this._render(); this._emit("change", 0); }
+      };
+      this._raf = requestAnimationFrame(step);
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._crown.classList.add("turning");
+      this._drag = { y: e.clientY, acc: 0, moved: false }; this._gestureDelta = 0;
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = (this._drag.y - e.clientY) / this._scale; this._drag.y = e.clientY;
+      this._drag.acc += dy;
+      const per = 4.5;                                                 // px of travel per click
+      const clicks = Math.trunc(this._drag.acc / per);
+      if (clicks) { this._drag.acc -= clicks * per; this._drag.moved = true; this._gestureDelta += clicks; this._turn(clicks, false); }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._crown.classList.remove("turning");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._turn(0, true); else this._pull(1);              // a click on the crown pulls it
+      this._gestureDelta = 0;
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const c = (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 10 : 1);
+      this._gestureDelta = (this._gestureDelta || 0) + c;
+      this._turn(c, false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => { this._turn(0, true); this._gestureDelta = 0; }, 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = e.shiftKey ? 10 : 1;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": this._gestureDelta = big; this._turn(big, true); break;
+        case "ArrowDown": case "ArrowLeft": this._gestureDelta = -big; this._turn(-big, true); break;
+        case " ": case "Enter": case "]": this._pull(1); break;
+        case "[": this._pull(-1); break;
+        case "Home": this._setPosition(0); break;
+        case "End": this._setPosition(3); break;
+        default: return;
+      }
+      e.preventDefault(); this._gestureDelta = 0;
+    }
+  }
+  customElements.define("sk-crown-oyster", SkCrownOyster);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
