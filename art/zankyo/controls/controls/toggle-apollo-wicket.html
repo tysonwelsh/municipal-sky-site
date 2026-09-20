@@ -68,7 +68,7 @@
   var TAG = "sk-toggle-apollo-wicket";
   if (customElements.get(TAG)) return;
 
-  var H = 96, CX = 32, CY = 54, LEN = 20, BALL = 5.2, W2 = 64, W3 = 76;
+  var H = 96, CX = 32, CY = 54, LEN = 20, BALL = 5.6, W2 = 64, W3 = 76;
   var TAU = Math.PI * 2, LIGHT = -0.78;           // light direction, radians from "up", above-left
 
   function P(cx, cy, r, a) { return (cx + r * Math.sin(a)).toFixed(2) + "," + (cy - r * Math.cos(a)).toFixed(2); }
@@ -80,7 +80,7 @@
     s += '<polygon points="' + polyPts(cx, cy, R, n, rot) + '" fill="' + base + '" stroke="#08090a" stroke-width="0.6" stroke-linejoin="round"/>';
     for (i = 0; i < n; i++) {
       a0 = i / n * TAU + rot; a1 = (i + 1) / n * TAU + rot; am = (a0 + a1) / 2;
-      b = Math.cos(am - LIGHT); o = b > 0 ? b * 0.52 : -b * 0.55;
+      b = Math.cos(am - LIGHT); o = b > 0 ? b * 0.62 : -b * 0.55;
       s += '<polygon points="' + P(cx, cy, R, a0) + " " + P(cx, cy, R, a1) + " " + P(cx, cy, inR, a1) + " " + P(cx, cy, inR, a0) +
            '" fill="' + (b > 0 ? "#ffffff" : "#000000") + '" opacity="' + o.toFixed(3) + '"/>';
     }
@@ -125,9 +125,9 @@
       '<linearGradient id="railcap" x1="0" y1="0" x2="0" y2="1">',
         '<stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>',
       '<linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">',
-        '<stop offset="0" stop-color="#4f545b"/><stop offset="0.14" stop-color="#aab1b8"/><stop offset="0.28" stop-color="#f7f9fa"/>',
-        '<stop offset="0.42" stop-color="#dde2e7"/><stop offset="0.60" stop-color="#959ca4"/><stop offset="0.80" stop-color="#5f646b"/>',
-        '<stop offset="0.92" stop-color="#43484e"/><stop offset="1" stop-color="#8b9299"/></linearGradient>',
+        '<stop offset="0" stop-color="#585d64"/><stop offset="0.12" stop-color="#b9c0c7"/><stop offset="0.26" stop-color="#f9fbfc"/>',
+        '<stop offset="0.40" stop-color="#d3d9df"/><stop offset="0.52" stop-color="#848b93"/><stop offset="0.70" stop-color="#4a4f56"/>',
+        '<stop offset="0.86" stop-color="#32373d"/><stop offset="1" stop-color="#8d949b"/></linearGradient>',
       '<radialGradient id="ballg" cx="33%" cy="27%" r="74%">',
         '<stop offset="0" stop-color="#ffffff"/><stop offset="0.16" stop-color="#eef1f4"/><stop offset="0.46" stop-color="#bcc3ca"/>',
         '<stop offset="0.74" stop-color="#7d838b"/><stop offset="0.90" stop-color="#474c53"/><stop offset="1" stop-color="#727981"/></radialGradient>',
@@ -136,7 +136,7 @@
       '<linearGradient id="washg" x1="0" y1="0" x2="0.4" y2="1">',
         '<stop offset="0" stop-color="#c3c8cd"/><stop offset="0.5" stop-color="#8b9096"/><stop offset="1" stop-color="#565b61"/></linearGradient>',
       '<linearGradient id="nuttop" x1="0" y1="0" x2="0.4" y2="1">',
-        '<stop offset="0" stop-color="#3a3d42"/><stop offset="0.55" stop-color="#1e2023"/><stop offset="1" stop-color="#141518"/></linearGradient>',
+        '<stop offset="0" stop-color="#4a4e54"/><stop offset="0.5" stop-color="#26282c"/><stop offset="1" stop-color="#17181b"/></linearGradient>',
       '<filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>',
       '<filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.6"/></filter>',
       '<filter id="flat" x="-70%" y="-70%" width="240%" height="240%">',
@@ -159,14 +159,14 @@
 
     // wicket guard rails: shadow, body, lit left edge, cap highlight
     '<g class="rails">',
-      '<rect x="14.3" y="28.6" width="5.6" height="53" rx="2.8" fill="#000" opacity="0.42" filter="url(#soft)"/>',
-      '<rect x="45.3" y="28.6" width="5.6" height="53" rx="2.8" fill="#000" opacity="0.42" filter="url(#soft)"/>',
-      '<rect x="12.8" y="27" width="5.6" height="53" rx="2.8" fill="url(#rail)" stroke="#33373b" stroke-width="0.5"/>',
-      '<rect x="43.8" y="27" width="5.6" height="53" rx="2.8" fill="url(#rail)" stroke="#33373b" stroke-width="0.5"/>',
-      '<rect x="13.5" y="28" width="1.5" height="51" rx="0.75" fill="#ffffff" opacity="0.18"/>',
-      '<rect x="44.5" y="28" width="1.5" height="51" rx="0.75" fill="#ffffff" opacity="0.18"/>',
-      '<ellipse cx="15.6" cy="29.4" rx="2.4" ry="1.7" fill="url(#railcap)"/>',
-      '<ellipse cx="46.6" cy="29.4" rx="2.4" ry="1.7" fill="url(#railcap)"/>',
+      '<rect x="14.0" y="28.6" width="6.2" height="53" rx="3.1" fill="#000" opacity="0.42" filter="url(#soft)"/>',
+      '<rect x="45.0" y="28.6" width="6.2" height="53" rx="3.1" fill="#000" opacity="0.42" filter="url(#soft)"/>',
+      '<rect x="12.5" y="27" width="6.2" height="53" rx="3.1" fill="url(#rail)" stroke="#33373b" stroke-width="0.5"/>',
+      '<rect x="43.5" y="27" width="6.2" height="53" rx="3.1" fill="url(#rail)" stroke="#33373b" stroke-width="0.5"/>',
+      '<rect x="13.3" y="28" width="1.7" height="51" rx="0.75" fill="#ffffff" opacity="0.18"/>',
+      '<rect x="44.3" y="28" width="1.7" height="51" rx="0.75" fill="#ffffff" opacity="0.18"/>',
+      '<ellipse cx="15.4" cy="29.3" rx="2.7" ry="1.7" fill="url(#railcap)"/>',
+      '<ellipse cx="46.4" cy="29.3" rx="2.7" ry="1.7" fill="url(#railcap)"/>',
     '</g>',
 
     // the panel hole, a hair larger than the bushing: a black crescent up and left
@@ -184,14 +184,14 @@
 
     // the bat's own shadow on the panel
     '<g class="sh" transform="translate(1.7,2.5)" filter="url(#flat)" opacity="0.5">',
-      '<path class="sh-shaft" d="M ' + (CX - 2.3) + ' ' + (CY + 2) + ' L ' + (CX - 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 2.3) + ' ' + (CY + 2) + ' Z" fill="#000"/>',
+      '<path class="sh-shaft" d="M ' + (CX - 3.0) + ' ' + (CY + 2) + ' L ' + (CX - 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 3.0) + ' ' + (CY + 2) + ' Z" fill="#000"/>',
       '<circle class="sh-ball" cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="#000"/>',
     '</g>',
 
     // the bat: tapered chrome shaft with a hard highlight down its length, and a ball tip
     '<g class="bat">',
-      '<path class="shaft" d="M ' + (CX - 2.35) + ' ' + (CY + 2.4) + ' L ' + (CX - 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 2.35) + ' ' + (CY + 2.4) + ' Z" fill="url(#chrome)" stroke="#2b3035" stroke-width="0.3"/>',
-    '<path class="shaft" d="M ' + (CX - 1.25) + ' ' + (CY + 2) + ' L ' + (CX - 0.85) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.1) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.45) + ' ' + (CY + 2) + ' Z" fill="#ffffff" opacity="0.75"/>',
+      '<path class="shaft" d="M ' + (CX - 3.05) + ' ' + (CY + 2.4) + ' L ' + (CX - 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 3.05) + ' ' + (CY + 2.4) + ' Z" fill="url(#chrome)" stroke="#2b3035" stroke-width="0.3"/>',
+    '<path class="shaft" d="M ' + (CX - 1.6) + ' ' + (CY + 2) + ' L ' + (CX - 1.15) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.15) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.6) + ' ' + (CY + 2) + ' Z" fill="#ffffff" opacity="0.8"/>',
       '<g class="ball">',
         '<circle cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="url(#ballg)" stroke="#31363c" stroke-width="0.3"/>',
         '<ellipse cx="' + (CX - 1.7) + '" cy="' + (CY - LEN - 1.9) + '" rx="1.5" ry="1.15" fill="#ffffff" opacity="0.95" transform="rotate(-28 ' + (CX - 1.7) + ' ' + (CY - LEN - 1.9) + ')"/>',

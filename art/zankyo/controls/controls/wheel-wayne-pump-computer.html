@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wayne pump computer face — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "wheel-wayne-pump-computer",
+  "element": "sk-wheel-pump-computer",
+  "name": "Wayne petrol-pump computer face",
+  "kind": "output",
+  "code": "G14.1",
+  "type": "Character wheel / numeral drum",
+  "source": "Wayne 60/70-series and Tokheim 39 computing-pump face, Fort Wayne, 1950s: white numeral drums for THIS SALE and GALLONS behind chrome on cream porcelain enamel",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["porcelain enamel", "chrome", "glass", "painted steel drums"],
+  "tags": ["petrol pump", "gas station", "odometer", "drum", "computer face", "roadside"],
+  "value": { "model": "range", "min": 0, "max": 99.99, "step": 0.01, "unit": "$", "fields": ["sale", "gallons", "price"] },
+  "attributes": ["value", "sale", "gallons", "price", "scale"],
+  "events": [],
+  "size": { "w": 300, "h": 250 },
+  "notes": "value is {sale, gallons} (a plain number sets the sale and computes gallons from the price). The demo pumps: the gallons wheels roll, the money wheels spin faster and blur, then reset() spins everything back to zero."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-wheel-pump-computer sale="4.75" gallons="12.3" price="38.9"></sk-wheel-pump-computer>
+    <sk-wheel-pump-computer sale="2.345" gallons="6.07" price="38.9" scale="0.8"></sk-wheel-pump-computer>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>computing pump</b> arrived in the late 1930s and by the 1950s every Wayne 60/70 and Tokheim 39 on a
+  roadside had this face: a cream porcelain-enamelled casting, a chromed bezel over each window, and behind the glass
+  two rows of white numeral drums — <b>THIS SALE $</b> above, <b>GALLONS</b> below — geared to the meter, with the
+  price per gallon set on a small pair of wheels at the bottom. Lift the handle and the gallons wheels crawl while the
+  money wheels run away from them.</p>
+  <p><b>The tells kept:</b> the drums are projected cylinders, not a sliding strip — each numeral is placed by angle,
+  <code>y = R·sin θ</code>, squashed by <code>cos θ</code>, so figures foreshorten and crowd at the top and bottom of
+  the window while the next one rolls in from below; true odometer carry, where a wheel only moves in the last tenth of
+  the wheel to its right, so carries snap; the cents wheel doubles into a 40 % ghost when it spins fast; the deep
+  window with its cylinder shading and the fine dark seam between wheels; the red decimal panel in each row; cream
+  enamel yellowed toward the edges with a chip or two of exposed steel; a chromed bezel and bowed glass with one long
+  highlight. <code>reset()</code> spins everything back to zero in half a second, the way lifting the handle does.</p>
+  <p><b>Left out:</b> the pump body, the globe and the hose; the maker's name (a generic face, to avoid a trademark);
+  the mechanical clatter, and the tiny "9/10" that really followed the price.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-wheel-pump-computer> — 1950s computing-pump numeral drums ====
+   attributes: sale (dollars) · gallons · price (cents per gallon) · value · scale
+   properties: value → {sale, gallons, price}; setting a number sets the sale. method: reset()
+   no events (an output). self-contained: paste this block into any page and use
+   <sk-wheel-pump-computer sale="4.75" gallons="12.3" price="38.9"></sk-wheel-pump-computer> */
+(function () {
+  if (customElements.get("sk-wheel-pump-computer")) return;
+  var W = 300, H = 250, NS = "http://www.w3.org/2000/svg";
+  // rows: x y w h  n(drums) dw  redAfter redW  fontSize
+  var ROWS = [
+    { key: "sale",  x: 30,  y: 46,  w: 240, h: 48, n: 5, dw: 34, redAfter: 3, redW: 14, fs: 30 },
+    { key: "gal",   x: 30,  y: 136, w: 240, h: 40, n: 3, dw: 32, redAfter: 2, redW: 12, fs: 26 },
+    { key: "price", x: 102, y: 213, w: 96,  h: 22, n: 3, dw: 22, redAfter: 2, redW: 8,  fs: 16 }
+  ];
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  '.leg { font-family: "Bebas Neue", "Archivo Narrow", "Arial Narrow", sans-serif; letter-spacing: 0.08em; text-anchor: middle; fill: #1c1a17; }',
+  '.leg.red { fill: #b7221c; }',
+  '.fig { font-family: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", sans-serif; font-weight: 700; text-anchor: middle; fill: #1a1814; }',
+  '.mark { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; font-weight: 700; text-anchor: middle; fill: #b7221c; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '<defs>',
+    '<radialGradient id="enamel" cx="26%" cy="10%" r="118%">',
+      '<stop offset="0" stop-color="#f8f1dd"/><stop offset="0.42" stop-color="#efe6d0"/><stop offset="0.78" stop-color="#e3d8bc"/><stop offset="1" stop-color="#cfc3a4"/>',
+    '</radialGradient>',
+    '<linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#fdfdfb"/><stop offset="0.24" stop-color="#e0e2e0"/><stop offset="0.48" stop-color="#a3a5a3"/>',
+      '<stop offset="0.5" stop-color="#63665f"/><stop offset="0.66" stop-color="#a8aaa6"/><stop offset="0.9" stop-color="#e6e8e4"/><stop offset="1" stop-color="#7d7f7b"/>',
+    '</linearGradient>',
+    '<linearGradient id="drumface" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#b9b3a4"/><stop offset="0.16" stop-color="#e8e4da"/><stop offset="0.42" stop-color="#fbf9f4"/><stop offset="0.62" stop-color="#f1eee5"/><stop offset="0.86" stop-color="#cdc7b8"/><stop offset="1" stop-color="#a49d8e"/>',
+    '</linearGradient>',
+    '<linearGradient id="cyl" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#000" stop-opacity="0.72"/><stop offset="0.1" stop-color="#000" stop-opacity="0.38"/>',
+      '<stop offset="0.26" stop-color="#000" stop-opacity="0.08"/><stop offset="0.42" stop-color="#fff" stop-opacity="0.16"/>',
+      '<stop offset="0.6" stop-color="#000" stop-opacity="0.04"/><stop offset="0.84" stop-color="#000" stop-opacity="0.4"/><stop offset="1" stop-color="#000" stop-opacity="0.76"/>',
+    '</linearGradient>',
+    '<linearGradient id="recess" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#0d0c0b"/><stop offset="1" stop-color="#2b2822"/>',
+    '</linearGradient>',
+    '<linearGradient id="red" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#8e1a1d"/><stop offset="0.3" stop-color="#c8262a"/><stop offset="0.62" stop-color="#b52125"/><stop offset="1" stop-color="#771316"/>',
+    '</linearGradient>',
+    '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2"/></filter>',
+  '</defs>',
+  '<rect x="6" y="9" width="290" height="240" rx="9" fill="#000" opacity="0.5" filter="url(#soft)"/>',
+  '<rect x="2" y="2" width="296" height="243" rx="8" fill="url(#enamel)" stroke="#9a9078" stroke-width="0.8"/>',
+  '<rect x="3.4" y="3.4" width="293.2" height="240.2" rx="7" fill="none" stroke="#fffaf0" stroke-opacity="0.75" stroke-width="1.1"/>',
+  '<!-- enamel chips: bare steel through the porcelain, where the hose swings -->',
+  '<path d="M 288 196 l 4 3 l -2 5 l -5 -3 z" fill="#8a8478"/>',
+  '<path d="M 286.5 197 l 2 1.5 l -1 2 z" fill="#5d574c" opacity="0.8"/>',
+  '<path d="M 11 60 l 3.5 1.6 l -1.4 3.4 l -3.4 -2 z" fill="#8a8478"/>',
+  '<path d="M 150 241 l 7 1.6 l -6 1.6 l -6 -1.4 z" fill="#8a8478" opacity="0.55"/>',
+  '<!-- legends -->',
+  '<text class="leg red" x="150" y="31" style="font-size:14px">THIS SALE</text>',
+  '<text class="leg" x="150" y="124" style="font-size:14px">GALLONS</text>',
+  '<text class="leg" x="150" y="205" style="font-size:11px">PRICE PER GALLON</text>',
+  '<text class="mark" x="42" y="77" style="font-size:19px">$</text>',
+  '<text class="mark" x="207" y="230" style="font-size:13px">&#162;</text>',
+  '<g class="rows"></g>',
+  '</svg>',
+  '</div>'].join("");
+
+  function mk(t, a) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+  function odo(V, place) {
+    var p = Math.pow(10, place), x = V / p;
+    if (place === 0) return x;
+    var d = Math.floor(x), f = x - d;
+    return d + (f > 0.9 ? (f - 0.9) * 10 : 0);      // a wheel only turns in the last tenth of the one to its right
+  }
+
+  class SkWheelPumpComputer extends HTMLElement {
+    static get observedAttributes() { return ["value", "sale", "gallons", "price", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._sale = 0; this._gal = 0; this._price = 38.9; this._scale = 1;
+      this._dSale = 0; this._dGal = 0; this._spin = 0;
+      this._raf = 0; this._last = 0; this._ready = 0; this._reflecting = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._rowsG = this.shadowRoot.querySelector(".rows");
+      this._rows = {};
+      this._tick = this._tick.bind(this);
+      this._build();
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read();
+      this._dSale = this._sale; this._dGal = this._gal; this._spin = 0;
+      this._ready = 1;
+      this._paint();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this._ready || this._reflecting) return;
+      this._read();
+      if (n === "price" || n === "scale") this._paint(); else this._kick();
+    }
+    get value() { return { sale: this._sale, gallons: this._gal, price: this._price }; }
+    set value(v) {
+      if (v == null) return;
+      if (typeof v === "object") { this._set(v.sale, v.gallons); return; }
+      if (typeof v === "string" && v.indexOf("/") > 0) { var p = v.split("/"); this._set(parseFloat(p[0]), parseFloat(p[1])); return; }
+      var n = parseFloat(v); if (isNaN(n)) return;
+      this._set(n, this._price > 0 ? n / (this._price / 100) : 0);
+    }
+    get sale() { return this._sale; }
+    set sale(v) { this._set(parseFloat(v), this._gal); }
+    get gallons() { return this._gal; }
+    set gallons(v) { this._set(this._sale, parseFloat(v)); }
+    get price() { return this._price; }
+    set price(v) { this.setAttribute("price", String(v)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    reset() { this._set(0, 0); this._spin = 4; this._kick(); }
+
+    _set(sale, gal) {
+      if (!isNaN(sale)) this._sale = Math.max(0, Math.min(99.99, sale));
+      if (!isNaN(gal)) this._gal = Math.max(0, Math.min(99.99, gal));
+      this._reflecting = 1;
+      this.setAttribute("sale", String(Math.round(this._sale * 1000) / 1000));
+      this.setAttribute("gallons", String(Math.round(this._gal * 1000) / 1000));
+      this._reflecting = 0;
+      this._label();
+      this._kick();
+    }
+    _read() {
+      var num = function (el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._sale = Math.max(0, Math.min(99.99, num(this, "sale", this._sale)));
+      this._gal = Math.max(0, Math.min(99.99, num(this, "gallons", this._gal)));
+      this._price = Math.max(0, Math.min(99.9, num(this, "price", this._price)));
+      var sc = Math.max(0.2, num(this, "scale", 1));
+      if (sc !== this._scale || !this._ready) {
+        this._scale = sc;
+        this.style.width = (W * sc) + "px"; this.style.height = (H * sc) + "px";
+        this._wrap.style.transform = "scale(" + sc + ")";
+      }
+      this._label();
+    }
+    _label() {
+      this.setAttribute("aria-label", "pump computer: $" + this._sale.toFixed(2) + " for " + this._gal.toFixed(1) +
+        " gallons at " + this._price.toFixed(1) + " cents a gallon");
+    }
+
+    _build() {
+      var g = this._rowsG, self = this;
+      ROWS.forEach(function (cfg, ri) {
+        var total = cfg.n * cfg.dw + cfg.redW;
+        var sx = cfg.x + (cfg.w - total) / 2;
+        var row = mk("g", {});
+        // chrome bezel and its recess
+        var bz = 8, bx = cfg.x - bz, by = cfg.y - bz, bw = cfg.w + bz * 2, bh = cfg.h + bz * 2;
+        row.appendChild(mk("rect", { x: bx + 1.5, y: by + 2.5, width: bw, height: bh, rx: 6, fill: "#000", opacity: 0.35, filter: "url(#soft)" }));
+        row.appendChild(mk("rect", { x: bx, y: by, width: bw, height: bh, rx: 6, fill: "url(#chrome)", stroke: "#5d605c", "stroke-width": 0.7 }));
+        row.appendChild(mk("rect", { x: bx + 1.4, y: by + 1.4, width: bw - 2.8, height: bh - 2.8, rx: 5, fill: "none", stroke: "#fff", "stroke-opacity": 0.55, "stroke-width": 0.9 }));
+        row.appendChild(mk("rect", { x: cfg.x - 3, y: cfg.y - 3, width: cfg.w + 6, height: cfg.h + 6, rx: 3, fill: "url(#recess)" }));
+        row.appendChild(mk("rect", { x: cfg.x - 1.4, y: cfg.y - 1.4, width: cfg.w + 2.8, height: cfg.h + 2.8, rx: 2, fill: "none", stroke: "#000", "stroke-width": 1.4, opacity: 0.8 }));
+        // the window: dark behind the wheels, then the wheels themselves
+        row.appendChild(mk("rect", { x: cfg.x, y: cfg.y, width: cfg.w, height: cfg.h, fill: "#2a2721" }));
+
+        var clipId = "clip" + ri;
+        var cp = mk("clipPath", { id: clipId });
+        cp.appendChild(mk("rect", { x: cfg.x, y: cfg.y, width: cfg.w, height: cfg.h }));
+        self.shadowRoot.querySelector("defs").appendChild(cp);
+        var inner = mk("g", { "clip-path": "url(#" + clipId + ")" });
+
+        var drums = [], cx = sx, R = cfg.h * 0.62;
+        for (var i = 0; i < cfg.n; i++) {
+          if (i === cfg.redAfter) {
+            inner.appendChild(mk("rect", { x: cx, y: cfg.y, width: cfg.redW, height: cfg.h, fill: "url(#red)" }));
+            inner.appendChild(mk("circle", { cx: cx + cfg.redW / 2, cy: cfg.y + cfg.h * 0.66, r: Math.max(1.6, cfg.redW * 0.16), fill: "#fbf5ec" }));
+            cx += cfg.redW;
+          }
+          // the drum face
+          inner.appendChild(mk("rect", { x: cx + 0.8, y: cfg.y, width: cfg.dw - 1.6, height: cfg.h, fill: "url(#drumface)" }));
+          // the seam between wheels
+          inner.appendChild(mk("rect", { x: cx - 0.9, y: cfg.y, width: 1.8, height: cfg.h, fill: "#37332b" }));
+          inner.appendChild(mk("rect", { x: cx + 0.9, y: cfg.y, width: 0.6, height: cfg.h, fill: "#fff", opacity: 0.35 }));
+          var d = { cx: cx + cfg.dw / 2, cy: cfg.y + cfg.h / 2, R: R, slots: [], pos: 0, last: 0, blur: 0 };
+          var gg = mk("g", {});
+          for (var j = -1; j <= 1; j++) {
+            var ghost = mk("text", { "class": "fig", x: 0, y: 0, style: "font-size:" + cfg.fs + "px", "dominant-baseline": "central", opacity: 0 });
+            var main = mk("text", { "class": "fig", x: 0, y: 0, style: "font-size:" + cfg.fs + "px", "dominant-baseline": "central" });
+            gg.appendChild(ghost); gg.appendChild(main);
+            d.slots.push({ a: main, b: ghost, cur: -1 });
+          }
+          inner.appendChild(gg);
+          drums.push(d);
+          cx += cfg.dw;
+        }
+        // last seam on the right of the row
+        inner.appendChild(mk("rect", { x: cx - 0.9, y: cfg.y, width: 1.8, height: cfg.h, fill: "#37332b" }));
+        // cylinder shading over everything in the window, then the glass
+        inner.appendChild(mk("rect", { x: cfg.x, y: cfg.y, width: cfg.w, height: cfg.h, fill: "url(#cyl)" }));
+        inner.appendChild(mk("path", {
+          d: "M " + cfg.x + " " + (cfg.y + cfg.h * 0.30) + " Q " + (cfg.x + cfg.w * 0.42) + " " + (cfg.y - cfg.h * 0.10) +
+             " " + (cfg.x + cfg.w) + " " + (cfg.y + cfg.h * 0.16) + " L " + (cfg.x + cfg.w) + " " + cfg.y + " L " + cfg.x + " " + cfg.y + " Z",
+          fill: "#fff", opacity: 0.07
+        }));
+        row.appendChild(inner);
+        g.appendChild(row);
+        self._rows[cfg.key] = { cfg: cfg, drums: drums };
+      });
+    }
+
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      var dt = Math.min(0.05, Math.max(0.001, (now - this._last) / 1000)); this._last = now;
+      var k = 1 - Math.exp(-dt / 0.10);
+      this._dSale += (this._sale - this._dSale) * k;
+      this._dGal += (this._gal - this._dGal) * k;
+      if (this._spin > 0) this._spin = Math.max(0, this._spin - dt * 8);
+      this._paint(dt);
+      var settled = Math.abs(this._sale - this._dSale) < 0.0004 && Math.abs(this._gal - this._dGal) < 0.0004 && this._spin <= 0;
+      if (settled) { this._dSale = this._sale; this._dGal = this._gal; this._paint(dt); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint(dt) {
+      this._paintRow(this._rows.sale, this._dSale * 100, dt);
+      this._paintRow(this._rows.gal, this._dGal * 10, dt);
+      this._paintRow(this._rows.price, Math.round(this._price * 10), 0);
+    }
+    _paintRow(row, V, dt) {
+      var n = row.drums.length;
+      for (var k = 0; k < n; k++) {
+        var d = row.drums[k], place = n - 1 - k;
+        var pos = odo(V, place) + this._spin;
+        var speed = dt ? Math.abs(pos - d.last) / dt : 0;
+        d.last = pos;
+        var base = Math.floor(pos), frac = pos - base;
+        for (var j = -1; j <= 1; j++) {
+          var s = d.slots[j + 1], digit = ((base + j) % 10 + 10) % 10;
+          if (s.cur !== digit) { s.cur = digit; s.a.textContent = String(digit); s.b.textContent = String(digit); }
+          var ang = (j - frac) * 0.6283185307;                 // 36° per numeral
+          var ty = d.cy + d.R * Math.sin(ang), sc = Math.cos(ang);
+          if (sc < 0.02) sc = 0.02;
+          var tr = "translate(" + d.cx.toFixed(2) + " " + ty.toFixed(2) + ") scale(1 " + sc.toFixed(3) + ")";
+          s.a.setAttribute("transform", tr);
+          s.b.setAttribute("transform", "translate(" + d.cx.toFixed(2) + " " + (ty - 2.6).toFixed(2) + ") scale(1 " + sc.toFixed(3) + ")");
+        }
+        var blur = speed > 6 ? 1 : 0;                           // a fast wheel doubles into a ghost
+        if (blur !== d.blur) {
+          d.blur = blur;
+          for (var q = 0; q < 3; q++) { d.slots[q].b.setAttribute("opacity", blur ? 0.4 : 0); d.slots[q].a.setAttribute("opacity", blur ? 0.72 : 1); }
+        }
+      }
+    }
+    // the idle demo: lift the handle, pump nine gallons, hold, then reset
+    demo(t) {
+      var c = t % 15;
+      if (c < 1) { if (this._sale !== 0 || this._gal !== 0) this._set(0, 0); }
+      else if (c < 10) { var gal = (c - 1) * 1.05; this._set(Math.round(gal * this._price) / 100, gal); }
+      else if (c < 13.5) { /* hold the sale */ }
+      else if (this._sale !== 0) { this.reset(); }
+      return undefined;
+    }
+  }
+  customElements.define("sk-wheel-pump-computer", SkWheelPumpComputer);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

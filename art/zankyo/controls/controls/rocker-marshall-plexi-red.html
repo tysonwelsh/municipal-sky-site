@@ -24,7 +24,7 @@
   "value": { "model": "boolean" },
   "attributes": ["value", "legend", "label", "lamp", "scale", "disabled"],
   "events": ["input", "change"],
-  "size": { "w": 96, "h": 72 },
+  "size": { "w": 96, "h": 80 },
   "notes": "POWER on with its neon pilot lit and STANDBY off with its pilot dark, both at scale 1.6. Click either half, drag up or down the throw, Space/Enter, or the arrows."
 }
 </script>
@@ -60,7 +60,7 @@
    self-contained: paste this block into any page and use <sk-rocker-marshall-plexi-red value="true" legend="POWER"> */
 (function () {
   if (customElements.get("sk-rocker-marshall-plexi-red")) return;
-  var W = 96, H = 72;
+  var W = 96, H = 80;
   var TPL = document.createElement("template");
   TPL.innerHTML = [
   '<style>',
@@ -69,26 +69,26 @@
   ':host([hidden]) { display:none; }',
   '.wrap { position:absolute; left:0; top:0; width:' + W + 'px; height:' + H + 'px; transform-origin:0 0; }',
   /* ---- the gold plexi panel ---- */
-  '.panel { position:absolute; inset:0; border-radius:1.5px; overflow:hidden;',
+  '.panel { position:absolute; inset:0; border-radius:1px; overflow:hidden;',
   '  background:',
-  '    repeating-linear-gradient(0deg, rgba(255,246,214,0.055) 0 1px, rgba(46,30,4,0.07) 1px 2px),',
-  '    linear-gradient(101deg, rgba(255,255,255,0) 10%, rgba(255,247,212,0.20) 30%, rgba(255,247,212,0.06) 46%, rgba(255,255,255,0) 64%),',
-  '    linear-gradient(178deg, #bfa04b 0%, #b0913e 40%, #9a7c33 74%, #86672a 100%);',
+  '    repeating-linear-gradient(0deg, rgba(255,250,226,0.05) 0 1px, rgba(255,250,226,0) 1px 2.5px),',
+  '    linear-gradient(100deg, rgba(255,255,255,0) 4%, rgba(255,250,226,0.26) 25%, rgba(255,250,226,0.09) 44%, rgba(255,255,255,0) 63%),',
+  '    linear-gradient(178deg, #bda256 0%, #ac8f45 42%, #937939 76%, #82692f 100%);',
   '  box-shadow: inset 0 1px 0 rgba(255,246,214,0.45), inset 0 -1px 0 rgba(36,23,3,0.6),',
   '    inset 1px 0 0 rgba(255,246,214,0.16), 0 1px 2px rgba(0,0,0,0.55); }',
-  '.scuff { position:absolute; left:5px; bottom:3px; width:50px; height:12px; border-radius:50%;',
+  '.scuff { position:absolute; left:5px; bottom:4px; width:50px; height:12px; border-radius:50%;',
   '  background: radial-gradient(50% 50% at 50% 50%, rgba(255,250,224,0.17), rgba(255,250,224,0) 72%);',
   '  transform: rotate(-3deg); }',
   '.scratch { position:absolute; height:1px; background: linear-gradient(90deg, rgba(255,252,232,0), rgba(255,252,232,0.34), rgba(255,252,232,0)); }',
-  '.s1 { left:7px; bottom:8px; width:40px; transform:rotate(-1.4deg); }',
-  '.s2 { left:17px; bottom:5px; width:26px; opacity:0.55; transform:rotate(1deg); }',
+  '.s1 { left:7px; bottom:9px; width:40px; transform:rotate(-1.4deg); }',
+  '.s2 { left:17px; bottom:6px; width:26px; opacity:0.55; transform:rotate(1deg); }',
   /* ---- silk-screened legend ---- */
-  '.legend { position:absolute; left:0; top:2px; width:70px; text-align:center;',
+  '.legend { position:absolute; left:0; top:3px; width:70px; text-align:center;',
   '  font-family:"Archivo Narrow","Roboto Condensed","Arial Narrow",sans-serif; font-weight:600;',
   '  font-size:8px; line-height:12px; letter-spacing:0.07em; color:#141414;',
   '  text-shadow:0 0.5px 0 rgba(255,247,216,0.32); white-space:nowrap; }',
   /* ---- the black bezel let into the panel ---- */
-  '.bezel { position:absolute; left:5px; top:17px; width:60px; height:34px; border-radius:3px;',
+  '.bezel { position:absolute; left:5px; top:19px; width:60px; height:34px; border-radius:3px;',
   '  background: linear-gradient(176deg, #2a2a2e 0%, #1a1a1d 34%, #101012 70%, #0a0a0c 100%);',
   '  box-shadow: 0 0 0 0.6px rgba(236,212,146,0.6), inset 0 1px 0 rgba(255,255,255,0.18),',
   '    inset 0 -1px 0 rgba(0,0,0,0.75), 0 1px 2px rgba(0,0,0,0.6), 0 3px 6px rgba(0,0,0,0.4); }',
@@ -128,12 +128,12 @@
   /* moulded ON + arrow, white paint half worn */
   '.mark { position:absolute; left:0; right:0; top:0.9px; height:8px; display:flex; align-items:center;',
   '  justify-content:center; gap:2.5px; pointer-events:none; }',
-  '.mark b { font-family:"Barlow","Helvetica Neue",Arial,sans-serif; font-weight:700; font-size:6px;',
-  '  letter-spacing:0.1em; color:rgba(236,236,226,0.66); text-shadow:0 0.5px 0 rgba(84,6,10,0.8); }',
+  '.mark b { font-family:"Barlow","Helvetica Neue",Arial,sans-serif; font-weight:700; font-size:6.5px;',
+  '  letter-spacing:0.12em; color:rgba(238,238,228,0.72); text-shadow:0 0.5px 0 rgba(84,6,10,0.8); }',
   '.arw { width:0; height:0; border-left:2.4px solid transparent; border-right:2.4px solid transparent;',
   '  border-top:3.2px solid rgba(236,236,226,0.52); filter: drop-shadow(0 0.5px 0 rgba(84,6,10,0.75)); }',
   /* ---- the neon pilot in its chrome bezel ---- */
-  '.lamp { position:absolute; left:70px; top:23px; width:21px; height:21px; border-radius:50%;',
+  '.lamp { position:absolute; left:70px; top:25px; width:21px; height:21px; border-radius:50%;',
   '  background: conic-gradient(from 212deg, #767b82, #f4f7fa 12%, #a8aeb5 27%, #4c5158 45%, #e0e5ea 60%,',
   '    #858a91 76%, #393d43 90%, #767b82);',
   '  box-shadow: 0 1px 2px rgba(0,0,0,0.65), 0 2px 5px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(0,0,0,0.55); }',
@@ -153,7 +153,7 @@
   ':host(.lit) .halo { opacity:1; transition: opacity 300ms ease-out; }',
   ':host([lamp="none"]) .lamp { display:none; }',
   /* ---- the hit area + focus ---- */
-  '.grab { position:absolute; left:3px; top:15px; width:64px; height:38px; border-radius:4px;',
+  '.grab { position:absolute; left:3px; top:17px; width:64px; height:38px; border-radius:4px;',
   '  cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; outline:none; }',
   ':host([disabled]) .grab { cursor:default; }',
   '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }',
@@ -259,7 +259,7 @@
       this._grab.addEventListener("pointerup", this._onUp);
       this._grab.addEventListener("pointercancel", this._onUp);
       var b = this.getBoundingClientRect();
-      this._drag = { mid: b.top + (17 + 17) * this._scale, y0: e.clientY, moved: false, changed: false };
+      this._drag = { mid: b.top + 36 * this._scale, y0: e.clientY, moved: false, changed: false };
     }
     _onMove(e) {
       var d = this._drag; if (!d) return;

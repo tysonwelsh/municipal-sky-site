@@ -74,7 +74,7 @@
   const pt = (d, r) => [PX + r * Math.sin(rad(d)), PY - r * Math.cos(rad(d))];
   function arcp(r, a, b) { const p0 = pt(a, r), p1 = pt(b, r); return `M ${f2(p0[0])} ${f2(p0[1])} A ${r} ${r} 0 0 1 ${f2(p1[0])} ${f2(p1[1])}`; }
   function tick(d, r0, r1, col, w) { const a = pt(d, r0), b = pt(d, r1); return `<line x1="${f2(a[0])}" y1="${f2(a[1])}" x2="${f2(b[0])}" y2="${f2(b[1])}" stroke="${col}" stroke-width="${w}"/>`; }
-  function lbl(d, r, cls, t) { const p = pt(d, r); return `<text class="${cls}" x="${f2(p[0])}" y="${f2(p[1])}" transform="rotate(${f2(d)} ${f2(p[0])} ${f2(p[1])})">${t}</text>`; }
+  function lbl(d, r, cls, t) { const p = pt(d, r); return `<text class="${cls}" x="${f2(p[0])}" y="${f2(p[1])}">${t}</text>`; }
   function hexp(cx, cy, r) { let s = ""; for (let i = 0; i < 6; i++) { const a = rad(i * 60); s += (i ? "L" : "M") + f2(cx + r * Math.cos(a)) + " " + f2(cy + r * Math.sin(a)) + " "; } return s + "Z"; }
 
   // ---- the printed card, built once ----
