@@ -360,7 +360,7 @@
       const now = performance.now(), first = s[0], last = s[s.length - 1];
       let vel = 0;
       if (s.length > 1 && now - last[0] < 80 && last[0] > first[0]) vel = this._pxToV(last[1] - first[1]) / ((last[0] - first[0]) / 1000);
-      const cap = (this._B.max - this._B.min) * 2.5;                     // no more than 2.5 bands per second
+      const cap = (this._B.max - this._B.min) * 1.5;                     // no more than 1.5 bands per second
       vel = Math.max(-cap, Math.min(cap, vel));
       if (Math.abs(vel) > (this._B.max - this._B.min) * 0.08) { this._inertia = true; this._vel = vel; this._fv = this._v; this._kick(); }
       else if (moved) this._emit(true);

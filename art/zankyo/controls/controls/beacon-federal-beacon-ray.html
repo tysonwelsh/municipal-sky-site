@@ -269,7 +269,7 @@
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
       this._run = false; this._rpm = 90; this._phase = 0; this._scale = 1;
-      this._raf = 0; this._t0 = 0; this._a = 0.7;
+      this._raf = 0; this._a = 0.7;
       const sr = this.shadowRoot;
       this._wrap = sr.querySelector(".wrap");
       this._refl = sr.querySelectorAll(".refl");
@@ -309,12 +309,13 @@
         : col + " rotating beacon, off");
     }
     _apply() {
-      if (this._run && this._rpm > 0) { if (!this._raf) { this._t0 = 0; this._raf = requestAnimationFrame(this._tick); } }
+      if (this._run && this._rpm > 0) { if (!this._raf) this._raf = requestAnimationFrame(this._tick); }
       else { cancelAnimationFrame(this._raf); this._raf = 0; this._paint(this._run ? this._a : 0.62, this._run ? 1 : 0); }
     }
+    // the carrier is driven off the document clock, so every beacon on a page
+    // turns in step and a still frame of the page is reproducible
     _tick(now) {
-      if (!this._t0) this._t0 = now;
-      this._a = this._phase * Math.PI / 180 + ((now - this._t0) / 1000) * (this._rpm / 60) * 2 * Math.PI;
+      this._a = this._phase * Math.PI / 180 + (now / 1000) * (this._rpm / 60) * 2 * Math.PI;
       this._paint(this._a, 1);
       this._raf = requestAnimationFrame(this._tick);
     }

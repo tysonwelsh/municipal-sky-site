@@ -85,8 +85,8 @@
     funcs.forEach((fn, i) => {
       const x = L.kx + i * L.pitch, cx = x + L.kw / 2, cy = KY + 8.4;
       const wear = fn === "play"
-        ? `<ellipse cx="${cx}" cy="${KY + 22}" rx="${L.kw * 0.26}" ry="4.2" fill="#aab3b8" opacity="0.26" filter="url(#sf)"/>
-           <ellipse cx="${cx - 2}" cy="${KY + 19}" rx="${L.kw * 0.17}" ry="3" fill="#7b858a" opacity="0.18" filter="url(#sf)"/>` : "";
+        ? `<ellipse cx="${cx}" cy="${KY + 14}" rx="${L.kw * 0.28}" ry="5.4" fill="#939ca1" opacity="0.2" filter="url(#sf)"/>
+           <ellipse cx="${cx - 2.5}" cy="${KY + 11}" rx="${L.kw * 0.18}" ry="3.4" fill="#79838a" opacity="0.14" filter="url(#sf)"/>` : "";
       g += `<g class="key k${i}">
         <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.2" fill="url(#chr)"/>
         <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.2" fill="url(#dome)"/>

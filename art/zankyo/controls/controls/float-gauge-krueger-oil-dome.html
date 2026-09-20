@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Krueger Sentry oil-tank gauge — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "float-gauge-krueger-oil-dome",
+  "element": "sk-float-gauge-krueger",
+  "name": "Krueger Sentry oil-tank gauge",
+  "kind": "output",
+  "code": "I3",
+  "type": "Float gauge, red disc in a clear dome",
+  "source": "Krueger Sentry Gauge (Wisconsin) — the clear dome on top of a domestic heating-oil tank, a red disc riding on a float rod against a printed card",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["polycarbonate dome", "printed card", "red plastic disc", "brass rod", "black cap", "green steel tank"],
+  "tags": ["heating oil", "tank", "float", "basement", "dome", "E to F"],
+  "value": { "model": "range", "min": 0, "max": 1, "step": 0.01, "unit": "" },
+  "attributes": ["value", "label", "scale"],
+  "events": [],
+  "size": { "w": 64, "h": 130 },
+  "notes": "Three domes at F, a quarter and nearly empty. Set value 0…1; the disc eases up over about two seconds and wobbles on its rod as it settles."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-float-gauge-krueger value="1" label="No. 1 tank" scale="1.35"></sk-float-gauge-krueger>
+    <sk-float-gauge-krueger value="0.25" label="No. 2 tank" scale="1.35"></sk-float-gauge-krueger>
+    <sk-float-gauge-krueger value="0.04" label="No. 3 tank" scale="1.35"></sk-float-gauge-krueger>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Krueger Sentry</b> gauge is the little clear dome screwed into the top of a domestic heating-oil
+  tank: a float on a rod inside the tank lifts a bright red disc up a printed card marked <b>F ¾ ½ ¼ E</b>, and
+  the oil man in the basement reads the level from six feet away by where the red sits. Nothing is electrical;
+  the whole instrument is a rod, a disc, a card and a plastic dome on a threaded cap.</p>
+  <p><b>The tells kept here:</b> the red disc as the only saturated thing in the picture, read against big
+  black letters on the card behind it; the dome yellowed with age, clouded at the crown and crazed with a
+  cobweb of fine scratches, carrying two vertical highlight streaks that belong to the room and not to the
+  card; the card itself set a degree or two askew in its slot and bleached at the top where the cellar light
+  falls; the black threaded cap on its hex base with a ring of dirt where it meets the tank; the brass rod
+  catching one line of light. The disc has mass — it eases to a new level over about two seconds and
+  <i>wobbles</i> on the rod as it stops, tilting a little with the wobble.</p>
+  <p><b>Left out:</b> the float and the rod below the cap inside the tank, the gallon table stamped on the
+  tank's side, and the maker's decal (replaced by a plain word).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-float-gauge-krueger> — heating-oil tank gauge: a red disc rising in a clear dome ====
+   attributes: value (0…1) label scale
+   no events (an output). set .value or the attribute; the disc eases and wobbles.
+   self-contained: paste this block into any page and use <sk-float-gauge-krueger value="0.5"></sk-float-gauge-krueger> */
+(function () {
+  if (customElements.get("sk-float-gauge-krueger")) return;
+  const W = 64, H = 130;
+  const Y_F = 26, Y_E = 84;                 // the disc's centre at full and at empty
+  const DX = 26.25;                          // the disc's and rod's centre line
+  const LX = 41.5;                           // the card's letter column
+
+  // the card's legend, drawn once into the template
+  function legend() {
+    const rows = [[1, "F"], [0.75, "3/4"], [0.5, "1/2"], [0.25, "1/4"], [0, "E"]];
+    let s = "";
+    for (const [f, txt] of rows) {
+      const y = Y_E - (Y_E - Y_F) * f;
+      const fade = f > 0.8 ? 0.72 : f > 0.55 ? 0.85 : 1;       // sun-faded at the top
+      s += `<line x1="34.6" y1="${y}" x2="38.4" y2="${y}" stroke="#23211c" stroke-width="1" opacity="${fade * 0.9}"/>`;
+      if (txt.indexOf("/") < 0) {
+        s += `<text class="lt" x="${LX}" y="${y + 3.3}" opacity="${fade}">${txt}</text>`;
+      } else {
+        const p = txt.split("/");
+        s += `<text class="fr" x="${LX}" y="${y - 1.3}" opacity="${fade}">${p[0]}</text>`
+          + `<line x1="${LX - 3.1}" y1="${y}" x2="${LX + 3.1}" y2="${y}" stroke="#23211c" stroke-width="0.7" opacity="${fade}"/>`
+          + `<text class="fr" x="${LX}" y="${y + 4.9}" opacity="${fade}">${p[1]}</text>`;
+      }
+    }
+    return s;
+  }
+  // a cobweb of scratches on the crown
+  function scratches() {
+    const seg = [[19, 24, 27, 17], [25, 16, 36, 19], [33, 15, 44, 23], [20, 32, 26, 26], [38, 27, 46, 33],
+                 [17, 45, 23, 39], [43, 52, 47, 47], [18, 66, 22, 61], [44, 74, 48, 70], [21, 84, 25, 79]];
+    return seg.map(s => `<path d="M ${s[0]} ${s[1]} Q ${(s[0] + s[2]) / 2 + 1} ${(s[1] + s[3]) / 2 - 2} ${s[2]} ${s[3]}" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="0.4" stroke-linecap="round"/>`).join("");
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Oswald", "Haettenschweiler", "Arial Narrow", sans-serif; fill: #23211c; text-anchor: middle; }
+    .lt { font-size: 9px; font-weight: 700; }
+    .fr { font-size: 5.4px; font-weight: 700; }
+    .wm { font-size: 4.6px; font-weight: 500; letter-spacing: 0.16em; fill: #7c745f; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="tank" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3e6350"/><stop offset="0.45" stop-color="#2e4a3a"/><stop offset="1" stop-color="#1c2e24"/>
+        </linearGradient>
+        <linearGradient id="hex" x1="0" y1="0" x2="1" y2="0.3">
+          <stop offset="0" stop-color="#4a4a4a"/><stop offset="0.35" stop-color="#2a2a2a"/><stop offset="0.75" stop-color="#141414"/><stop offset="1" stop-color="#232323"/>
+        </linearGradient>
+        <linearGradient id="collar" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3a3a3a"/><stop offset="0.3" stop-color="#1e1e1e"/><stop offset="0.8" stop-color="#0c0c0c"/><stop offset="1" stop-color="#1a1a1a"/>
+        </linearGradient>
+        <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#d6d4c6"/><stop offset="1" stop-color="#a9a696"/>
+        </linearGradient>
+        <linearGradient id="card" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#fbf8ee"/><stop offset="0.35" stop-color="#f4efe0"/><stop offset="1" stop-color="#e2d9c0"/>
+        </linearGradient>
+        <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#b8a768" stop-opacity="0.8"/><stop offset="0.16" stop-color="#d8c78c" stop-opacity="0.25"/>
+          <stop offset="0.6" stop-color="#d8c78c" stop-opacity="0"/><stop offset="0.88" stop-color="#cbb87c" stop-opacity="0.4"/><stop offset="1" stop-color="#9c8d55" stop-opacity="0.85"/>
+        </linearGradient>
+        <linearGradient id="streak" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.12" stop-color="#fff" stop-opacity="0.5"/>
+          <stop offset="0.75" stop-color="#fff" stop-opacity="0.34"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="disc" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e8544a"/><stop offset="0.3" stop-color="#d8231c"/><stop offset="0.72" stop-color="#b01c16"/><stop offset="1" stop-color="#7d130e"/>
+        </linearGradient>
+        <linearGradient id="rod" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#8a6c28"/><stop offset="0.35" stop-color="#e8cf82"/><stop offset="0.7" stop-color="#c9a24c"/><stop offset="1" stop-color="#7a5e20"/>
+        </linearGradient>
+        <radialGradient id="cloud" cx="50%" cy="14%" r="62%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.65" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="dirt" cx="50%" cy="50%" r="50%">
+          <stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="0.8" stop-color="#120c05" stop-opacity="0.5"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="inside"><path d="M 17.5 96 L 17.5 30 A 14.5 14.5 0 0 1 46.5 30 L 46.5 96 Z"/></clipPath>
+        <clipPath id="outside"><path d="M 14 100 L 14 26 A 18 18 0 0 1 50 26 L 50 100 Z"/></clipPath>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.5"/></filter>
+        <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="hair" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.6"/></filter>
+      </defs>
+
+      <!-- the tank top: dark green steel, a shallow crown -->
+      <path d="M 0 125 C 10 116 21 112.5 32 112.5 C 43 112.5 54 116 64 125 L 64 130 L 0 130 Z" fill="url(#tank)"/>
+      <path d="M 2 122.5 C 11 115.5 21.5 112.8 32 112.8" fill="none" stroke="#7fa88e" stroke-opacity="0.35" stroke-width="0.9"/>
+      <path d="M 40 113.5 C 50 115 58 119 63 124" fill="none" stroke="#0e1a14" stroke-opacity="0.5" stroke-width="0.8"/>
+      <ellipse cx="46" cy="121" rx="7" ry="2.2" fill="#6b4a22" opacity="0.28"/>
+      <!-- the unit's shadow on the tank -->
+      <ellipse cx="34" cy="121" rx="26" ry="5.5" fill="#000" opacity="0.55" filter="url(#softer)"/>
+      <!-- the dirty ring where the cap screws in -->
+      <ellipse cx="32" cy="119" rx="27" ry="6.5" fill="url(#dirt)"/>
+
+      <!-- hex base -->
+      <path d="M 8 112 L 13 106.5 L 51 106.5 L 56 112 L 56 117 L 51 121.5 L 13 121.5 L 8 117 Z" fill="url(#hex)" stroke="#080808" stroke-width="0.7" stroke-linejoin="round"/>
+      <path d="M 13 106.9 L 51 106.9" stroke="#5c5c5c" stroke-opacity="0.75" stroke-width="0.8"/>
+      <path d="M 8.4 112 L 13 107" stroke="#6a6a6a" stroke-opacity="0.5" stroke-width="0.7"/>
+      <path d="M 13 121.1 L 51 121.1" stroke="#000" stroke-opacity="0.8" stroke-width="0.9"/>
+
+      <!-- the dome: backdrop, card, disc and rod, then the glass -->
+      <g clip-path="url(#inside)">
+        <rect x="17" y="12" width="30" height="86" fill="url(#back)"/>
+        <!-- the printed card, a degree and a half askew in its slot -->
+        <g transform="rotate(-1.7 32 54)">
+          <rect x="19" y="12" width="27" height="82" fill="url(#card)"/>
+          <rect x="19" y="12" width="27" height="17" fill="#fff" opacity="0.45"/>
+          <rect x="19" y="12" width="1.6" height="82" fill="#000" opacity="0.12"/>
+          <text class="wm" x="32.5" y="18">SENTRY</text>
+          <line x1="34.5" y1="20.5" x2="44" y2="20.5" stroke="#8c8husk" stroke-width="0"/>
+          ${legend()}
+          <text class="wm" x="32.5" y="91">GALLONS</text>
+        </g>
+        <!-- the red disc on its brass rod -->
+        <g class="floatg">
+          <rect x="${DX - 1.2}" y="2" width="2.4" height="120" fill="url(#rod)"/>
+          <rect x="${DX - 8}" y="3.5" width="16" height="2" fill="#000" opacity="0.3" filter="url(#hair)"/>
+          <rect x="${DX - 8}" y="-4" width="16" height="8" rx="2" fill="url(#disc)" stroke="#7d130e" stroke-width="0.5"/>
+          <path d="M ${DX - 7.4} -2.4 L ${DX + 7.4} -2.4" stroke="#ff8c80" stroke-opacity="0.65" stroke-width="0.9"/>
+          <path d="M ${DX - 7.4} 2.7 L ${DX + 7.4} 2.7" stroke="#5c0d09" stroke-opacity="0.6" stroke-width="0.8"/>
+          <rect x="${DX - 6.4}" y="-3" width="4.2" height="1.6" rx="0.8" fill="#fff" opacity="0.5"/>
+        </g>
+        <!-- the far inside wall, in shadow -->
+        <rect x="17" y="12" width="30" height="86" fill="url(#edge)" opacity="0.5"/>
+      </g>
+
+      <!-- the collar: black threaded cap over the dome's foot -->
+      <rect x="15.5" y="94" width="33" height="14" rx="1.5" fill="url(#collar)" stroke="#070707" stroke-width="0.7"/>
+      <g stroke="#4e4e4e" stroke-opacity="0.55" stroke-width="0.55">
+        <path d="M 16 97.2 L 48 96.4"/><path d="M 16 100.2 L 48 99.4"/><path d="M 16 103.2 L 48 102.4"/><path d="M 16 106.2 L 48 105.4"/>
+      </g>
+      <path d="M 16 94.6 L 48 94.6" stroke="#6e6e6e" stroke-opacity="0.6" stroke-width="0.8"/>
+      <path d="M 15.9 94 L 15.9 108" stroke="#7a7a7a" stroke-opacity="0.45" stroke-width="0.8"/>
+
+      <!-- the glass -->
+      <g clip-path="url(#outside)">
+        <path d="M 14 100 L 14 26 A 18 18 0 0 1 50 26 L 50 100 Z" fill="#e8e2c8" fill-opacity="0.22"/>
+        <rect x="14" y="8" width="36" height="92" fill="url(#edge)"/>
+        <rect x="14" y="8" width="36" height="60" fill="url(#cloud)"/>
+        ${scratches()}
+        <rect x="20.2" y="14" width="3.4" height="80" rx="1.7" fill="url(#streak)" filter="url(#hair)"/>
+        <rect x="42.4" y="20" width="1.7" height="72" rx="0.85" fill="url(#streak)" opacity="0.8" filter="url(#hair)"/>
+        <path d="M 19.5 24 A 15 15 0 0 1 31 12.6" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round" filter="url(#hair)"/>
+        <path d="M 46.6 30 A 16.4 16.4 0 0 0 41 17.6" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="1.1" stroke-linecap="round" filter="url(#hair)"/>
+      </g>
+      <path d="M 14 100 L 14 26 A 18 18 0 0 1 50 26 L 50 100" fill="none" stroke="#f4f2e4" stroke-opacity="0.35" stroke-width="0.9"/>
+      <path d="M 50 100 L 50 26 A 18 18 0 0 0 40.5 10.2" fill="none" stroke="#6f6a4a" stroke-opacity="0.45" stroke-width="0.9"/>
+    </svg>
+  </div>`;
+
+  class SkFloatGaugeKrueger extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0.5; this._scale = 1;
+      this._x = 0.5; this._vel = 0; this._w = 0; this._wv = 0;
+      this._raf = 0; this._last = 0;
+      this._g = this.shadowRoot.querySelector(".floatg");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs();
+      this._x = this._v; this._vel = 0; this._w = 0; this._wv = 0;
+      this._paint();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._kick(); }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      v = Math.min(1, Math.max(0, v));
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    /* a slow drain and a fill, for the gallery's idle animation */
+    demo(t) { const p = (t % 42) / 42; return p < 0.86 ? 1 - (p / 0.86) * 0.93 : 1; }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(1, Math.max(0, num("value", this._v)));
+      this.setAttribute("aria-valuemin", "0"); this.setAttribute("aria-valuemax", "1");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._aria();
+    }
+    _aria() {
+      const pct = Math.round(this._v * 100);
+      const word = pct >= 97 ? "full" : pct <= 3 ? "empty" : pct + " per cent";
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this.setAttribute("aria-valuetext", word);
+      this.setAttribute("aria-label", (this.getAttribute("label") || "oil tank gauge") + ", " + word);
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.033, Math.max(0.001, (now - this._last) / 1000)); this._last = now;
+      const prevVel = this._vel;
+      const x0 = this._x;
+      // the float rises with the oil: an eased approach, about two seconds end to end
+      this._x += (this._v - this._x) * (1 - Math.exp(-dt / 0.42));
+      this._vel = (this._x - x0) / dt;
+      // the disc rattles on its rod: a light spring driven by the carriage's acceleration
+      const accPx = ((this._vel - prevVel) / dt) * (Y_E - Y_F) * -1;
+      this._wv += (-760 * this._w - 11 * this._wv - accPx * 0.02) * dt;
+      this._w += this._wv * dt;
+      if (this._w > 2.6) { this._w = 2.6; this._wv = 0; }
+      if (this._w < -2.6) { this._w = -2.6; this._wv = 0; }
+      this._paint();
+      if (Math.abs(this._v - this._x) < 0.0006 && Math.abs(this._w) < 0.015 && Math.abs(this._wv) < 0.06) {
+        this._x = this._v; this._vel = 0; this._w = 0; this._wv = 0; this._paint(); this._raf = 0; return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const y = Y_E - (Y_E - Y_F) * this._x + this._w;
+      const tilt = (this._w * 0.9).toFixed(2);
+      this._g.setAttribute("transform", `translate(0 ${y.toFixed(2)}) rotate(${tilt} ${DX} 0)`);
+      this._aria();
+    }
+  }
+  customElements.define("sk-float-gauge-krueger", SkFloatGaugeKrueger);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
