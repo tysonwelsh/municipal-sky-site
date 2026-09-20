@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hammond B-3 two-legend tilt tablet — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "stoptab-hammond-b3-tablet",
+  "element": "sk-stoptab-hammond-b3-tablet",
+  "name": "Hammond B-3 two-legend tilt tablet",
+  "kind": "input",
+  "code": "C13",
+  "type": "Organ stop tab / tilt tablet",
+  "source": "The six tilting stop tablets to the right of the manuals on a Hammond B-3 / C-3 tonewheel console, vibrato in black and percussion in ivory",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["moulded phenolic", "walnut", "engraved fill"],
+  "tags": ["organ", "hammond", "tilt tablet", "stop tab", "two legends", "see-saw"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "upper", "lower", "colour", "keys", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 60, "h": 224 },
+  "notes": "Three of the row: two black vibrato tablets and an ivory percussion one. The RAISED legend is the state; click either half to push it down."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-stoptab-hammond-b3-tablet value="true" upper="VIBRATO SWELL" lower="OFF" colour="black" keys scale="0.9"></sk-stoptab-hammond-b3-tablet>
+    <sk-stoptab-hammond-b3-tablet value="false" upper="VIBRATO GREAT" lower="OFF" colour="black" scale="0.9"></sk-stoptab-hammond-b3-tablet>
+    <sk-stoptab-hammond-b3-tablet value="true" upper="PERCUSSION ON" lower="NORMAL" colour="ivory" scale="0.9"></sk-stoptab-hammond-b3-tablet>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>To the right of the two manuals on a <b>Hammond B-3</b> (and its church-going twin the C-3) sit six long
+  phenolic <b>tilt tablets</b> in a walnut rail: two black ones for the vibrato and four ivory ones for the
+  percussion. They are not switches that stand up — they are see-saws. Each one is engraved with a different
+  legend on each half, and the half you push down is the half you are turning <i>off</i>; the half left standing
+  is the state the organ is in. VIBRATO SWELL over OFF, PERCUSSION ON over NORMAL, DECAY FAST over SLOW,
+  HARMONIC THIRD over SECOND.</p>
+  <p><b>The tells kept here:</b> the see-saw geometry is real — the tablet is a plane rotated ±12° about its
+  middle and projected from the console's viewing angle, so the raised end lifts, the depressed end sinks
+  below the rail's surface and is cut off by the near lip of the slot, and the whole tablet lengthens or
+  shortens on screen exactly as a tilted plank does. The far ends are a little narrower than the near ends
+  (the console's tilt). The gloss is Hammond gloss: one long soft highlight running down the raised half and
+  a sharp bright line along the bevelled near end. The legends are engraved in two short lines per half, in a
+  Gothic condensed, filled white on the black tablets and black on the ivory. The ivory has yellowed at the
+  near ends where hands rest. Walnut rail, a ~2 mm gap and a dark slot round every tablet, and the ivory
+  key-ends of the upper manual peeking past the left edge of the first one.</p>
+  <p><b>Left out:</b> the drawbars and the preset keys, the felt bushing you can see if you lift a tablet out,
+  and the wiring bus underneath. Click either half to push it down, drag across the row with the button held
+  to flip a run of them, Space or Enter toggles.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-stoptab-hammond-b3-tablet> — Hammond B-3 two-legend tilt tablet in a walnut rail ====
+   attributes: value("true"/"false") upper lower colour("black"|"ivory") keys scale disabled
+   events: input {value} while the gesture runs, change {value} when it settles
+   value true  = the UPPER legend is the state (the upper half stands raised)
+   value false = the LOWER legend is the state (the lower half stands raised)
+   self-contained: paste this block into any page and use
+   <sk-stoptab-hammond-b3-tablet upper="VIBRATO SWELL" lower="OFF"></sk-stoptab-hammond-b3-tablet> */
+(function () {
+  var TAG = "sk-stoptab-hammond-b3-tablet";
+  if (customElements.get(TAG)) return;
+  var NS = "http://www.w3.org/2000/svg";
+  var W = 60, H = 224, CX = 30, CY = 112;
+  var L = 90;                 // half length of the tablet, in its own plane
+  var HW = 21;                // half width
+  var TILT = 12;              // degrees of see-saw either side of flat
+  var PHI = 58 * Math.PI / 180;               // the console seen from 58 deg above the rail plane
+  var SP = Math.sin(PHI), CP = Math.cos(PHI);
+
+  // project a point on the tablet's centre line (u = distance from the pivot,
+  // positive toward the far/upper end) at tilt t in -1..1
+  function proj(u, t) {
+    var th = t * TILT * Math.PI / 180;
+    var Y = u * Math.cos(th), Z = u * Math.sin(th);
+    return { y: CY - (Y * SP + Z * CP), w: HW * (1 - 0.085 * (Y / L) + 0.02 * (Z / 20)) };
+  }
+  var FF = proj(L, 0), FN = proj(-L, 0);      // the flat footprint: the slot's lips
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host{display:inline-block;width:' + W + 'px;height:' + H + 'px;position:relative;font-size:10px;',
+  '  -webkit-tap-highlight-color:transparent}',
+  ':host([hidden]){display:none}',
+  '.wrap{position:absolute;inset:0;transform-origin:0 0}',
+  'svg{display:block;width:' + W + 'px;height:' + H + 'px;overflow:visible}',
+  '.hit{position:absolute;left:5px;top:20px;width:50px;height:184px;border-radius:5px;cursor:pointer;',
+  '  touch-action:none;user-select:none;-webkit-user-select:none;outline:none}',
+  ':host([disabled]) .hit{cursor:default}',
+  '.hit:focus-visible{box-shadow:0 0 0 2px #16e0e0,0 0 10px rgba(22,224,224,.55)}',
+  'text{font-family:"Archivo Narrow","Roboto Condensed","Arial Narrow",Arial,sans-serif;font-weight:600;',
+  '  font-size:6.5px;letter-spacing:.06em;text-anchor:middle;white-space:pre}',
+  '</style>',
+  '<div class="wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
+  '<defs>',
+  ' <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0.08">',
+  '  <stop offset="0" stop-color="#341d0e"/><stop offset=".22" stop-color="#5b3620"/>',
+  '  <stop offset=".5" stop-color="#4a2c18"/><stop offset=".78" stop-color="#603b22"/>',
+  '  <stop offset="1" stop-color="#2d190b"/></linearGradient>',
+  ' <linearGradient id="railLit" x1="0" y1="0" x2="0.35" y2="1">',
+  '  <stop offset="0" stop-color="#fff" stop-opacity=".13"/><stop offset=".45" stop-color="#fff" stop-opacity=".02"/>',
+  '  <stop offset="1" stop-color="#000" stop-opacity=".30"/></linearGradient>',
+  ' <linearGradient id="blk" x1="0" y1="0" x2="1" y2="0">',
+  '  <stop offset="0" stop-color="#0d0c0e"/><stop offset=".14" stop-color="#3f383e"/>',
+  '  <stop offset=".3" stop-color="#232025"/><stop offset=".62" stop-color="#161417"/>',
+  '  <stop offset=".88" stop-color="#2a262c"/><stop offset="1" stop-color="#090809"/></linearGradient>',
+  ' <linearGradient id="ivy" x1="0" y1="0" x2="1" y2="0">',
+  '  <stop offset="0" stop-color="#9c9176"/><stop offset=".14" stop-color="#f8f2df"/>',
+  '  <stop offset=".34" stop-color="#ece3c8"/><stop offset=".66" stop-color="#ded3b4"/>',
+  '  <stop offset=".88" stop-color="#efe7cf"/><stop offset="1" stop-color="#8e8368"/></linearGradient>',
+  ' <linearGradient id="yellowed" x1="0" y1="0" x2="0" y2="1">',
+  '  <stop offset=".45" stop-color="#c9a95e" stop-opacity="0"/><stop offset="1" stop-color="#c9a95e" stop-opacity=".30"/></linearGradient>',
+  ' <linearGradient id="shadeN" x1="0" y1="0" x2="0" y2="1">',
+  '  <stop offset=".42" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></linearGradient>',
+  ' <linearGradient id="shadeF" x1="0" y1="1" x2="0" y2="0">',
+  '  <stop offset=".42" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></linearGradient>',
+  ' <radialGradient id="gloss" cx="50%" cy="50%" r="50%">',
+  '  <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".55" stop-color="#fff" stop-opacity=".14"/>',
+  '  <stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>',
+  ' <linearGradient id="slotg" x1="0" y1="0" x2="1" y2="0.3">',
+  '  <stop offset="0" stop-color="#0a0806"/><stop offset=".5" stop-color="#1c1109"/><stop offset="1" stop-color="#060402"/></linearGradient>',
+  ' <linearGradient id="keyg" x1="0" y1="0" x2="1" y2="0">',
+  '  <stop offset="0" stop-color="#6d654e"/><stop offset=".35" stop-color="#efe8d0"/><stop offset="1" stop-color="#bdb392"/></linearGradient>',
+  ' <filter id="blur2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.8"/></filter>',
+  ' <clipPath id="slotclip"><rect class="clipr" x="0" y="0" width="60" height="224"/></clipPath>',
+  '</defs>',
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#wood)"/>',
+  '<g class="fig" opacity=".5"></g>',
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#railLit)"/>',
+  '<g class="keys" opacity="0"></g>',
+  '<path class="slot" fill="url(#slotg)"/>',
+  '<path class="slotlip" fill="none" stroke="#7a4f2e" stroke-opacity=".45" stroke-width=".7"/>',
+  '<g clip-path="url(#slotclip)">',
+  ' <path class="face"/>',
+  ' <path class="top"/>',
+  ' <path class="crown" fill="url(#gloss)" opacity=".18"/>',
+  ' <path class="yellow" fill="url(#yellowed)" opacity="0"/>',
+  ' <path class="shN" fill="url(#shadeN)" opacity="0"/>',
+  ' <path class="shF" fill="url(#shadeF)" opacity="0"/>',
+  ' <ellipse class="gl" fill="url(#gloss)" opacity="0"/>',
+  ' <g class="legends"></g>',
+  ' <path class="castR" fill="#000" opacity=".2" filter="url(#blur2)"/>',
+  ' <path class="bevel" fill="none" stroke-linecap="round"/>',
+  '</g>',
+  '</svg><div class="hit" role="switch" tabindex="0"></div></div>'].join("");
+
+  function lines(s) {
+    var w = String(s || "").trim().split(/\s+/).filter(Boolean);
+    if (!w.length) return [""];
+    if (w.length === 1) return w;
+    if (w.length === 2) return w;
+    return [w[0], w.slice(1).join(" ")];
+  }
+
+  class SkStopTabHammond extends HTMLElement {
+    static get observedAttributes() { return ["value", "upper", "lower", "colour", "color", "keys", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._v = true; this._t = 1; this._from = 1; this._t0 = 0; this._raf = 0;
+      this._scale = 1; this._col = "black"; this._up = "VIBRATO SWELL"; this._lo = "OFF";
+      this._wrap = r.querySelector(".wrap"); this._hit = r.querySelector(".hit");
+      this._top = r.querySelector(".top"); this._face = r.querySelector(".face");
+      this._crown = r.querySelector(".crown"); this._yellow = r.querySelector(".yellow");
+      this._shN = r.querySelector(".shN"); this._shF = r.querySelector(".shF");
+      this._gl = r.querySelector(".gl"); this._legends = r.querySelector(".legends");
+      this._clip = r.querySelector(".clipr"); this._slot = r.querySelector(".slot");
+      this._lip = r.querySelector(".slotlip"); this._cast = r.querySelector(".castR");
+      this._bevel = r.querySelector(".bevel"); this._keys = r.querySelector(".keys");
+      this._fig = r.querySelector(".fig");
+      this._onDown = this._onDown.bind(this); this._onEnter = this._onEnter.bind(this);
+      this._onKey = this._onKey.bind(this); this._onWheel = this._onWheel.bind(this);
+      this._tick = this._tick.bind(this);
+      this._drawRail();
+      this._drawSlot();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._v ? "true" : "false");
+      this._readAttrs(); this._drawLegends();
+      this._t = this._v ? 1 : -1; this._paint();
+      var h = this._hit;
+      h.addEventListener("pointerdown", this._onDown);
+      h.addEventListener("pointerenter", this._onEnter);
+      h.addEventListener("keydown", this._onKey);
+      h.addEventListener("wheel", this._onWheel, { passive: false });
+    }
+    disconnectedCallback() {
+      var h = this._hit;
+      h.removeEventListener("pointerdown", this._onDown);
+      h.removeEventListener("pointerenter", this._onEnter);
+      h.removeEventListener("keydown", this._onKey);
+      h.removeEventListener("wheel", this._onWheel);
+      if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "upper" || n === "lower" || n === "colour" || n === "color") this._drawLegends();
+      if (n === "value") this._animate(); else this._paint();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      var b = (v === true || v === "true" || v === 1 || v === "1" || v === "on");
+      if (b === this._v) { this.setAttribute("value", b ? "true" : "false"); return; }
+      this._v = b; this.setAttribute("value", b ? "true" : "false"); this._animate();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._hit.focus(o); }
+
+    _readAttrs() {
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._col = (this.getAttribute("colour") || this.getAttribute("color") || "black").toLowerCase() === "ivory" ? "ivory" : "black";
+      this._up = this.getAttribute("upper") || "VIBRATO SWELL";
+      this._lo = this.getAttribute("lower") || "OFF";
+      var a = this.getAttribute("value");
+      this._v = a == null ? this._v : (a === "true" || a === "1" || a === "on");
+      var dis = this.hasAttribute("disabled");
+      this._hit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._hit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._hit.setAttribute("aria-checked", this._v ? "true" : "false");
+      this._hit.setAttribute("aria-label", this._up + " / " + this._lo);
+      this._keys.setAttribute("opacity", this.hasAttribute("keys") ? "1" : "0");
+    }
+
+    _drawRail() {
+      // walnut figure: a few soft vertical streaks
+      var g = this._fig, seed = 0;
+      var xs = [7, 16, 25, 33, 42, 51, 57];
+      for (var i = 0; i < xs.length; i++) {
+        var x = xs[i], p = document.createElementNS(NS, "path");
+        var d = "M " + x + " -4";
+        for (var y = 10; y <= H + 6; y += 28) { seed += 1; d += " Q " + (x + (seed % 3 - 1) * 3.2) + " " + (y - 14) + " " + (x + (seed % 2 ? 1.4 : -1.4)) + " " + y; }
+        p.setAttribute("d", d); p.setAttribute("fill", "none");
+        p.setAttribute("stroke", i % 2 ? "#8a5e37" : "#301a0b");
+        p.setAttribute("stroke-width", i % 3 === 0 ? 1.5 : 0.8);
+        p.setAttribute("stroke-opacity", i % 2 ? 0.28 : 0.5);
+        g.appendChild(p);
+      }
+      // the upper manual's ivory key-ends, peeking past the left edge
+      var k = this._keys;
+      var bg = document.createElementNS(NS, "rect");
+      bg.setAttribute("x", -1); bg.setAttribute("y", 0); bg.setAttribute("width", 8); bg.setAttribute("height", H);
+      bg.setAttribute("fill", "#0d0906"); k.appendChild(bg);
+      for (var yy = 4; yy < H - 4; yy += 11.5) {
+        var r = document.createElementNS(NS, "rect");
+        r.setAttribute("x", -1); r.setAttribute("y", yy); r.setAttribute("width", 6.6); r.setAttribute("height", 9.4);
+        r.setAttribute("rx", 1.1); r.setAttribute("fill", "url(#keyg)"); k.appendChild(r);
+        var sh = document.createElementNS(NS, "rect");
+        sh.setAttribute("x", 4.4); sh.setAttribute("y", yy); sh.setAttribute("width", 2.2); sh.setAttribute("height", 9.4);
+        sh.setAttribute("fill", "#000"); sh.setAttribute("opacity", ".22"); k.appendChild(sh);
+      }
+      var edge = document.createElementNS(NS, "rect");
+      edge.setAttribute("x", 5.6); edge.setAttribute("y", 0); edge.setAttribute("width", 2.4); edge.setAttribute("height", H);
+      edge.setAttribute("fill", "#000"); edge.setAttribute("opacity", ".5"); k.appendChild(edge);
+    }
+
+    _drawSlot() {
+      var m = 2.6;
+      var fw = FF.w + m, nw = FN.w + m, fy = FF.y - m, ny = FN.y + m;
+      var d = "M " + (CX - fw) + " " + fy + " L " + (CX + fw) + " " + fy +
+              " L " + (CX + nw) + " " + ny + " L " + (CX - nw) + " " + ny + " Z";
+      this._slot.setAttribute("d", d);
+      this._lip.setAttribute("d", "M " + (CX + fw) + " " + fy + " L " + (CX + nw) + " " + ny + " L " + (CX - nw) + " " + ny);
+    }
+
+    _drawLegends() {
+      var g = this._legends; while (g.firstChild) g.removeChild(g.firstChild);
+      var ivory = this._col === "ivory";
+      var fg = ivory ? "#1a1816" : "#f1f0ea";
+      var sh = ivory ? "rgba(255,255,255,0.68)" : "rgba(0,0,0,0.70)";
+      function mk(txt) {
+        var ls = lines(txt), grp = document.createElementNS(NS, "g");
+        for (var i = 0; i < ls.length; i++) {
+          var dy = (i - (ls.length - 1) / 2) * 7.3 + 2.3;
+          var a = document.createElementNS(NS, "text");
+          a.setAttribute("x", 0.4); a.setAttribute("y", dy + 0.5); a.setAttribute("fill", sh); a.textContent = ls[i];
+          var b = document.createElementNS(NS, "text");
+          b.setAttribute("x", 0); b.setAttribute("y", dy); b.setAttribute("fill", fg); b.textContent = ls[i];
+          grp.appendChild(a); grp.appendChild(b);
+        }
+        return grp;
+      }
+      this._gF = mk(this._up); this._gN = mk(this._lo);
+      g.appendChild(this._gF); g.appendChild(this._gN);
+    }
+
+    _animate() {
+      this._readAttrs();
+      this._from = this._t; this._to = this._v ? 1 : -1; this._t0 = performance.now();
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    _tick(now) {
+      var k = Math.min(1, (now - this._t0) / 70);
+      var e = 1 - Math.pow(1 - k, 3);
+      this._t = this._from + (this._to - this._from) * e;
+      this._paint();
+      if (k < 1) this._raf = requestAnimationFrame(this._tick); else this._raf = 0;
+    }
+
+    _paint() {
+      var t = Math.max(-1, Math.min(1, this._t));
+      var ivory = this._col === "ivory";
+      var far = proj(L, t), near = proj(-L, t);
+      var d = "M " + (CX - far.w).toFixed(2) + " " + far.y.toFixed(2) +
+              " L " + (CX + far.w).toFixed(2) + " " + far.y.toFixed(2) +
+              " L " + (CX + near.w).toFixed(2) + " " + near.y.toFixed(2) +
+              " L " + (CX - near.w).toFixed(2) + " " + near.y.toFixed(2) + " Z";
+      this._top.setAttribute("d", d);
+      this._top.setAttribute("fill", ivory ? "url(#ivy)" : "url(#blk)");
+      this._top.setAttribute("stroke", ivory ? "#7e7458" : "#000");
+      this._top.setAttribute("stroke-width", ".5");
+      this._top.setAttribute("stroke-opacity", ivory ? ".65" : ".8");
+      this._crown.setAttribute("d", d);
+      this._yellow.setAttribute("d", d);
+      this._yellow.setAttribute("opacity", ivory ? "1" : "0");
+      this._shN.setAttribute("d", d); this._shF.setAttribute("d", d);
+      this._shN.setAttribute("opacity", Math.max(0, t).toFixed(3));     // near half down
+      this._shF.setAttribute("opacity", Math.max(0, -t).toFixed(3));    // far half down
+      this._cast.setAttribute("d", "M " + (CX + far.w - 2).toFixed(2) + " " + far.y.toFixed(2) +
+        " L " + (CX + far.w + 3.4).toFixed(2) + " " + far.y.toFixed(2) +
+        " L " + (CX + near.w + 3.4).toFixed(2) + " " + near.y.toFixed(2) +
+        " L " + (CX + near.w - 2).toFixed(2) + " " + near.y.toFixed(2) + " Z");
+      this._cast.setAttribute("opacity", (0.16 + 0.26 * Math.abs(t)).toFixed(3));
+
+      // the bevelled near end: a slab of thickness, bright along its top edge when raised
+      var fh = Math.max(0.7, 2.3 - t * 2.9);
+      this._face.setAttribute("d",
+        "M " + (CX - near.w).toFixed(2) + " " + near.y.toFixed(2) +
+        " L " + (CX + near.w).toFixed(2) + " " + near.y.toFixed(2) +
+        " L " + (CX + near.w * 0.985).toFixed(2) + " " + (near.y + fh).toFixed(2) +
+        " L " + (CX - near.w * 0.985).toFixed(2) + " " + (near.y + fh).toFixed(2) + " Z");
+      this._face.setAttribute("fill", ivory ? "#b9ad8e" : "#0c0b0d");
+      this._bevel.setAttribute("d", "M " + (CX - near.w * 0.93).toFixed(2) + " " + (near.y + 0.25).toFixed(2) +
+        " L " + (CX + near.w * 0.93).toFixed(2) + " " + (near.y + 0.25).toFixed(2));
+      this._bevel.setAttribute("stroke", ivory ? "#fffaea" : "#8d848f");
+      this._bevel.setAttribute("stroke-width", (0.5 + 0.7 * Math.max(0, -t)).toFixed(2));
+      this._bevel.setAttribute("stroke-opacity", (0.25 + 0.65 * Math.max(0, -t)).toFixed(2));
+
+      // the long gloss stripe runs down whichever half is standing up
+      var s = t >= 0 ? 1 : -1;
+      var gc = proj(s * 0.5 * L, t);
+      this._gl.setAttribute("cx", (CX - 3.4).toFixed(2));
+      this._gl.setAttribute("cy", gc.y.toFixed(2));
+      this._gl.setAttribute("rx", "7.6");
+      this._gl.setAttribute("ry", (30 + 8 * Math.abs(t)).toFixed(2));
+      this._gl.setAttribute("opacity", (0.30 + 0.45 * Math.abs(t)).toFixed(3));
+
+      // the depressed end sinks below the rail's surface: the slot's lip cuts it off
+      var top = far.y < FF.y ? far.y - 14 : FF.y;
+      var bot = near.y > FN.y ? near.y + 14 : FN.y;
+      this._clip.setAttribute("x", "-2"); this._clip.setAttribute("width", W + 4);
+      this._clip.setAttribute("y", top.toFixed(2)); this._clip.setAttribute("height", Math.max(1, bot - top).toFixed(2));
+
+      // legends ride the tilted plane
+      var th = t * TILT * Math.PI / 180;
+      var vs = (Math.cos(th) * SP + Math.sin(th) * CP) / SP;
+      var pf = proj(0.5 * L, t), pn = proj(-0.5 * L, t);
+      if (this._gF) this._gF.setAttribute("transform", "translate(" + CX + "," + pf.y.toFixed(2) + ") scale(" + (pf.w / HW).toFixed(3) + "," + vs.toFixed(3) + ")");
+      if (this._gN) this._gN.setAttribute("transform", "translate(" + CX + "," + pn.y.toFixed(2) + ") scale(" + (pn.w / HW).toFixed(3) + "," + vs.toFixed(3) + ")");
+      this._hit.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+
+    _commit(b, settle) {
+      if (this.hasAttribute("disabled")) return;
+      if (b !== this._v) {
+        this._v = b; this._animate();
+        this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: b } }));
+      } else if (!settle) return;
+      if (settle) {
+        this.setAttribute("value", b ? "true" : "false");
+        this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: b } }));
+      }
+    }
+    // pushing a half DOWN selects the other half's legend
+    _fromPoint(e) {
+      var r = this._hit.getBoundingClientRect();
+      return (e.clientY - r.top) < r.height / 2 ? false : true;   // upper half pressed -> lower legend
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._hit.focus({ preventScroll: true });
+      this._commit(this._fromPoint(e), true);
+    }
+    _onEnter(e) {                                     // drag across the row flips tablets as it passes
+      if (this.hasAttribute("disabled") || !e.buttons) return;
+      this._commit(this._fromPoint(e), true);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var b = null;
+      switch (e.key) {
+        case " ": case "Spacebar": case "Enter": b = !this._v; break;
+        case "ArrowUp": case "ArrowRight": case "End": b = true; break;
+        case "ArrowDown": case "ArrowLeft": case "Home": b = false; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._commit(b, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      var b = e.deltaY < 0;
+      if (b === this._v) return;
+      e.preventDefault();
+      this._commit(b, true);
+    }
+  }
+  customElements.define(TAG, SkStopTabHammond);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

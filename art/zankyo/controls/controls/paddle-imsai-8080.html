@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IMSAI 8080 paddle switches — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "paddle-imsai-8080",
+  "element": "sk-paddle-imsai-8080",
+  "name": "IMSAI 8080 paddle switches",
+  "kind": "input",
+  "code": "C5",
+  "type": "Paddle switch",
+  "source": "The front panel of the IMSAI 8080: flat blue data/address paddles and red control paddles under a row of diffused red LEDs, 1975",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["moulded plastic paddles", "black anodised aluminium panel", "diffused red LEDs in black grommets"],
+  "tags": ["computer", "altair", "s-100", "front panel", "byte", "blade", "bit switches"],
+  "value": { "model": "bits", "count": 8 },
+  "attributes": ["value", "count", "colour", "momentary", "legend", "legends", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release"],
+  "size": { "w": 260, "h": 120 },
+  "notes": "A data byte 10110010 with its LEDs, and a red momentary control group of three. Click a paddle, sweep a finger across the row, or use the arrows and Space."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-paddle-imsai-8080 value="10110010" legend="DATA" label="data byte"></sk-paddle-imsai-8080>
+    <sk-paddle-imsai-8080 count="3" colour="red" momentary legend="CONTROL" legends="RUN/STOP,EXAMINE,DEPOSIT" label="control group"></sk-paddle-imsai-8080>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>IMSAI 8080</b> of 1975 answered the Altair's tiny toggles with twenty-two flat paddle switches —
+  blue for address and data, red for the control group — in a row of black slots under sixteen diffused red
+  LEDs, on a black anodised panel silk-screened with the bit numbers.</p>
+  <p><b>The tells kept here:</b> the paddle as a real flat blade hinged at the panel and seen from slightly
+  above, so a switch that is <i>up</i> shows only its narrow lit top edge with a long shadow falling down the
+  panel, and one that is <i>down</i> presents the whole coloured face; the 5:1 width-to-thickness and the
+  square-cut tip; the slot a hair wider than the blade with a pivot pin showing grey at each side; the ridge
+  moulded along the centre line; the LEDs as dull dark red discs in black grommets that go a flat orange-red
+  when lit, with a small halo and no lens flare; the red control paddles springing back to centre; and a
+  hairline scratch across the anodising below the row.</p>
+  <p><b>Left out:</b> the full twenty-two-switch panel with its address group, the blue-grey legend band, the
+  IMSAI badge, and the paddle's moulded part number.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-paddle-imsai-8080> — a row of IMSAI 8080 flat paddle switches with their LEDs ====
+   attributes: value("10110010") count(1..16) colour("blue"|"red") momentary legend legends(comma list) label scale disabled
+   events: input {value:[bool]} during a sweep, change {value} when it settles, press/release {index,value} for momentary
+   self-contained: paste this block into any page and use <sk-paddle-imsai-8080 value="10110010"> */
+(function () {
+  if (customElements.get("sk-paddle-imsai-8080")) return;
+  var CELL = 30, H = 120, PAD = 10, HINGE = 78, BLADE = 26, BW = 20;
+  var A_DOWN = 33, A_MID = 65, A_UP = 97;        /* CSS rotateX for a panel seen 25 degrees from above */
+  var CSS = [
+  ':host { display:inline-block; flex:0 0 auto; position:relative; font-size:10px;',
+  '  -webkit-tap-highlight-color:transparent;',
+  '  --face:#4a6bd0; --mid:#2848a8; --lo:#17296a; --hi:#7f9ce8; --under:#101f4f; }',
+  ':host([hidden]) { display:none; }',
+  ':host([colour="red"]) { --face:#e44b50; --mid:#c8262c; --lo:#741215; --hi:#ff8f8f; --under:#4a0c0e; }',
+  '.wrap { position:absolute; left:0; top:0; transform-origin:0 0; }',
+  '.panel { position:absolute; inset:0; border-radius:1.5px; overflow:hidden;',
+  '  background:',
+  '    repeating-linear-gradient(90deg, rgba(255,255,255,0.022) 0 1px, rgba(0,0,0,0.05) 1px 3px),',
+  '    linear-gradient(176deg, #1d1f24 0%, #15171b 42%, #0f1013 78%, #0b0c0e 100%);',
+  '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), inset 0 -1px 0 rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.5); }',
+  '.hair { position:absolute; left:6%; top:' + (HINGE + 28) + 'px; width:74%; height:1px; transform:rotate(-0.35deg);',
+  '  background: linear-gradient(90deg, rgba(190,196,206,0), rgba(190,196,206,0.28) 40%, rgba(190,196,206,0.05)); }',
+  '.hair2 { position:absolute; left:22%; top:' + (HINGE + 33) + 'px; width:31%; height:1px; opacity:0.5; transform:rotate(0.5deg);',
+  '  background: linear-gradient(90deg, rgba(190,196,206,0), rgba(190,196,206,0.22), rgba(190,196,206,0)); }',
+  '.glegend { position:absolute; left:0; right:0; top:41px; text-align:center;',
+  '  font-family:"Inter","Helvetica Neue",Arial,sans-serif; font-weight:600; font-size:6.5px; line-height:9px;',
+  '  letter-spacing:0.1em; color:#c9ccd4; opacity:0.82; }',
+  '.row { position:absolute; left:' + PAD + 'px; top:0; right:' + PAD + 'px; bottom:0; }',
+  /* ---- one switch cell ---- */
+  '.sw { position:absolute; top:0; width:' + CELL + 'px; height:' + H + 'px; outline:none; }',
+  '.num { position:absolute; left:0; right:0; top:4px; text-align:center;',
+  '  font-family:"Inter","Helvetica Neue",Arial,sans-serif; font-weight:500; font-size:7px; line-height:9px;',
+  '  color:#f0f0ea; opacity:0.88; text-shadow:0 0.5px 0 rgba(0,0,0,0.7); }',
+  '.lg { position:absolute; left:-3px; right:-3px; top:' + (HINGE + 28) + 'px; text-align:center; white-space:nowrap;',
+  '  font-family:"Inter","Helvetica Neue",Arial,sans-serif; font-weight:600; font-size:5.5px; line-height:8px;',
+  '  letter-spacing:0.02em; color:#e8e9ec; opacity:0.8; }',
+  /* LED in a black grommet */
+  '.led { position:absolute; left:' + (CELL / 2 - 7) + 'px; top:19px; width:14px; height:14px; border-radius:50%;',
+  '  background: radial-gradient(60% 60% at 34% 28%, #33353a, #131417 62%, #08090b 100%);',
+  '  box-shadow: inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -1px 1px rgba(0,0,0,0.8), 0 1px 1px rgba(0,0,0,0.6); }',
+  '.led i { position:absolute; left:2.6px; top:2.6px; width:8.8px; height:8.8px; border-radius:50%; display:block;',
+  '  background: radial-gradient(58% 58% at 36% 32%, #5e1512, #3c0d0c 60%, #280807 100%);',
+  '  box-shadow: inset 0 0.5px 1px rgba(0,0,0,0.8); transition: background 110ms ease-out, box-shadow 110ms ease-out; }',
+  '.led b { position:absolute; left:-4px; top:-4px; width:22px; height:22px; border-radius:50%; display:block;',
+  '  background: radial-gradient(50% 50% at 50% 50%, rgba(255,72,40,0.5), rgba(255,60,30,0.16) 44%, rgba(255,60,30,0) 70%);',
+  '  filter: blur(1.6px); opacity:0; transition: opacity 110ms ease-out; pointer-events:none; }',
+  '.sw.on .led i { background: radial-gradient(58% 58% at 38% 34%, #ffb59a, #ff3a22 40%, #d8180f 78%, #9c0f0a 100%);',
+  '  box-shadow: inset 0 0 2px rgba(255,190,150,0.55), 0 0 3px rgba(255,60,30,0.5); }',
+  '.sw.on .led b { opacity:1; }',
+  /* the slot in the panel */
+  '.slot { position:absolute; left:' + (CELL / 2 - 11.5) + 'px; top:' + (HINGE - 4.5) + 'px; width:23px; height:9px;',
+  '  border-radius:1.5px; background:#050506;',
+  '  box-shadow: inset 0 1.5px 2px rgba(0,0,0,0.95), inset 0 -1px 0 rgba(255,255,255,0.07), 0 0.5px 0 rgba(255,255,255,0.06); }',
+  '.pin { position:absolute; top:' + (HINGE - 1) + 'px; width:2px; height:2px; border-radius:50%;',
+  '  background: radial-gradient(50% 50% at 35% 30%, #9aa0a8, #4a4e54); }',
+  '.pl { left:' + (CELL / 2 - 11) + 'px; } .pr { left:' + (CELL / 2 + 9) + 'px; }',
+  /* the cast shadow */
+  '.shadow { position:absolute; left:' + (CELL / 2 - 8) + 'px; top:' + (HINGE + 1) + 'px; width:22px; height:9px;',
+  '  border-radius:2px; background:#000; opacity:0.42; filter: blur(2.4px); transition: all 60ms linear; }',
+  '.sw.up .shadow { top:' + (HINGE + 2) + 'px; height:17px; opacity:0.55; }',
+  '.sw.dn .shadow { top:' + (HINGE + 20) + 'px; height:8px; opacity:0.5; }',
+  /* the blade */
+  '.pv { position:absolute; left:' + (CELL / 2 - BW / 2) + 'px; top:' + HINGE + 'px; width:' + BW + 'px; height:0;',
+  '  perspective:210px; }',
+  '.blade { position:absolute; left:0; top:0; width:' + BW + 'px; height:' + BLADE + 'px;',
+  '  transform-origin:50% 0; transform-style:preserve-3d; transform: rotateX(' + A_MID + 'deg);',
+  '  transition: transform 60ms cubic-bezier(.2,.9,.3,1.12); }',
+  '.sw.up .blade { transform: rotateX(' + A_UP + 'deg); }',
+  '.sw.dn .blade { transform: rotateX(' + A_DOWN + 'deg); }',
+  '.sw.mo .blade { transition-duration: 90ms; }',
+  '.face, .back { position:absolute; left:0; top:0; width:100%; height:100%; backface-visibility:hidden;',
+  '  border-radius:0 0 2px 2px; }',
+  '.face { background:',
+  '    linear-gradient(90deg, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.10) 26%, rgba(255,255,255,0.22) 50%,',
+  '      rgba(255,255,255,0.06) 60%, rgba(0,0,0,0.34) 100%),',
+  '    linear-gradient(180deg, var(--hi) 0%, var(--face) 22%, var(--mid) 62%, var(--lo) 100%);',
+  '  box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.35); }',
+  '.back { transform: rotateX(180deg);',
+  '  background: linear-gradient(0deg, var(--lo) 0%, var(--under) 60%, #05060c 100%); }',
+  '.tip { position:absolute; left:0; top:' + BLADE + 'px; width:100%; height:4px; transform-origin:50% 0;',
+  '  transform: rotateX(-90deg); border-radius:1px;',
+  '  background: linear-gradient(180deg, var(--hi) 0%, var(--face) 45%, var(--mid) 100%);',
+  '  box-shadow: 0 0 0 0.4px rgba(0,0,0,0.4); }',
+  '.sw:focus-visible { border-radius:3px; box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }',
+  ':host([disabled]) .sw { cursor:default; }',
+  '.sw { cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }'].join("\n");
+
+  function bitsFromAttr(v, n) {
+    var out = [], i;
+    if (Array.isArray(v)) { for (i = 0; i < n; i++) out.push(!!v[i]); return out; }
+    var s = (v == null ? "" : String(v)).trim();
+    if (s.charAt(0) === "[") { try { return bitsFromAttr(JSON.parse(s), n); } catch (_) {} }
+    if (/^[01]+$/.test(s)) { for (i = 0; i < n; i++) out.push(s.charAt(i) === "1"); return out; }
+    if (s.indexOf(",") >= 0) { var p = s.split(","); for (i = 0; i < n; i++) out.push(/^(true|1|on)$/i.test((p[i] || "").trim())); return out; }
+    var num = parseInt(s, 10);
+    if (!isNaN(num)) { for (i = 0; i < n; i++) out.push(!!((num >> (n - 1 - i)) & 1)); return out; }
+    for (i = 0; i < n; i++) out.push(false);
+    return out;
+  }
+
+  class SkPaddleImsai extends HTMLElement {
+    static get observedAttributes() { return ["value", "count", "colour", "momentary", "legend", "legends", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      var root = this.attachShadow({ mode: "open" });
+      var st = document.createElement("style"); st.textContent = CSS; root.appendChild(st);
+      var wrap = document.createElement("div"); wrap.className = "wrap";
+      wrap.innerHTML = '<div class="panel"></div><div class="hair"></div><div class="hair2"></div>' +
+        '<div class="glegend"></div><div class="row" role="group"></div>';
+      root.appendChild(wrap);
+      this._wrap = wrap; this._row = wrap.querySelector(".row"); this._gl = wrap.querySelector(".glegend");
+      this._n = 8; this._bits = []; this._cells = []; this._scale = 1; this._focus = 0;
+      this._wired = false; this._drag = null; this._held = -1;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this);
+      this._onUp = this._onUp.bind(this); this._onKey = this._onKey.bind(this);
+      this._onWheel = this._onWheel.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "");
+      this._read(); this._render();
+      if (this._wired) return;                     /* stage.js re-parents us once: wire up only the once */
+      this._wired = true;
+      this._row.addEventListener("pointerdown", this._onDown);
+      this._row.addEventListener("keydown", this._onKey);
+      this._row.addEventListener("wheel", this._onWheel, { passive: false });
+    }
+    disconnectedCallback() { this._endDrag(); }
+    attributeChangedCallback(n, o, v) { if (o === v) return; this._read(); this._render(); }
+
+    get value() { return this._bits.slice(); }
+    set value(v) {
+      this._bits = bitsFromAttr(v, this._n);
+      var s = this._bits.map(function (b) { return b ? "1" : "0"; }).join("");
+      if (this.getAttribute("value") !== s) this.setAttribute("value", s);
+      this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get count() { return this._n; }
+    focus(o) { var c = this._cells[this._focus] || this._cells[0]; if (c) c.el.focus(o); }
+    blur() { var c = this._cells[this._focus]; if (c) c.el.blur(); }
+
+    _read() {
+      var n = parseInt(this.getAttribute("count"), 10);
+      n = isNaN(n) ? 8 : Math.max(1, Math.min(16, n));
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this._mom = this.hasAttribute("momentary");
+      var legs = (this.getAttribute("legends") || "").split(",");
+      if (n !== this._n || this._cells.length !== n || this._legs !== legs.join(",")) {
+        this._n = n; this._legs = legs.join(","); this._build(legs);
+      }
+      this._bits = bitsFromAttr(this.getAttribute("value"), n);
+      this._gl.textContent = this.getAttribute("legend") || "";
+      var W = n * CELL + PAD * 2;
+      this._W = W;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.width = W + "px"; this._wrap.style.height = H + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._row.setAttribute("aria-label", this.getAttribute("label") || this.getAttribute("legend") || "switches");
+      var dis = this.hasAttribute("disabled");
+      this._row.setAttribute("aria-disabled", dis ? "true" : "false");
+    }
+    _build(legs) {
+      var i, n = this._n, mom = this._mom;
+      this._row.textContent = ""; this._cells = [];
+      if (this._focus >= n) this._focus = 0;
+      for (i = 0; i < n; i++) {
+        var d = document.createElement("div");
+        d.className = "sw" + (mom ? " mo" : "");
+        d.style.left = (i * CELL) + "px";
+        d.setAttribute("role", "switch");
+        d.setAttribute("tabindex", i === this._focus ? "0" : "-1");
+        var leg = (legs[i] || "").trim();
+        d.setAttribute("aria-label", leg || ("bit " + (n - 1 - i)));
+        d.innerHTML =
+          (mom ? "" : '<div class="num">' + (n - 1 - i) + "</div>") +
+          '<div class="led"><b></b><i></i></div>' +
+          '<div class="slot"></div><div class="pin pl"></div><div class="pin pr"></div>' +
+          '<div class="shadow"></div>' +
+          '<div class="pv"><div class="blade"><div class="face"></div><div class="back"></div><div class="tip"></div></div></div>' +
+          (leg ? '<div class="lg">' + leg.replace(/[<>&]/g, "") + "</div>" : "");
+        this._row.appendChild(d);
+        this._cells.push({ el: d });
+      }
+    }
+    _render() {
+      for (var i = 0; i < this._cells.length; i++) {
+        var c = this._cells[i], on = !!this._bits[i];
+        c.el.classList.toggle("on", on);
+        if (this._mom) { c.el.classList.toggle("up", on); c.el.classList.toggle("dn", false); }
+        else { c.el.classList.toggle("up", on); c.el.classList.toggle("dn", !on); }
+        c.el.setAttribute("aria-checked", on ? "true" : "false");
+        c.el.setAttribute("tabindex", (i === this._focus && !this.hasAttribute("disabled")) ? "0" : "-1");
+      }
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _setBit(i, b, settle) {
+      if (i < 0 || i >= this._n || !!this._bits[i] === b) return false;
+      this._bits[i] = b;
+      this.setAttribute("value", this._bits.map(function (x) { return x ? "1" : "0"; }).join(""));
+      this._render();
+      this._emit("input", { value: this.value, index: i });
+      if (settle) this._emit("change", { value: this.value, index: i });
+      return true;
+    }
+    _indexAt(e) {
+      var b = this._row.getBoundingClientRect();
+      var x = (e.clientX - b.left) / this._scale;
+      return Math.max(0, Math.min(this._n - 1, Math.floor(x / CELL)));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      var i = this._indexAt(e);
+      this._focus = i;
+      var c = this._cells[i]; if (c) c.el.focus({ preventScroll: true });
+      try { this._row.setPointerCapture(e.pointerId); } catch (_) {}
+      this._row.addEventListener("pointermove", this._onMove);
+      this._row.addEventListener("pointerup", this._onUp);
+      this._row.addEventListener("pointercancel", this._onUp);
+      if (this._mom) {
+        this._held = i; this._setBit(i, true, false);
+        this._emit("press", { index: i, value: this.value });
+        this._drag = { mom: true, changed: true };
+        return;
+      }
+      var target = !this._bits[i];
+      this._drag = { target: target, changed: this._setBit(i, target, false) };
+    }
+    _onMove(e) {
+      var d = this._drag; if (!d) return;
+      var i = this._indexAt(e);
+      if (d.mom) {
+        if (i !== this._held) {                    /* slide off: release the one being held */
+          if (this._held >= 0) { this._setBit(this._held, false, false); this._emit("release", { index: this._held, value: this.value }); }
+          this._held = i; this._setBit(i, true, false); this._emit("press", { index: i, value: this.value });
+        }
+        return;
+      }
+      if (this._setBit(i, d.target, false)) d.changed = true;
+    }
+    _onUp(e) {
+      var d = this._drag; if (!d) return;
+      this._endDrag(e);
+      if (d.mom) {
+        var h = this._held; this._held = -1;
+        if (h >= 0) { this._setBit(h, false, false); this._emit("release", { index: h, value: this.value }); }
+        this._emit("change", { value: this.value });
+        return;
+      }
+      if (d.changed) this._emit("change", { value: this.value });
+    }
+    _endDrag(e) {
+      this._row.removeEventListener("pointermove", this._onMove);
+      this._row.removeEventListener("pointerup", this._onUp);
+      this._row.removeEventListener("pointercancel", this._onUp);
+      if (e) { try { this._row.releasePointerCapture(e.pointerId); } catch (_) {} }
+      this._drag = null;
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      var i = this._indexAt(e), want = e.deltaY < 0;
+      if (!!this._bits[i] === want) return;        /* nothing to change: let the page scroll */
+      e.preventDefault();
+      this._setBit(i, want, true);
+      if (this._mom) { var self = this; clearTimeout(this._mt); this._mt = setTimeout(function () { self._setBit(i, false, true); }, 320); }
+    }
+    _moveFocus(i) {
+      this._focus = Math.max(0, Math.min(this._n - 1, i));
+      this._render();
+      var c = this._cells[this._focus]; if (c) c.el.focus({ preventScroll: true });
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var i = this._focus, self = this;
+      switch (e.key) {
+        case "ArrowLeft": e.preventDefault(); this._moveFocus(i - 1); return;
+        case "ArrowRight": e.preventDefault(); this._moveFocus(i + 1); return;
+        case "Home": e.preventDefault(); this._moveFocus(0); return;
+        case "End": e.preventDefault(); this._moveFocus(this._n - 1); return;
+        case "ArrowUp": e.preventDefault(); this._pulse(i, true); return;
+        case "ArrowDown": e.preventDefault(); this._pulse(i, false); return;
+        case " ": case "Spacebar": case "Enter": e.preventDefault(); this._pulse(i, !this._bits[i]); return;
+        default: return;
+      }
+    }
+    _pulse(i, b) {
+      var self = this;
+      if (this._mom) {
+        if (!b) return;
+        this._setBit(i, true, false); this._emit("press", { index: i, value: this.value });
+        clearTimeout(this._kt);
+        this._kt = setTimeout(function () {
+          self._setBit(i, false, false); self._emit("release", { index: i, value: self.value });
+          self._emit("change", { value: self.value });
+        }, 260);
+        return;
+      }
+      this._setBit(i, b, true);
+    }
+  }
+  customElements.define("sk-paddle-imsai-8080", SkPaddleImsai);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

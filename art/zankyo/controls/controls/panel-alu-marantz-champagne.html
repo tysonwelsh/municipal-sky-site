@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Champagne brushed aluminium face — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@400;500;600&family=Libre+Franklin:wght@500&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "panel-alu-marantz-champagne",
+  "element": "sk-panel-alu-champagne",
+  "name": "Champagne brushed aluminium face",
+  "kind": "output",
+  "code": "J1",
+  "type": "Panel swatch — brushed / anodised aluminium",
+  "source": "Marantz 2270 / 2230 receiver front plate, and the wider 1970s Japanese silver-face (Pioneer SX-1250, Sansui 9090DB, Kenwood KA-9100)",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["brushed aluminium", "clear anodise", "thin-film silk-screen"],
+  "tags": ["panel", "swatch", "receiver", "hi-fi", "silver face", "brushed grain", "silk-screen"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "legend", "badge", "width", "height", "finish", "lines", "wear", "tilt", "scale"],
+  "events": [],
+  "size": { "w": 320, "h": 120 },
+  "demoWords": ["BASS   TREBLE   BALANCE   FILTER", "VOLUME   SELECTOR   MODE", "TAPE MONITOR   LOUDNESS", "SPEAKERS   A   B   REMOTE"],
+  "notes": "A plate other controls mount on. value (or legend) is the silk-screened row; move the pointer across it and the reflected sheen slides along the grain.",
+  "slot": "default — drop knobs, switches or meters onto the plate"
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-panel-alu-champagne width="320" height="120" lines badge="STEREOPHONIC RECEIVER"
+      value="BASS   TREBLE   BALANCE   FILTER"></sk-panel-alu-champagne>
+    <sk-panel-alu-champagne width="200" height="120" finish="silver" lines wear="0.6"
+      badge="TUNER" value="VOLUME   PHONO"></sk-panel-alu-champagne>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>1970s Japanese silver face</b>: a 4&nbsp;mm aluminium plate, brushed dead straight along its width and
+  clear-anodised with a warm champagne tint, carrying tiny dark-blue Helvetica legends and two engraved
+  hairlines filled black. Marantz's 2270 is the warmest of them; Pioneer and Kenwood ran cooler and
+  neutral, which is what <code>finish="silver"</code> gives you.</p>
+  <p><b>The tells kept here:</b> the grain is horizontal and continuous across the whole width — built from an
+  anisotropic turbulence field plus three coprime hairline gradients so it never moirés at any
+  <code>scale</code>; a single soft reflected band across the upper third that follows the grain, brighter at
+  the left, and that <i>slides</i> ±6&nbsp;px as the pointer crosses the plate, the way a real brushed surface
+  moves its sheen; the anodise warm rather than neutral; legends tiny, wide-tracked and dark blue with a
+  half-pixel halo under each glyph so the ink sits proud of the metal; two engraved rules with a bright lower
+  lip so they read cut, not printed; a 1&nbsp;px bright chamfer at the top and the whiter raw aluminium of the
+  4&nbsp;mm cut edge along the bottom. With <code>wear</code> the legend under the centre knob thins back to
+  bare grain, and the anodise polishes where thumbs went.</p>
+  <p><b>Left out:</b> the maker's script logo (a generic wordmark stands in), the gyro-touch flywheel cut-out,
+  and the rack handles' countersinks.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-panel-alu-champagne> — 1970s champagne brushed-aluminium plate ====
+   attributes: value legend badge width height finish(champagne|silver) lines wear(0..1) tilt(-1..1) scale
+   no events (an output). Has a default <slot>: put controls on the plate.
+   self-contained: paste this block into any page and use
+   <sk-panel-alu-champagne value="BASS   TREBLE"></sk-panel-alu-champagne> */
+(function () {
+  if (customElements.get("sk-panel-alu-champagne")) return;
+  var DW = 320, DH = 120;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1; ',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.plate { position: absolute; inset: 0; overflow: hidden; border-radius: 2px;',
+  '  background: linear-gradient(180deg, #e6dcc1 0%, #dbd1b6 34%, #d4c9ac 68%, #c7bc9e 100%);',
+  '  box-shadow: 0 10px 20px rgba(0,0,0,.42), 0 2px 4px rgba(0,0,0,.55), 0 0 0 1px rgba(20,18,14,.55); }',
+  ':host([finish="silver"]) .plate { background: linear-gradient(180deg, #e2e2e2 0%, #d7d7d3 34%, #d0d0cc 68%, #c1c1bd 100%); }',
+  /* --- grain: anisotropic turbulence, long straight horizontal streaks --- */
+  '.grain { position: absolute; inset: 0; width: 100%; height: 100%; display: block;',
+  '  mix-blend-mode: overlay; opacity: .62; pointer-events: none; }',
+  /* --- hairlines at three coprime pitches: crispness without a 1px repeat --- */
+  '.hair { position: absolute; inset: 0; mix-blend-mode: overlay; opacity: .34; pointer-events: none;',
+  '  background:',
+  '    repeating-linear-gradient(180deg, rgba(255,255,255,.55) 0 1px, rgba(255,255,255,0) 1px 3px),',
+  '    repeating-linear-gradient(180deg, rgba(0,0,0,.42) 0 1px, rgba(0,0,0,0) 1px 7px),',
+  '    repeating-linear-gradient(180deg, rgba(255,255,255,.34) 0 1px, rgba(255,255,255,0) 1px 11px); }',
+  /* --- warm anodise cast + vignette --- */
+  '.tint { position: absolute; inset: 0; pointer-events: none;',
+  '  background: radial-gradient(120% 140% at 18% -10%, rgba(255,241,205,.30), rgba(255,241,205,0) 55%),',
+  '              radial-gradient(150% 120% at 50% 118%, rgba(70,58,34,.22), rgba(70,58,34,0) 62%); }',
+  ':host([finish="silver"]) .tint { background:',
+  '  radial-gradient(120% 140% at 18% -10%, rgba(248,250,255,.26), rgba(248,250,255,0) 55%),',
+  '  radial-gradient(150% 120% at 50% 118%, rgba(48,52,58,.20), rgba(48,52,58,0) 62%); }',
+  /* --- the reflected band across the upper third, shifted by tilt --- */
+  '.sheen { position: absolute; left: -14%; right: -14%; top: 3%; height: 46%; pointer-events: none;',
+  '  transform: translateX(calc(var(--tilt, 0) * 6px));',
+  '  transition: transform .18s ease-out;',
+  '  background: linear-gradient(90deg, rgba(255,250,232,.00) 0%, rgba(255,250,232,.62) 16%,',
+  '     rgba(255,250,232,.36) 42%, rgba(255,250,232,.12) 68%, rgba(255,250,232,0) 92%);',
+  '  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0%, #000 42%, rgba(0,0,0,.35) 80%, rgba(0,0,0,0) 100%);',
+  '          mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0%, #000 42%, rgba(0,0,0,.35) 80%, rgba(0,0,0,0) 100%); }',
+  '.sheen2 { position: absolute; left: -10%; right: -10%; top: 58%; height: 30%; pointer-events: none;',
+  '  transform: translateX(calc(var(--tilt, 0) * -4px)); transition: transform .18s ease-out;',
+  '  background: linear-gradient(90deg, rgba(255,252,240,0) 10%, rgba(255,252,240,.20) 55%, rgba(255,252,240,0) 96%);',
+  '  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0), #000 50%, rgba(0,0,0,0));',
+  '          mask-image: linear-gradient(180deg, rgba(0,0,0,0), #000 50%, rgba(0,0,0,0)); }',
+  /* --- engraved-and-filled hairline rules --- */
+  '.rule { position: absolute; left: 0; right: 0; height: 1px; background: #23262b; display: none;',
+  '  box-shadow: 0 1px 0 rgba(237,230,210,.85), 0 -1px 0 rgba(0,0,0,.14); }',
+  ':host([lines]) .rule { display: block; }',
+  /* --- the 1px bright chamfer and the raw 4mm cut edge --- */
+  '.chamfer { position: absolute; inset: 0; pointer-events: none; border-radius: 2px;',
+  '  box-shadow: inset 0 1px 0 rgba(255,253,244,.85), inset 1px 0 0 rgba(255,252,240,.40),',
+  '              inset -1px 0 0 rgba(88,78,56,.42), inset 0 -1px 0 rgba(60,52,36,.40); }',
+  '.rawedge { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; pointer-events: none;',
+  '  background: linear-gradient(180deg, rgba(20,18,12,.45) 0 1px, #f6f2e6 1px, #d8d1bb 55%, #a89e83 100%); }',
+  ':host([finish="silver"]) .rawedge { background: linear-gradient(180deg, rgba(18,20,22,.45) 0 1px, #f4f5f5 1px, #d4d5d3 55%, #a3a4a1 100%); }',
+  /* --- print --- */
+  '.legend { position: absolute; left: 14px; right: 14px; bottom: 10px; display: flex;',
+  '  justify-content: space-around; align-items: baseline; gap: 6px;',
+  '  font-family: "Inter", "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif;',
+  '  font-weight: 500; font-size: 9px; letter-spacing: 0.16em; white-space: pre;',
+  '  color: #1c2a4a; text-shadow: 0 .5px .5px rgba(28,34,52,.34); }',
+  ':host([finish="silver"]) .legend { color: #14161a; text-shadow: 0 .5px .5px rgba(0,0,0,.30); }',
+  '.legend.one { justify-content: center; }',
+  '.legend span { display: block; }',
+  '.legend span.thin { opacity: var(--inkleft, 1);',
+  '  -webkit-mask-image: radial-gradient(58% 150% at 50% 55%, rgba(0,0,0,var(--inkcore,1)) 12%, #000 78%);',
+  '          mask-image: radial-gradient(58% 150% at 50% 55%, rgba(0,0,0,var(--inkcore,1)) 12%, #000 78%); }',
+  '.badge { position: absolute; left: 15px; top: 11px;',
+  '  font-family: "Michroma", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 10px;',
+  '  letter-spacing: 0.06em; color: #26314a; opacity: .92;',
+  '  text-shadow: 0 .5px .5px rgba(28,34,52,.30); }',
+  ':host([finish="silver"]) .badge { color: #1a1d22; }',
+  '.badge:empty { display: none; }',
+  /* --- wear: polished patches and a thumbed sheen --- */
+  '.wear { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light;',
+  '  background: radial-gradient(46% 62% at 50% 76%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),',
+  '              radial-gradient(22% 40% at 22% 70%, rgba(255,255,255,.55), rgba(255,255,255,0) 72%),',
+  '              radial-gradient(26% 34% at 80% 34%, rgba(0,0,0,.35), rgba(0,0,0,0) 74%); }',
+  '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
+  '  gap: 14px; pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <svg class="grain" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">',
+  '      <defs>',
+  '        <filter id="brush" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">',
+  '          <feTurbulence type="fractalNoise" baseFrequency="0.0028 0.40" numOctaves="3" seed="19" result="n"/>',
+  '          <feColorMatrix in="n" type="matrix" values="0.34 0.34 0.34 0 0  0.34 0.34 0.34 0 0  0.34 0.34 0.34 0 0  0 0 0 0 1" result="g"/>',
+  '          <feComponentTransfer in="g" result="c">',
+  '            <feFuncR type="linear" slope="1.75" intercept="-0.38"/>',
+  '            <feFuncG type="linear" slope="1.75" intercept="-0.38"/>',
+  '            <feFuncB type="linear" slope="1.75" intercept="-0.38"/>',
+  '          </feComponentTransfer>',
+  '          <feGaussianBlur in="c" stdDeviation="0.24 0"/>',
+  '        </filter>',
+  '      </defs>',
+  '      <rect x="0" y="0" width="100%" height="100%" filter="url(#brush)"/>',
+  '    </svg>',
+  '    <div class="hair"></div>',
+  '    <div class="tint"></div>',
+  '    <div class="rule r1"></div>',
+  '    <div class="rule r2"></div>',
+  '    <div class="sheen"></div>',
+  '    <div class="sheen2"></div>',
+  '    <div class="wear"></div>',
+  '    <div class="badge"></div>',
+  '    <div class="legend"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '    <div class="chamfer"></div>',
+  '    <div class="rawedge"></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  class SkPanelAluChampagne extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "legend", "badge", "width", "height", "finish", "lines", "wear", "tilt", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._plate = r.querySelector(".plate");
+      this._legend = r.querySelector(".legend");
+      this._badge = r.querySelector(".badge");
+      this._r1 = r.querySelector(".r1");
+      this._r2 = r.querySelector(".r2");
+      this._wear = r.querySelector(".wear");
+      this._v = "";
+      // the sheen follows the pointer across the grain; nothing is emitted
+      this.addEventListener("pointermove", function (e) {
+        var b = this.getBoundingClientRect();
+        if (!b.width) return;
+        this.style.setProperty("--tilt", clamp(((e.clientX - b.left) / b.width) * 2 - 1, -1, 1).toFixed(3));
+      }.bind(this));
+      this.addEventListener("pointerleave", function () {
+        this.style.setProperty("--tilt", String(num(this, "tilt", 0)));
+      }.bind(this));
+    }
+    connectedCallback() {                      // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var w = clamp(num(this, "width", DW), 40, 4000);
+      var h = clamp(num(this, "height", DH), 26, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      // rules: one high on the plate, one just above the legend row
+      var y2 = Math.max(14, h - 26);
+      var y1 = Math.min(Math.round(h * 0.30), y2 - 10);
+      this._r1.style.top = y1 + "px";
+      this._r2.style.top = y2 + "px";
+
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      this._wear.style.opacity = (wear * 0.9).toFixed(2);
+
+      var txt = this.getAttribute("value");
+      if (txt == null) txt = this.getAttribute("legend");
+      txt = txt == null ? "" : txt;
+      if (txt !== this._v || this._lastWear !== wear) {
+        this._v = txt; this._lastWear = wear;
+        this._paintLegend(txt, wear);
+      }
+      this._badge.textContent = this.getAttribute("badge") || "";
+      // the plate sits lower on very small swatches: keep the print inside
+      this._legend.style.fontSize = (h < 56 ? 7.5 : 9) + "px";
+      this._legend.style.bottom = (h < 56 ? 6 : 10) + "px";
+      this._badge.style.fontSize = (h < 56 ? 7.5 : 10) + "px";
+
+      if (!this.hasAttribute("tilt")) { /* pointer drives it */ }
+      else this.style.setProperty("--tilt", String(clamp(num(this, "tilt", 0), -1, 1)));
+
+      this.setAttribute("aria-label",
+        (txt ? txt.replace(/\s{2,}/g, ", ") + " — " : "") +
+        (this.getAttribute("finish") === "silver" ? "brushed silver" : "champagne brushed aluminium") + " panel");
+    }
+    _paintLegend(txt, wear) {
+      var g = this._legend;
+      while (g.firstChild) g.removeChild(g.firstChild);
+      var parts = txt.split(/\s{2,}/).filter(function (p) { return p.length; });
+      g.classList.toggle("one", parts.length < 2);
+      var mid = (parts.length - 1) / 2;
+      parts.forEach(function (p, i) {
+        var s = document.createElement("span");
+        s.textContent = p;
+        // the ink wears through under the centre knob, where the thumb lands
+        if (wear > 0.02) {
+          var d = Math.abs(i - mid) / (mid || 1);
+          var amt = wear * (1 - Math.min(1, d));
+          if (amt > 0.04) {
+            s.className = "thin";
+            s.style.setProperty("--inkcore", (1 - 0.92 * amt).toFixed(2));
+            s.style.setProperty("--inkleft", (1 - 0.34 * amt).toFixed(2));
+          }
+        }
+        g.appendChild(s);
+      });
+    }
+  }
+  customElements.define("sk-panel-alu-champagne", SkPanelAluChampagne);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

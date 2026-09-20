@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eight-level punched paper tape — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "tape-punched-8-level-ascii",
+  "element": "sk-tape-punched-8-level",
+  "name": "Eight-level punched paper tape",
+  "kind": "output",
+  "code": "G17",
+  "type": "Punched paper tape",
+  "source": "The 1-inch eight-level ASCII tape of a Teletype ASR-33 punch / DEC PC05 reader, and the 11/16-inch five-level Baudot tape of a Model 28",
+  "era": "1960s",
+  "origin": "USA / UK",
+  "materials": ["oiled buff paper tape", "painted steel reader plate"],
+  "tags": ["teletype", "paper tape", "ascii", "baudot", "sprocket holes", "bootstrap", "reader"],
+  "value": { "model": "text" },
+  "attributes": ["value", "levels", "feed", "colour", "label", "scale"],
+  "events": [],
+  "demoWords": ["HELLO WORLD", "ZANKYO", "BIN LOADER", "READY."],
+  "notes": "Eight-level ASCII with even parity in track 8, feeding through a reader window; a narrower five-level Baudot tape alongside. Set value to punch it."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-tape-punched-8-level value="HELLO WORLD" feed="26" label="8-LEVEL ASCII"></sk-tape-punched-8-level>
+    <sk-tape-punched-8-level value="ZANKYO" levels="5" colour="yellow" feed="0" scale="0.45" label="5-LEVEL BAUDOT"></sk-tape-punched-8-level>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>One inch of oiled buff paper, eight data tracks on a tenth-inch pitch with a row of smaller feed holes
+  between tracks 3 and 4 — the offset row is the single detail that makes a strip read as real tape rather
+  than a dotted ribbon. An ASR-33 punched it at ten characters a second: seven bits of ASCII in tracks 1–7,
+  <b>even parity</b> in track 8, so <code>H</code> (0x48) punches tracks 4 and 7 and a rubout punches all
+  eight. The five-level Baudot tape beside it is narrower, its feed row between tracks 2 and 3, and it opens
+  with the <code>LTRS</code> shift — all five holes.</p>
+  <p><b>The tells kept here:</b> real bit patterns, checked against the parity rule; the leader of blank tape
+  with a marker-pen label and a run of rubouts before the data; holes that show the dark behind them with a
+  paper-fibre fringe and a faint shadow on the translucent tape; the fanfold crease; two chads lying loose
+  where they fell; the tape drifting through a reader window whose star-wheel turns one tooth per character;
+  a 1 px lateral wobble as it feeds; the fibrous, slightly wavy cut edges.</p>
+  <p><b>Left out:</b> the reader's photocell lamp and its glow through the holes, the spooling reels, and the
+  pink and black-Mylar stocks (the <code>colour</code> attribute carries them; the demo shows buff and yellow).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-tape-punched-8-level> — punched paper tape through a reader window ====
+   attributes: value levels(8|5) feed(px/s) colour(buff|yellow|pink|black-mylar) label scale
+   methods:    punch(str) — appends characters at 10/s;  value — punches the whole strip
+   no events (an output).
+   self-contained: paste this block into any page and use <sk-tape-punched-8-level value="HELLO"> */
+(function () {
+  "use strict";
+  if (customElements.get("sk-tape-punched-8-level")) return;
+
+  var W = 320, H = 96;
+  var PITCH = 6.1;                    // 0.1 inch at x2.4
+  var RD = 2.2, RF = 1.2;             // data / feed hole radii
+  var LEAD = 16, RUBS = 8;            // blank leader columns, rubout columns
+  var MINCOLS = 80;                   // ~8 inches of tape: one fanfold crease per run
+
+  var ITA2 = { " ": 4, "\n": 8, "\r": 2, A: 3, B: 25, C: 14, D: 9, E: 1, F: 13, G: 26, H: 20, I: 6, J: 11, K: 15,
+    L: 18, M: 28, N: 12, O: 24, P: 22, Q: 23, R: 10, S: 5, T: 16, U: 7, V: 30, W: 19, X: 29, Y: 21, Z: 17,
+    "-": 24, ".": 28, ",": 12 };
+
+  var PAL = {
+    "buff":        { a: "#e3d4ac", b: "#d9c9a0", c: "#c4b083", fib: "rgba(150,124,72,0.10)", hole: "#17150f", fr: "#f4ecd4" },
+    "yellow":      { a: "#f0e38a", b: "#e8d76a", c: "#cdb94e", fib: "rgba(140,118,40,0.10)", hole: "#17150f", fr: "#fbf4c2" },
+    "pink":        { a: "#f6d6d1", b: "#efc6c0", c: "#d7a59e", fib: "rgba(150,96,90,0.10)", hole: "#17150f", fr: "#fde9e5" },
+    "black-mylar": { a: "#333333", b: "#1a1a1a", c: "#0b0b0b", fib: "rgba(255,255,255,0.05)", hole: "#9a9a96", fr: "#000000" }
+  };
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
+  '        --t1:#e3d4ac; --t2:#d9c9a0; --t3:#c4b083; --fib:rgba(150,124,72,0.10); --hole:#17150f; --fringe:#f4ecd4; }',
+  ':host([hidden]) { display:none; }',
+  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  'svg { display:block; width:' + W + 'px; height:' + H + 'px; }',
+  '.rule { font-family:"JetBrains Mono", ui-monospace, monospace; font-size:4.6px; fill:#9aa09a; letter-spacing:0.04em; text-anchor:middle; }',
+  '.mark { font-family:"Special Elite", "Courier New", cursive; font-size:11px; fill:#1c2a5a; opacity:0.92; }',
+  '.plate { font-family:"JetBrains Mono", ui-monospace, monospace; font-size:4.6px; fill:#7f857f; letter-spacing:0.14em; }',
+  '@keyframes pop { 0% { transform:scale(0.1); } 70% { transform:scale(1.15); } 100% { transform:scale(1); } }',
+  '.p { animation:pop 90ms ease-out; transform-box:fill-box; transform-origin:center; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
+  '    <defs>',
+  '      <linearGradient id="deck" x1="0" y1="0" x2="0.3" y2="1">',
+  '        <stop offset="0" stop-color="#26262a"/><stop offset="0.5" stop-color="#141417"/><stop offset="1" stop-color="#0a0a0c"/>',
+  '      </linearGradient>',
+  '      <linearGradient id="tape" x1="0" y1="0" x2="0.04" y2="1">',
+  '        <stop offset="0" stop-color="var(--t1)"/><stop offset="0.38" stop-color="var(--t2)"/><stop offset="1" stop-color="var(--t3)"/>',
+  '      </linearGradient>',
+  '      <radialGradient id="hole" cx="38%" cy="34%" r="70%">',
+  '        <stop offset="0" stop-color="var(--hole)"/><stop offset="0.72" stop-color="var(--hole)"/><stop offset="1" stop-color="var(--hole)" stop-opacity="0.72"/>',
+  '      </radialGradient>',
+  '      <linearGradient id="frame" x1="0" y1="0" x2="0.2" y2="1">',
+  '        <stop offset="0" stop-color="#3b3b3e"/><stop offset="0.4" stop-color="#17171a"/><stop offset="1" stop-color="#0a0a0b"/>',
+  '      </linearGradient>',
+  '      <radialGradient id="star" cx="34%" cy="30%" r="72%">',
+  '        <stop offset="0" stop-color="#8f9296"/><stop offset="0.6" stop-color="#3c3e41"/><stop offset="1" stop-color="#141517"/>',
+  '      </radialGradient>',
+  '      <filter id="sh" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>',
+  '      <g id="run"></g>',
+  '    </defs>',
+  '    <rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#deck)"/>',
+  '    <g class="tapeg">',
+  '      <rect class="tsh" fill="#000" opacity="0.55" filter="url(#sh)"/>',
+  '      <rect class="tbody" fill="url(#tape)"/>',
+  '      <rect class="tedge1" fill="#fff" opacity="0.18"/>',
+  '      <rect class="tedge2" fill="#000" opacity="0.22"/>',
+  '      <g class="moving">',
+  '        <use href="#run" x="0"/><use href="#run" class="u2"/>',
+  '      </g>',
+  '    </g>',
+  '    <g class="guide">',
+  '      <rect x="0" y="0" width="17" height="' + H + '" fill="url(#frame)"/>',
+  '      <rect x="16.4" y="0" width="0.8" height="' + H + '" fill="#000" opacity="0.7"/>',
+  '      <rect x="0" y="0" width="17" height="0.8" fill="#55575a" opacity="0.6"/>',
+  '      <g class="ruler"></g>',
+  '    </g>',
+  '    <g class="reader"></g>',
+  '    <text class="plate label" x="21" y="' + (H - 3) + '"></text>',
+  '  </svg>',
+  '</div>'].join("\n");
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function rnd(a, b) { var x = Math.imul(a * 2654435761 ^ b * 40503, 2246822519); x ^= x >>> 13; return (x >>> 0) % 10000 / 10000; }
+
+  class SkTapePunched extends HTMLElement {
+    static get observedAttributes() { return ["value", "levels", "feed", "colour", "color", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._text = ""; this._levels = 8; this._feed = 0; this._scale = 1; this._col = "buff";
+      this._off = 0; this._raf = 0; this._last = 0; this._t = 0; this._q = []; this._timer = 0; this._new = -1;
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap"); this._run = r.querySelector("#run");
+      this._moving = r.querySelector(".moving"); this._u2 = r.querySelector(".u2");
+      this._tapeg = r.querySelector(".tapeg"); this._reader = r.querySelector(".reader");
+      this._ruler = r.querySelector(".ruler"); this._labelT = r.querySelector(".label");
+      this._tick = this._tick.bind(this); this._pt = this._pt.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._readAttrs(); this._build(); this._paint();
+      if (this._feed > 0) this._start();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._timer); this._timer = 0; this._q.length = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      var geo = (n !== "value" && n !== "feed" && n !== "label");
+      this._readAttrs();
+      if (geo || n === "value") this._build();
+      this._paint();
+      if (this._feed > 0 && !this._raf) this._start(); else if (this._feed <= 0 && this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+    }
+
+    get value() { return this._text; }
+    set value(v) {
+      var t = String(v == null ? "" : v).toUpperCase();
+      if (t === this._text) return;
+      this._text = t; this._new = -1;
+      this.setAttribute("value", t);
+      this._build(); this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    /* punch characters onto the end of the strip, one every 100 ms */
+    punch(str) {
+      if (str == null) return;
+      var s = String(str).toUpperCase(), i;
+      for (i = 0; i < s.length; i++) this._q.push(s[i]);
+      if (!this._timer) this._timer = setTimeout(this._pt, 100);
+    }
+    _pt() {
+      if (!this._q.length) { this._timer = 0; return; }
+      var ch = this._q.shift();
+      this._text += ch; this._new = this._text.length - 1;
+      this.setAttribute("value", this._text);
+      this._build(); this._paint();
+      this._timer = setTimeout(this._pt, 100);
+    }
+
+    _readAttrs() {
+      var num = function (n, d, s) { var x = parseFloat(s.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._levels = Math.round(num("levels", 8, this)) === 5 ? 5 : 8;
+      this._feed = Math.max(0, num("feed", 0, this));
+      this._scale = Math.max(0.2, num("scale", 1, this));
+      this._col = this.getAttribute("colour") || this.getAttribute("color") || "buff";
+      if (!PAL[this._col]) this._col = "buff";
+      var p = PAL[this._col];
+      this.style.setProperty("--t1", p.a); this.style.setProperty("--t2", p.b); this.style.setProperty("--t3", p.c);
+      this.style.setProperty("--fib", p.fib); this.style.setProperty("--hole", p.hole); this.style.setProperty("--fringe", p.fr);
+      if (this.hasAttribute("value")) this._text = String(this.getAttribute("value")).toUpperCase();
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var lab = this.getAttribute("label") || (this._levels + "-level tape");
+      this._labelT.textContent = lab;
+      this.setAttribute("aria-label", lab + ": " + (this._text || "blank tape"));
+    }
+
+    // --- geometry ---------------------------------------------------------
+    _geo() {
+      var L = this._levels;
+      var rows = L === 8 ? 9 : 6;                       // data rows + the feed row
+      var th = L === 8 ? 61 : 42;                       // 1 inch / 11-16 inch at x2.4
+      var top = Math.round((H - th) / 2) + 2;
+      var m = L === 8 ? 6.6 : 5.7;                      // margin above the first row
+      var feedIdx = L === 8 ? 5 : 3;                    // feed between tracks 3/4 (8-level), 2/3 (5-level)
+      var ys = [], i;
+      for (i = 0; i < rows; i++) ys.push(top + m + i * PITCH);
+      return { th: th, top: top, ys: ys, feedIdx: feedIdx, rows: rows };
+    }
+    /* the bit pattern of one character: ASCII in tracks 1-7 with even parity
+       in track 8, or ITA2 in the five-level tracks */
+    _bits(ch) {
+      if (this._levels === 5) return ITA2[ch] == null ? 0 : ITA2[ch];
+      var n = ch.charCodeAt(0) & 0x7f, p = 0, i;
+      for (i = 0; i < 7; i++) if ((n >> i) & 1) p ^= 1;
+      return n | (p << 7);
+    }
+    /* top-to-bottom track order: 8 7 6 5 4 · 3 2 1   (five-level: 5 4 3 · 2 1) */
+    _order() { return this._levels === 8 ? [7, 6, 5, 4, 3, -1, 2, 1, 0] : [4, 3, 2, -1, 1, 0]; }
+
+    _build() {
+      var g = this._geo(), ord = this._order(), i, k, c, b, x, y, out = [];
+      var cols = Math.max(MINCOLS, LEAD + RUBS + this._text.length + 6);
+      this._cols = cols; this._runW = cols * PITCH;
+      var codes = [];
+      for (i = 0; i < LEAD; i++) codes.push(-1);                          // blank leader
+      for (i = 0; i < RUBS; i++) codes.push(this._levels === 8 ? 0xff : 31);   // rubout / LTRS
+      for (i = 0; i < this._text.length; i++) codes.push(this._bits(this._text[i]));
+      while (codes.length < cols) codes.push(-1);
+      // the fanfold crease, every 8 inches of tape
+      out.push('<rect x="' + (66 * PITCH).toFixed(1) + '" y="' + g.top + '" width="1.4" height="' + g.th + '" fill="#000" opacity="0.13"/>');
+      out.push('<rect x="' + (66 * PITCH + 1.4).toFixed(1) + '" y="' + g.top + '" width="0.7" height="' + g.th + '" fill="#fff" opacity="0.2"/>');
+      for (c = 0; c < cols; c++) {
+        x = c * PITCH + PITCH / 2;
+        b = codes[c];
+        for (k = 0; k < g.rows; k++) {
+          y = g.ys[k];
+          if (k === g.feedIdx) {
+            out.push('<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="' + RF + '" fill="url(#hole)" stroke="var(--fringe)" stroke-opacity="0.5" stroke-width="0.35"/>');
+          } else if (b > 0 && ((b >> ord[k]) & 1)) {
+            var isNew = this._new >= 0 && c === LEAD + RUBS + this._new;
+            out.push('<circle class="' + (isNew ? "p" : "") + '" cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="' + RD + '" fill="url(#hole)" stroke="var(--fringe)" stroke-opacity="0.55" stroke-width="0.4"/>');
+          }
+        }
+      }
+      // the leader, written on in marker
+      out.push('<text class="mark" x="' + (2.5 * PITCH).toFixed(1) + '" y="' + (g.top + g.th * 0.68).toFixed(1) + '" transform="rotate(-2.4 ' + (2.5 * PITCH).toFixed(1) + ' ' + (g.top + g.th * 0.68).toFixed(1) + ')">' + (this._levels === 8 ? "BIN LOADER" : "LTRS") + '</text>');
+      // two chads that fell on the tape and stuck
+      var ch1 = [LEAD * PITCH + 34, g.ys[1] + 2.6], ch2 = [(LEAD + RUBS + 3) * PITCH + 3, g.ys[g.rows - 2] + 1.8];
+      [ch1, ch2].forEach(function (p) {
+        out.push('<ellipse cx="' + (p[0] + 0.7).toFixed(1) + '" cy="' + (p[1] + 0.8).toFixed(1) + '" rx="' + (RD * 0.98) + '" ry="' + (RD * 0.8) + '" fill="#000" opacity="0.3"/>');
+        out.push('<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (RD * 0.92) + '" fill="var(--t1)" stroke="#8d7a4c" stroke-opacity="0.5" stroke-width="0.3"/>');
+      });
+      this._run.innerHTML = out.join("");
+      this._u2.setAttribute("x", this._runW.toFixed(2));
+
+      // the tape body and its edges
+      var r = this.shadowRoot;
+      var set = function (sel, a) { var e = r.querySelector(sel); for (var k2 in a) e.setAttribute(k2, a[k2]); };
+      set(".tsh", { x: -4, y: g.top + 2, width: W + 8, height: g.th });
+      set(".tbody", { x: -4, y: g.top, width: W + 8, height: g.th });
+      set(".tedge1", { x: -4, y: g.top, width: W + 8, height: 0.7 });
+      set(".tedge2", { x: -4, y: g.top + g.th - 0.7, width: W + 8, height: 0.7 });
+
+      // the level ruler on the guide plate
+      var rr = [], names = this._levels === 8 ? ["8", "7", "6", "5", "4", "·", "3", "2", "1"] : ["5", "4", "3", "·", "2", "1"];
+      for (i = 0; i < g.rows; i++) rr.push('<text class="rule" x="8.5" y="' + (g.ys[i] + 1.7).toFixed(1) + '">' + names[i] + '</text>');
+      this._ruler.innerHTML = rr.join("");
+
+      // the reader window: a black frame with a notch for the star-wheel
+      var wx = 196, ww = 104, wy = g.top - 11, wh = g.th + 22, sx = wx + ww / 2, sy = g.ys[g.feedIdx];
+      var inx = wx + 6, iny = g.top - 2.5, inw = ww - 12, inh = g.th + 5;
+      var d = "M " + wx + " " + wy + " h " + ww + " v " + wh + " h " + (-ww) + " Z " +
+              "M " + inx + " " + iny + " v " + inh + " h " + inw + " v " + (-inh) + " Z";
+      var st = [], a0;
+      for (i = 0; i < 8; i++) {
+        a0 = i * 45 * Math.PI / 180;
+        st.push((i ? "L " : "M ") + (Math.cos(a0) * 8.4).toFixed(2) + " " + (Math.sin(a0) * 8.4).toFixed(2) +
+                " L " + (Math.cos(a0 + 0.39) * 4.6).toFixed(2) + " " + (Math.sin(a0 + 0.39) * 4.6).toFixed(2));
+      }
+      this._reader.innerHTML =
+        '<path d="' + d + '" fill="url(#frame)" fill-rule="evenodd"/>' +
+        '<path d="M ' + wx + ' ' + wy + ' h ' + ww + '" stroke="#5a5c60" stroke-opacity="0.75" stroke-width="0.9" fill="none"/>' +
+        '<path d="M ' + inx + ' ' + (iny + inh) + ' h ' + inw + '" stroke="#4a4c50" stroke-opacity="0.6" stroke-width="0.7" fill="none"/>' +
+        '<rect x="' + inx + '" y="' + iny + '" width="' + inw + '" height="2.2" fill="#000" opacity="0.45"/>' +
+        '<circle cx="' + (wx + 7) + '" cy="' + (wy + 6) + '" r="2.3" fill="#6d7074"/><circle cx="' + (wx + 7) + '" cy="' + (wy + 6) + '" r="2.3" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="0.5"/>' +
+        '<circle cx="' + (wx + ww - 7) + '" cy="' + (wy + wh - 6) + '" r="2.3" fill="#6d7074"/><circle cx="' + (wx + ww - 7) + '" cy="' + (wy + wh - 6) + '" r="2.3" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="0.5"/>' +
+        '<g class="starg" transform="translate(' + sx + ' ' + sy + ')"><path class="star" d="' + st.join(" ") + ' Z" fill="url(#star)" stroke="#000" stroke-width="0.4"/>' +
+        '<circle r="1.7" fill="#222426" stroke="#8a8d90" stroke-opacity="0.5" stroke-width="0.4"/></g>';
+      this._starg = this.shadowRoot.querySelector(".starg");
+      this._sx = sx; this._sy = sy;
+    }
+
+    _paint() {
+      var o = this._off % (this._runW || 1);
+      var wob = Math.sin(this._t * 2.1) * 0.5;
+      this._moving.setAttribute("transform", "translate(" + (-o).toFixed(2) + " " + wob.toFixed(2) + ")");
+      if (this._starg) this._starg.setAttribute("transform", "translate(" + this._sx + " " + this._sy + ") rotate(" + (this._off / PITCH * 45).toFixed(2) + ")");
+    }
+    _start() { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); }
+    _tick(now) {
+      var dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      this._t += dt; this._off += this._feed * dt;
+      this._paint();
+      this._raf = this._feed > 0 ? requestAnimationFrame(this._tick) : 0;
+    }
+  }
+  customElements.define("sk-tape-punched-8-level", SkTapePunched);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
