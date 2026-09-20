@@ -344,7 +344,7 @@
         // rising: the balance weight throws it up and it hits the stop.
         this._phi = this._up
           ? this._to + d * Math.pow(1 - u, 3)
-          : this._to + d * Math.exp(-5 * u) * Math.cos(6.6 * u);
+          : this._to + d * Math.exp(-5.6 * u) * Math.cos(6.6 * u);
         this._paint();
         this._raf = requestAnimationFrame(this._tick);
         return;

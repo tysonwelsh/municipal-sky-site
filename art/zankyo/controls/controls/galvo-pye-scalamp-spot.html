@@ -113,18 +113,18 @@
           <stop offset="0" stop-color="#a6acae"/><stop offset="0.42" stop-color="#8d9294"/><stop offset="1" stop-color="#6e7476"/>
         </linearGradient>
         <radialGradient id="dimp" cx="34%" cy="30%" r="58%">
-          <stop offset="0" stop-color="#d4d9da" stop-opacity="0.5"/>
-          <stop offset="0.48" stop-color="#9aa0a2" stop-opacity="0.03"/>
-          <stop offset="0.88" stop-color="#4e5456" stop-opacity="0.4"/>
-          <stop offset="1" stop-color="#5b6062" stop-opacity="0.1"/>
+          <stop offset="0" stop-color="#d4d9da" stop-opacity="0.44"/>
+          <stop offset="0.5" stop-color="#9aa0a2" stop-opacity="0.02"/>
+          <stop offset="0.9" stop-color="#4e5456" stop-opacity="0.3"/>
+          <stop offset="1" stop-color="#5b6062" stop-opacity="0.06"/>
         </radialGradient>
-        <pattern id="hammer" width="16" height="13" patternUnits="userSpaceOnUse">
-          <circle cx="3.5" cy="3" r="3.5" fill="url(#dimp)"/>
-          <circle cx="11" cy="5.5" r="3.2" fill="url(#dimp)"/>
-          <circle cx="7" cy="10.5" r="3.4" fill="url(#dimp)"/>
-          <circle cx="14.5" cy="11" r="3.0" fill="url(#dimp)"/>
-          <circle cx="0" cy="9" r="2.9" fill="url(#dimp)"/>
-          <circle cx="16" cy="1.5" r="3.1" fill="url(#dimp)"/>
+        <pattern id="hammer" width="19" height="16" patternUnits="userSpaceOnUse">
+          <circle cx="4" cy="3.5" r="4.2" fill="url(#dimp)"/>
+          <circle cx="13" cy="6.5" r="3.9" fill="url(#dimp)"/>
+          <circle cx="8" cy="12.5" r="4.1" fill="url(#dimp)"/>
+          <circle cx="17" cy="13.5" r="3.7" fill="url(#dimp)"/>
+          <circle cx="0" cy="11" r="3.5" fill="url(#dimp)"/>
+          <circle cx="19" cy="2" r="3.8" fill="url(#dimp)"/>
         </pattern>
         <filter id="mot" x="-2%" y="-2%" width="104%" height="104%">
           <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="5" result="n"/>
@@ -174,7 +174,7 @@
       <rect x="7" y="11" width="252" height="192" rx="9" fill="#000" opacity="0.55" filter="url(#bl35)"/>
       <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#box)"/>
       <rect x="3" y="3" width="254" height="194" rx="9" fill="#b3b8ba" filter="url(#mot)" opacity="0.5"/>
-      <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#hammer)" opacity="0.6"/>
+      <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#hammer)" opacity="0.5"/>
       <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#boxlight)"/>
       <path d="M 12 3.6 L 248 3.6 M 3.6 12 L 3.6 188" fill="none" stroke="#cfd4d5" stroke-opacity="0.55" stroke-width="1.1"/>
       <path d="M 12 196.4 L 248 196.4 M 256.4 12 L 256.4 188" fill="none" stroke="#2f3436" stroke-opacity="0.6" stroke-width="1.1"/>
@@ -194,11 +194,11 @@
         <g class="scaleprint">${SC}</g>
         <!-- the spot: a soft bright blob with a crisp hairline, blooming on the glass -->
         <g class="spot">
-          <ellipse cx="0" cy="${SPOTY}" rx="17" ry="15" fill="url(#halog)" filter="url(#bl9)"/>
-          <ellipse cx="0" cy="${SPOTY}" rx="8" ry="11" fill="url(#halog)" filter="url(#bl4)"/>
-          <ellipse cx="0" cy="${SPOTY}" rx="4.4" ry="8.4" fill="url(#spotg)"/>
-          <ellipse cx="0" cy="${SPOTY}" rx="2.1" ry="5.6" fill="#ffffff" opacity="0.85" filter="url(#bl2)"/>
-          <rect x="-0.5" y="36" width="1" height="21" fill="#1a1a18"/>
+          <ellipse cx="0" cy="47" rx="24" ry="17" fill="url(#halog)" filter="url(#bl9)"/>
+          <ellipse cx="0" cy="47" rx="14" ry="14" fill="url(#halog)" filter="url(#bl4)"/>
+          <ellipse cx="0" cy="47" rx="10.5" ry="12" fill="url(#spotg)"/>
+          <ellipse cx="0" cy="47" rx="5" ry="8" fill="#ffffff" opacity="0.9" filter="url(#bl2)"/>
+          <rect x="-0.55" y="34" width="1.1" height="26" fill="#161614"/>
         </g>
         <!-- the frame overlaps the glass top and bottom -->
         <rect x="25" y="21" width="210" height="6" fill="url(#edgetop)"/>
@@ -212,9 +212,9 @@
       <ellipse cx="${KX + 2}" cy="${KY + 3.5}" rx="18" ry="17" fill="#1b2022" opacity="0.5" filter="url(#bl2)"/>
       <circle cx="${KX}" cy="${KY}" r="17" fill="url(#knob)" stroke="#0d0c0b" stroke-width="0.6"/>
       <circle cx="${KX}" cy="${KY}" r="12.4" fill="none" stroke="#3a3633" stroke-opacity="0.8" stroke-width="0.7"/>
-      <path d="M ${KX - 8} ${KY - 13} A 17 17 0 0 1 ${KX + 6.5} ${KY - 15.7}" fill="none" stroke="#6e6862" stroke-opacity="0.65" stroke-width="1.6"/>
+      <path d="M ${KX - 11.5} ${KY - 11} A 17 17 0 0 1 ${KX + 4} ${KY - 16.5}" fill="none" stroke="#8a837a" stroke-opacity="0.8" stroke-width="2.1"/>
       <path d="M ${KX - 13} ${KY + 9} A 17 17 0 0 0 ${KX + 9.5} ${KY + 13.5}" fill="none" stroke="#5a544d" stroke-opacity="0.3" stroke-width="1.4"/>
-      <g class="index"><rect x="${KX - 0.9}" y="${KY - 16}" width="1.8" height="10" rx="0.6" fill="#ddd6c6"/></g>
+      <g class="index"><rect x="${KX - 1.1}" y="${KY - 16.2}" width="2.2" height="11.5" rx="0.8" fill="#e8e2d2"/><rect x="${KX - 1.1}" y="${KY - 16.2}" width="2.2" height="11.5" rx="0.8" fill="none" stroke="#7a746a" stroke-width="0.3"/></g>
       <circle cx="${KX}" cy="${KY}" r="2.4" fill="#0e0d0c"/>
 
       <!-- ---- the engraved nameplate ---- -->
