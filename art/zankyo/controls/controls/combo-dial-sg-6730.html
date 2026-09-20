@@ -24,7 +24,7 @@
   "value": { "model": "delta", "min": 0, "max": 99, "step": 1, "unit": "" },
   "attributes": ["value", "combination", "phase", "label", "scale", "disabled"],
   "events": ["input", "change", "open"],
-  "size": { "w": 124, "h": 124 },
+  "size": { "w": 124, "h": 134 },
   "notes": "One dial at 50; a second at 0 with combination=\"25-50-75\" and the sequence half done (phase 2: two turns left to 75 will do it). Drag round the dial; it coasts a little. Left (anticlockwise) increases the number."
 }
 </script>
@@ -64,7 +64,7 @@
    self-contained: paste this block into any page and use <sk-combo-sg-6730 value="50"></sk-combo-sg-6730> */
 (function () {
   if (customElements.get("sk-combo-sg-6730")) return;
-  const W = 124, H = 124, C = 62;
+  const W = 124, H = 134, C = 62;
   const P = (r, a) => { const t = a * Math.PI / 180; return [C + r * Math.sin(t), C - r * Math.cos(t)]; };
   const ann = (r1, r2) => `M ${C - r1} ${C} A ${r1} ${r1} 0 1 0 ${C + r1} ${C} A ${r1} ${r1} 0 1 0 ${C - r1} ${C} Z M ${C - r2} ${C} A ${r2} ${r2} 0 1 0 ${C + r2} ${C} A ${r2} ${r2} 0 1 0 ${C - r2} ${C} Z`;
   // knurl: 96 ridges, each a light face and a dark face
@@ -104,11 +104,8 @@
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>
-        <linearGradient id="door" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#979a97"/><stop offset="0.6" stop-color="#8a8d8a"/><stop offset="1" stop-color="#7a7d7a"/>
-        </linearGradient>
-        <radialGradient id="grime" cx="53%" cy="55%" r="52%">
-          <stop offset="0.66" stop-color="#5f625f" stop-opacity="0"/><stop offset="0.82" stop-color="#5f625f" stop-opacity="0.5"/><stop offset="1" stop-color="#6f726f" stop-opacity="0"/>
+        <radialGradient id="grime" cx="50%" cy="50%" r="50%">
+          <stop offset="0.9" stop-color="#4a4d4a" stop-opacity="0.55"/><stop offset="0.96" stop-color="#5a5d5a" stop-opacity="0.25"/><stop offset="1" stop-color="#6f726f" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="cham" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#e6e7e4"/><stop offset="0.35" stop-color="#c2c3c0"/><stop offset="0.65" stop-color="#8e8f8c"/><stop offset="1" stop-color="#5c5d5a"/>
@@ -140,10 +137,9 @@
         <g id="print"><g class="ticks">${ticks}</g>${nums}</g>
       </defs>
 
-      <!-- the door: grey paint with a halo of grime around the ring -->
-      <rect width="${W}" height="${H}" fill="url(#door)"/>
-      <rect width="${W}" height="${H}" fill="url(#grime)"/>
-      <text class="label" x="${C}" y="${H - 1.5}"></text>
+      <!-- the door around the ring: a halo of grime on the host's grey paint -->
+      <circle cx="${C + 1}" cy="${C + 1.5}" r="62" fill="url(#grime)"/>
+      <text class="label" x="${C}" y="${H - 3}"></text>
 
       <!-- the fixed ring: proud of the door -->
       <circle cx="${C + 2.5}" cy="${C + 3.5}" r="60" fill="#000" opacity="0.38" filter="url(#f3)"/>
@@ -163,7 +159,7 @@
         <circle cx="${C}" cy="${C}" r="44.5" fill="#3a3b3d"/>
         <g class="knurl" stroke-width="1.15">${knurl}</g>
         <!-- thumb-worn brightness on the knurl (at 3 o'clock when the dial reads 0) -->
-        <path d="M ${P(44.5, 70).map(v => v.toFixed(2)).join(" ")} A 44.5 44.5 0 0 1 ${P(44.5, 110).map(v => v.toFixed(2)).join(" ")}" fill="none" stroke="#e8e9e6" stroke-width="3.2" stroke-opacity="0.45" stroke-linecap="round" filter="url(#fw)"/>
+        <path d="M ${P(44.5, 70).map(v => v.toFixed(2)).join(" ")} A 44.5 44.5 0 0 1 ${P(44.5, 110).map(v => v.toFixed(2)).join(" ")}" fill="none" stroke="#eeefec" stroke-width="3.6" stroke-opacity="0.6" stroke-linecap="round" filter="url(#fw)"/>
         <circle cx="${C}" cy="${C}" r="39.5" fill="url(#face)"/>
         <g class="spun">${spun}</g>
         <g class="print-sh" fill="#000" stroke="#000" opacity="0.55" transform="translate(0.4 0.45)"><use href="#print"/></g>

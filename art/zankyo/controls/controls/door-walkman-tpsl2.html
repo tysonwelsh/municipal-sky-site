@@ -75,7 +75,7 @@
       transform-origin: 88px 103px;
       transform: perspective(520px) rotateX(0deg);
       transition: transform 170ms cubic-bezier(.2,.9,.3,1.14); }
-    :host([value="true"]) .doorbox { transform: perspective(520px) rotateX(-30deg); }
+    :host([value="true"]) .doorbox { transform: perspective(520px) rotateX(-34deg) translateY(1px); }
     .opensh, .doorlit { opacity: 0; transition: opacity 170ms ease-out; }
     :host([value="true"]) .opensh, :host([value="true"]) .doorlit { opacity: 1; }
     .grab { position: absolute; left: 30px; top: 16px; width: 116px; height: 90px;
@@ -101,17 +101,26 @@
     <svg class="body" viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>
         <linearGradient id="blue" x1="0.12" y1="0" x2="0.5" y2="1">
-          <stop offset="0" stop-color="#4f80c0"/><stop offset="0.34" stop-color="#356aab"/>
-          <stop offset="0.72" stop-color="#2a5691"/><stop offset="1" stop-color="#22467a"/>
+          <stop offset="0" stop-color="#4a7cbb"/><stop offset="0.3" stop-color="#31659f"/>
+          <stop offset="0.72" stop-color="#25507f"/><stop offset="1" stop-color="#1b3c66"/>
         </linearGradient>
         <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#eceff1"/><stop offset="0.28" stop-color="#c9ccce"/>
           <stop offset="0.75" stop-color="#aeb1b4"/><stop offset="1" stop-color="#8d9193"/>
         </linearGradient>
+        <pattern id="paintgrain" width="3" height="3" patternUnits="userSpaceOnUse">
+          <rect width="3" height="3" fill="none"/>
+          <rect width="3" height="1" fill="#ffffff" opacity="0.018"/>
+        </pattern>
         <pattern id="brush" width="4" height="2" patternUnits="userSpaceOnUse">
           <rect width="4" height="1" fill="#ffffff" opacity="0.16"/>
           <rect y="1" width="4" height="1" fill="#000000" opacity="0.09"/>
         </pattern>
+        <linearGradient id="chromeh" x1="0" y1="0" x2="0.12" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.36" stop-color="#e2e5e7"/>
+          <stop offset="0.46" stop-color="#9aa0a3"/><stop offset="0.48" stop-color="#5c6164"/>
+          <stop offset="0.72" stop-color="#b6babd"/><stop offset="1" stop-color="#7d8184"/>
+        </linearGradient>
         <radialGradient id="chrome" cx="32%" cy="26%" r="78%">
           <stop offset="0" stop-color="#ffffff"/><stop offset="0.42" stop-color="#dcdfe1"/>
           <stop offset="0.78" stop-color="#9ea2a5"/><stop offset="1" stop-color="#5d6164"/>
@@ -132,7 +141,7 @@
           <stop offset="0" stop-color="#4a3623"/><stop offset="0.7" stop-color="#2e2116"/><stop offset="1" stop-color="#1d150e"/>
         </radialGradient>
         <linearGradient id="openShadow" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#000" stop-opacity="0.85"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+          <stop offset="0" stop-color="#000" stop-opacity="0.34"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
         </linearGradient>
         <linearGradient id="springg" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#c8ced3"/><stop offset="0.5" stop-color="#8c9298"/><stop offset="1" stop-color="#4c5156"/>
@@ -152,7 +161,8 @@
         <!-- blue body -->
         <rect x="0" y="0" width="${W}" height="${H}" fill="url(#blue)"/>
         <!-- a soft broad highlight from above-left -->
-        <ellipse cx="46" cy="14" rx="86" ry="42" fill="#9dc2ec" opacity="0.13" filter="url(#b4)"/>
+        <ellipse cx="44" cy="10" rx="82" ry="36" fill="#a8c9ee" opacity="0.09" filter="url(#b4)"/>
+        <rect x="0" y="0" width="176" height="128" fill="url(#paintgrain)"/>
         <!-- brushed silver end caps, top and bottom -->
         <rect x="0" y="0" width="${W}" height="13" fill="url(#silver)"/>
         <rect x="0" y="0" width="${W}" height="13" fill="url(#brush)"/>
@@ -172,36 +182,46 @@
         <g clip-path="url(#well)">
           <rect x="31" y="24" width="114" height="80" fill="#0e1115"/>
           <!-- back wall lit a little at the bottom right -->
-          <rect x="31" y="24" width="114" height="80" fill="#2a3340" opacity="0.35"/>
+          <rect x="31" y="24" width="114" height="80" fill="#394452" opacity="0.5"/>
+          <rect x="31" y="24" width="114" height="13" fill="#6e8098" opacity="0.62"/>
+          <rect x="31" y="35" width="114" height="3" fill="#000" opacity="0.35"/>
           <!-- the leaf spring across the top of the well -->
-          <path d="M40 29.5 Q88 26.4 136 29.5 L136 31.6 Q88 28.6 40 31.6 Z" fill="url(#springg)"/>
-          <path d="M40 29.5 Q88 26.4 136 29.5" fill="none" stroke="#e6ebee" stroke-opacity="0.55" stroke-width="0.5"/>
-          <circle cx="44" cy="30.6" r="1.5" fill="#6d7378"/><circle cx="132" cy="30.6" r="1.5" fill="#6d7378"/>
+          <path d="M40 30.2 Q88 26.2 136 30.2 L136 33.2 Q88 29.2 40 33.2 Z" fill="url(#springg)"/>
+          <path d="M40 30.2 Q88 26.2 136 30.2" fill="none" stroke="#f2f6f8" stroke-opacity="0.8" stroke-width="0.7"/>
+          <path d="M40 33.2 Q88 29.2 136 33.2" fill="none" stroke="#2a2e32" stroke-opacity="0.8" stroke-width="0.6"/>
+          <circle cx="44" cy="31.6" r="1.7" fill="#8f969c" stroke="#3a3e42" stroke-width="0.4"/>
+          <circle cx="132" cy="31.6" r="1.7" fill="#8f969c" stroke="#3a3e42" stroke-width="0.4"/>
           <!-- the cassette, label out -->
           <rect x="38" y="33" width="100" height="60" rx="2" fill="url(#shell)" stroke="#0c0c0d" stroke-width="0.7"/>
-          <rect x="38.7" y="33.7" width="98.6" height="1" fill="#6a6a6e" opacity="0.5"/>
-          <rect x="42" y="37" width="92" height="52" rx="1" fill="url(#label)"/>
-          <rect x="42" y="37" width="92" height="52" rx="1" fill="none" stroke="#b6a884" stroke-width="0.4" stroke-opacity="0.7"/>
-          <g stroke="#a99b78" stroke-width="0.5" stroke-opacity="0.75">
-            <line x1="47" y1="44.5" x2="129" y2="44.5"/>
-            <line x1="47" y1="49.5" x2="129" y2="49.5"/>
-            <line x1="47" y1="78" x2="129" y2="78"/>
-            <line x1="47" y1="83" x2="129" y2="83"/>
+          <rect x="38.7" y="33.7" width="98.6" height="1" fill="#717176" opacity="0.55"/>
+          <rect x="50" y="41" width="76" height="39" rx="1" fill="url(#label)"/>
+          <rect x="50" y="41" width="76" height="39" rx="1" fill="none" stroke="#a8996f" stroke-width="0.4" stroke-opacity="0.9"/>
+          <g stroke="#a3905f" stroke-width="0.5" stroke-opacity="0.8">
+            <line x1="54" y1="46.5" x2="122" y2="46.5"/>
+            <line x1="54" y1="50" x2="122" y2="50"/>
+            <line x1="54" y1="71" x2="122" y2="71"/>
+            <line x1="54" y1="75" x2="122" y2="75"/>
           </g>
-          <rect x="47" y="40" width="15" height="2.4" fill="#7e6f4d" opacity="0.6"/>
-          <!-- hub holes: the pack, then the toothed hub -->
+          <rect x="54" y="42.6" width="12" height="2.4" fill="#8a7645" opacity="0.7"/>
+          <!-- hub holes: the fat supply pack at the left, the thin take-up at the right -->
           <g>
-            <circle cx="70" cy="63" r="13.6" fill="#101113"/>
-            <circle cx="70" cy="63" r="12.6" fill="url(#pack)"/>
-            <circle cx="70" cy="63" r="12.6" fill="none" stroke="#5a4630" stroke-width="0.5" stroke-opacity="0.5"/>
-            <g transform="translate(70 63)"><g class="hub hub-l"><use href="#hub6"/></g></g>
+            <circle cx="70" cy="60" r="11.4" fill="#0c0d0f"/>
+            <circle cx="70" cy="60" r="11" fill="url(#pack)"/>
+            <circle cx="70" cy="60" r="11" fill="none" stroke="#7a5c3a" stroke-width="0.6" stroke-opacity="0.6"/>
+            <g transform="translate(70 60)"><g class="hub hub-l"><use href="#hub6"/></g></g>
           </g>
           <g>
-            <circle cx="106" cy="63" r="13.6" fill="#101113"/>
-            <circle cx="106" cy="63" r="8.6" fill="url(#pack)"/>
-            <circle cx="106" cy="63" r="8.6" fill="none" stroke="#5a4630" stroke-width="0.5" stroke-opacity="0.5"/>
-            <g transform="translate(106 63)"><g class="hub hub-r"><use href="#hub6"/></g></g>
+            <circle cx="106" cy="60" r="11.4" fill="#0c0d0f"/>
+            <circle cx="106" cy="60" r="7.2" fill="url(#pack)"/>
+            <circle cx="106" cy="60" r="7.2" fill="none" stroke="#7a5c3a" stroke-width="0.6" stroke-opacity="0.6"/>
+            <g transform="translate(106 60)"><g class="hub hub-r"><use href="#hub6"/></g></g>
           </g>
+          <!-- the tape window along the foot of the shell -->
+          <rect x="62" y="82" width="52" height="8" rx="0.8" fill="#0d0e10"/>
+          <rect x="64" y="84.6" width="48" height="2.6" fill="#4a3826"/>
+          <rect x="64" y="84.6" width="48" height="0.9" fill="#6b523a" opacity="0.8"/>
+          <rect x="67" y="82" width="2.6" height="8" fill="#23242a"/>
+          <rect x="106" y="82" width="2.6" height="8" fill="#23242a"/>
           <!-- the tape path and the head block along the foot of the well -->
           <rect x="44" y="90" width="88" height="3" fill="#15161a"/>
           <rect x="52" y="93" width="72" height="11" rx="1" fill="#17181b"/>
@@ -212,7 +232,7 @@
           <!-- inner shadow of the well: dark at the top-left, a lit lip bottom-right -->
           <rect x="31" y="24" width="114" height="80" rx="2.5" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="5" filter="url(#b2)"/>
           <!-- the shadow the sprung door throws back into the well -->
-          <rect class="opensh" x="31" y="24" width="114" height="26" fill="url(#openShadow)"/>
+          <rect class="opensh" x="31" y="24" width="114" height="20" fill="url(#openShadow)"/>
         </g>
         <path d="M31.5 103.5 h113" stroke="#7fa6d6" stroke-opacity="0.35" stroke-width="0.8" fill="none"/>
         <path d="M31.4 24.4 v79" stroke="#000" stroke-opacity="0.5" stroke-width="0.8" fill="none"/>
@@ -220,12 +240,12 @@
         <!-- chrome latch button on the top edge, above the door -->
         <g class="latch">
           <rect x="95" y="14.5" width="16" height="11" rx="2" fill="#000" opacity="0.4" filter="url(#b1)"/>
-          <rect x="94.5" y="13.5" width="16" height="11" rx="2.2" fill="url(#chrome)" stroke="#5a5f62" stroke-width="0.5"/>
-          <rect x="96" y="14.6" width="13" height="3.4" rx="1.4" fill="#ffffff" opacity="0.5"/>
-          <g stroke="#7f8589" stroke-width="0.55" stroke-opacity="0.8">
-            <line x1="98" y1="19.4" x2="107" y2="19.4"/><line x1="98" y1="21.2" x2="107" y2="21.2"/>
+          <rect x="94.5" y="13.5" width="16" height="11" rx="2.2" fill="url(#chromeh)" stroke="#4d5255" stroke-width="0.5"/>
+          <rect x="95.6" y="14.3" width="13.8" height="2.6" rx="1.2" fill="#ffffff" opacity="0.75"/>
+          <g stroke="#6c7276" stroke-width="0.5" stroke-opacity="0.85">
+            <line x1="98" y1="19.6" x2="107" y2="19.6"/><line x1="98" y1="21.2" x2="107" y2="21.2"/>
           </g>
-          <rect x="94.5" y="23.2" width="16" height="1.3" fill="#3f4447" opacity="0.65"/>
+          <rect x="94.5" y="22.9" width="16" height="1.6" fill="#33383b" opacity="0.8"/>
         </g>
 
         <!-- screws in the silver caps -->
@@ -267,8 +287,8 @@
       <svg class="door" viewBox="0 0 ${W} ${H}" aria-hidden="true">
         <defs>
           <linearGradient id="dblue" x1="0.12" y1="0" x2="0.45" y2="1">
-            <stop offset="0" stop-color="#5486c6"/><stop offset="0.3" stop-color="#3a6fb0"/>
-            <stop offset="0.7" stop-color="#2c5896"/><stop offset="1" stop-color="#244a80"/>
+            <stop offset="0" stop-color="#4f83c2"/><stop offset="0.28" stop-color="#356aa8"/>
+            <stop offset="0.7" stop-color="#27538a"/><stop offset="1" stop-color="#1e4271"/>
           </linearGradient>
           <linearGradient id="glassref" x1="0" y1="0" x2="0.6" y2="1">
             <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
@@ -291,7 +311,7 @@
               d="M35 25 h106 a3 3 0 0 1 3 3 v72 a3 3 0 0 1 -3 3 h-106 a3 3 0 0 1 -3 -3 v-72 a3 3 0 0 1 3 -3 z
                  M46 40 h84 a2 2 0 0 1 2 2 v44 a2 2 0 0 1 -2 2 h-84 a2 2 0 0 1 -2 -2 v-44 a2 2 0 0 1 2 -2 z"/>
         <!-- moulded bevel: lit top-left edge, dark bottom-right edge -->
-        <path d="M35 25.6 h106 a2.4 2.4 0 0 1 2.4 2.4" fill="none" stroke="#8bb7e8" stroke-opacity="0.65" stroke-width="0.9"/>
+        <path d="M35 25.5 h106 a2.4 2.4 0 0 1 2.4 2.4" fill="none" stroke="#a7cbf2" stroke-opacity="0.8" stroke-width="1.1"/>
         <path d="M32.6 28 a2.4 2.4 0 0 1 2.4 -2.4" fill="none" stroke="#8bb7e8" stroke-opacity="0.5" stroke-width="0.9"/>
         <path d="M32.6 98 v2 a3 3 0 0 0 3 3 h106 a3 3 0 0 0 3 -3 v-2" fill="none" stroke="#12294a" stroke-opacity="0.85" stroke-width="1"/>
         <!-- paint wear along the bottom rail, where fingers push it shut -->
@@ -299,7 +319,9 @@
         <!-- silver keyline round the window, then the smoked/clear polystyrene -->
         <rect x="43.2" y="39.2" width="89.6" height="49.6" rx="2.6" fill="none" stroke="#c9ccce" stroke-width="1" stroke-opacity="0.9"/>
         <rect x="44.4" y="40.4" width="87.2" height="47.2" rx="2" fill="none" stroke="#0e2440" stroke-width="0.7" stroke-opacity="0.8"/>
-        <rect x="44" y="40" width="88" height="48" rx="2" fill="#f0f0e1" opacity="0.13"/>
+        <rect x="44" y="40" width="88" height="48" rx="2" fill="#eceadb" opacity="0.10"/>
+        <rect x="44" y="40" width="88" height="7" fill="#000" opacity="0.30" filter="url(#db1)"/>
+        <rect x="44" y="40" width="4" height="48" fill="#000" opacity="0.22" filter="url(#db1)"/>
         <!-- one long soft reflection at the upper left, nothing like the cassette behind it -->
         <path d="M47 40 L70 40 L54 88 L44.4 88 Z" fill="url(#glassref)" filter="url(#db1)"/>
         <path d="M74 40 L80 40 L64 88 L58 88 Z" fill="#ffffff" opacity="0.07" filter="url(#db1)"/>

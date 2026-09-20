@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Victorian rope-twist brass bell push — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "bellpush-victorian-brass-pearl",
+  "element": "sk-bellpush-victorian-brass",
+  "name": "Victorian rope-twist brass bell push",
+  "kind": "input",
+  "code": "D17",
+  "type": "Bell push / door buzzer",
+  "source": "Victorian and Edwardian cast-brass bell pushes (Kenrick, Comyn Ching; the US Bryant pattern), about 1880–1910: a rope-twist escutcheon with a mother-of-pearl dome and PRESS engraved above it",
+  "era": "pre-1900",
+  "origin": "UK",
+  "materials": ["cast brass", "mother-of-pearl", "lacquer", "steel screws"],
+  "tags": ["door", "bell", "momentary", "rope twist", "nacre", "escutcheon"],
+  "value": { "model": "momentary" },
+  "attributes": ["label", "legend", "oval", "pressed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 160, "h": 160 },
+  "notes": "The round pattern with PRESS engraved, and the oval tradesmen's push. Press with the pointer or Space/Enter: the pearl sinks 2 px into its collar and comes back slowly."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-bellpush-victorian-brass label="front door" legend="PRESS"></sk-bellpush-victorian-brass>
+    <sk-bellpush-victorian-brass oval legend="" label="tradesmen"></sk-bellpush-victorian-brass>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The cast-brass <b>bell push</b> screwed to the jamb of every late-Victorian front door: a 55&nbsp;mm
+  escutcheon with a rope-twist rim, two slotted screws, and a small dome of <b>mother-of-pearl</b> in a brass
+  collar for the thumb. Kenrick and Comyn Ching sold them by the gross; the American equivalent is the Bryant
+  pattern. Some are engraved PRESS in Roman capitals above the dome; the oval tradesmen's push beside it is
+  plain.</p>
+  <p><b>The tells kept here:</b> the rope-twist rim is twenty-eight separate beads, each one lit on the side
+  that faces the light above-left and dark on the other, so the ring turns from bright at the top-left to
+  nearly black at the bottom-right — the thing a flat ring of notches never does; the grooves between them hold
+  a green-brown tarnish; the polished field carries one soft, broad reflection of the room rather than a
+  mirror; the pearl is <i>soft</i> — a wide low highlight with a blue and a pink flare underneath it, never a
+  chrome hot-spot — and its top is glossier than its sides, a century of thumbs; the brass immediately around
+  the collar is polished lighter for the same reason; the two slotted screws sit at odd angles because nobody
+  ever lined them up. PRESS is engraved: dark fill with a lit lower edge. The dome sinks 2&nbsp;px in 60&nbsp;ms
+  and takes 140&nbsp;ms to come back, the way a sprung brass plunger does.</p>
+  <p><b>Left out:</b> the lacquer's crazing, the bell wire and the wooden pattress behind it, and the
+  hand-chased detail that varies push to push — this one is a catalogue casting, cleanly struck.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-bellpush-victorian-brass> — Victorian rope-twist brass bell push, mother-of-pearl dome ====
+   attributes: label legend oval pressed scale disabled
+   events: press / release / activate  (momentary; .value is the boolean pressed state)
+   self-contained: paste this block into any page and use <sk-bellpush-victorian-brass></sk-bellpush-victorian-brass> */
+(function () {
+  var TAG = "sk-bellpush-victorian-brass";
+  if (customElements.get(TAG)) return;
+
+  var LX = -0.62, LY = -0.78;                    // the light, above-left
+
+  function hex(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function mix(a, b, t) {
+    a = hex(a); b = hex(b);
+    var r = Math.round(a[0] + (b[0] - a[0]) * t), g = Math.round(a[1] + (b[1] - a[1]) * t), c = Math.round(a[2] + (b[2] - a[2]) * t);
+    return "rgb(" + r + "," + g + "," + c + ")";
+  }
+  function n(x) { return Math.round(x * 100) / 100; }
+
+  /* the rope twist: n beads on an ellipse, each a little cylinder lit by the one light */
+  function rope(cx, cy, rx, ry, band, count, tilt) {
+    var per = Math.PI * (3 * (rx + ry) - Math.sqrt((3 * rx + ry) * (rx + 3 * ry)));
+    var L = per / count * 1.38, Wb = band * 0.74, out = "";
+    for (var i = 0; i < count; i++) {
+      var t = 2 * Math.PI * i / count, ct = Math.cos(t), st = Math.sin(t);
+      var x = cx + rx * ct, y = cy + ry * st;
+      var ang = Math.atan2(ry * ct, -rx * st) * 180 / Math.PI + tilt;
+      var nx = ct / rx, ny = st / ry, nl = Math.sqrt(nx * nx + ny * ny); nx /= nl; ny /= nl;
+      var lit = Math.max(0, Math.min(1, 0.5 + 0.62 * (nx * LX + ny * LY)));
+      var a = ang * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+      var hx = LX * ca + LY * sa, hy = -LX * sa + LY * ca;      // the light, in the bead's own frame
+      var base = mix("#503509", "#d8bb65", lit);
+      var hox = hx * Wb * 0.24, hoy = hy * Wb * 0.24;
+      out += '<g transform="translate(' + n(x) + ',' + n(y) + ') rotate(' + n(ang) + ')">'
+        + '<rect x="' + n(-L / 2) + '" y="' + n(-Wb / 2) + '" width="' + n(L) + '" height="' + n(Wb) + '" rx="' + n(Wb / 2) + '" fill="' + base + '" stroke="#33220a" stroke-opacity="0.55" stroke-width="0.55"/>'
+        + '<rect x="' + n(-L * 0.31 + hox) + '" y="' + n(-Wb * 0.17 + hoy) + '" width="' + n(L * 0.62) + '" height="' + n(Wb * 0.34) + '" rx="' + n(Wb * 0.17) + '" fill="#fbecb8" opacity="' + n(0.05 + 0.60 * lit * lit) + '"/>'
+        + '<rect x="' + n(-L * 0.34 - hox * 1.1) + '" y="' + n(-Wb * 0.19 - hoy * 1.1) + '" width="' + n(L * 0.68) + '" height="' + n(Wb * 0.38) + '" rx="' + n(Wb * 0.19) + '" fill="#2e1e05" opacity="' + n(0.52 - 0.40 * lit) + '"/>'
+        + '</g>';
+    }
+    return out;
+  }
+
+  function screw(x, y, r, rot) {
+    return '<g transform="translate(' + x + ',' + y + ')">'
+      + '<circle r="' + n(r + 1.6) + '" fill="#7a5a1e" opacity="0.5"/>'
+      + '<circle cx="0.5" cy="0.7" r="' + n(r + 0.9) + '" fill="#2a1d06" opacity="0.35"/>'
+      + '<circle r="' + r + '" fill="url(#brass)" stroke="#5a4012" stroke-width="0.5"/>'
+      + '<g transform="rotate(' + rot + ')">'
+      + '<rect x="' + n(-r * 0.86) + '" y="-0.75" width="' + n(r * 1.72) + '" height="1.5" rx="0.6" fill="#3a2808" opacity="0.85"/>'
+      + '<rect x="' + n(-r * 0.86) + '" y="0.55" width="' + n(r * 1.72) + '" height="0.7" rx="0.35" fill="#ffeaa8" opacity="0.4"/>'
+      + '</g></g>';
+  }
+
+  function build(oval, legend) {
+    var W = oval ? 130 : 160, H = oval ? 180 : 160;
+    var cx = W / 2, cy = H / 2;
+    var RX = oval ? 57 : 71, RY = oval ? 82 : 71;       // outer
+    var band = oval ? 11 : 11.5;                        // rope rim width
+    var mx = RX - band / 2, my = RY - band / 2;         // rope centre-line
+    var ix = RX - band, iy = RY - band;                 // inner field
+    var beads = oval ? 34 : 28;
+    var sr = 5.4;
+    var screws = oval
+      ? screw(n(cx - ix + 11), cy, sr, 28) + screw(n(cx + ix - 11), cy, sr, 101)
+      : screw(cx, n(cy - iy + 10), sr, 23) + screw(cx, n(cy + iy - 10), sr, 104);
+    var dome = 16, col = 20.5;
+    var arcR = oval ? 36 : 35;
+    var text = legend
+      ? '<path id="arc" d="M ' + n(cx - arcR) + ' ' + cy + ' A ' + arcR + ' ' + arcR + ' 0 0 1 ' + n(cx + arcR) + ' ' + cy + '" fill="none"/>'
+        + '<text class="leg lit" dy="0.8"><textPath href="#arc" startOffset="50%">' + legend + '</textPath></text>'
+        + '<text class="leg ink"><textPath href="#arc" startOffset="50%">' + legend + '</textPath></text>'
+      : "";
+
+    return { W: W, H: H, svg: '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">'
+      + '<defs>'
+      + '<radialGradient id="field" cx="34%" cy="26%" r="86%">'
+      + '<stop offset="0" stop-color="#f0d98f"/><stop offset="0.36" stop-color="#d4ab52"/><stop offset="0.72" stop-color="#b08a32"/><stop offset="1" stop-color="#7c5a1c"/></radialGradient>'
+      + '<radialGradient id="brass" cx="34%" cy="28%" r="78%">'
+      + '<stop offset="0" stop-color="#f3dc92"/><stop offset="0.55" stop-color="#bd9440"/><stop offset="1" stop-color="#6b4c16"/></radialGradient>'
+      + '<linearGradient id="collar" x1="0.2" y1="0" x2="0.8" y2="1">'
+      + '<stop offset="0" stop-color="#ffefb6"/><stop offset="0.45" stop-color="#cfa54c"/><stop offset="1" stop-color="#6d4d16"/></linearGradient>'
+      + '<radialGradient id="pearl" cx="38%" cy="30%" r="86%">'
+      + '<stop offset="0" stop-color="#f7f5f1"/><stop offset="0.3" stop-color="#e9e5df"/><stop offset="0.66" stop-color="#d3cec7"/><stop offset="1" stop-color="#a49e97"/></radialGradient>'
+      + '<linearGradient id="room" x1="0" y1="0" x2="0.7" y2="1">'
+      + '<stop offset="0" stop-color="#fff8dd" stop-opacity="0.42"/><stop offset="0.38" stop-color="#fff6d8" stop-opacity="0.05"/>'
+      + '<stop offset="0.58" stop-color="#2a1d06" stop-opacity="0.16"/><stop offset="1" stop-color="#241902" stop-opacity="0.40"/></linearGradient>'
+      + '<filter id="b1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1"/></filter>'
+      + '<filter id="b3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>'
+      + '<filter id="b6" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>'
+      + '<clipPath id="fieldclip"><ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(ix) + '" ry="' + n(iy) + '"/></clipPath>'
+      + '<clipPath id="domeclip"><circle cx="' + cx + '" cy="' + cy + '" r="' + dome + '"/></clipPath>'
+      + '</defs>'
+
+      /* the shadow on the paint */
+      + '<ellipse cx="' + n(cx + 3) + '" cy="' + n(cy + 6) + '" rx="' + n(RX + 1) + '" ry="' + n(RY + 1) + '" fill="#2b2212" opacity="0.34" filter="url(#b6)"/>'
+      + '<ellipse cx="' + n(cx + 1) + '" cy="' + n(cy + 2) + '" rx="' + n(RX) + '" ry="' + n(RY) + '" fill="#2b2212" opacity="0.5" filter="url(#b1)"/>'
+
+      /* the casting: dark ground, then the polished field */
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(RX) + '" ry="' + n(RY) + '" fill="#5c4014"/>'
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(ix + 0.6) + '" ry="' + n(iy + 0.6) + '" fill="url(#field)"/>'
+      + '<g clip-path="url(#fieldclip)">'
+      + '<ellipse cx="' + n(cx - ix * 0.34) + '" cy="' + n(cy - iy * 0.46) + '" rx="' + n(ix * 0.95) + '" ry="' + n(iy * 0.42) + '" fill="#fff4cf" opacity="0.20" filter="url(#b6)" transform="rotate(-18 ' + cx + ' ' + cy + ')"/>'
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(ix) + '" ry="' + n(iy) + '" fill="url(#room)"/>'
+      + '<ellipse cx="' + n(cx + ix * 0.42) + '" cy="' + n(cy + iy * 0.5) + '" rx="' + n(ix * 0.34) + '" ry="' + n(iy * 0.2) + '" fill="#6d6a3a" opacity="0.26" filter="url(#b6)"/>'
+      + '<ellipse cx="' + n(cx - ix * 0.5) + '" cy="' + n(cy + iy * 0.42) + '" rx="' + n(ix * 0.2) + '" ry="' + n(iy * 0.14) + '" fill="#7d6a3c" opacity="0.2" filter="url(#b6)"/>'
+      /* the thumb has polished the brass around the collar */
+      + '<circle cx="' + cx + '" cy="' + n(cy + 1) + '" r="31" fill="#ffeeb4" opacity="0.13" filter="url(#b6)"/>'
+      + '</g>'
+      /* the step from field down into the rim */
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(ix) + '" ry="' + n(iy) + '" fill="none" stroke="#3d2a09" stroke-opacity="0.55" stroke-width="1.2"/>'
+      + '<path d="M ' + n(cx - ix * 0.94) + ' ' + n(cy - iy * 0.34) + ' A ' + n(ix) + ' ' + n(iy) + ' 0 0 1 ' + n(cx + ix * 0.5) + ' ' + n(cy - iy * 0.86) + '" fill="none" stroke="#ffeaa6" stroke-opacity="0.45" stroke-width="1"/>'
+
+      /* the rope twist, in its groove */
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(mx) + '" ry="' + n(my) + '" fill="none" stroke="#4c3510" stroke-width="' + n(band + 1) + '"/>'
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(mx) + '" ry="' + n(my) + '" fill="none" stroke="#7d6a3c" stroke-width="' + n(band) + '" opacity="0.5"/>'
+      + rope(cx, cy, mx, my, band, beads, 34)
+      /* the outer edge: lit at the top-left, dark below-right */
+      + '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + n(RX) + '" ry="' + n(RY) + '" fill="none" stroke="#2c1e06" stroke-opacity="0.7" stroke-width="1"/>'
+      + '<path d="M ' + n(cx - RX) + ' ' + n(cy - RY * 0.12) + ' A ' + n(RX) + ' ' + n(RY) + ' 0 0 1 ' + n(cx + RX * 0.62) + ' ' + n(cy - RY * 0.78) + '" fill="none" stroke="#ffeaa6" stroke-opacity="0.55" stroke-width="1.1"/>'
+
+      + screws
+      + text
+
+      /* the collar and the pearl */
+      + '<g class="dome">'
+      + '<ellipse cx="' + n(cx + 1) + '" cy="' + n(cy + 2.5) + '" rx="' + n(col) + '" ry="' + n(col) + '" fill="#3d2a09" opacity="0.4" filter="url(#b3)"/>'
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + col + '" fill="url(#collar)"/>'
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + n(col - 1.4) + '" fill="none" stroke="#fff3c4" stroke-opacity="0.55" stroke-width="0.8"/>'
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + n(dome + 1.2) + '" fill="#2f2008" opacity="0.65"/>'
+      + '<g class="pearl">'
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + dome + '" fill="url(#pearl)"/>'
+      + '<g clip-path="url(#domeclip)">'
+      + '<ellipse cx="' + n(cx + 3) + '" cy="' + n(cy + 4) + '" rx="12" ry="7.5" fill="#9dbbdf" opacity="0.40" filter="url(#b3)" transform="rotate(26 ' + cx + ' ' + cy + ')"/>'
+      + '<ellipse cx="' + n(cx - 6.5) + '" cy="' + n(cy + 7.5) + '" rx="10" ry="5.5" fill="#f3c9b8" opacity="0.44" filter="url(#b3)" transform="rotate(-14 ' + cx + ' ' + cy + ')"/>'
+      + '<ellipse cx="' + n(cx + 8) + '" cy="' + n(cy - 5) + '" rx="8" ry="4" fill="#c6e3d2" opacity="0.34" filter="url(#b3)" transform="rotate(-42 ' + cx + ' ' + cy + ')"/>'
+      + '<ellipse cx="' + n(cx - 8) + '" cy="' + n(cy + 1) + '" rx="6" ry="3.4" fill="#ead9f2" opacity="0.26" filter="url(#b3)" transform="rotate(62 ' + cx + ' ' + cy + ')"/>'
+      + '<ellipse cx="' + n(cx - 4.5) + '" cy="' + n(cy - 5.5) + '" rx="10.5" ry="6.5" fill="#fffdf8" opacity="0.55" filter="url(#b3)" transform="rotate(-22 ' + cx + ' ' + cy + ')"/>'
+      + '<ellipse cx="' + n(cx - 3.6) + '" cy="' + n(cy - 7) + '" rx="5" ry="2.4" fill="#ffffff" opacity="0.5" filter="url(#b3)" transform="rotate(-22 ' + cx + ' ' + cy + ')"/>'
+      + '<path d="M ' + n(cx - dome) + ' ' + n(cy + 6) + ' A ' + dome + ' ' + dome + ' 0 0 0 ' + n(cx + dome) + ' ' + n(cy + 6) + '" fill="none" stroke="#fff6ea" stroke-opacity="0.4" stroke-width="1.6" filter="url(#b1)"/>'
+      + '<ellipse cx="' + n(cx + 5) + '" cy="' + n(cy + 9) + '" rx="13" ry="6" fill="#6f665c" opacity="0.28" filter="url(#b3)"/>'
+      + '</g>'
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + n(dome - 0.4) + '" fill="none" stroke="#8d867d" stroke-opacity="0.5" stroke-width="0.8"/>'
+      + '</g></g>'
+      + '</svg>' };
+  }
+
+  var CSS = `
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    .leg { font-family: "Libre Franklin", "Times New Roman", serif; font-weight: 700; font-size: 7px;
+      letter-spacing: 0.15em; text-anchor: middle; }
+    .leg.ink { fill: #1a1612; }
+    .leg.lit { fill: #ffeaa6; opacity: 0.55; transform: translate(0.55px, 0.6px); }
+    .dome { transition: transform 140ms cubic-bezier(.35,0,.6,1); }
+    .wrap.down .dome { transform: translateY(2px); transition-duration: 60ms; transition-timing-function: cubic-bezier(.3,.7,.5,1); }
+    .grab { position: absolute; left: 0; top: 0; border-radius: 50%; cursor: pointer; touch-action: none;
+      user-select: none; -webkit-user-select: none; outline: none; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }
+  `;
+
+  class SkBellPush extends HTMLElement {
+    static get observedAttributes() { return ["label", "legend", "oval", "pressed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      var r = this.attachShadow({ mode: "open" });
+      var st = document.createElement("style"); st.textContent = CSS;
+      var wrap = document.createElement("div"); wrap.className = "wrap";
+      var grab = document.createElement("div"); grab.className = "grab";
+      grab.setAttribute("role", "button"); grab.setAttribute("tabindex", "0");
+      r.appendChild(st); r.appendChild(wrap); wrap.appendChild(grab);
+      this._wrap = wrap; this._grab = grab; this._scale = 1; this._down = false; this._sig = "";
+      this._onDown = this._onDown.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this); this._onKeyUp = this._onKeyUp.bind(this);
+    }
+    connectedCallback() {
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      this._grab.addEventListener("keydown", this._onKeyDown);
+      this._grab.addEventListener("keyup", this._onKeyUp);
+      this._grab.addEventListener("blur", this._onKeyUp);
+      this._read();
+    }
+    disconnectedCallback() {
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      this._grab.removeEventListener("keydown", this._onKeyDown);
+      this._grab.removeEventListener("keyup", this._onKeyUp);
+      this._grab.removeEventListener("blur", this._onKeyUp);
+    }
+    attributeChangedCallback(nm, o, v) { if (o === v || !this.isConnected) return; if (nm === "pressed") { this._show(this.hasAttribute("pressed")); return; } this._read(); }
+    get value() { return this._down; }
+    set value(v) { this._show(!!v); }                      /* set from outside: no events */
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _read() {
+      var oval = this.hasAttribute("oval");
+      var legend = this.hasAttribute("legend") ? this.getAttribute("legend") : "PRESS";
+      var sig = (oval ? "o" : "r") + "|" + legend;
+      if (sig !== this._sig) {
+        this._sig = sig;
+        var b = build(oval, legend);
+        this._W = b.W; this._H = b.H;
+        var old = this._wrap.querySelector("svg"); if (old) old.remove();
+        this._wrap.insertAdjacentHTML("afterbegin", b.svg);
+      }
+      var sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) || sc <= 0 ? 1 : sc;
+      this.style.width = (this._W * this._scale) + "px";
+      this.style.height = (this._H * this._scale) + "px";
+      this._wrap.style.width = this._W + "px"; this._wrap.style.height = this._H + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var g = this._grab, d = Math.min(this._W, this._H) * 0.66;
+      g.style.left = ((this._W - d) / 2) + "px"; g.style.top = ((this._H - d) / 2) + "px";
+      g.style.width = d + "px"; g.style.height = d + "px";
+      g.setAttribute("aria-label", this.getAttribute("label") || "bell push");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this._show(this.hasAttribute("pressed"));
+    }
+    _show(on) {
+      this._down = !!on;
+      this._wrap.classList.toggle("down", !!on);
+      this._grab.setAttribute("aria-pressed", on ? "true" : "false");
+      if (on !== this.hasAttribute("pressed")) { if (on) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true })); }
+    _press() { if (this._down) return; this._show(true); this._emit("press"); }
+    _release(activate) { if (!this._down) return; this._show(false); this._emit("release"); if (activate) this._emit("activate"); }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      if (!this._down || this._key) return;
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release(e.type !== "pointercancel");
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._key = true; this._press();
+      if (e.key === "Enter") { var self = this; setTimeout(function () { self._key = false; self._release(true); }, 110); }
+    }
+    _onKeyUp(e) {
+      if (!this._key) return;
+      if (e.type === "keyup" && e.key !== " " && e.key !== "Spacebar") return;
+      this._key = false; this._release(true);
+    }
+  }
+  customElements.define(TAG, SkBellPush);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

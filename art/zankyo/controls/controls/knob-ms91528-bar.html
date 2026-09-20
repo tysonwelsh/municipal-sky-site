@@ -139,7 +139,7 @@
       <text class="lab fg" x="${CX}" y="${H - 5}"></text>
 
       <!-- finger grime, off-centre from below-right -->
-      <circle cx="${CX + 3}" cy="${CY + 4}" r="34" fill="url(#grime)"/>
+      <circle cx="${CX + 3}" cy="${CY + 4}" r="30" fill="url(#grime)" opacity="0.7"/>
 
       <!-- boss shadows: soft ambient and tight contact -->
       <circle cx="${CX + 2.5}" cy="${CY + 3.5}" r="21" fill="#000" opacity="0.5" filter="url(#softer)"/>
@@ -172,7 +172,7 @@
         <path d="M ${CX - 9.2} ${CY - 25.2} L ${CX - 7.8} ${CY - 25.2}" stroke="#141414" stroke-width="0.7"/>
         <path d="M ${CX - 9.2} ${CY - 32.4} L ${CX - 7} ${CY - 35.6} L ${CX + 7} ${CY - 35.6}" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.5"/>
         <!-- polish where a thumb sits on the rounded end -->
-        <ellipse cx="${CX + 1}" cy="${CY + 3}" rx="6" ry="9" fill="#fff" opacity="0.045"/>
+        <path d="M ${CX - 6} ${CY + 9} A 8 8 0 0 0 ${CX + 6} ${CY + 9}" fill="none" stroke="#fff" stroke-opacity="0.09" stroke-width="2.2" stroke-linecap="round"/>
       </g>
     </svg>
     <div class="grab" role="slider" tabindex="0"></div>

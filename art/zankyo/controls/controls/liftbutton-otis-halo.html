@@ -89,7 +89,7 @@
     .plate { position: absolute; inset: 0; border-radius: 2px;
       background:
         radial-gradient(125% 80% at 14% -14%, rgba(255,255,255,0.50), rgba(255,255,255,0) 64%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.055) 0 1px, rgba(0,0,0,0.05) 1px 2px, rgba(255,255,255,0.018) 2px 3px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, rgba(0,0,0,0.035) 1px 2px),
         linear-gradient(178deg, #dcdfe1, #c4c7c9 46%, #adb0b2);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(0,0,0,0.32), inset 0 0 0 1px rgba(0,0,0,0.16),
         0 2px 5px rgba(0,0,0,0.45);
@@ -112,23 +112,23 @@
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>
         <linearGradient id="chamf" x1="0.1" y1="0.05" x2="0.85" y2="0.95">
-          <stop offset="0" stop-color="#63686a"/><stop offset="0.42" stop-color="#8d9395"/>
-          <stop offset="0.78" stop-color="#e2e6e8"/><stop offset="1" stop-color="#f6f9fa"/>
+          <stop offset="0" stop-color="#7e8385"/><stop offset="0.42" stop-color="#9aa0a2"/>
+          <stop offset="0.78" stop-color="#dfe3e5"/><stop offset="1" stop-color="#f2f5f6"/>
         </linearGradient>
         <radialGradient id="recess" cx="32%" cy="26%" r="86%">
           <stop offset="0" stop-color="#0a0b0c"/><stop offset="0.72" stop-color="#17191b"/><stop offset="1" stop-color="#2a2d30"/>
         </radialGradient>
-        <radialGradient id="btnface" cx="35%" cy="26%" r="80%">
-          <stop offset="0" stop-color="#3b3f43"/><stop offset="0.42" stop-color="#232629"/>
-          <stop offset="0.84" stop-color="#141618"/><stop offset="1" stop-color="#0b0c0d"/>
+        <radialGradient id="btnface" cx="36%" cy="27%" r="84%">
+          <stop offset="0" stop-color="#2e3236"/><stop offset="0.55" stop-color="#26292c"/>
+          <stop offset="0.9" stop-color="#1f2225"/><stop offset="1" stop-color="#16191b"/>
         </radialGradient>
         <radialGradient id="sheen" cx="34%" cy="26%" r="52%">
-          <stop offset="0" stop-color="#ffffff" stop-opacity="0.26"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0.05"/>
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.15"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0.035"/>
           <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="ringOff" cx="33%" cy="24%" r="82%">
-          <stop offset="0" stop-color="#f2f3f0"/><stop offset="0.5" stop-color="#d8d9d6"/>
-          <stop offset="0.85" stop-color="#b4b6b3"/><stop offset="1" stop-color="#9b9d9a"/>
+          <stop offset="0" stop-color="#f6f7f4"/><stop offset="0.5" stop-color="#dedfdc"/>
+          <stop offset="0.86" stop-color="#c2c4c1"/><stop offset="1" stop-color="#adafac"/>
         </radialGradient>
         <radialGradient id="ringW" cx="50%" cy="50%" r="60%">
           <stop offset="0" stop-color="#ffe9b0"/><stop offset="0.45" stop-color="#fff6dc"/><stop offset="1" stop-color="#fffdf4"/>
@@ -151,8 +151,8 @@
           <stop offset="0.52" stop-color="#ffcf72" stop-opacity="0.58"/><stop offset="0.72" stop-color="#ffb52e" stop-opacity="0.24"/>
           <stop offset="1" stop-color="#ffb000" stop-opacity="0"/>
         </radialGradient>
-        <radialGradient id="dot" cx="34%" cy="28%" r="78%">
-          <stop offset="0" stop-color="#f4f6f7"/><stop offset="0.55" stop-color="#cdd1d3"/><stop offset="1" stop-color="#9ea3a5"/>
+        <radialGradient id="dot" cx="33%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#fbfcfc"/><stop offset="0.5" stop-color="#d4d8da"/><stop offset="1" stop-color="#93989a"/>
         </radialGradient>
         <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>
         <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6"/></filter>
@@ -168,13 +168,13 @@
       <circle cx="${CX + 0.5}" cy="${CY + 1}" r="37.5" fill="none" stroke="#7d8285" stroke-opacity="0.18" stroke-width="4" filter="url(#soft)"/>
 
       <!-- the chamfered hole -->
-      <circle cx="${CX}" cy="${CY}" r="34" fill="none" stroke="url(#chamf)" stroke-width="3.2"/>
+      <circle cx="${CX}" cy="${CY}" r="34.2" fill="none" stroke="url(#chamf)" stroke-width="2.6"/>
       <circle cx="${CX}" cy="${CY}" r="32.4" fill="url(#recess)"/>
-      <circle cx="${CX}" cy="${CY}" r="35.6" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="0.7"/>
+      <circle cx="${CX}" cy="${CY}" r="35.5" fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="0.6"/>
 
       <!-- the halo ring: dull grey acrylic, then the lit variants over it -->
       <circle cx="${CX}" cy="${CY}" r="29.7" fill="none" stroke="url(#ringOff)" stroke-width="5.6"/>
-      <circle cx="${CX}" cy="${CY}" r="32.5" fill="none" stroke="#0a0b0c" stroke-opacity="0.75" stroke-width="0.9"/>
+      <circle cx="${CX}" cy="${CY}" r="32.6" fill="none" stroke="#0a0b0c" stroke-opacity="0.5" stroke-width="0.7"/>
       <g class="lit lit-w">
         <circle cx="${CX}" cy="${CY}" r="29.7" fill="none" stroke="#fff3d0" stroke-width="8.5" opacity="0.55" filter="url(#glow)"/>
         <circle cx="${CX}" cy="${CY}" r="29.7" fill="none" stroke="url(#ringW)" stroke-width="5.6"/>
@@ -193,14 +193,14 @@
 
       <!-- the black Lexan button: a low cylinder standing proud of the plate -->
       <g class="btn">
-        <ellipse cx="${CX + 0.8}" cy="${CY + 2.2}" rx="26.8" ry="26.2" fill="#000" opacity="0.6" filter="url(#soft)"/>
-        <circle cx="${CX}" cy="${CY + 1.1}" r="26.6" fill="#0c0d0e"/>
+        <ellipse cx="${CX + 0.8}" cy="${CY + 2.4}" rx="26.6" ry="26" fill="#000" opacity="0.6" filter="url(#soft)"/>
+        <circle cx="${CX}" cy="${CY + 1.5}" r="26.3" fill="#0d0f10"/>
         <circle cx="${CX}" cy="${CY}" r="26.6" fill="url(#btnface)"/>
-        <ellipse cx="${CX - 9}" cy="${CY - 11}" rx="17" ry="12" fill="url(#sheen)" transform="rotate(-26 ${CX - 9} ${CY - 11})"/>
-        <path d="M ${CX - 20} ${CY + 15.5} A 25.5 25.5 0 0 0 ${CX + 20} ${CY + 15.5}" fill="none" stroke="#7c8288" stroke-opacity="0.35" stroke-width="1.3"/>
-        <circle cx="${CX}" cy="${CY}" r="26.8" fill="none" stroke="#2f3336" stroke-opacity="0.55" stroke-width="0.7"/>
+        <ellipse cx="${CX - 8}" cy="${CY - 10}" rx="19" ry="14" fill="url(#sheen)" transform="rotate(-26 ${CX - 8} ${CY - 10})"/>
+        <path d="M ${CX - 22.5} ${CY + 13.2} A 26.1 26.1 0 0 0 ${CX + 22.5} ${CY + 13.2}" fill="none" stroke="#818a90" stroke-opacity="0.45" stroke-width="1"/>
+        <circle cx="${CX}" cy="${CY}" r="26.6" fill="none" stroke="#3a3f43" stroke-opacity="0.5" stroke-width="0.6"/>
         <!-- grime in the gap -->
-        <circle cx="${CX}" cy="${CY}" r="27.1" fill="none" stroke="#5d625f" stroke-opacity="0.35" stroke-width="1.5" filter="url(#hair)"/>
+        <circle cx="${CX}" cy="${CY}" r="27.2" fill="none" stroke="#5d625f" stroke-opacity="0.3" stroke-width="1.4" filter="url(#hair)"/>
         <!-- the moulded numeral: shadow under, bevel above, polished face -->
         <text class="num sh" x="${CX + 0.55}" y="${CY}" dominant-baseline="central" fill="#000" fill-opacity="0.65" dy="0.75"></text>
         <text class="num hi" x="${CX - 0.45}" y="${CY}" dominant-baseline="central" fill="#ffffff" fill-opacity="0.5" dy="-0.6"></text>
@@ -291,9 +291,9 @@
         else if (CELL[ch]) cells.push(CELL[ch]);
       }
       if (!cells.length) return;
-      const dx = 4.4, dy = 4.4, pitch = 12.4, r = 1.5;
+      const dx = 5, dy = 5, pitch = 13.6, r = 1.85;
       const total = (cells.length - 1) * pitch + dx;
-      let x0 = CX - total / 2, y0 = 84;
+      let x0 = CX - total / 2, y0 = 82.5;
       cells.forEach((cell, ci) => {
         const cx0 = x0 + ci * pitch;
         cell.forEach(d => {
@@ -301,7 +301,7 @@
           const x = cx0 + col * dx, y = y0 + row * dy;
           const sh = document.createElementNS(NS, "circle");
           sh.setAttribute("cx", (x + 0.55).toFixed(2)); sh.setAttribute("cy", (y + 0.7).toFixed(2));
-          sh.setAttribute("r", r); sh.setAttribute("fill", "#63686a"); sh.setAttribute("fill-opacity", "0.55");
+          sh.setAttribute("r", r); sh.setAttribute("fill", "#585d5f"); sh.setAttribute("fill-opacity", "0.6");
           g.appendChild(sh);
           const dot = document.createElementNS(NS, "circle");
           dot.setAttribute("cx", x.toFixed(2)); dot.setAttribute("cy", y.toFixed(2));

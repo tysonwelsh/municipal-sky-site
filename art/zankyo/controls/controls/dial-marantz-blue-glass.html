@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marantz blue-lit dial glass with Gyro-Touch wheel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dial-marantz-blue-glass",
+  "element": "sk-dial-marantz",
+  "name": "Marantz blue-lit black-glass dial with a Gyro-Touch wheel",
+  "kind": "both",
+  "code": "A7",
+  "type": "Linear tuning dial",
+  "source": "Marantz 2270 / 2325 receiver dial glass and tuning flywheel, 1971–1977",
+  "era": "1970s",
+  "origin": "USA / Japan",
+  "materials": ["smoked glass", "blue backlight", "brushed aluminium", "knurled flywheel", "printed scale"],
+  "tags": ["receiver", "radio", "tuning", "FM", "AM", "flywheel", "inertia", "backlit", "hi-fi"],
+  "value": { "model": "range", "min": 88, "max": 108, "step": 0.1, "unit": "MHz" },
+  "attributes": ["value", "band", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 420, "h": 110 },
+  "notes": "FM at 101.1; a second dial on AM at 1010 kHz at scale 0.6. Drag or flick the flywheel edge at the right (it spins on), wheel steps 0.1, arrows step. band=AM switches to the 530–1600 kHz scale."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium">
+    <sk-dial-marantz value="101.1" band="FM" label="TUNING"></sk-dial-marantz>
+    <sk-dial-marantz value="1010" band="AM" label="TUNING" scale="0.6"></sk-dial-marantz>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Marantz 22-series receivers</b> of the early seventies wear a long black-glass dial that lights up
+  a cold, even blue when the set is on: white FM and AM scales printed on the glass, a thin red pointer, two
+  small blue-lit meters at the left, all set in a brushed-aluminium fascia. Tuning is by the
+  <b>Gyro-Touch</b> flywheel, a heavy horizontal wheel whose knurled rim shows through a slot at the right
+  of the glass; flick it and it spins on, the pointer sliding a beat behind.</p>
+  <p><b>The tells kept here:</b> the blue wash brightest around the pointer, with a bloom that spills past the
+  bezel onto the aluminium; the scale numerals printed on the glass, so they carry a lit halo and drop a small
+  shadow onto the diffuser behind them; the AM scale in tens (55 to 160) with its logarithmic crowding at the
+  low end; the red hairline pointer with a hot tip and a faint halo; the flywheel rim drawn as a cylinder, its
+  knurl ridges placed by angle and crowding toward the ends of the slot, spinning as the pointer moves and
+  carrying on with inertia after a flick (~900 ms decay); the tuning and signal meters as static lit windows;
+  the fascia's horizontal grain, and the black bezel line around the glass. The wheel takes horizontal drag,
+  a mouse wheel and the arrow keys; <code>band="AM"</code> re-maps the pointer to the lower scale.</p>
+  <p><b>Left out:</b> the Marantz script and model number on the fascia, the stereo lamp, the live meter needles,
+  and the fascia's other controls.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dial-marantz> — blue-lit black-glass tuning dial with an inertial flywheel edge ====
+   attributes: value band(FM|AM) label scale disabled
+   events: input {value, band} while the pointer moves (drag, flick inertia, wheel, keys), change {value, band} when it settles
+   self-contained: paste this block into any page and use <sk-dial-marantz value="98.5"></sk-dial-marantz> */
+(function () {
+  if (customElements.get("sk-dial-marantz")) return;
+  const W = 420, H = 110;
+  const GX = 66, GY = 10, GW = 288, GH = 90;            // the glass
+  const XS0 = 96, XS1 = 332;                             // the scale span
+  const FX = 389, FR = 27, FY0 = 41, FH = 28;            // flywheel: centre x, radius, rim band top, rim height
+  const NR = 44;                                         // knurl ridges around the rim
+  const BANDS = { FM: { min: 88, max: 108, step: 0.1, unit: "MHz", log: false }, AM: { min: 530, max: 1600, step: 10, unit: "kHz", log: true } };
+  const f = n => n.toFixed(2);
+  const meter = (x, y, w, h, label, frac) => {
+    const cx = x + w / 2, py = y + h + 14, r = h + 8;
+    let ticks = "";
+    for (let i = 0; i <= 8; i++) { const a = (-32 + 64 * i / 8) * Math.PI / 180, r0 = r - (i % 4 === 0 ? 6 : 3.5); ticks += `<line x1="${f(cx + r0 * Math.sin(a))}" y1="${f(py - r0 * Math.cos(a))}" x2="${f(cx + (r - 1) * Math.sin(a))}" y2="${f(py - (r - 1) * Math.cos(a))}" stroke="#e8eef6" stroke-width="${i % 4 === 0 ? 0.9 : 0.6}" opacity="0.9"/>`; }
+    const na = (-32 + 64 * frac) * Math.PI / 180;
+    return `
+      <rect x="${x - 1.5}" y="${y - 1.5}" width="${w + 3}" height="${h + 3}" rx="1.5" fill="#07090c"/>
+      <rect x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" fill="#2f5c95" opacity="0.28" filter="url(#bloom)"/>
+      <rect x="${x - 1.5}" y="${y - 1.5}" width="${w + 3}" height="${h + 3}" rx="1.5" fill="#07090c"/>
+      <g clip-path="url(#mclip${label})">
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#wash)"/>
+        <ellipse cx="${cx}" cy="${y + h * 0.55}" rx="${w * 0.5}" ry="${h * 0.5}" fill="#3d6fa8" opacity="0.55" filter="url(#glow5)"/>
+        ${ticks}
+        <line x1="${f(cx + 4 * Math.sin(na))}" y1="${f(py - 4 * Math.cos(na))}" x2="${f(cx + (r - 1) * Math.sin(na))}" y2="${f(py - (r - 1) * Math.cos(na))}" stroke="#0a0c10" stroke-width="1.1"/>
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="4" filter="url(#blur2)"/>
+        <path d="M ${x} ${y} L ${x + w * 0.55} ${y} L ${x + w * 0.2} ${y + h} L ${x} ${y + h} Z" fill="url(#refl)"/>
+      </g>
+      <text class="lg" x="${cx}" y="${y + h + 9.5}">${label}</text>`;
+  };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${FX - FR - 2}px; top: ${FY0 - 4}px; width: ${2 * FR + 4}px; height: ${FH + 8}px; border-radius: 3px; cursor: ew-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500; fill: #e8eef6; }
+    .num { font-size: 6.5px; text-anchor: middle; }
+    .band { font-size: 6px; font-weight: 600; letter-spacing: 0.06em; fill: #5d769a; }
+    .band.on { fill: #eef3fa; }
+    .unit { font-size: 5.5px; letter-spacing: 0.04em; text-anchor: end; fill: #c9d6e8; }
+    .lg { font-size: 5.5px; letter-spacing: 0.14em; text-anchor: middle; fill: #45463f; }
+    .ptr, .glowm { will-change: transform; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <pattern id="grain" width="7" height="3" patternUnits="userSpaceOnUse">
+          <rect width="7" height="3" fill="#cfd0cb"/><rect y="0.5" width="7" height="0.8" fill="#dadbd6"/><rect y="2" width="7" height="0.6" fill="#c2c3be"/>
+        </pattern>
+        <linearGradient id="fasciaLight" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.04"/><stop offset="1" stop-color="#000" stop-opacity="0.1"/>
+        </linearGradient>
+        <linearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0d1a33"/><stop offset="0.45" stop-color="#1e3f6e"/><stop offset="1" stop-color="#0b1220"/>
+        </linearGradient>
+        <radialGradient id="glowG" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#4f86c4"/><stop offset="0.5" stop-color="#3d6fa8" stop-opacity="0.55"/><stop offset="1" stop-color="#3d6fa8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="refl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3b3d42"/><stop offset="0.25" stop-color="#2a2c30"/><stop offset="1" stop-color="#151619"/>
+        </linearGradient>
+        <linearGradient id="rimEnds" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.8"/><stop offset="0.18" stop-color="#000" stop-opacity="0"/><stop offset="0.82" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.8"/>
+        </linearGradient>
+        <clipPath id="gclip"><rect x="${GX}" y="${GY}" width="${GW}" height="${GH}"/></clipPath>
+        <clipPath id="mclipTUNING"><rect x="10" y="10" width="46" height="32"/></clipPath>
+        <clipPath id="mclipSIGNAL"><rect x="10" y="58" width="46" height="32"/></clipPath>
+        <clipPath id="sclip"><rect x="${FX - FR}" y="${FY0 - 2}" width="${2 * FR}" height="${FH + 4}" rx="1.5"/></clipPath>
+        <filter id="bloom" x="-20%" y="-30%" width="140%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="glow5" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+        <filter id="blur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2"/></filter>
+        <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.4"/></filter>
+        <filter id="printShadow" x="-10%" y="-20%" width="120%" height="140%"><feFlood flood-color="#000" flood-opacity="0.55"/><feComposite in2="SourceAlpha" operator="in"/><feGaussianBlur stdDeviation="0.45"/></filter>
+        <filter id="printGlow" x="-10%" y="-20%" width="120%" height="140%"><feFlood flood-color="#a9c8ff" flood-opacity="0.7"/><feComposite in2="SourceAlpha" operator="in"/><feGaussianBlur stdDeviation="1.1"/></filter>
+      </defs>
+
+      <!-- brushed aluminium fascia -->
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2" fill="url(#grain)" stroke="#7d7e79" stroke-width="1"/>
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2" fill="url(#fasciaLight)"/>
+      <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="1.5" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+
+      <!-- the two small meters, static lit windows -->
+      ${meter(10, 10, 46, 32, "TUNING", 0.5)}
+      ${meter(10, 58, 46, 32, "SIGNAL", 0.72)}
+
+      <!-- blue bloom that spills past the bezel onto the fascia -->
+      <rect x="${GX - 6}" y="${GY - 6}" width="${GW + 12}" height="${GH + 12}" fill="#2f5c95" opacity="0.42" filter="url(#bloom)"/>
+      <!-- bezel: a black line, recessed (dark top-left edge, lit bottom-right lip) -->
+      <rect x="${GX - 2.5}" y="${GY - 2.5}" width="${GW + 5}" height="${GH + 5}" rx="1.5" fill="#07090c"/>
+      <path d="M ${GX - 3} ${GY + GH + 3} L ${GX + GW + 3} ${GY + GH + 3} L ${GX + GW + 3} ${GY - 3}" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.8"/>
+      <path d="M ${GX - 3} ${GY + GH + 3} L ${GX - 3} ${GY - 3} L ${GX + GW + 3} ${GY - 3}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.8"/>
+
+      <!-- the glass -->
+      <g clip-path="url(#gclip)">
+        <rect x="${GX}" y="${GY}" width="${GW}" height="${GH}" fill="#0b1220"/>
+        <rect x="${GX}" y="${GY}" width="${GW}" height="${GH}" fill="url(#wash)"/>
+        <ellipse class="glowm" cx="0" cy="${GY + GH * 0.5}" rx="78" ry="62" fill="url(#glowG)" opacity="0.85"/>
+        <!-- scales printed on the glass: a shadow onto the diffuser, a lit halo, the print -->
+        <g id="scl" class="scl"></g>
+        <use href="#scl" transform="translate(0.7 0.9)" filter="url(#printShadow)"/>
+        <use href="#scl" filter="url(#printGlow)"/>
+        <use href="#scl"/>
+        <!-- the red pointer with a hot tip and a halo -->
+        <g class="ptr">
+          <line x1="0" y1="${GY + 2}" x2="0" y2="${GY + GH - 2}" stroke="#ff6a60" stroke-opacity="0.5" stroke-width="2.4" filter="url(#blur1)"/>
+          <line x1="0" y1="${GY + 2}" x2="0" y2="${GY + GH - 2}" stroke="#e0302a" stroke-width="1"/>
+          <line x1="0" y1="${GY + 2}" x2="0" y2="${GY + 12}" stroke="#ffb0a8" stroke-width="1.3"/>
+        </g>
+        <!-- inner shadow from the bezel, and one wide room reflection -->
+        <rect x="${GX}" y="${GY}" width="${GW}" height="${GH}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="5" filter="url(#blur2)"/>
+        <path d="M ${GX} ${GY} L ${GX + 150} ${GY} L ${GX + 60} ${GY + GH} L ${GX} ${GY + GH} Z" fill="url(#refl)"/>
+        <rect x="${GX + 0.5}" y="${GY + 0.5}" width="${GW - 1}" height="${GH - 1}" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="1"/>
+      </g>
+
+      <!-- the flywheel rim through its slot -->
+      <rect x="${FX - FR - 2}" y="${FY0 - 4}" width="${2 * FR + 4}" height="${FH + 8}" rx="2" fill="#0a0b0e"/>
+      <g clip-path="url(#sclip)">
+        <rect x="${FX - FR}" y="${FY0}" width="${2 * FR}" height="${FH}" fill="url(#rim)"/>
+        <path class="kn3" fill="#6b6e74" opacity="0.28"/>
+        <path class="kn2" fill="#6b6e74" opacity="0.6"/>
+        <path class="kn1" fill="#8a8d93" opacity="0.95"/>
+        <path class="knS" fill="#0c0d10" opacity="0.75"/>
+        <rect x="${FX - FR}" y="${FY0}" width="${2 * FR}" height="${FH}" fill="url(#rimEnds)"/>
+        <rect x="${FX - FR}" y="${FY0}" width="${2 * FR}" height="1.2" fill="#fff" opacity="0.18"/>
+        <rect x="${FX - FR}" y="${FY0 + FH - 2}" width="${2 * FR}" height="2" fill="#000" opacity="0.5"/>
+        <rect x="${FX - FR - 2}" y="${FY0 - 4}" width="${2 * FR + 4}" height="${FH + 8}" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="5" filter="url(#blur2)"/>
+      </g>
+      <path d="M ${FX - FR - 2.5} ${FY0 + FH + 4.5} L ${FX + FR + 2.5} ${FY0 + FH + 4.5} L ${FX + FR + 2.5} ${FY0 - 4}" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.8"/>
+      <text class="lg" x="${FX}" y="${FY0 + FH + 14}">TUNING</text>
+      <text class="lg" x="${FX}" y="${FY0 - 9}">GYRO-TOUCH</text>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkDialMarantz extends HTMLElement {
+    static get observedAttributes() { return ["value", "band", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._band = "FM"; this._B = BANDS.FM; this._v = 101.1; this._fv = 101.1; this._scale = 1;
+      this._px = XS0; this._vel = 0; this._raf = 0; this._last = 0; this._inertia = false;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._grab = q(".grab"); this._wrap = q(".wrap"); this._ptr = q(".ptr"); this._glow = q(".glowm"); this._scl = q(".scl");
+      this._kn = [q(".kn1"), q(".kn2"), q(".kn3"), q(".knS")];
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this._drawScale();
+      this._readAttrs();
+      if (!this.hasAttribute("value")) this._reflect();
+      this._px = this._x(this._v); this._paint();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0; this._inertia = false; this._vel = 0;
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._kick(); }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._inertia = false; this._vel = 0; this._v = this._fv = this._quant(v); this._reflect(); this._kick(); }
+    get band() { return this._band; }
+    set band(b) { this.setAttribute("band", String(b)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _quant(v) { const B = this._B; return Math.min(B.max, Math.max(B.min, Math.round(v / B.step) * B.step)); }
+    _reflect() { this.setAttribute("value", String(Math.round(this._v * 100) / 100)); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const b = String(this.getAttribute("band") || "FM").toUpperCase();
+      this._band = BANDS[b] ? b : "FM"; this._B = BANDS[this._band];
+      this._v = this._fv = this._quant(num("value", this._v));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this.shadowRoot.querySelectorAll(".band").forEach(t => t.classList.toggle("on", t.dataset.band === this._band));
+      const g = this._grab, label = this.getAttribute("label") || "tuning";
+      g.setAttribute("aria-label", label);
+      g.setAttribute("aria-valuemin", this._B.min); g.setAttribute("aria-valuemax", this._B.max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _x(v) { const B = this._B; const t = B.log ? Math.log(v / B.min) / Math.log(B.max / B.min) : (v - B.min) / (B.max - B.min); return XS0 + t * (XS1 - XS0); }
+    _drawScale() {
+      const g = this._scl; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+      const xf = (B, v) => { const t = B.log ? Math.log(v / B.min) / Math.log(B.max / B.min) : (v - B.min) / (B.max - B.min); return XS0 + t * (XS1 - XS0); };
+      // FM, upper: numerals above, ticks hanging from a baseline
+      const F = BANDS.FM, yF = 36;
+      g.appendChild(mk("line", { x1: XS0 - 5, y1: yF, x2: XS1 + 5, y2: yF, stroke: "#e8eef6", "stroke-width": 0.8 }));
+      for (let v = F.min; v <= F.max + 1e-9; v += 0.5) {
+        const isInt = Math.abs(v - Math.round(v)) < 1e-6, even = isInt && Math.round(v) % 2 === 0;
+        const x = xf(F, v), len = even ? 7 : isInt ? 5 : 3;
+        g.appendChild(mk("line", { x1: f(x), y1: yF, x2: f(x), y2: yF + len, stroke: "#e8eef6", "stroke-width": even ? 0.9 : 0.6 }));
+        if (even) g.appendChild(mk("text", { x: f(x), y: yF - 5, class: "num" }, String(Math.round(v))));
+      }
+      g.appendChild(mk("text", { x: XS0 - 18, y: yF - 5, class: "band", "data-band": "FM" }, "FM"));
+      g.appendChild(mk("text", { x: XS1 + 20, y: yF - 5, class: "unit" }, "MHz"));
+      // AM, lower: ticks rising to a baseline, numerals in tens below, logarithmic spacing
+      const A = BANDS.AM, yA = 66, labels = [550, 600, 700, 800, 1000, 1200, 1400, 1600];
+      g.appendChild(mk("line", { x1: XS0 - 5, y1: yA, x2: XS1 + 5, y2: yA, stroke: "#e8eef6", "stroke-width": 0.8 }));
+      for (let v = 530; v <= 1600; v += v < 700 ? 10 : v < 1200 ? 20 : 40) {
+        const major = labels.includes(v) || v % 100 === 0, x = xf(A, v);
+        g.appendChild(mk("line", { x1: f(x), y1: yA, x2: f(x), y2: yA - (major ? 6 : 3), stroke: "#e8eef6", "stroke-width": major ? 0.9 : 0.6 }));
+      }
+      labels.forEach(v => g.appendChild(mk("text", { x: f(xf(A, v)), y: yA + 12.5, class: "num" }, String(v / 10))));
+      g.appendChild(mk("text", { x: XS0 - 18, y: yA + 12.5, class: "band", "data-band": "AM" }, "AM"));
+      g.appendChild(mk("text", { x: XS1 + 20, y: yA + 12.5, class: "unit" }, "kHz"));
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      let busy = false;
+      if (this._inertia) {
+        this._fv += this._vel * dt;
+        this._vel *= Math.exp(-dt / 0.3);                              // ~900 ms to run down
+        const B = this._B;
+        if (this._fv <= B.min || this._fv >= B.max) { this._fv = Math.min(B.max, Math.max(B.min, this._fv)); this._vel = 0; }
+        const q = this._quant(this._fv);
+        if (q !== this._v) { this._v = q; this._reflect(); this._emit(false); }
+        if (Math.abs(this._vel) < B.step * 0.4) { this._inertia = false; this._vel = 0; this._fv = this._v; this._emit(true); }
+        else busy = true;
+      }
+      const target = this._x(this._v), d = target - this._px;
+      if (Math.abs(d) > 0.05) { this._px += d * (1 - Math.exp(-dt / 0.07)); busy = true; } else this._px = target;
+      this._paint();
+      this._raf = busy ? requestAnimationFrame(this._tick) : 0;
+    }
+    _paint() {
+      const x = this._px;
+      this._ptr.style.transform = `translate(${f(x)}px, 0)`;
+      this._glow.style.transform = `translate(${f(x)}px, 0)`;
+      // the flywheel rim: ridges by angle, crowding at the ends of the slot
+      const off = (x - XS0) / FR * 1.4;
+      const d = ["", "", "", ""];
+      for (let i = 0; i < NR; i++) {
+        const th = i * 2 * Math.PI / NR + off, c = Math.cos(th), s = Math.sin(th);
+        if (c < 0.03) continue;
+        const rx = FX + FR * s, w = Math.max(0.6, 1.9 * c);
+        const l = c * (0.78 - 0.32 * s);                                 // lit from above-left: ridges on the left face the light
+        const b = l > 0.6 ? 0 : l > 0.3 ? 1 : 2;
+        d[b] += `M${f(rx - w / 2)} ${FY0}h${f(w)}v${FH}h${f(-w)}z`;
+        d[3] += `M${f(rx + w / 2 + 0.15)} ${FY0}h${f(Math.max(0.5, w * 0.8))}v${FH}h${f(-Math.max(0.5, w * 0.8))}z`;
+      }
+      this._kn.forEach((p, i) => p.setAttribute("d", d[i] || "M0 0"));
+      const g = this._grab;
+      g.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      g.setAttribute("aria-valuetext", (Math.round(this._v * 10) / 10) + " " + this._B.unit);
+    }
+    _emit(settle) { this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v, band: this._band } })); }
+    _set(v) { const q = this._quant(v); this._fv = q; if (q === this._v) return false; this._v = q; this._reflect(); this._emit(false); this._kick(); return true; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._inertia = false; this._vel = 0; this._fv = this._v;
+      this._drag = { x: e.clientX, v: this._v, moved: false, samples: [[performance.now(), e.clientX]] };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _pxToV(px) { return px / this._scale * (this._B.max - this._B.min) / (XS1 - XS0); }
+    _onMove(e) {
+      if (!this._drag) return;
+      const now = performance.now(), s = this._drag.samples;
+      s.push([now, e.clientX]); while (s.length > 2 && now - s[0][0] > 90) s.shift();
+      const v = this._drag.v + this._pxToV(e.clientX - this._drag.x) * (e.shiftKey ? 0.25 : 1);
+      if (this._set(v)) this._drag.moved = true;
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const s = this._drag.samples, moved = this._drag.moved; this._drag = null;
+      const now = performance.now(), first = s[0], last = s[s.length - 1];
+      let vel = 0;
+      if (s.length > 1 && now - last[0] < 80 && last[0] > first[0]) vel = this._pxToV(last[1] - first[1]) / ((last[0] - first[0]) / 1000);
+      const cap = (this._B.max - this._B.min) * 2.5;                     // no more than 2.5 bands per second
+      vel = Math.max(-cap, Math.min(cap, vel));
+      if (Math.abs(vel) > (this._B.max - this._B.min) * 0.08) { this._inertia = true; this._vel = vel; this._fv = this._v; this._kick(); }
+      else if (moved) this._emit(true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : -e.deltaY;
+      const dir = delta > 0 ? 1 : -1;
+      this._inertia = false; this._vel = 0;
+      if (this._set(this._v + dir * this._B.step * (e.shiftKey ? 10 : 1))) { clearTimeout(this._wt); this._wt = setTimeout(() => this._emit(true), 220); }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const B = this._B, st = B.step, big = st * 10, r = B.max - B.min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : st); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : st); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = B.min; break;
+        case "End": v = B.max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._inertia = false; this._vel = 0;
+      if (this._set(v)) this._emit(true);
+    }
+  }
+  customElements.define("sk-dial-marantz", SkDialMarantz);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

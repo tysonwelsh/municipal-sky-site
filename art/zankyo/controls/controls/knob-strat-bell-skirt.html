@@ -157,7 +157,8 @@
       <!-- numerals on the slope, projected (built by JS) -->
       <g class="nums"></g>
       <!-- the concave waist: a shadowed crease -->
-      <ellipse cx="${CX}" cy="${f(WY)}" rx="${RW + 1.2}" ry="${f(RYW + 1.2)}" fill="#5a4a22" opacity="0.28" filter="url(#tight)"/>
+      <ellipse cx="${CX + 0.8}" cy="${f(WY + 1)}" rx="${RW + 2.6}" ry="${f(RYW + 2.6)}" fill="#5a4a22" opacity="0.3" filter="url(#soft)"/>
+      <ellipse cx="${CX}" cy="${f(WY)}" rx="${RW + 1.2}" ry="${f(RYW + 1.2)}" fill="#4a3c1a" opacity="0.4" filter="url(#tight)"/>
       <ellipse cx="${CX}" cy="${f(WY)}" rx="${RW}" ry="${f(RYW)}" fill="url(#bodyG)"/>
       <!-- the body from the waist up to the shoulder -->
       <path class="bodyShape" d="M ${CX - RW} ${f(WY)} C ${CX - RW + 1.5} ${f(WY - 3)} ${CX - RT - 1} ${f(TY + 3)} ${CX - RT} ${f(TY)} A ${RT} ${f(RYT)} 0 0 1 ${CX + RT} ${f(TY)} C ${CX + RT + 1} ${f(TY + 3)} ${CX + RW - 1.5} ${f(WY - 3)} ${CX + RW} ${f(WY)} A ${RW} ${f(RYW)} 0 0 1 ${CX - RW} ${f(WY)} Z" fill="url(#bodyG)"/>

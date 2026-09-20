@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Western Electric 2500 Touch-Tone keypad — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "keypad-we-2500",
+  "element": "sk-keypad-we-2500",
+  "name": "Western Electric 2500 Touch-Tone keypad",
+  "kind": "input",
+  "code": "D11",
+  "type": "Telephone keypad",
+  "source": "Western Electric / Bell System 2500 desk set, 1968 on: twelve white keys in a 3 × 4 grid with * and #, letters beneath the numerals and OPER under the 0, let into a coloured ABS housing",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["white ABS keys", "ABS housing", "printed legends"],
+  "tags": ["telephone", "Bell System", "Touch-Tone", "DTMF", "keypad", "digits"],
+  "value": { "model": "digits" },
+  "attributes": ["value", "housing", "single", "legend", "letters", "held", "maxlength", "scale", "disabled"],
+  "events": ["press", "release", "activate", "input", "change"],
+  "size": { "w": 190, "h": 220 },
+  "notes": "A black desk set and an avocado one with the 5 held down. Click a key, or type digits, * and #; arrows walk the grid, Space/Enter dials, Backspace rubs out."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="putty">
+    <sk-keypad-we-2500 value="" housing="black"></sk-keypad-we-2500>
+    <sk-keypad-we-2500 value="4155" housing="avocado" held="5" scale="0.8"></sk-keypad-we-2500>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Western Electric 2500</b> is the Touch-Tone desk telephone: the 500 rotary set with the dial replaced
+  by twelve keys, from 1968 until the Bell System stopped making them. Twelve glossy white ABS keys in a 3 × 4
+  grid, let into a rectangular recess in the housing, with the numeral large and the letters small beneath it,
+  <b>OPER</b> under the 0, and <b>&#42;</b> and <b>#</b> in the bottom corners. The housing came in black, ivory,
+  beige, red, green, yellow and — this being 1972 — avocado.</p>
+  <p><b>The tells kept here:</b> two weights on one key, a heavy Helvetica numeral over 6&nbsp;px letters; 1 with
+  no letters, 7 = PRS and 9 = WXY because Q and Z were left out; the six-pointed Bell asterisk and the upright
+  octothorpe drawn as paths rather than typed; the slight dome on the key top with its soft highlight above and
+  a hairline bright rim below; the whole block let into a recess whose floor is the housing colour, with a dark
+  gap around every key; the top row yellower than the rest and a line of grime along the recess edge. A press
+  travels 2&nbsp;px in 50&nbsp;ms and comes back spongily in 110&nbsp;ms, and the key brightens for a frame where
+  the DTMF pair would sound.</p>
+  <p><b>Left out:</b> the handset, the cradle, the finger-wheel-era number card and its plastic window, the
+  network block behind the keys, and the tones themselves — the element has no audio.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-keypad-we-2500> — Bell System 2500 twelve-button Touch-Tone keypad ====
+   attributes: value (the digit string) · housing [black|ivory|beige|red|green|yellow|avocado]
+               single (render one key) legend letters · held (a key shown down) · maxlength · scale · disabled
+   events: press {key} · release {key} · activate {key} · input {value, key} · change {value}
+   setting .value from outside re-renders and emits nothing.
+   self-contained: paste this block into any page and use <sk-keypad-we-2500></sk-keypad-we-2500> */
+(function () {
+  if (customElements.get("sk-keypad-we-2500")) return;
+  var W = 190, H = 220;                       // the keypad plate at scale 1
+  var KW = 40, KH = 34, PX = 54, PY = 45;     // 14 x 12 mm keys on a 19 x 16 mm pitch
+  var X0 = 21, Y0 = 25;                       // the 1 key's corner
+  var KEYS = [
+    ["1", ""], ["2", "ABC"], ["3", "DEF"],
+    ["4", "GHI"], ["5", "JKL"], ["6", "MNO"],
+    ["7", "PRS"], ["8", "TUV"], ["9", "WXY"],
+    ["*", ""], ["0", "OPER"], ["#", ""]
+  ];
+  var NAMES = { "*": "star", "#": "number sign", "0": "zero, operator" };
+  var STAR = '<svg class="glyph" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">' +
+    '<g stroke="#1a1a1a" stroke-width="2.1" stroke-linecap="butt">' +
+    '<line x1="8" y1="1.6" x2="8" y2="14.4"/><line x1="2.46" y1="4.8" x2="13.54" y2="11.2"/><line x1="2.46" y1="11.2" x2="13.54" y2="4.8"/>' +
+    '</g></svg>';
+  var HASH = '<svg class="glyph" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">' +
+    '<g stroke="#1a1a1a" stroke-width="2" stroke-linecap="butt">' +
+    '<line x1="5.6" y1="2.2" x2="5.6" y2="13.8"/><line x1="10.4" y1="2.2" x2="10.4" y2="13.8"/>' +
+    '<line x1="2.2" y1="5.9" x2="13.8" y2="5.9"/><line x1="2.2" y1="10.1" x2="13.8" y2="10.1"/>' +
+    '</g></svg>';
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
+  '  --h1:#33322f; --h2:#1f1f1f; --h3:#131313; --h4:#0c0c0c; --edge:#000;',
+  '  -webkit-tap-highlight-color:transparent; }',
+  ':host([hidden]) { display:none; }',
+  ':host([housing="ivory"])   { --h1:#f4efe0; --h2:#e9e2cf; --h3:#d6cdb6; --h4:#b9ae93; --edge:#8e846b; }',
+  ':host([housing="beige"])   { --h1:#e6d8ba; --h2:#d9c9a8; --h3:#c2b08b; --h4:#a4926d; --edge:#75664a; }',
+  ':host([housing="red"])     { --h1:#c9463c; --h2:#b8302a; --h3:#8e211d; --h4:#661513; --edge:#3d0c0b; }',
+  ':host([housing="green"])   { --h1:#4d7a55; --h2:#3c6544; --h3:#2b4b32; --h4:#1d3423; --edge:#101e14; }',
+  ':host([housing="yellow"])  { --h1:#efd457; --h2:#e0c33a; --h3:#bda029; --h4:#947c1c; --edge:#5f4f10; }',
+  ':host([housing="avocado"]) { --h1:#93a349; --h2:#7e8f3b; --h3:#63712c; --h4:#48531e; --edge:#2b3211; }',
+  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  /* the housing plate the keys are let into */
+  '.plate { position:absolute; left:0; top:0; width:' + W + 'px; height:' + H + 'px; border-radius:5px;',
+  '  background:',
+  '    repeating-linear-gradient(112deg, rgba(255,255,255,.012) 0 1px, rgba(0,0,0,0) 1px 4px),',
+  '    radial-gradient(115% 85% at 24% -10%, rgba(255,255,255,.10), rgba(255,255,255,0) 56%),',
+  '    linear-gradient(168deg, var(--h1) 0%, var(--h2) 46%, var(--h3) 100%);',
+  '  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), inset 0 -2px 5px rgba(0,0,0,.35),',
+  '    inset 0 0 0 1px rgba(0,0,0,.22), 0 2px 2px rgba(0,0,0,.55), 0 7px 16px rgba(0,0,0,.45); }',
+  /* the rectangular recess */
+  '.recess { position:absolute; border-radius:3px;',
+  '  background: linear-gradient(176deg, var(--h4) 0%, var(--h3) 78%, var(--h2) 100%);',
+  '  box-shadow: inset 2px 2px 4px rgba(0,0,0,.85), inset -1px -1px 0 rgba(255,255,255,.14),',
+  '    inset 0 1.6px 0 rgba(162,159,142,.26), inset 1.6px 0 0 rgba(150,147,132,.16),',
+  '    0 1px 0 rgba(255,255,255,.10); }',
+  /* keys */
+  '.k { position:absolute; width:' + KW + 'px; height:' + KH + 'px; border-radius:5px; cursor:pointer;',
+  '  touch-action:none; outline:none; user-select:none; -webkit-user-select:none;',
+  '  transition: transform 110ms cubic-bezier(.3,.6,.4,1), box-shadow 110ms ease-out, filter 110ms ease-out;',
+  '  background:',
+  '    radial-gradient(130% 100% at 44% 0%, rgba(255,255,255,.98), rgba(255,255,255,0) 62%),',
+  '    linear-gradient(177deg, #fdfdfa 0%, #f6f5f0 40%, #eeece5 70%, #dbd8d0 92%, #c8c5bc 100%);',
+  '  box-shadow: inset 0 -1.2px 0 rgba(255,255,255,.9), inset 0 0 0 .7px rgba(0,0,0,.12),',
+  '    0 1.6px 1.6px rgba(0,0,0,.55), 0 4px 7px rgba(0,0,0,.35); }',
+  '.k.worn { box-shadow: inset 0 0 0 40px rgba(198,168,88,.085), inset 0 -1.2px 0 rgba(255,255,255,.85),',
+  '    inset 0 0 0 .7px rgba(0,0,0,.12), 0 1.6px 1.6px rgba(0,0,0,.55), 0 4px 7px rgba(0,0,0,.35); }',
+  '.k.down { transform: translateY(2px); transition-duration: 50ms;',
+  '  box-shadow: inset 0 -1px 0 rgba(255,255,255,.7), inset 0 1.5px 2.5px rgba(0,0,0,.22),',
+  '    inset 0 0 0 .7px rgba(0,0,0,.14), 0 .6px .8px rgba(0,0,0,.6), 0 1.5px 3px rgba(0,0,0,.35); }',
+  '.k.beep { filter: brightness(1.10); transition-duration: 0ms; }',
+  ':host([disabled]) .k { cursor:default; }',
+  '.k:focus-visible::after { content:""; position:absolute; left:-3px; top:-3px; right:-3px; bottom:-3px;',
+  '  border-radius:9px; box-shadow: 0 0 0 1.8px #16e0e0, 0 0 8px rgba(22,224,224,.55); }',
+  '.num { position:absolute; left:0; right:0; top:4.5px; text-align:center; color:#1a1a1a;',
+  '  font-family:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif; font-weight:800; font-size:13px;',
+  '  line-height:1; letter-spacing:-.01em; }',
+  '.let { position:absolute; left:0; right:0; top:19.5px; text-align:center; color:#2a2a2a;',
+  '  font-family:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif; font-weight:600; font-size:6px;',
+  '  line-height:1; letter-spacing:.12em; text-indent:.12em; }',
+  '.k.sym .num { top:9.5px; }',
+  '.glyph { display:block; margin:0 auto; }',
+  '</style>',
+  '<div class="wrap"><div class="plate"><div class="recess"></div></div></div>'].join("\n");
+
+  class SkKeypadWe2500 extends HTMLElement {
+    static get observedAttributes() { return ["value", "housing", "single", "legend", "letters", "held", "maxlength", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = ""; this._scale = 1; this._idx = 0; this._keys = []; this._beeps = [];
+      this._downKey = null; this._kbKey = null;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._plate = this.shadowRoot.querySelector(".plate");
+      this._recess = this.shadowRoot.querySelector(".recess");
+      ["_onDown", "_onUp", "_onKeyDown", "_onKeyUp", "_onBlur"].forEach(function (m) { this[m] = this[m].bind(this); }, this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "group");
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "Touch-Tone keypad");
+      this._v = this.getAttribute("value") || "";
+      this._build(); this._render();
+    }
+    disconnectedCallback() {
+      this._beeps.forEach(clearTimeout); this._beeps = [];
+      this._downKey = null; this._kbKey = null;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { this._v = v == null ? "" : String(v); this._aria(); return; }
+      if (n === "single" || n === "legend" || n === "letters") this._build();
+      this._render();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = v == null ? "" : String(v);
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", v); this._aria();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opt) { var k = this._keys[this._idx] || this._keys[0]; if (k) k.el.focus(opt); }
+    blur() { var k = this._keys[this._idx]; if (k) k.el.blur(); }
+
+    // ---- structure ----
+    _build() {
+      var single = this.hasAttribute("single");
+      this._keys.forEach(function (k) { k.el.remove(); });
+      this._keys = [];
+      var list = single
+        ? [[this.getAttribute("legend") || "2", this.getAttribute("letters") == null ? "ABC" : this.getAttribute("letters")]]
+        : KEYS;
+      var self = this;
+      list.forEach(function (d, i) {
+        var el = document.createElement("div");
+        el.className = "k" + (d[0] === "*" || d[0] === "#" ? " sym" : "") + (!single && i < 3 ? " worn" : "");
+        el.setAttribute("role", "button");
+        el.setAttribute("tabindex", "-1");
+        el.setAttribute("aria-label", NAMES[d[0]] || (d[1] ? d[0] + " " + d[1].split("").join(" ") : d[0]));
+        var num = document.createElement("span");
+        num.className = "num";
+        if (d[0] === "*") num.innerHTML = STAR; else if (d[0] === "#") num.innerHTML = HASH; else num.textContent = d[0];
+        el.appendChild(num);
+        if (d[1]) { var let_ = document.createElement("span"); let_.className = "let"; let_.textContent = d[1]; el.appendChild(let_); }
+        el.addEventListener("pointerdown", self._onDown);
+        el.addEventListener("pointerup", self._onUp);
+        el.addEventListener("pointercancel", self._onUp);
+        el.addEventListener("keydown", self._onKeyDown);
+        el.addEventListener("keyup", self._onKeyUp);
+        el.addEventListener("blur", self._onBlur);
+        self._plate.appendChild(el);
+        self._keys.push({ el: el, key: d[0] });
+      });
+      if (this._idx >= this._keys.length) this._idx = 0;
+    }
+    _render() {
+      var single = this.hasAttribute("single");
+      var s = parseFloat(this.getAttribute("scale")); if (isNaN(s) || s <= 0) s = 1;
+      this._scale = s;
+      var w = single ? KW + 20 : W, h = single ? KH + 20 : H;
+      this.style.width = (w * s) + "px"; this.style.height = (h * s) + "px";
+      this._wrap.style.transform = s === 1 ? "" : "scale(" + s + ")";
+      this._plate.style.width = w + "px"; this._plate.style.height = h + "px";
+      var r = single ? [5, 5, w - 10, h - 10] : [9, 13, 172, 194];
+      this._recess.style.left = r[0] + "px"; this._recess.style.top = r[1] + "px";
+      this._recess.style.width = r[2] + "px"; this._recess.style.height = r[3] + "px";
+      var held = this.getAttribute("held");
+      var dis = this.hasAttribute("disabled");
+      var self = this;
+      this._keys.forEach(function (k, i) {
+        if (single) { k.el.style.left = "10px"; k.el.style.top = "10px"; }
+        else { k.el.style.left = (X0 + (i % 3) * PX) + "px"; k.el.style.top = (Y0 + Math.floor(i / 3) * PY) + "px"; }
+        k.el.setAttribute("tabindex", dis ? "-1" : (i === self._idx ? "0" : "-1"));
+        k.el.setAttribute("aria-disabled", dis ? "true" : "false");
+        k.el.classList.toggle("down", held != null && held === k.key);
+      });
+      this._aria();
+    }
+    _aria() { this.setAttribute("aria-valuetext", this._v || "empty"); }
+
+    // ---- value ----
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _append(key) {
+      var max = parseInt(this.getAttribute("maxlength"), 10); if (isNaN(max) || max < 1) max = 24;
+      var v = (this._v + key);
+      if (v.length > max) v = v.slice(v.length - max);
+      this._v = v; this.setAttribute("value", v); this._aria();
+      this._emit("input", { value: this._v, key: key });
+    }
+    _rubout() {
+      if (!this._v) return;
+      this._v = this._v.slice(0, -1); this.setAttribute("value", this._v); this._aria();
+      this._emit("input", { value: this._v, key: "backspace" });
+      this._emit("change", { value: this._v });
+    }
+    _press(i) {
+      if (this.hasAttribute("disabled") || this._downKey != null) return;
+      var k = this._keys[i]; if (!k) return;
+      this._downKey = i;
+      k.el.classList.add("down", "beep");
+      var self = this, t = setTimeout(function () { k.el.classList.remove("beep"); }, 90);
+      this._beeps.push(t);
+      this._emit("press", { key: k.key });
+      this._emit("activate", { key: k.key });
+      this._append(k.key);
+    }
+    _release() {
+      if (this._downKey == null) return;
+      var k = this._keys[this._downKey]; this._downKey = null;
+      if (!k) return;
+      if (this.getAttribute("held") !== k.key) k.el.classList.remove("down");
+      this._emit("release", { key: k.key });
+      this._emit("change", { value: this._v });
+    }
+    _index(el) { for (var i = 0; i < this._keys.length; i++) if (this._keys[i].el === el) return i; return -1; }
+    _focusTo(i) {
+      if (i < 0 || i >= this._keys.length) return;
+      this._idx = i;
+      var self = this;
+      this._keys.forEach(function (k, j) { k.el.setAttribute("tabindex", self.hasAttribute("disabled") ? "-1" : (j === i ? "0" : "-1")); });
+      this._keys[i].el.focus({ preventScroll: true });
+    }
+
+    // ---- input ----
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      var i = this._index(e.currentTarget);
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+      this._focusTo(i);
+      this._press(i);
+    }
+    _onUp(e) {
+      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      var i = this._index(e.currentTarget), n = this._keys.length, cols = this.hasAttribute("single") ? 1 : 3;
+      var k = e.key;
+      if (k === " " || k === "Spacebar" || k === "Enter") {
+        e.preventDefault();
+        if (e.repeat) return;
+        this._kbKey = i; this._press(i); return;
+      }
+      if (k === "Backspace") { e.preventDefault(); this._rubout(); return; }
+      if (/^[0-9*#]$/.test(k)) {
+        for (var j = 0; j < n; j++) if (this._keys[j].key === k) {
+          e.preventDefault();
+          this._focusTo(j);
+          if (e.repeat) return;
+          this._kbKey = j; this._press(j);
+          var self = this; setTimeout(function () { if (self._kbKey === j) { self._kbKey = null; self._release(); } }, 90);
+          return;
+        }
+        return;
+      }
+      var to = null;
+      switch (k) {
+        case "ArrowRight": to = (i % cols) < cols - 1 ? i + 1 : i; break;
+        case "ArrowLeft": to = (i % cols) > 0 ? i - 1 : i; break;
+        case "ArrowDown": to = i + cols < n ? i + cols : i; break;
+        case "ArrowUp": to = i - cols >= 0 ? i - cols : i; break;
+        case "Home": to = 0; break;
+        case "End": to = n - 1; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._focusTo(to);
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (this._kbKey != null) { this._kbKey = null; this._release(); }
+    }
+    _onBlur() { if (this._kbKey != null) { this._kbKey = null; this._release(); } }
+  }
+  customElements.define("sk-keypad-we-2500", SkKeypadWe2500);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
