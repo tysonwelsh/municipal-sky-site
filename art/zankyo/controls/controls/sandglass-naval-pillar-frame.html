@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naval half-hour glass, turned pillar frame — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "sandglass-naval-pillar-frame",
+  "element": "sk-sandglass-naval",
+  "name": "Naval half-hour glass in a turned-wood pillar frame",
+  "kind": "both",
+  "code": "I10",
+  "type": "Sandglass / running glass",
+  "source": "The ship's watch glass of the 17th–19th centuries — two blown bulbs bound at the waist with cord, in a four-pillar turned oak frame, white sand",
+  "era": "pre-1900",
+  "origin": "UK",
+  "materials": ["blown glass", "oak", "waxed cord", "sand", "brass"],
+  "tags": ["ship", "watch keeping", "timer", "sand", "flip", "half hour"],
+  "value": { "model": "time", "min": 0, "max": 60, "step": 0.1, "unit": "s" },
+  "attributes": ["value", "duration", "running", "label", "scale", "disabled"],
+  "events": ["activate"],
+  "size": { "w": 100, "h": 220 },
+  "notes": "Three glasses on a one-minute demo duration: just turned, half run, and down to the last grains. Click one or press Space to turn it over."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="navy">
+    <sk-sandglass-naval duration="60" value="58" running label="½ HOUR"></sk-sandglass-naval>
+    <sk-sandglass-naval duration="60" value="30" running></sk-sandglass-naval>
+    <sk-sandglass-naval duration="240" value="7" running></sk-sandglass-naval>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>half-hour glass</b> ran the Royal Navy's day: the boy of the watch turned it and struck the bell, eight
+  turns to a watch. The instrument is two hand-blown bulbs joined at a narrow waist, the join bound in waxed cord,
+  the pair held between two round end plates by four turned pillars of dark oak — beads and rings cut on a pole
+  lathe — with brass pins through the plates.</p>
+  <p><b>The tells kept here:</b> the glass is hand-blown, so the two bulbs are not quite the same and there is a
+  seed bubble in the shoulder of the upper one; the cord is a real wrap of five turns, lit on top; the sand in
+  the upper bulb sinks as a funnel with a dimple that deepens as the level falls, and the pile in the lower bulb
+  grows as a cone at the angle of repose until it drowns in its own level; a single thread of sand between them
+  with loose grains in it; long vertical highlights on both bulbs, and the sand lit from the left and shadowed to
+  the right. Turning the glass rotates the whole frame through 180° in half a second, and the thread starts again
+  after a beat — the sand that was below is now above.</p>
+  <p><b>Left out:</b> the paper seal over the neck, the maker's ivory label, and the gimballed binnacle case some
+  of these lived in.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-sandglass-naval> — a ship's half-hour glass in a turned four-pillar frame ====
+   attributes: value (seconds left in the TOP bulb) · duration (s, default 1800) · running · label · scale · disabled
+   events: activate {value} when the glass is turned (click, Space or Enter). Setting .value never emits.
+   self-contained: paste this block into any page and use
+   <sk-sandglass-naval duration="60" value="60" running></sk-sandglass-naval> */
+(function () {
+  if (customElements.get("sk-sandglass-naval")) return;
+  const W = 100, H = 220, CX = 50, NECK = 110;
+  const TOPD = "M 45.5 110 C 43 90, 18 86, 18 60 C 18 38, 28 26, 50 26 C 72 26, 83 38, 83 61 C 83 87, 57 90, 54.5 110";
+  const BOTD = "M 45.5 110 C 43 130, 17 134, 17 159 C 17 181, 28 194, 50 194 C 72 194, 82 182, 82 159 C 82 134, 57 130, 54.5 110";
+  const TOPF = 34, TOPE = 97;            // sand level in the top bulb, full and empty (empty = just above the cord)
+  const FLOOR = 192, BH = 78;            // floor of the bottom bulb and its inside height
+
+  /* a turned pillar: a shaft with beads and rings, lit from the left */
+  function pillar(cx, w, y0, y1, o) {
+    const sh = w * 0.33, mid = (y0 + y1) / 2;
+    const bead = (y, hw, h) => `<rect x="${(cx - hw).toFixed(2)}" y="${(y - h / 2).toFixed(2)}" width="${(hw * 2).toFixed(2)}" height="${h}" rx="${(h / 2.2).toFixed(2)}" fill="url(#wood)"/>`;
+    let s = `<g opacity="${o}">`;
+    s += `<rect x="${cx - sh}" y="${y0}" width="${sh * 2}" height="${y1 - y0}" fill="url(#wood)"/>`;
+    s += bead(y0 + 3, w / 2, 7) + bead(y0 + 13, w * 0.42, 5);
+    s += bead(mid - 11, w * 0.44, 5) + bead(mid, w / 2 * 0.96, 9) + bead(mid + 11, w * 0.44, 5);
+    s += bead(y1 - 13, w * 0.42, 5) + bead(y1 - 3, w / 2, 7);
+    s += `<rect x="${cx - sh * 0.45}" y="${y0 + 6}" width="0.7" height="${y1 - y0 - 12}" fill="#c99a63" opacity="0.18"/>`;
+    s += `<rect x="${cx + sh * 0.2}" y="${y0 + 6}" width="0.6" height="${y1 - y0 - 12}" fill="#160d04" opacity="0.25"/>`;
+    return s + `</g>`;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; width: ${W}px; height: ${H}px; font-size: 10px;
+            -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; cursor: pointer; outline: none;
+            touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    :host([disabled]) .wrap { cursor: default; }
+    :host(:focus-visible) .wrap { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); border-radius: 7px; }
+    :host { outline: none; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .all { transform-box: view-box; transform-origin: ${CX}px ${NECK}px; }
+    .plate { font-family: "Special Elite", "Courier Prime", Courier, monospace; font-size: 5px;
+             text-anchor: middle; fill: #3a2c10; letter-spacing: 0.06em; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#1c1207"/><stop offset="0.16" stop-color="#6b4a2c"/>
+          <stop offset="0.36" stop-color="#8a6238"/><stop offset="0.66" stop-color="#4a3018"/>
+          <stop offset="1" stop-color="#180f05"/>
+        </linearGradient>
+        <linearGradient id="woodv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9a6e40"/><stop offset="0.28" stop-color="#6b4a2c"/>
+          <stop offset="0.72" stop-color="#3a2510"/><stop offset="1" stop-color="#1a1006"/>
+        </linearGradient>
+        <linearGradient id="sandg" x1="0" y1="0" x2="1" y2="0.15">
+          <stop offset="0" stop-color="#f4efe2"/><stop offset="0.34" stop-color="#e8e2d0"/>
+          <stop offset="0.72" stop-color="#d6cfba"/><stop offset="1" stop-color="#bdb59f"/>
+        </linearGradient>
+        <linearGradient id="brass" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#f0dca0"/><stop offset="0.45" stop-color="#c9a24c"/>
+          <stop offset="1" stop-color="#6d5220"/>
+        </linearGradient>
+        <linearGradient id="cord" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#241a0d"/><stop offset="0.26" stop-color="#6d5a35"/>
+          <stop offset="0.55" stop-color="#4e4029"/><stop offset="1" stop-color="#1d150a"/>
+        </linearGradient>
+        <linearGradient id="glassg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#cfe2e4" stop-opacity="0.22"/><stop offset="0.3" stop-color="#eaf4f4" stop-opacity="0.07"/>
+          <stop offset="0.72" stop-color="#9fb4b6" stop-opacity="0.07"/><stop offset="1" stop-color="#c2d6d8" stop-opacity="0.2"/>
+        </linearGradient>
+        <pattern id="speck" width="5" height="5" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1.4" r="0.4" fill="#ffffff" opacity="0.2"/>
+          <circle cx="3.6" cy="3.1" r="0.38" fill="#8f8570" opacity="0.22"/>
+          <circle cx="4.4" cy="0.6" r="0.28" fill="#6f6857" opacity="0.16"/>
+          <circle cx="1.6" cy="4.3" r="0.26" fill="#ffffff" opacity="0.12"/>
+          <circle cx="2.7" cy="1.9" r="0.22" fill="#6f6857" opacity="0.12"/>
+        </pattern>
+        <clipPath id="ctop"><path d="${TOPD} Z"/></clipPath>
+        <clipPath id="cbot"><path d="${BOTD} Z"/></clipPath>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+        <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>
+      </defs>
+
+      <g class="all">
+        <!-- shadow on the panel -->
+        <ellipse cx="54" cy="212" rx="40" ry="7" fill="#000" opacity="0.45" filter="url(#b2)"/>
+
+        <!-- the two back pillars, behind the glass -->
+        ${pillar(34, 8, 20, 200, 0.72)}
+        ${pillar(66, 8, 20, 200, 0.72)}
+
+        <!-- the glass: sand first, then the walls over it -->
+        <g clip-path="url(#ctop)">
+          <path class="sandT" fill="url(#sandg)"/>
+          <path class="sandTg" fill="url(#speck)"/>
+        </g>
+        <g clip-path="url(#cbot)">
+          <path class="sandB" fill="url(#sandg)"/>
+          <path class="sandBg" fill="url(#speck)"/>
+        </g>
+        <!-- the thread of sand -->
+        <g class="stream">
+          <line class="thread" x1="50" y1="112" x2="50" y2="188" stroke="#ded7c2" stroke-width="1.1"/>
+          <circle class="gr g0" r="0.6" fill="#f2ece0"/><circle class="gr g1" r="0.5" fill="#cfc8b4"/>
+          <circle class="gr g2" r="0.55" fill="#f2ece0"/><circle class="gr g3" r="0.45" fill="#cfc8b4"/>
+        </g>
+
+        <!-- glass walls -->
+        <path d="${TOPD} Z" fill="url(#glassg)"/>
+        <path d="${BOTD} Z" fill="url(#glassg)"/>
+        <path d="${TOPD} Z" fill="none" stroke="#b8c4c8" stroke-opacity="0.55" stroke-width="1"/>
+        <path d="${BOTD} Z" fill="none" stroke="#b8c4c8" stroke-opacity="0.5" stroke-width="1"/>
+        <!-- long highlights -->
+        <path d="M 28 40 C 23 50, 23 74, 27 88" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="3.4" stroke-linecap="round" filter="url(#b1)"/>
+        <path d="M 70 36 C 76 46, 76 72, 72 86" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" stroke-linecap="round" filter="url(#b1)"/>
+        <path d="M 27 134 C 22 146, 22 172, 27 184" fill="none" stroke="#ffffff" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" filter="url(#b1)"/>
+        <path d="M 71 132 C 76 144, 76 170, 71 182" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2" stroke-linecap="round" filter="url(#b1)"/>
+        <path d="M 19.5 44 C 16.5 54, 16.5 78, 20 90" fill="none" stroke="#8fb0a6" stroke-opacity="0.35" stroke-width="1.2"/>
+        <path d="M 81.5 46 C 84.5 56, 84 78, 80.5 90" fill="none" stroke="#8fb0a6" stroke-opacity="0.3" stroke-width="1.2"/>
+        <path d="M 18.5 140 C 15.6 150, 15.6 174, 19 186" fill="none" stroke="#8fb0a6" stroke-opacity="0.32" stroke-width="1.2"/>
+        <path d="M 80.8 142 C 83.6 152, 83.2 174, 80 186" fill="none" stroke="#8fb0a6" stroke-opacity="0.28" stroke-width="1.2"/>
+        <!-- a seed bubble in the shoulder -->
+        <ellipse cx="68" cy="47" rx="1.7" ry="2.3" fill="#ffffff" opacity="0.28"/>
+        <ellipse cx="67.5" cy="46.3" rx="0.6" ry="0.8" fill="#ffffff" opacity="0.7"/>
+
+        <!-- the cord binding at the waist -->
+        <g>
+          <rect x="41.5" y="101" width="17" height="19" rx="2.5" fill="#241b0e" opacity="0.5"/>
+          <rect x="42.2" y="101.2" width="15.6" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.9" y="104" width="16.2" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.6" y="106.8" width="16.8" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.5" y="109.6" width="17" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.6" y="112.4" width="16.8" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.9" y="115.2" width="16.2" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="42.2" y="118" width="15.6" height="2.6" rx="1.2" fill="url(#cord)"/>
+          <path d="M 43.4 102 L 56.6 102 M 43.2 107.6 L 56.8 107.6 M 43.2 113.2 L 56.8 113.2"
+                stroke="#9a8250" stroke-opacity="0.3" stroke-width="0.45"/>
+          <path d="M 58.4 101.5 C 60.5 104, 60.5 116, 58.2 119.6" fill="none" stroke="#1d150a" stroke-opacity="0.5" stroke-width="0.8"/>
+        </g>
+
+        <!-- the two front pillars -->
+        ${pillar(15, 11, 20, 200, 1)}
+        ${pillar(85, 11, 20, 200, 1)}
+
+        <!-- end plates -->
+        <rect x="5" y="6" width="90" height="16" rx="4.5" fill="url(#woodv)" stroke="#170e05" stroke-width="0.8"/>
+        <rect x="6.5" y="7.2" width="87" height="2" rx="1" fill="#b98a52" opacity="0.28"/>
+        <rect x="5" y="17.4" width="90" height="1.6" fill="#170e05" opacity="0.4"/>
+        <rect x="5" y="198" width="90" height="16" rx="4.5" fill="url(#woodv)" stroke="#170e05" stroke-width="0.8"/>
+        <rect x="6.5" y="199.2" width="87" height="2" rx="1" fill="#b98a52" opacity="0.28"/>
+        <rect x="5" y="209.4" width="90" height="1.6" fill="#170e05" opacity="0.4"/>
+        <!-- brass pins through the plates -->
+        <circle cx="15" cy="14" r="1.9" fill="url(#brass)"/><circle cx="85" cy="14" r="1.9" fill="url(#brass)"/>
+        <circle cx="15" cy="206" r="1.9" fill="url(#brass)"/><circle cx="85" cy="206" r="1.9" fill="url(#brass)"/>
+        <!-- the engraved brass plate -->
+        <g class="tag">
+          <rect x="35" y="202.5" width="30" height="8.5" rx="1" fill="url(#brass)" stroke="#3a2c10" stroke-width="0.4"/>
+          <text class="plate" x="50" y="208.6"></text>
+        </g>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkSandglassNaval extends HTMLElement {
+    static get observedAttributes() { return ["value", "duration", "running", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._dur = 1800; this._f = 1; this._scale = 1; this._raf = 0; this._last = 0;
+      this._flipping = false; this._settle = 0; this._reflect = -1;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._all = $(".all");
+      this._sT = $(".sandT"); this._sTg = $(".sandTg"); this._sB = $(".sandB"); this._sBg = $(".sandBg");
+      this._stream = $(".stream"); this._thread = $(".thread");
+      this._grains = [$(".g0"), $(".g1"), $(".g2"), $(".g3")];
+      this._tagT = $(".plate"); this._tag = $(".tag");
+      this._tick = this._tick.bind(this);
+      this._onClick = this._onClick.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "button");
+      if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+      this._read(); this._paint();
+      this.addEventListener("click", this._onClick);
+      this.addEventListener("keydown", this._onKey);
+      if (this.hasAttribute("running")) this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      clearTimeout(this._ft);
+      this.removeEventListener("click", this._onClick);
+      this.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value" && this._reflect === v) return;
+      this._read(); this._paint();
+      if (n === "running" && this.hasAttribute("running")) this._kick();
+    }
+    /* seconds left in the top bulb; setting it never emits */
+    get value() { return Math.round(this._f * this._dur * 10) / 10; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._f = Math.min(1, Math.max(0, v / (this._dur || 1))); this._reflectValue(true); this._paint(); }
+    get duration() { return this._dur; }
+    set duration(d) { this.setAttribute("duration", String(d)); }
+    get running() { return this.hasAttribute("running"); }
+    set running(v) { if (v) this.setAttribute("running", ""); else this.removeAttribute("running"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    /* turn the glass over: what was below is now above */
+    flip() {
+      if (this._flipping || this.hasAttribute("disabled")) return;
+      this._flipping = true;
+      const g = this._all;
+      g.style.transition = "transform 500ms cubic-bezier(.4,.02,.25,1)";
+      g.style.transform = "rotate(180deg)";
+      clearTimeout(this._ft);
+      this._ft = setTimeout(() => {
+        g.style.transition = "none";
+        g.style.transform = "none";
+        void g.getBoundingClientRect();
+        this._f = 1 - this._f;
+        this._settle = performance.now() / 1000 + 0.2;
+        this._flipping = false;
+        this.setAttribute("running", "");
+        this._reflectValue(true); this._paint(); this._kick();
+        this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { value: this.value } }));
+      }, 500);
+    }
+    _onClick() { if (!this.hasAttribute("disabled")) this.flip(); }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") { e.preventDefault(); this.flip(); }
+    }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._dur = Math.max(0.5, num("duration", 1800));
+      this._scale = Math.max(0.2, num("scale", 1));
+      if (this.hasAttribute("value")) this._f = Math.min(1, Math.max(0, num("value", this._f * this._dur) / this._dur));
+      const lab = this.getAttribute("label") || "";
+      this._tagT.textContent = lab;
+      this._tag.style.display = lab ? "" : "none";
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      this.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this._aria();
+    }
+    _aria() {
+      const s = Math.round(this._f * this._dur);
+      this.setAttribute("aria-label", (this.getAttribute("label") || "sandglass") + ", " + s + " seconds left in the upper bulb; press to turn");
+    }
+    _reflectValue(force) {
+      const s = String(Math.round(this._f * this._dur * 10) / 10);
+      if (force || s !== this._reflect) { this._reflect = s; this.setAttribute("value", s); this._aria(); }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now() / 1000; this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const t = now / 1000;
+      const dt = Math.min(0.1, Math.max(0, t - this._last)); this._last = t;
+      if (this.hasAttribute("running") && !this._flipping && t > this._settle && this._f > 0) {
+        this._f = Math.max(0, this._f - dt / this._dur);
+        if (Math.abs(this._f * this._dur - parseFloat(this._reflect)) > 0.45) this._reflectValue(false);
+      }
+      this._paint(t);
+      const idle = !this.hasAttribute("running") || this._f <= 0;
+      if (idle && !this._flipping) { this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint(t) {
+      t = t || performance.now() / 1000;
+      const f = this._f;
+      // --- the top bulb: a level with a funnel dimple that deepens as it drains
+      const L = TOPE - (TOPE - TOPF) * Math.pow(f, 0.62);
+      let d = f <= 0 ? 0 : 3 + 13 * (1 - f);
+      if (t < this._settle) d = 2;
+      if (L + d > TOPE - 1) d = Math.max(0, TOPE - 1 - L);
+      const w = d * 1.54 + 2;
+      const dT = f <= 0 ? "" :
+        `M -12 ${L.toFixed(1)} L ${(CX - w).toFixed(1)} ${L.toFixed(1)} L ${CX} ${(L + d).toFixed(1)} L ${(CX + w).toFixed(1)} ${L.toFixed(1)} L 112 ${L.toFixed(1)} L 112 200 L -12 200 Z`;
+      this._sT.setAttribute("d", dT); this._sTg.setAttribute("d", dT);
+      // --- the bottom bulb: a cone at the angle of repose drowning in its own level
+      const g = 1 - f;
+      const Lb = FLOOR - BH * Math.pow(g, 1.45);
+      const P = 31 * Math.pow(Math.max(0, 1 - g), 0.75) * Math.min(1, g * 4.5);
+      const wb = P * 1.54 + 3;
+      const dB = g <= 0.001 ? "" :
+        `M -12 ${Lb.toFixed(1)} L ${(CX - wb).toFixed(1)} ${Lb.toFixed(1)} L ${CX} ${(Lb - P).toFixed(1)} L ${(CX + wb).toFixed(1)} ${Lb.toFixed(1)} L 112 ${Lb.toFixed(1)} L 112 210 L -12 210 Z`;
+      this._sB.setAttribute("d", dB); this._sBg.setAttribute("d", dB);
+      // --- the thread of sand
+      const flowing = f > 0 && this.hasAttribute("running") && t >= this._settle && !this._flipping;
+      this._stream.style.opacity = flowing ? "1" : "0";
+      if (flowing) {
+        const y0 = 112, y1 = Math.max(y0 + 4, Lb - P - 1);
+        this._thread.setAttribute("y2", y1.toFixed(1));
+        const len = y1 - y0;
+        for (let i = 0; i < 4; i++) {
+          const y = y0 + ((t * 96 + i * len / 4) % len);
+          this._grains[i].setAttribute("cy", y.toFixed(1));
+          this._grains[i].setAttribute("cx", (CX + (i % 2 ? 1 : -1) * (0.7 + 0.5 * Math.sin(t * 9 + i))).toFixed(2));
+        }
+      }
+    }
+  }
+  customElements.define("sk-sandglass-naval", SkSandglassNaval);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

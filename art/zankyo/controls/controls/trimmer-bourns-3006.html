@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bourns 3006 multiturn trimpot — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "trimmer-bourns-3006",
+  "element": "sk-trim-bourns-3006",
+  "name": "Bourns 3006 multiturn trimpot",
+  "kind": "input",
+  "code": "A18",
+  "type": "Multiturn trimmer potentiometer",
+  "source": "Bourns 3006P 25-turn cermet trimmer, the blue rectangular trimpot with a brass end-screw, on a slice of green PCB",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["blue moulded epoxy", "brass screw", "tinned pins", "FR4 PCB"],
+  "tags": ["electronics", "trimmer", "potentiometer", "multiturn", "screwdriver", "PCB", "clutch"],
+  "value": { "model": "range", "min": 0, "max": 100, "step": 0.1, "unit": "%" },
+  "attributes": ["value", "turns", "label", "screwdriver", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 150, "h": 64 },
+  "notes": "RV1 at 37 %; RV2 at 100 %, where the slip clutch lets the screw keep turning, at scale 1.3. Drag or wheel turns the screw: 25 turns end to end, 4 % per turn."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-trim-bourns-3006 value="37" label="RV1" screwdriver></sk-trim-bourns-3006>
+    <sk-trim-bourns-3006 value="100" label="RV2" scale="1.3" screwdriver></sk-trim-bourns-3006>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Bourns 3006P</b> is the multiturn trimmer everyone has set with a jeweller's screwdriver: a 19 mm cobalt-blue
+  moulded body, a brass leadscrew in a boss at one end, three tinned pins beneath, and a slip clutch at each end
+  of travel so the screw keeps turning when the wiper has nowhere left to go. Twenty-five turns take the wiper
+  from one end to the other, so a whole turn moves the value only four per cent.</p>
+  <p><b>The tells kept here:</b> the blue that reads from across a bench, slightly glossy with a moulded speckle and
+  a parting line; the brass slotted screw, the only moving part, in its boss on the end face, drawn in the
+  same oblique projection as the body so the slot turns in perspective; white monospaced type and value code
+  on the top; three pins in a row under the body, the middle one the wiper, each with a tinned fillet on its
+  pad; the body's shadow falling down-right onto the board and the <code>RV1</code> silkscreen beside it. Drag
+  or wheel turns the screw (4° per px, Shift for ten turns), arrows step 0.1 %, Shift-arrows 1 %, Home/End go
+  to the ends; with the <code>screwdriver</code> attribute a blade tip sits in the slot while you drag. At either
+  end the clutch slips: the screw turns and the value stays.</p>
+  <p><b>Left out:</b> the Bourns wordmark, the leadscrew's O-ring seal, the date code.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-trim-bourns-3006> — Bourns 3006P blue 25-turn trimpot on a slice of PCB ====
+   attributes: value (0–100 %, step 0.1) turns (default 25) label screwdriver scale disabled
+   events: input {value} while turning, change {value} when the gesture settles
+   self-contained: paste this block into any page and use <sk-trim-bourns-3006 value="50"></sk-trim-bourns-3006> */
+(function () {
+  if (customElements.get("sk-trim-bourns-3006")) return;
+  const W = 150, H = 64;
+  // an oblique projection, in mm: X along the body (recedes up-left), Y across it (recedes up-right), Z up
+  const EX = [-4.3, -0.9], EY = [3.6, -1.0], EZ = [0, -3.8], O = [110, 50];
+  const L = 19, D = 4.8, HB = 6.4, STAND = 1.5, PCBT = 0.8;
+  const P = (x, y, z) => [O[0] + x * EX[0] + y * EY[0] + z * EZ[0], O[1] + x * EX[1] + y * EY[1] + z * EZ[1]];
+  const M = (a, b, o) => `matrix(${a[0]} ${a[1]} ${b[0]} ${b[1]} ${o[0]} ${o[1]})`;
+  const TOP = M(EX, EY, P(0, 0, HB)), FRONT = M(EX, EZ, P(0, 0, 0)), END = M(EY, EZ, P(0, 0, 0));
+  const PCB = M(EX, EY, P(0, 0, -STAND)), PCBF = M(EX, EZ, P(0, -1.2, 0)), PCBR = M(EY, EZ, P(-4, 0, 0));
+  const SC = [2.4, 4.3];                                    // the screw's centre on the end face (Y, Z)
+  const SCS = P(0, SC[0], SC[1]);
+  const PINS = [3, 9.5, 16];
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 104px; top: 14px; width: 40px; height: 34px; border-radius: 8px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Share Tech Mono", "Courier New", monospace; }
+    .print { font-size: 1.25px; fill: #f2f2ee; letter-spacing: 0.02em; }
+    .silk { font-size: 1.35px; fill: #f2f2ee; }
+    .driver { display: none; }
+    .driver.on { display: block; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="pcbg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#27684a"/><stop offset="0.5" stop-color="#1e5a3a"/><stop offset="1" stop-color="#174a2f"/>
+        </linearGradient>
+        <linearGradient id="topg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3468bb"/><stop offset="0.4" stop-color="#3b72c8"/><stop offset="1" stop-color="#2e5fb2"/>
+        </linearGradient>
+        <linearGradient id="frontg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2f60b3"/><stop offset="0.7" stop-color="#26509a"/><stop offset="0.93" stop-color="#1f4384"/><stop offset="1" stop-color="#2a56a0"/>
+        </linearGradient>
+        <linearGradient id="endg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2a569f"/><stop offset="1" stop-color="#1e4280"/>
+        </linearGradient>
+        <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.02"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.2"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="brass" cx="35%" cy="68%" r="70%">
+          <stop offset="0" stop-color="#f1d98a"/><stop offset="0.45" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6a2a"/>
+        </radialGradient>
+        <radialGradient id="tin" cx="35%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#eef0ec"/><stop offset="0.6" stop-color="#b9bcb7"/><stop offset="1" stop-color="#787b76"/>
+        </radialGradient>
+        <linearGradient id="ping" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#d7d9d4"/><stop offset="0.5" stop-color="#b9bcb7"/><stop offset="1" stop-color="#6f726d"/>
+        </linearGradient>
+        <linearGradient id="blade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6d7073"/><stop offset="0.5" stop-color="#d4d7da"/><stop offset="1" stop-color="#7d8083"/>
+        </linearGradient>
+        <filter id="mould" x="0" y="0" width="1" height="1">
+          <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="7" result="n"/>
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.16 0" result="g"/>
+          <feComposite in="g" in2="SourceGraphic" operator="in"/>
+        </filter>
+        <filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="0.35"/></filter>
+        <filter id="blur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="0.8"/></filter>
+      </defs>
+
+      <!-- the PCB: a slab in the same projection; top, then its two cut edges -->
+      <g transform="${PCBF}"><rect x="-4" y="${-STAND - PCBT}" width="24.5" height="${PCBT}" fill="#8c8f5c"/><rect x="-4" y="${-STAND - PCBT}" width="24.5" height="0.12" fill="#3d4a2a"/></g>
+      <g transform="${PCBR}"><rect x="-1.2" y="${-STAND - PCBT}" width="6.7" height="${PCBT}" fill="#767a4a"/></g>
+      <g transform="${PCB}">
+        <rect x="-4" y="-1.2" width="24.5" height="6.7" fill="url(#pcbg)"/>
+        <!-- a trace or two under the mask -->
+        <path d="M -3.2 4.6 L 20.5 4.6 M -3.2 -0.4 L 2.2 -0.4" fill="none" stroke="#2f7a52" stroke-width="0.35"/>
+        <path d="M 16 2.4 L 20.5 2.4" fill="none" stroke="#2f7a52" stroke-width="0.35"/>
+        <!-- the body's shadow on the board, down-right of it -->
+        <rect x="-2.1" y="-1.1" width="${L}" height="${D}" fill="#000" opacity="0.42" filter="url(#blur2)"/>
+        <rect x="0" y="0" width="${L}" height="${D}" fill="#000" opacity="0.35" filter="url(#blur)"/>
+        <!-- silkscreen outline and reference -->
+        <rect x="-0.5" y="-0.6" width="${L + 1}" height="${D + 1.2}" fill="none" stroke="#f2f2ee" stroke-width="0.16" stroke-opacity="0.85"/>
+        <text class="silk" transform="translate(-1.1 3.4) rotate(180)"></text>
+        <!-- pads and fillets -->
+        ${PINS.map(x => `<circle cx="${x}" cy="2.4" r="1.05" fill="#c9a24a"/><circle cx="${x}" cy="2.4" r="0.7" fill="url(#tin)"/><ellipse cx="${x}" cy="1.9" rx="0.55" ry="0.7" fill="url(#tin)"/>`).join("")}
+      </g>
+      <!-- pins from the pads up into the body -->
+      ${PINS.map(x => { const [px, py] = P(x, 2.4, 0); return `<rect x="${(px - 0.9).toFixed(2)}" y="${py.toFixed(2)}" width="1.8" height="${(STAND * -EZ[1]).toFixed(2)}" fill="url(#ping)"/><rect x="${(px + 0.5).toFixed(2)}" y="${py.toFixed(2)}" width="0.4" height="${(STAND * -EZ[1]).toFixed(2)}" fill="#000" opacity="0.3"/>`; }).join("")}
+
+      <!-- the body: front face, end face, top face, each drawn in its own plane -->
+      <g transform="${FRONT}">
+        <rect x="0" y="0" width="${L}" height="${HB}" fill="url(#frontg)"/>
+        <rect x="0" y="0" width="${L}" height="${HB}" fill="#fff" filter="url(#mould)"/>
+        <path d="M 0 3.3 L ${L} 3.3" fill="none" stroke="#22478a" stroke-width="0.14"/>
+        <path d="M 0 3.46 L ${L} 3.46" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="0.1"/>
+        <rect x="0" y="0" width="${L}" height="${HB}" fill="none" stroke="#1b3a72" stroke-width="0.14"/>
+      </g>
+      <g transform="${END}">
+        <rect x="0" y="0" width="${D}" height="${HB}" fill="url(#endg)"/>
+        <rect x="0" y="0" width="${D}" height="${HB}" fill="#fff" filter="url(#mould)"/>
+        <path d="M 0 3.3 L ${D} 3.3" fill="none" stroke="#1c3c76" stroke-width="0.14"/>
+        <rect x="0" y="0" width="${D}" height="${HB}" fill="none" stroke="#1b3a72" stroke-width="0.14"/>
+        <!-- the screw boss, the countersink, the brass screw -->
+        <circle cx="${SC[0]}" cy="${SC[1]}" r="1.75" fill="#2a56a0" stroke="#1a3a70" stroke-width="0.12"/>
+        <circle cx="${SC[0] - 0.08}" cy="${SC[1] + 0.08}" r="1.6" fill="none" stroke="#fff" stroke-opacity="0.25" stroke-width="0.12"/>
+        <circle cx="${SC[0]}" cy="${SC[1]}" r="1.35" fill="#112a58"/>
+        <circle cx="${SC[0]}" cy="${SC[1]}" r="1.12" fill="url(#brass)" stroke="#5a4416" stroke-width="0.08"/>
+        <g class="slot" transform="translate(${SC[0]} ${SC[1]})">
+          <rect x="-0.95" y="-0.2" width="1.9" height="0.28" fill="#e8cf82" opacity="0.7"/>
+          <rect x="-0.95" y="-0.13" width="1.9" height="0.28" fill="#3a2a10"/>
+          <g class="driver">
+            <rect x="-1.25" y="-0.24" width="2.5" height="0.46" fill="url(#blade)" stroke="#4b4e51" stroke-width="0.06"/>
+          </g>
+        </g>
+      </g>
+      <g transform="${TOP}">
+        <rect x="0" y="0" width="${L}" height="${D}" fill="url(#topg)"/>
+        <rect x="0" y="0" width="${L}" height="${D}" fill="#fff" filter="url(#mould)"/>
+        <rect x="0" y="0" width="${L}" height="${D}" fill="url(#gloss)"/>
+        <rect x="0" y="0" width="${L}" height="${D}" fill="none" stroke="#5f8ad2" stroke-opacity="0.5" stroke-width="0.14"/>
+        <!-- white printing: type and value code, reading left to right on screen -->
+        <text class="print" transform="translate(17.6 1.55) rotate(180)">3006P</text>
+        <text class="print" transform="translate(11.4 1.55) rotate(180)">1-103</text>
+        <circle cx="3.2" cy="2.4" r="0.32" fill="#f2f2ee"/>
+        <path d="M 6.2 3.3 L 5.4 3.3" fill="none" stroke="#f2f2ee" stroke-width="0.2"/>
+      </g>
+      <!-- the screwdriver shaft, toward the viewer, only while dragging -->
+      <g class="driver shaft">
+        <path d="M ${SCS[0].toFixed(1)} ${SCS[1].toFixed(1)} L ${(SCS[0] + 24).toFixed(1)} ${(SCS[1] + 15).toFixed(1)}" stroke="#4d5054" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M ${SCS[0].toFixed(1)} ${SCS[1].toFixed(1)} L ${(SCS[0] + 24).toFixed(1)} ${(SCS[1] + 15).toFixed(1)}" stroke="#c9ccd0" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M ${(SCS[0] + 2).toFixed(1)} ${(SCS[1] + 0.6).toFixed(1)} L ${(SCS[0] + 22).toFixed(1)} ${(SCS[1] + 13.1).toFixed(1)}" stroke="#fff" stroke-opacity="0.6" stroke-width="0.5" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkTrimBourns3006 extends HTMLElement {
+    static get observedAttributes() { return ["value", "turns", "label", "screwdriver", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 50; this._turns = 25; this._scale = 1; this._over = 0;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab"); this._slot = $(".slot"); this._silk = $(".silk");
+      this._drivers = this.shadowRoot.querySelectorAll(".driver");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._v = this._clamp(v); this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _clamp(v) { return Math.min(100, Math.max(0, Math.round(v * 10) / 10)); }
+    _reflect() { const s = String(this._v); if (this.getAttribute("value") !== s) this.setAttribute("value", s); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1)); this._turns = Math.max(1, num("turns", 25));
+      this._v = this._clamp(num("value", this._v));
+      const g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", this.getAttribute("label") || "trimmer");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "100");
+      g.setAttribute("tabindex", dis ? "-1" : "0"); g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._silk.textContent = this.getAttribute("label") || "RV1";
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _degPerPct() { return 360 * this._turns / 100; }
+    _render() {
+      const a = this._v * this._degPerPct() + this._over;
+      this._slot.setAttribute("transform", `translate(${SC[0]} ${SC[1]}) rotate(${(a % 360).toFixed(1)})`);
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", this._v.toFixed(1) + " %");
+    }
+    // turn the screw by some degrees; at the ends the clutch slips and only the slot turns
+    _turnBy(deg, settle) {
+      const want = this._v + deg / this._degPerPct();
+      const v = this._clamp(want);
+      const slipped = (want - v) * this._degPerPct();
+      if (Math.abs(slipped) > 0.01) this._over = (this._over + slipped) % 360;
+      this._set(v, settle);
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      const changed = v !== this._v;
+      this._v = v; this._reflect(); this._render();
+      if (changed) this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v } }));
+      if (settle) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _driver(on) { if (!this.hasAttribute("screwdriver")) on = false; this._drivers.forEach(d => d.classList.toggle("on", on)); }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._driver(true);
+      this._drag = { y: e.clientY, acc: 0, moved: false, v0: this._v };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = (this._drag.y - e.clientY) / this._scale; this._drag.y = e.clientY;
+      const deg = dy * 4 * (e.shiftKey ? 10 : 1);                    // 4° per px: a full turn is 90 px of travel
+      if (deg) { this._drag.moved = true; this._turnBy(deg, false); }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._driver(false);
+      const d = this._drag; this._drag = null;
+      if (d.moved && d.v0 !== this._v) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._turnBy((e.deltaY < 0 ? 1 : -1) * 45 * (e.shiftKey ? 10 : 1), false);   // an eighth of a turn per notch
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const step = e.shiftKey ? 1 : 0.1;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": this._turnBy(step * this._degPerPct(), true); break;
+        case "ArrowDown": case "ArrowLeft": this._turnBy(-step * this._degPerPct(), true); break;
+        case "PageUp": this._set(this._v + 4, true); break;
+        case "PageDown": this._set(this._v - 4, true); break;
+        case "Home": this._set(0, true); break;
+        case "End": this._set(100, true); break;
+        default: return;
+      }
+      e.preventDefault();
+    }
+  }
+  customElements.define("sk-trim-bourns-3006", SkTrimBourns3006);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engraved lamacoid plate — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "label-lamacoid-engraved",
+  "element": "sk-label-lamacoid",
+  "name": "Engraved lamacoid plate",
+  "kind": "output",
+  "code": "J10",
+  "type": "Panel swatch — engraved legend plate",
+  "source": "Two-layer phenolic/acrylic lamacoid plates on Western Electric bays, aircraft placards, studio patch bays and rack module IDs, 1940s onward",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["phenolic laminate", "nickel-plated brass screws", "adhesive tape"],
+  "tags": ["label", "engraved", "placard", "rack", "swatch", "furniture"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "sub", "colors", "mount", "width", "height", "scale"],
+  "events": [],
+  "size": { "w": 118, "h": 28 },
+  "notes": "value is the engraved legend; sub is an optional second line. Three states: white-on-black with screws, a black-on-white patch-bay strip, and a crooked tape-mounted red one."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium-black">
+    <sk-label-lamacoid value="PULL TO RESET" colors="white-on-black" mount="screws"></sk-label-lamacoid>
+    <sk-label-lamacoid value="CH 1   CH 2   CH 3" colors="black-on-white" mount="screws" scale="0.9"></sk-label-lamacoid>
+    <sk-label-lamacoid value="MAIN BUS" sub="DO NOT REMOVE" colors="white-on-red" mount="tape" scale="0.9"></sk-label-lamacoid>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>lamacoid</b> — a two-layer laminate, a thin coloured cap over a white (or black) core — engraved on
+  a rotary cutter so the legend is the core showing through, not printed ink. It rides every equipment bay,
+  aircraft placard and rack module from the 1940s on: two small screws at the ends, or, for a lighter fixing,
+  a strip of double-sided tape that never sits quite straight.</p>
+  <p><b>The tells kept here:</b> monoline letters with rounded terminals and a soft half-pixel fringe where the
+  cutter's cone widened the cut at the surface; a pale hairline all round the edge where the bevel exposes the
+  core; the plate sitting a pixel proud with a hairline contact shadow; two slotted screws with their slots
+  not aligned; a low satin sheen, never a gloss. The tape-mounted variant drops the screws, tilts a degree or
+  two, and gets a broader, softer lift-shadow instead of the screws' tight one.</p>
+  <p><b>Left out:</b> the engraver's occasional slightly-off baseline wobble, and a fully chipped corner (the
+  wear hook is wired but not shown here).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-label-lamacoid> — two-layer engraved phenolic legend plate ====
+   attributes: value(legend) sub(second line) colors(white-on-black|black-on-white|white-on-red)
+               mount(screws|tape) width height scale
+   no events (an output). self-contained: paste this block into any page and use
+   <sk-label-lamacoid value="PULL TO RESET"></sk-label-lamacoid> */
+(function () {
+  if (customElements.get("sk-label-lamacoid")) return;
+  var DH = 28;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.tilt { position: absolute; inset: 0; transform-origin: 50% 50%; }',
+  '.tapeshadow { position: absolute; inset: -4px -3px -6px -3px; border-radius: 6px; opacity: 0;',
+  '  background: rgba(0,0,0,.35); filter: blur(3px); }',
+  ':host([mount="tape"]) .tapeshadow { opacity: 1; }',
+  '.liftshadow { position: absolute; inset: -1px -1px -2px -1px; border-radius: 4px;',
+  '  box-shadow: 0 1.5px 2px rgba(0,0,0,.55), 0 0.5px 0 rgba(0,0,0,.4); }',
+  ':host([mount="tape"]) .liftshadow { box-shadow: none; }',
+  '.core { position: absolute; inset: -1px; border-radius: 4px; background: #f2f1ea; }',
+  '.cap { position: absolute; inset: 0; border-radius: 3px; overflow: hidden;',
+  '  background: linear-gradient(160deg, #2b2b2d 0%, #1b1b1c 55%, #141415 100%); }',
+  '.cap::after { content: ""; position: absolute; inset: 0; pointer-events: none;',
+  '  background: radial-gradient(65% 90% at 26% 8%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%); }',
+  ':host([colors="black-on-white"]) .cap { background: linear-gradient(160deg, #f7f6f1 0%, #f4f3ee 55%, #e9e7de 100%); }',
+  ':host([colors="black-on-white"]) .cap::after { background: radial-gradient(65% 90% at 26% 8%, rgba(255,255,255,.55), rgba(255,255,255,0) 60%); }',
+  ':host([colors="white-on-red"]) .cap { background: linear-gradient(160deg, #c8362c 0%, #b8261f 55%, #8f1a15 100%); }',
+  ':host([colors="black-on-white"]) .core { background: #141414; }',
+  '.legend { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;',
+  '  justify-content: center; gap: 1px; pointer-events: none; }',
+  '.line { font-family: "Barlow", "Arial Narrow", Arial, sans-serif; font-weight: 600; text-transform: uppercase;',
+  '  color: #f2f1ea; text-shadow: .45px .45px .4px rgba(0,0,0,.55), -.2px -.2px .2px rgba(255,255,255,.05); white-space: pre; }',
+  ':host([colors="black-on-white"]) .line { color: #141414; text-shadow: .4px .4px .35px rgba(0,0,0,.32), -.2px -.2px .2px rgba(255,255,255,.4); }',
+  ':host([colors="white-on-red"]) .line { color: #f4ede0; text-shadow: .45px .45px .4px rgba(0,0,0,.5); }',
+  '.line.sub { opacity: .82; }',
+  '.screw { position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%;',
+  '  background: radial-gradient(circle at 34% 30%, #f2f2f0, #b6b6b2 55%, #6e6e6a 100%);',
+  '  box-shadow: 0 .5px 1px rgba(0,0,0,.7); }',
+  '.screw::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4.6px; height: 1px;',
+  '  background: #2a2a28; transform: translate(-50%,-50%) rotate(var(--sa, 22deg)); }',
+  '.screw.l { left: 6px; } .screw.r { right: 6px; }',
+  ':host([mount="tape"]) .screw { display: none; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="tilt">',
+  '    <div class="tapeshadow"></div>',
+  '    <div class="liftshadow"></div>',
+  '    <div class="core"></div>',
+  '    <div class="cap">',
+  '      <div class="legend"><div class="line l1"></div><div class="line sub l2"></div></div>',
+  '    </div>',
+  '    <div class="screw l" style="--sa:24deg"></div>',
+  '    <div class="screw r" style="--sa:-38deg"></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  // rough text width for the fallback + Barlow metrics, so the plate can size itself before layout settles
+  var _ctx = null;
+  function measure(text, sizePx, weight) {
+    if (!_ctx) { try { _ctx = document.createElement("canvas").getContext("2d"); } catch (e) { _ctx = false; } }
+    if (!_ctx) return text.length * sizePx * 0.62;
+    _ctx.font = weight + " " + sizePx + "px Barlow, Arial, sans-serif";
+    var w = _ctx.measureText(text).width;
+    return w + text.length * sizePx * 0.14;   // approximate the 0.14em tracking
+  }
+
+  class SkLabelLamacoid extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "sub", "colors", "mount", "width", "height", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._tilt = r.querySelector(".tilt");
+      this._l1 = r.querySelector(".l1");
+      this._l2 = r.querySelector(".l2");
+      this._v = "";
+      var self = this;
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { self._sync(); });
+    }
+    connectedCallback() { this.setAttribute("role", "img"); this._sync(); }   // idempotent: stage.js re-parents us once
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var s = clamp(num(this, "scale", 1), 0.3, 6);
+      var text = (this.getAttribute("value") || "").toUpperCase();
+      var sub = (this.getAttribute("sub") || "").toUpperCase();
+      this._v = this.getAttribute("value") || "";
+      this._l1.textContent = text;
+      this._l2.textContent = sub;
+      this._l2.style.display = sub ? "block" : "none";
+      var fs = 9;
+      this._l1.style.fontSize = fs + "px"; this._l1.style.letterSpacing = "0.14em";
+      this._l2.style.fontSize = (fs - 1.5) + "px"; this._l2.style.letterSpacing = "0.12em";
+
+      var h = num(this, "height", sub ? DH + 9 : DH);
+      var w = num(this, "width", NaN);
+      if (isNaN(w)) {
+        var textW = Math.max(measure(text, fs, 600), sub ? measure(sub, fs - 1.5, 600) : 0);
+        w = Math.max(46, Math.round(textW) + 22);
+      }
+      w = clamp(w, 30, 2000); h = clamp(h, 18, 2000);
+
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+      this._tilt.style.transform = this.getAttribute("mount") === "tape" ? "rotate(-1.6deg)" : "none";
+
+      var colors = this.getAttribute("colors") || "white-on-black";
+      this.setAttribute("aria-label", (this._v || "blank") + " lamacoid plate, " + colors.replace(/-/g, " "));
+    }
+  }
+  customElements.define("sk-label-lamacoid", SkLabelLamacoid);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

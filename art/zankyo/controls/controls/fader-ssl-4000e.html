@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSL 4000 E channel fader — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "fader-ssl-4000e",
+  "element": "sk-fader-ssl-4000e",
+  "name": "SSL 4000 E channel fader",
+  "kind": "input",
+  "code": "B1",
+  "type": "Linear fader",
+  "source": "Solid State Logic 4000 E channel module, Penny & Giles 100 mm conductive-plastic fader with the grey-blue moulded knob (G-series fader-status LED)",
+  "era": "1980s",
+  "origin": "UK",
+  "materials": ["grey-blue moulded plastic", "black anodised aluminium", "felt", "painted steel", "silk-screen"],
+  "tags": ["console", "audio", "fader", "mixing", "audio taper", "LED"],
+  "value": { "model": "range", "min": -60, "max": 10, "step": 0.5, "unit": "dB" },
+  "attributes": ["value", "min", "max", "step", "label", "scale", "disabled", "led"],
+  "events": ["input", "change"],
+  "size": { "w": 56, "h": 372 },
+  "notes": "Three faders: 0 dB with the fader-status LED lit, −∞ with it dark, and a small one at +6. Drag the knob along the slot, wheel, or arrows (Shift ×10). −60 is printed ∞."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-fader-ssl-4000e value="0" label="CH 12" led="on"></sk-fader-ssl-4000e>
+    <sk-fader-ssl-4000e value="-60" label="CH 13"></sk-fader-ssl-4000e>
+    <sk-fader-ssl-4000e value="6" label="CH 14" led="on" scale="0.6"></sk-fader-ssl-4000e>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>SSL 4000 E</b> channel fader is a Penny &amp; Giles 100 mm conductive-plastic fader let into the
+  bottom of every module of the console that mixed most of the 1980s: a black anodised slot rail on a light grey
+  painted module face, a felt dust brush parting in the slot around the stem, and the knob that any session
+  engineer recognises across the room — a plain rectangular block in a desaturated blue-grey that no other
+  console used, wider than tall, with a shallow dish on top and no index line. On the G-series a 3 mm red
+  fader-status LED sits at the head of the rail in a black holder.</p>
+  <p><b>The tells kept here:</b> the blue-grey block knob with its barely-there concave dish and one soft polish
+  on top; the felt brush strips meeting in a hairline down the slot; the audio-taper scale printed white to the
+  right of the slot — +10, +5, 0, 5, 10, 20, 30, 40, 60, ∞ — with the 0 tick longer and the spacing crushing
+  toward ∞; the LED and its holder at the top right; the two cross-head screws at the ends of the rail; a
+  grime shadow in the slot below the knob's usual resting place near 0 dB. The knob follows the pointer exactly
+  along the slot; the wheel steps 0.5 dB; arrows step 0.5 dB and Shift-arrows 5 dB; Home/End go to ∞ and +10.
+  The LED is a status lamp and does not follow the value.</p>
+  <p><b>Left out:</b> the mute and solo buttons above the fader, the VCA group selector, the module's scribble strip.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-fader-ssl-4000e> — SSL 4000 E channel fader, grey-blue block knob on a black anodised slot rail ====
+   attributes: value min max step label scale disabled led("on" lights the fader-status LED)
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-fader-ssl-4000e value="0"></sk-fader-ssl-4000e> */
+(function () {
+  if (customElements.get("sk-fader-ssl-4000e")) return;
+  const W = 56, H = 372;
+  const SX = 19;                          // slot centre x
+  const Y_TOP = 38, Y_BOT = 338;          // knob centre at +10 and at -inf (300 px travel)
+  const TRAVEL = Y_BOT - Y_TOP;
+  // audio taper: value -> fraction of travel from the bottom (0 dB at 72 %, -20 at 25 %)
+  const TAPER = [[-60, 0], [-40, 0.09], [-30, 0.16], [-20, 0.25], [-10, 0.49], [-5, 0.60], [0, 0.72], [5, 0.86], [10, 1]];
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 2px; top: 24px; width: 52px; height: 328px; border-radius: 3px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .cap { transition: none; }
+    .cap.settle { transition: transform 60ms ease-out; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500; fill: #f4f4f0; letter-spacing: 0.02em; }
+    .num { font-size: 7px; }
+    .num.big { font-size: 8px; }
+    .inf { font-size: 9px; font-weight: 600; }
+    .label { font-size: 6.5px; fill: #3b3d3f; letter-spacing: 0.08em; font-weight: 600; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c0c0bc"/><stop offset="0.5" stop-color="#b9b9b5"/><stop offset="1" stop-color="#aeaeaa"/>
+        </linearGradient>
+        <linearGradient id="rail" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1e1f22"/><stop offset="0.5" stop-color="#131416"/><stop offset="1" stop-color="#0e0f11"/>
+        </linearGradient>
+        <pattern id="grain" width="2" height="2" patternUnits="userSpaceOnUse">
+          <rect width="1" height="2" fill="#fff" fill-opacity="0.035"/>
+        </pattern>
+        <pattern id="felt" width="3" height="2" patternUnits="userSpaceOnUse">
+          <rect width="3" height="2" fill="#26282b"/>
+          <rect y="0.6" width="3" height="0.6" fill="#1b1d1f"/>
+          <rect x="1" y="1.4" width="1" height="0.5" fill="#33363a"/>
+        </pattern>
+        <linearGradient id="slotShade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.6"/><stop offset="0.35" stop-color="#000" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/>
+        </linearGradient>
+        <linearGradient id="grime" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="0.4" stop-color="#000" stop-opacity="0.55"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="knobTop" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stop-color="#b2bfcb"/><stop offset="0.5" stop-color="#8fa0b0"/><stop offset="1" stop-color="#75859a"/>
+        </linearGradient>
+        <linearGradient id="knobSide" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#66747f"/><stop offset="1" stop-color="#4a5761"/>
+        </linearGradient>
+        <radialGradient id="dish" cx="45%" cy="45%" r="60%">
+          <stop offset="0" stop-color="#7a8a99"/><stop offset="0.7" stop-color="#84949f"/><stop offset="1" stop-color="#93a3b2"/>
+        </radialGradient>
+        <radialGradient id="polish" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="screw" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#e8e8e6"/><stop offset="0.55" stop-color="#8e908f"/><stop offset="1" stop-color="#3c3e3f"/>
+        </radialGradient>
+        <radialGradient id="ledOn" cx="38%" cy="35%" r="65%">
+          <stop offset="0" stop-color="#ffb3ad"/><stop offset="0.35" stop-color="#ff3b30"/><stop offset="1" stop-color="#a5130c"/>
+        </radialGradient>
+        <radialGradient id="ledOff" cx="38%" cy="35%" r="65%">
+          <stop offset="0" stop-color="#7a2a2a"/><stop offset="1" stop-color="#3f1010"/>
+        </radialGradient>
+        <radialGradient id="holder" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#3a3a3c"/><stop offset="1" stop-color="#0b0b0c"/>
+        </radialGradient>
+        <clipPath id="slotClip"><rect x="14" y="32" width="10" height="312" rx="1.5"/></clipPath>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>
+        <filter id="b4" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+
+      <!-- module face: light grey painted steel, with the seams to the neighbouring modules -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#face)"/>
+      <rect x="0" y="0" width="0.7" height="${H}" fill="#7d7d7a"/>
+      <rect x="${W - 0.7}" y="0" width="0.7" height="${H}" fill="#d6d6d2"/>
+      <text class="label" x="27" y="364.5"></text>
+
+      <!-- fader-status LED in its black holder, top right -->
+      <circle class="ledGlow" cx="47" cy="12" r="7" fill="#ff3b30" opacity="0" filter="url(#b4)"/>
+      <circle cx="47.6" cy="12.8" r="4" fill="#000" opacity="0.35" filter="url(#b1)"/>
+      <circle cx="47" cy="12" r="3.8" fill="url(#holder)" stroke="#000" stroke-width="0.5"/>
+      <circle class="led" cx="47" cy="12" r="2.2" fill="url(#ledOff)" stroke="#2a0b0b" stroke-width="0.3"/>
+      <ellipse class="ledHot" cx="46.3" cy="11.2" rx="0.8" ry="0.5" fill="#fff" opacity="0"/>
+
+      <!-- the rail: black anodised, let into the face -->
+      <rect x="1.5" y="23.5" width="52" height="328" rx="2.5" fill="#000" opacity="0.5" filter="url(#b1)"/>
+      <rect x="2" y="24" width="52" height="328" rx="2.5" fill="url(#rail)"/>
+      <rect x="2" y="24" width="52" height="328" rx="2.5" fill="url(#grain)"/>
+      <path d="M 4 351 L 4 27 Q 4 26 5 26 L 52 26" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="1.2"/>
+      <path d="M 53 27 L 53 350 Q 53 351 52 351 L 5 351" fill="none" stroke="#3a3c40" stroke-opacity="0.55" stroke-width="0.8"/>
+
+      <!-- the scale, silk-screened white -->
+      <g class="scale"></g>
+
+      <!-- the slot: recessed, with the felt brush strips meeting in a hairline -->
+      <rect x="14" y="32" width="10" height="312" rx="1.5" fill="#050506"/>
+      <g clip-path="url(#slotClip)">
+        <rect x="14" y="32" width="4.7" height="312" fill="url(#felt)"/>
+        <rect x="19.3" y="32" width="4.7" height="312" fill="url(#felt)"/>
+        <rect x="18.7" y="32" width="0.6" height="312" fill="#030303"/>
+        <rect x="14" y="32" width="10" height="312" fill="url(#slotShade)"/>
+        <rect x="14" y="120" width="10" height="90" fill="url(#grime)"/>
+        <rect x="13" y="31" width="12" height="314" rx="2" fill="none" stroke="#000" stroke-width="3" filter="url(#b1)"/>
+        <rect x="14" y="32" width="10" height="6" fill="#000" opacity="0.6" filter="url(#b1)"/>
+      </g>
+      <path d="M 24.3 34 L 24.3 343" stroke="#3a3c40" stroke-opacity="0.5" stroke-width="0.6"/>
+
+      <!-- cross-head screws at the ends of the rail -->
+      <g transform="translate(19 13)">
+        <circle r="3.8" fill="#000" opacity="0.35" filter="url(#b1)" cx="0.6" cy="0.7"/>
+        <circle r="3.4" fill="url(#screw)" stroke="#2c2e2f" stroke-width="0.5"/>
+        <g transform="rotate(12)" fill="#1b1c1d"><rect x="-2.6" y="-0.55" width="5.2" height="1.1"/><rect x="-0.55" y="-2.6" width="1.1" height="5.2"/></g>
+      </g>
+      <g transform="translate(19 362)">
+        <circle r="3.8" fill="#000" opacity="0.35" filter="url(#b1)" cx="0.6" cy="0.7"/>
+        <circle r="3.4" fill="url(#screw)" stroke="#2c2e2f" stroke-width="0.5"/>
+        <g transform="rotate(-25)" fill="#1b1c1d"><rect x="-2.6" y="-0.55" width="5.2" height="1.1"/><rect x="-0.55" y="-2.6" width="1.1" height="5.2"/></g>
+      </g>
+
+      <!-- the knob: a grey-blue block, wider than tall, standing proud -->
+      <g class="cap">
+        <rect x="6" y="-6" width="30" height="20" rx="3.5" fill="#000" opacity="0.45" filter="url(#b2)"/>
+        <rect x="5" y="-7.5" width="30" height="19" rx="3.2" fill="#000" opacity="0.6" filter="url(#b1)"/>
+        <rect x="4" y="-9" width="30" height="21.5" rx="3" fill="url(#knobSide)" stroke="#39454e" stroke-width="0.5"/>
+        <rect x="4" y="-9" width="30" height="18" rx="3" fill="url(#knobTop)" stroke="#6a7885" stroke-width="0.5"/>
+        <rect x="8" y="-5.5" width="22" height="11" rx="2.6" fill="url(#dish)"/>
+        <path d="M 9.5 5 Q 9.5 5.5 10 5.5 L 28 5.5 Q 30 5.5 30 3.5 L 30 -2" fill="none" stroke="#b6c3ce" stroke-opacity="0.6" stroke-width="0.5"/>
+        <path d="M 29 -5.2 L 10.5 -5.2 Q 8 -5.2 8 -3 L 8 3" fill="none" stroke="#5b6873" stroke-opacity="0.7" stroke-width="0.5"/>
+        <ellipse cx="13" cy="-6" rx="8" ry="2.2" fill="url(#polish)"/>
+        <path d="M 7 -8 Q 19 -8.6 31 -8" fill="none" stroke="#c8d3dc" stroke-opacity="0.45" stroke-width="0.5"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkFaderSsl4000e extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "scale", "disabled", "led"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = -60; this._max = 10; this._step = 0.5; this._scale = 1;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._cap = q(".cap"); this._grab = q(".grab"); this._wrap = q(".wrap"); this._label = q(".label"); this._scaleG = q(".scale");
+      this._led = q(".led"); this._ledGlow = q(".ledGlow"); this._ledHot = q(".ledHot");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawScale(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n !== "value") this._drawScale(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", -60); this._max = num("max", 10); this._step = Math.max(0.01, num("step", 0.5));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._label.textContent = this.getAttribute("label") || "";
+      const on = /^(on|1|true)$/i.test(this.getAttribute("led") || "");
+      this._led.setAttribute("fill", on ? "url(#ledOn)" : "url(#ledOff)");
+      this._ledGlow.setAttribute("opacity", on ? "0.55" : "0");
+      this._ledHot.setAttribute("opacity", on ? "0.85" : "0");
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "fader");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("aria-orientation", "vertical");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _q(v) { return Math.round(Math.round(v / this._step) * this._step * 1000) / 1000; }
+    // value -> fraction of travel from the bottom, through the taper table (extrapolated linearly outside it)
+    _t(v) {
+      const T = TAPER;
+      if (v <= T[0][0]) return T[0][1] + (v - T[0][0]) * (T[1][1] - T[0][1]) / (T[1][0] - T[0][0]);
+      for (let i = 1; i < T.length; i++) if (v <= T[i][0]) { const a = T[i - 1], b = T[i]; return a[1] + (v - a[0]) * (b[1] - a[1]) / (b[0] - a[0]); }
+      const a = T[T.length - 2], b = T[T.length - 1]; return b[1] + (v - b[0]) * (b[1] - a[1]) / (b[0] - a[0]);
+    }
+    _vOfT(t) {
+      const T = TAPER;
+      if (t <= T[0][1]) return T[0][0] + (t - T[0][1]) * (T[1][0] - T[0][0]) / (T[1][1] - T[0][1]);
+      for (let i = 1; i < T.length; i++) if (t <= T[i][1]) { const a = T[i - 1], b = T[i]; return a[0] + (t - a[1]) * (b[0] - a[0]) / (b[1] - a[1]); }
+      const a = T[T.length - 2], b = T[T.length - 1]; return b[0] + (t - b[1]) * (b[0] - a[0]) / (b[1] - a[1]);
+    }
+    _y(v) { return Y_BOT - Math.min(1, Math.max(0, this._t(v))) * TRAVEL; }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      const marks = [[10, "+10", 1], [5, "+5", 1], [0, "0", 2], [-5, "5", 1], [-10, "10", 1], [-20, "20", 1], [-30, "30", 1], [-40, "40", 1]];
+      const minors = [7.5, 2.5, -2.5, -7.5, -15, -25, -35];
+      for (const m of minors) {
+        const y = this._y(m);
+        g.appendChild(mk("line", { x1: 37.5, y1: y, x2: 39.5, y2: y, stroke: "#f4f4f0", "stroke-width": 0.6, opacity: 0.7 }));
+      }
+      const put = (y, txt, kind) => {
+        const len = kind === 2 ? 6.5 : 4;
+        g.appendChild(mk("line", { x1: 37.5, y1: y, x2: 37.5 + len, y2: y, stroke: "#f4f4f0", "stroke-width": kind === 2 ? 1.1 : 0.8 }));
+        const t = mk("text", { x: 45.5, y: y + 2.5, class: kind === 2 ? "num big" : (txt === "10" ? "num big" : "num") });
+        t.textContent = txt; g.appendChild(t);
+      };
+      for (const [v, txt, kind] of marks) put(this._y(v), txt, kind);
+      // the crushed bottom of the scale: 60 just above the end stop, and the infinity glyph at it
+      const y60 = Y_BOT - 0.035 * TRAVEL;
+      put(y60, "60", 1);
+      g.appendChild(mk("line", { x1: 37.5, y1: Y_BOT, x2: 42, y2: Y_BOT, stroke: "#f4f4f0", "stroke-width": 0.9 }));
+      const inf = mk("text", { x: 45, y: Y_BOT + 3, class: "inf" }); inf.textContent = "∞"; g.appendChild(inf);
+    }
+    _render() {
+      this._cap.style.transform = "translate(" + (SX - 19) + "px," + this._y(this._v).toFixed(2) + "px)";
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", this._v <= this._min ? "minus infinity" : ((this._v > 0 ? "+" : "") + this._v + " dB"));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _localY(e) { const r = this._grab.getBoundingClientRect(); return (e.clientY - r.top) / this._scale + 24; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._cap.classList.remove("settle");
+      const y = this._localY(e), cy = this._y(this._v);
+      const onKnob = Math.abs(y - cy) <= 12;
+      this._drag = { off: onKnob ? cy - y : 0, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+      if (!onKnob) this._onMove(e);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const cy = this._localY(e) + this._drag.off;
+      const t = Math.min(1, Math.max(0, (Y_BOT - cy) / TRAVEL));
+      const v = this._q(this._vOfT(t));
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const dir = e.deltaY < 0 ? 1 : -1;
+      const v = this._q(this._v + dir * this._step * (e.shiftKey ? 10 : 1));
+      if (v === this._v) return;
+      e.preventDefault();
+      this._cap.classList.add("settle");
+      this._set(v, false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const s = this._step * (e.shiftKey ? 10 : 1);
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + s; break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - s; break;
+        case "PageUp": v = this._v + this._step * 10; break;
+        case "PageDown": v = this._v - this._step * 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._cap.classList.add("settle");
+      v = this._q(v);
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-fader-ssl-4000e", SkFaderSsl4000e);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

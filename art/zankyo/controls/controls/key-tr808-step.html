@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TR-808 step key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "key-tr808-step",
+  "element": "sk-key-tr808-step",
+  "name": "Roland TR-808 step key with LED",
+  "kind": "both",
+  "code": "D2",
+  "type": "Rectangular key with indicator",
+  "source": "Roland TR-808 Rhythm Composer (1980), the sixteen step keys in four colour groups of four, each with a red LED above it",
+  "era": "1980s",
+  "origin": "Japan",
+  "materials": ["matte ABS", "diffused LED", "silk-screened charcoal panel"],
+  "tags": ["drum machine", "sequencer", "step key", "LED", "latching", "colour groups"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "lit", "color", "num", "beat", "run", "bpm", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release", "activate"],
+  "size": { "w": 66, "h": 60 },
+  "notes": "One key from each colour group — 1 red and 11 yellow are on, 6 orange and 16 white are off. Click or press Space."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-key-tr808-step color="red" num="1" beat value="true" label="step 1" scale="2.4"></sk-key-tr808-step>
+    <sk-key-tr808-step color="orange" num="6" label="step 6" scale="2.4"></sk-key-tr808-step>
+    <sk-key-tr808-step color="yellow" num="11" value="true" label="step 11" scale="2.4"></sk-key-tr808-step>
+    <sk-key-tr808-step color="white" num="16" label="step 16" scale="2.4"></sk-key-tr808-step>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Roland TR-808</b>'s sixteen step keys are the most copied row of buttons in music: rectangular matte
+  ABS caps on a 24&nbsp;mm pitch, in four groups of four — red, orange, yellow, then a white that has gone
+  ivory — each with its own small red LED in a separate hole above it, the step number silk-screened above that,
+  and a thin orange rule running across the charcoal panel over the whole row.</p>
+  <p><b>The tells kept here:</b> the four colours in group order; the LED <i>above</i> the key rather than in it,
+  lighting when the step is on, instant up and with a 60&nbsp;ms tail down, blooming into the panel around it;
+  the cap as a plain radiused rectangle with a barely convex top, a soft central highlight, a 1&nbsp;px darker
+  rim and a hairline parting line; the 1&nbsp;px black gap all round where the cap sits in its hole;
+  the beat mark on steps 1, 5, 9 and 13; and the grime that yellows the corners of every cap — worst on the
+  white ones, which were ivory when they left Roland and are worse now. Pressing travels 1.5&nbsp;px in
+  40&nbsp;ms onto a hard stop.</p>
+  <p><b>Left out:</b> the group legends (1–4, 5–8 …) and the beat-counter that print between the keys, the
+  sixteen-in-a-row <code>count</code> form — one element is one step — and the sequencer itself, though a
+  <code>run</code> attribute will flash the LED in its turn at the given <code>bpm</code> so a host does not
+  have to.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-key-tr808-step> — Roland TR-808 step key with its LED ====
+   attributes: value (boolean) · lit (LED on regardless, e.g. the sequencer passing) · color [red|orange|yellow|white]
+               num (1–16, printed) · beat (the panel's beat mark) · run + bpm (self-clocked sequencer flash)
+               label · scale · disabled
+   events: input/change {value}, press, release, activate
+   self-contained: paste this block into any page and use <sk-key-tr808-step color="red" num="1"></sk-key-tr808-step> */
+(function () {
+  if (customElements.get("sk-key-tr808-step")) return;
+  const W = 66, H = 60;
+  const CAPS = {
+    red:    { base: "#d8352b", hi: "#e55a4d", lo: "#96231b", grime: 0.13 },
+    orange: { base: "#e8792b", hi: "#ef9755", lo: "#a44e14", grime: 0.12 },
+    yellow: { base: "#efc229", hi: "#f4d55e", lo: "#ab8710", grime: 0.15 },
+    white:  { base: "#efeae0", hi: "#faf7f0", lo: "#b3ad9e", grime: 0.3 }
+  };
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; --base: #d8352b; --hi: #f0776a; --lo: #7e1a14; --grime: 0.13; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .panel {
+      position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; overflow: hidden;
+      background:
+        radial-gradient(150% 120% at 26% -10%, rgba(255,255,255,0.05), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, #343331 0%, #2d2c2b 46%, #262524 100%);
+      box-shadow: inset 0 -5px 9px rgba(0,0,0,0.3);
+    }
+    .rule { position: absolute; left: 0; top: 3px; width: ${W}px; height: 1.6px;
+      background: linear-gradient(90deg, #d2661f, #e2702a 30%, #e07c33 70%, #cc6320);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.45); opacity: 0.95; }
+    .beat { position: absolute; left: 50%; top: 11.6px; width: 0; height: 0; display: none;
+      margin-left: -13.2px; border-left: 2.3px solid transparent; border-right: 2.3px solid transparent;
+      border-top: 3.2px solid #d5d1c7; opacity: 0.85; }
+    :host([beat]) .beat { display: block; }
+    .num { position: absolute; left: 0; top: 10px; width: ${W}px; text-align: center;
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 7.5px;
+      letter-spacing: 0.02em; color: #f0eee8; text-shadow: 0 1px 0 rgba(0,0,0,0.6); line-height: 1; }
+
+    /* --- the LED, in its own hole above the key --- */
+    .spill { position: absolute; left: 50%; top: 25px; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+      border-radius: 50%; pointer-events: none; opacity: 0;
+      background: radial-gradient(circle, rgba(255,70,55,0.34) 0%, rgba(255,60,46,0.14) 38%, rgba(255,60,46,0) 70%);
+      transition: opacity 60ms linear; }
+    .ledhole { position: absolute; left: 50%; top: 25px; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+      border-radius: 50%; background: #0a0908;
+      box-shadow: inset 0 1px 1.5px rgba(0,0,0,0.95), inset 0 -1px 0.5px rgba(255,255,255,0.07),
+                  0 0.5px 0 rgba(255,255,255,0.05); }
+    .led { position: absolute; left: 1.6px; top: 1.6px; width: 7.8px; height: 7.8px; border-radius: 50%;
+      background: radial-gradient(circle at 36% 28%, #8d2b22, #5b1410 58%, #370c09); }
+    .led .on { position: absolute; inset: -0.2px; border-radius: 50%; opacity: 0; transition: opacity 60ms linear;
+      background: radial-gradient(circle at 36% 28%, #ffcfc6 0%, #ff6a58 28%, #ff3b2e 55%, #cf1a0e 100%);
+      box-shadow: 0 0 5px 1.5px rgba(255,59,46,0.8), 0 0 12px 4px rgba(255,59,46,0.4); }
+    .led .glint { position: absolute; left: 1.5px; top: 1.2px; width: 2px; height: 1.3px; border-radius: 50%;
+      background: rgba(255,255,255,0.3); filter: blur(0.4px); }
+    .is-lit .led .on { opacity: 1; transition: opacity 0s; }
+    .is-lit .spill { opacity: 1; transition: opacity 0s; }
+
+    /* --- the key --- */
+    .hole { position: absolute; left: 5px; top: 31px; width: 56px; height: 27px; border-radius: 3.5px;
+      background: #070706; box-shadow: inset 0 1px 1.5px rgba(0,0,0,0.9), 0 0.5px 0 rgba(255,255,255,0.05); }
+    .cap { position: absolute; left: 6px; top: 32px; width: 54px; height: 25px; border-radius: 2.8px;
+      background:
+        radial-gradient(90% 140% at 42% 14%, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 55%, rgba(255,255,255,0) 82%),
+        linear-gradient(180deg, var(--hi) 0%, var(--base) 20%, var(--base) 74%, var(--lo) 100%);
+      box-shadow: 0 1.5px 2.5px rgba(0,0,0,0.75), inset 0 0 0 0.7px rgba(0,0,0,0.3),
+                  inset 0 0.6px 0 rgba(255,255,255,0.17), inset 0 -1.2px 1.6px rgba(0,0,0,0.26);
+      cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; outline: none;
+      transition: transform 40ms cubic-bezier(.35,0,.7,1), box-shadow 40ms linear; }
+    .cap.down { transform: translateY(1.5px);
+      box-shadow: 0 0.4px 1px rgba(0,0,0,0.8), inset 0 0 0 0.7px rgba(0,0,0,0.34),
+                  inset 0 1.2px 2px rgba(0,0,0,0.3); }
+    :host([disabled]) .cap { cursor: default; }
+    .cap:focus-visible { box-shadow: 0 0 0 1.6px #16e0e0, 0 0 8px rgba(22,224,224,0.6),
+      inset 0 0.6px 0 rgba(255,255,255,0.17), inset 0 -1.2px 1.6px rgba(0,0,0,0.26); }
+    .parting { position: absolute; left: 0.8px; right: 0.8px; top: 8px; height: 1px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.2) 0 50%, rgba(0,0,0,0.17) 50% 100%); }
+    .grime { position: absolute; inset: 0; border-radius: 2.8px; pointer-events: none;
+      background: radial-gradient(86% 150% at 50% 42%, rgba(0,0,0,0) 46%, rgba(74,56,24,var(--grime)) 100%); }
+  </style>
+  <div class="wrap">
+    <div class="panel">
+      <div class="rule"></div>
+      <div class="beat"></div>
+      <div class="num"></div>
+      <div class="spill"></div>
+      <div class="ledhole"><div class="led"><div class="on"></div><div class="glint"></div></div></div>
+      <div class="hole"></div>
+      <div class="cap" role="switch" tabindex="0"><div class="parting"></div><div class="grime"></div></div>
+    </div>
+  </div>`;
+
+  const truthy = v => v === true || v === 1 || v === "" || v === "true" || v === "on" || v === "1";
+
+  class SkKeyTr808Step extends HTMLElement {
+    static get observedAttributes() { return ["value", "lit", "color", "num", "beat", "run", "bpm", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._cap = r.querySelector(".cap");
+      this._num = r.querySelector(".num");
+      this._v = false; this._scale = 1; this._down = false; this._keyDown = false;
+      this._seq = false; this._raf = 0;
+      this._onDown = this._onDown.bind(this); this._onUp = this._onUp.bind(this);
+      this._onCancel = this._onCancel.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this); this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs(); this._render();
+      const c = this._cap;
+      c.addEventListener("pointerdown", this._onDown);
+      c.addEventListener("pointerup", this._onUp);
+      c.addEventListener("pointercancel", this._onCancel);
+      c.addEventListener("keydown", this._onKeyDown);
+      c.addEventListener("keyup", this._onKeyUp);
+      c.addEventListener("blur", this._onBlur);
+      this._runCheck();
+    }
+    disconnectedCallback() {
+      const c = this._cap;
+      c.removeEventListener("pointerdown", this._onDown);
+      c.removeEventListener("pointerup", this._onUp);
+      c.removeEventListener("pointercancel", this._onCancel);
+      c.removeEventListener("keydown", this._onKeyDown);
+      c.removeEventListener("keyup", this._onKeyUp);
+      c.removeEventListener("blur", this._onBlur);
+      if (this._raf) cancelAnimationFrame(this._raf);
+      this._raf = 0; this._down = false; this._keyDown = false;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs(); this._render();
+      if (n === "run" || n === "bpm") this._runCheck();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      const b = truthy(v) || v === true;
+      if (b === this._v) return;
+      this._v = b;
+      this.setAttribute("value", b ? "true" : "false");
+      this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opts) { this._cap.focus(opts); }
+    blur() { this._cap.blur(); }
+
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const c = CAPS[(this.getAttribute("color") || "red").toLowerCase()] || CAPS.red;
+      this.style.setProperty("--base", c.base);
+      this.style.setProperty("--hi", c.hi);
+      this.style.setProperty("--lo", c.lo);
+      this.style.setProperty("--grime", String(c.grime));
+      const n = this.getAttribute("num");
+      this._num.textContent = n == null ? "" : n;
+      this._v = this.hasAttribute("value") ? truthy(this.getAttribute("value")) : this._v;
+      const dis = this.hasAttribute("disabled");
+      this._cap.setAttribute("tabindex", dis ? "-1" : "0");
+      this._cap.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._cap.setAttribute("aria-label", this.getAttribute("label") || (n ? "step " + n : "step"));
+    }
+    _render() {
+      const lit = this._v || this.hasAttribute("lit") || this._seq;
+      this._wrap.classList.toggle("is-lit", lit);
+      this._cap.classList.toggle("down", this._down);
+      this._cap.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+    _fire(type, detail) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: detail || {} })); }
+    _toggle() {
+      if (this.hasAttribute("disabled")) return;
+      this._v = !this._v;
+      this.setAttribute("value", this._v ? "true" : "false");
+      this._render();
+      this._fire("input", { value: this._v });
+      this._fire("change", { value: this._v });
+    }
+    _press() {
+      if (this.hasAttribute("disabled") || this._down) return;
+      this._down = true; this._render(); this._fire("press");
+    }
+    _release(activate) {
+      if (!this._down) return;
+      this._down = false; this._render(); this._fire("release");
+      if (activate && !this.hasAttribute("disabled")) { this._toggle(); this._fire("activate", { value: this._v }); }
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._cap.focus({ preventScroll: true });
+      try { this._cap.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      if (!this._down) return;
+      e.preventDefault();
+      const r = this._cap.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      try { this._cap.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release(inside);
+    }
+    _onCancel() { this._release(false); }
+    _onKeyDown(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault();
+      if (e.repeat || this._keyDown) return;
+      this._keyDown = true; this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault(); this._keyDown = false; this._release(true);
+    }
+    _onBlur() { if (this._keyDown) { this._keyDown = false; this._release(false); } }
+
+    // a self-clocked sixteenth-note sweep: every key with run= flashes in its turn,
+    // in step with its neighbours because they all read the same clock.
+    _runCheck() {
+      const want = this.hasAttribute("run") && !!this.getAttribute("num");
+      if (want && !this._raf) this._raf = requestAnimationFrame(this._tick);
+      if (!want && this._raf) {
+        cancelAnimationFrame(this._raf); this._raf = 0;
+        if (this._seq) { this._seq = false; this._render(); }
+      }
+    }
+    _tick() {
+      this._raf = requestAnimationFrame(this._tick);
+      const bpm = Math.max(20, parseFloat(this.getAttribute("bpm")) || 120);
+      const ms = 60000 / bpm / 4;
+      const n = (parseInt(this.getAttribute("num"), 10) || 1) - 1;
+      const on = Math.floor(performance.now() / ms) % 16 === (n % 16);
+      if (on !== this._seq) { this._seq = on; this._render(); }
+    }
+  }
+  customElements.define("sk-key-tr808-step", SkKeyTr808Step);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dive bezel, black insert with a lume triangle at 12 — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "bezel-dive-submariner",
+  "element": "sk-bezel-sub",
+  "name": "Dive bezel, black insert with a lume triangle at 12",
+  "kind": "input",
+  "code": "A16",
+  "type": "Rotating bezel",
+  "source": "Rolex Submariner 5513-type unidirectional dive bezel, 1953/1962 pattern (also Seiko 6309, Blancpain Fifty Fathoms)",
+  "era": "1960s",
+  "origin": "Switzerland",
+  "materials": ["steel", "anodised aluminium", "lume", "acrylic crystal"],
+  "tags": ["watch", "dive", "bezel", "ratchet", "one-way", "lume", "coin edge"],
+  "value": { "model": "steps", "min": 0, "max": 59, "step": 1, "unit": "min" },
+  "attributes": ["value", "clicks", "bidirectional", "aged", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 144, "h": 144 },
+  "notes": "Two bezels: fresh at 0 (triangle at 12) and an aged one at 25 minutes elapsed. Drag around the centre, wheel or arrows; it only goes anticlockwise, and pulling it clockwise just twitches."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-bezel-sub value="0" label="ELAPSED MINUTES"></sk-bezel-sub>
+    <sk-bezel-sub value="25" label="ELAPSED MINUTES (aged)" scale="0.8" aged></sk-bezel-sub>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>unidirectional dive bezel</b> of the 1953 Submariner and its 1962 5513 successor (and the Fifty Fathoms and
+  the Seiko 6309 that copied the idea): a steel ring with a coin-edge knurl you can grip with a wet glove, carrying a
+  black anodised aluminium insert printed with 10 20 30 40 50, a bar every five minutes, a hash every single minute
+  for the first quarter hour, and an inverted triangle at 12 with a lume dot inside. You set the triangle to the
+  minute hand at the start of a dive and read elapsed time off the insert. The ratchet only lets it turn
+  anticlockwise, so a knock can only ever shorten the dive.</p>
+  <p><b>The tells kept here:</b> the triangle at 12 with the lume pip that glows faintly against the dark panel; the
+  marker density that changes at 15; a coin-edge of 120 teeth whose two facets are each lit from above-left, so
+  the ring reads bright at the top-left and dark at the bottom-right with a little reflected light at the far
+  edge; the insert sitting below the steel lip with an inner shadow at its top-left; a flat crystal over an empty
+  dial with one wide window-shaped reflection. The value is the minute reading at 12 o'clock: each anticlockwise
+  click adds one (or a half with <code>clicks="120"</code>) and it wraps at 60. Pull it clockwise and it twitches a
+  degree and settles back; <code>bidirectional</code> frees it. Drag follows the pointer's angle around the centre;
+  the wheel and the arrows click; Home turns it round to the triangle at 12. The <code>aged</code> palette turns the
+  insert grey-blue and the pip cream.</p>
+  <p><b>Left out:</b> the case and lugs around the bezel, the hands and the dial printing (an empty dial keeps the
+  bezel the subject), the lume ageing into cracks.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-bezel-sub> — Submariner-type unidirectional dive bezel with a lume triangle at 12 ====
+   attributes: value (minutes at 12, 0…59) clicks (60 | 120) bidirectional aged label scale disabled
+   events: input {value} on every click, change {value} when the gesture settles
+   self-contained: paste this block into any page and use <sk-bezel-sub value="0"></sk-bezel-sub> */
+(function () {
+  if (customElements.get("sk-bezel-sub")) return;
+  const W = 144, H = 144, CX = 72, CY = 72;
+  const R_OUT = 71.5, R_KN = 67, R_LIP = 63.5, R_INS = 46.5, R_REH = 44.5;
+  const f = n => (Math.round(n * 100) / 100).toString();
+  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; };
+  const ann = (r0, r1) => `M ${CX - r0} ${CY} a ${r0} ${r0} 0 1 0 ${2 * r0} 0 a ${r0} ${r0} 0 1 0 ${-2 * r0} 0 M ${CX - r1} ${CY} a ${r1} ${r1} 0 1 0 ${2 * r1} 0 a ${r1} ${r1} 0 1 0 ${-2 * r1} 0 Z`;
+  const arc = (r, a0, a1) => { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M ${f(x0)} ${f(y0)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f(x1)} ${f(y1)}`; };
+
+  // the coin edge: 120 teeth, each with two facets, lit from above-left with a little reflected light from below-right
+  function knurl() {
+    const N = 120, pitch = 360 / N, LIGHT = -45, out = [];
+    const lum = phi => {
+      const d = (phi - LIGHT) * Math.PI / 180, r = (phi - 135) * Math.PI / 180;
+      return Math.max(0.08, Math.min(0.96, 0.40 + 0.46 * Math.cos(d) + 0.12 * Math.max(0, Math.cos(r))));
+    };
+    const grey = L => { const c = Math.round(50 + 190 * L); return `rgb(${c},${c + 1},${c})`; };
+    for (let i = 0; i < N; i++) {
+      for (let s = 0; s < 2; s++) {
+        const a0 = i * pitch + s * pitch / 2, a1 = a0 + pitch / 2;
+        const phi = a0 + pitch / 4 + (s ? 44 : -44);
+        const [x0, y0] = pt(a0, R_OUT), [x1, y1] = pt(a1, R_OUT), [x2, y2] = pt(a1, R_KN), [x3, y3] = pt(a0, R_KN);
+        const c = grey(lum(phi));
+        out.push(`<path d="M${f(x0)} ${f(y0)}L${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}L${f(x3)} ${f(y3)}Z" fill="${c}" stroke="${c}" stroke-width="0.3"/>`);
+      }
+    }
+    return out.join("");
+  }
+  // the insert's printing: numerals every ten, a bar every five, a hash every minute up to 15, the triangle at 0
+  function markers() {
+    const out = [];
+    for (let m = 1; m < 60; m++) {
+      const a = m * 6;
+      if (m % 10 === 0) {
+        const [x, y] = pt(a, 55.6);
+        out.push(`<text class="num" x="${f(x)}" y="${f(y)}" transform="rotate(${a} ${f(x)} ${f(y)})">${m}</text>`);
+      } else if (m % 5 === 0) {
+        out.push(`<rect class="mk" x="${CX - 1.25}" y="${CY - 61.6}" width="2.5" height="9.6" rx="0.3" transform="rotate(${a} ${CX} ${CY})"/>`);
+      } else if (m < 15) {
+        out.push(`<rect class="mk" x="${CX - 0.6}" y="${CY - 61.6}" width="1.2" height="4.4" transform="rotate(${a} ${CX} ${CY})"/>`);
+      }
+    }
+    return out.join("");
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px;
+      --insert: #101215; --ink: #f2f2ee; --pip: #cfe8b0; --glow: #eaf5cc; --glow-a: 0.6; }
+    :host([aged]) { --insert: #1c2129; --ink: #e8e4d6; --pip: #d9c98a; --glow: #e3d49c; --glow-a: 0.42; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .tw, .rot { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
+    .tw { transition: transform 60ms ease-out; }
+    .rot { transition: transform 70ms cubic-bezier(.2,.9,.3,1.1); }
+    .insert { fill: var(--insert); }
+    .mk { fill: var(--ink); }
+    .num { font-family: "Barlow", "Roboto Condensed", "Arial Narrow", Arial, sans-serif; font-weight: 600; font-size: 7px;
+      fill: var(--ink); text-anchor: middle; dominant-baseline: central; letter-spacing: 0.02em; }
+    .pip { fill: var(--pip); }
+    .glow { fill: var(--glow); opacity: var(--glow-a); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="lip" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f4f5f2"/><stop offset="0.28" stop-color="#cfd1ce"/><stop offset="0.55" stop-color="#9c9e9b"/>
+          <stop offset="0.84" stop-color="#5e605d"/><stop offset="1" stop-color="#8a8c89"/>
+        </linearGradient>
+        <linearGradient id="reh" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e6e8e5"/><stop offset="0.5" stop-color="#8f918e"/><stop offset="0.9" stop-color="#4a4c49"/><stop offset="1" stop-color="#7a7c79"/>
+        </linearGradient>
+        <radialGradient id="sheen" cx="0.36" cy="0.32" r="0.62">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="dial" cx="0.46" cy="0.42" r="0.7">
+          <stop offset="0" stop-color="#16161a"/><stop offset="0.7" stop-color="#0a0a0c"/><stop offset="1" stop-color="#050506"/>
+        </radialGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.14"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.05"/><stop offset="0.6" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <clipPath id="cIns"><path d="${ann(R_LIP, R_INS)}" clip-rule="evenodd"/></clipPath>
+        <clipPath id="cDial"><circle cx="${CX}" cy="${CY}" r="${R_REH}"/></clipPath>
+        <filter id="b2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.8"/></filter>
+        <filter id="b5" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4.5"/></filter>
+      </defs>
+
+      <!-- the bezel stands on the panel: a tight contact shadow and a soft one, both down-right -->
+      <circle cx="${CX + 3}" cy="${CY + 5}" r="70" fill="#000" opacity="0.5" filter="url(#b5)"/>
+      <circle cx="${CX + 1.2}" cy="${CY + 2}" r="71.5" fill="#000" opacity="0.75" filter="url(#b2)"/>
+
+      <g class="tw">
+        <!-- coin edge, lit in place (it does not turn: at a click's pitch the teeth land on themselves) -->
+        <g>${knurl()}</g>
+        <circle cx="${CX}" cy="${CY}" r="${R_OUT}" fill="none" stroke="#15161a" stroke-opacity="0.9" stroke-width="0.7"/>
+        <circle cx="${CX}" cy="${CY}" r="${R_KN + 0.1}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.5"/>
+        <!-- polished lip of the steel ring -->
+        <path d="${ann(R_KN, R_LIP)}" fill="url(#lip)" fill-rule="evenodd"/>
+        <path d="${arc(R_KN - 1.4, -150, -30)}" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="0.7"/>
+        <path d="${arc(R_LIP + 1.2, 40, 160)}" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="0.6"/>
+        <!-- one hairline scratch on the lip where a glove caught it -->
+        <path d="M 116.5 41 l 4.2 -5.6" stroke="#fff" stroke-opacity="0.45" stroke-width="0.5"/>
+
+        <!-- the insert turns -->
+        <g class="rot">
+          <path class="insert" d="${ann(R_LIP, R_INS)}" fill-rule="evenodd"/>
+          <g>${markers()}</g>
+          <path class="mk" d="M ${CX - 4.7} ${CY - 61.7} L ${CX + 4.7} ${CY - 61.7} L ${CX} ${CY - 50.2} Z"/>
+          <circle class="glow" cx="${CX}" cy="${CY - 57.4}" r="4.4" filter="url(#b2)"/>
+          <circle class="pip" cx="${CX}" cy="${CY - 57.4}" r="2.15"/>
+          <circle cx="${CX - 0.6}" cy="${CY - 58}" r="0.7" fill="#fff" opacity="0.55"/>
+        </g>
+
+        <!-- anodised sheen, the step down from the lip, and the lip's shadow on the insert's top-left -->
+        <path d="${ann(R_LIP, R_INS)}" fill="url(#sheen)" fill-rule="evenodd"/>
+        <g clip-path="url(#cIns)">
+          <circle cx="${CX + 1.7}" cy="${CY + 1.7}" r="${R_LIP}" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="5" filter="url(#b2)"/>
+          <circle cx="${CX - 0.9}" cy="${CY - 0.9}" r="${R_INS}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="2.2" filter="url(#b2)"/>
+        </g>
+        <circle cx="${CX}" cy="${CY}" r="${R_LIP}" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="0.6"/>
+        <path d="${arc(R_LIP - 0.6, 60, 190)}" fill="none" stroke="#fff" stroke-opacity="0.14" stroke-width="0.6"/>
+
+        <!-- the rehaut ring and the dial under a flat crystal -->
+        <path d="${ann(R_INS, R_REH)}" fill="url(#reh)" fill-rule="evenodd"/>
+        <circle cx="${CX}" cy="${CY}" r="${R_REH}" fill="url(#dial)"/>
+        <g clip-path="url(#cDial)">
+          <circle cx="${CX + 1.4}" cy="${CY + 1.6}" r="${R_REH}" fill="none" stroke="#000" stroke-opacity="0.9" stroke-width="4" filter="url(#b2)"/>
+          <ellipse cx="${CX - 12}" cy="${CY - 14}" rx="30" ry="15" fill="url(#glass)" transform="rotate(-38 ${CX - 12} ${CY - 14})"/>
+          <path d="M 30 88 Q 40 118 78 114" fill="none" stroke="#fff" stroke-opacity="0.05" stroke-width="10"/>
+        </g>
+        <path d="${arc(R_REH - 0.8, -125, -25)}" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.8"/>
+        <circle cx="${CX}" cy="${CY}" r="${R_REH}" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="0.6"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkBezelSub extends HTMLElement {
+    static get observedAttributes() { return ["value", "clicks", "bidirectional", "aged", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._clicks = 60; this._step = 1; this._bi = false; this._scale = 1; this._ang = 0; this._shown = 0;
+      this._rot = this.shadowRoot.querySelector(".rot");
+      this._tw = this.shadowRoot.querySelector(".tw");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs();
+      this._v = this._norm(parseFloat(this.getAttribute("value")) || 0);
+      this._ang = -this._v * 6; this._shown = this._ang;
+      this._rot.style.transition = "none"; this._render();
+      requestAnimationFrame(() => { this._rot.style.transition = ""; });
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      clearTimeout(this._twT); clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { const x = parseFloat(v); if (!isNaN(x)) this._goto(x); return; }
+      this._readAttrs(); this._render();
+    }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._goto(v); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._clicks = num("clicks", 60) >= 120 ? 120 : 60;
+      this._step = 60 / this._clicks;
+      this._bi = this.hasAttribute("bidirectional");
+      this._scale = Math.max(0.2, num("scale", 1));
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "dive bezel, minutes elapsed");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", String(60 - this._step));
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _norm(v) { v = Math.round(v / this._step) * this._step; return ((v % 60) + 60) % 60; }
+    _fmt(v) { return String(Math.round(v * 10) / 10); }
+    // move to minute v the way the ratchet allows: anticlockwise (the short way if bidirectional); no events
+    _goto(v) {
+      v = this._norm(v);
+      let d = ((v - this._v) % 60 + 60) % 60;
+      if (this._bi && d > 30) d -= 60;
+      this._ang -= d * 6; this._v = v;
+      this.setAttribute("value", this._fmt(v)); this._render();
+    }
+    _render() {
+      const ms = Math.min(420, 60 + Math.abs(this._ang - this._shown) * 1.2);
+      this._rot.style.transitionDuration = ms + "ms";
+      this._rot.style.transform = "rotate(" + this._ang.toFixed(2) + "deg)"; this._shown = this._ang;
+      this._grab.setAttribute("aria-valuenow", this._fmt(this._v));
+      this._grab.setAttribute("aria-valuetext", this._fmt(this._v) + " min");
+    }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this._v } })); }
+    // a user turn of k clicks; k > 0 is anticlockwise, the only way the ratchet lets it go
+    _turn(k, settle) {
+      if (k < 0 && !this._bi) { this._twitch(); return false; }
+      if (k === 0) return false;
+      this._ang -= k * 360 / this._clicks;
+      this._v = this._norm(this._v + k * this._step);
+      this.setAttribute("value", this._fmt(this._v)); this._render();
+      this._emit("input"); if (settle) this._emit("change");
+      return true;
+    }
+    _twitch(hold) {
+      this._tw.style.transform = "rotate(1deg)";
+      clearTimeout(this._twT); this._twT = setTimeout(() => { this._tw.style.transform = ""; }, hold ? 160 : 110);
+    }
+    _pa(e) { return Math.atan2(e.clientY - this._cy, e.clientX - this._cx) * 180 / Math.PI; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      const r = this._grab.getBoundingClientRect(); this._cx = r.left + r.width / 2; this._cy = r.top + r.height / 2;
+      const a = this._pa(e);
+      this._drag = { a: a, last: a, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const a = this._pa(e), ca = 360 / this._clicks;
+      const wrap = d => ((d + 540) % 360) - 180;
+      const d = wrap(a - this._drag.a);                      // screen angle: clockwise positive, so anticlockwise is negative
+      if (d < 0) {
+        const k = Math.floor(-d / ca);
+        if (k >= 1) { this._drag.a = wrap(this._drag.a - k * ca); this._drag.moved = true; this._turn(k, false); }
+      } else if (d > 0) {
+        if (this._bi) {
+          const k = Math.floor(d / ca);
+          if (k >= 1) { this._drag.a = wrap(this._drag.a + k * ca); this._drag.moved = true; this._turn(-k, false); }
+        } else {
+          // the ratchet holds: the finger slips over the teeth, the bezel twitches, and the grip re-anchors
+          if (wrap(a - this._drag.last) > 0.4) this._twitch(true);
+          this._drag.a = a;
+        }
+      }
+      this._drag.last = a;
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._emit("change");
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const dir = e.deltaY < 0 ? 1 : -1;
+      e.preventDefault();
+      if (this._turn(dir * (e.shiftKey ? 10 : 1), false)) { clearTimeout(this._wt); this._wt = setTimeout(() => this._emit("change"), 220); }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = e.shiftKey ? 10 : 1, per5 = 5 / this._step;
+      const toward = v => Math.round((((v - this._v) % 60 + 60) % 60) / this._step);   // clicks anticlockwise to reach v
+      let k;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": k = big; break;
+        case "ArrowDown": case "ArrowLeft": k = -big; break;
+        case "PageUp": k = per5; break;
+        case "PageDown": k = -per5; break;
+        case "Home": k = toward(0); break;
+        case "End": k = toward(60 - this._step); break;
+        default: return;
+      }
+      e.preventDefault();
+      this._turn(k, true);
+    }
+  }
+  customElements.define("sk-bezel-sub", SkBezelSub);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chadburn engine-order telegraph — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "lever-chadburn-telegraph",
+  "element": "sk-lever-chadburn-telegraph",
+  "name": "Chadburn engine-order telegraph, brass pedestal head",
+  "kind": "both",
+  "code": "B4",
+  "type": "Engine-order telegraph lever",
+  "source": "Chadburn's Ship Telegraph Co. bridge telegraph (also Robinson, Bloctube), 1870s–1950s",
+  "era": "pre-1900",
+  "origin": "UK",
+  "materials": ["lacquered brass", "enamelled dial", "turned wood grip", "steel", "glass"],
+  "tags": ["ship", "bridge", "engine room", "lever", "pointer", "bell", "sectors"],
+  "value": { "model": "steps", "options": ["FULL ASTERN", "HALF ASTERN", "SLOW ASTERN", "DEAD SLOW ASTERN", "STOP", "DEAD SLOW AHEAD", "SLOW AHEAD", "HALF AHEAD", "FULL AHEAD"] },
+  "attributes": ["value", "reply", "extended", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 300, "h": 320 },
+  "notes": "Two heads: HALF AHEAD with the engine room's reply pointer agreeing, and STOP with a reply still at SLOW ASTERN so the bell shivers. Drag the handle round the face, wheel, or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-lever-chadburn-telegraph value="HALF AHEAD" label="PORT ENGINE"></sk-lever-chadburn-telegraph>
+    <sk-lever-chadburn-telegraph value="STOP" reply="SLOW ASTERN" label="STBD ENGINE" scale="0.62"></sk-lever-chadburn-telegraph>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Chadburn's engine-order telegraph</b> stood on the bridge of every British steamship from the
+  1870s: a lacquered brass pedestal with a domed glass over a white enamelled dial, the orders painted in
+  wedge-shaped sectors — <b>AHEAD</b> in black down the right, <b>ASTERN</b> in red down the left, STOP at the
+  top — and a brass handle with a turned black grip that <i>is</i> the pointer. The officer swings the handle
+  into a sector, a bell rings in the engine room, and the engineer swings his own handle to match; his answer
+  comes back as the thin black reply pointer under the bridge handle, and the bell stops when the two agree.</p>
+  <p><b>The tells kept here:</b> the heavy brass bezel with six slotted screws and a half-width detent notch at
+  every position; the mirrored face with black radials between the sectors and the words set along the
+  radials; the grip as a turned barrel, fatter in the middle, with a ferrule at each end and a polish where
+  the hand goes; the thin reply pointer that lags the order by 400 ms and eases in; a small bell dome at the
+  base of the pedestal that shivers while the order and the reply disagree; tarnish in the bezel's recess and
+  one wide reflection across the upper-left of the glass. The handle follows the pointer's angle and snaps
+  into the nearest sector with a small overshoot; the wheel steps a sector; arrows step, Shift-arrows run to
+  the end. <code>extended</code> adds STAND BY and FINISHED WITH ENGINES at the bottom corners.</p>
+  <p><b>Left out:</b> the second (engine-room) dial on the back of the head, the maker's name (a plain
+  "SHIP TELEGRAPH" instead), the pedestal column below the neck.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-lever-chadburn-telegraph> — brass engine-order telegraph head; the handle is the input, the reply pointer the output ====
+   attributes: value (an order string) reply (an order string, or absent = the engine room answers by itself after 400 ms)
+               extended (adds STAND BY / FINISHED WITH ENGINES) label scale disabled
+   events: input {value} during a gesture, change {value} when the handle settles in a sector
+   self-contained: paste this block into any page and use <sk-lever-chadburn-telegraph value="STOP"></sk-lever-chadburn-telegraph> */
+(function () {
+  if (customElements.get("sk-lever-chadburn-telegraph")) return;
+  const W = 300, H = 320, CX = 150, CY = 150, STEP = 27;
+  const RF = 112;                                   // face radius
+  const BASE = ["FULL ASTERN", "HALF ASTERN", "SLOW ASTERN", "DEAD SLOW ASTERN", "STOP", "DEAD SLOW AHEAD", "SLOW AHEAD", "HALF AHEAD", "FULL AHEAD"];
+  const EXT = ["FINISHED WITH ENGINES"].concat(BASE, ["STAND BY"]);
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - 136}px; top: ${CY - 136}px; width: 272px; height: 272px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.6); }
+    .rot { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 70ms cubic-bezier(.2,.9,.3,1.28); }
+    .drag .rot { transition: none; }
+    .reply { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 620ms cubic-bezier(.3,.6,.2,1); }
+    .reply.now { transition: none; }
+    .bell { transform-origin: ${CX}px 320px; transform-box: view-box; }
+    .bell.ring { animation: shiver 84ms linear infinite; }
+    .bell.ding { animation: shiver 84ms linear 4; }
+    @keyframes shiver { 0% { transform: rotate(-2.2deg); } 50% { transform: rotate(2.2deg); } 100% { transform: rotate(-2.2deg); } }
+    text { font-family: "Libre Franklin", "Franklin Gothic Medium", "Arial", sans-serif; font-weight: 700; letter-spacing: 0.08em; text-anchor: middle; dominant-baseline: middle; }
+    .w8 { font-size: 8px; }
+    .w6 { font-size: 6px; font-weight: 600; }
+    .w55 { font-size: 5.5px; font-weight: 600; }
+    .stop { font-size: 9px; }
+    .arc { font-size: 9.5px; letter-spacing: 0.26em; }
+    .maker { font-size: 5px; font-weight: 600; letter-spacing: 0.22em; fill: #5a534a; }
+    .label { font-size: 6.5px; font-weight: 600; letter-spacing: 0.2em; fill: #2a2118; }
+    .blk { fill: #1b1b1b; } .red { fill: #b3262b; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="bezel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f2dc9c"/><stop offset="0.18" stop-color="#d9ba74"/><stop offset="0.45" stop-color="#b8935a"/><stop offset="0.72" stop-color="#8a6a36"/><stop offset="1" stop-color="#5e4520"/>
+        </linearGradient>
+        <linearGradient id="bezelIn" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3f2d14"/><stop offset="0.35" stop-color="#6b4f26"/><stop offset="0.75" stop-color="#b8935a"/><stop offset="1" stop-color="#e6c988"/>
+        </linearGradient>
+        <linearGradient id="brassCyl" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5a4020"/><stop offset="0.22" stop-color="#b8935a"/><stop offset="0.36" stop-color="#ecd28e"/><stop offset="0.52" stop-color="#c9a565"/><stop offset="0.8" stop-color="#8a6a36"/><stop offset="1" stop-color="#4a3417"/>
+        </linearGradient>
+        <radialGradient id="brassDome" cx="35%" cy="30%" r="72%">
+          <stop offset="0" stop-color="#f6e1a4"/><stop offset="0.45" stop-color="#c9a565"/><stop offset="0.8" stop-color="#8a6a36"/><stop offset="1" stop-color="#4a3417"/>
+        </radialGradient>
+        <radialGradient id="face" cx="42%" cy="38%" r="72%">
+          <stop offset="0" stop-color="#f7f3e8"/><stop offset="0.55" stop-color="#f2eee2"/><stop offset="0.88" stop-color="#e8e2cf"/><stop offset="1" stop-color="#d6ceb6"/>
+        </radialGradient>
+        <radialGradient id="dome" cx="34%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.12"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a1e10" stop-opacity="0.22"/>
+        </radialGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.3"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="arm" gradientUnits="userSpaceOnUse" x1="${CX - 6}" y1="0" x2="${CX + 6}" y2="0">
+          <stop offset="0" stop-color="#5e4520"/><stop offset="0.3" stop-color="#d9ba74"/><stop offset="0.42" stop-color="#f2dc9c"/><stop offset="0.65" stop-color="#b8935a"/><stop offset="1" stop-color="#5e4520"/>
+        </linearGradient>
+        <linearGradient id="grip" gradientUnits="userSpaceOnUse" x1="${CX - 9}" y1="0" x2="${CX + 9}" y2="0">
+          <stop offset="0" stop-color="#0d0908"/><stop offset="0.3" stop-color="#5a4a3c"/><stop offset="0.48" stop-color="#3a2e25"/><stop offset="0.72" stop-color="#241d18"/><stop offset="0.9" stop-color="#0d0908"/><stop offset="1" stop-color="#3a2e25"/>
+        </linearGradient>
+        <linearGradient id="polish" gradientUnits="userSpaceOnUse" x1="0" y1="${CY - 108}" x2="0" y2="${CY - 136}">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <clipPath id="faceClip"><circle cx="${CX}" cy="${CY}" r="${RF}"/></clipPath>
+        <filter id="blur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="blur5" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- pedestal neck, collar and the bell dome at its base -->
+      <rect x="112" y="250" width="76" height="70" fill="url(#brassCyl)"/>
+      <ellipse cx="154" cy="292" rx="52" ry="9" fill="#000" opacity="0.5" filter="url(#blur5)"/>
+      <rect x="102" y="279" width="96" height="13" rx="3" fill="url(#brassCyl)" stroke="#3a2a12" stroke-width="0.6"/>
+      <rect x="104" y="280" width="92" height="1" fill="#f2dc9c" opacity="0.5"/>
+      <g class="bell">
+        <ellipse cx="152" cy="320" rx="26" ry="4" fill="#000" opacity="0.5" filter="url(#blur2)"/>
+        <path d="M 126 320 A 24 25 0 0 1 174 320 Z" fill="url(#brassDome)" stroke="#3a2a12" stroke-width="0.7"/>
+        <path d="M 131 316 A 20 20 0 0 1 143 299" fill="none" stroke="#f6e1a4" stroke-opacity="0.55" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="150" cy="295" r="3.2" fill="url(#brassDome)" stroke="#3a2a12" stroke-width="0.5"/>
+      </g>
+
+      <!-- the head's shadow on the panel -->
+      <circle cx="${CX + 6}" cy="${CY + 8}" r="134" fill="#000" opacity="0.5" filter="url(#blur5)"/>
+      <!-- bezel: a heavy lacquered ring, tarnish in its recess, lit lip lower right -->
+      <circle cx="${CX}" cy="${CY}" r="134" fill="url(#bezel)" stroke="#2e2010" stroke-width="1"/>
+      <circle cx="${CX}" cy="${CY}" r="126.5" fill="none" stroke="#3a2a12" stroke-opacity="0.34" stroke-width="7" filter="url(#blur2)"/>
+      <path d="M ${CX - 114} ${CY - 70} A 132 132 0 0 1 ${CX - 40} ${CY - 126}" fill="none" stroke="#fff5cf" stroke-opacity="0.55" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M ${CX + 40} ${CY + 126} A 132 132 0 0 1 ${CX + 114} ${CY + 70}" fill="none" stroke="#fff5cf" stroke-opacity="0.18" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="${CX}" cy="${CY}" r="119.5" fill="url(#bezelIn)" stroke="#2e2010" stroke-width="0.8"/>
+      <g class="notches"></g>
+      <g class="screws"></g>
+
+      <!-- the enamelled face under its domed glass -->
+      <circle cx="${CX}" cy="${CY}" r="${RF}" fill="url(#face)"/>
+      <g clip-path="url(#faceClip)">
+        <g class="dial"></g>
+        <text class="maker" x="${CX}" y="${CY + 68}">SHIP TELEGRAPH</text>
+        <text class="maker" x="${CX}" y="${CY + 76}">LIVERPOOL</text>
+        <text class="label" x="${CX}" y="${CY + 100}"></text>
+        <!-- the engine room's reply: a thin black steel pointer under the handle -->
+        <g class="reply">
+          <path d="M ${CX - 1.7} ${CY} L ${CX + 1.7} ${CY} L ${CX + 0.5} ${CY - 100} L ${CX - 0.5} ${CY - 100} Z" fill="#1b1b1b"/>
+          <path d="M ${CX - 2.4} ${CY} L ${CX + 2.4} ${CY} L ${CX + 2.4} ${CY + 14} A 2.4 2.4 0 0 1 ${CX - 2.4} ${CY + 14} Z" fill="#1b1b1b"/>
+          <circle cx="${CX}" cy="${CY + 18}" r="3.6" fill="#1b1b1b"/>
+        </g>
+        <circle cx="${CX - 5}" cy="${CY - 5}" r="${RF}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="12" filter="url(#blur5)"/>
+        <circle cx="${CX}" cy="${CY}" r="${RF}" fill="url(#dome)"/>
+        <ellipse cx="${CX - 36}" cy="${CY - 44}" rx="84" ry="19" fill="url(#glass)" transform="rotate(-38 ${CX - 36} ${CY - 44})"/>
+      </g>
+      <circle cx="${CX}" cy="${CY}" r="${RF}" fill="none" stroke="#fff" stroke-opacity="0.2" stroke-width="1"/>
+
+      <!-- the handle's shadow, then the handle: brass arm, turned grip, two ferrules -->
+      <g transform="translate(4 6)" opacity="0.45" filter="url(#blur2)">
+        <g class="rot">
+          <path d="M ${CX - 6} ${CY - 8} L ${CX + 6} ${CY - 8} L ${CX + 4} ${CY - 96} L ${CX - 4} ${CY - 96} Z" fill="#000"/>
+          <path d="M ${CX - 4.5} ${CY - 92} Q ${CX - 10.5} ${CY - 121} ${CX - 4.5} ${CY - 150} L ${CX + 4.5} ${CY - 150} Q ${CX + 10.5} ${CY - 121} ${CX + 4.5} ${CY - 92} Z" fill="#000"/>
+        </g>
+      </g>
+      <g class="rot handle">
+        <path d="M ${CX - 6} ${CY - 8} L ${CX + 6} ${CY - 8} L ${CX + 4} ${CY - 96} L ${CX - 4} ${CY - 96} Z" fill="url(#arm)" stroke="#3a2a12" stroke-width="0.5"/>
+        <path d="M ${CX - 4.5} ${CY - 92} Q ${CX - 10.5} ${CY - 121} ${CX - 4.5} ${CY - 150} L ${CX + 4.5} ${CY - 150} Q ${CX + 10.5} ${CY - 121} ${CX + 4.5} ${CY - 92} Z" fill="url(#grip)" stroke="#0d0908" stroke-width="0.5"/>
+        <path d="M ${CX - 3.2} ${CY - 100} Q ${CX - 7.4} ${CY - 121} ${CX - 3.2} ${CY - 142}" fill="none" stroke="url(#polish)" stroke-width="2.6" stroke-linecap="round"/>
+        <rect x="${CX - 5.5}" y="${CY - 97}" width="11" height="6" rx="1" fill="url(#arm)" stroke="#3a2a12" stroke-width="0.5"/>
+        <rect x="${CX - 5.5}" y="${CY - 155}" width="11" height="6" rx="1" fill="url(#arm)" stroke="#3a2a12" stroke-width="0.5"/>
+        <circle cx="${CX}" cy="${CY - 156}" r="3.2" fill="url(#brassDome)" stroke="#3a2a12" stroke-width="0.5"/>
+      </g>
+      <!-- hub boss and its slotted nut -->
+      <circle cx="${CX + 1}" cy="${CY + 2}" r="17" fill="#000" opacity="0.5" filter="url(#blur2)"/>
+      <circle cx="${CX}" cy="${CY}" r="16" fill="url(#brassDome)" stroke="#3a2a12" stroke-width="0.8"/>
+      <circle cx="${CX}" cy="${CY}" r="6" fill="url(#brassDome)" stroke="#2e2010" stroke-width="0.7"/>
+      <rect x="${CX - 4.6}" y="${CY - 0.7}" width="9.2" height="1.4" fill="#2e2010" transform="rotate(-24 ${CX} ${CY})"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkLeverChadburn extends HTMLElement {
+    static get observedAttributes() { return ["value", "reply", "extended", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._i = 4; this._r = 4; this._scale = 1; this._auto = true;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab"); this._dial = $(".dial"); this._notches = $(".notches"); this._screws = $(".screws");
+      this._rots = this.shadowRoot.querySelectorAll(".rot"); this._reply = $(".reply"); this._bell = $(".bell"); this._labelT = $(".label");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._drawScrews();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._opts()[this._i]);
+      this._readAttrs(); this._drawDial();
+      this._r = this.hasAttribute("reply") ? this._find(this.getAttribute("reply"), this._r) : this._i;   // the engine room already answered before we looked
+      this._reply.classList.add("now"); this._render(); this._paintReply();
+      requestAnimationFrame(() => this._reply.classList.remove("now"));
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._rt); clearTimeout(this._dt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "extended") this._drawDial();
+      if (n === "reply") { this._r = this._auto ? this._i : this._find(v, this._r); this._paintReply(); }
+      if (n === "value" || n === "extended") this._answer();
+      this._render();
+    }
+    get value() { return this._opts()[this._i]; }
+    set value(v) { const i = this._find(v, -1); if (i < 0) return; this._i = i; this.setAttribute("value", this._opts()[i]); this._render(); this._answer(); }
+    get reply() { return this._opts()[this._r]; }
+    set reply(v) { if (v == null || v === "") this.removeAttribute("reply"); else this.setAttribute("reply", String(v)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+    demo(t) { const seq = ["STOP", "DEAD SLOW AHEAD", "HALF AHEAD", "FULL AHEAD", "HALF AHEAD", "STOP", "SLOW ASTERN", "STOP"]; return seq[Math.floor(t / 2.4) % seq.length]; }
+
+    _opts() { return this.hasAttribute("extended") ? EXT : BASE; }
+    _find(v, dflt) {
+      const o = this._opts();
+      if (typeof v === "number" && isFinite(v)) return Math.max(0, Math.min(o.length - 1, Math.round(v)));
+      const s = String(v == null ? "" : v).trim().toUpperCase().replace(/\s+/g, " ");
+      const i = o.indexOf(s); if (i >= 0) return i;
+      const n = parseInt(s, 10); return isNaN(n) ? dflt : Math.max(0, Math.min(o.length - 1, n));
+    }
+    _angle(i) { return (i - (this._opts().length - 1) / 2) * STEP; }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const o = this._opts();
+      this._i = this._find(this.getAttribute("value"), Math.min(this._i, o.length - 1));
+      this._auto = !this.hasAttribute("reply");
+      this._labelT.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "engine order telegraph");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", String(o.length - 1));
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _pt(deg, r) { const a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; }
+    _drawScrews() {
+      const ns = "http://www.w3.org/2000/svg";
+      const slots = [22, -50, 70, -15, 40, -80];
+      for (let k = 0; k < 6; k++) {
+        const a = 30 + k * 60, [x, y] = this._pt(a, 127);
+        const g = document.createElementNS(ns, "g"); g.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+        g.innerHTML = `<circle cx="0.6" cy="0.8" r="4.4" fill="#000" opacity="0.4"/><circle r="4.2" fill="url(#brassDome)" stroke="#2e2010" stroke-width="0.6"/><rect x="-3.4" y="-0.6" width="6.8" height="1.2" fill="#2e2010" transform="rotate(${slots[k]})"/>`;
+        this._screws.appendChild(g);
+      }
+    }
+    _drawDial() {
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+      const g = this._dial; while (g.firstChild) g.removeChild(g.firstChild);
+      const nt = this._notches; while (nt.firstChild) nt.removeChild(nt.firstChild);
+      const o = this._opts(), n = o.length;
+      // sector radials and the two rim circles
+      for (let i = 0; i <= n; i++) {
+        const a = this._angle(0) - STEP / 2 + i * STEP;
+        const [x0, y0] = this._pt(a, 40), [x1, y1] = this._pt(a, 92);
+        g.appendChild(mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: "#1b1b1b", "stroke-width": 1.1 }));
+      }
+      g.appendChild(mk("circle", { cx: CX, cy: CY, r: 92, fill: "none", stroke: "#1b1b1b", "stroke-width": 0.9 }));
+      g.appendChild(mk("circle", { cx: CX, cy: CY, r: 108, fill: "none", stroke: "#1b1b1b", "stroke-width": 1.6 }));
+      g.appendChild(mk("circle", { cx: CX, cy: CY, r: 40, fill: "none", stroke: "#1b1b1b", "stroke-width": 0.9 }));
+      // AHEAD and ASTERN along the outer band
+      const aMax = this._angle(n - 1) - STEP / 2 + 4, aMin = 16;
+      const arc = (id, a0, a1, sweep) => { const [x0, y0] = this._pt(a0, 101), [x1, y1] = this._pt(a1, 101); return mk("path", { id, d: `M ${x0} ${y0} A 101 101 0 0 ${sweep} ${x1} ${y1}`, fill: "none" }); };
+      g.appendChild(arc("skct-ahead", aMin, aMax, 1)); g.appendChild(arc("skct-astern", -aMin, -aMax, 0));
+      for (const [id, word, cls] of [["skct-ahead", "AHEAD", "blk"], ["skct-astern", "ASTERN", "red"]]) {
+        const t = mk("text", { class: "arc " + cls }); const tp = mk("textPath", { href: "#" + id, startOffset: "50%" }, word);
+        tp.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + id); t.appendChild(tp); g.appendChild(t);
+      }
+      // the words in their sectors, set along the radials
+      for (let i = 0; i < n; i++) {
+        const w = o[i], a = this._angle(i);
+        const red = /ASTERN|STOP|FINISHED/.test(w);
+        let lines, cls;
+        if (w === "STOP") { lines = ["STOP"]; cls = "stop"; }
+        else if (/^DEAD/.test(w)) { lines = ["DEAD SLOW"]; cls = "w6"; }
+        else if (w === "STAND BY") { lines = ["STAND BY"]; cls = "w6"; }
+        else if (/^FINISHED/.test(w)) { lines = ["FINISHED", "WITH ENGINES"]; cls = "w55"; }
+        else { lines = [w.split(" ")[0]]; cls = "w8"; }
+        const rot = a === 0 ? 0 : a > 0 ? a - 90 : a + 90;
+        const [x, y] = this._pt(a, 66);
+        lines.forEach((ln, j) => {
+          const dy = (j - (lines.length - 1) / 2) * 7;
+          g.appendChild(mk("text", { class: cls + (red ? " red" : " blk"), x, y, transform: `rotate(${rot} ${x} ${y}) translate(0 ${dy})` }, ln));
+        });
+        // the half-width detent notch in the bezel rim at each position
+        const [nx, ny] = this._pt(a, 116.5);
+        nt.appendChild(mk("rect", { x: nx - 0.8, y: ny - 3.2, width: 1.6, height: 6.4, rx: 0.5, fill: "#4a3417", transform: `rotate(${a} ${nx} ${ny})` }));
+        nt.appendChild(mk("rect", { x: nx + 0.9, y: ny - 3.2, width: 0.6, height: 6.4, fill: "#f6e1a4", opacity: 0.45, transform: `rotate(${a} ${nx} ${ny})` }));
+      }
+      this._maxA = this._angle(n - 1);
+    }
+    _render() {
+      const a = this._angle(this._i);
+      this._rots.forEach(r => { r.style.transform = `rotate(${a.toFixed(2)}deg)`; });
+      this._grab.setAttribute("aria-valuenow", String(this._i));
+      this._grab.setAttribute("aria-valuetext", this._opts()[this._i]);
+      this._checkBell();
+    }
+    _paintReply() { this._reply.style.transform = `rotate(${this._angle(this._r).toFixed(2)}deg)`; this._checkBell(); }
+    _answer() {                              // the engine room answers after a moment, unless the host holds the reply
+      clearTimeout(this._rt);
+      if (!this._auto) return;
+      this._rt = setTimeout(() => { this._r = this._i; this._paintReply(); }, 400);
+    }
+    _checkBell() {
+      const mismatch = this._r !== this._i;
+      this._bell.classList.toggle("ring", mismatch);
+    }
+    _ding() {
+      const b = this._bell; b.classList.remove("ding"); void b.getBoundingClientRect(); b.classList.add("ding");
+      clearTimeout(this._dt); this._dt = setTimeout(() => b.classList.remove("ding"), 400);
+    }
+    _set(i, settle) {
+      i = Math.max(0, Math.min(this._opts().length - 1, i));
+      if (i === this._i && !settle) return;
+      const changed = i !== this._i;
+      this._i = i; this.setAttribute("value", this._opts()[i]); this._render();
+      if (changed) { this._ding(); this._answer(); }
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._opts()[this._i] } }));
+    }
+    _pointerAngle(e) {
+      const r = this._grab.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      return Math.atan2(dx, -dy) * 180 / Math.PI;
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._wrap.classList.add("drag");
+      this._drag = { moved: false, start: this._i };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+      this._onMove(e);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const lim = this._maxA + STEP / 2 - 3;
+      const a = Math.max(-lim, Math.min(lim, this._pointerAngle(e)));
+      this._rots.forEach(r => { r.style.transform = `rotate(${a.toFixed(2)}deg)`; });   // the handle follows the hand
+      const i = Math.round(a / STEP + (this._opts().length - 1) / 2);
+      if (i !== this._i) this._drag.moved = true;
+      const before = this._i; this._set(i, false);
+      if (before === this._i) this._rots.forEach(r => { r.style.transform = `rotate(${a.toFixed(2)}deg)`; });
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._wrap.classList.remove("drag");
+      const d = this._drag; this._drag = null;
+      this._render();                                                   // snap into the sector with the overshoot
+      if (d.moved || d.start !== this._i) this._set(this._i, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._i + dir, false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._i, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const n = this._opts().length, big = e.shiftKey ? 10 : 1;
+      let i = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": i = this._i + big; break;
+        case "ArrowDown": case "ArrowLeft": i = this._i - big; break;
+        case "PageUp": i = this._i + 2; break;
+        case "PageDown": i = this._i - 2; break;
+        case "Home": i = 0; break;
+        case "End": i = n - 1; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(i, false); this._set(this._i, true);
+    }
+  }
+  customElements.define("sk-lever-chadburn-telegraph", SkLeverChadburn);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

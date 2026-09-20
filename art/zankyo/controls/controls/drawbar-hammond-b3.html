@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hammond B-3 drawbar — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@500&family=Archivo+Narrow:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "drawbar-hammond-b3",
+  "element": "sk-drawbar-hammond-b3",
+  "name": "Hammond B-3 drawbar (brown / white / black caps, numbered stem)",
+  "kind": "input",
+  "code": "B5",
+  "type": "Drawbar",
+  "source": "Hammond B-3 / C-3 / A-100 drawbars, 1954–1974 (the same bars from the Model A of 1935)",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["phenolic", "painted steel", "chrome", "walnut"],
+  "tags": ["organ", "tonewheel", "audio", "harmonics", "detent", "numbered stem", "set of nine"],
+  "value": { "model": "steps", "min": 0, "max": 8, "step": 1, "unit": "" },
+  "attributes": ["value", "footage", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 28, "h": 128 },
+  "notes": "A full set of nine at 888 000 000 (brown-brown-white-white-black-white-black-black-white) and a single 8′ bar pushed in, enlarged. Drag a bar toward you, wheel, or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <div style="display:flex;gap:0">
+      <sk-drawbar-hammond-b3 value="8" footage="16"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="8" footage="5⅓"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="8" footage="8"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="0" footage="4"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="0" footage="2⅔"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="0" footage="2"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="0" footage="1⅗"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="0" footage="1⅓"></sk-drawbar-hammond-b3>
+      <sk-drawbar-hammond-b3 value="0" footage="1"></sk-drawbar-hammond-b3>
+    </div>
+    <sk-drawbar-hammond-b3 value="0" footage="8" scale="1.5"></sk-drawbar-hammond-b3>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Hammond drawbar</b> has not changed since the Model A of 1935: nine bars per manual, each a
+  black steel stem with a moulded phenolic cap, sliding in a chrome escutcheon over the walnut console.
+  Pulling a bar toward you adds that harmonic in eight steps, and the stem reveals a white-boxed numeral
+  for each step as it comes out, so the registration can be read from the bench — 888 000 000 is the
+  classic jazz setting. The caps are colour-coded: brown for the sub-fundamental and sub-third, white for
+  the octaves, black for the odd harmonics, reading brown-brown-white-white-black-white-black-black-white
+  across the set.</p>
+  <p><b>The tells kept here:</b> the scalloped front edge of each cap — four concave bites — and the cap's
+  thickness, drawn as a solid block with its side and its bottom showing; the numerals 1–8 in white boxes on
+  the black stem, emerging one at a time from under the chrome so the number just below the rail is the
+  current step; the footage engraved and black-filled on the chrome beneath each channel, with real
+  fraction characters; the caps sitting in a shallow black channel with the stem's shadow falling into it;
+  the white caps yellowed and the 8′ cap worn glossy where the fingers go; the brown caps with a satin
+  sheen. The bar is pulled <i>down</i> the screen to increase, with a soft detent every step; wheel down
+  pulls one step; arrows step, Shift-arrows run to the end; Home pushes fully in.</p>
+  <p><b>Left out:</b> the preset-key logic and the second manual's set; the console lip is a strip of walnut
+  rather than the whole fallboard.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-drawbar-hammond-b3> — one Hammond drawbar: numbered stem, scalloped phenolic cap, chrome rail, walnut lip ====
+   attributes: value (0–8, 0 = pushed fully in) footage ("16" "5⅓" "8" "4" "2⅔" "2" "1⅗" "1⅓" "1" — sets the cap colour) scale disabled
+   events: input {value} during a gesture, change {value} when the bar settles in a detent
+   self-contained: paste this block into any page and use <sk-drawbar-hammond-b3 value="8" footage="16"></sk-drawbar-hammond-b3> */
+(function () {
+  if (customElements.get("sk-drawbar-hammond-b3")) return;
+  const W = 28, H = 128, PITCH = 7, TOP = 10;      // cap top sits at TOP + PITCH × value
+  const FOOT = ["16", "5⅓", "8", "4", "2⅔", "2", "1⅗", "1⅓", "1"];
+  const COLOUR = { "16": "brown", "5⅓": "brown", "8": "white", "4": "white", "2⅔": "black", "2": "white", "1⅗": "black", "1⅓": "black", "1": "white" };
+  const ALIAS = { "5 1/3": "5⅓", "5-1/3": "5⅓", "2 2/3": "2⅔", "2-2/3": "2⅔", "1 3/5": "1⅗", "1-3/5": "1⅗", "1 1/3": "1⅓", "1-1/3": "1⅓" };
+  const CAP = "M 5.2 10 H 22.8 A 1.2 1.2 0 0 1 24 11.2 V 30 A 1 1 0 0 1 23 31 H 23.7 A 2.2 2.2 0 0 0 19.3 31 H 18.7 A 2.2 2.2 0 0 0 14.3 31 H 13.7 A 2.2 2.2 0 0 0 9.3 31 H 8.7 A 2.2 2.2 0 0 0 4.3 31 H 5 A 1 1 0 0 1 4 30 V 11.2 A 1.2 1.2 0 0 1 5.2 10 Z";
+  const TPL = document.createElement("template");
+  let boxes = "";
+  for (let k = 1; k <= 8; k++) {
+    const y = TOP - PITCH * k + 0.9;
+    boxes += `<rect x="10.2" y="${y}" width="7.6" height="5.3" rx="0.4" fill="#f4f4f0"/><text class="num" x="14" y="${y + 2.75}">${k}</text>`;
+  }
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px;
+      --cap: #efe8d6; --cap-sh: #c9c1ac; --cap-dk: #a89f88; --cap-hi: rgba(255,255,255,0.55); }
+    :host([hidden]) { display: none; }
+    :host(.brown) { --cap: #5b3a27; --cap-sh: #3e2718; --cap-dk: #2a1a0f; --cap-hi: rgba(255,225,190,0.45); }
+    :host(.black) { --cap: #221f1d; --cap-sh: #0d0c0b; --cap-dk: #060606; --cap-hi: rgba(255,255,255,0.5); }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 1px; top: 9px; width: 26px; height: 84px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 2px; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 8px rgba(22,224,224,0.6); }
+    .bar { transition: transform 30ms cubic-bezier(.2,.8,.3,1.1); }
+    .drag .bar { transition: transform 30ms linear; }
+    .cap { fill: var(--cap); } .capside { fill: var(--cap-sh); } .capbot { fill: var(--cap-dk); }
+    .num { font-family: "Oswald", "Arial Narrow", "Roboto Condensed", sans-serif; font-weight: 500; font-size: 5.6px; fill: #141414; text-anchor: middle; dominant-baseline: middle; }
+    .foot { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; font-weight: 600; font-size: 6.5px; fill: #1a1a1a; text-anchor: middle; letter-spacing: 0.02em; }
+    .foot.lit { fill: #fff; opacity: 0.55; }
+    .worn { display: none; } :host(.worn) .worn { display: inline; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f2f3f4"/><stop offset="0.16" stop-color="#d9dbdd"/><stop offset="0.44" stop-color="#b9bcbe"/><stop offset="0.5" stop-color="#7a7d80"/><stop offset="0.56" stop-color="#c4c7c9"/><stop offset="0.82" stop-color="#d9dbdd"/><stop offset="1" stop-color="#8e9194"/>
+        </linearGradient>
+        <linearGradient id="chan" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#050505"/><stop offset="0.12" stop-color="#101010"/><stop offset="1" stop-color="#151515"/>
+        </linearGradient>
+        <linearGradient id="stem" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#0a0a0a"/><stop offset="0.3" stop-color="#2a2a2a"/><stop offset="0.55" stop-color="#141414"/><stop offset="1" stop-color="#050505"/>
+        </linearGradient>
+        <linearGradient id="walnut" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2a170c"/><stop offset="0.12" stop-color="#4b2f1e"/><stop offset="0.6" stop-color="#5a3a25"/><stop offset="1" stop-color="#3d2415"/>
+        </linearGradient>
+        <radialGradient id="dish" cx="32%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.38"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#000" stop-opacity="0.22"/>
+        </radialGradient>
+        <linearGradient id="yellow" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#c9a25a" stop-opacity="0"/><stop offset="1" stop-color="#b08a3a" stop-opacity="0.22"/>
+        </linearGradient>
+        <clipPath id="chanClip"><rect x="0" y="9.4" width="28" height="83.6"/></clipPath>
+        <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="blur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+      </defs>
+
+      <!-- the chrome escutcheon, the walnut lip below it -->
+      <rect x="0" y="0" width="${W}" height="5" fill="#141210"/>
+      <rect x="0" y="4" width="${W}" height="98" fill="url(#chrome)"/>
+      <rect x="0" y="102" width="${W}" height="26" fill="url(#walnut)"/>
+      <rect x="0" y="102" width="${W}" height="5" fill="#000" opacity="0.45" filter="url(#blur1)"/>
+      <rect x="0" y="4" width="${W}" height="1" fill="#fff" opacity="0.5"/>
+      <!-- the channel: a shallow black slot let into the chrome -->
+      <rect x="0" y="9" width="${W}" height="84" fill="url(#chan)"/>
+      <rect x="0" y="9" width="${W}" height="3" fill="#000" opacity="0.7" filter="url(#blur1)"/>
+      <rect x="0" y="92.5" width="${W}" height="0.7" fill="#fff" opacity="0.28"/>
+      <rect x="0" y="8.4" width="${W}" height="0.8" fill="#2a2a2a"/>
+      <g clip-path="url(#chanClip)">
+        <!-- the stem's shadow into the channel -->
+        <g class="bar sh" transform="translate(1.6 1.8)" opacity="0.6" filter="url(#blur1)">
+          <rect x="8.5" y="-60" width="11" height="90" fill="#000"/><path d="${CAP}" fill="#000"/>
+        </g>
+        <!-- the bar: black stem with its stacked numerals, then the cap -->
+        <g class="bar">
+          <rect x="8.5" y="-60" width="11" height="92" fill="url(#stem)"/>
+          <rect x="8.5" y="-60" width="0.8" height="92" fill="#fff" opacity="0.16"/>
+          ${boxes}
+          <!-- the block's underside and side, then the face -->
+          <path class="capbot" d="${CAP}" transform="translate(0.8 2.2)"/>
+          <path class="capside" d="${CAP}" transform="translate(1.4 0.9)"/>
+          <path class="cap" d="${CAP}"/>
+          <path d="${CAP}" fill="url(#dish)"/>
+          <path class="worn" d="${CAP}" fill="url(#yellow)"/>
+          <path class="worn" d="M 8 15 Q 14 19 20 16" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.5"/>
+          <path d="M 5.4 10.6 H 22.6" fill="none" stroke="var(--cap-hi)" stroke-width="0.8"/>
+          <path d="M 4.7 12 V 29" fill="none" stroke="var(--cap-hi)" stroke-width="0.6" opacity="0.6"/>
+          <path d="${CAP}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="0.5"/>
+        </g>
+      </g>
+      <!-- the footage, engraved and black-filled -->
+      <text class="foot lit" x="14" y="100.6"></text>
+      <text class="foot" x="14" y="100"></text>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkDrawbarHammond extends HTMLElement {
+    static get observedAttributes() { return ["value", "footage", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._foot = "8";
+      this._wrap = this.shadowRoot.querySelector(".wrap"); this._grab = this.shadowRoot.querySelector(".grab");
+      this._bars = this.shadowRoot.querySelectorAll(".bar"); this._foots = this.shadowRoot.querySelectorAll(".foot");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get footage() { return this._foot; }
+    set footage(f) { this.setAttribute("footage", String(f)); }
+    focus() { this._grab.focus(); }
+    demo(t) { const presets = ["888000000", "888800008", "808808008", "888000000"]; const i = Math.max(0, FOOT.indexOf(this._foot)); return parseInt(presets[Math.floor(t / 3) % presets.length].charAt(i), 10); }
+
+    _clamp(v) { return Math.min(8, Math.max(0, Math.round(v))); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      let f = (this.getAttribute("footage") || "8").trim(); f = ALIAS[f] || f; this._foot = f;
+      const col = COLOUR[f] || "white";
+      this.classList.toggle("brown", col === "brown"); this.classList.toggle("black", col === "black"); this.classList.toggle("worn", f === "8");
+      this._foots.forEach(t => { t.textContent = f + "′"; });
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || ("drawbar " + f + " foot"));
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "8");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      const y = PITCH * this._v;
+      this._bars[0].style.transform = `translate(1.6px, ${y + 1.8}px)`;
+      this._bars[1].style.transform = `translate(0px, ${y}px)`;
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._wrap.classList.add("drag");
+      this._drag = { y: e.clientY, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = (e.clientY - this._drag.y) / this._scale;             // toward the player (down) pulls the bar out
+      const v = this._clamp(this._drag.v + dy / PITCH);
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._wrap.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? 1 : -1;                                 // wheel down = pull toward you
+      this._set(this._v + dir * (e.shiftKey ? 10 : 1), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = e.shiftKey ? 10 : 1;
+      let v = null;
+      switch (e.key) {
+        case "ArrowDown": case "ArrowRight": v = this._v + big; break;   // pull out
+        case "ArrowUp": case "ArrowLeft": v = this._v - big; break;      // push in
+        case "PageDown": v = this._v + 4; break;
+        case "PageUp": v = this._v - 4; break;
+        case "Home": v = 0; break;
+        case "End": v = 8; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(v, false); this._set(this._v, true);
+    }
+  }
+  customElements.define("sk-drawbar-hammond-b3", SkDrawbarHammond);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

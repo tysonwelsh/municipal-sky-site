@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stratocaster bell knob, white 1–10 skirt — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-strat-bell-skirt",
+  "element": "sk-knob-strat-bell",
+  "name": "Fender Stratocaster bell knob, white 1–10 skirt",
+  "kind": "input",
+  "code": "A3",
+  "type": "Skirted numbered knob",
+  "source": "Fender Stratocaster control knob on a white 3-ply pickguard, 1954 onward",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["aged ABS", "printed numerals", "3-ply pickguard", "steel screw"],
+  "tags": ["guitar", "bell knob", "skirt", "no pointer", "volume", "tone", "cone projection"],
+  "value": { "model": "range", "min": 1, "max": 10, "step": 0.1, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "label", "finish", "index", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 84, "h": 100 },
+  "notes": "VOLUME at 10, TONE at 6, and a fresh-white TONE at 3 at scale 0.8. Read the numeral facing you, over the wear mark at the front (index=\"12\" moves the mark to the top). Drag up/down, wheel, or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-knob-strat-bell value="10" label="VOLUME"></sk-knob-strat-bell>
+    <sk-knob-strat-bell value="6" label="TONE"></sk-knob-strat-bell>
+    <sk-knob-strat-bell value="3" label="TONE" finish="fresh" scale="0.8"></sk-knob-strat-bell>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Stratocaster knob</b> has not changed since 1954: a small white bell of moulded plastic with a flared
+  skirt, a concave waist and a flat top a good deal smaller than the skirt. The numerals 1 to 10 are printed
+  on the slope of the skirt, and VOLUME or TONE across the top. There is no pointer; you read the number that
+  faces you. The knob sits on a three-ply pickguard whose bevelled edge shows the black middle ply as a
+  hairline.</p>
+  <p><b>The tells kept here:</b> the bell silhouette drawn as a solid of revolution seen from nearly overhead, so
+  the front skirt is a little taller than the back; each numeral is placed on the cone by angle and projected
+  with its own affine matrix, so it stands upright at the front, lies on its side at 3 and 9, and is squashed
+  and inverted at the back; concentric turning rings and one soft highlight on the top; the numerals at
+  5, 6 and 7 rubbed thin by a decade of thumbs; the skirt yellowed warmer than the top, with a
+  <code>finish="fresh"</code> attribute for a new knob; a faint wear mark on the pickguard that serves as the
+  index — at the front, where the numeral facing you stands upright (seen from above, the numeral at the far
+  side is inverted and a 6 reads as a 9), with <code>index="12"</code> to put the mark at the top instead;
+  the pickguard's bevel with the black ply, and one of its screws. Drag is vertical (up is
+  clockwise), the wheel steps, arrows step and Shift-arrows step by ten.</p>
+  <p><b>Left out:</b> the split-shaft pot's D-flat inside the knob, and the mould's parting line on the skirt.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-strat-bell> — Stratocaster bell knob, numerals projected on a cone, no pointer ====
+   attributes: value min max step label(VOLUME|TONE) finish(aged|fresh) scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-knob-strat-bell value="7" label="TONE"></sk-knob-strat-bell> */
+(function () {
+  if (customElements.get("sk-knob-strat-bell")) return;
+  const W = 84, H = 100, CX = 42, CY = 54;
+  const E = 80 * Math.PI / 180, SE = Math.sin(E), CE = Math.cos(E);     // view elevation: nearly overhead
+  const RB = 34, ZW = 9, RW = 25, HT = 44, RT = 18.5;                   // base radius, waist height/radius, top height/radius
+  const AL = Math.PI / 4, CA = Math.cos(AL), SA = Math.sin(AL);         // skirt slope
+  const SWEEP = 300;
+  const TY = CY - HT * CE, WY = CY - ZW * CE;                           // projected centres of the top and waist ellipses
+  const RYB = RB * SE, RYW = RW * SE, RYT = RT * SE;
+  const f = n => n.toFixed(2);
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px;
+      --top1: #fbf9f1; --top2: #f0ebdc; --top3: #d9d2bc; --sk1: #f6f1e2; --sk2: #ece5cf; --sk3: #cbc2a6; --body2: #e9e3d0; --body3: #cfc7ae; --ink: #1a1a1a; }
+    :host([finish="fresh"]) { --top1: #fdfdfa; --top2: #f3f0e7; --top3: #dcd9d0; --sk1: #f8f7f2; --sk2: #f0ede4; --sk3: #cfccc2; --body2: #ecebe4; --body3: #d2cfc5; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - 36}px; top: ${CY - 40}px; width: 72px; height: 76px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .ix12 { display: none; } :host([index="12"]) .ix12 { display: initial; } :host([index="12"]) .ix6 { display: none; }
+    text { font-family: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif; fill: var(--ink); }
+    .num { font-size: 7.2px; font-weight: 500; text-anchor: middle; dominant-baseline: central; }
+    .word { font-size: 5.5px; font-weight: 600; letter-spacing: 0.1em; text-anchor: middle; dominant-baseline: central; opacity: 0.86; }
+    .t1 { stop-color: var(--top1); } .t2 { stop-color: var(--top2); } .t3 { stop-color: var(--top3); }
+    .s1 { stop-color: var(--sk1); } .s2 { stop-color: var(--sk2); } .s3 { stop-color: var(--sk3); }
+    .b2 { stop-color: var(--body2); } .b3 { stop-color: var(--body3); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="bevel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fbf9f3"/><stop offset="0.5" stop-color="#e6e2d4"/><stop offset="1" stop-color="#cfcabb"/>
+        </linearGradient>
+        <linearGradient id="guard" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f3f0e7"/><stop offset="1" stop-color="#e9e5d9"/>
+        </linearGradient>
+        <linearGradient id="skirtG" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" class="s1"/><stop offset="0.45" class="s2"/><stop offset="1" class="s3"/>
+        </linearGradient>
+        <linearGradient id="bodyG" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" class="t1"/><stop offset="0.35" class="b2"/><stop offset="0.82" class="b3"/><stop offset="1" class="b2"/>
+        </linearGradient>
+        <linearGradient id="bodyV" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.3" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a2e10" stop-opacity="0.3"/>
+        </linearGradient>
+        <radialGradient id="topG" cx="36%" cy="30%" r="72%">
+          <stop offset="0" class="t1"/><stop offset="0.55" class="t2"/><stop offset="1" class="t3"/>
+        </radialGradient>
+        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.9"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.1"/><stop offset="1" stop-color="#5a4e2c" stop-opacity="0.45"/>
+        </linearGradient>
+        <radialGradient id="sheen" cx="32%" cy="24%" r="55%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.7"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="grime" cx="58%" cy="62%" r="50%">
+          <stop offset="0.66" stop-color="#000" stop-opacity="0"/><stop offset="0.84" stop-color="#4a3a14" stop-opacity="0.16"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="screwG" cx="36%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#e2e2de"/><stop offset="0.6" stop-color="#a8a8a3"/><stop offset="1" stop-color="#5c5c58"/>
+        </radialGradient>
+        <clipPath id="bodyClip"><path class="bodyShape"/></clipPath>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.6"/></filter>
+        <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="tight" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>
+      </defs>
+
+      <!-- a slice of 3-ply pickguard: bevel face, black middle ply, top surface -->
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2.5" fill="url(#bevel)" stroke="#b9b4a5" stroke-width="0.8"/>
+      <rect x="2.2" y="2.2" width="${W - 4.4}" height="${H - 4.4}" rx="1.6" fill="none" stroke="#1b1b1b" stroke-width="0.8"/>
+      <rect x="3.4" y="3.4" width="${W - 6.8}" height="${H - 6.8}" rx="1.2" fill="url(#guard)"/>
+      <rect x="3.4" y="3.4" width="${W - 6.8}" height="${H - 6.8}" rx="1.2" fill="none" stroke="#fff" stroke-opacity="0.6" stroke-width="0.6"/>
+      <!-- pickguard screw -->
+      <g transform="translate(12 12)">
+        <circle cx="0.6" cy="0.8" r="4.6" fill="#000" opacity="0.25" filter="url(#tight)"/>
+        <circle r="4.4" fill="url(#screwG)" stroke="#6a6a66" stroke-width="0.5"/>
+        <g transform="rotate(22)" fill="#3a3a38"><rect x="-3" y="-0.55" width="6" height="1.1"/><rect x="-0.55" y="-3" width="1.1" height="6"/></g>
+      </g>
+      <!-- the index: a wear mark on the pickguard, at 6 (the front, default) or at 12 -->
+      <g class="ix6">
+        <ellipse cx="${CX}" cy="${CY + RYB + 4}" rx="4.5" ry="1.6" fill="#8a7e5c" opacity="0.3" filter="url(#tight)"/>
+        <path d="M ${CX - 2.5} ${CY + RYB + 3.4} L ${CX + 2.5} ${CY + RYB + 4.2}" stroke="#6b6046" stroke-opacity="0.5" stroke-width="0.5"/>
+      </g>
+      <g class="ix12">
+        <ellipse cx="${CX}" cy="${CY - RYB - 3.5}" rx="4.5" ry="1.6" fill="#8a7e5c" opacity="0.3" filter="url(#tight)"/>
+        <path d="M ${CX - 2.5} ${CY - RYB - 4.2} L ${CX + 2.5} ${CY - RYB - 3.4}" stroke="#6b6046" stroke-opacity="0.5" stroke-width="0.5"/>
+      </g>
+
+      <!-- grime and shadows under the skirt -->
+      <ellipse cx="${CX + 3}" cy="${CY + 3}" rx="${RB + 8}" ry="${f(RYB + 8)}" fill="url(#grime)"/>
+      <ellipse cx="${CX + 3}" cy="${CY + 3.5}" rx="${RB}" ry="${f(RYB)}" fill="#3a3320" opacity="0.32" filter="url(#softer)"/>
+      <ellipse cx="${CX + 1}" cy="${CY + 1.5}" rx="${RB}" ry="${f(RYB)}" fill="#2a2416" opacity="0.4" filter="url(#tight)"/>
+
+      <!-- the skirt: a cone from the base ellipse up to the waist -->
+      <ellipse cx="${CX}" cy="${CY}" rx="${RB}" ry="${f(RYB)}" fill="url(#skirtG)"/>
+      <ellipse cx="${CX}" cy="${CY}" rx="${RB}" ry="${f(RYB)}" fill="none" stroke="#9a8f70" stroke-opacity="0.45" stroke-width="0.5"/>
+      <!-- numerals on the slope, projected (built by JS) -->
+      <g class="nums"></g>
+      <!-- the concave waist: a shadowed crease -->
+      <ellipse cx="${CX + 0.8}" cy="${f(WY + 1)}" rx="${RW + 2.6}" ry="${f(RYW + 2.6)}" fill="#5a4a22" opacity="0.3" filter="url(#soft)"/>
+      <ellipse cx="${CX}" cy="${f(WY)}" rx="${RW + 1.2}" ry="${f(RYW + 1.2)}" fill="#4a3c1a" opacity="0.4" filter="url(#tight)"/>
+      <ellipse cx="${CX}" cy="${f(WY)}" rx="${RW}" ry="${f(RYW)}" fill="url(#bodyG)"/>
+      <!-- the body from the waist up to the shoulder -->
+      <path class="bodyShape" d="M ${CX - RW} ${f(WY)} C ${CX - RW + 1.5} ${f(WY - 3)} ${CX - RT - 1} ${f(TY + 3)} ${CX - RT} ${f(TY)} A ${RT} ${f(RYT)} 0 0 1 ${CX + RT} ${f(TY)} C ${CX + RT + 1} ${f(TY + 3)} ${CX + RW - 1.5} ${f(WY - 3)} ${CX + RW} ${f(WY)} A ${RW} ${f(RYW)} 0 0 1 ${CX - RW} ${f(WY)} Z" fill="url(#bodyG)"/>
+      <rect x="${CX - RW}" y="${f(TY - RYT)}" width="${2 * RW}" height="${f(WY + RYW - TY + RYT)}" fill="url(#bodyV)" clip-path="url(#bodyClip)"/>
+      <!-- reflected light on the far underside of the body -->
+      <path d="M ${CX - RW + 4} ${f(WY + RYW - 3)} A ${RW} ${f(RYW)} 0 0 0 ${CX + RW - 3} ${f(WY + RYW - 4)}" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="1"/>
+      <!-- the flat top: turning rings, sheen, rounded shoulder, printed word -->
+      <ellipse cx="${CX}" cy="${f(TY)}" rx="${RT}" ry="${f(RYT)}" fill="url(#topG)"/>
+      <g fill="none" stroke-width="0.45">
+        <ellipse cx="${CX}" cy="${f(TY)}" rx="15.5" ry="${f(15.5 * SE)}" stroke="#000" stroke-opacity="0.07"/>
+        <ellipse cx="${CX}" cy="${f(TY - 0.4)}" rx="15.5" ry="${f(15.5 * SE)}" stroke="#fff" stroke-opacity="0.5"/>
+        <ellipse cx="${CX}" cy="${f(TY)}" rx="12.5" ry="${f(12.5 * SE)}" stroke="#000" stroke-opacity="0.06"/>
+        <ellipse cx="${CX}" cy="${f(TY - 0.4)}" rx="12.5" ry="${f(12.5 * SE)}" stroke="#fff" stroke-opacity="0.45"/>
+        <ellipse cx="${CX}" cy="${f(TY)}" rx="9.5" ry="${f(9.5 * SE)}" stroke="#000" stroke-opacity="0.06"/>
+        <ellipse cx="${CX}" cy="${f(TY - 0.4)}" rx="9.5" ry="${f(9.5 * SE)}" stroke="#fff" stroke-opacity="0.4"/>
+        <ellipse cx="${CX}" cy="${f(TY)}" rx="6.5" ry="${f(6.5 * SE)}" stroke="#000" stroke-opacity="0.05"/>
+        <ellipse cx="${CX}" cy="${f(TY)}" rx="3.5" ry="${f(3.5 * SE)}" stroke="#000" stroke-opacity="0.05"/>
+      </g>
+      <ellipse cx="${CX}" cy="${f(TY)}" rx="${RT}" ry="${f(RYT)}" fill="url(#sheen)"/>
+      <ellipse cx="${CX}" cy="${f(TY)}" rx="${RT}" ry="${f(RYT)}" fill="none" stroke="url(#rim)" stroke-width="1.1"/>
+      <text class="word"></text>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkKnobStratBell extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "finish", "index", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 5; this._min = 1; this._max = 10; this._step = 0.1; this._scale = 1;
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._word = this.shadowRoot.querySelector(".word");
+      this._numsG = this.shadowRoot.querySelector(".nums");
+      this._nums = [];
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._buildNums(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n === "min" || n === "max") this._buildNums(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 1); this._max = num("max", 10); this._step = num("step", 0.1);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._idx = this.getAttribute("index") === "12" ? 0 : 180;      // where the reading numeral sits: the front (6 o'clock) unless asked for 12
+      this._v = this._clamp(num("value", this._v));
+      const label = this.getAttribute("label") || "VOLUME";
+      this._word.textContent = label;
+      const g = this._grab;
+      g.setAttribute("aria-label", label);
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _rot(v) { return (v - this._min) / (this._max - this._min || 1) * SWEEP; }   // knob rotation, clockwise degrees
+    _buildNums() {
+      const g = this._numsG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const n = Math.max(2, Math.min(12, Math.round(this._max - this._min) + 1));
+      this._nums = [];
+      for (let i = 0; i < n; i++) {
+        const val = this._min + i;
+        const t = document.createElementNS(ns, "text");
+        t.setAttribute("class", "num");
+        t.textContent = String(Math.round(val));
+        // the print is rubbed thin where thumbs sit most: 5–7
+        if (val >= 5 && val <= 7) t.setAttribute("opacity", val === 6 ? 0.5 : 0.66);
+        g.appendChild(t);
+        this._nums.push({ el: t, phi: -i * SWEEP / (n - 1) });   // ascending counter-clockwise, so turning clockwise brings a larger numeral to 12
+      }
+    }
+    _render() {
+      const rho = this._rot(this._v);
+      const z = 4.6, R = RB - z;                      // the numerals sit mid-slope
+      for (const nm of this._nums) {
+        const phi = (nm.phi + rho + this._idx) * Math.PI / 180, s = Math.sin(phi), c = Math.cos(phi);
+        // glyph x axis and up axis on the cone, projected: see notes
+        const a = -c, b = -s * SE;
+        const ux = -s * CA, uy = c * CA * SE - SA * CE;
+        const tx = CX + R * s, ty = CY - R * c * SE - z * CE;
+        nm.el.setAttribute("transform", `matrix(${f(a)} ${f(b)} ${f(-ux)} ${f(-uy)} ${f(tx)} ${f(ty)})`);
+      }
+      // the word on the top rotates with the knob, on a disc squashed by the view
+      const r = (rho + this._idx + 180) * Math.PI / 180, cr = Math.cos(r), sr = Math.sin(r), dy = 1.2;
+      this._word.setAttribute("transform", `matrix(${f(cr)} ${f(sr * SE)} ${f(-sr)} ${f(cr * SE)} ${f(CX - dy * sr)} ${f(TY + dy * cr * SE)})`);
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._grab.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._drag = { y: e.clientY, x: e.clientX, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = this._drag.y - e.clientY, dx = e.clientX - this._drag.x;
+      const px = (dy + dx * 0.35) / this._scale;                    // up or right = clockwise
+      const range = this._max - this._min;
+      let v = this._drag.v + px * (e.shiftKey ? 0.25 : 1) * range / 160;
+      v = Math.round(v / this._step) * this._step;
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-knob-strat-bell", SkKnobStratBell);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

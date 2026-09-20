@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weston square panel meter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@400;500&family=Archivo+Narrow:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "meter-weston-panel",
+  "element": "sk-meter-weston",
+  "name": "Weston square panel meter",
+  "kind": "output",
+  "code": "F1",
+  "type": "Moving-coil panel meter",
+  "source": "Weston Model 301 / Simpson 2.5-inch square panel meter, black Bakelite bezel, mirror-strip scale, knife-edge needle",
+  "era": "1940s",
+  "origin": "USA",
+  "materials": ["bakelite", "glass", "aged paper scale", "steel screws"],
+  "tags": ["test equipment", "radio", "meter", "needle", "ballistics", "reference build"],
+  "value": { "model": "range", "min": 0, "max": 100, "unit": "µA" },
+  "attributes": ["value", "min", "max", "unit", "legend", "scale", "redline"],
+  "events": [],
+  "size": { "w": 200, "h": 176 },
+  "notes": "Set value to move the needle; it has mass and overshoots a little. A second meter shows a redline at 80."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="hammertone">
+    <sk-meter-weston value="42" unit="D.C. MICROAMPERES" legend="MODEL 301"></sk-meter-weston>
+    <sk-meter-weston value="70" min="0" max="150" unit="D.C. VOLTS" legend="MODEL 301" redline="120" scale="0.8"></sk-meter-weston>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Weston Model 301</b> and its Simpson and Triplett cousins are the square black meters on every 1940s
+  radio bench, power supply and transmitter: a moulded Bakelite bezel with four slotted screws, a cream paper
+  scale under glass, a <b>mirror strip</b> along the arc so you can put the needle over its own reflection and
+  read it without parallax, a black knife-edge needle, and a slotted <b>zero-adjust</b> screw at the bottom of the
+  bezel.</p>
+  <p><b>The tells kept here:</b> the bezel's soft-cornered moulding with a bevel that catches the top-left light;
+  the scale's yellowing, darker toward the corners; the mirror strip as a band that reflects a little of
+  the needle; the needle's taper and its pivot cap; the glass as one broad reflection that is not the shape
+  of anything under it; the screws with slots at different angles. The needle has <b>mass</b>: it approaches
+  the value with a damped spring and overshoots a touch, and it stops moving when the element leaves the
+  page.</p>
+  <p><b>Left out:</b> the rear terminals, the "Weston" script logo (replaced by a plain word to avoid a trademark).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-meter-weston> — 1940s square Bakelite panel meter with a mirror-strip scale ====
+   attributes: value min max unit legend scale redline
+   no events (an output). set .value or the attribute; the needle has ballistics.
+   self-contained: paste this block into any page and use <sk-meter-weston value="40"></sk-meter-weston> */
+(function () {
+  if (customElements.get("sk-meter-weston")) return;
+  const W = 200, H = 176;
+  const PX = 100, PY = 178;             // needle pivot, below the window
+  const R = 118;                        // scale radius
+  const SWEEP = 96;                     // degrees, -48..+48
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Oswald", "Archivo Narrow", "Arial Narrow", sans-serif; fill: #2a2622; }
+    .num { font-size: 9.5px; text-anchor: middle; font-weight: 500; }
+    .unit { font-size: 7px; letter-spacing: 0.12em; text-anchor: middle; fill: #3a352f; }
+    .brand { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; font-size: 8px; letter-spacing: 0.3em; text-anchor: middle; fill: #4a443c; font-weight: 600; }
+    .legend { font-size: 5.5px; letter-spacing: 0.1em; text-anchor: middle; fill: #6a635a; }
+    .needle { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="bez" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3a3735"/><stop offset="0.5" stop-color="#171514"/><stop offset="1" stop-color="#0b0a0a"/>
+        </linearGradient>
+        <linearGradient id="bezin" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#0a0909"/><stop offset="0.5" stop-color="#1b1918"/><stop offset="1" stop-color="#2a2725"/>
+        </linearGradient>
+        <radialGradient id="face" cx="50%" cy="35%" r="80%">
+          <stop offset="0" stop-color="#f3ead3"/><stop offset="0.6" stop-color="#e9dcbd"/><stop offset="1" stop-color="#cdbc95"/>
+        </radialGradient>
+        <linearGradient id="mirror" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8d8f92"/><stop offset="0.45" stop-color="#e7e9ec"/><stop offset="0.5" stop-color="#f6f7f8"/><stop offset="0.55" stop-color="#d0d3d7"/><stop offset="1" stop-color="#7c7f83"/>
+        </linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.35" stop-color="#fff" stop-opacity="0.06"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.04"/>
+        </linearGradient>
+        <radialGradient id="screw" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#9b9a97"/><stop offset="0.6" stop-color="#4f4e4c"/><stop offset="1" stop-color="#1d1c1b"/>
+        </radialGradient>
+        <radialGradient id="cap" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#6e6c69"/><stop offset="0.7" stop-color="#232221"/><stop offset="1" stop-color="#0d0d0c"/>
+        </radialGradient>
+        <clipPath id="win"><rect x="18" y="16" width="164" height="112" rx="3"/></clipPath>
+        <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="blur3" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- shadow on the panel -->
+      <rect x="4" y="6" width="${W - 6}" height="${H - 8}" rx="9" fill="#000" opacity="0.55" filter="url(#blur3)"/>
+      <!-- bezel: outer moulding, bevel, inner step -->
+      <rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="8" fill="url(#bez)" stroke="#000" stroke-width="1"/>
+      <rect x="3.5" y="3.5" width="${W - 7}" height="${H - 7}" rx="7" fill="none" stroke="#4a4744" stroke-opacity="0.55" stroke-width="0.8"/>
+      <rect x="15" y="13" width="170" height="118" rx="5" fill="url(#bezin)"/>
+      <rect x="16" y="14" width="168" height="116" rx="4.5" fill="none" stroke="#000" stroke-width="1"/>
+
+      <!-- the window -->
+      <g clip-path="url(#win)">
+        <rect x="18" y="16" width="164" height="112" fill="url(#face)"/>
+        <!-- yellowing toward the corners -->
+        <rect x="18" y="16" width="164" height="112" fill="#7a5a20" opacity="0.10"/>
+        <!-- mirror strip along the arc -->
+        <path class="mirrorband" fill="url(#mirror)" opacity="0.9"/>
+        <!-- scale -->
+        <g class="scale"></g>
+        <text class="brand" x="100" y="103">WESTON</text>
+        <text class="unit" x="100" y="114"></text>
+        <text class="legend" x="100" y="123"></text>
+        <!-- needle reflection in the mirror strip -->
+        <g class="needle reflect" opacity="0.35">
+          <path d="M ${PX} ${PY} L ${PX - 1.2} ${PY - 40} L ${PX} ${PY - R - 2} L ${PX + 1.2} ${PY - 40} Z" fill="#000" filter="url(#blur1)"/>
+        </g>
+        <!-- needle: black knife edge -->
+        <g class="needle">
+          <path d="M ${PX} ${PY} L ${PX - 1.4} ${PY - 40} L ${PX} ${PY - R - 4} L ${PX + 1.4} ${PY - 40} Z" fill="#141210"/>
+          <path d="M ${PX - 5} ${PY - 30} L ${PX + 5} ${PY - 30} L ${PX + 1.6} ${PY - 52} L ${PX - 1.6} ${PY - 52} Z" fill="#1c1a17"/>
+        </g>
+        <!-- pivot cap peeks over the bottom edge -->
+        <circle cx="${PX}" cy="${PY - 52}" r="6" fill="url(#cap)" stroke="#000" stroke-width="0.6"/>
+        <!-- inner shadow from the bezel onto the face -->
+        <rect x="18" y="16" width="164" height="112" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="6" filter="url(#blur3)"/>
+        <!-- glass -->
+        <path d="M 18 16 L 120 16 L 60 128 L 18 128 Z" fill="url(#glass)"/>
+        <rect x="18" y="16" width="164" height="112" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="1"/>
+      </g>
+
+      <!-- corner screws, slots at odd angles -->
+      <g class="screws">
+        <g transform="translate(11 11)"><circle r="4" fill="url(#screw)" stroke="#000" stroke-width="0.6"/><rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#0a0a0a" transform="rotate(28)"/></g>
+        <g transform="translate(189 11)"><circle r="4" fill="url(#screw)" stroke="#000" stroke-width="0.6"/><rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#0a0a0a" transform="rotate(-61)"/></g>
+        <g transform="translate(11 165)"><circle r="4" fill="url(#screw)" stroke="#000" stroke-width="0.6"/><rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#0a0a0a" transform="rotate(80)"/></g>
+        <g transform="translate(189 165)"><circle r="4" fill="url(#screw)" stroke="#000" stroke-width="0.6"/><rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#0a0a0a" transform="rotate(-12)"/></g>
+      </g>
+      <!-- zero adjust: a slotted screw in a countersink at the bottom centre -->
+      <circle cx="100" cy="151" r="7.5" fill="#0a0a0a"/>
+      <circle cx="100" cy="151" r="5.2" fill="url(#screw)" stroke="#000" stroke-width="0.6"/>
+      <rect x="95.8" y="150.3" width="8.4" height="1.4" fill="#0a0a0a" transform="rotate(-8 100 151)"/>
+      <!-- bezel highlight, top-left light -->
+      <path d="M 10 2 L ${W - 10} 2 Q ${W - 2} 2 ${W - 2} 10 L ${W - 2} 20" fill="none" stroke="#6a6663" stroke-opacity="0.35" stroke-width="1"/>
+      <path d="M 2 20 L 2 10 Q 2 2 10 2" fill="none" stroke="#8a8683" stroke-opacity="0.5" stroke-width="1"/>
+    </svg>
+  </div>`;
+
+  class SkMeterWeston extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "unit", "legend", "scale", "redline"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 100; this._scale = 1;
+      this._x = 0; this._vel = 0; this._raf = 0; this._last = 0;
+      this._needles = this.shadowRoot.querySelectorAll(".needle");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._band = this.shadowRoot.querySelector(".mirrorband");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs(); this._drawScale();
+      this._x = this._angle(this._v); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n !== "value") this._drawScale(); this._kick(); }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._v = Math.min(this._max, Math.max(this._min, v)); this.setAttribute("value", String(Math.round(this._v * 100) / 100)); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 100); this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      this._red = this.hasAttribute("redline") ? num("redline", NaN) : NaN;
+      this.shadowRoot.querySelector(".unit").textContent = this.getAttribute("unit") || "";
+      this.shadowRoot.querySelector(".legend").textContent = this.getAttribute("legend") || "";
+      this.setAttribute("aria-valuemin", this._min); this.setAttribute("aria-valuemax", this._max); this.setAttribute("aria-valuenow", this._v);
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", (this.getAttribute("unit") || "meter"));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return -SWEEP / 2 + t * SWEEP; }
+    _pt(deg, r) { const a = deg * Math.PI / 180; return [PX + r * Math.sin(a), PY - r * Math.cos(a)]; }
+    _arc(r, a0, a1) { const [x0, y0] = this._pt(a0, r), [x1, y1] = this._pt(a1, r); return `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}`; }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      // mirror band: between r=R-22 and r=R-14
+      const ri = R - 24, ro = R - 15;
+      const [ax, ay] = this._pt(-SWEEP / 2, ro), [bx, by] = this._pt(SWEEP / 2, ro), [cx, cy] = this._pt(SWEEP / 2, ri), [dx, dy] = this._pt(-SWEEP / 2, ri);
+      this._band.setAttribute("d", `M ${ax} ${ay} A ${ro} ${ro} 0 0 1 ${bx} ${by} L ${cx} ${cy} A ${ri} ${ri} 0 0 0 ${dx} ${dy} Z`);
+      // arc line
+      g.appendChild(mk("path", { d: this._arc(R - 12, -SWEEP / 2, SWEEP / 2), fill: "none", stroke: "#2a2622", "stroke-width": 1.1 }));
+      // red band
+      if (!isNaN(this._red)) {
+        const r0 = R - 12, r1 = R - 6;
+        const a0 = this._angle(this._red), a1 = SWEEP / 2;
+        const [x0, y0] = this._pt(a0, r1), [x1, y1] = this._pt(a1, r1), [x2, y2] = this._pt(a1, r0), [x3, y3] = this._pt(a0, r0);
+        g.appendChild(mk("path", { d: `M ${x0} ${y0} A ${r1} ${r1} 0 0 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 0 0 ${x3} ${y3} Z`, fill: "#b8322a", opacity: 0.85 }));
+      }
+      const range = this._max - this._min;
+      const majors = 10, minors = 5;
+      for (let i = 0; i <= majors * minors; i++) {
+        const val = this._min + range * i / (majors * minors);
+        const a = this._angle(val);
+        const isMajor = i % minors === 0, isMid = !isMajor && i % minors === Math.floor(minors / 2) && minors % 2 === 1;
+        const len = isMajor ? 9 : isMid ? 6 : 4;
+        const [x0, y0] = this._pt(a, R - 12), [x1, y1] = this._pt(a, R - 12 + len);
+        g.appendChild(mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: "#2a2622", "stroke-width": isMajor ? 1.2 : 0.7 }));
+        if (isMajor && (i / minors) % 2 === 0) {
+          const [tx, ty] = this._pt(a, R + 4);
+          const t = mk("text", { x: tx, y: ty + 3, class: "num", transform: `rotate(${a} ${tx} ${ty})` });
+          t.textContent = String(Math.round(val));
+          g.appendChild(t);
+        }
+      }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const target = this._angle(this._v);
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // damped spring: a heavy needle, a little overshoot
+      const k = 140, c = 14;
+      const acc = k * (target - this._x) - c * this._vel;
+      this._vel += acc * dt; this._x += this._vel * dt;
+      this._paint();
+      if (Math.abs(target - this._x) < 0.02 && Math.abs(this._vel) < 0.05) { this._x = target; this._vel = 0; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const a = Math.max(-SWEEP / 2 - 3, Math.min(SWEEP / 2 + 3, this._x));   // the needle can bang the stop a little
+      this._needles.forEach(n => { n.style.transform = `rotate(${a.toFixed(2)}deg)`; });
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+    }
+  }
+  customElements.define("sk-meter-weston", SkMeterWeston);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

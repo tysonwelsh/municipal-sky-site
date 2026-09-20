@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP-35 bubble-lens red LED row — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Roboto+Condensed:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "led7-hp35-bubble-lens",
+  "element": "sk-led7-hp35-bubble",
+  "name": "HP-35 bubble-lens red LED row",
+  "kind": "output",
+  "code": "G8.1",
+  "type": "Red LED seven-segment row under bubble magnifiers",
+  "source": "Hewlett-Packard HP-35 (1972) / HP-45 / HP-65 — HP 5082-7400-series red LED clusters under moulded bubble lenses behind a red window",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["red GaAsP LED", "moulded acrylic bubble lenses", "red-tinted window", "matte black plastic"],
+  "tags": ["calculator", "scientific", "seven-segment", "magnifier", "hairline strokes"],
+  "value": { "model": "digits", "min": 0, "max": 9999999999, "unit": "" },
+  "attributes": ["value", "digits", "bubbles", "scale", "label"],
+  "events": [],
+  "size": { "w": 300, "h": 40 },
+  "notes": "The real window is 68 mm wide; this is built at ×4. Two rows: a full mantissa, and 6.02 × 10²³ at scale 1.5 where the bubble lenses and their crescent glints read."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="beige">
+    <sk-led7-hp35-bubble value="1.4142135623" label="5082 · 7405"></sk-led7-hp35-bubble>
+    <sk-led7-hp35-bubble value="6.02  23" scale="1.5" label="5082 · 7405"></sk-led7-hp35-bubble>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>HP-35</b> of 1972 put a scientific calculator in a shirt pocket, and the way it did the display is the
+  reason it is remembered: a strip of HP 5082-7400-series red LED clusters, each digit a die only a millimetre or
+  so across, with a row of moulded <b>bubble magnifiers</b> over them and a dark red window in front. The whole
+  window is 68&nbsp;mm long; this build is <b>×4</b>, which is the only way the hairline strokes are visible at all.</p>
+  <p><b>The tells kept here:</b> fifteen bubbles on an 18&nbsp;px pitch, each with a dark rim and one crescent glint
+  in the upper left; the digits are drawn <i>through</i> the lens — every segment vertex is run through a barrel
+  warp about the dome centre and magnified about 1.26×, so the middle of the digit swells and the corners lag,
+  exactly as a plano-convex bubble does; the strokes are hairlines with 45° mitred ends, a 5° lean, and wide corner
+  gaps, with a hotter core line down the middle of each; the <b>decimal point lives inside the digit's own bubble</b>
+  at lower right, which is the HP quirk everybody recognises; the layout is a sign position, ten mantissa digits, a
+  blank, then the exponent sign and two exponent digits right-justified; the red window sinks the unlit segments
+  almost to nothing while the domes still glint; and the switching is <b>instant</b> — LEDs do not fade, so there is
+  no transition anywhere in the element.</p>
+  <p><b>Left out:</b> the multiplex flicker and the individual dice's slightly different reds, the cluster's gold
+  bond wires seen under the dome at a low angle, and the HP wordmark (a plain silk-screened part number stands in
+  for it).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-led7-hp35-bubble> — HP-35 red LED row under bubble magnifier lenses ====
+   attributes: value digits bubbles scale label
+   no events (an output). set .value to an HP-style string ("6.02  23", "-1.0 -03") or a number.
+   self-contained: paste this block into any page and use <sk-led7-hp35-bubble value="3.14159"></sk-led7-hp35-bubble> */
+(function () {
+  if (customElements.get("sk-led7-hp35-bubble")) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 300, H = 40;
+  const PITCH = 18, CY = 20, DOME = 8.6;      // bubble pitch, row centre, dome radius
+  const DW = 6.2, DH = 11.4, DT = 0.95, DG = 0.8;   // digit box, stroke, corner gap
+  const MAG = 1.26, BARREL = 0.16, LENSR = 6.5, SLANT = 5;
+  const SEGS = ["a", "b", "c", "d", "e", "f", "g"];
+  const MAP = {
+    "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc",
+    "5": "afgcd", "6": "afgecd", "7": "abc", "8": "abcdefg", "9": "abcdfg",
+    "-": "g", " ": ""
+  };
+  const TAN = Math.tan(SLANT * Math.PI / 180);
+
+  function mk(t, a, p) {
+    const e = document.createElementNS(NS, t);
+    for (const k in a) e.setAttribute(k, a[k]);
+    if (p) p.appendChild(e);
+    return e;
+  }
+  // the bubble lens: magnify about the digit centre, barrel-warp with radius
+  function lens(x, y) {
+    const dx = x - DW / 2, dy = y - DH / 2;
+    const r2 = (dx * dx + dy * dy) / (LENSR * LENSR);
+    const s = MAG * (1 - BARREL * r2);
+    return [DW / 2 + dx * s, DH / 2 + dy * s];
+  }
+  function poly(pts) {
+    return "M" + pts.map(function (p) { const q = lens(p[0], p[1]); return q[0].toFixed(2) + " " + q[1].toFixed(2); }).join("L") + "Z";
+  }
+  function line(x0, y0, x1, y1) {
+    const a = lens(x0, y0), m = lens((x0 + x1) / 2, (y0 + y1) / 2), b = lens(x1, y1);
+    return "M" + a[0].toFixed(2) + " " + a[1].toFixed(2) + "L" + m[0].toFixed(2) + " " + m[1].toFixed(2) + "L" + b[0].toFixed(2) + " " + b[1].toFixed(2);
+  }
+  // mitred hexagon segments in a DW × DH box
+  function segShapes() {
+    const t = DT, h = t / 2, g = DG, w = DW, ht = DH, m = ht / 2;
+    const hz = function (cy) {
+      return { p: [[g, cy], [g + h, cy - h], [w - g - h, cy - h], [w - g, cy], [w - g - h, cy + h], [g + h, cy + h]],
+               ax: [g + h, cy, w - g - h, cy] };
+    };
+    const vt = function (cx, y0, y1) {
+      return { p: [[cx, y0], [cx + h, y0 + h], [cx + h, y1 - h], [cx, y1], [cx - h, y1 - h], [cx - h, y0 + h]],
+               ax: [cx, y0 + h, cx, y1 - h] };
+    };
+    return {
+      a: hz(h), g: hz(m), d: hz(ht - h),
+      f: vt(h, g, m - g), b: vt(w - h, g, m - g),
+      e: vt(h, m + g, ht - g), c: vt(w - h, m + g, ht - g)
+    };
+  }
+  const SHAPES = segShapes();
+  const DPPTS = [[DW + 0.55, DH - 1.05], [DW + 1.55, DH - 1.05], [DW + 1.55, DH - 0.05], [DW + 0.55, DH - 0.05]];
+
+  function buildCell(parent, cx, ghost) {
+    const outer = mk("g", { transform: "translate(" + (cx - DW / 2 + (DH / 2) * TAN).toFixed(2) + " " + (CY - DH / 2).toFixed(2) + ") skewX(" + (-SLANT) + ")" }, parent);
+    const g = mk("g", { class: "dg" }, outer);
+    const out = {};
+    SEGS.forEach(function (k) {
+      const sh = SHAPES[k];
+      if (ghost) { mk("path", { d: poly(sh.p), class: "gs" }, g); return; }
+      const grp = mk("g", { class: "sg" }, g);
+      mk("path", { d: poly(sh.p), class: "bod" }, grp);
+      mk("path", { d: line(sh.ax[0], sh.ax[1], sh.ax[2], sh.ax[3]), class: "cor", "stroke-width": DT * 0.36 }, grp);
+      out[k] = grp;
+    });
+    if (ghost) { mk("path", { d: poly(DPPTS), class: "gs" }, g); return null; }
+    out.dp = mk("path", { d: poly(DPPTS), class: "sg bod" }, g);
+    return out;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; line-height: normal; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible;
+          filter: drop-shadow(0 1px 1px rgba(0,0,0,0.55)) drop-shadow(0 5px 10px rgba(0,0,0,0.45)); }
+    .dg { transform-box: fill-box; transform-origin: center; }
+    :host([bubbles="false"]) .dg { transform: scale(0.80); }
+    :host([bubbles="false"]) .domes { display: none; }
+    /* LEDs switch instantly — no transitions anywhere */
+    .gs  { fill: #2a0c0a; opacity: 0.35; }
+    .sg  { opacity: 0; }
+    .sg.on { opacity: 1; }
+    .bod { fill: #ff2a1a; }
+    .cor { stroke: #ff8a72; fill: none; stroke-linecap: round; opacity: 0.8; }
+    .bloom { filter: blur(1.1px); opacity: 0.5; }
+    .glow  { filter: blur(3.4px); opacity: 0.30; }
+    text { font-family: "Roboto Condensed", "Archivo Narrow", "Arial Narrow", sans-serif;
+           font-weight: 400; font-size: 4.4px; letter-spacing: 0.14em; fill: #56504e; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="case" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#232220"/><stop offset="0.16" stop-color="#171615"/>
+          <stop offset="0.85" stop-color="#101010"/><stop offset="1" stop-color="#0a0a0a"/>
+        </linearGradient>
+        <linearGradient id="slot" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.95"/><stop offset="0.5" stop-color="#000" stop-opacity="0.4"/>
+          <stop offset="1" stop-color="#2a2624" stop-opacity="0.55"/>
+        </linearGradient>
+        <radialGradient id="rim" cx="50%" cy="50%" r="50%">
+          <stop offset="0.62" stop-color="#000" stop-opacity="0"/>
+          <stop offset="0.87" stop-color="#3a0d0a" stop-opacity="0.30"/>
+          <stop offset="1" stop-color="#6a1a16" stop-opacity="0.55"/>
+        </radialGradient>
+        <linearGradient id="winrefl" x1="0" y1="0" x2="0.55" y2="1">
+          <stop offset="0" stop-color="#ffd9d2" stop-opacity="0.12"/>
+          <stop offset="0.6" stop-color="#ffd9d2" stop-opacity="0.02"/>
+          <stop offset="1" stop-color="#ffd9d2" stop-opacity="0"/>
+        </linearGradient>
+        <pattern id="mach" width="3" height="3" patternUnits="userSpaceOnUse">
+          <rect width="3" height="1" fill="#fff" fill-opacity="0.035"/>
+        </pattern>
+        <clipPath id="winclip"><rect x="12" y="6" width="276" height="28" rx="2"/></clipPath>
+      </defs>
+
+      <!-- matte black case with a fine horizontal machining texture -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2.5" fill="url(#case)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2.5" fill="url(#mach)"/>
+      <rect x="0" y="0.3" width="${W}" height="0.7" rx="0.35" fill="#4a4846" opacity="0.5"/>
+      <text class="part" x="${W - 8}" y="${H - 2.6}" text-anchor="end"></text>
+
+      <!-- the slot: a recess, then the red window -->
+      <rect x="10.4" y="4.6" width="279.2" height="30.8" rx="2.6" fill="url(#slot)"/>
+      <g clip-path="url(#winclip)">
+        <rect x="12" y="6" width="276" height="28" fill="#0b0504"/>
+        <g class="ghost"></g>
+        <g class="bloom"><use href="#lit"/></g>
+        <g id="lit"></g>
+        <!-- bubble domes: rim shading in front of the dice, behind the window tint -->
+        <g class="domes"></g>
+        <!-- the dark red window -->
+        <rect x="12" y="6" width="276" height="28" fill="#3a0808" opacity="0.55"/>
+        <!-- what gets through the window: a wider glow, and the domes' glints -->
+        <g class="glow"><use href="#lit"/></g>
+        <g class="glints"></g>
+        <!-- one broad reflection across the whole window -->
+        <path d="M 12 6 L 96 6 L 40 34 L 12 34 Z" fill="url(#winrefl)"/>
+        <!-- the slot's own shadow falling on the window -->
+        <rect x="12.6" y="6.6" width="274.8" height="26.8" rx="1.6" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="2"/>
+      </g>
+      <rect x="12" y="6" width="276" height="28" rx="2" fill="none" stroke="#000" stroke-width="0.8"/>
+      <path d="M 12.4 33.7 L 287.6 33.7" stroke="#6b6360" stroke-opacity="0.35" stroke-width="0.7"/>
+    </svg>
+  </div>`;
+
+  class SkLed7Hp35 extends HTMLElement {
+    static get observedAttributes() { return ["value", "digits", "bubbles", "scale", "label"]; }
+
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._mant = 10; this._built = 0; this._lastLabel = "";
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._v = "";
+    }
+
+    _build() {
+      const r = this.shadowRoot;
+      const ghost = r.querySelector(".ghost"), lit = r.querySelector("#lit");
+      const domes = r.querySelector(".domes"), glints = r.querySelector(".glints");
+      [ghost, lit, domes, glints].forEach(function (g) { while (g.firstChild) g.removeChild(g.firstChild); });
+
+      const n = this._mant + 5;                       // sign + mantissa + gap + expsign + 2
+      const span = (n - 1) * PITCH;
+      const x0 = W / 2 - span / 2;
+      this._cells = [];
+      const C = 2 * Math.PI * 6.5;                    // dashed-arc crescent on each dome
+      for (let i = 0; i < n; i++) {
+        const cx = x0 + i * PITCH;
+        buildCell(ghost, cx, true);
+        this._cells.push(buildCell(lit, cx, false));
+        mk("circle", { cx: cx, cy: CY, r: DOME, fill: "url(#rim)" }, domes);
+        mk("circle", { cx: cx, cy: CY, r: DOME, fill: "none", stroke: "#6a1a16", "stroke-opacity": 0.4, "stroke-width": 0.8 }, domes);
+        mk("circle", {
+          cx: cx, cy: CY, r: 6.5, fill: "none", stroke: "#fff", "stroke-opacity": 0.42,
+          "stroke-width": 1.5, "stroke-linecap": "round",
+          "stroke-dasharray": (C * 0.22).toFixed(2) + " " + (C * 0.78).toFixed(2),
+          "stroke-dashoffset": (-C * 0.53).toFixed(2)
+        }, glints);
+        mk("ellipse", { cx: cx - 3.3, cy: CY - 4.2, rx: 1.5, ry: 0.85, transform: "rotate(-34 " + (cx - 3.3) + " " + (CY - 4.2) + ")", fill: "#fff", opacity: 0.5 }, glints);
+      }
+      this._built = 1;
+    }
+
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read();
+      if (!this._built) this._build();
+      this._paint();
+    }
+    disconnectedCallback() { /* nothing running: LEDs are instant */ }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      const m = this._mant;
+      this._read();
+      if (this._mant !== m) this._build();
+      this._paint();
+    }
+
+    get value() { return this._v; }
+    set value(v) { if (v == null) return; this._v = String(v); this.setAttribute("value", this._v); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      const d = parseInt(this.getAttribute("digits"), 10);
+      this._mant = Math.max(3, Math.min(14, isNaN(d) ? 10 : d));
+      const sc = parseFloat(this.getAttribute("scale"));
+      const s = Math.max(0.2, isNaN(sc) ? 1 : sc);
+      if (s !== this._scale || !this._sized) {
+        this._scale = s; this._sized = 1;
+        this.style.width = (W * s) + "px"; this.style.height = (H * s) + "px";
+        this._wrap.style.transform = "scale(" + s + ")";
+      }
+      const raw = this.getAttribute("value");
+      if (raw !== null) this._v = raw;
+      const lab = this.getAttribute("label") || "";
+      const t = this.shadowRoot.querySelector(".part");
+      if (t.textContent !== lab) t.textContent = lab;
+    }
+
+    // "−1.0  −03", "6.02 23", "3.1415926536e00", 1234  →  cell characters
+    _cellsFor(v) {
+      let s = String(v == null ? "" : v).replace(/−/g, "-").trim();
+      let mant = s, exp = "";
+      const e = s.search(/[eE]/);
+      if (e >= 0) { mant = s.slice(0, e); exp = s.slice(e + 1); }
+      else {
+        const m = s.match(/^([+-]?[0-9.]*)\s{1,}([+-]?\s*[0-9]+)$/);
+        if (m) { mant = m[1]; exp = m[2].replace(/\s+/g, ""); }
+      }
+      let sign = " ";
+      mant = mant.trim();
+      if (mant[0] === "-") { sign = "-"; mant = mant.slice(1); }
+      else if (mant[0] === "+") mant = mant.slice(1);
+      if (mant[0] === ".") mant = "0" + mant;
+
+      // mantissa, left-justified, the point folded into the digit before it
+      const cells = [{ c: sign, dp: 0 }];
+      const body = [];
+      for (let i = 0; i < mant.length; i++) {
+        const ch = mant[i];
+        if (ch === ".") { if (body.length) body[body.length - 1].dp = 1; else body.push({ c: "0", dp: 1 }); continue; }
+        if (!/[0-9]/.test(ch)) continue;
+        if (body.length >= this._mant) break;
+        body.push({ c: ch, dp: 0 });
+      }
+      for (let i = 0; i < this._mant; i++) cells.push(body[i] || { c: " ", dp: 0 });
+      cells.push({ c: " ", dp: 0 });                      // the blank between the groups
+
+      exp = exp.trim();
+      let es = " ";
+      if (exp[0] === "-") { es = "-"; exp = exp.slice(1); }
+      else if (exp[0] === "+") exp = exp.slice(1);
+      exp = exp.replace(/[^0-9]/g, "");
+      if (exp === "") es = " ";
+      exp = exp.slice(-2);
+      while (exp.length && exp.length < 2) exp = " " + exp;     // right-justified in its group
+      cells.push({ c: es, dp: 0 });
+      cells.push({ c: exp[0] || " ", dp: 0 });
+      cells.push({ c: exp[1] || " ", dp: 0 });
+      return cells;
+    }
+
+    _paint() {
+      const cells = this._cellsFor(this._v);
+      for (let i = 0; i < this._cells.length; i++) {
+        const cell = this._cells[i], want = cells[i] || { c: " ", dp: 0 };
+        const on = MAP[want.c] || "";
+        for (let k = 0; k < SEGS.length; k++) cell[SEGS[k]].classList.toggle("on", on.indexOf(SEGS[k]) >= 0);
+        cell.dp.classList.toggle("on", !!want.dp);
+      }
+      let txt = "";
+      cells.forEach(function (c) { txt += c.c + (c.dp ? "." : ""); });
+      txt = txt.replace(/\s+/g, " ").trim();
+      const lab = (this.getAttribute("label") ? "" : "") + "LED display: " + (txt || "blank");
+      if (lab !== this._lastLabel) { this._lastLabel = lab; this.setAttribute("aria-label", lab); }
+    }
+
+    demo(t) {
+      const seq = ["1.4142135623", "3.1415926536  00", "9.99  99", "6.02  23", "-1.0  -03", "2.718281828"];
+      return seq[Math.floor(t / 2.4) % seq.length];
+    }
+  }
+  customElements.define("sk-led7-hp35-bubble", SkLed7Hp35);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

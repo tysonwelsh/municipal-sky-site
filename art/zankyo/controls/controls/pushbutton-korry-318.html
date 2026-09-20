@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Korry 318 switch-light — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pushbutton-korry-318",
+  "element": "sk-pushbutton-korry-318",
+  "name": "Korry 318 dead-face split-legend switch-light",
+  "kind": "both",
+  "code": "D3",
+  "type": "Lighted push-button switch",
+  "source": "Korry 318-series sunlight-readable switch-light, as used across the Airbus A320 overhead panel (FAULT / ON, AVAIL / ON) and the Boeing 737 and 747 main instrument panel",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["anodised aluminium", "laser-engraved light plate", "incandescent lamps"],
+  "tags": ["aviation", "overhead panel", "annunciator", "dead face", "split legend", "sunlight readable"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "upper", "lower", "upper-text", "lower-text", "wide", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release", "activate"],
+  "size": { "w": 72, "h": 72 },
+  "notes": "Three switch-lights: FAULT amber over OFF white, a dead one whose legends are invisible until lit, and the wide Boeing form latched in with AVAIL green over ON blue."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-pushbutton-korry-318 upper="amber" upper-text="FAULT" lower="white" lower-text="OFF" label="APU bleed" scale="1.6"></sk-pushbutton-korry-318>
+    <sk-pushbutton-korry-318 upper-text="FAULT" lower-text="ON" label="Pack 1" scale="1.6"></sk-pushbutton-korry-318>
+    <sk-pushbutton-korry-318 wide upper="green" upper-text="AVAIL" lower="blue" lower-text="ON" value="true" label="APU master" scale="1.6"></sk-pushbutton-korry-318>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>Korry 318</b> is the square switch-light that covers the Airbus overhead panel and the Boeing MIP: a
+  black anodised frame, a laser-engraved light plate split into two independently lit legends — FAULT over ON,
+  AVAIL over OFF — and incandescent lamps behind each half. It is <b>sunlight readable</b>, which is the whole
+  point of the design: unlit, the plate is as black as the frame and the words are simply not there.</p>
+  <p><b>The tells kept here:</b> the dead face — nothing of the legend shows until a lamp is behind it; the
+  hairline that splits the lens into two halves lit in their own colours; the lens sitting proud of a frame
+  with a 45° chamfer that catches the light on its top-left; the lit half glowing faintly as a whole, not just
+  at the letters, with a blurred copy under the crisp legend and four faint lamp hot-spots across it; a cold
+  reflection of the room across the top third of the plate that ignores the shape of anything under it; and a
+  press of the lens alone onto a hard stop — the frame never moves. The lamps <b>warm up over 120&nbsp;ms and
+  cool over 250&nbsp;ms</b>, so a half fades rather than switches.</p>
+  <p><b>Left out:</b> the press-to-test and the dimming bus, the lamp-pair redundancy (a real Korry keeps
+  half-brightness on a failed filament), and the dust in the frame's chamfer that every flight-deck photograph
+  shows.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pushbutton-korry-318> — Korry 318 dead-face split-legend switch-light ====
+   attributes: value (boolean, latched in) · upper / lower [off|amber|white|blue|green] · upper-text / lower-text
+               wide (the 1 × 0.5 in Boeing form) · label · scale · disabled
+   events: press, release, activate, input/change with detail {value, upper, lower}
+   self-contained: paste this block into any page and use
+   <sk-pushbutton-korry-318 upper="amber" upper-text="FAULT" lower="white" lower-text="OFF"></sk-pushbutton-korry-318> */
+(function () {
+  if (customElements.get("sk-pushbutton-korry-318")) return;
+  const W = 72, H = 72, WW = 96, WH = 52;
+  const LAMPS = {
+    off:   null,
+    amber: { c: "#ffb000", spot: "rgba(255,176,0,0.055)", wash: "rgba(255,150,0,0.16)", glow: "rgba(255,176,0,0.6)" },
+    white: { c: "#f4f6ff", spot: "rgba(236,242,255,0.05)", wash: "rgba(225,232,255,0.14)", glow: "rgba(244,246,255,0.55)" },
+    blue:  { c: "#58b6ff", spot: "rgba(88,182,255,0.055)", wash: "rgba(70,160,255,0.16)", glow: "rgba(88,182,255,0.6)" },
+    green: { c: "#35c26b", spot: "rgba(53,194,107,0.06)", wash: "rgba(40,180,95,0.16)", glow: "rgba(53,194,107,0.6)" }
+  };
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      --fw: ${W}px; --fh: ${H}px; --fs: 8px; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .frame {
+      position: absolute; left: 0; top: 0; width: var(--fw); height: var(--fh); border-radius: 3px;
+      background: linear-gradient(135deg, #4b4d50 0%, #313336 22%, #1c1d1f 46%, #161718 74%, #0e0f10 100%);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.05), 0 2px 3px rgba(0,0,0,0.6), 0 7px 14px rgba(0,0,0,0.45);
+      cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; outline: none;
+    }
+    :host([disabled]) .frame { cursor: default; }
+    .frame:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.5),
+      0 2px 3px rgba(0,0,0,0.6), 0 7px 14px rgba(0,0,0,0.45); }
+    .well { position: absolute; left: 3.6px; top: 3.6px; right: 3.6px; bottom: 3.6px; border-radius: 3px;
+      background: #0a0a0b; box-shadow: inset 0 1.5px 2px rgba(0,0,0,0.9); }
+    .lens {
+      position: absolute; left: 4.4px; top: 4.4px; right: 4.4px; bottom: 4.4px; border-radius: 2.6px;
+      display: flex; flex-direction: column; overflow: hidden;
+      background: radial-gradient(130% 130% at 38% 26%, #26282b 0%, #202225 52%, #191b1d 100%);
+      box-shadow: 0 1.6px 2.6px rgba(0,0,0,0.85), inset 0 0.6px 0 rgba(255,255,255,0.09),
+                  inset 0 -0.8px 0 rgba(0,0,0,0.5);
+      transition: transform 80ms cubic-bezier(.2,.9,.3,1.1), box-shadow 80ms linear;
+    }
+    .lens::after {  /* the barely-there texture of the light plate */
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(94deg, rgba(255,255,255,0.014) 0 1px, rgba(0,0,0,0.014) 1px 2.5px);
+    }
+    :host([value="true"]) .lens { transform: translateY(1.3px); }
+    .lens.down, :host([value="true"]) .lens.down {
+      transform: translateY(2.6px); transition-duration: 40ms;
+      box-shadow: 0 0.5px 1px rgba(0,0,0,0.85), inset 0 1.4px 2px rgba(0,0,0,0.55);
+    }
+    .half { position: relative; flex: 1 1 0; display: flex; align-items: center; justify-content: center; }
+    .lamp { position: absolute; inset: 0; opacity: 0; transition: opacity 250ms ease-in; }
+    .half.lit .lamp { opacity: 1; transition: opacity 120ms cubic-bezier(.35,.1,.6,1); }
+    .spots { position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 16% 48%, var(--spot) 0%, transparent 38%),
+        radial-gradient(circle at 39% 48%, var(--spot) 0%, transparent 38%),
+        radial-gradient(circle at 61% 48%, var(--spot) 0%, transparent 38%),
+        radial-gradient(circle at 84% 48%, var(--spot) 0%, transparent 38%);
+      filter: blur(1.6px); }
+    .wash { position: absolute; inset: 0; filter: blur(2px);
+      background: radial-gradient(58% 64% at 50% 50%, var(--wash) 0%, transparent 74%); }
+    .tx { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-family: "Oswald", "DIN Alternate", "Arial Narrow", sans-serif; font-weight: 500;
+      font-size: var(--fs); letter-spacing: 0.06em; line-height: 1; color: var(--c);
+      text-shadow: 0 0 2px var(--glow), 0 0 6px var(--glow); }
+    .tx.b { filter: blur(1.1px); opacity: 0.85; text-shadow: none; }
+    .hair { position: absolute; left: 0; right: 0; top: 50%; height: 1.2px; margin-top: -0.6px; z-index: 2;
+      background: linear-gradient(180deg, rgba(0,0,0,0.95) 0 60%, rgba(255,255,255,0.07) 60% 100%); }
+    .reflect { position: absolute; inset: 0; z-index: 3; pointer-events: none;
+      clip-path: polygon(0 0, 100% 0, 100% 20%, 0 38%);
+      background:
+        linear-gradient(170deg, rgba(206,228,255,0.085) 0%, rgba(186,210,248,0.025) 46%, rgba(255,255,255,0) 82%),
+        linear-gradient(100deg, rgba(210,230,255,0.05) 0%, rgba(255,255,255,0) 60%); }
+  </style>
+  <div class="wrap">
+    <div class="frame" role="switch" tabindex="0">
+      <div class="well"></div>
+      <div class="lens">
+        <div class="half up"><div class="lamp"><div class="spots"></div><div class="wash"></div><div class="tx b"><span></span></div><div class="tx"><span></span></div></div></div>
+        <div class="half lo"><div class="lamp"><div class="spots"></div><div class="wash"></div><div class="tx b"><span></span></div><div class="tx"><span></span></div></div></div>
+        <div class="hair"></div>
+        <div class="reflect"></div>
+      </div>
+    </div>
+  </div>`;
+
+  const truthy = v => v === true || v === 1 || v === "" || v === "true" || v === "on" || v === "1";
+
+  class SkPushKorry318 extends HTMLElement {
+    static get observedAttributes() { return ["value", "upper", "lower", "upper-text", "lower-text", "wide", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._frame = r.querySelector(".frame");
+      this._lens = r.querySelector(".lens");
+      this._up = r.querySelector(".half.up");
+      this._lo = r.querySelector(".half.lo");
+      this._upTx = r.querySelectorAll(".half.up .tx span");
+      this._loTx = r.querySelectorAll(".half.lo .tx span");
+      this._v = false; this._scale = 1; this._down = false; this._keyDown = false;
+      this._onDown = this._onDown.bind(this); this._onUp = this._onUp.bind(this);
+      this._onCancel = this._onCancel.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this); this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs(); this._render();
+      const f = this._frame;
+      f.addEventListener("pointerdown", this._onDown);
+      f.addEventListener("pointerup", this._onUp);
+      f.addEventListener("pointercancel", this._onCancel);
+      f.addEventListener("keydown", this._onKeyDown);
+      f.addEventListener("keyup", this._onKeyUp);
+      f.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      const f = this._frame;
+      f.removeEventListener("pointerdown", this._onDown);
+      f.removeEventListener("pointerup", this._onUp);
+      f.removeEventListener("pointercancel", this._onCancel);
+      f.removeEventListener("keydown", this._onKeyDown);
+      f.removeEventListener("keyup", this._onKeyUp);
+      f.removeEventListener("blur", this._onBlur);
+      this._down = false; this._keyDown = false;
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) {
+      const b = truthy(v) || v === true;
+      if (b === this._v) return;
+      this._v = b; this.setAttribute("value", b ? "true" : "false"); this._render();
+    }
+    get upper() { return (this.getAttribute("upper") || "off").toLowerCase(); }
+    set upper(c) { this.setAttribute("upper", String(c)); }
+    get lower() { return (this.getAttribute("lower") || "off").toLowerCase(); }
+    set lower(c) { this.setAttribute("lower", String(c)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opts) { this._frame.focus(opts); }
+    blur() { this._frame.blur(); }
+
+    _readAttrs() {
+      const wide = this.hasAttribute("wide");
+      const w = wide ? WW : W, h = wide ? WH : H;
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.setProperty("--fw", w + "px");
+      this.style.setProperty("--fh", h + "px");
+      this.style.setProperty("--fs", (wide ? 7.6 : 8) + "px");
+      this.style.width = (w * this._scale) + "px";
+      this.style.height = (h * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const ut = this.getAttribute("upper-text") || "", lt = this.getAttribute("lower-text") || "";
+      for (const n of this._upTx) n.textContent = ut;
+      for (const n of this._loTx) n.textContent = lt;
+      this._v = this.hasAttribute("value") ? truthy(this.getAttribute("value")) : this._v;
+      const dis = this.hasAttribute("disabled");
+      this._frame.setAttribute("tabindex", dis ? "-1" : "0");
+      this._frame.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._frame.setAttribute("aria-label", this.getAttribute("label") || (ut + " " + lt).trim() || "switch-light");
+    }
+    _paint(half, name) {
+      const L = LAMPS[name] || null;
+      half.classList.toggle("lit", !!L);
+      if (L) {
+        half.style.setProperty("--c", L.c);
+        half.style.setProperty("--spot", L.spot);
+        half.style.setProperty("--wash", L.wash);
+        half.style.setProperty("--glow", L.glow);
+      }
+      return !!L;
+    }
+    _render() {
+      const u = this._paint(this._up, this.upper), l = this._paint(this._lo, this.lower);
+      this._lens.classList.toggle("down", this._down);
+      this._frame.setAttribute("aria-checked", this._v ? "true" : "false");
+      const txt = [];
+      if (u) txt.push((this.getAttribute("upper-text") || "upper") + " lit");
+      if (l) txt.push((this.getAttribute("lower-text") || "lower") + " lit");
+      this._frame.setAttribute("aria-description", txt.join(", ") || "dark");
+    }
+    _fire(type, detail) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: detail || {} })); }
+    _detail() { return { value: this._v, upper: this.upper, lower: this.lower }; }
+    _press() {
+      if (this.hasAttribute("disabled") || this._down) return;
+      this._down = true; this._render(); this._fire("press");
+    }
+    _release(activate) {
+      if (!this._down) return;
+      this._down = false; this._render(); this._fire("release");
+      if (activate && !this.hasAttribute("disabled")) {
+        this._v = !this._v;
+        this.setAttribute("value", this._v ? "true" : "false");
+        this._render();
+        this._fire("input", this._detail());
+        this._fire("change", this._detail());
+        this._fire("activate", this._detail());
+      }
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._frame.focus({ preventScroll: true });
+      try { this._frame.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      if (!this._down) return;
+      e.preventDefault();
+      const r = this._frame.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      try { this._frame.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release(inside);
+    }
+    _onCancel() { this._release(false); }
+    _onKeyDown(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault();
+      if (e.repeat || this._keyDown) return;
+      this._keyDown = true; this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault(); this._keyDown = false; this._release(true);
+    }
+    _onBlur() { if (this._keyDown) { this._keyDown = false; this._release(false); } }
+  }
+  customElements.define("sk-pushbutton-korry-318", SkPushKorry318);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

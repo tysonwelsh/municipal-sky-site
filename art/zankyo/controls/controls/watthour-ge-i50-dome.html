@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GE I-50 glass-dome watt-hour meter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "watthour-ge-i50-dome",
+  "element": "sk-watthour-dome",
+  "name": "GE I-50 glass-dome watt-hour meter",
+  "kind": "output",
+  "code": "F13",
+  "type": "Watt-hour meter register",
+  "source": "General Electric Type I-50 single-phase induction watt-hour meter under its glass dome — five alternating pointer dials over the spinning aluminium disc",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["glass", "aluminium", "printed card", "painted steel", "lead seal"],
+  "tags": ["utility", "electricity", "kilowatthours", "register", "disc", "dome"],
+  "value": { "model": "range", "min": 0, "max": 99999, "step": 0.001, "unit": "kWh" },
+  "attributes": ["value", "rate", "watts", "kh", "run", "label", "scale"],
+  "events": [],
+  "size": { "w": 200, "h": 240 },
+  "notes": "The left meter is drawing 1728 W — 4 rpm at Kh 7.2 — so the disc's black mark comes round every 15 s and the register creeps. The right one is a new meter at zero with the disc stopped."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-watthour-dome value="41377.5" watts="1728" label="house meter"></sk-watthour-dome>
+    <sk-watthour-dome value="0" rate="0" label="new meter" scale="0.6"></sk-watthour-dome>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>General Electric Type I-50</b> is the meter on the side of an American house from about 1950 to the
+  end of the century: an induction motor whose rotor is a horizontal aluminium disc, dragged round by the
+  current in the house and braked by two permanent magnets, so that the disc's speed is exactly proportional to
+  the power being drawn. Everything sits under a clear glass dome clamped to a black base and closed with a lead
+  seal on a wire. The constant printed on the nameplate — <b>Kh 7.2</b> — is the watt-hours per revolution: count
+  the turns for a minute, multiply, and you know what the house is using without touching anything.</p>
+  <p><b>The tells kept here:</b> five small dials in a row reading 10000 · 1000 · 100 · 10 · 1, each with a tiny
+  black arrow, and <b>alternating in direction</b> — the units dial clockwise, the tens anticlockwise, and so on,
+  because the gear train reverses at every stage; the reading taken from each pointer's last-passed figure. Below
+  them the disc, seen as a thin bright ellipse slightly from above, turned with a spun sheen, with the
+  <b>black mark on its rim</b> coming round once per revolution and foreshortening away at the sides — the one
+  motion cue on the whole instrument. The dome carries one vertical highlight band, a second curved one at the
+  lower right, a green tint where the glass is thickest at the edges, and a dark ring where it meets the base.
+  The nameplate is printed, not engraved, in a dense small sans. The base is black with a rim highlight, a
+  sealing screw, and the lead seal on its red wire at the bottom left.</p>
+  <p><b>Left out:</b> the GE monogram and the utility's stamped name plate; the potential and current coils and
+  the register's gear train behind the plate; and the demand pointer of the I-70. The register advance is
+  physical, not theatrical: at 4 rpm and Kh 7.2 the units pointer moves about ten degrees a minute, so the disc
+  does the visible work — set a bigger <code>watts</code> or drag the bench slider to watch the dials move.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-watthour-dome> — GE I-50 glass-dome watt-hour meter ====
+   attributes: value (cumulative kWh) · rate (disc rpm) · watts (derives rpm from kh) · kh (Wh/rev, 7.2)
+               · run (default true; the register advances from the rate) · label · scale
+   no events (an output). self-contained: paste this block into any page and use
+   <sk-watthour-dome value="41377.5" watts="1728"></sk-watthour-dome> */
+(function () {
+  if (customElements.get("sk-watthour-dome")) return;
+  var W = 200, H = 240;
+  var PLX = 28, PLY = 52, PLW = 144, PLH = 110;
+  var DCY = 104, DR = 13.6, DCX = [45.6, 72.8, 100, 127.2, 154.4];   // left to right: 10000 … 1
+  var DISC_X = 100, DISC_Y = 176, DISC_RX = 47, DISC_RY = 8.4, DISC_T = 4.2;
+  var NS = "http://www.w3.org/2000/svg";
+  var DOME = "M 16 200 L 16 118 C 16 58 50 28 100 28 C 150 28 184 58 184 118 L 184 200 Z";
+
+  function dials() {
+    var s = "", i, k, a, x0, y0, x1, y1;
+    for (i = 0; i < 5; i++) {
+      var cw = ((4 - i) % 2) === 0;            // i is the left-to-right index; 4 = the units dial, clockwise
+      s += '<g transform="translate(' + DCX[i] + ' ' + DCY + ')">';
+      s += '<circle r="' + DR + '" fill="#fcfbf7" stroke="#1c1b18" stroke-width="0.7"/>';
+      s += '<circle r="' + (DR - 2.4) + '" fill="none" stroke="#1c1b18" stroke-opacity="0.35" stroke-width="0.4"/>';
+      for (k = 0; k < 10; k++) {
+        a = (cw ? 1 : -1) * k * 36 * Math.PI / 180;
+        x0 = Math.sin(a) * (DR - 2.4); y0 = -Math.cos(a) * (DR - 2.4);
+        x1 = Math.sin(a) * DR; y1 = -Math.cos(a) * DR;
+        s += '<line x1="' + x0.toFixed(2) + '" y1="' + y0.toFixed(2) + '" x2="' + x1.toFixed(2) + '" y2="' + y1.toFixed(2) + '" stroke="#1c1b18" stroke-width="0.6"/>';
+        x0 = Math.sin(a) * 8.1; y0 = -Math.cos(a) * 8.1;
+        s += '<text class="fig" x="' + x0.toFixed(2) + '" y="' + (y0 + 2.2).toFixed(2) + '">' + k + '</text>';
+      }
+      s += '<g class="ptr"><path d="M -1.7 -1.6 L 0 -10.6 L 1.7 -1.6 Z" fill="#111"/><path d="M -0.9 -1.2 L -0.9 3.4 L 0.9 3.4 L 0.9 -1.2 Z" fill="#111"/></g>';
+      s += '<circle r="1.5" fill="#111"/><circle cx="-0.5" cy="-0.5" r="0.5" fill="#9a968c"/>';
+      s += '</g>';
+    }
+    return s;
+  }
+  function caps() {
+    var lab = ["10000", "1000", "100", "10", "1"], s = "", i;
+    for (i = 0; i < 5; i++) s += '<text class="cap" x="' + DCX[i] + '" y="127">' + lab[i] + '</text>';
+    return s;
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  '  :host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; }',
+  '  :host([hidden]) { display: none; }',
+  '  .wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  '  svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  '  text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; fill: #1c1b18; }',
+  '  .fig { font-size: 6px; font-weight: 500; text-anchor: middle; }',
+  '  .cap { font-size: 5px; font-weight: 600; letter-spacing: 0.06em; text-anchor: middle; fill: #3a3833; }',
+  '  .ttl { font-size: 6.4px; font-weight: 600; letter-spacing: 0.2em; text-anchor: middle; }',
+  '  .sub { font-size: 5px; font-weight: 500; letter-spacing: 0.14em; text-anchor: middle; fill: #4a4740; }',
+  '  .kwh { font-size: 6.6px; font-weight: 600; letter-spacing: 0.22em; text-anchor: middle; }',
+  '  .mono { font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace; font-size: 5.6px; fill: #3a3833; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '  <defs>',
+  '    <linearGradient id="base" x1="0.1" y1="0" x2="0.85" y2="1">',
+  '      <stop offset="0" stop-color="#34363a"/><stop offset="0.3" stop-color="#1d1e1f"/><stop offset="0.75" stop-color="#0d0e0f"/><stop offset="1" stop-color="#26282a"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="basetop" x1="0.15" y1="0" x2="0.8" y2="1">',
+  '      <stop offset="0" stop-color="#3f4041"/><stop offset="0.45" stop-color="#202122"/><stop offset="1" stop-color="#0e0f10"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="plate" x1="0.15" y1="0" x2="0.7" y2="1">',
+  '      <stop offset="0" stop-color="#f7f2e4"/><stop offset="0.45" stop-color="#efe9d8"/><stop offset="1" stop-color="#d9d2bd"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="discface" x1="0.1" y1="0" x2="0.9" y2="1">',
+  '      <stop offset="0" stop-color="#eceeea"/><stop offset="0.26" stop-color="#b2b4b0"/><stop offset="0.55" stop-color="#d2d4d1"/><stop offset="0.8" stop-color="#93958f"/><stop offset="1" stop-color="#696b6a"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="discrim" x1="0" y1="0" x2="1" y2="0">',
+  '      <stop offset="0" stop-color="#6e7070"/><stop offset="0.22" stop-color="#c9cac6"/><stop offset="0.5" stop-color="#9a9c9a"/><stop offset="0.8" stop-color="#787a79"/><stop offset="1" stop-color="#555756"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">',
+  '      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.4"/>',
+  '      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.34"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>',
+  '    </linearGradient>',
+  '    <clipPath id="domeclip"><path d="' + DOME + '"/></clipPath>',
+  '    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>',
+  '    <filter id="soft1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4"/></filter>',
+  '  </defs>',
+
+  '  <!-- shadow on the wall -->',
+  '  <ellipse cx="106" cy="226" rx="92" ry="16" fill="#000" opacity="0.5" filter="url(#soft)"/>',
+
+  '  <!-- black base ring -->',
+  '  <path d="M 12 200 L 12 222 A 88 13 0 0 0 188 222 L 188 200 Z" fill="url(#base)"/>',
+  '  <ellipse cx="100" cy="200" rx="88" ry="13" fill="url(#basetop)"/>',
+  '  <path d="M 12 200 A 88 13 0 0 1 100 187" fill="none" stroke="#5a5c5e" stroke-opacity="0.75" stroke-width="1.2"/>',
+  '  <path d="M 100 187 A 88 13 0 0 1 188 200" fill="none" stroke="#3f4041" stroke-opacity="0.5" stroke-width="1"/>',
+  '  <!-- lead seal on its red wire, bottom left -->',
+  '  <path d="M 38 212.6 C 45 208.5 52 207.5 58 208.4" fill="none" stroke="#b9231a" stroke-width="1.4"/>',
+  '  <circle cx="35" cy="214.5" r="4.4" fill="#8e9193"/>',
+  '  <circle cx="33.6" cy="213.2" r="2.4" fill="#b9bcbd" opacity="0.8"/>',
+  '  <circle cx="35" cy="214.5" r="4.4" fill="none" stroke="#3a3c3d" stroke-width="0.6"/>',
+  '  <!-- sealing screw -->',
+  '  <circle cx="152" cy="211" r="4" fill="#3a3c3d" stroke="#0a0a0a" stroke-width="0.6"/>',
+  '  <rect x="148.7" y="210.4" width="6.6" height="1.2" fill="#0d0e0e" transform="rotate(22 152 211)"/>',
+
+  '  <g clip-path="url(#domeclip)">',
+  '    <!-- inside the dome -->',
+  '    <rect x="0" y="0" width="200" height="240" fill="#1c1e1f"/>',
+  '    <rect x="0" y="0" width="200" height="240" fill="url(#basetop)" opacity="0.7"/>',
+  '    <!-- nameplate -->',
+  '    <rect x="' + (PLX + 2) + '" y="' + (PLY + 4) + '" width="' + PLW + '" height="' + PLH + '" rx="3" fill="#000" opacity="0.45" filter="url(#soft1)"/>',
+  '    <rect x="' + PLX + '" y="' + PLY + '" width="' + PLW + '" height="' + PLH + '" rx="3" fill="url(#plate)"/>',
+  '    <ellipse cx="56" cy="156" rx="13" ry="5" fill="#b8a878" opacity="0.16"/>',
+  '    <ellipse cx="150" cy="60" rx="9" ry="4" fill="#b8a878" opacity="0.13"/>',
+  '    <text class="ttl" x="100" y="63">WATTHOUR METER</text>',
+  '    <text class="sub" x="100" y="72">SINGLE PHASE  3 WIRE  60 CYCLES</text>',
+  '    <line x1="34" y1="78.5" x2="166" y2="78.5" stroke="#1c1b18" stroke-opacity="0.4" stroke-width="0.5"/>',
+  '    <g class="reg">' + dials() + '</g>',
+  '    ' + caps(),
+  '    <text class="sub" x="100" y="134">MULTIPLY BY 1</text>',
+  '    <text class="kwh" x="100" y="144">KILOWATTHOURS</text>',
+  '    <line x1="34" y1="149" x2="166" y2="149" stroke="#1c1b18" stroke-opacity="0.4" stroke-width="0.5"/>',
+  '    <text class="mono" x="34" y="157">Kh 7.2</text>',
+  '    <text class="mono" x="166" y="157" text-anchor="end">240V  TYPE I-50</text>',
+  '    <!-- spindle -->',
+  '    <rect x="98.8" y="160" width="2.4" height="20" fill="#3c3e3f"/>',
+  '    <!-- brake magnets: the disc runs through the gap of each block -->',
+  '    <path d="M 24 164 h 34 v 30 h -34 z" fill="#17181a"/>',
+  '    <path d="M 24 164 h 34 v 4 h -34 z" fill="#5d6062"/>',
+  '    <path d="M 24 168 h 3 v 26 h -3 z" fill="#3d4042"/>',
+  '    <path d="M 142 164 h 34 v 30 h -34 z" fill="#17181a"/>',
+  '    <path d="M 142 164 h 34 v 4 h -34 z" fill="#4d5052"/>',
+  '    <!-- the disc: a thin aluminium ellipse, seen edge-on and slightly from above -->',
+  '    <ellipse cx="102" cy="' + (DISC_Y + DISC_T + 7) + '" rx="' + (DISC_RX * 0.95) + '" ry="6" fill="#000" opacity="0.45" filter="url(#soft1)"/>',
+  '    <ellipse cx="' + DISC_X + '" cy="' + (DISC_Y + DISC_T) + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="url(#discrim)"/>',
+  '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="url(#discface)"/>',
+  '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + (DISC_RX * 0.78) + '" ry="' + (DISC_RY * 0.78) + '" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="0.6"/>',
+  '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + (DISC_RX * 0.56) + '" ry="' + (DISC_RY * 0.56) + '" fill="none" stroke="#7d7f7e" stroke-opacity="0.5" stroke-width="0.5"/>',
+  '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + (DISC_RX * 0.3) + '" ry="' + (DISC_RY * 0.3) + '" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="0.5"/>',
+  '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="none" stroke="#5f6160" stroke-width="0.6"/>',
+  '    <path d="M ' + (DISC_X - DISC_RX * 0.86) + ' ' + (DISC_Y - DISC_RY * 0.5) + ' A ' + DISC_RX + ' ' + DISC_RY + ' 0 0 1 ' + (DISC_X + DISC_RX * 0.2) + ' ' + (DISC_Y - DISC_RY * 0.98) + '" fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="1.2"/>',
+  '    <line class="marktop" stroke="#0d0d0d" stroke-width="3" stroke-linecap="butt"/>',
+  '    <g class="mark"><rect x="-3.4" y="-1.6" width="6.8" height="7.6" fill="#0b0b0b"/></g>',
+  '    <!-- the magnets front jaws, in front of the disc rim -->',
+  '    <path d="M 40 ' + (DISC_Y + 2) + ' h 18 v 12 h -18 z" fill="#17181a"/>',
+  '    <path d="M 142 ' + (DISC_Y + 2) + ' h 18 v 12 h -18 z" fill="#17181a"/>',
+  '    <path d="M 40 ' + (DISC_Y + 2) + ' h 18 v 1.6 h -18 z" fill="#44474a"/>',
+  '    <path d="M 142 ' + (DISC_Y + 2) + ' h 18 v 1.6 h -18 z" fill="#3c3f42"/>',
+  '    <ellipse cx="100" cy="200" rx="84" ry="12" fill="none" stroke="#0a0a0a" stroke-opacity="0.6" stroke-width="4"/>',
+  '  </g>',
+
+  '  <!-- the glass -->',
+  '  <g clip-path="url(#domeclip)" pointer-events="none">',
+  '    <rect x="0" y="0" width="200" height="240" fill="#cfd6cf" opacity="0.05"/>',
+  '    <path d="' + DOME + '" fill="none" stroke="#a9c9b0" stroke-opacity="0.34" stroke-width="5"/>',
+  '    <path d="' + DOME + '" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.4"/>',
+  '    <rect x="36" y="30" width="20" height="172" fill="url(#band)" filter="url(#soft1)"/>',
+  '    <rect x="62" y="34" width="6" height="168" fill="#ffffff" opacity="0.13" filter="url(#soft1)"/>',
+  '    <path d="M 170 108 C 178 140 176 176 168 198" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="8" filter="url(#soft1)"/>',
+  '    <path d="M 44 54 C 56 40 74 33 92 32" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.6" filter="url(#soft1)"/>',
+  '  </g>',
+  '</svg>',
+  '</div>'].join("\n");
+
+  class SkWatthourDome extends HTMLElement {
+    static get observedAttributes() { return ["value", "rate", "watts", "kh", "run", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._kwh = 0; this._rate = 0; this._kh = 7.2; this._run = true; this._scale = 1;
+      this._theta = (Math.random() - 0.5) * 2.4;   // stopped at a random mark angle, on the visible side
+      this._raf = 0; this._last = 0; this._self = false; this._said = -1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._ptrs = this.shadowRoot.querySelectorAll(".ptr");
+      this._mark = this.shadowRoot.querySelector(".mark");
+      this._marktop = this.shadowRoot.querySelector(".marktop");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._read(); this._paint();
+      if (this._rate) this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected || this._self) return;
+      this._read(); this._paint();
+      if (this._rate) this._kick(); else { cancelAnimationFrame(this._raf); this._raf = 0; }
+    }
+    get value() { return Math.round(this._kwh * 1000) / 1000; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._kwh = ((v % 100000) + 100000) % 100000;
+      this._reflect(); this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get rate() { return this._rate; }
+    set rate(r) { this.setAttribute("rate", String(r)); }
+
+    _reflect() {
+      this._self = true;
+      this.setAttribute("value", String(Math.round(this._kwh * 1000) / 1000));
+      this._self = false;
+    }
+    _read() {
+      var self = this;
+      var num = function (n, d) { var x = parseFloat(self.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._kh = Math.max(0.01, num("kh", 7.2));
+      var r = this.getAttribute("run");
+      this._run = !(r === "false" || r === "0");
+      var v = num("value", this._kwh);
+      this._kwh = ((v % 100000) + 100000) % 100000;
+      if (this.hasAttribute("rate")) this._rate = Math.max(0, num("rate", 0));
+      else if (this.hasAttribute("watts")) this._rate = Math.max(0, num("watts", 0)) / (60 * this._kh);
+      else this._rate = 0;
+      this.setAttribute("aria-valuemin", "0");
+      this.setAttribute("aria-valuemax", "99999");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      var dt = Math.min(0.12, (now - this._last) / 1000); this._last = now;
+      if (this._rate > 0) {
+        var rev = this._rate / 60 * dt;
+        this._theta += rev * Math.PI * 2;
+        if (this._run) {
+          this._kwh = (this._kwh + rev * this._kh / 1000) % 100000;
+          if (Math.abs(this._kwh - (this._shown || 0)) > 0.02) { this._shown = this._kwh; this._reflect(); }
+        }
+      }
+      this._paint();
+      if (this._rate > 0 && this.isConnected) { this._raf = requestAnimationFrame(this._tick); } else { this._raf = 0; }
+    }
+    _paint() {
+      var v = this._kwh, i, d, a;
+      // five dials, left to right 10000 … 1, alternating direction
+      for (i = 0; i < 5; i++) {
+        var pow = Math.pow(10, 4 - i);
+        d = (v / pow) % 10;
+        var cw = (i % 2) === 0;                 // i=0 is the 10000 dial: clockwise (it is the 5th from the right)
+        a = (cw ? 1 : -1) * d * 36;
+        this._ptrs[i].setAttribute("transform", "rotate(" + a.toFixed(2) + ")");
+      }
+      // the disc's rim mark: position on the ellipse, width foreshortened, hidden round the back
+      var th = this._theta, s = Math.sin(th), c = Math.cos(th);
+      // the mark is painted across the rim and onto the top face: the top part stays visible all the way round
+      this._marktop.setAttribute("x1", (DISC_X + DISC_RX * 0.66 * s).toFixed(2));
+      this._marktop.setAttribute("y1", (DISC_Y + DISC_RY * 0.66 * c).toFixed(2));
+      this._marktop.setAttribute("x2", (DISC_X + DISC_RX * 0.995 * s).toFixed(2));
+      this._marktop.setAttribute("y2", (DISC_Y + DISC_RY * 0.995 * c).toFixed(2));
+      if (c > -0.02) {
+        var x = DISC_X + DISC_RX * s, y = DISC_Y + DISC_RY * c;
+        this._mark.setAttribute("transform", "translate(" + x.toFixed(2) + " " + y.toFixed(2) + ") scale(" + Math.max(0.02, c).toFixed(3) + " 1)");
+        this._mark.setAttribute("opacity", "1");
+      } else {
+        this._mark.setAttribute("opacity", "0");
+      }
+      var r = Math.round(v * 10);
+      if (r !== this._said) {
+        this._said = r;
+        this.setAttribute("aria-valuenow", String(Math.round(v * 1000) / 1000));
+        this.setAttribute("aria-label", (this.getAttribute("label") || "watt-hour meter") + ", " + (Math.round(v * 10) / 10).toFixed(1) + " kilowatthours");
+      }
+    }
+    // the meter runs from its own rate; the harness should not write a value into it
+    demo() { return undefined; }
+  }
+  customElements.define("sk-watthour-dome", SkWatthourDome);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

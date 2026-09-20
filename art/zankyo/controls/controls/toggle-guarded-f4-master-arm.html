@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F-4 / A-10 MASTER ARM red flip guard — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "toggle-guarded-f4-master-arm",
+  "element": "sk-toggle-guarded-f4-master-arm",
+  "name": "F-4 / A-10 MASTER ARM red flip guard",
+  "kind": "input",
+  "code": "C2",
+  "type": "Toggle with safety cover",
+  "source": "The MASTER ARM switch under a red Cutler-Hammer / Eaton flip guard on the F-4 Phantom and A-10 armament panels, 1960s-80s",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["red moulded plastic", "chrome-plated brass", "black anodised aluminium", "black panel", "engraved legend"],
+  "tags": ["aircraft", "cockpit", "armament", "safety cover", "two-stage", "flip guard"],
+  "value": { "model": "boolean", "unit": "" },
+  "attributes": ["value", "cover", "label", "up", "down", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 96, "h": 144 },
+  "notes": "Three states: cover open at SAFE, cover closed, cover open at ARM. The switch cannot be armed with the cover down, and dropping the cover knocks the bat back to SAFE."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="plastic-grey">
+    <sk-toggle-guarded-f4-master-arm cover="open" value="false" label="MASTER ARM"></sk-toggle-guarded-f4-master-arm>
+    <sk-toggle-guarded-f4-master-arm cover="closed" value="false" label="MASTER ARM"></sk-toggle-guarded-f4-master-arm>
+    <sk-toggle-guarded-f4-master-arm cover="open" value="true" label="MASTER ARM"></sk-toggle-guarded-f4-master-arm>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>On an F-4's armament panel and on the A-10's, the MASTER ARM switch is an ordinary MS chrome bat toggle
+  wearing a <b>red flip guard</b>: a moulded U-channel hinged on a steel pin at its base, sprung so it falls
+  shut, with a rectangular hole in its front so the crew can read the switch's position without lifting it.
+  The guard is not a lock. It is there so that nothing — a knee, a checklist, a glove — can arm the aircraft
+  by accident, and so that dropping the cover <i>disarms</i> it: the lip sweeps the bat down on its way past.</p>
+  <p><b>The tells kept here:</b> the cover really is a box — a front frame standing thirteen pixels off the
+  panel on two side walls and a top wall, drawn in perspective so you see slivers of its insides through the
+  window; it hinges at the <i>bottom</i> on a pin between two ears and flips 110 degrees, hanging below the
+  switch with its darker inner face and moulded rib toward you; the bat is hidden behind it when shut, with
+  only the ball peeking below the lip; ARM above and SAFE below, engraved white on black, with the function
+  name on a screwed-on grey plate; a chip on the guard's lower corner showing pale plastic under the red.
+  Closing the cover over an armed switch drives the bat down at sixty degrees of travel and then finishes
+  shutting; trying to arm it while the cover is down only makes the cover twitch.</p>
+  <p><b>Left out:</b> the torsion spring's coils behind the hinge (the guard here stays where you put it
+  rather than falling shut), the safety wire, and the neighbouring GUN/MSL/BOMB selector that gives the
+  switch its context on the real panel.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-toggle-guarded-f4-master-arm> — MS chrome bat under a red flip guard ====
+   attributes: value ("true"|"false") cover ("open"|"closed") label up down scale disabled
+   events: input {value} and change {value}; the value cannot go true while the cover is closed
+   self-contained: paste this block into any page and use <sk-toggle-guarded-f4-master-arm></sk-toggle-guarded-f4-master-arm> */
+(function () {
+  var TAG = "sk-toggle-guarded-f4-master-arm";
+  if (customElements.get(TAG)) return;
+
+  var W = 96, H = 144, CX = 48, CY = 72, LEN = 20, BALL = 5.6;
+  var GX = 18, GY = 48, GW = 60, GH = 42, GD = 13;        // guard box: left, top, width, height, depth
+  var TAU = Math.PI * 2, LIGHT = -0.78;
+
+  function P(cx, cy, r, a) { return (cx + r * Math.sin(a)).toFixed(2) + "," + (cy - r * Math.cos(a)).toFixed(2); }
+  function polyPts(cx, cy, r, n, rot) { var p = [], i; for (i = 0; i < n; i++) p.push(P(cx, cy, r, i / n * TAU + rot)); return p.join(" "); }
+  function starPts(cx, cy, r1, r2, n) { var p = [], i; for (i = 0; i < n * 2; i++) p.push(P(cx, cy, i % 2 ? r2 : r1, i / (n * 2) * TAU)); return p.join(" "); }
+  function nutSVG(cx, cy, R, n, base, top) {
+    var inR = R * 0.74, s = "", i, a0, a1, am, b, o, rot = Math.PI / n;
+    s += '<polygon points="' + polyPts(cx, cy, R, n, rot) + '" fill="' + base + '" stroke="#08090a" stroke-width="0.6" stroke-linejoin="round"/>';
+    for (i = 0; i < n; i++) {
+      a0 = i / n * TAU + rot; a1 = (i + 1) / n * TAU + rot; am = (a0 + a1) / 2;
+      b = Math.cos(am - LIGHT); o = b > 0 ? b * 0.62 : -b * 0.55;
+      s += '<polygon points="' + P(cx, cy, R, a0) + " " + P(cx, cy, R, a1) + " " + P(cx, cy, inR, a1) + " " + P(cx, cy, inR, a0) +
+           '" fill="' + (b > 0 ? "#ffffff" : "#000000") + '" opacity="' + o.toFixed(3) + '"/>';
+    }
+    s += '<polygon points="' + polyPts(cx, cy, inR, n, rot) + '" fill="' + top + '"/>';
+    return s;
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px;',
+  '  -webkit-tap-highlight-color: transparent; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  'text { font-family: "Roboto Condensed", "Arial Narrow", sans-serif; font-weight: 600; text-anchor: middle; }',
+  '.t-throw { font-size: 8px; letter-spacing: 0.12em; fill: #f5f5f2; }',
+  '.t-throw.under { fill: #000000; opacity: 0.75; }',
+  '.t-plate { font-size: 7.5px; letter-spacing: 0.10em; fill: #111214; }',
+  '.t-plate.over { fill: #e8ebee; opacity: 0.32; }',
+  '.shaft, .sh-shaft { transform-box: view-box; transform-origin: ' + CX + 'px ' + CY + 'px; }',
+  '.ball, .sh-ball { transform-box: view-box; transform-origin: ' + CX + 'px ' + (CY - LEN) + 'px; }',
+  '.shaft, .ball, .sh-shaft, .sh-ball { transition: transform 80ms cubic-bezier(.2,.9,.3,1.15); }',
+  '.wrap.dragging .shaft, .wrap.dragging .ball, .wrap.dragging .sh-shaft, .wrap.dragging .sh-ball { transition: none; }',
+
+  '.scene { position: absolute; inset: 0; pointer-events: none;',
+  '  perspective: 220px; perspective-origin: ' + CX + 'px 30px; }',
+  '.gsh { position: absolute; left: ' + (GX + 3) + 'px; top: ' + (GY + 5) + 'px; width: ' + GW + 'px; height: ' + GH + 'px;',
+  '  background: #000; opacity: 0.62; filter: blur(3.2px); border-radius: 2px;',
+  '  transition: opacity 160ms linear, transform 160ms ease-out; }',
+  '.guard { position: absolute; left: ' + GX + 'px; top: ' + GY + 'px; width: ' + GW + 'px; height: ' + GH + 'px;',
+  '  transform-origin: 50% 100%; transform-style: preserve-3d; transform: rotateX(0deg);',
+  '  transition: transform 160ms cubic-bezier(.22,.86,.3,1.14); }',
+  '.gface { position: absolute; inset: 0; box-sizing: border-box; transform: translateZ(' + GD + 'px);',
+  '  border-style: solid; border-width: 7px 8px 8px; background: transparent;',
+  '  border-image: linear-gradient(158deg, #f4585d 0%, #d42f33 34%, #b8232a 58%, #8b1317 100%) 1;',
+  '  backface-visibility: hidden; }',
+  '.gwin { position: absolute; inset: 0; box-shadow: inset 0 2px 3px rgba(0,0,0,0.55), inset 0 0 0 0.6px rgba(0,0,0,0.55); }',
+  '.gtl { position: absolute; left: -8px; right: -8px; top: -7px; height: 1.5px; background: rgba(255,255,255,0.42); }',
+  '.gbl { position: absolute; left: -8px; right: -8px; bottom: -8px; height: 1.6px; background: rgba(255,170,170,0.22); }',
+  '.gchip { position: absolute; right: -8px; bottom: -8px; width: 7px; height: 5px;',
+  '  background: linear-gradient(135deg, #e7c9c5, #b99a95); clip-path: polygon(100% 0, 100% 100%, 0 100%); }',
+  '.ginner { position: absolute; inset: 0; transform: translateZ(' + (GD - 0.6) + 'px) rotateY(180deg); backface-visibility: hidden;',
+  '  background: linear-gradient(0deg, #9c1b1f 0%, #7f1417 45%, #five 46%, #5f0f12 100%); }',
+  '.grib { position: absolute; left: 8px; right: 8px; top: 46%; height: 3px; border-radius: 1.5px;',
+  '  background: linear-gradient(180deg, #b52c30, #6d1114); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }',
+  '.gside { position: absolute; top: 0; width: ' + GD + 'px; height: ' + GH + 'px; transform-origin: 0 50%; transform: rotateY(-90deg);',
+  '  background: linear-gradient(180deg, #a72025, #7c1417); }',
+  '.gsl { left: 0; }',
+  '.gsr { left: ' + GW + 'px; }',
+  '.gtw { position: absolute; left: 0; top: 0; width: ' + GW + 'px; height: ' + GD + 'px; transform-origin: 50% 0; transform: rotateX(90deg);',
+  '  background: linear-gradient(180deg, #f0585d, #c02a2f); }',
+  '.guard.bump { animation: bump 220ms ease-out; }',
+  '@keyframes bump { 0% { transform: rotateX(0deg); } 35% { transform: rotateX(-7deg); } 100% { transform: rotateX(0deg); } }',
+
+  '.grab { position: absolute; left: 6px; top: 26px; width: 84px; height: 104px; border-radius: 4px;',
+  '  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }',
+  ':host([disabled]) .grab { cursor: default; }',
+  '.grab:focus-visible { box-shadow: 0 0 0 1.5px rgba(22,224,224,0.95), 0 0 9px rgba(22,224,224,0.55); }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg class="svg" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
+    '<defs>',
+      '<linearGradient id="pan" x1="0" y1="0" x2="0.3" y2="1">',
+        '<stop offset="0" stop-color="#2b2b2e"/><stop offset="0.4" stop-color="#1a1a1c"/><stop offset="1" stop-color="#121214"/></linearGradient>',
+      '<linearGradient id="plate" x1="0" y1="0" x2="0.2" y2="1">',
+        '<stop offset="0" stop-color="#dfe2e6"/><stop offset="0.45" stop-color="#c2c6cb"/><stop offset="1" stop-color="#9ea3a9"/></linearGradient>',
+      '<linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">',
+        '<stop offset="0" stop-color="#585d64"/><stop offset="0.12" stop-color="#b9c0c7"/><stop offset="0.26" stop-color="#f9fbfc"/>',
+        '<stop offset="0.40" stop-color="#d3d9df"/><stop offset="0.52" stop-color="#848b93"/><stop offset="0.70" stop-color="#4a4f56"/>',
+        '<stop offset="0.86" stop-color="#32373d"/><stop offset="1" stop-color="#8d949b"/></linearGradient>',
+      '<radialGradient id="ballg" cx="33%" cy="27%" r="74%">',
+        '<stop offset="0" stop-color="#ffffff"/><stop offset="0.16" stop-color="#eef1f4"/><stop offset="0.46" stop-color="#bcc3ca"/>',
+        '<stop offset="0.74" stop-color="#7d838b"/><stop offset="0.90" stop-color="#474c53"/><stop offset="1" stop-color="#727981"/></radialGradient>',
+      '<radialGradient id="bush" cx="34%" cy="28%" r="78%">',
+        '<stop offset="0" stop-color="#53575d"/><stop offset="0.5" stop-color="#26282c"/><stop offset="1" stop-color="#121316"/></radialGradient>',
+      '<linearGradient id="washg" x1="0" y1="0" x2="0.4" y2="1">',
+        '<stop offset="0" stop-color="#c3c8cd"/><stop offset="0.5" stop-color="#8b9096"/><stop offset="1" stop-color="#565b61"/></linearGradient>',
+      '<linearGradient id="nuttop" x1="0" y1="0" x2="0.4" y2="1">',
+        '<stop offset="0" stop-color="#4a4e54"/><stop offset="0.5" stop-color="#26282c"/><stop offset="1" stop-color="#17181b"/></linearGradient>',
+      '<radialGradient id="screw" cx="34%" cy="28%" r="72%">',
+        '<stop offset="0" stop-color="#e3e6ea"/><stop offset="0.6" stop-color="#9aa0a6"/><stop offset="1" stop-color="#4c5157"/></radialGradient>',
+      '<filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>',
+      '<filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.8"/></filter>',
+      '<filter id="flat" x="-70%" y="-70%" width="240%" height="240%">',
+        '<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.85 0"/><feGaussianBlur stdDeviation="1.15"/></filter>',
+    '</defs>',
+
+    '<rect x="1.8" y="3.2" width="' + W + '" height="' + H + '" rx="4" fill="#000" opacity="0.6" filter="url(#soft2)"/>',
+    '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="3.5" fill="url(#pan)"/>',
+    '<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="3" fill="none" stroke="#45464a" stroke-opacity="0.5" stroke-width="0.9"/>',
+    '<rect x="0.5" y="1.2" width="' + (W - 1) + '" height="' + (H - 2) + '" rx="3" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="0.9"/>',
+
+    // function plate, screwed on
+    '<rect x="12.6" y="7.4" width="71" height="15" rx="1.6" fill="#000" opacity="0.55" filter="url(#soft)"/>',
+    '<rect x="12" y="6" width="72" height="15" rx="1.6" fill="url(#plate)" stroke="#6b7076" stroke-width="0.5"/>',
+    '<rect x="12.6" y="6.6" width="70.8" height="1" rx="0.5" fill="#ffffff" opacity="0.5"/>',
+    '<text class="t-plate over n-name" x="' + CX + '" y="16.8"></text>',
+    '<text class="t-plate n-name" x="' + CX + '" y="16.3"></text>',
+    '<circle cx="17.5" cy="13.6" r="2.1" fill="url(#screw)" stroke="#4a4f55" stroke-width="0.35"/>',
+    '<path d="M 15.9 12.8 L 19.1 14.4" stroke="#3b4046" stroke-width="0.7" stroke-linecap="round"/>',
+    '<circle cx="78.5" cy="13.6" r="2.1" fill="url(#screw)" stroke="#4a4f55" stroke-width="0.35"/>',
+    '<path d="M 77.7 12 L 79.3 15.2" stroke="#3b4046" stroke-width="0.7" stroke-linecap="round"/>',
+
+    '<text class="t-throw under n-up" x="' + CX + '" y="35.4"></text><text class="t-throw n-up" x="' + CX + '" y="36"></text>',
+    '<text class="t-throw under n-down" x="' + CX + '" y="125.4"></text><text class="t-throw n-down" x="' + CX + '" y="126"></text>',
+
+    // panel hole, lock washer, hex nut, bushing face
+    '<circle cx="' + (CX - 0.6) + '" cy="' + (CY - 0.7) + '" r="12.4" fill="#0a0b0c"/>',
+    '<polygon points="' + starPts(CX, CY, 12.2, 10.9, 26) + '" fill="url(#washg)" stroke="#2a2d31" stroke-width="0.35"/>',
+    nutSVG(CX, CY, 10.9, 6, "#1d1e21", "url(#nuttop)"),
+    '<circle cx="' + CX + '" cy="' + CY + '" r="6.3" fill="url(#bush)" stroke="#0a0b0d" stroke-width="0.5"/>',
+    '<circle cx="' + CX + '" cy="' + CY + '" r="5.1" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="0.4"/>',
+    '<circle cx="' + CX + '" cy="' + CY + '" r="3.7" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="0.4"/>',
+
+    // the bat and its shadow
+    '<g class="sh" transform="translate(1.7,2.5)" filter="url(#flat)" opacity="0.5">',
+      '<path class="sh-shaft" d="M ' + (CX - 3.0) + ' ' + (CY + 2) + ' L ' + (CX - 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 3.0) + ' ' + (CY + 2) + ' Z" fill="#000"/>',
+      '<circle class="sh-ball" cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="#000"/>',
+    '</g>',
+    '<g class="bat">',
+      '<path class="shaft" d="M ' + (CX - 3.05) + ' ' + (CY + 2.4) + ' L ' + (CX - 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 2.1) + ' ' + (CY - LEN) + ' L ' + (CX + 3.05) + ' ' + (CY + 2.4) + ' Z" fill="url(#chrome)" stroke="#2b3035" stroke-width="0.3"/>',
+      '<path class="shaft" d="M ' + (CX - 1.6) + ' ' + (CY + 2) + ' L ' + (CX - 1.15) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.15) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.6) + ' ' + (CY + 2) + ' Z" fill="#ffffff" opacity="0.8"/>',
+      '<g class="ball">',
+        '<circle cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="url(#ballg)" stroke="#31363c" stroke-width="0.3"/>',
+        '<ellipse cx="' + (CX - 1.7) + '" cy="' + (CY - LEN - 1.9) + '" rx="1.5" ry="1.15" fill="#ffffff" opacity="0.95" transform="rotate(-28 ' + (CX - 1.7) + ' ' + (CY - LEN - 1.9) + ')"/>',
+        '<path d="M ' + (CX - 3.6) + ' ' + (CY - LEN + 3.3) + ' A ' + BALL + ' ' + BALL + ' 0 0 0 ' + (CX + 3.8) + ' ' + (CY - LEN + 3.0) + '" fill="none" stroke="#d3dae1" stroke-opacity="0.55" stroke-width="0.8"/>',
+      '</g>',
+    '</g>',
+
+    // hinge: two ears on a panel bracket and one steel pin
+    '<g class="hinge">',
+      '<rect x="29" y="86" width="9" height="9" rx="1.6" fill="#6f747a" stroke="#2b2e32" stroke-width="0.5"/>',
+      '<rect x="58" y="86" width="9" height="9" rx="1.6" fill="#6f747a" stroke="#2b2e32" stroke-width="0.5"/>',
+      '<rect x="29.6" y="86.6" width="7.8" height="1.2" rx="0.6" fill="#ffffff" opacity="0.3"/>',
+      '<rect x="58.6" y="86.6" width="7.8" height="1.2" rx="0.6" fill="#ffffff" opacity="0.3"/>',
+      '<rect x="31" y="88.6" width="34" height="3.2" rx="1.6" fill="url(#washg)" stroke="#2f3236" stroke-width="0.4"/>',
+      '<rect x="31.6" y="89" width="32.8" height="1" rx="0.5" fill="#ffffff" opacity="0.45"/>',
+    '</g>',
+  '</svg>',
+  '<div class="scene">',
+    '<div class="gsh"></div>',
+    '<div class="guard">',
+      '<div class="gtw"></div>',
+      '<div class="gside gsl"></div>',
+      '<div class="gside gsr"></div>',
+      '<div class="ginner"><div class="grib"></div></div>',
+      '<div class="gface"><div class="gwin"></div><div class="gtl"></div><div class="gbl"></div><div class="gchip"></div></div>',
+    '</div>',
+  '</div>',
+  '<div class="grab" role="switch" tabindex="0"></div>',
+  '</div>'
+  ].join("");
+
+  class Sw extends HTMLElement {
+    static get observedAttributes() { return ["value", "cover", "label", "up", "down", "scale", "disabled"]; }
+    constructor() {
+      super();
+      var r = this.attachShadow({ mode: "open" });
+      r.appendChild(TPL.content.cloneNode(true));
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._guard = r.querySelector(".guard");
+      this._gsh = r.querySelector(".gsh");
+      this._shaft = [].slice.call(r.querySelectorAll(".shaft"));
+      this._ball = r.querySelector(".ball");
+      this._shShaft = r.querySelector(".sh-shaft"); this._shBall = r.querySelector(".sh-ball");
+      this._tName = [].slice.call(r.querySelectorAll(".n-name"));
+      this._tUp = [].slice.call(r.querySelectorAll(".n-up"));
+      this._tDown = [].slice.call(r.querySelectorAll(".n-down"));
+      this._v = false; this._open = false; this._scale = 1; this._timers = []; this._drag = null; this._wired = false;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      this._read(); this._layout(); this._drawBat(); this._drawCover(false);
+      if (!this._wired) {
+        this._wired = true;
+        this._grab.addEventListener("pointerdown", this._onDown);
+        this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+        this._grab.addEventListener("keydown", this._onKey);
+      }
+    }
+    disconnectedCallback() {
+      if (this._wired) {
+        this._wired = false;
+        this._grab.removeEventListener("pointerdown", this._onDown);
+        this._grab.removeEventListener("wheel", this._onWheel);
+        this._grab.removeEventListener("keydown", this._onKey);
+      }
+      this._clear(); this._endDrag();
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n !== "value" && n !== "cover") this._layout();
+      this._drawBat(); this._drawCover(true);
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = (v === true || v === 1 || String(v).toLowerCase() === "true" || String(v).toLowerCase() === "on");
+      if (v && !this._open) v = false;                       // the cover physically holds the bat down
+      this._v = v; this._reflect(); this._drawBat();
+    }
+    get cover() { return this._open ? "open" : "closed"; }
+    set cover(c) { this.setAttribute("cover", c === "open" || c === true ? "open" : "closed"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+    blur() { this._grab.blur(); }
+
+    _clear() { this._timers.forEach(clearTimeout); this._timers = []; }
+    _later(fn, ms) { this._timers.push(setTimeout(fn, ms)); }
+    _read() {
+      var s = parseFloat(this.getAttribute("scale")); this._scale = isNaN(s) || s <= 0 ? 1 : s;
+      this._open = this.getAttribute("cover") === "open";
+      var v = String(this.getAttribute("value") || "false").toLowerCase();
+      this._v = (v === "true" || v === "1" || v === "on" || v === "arm") && this._open;
+    }
+    _layout() {
+      var up = this.getAttribute("up") || "ARM", down = this.getAttribute("down") || "SAFE";
+      this._tName.forEach(function (t) { t.textContent = this.getAttribute("label") || "MASTER ARM"; }, this);
+      this._tUp.forEach(function (t) { t.textContent = up; });
+      this._tDown.forEach(function (t) { t.textContent = down; });
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", (this.getAttribute("label") || "MASTER ARM"));
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+    }
+    _drawBat() {
+      var f = this._v ? 1 : -1, k = 1;
+      this._shaft.forEach(function (e) { e.style.transform = "scale(1," + f + ")"; });
+      this._shShaft.style.transform = "scale(1," + f + ")";
+      var b = "translate(0px," + (LEN * (1 - f)) + "px) scale(" + k + ")";
+      this._ball.style.transform = b; this._shBall.style.transform = b;
+      this._grab.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+    _drawCover(animate, phi) {
+      if (phi == null) phi = this._open ? 110 : 0;
+      this._guard.style.transitionDuration = animate ? "" : "0ms";
+      this._guard.style.transform = "rotateX(" + (-phi) + "deg)";
+      var shut = phi < 20;
+      this._gsh.style.transitionDuration = animate ? "" : "0ms";
+      this._gsh.style.opacity = shut ? "0.62" : "0.26";
+      this._gsh.style.transform = shut ? "none" : "translateY(26px) scaleY(0.34)";
+      if (!animate) { void this._guard.offsetWidth; this._guard.style.transitionDuration = ""; this._gsh.style.transitionDuration = ""; }
+    }
+    _reflect() {
+      var v = this._v ? "true" : "false";
+      if (this.getAttribute("value") !== v) this.setAttribute("value", v);
+      var c = this._open ? "open" : "closed";
+      if (this.getAttribute("cover") !== c) this.setAttribute("cover", c);
+    }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: { value: this._v } })); }
+    _setValue(v, settle) {
+      if (v && !this._open) { this._nudge(); return false; }
+      if (v === this._v) { if (settle) this._emit("change"); return false; }
+      this._v = v; this._reflect(); this._drawBat();
+      this._emit("input"); if (settle) this._emit("change");
+      return true;
+    }
+    _nudge() {
+      var g = this._guard;
+      g.classList.remove("bump"); void g.offsetWidth; g.classList.add("bump");
+      this._later(function () { g.classList.remove("bump"); }, 260);
+    }
+    _setCover(open) {
+      if (open === this._open) return;
+      this._clear();
+      if (!open && this._v) {                       // the lip sweeps the bat down on the way past
+        this._open = false; this._reflect();
+        this._drawCover(true, 60);
+        var self = this;
+        this._later(function () {
+          self._v = false; self._reflect(); self._drawBat(); self._emit("input"); self._emit("change");
+          self._guard.style.transitionDuration = "120ms";
+          self._drawCover(true, 0);
+          self._later(function () { self._guard.style.transitionDuration = ""; }, 140);
+        }, 80);
+        return;
+      }
+      this._open = open; this._reflect(); this._drawCover(true);
+    }
+    _endDrag() {
+      if (!this._drag) return;
+      var g = this._grab;
+      g.removeEventListener("pointermove", this._onMove);
+      g.removeEventListener("pointerup", this._onUp);
+      g.removeEventListener("pointercancel", this._onUp);
+      this._wrap.classList.remove("dragging");
+      this._drag = null;
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      var r = this.getBoundingClientRect(), y = (e.clientY - r.top) / this._scale;
+      this._drag = { y: e.clientY, y0: y, moved: false, onBat: this._open && y < 86 };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      var dy = (this._drag.y - e.clientY) / this._scale;
+      if (Math.abs(dy) < 4) return;
+      this._drag.moved = true;
+      if (this._drag.onBat) this._setValue(dy > 0, false);
+      else this._setCover(dy < 0);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      var moved = this._drag.moved, onBat = this._drag.onBat;
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._endDrag();
+      if (moved) { if (onBat) this._emit("change"); return; }
+      if (!this._open) this._setCover(true);            // shut: the only thing you can do is lift the cover
+      else if (onBat) this._setValue(!this._v, true);   // open: the bat toggles
+      else this._setCover(false);                       // a tap on the fallen cover shuts it again
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      if (!this._open) { if (e.deltaY < 0) this._setCover(true); else this._nudge(); return; }
+      if (e.deltaY < 0) this._setValue(true, true); else if (this._v) this._setValue(false, true); else this._setCover(false);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": e.preventDefault(); if (!this._open) this._setCover(true); else this._setValue(true, true); break;
+        case "ArrowDown": case "ArrowLeft": e.preventDefault(); if (this._open && this._v) this._setValue(false, true); else this._setCover(false); break;
+        case "Home": e.preventDefault(); this._setValue(false, true); break;
+        case "End": e.preventDefault(); if (this._open) this._setValue(true, true); else this._nudge(); break;
+        case " ": case "Spacebar": case "Enter": e.preventDefault(); if (!this._open) this._setCover(true); else this._setValue(!this._v, true); break;
+        default: return;
+      }
+    }
+  }
+  customElements.define(TAG, Sw);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

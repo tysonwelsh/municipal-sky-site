@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vox V846 wah treadle — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Josefin+Sans:wght@600;700&family=Oswald:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pedal-vox-v846-wah",
+  "element": "sk-pedal-vox-v846-wah",
+  "name": "Vox V846 wah treadle",
+  "kind": "input",
+  "code": "E5",
+  "type": "Rocking treadle pedal",
+  "source": "Vox V846 (Thomas Organ, 1967) / Dunlop Cry Baby GCB-95: a black die-cast rocking treadle with a ribbed rubber tread, seen from the side-above",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["die-cast aluminium", "rubber", "chrome"],
+  "tags": ["guitar", "effects", "wah", "treadle", "foot control"],
+  "value": { "model": "range", "min": 0, "max": 1, "step": 0.01, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "bypass", "tread", "led", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 320, "h": 180 },
+  "notes": "Three treadles: heel down, mid-travel, and toe down with the Cry Baby plate and its LED lit."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="none">
+    <sk-pedal-vox-v846-wah value="0" label="WAH"></sk-pedal-vox-v846-wah>
+    <sk-pedal-vox-v846-wah value="0.55" label="WAH" scale="0.82"></sk-pedal-vox-v846-wah>
+    <sk-pedal-vox-v846-wah value="1" label="WAH" tread="crybaby" led scale="0.82"></sk-pedal-vox-v846-wah>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>The <b>Vox V846</b> (built for Thomas Organ in 1967 and copied ever since, most famously by the Dunlop
+Cry Baby) is a rocking treadle in a black die-cast housing: a ribbed black rubber tread, a chrome nameplate
+riveted to the treadle's front slope, a rack-and-pinion under the skirt turning the pot as the pedal rocks, and
+a hard mechanical stop at each end of its travel. Heel down backs the wah off; toe down is fully forward.</p>
+<p><b>The tells kept here:</b> the treadle rocking about a hinge near the heel, so the toe end travels through
+a real arc and closes toward the base as it goes down; the rubber tread's lateral ribs, each with a highlight
+on its crown and a shadow in its trough; the die-cast housing's flat, speckled, gloss-free finish with a crisp
+edge light from the top-left; the chrome plate catching a horizon reflection; a firm push past the toe stop
+(or Space) clacking the bypass switch, with a small red LED on the <code>led</code> variant. Drag is vertical —
+pull up for heel, push down for toe — and the <code>tread</code> attribute swaps the plate for the Cry&nbsp;Baby's
+white script.</p>
+<p><b>Left out:</b> the return spring (real wah treadles have none — they stay where you leave them), the
+underside rack-and-pinion, the side-mounted input/output jacks.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pedal-vox-v846-wah> — Vox V846 / Cry Baby style rocking wah treadle ====
+   attributes: value(0..1) min max step bypass(bool) tread(vox|crybaby) led(bool) label scale disabled
+   events: input {value} during the gesture, change {value,bypass} when it settles or bypass toggles
+   self-contained: paste this block into any page and use <sk-pedal-vox-v846-wah value="0.5"></sk-pedal-vox-v846-wah> */
+(function () {
+  if (customElements.get("sk-pedal-vox-v846-wah")) return;
+  const W = 320, H = 180;
+  const PX = 66, PY = 92;               // hinge / pivot, in the fixed base
+  const AMIN = -22, AMAX = 16;          // heel-down .. toe-down, degrees
+  const GROOVES = 15;
+  let grooveSVG = "";
+  for (let i = 0; i < GROOVES; i++) {
+    const x = 26 + i * (176 / (GROOVES - 1));
+    grooveSVG += `<line x1="${x.toFixed(1)}" y1="-9" x2="${(x - 3).toFixed(1)}" y2="7" stroke="#0c0c0b" stroke-width="1.6" opacity="0.55"/>`;
+    grooveSVG += `<line x1="${(x + 1.1).toFixed(1)}" y1="-9" x2="${(x - 1.9).toFixed(1)}" y2="7" stroke="#484846" stroke-width="0.8" opacity="0.5"/>`;
+  }
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 20px; top: 55px; width: 260px; height: 90px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 8px; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: inset 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    .treadle { transform-origin: ${PX}px ${PY}px; transform-box: view-box; transition: transform 60ms linear; }
+    .treadle.snap { transition: transform 110ms cubic-bezier(.2,.9,.3,1.15); }
+    text { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; }
+    .label { font-size: 8px; letter-spacing: 0.16em; fill: #6c6c68; text-anchor: middle; font-family: "Oswald","Arial Narrow",sans-serif; }
+    .plate-txt { font-size: 8.5px; font-style: italic; font-weight: 700; text-anchor: middle; }
+    .cry-txt { font-size: 8px; font-weight: 600; text-anchor: middle; fill: #f2efe8; font-family: "Josefin Sans", cursive, sans-serif; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="cast" cx="34%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#3c3c3a"/><stop offset="0.45" stop-color="#232322"/><stop offset="1" stop-color="#131312"/>
+        </radialGradient>
+        <linearGradient id="castTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4c4c49"/><stop offset="1" stop-color="#232322"/>
+        </linearGradient>
+        <linearGradient id="rubber" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#333331"/><stop offset="0.4" stop-color="#232321"/><stop offset="1" stop-color="#161615"/>
+        </linearGradient>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f4f6f7"/><stop offset="0.28" stop-color="#c9cdce"/><stop offset="0.5" stop-color="#7d8386"/>
+          <stop offset="0.55" stop-color="#eef0f1"/><stop offset="0.75" stop-color="#8b9092"/><stop offset="1" stop-color="#484d4f"/>
+        </linearGradient>
+        <linearGradient id="chromeBlack" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1c1c1b"/><stop offset="0.5" stop-color="#0c0c0b"/><stop offset="1" stop-color="#020202"/>
+        </linearGradient>
+        <radialGradient id="hinge" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#e7e9ea"/><stop offset="0.55" stop-color="#8a8f92"/><stop offset="1" stop-color="#3a3d3f"/>
+        </radialGradient>
+        <radialGradient id="ledOn" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#ff9d8c"/><stop offset="0.4" stop-color="#ff2a1e"/><stop offset="1" stop-color="#7a0f0a"/>
+        </radialGradient>
+        <radialGradient id="ledOff" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#6a3630"/><stop offset="1" stop-color="#2c1210"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+        <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0"/>
+        </filter>
+      </defs>
+
+      <text class="label" x="${W / 2}" y="${H - 6}"></text>
+
+      <!-- floor contact shadow -->
+      <ellipse cx="${W/2}" cy="${H - 22}" rx="132" ry="9" fill="#000" opacity="0.4" filter="url(#soft2)"/>
+
+      <!-- fixed base / housing: taller at the heel, low across to the toe -->
+      <g>
+        <path d="M 22 152 Q 20 108 44 96 Q 56 88 78 86 Q 150 82 232 108 Q 268 119 288 128
+                 Q 296 132 296 140 L 296 148 Q 296 156 288 156 L 34 156 Q 22 156 22 152 Z"
+              fill="url(#cast)" stroke="#050504" stroke-width="1.4"/>
+        <path d="M 22 152 Q 20 108 44 96 Q 56 88 78 86 Q 150 82 232 108 Q 268 119 288 128"
+              fill="none" stroke="#5c5c58" stroke-width="1.1" opacity="0.5"/>
+        <path d="M 22 152 Q 20 108 44 96 Q 56 88 78 86 Q 150 82 232 108 Q 268 119 288 128
+                 Q 296 132 296 140 L 296 148 Q 296 156 288 156 L 34 156 Q 22 156 22 152 Z"
+              fill="url(#grain)" opacity="0.4"/>
+        <!-- worn alloy nub at the toe corner -->
+        <ellipse cx="286" cy="140" rx="5" ry="2.6" fill="#8a8d8a" opacity="0.35"/>
+        <!-- a screw on the heel face -->
+        <circle cx="34" cy="120" r="3" fill="url(#hinge)" stroke="#000" stroke-width="0.5"/>
+        <rect x="31.4" y="119.4" width="5.2" height="1" fill="#050504" transform="rotate(35 34 120)"/>
+      </g>
+
+      <!-- rocking treadle -->
+      <g class="treadle">
+        <g transform="translate(${PX} ${PY})">
+          <!-- tread body: a long wedge from the hinge out to the toe tip -->
+          <path d="M -18 -12 Q -22 0 -14 10 L 178 -2 Q 202 -4 206 -12 Q 208 -20 198 -22 L -6 -20 Q -16 -19 -18 -12 Z"
+                fill="url(#castTop)" stroke="#050504" stroke-width="1.2"/>
+          <!-- rubber tread inset -->
+          <path d="M 4 -14 L 168 -19 Q 186 -19.5 188 -13 Q 189 -6 172 -3 L 6 6 Q -6 6 -6 -3 Q -6 -12 4 -14 Z"
+                fill="url(#rubber)" stroke="#000" stroke-width="0.6"/>
+          <g clip-path="none">${grooveSVG}</g>
+          <ellipse cx="90" cy="-6" rx="60" ry="3.4" fill="#3c3c39" opacity="0.35"/>
+          <!-- rounded rubber edge, grey rim light -->
+          <path d="M 168 -19 Q 186 -19.5 188 -13 Q 189 -6 172 -3" fill="none" stroke="#6c6c68" stroke-width="1" opacity="0.6"/>
+          <!-- chrome nameplate on the front slope -->
+          <g transform="translate(150 -10.5) rotate(-4)">
+            <rect class="plateBg" x="-32" y="-8.5" width="64" height="17" rx="2.4" />
+            <rect x="-31" y="-7.5" width="62" height="6" rx="1.4" fill="#fff" opacity="0.22"/>
+            <text class="plate-txt"></text>
+          </g>
+          <!-- LED -->
+          <circle class="led" cx="196" cy="-16" r="2.6" />
+          <circle class="ledGlow" cx="196" cy="-16" r="6" filter="url(#soft)" opacity="0" fill="#ff2a1e"/>
+        </g>
+      </g>
+
+      <!-- hinge pin, fixed, drawn over the treadle's heel so it reads as the pivot -->
+      <circle cx="${PX}" cy="${PY}" r="5" fill="url(#hinge)" stroke="#1a1a19" stroke-width="0.8"/>
+      <circle cx="${PX - 1.3}" cy="${PY - 1.5}" r="1.3" fill="#fff" opacity="0.6"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkPedalVoxWah extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "bypass", "tread", "led", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 1; this._step = 0.01; this._scale = 1; this._bypass = false;
+      this._treadle = this.shadowRoot.querySelector(".treadle");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._label = this.shadowRoot.querySelector(".label");
+      this._plateBg = this.shadowRoot.querySelector(".plateBg");
+      this._plateTxt = this.shadowRoot.querySelector(".plate-txt");
+      this._led = this.shadowRoot.querySelector(".led");
+      this._ledGlow = this.shadowRoot.querySelector(".ledGlow");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 1); this._step = num("step", 0.01);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._bypass = this.hasAttribute("bypass");
+      this._tread = (this.getAttribute("tread") === "crybaby") ? "crybaby" : "vox";
+      this._label.textContent = this.getAttribute("label") || "";
+      if (this._tread === "crybaby") {
+        this._plateBg.setAttribute("fill", "url(#chromeBlack)");
+        this._plateTxt.setAttribute("class", "cry-txt");
+        this._plateTxt.textContent = "CRY BABY";
+      } else {
+        this._plateBg.setAttribute("fill", "url(#chrome)");
+        this._plateTxt.setAttribute("class", "plate-txt");
+        this._plateTxt.setAttribute("fill", "#2a2c2d");
+        this._plateTxt.textContent = "WAH-WAH";
+      }
+      const hasLed = this.hasAttribute("led");
+      this._led.style.display = hasLed ? "" : "none";
+      this._ledGlow.style.display = hasLed ? "" : "none";
+      const lit = hasLed && !this._bypass;
+      this._led.setAttribute("fill", lit ? "url(#ledOn)" : "url(#ledOff)");
+      this._ledGlow.setAttribute("opacity", lit ? "0.7" : "0");
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "wah treadle");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return AMIN + t * (AMAX - AMIN); }
+    _render() {
+      this._treadle.style.transform = "rotate(" + this._angle(this._v).toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._grab.setAttribute("role", "slider");
+      this._grab.setAttribute("aria-valuetext", (this._bypass ? "bypassed, " : "") + Math.round(this._v * 100) + "%");
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v, bypass: this._bypass } }));
+    }
+    _toggleBypass() {
+      this._bypass = !this._bypass;
+      if (this._bypass) this.setAttribute("bypass", ""); else this.removeAttribute("bypass");
+      this._readAttrs();
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v, bypass: this._bypass } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._treadle.classList.remove("snap");
+      this._drag = { y: e.clientY, v: this._v, over: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = e.clientY - this._drag.y;                     // down = toe down = more
+      const range = this._max - this._min;
+      let raw = this._drag.v + (dy / this._scale) * range / 130;
+      this._drag.over = raw > this._max + 0.05;
+      let v = this._clamp(raw);
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false);
+    }
+    _onUp() {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      this._grab.classList.remove("drag");
+      const over = this._drag.over; this._drag = null;
+      this._set(this._v, true);
+      if (over) { this._treadle.classList.add("snap"); this._toggleBypass(); }
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._treadle.classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 200);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Spacebar") { e.preventDefault(); this._treadle.classList.add("snap"); this._toggleBypass(); return; }
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step * 2); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step * 2); break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._treadle.classList.add("snap");
+      v = this._clamp(Math.round(v / this._step) * this._step);
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-pedal-vox-v846-wah", SkPedalVoxWah);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

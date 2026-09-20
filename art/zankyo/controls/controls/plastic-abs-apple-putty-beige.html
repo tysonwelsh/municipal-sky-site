@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple II putty-beige ABS panel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Michroma&family=Inter:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "plastic-abs-apple-putty-beige",
+  "element": "sk-plastic-apple-beige",
+  "name": "Apple II putty-beige ABS panel",
+  "kind": "output",
+  "code": "J7",
+  "type": "Panel swatch — textured ABS plastic",
+  "source": "Apple II / II+ / IIe and Disk II cases, and the 1987 platinum-grey family that replaced the putty run",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["textured ABS plastic"],
+  "tags": ["panel", "swatch", "computer", "1980s", "vents", "yellowing", "badge"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "legend", "width", "height", "finish", "vents", "yellow", "wear", "scale"],
+  "events": [],
+  "size": { "w": 320, "h": 120 },
+  "notes": "A moulded case panel other controls sit on. value (or legend) is the recessed badge legend."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-plastic-apple-beige width="320" height="120" vents value="IIe"></sk-plastic-apple-beige>
+    <sk-plastic-apple-beige width="260" height="110" vents value="IIe" yellow="0.8"></sk-plastic-apple-beige>
+    <sk-plastic-apple-beige width="220" height="100" finish="platinum" vents value="IIe"></sk-plastic-apple-beige>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Apple II</b> family's putty-beige ABS shell — carried through the II, II+, IIe and the Disk II — is
+  a warm, slightly greenish beige moulded with a fine leather-like pebble, a row of slotted vents over the
+  power supply, and a small recessed badge. Every surviving example has yellowed unevenly: the plastic's
+  flame-retardant browns under UV, fastest where light actually falls on it.</p>
+  <p><b>The tells kept here:</b> the fine pebble grain, matte everywhere with no reflection band; a moulded vent
+  grille of rounded slots each with a dark interior and a lit rib top; a faint mould-seam line with a 1&nbsp;px
+  step; a recessed rectangular badge holding the legend, dark inside with no ink outside it; and, with
+  <code>yellow</code>, an uneven amber cast that stops sharply at a rectangular patch of the original beige —
+  the shadow of a lid or a decal that shielded the plastic underneath. <code>finish="platinum"</code> swaps in
+  the cooler, darker 1987 case colour, which barely yellows at all. <code>wear</code> polishes the pebble
+  smooth and faintly shinier where hands rested.</p>
+  <p><b>Left out:</b> the keyboard well and the rainbow Apple mark (a plain recessed badge stands in for it).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-plastic-apple-beige> — 1980s Apple II putty-beige textured ABS panel ====
+   attributes: value legend width height finish(putty|platinum) vents yellow(0..1) wear(0..1) scale
+   no events (an output). Has a default <slot>: mount a control on the panel.
+   self-contained: paste this block into any page and use
+   <sk-plastic-apple-beige value="IIe" vents></sk-plastic-apple-beige> */
+(function () {
+  if (customElements.get("sk-plastic-apple-beige")) return;
+  var DW = 320, DH = 120;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1;',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;',
+  '        --putty: #d3c6a8; --puttyhi: #e2d7bd; --puttylo: #b9ac8f;',
+  '        --yellowed: #b89e62; --sheltered: #d9cfb5;',
+  '        --ventint: #1e1c18; --badgebg: #2a2620; --badgefg: #d8d0bc; --seam: #bfb294; }',
+  ':host([hidden]) { display: none; }',
+  ':host([finish="platinum"]) { --putty: #c5c6c2; --puttyhi: #d5d6d2; --puttylo: #a9aaa6;',
+  '  --yellowed: #bcbdb8; --sheltered: #cacbc7; --badgebg: #232422; --badgefg: #cfd0cc; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.plate { position: absolute; inset: 0; overflow: hidden; border-radius: 6px;',
+  '  background: linear-gradient(180deg, var(--puttyhi) 0%, var(--putty) 40%, var(--puttylo) 100%);',
+  '  box-shadow: 0 10px 20px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.5), 0 0 0 1px rgba(20,16,8,.35); }',
+  '.pebble { position: absolute; inset: 0; width: 100%; height: 100%; display: block;',
+  '  mix-blend-mode: overlay; opacity: .55; pointer-events: none; }',
+  '.yellow { position: absolute; inset: 0; pointer-events: none; opacity: 0;',
+  '  background: linear-gradient(165deg, var(--yellowed) 0%, rgba(184,158,98,.35) 55%, rgba(184,158,98,0) 82%);',
+  '  mix-blend-mode: multiply; }',
+  '.shelter { position: absolute; left: 8%; top: 14%; width: 20%; height: 34%; pointer-events: none;',
+  '  background: rgba(217,207,181,.78); border-radius: 1px; opacity: 0; mix-blend-mode: normal;',
+  '  box-shadow: 1px 1px 0 rgba(0,0,0,.05), inset 0 1px 1px rgba(255,255,255,.3); }',
+  '.seam { position: absolute; left: 4%; right: 4%; top: 62%; height: 1px; pointer-events: none;',
+  '  background: var(--seam); opacity: .55; box-shadow: 0 1px 0 rgba(255,255,255,.35); }',
+  '.vents { position: absolute; right: 7%; top: 14%; width: 30%; height: 34%; pointer-events: none; }',
+  '.vents svg { display: none; width: 100%; height: 100%; overflow: visible; }',
+  ':host([vents]) .vents svg { display: block; }',
+  '.badge { position: absolute; left: 8%; bottom: 10%; padding: 3px 8px; border-radius: 2px;',
+  '  background: var(--badgebg); box-shadow: inset 0 1px 2px rgba(0,0,0,.7), inset 0 -1px 0 rgba(255,255,255,.06),',
+  '  0 1px 0 rgba(255,255,255,.35);',
+  '  font-family: "Michroma", "Inter", sans-serif; font-size: 11px; letter-spacing: 0.03em;',
+  '  color: var(--badgefg); line-height: 1; }',
+  '.badge:empty { display: none; padding: 0; box-shadow: none; }',
+  '.wear { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light;',
+  '  background: radial-gradient(38% 55% at 68% 72%, rgba(255,255,255,.8), rgba(255,255,255,0) 72%);',
+  '  filter: saturate(0.6); }',
+  '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
+  '  pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '.chamfer { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;',
+  '  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 3px rgba(0,0,0,.28),',
+  '              inset 1px 0 0 rgba(255,255,255,.25), inset -1px 0 0 rgba(0,0,0,.20); }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <svg class="pebble" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">',
+  '      <defs>',
+  '        <filter id="peb" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">',
+  '          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="n"/>',
+  '          <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 0.98  0 0 0 0 0.9  0 0 0 2.6 -1.35" result="c"/>',
+  '        </filter>',
+  '      </defs>',
+  '      <rect x="0" y="0" width="100%" height="100%" filter="url(#peb)"/>',
+  '    </svg>',
+  '    <div class="yellow"></div>',
+  '    <div class="shelter"></div>',
+  '    <div class="seam"></div>',
+  '    <div class="vents"><svg viewBox="0 0 96 40" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg></div>',
+  '    <div class="wear"></div>',
+  '    <div class="badge"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '    <div class="chamfer"></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  var NS = "http://www.w3.org/2000/svg";
+
+  function buildVentSvg(svg) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var defs = document.createElementNS(NS, "defs");
+    var grad = document.createElementNS(NS, "linearGradient");
+    grad.setAttribute("id", "ventint"); grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0"); grad.setAttribute("x2", "0"); grad.setAttribute("y2", "1");
+    var s1 = document.createElementNS(NS, "stop"); s1.setAttribute("offset", "0"); s1.setAttribute("stop-color", "#050403");
+    var s2 = document.createElementNS(NS, "stop"); s2.setAttribute("offset", "1"); s2.setAttribute("stop-color", "#2a2620");
+    grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svg.appendChild(defs);
+    for (var i = 0; i < 12; i++) {
+      var x = i * 8 + 2;
+      var slot = document.createElementNS(NS, "rect");
+      slot.setAttribute("x", x); slot.setAttribute("y", 1); slot.setAttribute("width", 4); slot.setAttribute("height", 38);
+      slot.setAttribute("rx", 2); slot.setAttribute("fill", "url(#ventint)");
+      slot.setAttribute("stroke", "rgba(0,0,0,.35)"); slot.setAttribute("stroke-width", "0.5");
+      svg.appendChild(slot);
+      if (i < 11) {
+        var rib = document.createElementNS(NS, "rect");
+        rib.setAttribute("x", x + 4.4); rib.setAttribute("y", 1); rib.setAttribute("width", 3.2); rib.setAttribute("height", 1);
+        rib.setAttribute("rx", 0.5); rib.setAttribute("fill", "rgba(255,255,255,.5)");
+        svg.appendChild(rib);
+      }
+    }
+  }
+
+  class SkPlasticAppleBeige extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "legend", "width", "height", "finish", "vents", "yellow", "wear", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._badge = r.querySelector(".badge");
+      this._yellow = r.querySelector(".yellow");
+      this._shelter = r.querySelector(".shelter");
+      this._wear = r.querySelector(".wear");
+      this._ventSvg = r.querySelector(".vents svg");
+      this._v = "";
+      buildVentSvg(this._ventSvg);
+    }
+    connectedCallback() {                       // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var w = clamp(num(this, "width", DW), 60, 4000);
+      var h = clamp(num(this, "height", DH), 26, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      var isPlatinum = this.getAttribute("finish") === "platinum";
+      var yellow = isPlatinum ? 0 : clamp(num(this, "yellow", 0), 0, 1);
+      this._yellow.style.opacity = yellow.toFixed(2);
+      this._shelter.style.opacity = yellow > 0.15 ? Math.min(1, yellow * 1.1).toFixed(2) : "0";
+
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      this._wear.style.opacity = (wear * 0.7).toFixed(2);
+
+      var txt = this.getAttribute("value");
+      if (txt == null) txt = this.getAttribute("legend");
+      txt = txt == null ? "" : txt;
+      this._v = txt;
+      this._badge.textContent = txt;
+      this._badge.style.fontSize = (h < 70 ? 9 : 11) + "px";
+
+      var matName = isPlatinum ? "platinum-grey ABS" : "putty-beige ABS";
+      this.setAttribute("aria-label", (txt ? "badge “" + txt + "” on " : "") + matName + " case panel" +
+        (yellow > 0.3 ? ", UV-yellowed" : ""));
+    }
+  }
+  customElements.define("sk-plastic-apple-beige", SkPlasticAppleBeige);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

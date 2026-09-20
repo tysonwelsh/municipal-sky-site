@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Walkman TPS-L2 cassette door — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "door-walkman-tpsl2",
+  "element": "sk-door-walkman-tpsl2",
+  "name": "Walkman TPS-L2 cassette door",
+  "kind": "both",
+  "code": "B7",
+  "type": "Drawer / cassette door / tray",
+  "source": "Sony Walkman TPS-L2 (1979): the steel-blue cassette door with its clear window, the chrome latch button on the top edge, brushed silver end caps",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["painted aluminium", "brushed aluminium", "clear polystyrene", "chrome"],
+  "tags": ["walkman", "cassette", "door", "latch", "window", "transport", "hubs"],
+  "value": { "model": "boolean", "unit": "" },
+  "attributes": ["value", "playing", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 176, "h": 128 },
+  "notes": "Closed and playing (the hubs turn), sprung open, and a closed one at scale 0.6. Press the chrome latch or the door, or hit Space; arrows open and close."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="plastic-grey">
+    <sk-door-walkman-tpsl2 value="false" playing label="CASSETTE DOOR"></sk-door-walkman-tpsl2>
+    <sk-door-walkman-tpsl2 value="true" label="CASSETTE DOOR"></sk-door-walkman-tpsl2>
+    <sk-door-walkman-tpsl2 value="false" label="CASSETTE DOOR" scale="0.6"></sk-door-walkman-tpsl2>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sony TPS-L2</b> of 1979 — the first Walkman — is a steel-blue painted aluminium box with brushed
+  silver caps at the top and bottom edges, and nearly the whole front is the cassette door: a blue panel with a
+  clear polystyrene window in it, hinged along its bottom, held by a small chrome latch button at the top edge.
+  Press the latch and the door springs a few degrees; push it back and it clicks flat.</p>
+  <p><b>The tells kept here:</b> that blue — a steel blue, not navy, not sky — with the silver ends and their
+  little chrome screws; the cassette sitting label-out in the well with its two hub holes, the supply pack
+  fatter than the take-up; the toothed hubs turning when <code>playing</code>, the take-up faster than the
+  supply; the silver keyline round the window and the window's one long soft reflection at the upper left,
+  which does not follow the shape of the cassette behind it; the door hinged at the bottom, so open, its top
+  comes toward you and the leaf spring and the well's back wall show above it; a polished thumb-scuff on the
+  blue just under the latch.</p>
+  <p><b>Left out:</b> the brand, the model plate, the headphone jacks and the twin volume wheels on the top
+  edge (those are their own control), and the orange HOTLINE button on the side.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-door-walkman-tpsl2> — Sony TPS-L2 cassette door with its window ====
+   attributes: value("true"/"false" — open) playing label scale disabled
+   events: input {value} when the user works the latch/door, change {value} when the swing settles
+   self-contained: paste this block into any page and use <sk-door-walkman-tpsl2 playing></sk-door-walkman-tpsl2> */
+(function () {
+  if (customElements.get("sk-door-walkman-tpsl2")) return;
+  const W = 176, H = 128;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; overflow: visible; }
+    .doorbox { position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px;
+      transform-origin: 88px 103px;
+      transform: perspective(520px) rotateX(0deg);
+      transition: transform 170ms cubic-bezier(.2,.9,.3,1.14); }
+    :host([value="true"]) .doorbox { transform: perspective(520px) rotateX(-34deg) translateY(1px); }
+    .opensh, .doorlit { opacity: 0; transition: opacity 170ms ease-out; }
+    :host([value="true"]) .opensh, :host([value="true"]) .doorlit { opacity: 1; }
+    .grab { position: absolute; left: 30px; top: 16px; width: 116px; height: 90px;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; cursor: pointer;
+      border-radius: 3px; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    .latchhit { position: absolute; left: 92px; top: 13px; width: 20px; height: 14px; cursor: pointer;
+      touch-action: none; outline: none; }
+    :host([disabled]) .latchhit { cursor: default; }
+    .latch { transition: transform 90ms ease-out; transform-box: fill-box; }
+    :host(.pressing) .latch { transform: translateY(1.1px); }
+    .hub { transform-box: fill-box; transform-origin: 50% 50%; }
+    :host([playing]) .hub-l { animation: sk-spin 2.4s linear infinite; }
+    :host([playing]) .hub-r { animation: sk-spin 1.65s linear infinite; }
+    @keyframes sk-spin { to { transform: rotate(360deg); } }
+    text { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 500; }
+    .legend { font-size: 5px; letter-spacing: 0.15em; fill: #cfdbe8; fill-opacity: 0.82; }
+    .lbl { font-size: 5.5px; letter-spacing: 0.16em; fill: #8e949a; text-anchor: middle; font-weight: 600; }
+  </style>
+  <div class="wrap">
+    <!-- ================= body, well, cassette ================= -->
+    <svg class="body" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="blue" x1="0.12" y1="0" x2="0.5" y2="1">
+          <stop offset="0" stop-color="#4a7cbb"/><stop offset="0.3" stop-color="#31659f"/>
+          <stop offset="0.72" stop-color="#25507f"/><stop offset="1" stop-color="#1b3c66"/>
+        </linearGradient>
+        <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#eceff1"/><stop offset="0.28" stop-color="#c9ccce"/>
+          <stop offset="0.75" stop-color="#aeb1b4"/><stop offset="1" stop-color="#8d9193"/>
+        </linearGradient>
+        <pattern id="paintgrain" width="3" height="3" patternUnits="userSpaceOnUse">
+          <rect width="3" height="3" fill="none"/>
+          <rect width="3" height="1" fill="#ffffff" opacity="0.018"/>
+        </pattern>
+        <pattern id="brush" width="4" height="2" patternUnits="userSpaceOnUse">
+          <rect width="4" height="1" fill="#ffffff" opacity="0.16"/>
+          <rect y="1" width="4" height="1" fill="#000000" opacity="0.09"/>
+        </pattern>
+        <linearGradient id="chromeh" x1="0" y1="0" x2="0.12" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.36" stop-color="#e2e5e7"/>
+          <stop offset="0.46" stop-color="#9aa0a3"/><stop offset="0.48" stop-color="#5c6164"/>
+          <stop offset="0.72" stop-color="#b6babd"/><stop offset="1" stop-color="#7d8184"/>
+        </linearGradient>
+        <radialGradient id="chrome" cx="32%" cy="26%" r="78%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.42" stop-color="#dcdfe1"/>
+          <stop offset="0.78" stop-color="#9ea2a5"/><stop offset="1" stop-color="#5d6164"/>
+        </radialGradient>
+        <radialGradient id="screw" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#e8ebed"/><stop offset="0.55" stop-color="#9da1a4"/><stop offset="1" stop-color="#4c5053"/>
+        </radialGradient>
+        <linearGradient id="shell" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stop-color="#3d3d40"/><stop offset="0.5" stop-color="#2b2b2b"/><stop offset="1" stop-color="#1b1b1d"/>
+        </linearGradient>
+        <linearGradient id="label" x1="0.1" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#f7f0dd"/><stop offset="0.55" stop-color="#efe6cc"/><stop offset="1" stop-color="#d9cdac"/>
+        </linearGradient>
+        <radialGradient id="hubg" cx="34%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#d2d2d2"/><stop offset="0.55" stop-color="#9a9a9a"/><stop offset="1" stop-color="#565656"/>
+        </radialGradient>
+        <radialGradient id="pack" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#4a3623"/><stop offset="0.7" stop-color="#2e2116"/><stop offset="1" stop-color="#1d150e"/>
+        </radialGradient>
+        <linearGradient id="openShadow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.34"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="springg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c8ced3"/><stop offset="0.5" stop-color="#8c9298"/><stop offset="1" stop-color="#4c5156"/>
+        </linearGradient>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>
+        <filter id="b4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4.5"/></filter>
+        <clipPath id="well"><rect x="31" y="24" width="114" height="80" rx="2.5"/></clipPath>
+        <clipPath id="bodyclip"><rect x="0" y="0" width="${W}" height="${H}" rx="7"/></clipPath>
+      </defs>
+
+      <!-- ambient + contact shadow on the panel -->
+      <rect x="3" y="8" width="170" height="124" rx="9" fill="#000" opacity="0.5" filter="url(#b4)"/>
+      <rect x="2" y="4" width="172" height="126" rx="8" fill="#000" opacity="0.6" filter="url(#b2)"/>
+
+      <g clip-path="url(#bodyclip)">
+        <!-- blue body -->
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#blue)"/>
+        <!-- a soft broad highlight from above-left -->
+        <ellipse cx="44" cy="10" rx="82" ry="36" fill="#a8c9ee" opacity="0.09" filter="url(#b4)"/>
+        <rect x="0" y="0" width="176" height="128" fill="url(#paintgrain)"/>
+        <!-- brushed silver end caps, top and bottom -->
+        <rect x="0" y="0" width="${W}" height="13" fill="url(#silver)"/>
+        <rect x="0" y="0" width="${W}" height="13" fill="url(#brush)"/>
+        <rect x="0" y="115" width="${W}" height="13" fill="url(#silver)"/>
+        <rect x="0" y="115" width="${W}" height="13" fill="url(#brush)"/>
+        <rect x="0" y="0" width="${W}" height="1" fill="#ffffff" opacity="0.6"/>
+        <rect x="0" y="12.4" width="${W}" height="0.8" fill="#0d1c2e" opacity="0.7"/>
+        <rect x="0" y="115" width="${W}" height="0.8" fill="#0d1c2e" opacity="0.55"/>
+        <rect x="0" y="127" width="${W}" height="1" fill="#000" opacity="0.45"/>
+
+        <!-- silk-screen on the blue -->
+        <text class="legend" x="34" y="111.5">STEREO</text>
+        <text class="legend" x="142" y="111.5" text-anchor="end">CASSETTE</text>
+
+        <!-- the well: a hole in the body -->
+        <rect x="31" y="24" width="114" height="80" rx="2.5" fill="#0a0c0f"/>
+        <g clip-path="url(#well)">
+          <rect x="31" y="24" width="114" height="80" fill="#0e1115"/>
+          <!-- back wall lit a little at the bottom right -->
+          <rect x="31" y="24" width="114" height="80" fill="#394452" opacity="0.5"/>
+          <rect x="31" y="24" width="114" height="13" fill="#6e8098" opacity="0.62"/>
+          <rect x="31" y="35" width="114" height="3" fill="#000" opacity="0.35"/>
+          <!-- the leaf spring across the top of the well -->
+          <path d="M40 30.2 Q88 26.2 136 30.2 L136 33.2 Q88 29.2 40 33.2 Z" fill="url(#springg)"/>
+          <path d="M40 30.2 Q88 26.2 136 30.2" fill="none" stroke="#f2f6f8" stroke-opacity="0.8" stroke-width="0.7"/>
+          <path d="M40 33.2 Q88 29.2 136 33.2" fill="none" stroke="#2a2e32" stroke-opacity="0.8" stroke-width="0.6"/>
+          <circle cx="44" cy="31.6" r="1.7" fill="#8f969c" stroke="#3a3e42" stroke-width="0.4"/>
+          <circle cx="132" cy="31.6" r="1.7" fill="#8f969c" stroke="#3a3e42" stroke-width="0.4"/>
+          <!-- the cassette, label out -->
+          <rect x="38" y="33" width="100" height="60" rx="2" fill="url(#shell)" stroke="#0c0c0d" stroke-width="0.7"/>
+          <rect x="38.7" y="33.7" width="98.6" height="1" fill="#717176" opacity="0.55"/>
+          <rect x="50" y="41" width="76" height="39" rx="1" fill="url(#label)"/>
+          <rect x="50" y="41" width="76" height="39" rx="1" fill="none" stroke="#a8996f" stroke-width="0.4" stroke-opacity="0.9"/>
+          <g stroke="#a3905f" stroke-width="0.5" stroke-opacity="0.8">
+            <line x1="54" y1="46.5" x2="122" y2="46.5"/>
+            <line x1="54" y1="50" x2="122" y2="50"/>
+            <line x1="54" y1="71" x2="122" y2="71"/>
+            <line x1="54" y1="75" x2="122" y2="75"/>
+          </g>
+          <rect x="54" y="42.6" width="12" height="2.4" fill="#8a7645" opacity="0.7"/>
+          <!-- hub holes: the fat supply pack at the left, the thin take-up at the right -->
+          <g>
+            <circle cx="70" cy="60" r="11.4" fill="#0c0d0f"/>
+            <circle cx="70" cy="60" r="11" fill="url(#pack)"/>
+            <circle cx="70" cy="60" r="11" fill="none" stroke="#7a5c3a" stroke-width="0.6" stroke-opacity="0.6"/>
+            <g transform="translate(70 60)"><g class="hub hub-l"><use href="#hub6"/></g></g>
+          </g>
+          <g>
+            <circle cx="106" cy="60" r="11.4" fill="#0c0d0f"/>
+            <circle cx="106" cy="60" r="7.2" fill="url(#pack)"/>
+            <circle cx="106" cy="60" r="7.2" fill="none" stroke="#7a5c3a" stroke-width="0.6" stroke-opacity="0.6"/>
+            <g transform="translate(106 60)"><g class="hub hub-r"><use href="#hub6"/></g></g>
+          </g>
+          <!-- the tape window along the foot of the shell -->
+          <rect x="62" y="82" width="52" height="8" rx="0.8" fill="#0d0e10"/>
+          <rect x="64" y="84.6" width="48" height="2.6" fill="#4a3826"/>
+          <rect x="64" y="84.6" width="48" height="0.9" fill="#6b523a" opacity="0.8"/>
+          <rect x="67" y="82" width="2.6" height="8" fill="#23242a"/>
+          <rect x="106" y="82" width="2.6" height="8" fill="#23242a"/>
+          <!-- the tape path and the head block along the foot of the well -->
+          <rect x="44" y="90" width="88" height="3" fill="#15161a"/>
+          <rect x="52" y="93" width="72" height="11" rx="1" fill="#17181b"/>
+          <rect x="60" y="94.5" width="9" height="5" rx="0.6" fill="#9fa5aa"/>
+          <rect x="60" y="94.5" width="9" height="2" rx="0.6" fill="#cdd2d6"/>
+          <rect x="86" y="94.5" width="6" height="5" rx="0.6" fill="#8b9096"/>
+          <circle cx="104" cy="97" r="3.4" fill="#26282c"/><circle cx="104" cy="97" r="1" fill="#8b9096"/>
+          <!-- inner shadow of the well: dark at the top-left, a lit lip bottom-right -->
+          <rect x="31" y="24" width="114" height="80" rx="2.5" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="5" filter="url(#b2)"/>
+          <!-- the shadow the sprung door throws back into the well -->
+          <rect class="opensh" x="31" y="24" width="114" height="20" fill="url(#openShadow)"/>
+        </g>
+        <path d="M31.5 103.5 h113" stroke="#7fa6d6" stroke-opacity="0.35" stroke-width="0.8" fill="none"/>
+        <path d="M31.4 24.4 v79" stroke="#000" stroke-opacity="0.5" stroke-width="0.8" fill="none"/>
+
+        <!-- chrome latch button on the top edge, above the door -->
+        <g class="latch">
+          <rect x="95" y="14.5" width="16" height="11" rx="2" fill="#000" opacity="0.4" filter="url(#b1)"/>
+          <rect x="94.5" y="13.5" width="16" height="11" rx="2.2" fill="url(#chromeh)" stroke="#4d5255" stroke-width="0.5"/>
+          <rect x="95.6" y="14.3" width="13.8" height="2.6" rx="1.2" fill="#ffffff" opacity="0.75"/>
+          <g stroke="#6c7276" stroke-width="0.5" stroke-opacity="0.85">
+            <line x1="98" y1="19.6" x2="107" y2="19.6"/><line x1="98" y1="21.2" x2="107" y2="21.2"/>
+          </g>
+          <rect x="94.5" y="22.9" width="16" height="1.6" fill="#33383b" opacity="0.8"/>
+        </g>
+
+        <!-- screws in the silver caps -->
+        <g>
+          <circle cx="9" cy="6.5" r="2.1" fill="url(#screw)" stroke="#5b5f62" stroke-width="0.35"/>
+          <rect x="7.3" y="6.15" width="3.4" height="0.7" fill="#4a4e51" transform="rotate(22 9 6.5)"/>
+          <circle cx="167" cy="6.5" r="2.1" fill="url(#screw)" stroke="#5b5f62" stroke-width="0.35"/>
+          <rect x="165.3" y="6.15" width="3.4" height="0.7" fill="#4a4e51" transform="rotate(-38 167 6.5)"/>
+          <circle cx="9" cy="121.5" r="2.1" fill="url(#screw)" stroke="#5b5f62" stroke-width="0.35"/>
+          <rect x="7.3" y="121.15" width="3.4" height="0.7" fill="#4a4e51" transform="rotate(70 9 121.5)"/>
+          <circle cx="167" cy="121.5" r="2.1" fill="url(#screw)" stroke="#5b5f62" stroke-width="0.35"/>
+          <rect x="165.3" y="121.15" width="3.4" height="0.7" fill="#4a4e51" transform="rotate(-8 167 121.5)"/>
+        </g>
+        <!-- the thumb scuff under the latch: a decade of thumbs -->
+        <ellipse cx="102" cy="31" rx="13" ry="7" fill="#b9d3ef" opacity="0.10" filter="url(#b2)"/>
+        <!-- body edge: lit at the top-left, dark at the bottom-right -->
+        <rect x="0.5" y="0.5" width="175" height="127" rx="7" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1"/>
+      </g>
+      <defs>
+        <g id="hub6">
+          <circle r="6.2" fill="#0e0f10"/>
+          <circle r="5.6" fill="url(#hubg)"/>
+          <g fill="#4e4e4e">
+            <rect x="-0.85" y="-5.6" width="1.7" height="2.6" rx="0.4"/>
+            <rect x="-0.85" y="-5.6" width="1.7" height="2.6" rx="0.4" transform="rotate(60)"/>
+            <rect x="-0.85" y="-5.6" width="1.7" height="2.6" rx="0.4" transform="rotate(120)"/>
+            <rect x="-0.85" y="-5.6" width="1.7" height="2.6" rx="0.4" transform="rotate(180)"/>
+            <rect x="-0.85" y="-5.6" width="1.7" height="2.6" rx="0.4" transform="rotate(240)"/>
+            <rect x="-0.85" y="-5.6" width="1.7" height="2.6" rx="0.4" transform="rotate(300)"/>
+          </g>
+          <circle r="2.4" fill="#161616"/>
+          <path d="M -3.6 -3.6 A 5.1 5.1 0 0 1 0.4 -5.1" fill="none" stroke="#e6e6e6" stroke-opacity="0.55" stroke-width="0.8"/>
+        </g>
+      </defs>
+    </svg>
+
+    <!-- ================= the door, hinged at its bottom ================= -->
+    <div class="doorbox">
+      <svg class="door" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+        <defs>
+          <linearGradient id="dblue" x1="0.12" y1="0" x2="0.45" y2="1">
+            <stop offset="0" stop-color="#4f83c2"/><stop offset="0.28" stop-color="#356aa8"/>
+            <stop offset="0.7" stop-color="#27538a"/><stop offset="1" stop-color="#1e4271"/>
+          </linearGradient>
+          <linearGradient id="glassref" x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+            <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.10"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="doorlit" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#bcd8f6" stop-opacity="0.30"/>
+            <stop offset="0.6" stop-color="#bcd8f6" stop-opacity="0.06"/>
+            <stop offset="1" stop-color="#bcd8f6" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="db2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+          <filter id="db1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
+        </defs>
+        <!-- the door's own shadow onto the body -->
+        <path d="M33 27 h112 a3 3 0 0 1 3 3 v72 a3 3 0 0 1 -3 3 h-112 a3 3 0 0 1 -3 -3 v-72 a3 3 0 0 1 3 -3 z"
+              fill="#000" opacity="0.5" filter="url(#db2)"/>
+        <!-- the blue door panel with the window cut out of it -->
+        <path fill-rule="evenodd" fill="url(#dblue)"
+              d="M35 25 h106 a3 3 0 0 1 3 3 v72 a3 3 0 0 1 -3 3 h-106 a3 3 0 0 1 -3 -3 v-72 a3 3 0 0 1 3 -3 z
+                 M46 40 h84 a2 2 0 0 1 2 2 v44 a2 2 0 0 1 -2 2 h-84 a2 2 0 0 1 -2 -2 v-44 a2 2 0 0 1 2 -2 z"/>
+        <!-- moulded bevel: lit top-left edge, dark bottom-right edge -->
+        <path d="M35 25.5 h106 a2.4 2.4 0 0 1 2.4 2.4" fill="none" stroke="#a7cbf2" stroke-opacity="0.8" stroke-width="1.1"/>
+        <path d="M32.6 28 a2.4 2.4 0 0 1 2.4 -2.4" fill="none" stroke="#8bb7e8" stroke-opacity="0.5" stroke-width="0.9"/>
+        <path d="M32.6 98 v2 a3 3 0 0 0 3 3 h106 a3 3 0 0 0 3 -3 v-2" fill="none" stroke="#12294a" stroke-opacity="0.85" stroke-width="1"/>
+        <!-- paint wear along the bottom rail, where fingers push it shut -->
+        <ellipse cx="88" cy="99" rx="26" ry="3.4" fill="#cfe2f6" opacity="0.10" filter="url(#db1)"/>
+        <!-- silver keyline round the window, then the smoked/clear polystyrene -->
+        <rect x="43.2" y="39.2" width="89.6" height="49.6" rx="2.6" fill="none" stroke="#c9ccce" stroke-width="1" stroke-opacity="0.9"/>
+        <rect x="44.4" y="40.4" width="87.2" height="47.2" rx="2" fill="none" stroke="#0e2440" stroke-width="0.7" stroke-opacity="0.8"/>
+        <rect x="44" y="40" width="88" height="48" rx="2" fill="#eceadb" opacity="0.10"/>
+        <rect x="44" y="40" width="88" height="7" fill="#000" opacity="0.30" filter="url(#db1)"/>
+        <rect x="44" y="40" width="4" height="48" fill="#000" opacity="0.22" filter="url(#db1)"/>
+        <!-- one long soft reflection at the upper left, nothing like the cassette behind it -->
+        <path d="M47 40 L70 40 L54 88 L44.4 88 Z" fill="url(#glassref)" filter="url(#db1)"/>
+        <path d="M74 40 L80 40 L64 88 L58 88 Z" fill="#ffffff" opacity="0.07" filter="url(#db1)"/>
+        <!-- the door catches more light when it is tilted toward you -->
+        <rect class="doorlit" x="32" y="25" width="112" height="78" rx="3" fill="url(#doorlit)"/>
+        <!-- hinge line along the bottom -->
+        <path d="M34 102.4 h108" stroke="#0b1d33" stroke-opacity="0.7" stroke-width="0.7" fill="none"/>
+      </svg>
+    </div>
+
+    <div class="grab" role="switch" tabindex="0"></div>
+    <div class="latchhit" aria-hidden="true"></div>
+  </div>`;
+
+  class SkDoorWalkmanTpsl2 extends HTMLElement {
+    static get observedAttributes() { return ["value", "playing", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = false; this._scale = 1; this._t = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._latch = this.shadowRoot.querySelector(".latchhit");
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this);
+      this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "false");
+      this._readAttrs(); this._render();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._latch.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._latch.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      this._latch.addEventListener("pointercancel", this._onUp);
+      this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+      this._grab.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._t);
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._latch.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._latch.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      this._latch.removeEventListener("pointercancel", this._onUp);
+      this._grab.removeEventListener("wheel", this._onWheel);
+      this._grab.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      const b = (v === true || v === "true" || v === 1 || v === "1" || v === "open" || v === "on");
+      this._v = b; this.setAttribute("value", b ? "true" : "false"); this._render();
+    }
+    get open() { return this._v; }
+    set open(v) { this.value = v; }
+    get playing() { return this.hasAttribute("playing"); }
+    set playing(v) { if (v) this.setAttribute("playing", ""); else this.removeAttribute("playing"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opt) { this._grab.focus(opt); }
+
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      const a = this.getAttribute("value");
+      this._v = (a === "true" || a === "1" || a === "open");
+      const dis = this.hasAttribute("disabled");
+      this._grab.setAttribute("aria-label", this.getAttribute("label") || "cassette door");
+      this._grab.setAttribute("tabindex", dis ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() { this._grab.setAttribute("aria-checked", this._v ? "true" : "false"); }
+    _set(v) {
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", v ? "true" : "false"); this._render();
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v } }));
+      clearTimeout(this._t);
+      this._t = setTimeout(() => {
+        this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+      }, v ? 180 : 130);
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+      this.classList.add("pressing");
+    }
+    _onUp(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (!this.classList.contains("pressing")) return;
+      this.classList.remove("pressing");
+      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._set(!this._v);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const want = e.deltaY < 0;             // wheel up springs it open, down pushes it shut
+      if (want === this._v) return;
+      e.preventDefault();
+      this._set(want);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      let v = null;
+      switch (e.key) {
+        case " ": case "Spacebar": case "Enter": v = !this._v; break;
+        case "ArrowUp": case "ArrowRight": case "Home": v = true; break;
+        case "ArrowDown": case "ArrowLeft": case "End": v = false; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(v);
+    }
+  }
+  customElements.define("sk-door-walkman-tpsl2", SkDoorWalkmanTpsl2);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

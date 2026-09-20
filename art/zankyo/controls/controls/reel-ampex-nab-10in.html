@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ampex 10½-inch NAB reel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "reel-ampex-nab-10in",
+  "element": "sk-reel-ampex-nab",
+  "name": "Ampex 10½-inch NAB reel",
+  "kind": "output",
+  "code": "I5",
+  "type": "Tape reel",
+  "source": "Ampex 350 / AG-440 / ATR-100 with a precision 10½-inch aluminium reel on an NAB hub adapter — three spokes, three windows, the three-lobed hub knob",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["spun aluminium", "black anodised hub", "oxide tape", "grey-green deck plate"],
+  "tags": ["tape machine", "studio", "broadcast", "NAB hub", "spin", "motion blur"],
+  "value": { "model": "range", "min": 0, "max": 1, "step": 0.001, "unit": "" },
+  "attributes": ["value", "rate", "playing", "role", "label", "scale"],
+  "events": [],
+  "size": { "w": 240, "h": 240 },
+  "notes": "value is the tape on the reel and sets the pack radius; rate is rev/s (signed); playing drifts the pack and takes the rate from 1/radius. Two reels: a full one at rest and one in a fast wind, blurred."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-reel-ampex-nab value="0.96" rate="0" role="takeup" label="Take-up reel" scale="0.82"></sk-reel-ampex-nab>
+    <sk-reel-ampex-nab value="0.26" rate="-5.5" role="supply" label="Supply reel, fast wind" scale="0.82"></sk-reel-ampex-nab>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>10½-inch precision aluminium reel</b> on an Ampex 350, AG-440 or ATR-100: a machined flange with
+  three wide spokes and three big windows, a brushed rim, and a black NAB hub adapter whose three-lobed
+  knurled knob you thumb tight over the centre screw. Through the windows you watch the amber-brown pack of
+  oxide grow on one side and shrink on the other, and you can tell from across the control room how much
+  tape is left.</p>
+  <p><b>The tells kept here:</b> the pack showing as a ring of oxide through the three windows, with its fine
+  concentric grain, a dark edge where it sits down on the hub and a bright edge ring at its rim — and it grows
+  and shrinks with <b>value</b>; the three-lobed hub knob and its centre screw turning with the reel; the
+  <b>brushed highlight that does not turn</b> — it is a reflection of the room, so it stays on the upper left
+  while the metal spins under it; the rate that rises as the pack shrinks (rate ∝ 1/radius, the reason a
+  supply reel speeds up as it empties); the spokes blurring into a grey ring above about two turns a second,
+  and a hard shadow thrown down and right onto the deck plate.</p>
+  <p><b>Left out:</b> the tape's run to the heads, the reel-retaining knob's spring, and the maker's name —
+  the engraved wordmark on the rim is a generic one. The direction attribute is spelled <code>role</code> as
+  the style entry asks, so the element's accessible image role and label are carried on its inner wrapper
+  rather than on the host.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-reel-ampex-nab> — 10½" NAB aluminium tape reel on a grey-green deck ====
+   attributes: value (0…1, tape on this reel) rate (rev/s, signed) playing role(supply|takeup) label scale
+   no events (an output). set .value or the attribute; rate spins it, playing drifts the pack.
+   self-contained: paste this block into any page and use <sk-reel-ampex-nab value="0.8" rate="1"></sk-reel-ampex-nab> */
+(function () {
+  if (customElements.get("sk-reel-ampex-nab")) return;
+  const W = 240, H = 240, C = 120;
+  const R_OUT = 108, R_WIN = 98, R_HUB = 46, R_PACK = 97;   // flange, window outer, hub, full pack
+  const K_RATE = 54;                                        // rev/s × radius, constant tape speed
+  const rad = d => d * Math.PI / 180;
+  const pt = (a, r) => [(C + r * Math.cos(rad(a))).toFixed(2), (C + r * Math.sin(rad(a))).toFixed(2)];
+
+  // a window: an annular sector with all four corners filleted
+  function win(a0, a1, r0, r1, c) {
+    const d0 = Math.asin(c / (r0 + c)) * 180 / Math.PI, d1 = Math.asin(c / (r1 - c)) * 180 / Math.PI;
+    const P = [pt(a0 + d0, r0), pt(a0, r0 + c), pt(a0, r1 - c), pt(a0 + d1, r1),
+               pt(a1 - d1, r1), pt(a1, r1 - c), pt(a1, r0 + c), pt(a1 - d0, r0)];
+    return `M ${P[0]} A ${c} ${c} 0 0 1 ${P[1]} L ${P[2]} A ${c} ${c} 0 0 1 ${P[3]}`
+         + ` A ${r1} ${r1} 0 0 1 ${P[4]} A ${c} ${c} 0 0 1 ${P[5]} L ${P[6]}`
+         + ` A ${c} ${c} 0 0 1 ${P[7]} A ${r0} ${r0} 0 0 0 ${P[0]} Z`;
+  }
+  const WINS = [-77, 43, 163].map(a => win(a, a + 94, R_HUB + 2, R_WIN, 9));
+
+  function rings() {                      // spun aluminium: fine concentric turning marks
+    let s = "";
+    for (let r = 20; r < R_OUT; r += 2.3) {
+      const light = (Math.round(r * 7) % 3) === 0;
+      s += `<circle cx="${C}" cy="${C}" r="${r.toFixed(1)}" fill="none" stroke="${light ? "#ffffff" : "#000000"}" stroke-opacity="${light ? 0.05 : 0.055}" stroke-width="1.15"/>`;
+    }
+    return s;
+  }
+  function packGrain() {
+    let s = "";
+    for (let r = R_HUB + 1.4; r < R_PACK; r += 1.8) {
+      const light = (Math.round(r * 5) % 2) === 0;
+      s += `<circle cx="${C}" cy="${C}" r="${r.toFixed(1)}" fill="none" stroke="${light ? "#d9a05c" : "#3c2410"}" stroke-opacity="${light ? 0.1 : 0.15}" stroke-width="0.95"/>`;
+    }
+    return s;
+  }
+  function knurl() {                      // ticks round the three lobes of the hub knob
+    let s = "";
+    for (let i = 0; i < 3; i++) {
+      const ca = -90 + i * 120;
+      const cx = C + 18 * Math.cos(rad(ca)), cy = C + 18 * Math.sin(rad(ca));
+      for (let j = -7; j <= 7; j++) {
+        const a = ca + j * 8.5;
+        const x0 = cx + 12.2 * Math.cos(rad(a)), y0 = cy + 12.2 * Math.sin(rad(a));
+        const x1 = cx + 16.2 * Math.cos(rad(a)), y1 = cy + 16.2 * Math.sin(rad(a));
+        const lit = Math.cos(rad(a + 45));
+        s += `<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" stroke="${lit > 0 ? "#6a6a70" : "#000"}" stroke-opacity="${(0.25 + 0.4 * Math.abs(lit)).toFixed(2)}" stroke-width="1.1"/>`;
+      }
+    }
+    return s;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: hidden; }
+    text { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; font-weight: 600; }
+    .mark { font-size: 5.4px; letter-spacing: 0.16em; fill: #55595c; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="deck" x1="0.1" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stop-color="#8f9b94"/><stop offset="0.5" stop-color="#7f8c86"/><stop offset="1" stop-color="#63706b"/>
+        </linearGradient>
+        <radialGradient id="alu" cx="34%" cy="26%" r="78%">
+          <stop offset="0" stop-color="#eceef0"/><stop offset="0.35" stop-color="#d0d3d5"/><stop offset="0.72" stop-color="#abaeb1"/><stop offset="1" stop-color="#8e9194"/>
+        </radialGradient>
+        <radialGradient id="pack" cx="42%" cy="34%" r="70%">
+          <stop offset="0" stop-color="#553113"/><stop offset="0.45" stop-color="#6b3f1a"/><stop offset="0.86" stop-color="#8a5a26"/><stop offset="1" stop-color="#5a3415"/>
+        </radialGradient>
+        <radialGradient id="hubg" cx="36%" cy="28%" r="76%">
+          <stop offset="0" stop-color="#3a3a3e"/><stop offset="0.55" stop-color="#232326"/><stop offset="1" stop-color="#101012"/>
+        </radialGradient>
+        <radialGradient id="lobe" cx="34%" cy="26%" r="72%">
+          <stop offset="0" stop-color="#4a4a4e"/><stop offset="0.5" stop-color="#26262a"/><stop offset="1" stop-color="#0d0d0f"/>
+        </radialGradient>
+        <radialGradient id="screw" cx="34%" cy="28%" r="70%">
+          <stop offset="0" stop-color="#eceded"/><stop offset="0.55" stop-color="#b4b6b8"/><stop offset="1" stop-color="#6e7072"/>
+        </radialGradient>
+        <linearGradient id="spec" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="lamp" cx="30%" cy="22%" r="60%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="disc"><circle cx="${C}" cy="${C}" r="${R_OUT}"/></clipPath>
+        <clipPath id="packclip"><circle class="packr" cx="${C}" cy="${C}" r="${R_PACK}"/></clipPath>
+        <mask id="wins">
+          <circle cx="${C}" cy="${C}" r="${R_OUT}" fill="#fff"/>
+          <path d="${WINS[0]}" fill="#000"/><path d="${WINS[1]}" fill="#000"/><path d="${WINS[2]}" fill="#000"/>
+        </mask>
+        <path id="rimarc" d="M ${pt(-142, 102.5)} A 102.5 102.5 0 0 1 ${pt(-38, 102.5)}" fill="none"/>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
+        <filter id="wide" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
+
+        <!-- everything that turns -->
+        <g id="body">
+          <!-- the tape pack -->
+          <circle class="packr" cx="${C}" cy="${C}" r="${R_PACK}" fill="url(#pack)"/>
+          <g clip-path="url(#packclip)">${packGrain()}</g>
+          <circle cx="${C}" cy="${C}" r="${R_HUB + 3}" fill="none" stroke="#2e1b0a" stroke-opacity="0.75" stroke-width="5"/>
+          <circle class="packr" cx="${C}" cy="${C}" r="${R_PACK}" fill="none" stroke="#c9925a" stroke-opacity="0.85" stroke-width="1.6"/>
+          <circle class="packr2" cx="${C}" cy="${C}" r="${R_PACK - 1.6}" fill="none" stroke="#4a2c12" stroke-opacity="0.5" stroke-width="1.2"/>
+          <!-- the flange, with the three windows cut out -->
+          <g mask="url(#wins)">
+            <circle cx="${C}" cy="${C}" r="${R_OUT}" fill="url(#alu)"/>
+            ${rings()}
+            <circle cx="${C}" cy="${C}" r="${R_OUT - 4}" fill="none" stroke="#7e8184" stroke-opacity="0.5" stroke-width="1"/>
+            <circle cx="${C}" cy="${C}" r="${R_OUT}" fill="none" stroke="#5f6265" stroke-width="1.4"/>
+            <circle cx="${C}" cy="${C}" r="${R_OUT - 1.6}" fill="none" stroke="#fdfdfd" stroke-opacity="0.35" stroke-width="1"/>
+            <text class="mark"><textPath href="#rimarc" startOffset="50%" text-anchor="middle">PRECISION  MAGNETIC</textPath></text>
+          </g>
+          <!-- the cut edges of the windows -->
+          <g fill="none">
+            <path d="${WINS[0]}" stroke="#6c7073" stroke-width="2.4"/><path d="${WINS[1]}" stroke="#6c7073" stroke-width="2.4"/><path d="${WINS[2]}" stroke="#6c7073" stroke-width="2.4"/>
+            <path d="${WINS[0]}" stroke="#000" stroke-opacity="0.35" stroke-width="0.9"/><path d="${WINS[1]}" stroke="#000" stroke-opacity="0.35" stroke-width="0.9"/><path d="${WINS[2]}" stroke="#000" stroke-opacity="0.35" stroke-width="0.9"/>
+          </g>
+          <!-- the NAB hub adapter and its three-lobed knob -->
+          <circle cx="${C}" cy="${C}" r="${R_HUB}" fill="url(#hubg)"/>
+          <circle cx="${C}" cy="${C}" r="${R_HUB - 1.2}" fill="none" stroke="#54545a" stroke-opacity="0.45" stroke-width="1.1"/>
+          <circle cx="${C}" cy="${C}" r="${R_HUB - 7}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="2"/>
+          <g fill="url(#lobe)" stroke="#08080a" stroke-width="0.7">
+            <circle cx="${pt(-90, 18)[0]}" cy="${pt(-90, 18)[1]}" r="16.2"/>
+            <circle cx="${pt(30, 18)[0]}" cy="${pt(30, 18)[1]}" r="16.2"/>
+            <circle cx="${pt(150, 18)[0]}" cy="${pt(150, 18)[1]}" r="16.2"/>
+          </g>
+          <circle cx="${C}" cy="${C}" r="22" fill="url(#lobe)"/>
+          ${knurl()}
+          <circle cx="${C}" cy="${C}" r="13" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="1.4"/>
+          <circle cx="${C}" cy="${C}" r="6.4" fill="url(#screw)" stroke="#3a3c3e" stroke-width="0.6"/>
+          <path d="M ${C - 4.6} ${C - 0.8} L ${C + 4.6} ${C - 0.8} L ${C + 4.6} ${C + 0.8} L ${C - 4.6} ${C + 0.8} Z" fill="#3c3e40" transform="rotate(24 ${C} ${C})"/>
+          <path d="M ${C - 14} ${C - 12} A 21 21 0 0 1 ${C + 6} ${C - 19}" fill="none" stroke="#7a7a80" stroke-opacity="0.5" stroke-width="1.2"/>
+        </g>
+      </defs>
+
+      <!-- the deck plate -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#deck)"/>
+      <g opacity="0.35">
+        <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
+        <path d="M 0 30 L ${W} 26 M 0 74 L ${W} 70 M 0 132 L ${W} 128 M 0 186 L ${W} 182 M 0 220 L ${W} 216" stroke="#000" stroke-opacity="0.07" stroke-width="0.8"/>
+        <path d="M 0 33 L ${W} 29 M 0 77 L ${W} 73 M 0 135 L ${W} 131 M 0 189 L ${W} 185" stroke="#fff" stroke-opacity="0.07" stroke-width="0.8"/>
+      </g>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#lamp)"/>
+
+      <!-- the reel's shadow on the deck -->
+      <circle cx="${C + 9}" cy="${C + 11}" r="${R_OUT - 1}" fill="#1b2420" opacity="0.5" filter="url(#softer)"/>
+      <circle cx="${C + 1}" cy="${C + 2}" r="${R_OUT - 2}" fill="#16211c" opacity="0.3"/>
+      <circle cx="${C + 4}" cy="${C + 5}" r="${R_OUT - 1}" fill="#101a16" opacity="0.55" filter="url(#soft)"/>
+
+      <!-- the reel: two ghosts for the wind blur, then the reel itself -->
+      <use class="ghost gh1" href="#body" opacity="0"/>
+      <use class="ghost gh2" href="#body" opacity="0"/>
+      <use class="reel" href="#body"/>
+      <!-- at speed the spokes and the knob smear into the average of metal and what is behind them -->
+      <path class="smear" fill-rule="evenodd" fill="url(#alu)" opacity="0"
+            d="M ${C - 105} ${C} A 105 105 0 1 0 ${C + 105} ${C} A 105 105 0 1 0 ${C - 105} ${C} Z
+               M ${C - 48} ${C} A 48 48 0 1 0 ${C + 48} ${C} A 48 48 0 1 0 ${C - 48} ${C} Z"/>
+      <circle class="smear" cx="${C}" cy="${C}" r="35" fill="url(#lobe)" opacity="0"/>
+
+      <!-- the room in the metal: a reflection, so it does not turn -->
+      <g clip-path="url(#disc)" pointer-events="none">
+        <path d="M ${pt(-170, 86)} A 86 86 0 0 1 ${pt(-64, 86)}" fill="none" stroke="url(#spec)" stroke-width="44" opacity="0.30" filter="url(#wide)"/>
+        <path d="M ${pt(-162, 100)} A 100 100 0 0 1 ${pt(-96, 100)}" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="7" filter="url(#soft)"/>
+        <ellipse cx="72" cy="62" rx="54" ry="38" fill="#fff" opacity="0.13" filter="url(#softer)" transform="rotate(-35 72 62)"/>
+        <path d="M ${pt(24, 100)} A 100 100 0 0 1 ${pt(74, 100)}" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="9" filter="url(#soft)"/>
+        <circle cx="${C}" cy="${C}" r="${R_OUT}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="2"/>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkReelAmpexNab extends HTMLElement {
+    static get observedAttributes() { return ["value", "rate", "playing", "role", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 1; this._scale = 1; this._rateAttr = 0; this._rate = 0; this._ang = 0;
+      this._dir = 1; this._playing = false; this._raf = 0; this._last = 0; this._lastR = -1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._reel = this.shadowRoot.querySelector(".reel");
+      this._gh = this.shadowRoot.querySelectorAll(".ghost");
+      this._smear = this.shadowRoot.querySelectorAll(".smear");
+      this._pr = this.shadowRoot.querySelectorAll(".packr");
+      this._pr2 = this.shadowRoot.querySelector(".packr2");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this._wrap.setAttribute("role", "img");
+      this._readAttrs(); this._paintPack(); this._paintSpin();
+      this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._paintPack(); this._kick(); }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      v = Math.min(1, Math.max(0, v));
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000));
+      this._paintPack();
+    }
+    get rate() { return this._rateAttr; }
+    set rate(r) { this.setAttribute("rate", String(r)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    /* the reel runs on its own attributes; keep the generic driver off it */
+    demo() { return undefined; }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(1, Math.max(0, num("value", this._v)));
+      this._rateAttr = num("rate", 0);
+      this._playing = this.hasAttribute("playing");
+      const r = (this.getAttribute("role") || "").toLowerCase();
+      this._dir = r === "supply" ? -1 : 1;
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._aria();
+    }
+    _aria() {
+      this._wrap.setAttribute("aria-label", (this.getAttribute("label") || "tape reel") + ", " +
+        Math.round(this._v * 100) + " per cent of the tape on this reel" +
+        (Math.abs(this._rate) > 0.05 ? ", turning" : ", stopped"));
+    }
+    _radius() { return R_HUB + (R_PACK - R_HUB) * this._v; }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, Math.max(0.001, (now - this._last) / 1000)); this._last = now;
+      const R = this._radius();
+      const target = this._playing ? this._dir * K_RATE / R : this._rateAttr;
+      // the capstan does not let go at once: spin-up and spin-down take about a second and a half
+      this._rate += (target - this._rate) * (1 - Math.exp(-dt / 0.42));
+      if (Math.abs(target - this._rate) < 0.004) this._rate = target;
+      this._ang = (this._ang + this._rate * 360 * dt) % 360;
+      if (this._playing) {
+        const nv = Math.min(1, Math.max(0, this._v + this._dir * (1.15 / R) * dt));
+        if (nv !== this._v) { this._v = nv; this.setAttribute("value", String(Math.round(nv * 1000) / 1000)); this._paintPack(); }
+      }
+      this._paintSpin();
+      if (this._playing || Math.abs(this._rate) > 0.003) { this._raf = requestAnimationFrame(this._tick); return; }
+      this._rate = 0; this._paintSpin(); this._aria(); this._raf = 0;
+    }
+    _paintPack() {
+      const R = this._radius();
+      if (Math.abs(R - this._lastR) < 0.12) return;
+      this._lastR = R;
+      for (let i = 0; i < this._pr.length; i++) this._pr[i].setAttribute("r", R.toFixed(2));
+      this._pr2.setAttribute("r", Math.max(0.5, R - 1.6).toFixed(2));
+      this._aria();
+    }
+    _paintSpin() {
+      const a = this._ang, sp = Math.abs(this._rate);
+      this._reel.setAttribute("transform", `rotate(${a.toFixed(2)} ${C} ${C})`);
+      // above about two turns a second the spokes smear into a ring
+      const g = Math.min(15, sp * 5);
+      const op = Math.max(0, Math.min(0.24, (sp - 1.2) / 9));
+      const sm = Math.max(0, Math.min(0.62, (sp - 1.1) / 3.6));
+      for (let i = 0; i < this._smear.length; i++) this._smear[i].setAttribute("opacity", sm.toFixed(3));
+      this._gh[0].setAttribute("transform", `rotate(${(a - g).toFixed(2)} ${C} ${C})`);
+      this._gh[1].setAttribute("transform", `rotate(${(a + g).toFixed(2)} ${C} ${C})`);
+      this._gh[0].setAttribute("opacity", op.toFixed(3));
+      this._gh[1].setAttribute("opacity", op.toFixed(3));
+      this._reel.setAttribute("opacity", (1 - op * 0.6).toFixed(3));
+    }
+  }
+  customElements.define("sk-reel-ampex-nab", SkReelAmpexNab);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

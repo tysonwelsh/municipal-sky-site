@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NES controller cross key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dpad-nes-controller",
+  "element": "sk-dpad-nes-controller",
+  "name": "NES controller cross key",
+  "kind": "input",
+  "code": "E3",
+  "type": "D-pad / cross key",
+  "source": "The moulded cross key of the Nintendo NES-004 control pad (1985): a matte black cross in a dished recess on a two-tone grey ABS brick, with the black-and-silver overlay and the red A / B domes",
+  "era": "1980s",
+  "origin": "Japan",
+  "materials": ["matte ABS", "glossy ABS overlay", "silicone rubber pills"],
+  "tags": ["game", "8-way", "cross key", "console", "1985", "red buttons"],
+  "value": { "model": "steps", "options": ["none", "n", "ne", "e", "se", "s", "sw", "w", "nw"] },
+  "attributes": ["value", "ways", "full", "label", "scale", "disabled"],
+  "events": ["input", "change", "activate"],
+  "size": { "w": 88, "h": 88 },
+  "notes": "The cross alone is 88 x 88 px; the full attribute mounts the whole 375 x 165 px pad with SELECT / START and A / B, which emit activate with detail.key."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-dpad-nes-controller value="e" label="CROSS KEY"></sk-dpad-nes-controller>
+    <sk-dpad-nes-controller value="ne" label="8-WAY"></sk-dpad-nes-controller>
+    <sk-dpad-nes-controller full value="n" label="CONTROL PAD"></sk-dpad-nes-controller>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>NES-004 control pad</b> put a single moulded cross where two arcade sticks used to be. The cross is a
+  matte black ABS plus with square ends, a low arrow ridge moulded into each arm and a shallow dish at the
+  middle; it sits about a millimetre below the surface in a round charcoal recess, rocking on a pivot under the
+  dish so that only one arm — or two, for a diagonal — can go down at a time. The brick around it is two-tone
+  grey with a hairline parting line where the two shells meet, and the right-hand half is a glossy black overlay
+  with fine silver rules, two rubber pills and two red domes.</p>
+  <p><b>The tells kept here:</b> the four equal arms with a dished, never-moving centre; the moulded arrow on each
+  arm, lit on the edge that faces the light and dark on the edge that does not; the press that <i>tilts</i> the
+  cross about its pivot — the pressed arm drops and darkens, the opposite arm rises and catches a grey highlight,
+  and a diagonal tilts two arms by half; the recess ring shadowed hardest at the top-left because the light comes
+  from there and the cross lives in a hole; matte black that takes a broad grey highlight and never a white one.
+  In <code>full</code> the overlay's silver rules, the pills in their lighter grey well with SELECT and START
+  printed beneath, and the red domes in their black squares with the red A / B legends. Pointer, arrow keys (two
+  at once give a diagonal) and the wheel all drive it; <code>ways="4"</code> throws the diagonals away.</p>
+  <p><b>Left out:</b> the cable and its strain relief beyond a stub, the screw bosses on the back, the exact
+  Nintendo wordmarks (a generic legend stands in), and the rubber membrane contacts under the cross.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dpad-nes-controller> — NES-004 cross key, alone or on the whole pad ====
+   attributes: value(none|n|ne|e|se|s|sw|w|nw) ways(8|4) full label scale disabled
+   events: input {value} while held, change {value} when it settles, activate {key} for A/B/SELECT/START
+   self-contained: paste this block into any page and use <sk-dpad-nes-controller></sk-dpad-nes-controller> */
+(function () {
+  if (customElements.get("sk-dpad-nes-controller")) return;
+
+  var W = 88, H = 88, FW = 375, FH = 165;
+  var DIRS = ["n", "ne", "e", "se", "s", "sw", "w", "nw"];
+  var TILT = {
+    none: [0, 0], n: [9, 0], s: [-9, 0], e: [0, 9], w: [0, -9],
+    ne: [5, 5], se: [-5, 5], sw: [-5, -5], nw: [5, -5]
+  };
+
+  /* ---- the cross outline: a plus with square ends, rounded at every corner ---- */
+  function roundPoly(pts, radii) {
+    var d = "", n = pts.length;
+    for (var i = 0; i < n; i++) {
+      var p0 = pts[(i + n - 1) % n], p1 = pts[i], p2 = pts[(i + 1) % n], r = radii[i];
+      var u = unit(p0, p1), v = unit(p2, p1);
+      var a = [p1[0] + u[0] * r, p1[1] + u[1] * r], b = [p1[0] + v[0] * r, p1[1] + v[1] * r];
+      d += (i ? " L " : "M ") + f(a) + " Q " + f(p1) + " " + f(b);
+    }
+    return d + " Z";
+  }
+  function unit(a, b) { var dx = a[0] - b[0], dy = a[1] - b[1], m = Math.hypot(dx, dy) || 1; return [dx / m, dy / m]; }
+  function f(p) { return (Math.round(p[0] * 100) / 100) + " " + (Math.round(p[1] * 100) / 100); }
+
+  var AW = 12, AR = 33;
+  var CROSS = roundPoly(
+    [[-AW, -AR], [AW, -AR], [AW, -AW], [AR, -AW], [AR, AW], [AW, AW], [AW, AR], [-AW, AR], [-AW, AW], [-AR, AW], [-AR, -AW], [-AW, -AW]],
+    [3, 3, 5, 3, 3, 5, 3, 3, 5, 3, 3, 5]);
+
+  /* ---- the moulded arrow on one arm: edges lit or shadowed by their own normal ---- */
+  function arrow(rot) {
+    var a = rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    var P = [[0, -28.6], [6.6, -19.0], [-6.6, -19.0]].map(function (p) { return [p[0] * c - p[1] * s, p[0] * s + p[1] * c]; });
+    var cen = [(P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3];
+    var out = '<path d="M ' + f(P[0]) + ' L ' + f(P[1]) + ' L ' + f(P[2]) + ' Z" fill="#26262a"/>';
+    for (var i = 0; i < 3; i++) {
+      var A = P[i], B = P[(i + 1) % 3];
+      var n = [B[1] - A[1], -(B[0] - A[0])], m = Math.hypot(n[0], n[1]) || 1;
+      n = [n[0] / m, n[1] / m];
+      var mid = [(A[0] + B[0]) / 2 - cen[0], (A[1] + B[1]) / 2 - cen[1]];
+      if (n[0] * mid[0] + n[1] * mid[1] < 0) { n = [-n[0], -n[1]]; }
+      var lit = (n[0] * -0.707 + n[1] * -0.707) > 0.08;
+      out += '<path d="M ' + f(A) + ' L ' + f(B) + '" stroke="' + (lit ? "#5a5a60" : "#0a0a0b") +
+             '" stroke-width="1.1" stroke-linecap="round" opacity="' + (lit ? 0.9 : 0.8) + '" fill="none"/>';
+    }
+    return out;
+  }
+
+  /* ---- the charcoal recess the cross sits in, centred on (cx,cy) ---- */
+  function well(cx, cy) {
+    return '<g transform="translate(' + cx + ' ' + cy + ')">' +
+      '<circle r="39.5" fill="url(#rec)"/>' +
+      '<g clip-path="url(#recclip)">' +
+        '<circle r="39" fill="none" stroke="#000" stroke-width="7" opacity="0.75" filter="url(#b2)"/>' +
+        '<path d="M -34 -19 A 39 39 0 0 1 19 -34" fill="none" stroke="#000" stroke-width="7" opacity="0.7" filter="url(#b2)"/>' +
+        '<path d="M 32 21 A 39 39 0 0 1 -21 33" fill="none" stroke="#7d7d80" stroke-width="1.6" opacity="0.5" filter="url(#b1)"/>' +
+      '</g>' +
+      '<circle r="39.5" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1"/>' +
+      '<path class="csh" d="' + CROSS + '" fill="#000" opacity="0.62" filter="url(#b2)" transform="translate(1.6 2.2)"/>' +
+    '</g>';
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host{display:inline-block;width:88px;height:88px;position:relative;font-size:10px;-webkit-tap-highlight-color:transparent}',
+  ':host([hidden]){display:none}',
+  '.wrap{position:absolute;left:0;top:0;width:88px;height:88px;transform-origin:0 0}',
+  'svg{position:absolute;left:0;top:0;display:block;overflow:visible}',
+  '.pad{display:none}',
+  ':host([full]) .pad{display:block}',
+  ':host([full]) .solo{display:none}',
+  '.persp{position:absolute;left:0;top:0;width:88px;height:88px;perspective:300px;perspective-origin:50% 50%;pointer-events:none}',
+  ':host([full]) .persp{left:28px;top:52px}',
+  '.cross{transition:transform 60ms cubic-bezier(.2,.9,.3,1.12)}',
+  '.cross.down{transition:transform 30ms linear}',
+  '.grab{position:absolute;left:5px;top:5px;width:78px;height:78px;border-radius:50%;cursor:pointer;',
+  '  touch-action:none;user-select:none;-webkit-user-select:none;outline:none}',
+  ':host([full]) .grab{left:33px;top:57px}',
+  ':host([disabled]) .grab{cursor:default}',
+  '.grab:focus-visible{box-shadow:0 0 0 2px #16e0e0,0 0 12px rgba(22,224,224,.65)}',
+  '.btn{position:absolute;display:none;border-radius:50%;cursor:pointer;outline:none;',
+  '  touch-action:none;user-select:none;-webkit-user-select:none;background:transparent;border:0;padding:0}',
+  ':host([full]) .btn{display:block}',
+  ':host([full][disabled]) .btn{cursor:default}',
+  '.btn.pill{border-radius:8px}',
+  '.btn:focus-visible{box-shadow:0 0 0 2px #16e0e0,0 0 12px rgba(22,224,224,.65)}',
+  '.key{transition:transform 40ms ease-out,filter 40ms ease-out;transform-box:fill-box;transform-origin:50% 50%}',
+  '.key.on{transform:translateY(1.6px);filter:brightness(.72)}',
+  'text{font-family:"Michroma","Eurostile","Arial Narrow",sans-serif;font-weight:400}',
+  '.lg{font-size:6px;letter-spacing:.06em;text-anchor:middle;fill:#a5a29b}',
+  '.ab{font-size:9px;letter-spacing:.06em;text-anchor:middle;fill:#c8262a}',
+  '.wm{font-size:5.6px;letter-spacing:.24em;text-anchor:middle;fill:#b23a36}',
+  '.wm2{font-size:4.4px;letter-spacing:.2em;text-anchor:middle;fill:#8a867e}',
+  '</style>',
+  '<div class="wrap">',
+
+  /* ---------- defs + the cross-only well ---------- */
+  '<svg class="solo" width="88" height="88" viewBox="0 0 88 88" aria-hidden="true">',
+    '<defs>',
+      '<radialGradient id="rec" cx="34%" cy="28%" r="78%">',
+        '<stop offset="0" stop-color="#232326"/><stop offset="0.6" stop-color="#161617"/><stop offset="1" stop-color="#0d0d0e"/>',
+      '</radialGradient>',
+      '<clipPath id="recclip"><circle r="39.5"/></clipPath>',
+      '<linearGradient id="abs" x1="0.12" y1="0.05" x2="0.85" y2="1">',
+        '<stop offset="0" stop-color="#3d3d40"/><stop offset="0.34" stop-color="#232325"/><stop offset="0.72" stop-color="#191919"/><stop offset="1" stop-color="#121213"/>',
+      '</linearGradient>',
+      '<linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">',
+        '<stop offset="0" stop-color="#5c5c61"/><stop offset="0.45" stop-color="#2a2a2c"/><stop offset="1" stop-color="#050505"/>',
+      '</linearGradient>',
+      '<linearGradient id="dish" x1="0.1" y1="0.05" x2="0.9" y2="1">',
+        '<stop offset="0" stop-color="#0c0c0d"/><stop offset="0.55" stop-color="#1e1e20"/><stop offset="1" stop-color="#3a3a3e"/>',
+      '</linearGradient>',
+      '<radialGradient id="spec" cx="30%" cy="22%" r="62%">',
+        '<stop offset="0" stop-color="#ffffff" stop-opacity="0.13"/><stop offset="0.55" stop-color="#ffffff" stop-opacity="0.03"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>',
+      '</radialGradient>',
+      '<linearGradient id="body" x1="0.1" y1="0" x2="0.5" y2="1">',
+        '<stop offset="0" stop-color="#d4d0c8"/><stop offset="0.42" stop-color="#bab6af"/><stop offset="0.8" stop-color="#a9a59d"/><stop offset="1" stop-color="#9d9991"/>',
+      '</linearGradient>',
+      '<linearGradient id="ovl" x1="0.1" y1="0" x2="0.6" y2="1">',
+        '<stop offset="0" stop-color="#242426"/><stop offset="0.18" stop-color="#141415"/><stop offset="1" stop-color="#08080a"/>',
+      '</linearGradient>',
+      '<linearGradient id="gloss" x1="0" y1="0" x2="0.25" y2="1">',
+        '<stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.03"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>',
+      '</linearGradient>',
+      '<radialGradient id="red" cx="34%" cy="26%" r="76%">',
+        '<stop offset="0" stop-color="#e86a6a"/><stop offset="0.3" stop-color="#cf3230"/><stop offset="0.76" stop-color="#a71d1f"/><stop offset="1" stop-color="#6d1214"/>',
+      '</radialGradient>',
+      '<linearGradient id="pill" x1="0.1" y1="0" x2="0.5" y2="1">',
+        '<stop offset="0" stop-color="#3a3a3a"/><stop offset="0.4" stop-color="#232323"/><stop offset="1" stop-color="#121212"/>',
+      '</linearGradient>',
+      '<linearGradient id="wellg" x1="0.1" y1="0" x2="0.5" y2="1">',
+        '<stop offset="0" stop-color="#4a4844"/><stop offset="0.5" stop-color="#5e5b56"/><stop offset="1" stop-color="#6d6a64"/>',
+      '</linearGradient>',
+      '<filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>',
+      '<filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>',
+      '<filter id="b4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4.5"/></filter>',
+    '</defs>',
+    well(44, 44),
+  '</svg>',
+
+  /* ---------- the whole pad ---------- */
+  '<svg class="pad" width="375" height="165" viewBox="0 0 375 165" aria-hidden="true">',
+    '<rect x="8" y="16" width="360" height="148" rx="12" fill="#000" opacity="0.5" filter="url(#b4)"/>',
+    '<rect x="88" y="0" width="26" height="12" rx="4" fill="#2b2b2c"/>',
+    '<rect x="2" y="6" width="371" height="153" rx="11" fill="url(#body)" stroke="#5f5c56" stroke-width="0.8"/>',
+    /* the parting line where the two shells meet */
+    '<rect x="4.2" y="8.2" width="366.6" height="148.6" rx="9.4" fill="none" stroke="#6f6c65" stroke-opacity="0.85" stroke-width="0.9"/>',
+    '<rect x="5.4" y="9.4" width="364.2" height="146.2" rx="8.8" fill="none" stroke="#e6e2da" stroke-opacity="0.5" stroke-width="0.7"/>',
+    '<path d="M 13 6 L 362 6" stroke="#f2eee6" stroke-opacity="0.55" stroke-width="1.2"/>',
+    '<path d="M 13 158 L 362 158" stroke="#4e4b46" stroke-opacity="0.6" stroke-width="1.2"/>',
+    /* generic wordmark above the cross */
+    '<text class="wm" x="72" y="30">CONTROL PAD</text>',
+    '<text class="wm2" x="72" y="42">MODEL 004</text>',
+    /* the glossy black overlay */
+    '<rect x="131" y="27" width="234" height="123" rx="7" fill="#0a0a0b" opacity="0.55" filter="url(#b1)"/>',
+    '<rect x="130" y="26" width="234" height="122" rx="7" fill="url(#ovl)" stroke="#000" stroke-width="0.8"/>',
+    '<rect x="130" y="26" width="234" height="122" rx="7" fill="url(#gloss)"/>',
+    /* fine silver rules along the top of the overlay */
+    '<g stroke="#8e8b85" stroke-width="0.9" opacity="0.5">',
+      '<path d="M 142 34.5 L 352 34.5"/><path d="M 142 39.5 L 352 39.5"/><path d="M 142 44.5 L 352 44.5"/><path d="M 142 49.5 L 352 49.5"/>',
+    '</g>',
+    '<g stroke="#000" stroke-width="0.8" opacity="0.65">',
+      '<path d="M 142 35.6 L 352 35.6"/><path d="M 142 40.6 L 352 40.6"/><path d="M 142 45.6 L 352 45.6"/><path d="M 142 50.6 L 352 50.6"/>',
+    '</g>',
+    /* SELECT / START in a lighter grey well */
+    '<rect x="146" y="72" width="108" height="50" rx="6" fill="url(#wellg)" stroke="#2a2825" stroke-width="0.8"/>',
+    '<rect x="147" y="73" width="106" height="48" rx="5.4" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="2.4" filter="url(#b1)"/>',
+    '<g class="key k-select">',
+      '<rect x="157" y="86" width="40" height="14" rx="7" fill="url(#pill)" stroke="#000" stroke-width="0.7"/>',
+      '<rect x="159" y="87.4" width="36" height="4" rx="2" fill="#6c6c6c" opacity="0.5"/>',
+    '</g>',
+    '<g class="key k-start">',
+      '<rect x="203" y="86" width="40" height="14" rx="7" fill="url(#pill)" stroke="#000" stroke-width="0.7"/>',
+      '<rect x="205" y="87.4" width="36" height="4" rx="2" fill="#6c6c6c" opacity="0.5"/>',
+    '</g>',
+    '<text class="lg" x="177" y="114">SELECT</text>',
+    '<text class="lg" x="223" y="114">START</text>',
+    /* the red domes in their black squares */
+    '<rect x="266" y="58" width="46" height="62" rx="5" fill="#0c0c0d" stroke="#000" stroke-width="0.8"/>',
+    '<rect x="316" y="58" width="46" height="62" rx="5" fill="#0c0c0d" stroke="#000" stroke-width="0.8"/>',
+    '<circle cx="289" cy="83" r="17.5" fill="#070707"/>',
+    '<circle cx="339" cy="83" r="17.5" fill="#070707"/>',
+    '<g class="key k-b">',
+      '<circle cx="289" cy="83" r="15.6" fill="url(#red)" stroke="#5e0f11" stroke-width="0.7"/>',
+      '<ellipse cx="284" cy="77.5" rx="6.4" ry="4.6" fill="#ffffff" opacity="0.22"/>',
+      '<path d="M 277.5 90.5 A 15.6 15.6 0 0 0 300.5 90.5" fill="none" stroke="#e8807c" stroke-opacity="0.35" stroke-width="1.4"/>',
+    '</g>',
+    '<g class="key k-a">',
+      '<circle cx="339" cy="83" r="15.6" fill="url(#red)" stroke="#5e0f11" stroke-width="0.7"/>',
+      '<ellipse cx="334" cy="77.5" rx="6.4" ry="4.6" fill="#ffffff" opacity="0.22"/>',
+      '<path d="M 327.5 90.5 A 15.6 15.6 0 0 0 350.5 90.5" fill="none" stroke="#e8807c" stroke-opacity="0.35" stroke-width="1.4"/>',
+    '</g>',
+    '<text class="ab" x="289" y="114">B</text>',
+    '<text class="ab" x="339" y="114">A</text>',
+    well(72, 96),
+  '</svg>',
+
+  /* ---------- the cross itself, on its own tilting layer ---------- */
+  '<div class="persp">',
+    '<svg class="cross" width="88" height="88" viewBox="0 0 88 88" aria-hidden="true">',
+      '<g transform="translate(44 44)">',
+        '<path d="' + CROSS + '" fill="url(#abs)" stroke="url(#edge)" stroke-width="1.3"/>',
+        '<path d="' + CROSS + '" fill="url(#spec)"/>',
+        '<g class="arrows">', arrow(0), arrow(90), arrow(180), arrow(270), '</g>',
+        '<circle r="10.4" fill="url(#dish)"/>',
+        '<circle r="10.4" fill="none" stroke="#000" stroke-opacity="0.65" stroke-width="1.1"/>',
+        '<path d="M -7.4 7.4 A 10.4 10.4 0 0 0 7.4 7.4" fill="none" stroke="#6a6a70" stroke-opacity="0.45" stroke-width="1"/>',
+        '<g clip-path="url(#crclip)">',
+          '<rect class="sh sh-n" x="-13" y="-34" width="26" height="30" fill="#000" opacity="0"/>',
+          '<rect class="sh sh-e" x="4" y="-13" width="30" height="26" fill="#000" opacity="0"/>',
+          '<rect class="sh sh-s" x="-13" y="4" width="26" height="30" fill="#000" opacity="0"/>',
+          '<rect class="sh sh-w" x="-34" y="-13" width="30" height="26" fill="#000" opacity="0"/>',
+          '<rect class="lt lt-n" x="-13" y="-34" width="26" height="30" fill="#ffffff" opacity="0"/>',
+          '<rect class="lt lt-e" x="4" y="-13" width="30" height="26" fill="#ffffff" opacity="0"/>',
+          '<rect class="lt lt-s" x="-13" y="4" width="26" height="30" fill="#ffffff" opacity="0"/>',
+          '<rect class="lt lt-w" x="-34" y="-13" width="30" height="26" fill="#ffffff" opacity="0"/>',
+        '</g>',
+      '</g>',
+      '<defs><clipPath id="crclip" clipPathUnits="userSpaceOnUse"><path d="' + CROSS + '" transform="translate(44 44)"/></clipPath></defs>',
+    '</svg>',
+  '</div>',
+
+  '<div class="grab" role="slider" tabindex="0"></div>',
+  '<div class="btn" data-key="b"   role="button" tabindex="0" aria-label="B"      style="left:272px;top:66px;width:34px;height:34px"></div>',
+  '<div class="btn" data-key="a"   role="button" tabindex="0" aria-label="A"      style="left:322px;top:66px;width:34px;height:34px"></div>',
+  '<div class="btn pill" data-key="select" role="button" tabindex="0" aria-label="SELECT" style="left:156px;top:84px;width:42px;height:18px"></div>',
+  '<div class="btn pill" data-key="start"  role="button" tabindex="0" aria-label="START"  style="left:202px;top:84px;width:42px;height:18px"></div>',
+  '</div>'].join("");
+
+  class SkDpadNes extends HTMLElement {
+    static get observedAttributes() { return ["value", "ways", "full", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = "none"; this._scale = 1; this._ways = 8;
+      this._held = {}; this._drag = null; this._wt = 0;
+      var R = this.shadowRoot;
+      this._wrap = R.querySelector(".wrap");
+      this._cross = R.querySelector(".cross");
+      this._grab = R.querySelector(".grab");
+      this._btns = Array.prototype.slice.call(R.querySelectorAll(".btn"));
+      this._sh = {}; this._lt = {};
+      ["n", "e", "s", "w"].forEach(function (d) { this._sh[d] = R.querySelector(".sh-" + d); this._lt[d] = R.querySelector(".lt-" + d); }, this);
+      ["_onDown", "_onMove", "_onUp", "_onWheel", "_onKeyDown", "_onKeyUp", "_onBtnDown", "_onBtnUp", "_onBtnKey"]
+        .forEach(function (m) { this[m] = this[m].bind(this); }, this);
+      this._bound = false;
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._v);
+      this._readAttrs(); this._render();
+      if (this._bound) return;                       // idempotent: stage.js re-parents us once
+      this._bound = true;
+      var g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKeyDown);
+      g.addEventListener("keyup", this._onKeyUp);
+      this._btns.forEach(function (b) {
+        b.addEventListener("pointerdown", this._onBtnDown);
+        b.addEventListener("pointerup", this._onBtnUp);
+        b.addEventListener("pointercancel", this._onBtnUp);
+        b.addEventListener("keydown", this._onBtnKey);
+      }, this);
+    }
+    disconnectedCallback() { clearTimeout(this._wt); this._wt = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) { v = this._norm(v); if (v == null) return; this._v = v; this.setAttribute("value", v); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _norm(v) {
+      v = String(v == null ? "" : v).toLowerCase().trim();
+      if (v === "" || v === "none" || v === "null" || v === "centre" || v === "center") return "none";
+      if (DIRS.indexOf(v) < 0) return null;
+      if (this._ways === 4 && v.length === 2) return v[0];
+      return v;
+    }
+    _readAttrs() {
+      var s = parseFloat(this.getAttribute("scale")); this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      var w = parseInt(this.getAttribute("ways"), 10); this._ways = w === 4 ? 4 : 8;
+      var v = this._norm(this.getAttribute("value")); if (v != null) this._v = v;
+      var full = this.hasAttribute("full"), dis = this.hasAttribute("disabled");
+      var nw = full ? FW : W, nh = full ? FH : H;
+      this.style.width = (nw * this._scale) + "px"; this.style.height = (nh * this._scale) + "px";
+      this._wrap.style.width = nw + "px"; this._wrap.style.height = nh + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "direction pad");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", String(this._ways));
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._btns.forEach(function (b) { b.setAttribute("tabindex", (full && !dis) ? "0" : "-1"); b.setAttribute("aria-disabled", dis ? "true" : "false"); });
+    }
+    _render() {
+      var v = this._v, t = TILT[v] || [0, 0];
+      this._cross.style.transform = "rotateX(" + t[0] + "deg) rotateY(" + t[1] + "deg)";
+      var OPP = { n: "s", s: "n", e: "w", w: "e" };
+      ["n", "e", "s", "w"].forEach(function (d) {
+        var on = v !== "none" && v.indexOf(d) >= 0;
+        var half = on && v.length === 2;
+        this._sh[d].setAttribute("opacity", on ? (half ? 0.2 : 0.32) : 0);
+        var opp = v !== "none" && v.indexOf(OPP[d]) >= 0;
+        this._lt[d].setAttribute("opacity", opp ? (v.length === 2 ? 0.045 : 0.075) : 0);
+      }, this);
+      this._grab.setAttribute("aria-valuenow", String(v === "none" ? 0 : DIRS.indexOf(v) + 1));
+      this._grab.setAttribute("aria-valuetext", v);
+    }
+    _set(v, settle) {
+      v = this._norm(v); if (v == null) return;
+      if (v === this._v && !settle) return;
+      this._v = v; this._render();
+      if (settle) this.setAttribute("value", v);       // only settled values reflect
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _dirAt(e) {
+      var r = this._grab.getBoundingClientRect();
+      var dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      var d = Math.hypot(dx, dy) / (r.width / 2 || 1);
+      if (d < 0.2) return "none";
+      var a = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
+      if (this._ways === 4) return ["n", "e", "s", "w"][Math.round(a / 90) % 4];
+      return DIRS[Math.round(a / 45) % 8];
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._cross.classList.add("down");
+      this._drag = 1;
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      this._set(this._dirAt(e), false);
+    }
+    _onMove(e) { if (this._drag) this._set(this._dirAt(e), false); }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._drag = null;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._cross.classList.remove("down");
+      this._set("none", true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      var step = this._ways === 4 ? 2 : 1, ring = this._ways === 4 ? ["n", "e", "s", "w"] : DIRS;
+      var i = ring.indexOf(this._v);
+      var n = i < 0 ? (e.deltaY < 0 ? 0 : ring.length - 1) : (i + (e.deltaY < 0 ? 1 : -1) + ring.length) % ring.length;
+      this._set(ring[n], false);
+      clearTimeout(this._wt);
+      this._wt = setTimeout(function () { this._set("none", true); }.bind(this), 280);
+    }
+    _fromHeld() {
+      var v = (this._held.n ? "n" : this._held.s ? "s" : "") + (this._held.e ? "e" : this._held.w ? "w" : "");
+      return v === "" ? "none" : v;
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      var map = { ArrowUp: "n", ArrowDown: "s", ArrowLeft: "w", ArrowRight: "e" };
+      if (e.key === "Home") { e.preventDefault(); this._set("n", false); this._set("n", true); return; }
+      if (e.key === "End") { e.preventDefault(); this._held = {}; this._set("none", true); return; }
+      var d = map[e.key]; if (!d) return;
+      e.preventDefault();
+      if (d === "n") delete this._held.s; if (d === "s") delete this._held.n;
+      if (d === "e") delete this._held.w; if (d === "w") delete this._held.e;
+      this._held[d] = 1;
+      this._set(this._fromHeld(), false);
+    }
+    _onKeyUp(e) {
+      var map = { ArrowUp: "n", ArrowDown: "s", ArrowLeft: "w", ArrowRight: "e" };
+      var d = map[e.key]; if (!d) return;
+      delete this._held[d];
+      var v = this._fromHeld();
+      if (v === "none") this._set("none", true); else this._set(v, false);
+    }
+    _btnFor(el) { return this.shadowRoot.querySelector(".k-" + el.getAttribute("data-key")); }
+    _onBtnDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault(); e.currentTarget.focus({ preventScroll: true });
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+      this._btnFor(e.currentTarget).classList.add("on");
+      this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { key: e.currentTarget.getAttribute("data-key") } }));
+    }
+    _onBtnUp(e) { this._btnFor(e.currentTarget).classList.remove("on"); }
+    _onBtnKey(e) {
+      if (this.hasAttribute("disabled") || (e.key !== " " && e.key !== "Enter")) return;
+      e.preventDefault();
+      var k = this._btnFor(e.currentTarget), t = e.currentTarget;
+      k.classList.add("on"); setTimeout(function () { k.classList.remove("on"); }, 110);
+      this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { key: t.getAttribute("data-key") } }));
+    }
+  }
+  customElements.define("sk-dpad-nes-controller", SkDpadNes);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

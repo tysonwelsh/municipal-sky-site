@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Western Electric 3-slot payphone coin head — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Anton&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "coinslot-we-3-slot-payphone",
+  "element": "sk-coinslot-we-3-slot-payphone",
+  "name": "Western Electric 3-slot payphone coin head",
+  "kind": "input",
+  "code": "E8",
+  "type": "3-slot coin head",
+  "source": "Western Electric 233G / 236G (Gray Telephone Pay Station, 1911-1965): the nickel-plated coin head on top of a black steel payphone case, three slots cast 5c / 10c / 25c",
+  "era": "1910s",
+  "origin": "USA",
+  "materials": ["nickel plate", "cast steel", "black wrinkle enamel"],
+  "tags": ["telephone", "payphone", "coin", "momentary", "chrome"],
+  "value": { "model": "momentary" },
+  "attributes": ["label", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 300, "h": 150 },
+  "notes": "Two coin heads and a scaled-down one: click a slot or focus one and press Space/Enter, arrows move between slots."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-coinslot-we-3-slot-payphone label="PAY STATION"></sk-coinslot-we-3-slot-payphone>
+    <sk-coinslot-we-3-slot-payphone label="PAY STATION" scale="0.82"></sk-coinslot-we-3-slot-payphone>
+    <sk-coinslot-we-3-slot-payphone label="PAY STATION" scale="0.65" disabled></sk-coinslot-we-3-slot-payphone>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>The <b>Gray Telephone Pay Station's</b> coin head, made by Western Electric from 1911 into the 1960s, is
+the nickel-plated fascia on top of every black wrinkle-enamel payphone case: three slots of three different
+widths side by side, "5¢" "10¢" "25¢" cast into the metal above them, the nickel worn warm and slightly dull
+from decades of thumbs. A nickel drops with a single bell, a dime with a double bell, a quarter with a gong —
+the operator (and later the mechanism) told them apart by ear as much as by sight.</p>
+<p><b>The tells kept here:</b> three different-width chutes, narrowest to widest, left to right; the cast
+relief numerals, a light top edge and a dark underside on the same nickel; the warm, slightly dull plating
+with a hard specular on the cast edges; a coin that tilts ninety degrees and drops into the slot's plane
+when a station is activated, named with its chime in the event detail. Each slot is a real button: click it,
+Tab to it and press Space or Enter, or move between slots with the arrow keys.</p>
+<p><b>Left out:</b> the coin-return lever and cup, the black case below the head, the brass lock, the wear
+patch worn to brass around the quarter slot.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-coinslot-we-3-slot-payphone> — WE 233G nickel 3-slot coin head (5c/10c/25c) ====
+   attributes: label scale disabled
+   events (momentary, one set per slot): press {denomination}, release {denomination}, activate {denomination,chime}
+   self-contained: paste this block into any page and use <sk-coinslot-we-3-slot-payphone></sk-coinslot-we-3-slot-payphone> */
+(function () {
+  if (customElements.get("sk-coinslot-we-3-slot-payphone")) return;
+  const W = 300, H = 150;
+  const SLOTS = [
+    { d: 5, label: "5¢", chime: "bell", x: 62, w: 26 },
+    { d: 10, label: "10¢", chime: "double bell", x: 138, w: 34 },
+    { d: 25, label: "25¢", chime: "gong", x: 224, w: 44 }
+  ];
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Anton", "Arial Narrow", sans-serif; }
+    .label { font-size: 8px; letter-spacing: 0.22em; fill: #8a8f92; text-anchor: middle; font-family: "Special Elite", "Courier New", monospace; }
+    .btn { position: absolute; top: 30px; width: 52px; height: 62px; border-radius: 6px; cursor: pointer;
+      touch-action: manipulation; outline: none; -webkit-user-select: none; user-select: none; background: transparent; border: none; padding: 0; }
+    .btn:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    :host([disabled]) .btn { cursor: default; }
+    .coin { opacity: 0; transform: translateY(0) scaleY(1); transform-box: fill-box; transform-origin: 50% 0%; }
+    .coin.drop { animation: coindrop 320ms ease-in forwards; }
+    @keyframes coindrop {
+      0% { opacity: 1; transform: translateY(0) scaleY(1) rotate(0deg); }
+      35% { opacity: 1; transform: translateY(2px) scaleY(0.35) rotate(6deg); }
+      100% { opacity: 0; transform: translateY(16px) scaleY(0.2) rotate(10deg); }
+    }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="wrinkle" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#232221"/><stop offset="1" stop-color="#121110"/>
+        </linearGradient>
+        <linearGradient id="nickel" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#f0eee7"/><stop offset="0.28" stop-color="#cfcbbd"/><stop offset="0.5" stop-color="#9a9d9c"/>
+          <stop offset="0.56" stop-color="#e6e5df"/><stop offset="0.78" stop-color="#8e918f"/><stop offset="1" stop-color="#575b5a"/>
+        </linearGradient>
+        <linearGradient id="chuteWall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7d827f"/><stop offset="0.5" stop-color="#c9c7ba"/><stop offset="1" stop-color="#4c504e"/>
+        </linearGradient>
+        <radialGradient id="coinFill" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#f2f0e8"/><stop offset="0.55" stop-color="#c7c4b4"/><stop offset="1" stop-color="#88857a"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <ellipse cx="${W/2}" cy="${H-16}" rx="130" ry="8" fill="#000" opacity="0.35" filter="url(#soft)"/>
+      <text class="label" x="${W/2}" y="${H-8}"></text>
+
+      <!-- black wrinkle case edges peeking above and below the nickel fascia -->
+      <rect x="8" y="0" width="${W-16}" height="18" rx="4" fill="url(#wrinkle)"/>
+      <rect x="8" y="${H-40}" width="${W-16}" height="18" rx="4" fill="url(#wrinkle)"/>
+
+      <!-- nickel fascia -->
+      <rect x="10" y="8" width="${W-20}" height="98" rx="7" fill="url(#nickel)" stroke="#3d403e" stroke-width="1"/>
+      <rect x="12" y="10" width="${W-24}" height="4" rx="2" fill="#fff" opacity="0.45"/>
+      <rect x="10" y="8" width="${W-20}" height="98" rx="7" fill="none" stroke="#2a2c2b" stroke-opacity="0.4" stroke-width="1"/>
+
+      <g class="slots"></g>
+    </svg>
+    <button class="btn" style="left:${SLOTS[0].x - 26}px" type="button"></button>
+    <button class="btn" style="left:${SLOTS[1].x - 26}px" type="button"></button>
+    <button class="btn" style="left:${SLOTS[2].x - 26}px" type="button"></button>
+  </div>`;
+
+  function relief(g, x, y, str, size) {
+    const ns = "http://www.w3.org/2000/svg";
+    const mk = (dx, dy, fill, op) => {
+      const t = document.createElementNS(ns, "text");
+      t.setAttribute("x", x + dx); t.setAttribute("y", y + dy);
+      t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", size);
+      t.setAttribute("fill", fill); if (op != null) t.setAttribute("opacity", op);
+      t.textContent = str;
+      g.appendChild(t);
+    };
+    mk(-0.5, -0.6, "#fdfdf8", 0.9);
+    mk(0.5, 0.6, "#5b5e5c", 0.85);
+    mk(0, 0, "#c6c4ba", 1);
+  }
+
+  class SkCoinslotWePayphone extends HTMLElement {
+    static get observedAttributes() { return ["label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._label = this.shadowRoot.querySelector(".label");
+      this._slotsG = this.shadowRoot.querySelector(".slots");
+      this._btns = Array.from(this.shadowRoot.querySelectorAll(".btn"));
+      this._coins = [];
+      this._buildSlots();
+      this._btns.forEach((b, i) => {
+        b.addEventListener("pointerdown", () => this._press(i));
+        b.addEventListener("pointerup", () => this._releaseActivate(i));
+        b.addEventListener("pointercancel", () => this._cancel(i));
+        b.addEventListener("keydown", e => this._onKey(e, i));
+        b.addEventListener("keyup", e => { if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") this._releaseActivate(i); });
+      });
+    }
+    connectedCallback() { this._readAttrs(); }
+    disconnectedCallback() {}
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); }
+    get value() { return null; }
+    set value(_) { /* momentary: no settable value */ }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._btns[0].focus(); }
+
+    _buildSlots() {
+      const ns = "http://www.w3.org/2000/svg";
+      const g = this._slotsG;
+      SLOTS.forEach((s, i) => {
+        const chuteY = 46, chuteH = 44;
+        const wall = document.createElementNS(ns, "rect");
+        wall.setAttribute("x", s.x - s.w / 2 - 3); wall.setAttribute("y", chuteY - 3);
+        wall.setAttribute("width", s.w + 6); wall.setAttribute("height", chuteH + 6);
+        wall.setAttribute("rx", 6); wall.setAttribute("fill", "url(#chuteWall)");
+        wall.setAttribute("stroke", "#3a3c3b"); wall.setAttribute("stroke-width", "0.8");
+        g.appendChild(wall);
+        const mouth = document.createElementNS(ns, "rect");
+        mouth.setAttribute("x", s.x - s.w / 2); mouth.setAttribute("y", chuteY);
+        mouth.setAttribute("width", s.w); mouth.setAttribute("height", chuteH);
+        mouth.setAttribute("rx", 4); mouth.setAttribute("fill", "#050505");
+        g.appendChild(mouth);
+        const rim = document.createElementNS(ns, "rect");
+        rim.setAttribute("x", s.x - s.w / 2); rim.setAttribute("y", chuteY);
+        rim.setAttribute("width", s.w); rim.setAttribute("height", 3);
+        rim.setAttribute("fill", "#e9e7df"); rim.setAttribute("opacity", "0.55");
+        g.appendChild(rim);
+        relief(g, s.x, 34, s.label, 15);
+        const coin = document.createElementNS(ns, "circle");
+        coin.setAttribute("class", "coin");
+        coin.setAttribute("cx", s.x); coin.setAttribute("cy", chuteY - 6);
+        coin.setAttribute("r", Math.min(9, s.w / 2 - 2));
+        coin.setAttribute("fill", "url(#coinFill)");
+        coin.setAttribute("stroke", "#6d6a5e"); coin.setAttribute("stroke-width", "0.6");
+        g.appendChild(coin);
+        this._coins[i] = coin;
+      });
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._label.textContent = this.getAttribute("label") || "";
+      const dis = this.hasAttribute("disabled");
+      this._btns.forEach((b, i) => {
+        const s = SLOTS[i];
+        b.setAttribute("role", "button");
+        b.setAttribute("aria-label", (this.getAttribute("label") || "coin slot") + " " + s.label);
+        b.tabIndex = dis ? -1 : 0;
+        b.setAttribute("aria-disabled", dis ? "true" : "false");
+      });
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _press(i) {
+      if (this.hasAttribute("disabled")) return;
+      this._btns[i].focus({ preventScroll: true });
+      this.dispatchEvent(new CustomEvent("press", { bubbles: true, composed: true, detail: { denomination: SLOTS[i].d } }));
+    }
+    _cancel() {}
+    _releaseActivate(i) {
+      if (this.hasAttribute("disabled")) return;
+      const s = SLOTS[i];
+      this.dispatchEvent(new CustomEvent("release", { bubbles: true, composed: true, detail: { denomination: s.d } }));
+      this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { denomination: s.d, chime: s.chime } }));
+      const coin = this._coins[i];
+      coin.classList.remove("drop"); void coin.getBBox();
+      coin.classList.add("drop");
+      clearTimeout(coin._t); coin._t = setTimeout(() => coin.classList.remove("drop"), 340);
+    }
+    _onKey(e, i) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") {
+        if (!e.repeat) { e.preventDefault(); this._press(i); } else e.preventDefault();
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault(); this._btns[(i + 1) % this._btns.length].focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault(); this._btns[(i + this._btns.length - 1) % this._btns.length].focus();
+      } else if (e.key === "Home") { e.preventDefault(); this._btns[0].focus(); }
+      else if (e.key === "End") { e.preventDefault(); this._btns[this._btns.length - 1].focus(); }
+    }
+  }
+  customElements.define("sk-coinslot-we-3-slot-payphone", SkCoinslotWePayphone);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

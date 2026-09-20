@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locomotive boiler gauge glass — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "sight-glass-boiler-gauge-brass",
+  "element": "sk-sight-glass-boiler",
+  "name": "Locomotive boiler gauge glass",
+  "kind": "output",
+  "code": "I2",
+  "type": "Sight glass / liquid level",
+  "source": "The steam-locomotive and stationary-boiler tubular water gauge (Klinger, Penberthy, GWR/LMS pattern) — a glass between two brass cocks over a diagonal-striped backplate",
+  "era": "1920s",
+  "origin": "UK",
+  "materials": ["brass", "glass", "enamelled backplate", "verdigris"],
+  "tags": ["steam", "boiler", "locomotive", "water level", "refraction", "meniscus"],
+  "value": { "model": "range", "min": 0, "max": 1, "step": 0.005, "unit": "" },
+  "attributes": ["value", "boil", "danger", "label", "scale"],
+  "events": [],
+  "size": { "w": 90, "h": 320 },
+  "notes": "Three gauges: half a glass, a dangerously low one sitting on the red line, and one boiling hard at two-thirds. The stripes behind the glass lean the other way wherever there is water."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-sight-glass-boiler value="0.52" scale="0.63" label="water gauge, half a glass"></sk-sight-glass-boiler>
+    <sk-sight-glass-boiler value="0.21" scale="0.63" label="water gauge, dangerously low"></sk-sight-glass-boiler>
+    <sk-sight-glass-boiler value="0.66" boil="0.85" scale="0.63" label="water gauge, boiling hard"></sk-sight-glass-boiler>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Every boiler that ever made steam carried one of these on its backhead: a tube of thick glass held between
+  two brass cocks, with a drain cock under the bottom one and a guard in front in case the glass let go. The
+  fireman's whole job hangs on it, and it is read from six feet away in a shaking cab, so the backplate behind
+  the glass is painted with steep black diagonals — where there is water the glass acts as a lens and the
+  stripes appear to <i>lean the other way</i>, and the level is the hard line where they reverse.</p>
+  <p><b>The tells kept here:</b> the striped backplate and the reversal at the water line, with the stripes in
+  the water also a touch coarser because the glass magnifies them; the meniscus as a bright curve with a dark
+  line beneath it; the tube's white highlight down its left and the grey-green shadow down its right, over a
+  cylinder gradient so it reads as a tube and not a slot; the two big brass cocks with their turned bodies,
+  packing nuts and long lever handles both laid over the same way, which is how you know the gauge is open;
+  the brass polished bright on the handle crowns where hands go and dull with verdigris in the threads and
+  under the nuts; the drain cock and its little spout; the red lowest-safe-water line across the plate; and the
+  engraved brass plate at the foot. With <code>boil</code> the level surges about half a hertz and bubbles
+  climb the glass.</p>
+  <p><b>Left out:</b> the wire guard's mesh (the frame is here, the mesh would fill the window at this size),
+  the union threads into the backhead, and the maker's name (a generic engraving stands in).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-sight-glass-boiler> — locomotive boiler water gauge, brass cocks, striped backplate ====
+   attributes: value 0..1 (water level in the glass)  boil 0..1  danger 0..1 (the red line)  label  scale
+   no events (an output). the level eases over ~800 ms; boil adds a surge and bubbles.
+   self-contained: paste this block into any page and use <sk-sight-glass-boiler value="0.5"></sk-sight-glass-boiler> */
+(function () {
+  if (customElements.get("sk-sight-glass-boiler")) return;
+  const W = 90, H = 320, CX = 45;
+  const GT = 60, GB = 244;                 // top and bottom of the water column in the glass
+  const TL = 37, TW = 16;                  // tube left edge, tube width
+  const NB = 9;                            // bubbles
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif; }
+    .eng { font-size: 6.5px; font-weight: 700; fill: #2a2110; letter-spacing: 0.2em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="br" x1="0" y1="0" x2="1" y2="0.15">
+          <stop offset="0" stop-color="#6b5320"/><stop offset="0.16" stop-color="#e8cf7a"/><stop offset="0.36" stop-color="#c9a24c"/>
+          <stop offset="0.62" stop-color="#a5822f"/><stop offset="0.86" stop-color="#7d611f"/><stop offset="1" stop-color="#4e3c12"/>
+        </linearGradient>
+        <linearGradient id="brh" x1="0" y1="0" x2="1" y2="0.1">
+          <stop offset="0" stop-color="#8a6d2c"/><stop offset="0.2" stop-color="#ffeeb4"/><stop offset="0.42" stop-color="#d9b45c"/>
+          <stop offset="0.75" stop-color="#8a6d2c"/><stop offset="1" stop-color="#57431a"/>
+        </linearGradient>
+        <linearGradient id="brv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e8cf7a"/><stop offset="0.35" stop-color="#c9a24c"/><stop offset="1" stop-color="#6b5320"/>
+        </linearGradient>
+        <linearGradient id="tube" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5d6f77" stop-opacity="0.55"/><stop offset="0.12" stop-color="#ffffff" stop-opacity="0.5"/>
+          <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.06"/><stop offset="0.62" stop-color="#3f5158" stop-opacity="0.06"/>
+          <stop offset="0.84" stop-color="#7a8a90" stop-opacity="0.5"/><stop offset="1" stop-color="#3a474d" stop-opacity="0.62"/>
+        </linearGradient>
+        <linearGradient id="shield" x1="0" y1="0" x2="1" y2="0.6">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="0.28" stop-color="#ffffff" stop-opacity="0.04"/>
+          <stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+        </linearGradient>
+        <pattern id="stA" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(34)">
+          <rect x="0" y="0" width="3.5" height="7" fill="#1c1c1c"/>
+        </pattern>
+        <pattern id="stB" width="8.6" height="8.6" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
+          <rect x="0" y="0" width="4.3" height="8.6" fill="#132025"/>
+        </pattern>
+        <clipPath id="pane"><rect x="30" y="${GT - 4}" width="30" height="${GB - GT + 8}"/></clipPath>
+        <clipPath id="tubeclip"><rect x="${TL}" y="${GT - 4}" width="${TW}" height="${GB - GT + 8}"/></clipPath>
+        <clipPath id="wclip"><rect class="wclip" x="${TL}" y="0" width="${TW}" height="0"/></clipPath>
+        <filter id="sft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.8"/></filter>
+        <filter id="sft2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.7"/></filter>
+      </defs>
+
+      <!-- everything throws a shadow onto the backhead -->
+      <g opacity="0.55" filter="url(#sft)">
+        <rect x="30" y="16" width="34" height="292" rx="4" fill="#000"/>
+        <rect x="10" y="26" width="72" height="18" rx="6" fill="#000"/>
+        <rect x="10" y="272" width="72" height="18" rx="6" fill="#000"/>
+      </g>
+
+      <!-- the backplate and the striped window -->
+      <rect x="27" y="${GT - 7}" width="36" height="${GB - GT + 14}" rx="2" fill="#cfcabb"/>
+      <rect x="28" y="${GT - 6}" width="34" height="${GB - GT + 12}" rx="1.6" fill="#f0ece0"/>
+      <g clip-path="url(#pane)">
+        <rect x="30" y="${GT - 4}" width="30" height="${GB - GT + 8}" fill="#f4f1e7"/>
+        <rect x="30" y="${GT - 4}" width="30" height="${GB - GT + 8}" fill="url(#stA)" opacity="0.92"/>
+        <!-- the lowest safe water line -->
+        <g class="danger">
+          <rect x="30" y="-1.4" width="30" height="2.8" fill="#b3231b"/>
+          <path d="M 30 -3.4 l 4 3.4 l -4 3.4 Z" fill="#8e1a13"/>
+          <path d="M 60 -3.4 l -4 3.4 l 4 3.4 Z" fill="#8e1a13"/>
+        </g>
+        <!-- the water: white again, then the stripes the other way, then the tint -->
+        <g clip-path="url(#wclip)">
+          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="#c3dbe1"/>
+          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="url(#stB)"/>
+          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="#2a4a5a" opacity="0.26"/>
+        </g>
+        <!-- steam above the water is a shade whiter than the plate -->
+        <rect class="steam" x="${TL}" y="${GT - 4}" width="${TW}" height="0" fill="#ffffff" opacity="0.2"/>
+        <!-- bubbles -->
+        <g class="bub" clip-path="url(#tubeclip)"></g>
+        <!-- the meniscus rides on the surface -->
+        <g class="men">
+          <path d="M ${TL + 0.6} 2.4 Q ${CX} -2.6 ${TL + TW - 0.6} 2.4" fill="none" stroke="#123039" stroke-width="1.5" stroke-opacity="0.75"/>
+          <path d="M ${TL + 0.6} 1.1 Q ${CX} -3.5 ${TL + TW - 0.6} 1.1" fill="none" stroke="#c6e2e8" stroke-width="1.3" stroke-opacity="0.9"/>
+        </g>
+        <!-- the tube reads as a cylinder of glass -->
+        <rect x="${TL}" y="${GT - 4}" width="${TW}" height="${GB - GT + 8}" fill="url(#tube)"/>
+        <rect x="${TL - 0.6}" y="${GT - 4}" width="1.2" height="${GB - GT + 8}" fill="#4a5a61" opacity="0.7"/>
+        <rect x="${TL + TW - 0.6}" y="${GT - 4}" width="1.2" height="${GB - GT + 8}" fill="#3d4b51" opacity="0.8"/>
+        <rect x="${TL + 1.4}" y="${GT - 4}" width="1.1" height="${GB - GT + 8}" fill="#ffffff" opacity="0.5"/>
+        <!-- the guard's glass in front, one reflection that is not the shape of the tube -->
+        <path d="M 30 ${GT - 4} L 60 ${GT - 4} L 30 ${GT + 96} Z" fill="url(#shield)"/>
+        <rect x="30" y="${GT - 4}" width="30" height="${GB - GT + 8}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="3" filter="url(#sft2)"/>
+      </g>
+      <!-- the guard frame: two brass bars in front, strapped top and bottom -->
+      <rect x="24.5" y="${GT - 9}" width="5" height="${GB - GT + 18}" rx="1.6" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.4"/>
+      <rect x="60.5" y="${GT - 9}" width="5" height="${GB - GT + 18}" rx="1.6" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.4"/>
+      <rect x="23" y="${GT - 10}" width="44" height="4.6" rx="1.6" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+      <rect x="23" y="${GB + 5}" width="44" height="4.6" rx="1.6" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+
+      <!-- TOP COCK -->
+      <g class="cock">
+        <rect x="39" y="2" width="12" height="12" fill="url(#br)"/>
+        <rect x="35" y="11" width="20" height="6" rx="1" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+        <path d="M 30 17 h 30 v 16 a 4 4 0 0 1 -4 4 h -22 a 4 4 0 0 1 -4 -4 Z" fill="url(#br)" stroke="#4e3c12" stroke-width="0.5"/>
+        <rect x="30" y="20" width="30" height="1.6" fill="#ffeeb4" opacity="0.45"/>
+        <rect x="30" y="30" width="30" height="2.4" fill="#5f8a6a" opacity="0.3"/>
+        <ellipse cx="45" cy="17" rx="15" ry="2.4" fill="#f0dc98" opacity="0.35"/>
+        <!-- packing nut and gland down to the glass -->
+        <path d="M 34 37 h 22 l -2.5 9 h -17 Z" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.4"/>
+        <path d="M 36.5 46 h 17 l -1.5 6 h -14 Z" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+        <rect x="36.5" y="51" width="17" height="10" rx="1.4" fill="url(#brv)" stroke="#4e3c12" stroke-width="0.4"/>
+        <rect x="37.6" y="52" width="2" height="8" fill="#ffeeb4" opacity="0.5"/>
+        <!-- the lever handle, laid over to the right: open -->
+        <g class="handle">
+          <path d="M 45 21 L 80 27 L 83 30.5 L 80 34 L 45 29 Z" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.5" stroke-linejoin="round"/>
+          <path d="M 50 23.4 L 79 28.6" stroke="#fff3c4" stroke-opacity="0.65" stroke-width="1.1"/>
+          <circle cx="45" cy="25" r="6.5" fill="url(#br)" stroke="#4e3c12" stroke-width="0.5"/>
+          <circle cx="45" cy="25" r="2.4" fill="#6b5320" stroke="#3e3010" stroke-width="0.4"/>
+          <circle cx="42.8" cy="22.8" r="2.2" fill="#ffeeb4" opacity="0.5"/>
+        </g>
+      </g>
+
+      <!-- BOTTOM COCK -->
+      <g class="cock">
+        <rect x="36.5" y="${GB - 1}" width="17" height="10" rx="1.4" fill="url(#brv)" stroke="#4e3c12" stroke-width="0.4"/>
+        <rect x="37.6" y="${GB}" width="2" height="8" fill="#ffeeb4" opacity="0.5"/>
+        <path d="M 38 ${GB + 9} h 14 l 1.5 6 h -17 Z" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+        <path d="M 36.5 ${GB + 15} h 17 l 2.5 9 h -22 Z" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.4"/>
+        <path d="M 30 ${GB + 24} h 30 v 16 a 4 4 0 0 1 -4 4 h -22 a 4 4 0 0 1 -4 -4 Z" fill="url(#br)" stroke="#4e3c12" stroke-width="0.5"/>
+        <rect x="30" y="${GB + 26}" width="30" height="1.6" fill="#ffeeb4" opacity="0.45"/>
+        <rect x="30" y="${GB + 37}" width="30" height="2.4" fill="#5f8a6a" opacity="0.32"/>
+        <g class="handle">
+          <path d="M 45 ${GB + 28} L 80 ${GB + 34} L 83 ${GB + 37.5} L 80 ${GB + 41} L 45 ${GB + 36} Z" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.5" stroke-linejoin="round"/>
+          <path d="M 50 ${GB + 30.4} L 79 ${GB + 35.6}" stroke="#fff3c4" stroke-opacity="0.65" stroke-width="1.1"/>
+          <circle cx="45" cy="${GB + 32}" r="6.5" fill="url(#br)" stroke="#4e3c12" stroke-width="0.5"/>
+          <circle cx="45" cy="${GB + 32}" r="2.4" fill="#6b5320" stroke="#3e3010" stroke-width="0.4"/>
+          <circle cx="42.8" cy="${GB + 29.8}" r="2.2" fill="#ffeeb4" opacity="0.5"/>
+        </g>
+        <!-- the drain cock and its little spout -->
+        <rect x="41" y="${GB + 44}" width="8" height="7" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+        <circle cx="45" cy="${GB + 53}" r="4.2" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.4"/>
+        <rect x="43.6" y="${GB + 49}" width="2.8" height="4" fill="#8a6d2c"/>
+        <path d="M 41 ${GB + 55} l -9 6 l -2.6 -2.6 l 8 -6 Z" fill="url(#br)" stroke="#4e3c12" stroke-width="0.4"/>
+        <path d="M 49.4 ${GB + 51} l 7 1.6" stroke="#a5822f" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="57.5" cy="${GB + 52.8}" r="2.2" fill="#c9a24c" stroke="#4e3c12" stroke-width="0.4"/>
+      </g>
+
+      <!-- the engraved plate at the foot -->
+      <rect x="9" y="${H - 16}" width="72" height="13" rx="1.6" fill="url(#brh)" stroke="#4e3c12" stroke-width="0.5"/>
+      <rect x="10" y="${H - 15}" width="70" height="1.1" fill="#fff3c4" opacity="0.5"/>
+      <text class="eng" x="45" y="${H - 6.4}">GAUGE GLASS</text>
+      <circle cx="13.5" cy="${H - 9.5}" r="1.4" fill="#e8cf7a" stroke="#4e3c12" stroke-width="0.3"/>
+      <circle cx="76.5" cy="${H - 9.5}" r="1.4" fill="#e8cf7a" stroke="#4e3c12" stroke-width="0.3"/>
+    </svg>
+  </div>`;
+
+  class SkSightGlassBoiler extends HTMLElement {
+    static get observedAttributes() { return ["value", "boil", "danger", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const sr = this.shadowRoot;
+      this._wrap = sr.querySelector(".wrap");
+      this._wclip = sr.querySelector(".wclip");
+      this._steam = sr.querySelector(".steam");
+      this._men = sr.querySelector(".men");
+      this._dang = sr.querySelector(".danger");
+      this._bubG = sr.querySelector(".bub");
+      this._v = 0.5; this._x = 0.5; this._boil = 0; this._danger = 0.22; this._scale = 1;
+      this._raf = 0; this._last = 0; this._t = 0;
+      this._bub = [];
+      const ns = "http://www.w3.org/2000/svg";
+      for (let i = 0; i < NB; i++) {
+        const c = document.createElementNS(ns, "circle");
+        c.setAttribute("fill", "#dff0f4"); c.setAttribute("fill-opacity", "0.72"); c.setAttribute("r", "0");
+        this._bubG.appendChild(c);
+        this._bub.push({ el: c, x: 0, y: 0, r: 0, v: 0, live: false });
+      }
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs();
+      this._x = this._v; this._paint();
+      if (this._boil > 0) this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._kick(); }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.min(1, Math.max(0, v));
+      this.setAttribute("value", String(Math.round(this._v * 1000) / 1000));
+      this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._v = Math.min(1, Math.max(0, num("value", this._v)));
+      this._boil = Math.min(1, Math.max(0, num("boil", 0)));
+      this._danger = Math.min(1, Math.max(0, num("danger", 0.22)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._dang.setAttribute("transform", "translate(0 " + this._y(this._danger).toFixed(2) + ")");
+      this.setAttribute("aria-valuemin", "0"); this.setAttribute("aria-valuemax", "1");
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this.setAttribute("aria-valuetext", Math.round(this._v * 100) + " per cent of a glass");
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", this.getAttribute("label") || "boiler water gauge glass");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _y(lv) { return GB - lv * (GB - GT); }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      let dt = (now - this._last) / 1000; this._last = now;
+      if (!(dt > 0)) dt = 0.016; if (dt > 0.1) dt = 0.1;
+      this._t += dt;
+      const k = 1 - Math.exp(-dt / 0.26);                 // settles in about 800 ms
+      this._x += (this._v - this._x) * k;
+      if (this._boil > 0) this._bubbles(dt);
+      this._paint();
+      const done = Math.abs(this._v - this._x) < 0.0015 && this._boil <= 0;
+      if (done) { this._x = this._v; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _bubbles(dt) {
+      const lv = this._y(this._level());
+      for (let i = 0; i < NB; i++) {
+        const b = this._bub[i];
+        if (!b.live) {
+          if (Math.random() > dt * 2.4 * (0.4 + this._boil)) continue;
+          b.live = true; b.r = 0.5 + Math.random() * 1.3;
+          b.x = TL + 2.4 + Math.random() * (TW - 4.8);
+          b.y = GB - 2 - Math.random() * 6;
+          b.v = 14 + Math.random() * 26 * this._boil;
+          b.el.setAttribute("r", b.r.toFixed(2));
+        }
+        b.y -= b.v * dt;
+        if (b.y < lv + 2) { b.live = false; b.el.setAttribute("r", "0"); continue; }
+        b.el.setAttribute("cx", (b.x + Math.sin(b.y * 0.22) * 0.7).toFixed(2));
+        b.el.setAttribute("cy", b.y.toFixed(2));
+      }
+    }
+    _level() {
+      let lv = this._x;
+      if (this._boil > 0) lv += 0.03 * this._boil * Math.sin(this._t * 3.77);   // a 0.6 Hz surge
+      return Math.min(1, Math.max(0, lv));
+    }
+    _paint() {
+      const y = this._y(this._level());
+      this._wclip.setAttribute("y", y.toFixed(2));
+      this._wclip.setAttribute("height", Math.max(0, GB + 8 - y).toFixed(2));
+      this._steam.setAttribute("height", Math.max(0, y - (GT - 4)).toFixed(2));
+      this._men.setAttribute("transform", "translate(0 " + y.toFixed(2) + ")");
+      this._men.setAttribute("opacity", this._level() > 0.008 ? "1" : "0");
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+    }
+  }
+  customElements.define("sk-sight-glass-boiler", SkSightGlassBoiler);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

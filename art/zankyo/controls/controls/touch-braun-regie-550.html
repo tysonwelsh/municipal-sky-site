@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Braun Regie 550 touch plates — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "touch-braun-regie-550",
+  "element": "sk-touch-braun-regie-550",
+  "name": "Braun Regie 550 touch plates",
+  "kind": "both",
+  "code": "D16",
+  "type": "Touch plate / capacitive source select",
+  "source": "Braun Regie 550 / Regie 528 receiver (1977–78) and the Braun Atelier series: flush brushed-aluminium touch squares on a strict grid, a silk-screened legend above each and a red LED beside it",
+  "era": "1970s",
+  "origin": "West Germany",
+  "materials": ["brushed aluminium", "anodised panel", "LED", "silk-screen"],
+  "tags": ["hi-fi", "receiver", "source select", "capacitive", "no travel", "Dieter Rams", "Akzidenz"],
+  "value": { "model": "steps", "options": ["phono", "tuner", "tape 1", "tape 2", "aux", "tv"] },
+  "attributes": ["value", "options", "label", "single", "legend", "lit", "panel", "scale", "disabled"],
+  "events": ["input", "change", "press", "release", "activate"],
+  "size": { "w": 360, "h": 72 },
+  "notes": "A row of six on the black panel with TAPE 1 selected, and one plate on the silver-panel variant. Touch a plate or use the arrow keys: nothing moves, the LED answers."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-touch-braun-regie-550 label="source" value="tape 1"></sk-touch-braun-regie-550>
+    <sk-touch-braun-regie-550 single legend="mono" lit panel="silver" label="mono"></sk-touch-braun-regie-550>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Braun Regie 550</b> receiver of 1977 — Dieter Rams and Peter Hartwein — put the source selector on a
+  row of flush brushed-aluminium squares that do not move at all. A finger on the metal is enough; the only
+  answer is a 2&nbsp;mm red LED next to the plate. The legends are set small, lower-case, in Akzidenz-Grotesk,
+  left-aligned to the plate below them, on a 22&nbsp;mm grid that never varies across the whole front.</p>
+  <p><b>The tells kept here:</b> no travel and no shadow crease — the plate is flush in the panel, separated
+  from it only by a hairline black gap and by having a different texture (horizontal brushed grain against a
+  matte panel); the LED is instant, tiny, a hot core in a bloom, and it casts a faint red wash on the panel
+  around it; touching a plate lifts its brightness about 3&nbsp;% for a tenth of a second — the light a
+  fingertip returns — and then it is over; the legends sit above their plates in a light grotesk on a strict
+  grid; there is one greasy fingerprint on <i>tuner</i>, the plate this owner uses. The silver-panel
+  variant and the single-plate form are both in the demo.</p>
+  <p><b>Left out:</b> the actual capacitance — a real plate answers a finger 2&nbsp;mm away, this one wants a
+  click or a key; the engraved BRAUN wordmark; the seam where the extruded panel meets the wooden case.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-touch-braun-regie-550> — Braun Regie 550 brushed touch plates with LEDs ====
+   attributes: value options label single legend lit panel(silver) scale disabled
+   events: input {value} / change {value} on selection, press / release / activate on a plate
+   self-contained: paste this block into any page and use
+   <sk-touch-braun-regie-550 options="phono,tuner,aux" value="tuner"></sk-touch-braun-regie-550> */
+(function () {
+  var TAG = "sk-touch-braun-regie-550";
+  if (customElements.get(TAG)) return;
+  var CELL = 60, H = 72, PS = 38, PX = 11, PY = 24;     // cell pitch, height, plate size, plate inset
+  var DEF = ["phono", "tuner", "tape 1", "tape 2", "aux", "tv"];
+
+  var CSS = `
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; }
+    .panel {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(130% 160% at 20% -30%, rgba(255,255,255,0.05), rgba(255,255,255,0) 62%),
+        linear-gradient(180deg, #232322 0%, #1c1c1b 48%, #151514 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.8);
+    }
+    :host([panel="silver"]) .panel {
+      background:
+        radial-gradient(130% 160% at 20% -30%, rgba(255,255,255,0.20), rgba(255,255,255,0) 60%),
+        linear-gradient(180deg, #bcc0c2 0%, #b0b4b6 55%, #a4a8aa 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.35);
+    }
+    .panel::after {
+      content: ""; position: absolute; inset: 0; opacity: 0.13; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23p)'/%3E%3C/svg%3E");
+      background-size: 64px 64px;
+    }
+    :host([panel="silver"]) .panel::after { opacity: 0.22; }
+    .cell { position: absolute; top: 0; width: ${CELL}px; height: ${H}px; }
+    .leg {
+      position: absolute; left: ${PX}px; top: 5px; width: ${PS - 4}px; height: 11px; line-height: 11px;
+      font-family: "Libre Franklin", "Akzidenz-Grotesk", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500; font-size: 6.5px; letter-spacing: 0.03em; color: #e8e8e4;
+      white-space: nowrap; overflow: hidden; text-shadow: 0 0.5px 0 rgba(0,0,0,0.5);
+    }
+    :host([panel="silver"]) .leg { color: #1a1a1a; text-shadow: 0 0.5px 0 rgba(255,255,255,0.35); }
+    /* the LED: a 2 mm lens in a black hole, beside the plate */
+    .glow { position: absolute; left: ${PX + PS - 15}px; top: 2px; width: 24px; height: 18px; border-radius: 50%;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(255,60,40,0.26), rgba(255,60,40,0) 70%);
+      opacity: 0; transition: opacity 30ms linear; pointer-events: none; }
+    .led { position: absolute; left: ${PX + PS - 6.5}px; top: 7.5px; width: 6px; height: 6px; border-radius: 50%;
+      background: radial-gradient(60% 60% at 38% 32%, #241110, #120707 78%, #080303 100%);
+      box-shadow: inset 0 0.5px 0.6px rgba(0,0,0,0.95), 0 0.5px 0 rgba(255,255,255,0.05); }
+    :host([panel="silver"]) .led { box-shadow: inset 0 0.5px 0.6px rgba(0,0,0,0.95), 0 0.5px 0 rgba(255,255,255,0.4); }
+    .led i { position: absolute; left: 1px; top: 1px; width: 4px; height: 4px; border-radius: 50%;
+      background: radial-gradient(60% 60% at 36% 28%, #55201a, #33100d 62%, #1d0908 100%); }
+    .cell.on .led i {
+      background: radial-gradient(55% 55% at 36% 28%, #fff4ee 0%, #ff7a55 26%, #ff2f2a 60%, #c2130d 100%);
+      box-shadow: 0 0 2.5px 0.8px rgba(255,47,42,0.95), 0 0 6px 2px rgba(255,47,42,0.5);
+    }
+    .cell.on .glow { opacity: 1; }
+    /* the plate: brushed aluminium, flush, a hairline gap all round */
+    .plate {
+      position: absolute; left: ${PX}px; top: ${PY}px; width: ${PS}px; height: ${PS}px;
+      border: 1px solid #0b0b0b; outline: none; cursor: default; touch-action: none;
+      user-select: none; -webkit-user-select: none;
+      background:
+        linear-gradient(102deg, rgba(255,255,255,0.17) 0%, rgba(255,255,255,0.06) 32%, rgba(0,0,0,0.02) 64%, rgba(0,0,0,0.07) 100%),
+        linear-gradient(180deg, #d2d6d8 0%, #c9cdcf 46%, #c0c4c6 100%);
+      box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.35), inset 0 -0.5px 0 rgba(0,0,0,0.22);
+      transition: filter 130ms linear;
+    }
+    /* the brush: fine horizontal streaks, drawn as noise so they survive any scale */
+    .plate::before {
+      content: ""; position: absolute; inset: 0; opacity: 0.42; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cfilter id='b' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 1.05' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='48' height='48' filter='url(%23b)'/%3E%3C/svg%3E");
+      background-size: 48px 48px;
+    }
+    .plate.hot { filter: brightness(1.035); transition: none; }
+    .cell.smudge .plate::after {
+      content: ""; position: absolute; inset: 0;
+      background:
+        radial-gradient(22% 30% at 59% 62%, rgba(255,255,255,0.13), rgba(255,255,255,0) 78%),
+        radial-gradient(34% 44% at 62% 70%, rgba(236,240,242,0.11), rgba(186,198,204,0.09) 55%, rgba(255,255,255,0) 80%);
+    }
+    .plate:focus-visible { box-shadow: inset 0 1px 0 rgba(255,255,255,0.20), 0 0 0 2px #16e0e0, 0 0 9px rgba(22,224,224,0.6); }
+    :host([disabled]) .plate { cursor: default; }
+  `;
+
+  class SkTouchBraun extends HTMLElement {
+    static get observedAttributes() { return ["value", "options", "label", "single", "legend", "lit", "panel", "scale", "disabled"]; }
+    constructor() {
+      super();
+      var r = this.attachShadow({ mode: "open" });
+      var st = document.createElement("style"); st.textContent = CSS;
+      var wrap = document.createElement("div"); wrap.className = "wrap";
+      var panel = document.createElement("div"); panel.className = "panel";
+      wrap.appendChild(panel);
+      r.appendChild(st); r.appendChild(wrap);
+      this._wrap = wrap;
+      this._opts = DEF.slice();
+      this._v = "";
+      this._scale = 1;
+      this._cells = [];
+      this._hot = [];
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "radiogroup");
+      this._read(true);
+    }
+    disconnectedCallback() { this._hot.forEach(clearTimeout); this._hot = []; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read(n === "options" || n === "single" || n === "legend");
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = v == null ? "" : String(v);
+      if (this._opts.indexOf(v) < 0 && v !== "") return;
+      this._v = v;
+      if (this.getAttribute("value") !== v) this.setAttribute("value", v);
+      this._paint();
+    }
+    get options() { return this._opts.slice(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { var i = Math.max(0, this._opts.indexOf(this._v)); if (this._cells[i]) this._cells[i].plate.focus(o); }
+
+    _read(rebuild) {
+      var raw = this.getAttribute("options");
+      var opts;
+      if (this.hasAttribute("single")) opts = [this.getAttribute("legend") || "on"];
+      else if (raw) { try { opts = JSON.parse(raw); } catch (e) { opts = raw.split(/\s*[,|]\s*/); } }
+      else opts = DEF.slice();
+      opts = (opts || []).map(String).filter(function (s) { return s.length; });
+      if (!opts.length) opts = DEF.slice();
+      if (rebuild || opts.join("\u0000") !== this._opts.join("\u0000")) { this._opts = opts; this._build(); }
+      var av = this.getAttribute("value");
+      if (av == null && this.hasAttribute("single") && this.hasAttribute("lit")) av = this._opts[0];
+      this._v = this._opts.indexOf(av) >= 0 ? av : "";
+      var sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) || sc <= 0 ? 1 : sc;
+      var W = CELL * this._opts.length;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.width = W + "px"; this._wrap.style.height = H + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this.setAttribute("aria-label", this.getAttribute("label") || "source");
+      this.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this._paint();
+    }
+    _build() {
+      this._cells.forEach(function (c) { c.root.remove(); });
+      this._cells = [];
+      var self = this;
+      var smudge = this._opts.length > 2 ? 1 : -1;      // the plate this owner uses
+      this._opts.forEach(function (opt, i) {
+        var cell = document.createElement("div");
+        cell.className = "cell" + (i === smudge ? " smudge" : "");
+        cell.style.left = (i * CELL) + "px";
+        var leg = document.createElement("div"); leg.className = "leg"; leg.textContent = opt; leg.setAttribute("aria-hidden", "true");
+        var glow = document.createElement("div"); glow.className = "glow";
+        var led = document.createElement("div"); led.className = "led"; led.setAttribute("aria-hidden", "true");
+        led.appendChild(document.createElement("i"));
+        var plate = document.createElement("div");
+        plate.className = "plate";
+        plate.setAttribute("role", "radio");
+        plate.setAttribute("aria-label", opt);
+        plate.setAttribute("tabindex", "-1");
+        plate.addEventListener("pointerdown", self._onDown);
+        plate.addEventListener("pointerup", self._onUp);
+        plate.addEventListener("pointercancel", self._onUp);
+        plate.addEventListener("keydown", self._onKey);
+        cell.appendChild(glow); cell.appendChild(leg); cell.appendChild(led); cell.appendChild(plate);
+        self._wrap.appendChild(cell);
+        self._cells.push({ root: cell, plate: plate, i: i });
+      });
+    }
+    _paint() {
+      var v = this._v, opts = this._opts, dis = this.hasAttribute("disabled");
+      var sel = opts.indexOf(v);
+      this._cells.forEach(function (c, i) {
+        c.root.classList.toggle("on", i === sel);
+        c.plate.setAttribute("aria-checked", i === sel ? "true" : "false");
+        c.plate.setAttribute("tabindex", dis ? "-1" : (i === (sel < 0 ? 0 : sel) ? "0" : "-1"));
+      });
+    }
+    _flash(i) {
+      var c = this._cells[i]; if (!c) return;
+      c.plate.classList.add("hot");
+      this._hot.push(setTimeout(function () { c.plate.classList.remove("hot"); }, 100));
+      if (this._hot.length > 8) clearTimeout(this._hot.shift());
+    }
+    _pick(i, fromKey) {
+      var opt = this._opts[i]; if (opt == null) return;
+      this._flash(i);
+      if (this.hasAttribute("single") && this._v === opt) opt = "";          // one plate on its own toggles
+      if (opt === this._v) return;
+      this._v = opt;
+      this.setAttribute("value", opt);
+      this._paint();
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: opt } }));
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: opt } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      var i = this._index(e.currentTarget);
+      e.currentTarget.focus({ preventScroll: true });
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+      this._down = i;
+      this.dispatchEvent(new CustomEvent("press", { bubbles: true, composed: true, detail: { value: this._opts[i], index: i } }));
+      this._pick(i);
+    }
+    _onUp(e) {
+      if (this._down == null) return;
+      var i = this._down; this._down = null;
+      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
+      this.dispatchEvent(new CustomEvent("release", { bubbles: true, composed: true, detail: { value: this._opts[i], index: i } }));
+      if (e.type !== "pointercancel") this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { value: this._v, index: i } }));
+    }
+    _index(plate) { for (var i = 0; i < this._cells.length; i++) if (this._cells[i].plate === plate) return i; return 0; }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var here = this._index(e.currentTarget), n = this._opts.length, to = null;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowDown": to = Math.min(n - 1, (this._opts.indexOf(this._v) < 0 ? here - 1 : here) + 1); break;
+        case "ArrowLeft": case "ArrowUp": to = Math.max(0, here - 1); break;
+        case "Home": to = 0; break;
+        case "End": to = n - 1; break;
+        case " ": case "Spacebar": case "Enter": to = here; break;
+        default: return;
+      }
+      e.preventDefault();
+      if (to == null) return;
+      this.dispatchEvent(new CustomEvent("press", { bubbles: true, composed: true, detail: { value: this._opts[to], index: to } }));
+      this._pick(to, true);
+      this.dispatchEvent(new CustomEvent("release", { bubbles: true, composed: true, detail: { value: this._opts[to], index: to } }));
+      this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { value: this._v, index: to } }));
+      var c = this._cells[to]; if (c) c.plate.focus({ preventScroll: true });
+    }
+  }
+  customElements.define(TAG, SkTouchBraun);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

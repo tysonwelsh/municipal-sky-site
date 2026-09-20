@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toshiba T3100 orange plasma text screen — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "plasma-toshiba-t3100-dos",
+  "element": "sk-plasma-t3100",
+  "name": "Toshiba T3100 orange plasma text screen",
+  "kind": "output",
+  "code": "G15",
+  "type": "Gas-plasma text display",
+  "source": "Toshiba T3100 (1986) / T3200, Compaq Portable III — 640x400 orange gas-plasma screen in a grey clamshell",
+  "era": "1980s",
+  "origin": "Japan",
+  "materials": ["gas-plasma glass", "tinted acrylic filter", "painted steel bezel"],
+  "tags": ["portable computer", "dos", "terminal", "plasma", "text"],
+  "value": { "model": "text" },
+  "attributes": ["value", "cursor", "crop", "scale"],
+  "events": [],
+  "size": { "w": 660, "h": 420 },
+  "notes": "A full 80x25 DOS session at scale 0.5, a cropped 40x10 prompt close-up, and a cropped box-drawing menu."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-plasma-t3100 value="C:\>DIR\nVolume in drive C is DOS\nVolume Serial Number is 1A2B-3C4D\n\nDirectory of C:\\n\nCOMMAND  COM    47845 03-17-91  12:00a\nAUTOEXEC BAT      128 03-17-91  12:00a\nCONFIG   SYS       94 03-17-91  12:00a\nWP       EXE   247332 01-02-90   1:00p\nGAMES        <DIR>    06-14-91   9:22a\n        5 file(s)    295399 bytes\n                    8734720 bytes free\n\nC:\>_" scale="0.5"></sk-plasma-t3100>
+    <sk-plasma-t3100 value="C:\>FORMAT A:\nInsert new diskette for\ndrive A:\nand press ENTER when ready...\n\nChecking existing disk format.\nFormatting 1.44M\n52 percent completed._" crop="40x10" scale="1.2"></sk-plasma-t3100>
+    <sk-plasma-t3100 value="+--------------------------------------+\n|          MAIN MENU  v2.10             |\n+--------------------------------------+\n|  1. Word Processor                    |\n|  2. Spreadsheet                       |\n|  3. Communications                    |\n|  4. Utilities                         |\n|  5. Exit to DOS                       |\n+--------------------------------------+\n   Select an option: _" crop="50x14" scale="0.8"></sk-plasma-t3100>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Toshiba T3100</b> (1986) was one of the first "luggable" DOS machines to swap a CRT for a
+  gas-plasma panel: a 640×400 orange text/graphics screen behind a bronze-tinted filter, built into a heavy
+  grey clamshell. It has no backlight of its own to worry about and no scanlines — the plasma cells fire
+  instantly and each character sits on a fixed 8×16 cell grid, giving DOS its crisp, glowing monospace look.</p>
+  <p><b>The tells kept here:</b> a deep, slightly redder-than-amber orange on a warm black field, drawn with a
+  two-pass glow (a soft blurred under-layer plus a crisp core) so solid text blocks bloom a little without
+  losing edges; a fine 8-pixel grid etched faintly across the glass; the bronze filter tint and a soft
+  highlight along the bezel's top edge; a hard 2 Hz cursor blink with no fade; and a canned DOS session
+  ("C:\&gt;DIR", a FORMAT prompt, a box-drawn menu) typed in at 60 characters a second when the control is
+  auto-demoed. `crop` shows a smaller window of the 80×25 page for a closer, larger view.</p>
+  <p><b>Left out:</b> a true 8×16 bitmap glyph table (a monospace Google Font stands in — real CGA box-drawing
+  glyphs are approximated with plain ASCII `+`/`-`/`|` so the grid never breaks on a missing glyph), the
+  clamshell's keyboard and latch, and the vent grille's exact slot count.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-plasma-t3100> — Toshiba T3100 style 80x25 orange gas-plasma text screen ====
+   attributes: value (an 80x25 page as text, rows separated by a literal "\n" pair) cursor("row,col") crop("COLSxROWS") scale
+   no events (an output); value drives a canvas redraw only when it actually changes.
+   self-contained: paste this block into any page and use <sk-plasma-t3100 value="C:\>DIR"></sk-plasma-t3100> */
+(function () {
+  if (customElements.get("sk-plasma-t3100")) return;
+  const CELLW = 8, CELLH = 16, MARGIN = 10;
+  const FULL_COLS = 80, FULL_ROWS = 25;
+  const SCRIPT = "C:\\>FORMAT A:\nInsert new diskette for\ndrive A:\nand press ENTER when ready...\n\nChecking existing disk format.\nFormatting 1.44M\n  4 percent completed.\n 22 percent completed.\n 58 percent completed.\n 91 percent completed.\n100 percent completed.\n\nFormat complete.\n\nVolume label (11 characters, ENTER for none)? _";
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .bezel { position: absolute; inset: 0; border-radius: 10px; box-sizing: border-box;
+      background: linear-gradient(155deg, #38383533 0%, transparent 30%), linear-gradient(160deg, #35342f 0%, #232220 45%, #171614 100%);
+      box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 10px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06); }
+    .screenwrap { position: absolute; border-radius: 2px; overflow: hidden; box-shadow: inset 0 0 0 1px #000, inset 0 0 14px rgba(0,0,0,0.65); background: #150b05; }
+    canvas { display: block; }
+    .cursor { position: absolute; background: #ff9a3f; box-shadow: 0 0 4px 1px rgba(255,120,30,0.8); animation: sk-blink 1s steps(1,end) infinite; }
+    @keyframes sk-blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+    .vents { position: absolute; right: 4px; display: flex; flex-direction: column; gap: 2px; }
+    .vents i { display: block; width: 10px; height: 1.4px; background: #0a0a09; border-radius: 1px; box-shadow: 0 0.6px 0 rgba(255,255,255,0.06); }
+    .legend { position: absolute; left: 0; right: 0; text-align: center; font: 500 7px "Roboto Condensed", "Arial Narrow", sans-serif; letter-spacing: 0.28em; color: #6a6a66; }
+  </style>
+  <div class="wrap">
+    <div class="bezel"></div>
+    <div class="vents"></div>
+    <div class="screenwrap"><canvas></canvas><div class="cursor"></div></div>
+    <div class="legend">PLASMA DISPLAY</div>
+  </div>`;
+
+  class SkPlasmaT3100 extends HTMLElement {
+    static get observedAttributes() { return ["value", "cursor", "crop", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = ""; this._scale = 1; this._cols = FULL_COLS; this._rows = FULL_ROWS; this._demoBase = null;
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._bezel = root.querySelector(".bezel");
+      this._screenwrap = root.querySelector(".screenwrap");
+      this._canvas = root.querySelector("canvas");
+      this._ctx = this._canvas.getContext("2d");
+      this._cursorEl = root.querySelector(".cursor");
+      this._vents = root.querySelector(".vents");
+      this._legend = root.querySelector(".legend");
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "C:\\>_");
+      this.setAttribute("role", "img");
+      this._readAttrs();
+      this._layout();
+      this._draw();
+    }
+    disconnectedCallback() {}
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "crop" || n === "scale") { this._layout(); }
+      this._draw();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = v == null ? "" : String(v);
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", v); this._draw();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) {
+      const typeDur = SCRIPT.length / 60, period = typeDur + 2.5;
+      const tt = t % period;
+      const n = tt < typeDur ? Math.floor(tt * 60) : SCRIPT.length;
+      return SCRIPT.slice(0, n);
+    }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._v = this.getAttribute("value") || "";
+      this._scale = Math.max(0.2, num("scale", 1));
+      const crop = this.getAttribute("crop");
+      const m = crop && /^(\d+)\s*x\s*(\d+)$/i.exec(crop.trim());
+      this._cols = m ? Math.min(FULL_COLS, parseInt(m[1], 10)) : FULL_COLS;
+      this._rows = m ? Math.min(FULL_ROWS, parseInt(m[2], 10)) : FULL_ROWS;
+      const cAttr = this.getAttribute("cursor");
+      const cm = cAttr && /^(\d+)\s*,\s*(\d+)$/.exec(cAttr.trim());
+      this._cursorRC = cm ? [parseInt(cm[1], 10), parseInt(cm[2], 10)] : null;
+    }
+    _layout() {
+      const cw = this._cols * CELLW, ch = this._rows * CELLH;
+      const W = cw + MARGIN * 2, H = ch + MARGIN * 2 + 12; // +12 for the bottom legend strip
+      this._W = W; this._H = H;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.width = W + "px"; this._wrap.style.height = H + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._canvas.width = cw; this._canvas.height = ch;
+      this._canvas.style.width = cw + "px"; this._canvas.style.height = ch + "px";
+      this._screenwrap.style.left = MARGIN + "px"; this._screenwrap.style.top = MARGIN + "px";
+      this._screenwrap.style.width = cw + "px"; this._screenwrap.style.height = ch + "px";
+      this._vents.style.top = MARGIN + "px"; this._vents.style.bottom = (12 + MARGIN) + "px";
+      this._vents.style.justifyContent = "space-evenly";
+    }
+    _rowsOf(v) { return v.replace(/\\n/g, "\n").split("\n"); }
+    _draw() {
+      const ctx = this._ctx, cw = this._canvas.width, ch = this._canvas.height;
+      const rows = this._rowsOf(this._v);
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.fillStyle = "#170d06"; ctx.fillRect(0, 0, cw, ch);
+      const bg = ctx.createLinearGradient(0, 0, cw, ch);
+      bg.addColorStop(0, "rgba(90,40,10,0.16)"); bg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, cw, ch);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "13px 'Share Tech Mono', Consolas, monospace";
+      let lastR = 0, lastC = 0;
+      for (let r = 0; r < this._rows; r++) {
+        const row = rows[r] || "";
+        let lastNonSpace = -1;
+        for (let c = 0; c < this._cols && c < row.length; c++) {
+          const ch2 = row[c];
+          if (ch2 && ch2 !== " ") lastNonSpace = c;
+        }
+        if (row.length) { lastR = r; lastC = Math.min(row.length, this._cols); }
+        // glow pass
+        ctx.shadowColor = "rgba(255,90,20,0.85)"; ctx.shadowBlur = 5; ctx.fillStyle = "#ff8a3c";
+        for (let c = 0; c < this._cols && c < row.length; c++) {
+          const ch2 = row[c]; if (ch2 && ch2 !== " ") ctx.fillText(ch2, c * CELLW + CELLW / 2, r * CELLH + CELLH / 2 + 1);
+        }
+      }
+      ctx.shadowBlur = 0; ctx.fillStyle = "#ffa257";
+      for (let r = 0; r < this._rows; r++) {
+        const row = rows[r] || "";
+        for (let c = 0; c < this._cols && c < row.length; c++) {
+          const ch2 = row[c]; if (ch2 && ch2 !== " ") ctx.fillText(ch2, c * CELLW + CELLW / 2, r * CELLH + CELLH / 2 + 1);
+        }
+      }
+      // fine pixel grid
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 1;
+      for (let x = 0; x <= cw; x += CELLW) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, ch); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+      // top edge reflection
+      const refl = ctx.createLinearGradient(0, 0, 0, ch * 0.12);
+      refl.addColorStop(0, "rgba(255,255,255,0.06)"); refl.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = refl; ctx.fillRect(0, 0, cw, ch * 0.12);
+
+      // cursor
+      let rc = this._cursorRC;
+      if (!rc) {
+        let r = 0, c = 0;
+        for (let i = 0; i < this._rows; i++) if ((rows[i] || "").length) { r = i; c = Math.min((rows[i] || "").length, this._cols); }
+        rc = [r, c];
+      }
+      this._cursorEl.style.left = (MARGIN + rc[1] * CELLW) + "px";
+      this._cursorEl.style.top = (MARGIN + rc[0] * CELLH + CELLH - 3) + "px";
+      this._cursorEl.style.width = CELLW + "px";
+      this._cursorEl.style.height = "2px";
+
+      // vents (rebuild only here, rarely)
+      if (!this._vents.childElementCount) for (let i = 0; i < 5; i++) this._vents.appendChild(document.createElement("i"));
+
+      this.setAttribute("aria-label", "Plasma text screen: " + rows.filter(Boolean).slice(0, 3).join(" / "));
+    }
+  }
+  customElements.define("sk-plasma-t3100", SkPlasmaT3100);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

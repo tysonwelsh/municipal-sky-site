@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sanwa OBSF-30 arcade button — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "arcade-sanwa-obsf30",
+  "element": "sk-arcade-sanwa-obsf30",
+  "name": "Sanwa OBSF-30 arcade button",
+  "kind": "input",
+  "code": "D6",
+  "type": "Arcade pushbutton, flat cap",
+  "source": "Sanwa Denshi OBSF-30 snap-in 30 mm pushbutton — the button of the Sega Astro City and every Japanese cabinet since the 1990s",
+  "era": "1990s",
+  "origin": "Japan",
+  "materials": ["polycarbonate", "microswitch"],
+  "tags": ["arcade", "candy cab", "momentary", "translucent", "30 mm", "snap-in"],
+  "value": { "model": "momentary" },
+  "attributes": ["color", "pressed", "label", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 96, "h": 112 },
+  "notes": "Three candy colours on a control panel: red at rest, blue held down, yellow at rest. Pointer or Space/Enter; travel is 1 px and the gap ring darkens."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="white">
+    <sk-arcade-sanwa-obsf30 color="red" label="LP"></sk-arcade-sanwa-obsf30>
+    <sk-arcade-sanwa-obsf30 color="blue" label="MP" pressed></sk-arcade-sanwa-obsf30>
+    <sk-arcade-sanwa-obsf30 color="yellow" label="HP"></sk-arcade-sanwa-obsf30>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sanwa Denshi OBSF-30</b> is the snap-in 30 mm button on the control panel of every Japanese candy
+  cabinet since the early 1990s — Astro City, Blast City, Versus City, and then every fight stick built in the
+  thirty years since. It is a short-throw microswitch button in a translucent polycarbonate cap, and the whole
+  design is one idea: a big flat disc of colour with almost no travel.</p>
+  <p><b>The tells kept here:</b> the plunger top is genuinely <i>flat</i> — the colour is even right out to about
+  85 % of the radius, and the convex roll happens only in the last two pixels, which is why a Sanwa reads as a
+  disc and a Happ reads as a bowl; the same-colour bezel rim is a thin 1.75 mm flange with a black hairline gap
+  between it and the plunger; the cap is <b>translucent</b>, so there is a warm core of light bouncing back off
+  the white body inside it, brightest just below centre; a broad soft highlight crescent sits at ten o'clock and a
+  thin bright line of piped light runs round the inside of the cap's edge; and a fine reflected-light line lies on
+  the bottom-right of the rim. Pressed, the cap drops one pixel and the gap ring goes black. These are new
+  buttons, so the only grime is the dark ring in the gap.</p>
+  <p><b>Left out:</b> the two 4.8 mm spade terminals and the microswitch body under the panel, the snap-in tabs,
+  and the six-button Vewlix arc — three colours in a row show the palette better on a bench. The little Michroma
+  legends are the panel's, not the button's.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-arcade-sanwa-obsf30> — Sanwa OBSF-30 30 mm flat-cap arcade button ====
+   attributes: color(red|blue|green|yellow|white|black|pink|lightblue|clear) pressed label scale disabled
+   events: press / release / activate
+   self-contained: paste this block into any page and use <sk-arcade-sanwa-obsf30 color="red"></sk-arcade-sanwa-obsf30> */
+(function () {
+  if (customElements.get("sk-arcade-sanwa-obsf30")) return;
+  var W = 96, H = 112, CX = 48, CY = 42;
+  var R_RIM = 38, R_GAP = 34.3, R_CAP = 33.6;
+  var D2R = Math.PI / 180;
+  function pt(r, a) { return (CX + r * Math.cos(a * D2R)).toFixed(2) + " " + (CY + r * Math.sin(a * D2R)).toFixed(2); }
+  function arc(r, a0, a1, sw) { return "M " + pt(r, a0) + " A " + r + " " + r + " 0 0 " + (sw === undefined ? 1 : sw) + " " + pt(r, a1); }
+
+  function hx(c, i) { return parseInt(c.substr(1 + i * 2, 2), 16); }
+  function mix(a, b, t) {
+    var o = "#";
+    for (var i = 0; i < 3; i++) { var v = Math.round(hx(a, i) + (hx(b, i) - hx(a, i)) * t); o += ("0" + Math.max(0, Math.min(255, v)).toString(16)).slice(-2); }
+    return o;
+  }
+  var lite = function (c, t) { return mix(c, "#ffffff", t); };
+  var dark = function (c, t) { return mix(c, "#000000", t); };
+
+  var BASE = {
+    red: "#e5262b", blue: "#1b6fd6", green: "#17a54a", yellow: "#f4d300", white: "#f4f2ec",
+    black: "#1a1a1a", pink: "#f26aa8", lightblue: "#63bfe8", clear: "#dfe5e9"
+  };
+  function palette(name) {
+    var b = BASE[name] || BASE.red, clear = name === "clear";
+    return {
+      mid: b,
+      lo: dark(b, 0.12),
+      edge: dark(b, 0.26),
+      glow: lite(b, clear ? 0.45 : 0.34),
+      pipe: lite(b, 0.78),
+      rimT: lite(b, 0.30),
+      rimM: b,
+      rimB: dark(b, 0.28),
+      rimR: lite(b, 0.46),
+      alpha: clear ? 0.62 : 1
+    };
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML =
+  '<style>' +
+  ':host{display:inline-block;width:' + W + 'px;height:' + H + 'px;position:relative;font-size:10px;-webkit-tap-highlight-color:transparent}' +
+  ':host([hidden]){display:none}' +
+  '.wrap{position:absolute;inset:0;transform-origin:0 0}' +
+  'svg{display:block;width:' + W + 'px;height:' + H + 'px;overflow:visible}' +
+  '.legend{font-family:"Michroma","Eurostile","Arial Narrow",sans-serif;font-size:7px;letter-spacing:0.18em;' +
+    'text-anchor:middle;fill:#23272b;fill-opacity:0.72}' +
+  '.cap{transform-box:view-box;transform-origin:' + CX + 'px ' + CY + 'px;transition:transform 20ms linear}' +
+  ':host([pressed]) .cap{transform:translate(0px,1px)}' +
+  '.gapdark{opacity:0;transition:opacity 20ms linear}' +
+  ':host([pressed]) .gapdark{opacity:1}' +
+  '.capshadow{transition:opacity 20ms linear}' +
+  ':host([pressed]) .capshadow{opacity:0.55}' +
+  '.grab{position:absolute;left:' + (CX - R_RIM) + 'px;top:' + (CY - R_RIM) + 'px;width:' + (R_RIM * 2) + 'px;height:' + (R_RIM * 2) + 'px;' +
+    'border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer}' +
+  ':host([disabled]) .grab{cursor:default}' +
+  '.grab:focus-visible{box-shadow:0 0 0 3px #16e0e0,0 0 16px rgba(22,224,224,.6)}' +
+  '</style>' +
+  '<div class="wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs>' +
+    '<linearGradient id="rimg" x1="0.18" y1="0" x2="0.62" y2="1">' +
+      '<stop class="s-rimT" offset="0"/><stop class="s-rimM" offset="0.46"/><stop class="s-rimB" offset="1"/></linearGradient>' +
+    '<radialGradient id="capg" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop class="s-mid" offset="0"/><stop class="s-mid2" offset="0.94"/>' +
+      '<stop class="s-lo" offset="0.982"/><stop class="s-edge" offset="1"/></radialGradient>' +
+    '<radialGradient id="coreg" cx="0.5" cy="0.55" r="0.95">' +
+      '<stop class="s-glow" offset="0" stop-opacity="0.24"/><stop class="s-glow2" offset="0.93" stop-opacity="0.22"/>' +
+      '<stop class="s-glow3" offset="1" stop-opacity="0"/></radialGradient>' +
+    '<linearGradient id="tilt" x1="0.2" y1="0" x2="0.72" y2="1">' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.03"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/>' +
+      '<stop offset="1" stop-color="#000" stop-opacity="0.028"/></linearGradient>' +
+    '<radialGradient id="spec" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.11"/>' +
+      '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="grime" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop offset="0.92" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.45"/></radialGradient>' +
+    '<filter id="s5" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>' +
+    '<filter id="s2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>' +
+    '<filter id="s1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5"/></filter>' +
+    '<filter id="s35" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.4"/></filter>' +
+  '</defs>' +
+
+    // the flange standing on the panel: a soft ambient shadow and a tight contact shadow
+    '<ellipse cx="' + (CX + 2) + '" cy="' + (CY + 6) + '" rx="' + (R_RIM + 1) + '" ry="' + (R_RIM - 1) + '" fill="#2b2c30" opacity="0.30" filter="url(#s5)"/>' +
+    '<ellipse cx="' + (CX + 1) + '" cy="' + (CY + 2.2) + '" rx="' + R_RIM + '" ry="' + (R_RIM - 0.5) + '" fill="#1b1c20" opacity="0.5" filter="url(#s2)"/>' +
+
+    // the bezel rim: a thin flat flange in the cap's own colour
+    '<circle class="rim" cx="' + CX + '" cy="' + CY + '" r="' + R_RIM + '" fill="url(#rimg)"/>' +
+    '<path class="lit" d="' + arc(R_RIM - 0.7, 196, 296) + '" fill="none" stroke-opacity="0.85" stroke-width="1.3"/>' +
+    '<path class="refl" d="' + arc(R_RIM - 0.9, 14, 146) + '" fill="none" stroke-opacity="0.6" stroke-width="1.2"/>' +
+    '<circle class="rimedge" cx="' + CX + '" cy="' + CY + '" r="' + (R_RIM - 0.35) + '" fill="none" stroke-opacity="0.55" stroke-width="0.7"/>' +
+
+    // the hairline gap, with the one piece of grime a new button has
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_GAP + '" fill="#0b0b0c"/>' +
+    '<circle class="gapdark" cx="' + CX + '" cy="' + CY + '" r="' + (R_GAP - 0.2) + '" fill="#000"/>' +
+
+    '<g class="capshadow"><ellipse cx="' + CX + '" cy="' + (CY + 0.4) + '" rx="' + (R_CAP - 0.6) + '" ry="' + (R_CAP - 0.8) + '" fill="#000" opacity="0.28" filter="url(#s1)"/></g>' +
+
+    // the plunger: flat to 85 % of the radius, then a two-pixel roll
+    '<g class="cap">' +
+      '<circle class="capface" cx="' + CX + '" cy="' + CY + '" r="' + R_CAP + '" fill="url(#capg)"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_CAP + '" fill="url(#coreg)"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_CAP + '" fill="url(#tilt)"/>' +
+      '<circle class="pipe2" cx="' + CX + '" cy="' + CY + '" r="' + (R_CAP - 0.85) + '" fill="none" stroke-opacity="0.42" stroke-width="1"/>' +
+      '<path class="pipe" d="' + arc(R_CAP - 0.9, 202, 300) + '" fill="none" stroke-opacity="0.45" stroke-width="1.1"/>' +
+      '<ellipse cx="' + (CX - 7) + '" cy="' + (CY - 12) + '" rx="23" ry="8" fill="url(#spec)" transform="rotate(-19 ' + (CX - 7) + ' ' + (CY - 12) + ')"/>' +
+      '<ellipse cx="' + (CX - 15) + '" cy="' + (CY - 15.5) + '" rx="7" ry="2.4" fill="#fff" opacity="0.42" transform="rotate(-19 ' + (CX - 15) + ' ' + (CY - 15.5) + ')"/>' +
+      '<path d="' + arc(R_CAP - 5, 22, 132) + '" fill="none" stroke="#fff" stroke-opacity="0.10" stroke-width="5" filter="url(#s35)"/>' +
+    '</g>' +
+    '<text class="legend" x="' + CX + '" y="' + (H - 12) + '"></text>' +
+  '</svg>' +
+  '<div class="grab" role="button" tabindex="0"></div></div>';
+
+  class SkSanwa extends HTMLElement {
+    static get observedAttributes() { return ["color", "pressed", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._scale = 1; this._keyHeld = false; this._pdown = false;
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._legend = r.querySelector(".legend");
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("color")) this.setAttribute("color", "red");
+      this._read();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      this._grab.addEventListener("keydown", this._onKeyDown);
+      this._grab.addEventListener("keyup", this._onKeyUp);
+    }
+    disconnectedCallback() {
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      this._grab.removeEventListener("keydown", this._onKeyDown);
+      this._grab.removeEventListener("keyup", this._onKeyUp);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); }
+
+    get value() { return this.hasAttribute("pressed"); }
+    set value(v) { if (v === true || v === "true" || v === 1) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    get color() { return this.getAttribute("color") || "red"; }
+    set color(c) { this.setAttribute("color", c); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+    blur() { this._grab.blur(); }
+
+    _read() {
+      var r = this.shadowRoot;
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      var name = (this.getAttribute("color") || "red").toLowerCase();
+      var p = palette(name);
+      var set = function (sel, col, op) {
+        var n = r.querySelector(sel); if (!n) return;
+        n.setAttribute("stop-color", col);
+        if (op !== undefined) n.setAttribute("stop-opacity", op);
+      };
+      set(".s-rimT", p.rimT); set(".s-rimM", p.rimM); set(".s-rimB", p.rimB);
+      set(".s-mid", p.mid); set(".s-mid2", p.mid); set(".s-lo", p.lo); set(".s-edge", p.edge);
+      set(".s-glow", p.glow); set(".s-glow2", p.glow); set(".s-glow3", p.glow);
+      r.querySelector(".capface").setAttribute("opacity", String(p.alpha));
+      r.querySelector(".lit").setAttribute("stroke", p.rimT);
+      r.querySelector(".refl").setAttribute("stroke", p.rimR);
+      r.querySelector(".rimedge").setAttribute("stroke", p.edge);
+      r.querySelector(".pipe").setAttribute("stroke", p.pipe);
+      r.querySelector(".pipe2").setAttribute("stroke", p.pipe);
+      this._legend.textContent = (this.getAttribute("label") || "").toUpperCase();
+      var dis = this.hasAttribute("disabled");
+      this._grab.setAttribute("tabindex", dis ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._grab.setAttribute("aria-pressed", this.hasAttribute("pressed") ? "true" : "false");
+      this._grab.setAttribute("aria-label", this.getAttribute("label") || (name + " button"));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: {} })); }
+    _down() {
+      if (this.hasAttribute("pressed")) return;
+      this.setAttribute("pressed", "");
+      this._grab.setAttribute("aria-pressed", "true");
+      this._emit("press");
+    }
+    _up(fire) {
+      if (!this.hasAttribute("pressed")) return;
+      this.removeAttribute("pressed");
+      this._grab.setAttribute("aria-pressed", "false");
+      this._emit("release");
+      if (fire) this._emit("activate");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._pdown = true;
+      this._down();
+    }
+    _onUp(e) {
+      if (!this._pdown) return;
+      this._pdown = false;
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._up(e.type === "pointerup");
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._keyHeld = true;
+      this._down();
+    }
+    _onKeyUp(e) {
+      if (!this._keyHeld) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      this._keyHeld = false;
+      this._up(true);
+    }
+  }
+  customElements.define("sk-arcade-sanwa-obsf30", SkSanwa);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

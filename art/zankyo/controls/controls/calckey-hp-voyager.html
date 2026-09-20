@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Voyager calculator key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "calckey-hp-voyager",
+  "element": "sk-calckey-hp-voyager",
+  "name": "HP Voyager calculator key",
+  "kind": "input",
+  "code": "D9",
+  "type": "Calculator key",
+  "source": "Hewlett-Packard HP-15C / 12C / 11C / 16C \"Voyager\" series, 1981–82: black keys with the gold f legend silk-screened on the case above and the blue g legend on the key's own front slope",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["doubleshot ABS", "lacquered aluminium case", "silk-screened legends"],
+  "tags": ["calculator", "key", "momentary", "shift legend", "RPN", "gold and blue"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "f-legend", "g-legend", "tone", "tall", "pressed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 40, "h": 44 },
+  "notes": "The 7 key with its gold FIX above and blue DEG on the front slope, then the two shift keys it belongs to: the gold f and the blue g. Shown at scale 2. Press with the mouse, a finger, or Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-calckey-hp-voyager legend="7" f-legend="FIX" g-legend="DEG" scale="2"></sk-calckey-hp-voyager>
+    <sk-calckey-hp-voyager legend="f" tone="gold" scale="2"></sk-calckey-hp-voyager>
+    <sk-calckey-hp-voyager legend="g" tone="blue" scale="2" pressed></sk-calckey-hp-voyager>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>HP Voyager</b> calculators — the 10C, 11C, 12C, 15C and 16C of 1981–82 — are a landscape slab with
+  a three-legend keyboard: the unshifted function in white on top of the key, the <b>f</b>-shifted one in gold
+  silk-screened on the case <i>above</i> the key, and the <b>g</b>-shifted one in blue on the key's own
+  <i>front slope</i>, where it faces you as you look down at the machine. Two shift keys carry those colours:
+  a gold f and a blue g, both legended in black.</p>
+  <p><b>The tells kept here:</b> all three legends in their three places; the key as a small rounded block with
+  a faintly cylindrical top and a visibly sloped front face in a lighter shade, narrowing toward the bottom;
+  the hairline of case that shows between keys, which are close but never touch; the brushed-and-lacquered
+  dark brown-black case with a fine horizontal grain and the room's light gathered at the top-left; the
+  gold-and-blue pair a shade deeper than their own legends. The click is HP's: one pixel of travel over 25 ms
+  with the top face darkening for a frame as it goes, and <code>activate</code> on the press rather than the
+  release — a Voyager registers on the way down.</p>
+  <p><b>Left out:</b> the LCD and its bezel above the block, the serial-number plate and the rubber feet, and
+  the two-row ENTER — the <code>tall</code> attribute builds it (one block spanning two rows, legend centred)
+  but the stage here shows the 7 key with its shift pair instead.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-calckey-hp-voyager> — HP-15C / Voyager key: white on top, gold above, blue on the front slope ====
+   attributes: legend f-legend g-legend tone(black|gold|blue) tall pressed scale disabled
+   events: press (and activate, on the way down) / release
+   momentary: no value. self-contained: paste this block into any page and use
+   <sk-calckey-hp-voyager legend="7" f-legend="FIX" g-legend="DEG"></sk-calckey-hp-voyager> */
+(function () {
+  const TAG = "sk-calckey-hp-voyager";
+  if (customElements.get(TAG)) return;
+  const W = 40, H = 44, ROW = 44;        // the 13 × 11 mm pitch, plus the legend zone above
+  const KX = 3, KW = 34, KY = 10.5, KH = 27.4, FRONT = 6.8;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent;
+      --key: #1a1a1b; --hi: rgba(124,124,132,0.6); --side: #08080a; --front: #232324; --frontLo: #141416; --ink: #f1f1ee; }
+    :host([hidden]) { display: none; }
+    :host([tone="gold"]) { --key: #c99b2a; --hi: rgba(255,228,158,0.5); --side: #6f5210; --front: #a97f1e; --frontLo: #6d5010; --ink: #17130a; }
+    :host([tone="blue"]) { --key: #3b8fd6; --hi: rgba(196,228,252,0.5); --side: #17507f; --front: #2c73ae; --frontLo: #17507f; --ink: #061220; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+
+    /* the brushed-and-lacquered case, one light from above-left */
+    .case { position: absolute; inset: 0;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,248,232,0.008) 0 0.6px, rgba(0,0,0,0.014) 0.6px 1.4px),
+        radial-gradient(130% 80% at 18% -14%, rgba(255,240,214,0.13), rgba(0,0,0,0) 64%),
+        linear-gradient(162deg, #35312d 0%, #2b2826 46%, #1f1d1b 100%); }
+
+    /* the gold f legend, silk-screened on the case above the key */
+    .f { position: absolute; left: 0; right: 0; top: 1.6px; height: 7.4px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 600; font-size: 6px;
+      letter-spacing: 0.06em; color: #d9a52c; text-shadow: 0 0.5px 0.5px rgba(0,0,0,0.55); white-space: nowrap; }
+    .f:empty { display: none; }
+
+    /* the key block: a flat-ish cylindrical top over a sloped front face */
+    .key { position: absolute; left: ${KX}px; width: ${KW}px; top: ${KY}px; height: ${KH}px;
+      outline: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+      filter: drop-shadow(0 1px 1.2px rgba(0,0,0,0.8)) drop-shadow(0 3px 4px rgba(0,0,0,0.45));
+      transition: transform 25ms linear, filter 25ms linear; }
+    .key.down { transform: translateY(1px);
+      filter: drop-shadow(0 0.5px 0.8px rgba(0,0,0,0.85)) drop-shadow(0 1.5px 2px rgba(0,0,0,0.4)); }
+    :host([disabled]) .key { cursor: default; }
+
+    .top { position: absolute; left: 0; right: 0; top: 0; bottom: ${FRONT}px; border-radius: 2.2px 2.2px 0 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0) 26%, rgba(0,0,0,0.04) 100%),
+        linear-gradient(90deg, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.05) 11%, rgba(255,255,255,0.015) 46%, rgba(255,255,255,0.065) 80%, rgba(0,0,0,0.15) 100%),
+        linear-gradient(180deg, var(--key) 0%, var(--key) 86%, var(--side) 100%);
+      box-shadow: inset 0 0.7px 0 var(--hi), inset 0 -0.5px 0 rgba(0,0,0,0.42);
+      transition: filter 60ms linear; }
+    .key.down .top { filter: brightness(0.8); }
+    .key.click .top { filter: brightness(0.68); }
+    .top::after { content: ""; position: absolute; left: 8%; top: 5%; width: 48%; height: 30%; border-radius: 50%;
+      background: radial-gradient(60% 60% at 40% 40%, rgba(255,255,255,0.075), rgba(255,255,255,0) 74%); }
+
+    /* the front slope: a lighter shade, narrowing toward the bottom, carrying the blue g legend */
+    .front { position: absolute; left: 0; right: 0; bottom: 0; height: ${FRONT}px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0 0.5px, rgba(255,255,255,0.1) 0.5px 1px, rgba(0,0,0,0) 1px),
+        linear-gradient(180deg, var(--front) 0%, var(--front) 46%, var(--frontLo) 100%);
+      clip-path: polygon(0 0, 100% 0, calc(100% - 1.2px) 100%, 1.2px 100%);
+      display: flex; align-items: center; justify-content: center; overflow: hidden; padding-top: 0.8px; }
+
+    .lg { position: absolute; left: 0; right: 0; top: 0; bottom: ${FRONT}px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 700; font-size: 7.5px;
+      letter-spacing: 0.02em; color: var(--ink); text-shadow: 0 0.5px 0.6px rgba(0,0,0,0.45); white-space: nowrap; }
+    :host([tone="gold"]) .lg, :host([tone="blue"]) .lg { text-shadow: 0 0.5px 0.5px rgba(255,255,255,0.16); font-size: 8px; }
+    .g { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 600; font-size: 4.9px;
+      letter-spacing: 0.06em; color: #5aa9e6; line-height: 1; white-space: nowrap; display: block;
+      text-shadow: 0 0.4px 0.5px rgba(0,0,0,0.55); }
+    .key:focus-visible { border-radius: 2.6px; box-shadow: 0 0 0 1.5px #16e0e0, 0 0 9px rgba(22,224,224,0.55); }
+  </style>
+  <div class="wrap">
+    <div class="case"></div>
+    <div class="f"></div>
+    <div class="key" role="button" tabindex="0">
+      <div class="top"></div>
+      <div class="front"><span class="g"></span></div>
+      <div class="lg"></div>
+    </div>
+  </div>`;
+
+  class SkCalckeyHpVoyager extends HTMLElement {
+    static get observedAttributes() { return ["legend", "f-legend", "g-legend", "tone", "tall", "pressed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._down = false; this._ct = 0;
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._key = r.querySelector(".key");
+      this._f = r.querySelector(".f");
+      this._g = r.querySelector(".g");
+      this._lg = r.querySelector(".lg");
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs();
+      const k = this._key;
+      k.addEventListener("pointerdown", this._onDown);
+      k.addEventListener("pointerup", this._onUp);
+      k.addEventListener("pointercancel", this._onUp);
+      k.addEventListener("keydown", this._onKeyDown);
+      k.addEventListener("keyup", this._onKeyUp);
+      k.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      const k = this._key;
+      k.removeEventListener("pointerdown", this._onDown);
+      k.removeEventListener("pointerup", this._onUp);
+      k.removeEventListener("pointercancel", this._onUp);
+      k.removeEventListener("keydown", this._onKeyDown);
+      k.removeEventListener("keyup", this._onKeyUp);
+      k.removeEventListener("blur", this._onBlur);
+      clearTimeout(this._ct);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "pressed") { this._key.classList.toggle("down", this.hasAttribute("pressed")); return; }
+      this._readAttrs();
+    }
+    get pressed() { return this.hasAttribute("pressed"); }
+    set pressed(b) { if (b) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    get legend() { return this.getAttribute("legend") || ""; }
+    set legend(s) { this.setAttribute("legend", s == null ? "" : String(s)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._key.focus(o); }
+    blur() { this._key.blur(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const tall = this.hasAttribute("tall");
+      const h = tall ? H + ROW : H;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (h * this._scale) + "px";
+      this._wrap.style.width = W + "px"; this._wrap.style.height = h + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._key.style.height = (tall ? KH + ROW : KH) + "px";
+
+      const lg = this.getAttribute("legend") || "";
+      this._lg.textContent = lg;
+      this._f.textContent = this.getAttribute("f-legend") || "";
+      this._g.textContent = this.getAttribute("g-legend") || "";
+      // long legends are set smaller, as HP set theirs
+      this._lg.style.fontSize = (lg.length >= 6 ? 5.8 : lg.length >= 4 ? 6.6 : lg.length >= 2 ? 7.2 : null) + "px";
+      if (lg.length < 2) this._lg.style.fontSize = "";
+
+      const k = this._key, dis = this.hasAttribute("disabled");
+      const names = [lg, this.getAttribute("f-legend"), this.getAttribute("g-legend")].filter(Boolean);
+      k.setAttribute("aria-label", (names.join(" ") || "key"));
+      k.setAttribute("aria-disabled", dis ? "true" : "false");
+      k.setAttribute("tabindex", dis ? "-1" : "0");
+      k.classList.toggle("down", this.hasAttribute("pressed"));
+    }
+    _emit(type) {
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { legend: this.getAttribute("legend") || "" } }));
+    }
+    _press() {
+      if (this._down || this.hasAttribute("disabled")) return;
+      this._down = true;
+      this.setAttribute("pressed", "");
+      this._key.classList.add("down", "click");
+      clearTimeout(this._ct);
+      this._ct = setTimeout(() => this._key.classList.remove("click"), 70);   // the crisp tactile snap
+      this._emit("press");
+      this._emit("activate");                                                 // a Voyager registers on the way down
+    }
+    _release() {
+      if (!this._down) return;
+      this._down = false;
+      this.removeAttribute("pressed");
+      this._key.classList.remove("down");
+      this._emit("release");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._key.focus({ preventScroll: true });
+      try { this._key.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      try { this._key.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      this._release();
+    }
+    _onBlur() { this._release(); }
+  }
+  customElements.define(TAG, SkCalckeyHpVoyager);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

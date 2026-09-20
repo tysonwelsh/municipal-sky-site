@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ashcroft-pattern brass boiler gauge — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "gauge-ashcroft-steam-brass",
+  "element": "sk-gauge-ashcroft-steam",
+  "name": "Ashcroft-pattern brass boiler gauge",
+  "kind": "output",
+  "code": "F5",
+  "type": "Gauge, Bourdon-tube style",
+  "source": "Ashcroft Mfg. Co. 6-inch locomotive and stationary boiler gauge, Bridgeport CT (Crosby and Dewrance made the same object)",
+  "era": "1900s",
+  "origin": "USA",
+  "materials": ["cast brass", "bevelled glass", "porcelain enamel", "blued steel"],
+  "tags": ["steam", "boiler", "locomotive", "bourdon", "needle", "ballistics", "brass", "enamel"],
+  "value": { "model": "range", "min": 0, "max": 300, "step": 1, "unit": "psi" },
+  "attributes": ["value", "min", "max", "redline", "unit", "legend", "label", "scale"],
+  "events": [],
+  "size": { "w": 200, "h": 214 },
+  "notes": "Set value to move the pointer; the Bourdon tube is heavy, so it overshoots and then trembles as if the steam were pulsing. The small one is at rest against its stop pin."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-gauge-ashcroft-steam value="155" max="300" redline="200"></sk-gauge-ashcroft-steam>
+    <sk-gauge-ashcroft-steam value="0" max="160" redline="120" legend="AUX. FEED" scale="0.6"></sk-gauge-ashcroft-steam>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Ashcroft</b> 6-inch boiler gauge is the brass eye on the backhead of every American locomotive and
+  on the front of every stationary engine from the 1880s to the 1920s — Crosby and Dewrance built the same
+  object in England. A cast brass case, a screwed-on bezel ring with a knurled edge and two fine-slotted
+  screws at twelve and six, a thick bevelled glass, and behind it a porcelain-enamel dial with engraved
+  Didone figures around a full 270 degrees, a hand-painted red line at the working pressure, and a slim
+  blued-steel spade pointer on a brass boss. A quarter-inch pipe stub leaves the bottom of the case.</p>
+  <p><b>The tells kept here:</b> the figures run from 0 at about seven o'clock to the top of the range at about
+  five, each one rotated upright to its own radius; the red line is painted by hand, so it wobbles, is fatter
+  at the inner end, and bleeds a little where the brush lifted; the maker's cartouche is an oval of fine
+  engraved rules with a city line, deliberately generic; the pointer is a slim shaft that swells to a leaf
+  four millimetres before the tip, with a short tail and a round brass counterweight; the bezel has a
+  radially hatched knurl, a polished flat face and a warm reflection at its upper left; the enamel is not
+  white but faintly warm toward the rim, crazed with hairlines, and chipped down to the iron in two or three
+  places, one of them under the screw at six. The pointer has <b>Bourdon mass</b>: it overshoots by about five
+  per cent, bounces once more, and then trembles a third of a degree at six hertz as the steam pulses.</p>
+  <p><b>Left out:</b> the rear threads and the syphon pipe; the real maker's name and eagle (a generic cartouche
+  stands in); the Didone is Playfair Display rather than a drawn Scotch Roman, with Libre Franklin carrying
+  the small caps.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-gauge-ashcroft-steam> — 1900s Ashcroft brass boiler gauge, white enamel dial ====
+   attributes: value min max redline unit legend label scale
+   no events (an output). set .value or the attribute; the pointer has Bourdon ballistics.
+   self-contained: paste this block into any page and use
+   <sk-gauge-ashcroft-steam value="155" max="300" redline="200"></sk-gauge-ashcroft-steam> */
+(function () {
+  if (customElements.get("sk-gauge-ashcroft-steam")) return;
+  const W = 200, H = 214, CX = 100, CY = 100;
+  const A0 = -135, SWEEP = 270;            // 0 at 7 o'clock, full scale at 5 o'clock
+  const R_ARC = 68, R_NUM = 53.5;
+  const NS = "http://www.w3.org/2000/svg";
+  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; };
+  const f = n => (Math.round(n * 100) / 100);
+
+  // --- static ornament, composed once ---------------------------------
+  let seed = 20250920;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  let knurl = "";
+  for (let i = 0; i < 216; i++) {                    // radial hatching on the bezel's outer edge
+    const a = i * (360 / 216);
+    const [x0, y0] = pt(a, 90.5), [x1, y1] = pt(a, 97.2);
+    knurl += `M ${f(x0)} ${f(y0)} L ${f(x1)} ${f(y1)} `;
+  }
+  let craze = "";
+  for (let i = 0; i < 16; i++) {                     // hairline crazing in the enamel
+    const a = rnd() * 360, r = 30 + rnd() * 40;
+    let [x, y] = pt(a, r); let d = `M ${f(x)} ${f(y)}`;
+    let dir = rnd() * 360;
+    for (let k = 0; k < 3; k++) {
+      dir += (rnd() - 0.5) * 120; const len = 5 + rnd() * 11;
+      x += len * Math.cos(dir * Math.PI / 180); y += len * Math.sin(dir * Math.PI / 180);
+      if (Math.hypot(x - CX, y - CY) > 72) break;
+      d += ` L ${f(x)} ${f(y)}`;
+    }
+    craze += d + " ";
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; fill: #1c1a17; }
+    .num { font-family: "Playfair Display", "Times New Roman", serif; font-weight: 700; font-size: 12px;
+           text-anchor: middle; dominant-baseline: middle; letter-spacing: -0.01em; }
+    .cap { font-weight: 600; letter-spacing: 0.25em; text-anchor: middle; fill: #2e2a22; }
+    .u1 { font-size: 6px; } .u2 { font-size: 5px; fill: #40392e; }
+    .cart { font-size: 6px; } .cart2 { font-size: 4.6px; letter-spacing: 0.18em; fill: #4a4236; }
+    .needle { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="a-ring" x1="0.12" y1="0.04" x2="0.88" y2="0.96">
+          <stop offset="0" stop-color="#f4e3a4"/><stop offset="0.22" stop-color="#d7b263"/>
+          <stop offset="0.52" stop-color="#a9832f"/><stop offset="0.78" stop-color="#6e5220"/>
+          <stop offset="0.93" stop-color="#9b7a36"/><stop offset="1" stop-color="#c9a24c"/>
+        </linearGradient>
+        <linearGradient id="a-face" x1="0.15" y1="0.05" x2="0.85" y2="0.95">
+          <stop offset="0" stop-color="#f0dc95"/><stop offset="0.3" stop-color="#c9a24c"/>
+          <stop offset="0.72" stop-color="#8a6829"/><stop offset="1" stop-color="#6e5220"/>
+        </linearGradient>
+        <linearGradient id="a-stub" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#6e5220"/><stop offset="0.28" stop-color="#e0c377"/>
+          <stop offset="0.6" stop-color="#a9832f"/><stop offset="1" stop-color="#5c441a"/>
+        </linearGradient>
+        <radialGradient id="a-enamel" cx="38%" cy="30%" r="82%">
+          <stop offset="0" stop-color="#fbf9f2"/><stop offset="0.55" stop-color="#f5f1e6"/>
+          <stop offset="0.86" stop-color="#ece5d2"/><stop offset="1" stop-color="#ddd2b8"/>
+        </radialGradient>
+        <linearGradient id="a-bevel" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/><stop offset="0.28" stop-color="#ffffff" stop-opacity="0.12"/>
+          <stop offset="0.6" stop-color="#2a2a26" stop-opacity="0.18"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.3"/>
+        </linearGradient>
+        <linearGradient id="a-glass" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.46"/><stop offset="0.38" stop-color="#fff" stop-opacity="0.13"/>
+          <stop offset="0.52" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.05"/>
+        </linearGradient>
+        <linearGradient id="a-blade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#0d1320"/><stop offset="0.3" stop-color="#1c2740"/>
+          <stop offset="0.52" stop-color="#5f6f8e"/><stop offset="0.7" stop-color="#1e2941"/><stop offset="1" stop-color="#0b1119"/>
+        </linearGradient>
+        <radialGradient id="a-boss" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#ffeeb4"/><stop offset="0.45" stop-color="#c9a24c"/>
+          <stop offset="0.86" stop-color="#6e5220"/><stop offset="1" stop-color="#9a7c36"/>
+        </radialGradient>
+        <radialGradient id="a-screw" cx="34%" cy="28%" r="72%">
+          <stop offset="0" stop-color="#f0dc95"/><stop offset="0.55" stop-color="#b08f3f"/><stop offset="1" stop-color="#5e4519"/>
+        </radialGradient>
+        <clipPath id="a-dial"><circle cx="${CX}" cy="${CY}" r="77"/></clipPath>
+        <clipPath id="a-ringclip"><path d="M ${CX} ${CY - 97.5} A 97.5 97.5 0 1 1 ${CX - 0.01} ${CY - 97.5} Z M ${CX} ${CY - 78} A 78 78 0 1 0 ${CX + 0.01} ${CY - 78} Z" clip-rule="evenodd"/></clipPath>
+        <filter id="a-b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="a-b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2"/></filter>
+      </defs>
+
+      <!-- ambient + contact shadow on the panel -->
+      <ellipse cx="${CX + 4}" cy="${CY + 9}" rx="98" ry="97" fill="#000" opacity="0.5" filter="url(#a-b3)"/>
+      <!-- the pipe stub at 6 o'clock -->
+      <g>
+        <rect x="89" y="176" width="22" height="38" fill="url(#a-stub)"/>
+        <rect x="85.5" y="186" width="29" height="11" rx="1.5" fill="url(#a-stub)" stroke="#4e3a14" stroke-width="0.5"/>
+        <path d="M 85.5 187.4 L 114.5 187.4" stroke="#ffeeb4" stroke-opacity="0.45" stroke-width="0.8"/>
+        <rect x="89" y="203" width="22" height="11" fill="#000" opacity="0.14"/>
+      </g>
+
+      <!-- brass case + bezel ring -->
+      <circle cx="${CX}" cy="${CY}" r="97.5" fill="url(#a-ring)"/>
+      <path d="${knurl}" fill="none" stroke="#57400f" stroke-opacity="0.62" stroke-width="0.75"/>
+      <circle cx="${CX}" cy="${CY}" r="97.5" fill="none" stroke="#3c2c0e" stroke-opacity="0.8" stroke-width="1"/>
+      <circle cx="${CX}" cy="${CY}" r="90" fill="url(#a-face)"/>
+      <circle cx="${CX}" cy="${CY}" r="90" fill="none" stroke="#4e3a14" stroke-opacity="0.5" stroke-width="0.7"/>
+      <!-- warm reflection across the ring's upper left, and reflected light under it -->
+      <g clip-path="url(#a-ringclip)">
+        <path d="M 30 42 A 90 90 0 0 1 98 10.1 L 98 2.5 A 97.5 97.5 0 0 0 24 37 Z" fill="#fff3c2" opacity="0.5"/>
+        <path d="M 34 48 A 84 84 0 0 1 84 16.8 L 84 12 A 89 89 0 0 0 30 45 Z" fill="#fffbe8" opacity="0.45"/>
+        <path d="M 16 122 A 90 90 0 0 0 48 168 L 43 174 A 97.5 97.5 0 0 1 9 124 Z" fill="#ffdf96" opacity="0.2"/>
+      </g>
+      <!-- tarnish: patina spots on the ring -->
+      <g fill="#7f6a3c" opacity="0.2">
+        <ellipse cx="146" cy="160" rx="13" ry="7" transform="rotate(-38 146 160)"/>
+        <ellipse cx="54" cy="24" rx="8" ry="4" transform="rotate(28 54 24)"/>
+        <ellipse cx="172" cy="78" rx="5" ry="9"/>
+        <ellipse cx="30" cy="150" rx="9" ry="5" transform="rotate(40 30 150)"/>
+      </g>
+      <!-- bezel screws at 12 and 6 -->
+      <g>
+        <circle cx="${CX}" cy="${CY - 84}" r="4.2" fill="url(#a-screw)" stroke="#4e3a14" stroke-width="0.5"/>
+        <rect x="${CX - 3.3}" y="${CY - 84.4}" width="6.6" height="0.9" fill="#3a2b0e" transform="rotate(16 ${CX} ${CY - 84})"/>
+        <circle cx="${CX}" cy="${CY + 84}" r="4.2" fill="url(#a-screw)" stroke="#4e3a14" stroke-width="0.5"/>
+        <rect x="${CX - 3.3}" y="${CY + 83.6}" width="6.6" height="0.9" fill="#3a2b0e" transform="rotate(-72 ${CX} ${CY + 84})"/>
+      </g>
+
+      <!-- the dial under glass -->
+      <g clip-path="url(#a-dial)">
+        <circle cx="${CX}" cy="${CY}" r="77" fill="url(#a-enamel)"/>
+        <circle cx="${CX}" cy="${CY}" r="77" fill="#8a6a2a" opacity="0.055"/>
+        <path d="${craze}" fill="none" stroke="#d4ccb9" stroke-width="0.4" opacity="0.32"/>
+        <!-- flea-bite chips at the rim -->
+        <g>
+          <ellipse cx="${CX}" cy="${CY + 72}" rx="3.1" ry="2.2" fill="#7a5a2a" opacity="0.5"/>
+          <ellipse cx="${CX - 0.4}" cy="${CY + 71.4}" rx="2.1" ry="1.3" fill="#5d4520" opacity="0.45"/>
+          <ellipse cx="42" cy="61" rx="2.3" ry="1.5" fill="#7a5a2a" opacity="0.55" transform="rotate(-30 42 61)"/>
+          <ellipse cx="160" cy="128" rx="1.8" ry="1.2" fill="#7a5a2a" opacity="0.5"/>
+        </g>
+        <g class="scale"></g>
+        <!-- maker's cartouche -->
+        <g class="cartouche" fill="none" stroke="#3a352c">
+          <ellipse cx="${CX}" cy="152" rx="34" ry="14.5" stroke-opacity="0.55" stroke-width="0.7"/>
+          <ellipse cx="${CX}" cy="152" rx="31" ry="12" stroke-opacity="0.3" stroke-width="0.4"/>
+        </g>
+        <text class="cap cart" x="${CX}" y="151">STEAM GAUGE</text>
+        <text class="cap cart2" x="${CX}" y="159.5">BRIDGEPORT · CONN.</text>
+        <text class="cap u1" x="${CX}" y="60">POUNDS</text>
+        <text class="cap u2" x="${CX}" y="69.5"></text>
+        <text class="cap u2 legend" x="${CX}" y="120"></text>
+
+        <!-- brass stop pin just below zero -->
+        <circle class="stop" cx="0" cy="0" r="2.6" fill="url(#a-screw)" stroke="#4e3a14" stroke-width="0.4"/>
+
+        <!-- pointer: shadow copy, then the blued spade -->
+        <g transform="translate(2.4 3.2)">
+          <g class="needle">
+            <path d="M ${CX - 1.3} ${CY} L ${CX - 1.3} ${CY - 40} L ${CX - 3.5} ${CY - 52} L ${CX} ${CY - 72}
+                     L ${CX + 3.5} ${CY - 52} L ${CX + 1.3} ${CY - 40} L ${CX + 1.3} ${CY} Z" fill="#2b2418" opacity="0.3" filter="url(#a-b1)"/>
+            <circle cx="${CX}" cy="${CY + 17}" r="3.8" fill="#2b2418" opacity="0.26" filter="url(#a-b1)"/>
+          </g>
+        </g>
+        <g class="needle">
+          <rect x="${CX - 1.4}" y="${CY - 6}" width="2.8" height="21" fill="#1b2437"/>
+          <circle cx="${CX}" cy="${CY + 16}" r="3.7" fill="url(#a-boss)" stroke="#5e4519" stroke-width="0.5"/>
+          <path d="M ${CX - 1.15} ${CY + 2} L ${CX - 1.15} ${CY - 40} L ${CX - 3.4} ${CY - 52}
+                   L ${CX - 1.7} ${CY - 64} L ${CX} ${CY - 72.5} L ${CX + 1.7} ${CY - 64}
+                   L ${CX + 3.4} ${CY - 52} L ${CX + 1.15} ${CY - 40} L ${CX + 1.15} ${CY + 2} Z" fill="url(#a-blade)"/>
+          <path d="M ${CX - 0.45} ${CY - 10} L ${CX - 0.45} ${CY - 41} L ${CX - 1.5} ${CY - 52}
+                   L ${CX - 0.5} ${CY - 66} L ${CX + 0.35} ${CY - 52} L ${CX + 0.1} ${CY - 41}
+                   L ${CX + 0.1} ${CY - 10} Z" fill="#9fb0cc" opacity="0.4"/>
+        </g>
+        <circle cx="${CX}" cy="${CY}" r="7" fill="url(#a-boss)" stroke="#5e4519" stroke-width="0.6"/>
+        <circle cx="${CX - 2}" cy="${CY - 2.4}" r="2.4" fill="#fff3c8" opacity="0.5"/>
+
+        <!-- bevelled glass: inner bevel ring, one broad reflection, a crescent glint -->
+        <circle cx="${CX}" cy="${CY}" r="74" fill="none" stroke="url(#a-bevel)" stroke-width="6"/>
+        <path d="M 30 23 L 128 23 L 52 174 L 24 174 Z" fill="url(#a-glass)"/>
+        <path d="M 40 46 A 74 74 0 0 1 94 26.6" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="2.2" stroke-linecap="round" filter="url(#a-b1)"/>
+        <circle cx="${CX}" cy="${CY}" r="77" fill="none" stroke="#000" stroke-opacity="0.4" stroke-width="7" filter="url(#a-b3)"/>
+      </g>
+      <circle cx="${CX}" cy="${CY}" r="77.5" fill="none" stroke="#3c2c0e" stroke-opacity="0.7" stroke-width="1.2"/>
+    </svg>
+  </div>`;
+
+  class SkGaugeAshcroft extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "redline", "unit", "legend", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 300; this._red = 200; this._scale = 1;
+      this._x = A0; this._vel = 0; this._trem = 0; this._ph = 0; this._raf = 0; this._last = 0;
+      const R = this.shadowRoot;
+      this._needles = R.querySelectorAll(".needle");
+      this._wrap = R.querySelector(".wrap");
+      this._scaleG = R.querySelector(".scale");
+      this._u2 = R.querySelector(".u2"); this._legend = R.querySelector(".legend");
+      this._stop = R.querySelector(".stop");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._read(); this._drawScale();
+      this._x = this._angle(this._v); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read(); if (n !== "value") this._drawScale();
+      if (n === "value") this._trem = 0.3;
+      this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return;
+      v = Math.min(this._max, Math.max(this._min, v));
+      if (v === this._v) return;
+      this._v = v; this._trem = 0.3;
+      this.setAttribute("value", String(Math.round(v * 10) / 10)); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { const m = this._max; return Math.max(0, Math.min(m, m * 0.5 + m * 0.2 * Math.sin(t * 0.33) + m * 0.05 * Math.sin(t * 1.9))); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 300);
+      if (this._max <= this._min) this._max = this._min + 1;
+      this._red = this.hasAttribute("redline") ? num("redline", NaN) : 200;
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      const u = this.getAttribute("unit") || "PER SQUARE INCH";
+      if (this._u2.textContent !== u) this._u2.textContent = u;
+      const lg = this.getAttribute("legend") || "";
+      if (this._legend.textContent !== lg) this._legend.textContent = lg;
+      const lab = this.getAttribute("label") || "steam pressure";
+      this.setAttribute("aria-label", lab + ", pounds per square inch");
+      this.setAttribute("aria-valuemin", String(this._min));
+      this.setAttribute("aria-valuemax", String(this._max));
+      this.setAttribute("aria-valuenow", String(this._v));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const [sx, sy] = pt(A0 - 3.6, R_ARC + 3);
+      this._stop.setAttribute("cx", f(sx)); this._stop.setAttribute("cy", f(sy));
+    }
+    _angle(v) { return A0 + (v - this._min) / (this._max - this._min) * SWEEP; }
+    _arc(r, a0, a1) { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M ${f(x0)} ${f(y0)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f(x1)} ${f(y1)}`; }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      const range = this._max - this._min;
+      let minor = 1; for (const c of [1, 2, 2.5, 5, 10, 20, 25, 50]) { if (range / c <= 80) { minor = c; break; } }
+      const major = minor * 5, figure = minor * 10;
+      // the heavy black arc
+      g.appendChild(mk("path", { d: this._arc(R_ARC, A0, A0 + SWEEP), fill: "none", stroke: "#1c1a17", "stroke-width": 1.5 }));
+      const n = Math.round(range / minor);
+      for (let i = 0; i <= n; i++) {
+        const val = this._min + i * minor, a = this._angle(val);
+        const isFig = Math.abs(val / figure - Math.round(val / figure)) < 1e-6;
+        const isMaj = Math.abs(val / major - Math.round(val / major)) < 1e-6;
+        const len = isFig ? 6 : isMaj ? 4.4 : 2.6;
+        const [x0, y0] = pt(a, R_ARC), [x1, y1] = pt(a, R_ARC + len);
+        g.appendChild(mk("line", { x1: f(x0), y1: f(y0), x2: f(x1), y2: f(y1), stroke: "#1c1a17", "stroke-width": isFig ? 1.6 : isMaj ? 1.1 : 0.6 }));
+        if (isFig) {
+          const [tx, ty] = pt(a, R_NUM);
+          const t = mk("text", { x: f(tx), y: f(ty), class: "num", transform: `rotate(${f(a)} ${f(tx)} ${f(ty)})` });
+          t.textContent = String(Math.round(val));
+          g.appendChild(t);
+        }
+      }
+      // the hand-painted red line: wavy, fatter at the inner end, with a bleed
+      if (!isNaN(this._red) && this._red > this._min && this._red < this._max) {
+        const a = this._angle(this._red);
+        let L = "", Rt = [];
+        for (let i = 0; i <= 8; i++) {
+          const r = 60 + i * (R_ARC + 3.5 - 60) / 8;
+          const wob = Math.sin(i * 1.05 + 0.6) * 0.62;
+          const wid = 1.5 - i * 0.055;
+          const [x0, y0] = pt(a + wob - wid * 57.3 / r, r), [x1, y1] = pt(a + wob + wid * 57.3 / r, r);
+          L += (i ? " L " : "M ") + f(x0) + " " + f(y0);
+          Rt.push(` L ${f(x1)} ${f(y1)}`);
+        }
+        g.appendChild(mk("path", { d: L + Rt.reverse().join("") + " Z", fill: "#b8231a" }));
+        const [bx, by] = pt(a + 1.2, 58.6);
+        g.appendChild(mk("ellipse", { cx: f(bx), cy: f(by), rx: 1.5, ry: 1.1, fill: "#b8231a", opacity: 0.55,
+          transform: `rotate(${f(a)} ${f(bx)} ${f(by)})` }));
+      }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const target = this._angle(this._v);
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // a heavy Bourdon tube: ~450 ms, about 5 % overshoot, one smaller bounce
+      const k = 168, c = 17.4;
+      this._vel += (k * (target - this._x) - c * this._vel) * dt;
+      this._x += this._vel * dt;
+      this._ph += dt;
+      this._trem *= Math.pow(0.22, dt);
+      this._paint();
+      if (Math.abs(target - this._x) < 0.02 && Math.abs(this._vel) < 0.06 && this._trem < 0.012) {
+        this._x = target; this._vel = 0; this._trem = 0; this._paint(); this._raf = 0; return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const lo = A0 - 3.2, hi = A0 + SWEEP + 3.2;
+      const trem = this._trem * Math.sin(this._ph * 2 * Math.PI * 6);
+      const a = Math.max(lo, Math.min(hi, this._x + trem));
+      const s = "rotate(" + a.toFixed(2) + "deg)";
+      this._needles.forEach(nd => { nd.style.transform = s; });
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 10) / 10));
+    }
+  }
+  customElements.define("sk-gauge-ashcroft-steam", SkGaugeAshcroft);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Underwood No. 5 glass key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "typekey-underwood-5-glass",
+  "element": "sk-typekey-underwood-5",
+  "name": "Underwood No. 5 glass typewriter key",
+  "kind": "input",
+  "code": "D7",
+  "type": "Typewriter key",
+  "source": "Underwood No. 5 standard typewriter, 1900–1930: a glass disc over a black paper legend in a nickel-plated ring, on a long japanned steel stem",
+  "era": "1900s",
+  "origin": "USA",
+  "materials": ["glass", "nickel-plated brass", "paper legend", "japanned steel"],
+  "tags": ["typewriter", "key", "momentary", "glass", "nickel ring", "stem", "long travel"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "sub", "stem", "wide", "worn", "pressed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 60, "h": 116 },
+  "notes": "Three keys of a bank: A, the figure key 2 over the quote, and a wider SHIFT lozenge held down. Press with the mouse, a finger, or Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-typekey-underwood-5 legend="A"></sk-typekey-underwood-5>
+    <sk-typekey-underwood-5 legend="2" sub="&quot;"></sk-typekey-underwood-5>
+    <sk-typekey-underwood-5 legend="SHIFT" wide="1.7" pressed></sk-typekey-underwood-5>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Underwood No. 5</b> — the machine that fixed the shape of the typewriter from 1900 until the
+  1930s — has four banks of round keys, each a disc of glass over a black paper legend, held in a
+  nickel-plated brass ring with a rolled bead, on a long japanned steel stem that rises out of the frame.
+  Nickel is warmer and yellower than chrome, and the plating on the front edge of a much-used key wears
+  through to the brass underneath.</p>
+  <p><b>The tells kept here:</b> the rolled bead read as three concentric lines — bright outer edge, dark
+  groove, bright inner edge; the glass sitting about a millimetre below the ring, so the ring throws a
+  hairline crescent shadow across the top-left of the glass and a band of reflected light glows along the
+  bottom-right; one wide, soft, slightly curved reflection over the top-left third with a faint blue-grey
+  cast; cream-white letters (never pure white) on warm matte black paper; the brass showing at the front
+  edge and a grey scuff over the legend of the most-used keys; the stem rising from behind with the frame's
+  gold pinstripe either side of it. Travel is long — eight pixels of it — with a hard clack at the bottom
+  that darkens the stem for a frame, and a slower rise back. The <code>stem</code> attribute sets the lever's
+  length, which is how a host staggers the four banks up and back; here the SHIFT lozenge is held down
+  eight pixels below its neighbours.</p>
+  <p><b>Left out:</b> the type-bar and its linkage, the ribbon-colour levers, the decal on the frame, and the
+  ring's true torus — this is a flat-on elevation, so the bead is drawn with light rather than geometry.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-typekey-underwood-5> — glass-and-nickel-ring typewriter key on a stem ====
+   attributes: legend sub stem(px) wide(units) worn pressed scale disabled
+   events: press / release (a gesture starts and ends), activate (at the bottom of the travel)
+   momentary: no value. self-contained: paste this block into any page and use
+   <sk-typekey-underwood-5 legend="A"></sk-typekey-underwood-5> */
+(function () {
+  const TAG = "sk-typekey-underwood-5";
+  if (customElements.get(TAG)) return;
+  const KW = 60, KH = 60, STEM = 56;                 // key cell, and the default stem below it
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent;
+      --kw: ${KW}px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+
+    /* the machine's frame behind the stems: japanned black with a gold pinstripe each side */
+    .frame { position: absolute; left: 50%; margin-left: -19px; width: 38px; top: 22px; bottom: 0;
+      background: radial-gradient(46% 74% at 50% 104%, rgba(8,7,6,0.95), rgba(8,7,6,0.5) 58%, rgba(8,7,6,0) 100%); }
+    .frame::before { content: ""; position: absolute; left: 11px; top: 38%; bottom: 0; width: 1px;
+      background: linear-gradient(180deg, rgba(201,164,60,0), rgba(201,164,60,0.34) 45%, rgba(201,164,60,0.16) 100%); }
+
+    /* the lever: flat japanned steel, a hairline of light down its left face */
+    .stem { position: absolute; left: 50%; margin-left: -3.7px; width: 7.4px; top: 24px; bottom: 0;
+      background: linear-gradient(90deg, #080807 0%, #46433a 14%, #262420 42%, #131210 70%, #040403 100%);
+      box-shadow: 2.5px 0 5px rgba(0,0,0,0.8); transition: filter 60ms linear; }
+    .stem::after { content: ""; position: absolute; left: 1.3px; top: 0; bottom: 0; width: 0.9px;
+      background: linear-gradient(180deg, rgba(214,208,188,0.62), rgba(214,208,188,0.12)); }
+    .wrap.clack .stem { filter: brightness(0.5); }
+
+    /* the key itself */
+    .key { position: absolute; left: 0; top: 1px; width: var(--kw); height: 56px; border-radius: 999px;
+      cursor: pointer; outline: none; touch-action: none; user-select: none; -webkit-user-select: none;
+      transition: transform 110ms cubic-bezier(.2,.7,.3,1); }
+    .key.down { transform: translateY(8px) scale(0.975);
+      transition: transform 60ms cubic-bezier(.45,0,.85,.55); }
+    :host([disabled]) .key { cursor: default; }
+    .key:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 11px rgba(22,224,224,0.55); }
+    .key.down .ring { box-shadow:
+        inset 0 0 0 1.1px rgba(255,255,255,0.42),
+        inset 0 0 0 2.8px rgba(0,0,0,0.66),
+        inset 0 0 0 4.2px rgba(255,255,255,0.36),
+        inset 0 1.4px 0.6px rgba(255,255,255,0.45),
+        inset 0 -1.6px 1.2px rgba(0,0,0,0.28),
+        0 0 0 0.8px rgba(0,0,0,0.75),
+        0 1px 1.4px rgba(0,0,0,0.9),
+        0 3px 5px rgba(0,0,0,0.62); }
+
+    /* nickel ring, lit from above-left, with a rolled bead: bright / groove / bright */
+    .ring { position: absolute; inset: 0; border-radius: 999px;
+      background: linear-gradient(150deg, #fdfdf8 0%, #f2f2ea 8%, #e2e4d9 20%, #c7cbbd 34%, #a5a99b 50%, #85897c 62%, #b2b6a7 76%, #d8dacb 90%, #eff0e6 100%);
+      box-shadow:
+        inset 0 0 0 1.1px rgba(255,255,255,0.5),
+        inset 0 0 0 2.8px rgba(0,0,0,0.62),
+        inset 0 0 0 4.2px rgba(255,255,255,0.42),
+        inset 0 1.4px 0.6px rgba(255,255,255,0.55),
+        inset 0 -1.6px 1.2px rgba(0,0,0,0.22),
+        0 0 0 0.8px rgba(0,0,0,0.75),
+        0 1.6px 2px rgba(0,0,0,0.8),
+        0 7px 13px rgba(0,0,0,0.5); }
+    /* plating worn through to brass at the front edge */
+    .ring::before { content: ""; position: absolute; inset: 0; border-radius: 999px;
+      background: radial-gradient(96% 52% at 48% 112%, rgba(216,168,88,0.62), rgba(216,168,88,0.18) 46%, rgba(0,0,0,0) 64%); }
+
+    /* the ring's underside is a dark cup; the glass sits about a millimetre down inside it */
+    .cup { position: absolute; inset: 6px; border-radius: 999px; overflow: hidden;
+      background: radial-gradient(120% 120% at 32% 24%, #2e2a22 0%, #191510 55%, #0d0c09 100%);
+      box-shadow: inset 0 1.6px 2px rgba(0,0,0,0.9); }
+    .glass { position: absolute; left: 1.7px; top: 1.7px; right: 0.5px; bottom: 0.5px; border-radius: 999px; overflow: hidden;
+      background: radial-gradient(140% 130% at 36% 28%, #151413 0%, #121110 58%, #0e0d0d 100%);
+      box-shadow: inset 1.3px 1.7px 2.4px rgba(0,0,0,0.95); }
+
+    /* the paper legend under the glass */
+    .paper { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lg, .sb { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 700;
+      color: #f4efe2; line-height: 1; display: block; text-shadow: 0 0.5px 0.5px rgba(0,0,0,0.85); }
+    .lg { font-size: 15px; }
+    .lg.two { font-size: 12.5px; }
+    .lg.word { font-size: 9.5px; letter-spacing: 0.1em; font-weight: 600; }
+    .sb { font-size: 10px; margin-top: 2px; }
+    .lg:empty, .sb:empty { display: none; }
+    /* a grey scuff on the most-used legends */
+    .scuff { position: absolute; left: 22%; top: 30%; width: 58%; height: 44%; border-radius: 50%; opacity: 0;
+      background: radial-gradient(58% 58% at 46% 48%, rgba(196,190,178,0.16), rgba(196,190,178,0.04) 62%, transparent 76%);
+      filter: blur(1.4px); }
+    :host([worn]) .scuff, .worn .scuff { opacity: 1; }
+
+    /* the glass: one wide soft reflection over the top-left, a cool cast, a lit rim at bottom-right */
+    .refl { position: absolute; left: -24%; top: -24%; width: 110%; height: 86%; border-radius: 50%;
+      background: linear-gradient(174deg, rgba(255,255,255,0) 16%, rgba(255,255,255,0.34) 40%, rgba(255,255,255,0.45) 58%, rgba(255,255,255,0.17) 80%, rgba(255,255,255,0) 96%);
+      transform: rotate(-12deg); filter: blur(1.6px); }
+    .haze { position: absolute; inset: 0;
+      background: radial-gradient(70% 58% at 30% 16%, rgba(226,232,238,0.14), rgba(226,232,238,0.03) 52%, rgba(0,0,0,0) 74%); }
+    .spec { position: absolute; left: 13%; top: 11%; width: 32%; height: 12%; border-radius: 50%;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,0.62), rgba(255,255,255,0.12) 58%, rgba(255,255,255,0) 78%);
+      transform: rotate(-26deg); filter: blur(0.9px); }
+    .tint { position: absolute; inset: 0;
+      background: linear-gradient(158deg, rgba(159,179,196,0.16), rgba(159,179,196,0.03) 46%, rgba(0,0,0,0) 72%); }
+    .rim { position: absolute; inset: 0; border-radius: 999px;
+      box-shadow: inset 0 0 0 0.7px rgba(255,255,255,0.1), inset -0.9px -1.2px 1.6px rgba(236,239,230,0.3), inset 1.1px 1.4px 1.6px rgba(0,0,0,0.75); }
+  </style>
+  <div class="wrap">
+    <div class="frame"></div>
+    <div class="stem"></div>
+    <div class="key" role="button" tabindex="0">
+      <div class="ring">
+        <div class="cup">
+          <div class="glass">
+            <div class="paper"><span class="lg"></span><span class="sb"></span></div>
+            <div class="scuff"></div>
+            <div class="haze"></div>
+            <div class="refl"></div>
+            <div class="spec"></div>
+            <div class="tint"></div>
+            <div class="rim"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  class SkTypekeyUnderwood5 extends HTMLElement {
+    static get observedAttributes() { return ["legend", "sub", "stem", "wide", "worn", "pressed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._wide = 1; this._stem = STEM; this._down = false; this._t = 0; this._ct = 0;
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._key = r.querySelector(".key");
+      this._lg = r.querySelector(".lg");
+      this._sb = r.querySelector(".sb");
+      this._glass = r.querySelector(".glass");
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs();
+      const k = this._key;
+      k.addEventListener("pointerdown", this._onDown);
+      k.addEventListener("pointerup", this._onUp);
+      k.addEventListener("pointercancel", this._onUp);
+      k.addEventListener("keydown", this._onKeyDown);
+      k.addEventListener("keyup", this._onKeyUp);
+      k.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      const k = this._key;
+      k.removeEventListener("pointerdown", this._onDown);
+      k.removeEventListener("pointerup", this._onUp);
+      k.removeEventListener("pointercancel", this._onUp);
+      k.removeEventListener("keydown", this._onKeyDown);
+      k.removeEventListener("keyup", this._onKeyUp);
+      k.removeEventListener("blur", this._onBlur);
+      clearTimeout(this._t); clearTimeout(this._ct);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "pressed") { this._applyDown(this.hasAttribute("pressed")); return; }
+      this._readAttrs();
+    }
+    get pressed() { return this.hasAttribute("pressed"); }
+    set pressed(b) { if (b) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    get legend() { return this.getAttribute("legend") || ""; }
+    set legend(s) { this.setAttribute("legend", s == null ? "" : String(s)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._key.focus(o); }
+    blur() { this._key.blur(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._wide = Math.max(1, num("wide", 1));
+      this._stem = Math.max(0, num("stem", STEM));
+      const w = KW * this._wide, h = KH + this._stem;
+      this.style.setProperty("--kw", w + "px");
+      this.style.width = (w * this._scale) + "px";
+      this.style.height = (h * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._wrap.style.width = w + "px"; this._wrap.style.height = h + "px";
+
+      const lg = this.getAttribute("legend") || "";
+      const sb = this.getAttribute("sub") || "";
+      this._lg.textContent = lg; this._sb.textContent = sb;
+      this._lg.className = "lg" + (sb ? " two" : (lg.length > 2 ? " word" : ""));
+      this._wrap.classList.toggle("worn", /^[aes]$/i.test(lg) || lg === " ");
+
+      const k = this._key, dis = this.hasAttribute("disabled");
+      k.setAttribute("aria-label", (lg || "key") + (sb ? " " + sb : "") + " key");
+      k.setAttribute("aria-disabled", dis ? "true" : "false");
+      k.setAttribute("tabindex", dis ? "-1" : "0");
+      this._applyDown(this.hasAttribute("pressed"));
+    }
+    _applyDown(on) { this._key.classList.toggle("down", !!on); }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { legend: this.getAttribute("legend") || "" } })); }
+    _clack() {
+      this._wrap.classList.add("clack");
+      clearTimeout(this._ct);
+      this._ct = setTimeout(() => this._wrap.classList.remove("clack"), 70);
+    }
+    _press() {
+      if (this._down || this.hasAttribute("disabled")) return;
+      this._down = true;
+      this.setAttribute("pressed", ""); this._applyDown(true);
+      this._emit("press");
+      clearTimeout(this._t);
+      this._t = setTimeout(() => { this._t = 0; this._clack(); this._emit("activate"); }, 60);   // the type-bar hits at the bottom
+    }
+    _release() {
+      if (!this._down) return;
+      this._down = false;
+      if (this._t) { clearTimeout(this._t); this._t = 0; this._clack(); this._emit("activate"); }  // a quick tap still types
+      this.removeAttribute("pressed"); this._applyDown(false);
+      this._emit("release");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._key.focus({ preventScroll: true });
+      try { this._key.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      try { this._key.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      this._release();
+    }
+    _onBlur() { this._release(); }
+  }
+  customElements.define(TAG, SkTypekeyUnderwood5);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

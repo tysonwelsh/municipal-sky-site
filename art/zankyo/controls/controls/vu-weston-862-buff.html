@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weston 862 buff-scale round VU — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "vu-weston-862-buff",
+  "element": "sk-vu-weston-862",
+  "name": "Weston 862 buff-scale round VU",
+  "kind": "output",
+  "code": "F2",
+  "type": "Volume-unit indicator",
+  "source": "Weston Model 862 Standard Volume Indicator, Type A scale, in RCA and Western Electric broadcast consoles",
+  "era": "1940s",
+  "origin": "USA",
+  "materials": ["black phenolic flange", "flat glass", "buff scale card", "chrome pivot cap"],
+  "tags": ["broadcast", "audio", "VU", "needle", "ballistics", "backlit", "buff scale"],
+  "value": { "model": "range", "min": -20, "max": 3, "unit": "dB" },
+  "attributes": ["value", "min", "max", "lit", "legend", "scale"],
+  "events": [],
+  "size": { "w": 190, "h": 176 },
+  "notes": "Three meters: programme at −7 with the lamp on, one pinned at +3, one unlit and smaller. Set value in dB; the pointer answers with true VU ballistics."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-vu-weston-862 value="-7" lit></sk-vu-weston-862>
+    <sk-vu-weston-862 value="3" lit></sk-vu-weston-862>
+    <sk-vu-weston-862 value="-13" scale="0.8"></sk-vu-weston-862>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Weston Model 862</b> is the round Standard Volume Indicator screwed into the meter panel of every
+  American broadcast console from 1939 onward — a 3½-inch black phenolic flange, flat glass, and behind it the
+  <b>Type A</b> card in Weston buff, a warm ivory-tan that turns amber when the console's lamp is behind it.
+  Two scales share one tick line: the dB row above, running −20 −10 −7 −5 −3 −2 −1 0 +1 +2 +3, and the
+  percentage row below, 0 to 100 evenly spaced. The dB numerals crowd to the left because deflection follows
+  voltage, not decibels: 0&nbsp;VU sits at 100&nbsp;% and about seven-tenths of the way along the arc, and full
+  scale is +3&nbsp;VU.</p>
+  <p><b>The tells kept here:</b> both arcs on the one tick line, logarithmic above and linear below; the red
+  section from 0 to +3 with red ticks, red numerals and a red bar joining the two rows; the plain black knife
+  pointer with no spade and a chrome pivot cap low on the card; the shallow arc with the pivot far below the
+  scale; the buff card lit from behind by a soft, uneven, low-centre pool with the paper's grain still showing
+  through it; "VU" in its ruled box under the arc's centre; the flange's hairline polished rim and three small
+  screws at 120°. The pointer has true <b>VU ballistics</b> — a damped second-order approach that reaches 99&nbsp;%
+  of a step in 300&nbsp;ms and overshoots by about 1&nbsp;%, the same falling as rising — and it stops when the
+  element leaves the page.</p>
+  <p><b>Left out:</b> the Weston script logo (a plain wordmark stands in), the rear terminal posts and the
+  zero-adjust screw of the panel-mounting variant, and the slight parallax between pointer and card.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-vu-weston-862> — 1940s round buff-scale VU meter, backlit, true VU ballistics ====
+   attributes: value(dB) min max lit legend scale
+   no events (an output). set .value or the attribute; the pointer has ballistics.
+   self-contained: paste this block into any page and use <sk-vu-weston-862 value="-7" lit></sk-vu-weston-862> */
+(function () {
+  if (customElements.get("sk-vu-weston-862")) return;
+
+  const W = 190, H = 176;
+  const CX = 95, CY = 88;            // flange centre
+  const RO = 84;                     // flange outer radius
+  const RG = 68;                     // glass / card radius
+  const PX = 95, PY = 138;           // pointer pivot, low on the card
+  const RT = 82;                     // the tick line both scales share
+  const SWEEP = 78;                  // degrees of arc: -39 .. +39
+  const FS = 3;                      // dB at full deflection
+
+  // deflection is proportional to voltage: t = 10^((dB-3)/20), so 0 VU lands at 0.708
+  const tOfDb = db => Math.pow(10, (db - FS) / 20);
+  const tOfPct = p => p / (100 * Math.pow(10, FS / 20));
+  const DB_MAJ = [-20, -10, -7, -5, -3, -2, -1, 0, 1, 2, 3];
+  const DB_MIN = [-15, -12, -9, -8, -6, -4, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5];
+  const PCT_MAJ = [0, 20, 40, 60, 80, 100];
+  const PCT_MIN = [10, 30, 50, 70, 90];
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Oswald", "Archivo Narrow", "Arial Narrow", sans-serif; fill: #1a1814; }
+    .db   { font-size: 8px;   font-weight: 500; text-anchor: middle; }
+    .pct  { font-size: 7px;   font-weight: 400; text-anchor: middle; fill: #2b271f; }
+    .red  { fill: #b2231a; }
+    .vu   { font-size: 10px; font-weight: 600; text-anchor: middle; letter-spacing: 0.06em; }
+    .maker { font-size: 4.8px; font-weight: 400; letter-spacing: 0.18em; text-anchor: middle; fill: #7d7152; }
+    .needle { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
+    /* the lamp: off by default, on with [lit] */
+    .litcard, .pool, .poolb, .warmrim { opacity: 0; transition: opacity 140ms ease-out; }
+    :host([lit]) .litcard { opacity: 1; }
+    :host([lit]) .pool    { opacity: 0.95; }
+    :host([lit]) .poolb   { opacity: 0.6; }
+    :host([lit]) .warmrim { opacity: 0.5; }
+    :host([lit]) .cold    { opacity: 0; }
+    .cold { opacity: 0.5; transition: opacity 140ms ease-out; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="flange" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#37342f"/><stop offset="0.42" stop-color="#1a1815"/>
+          <stop offset="0.78" stop-color="#0d0c0b"/><stop offset="1" stop-color="#141310"/>
+        </linearGradient>
+        <linearGradient id="rim" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#8a867a"/><stop offset="0.3" stop-color="#55524a"/>
+          <stop offset="0.62" stop-color="#211f1c"/><stop offset="0.88" stop-color="#4a4740"/><stop offset="1" stop-color="#2a2824"/>
+        </linearGradient>
+        <linearGradient id="step" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#070706"/><stop offset="0.55" stop-color="#1d1b18"/><stop offset="1" stop-color="#2b2824"/>
+        </linearGradient>
+        <radialGradient id="card" cx="46%" cy="34%" r="86%">
+          <stop offset="0" stop-color="#ece0b6"/><stop offset="0.55" stop-color="#e8d9a8"/>
+          <stop offset="1" stop-color="#cbb884"/>
+        </radialGradient>
+        <radialGradient id="cardlit" cx="50%" cy="76%" r="92%">
+          <stop offset="0" stop-color="#f7e6ad"/><stop offset="0.42" stop-color="#f2dc98"/>
+          <stop offset="1" stop-color="#d9bf7d"/>
+        </radialGradient>
+        <radialGradient id="poolg" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffcf7a" stop-opacity="0.9"/><stop offset="0.5" stop-color="#ffc165" stop-opacity="0.38"/>
+          <stop offset="1" stop-color="#ffb84e" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="cool" cx="50%" cy="42%" r="70%">
+          <stop offset="0" stop-color="#6a6250" stop-opacity="0"/><stop offset="0.72" stop-color="#4e4635" stop-opacity="0.12"/>
+          <stop offset="1" stop-color="#2e2a1e" stop-opacity="0.45"/>
+        </radialGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.13"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0.015"/>
+        </linearGradient>
+        <radialGradient id="screwg" cx="34%" cy="28%" r="72%">
+          <stop offset="0" stop-color="#9d9a92"/><stop offset="0.58" stop-color="#4b4843"/><stop offset="1" stop-color="#171614"/>
+        </radialGradient>
+        <radialGradient id="capg" cx="34%" cy="26%" r="76%">
+          <stop offset="0" stop-color="#f0eee8"/><stop offset="0.34" stop-color="#b9b6ad"/>
+          <stop offset="0.72" stop-color="#5d5a54"/><stop offset="1" stop-color="#232220"/>
+        </radialGradient>
+        <filter id="grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="11" result="n"/>
+          <feColorMatrix type="saturate" values="0"/>
+        </filter>
+        <filter id="b2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="b4" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="b08" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+        <clipPath id="glassclip"><circle cx="${CX}" cy="${CY}" r="${RG}"/></clipPath>
+      </defs>
+
+      <!-- shadow on the panel: tight contact + soft ambient, down-right -->
+      <circle cx="${CX + 3}" cy="${CY + 6}" r="${RO - 1}" fill="#000" opacity="0.42" filter="url(#b4)"/>
+      <circle cx="${CX + 1}" cy="${CY + 2}" r="${RO}" fill="#000" opacity="0.5" filter="url(#b2)"/>
+
+      <!-- the flange: black phenolic, one light above-left -->
+      <circle cx="${CX}" cy="${CY}" r="${RO}" fill="url(#flange)"/>
+      <circle cx="${CX}" cy="${CY}" r="${RO - 0.6}" fill="none" stroke="url(#rim)" stroke-width="1.6"/>
+      <circle cx="${CX}" cy="${CY}" r="${RO - 3}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="1.2"/>
+      <!-- the step down to the glass -->
+      <circle cx="${CX}" cy="${CY}" r="${RG + 4}" fill="url(#step)"/>
+      <circle cx="${CX}" cy="${CY}" r="${RG + 1.4}" fill="none" stroke="#000" stroke-width="2.4"/>
+
+      <g clip-path="url(#glassclip)">
+        <!-- the buff card, unlit then lit -->
+        <circle cx="${CX}" cy="${CY}" r="${RG}" fill="url(#card)"/>
+        <circle class="litcard" cx="${CX}" cy="${CY}" r="${RG}" fill="url(#cardlit)"/>
+        <!-- the lamp behind the card: a soft uneven pool, low and off-centre -->
+        <ellipse class="pool" cx="${CX - 4}" cy="${CY + 34}" rx="62" ry="40" fill="url(#poolg)"/>
+        <ellipse class="poolb" cx="${CX + 26}" cy="${CY + 14}" rx="34" ry="26" fill="url(#poolg)"/>
+        <!-- the paper's grain, over the light -->
+        <rect x="${CX - RG}" y="${CY - RG}" width="${RG * 2}" height="${RG * 2}" filter="url(#grain)" opacity="0.085" style="mix-blend-mode:multiply"/>
+        <rect x="${CX - RG}" y="${CY - RG}" width="${RG * 2}" height="${RG * 2}" fill="url(#cool)" class="cold"/>
+
+        <!-- scale, drawn by angle -->
+        <g class="scale"></g>
+        <rect x="80" y="104" width="30" height="16" rx="1" fill="none" stroke="#1a1814" stroke-width="0.85"/>
+        <text class="vu" x="95" y="116">VU</text>
+        <text class="maker" x="95" y="97.5">VOLUME INDICATOR</text>
+
+        <!-- pointer: a plain black knife, no spade -->
+        <g class="needle">
+          <path d="M ${PX - 1.5} ${PY - 3} L ${PX - 0.75} ${PY - RT - 5} L ${PX + 0.75} ${PY - RT - 5} L ${PX + 1.5} ${PY - 3} Z" fill="#000" opacity="0.28" filter="url(#b08)" transform="translate(1.6 1.6)"/>
+          <path d="M ${PX - 1.5} ${PY - 3} L ${PX - 0.75} ${PY - RT - 5} L ${PX + 0.75} ${PY - RT - 5} L ${PX + 1.5} ${PY - 3} Z" fill="#0e0d0c"/>
+          <path d="M ${PX - 0.55} ${PY - 26} L ${PX - 0.3} ${PY - RT - 2.5} L ${PX + 0.1} ${PY - RT - 2.5} L ${PX + 0.35} ${PY - 26} Z" fill="#605a52" opacity="0.55"/>
+        </g>
+        <!-- chrome pivot cap -->
+        <circle cx="${PX}" cy="${PY}" r="6.6" fill="url(#capg)" stroke="#0c0b0a" stroke-width="0.7"/>
+        <circle cx="${PX - 1.8}" cy="${PY - 2.1}" r="1.5" fill="#ffffff" opacity="0.75"/>
+        <circle cx="${PX}" cy="${PY}" r="1.7" fill="#141210" opacity="0.85"/>
+
+        <!-- the bezel's shadow falling on the card -->
+        <circle cx="${CX}" cy="${CY}" r="${RG}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="9" filter="url(#b2)"/>
+        <circle class="warmrim" cx="${CX}" cy="${CY}" r="${RG - 1}" fill="none" stroke="#ff9d2e" stroke-opacity="0.35" stroke-width="5" filter="url(#b2)"/>
+        <!-- glass: one broad reflection, the shape of a window, not of the dial -->
+        <path d="M ${CX - RG - 4} ${CY - 6} Q ${CX - 40} ${CY - 74} ${CX + 34} ${CY - 60} L ${CX + 46} ${CY - 40} Q ${CX - 22} ${CY - 50} ${CX - 44} ${CY + 30} Z" fill="url(#glass)"/>
+        <path d="M ${CX - 52} ${CY + 46} Q ${CX - 16} ${CY + 18} ${CX + 24} ${CY + 30} L ${CX + 16} ${CY + 44} Q ${CX - 20} ${CY + 34} ${CX - 44} ${CY + 56} Z" fill="#fff" opacity="0.05"/>
+        <circle cx="${CX}" cy="${CY}" r="${RG - 0.5}" fill="none" stroke="#fff" stroke-opacity="0.13" stroke-width="1"/>
+      </g>
+
+      <!-- three screws at 120° -->
+      <g class="screws">
+        <g transform="translate(${CX} ${CY - 76})"><circle r="3.1" fill="url(#screwg)" stroke="#000" stroke-width="0.5"/><rect x="-2.3" y="-0.42" width="4.6" height="0.84" fill="#0a0a09" transform="rotate(34)"/></g>
+        <g transform="translate(${CX + 65.8} ${CY + 38})"><circle r="3.1" fill="url(#screwg)" stroke="#000" stroke-width="0.5"/><rect x="-2.3" y="-0.42" width="4.6" height="0.84" fill="#0a0a09" transform="rotate(-18)"/></g>
+        <g transform="translate(${CX - 65.8} ${CY + 38})"><circle r="3.1" fill="url(#screwg)" stroke="#000" stroke-width="0.5"/><rect x="-2.3" y="-0.42" width="4.6" height="0.84" fill="#0a0a09" transform="rotate(72)"/></g>
+      </g>
+      <!-- polished rim highlight, top-left -->
+      <path d="M ${CX - 68} ${CY - 50} A ${RO} ${RO} 0 0 1 ${CX + 20} ${CY - 81}" fill="none" stroke="#9b978c" stroke-opacity="0.5" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M ${CX + 52} ${CY + 66} A ${RO} ${RO} 0 0 0 ${CX + 78} ${CY + 30}" fill="none" stroke="#6d6a62" stroke-opacity="0.3" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+  </div>`;
+
+  class SkVuWeston862 extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "lit", "legend", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = -20; this._min = -20; this._max = 3; this._scale = 1;
+      this._x = 0; this._vel = 0; this._raf = 0; this._last = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._needle = this.shadowRoot.querySelector(".needle");
+      this._maker = this.shadowRoot.querySelector(".maker");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs();
+      if (!this._drawn) { this._drawScale(); this._drawn = true; }
+      this._x = this._angle(this._v); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.min(this._max, Math.max(this._min, v));
+      this.setAttribute("value", String(Math.round(this._v * 100) / 100));
+      this._kick();
+    }
+    get lit() { return this.hasAttribute("lit"); }
+    set lit(on) { if (on) this.setAttribute("lit", ""); else this.removeAttribute("lit"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    /* a bouncing programme-material pattern: syllables over a slow level */
+    demo(t) {
+      const syl = Math.exp(-((t * 2.4) % 1) * 2.6);
+      const lvl = 0.42 + 0.22 * Math.sin(t * 0.37) + 0.1 * Math.sin(t * 0.91 + 1.4);
+      const u = Math.max(0, Math.min(1, lvl + 0.52 * syl * (0.55 + 0.45 * Math.sin(t * 0.63))));
+      return -20 + 23 * u;
+    }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", -20); this._max = num("max", 3);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      this._maker.textContent = this.getAttribute("legend") || "VOLUME INDICATOR";
+      this.setAttribute("aria-valuemin", this._min);
+      this.setAttribute("aria-valuemax", this._max);
+      this.setAttribute("aria-valuenow", this._v);
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "volume units");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _angle(db) { return -SWEEP / 2 + Math.max(0, Math.min(1, tOfDb(db))) * SWEEP; }
+    _angT(t) { return -SWEEP / 2 + t * SWEEP; }
+    _pt(deg, r) { const a = deg * Math.PI / 180; return [PX + r * Math.sin(a), PY - r * Math.cos(a)]; }
+    _arc(r, a0, a1) { const [x0, y0] = this._pt(a0, r), [x1, y1] = this._pt(a1, r); return `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}`; }
+
+    _drawScale() {
+      const g = this._scaleG, ns = "http://www.w3.org/2000/svg";
+      while (g.firstChild) g.removeChild(g.firstChild);
+      const mk = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; g.appendChild(e); return e; };
+      const a0 = -SWEEP / 2, aRed = this._angT(tOfDb(0)), a1 = SWEEP / 2;
+
+      // the shared tick line: black to 0 VU, red from 0 to +3
+      mk("path", { d: this._arc(RT, a0, aRed), fill: "none", stroke: "#1a1814", "stroke-width": 1.1 });
+      mk("path", { d: this._arc(RT, aRed, a1), fill: "none", stroke: "#c8261c", "stroke-width": 2.1 });
+      // the red bar joining the two rows
+      const ri = RT - 6.5, ro = RT + 6.5;
+      const [bx0, by0] = this._pt(aRed, ro), [bx1, by1] = this._pt(a1, ro), [bx2, by2] = this._pt(a1, ri), [bx3, by3] = this._pt(aRed, ri);
+      mk("path", { d: `M ${bx0} ${by0} A ${ro} ${ro} 0 0 1 ${bx1} ${by1} L ${bx2} ${by2} A ${ri} ${ri} 0 0 0 ${bx3} ${by3} Z`, fill: "#c8261c", opacity: 0.16 });
+
+      const tickOut = (t, len, w, col) => {
+        const a = this._angT(t);
+        const [x0, y0] = this._pt(a, RT), [x1, y1] = this._pt(a, RT + len);
+        mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: col, "stroke-width": w });
+      };
+      const tickIn = (t, len, w, col) => {
+        const a = this._angT(t);
+        const [x0, y0] = this._pt(a, RT), [x1, y1] = this._pt(a, RT - len);
+        mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: col, "stroke-width": w });
+      };
+      const label = (t, r, cls, txt) => {
+        const a = this._angT(t), [x, y] = this._pt(a, r);
+        mk("text", { x: x, y: y + 2.4, "class": cls, transform: `rotate(${a.toFixed(2)} ${x} ${y})` }, txt);
+      };
+
+      // ---- the dB row, above the line (logarithmic: it crowds to the left)
+      DB_MIN.forEach(d => { const red = d > 0; tickOut(tOfDb(d), 3.6, 0.65, red ? "#c8261c" : "#1a1814"); });
+      DB_MAJ.forEach(d => {
+        const t = tOfDb(d), red = d >= 0;
+        tickOut(t, 6.6, red ? 1.45 : 1.2, red ? "#c8261c" : "#1a1814");
+        const s = d > 0 ? "+" + d : d < 0 ? "−" + (-d) : "0";
+        label(t, RT + 12, red ? "db red" : "db", s);
+      });
+      // ---- the percentage row, below the line (linear)
+      PCT_MIN.forEach(p => tickIn(tOfPct(p), 3.4, 0.65, "#1a1814"));
+      PCT_MAJ.forEach(p => {
+        const t = tOfPct(p), red = p >= 100;
+        tickIn(t, 6, red ? 1.4 : 1.1, red ? "#c8261c" : "#1a1814");
+        label(t, RT - 13.8, red ? "pct red" : "pct", String(p));
+      });
+    }
+
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const target = this._angle(this._v);
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // VU ballistics: 99% of a step in 300 ms, ~1% overshoot  (zeta 0.83, wn 14 rad/s)
+      const k = 196, c = 23.2;
+      const acc = k * (target - this._x) - c * this._vel;
+      this._vel += acc * dt; this._x += this._vel * dt;
+      this._paint();
+      if (Math.abs(target - this._x) < 0.01 && Math.abs(this._vel) < 0.04) { this._x = target; this._vel = 0; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const a = Math.max(-SWEEP / 2 - 1.6, Math.min(SWEEP / 2 + 1.6, this._x));
+      this._needle.style.transform = "rotate(" + a.toFixed(2) + "deg)";
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+    }
+  }
+  customElements.define("sk-vu-weston-862", SkVuWeston862);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

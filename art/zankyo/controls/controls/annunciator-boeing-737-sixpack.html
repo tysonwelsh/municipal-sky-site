@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>737 glareshield six-pack annunciator — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "annunciator-boeing-737-sixpack",
+  "element": "sk-annunciator-boeing-737",
+  "name": "737 glareshield six-pack annunciator",
+  "kind": "both",
+  "code": "H3",
+  "type": "Annunciator panel",
+  "source": "The captain's glareshield of a Boeing 737-200/-300: the 2 × 3 system annunciator between the square MASTER CAUTION and FIRE WARN push-to-reset lights",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["black-painted aluminium", "dead-face Korry caps", "incandescent lamps"],
+  "tags": ["aviation", "cockpit", "annunciator", "dead face", "master caution", "fire warning"],
+  "value": { "model": "bits", "count": 8 },
+  "attributes": ["value", "flash", "scale", "disabled"],
+  "events": ["activate", "change"],
+  "size": { "w": 268, "h": 112 },
+  "notes": "Bits 0-5 are FLT CONT, IRS, FUEL, ELEC, APU, OVHT/DET; bit 6 is MASTER CAUTION and bit 7 FIRE WARN. The two square caps are buttons: press MASTER CAUTION (click or Space) to acknowledge it."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-annunciator-boeing-737 value="00100010"></sk-annunciator-boeing-737>
+    <sk-annunciator-boeing-737 value="00011001"></sk-annunciator-boeing-737>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Straight ahead of the captain on a <b>737-200 or -300</b>, on the black glareshield above the instrument
+  panel, sit three things: a square amber <b>MASTER CAUTION</b> light, the six-light <b>system annunciator</b>
+  everybody calls the six-pack, and a square red <b>FIRE WARN</b> light. All three are Korry-type
+  <i>dead-face</i> caps — opaque black faces with the legend cut through them, so nothing shows until a lamp
+  behind it comes on. A system fault lights its tile in the six-pack <i>and</i> MASTER CAUTION together;
+  pushing MASTER CAUTION acknowledges it and puts it out, leaving the tile lit so you still know what broke.</p>
+  <p><b>The tells kept here:</b> the dead face — unlit, the caps are near-black and the legends are only a
+  barely-there grey ghost of the letters. Only the <i>letters</i> light, never the tile: the face stays black
+  around glowing amber text, and the letters bloom a little past their strokes and tint the face around them.
+  The six-pack is two columns of three in the fixed order FLT CONT · IRS · FUEL over ELEC · APU · OVHT/DET,
+  with OVHT/DET wrapping to two lines. FIRE WARN is the one red thing on a panel of amber. The two square caps
+  sit apart from the six-pack with a hairline gap all round, because they are buttons, and each carries the
+  horizontal split line of a two-lamp Korry cap. Each cap has a slight brightness gradient across it — the
+  lamp is at one end. The glareshield itself is matte black with a faint diagonal sheen and no screws: the
+  caps are retained from behind. Lamps come up in 120 ms and die in 250 ms.</p>
+  <p><b>Left out:</b> the dimming/test switch, the six-pack's rear lamp cartridges, and the FO's mirrored set
+  on the right of the glareshield. <code>flash</code> puts FIRE WARN on a 1 Hz flash with the fire bell
+  implied; the second instance here shows the steady state instead so the still frame is honest.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-annunciator-boeing-737> — 737 glareshield six-pack + MASTER CAUTION + FIRE WARN ====
+   attributes: value ("00100010" or an array of 8 booleans) · flash · scale · disabled
+   events: activate {button, value} when a cap is pushed; change {value} when that push alters the lamps
+   self-contained: paste this block into any page and use <sk-annunciator-boeing-737 value="00100010"></sk-…> */
+(function () {
+  if (customElements.get("sk-annunciator-boeing-737")) return;
+  var W = 268, H = 112;
+  var TILES = [
+    { t: "FLT CONT", a: "flight control", c: 0, r: 0 },
+    { t: "IRS",      a: "I R S",          c: 0, r: 1 },
+    { t: "FUEL",     a: "fuel",           c: 0, r: 2 },
+    { t: "ELEC",     a: "electrical",     c: 1, r: 0 },
+    { t: "APU",      a: "A P U",          c: 1, r: 1 },
+    { t: "OVHT<br>DET", a: "overheat detector", c: 1, r: 2 }
+  ];
+  var tileHTML = TILES.map(function (d, i) {
+    return '<div class="tile" part="tile" style="--b:var(--b' + i + ');left:' + (4 + d.c * 68) + 'px;top:' + (4 + d.r * 34) + 'px">' +
+             '<i class="wash"></i>' +
+             '<span class="ghost">' + d.t + '</span><span class="lit">' + d.t + '</span>' +
+           '</div>';
+  }).join("");
+  // the light a lit cap throws on the bezel and the glareshield around it
+  var tileSpill = TILES.map(function (d, i) {
+    return '<i class="spill" style="--b:var(--b' + i + ');left:' + (4 + d.c * 68 - 7) + 'px;top:' + (4 + d.r * 34 - 7) + 'px;width:78px;height:44px"></i>';
+  }).join("");
+
+  function cap(cls, idx, l1, l2) {
+    return '<div class="cap ' + cls + '" style="--b:var(--b' + idx + ')" tabindex="0" role="button">' +
+             '<i class="wash"></i>' +
+             '<div class="half t"><span class="ghost">' + l1 + '</span><span class="lit">' + l1 + '</span></div>' +
+             '<i class="split"></i>' +
+             '<div class="half b"><span class="ghost">' + l2 + '</span><span class="lit">' + l2 + '</span></div>' +
+             '<i class="ring"></i>' +
+           '</div>';
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML =
+  '<style>' +
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px;' +
+  '  -webkit-tap-highlight-color: transparent; --b0:0; --b1:0; --b2:0; --b3:0; --b4:0; --b5:0; --b6:0; --b7:0; }' +
+  ':host([hidden]) { display: none; }' +
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }' +
+  '.shield { position: absolute; left: 0; top: 0; width: ' + W + 'px; height: ' + H + 'px; border-radius: 2px;' +
+  '  background:' +
+  '    repeating-linear-gradient(45deg, rgba(255,255,255,0.013) 0 1px, rgba(0,0,0,0) 1px 6px),' +
+  '    linear-gradient(128deg, #212123 0%, #1a1a1c 42%, #141416 78%, #1b1b1d 100%);' +
+  '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.7), 0 3px 9px rgba(0,0,0,0.6);' +
+  '  overflow: hidden; }' +
+  // the recessed bezel the six-pack is let into
+  '.six { position: absolute; left: 64px; top: 3px; width: 140px; height: 106px; border-radius: 2px;' +
+  '  background: #15161a;' +
+  '  box-shadow: inset 1.5px 1.5px 3px rgba(0,0,0,0.95), inset -1px -1px 0 rgba(255,255,255,0.055), 0 0 0 0.5px #0a0a0c; }' +
+  // a dead-face tile: near-black, the lamp at the top end
+  '.tile, .cap { --lamp: #ffb324; --lrgb: 255,179,36; }' +
+  '.tile { position: absolute; width: 64px; height: 30px; border-radius: 1.5px; overflow: hidden;' +
+  '  background: linear-gradient(168deg, #26272b 0%, #222327 54%, #1d1e21 100%);' +
+  '  box-shadow: inset 0 0 0 0.5px #0e0f11, inset 0 0.5px 0 rgba(255,255,255,0.05), 0 1px 1.5px rgba(0,0,0,0.65);' +
+  '  display: grid; place-items: center; }' +
+  // the two square Korry caps: proud, with a hairline gap all round
+  '.cap { position: absolute; top: 28px; width: 56px; height: 56px; border-radius: 2px; overflow: hidden;' +
+  '  background: linear-gradient(162deg, #27282d 0%, #222327 50%, #1c1d20 100%);' +
+  '  box-shadow: 0 0 0 1px #0a0a0c, inset 0 0 0 0.5px #0e0f11, inset 0.5px 0.5px 0 rgba(255,255,255,0.07),' +
+  '    inset -0.5px -0.5px 0 rgba(0,0,0,0.8), 0 1.5px 3px rgba(0,0,0,0.7);' +
+  '  cursor: pointer; outline: none; touch-action: manipulation; user-select: none; -webkit-user-select: none; }' +
+  '.cap.mc { left: 6px; } .cap.fw { left: 206px; --lamp: #ff3a2e; --lrgb: 255,58,46; }' +
+  '.cap.press { transform: translate(0.5px, 0.7px); filter: brightness(0.86); }' +
+  ':host([disabled]) .cap { cursor: default; }' +
+  '.split { position: absolute; left: 0; top: 27px; width: 56px; height: 2px;' +
+  '  background: linear-gradient(#08080a, #08080a 60%, rgba(255,255,255,0.07)); }' +
+  '.half { position: absolute; left: 0; width: 56px; height: 27px; display: grid; place-items: center; }' +
+  '.half.t { top: 0; } .half.b { top: 29px; }' +
+  // the legends: a grey ghost always, the lit letters over it
+  '.ghost, .lit { position: absolute; text-align: center; white-space: nowrap; line-height: 1.16;' +
+  '  font-family: "Josefin Sans", "Futura", "Century Gothic", "Trebuchet MS", sans-serif; font-weight: 600; }' +
+  '.tile .ghost, .tile .lit { font-size: 7.5px; letter-spacing: 0.1em; }' +
+  '.cap .ghost, .cap .lit { font-size: 9px; letter-spacing: 0.08em; }' +
+  '.ghost { color: #2a2b2f; text-shadow: 0 0.5px 0 rgba(0,0,0,0.65); }' +
+  '.lit { color: var(--lamp); opacity: var(--b);' +
+  '  text-shadow: 0 0 1.5px rgba(var(--lrgb),0.95), 0 0 4px rgba(var(--lrgb),0.6), 0 0 9px rgba(var(--lrgb),0.35); }' +
+  // the lamp behind tints the face, brighter at the end the lamp sits
+  '.wash { position: absolute; inset: 0; opacity: var(--b); pointer-events: none;' +
+  '  background: radial-gradient(116% 86% at 50% 26%, rgba(var(--lrgb),0.2), rgba(var(--lrgb),0.07) 52%, rgba(var(--lrgb),0) 80%); }' +
+  '.spill { position: absolute; pointer-events: none; opacity: var(--b); filter: blur(3.5px); --lrgb: 255,179,36;' +
+  '  background: radial-gradient(closest-side, rgba(var(--lrgb),0.26), rgba(var(--lrgb),0) 100%); }' +
+  '.spill.red { --lrgb: 255,58,46; }' +
+  '.ring { position: absolute; inset: 0; border-radius: 2px; pointer-events: none; }' +
+  '.cap:focus-visible .ring { box-shadow: inset 0 0 0 1.5px #16e0e0, 0 0 8px rgba(22,224,224,0.55); }' +
+  '</style>' +
+  '<div class="wrap"><div class="shield">' +
+    '<i class="spill" style="--b:var(--b6);left:-2px;top:20px;width:72px;height:72px"></i>' +
+    cap("mc", 6, "MASTER", "CAUTION") +
+    '<div class="six">' + tileSpill + tileHTML + '</div>' +
+    '<i class="spill red" style="--b:var(--b7);left:198px;top:20px;width:72px;height:72px"></i>' +
+    cap("fw", 7, "FIRE", "WARN") +
+  '</div></div>';
+
+  class SkAnnunciator737 extends HTMLElement {
+    static get observedAttributes() { return ["value", "flash", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open", delegatesFocus: true }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._tiles = r.querySelectorAll(".tile");
+      this._mc = r.querySelector(".cap.mc");
+      this._fw = r.querySelector(".cap.fw");
+      this._bits = [false, false, false, false, false, false, false, false];
+      this._b = [0, 0, 0, 0, 0, 0, 0, 0];
+      this._scale = 1; this._raf = 0; this._last = 0; this._t = 0;
+      this._tick = this._tick.bind(this);
+      [[this._mc, "master-caution", 6], [this._fw, "fire-warn", 7]].forEach(function (c) {
+        var node = c[0], name = c[1], idx = c[2], self = this;
+        node.addEventListener("pointerdown", function (e) { if (self.hasAttribute("disabled") || (e.button && e.button !== 0)) return; node.classList.add("press"); node.focus({ preventScroll: true }); });
+        ["pointerup", "pointercancel", "pointerleave", "blur"].forEach(function (t) { node.addEventListener(t, function () { node.classList.remove("press"); }); });
+        node.addEventListener("click", function () { self._push(name, idx); });
+        node.addEventListener("keydown", function (e) {
+          if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+          e.preventDefault(); node.classList.add("press");
+          setTimeout(function () { node.classList.remove("press"); }, 110);
+          self._push(name, idx);
+        });
+      }, this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "group");
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "glareshield annunciator");
+      this._read();
+      for (var i = 0; i < 8; i++) this._b[i] = this._bits[i] ? 1 : 0;
+      this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._kick(); }
+
+    get value() { return this._bits.slice(); }
+    set value(v) { this._bits = parse(v, this._bits); this._reflect(); this._aria(); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    // a plausible caution sequence for the bench's auto-demo
+    demo(t) {
+      var p = t % 13, on = [false, false, false, false, false, false, false, false];
+      if (p > 1.6) { on[2] = true; on[6] = true; }
+      if (p > 3.6) { on[3] = true; }
+      if (p > 5.6) { on[6] = false; }
+      if (p > 7.6) { on[7] = true; }
+      if (p > 9.6) { on = [true, true, true, true, true, true, false, true]; }
+      return on;
+    }
+
+    _read() {
+      var s = parseFloat(this.getAttribute("scale")); this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var av = this.getAttribute("value");
+      if (av != null) this._bits = parse(av, this._bits);
+      this.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this._aria();
+    }
+    _reflect() { this.setAttribute("value", this._bits.map(function (b) { return b ? "1" : "0"; }).join("")); }
+    _aria() {
+      for (var i = 0; i < 6; i++) {
+        this._tiles[i].setAttribute("role", "img");
+        this._tiles[i].setAttribute("aria-label", TILES[i].a + " caution, " + (this._bits[i] ? "lit" : "dark"));
+      }
+      this._mc.setAttribute("aria-label", "MASTER CAUTION, " + (this._bits[6] ? "lit" : "dark") + ", push to acknowledge");
+      this._fw.setAttribute("aria-label", "FIRE WARN, " + (this._bits[7] ? "lit" : "dark") + ", push to silence");
+    }
+    _push(name, idx) {
+      if (this.hasAttribute("disabled")) return;
+      var changed = false;
+      if (this._bits[idx]) { this._bits[idx] = false; changed = true; this._reflect(); this._aria(); this._kick(); }
+      this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { button: name, value: this.value } }));
+      if (changed) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this.value } }));
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      var dt = Math.min(0.05, (now - this._last) / 1000); this._last = now; this._t += dt;
+      var flash = this.hasAttribute("flash"), done = true;
+      for (var i = 0; i < 8; i++) {
+        var want = this._bits[i] ? 1 : 0;
+        if (i === 7 && flash && want) want = (this._t % 1) < 0.55 ? 1 : 0;   // FIRE WARN, 1 Hz, bell implied
+        // incandescent: ~120 ms up, ~250 ms down
+        this._b[i] += (want - this._b[i]) * Math.min(1, dt / (want > this._b[i] ? 0.048 : 0.1));
+        if (Math.abs(want - this._b[i]) > 0.002) done = false; else this._b[i] = want;
+      }
+      this._paint();
+      if (done && !flash) { this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      for (var i = 0; i < 8; i++) this.style.setProperty("--b" + i, this._b[i].toFixed(3));
+    }
+  }
+  function parse(v, prev) {
+    var out = prev ? prev.slice() : [];
+    if (Array.isArray(v)) { for (var i = 0; i < 8; i++) out[i] = !!v[i]; return out; }
+    if (typeof v === "number") { for (var j = 0; j < 8; j++) out[j] = !!(v & (1 << j)); return out; }
+    var s = String(v == null ? "" : v).trim();
+    if (s.charAt(0) === "[") { try { return parse(JSON.parse(s), prev); } catch (e) { return out; } }
+    if (s.indexOf(",") >= 0) return parse(s.split(",").map(function (x) { return /^(1|true|on)$/i.test(x.trim()); }), prev);
+    for (var k = 0; k < 8; k++) out[k] = s.charAt(k) === "1";
+    return out;
+  }
+  customElements.define("sk-annunciator-boeing-737", SkAnnunciator737);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

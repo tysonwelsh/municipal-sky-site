@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marantz blue-lit tuning dial — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dial-backlight-marantz-2270",
+  "element": "sk-dial-backlight-marantz",
+  "name": "Marantz blue-lit tuning dial",
+  "kind": "output",
+  "code": "H11",
+  "type": "Dial lamp / scale backlight",
+  "source": "Marantz 2270 / 2230 receiver — the wide smoked-glass dial window lit pale blue from behind, white numerals, a red string-drive pointer",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["smoked glass", "champagne anodised aluminium", "blue-filtered incandescent lamps"],
+  "tags": ["receiver", "hi-fi", "tuning", "backlight", "glass", "readout"],
+  "value": { "model": "range", "min": 88, "max": 108, "step": 0.1, "unit": "MHz" },
+  "attributes": ["value", "lit", "am", "stereo", "label", "scale"],
+  "events": [],
+  "size": { "w": 480, "h": 96 },
+  "notes": "value moves the pointer with the string-drive's lag; lit fades the lamps up and down over 250 ms. The second window is switched off, so the glass is black."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-dial-backlight-marantz value="101.1" lit="true" am stereo label="TUNING"></sk-dial-backlight-marantz>
+    <sk-dial-backlight-marantz value="94.7" lit="false" scale="0.42" label="TUNING"></sk-dial-backlight-marantz>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Marantz 2270</b> and its 2230 / 2325 brothers put a hand-span of smoked glass across the front of
+  the receiver. Behind it sit incandescent lamps with blue filter caps; the scale is printed on the back of
+  the glass in white, and a red pointer on a string drive slides across it. Switched off, the window is a
+  black slab and the numerals are gone. Switched on, it is the most recognisable blue in hi-fi.</p>
+  <p><b>The tells kept here:</b> the glass is genuinely black when off — the print is there, at a hair above
+  the glass's own value, and only the lamps reveal it; <b>four pools of light</b> along the top edge, so the
+  numerals under a lamp are brighter than the ones between and the bottom of the window falls away to a
+  deep blue; the pools run <b>warm in the core and blue at the edge</b>, because it is a hot filament behind
+  a blue cap; a single fine horizontal reflection from the room, which does not follow the shape of
+  anything behind the glass; the pointer as a thin red line the full height of the window that casts no
+  light of its own and arrives with the string's lag and a pixel of overshoot; the FM scale even and linear
+  with a compressed AM row below it; and a separate STEREO window at the left end that lights red.</p>
+  <p><b>Left out:</b> the gyro-touch flywheel and its knob (another control), the signal-strength and
+  centre-tune meters that sit to the right of the glass on the real receiver, and the FM MUTING / MODE
+  legends along the fascia below.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dial-backlight-marantz> — 1970s blue-lit smoked-glass tuning dial ====
+   attributes: value (88…108 MHz, the pointer) · lit ("false" turns the lamps off) · am (show the AM row)
+               stereo (light the STEREO window) · label · scale
+   no events (an output). set .value = 101.1 and the pointer glides there.
+   self-contained: paste this block into any page and use
+   <sk-dial-backlight-marantz value="101.1" lit="true"></sk-dial-backlight-marantz> */
+(function () {
+  if (customElements.get("sk-dial-backlight-marantz")) return;
+
+  const W = 480, H = 96;
+  const WX = 10, WY = 12, WW = 460, WH = 68;        // the glass window
+  const X0 = 63, X1 = 430;                          // the printed FM scale, 88 → 108 MHz
+  const FMIN = 88, FMAX = 108;
+  const POOLS = [0.14, 0.38, 0.63, 0.87];           // where the four lamps sit along the top edge
+
+  const fmX = f => X0 + (f - FMIN) / (FMAX - FMIN) * (X1 - X0);
+  const amX = f => X0 + ((1 / 540 - 1 / f) / (1 / 540 - 1 / 1600)) * (X1 - X0);
+
+  function scaleMarkup() {
+    let ticks = "", nums = "";
+    // FM: a tick every 0.2 MHz, a longer one every 1, a major every 2 with a numeral
+    for (let i = 0; i <= 100; i++) {
+      const f = FMIN + i * 0.2, x = fmX(f).toFixed(2);
+      const major = i % 10 === 0, mid = !major && i % 5 === 0;
+      ticks += '<path d="M ' + x + ' 38 V ' + (major ? 45.5 : mid ? 43 : 41) + '" stroke-width="' + (major ? 1.1 : 0.7) + '"/>';
+      if (major) nums += '<text class="num" x="' + x + '" y="34">' + Math.round(f) + '</text>';
+    }
+    // AM: 540…1600 kHz, crowding toward the top end as a real dial does
+    let am = '<g class="amrow"><path class="tk" d="M ' + X0 + ' 66 H ' + X1 + ' ';
+    for (let f = 540; f <= 1600; f += 20) am += 'M ' + amX(f).toFixed(2) + ' 66 V ' + (f % 100 === 0 ? 71 : 68.5) + ' ';
+    am += '" stroke-width="0.7"/>';
+    [55, 60, 70, 80, 100, 120, 140, 160].forEach(n => {
+      am += '<text class="num am" x="' + amX(n * 10).toFixed(2) + '" y="62">' + n + '</text>';
+    });
+    am += '<text class="unit" x="' + (X1 + 24) + '" y="62">kHz</text></g>';
+    return '<path class="tk" d="M ' + X0 + ' 38 H ' + X1 + '" stroke-width="0.7"/>' +
+      '<g class="tk">' + ticks + '</g>' + nums +
+      '<text class="unit" x="' + (X1 + 24) + '" y="34">MHz</text>' + am;
+  }
+  const SCALE = scaleMarkup();
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; text-anchor: middle; }
+    .num { font-size: 9.5px; font-weight: 500; letter-spacing: 0.01em; }
+    .num.am { font-size: 7.5px; font-weight: 400; }
+    .unit { font-size: 6.5px; font-weight: 500; letter-spacing: 0.08em; }
+    .stereo-t { font-size: 5.2px; font-weight: 600; letter-spacing: 0.14em; }
+    .tk { fill: none; stroke-linecap: butt; }
+    /* the print on the back of the glass: a dark copy always there, a white copy the lamps reveal */
+    .ink-off .tk { stroke: #26282e; } .ink-off text { fill: #26282e; }
+    .ink-on  .tk { stroke: #d9e6f5; } .ink-on  text { fill: #eef4ff; }
+    .ink-on, .glow, .stereo-on { opacity: 0; transition: opacity 250ms ease-out; }
+    .on .ink-on, .on .glow { opacity: 1; }
+    .on .stereo-on { opacity: 0; }
+    .on.st .stereo-on { opacity: 1; }
+    .amrow { display: none; }
+    .am-on .amrow { display: inline; }
+    .ptr { transition: transform 400ms cubic-bezier(.25, 1.18, .4, 1); will-change: transform; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="fascia" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e6dcc2"/><stop offset="0.28" stop-color="#d9cfb4"/>
+          <stop offset="0.52" stop-color="#c6bb9e"/><stop offset="0.78" stop-color="#b8ad92"/>
+          <stop offset="1" stop-color="#a99e84"/>
+        </linearGradient>
+        <linearGradient id="aniso" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.22" stop-color="#fff" stop-opacity="0.28"/>
+          <stop offset="0.5" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <pattern id="grain" width="4" height="3" patternUnits="userSpaceOnUse">
+          <rect width="4" height="1" fill="#fff" fill-opacity="0.07"/>
+          <rect y="2" width="4" height="1" fill="#000" fill-opacity="0.05"/>
+        </pattern>
+        <linearGradient id="glassoff" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1e2027"/><stop offset="0.55" stop-color="#16181d"/><stop offset="1" stop-color="#101216"/>
+        </linearGradient>
+        <linearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#27527f"/><stop offset="0.5" stop-color="#1b3c63"/>
+          <stop offset="1" stop-color="#102539"/>
+        </linearGradient>
+        <radialGradient id="pool" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff4dc" stop-opacity="0.9"/>
+          <stop offset="0.10" stop-color="#cfe2f6" stop-opacity="0.72"/>
+          <stop offset="0.34" stop-color="#7fb0e8" stop-opacity="0.32"/>
+          <stop offset="0.66" stop-color="#5f96d4" stop-opacity="0.14"/>
+          <stop offset="1" stop-color="#4f86c6" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="poolw" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="0.45" stop-color="#fff" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="vig" cx="50%" cy="20%" r="72%">
+          <stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#040b14" stop-opacity="0.45"/>
+        </radialGradient>
+        <linearGradient id="ptrg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7a1109"/><stop offset="0.35" stop-color="#ff3b2e"/>
+          <stop offset="0.7" stop-color="#e02618"/><stop offset="1" stop-color="#6d0f08"/>
+        </linearGradient>
+        <linearGradient id="refl" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.25" stop-color="#fff" stop-opacity="0.13"/>
+          <stop offset="0.62" stop-color="#fff" stop-opacity="0.04"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="poolmask">
+          <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#343434"/>
+          ${POOLS.map(p => '<ellipse cx="' + (WX + p * WW).toFixed(1) + '" cy="' + (WY - 1) + '" rx="96" ry="86" fill="url(#poolw)"/>').join("")}
+        </mask>
+        <clipPath id="winclip"><rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" rx="1.5"/></clipPath>
+        <filter id="soft" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="2.5"/></filter>
+      </defs>
+
+      <!-- champagne aluminium fascia -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="url(#fascia)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="url(#grain)"/>
+      <rect x="0" y="18" width="${W}" height="60" fill="url(#aniso)"/>
+      <!-- engraved hairlines above and below the window -->
+      <path d="M 12 6.5 H ${W - 12}" stroke="#7d7460" stroke-width="1"/>
+      <path d="M 12 7.5 H ${W - 12}" stroke="#f0e8d2" stroke-width="0.8" stroke-opacity="0.8"/>
+      <path d="M 12 ${H - 7.5} H ${W - 12}" stroke="#7d7460" stroke-width="1"/>
+      <path d="M 12 ${H - 6.5} H ${W - 12}" stroke="#f0e8d2" stroke-width="0.8" stroke-opacity="0.8"/>
+
+      <!-- the window is let into the fascia: dark lip top-left, lit lip bottom-right -->
+      <rect x="${WX - 1.5}" y="${WY - 1.5}" width="${WW + 3}" height="${WH + 3}" rx="2.5" fill="#6f6752"/>
+      <path d="M ${WX - 1.5} ${WY + WH + 1.5} H ${WX + WW + 1.5} V ${WY - 1.5}" fill="none" stroke="#f2ebd8" stroke-width="0.9" stroke-opacity="0.55"/>
+
+      <g clip-path="url(#winclip)">
+        <!-- smoked glass, unlit -->
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#glassoff)"/>
+        <!-- the lamps: a base wash plus four pools along the top edge -->
+        <g class="glow">
+          <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#wash)" opacity="0.92"/>
+          ${POOLS.map(p => '<ellipse cx="' + (WX + p * WW).toFixed(1) + '" cy="' + (WY - 2) + '" rx="92" ry="84" fill="url(#pool)"/>').join("")}
+          <rect x="${WX}" y="${WY + WH - 30}" width="${WW}" height="30" fill="#0a1626" opacity="0.3"/>
+          <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#vig)"/>
+        </g>
+        <!-- the scale, printed on the back of the glass -->
+        <g class="ink-off">${SCALE}</g>
+        <g class="ink-on" mask="url(#poolmask)">${SCALE}</g>
+        <!-- STEREO window at the left end -->
+        
+        <g class="stereo-on">
+          <rect x="16" y="23" width="34" height="13" rx="1" fill="#c22012"/>
+          <rect x="16" y="23" width="34" height="13" rx="1" fill="#ff5a42" opacity="0.35" filter="url(#soft)"/>
+        </g>
+        <text class="stereo-t st-off" x="33" y="31.5" fill="#24272d">STEREO</text>
+        <g class="stereo-on"><text class="stereo-t" x="33" y="31.5" fill="#2c0705">STEREO</text></g>
+        <!-- the pointer: a red line the full height of the window, casting no light -->
+        <g class="ptr">
+          <rect x="-1.4" y="${WY + 1}" width="2.8" height="${WH - 2}" fill="url(#ptrg)"/>
+          <rect x="-1.9" y="${WY + 1}" width="0.6" height="${WH - 2}" fill="#120303" opacity="0.7"/>
+          <rect x="1.3" y="${WY + 1}" width="0.6" height="${WH - 2}" fill="#120303" opacity="0.7"/>
+          <path d="M -4 ${WY + 1} L 4 ${WY + 1} L 0 ${WY + 6} Z" fill="#ff3b2e"/>
+        </g>
+        <!-- one fine reflection from the room, and the glass's own sheen -->
+        <rect x="${WX}" y="${WY + 14}" width="${WW}" height="3.5" fill="url(#refl)"/>
+        <rect x="${WX}" y="${WY + 17.5}" width="${WW}" height="6" fill="url(#refl)" opacity="0.35"/>
+        <!-- the fascia's shadow falling onto the glass -->
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="5" filter="url(#soft)"/>
+      </g>
+      <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" rx="1.5" fill="none" stroke="#0a0b0d" stroke-width="1"/>
+    </svg>
+  </div>`;
+
+  class SkDialMarantz extends HTMLElement {
+    static get observedAttributes() { return ["value", "lit", "am", "stereo", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 98; this._scale = 1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._svg = this.shadowRoot.querySelector("svg");
+      this._ptr = this.shadowRoot.querySelector(".ptr");
+    }
+    connectedCallback() { this.setAttribute("role", "img"); this._read(); this._paint(); }
+    disconnectedCallback() { }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._paint(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.min(FMAX, Math.max(FMIN, v));
+      this.setAttribute("value", String(Math.round(this._v * 10) / 10));
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get lit() { return (this.getAttribute("lit") || "").toLowerCase() !== "false"; }
+    set lit(v) { this.setAttribute("lit", v ? "true" : "false"); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._v = Math.min(FMAX, Math.max(FMIN, num("value", this._v)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const lit = this.lit, am = this.hasAttribute("am"), st = this.hasAttribute("stereo");
+      this._svg.setAttribute("class", (lit ? "on " : "") + (am ? "am-on " : "") + (st ? "st" : ""));
+      this.setAttribute("aria-label", (this.getAttribute("label") || "Tuning dial") + ", " +
+        (Math.round(this._v * 10) / 10).toFixed(1) + " MHz FM" + (st ? ", stereo" : "") + (lit ? "" : ", dial lamps off"));
+    }
+    _paint() {
+      this._ptr.style.transform = "translateX(" + fmX(this._v).toFixed(2) + "px)";
+      this.setAttribute("aria-label", (this.getAttribute("label") || "Tuning dial") + ", " +
+        (Math.round(this._v * 10) / 10).toFixed(1) + " MHz FM" +
+        (this.hasAttribute("stereo") ? ", stereo" : "") + (this.lit ? "" : ", dial lamps off"));
+    }
+  }
+  customElements.define("sk-dial-backlight-marantz", SkDialMarantz);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

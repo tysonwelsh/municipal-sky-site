@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ericsson GS10C Dekatron — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dekatron-ericsson-gs10c",
+  "element": "sk-dekatron-gs10c",
+  "name": "Ericsson GS10C Dekatron, end view",
+  "kind": "output",
+  "code": "G12",
+  "type": "Decade counting tube (Dekatron)",
+  "source": "Ericsson Telephones GS10C / GC10B decade counting tube, Beeston, 1949–60s, as read end-on in the Harwell Dekatron computer and in scalers and ratemeters",
+  "era": "1950s",
+  "origin": "UK",
+  "materials": ["glass", "neon", "nickel cathode wire", "mica", "black bakelite holder"],
+  "tags": ["counter", "neon", "glow discharge", "nuclear instrument", "computing", "readout"],
+  "value": { "model": "steps", "min": 0, "max": 9, "step": 1 },
+  "attributes": ["value", "glow", "escutcheon", "spin", "label", "scale"],
+  "events": [],
+  "size": { "w": 120, "h": 120 },
+  "notes": "Three tubes: one resting at 7, one counting fast enough to smear into an arc, and a purple Soviet-tinted one at 1.3× with the escutcheon off. Set .value 0–9, or call step(±n) to pulse it."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="hammertone">
+    <sk-dekatron-gs10c value="7" label="UNITS"></sk-dekatron-gs10c>
+    <sk-dekatron-gs10c value="0" spin="36" label="TENS"></sk-dekatron-gs10c>
+    <sk-dekatron-gs10c value="3" glow="purple" escutcheon="off" scale="1.3" label="OG-4"></sk-dekatron-gs10c>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>Dekatron</b> is a cold-cathode counting tube: a ring of thirty fine wire cathodes standing off a mica
+  disc inside a one-inch glass envelope, a disc anode in the middle, and a neon fill. A glow discharge sits on
+  one of the ten <b>main</b> cathodes; a pulse on the guide electrodes walks it round to the next one, two
+  <b>guide</b> cathodes at a time, and the tube remembers its count with no memory at all. The Ericsson GS10C
+  was the British one — Beeston, 1949 — and 828 of them are the store and the registers of the Harwell
+  Dekatron, which is still running at Bletchley.</p>
+  <p><b>The tells kept here:</b> seen end-on you read the thirty pins as short radial dashes — ten long main
+  ones, twenty shorter guides between — around the dull grey anode disc, with the mica sheet faintly behind
+  them. One cathode carries an orange dot with a pale core and a soft halo, and the two guides either side of
+  it pick up a faint glow of their own. A step <b>hops</b> in three eight-millisecond sub-steps, main → guide →
+  guide → main, so a fast count reads as a rotating smear with a trail of about sixty degrees; a negative
+  pulse hops the other way. The glass face is domed: a broad crescent reflection at the upper left, a bright
+  rim ring, and the whole thing sits in a black bakelite holder with a keyway slot and a printed 0–9
+  escutcheon, zero at the top. Purple mode is the Soviet ОГ-4's tint.</p>
+  <p><b>Left out:</b> the eleven-pin base and the wiring behind it, the "double-pulse" GC10B guide arrangement,
+  and the way a real tube's glow fattens as the anode current rises.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dekatron-gs10c> — Ericsson GS10C decade counting tube, seen end-on ====
+   attributes: value(0–9) glow(orange|purple) escutcheon(off) spin(steps/s, demo) label scale
+   methods: step(n) — pulse the glow n cathodes on (negative goes anti-clockwise)
+   no events (an output).
+   self-contained: paste this block into any page and use <sk-dekatron-gs10c value="4"></sk-dekatron-gs10c> */
+(function () {
+  if (customElements.get("sk-dekatron-gs10c")) return;
+
+  var W = 120, H = 120, C = 60;
+  var RC = 30.5;        // the radius the glow sits at
+  var SUB = 8;          // ms per sub-step (main → guide → guide → main)
+  var DEG = 12;         // degrees per sub-step
+  function pt(a, r) { var t = a * Math.PI / 180; return [C + r * Math.sin(t), C - r * Math.cos(t)]; }
+  function f(n) { return Math.round(n * 100) / 100; }
+
+  /* the parts that never change, built once as a string */
+  function chrome() {
+    var s = "", j, a, b, x0, y0, x1, y1;
+    /* thirty cathode pins: ten long main, twenty short guides, lit from above-left */
+    for (j = 0; j < 30; j++) {
+      a = j * DEG;
+      var main = (j % 3 === 0);
+      var lit = 0.45 + 0.55 * Math.max(0, Math.cos((a + 45) * Math.PI / 180));
+      var r0 = main ? 24.5 : 26.5, r1 = main ? 35.2 : 33.2;
+      var p0 = pt(a, r0), p1 = pt(a, r1);
+      s += '<line x1="' + f(p0[0]) + '" y1="' + f(p0[1]) + '" x2="' + f(p1[0]) + '" y2="' + f(p1[1]) +
+           '" stroke="#7a7068" stroke-opacity="' + f(0.35 + 0.6 * lit) + '" stroke-width="' + (main ? 1.8 : 1.15) +
+           '" stroke-linecap="round"/>';
+      /* a tiny dark base where each wire leaves the mica */
+      s += '<circle cx="' + f(p0[0]) + '" cy="' + f(p0[1]) + '" r="' + (main ? 1.05 : 0.8) + '" fill="#1b1916" fill-opacity="0.85"/>';
+    }
+    return s;
+  }
+  function brush() {   /* the anode disc's radial brushing */
+    var s = "";
+    for (var i = 0; i < 40; i++) {
+      var a = i * 9 + (i % 3) * 2.5;
+      var p0 = pt(a, 4.5), p1 = pt(a, 16.4);
+      s += '<line x1="' + f(p0[0]) + '" y1="' + f(p0[1]) + '" x2="' + f(p1[0]) + '" y2="' + f(p1[1]) +
+           '" stroke="#5a564e" stroke-width="0.5" stroke-opacity="' + (0.10 + (i % 4) * 0.045) + '"/>';
+    }
+    return s;
+  }
+  function escut() {
+    var s = "";
+    for (var d = 0; d < 10; d++) {
+      var p = pt(d * 36, 54);
+      s += '<text class="esc" x="' + f(p[0]) + '" y="' + f(p[1]) + '">' + d + '</text>';
+    }
+    return s;
+  }
+
+  var RIM0 = pt(-88, 46.2), RIM1 = pt(-14, 46.2);
+  var KEY = pt(198, 54);
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      --core: #ffd7a0; --body: #ff8a30; --halo: #ff4a1a; --guide: #ff6a2a; }
+    :host([hidden]) { display: none; }
+    :host([glow="purple"]) { --core: #f3ddff; --body: #d07aff; --halo: #9a3aff; --guide: #b060ff; }
+    :host([escutcheon="off"]) .esc, :host([escutcheon="0"]) .esc, :host([escutcheon="none"]) .esc { display: none; }
+    .wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    .esc { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; font-weight: 500; font-size: 7px;
+      fill: #b9b3aa; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0.02em; }
+    .glowg { transform-box: view-box; transform-origin: ${C}px ${C}px; }
+  </style>
+  <div class="wrap">
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="holder" cx="34%" cy="26%" r="78%">
+          <stop offset="0" stop-color="#3a352f"/><stop offset="0.45" stop-color="#1f1c19"/><stop offset="1" stop-color="#0c0b0a"/>
+        </radialGradient>
+        <radialGradient id="inside" cx="42%" cy="34%" r="72%">
+          <stop offset="0" stop-color="#16151b"/><stop offset="0.6" stop-color="#0d0c11"/><stop offset="1" stop-color="#050507"/>
+        </radialGradient>
+        <radialGradient id="mica" cx="42%" cy="34%" r="66%">
+          <stop offset="0" stop-color="#b8b0a0" stop-opacity="0.17"/><stop offset="0.72" stop-color="#8d8677" stop-opacity="0.08"/><stop offset="1" stop-color="#6a655c" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="anode" cx="34%" cy="28%" r="76%">
+          <stop offset="0" stop-color="#4a4640"/><stop offset="0.55" stop-color="#2c2a26"/><stop offset="1" stop-color="#16150f"/>
+        </radialGradient>
+        <radialGradient id="gloss" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.5"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="dot" cx="42%" cy="38%" r="60%">
+          <stop offset="0" stop-color="var(--core)"/><stop offset="0.45" stop-color="var(--body)"/><stop offset="1" stop-color="var(--halo)"/>
+        </radialGradient>
+        <radialGradient id="hl" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="var(--halo)" stop-opacity="0.85"/><stop offset="0.5" stop-color="var(--halo)" stop-opacity="0.26"/><stop offset="1" stop-color="var(--halo)" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.2"/></filter>
+        <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2"/></filter>
+        <clipPath id="face"><circle cx="${C}" cy="${C}" r="47.5"/></clipPath>
+      </defs>
+
+      <!-- the holder stands on the panel -->
+      <circle cx="${C + 1.5}" cy="${C + 4}" r="58" fill="#000" opacity="0.6" filter="url(#soft)"/>
+      <circle cx="${C}" cy="${C}" r="54" fill="none" stroke="url(#holder)" stroke-width="12"/>
+      <circle cx="${C}" cy="${C}" r="59.6" fill="none" stroke="#000" stroke-width="0.9" opacity="0.9"/>
+      <path d="M ${f(pt(-120, 59.2)[0])} ${f(pt(-120, 59.2)[1])} A 59.2 59.2 0 0 1 ${f(pt(-18, 59.2)[0])} ${f(pt(-18, 59.2)[1])}"
+            fill="none" stroke="#6b645b" stroke-opacity="0.45" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M ${f(pt(40, 59.2)[0])} ${f(pt(40, 59.2)[1])} A 59.2 59.2 0 0 1 ${f(pt(150, 59.2)[0])} ${f(pt(150, 59.2)[1])}"
+            fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1.4" stroke-linecap="round"/>
+      <!-- the keyway slot in the holder -->
+      <g transform="rotate(18 ${C} ${C})">
+        <rect x="${C - 2.4}" y="${C + 49}" width="4.8" height="9" rx="1.6" fill="#050505"/>
+        <rect x="${C - 2.4}" y="${C + 49}" width="4.8" height="9" rx="1.6" fill="none" stroke="#4e4842" stroke-opacity="0.5" stroke-width="0.6"/>
+      </g>
+      ${escut()}
+
+      <!-- the glass face -->
+      <circle cx="${C}" cy="${C}" r="48" fill="#0a0a0c"/>
+      <g clip-path="url(#face)">
+        <circle cx="${C}" cy="${C}" r="47.5" fill="url(#inside)"/>
+        <circle cx="${C}" cy="${C}" r="41" fill="url(#mica)"/>
+        <circle cx="${C}" cy="${C}" r="41" fill="none" stroke="#9a9284" stroke-opacity="0.16" stroke-width="0.8"/>
+        ${chrome()}
+        <circle cx="${C}" cy="${C}" r="17" fill="url(#anode)"/>
+        <g>${brush()}</g>
+        <circle cx="${C}" cy="${C}" r="17" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="0.8"/>
+        <circle cx="${C}" cy="${C}" r="17.6" fill="none" stroke="#6a655c" stroke-opacity="0.35" stroke-width="0.6"/>
+
+        <!-- the glow: a group that rotates about the tube's axis -->
+        <g class="trail"></g>
+        <g class="glowg">
+          <circle class="cast" cx="${C}" cy="${C - RC}" r="25" fill="url(#hl)" opacity="0.85"/>
+          <circle cx="${f(pt(-12, RC)[0])}" cy="${f(pt(-12, RC)[1])}" r="2.4" fill="var(--guide)" opacity="0.2"/>
+          <circle cx="${f(pt(12, RC)[0])}" cy="${f(pt(12, RC)[1])}" r="2.4" fill="var(--guide)" opacity="0.2"/>
+          <circle cx="${C}" cy="${C - RC}" r="8.4" fill="url(#hl)" filter="url(#soft2)"/>
+          <circle cx="${C}" cy="${C - RC}" r="3.2" fill="var(--body)" opacity="0.95" filter="url(#soft2)"/>
+          <circle cx="${C}" cy="${C - RC}" r="3.9" fill="url(#dot)"/>
+          <circle cx="${C - 0.45}" cy="${C - RC - 0.55}" r="1.6" fill="var(--core)"/>
+        </g>
+
+        <!-- the dome: one broad reflection, not the shape of anything under it -->
+        <ellipse cx="36" cy="29" rx="29" ry="11" transform="rotate(-42 36 29)" fill="url(#gloss)" opacity="0.8"/>
+        <ellipse cx="78" cy="92" rx="18" ry="6" transform="rotate(-30 78 92)" fill="url(#gloss)" opacity="0.18"/>
+        <path d="M ${f(RIM0[0])} ${f(RIM0[1])} A 46.2 46.2 0 0 1 ${f(RIM1[0])} ${f(RIM1[1])}"
+              fill="none" stroke="#fff" stroke-opacity="0.62" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="${C}" cy="${C}" r="47.5" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="5" filter="url(#soft2)"/>
+      </g>
+      <circle cx="${C}" cy="${C}" r="47.6" fill="none" stroke="#9aa4a8" stroke-opacity="0.45" stroke-width="1.2"/>
+      <circle cx="${C}" cy="${C}" r="48.4" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1"/>
+    </svg>
+  </div>`;
+
+  class SkDekatron extends HTMLElement {
+    static get observedAttributes() { return ["value", "glow", "escutcheon", "spin", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._spin = 0;
+      this._ang = 0; this._target = 0; this._vel = 0;
+      this._raf = 0; this._last = 0; this._acc = 0;
+      this._glowG = this.shadowRoot.querySelector(".glowg");
+      this._trailG = this.shadowRoot.querySelector(".trail");
+      this._trail = [];
+      var ns = "http://www.w3.org/2000/svg";
+      for (var i = 0; i < 6; i++) {
+        var g = document.createElementNS(ns, "g");
+        var c = document.createElementNS(ns, "circle");
+        c.setAttribute("cx", C); c.setAttribute("cy", C - RC); c.setAttribute("r", "3.1");
+        c.setAttribute("fill", "url(#dot)");
+        g.appendChild(c); g.setAttribute("opacity", "0");
+        g.style.transformBox = "view-box"; g.style.transformOrigin = C + "px " + C + "px";
+        this._trailG.appendChild(g); this._trail.push(g);
+      }
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read();
+      this._ang = this._target = this._v * 36;
+      this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { this._goto(parseFloat(v)); return; }
+      this._read(); this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) { v = Math.round(parseFloat(v)); if (isNaN(v)) return; this._goto(v); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    /* a pulse train: n cathodes on, negative goes anti-clockwise */
+    step(n) {
+      n = Math.round(n || 0); if (!n) return;
+      this._target += n * 36;
+      this._v = ((Math.round(this._target / 36) % 10) + 10) % 10;
+      this._reflect(); this._kick();
+    }
+    demo(t) {
+      if (this._spin) return undefined;
+      var d = this._ds || (this._ds = { t: t, ph: 0 });
+      var dt = Math.max(0, Math.min(0.1, t - d.t)); d.t = t;
+      var rate = 4 + 24 * (0.5 + 0.5 * Math.sin(t * 0.41));
+      var dir = Math.sin(t * 0.13) < -0.8 ? -1 : 1;
+      d.ph += dt * rate * dir;
+      return ((Math.floor(d.ph) % 10) + 10) % 10;
+    }
+
+    _read() {
+      var n = function (a, d) { var x = parseFloat(this.getAttribute(a)); return isNaN(x) ? d : x; }.bind(this);
+      this._scale = Math.max(0.2, n("scale", 1));
+      this._spin = Math.max(0, Math.min(41, n("spin", 0)));
+      var v = n("value", this._v);
+      this._v = ((Math.round(v) % 10) + 10) % 10;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this.shadowRoot.querySelector(".wrap").style.transform = "scale(" + this._scale + ")";
+      this.setAttribute("aria-label", (this.getAttribute("label") || "Dekatron") + ": glow at " + this._v);
+    }
+    _reflect() {
+      this.setAttribute("value", String(this._v));
+      this.setAttribute("aria-label", (this.getAttribute("label") || "Dekatron") + ": glow at " + this._v);
+    }
+    /* the glow walks the shorter way round, like a real tube being pulsed */
+    _goto(v) {
+      if (isNaN(v)) return;
+      v = ((Math.round(v) % 10) + 10) % 10;
+      var cur = ((Math.round(this._target / 36) % 10) + 10) % 10;
+      if (v === cur && this._v === v) return;
+      var d = ((v - cur) % 10 + 10) % 10;
+      if (d > 5) d -= 10;
+      this._target += d * 36;
+      this._v = v;
+      this._reflect(); this._kick();
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      var dt = Math.min(120, now - this._last); this._last = now;
+      if (this._spin) { this._target += this._spin * 36 * dt / 1000; }
+      var gap = this._target - this._ang;
+      /* a runaway count never lags more than two turns behind */
+      if (Math.abs(gap) > 720) { this._ang = this._target - 360 * (gap > 0 ? 1 : -1); gap = this._target - this._ang; }
+      var before = this._ang;
+      if (gap !== 0) {
+        this._acc += dt;
+        var subs = Math.floor(this._acc / SUB);
+        if (subs > 0) {
+          this._acc -= subs * SUB;
+          var move = Math.min(Math.abs(gap), subs * DEG) * (gap > 0 ? 1 : -1);
+          this._ang += move;
+          if (Math.abs(this._target - this._ang) < 0.001) this._ang = this._target;
+        }
+      } else { this._acc = 0; }
+      this._vel = this._vel * 0.65 + ((this._ang - before) / (dt || 16) * 1000) * 0.35;
+      this._paint();
+      if (this._ang === this._target && !this._spin && Math.abs(this._vel) < 20) { this._vel = 0; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      var a = this._ang;
+      this._glowG.style.transform = "rotate(" + f(a) + "deg)";
+      /* above about 30 steps a second the eye sees an arc, not a dot */
+      var sp = Math.abs(this._vel);
+      var frac = Math.max(0, Math.min(1, (sp - 620) / 880));
+      var span = 60 * frac, dir = this._vel >= 0 ? -1 : 1;
+      for (var i = 0; i < this._trail.length; i++) {
+        var k = (i + 1) / this._trail.length;
+        var g = this._trail[i];
+        if (frac <= 0.02) { if (g.getAttribute("opacity") !== "0") g.setAttribute("opacity", "0"); continue; }
+        g.setAttribute("opacity", f(0.5 * frac * (1 - k * 0.9)));
+        g.style.transform = "rotate(" + f(a + dir * span * k) + "deg)";
+      }
+    }
+  }
+  customElements.define("sk-dekatron-gs10c", SkDekatron);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

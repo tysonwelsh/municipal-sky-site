@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sony Walkman TPS-L2 volume wheels — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "thumbwheel-walkman-tps-l2",
+  "element": "sk-wheel-tps-l2",
+  "name": "Sony Walkman TPS-L2 twin volume wheels",
+  "kind": "input",
+  "code": "A9",
+  "type": "Edge-on thumbwheel in a slot",
+  "source": "Sony Walkman TPS-L2 (1979): the two black serrated VOL wheels rolling through slots in the silver top edge, L and R, above the blue body",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["black ABS", "brushed aluminium", "blue anodised aluminium", "silk-screen"],
+  "tags": ["walkman", "cassette", "volume", "thumbwheel", "serrated", "twin", "L/R"],
+  "value": { "model": "range", "min": 0, "max": 10, "step": 0.1, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "channels", "link", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 140, "h": 48 },
+  "notes": "Twin wheels at L 6 / R 6, linked so either moves both; a second pair at scale 1.6 to show the serrations, unlinked at 0.9 / 7.5 so the white dot sits by the index. Drag a wheel up or down along its slot, wheel, or use the arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="navy">
+    <sk-wheel-tps-l2 value="6,6" channels="2" link label="VOL"></sk-wheel-tps-l2>
+    <sk-wheel-tps-l2 value="0.9,7.5" channels="2" label="VOL" scale="1.6"></sk-wheel-tps-l2>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sony Walkman TPS-L2</b> of 1979 is blue and silver with an orange button, and its volume is not a knob
+  but two black serrated wheels, one per channel, set into the silver top edge. Each wheel lives inside the body
+  and only a sliver of its rim pokes up through a slot; you roll it with a thumb moving front to back. This is that
+  top edge seen from above: the slots, the two rims, VOL with L and R silk-screened in white between them, and
+  below it a slice of the blue front with the orange HOTLINE button.</p>
+  <p><b>The tells kept here:</b> only an arc of each wheel shows, black against the silver, and its sixty
+  serrations are placed by angle on a 17.5 px rim (<i>y = R·sin θ</i>, width and brightness by cos θ), so they
+  crowd toward both ends of the slot and scroll past as the value changes; the slot's inner shadow at the top
+  and left with a lit lip at the bottom and right; the white index tick at the slot's edge and the faint white dot
+  on the rim that passes it at zero; the brushed silver edge over the anodised blue; the wheels the only black
+  thing on the body. Drag along the slot (1 px = 0.05, up is louder), wheel over it, arrows and Shift-arrows,
+  Home/End; 300° of travel with hard stops. <code>channels="2"</code> gives the twin and emits <code>{ value: [l, r] }</code>;
+  <code>link</code> gangs them so either wheel drives both.</p>
+  <p><b>Left out:</b> the TONE switch and the headphone jacks further along the edge; the second, white "SONY" print;
+  the cassette door.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-wheel-tps-l2> — Sony Walkman TPS-L2 VOL thumbwheels through slots in the silver top edge ====
+   attributes: value ("6" or "6,6") min max step channels(1|2) link label scale disabled
+   events: input {value, channel} during a gesture, change {value, channel} when it settles; value is a number (one wheel) or [l, r]
+   self-contained: paste this block into any page and use <sk-wheel-tps-l2 value="6,6" channels="2" link></sk-wheel-tps-l2> */
+(function () {
+  if (customElements.get("sk-wheel-tps-l2")) return;
+  const W = 140, H = 48;
+  const SW = 9, SH = 26, SY = 8;         // slot width, height, top
+  const R = 17.5, RIBS = 60;             // rim radius (px) and number of serrations
+  const SWEEP = 300;                     // degrees of travel over the whole range
+  const DEG = Math.PI / 180;
+  const ns = "http://www.w3.org/2000/svg";
+  const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500; fill: #f2f2ee; font-size: 5.5px; letter-spacing: 0.08em; text-anchor: middle; }
+    .grab { position: absolute; top: ${SY - 3}px; width: ${SW + 8}px; height: ${SH + 6}px; border-radius: 4px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#eeefeb"/><stop offset="0.09" stop-color="#d4d5d0"/><stop offset="0.5" stop-color="#b7b8b4"/><stop offset="1" stop-color="#9c9d99"/>
+        </linearGradient>
+        <pattern id="grain" width="140" height="2" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="140" height="0.7" fill="#fff" fill-opacity="0.09"/>
+          <rect x="0" y="1.2" width="140" height="0.5" fill="#000" fill-opacity="0.07"/>
+        </pattern>
+        <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3f6196"/><stop offset="1" stop-color="#2b4573"/>
+        </linearGradient>
+        <pattern id="bgrain" width="3" height="10" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="1" height="10" fill="#fff" fill-opacity="0.05"/>
+          <rect x="1.8" y="0" width="0.6" height="10" fill="#000" fill-opacity="0.08"/>
+        </pattern>
+        <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f7a271"/><stop offset="0.25" stop-color="#ec6e34"/><stop offset="1" stop-color="#c94d18"/>
+        </linearGradient>
+        <linearGradient id="rimy" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#101010"/><stop offset="0.3" stop-color="#2a2a2a"/><stop offset="0.5" stop-color="#1e1e1e"/><stop offset="1" stop-color="#050505"/>
+        </linearGradient>
+        <linearGradient id="rimx" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.2" stop-color="#fff" stop-opacity="0"/><stop offset="0.8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+        </linearGradient>
+        <linearGradient id="slotv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.85"/><stop offset="0.16" stop-color="#000" stop-opacity="0"/><stop offset="0.88" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+        </linearGradient>
+        <linearGradient id="sloth" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.7"/><stop offset="0.3" stop-color="#000" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.8"/></filter>
+      </defs>
+      <!-- the silver top edge, brushed along its length, rounded where it turns down to the back -->
+      <path d="M 0 6 Q 0 0 6 0 H ${W - 6} Q ${W} 0 ${W} 6 V ${H} H 0 Z" fill="url(#edge)"/>
+      <path d="M 0 6 Q 0 0 6 0 H ${W - 6} Q ${W} 0 ${W} 6 V 37 H 0 Z" fill="url(#grain)"/>
+      <path d="M 6 0.5 H ${W - 6}" stroke="#fff" stroke-opacity="0.8" stroke-width="0.8"/>
+      <!-- the corner down to the front: a lit edge, then the blue anodised face -->
+      <rect x="0" y="37" width="${W}" height="11" fill="url(#body)"/>
+      <rect x="0" y="37" width="${W}" height="11" fill="url(#bgrain)"/>
+      <path d="M 0 36.6 H ${W}" stroke="#f3f3ef" stroke-width="0.9"/>
+      <path d="M 0 37.6 H ${W}" stroke="#0e1a2e" stroke-opacity="0.85" stroke-width="0.9"/>
+      <!-- the orange button, a slice of it, on the front -->
+      <rect x="10.5" y="40.2" width="20" height="7" rx="1.6" fill="#000" opacity="0.4" filter="url(#soft)"/>
+      <rect x="10" y="39.4" width="20" height="7" rx="1.6" fill="url(#orange)" stroke="#8a3410" stroke-width="0.5"/>
+      <path d="M 12 40.3 H 28" stroke="#ffd2b5" stroke-opacity="0.8" stroke-width="0.6"/>
+      <g class="wheels"></g>
+      <g class="legend"></g>
+    </svg>
+    <div class="grabs"></div>
+  </div>`;
+
+  class SkWheelTpsL2 extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "channels", "link", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._vals = [5, 5]; this._min = 0; this._max = 10; this._step = 0.1; this._scale = 1; this._n = 0; this._link = false;
+      this._wheels = [];
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._wheelG = $(".wheels"); this._legendG = $(".legend"); this._grabs = $(".grabs");
+      ["_onDown", "_onMove", "_onUp", "_onWheel", "_onKey"].forEach(f => { this[f] = this[f].bind(this); });
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._fmt());
+      this._readAttrs(); this._render();
+    }
+    disconnectedCallback() { this._unbind(); }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._n === 1 ? this._vals[0] : this._vals.slice(0, this._n); }
+    set value(v) {
+      const arr = Array.isArray(v) ? v : String(v).split(/[,\s|]+/).map(parseFloat);
+      if (!arr.length) return;
+      for (let i = 0; i < this._n; i++) { const x = this._clamp(parseFloat(arr[Math.min(i, arr.length - 1)])); if (!isNaN(x)) this._vals[i] = x; }
+      this._reflect(); this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._wheels[0]) this._wheels[0].grab.focus(); }
+
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _fmt() { return this._vals.slice(0, this._n || 1).map(v => String(Math.round(v * 100) / 100)).join(","); }
+    _reflect() { this.setAttribute("value", this._fmt()); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const n = Math.max(1, Math.min(2, Math.round(num("channels", 1))));
+      if (n !== this._n) { this._n = n; this._build(); }
+      this._min = num("min", 0); this._max = num("max", 10); this._step = Math.max(0.001, num("step", 0.1));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._link = this.hasAttribute("link");
+      const raw = (this.getAttribute("value") || "").split(/[,\s|]+/).map(parseFloat);
+      for (let i = 0; i < this._n; i++) { const x = raw[Math.min(i, raw.length - 1)]; if (!isNaN(x)) this._vals[i] = this._clamp(x); }
+      const label = this.getAttribute("label") || "VOL";
+      const dis = this.hasAttribute("disabled");
+      this._wheels.forEach((w, i) => {
+        w.grab.setAttribute("aria-label", this._n === 2 ? label + " " + (i ? "R" : "L") : label);
+        w.grab.setAttribute("aria-valuemin", this._min); w.grab.setAttribute("aria-valuemax", this._max);
+        w.grab.setAttribute("tabindex", dis ? "-1" : "0"); w.grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      });
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+
+    /* ---- build one or two slots with a rim each, and the printed legend ---- */
+    _unbind() {
+      this._wheels.forEach(w => {
+        w.grab.removeEventListener("pointerdown", this._onDown); w.grab.removeEventListener("wheel", this._onWheel); w.grab.removeEventListener("keydown", this._onKey);
+      });
+    }
+    _build() {
+      this._unbind();
+      const wg = this._wheelG, lg = this._legendG, gs = this._grabs;
+      for (const g of [wg, lg, gs]) while (g.firstChild) g.removeChild(g.firstChild);
+      this._wheels = [];
+      const xs = this._n === 2 ? [58, 105] : [81.5];
+      xs.forEach((sx, i) => {
+        const cx = sx + SW / 2, cy = SY + SH / 2;
+        const g = mk("g");
+        const cid = "slot" + i;
+        const cp = mk("clipPath", { id: cid }); cp.appendChild(mk("rect", { x: sx, y: SY, width: SW, height: SH, rx: 2 })); g.appendChild(cp);
+        // the hole: dark edge at the top-left, lit lip at the bottom-right
+        g.appendChild(mk("rect", { x: sx - 0.6, y: SY - 0.6, width: SW + 1.2, height: SH + 1.2, rx: 2.4, fill: "#6d6e6a" }));
+        g.appendChild(mk("path", { d: `M ${sx + 2} ${SY + SH + 0.9} H ${sx + SW - 1} Q ${sx + SW + 0.9} ${SY + SH + 0.9} ${sx + SW + 0.9} ${SY + SH - 1} V ${SY + 2}`, fill: "none", stroke: "#f6f6f2", "stroke-width": 0.9, "stroke-linecap": "round" }));
+        const inner = mk("g", { "clip-path": `url(#${cid})` });
+        inner.appendChild(mk("rect", { x: sx, y: SY, width: SW, height: SH, fill: "#0a0a0a" }));
+        // the rim: a sliver of a 35 px wheel, standing 3 px proud, black
+        inner.appendChild(mk("rect", { x: sx + 1.5, y: SY - 2, width: SW - 3, height: SH + 4, fill: "url(#rimy)" }));
+        const ribs = mk("g"); inner.appendChild(ribs);
+        const ribList = [];
+        for (let j = 0; j < RIBS; j++) {
+          const groove = mk("line", { x1: sx + 1.5, x2: sx + SW - 1.5, stroke: "#000" });
+          const crest = mk("line", { x1: sx + 1.5, x2: sx + SW - 1.5, stroke: "#5a5a5a" });
+          ribs.appendChild(groove); ribs.appendChild(crest);
+          ribList.push({ crest, groove, deg: j * 360 / RIBS });
+        }
+        const dot = mk("ellipse", { cx: cx, rx: 0.75, ry: 0.75, fill: "#f2f2ee", opacity: 0.7 }); inner.appendChild(dot);
+        inner.appendChild(mk("rect", { x: sx + 1.5, y: SY - 2, width: SW - 3, height: SH + 4, fill: "url(#rimx)" }));
+        inner.appendChild(mk("rect", { x: sx, y: SY, width: SW, height: SH, fill: "url(#slotv)" }));
+        inner.appendChild(mk("rect", { x: sx, y: SY, width: SW, height: SH, fill: "url(#sloth)" }));
+        g.appendChild(inner);
+        g.appendChild(mk("rect", { x: sx, y: SY, width: SW, height: SH, rx: 2, fill: "none", stroke: "#000", "stroke-opacity": 0.55, "stroke-width": 0.6 }));
+        // the printed index tick beside the slot (outside on the L wheel, outside on the R wheel)
+        const tx0 = (this._n === 2 && i === 1) ? sx + SW + 2 : sx - 5, tx1 = tx0 + 3;
+        g.appendChild(mk("line", { x1: tx0, y1: cy, x2: tx1, y2: cy, stroke: "#f2f2ee", "stroke-width": 0.9 }));
+        wg.appendChild(g);
+        const grab = document.createElement("div");
+        grab.className = "grab"; grab.setAttribute("role", "slider"); grab.setAttribute("tabindex", "0"); grab.dataset.i = String(i);
+        grab.style.left = (sx - 4) + "px";
+        gs.appendChild(grab);
+        grab.addEventListener("pointerdown", this._onDown); grab.addEventListener("wheel", this._onWheel, { passive: false }); grab.addEventListener("keydown", this._onKey);
+        this._wheels.push({ grab, ribs: ribList, dot, cx, cy });
+      });
+      // legend, silk-screened white
+      if (this._n === 2) {
+        const t = mk("text", { x: 86, y: 15.5 }); t.textContent = "VOL"; lg.appendChild(t);
+        const l = mk("text", { x: 75, y: 27.5 }); l.textContent = "L"; lg.appendChild(l);
+        const r = mk("text", { x: 97, y: 27.5 }); r.textContent = "R"; lg.appendChild(r);
+      } else {
+        const t = mk("text", { x: 72, y: 23.5, "text-anchor": "end" }); t.textContent = "VOL"; lg.appendChild(t);
+      }
+    }
+
+    /* ---- projection: sixty serrations by angle on the rim, crowding toward the slot's ends ---- */
+    _render() {
+      this._wheels.forEach((w, i) => {
+        const v = this._vals[i];
+        const turn = (v - this._min) / (this._max - this._min || 1) * SWEEP;    // the wheel's rotation, degrees
+        const pitch = 360 / RIBS;
+        w.ribs.forEach(r => {
+          let a = ((r.deg + turn) % 360 + 540) % 360 - 180;                 // + is up the slot (toward the back)
+          const c = Math.cos(a * DEG);
+          if (c <= 0.03) { r.crest.style.display = "none"; r.groove.style.display = "none"; return; }
+          r.crest.style.display = ""; r.groove.style.display = "";
+          const s = Math.sin(a * DEG);
+          const y = w.cy - R * s;
+          const half = R * Math.sin(pitch / 2 * DEG) * c;                  // half a pitch, foreshortened
+          const diff = Math.max(0, 0.6 * s + 0.74 * c);
+          const spec = Math.pow(Math.max(0, 0.32 * s + 0.95 * c), 18);
+          const lum = 0.12 + 0.5 * diff + 0.85 * spec;
+          const gv = Math.round(Math.min(255, 30 + 130 * lum));
+          r.crest.setAttribute("y1", y - half * 0.4); r.crest.setAttribute("y2", y - half * 0.4);
+          r.crest.setAttribute("stroke-width", Math.max(0.25, half * 0.8).toFixed(2));
+          r.crest.setAttribute("stroke", `rgb(${gv},${gv},${gv})`);
+          r.groove.setAttribute("y1", y + half * 0.55); r.groove.setAttribute("y2", y + half * 0.55);
+          r.groove.setAttribute("stroke-width", Math.max(0.25, half * 0.7).toFixed(2));
+          r.groove.setAttribute("opacity", (0.5 + 0.5 * c).toFixed(2));
+        });
+        // the white dot printed on the rim at zero
+        const ad = ((turn) % 360 + 540) % 360 - 180, cd = Math.cos(ad * DEG);
+        if (cd > 0.05) { w.dot.style.display = ""; w.dot.setAttribute("cy", (w.cy - R * Math.sin(ad * DEG)).toFixed(2)); w.dot.setAttribute("ry", (0.75 * cd).toFixed(2)); w.dot.setAttribute("opacity", (0.25 + 0.5 * cd).toFixed(2)); }
+        else w.dot.style.display = "none";
+        w.grab.setAttribute("aria-valuenow", String(Math.round(v * 100) / 100));
+        w.grab.setAttribute("aria-valuetext", String(Math.round(v * 10) / 10));
+      });
+    }
+    _emit(type, i) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this.value, channel: i } })); }
+    _set(i, v, settle) {
+      v = this._clamp(Math.round(v / this._step) * this._step);
+      v = Math.round(v * 1000) / 1000;
+      const targets = this._link ? [...Array(this._n).keys()] : [i];
+      let changed = false;
+      targets.forEach(k => { if (this._vals[k] !== v) { this._vals[k] = v; changed = true; } });
+      if (!changed && !settle) return;
+      this._reflect(); this._render();
+      this._emit(settle ? "change" : "input", i);
+    }
+    _dis() { return this.hasAttribute("disabled"); }
+    _onDown(e) {
+      if (this._dis() || (e.button && e.button !== 0)) return;
+      const g = e.currentTarget, i = +g.dataset.i;
+      e.preventDefault(); g.focus({ preventScroll: true });
+      g.setPointerCapture(e.pointerId); g.classList.add("drag");
+      this._drag = { g, i, y: e.clientY, v: this._vals[i], moved: false };
+      g.addEventListener("pointermove", this._onMove); g.addEventListener("pointerup", this._onUp); g.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const dy = (d.y - e.clientY) / this._scale;                       // up the slot = louder
+      const v = d.v + dy * 0.05 * (e.shiftKey ? 0.25 : 1);
+      if (Math.abs(v - this._vals[d.i]) >= this._step / 2) d.moved = true;
+      this._set(d.i, v, false);
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      d.g.removeEventListener("pointermove", this._onMove); d.g.removeEventListener("pointerup", this._onUp); d.g.removeEventListener("pointercancel", this._onUp);
+      try { d.g.releasePointerCapture(e.pointerId); } catch (_) {}
+      d.g.classList.remove("drag"); this._drag = null;
+      if (d.moved) this._set(d.i, this._vals[d.i], true);
+    }
+    _onWheel(e) {
+      if (this._dis()) return;
+      e.preventDefault();
+      const i = +e.currentTarget.dataset.i;
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(i, this._vals[i] + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(i, this._vals[i], true), 220);
+    }
+    _onKey(e) {
+      if (this._dis()) return;
+      const i = +e.currentTarget.dataset.i, v0 = this._vals[i], big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = v0 + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = v0 - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = v0 + r / 10; break;
+        case "PageDown": v = v0 - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(i, v, false); this._set(i, v, true);
+    }
+  }
+  customElements.define("sk-wheel-tps-l2", SkWheelTpsL2);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

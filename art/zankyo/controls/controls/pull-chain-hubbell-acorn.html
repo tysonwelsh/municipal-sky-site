@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubbell pull-chain socket, acorn fob — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pull-chain-hubbell-acorn",
+  "element": "sk-pull-chain-hubbell-acorn",
+  "name": "Hubbell pull-chain socket with acorn fob",
+  "kind": "input",
+  "code": "C10.1",
+  "type": "Pull chain / cord",
+  "source": "The brass pull-chain Edison lampholder of Harvey Hubbell's 1896 patent (Hubbell, Bryant, Leviton), with a beaded brass chain and a turned acorn fob",
+  "era": "pre-1900",
+  "origin": "USA",
+  "materials": ["spun brass", "beaded chain", "paper insulator", "glass", "cloth cord"],
+  "tags": ["lamp", "socket", "ratchet switch", "beaded chain", "acorn fob", "domestic"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "fob", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 96, "h": 240 },
+  "notes": "Drag the chain down until it goes taut and the ratchet clicks; it springs back and swings. Space or Enter pulls it too."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-pull-chain-hubbell-acorn value="true" label="PORCH LAMP"></sk-pull-chain-hubbell-acorn>
+    <sk-pull-chain-hubbell-acorn value="false" label="CELLAR LAMP"></sk-pull-chain-hubbell-acorn>
+    <sk-pull-chain-hubbell-acorn value="true" fob="wood" label="WORKSHOP" scale="0.7"></sk-pull-chain-hubbell-acorn>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Harvey Hubbell's <b>pull-chain lampholder</b> of 1896 put the switch inside the socket: a spring-loaded
+  ratchet turned one notch by a beaded brass chain that leaves the shell through a little eyelet in its
+  <i>side</i>, twelve millimetres below the cap. Bryant and Leviton built the same thing for the next
+  seventy years, and it still hangs in cellars and on porches with a turned brass acorn on the end of the
+  chain so a hand finds it in the dark.</p>
+  <p><b>The tells kept here:</b> the spun brass shell with its cylinder highlight, rolled lip and a rim of paper
+  insulator showing at the mouth; the stamped <i>250V 660W</i> rating embossed on the shell; the eyelet in the
+  side, not the bottom; a chain of small brass spheres on a fine link, each catching its own highlight, the top
+  ones brighter than the bottom; the slight S-curve the chain takes at rest under the fob's weight; the acorn's
+  rounded nut, pointed tip and knurled band at the joint, in brass or in turned wood; the lamp's screw base
+  below with its first thread lines and the glass shoulder starting. Pull the chain about twenty millimetres
+  and it goes taut, the ratchet clicks, and the chain springs back in 150&nbsp;ms then swings itself out over a
+  second or so. The bulb warms up over 120&nbsp;ms and cools over 250&nbsp;ms, as an incandescent does.</p>
+  <p><b>Left out:</b> the porcelain interior and the cap's set-screw, the second chain some holders carry for a
+  three-way lamp, and the cloth cord's full braid — only a short length of it enters the cap.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pull-chain-hubbell-acorn> — 1896 Hubbell brass lampholder, beaded chain, acorn fob ====
+   attributes: value (boolean, "true"/"false") · fob [brass|wood] · label · scale · disabled
+   events: input {value}, change {value} — fired when a full pull turns the ratchet
+   self-contained: paste this block into any page and use
+     <sk-pull-chain-hubbell-acorn value="true"></sk-pull-chain-hubbell-acorn> */
+(function () {
+  if (customElements.get("sk-pull-chain-hubbell-acorn")) return;
+  const W = 96, H = 240;
+  const EX = 69.5, EY = 48;          // the chain's eyelet, in the side of the shell
+  const L0 = 138;                    // chain length at rest, px
+  const MAXP = 26;                   // full pull travel, px (~20 mm)
+  const BD = 4.9;                    // bead pitch
+  const NB = Math.floor((L0 + MAXP) / BD) + 1;
+  const truthy = v => v === true || v === "" || v === "true" || v === "on" || v === "1";
+
+  let beadMarkup = "";
+  for (let i = 0; i < NB; i++) {
+    // the beads near the eyelet take more of the light; the ones by the fob fall into shade
+    const lit = Math.max(0.16, 0.95 - 1.08 * (i / NB));
+    beadMarkup += `<g class="bead"><circle r="2.2" fill="url(#bead)"/>` +
+      `<circle cx="-0.66" cy="-0.76" r="0.8" fill="#fff6d8" opacity="${lit.toFixed(2)}"/>` +
+      `<path d="M -1.75 1.28 A 2.2 2.2 0 0 0 1.6 1.44" fill="none" stroke="#f0d79a" stroke-opacity="0.28" stroke-width="0.5"/></g>`;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 52px; top: 44px; width: 36px; height: 182px; border-radius: 14px;
+      cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }
+    /* incandescent: warms over 120 ms, cools over 250 ms */
+    .lamp { opacity: 0; transition: opacity 250ms ease-out; }
+    .wrap.on .lamp { opacity: 1; transition: opacity 120ms ease-in; }
+    text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; font-weight: 500; }
+    .stamp { font-size: 4.2px; letter-spacing: 0.08em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="shell" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5f4720"/><stop offset="0.08" stop-color="#9d7838"/>
+          <stop offset="0.24" stop-color="#e8cc8c"/><stop offset="0.36" stop-color="#c49e52"/>
+          <stop offset="0.60" stop-color="#8a6a30"/><stop offset="0.82" stop-color="#513d1b"/>
+          <stop offset="0.94" stop-color="#9b7838"/><stop offset="1" stop-color="#6b5226"/>
+        </linearGradient>
+        <linearGradient id="cap" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#78592a"/><stop offset="0.22" stop-color="#f2dba2"/>
+          <stop offset="0.42" stop-color="#cda963"/><stop offset="0.70" stop-color="#8e6f37"/>
+          <stop offset="0.9" stop-color="#5b4520"/><stop offset="1" stop-color="#8c6c33"/>
+        </linearGradient>
+        <linearGradient id="base" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#585c60"/><stop offset="0.2" stop-color="#c6cace"/>
+          <stop offset="0.44" stop-color="#93999d"/><stop offset="0.76" stop-color="#5b5f63"/>
+          <stop offset="1" stop-color="#868a8e"/>
+        </linearGradient>
+        <linearGradient id="glass" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#e2e9ec" stop-opacity="0.3"/>
+          <stop offset="0.35" stop-color="#a8b4b9" stop-opacity="0.11"/>
+          <stop offset="1" stop-color="#8e989c" stop-opacity="0.01"/>
+        </linearGradient>
+        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.75"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="glassmask"><rect x="26" y="106" width="44" height="24" fill="url(#fade)"/></mask>
+        <radialGradient id="bead" cx="32%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#f7ead0"/><stop offset="0.38" stop-color="#c9a75c"/>
+          <stop offset="0.82" stop-color="#7a5f2b"/><stop offset="1" stop-color="#4f3c17"/>
+        </radialGradient>
+        <radialGradient id="acornB" cx="30%" cy="24%" r="82%">
+          <stop offset="0" stop-color="#f4e0a8"/><stop offset="0.34" stop-color="#c2985180"/>
+          <stop offset="0.34" stop-color="#c29851"/><stop offset="0.76" stop-color="#8a6a31"/>
+          <stop offset="1" stop-color="#432f11"/>
+        </radialGradient>
+        <radialGradient id="acornW" cx="30%" cy="24%" r="82%">
+          <stop offset="0" stop-color="#c09565"/><stop offset="0.38" stop-color="#8a6236"/>
+          <stop offset="0.78" stop-color="#5a3d1f"/><stop offset="1" stop-color="#2b1d0f"/>
+        </radialGradient>
+        <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffd489" stop-opacity="0.6"/>
+          <stop offset="0.4" stop-color="#ffb347" stop-opacity="0.2"/>
+          <stop offset="1" stop-color="#ff9a1e" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="filament" cx="50%" cy="46%" r="52%">
+          <stop offset="0" stop-color="#fff8e2"/><stop offset="0.35" stop-color="#ffd98e"/>
+          <stop offset="1" stop-color="#ffb04a" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="soft" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="3.2"/></filter>
+        <filter id="tight" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>
+      </defs>
+
+      <!-- the lamp's halo, behind everything -->
+      <ellipse class="lamp" cx="48" cy="116" rx="52" ry="42" fill="url(#halo)"/>
+
+      <!-- cloth cord into the cap -->
+      <rect x="44.8" y="-2" width="6.4" height="20" fill="#2a2624"/>
+      <rect x="45.7" y="-2" width="1.4" height="20" fill="#4a4441" opacity="0.7"/>
+      <g stroke="#100e0d" stroke-width="0.7" opacity="0.5">
+        <path d="M 44.8 0 L 51.2 3.6"/><path d="M 44.8 7 L 51.2 10.6"/><path d="M 44.8 14 L 51.2 17.6"/>
+      </g>
+
+      <!-- cap -->
+      <path d="M 29 33 L 29 21 Q 29 16.5 33.5 16.5 L 62.5 16.5 Q 67 16.5 67 21 L 67 33 Z" fill="url(#cap)"/>
+      <path d="M 34 17.6 L 60 17.6" stroke="#fff0c6" stroke-opacity="0.55" stroke-width="0.9"/>
+      <rect x="29" y="30.4" width="38" height="2.6" fill="#40300f" opacity="0.55"/>
+
+      <!-- shell -->
+      <rect x="25" y="31.6" width="46" height="48" fill="url(#shell)"/>
+      <rect x="25" y="31.6" width="46" height="1.5" fill="#3a2b10" opacity="0.7"/>
+      <!-- lacquer gone patchy -->
+      <ellipse cx="36" cy="58" rx="6" ry="12" fill="#6e5427" opacity="0.13" filter="url(#tight)"/>
+      <ellipse cx="59" cy="45" rx="4" ry="6" fill="#f0d79a" opacity="0.09" filter="url(#tight)"/>
+      <!-- the stamped rating, embossed: dark below, light above -->
+      <text class="stamp" x="45" y="62.5" fill="#3d2c0d" opacity="0.42">250V 660W</text>
+      <text class="stamp" x="45" y="61.9" fill="#f6e5b4" opacity="0.22">250V 660W</text>
+
+      <!-- rolled lip -->
+      <path d="M 23.2 75 L 72.8 75 L 72.8 82 Q 72.8 88.4 66.4 88.4 L 29.6 88.4 Q 23.2 88.4 23.2 82 Z" fill="url(#shell)"/>
+      <path d="M 26 76.6 L 70 76.6" stroke="#fff0c6" stroke-opacity="0.4" stroke-width="1"/>
+      <path d="M 25.2 86.2 Q 48 90.6 70.8 86.2" fill="none" stroke="#2c2008" stroke-opacity="0.75" stroke-width="1.3"/>
+      <!-- paper insulator liner at the mouth -->
+      <path d="M 30 87.4 Q 48 91.4 66 87.4 L 66 89.6 Q 48 93.6 30 89.6 Z" fill="#ece2c8" opacity="0.8"/>
+
+      <!-- the lamp's screw base -->
+      <path d="M 32.5 89 L 63.5 89 L 61 110 L 35 110 Z" fill="url(#base)"/>
+      <g fill="none" stroke="#33373b" stroke-opacity="0.65" stroke-width="1.1">
+        <path d="M 32.9 94.4 Q 48 98 63.1 94.4"/><path d="M 33.5 100.2 Q 48 103.8 62.5 100.2"/><path d="M 34.1 106 Q 48 109.6 61.9 106"/>
+      </g>
+      <g fill="none" stroke="#eef2f5" stroke-opacity="0.32" stroke-width="0.7">
+        <path d="M 33.1 93 Q 48 96.6 62.9 93"/><path d="M 33.7 98.8 Q 48 102.4 62.3 98.8"/><path d="M 34.3 104.6 Q 48 108.2 61.7 104.6"/>
+      </g>
+
+      <!-- the glass shoulder of the bulb, fading out of frame -->
+      <g mask="url(#glassmask)">
+        <path d="M 35.5 108 L 60.5 108 Q 65.5 116 66.5 130 L 29.5 130 Q 30.5 116 35.5 108 Z" fill="url(#glass)"/>
+        <ellipse class="lamp" cx="48" cy="120" rx="14" ry="10" fill="url(#filament)"/>
+        <path class="lamp" d="M 35.5 108 L 60.5 108 Q 65.5 116 66.5 130 L 29.5 130 Q 30.5 116 35.5 108 Z" fill="#ffc36a" opacity="0.2"/>
+        <path d="M 37.6 110.5 Q 34.4 118 33.8 128" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.4"/>
+        <path d="M 59.6 111 Q 62.8 118 63.4 128" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="0.8"/>
+      </g>
+      <!-- filament glow and warm light bouncing back onto the lip -->
+      <ellipse class="lamp" cx="48" cy="118" rx="10" ry="6" fill="#fff3d0" filter="url(#soft)"/>
+      <path class="lamp" d="M 25.2 86.2 Q 48 90.6 70.8 86.2" fill="none" stroke="#ffcc7a" stroke-opacity="0.8" stroke-width="1.7" filter="url(#tight)"/>
+
+      <!-- the chain's eyelet, in the side of the shell -->
+      <ellipse cx="${EX}" cy="${EY}" rx="4.4" ry="3.5" fill="url(#cap)" stroke="#3e2e0d" stroke-width="0.5"/>
+      <ellipse cx="${EX}" cy="${EY}" rx="2" ry="1.5" fill="#201707"/>
+      <path d="M ${EX - 3} ${EY - 2.2} Q ${EX} ${EY - 3.4} ${EX + 3} ${EY - 2.2}" fill="none" stroke="#ffeec2" stroke-opacity="0.5" stroke-width="0.7"/>
+
+      <!-- the chain: spine, beads, fob -->
+      <g class="swing">
+        <path class="spine" fill="none" stroke="#6a5227" stroke-width="1.2" stroke-linecap="round"/>
+        <g class="beads">${beadMarkup}</g>
+        <g class="fob">
+          <ellipse cx="1.2" cy="12.6" rx="7.6" ry="11.4" fill="#000" opacity="0.3" filter="url(#tight)"/>
+          <path d="M 0 -1.5 A 2.2 2.2 0 0 0 0 2.9" fill="none" stroke="#8a6a31" stroke-width="1.1"/>
+          <path class="fobbody" d="M 0 1.4 C -4 1.4 -7.4 4.4 -7.4 8.4 L -7.4 10.6 L 7.4 10.6 L 7.4 8.4 C 7.4 4.4 4 1.4 0 1.4 Z" fill="url(#acornB)"/>
+          <rect class="fobband" x="-7.6" y="10" width="15.2" height="3" fill="url(#acornB)" stroke="#3c2c10" stroke-opacity="0.6" stroke-width="0.4"/>
+          <g class="knurl" stroke="#3c2c10" stroke-opacity="0.55" stroke-width="0.5">
+            <path d="M -5.6 10.3 L -5.6 12.7"/><path d="M -3.4 10.3 L -3.4 12.7"/><path d="M -1.2 10.3 L -1.2 12.7"/>
+            <path d="M 1 10.3 L 1 12.7"/><path d="M 3.2 10.3 L 3.2 12.7"/><path d="M 5.4 10.3 L 5.4 12.7"/>
+          </g>
+          <path class="fobtip" d="M -7.4 12.6 C -7.4 17.6 -4 21.8 0 23 C 4 21.8 7.4 17.6 7.4 12.6 Z" fill="url(#acornB)"/>
+          <path d="M -3.4 3.4 C -5.2 5 -5.9 7 -5.9 9.7" fill="none" stroke="#fff3cf" stroke-opacity="0.5" stroke-width="1"/>
+          <path d="M -4.4 13.8 C -5 16.4 -3.8 18.8 -2.4 20.2" fill="none" stroke="#fff3cf" stroke-opacity="0.3" stroke-width="0.85"/>
+          <path d="M 6.2 14.2 C 5.7 17 4 19.4 2.2 20.9" fill="none" stroke="#e2c082" stroke-opacity="0.3" stroke-width="0.9"/>
+        </g>
+      </g>
+    </svg>
+    <div class="grab" role="switch" tabindex="0"></div>
+  </div>`;
+
+  class SkPullChain extends HTMLElement {
+    static get observedAttributes() { return ["value", "fob", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._spine = r.querySelector(".spine");
+      this._beads = Array.prototype.slice.call(r.querySelectorAll(".bead"));
+      this._fob = r.querySelector(".fob");
+      this._fobParts = Array.prototype.slice.call(r.querySelectorAll(".fobbody, .fobband, .fobtip"));
+      this._swing = r.querySelector(".swing");
+      this._v = false; this._scale = 1;
+      this._pull = 0; this._phi = 0; this._raf = 0; this._phase = ""; this._t0 = 0; this._p0 = 0; this._amp = 0;
+      this._drag = null; this._armed = true;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "false");
+      this._readAttrs(); this._layout(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown);
+      g.removeEventListener("keydown", this._onKey);
+      g.removeEventListener("pointermove", this._onMove);
+      g.removeEventListener("pointerup", this._onUp);
+      g.removeEventListener("pointercancel", this._onUp);
+      if (this._raf) cancelAnimationFrame(this._raf);
+      this._raf = 0; this._phase = ""; this._drag = null;
+      this._pull = 0; this._phi = 0; this._layout();
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) {
+      const b = truthy(v);
+      this.setAttribute("value", b ? "true" : "false");
+      if (b === this._v) return;
+      this._v = b; this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opts) { this._grab.focus(opts); }
+    blur() { this._grab.blur(); }
+
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._v = this.hasAttribute("value") ? truthy(this.getAttribute("value")) : this._v;
+      const wood = (this.getAttribute("fob") || "brass").toLowerCase() === "wood";
+      this._fobParts.forEach(p => p.setAttribute("fill", wood ? "url(#acornW)" : "url(#acornB)"));
+      const dis = this.hasAttribute("disabled");
+      this._grab.setAttribute("tabindex", dis ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._grab.setAttribute("aria-label", this.getAttribute("label") || "lamp");
+    }
+    _render() {
+      this._wrap.classList.toggle("on", this._v);
+      this._grab.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+    _pt(s, Lv, st) {
+      const u = Math.max(0, Math.min(1, s / Lv));
+      return [EX + st * (-3.6 * Math.sin(Math.PI * u) - 2.6 * Math.sin(2 * Math.PI * u)), EY + s];
+    }
+    _layout() {
+      const Lv = L0 + this._pull;
+      const st = 1 - 0.78 * (this._pull / MAXP);
+      for (let i = 0; i < NB; i++) {
+        const s = Lv - (i + 1) * BD;
+        const b = this._beads[i];
+        if (s < 1.2) { b.style.display = "none"; continue; }
+        b.style.display = "";
+        const p = this._pt(s, Lv, st);
+        b.setAttribute("transform", "translate(" + p[0].toFixed(2) + " " + p[1].toFixed(2) + ")");
+      }
+      let d = "M " + EX + " " + EY;
+      for (let s = 5; s <= Lv; s += 5) { const p = this._pt(s, Lv, st); d += " L " + p[0].toFixed(2) + " " + p[1].toFixed(2); }
+      this._spine.setAttribute("d", d);
+      const pe = this._pt(Lv, Lv, st), pb = this._pt(Lv - 7, Lv, st);
+      const ang = Math.atan2(-(pe[0] - pb[0]), pe[1] - pb[1]) * 180 / Math.PI;
+      this._fob.setAttribute("transform", "translate(" + pe[0].toFixed(2) + " " + pe[1].toFixed(2) + ") rotate(" + ang.toFixed(2) + ")");
+      this._swing.setAttribute("transform", "rotate(" + this._phi.toFixed(3) + " " + EX + " " + EY + ")");
+    }
+    _fire(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: { value: this._v } })); }
+    _click() {                       // the ratchet turns one notch
+      if (this.hasAttribute("disabled")) return;
+      this._v = !this._v;
+      this.setAttribute("value", this._v ? "true" : "false");
+      this._render();
+      this._fire("input"); this._fire("change");
+    }
+    _start(phase, p0) {
+      this._phase = phase; this._t0 = performance.now(); this._p0 = p0;
+      this._amp = 2.2 + 8.5 * (p0 / MAXP);
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    _tick(now) {
+      this._raf = 0;
+      const t = (now - this._t0) / 1000;
+      if (this._phase === "down") {                       // a keyboard / programmatic pull
+        const k = Math.min(1, t / 0.11);
+        this._pull = MAXP * (1 - Math.pow(1 - k, 2));
+        this._layout();
+        if (k >= 1) { this._start("release", MAXP); return; }
+      } else if (this._phase === "release") {
+        const k = Math.min(1, t / 0.15);                  // springs back over 150 ms
+        this._pull = this._p0 * Math.pow(1 - k, 2);
+        this._phi = this._amp * Math.exp(-t / 0.42) * Math.sin(2 * Math.PI * 2.5 * t);   // ~3 swings, 1.2 s
+        this._layout();
+        if (t > 1.45) { this._pull = 0; this._phi = 0; this._phase = ""; this._layout(); return; }
+      } else { return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+      this._phase = ""; this._phi = 0; this._armed = true;
+      this._drag = { y: e.clientY, p: this._pull };
+      this._grab.classList.add("drag");
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = (e.clientY - this._drag.y) / this._scale;
+      this._pull = Math.max(0, Math.min(MAXP, this._drag.p + dy));
+      if (this._pull >= MAXP - 0.01 && this._armed) { this._armed = false; this._click(); }
+      if (this._pull < MAXP * 0.35) this._armed = true;        // let it up a little and the ratchet re-arms
+      this._layout();
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      this._drag = null;
+      this._start("release", this._pull);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter" || e.key === "ArrowDown") {
+        e.preventDefault();
+        if (e.repeat) return;
+        this._click();                                   // the ratchet turns; the pull is drawn after it
+        this._start("down", 0);
+      }
+    }
+  }
+  customElements.define("sk-pull-chain-hubbell-acorn", SkPullChain);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

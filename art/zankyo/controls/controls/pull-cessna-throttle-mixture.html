@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cessna throttle and mixture — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow+Condensed:wght@600&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pull-cessna-throttle-mixture",
+  "element": "sk-pull-cessna-throttle-mixture",
+  "name": "Cessna throttle plunger and red vernier mixture",
+  "kind": "input",
+  "code": "B6",
+  "type": "Push-pull plunger",
+  "source": "Cessna 172 engine controls on the lower panel — the black THROTTLE plunger and the red vernier MIXTURE with its centre lock button, 1956–",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["phenolic", "anodised aluminium", "chrome", "painted aluminium panel"],
+  "tags": ["aircraft", "cockpit", "engine", "plunger", "vernier", "push-pull", "knurl"],
+  "value": { "model": "range", "min": 0, "max": 100, "step": 1, "unit": "%" },
+  "attributes": ["value", "role", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 64, "h": 168 },
+  "notes": "Throttle pushed fully in, mixture at 75 with the chrome shaft showing, and a smaller throttle at 30. Drag along the shaft; the wheel twists the mixture's vernier; arrows step, Home is full in."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-pull-cessna-throttle-mixture value="100" role="throttle"></sk-pull-cessna-throttle-mixture>
+    <sk-pull-cessna-throttle-mixture value="75" role="mixture"></sk-pull-cessna-throttle-mixture>
+    <sk-pull-cessna-throttle-mixture value="30" role="throttle" scale="0.7"></sk-pull-cessna-throttle-mixture>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The engine controls on a <b>Cessna 172</b> are two plungers side by side on the lower panel, coloured by
+  regulation: the black phenolic <b>THROTTLE</b> knob, pushed in for full power, and the red anodised
+  <b>MIXTURE</b> knob, a vernier — twist it for fine leaning, press the small button in its centre to slide it
+  freely. Each rides a chrome shaft through a black friction collar; the shaft only shows when the knob is
+  pulled out, and the knob lands back against the collar when pushed home.</p>
+  <p><b>The tells kept here:</b> the pair — black plunger, red vernier — with the panel legends engraved above
+  the holes in a Futura-like face; THROTTLE curving around the top of the black face with PUSH beneath; the
+  mixture's knurled skirt with about forty knurls placed by angle so they crowd at the sides, and the black
+  centre button that depresses while you drag; the chrome shaft with a hard horizon, visible between knob and
+  collar only when pulled; the black knurled friction collar, a little grubby at its base; a shallow ring of
+  wear on the paint around each hole; one light above-left, so the knob's rim catches a highlight there and
+  the shadows fall down and right. Pulling the knob down the screen reduces, with a 40 ms friction ease; the
+  wheel over the mixture turns the vernier and moves it 1 % per notch; arrows step 1 %, Shift-arrows 10 %,
+  Home is full in, End full out.</p>
+  <p><b>Left out:</b> the carburettor-heat knob that sits beside them, the throttle's friction-lock
+  adjustment and the placard text below the panel.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pull-cessna-throttle-mixture> — Cessna push-pull engine control: black throttle plunger or red vernier mixture ====
+   attributes: value (0–100, 100 = pushed fully in) role ("throttle" | "mixture") label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-pull-cessna-throttle-mixture value="100" role="mixture"></sk-pull-cessna-throttle-mixture> */
+(function () {
+  if (customElements.get("sk-pull-cessna-throttle-mixture")) return;
+  const W = 64, H = 168, CX = 32, TRAVEL = 80, TY0 = 40;     // TY0: the knob's back-rim centre when pushed in
+  const TPL = document.createElement("template");
+  let knurl = "";
+  for (let i = 0; i < 22; i++) knurl += `<line class="kn" x1="0" y1="0" x2="0" y2="0" stroke="#5a1114" stroke-width="1"/><line class="kn" x1="0" y1="0" x2="0" y2="0" stroke="#f3a0a3" stroke-width="1"/>`;
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 6px; top: 16px; width: 52px; height: 146px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 6px; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .knob, .shaft, .shsh, .ksh { transition: transform 40ms linear; }
+    .throttle, .mixture { display: none; }
+    :host([role="mixture"]) .mixture { display: inline; }
+    :host(:not([role="mixture"])) .throttle { display: inline; }
+    .btn { transform-origin: ${CX}px 0px; transform-box: fill-box; transition: transform 60ms ease-out; }
+    .drag .btn { transform: translate(0, 1px) scale(0.92); }
+    text { text-anchor: middle; dominant-baseline: middle; }
+    .legend { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; font-weight: 600; font-size: 6.5px; letter-spacing: 0.14em; fill: #f3f3f1; }
+    .legend.sh { fill: #3a3d40; }
+    .face { font-family: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif; font-weight: 600; font-size: 5.5px; letter-spacing: 0.08em; fill: #ececea; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="panel" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stop-color="#93979b"/><stop offset="1" stop-color="#7f8387"/>
+        </linearGradient>
+        <radialGradient id="wear" cx="50%" cy="50%" r="50%">
+          <stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="0.72" stop-color="#2a2a2a" stop-opacity="0.22"/><stop offset="0.9" stop-color="#000" stop-opacity="0.06"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="collar" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#0a0a0a"/><stop offset="0.28" stop-color="#3b3b3b"/><stop offset="0.5" stop-color="#222"/><stop offset="0.8" stop-color="#0e0e0e"/><stop offset="1" stop-color="#2a2a2a"/>
+        </linearGradient>
+        <linearGradient id="shaft" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5f6366"/><stop offset="0.22" stop-color="#d2d5d7"/><stop offset="0.38" stop-color="#f5f6f7"/><stop offset="0.5" stop-color="#8a8e91"/><stop offset="0.72" stop-color="#4a4d50"/><stop offset="0.88" stop-color="#7a7e81"/><stop offset="1" stop-color="#b9bcbe"/>
+        </linearGradient>
+        <linearGradient id="blkSide" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#050505"/><stop offset="0.25" stop-color="#3a3a3a"/><stop offset="0.45" stop-color="#232323"/><stop offset="0.8" stop-color="#0c0c0c"/><stop offset="1" stop-color="#2a2a2a"/>
+        </linearGradient>
+        <radialGradient id="blkFace" cx="40%" cy="36%" r="70%">
+          <stop offset="0" stop-color="#2c2c2c"/><stop offset="0.7" stop-color="#1b1b1b"/><stop offset="0.93" stop-color="#101010"/><stop offset="1" stop-color="#2a2a2a"/>
+        </radialGradient>
+        <linearGradient id="redSide" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5a1114"/><stop offset="0.25" stop-color="#d63a40"/><stop offset="0.45" stop-color="#c1272d"/><stop offset="0.8" stop-color="#7f1a1e"/><stop offset="1" stop-color="#a8262b"/>
+        </linearGradient>
+        <radialGradient id="redFace" cx="40%" cy="36%" r="70%">
+          <stop offset="0" stop-color="#d4474c"/><stop offset="0.7" stop-color="#c1272d"/><stop offset="0.93" stop-color="#8a1c20"/><stop offset="1" stop-color="#d0464b"/>
+        </radialGradient>
+        <radialGradient id="btn" cx="36%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#4a4a4a"/><stop offset="0.6" stop-color="#151515"/><stop offset="1" stop-color="#000"/>
+        </radialGradient>
+        <radialGradient id="spec" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="blur3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+        <path id="skct-arc" d="M ${CX - 16} ${CX + 2} A 16 16 0 0 1 ${CX + 16} ${CX + 2}" fill="none"/>
+      </defs>
+
+      <!-- the grey painted panel with its engraved legend and the ring of wear around the hole -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
+      <text class="legend sh" x="${CX + 0.4}" y="11.5"></text>
+      <text class="legend" x="${CX}" y="11"></text>
+      <circle cx="${CX}" cy="38" r="26" fill="url(#wear)"/>
+      <ellipse cx="${CX + 1}" cy="41" rx="13" ry="7" fill="#000" opacity="0.45" filter="url(#blur1)"/>
+      <!-- the friction collar: black knurled plastic, seen a little from above -->
+      <rect x="${CX - 11.5}" y="33" width="23" height="9" fill="url(#collar)"/>
+      <g class="kcol" stroke="#000" stroke-width="0.7" opacity="0.7"></g>
+      <ellipse cx="${CX}" cy="42" rx="11.5" ry="4.6" fill="url(#collar)"/>
+      <ellipse cx="${CX}" cy="42" rx="11.5" ry="4.6" fill="#8a8a86" opacity="0.18"/>
+      <ellipse cx="${CX}" cy="33" rx="11.5" ry="4.6" fill="#2b2b2b" stroke="#000" stroke-width="0.6"/>
+      <ellipse cx="${CX}" cy="33" rx="7.5" ry="3" fill="#0a0a0a"/>
+      <path d="M ${CX - 10} 31.6 A 11.5 4.6 0 0 1 ${CX - 2} 28.6" fill="none" stroke="#7a7a7a" stroke-opacity="0.6" stroke-width="0.8"/>
+
+      <!-- the chrome shaft and its shadow on the panel: their length follows the knob -->
+      <rect class="shsh" x="${CX - 1}" y="36" width="14" height="10" fill="#000" opacity="0.35" filter="url(#blur1)"/>
+      <rect class="shaft" x="${CX - 6}" y="34" width="12" height="10" fill="url(#shaft)"/>
+
+      <!-- the knob's ambient shadow, then the knob -->
+      <g class="ksh"><ellipse class="kshape" cx="${CX + 7}" cy="${TY0 + 22}" rx="25" ry="30" fill="#000" opacity="0.4" filter="url(#blur3)"/></g>
+      <g class="knob">
+        <g class="throttle">
+          <ellipse cx="${CX}" cy="${TY0}" rx="24" ry="21.5" fill="url(#blkSide)"/>
+          <rect x="${CX - 24}" y="${TY0}" width="48" height="14" fill="url(#blkSide)"/>
+          <ellipse cx="${CX}" cy="${TY0 + 14}" rx="24" ry="21.5" fill="url(#blkFace)" stroke="#000" stroke-width="0.8"/>
+          <ellipse cx="${CX}" cy="${TY0 + 14}" rx="22" ry="19.5" fill="none" stroke="#3a3a3a" stroke-opacity="0.6" stroke-width="0.6"/>
+          <ellipse cx="${CX - 10}" cy="${TY0 - 1}" rx="9" ry="4" fill="url(#spec)"/>
+          <g transform="translate(0 ${TY0 - 20})">
+            <text class="face"><textPath href="#skct-arc" startOffset="50%">THROTTLE</textPath></text>
+          </g>
+          <text class="face" x="${CX}" y="${TY0 + 20}">PUSH</text>
+          <path d="M ${CX - 22} ${TY0 - 4} A 24 21.5 0 0 1 ${CX - 4} ${TY0 - 21}" fill="none" stroke="#6a6a6a" stroke-opacity="0.55" stroke-width="1"/>
+        </g>
+        <g class="mixture">
+          <ellipse cx="${CX}" cy="${TY0}" rx="20.5" ry="18.5" fill="url(#redSide)"/>
+          <rect x="${CX - 20.5}" y="${TY0}" width="41" height="12" fill="url(#redSide)"/>
+          <g class="knurls">${knurl}</g>
+          <ellipse cx="${CX}" cy="${TY0 + 12}" rx="20.5" ry="18.5" fill="url(#redFace)" stroke="#5a1114" stroke-width="0.8"/>
+          <ellipse cx="${CX}" cy="${TY0 + 12}" rx="17" ry="15.3" fill="none" stroke="#7f1a1e" stroke-opacity="0.7" stroke-width="0.6"/>
+          <ellipse cx="${CX - 8}" cy="${TY0 - 1}" rx="8" ry="3.5" fill="url(#spec)"/>
+          <path d="M ${CX - 19} ${TY0 - 3} A 20.5 18.5 0 0 1 ${CX - 4} ${TY0 - 18}" fill="none" stroke="#f08a8e" stroke-opacity="0.6" stroke-width="1"/>
+          <circle cx="${CX}" cy="${TY0 + 12}" r="6.2" fill="#d9dbdd" stroke="#6a6d70" stroke-width="0.5"/>
+          <g class="btn">
+            <circle cx="${CX}" cy="${TY0 + 12}" r="5" fill="url(#btn)"/>
+            <ellipse cx="${CX - 1.6}" cy="${TY0 + 10.4}" rx="2" ry="1.2" fill="#fff" opacity="0.28"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkPullCessna extends HTMLElement {
+    static get observedAttributes() { return ["value", "role", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 100; this._scale = 1; this._phase = 0; this._mix = false;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab"); this._knob = $(".knob"); this._ksh = $(".ksh");
+      this._shaft = $(".shaft"); this._shsh = $(".shsh"); this._kn = this.shadowRoot.querySelectorAll(".kn"); this._kcol = $(".kcol");
+      this._legs = this.shadowRoot.querySelectorAll(".legend");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._drawCollar();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _clamp(v) { return Math.min(100, Math.max(0, Math.round(v))); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._mix = (this.getAttribute("role") || "throttle").toLowerCase() === "mixture";
+      const legend = this.getAttribute("label") || (this._mix ? "MIXTURE" : "THROTTLE");
+      this._legs.forEach(t => { t.textContent = legend; });
+      const g = this._grab;
+      g.setAttribute("aria-label", legend.toLowerCase());
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "100");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _drawCollar() {                       // the collar's own knurl, projected round its barrel
+      const ns = "http://www.w3.org/2000/svg";
+      for (let i = -8; i <= 8; i++) {
+        const th = i * 11 * Math.PI / 180, x = CX + 11.2 * Math.sin(th);
+        const l = document.createElementNS(ns, "line");
+        l.setAttribute("x1", x.toFixed(2)); l.setAttribute("x2", x.toFixed(2)); l.setAttribute("y1", 34); l.setAttribute("y2", 42);
+        l.setAttribute("stroke-width", (0.35 + 0.5 * Math.cos(th)).toFixed(2));
+        this._kcol.appendChild(l);
+      }
+    }
+    _render() {
+      const dy = (100 - this._v) / 100 * TRAVEL;
+      this._knob.style.transform = `translate(0px, ${dy.toFixed(2)}px)`;
+      this._ksh.style.transform = `translate(${(dy * 0.08).toFixed(2)}px, ${(dy * 1.06).toFixed(2)}px)`;
+      const len = Math.max(0, dy + 8);
+      this._shaft.style.height = len + "px"; this._shsh.style.height = (len + 2) + "px";
+      if (this._mix) {
+        // ~40 knurls round the skirt: x = R·sin θ, width and brightness ∝ cos θ, crowding at the sides; the vernier twist shifts their phase
+        const R = 20.5, RY = 18.5, N = 40;
+        for (let i = 0; i < this._kn.length; i++) {
+          const k = (i >> 1) - 11, lit = (i & 1) === 1;
+          let th = (k * 360 / N + this._phase) * Math.PI / 180;
+          th = ((th + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+          const c = Math.cos(th), l = this._kn[i];
+          if (c <= 0.06) { l.setAttribute("opacity", "0"); continue; }
+          const x = CX + R * Math.sin(th) + (lit ? -0.5 * c : 0.5 * c), top = TY0 - RY * c;
+          l.setAttribute("x1", x.toFixed(2)); l.setAttribute("x2", x.toFixed(2));
+          l.setAttribute("y1", (top + 0.6).toFixed(2)); l.setAttribute("y2", (top + 12.2).toFixed(2));
+          l.setAttribute("stroke-width", (0.3 + 0.9 * c).toFixed(2));
+          const side = Math.sin(th);                                                  // lit from the left
+          l.setAttribute("opacity", (lit ? 0.25 + 0.6 * c * (side < 0 ? 1 : 0.45) : 0.35 + 0.45 * c).toFixed(2));
+        }
+      }
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", this._v + "%" + (this._v === 100 ? " (full in)" : ""));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._wrap.classList.add("drag");
+      this._drag = { y: e.clientY, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = (e.clientY - this._drag.y) / this._scale;          // down the screen = pulled out = less
+      const v = this._clamp(this._drag.v - dy / TRAVEL * 100);
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._wrap.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled") || this._drag) return;         // the vernier does nothing while the button is pressed
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1, n = e.shiftKey ? 10 : 1;
+      if (this._mix) this._phase = (this._phase + dir * 9 * n) % 360;   // a notch of twist per click
+      this._set(this._v + dir * n, false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = e.shiftKey ? 10 : 1;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + big; break;   // push in
+        case "ArrowDown": case "ArrowLeft": v = this._v - big; break;  // pull out
+        case "PageUp": v = this._v + 10; break;
+        case "PageDown": v = this._v - 10; break;
+        case "Home": v = 100; break;
+        case "End": v = 0; break;
+        default: return;
+      }
+      e.preventDefault();
+      if (this._mix) this._phase = (this._phase + (v > this._v ? 9 : -9)) % 360;
+      this._set(v, false); this._set(this._v, true);
+    }
+  }
+  customElements.define("sk-pull-cessna-throttle-mixture", SkPullCessna);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wittner Maelzel pyramid metronome, walnut — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "metronome-wittner-maelzel",
+  "element": "sk-metronome-wittner",
+  "name": "Wittner Maelzel pyramid metronome, walnut",
+  "kind": "both",
+  "code": "I6",
+  "type": "Pendulum metronome",
+  "source": "Wittner \"Maelzel\" 803 / 811 pyramid metronome with the front door off (also Seth Thomas), walnut case, inverted pendulum with a brass sliding weight",
+  "era": "1950s",
+  "origin": "Germany",
+  "materials": ["walnut veneer", "printed card", "steel rod", "brass", "lead"],
+  "tags": ["music", "tempo", "pendulum", "escapement", "bell", "sliding weight"],
+  "value": { "model": "range", "min": 40, "max": 208, "step": 1, "unit": "bpm" },
+  "attributes": ["value", "min", "max", "step", "label", "scale", "disabled", "running", "bell", "amplitude"],
+  "events": ["input", "change"],
+  "size": { "w": 140, "h": 240 },
+  "notes": "Drag the brass weight up or down the rod (or use the wheel and the arrow keys) to set the tempo; the pendulum swings at it. Stopped at 60, running at 120 with the bell every 4, running at 208."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-metronome-wittner value="60" label="TEMPO"></sk-metronome-wittner>
+    <sk-metronome-wittner value="120" label="TEMPO" bell="4" running scale="0.92"></sk-metronome-wittner>
+    <sk-metronome-wittner value="208" label="TEMPO" bell="0" running scale="0.92"></sk-metronome-wittner>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Wittner "Maelzel" 803/811</b> is the walnut pyramid on a million piano lids: a wound clockwork
+  escapement driving an <b>inverted pendulum</b> — the rod is pivoted just above the base, a lead bob hangs
+  below it out of sight, and a brass weight slides up the rod against a printed card. Higher weight, slower
+  beat. This is the instrument with its front door taken off, which is how you actually use it.</p>
+  <p><b>The tells kept here:</b> the upside-down pendulum with its pivot at the bottom and the bob hidden behind
+  the base; the brass weight with the little window showing the number it sits on; the escapement's dead stop
+  at each extreme (the rod holds for 30&nbsp;ms before it comes back — that is the tick); a constant swing while
+  only the period changes; the scale's numbers <i>unevenly</i> spaced, wide apart at 40 and crowding to
+  nothing at 208, because the tempo goes as the reciprocal of the weight's height; the Italian tempo names
+  set in italic up the right of the card; the bell lever with its 0&nbsp;2&nbsp;3&nbsp;4&nbsp;6 and the little
+  brass bell it flicks; the brass winding key out of the right-hand side; oiled walnut with the grain running
+  up the case and a satin sheen from above-left.</p>
+  <p><b>Left out / changed:</b> the front door itself, the clockwork behind the card, and the amplitude — the
+  entry asks for ±35°, which at 140&nbsp;px wide would throw the rod clean out of the case, so the swing is
+  drawn at ±10° and the rod is clipped by the window frame at the extremes exactly as the real frame hides it.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-metronome-wittner> — Wittner Maelzel pyramid metronome, door off ====
+   attributes: value(bpm 40..208) min max step label scale disabled running bell(0|2|3|4|6) amplitude(deg)
+   events: input {value} while the weight is dragged, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-metronome-wittner value="120" running></sk-metronome-wittner> */
+(function () {
+  if (customElements.get("sk-metronome-wittner")) return;
+  const W = 140, H = 240;
+  const PX = 70, PY = 208;               // the pendulum pivot, just above the base
+  const DMIN = 36, DMAX = 164;           // the weight's travel, measured up the rod from the pivot
+  const ROD = 173;                       // the rod above the pivot
+  const CC = 6339.05, CA = 5.5238;       // d = CC/bpm + CA  (the real, reciprocal-ish scale)
+  const b2d = b => CC / b + CA;
+  const d2b = d => CC / (d - CA);
+  const TEMPI = [40,42,44,46,48,50,52,54,56,58,60,63,66,69,72,76,80,84,88,92,96,100,104,108,112,116,120,126,132,138,144,152,160,168,176,184,192,200,208];
+  const NAMES = [["Largo", 63, 15], ["Adagio", 96, 17], ["Andante", 124, 20], ["Allegro", 149, 19], ["Presto", 171, 16]];
+  const OPEN_TOP = 30, OPEN_BOT = 214;
+  const halfOpen = y => 18 + 0.159314 * (y - 16);
+  const OP = `M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} Z`;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 20px; top: 28px; width: 100px; height: 188px; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none;
+      clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%); }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); border-radius: 2px; }
+    text { font-family: "Archivo Narrow", "Roboto Condensed", "Arial Narrow", sans-serif; fill: #262019; }
+    .num { font-size: 6.4px; font-weight: 600; text-anchor: end; }
+    .name { font-size: 5.6px; font-weight: 400; font-style: italic; text-anchor: middle; fill: #4a3c2a; }
+    .bellnum { font-size: 4.6px; font-weight: 600; text-anchor: middle; fill: #4a3c2a; }
+    .plate { font-size: 5.2px; font-weight: 600; letter-spacing: 0.26em; text-anchor: middle; fill: #f0d79a; }
+    .wnum { font-size: 6.8px; font-weight: 600; text-anchor: middle; fill: #1d1811; }
+    .pend { transform-box: view-box; transform-origin: ${PX}px ${PY}px; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="walnut" x1="0.1" y1="0" x2="0.95" y2="1">
+          <stop offset="0" stop-color="#9a5f33"/><stop offset="0.24" stop-color="#7a4726"/>
+          <stop offset="0.58" stop-color="#4e2c17"/><stop offset="1" stop-color="#2a1509"/>
+        </linearGradient>
+        <linearGradient id="plinth" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#7c4a29"/><stop offset="0.5" stop-color="#553119"/><stop offset="1" stop-color="#2a1509"/>
+        </linearGradient>
+        <linearGradient id="lip" x1="0" y1="0" x2="1" y2="0.6">
+          <stop offset="0" stop-color="#57351d"/><stop offset="0.5" stop-color="#2e1a10"/><stop offset="1" stop-color="#1d1009"/>
+        </linearGradient>
+        <linearGradient id="card" x1="0.15" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#f4ecd2"/><stop offset="0.55" stop-color="#efe6c8"/><stop offset="1" stop-color="#d9caa2"/>
+        </linearGradient>
+        <linearGradient id="rod" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3e3e44"/><stop offset="0.3" stop-color="#b9bcc0"/>
+          <stop offset="0.6" stop-color="#77797e"/><stop offset="1" stop-color="#2e2e33"/>
+        </linearGradient>
+        <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0.7">
+          <stop offset="0" stop-color="#f3dfa2"/><stop offset="0.22" stop-color="#c9a24c"/>
+          <stop offset="0.62" stop-color="#9c7a32"/><stop offset="1" stop-color="#6a4f1c"/>
+        </linearGradient>
+        <linearGradient id="brass2" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#e8d090"/><stop offset="0.5" stop-color="#a98430"/><stop offset="1" stop-color="#5d4415"/>
+        </linearGradient>
+        <radialGradient id="bob" cx="34%" cy="28%" r="80%">
+          <stop offset="0" stop-color="#3c3c40"/><stop offset="0.6" stop-color="#17171a"/><stop offset="1" stop-color="#08080a"/>
+        </radialGradient>
+        <filter id="grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9 0.016" numOctaves="4" seed="11" result="t"/>
+          <feColorMatrix in="t" type="saturate" values="0"/>
+          <feComponentTransfer><feFuncA type="linear" slope="0.55" intercept="0"/></feComponentTransfer>
+        </filter>
+        <filter id="sh4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="sh2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="sh1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.7"/></filter>
+        <filter id="glow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <clipPath id="caseclip"><path d="M 9 221 L 41.5 16 L 98.5 16 L 131 221 Z"/></clipPath>
+        <clipPath id="openclip"><path d="${OP}"/></clipPath>
+      </defs>
+
+      <!-- shadow on the panel -->
+      <path d="M 8 26 L 42 16 L 100 16 L 136 236 L 6 236 Z" fill="#000" opacity="0.5" filter="url(#sh4)" transform="translate(3 5)"/>
+
+      <!-- the pyramid case -->
+      <path d="M 9 221 L 41.5 16 L 98.5 16 L 131 221 Z" fill="url(#walnut)"/>
+      <g clip-path="url(#caseclip)">
+        <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)" opacity="0.3" style="mix-blend-mode:overlay"/>
+        <path d="M 26 221 C 40 150 46 86 52 16" fill="none" stroke="#2c1608" stroke-opacity="0.3" stroke-width="1.6"/>
+        <path d="M 46 221 C 54 150 58 84 62 16" fill="none" stroke="#2c1608" stroke-opacity="0.18" stroke-width="1"/>
+        <path d="M 112 221 C 104 150 98 86 92 16" fill="none" stroke="#2c1608" stroke-opacity="0.26" stroke-width="1.3"/>
+        <path d="M 9 221 L 41.5 16 L 50 16 L 20 221 Z" fill="#ffdcae" opacity="0.13"/>
+        <path d="M 9 221 L 41.5 16 L 44 16 L 13 221 Z" fill="#ffe6c4" opacity="0.16"/>
+        <path d="M 131 221 L 98.5 16 L 88 16 L 121 221 Z" fill="#000" opacity="0.38"/>
+        <path d="M 131 221 L 98.5 16 L 95 16 L 127 221 Z" fill="#000" opacity="0.3"/>
+        <path d="M 9 221 L 131 221 L 131 200 L 9 200 Z" fill="#000" opacity="0.22"/>
+      </g>
+      <path d="M 9 221 L 41.5 16 L 98.5 16 L 131 221 Z" fill="none" stroke="#1b0e05" stroke-width="0.9"/>
+      <path d="M 10.6 219 L 42.4 18" fill="none" stroke="#c08a52" stroke-opacity="0.34" stroke-width="0.9"/>
+
+      <!-- the winding key, out of the right-hand side -->
+      <g class="key">
+        <ellipse cx="121" cy="152" rx="3.4" ry="4.6" fill="#1a0d05" opacity="0.55" filter="url(#sh1)"/>
+        <path d="M 116 147 L 128 149 L 128 157 L 116 155 Z" fill="url(#brass2)" stroke="#4a340f" stroke-width="0.5"/>
+        <path d="M 127 148 q 6 -3 6 2 q 0 4 -5 3 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.4"/>
+        <path d="M 127 158 q 6 3 6 -2 q 0 -4 -5 -3 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.4"/>
+        <rect x="126" y="151.6" width="7" height="1.6" rx="0.7" fill="url(#brass2)" stroke="#4a340f" stroke-width="0.35"/>
+        <path d="M 117 148 L 127 149.6" stroke="#ffeec0" stroke-opacity="0.5" stroke-width="0.6"/>
+      </g>
+
+      <!-- the door aperture: the lip, then the card -->
+      <path d="${OP}" fill="url(#lip)" transform="translate(0 0) scale(1)"/>
+      <path class="ap" d="${OP}" fill="url(#card)" transform="translate(0 1.6) scale(0.965) translate(2.45 0)"/>
+      <g clip-path="url(#openclip)">
+        <path d="${OP}" fill="url(#card)"/>
+        <path d="${OP}" fill="#8a6a22" opacity="0.09"/>
+        <path d="${OP}" fill="none" stroke="#a8863a" stroke-opacity="0.34" stroke-width="9" filter="url(#sh2)"/>
+        <circle cx="42" cy="120" r="1.6" fill="#b09656" opacity="0.3"/>
+        <circle cx="96" cy="78" r="1.1" fill="#b09656" opacity="0.26"/>
+        <circle cx="34" cy="176" r="2.1" fill="#b09656" opacity="0.22"/>
+        <circle cx="104" cy="160" r="1.4" fill="#b09656" opacity="0.28"/>
+        <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)" opacity="0.1" style="mix-blend-mode:multiply"/>
+
+        <!-- printed scale, tempo names, bell scale -->
+        <g class="print"></g>
+
+        <!-- the bell and its hammer, low in the case where the movement is -->
+        <g class="bellgrp">
+          <ellipse cx="99" cy="203" rx="10" ry="2.4" fill="#2a1a08" opacity="0.45"/>
+          <path d="M 89 201.5 q 0 -12 10 -12 q 10 0 10 12 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.55"/>
+          <path d="M 91 200.5 q 0.5 -9.5 6.6 -10.4" fill="none" stroke="#ffeec4" stroke-opacity="0.75" stroke-width="1"/>
+          <path d="M 89 201.5 L 109 201.5" stroke="#6a4c14" stroke-width="0.7"/>
+          <rect x="97.6" y="186" width="2.8" height="4" rx="1.2" fill="url(#brass2)" stroke="#4a340f" stroke-width="0.3"/>
+          <g class="hammer">
+            <path d="M 82 208 L 86.4 200" stroke="#20201e" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="86.4" cy="199.6" r="2" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.3"/>
+          </g>
+          <circle class="bellflash" cx="99" cy="196" r="9" fill="#ffd489" opacity="0" filter="url(#glow)"/>
+        </g>
+
+        <!-- the pendulum: rod, bob below the pivot, sliding weight -->
+        <g class="pend">
+          <path d="M 68.9 ${PY - ROD} L 71.1 ${PY - ROD} L 71.7 ${PY + 30} L 68.3 ${PY + 30} Z" fill="url(#rod)"/>
+          <path d="M 69.3 ${PY - ROD + 2} L 69.8 ${PY - ROD + 2} L 70.1 ${PY + 24} L 69.5 ${PY + 24} Z" fill="#eef1f4" opacity="0.4"/>
+          <rect x="60" y="${PY + 4}" width="20" height="26" rx="4" fill="url(#bob)"/>
+          <circle cx="${PX}" cy="${PY}" r="6.2" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.6"/>
+          <path d="M ${PX - 5} ${PY - 3.6} A 6.2 6.2 0 0 1 ${PX + 3.6} ${PY - 5}" fill="none" stroke="#ffeab8" stroke-opacity="0.65" stroke-width="0.9"/>
+          <circle cx="${PX}" cy="${PY}" r="1.9" fill="#241a06"/>
+          <g class="weight">
+            <path d="M -11 8 L -8.6 -8 L 8.6 -8 L 11 8 Z" fill="#2a1c06" opacity="0.5" filter="url(#sh1)" transform="translate(1.6 1.8)"/>
+            <path d="M -11 8 L -8.6 -8 L 8.6 -8 L 11 8 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.6"/>
+            <path d="M -8.6 -8 L 8.6 -8 L 8.3 -6 L -8.3 -6 Z" fill="#ffeab8" opacity="0.6"/>
+            <path d="M -10.7 5.8 L 10.7 5.8 L 11 8 L -11 8 Z" fill="#f6dfa0" opacity="0.3"/>
+            <rect x="-7.4" y="-4.8" width="14.8" height="9.6" rx="1.2" fill="#1d1811"/>
+            <rect x="-6.7" y="-4.1" width="13.4" height="8.2" rx="0.7" fill="#ede3c4"/>
+            <rect x="-6.7" y="-4.1" width="13.4" height="2" rx="0.7" fill="#9b8f6a" opacity="0.45"/>
+            <text class="wnum" x="0" y="2.4">120</text>
+            <path d="M -11 8 L 11 8" stroke="#2a1c06" stroke-width="0.8"/>
+          </g>
+        </g>
+
+        <!-- the frame's shadow falling onto the card -->
+        <path d="${OP}" fill="none" stroke="#000" stroke-opacity="0.42" stroke-width="5" filter="url(#sh2)"/>
+      </g>
+      <path d="${OP}" fill="none" stroke="#1a0d05" stroke-width="1"/>
+      <path d="M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP) - 1.4} ${OPEN_TOP + 1.6} L ${PX - halfOpen(OPEN_TOP) + 1.4} ${OPEN_TOP + 1.6} Z" fill="#120903" opacity="0.8"/>
+      <path d="M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX - halfOpen(OPEN_BOT) + 1.8} ${OPEN_BOT} L ${PX - halfOpen(OPEN_TOP) + 1.8} ${OPEN_TOP} Z" fill="#150b04" opacity="0.6"/>
+      <path d="M ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX + halfOpen(OPEN_BOT) - 1.6} ${OPEN_BOT} L ${PX + halfOpen(OPEN_TOP) - 1.6} ${OPEN_TOP} Z" fill="#d9a468" opacity="0.3"/>
+      <path d="M ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX + halfOpen(OPEN_BOT) - 1.6} ${OPEN_BOT - 1.8} L ${PX - halfOpen(OPEN_BOT) + 1.6} ${OPEN_BOT - 1.8} Z" fill="#e0ab6e" opacity="0.34"/>
+
+      <!-- the cap and the base moulding -->
+      <path d="M 39 10 L 101 10 L 99.3 17 L 40.7 17 Z" fill="url(#plinth)" stroke="#1b0e05" stroke-width="0.7"/>
+      <path d="M 39.6 11 L 100.4 11" stroke="#c08a52" stroke-opacity="0.4" stroke-width="0.8"/>
+      <rect x="3" y="218" width="134" height="18" rx="2.5" fill="url(#plinth)" stroke="#170b03" stroke-width="0.8"/>
+      <rect x="4.4" y="219.4" width="131.2" height="1.2" rx="0.6" fill="#c08a52" opacity="0.32"/>
+      <rect x="3" y="233" width="134" height="3" rx="1.4" fill="#000" opacity="0.35"/>
+      <!-- brass nameplate on the plinth -->
+      <rect class="pl" x="34" y="222" width="72" height="9" rx="1.2" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.4"/>
+      <rect x="34.6" y="222.6" width="70.8" height="1" fill="#ffeab8" opacity="0.5"/>
+      <text class="plate" x="70" y="228.7">MAELZEL</text>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkMetronomeWittner extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "scale", "disabled", "running", "bell", "amplitude"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 60; this._min = 40; this._max = 208; this._step = 1; this._scale = 1; this._amp = 10;
+      this._bell = 0; this._ph = 0.32; this._beat = 0; this._flash = 0; this._raf = 0; this._last = 0;
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._pend = r.querySelector(".pend");
+      this._weight = r.querySelector(".weight");
+      this._wnum = r.querySelector(".wnum");
+      this._print = r.querySelector(".print");
+      this._flashEl = r.querySelector(".bellflash");
+      this._hammer = r.querySelector(".hammer");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawPrint(); this._paint();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+      this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown);
+      g.removeEventListener("wheel", this._onWheel);
+      g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "min" || n === "max") this._drawPrint();
+      if (n === "bell") this._drawPrint();
+      this._paint(); this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(v)); this._paint(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get running() { return this.hasAttribute("running"); }
+    set running(on) { if (on) this.setAttribute("running", ""); else this.removeAttribute("running"); }
+    focus(o) { this._grab.focus(o); }
+    demo() { return undefined; }            /* it beats on its own; the harness must not drive it */
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 40); this._max = num("max", 208); this._step = Math.max(1, num("step", 1));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._amp = Math.max(0, Math.min(35, num("amplitude", 10)));
+      this._bell = [0, 2, 3, 4, 6].indexOf(num("bell", 0)) >= 0 ? num("bell", 0) : 0;
+      this._v = this._clamp(num("value", this._v));
+      const g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", this.getAttribute("label") || "tempo");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, Math.round(v))); }
+
+    _drawPrint() {
+      const g = this._print; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; g.appendChild(e); return e; };
+      let lastY = 1e9;
+      for (let i = TEMPI.length - 1; i >= 0; i--) {
+        const b = TEMPI[i];
+        if (b < this._min || b > this._max) continue;
+        const y = PY - b2d(b);
+        const show = lastY - y >= 7.2;
+        mk("line", { x1: show ? 59.2 : 61, y1: y, x2: 65.4, y2: y, stroke: "#2a231a", "stroke-width": show ? 0.9 : 0.5, opacity: show ? 0.95 : 0.55 });
+        if (show) {
+          const t = String(b);
+          mk("text", { x: 58, y: y + 2.2, class: "num", textLength: t.length > 2 ? 10 : 7.2, lengthAdjust: "spacingAndGlyphs" }, t);
+          lastY = y;
+        }
+      }
+      for (const [nm, y, len] of NAMES) mk("text", { x: 85, y: y, class: "name", textLength: len, lengthAdjust: "spacingAndGlyphs", transform: `rotate(-90 85 ${y})` }, nm);
+      // the bell lever and its 0 2 3 4 6, on the wide lower part of the card
+      const bells = [0, 2, 3, 4, 6];
+      mk("rect", { x: 26, y: 189.4, width: 42, height: 6.4, rx: 3.2, fill: "#cdbe98" });
+      mk("rect", { x: 26.7, y: 190.1, width: 40.6, height: 5, rx: 2.5, fill: "#6d5f43", opacity: 0.5 });
+      bells.forEach((b, i) => {
+        const x = 29.4 + i * 9.3;
+        mk("line", { x1: x, y1: 197.4, x2: x, y2: 199.4, stroke: "#4a3c2a", "stroke-width": 0.5 });
+        mk("text", { x: x - 2.4, y: 204.6, class: "bellnum", textLength: 4.8, lengthAdjust: "spacingAndGlyphs" }, String(b));
+      });
+      const sel = Math.max(0, bells.indexOf(this._bell));
+      const lx = 29.4 + sel * 9.3;
+      mk("rect", { x: lx - 3.2, y: 187.4, width: 6.4, height: 10.4, rx: 1.4, fill: "url(#brass)", stroke: "#4a340f", "stroke-width": 0.4 });
+      mk("rect", { x: lx - 2.6, y: 188, width: 5.2, height: 1, fill: "#ffeab8", opacity: 0.6 });
+    }
+
+    _paint() {
+      const d = b2d(Math.min(208, Math.max(40, this._v)));
+      const dd = Math.max(DMIN, Math.min(DMAX, d));
+      this._weight.setAttribute("transform", `translate(${PX} ${PY - dd})`);
+      this._wnum.textContent = String(Math.round(this._v));
+      const g = this._grab;
+      g.setAttribute("aria-valuenow", String(this._v));
+      g.setAttribute("aria-valuetext", this._v + " bpm");
+    }
+    _angle() {
+      if (!this.hasAttribute("running")) return 0;
+      const A = this._amp;
+      const i = Math.floor(this._ph), u = this._ph - i, dir = (i % 2 === 0) ? 1 : -1;
+      const T = 60000 / Math.max(1, this._v);
+      const h = Math.min(0.3, 30 / T);
+      const f = u < h ? 0 : (1 - Math.cos(Math.PI * (u - h) / (1 - h))) / 2;
+      return dir * (-A + 2 * A * f);
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.1, (now - this._last) / 1000); this._last = now;
+      const run = this.hasAttribute("running");
+      if (run) {
+        const T = 60 / Math.max(1, this._v);
+        const before = Math.floor(this._ph);
+        this._ph += dt / T;
+        if (Math.floor(this._ph) !== before) {
+          this._beat++;
+          if (this._bell > 0 && this._beat % this._bell === 0) this._flash = 1;
+        }
+        if (this._ph >= 2) { this._ph -= 2; }
+      }
+      this._pend.style.transform = "rotate(" + this._angle().toFixed(2) + "deg)";
+      if (this._flash > 0) {
+        this._flash = Math.max(0, this._flash - dt / 0.22);
+        this._flashEl.setAttribute("opacity", (this._flash * 0.8).toFixed(3));
+        this._hammer.setAttribute("transform", `rotate(${(-16 * this._flash).toFixed(2)} 82 208)`);
+      }
+      if (run || this._flash > 0) { this._raf = requestAnimationFrame(this._tick); }
+      else { this._pend.style.transform = "rotate(0deg)"; this._raf = 0; }
+    }
+
+    _wpt() { const dd = Math.max(DMIN, Math.min(DMAX, b2d(this._v))); const a = this._angle() * Math.PI / 180; return [PX + dd * Math.sin(a), PY - dd * Math.cos(a)]; }
+    _fromPointer(e) {
+      const r = this._wrap.getBoundingClientRect();
+      const s = this._scale;
+      const x = (e.clientX - r.left) / s, y = (e.clientY - r.top) / s;
+      const a = this._angle() * Math.PI / 180;
+      const d = (x - PX) * Math.sin(a) + (PY - y) * Math.cos(a);   // project onto the rod
+      return this._clamp(d2b(Math.max(DMIN, Math.min(DMAX, d))));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._paint();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      const r = this._wrap.getBoundingClientRect(), s = this._scale;
+      const x = (e.clientX - r.left) / s, y = (e.clientY - r.top) / s;
+      const [wx, wy] = this._wpt();
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      if (Math.abs(x - wx) > 16 || Math.abs(y - wy) > 18) return;    // you have to take hold of the weight
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._drag = { moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) { if (!this._drag) return; this._drag.moved = true; this._set(this._fromPointer(e), false); }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._set(this._v + (e.deltaY < 0 ? 1 : -1) * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 10;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + 12; break;
+        case "PageDown": v = this._v - 12; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        case " ": case "Enter": this.running = !this.running; e.preventDefault(); this._kick(); return;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-metronome-wittner", SkMetronomeWittner);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

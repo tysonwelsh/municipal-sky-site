@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teletype 33 ASR tape reader — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "tape-reader-teletype-33-asr",
+  "element": "sk-tape-reader-teletype-33-asr",
+  "name": "Teletype 33 ASR tape reader",
+  "kind": "both",
+  "code": "E13.1",
+  "type": "Punched-tape reader",
+  "source": "Teletype Model 33 ASR (1963), the reader unit beside the keyboard, 8-level 1-inch paper tape",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["painted steel", "acrylic", "buff paper tape"],
+  "tags": ["telecom", "computer", "paper tape", "sprocket", "reference"],
+  "value": { "model": "text" },
+  "attributes": ["value", "mode", "punch", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 540, "h": 210 },
+  "notes": "Two units: one stopped with HELLO WORLD punched, one running with the lid up over the sprocket."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-tape-reader-teletype-33-asr scale="0.62" value="HELLO WORLD" mode="stop"></sk-tape-reader-teletype-33-asr>
+    <sk-tape-reader-teletype-33-asr scale="0.62" value="RUN100 PRINT X" mode="start" punch></sk-tape-reader-teletype-33-asr>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>The <b>Teletype Model 33 ASR</b>'s reader sat to the left of the keyboard: a light-grey steel housing with a
+hinged clear lid over a toothed sprocket wheel, reading 1-inch buff paper tape punched with up to eight holes per
+column plus a smaller, off-centre sprocket hole. A four-position lever — OFF, START, FREE, STOP — ran the tape,
+released it for hand-feeding, or held it still; the punch beside it chattered fresh tape into a chad box.</p>
+<p><b>The tells kept here:</b> the tape's eight data rows with the sprocket hole sitting between rows three and
+four, not in the middle; the sprocket's teeth advancing the tape one column per character as it runs; the acrylic
+lid, which opens on click to show the sprocket bare; the little heap of chad; the lever's own track and labels.
+Running scrolls the tape and turns the sprocket in step, emitting one event per character.</p>
+<p><b>Left out:</b> the companion punch mechanism's own paper path and the keyboard it sat beside; fanfold takeup
+is only suggested by the tape curling off both edges.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-tape-reader-teletype-33-asr> — Teletype 33 ASR paper-tape reader ====
+   attributes: value mode(off|start|free|stop) punch scale disabled
+   value: the tape's content as ASCII, rendered as 8-level punches
+   events: input {char,index} per character read, change when a run completes
+   self-contained: paste this block into any page and use
+   <sk-tape-reader-teletype-33-asr value="HI"></sk-tape-reader-teletype-33-asr> */
+(function () {
+  if (customElements.get("sk-tape-reader-teletype-33-asr")) return;
+  const W = 540, H = 210;
+  const NS = "http://www.w3.org/2000/svg";
+  function sn(tag, a) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); return e; }
+
+  const CHAR_W = 11;         // px per tape column
+  const HOUSE = { x: 96, y: 14, w: 320, h: 168 };
+  const TAPE_TOP = 84, TAPE_H = 42;          // 8 data rows + 1 sprocket row within this band
+  const ROW_PITCH = TAPE_H / 9;
+  const HOLE_R = 1.9;
+  const SP_CX = 260, SP_CY = TAPE_TOP + TAPE_H / 2, SP_R = 16;
+  const LEAD = 8; // blank leader/trailer columns
+  const LEVER_X = 372, LEVER_Y0 = 34, LEVER_Y1 = 150;
+  const MODES = ["off", "start", "free", "stop"];
+  const SPEED = CHAR_W * 10; // px/sec, 10 cols/s
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display:inline-block; width:${W}px; height:${H}px; position:relative; font-size:10px; -webkit-tap-highlight-color:transparent; }
+    :host([hidden]) { display:none; }
+    .wrap { position:absolute; inset:0; transform-origin:0 0; }
+    svg { position:absolute; overflow:visible; }
+    text { font-family:"Roboto Condensed","Arial Narrow",sans-serif; }
+    .tapewin { position:absolute; left:0; top:0; width:${W}px; height:${H}px; overflow:hidden; }
+    .lid { position:absolute; left:${HOUSE.x + 34}px; top:${TAPE_TOP - 14}px; width:${HOUSE.w - 68}px; height:${TAPE_H + 26}px;
+      border-radius:6px; background:linear-gradient(160deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.16) 100%);
+      border:1px solid rgba(255,255,255,0.5); box-shadow:0 2px 6px rgba(0,0,0,0.25), inset 0 0 10px rgba(255,255,255,0.15);
+      transform-origin: 50% 0%; transition: transform 260ms cubic-bezier(.2,.8,.3,1.1), opacity 260ms; cursor:pointer; z-index:5; }
+    .lid.open { transform: rotateX(58deg) translateY(-6px); opacity:0.55; }
+    .lever-knob { position:absolute; width:14px; height:9px; border-radius:2px; left:${LEVER_X - 7}px;
+      background:linear-gradient(160deg,#3a3a3a,#111 70%); box-shadow:0 2px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+      cursor:pointer; transition: top 140ms cubic-bezier(.3,.7,.3,1.3); z-index:6; }
+    .lever-track { position:absolute; left:${LEVER_X - 1.5}px; top:${LEVER_Y0}px; width:3px; height:${LEVER_Y1 - LEVER_Y0}px;
+      background:linear-gradient(#0a0a0a,#2a2a2a); border-radius:2px; box-shadow: inset 0 0 2px #000; }
+    .lever-lbl { position:absolute; font:600 6px/1 "Roboto Condensed",sans-serif; letter-spacing:0.06em; color:#e8e6de; left:${LEVER_X + 12}px; }
+    .lever-lbl.on { color:#8fe8ff; text-shadow:0 0 4px rgba(143,232,255,0.7); }
+    .host-focus { outline:none; }
+    :host(:focus-visible) .housing { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6), 0 8px 16px rgba(0,0,0,0.4); }
+  </style>
+  <div class="wrap" tabindex="0" role="group">
+    <div class="tapewin">
+      <svg viewBox="0 0 ${W} ${H}">
+        <defs>
+          <linearGradient id="hbody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#dfe2de"/><stop offset="0.5" stop-color="#c3c6c2"/><stop offset="1" stop-color="#989b97"/>
+          </linearGradient>
+          <linearGradient id="tapeg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#efe3ba"/><stop offset="0.5" stop-color="#e6d9b0"/><stop offset="1" stop-color="#d9cb9e"/>
+          </linearGradient>
+          <filter id="tsoft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+        </defs>
+        <!-- ambient shadow -->
+        <rect x="${HOUSE.x + 4}" y="${HOUSE.y + 8}" width="${HOUSE.w}" height="${HOUSE.h}" rx="16" fill="#000" opacity="0.35" filter="url(#tsoft)"/>
+        <!-- tape, drawn beneath the housing so it appears to run through it -->
+        <g class="tapegroup"></g>
+        <!-- housing -->
+        <g class="housing">
+          <path d="M ${HOUSE.x} ${HOUSE.y + 20} q 0 -20 20 -20 h ${HOUSE.w - 40} q 20 0 20 20 v ${HOUSE.h - 20} q 0 20 -20 20 h -${HOUSE.w - 40} q -20 0 -20 -20 Z"
+                fill="url(#hbody)" stroke="#6f746f" stroke-width="1"/>
+          <path d="M ${HOUSE.x} ${HOUSE.y + 20} q 0 -20 20 -20 h ${HOUSE.w - 40} q 20 0 20 20" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.4"/>
+          <!-- window cut where the tape shows -->
+          <rect x="${HOUSE.x + 26}" y="${TAPE_TOP - 6}" width="${HOUSE.w - 52}" height="${TAPE_H + 12}" rx="4" fill="#3a3d39" opacity="0.9"/>
+          <rect x="${HOUSE.x + 26}" y="${TAPE_TOP - 6}" width="${HOUSE.w - 52}" height="${TAPE_H + 12}" rx="4" fill="none" stroke="#20221f" stroke-width="1"/>
+        </g>
+        <!-- tape re-drawn through the window -->
+        <clipPath id="winclip"><rect x="${HOUSE.x + 26}" y="${TAPE_TOP - 6}" width="${HOUSE.w - 52}" height="${TAPE_H + 12}" rx="4"/></clipPath>
+        <g clip-path="url(#winclip)"><g class="tapegroup2"></g></g>
+        <!-- sprocket wheel -->
+        <g class="sprocket" transform="translate(${SP_CX} ${SP_CY})">
+          <circle r="${SP_R}" fill="#171716" stroke="#000" stroke-width="1"/>
+          <circle r="${SP_R - 4}" fill="#232322"/>
+          <g class="teeth"></g>
+          <circle r="3" fill="#050505"/>
+        </g>
+        <!-- guide chrome bail over the tape -->
+        <rect x="${HOUSE.x + 26}" y="${TAPE_TOP - 9}" width="${HOUSE.w - 52}" height="3" rx="1.5" fill="#dfe3e5" opacity="0.85"/>
+        <rect x="${HOUSE.x + 26}" y="${TAPE_TOP + TAPE_H + 6}" width="${HOUSE.w - 52}" height="3" rx="1.5" fill="#c7cbcd" opacity="0.7"/>
+        <!-- chad box -->
+        <g transform="translate(${HOUSE.x + HOUSE.w - 40} ${HOUSE.y + HOUSE.h - 30})">
+          <rect x="0" y="0" width="46" height="26" rx="2" fill="#9a9d99" stroke="#6f726e"/>
+          <g class="chad"></g>
+        </g>
+        <text class="platelbl" x="${HOUSE.x + 14}" y="${HOUSE.y + HOUSE.h - 8}" font-size="5.5" letter-spacing="0.08em" fill="#5a5d59">READER</text>
+      </svg>
+      <div class="lid"></div>
+      <div class="lever-track"></div>
+      <div class="lever-knob"></div>
+      <div class="lever-lbl" style="top:${LEVER_Y0 - 3}px">OFF</div>
+      <div class="lever-lbl" style="top:${LEVER_Y0 + (LEVER_Y1-LEVER_Y0)/3 - 3}px">START</div>
+      <div class="lever-lbl" style="top:${LEVER_Y0 + 2*(LEVER_Y1-LEVER_Y0)/3 - 3}px">FREE</div>
+      <div class="lever-lbl" style="top:${LEVER_Y1 - 3}px">STOP</div>
+    </div>
+  </div>`;
+
+  function toBits(code) {
+    const b = [];
+    for (let i = 7; i >= 0; i--) b.push((code >> i) & 1);
+    return b; // 8 bits, MSB first (top row first)
+  }
+
+  class SkTapeReader extends HTMLElement {
+    static get observedAttributes() { return ["value", "mode", "punch", "scale", "disabled", "label"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = ""; this._mode = "stop"; this._scale = 1; this._scroll = 0; this._built = false;
+      this._raf = 0; this._last = 0; this._lastCol = -1;
+      this._onPointerDown = this._onPointerDown.bind(this);
+      this._onPointerMove = this._onPointerMove.bind(this);
+      this._onPointerUp = this._onPointerUp.bind(this);
+      this._tick = this._tick.bind(this);
+      this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this._built) { this._build(); this._built = true; }
+      this._readAttrs();
+      this._layoutTape();
+      this._render();
+      this._host.addEventListener("keydown", this._onKey);
+      this._lid.addEventListener("click", () => { this._lidOpen = !this._lidOpen; this._lid.classList.toggle("open", this._lidOpen); });
+      this._knob.addEventListener("pointerdown", (e) => { e.stopPropagation(); this._draggingLever = true; this._knob.setPointerCapture(e.pointerId); });
+      this._knob.addEventListener("pointermove", (e) => { if (!this._draggingLever) return; this._leverDragTo(e); });
+      this._knob.addEventListener("pointerup", () => { this._draggingLever = false; });
+      this.shadowRoot.querySelectorAll(".lever-lbl").forEach((lbl, i) => { lbl.style.cursor = "pointer"; lbl.addEventListener("click", () => this._setMode(MODES[i], true)); });
+      this._tapeArea.addEventListener("pointerdown", this._onPointerDown);
+      this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._host.removeEventListener("keydown", this._onKey);
+      this._tapeArea.removeEventListener("pointerdown", this._onPointerDown);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this._built) return; this._readAttrs(); if (n === "value") this._layoutTape(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { this._v = v == null ? "" : String(v); this.setAttribute("value", this._v); this._layoutTape(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._wrap) this._wrap.focus(); }
+
+    _build() {
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._host = this._wrap;
+      this._lid = root.querySelector(".lid");
+      this._knob = root.querySelector(".lever-knob");
+      this._tapeArea = root.querySelector(".tapewin");
+      this._tapeG = root.querySelector(".tapegroup");
+      this._tapeG2 = root.querySelector(".tapegroup2");
+      this._teeth = root.querySelector(".teeth");
+      this._chad = root.querySelector(".chad");
+      this._lidOpen = false;
+      for (let i = 0; i < 12; i++) {
+        const a = i * 30;
+        const t = sn("rect", { x: -2, y: -(SP_R - 1), width: 4, height: 4, rx: 1, fill: "#0c0c0b", transform: `rotate(${a})` });
+        this._teeth.appendChild(t);
+      }
+      for (let i = 0; i < 14; i++) {
+        const c = sn("circle", { cx: 4 + (i % 6) * 6 + Math.random() * 2, cy: 6 + Math.floor(i / 6) * 7 + Math.random() * 2, r: 1.1, fill: "#c9bb90" });
+        this._chad.appendChild(c);
+      }
+    }
+    _readAttrs() {
+      this._scale = Math.max(0.2, parseFloat(this.getAttribute("scale")) || 1);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._disabled = this.hasAttribute("disabled");
+      this._punch = this.hasAttribute("punch");
+      this.setAttribute("role", "group");
+      this.setAttribute("aria-label", this.getAttribute("label") || "paper tape reader");
+      this._wrap.setAttribute("tabindex", this._disabled ? "-1" : "0");
+      if (this.hasAttribute("value") && this.getAttribute("value") !== this._v) this._v = this.getAttribute("value");
+      const m = this.getAttribute("mode");
+      if (m && MODES.indexOf(m) >= 0) this._mode = m;
+    }
+    _layoutTape() {
+      const s = this._v || "";
+      while (this._tapeG.firstChild) this._tapeG.removeChild(this._tapeG.firstChild);
+      while (this._tapeG2.firstChild) this._tapeG2.removeChild(this._tapeG2.firstChild);
+      const cols = LEAD + s.length + LEAD;
+      const wpx = cols * CHAR_W;
+      const build = (parent) => {
+        const strip = sn("rect", { x: 0, y: TAPE_TOP, width: wpx, height: TAPE_H, rx: 3, fill: "url(#tapeg)", stroke: "#b9ab7e", "stroke-width": 0.6 });
+        parent.appendChild(strip);
+        for (let c = 0; c < cols; c++) {
+          const cx = c * CHAR_W + CHAR_W / 2;
+          const ci = c - LEAD;
+          const ch = ci >= 0 && ci < s.length ? s[ci] : null;
+          const bits = ch ? toBits(s.charCodeAt(ci) & 0xff) : [0, 0, 0, 0, 0, 0, 0, 0];
+          // 8 data rows with the sprocket hole inserted after row index 2 (off-centre: 3 above, 5 below)
+          let slot = 0;
+          for (let r = 0; r < 9; r++) {
+            const y = TAPE_TOP + ROW_PITCH * (slot + 0.5);
+            if (r === 3) {
+              parent.appendChild(sn("circle", { cx, cy: TAPE_TOP + ROW_PITCH * (slot + 0.5), r: HOLE_R * 0.55, fill: "#000", opacity: 0.55 }));
+              slot++; continue;
+            }
+            const bitIndex = r < 3 ? r : r - 1;
+            const on = bits[bitIndex];
+            if (on) {
+              parent.appendChild(sn("circle", { cx, cy: y, r: HOLE_R, fill: "#1a1a17" }));
+              parent.appendChild(sn("circle", { cx, cy: y - HOLE_R * 0.4, r: HOLE_R * 0.5, fill: "#a89a70", opacity: 0.5 }));
+            }
+            slot++;
+          }
+        }
+      };
+      build(this._tapeG);
+      build(this._tapeG2);
+      this._tapeLen = wpx;
+      this._colsTotal = cols;
+      const startX = HOUSE.x + 40;
+      this._baseX = startX;
+      this._tapeG.setAttribute("transform", `translate(${this._baseX - this._scroll} 0)`);
+      this._tapeG2.setAttribute("transform", `translate(${this._baseX - this._scroll} 0)`);
+    }
+    _render() {
+      const angle = (this._scroll / CHAR_W) * 33;
+      this._teeth.setAttribute("transform", `rotate(${angle.toFixed(1)})`);
+      this.shadowRoot.querySelectorAll(".lever-lbl").forEach((lbl, i) => lbl.classList.toggle("on", MODES[i] === this._mode));
+      const idx = MODES.indexOf(this._mode);
+      const top = LEVER_Y0 + (idx / (MODES.length - 1)) * (LEVER_Y1 - LEVER_Y0) - 4.5;
+      this._knob.style.top = top + "px";
+      this._wrap.classList.toggle("chatter", this._punch && this._mode === "start");
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      if (this._mode === "start" && !this._disabled) {
+        const maxScroll = Math.max(0, this._tapeLen - (HOUSE.w - 52));
+        this._scroll = Math.min(maxScroll, this._scroll + SPEED * dt);
+        this._applyScroll();
+        const col = Math.floor(this._scroll / CHAR_W) - LEAD;
+        if (col !== this._lastCol && col >= 0 && col < this._v.length) {
+          this._lastCol = col;
+          this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { char: this._v[col], index: col } }));
+        }
+        if (this._scroll >= maxScroll) {
+          this._mode = "stop"; this.setAttribute("mode", "stop"); this._render();
+          this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+        }
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _applyScroll() {
+      this._tapeG.setAttribute("transform", `translate(${this._baseX - this._scroll} 0)`);
+      this._tapeG2.setAttribute("transform", `translate(${this._baseX - this._scroll} 0)`);
+      this._render();
+    }
+    _setMode(m, user) {
+      if (this._disabled) return;
+      this._mode = m; this.setAttribute("mode", m); this._lastCol = Math.floor(this._scroll / CHAR_W) - LEAD - 1;
+      this._render();
+      if (user) this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v, mode: m } }));
+    }
+    _leverDragTo(e) {
+      const rect = this.shadowRoot.querySelector(".lever-track").getBoundingClientRect();
+      const s = this._scale || 1;
+      let t = (e.clientY - rect.top) / rect.height;
+      t = Math.max(0, Math.min(1, t));
+      const i = Math.round(t * (MODES.length - 1));
+      if (MODES[i] !== this._mode) this._setMode(MODES[i], true);
+    }
+    _onPointerDown(e) {
+      if (this._disabled || this._mode !== "free") return;
+      this._dragStart = { x: e.clientX, scroll: this._scroll };
+      this._tapeArea.setPointerCapture(e.pointerId);
+      this._tapeArea.addEventListener("pointermove", this._onPointerMove);
+      this._tapeArea.addEventListener("pointerup", this._onPointerUp);
+    }
+    _onPointerMove(e) {
+      if (!this._dragStart) return;
+      const dx = (this._dragStart.x - e.clientX) / this._scale;
+      const maxScroll = Math.max(0, this._tapeLen - (HOUSE.w - 52));
+      const prevCol = Math.floor(this._scroll / CHAR_W);
+      this._scroll = Math.max(0, Math.min(maxScroll, this._dragStart.scroll + dx));
+      this._applyScroll();
+      const col = Math.floor(this._scroll / CHAR_W);
+      if (col !== prevCol) {
+        const ci = col - LEAD;
+        if (ci >= 0 && ci < this._v.length) this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { char: this._v[ci], index: ci } }));
+      }
+    }
+    _onPointerUp(e) {
+      this._dragStart = null;
+      this._tapeArea.removeEventListener("pointermove", this._onPointerMove);
+      this._tapeArea.removeEventListener("pointerup", this._onPointerUp);
+      try { this._tapeArea.releasePointerCapture(e.pointerId); } catch (_) {}
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onKey(e) {
+      if (this._disabled) return;
+      switch (e.key) {
+        case "s": case "S": e.preventDefault(); this._setMode("start", true); return;
+        case "t": case "T": e.preventDefault(); this._setMode("stop", true); return;
+        case "f": case "F": e.preventDefault(); this._setMode("free", true); return;
+        case "o": case "O": e.preventDefault(); this._setMode("off", true); return;
+        case "ArrowRight": e.preventDefault(); this._nudge(1); return;
+        case "ArrowLeft": e.preventDefault(); this._nudge(-1); return;
+        case "Enter": case " ": e.preventDefault(); this._lidOpen = !this._lidOpen; this._lid.classList.toggle("open", this._lidOpen); return;
+      }
+    }
+    _nudge(dir) {
+      const maxScroll = Math.max(0, this._tapeLen - (HOUSE.w - 52));
+      this._scroll = Math.max(0, Math.min(maxScroll, this._scroll + dir * CHAR_W));
+      this._applyScroll();
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+  }
+  customElements.define("sk-tape-reader-teletype-33-asr", SkTapeReader);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

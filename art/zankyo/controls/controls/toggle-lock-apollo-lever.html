@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apollo CM lever-lock toggle — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "toggle-lock-apollo-lever",
+  "element": "sk-toggle-lock-apollo-lever",
+  "name": "Apollo CM lever-lock toggle",
+  "kind": "input",
+  "code": "C3.1",
+  "type": "Locking toggle (pull-to-move)",
+  "source": "The Micro Switch / Grace lever-lock (MS24659-type) toggle on the Apollo Command Module Main Display Console, 1966-72",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["chrome", "black bushing", "grey panel"],
+  "tags": ["spacecraft", "toggle", "lock", "console"],
+  "value": { "model": "steps", "options": ["OFF", "ON"] },
+  "attributes": ["value", "positions", "locked", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 80, "h": 120 },
+  "notes": "Three instances: locked OFF, locked ON, and mid-pull (lifted, not yet thrown)."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-toggle-lock-apollo-lever value="OFF" label="CABIN FAN"></sk-toggle-lock-apollo-lever>
+    <sk-toggle-lock-apollo-lever value="ON" label="O2 SUPPLY"></sk-toggle-lock-apollo-lever>
+    <sk-toggle-lock-apollo-lever value="OFF" label="XLUNAR" scale="0.85"></sk-toggle-lock-apollo-lever>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>lever-lock toggle</b> on the Apollo Command Module's Main Display Console is a plain MS-type
+  chrome bat toggle with one extra part threaded onto its base: a short knurled chrome sleeve that must
+  be lifted before the bat can throw, so a stray glove or a floating checklist cannot flip a critical
+  switch in flight. It sits on the same grey panel, same black-filled engraved legend, as the console's
+  ungaurded toggles beside it.</p>
+  <p><b>The tells kept here:</b> the knurled collar riding the bat's base, visibly a separate turned part;
+  a pointerdown that lifts the bat 2 px and slides the collar up before the throw is allowed — try it
+  without holding and the bat only shivers and refuses; the release drop with a one-frame bounce as the
+  collar reseats over the bushing's tooth; the small engraved rule under the switch name standing in for
+  the lock legend; the gap of shadow between collar and bushing that closes when locked. Drag (a short
+  pull down/away then a vertical throw), click-and-hold, Space/Enter, and arrows all work; a plain click
+  shakes the bat and does nothing.</p>
+  <p><b>Left out:</b> the hex nut's exact thread pitch, the console's engraved reference designator
+  numbers that would sit beside the legend on the real panel.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-toggle-lock-apollo-lever> — Apollo CM lever-lock (pull-to-move) toggle ====
+   attributes: value(OFF|ON) positions(3) locked label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use
+   <sk-toggle-lock-apollo-lever value="OFF"></sk-toggle-lock-apollo-lever> */
+(function () {
+  if (customElements.get("sk-toggle-lock-apollo-lever")) return;
+  const W = 80, H = 120, CX = 40, PIVOT_Y = 66;
+  const OPTS = ["OFF", "ON"];
+  const ANG = { OFF: -22, ON: 22 };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 12px; top: 8px; width: 56px; height: 88px; cursor: pointer;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 8px; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    :host([disabled]) .grab { cursor: default; }
+    .assembly { transform-origin: ${CX}px ${PIVOT_Y}px; transform-box: view-box; }
+    .assembly.anim { transition: transform 90ms cubic-bezier(.2,.9,.3,1.15); }
+    .liftgrp { transform-box: view-box; transform-origin: ${CX}px ${PIVOT_Y}px; }
+    .liftgrp.lifting { transition: transform 120ms cubic-bezier(.2,.8,.3,1); }
+    .liftgrp.seating { transition: transform 60ms cubic-bezier(.4,0,.6,1.4); }
+    .shake { animation: sk-shake 180ms ease; }
+    @keyframes sk-shake { 0%,100% { transform: rotate(0deg); } 30% { transform: rotate(-1deg); } 70% { transform: rotate(1deg); } }
+    text { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; fill: #111214; }
+    .legend { font-size: 6px; font-weight: 600; letter-spacing: 0.08em; text-anchor: middle; }
+    .legend2 { font-size: 5px; font-weight: 600; letter-spacing: 0.1em; text-anchor: middle; fill: #34363a; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="apl-panel" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stop-color="#787c81"/><stop offset="1" stop-color="#5d6166"/>
+        </linearGradient>
+        <radialGradient id="apl-nut" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#e6e9ec"/><stop offset="0.55" stop-color="#9ba1a8"/><stop offset="1" stop-color="#4c5157"/>
+        </radialGradient>
+        <linearGradient id="apl-bushing" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3a3b3e"/><stop offset="0.5" stop-color="#1c1d20"/><stop offset="1" stop-color="#0c0c0d"/>
+        </linearGradient>
+        <linearGradient id="apl-collar" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#e9ecef"/><stop offset="0.18" stop-color="#9aa0a6"/><stop offset="0.32" stop-color="#c4c8cd"/>
+          <stop offset="0.5" stop-color="#7a7f85"/><stop offset="0.68" stop-color="#c4c8cd"/><stop offset="0.82" stop-color="#9aa0a6"/>
+          <stop offset="1" stop-color="#dfe3e6"/>
+        </linearGradient>
+        <linearGradient id="apl-bat" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#f4f6f8"/><stop offset="0.28" stop-color="#aeb4ba"/><stop offset="0.5" stop-color="#d9dde2"/>
+          <stop offset="0.72" stop-color="#7d8288"/><stop offset="1" stop-color="#6c7178"/>
+        </linearGradient>
+        <radialGradient id="apl-ball" cx="34%" cy="28%" r="70%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.4" stop-color="#d3d8dc"/><stop offset="0.75" stop-color="#8a9096"/><stop offset="1" stop-color="#565b61"/>
+        </radialGradient>
+        <filter id="apl-soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4"/></filter>
+      </defs>
+
+      <!-- panel patch -->
+      <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="4" fill="url(#apl-panel)" stroke="#3f4144" stroke-width="1"/>
+      <rect x="2.5" y="2.5" width="${W - 5}" height="${H - 5}" rx="3.5" fill="none" stroke="#95999e" stroke-opacity="0.35" stroke-width="0.8"/>
+
+      <!-- legend above -->
+      <text class="legend" x="${CX}" y="14"></text>
+
+      <!-- bushing shadow on panel -->
+      <ellipse cx="${CX + 1.5}" cy="${PIVOT_Y + 20}" rx="14" ry="6" fill="#000" opacity="0.35" filter="url(#apl-soft)"/>
+
+      <!-- hex nut behind bushing -->
+      <polygon points="${CX},${PIVOT_Y+8} ${CX+10.4},${PIVOT_Y+14} ${CX+10.4},${PIVOT_Y+26} ${CX},${PIVOT_Y+32} ${CX-10.4},${PIVOT_Y+26} ${CX-10.4},${PIVOT_Y+14}"
+        fill="url(#apl-nut)" stroke="#2c2f32" stroke-width="0.6"/>
+
+      <!-- bushing (tall enough to fully cover the hex nut behind it) -->
+      <rect x="${CX - 8}" y="${PIVOT_Y + 4}" width="16" height="30" rx="3" fill="url(#apl-bushing)" stroke="#000" stroke-width="0.6"/>
+      <!-- bushing tooth at 12 o'clock -->
+      <rect class="tooth" x="${CX - 2}" y="${PIVOT_Y + 3}" width="4" height="3" fill="#2d2f33" stroke="#000" stroke-width="0.3"/>
+
+      <g class="assembly">
+        <g class="liftgrp">
+          <!-- gap shadow between collar and bushing -->
+          <ellipse class="gapshadow" cx="${CX}" cy="${PIVOT_Y + 8}" rx="8.6" ry="2" fill="#000" opacity="0.5"/>
+          <!-- knurled collar -->
+          <g class="collar">
+            <rect x="${CX - 8.6}" y="${PIVOT_Y - 4}" width="17.2" height="12" rx="2.4" fill="url(#apl-collar)" stroke="#4c4f53" stroke-width="0.6"/>
+            <g stroke="#5c6065" stroke-width="0.6" opacity="0.7">
+              <line x1="${CX-7}" y1="${PIVOT_Y-4}" x2="${CX-7}" y2="${PIVOT_Y+8}"/>
+              <line x1="${CX-4.2}" y1="${PIVOT_Y-4}" x2="${CX-4.2}" y2="${PIVOT_Y+8}"/>
+              <line x1="${CX-1.4}" y1="${PIVOT_Y-4}" x2="${CX-1.4}" y2="${PIVOT_Y+8}"/>
+              <line x1="${CX+1.4}" y1="${PIVOT_Y-4}" x2="${CX+1.4}" y2="${PIVOT_Y+8}"/>
+              <line x1="${CX+4.2}" y1="${PIVOT_Y-4}" x2="${CX+4.2}" y2="${PIVOT_Y+8}"/>
+              <line x1="${CX+7}" y1="${PIVOT_Y-4}" x2="${CX+7}" y2="${PIVOT_Y+8}"/>
+            </g>
+          </g>
+          <!-- bat: rectangle + ball tip, pivoting at PIVOT_Y -->
+          <rect x="${CX - 3}" y="${PIVOT_Y - 40}" width="6" height="40" rx="3" fill="url(#apl-bat)" stroke="#4a4e53" stroke-width="0.5"/>
+          <circle cx="${CX}" cy="${PIVOT_Y - 42}" r="5.4" fill="url(#apl-ball)" stroke="#565b61" stroke-width="0.5"/>
+        </g>
+      </g>
+
+      <!-- lock rule under the legend -->
+      <line class="lockrule" x1="${CX - 10}" y1="${H - 10}" x2="${CX + 10}" y2="${H - 10}" stroke="#111214" stroke-width="1.1" stroke-linecap="round"/>
+      <text class="legend2" x="${CX}" y="${H - 3}">LOCK</text>
+    </svg>
+    <div class="grab" role="switch" tabindex="0"></div>
+  </div>`;
+
+  class SkToggleLockApolloLever extends HTMLElement {
+    static get observedAttributes() { return ["value", "positions", "locked", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = "OFF"; this._scale = 1;
+      this._assembly = this.shadowRoot.querySelector(".assembly");
+      this._lift = this.shadowRoot.querySelector(".liftgrp");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._legend = this.shadowRoot.querySelector(".legend");
+      this._lifted = false; this._down = null;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKey = this._onKey.bind(this); this._onWheel = this._onWheel.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._v);
+      this._readAttrs(); this._render(true);
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("keydown", this._onKey);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown);
+      g.removeEventListener("keydown", this._onKey);
+      g.removeEventListener("wheel", this._onWheel);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(true); }
+    get value() { return this._v; }
+    set value(v) {
+      v = String(v).toUpperCase(); if (OPTS.indexOf(v) < 0) return;
+      this._v = v; this.setAttribute("value", v); this._render(true);
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const v = (this.getAttribute("value") || "OFF").toUpperCase();
+      this._v = OPTS.indexOf(v) >= 0 ? v : "OFF";
+      this._legend.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "lever-lock toggle");
+      g.setAttribute("aria-checked", this._v === "ON" ? "true" : "false");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render(anim) {
+      this._assembly.classList.toggle("anim", !!anim);
+      this._assembly.style.transform = "rotate(" + ANG[this._v] + "deg)";
+      this._grab.setAttribute("aria-checked", this._v === "ON" ? "true" : "false");
+    }
+    _lockedSet() {
+      const raw = this.getAttribute("locked");
+      if (raw == null) return { OFF: true, ON: true };
+      const list = raw.split(/[\s,]+/).map(s => s.toUpperCase()).filter(Boolean);
+      const s = {}; list.forEach(k => s[k] = true); return s;
+    }
+    _set(v, settle) {
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", v); this._render(false);
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _doLift() {
+      if (this._lifted) return;
+      this._lifted = true;
+      this._lift.classList.remove("seating"); this._lift.classList.add("lifting");
+      this._lift.style.transform = "translateY(-3px)";
+    }
+    _doSeat() {
+      if (!this._lifted) return;
+      this._lifted = false;
+      this._lift.classList.remove("lifting"); this._lift.classList.add("seating");
+      this._lift.style.transform = "translateY(0px)";
+    }
+    _refuse() {
+      this._assembly.classList.remove("shake"); void this._assembly.offsetWidth;
+      this._assembly.classList.add("shake");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._down = { y: e.clientY, t: performance.now(), lifted: false, thrown: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._down) return;
+      const dy = (this._down.y - e.clientY) / this._scale;
+      // a short pull (either direction, >=5px) arms the lift
+      if (!this._down.lifted && Math.abs(dy) >= 5) {
+        this._down.lifted = true; this._doLift();
+      }
+      if (this._down.lifted) {
+        // once lifted, a further vertical move throws toward the target
+        const target = dy > 0 ? "ON" : "OFF";
+        if (target !== this._v && Math.abs(dy) > 14) {
+          this._assembly.classList.add("anim");
+          this._set(target, false);
+          this._down.thrown = true;
+        }
+      }
+    }
+    _onUp(e) {
+      if (!this._down) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      const thrown = this._down.thrown, lifted = this._down.lifted;
+      this._down = null;
+      this._doSeat();
+      if (thrown) this._set(this._v, true);
+      else if (!lifted) this._refuse();
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = "ON"; break;
+        case "ArrowDown": case "ArrowLeft": v = "OFF"; break;
+        case " ": case "Enter": v = this._v === "ON" ? "OFF" : "ON"; break;
+        case "Home": v = "OFF"; break;
+        case "End": v = "ON"; break;
+        default: return;
+      }
+      e.preventDefault();
+      if (v === this._v) return;
+      this._assembly.classList.add("anim");
+      this._doLift();
+      setTimeout(() => { this._set(v, false); this._set(v, true); this._doSeat(); }, 90);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const v = e.deltaY < 0 ? "ON" : "OFF";
+      if (v === this._v) return;
+      this._assembly.classList.add("anim");
+      this._doLift();
+      clearTimeout(this._wt);
+      this._wt = setTimeout(() => { this._set(v, false); this._set(v, true); this._doSeat(); }, 90);
+    }
+  }
+  customElements.define("sk-toggle-lock-apollo-lever", SkToggleLockApolloLever);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

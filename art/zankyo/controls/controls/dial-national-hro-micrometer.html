@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>National HRO micrometer dial — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Archivo+Narrow:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dial-national-hro-micrometer",
+  "element": "sk-dial-hro",
+  "name": "National HRO micrometer dial",
+  "kind": "input",
+  "code": "A6",
+  "type": "Vernier / reduction-drive tuning knob",
+  "source": "National HRO / HRO-5 / HRO-50 receiver, the PW-D precision worm-drive dial with the numerals inside the knob, 1935–1960",
+  "era": "1930s",
+  "origin": "USA",
+  "materials": ["moulded phenolic", "nickel escutcheon", "black wrinkle panel"],
+  "tags": ["receiver", "radio", "tuning", "multi-turn", "vernier", "scalloped", "worm drive"],
+  "value": { "model": "range", "min": 0, "max": 500, "step": 0.5, "unit": "" },
+  "attributes": ["value", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 160, "h": 160 },
+  "notes": "Ten turns end to end. Drag around the rim and it coasts; the wheel reads half-divisions, Shift steps ten. A second dial sits at 0, smaller."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wrinkle">
+    <sk-dial-hro value="237.5" label="TUNING"></sk-dial-hro>
+    <sk-dial-hro value="0" label="BAND SPREAD" scale="0.6"></sk-dial-hro>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>National PW-D</b> is the dial on the HRO, the receiver every 1930s and wartime listening post was built
+  around: a hand-sized black phenolic knob with ten finger scallops around a thick chamfered rim, driving the
+  gang capacitor through a precision worm. Ten turns take it end to end, and the reading is not printed around
+  the knob but <i>inside</i> it — a numbered disc turns behind a small window at twelve o'clock, framed by a
+  bright nickel escutcheon with an engraved 0–10 vernier along its lower edge.</p>
+  <p><b>The tells kept here:</b> the ten scallops cut through the rim, each a lit dimple with a shadowed
+  top-left wall; the chamfer as one crisp ring of highlight above a dead-matte face; the window's nickel
+  escutcheon, the numeral disc drawn as a cylinder seen edge-on so the figures foreshorten and crowd as they
+  reach the window's edges; the vernier lines reading 0–10 against the disc's divisions, half a division by
+  eye; a small turn counter under the window that climbs a digit per turn; an engraved word plate on the
+  panel below. The drag follows the finger's angle and the dial coasts on release, slowing over about
+  600 ms; it stops softly at 0 and 500.</p>
+  <p><b>Left out:</b> the worm-drive backlash you can feel on a real one, and the bandspread calibration
+  charts that lived in the lid.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dial-hro> — National PW-D micrometer dial: ten turns, the readout inside the knob ====
+   attributes: value(0–500, step 0.5) label scale disabled
+   events: input {value} during a gesture or a coast, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-dial-hro value="237.5"></sk-dial-hro> */
+(function () {
+  if (customElements.get("sk-dial-hro")) return;
+  const W = 160, H = 160, CX = 80, CY = 72;
+  const RK = 66, RB = 57;                       // knob rim radius, face radius (the chamfer lies between)
+  const NS = 10, RS = 11, RSC = RK + 2.5;         // scallops: count, radius, centre radius (just outside the rim)
+  const RD = 24, DEG_U = 4.9, TH_MAX = 62;       // numeral drum: radius, degrees per unit, visible half-angle
+  const AX = 59, AY = 28.5, AW = 42, AH = 13;    // window aperture
+  const TX = 74.5, TY = 53.5, TW = 11, TH = 9;   // turn-counter aperture
+  const MIN = 0, MAX = 500, STEP = 0.5, PER_TURN = 50;
+  const DEG = Math.PI / 180;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - RK}px; top: ${CY - RK}px; width: ${2 * RK}px; height: ${2 * RK}px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Archivo Narrow", "Arial Narrow", "Roboto Condensed", sans-serif; }
+    .num { font-size: 8px; font-weight: 500; fill: #f3f1e6; text-anchor: middle; }
+    .vn { font-size: 5px; font-weight: 600; fill: #2b2b27; text-anchor: middle; }
+    .turn { font-size: 7.5px; font-weight: 600; fill: #f3f1e6; text-anchor: middle; }
+    .plate { font-size: 6.5px; font-weight: 500; letter-spacing: 0.22em; fill: #eae7d8; text-anchor: middle; }
+    .plate.sh { fill: #000; opacity: 0.7; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="bevel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#4a4738"/><stop offset="0.28" stop-color="#2c2b22"/><stop offset="0.62" stop-color="#13120e"/><stop offset="1" stop-color="#08080a"/>
+        </linearGradient>
+        <radialGradient id="face" cx="0.4" cy="0.34" r="0.78">
+          <stop offset="0" stop-color="#1d1c16"/><stop offset="0.55" stop-color="#16150f"/><stop offset="1" stop-color="#0f0e0a"/>
+        </radialGradient>
+        <linearGradient id="dimple" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#040405"/><stop offset="0.42" stop-color="#0d0d0b"/><stop offset="0.8" stop-color="#2c2a23"/><stop offset="1" stop-color="#48453a"/>
+        </linearGradient>
+        <linearGradient id="nickel" x1="0" y1="0" x2="0.25" y2="1">
+          <stop offset="0" stop-color="#f4f4f0"/><stop offset="0.28" stop-color="#d9d9d4"/><stop offset="0.6" stop-color="#bcbcb7"/><stop offset="1" stop-color="#8e8e8a"/>
+        </linearGradient>
+        <linearGradient id="drumbg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#050505"/><stop offset="0.5" stop-color="#181818"/><stop offset="1" stop-color="#050505"/>
+        </linearGradient>
+        <linearGradient id="drumshade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.9"/><stop offset="0.2" stop-color="#000" stop-opacity="0.15"/><stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="0.8" stop-color="#000" stop-opacity="0.15"/><stop offset="1" stop-color="#000" stop-opacity="0.9"/>
+        </linearGradient>
+        <linearGradient id="apshade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.75"/><stop offset="0.35" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/>
+        </linearGradient>
+        <linearGradient id="plateg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2c2c2a"/><stop offset="1" stop-color="#141413"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4.5"/></filter>
+        <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
+          <circle cx="${CX}" cy="${CY}" r="${RK}" fill="#fff"/>
+          <g class="cuts"></g>
+        </mask>
+        <clipPath id="body"><circle cx="${CX}" cy="${CY}" r="${RK}"/></clipPath>
+        <clipPath id="ap"><rect x="${AX}" y="${AY}" width="${AW}" height="${AH}"/></clipPath>
+        <clipPath id="tc"><rect x="${TX}" y="${TY}" width="${TW}" height="${TH}"/></clipPath>
+      </defs>
+
+      <!-- the engraved word plate on the panel, below the dial -->
+      <rect x="47" y="146.5" width="66" height="12" rx="1.2" fill="#000" opacity="0.5" filter="url(#soft)"/>
+      <rect x="46" y="145" width="68" height="12.5" rx="1.2" fill="url(#plateg)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 47.5 146 H 112.5" stroke="#4a4a46" stroke-width="0.6" opacity="0.7"/>
+      <path d="M 47.5 156.6 H 112.5" stroke="#000" stroke-width="0.6"/>
+      <text class="plate sh" x="79.7" y="153.9"></text>
+      <text class="plate" x="80" y="154.2"></text>
+
+      <!-- contact and ambient shadow, down-right -->
+      <ellipse cx="${CX + 3}" cy="${CY + 6}" rx="${RK}" ry="${RK - 1}" fill="#000" opacity="0.6" filter="url(#softer)"/>
+      <ellipse cx="${CX + 1}" cy="${CY + 2}" rx="${RK}" ry="${RK}" fill="#000" opacity="0.8" filter="url(#soft)"/>
+
+      <!-- the knob: chamfered rim and matte face, with the scallops cut out of the silhouette -->
+      <g mask="url(#cut)">
+        <circle cx="${CX}" cy="${CY}" r="${RK}" fill="url(#bevel)"/>
+        <circle cx="${CX}" cy="${CY}" r="${RK - 0.4}" fill="none" stroke="#000" stroke-width="0.8" opacity="0.7"/>
+        <circle cx="${CX}" cy="${CY}" r="${RK - 1.1}" fill="none" stroke="#33322a" stroke-width="0.7" opacity="0.7"/>
+        <!-- the one crisp ring of highlight along the chamfer, strongest where the light hits; reflected light below-right -->
+        <path class="hl" fill="none" stroke="#8a8670" stroke-width="0.9" opacity="0.9"/>
+        <path class="rl" fill="none" stroke="#6a6858" stroke-width="1.1" opacity="0.55"/>
+        <circle cx="${CX}" cy="${CY}" r="${RB}" fill="url(#face)"/>
+        <circle cx="${CX}" cy="${CY}" r="${RB}" fill="none" stroke="#000" stroke-width="1.2" opacity="0.6"/>
+        <circle cx="${CX}" cy="${CY}" r="${RB + 0.9}" fill="none" stroke="#3b3a30" stroke-width="0.5" opacity="0.7"/>
+        <!-- a faint moulded ring near the hub -->
+        <circle cx="${CX}" cy="${CY}" r="18" fill="none" stroke="#000" stroke-width="0.6" opacity="0.35"/>
+        <circle cx="${CX}" cy="${CY}" r="18.6" fill="none" stroke="#2a2921" stroke-width="0.4" opacity="0.5"/>
+      </g>
+      <g class="dimples" clip-path="url(#body)"></g>
+
+      <!-- the window: nickel escutcheon, aperture, numeral drum, vernier -->
+      <rect x="53" y="27" width="56" height="24" rx="2" fill="#000" opacity="0.55" filter="url(#soft)"/>
+      <rect x="52" y="25" width="56" height="25" rx="2" fill="url(#nickel)" stroke="#55554f" stroke-width="0.6"/>
+      <path d="M 53.2 48.6 V 27.6 Q 53.2 26.2 54.6 26.2 H 106.4" fill="none" stroke="#fff" stroke-width="0.6" opacity="0.7"/>
+      <path d="M 54.6 48.8 H 105.8 Q 106.8 48.8 106.8 47.8 V 27.5" fill="none" stroke="#5c5c57" stroke-width="0.6" opacity="0.8"/>
+      <rect x="${AX - 1}" y="${AY - 1}" width="${AW + 2}" height="${AH + 2}" fill="#4a4a46"/>
+      <rect x="${AX - 1}" y="${AY - 1}" width="${AW + 2}" height="1" fill="#2a2a27"/>
+      <g clip-path="url(#ap)">
+        <rect x="${AX}" y="${AY}" width="${AW}" height="${AH}" fill="url(#drumbg)"/>
+        <g class="drum">
+          <path class="ticks" fill="none" stroke="#e8e6da" stroke-width="0.55" stroke-linecap="butt"/>
+          <text class="num"></text><text class="num"></text><text class="num"></text><text class="num"></text>
+        </g>
+        <rect x="${AX}" y="${AY}" width="${AW}" height="${AH}" fill="url(#drumshade)"/>
+        <rect x="${AX}" y="${AY}" width="${AW}" height="${AH}" fill="url(#apshade)"/>
+      </g>
+      <rect x="${AX}" y="${AY}" width="${AW}" height="${AH}" fill="none" stroke="#000" stroke-width="0.8"/>
+      <path d="M ${AX} ${AY + AH + 0.4} H ${AX + AW}" stroke="#fff" stroke-width="0.5" opacity="0.6"/>
+      <g class="vernier"></g>
+
+      <!-- turn counter: a small drum in its own nickel frame -->
+      <rect x="${TX - 2.5}" y="${TY - 2.5}" width="${TW + 5}" height="${TH + 5}" rx="1.2" fill="url(#nickel)" stroke="#55554f" stroke-width="0.5"/>
+      <rect x="${TX - 0.8}" y="${TY - 0.8}" width="${TW + 1.6}" height="${TH + 1.6}" fill="#3a3a36"/>
+      <g clip-path="url(#tc)">
+        <rect x="${TX}" y="${TY}" width="${TW}" height="${TH}" fill="#0c0c0c"/>
+        <g class="turns"><text class="turn"></text><text class="turn"></text><text class="turn"></text></g>
+        <rect x="${TX}" y="${TY}" width="${TW}" height="${TH}" fill="url(#apshade)"/>
+      </g>
+      <rect x="${TX}" y="${TY}" width="${TW}" height="${TH}" fill="none" stroke="#000" stroke-width="0.7"/>
+      <text class="vn" x="${CX}" y="${TY + TH + 7.2}" fill="#8a8878" style="fill:#8a8878; letter-spacing:0.12em">TURNS</text>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const mk = (t, a) => { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const arc = (r, a0, a1) => {
+    const p = a => [CX + r * Math.sin(a * DEG), CY - r * Math.cos(a * DEG)];
+    const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  };
+
+  class SkDialHro extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._vf = 0; this._scale = 1;
+      this._w = 0; this._raf = 0; this._last = 0;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._grab = $(".grab"); this._wrap = $(".wrap");
+      this._ticks = $(".ticks"); this._nums = Array.from(this.shadowRoot.querySelectorAll(".num"));
+      this._turns = Array.from(this.shadowRoot.querySelectorAll(".turn"));
+      this._plate = this.shadowRoot.querySelectorAll(".plate");
+      // build the scallop cut-outs and their dimples
+      const cuts = $(".cuts"), dimples = $(".dimples");
+      this._cuts = []; this._dimples = [];
+      for (let i = 0; i < NS; i++) {
+        const c = mk("circle", { r: RS, fill: "#000" }); cuts.appendChild(c); this._cuts.push(c);
+        const g = mk("g", {});
+        g.appendChild(mk("circle", { r: RS, fill: "url(#dimple)" }));
+        g.appendChild(mk("circle", { r: RS - 0.3, fill: "none", stroke: "#000", "stroke-width": 0.8, opacity: 0.85 }));
+        // the far (lower-right) lip of the dimple catches the light
+        const a0 = 15 * DEG, a1 = 125 * DEG, rr = RS - 0.4;
+        g.appendChild(mk("path", { d: `M ${(rr * Math.cos(a0)).toFixed(2)} ${(rr * Math.sin(a0)).toFixed(2)} A ${rr} ${rr} 0 0 1 ${(rr * Math.cos(a1)).toFixed(2)} ${(rr * Math.sin(a1)).toFixed(2)}`, fill: "none", stroke: "#8a8672", "stroke-width": 0.7, opacity: 0.7 }));
+        dimples.appendChild(g); this._dimples.push(g);
+      }
+      $(".hl").setAttribute("d", arc(RK - 1, -128, -12));
+      $(".rl").setAttribute("d", arc(RK - 1.2, 40, 165));
+      // the vernier: eleven lines engraved on the escutcheon below the aperture, projected like the drum
+      const vg = $(".vernier");
+      for (let i = 0; i <= 10; i++) {
+        const t = (i - 5) * DEG_U * DEG, x = CX + RD * Math.sin(t);
+        const len = i % 5 === 0 ? 3.6 : 2.2;
+        vg.appendChild(mk("line", { x1: x.toFixed(2), y1: AY + AH + 1.2, x2: x.toFixed(2), y2: AY + AH + 1.2 + len, stroke: "#2b2b27", "stroke-width": i % 5 === 0 ? 0.7 : 0.5 }));
+        vg.appendChild(mk("line", { x1: (x + 0.35).toFixed(2), y1: AY + AH + 1.2, x2: (x + 0.35).toFixed(2), y2: AY + AH + 1.2 + len, stroke: "#fff", "stroke-width": 0.3, opacity: 0.55 }));
+        if (i % 5 === 0) { const tx = mk("text", { class: "vn", x: x.toFixed(2), y: AY + AH + 9.4 }); tx.textContent = String(i); vg.appendChild(tx); }
+      }
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._spin = this._spin.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._stop(); this._vf = this._clamp(v); this._v = this._q(this._vf); this.setAttribute("value", String(this._v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const v = this._clamp(num("value", this._v));
+      if (v !== this._v) { this._vf = v; this._v = this._q(v); }
+      const label = this.getAttribute("label") || "";
+      this._plate.forEach(t => { t.textContent = label; });
+      const g = this._grab;
+      g.setAttribute("aria-label", label || "micrometer dial");
+      g.setAttribute("aria-valuemin", MIN); g.setAttribute("aria-valuemax", MAX);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(MAX, Math.max(MIN, v)); }
+    _q(v) { return Math.round(v / STEP) * STEP; }
+    _render() {
+      const v = this._vf, th = v / PER_TURN * 360;
+      // the scallops go round with the rim; their shading stays with the light
+      for (let i = 0; i < NS; i++) {
+        const a = (th + i * 360 / NS) * DEG, x = (CX + RSC * Math.sin(a)).toFixed(2), y = (CY - RSC * Math.cos(a)).toFixed(2);
+        this._cuts[i].setAttribute("cx", x); this._cuts[i].setAttribute("cy", y);
+        this._dimples[i].setAttribute("transform", `translate(${x} ${y})`);
+      }
+      // the numeral drum: unit m sits at vernier line (v - m); line 5 is the aperture's centre
+      const span = TH_MAX / DEG_U;
+      const lo = Math.max(MIN, Math.ceil(v - 5 - span)), hi = Math.min(MAX, Math.floor(v - 5 + span));
+      let d = "", ni = 0;
+      const yb = AY + AH - 0.4;
+      for (let m = lo; m <= hi; m++) {
+        const t = (v - m - 5) * DEG_U * DEG, c = Math.cos(t), x = (CX + RD * Math.sin(t)).toFixed(2);
+        const len = m % 10 === 0 ? 3.6 : m % 5 === 0 ? 2.6 : 1.6;
+        d += `M${x} ${yb}v${-len}`;
+        if (m % 10 === 0 && ni < this._nums.length) {
+          const tx = this._nums[ni++];
+          tx.textContent = String(m);
+          tx.setAttribute("transform", `translate(${x} ${AY + 7.3}) scale(${c.toFixed(3)} 1)`);
+          tx.setAttribute("opacity", (0.25 + 0.75 * c).toFixed(2));
+          tx.style.display = "";
+        }
+      }
+      for (; ni < this._nums.length; ni++) this._nums[ni].style.display = "none";
+      this._ticks.setAttribute("d", d);
+      // the turn counter: a digit per turn, carried like an odometer
+      const tn = v / PER_TURN, base = Math.floor(tn), frac = tn - base;
+      const carry = frac < 0.86 ? 0 : (frac - 0.86) / 0.14;          // the digit only rolls in the last stretch of the turn
+      for (let k = 0; k < 3; k++) {
+        const n = base - 1 + k, tx = this._turns[k];
+        if (n < 0 || n > MAX / PER_TURN) { tx.style.display = "none"; continue; }
+        tx.style.display = "";
+        tx.textContent = String(n);
+        tx.setAttribute("x", CX); tx.setAttribute("y", (TY + TH / 2 + 2.7 + (n - base - carry) * TH).toFixed(2));
+      }
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", this._v.toFixed(1) + " (turn " + Math.min(10, base + 1) + ")");
+    }
+    _set(vf, settle) {
+      vf = this._clamp(vf);
+      const v = this._q(vf);
+      this._vf = vf;
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _stop() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } this._w = 0; }
+    _ang(e) { return Math.atan2(e.clientX - this._c.x, -(e.clientY - this._c.y)) / DEG; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      const wasSpinning = !!this._raf; this._stop();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      const r = this._grab.getBoundingClientRect();
+      this._c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      this._drag = { a: this._ang(e), t: performance.now(), w: 0, moved: wasSpinning };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const a = this._ang(e);
+      let da = a - this._drag.a; da = ((da + 540) % 360) - 180;
+      const now = performance.now(), dt = Math.max(4, now - this._drag.t) / 1000;
+      this._drag.w = 0.55 * this._drag.w + 0.45 * (da / dt);
+      this._drag.a = a; this._drag.t = now;
+      if (Math.abs(da) > 0.3) this._drag.moved = true;
+      this._set(this._vf + da / 360 * PER_TURN, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const d = this._drag; this._drag = null;
+      const stale = performance.now() - d.t > 90;              // the finger paused before letting go: no flick
+      const w = stale ? 0 : Math.max(-1600, Math.min(1600, d.w));
+      if (Math.abs(w) > 40 && this._vf > MIN && this._vf < MAX) { this._w = w; this._last = performance.now(); this._raf = requestAnimationFrame(this._spin); }
+      else if (d.moved) this._set(this._vf, true);
+    }
+    _spin(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      let vf = this._vf + this._w * dt / 360 * PER_TURN;
+      this._w *= Math.exp(-dt / 0.22);
+      if (vf <= MIN || vf >= MAX) { vf = this._clamp(vf); this._w = 0; }   // soft stop at the ends
+      this._set(vf, false);
+      if (Math.abs(this._w) < 6) { this._raf = 0; this._w = 0; this._set(this._vf, true); return; }
+      this._raf = requestAnimationFrame(this._spin);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._stop();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._q(this._vf) + dir * (e.shiftKey ? 10 : STEP), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._vf, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      let v = null; const cur = this._q(this._vf);
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = cur + (e.shiftKey ? STEP * 10 : STEP); break;
+        case "ArrowDown": case "ArrowLeft": v = cur - (e.shiftKey ? STEP * 10 : STEP); break;
+        case "PageUp": v = cur + PER_TURN; break;
+        case "PageDown": v = cur - PER_TURN; break;
+        case "Home": v = MIN; break;
+        case "End": v = MAX; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._stop();
+      this._set(v, false); this._set(this._vf, true);
+    }
+  }
+  customElements.define("sk-dial-hro", SkDialHro);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

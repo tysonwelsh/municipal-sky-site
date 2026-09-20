@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMS VCS3 pin matrix — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "matrix-ems-vcs3",
+  "element": "sk-matrix-ems-vcs3",
+  "name": "EMS VCS3 pin matrix, 16 × 16",
+  "kind": "input",
+  "code": "E6",
+  "type": "Pin patch matrix",
+  "source": "The EMS VCS3 \"Putney\" (1969) / Synthi A patchboard: 256 sockets on a black anodised plate, patched with white, red and green plastic-headed pins",
+  "era": "1960s",
+  "origin": "UK",
+  "materials": ["black anodised aluminium", "moulded plastic pins", "silk-screened legends"],
+  "tags": ["synthesiser", "studio", "patchbay", "matrix", "pins", "EMS", "Synthi"],
+  "value": { "model": "bits", "count": 256 },
+  "attributes": ["value", "pins", "rows", "cols", "row-legends", "col-legends", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 280, "h": 274 },
+  "notes": "A patched 16 × 16 board (two red pins, one green) beside an 8 × 8 cut-down. Click a hole to drop a pin, click a pin to pull it, Shift-click or C cycles its colour; arrows move the focus ring, Space toggles."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-matrix-ems-vcs3 scale="0.62" label="PATCHBOARD"
+      pins="0,3 0,10,red 1,0 2,1 4,3 5,6 6,7,green 7,0 9,3 9,10 10,13 11,7 13,6,red 14,10 15,11"></sk-matrix-ems-vcs3>
+    <sk-matrix-ems-vcs3 scale="0.62" rows="8" cols="8" label="SYNTHI SLICE"
+      row-legends="OSC 1 SINE|OSC 1 RAMP|OSC 2 TRI|OSC 2 SQUARE|NOISE GEN|FILTER|ENVELOPE|OUTPUT CH. 1"
+      col-legends="OSC 1 FREQ|OSC 2 FREQ|FILTER FREQ|RING MOD X|REVERB MIX|ENV SIGNAL|OUTPUT CH. 1|METER"
+      pins="0,2 3,5,green 6,6"></sk-matrix-ems-vcs3>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>EMS VCS3</b> of 1969 — and the Synthi A that folded the same synthesiser into a briefcase — replaced
+  the patch cord with a <b>pin matrix</b>: a small removable board drilled with 16 × 16 = 256 sockets, let into a
+  black anodised plate, with the sources printed down the left edge and the destinations printed across the top.
+  A connection is a pin pushed into the crossing of the two. The pins were sold in colours that were really
+  resistances: <b>white</b> 2k7 (the standard patch), <b>red</b> 1 % (accurate control voltages) and
+  <b>green</b> 68 k (attenuating). The same idea went up to 60 × 60 on the Synthi 100.</p>
+  <p><b>The tells kept here:</b> the 256 holes on an exact 6.35 mm pitch, each a black dot with a chamfered mouth
+  whose lit crescent sits at the lower right, so an empty board reads as a field of tiny highlights; the pin as a
+  short cylinder <i>standing proud</i> — a domed top with one specular, a dark side, a moulding flash line, and a
+  hard cast shadow down-right; pins wider than their holes; white pins common, red and green loud and rare; the
+  legends silk-screened on the <i>edges</i> in condensed capitals, the columns rotated; fine rules grouping every
+  fourth row and column; a faintly brushed anodised plate with the matrix board let into it; and a few sockets
+  worn bright where pins have been pulled thousands of times. A hover shows a 40 % ghost pin so the target is
+  legible; hovering a seated pin lifts it a pixel.</p>
+  <p><b>Left out:</b> the board's physical removability (the real one lifts out on two thumb catches), the
+  resistance values printed on the pin tray, and the sound of the pin seating.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-matrix-ems-vcs3> — EMS VCS3 / Synthi pin matrix ====
+   attributes: value (row-major "0101…" bit string) · pins ("row,col[,colour]" tuples, space separated)
+               rows cols (default 16) · row-legends / col-legends ("A|B|C") · label · scale · disabled
+   property   value ⇄ array of rows*cols booleans (row-major); setting it does NOT emit
+   events     input / change  detail { value, index, row, col, on, colour }
+   self-contained: paste this block into any page and use <sk-matrix-ems-vcs3></sk-matrix-ems-vcs3> */
+(function () {
+  if (customElements.get("sk-matrix-ems-vcs3")) return;
+
+  var P = 13, GX = 64, GY = 54, RM = 8, BM = 12;     // pitch, grid origin, right/bottom margin
+  var COLOURS = ["white", "red", "green"];
+  var ROWL = ["OSC 1 SINE", "OSC 1 RAMP", "OSC 2 TRI", "OSC 2 SQUARE", "OSC 3 TRI", "OSC 3 SQUARE",
+              "NOISE GEN", "INPUT AMP 1", "INPUT AMP 2", "FILTER", "TRAPEZOID", "ENVELOPE",
+              "RING MOD", "REVERB", "OUTPUT CH. 1", "OUTPUT CH. 2"];
+  var COLL = ["OSC 1 FREQ", "OSC 2 FREQ", "OSC 3 FREQ", "FILTER FREQ", "RING MOD X", "RING MOD Y",
+              "REVERB MIX", "ENV SIGNAL", "INPUT CH. 1", "INPUT CH. 2", "OUTPUT CH. 1", "OUTPUT CH. 2",
+              "METER", "TRAPEZOID", "OSC 1 SHAPE", "SCOPE"];
+
+  var CSS = [
+    ':host{display:inline-block;position:relative;font-size:10px;-webkit-tap-highlight-color:transparent;}',
+    ':host([hidden]){display:none}',
+    '.wrap{position:absolute;left:0;top:0;transform-origin:0 0}',
+    'svg{display:block;overflow:visible}',
+    'text{font-family:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;font-weight:500;fill:#d8d5cc;}',
+    '.cl,.rl{font-size:7px;letter-spacing:0.04em}',
+    '.rl{text-anchor:end}',
+    '.grid{position:absolute;display:grid;touch-action:none}',
+    '.cell{outline:none;cursor:pointer;border-radius:50%}',
+    ':host([disabled]) .cell{cursor:default}',
+    '.cell:focus-visible{box-shadow:0 0 0 1.5px #16e0e0,0 0 7px rgba(22,224,224,.75);border-radius:2px}',
+    '.pin{transition:transform 90ms cubic-bezier(.2,.9,.3,1.3)}',
+    '.pin.drop{animation:sk-drop 140ms cubic-bezier(.25,.9,.35,1.25) 1}',
+    '.pin.pull{animation:sk-pull 80ms ease-in 1 forwards}',
+    '.cell:hover~.x{}',
+    '@keyframes sk-drop{0%{transform:translateY(-3.4px)}70%{transform:translateY(0.9px)}100%{transform:translateY(0)}}',
+    '@keyframes sk-pull{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-4.2px);opacity:0}}',
+    '@media (prefers-reduced-motion: reduce){.pin,.pin.drop,.pin.pull{animation:none;transition:none}}'
+  ].join("");
+
+  function defs(seedHoles) {
+    return '' +
+    '<defs>' +
+      '<linearGradient id="chm" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0" stop-color="#101114"/><stop offset=".45" stop-color="#202126"/><stop offset="1" stop-color="#43444a"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="chmw" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0" stop-color="#1a1b1f"/><stop offset=".4" stop-color="#3a3b41"/><stop offset="1" stop-color="#77787e"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="plate" x1="0" y1="0" x2="0.25" y2="1">' +
+        '<stop offset="0" stop-color="#1c1d20"/><stop offset=".45" stop-color="#141517"/><stop offset="1" stop-color="#0d0e10"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="board" x1="0" y1="0" x2="0.3" y2="1">' +
+        '<stop offset="0" stop-color="#191a1d"/><stop offset=".5" stop-color="#121316"/><stop offset="1" stop-color="#0e0f11"/>' +
+      '</linearGradient>' +
+      '<radialGradient id="pgw" cx="33%" cy="27%" r="78%">' +
+        '<stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#e9e6df"/><stop offset=".85" stop-color="#c3c0b8"/><stop offset="1" stop-color="#a5a29a"/>' +
+      '</radialGradient>' +
+      '<radialGradient id="pgr" cx="33%" cy="27%" r="78%">' +
+        '<stop offset="0" stop-color="#f08b83"/><stop offset=".4" stop-color="#c8322b"/><stop offset=".85" stop-color="#9b241e"/><stop offset="1" stop-color="#7d1c18"/>' +
+      '</radialGradient>' +
+      '<radialGradient id="pgg" cx="33%" cy="27%" r="78%">' +
+        '<stop offset="0" stop-color="#8fd1a6"/><stop offset=".4" stop-color="#3f8f5a"/><stop offset=".85" stop-color="#2d6b43"/><stop offset="1" stop-color="#23553a"/>' +
+      '</radialGradient>' +
+      '<filter id="pb" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.7"/></filter>' +
+      '<filter id="bb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2"/></filter>' +
+      '<g id="hole">' +
+        '<circle r="4.6" fill="url(#chm)"/>' +
+        '<circle r="4.6" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="0.5"/>' +
+        '<circle r="2.9" fill="#050506"/>' +
+        '<circle r="2.9" fill="none" stroke="#3a3b3f" stroke-opacity="0.5" stroke-width="0.55"/>' +
+      '</g>' +
+      '<g id="holew">' +
+        '<circle r="4.6" fill="url(#chmw)"/>' +
+        '<circle r="4.6" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.5"/>' +
+        '<circle r="2.9" fill="#050506"/>' +
+        '<circle r="2.9" fill="none" stroke="#54555b" stroke-opacity="0.6" stroke-width="0.55"/>' +
+      '</g>' +
+      pinDef("w", "#b5b2aa", "#8e8b84") + pinDef("r", "#7d1c18", "#5d1310") + pinDef("g", "#23553a", "#193d2a") +
+      '<g id="ghost">' +
+        '<circle r="4.5" fill="#ffffff" fill-opacity="0.22"/>' +
+        '<circle r="4.5" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.7"/>' +
+      '</g>' +
+    '</defs>';
+  }
+  function pinDef(k, side, sideDark) {
+    return '<g id="pin' + k + '">' +
+      '<ellipse cx="1.5" cy="2.0" rx="4.7" ry="4.4" fill="#000" fill-opacity="0.55" filter="url(#pb)"/>' +
+      '<circle cx="0" cy="2.1" r="4.5" fill="' + sideDark + '"/>' +
+      '<circle cx="0" cy="1.2" r="4.5" fill="' + side + '"/>' +
+      '<circle cx="0" cy="0" r="4.5" fill="url(#pg' + k + ')"/>' +
+      '<circle cx="0" cy="0" r="4.5" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="0.45"/>' +
+      '<ellipse cx="-1.5" cy="-1.8" rx="1.6" ry="1.25" fill="#fff" fill-opacity="0.8" transform="rotate(-38)"/>' +
+      '<path d="M -4.4 0.6 L 4.4 0.6" stroke="#fff" stroke-opacity="0.13" stroke-width="0.4"/>' +
+    '</g>';
+  }
+
+  // a fixed-seed PRNG so the worn sockets are the same on every render
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = '<style>' + CSS + '</style><div class="wrap"><svg class="art" aria-hidden="true"></svg><div class="grid"></div></div>';
+
+  class SkMatrixVCS3 extends HTMLElement {
+    static get observedAttributes() { return ["value", "pins", "rows", "cols", "row-legends", "col-legends", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._svg = this.shadowRoot.querySelector(".art");
+      this._gridEl = this.shadowRoot.querySelector(".grid");
+      this._rows = 16; this._cols = 16; this._scale = 1;
+      this._on = new Map();          // index -> colour
+      this._cells = []; this._cur = 0; this._built = "";
+      this._wired = false;
+      this._onKey = this._onKey.bind(this);
+      this._onDown = this._onDown.bind(this);
+      this._onOver = this._onOver.bind(this);
+      this._onOut = this._onOut.bind(this);
+      this._onCtx = this._onCtx.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs();
+      if (!this._wired) {
+        this._gridEl.addEventListener("keydown", this._onKey);
+        this._gridEl.addEventListener("pointerdown", this._onDown);
+        this._gridEl.addEventListener("pointerover", this._onOver);
+        this._gridEl.addEventListener("pointerleave", this._onOut);
+        this._gridEl.addEventListener("contextmenu", this._onCtx);
+        this._wired = true;
+      }
+      this._build();
+      if (!this._seeded) { this._seedFromAttrs(); this._seeded = true; }
+      this._paint();
+    }
+    disconnectedCallback() {
+      this._gridEl.removeEventListener("keydown", this._onKey);
+      this._gridEl.removeEventListener("pointerdown", this._onDown);
+      this._gridEl.removeEventListener("pointerover", this._onOver);
+      this._gridEl.removeEventListener("pointerleave", this._onOut);
+      this._gridEl.removeEventListener("contextmenu", this._onCtx);
+      this._wired = false;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "rows" || n === "cols" || n === "row-legends" || n === "col-legends") { this._build(); this._paint(); return; }
+      if (n === "pins") { this._fromPins(this.getAttribute("pins")); this._paint(); return; }
+      if (n === "value") { this._fromBits(this.getAttribute("value")); this._paint(); return; }
+    }
+
+    get value() { var n = this._rows * this._cols, a = new Array(n); for (var i = 0; i < n; i++) a[i] = this._on.has(i); return a; }
+    set value(v) {
+      var n = this._rows * this._cols, i;
+      if (typeof v === "string") { this._fromBits(v); this._reflect(); this._paint(); return; }
+      if (!Array.isArray(v)) return;
+      for (i = 0; i < n; i++) {
+        var on = !!v[i];
+        if (on && !this._on.has(i)) this._on.set(i, "white");
+        else if (!on && this._on.has(i)) this._on.delete(i);
+      }
+      this._reflect(); this._paint();
+    }
+    get pins() { return this._pinString(); }
+    set pins(s) { this.setAttribute("pins", String(s)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    colourAt(row, col) { return this._on.get(row * this._cols + col) || null; }
+    focus(o) { var c = this._cells[this._cur] || this._cells[0]; if (c) c.focus(o); else HTMLElement.prototype.focus.call(this, o); }
+
+    // ---- attributes ----------------------------------------------------
+    _readAttrs() {
+      var num = function (s, d, lo, hi) { var x = parseInt(s, 10); return isNaN(x) ? d : Math.min(hi, Math.max(lo, x)); };
+      this._rows = num(this.getAttribute("rows"), 16, 1, 24);
+      this._cols = num(this.getAttribute("cols"), 16, 1, 24);
+      var sc = parseFloat(this.getAttribute("scale")); this._scale = isNaN(sc) ? 1 : Math.max(0.2, sc);
+      var split = function (s, def, n) {
+        var a = (s || "").split("|").map(function (x) { return x.trim(); }).filter(function (x) { return x.length; });
+        var out = []; for (var i = 0; i < n; i++) out.push(a.length ? (a[i % a.length] || "") : (def[i % def.length] || ""));
+        return out;
+      };
+      this._rowL = split(this.getAttribute("row-legends"), ROWL, this._rows);
+      this._colL = split(this.getAttribute("col-legends"), COLL, this._cols);
+      this._W = GX + this._cols * P + RM;
+      this._H = GY + this._rows * P + BM;
+      this.style.width = (this._W * this._scale) + "px";
+      this.style.height = (this._H * this._scale) + "px";
+      this._wrap.style.width = this._W + "px";
+      this._wrap.style.height = this._H + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _seedFromAttrs() {
+      if (this.hasAttribute("pins")) this._fromPins(this.getAttribute("pins"));
+      else if (this.hasAttribute("value")) this._fromBits(this.getAttribute("value"));
+    }
+    _fromPins(s) {
+      this._on.clear();
+      (s || "").split(/[\s;]+/).forEach(function (t) {
+        if (!t) return;
+        var p = t.split(",");
+        var r = parseInt(p[0], 10), c = parseInt(p[1], 10);
+        var col = (p[2] || "white").toLowerCase();
+        if (COLOURS.indexOf(col) < 0) col = "white";
+        if (isNaN(r) || isNaN(c) || r < 0 || c < 0 || r >= this._rows || c >= this._cols) return;
+        this._on.set(r * this._cols + c, col);
+      }, this);
+    }
+    _fromBits(s) {
+      if (s == null) return;
+      this._on.clear();
+      var str = String(s).replace(/[^01]/g, "");
+      for (var i = 0; i < str.length && i < this._rows * this._cols; i++) if (str[i] === "1") this._on.set(i, "white");
+    }
+    _pinString() {
+      var out = [], cols = this._cols;
+      Array.from(this._on.keys()).sort(function (a, b) { return a - b; }).forEach(function (i) {
+        var c = this._on.get(i);
+        out.push(Math.floor(i / cols) + "," + (i % cols) + (c === "white" ? "" : "," + c));
+      }, this);
+      return out.join(" ");
+    }
+    _reflect() {
+      this._quiet = true;
+      this.setAttribute("pins", this._pinString());
+      this._quiet = false;
+    }
+
+    // ---- build ---------------------------------------------------------
+    _build() {
+      var key = this._rows + "x" + this._cols + "|" + this._rowL.join("|") + "|" + this._colL.join("|");
+      if (key === this._built) { this._layout(); return; }
+      this._built = key;
+      var R = this._rows, C = this._cols, W = this._W, H = this._H, r, c, s = [];
+      var rand = rng(0x5CA1AB1E);
+
+      s.push(defs());
+      // the anodised plate, with a fine brushed grain and a top light
+      s.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="3" fill="url(#plate)"/>');
+      var grain = [];
+      for (var y = 1.5; y < H; y += 2) grain.push('<path d="M0 ' + y + ' H' + W + '" stroke="#ffffff" stroke-opacity="0.028" stroke-width="0.6"/>');
+      s.push('<g>' + grain.join("") + '</g>');
+      s.push('<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="2.6" fill="none" stroke="#000" stroke-opacity="0.9" stroke-width="1"/>');
+      s.push('<path d="M1 1 H' + (W - 1) + '" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1"/>');
+
+      // the matrix board, let into the plate
+      var bx = GX - 10, by = GY - 10, bw = C * P + 20, bh = R * P + 20;
+      s.push('<rect x="' + (bx + 1) + '" y="' + (by + 2) + '" width="' + bw + '" height="' + bh + '" rx="3" fill="#000" fill-opacity="0.5" filter="url(#bb)"/>');
+      s.push('<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="2.5" fill="url(#board)"/>');
+      s.push('<path d="M' + (bx + 0.6) + ' ' + (by + bh - 0.6) + ' V' + (by + 0.6) + ' H' + (bx + bw - 0.6) + '" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="1.2"/>');
+      s.push('<path d="M' + (bx + 0.6) + ' ' + (by + bh - 0.6) + ' H' + (bx + bw - 0.6) + ' V' + (by + 0.6) + '" fill="none" stroke="#5a5b60" stroke-opacity="0.45" stroke-width="0.9"/>');
+
+      // group rules every four rows / columns
+      var rules = [];
+      for (c = 4; c < C; c += 4) { var gx = GX + c * P - P / 2;
+        rules.push('<path d="M' + gx + ' ' + (by + 3) + ' V' + (by + bh - 3) + '" stroke="#8a8a86" stroke-opacity="0.16" stroke-width="0.6"/>');
+        rules.push('<path d="M' + gx + ' ' + (GY - 13) + ' V' + (GY - 8) + '" stroke="#8a8a86" stroke-opacity="0.55" stroke-width="0.7"/>'); }
+      for (r = 4; r < R; r += 4) { var gy = GY + r * P - P / 2;
+        rules.push('<path d="M' + (bx + 3) + ' ' + gy + ' H' + (bx + bw - 3) + '" stroke="#8a8a86" stroke-opacity="0.16" stroke-width="0.6"/>');
+        rules.push('<path d="M' + (GX - 15) + ' ' + gy + ' H' + (GX - 10) + '" stroke="#8a8a86" stroke-opacity="0.55" stroke-width="0.7"/>'); }
+      s.push(rules.join(""));
+
+      // 256 sockets; about 8 % are worn bright at the mouth
+      var holes = [];
+      for (r = 0; r < R; r++) for (c = 0; c < C; c++) {
+        var worn = rand() < 0.08;
+        holes.push('<use href="#' + (worn ? "holew" : "hole") + '" x="' + (GX + c * P + P / 2) + '" y="' + (GY + r * P + P / 2) + '"/>');
+      }
+      s.push('<g class="holes">' + holes.join("") + '</g>');
+
+      // the ghost pin the hover shows, and the pins themselves
+      s.push('<g class="ghostg" style="display:none"><use href="#ghost" x="0" y="0"/></g>');
+      s.push('<g class="pins"></g>');
+
+      // silk-screened legends: columns rotated -90 above, rows to the left
+      var leg = [];
+      for (c = 0; c < C; c++) leg.push('<text class="cl" transform="translate(' + (GX + c * P + P / 2 + 2.4) + ' ' + (GY - 16) + ') rotate(-90)">' + esc(this._colL[c]) + '</text>');
+      for (r = 0; r < R; r++) leg.push('<text class="rl" x="' + (GX - 16) + '" y="' + (GY + r * P + P / 2 + 2.4) + '">' + esc(this._rowL[r]) + '</text>');
+      s.push('<g class="legends">' + leg.join("") + '</g>');
+
+      this._svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      this._svg.setAttribute("width", W); this._svg.setAttribute("height", H);
+      this._svg.innerHTML = s.join("");
+      this._pinsG = this._svg.querySelector(".pins");
+      this._ghostG = this._svg.querySelector(".ghostg");
+      this._ghostU = this._ghostG.firstChild;
+
+      // the accessible grid sits over the sockets: one cell per hole
+      var g = this._gridEl;
+      g.innerHTML = "";
+      g.setAttribute("role", "grid");
+      g.style.gridTemplateColumns = "repeat(" + C + ", " + P + "px)";
+      g.style.gridTemplateRows = "repeat(" + R + ", " + P + "px)";
+      this._cells = [];
+      for (r = 0; r < R; r++) {
+        var row = document.createElement("div");
+        row.setAttribute("role", "row");
+        row.style.display = "contents";
+        for (c = 0; c < C; c++) {
+          var cell = document.createElement("div");
+          cell.className = "cell";
+          cell.setAttribute("role", "gridcell");
+          cell.setAttribute("tabindex", "-1");
+          cell.dataset.i = String(r * C + c);
+          row.appendChild(cell);
+          this._cells.push(cell);
+        }
+        g.appendChild(row);
+      }
+      if (this._cur >= this._cells.length) this._cur = 0;
+      this._layout();
+    }
+    _layout() {
+      var g = this._gridEl;
+      g.style.left = GX + "px"; g.style.top = GY + "px";
+      g.style.width = (this._cols * P) + "px"; g.style.height = (this._rows * P) + "px";
+    }
+
+    // ---- paint ---------------------------------------------------------
+    _paint() {
+      if (!this._pinsG) return;
+      var C = this._cols, dis = this.hasAttribute("disabled");
+      var want = new Map(this._on), have = this._pinNodes || (this._pinNodes = new Map());
+      // remove pins that are gone
+      Array.from(have.keys()).forEach(function (i) {
+        if (!want.has(i)) { var n = have.get(i); have.delete(i); pull(n); }
+      });
+      // add or recolour
+      var self = this;
+      want.forEach(function (col, i) {
+        var n = have.get(i);
+        if (n && n.dataset.col === col) return;
+        if (n) { n.remove(); have.delete(i); }
+        var gnode = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        gnode.setAttribute("class", "pin");
+        gnode.dataset.col = col;
+        var u = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        u.setAttribute("href", "#pin" + col[0]);
+        u.setAttribute("x", String(GX + (i % C) * P + P / 2));
+        u.setAttribute("y", String(GY + Math.floor(i / C) * P + P / 2));
+        gnode.appendChild(u);
+        if (self._animate) gnode.classList.add("drop");
+        self._pinsG.appendChild(gnode);
+        have.set(i, gnode);
+      });
+      function pull(n) {
+        if (!n) return;
+        n.classList.remove("drop");
+        n.classList.add("pull");
+        setTimeout(function () { if (n.parentNode) n.remove(); }, 120);
+      }
+      // aria
+      this._cells.forEach(function (cell, i) {
+        var col = this._on.get(i);
+        cell.setAttribute("aria-selected", col ? "true" : "false");
+        cell.setAttribute("tabindex", dis ? "-1" : (i === this._cur ? "0" : "-1"));
+        cell.setAttribute("aria-label",
+          this._rowL[Math.floor(i / C)] + " to " + this._colL[i % C] + (col ? ", " + col + " pin" : ", empty"));
+      }, this);
+      this._gridEl.setAttribute("aria-label", this.getAttribute("label") || "patch matrix");
+      this._gridEl.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._gridEl.setAttribute("aria-rowcount", String(this._rows));
+      this._gridEl.setAttribute("aria-colcount", String(this._cols));
+    }
+
+    // ---- edits ---------------------------------------------------------
+    _emit(i, on, colour) {
+      var d = { value: this.value, index: i, row: Math.floor(i / this._cols), col: i % this._cols, on: on, colour: colour };
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: d }));
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: d }));
+    }
+    _toggle(i, cycle) {
+      if (this.hasAttribute("disabled")) return;
+      this._animate = true;
+      var col = this._on.get(i);
+      if (col && cycle) { col = COLOURS[(COLOURS.indexOf(col) + 1) % COLOURS.length]; this._on.set(i, col); }
+      else if (col) { this._on.delete(i); col = null; }
+      else { col = "white"; this._on.set(i, col); }
+      this._reflect(); this._paint(); this._animate = false;
+      this._emit(i, !!col, col);
+    }
+    _moveTo(i) {
+      i = Math.max(0, Math.min(this._cells.length - 1, i));
+      this._cur = i;
+      this._cells.forEach(function (c, k) { c.setAttribute("tabindex", k === i ? "0" : "-1"); });
+      this._cells[i].focus({ preventScroll: true });
+      this._ghostAt(i);
+    }
+    _ghostAt(i) {
+      if (i == null || this.hasAttribute("disabled")) { this._ghostG.style.display = "none"; return; }
+      if (this._on.has(i)) { this._ghostG.style.display = "none"; return; }
+      this._ghostU.setAttribute("x", String(GX + (i % this._cols) * P + P / 2));
+      this._ghostU.setAttribute("y", String(GY + Math.floor(i / this._cols) * P + P / 2));
+      this._ghostG.style.display = "";
+    }
+    _onDown(e) {
+      var cell = e.target.closest ? e.target.closest(".cell") : null;
+      if (!cell) return;
+      e.preventDefault();
+      var i = +cell.dataset.i;
+      this._cur = i;
+      this._cells.forEach(function (c, k) { c.setAttribute("tabindex", k === i ? "0" : "-1"); });
+      if (!this.hasAttribute("disabled")) cell.focus({ preventScroll: true });
+      if (e.button === 2) return;                       // handled by contextmenu
+      this._toggle(i, e.shiftKey || e.altKey);
+      this._ghostAt(i);
+    }
+    _onCtx(e) {
+      var cell = e.target.closest ? e.target.closest(".cell") : null;
+      if (!cell) return;
+      e.preventDefault();
+      if (this._on.has(+cell.dataset.i)) this._toggle(+cell.dataset.i, true);
+    }
+    _onOver(e) {
+      var cell = e.target.closest ? e.target.closest(".cell") : null;
+      if (!cell) { this._ghostG.style.display = "none"; return; }
+      var i = +cell.dataset.i;
+      this._ghostAt(i);
+      var n = this._pinNodes && this._pinNodes.get(i);
+      if (this._lift && this._lift !== n) this._lift.style.transform = "";
+      if (n) { n.style.transform = "translateY(-1px)"; this._lift = n; } else this._lift = null;
+    }
+    _onOut() {
+      this._ghostG.style.display = "none";
+      if (this._lift) { this._lift.style.transform = ""; this._lift = null; }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var C = this._cols, R = this._rows, i = this._cur, n = this._cells.length, k = e.key;
+      var to = null;
+      if (k === "ArrowLeft") to = i % C === 0 ? i : i - 1;
+      else if (k === "ArrowRight") to = i % C === C - 1 ? i : i + 1;
+      else if (k === "ArrowUp") to = i - C < 0 ? i : i - C;
+      else if (k === "ArrowDown") to = i + C >= n ? i : i + C;
+      else if (k === "Home") to = e.ctrlKey ? 0 : i - (i % C);
+      else if (k === "End") to = e.ctrlKey ? n - 1 : i - (i % C) + C - 1;
+      else if (k === "PageUp") to = i % C;
+      else if (k === "PageDown") to = (R - 1) * C + (i % C);
+      else if (k === " " || k === "Spacebar" || k === "Enter") { e.preventDefault(); this._toggle(i, e.shiftKey); this._ghostAt(i); return; }
+      else if (k === "c" || k === "C") { e.preventDefault(); if (this._on.has(i)) this._toggle(i, true); return; }
+      else if (k === "Delete" || k === "Backspace") { e.preventDefault(); if (this._on.has(i)) this._toggle(i, false); return; }
+      else return;
+      e.preventDefault();
+      this._moveTo(to);
+    }
+  }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  customElements.define("sk-matrix-ems-vcs3", SkMatrixVCS3);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

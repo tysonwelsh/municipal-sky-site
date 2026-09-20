@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solari Cifra 3 flip clock — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "flap-solari-cifra-3",
+  "element": "sk-flap-cifra-3",
+  "name": "Solari Cifra 3 flip clock",
+  "kind": "output",
+  "code": "G3",
+  "type": "Split-flap clock",
+  "source": "Solari di Udine \"Cifra 3\" table clock designed by Gino Valle, 1966",
+  "era": "1960s",
+  "origin": "Italy",
+  "materials": ["ABS cylinder", "black flaps", "clear front"],
+  "tags": ["clock", "split-flap", "flip", "Gino Valle", "desk", "time"],
+  "value": { "model": "time", "min": 0, "max": 86400, "unit": "HH:MM" },
+  "attributes": ["value", "case", "twelve", "flip", "live", "scale"],
+  "events": [],
+  "size": { "w": 360, "h": 200 },
+  "notes": "A black case at 10:24 and an orange one caught mid-fall on the roll from 23:59 to 00:00. Set value in seconds or as \"HH:MM\"; every flap that changes falls in two phases."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-flap-cifra-3 value="10:24"></sk-flap-cifra-3>
+    <sk-flap-cifra-3 value="00:00" case="orange" flip="0.66" scale="0.7"></sk-flap-cifra-3>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Gino Valle's <b>Cifra 3</b> for Solari di Udine, 1966: a lying-down ABS cylinder with a rectangular window
+  cut in its flat front face, two banks of black flaps behind it, and nothing else — no dial, no buttons, no
+  branding on the front. It has been in production ever since and sits in MoMA's design collection.</p>
+  <p><b>The tells kept here:</b> the body is shaded as a <i>tube</i> — a bright band along the top curve, a deep
+  shadow underneath and a sliver of reflected light at the very bottom edge, with the flat front face marked off
+  by the thin recess line that runs round it; the flat end discs at either side; the small moulded bar beside the
+  window on the right where the setting wheel lives; the figures are large and geometric with a closed 4, cut
+  across the middle by a one-pixel black split line with a lighter edge under it, and the two halves of a figure
+  never line up perfectly — the lower half sits half a pixel over; each of the four positions is its own flap
+  stack, so :09 → :10 is a two-flap cascade and a jump cycles the intermediate flaps through; and the fall is in
+  two phases — the top half hinges down 130 ms from 0° to −90° in perspective, darkening as it turns away from
+  the light and dragging a shadow across the card below, then the next figure's bottom half swings from +90° to
+  0° over 110 ms and bounces once on its stop.</p>
+  <p><b>Left out:</b> the mains cord and the synchronous motor's hum, the setting wheel itself (only its moulded
+  access bar is here), and the Solari wordmark.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-flap-cifra-3> — Solari Cifra 3 cylinder flip clock ====
+   attributes: value("HH:MM" or seconds) case(black|white|orange|red) twelve flip(0…1, freezes a fall) live scale
+   no events (an output). set .value or the attribute; flaps that change fall.
+   self-contained: paste this block into any page and use <sk-flap-cifra-3 value="10:24"></sk-flap-cifra-3> */
+(function () {
+  if (customElements.get("sk-flap-cifra-3")) return;
+  const W = 360, H = 200;
+  const CARD = 84, HALF = 42, CW = 46, GAP = 20, FS = 76;     // card, cell, gap, figure size
+  const PA = 0.54;                                            // the fall's two phases: 130 ms then 110 ms
+  const D10 = "0123456789".split("");
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host {
+      display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      --edge: #262626; --hi: #3c3c3c; --mid: #232323; --mid2: #1a1a1a; --lo: #0e0e0e; --deep: #050505; --refl: #202020;
+      --ink: rgba(255,255,255,0.10); --shade: rgba(0,0,0,0.55);
+    }
+    :host([hidden]) { display: none; }
+    :host([case="white"]) { --edge: #e7e5dd; --hi: #faf9f5; --mid: #eceae3; --mid2: #dfddd5; --lo: #c2c0b8; --deep: #a5a39b; --refl: #d6d4cc; --ink: rgba(0,0,0,0.16); --shade: rgba(0,0,0,0.32); }
+    :host([case="orange"]) { --edge: #d9541b; --hi: #f4762f; --mid: #e8591c; --mid2: #d44f18; --lo: #a93c10; --deep: #7f2d0c; --refl: #c85c22; --ink: rgba(255,255,255,0.14); }
+    :host([case="red"]) { --edge: #b8242a; --hi: #d9454c; --mid: #c4262b; --mid2: #ab2126; --lo: #861a1e; --deep: #611215; --refl: #9d2b30; --ink: rgba(255,255,255,0.13); }
+
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .shadow { position: absolute; left: 22px; top: 176px; width: 316px; height: 20px; border-radius: 50%;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,0.6), rgba(0,0,0,0) 72%); }
+    .base { position: absolute; left: 104px; top: 174px; width: 152px; height: 16px; border-radius: 0 0 5px 5px;
+      background: linear-gradient(180deg, var(--deep), #000 70%); box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
+
+    /* the body is a horizontal cylinder: a rectangle in silhouette, a tube in its shading */
+    .body { position: absolute; left: 6px; top: 8px; width: 348px; height: 174px; border-radius: 9px;
+      background: linear-gradient(180deg,
+        var(--edge) 0%, var(--hi) 5%, var(--mid) 21%, var(--mid2) 48%,
+        var(--lo) 76%, var(--deep) 93%, var(--refl) 99.5%, var(--deep) 100%);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 -1px 0 rgba(0,0,0,0.5) inset;
+      overflow: hidden; }
+    .body::after { content: ""; position: absolute; inset: 0;
+      background: radial-gradient(60% 120% at 26% -10%, rgba(255,255,255,0.13), rgba(255,255,255,0) 60%); }
+    /* the flat end discs */
+    .end { position: absolute; top: 0; width: 13px; height: 100%;
+      background: linear-gradient(90deg, rgba(0,0,0,0.42), rgba(0,0,0,0) 62%); }
+    .end.r { right: 0; transform: scaleX(-1); background: linear-gradient(90deg, rgba(0,0,0,0.5), rgba(0,0,0,0) 62%); }
+    .end i { position: absolute; top: 4px; bottom: 4px; width: 1px; background: var(--ink); }
+    .end.l i { right: 0; } .end.r i { right: 0; }
+    /* the flat front face, marked off by the thin recess line */
+    .face { position: absolute; left: 0; right: 0; top: 34px; height: 128px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 22%, rgba(0,0,0,0.12) 100%);
+      border-top: 1px solid rgba(0,0,0,0.35); border-bottom: 1px solid rgba(0,0,0,0.4); }
+    .face::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--ink); transform: translateY(1px); }
+    .face::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); }
+    /* the setting-wheel access bar */
+    .bar { position: absolute; right: 22px; top: 74px; width: 11px; height: 46px; border-radius: 5px;
+      background: linear-gradient(90deg, rgba(0,0,0,0.45), rgba(255,255,255,0.12) 45%, rgba(0,0,0,0.5));
+      box-shadow: 0 1px 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14); }
+
+    /* the window */
+    .win { position: absolute; left: 74px; top: 50px; width: 212px; height: 90px; border-radius: 4px;
+      background: #070707; overflow: hidden;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.14), 0 -1px 2px rgba(0,0,0,0.55),
+                  inset 0 3px 6px rgba(0,0,0,0.95), inset 0 -2px 4px rgba(0,0,0,0.8); }
+    .cards { position: absolute; left: 4px; top: 3px; height: ${CARD}px; display: flex; align-items: flex-start; }
+    .glass { position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(112deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 26%, rgba(255,255,255,0) 44%),
+                  linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0) 8%); }
+
+    /* one flap stack */
+    .dg { position: relative; width: ${CW}px; height: ${CARD}px; perspective: 620px; margin-right: 0; }
+    .gap { width: ${GAP}px; height: ${CARD}px; }
+    .half { position: absolute; left: 0; width: 100%; height: ${HALF}px; overflow: hidden; backface-visibility: hidden; }
+    .half b { display: block; width: 100%; height: ${CARD}px; line-height: ${CARD}px; text-align: center;
+      font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 600;
+      font-size: ${FS}px; letter-spacing: -0.02em; color: #f7f7f4; }
+    .t { top: 0; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #1d1d1d, #131313 62%, #0e0e0e); }
+    .b { top: ${HALF}px; border-radius: 0 0 3px 3px; background: linear-gradient(180deg, #131313, #0b0b0b); }
+    .b b { margin-top: -${HALF}px; margin-left: 0.5px; }          /* the halves never quite line up */
+    .t::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: #333; }
+    .ft { z-index: 4; transform-origin: 50% 100%; }
+    .fb { z-index: 4; transform-origin: 50% 0%; }
+    .sh { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+    .ft .sh { background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.95)); }
+    .fb .sh { background: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.02)); }
+    .cast { position: absolute; left: 0; top: ${HALF}px; width: 100%; height: ${HALF}px; z-index: 3; opacity: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.1) 70%); pointer-events: none; }
+    /* the split: 1 px black with a lighter lower edge */
+    .split { position: absolute; left: 0; top: ${HALF - 1.6}px; width: 100%; height: 3px; z-index: 3;
+      background: linear-gradient(180deg, #000 0 1.8px, #2a2a2a 1.8px 3px); pointer-events: none; }
+  </style>
+  <div class="wrap">
+    <div class="shadow"></div>
+    <div class="base"></div>
+    <div class="body">
+      <div class="face"></div>
+      <div class="end l"><i></i></div>
+      <div class="end r"><i></i></div>
+      <div class="bar"></div>
+      <div class="win"><div class="cards"></div><div class="glass"></div></div>
+    </div>
+  </div>`;
+
+  const two = n => (n < 10 ? "0" : "") + n;
+
+  class SkFlapCifra3 extends HTMLElement {
+    static get observedAttributes() { return ["value", "case", "twelve", "flip", "live", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._min = 0; this._scale = 1; this._raf = 0; this._last = 0; this._iv = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._cards = this.shadowRoot.querySelector(".cards");
+      this._cells = []; this._twelve = null; this._lab = "";
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "timer");
+      this._read();
+      this._build();
+      this._apply(false);
+      this._live();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; clearInterval(this._iv); this._iv = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      const was = this._twelve;
+      this._read();
+      if (this._twelve !== was) { this._build(); this._apply(false); }
+      else if (n === "value" || n === "flip") this._apply(n === "value" && !this.hasAttribute("flip"));
+      if (n === "live") this._live();
+    }
+
+    get value() { return two(Math.floor(this._min / 60)) + ":" + two(this._min % 60); }
+    set value(v) {
+      const m = this._parse(v);
+      if (m == null) return;
+      const changed = m !== this._min;
+      this._min = m;
+      this.setAttribute("value", this.value);
+      if (changed) this._apply(!this.hasAttribute("flip"));
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    /* the idle demo: the clock runs at thirty-five times, so a flap falls every couple of seconds */
+    demo(t) { return (10 * 3600 + 23 * 60 + 40 + t * 35) % 86400; }
+
+    _parse(v) {
+      if (typeof v === "number") return Math.floor(((v / 60) % 1440 + 1440) % 1440);
+      const s = String(v == null ? "" : v).trim();
+      let m = /^(\d{1,2})\s*:\s*(\d{1,2})/.exec(s);
+      if (m) return ((parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60) + 1440) % 1440;
+      const n = parseFloat(s);
+      if (!isNaN(n)) return Math.floor(((n / 60) % 1440 + 1440) % 1440);
+      return null;
+    }
+
+    _read() {
+      const num = (s, d) => { const x = parseFloat(s); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num(this.getAttribute("scale"), 1));
+      this._twelve = this.hasAttribute("twelve");
+      const m = this._parse(this.getAttribute("value"));
+      if (m != null) this._min = m;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+
+    _live() {
+      clearInterval(this._iv); this._iv = 0;
+      if (!this.hasAttribute("live")) return;
+      const now = () => { const d = new Date(); this.value = two(d.getHours()) + ":" + two(d.getMinutes()); };
+      now();
+      this._iv = setInterval(now, 1000);
+    }
+
+    /* one stack per position; the hours tens carries 0–2, the minutes tens 0–5 */
+    _build() {
+      this._cards.innerHTML = "";
+      this._cells = [];
+      const sets = this._twelve
+        ? [["0", "1"], D10, ["0", "1", "2", "3", "4", "5"], D10, ["AM", "PM"]]
+        : [["0", "1", "2"], D10, ["0", "1", "2", "3", "4", "5"], D10];
+      const cw = this._twelve ? 40 : CW, gap = this._twelve ? 14 : GAP, fs = this._twelve ? 66 : FS;
+      sets.forEach((chars, k) => {
+        if (k === 2) {
+          const g = document.createElement("div"); g.className = "gap";
+          g.style.width = gap + "px"; this._cards.appendChild(g);
+        }
+        if (k === 4) {
+          const g = document.createElement("div"); g.className = "gap";
+          g.style.width = "4px"; this._cards.appendChild(g);
+        }
+        const d = document.createElement("div");
+        d.className = "dg";
+        d.style.width = (k === 4 ? 28 : cw) + "px";
+        d.innerHTML =
+          '<div class="half t"><b></b></div>' +
+          '<div class="half b"><b></b></div>' +
+          '<div class="cast"></div><div class="split"></div>' +
+          '<div class="half t ft"><b></b><i class="sh"></i></div>' +
+          '<div class="half b fb"><b></b><i class="sh"></i></div>';
+        const q = s => d.querySelector(s);
+        const cell = {
+          chars, i: 0, to: -1, p: 0, dur: 240, q: [],
+          el: d,
+          tTx: q(".t:not(.ft) b"), bTx: q(".b:not(.fb) b"),
+          ftEl: q(".ft"), fbEl: q(".fb"),
+          ftTx: q(".ft b"), fbTx: q(".fb b"),
+          ftSh: q(".ft .sh"), fbSh: q(".fb .sh"),
+          cast: q(".cast")
+        };
+        [cell.tTx, cell.bTx, cell.ftTx, cell.fbTx].forEach(b => {
+          if (k === 4) { b.style.fontSize = "17px"; b.style.letterSpacing = "0.02em"; }
+          else if (fs !== FS) b.style.fontSize = fs + "px";
+        });
+        this._cards.appendChild(d);
+        this._cells.push(cell);
+      });
+      this._cards.style.left = this._twelve ? "6px" : "4px";
+    }
+
+    _target() {
+      let h = Math.floor(this._min / 60), m = this._min % 60, ap = 0;
+      if (this._twelve) { ap = h >= 12 ? 1 : 0; h = h % 12; if (h === 0) h = 12; }
+      const out = [Math.floor(h / 10), h % 10, Math.floor(m / 10), m % 10];
+      if (this._twelve) out.push(ap);
+      return out;
+    }
+
+    _apply(animate) {
+      const tgt = this._target();
+      const frozen = this.hasAttribute("flip");
+      if (frozen) {
+        const p = Math.max(0, Math.min(1, parseFloat(this.getAttribute("flip")) || 0));
+        const prevMin = (this._min + 1439) % 1440, keep = this._min;
+        this._min = prevMin; const prev = this._target(); this._min = keep;
+        cancelAnimationFrame(this._raf); this._raf = 0;
+        this._cells.forEach((c, k) => {
+          c.q.length = 0;
+          if (prev[k] === tgt[k]) { c.i = tgt[k]; c.to = -1; c.p = 0; }
+          else { c.i = prev[k]; c.to = tgt[k]; c.p = p; }
+          this._render(c);
+        });
+        this._name();
+        return;
+      }
+      this._cells.forEach((c, k) => {
+        const last = c.q.length ? c.q[c.q.length - 1] : (c.to >= 0 ? c.to : c.i);
+        if (last === tgt[k]) { if (!animate && c.to < 0 && !c.q.length) { c.i = tgt[k]; this._render(c); } return; }
+        if (!animate) { c.q.length = 0; c.to = -1; c.p = 0; c.i = tgt[k]; this._render(c); return; }
+        let x = last, guard = 0;                       // cycle the intermediate flaps through
+        while (x !== tgt[k] && guard++ < 12) { x = (x + 1) % c.chars.length; c.q.push(x); }
+      });
+      this._name();
+      if (animate) this._kick();
+    }
+
+    _name() {
+      const l = this.value + (this._twelve ? (Math.floor(this._min / 60) >= 12 ? " PM" : " AM") : "");
+      if (l !== this._lab) { this._lab = l; this.setAttribute("aria-label", l); }
+    }
+
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+
+    _next(c) { if (c.q.length) { c.to = c.q.shift(); c.p = 0; c.dur = c.q.length > 1 ? 150 : 240; } }
+
+    _tick(now) {
+      const dt = Math.min(64, now - this._last); this._last = now;
+      let busy = false;
+      for (const c of this._cells) {
+        if (c.to < 0 && c.q.length) this._next(c);
+        if (c.to < 0) continue;
+        c.p += dt / c.dur;
+        if (c.p >= 1) { c.i = c.to; c.to = -1; c.p = 0; this._next(c); }
+        this._render(c);
+        if (c.to >= 0 || c.q.length) busy = true;
+      }
+      if (busy) { this._raf = requestAnimationFrame(this._tick); } else { this._raf = 0; }
+    }
+
+    _render(c) {
+      const cur = c.chars[c.i], nxt = c.to >= 0 ? c.chars[c.to] : cur;
+      if (c.tTx.textContent !== nxt) c.tTx.textContent = nxt;     // the next figure's top half waits behind
+      if (c.bTx.textContent !== cur) c.bTx.textContent = cur;
+      if (c.to < 0) {
+        c.ftEl.style.display = "none"; c.fbEl.style.display = "none"; c.cast.style.opacity = "0";
+        return;
+      }
+      if (c.ftTx.textContent !== cur) c.ftTx.textContent = cur;
+      if (c.fbTx.textContent !== nxt) c.fbTx.textContent = nxt;
+      if (c.p < PA) {
+        const a = c.p / PA, e = a * a;                            // it falls, so it accelerates
+        c.ftEl.style.display = ""; c.fbEl.style.display = "none";
+        c.ftEl.style.transform = `rotateX(${(-90 * e).toFixed(2)}deg)`;
+        c.ftSh.style.opacity = (0.8 * Math.sin(e * Math.PI / 2)).toFixed(3);
+        c.cast.style.opacity = (0.55 * e).toFixed(3);
+      } else {
+        const b = (c.p - PA) / (1 - PA), e = 1 - (1 - b) * (1 - b);
+        let ang = 90 * (1 - e);
+        if (b > 0.85) ang = -3.5 * Math.sin((b - 0.85) / 0.15 * Math.PI);   // it bounces once on the stop
+        c.ftEl.style.display = "none"; c.fbEl.style.display = "";
+        c.fbEl.style.transform = `rotateX(${ang.toFixed(2)}deg)`;
+        c.fbSh.style.opacity = (0.45 * Math.sin(Math.max(0, ang) * Math.PI / 180)).toFixed(3);
+        c.cast.style.opacity = (0.5 * (1 - e)).toFixed(3);
+      }
+    }
+  }
+  customElements.define("sk-flap-cifra-3", SkFlapCifra3);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

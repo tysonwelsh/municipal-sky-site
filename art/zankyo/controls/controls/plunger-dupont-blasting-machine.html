@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blasting machine T-plunger, oak box — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "plunger-dupont-blasting-machine",
+  "element": "sk-plunger-dupont-blasting",
+  "name": "Blasting machine T-plunger, oak box",
+  "kind": "input",
+  "code": "D18",
+  "type": "Detonator plunger / T-handle push",
+  "source": "The E. I. du Pont de Nemours \"Blasting Machine No. 3\" and its Fidelity Electric equivalents, about 1910–1950: a varnished oak box with brass corner straps, two binding posts and a T-handle plunger that spins a magneto when it is driven down",
+  "era": "1900s",
+  "origin": "USA",
+  "materials": ["quarter-sawn oak", "varnish", "brass", "painted steel"],
+  "tags": ["demolition", "magneto", "momentary", "gestural", "T-handle", "oak"],
+  "value": { "model": "momentary", "gesture": "range", "min": 0, "max": 1 },
+  "attributes": ["value", "label", "scale", "disabled"],
+  "events": ["press", "release", "input", "change", "fire", "activate"],
+  "size": { "w": 200, "h": 360 },
+  "notes": "Three machines: plunger up, half way, and driven home with the terminals live. Drag the handle down — it stiffens toward the bottom and only fires at the very end — or hold Space; let go and the rack lifts it back over 600 ms."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-plunger-dupont-blasting label="firing line" scale="0.55"></sk-plunger-dupont-blasting>
+    <sk-plunger-dupont-blasting label="firing line" value="0.5" scale="0.42"></sk-plunger-dupont-blasting>
+    <sk-plunger-dupont-blasting label="firing line" value="1" scale="0.42"></sk-plunger-dupont-blasting>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>blasting machine</b> is the box in every cartoon: quarter-sawn oak, varnished amber, brass straps
+  screwed over the corners, two binding posts on the side for the firing line, a stamped brass plate, and a
+  T-handle on a black steel rod standing a hundred millimetres above the lid. It is not a switch. Driving the
+  handle down spins a small magneto through a rack and pinion, and the current it makes goes out to the caps —
+  which is why the handle has to go <i>all the way</i>, and hard.</p>
+  <p><b>The tells kept here:</b> the silhouette first — a wide turned handle high above a small box; oak with a
+  drawn vertical grain and the pale medullary flecks of a quarter-sawn board, under a varnish that carries one
+  broad sheen from the top left; brass corner straps with slotted screws set at their own angles; two binding
+  posts with knurled nuts, the firing line wrapped round the lower one and dropping away; the stamped plate,
+  its letters debossed so the bottom edge of each one catches light. The travel is the point: the drag maps
+  non-linearly so the last centimetres come slowly, it <b>fires only at the very bottom</b> — a flash at the
+  terminals, a <code>fire</code> event — and on release the rack lifts it back over 600&nbsp;ms rather than
+  snapping. The varnish is worn pale along the top edges and the ends of the handle are polished where the
+  hands go.</p>
+  <p><b>Left out:</b> the maker's name (the plate carries the type and the cap rating only), the leather strap,
+  and the screw-down latch on the lid.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-plunger-dupont-blasting> — oak-box blasting machine with a T-plunger ====
+   attributes: value(0…1) label scale disabled
+   events: press / release, input {value} and change {value} while it travels,
+           fire + activate when the plunger bottoms
+   self-contained: paste this block into any page and use <sk-plunger-dupont-blasting></sk-plunger-dupont-blasting> */
+(function () {
+  var TAG = "sk-plunger-dupont-blasting";
+  if (customElements.get(TAG)) return;
+  var W = 200, H = 360, CX = 100;
+  var TRAVEL = 90, DRAG = 150;
+  var BX = 30, BY = 118, BW = 140, BH = 234;          // the box
+  var HT = 6, HH = 22, HW = 124;                      // the T-handle at rest
+
+  function n(x) { return Math.round(x * 100) / 100; }
+  function rng(seed) { return function () { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }; }
+
+  /* quarter-sawn oak: drawn vertical grain plus the pale rays */
+  function oak() {
+    var r = rng(20250920), out = "";
+    for (var i = 0; i < 36; i++) {
+      var x = BX + 3 + (BW - 6) * r(), a = 1 + r() * 5, q = r(), sw = q > 0.86 ? 1.6 + r() * 1.4 : 0.4 + r() * 0.9, dark = r() > 0.4;
+      out += '<path d="M ' + n(x) + ' ' + BY + ' C ' + n(x + a) + ' ' + n(BY + BH * 0.3) + ' ' + n(x - a) + ' ' + n(BY + BH * 0.66) + ' ' + n(x + a * 0.4) + ' ' + n(BY + BH) + '" fill="none" stroke="' + (dark ? "#472a0c" : "#c0904e") + '" stroke-opacity="' + n(q > 0.86 ? 0.3 + r() * 0.24 : 0.10 + r() * 0.18) + '" stroke-width="' + n(sw) + '"/>';
+    }
+    for (var j = 0; j < 22; j++) {
+      var fx = BX + 6 + (BW - 12) * r(), fy = BY + 8 + (BH - 16) * r(), fw = 4 + r() * 11, fh = 1 + r() * 1.5;
+      out += '<ellipse cx="' + n(fx) + '" cy="' + n(fy) + '" rx="' + n(fw / 2) + '" ry="' + n(fh / 2) + '" fill="#eac78a" opacity="' + n(0.10 + r() * 0.20) + '" transform="rotate(' + n(-7 + r() * 14) + ' ' + n(fx) + ' ' + n(fy) + ')"/>';
+    }
+    for (var k = 0; k < 4; k++) {
+      var gx = BX + BW * r(), gy = BY + BH * r();
+      out += '<ellipse cx="' + n(gx) + '" cy="' + n(gy) + '" rx="' + n(14 + r() * 26) + '" ry="' + n(22 + r() * 50) + '" fill="#2f1c08" opacity="' + n(0.08 + r() * 0.1) + '" filter="url(#bb9)"/>';
+    }
+    return out;
+  }
+
+  function screw(x, y, r, rot) {
+    return '<g transform="translate(' + n(x) + ',' + n(y) + ')">'
+      + '<circle cx="0.4" cy="0.6" r="' + n(r + 0.8) + '" fill="#2a1d06" opacity="0.5"/>'
+      + '<circle r="' + r + '" fill="url(#brass)" stroke="#4e3a0f" stroke-width="0.5"/>'
+      + '<g transform="rotate(' + rot + ')">'
+      + '<rect x="' + n(-r * 0.85) + '" y="-0.6" width="' + n(r * 1.7) + '" height="1.2" rx="0.5" fill="#33240a" opacity="0.85"/>'
+      + '<rect x="' + n(-r * 0.85) + '" y="0.5" width="' + n(r * 1.7) + '" height="0.6" rx="0.3" fill="#ffeaa8" opacity="0.4"/>'
+      + '</g></g>';
+  }
+
+  /* an L-shaped corner strap; sx/sy mirror it into each corner */
+  function strap(x, y, sx, sy) {
+    var A = 33, B = 37, T = 10.5;
+    var p = 'M ' + x + ' ' + y + ' l ' + (sx * A) + ' 0 l 0 ' + (sy * T) + ' l ' + (-sx * (A - T)) + ' 0 l 0 ' + (sy * (B - T)) + ' l ' + (-sx * T) + ' 0 z';
+    return '<g>'
+      + '<path d="' + p + '" transform="translate(1.2,1.6)" fill="#241703" opacity="0.45"/>'
+      + '<path d="' + p + '" fill="url(#strapg)" stroke="#4b3810" stroke-width="0.7" stroke-linejoin="round"/>'
+      + '<path d="' + p + '" fill="none" stroke="#ffe9a4" stroke-opacity="0.35" stroke-width="0.7" transform="translate(-0.5,-0.6)"/>'
+      + screw(x + sx * 22, y + sy * 5.3, 2.6, 31 + (sx * sy > 0 ? 20 : 0))
+      + screw(x + sx * 5.3, y + sy * 25, 2.6, 74 + (sx > 0 ? 40 : 0))
+      + '</g>';
+  }
+
+  function post(y, wire) {
+    var x = BX + BW - 6;
+    return '<g>'
+      + '<rect x="' + n(x) + '" y="' + n(y - 3) + '" width="10" height="6" rx="1" fill="url(#brass)" stroke="#4e3a0f" stroke-width="0.5"/>'
+      + '<rect x="' + n(x + 8) + '" y="' + n(y - 7.5) + '" width="9" height="15" rx="2" fill="url(#knurl)" stroke="#4b3810" stroke-width="0.6"/>'
+      + '<rect x="' + n(x + 8) + '" y="' + n(y - 7.5) + '" width="9" height="15" rx="2" fill="url(#knurlline)"/>'
+      + '<rect x="' + n(x + 16) + '" y="' + n(y - 2) + '" width="5" height="4" rx="1" fill="url(#brass)"/>'
+      + (wire ? '<path d="M ' + n(x + 12) + ' ' + n(y + 6) + ' c 0 8 8 10 10 18 c 2 8 -4 14 -2 26 c 1 8 4 12 4 20" fill="none" stroke="#2a1d14" stroke-width="3.2" stroke-linecap="round"/>'
+        + '<path d="M ' + n(x + 12) + ' ' + n(y + 6) + ' c 0 8 8 10 10 18 c 2 8 -4 14 -2 26 c 1 8 4 12 4 20" fill="none" stroke="#6a5343" stroke-width="1" stroke-linecap="round" stroke-opacity="0.6"/>'
+        + '<ellipse cx="' + n(x + 12.5) + '" cy="' + n(y) + '" rx="3" ry="8" fill="none" stroke="#2a1d14" stroke-width="2.6"/>' : "")
+      + '</g>';
+  }
+
+  function plate() {
+    var px = CX - 47, py = 200, pw = 94, ph = 44;
+    function line(t, y, size, weight, track) {
+      return '<text class="pl lit" x="' + CX + '" y="' + n(y + 0.7) + '" style="font-size:' + size + 'px;font-weight:' + weight + ';letter-spacing:' + track + 'em">' + t + '</text>'
+        + '<text class="pl ink" x="' + CX + '" y="' + y + '" style="font-size:' + size + 'px;font-weight:' + weight + ';letter-spacing:' + track + 'em">' + t + '</text>';
+    }
+    return '<g>'
+      + '<rect x="' + n(px + 1) + '" y="' + n(py + 1.5) + '" width="' + pw + '" height="' + ph + '" rx="2" fill="#2a1a06" opacity="0.45"/>'
+      + '<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" rx="2" fill="url(#plateg)" stroke="#6b5116" stroke-width="0.7"/>'
+      + '<rect x="' + n(px + 1.2) + '" y="' + n(py + 1.2) + '" width="' + n(pw - 2.4) + '" height="' + n(ph - 2.4) + '" rx="1.4" fill="none" stroke="#3f2f0c" stroke-opacity="0.5" stroke-width="0.7"/>'
+      + line("BLASTING MACHINE", py + 13, 5.8, 700, 0.09)
+      + line("No. 3", py + 27, 10.5, 700, 0.04)
+      + line("50 CAP", py + 37.5, 5.4, 500, 0.14)
+      + screw(px + 5, py + 5, 2.1, 18) + screw(px + pw - 5, py + 5, 2.1, 96)
+      + screw(px + 5, py + ph - 5, 2.1, 62) + screw(px + pw - 5, py + ph - 5, 2.1, 8)
+      + '</g>';
+  }
+
+  var SVG = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">'
+    + '<defs>'
+    + '<linearGradient id="oakg" x1="0" y1="0" x2="0.8" y2="1">'
+    + '<stop offset="0" stop-color="#8d6128"/><stop offset="0.36" stop-color="#744d1f"/><stop offset="0.76" stop-color="#553516"/><stop offset="1" stop-color="#37210d"/></linearGradient>'
+    + '<linearGradient id="lidg" x1="0" y1="0" x2="0.7" y2="1">'
+    + '<stop offset="0" stop-color="#e6c184" stop-opacity="0.5"/><stop offset="0.45" stop-color="#c79a54" stop-opacity="0.12"/><stop offset="1" stop-color="#1c1003" stop-opacity="0.45"/></linearGradient>'
+    + '<linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.7">'
+    + '<stop offset="0" stop-color="#ffdb9a" stop-opacity="0.30"/><stop offset="0.3" stop-color="#ffd995" stop-opacity="0.04"/>'
+    + '<stop offset="0.58" stop-color="#160c02" stop-opacity="0.16"/><stop offset="1" stop-color="#120a01" stop-opacity="0.46"/></linearGradient>'
+    + '<linearGradient id="brass" x1="0.2" y1="0" x2="0.8" y2="1">'
+    + '<stop offset="0" stop-color="#f0d68a"/><stop offset="0.5" stop-color="#c6a04a"/><stop offset="1" stop-color="#6e5018"/></linearGradient>'
+    + '<linearGradient id="strapg" x1="0.1" y1="0" x2="0.9" y2="1">'
+    + '<stop offset="0" stop-color="#f7e5a6"/><stop offset="0.3" stop-color="#d8b258"/><stop offset="0.72" stop-color="#9c7828"/><stop offset="1" stop-color="#6a4d14"/></linearGradient>'
+    + '<linearGradient id="plateg" x1="0.1" y1="0" x2="0.9" y2="1">'
+    + '<stop offset="0" stop-color="#e3c878"/><stop offset="0.45" stop-color="#c9a850"/><stop offset="1" stop-color="#8d6c22"/></linearGradient>'
+    + '<linearGradient id="knurl" x1="0" y1="0" x2="1" y2="0">'
+    + '<stop offset="0" stop-color="#8f6d25"/><stop offset="0.35" stop-color="#e6cb7e"/><stop offset="0.7" stop-color="#b08c3c"/><stop offset="1" stop-color="#6a4d14"/></linearGradient>'
+    + '<pattern id="knurlline" width="1.6" height="4" patternUnits="userSpaceOnUse">'
+    + '<rect width="0.7" height="4" fill="#4b3810" opacity="0.45"/></pattern>'
+    + '<linearGradient id="rod" x1="0" y1="0" x2="1" y2="0">'
+    + '<stop offset="0" stop-color="#101010"/><stop offset="0.2" stop-color="#3c3c3c"/><stop offset="0.3" stop-color="#5a5a5a"/>'
+    + '<stop offset="0.42" stop-color="#242424"/><stop offset="0.78" stop-color="#121212"/><stop offset="0.92" stop-color="#2e2e2e"/><stop offset="1" stop-color="#151515"/></linearGradient>'
+    + '<linearGradient id="handle" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="#6f4a1d"/><stop offset="0.15" stop-color="#c99f5c"/><stop offset="0.4" stop-color="#8d5f26"/><stop offset="0.72" stop-color="#553413"/>'
+    + '<stop offset="0.9" stop-color="#37200a"/><stop offset="1" stop-color="#77501e"/></linearGradient>'
+    + '<radialGradient id="spark" cx="50%" cy="50%" r="50%">'
+    + '<stop offset="0" stop-color="#ffffff"/><stop offset="0.3" stop-color="#cfe6ff"/><stop offset="0.6" stop-color="#5aa8ff" stop-opacity="0.5"/><stop offset="1" stop-color="#2a6cff" stop-opacity="0"/></radialGradient>'
+    + '<filter id="bb2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>'
+    + '<filter id="bb5" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>'
+    + '<filter id="bb9" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="9"/></filter>'
+    + '<clipPath id="boxclip"><rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="' + BH + '" rx="3"/></clipPath>'
+    + '</defs>'
+
+    /* the ground */
+    + '<ellipse cx="' + n(CX + 6) + '" cy="' + n(BY + BH + 4) + '" rx="' + n(BW * 0.62) + '" ry="9" fill="#000" opacity="0.5" filter="url(#bb9)"/>'
+    + '<rect x="' + n(BX + 3) + '" y="' + n(BY + 8) + '" width="' + n(BW) + '" height="' + n(BH - 4) + '" rx="3" fill="#000" opacity="0.45" filter="url(#bb5)"/>'
+
+    /* the plunger: rod + T-handle */
+    + '<g class="plunger">'
+    + '<rect x="' + n(CX - 6) + '" y="' + n(HT + HH - 6) + '" width="12" height="' + n(BY - HT - HH + 12) + '" fill="url(#rod)"/>'
+    + '<rect x="' + n(CX - 3.6) + '" y="' + n(HT + HH - 6) + '" width="1.6" height="' + n(BY - HT - HH + 12) + '" fill="#8a8a8a" opacity="0.75"/>'
+    + '<rect x="' + n(CX + 4.2) + '" y="' + n(HT + HH - 6) + '" width="1" height="' + n(BY - HT - HH + 12) + '" fill="#4a4a4a" opacity="0.6"/>'
+    + '<g class="handle">'
+    + '<rect x="' + n(CX - HW / 2 + 2) + '" y="' + n(HT + 3) + '" width="' + HW + '" height="' + HH + '" rx="' + n(HH / 2) + '" fill="#000" opacity="0.4" filter="url(#bb5)"/>'
+    + '<rect x="' + n(CX - HW / 2) + '" y="' + HT + '" width="' + HW + '" height="' + HH + '" rx="' + n(HH / 2) + '" fill="url(#handle)" stroke="#33200a" stroke-width="0.8"/>'
+    + '<rect x="' + n(CX - HW / 2 + 2) + '" y="' + n(HT + 1.4) + '" width="' + n(HW - 4) + '" height="3" rx="1.5" fill="#f0cb87" opacity="0.4"/>'
+    + '<path d="M ' + n(CX - HW / 2 + 8) + ' ' + n(HT + HH - 1.6) + ' h ' + n(HW - 16) + '" stroke="#c08a45" stroke-opacity="0.35" stroke-width="1.4"/>'
+    + '<g opacity="0.5">'
+    + '<path d="M ' + n(CX - 46) + ' ' + n(HT + 2) + ' v ' + n(HH - 4) + '" stroke="#3a2409" stroke-width="1.4"/><path d="M ' + n(CX - 44.2) + ' ' + n(HT + 2) + ' v ' + n(HH - 4) + '" stroke="#e8c489" stroke-width="0.9"/>'
+    + '<path d="M ' + n(CX + 46) + ' ' + n(HT + 2) + ' v ' + n(HH - 4) + '" stroke="#3a2409" stroke-width="1.4"/><path d="M ' + n(CX + 47.8) + ' ' + n(HT + 2) + ' v ' + n(HH - 4) + '" stroke="#e8c489" stroke-width="0.9"/>'
+    + '<path d="M ' + n(CX - 53) + ' ' + n(HT + 3) + ' v ' + n(HH - 6) + '" stroke="#3a2409" stroke-width="1"/>'
+    + '<path d="M ' + n(CX + 53) + ' ' + n(HT + 3) + ' v ' + n(HH - 6) + '" stroke="#3a2409" stroke-width="1"/>'
+    + '</g>'
+    /* the ends, polished by a hundred hands */
+    + '<ellipse cx="' + n(CX - HW / 2 + 7) + '" cy="' + n(HT + HH * 0.42) + '" rx="5" ry="7" fill="#f2cd8c" opacity="0.3" filter="url(#bb2)"/>'
+    + '<ellipse cx="' + n(CX + HW / 2 - 7) + '" cy="' + n(HT + HH * 0.42) + '" rx="5" ry="7" fill="#f2cd8c" opacity="0.26" filter="url(#bb2)"/>'
+    /* the ferrule where the rod enters the handle */
+    + '<rect x="' + n(CX - 10) + '" y="' + n(HT + HH - 5) + '" width="20" height="12" rx="2" fill="url(#brass)" stroke="#4b3810" stroke-width="0.6"/>'
+    + '<rect x="' + n(CX - 10) + '" y="' + n(HT + HH - 5) + '" width="20" height="2.6" rx="1.3" fill="#ffeaa8" opacity="0.4"/>'
+    + '</g></g>'
+    /* the lid, seen a little from above: the thing that makes it a box */
+    + '<path d="M ' + n(BX + 7) + ' ' + n(BY - 7) + ' L ' + n(BX + BW - 7) + ' ' + n(BY - 7) + ' L ' + n(BX + BW) + ' ' + n(BY + 1) + ' L ' + BX + ' ' + n(BY + 1) + ' Z" fill="#9d6e31"/>'
+    + '<path d="M ' + n(BX + 7) + ' ' + n(BY - 7) + ' L ' + n(BX + BW - 7) + ' ' + n(BY - 7) + ' L ' + n(BX + BW) + ' ' + n(BY + 1) + ' L ' + BX + ' ' + n(BY + 1) + ' Z" fill="url(#lidg)"/>'
+    + '<path d="M ' + n(BX + 7) + ' ' + n(BY - 7) + ' L ' + n(BX + BW - 7) + ' ' + n(BY - 7) + '" stroke="#f0d197" stroke-opacity="0.45" stroke-width="0.9" fill="none"/>'
+    + '<path d="M ' + n(BX + 7.5) + ' ' + n(BY - 6.6) + ' L ' + n(BX + 0.6) + ' ' + n(BY + 0.6) + ' M ' + n(BX + BW - 7.5) + ' ' + n(BY - 6.6) + ' L ' + n(BX + BW - 0.6) + ' ' + n(BY + 0.6) + '" stroke="#2c1a06" stroke-opacity="0.5" stroke-width="0.8" fill="none"/>'
+    /* the box */
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="' + BH + '" rx="3" fill="url(#oakg)"/>'
+    + '<g clip-path="url(#boxclip)">' + oak()
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="' + BH + '" fill="url(#sheen)"/>'
+    + '<ellipse cx="' + n(BX + BW * 0.26) + '" cy="' + n(BY + BH * 0.2) + '" rx="' + n(BW * 0.5) + '" ry="' + n(BH * 0.2) + '" fill="#ffe0a6" opacity="0.14" filter="url(#bb9)" transform="rotate(-14 ' + n(BX + BW * 0.3) + ' ' + n(BY + BH * 0.2) + ')"/>'
+    /* the lid, and the varnish worn pale along its edges */
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="12" fill="#c08b45" opacity="0.22"/>'
+    + '<rect x="' + BX + '" y="' + n(BY + 11.4) + '" width="' + BW + '" height="1.8" fill="#2e1c06" opacity="0.7"/>'
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="2.6" fill="#f0d29a" opacity="0.5"/>'
+    + '<rect x="' + BX + '" y="' + n(BY + 13.2) + '" width="' + BW + '" height="1.4" fill="#e8c489" opacity="0.28"/>'
+    + '<rect x="' + BX + '" y="' + n(BY + BH - 3) + '" width="' + BW + '" height="3" fill="#2a1a05" opacity="0.5"/>'
+    + '</g>'
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="' + BH + '" rx="3" fill="none" stroke="#3a2409" stroke-width="1.2"/>'
+    + '<path d="M ' + n(BX + 0.8) + ' ' + n(BY + BH - 3) + ' L ' + n(BX + 0.8) + ' ' + n(BY + 3) + ' Q ' + n(BX + 0.8) + ' ' + n(BY + 0.8) + ' ' + n(BX + 3) + ' ' + n(BY + 0.8) + ' L ' + n(BX + BW - 3) + ' ' + n(BY + 0.8) + '" fill="none" stroke="#ffd79a" stroke-opacity="0.3" stroke-width="0.9"/>'
+    + '<path d="M ' + n(BX + BW - 0.8) + ' ' + n(BY + 3) + ' L ' + n(BX + BW - 0.8) + ' ' + n(BY + BH - 3) + ' L ' + n(BX + 3) + ' ' + n(BY + BH - 0.8) + '" fill="none" stroke="#150c02" stroke-opacity="0.45" stroke-width="1"/>'
+
+    + plate()
+    + post(258, false) + post(296, true)
+    + strap(BX, BY, 1, 1) + strap(BX + BW, BY, -1, 1)
+    + strap(BX, BY + BH, 1, -1) + strap(BX + BW, BY + BH, -1, -1)
+
+    /* the spark at the terminals, when the magneto is turning */
+    + '<g class="spark">'
+    + '<circle cx="' + n(BX + BW + 12) + '" cy="258" r="13" fill="url(#spark)" filter="url(#bb2)"/>'
+    + '<circle cx="' + n(BX + BW + 12) + '" cy="258" r="3" fill="#ffffff"/>'
+    + '<circle cx="' + n(BX + BW + 12) + '" cy="296" r="9" fill="url(#spark)" filter="url(#bb2)"/>'
+    + '</g>'
+
+    /* the gland the rod runs through */
+    + '<g><ellipse cx="' + CX + '" cy="' + n(BY + 2) + '" rx="17" ry="4.5" fill="#241703" opacity="0.5"/>'
+    + '<rect x="' + n(CX - 16) + '" y="' + n(BY - 5) + '" width="32" height="9" rx="2.5" fill="url(#brass)" stroke="#4b3810" stroke-width="0.6"/>'
+    + '<rect x="' + n(CX - 16) + '" y="' + n(BY - 5) + '" width="32" height="2.4" rx="1.2" fill="#ffeaa8" opacity="0.35"/>'
+    + '<rect x="' + n(CX - 7.5) + '" y="' + n(BY - 7) + '" width="15" height="5" rx="1.5" fill="#1a1a1a"/></g>'
+
+    + '</svg>';
+
+  var CSS = `
+    :host { display: inline-block; position: relative; width: ${W}px; height: ${H}px; font-size: 10px; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    .pl { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; text-anchor: middle; }
+    .pl.ink { fill: #2a2210; }
+    .pl.lit { fill: #f6e2a8; opacity: 0.55; }
+    .spark { opacity: 0; transition: opacity 120ms linear; }
+    :host([data-live]) .spark { opacity: 0.55; }
+    :host([data-boom]) .spark { opacity: 1; transition: none; }
+    .grab { position: absolute; left: ${CX - HW / 2 - 4}px; width: ${HW + 8}px; height: ${HH + 10}px;
+      border-radius: ${HH / 2 + 4}px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }
+  `;
+
+  class SkPlunger extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      var r = this.attachShadow({ mode: "open" });
+      var st = document.createElement("style"); st.textContent = CSS;
+      var wrap = document.createElement("div"); wrap.className = "wrap";
+      wrap.innerHTML = SVG;
+      var grab = document.createElement("div"); grab.className = "grab";
+      grab.setAttribute("role", "button"); grab.setAttribute("tabindex", "0");
+      wrap.appendChild(grab);
+      r.appendChild(st); r.appendChild(wrap);
+      this._wrap = wrap; this._grab = grab;
+      this._plunger = wrap.querySelector(".plunger");
+      this._v = 0; this._scale = 1; this._armed = true; this._raf = 0; this._mode = null; this._lastIn = 0;
+      ["_onDown", "_onMove", "_onUp", "_onKeyDown", "_onKeyUp", "_tick"].forEach(function (k) { this[k] = this[k].bind(this); }, this);
+    }
+    connectedCallback() {
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("keydown", this._onKeyDown);
+      this._grab.addEventListener("keyup", this._onKeyUp);
+      this._grab.addEventListener("blur", this._onKeyUp);
+      this._read(); this._render();
+    }
+    disconnectedCallback() {
+      if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; this._mode = null;
+      clearTimeout(this._boomT);
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("keydown", this._onKeyDown);
+      this._grab.removeEventListener("keyup", this._onKeyUp);
+      this._grab.removeEventListener("blur", this._onKeyUp);
+    }
+    attributeChangedCallback(nm, o, v) { if (o === v || !this.isConnected || this._own) return; this._read(); this._render(); }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.max(0, Math.min(1, v));
+      if (this._v >= 0.999) this._armed = false; else if (this._v < 0.5) this._armed = true;
+      var s = String(Math.round(this._v * 1000) / 1000);
+      this._own = true; if (this.getAttribute("value") !== s) this.setAttribute("value", s); this._own = false;
+      this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _read() {
+      var sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) || sc <= 0 ? 1 : sc;
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var v = parseFloat(this.getAttribute("value"));
+      if (!isNaN(v)) this._v = Math.max(0, Math.min(1, v));
+      if (this._v >= 0.999) this._armed = false;
+      var g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "blasting machine plunger");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+    }
+    _render() {
+      var y = TRAVEL * this._v;
+      this._plunger.setAttribute("transform", "translate(0," + n(y) + ")");
+      this._grab.style.top = (HT - 5 + y) + "px";
+      var live = this._v >= 0.99;
+      if (live !== this.hasAttribute("data-live")) { if (live) this.setAttribute("data-live", ""); else this.removeAttribute("data-live"); }
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100)));
+      this._grab.setAttribute("aria-valuetext", this._v >= 0.999 ? "fired" : Math.round(this._v * 100) + " per cent down");
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _set(v, force) {
+      v = Math.max(0, Math.min(1, v));
+      if (v === this._v && !force) return;
+      this._v = v;
+      this._own = true; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._own = false;
+      this._render();
+      var now = performance.now();
+      if (force || this._mode !== "up" || now - this._lastIn > 55) { this._lastIn = now; this._emit("input", { value: this._v }); }
+      if (v >= 0.9995 && this._armed) {
+        this._armed = false;
+        this._emit("fire", { value: 1 });
+        this._emit("activate", { value: 1 });
+        this.setAttribute("data-boom", "");
+        var self = this;
+        clearTimeout(this._boomT);
+        this._boomT = setTimeout(function () { self.removeAttribute("data-boom"); }, 130);
+      }
+      if (v < 0.5) this._armed = true;
+    }
+    /* the drag is stiff at the bottom: v = sin(u·π/2) */
+    _u() { return Math.asin(Math.max(0, Math.min(1, this._v))) / (Math.PI / 2); }
+
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._stop();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.add("drag");
+      this._drag = { y: e.clientY, u: this._u() };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      this._emit("press", { value: this._v });
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      var u = this._drag.u + (e.clientY - this._drag.y) / (DRAG * this._scale);
+      u = Math.max(0, Math.min(1, u));
+      this._set(Math.sin(u * Math.PI / 2));
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._drag = null;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      this._emit("release", { value: this._v });
+      this._returnHome();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") {
+        e.preventDefault();
+        if (e.repeat || this._key) return;
+        this._key = true;
+        this._emit("press", { value: this._v });
+        this._start("down");
+        if (e.key === "Enter") { var self = this; setTimeout(function () { if (self._key) { self._key = false; self._emit("release", { value: self._v }); self._returnHome(); } }, 760); }
+        return;
+      }
+      var step = e.shiftKey ? 0.25 : 0.1, v = null;
+      switch (e.key) {
+        case "ArrowDown": case "ArrowRight": v = this._v + step; break;
+        case "ArrowUp": case "ArrowLeft": v = this._v - step; break;
+        case "Home": v = 0; break;
+        case "End": v = 1; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._stop();
+      this._set(Math.round(Math.max(0, Math.min(1, v)) * 1000) / 1000, true);
+      this._emit("change", { value: this._v });
+    }
+    _onKeyUp(e) {
+      if (!this._key) return;
+      if (e.type === "keyup" && !(e.key === " " || e.key === "Spacebar" || e.key === "Enter")) return;
+      this._key = false;
+      this._emit("release", { value: this._v });
+      this._returnHome();
+    }
+    _returnHome() { if (this._v <= 0) { this._emit("change", { value: 0 }); return; } this._from = this._v; this._start("up"); }
+    _start(mode) {
+      this._mode = mode; this._t0 = performance.now();
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    _stop() { this._mode = null; if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } }
+    _tick(now) {
+      this._raf = 0;
+      if (!this._mode) return;
+      var t = (now - this._t0) / 1000;
+      if (this._mode === "down") {
+        var u = Math.min(1, this._u() + 0.016 / 0.62);        /* about 620 ms to the bottom */
+        this._set(Math.sin(u * Math.PI / 2));
+        if (this._v >= 1) { this._mode = "hold"; }
+      } else if (this._mode === "up") {
+        var k = Math.min(1, t / 0.6), e = 1 - Math.pow(1 - k, 3);   /* the rack lifts it back */
+        this._set(this._from * (1 - e));
+        if (k >= 1) { this._set(0, true); this._mode = null; this._emit("change", { value: 0 }); return; }
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+  }
+  customElements.define(TAG, SkPlunger);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

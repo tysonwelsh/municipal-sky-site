@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atari CX40 joystick — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "joystick-atari-cx40",
+  "element": "sk-joystick-atari-cx40",
+  "name": "Atari CX40 joystick",
+  "kind": "input",
+  "code": "E1",
+  "type": "Joystick / control stick",
+  "source": "Atari CX40 joystick, 1977, shipped with the Atari VCS / 2600",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["textured black ABS", "rubber boot", "printed overlay"],
+  "tags": ["arcade", "console", "8-way", "fire button", "spring return"],
+  "value": { "model": "xy", "min": -1, "max": 1, "unit": "", "note": "8-way digital {x,y} in -1/0/1; the analog attribute reports continuous -1…1" },
+  "attributes": ["value", "analog", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release"],
+  "size": { "w": 220, "h": 260 },
+  "notes": "Three instances: centred P1, a deflected up-right P2 held as a static demo state, and a smaller disabled P3."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-joystick-atari-cx40 label="P1"></sk-joystick-atari-cx40>
+    <sk-joystick-atari-cx40 label="P2" value="1,-1"></sk-joystick-atari-cx40>
+    <sk-joystick-atari-cx40 label="P3" scale="0.8" disabled></sk-joystick-atari-cx40>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Atari CX40</b> shipped with the 1977 VCS/2600: a square black ABS base with a moulded texture, an
+  orange-and-black striped overlay screwed to the top, a rubber accordion boot around the stick's base, a black
+  stick with a flared four-flat grip, and one concave orange fire button at the top-left corner. Underneath, four
+  leaf-switch contacts read the stick as eight directions plus centre — there is no analog position, only on/off
+  per axis.</p>
+  <p><b>The tells kept here:</b> the square black silhouette with the diagonal orange/black candy-stripe frame;
+  the stick's continuous lean toward the pointer with the rubber boot nudging along with it; the fire button's
+  concave dish, lit on the far wall and shadowed on the near wall, with a 2 px press; the flared grip with its
+  moulded flats and a polished cap where thumbs land; a spring return that snaps the stick to centre a beat after
+  release, matching the leaf switches disengaging. The generic "VIDEO GAME CONTROL" wordmark stands in for the
+  original trademarked overlay text. Drag follows the pointer's direction (angle-follow, not vertical); the
+  reported value snaps to the nearest digital reading per axis unless <code>analog</code> is set; arrows tilt,
+  Space or Enter fires.</p>
+  <p><b>Left out:</b> the rear cable and DE-9 connector, the underside's four rubber feet in full relief, the
+  exact leaf-switch click sound.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-joystick-atari-cx40> — Atari CX40 8-way digital joystick with the orange fire button ====
+   attributes: value(x,y) analog label scale disabled
+   value model: xy — {x,y} each in -1/0/1 (digital, default) or continuous -1..1 (analog attribute)
+   events: input/change {value:{x,y},detail:{x,y,fire}} during/after a gesture; press/release {x,y,fire} for the button
+   self-contained: paste this block into any page and use <sk-joystick-atari-cx40></sk-joystick-atari-cx40> */
+(function () {
+  if (customElements.get("sk-joystick-atari-cx40")) return;
+  const W = 220, H = 260;
+  const PX = 110, PY = 168;           // stick pivot (boot centre)
+  const TIPX0 = 110, TIPY0 = 54;      // idle tip position (upright)
+  const MAXDX = 32, MAXDY = 16;       // px shift at full deflection
+  const FBX = 58, FBY = 112, FBR = 13; // fire button
+  const DEAD = 0.16;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Michroma", "Arial Narrow", sans-serif; }
+    .word { font-size: 4.6px; letter-spacing: 0.16em; fill: #e8752a; text-anchor: middle; opacity: 0.85; }
+    .label { font-size: 8.5px; letter-spacing: 0.2em; fill: #8a8a86; text-anchor: middle; font-family: "JetBrains Mono", monospace; }
+    .stickhit { position: absolute; left: ${PX - 60}px; top: ${TIPY0 - 34}px; width: 120px; height: 152px; border-radius: 20px; cursor: grab;
+      touch-action: none; outline: none; -webkit-user-select: none; user-select: none; }
+    .stickhit.drag { cursor: grabbing; }
+    .stickhit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); border-radius: 16px; }
+    .firehit { position: absolute; left: ${FBX - FBR - 3}px; top: ${FBY - FBR - 3}px; width: ${(FBR + 3) * 2}px; height: ${(FBR + 3) * 2}px;
+      border-radius: 50%; cursor: pointer; touch-action: none; outline: none; -webkit-user-select: none; user-select: none; }
+    .firehit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    :host([disabled]) .stickhit, :host([disabled]) .firehit { cursor: default; }
+    .stickgrp { transition: none; }
+    .stickgrp.settle { transition: none; }
+    .fire { transition: transform 30ms ease-out; }
+    .fire.pressed { transform: translate(0.6px, 1.6px); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <pattern id="candy" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="11" height="11" fill="#e8752a"/><rect width="5.5" height="11" fill="#131313"/>
+        </pattern>
+        <linearGradient id="baseGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#333230"/><stop offset="0.45" stop-color="#1c1b1a"/><stop offset="1" stop-color="#0c0b0b"/>
+        </linearGradient>
+        <radialGradient id="panelGrad" cx="34%" cy="26%" r="85%">
+          <stop offset="0" stop-color="#2a2a28"/><stop offset="0.55" stop-color="#191918"/><stop offset="1" stop-color="#0a0a09"/>
+        </radialGradient>
+        <radialGradient id="sheen" cx="30%" cy="18%" r="60%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.10"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.02"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="bootGrad" cx="35%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#3a3a3a"/><stop offset="0.55" stop-color="#1c1c1c"/><stop offset="1" stop-color="#060606"/>
+        </radialGradient>
+        <linearGradient id="stickGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#4c4c4a"/><stop offset="0.32" stop-color="#232321"/><stop offset="0.7" stop-color="#0a0a09"/><stop offset="1" stop-color="#2c2c2a"/>
+        </linearGradient>
+        <radialGradient id="gripGrad" cx="32%" cy="26%" r="75%">
+          <stop offset="0" stop-color="#57574f"/><stop offset="0.5" stop-color="#242422"/><stop offset="1" stop-color="#0a0a09"/>
+        </radialGradient>
+        <radialGradient id="capGrad" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#6a6a60"/><stop offset="0.6" stop-color="#2c2c28"/><stop offset="1" stop-color="#0d0d0b"/>
+        </radialGradient>
+        <radialGradient id="btnGrad" cx="40%" cy="28%" r="80%">
+          <stop offset="0" stop-color="#ffb06a"/><stop offset="0.45" stop-color="#ef7a22"/><stop offset="0.8" stop-color="#c2591a"/><stop offset="1" stop-color="#8f3d0f"/>
+        </radialGradient>
+        <radialGradient id="btnRing" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#3a3a3a"/><stop offset="0.7" stop-color="#161616"/><stop offset="1" stop-color="#020202"/>
+        </radialGradient>
+        <radialGradient id="footGrad" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#2a2a2a"/><stop offset="1" stop-color="#020202"/>
+        </radialGradient>
+        <pattern id="stipple" width="3.2" height="3.2" patternUnits="userSpaceOnUse">
+          <circle cx="0.6" cy="0.6" r="0.5" fill="#000" opacity="0.35"/>
+        </pattern>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4.5"/></filter>
+      </defs>
+
+      <!-- ambient contact shadow -->
+      <rect x="20" y="76" width="184" height="176" rx="18" fill="#000" opacity="0.5" filter="url(#soft2)"/>
+      <!-- rubber feet peeking from under the base -->
+      <g class="feet">
+        <ellipse cx="30" cy="246" rx="6" ry="3" fill="url(#footGrad)"/>
+        <ellipse cx="190" cy="246" rx="6" ry="3" fill="url(#footGrad)"/>
+        <ellipse cx="30" cy="76" rx="6" ry="3" fill="url(#footGrad)"/>
+        <ellipse cx="190" cy="76" rx="6" ry="3" fill="url(#footGrad)"/>
+      </g>
+
+      <!-- base plate -->
+      <rect x="18" y="70" width="184" height="178" rx="18" fill="url(#baseGrad)" stroke="#000" stroke-width="1"/>
+      <rect x="18" y="70" width="184" height="178" rx="18" fill="url(#stipple)" opacity="0.5"/>
+      <rect x="19.5" y="71.5" width="181" height="175" rx="17" fill="none" stroke="#55524c" stroke-opacity="0.3" stroke-width="0.8"/>
+
+      <!-- candy-stripe overlay frame -->
+      <path d="M27 79 h166 a9 9 0 0 1 9 9 v142 a9 9 0 0 1 -9 9 h-166 a9 9 0 0 1 -9 -9 v-142 a9 9 0 0 1 9 -9 Z
+                M36 88 h148 v124 h-148 Z" fill-rule="evenodd" fill="url(#candy)" stroke="#0a0a0a" stroke-width="0.6"/>
+
+      <!-- black centre panel -->
+      <rect x="36" y="88" width="148" height="124" rx="6" fill="url(#panelGrad)"/>
+      <rect x="36" y="88" width="148" height="124" rx="6" fill="url(#stipple)" opacity="0.6"/>
+      <rect x="36" y="88" width="148" height="124" rx="6" fill="url(#sheen)"/>
+      <rect x="36" y="88" width="148" height="124" rx="6" fill="none" stroke="#000" stroke-width="1.2" opacity="0.7"/>
+
+      <!-- fire button -->
+      <g class="firebtn">
+        <ellipse cx="${FBX + 1.5}" cy="${FBY + 2.5}" rx="${FBR + 3}" ry="${FBR + 2}" fill="#000" opacity="0.4" filter="url(#soft)"/>
+        <circle cx="${FBX}" cy="${FBY}" r="${FBR + 3}" fill="url(#btnRing)" stroke="#000" stroke-width="0.7"/>
+        <g class="fire">
+          <circle cx="${FBX}" cy="${FBY}" r="${FBR}" fill="url(#btnGrad)"/>
+          <path d="M ${FBX - FBR + 2} ${FBY + FBR - 3} A ${FBR - 1} ${FBR - 1} 0 0 0 ${FBX + FBR - 2} ${FBY + FBR - 3}"
+                fill="none" stroke="#5a2408" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
+          <ellipse cx="${FBX - 3.5}" cy="${FBY - 5}" rx="5" ry="3.4" fill="#fff" opacity="0.28"/>
+        </g>
+      </g>
+
+      <!-- rubber boot: a ridged frustum, wide at the panel, narrow at the shaft -->
+      <g class="boot">
+        <ellipse cx="${PX + 2}" cy="${PY + 14}" rx="33" ry="12" fill="#000" opacity="0.4" filter="url(#soft)"/>
+        <path d="M ${PX - 30} ${PY + 8} A 30 11 0 1 0 ${PX + 30} ${PY + 8} L ${PX + 15} ${PY - 12} A 15 7 0 1 0 ${PX - 15} ${PY - 12} Z"
+              fill="url(#bootGrad)" stroke="#000" stroke-width="0.7"/>
+        <ellipse cx="${PX}" cy="${PY + 8}" rx="30" ry="11" fill="none" stroke="#57574f" stroke-opacity="0.4" stroke-width="0.9"/>
+        <path class="ridge1" d="M ${PX - 25} ${PY + 1} A 25 9.5 0 0 0 ${PX + 25} ${PY + 1}" fill="none" stroke="#4a4a46" stroke-opacity="0.55" stroke-width="1"/>
+        <path class="ridge1b" d="M ${PX - 25} ${PY - 1.5} A 25 9.5 0 0 1 ${PX + 25} ${PY - 1.5}" fill="none" stroke="#020202" stroke-opacity="0.5" stroke-width="1"/>
+        <path class="ridge2" d="M ${PX - 19} ${PY - 6.5} A 19 8 0 0 0 ${PX + 19} ${PY - 6.5}" fill="none" stroke="#4a4a46" stroke-opacity="0.5" stroke-width="0.9"/>
+        <path class="ridge2b" d="M ${PX - 19} ${PY - 8.5} A 19 8 0 0 1 ${PX + 19} ${PY - 8.5}" fill="none" stroke="#020202" stroke-opacity="0.45" stroke-width="0.9"/>
+        <ellipse cx="${PX}" cy="${PY - 12}" rx="15" ry="6.5" fill="url(#bootGrad)" stroke="#3a3a3a" stroke-width="0.6"/>
+      </g>
+
+      <!-- the stick: tapered polygon + grip, recomputed on tilt -->
+      <g class="stickgrp">
+        <path class="stickbody" fill="url(#stickGrad)" stroke="#000" stroke-width="0.6" stroke-linejoin="round"/>
+        <ellipse class="grip" fill="url(#gripGrad)" stroke="#000" stroke-width="0.6"/>
+        <line class="flat1" stroke="#000" stroke-opacity="0.45" stroke-width="0.8"/>
+        <line class="flat2" stroke="#000" stroke-opacity="0.45" stroke-width="0.8"/>
+        <ellipse class="cap" rx="4.6" ry="3.2" fill="url(#capGrad)" stroke="#000" stroke-width="0.5"/>
+        <ellipse class="capsheen" rx="2.2" ry="1.3" fill="#fff" opacity="0.3"/>
+      </g>
+
+      <text class="word" x="110" y="204">VIDEO GAME CONTROL</text>
+      <text class="label" x="110" y="242"></text>
+    </svg>
+    <div class="stickhit" role="group" tabindex="0"></div>
+    <div class="firehit" role="button" tabindex="-1" aria-label="Fire"></div>
+  </div>`;
+
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function round2(v) { return Math.round(v * 100) / 100; }
+  function dirName(x, y) {
+    const k = Math.sign(x) + "," + Math.sign(y);
+    const names = { "0,0": "center", "0,-1": "up", "0,1": "down", "-1,0": "left", "1,0": "right",
+      "-1,-1": "up-left", "1,-1": "up-right", "-1,1": "down-left", "1,1": "down-right" };
+    return names[k] || "center";
+  }
+
+  class SkJoystickCX40 extends HTMLElement {
+    static get observedAttributes() { return ["value", "analog", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._x = 0; this._y = 0;        // committed value — mirrors the attribute, updated immediately on input
+      this._nx = 0; this._ny = 0;      // visual stick position, -1..1 — springs toward {_x,_y}
+      this._vx = 0; this._vy = 0;      // spring velocities (cosmetic only)
+      this._fire = false;
+      this._scale = 1; this._analog = false;
+      this._raf = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._stickHit = this.shadowRoot.querySelector(".stickhit");
+      this._fireHit = this.shadowRoot.querySelector(".firehit");
+      this._body = this.shadowRoot.querySelector(".stickbody");
+      this._grip = this.shadowRoot.querySelector(".grip");
+      this._flat1 = this.shadowRoot.querySelector(".flat1");
+      this._flat2 = this.shadowRoot.querySelector(".flat2");
+      this._cap = this.shadowRoot.querySelector(".cap");
+      this._capsheen = this.shadowRoot.querySelector(".capsheen");
+      this._boot = this.shadowRoot.querySelector(".boot");
+      this._fireEl = this.shadowRoot.querySelector(".fire");
+      this._label = this.shadowRoot.querySelector(".label");
+      this._tick = this._tick.bind(this);
+      this._onStickDown = this._onStickDown.bind(this);
+      this._onStickMove = this._onStickMove.bind(this);
+      this._onStickUp = this._onStickUp.bind(this);
+      this._onFireDown = this._onFireDown.bind(this);
+      this._onFireUp = this._onFireUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      this._onWheel = this._onWheel.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0,0");
+      this._readAttrs();
+      this._nx = this._x; this._ny = this._y;
+      this._render();
+      const s = this._stickHit, f = this._fireHit;
+      s.addEventListener("pointerdown", this._onStickDown);
+      s.addEventListener("keydown", this._onKeyDown);
+      s.addEventListener("keyup", this._onKeyUp);
+      s.addEventListener("wheel", this._onWheel, { passive: false });
+      f.addEventListener("pointerdown", this._onFireDown);
+    }
+    disconnectedCallback() {
+      const s = this._stickHit, f = this._fireHit;
+      s.removeEventListener("pointerdown", this._onStickDown);
+      s.removeEventListener("keydown", this._onKeyDown);
+      s.removeEventListener("keyup", this._onKeyUp);
+      s.removeEventListener("wheel", this._onWheel);
+      f.removeEventListener("pointerdown", this._onFireDown);
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      clearTimeout(this._idleT);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "value") { this._nx = this._x; this._ny = this._y; this._render(); }
+    }
+    get value() { return { x: this._x, y: this._y }; }
+    set value(v) {
+      let x, y;
+      if (v && typeof v === "object") { x = v.x; y = v.y; }
+      else if (typeof v === "string") { const p = v.split(","); x = parseFloat(p[0]); y = parseFloat(p[1]); }
+      x = clamp(parseFloat(x), -1, 1); y = clamp(parseFloat(y), -1, 1);
+      if (isNaN(x) || isNaN(y)) return;
+      clearTimeout(this._idleT); cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      this._x = x; this._y = y; this._nx = x; this._ny = y;
+      this.setAttribute("value", round2(x) + "," + round2(y));
+      this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._stickHit.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._analog = this.hasAttribute("analog");
+      const raw = this.getAttribute("value") || "0,0";
+      const p = raw.split(",");
+      this._x = clamp(parseFloat(p[0]) || 0, -1, 1);
+      this._y = clamp(parseFloat(p[1]) || 0, -1, 1);
+      this._label.textContent = this.getAttribute("label") || "";
+      const dis = this.hasAttribute("disabled");
+      this._stickHit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._stickHit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._stickHit.setAttribute("aria-label", (this.getAttribute("label") || "joystick") + " stick");
+      this._fireHit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._fireHit.setAttribute("aria-pressed", this._fire ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _stickGeom(nx, ny) {
+      // tipX,tipY is the very top of the assembly (the cap's centre); the grip sits just below it,
+      // and the shaft tapers up from the pivot into the grip's base — no gap between the parts.
+      const tipX = TIPX0 + nx * MAXDX, tipY = TIPY0 + ny * MAXDY;
+      const dx = tipX - PX, dy = tipY - PY, len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len, perpX = -uy, perpY = ux;
+      const GRIP_RY = 9, GRIP_LEN = 15;                   // the grip's own extent along the shaft axis
+      const baseHalf = 8, tipHalf = 5.5;
+      const gx = PX + ux * (len - GRIP_RY), gy = PY + uy * (len - GRIP_RY);          // grip centre
+      const bx = PX + ux * (len - GRIP_LEN), by = PY + uy * (len - GRIP_LEN);        // shaft narrows here
+      const p1x = PX + perpX * baseHalf, p1y = PY + perpY * baseHalf;
+      const p2x = PX - perpX * baseHalf, p2y = PY - perpY * baseHalf;
+      const p3x = bx - perpX * tipHalf, p3y = by - perpY * tipHalf;
+      const p4x = bx + perpX * tipHalf, p4y = by + perpY * tipHalf;
+      this._body.setAttribute("d", `M ${p1x} ${p1y} L ${p3x} ${p3y} L ${p4x} ${p4y} L ${p2x} ${p2y} Z`);
+      const ang = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+      this._grip.setAttribute("cx", gx); this._grip.setAttribute("cy", gy);
+      this._grip.setAttribute("rx", 11.5); this._grip.setAttribute("ry", GRIP_RY);
+      this._grip.setAttribute("transform", `rotate(${ang.toFixed(1)} ${gx} ${gy})`);
+      this._flat1.setAttribute("x1", gx - perpX * 5); this._flat1.setAttribute("y1", gy - perpY * 5 - 5.5);
+      this._flat1.setAttribute("x2", gx - perpX * 5); this._flat1.setAttribute("y2", gy - perpY * 5 + 5.5);
+      this._flat2.setAttribute("x1", gx + perpX * 1); this._flat2.setAttribute("y1", gy + perpY * 1 - 5.5);
+      this._flat2.setAttribute("x2", gx + perpX * 1); this._flat2.setAttribute("y2", gy + perpY * 1 + 5.5);
+      this._cap.setAttribute("cx", tipX); this._cap.setAttribute("cy", tipY - 2);
+      this._cap.setAttribute("transform", `rotate(${ang.toFixed(1)} ${tipX} ${tipY - 2})`);
+      this._capsheen.setAttribute("cx", tipX - perpX * 1.6); this._capsheen.setAttribute("cy", tipY - 2 - perpY * 1.6 - 0.5);
+      this._boot.style.transform = `translate(${(nx * 3).toFixed(1)}px, ${(ny * 1.5).toFixed(1)}px) skewX(${(nx * 5).toFixed(1)}deg)`;
+    }
+    _render() { this._stickGeom(this._nx, this._ny); this._updateAria(); }
+    _updateAria() {
+      this._stickHit.setAttribute("aria-valuetext", dirName(this._x, this._y));
+    }
+    _valueFromRaw(nx, ny) {
+      if (this._analog) return { x: round2(nx), y: round2(ny) };
+      const vx = Math.abs(nx) > DEAD ? Math.sign(nx) : 0;
+      const vy = Math.abs(ny) > DEAD ? Math.sign(ny) : 0;
+      return { x: vx, y: vy };
+    }
+    _emit(type, extra) {
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: Object.assign({ x: this._x, y: this._y, fire: this._fire }, extra || {}) }));
+    }
+    // commit is the settled, logical reading: it writes the attribute immediately (SPEC: property mirrors
+    // the attribute) and kicks a purely cosmetic spring so the stick's visual position eases to match —
+    // the spring's own RAF ticks never touch the attribute, only _commit does.
+    _commit(v) {
+      this._x = v.x; this._y = v.y;
+      this.setAttribute("value", round2(v.x) + "," + round2(v.y));
+      this._kick();
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      const tx = this._x, ty = this._y;
+      const k = 260, c = 17;
+      const ax = k * (tx - this._nx) - c * this._vx, ay = k * (ty - this._ny) - c * this._vy;
+      this._vx += ax * dt; this._nx += this._vx * dt;
+      this._vy += ay * dt; this._ny += this._vy * dt;
+      this._stickGeom(this._nx, this._ny);
+      if (Math.abs(tx - this._nx) < 0.01 && Math.abs(ty - this._ny) < 0.01 && Math.abs(this._vx) < 0.03 && Math.abs(this._vy) < 0.03) {
+        this._nx = tx; this._ny = ty; this._vx = 0; this._vy = 0;
+        this._stickGeom(this._nx, this._ny);
+        this._raf = 0;
+        return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _armIdleReturn() {
+      clearTimeout(this._idleT);
+      this._idleT = setTimeout(() => { this._commit({ x: 0, y: 0 }); this._emit("change"); this._updateAria(); }, 650);
+    }
+    _onStickDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      clearTimeout(this._idleT);
+      this._stickHit.focus({ preventScroll: true });
+      this._stickHit.setPointerCapture(e.pointerId);
+      this._stickHit.classList.add("drag");
+      this._drag = { x: e.clientX, y: e.clientY };
+      this._stickHit.addEventListener("pointermove", this._onStickMove);
+      this._stickHit.addEventListener("pointerup", this._onStickUp);
+      this._stickHit.addEventListener("pointercancel", this._onStickUp);
+    }
+    _onStickMove(e) {
+      if (!this._drag) return;
+      cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      const dx = (e.clientX - this._drag.x) / this._scale, dy = (e.clientY - this._drag.y) / this._scale;
+      this._nx = clamp(dx / 40, -1, 1); this._ny = clamp(dy / 40, -1, 1);
+      this._stickGeom(this._nx, this._ny);
+      const v = this._valueFromRaw(this._nx, this._ny);
+      this._x = v.x; this._y = v.y;
+      this.setAttribute("value", round2(v.x) + "," + round2(v.y));
+      this._emit("input"); this._updateAria();
+    }
+    _onStickUp(e) {
+      if (!this._drag) return;
+      this._stickHit.removeEventListener("pointermove", this._onStickMove);
+      this._stickHit.removeEventListener("pointerup", this._onStickUp);
+      this._stickHit.removeEventListener("pointercancel", this._onStickUp);
+      try { this._stickHit.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._stickHit.classList.remove("drag");
+      this._drag = null;
+      this._commit({ x: 0, y: 0 });
+      this._emit("change"); this._updateAria();
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const ny = clamp((this._analog ? this._ny : this._y) + (e.deltaY < 0 ? -0.6 : 0.6), -1, 1);
+      const v = this._valueFromRaw(this._x, ny);
+      this._commit(v);
+      this._emit("input"); this._updateAria();
+      this._armIdleReturn();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home"].indexOf(e.key) >= 0) {
+        e.preventDefault();
+        let x = this._x, y = this._y;
+        if (e.key === "Home") { x = 0; y = 0; }
+        else if (e.key === "ArrowUp") y = -1; else if (e.key === "ArrowDown") y = 1;
+        else if (e.key === "ArrowLeft") x = -1; else if (e.key === "ArrowRight") x = 1;
+        this._commit({ x, y });
+        this._emit("input"); this._emit("change"); this._updateAria();
+        if (x === 0 && y === 0) clearTimeout(this._idleT); else this._armIdleReturn();
+      } else if ((e.key === " " || e.key === "Spacebar" || e.key === "Enter") && !e.repeat) {
+        e.preventDefault();
+        this._setFire(true);
+      }
+    }
+    _onKeyUp(e) {
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") this._setFire(false);
+    }
+    _setFire(on) {
+      if (this._fire === on) return;
+      this._fire = on;
+      this._fireEl.classList.toggle("pressed", on);
+      this._fireHit.setAttribute("aria-pressed", on ? "true" : "false");
+      this._emit(on ? "press" : "release");
+    }
+    _onFireDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._fireHit.setPointerCapture(e.pointerId);
+      this._setFire(true);
+      this._fireHit.addEventListener("pointerup", this._onFireUp);
+      this._fireHit.addEventListener("pointercancel", this._onFireUp);
+    }
+    _onFireUp(e) {
+      this._fireHit.removeEventListener("pointerup", this._onFireUp);
+      this._fireHit.removeEventListener("pointercancel", this._onFireUp);
+      try { this._fireHit.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._setFire(false);
+    }
+  }
+  customElements.define("sk-joystick-atari-cx40", SkJoystickCX40);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

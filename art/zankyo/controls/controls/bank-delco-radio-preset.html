@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delco car-radio pull-to-set presets — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Bebas+Neue&family=Archivo+Narrow:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "bank-delco-radio-preset",
+  "element": "sk-bank-delco-radio-preset",
+  "name": "Delco car-radio pull-to-set presets",
+  "kind": "input",
+  "code": "C12.1",
+  "type": "Interlocking pushbutton bank",
+  "source": "The five chromed pull-to-set preset buttons under the dial of a Delco (GM) / Motorola / Philco car radio, 1940s–70s",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["chromed die-cast", "black plastic insert bar", "black dash paint", "amber dial glass"],
+  "tags": ["automobile", "car radio", "preset", "chrome", "interlock", "one-of-n"],
+  "value": { "model": "steps", "min": 1, "max": 5, "step": 1 },
+  "attributes": ["value", "count", "labels", "manual", "insert", "scale", "disabled"],
+  "events": ["input", "change", "set"],
+  "size": { "w": 260, "h": 80 },
+  "notes": "Preset 3 in; the manual state with none pressed; a pulled button next to an ivory-insert four-button variant at scale 0.8."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-bank-delco-radio-preset value="3" label="PRESETS"></sk-bank-delco-radio-preset>
+    <sk-bank-delco-radio-preset manual label="PRESETS"></sk-bank-delco-radio-preset>
+    <sk-bank-delco-radio-preset value="2" count="4" insert="ivory" label="PRESETS" scale="0.8"></sk-bank-delco-radio-preset>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Under the dial of a 1950s Delco or Motorola car radio sits a row of chunky chromed rectangular
+  presets in a chrome bezel: pull one toward you to set it to the station you've just tuned by hand,
+  push it back in and it stays there, and pushing any preset in pops all the others out together with
+  a little mechanical jolt.</p>
+  <p><b>The tells kept here:</b> the caps as reflective chrome with a hard horizon line, dark below and
+  bright above, and a small hot spot on the dome; the black insert bar across each face carrying a
+  moulded numeral between two bright chrome hairlines; the pressed cap reading not darker but simply
+  <i>lower</i>, its slot showing more black above it; the linked pop when a new one is pressed; and the
+  dial pointer above slewing to the new station over 300&nbsp;ms. Dragging a cap upward pulls it into
+  a "set" stage beyond normal-out and fires a <code>set</code> event; pushing it back in selects it.</p>
+  <p><b>Left out:</b> the tone and volume knobs either side, the AM dial's full frequency scale, and the
+  radio's chassis behind the bezel.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-bank-delco-radio-preset> — Delco-style chrome pull-to-set car-radio presets ====
+   attributes: value(1..count) count(4..6) labels(comma list) manual insert("black"|"ivory") label scale disabled
+   events: input/change {value} when a preset is selected, set {index} when a cap is pulled and released
+   self-contained: paste this block into any page and use <sk-bank-delco-radio-preset value="1"> */
+(function () {
+  if (customElements.get("sk-bank-delco-radio-preset")) return;
+  const PITCH = 48, MARGIN = 10, H = 80;
+  const DIAL_Y = 2, DIAL_H = 10, BEZEL_Y = 16, BEZEL_H = 50, SLOT_Y = 23, SLOT_H = 36;
+  const CAP_W = 32, CAP_H = 28, CAP_TOP = 26;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display:inline-block; position:relative; font-size:10px; -webkit-tap-highlight-color:transparent;
+      --insert:#1a1a1c; --insert-text:#eee6cf; }
+    :host([hidden]) { display:none; }
+    :host([insert="ivory"]) { --insert:#e8dfc6; --insert-text:#1c1a12; }
+    .wrap { position:absolute; left:0; top:0; transform-origin:0 0; }
+    svg { display:block; height:${H}px; overflow:visible; }
+    text { font-family:"Bebas Neue","Arial Narrow",sans-serif; }
+    .num { font-size:9px; text-anchor:middle; fill:var(--insert-text); letter-spacing:0.02em; }
+    .legend { font-family:"Archivo Narrow","Arial Narrow",sans-serif; font-size:6px; font-weight:500; letter-spacing:0.1em; fill:#c7c9cb; text-anchor:middle; opacity:0.85; }
+    .cell { cursor:pointer; touch-action:none; outline:none; }
+    :host([disabled]) .cell { cursor:default; }
+    .cap { transition: transform 90ms cubic-bezier(.2,.9,.3,1.12); }
+    .cell.in .cap { transform: translateY(5px); transition: transform 90ms cubic-bezier(.3,0,.6,1); }
+    .cell.pulled .cap { transform: translateY(-6px); transition: transform 120ms cubic-bezier(.2,.9,.3,1.12); }
+    .cell.jolt .cap { animation: jolt 70ms ease-out; }
+    @keyframes jolt { 0% { transform: translateY(0); } 40% { transform: translateY(1.4px); } 100% { transform: translateY(0); } }
+    .cell:focus-visible .ring { opacity:1; }
+    .ptr { transition: transform 300ms cubic-bezier(.3,.1,.2,1); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 100 ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="chromeV" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#eef1f2"/><stop offset="0.42" stop-color="#c6cbce"/><stop offset="0.5" stop-color="#6c7176"/>
+          <stop offset="0.58" stop-color="#dfe2e4"/><stop offset="1" stop-color="#a7abae"/>
+        </linearGradient>
+        <linearGradient id="capChrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.38" stop-color="#d3d8db"/><stop offset="0.48" stop-color="#6c7176"/>
+          <stop offset="0.56" stop-color="#eef1f2"/><stop offset="1" stop-color="#aeb2b5"/>
+        </linearGradient>
+        <radialGradient id="hot" cx="30%" cy="18%" r="45%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="dash" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1b1b1d"/><stop offset="1" stop-color="#101012"/>
+        </linearGradient>
+        <linearGradient id="glassAmber" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e0a94c"/><stop offset="1" stop-color="#7a5420"/>
+        </linearGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4"/></filter>
+      </defs>
+
+      <!-- dash paint -->
+      <rect x="0" y="0" width="100" height="${H}" fill="url(#dash)"/>
+
+      <!-- amber dial glass hint -->
+      <rect class="dialg" x="${MARGIN}" y="${DIAL_Y}" width="10" height="${DIAL_H}" rx="1" fill="url(#glassAmber)" stroke="#000" stroke-opacity="0.5" stroke-width="0.6"/>
+      <g class="ptr"><rect x="-0.6" y="${DIAL_Y - 1}" width="1.2" height="${DIAL_H + 2}" fill="#e23a2c"/></g>
+
+      <!-- chrome bezel strip -->
+      <rect class="bezel" x="${MARGIN - 2}" y="${BEZEL_Y}" width="10" height="${BEZEL_H}" rx="3" fill="url(#chromeV)" stroke="#4a4d4f" stroke-width="0.6"/>
+      <rect class="bezel2" x="${MARGIN - 2}" y="${BEZEL_Y}" width="10" height="3" rx="1.5" fill="#fff" opacity="0.35"/>
+
+      <g class="cells"></g>
+
+      <!-- shadow under bezel onto dash -->
+      <rect x="${MARGIN - 2}" y="${BEZEL_Y + BEZEL_H}" width="10" height="4" fill="#000" opacity="0.4" filter="url(#soft)"/>
+      <text class="legend" x="50" y="76"></text>
+    </svg>
+  </div>`;
+
+  function labelsFromAttr(v, n) {
+    if (!v) return null;
+    const p = String(v).split(",").map(s => s.trim());
+    if (p.length < n) return null;
+    return p;
+  }
+
+  class SkBankDelcoPreset extends HTMLElement {
+    static get observedAttributes() { return ["value", "count", "labels", "manual", "insert", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: "open" });
+      root.appendChild(TPL.content.cloneNode(true));
+      this._svg = root.querySelector("svg");
+      this._cellsG = root.querySelector(".cells");
+      this._ptr = root.querySelector(".ptr");
+      this._bezel = root.querySelector(".bezel");
+      this._bezel2 = root.querySelector(".bezel2");
+      this._dialg = root.querySelector(".dialg");
+      this._legend = root.querySelector(".legend");
+      this._wrap = root.querySelector(".wrap");
+      this._n = 5; this._value = 1; this._focus = 0; this._pulled = -1; this._scale = 1;
+      this._cells = []; this._drag = null;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "1");
+      this._readAttrs(); this._render();
+      const g = this._cellsG;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._cellsG;
+      g.removeEventListener("pointerdown", this._onDown);
+      g.removeEventListener("keydown", this._onKey);
+      this._endDrag();
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._value; }
+    set value(v) {
+      const n = Math.max(1, Math.min(this._n, Math.round(parseFloat(v))));
+      if (isNaN(n)) return;
+      this._value = n; this.setAttribute("value", String(n)); this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { const c = this._cells[this._focus] || this._cells[0]; if (c) c.focus(o); }
+    blur() { const c = this._cells[this._focus]; if (c) c.blur(); }
+
+    _countAttr() { let n = parseInt(this.getAttribute("count"), 10); return isNaN(n) ? 5 : Math.max(4, Math.min(6, n)); }
+    _readAttrs() {
+      const n = this._countAttr();
+      const legs = labelsFromAttr(this.getAttribute("labels"), n);
+      const legsKey = legs ? legs.join(",") : "";
+      if (n !== this._n || this._cells.length !== n || this._legsKey !== legsKey) {
+        this._n = n; this._legsKey = legsKey; this._build(legs);
+      }
+      let v = parseInt(this.getAttribute("value"), 10);
+      this._value = isNaN(v) ? 1 : Math.max(1, Math.min(this._n, v));
+      if (this._focus >= this._n) this._focus = 0;
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+
+      const bezelW = this._n * PITCH;
+      const totalW = bezelW + MARGIN * 2;
+      this._W = totalW;
+      this._svg.setAttribute("viewBox", `0 0 ${totalW} ${H}`);
+      this._svg.style.width = totalW + "px";
+      this._bezel.setAttribute("x", MARGIN - 2); this._bezel.setAttribute("width", bezelW + 4);
+      this._bezel2.setAttribute("x", MARGIN - 2); this._bezel2.setAttribute("width", bezelW + 4);
+      this._dialg.setAttribute("x", MARGIN + 6); this._dialg.setAttribute("width", bezelW - 12);
+      this._legend.setAttribute("x", totalW / 2);
+      this._legend.textContent = this.getAttribute("label") || "";
+      this.style.width = (totalW * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._cellsG.setAttribute("aria-label", (this.getAttribute("label") || "presets"));
+      this._cellsG.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this._paintPointer();
+    }
+    _build(legs) {
+      const n = this._n;
+      this._cellsG.textContent = ""; this._cells = [];
+      if (this._focus >= n) this._focus = 0;
+      if (this._pulled >= n) this._pulled = -1;
+      const ns = "http://www.w3.org/2000/svg";
+      for (let i = 0; i < n; i++) {
+        const cx = MARGIN + i * PITCH;
+        const g = document.createElementNS(ns, "g");
+        g.setAttribute("class", "cell");
+        g.setAttribute("tabindex", i === this._focus ? "0" : "-1");
+        g.setAttribute("role", "radio");
+        const lbl = legs ? legs[i] : String(i + 1);
+        g.setAttribute("aria-label", "preset " + lbl);
+        const slotW = CAP_W + 6, slotX = cx + PITCH / 2 - slotW / 2;
+        const capX = cx + PITCH / 2 - CAP_W / 2;
+        g.innerHTML =
+          `<rect x="${slotX}" y="${SLOT_Y}" width="${slotW}" height="${SLOT_H}" rx="3" fill="#050506"/>` +
+          `<g class="cap" style="transform-box: fill-box; transform-origin:50% 100%;">` +
+          `<rect x="${capX + 1}" y="${CAP_TOP + 2}" width="${CAP_W}" height="${CAP_H}" rx="2" fill="#000" opacity="0.35" filter="url(#soft)"/>` +
+          `<rect x="${capX}" y="${CAP_TOP}" width="${CAP_W}" height="${CAP_H}" rx="2" fill="url(#capChrome)" stroke="#5b5e60" stroke-width="0.5"/>` +
+          `<ellipse cx="${capX + CAP_W * 0.32}" cy="${CAP_TOP + CAP_H * 0.2}" rx="${CAP_W * 0.28}" ry="${CAP_H * 0.16}" fill="url(#hot)"/>` +
+          `<rect x="${capX + 1}" y="${CAP_TOP + CAP_H * 0.36}" width="${CAP_W - 2}" height="${CAP_H * 0.34}" fill="var(--insert)"/>` +
+          `<rect x="${capX + 1}" y="${CAP_TOP + CAP_H * 0.36 - 0.8}" width="${CAP_W - 2}" height="0.8" fill="#f4f6f7" opacity="0.85"/>` +
+          `<rect x="${capX + 1}" y="${CAP_TOP + CAP_H * 0.70}" width="${CAP_W - 2}" height="0.8" fill="#f4f6f7" opacity="0.85"/>` +
+          `<text class="num" x="${capX + CAP_W / 2}" y="${CAP_TOP + CAP_H * 0.36 + CAP_H * 0.24}">${lbl}</text>` +
+          `</g>` +
+          `<rect class="ring" x="${slotX - 1.5}" y="${SLOT_Y - 8}" width="${slotW + 3}" height="${SLOT_H + 10}" rx="4" fill="none" stroke="#16e0e0" stroke-width="1.4" opacity="0" style="filter:drop-shadow(0 0 3px rgba(22,224,224,0.7));"/>`;
+        this._cellsG.appendChild(g);
+        this._cells.push(g);
+      }
+    }
+    _render() {
+      const manual = this.hasAttribute("manual");
+      for (let i = 0; i < this._cells.length; i++) {
+        const c = this._cells[i];
+        const selected = !manual && (i === this._value - 1) && this._pulled !== i;
+        const pulled = i === this._pulled;
+        c.classList.toggle("in", selected);
+        c.classList.toggle("pulled", pulled);
+        c.setAttribute("aria-checked", selected ? "true" : "false");
+        c.setAttribute("tabindex", (i === this._focus && !this.hasAttribute("disabled")) ? "0" : "-1");
+      }
+      this._paintPointer();
+    }
+    _paintPointer() {
+      const manual = this.hasAttribute("manual");
+      const bezelW = this._n * PITCH;
+      const x = MARGIN + 6 + (bezelW - 12) * ((this._value - 0.5) / this._n);
+      this._ptr.style.transform = `translateX(${x.toFixed(1)}px)`;
+      this._ptr.style.opacity = manual ? "0.4" : "1";
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _select(i) {
+      if (i < 0 || i >= this._n) return;
+      const wasPulled = this._pulled === i;
+      this._pulled = -1;
+      const manual = this.hasAttribute("manual");
+      const changed = manual || this._value !== i + 1;
+      this._value = i + 1;
+      if (manual) this.removeAttribute("manual");
+      this.setAttribute("value", String(this._value));
+      this._render();
+      if (changed) {
+        this._emit("input", { value: this._value });
+        this._emit("change", { value: this._value });
+        for (let k = 0; k < this._cells.length; k++) {
+          if (k === i) continue;
+          const c = this._cells[k];
+          c.classList.remove("jolt"); void c.getBoundingClientRect();
+          c.classList.add("jolt");
+        }
+        clearTimeout(this._jt);
+        this._jt = setTimeout(() => { for (const c of this._cells) c.classList.remove("jolt"); }, 90);
+      }
+    }
+    _moveFocus(i) {
+      this._focus = Math.max(0, Math.min(this._n - 1, i));
+      this._render();
+      const c = this._cells[this._focus]; if (c) c.focus({ preventScroll: true });
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      let i = -1;
+      for (let k = 0; k < this._cells.length; k++) if (this._cells[k].contains(e.target)) { i = k; break; }
+      if (i < 0) return;
+      e.preventDefault();
+      this._focus = i; this._render();
+      this._cells[i].focus({ preventScroll: true });
+      try { this._cellsG.setPointerCapture(e.pointerId); } catch (_) {}
+      this._drag = { i, y0: e.clientY, mode: null };
+      this._cellsG.addEventListener("pointermove", this._onMove);
+      this._cellsG.addEventListener("pointerup", this._onUp);
+      this._cellsG.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const dy = e.clientY - d.y0;
+      if (d.mode === null && dy < -8) {
+        d.mode = "pull";
+        for (let k = 0; k < this._cells.length; k++) this._cells[k].classList.toggle("pulled", k === d.i);
+        this._pulled = d.i;
+      }
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._endDrag(e);
+      if (d.mode === "pull") { this._emit("set", { index: d.i }); }
+      else { this._select(d.i); }
+    }
+    _endDrag(e) {
+      this._cellsG.removeEventListener("pointermove", this._onMove);
+      this._cellsG.removeEventListener("pointerup", this._onUp);
+      this._cellsG.removeEventListener("pointercancel", this._onUp);
+      if (e) { try { this._cellsG.releasePointerCapture(e.pointerId); } catch (_) {} }
+      this._drag = null;
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const i = this._focus;
+      switch (e.key) {
+        case "ArrowLeft": e.preventDefault(); this._moveFocus(i - 1); this._select(this._focus); return;
+        case "ArrowRight": e.preventDefault(); this._moveFocus(i + 1); this._select(this._focus); return;
+        case "Home": e.preventDefault(); this._moveFocus(0); this._select(this._focus); return;
+        case "End": e.preventDefault(); this._moveFocus(this._n - 1); this._select(this._focus); return;
+        case " ": case "Spacebar": case "Enter": e.preventDefault(); this._select(i); return;
+        default: return;
+      }
+    }
+  }
+  customElements.define("sk-bank-delco-radio-preset", SkBankDelcoPreset);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

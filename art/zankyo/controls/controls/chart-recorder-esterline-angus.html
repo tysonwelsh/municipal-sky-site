@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esterline-Angus strip-chart recorder — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "chart-recorder-esterline-angus",
+  "element": "sk-chart-recorder-esterline",
+  "name": "Esterline-Angus strip-chart recorder",
+  "kind": "output",
+  "code": "I8",
+  "type": "Strip-chart recorder",
+  "source": "Esterline-Angus Model AW graphic recorder, Indianapolis — black crackle case, chrome door, red capillary ink pen on a curvilinear green chart",
+  "era": "1940s",
+  "origin": "USA",
+  "materials": ["black crackle steel", "chrome", "glass", "chart paper", "red ink", "brass"],
+  "tags": ["instrument", "recorder", "ink pen", "curvilinear chart", "paper", "laboratory"],
+  "value": { "model": "waveform", "count": 300, "min": 0, "max": 1 },
+  "attributes": ["value", "speed", "live", "preset", "chart", "label", "scale"],
+  "events": [],
+  "size": { "w": 240, "h": 320 },
+  "notes": "The paper runs out downward and the pen writes near the top. Set value to a number (the pen's position, 0–1) or to an array of 300 samples (the whole trace)."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-chart-recorder-esterline value="0.62" live speed="7" chart="1078" label="LINE PRESSURE"></sk-chart-recorder-esterline>
+    <sk-chart-recorder-esterline value="0.78" live speed="4" preset="step" chart="1078" label="OVEN" scale="0.72"></sk-chart-recorder-esterline>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Esterline-Angus Model AW</b> is the black crackle box with the chrome door that sat on every
+  test floor from the 1930s on: a roll of 4-inch chart paper crawls downward past a capillary pen fed from a
+  little brass well, and the pen writes in red on a green-printed grid. Because the pen swings on an arm, its
+  path is an arc — so the chart's <b>time lines are printed as arcs struck from the pen's pivot</b>, and a
+  moment in time is a curve, not a straight rule across the paper. That is what "curvilinear chart" means, and
+  it is the difference between this machine and the linkage-driven rectilinear recorders.</p>
+  <p><b>The tells kept here:</b> the curvilinear grid, drawn with the same radius and centre as the pen arm, so
+  the arcs and the pen's path are the same curve; the paper running down with the pen writing near the top; the
+  red ink laid down thicker where the pen dwells and thinner on a fast excursion, with a small blot where it
+  stopped, and a faint bleed into the paper either side of the line; the sprocket perforations down one edge;
+  the heavy grid line every fourth division and the printed 0–100 scale and hour stamp that come round with the
+  paper; the black wrinkle paint with the light from above-left, the chrome door frame with its hard horizon,
+  one broad diagonal reflection in the glass that is not the shape of anything behind it, and the brass ink
+  well below.</p>
+  <p><b>Left out:</b> the clock drive and the take-up spool behind the paper, the range switch, the door latch
+  and hinge pin, and the maker's name — the plate reads generically.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-chart-recorder-esterline> — Esterline-Angus AW strip-chart recorder ====
+   attributes: value(0..1 pen position, or a 300-long array via the property) speed(px/s) live preset chart label scale
+   no events (an output). set .value to a number for the pen, or to an array of samples for the whole trace.
+   self-contained: paste this block into any page and use <sk-chart-recorder-esterline value="0.5" live></sk-chart-recorder-esterline> */
+(function () {
+  if (customElements.get("sk-chart-recorder-esterline")) return;
+  const W = 240, H = 320;
+  const PAP = { x: 24, y: 28, w: 192, h: 242 };        // the paper behind the glass
+  const GX0 = 42, GX1 = 198;                            // the printed 0..100 scale across the paper
+  const PVX = 120, PVY = -70, RP = 170;                 // the pen's pivot, above the case, and the arm's length
+  const N = 300, DS = 0.92;                             // samples kept, and the paper each one gets
+  const yTip = x => PVY + Math.sqrt(RP * RP - (x - PVX) * (x - PVX));
+  const xOf = v => GX0 + (GX1 - GX0) * Math.max(0, Math.min(1, v));
+  const A0 = Math.atan2(yTip(GX1) - PVY, GX1 - PVX), A1 = Math.atan2(yTip(GX0) - PVY, GX0 - PVX);
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg, canvas { position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; display: block; }
+    svg { overflow: visible; }
+    text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; }
+    .plate { font-size: 6.4px; font-weight: 600; letter-spacing: 0.24em; text-anchor: middle; fill: #cfd2d4; }
+    .sub { font-size: 5px; font-weight: 400; letter-spacing: 0.18em; text-anchor: middle; fill: #8c9094; }
+    .arm { transform-box: view-box; transform-origin: ${PVX}px ${PVY}px; }
+  </style>
+  <div class="wrap">
+    <svg class="back" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="case" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#34343a"/><stop offset="0.3" stop-color="#1e1e22"/>
+          <stop offset="0.72" stop-color="#131316"/><stop offset="1" stop-color="#08080a"/>
+        </linearGradient>
+        <filter id="crackle" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.24" numOctaves="3" seed="19" result="t"/>
+          <feColorMatrix in="t" type="saturate" values="0"/>
+          <feComponentTransfer><feFuncA type="table" tableValues="0 0.25 0.9 0.25 0"/></feComponentTransfer>
+        </filter>
+        <filter id="csh" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+      <rect x="6" y="10" width="${W - 8}" height="${H - 12}" rx="8" fill="#000" opacity="0.55" filter="url(#csh)"/>
+      <rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="7" fill="url(#case)" stroke="#000" stroke-width="1"/>
+      <g>
+        <rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="7" filter="url(#crackle)" opacity="0.62" style="mix-blend-mode:overlay"/>
+      </g>
+      <path d="M 9 2 L 231 2 Q 238 2 238 9" fill="none" stroke="#6a6a72" stroke-opacity="0.4" stroke-width="1.1"/>
+      <path d="M 2 9 Q 2 2 9 2" fill="none" stroke="#8c8c96" stroke-opacity="0.5" stroke-width="1.2"/>
+      <path d="M 2 ${H - 9} Q 2 ${H - 2} 9 ${H - 2} L 231 ${H - 2}" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.2"/>
+      <path d="M 3 ${H - 22} L 9.5 ${H - 16} L 6 ${H - 6} L 2.5 ${H - 9} Z" fill="#6b6f72"/>
+      <path d="M 3.6 ${H - 20} L 8.2 ${H - 15.4} L 5.6 ${H - 8} L 3 ${H - 10} Z" fill="#9aa0a4"/>
+      <path d="M 196 ${H - 6.4} L 214 ${H - 7.2}" stroke="#7d8184" stroke-opacity="0.35" stroke-width="0.8"/>
+      <!-- the paper well behind the door -->
+      <rect x="${PAP.x - 3}" y="${PAP.y - 3}" width="${PAP.w + 6}" height="${PAP.h + 6}" rx="2" fill="#0a0a0c"/>
+    </svg>
+    <canvas class="cv"></canvas>
+    <svg class="front" viewBox="0 0 ${W} ${H}" role="img" aria-hidden="false">
+      <defs>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0.2" y2="1">
+          <stop offset="0" stop-color="#f4f6f7"/><stop offset="0.36" stop-color="#c3c7ca"/>
+          <stop offset="0.5" stop-color="#7d8285"/><stop offset="0.52" stop-color="#b9bec1"/>
+          <stop offset="0.8" stop-color="#8d9295"/><stop offset="1" stop-color="#4f5356"/>
+        </linearGradient>
+        <linearGradient id="glassg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.38" stop-color="#fff" stop-opacity="0.07"/>
+          <stop offset="0.52" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.05"/>
+        </linearGradient>
+        <radialGradient id="wellg" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#f0d69a"/><stop offset="0.55" stop-color="#b48d3c"/><stop offset="1" stop-color="#5f4614"/>
+        </radialGradient>
+        <radialGradient id="scr" cx="34%" cy="30%" r="72%">
+          <stop offset="0" stop-color="#9ea2a4"/><stop offset="0.6" stop-color="#53585a"/><stop offset="1" stop-color="#1e2021"/>
+        </radialGradient>
+        <linearGradient id="capg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7f939c"/><stop offset="0.35" stop-color="#e2eef4"/>
+          <stop offset="0.7" stop-color="#a9bcc6"/><stop offset="1" stop-color="#5e6f78"/>
+        </linearGradient>
+        <clipPath id="winclip"><rect x="${PAP.x}" y="${PAP.y}" width="${PAP.w}" height="${PAP.h}"/></clipPath>
+        <filter id="psh" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
+      </defs>
+
+      <!-- the pen arm, behind the glass, coming down from its pivot above the case -->
+      <g clip-path="url(#winclip)">
+        <g class="arm">
+          <path d="M ${PVX - 1.6} ${PVY} L ${PVX + 1.6} ${PVY} L ${PVX + 1.15} ${PVY + RP - 6} L ${PVX - 1.15} ${PVY + RP - 6} Z"
+                fill="#000" opacity="0.28" filter="url(#psh)" transform="translate(3 3)"/>
+          <path d="M ${PVX - 1.6} ${PVY} L ${PVX + 1.6} ${PVY} L ${PVX + 1.15} ${PVY + RP - 6} L ${PVX - 1.15} ${PVY + RP - 6} Z" fill="#17171a"/>
+          <path d="M ${PVX - 1.2} ${PVY} L ${PVX - 0.5} ${PVY} L ${PVX - 0.35} ${PVY + RP - 8} L ${PVX - 0.95} ${PVY + RP - 8} Z" fill="#8f9197" opacity="0.5"/>
+          <path d="M ${PVX - 2.6} ${PVY + RP - 14} L ${PVX + 2.6} ${PVY + RP - 14} L ${PVX + 1.1} ${PVY + RP - 5.5} L ${PVX - 1.1} ${PVY + RP - 5.5} Z" fill="#101013"/>
+          <path d="M ${PVX - 1.9} ${PVY + RP - 12} L ${PVX + 1.9} ${PVY + RP - 12} L ${PVX + 0.7} ${PVY + RP - 1.6} L ${PVX - 0.7} ${PVY + RP - 1.6} Z" fill="url(#capg)" opacity="0.95"/>
+          <path d="M ${PVX - 0.9} ${PVY + RP - 11} L ${PVX - 0.1} ${PVY + RP - 11} L ${PVX - 0.15} ${PVY + RP - 3} L ${PVX - 0.6} ${PVY + RP - 3} Z" fill="#fff" opacity="0.6"/>
+          <circle cx="${PVX}" cy="${PVY + RP - 0.6}" r="1.05" fill="#b3161a"/>
+        </g>
+      </g>
+
+      <!-- glass -->
+      <g clip-path="url(#winclip)">
+        <path d="M ${PAP.x} ${PAP.y} L ${PAP.x + 118} ${PAP.y} L ${PAP.x + 6} ${PAP.y + PAP.h} L ${PAP.x} ${PAP.y + PAP.h} Z" fill="url(#glassg)"/>
+        <path d="M ${PAP.x + 150} ${PAP.y} L ${PAP.x + PAP.w} ${PAP.y} L ${PAP.x + PAP.w} ${PAP.y + 46} Z" fill="#fff" opacity="0.05"/>
+        <rect x="${PAP.x}" y="${PAP.y}" width="${PAP.w}" height="${PAP.h}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="5" filter="url(#psh)"/>
+      </g>
+
+      <!-- the chrome door frame -->
+      <path d="M 14 20 L 226 20 L 226 278 L 14 278 Z M ${PAP.x} ${PAP.y} L ${PAP.x} ${PAP.y + PAP.h} L ${PAP.x + PAP.w} ${PAP.y + PAP.h} L ${PAP.x + PAP.w} ${PAP.y} Z"
+            fill="url(#chrome)" fill-rule="evenodd" stroke="#2a2d2f" stroke-width="0.7"/>
+      <path d="M 15 21 L 225 21" stroke="#fff" stroke-opacity="0.65" stroke-width="0.9"/>
+      <path d="M 15 277 L 225 277" stroke="#000" stroke-opacity="0.5" stroke-width="1"/>
+      <rect x="${PAP.x - 1.2}" y="${PAP.y - 1.2}" width="${PAP.w + 2.4}" height="${PAP.h + 2.4}" fill="none" stroke="#3d4143" stroke-width="1.2"/>
+      <rect x="${PAP.x - 0.4}" y="${PAP.y - 0.4}" width="${PAP.w + 0.8}" height="${PAP.h + 0.8}" fill="none" stroke="#f0f3f4" stroke-opacity="0.5" stroke-width="0.7"/>
+      <!-- the door's latch -->
+      <g transform="translate(226 149)">
+        <rect x="-2" y="-11" width="7" height="22" rx="2.4" fill="url(#chrome)" stroke="#2a2d2f" stroke-width="0.5"/>
+        <circle cx="1.6" cy="0" r="2.1" fill="#3a3e40"/>
+        <path d="M -1.4 -10 L 4.2 -10" stroke="#fff" stroke-opacity="0.6" stroke-width="0.7"/>
+      </g>
+
+      <!-- below the door: the plate, the ink well, two screws -->
+      <text class="plate" x="94" y="294">GRAPHIC RECORDER</text>
+      <text class="sub" x="94" y="304">MODEL AW · CHART SPEED 3 IN. / HR.</text>
+      <g transform="translate(200 297)">
+        <ellipse cx="1.5" cy="2" rx="12" ry="5" fill="#000" opacity="0.5" filter="url(#psh)"/>
+        <ellipse cx="0" cy="0" rx="12.5" ry="6.2" fill="url(#wellg)" stroke="#3f2f0d" stroke-width="0.6"/>
+        <ellipse cx="0" cy="-1" rx="8.6" ry="3.8" fill="#2a1408"/>
+        <ellipse cx="0" cy="-1" rx="8.6" ry="3.8" fill="none" stroke="#e8cd8c" stroke-opacity="0.6" stroke-width="0.6"/>
+        <ellipse cx="-1" cy="-0.6" rx="5.6" ry="2.3" fill="#8e1114"/>
+        <path d="M -11 -2.6 A 12 6 0 0 1 -2 -5.6" fill="none" stroke="#ffeec0" stroke-opacity="0.7" stroke-width="1"/>
+      </g>
+      <g transform="translate(14 306)"><circle r="3.4" fill="url(#scr)" stroke="#000" stroke-width="0.5"/><rect x="-2.6" y="-0.5" width="5.2" height="1" fill="#0d0e0e" transform="rotate(34)"/></g>
+      <g transform="translate(226 306)"><circle r="3.4" fill="url(#scr)" stroke="#000" stroke-width="0.5"/><rect x="-2.6" y="-0.5" width="5.2" height="1" fill="#0d0e0e" transform="rotate(-52)"/></g>
+      <g transform="translate(14 14)"><circle r="3.4" fill="url(#scr)" stroke="#000" stroke-width="0.5"/><rect x="-2.6" y="-0.5" width="5.2" height="1" fill="#0d0e0e" transform="rotate(12)"/></g>
+      <g transform="translate(226 14)"><circle r="3.4" fill="url(#scr)" stroke="#000" stroke-width="0.5"/><rect x="-2.6" y="-0.5" width="5.2" height="1" fill="#0d0e0e" transform="rotate(-24)"/></g>
+    </svg>
+  </div>`;
+
+  class SkChartRecorderEsterline extends HTMLElement {
+    static get observedAttributes() { return ["value", "speed", "live", "preset", "chart", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._h = new Float64Array(N); this._target = 0.5; this._pen = 0.5; this._vel = 0;
+      this._speed = 6; this._scale = 1; this._S = 0; this._frac = 0; this._k = 0; this._raf = 0; this._last = 0;
+      this._chart = "1078";
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._cv = r.querySelector(".cv"); this._ctx = this._cv.getContext("2d");
+      this._front = r.querySelector(".front");
+      this._armEl = r.querySelector(".arm");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs(); this._seed(); this._resize(); this._kick();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (this.isConnected) this._paint(); });
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "preset") this._seed();
+      if (n === "scale") this._resize();
+      this._kick();
+    }
+    get value() { return Array.prototype.slice.call(this._h); }
+    set value(v) {
+      if (Array.isArray(v) || (v && v.length && typeof v !== "string")) {
+        const n = v.length;
+        for (let i = 0; i < N; i++) { const j = Math.min(n - 1, Math.round(i * (n - 1) / (N - 1))); this._h[i] = Math.max(0, Math.min(1, +v[j] || 0)); }
+        this._target = this._h[N - 1];
+      } else {
+        const x = parseFloat(v); if (isNaN(x)) return;
+        this._target = Math.max(0, Math.min(1, x));
+        this.setAttribute("value", String(Math.round(this._target * 1000) / 1000));
+      }
+      this._aria(); this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) {
+      const s = 0.52 + 0.26 * Math.sin(t * 0.47) + 0.08 * Math.sin(t * 1.9 + 1);
+      const step = (t % 21) > 14 ? 0.26 : 0;
+      return Math.max(0.03, Math.min(0.97, s + step));
+    }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._speed = Math.max(0, Math.min(60, num("speed", 6)));
+      this._chart = this.getAttribute("chart") || "1078";
+      const sc = Math.max(0.2, num("scale", 1));
+      const changed = sc !== this._scale; this._scale = sc;
+      if (this.hasAttribute("value")) { const x = num("value", NaN); if (!isNaN(x)) this._target = Math.max(0, Math.min(1, x)); }
+      this.style.width = (W * sc) + "px"; this.style.height = (H * sc) + "px";
+      this._wrap.style.transform = "scale(" + sc + ")";
+      if (changed) this._resize();
+      this._aria();
+    }
+    _aria() {
+      this._front.setAttribute("aria-label",
+        (this.getAttribute("label") || "chart recorder") + ", pen at " + Math.round(this._target * 100) + " of 100");
+    }
+    _seed() {
+      const p = this.getAttribute("preset") || "wander";
+      for (let i = 0; i < N; i++) {
+        const t = i / N;
+        let v;
+        if (p === "steady") v = 0.58 + 0.012 * Math.sin(t * 40) + (t > 0.86 ? 0.02 * Math.sin(t * 160) : 0);
+        else if (p === "step") v = t < 0.42 ? 0.3 : (t < 0.46 ? 0.3 + (t - 0.42) / 0.04 * 0.52 : 0.78 + 0.1 * Math.exp(-(t - 0.46) * 40) * Math.cos((t - 0.46) * 90));
+        else v = 0.52 + 0.24 * Math.sin(t * 9.1) + 0.1 * Math.sin(t * 23 + 1.2) + 0.04 * Math.sin(t * 61);
+        this._h[i] = Math.max(0.03, Math.min(0.97, v));
+      }
+      const av = parseFloat(this.getAttribute("value"));
+      if (!isNaN(av)) {
+        const end = Math.max(0, Math.min(1, av));
+        for (let i = N - 34; i < N; i++) { const u = (i - (N - 34)) / 33; this._h[i] = this._h[i] * (1 - u) + end * u; }
+      }
+      this._target = this._h[N - 1]; this._pen = this._target; this._vel = 0;
+    }
+    _resize() {
+      const k = Math.min(4, Math.max(2, Math.ceil(2 * this._scale)));
+      if (k === this._k) return;
+      this._k = k; this._cv.width = W * k; this._cv.height = H * k;
+      this._ctx.setTransform(k, 0, 0, k, 0, 0);
+      this._paint();
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.06, (now - this._last) / 1000); this._last = now;
+      // the pen has a little mass: ~150 ms to settle, with a touch of overshoot
+      const acc = 900 * (this._target - this._pen) - 44 * this._vel;
+      this._vel += acc * dt; this._pen += this._vel * dt;
+      if (this._pen < -0.04) { this._pen = -0.04; this._vel = 0; }
+      if (this._pen > 1.04) { this._pen = 1.04; this._vel = 0; }
+      if (this.hasAttribute("live")) {
+        this._S += this._speed * dt; this._frac += this._speed * dt;
+        while (this._frac >= DS) {
+          this._frac -= DS;
+          this._h.copyWithin(0, 1); this._h[N - 1] = this._pen;
+        }
+      }
+      this._paint();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+
+    _paint() {
+      const c = this._ctx;
+      c.save();
+      c.beginPath(); c.rect(PAP.x, PAP.y, PAP.w, PAP.h); c.clip();
+      // --- the paper
+      const pg = c.createLinearGradient(PAP.x, PAP.y, PAP.x + PAP.w, PAP.y + PAP.h);
+      pg.addColorStop(0, "#f3ebd4"); pg.addColorStop(0.55, "#efe6cc"); pg.addColorStop(1, "#ddd0ae");
+      c.fillStyle = pg; c.fillRect(PAP.x, PAP.y, PAP.w, PAP.h);
+      const S = this._S, ye = PAP.y + PAP.h;
+      // --- sprocket perforations down the left edge, and the paper's edge line
+      c.fillStyle = "#cbbf9e";
+      for (let y = PAP.y - 12 + ((S % 12) + 12) % 12; y < ye + 12; y += 12) {
+        c.beginPath(); c.arc(30.5, y, 1.7, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = "rgba(120,104,66,0.5)"; c.lineWidth = 0.5; c.stroke();
+      }
+      c.strokeStyle = "rgba(120,104,66,0.35)"; c.lineWidth = 0.6;
+      c.beginPath(); c.moveTo(33.6, PAP.y); c.lineTo(33.6, ye); c.stroke();
+      // --- the value lines, straight along the paper's travel
+      for (let u = 0; u <= 100.001; u += 5) {
+        const heavy = u % 20 === 0;
+        c.strokeStyle = heavy ? "rgba(61,138,78,0.95)" : "rgba(90,160,106,0.55)";
+        c.lineWidth = heavy ? 0.85 : 0.55;
+        const x = xOf(u / 100);
+        c.beginPath(); c.moveTo(x, PAP.y); c.lineTo(x, ye); c.stroke();
+      }
+      // --- the time lines: arcs struck from the pen's pivot
+      const arc = (o, lw, col) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); c.arc(PVX, PVY + o, RP, A0, A1); c.stroke(); };
+      const m0 = ((S % 12) + 12) % 12;
+      for (let o = m0 - 84; o < 216; o += 12) arc(o, 0.5, "rgba(90,160,106,0.5)");
+      const m1 = ((S % 48) + 48) % 48;
+      for (let o = m1 - 96; o < 240; o += 48) arc(o, 0.9, "rgba(61,138,78,0.95)");
+      // --- the printed scale and the hour stamp, coming round with the paper
+      c.fillStyle = "rgba(48,118,66,0.95)";
+      c.font = '500 5.4px "Libre Franklin", "Liberation Sans", Arial, sans-serif';
+      c.textAlign = "center";
+      const per = 144, m2 = ((S % per) + per) % per;
+      for (let o = m2 - per * 2; o < 260; o += per) {
+        const hour = Math.round((S - o) / per);
+        arc(o, 1.3, "rgba(45,112,60,0.95)");
+        for (let u = 0; u <= 100.001; u += 20) {
+          const x = xOf(u / 100);
+          c.fillText(String(u), x, yTip(x) + o - 3.4);
+        }
+        c.textAlign = "left";
+        c.font = '600 5px "Libre Franklin", "Liberation Sans", Arial, sans-serif';
+        const hh = ((hour % 24) + 24) % 24;
+        c.fillText((hh < 10 ? "0" : "") + hh + "h", 36.5, yTip(36.5) + o + 7.4);
+        c.textAlign = "center";
+        c.font = '500 5.4px "Libre Franklin", "Liberation Sans", Arial, sans-serif';
+      }
+      // --- the chart number, printed down the edge
+      c.save();
+      c.font = '6px "Special Elite", "Courier Prime", "Courier New", monospace';
+      c.fillStyle = "rgba(96,86,58,0.75)"; c.textAlign = "center";
+      const per2 = 168, m3 = ((S % per2) + per2) % per2;
+      for (let o = m3 - per2; o < 260; o += per2) {
+        c.save(); c.translate(209.5, PAP.y + 40 + o); c.rotate(-Math.PI / 2);
+        c.fillText("CHART No. " + this._chart, 0, 0); c.restore();
+      }
+      c.restore();
+      // --- the red ink
+      this._ink(c);
+      // --- the paper's own shading: a slight curl toward the take-up slot
+      const sg = c.createLinearGradient(0, ye - 26, 0, ye);
+      sg.addColorStop(0, "rgba(60,44,16,0)"); sg.addColorStop(1, "rgba(60,44,16,0.3)");
+      c.fillStyle = sg; c.fillRect(PAP.x, ye - 26, PAP.w, 26);
+      const tg = c.createLinearGradient(0, PAP.y, 0, PAP.y + 16);
+      tg.addColorStop(0, "rgba(60,44,16,0.26)"); tg.addColorStop(1, "rgba(60,44,16,0)");
+      c.fillStyle = tg; c.fillRect(PAP.x, PAP.y, PAP.w, 16);
+      c.restore();
+      // the pen arm follows the tip
+      const ang = Math.asin(Math.max(-1, Math.min(1, (xOf(this._pen) - PVX) / RP)));
+      this._armEl.style.transform = "rotate(" + (ang * 180 / Math.PI).toFixed(2) + "deg)";
+    }
+    _ink(c) {
+      const h = this._h, off = this._frac;
+      const px = new Float64Array(N), py = new Float64Array(N);
+      for (let i = 0; i < N; i++) {
+        const x = xOf(h[i]);
+        px[i] = x; py[i] = yTip(x) + (N - 1 - i) * DS + off;
+      }
+      // the bleed into the paper, then the line itself
+      c.lineCap = "round"; c.lineJoin = "round";
+      c.strokeStyle = "rgba(172,30,32,0.11)"; c.lineWidth = 2.3;
+      c.beginPath(); c.moveTo(px[0], py[0]);
+      for (let i = 1; i < N; i++) c.lineTo(px[i], py[i]);
+      c.stroke();
+      for (let i = 1; i < N; i++) {
+        const d = Math.abs(px[i] - px[i - 1]);
+        const w = d > 2.6 ? 0.7 : 0.82 + 0.62 * (1 - Math.min(1, d / 2.6));
+        c.strokeStyle = d < 0.22 ? "rgba(154,18,20,0.97)" : "rgba(200,24,26,0.95)";
+        c.lineWidth = w;
+        c.beginPath(); c.moveTo(px[i - 1], py[i - 1]); c.lineTo(px[i], py[i]); c.stroke();
+        if (d < 0.1 && i % 37 === 0) { c.fillStyle = "rgba(154,18,20,0.85)"; c.beginPath(); c.arc(px[i], py[i], 1.05, 0, Math.PI * 2); c.fill(); }
+      }
+      // the wet ink at the nib
+      c.fillStyle = "rgba(190,22,24,0.95)";
+      c.beginPath(); c.arc(px[N - 1], py[N - 1], 1.0, 0, Math.PI * 2); c.fill();
+    }
+  }
+  customElements.define("sk-chart-recorder-esterline", SkChartRecorderEsterline);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

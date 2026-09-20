@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studer / Elma collet knob, coloured cap — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-studer-elma-collet",
+  "element": "sk-knob-elma-collet",
+  "name": "Studer / Elma collet knob, coloured cap",
+  "kind": "input",
+  "code": "A4",
+  "type": "Collet / instrument knob",
+  "source": "Elma \"Classic\" collet knob with a snap-in coloured cap, as fitted to Studer A80 / A810 tape machines, EMT, Neve",
+  "era": "1970s",
+  "origin": "Switzerland",
+  "materials": ["satin-black anodised aluminium", "moulded plastic cap", "painted steel panel, engraved"],
+  "tags": ["tape machine", "studio", "collet", "no set-screw", "coloured cap", "270 degrees", "engraved dots"],
+  "value": { "model": "range", "min": 0, "max": 10, "step": 0.1, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "label", "scale", "disabled", "cap", "diameter", "panel"],
+  "events": ["input", "change"],
+  "size": { "w": 92, "h": 108 },
+  "notes": "A grey cap at 7 on the A810's light grey panel, a red record-side cap at 3 on the A80's dark grey, and a 14 mm blue one. Drag up/down, wheel, or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-knob-elma-collet value="7" label="LEVEL" cap="grey" panel="a810"></sk-knob-elma-collet>
+    <sk-knob-elma-collet value="3" label="REC LEVEL" cap="red" panel="a80" scale="0.85"></sk-knob-elma-collet>
+    <sk-knob-elma-collet value="5" label="MONITOR" cap="blue" panel="a810" diameter="14"></sk-knob-elma-collet>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Elma "Classic" collet knob</b> is the knob of the Swiss studio: on every Studer A80 and A810
+  audio module, on EMT plates and Neve desks. A plain cylinder of satin-black anodised aluminium, clamped
+  to the shaft by a collet under the cap (so there is no set-screw and no skirt), with a chamfered top edge
+  and a snap-in plastic cap in a colour that carries meaning across the machine: grey for level, red for the
+  record side, blue and green for monitoring. The pointer is a white line moulded proud on the cap, running
+  from its centre to its edge and no further. The scale is not on the knob: it is a ring of eleven engraved
+  dots on the panel over 270 degrees, with tiny numerals only at 0 and 10, and a DIN-like engraved legend below.</p>
+  <p><b>The tells kept here:</b> the pure cylinder, its chamfer catching one bright ring of light at the top-left;
+  the cap a step below the chamfer, with an inner shadow at its top-left and a lit lip at the bottom-right; the
+  pointer line with its own moulded shadow; the anodised body as a matte black with a faint concentric grain
+  and a soft top-left highlight but no specular; the dark contact ring where the body stands proud of the panel;
+  a light band of reflected light on the underside; the engraved dots and legend with a lit edge (A810, light
+  grey) or a shadowed edge (A80, dark grey); a little finger grime below-right. <code>cap</code> picks the
+  colour, <code>diameter</code> (14 / 21 / 28 mm) the size, <code>panel</code> (a810 / a80) the plate. Drag is
+  vertical (up is clockwise), the wheel steps, arrows step and Shift-arrows step by ten; 270 degrees, heavy.</p>
+  <p><b>Left out:</b> the collet itself and the knurled locking ring under the cap, the A810's module screws.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-elma-collet> — Elma collet knob with a coloured cap on an engraved Studer panel ====
+   attributes: value min max step label scale disabled cap(grey|red|blue|green|yellow|black) diameter(14|21|28) panel(a810|a80)
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-knob-elma-collet value="5" cap="red"></sk-knob-elma-collet> */
+(function () {
+  if (customElements.get("sk-knob-elma-collet")) return;
+  const SWEEP = 270;
+  const CAPS = { grey: "#8f9195", red: "#c0302a", blue: "#2f5fa8", green: "#3a8a4b", yellow: "#e0be36", black: "#111111" };
+  const PANELS = {
+    a810: { hi: "#d3d5d0", lo: "#c2c4bf", ink: "#26282b", lit: 0.55, dark: 0.10, edge: 0.32, sheen: 0.5, low: 0.16, grime: 0.15 },
+    a80:  { hi: "#868b8f", lo: "#747a7e", ink: "#eeeeea", lit: 0.12, dark: 0.45, edge: 0.5,  sheen: 0.22, low: 0.28, grime: 0.22 }
+  };
+  // natural geometry from the knob radius: 21 mm → r 30 → 92 × 108
+  const geo = r => { const CX = Math.max(46, r + 16), CY = r + 20; return { r, CX, CY, W: CX * 2, H: CY + r + 28 }; };
+  const f2 = n => (Math.round(n * 100) / 100).toString();
+  function arc(cx, cy, r, a0, a1) {
+    const p = a => [cx + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+    const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `M ${f2(x0)} ${f2(y0)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f2(x1)} ${f2(y1)}`;
+  }
+
+  function markup(g) {
+    const { r, CX, CY, W, H } = g, rc = r - 5;
+    let dots = "";
+    for (let i = 0; i <= 10; i++) {
+      const a = (-SWEEP / 2 + SWEEP * i / 10) * Math.PI / 180, rd = r + 7.5;
+      dots += `<circle cx="${f2(CX + rd * Math.sin(a))}" cy="${f2(CY - rd * Math.cos(a))}" r="${i === 0 || i === 10 ? 1.3 : 1.05}"/>`;
+    }
+    const rn = r + 14.5, an = SWEEP / 2 * Math.PI / 180;
+    const nx0 = f2(CX - rn * Math.sin(an)), nx1 = f2(CX + rn * Math.sin(an)), ny = f2(CY - rn * Math.cos(an) + 2.2);
+    return `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - r - 3}px; top: ${CY - r - 3}px; width: ${2 * r + 6}px; height: ${2 * r + 6}px; border-radius: 50%;
+      cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .ptr { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 55ms linear; }
+    .ptr.snap { transition: transform 170ms cubic-bezier(.25,.8,.3,1); }
+    text { font-family: "Oswald", "DIN Alternate", "Roboto Condensed", "Arial Narrow", sans-serif; font-weight: 400; }
+    .legend { font-size: 7px; letter-spacing: 0.08em; text-anchor: middle; }
+    .num { font-size: 6px; text-anchor: middle; letter-spacing: 0.02em; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop class="p0" offset="0" stop-color="#d3d5d0"/><stop class="p1" offset="1" stop-color="#c2c4bf"/></linearGradient>
+        <radialGradient id="body" cx="34%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#3d3f43"/><stop offset="0.45" stop-color="#232427"/><stop offset="0.85" stop-color="#17181a"/><stop offset="1" stop-color="#1e1f22"/>
+        </radialGradient>
+        <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0b0c"/><stop offset="0.7" stop-color="#141516"/><stop offset="1" stop-color="#3a3c40"/></linearGradient>
+        <linearGradient id="cham" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#a6a9ae"/><stop offset="0.22" stop-color="#5e6166"/><stop offset="0.55" stop-color="#1c1d1f"/><stop offset="0.8" stop-color="#0b0b0c"/><stop offset="1" stop-color="#3c3e42"/>
+        </linearGradient>
+        <radialGradient id="capsheen" cx="34%" cy="28%" r="72%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.2"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#000" stop-opacity="0.22"/>
+        </radialGradient>
+        <radialGradient id="grime" cx="50%" cy="50%" r="50%">
+          <stop offset="0.64" stop-color="#2a2520" stop-opacity="0"/><stop offset="0.8" stop-color="#2a2520" stop-opacity="1"/><stop offset="1" stop-color="#2a2520" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="b05" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.5"/></filter>
+        <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- the painted steel module, engraved -->
+      <rect class="plate" x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2" fill="url(#plate)" stroke="#000" stroke-opacity="0.32"/>
+      <path class="plate-hi" d="M 1.5 ${H - 2.5} L 1.5 1.5 L ${W - 2.5} 1.5" fill="none" stroke="#fff" stroke-opacity="0.5"/>
+      <path class="plate-lo" d="M ${W - 1.5} 2.5 L ${W - 1.5} ${H - 1.5} L 2.5 ${H - 1.5}" fill="none" stroke="#000" stroke-opacity="0.16"/>
+      <!-- engraving: a shadowed edge top-left, a lit lip bottom-right, then the fill -->
+      <use href="#ink" class="ink-dark" fill="#000" opacity="0.1" transform="translate(-0.3 -0.4)"/>
+      <use href="#ink" class="ink-lit" fill="#fff" opacity="0.55" transform="translate(0.35 0.45)"/>
+      <g class="ink" fill="#26282b"><g id="ink">
+        ${dots}
+        <text class="num" x="${nx0}" y="${ny}">0</text><text class="num" x="${nx1}" y="${ny}">10</text>
+        <text class="legend" x="${CX}" y="${H - 7.5}"></text>
+      </g></g>
+
+      <!-- finger grime, from below-right -->
+      <circle class="grime" cx="${CX + 4}" cy="${CY + 5}" r="${r + 11}" fill="url(#grime)" opacity="0.15"/>
+      <!-- ambient shadow, contact shadow, and the thin dark ring where the body stands proud -->
+      <ellipse cx="${CX + 3}" cy="${CY + 5}" rx="${r + 1}" ry="${r}" fill="#000" opacity="0.42" filter="url(#b3)"/>
+      <circle cx="${CX + 1}" cy="${CY + 2.2}" r="${r}" fill="#000" opacity="0.55" filter="url(#b1)"/>
+      <circle cx="${CX}" cy="${CY + 1}" r="${r + 0.6}" fill="none" stroke="#000" stroke-opacity="0.65" stroke-width="1" filter="url(#b05)"/>
+      <!-- the side wall (a sliver shows below), with reflected light along its underside -->
+      <circle cx="${CX}" cy="${CY + 2.6}" r="${r}" fill="url(#side)"/>
+      <!-- the top face: anodised, matte, one soft highlight -->
+      <circle cx="${CX}" cy="${CY}" r="${r}" fill="url(#body)" stroke="#08080a" stroke-width="0.5"/>
+      <!-- the chamfer and its ring of light -->
+      <circle cx="${CX}" cy="${CY}" r="${r - 1.4}" fill="none" stroke="url(#cham)" stroke-width="2.6"/>
+      <path d="${arc(CX, CY, r - 0.25, -165, -25)}" fill="none" stroke="#c9ccd1" stroke-opacity="0.4" stroke-width="0.55"/>
+      <circle cx="${CX}" cy="${CY}" r="${r - 2.8}" fill="url(#body)"/>
+      <circle cx="${CX}" cy="${CY}" r="${r - 3.7}" fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="0.35"/>
+      <circle cx="${CX}" cy="${CY}" r="${r - 4.4}" fill="none" stroke="#fff" stroke-opacity="0.05" stroke-width="0.35"/>
+      <!-- the cap: a step below the chamfer -->
+      <circle class="cap" cx="${CX}" cy="${CY}" r="${rc}" fill="#8f9195"/>
+      <circle cx="${CX}" cy="${CY}" r="${rc}" fill="url(#capsheen)"/>
+      <path d="${arc(CX, CY, rc - 0.5, -175, 5)}" fill="none" stroke="#000" stroke-opacity="0.42" stroke-width="1" filter="url(#b05)"/>
+      <path d="${arc(CX, CY, rc + 0.3, 25, 155)}" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="0.6"/>
+      <circle cx="${CX}" cy="${CY}" r="${rc}" fill="none" stroke="#000" stroke-opacity="0.4" stroke-width="0.5"/>
+      <!-- the pointer line, moulded proud -->
+      <g class="ptr">
+        <rect class="ptr-sh" x="${CX - 1.1}" y="${CY - rc + 0.3}" width="2.2" height="${rc - 0.3}" rx="0.8" fill="#000" opacity="0.35"/>
+        <rect x="${CX - 1.1}" y="${CY - rc + 0.3}" width="2.2" height="${rc - 0.3}" rx="0.8" fill="#f4f4f0"/>
+        <rect x="${CX - 1.1}" y="${CY - rc + 0.3}" width="0.55" height="${rc - 0.3}" rx="0.3" fill="#fff" opacity="0.75"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+  }
+
+  class SkKnobElmaCollet extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "scale", "disabled", "cap", "diameter", "panel"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this._v = 5; this._min = 0; this._max = 10; this._step = 0.1; this._scale = 1; this._mm = 0;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._build(); this._attach(); this._readAttrs(); this._render();
+    }
+    disconnectedCallback() { this._detach(); }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected || !this._grab) return;
+      if (n === "diameter") this._build();
+      this._readAttrs(); this._render();
+    }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._grab) this._grab.focus(); }
+
+    _build() {
+      const d = parseFloat(this.getAttribute("diameter"));
+      const mm = d === 14 || d === 28 ? d : 21;
+      if (mm === this._mm && this._grab) return;
+      this._mm = mm;
+      this._detach();
+      const g = geo(Math.round(mm * 30 / 21)); this._g = g;
+      this.shadowRoot.innerHTML = markup(g);
+      const q = s => this.shadowRoot.querySelector(s);
+      this._grab = q(".grab"); this._wrap = q(".wrap"); this._ptr = q(".ptr"); this._ptrSh = q(".ptr-sh");
+      this._legend = q(".legend"); this._cap = q(".cap");
+      this._stops = [q(".p0"), q(".p1")]; this._inkG = q(".ink"); this._inkDark = q(".ink-dark"); this._inkLit = q(".ink-lit");
+      this._plate = q(".plate"); this._plateHi = q(".plate-hi"); this._plateLo = q(".plate-lo"); this._grime = q(".grime");
+      this._attach();
+    }
+    _attach() {
+      const g = this._grab; if (!g) return;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    _detach() {
+      const g = this._grab; if (!g) return;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      g.removeEventListener("pointermove", this._onMove); g.removeEventListener("pointerup", this._onUp); g.removeEventListener("pointercancel", this._onUp);
+      this._drag = null;
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 10); this._step = num("step", 0.1);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      const label = this.getAttribute("label") || "";
+      this._legend.textContent = label.toUpperCase();
+      this._cap.setAttribute("fill", CAPS[(this.getAttribute("cap") || "grey").toLowerCase()] || CAPS.grey);
+      const p = PANELS[(this.getAttribute("panel") || "a810").toLowerCase()] || PANELS.a810;
+      this._stops[0].setAttribute("stop-color", p.hi); this._stops[1].setAttribute("stop-color", p.lo);
+      this._inkG.setAttribute("fill", p.ink); this._inkDark.setAttribute("opacity", p.dark); this._inkLit.setAttribute("opacity", p.lit);
+      this._plate.setAttribute("stroke-opacity", p.edge); this._plateHi.setAttribute("stroke-opacity", p.sheen); this._plateLo.setAttribute("stroke-opacity", p.low);
+      this._grime.setAttribute("opacity", p.grime);
+      const g = this._grab;
+      g.setAttribute("aria-label", label || "knob");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (this._g.W * this._scale) + "px"; this.style.height = (this._g.H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.round(Math.min(this._max, Math.max(this._min, v)) * 1000) / 1000; }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return -SWEEP / 2 + t * SWEEP; }
+    _render() {
+      const a = this._angle(this._v);
+      this._ptr.style.transform = "rotate(" + a.toFixed(2) + "deg)";
+      // the moulded line's shadow stays down-right on screen whatever the angle
+      const t = a * Math.PI / 180, dx = 0.5, dy = 0.55;
+      this._ptrSh.setAttribute("transform", `translate(${f2(dx * Math.cos(t) + dy * Math.sin(t))} ${f2(-dx * Math.sin(t) + dy * Math.cos(t))})`);
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._grab.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._ptr.classList.remove("snap");
+      this._drag = { y: e.clientY, x: e.clientX, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = this._drag.y - e.clientY, dx = e.clientX - this._drag.x;
+      const px = (dy + dx * 0.35) / this._scale;                    // up or right = clockwise
+      const range = this._max - this._min;
+      const fine = e.shiftKey ? 0.25 : 1;
+      let v = this._drag.v + px * fine * range / 170;               // a heavy pot: 170 px for the full 270°
+      v = Math.round(v / this._step) * this._step;
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._ptr.classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._ptr.classList.add("snap");
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-knob-elma-collet", SkKnobElmaCollet);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

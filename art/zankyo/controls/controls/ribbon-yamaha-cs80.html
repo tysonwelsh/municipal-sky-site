@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamaha CS-80 ribbon controller — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "ribbon-yamaha-cs80",
+  "element": "sk-ribbon-yamaha-cs80",
+  "name": "Yamaha CS-80 ribbon controller",
+  "kind": "input",
+  "code": "B8",
+  "type": "Ribbon controller / touch strip",
+  "source": "The resistive ribbon above the left of the Yamaha CS-80's keyboard (1977), flush in the black panel behind a slim anodised frame",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["resistive ribbon", "anodised aluminium", "black panel", "silk-screen"],
+  "tags": ["synthesiser", "pitch bend", "touch strip", "momentary", "spring return", "no scale"],
+  "value": { "model": "range", "min": -1, "max": 1, "step": 0.005, "unit": "" },
+  "attributes": ["value", "hold", "relative", "touch", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release"],
+  "size": { "w": 420, "h": 44 },
+  "notes": "One ribbon held at +0.6 with the fingertip on it, and a smaller hold one parked at −0.3. Drag along the strip; let go and it springs back to zero unless hold is set."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wrinkle">
+    <sk-ribbon-yamaha-cs80 value="0.6" touch label="RIBBON CONTROLLER"></sk-ribbon-yamaha-cs80>
+    <sk-ribbon-yamaha-cs80 value="-0.3" hold scale="0.5" label="RIBBON CONTROLLER"></sk-ribbon-yamaha-cs80>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Yamaha CS-80</b> (1977) carries a 350 mm resistive <b>ribbon</b> above the left end of its keyboard:
+  a matte black strip lying flush in the black panel inside a slim silver-anodised frame with a countersunk
+  screw at each end. There is no scale on it, no centre mark, no detent — you slide a finger along it and the
+  pitch goes with the finger; lift off and it returns to nothing.</p>
+  <p><b>The tells kept here:</b> the strip is dead matte, with a faint weave in the surface and a lighter
+  <b>polished band</b> down the middle third where a thousand slides have worn it; the hairline dark gap
+  between ribbon and frame, with a glint along the frame's inner edge where the light from above-left catches
+  it; the anodised frame's fine grain running the length of the strip under one broad soft highlight; the two
+  countersunk screws; one line of white silk-screen beneath, which is the only printing anywhere near it.
+  Nothing shows the value but the fingertip's own soft shadow — released, it springs to zero in 120 ms.</p>
+  <p><b>Left out:</b> the CS-80 itself — the keyboard, the wooden end cheeks and the brass rail beside it —
+  and the brand, which on the real panel sits far to the left of the ribbon.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-ribbon-yamaha-cs80> — Yamaha CS-80 resistive ribbon, momentary, springs to zero ====
+   attributes: value(−1…1) hold relative touch label scale disabled
+   events: press, input {value} while the finger moves, release, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-ribbon-yamaha-cs80></sk-ribbon-yamaha-cs80> */
+(function () {
+  if (customElements.get("sk-ribbon-yamaha-cs80")) return;
+  const W = 420, H = 44;
+  const X0 = 18, X1 = 402, YT = 11.5, YB = 26.5;          // the ribbon's own rectangle
+  const LEN = X1 - X0, STEP = 0.005;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${X0 - 4}px; top: 5px; width: ${LEN + 8}px; height: 24px;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; cursor: pointer;
+      border-radius: 2px; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.5); }
+    .finger { opacity: 0; transition: opacity 90ms ease-out; }
+    :host([touch]) .finger, :host(.pressed) .finger { opacity: 1; }
+    text { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; }
+    .legend { font-size: 6px; font-weight: 600; letter-spacing: 0.16em; fill: #f4f4f2; fill-opacity: 0.86;
+      text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="panel" x1="0" y1="0" x2="0.1" y2="1">
+          <stop offset="0" stop-color="#191a1c"/><stop offset="0.5" stop-color="#101011"/><stop offset="1" stop-color="#0a0a0b"/>
+        </linearGradient>
+        <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e2e5e7"/><stop offset="0.22" stop-color="#c4c7c9"/>
+          <stop offset="0.55" stop-color="#9aa0a3"/><stop offset="0.85" stop-color="#7c7f82"/>
+          <stop offset="1" stop-color="#a5a9ac"/>
+        </linearGradient>
+        <pattern id="grain" width="6" height="2" patternUnits="userSpaceOnUse">
+          <rect width="6" height="1" fill="#ffffff" opacity="0.15"/>
+          <rect y="1" width="6" height="1" fill="#000000" opacity="0.13"/>
+        </pattern>
+        <linearGradient id="framelight" x1="0.02" y1="0" x2="0.55" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+          <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.06"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#232323"/><stop offset="0.3" stop-color="#1a1a1a"/>
+          <stop offset="0.8" stop-color="#151515"/><stop offset="1" stop-color="#1e1e1e"/>
+        </linearGradient>
+        <pattern id="weave" width="3" height="3" patternUnits="userSpaceOnUse">
+          <rect width="3" height="3" fill="none"/>
+          <rect width="1" height="1" fill="#ffffff" opacity="0.030"/>
+          <rect x="1.5" y="1.5" width="1" height="1" fill="#000000" opacity="0.22"/>
+        </pattern>
+        <linearGradient id="polish" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0.20" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="0.34" stop-color="#ffffff" stop-opacity="0.06"/>
+          <stop offset="0.50" stop-color="#ffffff" stop-opacity="0.105"/>
+          <stop offset="0.66" stop-color="#ffffff" stop-opacity="0.06"/>
+          <stop offset="0.80" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="screw" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#eef1f2"/><stop offset="0.5" stop-color="#a8acaf"/><stop offset="1" stop-color="#53585b"/>
+        </radialGradient>
+        <radialGradient id="tipshadow" cx="50%" cy="42%" r="52%">
+          <stop offset="0" stop-color="#000000" stop-opacity="0.85"/>
+          <stop offset="0.55" stop-color="#000000" stop-opacity="0.42"/>
+          <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="rb1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1"/></filter>
+        <filter id="rb2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6"/></filter>
+        <clipPath id="ribclip"><rect x="${X0}" y="${YT}" width="${LEN}" height="${YB - YT}" rx="0.8"/></clipPath>
+      </defs>
+
+      <!-- the panel the ribbon is let into -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="url(#panel)"/>
+      <rect x="0" y="0" width="${W}" height="14" fill="#ffffff" opacity="0.020"/>
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1"/>
+
+      <!-- the anodised frame, screwed down over the ribbon's edges -->
+      <rect x="4" y="6.6" width="412" height="27" rx="2.2" fill="#000" opacity="0.6" filter="url(#rb2)"/>
+      <rect x="4" y="6" width="412" height="26" rx="2" fill="url(#frame)"/>
+      <rect x="4" y="6" width="412" height="26" rx="2" fill="url(#grain)"/>
+      <rect x="4" y="6" width="412" height="26" rx="2" fill="url(#framelight)"/>
+      <rect x="4.5" y="6.5" width="411" height="25" rx="1.8" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.7"/>
+      <rect x="4" y="30.8" width="412" height="1.2" fill="#4e5255" opacity="0.8"/>
+      <rect x="4.5" y="6.5" width="411" height="25" rx="1.8" fill="none" stroke="#2f3335" stroke-opacity="0.85" stroke-width="0.6"/>
+
+      <!-- the hairline gap, then the ribbon itself -->
+      <rect x="${X0 - 1.4}" y="${YT - 1.4}" width="${LEN + 2.8}" height="${YB - YT + 2.8}" rx="1" fill="#07070a"/>
+      <g clip-path="url(#ribclip)">
+        <rect x="${X0}" y="${YT}" width="${LEN}" height="${YB - YT}" fill="url(#ribbon)"/>
+        <rect x="${X0}" y="${YT}" width="${LEN}" height="${YB - YT}" fill="url(#weave)"/>
+        <!-- the polish: a lighter band down the middle third -->
+        <rect x="${X0}" y="${YT}" width="${LEN}" height="${YB - YT}" fill="url(#polish)"/>
+        <!-- the finger's own soft shadow, the only thing that shows a position -->
+        <g class="finger">
+          <ellipse class="tip" cx="210" cy="19.6" rx="14" ry="9" fill="url(#tipshadow)"/>
+          <ellipse class="tip2" cx="210" cy="20.4" rx="7.5" ry="4.6" fill="#000000" opacity="0.55" filter="url(#rb1)"/>
+          <ellipse class="tiphi" cx="210" cy="15.4" rx="7" ry="2.2" fill="#ffffff" opacity="0.10" filter="url(#rb1)"/>
+        </g>
+        <!-- the ribbon is slightly proud at its edges: a shadow under the frame's lip -->
+        <rect x="${X0}" y="${YT}" width="${LEN}" height="2.2" fill="#000" opacity="0.55" filter="url(#rb1)"/>
+        <rect x="${X0}" y="${YB - 1.6}" width="${LEN}" height="1.6" fill="#3a3a3a" opacity="0.5"/>
+      </g>
+      <!-- the glint along the frame's inner edge, above-left light -->
+      <path d="M${X0 - 1.4} ${YT - 1.6} h${LEN + 2.8}" stroke="#f4f8fa" stroke-opacity="0.8" stroke-width="0.8" fill="none"/>
+      <path d="M${X0 - 1.6} ${YT - 1.6} v${YB - YT + 3}" stroke="#eef2f4" stroke-opacity="0.35" stroke-width="0.7" fill="none"/>
+      <path d="M${X0 - 1.4} ${YB + 1.5} h${LEN + 2.8}" stroke="#2a2d2f" stroke-opacity="0.9" stroke-width="0.7" fill="none"/>
+
+      <!-- the two countersunk screws -->
+      <g>
+        <circle cx="11" cy="18.6" r="3.6" fill="#5c6063" opacity="0.5"/>
+        <circle cx="11" cy="18.6" r="3" fill="url(#screw)" stroke="#484c4f" stroke-width="0.4"/>
+        <rect x="8.4" y="18.2" width="5.2" height="0.9" rx="0.3" fill="#3c4043" transform="rotate(24 11 18.6)"/>
+        <circle cx="409" cy="18.6" r="3.6" fill="#5c6063" opacity="0.5"/>
+        <circle cx="409" cy="18.6" r="3" fill="url(#screw)" stroke="#484c4f" stroke-width="0.4"/>
+        <rect x="406.4" y="18.2" width="5.2" height="0.9" rx="0.3" fill="#3c4043" transform="rotate(-52 409 18.6)"/>
+      </g>
+
+      <!-- the one line of silk-screen -->
+      <text class="legend" x="210" y="41">RIBBON CONTROLLER</text>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkRibbonYamahaCs80 extends HTMLElement {
+    static get observedAttributes() { return ["value", "hold", "relative", "touch", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._fx = null; this._raf = 0; this._wt = 0; this._drag = null;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._tip = this.shadowRoot.querySelector(".tip");
+      this._tiphi = this.shadowRoot.querySelector(".tiphi");
+      this._tip2 = this.shadowRoot.querySelector(".tip2");
+      this._legend = this.shadowRoot.querySelector(".legend");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._spring = this._spring.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown);
+      g.removeEventListener("wheel", this._onWheel);
+      g.removeEventListener("keydown", this._onKey);
+      g.removeEventListener("pointermove", this._onMove);
+      g.removeEventListener("pointerup", this._onUp);
+      g.removeEventListener("pointercancel", this._onUp);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = this._clamp(parseFloat(v)); if (isNaN(v)) return;
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opt) { this._grab.focus(opt); }
+
+    _clamp(v) { return Math.min(1, Math.max(-1, v)); }
+    _x(v) { return X0 + (v + 1) / 2 * LEN; }
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      const a = parseFloat(this.getAttribute("value"));
+      if (!isNaN(a)) this._v = this._clamp(a);
+      const dis = this.hasAttribute("disabled");
+      const lab = this.getAttribute("label");
+      this._legend.textContent = lab == null ? "RIBBON CONTROLLER" : lab;
+      const g = this._grab;
+      g.setAttribute("aria-label", lab || "ribbon controller");
+      g.setAttribute("aria-valuemin", "-1"); g.setAttribute("aria-valuemax", "1");
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      const fx = this._fx == null ? this._x(this._v) : this._fx;
+      this._tip.setAttribute("cx", fx.toFixed(2));
+      this._tip2.setAttribute("cx", fx.toFixed(2));
+      this._tiphi.setAttribute("cx", fx.toFixed(2));
+      const g = this._grab;
+      g.setAttribute("aria-valuenow", String(Math.round(this._v * 1000) / 1000));
+      g.setAttribute("aria-valuetext", (this._v >= 0 ? "+" : "") + this._v.toFixed(2));
+    }
+    _set(v, settle) {
+      v = this._clamp(Math.round(v / STEP) * STEP);
+      if (v !== this._v) {
+        this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000));
+        this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v } }));
+      }
+      this._render();
+      if (settle) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _px(e) {
+      const r = this._grab.getBoundingClientRect();
+      // the grab box starts 4px (× scale) left of the ribbon
+      return X0 - 4 + (e.clientX - r.left) / this._scale;
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this.classList.add("pressed");
+      const px = this._px(e);
+      this._drag = { px: px, v: this._v, rel: this.hasAttribute("relative") };
+      this._fx = Math.min(X1, Math.max(X0, px));
+      this.dispatchEvent(new CustomEvent("press", { bubbles: true, composed: true, detail: { value: this._v } }));
+      this._set(this._drag.rel ? 0 : (px - X0) / LEN * 2 - 1, false);
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const px = this._px(e);
+      this._fx = Math.min(X1, Math.max(X0, px));
+      const v = this._drag.rel ? (px - this._drag.px) / (LEN / 2) : (px - X0) / LEN * 2 - 1;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._drag = null; this._fx = null;
+      this.classList.remove("pressed");
+      this.dispatchEvent(new CustomEvent("release", { bubbles: true, composed: true, detail: { value: this._v } }));
+      if (this.hasAttribute("hold")) { this._render(); this._set(this._v, true); return; }
+      this._springFrom = this._v; this._springT0 = performance.now();
+      this._raf = requestAnimationFrame(this._spring);
+    }
+    _spring(now) {
+      const t = Math.min(1, (now - this._springT0) / 120);
+      const e = 1 - Math.pow(1 - t, 3);                       // ease-out, 120 ms back to nothing
+      this._set(this._springFrom * (1 - e), false);
+      if (t < 1) { this._raf = requestAnimationFrame(this._spring); return; }
+      this._raf = 0; this._set(0, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const v = this._clamp(this._v + (e.deltaY < 0 ? 0.02 : -0.02));
+      if (v === this._v) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._set(v, false);                                     // the wheel holds where it leaves it
+      clearTimeout(this._wt);
+      this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      let v = null;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowUp": v = this._v + (e.shiftKey ? STEP * 10 : STEP); break;
+        case "ArrowLeft": case "ArrowDown": v = this._v - (e.shiftKey ? STEP * 10 : STEP); break;
+        case "PageUp": v = this._v + 0.1; break;
+        case "PageDown": v = this._v - 0.1; break;
+        case "Home": v = -1; break;
+        case "End": v = 1; break;
+        case "0": case "Escape": v = 0; break;
+        default: return;
+      }
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._set(v, false); this._set(this._v, true);
+    }
+  }
+  customElements.define("sk-ribbon-yamaha-cs80", SkRibbonYamahaCs80);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

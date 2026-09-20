@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tektronix 465 CRT — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "crt-tektronix-465",
+  "element": "sk-crt-tek-465",
+  "name": "Tektronix 465 CRT",
+  "kind": "output",
+  "code": "H12",
+  "type": "Oscilloscope CRT",
+  "source": "Tektronix 465 / 475 portable oscilloscope — the 8 × 10 division internal-graticule CRT with a green filter in a black bezel",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["black plastic bezel", "green filter", "flat-faced CRT", "P31 phosphor"],
+  "tags": ["test equipment", "oscilloscope", "phosphor", "trace", "graticule", "readout"],
+  "value": { "model": "waveform", "count": 500 },
+  "attributes": ["value", "value2", "intensity", "focus", "illum", "label", "scale"],
+  "events": [],
+  "size": { "w": 360, "h": 300 },
+  "notes": "value is an array of 0…1 across ten divisions; value2 is channel 2. The left tube shows two channels of a sine with the graticule illuminated, the right one a square wave with overshoot at higher intensity."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-crt-tek-465 label="CH 1 + CH 2" intensity="0.62" illum="0.4" value="0.66,0.686,0.711,0.736,0.76,0.783,0.805,0.826,0.845,0.862,0.877,0.89,0.901,0.909,0.915,0.919,0.92,0.918,0.914,0.908,0.899,0.888,0.874,0.859,0.841,0.822,0.801,0.779,0.755,0.731,0.706,0.681,0.655,0.629,0.604,0.579,0.555,0.532,0.511,0.49,0.472,0.455,0.44,0.428,0.417,0.409,0.404,0.401,0.4,0.402,0.407,0.414,0.423,0.435,0.449,0.465,0.483,0.502,0.523,0.546,0.569,0.594,0.619,0.645,0.67,0.696,0.721,0.746,0.769,0.792,0.814,0.834,0.852,0.868,0.883,0.895,0.905,0.912,0.917,0.92,0.92,0.917,0.912,0.905,0.895,0.883,0.868,0.852,0.834,0.814,0.792,0.769,0.746,0.721,0.696,0.67,0.645,0.619,0.594,0.569,0.546,0.523,0.502,0.483,0.465,0.449,0.435,0.423,0.414,0.407,0.402,0.4,0.401,0.404,0.409,0.417,0.428,0.44,0.455,0.472,0.49,0.511,0.532,0.555,0.579,0.604,0.629,0.655,0.681,0.706,0.731,0.755,0.779,0.801,0.822,0.841,0.859,0.874,0.888,0.899,0.908,0.914,0.918,0.92,0.919,0.915,0.909,0.901,0.89,0.877,0.862,0.845,0.826,0.805,0.783,0.76,0.736,0.711,0.686,0.66" value2="0.442,0.436,0.43,0.422,0.412,0.402,0.391,0.378,0.365,0.352,0.338,0.323,0.308,0.294,0.279,0.264,0.25,0.236,0.223,0.211,0.199,0.189,0.18,0.171,0.164,0.159,0.154,0.152,0.15,0.15,0.152,0.155,0.159,0.165,0.172,0.18,0.19,0.2,0.212,0.224,0.237,0.251,0.265,0.28,0.295,0.309,0.324,0.339,0.353,0.366,0.379,0.391,0.403,0.413,0.422,0.43,0.437,0.442,0.446,0.449,0.45,0.45,0.448,0.445,0.44,0.434,0.427,0.418,0.408,0.398,0.386,0.373,0.36,0.346,0.332,0.317,0.302,0.288,0.273,0.259,0.245,0.231,0.218,0.206,0.195,0.185,0.176,0.168,0.162,0.157,0.153,0.151,0.15,0.151,0.153,0.156,0.161,0.167,0.175,0.184,0.194,0.205,0.217,0.229,0.243,0.257,0.271,0.286,0.3,0.315,0.33,0.344,0.358,0.372,0.384,0.396,0.407,0.417,0.425,0.433,0.439,0.444,0.447,0.449,0.45,0.449,0.447,0.443,0.438,0.431,0.423,0.414,0.404,0.393,0.381,0.368,0.355,0.341,0.326,0.311,0.297,0.282,0.267,0.253,0.239,0.226,0.213,0.202,0.191,0.181,0.173,0.166,0.16,0.155,0.152,0.15,0.15,0.151,0.154,0.158"></sk-crt-tek-465>
+    <sk-crt-tek-465 label="CH 1 square" intensity="0.82" focus="0.9" scale="0.62" value="0.5,0.707,0.79,0.807,0.798,0.786,0.782,0.785,0.792,0.799,0.803,0.804,0.803,0.801,0.8,0.799,0.799,0.799,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.432,0.263,0.201,0.194,0.205,0.216,0.218,0.214,0.206,0.2,0.196,0.196,0.197,0.199,0.201,0.201,0.201,0.201,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.624,0.76,0.804,0.804,0.792,0.783,0.782,0.788,0.795,0.801,0.804,0.804,0.802,0.8,0.799,0.799,0.799,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.33,0.223,0.193,0.199,0.211,0.218,0.217,0.21,0.203,0.198,0.196,0.196,0.198,0.2,0.201,0.201,0.201,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.5"></sk-crt-tek-465>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Tektronix 465</b> is the portable 100 MHz scope that sat on every bench of the 1970s. Its tube has
+  an <b>internal graticule</b> — the ruling is etched on the inside of the faceplate, in the same plane as the
+  phosphor — so the trace lies exactly on the lines with no parallax, and a green filter in front turns the
+  screen's black into a dark green.</p>
+  <p><b>The tells kept here:</b> the graticule is dim etched grey-green, never white, and its centre lines
+  carry hash marks every 0.2 division, with dotted 0 % and 100 % rise-time lines across the face and 10 % /
+  90 % marks at the left; <b>P31 green</b> — where the beam moves fast the trace is thin and dim, where it
+  dwells on a flat top it is fat and bright, with a white-green core inside a soft bloom that widens with
+  <code>intensity</code>; a short <b>persistence</b>, so a changing signal drags a fading tail behind it and a
+  still one sits rock steady; the retrace is blanked, and a single sample parks the beam as one bright dot;
+  the corners fall off darker behind the filter; the beam writes its own channel numbers at the left of each
+  trace; and <code>illum</code> lights the graticule from the edge the way the 465's GRATICULE ILLUM control
+  does.</p>
+  <p><b>Left out:</b> the whole front panel around the bezel — the 465's cream and blue-grey deck, its collet
+  knobs and its camera-mount lugs are other controls; there is no sweep animation, because at the default
+  2 ms/div the whole width is written in 20 ms, faster than a frame; and the waveform array is not reflected
+  back to the <code>value</code> attribute, since it changes every frame.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-crt-tek-465> — 1970s Tektronix 465 CRT, internal graticule, P31 green ====
+   attributes: value (waveform: CSV or JSON array of 0…1, one per sample across ten divisions)
+               value2 (channel 2) · intensity 0…1 · focus 0…1 · illum 0…1 (graticule illumination)
+               label · scale
+   no events (an output). set .value = [...] every frame; drawing is a handful of strokes.
+   self-contained: paste this block into any page and use
+   <sk-crt-tek-465 value="0.5,0.7,0.9,..."></sk-crt-tek-465> */
+(function () {
+  if (customElements.get("sk-crt-tek-465")) return;
+
+  const W = 360, H = 300;
+  const SX = 20, SY = 20, SW = 320, SH = 256;        // the screen inside the bezel
+  const DX = SW / 10, DY = SH / 8;                   // one division
+  const BG = "#121a16";                              // the tube face with no beam
+  const Y100 = 1.5 * DY, Y0 = 6.5 * DY;              // the dotted rise-time lines
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg, canvas { position: absolute; display: block; }
+    svg { left: 0; top: 0; width: ${W}px; height: ${H}px; }
+    canvas { left: ${SX}px; top: ${SY}px; width: ${SW}px; height: ${SH}px; }
+    .front { pointer-events: none; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .leg { font-size: 6px; font-weight: 500; letter-spacing: 0.24em; fill: #50565e; fill-opacity: 0.75; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg class="back" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="bez" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#34343a"/><stop offset="0.35" stop-color="#232326"/>
+          <stop offset="1" stop-color="#151517"/>
+        </linearGradient>
+        <linearGradient id="recess" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#0a0a0b"/><stop offset="0.6" stop-color="#1a1a1d"/><stop offset="1" stop-color="#2c2c31"/>
+        </linearGradient>
+        <radialGradient id="screwg" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#4c4c52"/><stop offset="0.65" stop-color="#232327"/><stop offset="1" stop-color="#0d0d0f"/>
+        </radialGradient>
+        <filter id="bsoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5"/></filter>
+      </defs>
+      <!-- the bezel sits on the panel -->
+      <rect x="3" y="6" width="${W - 6}" height="${H - 8}" rx="8" fill="#000" opacity="0.4" filter="url(#bsoft)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="7" fill="url(#bez)"/>
+      <!-- the camera-mount ring moulded into the bezel face -->
+      <rect x="7.5" y="7.5" width="${W - 15}" height="${H - 15}" rx="5" fill="none" stroke="#08080a" stroke-width="1.4"/>
+      <rect x="8.5" y="8.5" width="${W - 17}" height="${H - 17}" rx="5" fill="none" stroke="#45454b" stroke-width="0.9" stroke-opacity="0.7"/>
+      <!-- the tube face is let into the bezel -->
+      <rect x="${SX - 4}" y="${SY - 4}" width="${SW + 8}" height="${SH + 8}" rx="4" fill="url(#recess)"/>
+      <rect x="${SX - 0.5}" y="${SY - 0.5}" width="${SW + 1}" height="${SH + 1}" fill="#121a16" stroke="#000" stroke-width="1"/>
+      <!-- four corner screws -->
+      <g>
+        <g transform="translate(11 11)"><circle r="3.2" fill="url(#screwg)"/><rect x="-2.4" y="-0.45" width="4.8" height="0.9" fill="#0a0a0b" transform="rotate(34)"/></g>
+        <g transform="translate(${W - 11} 11)"><circle r="3.2" fill="url(#screwg)"/><rect x="-2.4" y="-0.45" width="4.8" height="0.9" fill="#0a0a0b" transform="rotate(-58)"/></g>
+        <g transform="translate(11 ${H - 11})"><circle r="3.2" fill="url(#screwg)"/><rect x="-2.4" y="-0.45" width="4.8" height="0.9" fill="#0a0a0b" transform="rotate(72)"/></g>
+        <g transform="translate(${W - 11} ${H - 11})"><circle r="3.2" fill="url(#screwg)"/><rect x="-2.4" y="-0.45" width="4.8" height="0.9" fill="#0a0a0b" transform="rotate(-9)"/></g>
+      </g>
+      <text class="leg" x="${W / 2}" y="${H - 8}">TYPE 465</text>
+    </svg>
+    <canvas></canvas>
+    <svg class="front" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="vig" cx="50%" cy="46%" r="66%">
+          <stop offset="0.55" stop-color="#000" stop-opacity="0"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.68"/>
+        </radialGradient>
+        <linearGradient id="glassr" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#cfe6d8" stop-opacity="0.10"/>
+          <stop offset="0.45" stop-color="#cfe6d8" stop-opacity="0.025"/>
+          <stop offset="1" stop-color="#cfe6d8" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="fsoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <!-- the filter darkens the corners -->
+      <rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="url(#vig)"/>
+      <!-- one broad reflection in the filter, the shape of the room -->
+      <path d="M ${SX} ${SY} L ${SX + 150} ${SY} L ${SX + 40} ${SY + SH} L ${SX} ${SY + SH} Z" fill="url(#glassr)"/>
+      <!-- the tube face is behind the bezel: a shadow around the edge -->
+      <rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="7" filter="url(#fsoft)"/>
+      <rect x="${SX - 0.5}" y="${SY - 0.5}" width="${SW + 1}" height="${SH + 1}" fill="none" stroke="#000" stroke-width="1"/>
+      <path d="M ${SX - 4} ${SY + SH + 4} H ${SX + SW + 4} V ${SY - 4}" fill="none" stroke="#4e4e55" stroke-width="1" stroke-opacity="0.55"/>
+    </svg>
+  </div>`;
+
+  class SkCrtTek465 extends HTMLElement {
+    static get observedAttributes() { return ["value", "value2", "intensity", "focus", "illum", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._w = null; this._w2 = null;
+      this._I = 0.62; this._focus = 1; this._illum = 0; this._scale = 1; this._dpr = 0;
+      this._raf = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._cv = this.shadowRoot.querySelector("canvas");
+      this._ctx = this._cv.getContext("2d");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._size(true);
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._size(false); }
+
+    // the waveform: an array of 0…1, one per sample across the ten divisions.
+    // not reflected to the attribute — it changes every frame.
+    get value() { return this._w; }
+    set value(v) { const a = parse(v); if (a) this._w = a; }
+    get value2() { return this._w2; }
+    set value2(v) { const a = parse(v); if (a) this._w2 = a; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._w = parse(this.getAttribute("value")) || this._w;
+      this._w2 = parse(this.getAttribute("value2")) || this._w2;
+      this._I = Math.max(0, Math.min(1, num("intensity", 0.62)));
+      this._focus = Math.max(0, Math.min(1, num("focus", 1)));
+      this._illum = Math.max(0, Math.min(1, num("illum", 0)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const ch = (this._w2 && this._w2.length > 1) ? "two channels" : "one channel";
+      this.setAttribute("aria-label", (this.getAttribute("label") || "Oscilloscope") +
+        ", " + ch + ", " + ((this._w && this._w.length) || 0) + " samples on an 8 by 10 division graticule");
+    }
+    _size(force) {
+      const dpr = Math.min(3, (window.devicePixelRatio || 1) * Math.max(1, this._scale));
+      if (!force && dpr === this._dpr) return;
+      this._dpr = dpr;
+      this._cv.width = Math.round(SW * dpr); this._cv.height = Math.round(SH * dpr);
+      const c = this._ctx;
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.lineJoin = "round"; c.lineCap = "round";
+      c.globalCompositeOperation = "source-over";
+      c.fillStyle = BG; c.fillRect(0, 0, SW, SH);
+    }
+    _tick() { this._draw(); this._raf = requestAnimationFrame(this._tick); }
+
+    _draw() {
+      const c = this._ctx;
+      c.globalCompositeOperation = "source-over";
+      // persistence: the last frames fade toward the dark face (~80 ms)
+      c.fillStyle = "rgba(18,26,22,0.30)";
+      c.fillRect(0, 0, SW, SH);
+      this._graticule(c);
+      c.globalCompositeOperation = "lighter";
+      if (this._w) this._trace(c, this._w, "1");
+      if (this._w2) this._trace(c, this._w2, "2");
+      c.globalCompositeOperation = "source-over";
+    }
+
+    _graticule(c) {
+      const il = this._illum;
+      const r = Math.round(92 + il * 96), g = Math.round(138 + il * 96), b = Math.round(106 + il * 64);
+      c.strokeStyle = "rgba(" + r + "," + g + "," + b + "," + (0.38 + il * 0.30).toFixed(3) + ")";
+      c.lineWidth = 1;
+      c.beginPath();
+      for (let i = 0; i <= 10; i++) { const x = Math.round(i * DX) + 0.5; c.moveTo(x, 0); c.lineTo(x, SH); }
+      for (let j = 0; j <= 8; j++) { const y = Math.round(j * DY) + 0.5; c.moveTo(0, y); c.lineTo(SW, y); }
+      c.stroke();
+      // hash marks every 0.2 division on the centre lines
+      c.lineWidth = 1;
+      c.beginPath();
+      const cx = Math.round(5 * DX) + 0.5, cy = Math.round(4 * DY) + 0.5;
+      for (let i = 1; i < 50; i++) { const x = Math.round(i * DX / 5) + 0.5; if (i % 5 === 0) continue; c.moveTo(x, cy - 2.4); c.lineTo(x, cy + 2.4); }
+      for (let j = 1; j < 40; j++) { const y = Math.round(j * DY / 5) + 0.5; if (j % 5 === 0) continue; c.moveTo(cx - 2.4, y); c.lineTo(cx + 2.4, y); }
+      c.stroke();
+      // the dotted 0 % and 100 % rise-time lines, and the 10 % / 90 % marks at the left
+      c.setLineDash([1.5, 4.5]);
+      c.beginPath();
+      c.moveTo(DX * 0.5, Y100 + 0.5); c.lineTo(SW - DX * 0.5, Y100 + 0.5);
+      c.moveTo(DX * 0.5, Y0 + 0.5); c.lineTo(SW - DX * 0.5, Y0 + 0.5);
+      c.stroke();
+      c.setLineDash([]);
+      c.beginPath();
+      const y10 = Y0 - 0.1 * (Y0 - Y100), y90 = Y0 - 0.9 * (Y0 - Y100);
+      c.moveTo(DX * 0.5, y10 + 0.5); c.lineTo(DX * 1.1, y10 + 0.5);
+      c.moveTo(DX * 0.5, y90 + 0.5); c.lineTo(DX * 1.1, y90 + 0.5);
+      c.stroke();
+    }
+
+    // one channel: bloom, core, and the slow parts of the beam drawn fatter and brighter
+    _trace(c, w, id) {
+      const n = w.length, I = this._I, f = this._focus;
+      if (n < 2) {                       // a stopped sweep: the beam parks as one dot
+        const x = SW / 2, y = clampY(w[0]);
+        const dot = (r, a) => { c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.fillStyle = "rgba(120,255,150," + a + ")"; c.fill(); };
+        dot(7 * (2 - f), 0.05 * I); dot(3.2, 0.22 * I); dot(1.6, 0.6 * I);
+        c.beginPath(); c.arc(x, y, 0.9, 0, 6.2832); c.fillStyle = "rgba(230,255,236," + (0.85 * I) + ")"; c.fill();
+        this._glyph(c, id, y, I);
+        return;
+      }
+      const step = (SW - 1) / (n - 1);
+      c.beginPath();
+      c.moveTo(0, clampY(w[0]));
+      for (let i = 1; i < n; i++) c.lineTo(i * step, clampY(w[i]));
+      const blur = 1 + (1 - f) * 2.4;
+      c.lineWidth = 9 * blur; c.strokeStyle = "rgba(46,220,86," + (0.025 + 0.045 * I).toFixed(3) + ")"; c.stroke();
+      c.lineWidth = 3.6 * blur; c.strokeStyle = "rgba(74,246,110," + (0.04 + 0.09 * I).toFixed(3) + ")"; c.stroke();
+      c.lineWidth = 1.25 * blur; c.strokeStyle = "rgba(118,255,146," + (0.20 + 0.46 * I).toFixed(3) + ")"; c.stroke();
+      // where the beam moves slowly it dwells: fatter, and with a white-green core
+      c.beginPath();
+      let any = false;
+      for (let i = 1; i < n; i++) {
+        const y0 = clampY(w[i - 1]), y1 = clampY(w[i]);
+        if (Math.abs(y1 - y0) > 1.3) continue;
+        c.moveTo((i - 1) * step, y0); c.lineTo(i * step, y1); any = true;
+      }
+      if (any) {
+        c.lineWidth = 2.6 * blur; c.strokeStyle = "rgba(140,255,168," + (0.07 + 0.17 * I).toFixed(3) + ")"; c.stroke();
+        c.lineWidth = 0.85; c.strokeStyle = "rgba(222,255,230," + (0.24 + 0.5 * I).toFixed(3) + ")"; c.stroke();
+      }
+      this._glyph(c, id, clampY(w[0]), I);
+    }
+
+    // the beam writes the channel number at the left of its own trace
+    _glyph(c, id, y, I) {
+      const x = 5;
+      c.beginPath();
+      if (id === "1") { c.moveTo(x + 1.5, y - 3.5); c.lineTo(x + 3.5, y - 5); c.lineTo(x + 3.5, y + 4); c.moveTo(x + 1, y + 4); c.lineTo(x + 6, y + 4); }
+      else { c.moveTo(x + 1, y - 3.5); c.lineTo(x + 2.5, y - 5); c.lineTo(x + 5, y - 5); c.lineTo(x + 6, y - 3.5); c.lineTo(x + 6, y - 1.5); c.lineTo(x + 1, y + 4); c.lineTo(x + 6.2, y + 4); }
+      c.lineWidth = 2.6; c.strokeStyle = "rgba(90,255,128," + (0.08 * I).toFixed(3) + ")"; c.stroke();
+      c.lineWidth = 1.1; c.strokeStyle = "rgba(170,255,190," + (0.32 + 0.4 * I).toFixed(3) + ")"; c.stroke();
+    }
+  }
+
+  function clampY(v) { v = +v; if (!isFinite(v)) v = 0.5; return SH - Math.max(-0.15, Math.min(1.15, v)) * SH; }
+  function parse(s) {
+    if (s == null) return null;
+    if (Array.isArray(s)) return s.length ? s : null;
+    if (typeof s === "number") return [s];
+    if (typeof s !== "string") return null;
+    s = s.trim(); if (!s) return null;
+    if (s.charAt(0) === "[") { try { const a = JSON.parse(s); return Array.isArray(a) && a.length ? a : null; } catch (e) { return null; } }
+    const out = [], parts = s.split(/[\s,]+/);
+    for (let i = 0; i < parts.length; i++) { const x = parseFloat(parts[i]); if (!isNaN(x)) out.push(x); }
+    return out.length ? out : null;
+  }
+  customElements.define("sk-crt-tek-465", SkCrtTek465);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

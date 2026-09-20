@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grundig city-name dial — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dial-grundig-city-names",
+  "element": "sk-dial-grundig",
+  "name": "Grundig city-name dial",
+  "kind": "both",
+  "code": "A7",
+  "type": "Slide-rule tuning dial",
+  "source": "Grundig 3055W / 5040 Konzertschrank table radio, the backlit gold dial glass with station names in green and red, 1955–1958",
+  "era": "1950s",
+  "origin": "West Germany",
+  "materials": ["backlit dial glass", "screen print", "brass frame", "red pointer wire"],
+  "tags": ["radio", "tuning", "slide rule", "station names", "backlit", "band switch", "walnut cabinet"],
+  "value": { "model": "range", "min": 520, "max": 1600, "step": 1, "unit": "kHz" },
+  "attributes": ["value", "band", "scale", "disabled", "knob"],
+  "events": ["input", "change"],
+  "size": { "w": 440, "h": 130 },
+  "notes": "MW at 693 kHz with the flywheel knob; a second glass on UKW at 92.4 MHz, smaller. Drag the pointer or the glass, wheel, arrows; click a band name to switch bands. The value is the frequency in the selected band."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-dial-grundig value="693" band="MW" knob></sk-dial-grundig>
+    <sk-dial-grundig value="92.4" band="UKW" scale="0.6"></sk-dial-grundig>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Grundig dial glass</b> of the mid-fifties is the long warm window across the front of a walnut
+  table radio: cream-gold glass lit by a row of pilot bulbs behind it, four bands stacked as horizontal gold
+  lines (UKW, KW, MW, LW), frequency figures under each line and the names of Europe's transmitters above
+  them, screen-printed in dark green and dark red condensed capitals. A single red wire crosses the whole
+  height on a string drive and moves with a little slack; tiny lamps below show which band is switched in.</p>
+  <p><b>The tells kept here:</b> the four band lines with names above and figures below, in two colours and two
+  rows where the short-wave stations crowd; the pool of light that is brighter at the lower corners where
+  the bulbs sit and dimmer in the middle; the glass's one wide reflection shaped by the room and the slightly
+  washed look of the print under it; the band names at the left edge with the active one lit; the row of
+  four lamps under the scale, one lit; the pointer that eases to its place over 200 ms and hesitates for
+  1 % of the scale when it changes direction. Drag the pointer or the glass, use the wheel or arrows, or
+  the small flywheel knob at the right (the <code>knob</code> attribute), which coasts.</p>
+  <p><b>Left out:</b> the metre-band markings on the KW line, the piano-key band switch, the magic-eye tuning
+  indicator that sat beside the glass.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dial-grundig> — 1950s backlit gold dial glass with city names and a red wire pointer ====
+   attributes: value(frequency in the band) band(UKW|KW|MW|LW) scale disabled knob(adds a flywheel knob at the right)
+   events: input {value, band} during a gesture, change {value, band} when it settles
+   self-contained: paste this block into any page and use <sk-dial-grundig value="693" band="MW"></sk-dial-grundig> */
+(function () {
+  if (customElements.get("sk-dial-grundig")) return;
+  const W = 440, H = 130, KW = 44;                     // glass size; the knob adds KW to the width
+  const X0 = 50, X1 = 426;                              // the scale's span
+  const ROWS = [30, 55, 80, 105];                       // band line y for UKW, KW, MW, LW
+  const ORDER = ["UKW", "KW", "MW", "LW"];
+  const KX = W + KW / 2, KY = 65, KR = 17;              // the knob
+  const DEG = Math.PI / 180;
+  // names: [frequency, name, row (0 near the line, 1 above it), red?]
+  const BANDS = {
+    UKW: { min: 87, max: 100, step: 0.1, unit: "MHz", law: 1, tick: 0.5, nums: [87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100],
+      names: [[87.3, "SAARBRÜCKEN", 1, 0], [88.3, "STUTTGART", 0, 1], [89.2, "HAMBURG", 1, 1], [90.0, "KÖLN", 0, 0], [90.9, "MÜNCHEN", 1, 0], [91.8, "BREMEN", 0, 1],
+        [92.7, "FRANKFURT", 1, 1], [93.6, "BERLIN", 0, 0], [94.6, "HANNOVER", 1, 0], [95.5, "KASSEL", 0, 1], [96.4, "WIEN", 1, 1], [97.4, "BASEL", 0, 0], [98.4, "ZÜRICH", 1, 0], [99.4, "NÜRNBERG", 0, 1]] },
+    KW: { min: 5.9, max: 15.5, step: 0.05, unit: "MHz", law: 0.5, tick: 0.5, nums: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      names: [[5.95, "MOSKAU", 0, 1], [6.05, "LONDON", 1, 0], [6.15, "PRAG", 0, 0], [6.25, "KAIRO", 1, 1], [6.37, "ROM", 0, 1], [6.5, "BERN", 1, 0], [6.65, "PARIS", 0, 0], [6.85, "WIEN", 1, 1],
+        [7.15, "ANKARA", 0, 1], [7.3, "SOFIA", 1, 0], [9.5, "LISSABON", 0, 0], [9.75, "NEW YORK", 1, 1], [11.7, "DELHI", 0, 1], [12.0, "PEKING", 1, 0], [15.1, "MELBOURNE", 0, 0], [15.35, "KAPSTADT", 1, 1]] },
+    MW: { min: 520, max: 1600, step: 1, unit: "kHz", law: 0.5, tick: 50, nums: [550, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600],
+      names: [[529, "BEROMÜNSTER", 0, 1], [557, "MONTE CENERI", 1, 0], [584, "WIEN", 0, 0], [620, "BRÜSSEL", 1, 1], [638, "PRAG", 0, 1], [692, "ROM", 1, 0], [765, "SOTTENS", 0, 0], [800, "MÜNCHEN", 1, 1],
+        [863, "PARIS", 0, 1], [908, "LONDON", 1, 0], [971, "HAMBURG", 0, 0], [1007, "HILVERSUM", 1, 1], [1178, "STOCKHOLM", 0, 1], [1250, "BUDAPEST", 1, 0], [1376, "LILLE", 0, 0], [1439, "LUXEMBURG", 1, 1], [1538, "KÖLN", 0, 1]] },
+    LW: { min: 150, max: 300, step: 1, unit: "kHz", law: 0.5, tick: 10, nums: [150, 160, 170, 180, 200, 220, 240, 260, 280, 300],
+      names: [[164, "PARIS", 0, 0], [173, "MOSKAU", 1, 1], [200, "DROITWICH", 0, 1], [218, "OSLO", 1, 0], [236, "LUXEMBURG", 0, 0], [245, "KALUNDBORG", 1, 1], [272, "MOTALA", 0, 1]] }
+  };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    :host([knob]) { width: ${W + KW}px; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W + KW}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 6px; top: 6px; width: ${W - 12}px; height: ${H - 12}px; cursor: ew-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .kgrab { position: absolute; left: ${KX - KR - 3}px; top: ${KY - KR - 3}px; width: ${2 * KR + 6}px; height: ${2 * KR + 6}px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; display: none; }
+    :host([knob]) .kgrab { display: block; }
+    :host([knob]) .knob { display: inline; }
+    .knob { display: none; }
+    .kgrab.drag { cursor: grabbing; }
+    :host([disabled]) .grab, :host([disabled]) .kgrab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif; }
+    .name { font-size: 6.5px; font-weight: 500; letter-spacing: 0.04em; text-anchor: middle; }
+    .name.g { fill: #2f5d3b; } .name.r { fill: #8d2a25; }
+    .fig { font-size: 7px; font-weight: 600; fill: #4a3a22; text-anchor: middle; }
+    .unit { font-size: 5.5px; font-weight: 600; fill: #4a3a22; text-anchor: start; letter-spacing: 0.04em; }
+    .band { font-size: 7.5px; font-weight: 600; letter-spacing: 0.06em; text-anchor: end; fill: #8a7a58; opacity: 0.75; }
+    .band.on { fill: #2f5d3b; opacity: 1; }
+    .lamplbl { font-size: 5px; font-weight: 600; letter-spacing: 0.08em; fill: #6b5a3a; text-anchor: start; }
+    .lamplbl.on { fill: #4a3a22; }
+    .ptr { will-change: transform; }
+    .kn { transform-origin: ${KX}px ${KY}px; transform-box: view-box; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W + KW} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e2c57a"/><stop offset="0.18" stop-color="#c9a24a"/><stop offset="0.55" stop-color="#b7913f"/><stop offset="1" stop-color="#6f5522"/>
+        </linearGradient>
+        <linearGradient id="brassin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5a4218"/><stop offset="0.5" stop-color="#8a6b2c"/><stop offset="1" stop-color="#d1b061"/>
+        </linearGradient>
+        <radialGradient id="bulbL" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#fff3cf" stop-opacity="0.95"/><stop offset="0.45" stop-color="#f6e4b0" stop-opacity="0.55"/><stop offset="1" stop-color="#f6e4b0" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="bulbR" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#fff0c4" stop-opacity="0.9"/><stop offset="0.45" stop-color="#f4e0a8" stop-opacity="0.5"/><stop offset="1" stop-color="#f4e0a8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="dimmid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a6a2a" stop-opacity="0.34"/><stop offset="0.5" stop-color="#8a6a2a" stop-opacity="0.12"/><stop offset="1" stop-color="#8a6a2a" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="glassrefl" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.07"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="lampon" cx="0.4" cy="0.4" r="0.6">
+          <stop offset="0" stop-color="#fff6d8"/><stop offset="0.4" stop-color="#ffd27a"/><stop offset="1" stop-color="#c98a2a"/>
+        </radialGradient>
+        <radialGradient id="lampoff" cx="0.4" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#8a7650"/><stop offset="0.6" stop-color="#6b5a3a"/><stop offset="1" stop-color="#3e3220"/>
+        </radialGradient>
+        <radialGradient id="kbody" cx="0.36" cy="0.3" r="0.75">
+          <stop offset="0" stop-color="#3a2a1c"/><stop offset="0.5" stop-color="#1c130c"/><stop offset="1" stop-color="#0a0605"/>
+        </radialGradient>
+        <linearGradient id="kring" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f0d68a"/><stop offset="0.5" stop-color="#a8843a"/><stop offset="1" stop-color="#4f3a12"/>
+        </linearGradient>
+        <clipPath id="glass"><rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="1.5"/></clipPath>
+        <filter id="blur6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="blur14" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+        <filter id="blur2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="blur1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+      </defs>
+
+      <!-- shadow into the cabinet, then the brass frame -->
+      <rect x="3" y="5" width="${W - 4}" height="${H - 6}" rx="5" fill="#000" opacity="0.5" filter="url(#blur6)"/>
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="4" fill="url(#brass)" stroke="#3a2a10" stroke-width="0.8"/>
+      <path d="M 4 ${H - 3} V 4 H ${W - 4}" fill="none" stroke="#f3dc98" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 4.5 ${H - 3.5} H ${W - 3.5} V 4" fill="none" stroke="#3f2e10" stroke-width="0.8" opacity="0.6"/>
+
+      <g clip-path="url(#glass)">
+        <!-- the glass ground and the bulbs behind it -->
+        <rect x="6" y="6" width="${W - 12}" height="${H - 12}" fill="#e2cf98"/>
+        <ellipse cx="${W * 0.24}" cy="${H + 8}" rx="${W * 0.28}" ry="${H * 0.95}" fill="url(#bulbL)"/>
+        <ellipse cx="${W * 0.77}" cy="${H + 10}" rx="${W * 0.27}" ry="${H * 0.92}" fill="url(#bulbR)"/>
+        <ellipse cx="${W * 0.24}" cy="${H - 2}" rx="${W * 0.1}" ry="${H * 0.35}" fill="#fff8e0" opacity="0.55" filter="url(#blur14)"/>
+        <ellipse cx="${W * 0.77}" cy="${H}" rx="${W * 0.1}" ry="${H * 0.35}" fill="#fff4d6" opacity="0.5" filter="url(#blur14)"/>
+        <rect x="6" y="6" width="${W - 12}" height="${H - 12}" fill="url(#dimmid)"/>
+        <ellipse cx="${W * 0.5}" cy="${H * 0.3}" rx="${W * 0.22}" ry="${H * 0.5}" fill="#7a5e28" opacity="0.16" filter="url(#blur14)"/>
+        <!-- the print: band lines, figures, names, band names, lamps -->
+        <g class="print"></g>
+        <!-- the band lamps -->
+        <g class="lamps"></g>
+        <!-- the pointer: a red wire, with a soft shadow on the ground -->
+        <g class="ptr">
+          <line x1="1.4" y1="7" x2="1.4" y2="${H - 7}" stroke="#5a2a10" stroke-opacity="0.25" stroke-width="1.6" filter="url(#blur1)"/>
+          <line x1="0" y1="7" x2="0" y2="${H - 7}" stroke="#a5261f" stroke-width="1.5"/>
+          <line x1="0" y1="7" x2="0" y2="${H - 7}" stroke="#d6322a" stroke-width="0.9"/>
+          <line x1="-0.25" y1="7" x2="-0.25" y2="${H - 7}" stroke="#ff8a7a" stroke-width="0.35" opacity="0.8"/>
+        </g>
+        <!-- the glass: everything behind it slightly washed, one wide reflection from the room -->
+        <rect x="6" y="6" width="${W - 12}" height="${H - 12}" fill="#fff" opacity="0.055"/>
+        <path d="M 6 6 L 250 6 L 150 ${H - 6} L 6 ${H - 6} Z" fill="url(#glassrefl)"/>
+        <path d="M 300 6 L 340 6 L 262 ${H - 6} L 236 ${H - 6} Z" fill="#fff" opacity="0.045"/>
+        <!-- the frame's inner shadow onto the glass -->
+        <rect x="6" y="6" width="${W - 12}" height="${H - 12}" fill="none" stroke="#3a2a10" stroke-opacity="0.55" stroke-width="5" filter="url(#blur2)"/>
+      </g>
+      <rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="1.5" fill="none" stroke="url(#brassin)" stroke-width="1"/>
+
+      <!-- the flywheel knob (only with the knob attribute) -->
+      <g class="knob">
+        <ellipse cx="${KX + 2}" cy="${KY + 4}" rx="${KR + 3}" ry="${KR + 2}" fill="#000" opacity="0.6" filter="url(#blur2)"/>
+        <circle cx="${KX}" cy="${KY}" r="${KR + 2.5}" fill="url(#kring)" stroke="#2a1c06" stroke-width="0.6"/>
+        <circle cx="${KX}" cy="${KY}" r="${KR + 0.6}" fill="#0a0605"/>
+        <g class="kn">
+          <circle cx="${KX}" cy="${KY}" r="${KR}" fill="url(#kbody)"/>
+          <circle cx="${KX}" cy="${KY}" r="${KR - 3}" fill="none" stroke="#5a4028" stroke-opacity="0.35" stroke-width="0.6"/>
+          <circle cx="${KX}" cy="${KY - KR + 5.5}" r="1.6" fill="#f3e6c8" opacity="0.9"/>
+        </g>
+        <ellipse cx="${KX - 5}" cy="${KY - 6}" rx="8" ry="6" fill="#fff" opacity="0.12" filter="url(#blur2)"/>
+        <path d="M ${KX - 12} ${KY + 12} A ${KR} ${KR} 0 0 0 ${KX + 12} ${KY + 12}" fill="none" stroke="#a5804a" stroke-opacity="0.3" stroke-width="1"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+    <div class="kgrab" tabindex="-1" aria-hidden="true"></div>
+  </div>`;
+
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const mk = (t, a, txt) => { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+  const fmt = (v, b) => { const d = b.step < 1 ? (b.step < 0.1 ? 2 : 1) : 0; return v.toFixed(d); };
+
+  class SkDialGrundig extends HTMLElement {
+    static get observedAttributes() { return ["value", "band", "scale", "disabled", "knob"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._band = "MW"; this._v = 693; this._scale = 1;
+      this._p = 0; this._dir = 0; this._slack = 0; this._raf = 0; this._last = 0; this._w = 0;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._grab = $(".grab"); this._kgrab = $(".kgrab"); this._wrap = $(".wrap");
+      this._print = $(".print"); this._lampsG = $(".lamps"); this._ptr = $(".ptr"); this._kn = $(".kn");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKDown = this._onKDown.bind(this); this._onKMove = this._onKMove.bind(this); this._onKUp = this._onKUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+      this._drawPrint();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("band")) this.setAttribute("band", this._band);
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs();
+      this._p = this._t(this._v); this._paint();
+      const g = this._grab, k = this._kgrab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+      k.addEventListener("pointerdown", this._onKDown);
+      k.addEventListener("wheel", this._onWheel, { passive: false });
+    }
+    disconnectedCallback() {
+      const g = this._grab, k = this._kgrab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      k.removeEventListener("pointerdown", this._onKDown); k.removeEventListener("wheel", this._onWheel);
+      cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._kick(); }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._w = 0; this._v = this._q(this._clamp(v)); this.setAttribute("value", String(this._v)); this._kick(); }
+    get band() { return this._band; }
+    set band(b) { this.setAttribute("band", String(b)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    get _b() { return BANDS[this._band]; }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const band = String(this.getAttribute("band") || "MW").toUpperCase();
+      this._band = BANDS[band] ? band : "MW";
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._q(this._clamp(num("value", this._v)));
+      const g = this._grab, b = this._b;
+      g.setAttribute("aria-label", "tuning, " + this._band);
+      g.setAttribute("aria-valuemin", b.min); g.setAttribute("aria-valuemax", b.max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      const w = W + (this.hasAttribute("knob") ? KW : 0);
+      this.style.width = (w * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      // the active band: its name lit, its lamp on
+      this.shadowRoot.querySelectorAll(".band").forEach(t => t.classList.toggle("on", t.getAttribute("data-band") === this._band));
+      this.shadowRoot.querySelectorAll(".bandglow").forEach(t => { t.style.display = t.getAttribute("data-band") === this._band ? "" : "none"; });
+      this.shadowRoot.querySelectorAll(".lamplbl").forEach(t => t.classList.toggle("on", t.getAttribute("data-band") === this._band));
+      this.shadowRoot.querySelectorAll(".lamp").forEach(t => { const on = t.getAttribute("data-band") === this._band; t.setAttribute("fill", on ? "url(#lampon)" : "url(#lampoff)"); });
+      this.shadowRoot.querySelectorAll(".lampglow").forEach(t => { t.style.display = t.getAttribute("data-band") === this._band ? "" : "none"; });
+    }
+    _clamp(v) { const b = this._b; return Math.min(b.max, Math.max(b.min, v)); }
+    _q(v) { const b = this._b; return Math.round(Math.round((v - b.min) / b.step) * b.step * 1000 + b.min * 1000) / 1000; }
+    _t(f, b) { b = b || this._b; const u = Math.min(1, Math.max(0, (f - b.min) / (b.max - b.min))); return b.law === 1 ? u : Math.pow(u, b.law); }
+    _f(t) { const b = this._b; t = Math.min(1, Math.max(0, t)); const u = b.law === 1 ? t : Math.pow(t, 1 / b.law); return b.min + u * (b.max - b.min); }
+    _x(t) { return X0 + t * (X1 - X0); }
+    _drawPrint() {
+      const g = this._print; while (g.firstChild) g.removeChild(g.firstChild);
+      ORDER.forEach((key, i) => {
+        const b = BANDS[key], y = ROWS[i];
+        // gold band line and its ticks
+        g.appendChild(mk("line", { x1: X0 - 4, y1: y, x2: X1 + 4, y2: y, stroke: "#c9a24a", "stroke-width": 1.1 }));
+        g.appendChild(mk("line", { x1: X0 - 4, y1: y + 0.9, x2: X1 + 4, y2: y + 0.9, stroke: "#7a5e28", "stroke-width": 0.35, opacity: 0.6 }));
+        let d = "";
+        for (let f = b.min; f <= b.max + 1e-9; f += b.tick) { const x = this._x(this._t(f, b)).toFixed(2); d += `M${x} ${y}v-2.2`; }
+        g.appendChild(mk("path", { d, stroke: "#c9a24a", "stroke-width": 0.5, fill: "none", opacity: 0.85 }));
+        // the figures under the line
+        b.nums.forEach(f => {
+          const x = this._x(this._t(f, b));
+          g.appendChild(mk("line", { x1: x, y1: y, x2: x, y2: y + 3, stroke: "#4a3a22", "stroke-width": 0.7 }));
+          g.appendChild(mk("text", { class: "fig", x: x.toFixed(2), y: y + 9.6 }, String(f)));
+        });
+        g.appendChild(mk("text", { class: "unit", x: X1 + 6.5, y: y + 3 }, b.unit));
+        // the names above the line, two rows, kept inside the glass
+        b.names.forEach(([f, name, row, red]) => {
+          let x = this._x(this._t(f, b));
+          const half = name.length * 1.45 + 0.8;
+          x = Math.max(X0 - 2 + half, Math.min(X1 + 2 - half, x));
+          g.appendChild(mk("text", { class: "name " + (red ? "r" : "g"), x: x.toFixed(2), y: (y - 4 - row * 6.4).toFixed(2) }, name));
+        });
+        // band name at the left edge, with a warm glow when it is the active one
+        g.appendChild(mk("ellipse", { class: "bandglow", "data-band": key, cx: 30, cy: y, rx: 16, ry: 7, fill: "#fff3c2", opacity: 0.85, filter: "url(#blur2)" }));
+        g.appendChild(mk("text", { class: "band", "data-band": key, x: 40, y: y + 2.7 }, key));
+      });
+      // the row of pilot lamps under the scale
+      const lg = this._lampsG; while (lg.firstChild) lg.removeChild(lg.firstChild);
+      ORDER.forEach((key, i) => {
+        const x = 176 + i * 34, y = 120.5;
+        lg.appendChild(mk("circle", { class: "lampglow", "data-band": key, cx: x, cy: y, r: 7, fill: "#ffd27a", opacity: 0.7, filter: "url(#blur2)" }));
+        lg.appendChild(mk("circle", { cx: x, cy: y, r: 3.1, fill: "#3a2c14", opacity: 0.8 }));
+        lg.appendChild(mk("circle", { class: "lamp", "data-band": key, cx: x, cy: y, r: 2.5, fill: "url(#lampoff)" }));
+        lg.appendChild(mk("text", { class: "lamplbl", "data-band": key, x: x + 5, y: y + 1.9 }, key));
+      });
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // the flywheel knob coasting
+      if (this._w) {
+        const t = this._t(this._v) + this._w * dt;
+        this._w *= Math.exp(-dt / 0.2);
+        const clamped = t <= 0 || t >= 1;
+        this._set(this._f(t), false, true);
+        if (clamped || Math.abs(this._w) < 0.004) { this._w = 0; this._set(this._v, true, true); }
+      }
+      // the pointer: eased, with a little slack when it reverses
+      this._slack *= Math.exp(-dt / 0.35);
+      const target = this._t(this._v) - this._dir * this._slack;
+      this._p += (target - this._p) * (1 - Math.exp(-dt / 0.065));
+      this._paint();
+      if (!this._w && Math.abs(target - this._p) < 0.0003 && this._slack < 0.0004) { this._p = target; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const x = this._x(this._p);
+      this._ptr.style.transform = `translate(${x.toFixed(2)}px, 0)`;
+      this._kn.style.transform = `rotate(${(this._p * 900).toFixed(1)}deg)`;
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", fmt(this._v, this._b) + " " + this._b.unit + ", " + this._band);
+    }
+    _set(v, settle, quiet) {
+      v = this._q(this._clamp(v));
+      const d = Math.sign(v - this._v);
+      if (d && this._dir && d !== this._dir) this._slack = 0.01;    // 1 % of slack in the cord when the direction changes
+      if (d) this._dir = d;
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v));
+      this._kick();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v, band: this._band } }));
+    }
+    _setBand(b) {
+      if (b === this._band) return;
+      this._band = b; this.setAttribute("band", b);
+      this._v = this._q(this._clamp(this._v)); this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._kick();
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v, band: b } }));
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v, band: b } }));
+    }
+    _local(e) { const r = this._wrap.getBoundingClientRect(); return { x: (e.clientX - r.left) / this._scale, y: (e.clientY - r.top) / this._scale }; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._w = 0;
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      const p = this._local(e);
+      this._drag = { x0: p.x, y0: p.y, t0: this._t(this._v), moved: false, onPtr: Math.abs(p.x - this._x(this._p)) < 7 };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const p = this._local(e), dx = p.x - this._drag.x0;
+      if (Math.abs(dx) > 1.5) this._drag.moved = true;
+      if (!this._drag.moved) return;
+      // the pointer follows the finger exactly; the glass drags the scale at the same rate
+      this._set(this._f(this._drag.t0 + dx / (X1 - X0)), false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      const d = this._drag; this._drag = null;
+      if (d.moved) { this._set(this._v, true); return; }
+      // a click: on a band name at the left edge switches the band; on the scale, the pointer goes there
+      if (d.x0 < 46) { let best = 0; ROWS.forEach((y, i) => { if (Math.abs(y - d.y0) < Math.abs(ROWS[best] - d.y0)) best = i; }); if (Math.abs(ROWS[best] - d.y0) < 12) this._setBand(ORDER[best]); return; }
+      if (d.x0 >= X0 - 4 && d.x0 <= X1 + 4 && d.y0 < 114) { this._set(this._f((d.x0 - X0) / (X1 - X0)), false); this._set(this._v, true); }
+    }
+    _onKDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._w = 0;
+      this._grab.focus({ preventScroll: true });
+      this._kgrab.setPointerCapture(e.pointerId);
+      this._kgrab.classList.add("drag");
+      this._kdrag = { y: e.clientY, x: e.clientX, t: this._t(this._v), at: performance.now(), w: 0, moved: false };
+      this._kgrab.addEventListener("pointermove", this._onKMove);
+      this._kgrab.addEventListener("pointerup", this._onKUp); this._kgrab.addEventListener("pointercancel", this._onKUp);
+    }
+    _onKMove(e) {
+      const d = this._kdrag; if (!d) return;
+      const px = ((d.y - e.clientY) + (e.clientX - d.x) * 0.35) / this._scale;   // up or right = clockwise = higher
+      const now = performance.now(), dt = Math.max(4, now - d.at) / 1000;
+      const t = d.t + px / 420;
+      d.w = 0.5 * d.w + 0.5 * ((t - this._t(this._v)) / dt);
+      d.at = now; d.moved = true;
+      this._set(this._f(t), false);
+    }
+    _onKUp(e) {
+      const d = this._kdrag; if (!d) return; this._kdrag = null;
+      this._kgrab.removeEventListener("pointermove", this._onKMove);
+      this._kgrab.removeEventListener("pointerup", this._onKUp); this._kgrab.removeEventListener("pointercancel", this._onKUp);
+      try { this._kgrab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._kgrab.classList.remove("drag");
+      const stale = performance.now() - d.at > 90;
+      const w = stale ? 0 : Math.max(-3, Math.min(3, d.w));
+      if (Math.abs(w) > 0.08) { this._w = w; this._kick(); }
+      else if (d.moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._w = 0;
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._b.step * (e.shiftKey ? 10 : 1), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const b = this._b, big = b.step * 10; let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : b.step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : b.step); break;
+        case "PageUp": v = this._v + (b.max - b.min) / 10; break;
+        case "PageDown": v = this._v - (b.max - b.min) / 10; break;
+        case "Home": v = b.min; break;
+        case "End": v = b.max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._w = 0;
+      this._set(v, false); this._set(this._v, true);
+    }
+  }
+  customElements.define("sk-dial-grundig", SkDialGrundig);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

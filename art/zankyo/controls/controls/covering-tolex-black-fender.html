@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tolex covering, black — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "covering-tolex-black-fender",
+  "element": "sk-covering-tolex",
+  "name": "Tolex covering, black",
+  "kind": "output",
+  "code": "J9",
+  "type": "Panel swatch — rubber / leather / vinyl covering",
+  "source": "Fender's 1963– black tolex amplifier covering (also brown/blonde 1961–63), Marshall black levant, Ampeg blue-diamond, Orange orange",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["vinyl-coated fabric", "pine substrate", "nickel-plated steel corner protector"],
+  "tags": ["amplifier", "cabinet", "covering", "swatch", "furniture"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "color", "corner", "wear", "yellow", "width", "height", "scale"],
+  "events": [],
+  "size": { "w": 240, "h": 160 },
+  "notes": "A cabinet-covering swatch other pages mount hardware on. Three states: black with the chrome corner, blue-diamond, and a yellowed blonde with a scuff."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-covering-tolex color="black" corner></sk-covering-tolex>
+    <sk-covering-tolex color="blue-diamond" scale="0.8"></sk-covering-tolex>
+    <sk-covering-tolex color="blonde" yellow wear="0.6" scale="0.8"></sk-covering-tolex>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Fender's <b>black tolex</b> (1963–) and its 1950s brown/blonde predecessors: a vinyl-coated cotton fabric,
+  embossed with a fine pebbled "elephant" grain, glued over the pine cabinet with the corners folded and
+  stapled, then capped with a stamped nickel corner protector. The same idea covers Marshall's black levant,
+  Ampeg's printed blue-diamond and Orange's orange.</p>
+  <p><b>The tells kept here:</b> the pebble is built from two layered noise fields lit from above-left, so it
+  sparkles in tiny highlights rather than showing a reflected band; a folded, stapled corner under a stamped,
+  slightly domed chrome L-bracket with three screws at odd angles, casting its own small shadow onto the
+  vinyl; the blue-diamond variant as a printed grid softened by the grain underneath; a vertical seam where
+  two sheets meet, one edge sitting a hair proud; <code>yellow</code> ambers the blonde variant and
+  <code>wear</code> adds grey scuffs and a small torn corner exposing the wood beneath.</p>
+  <p><b>Left out:</b> the piping trim along the edges, the individual weave of the backing cloth under the
+  vinyl skin, and Ampeg's full sparkle-diamond repeat (approximated as a soft crosshatch).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-covering-tolex> — vinyl cabinet covering with a folded, chrome-cornered edge ====
+   attributes: value(unused) color(black|brown|blonde|orange|blue-diamond) corner wear(0..1) yellow width height scale
+   no events (an output). self-contained: paste this block into any page and use
+   <sk-covering-tolex color="black" corner></sk-covering-tolex> */
+(function () {
+  if (customElements.get("sk-covering-tolex")) return;
+  var DW = 240, DH = 160;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.plate { position: absolute; inset: 0; overflow: hidden; border-radius: 3px;',
+  '  box-shadow: 0 10px 22px rgba(0,0,0,.5), 0 2px 5px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.6);',
+  '  background: linear-gradient(160deg, #232324 0%, #1a1a1b 55%, #0e0e0f 100%); }',
+  ':host([color="brown"]) .plate { background: linear-gradient(160deg, #6b4c39 0%, #4d3526 55%, #33221a 100%); }',
+  ':host([color="blonde"]) .plate { background: linear-gradient(160deg, #efe3bf 0%, #e2d3a8 55%, #c8b586 100%); }',
+  ':host([color="orange"]) .plate { background: linear-gradient(160deg, #e6853a 0%, #d3651c 55%, #a24d16 100%); }',
+  ':host([color="blue-diamond"]) .plate { background: linear-gradient(160deg, #34569d 0%, #2a4a8a 55%, #1c3468 100%); }',
+  /* --- pebble grain: a coarse bump layer + a fine sparkle layer, both isotropic (no direction) --- */
+  '.grain { position: absolute; inset: -2%; width: 104%; height: 104%; display: block; pointer-events: none; }',
+  '.g-coarse { mix-blend-mode: soft-light; opacity: .55; }',
+  '.g-fine { mix-blend-mode: overlay; opacity: .58; }',
+  '.tint { position: absolute; inset: 0; pointer-events: none;',
+  '  background: radial-gradient(120% 130% at 14% -8%, rgba(255,255,255,.14), rgba(255,255,255,0) 55%),',
+  '              radial-gradient(140% 120% at 60% 120%, rgba(0,0,0,.34), rgba(0,0,0,0) 62%); }',
+  '.yellowtint { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: multiply;',
+  '  background: radial-gradient(80% 90% at 40% 30%, rgba(196,164,84,.55), rgba(196,164,84,.28) 60%, rgba(196,164,84,.42) 100%); }',
+  ':host([color="blonde"][yellow]) .yellowtint { opacity: 1; }',
+  '.diamond { position: absolute; inset: 0; pointer-events: none; opacity: 0; filter: blur(.4px);',
+  '  background:',
+  '    repeating-linear-gradient(45deg, rgba(184,200,230,.55) 0 1px, rgba(184,200,230,0) 1px 13px),',
+  '    repeating-linear-gradient(-45deg, rgba(184,200,230,.55) 0 1px, rgba(184,200,230,0) 1px 13px); }',
+  ':host([color="blue-diamond"]) .diamond { opacity: .55; }',
+  '.seam { position: absolute; top: 0; bottom: 0; left: 61%; width: 2px; pointer-events: none;',
+  '  background: linear-gradient(180deg, rgba(0,0,0,.38), rgba(0,0,0,.5) 60%, rgba(0,0,0,.4));',
+  '  box-shadow: 1px 0 0 rgba(255,255,255,.06); }',
+  '.scuff { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light;',
+  '  background: radial-gradient(20% 26% at 30% 66%, rgba(180,180,180,.8), rgba(180,180,180,0) 72%),',
+  '              radial-gradient(14% 20% at 40% 78%, rgba(160,160,160,.7), rgba(160,160,160,0) 74%); }',
+  '.tear { position: absolute; width: 15px; height: 13px; left: 6px; bottom: 5px; opacity: 0; pointer-events: none; }',
+  '.corner { position: absolute; right: -1px; bottom: -1px; width: 40px; height: 40px; display: none; pointer-events: none; }',
+  ':host([corner]) .corner { display: block; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <svg class="grain g-coarse" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">',
+  '      <defs><filter id="bump1" color-interpolation-filters="sRGB">',
+  '        <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="3" stitchTiles="stitch" result="n"/>',
+  '        <feColorMatrix in="n" type="matrix" values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 0 1" result="g"/>',
+  '        <feComponentTransfer in="g"><feFuncR type="linear" slope="2.1" intercept="-0.55"/><feFuncG type="linear" slope="2.1" intercept="-0.55"/><feFuncB type="linear" slope="2.1" intercept="-0.55"/></feComponentTransfer>',
+  '      </filter></defs>',
+  '      <rect x="0" y="0" width="100%" height="100%" filter="url(#bump1)"/>',
+  '    </svg>',
+  '    <svg class="grain g-fine" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">',
+  '      <defs><filter id="bump2" color-interpolation-filters="sRGB">',
+  '        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>',
+  '        <feColorMatrix in="n" type="matrix" values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 0 1" result="g"/>',
+  '        <feComponentTransfer in="g" result="c"><feFuncR type="linear" slope="2.9" intercept="-0.86"/><feFuncG type="linear" slope="2.9" intercept="-0.86"/><feFuncB type="linear" slope="2.9" intercept="-0.86"/></feComponentTransfer>',
+  '        <feGaussianBlur in="c" stdDeviation="0.22"/>',
+  '      </filter></defs>',
+  '      <rect x="0" y="0" width="100%" height="100%" filter="url(#bump2)"/>',
+  '    </svg>',
+  '    <div class="tint"></div>',
+  '    <div class="yellowtint"></div>',
+  '    <div class="diamond"></div>',
+  '    <div class="seam"></div>',
+  '    <div class="scuff"></div>',
+  '    <svg class="tear" viewBox="0 0 15 13" aria-hidden="true">',
+  '      <path d="M1 12 L2 5 L6 7 L5 1 L11 3 L10 9 L14 8 L13 12 Z" fill="#241a12"/>',
+  '      <path d="M1 12 L2 5 L6 7 L5 1 L11 3 L10 9 L14 8 L13 12 Z" fill="none" stroke="#0a0705" stroke-width=".6"/>',
+  '    </svg>',
+  '    <svg class="corner" viewBox="0 0 40 40" aria-hidden="true">',
+  '      <defs>',
+  '        <linearGradient id="chr" x1="0" y1="0" x2="0" y2="1">',
+  '          <stop offset="0" stop-color="#f6f6f6"/><stop offset="0.42" stop-color="#e6e6e6"/>',
+  '          <stop offset="0.46" stop-color="#8f8f8f"/><stop offset="0.55" stop-color="#6a6a6a"/>',
+  '          <stop offset="0.7" stop-color="#4a4a4c"/><stop offset="1" stop-color="#2c2c2e"/>',
+  '        </linearGradient>',
+  '        <radialGradient id="screwc" cx="35%" cy="30%" r="70%">',
+  '          <stop offset="0" stop-color="#eee"/><stop offset="0.6" stop-color="#9c9c9c"/><stop offset="1" stop-color="#444"/>',
+  '        </radialGradient>',
+  '        <filter id="dsh" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>',
+  '      </defs>',
+  '      <rect x="1.5" y="23.5" width="38.5" height="16.5" rx="3" fill="#000" opacity=".38" filter="url(#dsh)" transform="translate(0.8,0.9)"/>',
+  '      <rect x="23.5" y="1.5" width="16.5" height="22" rx="3" fill="#000" opacity=".38" filter="url(#dsh)" transform="translate(0.8,0.9)"/>',
+  '      <path d="M14 27 L27 14" stroke="#000" stroke-opacity=".32" stroke-width="1.6" stroke-linecap="round"/>',
+  '      <rect x="17.4" y="22.4" width="2.4" height="1.1" fill="#8a8a8a" transform="rotate(-45 18.6 22.95)"/>',
+  '      <rect x="21.4" y="18.4" width="2.4" height="1.1" fill="#8a8a8a" transform="rotate(-45 22.6 18.95)"/>',
+  '      <rect x="0" y="24" width="40" height="16" rx="3" fill="url(#chr)" stroke="#1c1c1c" stroke-width=".6"/>',
+  '      <rect x="24" y="0" width="16" height="40" rx="3" fill="url(#chr)" stroke="#1c1c1c" stroke-width=".6"/>',
+  '      <path d="M0 25.4 L40 25.4" stroke="#fff" stroke-opacity=".3" stroke-width=".6"/>',
+  '      <path d="M25.4 0 L25.4 40" stroke="#fff" stroke-opacity=".3" stroke-width=".6"/>',
+  '      <g transform="translate(9,32) rotate(24)"><circle r="2.1" fill="url(#screwc)" stroke="#222" stroke-width=".4"/><rect x="-1.6" y="-.35" width="3.2" height=".7" fill="#1a1a1a"/></g>',
+  '      <g transform="translate(32,9) rotate(-52)"><circle r="2.1" fill="url(#screwc)" stroke="#222" stroke-width=".4"/><rect x="-1.6" y="-.35" width="3.2" height=".7" fill="#1a1a1a"/></g>',
+  '      <g transform="translate(30,30) rotate(70)"><circle r="1.9" fill="url(#screwc)" stroke="#222" stroke-width=".4"/><rect x="-1.4" y="-.32" width="2.8" height=".64" fill="#1a1a1a"/></g>',
+  '    </svg>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  class SkCoveringTolex extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "color", "corner", "wear", "yellow", "width", "height", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._scuff = r.querySelector(".scuff");
+      this._tear = r.querySelector(".tear");
+      this._v = "";
+    }
+    connectedCallback() { this.setAttribute("role", "img"); this._sync(); }   // idempotent: stage.js re-parents us once
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var w = clamp(num(this, "width", DW), 60, 2000);
+      var h = clamp(num(this, "height", DH), 40, 2000);
+      var s = clamp(num(this, "scale", 1), 0.2, 6);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      this._scuff.style.opacity = (wear * 0.85).toFixed(2);
+      this._tear.style.opacity = wear > 0.35 ? (Math.min(1, (wear - 0.3) * 1.6)).toFixed(2) : 0;
+
+      this._v = this.getAttribute("value") || "";
+      var color = this.getAttribute("color") || "black";
+      this.setAttribute("aria-label",
+        color.replace("-", " ") + " tolex covering" +
+        (this.hasAttribute("corner") ? " with a chrome corner protector" : "") +
+        (wear > 0.15 ? ", worn" : ""));
+    }
+  }
+  customElements.define("sk-covering-tolex", SkCoveringTolex);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

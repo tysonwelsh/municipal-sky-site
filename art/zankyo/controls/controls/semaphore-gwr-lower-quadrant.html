@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GWR lower-quadrant semaphore — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "semaphore-gwr-lower-quadrant",
+  "element": "sk-semaphore-gwr",
+  "name": "GWR lower-quadrant semaphore",
+  "kind": "output",
+  "code": "I4",
+  "type": "Semaphore signal arm",
+  "source": "Great Western Railway lower-quadrant home signal (Saxby & Farmer / GWR pattern) — red arm with a white band, spectacle plate with red and blue glasses in front of an oil lamp, white post with a black band",
+  "era": "1900s",
+  "origin": "UK",
+  "materials": ["pressed steel arm", "cast iron spectacle", "coloured glass", "oil lamp", "painted timber post"],
+  "tags": ["railway", "signalling", "danger", "clear", "lower quadrant", "oil lamp", "distant arm"],
+  "value": { "model": "steps", "options": ["on", "off"] },
+  "attributes": ["value", "night", "distant", "label", "scale"],
+  "events": [],
+  "size": { "w": 200, "h": 260 },
+  "notes": "value=\"on\" is danger (arm horizontal), \"off\" is clear (arm dropped 45°). The arm falls with a bounce and springs back faster; the spectacle carries the lamp's aspect from red to green."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-semaphore-gwr value="on" label="Down home" scale="0.75"></sk-semaphore-gwr>
+    <sk-semaphore-gwr value="off" label="Up home" night scale="0.75"></sk-semaphore-gwr>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>Great Western lower-quadrant home signal</b>: a pressed-steel arm painted signal red with a white
+  band near its tip, pivoted on a cast bracket near the top of a white timber post with a black band at its
+  foot and a cast finial on top. The GWR kept the arm dropping <i>down</i> to show clear long after other
+  railways went to the upper quadrant, and the balance weight at the foot of the post pulls it back up to
+  danger the moment the wire goes slack — the fail-safe that the whole of British signalling is built on.</p>
+  <p><b>The tells kept here:</b> the arm falls 45° to clear and overshoots four degrees before it settles, and
+  snaps back up to danger in half the time with a hard stop and a shudder; the <b>spectacle plate</b> swings
+  with it so that the oil lamp behind shows red through the red glass at danger and green through the
+  <i>blue</i> glass at clear — blue glass plus a yellow flame is how a Victorian railway made green; the white
+  band on the red arm; the white post, black band and finial; the balance lever and its weight turning at the
+  foot with the operating rod rising alongside the post. <b>night</b> darkens everything to a silhouette and
+  leaves only the aspect burning; <b>distant</b> swaps in the yellow fishtail arm with its black chevron and a
+  yellow aspect.</p>
+  <p><b>Left out:</b> the lamp's daily trip up the ladder — there is no ladder, no lamp iron and no wire run,
+  and the post is a plain section rather than a full GWR wooden post with its cap and bolts.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-semaphore-gwr> — GWR lower-quadrant signal arm, spectacle plate and oil lamp ====
+   attributes: value ("on" = danger | "off" = clear) night distant label scale
+   no events (an output). set .value or the attribute; the arm falls with a bounce.
+   self-contained: paste this block into any page and use <sk-semaphore-gwr value="off"></sk-semaphore-gwr> */
+(function () {
+  if (customElements.get("sk-semaphore-gwr")) return;
+  const W = 200, H = 260;
+  const PX = 62, PY = 96;          // the arm's pivot
+  const DROP = 45;                 // degrees to clear
+  const RG = 27;                   // spectacle radius
+  const rad = d => d * Math.PI / 180;
+  const A = { x: PX + RG * Math.cos(rad(135)), y: PY + RG * Math.sin(rad(135)) };   // danger glass, at the lamp
+  const B = { x: PX + RG * Math.cos(rad(90)), y: PY + RG * Math.sin(rad(90)) };     // clear glass
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: hidden; }
+    text { font-family: "Oswald", "Arial Narrow", sans-serif; text-anchor: middle; }
+    .plate { font-size: 5px; font-weight: 600; letter-spacing: 0.14em; fill: #f2f0e8; }
+    .nightsky, .veil { opacity: 0; transition: opacity 420ms ease; }
+    .wrap.is-night .nightsky { opacity: 1; }
+    .wrap.is-night .veil { opacity: 0.7; }
+    .dayonly { transition: opacity 420ms ease; }
+    .wrap.is-night .dayonly { opacity: 0.12; }
+    .lamp-a, .lamp-b { opacity: 0; transition: opacity 240ms ease; }
+    .wrap.is-on .lamp-a { opacity: 0.88; }
+    .wrap.is-on.is-night .lamp-a { opacity: 1; }
+    .wrap:not(.is-on) .lamp-b { opacity: 0.88; }
+    .wrap:not(.is-on).is-night .lamp-b { opacity: 1; }
+    .bloom { opacity: 0.35; transition: opacity 420ms ease; }
+    .wrap.is-night .bloom { opacity: 1; }
+    .armdist { display: none; }
+    :host([distant]) .armhome { display: none; }
+    :host([distant]) .armdist { display: block; }
+    :host([distant]) .lamp-a .gl { fill: #ffc21c; }
+    :host([distant]) .lamp-a .bl { fill: #ffc21c; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="skyd" x1="0" y1="0" x2="0.25" y2="1">
+          <stop offset="0" stop-color="#e6f0f5"/><stop offset="0.55" stop-color="#cbdde8"/><stop offset="1" stop-color="#aec6d6"/>
+        </linearGradient>
+        <linearGradient id="skyn" x1="0" y1="0" x2="0.2" y2="1">
+          <stop offset="0" stop-color="#10202e"/><stop offset="0.55" stop-color="#1a2c3a"/><stop offset="1" stop-color="#27394a"/>
+        </linearGradient>
+        <linearGradient id="post" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#cfcabc"/><stop offset="0.16" stop-color="#fbfaf4"/><stop offset="0.55" stop-color="#eceae0"/><stop offset="0.88" stop-color="#b6b2a5"/><stop offset="1" stop-color="#8e8b80"/>
+        </linearGradient>
+        <linearGradient id="postb" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#2a2a2a"/><stop offset="0.16" stop-color="#3c3c3c"/><stop offset="0.6" stop-color="#1c1c1c"/><stop offset="1" stop-color="#0c0c0c"/>
+        </linearGradient>
+        <linearGradient id="armr" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9c1c16"/><stop offset="0.12" stop-color="#d8342c"/><stop offset="0.45" stop-color="#c8231d"/><stop offset="0.86" stop-color="#961710"/><stop offset="1" stop-color="#6a1010"/>
+        </linearGradient>
+        <linearGradient id="army" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c08a10"/><stop offset="0.12" stop-color="#f5c534"/><stop offset="0.45" stop-color="#e8ae14"/><stop offset="0.86" stop-color="#b8840c"/><stop offset="1" stop-color="#7d5a08"/>
+        </linearGradient>
+        <linearGradient id="white" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#f2f0e8"/><stop offset="1" stop-color="#bdbab0"/>
+        </linearGradient>
+        <linearGradient id="cast" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#55554f"/><stop offset="0.4" stop-color="#2c2c28"/><stop offset="1" stop-color="#121210"/>
+        </linearGradient>
+        <linearGradient id="lampg" x1="0" y1="0" x2="1" y2="0.4">
+          <stop offset="0" stop-color="#3a3a36"/><stop offset="0.35" stop-color="#1f1f1d"/><stop offset="1" stop-color="#0b0b0a"/>
+        </linearGradient>
+        <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e2c880"/><stop offset="0.5" stop-color="#a5822f"/><stop offset="1" stop-color="#5c4715"/>
+        </linearGradient>
+        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7d7a63"/><stop offset="0.35" stop-color="#5f5c49"/><stop offset="1" stop-color="#3d3b2f"/>
+        </linearGradient>
+        <radialGradient id="flame" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff3c8"/><stop offset="0.45" stop-color="#ffc85a"/><stop offset="1" stop-color="#9a6a18"/>
+        </radialGradient>
+        <radialGradient id="glassA" cx="38%" cy="34%" r="70%">
+          <stop offset="0" stop-color="#ff6a52"/><stop offset="0.45" stop-color="#ff2a1e"/><stop offset="1" stop-color="#a81208"/>
+        </radialGradient>
+        <radialGradient id="glassB" cx="38%" cy="34%" r="70%">
+          <stop offset="0" stop-color="#b6ffd2"/><stop offset="0.42" stop-color="#34d97a"/><stop offset="1" stop-color="#10743c"/>
+        </radialGradient>
+        <filter id="bloom" x="-120%" y="-120%" width="340%" height="340%"><feGaussianBlur stdDeviation="5"/></filter>
+        <filter id="bloom2" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="11"/></filter>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- sky -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#skyd)"/>
+      <rect class="nightsky" x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#skyn)"/>
+      <g class="dayonly">
+        <ellipse cx="146" cy="62" rx="52" ry="15" fill="#fff" opacity="0.5" filter="url(#softer)"/>
+        <ellipse cx="34" cy="150" rx="40" ry="12" fill="#fff" opacity="0.32" filter="url(#softer)"/>
+        <rect x="0" y="222" width="${W}" height="14" fill="#8e9a8a" opacity="0.5" filter="url(#soft)"/>
+      </g>
+
+      <!-- ground: ballast at the foot of the post -->
+      <path d="M 0 238 C 30 233 58 236 82 234 C 120 231 160 237 ${W} 233 L ${W} ${H} L 0 ${H} Z" fill="url(#ground)"/>
+      <g opacity="0.5">
+        <circle cx="24" cy="248" r="1.6" fill="#241f16"/><circle cx="46" cy="243" r="1.2" fill="#8e8a72"/>
+        <circle cx="96" cy="250" r="1.8" fill="#241f16"/><circle cx="132" cy="244" r="1.3" fill="#8e8a72"/>
+        <circle cx="166" cy="252" r="1.5" fill="#241f16"/><circle cx="14" cy="255" r="1.3" fill="#8e8a72"/>
+        <circle cx="118" cy="240" r="1.1" fill="#241f16"/><circle cx="186" cy="246" r="1.4" fill="#241f16"/>
+      </g>
+      <ellipse cx="78" cy="243" rx="30" ry="6" fill="#0d0c08" opacity="0.45" filter="url(#soft)"/>
+
+      <!-- post -->
+      <rect x="55" y="28" width="14" height="216" fill="url(#post)"/>
+      <rect x="55" y="206" width="14" height="38" fill="url(#postb)"/>
+      <rect x="55" y="204.5" width="14" height="2" fill="#f6f4ec" opacity="0.5"/>
+      <rect x="68.4" y="28" width="0.8" height="216" fill="#6d6a5f" opacity="0.7"/>
+      <path d="M 57.5 40 L 57.5 200" stroke="#fff" stroke-opacity="0.55" stroke-width="1"/>
+      <path d="M 55 118 L 69 118" stroke="#9b9788" stroke-opacity="0.5" stroke-width="0.7"/>
+      <!-- finial -->
+      <path d="M 62 6 L 65.5 22 L 58.5 22 Z" fill="url(#cast)"/>
+      <circle cx="62" cy="24.5" r="4.6" fill="url(#cast)"/>
+      <rect x="55.5" y="28" width="13" height="4" rx="1" fill="url(#cast)"/>
+      <circle cx="60.4" cy="23" r="1.4" fill="#6f6f68" opacity="0.65"/>
+      <!-- the cast plate -->
+      <rect x="51" y="150" width="22" height="13" rx="1" fill="#181817" stroke="#000" stroke-width="0.5"/>
+      <text class="plate" x="62" y="159">G.W.R.</text>
+
+      <!-- the operating rod alongside the post -->
+      <g class="rod"><rect x="70.5" y="104" width="2.6" height="92" fill="#6e6a60" stroke="#3a3830" stroke-width="0.4"/>
+        <rect x="70.5" y="104" width="0.9" height="92" fill="#c9c5b8" opacity="0.6"/></g>
+
+      <!-- the lamp: case on its bracket, the flame behind the spectacle -->
+      <rect x="49" y="112" width="8" height="7" fill="url(#cast)"/>
+      <path d="M 26 106 L 54 106 L 54 136 L 26 136 Z" fill="url(#lampg)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 24 106 L 56 106 L 52 99 L 28 99 Z" fill="url(#lampg)" stroke="#000" stroke-width="0.7"/>
+      <rect x="36" y="92" width="8" height="8" rx="1" fill="url(#lampg)" stroke="#000" stroke-width="0.6"/>
+      <path d="M 27 107 L 53 107" stroke="#6a6a64" stroke-opacity="0.55" stroke-width="0.8"/>
+      <path d="M 27 108 L 27 135" stroke="#6a6a64" stroke-opacity="0.4" stroke-width="0.8"/>
+      <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="11.5" fill="url(#brass)"/>
+      <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="9.6" fill="url(#flame)"/>
+      <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="11.5" fill="none" stroke="#2a2208" stroke-width="0.6"/>
+
+      <!-- the arm, spectacle and bracket: everything that swings -->
+      <g class="rot">
+        <!-- home arm: red with a white band -->
+        <g class="armhome">
+          <path d="M ${PX + 124} ${PY - 11} L ${PX} ${PY - 11} A 11 11 0 0 0 ${PX} ${PY + 11} L ${PX + 124} ${PY + 11} Z" fill="url(#armr)" stroke="#5e0d0a" stroke-width="0.8" stroke-linejoin="round"/>
+          <rect x="${PX + 98}" y="${PY - 11}" width="13" height="22" fill="url(#white)"/>
+          <rect x="${PX + 4}" y="${PY - 10}" width="120" height="1.2" fill="#ff8a7c" opacity="0.35"/>
+          <rect x="${PX + 4}" y="${PY + 8.4}" width="120" height="1.4" fill="#4d0a08" opacity="0.5"/>
+          <rect x="${PX + 4}" y="${PY - 3}" width="120" height="4" fill="#fff" opacity="0.06"/>
+          <path d="M ${PX + 118} ${PY + 11} l 5 0 l -1 -4 Z" fill="#59544a" opacity="0.8"/>
+          <path d="M ${PX + 58} ${PY - 11} l 7 0 l -3 3 Z" fill="#8e837a" opacity="0.5"/>
+          <ellipse cx="${PX + 86}" cy="${PY + 4}" rx="9" ry="3" fill="#6d4a32" opacity="0.2"/>
+          <g fill="#59110d" opacity="0.75">
+            <circle cx="${PX + 12}" cy="${PY - 5}" r="1.3"/><circle cx="${PX + 12}" cy="${PY + 5}" r="1.3"/>
+            <circle cx="${PX + 24}" cy="${PY - 5}" r="1.3"/><circle cx="${PX + 24}" cy="${PY + 5}" r="1.3"/>
+          </g>
+        </g>
+        <!-- distant arm: yellow fishtail with a black chevron -->
+        <g class="armdist">
+          <path d="M ${PX + 124} ${PY - 11} L ${PX} ${PY - 11} A 11 11 0 0 0 ${PX} ${PY + 11} L ${PX + 124} ${PY + 11} L ${PX + 114} ${PY} Z" fill="url(#army)" stroke="#6a4c06" stroke-width="0.8" stroke-linejoin="round"/>
+          <path d="M ${PX + 94} ${PY - 11} L ${PX + 104} ${PY - 11} L ${PX + 94} ${PY} L ${PX + 104} ${PY + 11} L ${PX + 94} ${PY + 11} L ${PX + 84} ${PY} Z" fill="#141210"/>
+          <rect x="${PX + 4}" y="${PY - 10}" width="116" height="1.2" fill="#ffe9a0" opacity="0.4"/>
+          <rect x="${PX + 4}" y="${PY + 8.4}" width="116" height="1.4" fill="#5c4104" opacity="0.5"/>
+        </g>
+        <!-- spectacle plate: a figure-of-eight casting carrying the two glasses -->
+        <g>
+          <path d="M ${PX - 7} ${PY - 5} L ${PX + 7} ${PY - 3} L ${(A.x + 9).toFixed(2)} ${(A.y + 6).toFixed(2)} L ${(A.x - 6).toFixed(2)} ${(A.y + 9).toFixed(2)} Z" fill="url(#cast)"/>
+          <path d="M ${(A.x - 6).toFixed(2)} ${(A.y - 12).toFixed(2)} L ${(B.x - 2).toFixed(2)} ${(B.y - 13.5).toFixed(2)} L ${(B.x + 4).toFixed(2)} ${(B.y + 13).toFixed(2)} L ${(A.x + 3).toFixed(2)} ${(A.y + 13.5).toFixed(2)} Z" fill="url(#cast)"/>
+          <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="13.6" fill="url(#cast)" stroke="#000" stroke-width="0.7"/>
+          <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="13.6" fill="url(#cast)" stroke="#000" stroke-width="0.7"/>
+          <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="9.5" fill="#3e0f0a"/>
+          <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="9.5" fill="#132340"/>
+          <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="10.2" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1.6"/>
+          <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="10.2" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1.6"/>
+          <path d="M ${(A.x - 9).toFixed(2)} ${(A.y - 10).toFixed(2)} A 13.6 13.6 0 0 1 ${(A.x + 6).toFixed(2)} ${(A.y - 12.2).toFixed(2)}" fill="none" stroke="#7b7b74" stroke-opacity="0.6" stroke-width="1.1"/>
+          <path d="M ${(B.x - 11).toFixed(2)} ${(B.y - 8).toFixed(2)} A 13.6 13.6 0 0 1 ${(B.x + 2).toFixed(2)} ${(B.y - 13.4).toFixed(2)}" fill="none" stroke="#7b7b74" stroke-opacity="0.45" stroke-width="1"/>
+        </g>
+        <!-- the pivot boss -->
+        <circle cx="${PX}" cy="${PY}" r="6.5" fill="url(#cast)" stroke="#000" stroke-width="0.6"/>
+        <circle cx="${PX}" cy="${PY}" r="2.2" fill="#6e6a60"/>
+      </g>
+
+      <!-- the balance lever at the foot -->
+      <g class="rotb">
+        <rect x="${PX - 30}" y="188" width="34" height="4" rx="2" fill="url(#cast)"/>
+        <circle cx="${PX - 30}" cy="190" r="7" fill="url(#cast)" stroke="#000" stroke-width="0.6"/>
+        <circle cx="${PX - 32}" cy="187.5" r="2" fill="#6e6e68" opacity="0.5"/>
+      </g>
+      <circle cx="${PX}" cy="190" r="3.4" fill="url(#cast)" stroke="#000" stroke-width="0.5"/>
+
+      <!-- night -->
+      <rect class="veil" x="0" y="0" width="${W}" height="${H}" rx="3" fill="#060c14" opacity="0"/>
+
+      <!-- the aspect: the lit glass, above the night -->
+      <g class="rot aspect">
+        <g class="lamp-a">
+          <circle class="bl bloom" cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="10" fill="#ff2a1e" filter="url(#bloom2)" opacity="0.5"/>
+          <circle class="bl bloom" cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="8" fill="#ff3a24" filter="url(#bloom)"/>
+          <circle class="gl" cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="9.3" fill="url(#glassA)"/>
+          <circle cx="${(A.x - 2.5).toFixed(2)}" cy="${(A.y - 2.5).toFixed(2)}" r="3" fill="#fff" opacity="0.45"/>
+        </g>
+        <g class="lamp-b">
+          <circle class="bl bloom" cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="10" fill="#34d97a" filter="url(#bloom2)" opacity="0.5"/>
+          <circle class="bl bloom" cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="8" fill="#3ee08a" filter="url(#bloom)"/>
+          <circle class="gl" cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="9.3" fill="url(#glassB)"/>
+          <circle cx="${(B.x - 2.5).toFixed(2)}" cy="${(B.y - 2.5).toFixed(2)}" r="3" fill="#fff" opacity="0.45"/>
+        </g>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkSemaphoreGwr extends HTMLElement {
+    static get observedAttributes() { return ["value", "night", "distant", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._on = true; this._scale = 1;
+      this._phi = 0; this._from = 0; this._to = 0; this._t0 = 0; this._dur = 1; this._up = true; this._sh = 0;
+      this._raf = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._rots = this.shadowRoot.querySelectorAll(".rot");
+      this._rotb = this.shadowRoot.querySelector(".rotb");
+      this._rod = this.shadowRoot.querySelector(".rod");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      if (!this.hasAttribute("value")) this.setAttribute("value", "on");
+      this._readAttrs();
+      this._phi = this._on ? 0 : DROP; this._sh = 0;
+      this._paint();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      const was = this._on;
+      this._readAttrs();
+      if (this._on !== was) this._go(); else this._paint();
+    }
+    get value() { return this._on ? "on" : "off"; }
+    set value(v) {
+      const on = this._parse(v);
+      if (on === null) return;
+      // the attribute is the single source of truth; attributeChangedCallback runs the arm
+      this.setAttribute("value", on ? "on" : "off");
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _parse(v) {
+      if (typeof v === "boolean") return v;
+      if (typeof v === "number") return v !== 0;
+      if (v == null) return null;
+      const s = String(v).toLowerCase().trim();
+      if (s === "on" || s === "danger" || s === "1" || s === "true" || s === "stop") return true;
+      if (s === "off" || s === "clear" || s === "0" || s === "false" || s === "proceed") return false;
+      return null;
+    }
+    _readAttrs() {
+      const sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) ? 1 : Math.max(0.2, sc);
+      const on = this._parse(this.getAttribute("value"));
+      this._on = on === null ? true : on;
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._wrap.classList.toggle("is-on", this._on);
+      this._wrap.classList.toggle("is-night", this.hasAttribute("night"));
+      const arm = this.hasAttribute("distant") ? "distant signal" : "home signal";
+      this.setAttribute("aria-label", (this.getAttribute("label") || "semaphore") + ", " + arm + " " +
+        (this._on ? "on — danger, arm horizontal" : "off — clear, arm dropped"));
+    }
+    _go() {
+      this._from = this._phi; this._to = this._on ? 0 : DROP;
+      this._up = this._on; this._dur = this._on ? 350 : 620;
+      this._t0 = performance.now(); this._sh = 0;
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    _tick(now) {
+      const u = (now - this._t0) / this._dur;
+      const d = this._from - this._to;
+      if (u < 1) {
+        // falling: a damped bounce with about four degrees of overshoot.
+        // rising: the balance weight throws it up and it hits the stop.
+        this._phi = this._up
+          ? this._to + d * Math.pow(1 - u, 3)
+          : this._to + d * Math.exp(-5.6 * u) * Math.cos(6.6 * u);
+        this._paint();
+        this._raf = requestAnimationFrame(this._tick);
+        return;
+      }
+      this._phi = this._to;
+      const s = (now - this._t0 - this._dur) / 1000;
+      // the hard stop at danger shudders the arm for a moment
+      this._sh = this._up && s < 0.24 ? Math.exp(-15 * s) * Math.sin(66 * s) : 0;
+      this._paint();
+      if (this._sh !== 0) { this._raf = requestAnimationFrame(this._tick); return; }
+      this._raf = 0;
+    }
+    _paint() {
+      const t = `rotate(${this._phi.toFixed(2)} ${PX} ${PY}) translate(0 ${this._sh.toFixed(2)})`;
+      for (let i = 0; i < this._rots.length; i++) this._rots[i].setAttribute("transform", t);
+      this._rotb.setAttribute("transform", `rotate(${(-this._phi * 0.85).toFixed(2)} ${PX} 190)`);
+      this._rod.setAttribute("transform", `translate(0 ${(-this._phi / DROP * 7).toFixed(2)})`);
+    }
+  }
+  customElements.define("sk-semaphore-gwr", SkSemaphoreGwr);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

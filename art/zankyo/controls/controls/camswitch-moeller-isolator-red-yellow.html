@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klöckner-Moeller red-on-yellow isolator — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "camswitch-moeller-isolator-red-yellow",
+  "element": "sk-camswitch-moeller-isolator-red-yellow",
+  "name": "Klöckner-Moeller red-on-yellow isolator",
+  "kind": "input",
+  "code": "C16",
+  "type": "Cam switch / rotary isolator",
+  "source": "The Klöckner-Moeller (Bonn) T0/T3 cam switch in its main-switch dress: a red moulded handle on a yellow legend plate, padlockable at 0 — later Moeller, then Eaton",
+  "era": "1970s",
+  "origin": "Germany",
+  "materials": ["moulded plastic", "printed plate", "steel screws"],
+  "tags": ["industrial", "machine tool", "main switch", "lockable", "IEC", "detent"],
+  "value": { "model": "steps", "options": ["0", "I"] },
+  "attributes": ["value", "positions", "labels", "variant", "locked", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 112, "h": 112 },
+  "notes": "Three switches: the main switch at I, a padlocked one at 0, and the plain black control variant on a three-position plate. Drag round the handle, wheel, arrows, or Space."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="plastic-grey">
+    <sk-camswitch-moeller-isolator-red-yellow value="I" label="HAUPTSCHALTER"></sk-camswitch-moeller-isolator-red-yellow>
+    <sk-camswitch-moeller-isolator-red-yellow value="0" locked label="HAUPTSCHALTER"></sk-camswitch-moeller-isolator-red-yellow>
+    <sk-camswitch-moeller-isolator-red-yellow variant="control" positions="3" labels="1,2,3" value="2" label="PUMPE" scale="0.8"></sk-camswitch-moeller-isolator-red-yellow>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Klöckner-Moeller T0</b> cam switch is the little brown-box rotary that sits on the side of every
+  German machine tool, lathe cabinet and compressor. In its <i>main-switch</i> dress it wears the IEC colours:
+  a fat red moulded handle on a bright yellow plate, printed <b>0</b> at ten o'clock and <b>I</b> at twelve,
+  and a padlock hole through the handle's base that only lines up with the collar's lug when the switch is at
+  0 — so the fitter can hang his own lock on it and work on the machine knowing nobody can energise it.</p>
+  <p><b>The tells kept here:</b> red on yellow and nothing else coloured, on a grey enclosure; the tapered
+  pistol grip with the raised white pointer stripe; the handle standing well proud, its shadow thrown down and
+  to the right across the plate and turning with it; the four cross-head screws and the raised rim of the
+  legend plate; the small black collar the handle turns in, with the padlock lug at 0; the printed legend in a
+  grotesque along the bottom edge. The detent is real: each step takes 120 ms and lands with a small jolt.
+  <b>locked</b> hangs a brass padlock through the hole and the handle will not move. The <b>control</b>
+  variant is the same casting in black on a grey-white plate with 1·2·3.</p>
+  <p><b>Left out:</b> the enclosure's cable glands and the stack of cam contacts behind the panel; the rating
+  plate on the box's side; the "Klöckner-Moeller" wordmark, which is a live trademark.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-camswitch-moeller-isolator-red-yellow> — T0-style rotary isolator, red handle on a yellow plate ====
+   attributes: value positions labels variant("main"|"control") locked label scale disabled
+   events: input {value} during the gesture, change {value} when it settles
+   self-contained: paste this block into any page and use
+   <sk-camswitch-moeller-isolator-red-yellow value="0"></sk-camswitch-moeller-isolator-red-yellow> */
+(function () {
+  var TAG = "sk-camswitch-moeller-isolator-red-yellow";
+  if (customElements.get(TAG)) return;
+  var W = 112, H = 112, CX = 56, CY = 56;
+  var A0 = -60, STEP = 60;                    // position 0 at ten o'clock, 60° per step, clockwise
+  var HANDLE = "M 49.9 21.2 A 3.2 3.2 0 0 1 53.1 18 L 58.9 18 A 3.2 3.2 0 0 1 62.1 21.2 L 67.4 69 A 12.4 12.4 0 0 1 44.6 69 Z";
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host{display:inline-block;width:' + W + 'px;height:' + H + 'px;position:relative;font-size:10px;',
+  '  -webkit-tap-highlight-color:transparent;}',
+  ':host([hidden]){display:none}',
+  '.wrap{position:absolute;inset:0;transform-origin:0 0}',
+  'svg{display:block;width:' + W + 'px;height:' + H + 'px;overflow:visible}',
+  '.grab{position:absolute;left:10px;top:10px;width:92px;height:92px;border-radius:9px;cursor:grab;',
+  '  touch-action:none;user-select:none;-webkit-user-select:none;outline:none}',
+  '.grab.drag{cursor:grabbing}',
+  ':host([disabled]) .grab,:host([locked]) .grab{cursor:default}',
+  '.grab:focus-visible{box-shadow:0 0 0 2px #16e0e0,0 0 12px rgba(22,224,224,.65)}',
+  '.rot{transform-box:view-box;transform-origin:' + CX + 'px ' + CY + 'px;',
+  '  transition:transform 120ms cubic-bezier(.2,.9,.3,1.3)}',
+  '.rot.free{transition:none}',
+  'text{font-family:"Inter","Helvetica Neue",Arial,sans-serif;fill:#131313}',
+  '.pos{font-size:9px;font-weight:700;text-anchor:middle;dominant-baseline:central}',
+  '.leg{font-size:5px;font-weight:600;letter-spacing:.1em;text-anchor:middle;fill:#1c1c1a}',
+  '.leg.sub{font-size:4.4px;fill:#3a3520;letter-spacing:.14em}',
+  ':host([variant="control"]) .leg{fill:#26262a}',
+  ':host([variant="control"]) .rimhi{stroke:#ffffff}',
+  ':host([variant="control"]) .rimlo{stroke:#6a6a64}',
+  ':host([variant="control"]) .rimed{stroke:#7c7c76}',
+  ':host([variant="control"]) .boss{stroke:#8e8e88}',
+  ':host([variant="control"]) .leg.sub{fill:#55555a}',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
+  ' <defs>',
+  '  <linearGradient id="encl" x1="0" y1="0" x2=".35" y2="1">',
+  '   <stop offset="0" stop-color="#cfd3ce"/><stop offset=".55" stop-color="#b9bdb8"/><stop offset="1" stop-color="#9aa09b"/></linearGradient>',
+  '  <radialGradient id="plate" cx="32%" cy="26%" r="86%">',
+  '   <stop offset="0" stop-color="#ffdf52"/><stop offset=".42" stop-color="#f3c400"/><stop offset=".85" stop-color="#d9ac00"/><stop offset="1" stop-color="#b58f00"/></radialGradient>',
+  '  <radialGradient id="plateC" cx="32%" cy="26%" r="86%">',
+  '   <stop offset="0" stop-color="#f4f4f1"/><stop offset=".5" stop-color="#e2e2dd"/><stop offset="1" stop-color="#bcbcb6"/></radialGradient>',
+  '  <linearGradient id="hand" x1="0" y1="0" x2="1" y2=".12">',
+  '   <stop offset="0" stop-color="#b92320"/><stop offset=".16" stop-color="#ea4c48"/><stop offset=".46" stop-color="#cf2a27"/><stop offset=".82" stop-color="#9d1b18"/><stop offset="1" stop-color="#8a1713"/></linearGradient>',
+  '  <linearGradient id="handC" x1="0" y1="0" x2="1" y2=".12">',
+  '   <stop offset="0" stop-color="#2c2c2f"/><stop offset=".16" stop-color="#4a4a4e"/><stop offset=".46" stop-color="#232326"/><stop offset=".82" stop-color="#141416"/><stop offset="1" stop-color="#0e0e10"/></linearGradient>',
+  '  <radialGradient id="collar" cx="34%" cy="28%" r="80%">',
+  '   <stop offset="0" stop-color="#43434a"/><stop offset=".6" stop-color="#232327"/><stop offset="1" stop-color="#101012"/></radialGradient>',
+  '  <radialGradient id="screw" cx="34%" cy="28%" r="74%">',
+  '   <stop offset="0" stop-color="#d8dbdd"/><stop offset=".55" stop-color="#9fa3a6"/><stop offset="1" stop-color="#5e6265"/></radialGradient>',
+  '  <radialGradient id="lit" cx="50%" cy="50%" r="50%">',
+  '   <stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>',
+  '  <linearGradient id="spec" x1="0" y1="0" x2="1" y2="0">',
+  '   <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".34" stop-color="#fff" stop-opacity=".5"/><stop offset=".46" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>',
+  '  <radialGradient id="dark" cx="50%" cy="50%" r="50%">',
+  '   <stop offset="0" stop-color="#2a0603" stop-opacity=".5"/><stop offset="1" stop-color="#2a0603" stop-opacity="0"/></radialGradient>',
+  '  <linearGradient id="brass" x1="0" y1="0" x2=".6" y2="1">',
+  '   <stop offset="0" stop-color="#f0d68c"/><stop offset=".45" stop-color="#c39a3c"/><stop offset="1" stop-color="#6d5117"/></linearGradient>',
+  '  <clipPath id="hclip"><path d="' + HANDLE + '"/></clipPath>',
+  '  <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>',
+  '  <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>',
+  '  <filter id="b4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4.5"/></filter>',
+  ' </defs>',
+  ' <rect x="2" y="5" width="' + (W - 2) + '" height="' + H + '" rx="7" fill="#000" opacity=".5" filter="url(#b4)"/>',
+  ' <rect x="1" y="2" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="6" fill="#000" opacity=".55" filter="url(#b1)"/>',
+  ' <rect x="0" y="0" width="' + W + '" height="' + H + '" rx="5" fill="url(#encl)"/>',
+  ' <rect x=".5" y=".5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="4.5" fill="none" stroke="#6f746f" stroke-opacity=".7"/>',
+  ' <rect x="1.5" y="1.5" width="' + (W - 3) + '" height="' + (H - 3) + '" rx="4" fill="none" stroke="#e6eae5" stroke-opacity=".5"/>',
+  ' <rect x="11" y="12" width="92" height="92" rx="8" fill="#000" opacity=".4" filter="url(#b2)"/>',
+  ' <rect class="plate" x="10" y="10" width="92" height="92" rx="8" fill="url(#plate)"/>',
+  ' <path class="rimhi" d="M 18 10 H 94 A 8 8 0 0 1 102 18" fill="none" stroke="#fff3a8" stroke-opacity=".75" stroke-width="1.2"/>',
+  ' <path class="rimlo" d="M 10 94 A 8 8 0 0 0 18 102 H 94" fill="none" stroke="#7c6000" stroke-opacity=".45" stroke-width="1.2"/>',
+  ' <rect class="rimed" x="10.6" y="10.6" width="90.8" height="90.8" rx="7.5" fill="none" stroke="#8a6d00" stroke-opacity=".35" stroke-width=".8"/>',
+  ' <ellipse cx="57" cy="58" rx="24" ry="23" fill="#000" opacity=".09" filter="url(#b2)"/>',
+  ' <circle class="boss" cx="56" cy="56" r="23" fill="none" stroke="#b08c00" stroke-opacity=".3" stroke-width="1"/>',
+  ' <g class="print"></g>',
+  ' <g class="screws"></g>',
+  ' <ellipse cx="59" cy="60" rx="19" ry="18" fill="#000" opacity=".3" filter="url(#b2)"/>',
+  ' <circle cx="' + CX + '" cy="' + CY + '" r="17" fill="url(#collar)"/>',
+  ' <circle cx="' + CX + '" cy="' + CY + '" r="16.2" fill="none" stroke="#5a5a62" stroke-opacity=".7" stroke-width=".9"/>',
+  ' <path d="M 43 62 A 15 15 0 0 0 69 62" fill="none" stroke="#8b8b96" stroke-opacity=".35" stroke-width="1"/>',
+  ' <g class="lug"><rect x="70" y="60" width="7" height="5" rx="1.6" fill="#191a1e"/><rect x="70.4" y="60.4" width="6.2" height="1.4" rx=".7" fill="#4c4d55" opacity=".8"/></g>',
+  ' <g class="lockA" style="display:none"><path d="M 67.2 58.5 A 5.6 6.4 0 0 1 78.4 58.5 L 78.4 70 L 75.6 70 L 75.6 59 A 2.8 3.4 0 0 0 70 59 L 70 70 L 67.2 70 Z" fill="#8a6a22"/></g>',
+  ' <g transform="translate(5,6.5)" opacity=".5"><g class="rot sh"><path d="' + HANDLE + '" fill="#000" filter="url(#b2)"/></g></g>',
+  ' <g transform="translate(1.6,2.2)" opacity=".5"><g class="rot sh2"><path d="' + HANDLE + '" fill="#000" filter="url(#b1)"/></g></g>',
+  ' <g class="rot handle">',
+  '  <path class="hbody" d="' + HANDLE + '" fill="url(#hand)"/>',
+  '  <g clip-path="url(#hclip)">',
+  '   <g class="counter">',
+  '    <ellipse cx="' + (CX - 13) + '" cy="' + (CY - 26) + '" rx="26" ry="34" fill="url(#lit)"/>',
+  '    <ellipse cx="' + (CX + 16) + '" cy="' + (CY + 18) + '" rx="22" ry="30" fill="url(#dark)"/>',
+  '    <rect x="' + (CX - 30) + '" y="' + (CY - 46) + '" width="30" height="92" fill="url(#spec)"/>',
+  '   </g>',
+  '   <path d="' + HANDLE + '" fill="none" stroke="#5e0f0c" stroke-opacity=".55" stroke-width="1.6"/>',
+  '  </g>',
+  '  <rect x="54.6" y="22.6" width="3.4" height="42" rx="1.7" fill="#000" opacity=".3"/>',
+  '  <rect class="stripe" x="54.2" y="22" width="3.4" height="42" rx="1.7" fill="#f4f4f0"/>',
+  '  <rect x="54.4" y="22.2" width="1.3" height="41.6" rx=".65" fill="#fff" opacity=".75"/>',
+  '  <ellipse class="hole" cx="' + CX + '" cy="73" rx="3.4" ry="2.8" fill="#4a0d0a"/>',
+  '  <ellipse cx="' + CX + '" cy="72.3" rx="3.4" ry="2.4" fill="#000" opacity=".55"/>',
+  ' </g>',
+  ' <g class="lockB" style="display:none">',
+  '  <ellipse cx="73" cy="80" rx="10" ry="4" fill="#000" opacity=".3" filter="url(#b2)"/>',
+  '  <path d="M 67.2 58.5 A 5.6 6.4 0 0 1 78.4 58.5 L 78.4 68 L 75.6 68 L 75.6 59 A 2.8 3.4 0 0 0 70 59 L 70 68 L 67.2 68 Z" fill="url(#brass)" opacity=".92"/>',
+  '  <rect x="64.6" y="66" width="16.4" height="13" rx="2.4" fill="url(#brass)" stroke="#57400f" stroke-width=".6"/>',
+  '  <rect x="65.5" y="66.8" width="14.6" height="2.8" rx="1.4" fill="#ffe9a8" opacity=".45"/>',
+  '  <circle cx="72.8" cy="72" r="1.9" fill="#4a3810"/><rect x="72" y="72" width="1.6" height="3.4" fill="#4a3810"/>',
+  ' </g>',
+  '</svg>',
+  '<div class="grab" role="slider" tabindex="0"></div>',
+  '</div>'].join("\n");
+
+  var NS = "http://www.w3.org/2000/svg";
+
+  function El(n, a) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); return e; }
+
+  class SkMoellerIsolator extends HTMLElement {
+    static get observedAttributes() { return ["value", "positions", "labels", "variant", "locked", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._i = 0; this._labels = ["0", "I"]; this._scale = 1;
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._rots = r.querySelectorAll(".rot");
+      this._counter = r.querySelector(".counter");
+      this._print = r.querySelector(".print");
+      this._screws = r.querySelector(".screws");
+      this._lockA = r.querySelector(".lockA"); this._lockB = r.querySelector(".lockB");
+      this._lug = r.querySelector(".lug");
+      this._plate = r.querySelector(".plate");
+      this._hbody = r.querySelector(".hbody");
+      ["_down", "_move", "_up", "_wheel", "_key"].forEach(function (m) { this[m] = this[m].bind(this); }, this);
+      this._drawScrews();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._labels[0]);
+      this._read(); this._drawPrint(); this._render(true);
+      var g = this._grab;
+      g.removeEventListener("pointerdown", this._down);
+      g.removeEventListener("wheel", this._wheel);
+      g.removeEventListener("keydown", this._key);
+      g.addEventListener("pointerdown", this._down);
+      g.addEventListener("wheel", this._wheel, { passive: false });
+      g.addEventListener("keydown", this._key);
+    }
+    disconnectedCallback() {
+      var g = this._grab;
+      g.removeEventListener("pointerdown", this._down);
+      g.removeEventListener("wheel", this._wheel);
+      g.removeEventListener("keydown", this._key);
+      this._endDrag();
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "positions" || n === "labels" || n === "variant" || n === "label") this._drawPrint();
+      this._render(n === "scale" || n === "variant");
+    }
+    get value() { return this._labels[this._i]; }
+    set value(v) {
+      var i = this._index(v); if (i < 0) return;
+      this._i = i; this.setAttribute("value", this._labels[i]); this._render();
+    }
+    get index() { return this._i; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _index(v) {
+      if (v == null) return -1;
+      var s = String(v), n = this._labels.indexOf(s);
+      if (n >= 0) return n;
+      var k = parseInt(s, 10);
+      return (!isNaN(k) && k >= 0 && k < this._labels.length) ? k : -1;
+    }
+    _read() {
+      var lab = this.getAttribute("labels");
+      var n = parseInt(this.getAttribute("positions"), 10);
+      if (lab) this._labels = lab.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+      else if (!isNaN(n) && n >= 2 && n <= 6) { this._labels = ["0"]; for (var k = 1; k < n; k++) this._labels.push(String(k)); }
+      else this._labels = ["0", "I"];
+      if (this._labels.length < 2) this._labels = ["0", "I"];
+      var s = parseFloat(this.getAttribute("scale")); this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      var i = this._index(this.getAttribute("value"));
+      this._i = Math.min(this._labels.length - 1, Math.max(0, i < 0 ? this._i : i));
+      if (this._frozen()) this._i = 0;
+      var g = this._grab, off = this.hasAttribute("disabled") || this.hasAttribute("locked");
+      g.setAttribute("aria-label", this.getAttribute("label") || "isolator");
+      g.setAttribute("aria-valuemin", "0");
+      g.setAttribute("aria-valuemax", String(this._labels.length - 1));
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", off ? "true" : "false");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var ctrl = this.getAttribute("variant") === "control";
+      this._plate.setAttribute("fill", ctrl ? "url(#plateC)" : "url(#plate)");
+      this._hbody.setAttribute("fill", ctrl ? "url(#handC)" : "url(#hand)");
+    }
+    _frozen() { return this.hasAttribute("locked"); }
+    _angle(i) { return A0 + i * STEP; }
+    _drawScrews() {
+      var g = this._screws, pts = [[19, 19, 28], [93, 19, -14], [19, 93, 58], [93, 93, 8]];
+      pts.forEach(function (p) {
+        g.appendChild(El("circle", { cx: p[0] + 0.6, cy: p[1] + 0.9, r: 3.6, fill: "#000", "fill-opacity": ".35" }));
+        g.appendChild(El("circle", { cx: p[0], cy: p[1], r: 3.5, fill: "url(#screw)", stroke: "#4a4e51", "stroke-width": ".5" }));
+        var c = El("g", { transform: "rotate(" + p[2] + " " + p[0] + " " + p[1] + ")" });
+        c.appendChild(El("rect", { x: p[0] - 2.5, y: p[1] - 0.45, width: 5, height: 0.9, rx: 0.4, fill: "#3a3d40" }));
+        c.appendChild(El("rect", { x: p[0] - 0.45, y: p[1] - 2.5, width: 0.9, height: 5, rx: 0.4, fill: "#3a3d40" }));
+        c.appendChild(El("rect", { x: p[0] - 2.5, y: p[1] - 0.45, width: 5, height: 0.4, rx: 0.2, fill: "#eef1f2", "fill-opacity": ".45" }));
+        g.appendChild(c);
+      });
+    }
+    _drawPrint() {
+      var g = this._print; while (g.firstChild) g.removeChild(g.firstChild);
+      var ctrl = this.getAttribute("variant") === "control";
+      var ink = ctrl ? "#1b1b1e" : "#131313";
+      for (var i = 0; i < this._labels.length; i++) {
+        var a = this._angle(i) * Math.PI / 180, s = Math.sin(a), c = Math.cos(a);
+        g.appendChild(El("line", {
+          x1: CX + 35.5 * s, y1: CY - 35.5 * c, x2: CX + 37.6 * s, y2: CY - 37.6 * c,
+          stroke: ink, "stroke-width": 2, "stroke-linecap": "round"
+        }));
+        var t = El("text", { x: CX + 44 * s, y: CY - 44 * c, "class": "pos", fill: ink });
+        t.textContent = this._labels[i];
+        g.appendChild(t);
+      }
+      // the sector the handle sweeps, printed as a hairline arc between the marks
+      var a1 = this._angle(0) * Math.PI / 180, a2 = this._angle(this._labels.length - 1) * Math.PI / 180, R = 36.6;
+      g.appendChild(El("path", {
+        d: "M " + (CX + R * Math.sin(a1)) + " " + (CY - R * Math.cos(a1)) +
+           " A " + R + " " + R + " 0 0 1 " + (CX + R * Math.sin(a2)) + " " + (CY - R * Math.cos(a2)),
+        fill: "none", stroke: ink, "stroke-opacity": ".55", "stroke-width": ".8"
+      }));
+      var lead = this.getAttribute("label") || (ctrl ? "" : "HAUPTSCHALTER");
+      var t1 = El("text", { x: CX, y: 91, "class": "leg" }); t1.textContent = lead;
+      var t2 = El("text", { x: CX, y: 97.8, "class": "leg sub" }); t2.textContent = ctrl ? "WAHLSCHALTER" : "MAIN SWITCH";
+      g.appendChild(t1); g.appendChild(t2);
+    }
+    _render(hard) {
+      var a = this._angle(this._i);
+      for (var k = 0; k < this._rots.length; k++) {
+        if (hard) this._rots[k].classList.add("free");
+        this._rots[k].style.transform = "rotate(" + a + "deg)";
+      }
+      this._counter.style.transform = "rotate(" + (-a) + "deg)";
+      if (hard) { var rr = this._rots; requestAnimationFrame(function () { for (var j = 0; j < rr.length; j++) rr[j].classList.remove("free"); }); }
+      var lk = this._frozen() && this._i === 0;
+      this._lockA.style.display = lk ? "" : "none"; this._lockB.style.display = lk ? "" : "none";
+      this._lug.style.display = this._i === 0 ? "" : "none";
+      this._grab.setAttribute("aria-valuenow", String(this._i));
+      this._grab.setAttribute("aria-valuetext", this._labels[this._i]);
+    }
+    _set(i, settle) {
+      i = Math.min(this._labels.length - 1, Math.max(0, i));
+      var changed = i !== this._i;
+      if (!changed && !settle) return;
+      this._i = i;
+      this.setAttribute("value", this._labels[i]);
+      this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", {
+        bubbles: true, composed: true, detail: { value: this._labels[i], index: i }
+      }));
+    }
+    _live() { return !this.hasAttribute("disabled") && !this._frozen(); }
+    _fromPointer(e) {
+      var r = this._grab.getBoundingClientRect();
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var deg = Math.atan2(e.clientX - cx, cy - e.clientY) * 180 / Math.PI;
+      var best = 0, bd = 1e9;
+      for (var i = 0; i < this._labels.length; i++) {
+        var d = Math.abs(deg - this._angle(i));
+        if (d < bd) { bd = d; best = i; }
+      }
+      return best;
+    }
+    _down(e) {
+      if (!this._live() || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.add("drag");
+      this._drag = { id: e.pointerId, from: this._i, moved: false };
+      this._grab.addEventListener("pointermove", this._move);
+      this._grab.addEventListener("pointerup", this._up);
+      this._grab.addEventListener("pointercancel", this._up);
+      var i = this._fromPointer(e);
+      if (i !== this._i) { this._drag.moved = true; this._set(i, false); }
+    }
+    _move(e) {
+      if (!this._drag) return;
+      var i = this._fromPointer(e);
+      if (i !== this._i) { this._drag.moved = true; this._set(i, false); }
+    }
+    _up(e) {
+      if (!this._drag) return;
+      var moved = this._drag.moved;
+      this._endDrag(e);
+      if (moved) this._set(this._i, true);
+    }
+    _endDrag(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._move);
+      this._grab.removeEventListener("pointerup", this._up);
+      this._grab.removeEventListener("pointercancel", this._up);
+      try { this._grab.releasePointerCapture(e ? e.pointerId : this._drag.id); } catch (_) {}
+      this._grab.classList.remove("drag");
+      this._drag = null;
+    }
+    _wheel(e) {
+      if (!this._live()) return;
+      e.preventDefault();
+      var d = e.deltaY < 0 ? 1 : -1;
+      var i = Math.min(this._labels.length - 1, Math.max(0, this._i + d));
+      if (i === this._i) return;
+      this._set(i, false);
+      clearTimeout(this._wt);
+      var self = this; this._wt = setTimeout(function () { self._set(self._i, true); }, 200);
+    }
+    _key(e) {
+      if (!this._live()) return;
+      var i = null, n = this._labels.length;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowUp": i = this._i + 1; break;
+        case "ArrowLeft": case "ArrowDown": i = this._i - 1; break;
+        case "Home": i = 0; break;
+        case "End": i = n - 1; break;
+        case " ": case "Spacebar": case "Enter": i = (this._i + 1) % n; break;
+        default: return;
+      }
+      e.preventDefault();
+      i = Math.min(n - 1, Math.max(0, i));
+      if (i === this._i) return;
+      this._set(i, false); this._set(i, true);
+    }
+  }
+  customElements.define(TAG, SkMoellerIsolator);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

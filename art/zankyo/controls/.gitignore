@@ -1,0 +1,5 @@
+shots/*.png
+shots/*.bench.jpg
+tools/report.json
+tools/catalog.json
+parts/

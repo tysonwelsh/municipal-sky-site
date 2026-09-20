@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBM Model M key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "key-ibm-model-m",
+  "element": "sk-key-ibm-model-m",
+  "name": "IBM Model M buckling-spring key",
+  "kind": "input",
+  "code": "D8",
+  "type": "Terminal / computer key",
+  "source": "IBM Model M (1391401) Enhanced Keyboard, 1985: two-piece pearl PBT caps with dye-sublimated legends over a buckling-spring switch, in a pebble-grey case",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["pearl PBT", "pebble-grey ABS case", "dye-sublimated legend"],
+  "tags": ["keyboard", "key", "momentary", "buckling spring", "dye-sub", "cylindrical dish"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "sub", "width", "tone", "row", "shine", "pressed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 56, "h": 56 },
+  "notes": "Three caps off the home row: a pearl A, a pebble-grey 1.75u Caps Lock on two lines, and a 2.25u Enter held down past the spring's snap. Press with the mouse, a finger, or Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-key-ibm-model-m legend="A" row="3"></sk-key-ibm-model-m>
+    <sk-key-ibm-model-m legend="Caps" sub="Lock" tone="grey" width="1.75" row="3"></sk-key-ibm-model-m>
+    <sk-key-ibm-model-m legend="Enter" width="2.25" row="3" pressed></sk-key-ibm-model-m>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>IBM Model M</b> of 1985 put a buckling spring under a two-piece pearl PBT keycap: press it and the
+  spring bows sideways about two millimetres down, throwing a hammer at the membrane with a crack you can hear
+  two rooms away, and the cap drops the rest of its travel in one go. The legends are
+  <b>dye-sublimated</b> — soaked into the plastic rather than printed on it — so they are grey, slightly soft
+  at the edge, and they never wear off.</p>
+  <p><b>The tells kept here:</b> the cap drawn as a real truncated pyramid — four separate walls, the left one
+  lit, the right one in shade, the back one bright, the front one tall and dropping into the shadow the top
+  face casts on it; a cylindrical dish across that top face, dark at the left and turning bright where the
+  curve comes back up into the light; the hairline seam around the skirt where the shell meets its base; the
+  grey legend at the <i>top-left</i> of the dish for letters and centred for words; pearl for the alphas and
+  pebble grey for the modifiers; the fine matte PBT grain on every face; the polish on a much-used cap (Enter,
+  here); and the pebble-grey hairline-textured case with the dark base plate showing in the gap between caps.
+  The travel is two-stage — two pixels of load, then a snap through the remaining two — and
+  <code>activate</code> fires at the snap, not at the bottom.</p>
+  <p><b>Left out:</b> the case's three status LEDs and its badge, the barrel plate under the caps, and the
+  flip-out feet. The <code>row</code> attribute tilts the top face (4°, 2°, 0°, −2°, −4° from the number row
+  down) by trading front wall for back wall; all three caps here are from the home row, so they stand level.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-key-ibm-model-m> — pearl-and-grey buckling-spring keycap ====
+   attributes: legend sub width(units) tone(pearl|grey) row(1-5) shine pressed scale disabled
+   events: press / release, activate (at the spring's snap, ~30 ms into the travel)
+   momentary: no value. self-contained: paste this block into any page and use
+   <sk-key-ibm-model-m legend="A"></sk-key-ibm-model-m> */
+(function () {
+  const TAG = "sk-key-ibm-model-m";
+  if (customElements.get(TAG)) return;
+  const U = 56;                       // one key unit: the 19.05 mm pitch
+  const PAD = 4.4, TOP = 4.6, BOT = 5.4; // the cap's footprint inside the cell
+  const CH = U - TOP - BOT;            // cap height
+  const SIDE = 6.2;                    // wall thickness seen from the front-above
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent;
+      --top: #e8e5dc;
+      --b1: #f5f2e9; --b2: #ddd9cd;     /* back wall  */
+      --l1: #f0ece2; --l2: #d3cfc3;     /* left wall  */
+      --r1: #bfbbaf; --r2: #a7a397;     /* right wall */
+      --f1: #d0ccc0; --f2: #b3afa3;     /* front wall */
+      --ink: #46463f; }
+    :host([hidden]) { display: none; }
+    :host([tone="grey"]) {
+      --top: #aeaaa2;
+      --b1: #c9c5bd; --b2: #b2aea5;
+      --l1: #c6c2ba; --l2: #a5a199;
+      --r1: #8f8b84; --r2: #77746d;
+      --f1: #9d9992; --f2: #807d76;
+      --ink: #3c3c3a; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+
+    /* the pebble-grey case, hairline-textured, lit from above-left */
+    .case { position: absolute; inset: 0; border-radius: 2.5px;
+      background:
+        repeating-linear-gradient(93deg, rgba(0,0,0,0.045) 0 0.5px, rgba(255,255,255,0.03) 0.5px 1.4px),
+        linear-gradient(158deg, #b6b1a7 0%, #a5a098 46%, #85817a 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1.5px 0 rgba(0,0,0,0.25),
+                  0 2px 4px rgba(0,0,0,0.5), 0 7px 15px rgba(0,0,0,0.38); }
+    /* the dark base plate, seen in the gap around the cap */
+    .well { position: absolute; left: 2.6px; right: 2.6px; top: 2.8px; bottom: 3.4px; border-radius: 4px;
+      background: #2b2a28; box-shadow: inset 0 1px 1.6px rgba(0,0,0,0.65); }
+
+    /* the cap: an SVG truncated pyramid that travels */
+    .cap { position: absolute; left: ${PAD}px; top: ${TOP}px; height: ${CH}px;
+      outline: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+      filter: drop-shadow(0 1.5px 1.5px rgba(0,0,0,0.55)) drop-shadow(0 5px 6px rgba(0,0,0,0.3));
+      transition: transform 95ms cubic-bezier(.2,.8,.35,1); }
+    .cap.d1 { transform: translateY(2px); transition: transform 30ms cubic-bezier(.4,0,1,.6); }
+    .cap.d2 { transform: translateY(4px); transition: transform 10ms linear;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.65)) drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+    :host([disabled]) .cap { cursor: default; }
+    .cap svg { display: block; }
+    .cap:focus-visible .ring { stroke: #16e0e0; stroke-width: 1.6; stroke-opacity: 1; }
+
+    /* dye-sub legends: grey, soft-edged, top-left of the dish for letters, centred for words */
+    .lgs { position: absolute; display: flex; flex-direction: column; filter: blur(0.3px); }
+    .lgs.letter { align-items: flex-start; justify-content: flex-start; padding: 2.5px 0 0 3px; }
+    .lgs.word { align-items: center; justify-content: center; }
+    .lg, .sb { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500;
+      color: var(--ink); line-height: 1.2; letter-spacing: 0.01em; display: block; }
+    .lgs.letter .lg { font-size: 9.5px; }
+    .lgs.word .lg, .lgs.word .sb { font-size: 7px; }
+    .lg:empty, .sb:empty { display: none; }
+  </style>
+  <div class="wrap">
+    <div class="case"></div>
+    <div class="well"></div>
+    <div class="cap" role="button" tabindex="0">
+      <div class="lgs"><span class="lg"></span><span class="sb"></span></div>
+    </div>
+  </div>`;
+
+  class SkKeyIbmModelM extends HTMLElement {
+    static get observedAttributes() { return ["legend", "sub", "width", "tone", "row", "shine", "pressed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._u = 1; this._row = 3; this._down = false; this._st = 0; this._geom = "";
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._cap = r.querySelector(".cap");
+      this._lgs = r.querySelector(".lgs");
+      this._lg = r.querySelector(".lg");
+      this._sb = r.querySelector(".sb");
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs();
+      const c = this._cap;
+      c.addEventListener("pointerdown", this._onDown);
+      c.addEventListener("pointerup", this._onUp);
+      c.addEventListener("pointercancel", this._onUp);
+      c.addEventListener("keydown", this._onKeyDown);
+      c.addEventListener("keyup", this._onKeyUp);
+      c.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      const c = this._cap;
+      c.removeEventListener("pointerdown", this._onDown);
+      c.removeEventListener("pointerup", this._onUp);
+      c.removeEventListener("pointercancel", this._onUp);
+      c.removeEventListener("keydown", this._onKeyDown);
+      c.removeEventListener("keyup", this._onKeyUp);
+      c.removeEventListener("blur", this._onBlur);
+      clearTimeout(this._st);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "pressed") { this._show(this.hasAttribute("pressed")); return; }
+      this._readAttrs();
+    }
+    get pressed() { return this.hasAttribute("pressed"); }
+    set pressed(b) { if (b) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    get legend() { return this.getAttribute("legend") || ""; }
+    set legend(s) { this.setAttribute("legend", s == null ? "" : String(s)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._cap.focus(o); }
+    blur() { this._cap.blur(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._u = Math.max(1, num("width", 1));
+      this._row = Math.min(5, Math.max(1, Math.round(num("row", 3))));
+      const w = U * this._u;
+      this.style.width = (w * this._scale) + "px";
+      this.style.height = (U * this._scale) + "px";
+      this._wrap.style.width = w + "px"; this._wrap.style.height = U + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._build(w);
+
+      const lg = this.getAttribute("legend") || "";
+      const sb = this.getAttribute("sub") || "";
+      this._lg.textContent = lg; this._sb.textContent = sb;
+      this._lgs.className = "lgs " + (!sb && lg.length <= 2 ? "letter" : "word");
+
+      const c = this._cap, dis = this.hasAttribute("disabled");
+      c.setAttribute("aria-label", (lg + (sb ? " " + sb : "")).trim() || "key");
+      c.setAttribute("aria-disabled", dis ? "true" : "false");
+      c.setAttribute("tabindex", dis ? "-1" : "0");
+      this._show(this.hasAttribute("pressed"));
+    }
+
+    // the cap, drawn face by face so the light is honest on each wall
+    _build(w) {
+      const CW = w - PAD * 2;
+      const tilt = (3 - this._row) * 2;                 // +4° (number row, tilts back) … -4° (bottom row)
+      const bw = 7 - tilt * 0.55, fw = 11 + tilt * 1.05;  // back wall / front wall, seen from the front-above
+      const tl = SIDE, tr = CW - SIDE, tt = bw, tb = CH - fw;
+      const shine = this.hasAttribute("shine") || /^(e|enter|space|return)$/i.test(this.getAttribute("legend") || "");
+      const key = [CW, this._row, shine].join("|");
+      if (key !== this._geom) {
+        this._geom = key;
+        const g = `
+        <svg width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}" aria-hidden="true">
+          <defs>
+            <linearGradient id="gb" x1="0.2" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="var(--b1)"/><stop offset="1" stop-color="var(--b2)"/></linearGradient>
+            <linearGradient id="gl" x1="0" y1="0" x2="1" y2="0.4"><stop offset="0" stop-color="var(--l1)"/><stop offset="1" stop-color="var(--l2)"/></linearGradient>
+            <linearGradient id="gr" x1="1" y1="0" x2="0" y2="0.4"><stop offset="0" stop-color="var(--r2)"/><stop offset="1" stop-color="var(--r1)"/></linearGradient>
+            <linearGradient id="gf" x1="0.3" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="var(--f2)"/><stop offset="0.72" stop-color="var(--f1)"/><stop offset="1" stop-color="var(--f2)"/></linearGradient>
+            <linearGradient id="dh" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#000" stop-opacity="0.26"/><stop offset="0.16" stop-color="#000" stop-opacity="0.09"/>
+              <stop offset="0.44" stop-color="#fff" stop-opacity="0"/><stop offset="0.76" stop-color="#fff" stop-opacity="0.15"/>
+              <stop offset="0.93" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0.02"/>
+            </linearGradient>
+            <linearGradient id="dv" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.03"/>
+              <stop offset="0.78" stop-color="#000" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.16"/>
+            </linearGradient>
+            <radialGradient id="gloss" cx="42%" cy="24%" r="78%">
+              <stop offset="0" stop-color="#fffbe8" stop-opacity="${shine ? 0.34 : 0}"/><stop offset="0.6" stop-color="#fff6d8" stop-opacity="${shine ? 0.1 : 0}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="grain" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(17)">
+              <rect width="1.1" height="2.4" fill="#000" opacity="0.016"/>
+              <rect x="1.1" width="0.8" height="2.4" fill="#fff" opacity="0.02"/>
+              <rect y="1.2" width="2.4" height="0.5" fill="#000" opacity="0.012"/>
+            </pattern>
+            <clipPath id="cc"><rect x="0" y="0" width="${CW}" height="${CH}" rx="3.2"/></clipPath>
+            <filter id="sh" x="-20%" y="-60%" width="140%" height="260%"><feGaussianBlur stdDeviation="1.1"/></filter>
+          </defs>
+          <g clip-path="url(#cc)">
+            <rect width="${CW}" height="${CH}" fill="var(--f1)"/>
+            <path d="M0 0 H${CW} L${tr} ${tt} H${tl} Z" fill="url(#gb)"/>
+            <path d="M0 0 L${tl} ${tt} V${tb} L0 ${CH} Z" fill="url(#gl)"/>
+            <path d="M${CW} 0 L${tr} ${tt} V${tb} L${CW} ${CH} Z" fill="url(#gr)"/>
+            <path d="M0 ${CH} L${tl} ${tb} H${tr} L${CW} ${CH} Z" fill="url(#gf)"/>
+            <rect width="${CW}" height="${CH}" fill="url(#grain)"/>
+            <!-- the shadow the top face throws down the front wall -->
+            <path d="M${tl} ${tb + 0.6} H${tr}" stroke="#000" stroke-opacity="0.34" stroke-width="2.2" filter="url(#sh)"/>
+            <!-- the two-piece seam around the skirt, and the lit bottom lip -->
+            <path d="M0 ${CH - 3.6} H${CW}" stroke="#000" stroke-opacity="0.22" stroke-width="0.9"/>
+            <path d="M0 ${CH - 2.7} H${CW}" stroke="#fff" stroke-opacity="0.3" stroke-width="0.8"/>
+            <path d="M0 ${CH - 0.5} H${CW}" stroke="#fff" stroke-opacity="0.13" stroke-width="1"/>
+          </g>
+          <rect x="0.4" y="0.4" width="${CW - 0.8}" height="${CH - 0.8}" rx="3" fill="none" stroke="#000" stroke-opacity="0.32" stroke-width="0.8"/>
+          <!-- the top face: base colour, cylindrical dish, grain, polish, lit lip -->
+          <g>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="var(--top)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#dh)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#dv)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#grain)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#gloss)"/>
+            <rect x="${tl + 0.35}" y="${tt + 0.35}" width="${tr - tl - 0.7}" height="${tb - tt - 0.7}" rx="2.2" fill="none" stroke="#fff" stroke-opacity="0.24" stroke-width="0.7"/>
+          </g>
+          <rect class="ring" x="0.8" y="0.8" width="${CW - 1.6}" height="${CH - 1.6}" rx="3" fill="none" stroke="#16e0e0" stroke-opacity="0" stroke-width="1.6"/>
+        </svg>`;
+        const old = this._cap.querySelector("svg");
+        if (old) old.remove();
+        this._cap.insertAdjacentHTML("afterbegin", g);
+      }
+      this._cap.style.width = CW + "px";
+      this._lgs.style.left = tl + "px"; this._lgs.style.top = tt + "px";
+      this._lgs.style.width = (tr - tl) + "px"; this._lgs.style.height = (tb - tt) + "px";
+    }
+
+    // the static picture of a state: no events, no staging
+    _show(on) {
+      clearTimeout(this._st); this._st = 0;
+      this._cap.classList.toggle("d1", !!on);
+      this._cap.classList.toggle("d2", !!on);
+    }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { legend: this.getAttribute("legend") || "" } })); }
+    _snap() { this._st = 0; this._cap.classList.add("d2"); this._emit("activate"); }
+    _press() {
+      if (this._down || this.hasAttribute("disabled")) return;
+      this._down = true;
+      this.setAttribute("pressed", "");
+      this._cap.classList.add("d1"); this._cap.classList.remove("d2");
+      this._emit("press");
+      clearTimeout(this._st);
+      this._st = setTimeout(() => this._snap(), 30);            // the spring buckles
+    }
+    _release() {
+      if (!this._down) return;
+      this._down = false;
+      if (this._st) { clearTimeout(this._st); this._snap(); }   // a quick tap still buckles the spring
+      this.removeAttribute("pressed");
+      this._cap.classList.remove("d1", "d2");
+      this._emit("release");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._cap.focus({ preventScroll: true });
+      try { this._cap.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      try { this._cap.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      this._release();
+    }
+    _onBlur() { this._release(); }
+  }
+  customElements.define(TAG, SkKeyIbmModelM);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

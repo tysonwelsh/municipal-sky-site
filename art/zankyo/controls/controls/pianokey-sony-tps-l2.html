@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sony Walkman TPS-L2 transport keys — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pianokey-sony-tps-l2",
+  "element": "sk-pianokey-sony-tps-l2",
+  "name": "Walkman TPS-L2 chrome transport keys",
+  "kind": "input",
+  "code": "D14",
+  "type": "Piano-key transport bank",
+  "source": "Sony Walkman TPS-L2 (1979): chrome piano keys in a black slot along the top edge, the blue-and-silver body, the orange HOT LINE button",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["chrome-plated ABS", "satin aluminium", "painted steel", "matte ABS"],
+  "tags": ["cassette", "portable", "transport", "latching", "one-of-N", "hot line", "chrome"],
+  "value": { "model": "steps", "options": ["stop", "play", "ff", "rew"] },
+  "attributes": ["value", "single", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release", "activate"],
+  "size": { "w": 240, "h": 60 },
+  "notes": "The bank with PLAY latched, and one FF key on its own. A latched key sits 6 px lower; STOP pops it up. The orange HOT LINE is momentary."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="navy">
+    <sk-pianokey-sony-tps-l2 value="play" label="TRANSPORT"></sk-pianokey-sony-tps-l2>
+    <sk-pianokey-sony-tps-l2 single="ff" value="ff" label="CUE"></sk-pianokey-sony-tps-l2>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sony TPS-L2</b> of 1979 — the first Walkman — carried its transport on four chrome-plated piano
+  keys set in a black slot along the top edge of a blue-and-silver box, with the stamped black symbols small
+  enough that you found them by feel. The one warm colour on the whole object is the orange <b>HOT LINE</b>
+  button on the blue band, which cut the music and opened the microphone so two people sharing the two
+  headphone jacks could talk.</p>
+  <p><b>The tells kept here:</b> chrome with a <i>hard horizon</i> — bright sky on the upper half, a sharp
+  line, dark ground reflection below, then a bright bottom lip; a latched key that sits 6&nbsp;px lower than
+  its neighbours and has a deeper black gap above it, popping back up with a spring when STOP is pressed;
+  stamped black symbols, crisp and small; the satin silver body with a fine horizontal grain and one broad
+  soft highlight; the Walkman-blue painted band with its hairline seam; the matte orange button, domed, the
+  only warm thing on the panel; and the wear on PLAY, whose chrome has gone dull grey where a thumb has
+  landed ten thousand times.</p>
+  <p><b>Left out:</b> the second headphone jack and the cassette window that would sit above the keys, the
+  REC/PAUSE slider, and the mechanical clack (this is a silent control).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pianokey-sony-tps-l2> — Walkman TPS-L2 chrome piano-key transport bank ====
+   attributes: value(stop|play|ff|rew) single(play|ff|rew|stop) label scale disabled
+   events: input/change {value} when a key latches; press/release/activate on every key press
+           (the HOT LINE button emits press/release/activate with detail {part:"hotline"})
+   self-contained: paste this block into any page and use <sk-pianokey-sony-tps-l2 value="play"></sk-pianokey-sony-tps-l2> */
+(function () {
+  if (customElements.get("sk-pianokey-sony-tps-l2")) return;
+
+  const ORDER = ["rew", "play", "ff", "stop"];        // left to right on the machine
+  const NAMES = { rew: "rewind", play: "play", ff: "fast forward", stop: "stop" };
+  const BANK = { w: 240, h: 60, silver: 43, slot: { x: 9, y: 6, w: 222, h: 34 }, kx: 3, kw: 50, pitch: 55.33 };
+  const ONE = { w: 60, h: 60, silver: 43, slot: { x: 5, y: 6, w: 50, h: 34 }, kx: 3, kw: 44, pitch: 0 };
+  const KY = 3, KH = 31, TRAVEL = 6;                  // key top inside the slot, height, latch travel
+
+  function sym(fn, cx, cy) {
+    const t = (x, y, w, h, dir) => dir > 0
+      ? `M ${x} ${y - h / 2} L ${x + w} ${y} L ${x} ${y + h / 2} Z`
+      : `M ${x + w} ${y - h / 2} L ${x} ${y} L ${x + w} ${y + h / 2} Z`;
+    if (fn === "play") return t(cx - 3.4, cy, 7.4, 8.4, 1);
+    if (fn === "ff") return t(cx - 5, cy, 4.6, 8.4, 1) + " " + t(cx + 0.4, cy, 4.6, 8.4, 1);
+    if (fn === "rew") return t(cx - 5, cy, 4.6, 8.4, -1) + " " + t(cx + 0.4, cy, 4.6, 8.4, -1);
+    return `M ${cx - 3.7} ${cy - 3.7} h 7.4 v 7.4 h -7.4 Z`;
+  }
+
+  function keysSVG(L, funcs) {
+    let g = "";
+    funcs.forEach((fn, i) => {
+      const x = L.kx + i * L.pitch, cx = x + L.kw / 2, cy = KY + 8.4;
+      const wear = fn === "play"
+        ? `<ellipse cx="${cx}" cy="${KY + 14}" rx="${L.kw * 0.28}" ry="5.4" fill="#939ca1" opacity="0.2" filter="url(#sf)"/>
+           <ellipse cx="${cx - 2.5}" cy="${KY + 11}" rx="${L.kw * 0.18}" ry="3.4" fill="#79838a" opacity="0.14" filter="url(#sf)"/>` : "";
+      g += `<g class="key k${i}">
+        <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.2" fill="url(#chr)"/>
+        <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.2" fill="url(#dome)"/>
+        ${wear}
+        <path d="M ${x + 1.6} ${KY + 0.7} H ${x + L.kw - 1.6}" stroke="#ffffff" stroke-opacity="0.8" stroke-width="0.9" stroke-linecap="round"/>
+        <path d="M ${x + 1.6} ${KY + KH - 0.5} H ${x + L.kw - 1.6}" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.8" stroke-linecap="round"/>
+        <path d="${sym(fn, cx, cy + 0.45)}" fill="#ffffff" fill-opacity="0.55"/>
+        <path d="${sym(fn, cx, cy)}" fill="#111111"/>
+      </g>`;
+    });
+    return g;
+  }
+
+  function markup(L, funcs, bank) {
+    const S = L.slot;
+    const hots = bank ? `
+      <div class="hot" role="button" tabindex="0" aria-label="hot line"></div>
+      <div class="lbl lbl-hot">HOT LINE</div>
+      <div class="lbl lbl-st">STEREO</div>` : "";
+    let hits = "";
+    funcs.forEach((fn, i) => {
+      hits += `<div class="hit h${i}" role="radio" tabindex="-1" aria-label="${NAMES[fn] || fn}"
+        style="left:${S.x + L.kx + i * L.pitch}px;top:${S.y}px;width:${L.kw}px;height:${S.h}px"></div>`;
+    });
+    return `
+    <div class="body" style="height:${L.silver}px"></div>
+    <div class="blue" style="top:${L.silver}px;height:${L.h - L.silver}px">${hots}</div>
+    <div class="slot" style="left:${S.x}px;top:${S.y}px;width:${S.w}px;height:${S.h}px">
+      <svg viewBox="0 0 ${S.w} ${S.h}" width="${S.w}" height="${S.h}">
+        <defs>
+          <linearGradient id="chr" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="0.06" stop-color="#f2f7fa"/>
+            <stop offset="0.32" stop-color="#d4dce1"/><stop offset="0.52" stop-color="#bcc5cb"/>
+            <stop offset="0.60" stop-color="#9fa8b0"/>
+            <stop offset="0.607" stop-color="#1e2226"/><stop offset="0.74" stop-color="#2b3137"/>
+            <stop offset="0.89" stop-color="#48515a"/><stop offset="0.955" stop-color="#8b949c"/>
+            <stop offset="0.99" stop-color="#d2dade"/><stop offset="1" stop-color="#eef4f6"/>
+          </linearGradient>
+          <linearGradient id="dome" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#000000" stop-opacity="0.3"/>
+            <stop offset="0.07" stop-color="#000000" stop-opacity="0.06"/>
+            <stop offset="0.20" stop-color="#ffffff" stop-opacity="0.12"/>
+            <stop offset="0.52" stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="0.90" stop-color="#000000" stop-opacity="0.14"/>
+            <stop offset="1" stop-color="#000000" stop-opacity="0.36"/>
+          </linearGradient>
+          <linearGradient id="gap" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#000000" stop-opacity="0.8"/>
+            <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="sf" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        </defs>
+        ${keysSVG(L, funcs)}
+        <rect x="0" y="0" width="${S.w}" height="6" fill="url(#gap)"/>
+      </svg>
+    </div>
+    <div class="hits" role="radiogroup">${hits}</div>`;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .body { position: absolute; left: 0; top: 0; right: 0; border-radius: 2px 2px 0 0;
+      background:
+        radial-gradient(110% 120% at 16% -30%, rgba(255,255,255,0.55), rgba(255,255,255,0) 62%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.075) 0 1px, rgba(0,0,0,0.05) 1px 2px),
+        linear-gradient(180deg, #e4e8eb, #d3d8dc 40%, #c0c6ca 72%, #a9b0b5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 1px 0 0 rgba(255,255,255,0.4),
+        inset -1px 0 0 rgba(0,0,0,0.18), inset 0 -1px 0 rgba(0,0,0,0.5);
+    }
+    .blue { position: absolute; left: 0; right: 0; border-radius: 0 0 2px 2px;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 1px, rgba(0,0,0,0.055) 1px 3px),
+        linear-gradient(180deg, #5a8ac4 0 1px, #4879b2 1px, #3f6fa8 48%, #35608f 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.45);
+    }
+    .slot { position: absolute; overflow: hidden; border-radius: 2px;
+      background: linear-gradient(180deg, #0a0a0b, #17171a 55%, #212125);
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.95), inset 0 -1px 0 rgba(255,255,255,0.1),
+        inset 1px 0 2px rgba(0,0,0,0.8), inset -1px 0 2px rgba(0,0,0,0.8);
+    }
+    .slot svg { display: block; pointer-events: none; }
+    .key { transform-box: view-box; transform-origin: 0 0; transition: transform 60ms cubic-bezier(.2,.85,.4,1); }
+    .key.rise { transition: transform 90ms cubic-bezier(.2,.9,.3,1.25); }
+    .key.down { transform: translateY(${TRAVEL}px); }
+    .hits { position: absolute; inset: 0; pointer-events: none; }
+    .hit { position: absolute; border-radius: 2px; pointer-events: auto; cursor: pointer; touch-action: none; outline: none;
+      user-select: none; -webkit-user-select: none; }
+    .hit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    :host([disabled]) .hit, :host([disabled]) .hot { cursor: default; }
+    .hot { position: absolute; left: 12px; top: 3.5px; width: 32px; height: 10.5px; border-radius: 2.5px;
+      cursor: pointer; touch-action: none; outline: none;
+      background: linear-gradient(180deg, #ff9a5c 0, #f5813a 20%, #f26f21 58%, #d2540e 100%);
+      box-shadow: 0 1px 1.6px rgba(0,0,0,0.55), inset 0 0.6px 0 rgba(255,255,255,0.38), inset 0 -0.6px 0 rgba(0,0,0,0.3);
+      transition: transform 40ms ease-out, box-shadow 40ms ease-out; }
+    .hot.down { transform: translateY(1.6px); box-shadow: 0 0.4px 1px rgba(0,0,0,0.5), inset 0 0.6px 0 rgba(255,255,255,0.25); }
+    .hot:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    .lbl { position: absolute; font-family: "Michroma", "Eurostile", "Arial Narrow", sans-serif;
+      font-size: 5px; line-height: 1; letter-spacing: 0.14em; color: #d7e5f5; opacity: 0.92;
+      text-shadow: 0 0.5px 0 rgba(0,0,0,0.35); white-space: nowrap; }
+    .lbl-hot { left: 50px; top: 6.4px; }
+    .lbl-st { right: 9px; top: 6.4px; }
+  </style>
+  <div class="wrap"></div>`;
+
+  class SkPianoKeySonyTpsL2 extends HTMLElement {
+    static get observedAttributes() { return ["value", "single", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._v = "stop"; this._scale = 1; this._focus = 0; this._held = -1;
+      this._funcs = ORDER.slice(); this._L = BANK; this._bank = true;
+      this._onDown = this._onDown.bind(this); this._onUp = this._onUp.bind(this); this._onKey = this._onKey.bind(this);
+      this._hotDown = this._hotDown.bind(this); this._hotUp = this._hotUp.bind(this); this._hotKey = this._hotKey.bind(this);
+    }
+    connectedCallback() { this._build(); this._readAttrs(); this._paint(); }
+    disconnectedCallback() { clearTimeout(this._riseT); }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected || !this._group) return;
+      if (n === "single") { this._build(); this._readAttrs(); this._paint(); return; }
+      this._readAttrs(); this._paint();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = String(v == null ? "stop" : v).toLowerCase();
+      if (ORDER.indexOf(v) < 0) return;
+      if (!this._bank && v !== "stop" && v !== this._funcs[0]) return;
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", v); this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { const h = this._hits[Math.max(0, this._focus)]; if (h) h.focus(o); }
+
+    _build() {
+      const one = (this.getAttribute("single") || "").toLowerCase();
+      this._bank = ORDER.indexOf(one) < 0;
+      this._L = this._bank ? BANK : ONE;
+      this._funcs = this._bank ? ORDER.slice() : [one];
+      this._wrap.innerHTML = markup(this._L, this._funcs, this._bank);
+      this._keys = this._wrap.querySelectorAll(".key");
+      this._hits = this._wrap.querySelectorAll(".hit");
+      this._group = this._wrap.querySelector(".hits");
+      this._hot = this._wrap.querySelector(".hot");
+      this._hits.forEach((h, i) => {
+        h.addEventListener("pointerdown", e => this._onDown(e, i));
+        h.addEventListener("pointerup", e => this._onUp(e, i));
+        h.addEventListener("pointercancel", e => this._onUp(e, i));
+        h.addEventListener("keydown", e => this._onKey(e, i));
+        h.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter" || e.key === "Spacebar") this._release(i); });
+      });
+      if (this._hot) {
+        this._hot.addEventListener("pointerdown", this._hotDown);
+        this._hot.addEventListener("pointerup", this._hotUp);
+        this._hot.addEventListener("pointercancel", this._hotUp);
+        this._hot.addEventListener("keydown", this._hotKey);
+        this._hot.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter" || e.key === "Spacebar") this._hotUp(e); });
+      }
+      this._focus = Math.max(0, this._funcs.indexOf(this._v));
+    }
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = Math.max(0.2, isNaN(s) ? 1 : s);
+      const L = this._L;
+      this.style.width = (L.w * this._scale) + "px"; this.style.height = (L.h * this._scale) + "px";
+      this._wrap.style.width = L.w + "px"; this._wrap.style.height = L.h + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const a = (this.getAttribute("value") || "stop").toLowerCase();
+      this._v = ORDER.indexOf(a) >= 0 ? a : "stop";
+      if (!this._bank && this._v !== "stop" && this._v !== this._funcs[0]) this._v = "stop";
+      this._group.setAttribute("aria-label", this.getAttribute("label") || "tape transport");
+      const dis = this.hasAttribute("disabled");
+      this._group.setAttribute("aria-disabled", dis ? "true" : "false");
+      if (this._hot) this._hot.setAttribute("tabindex", dis ? "-1" : "0");
+    }
+    _paint() {
+      const li = this._funcs.indexOf(this._v);
+      this._keys.forEach((k, i) => k.classList.toggle("down", i === li || i === this._held));
+      const dis = this.hasAttribute("disabled");
+      this._hits.forEach((h, i) => {
+        h.setAttribute("aria-checked", i === li ? "true" : "false");
+        h.setAttribute("tabindex", dis ? "-1" : (i === this._focus ? "0" : "-1"));
+      });
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _set(fn) {
+      if (fn === this._v) return false;
+      this._v = fn; this.setAttribute("value", fn);
+      // keys that come back up spring rather than drop
+      this._keys.forEach(k => k.classList.add("rise"));
+      clearTimeout(this._riseT);
+      this._riseT = setTimeout(() => this._keys.forEach(k => k.classList.remove("rise")), 140);
+      this._paint();
+      this._emit("input", { value: fn }); this._emit("change", { value: fn });
+      return true;
+    }
+    _press(i) {
+      if (this.hasAttribute("disabled")) return;
+      const fn = this._funcs[i];
+      this._focus = i; this._held = i; this._paint();
+      this._emit("press", { value: fn });
+      if (this._bank) this._set(fn);
+      else this._set(this._v === fn ? "stop" : fn);
+    }
+    _release(i) {
+      if (this._held < 0) return;
+      const fn = this._funcs[i];
+      this._held = -1; this._paint();
+      this._emit("release", { value: this._v });
+      this._emit("activate", { value: fn });
+    }
+    _onDown(e, i) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._hits[i].focus({ preventScroll: true });
+      try { this._hits[i].setPointerCapture(e.pointerId); } catch (_) {}
+      this._press(i);
+    }
+    _onUp(e, i) { try { this._hits[i].releasePointerCapture(e.pointerId); } catch (_) {} this._release(i); }
+    _onKey(e, i) {
+      if (this.hasAttribute("disabled")) return;
+      const n = this._funcs.length;
+      let to = null;
+      switch (e.key) {
+        case "ArrowLeft": case "ArrowUp": to = (i - 1 + n) % n; break;
+        case "ArrowRight": case "ArrowDown": to = (i + 1) % n; break;
+        case "Home": to = 0; break;
+        case "End": to = n - 1; break;
+        case " ": case "Spacebar": case "Enter":
+          e.preventDefault(); if (!e.repeat) this._press(i); return;
+        default: return;
+      }
+      e.preventDefault();
+      this._focus = to; this._paint();
+      this._hits[to].focus({ preventScroll: true });
+      if (this._bank) this._set(this._funcs[to]);
+    }
+    _hotDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault(); this._hot.focus({ preventScroll: true });
+      try { this._hot.setPointerCapture(e.pointerId); } catch (_) {}
+      this._hot.classList.add("down"); this._emit("press", { part: "hotline" });
+    }
+    _hotUp(e) {
+      if (!this._hot.classList.contains("down")) return;
+      try { this._hot.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._hot.classList.remove("down");
+      this._emit("release", { part: "hotline" }); this._emit("activate", { part: "hotline" });
+    }
+    _hotKey(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault(); if (e.repeat) return;
+      this._hotDown({ preventDefault() {}, button: 0, pointerId: -1 });
+    }
+  }
+  customElements.define("sk-pianokey-sony-tps-l2", SkPianoKeySonyTpsL2);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

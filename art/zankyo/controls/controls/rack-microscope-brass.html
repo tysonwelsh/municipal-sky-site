@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Victorian brass microscope coarse-focus rack — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "rack-microscope-brass",
+  "element": "sk-rack-microscope-brass",
+  "name": "Victorian brass microscope coarse-focus rack",
+  "kind": "input",
+  "code": "B10.1",
+  "type": "Rack and pinion — geared linear track",
+  "source": "The coarse focus of a lacquered-brass microscope stand — Ross, Powell & Lealand, Beck, Leitz Wetzlar — a diagonal-cut rack on the limb and twin knurled knobs on the pinion axle",
+  "era": "pre-1900",
+  "origin": "UK",
+  "materials": ["lacquered brass", "black japan", "silvered scale"],
+  "tags": ["microscope", "rack and pinion", "knurled knob", "brass", "laboratory", "focus"],
+  "value": { "model": "range", "min": 0, "max": 30, "step": 0.1, "unit": "mm" },
+  "attributes": ["value", "min", "max", "step", "fine", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 128, "h": 240 },
+  "notes": "Three stands: racked down to 8 mm, run up to 25 mm with the tube high, and a small one at 0.6 scale. Drag the tube or the knobs up and down; the knurl scrolls one turn per 6 mm."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-rack-microscope-brass value="8" label="COARSE"></sk-rack-microscope-brass>
+    <sk-rack-microscope-brass value="25" label="COARSE"></sk-rack-microscope-brass>
+    <sk-rack-microscope-brass value="17.5" label="COARSE" scale="0.6"></sk-rack-microscope-brass>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Between about 1850 and 1920 an English microscope stand — Ross, Powell &amp; Lealand, Beck, or a Leitz from
+  Wetzlar — focused by a <b>rack and pinion</b>: a strip of teeth cut diagonally across the face of the limb, a
+  pinion in a cast housing, and a pair of knurled brass heads on a common axle so either hand could drive it.
+  The whole stand was lacquered brass on a japanned horseshoe foot, and a fine-focus micrometer with a silvered
+  divided drum stood beside the limb for the last half millimetre.</p>
+  <p><b>The tells kept here:</b> the rack's teeth are cut on the diagonal, bright on the top land and dark in the
+  root; the lacquer is duller and more orange on the flat faces and worn through to bright brass on the knobs and
+  on the front of the rack, where hands and the pinion have been. The knurl is a straight knurl of 44 ridges
+  <i>projected</i> around the rim, so it crowds at the top and bottom of each knob, and it scrolls one full turn
+  per 6 mm of climb. A window in the housing shows the pinion's teeth meshing with the rack. The draw-tube,
+  eyepiece and slide collar ride up together; the micrometer's silvered drum, an engraved <i>LONDON</i>, a serial
+  number, chipped japan on the horseshoe foot and a ring of old dust at its base finish it.</p>
+  <p><b>Left out:</b> the sub-stage mirror and condenser, the objective nosepiece, the stage plate and its clips —
+  this is the limb alone, which is the control. The <code>fine</code> attribute shifts the tube ±0.5 mm without
+  turning the coarse knobs, as the micrometer screw would; the drag is geared down to a deliberate 250 px for the
+  full 30 mm rather than the rack's true pitch.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-rack-microscope-brass> — Victorian brass coarse-focus rack and pinion ====
+   attributes: value min max step fine label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use
+   <sk-rack-microscope-brass value="12"></sk-rack-microscope-brass> */
+(function () {
+  if (customElements.get("sk-rack-microscope-brass")) return;
+  var NS = "http://www.w3.org/2000/svg";
+  var W = 128, H = 240;
+  var TRAVEL = 30;                     // px the tube climbs over the whole range
+  var RX0 = 55, RX1 = 73;              // the rack bar's left and right edges
+  var RTOP = 124, RBOT = 214;          // the rack bar at value = min
+  var KY = 187, KR = 23, KHW = 12;     // knob centre-y, radius, half-width
+  var KLX = 15, KRX = 113;             // the two knob centres
+  var PCX = 64, PCY = 192;             // the pinion
+  var RIDGES = 44;
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ', W, 'px; height: ', H, 'px; position: relative; font-size: 10px;',
+  '  -webkit-tap-highlight-color: transparent; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ', W, 'px; height: ', H, 'px; overflow: visible; }',
+  '.grab, .grab2 { position: absolute; touch-action: none; user-select: none; -webkit-user-select: none;',
+  '  cursor: ns-resize; outline: none; border-radius: 12px; }',
+  '.grab { left: 1px; top: 160px; width: 126px; height: 56px; }',
+  '.grab2 { left: 40px; top: 8px; width: 48px; height: 122px; }',
+  ':host([disabled]) .grab, :host([disabled]) .grab2 { cursor: default; }',
+  '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }',
+  '.mover { transform-box: view-box; transform-origin: 0 0; transition: transform 50ms linear; }',
+  '.mover.ease { transition: transform 160ms cubic-bezier(.3,.8,.35,1); }',
+  '.pin { transform-box: view-box; transform-origin: ', PCX, 'px ', PCY, 'px; transition: transform 50ms linear; }',
+  'text { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; }',
+  '.eng { font-size: 5px; font-style: italic; letter-spacing: 0.14em; text-anchor: middle; fill: #b9a071; opacity: 0.55; }',
+  '.ser { font-size: 3.9px; font-style: italic; letter-spacing: 0.06em; text-anchor: middle; fill: #2a1d09; opacity: 0.5; }',
+  '.lab { font-size: 5.8px; font-weight: 500; letter-spacing: 0.26em; text-anchor: middle; fill: #9d8a68; opacity: 0.8; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ', W, ' ', H, '" aria-hidden="true">',
+  '<defs>',
+    /* lacquered brass on a flat/round vertical face: dull, orange, one soft highlight left of centre */
+    '<linearGradient id="lac" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#4e3612"/><stop offset="0.09" stop-color="#9b7331"/>',
+      '<stop offset="0.24" stop-color="#c0964a"/><stop offset="0.40" stop-color="#ab8039"/>',
+      '<stop offset="0.66" stop-color="#6d4e1d"/><stop offset="0.84" stop-color="#8f6a2a"/>',
+      '<stop offset="1" stop-color="#32220b"/></linearGradient>',
+    '<linearGradient id="lacd" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#3b2810"/><stop offset="0.12" stop-color="#7e5d25"/>',
+      '<stop offset="0.30" stop-color="#9c7734"/><stop offset="0.52" stop-color="#7c5b22"/>',
+      '<stop offset="0.76" stop-color="#4b360f"/><stop offset="0.90" stop-color="#6e5220"/>',
+      '<stop offset="1" stop-color="#241804"/></linearGradient>',
+    /* brass worn bright by hands: the knobs, the pinion, the tooth lands */
+    '<linearGradient id="brt" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#6a4d1e"/><stop offset="0.08" stop-color="#d7bc7e"/>',
+      '<stop offset="0.24" stop-color="#f7e8ba"/><stop offset="0.44" stop-color="#d3b063"/>',
+      '<stop offset="0.72" stop-color="#6f5021"/><stop offset="0.90" stop-color="#bb9450"/>',
+      '<stop offset="1" stop-color="#3a2809"/></linearGradient>',
+    '<linearGradient id="brtH" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#8a6626"/><stop offset="0.22" stop-color="#f4e2ad"/>',
+      '<stop offset="0.55" stop-color="#d0ac60"/><stop offset="1" stop-color="#6b4c1b"/></linearGradient>',
+    '<linearGradient id="tooth" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#fbf0cd"/><stop offset="0.22" stop-color="#e2c684"/>',
+      '<stop offset="0.6" stop-color="#a87f38"/><stop offset="1" stop-color="#6b4d1c"/></linearGradient>',
+    '<linearGradient id="racksh" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="0.28" stop-color="#000" stop-opacity="0"/>',
+      '<stop offset="0.72" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/></linearGradient>',
+    '<linearGradient id="rackbg" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#2a1c08"/><stop offset="0.5" stop-color="#4c3718"/>',
+      '<stop offset="1" stop-color="#1d1305"/></linearGradient>',
+    '<linearGradient id="silv" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#7f7f79"/><stop offset="0.2" stop-color="#d8d8d2"/>',
+      '<stop offset="0.5" stop-color="#f0f0ea"/><stop offset="0.78" stop-color="#9a9a94"/>',
+      '<stop offset="1" stop-color="#63635e"/></linearGradient>',
+    '<linearGradient id="japan" x1="0.1" y1="0" x2="0.6" y2="1">',
+      '<stop offset="0" stop-color="#46423c"/><stop offset="0.22" stop-color="#211f1c"/>',
+      '<stop offset="0.7" stop-color="#121110"/><stop offset="1" stop-color="#070706"/></linearGradient>',
+    '<linearGradient id="groove" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#150d03"/><stop offset="0.35" stop-color="#2c1e08"/>',
+      '<stop offset="1" stop-color="#0d0802"/></linearGradient>',
+    '<radialGradient id="dust" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0.35" stop-color="#000" stop-opacity="0"/><stop offset="0.72" stop-color="#2b2113" stop-opacity="0.55"/>',
+      '<stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>',
+    '<linearGradient id="tarn" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#1d2a14" stop-opacity="0.34"/><stop offset="0.5" stop-color="#1d2a14" stop-opacity="0.04"/>',
+      '<stop offset="1" stop-color="#1d2a14" stop-opacity="0.30"/></linearGradient>',
+    '<filter id="sf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.8"/></filter>',
+    '<filter id="sf2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4.5"/></filter>',
+    '<clipPath id="slot"><rect x="54" y="170" width="20" height="34" rx="2"/></clipPath>',
+  '</defs>',
+
+  /* the stand's shadow on the bench */
+  '<ellipse cx="70" cy="234" rx="56" ry="9" fill="#000" opacity="0.5" filter="url(#sf2)"/>',
+
+  /* ---- fine-focus micrometer, fixed, on the left of the limb ---- */
+  '<rect x="29" y="108" width="18" height="18" rx="3" fill="url(#lacd)" stroke="#241804" stroke-width="0.5"/>',
+  '<rect x="9" y="70" width="25" height="48" rx="4" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>',
+  '<g class="mknurl"></g>',
+  '<rect x="9" y="86" width="25" height="14" fill="url(#silv)"/>',
+  '<g class="mtick"></g>',
+  '<rect x="9" y="86" width="25" height="14" fill="none" stroke="#54544f" stroke-width="0.5"/>',
+  '<rect x="10.4" y="71" width="1.6" height="46" fill="#fff" opacity="0.15"/>',
+
+  /* ---- the limb: fixed brass upright with the rack groove down its face ---- */
+  '<rect x="44" y="92" width="40" height="122" rx="5" fill="url(#lac)" stroke="#241804" stroke-width="0.7"/>',
+  '<rect x="44" y="92" width="40" height="122" rx="5" fill="url(#tarn)"/>',
+  '<rect x="54" y="96" width="20" height="116" rx="2" fill="url(#groove)"/>',
+  '<rect x="54" y="96" width="20" height="116" rx="2" fill="none" stroke="#e6c27a" stroke-opacity="0.2" stroke-width="0.6"/>',
+  '<rect x="75" y="96" width="1.5" height="116" fill="#f4e0ae" opacity="0.12"/>',
+
+  /* ---- the rack, the collar, the tube: everything that climbs ---- */
+  '<g class="mover">',
+    '<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#rackbg)"/>',
+    '<g class="teeth"></g>','<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#racksh)"/>',
+
+    /* body tube */
+    '<rect x="53" y="52" width="22" height="60" rx="1.5" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>',
+    '<rect x="57.4" y="53" width="1.9" height="58" fill="#fff" opacity="0.17"/>',
+    /* draw tube */
+    '<rect x="56" y="40" width="16" height="15" rx="1" fill="url(#lacd)" stroke="#241804" stroke-width="0.5"/>',
+    /* eyepiece cap with its knurl band */
+    '<path d="M 49 30.5 L 79 30.5 L 76.5 43 L 51.5 43 Z" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>','<rect x="49" y="28" width="30" height="3.4" rx="1.2" fill="url(#lacd)" stroke="#241804" stroke-width="0.5"/>','<ellipse cx="64" cy="29.7" rx="9.5" ry="1.5" fill="#0b0906"/>',
+    '<g class="eyeknurl"></g>',
+    '<path d="M 50 31.4 L 78 31.4" stroke="#f6e4b4" stroke-opacity="0.3" stroke-width="1"/>',
+    /* slide collar carrying the rack, with its clamp screw */
+    '<rect x="44" y="106" width="40" height="20" rx="3" fill="url(#lac)" stroke="#241804" stroke-width="0.7"/>',
+    '<rect x="44.8" y="107.2" width="38.4" height="1.5" rx="0.7" fill="#f6e4b4" opacity="0.33"/>',
+    '<circle cx="78" cy="116" r="3.1" fill="url(#brt)" stroke="#241804" stroke-width="0.4"/>',
+    '<rect x="75.5" y="115.4" width="5" height="1.1" fill="#241804" opacity="0.8" transform="rotate(26 78 116)"/>',
+  '</g>',
+
+  /* ---- the pinion housing, fixed, standing in front of the limb ---- */
+  '<ellipse cx="66" cy="212" rx="40" ry="7" fill="#000" opacity="0.45" filter="url(#sf)"/>',
+  '<rect x="26" y="162" width="76" height="50" rx="9" fill="url(#lac)" stroke="#241804" stroke-width="0.8"/>',
+  '<rect x="27.4" y="163.4" width="73.2" height="1.7" rx="0.85" fill="#f6e4b4" opacity="0.32"/>',
+  '<rect x="26" y="162" width="76" height="50" rx="9" fill="url(#tarn)"/>',
+  /* the window: the pinion meshing with the rack */
+  '<rect x="54" y="170" width="20" height="34" rx="2" fill="#0e0903"/>',
+  '<g clip-path="url(#slot)">',
+    '<g class="mover2">',
+      '<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#rackbg)"/>',
+      '<g class="teeth2"></g>',
+    '</g>',
+    '<g class="pin"><g class="pinteeth"></g>',
+      '<circle cx="', PCX, '" cy="', PCY, '" r="7" fill="url(#brtH)"/>',
+      '<circle cx="', PCX, '" cy="', PCY, '" r="2.2" fill="#2a1d0a"/>',
+    '</g>',
+  '</g>',
+  '<rect x="54" y="170" width="20" height="34" rx="2" fill="none" stroke="#1d1305" stroke-width="1.5"/>',
+  '<rect x="54.8" y="170.8" width="18.4" height="32.4" rx="1.5" fill="none" stroke="#f4e0ae" stroke-opacity="0.2" stroke-width="0.6"/>',
+  '<text class="ser" x="88" y="180">No 1042</text>',
+
+  /* ---- the twin knurled knobs on the pinion axle ---- */
+  '<g class="knobs"></g>',
+
+  /* ---- the japanned horseshoe foot ---- */
+  '<path d="M 44 208 L 84 208 L 108 230 Q 118 238 106 238 L 22 238 Q 10 238 20 230 Z" fill="url(#japan)" stroke="#000" stroke-width="0.6"/>',
+  '<path d="M 45 209.5 L 83 209.5 L 105 230.5" fill="none" stroke="#7d7772" stroke-opacity="0.5" stroke-width="0.9"/>',
+  '<path d="M 22 237 L 104 237" fill="none" stroke="#4d4843" stroke-opacity="0.35" stroke-width="0.7"/>',
+  '<path d="M 22.5 233.5 L 24.6 231.4 L 25.4 234 Z" fill="#9a9a95" opacity="0.4"/>','<path d="M 101 236.4 L 103.4 234.6 L 104 236.8 Z" fill="#9a9a95" opacity="0.32"/>',
+  '<ellipse cx="64" cy="210" rx="38" ry="6" fill="url(#dust)"/>',
+  '<text class="eng" x="64" y="223">LONDON</text>',
+  '<text class="lab" x="64" y="234"></text>',
+  '</svg>',
+  '<div class="grab2"></div>',
+  '<div class="grab" role="slider" tabindex="0"></div>',
+  '</div>'].join("");
+
+  function mk(tag, attrs) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  class SkRackMicroscopeBrass extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "fine", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 30; this._step = 0.1; this._fine = 0; this._scale = 1;
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._mover = r.querySelector(".mover");
+      this._mover2 = r.querySelector(".mover2");
+      this._pin = r.querySelector(".pin");
+      this._grab = r.querySelector(".grab");
+      this._grab2 = r.querySelector(".grab2");
+      this._lab = r.querySelector(".lab");
+      this._knobs = r.querySelector(".knobs");
+      this._ridge = []; this._built = false;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this);
+      this._onUp = this._onUp.bind(this); this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._build(); this._readAttrs(); this._render();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab2.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+      this._grab2.addEventListener("wheel", this._onWheel, { passive: false });
+      this._grab.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._wt);
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab2.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("wheel", this._onWheel);
+      this._grab2.removeEventListener("wheel", this._onWheel);
+      this._grab.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected || !this._built) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = this._clamp(parseFloat(v)); if (isNaN(v)) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000));
+      if (this._built) this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    /* ---------- one-time geometry ---------- */
+    _build() {
+      if (this._built) return; this._built = true;
+      var r = this.shadowRoot, i, y, x;
+      // the rack: teeth cut diagonally, bright top land, dark root
+      var pitch = 3.2, slant = 0.9, land = 2.0;
+      var t1 = r.querySelector(".teeth"), t2 = r.querySelector(".teeth2");
+      for (y = RTOP + 1.5; y < RBOT - 5; y += pitch) {
+        var d = "M " + RX0 + " " + (y + slant).toFixed(2) + " L " + RX1 + " " + y.toFixed(2) +
+                " L " + RX1 + " " + (y + land).toFixed(2) + " L " + RX0 + " " + (y + slant + land).toFixed(2) + " Z";
+        var d2 = "M " + RX0 + " " + (y + slant + land).toFixed(2) + " L " + RX1 + " " + (y + land).toFixed(2);
+        [t1, t2].forEach(function (g) {
+          g.appendChild(mk("path", { d: d, fill: "url(#tooth)" }));
+          g.appendChild(mk("path", { d: d2, fill: "none", stroke: "#241804", "stroke-width": 0.75, "stroke-opacity": 0.9 }));
+        });
+      }
+      // the pinion: twelve teeth on a small bright gear
+      var pg = r.querySelector(".pinteeth"), N = 12, R1 = 8.2, R2 = 12.2;
+      for (i = 0; i < N; i++) {
+        var a0 = i * 2 * Math.PI / N, w = 0.36 * 2 * Math.PI / N, w2 = 0.23 * 2 * Math.PI / N;
+        var pts = [[R1, a0 - w], [R2, a0 - w2], [R2, a0 + w2], [R1, a0 + w]].map(function (p) {
+          return (PCX + p[0] * Math.sin(p[1])).toFixed(2) + "," + (PCY - p[0] * Math.cos(p[1])).toFixed(2);
+        }).join(" ");
+        pg.appendChild(mk("polygon", { points: pts, fill: "url(#brtH)", stroke: "#241804", "stroke-width": 0.4 }));
+      }
+      pg.appendChild(mk("circle", { cx: PCX, cy: PCY, r: R1 + 0.5, fill: "url(#brtH)" }));
+      // the micrometer drum's fine graduations, and the knurl on its head
+      var mt = r.querySelector(".mtick");
+      for (i = 0; i < 15; i++) {
+        x = 10 + i * 1.6;
+        mt.appendChild(mk("line", { x1: x, y1: 87, x2: x, y2: (i % 5 === 0 ? 95 : 91.5), stroke: "#43433e", "stroke-width": 0.45, opacity: 0.85 }));
+      }
+      var mk2 = r.querySelector(".mknurl");
+      for (i = 0; i < 12; i++) {
+        x = 10.5 + i * 1.95;
+        mk2.appendChild(mk("line", { x1: x, y1: 72, x2: x, y2: 84, stroke: "#2e2007", "stroke-width": 0.6, opacity: 0.4 }));
+        mk2.appendChild(mk("line", { x1: x, y1: 102, x2: x, y2: 116, stroke: "#2e2007", "stroke-width": 0.6, opacity: 0.4 }));
+      }
+      // the eyepiece's fine knurl
+      var ek = r.querySelector(".eyeknurl");
+      for (i = 0; i < 17; i++) {
+        x = 51.5 + i * 1.6;
+        ek.appendChild(mk("line", { x1: x, y1: 32.4, x2: x, y2: 42.2, stroke: "#2e2007", "stroke-width": 0.55, opacity: 0.42 }));
+      }
+      // the two knurled knobs: cylinder bodies, a pool of ridge lines, then the rim
+      var g = this._knobs, kx, k;
+      for (k = 0; k < 2; k++) {
+        kx = k ? KRX : KLX;
+        g.appendChild(mk("ellipse", { cx: kx + 2.5, cy: KY + 4, rx: KHW + 2, ry: KR + 1, fill: "#000", opacity: 0.5, filter: "url(#sf)" }));
+        g.appendChild(mk("rect", { x: kx - KHW, y: KY - KR, width: KHW * 2, height: KR * 2, rx: 3.5, fill: "url(#brt)", stroke: "#2e2007", "stroke-width": 0.7 }));
+      }
+      for (k = 0; k < 2; k++) {
+        kx = k ? KRX : KLX;
+        var pool = [];
+        for (i = 0; i < 26; i++) {
+          var ln = mk("line", { x1: kx - KHW + 1.5, x2: kx + KHW - 1.5, y1: KY, y2: KY, stroke: "#2e2007", "stroke-width": 0.7, opacity: 0 });
+          g.appendChild(ln); pool.push(ln);
+        }
+        this._ridge.push(pool);
+      }
+      for (k = 0; k < 2; k++) {
+        kx = k ? KRX : KLX;
+        g.appendChild(mk("rect", { x: kx - KHW, y: KY - KR, width: KHW * 2, height: KR * 2, rx: 3.5, fill: "none", stroke: "#f7e8ba", "stroke-opacity": 0.32, "stroke-width": 0.7 }));
+        g.appendChild(mk("rect", { x: kx - KHW + 1, y: KY - KR + 1.4, width: 1.6, height: KR * 2 - 2.8, rx: 0.8, fill: "#fff", opacity: 0.16 }));
+      }
+      // axle collars between the knobs and the housing
+      g.appendChild(mk("rect", { x: KLX + KHW - 0.5, y: KY - 7, width: 6, height: 14, rx: 2, fill: "url(#lacd)" }));
+      g.appendChild(mk("rect", { x: KRX - KHW - 5.5, y: KY - 7, width: 6, height: 14, rx: 2, fill: "url(#lacd)" }));
+    }
+
+    /* ---------- attributes ---------- */
+    _readAttrs() {
+      var self = this;
+      var num = function (n, d) { var x = parseFloat(self.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 30); this._step = Math.max(0.001, num("step", 0.1));
+      this._fine = Math.max(-0.5, Math.min(0.5, num("fine", 0)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._lab.textContent = this.getAttribute("label") || "";
+      var g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", (this.getAttribute("label") || "coarse focus") + ", millimetres");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+
+    /* ---------- paint ---------- */
+    _render() {
+      var span = (this._max - this._min) || 1, pxPerMm = TRAVEL / span;
+      var t = (this._v - this._min) * pxPerMm + this._fine * pxPerMm;
+      var tr = "translateY(" + (-t).toFixed(2) + "px)";
+      this._mover.style.transform = tr;
+      this._mover2.style.transform = tr;
+      var deg = (this._v / 6) * 360;                       // one turn of the knobs per 6 mm
+      this._pin.style.transform = "rotate(" + (-deg).toFixed(2) + "deg)";
+      var phase = (-deg * Math.PI / 180) % (2 * Math.PI);
+      for (var k = 0; k < 2; k++) {
+        var kx = k ? KRX : KLX, pool = this._ridge[k], used = 0;
+        for (var i = 0; i < RIDGES; i++) {
+          var th = phase + i * 2 * Math.PI / RIDGES;
+          th = ((th % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+          if (th >= Math.PI || used >= pool.length) continue;
+          var s = Math.sin(th);
+          var y = KY - (KR - 1.4) * Math.cos(th);
+          var ln = pool[used++];
+          ln.setAttribute("y1", y.toFixed(2)); ln.setAttribute("y2", y.toFixed(2));
+          ln.setAttribute("opacity", (0.10 + 0.62 * s).toFixed(3));
+          ln.setAttribute("stroke-width", (0.4 + 0.45 * s).toFixed(2));
+          ln.setAttribute("x1", (kx - (KHW - 1.5 - 1.2 * (1 - s))).toFixed(2));
+          ln.setAttribute("x2", (kx + (KHW - 1.5 - 1.2 * (1 - s))).toFixed(2));
+        }
+        for (; used < pool.length; used++) pool[used].setAttribute("opacity", 0);
+      }
+      var shown = Math.round(this._v * 10) / 10;
+      this._grab.setAttribute("aria-valuenow", String(shown));
+      this._grab.setAttribute("aria-valuetext", shown.toFixed(1) + " mm");
+    }
+
+    _set(v, settle) {
+      v = this._clamp(Math.round(v / this._step) * this._step);
+      v = Math.round(v * 1000) / 1000;
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+
+    /* ---------- gestures ---------- */
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      var el = e.currentTarget;
+      el.setPointerCapture(e.pointerId);
+      this._mover.classList.remove("ease");
+      this._drag = { el: el, y: e.clientY, v: this._v, moved: false };
+      el.addEventListener("pointermove", this._onMove);
+      el.addEventListener("pointerup", this._onUp);
+      el.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      var dy = (this._drag.y - e.clientY) / this._scale;        // up = the tube climbs
+      var mmPerPx = (this._max - this._min) / 250;
+      if (Math.abs(dy) > 0.5) this._drag.moved = true;
+      this._set(this._drag.v + dy * mmPerPx * (e.shiftKey ? 0.25 : 1), false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      var el = this._drag.el;
+      el.removeEventListener("pointermove", this._onMove);
+      el.removeEventListener("pointerup", this._onUp);
+      el.removeEventListener("pointercancel", this._onUp);
+      try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+      var moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._mover.classList.add("ease");
+      this._set(this._v + (e.deltaY < 0 ? 1 : -1) * this._step * (e.shiftKey ? 10 : 1), false);
+      clearTimeout(this._wt);
+      var self = this;
+      this._wt = setTimeout(function () { self._set(self._v, true); }, 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var big = this._step * 10, v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + (this._max - this._min) / 10; break;
+        case "PageDown": v = this._v - (this._max - this._min) / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._mover.classList.add("ease");
+      this._set(v, false); this._set(this._v, true);
+    }
+  }
+  customElements.define("sk-rack-microscope-brass", SkRackMicroscopeBrass);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

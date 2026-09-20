@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cessna magneto key switch — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "keyswitch-cessna-magneto",
+  "element": "sk-keyswitch-cessna-magneto",
+  "name": "Cessna magneto key switch",
+  "kind": "input",
+  "code": "C6.1",
+  "type": "Key switch",
+  "source": "The Bendix / ACS five-position ignition switch (OFF R L BOTH START) on the Cessna 172 and most light aircraft, 1960s-",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["chrome", "brass key", "grey panel"],
+  "tags": ["aircraft", "ignition", "key", "momentary start"],
+  "value": { "model": "steps", "options": ["OFF", "R", "L", "BOTH", "START"] },
+  "attributes": ["value", "key", "label", "scale", "disabled"],
+  "events": ["input", "change", "activate"],
+  "size": { "w": 112, "h": 112 },
+  "notes": "Three instances: OFF with the key pulled, BOTH, and a smaller one caught at START (it springs back to BOTH)."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-keyswitch-cessna-magneto value="OFF" key="out" label="IGNITION"></sk-keyswitch-cessna-magneto>
+    <sk-keyswitch-cessna-magneto value="BOTH" key="in" label="IGNITION"></sk-keyswitch-cessna-magneto>
+    <sk-keyswitch-cessna-magneto value="START" key="in" label="IGNITION" scale="0.8"></sk-keyswitch-cessna-magneto>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Bendix / ACS ignition switch</b> on a Cessna 172 (and nearly every piston single since) is a
+  chrome-bezelled rotary with a flat black face, five printed positions across its top — OFF, R, L, BOTH,
+  START — and a plain brass key standing up out of the barrel. Turning past BOTH into the spring-loaded
+  START position engages the starter; let go and it snaps back to BOTH, running on both magnetos. The key
+  only pulls free at OFF.</p>
+  <p><b>The tells kept here:</b> the five legends silk-screened in an arc across the black face with START
+  swung down past BOTH toward 4 o'clock; the brass key's flat rectangular bow standing proud of the barrel,
+  seen from slightly above, rotating with it through the full throw; the thin red index line on the barrel
+  pointing at the live position; the key pulling free only at OFF, leaving a flared empty keyway; a scuff
+  worn into the black face at START where thumbs land. The key follows the pointer's angle while dragged,
+  clicks to a position, steps on the wheel and arrows, and springs back out of START on release or after a
+  400 ms Space/Enter pulse from BOTH.</p>
+  <p><b>Left out:</b> the switch's rear terminal block and the separate P-lead ground wires, the exact
+  Bendix part stamp on the barrel face.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-keyswitch-cessna-magneto> — Cessna/Bendix 5-position magneto key switch, START momentary ====
+   attributes: value(OFF|R|L|BOTH|START) key(in|out) label scale disabled
+   events: input {value}, change {value}, activate (on reaching START)
+   self-contained: paste this block into any page and use
+   <sk-keyswitch-cessna-magneto value="OFF"></sk-keyswitch-cessna-magneto> */
+(function () {
+  if (customElements.get("sk-keyswitch-cessna-magneto")) return;
+  const W = 112, H = 112, CX = 56, CY = 58;
+  const OPTS = ["OFF", "R", "L", "BOTH", "START"];
+  const ANGLES = [-96, -48, 0, 54, 110];
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 4px; top: 6px; width: 104px; height: 100px; border-radius: 50%; cursor: pointer;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    :host([disabled]) .grab { cursor: default; }
+    .turret { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
+    .turret.snap { transition: transform 120ms cubic-bezier(.2,.8,.3,1.08); }
+    text { font-family: "Roboto Condensed", "Arial Narrow", sans-serif; }
+    .leg { font-size: 6.5px; font-weight: 600; letter-spacing: 0.08em; text-anchor: middle; fill: #f2f3f1; }
+    .lbl { font-size: 6px; font-weight: 600; letter-spacing: 0.14em; text-anchor: middle; fill: #34363a; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="ks-bez" cx="34%" cy="26%" r="75%">
+          <stop offset="0" stop-color="#f2f4f6"/><stop offset="0.35" stop-color="#c7cbcf"/><stop offset="0.7" stop-color="#8a8f95"/><stop offset="1" stop-color="#5c6167"/>
+        </radialGradient>
+        <radialGradient id="ks-face" cx="38%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#232326"/><stop offset="0.6" stop-color="#151517"/><stop offset="1" stop-color="#0a0a0b"/>
+        </radialGradient>
+        <radialGradient id="ks-barrel" cx="34%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#eef0f2"/><stop offset="0.45" stop-color="#c9ccd0"/><stop offset="1" stop-color="#6e7379"/>
+        </radialGradient>
+        <linearGradient id="ks-key" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e8d494"/><stop offset="0.4" stop-color="#b9a05a"/><stop offset="1" stop-color="#6e5c2c"/>
+        </linearGradient>
+        <filter id="ks-soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="ks-blur1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+      </defs>
+
+      <!-- panel patch behind -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
+      <!-- ambient + contact shadow -->
+      <ellipse cx="${CX + 3}" cy="${CY + 6}" rx="46" ry="44" fill="#000" opacity="0.4" filter="url(#ks-soft)"/>
+
+      <!-- chrome bezel ring -->
+      <circle cx="${CX}" cy="${CY}" r="46" fill="url(#ks-bez)" stroke="#3d4045" stroke-width="1"/>
+      <circle cx="${CX}" cy="${CY}" r="46" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="1.4"
+        stroke-dasharray="70 210" transform="rotate(-135 ${CX} ${CY})"/>
+      <circle cx="${CX}" cy="${CY}" r="41.5" fill="none" stroke="#4a4d52" stroke-width="1.6" opacity="0.6"/>
+
+      <!-- black face -->
+      <circle cx="${CX}" cy="${CY}" r="38.5" fill="url(#ks-face)" stroke="#000" stroke-width="0.8"/>
+      <!-- wear scuff near START -->
+      <ellipse cx="${CX + 30}" cy="${CY + 18}" rx="9" ry="6" fill="#5a5a58" opacity="0.14" filter="url(#ks-blur1)" transform="rotate(30 ${CX+30} ${CY+18})"/>
+
+      <!-- legends printed on the face, static -->
+      <g class="scale"></g>
+
+      <!-- barrel + key + index line, rotates as one -->
+      <g class="turret">
+        <circle cx="${CX}" cy="${CY}" r="14.5" fill="url(#ks-barrel)" stroke="#3a3d41" stroke-width="0.8"/>
+        <circle cx="${CX}" cy="${CY}" r="14.5" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="0.8" stroke-dasharray="14 30" transform="rotate(-40 ${CX} ${CY})"/>
+        <!-- red index -->
+        <line class="idx" x1="${CX}" y1="${CY - 16.5}" x2="${CX}" y2="${CY - 24.5}" stroke="#ef3d3d" stroke-width="1.6" stroke-linecap="round"/>
+        <!-- keyway slot (shown when key is out) -->
+        <path class="slot" d="M ${CX - 3.4} ${CY - 8} L ${CX - 1.6} ${CY - 1} L ${CX + 1.6} ${CY - 1} L ${CX + 3.4} ${CY - 8} Z" fill="#050506"/>
+        <!-- the key: bow (rectangle with a hole) standing up out of the barrel -->
+        <g class="keybow">
+          <rect x="${CX - 3.6}" y="${CY - 26}" width="7.2" height="12.5" rx="1.3" fill="url(#ks-key)" stroke="#4a3c18" stroke-width="0.6"/>
+          <circle cx="${CX}" cy="${CY - 21.5}" r="1.8" fill="#151210" stroke="#6e5c2c" stroke-width="0.4"/>
+          <rect x="${CX - 3.6}" y="${CY - 14}" width="7.2" height="5.5" fill="url(#ks-key)" stroke="#4a3c18" stroke-width="0.6"/>
+          <rect x="${CX - 1}" y="${CY - 26}" width="0.9" height="24" fill="#fff" opacity="0.35"/>
+        </g>
+      </g>
+
+      <!-- label below -->
+      <text class="lbl" x="${CX}" y="${H - 3}"></text>
+    </svg>
+    <div class="grab" role="radiogroup" tabindex="0"></div>
+  </div>`;
+
+  class SkKeyswitchCessnaMagneto extends HTMLElement {
+    static get observedAttributes() { return ["value", "key", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = "OFF"; this._scale = 1;
+      this._turret = this.shadowRoot.querySelector(".turret");
+      this._keybow = this.shadowRoot.querySelector(".keybow");
+      this._slot = this.shadowRoot.querySelector(".slot");
+      this._idx = this.shadowRoot.querySelector(".idx");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._lbl = this.shadowRoot.querySelector(".lbl");
+      this._drag = null;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._v);
+      this._readAttrs(); this._drawScale(); this._render(false);
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._st); clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n === "key") this._render(true); else { this._drawScale(); this._render(true); } }
+    get value() { return this._v; }
+    set value(v) {
+      v = String(v).toUpperCase(); const i = OPTS.indexOf(v); if (i < 0) return;
+      this._v = v; this.setAttribute("value", v); this._render(true);
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const v = (this.getAttribute("value") || "OFF").toUpperCase();
+      this._v = OPTS.indexOf(v) >= 0 ? v : "OFF";
+      this._keyIn = (this.getAttribute("key") || "in") !== "out";
+      this._lbl.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", (this.getAttribute("label") || "magneto switch") + ", " + this._v);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg", r = 33;
+      OPTS.forEach((opt, i) => {
+        const a = ANGLES[i] * Math.PI / 180;
+        const t = document.createElementNS(ns, "text");
+        t.setAttribute("x", CX + r * Math.sin(a));
+        t.setAttribute("y", CY - r * Math.cos(a) + 2.2);
+        t.setAttribute("class", "leg");
+        t.textContent = opt;
+        g.appendChild(t);
+      });
+    }
+    _render(anim) {
+      this._turret.classList.toggle("snap", !!anim);
+      const i = OPTS.indexOf(this._v);
+      this._turret.style.transform = "rotate(" + ANGLES[i] + "deg)";
+      this._keybow.style.display = this._keyIn ? "" : "none";
+      this._slot.style.display = this._keyIn ? "none" : "";
+      this._grab.setAttribute("aria-label", (this.getAttribute("label") || "magneto switch") + ", " + this._v);
+    }
+    _set(v, settle) {
+      const changed = v !== this._v;
+      this._v = v; this.setAttribute("value", v); this._render(false);
+      if (changed || settle) this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+      if (v === "START" && changed) this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { value: "START" } }));
+    }
+    _springBack(from) {
+      clearTimeout(this._st);
+      this._st = setTimeout(() => { this._set("BOTH", true); }, 10);
+    }
+    _angleFromPointer(e) {
+      const r = this._grab.getBoundingClientRect();
+      const x = (e.clientX - r.left) / this._scale - CX, y = (e.clientY - r.top) / this._scale - CY;
+      let a = Math.atan2(x, -y) * 180 / Math.PI;
+      return Math.max(ANGLES[0], Math.min(ANGLES[ANGLES.length - 1], a));
+    }
+    _nearestIndex(a) {
+      let best = 0, bd = Infinity;
+      ANGLES.forEach((av, i) => { const d = Math.abs(av - a); if (d < bd) { bd = d; best = i; } });
+      return best;
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._turret.classList.remove("snap");
+      this._drag = { startI: OPTS.indexOf(this._v), lastI: OPTS.indexOf(this._v) };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const a = this._angleFromPointer(e);
+      this._turret.style.transform = "rotate(" + a.toFixed(1) + "deg)";
+      const i = this._nearestIndex(a);
+      if (i !== this._drag.lastI) {
+        this._drag.lastI = i;
+        this._set(OPTS[i], false);
+      }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._drag = null;
+      this._turret.classList.add("snap");
+      if (this._v === "START") { this._render(true); this._springBack(); }
+      else { this._set(this._v, true); this._render(true); }
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const i = OPTS.indexOf(this._v);
+      const ni = Math.max(0, Math.min(OPTS.length - 1, i + (e.deltaY < 0 ? 1 : -1)));
+      if (ni === i) return;
+      this._turret.classList.add("snap");
+      this._set(OPTS[ni], false);
+      if (OPTS[ni] === "START") { this._render(true); this._springBack(); }
+      else { clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220); }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const i = OPTS.indexOf(this._v);
+      let ni = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": ni = Math.min(3, i + 1); break;
+        case "ArrowDown": case "ArrowLeft": ni = Math.max(0, i - 1); break;
+        case "Home": ni = 0; break;
+        case "End": ni = 3; break;
+        case " ": case "Enter":
+          if (this._v === "BOTH") {
+            e.preventDefault();
+            this._turret.classList.add("snap");
+            this._set("START", false); this._render(true);
+            clearTimeout(this._st); this._st = setTimeout(() => this._set("BOTH", true), 400);
+          }
+          return;
+        default: return;
+      }
+      e.preventDefault();
+      if (ni === i) return;
+      this._turret.classList.add("snap");
+      this._set(OPTS[ni], false); this._set(OPTS[ni], true); this._render(true);
+    }
+  }
+  customElements.define("sk-keyswitch-cessna-magneto", SkKeyswitchCessnaMagneto);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NCR porcelain key on a nickel stem — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "key-ncr-brass-porcelain-stem",
+  "element": "sk-key-ncr-porcelain-stem",
+  "name": "NCR porcelain key on a tall nickel stem",
+  "kind": "input",
+  "code": "D12",
+  "type": "Cash register / adding-machine key",
+  "source": "National Cash Register brass registers (Model 79, 313, 442; Dayton, 1890s–1910s): porcelain-white key discs on tall nickel-plated stems in denomination columns above a cast-brass scroll case",
+  "era": "pre-1900",
+  "origin": "USA",
+  "materials": ["porcelain", "nickel-plated brass", "cast brass", "japanned steel"],
+  "tags": ["cash register", "denomination", "momentary", "long travel", "scrollwork", "Victorian"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "color", "stem", "crazed", "pressed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 60, "h": 190 },
+  "notes": "Three keys of a denomination column over the brass case: a crazed 5¢ standing highest, an amber 10¢ driven down against its identical neighbour, and NO SALE. Click, or press Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-key-ncr-porcelain-stem legend="5&#162;" stem="116" scale="1.1" crazed style="margin-right:-36px"></sk-key-ncr-porcelain-stem>
+    <sk-key-ncr-porcelain-stem legend="10&#162;" color="amber" stem="96" scale="1.1" pressed style="margin-right:-36px"></sk-key-ncr-porcelain-stem>
+    <sk-key-ncr-porcelain-stem legend="NO SALE" color="red" stem="96" scale="1.1"></sk-key-ncr-porcelain-stem>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>On a <b>National Cash Register</b> brass machine of the 1890s — the Model 79, the 313, the ornate 442 out of
+  Dayton — the amount keys are round porcelain or celluloid discs held up on tall nickel-plated stems, arranged in
+  columns by denomination, standing out of a black-japanned key frame above a cast-brass case covered in scrollwork.
+  You did not tap these keys; you drove them down an inch and the machine answered with a bell.</p>
+  <p><b>The tells kept here:</b> the mushroom-on-a-stalk silhouette — the stem is far longer than the key is wide;
+  cold glaze, a sharp white highlight with a blue-grey cast in the shadow, which is what tells porcelain from
+  plastic; the thin bright nickel rim showing the disc's thickness under it, worn through to brass at the lower
+  right where a thumb has been for thirty years; the stem as a bright cylinder with a dark core line down it; the
+  staggered column heights; and the brass case below with its scroll in low relief. The <b>5&#162;</b> is crazed —
+  fine grey hairlines in the glaze. Travel is long and mechanical: a 12&nbsp;px drop in 70&nbsp;ms, a hard stop,
+  160&nbsp;ms back up, and the drawer bell implied by one frame of light across the brass.</p>
+  <p><b>Left out:</b> the rest of the column (five keys and their frame), the indicator flags and the glass
+  window above, the cast dolphins and the maker's cartouche — the scroll here is suggested, not a portrait of any
+  one machine's casting.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-key-ncr-porcelain-stem> — NCR brass-register porcelain key on a tall nickel stem ====
+   attributes: legend · color [white|amber|green|red] · stem (px, 40…150) · crazed · pressed · scale · disabled
+   events: press {legend} · activate {legend} at the bottom of the travel · release {legend}
+   self-contained: paste this block into any page and use
+   <sk-key-ncr-porcelain-stem legend="5¢"></sk-key-ncr-porcelain-stem> */
+(function () {
+  if (customElements.get("sk-key-ncr-porcelain-stem")) return;
+  var W = 60, H = 190;
+  var CUT = 146;          // the frame's hole bottom: the stem is clipped here
+  var CY0 = 32;           // the head is drawn at this centre and translated
+  var DROP = 12;          // travel
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
+  '  --p0:#fefdfa; --p1:#faf7f0; --p2:#f4efe4; --p3:#e9e2d2; --ink:#1a1815;',
+  '  -webkit-tap-highlight-color:transparent; }',
+  ':host([hidden]) { display:none; }',
+  ':host([color="amber"]) { --p0:#fdf3d9; --p1:#f6e6bb; --p2:#efd9a4; --p3:#dcbd7c; }',
+  ':host([color="green"]) { --p0:#f5f9ec; --p1:#e0e9cd; --p2:#cbd8b4; --p3:#a8b98e; }',
+  ':host([color="red"])   { --p0:#f7d8cc; --p1:#eab3a3; --p2:#dd9a86; --p3:#b9755f; }',
+  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  'svg { display:block; width:' + W + 'px; height:' + H + 'px; overflow:visible; }',
+  'text { font-family:"Libre Franklin","Franklin Gothic",Helvetica,Arial,sans-serif; font-weight:700;',
+  '  fill:var(--ink); text-anchor:middle; }',
+  '.t1 { font-size:14px; }',
+  '.t2 { font-size:6.6px; letter-spacing:.06em; }',
+  '.mover { transition: transform 160ms cubic-bezier(.16,.72,.3,1); }',
+  '.mover.down { transform: translateY(' + DROP + 'px); transition: transform 70ms cubic-bezier(.45,0,.95,1); }',
+  '.flash { opacity:0; transition: opacity 200ms ease-out; }',
+  '.flash.on { opacity:.34; transition-duration:0ms; }',
+  '.hit { position:absolute; border-radius:50%; cursor:pointer; touch-action:none; outline:none;',
+  '  user-select:none; -webkit-user-select:none;',
+  '  transition: transform 160ms cubic-bezier(.16,.72,.3,1); }',
+  '.hit.down { transform: translateY(' + DROP + 'px); transition-duration:70ms; }',
+  ':host([disabled]) .hit { cursor:default; }',
+  '.hit:focus-visible { box-shadow: 0 0 0 1.8px #16e0e0, 0 0 10px rgba(22,224,224,.6); }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
+  '<defs>',
+  '  <radialGradient id="porc" cx="34%" cy="26%" r="88%">',
+  '    <stop offset="0" stop-color="var(--p0)"/><stop offset="0.62" stop-color="var(--p1)"/>',
+  '    <stop offset="0.92" stop-color="var(--p2)"/><stop offset="1" stop-color="var(--p3)"/>',
+  '  </radialGradient>',
+  '  <linearGradient id="nick" x1="0" y1="0" x2="1" y2="0.25">',
+  '    <stop offset="0" stop-color="#6d736f"/><stop offset="0.14" stop-color="#e2e6e3"/><stop offset="0.3" stop-color="#fbfcfb"/>',
+  '    <stop offset="0.5" stop-color="#c6ccc8"/><stop offset="0.7" stop-color="#868c88"/><stop offset="0.87" stop-color="#eef1ef"/>',
+  '    <stop offset="1" stop-color="#5a605c"/>',
+  '  </linearGradient>',
+  '  <linearGradient id="stemg" x1="0" y1="0" x2="1" y2="0">',
+  '    <stop offset="0" stop-color="#3f4441"/><stop offset="0.14" stop-color="#9aa19c"/><stop offset="0.3" stop-color="#eef1ee"/>',
+  '    <stop offset="0.45" stop-color="#bcc2be"/><stop offset="0.58" stop-color="#3d423f"/><stop offset="0.72" stop-color="#919894"/>',
+  '    <stop offset="0.88" stop-color="#d5d9d6"/><stop offset="1" stop-color="#434845"/>',
+  '  </linearGradient>',
+  '  <linearGradient id="brassg" x1="0" y1="0" x2="0" y2="1">',
+  '    <stop offset="0" stop-color="#e3bd70"/><stop offset="0.14" stop-color="#c79c44"/><stop offset="0.46" stop-color="#b8862e"/>',
+  '    <stop offset="0.8" stop-color="#8d6420"/><stop offset="1" stop-color="#6b4b14"/>',
+  '  </linearGradient>',
+  '  <linearGradient id="japan" x1="0" y1="0" x2="0" y2="1">',
+  '    <stop offset="0" stop-color="#34302e"/><stop offset="0.16" stop-color="#1c1a19"/><stop offset="0.7" stop-color="#121110"/>',
+  '    <stop offset="1" stop-color="#090909"/>',
+  '  </linearGradient>',
+  '  <clipPath id="cut"><rect x="-14" y="-40" width="88" height="' + (CUT + 40) + '"/></clipPath>',
+  '  <clipPath id="face"><circle cx="30" cy="' + CY0 + '" r="21.6"/></clipPath>',
+  '  <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>',
+  '  <filter id="b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.8"/></filter>',
+  '</defs>',
+
+  /* ---- the cast brass case ---- */
+  '<g class="brass">',
+  '  <rect x="0" y="158" width="60" height="32" fill="url(#brassg)"/>',
+  '  <rect x="0" y="158" width="60" height="1.2" fill="#f0d494" opacity="0.75"/>',
+  '  <rect x="0" y="188.4" width="60" height="1.6" fill="#4a330c" opacity="0.8"/>',
+  /* scrollwork in low relief: a dark pass down-right, a light pass up-left */
+  '  <g fill="none" stroke-width="1.1" stroke-linecap="round">',
+  '    <g transform="translate(0.7 0.7)" stroke="#5e400f" stroke-opacity="0.85">',
+  '      <path class="sc" d="M 3 185 C 3 170 15 163 21 170 C 25 175 20 180 17 177 C 15 175 17 172 19 173"/>',
+  '      <path class="sc" d="M 57 185 C 57 170 45 163 39 170 C 35 175 40 180 43 177 C 45 175 43 172 41 173"/>',
+  '      <path class="sc" d="M 21 170 C 25 166 35 166 39 170"/>',
+  '      <circle cx="30" cy="177" r="3.4"/>',
+  '      <path class="sc" d="M 8 163 C 14 159 46 159 52 163"/>',
+  '    </g>',
+  '    <g transform="translate(-0.7 -0.7)" stroke="#f2d89a" stroke-opacity="0.65">',
+  '      <path class="sc" d="M 3 185 C 3 170 15 163 21 170 C 25 175 20 180 17 177 C 15 175 17 172 19 173"/>',
+  '      <path class="sc" d="M 57 185 C 57 170 45 163 39 170 C 35 175 40 180 43 177 C 45 175 43 172 41 173"/>',
+  '      <path class="sc" d="M 21 170 C 25 166 35 166 39 170"/>',
+  '      <circle cx="30" cy="177" r="3.4"/>',
+  '      <path class="sc" d="M 8 163 C 14 159 46 159 52 163"/>',
+  '    </g>',
+  '  </g>',
+  '  <rect class="flash" x="0" y="158" width="60" height="32" fill="#fff6d8"/>',
+  '</g>',
+
+  /* ---- the black-japanned key frame ---- */
+  '<g class="frame">',
+  '  <rect x="0" y="128" width="60" height="31" fill="url(#japan)"/>',
+  '  <rect x="0" y="128" width="60" height="1" fill="#6a6360" opacity="0.65"/>',
+  '  <rect x="0" y="152" width="60" height="0.7" fill="#c9a44e" opacity="0.55"/>',
+  '  <rect x="0" y="156.6" width="60" height="2.4" fill="#000" opacity="0.5"/>',
+  /* the hole the stem runs in, with its nickel escutcheon */
+  '  <rect x="21.6" y="130" width="16.8" height="16" rx="2.2" fill="#0a0a0a"/>',
+  '  <rect x="21.6" y="130" width="16.8" height="16" rx="2.2" fill="none" stroke="url(#nick)" stroke-width="1.1" opacity="0.8"/>',
+  '  <rect x="23" y="131" width="14" height="3" fill="#000" opacity="0.55" filter="url(#b1)"/>',
+  '</g>',
+
+  /* ---- the key: stem + porcelain head, clipped where it enters the frame ---- */
+  '<g class="mover" clip-path="url(#cut)">',
+  '  <rect class="stem" x="23.6" y="30" width="12.8" height="130" fill="url(#stemg)"/>',
+  '  <rect class="stemtop" x="23.6" y="30" width="12.8" height="3" fill="#fbfdfb" opacity="0.35"/>',
+  '  <g class="head">',
+  '    <ellipse cx="34" cy="' + (CY0 + 6) + '" rx="20" ry="19" fill="#000" opacity="0.24" filter="url(#b3)"/>',
+  '    <circle cx="30" cy="' + (CY0 + 1.8) + '" r="23.8" fill="url(#nick)"/>',
+  '    <circle cx="30" cy="' + (CY0 + 2) + '" r="22.7" fill="none" stroke="#2b302e" stroke-opacity="0.55" stroke-width="0.6"/>',
+  '    <path class="worn" d="M 45.4 ' + (CY0 + 12.5) + ' A 22.2 22.2 0 0 1 31 ' + (CY0 + 24.6) + '" fill="none" stroke="#b8862e" stroke-opacity="0.55" stroke-width="2" stroke-linecap="round"/>',
+  '    <circle cx="30" cy="' + CY0 + '" r="21.6" fill="url(#porc)"/>',
+  '    <g clip-path="url(#face)">',
+  '      <ellipse cx="20" cy="' + (CY0 + 11) + '" rx="17" ry="12" fill="#d9dde0" opacity="0.26" filter="url(#b3)"/>',
+  '      <ellipse cx="36" cy="' + (CY0 + 16) + '" rx="16" ry="9" fill="#8d8878" opacity="0.15" filter="url(#b3)"/>',
+  '      <g class="craze" opacity="0"></g>',
+  '    </g>',
+  '    <ellipse cx="22" cy="' + (CY0 - 9) + '" rx="6.6" ry="3.6" transform="rotate(-26 22 ' + (CY0 - 9) + ')" fill="#fff" opacity="0.5" filter="url(#b1)"/>',
+  '    <ellipse cx="20.4" cy="' + (CY0 - 10.4) + '" rx="2.6" ry="1.5" transform="rotate(-26 20.4 ' + (CY0 - 10.4) + ')" fill="#fff" opacity="0.95"/>',
+  '    <circle cx="30" cy="' + CY0 + '" r="21.6" fill="none" stroke="#8e8778" stroke-opacity="0.45" stroke-width="0.5"/>',
+  '    <path d="M 12 ' + (CY0 - 7) + ' A 21.6 21.6 0 0 1 36 ' + (CY0 - 20.5) + '" fill="none" stroke="#fff" stroke-opacity="0.6" stroke-width="0.8"/>',
+  '    <text class="t1" x="30" y="' + (CY0 + 5) + '"></text>',
+  '    <text class="t2 l1" x="30" y="' + (CY0 - 1) + '"></text>',
+  '    <text class="t2 l2" x="30" y="' + (CY0 + 7.5) + '"></text>',
+  '  </g>',
+  '</g>',
+  '</svg>',
+  '<div class="hit" role="button" tabindex="0"></div>',
+  '</div>'].join("\n");
+
+  class SkKeyNcrPorcelainStem extends HTMLElement {
+    static get observedAttributes() { return ["legend", "color", "stem", "crazed", "pressed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._down = false; this._kb = false; this._hitBottom = 0; this._armed = false;
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._mover = r.querySelector(".mover");
+      this._stem = r.querySelector(".stem"); this._stemTop = r.querySelector(".stemtop");
+      this._head = r.querySelector(".head");
+      this._t1 = r.querySelector(".t1"); this._l1 = r.querySelector(".l1"); this._l2 = r.querySelector(".l2");
+      this._craze = r.querySelector(".craze");
+      this._flash = r.querySelector(".flash");
+      this._hit = r.querySelector(".hit");
+      this._drawCraze();
+      ["_onDown", "_onUp", "_onKeyDown", "_onKeyUp", "_onBlur"].forEach(function (m) { this[m] = this[m].bind(this); }, this);
+    }
+    connectedCallback() {
+      this._render();
+      var h = this._hit;
+      h.addEventListener("pointerdown", this._onDown);
+      h.addEventListener("pointerup", this._onUp);
+      h.addEventListener("pointercancel", this._onUp);
+      h.addEventListener("keydown", this._onKeyDown);
+      h.addEventListener("keyup", this._onKeyUp);
+      h.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      var h = this._hit;
+      h.removeEventListener("pointerdown", this._onDown);
+      h.removeEventListener("pointerup", this._onUp);
+      h.removeEventListener("pointercancel", this._onUp);
+      h.removeEventListener("keydown", this._onKeyDown);
+      h.removeEventListener("keyup", this._onKeyUp);
+      h.removeEventListener("blur", this._onBlur);
+      clearTimeout(this._bottomT); clearTimeout(this._flashT);
+      this._down = false; this._kb = false;
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._render(); }
+    get pressed() { return this._down || this.hasAttribute("pressed"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opt) { this._hit.focus(opt); }
+    blur() { this._hit.blur(); }
+
+    _drawCraze() {
+      var ns = "http://www.w3.org/2000/svg", g = this._craze;
+      // fine hairlines in the glaze, from a fixed seed so every 5¢ is crazed the same way
+      var seed = 23;
+      function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+      for (var i = 0; i < 9; i++) {
+        var a = rnd() * Math.PI * 2, r0 = 5 + rnd() * 13;
+        var x = 30 + Math.cos(a) * r0, y = CY0 + Math.sin(a) * r0;
+        var d = "M " + x.toFixed(1) + " " + y.toFixed(1);
+        var dir = rnd() * Math.PI * 2;
+        for (var j = 0; j < 3; j++) {
+          dir += (rnd() - 0.5) * 1.6;
+          var len = 1.4 + rnd() * 3.4;
+          x += Math.cos(dir) * len; y += Math.sin(dir) * len;
+          d += " L " + x.toFixed(1) + " " + y.toFixed(1);
+        }
+        var p = document.createElementNS(ns, "path");
+        p.setAttribute("d", d); p.setAttribute("fill", "none");
+        p.setAttribute("stroke", "#8e8a80"); p.setAttribute("stroke-width", (0.2 + rnd() * 0.16).toFixed(2));
+        p.setAttribute("stroke-opacity", (0.22 + rnd() * 0.2).toFixed(2));
+        g.appendChild(p);
+      }
+    }
+    _render() {
+      var s = parseFloat(this.getAttribute("scale")); if (isNaN(s) || s <= 0) s = 1;
+      this._scale = s;
+      this.style.width = (W * s) + "px"; this.style.height = (H * s) + "px";
+      this._wrap.style.transform = s === 1 ? "" : "scale(" + s + ")";
+
+      var stem = parseFloat(this.getAttribute("stem")); if (isNaN(stem)) stem = 116;
+      stem = Math.max(40, Math.min(150, stem));
+      var cy = CUT - stem;                                  // the disc's centre
+      var dy = cy - CY0;
+      this._head.setAttribute("transform", "translate(0 " + dy.toFixed(2) + ")");
+      this._stem.setAttribute("y", cy.toFixed(2));
+      this._stem.setAttribute("height", (CUT + DROP + 6 - cy).toFixed(2));
+      this._stemTop.setAttribute("y", cy.toFixed(2));
+
+      var legend = this.getAttribute("legend") || "";
+      var two = legend.length > 3 && legend.indexOf(" ") > 0;
+      if (two) {
+        var bits = legend.split(/\s+/);
+        this._t1.textContent = "";
+        this._l1.textContent = bits.shift();
+        this._l2.textContent = bits.join(" ");
+      } else {
+        this._t1.textContent = legend;
+        this._t1.style.fontSize = legend.length > 2 ? "11px" : "14px";
+        this._l1.textContent = ""; this._l2.textContent = "";
+      }
+      this._craze.setAttribute("opacity", this.hasAttribute("crazed") ? "1" : "0");
+
+      // the hit area follows the disc
+      this._hit.style.left = "6px";
+      this._hit.style.top = (cy - 24) + "px";
+      this._hit.style.width = "48px"; this._hit.style.height = "48px";
+      this._hit.setAttribute("aria-label", legend || "key");
+      var dis = this.hasAttribute("disabled");
+      this._hit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._hit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._paint();
+    }
+    _paint() {
+      var on = this._down || this.hasAttribute("pressed");
+      this._mover.classList.toggle("down", !!on);
+      this._hit.classList.toggle("down", !!on);
+      this._hit.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: { legend: this.getAttribute("legend") || "" } })); }
+    _bell() {
+      var f = this._flash, self = this;
+      f.classList.add("on");
+      clearTimeout(this._flashT);
+      this._flashT = setTimeout(function () { f.classList.remove("on"); }, 60);
+    }
+    _press() {
+      if (this.hasAttribute("disabled") || this._down) return;
+      this._down = true; this._armed = true; this._paint();
+      this._emit("press");
+      var self = this;
+      clearTimeout(this._bottomT);
+      this._bottomT = setTimeout(function () { self._bottom(); }, 70);   // the crash at the end of the travel
+    }
+    _bottom() { if (!this._armed) return; this._armed = false; this._bell(); this._emit("activate"); }
+    _release() {
+      if (!this._down) return;
+      clearTimeout(this._bottomT);
+      if (this._armed) this._bottom();            // released early: the key still hit the stop
+      this._down = false; this._paint();
+      this._emit("release");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      try { this._hit.setPointerCapture(e.pointerId); } catch (_) {}
+      this._hit.focus({ preventScroll: true });
+      this._press();
+    }
+    _onUp(e) { try { this._hit.releasePointerCapture(e.pointerId); } catch (_) {} this._release(); }
+    _onKeyDown(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault(); if (e.repeat) return;
+      this._kb = true; this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault(); this._kb = false; this._release();
+    }
+    _onBlur() { if (this._kb) { this._kb = false; this._release(); } }
+  }
+  customElements.define("sk-key-ncr-porcelain-stem", SkKeyNcrPorcelainStem);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
