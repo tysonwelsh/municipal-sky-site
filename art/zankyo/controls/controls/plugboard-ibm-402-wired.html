@@ -337,7 +337,7 @@
         case "ArrowDown": c.r = Math.min(this._rows - 1, c.r + 1); break;
         case "ArrowLeft": c.c = Math.max(0, c.c - 1); break;
         case "ArrowRight": c.c = Math.min(this._cols - 1, c.c + 1); break;
-        case " ": case "Enter": e.preventDefault(); this._pickHub(c.r, c.c); return;
+        case " ": e.preventDefault(); this._pickHub(c.r, c.c); return;
         case "Delete": case "Backspace": { e.preventDefault(); const idx = this._wireIndexAt(c.r, c.c); if (idx >= 0) this._removeWireAt(idx); return; }
         default: return;
       }

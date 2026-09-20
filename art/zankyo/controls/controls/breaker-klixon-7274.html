@@ -145,7 +145,11 @@
       </g>
 
       <!-- collared ring (wider, drawn when collared attribute is set): fixed at nut, drawn after stem -->
-      <circle class="collarring" cx="${CX}" cy="${NUT_Y}" r="9.4" fill="none" stroke="#0a0a0b" stroke-width="3.4" opacity="0"/>
+      <g class="collarring" opacity="0">
+        <circle cx="${CX}" cy="${NUT_Y}" r="9.4" fill="none" stroke="#020203" stroke-width="3.6"/>
+        <circle cx="${CX}" cy="${NUT_Y}" r="10.8" fill="none" stroke="#4c4e52" stroke-width="0.7" stroke-opacity="0.55" stroke-dasharray="10 24" transform="rotate(-130 ${CX} ${NUT_Y})"/>
+        <circle cx="${CX}" cy="${NUT_Y}" r="7.9" fill="none" stroke="#4c4e52" stroke-width="0.6" stroke-opacity="0.4" stroke-dasharray="8 22" transform="rotate(-130 ${CX} ${NUT_Y})"/>
+      </g>
 
       <!-- hex nut + bushing, fixed, painted after the stem so it hides the collar when pushed in -->
       <polygon points="${CX},${NUT_Y-7} ${CX+6.1},${NUT_Y-3.5} ${CX+6.1},${NUT_Y+3.5} ${CX},${NUT_Y+7} ${CX-6.1},${NUT_Y+3.5} ${CX-6.1},${NUT_Y-3.5}"

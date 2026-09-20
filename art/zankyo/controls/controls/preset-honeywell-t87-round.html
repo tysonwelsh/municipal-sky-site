@@ -198,6 +198,7 @@ this cover sits over (another build's job).</p>
     set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v))); this._render(); }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._ring) this._ring.focus(); }
 
     _build() {
       const root = this.shadowRoot;

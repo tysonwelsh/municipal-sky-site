@@ -195,6 +195,7 @@ here as simple radial distance), and the Moog Etherwave's smaller box (not model
     set value(v) { if (!v) return; if (typeof v.x === "number") this._x = v.x; if (typeof v.y === "number") this._y = v.y; this._reflect(); this._paint(); }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._wrap) this._wrap.focus(); }
 
     _build() {
       const root = this.shadowRoot;

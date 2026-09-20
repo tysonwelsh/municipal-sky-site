@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missile Command Trak-Ball — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "trackball-missile-command",
+  "element": "sk-trackball-missile-command",
+  "name": "Missile Command Trak-Ball",
+  "kind": "input",
+  "code": "E2",
+  "type": "Trackball",
+  "source": "Atari Missile Command upright (1980), the 4.5 in Atari Trak-Ball with three FIRE buttons for the three silos",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["white phenolic ball", "cast aluminium bezel", "leaf-switch buttons", "printed overlay"],
+  "tags": ["arcade", "console panel", "inertia", "delta", "fire buttons"],
+  "value": { "model": "delta", "unit": "px", "note": "value accumulates {x,y} in px since connection; events carry the per-tick {dx,dy}; the velocity attribute reports px/s" },
+  "attributes": ["value", "velocity", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release"],
+  "size": { "w": 300, "h": 360 },
+  "notes": "Two instances: one at rest, one rolling with a held position; a smaller scaled pair. Drag the ball, or use arrows/wheel; the three FIRE buttons are separately focusable."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-trackball-missile-command label="SILOS"></sk-trackball-missile-command>
+    <sk-trackball-missile-command label="SILOS" scale="0.72"></sk-trackball-missile-command>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Atari Trak-Ball</b> is the 4.5 in white phenolic ball sunk into the middle of the Missile Command
+  control panel, in a black cast-aluminium bezel with a raised, polished lip. Three chrome-ringed FIRE buttons —
+  red, white, red — sit above it, one for each silo, over the game's red-and-blue control-panel artwork.</p>
+  <p><b>The tells kept here:</b> the ball's cap rising well past the bezel's hole with a hot highlight at ten
+  o'clock and a soft core shadow; a speckled surface that visibly turns with the drag so the roll reads, and
+  keeps drifting a little after release before friction stops it; the raised ring's polish on its front, lit
+  top-left and shadowed on the inside of the hole; a grey grime band at the visible cap's equator; a sliver of
+  the black cup peeking at the bezel's bottom-left. Dragging anywhere on the ball rolls it (a <code>delta</code>
+  value, <code>{dx,dy}</code> per tick, accumulating in <code>value</code>); releasing keeps it coasting under
+  friction for about 800&nbsp;ms; the wheel nudges y; arrows roll with a little acceleration on repeat; each
+  FIRE button is its own focus stop.</p>
+  <p><b>Left out:</b> the roller assembly under the ball, the cabinet's full artwork, the 2.25 in Centipede
+  variant.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-trackball-missile-command> — Atari Trak-Ball with three FIRE buttons ====
+   attributes: value(x,y accumulated px) velocity(px/s, read-only) label scale disabled
+   value model: delta — .value = {x,y} accumulated since connection; input/change detail {value,delta}
+   events: input/change {value:{x,y},delta:{dx,dy}}; press/release {button:"left"|"center"|"right"}
+   self-contained: paste this block into any page and use <sk-trackball-missile-command></sk-trackball-missile-command> */
+(function () {
+  if (customElements.get("sk-trackball-missile-command")) return;
+  const W = 300, H = 360;
+  const BX = 150, BY = 235, BR = 66;      // ball centre + radius
+  const BTN_Y = 62, BTN_R = 16;
+  const BTNS = [{ id: "left", x: 90, color: "#cf2b25" }, { id: "center", x: 150, color: "#efeae0" }, { id: "right", x: 210, color: "#cf2b25" }];
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Michroma", "Arial Narrow", sans-serif; }
+    .fireword { font-size: 6px; letter-spacing: 0.1em; fill: #ece9e0; text-anchor: middle; opacity: 0.92; }
+    .label { font-size: 9px; letter-spacing: 0.22em; fill: #8a8a86; text-anchor: middle; font-family: "JetBrains Mono", monospace; }
+    .ballhit { position: absolute; left: ${BX - BR - 6}px; top: ${BY - BR - 6}px; width: ${(BR + 6) * 2}px; height: ${(BR + 6) * 2}px;
+      border-radius: 50%; cursor: grab; touch-action: none; outline: none; -webkit-user-select: none; user-select: none; }
+    .ballhit.drag { cursor: grabbing; }
+    .ballhit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 14px rgba(22,224,224,0.55); border-radius: 50%; }
+    .btnhit { position: absolute; width: ${(BTN_R + 3) * 2}px; height: ${(BTN_R + 3) * 2}px; border-radius: 50%; top: ${BTN_Y - BTN_R - 3}px;
+      cursor: pointer; touch-action: none; outline: none; -webkit-user-select: none; user-select: none; }
+    .btnhit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    :host([disabled]) .ballhit, :host([disabled]) .btnhit { cursor: default; }
+    .fire { transition: transform 30ms ease-out; }
+    .fire.pressed { transform: translate(0.5px, 1.6px); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="panelGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1c1c1b"/><stop offset="0.5" stop-color="#111111"/><stop offset="1" stop-color="#0a0a0a"/>
+        </linearGradient>
+        <linearGradient id="stripeRed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8242a"/><stop offset="1" stop-color="#7a1418"/></linearGradient>
+        <linearGradient id="stripeBlue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c4fa3"/><stop offset="1" stop-color="#182a5c"/></linearGradient>
+        <linearGradient id="bezGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#333331"/><stop offset="0.5" stop-color="#1a1a19"/><stop offset="1" stop-color="#0a0a09"/>
+        </linearGradient>
+        <radialGradient id="ringGrad" cx="34%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#5a5a56"/><stop offset="0.4" stop-color="#2c2c2a"/><stop offset="0.75" stop-color="#141413"/><stop offset="1" stop-color="#050505"/>
+        </radialGradient>
+        <radialGradient id="holeShadow" cx="50%" cy="50%" r="50%">
+          <stop offset="0.7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.75"/>
+        </radialGradient>
+        <radialGradient id="ballGrad" cx="32%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.35" stop-color="#ece8dc"/><stop offset="0.7" stop-color="#c9c4b5"/><stop offset="0.92" stop-color="#948e7d"/><stop offset="1" stop-color="#b7b2a2"/>
+        </radialGradient>
+        <radialGradient id="ballSheen" cx="28%" cy="20%" r="45%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.85"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="ringChrome" cx="35%" cy="25%" r="75%">
+          <stop offset="0" stop-color="#eef0f1"/><stop offset="0.4" stop-color="#9ba0a3"/><stop offset="0.7" stop-color="#4d5052"/><stop offset="1" stop-color="#1c1d1e"/>
+        </radialGradient>
+        <radialGradient id="btnRed" cx="38%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#ef6a63"/><stop offset="0.45" stop-color="#cf2b25"/><stop offset="1" stop-color="#7c1613"/>
+        </radialGradient>
+        <radialGradient id="btnWhite" cx="38%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#efeae0"/><stop offset="1" stop-color="#a9a498"/>
+        </radialGradient>
+        <pattern id="speck" width="9" height="9" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.55" fill="#7c7768" opacity="0.55"/>
+          <circle cx="6.5" cy="5.5" r="0.4" fill="#8f8a7a" opacity="0.4"/>
+          <circle cx="4" cy="7.5" r="0.35" fill="#6b6656" opacity="0.4"/>
+        </pattern>
+        <clipPath id="ballclip"><circle cx="${BX}" cy="${BY}" r="${BR}"/></clipPath>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+
+      <rect x="18" y="16" width="264" height="328" rx="16" fill="#000" opacity="0.5" filter="url(#soft2)"/>
+      <rect x="16" y="14" width="264" height="328" rx="16" fill="url(#panelGrad)" stroke="#000" stroke-width="1"/>
+      <path d="M16 30 L70 14 L16 14 Z" fill="url(#stripeRed)" opacity="0.85"/>
+      <path d="M280 30 L226 14 L280 14 Z" fill="url(#stripeBlue)" opacity="0.85"/>
+      <path d="M16 326 L60 342 L16 342 Z" fill="url(#stripeBlue)" opacity="0.7"/>
+      <path d="M280 326 L236 342 L280 342 Z" fill="url(#stripeRed)" opacity="0.7"/>
+
+      <!-- three FIRE buttons -->
+      <g class="buttons"></g>
+
+      <!-- bezel plate -->
+      <rect x="52" y="132" width="196" height="196" rx="16" fill="url(#bezGrad)" stroke="#000" stroke-width="1"/>
+      <rect x="53.5" y="133.5" width="193" height="193" rx="15" fill="none" stroke="#4a4a46" stroke-opacity="0.3" stroke-width="0.8"/>
+
+      <!-- sliver of the black cup peeking bottom-left -->
+      <path d="M ${BX - BR - 4} ${BY + 18} A ${BR + 10} ${BR + 10} 0 0 0 ${BX - BR + 10} ${BY + BR + 6} L ${BX - BR - 14} ${BY + BR + 6} Z" fill="#050505" opacity="0.85"/>
+
+      <!-- raised ring around the hole -->
+      <circle cx="${BX}" cy="${BY}" r="${BR + 14}" fill="url(#ringGrad)" stroke="#000" stroke-width="1"/>
+      <circle cx="${BX}" cy="${BY}" r="${BR + 14}" fill="none" stroke="#6a6a64" stroke-opacity="0.35" stroke-width="1.4"/>
+      <circle cx="${BX}" cy="${BY}" r="${BR + 5}" fill="#0a0a0a"/>
+      <circle cx="${BX}" cy="${BY}" r="${BR + 5}" fill="url(#holeShadow)"/>
+
+      <!-- the ball -->
+      <g class="ball">
+        <circle cx="${BX}" cy="${BY}" r="${BR}" fill="url(#ballGrad)"/>
+        <g clip-path="url(#ballclip)">
+          <rect class="speckwrap" x="${BX - BR * 3}" y="${BY - BR * 3}" width="${BR * 6}" height="${BR * 6}" fill="url(#speck)"/>
+          <ellipse class="grime" cx="${BX}" cy="${BY + 20}" rx="${BR}" ry="14" fill="#5a5548" opacity="0.16"/>
+        </g>
+        <circle cx="${BX}" cy="${BY}" r="${BR}" fill="url(#ballSheen)"/>
+        <circle cx="${BX}" cy="${BY}" r="${BR}" fill="none" stroke="#6a6558" stroke-opacity="0.3" stroke-width="1"/>
+      </g>
+
+      <text class="label" x="150" y="352"></text>
+    </svg>
+    <div class="ballhit" role="slider" tabindex="0" aria-label="trackball"></div>
+  </div>`;
+
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function round1(v) { return Math.round(v * 10) / 10; }
+
+  class SkTrackballMC extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: "open" });
+      root.appendChild(TPL.content.cloneNode(true));
+      this._x = 0; this._y = 0;          // accumulated position, px ("endless")
+      this._vx = 0; this._vy = 0;        // px/s, drives inertia
+      this._rollX = 0; this._rollY = 0;  // accumulated roll offset for the speckle texture
+      this._fire = { left: false, center: false, right: false };
+      this._scale = 1; this._raf = 0;
+      this._wrap = root.querySelector(".wrap");
+      this._ballHit = root.querySelector(".ballhit");
+      this._speck = root.querySelector(".speckwrap");
+      this._label = root.querySelector(".label");
+      this._btnG = root.querySelector(".buttons");
+      this._repeatN = 0; this._lastKeyT = 0;
+      this._tick = this._tick.bind(this);
+      this._onBallDown = this._onBallDown.bind(this); this._onBallMove = this._onBallMove.bind(this); this._onBallUp = this._onBallUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._btnEls = {};
+      BTNS.forEach(b => {
+        const ns = "http://www.w3.org/2000/svg";
+        const g = document.createElementNS(ns, "g"); g.setAttribute("class", "firebtn");
+        const grad = b.id === "center" ? "url(#btnWhite)" : "url(#btnRed)";
+        g.innerHTML = `
+          <ellipse cx="${b.x + 1.5}" cy="${BTN_Y + 3}" rx="${BTN_R + 3}" ry="${BTN_R + 2}" fill="#000" opacity="0.4" filter="url(#soft)"/>
+          <circle cx="${b.x}" cy="${BTN_Y}" r="${BTN_R + 3}" fill="url(#ringChrome)" stroke="#000" stroke-width="0.6"/>
+          <g class="fire">
+            <circle cx="${b.x}" cy="${BTN_Y}" r="${BTN_R}" fill="${grad}"/>
+            <ellipse cx="${b.x - 4}" cy="${BTN_Y - 5}" rx="5.5" ry="3.6" fill="#fff" opacity="${b.id === "center" ? 0.55 : 0.3}"/>
+          </g>
+          <text class="fireword" x="${b.x}" y="${BTN_Y - BTN_R - 7}">FIRE</text>`;
+        this._btnG.appendChild(g);
+        this._btnEls[b.id] = g.querySelector(".fire");
+        const hit = document.createElement("div");
+        hit.className = "btnhit"; hit.setAttribute("role", "button"); hit.setAttribute("tabindex", "0");
+        hit.setAttribute("aria-label", "Fire " + b.id); hit.style.left = (b.x - BTN_R - 3) + "px";
+        hit.dataset.id = b.id;
+        this._wrap.appendChild(hit);
+        hit.addEventListener("pointerdown", (e) => this._onFireDown(e, b.id, hit));
+        hit.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); this._setFire(b.id, true); } });
+        hit.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") this._setFire(b.id, false); });
+      });
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0,0");
+      this._readAttrs();
+      const raw = (this.getAttribute("value") || "0,0").split(",");
+      this._x = parseFloat(raw[0]) || 0; this._y = parseFloat(raw[1]) || 0;
+      const b = this._ballHit;
+      b.addEventListener("pointerdown", this._onBallDown);
+      b.addEventListener("wheel", this._onWheel, { passive: false });
+      b.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const b = this._ballHit;
+      b.removeEventListener("pointerdown", this._onBallDown);
+      b.removeEventListener("wheel", this._onWheel);
+      b.removeEventListener("keydown", this._onKey);
+      cancelAnimationFrame(this._raf); this._raf = 0;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "value") {
+        const raw = (this.getAttribute("value") || "0,0").split(",");
+        this._x = parseFloat(raw[0]) || 0; this._y = parseFloat(raw[1]) || 0;
+      }
+    }
+    get value() { return { x: this._x, y: this._y }; }
+    set value(v) {
+      let x, y;
+      if (v && typeof v === "object") { x = v.x; y = v.y; }
+      else if (typeof v === "string") { const p = v.split(","); x = parseFloat(p[0]); y = parseFloat(p[1]); }
+      x = parseFloat(x); y = parseFloat(y);
+      if (isNaN(x) || isNaN(y)) return;
+      cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      this._x = x; this._y = y;
+      this.setAttribute("value", round1(x) + "," + round1(y));
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._ballHit.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._label.textContent = this.getAttribute("label") || "";
+      const dis = this.hasAttribute("disabled");
+      this._ballHit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._ballHit.setAttribute("aria-disabled", dis ? "true" : "false");
+      Object.keys(this._btnEls).forEach(id => {
+        const hit = this._wrap.querySelector('.btnhit[data-id="' + id + '"]');
+        if (hit) { hit.setAttribute("tabindex", dis ? "-1" : "0"); hit.setAttribute("aria-disabled", dis ? "true" : "false"); }
+      });
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _roll(dx, dy) {
+      this._rollX += dx; this._rollY += dy;
+      this._speck.setAttribute("x", (BX - BR * 3 + this._rollX % 9).toFixed(1));
+      this._speck.setAttribute("y", (BY - BR * 3 + this._rollY % 9).toFixed(1));
+    }
+    _move(dx, dy, dt) {
+      this._x += dx; this._y += dy;
+      this._roll(dx, dy);
+      this.setAttribute("value", round1(this._x) + "," + round1(this._y));
+      const speed = dt > 0 ? Math.hypot(dx, dy) / dt : 0;
+      this.setAttribute("velocity", speed.toFixed(0));
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: { x: this._x, y: this._y }, delta: { dx: round1(dx), dy: round1(dy) } } }));
+    }
+    _settle() {
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: { x: this._x, y: this._y }, delta: { dx: 0, dy: 0 } } }));
+    }
+    _kickInertia() {
+      cancelAnimationFrame(this._raf);
+      this._last = performance.now();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      const decay = Math.exp(-dt / 0.14);
+      this._vx *= decay; this._vy *= decay;
+      if (Math.hypot(this._vx, this._vy) < 4) {
+        this._raf = 0; this._settle();
+        return;
+      }
+      this._move(this._vx * dt, this._vy * dt, dt);
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _onBallDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      this._ballHit.focus({ preventScroll: true });
+      this._ballHit.setPointerCapture(e.pointerId);
+      this._ballHit.classList.add("drag");
+      this._drag = { x: e.clientX, y: e.clientY, t: performance.now() };
+      this._ballHit.addEventListener("pointermove", this._onBallMove);
+      this._ballHit.addEventListener("pointerup", this._onBallUp);
+      this._ballHit.addEventListener("pointercancel", this._onBallUp);
+    }
+    _onBallMove(e) {
+      if (!this._drag) return;
+      const now = performance.now();
+      const dx = (e.clientX - this._drag.x) / this._scale, dy = (e.clientY - this._drag.y) / this._scale;
+      const dt = Math.max(0.001, (now - this._drag.t) / 1000);
+      this._vx = dx / dt; this._vy = dy / dt;
+      this._drag.x = e.clientX; this._drag.y = e.clientY; this._drag.t = now;
+      this._move(dx, dy, dt);
+    }
+    _onBallUp(e) {
+      if (!this._drag) return;
+      this._ballHit.removeEventListener("pointermove", this._onBallMove);
+      this._ballHit.removeEventListener("pointerup", this._onBallUp);
+      this._ballHit.removeEventListener("pointercancel", this._onBallUp);
+      try { this._ballHit.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._ballHit.classList.remove("drag");
+      this._drag = null;
+      if (Math.hypot(this._vx, this._vy) > 4) this._kickInertia(); else this._settle();
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      this._move(0, e.deltaY < 0 ? -10 : 10, 0.05);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._settle(), 160);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const dirs = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+      const d = dirs[e.key];
+      if (!d) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      const now = performance.now();
+      this._repeatN = (e.repeat && now - this._lastKeyT < 400) ? Math.min(this._repeatN + 1, 10) : 0;
+      this._lastKeyT = now;
+      const step = 7 + this._repeatN * 2.2;
+      this._move(d[0] * step, d[1] * step, 0.05);
+      clearTimeout(this._kt); this._kt = setTimeout(() => this._settle(), 180);
+    }
+    _setFire(id, on) {
+      if (this._fire[id] === on) return;
+      this._fire[id] = on;
+      const el = this._btnEls[id];
+      if (el) el.classList.toggle("pressed", on);
+      const hit = this._wrap.querySelector('.btnhit[data-id="' + id + '"]');
+      if (hit) hit.setAttribute("aria-pressed", on ? "true" : "false");
+      this.dispatchEvent(new CustomEvent(on ? "press" : "release", { bubbles: true, composed: true, detail: { button: id } }));
+    }
+    _onFireDown(e, id, hit) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      hit.setPointerCapture(e.pointerId);
+      hit.focus({ preventScroll: true });
+      this._setFire(id, true);
+      const up = (ev) => {
+        hit.removeEventListener("pointerup", up); hit.removeEventListener("pointercancel", up);
+        try { hit.releasePointerCapture(ev.pointerId); } catch (_) {}
+        this._setFire(id, false);
+      };
+      hit.addEventListener("pointerup", up); hit.addEventListener("pointercancel", up);
+    }
+  }
+  customElements.define("sk-trackball-missile-command", SkTrackballMC);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

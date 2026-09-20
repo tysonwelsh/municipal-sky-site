@@ -287,11 +287,6 @@
         this._jt = setTimeout(() => { for (const c of this._cells) c.classList.remove("jolt"); }, 90);
       }
     }
-    _indexAt(e) {
-      const b = this._cellsG.getBoundingClientRect();
-      const x = (e.clientX - b.left) / this._scale;
-      return Math.max(0, Math.min(this._n - 1, Math.floor(x / PITCH)));
-    }
     _moveFocus(i) {
       this._focus = Math.max(0, Math.min(this._n - 1, i));
       this._render();
