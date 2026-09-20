@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polaroid SX-70 shutter button — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "button-polaroid-sx70-shutter",
+  "element": "sk-button-polaroid-sx70-shutter",
+  "name": "Polaroid SX-70 red shutter button",
+  "kind": "input",
+  "code": "D15",
+  "type": "Appliance / camera push-button",
+  "source": "Polaroid SX-70 Land Camera (1972): the small red shutter button let into the brushed chrome face beside the lens housing; the OneStep (1977) puts the same button on a white body",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["glossy red ABS", "brushed chrome", "tan Porvair leather", "black plastic"],
+  "tags": ["camera", "shutter", "momentary", "chrome", "leather", "red"],
+  "value": { "model": "momentary" },
+  "attributes": ["pressed", "body", "label", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 72, "h": 72 },
+  "notes": "Three faces: the chrome SX-70 at rest, the same held down, and the white OneStep. Press fires a one-frame flash."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-button-polaroid-sx70-shutter label="SHUTTER" scale="1.2"></sk-button-polaroid-sx70-shutter>
+    <sk-button-polaroid-sx70-shutter label="SHUTTER" scale="1.2" pressed></sk-button-polaroid-sx70-shutter>
+    <sk-button-polaroid-sx70-shutter label="SHUTTER" scale="1.2" body="white"></sk-button-polaroid-sx70-shutter>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>On the <b>Polaroid SX-70</b> of 1972 the shutter is a 9&nbsp;mm red button let into the brushed chrome
+  front plate, immediately beside the tan Porvair panel that Edwin Land insisted should feel like a book
+  binding. It is the only colour on the camera: everything else is chrome, tan and black. The 1977
+  <b>OneStep</b> moved the same button onto a white plastic body with the Polaroid rainbow at its edge.</p>
+  <p><b>The tells kept here:</b> a small hot red dome in a field of chrome, its highlight tight and its
+  underside lit warm by the leather beside it; the chrome's grain running vertically with one broad soft
+  highlight crossing it; the button sunk in a round hole with a black plastic surround, the inner shadow at
+  the top-left and the lit lip at the bottom-right; the leather's soft grain meeting the chrome at a crisp
+  edge; the engraved exposure scale below. Press travels 1.5&nbsp;px, goes in over 40&nbsp;ms and comes back
+  over 90, and fires the shutter as a single frame of white.</p>
+  <p><b>Left out:</b> the lens housing and its focus wheel, the Polaroid wordmark on the chrome, and the
+  lighten/darken wheel itself — only its engraved scale is here.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-button-polaroid-sx70-shutter> — SX-70 red shutter button in brushed chrome ====
+   attributes: pressed(reflects) body(chrome|white) label scale disabled
+   events: press, release, activate  (momentary: no value)
+   self-contained: paste this block into any page and use <sk-button-polaroid-sx70-shutter></sk-button-polaroid-sx70-shutter> */
+(function () {
+  if (customElements.get("sk-button-polaroid-sx70-shutter")) return;
+  const W = 72, H = 72, BX = 29, BY = 33;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; width: ${W}px; height: ${H}px; transform-origin: 0 0;
+      border-radius: 2px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+    /* brushed chrome front plate: fine vertical grain, one broad soft highlight across it */
+    .face { position: absolute; left: 0; top: 0; width: 56px; height: ${H}px;
+      background:
+        linear-gradient(102deg, rgba(255,255,255,0) 10%, rgba(255,255,255,0.5) 33%, rgba(255,255,255,0.07) 52%, rgba(255,255,255,0) 74%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, rgba(0,0,0,0.028) 1px 2px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, rgba(0,0,0,0.02) 1px 3px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0 1px, rgba(255,255,255,0.02) 1px 5px),
+        linear-gradient(170deg, #e9ecee, #d8dcdf 42%, #c4c9cc 78%, #b2b7bb);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(0,0,0,0.35),
+        inset -1px 0 0 rgba(255,255,255,0.6); }
+    .side { position: absolute; left: 56px; top: 0; width: 16px; height: ${H}px;
+      background:
+        radial-gradient(circle at 0.7px 0.6px, rgba(255,255,255,0.05) 0 0.3px, rgba(255,255,255,0) 0.7px),
+        radial-gradient(circle at 1.6px 2.1px, rgba(0,0,0,0.05) 0 0.4px, rgba(0,0,0,0) 0.9px),
+        radial-gradient(circle at 2.4px 1.1px, rgba(0,0,0,0.035) 0 0.5px, rgba(0,0,0,0) 1.3px),
+        radial-gradient(38% 14% at 22% 26%, rgba(255,255,255,0.1), rgba(255,255,255,0) 72%),
+        radial-gradient(44% 12% at 74% 58%, rgba(0,0,0,0.09), rgba(0,0,0,0) 74%),
+        radial-gradient(34% 9% at 30% 86%, rgba(0,0,0,0.08), rgba(0,0,0,0) 76%),
+        radial-gradient(70% 45% at 28% 10%, rgba(255,255,255,0.18), rgba(255,255,255,0) 72%),
+        linear-gradient(162deg, #c99a68, #b98a5a 45%, #9d7248);
+      background-size: 2.1px 1.9px, 3.7px 2.9px, 5.3px 4.3px, auto, auto, auto, auto, auto;
+      box-shadow: inset 1px 0 0 rgba(0,0,0,0.55), inset 3px 0 5px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.12); }
+    :host([body="white"]) .face {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0) 0 60.5%, rgba(0,0,0,0.13) 60.5% 61.1%, rgba(255,255,255,0.65) 61.1% 61.8%, rgba(0,0,0,0) 61.8%),
+        radial-gradient(64% 34% at 34% 22%, rgba(255,255,255,0.75), rgba(255,255,255,0) 72%),
+        radial-gradient(22% 12% at 62% 82%, rgba(0,0,0,0.08), rgba(0,0,0,0) 70%),
+        linear-gradient(170deg, #f7f7f4, #eeeeea 46%, #e0e0da 80%, #d3d3cd);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.22),
+        inset -1px 0 0 rgba(0,0,0,0.12); }
+    :host([body="white"]) .side {
+      background: linear-gradient(90deg, #c8383c 0 20%, #e8803a 20% 40%, #e7c243 40% 60%, #4aa06a 60% 80%, #3f74ad 80% 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.25),
+        inset 1px 0 0 rgba(0,0,0,0.25); }
+    :host([body="white"]) .side::after { content: ""; position: absolute; inset: 0;
+      background: linear-gradient(170deg, rgba(255,255,255,0.45), rgba(255,255,255,0) 40%, rgba(0,0,0,0.14)); }
+    svg { position: absolute; inset: 0; display: block; width: ${W}px; height: ${H}px; pointer-events: none; }
+    .btn { transform-box: view-box; transform-origin: 0 0; transition: transform 90ms cubic-bezier(.3,.6,.4,1); }
+    .down .btn { transform: translateY(1.5px); transition: transform 40ms cubic-bezier(.4,0,.8,1); }
+    .pshade { opacity: 0; transition: opacity 90ms ease-out; }
+    .down .pshade { opacity: 1; transition: opacity 40ms ease-out; }
+    .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+    .flash.go { animation: fl 110ms ease-out 1; }
+    @keyframes fl { 0% { opacity: 0.55; } 100% { opacity: 0; } }
+    .hit { position: absolute; left: ${BX - 15}px; top: ${BY - 15}px; width: 30px; height: 30px;
+      border-radius: 50%; cursor: pointer; touch-action: none; outline: none;
+      user-select: none; -webkit-user-select: none; }
+    .hit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    :host([disabled]) .hit { cursor: default; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500;
+      font-size: 5px; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <div class="face"></div>
+    <div class="side"></div>
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="red" cx="34%" cy="28%" r="88%">
+          <stop offset="0" stop-color="#f2564a"/><stop offset="0.42" stop-color="#e23129"/>
+          <stop offset="0.76" stop-color="#d9261f"/><stop offset="0.94" stop-color="#ab1810"/>
+          <stop offset="1" stop-color="#8d150f"/>
+        </radialGradient>
+        <radialGradient id="recess" cx="30%" cy="24%" r="92%">
+          <stop offset="0" stop-color="#131516"/><stop offset="0.6" stop-color="#2a2d30"/><stop offset="1" stop-color="#4a4e52"/>
+        </radialGradient>
+        <linearGradient id="lip" x1="0.15" y1="0.1" x2="0.85" y2="0.9">
+          <stop offset="0" stop-color="#0d0d0d"/><stop offset="0.45" stop-color="#2a2a2a"/>
+          <stop offset="0.8" stop-color="#9aa0a3"/><stop offset="1" stop-color="#e8ecee"/>
+        </linearGradient>
+        <radialGradient id="spec" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="0.55" stop-color="#ffd8d2" stop-opacity="0.45"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="sf" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"/></filter>
+        <filter id="sf2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.6"/></filter>
+      </defs>
+
+      <!-- the hole: a shadow in the plate, a black plastic surround, a lit lip at the bottom-right -->
+      <circle cx="${BX - 0.5}" cy="${BY - 0.5}" r="16" fill="#000" opacity="0.28" filter="url(#sf)"/>
+      <circle cx="${BX}" cy="${BY}" r="14.6" fill="#1d1d1d"/>
+      <circle cx="${BX}" cy="${BY}" r="14.2" fill="none" stroke="url(#lip)" stroke-width="1.1"/>
+      <circle cx="${BX}" cy="${BY}" r="12.9" fill="url(#recess)"/>
+      <path d="M ${BX - 9.5} ${BY + 9.1} A 13.2 13.2 0 0 0 ${BX + 9.5} ${BY + 9.1}" fill="none"
+            stroke="#8d9296" stroke-opacity="0.5" stroke-width="0.8"/>
+
+      <!-- the red dome -->
+      <g class="btn">
+        <ellipse cx="${BX + 0.6}" cy="${BY + 1.8}" rx="11" ry="10.4" fill="#000" opacity="0.55" filter="url(#sf)"/>
+        <circle cx="${BX}" cy="${BY}" r="11" fill="url(#red)"/>
+        <path d="M ${BX - 6.8} ${BY + 8} A 10.4 10.4 0 0 0 ${BX + 6.8} ${BY + 8}" fill="none"
+              stroke="#f09a6a" stroke-opacity="0.42" stroke-width="0.9" filter="url(#sf2)"/>
+        <circle cx="${BX}" cy="${BY}" r="10.8" fill="none" stroke="#7d120e" stroke-opacity="0.55" stroke-width="0.7"/>
+        <ellipse cx="${BX - 4.1}" cy="${BY - 4.6}" rx="3.1" ry="1.9" fill="url(#spec)"
+                 transform="rotate(-32 ${BX - 4.1} ${BY - 4.6})"/>
+        <ellipse cx="${BX - 4.5}" cy="${BY - 5.1}" rx="1.1" ry="0.7" fill="#ffffff" fill-opacity="0.92"
+                 transform="rotate(-32 ${BX - 4.5} ${BY - 5.1})" filter="url(#sf2)"/>
+      </g>
+
+      <!-- the hole's shadow falls onto the button when it is pressed in -->
+      <g class="pshade">
+        <path d="M ${BX - 12.6} ${BY + 3} A 12.6 12.6 0 0 1 ${BX + 3} ${BY - 12.6} L ${BX + 2.4} ${BY - 9.6} A 9.8 9.8 0 0 0 ${BX - 9.6} ${BY + 2.4} Z"
+              fill="#000" opacity="0.55" filter="url(#sf)"/>
+      </g>
+
+      <!-- engraved exposure scale -->
+      <g class="legend" fill="none" stroke="#41464a" stroke-opacity="0.75" stroke-width="0.7" stroke-linecap="round">
+        <path d="M 16 60.6 h 25"/>
+        <path d="M 16 58.6 v 2 M 22.25 59.4 v 1.2 M 28.5 58.6 v 2 M 34.75 59.4 v 1.2 M 41 58.6 v 2"/>
+      </g>
+      <g class="legend" stroke="none">
+        <path d="M 16 61.4 h 25" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.6"/>
+      </g>
+      <text x="11.5" y="62" fill="#ffffff" fill-opacity="0.5" dy="0.5">1</text>
+      <text x="11.5" y="62" fill="#3d4246">1</text>
+      <text x="45.5" y="62" fill="#ffffff" fill-opacity="0.5" dy="0.5">2</text>
+      <text x="45.5" y="62" fill="#3d4246">2</text>
+    </svg>
+    <div class="flash"></div>
+    <div class="hit" role="button" tabindex="0"></div>
+  </div>`;
+
+  class SkButtonPolaroidSx70Shutter extends HTMLElement {
+    static get observedAttributes() { return ["pressed", "body", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._down = false;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._hit = this.shadowRoot.querySelector(".hit");
+      this._flash = this.shadowRoot.querySelector(".flash");
+      this._onDown = this._onDown.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this); this._onKeyUp = this._onKeyUp.bind(this);
+      this._clearFlash = () => this._flash.classList.remove("go");
+    }
+    connectedCallback() {
+      this._readAttrs(); this._paint();
+      this._hit.addEventListener("pointerdown", this._onDown);
+      this._hit.addEventListener("pointerup", this._onUp);
+      this._hit.addEventListener("pointercancel", this._onUp);
+      this._hit.addEventListener("keydown", this._onKeyDown);
+      this._hit.addEventListener("keyup", this._onKeyUp);
+      this._flash.addEventListener("animationend", this._clearFlash);
+    }
+    disconnectedCallback() {
+      this._hit.removeEventListener("pointerdown", this._onDown);
+      this._hit.removeEventListener("pointerup", this._onUp);
+      this._hit.removeEventListener("pointercancel", this._onUp);
+      this._hit.removeEventListener("keydown", this._onKeyDown);
+      this._hit.removeEventListener("keyup", this._onKeyUp);
+      this._flash.removeEventListener("animationend", this._clearFlash);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "pressed") this._down = this.hasAttribute("pressed");
+      this._readAttrs(); this._paint();
+    }
+    get value() { return this._down; }          // momentary: the held state, for a host readout
+    set value(_) { /* momentary controls are not set from outside */ }
+    get pressed() { return this._down; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._hit.focus(o); }
+
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = Math.max(0.2, isNaN(s) ? 1 : s);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const dis = this.hasAttribute("disabled");
+      this._hit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._hit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._hit.setAttribute("aria-label", this.getAttribute("label") || "shutter");
+    }
+    _paint() {
+      this._wrap.classList.toggle("down", this._down);
+      this._hit.setAttribute("aria-pressed", this._down ? "true" : "false");
+    }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: {} })); }
+    _press() {
+      if (this.hasAttribute("disabled") || this._down) return;
+      this._down = true; this.setAttribute("pressed", ""); this._paint();
+      this._flash.classList.remove("go");
+      void this._flash.offsetWidth;
+      this._flash.classList.add("go");
+      this._emit("press");
+    }
+    _release() {
+      if (!this._down) return;
+      this._down = false; this.removeAttribute("pressed"); this._paint();
+      this._emit("release"); this._emit("activate");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._hit.focus({ preventScroll: true });
+      try { this._hit.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) { try { this._hit.releasePointerCapture(e.pointerId); } catch (_) {} this._release(); }
+    _onKeyDown(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault(); if (e.repeat) return; this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault(); this._release();
+    }
+  }
+  customElements.define("sk-button-polaroid-sx70-shutter", SkButtonPolaroidSx70Shutter);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

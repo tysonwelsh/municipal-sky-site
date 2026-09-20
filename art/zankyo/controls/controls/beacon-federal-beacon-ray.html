@@ -126,11 +126,11 @@
     :host {
       display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
       --core: #fff1e8; --mid: #ff4a26; --spill: #ff3b22;
-      --g1: #ae362b; --g2: #7d1613; --g3: #430a09; --rib: #d4675c; --inner: #4a120f; --back: #5c130f;
+      --g1: #93261e; --g2: #66100e; --g3: #330706; --rib: #d4675c; --inner: #4a120f; --back: #5c130f;
     }
     :host([hidden]) { display: none; }
-    :host([color="amber"]) { --core: #fff9e2; --mid: #ffab22; --spill: #ff9d0f; --g1: #cd9024; --g2: #a06611; --g3: #452d07; --rib: #f0c877; --inner: #4d3108; --back: #6a4409; }
-    :host([color="blue"])  { --core: #ecf5ff; --mid: #4a90ff; --spill: #2f7bff; --g1: #2f54a0; --g2: #173375; --g3: #0b1938; --rib: #86a8e2; --inner: #142755; --back: #16306a; }
+    :host([color="amber"]) { --core: #fff9e2; --mid: #ffab22; --spill: #ff9d0f; --g1: #a8721a; --g2: #7d4e0c; --g3: #2e1d05; --rib: #f0c877; --inner: #4d3108; --back: #6a4409; }
+    :host([color="blue"])  { --core: #ecf5ff; --mid: #4a90ff; --spill: #2f7bff; --g1: #264483; --g2: #12275a; --g3: #08122a; --rib: #86a8e2; --inner: #142755; --back: #16306a; }
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     .ribhi { stroke: var(--rib); }
@@ -147,9 +147,10 @@
           <stop offset="1" style="stop-color:var(--g3)"/>
         </radialGradient>
         <radialGradient id="lobeg" cx="50%" cy="50%" r="50%">
-          <stop offset="0" style="stop-color:var(--core)" stop-opacity="1"/>
-          <stop offset="0.24" style="stop-color:var(--mid)" stop-opacity="0.95"/>
-          <stop offset="0.62" style="stop-color:var(--mid)" stop-opacity="0.42"/>
+          <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+          <stop offset="0.14" style="stop-color:var(--core)" stop-opacity="1"/>
+          <stop offset="0.34" style="stop-color:var(--mid)" stop-opacity="0.92"/>
+          <stop offset="0.66" style="stop-color:var(--mid)" stop-opacity="0.38"/>
           <stop offset="1" style="stop-color:var(--mid)" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="washg" cx="50%" cy="62%" r="58%">
@@ -231,8 +232,8 @@
         <!-- both lamps light the whole dome a little, whatever way they face -->
         <path class="wash" d="${domePath()}" fill="url(#washg)" opacity="0"/>
         <!-- the lit lobe, one per reflector, screened onto the glass -->
-        <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="112" rx="52" ry="62" fill="url(#lobeg)" filter="url(#b5)"/></g>
-        <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="112" rx="52" ry="62" fill="url(#lobeg)" filter="url(#b5)"/></g>
+        <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="112" rx="46" ry="70" fill="url(#lobeg)" filter="url(#b3)"/></g>
+        <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="112" rx="46" ry="70" fill="url(#lobeg)" filter="url(#b3)"/></g>
         <!-- the flutes, over the lobe: they chop it into bars -->
         <g>${ribs()}</g>
         <!-- the glass darkens at the foot, where the ring shades it -->
@@ -342,10 +343,10 @@
         this._lobe[k].setAttribute("transform", "translate(" + ((x - CX) * 1.15).toFixed(2) + " 0)");
         if (f > B) { B = f; bx = (x - CX) * 0.8; }
       }
-      this._wash.setAttribute("opacity", (lit * (0.30 + 0.20 * B)).toFixed(3));
-      this._air.setAttribute("opacity", (lit * (0.16 + 0.80 * B)).toFixed(3));
+      this._wash.setAttribute("opacity", (lit * (0.27 + 0.24 * B)).toFixed(3));
+      this._air.setAttribute("opacity", (lit * (0.24 + 0.74 * B)).toFixed(3));
       this._air.setAttribute("transform", "translate(" + bx.toFixed(2) + " 0)");
-      this._pool.setAttribute("opacity", (lit * (0.10 + 0.65 * B)).toFixed(3));
+      this._pool.setAttribute("opacity", (lit * (0.15 + 0.62 * B)).toFixed(3));
       this._cast.setAttribute("opacity", (lit * (0.05 + 0.14 * B)).toFixed(3));
     }
   }

@@ -234,7 +234,7 @@
       });
       this._aria();
     }
-    _aria() { this.setAttribute("aria-valuetext", this._v || "empty"); }
+    _aria() { this.setAttribute("data-dialled", this._v); }   // the group's name stays put; the digits live on value
 
     // ---- value ----
     _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }

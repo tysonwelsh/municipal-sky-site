@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vernier caliper, 150 mm / 0.05 — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "vernier-mitutoyo-caliper",
+  "element": "sk-vernier-mitutoyo-caliper",
+  "name": "Vernier caliper, 150 mm / 0.05 mm",
+  "kind": "both",
+  "code": "B11.1",
+  "type": "Vernier scale / slide-rule cursor",
+  "source": "A Mitutoyo 530-series 150 mm vernier caliper — satin stainless beam, 20-division 0.05 mm vernier on a bevelled plate, thumb roller and lock screw",
+  "era": "1960s",
+  "origin": "Japan",
+  "materials": ["satin stainless steel", "black-filled engraving"],
+  "tags": ["metrology", "workshop", "vernier", "caliper", "measurement", "japan"],
+  "value": { "model": "range", "min": 0, "max": 150, "step": 0.05, "unit": "mm" },
+  "attributes": ["value", "min", "max", "step", "lock", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 460, "h": 104 },
+  "notes": "Open at 37.45 — the vernier's 9th line is the one that lines up with the main scale — and a small one closed at 0.00. Drag the slider, or use the wheel and arrows; click the lock screw to freeze it."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-vernier-mitutoyo-caliper value="37.45" label="CALIPER"></sk-vernier-mitutoyo-caliper>
+    <sk-vernier-mitutoyo-caliper value="0" label="CLOSED" scale="0.5"></sk-vernier-mitutoyo-caliper>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Mitutoyo 530-104</b> is the plain 150 mm vernier caliper that sat in a thousand toolroom drawers before
+  dial and digital ones: a satin stainless beam engraved and black-filled in millimetres along its lower edge and
+  in sixteenths of an inch along its top, a slider carrying a bevelled <b>vernier plate</b> of twenty divisions
+  reading to 0.05 mm, outside jaws below, inside jaws above, a thumb roller, a lock screw, and a depth rod that
+  comes out of the far end of the beam by exactly as much as the jaws are open.</p>
+  <p><b>The tells kept here:</b> the vernier is real. Its twenty divisions span thirty-nine millimetres, so each is
+  1.95 mm against the main scale's 2 mm, and exactly one line of it coincides with a main-scale line — at
+  <b>37.45 mm</b> it is the ninth, as it must be. The satin finish is a broad soft highlight along the beam with a
+  fine horizontal grain and no hard chrome horizon; the engraving is black-filled with a longer line every five and
+  a numeral every ten; the inch scale runs in sixteenths with its own eight-division vernier on the slider's top
+  bar; the thumb roller turns as the slider travels; the lock screw sits a little askew when it is thrown; there is
+  a hairline of oil where the slider rides the beam and a dot of polish on each jaw tip.</p>
+  <p><b>Left out:</b> the 1/128 inch graduations, which at this scale would be a fifth of a pixel — the inch scale
+  is drawn in sixteenths and the fractional reading is left to its vernier. The jaws are foreshortened: a real
+  150 mm caliper's outside jaws are 40 mm deep, which would double the height of the drawing. The depth rod runs
+  off the right edge of the frame at large openings, as the real one runs off the end of a photograph.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-vernier-mitutoyo-caliper> — 150 mm vernier caliper reading to 0.05 mm ====
+   attributes: value min max step lock label scale disabled
+   events: input {value} while the slider moves, change {value} when it settles
+   self-contained: paste this block into any page and use
+   <sk-vernier-mitutoyo-caliper value="37.45"></sk-vernier-mitutoyo-caliper> */
+(function () {
+  if (customElements.get("sk-vernier-mitutoyo-caliper")) return;
+  var NS = "http://www.w3.org/2000/svg";
+  var W = 460, H = 104;
+  var PX = 2;                       // px per millimetre
+  var X0 = 28;                      // the fixed jaw's measuring face = 0 mm
+  var BEAM_T = 26, BEAM_B = 62;     // the beam's top and bottom edges
+  var BEAM_R = 436;                 // the beam's right end
+  var VDIV = 1.95 * PX;             // one vernier division = 1.95 mm
+  var IPX = 25.4 * PX / 16;         // one sixteenth of an inch, in px
+  var IVD = (7 / 16) * 25.4 * PX / 8;   // one division of the inch vernier
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ', W, 'px; height: ', H, 'px; position: relative; font-size: 10px;',
+  '  -webkit-tap-highlight-color: transparent; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ', W, 'px; height: ', H, 'px; overflow: visible; }',
+  '.grab { position: absolute; top: 8px; height: 92px; width: 112px; left: 0;',
+  '  touch-action: none; user-select: none; -webkit-user-select: none; cursor: ew-resize;',
+  '  outline: none; border-radius: 4px; }',
+  ':host([disabled]) .grab, :host([lock]) .grab { cursor: default; }',
+  '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }',
+  '.lockhit { position: absolute; top: 12px; height: 16px; width: 16px; left: 0; cursor: pointer; }',
+  ':host([disabled]) .lockhit { cursor: default; }',
+  '.slider { transform-box: view-box; transform-origin: 0 0; transition: transform 45ms linear; }',
+  '.slider.ease { transition: transform 150ms cubic-bezier(.3,.85,.35,1); }',
+  '.rodg { transform-box: view-box; transform-origin: 0 0; }',
+  '.roller { transform-box: view-box; transition: transform 45ms linear; }',
+  'text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #171717; }',
+  '.mm { font-size: 6px; font-weight: 500; text-anchor: middle; }',
+  '.inch { font-size: 5px; font-weight: 500; text-anchor: middle; }',
+  '.vn { font-size: 5px; font-weight: 500; text-anchor: middle; }',
+  '.ivn { font-size: 4px; font-weight: 500; text-anchor: middle; }',
+  '.etch { font-size: 4.6px; font-weight: 400; letter-spacing: 0.08em; fill: #2d2f30; opacity: 0.75; }',
+  '.unitm { font-size: 5px; font-weight: 600; letter-spacing: 0.06em; fill: #202020; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ', W, ' ', H, '" aria-hidden="true">',
+  '<defs>',
+    '<linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#f1f3f4"/><stop offset="0.08" stop-color="#e4e6e7"/>',
+      '<stop offset="0.34" stop-color="#d4d7d8"/><stop offset="0.62" stop-color="#bcc0c2"/>',
+      '<stop offset="0.86" stop-color="#a5a9ab"/><stop offset="1" stop-color="#cfd3d5"/></linearGradient>',
+    '<linearGradient id="slid" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#eceeef"/><stop offset="0.12" stop-color="#dcdfe0"/>',
+      '<stop offset="0.45" stop-color="#c6cacc"/><stop offset="0.78" stop-color="#aaaeb0"/>',
+      '<stop offset="1" stop-color="#c8cccd"/></linearGradient>',
+    '<linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#f4f6f7"/><stop offset="0.22" stop-color="#e2e5e6"/>',
+      '<stop offset="0.7" stop-color="#c3c7c9"/><stop offset="1" stop-color="#9ea2a4"/></linearGradient>',
+    '<linearGradient id="jaw" x1="0" y1="0" x2="0.35" y2="1">',
+      '<stop offset="0" stop-color="#e7eaeb"/><stop offset="0.4" stop-color="#c7cbcd"/>',
+      '<stop offset="0.8" stop-color="#a3a7a9"/><stop offset="1" stop-color="#bfc3c5"/></linearGradient>',
+    '<linearGradient id="rod" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#e9ecec"/><stop offset="0.4" stop-color="#c2c6c8"/>',
+      '<stop offset="1" stop-color="#8f9395"/></linearGradient>',
+    '<radialGradient id="screw" cx="34%" cy="28%" r="72%">',
+      '<stop offset="0" stop-color="#d3d6d8"/><stop offset="0.6" stop-color="#8d9093"/>',
+      '<stop offset="1" stop-color="#5a5d60"/></radialGradient>',
+    '<radialGradient id="roll" cx="32%" cy="26%" r="74%">',
+      '<stop offset="0" stop-color="#d8dbdd"/><stop offset="0.55" stop-color="#aeb2b4"/>',
+      '<stop offset="1" stop-color="#6f7274"/></radialGradient>',
+    '<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.34"/>',
+      '<stop offset="0.52" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>',
+    '<pattern id="grain" width="8" height="2" patternUnits="userSpaceOnUse">',
+      '<line x1="0" y1="0.4" x2="8" y2="0.4" stroke="#ffffff" stroke-opacity="0.22" stroke-width="0.4"/>',
+      '<line x1="0" y1="1.4" x2="8" y2="1.4" stroke="#4a4e50" stroke-opacity="0.12" stroke-width="0.4"/></pattern>',
+    '<filter id="sh" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>',
+    '<filter id="sh2" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="3.4"/></filter>',
+    '<clipPath id="frame"><rect x="0" y="0" width="', W, '" height="', H, '"/></clipPath>',
+  '</defs>',
+
+  '<g clip-path="url(#frame)">',
+  /* the whole instrument's shadow on the bench */
+  '<rect x="18" y="70" width="424" height="18" rx="6" fill="#000" opacity="0.4" filter="url(#sh2)"/>',
+
+  /* ---- the depth rod, out of the far end of the beam ---- */
+  '<g class="rodg">',
+    '<rect x="', (BEAM_R - 6), '" y="40" width="240" height="8" rx="1.5" fill="url(#rod)" stroke="#6f7375" stroke-width="0.4"/>',
+    '<rect x="', (BEAM_R - 6), '" y="41" width="240" height="1.4" fill="#fff" opacity="0.4"/>',
+  '</g>',
+
+  /* ---- the fixed jaw ---- */
+  '<path d="M 10 62 L 28 62 L 28 100 L 23 100 Q 12 86 10 62 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
+  '<path d="M 26.4 63 L 26.4 99" stroke="#8d9194" stroke-width="0.8" opacity="0.6"/>',
+  '<path d="M 18 26 L 28 26 L 28 4 L 24.5 2 L 21 4 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
+  '<ellipse cx="26" cy="96" rx="2.2" ry="3.4" fill="#fdfefe" opacity="0.5"/>',
+
+  /* ---- the beam ---- */
+  '<rect x="12" y="', BEAM_T, '" width="', (BEAM_R - 12), '" height="', (BEAM_B - BEAM_T), '" rx="1.5" fill="url(#beam)" stroke="#797d7f" stroke-width="0.5"/>',
+  '<rect x="12" y="', BEAM_T, '" width="', (BEAM_R - 12), '" height="', (BEAM_B - BEAM_T), '" fill="url(#grain)"/>',
+  '<rect x="12" y="', BEAM_T, '" width="', (BEAM_R - 12), '" height="', (BEAM_B - BEAM_T), '" fill="url(#sheen)"/>',
+  '<rect x="12" y="', (BEAM_T + 0.6), '" width="', (BEAM_R - 12), '" height="0.9" fill="#fff" opacity="0.55"/>',
+  '<g class="mscale"></g>',
+  '<g class="iscale"></g>',
+  '<text class="etch" x="352" y="42">530&#8201;&#8901;&#8201;0&#8211;150&#8201;mm</text>',
+  '<text class="unitm" x="352" y="52">mm</text>',
+  '<rect x="', (BEAM_R - 8), '" y="', BEAM_T, '" width="8" height="', (BEAM_B - BEAM_T), '" fill="#9fa3a5" opacity="0.5"/>',
+  '<rect x="', (BEAM_R - 8), '" y="39" width="8" height="10" rx="1" fill="#6d7173" opacity="0.7"/>',
+
+  /* ---- the slider: jaws, top bar with the inch vernier, bevelled vernier plate ---- */
+  '<g class="slider">',
+    /* shadow the slider casts on the beam */
+    '<rect x="', (X0 - 4), '" y="12" width="108" height="66" rx="3" fill="#000" opacity="0.32" filter="url(#sh)"/>',
+    /* the sliding outside jaw */
+    '<path d="M ', X0, ' 62 L ', (X0 + 17), ' 62 L ', (X0 + 17), ' 86 Q ', (X0 + 12), ' 97 ', X0, ' 100 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
+    '<path d="M ', (X0 + 1.6), ' 63 L ', (X0 + 1.6), ' 99" stroke="#8d9194" stroke-width="0.8" opacity="0.6"/>',
+    '<ellipse cx="', (X0 + 2), '" cy="96" rx="2.2" ry="3.4" fill="#fdfefe" opacity="0.5"/>',
+    /* the sliding inside jaw nib */
+    '<path d="M ', X0, ' 26 L ', (X0 + 10), ' 26 L ', (X0 + 10), ' 4 L ', (X0 + 6.5), ' 2 L ', (X0 + 3), ' 4 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
+    /* top bar (carries the inch vernier and the lock screw) */
+    '<rect x="', (X0 - 3), '" y="12" width="106" height="15" rx="2" fill="url(#slid)" stroke="#75797b" stroke-width="0.5"/>',
+    '<rect x="', (X0 - 3), '" y="12" width="106" height="15" fill="url(#grain)"/>',
+    '<rect x="', (X0 - 2), '" y="12.8" width="104" height="0.9" fill="#fff" opacity="0.55"/>',
+    '<g class="ivern"></g>',
+    /* the left column and the right boss that bridge the beam */
+    '<rect x="', (X0 - 3), '" y="12" width="11" height="64" rx="2" fill="url(#slid)" stroke="#75797b" stroke-width="0.5"/>',
+    '<rect x="', (X0 + 86), '" y="12" width="14" height="64" rx="2" fill="url(#slid)" stroke="#75797b" stroke-width="0.5"/>',
+    '<rect x="', (X0 + 86), '" y="12" width="14" height="64" fill="url(#grain)"/>',
+    /* the bevelled vernier plate */
+    '<rect x="', (X0 - 3), '" y="', BEAM_B, '" width="106" height="15" rx="1.5" fill="url(#plate)" stroke="#75797b" stroke-width="0.5"/>',
+    '<rect x="', (X0 - 3), '" y="', BEAM_B, '" width="106" height="15" fill="url(#grain)"/>',
+    '<rect x="', (X0 - 3), '" y="', (BEAM_B + 0.5), '" width="106" height="1" fill="#fff" opacity="0.6"/>',
+    '<g class="vern"></g>',
+    /* a hairline of oil where the slider rides the beam */
+    '<rect x="', (X0 - 3), '" y="', (BEAM_T - 0.6), '" width="106" height="1.1" fill="#3b3f41" opacity="0.5"/>',
+    '<rect x="', (X0 - 3), '" y="', (BEAM_B - 0.5), '" width="106" height="1.1" fill="#3b3f41" opacity="0.38"/>',
+    /* the lock screw */
+    '<circle class="lockscrew" cx="', (X0 + 48), '" cy="19.5" r="5" fill="url(#screw)" stroke="#5a5d60" stroke-width="0.5"/>',
+    '<rect class="lockslot" x="', (X0 + 44), '" y="18.9" width="8" height="1.3" rx="0.4" fill="#303335"/>',
+    /* the thumb roller */
+    '<g class="roller"><circle cx="', (X0 + 74), '" cy="80" r="9.5" fill="url(#roll)" stroke="#5d6062" stroke-width="0.5"/>',
+    '<g class="rknurl"></g>',
+    '<circle cx="', (X0 + 74), '" cy="80" r="3" fill="#7e8184" stroke="#54575a" stroke-width="0.4"/></g>',
+  '</g>',
+  '</g>',
+  '</svg>',
+  '<div class="grab" role="slider" tabindex="0"></div>',
+  '<div class="lockhit"></div>',
+  '</div>'].join("");
+
+  function mk(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  class SkVernierCaliper extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "lock", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 150; this._step = 0.05; this._scale = 1; this._built = false;
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._sl = r.querySelector(".slider");
+      this._rod = r.querySelector(".rodg");
+      this._roller = r.querySelector(".roller");
+      this._slot = r.querySelector(".lockslot");
+      this._grab = r.querySelector(".grab");
+      this._lockhit = r.querySelector(".lockhit");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this);
+      this._onUp = this._onUp.bind(this); this._onWheel = this._onWheel.bind(this);
+      this._onKey = this._onKey.bind(this); this._onLock = this._onLock.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._build(); this._readAttrs(); this._render();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+      this._grab.addEventListener("keydown", this._onKey);
+      this._lockhit.addEventListener("click", this._onLock);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._wt);
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("wheel", this._onWheel);
+      this._grab.removeEventListener("keydown", this._onKey);
+      this._lockhit.removeEventListener("click", this._onLock);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected || !this._built) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = this._clamp(parseFloat(v)); if (isNaN(v)) return;
+      this._v = v; this.setAttribute("value", this._fmt(v));
+      if (this._built) this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+    _fmt(v) { return (Math.round(v * 100) / 100).toFixed(2); }
+
+    /* ---------- one-time engraving ---------- */
+    _build() {
+      if (this._built) return; this._built = true;
+      var r = this.shadowRoot, i, x, g;
+
+      // the millimetre main scale along the beam's lower edge
+      g = r.querySelector(".mscale");
+      for (i = 0; i <= 150; i++) {
+        x = X0 + i * PX;
+        var len = (i % 10 === 0) ? 8.5 : (i % 5 === 0 ? 6.5 : 4.5);
+        g.appendChild(mk("line", { x1: x, y1: BEAM_B - 0.6, x2: x, y2: BEAM_B - 0.6 - len,
+          stroke: "#171717", "stroke-width": (i % 10 === 0 ? 0.72 : (i % 5 === 0 ? 0.6 : 0.42)),
+          "stroke-opacity": (i % 5 === 0 ? 0.95 : 0.72) }));
+        if (i % 10 === 0) g.appendChild(mk("text", { x: x, y: BEAM_B - 11.5, "class": "mm" }, String(i)));
+      }
+      // the inch scale in sixteenths along the beam's top edge
+      g = r.querySelector(".iscale");
+      for (i = 0; i <= 94; i++) {
+        x = X0 + i * IPX;
+        var l2 = (i % 16 === 0) ? 9 : (i % 8 === 0 ? 7.5 : (i % 4 === 0 ? 6 : (i % 2 === 0 ? 4.6 : 3.4)));
+        g.appendChild(mk("line", { x1: x, y1: BEAM_T + 0.6, x2: x, y2: BEAM_T + 0.6 + l2,
+          stroke: "#171717", "stroke-width": (i % 16 === 0 ? 0.72 : (i % 4 === 0 ? 0.55 : 0.4)),
+          "stroke-opacity": (i % 4 === 0 ? 0.92 : 0.66) }));
+        if (i % 16 === 0) g.appendChild(mk("text", { x: x, y: BEAM_T + 17.5, "class": "inch" }, String(i / 16)));
+      }
+      // the vernier: twenty divisions of 1.95 mm, numbered 0 … 10
+      g = r.querySelector(".vern");
+      for (i = 0; i <= 20; i++) {
+        x = X0 + i * VDIV;
+        var lv = (i % 2 === 0) ? 6 : 4;
+        g.appendChild(mk("line", { x1: x, y1: BEAM_B + 0.6, x2: x, y2: BEAM_B + 0.6 + lv,
+          stroke: "#171717", "stroke-width": (i % 2 === 0 ? 0.68 : 0.46), "stroke-opacity": (i % 2 === 0 ? 0.95 : 0.78) }));
+        if (i % 2 === 0) g.appendChild(mk("text", { x: x, y: BEAM_B + 13.4, "class": "vn" }, String(i / 2)));
+      }
+      g.appendChild(mk("text", { x: X0 + 20 * VDIV + 9, y: BEAM_B + 13.4, "class": "ivn" }, "0.05mm"));
+      // the inch vernier: eight divisions of 7/128 inch on the top bar
+      g = r.querySelector(".ivern");
+      for (i = 0; i <= 8; i++) {
+        x = X0 + i * IVD;
+        g.appendChild(mk("line", { x1: x, y1: BEAM_T - 0.6, x2: x, y2: BEAM_T - 0.6 - (i % 4 === 0 ? 5.5 : 3.8),
+          stroke: "#171717", "stroke-width": (i % 4 === 0 ? 0.62 : 0.42), "stroke-opacity": 0.85 }));
+        if (i % 4 === 0) g.appendChild(mk("text", { x: x, y: BEAM_T - 7.2, "class": "ivn" }, String(i)));
+      }
+      g.appendChild(mk("text", { x: X0 + 8 * IVD + 12, y: BEAM_T - 7.2, "class": "ivn" }, "1/128 in"));
+      // the thumb roller's knurl
+      g = r.querySelector(".rknurl");
+      for (i = 0; i < 34; i++) {
+        var a = i * 2 * Math.PI / 34;
+        g.appendChild(mk("line", {
+          x1: (X0 + 74 + 6.6 * Math.sin(a)).toFixed(2), y1: (80 - 6.6 * Math.cos(a)).toFixed(2),
+          x2: (X0 + 74 + 9.2 * Math.sin(a)).toFixed(2), y2: (80 - 9.2 * Math.cos(a)).toFixed(2),
+          stroke: "#5f6265", "stroke-width": 0.55, "stroke-opacity": 0.75
+        }));
+      }
+    }
+
+    /* ---------- attributes ---------- */
+    _readAttrs() {
+      var self = this;
+      var num = function (n, d) { var x = parseFloat(self.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = Math.max(0, num("min", 0)); this._max = Math.min(150, num("max", 150));
+      this._step = Math.max(0.01, num("step", 0.05));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      var g = this._grab, off = this.hasAttribute("disabled") || this.hasAttribute("lock");
+      g.setAttribute("aria-label", (this.getAttribute("label") || "vernier caliper") + ", millimetres");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", off ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+
+    /* ---------- paint ---------- */
+    _render() {
+      var dx = (this._v - 0) * PX;
+      this._sl.style.transform = "translateX(" + dx.toFixed(2) + "px)";
+      // the depth rod comes out of the far end by exactly the opening
+      this._rod.style.transform = "translateX(" + dx.toFixed(2) + "px)";
+      // the roller turns as the slider travels
+      var deg = dx / (2 * Math.PI * 9.5) * 360;
+      this._roller.style.transformOrigin = (X0 + 74) + "px 80px";
+      this._roller.style.transform = "rotate(" + deg.toFixed(1) + "deg)";
+      // the lock screw sits askew when it is thrown
+      var locked = this.hasAttribute("lock");
+      this._slot.setAttribute("transform", "rotate(" + (locked ? 38 : -6) + " " + (X0 + 48) + " 19.5)");
+      // the grab and the lock target follow the slider
+      var s = this._scale;
+      this._grab.style.left = ((X0 - 6 + dx) * s) + "px";
+      this._grab.style.top = (8 * s) + "px";
+      this._grab.style.width = (112 * s) + "px";
+      this._grab.style.height = (92 * s) + "px";
+      this._lockhit.style.left = ((X0 + 40 + dx) * s) + "px";
+      this._lockhit.style.top = (11.5 * s) + "px";
+      this._lockhit.style.width = (16 * s) + "px";
+      this._lockhit.style.height = (16 * s) + "px";
+      this._grab.setAttribute("aria-valuenow", this._fmt(this._v));
+      this._grab.setAttribute("aria-valuetext", this._fmt(this._v) + " mm");
+    }
+
+    _set(v, settle) {
+      v = this._clamp(Math.round(v / this._step) * this._step);
+      v = Math.round(v * 1000) / 1000;
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", this._fmt(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _off() { return this.hasAttribute("disabled") || this.hasAttribute("lock"); }
+
+    /* ---------- gestures: the slider follows the pointer along the beam ---------- */
+    _onDown(e) {
+      if (this._off() || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._sl.classList.remove("ease");
+      this._drag = { x: e.clientX, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      var dx = (e.clientX - this._drag.x) / this._scale;     // the jaw follows the pointer exactly
+      if (Math.abs(dx) > 0.5) this._drag.moved = true;
+      this._set(this._drag.v + dx / PX, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      var moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this._off()) return;
+      e.preventDefault();
+      this._sl.classList.add("ease");
+      this._set(this._v + (e.deltaY < 0 ? 1 : -1) * this._step * (e.shiftKey ? 10 : 1), false);
+      clearTimeout(this._wt);
+      var self = this;
+      this._wt = setTimeout(function () { self._set(self._v, true); }, 220);
+    }
+    _onKey(e) {
+      if (this._off()) return;
+      var big = this._step * 10, v = null;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowUp": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowLeft": case "ArrowDown": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + 10; break;
+        case "PageDown": v = this._v - 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._sl.classList.add("ease");
+      this._set(v, false); this._set(this._v, true);
+    }
+    _onLock(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.stopPropagation();
+      if (this.hasAttribute("lock")) this.removeAttribute("lock"); else this.setAttribute("lock", "");
+    }
+  }
+  customElements.define("sk-vernier-mitutoyo-caliper", SkVernierCaliper);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ferrari chrome gated shifter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "shifter-ferrari-gate",
+  "element": "sk-shifter-ferrari-gate",
+  "name": "Ferrari chrome gated shifter",
+  "kind": "input",
+  "code": "B9",
+  "type": "Gate / shift lever",
+  "source": "The open chrome gate on the transmission tunnel of a Ferrari 308 GTB, Testarossa or F355 — a dogleg five-speed with first back and to the left",
+  "era": "1980s",
+  "origin": "Italy",
+  "materials": ["chrome-plated steel", "bakelite", "polished aluminium", "leather"],
+  "tags": ["car", "gearbox", "dogleg", "H-gate", "ball knob", "chrome", "leather boot"],
+  "value": { "model": "steps", "options": ["1", "2", "3", "4", "5", "R", "N"] },
+  "attributes": ["value", "ball", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 176, "h": 224 },
+  "notes": "In 3, in neutral on the crossbar, and in reverse with an aluminium ball at scale 0.7. Drag the knob through the slots, or use the arrows: across the bar first, then into the slot."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-shifter-ferrari-gate value="3" label="GEAR"></sk-shifter-ferrari-gate>
+    <sk-shifter-ferrari-gate value="N" label="GEAR"></sk-shifter-ferrari-gate>
+    <sk-shifter-ferrari-gate value="R" ball="alu" scale="0.7" label="GEAR"></sk-shifter-ferrari-gate>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>From the 250 to the F355, a Ferrari's gear lever stands in an <b>open chrome gate</b>: a polished plate
+  screwed to the transmission tunnel with the H cut clean through it, so the black of the tunnel shows in the
+  slots. The pattern is a <b>dogleg</b> — first is back and to the left, on its own, with 2–3 in the middle
+  slot and 4–5 on the right, and reverse forward beside first — and every change is two straight legs with a
+  stop between them: out to the crossbar, across, then down into the slot. It is the only gear lever anybody
+  has ever wanted to hear.</p>
+  <p><b>The tells kept here:</b> the plate seen foreshortened from the driver's seat with the stem rising
+  toward you; chrome with a <b>hard horizon</b> across it, sky above and ground below; slots cut through, with
+  the lit lip on their near side and the shadowed wall on the far side; four countersunk chrome screws; the
+  black Bakelite ball with one hot highlight and the gate pattern engraved on its crown in white; the leather
+  boot showing as a dark rim under the plate's edge. A change runs along the crossbar and then down the slot,
+  about 80 ms a leg, and lands with a small metallic shudder.</p>
+  <p><b>Left out:</b> the badge on the crown of the knob, the lock-out collar for reverse on later cars, and
+  the tunnel's stitching, which sits below the frame.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-shifter-ferrari-gate> — the open chrome dogleg gate, seen from the driver's seat ====
+   attributes: value(1|2|3|4|5|R|N) ball(black|alu) label scale disabled
+   events: input {value, x, y} while the knob moves, change {value} when it seats
+   self-contained: paste this block into any page and use <sk-shifter-ferrari-gate value="N"></sk-shifter-ferrari-gate> */
+(function () {
+  if (customElements.get("sk-shifter-ferrari-gate")) return;
+  const W = 176, H = 224;
+  const XC = 88, YFAR = 98, YNEAR = 198, WFAR = 46, WNEAR = 64, POW = 1.28;   // the plate's projection
+  const SLOTU = [-0.62, 0, 0.62];            // left, middle, right slot
+  const ROWV = [-0.62, 0, 0.62];             // forward, crossbar, back
+  const HU = 0.058, HV = 0.072;              // half-widths of the cut slots
+  const NAME = [["R", "N", "1"], ["2", "N", "3"], ["4", "N", "5"]];
+  const ORDER = ["R", "N", "1", "2", "3", "4", "5"];
+  const POS = { "R": [0, 0], "1": [0, 2], "2": [1, 0], "3": [1, 2], "4": [2, 0], "5": [2, 2], "N": [1, 1] };
+  const BR = 22.6;                           // the ball's radius at v = 0
+
+  function tt(v) { return Math.pow((v + 1) / 2, POW); }
+  function wAt(v) { return WFAR + (WNEAR - WFAR) * tt(v); }
+  function P(u, v) { const k = tt(v); return [XC + u * (WFAR + (WNEAR - WFAR) * k), YFAR + (YNEAR - YFAR) * k]; }
+  function vFromY(y) {
+    let k = (y - YFAR) / (YNEAR - YFAR); k = Math.max(0, Math.min(1, k));
+    return 2 * Math.pow(k, 1 / POW) - 1;
+  }
+  function poly(pts) { return "M " + pts.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" L ") + " Z"; }
+  function roundPoly(pts, r) {
+    let d = "";
+    for (let i = 0; i < pts.length; i++) {
+      const p0 = pts[(i - 1 + pts.length) % pts.length], p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+      const a = [p1[0] - p0[0], p1[1] - p0[1]], b = [p2[0] - p1[0], p2[1] - p1[1]];
+      const la = Math.hypot(a[0], a[1]) || 1, lb = Math.hypot(b[0], b[1]) || 1;
+      const ra = Math.min(r, la / 2), rb = Math.min(r, lb / 2);
+      const s = [p1[0] - a[0] / la * ra, p1[1] - a[1] / la * ra];
+      const e = [p1[0] + b[0] / lb * rb, p1[1] + b[1] / lb * rb];
+      d += (i === 0 ? "M " + s[0].toFixed(2) + " " + s[1].toFixed(2) : " L " + s[0].toFixed(2) + " " + s[1].toFixed(2));
+      d += " Q " + p1[0].toFixed(2) + " " + p1[1].toFixed(2) + " " + e[0].toFixed(2) + " " + e[1].toFixed(2);
+    }
+    return d + " Z";
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none;
+      outline: none; cursor: grab; border-radius: 4px; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: inset 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.45); }
+    text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; font-weight: 700; }
+    .eng { font-size: 5px; fill: #ececea; text-anchor: middle; }
+    .engsh { font-size: 5px; fill: #000; fill-opacity: 0.55; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0.08" y2="1">
+          <stop offset="0" stop-color="#f4f7f8"/>
+          <stop offset="0.26" stop-color="#dde3e6"/>
+          <stop offset="0.40" stop-color="#9aa2a7"/>
+          <stop offset="0.415" stop-color="#454d52"/>
+          <stop offset="0.47" stop-color="#6f7478"/>
+          <stop offset="0.66" stop-color="#c6cdd1"/>
+          <stop offset="0.88" stop-color="#eef2f4"/>
+          <stop offset="1" stop-color="#a9b0b4"/>
+        </linearGradient>
+        <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.6">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
+          <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.05"/>
+          <stop offset="0.7" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0.10"/>
+        </linearGradient>
+        <linearGradient id="stemg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#4e5459"/><stop offset="0.14" stop-color="#cfd6da"/>
+          <stop offset="0.28" stop-color="#f6f8f9"/><stop offset="0.44" stop-color="#a8afb4"/>
+          <stop offset="0.58" stop-color="#5f666b"/><stop offset="0.80" stop-color="#c3cacd"/>
+          <stop offset="1" stop-color="#474d51"/>
+        </linearGradient>
+        <radialGradient id="ballblack" cx="33%" cy="27%" r="78%">
+          <stop offset="0" stop-color="#6a6a6c"/><stop offset="0.22" stop-color="#343436"/>
+          <stop offset="0.55" stop-color="#1b1b1c"/><stop offset="0.86" stop-color="#0c0c0d"/>
+          <stop offset="1" stop-color="#151517"/>
+        </radialGradient>
+        <radialGradient id="ballalu" cx="33%" cy="27%" r="78%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.2" stop-color="#dfe5e8"/>
+          <stop offset="0.5" stop-color="#9aa2a7"/><stop offset="0.78" stop-color="#565d62"/>
+          <stop offset="1" stop-color="#9aa1a6"/>
+        </radialGradient>
+        <radialGradient id="screwg" cx="34%" cy="26%" r="76%">
+          <stop offset="0" stop-color="#f2f5f6"/><stop offset="0.5" stop-color="#b3b9bc"/><stop offset="1" stop-color="#5a6064"/>
+        </radialGradient>
+        <linearGradient id="hole" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#050506"/><stop offset="0.6" stop-color="#0d0d0f"/><stop offset="1" stop-color="#121215"/>
+        </linearGradient>
+        <pattern id="hide" width="7" height="7" patternUnits="userSpaceOnUse">
+          <rect width="7" height="7" fill="#1e1c1b"/>
+          <circle cx="2" cy="2" r="1.3" fill="#2c2a29"/>
+          <circle cx="5.4" cy="5" r="1" fill="#131211"/>
+          <circle cx="5.8" cy="1.6" r="0.7" fill="#282625"/>
+        </pattern>
+        <filter id="s1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.7"/></filter>
+        <filter id="s2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="s4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
+        <clipPath id="gateclip"><path class="gated"/></clipPath>
+        <clipPath id="plateclip"><path class="plated"/></clipPath>
+        <mask id="liplight">
+          <rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>
+          <path class="gated" fill="#000" transform="translate(-1.5,-1.5)"/>
+        </mask>
+        <mask id="lipdark">
+          <rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>
+          <path class="gated" fill="#000" transform="translate(2,2)"/>
+        </mask>
+      </defs>
+
+      <!-- the leather boot the plate is screwed down onto -->
+      <path class="bootd" fill="url(#hide)"/>
+      <path class="bootd" fill="#000" opacity="0.35"/>
+      <g class="bootcreases" stroke="#3a3735" stroke-opacity="0.5" stroke-width="0.7" fill="none"></g>
+      <!-- the plate's shadow on the leather -->
+      <path class="plateshadow" fill="#000" opacity="0.6" filter="url(#s2)"/>
+
+      <!-- the chrome plate -->
+      <path class="plated" fill="url(#chrome)"/>
+      <g clip-path="url(#plateclip)">
+        <path class="plated" fill="url(#sheen)"/>
+        <!-- the polished rounded lip: bright along the near edge, dark along the far one -->
+        <path class="plated" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.4"
+              transform="translate(0,-1.6)"/>
+        <path class="plated" fill="none" stroke="#2c3236" stroke-opacity="0.7" stroke-width="2"
+              transform="translate(0,1.6)"/>
+      </g>
+      <path class="plated" fill="none" stroke="#31383c" stroke-width="0.8" stroke-opacity="0.9"/>
+
+      <!-- the H, cut clean through: the black of the tunnel shows in the slots -->
+      <path class="gated" fill="url(#hole)"/>
+      <g clip-path="url(#gateclip)">
+        <rect x="0" y="0" width="${W}" height="${H}" fill="#d7dee2" mask="url(#liplight)" opacity="0.9"/>
+        <rect x="0" y="0" width="${W}" height="${H}" fill="#000000" mask="url(#lipdark)" opacity="0.85" filter="url(#s1)"/>
+      </g>
+      <path class="gated" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="0.6"/>
+
+      <!-- four countersunk screws -->
+      <g class="screws"></g>
+
+      <!-- the knob's shadow on the plate, then the stem and the ball -->
+      <ellipse class="ballsh" fill="#000" opacity="0.45" filter="url(#s2)"/>
+      <path class="stem" fill="url(#stemg)" stroke="#2f3438" stroke-width="0.5"/>
+      <path class="stemhi" fill="#ffffff" opacity="0.5"/>
+      <g class="ballg">
+        <circle class="ball" r="${BR}" fill="url(#ballblack)"/>
+        <!-- core shadow and the band of reflected light on the far underside -->
+        <path class="refl" d="M ${-BR * 0.82} ${BR * 0.42} A ${BR} ${BR} 0 0 0 ${BR * 0.62} ${BR * 0.72}"
+              fill="none" stroke="#7d8286" stroke-opacity="0.35" stroke-width="1.6"/>
+        <!-- the crown, engraved with the pattern -->
+        <g class="crown" transform="translate(0 ${-BR * 0.30})">
+          <g class="crownlines"></g>
+        </g>
+        <!-- one hot highlight, above-left -->
+        <ellipse class="hot" cx="${-BR * 0.36}" cy="${-BR * 0.52}" rx="${BR * 0.20}" ry="${BR * 0.13}"
+                 fill="#ffffff" opacity="0.9" filter="url(#s1)" transform="rotate(-24)"/>
+        <circle r="${BR}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.7"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkShifterFerrariGate extends HTMLElement {
+    static get observedAttributes() { return ["value", "ball", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._slot = 1; this._row = 1; this._v = "N"; this._scale = 1;
+      this._u = 0; this._vv = 0;                       // the knob's live gate coordinates
+      this._raf = 0; this._anim = null; this._shudT = 0; this._drag = null; this._wt = 0;
+      const $ = s => this.shadowRoot.querySelector(s), $$ = s => this.shadowRoot.querySelectorAll(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab");
+      this._gated = $$("path.gated"); this._plated = $$("path.plated"); this._bootd = $$("path.bootd");
+      this._pshadow = $(".plateshadow"); this._creases = $(".bootcreases"); this._screws = $(".screws");
+      this._ballsh = $(".ballsh"); this._stem = $(".stem"); this._stemhi = $(".stemhi");
+      this._ballg = $(".ballg"); this._ball = $(".ball"); this._crownlines = $(".crownlines");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "N");
+      this._buildPlate(); this._buildCrown();
+      this._readAttrs();
+      const p = POS[this._v] || POS.N;
+      this._slot = p[0]; this._row = p[1];
+      this._u = SLOTU[this._slot]; this._vv = ROWV[this._row];
+      this._paint();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0; this._anim = null; clearTimeout(this._wt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown);
+      g.removeEventListener("wheel", this._onWheel);
+      g.removeEventListener("keydown", this._onKey);
+      g.removeEventListener("pointermove", this._onMove);
+      g.removeEventListener("pointerup", this._onUp);
+      g.removeEventListener("pointercancel", this._onUp);
+    }
+    _reflect(v) { this._refl = true; this.setAttribute("value", v); this._refl = false; }
+    attributeChangedCallback(n, o, nv) {
+      if (o === nv || !this.isConnected || this._refl) return;
+      this._readAttrs();
+      if (n === "value") {
+        const p = POS[this._v] || POS.N;
+        this._slot = p[0]; this._row = p[1];
+        this._goTo(p[0], p[1], false);
+      } else this._paint();
+    }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = String(v).toUpperCase();
+      if (!POS[v]) return;
+      this._v = v; this._reflect(v);
+      const p = POS[v]; this._slot = p[0]; this._row = p[1];
+      this._goTo(p[0], p[1], false);
+    }
+    get xy() { return { x: (this._u + 1) / 2, y: (this._vv + 1) / 2 }; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opt) { this._grab.focus(opt); }
+
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      const a = String(this.getAttribute("value") || "N").toUpperCase();
+      if (POS[a]) this._v = a;
+      this._ball.setAttribute("fill", this.getAttribute("ball") === "alu" ? "url(#ballalu)" : "url(#ballblack)");
+      const dis = this.hasAttribute("disabled");
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "gear selector");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", String(ORDER.length - 1));
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+
+    // ---- the static geometry -------------------------------------------
+    _buildPlate() {
+      const plate = roundPoly([P(-1, -1), P(1, -1), P(1, 1), P(-1, 1)], 7);
+      this._plated.forEach(e => e.setAttribute("d", plate));
+      const cor = [P(-1, -1), P(1, -1), P(1, 1), P(-1, 1)];
+      const cx = (cor[0][0] + cor[1][0] + cor[2][0] + cor[3][0]) / 4, cy = (cor[0][1] + cor[1][1] + cor[2][1] + cor[3][1]) / 4;
+      const out = cor.map(c => { const dx = c[0] - cx, dy = c[1] - cy, L = Math.hypot(dx, dy) || 1;
+        return [c[0] + dx / L * 11, c[1] + dy / L * 11]; });
+      const boot = roundPoly(out, 11);
+      this._bootd.forEach(e => e.setAttribute("d", boot));
+      this._pshadow.setAttribute("d", roundPoly([P(-1, -0.97), P(1.02, -0.97), P(1.03, 1.04), P(-0.98, 1.04)], 7));
+      // the H: three slots and the crossbar, one path, four subpaths
+      let d = "";
+      SLOTU.forEach(su => {
+        d += poly([P(su - HU, -0.72), P(su + HU, -0.72), P(su + HU, 0.72), P(su - HU, 0.72)]) + " ";
+      });
+      d += poly([P(-0.72, -HV), P(0.72, -HV), P(0.72, HV), P(-0.72, HV)]);
+      this._gated.forEach(e => e.setAttribute("d", d));
+      // leather creases, just under the plate's edge
+      const ns = "http://www.w3.org/2000/svg";
+      const cre = [[-1.1, -0.6, -1.03, 0.4], [1.06, -0.8, 1.12, 0.2], [-0.6, 1.0, 0.3, 1.02]];
+      cre.forEach(c => {
+        const a = P(c[0], c[1]), b = P(c[2], c[3]);
+        const e = document.createElementNS(ns, "path");
+        e.setAttribute("d", `M ${a[0].toFixed(1)} ${a[1].toFixed(1)} Q ${((a[0] + b[0]) / 2 + 2).toFixed(1)} ${((a[1] + b[1]) / 2).toFixed(1)} ${b[0].toFixed(1)} ${b[1].toFixed(1)}`);
+        this._creases.appendChild(e);
+      });
+      // four countersunk screws, foreshortened
+      [[-0.86, -0.85], [0.86, -0.85], [0.86, 0.86], [-0.86, 0.86]].forEach((s, i) => {
+        const [x, y] = P(s[0], s[1]);
+        const g = document.createElementNS(ns, "g");
+        g.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+        const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); g.appendChild(e); return e; };
+        mk("ellipse", { rx: 4.4, ry: 2.9, fill: "#3d4347", "fill-opacity": 0.85 });
+        mk("ellipse", { rx: 3.5, ry: 2.3, fill: "url(#screwg)", stroke: "#4e5559", "stroke-width": 0.4 });
+        mk("rect", { x: -3, y: -0.45, width: 6, height: 0.9, rx: 0.3, fill: "#2f3539", "fill-opacity": 0.85,
+          transform: "rotate(" + [18, -34, 62, -9][i] + ")" });
+        mk("ellipse", { rx: 3.5, ry: 2.3, fill: "none", stroke: "#ffffff", "stroke-opacity": 0.5, "stroke-width": 0.5,
+          transform: "translate(-0.3,-0.4)" });
+        this._screws.appendChild(g);
+      });
+    }
+    _buildCrown() {
+      // the gate pattern engraved on the crown: squashed in y, because you see the ball's top at an angle
+      const ns = "http://www.w3.org/2000/svg";
+      const g = this._crownlines;
+      const xs = [-8.4, 0, 8.4], yT = -5.2, yB = 5.2;
+      const line = (x1, y1, x2, y2, cls) => {
+        const e = document.createElementNS(ns, "path");
+        e.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
+        e.setAttribute("stroke", cls === "sh" ? "#000000" : "#ececea");
+        e.setAttribute("stroke-opacity", cls === "sh" ? "0.5" : "0.92");
+        e.setAttribute("stroke-width", cls === "sh" ? "1.3" : "0.9");
+        e.setAttribute("stroke-linecap", "round");
+        if (cls === "sh") e.setAttribute("transform", "translate(0.45,0.45)");
+        g.appendChild(e);
+      };
+      ["sh", ""].forEach(cls => {
+        xs.forEach(x => line(x, yT, x, yB, cls));
+        line(xs[0], 0, xs[2], 0, cls);
+      });
+      const txt = [["R", -8.4, -7.6], ["2", 0, -7.6], ["4", 8.4, -7.6], ["1", -8.4, 10.6], ["3", 0, 10.6], ["5", 8.4, 10.6]];
+      txt.forEach(t => {
+        const sh = document.createElementNS(ns, "text");
+        sh.setAttribute("class", "engsh"); sh.setAttribute("x", t[1] + 0.4); sh.setAttribute("y", t[2] + 0.4);
+        sh.textContent = t[0]; g.appendChild(sh);
+        const e = document.createElementNS(ns, "text");
+        e.setAttribute("class", "eng"); e.setAttribute("x", t[1]); e.setAttribute("y", t[2]);
+        e.textContent = t[0]; g.appendChild(e);
+      });
+    }
+
+    // ---- painting the moving parts --------------------------------------
+    _paint(shud) {
+      const u = this._u, v = this._vv;
+      const [gx, gy] = P(u, v);
+      const k = tt(v);
+      const sx = shud ? shud : 0;
+      const bx = XC + (gx - XC) * 1.28 + sx, by = gy - 78 - 6 * v;
+      const bs = 0.94 + 0.12 * k;
+      // the stem, a chromed cylinder standing in the slot
+      const dx = bx - gx, dy = by - gy, L = Math.hypot(dx, dy) || 1;
+      const nx = -dy / L, ny = dx / L;
+      const w0 = 3.1, w1 = 4.3;
+      const ex = bx - dx / L * BR * bs * 0.72, ey = by - dy / L * BR * bs * 0.72;
+      this._stem.setAttribute("d",
+        `M ${(gx - nx * w0).toFixed(2)} ${(gy - ny * w0).toFixed(2)}
+         L ${(ex - nx * w1).toFixed(2)} ${(ey - ny * w1).toFixed(2)}
+         L ${(ex + nx * w1).toFixed(2)} ${(ey + ny * w1).toFixed(2)}
+         L ${(gx + nx * w0).toFixed(2)} ${(gy + ny * w0).toFixed(2)} Z`);
+      this._stemhi.setAttribute("d",
+        `M ${(gx - nx * w0 * 0.45).toFixed(2)} ${(gy - ny * w0 * 0.45).toFixed(2)}
+         L ${(ex - nx * w1 * 0.5).toFixed(2)} ${(ey - ny * w1 * 0.5).toFixed(2)}
+         L ${(ex - nx * w1 * 0.1).toFixed(2)} ${(ey - ny * w1 * 0.1).toFixed(2)}
+         L ${(gx - nx * w0 * 0.1).toFixed(2)} ${(gy - ny * w0 * 0.1).toFixed(2)} Z`);
+      this._ballsh.setAttribute("cx", (gx + 9).toFixed(2));
+      this._ballsh.setAttribute("cy", (gy + 5).toFixed(2));
+      this._ballsh.setAttribute("rx", (BR * 0.86).toFixed(2));
+      this._ballsh.setAttribute("ry", (BR * 0.30).toFixed(2));
+      this._ballg.setAttribute("transform", `translate(${bx.toFixed(2)} ${by.toFixed(2)}) scale(${bs.toFixed(3)})`);
+      const g = this._grab;
+      g.setAttribute("aria-valuenow", String(ORDER.indexOf(this._v)));
+      g.setAttribute("aria-valuetext", this._v === "N" ? "neutral" : this._v === "R" ? "reverse" : this._v);
+    }
+
+    // ---- moving through the gate ----------------------------------------
+    _emit(type, settle) {
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true,
+        detail: { value: this._v, x: Math.round((this._u + 1) / 2 * 1000) / 1000, y: Math.round((this._vv + 1) / 2 * 1000) / 1000 } }));
+    }
+    _name(slot, row) { return NAME[slot][row]; }
+    _setValue(name, quiet) {
+      if (name === this._v) return;
+      this._v = name; this._reflect(name);
+      if (!quiet) this._emit("input");
+    }
+    // walk to (slot,row) along the gate: out to the bar, across, then into the slot
+    _goTo(slot, row, emit) {
+      const legs = [];
+      const uT = SLOTU[slot], vT = ROWV[row];
+      if (Math.abs(this._u - uT) > 0.001) {
+        if (Math.abs(this._vv) > 0.001) legs.push([this._u, 0]);
+        legs.push([uT, 0]);
+      }
+      legs.push([uT, vT]);
+      this._anim = { legs: legs, i: 0, t0: performance.now(), from: [this._u, this._vv], emit: !!emit };
+      this._legDur();
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    _legDur() {
+      const a = this._anim, to = a.legs[a.i];
+      const d = Math.hypot(to[0] - a.from[0], to[1] - a.from[1]);
+      a.dur = Math.max(45, Math.min(150, 80 * (d / 0.62)));
+    }
+    _tick(now) {
+      const a = this._anim;
+      if (!a) {
+        // running out the shudder only
+        const st = (now - this._shudT) / 110;
+        if (st < 1) { this._paint(2.2 * Math.sin(st * 26) * (1 - st)); this._raf = requestAnimationFrame(this._tick); return; }
+        this._paint(); this._raf = 0; return;
+      }
+      const to = a.legs[a.i];
+      let t = (now - a.t0) / a.dur;
+      if (t >= 1) {
+        t = 1;
+        this._u = to[0]; this._vv = to[1];
+        a.i++;
+        if (a.i < a.legs.length) { a.from = [this._u, this._vv]; a.t0 = now; this._legDur(); }
+        else {
+          this._anim = null;
+          const name = Math.abs(this._vv) > 0.3 ? this._name(this._nearSlot(), this._vv < 0 ? 0 : 2) : "N";
+          this._setValue(name, !a.emit);
+          if (a.emit) this._emit("change", true);
+          this._shudT = now;                                     // the metallic shudder as it hits the stop
+          this._raf = requestAnimationFrame(this._tick);
+          return;
+        }
+      } else {
+        const e = 1 - Math.pow(1 - t, 2.2);
+        this._u = a.from[0] + (to[0] - a.from[0]) * e;
+        this._vv = a.from[1] + (to[1] - a.from[1]) * e;
+        // crossing the bar reports neutral
+        const nm = Math.abs(this._vv) > 0.45 ? this._name(this._nearSlot(), this._vv < 0 ? 0 : 2) : "N";
+        this._setValue(nm, !a.emit);
+      }
+      this._paint();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _nearSlot() {
+      let best = 1, bd = 9;
+      SLOTU.forEach((su, i) => { const d = Math.abs(su - this._u); if (d < bd) { bd = d; best = i; } });
+      return best;
+    }
+
+    // ---- pointer ---------------------------------------------------------
+    _gateFromPointer(e) {
+      const r = this._grab.getBoundingClientRect();
+      const px = (e.clientX - r.left) / this._scale, py = (e.clientY - r.top) / this._scale;
+      let v = this._vv;
+      for (let i = 0; i < 3; i++) v = vFromY(py + 78 + 6 * v);      // the ball stands above the gate point
+      const gx = XC + (px - XC) / 1.28;
+      const u = (gx - XC) / wAt(v);
+      return [u, v];
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0; this._anim = null;
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._drag = true;
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const [ru, rv] = this._gateFromPointer(e);
+      if (Math.abs(this._vv) < 0.07) {
+        // on the crossbar: slide along it, or drop into a slot as you pass one
+        let near = -1;
+        SLOTU.forEach((su, i) => { if (Math.abs(ru - su) < 0.22) near = i; });
+        if (near >= 0 && Math.abs(rv) > 0.10) { this._u = SLOTU[near]; this._vv = Math.max(-0.62, Math.min(0.62, rv)); }
+        else { this._u = Math.max(-0.70, Math.min(0.70, ru)); this._vv = 0; }
+      } else {
+        this._vv = Math.max(-0.62, Math.min(0.62, rv));           // in a slot: only along it
+      }
+      const nm = Math.abs(this._vv) > 0.45 ? this._name(this._nearSlot(), this._vv < 0 ? 0 : 2) : "N";
+      this._setValue(nm);
+      this._emit("input");
+      this._paint();
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._drag = null;
+      const slot = this._nearSlot();
+      const row = Math.abs(this._vv) > 0.31 ? (this._vv < 0 ? 0 : 2) : 1;
+      this._slot = slot; this._row = row;
+      if (row === 1) {                                            // neutral: it stays where it is on the bar
+        this._anim = { legs: [[this._u, 0]], i: 0, t0: performance.now(), from: [this._u, this._vv], emit: true };
+        this._legDur();
+      } else this._goTo(slot, row, true);
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    // ---- wheel and keyboard ---------------------------------------------
+    _step(dir) {
+      const i = Math.max(0, Math.min(ORDER.length - 1, ORDER.indexOf(this._v) + dir));
+      const name = ORDER[i];
+      if (name === this._v) return;
+      const p = POS[name]; this._slot = p[0]; this._row = p[1];
+      this._goTo(p[0], p[1], true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const i = ORDER.indexOf(this._v), d = e.deltaY < 0 ? 1 : -1;
+      if ((i <= 0 && d < 0) || (i >= ORDER.length - 1 && d > 0)) return;
+      e.preventDefault();
+      this._step(d);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      let slot = this._nearSlot(), row = Math.abs(this._vv) > 0.31 ? (this._vv < 0 ? 0 : 2) : 1;
+      switch (e.key) {
+        case "ArrowUp": row = Math.max(0, row - 1); break;                 // forward, through neutral
+        case "ArrowDown": row = Math.min(2, row + 1); break;               // back, through neutral
+        case "ArrowLeft": if (row !== 1) row = 1; else slot = Math.max(0, slot - 1); break;
+        case "ArrowRight": if (row !== 1) row = 1; else slot = Math.min(2, slot + 1); break;
+        case "Home": slot = 0; row = 2; break;                             // first
+        case "End": slot = 2; row = 2; break;                              // fifth
+        case " ": case "Spacebar": case "Enter":                           // seat it
+          e.preventDefault();
+          this._goTo(slot, row, true);
+          return;
+        default: return;
+      }
+      e.preventDefault();
+      this._slot = slot; this._row = row;
+      this._goTo(slot, row, true);
+    }
+  }
+  customElements.define("sk-shifter-ferrari-gate", SkShifterFerrariGate);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

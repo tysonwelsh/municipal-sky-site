@@ -68,7 +68,7 @@
   const W = 380, H = 412, CX = 190, CY = 190, RS = 160, SC = 320, HC = SC / 2;
   const D2R = Math.PI / 180, NS = "http://www.w3.org/2000/svg";
   const AW = 0.0125;                                   // half-width of one bearing cell, radians
-  const FLOOR = 0.055;                                 // what is left of an echo after one revolution
+  const FLOOR = 0.2;                                 // what is left of an echo after one revolution (P7 keeps a dim picture)
 
   function lcg(seed) { let s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
@@ -138,9 +138,9 @@
         <radialGradient id="rubber" cx="40%" cy="32%" r="72%">
           <stop offset="0" stop-color="#2b2f31"/><stop offset="0.5" stop-color="#141617"/><stop offset="1" stop-color="#030404"/>
         </radialGradient>
-        <linearGradient id="glare" x1="0.1" y1="0" x2="0.7" y2="1">
-          <stop offset="0" stop-color="#cfe6ff" stop-opacity="0.075"/><stop offset="0.5" stop-color="#cfe6ff" stop-opacity="0.012"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
-        </linearGradient>
+        <radialGradient id="glare" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#cfe6ff" stop-opacity="0.075"/><stop offset="0.55" stop-color="#cfe6ff" stop-opacity="0.026"/><stop offset="1" stop-color="#cfe6ff" stop-opacity="0"/>
+        </radialGradient>
         <radialGradient id="scrw" cx="34%" cy="28%" r="72%">
           <stop offset="0" stop-color="#c3ccd1"/><stop offset="0.6" stop-color="#6d777d"/><stop offset="1" stop-color="#2b3134"/>
         </radialGradient>
@@ -201,7 +201,7 @@
       this._tgSrc = "35,0.42,1.4;118,0.70,0.9;308,0.29,1.7";
       this._tg = parseTargets(this._tgSrc);
       this._rpm = 24; this._ebl = 47; this._vrm = 0.62; this._rings = 4; this._clut = 0.35; this._rangeNM = 6; this._scale = 1;
-      this._acc = 140; this._a = 140; this._raf = 0; this._last = 0;
+      this._acc = 220; this._a = 220; this._raf = 0; this._last = 0;
       this._tick = this._tick.bind(this);
     }
     connectedCallback() {
@@ -327,11 +327,13 @@
       }
       const cl = this._clut;                                    // sea clutter round the centre
       if (cl > 0.02) {
-        const n = 2 + (Math.random() < cl ? 3 : 0);
+        const reach = (0.15 + 0.3 * cl) * RS, n = 2 + (Math.random() < cl ? 2 : 0);
         for (let i = 0; i < n; i++) {
-          const q = Math.random() * Math.random(), rr = 3 + q * (0.42 * RS) * (0.4 + cl);
-          const j = rad + (Math.random() - 0.5) * 0.024;
-          pc.fillStyle = "rgba(170,190,94," + Math.max(0, 0.82 * cl * (1 - rr / (0.44 * RS))).toFixed(3) + ")";
+          const rr = 4 + Math.random() * reach;
+          const j = rad + (Math.random() - 0.5) * 0.026;
+          const a = 0.9 * cl * (1 - rr / reach) * (0.35 + 0.65 * Math.random());
+          if (a <= 0.01) continue;
+          pc.fillStyle = "rgba(174,194,96," + a.toFixed(3) + ")";
           pc.fillRect(HC + rr * Math.cos(j), HC + rr * Math.sin(j), 1.5, 1.5);
         }
       }
@@ -359,23 +361,23 @@
       for (let i = 0; i < FR; i++) {
         const d = (((fi - i) % 360) + 360) % 360, k = (1 - i / FR) * (1 - i / FR), r = this._wave[d], dr = (d - 90) * D2R;
         if (r > 0.03) {
-          lc.lineWidth = 5.5; lc.strokeStyle = "rgba(190,226,255," + (0.30 * k).toFixed(3) + ")";
+          lc.lineWidth = 5.5; lc.strokeStyle = "rgba(150,204,255," + (0.36 * k).toFixed(3) + ")";
           lc.beginPath(); lc.arc(HC, HC, r * RS, dr - AW * 1.7, dr + AW * 1.7); lc.stroke();
-          lc.lineWidth = 2.8; lc.strokeStyle = "rgba(226,244,255," + (0.96 * k).toFixed(3) + ")";
+          lc.lineWidth = 2.8; lc.strokeStyle = (i < 4 ? "rgba(240,250,255," : "rgba(186,224,255,") + (0.96 * k).toFixed(3) + ")";
           lc.beginPath(); lc.arc(HC, HC, r * RS, dr - AW, dr + AW); lc.stroke();
         }
         const tg = this._tg;
         for (let j = 0; j < tg.length; j++) {
           const t = tg[j]; if (Math.floor(t.b) !== d) continue;
           const aw = (0.6 + t.s * 0.6) * D2R, trad = (t.b - 90) * D2R;
-          lc.lineWidth = 2.6 + t.s * 1.6; lc.strokeStyle = "rgba(236,250,255," + (0.96 * k).toFixed(3) + ")";
+          lc.lineWidth = 2.6 + t.s * 1.6; lc.strokeStyle = (i < 4 ? "rgba(244,252,255," : "rgba(196,230,255,") + (0.96 * k).toFixed(3) + ")";
           lc.beginPath(); lc.arc(HC, HC, t.r * RS, trad - aw, trad + aw); lc.stroke();
         }
       }
       // the sweep line and its bloom
       const x = HC + RS * Math.cos(rad), y = HC + RS * Math.sin(rad);
       lc.lineCap = "round";
-      const pass = [[8, "rgba(186,214,255,0.11)"], [3.6, "rgba(200,226,255,0.26)"], [1.4, "rgba(240,250,255,0.97)"]];
+      const pass = [[6, "rgba(176,208,255,0.10)"], [3.2, "rgba(196,224,255,0.24)"], [1.4, "rgba(240,250,255,0.97)"]];
       for (let i = 0; i < 3; i++) {
         lc.lineWidth = pass[i][0]; lc.strokeStyle = pass[i][1];
         lc.beginPath(); lc.moveTo(HC, HC); lc.lineTo(x, y); lc.stroke();

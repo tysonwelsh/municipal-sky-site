@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edwards red fire-alarm gong — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Anton&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "bell-edwards-fire-gong",
+  "element": "sk-bell-edwards-fire",
+  "name": "Edwards red fire-alarm gong",
+  "kind": "output",
+  "code": "I9",
+  "type": "Alarm gong / bell",
+  "source": "Edwards 340 / Faraday / Simplex 4090 fire-alarm gong — a spun steel gong painted signal red on a red cast back box, solenoid hammer behind, conduit from above",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["spun steel", "signal red enamel", "cast iron", "steel conduit"],
+  "tags": ["fire alarm", "gong", "school bell", "hammer", "momentary", "industrial"],
+  "value": { "model": "momentary" },
+  "attributes": ["ringing", "size", "label", "scale"],
+  "events": ["activate"],
+  "size": { "w": 180, "h": 180 },
+  "notes": "Three gongs: a silent 10-inch, a 10-inch ringing (hammer blurred, gong shaking), and a plain 6-inch. Call activate() — or click a gong — for a single strike."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-bell-edwards-fire label="FIRE"></sk-bell-edwards-fire>
+    <sk-bell-edwards-fire label="FIRE" ringing></sk-bell-edwards-fire>
+    <sk-bell-edwards-fire size="6"></sk-bell-edwards-fire>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Edwards 340</b> — and its Faraday and Simplex cousins — is the gong screwed to the corridor wall of
+  every American school, mill and hospital built between the wars and the seventies: a spun-steel gong of six or
+  ten inches painted signal red, a red cast back box smaller than the gong, a solenoid or motor-driven hammer
+  hidden behind it whose head just shows past the rim at four o'clock, and a run of half-inch conduit dropping
+  into the top of the box.</p>
+  <p><b>The tells kept here:</b> the gong is <i>domed</i> — a broad highlight up at the top-left, a dark crescent
+  at the bottom-right, a band of reflected light on the underside of the rolled rim; the central boss with its
+  hex bolt; FIRE cast into the face and painted over, so it is an emboss with no ink of its own; a chip on the
+  rim down to bare steel where a mop handle found it, and a lighter scuff above it; the conduit stub and its
+  cast hub; the back box peeking below the gong. Ringing, the gong shakes about two pixels at twenty hertz and
+  the hammer alternates so fast it doubles; a single strike is a sixty-millisecond swing and a four-hundred
+  millisecond ring-down.</p>
+  <p><b>Left out:</b> the rear solenoid and its terminals, the mounting screws hidden under the gong, and the
+  maker's name — the cast word is the generic FIRE, not a trademark.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-bell-edwards-fire> — 1950s red fire-alarm gong with a visible striker ====
+   attributes: ringing (boolean, continuous) · size (6 | 10 inches) · label (cast word, default FIRE) · scale
+   methods: activate() / strike() — one hammer blow; emits an "activate" event
+   no value events. self-contained: paste this block into any page and use
+   <sk-bell-edwards-fire ringing></sk-bell-edwards-fire> */
+(function () {
+  if (customElements.get("sk-bell-edwards-fire")) return;
+  const W = 180, H = 180, CX = 90, CY = 98, R = 78;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; width: ${W}px; height: ${H}px; font-size: 10px;
+            -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .cast { font-family: "Anton", "Oswald", "Arial Narrow", sans-serif; font-size: 19px;
+            letter-spacing: 0.14em; text-anchor: middle; }
+    .ghost { opacity: 0; }
+    .hide { display: none; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <radialGradient id="face" cx="33%" cy="26%" r="82%">
+          <stop offset="0" stop-color="#f2755c"/><stop offset="0.14" stop-color="#e8503f"/>
+          <stop offset="0.48" stop-color="#c7241f"/><stop offset="0.80" stop-color="#9c1813"/>
+          <stop offset="1" stop-color="#7d1210"/>
+        </radialGradient>
+        <linearGradient id="rim" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#ff9a83"/><stop offset="0.28" stop-color="#d43a2c"/>
+          <stop offset="0.62" stop-color="#8f1511"/><stop offset="1" stop-color="#5e0c0a"/>
+        </linearGradient>
+        <radialGradient id="boss" cx="34%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#e05c48"/><stop offset="0.5" stop-color="#a81b16"/>
+          <stop offset="1" stop-color="#6d100c"/>
+        </radialGradient>
+        <linearGradient id="bolt" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#9a9a9a"/><stop offset="0.45" stop-color="#5a5a5a"/>
+          <stop offset="1" stop-color="#242424"/>
+        </linearGradient>
+        <linearGradient id="castf" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e8604c"/><stop offset="1" stop-color="#a81b16"/>
+        </linearGradient>
+        <linearGradient id="cond" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3f4144"/><stop offset="0.22" stop-color="#8e9194"/>
+          <stop offset="0.45" stop-color="#5c5f62"/><stop offset="0.8" stop-color="#2e3032"/>
+          <stop offset="1" stop-color="#5a5d60"/>
+        </linearGradient>
+        <radialGradient id="box" cx="36%" cy="24%" r="86%">
+          <stop offset="0" stop-color="#c8322a"/><stop offset="0.6" stop-color="#96170f"/>
+          <stop offset="1" stop-color="#5a0d09"/>
+        </radialGradient>
+        <linearGradient id="arm" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a4a4e"/><stop offset="0.35" stop-color="#242426"/>
+          <stop offset="1" stop-color="#0d0d0e"/>
+        </linearGradient>
+        <radialGradient id="head" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#6c6c70"/><stop offset="0.55" stop-color="#26262a"/>
+          <stop offset="1" stop-color="#0c0c0d"/>
+        </radialGradient>
+        <radialGradient id="steel" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#cfd2d4"/><stop offset="0.6" stop-color="#9a9a9a"/>
+          <stop offset="1" stop-color="#6a6c6e"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="tiny" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.7"/></filter>
+      </defs>
+
+      <!-- ambient shadow on the wall, from the light above-left -->
+      <ellipse cx="97" cy="108" rx="79" ry="78" fill="#000" opacity="0.42" filter="url(#softer)"/>
+
+      <!-- conduit dropping into the top of the box -->
+      <g>
+        <rect x="80" y="-4" width="19" height="34" fill="url(#cond)"/>
+        <rect x="77" y="18" width="25" height="11" rx="2.5" fill="url(#cond)" stroke="#1d1f20" stroke-width="0.6"/>
+        <rect x="77" y="18" width="25" height="2.4" fill="#b9bdc0" opacity="0.5"/>
+        <ellipse cx="90" cy="40" rx="24" ry="14" fill="#8a1712"/>
+        <ellipse cx="90" cy="38" rx="24" ry="14" fill="url(#box)"/>
+      </g>
+
+      <!-- the red cast back box, peeking below the gong -->
+      <circle cx="92" cy="113" r="69" fill="url(#box)"/>
+      <circle cx="92" cy="113" r="69" fill="none" stroke="#4e0a07" stroke-width="1"/>
+      <path d="M 27 138 A 69 69 0 0 0 157 138" fill="none" stroke="#e0665a" stroke-opacity="0.35" stroke-width="1.4"/>
+
+      <!-- the hammer, behind the gong: only the head shows past the rim at 4 o'clock -->
+      <g class="ghost">
+        <g transform="rotate(30 ${CX} ${CY})"><g class="gin">
+          <rect x="112" y="93.5" width="56" height="9" rx="3" fill="url(#arm)"/>
+          <circle cx="171" cy="98" r="8" fill="url(#head)" stroke="#000" stroke-width="0.6"/>
+        </g></g>
+      </g>
+      <g>
+        <g transform="rotate(30 ${CX} ${CY})"><g class="hin">
+          <rect x="112" y="93.5" width="56" height="9" rx="3" fill="url(#arm)"/>
+          <rect x="112" y="94" width="56" height="1.6" rx="0.8" fill="#8f9296" opacity="0.35"/>
+          <circle cx="171" cy="98" r="8" fill="url(#head)" stroke="#000" stroke-width="0.6"/>
+          <circle cx="168.5" cy="95" r="2.6" fill="#b9bcc0" opacity="0.35"/>
+        </g></g>
+      </g>
+
+      <!-- the gong -->
+      <g class="bell">
+        <!-- rolled rim -->
+        <circle cx="${CX}" cy="${CY}" r="${R}" fill="url(#rim)"/>
+        <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#3d0705" stroke-width="1" opacity="0.8"/>
+        <!-- domed face -->
+        <circle cx="${CX}" cy="${CY}" r="${R - 7}" fill="url(#face)"/>
+        <!-- spun lathe rings -->
+        <circle cx="${CX}" cy="${CY}" r="26" fill="none" stroke="#fff" stroke-opacity="0.05" stroke-width="1"/>
+        <circle cx="${CX}" cy="${CY}" r="44" fill="none" stroke="#fff" stroke-opacity="0.045" stroke-width="1"/>
+        <circle cx="${CX}" cy="${CY}" r="58" fill="none" stroke="#000" stroke-opacity="0.07" stroke-width="1.2"/>
+        <!-- the cast word, an emboss: no ink of its own -->
+        <g class="legend">
+          <text class="cast" x="${CX}" y="${CY - 27}" fill="#000" opacity="0.34" dy="1.4"></text>
+          <text class="cast" x="${CX}" y="${CY - 27}" fill="#fff" opacity="0.26" dy="-1.2"></text>
+          <text class="cast" x="${CX}" y="${CY - 27}" fill="url(#castf)"></text>
+        </g>
+        <!-- central boss and hex bolt -->
+        <circle cx="${CX}" cy="${CY + 1}" r="15" fill="#000" opacity="0.35" filter="url(#soft)"/>
+        <circle cx="${CX}" cy="${CY}" r="14" fill="url(#boss)" stroke="#5e0c0a" stroke-width="0.7"/>
+        <path d="M ${CX} ${CY - 7} L ${CX + 6.1} ${CY - 3.5} L ${CX + 6.1} ${CY + 3.5} L ${CX} ${CY + 7} L ${CX - 6.1} ${CY + 3.5} L ${CX - 6.1} ${CY - 3.5} Z"
+              fill="url(#bolt)" stroke="#111" stroke-width="0.6"/>
+        <path d="M ${CX - 6.1} ${CY - 3.5} L ${CX} ${CY - 7} L ${CX + 6.1} ${CY - 3.5}" fill="none" stroke="#c6c8ca" stroke-opacity="0.55" stroke-width="0.8"/>
+        <!-- chip on the rim to bare steel, and a scuff -->
+        <g transform="rotate(232 ${CX} ${CY})">
+          <path d="M 83.5 21.5 L 91 18.8 L 96.5 22.6 L 94.2 28.8 L 86 27.6 Z" fill="url(#steel)"/>
+          <path d="M 83.5 21.5 L 91 18.8 L 96.5 22.6" fill="none" stroke="#5e0c0a" stroke-width="0.9"/>
+          <path d="M 96.5 22.6 L 94.2 28.8 L 86 27.6 Z" fill="none" stroke="#ffb9a8" stroke-opacity="0.35" stroke-width="0.7"/>
+        </g>
+        <g transform="rotate(58 ${CX} ${CY})">
+          <path d="M 96 26 L 104 30 L 100 33" fill="none" stroke="#f2a08e" stroke-opacity="0.4" stroke-width="1.1" stroke-linecap="round"/>
+        </g>
+        <!-- reflected light on the underside of the rim -->
+        <path d="M ${CX - 62} ${CY + 46} A ${R - 3} ${R - 3} 0 0 0 ${CX + 60} ${CY + 48}" fill="none"
+              stroke="#ff9a7e" stroke-opacity="0.22" stroke-width="3" filter="url(#tiny)"/>
+        <!-- the specular on the rim, above-left -->
+        <path d="M ${CX - 62} ${CY - 46} A ${R - 3} ${R - 3} 0 0 1 ${CX - 8} ${CY - 74}" fill="none"
+              stroke="#ffd9cc" stroke-opacity="0.5" stroke-width="2.2" filter="url(#tiny)"/>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkBellEdwardsFire extends HTMLElement {
+    static get observedAttributes() { return ["ringing", "size", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._sf = 1;
+      this._amp = 0; this._raf = 0; this._last = 0; this._hit = -9; this._sw = -9; this._demoK = -1;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._bell = $(".bell"); this._hin = $(".hin"); this._gin = $(".gin");
+      this._ghost = $(".ghost"); this._legend = $(".legend");
+      this._texts = this.shadowRoot.querySelectorAll(".cast");
+      this._tick = this._tick.bind(this);
+      this._onClick = () => { if (!this.hasAttribute("ringing")) this.strike(); };
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._paint(0, 0, 0);
+      this.addEventListener("click", this._onClick);
+      if (this.hasAttribute("ringing")) this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this.removeEventListener("click", this._onClick);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "ringing") { if (this.hasAttribute("ringing")) this._kick(); }
+    }
+    /* the value model is momentary; `value` is the ringing flag and never emits */
+    get value() { return this.hasAttribute("ringing"); }
+    set value(v) {
+      const on = (v === true || v === 1 || v === "true" || v === "1" || v === "on");
+      if (on === this.hasAttribute("ringing")) return;
+      if (on) this.setAttribute("ringing", ""); else this.removeAttribute("ringing");
+    }
+    get ringing() { return this.hasAttribute("ringing"); }
+    set ringing(v) { this.value = v; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    activate() { this.strike(); }
+    strike() {
+      const t = performance.now() / 1000;
+      this._sw = t; this._hit = t + 0.06;
+      this.dispatchEvent(new CustomEvent("activate", { bubbles: true, composed: true, detail: { value: null } }));
+      this._kick();
+    }
+    /* idle animation for the bench: one strike every couple of seconds */
+    demo(t) {
+      if (!this.hasAttribute("ringing")) {
+        const k = Math.floor(t / 2.6);
+        if (k !== this._demoK) { this._demoK = k; this.strike(); }
+      }
+      return undefined;
+    }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._sf = Math.round(num("size", 10)) === 6 ? 0.66 : 1;
+      const lab = this.hasAttribute("label") ? this.getAttribute("label") : (this._sf < 1 ? "" : "FIRE");
+      this._texts.forEach(t => { t.textContent = lab; });
+      this._legend.classList.toggle("hide", !lab);
+      const s = this._scale * this._sf;
+      this.style.width = (W * s) + "px"; this.style.height = (H * s) + "px";
+      this._wrap.style.transform = "scale(" + s + ")";
+      this.setAttribute("aria-label",
+        (this._sf < 1 ? "6-inch" : "10-inch") + " fire alarm gong, " + (this.hasAttribute("ringing") ? "ringing" : "silent"));
+    }
+    _kick() { if (!this._raf) { this._last = performance.now() / 1000; this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const t = now / 1000;
+      const dt = Math.min(0.05, Math.max(0, t - this._last)); this._last = t;
+      const ring = this.hasAttribute("ringing");
+      let ham = 0, amp;
+      if (ring) {
+        this._amp += (2.1 - this._amp) * Math.min(1, dt * 14);
+        amp = this._amp;
+        ham = Math.sin(t * Math.PI * 40) > 0 ? 1 : 0;
+      } else {
+        const sh = t - this._hit;
+        amp = sh >= 0 ? 2.9 * Math.exp(-sh / 0.115) : 0;
+        this._amp = amp;
+        const s = t - this._sw;
+        if (s >= 0 && s < 0.24) ham = s < 0.06 ? s / 0.06 : Math.max(0, 1 - (s - 0.06) / 0.18);
+      }
+      const ph = t * Math.PI * 40;
+      this._paint(amp * Math.sin(ph), amp * 0.42 * Math.sin(ph * 1.7 + 1), ham, ring);
+      if (!ring && amp < 0.02 && (t - this._sw) > 0.5) { this._paint(0, 0, 0, false); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint(dx, dy, ham, ring) {
+      this._bell.style.transform = "translate(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px)";
+      this._hin.style.transform = "translate(" + (-9 * ham).toFixed(2) + "px,0)";
+      this._gin.style.transform = "translate(" + (-9 * (1 - ham)).toFixed(2) + "px,0)";
+      this._ghost.style.opacity = ring ? "0.45" : "0";
+    }
+  }
+  customElements.define("sk-bell-edwards-fire", SkBellEdwardsFire);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
