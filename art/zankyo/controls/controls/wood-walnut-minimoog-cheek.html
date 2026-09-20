@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minimoog oiled walnut end cheek — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "wood-walnut-minimoog-cheek",
+  "element": "sk-wood-walnut-cheek",
+  "name": "Minimoog oiled walnut end cheek",
+  "kind": "output",
+  "code": "J6",
+  "type": "Panel swatch — solid oiled walnut",
+  "source": "Moog Minimoog Model D end cheeks and base (1970); Prophet-5 rev 3 walnut; Hohner Clavinet D6 cheeks",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["solid black walnut", "tung oil"],
+  "tags": ["panel", "swatch", "synthesizer", "wood", "walnut", "cheek"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "orientation", "edge", "end", "width", "height", "wear", "scale"],
+  "events": [],
+  "size": { "w": 48, "h": 200 },
+  "notes": "A solid-wood swatch other pages mount a synth or amp panel against. orientation sets the grain direction, edge rounds or squares the lit front edge, end shows a cut end-grain band."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-wood-walnut-cheek width="48" height="200"></sk-wood-walnut-cheek>
+    <sk-wood-walnut-cheek width="320" height="40" orientation="horizontal" end></sk-wood-walnut-cheek>
+    <sk-wood-walnut-cheek width="48" height="200" edge="square" scale="0.85"></sk-wood-walnut-cheek>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Minimoog Model D's</b> solid black-walnut end cheeks and base skirt, and the same timber on a
+  Prophet-5 rev&nbsp;3 or a Clavinet D6: a hand-oiled finish rubbed into the grain rather than lacquered over
+  it, so the wood stays matte and a little dark, with the front edge broken to a soft round that the light
+  catches as one clean line.</p>
+  <p><b>The tells kept here:</b> straight long grain with a slight waviness and one cathedral arch built from a
+  stretched noise field mapped through a warm three-stop gradient, so it crowds and curves rather than
+  repeating; short dark pore dashes running with the grain; a deep chocolate ground with warm red-brown early
+  wood, darker than any lacquered veneer; a single soft highlight along the rounded front edge and a paler
+  line of bare wood at the top edge where hands rest over the years; the piece sitting proud of its mounting
+  panel by a couple of pixels, with its own contact shadow. <code>orientation</code> turns the grain to run
+  along the long or short axis, <code>end</code> adds a cut end-grain band with its own ray pattern, and
+  <code>edge="square"</code> drops the round-over for a plain machined edge.</p>
+  <p><b>Left out:</b> the cheek's screw bosses and the case-bolt counterbores on its inner face.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-wood-walnut-cheek> — Minimoog-style solid oiled walnut end cheek ====
+   attributes: value orientation(vertical|horizontal) edge(rounded|square) end width height wear(0..1) scale
+   no events (an output). Has a default <slot> for mounting a panel against the cheek.
+   self-contained: paste this block into any page and use
+   <sk-wood-walnut-cheek></sk-wood-walnut-cheek> */
+(function () {
+  if (customElements.get("sk-wood-walnut-cheek")) return;
+  var DW = 48, DH = 200;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 9px; line-height: 1;',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.cheek { position: absolute; inset: 0; overflow: hidden;',
+  '  background: linear-gradient(100deg, #4c2f1a 0%, #5b3b22 42%, #6a4526 68%, #52341d 100%);',
+  '  box-shadow: 3px 5px 7px rgba(0,0,0,.55), 1px 1px 0 rgba(0,0,0,.4);',
+  '  border-radius: 3px; }',
+  ':host([edge="rounded"]) .cheek, :host(:not([edge])) .cheek { border-radius: 5px; }',
+  ':host([edge="square"]) .cheek { border-radius: 1px; }',
+  /* --- grain: fine turbulence streaks, oriented per `orientation` --- */
+  '.grain { position: absolute; inset: -4% -4%; width: 108%; height: 108%; display: block;',
+  '  mix-blend-mode: overlay; opacity: .68; pointer-events: none; }',
+  /* --- the cathedral arch: a slow radial warm/dark band, oriented with the grain --- */
+  '.cathedral { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .55; }',
+  ':host(:not([orientation="horizontal"])) .cathedral { background:',
+  '  radial-gradient(65% 32% at 38% 62%, rgba(150,100,55,.55) 0%, rgba(150,100,55,0) 68%),',
+  '  radial-gradient(55% 24% at 62% 30%, rgba(40,22,10,.5) 0%, rgba(40,22,10,0) 70%); }',
+  ':host([orientation="horizontal"]) .cathedral { background:',
+  '  radial-gradient(30% 70% at 62% 40%, rgba(150,100,55,.55) 0%, rgba(150,100,55,0) 68%),',
+  '  radial-gradient(22% 60% at 32% 62%, rgba(40,22,10,.5) 0%, rgba(40,22,10,0) 70%); }',
+  /* --- pores: short dark dashes running with the grain --- */
+  '.pores { position: absolute; inset: 0; pointer-events: none; opacity: .30; mix-blend-mode: multiply; }',
+  ':host(:not([orientation="horizontal"])) .pores { background: repeating-linear-gradient(0deg, rgba(30,16,8,.9) 0 1px, rgba(30,16,8,0) 1px 3px) 0 0/3px 100%,',
+  '  repeating-linear-gradient(0deg, rgba(30,16,8,0) 0 6px, rgba(30,16,8,.7) 6px 7px) 1px 0/5px 100%; }',
+  ':host([orientation="horizontal"]) .pores { background: repeating-linear-gradient(90deg, rgba(30,16,8,.9) 0 1px, rgba(30,16,8,0) 1px 3px) 0 0/100% 3px,',
+  '  repeating-linear-gradient(90deg, rgba(30,16,8,0) 0 6px, rgba(30,16,8,.7) 6px 7px) 0 1px/100% 5px; }',
+  /* --- oiled satin sheen: only along the rounded front edge, not across the face --- */
+  '.sheen { position: absolute; pointer-events: none; opacity: .55; mix-blend-mode: soft-light; }',
+  ':host(:not([orientation="horizontal"])) .sheen { right: 0; top: 0; bottom: 0; width: 34%;',
+  '  background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(210,170,120,.55) 62%, rgba(255,225,180,.75) 92%, rgba(255,225,180,.2) 100%); }',
+  ':host([orientation="horizontal"]) .sheen { left: 0; right: 0; top: 0; height: 40%;',
+  '  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(210,170,120,.5) 58%, rgba(255,225,180,.7) 90%, rgba(255,225,180,.2) 100%); }',
+  /* --- pale worn line of bare wood at the top edge, where hands rest --- */
+  '.handline { position: absolute; pointer-events: none; opacity: .5; mix-blend-mode: screen; }',
+  ':host(:not([orientation="horizontal"])) .handline { left: 0; right: 0; top: 0; height: 4px;',
+  '  background: linear-gradient(180deg, rgba(220,180,130,.65), rgba(220,180,130,0)); }',
+  ':host([orientation="horizontal"]) .handline { left: 0; top: 0; bottom: 0; width: 4px;',
+  '  background: linear-gradient(90deg, rgba(220,180,130,.65), rgba(220,180,130,0)); }',
+  /* --- end grain band (shown when `end` is set) --- */
+  '.endgrain { position: absolute; pointer-events: none; display: none; }',
+  ':host([end]:not([orientation="horizontal"])) .endgrain { display: block; left: 0; right: 0; top: 0; height: 22%;',
+  '  background: radial-gradient(160% 90% at 50% 145%, #6a4a2a 0%, #4a3019 45%, #2e1c0e 78%, #22140a 100%); }',
+  ':host([end][orientation="horizontal"]) .endgrain { display: block; top: 0; bottom: 0; left: 0; width: 16%;',
+  '  background: radial-gradient(90% 160% at -45% 50%, #6a4a2a 0%, #4a3019 45%, #2e1c0e 78%, #22140a 100%); }',
+  '.endrays { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }',
+  /* --- inset shadow where the cheek meets its (implied) mounting panel --- */
+  '.seam { position: absolute; pointer-events: none; }',
+  ':host(:not([orientation="horizontal"])) .seam { left: 0; top: 0; bottom: 0; width: 6px;',
+  '  background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,0)); }',
+  ':host([orientation="horizontal"]) .seam { left: 0; right: 0; bottom: 0; height: 6px;',
+  '  background: linear-gradient(0deg, rgba(0,0,0,.5), rgba(0,0,0,0)); }',
+  /* --- generic wear: a slightly polished patch where hands repeatedly touch --- */
+  '.wear1 { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light;',
+  '  background: radial-gradient(30% 22% at 50% 46%, rgba(255,235,200,.7), rgba(255,235,200,0) 72%); }',
+  /* --- optional printed/engraved text (rare on wood; usually empty) --- */
+  '.label { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; pointer-events: none;',
+  '  font-family: "JetBrains Mono", monospace; font-size: 7px; letter-spacing: .12em; color: rgba(255,235,205,.55);',
+  '  text-shadow: 0 1px 1px rgba(0,0,0,.6); }',
+  '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="cheek">',
+  '    <svg class="grain" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">',
+  '      <defs>',
+  '        <filter id="wg" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">',
+  '          <feTurbulence type="fractalNoise" baseFrequency="0.011 0.14" numOctaves="4" seed="7" result="n"/>',
+  '          <feColorMatrix in="n" type="matrix" values="0.5 0.3 0.1 0 0  0.35 0.35 0.1 0 0  0.2 0.2 0.1 0 0  0 0 0 0 1" result="g"/>',
+  '          <feComponentTransfer in="g" result="c">',
+  '            <feFuncR type="linear" slope="2.1" intercept="-0.55"/>',
+  '            <feFuncG type="linear" slope="2.1" intercept="-0.55"/>',
+  '            <feFuncB type="linear" slope="2.1" intercept="-0.55"/>',
+  '          </feComponentTransfer>',
+  '          <feGaussianBlur in="c" stdDeviation="0.18 0.35"/>',
+  '        </filter>',
+  '      </defs>',
+  '      <rect x="0" y="0" width="100%" height="100%" filter="url(#wg)"/>',
+  '    </svg>',
+  '    <div class="cathedral"></div>',
+  '    <div class="pores"></div>',
+  '    <div class="sheen"></div>',
+  '    <div class="handline"></div>',
+  '    <div class="seam"></div>',
+  '    <div class="wear1"></div>',
+  '    <div class="endgrain">',
+  '      <svg class="endrays" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">',
+  '        <defs><filter id="eg" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">',
+  '          <feTurbulence type="fractalNoise" baseFrequency="0.09 0.09" numOctaves="2" seed="3"/>',
+  '          <feColorMatrix type="matrix" values="0.4 0.25 0.1 0 0  0.25 0.25 0.1 0 0  0.15 0.15 0.1 0 0  0 0 0 0 0.55"/>',
+  '        </filter></defs>',
+  '        <rect x="0" y="0" width="100%" height="100%" filter="url(#eg)"/>',
+  '      </svg>',
+  '    </div>',
+  '    <div class="label"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  class SkWoodWalnutCheek extends HTMLElement {
+    static get observedAttributes() { return ["value", "orientation", "edge", "end", "width", "height", "wear", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._label = r.querySelector(".label");
+      this._wear1 = r.querySelector(".wear1");
+      this._v = null;
+    }
+    connectedCallback() {                     // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this.getAttribute("value") || ""; }
+    set value(v) { v = v == null ? "" : String(v); this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var horiz = this.getAttribute("orientation") === "horizontal";
+      var w = clamp(num(this, "width", horiz ? 320 : DW), 16, 4000);
+      var h = clamp(num(this, "height", horiz ? 40 : DH), 16, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      var txt = this.getAttribute("value") || "";
+      if (txt !== this._v) { this._v = txt; this._label.textContent = txt; }
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      this._wear1.style.opacity = (wear * 0.5).toFixed(2);
+
+      this.setAttribute("aria-label", (txt ? txt + " — " : "") + "oiled walnut end cheek" + (horiz ? ", horizontal grain" : ", vertical grain"));
+    }
+  }
+  customElements.define("sk-wood-walnut-cheek", SkWoodWalnutCheek);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

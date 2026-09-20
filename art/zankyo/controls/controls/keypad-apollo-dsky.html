@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apollo DSKY keyboard &amp; display — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Roboto+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "keypad-apollo-dsky",
+  "element": "sk-keypad-apollo-dsky",
+  "name": "Apollo DSKY keyboard & display",
+  "kind": "both",
+  "code": "E12.1",
+  "type": "Alphanumeric keypad with display",
+  "source": "The Apollo Guidance Computer's DSKY (MIT Instrumentation Laboratory / Raytheon, 1966), as flown in the Command Module and the LM",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["painted aluminium", "polycarbonate", "electroluminescent glass"],
+  "tags": ["spaceflight", "computer", "keypad", "seven-segment", "status lamps"],
+  "value": { "model": "text" },
+  "attributes": ["value", "prog", "verb", "noun", "r1", "r2", "r3", "lamps", "comp-acty", "flash", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 380, "h": 470 },
+  "notes": "Two units: one idle with a time in the registers, one flashing VERB/NOUN with lamps lit. Type VERB, digits, NOUN, digits, ENTR."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-keypad-apollo-dsky scale="0.62" prog="00" verb="16" noun="36" r1="+00135" r2="+02259" r3="+00047" lamps="PROG"></sk-keypad-apollo-dsky>
+    <sk-keypad-apollo-dsky scale="0.62" prog="01" verb="" noun="" r1="+00000" r2="+00000" r3="+00000" flash lamps="KEY REL,TRACKER,GIMBAL LOCK"></sk-keypad-apollo-dsky>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>The <b>DSKY</b> ("dis-key," Display and Keyboard) was the astronaut's only window into the Apollo Guidance
+Computer: a grey painted-aluminium panel the size of a paperback, a 19-key keypad of VERB, NOUN, the ten digits,
+the two signs, CLR, PRO, KEY REL, ENTR and RSET, and above it a block of amber-and-white status lamps beside a
+green electroluminescent display of three five-digit signed registers under PROG / VERB / NOUN. Every command to
+the computer was typed as a "Verb Noun" pair — <i>Verb 16 Noun 36</i> to display the mission time — and confirmed
+with ENTR.</p>
+<p><b>The tells kept here:</b> the keys as dark squares with a legend that glows rather than prints, dropping 2 px
+and brightening on press; the registers as seven-segment digits built from rounded, slightly italic strokes, an
+electroluminescent green with a soft bleed at the edges; VERB and NOUN flashing together when the computer wants
+an answer; the status lamps as flat, hotspot-free rectangles, lit amber or white on black; the COMP ACTY square
+in the display's corner. Keyboard: digits, <kbd>V</kbd>/<kbd>N</kbd> for VERB/NOUN, <kbd>Enter</kbd> for ENTR,
+<kbd>Esc</kbd> for CLR, arrows move between keys.</p>
+<p><b>Left out:</b> the alarm lamps' full 14-name set (a representative twelve are wired), the physical rear
+connector, and the AGC's actual verb/noun program logic — this reproduces the panel, not the computer.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-keypad-apollo-dsky> — Apollo DSKY keyboard + EL display + status lamps ====
+   attributes: value prog verb noun r1 r2 r3 lamps comp-acty flash scale disabled
+   value: the entry buffer as typed; events: input (per keystroke), change {verb,noun,entry} on ENTR
+   self-contained: paste this block into any page and use <sk-keypad-apollo-dsky></sk-keypad-apollo-dsky> */
+(function () {
+  if (customElements.get("sk-keypad-apollo-dsky")) return;
+  const W = 380, H = 470;
+
+  const SEG = { "0":"abcdef","1":"bc","2":"abged","3":"abgcd","4":"fgbc","5":"afgcd","6":"afgecd",
+                "7":"abc","8":"abcdefg","9":"abcdfg"," ":"","-":"g" };
+  const SEGXY = { a:[1,1,8,1], b:[8,1,8,8], c:[8,8,8,15], d:[1,15,8,15], e:[1,8,1,15], f:[1,1,1,8], g:[1,8,8,8] };
+  const DW = 12.5; // digit pitch
+  const NS = "http://www.w3.org/2000/svg";
+  function sn(tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+  // ---- keypad layout: 7 rows x 3 cols, 19 keys, matching the real DSKY block ----
+  const ROWS = [
+    ["VERB", null, "NOUN"],
+    ["+", null, "-"],
+    ["7", "8", "9"],
+    ["4", "5", "6"],
+    ["1", "2", "3"],
+    ["CLR", "0", "PRO"],
+    ["KEY REL", "RSET", "ENTR"]
+  ];
+  const LAMP_NAMES = ["UPLINK ACTY", "NO ATT", "STBY", "KEY REL", "OPR ERR", "TEMP", "GIMBAL LOCK", "PROG", "RESTART", "TRACKER", "ALT", "VEL"];
+  const LAMP_COLOR = { "UPLINK ACTY": "w", "NO ATT": "w", "STBY": "w", "KEY REL": "y", "OPR ERR": "y", "TEMP": "y",
+                        "GIMBAL LOCK": "y", "PROG": "w", "RESTART": "y", "TRACKER": "w", "ALT": "w", "VEL": "w" };
+
+  const GRID_LEFT = 108, GRID_TOP = 178, COL_PITCH = 52, ROW_PITCH = 40, KEY = 34;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .bezel { position: absolute; inset: 0; border-radius: 16px;
+      background: linear-gradient(155deg, #a7acae 0%, #8f9497 40%, #6d7274 78%, #5a5f61 100%);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 6px rgba(0,0,0,0.35);
+    }
+    .bezel::after { content:""; position:absolute; inset:6px; border-radius:11px; border:1px solid rgba(0,0,0,0.28); pointer-events:none; }
+    .screw { position:absolute; width:6px; height:6px; border-radius:50%; background: radial-gradient(circle at 35% 30%, #d6d9da, #6c7072 65%, #3a3d3e); box-shadow: inset 0 0 1px #000; }
+    svg { position: absolute; overflow: visible; }
+    text { font-family: "Michroma", "Eurostile", sans-serif; }
+
+    /* status lamps */
+    .lamp { position:absolute; width:64px; height:15px; border-radius:2px; background:#232321;
+      box-shadow: inset 0 0 0 1px #16171a, inset 0 1px 2px rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center;
+      overflow:hidden; }
+    .lamp span { font: 600 6px/1 "Roboto Condensed", sans-serif; letter-spacing: 0.03em; color:#3d3d3a; transition: color 120ms; text-align:center; }
+    .lamp.lit-w { background:#efe9d8; box-shadow: inset 0 0 0 1px #b9b199, 0 0 5px rgba(255,250,225,0.5); }
+    .lamp.lit-w span { color:#0d0d0c; }
+    .lamp.lit-y { background:#e8b81c; box-shadow: inset 0 0 0 1px #96780a, 0 0 6px rgba(232,184,28,0.6); }
+    .lamp.lit-y span { color:#0d0d0c; }
+
+    /* EL display */
+    .el { position:absolute; left:180px; top:20px; width:180px; height:132px; border-radius:4px;
+      background: radial-gradient(120% 100% at 30% 0%, #14251a 0%, #0c1a12 60%, #08130d 100%);
+      box-shadow: inset 0 0 0 1px #06120a, inset 0 3px 8px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.15); }
+    .el-glass { position:absolute; inset:0; border-radius:4px; background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 40%); pointer-events:none; }
+    .fieldlbl { font: 600 6px/1 "Roboto Condensed", sans-serif; letter-spacing:0.1em; fill:#3f7d57; }
+    .fieldlbl.lit { fill:#7dffb0; }
+    .comp { position:absolute; left:6px; top:6px; width:9px; height:9px; border-radius:1px; background:#123322; box-shadow: inset 0 0 0 1px #0a1f14; }
+    .comp.on { background:#5ef29b; box-shadow: 0 0 6px #5ef29b, inset 0 0 0 1px #2a6b46; }
+    .rule { position:absolute; left:8px; right:8px; height:1px; background:#2c5a3c; opacity:0.6; }
+
+    /* keys */
+    .key { position:absolute; width:${KEY}px; height:${KEY}px; border-radius:5px; cursor:pointer; outline:none;
+      background: linear-gradient(160deg, #3a3c3e 0%, #232527 55%, #191a1b 100%);
+      box-shadow: 0 3px 0 #0e0f10, 0 5px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
+      display:flex; align-items:center; justify-content:center; text-align:center; padding:2px;
+      transition: transform 30ms, box-shadow 30ms; -webkit-user-select:none; user-select:none; touch-action: manipulation; }
+    .key span { font: 600 7.5px/1.05 "Michroma", sans-serif; color:#8b8d8a; letter-spacing:0.01em; transition: color 60ms, text-shadow 60ms; }
+    .key.digit span { font-size: 11px; }
+    .key.pressed, .key:active { transform: translateY(2px); box-shadow: 0 1px 0 #0e0f10, 0 2px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.10); }
+    .key.pressed span, .key.lit span { color:#f5eddc; text-shadow: 0 0 5px rgba(245,237,220,0.85), 0 0 1px rgba(245,237,220,0.9); }
+    .key:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 8px rgba(22,224,224,0.6); }
+    :host([disabled]) .key { cursor: default; }
+
+    .flash .fieldlbl, .flash .field-g { animation: dsky-flash 0.6s steps(1,end) infinite; }
+    @keyframes dsky-flash { 0%,49% { opacity:1; } 50%,100% { opacity:0.15; } }
+  </style>
+  <div class="wrap">
+    <div class="bezel"></div>
+    <div class="screw" style="left:8px; top:8px;"></div>
+    <div class="screw" style="right:8px; top:8px;"></div>
+    <div class="screw" style="left:8px; bottom:8px;"></div>
+    <div class="screw" style="right:8px; bottom:8px;"></div>
+    <svg class="lamps" viewBox="0 0 ${W} ${H}"></svg>
+    <div class="lampsdom"></div>
+    <div class="el">
+      <div class="comp" part="comp"></div>
+      <svg class="eltop" viewBox="0 0 180 40" style="position:absolute; left:0; top:0; width:180px; height:40px;"></svg>
+      <div class="rule" style="top:42px;"></div>
+      <svg class="reggrp" viewBox="0 0 180 92" style="position:absolute; left:0; top:44px; width:180px; height:92px;"></svg>
+      <div class="rule" style="top:72px;"></div>
+      <div class="rule" style="top:102px;"></div>
+      <div class="el-glass"></div>
+    </div>
+    <div class="keys"></div>
+  </div>`;
+
+  class SkDsky extends HTMLElement {
+    static get observedAttributes() { return ["value", "prog", "verb", "noun", "r1", "r2", "r3", "lamps", "comp-acty", "flash", "scale", "disabled", "label"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1;
+      this._v = "";
+      this._mode = null; // 'verb' | 'noun'
+      this._buf = "";
+      this._verb = "";
+      this._noun = "";
+      this._built = false;
+      this._keyEls = [];
+      this._onKeyDown = this._onKeyDown.bind(this);
+    }
+    connectedCallback() {
+      if (!this._built) { this._build(); this._built = true; }
+      this._readAttrs();
+      this._render();
+      this.addEventListener("keydown", this._onKeyDown);
+    }
+    disconnectedCallback() { this.removeEventListener("keydown", this._onKeyDown); }
+    attributeChangedCallback(n, o, v) { if (o === v || !this._built) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { this._v = v == null ? "" : String(v); this.setAttribute("value", this._v); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _build() {
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._lampsDom = root.querySelector(".lampsdom");
+      this._keysDom = root.querySelector(".keys");
+      this._comp = root.querySelector(".comp");
+
+      // status lamps, 2 columns x 7 rows
+      LAMP_NAMES.forEach((name, i) => {
+        const col = i < 7 ? 0 : 1, row = i < 7 ? i : i - 7;
+        const d = document.createElement("div");
+        d.className = "lamp";
+        d.dataset.name = name;
+        const s = document.createElement("span"); s.textContent = name; d.appendChild(s);
+        d.style.left = (14 + col * 68) + "px";
+        d.style.top = (18 + row * 17) + "px";
+        this._lampsDom.appendChild(d);
+      });
+      this._lampEls = Array.from(this._lampsDom.children);
+
+      // EL fields: PROG / VERB / NOUN
+      const eltop = root.querySelector(".eltop");
+      this._fields = {};
+      [["PROG", 6, 2], ["VERB", 60, 2], ["NOUN", 118, 2]].forEach(([name, x, n]) => {
+        const g = sn("g", { class: "field-g" });
+        const lbl = sn("text", { x: x, y: 9, class: "fieldlbl", "font-size": 6 });
+        lbl.textContent = name;
+        g.appendChild(lbl);
+        const digitsG = sn("g", { transform: `translate(${x},14)` });
+        g.appendChild(digitsG);
+        eltop.appendChild(g);
+        this._fields[name] = { g, lbl, digits: this._makeDigits(digitsG, n, false) };
+      });
+
+      // registers R1 R2 R3
+      const reggrp = root.querySelector(".reggrp");
+      this._regs = {};
+      ["R1", "R2", "R3"].forEach((name, i) => {
+        const y = 22 + i * 30;
+        const digitsG = sn("g", { transform: `translate(20,${y})` });
+        reggrp.appendChild(digitsG);
+        this._regs[name] = this._makeDigits(digitsG, 5, true);
+      });
+
+      // keypad
+      ROWS.forEach((row, r) => {
+        row.forEach((label, c) => {
+          if (label == null) return;
+          const el = document.createElement("div");
+          el.className = "key" + (/^[0-9]$/.test(label) ? " digit" : "");
+          el.setAttribute("role", "button");
+          el.setAttribute("tabindex", r === 0 && c === 0 ? "0" : "-1");
+          el.setAttribute("aria-label", label === "-" ? "minus" : label === "+" ? "plus" : label);
+          const span = document.createElement("span"); span.textContent = label; el.appendChild(span);
+          el.style.left = (GRID_LEFT + c * COL_PITCH) + "px";
+          el.style.top = (GRID_TOP + r * ROW_PITCH) + "px";
+          el.dataset.key = label; el.dataset.row = r; el.dataset.col = c;
+          el.addEventListener("pointerdown", (e) => { e.preventDefault(); this._activate(el, label); });
+          el.addEventListener("focus", () => { this._keyEls.forEach(k => k.setAttribute("tabindex", "-1")); el.setAttribute("tabindex", "0"); });
+          this._keysDom.appendChild(el);
+          this._keyEls.push(el);
+        });
+      });
+    }
+    _makeDigits(container, count, withSign) {
+      const list = [];
+      let x = 0;
+      if (withSign) {
+        const g = sn("g", { transform: `translate(${x},0)` });
+        const h = sn("line", { x1: 0, y1: 8, x2: 8, y2: 8, "stroke-width": 2.2, "stroke-linecap": "round" });
+        const v = sn("line", { x1: 4, y1: 4, x2: 4, y2: 12, "stroke-width": 2.2, "stroke-linecap": "round" });
+        g.appendChild(h); g.appendChild(v);
+        container.appendChild(g);
+        list.push({ sign: { h, v } });
+        x += 11;
+      }
+      for (let i = 0; i < count; i++) {
+        const g = sn("g", { transform: `translate(${x},0) skewX(-10)` });
+        const segs = {};
+        for (const k in SEGXY) {
+          const [x1, y1, x2, y2] = SEGXY[k];
+          const line = sn("line", { x1, y1, x2, y2, "stroke-width": 2, "stroke-linecap": "round" });
+          g.appendChild(line);
+          segs[k] = line;
+        }
+        container.appendChild(g);
+        list.push({ segs });
+        x += DW;
+      }
+      return list;
+    }
+    _paintDigits(list, str, withSign) {
+      let s = str || "";
+      let sign = null, digits = s;
+      if (withSign) {
+        if (s[0] === "+" || s[0] === "-") { sign = s[0]; digits = s.slice(1); } else { sign = ""; digits = s; }
+        digits = digits.padStart(5, " ").slice(-5);
+      }
+      let idx = 0;
+      if (withSign) {
+        const it = list[0];
+        const on = sign === "-" || sign === "+";
+        it.sign.h.setAttribute("stroke", on ? "#6ff2a2" : "#17301f");
+        it.sign.h.style.filter = on ? "drop-shadow(0 0 1.6px #6ff2a2)" : "none";
+        it.sign.v.setAttribute("stroke", sign === "+" ? "#6ff2a2" : "#17301f");
+        it.sign.v.style.filter = sign === "+" ? "drop-shadow(0 0 1.6px #6ff2a2)" : "none";
+        idx = 1;
+      } else {
+        digits = s.padStart(list.length, " ").slice(-list.length);
+      }
+      for (let i = 0; i < digits.length; i++) {
+        const ch = digits[i];
+        const item = list[idx + i];
+        if (!item) continue;
+        const on = SEG[ch] || "";
+        for (const k in item.segs) {
+          const lit = on.indexOf(k) >= 0;
+          const line = item.segs[k];
+          line.setAttribute("stroke", lit ? "#6ff2a2" : "#173a24");
+          line.style.filter = lit ? "drop-shadow(0 0 1.4px #6ff2a2)" : "none";
+        }
+      }
+    }
+
+    _readAttrs() {
+      this._scale = Math.max(0.2, parseFloat(this.getAttribute("scale")) || 1);
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._disabled = this.hasAttribute("disabled");
+      this.setAttribute("role", "group");
+      this.setAttribute("aria-label", this.getAttribute("label") || "Apollo guidance computer keyboard and display");
+      this._compActy = this.hasAttribute("comp-acty");
+      this._flashOn = this.hasAttribute("flash");
+      this._lit = new Set((this.getAttribute("lamps") || "").split(",").map(s => s.trim()).filter(Boolean));
+      if (this.hasAttribute("value")) this._v = this.getAttribute("value");
+    }
+    _render() {
+      this._comp.classList.toggle("on", this._compActy);
+      this._lampEls.forEach(el => {
+        const name = el.dataset.name;
+        el.classList.remove("lit-w", "lit-y");
+        if (this._lit.has(name)) el.classList.add("lit-" + (LAMP_COLOR[name] || "w"));
+      });
+      const verb = this.getAttribute("verb") != null ? this.getAttribute("verb") : this._verb;
+      const noun = this.getAttribute("noun") != null ? this.getAttribute("noun") : this._noun;
+      this._paintDigits(this._fields.PROG.digits, this.getAttribute("prog") || "", false);
+      this._paintDigits(this._fields.VERB.digits, verb, false);
+      this._paintDigits(this._fields.NOUN.digits, noun, false);
+      this._paintDigits(this._regs.R1, this.getAttribute("r1") || "+00000", true);
+      this._paintDigits(this._regs.R2, this.getAttribute("r2") || "+00000", true);
+      this._paintDigits(this._regs.R3, this.getAttribute("r3") || "+00000", true);
+      const flashing = this._flashOn || this._mode != null;
+      this._fields.VERB.lbl.parentNode.classList.toggle("flash", flashing);
+      this._fields.NOUN.lbl.parentNode.classList.toggle("flash", flashing);
+      this._fields.VERB.lbl.classList.toggle("lit", true);
+      this._fields.NOUN.lbl.classList.toggle("lit", true);
+      this._fields.PROG.lbl.classList.add("lit");
+    }
+    _activate(el, label) {
+      if (this._disabled) return;
+      el.classList.add("pressed");
+      clearTimeout(el._pt);
+      el._pt = setTimeout(() => el.classList.remove("pressed"), 90);
+      this._press(label);
+    }
+    _press(label) {
+      if (/^[0-9]$/.test(label)) {
+        if (this._mode) {
+          this._buf = (this._buf + label).slice(-2);
+          if (this._mode === "verb") this._verb = this._buf.padStart(2, "0");
+          else this._noun = this._buf.padStart(2, "0");
+        }
+      } else if (label === "VERB") {
+        this._mode = "verb"; this._buf = ""; this._verb = "";
+      } else if (label === "NOUN") {
+        this._mode = "noun"; this._buf = ""; this._noun = "";
+      } else if (label === "CLR") {
+        if (this._mode) { this._buf = ""; if (this._mode === "verb") this._verb = ""; else this._noun = ""; }
+      } else if (label === "ENTR") {
+        const entry = "V" + (this._verb || "--") + "N" + (this._noun || "--");
+        this._mode = null; this._buf = "";
+        this._v = entry; this.setAttribute("value", entry);
+        this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { verb: this._verb, noun: this._noun, entry } }));
+      } else if (label === "+" || label === "-") {
+        // decorative: sign entry not modelled beyond visual press
+      }
+      this._render();
+      if (label !== "ENTR") {
+        this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v, key: label } }));
+      }
+    }
+    _onKeyDown(e) {
+      if (this._disabled) return;
+      const active = this.shadowRoot.activeElement;
+      const idx = this._keyEls.indexOf(active);
+      const nav = (dr, dc) => {
+        if (idx < 0) return;
+        let r = parseInt(active.dataset.row, 10), c = parseInt(active.dataset.col, 10);
+        for (let step = 0; step < 7; step++) {
+          r += dr; c += dc;
+          if (r < 0 || r > 6 || c < 0 || c > 2) return;
+          const found = this._keyEls.find(k => +k.dataset.row === r && +k.dataset.col === c);
+          if (found) { found.focus(); return; }
+        }
+      };
+      switch (e.key) {
+        case "ArrowUp": e.preventDefault(); nav(-1, 0); return;
+        case "ArrowDown": e.preventDefault(); nav(1, 0); return;
+        case "ArrowLeft": e.preventDefault(); nav(0, -1); return;
+        case "ArrowRight": e.preventDefault(); nav(0, 1); return;
+        case " ": case "Enter":
+          if (idx >= 0) { e.preventDefault(); this._activate(active, active.dataset.key); }
+          return;
+        case "Escape": e.preventDefault(); this._pressByLabel("CLR"); return;
+        case "v": case "V": e.preventDefault(); this._pressByLabel("VERB"); return;
+        case "n": case "N": e.preventDefault(); this._pressByLabel("NOUN"); return;
+        case "p": case "P": e.preventDefault(); this._pressByLabel("PRO"); return;
+        case "r": case "R": e.preventDefault(); this._pressByLabel("RSET"); return;
+        case "k": case "K": e.preventDefault(); this._pressByLabel("KEY REL"); return;
+        case "+": e.preventDefault(); this._pressByLabel("+"); return;
+        case "-": e.preventDefault(); this._pressByLabel("-"); return;
+        default:
+          if (/^[0-9]$/.test(e.key)) { e.preventDefault(); this._pressByLabel(e.key); }
+      }
+    }
+    _pressByLabel(label) {
+      const el = this._keyEls.find(k => k.dataset.key === label);
+      if (el) this._activate(el, label);
+    }
+  }
+  customElements.define("sk-keypad-apollo-dsky", SkDsky);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

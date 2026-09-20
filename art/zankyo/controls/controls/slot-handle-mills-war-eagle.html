@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mills War Eagle chrome slot handle — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Big+Shoulders:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "slot-handle-mills-war-eagle",
+  "element": "sk-slot-handle-mills-war-eagle",
+  "name": "Mills War Eagle chrome slot handle",
+  "kind": "input",
+  "code": "E9",
+  "type": "Slot-machine handle",
+  "source": "Mills Novelty \"War Eagle\" (1931): the chrome-plated pull lever, bracketed off the cast-aluminium cabinet's right edge, ending in a black phenolic ball",
+  "era": "1930s",
+  "origin": "USA",
+  "materials": ["chrome-plated steel", "black phenolite ball", "cast aluminium", "blue and gold enamel"],
+  "tags": ["slot machine", "one-armed bandit", "momentary", "spring return", "chrome", "gambling"],
+  "value": { "model": "momentary" },
+  "attributes": ["ball", "label", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 160, "h": 320 },
+  "notes": "Drag the ball straight down through the trip; it fires activate at the bottom and springs back with a bounce. Space does the whole pull. A red-ball variant and a disabled one alongside."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-slot-handle-mills-war-eagle label="pull handle" scale="0.68"></sk-slot-handle-mills-war-eagle>
+    <sk-slot-handle-mills-war-eagle label="pull handle, red ball" ball="red" scale="0.55"></sk-slot-handle-mills-war-eagle>
+    <sk-slot-handle-mills-war-eagle label="pull handle, disabled" scale="0.55" disabled></sk-slot-handle-mills-war-eagle>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Mills Novelty "War Eagle"</b> of 1931 is a cast-aluminium one-armed bandit painted blue and gold,
+  its reels behind glass and, bolted off the right edge of the case on a chrome bracket, the pull handle: a
+  chrome-plated steel rod ending in a black phenolite ball, cocking the reel spring as it swings down through
+  about sixty degrees.</p>
+  <p><b>The tells kept here:</b> the chrome rod's hard highlight-and-shadow pair running its length, like a
+  horizon line bent around a cylinder; the ball as a true sphere with a small hot spot at ten o'clock and a
+  faint cast of the cabinet's blue in its lower half; the chrome worn dull to grey in the band where a hand
+  grips below the ball; a sliver of the cabinet's blue-and-gold cast edge and the chrome mounting bracket the
+  lever pivots from. The pull has weight — it lags the pointer and stiffens as it nears the bottom — and the
+  return snaps back over 400&nbsp;ms with a small bounce at the top. It fires <code>activate</code> only if the
+  pull reaches the bottom; let go early and it just springs back.</p>
+  <p><b>Left out:</b> the cast-eagle front, the reel windows and the jackpot glass — this build is the handle
+  alone, as the brief asks for.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-slot-handle-mills-war-eagle> — Mills War Eagle chrome pull handle, black phenolite ball ====
+   attributes: ball(black|red) label scale disabled
+   events: press (grabbed), activate (reaches the trip at the bottom), release (let go)
+   momentary: no value property is meaningful; kept for host convenience (returns whether it is mid-pull)
+   self-contained: paste this block into any page and use <sk-slot-handle-mills-war-eagle></sk-slot-handle-mills-war-eagle> */
+(function () {
+  if (customElements.get("sk-slot-handle-mills-war-eagle")) return;
+  const W = 160, H = 320, CX = 100, CY = 222, L = 148, RB = 24;
+  const REST = -7, TRIP = 55;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      --ink: #cfd6da; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .lever { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 90ms ease-out; }
+    .lever.drag { transition: transform 60ms linear; }
+    .lever.ret { transition: transform 420ms cubic-bezier(.32,1.55,.6,1); }
+    .grab { position: absolute; left: ${CX - 46}px; top: 10px; width: 92px; height: 230px; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 40px; }
+    .grab.dragging { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Big Shoulders", "Arial Narrow", sans-serif; font-weight: 700; fill: var(--ink); }
+    .label { font-size: 9px; letter-spacing: 0.16em; text-anchor: middle; fill: #b7c0c5; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="cab" x1="0" y1="0" x2="1" y2="0.3">
+          <stop offset="0" stop-color="#3d6ab0"/><stop offset="0.45" stop-color="#2a4f8c"/><stop offset="1" stop-color="#173257"/>
+        </linearGradient>
+        <linearGradient id="cabEdge" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#0e213c"/><stop offset="0.6" stop-color="#1c3d6b"/><stop offset="1" stop-color="#0a1a30"/>
+        </linearGradient>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f0d789"/><stop offset="0.5" stop-color="#c9a44a"/><stop offset="1" stop-color="#7c5e20"/>
+        </linearGradient>
+        <linearGradient id="chromeRod" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#4a5054"/><stop offset="0.18" stop-color="#eef2f4"/><stop offset="0.32" stop-color="#a7adb1"/>
+          <stop offset="0.5" stop-color="#e2e7e9"/><stop offset="0.68" stop-color="#7b8085"/><stop offset="0.85" stop-color="#dfe4e6"/><stop offset="1" stop-color="#3a3f42"/>
+        </linearGradient>
+        <radialGradient id="chromeCap" cx="35%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#f4f7f8"/><stop offset="0.4" stop-color="#c7cdd0"/><stop offset="0.75" stop-color="#8a9095"/><stop offset="1" stop-color="#4a4f53"/>
+        </radialGradient>
+        <radialGradient id="ballG" cx="32%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#5c5c5c"/><stop offset="0.16" stop-color="#232323"/><stop offset="0.55" stop-color="#111"/><stop offset="0.85" stop-color="#0a0a0a"/><stop offset="1" stop-color="#26313c"/>
+        </radialGradient>
+        <radialGradient id="ballGRed" cx="32%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#e97a6a"/><stop offset="0.16" stop-color="#c8362a"/><stop offset="0.55" stop-color="#8f1e16"/><stop offset="0.85" stop-color="#6b140e"/><stop offset="1" stop-color="#4a1a20"/>
+        </radialGradient>
+        <radialGradient id="hot" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.25"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <filter id="softer" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- a sliver of the War Eagle's cast blue-and-gold cabinet edge -->
+      <rect x="0" y="0" width="56" height="${H}" fill="url(#cab)"/>
+      <rect x="50" y="0" width="6" height="${H}" fill="url(#cabEdge)"/>
+      <rect x="41" y="0" width="3" height="${H}" fill="url(#gold)" opacity="0.9"/>
+      <path d="M 0 0 L 56 0 L 56 10 L 0 6 Z" fill="#fff" opacity="0.1"/>
+      <!-- a couple of chips in the paint, where the corner meets the world -->
+      <path d="M 4 26 L 11 24 L 13 31 L 7 35 L 2 30 Z" fill="#8a97a3" opacity="0.5"/>
+      <path d="M 6 ${H - 40} L 12 ${H - 43} L 15 ${H - 36} L 9 ${H - 31} Z" fill="#8a97a3" opacity="0.4"/>
+
+      <!-- chrome mounting bracket, bolted off the cabinet's edge, carrying the pivot -->
+      <rect x="52" y="${CY - 9}" width="46" height="18" rx="4" fill="url(#chromeRod)" stroke="#20262a" stroke-width="1"/>
+      <rect x="52" y="${CY - 9}" width="46" height="4.5" rx="2" fill="#fff" opacity="0.35"/>
+
+      <!-- shadow the pivot casts on the bracket / cabinet -->
+      <ellipse cx="${CX + 3}" cy="${CY + 5}" rx="26" ry="24" fill="#000" opacity="0.4" filter="url(#softer)"/>
+
+      <!-- the escutcheon: a fixed chrome disc the lever pivots inside -->
+      <circle cx="${CX}" cy="${CY}" r="22" fill="url(#chromeCap)" stroke="#20262a" stroke-width="1.2"/>
+      <circle cx="${CX}" cy="${CY}" r="22" fill="none" stroke="#2e3a44" stroke-width="7" opacity="0.55"/>
+      <circle cx="${CX}" cy="${CY}" r="18.5" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="1"/>
+      <circle cx="${CX - 6}" cy="${CY - 7}" r="6" fill="#fff" opacity="0.3" filter="url(#soft)"/>
+      <rect x="${CX - 3.4}" y="${CY - 0.6}" width="6.8" height="1.2" fill="#12171a" transform="rotate(24 ${CX} ${CY})"/>
+
+      <!-- the lever: rotates about the pivot -->
+      <g class="lever">
+        <!-- contact shadow of the ball, follows the local frame so it reads under the ball at rest -->
+        <ellipse cx="4" cy="${-L + 6}" rx="17" ry="9" fill="#000" opacity="0.3" filter="url(#soft)" transform="translate(${CX} ${CY})"/>
+        <!-- the rod: a slight taper, drawn straight up in local space -->
+        <path d="M ${CX - 5.4} ${CY} L ${CX - 3.6} ${CY - L + 30} L ${CX - 3.2} ${CY - L + 6} L ${CX + 3.2} ${CY - L + 6} L ${CX + 3.6} ${CY - L + 30} L ${CX + 5.4} ${CY} Z"
+              fill="url(#chromeRod)" stroke="#20262a" stroke-width="0.8" stroke-linejoin="round"/>
+        <!-- worn band: chrome dulled to grey where the hand grips, below the ball -->
+        <rect x="${CX - 5.2}" y="${CY - L + 34}" width="10.4" height="46" fill="#7b8085" opacity="0.4"/>
+        <!-- hard highlight / shadow pair running the rod's length -->
+        <line x1="${CX - 2}" y1="${CY - 2}" x2="${CX - 1.4}" y2="${CY - L + 10}" stroke="#fff" stroke-opacity="0.75" stroke-width="1"/>
+        <line x1="${CX + 2.6}" y1="${CY - 2}" x2="${CX + 2}" y2="${CY - L + 10}" stroke="#20262a" stroke-opacity="0.6" stroke-width="1"/>
+
+        <!-- the ball -->
+        <ellipse cx="${CX + 1.5}" cy="${CY - L + 6 + RB * 0.55}" rx="${RB * 0.92}" ry="${RB * 0.4}" fill="#000" opacity="0.35" filter="url(#soft)"/>
+        <circle class="ball" cx="${CX}" cy="${CY - L + 6}" r="${RB}" fill="url(#ballG)"/>
+        <path d="M ${CX - RB * 0.72} ${CY - L + 6 + RB * 0.62} A ${RB} ${RB} 0 0 0 ${CX + RB * 0.72} ${CY - L + 6 + RB * 0.62}"
+              fill="none" stroke="#3a5878" stroke-opacity="0.4" stroke-width="3" filter="url(#soft)"/>
+        <ellipse cx="${CX - RB * 0.32}" cy="${CY - L + 6 - RB * 0.34}" rx="${RB * 0.3}" ry="${RB * 0.2}" fill="url(#hot)"/>
+      </g>
+
+      <text class="label" x="76" y="${H - 8}"></text>
+    </svg>
+    <div class="grab" role="button" tabindex="0"></div>
+  </div>`;
+
+  class SkSlotHandleMillsWarEagle extends HTMLElement {
+    static get observedAttributes() { return ["ball", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._angle = REST; this._drag = null; this._tripped = false; this._returning = null;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._lever = $(".lever"); this._grab = $(".grab"); this._label = $(".label");
+      this._ballEl = $(".ball");
+      ["_onDown", "_onMove", "_onUp", "_onKeyDown"].forEach(k => { this[k] = this[k].bind(this); });
+    }
+    connectedCallback() {
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("keydown", this._onKeyDown);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("keydown", this._onKeyDown);
+      clearTimeout(this._st); clearTimeout(this._st2);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._drag || this._returning ? "pulling" : "idle"; }
+    set value(_) { /* momentary: not settable from outside */ }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._ballEl.setAttribute("fill", (this.getAttribute("ball") || "black").toLowerCase() === "red" ? "url(#ballGRed)" : "url(#ballG)");
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "slot handle");
+      const dis = this.hasAttribute("disabled");
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _paint() { this._lever.style.transform = "rotate(" + this._angle.toFixed(2) + "deg)"; }
+    _render() { this._paint(); }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: {} })); }
+
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      clearTimeout(this._st); clearTimeout(this._st2);
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("dragging");
+      this._lever.classList.remove("ret"); this._lever.classList.add("drag");
+      this._tripped = false;
+      this._drag = { y: e.clientY, a0: this._angle };
+      this._emit("press");
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const dy = (e.clientY - d.y) / this._scale;
+      let a = d.a0 + (dy / 180) * (TRIP - REST);
+      a = Math.max(REST, Math.min(TRIP, a));
+      this._angle = a; this._paint();
+      if (!this._tripped && a >= TRIP - 0.5) { this._tripped = true; this._emit("activate"); }
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("dragging");
+      this._drag = null;
+      this._emit("release");
+      this._return();
+    }
+    _return() {
+      this._lever.classList.remove("drag"); this._lever.classList.add("ret");
+      this._angle = REST; this._paint();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat || this._drag) return;
+      clearTimeout(this._st); clearTimeout(this._st2);
+      this._tripped = false;
+      this._lever.classList.remove("ret"); this._lever.classList.add("drag");
+      this._emit("press");
+      this._angle = TRIP; this._paint();
+      this._st = setTimeout(() => {
+        this._tripped = true; this._emit("activate");
+        this._st2 = setTimeout(() => { this._emit("release"); this._return(); }, 90);
+      }, 150);
+    }
+  }
+  customElements.define("sk-slot-handle-mills-war-eagle", SkSlotHandleMillsWarEagle);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

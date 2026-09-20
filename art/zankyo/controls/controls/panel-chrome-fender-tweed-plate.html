@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fender tweed-era chrome control plate — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "panel-chrome-fender-tweed-plate",
+  "element": "sk-panel-chrome-fender",
+  "name": "Fender tweed-era chrome control plate",
+  "kind": "output",
+  "code": "J4",
+  "type": "Panel swatch — chrome control plate",
+  "source": "Fender Deluxe / Bassman / Twin tweed-era control plates (1948-60) — a bright chrome-plated steel plate bolted to the chassis top",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["chrome-plated steel", "black silk-screen", "nickel screws"],
+  "tags": ["panel", "swatch", "amplifier", "guitar amp", "chrome", "control plate"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "legend", "width", "height", "finish", "holes", "wear", "tilt", "scale"],
+  "events": [],
+  "size": { "w": 320, "h": 64 },
+  "demoWords": ["VOLUME   TREBLE   BASS", "VOLUME   TONE", "GAIN   MASTER", "SPEED   INTENSITY   VOLUME"],
+  "notes": "A plate other controls mount on. value is the silk-screened row; each name sits under a numbered dial ring where a knob would go. finish switches mirror/brushed chrome; wear pits the plate near the screws.",
+  "slot": "default — drop knobs onto the plate, one per numbered ring"
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-panel-chrome-fender width="320" height="64" value="VOLUME   TREBLE   BASS"></sk-panel-chrome-fender>
+    <sk-panel-chrome-fender width="220" height="60" finish="brushed" value="VOLUME   TONE" scale="0.95"></sk-panel-chrome-fender>
+    <sk-panel-chrome-fender width="200" height="56" value="GAIN   MASTER" wear="0.75" scale="0.9"></sk-panel-chrome-fender>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>tweed-era Fender control plate</b> bolted flat to the top of a Deluxe, Bassman or Twin chassis: a
+  bright chrome-plated steel strip with a numbered dial ring silk-screened around each pot's shaft hole and the
+  control's name printed underneath in a bold black gothic. It reads from across a stage as one bright bar with
+  a dark band running through it — the way any flat chrome catches a room.</p>
+  <p><b>The tells kept here:</b> the "horizon" — a dark band across the middle with pale sky above and a warm
+  ground below, the classic way a flat chrome plate reads regardless of its size — with a soft smeared blur of
+  the room caught in the reflection and a hard bright glint that drifts sideways as the plate is tilted; a
+  clockwise ring of 1–12 silk-screened around each hole, sized and spaced to the number of names in
+  <code>value</code>; bold black legends with no halo, floating right in the reflection; rounded 6&nbsp;px
+  corners with a thin bright-then-dark plated edge; four small nickel screws. <code>finish="brushed"</code>
+  swaps the horizon for a satin hairline sheen with one soft band. With <code>wear</code>, dark pits with bright
+  rims cluster near the screws and the centre legend scratches through to bare steel.</p>
+  <p><b>Left out:</b> the chassis lip and eyelet board beneath the plate, the jack and speaker-cable cutouts.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-panel-chrome-fender> — tweed-era chrome control plate, numbered dial rings + silk-screened names ====
+   attributes: value legend width height finish(mirror|brushed) holes wear(0..1) tilt(-1..1) scale
+   no events (an output). Has a default <slot>: drop knobs over the numbered rings.
+   self-contained: paste this block into any page and use
+   <sk-panel-chrome-fender value="VOLUME   TREBLE   BASS"></sk-panel-chrome-fender> */
+(function () {
+  if (customElements.get("sk-panel-chrome-fender")) return;
+  var DW = 320, DH = 64;
+  var NS = "http://www.w3.org/2000/svg";
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1;',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.plate { position: absolute; inset: 0; overflow: hidden; border-radius: 6px;',
+  '  background: linear-gradient(180deg, #dfe4ea 0%, #f6f8fa 16%, #eef1f3 30%, #9aa0a6 46%,',
+  '    #6b6f75 50%, #8d887d 54%, #a8a39a 62%, #c7c0b3 80%, #d4cfc6 100%);',
+  '  box-shadow: 0 9px 18px rgba(0,0,0,.45), 0 2px 4px rgba(0,0,0,.55), 0 0 0 1px rgba(10,10,10,.55); }',
+  ':host([finish="brushed"]) .plate { background: linear-gradient(180deg, #d2d2d1 0%, #c9c9c8 45%, #bdbdbc 100%); }',
+  /* --- brushed hairlines (only visible under finish=brushed) --- */
+  '.hair { position: absolute; inset: 0; mix-blend-mode: overlay; opacity: 0; pointer-events: none;',
+  '  background:',
+  '    repeating-linear-gradient(180deg, rgba(255,255,255,.6) 0 1px, rgba(255,255,255,0) 1px 3px),',
+  '    repeating-linear-gradient(180deg, rgba(0,0,0,.4) 0 1px, rgba(0,0,0,0) 1px 6px); }',
+  ':host([finish="brushed"]) .hair { opacity: .55; }',
+  /* --- a soft smeared reflection of "the room" caught in the chrome --- */
+  '.room { position: absolute; inset: -10%; pointer-events: none; opacity: .30; filter: blur(7px);',
+  '  mix-blend-mode: soft-light;',
+  '  background:',
+  '    radial-gradient(18% 40% at 22% 18%, rgba(255,255,255,.9), rgba(255,255,255,0) 70%),',
+  '    radial-gradient(24% 55% at 55% 8%, rgba(210,222,235,.7), rgba(210,222,235,0) 70%),',
+  '    radial-gradient(30% 45% at 78% 78%, rgba(70,50,30,.5), rgba(70,50,30,0) 72%),',
+  '    radial-gradient(16% 30% at 40% 82%, rgba(40,30,20,.4), rgba(40,30,20,0) 70%); }',
+  ':host([finish="brushed"]) .room { display: none; }',
+  /* --- the hard bright glint, slides with tilt --- */
+  '.glint { position: absolute; left: -10%; top: 6%; width: 46%; height: 3px; pointer-events: none;',
+  '  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95) 45%, rgba(255,255,255,0));',
+  '  filter: blur(1.4px); transform: rotate(-5deg) translateX(calc(var(--tilt, 0) * 8px));',
+  '  transition: transform .16s ease-out; }',
+  ':host([finish="brushed"]) .glint { top: 30%; width: 70%; height: 40%; filter: blur(10px); opacity: .5;',
+  '  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55) 40%, rgba(255,255,255,0) 85%); }',
+  /* --- svg overlay: dial rings + numerals + screws + pits --- */
+  '.art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }',
+  '.ink { fill: #141414; }',
+  '.num { font-family: "Oswald", "Arial Narrow", sans-serif; font-weight: 600; fill: #141414; text-anchor: middle; dominant-baseline: middle; }',
+  /* --- legend row --- */
+  '.legend { position: absolute; left: 12px; right: 12px; bottom: 8px; display: flex;',
+  '  justify-content: space-around; align-items: baseline; gap: 4px; pointer-events: none;',
+  '  font-family: "Oswald", "Arial Narrow", sans-serif; font-weight: 600; font-size: 8px;',
+  '  letter-spacing: 0.14em; white-space: pre; color: #141414; }',
+  '.legend span { display: block; }',
+  '.legend span.thin { opacity: var(--inkleft, 1);',
+  '  -webkit-mask-image: radial-gradient(58% 150% at 50% 55%, rgba(0,0,0,var(--inkcore,1)) 12%, #000 78%);',
+  '          mask-image: radial-gradient(58% 150% at 50% 55%, rgba(0,0,0,var(--inkcore,1)) 12%, #000 78%); }',
+  /* --- plated-steel edge: thin bright then dark --- */
+  '.chamfer { position: absolute; inset: 0; border-radius: 6px; pointer-events: none;',
+  '  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 1px 0 0 rgba(255,255,255,.45),',
+  '              inset -1px 0 0 rgba(15,15,15,.55), inset 0 -1px 0 rgba(10,10,10,.6),',
+  '              inset 0 0 0 2px rgba(0,0,0,.16); }',
+  /* --- wear: pits near screws --- */
+  '.pits { position: absolute; inset: 0; pointer-events: none; opacity: 0; }',
+  '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-around;',
+  '  padding: 0 12px; pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <div class="room"></div>',
+  '    <div class="hair"></div>',
+  '    <div class="glint"></div>',
+  '    <svg class="art" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>',
+  '      <radialGradient id="holeGrad" cx="38%" cy="32%" r="75%">',
+  '        <stop offset="0" stop-color="#3a3a3a"/><stop offset="0.55" stop-color="#0a0a0a"/><stop offset="0.86" stop-color="#000"/><stop offset="1" stop-color="#d8d8d8"/>',
+  '      </radialGradient>',
+  '      <radialGradient id="screwGrad" cx="35%" cy="30%" r="70%">',
+  '        <stop offset="0" stop-color="#f4f4f2"/><stop offset="0.55" stop-color="#9a9a96"/><stop offset="1" stop-color="#4a4a46"/>',
+  '      </radialGradient>',
+  '      <radialGradient id="pit" cx="40%" cy="35%" r="65%">',
+  '        <stop offset="0" stop-color="#f2f2f0"/><stop offset="0.35" stop-color="#2a2a28"/><stop offset="1" stop-color="#2a2a28" stop-opacity="0"/>',
+  '      </radialGradient>',
+  '    </defs>',
+  '      <g class="rings"></g>',
+  '      <g class="screws"></g>',
+  '      <g class="pits"></g>',
+  '    </svg>',
+  '    <div class="legend"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '    <div class="chamfer"></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function mk(t, a) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+
+  class SkPanelChromeFender extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "legend", "width", "height", "finish", "holes", "wear", "tilt", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._plate = r.querySelector(".plate");
+      this._legend = r.querySelector(".legend");
+      this._rings = r.querySelector(".rings");
+      this._screws = r.querySelector(".screws");
+      this._pitsG = r.querySelector(".pits");
+      this._art = r.querySelector(".art");
+      this._v = "";
+      this.addEventListener("pointermove", function (e) {
+        var b = this.getBoundingClientRect();
+        if (!b.width) return;
+        this.style.setProperty("--tilt", clamp(((e.clientX - b.left) / b.width) * 2 - 1, -1, 1).toFixed(3));
+      }.bind(this));
+      this.addEventListener("pointerleave", function () {
+        this.style.setProperty("--tilt", String(num(this, "tilt", 0)));
+      }.bind(this));
+    }
+    connectedCallback() {                     // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var w = clamp(num(this, "width", DW), 60, 4000);
+      var h = clamp(num(this, "height", DH), 32, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+      this._art.setAttribute("viewBox", "0 0 " + w + " " + h);
+      this._art.setAttribute("width", w); this._art.setAttribute("height", h);
+
+      var txt = this.getAttribute("value");
+      if (txt == null) txt = this.getAttribute("legend");
+      txt = txt == null ? "" : txt;
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      var holesAttr = this.hasAttribute("holes") ? Math.round(num(this, "holes", 0)) : null;
+
+      if (txt !== this._v || this._lastWear !== wear || this._lastW !== w || this._lastH !== h || holesAttr !== this._lastHolesAttr) {
+        this._v = txt; this._lastWear = wear; this._lastW = w; this._lastH = h; this._lastHolesAttr = holesAttr;
+        this._paint(txt, wear, w, h, holesAttr);
+      }
+
+      this.setAttribute("aria-label",
+        (txt ? txt.replace(/\s{2,}/g, ", ") + " — " : "") +
+        (this.getAttribute("finish") === "brushed" ? "brushed" : "mirror") + " chrome control plate");
+    }
+    _paint(txt, wear, w, h, holesAttr) {
+      var parts = txt.split(/\s{2,}/).filter(function (p) { return p.length; });
+      var n = holesAttr != null ? Math.max(0, holesAttr) : Math.max(1, parts.length);
+
+      // legend row
+      var lg = this._legend;
+      while (lg.firstChild) lg.removeChild(lg.firstChild);
+      var mid = (parts.length - 1) / 2;
+      parts.forEach(function (p, i) {
+        var s = document.createElement("span");
+        s.textContent = p;
+        if (wear > 0.03 && parts.length) {
+          var d = Math.abs(i - mid) / (mid || 1);
+          var amt = wear * (1 - Math.min(1, d));
+          if (amt > 0.05) {
+            s.className = "thin";
+            s.style.setProperty("--inkcore", (1 - 0.94 * amt).toFixed(2));
+            s.style.setProperty("--inkleft", (1 - 0.4 * amt).toFixed(2));
+          }
+        }
+        lg.appendChild(s);
+      });
+      lg.style.fontSize = (h < 52 ? 7 : 8) + "px";
+
+      // dial rings, spaced to match the legend's space-around centres
+      var rg = this._rings;
+      while (rg.firstChild) rg.removeChild(rg.firstChild);
+      var cy = Math.min(h * 0.40, h - 20);
+      var rOuter = clamp(Math.min(h * 0.30, w / Math.max(n, 1) * 0.30), 9, 30);
+      var rHole = rOuter * 0.40;
+      for (var i = 0; i < n; i++) {
+        var cx = w * (i + 0.5) / n;
+        var g = mk("g", { transform: "translate(" + cx.toFixed(1) + " " + cy.toFixed(1) + ")" });
+        for (var t = 1; t <= 12; t++) {
+          var a = (t / 12) * Math.PI * 2;
+          var major = (t % 3) === 0;
+          var r1 = rOuter * 0.78, r2 = major ? rOuter : rOuter * 0.90;
+          g.appendChild(mk("line", {
+            x1: (r1 * Math.sin(a)).toFixed(2), y1: (-r1 * Math.cos(a)).toFixed(2),
+            x2: (r2 * Math.sin(a)).toFixed(2), y2: (-r2 * Math.cos(a)).toFixed(2),
+            stroke: "#141414", "stroke-width": major ? 0.9 : 0.55, opacity: major ? 0.85 : 0.55
+          }));
+          if (rOuter > 13) {
+            var rt = rOuter * 1.18;
+            var tx = mk("text", { class: "num", x: (rt * Math.sin(a)).toFixed(2), y: (-rt * Math.cos(a) + 0.5).toFixed(2), style: "font-size:" + (rOuter * 0.22).toFixed(1) + "px" });
+            tx.textContent = String(t);
+            g.appendChild(tx);
+          }
+        }
+        g.appendChild(mk("circle", { r: rHole.toFixed(1), fill: "url(#holeGrad)", stroke: "#000", "stroke-width": 0.6 }));
+        rg.appendChild(g);
+      }
+
+      // corner screws
+      var sc = this._screws;
+      while (sc.firstChild) sc.removeChild(sc.firstChild);
+      var sr = clamp(Math.min(w, h) * 0.045, 2.4, 4.5);
+      var inset = sr + 4;
+      var pos = [[inset, inset, 24], [w - inset, inset, -58], [inset, h - inset, 72], [w - inset, h - inset, -18]];
+      pos.forEach(function (p) {
+        var g = mk("g", { transform: "translate(" + p[0].toFixed(1) + " " + p[1].toFixed(1) + ")" });
+        g.appendChild(mk("circle", { r: sr.toFixed(1), fill: "url(#screwGrad)", stroke: "#000", "stroke-width": 0.5 }));
+        g.appendChild(mk("rect", { x: (-sr * 0.8).toFixed(1), y: (-sr * 0.14).toFixed(1), width: (sr * 1.6).toFixed(1), height: (sr * 0.28).toFixed(1), fill: "#161616", transform: "rotate(" + p[2] + ")" }));
+        sc.appendChild(g);
+      });
+
+      // wear: pits clustering near the screws
+      var pg = this._pitsG;
+      while (pg.firstChild) pg.removeChild(pg.firstChild);
+      this._pitsG.parentNode.parentNode; // no-op, keep ref alive
+      if (wear > 0.02) {
+        var rand = function (seed) { var x = Math.sin(seed * 999.7) * 43758.5453; return x - Math.floor(x); };
+        var count = Math.round(wear * 14);
+        for (var k = 0; k < count; k++) {
+          var base = pos[k % pos.length];
+          var jx = base[0] + (rand(k * 3.1) - 0.5) * sr * 5;
+          var jy = base[1] + (rand(k * 7.7) - 0.5) * sr * 5;
+          var pr = 0.6 + rand(k * 5.3) * 1.1;
+          pg.appendChild(mk("circle", { cx: jx.toFixed(1), cy: jy.toFixed(1), r: pr.toFixed(1), fill: "url(#pit)" }));
+        }
+        this.shadowRoot.querySelector(".pits").style.opacity = Math.min(1, wear * 1.1).toFixed(2);
+      } else {
+        this.shadowRoot.querySelector(".pits").style.opacity = 0;
+      }
+    }
+  }
+  customElements.define("sk-panel-chrome-fender", SkPanelChromeFender);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

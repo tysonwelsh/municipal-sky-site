@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ekco round Bakelite escutcheon — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Josefin+Sans:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "panel-bakelite-ekco-brown",
+  "element": "sk-panel-bakelite-ekco",
+  "name": "Ekco round Bakelite escutcheon",
+  "kind": "output",
+  "code": "J3",
+  "type": "Panel swatch — moulded phenolic (Bakelite)",
+  "source": "Ekco AD-65 (1934, Wells Coates) / AD-75 / A22 round radio cases — moulded brown Bakelite",
+  "era": "1930s",
+  "origin": "UK",
+  "materials": ["moulded phenolic (bakelite)"],
+  "tags": ["panel", "swatch", "radio", "bakelite", "moulded", "escutcheon", "emboss"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "legend", "width", "height", "color", "arc", "wear", "scale"],
+  "events": [],
+  "size": { "w": 240, "h": 120 },
+  "notes": "A curved escutcheon segment other controls mount on. value (or legend) is a moulded, inkless legend read by its emboss."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-panel-bakelite-ekco width="240" height="120" value="WAVELENGTH"></sk-panel-bakelite-ekco>
+    <sk-panel-bakelite-ekco width="200" height="100" color="black" value="RADIOGRAM"></sk-panel-bakelite-ekco>
+    <sk-panel-bakelite-ekco width="200" height="100" color="walnut-mottled" arc value="EKCO" wear="0.5"></sk-panel-bakelite-ekco>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Ekco AD-65</b> and its round-cased siblings were moulded in one shot from brown phenolic —
+  Wells Coates's circular case is the best-known, but the material itself, not the shape, is the point here:
+  a deep, faintly translucent brown that looks like polished stone rather than paint, poured into a two-part
+  mould that always leaves its seam somewhere on the finished piece.</p>
+  <p><b>The tells kept here:</b> the body built in layers — a dark base, a lighter flow-marbling that follows
+  the material the way it moved in the mould, then one wide soft gloss and a single hard glint, so it reads as
+  glossy depth rather than a flat fill; a faint mould-seam ridge crossing the swatch, lit on one side and dark
+  on the other, with a tiny bright flash where it reaches the edge; the edge itself running warmer and lighter
+  — a hint of amber translucence where the material is thinnest; and a legend that is moulded, not printed —
+  raised in the same brown, read only by a light top-left edge and a dark bottom-right one. <code>color</code>
+  swaps in Ekco's black phenolic or a mottled walnut run; <code>arc</code> gives the swatch the convex curve of
+  a cut from the round case; <code>wear</code> adds a network of fine gloss scratches and a rubbed pale patch
+  where a hand habitually rested.</p>
+  <p><b>Left out:</b> the case's full disc form and control cut-outs (this is a flat material segment), and
+  the AD-65's chrome escutcheon ring, which belongs to a different swatch.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-panel-bakelite-ekco> — 1930s moulded brown Bakelite escutcheon segment ====
+   attributes: value legend width height color(brown|black|walnut-mottled) arc wear(0..1) scale
+   no events (an output). Has a default <slot>: mount a control on the swatch.
+   self-contained: paste this block into any page and use
+   <sk-panel-bakelite-ekco value="WAVELENGTH"></sk-panel-bakelite-ekco> */
+(function () {
+  if (customElements.get("sk-panel-bakelite-ekco")) return;
+  var DW = 240, DH = 120;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1;',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;',
+  '        --base: #3e2415; --mid: #56331d; --deep: #170d07; --marble: #6f4527;',
+  '        --gloss: #d9c3a8; --glint: #fff8ee; --edge: #8a4f1e; --edgelite: #c98a48;',
+  '        --legendlite: rgba(255,240,222,.42); --legenddark: rgba(0,0,0,.62); }',
+  ':host([hidden]) { display: none; }',
+  ':host([color="black"]) { --base: #141213; --mid: #2a2627; --deep: #060505; --marble: #3a3436;',
+  '  --gloss: #cfcfcf; --glint: #fbfbfb; --edge: #443a2c; --edgelite: #6a5a42;',
+  '  --legendlite: rgba(255,255,255,.28); --legenddark: rgba(0,0,0,.7); }',
+  ':host([color="walnut-mottled"]) { --base: #45280f; --mid: #6a4423; --deep: #1c1006; --marble: #b28a5a;',
+  '  --gloss: #e2c9a0; --glint: #fff7e6; --edge: #9a5f28; --edgelite: #d29a54; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.plate { position: absolute; inset: 0; overflow: hidden; border-radius: 5px;',
+  '  background:',
+  '    radial-gradient(115% 130% at 20% -8%, var(--mid), transparent 55%),',
+  '    radial-gradient(70% 70% at 90% 105%, var(--deep), transparent 60%),',
+  '    linear-gradient(152deg, var(--mid) 0%, var(--base) 46%, var(--deep) 100%);',
+  '  box-shadow: 0 12px 22px rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.55), 0 0 0 1px rgba(10,6,3,.6);',
+  '  transition: border-radius .2s ease; }',
+  ':host([arc]) .plate { border-radius: 46% 46% 6px 6px / 26% 26% 6px 6px; }',
+  '.marble { position: absolute; inset: 0; width: 100%; height: 100%; display: block;',
+  '  mix-blend-mode: overlay; opacity: .5; pointer-events: none; }',
+  '.gloss { position: absolute; left: -20%; top: -30%; width: 90%; height: 95%; pointer-events: none;',
+  '  background: radial-gradient(closest-side, var(--gloss) 0%, rgba(217,195,168,.34) 42%, rgba(217,195,168,0) 74%);',
+  '  opacity: .5; filter: blur(1px); }',
+  '.glint { position: absolute; left: 16%; top: 12%; width: 15%; height: 20%; pointer-events: none;',
+  '  background: radial-gradient(closest-side, var(--glint) 0%, rgba(255,248,238,.5) 38%, rgba(255,248,238,0) 72%);',
+  '  opacity: .85; }',
+  '.underlite { position: absolute; left: 6%; right: 22%; bottom: 4%; height: 22%; pointer-events: none;',
+  '  background: linear-gradient(0deg, rgba(255,220,180,.16), rgba(255,220,180,0) 100%);',
+  '  border-radius: 50%; filter: blur(2px); }',
+  '.seam { position: absolute; left: -4%; right: 8%; height: 1px; pointer-events: none;',
+  '  background: rgba(0,0,0,.38);',
+  '  box-shadow: 0 -1px 0 rgba(255,244,226,.22), 0 1px 0 rgba(0,0,0,.30);',
+  '  transform-origin: left center; }',
+  '.seamflash { position: absolute; width: 7px; height: 7px; border-radius: 50%; pointer-events: none;',
+  '  background: radial-gradient(circle, rgba(255,248,232,.85), rgba(255,248,232,0) 70%); }',
+  '.edge { position: absolute; right: 0; top: 0; bottom: 0; width: 10%; pointer-events: none;',
+  '  background: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--edge) 55%, var(--edgelite) 100%);',
+  '  opacity: .8; }',
+  ':host([arc]) .edge { right: auto; left: 0; top: 0; height: 12%; width: 100%; bottom: auto;',
+  '  background: linear-gradient(180deg, var(--edgelite) 0%, var(--edge) 55%, rgba(0,0,0,0) 100%); opacity: .55; }',
+  '.wear { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light; }',
+  '.wear .rub { position: absolute; left: 30%; top: 46%; width: 40%; height: 40%; border-radius: 50%;',
+  '  background: radial-gradient(closest-side, rgba(255,255,255,.85), rgba(255,255,255,0) 72%); }',
+  '.scratch { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; pointer-events: none; }',
+  '.legend { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center;',
+  '  justify-content: center; text-align: center; pointer-events: none;',
+  '  font-family: "Josefin Sans", "Futura", "Century Gothic", sans-serif; font-weight: 700;',
+  '  font-size: 15px; letter-spacing: 0.14em; white-space: pre; padding: 0 10%;',
+  '  color: var(--mid);',
+  '  text-shadow: -1px -1px 0 var(--legendlite), 1px 1.5px 1.5px var(--legenddark); }',
+  '.legend:empty { display: none; }',
+  '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
+  '  pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '.chamfer { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;',
+  '  box-shadow: inset 0 1px 0 rgba(255,244,226,.30), inset 0 -2px 3px rgba(0,0,0,.5),',
+  '              inset 1px 0 0 rgba(255,244,226,.10), inset -1px 0 0 rgba(0,0,0,.35); }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <svg class="marble" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">',
+  '      <defs>',
+  '        <filter id="mrb" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">',
+  '          <feTurbulence type="fractalNoise" baseFrequency="0.010 0.018" numOctaves="4" seed="7" result="n"/>',
+  '          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.44  0 0 0 0 0.27  0 0 0 0 0.15  0 0 0 0.7 0" result="c"/>',
+  '          <feComponentTransfer in="c" result="c2"><feFuncA type="linear" slope="2.1" intercept="-0.55"/></feComponentTransfer>',
+  '          <feGaussianBlur in="c2" stdDeviation="0.6"/>',
+  '        </filter>',
+  '      </defs>',
+  '      <rect x="0" y="0" width="100%" height="100%" filter="url(#mrb)"/>',
+  '    </svg>',
+  '    <div class="gloss"></div>',
+  '    <div class="glint"></div>',
+  '    <div class="underlite"></div>',
+  '    <div class="seam"></div>',
+  '    <div class="seamflash"></div>',
+  '    <div class="edge"></div>',
+  '    <div class="wear"><div class="rub"></div>',
+  '      <svg class="scratch" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">',
+  '        <defs>',
+  '          <filter id="scr" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">',
+  '            <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="2" seed="4" result="n"/>',
+  '            <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 0.96  0 0 0 0 0.9  0 0 0 3.6 -3.15"/>',
+  '          </filter>',
+  '        </defs>',
+  '        <rect x="0" y="0" width="100%" height="100%" filter="url(#scr)" opacity=".5"/>',
+  '      </svg>',
+  '    </div>',
+  '    <div class="legend"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '    <div class="chamfer"></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  class SkPanelBakeliteEkco extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "legend", "width", "height", "color", "arc", "wear", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._plate = r.querySelector(".plate");
+      this._legend = r.querySelector(".legend");
+      this._seam = r.querySelector(".seam");
+      this._flash = r.querySelector(".seamflash");
+      this._wear = r.querySelector(".wear");
+      this._v = "";
+    }
+    connectedCallback() {                       // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var w = clamp(num(this, "width", DW), 40, 4000);
+      var h = clamp(num(this, "height", DH), 26, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      var isArc = this.hasAttribute("arc");
+      // the mould seam: a near-horizontal ridge, angled slightly, reaching the right edge
+      var sy = Math.round(h * (isArc ? 0.62 : 0.4));
+      this._seam.style.top = sy + "px";
+      this._seam.style.transform = "rotate(" + (isArc ? -2.4 : -3.2) + "deg)";
+      this._flash.style.left = (w - 9) + "px";
+      this._flash.style.top = (sy - 4) + "px";
+
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      this._wear.style.opacity = (wear * 0.85).toFixed(2);
+
+      var txt = this.getAttribute("value");
+      if (txt == null) txt = this.getAttribute("legend");
+      txt = txt == null ? "" : txt;
+      this._v = txt;
+      this._legend.textContent = txt;
+      this._legend.style.fontSize = (h < 70 ? 11 : Math.min(17, Math.round(h * 0.14))) + "px";
+
+      var colorAttr = this.getAttribute("color") || "brown";
+      var matName = colorAttr === "black" ? "black phenolic" : colorAttr === "walnut-mottled" ? "mottled walnut phenolic" : "brown phenolic";
+      this.setAttribute("aria-label", (txt ? "moulded legend “" + txt + "” on " : "") + matName + " escutcheon panel");
+    }
+  }
+  customElements.define("sk-panel-bakelite-ekco", SkPanelBakeliteEkco);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

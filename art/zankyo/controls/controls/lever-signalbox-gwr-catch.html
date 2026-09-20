@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal-box lever with the squeeze catch — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "lever-signalbox-gwr-catch",
+  "element": "sk-lever-signalbox-gwr-catch",
+  "name": "Signal-box lever with the squeeze catch",
+  "kind": "input",
+  "code": "C14",
+  "type": "Lever switch / selector with a handle",
+  "source": "The lever frame of a British mechanical signal box (Saxby & Farmer pattern; GWR / LMS / LNER standard frames)",
+  "era": "pre-1900",
+  "origin": "UK",
+  "materials": ["painted steel", "polished steel", "cast iron", "brass", "vitreous enamel", "timber"],
+  "tags": ["railway", "signal box", "lever frame", "squeeze catch", "colour code"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "colour", "number", "plate", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 140, "h": 400 },
+  "notes": "A red lever NORMAL, a red lever REVERSED, and a black points lever, all shown small. Squeeze the catch (press and hold, or Space) then pull; drag follows the grip's arc."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-lever-signalbox-gwr-catch value="false" colour="red" number="12" plate="UP MAIN HOME" scale="0.55"></sk-lever-signalbox-gwr-catch>
+    <sk-lever-signalbox-gwr-catch value="true" colour="red" number="14" plate="DOWN MAIN HOME" scale="0.55"></sk-lever-signalbox-gwr-catch>
+    <sk-lever-signalbox-gwr-catch value="false" colour="black" number="7" plate="No 7 POINTS" scale="0.55"></sk-lever-signalbox-gwr-catch>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Saxby &amp; Farmer</b> pattern lever frame is the row of tall painted levers a signalman heaves in a
+  British mechanical signal box, one per signal, point or lock, standard on the GWR, LMS and LNER from the
+  1870s into preservation today. Each lever stands upright (NORMAL) in a notch on a cast quadrant plate and is
+  pulled back toward the signalman (REVERSED) to work its wire or rod; a spring catch under the top grip must be
+  squeezed before the lever will leave its notch, so a lever cannot be pulled by a stray touch.</p>
+  <p><b>The tells kept here:</b> the paint stopping in a hard line where a bright polished-steel grip begins; the
+  small catch handle just below the grip that closes 6° and lifts a rod out of the quadrant notch when squeezed
+  (press and hold, or Space); the block colour code — red for stop signals, black for points — carried by the
+  three levers in the demo; the round brass number plate and the white enamel description plate riding on the
+  lever's face; the quadrant plate's two notches and its bright arc of wear; the floorboards and a brass strip
+  underfoot; the long ~50° throw with a hard clack and jolt as it lands, and the softer 350&nbsp;ms return.</p>
+  <p><b>Left out:</b> the wire and crank below the floor, the interlocking that would refuse some levers when
+  others are reversed, the full frame of the six colours together (built here as three, at a common scale).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-lever-signalbox-gwr-catch> — GWR-pattern signal-box lever with a squeeze catch ====
+   attributes: value(boolean) colour(red|yellow|black|blue|brown|white) number plate scale disabled
+   events: input {value} while dragging, change {value} when it settles into NORMAL/REVERSED
+   self-contained: paste this block into any page and use
+   <sk-lever-signalbox-gwr-catch value="false" colour="red"></sk-lever-signalbox-gwr-catch> */
+(function () {
+  if (customElements.get("sk-lever-signalbox-gwr-catch")) return;
+  const W = 140, H = 400, PX = 66, PY = 356;   // pivot near the quadrant
+  const SWEEP = 50;                             // degrees, NORMAL(0) .. REVERSED(50)
+  const PAINT = {
+    red:    ["#c33832", "#6e1616"], yellow: ["#e9b820", "#8a6a10"],
+    black:  ["#3a3a3c", "#1c1c1d"], blue:   ["#3866c2", "#173a7a"],
+    brown:  ["#7a5432", "#4a2f1a"], white:  ["#eae7dd", "#9d998a"]
+  };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${PX - 34}px; top: 20px; width: 68px; height: ${PY - 20}px; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 8px; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: inset 0 0 0 2px #16e0e0; }
+    .lever { transform-origin: ${PX}px ${PY}px; transform-box: view-box; transition: transform 400ms cubic-bezier(.3,.75,.25,1.05); }
+    .lever.returning { transition: transform 350ms cubic-bezier(.35,.7,.3,1); }
+    .lever.dragging { transition: none; }
+    .catch-handle { transform-origin: ${PX + 4}px ${PY - 218}px; transform-box: view-box; transition: transform 120ms ease-out; }
+    .squeezed .catch-handle { transform: rotate(-7deg); }
+    .catch-pin { transition: transform 120ms ease-out; }
+    .squeezed .catch-pin { transform: translateY(-2px); }
+    text { font-family: "Libre Franklin", "Arial Narrow", sans-serif; }
+    .plate-text { font-size: 6px; font-weight: 700; letter-spacing: 0.05em; fill: #1a1a1a; text-anchor: middle; }
+    .num-text { font-size: 9px; font-weight: 800; fill: #2a1c06; text-anchor: middle; dominant-baseline: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7a5c3c"/><stop offset="1" stop-color="#4d3822"/>
+        </linearGradient>
+        <radialGradient id="quad" cx="35%" cy="20%" r="80%">
+          <stop offset="0" stop-color="#44444a"/><stop offset="0.6" stop-color="#242427"/><stop offset="1" stop-color="#131315"/>
+        </radialGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#f4f6f8"/><stop offset="0.35" stop-color="#c7ccd1"/><stop offset="0.65" stop-color="#8b9298"/><stop offset="1" stop-color="#565c61"/>
+        </linearGradient>
+        <linearGradient id="paintgrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="var(--paint-hi)"/><stop offset="0.45" stop-color="var(--paint)"/><stop offset="1" stop-color="var(--paint-dk)"/>
+        </linearGradient>
+        <radialGradient id="brassG" cx="35%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#f0dfa4"/><stop offset="0.6" stop-color="#c8a45c"/><stop offset="1" stop-color="#6e5525"/>
+        </radialGradient>
+        <radialGradient id="pivot" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#9aa0a5"/><stop offset="0.7" stop-color="#3f4348"/><stop offset="1" stop-color="#18191a"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- floorboards and brass strip -->
+      <rect x="0" y="${H - 26}" width="${W}" height="26" fill="url(#floor)"/>
+      <line x1="0" y1="${H - 26}" x2="${W}" y2="${H - 26}" stroke="#2c1f10" stroke-width="1" opacity="0.6"/>
+      <rect x="0" y="${H - 15}" width="${W}" height="3.4" fill="url(#brassG)" opacity="0.9"/>
+      <g stroke="#2c1f10" stroke-width="0.6" opacity="0.35">
+        <line x1="24" y1="${H - 26}" x2="24" y2="${H}"/><line x1="52" y1="${H - 26}" x2="52" y2="${H}"/>
+        <line x1="88" y1="${H - 26}" x2="88" y2="${H}"/><line x1="116" y1="${H - 26}" x2="116" y2="${H}"/>
+      </g>
+
+      <!-- shadow sweep on the floor, shifts with angle -->
+      <ellipse class="floorshadow" cx="${PX}" cy="${H - 20}" rx="26" ry="7" fill="#000" opacity="0.4" filter="url(#soft)"/>
+
+      <!-- quadrant plate -->
+      <path d="M ${PX - 44} ${PY + 6} A 48 48 0 0 1 ${PX + 8} ${PY - 46} L ${PX + 2} ${PY - 30} A 32 32 0 0 0 ${PX - 30} ${PY + 6} Z"
+            fill="url(#quad)" stroke="#000" stroke-width="1"/>
+      <path d="M ${PX - 40} ${PY + 2} A 44 44 0 0 1 ${PX + 4} ${PY - 40}" fill="none" stroke="#9aa0a5" stroke-width="1.4" opacity="0.55"/>
+      <!-- notches -->
+      <rect x="${PX - 42}" y="${PY - 2}" width="6" height="7" fill="#0a0a0b" transform="rotate(-6 ${PX - 42} ${PY - 2})"/>
+      <rect x="${PX + 2}" y="${PY - 44}" width="6" height="7" fill="#0a0a0b" transform="rotate(46 ${PX + 2} ${PY - 44})"/>
+
+      <!-- pivot boss -->
+      <circle cx="${PX}" cy="${PY}" r="9" fill="url(#pivot)" stroke="#000" stroke-width="1"/>
+
+      <g class="lever">
+        <!-- catch rod running down the shaft's face -->
+        <line class="catch-rod" x1="${PX + 4}" y1="${PY - 205}" x2="${PX + 4}" y2="${PY - 8}" stroke="#aab0b5" stroke-width="1.4" opacity="0.8"/>
+        <circle class="catch-pin" cx="${PX + 4}" cy="${PY - 10}" r="2.6" fill="#d7dade" stroke="#000" stroke-width="0.5"/>
+
+        <!-- painted shaft -->
+        <rect x="${PX - 7}" y="${PY - 240}" width="14" height="240" rx="5" fill="url(#paintgrad)" stroke="#000" stroke-opacity="0.55" stroke-width="0.8"/>
+        <!-- hard paint edge -->
+        <line x1="${PX - 7}" y1="${PY - 240}" x2="${PX + 7}" y2="${PY - 240}" stroke="#000" stroke-opacity="0.45" stroke-width="1"/>
+
+        <!-- brass number plate -->
+        <circle cx="${PX}" cy="${PY - 96}" r="13" fill="url(#brassG)" stroke="#4a3814" stroke-width="1"/>
+        <circle cx="${PX}" cy="${PY - 96}" r="13" fill="none" stroke="#fff" stroke-opacity="0.25" stroke-width="0.6"/>
+        <text class="num-text" x="${PX}" y="${PY - 95.5}"></text>
+
+        <!-- enamel description plate -->
+        <rect x="${PX - 30}" y="${PY - 70}" width="60" height="15" rx="1.5" fill="#f4f2ec" stroke="#000" stroke-width="0.8"/>
+        <rect x="${PX - 30}" y="${PY - 70}" width="60" height="15" rx="1.5" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.5"/>
+        <text class="plate-text" x="${PX}" y="${PY - 60.5}"></text>
+
+        <!-- catch handle, pivots near the grip -->
+        <g class="catch-handle">
+          <rect x="${PX - 3}" y="${PY - 224}" width="20" height="7" rx="3" fill="url(#steel)" stroke="#3a3d40" stroke-width="0.6" transform="rotate(18 ${PX + 4} ${PY - 218})"/>
+        </g>
+
+        <!-- polished steel grip -->
+        <rect x="${PX - 8}" y="${PY - 310}" width="16" height="72" rx="7" fill="url(#steel)" stroke="#3a3d40" stroke-width="0.8"/>
+        <ellipse cx="${PX - 3}" cy="${PY - 296}" rx="2.4" ry="26" fill="#fff" opacity="0.55"/>
+        <path d="M ${PX - 7} ${PY - 250} A 8 8 0 0 0 ${PX + 7} ${PY - 250}" fill="none" stroke="#eef1f3" stroke-opacity="0.7" stroke-width="1.4"/>
+        <ellipse cx="${PX}" cy="${PY - 306}" rx="8" ry="5" fill="#e9edf0" opacity="0.9"/>
+      </g>
+    </svg>
+    <div class="grab" role="switch" tabindex="0"></div>
+  </div>`;
+
+  class SkLever extends HTMLElement {
+    static get observedAttributes() { return ["value", "colour", "number", "plate", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = false; this._scale = 1; this._squeezed = false; this._built = false;
+      this._lever = this.shadowRoot.querySelector(".lever");
+      this._svg = this.shadowRoot.querySelector("svg");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._numText = this.shadowRoot.querySelector(".num-text");
+      this._plateText = this.shadowRoot.querySelector(".plate-text");
+      this._shadow = this.shadowRoot.querySelector(".floorshadow");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "false");
+      this._readAttrs(); this._render();
+      if (this._built) return; this._built = true;
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+      g.addEventListener("keyup", this._onKeyUp = () => this._releaseSqueeze());
+    }
+    disconnectedCallback() {
+      clearTimeout(this._squeezeT);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = !!v; this._v = v; this.setAttribute("value", v ? "true" : "false"); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      this._v = this.getAttribute("value") === "true";
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const c = (this.getAttribute("colour") || "black").toLowerCase();
+      const p = PAINT[c] || PAINT.black;
+      this.style.setProperty("--paint", p[0]);
+      this.style.setProperty("--paint-dk", p[1]);
+      this.style.setProperty("--paint-hi", "#fff");
+      this._numText.textContent = this.getAttribute("number") || "";
+      this._plateText.textContent = this.getAttribute("plate") || "";
+      this._grab.setAttribute("aria-label", (this.getAttribute("plate") || "signal lever"));
+      this._grab.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _angleFor(v) { return v ? SWEEP : 0; }
+    _apply(angle) {
+      this._lever.style.transform = "rotate(" + angle.toFixed(2) + "deg)";
+      this._shadow.setAttribute("cx", String(PX + angle * 0.5));
+      this._grab.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+    _render() { this._apply(this._angleFor(this._v)); }
+    _squeeze() {
+      if (this._squeezed) return;
+      this._squeezed = true; this._svg.classList.add("squeezed");
+    }
+    _releaseSqueeze() { this._squeezed = false; this._svg.classList.remove("squeezed"); }
+    _settle(v) {
+      v = !!v;
+      this._lever.classList.remove("dragging");
+      this._lever.classList.toggle("returning", v === false);   // pull (to REVERSED) is heavier than the return
+      this._v = v; this.setAttribute("value", v ? "true" : "false");
+      this._apply(this._angleFor(v));
+      setTimeout(() => this._releaseSqueeze(), 90);
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _toggleWithSqueeze() {
+      if (this.hasAttribute("disabled")) return;
+      this._squeeze();
+      this._settle(!this._v);
+    }
+    _setEnd(v) {
+      if (this.hasAttribute("disabled") || v === this._v) return;
+      this._squeeze();
+      this._settle(v);
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._squeeze();
+      this._lever.classList.add("dragging");
+      const rect = this._svg.getBoundingClientRect();
+      const sx = rect.width / W;
+      this._drag = { rect, sx, moved: false, startY: e.clientY, startX: e.clientX };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const d = this._drag;
+      if (Math.abs(e.clientY - d.startY) > 2 || Math.abs(e.clientX - d.startX) > 2) d.moved = true;
+      // angle-follow: local coords relative to pivot, in unscaled svg space
+      const lx = (e.clientX - d.rect.left) / d.sx;
+      const ly = (e.clientY - d.rect.top) / d.sx;
+      const dx = lx - PX, dy = PY - ly;                       // dy positive = pointer above pivot
+      let ang = Math.atan2(dx, dy) * 180 / Math.PI;           // 0 = straight up
+      ang = Math.max(0, Math.min(SWEEP, ang));
+      this._angleAtDragEnd = ang;
+      this._apply(ang);
+      const tentative = ang > SWEEP / 2;
+      if (tentative !== this._v) {
+        this._v = tentative; this.setAttribute("value", tentative ? "true" : "false");
+        this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v } }));
+      }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) {
+        const end = this._angleAtDragEnd > SWEEP / 2;
+        this._settle(end);
+      } else {
+        this._releaseSqueeze();
+        this._lever.classList.remove("dragging");
+        this._toggleWithSqueeze();
+      }
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0;
+      this._setEnd(dir);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      switch (e.key) {
+        case " ": case "Spacebar": case "Enter":
+          e.preventDefault(); this._squeeze(); this._toggleWithSqueeze(); break;
+        case "ArrowUp": case "ArrowRight": case "End":
+          e.preventDefault(); this._setEnd(true); break;
+        case "ArrowDown": case "ArrowLeft": case "Home":
+          e.preventDefault(); this._setEnd(false); break;
+        default: return;
+      }
+    }
+  }
+  customElements.define("sk-lever-signalbox-gwr-catch", SkLever);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raised-letter cast brass nameplate — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "plate-brass-nameplate-red",
+  "element": "sk-plate-brass-nameplate",
+  "name": "Raised-letter cast brass nameplate",
+  "kind": "output",
+  "code": "J5",
+  "type": "Panel swatch — cast brass nameplate",
+  "source": "GWR \"Castle\" and LNER locomotive nameplates and builder's plates — cast brass with raised polished letters on a painted ground",
+  "era": "1920s",
+  "origin": "UK",
+  "materials": ["cast brass", "enamel paint", "brass screws"],
+  "tags": ["panel", "swatch", "locomotive", "nameplate", "cast brass", "raised letters"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "sub", "ground", "width", "height", "wear", "scale"],
+  "events": [],
+  "size": { "w": 320, "h": 56 },
+  "demoWords": ["CAERPHILLY CASTLE", "No 4073", "FLYING SCOTSMAN", "LORD NELSON"],
+  "notes": "A cast plate other pages can bolt to a boiler side or backdrop. value is the raised name; sub is an optional second line; ground swaps the paint colour."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-plate-brass-nameplate value="CAERPHILLY CASTLE"></sk-plate-brass-nameplate>
+    <sk-plate-brass-nameplate value="No 4073" ground="black" scale="0.85"></sk-plate-brass-nameplate>
+    <sk-plate-brass-nameplate value="LORD NELSON" ground="green" wear="0.8" scale="0.8"></sk-plate-brass-nameplate>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>GWR- or LNER-style builder's nameplate</b>: brass sand-cast in one piece with the letters and the
+  frame standing proud, the raised faces then filed and polished bright while the painted ground stays matte,
+  and the whole plate screwed to the boiler cladding with four slotted brass screws.</p>
+  <p><b>The tells kept here:</b> the letters and the mitred border are one continuous polished brass surface,
+  lit top-left with a bright top face, a dark cast side showing along the bottom-right of every stroke and a
+  soft shadow it throws onto the paint; the ground is a matte, faintly brush-marked enamel, darker at the
+  edges the polishing rag never reached, with a small corner chip that has always exposed the raw brass
+  underneath — cast plates take knocks; four brass screws with slots at random angles set into the border.
+  <code>ground</code> swaps red for the black or green GWR variants also seen. With <code>wear</code> the paint
+  scuffs further near the letters and green verdigris settles into their corners.</p>
+  <p><b>Left out:</b> the running number roundel and the shed-code smokebox plate that usually ride alongside
+  it, and the plate's very slight convex curve to follow the boiler.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-plate-brass-nameplate> — cast brass raised-letter nameplate on a painted ground ====
+   attributes: value sub ground(red|black|green) width height wear(0..1) scale
+   no events (an output). Has a default <slot> for mounting decoration alongside the plate.
+   self-contained: paste this block into any page and use
+   <sk-plate-brass-nameplate value="CAERPHILLY CASTLE"></sk-plate-brass-nameplate> */
+(function () {
+  if (customElements.get("sk-plate-brass-nameplate")) return;
+  var DW = 320, DH = 56;
+  var NS = "http://www.w3.org/2000/svg";
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1;',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; filter: drop-shadow(0 8px 10px rgba(0,0,0,.5)); }',
+  '.plate { position: absolute; inset: 0; border-radius: 2px; overflow: hidden;',
+  '  background: linear-gradient(160deg, #b8342a 0%, #a3241c 45%, #7d1a14 100%); }',
+  ':host([ground="black"]) .plate { background: linear-gradient(160deg, #2c2a27 0%, #1b1a18 55%, #111010 100%); }',
+  ':host([ground="green"]) .plate { background: linear-gradient(160deg, #2c6042 0%, #1f4a30 55%, #133422 100%); }',
+  /* --- matte brush-marked ground: faint streaks + darker rag-missed edges --- */
+  '.brush { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .35;',
+  '  background: repeating-linear-gradient(78deg, rgba(255,255,255,.05) 0 2px, rgba(0,0,0,.05) 2px 4px); }',
+  '.vign { position: absolute; inset: 0; pointer-events: none;',
+  '  background: radial-gradient(120% 150% at 50% 40%, rgba(0,0,0,0) 55%, rgba(0,0,0,.30) 100%); }',
+  /* --- the raised, polished brass border: one frame around letters and edge --- */
+  '.border { position: absolute; inset: 4px; pointer-events: none; border-radius: 1px;',
+  '  border: 4px solid transparent;',
+  '  background:',
+  '    linear-gradient(155deg, #f3dc8a 0%, #cfa74e 45%, #8a6d2c 100%) padding-box,',
+  '    linear-gradient(155deg, #f6e6a8 0%, #b78a38 55%, #5c4517 100%) border-box;',
+  '  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);',
+  '  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);',
+  '  -webkit-mask-composite: xor; mask-composite: exclude;',
+  '  box-shadow: 0 1.5px 0 rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.55); }',
+  '.border::before { content: ""; position: absolute; inset: -4px; border-radius: 3px; pointer-events: none;',
+  '  box-shadow: 2px 3px 3px rgba(0,0,0,.35); }',
+  /* --- name: raised, polished brass letters with a cast bevel side --- */
+  '.names { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;',
+  '  justify-content: center; gap: 2px; pointer-events: none; }',
+  '.name { font-family: "Oswald", "Arial Narrow", sans-serif; font-weight: 700; letter-spacing: 0.07em;',
+  '  white-space: nowrap;',
+  '  background: linear-gradient(160deg, #fbeeb8 0%, #edcf7e 30%, #c9a24c 62%, #8a6d2c 100%);',
+  '  -webkit-background-clip: text; background-clip: text; color: transparent;',
+  '  text-shadow: 0 0.6px 0 rgba(255,255,255,.55), 0.6px 0.6px 0 #a9843e, 1.2px 1.2px 0 #8a6d2c,',
+  '    1.8px 1.8px 0 #6e5426, 2.2px 2.6px 2px rgba(0,0,0,.55); }',
+  '.name.sub { font-weight: 600; letter-spacing: 0.09em; }',
+  /* --- brass slotted screws set into the border --- */
+  '.art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }',
+  /* --- corner chip: always a little brass shows through the paint --- */
+  '.chip { position: absolute; pointer-events: none; }',
+  /* --- wear: extra scuffing + verdigris near the letters --- */
+  '.wear1 { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light;',
+  '  background: radial-gradient(30% 40% at 78% 78%, rgba(0,0,0,.4), rgba(0,0,0,0) 70%),',
+  '              radial-gradient(24% 36% at 24% 22%, rgba(255,255,255,.28), rgba(255,255,255,0) 70%); }',
+  '.verdi { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: multiply;',
+  '  background: radial-gradient(10% 40% at 50% 34%, rgba(63,138,96,.75), rgba(63,138,96,0) 75%),',
+  '              radial-gradient(10% 40% at 50% 66%, rgba(63,138,96,.6), rgba(63,138,96,0) 75%); }',
+  '.slotlayer { position: absolute; inset: 8px; display: flex; align-items: center; justify-content: center;',
+  '  pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <div class="brush"></div>',
+  '    <div class="vign"></div>',
+  '    <div class="border"></div>',
+  '    <svg class="art" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>',
+  '      <radialGradient id="screwGradB" cx="35%" cy="30%" r="70%">',
+  '        <stop offset="0" stop-color="#f6e6a8"/><stop offset="0.55" stop-color="#c9a24c"/><stop offset="1" stop-color="#6e5426"/>',
+  '      </radialGradient>',
+  '    </defs><g class="screws"></g></svg>',
+  '    <div class="chip"></div>',
+  '    <div class="verdi"></div>',
+  '    <div class="wear1"></div>',
+  '    <div class="names"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function mk(t, a) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+
+  class SkPlateBrassNameplate extends HTMLElement {
+    static get observedAttributes() { return ["value", "sub", "ground", "width", "height", "wear", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._names = r.querySelector(".names");
+      this._screws = r.querySelector(".screws");
+      this._art = r.querySelector(".art");
+      this._chip = r.querySelector(".chip");
+      this._wear1 = r.querySelector(".wear1");
+      this._verdi = r.querySelector(".verdi");
+      this._v = null; this._sub = null;
+    }
+    connectedCallback() {                     // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this.getAttribute("value") || ""; }
+    set value(v) { v = v == null ? "" : String(v); this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var text = this.getAttribute("value");
+      var w = this.hasAttribute("width") ? clamp(num(this, "width", DW), 60, 4000)
+        : clamp(Math.max(DW * 0.6, (text || "").length * 12 + 60), 60, 4000);
+      var h = clamp(num(this, "height", DH), 32, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+      this._art.setAttribute("viewBox", "0 0 " + w + " " + h);
+      this._art.setAttribute("width", w); this._art.setAttribute("height", h);
+
+      var sub = this.getAttribute("sub") || "";
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      if (text !== this._v || sub !== this._sub || this._lastW !== w || this._lastH !== h) {
+        this._v = text; this._sub = sub; this._lastW = w; this._lastH = h;
+        this._paintNames(text || "", sub, w, h);
+        this._paintScrews(w, h);
+        this._paintChip(w, h);
+      }
+      this._wear1.style.opacity = (wear * 0.85).toFixed(2);
+      this._verdi.style.opacity = (wear * 0.75).toFixed(2);
+
+      this.setAttribute("aria-label", (text ? text + (sub ? ", " + sub : "") : "blank") +
+        " — cast brass nameplate on " + (this.getAttribute("ground") || "red"));
+    }
+    _paintNames(text, sub, w, h) {
+      var n = this._names;
+      while (n.firstChild) n.removeChild(n.firstChild);
+      var big = clamp(h * 0.42, 12, 30);
+      var small = big * 0.5;
+      var l1 = document.createElement("div");
+      l1.className = "name";
+      l1.textContent = text;
+      l1.style.fontSize = big + "px";
+      // shrink to fit the plate width
+      l1.style.transform = "scale(" + Math.min(1, (w - 40) / Math.max(1, text.length * big * 0.62)).toFixed(3) + ")";
+      n.appendChild(l1);
+      if (sub) {
+        var l2 = document.createElement("div");
+        l2.className = "name sub";
+        l2.textContent = sub;
+        l2.style.fontSize = small + "px";
+        l2.style.transform = "scale(" + Math.min(1, (w - 40) / Math.max(1, sub.length * small * 0.62)).toFixed(3) + ")";
+        n.appendChild(l2);
+      }
+    }
+    _paintScrews(w, h) {
+      var sc = this._screws;
+      while (sc.firstChild) sc.removeChild(sc.firstChild);
+      var sr = clamp(Math.min(w, h) * 0.05, 2.6, 5);
+      var inset = sr + 5.5;
+      var pos = [[inset, inset, 24], [w - inset, inset, -58], [inset, h - inset, 72], [w - inset, h - inset, -18]];
+      pos.forEach(function (p) {
+        var g = mk("g", { transform: "translate(" + p[0].toFixed(1) + " " + p[1].toFixed(1) + ")" });
+        g.appendChild(mk("circle", { r: sr.toFixed(1), fill: "url(#screwGradB)", stroke: "#3a2c12", "stroke-width": 0.6 }));
+        g.appendChild(mk("rect", { x: (-sr * 0.78).toFixed(1), y: (-sr * 0.14).toFixed(1), width: (sr * 1.56).toFixed(1), height: (sr * 0.28).toFixed(1), fill: "#3a2c12", transform: "rotate(" + p[2] + ")" }));
+        sc.appendChild(g);
+      });
+    }
+    _paintChip(w, h) {
+      // a small permanent corner chip exposing raw cast brass beneath the paint
+      var s = clamp(Math.min(w, h) * 0.16, 8, 16);
+      this._chip.innerHTML =
+        '<svg width="' + s * 1.4 + '" height="' + s * 1.4 + '" style="position:absolute;left:' + (w - s * 1.35) + 'px;top:' + (h - s * 1.3) + 'px;overflow:visible" aria-hidden="true">' +
+        '<defs><radialGradient id="chipg" cx="30%" cy="25%" r="80%">' +
+        '<stop offset="0" stop-color="#f0dfa0"/><stop offset="0.5" stop-color="#b4924a"/><stop offset="1" stop-color="#5c4a26"/>' +
+        '</radialGradient></defs>' +
+        '<path d="M0 ' + s * 0.9 + ' Q ' + s * 0.15 + ' ' + s * 0.35 + ' ' + s * 0.6 + ' ' + s * 0.3 + ' Q ' + s * 1.05 + ' ' + s * 0.22 + ' ' + s + ' 0 L ' + s + ' ' + s + ' Z" fill="url(#chipg)" opacity="0.92"/>' +
+        '<path d="M0 ' + s * 0.9 + ' Q ' + s * 0.15 + ' ' + s * 0.35 + ' ' + s * 0.6 + ' ' + s * 0.3 + ' Q ' + s * 1.05 + ' ' + s * 0.22 + ' ' + s + ' 0" fill="none" stroke="#2a2016" stroke-width="0.8" opacity="0.5"/>' +
+        '</svg>';
+    }
+  }
+  customElements.define("sk-plate-brass-nameplate", SkPlateBrassNameplate);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klixon 7274 push-pull breaker — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Roboto+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<style>
+  /* demo-only decoration for the row of eight: not part of the element */
+  .sk-bus { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .sk-bus-title { font: 600 9px/1 "Arial Narrow", sans-serif; letter-spacing: 0.14em; color: #cfd0cd; }
+  .sk-bus-row { display: flex; gap: 3px; padding: 6px; border: 1px solid #d9d9d5; border-radius: 4px; background: #0c0d0e; }
+</style>
+<script type="application/json" id="sk-meta">
+{
+  "id": "breaker-klixon-7274",
+  "element": "sk-breaker-klixon-7274",
+  "name": "Klixon 7274 push-pull breaker",
+  "kind": "both",
+  "code": "C8.1",
+  "type": "Circuit breaker",
+  "source": "The Texas Instruments Klixon 7274 series push-pull thermal breaker (also Wood Electric, Mechanical Products), in rows on every aircraft breaker panel, 1950s-",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["black moulded plastic", "white nylon collar", "chrome"],
+  "tags": ["aircraft", "breaker panel", "push-pull", "tripped"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "tripped", "amps", "collared", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 48, "h": 80 },
+  "notes": "A large one pushed in, a tripped one popped with the white collar showing, and a row of eight bus breakers with one tripped and one collared."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-breaker-klixon-7274 value="true" amps="15" label="PITOT HEAT" scale="2"></sk-breaker-klixon-7274>
+    <sk-breaker-klixon-7274 value="false" tripped amps="15" label="LANDING LT"></sk-breaker-klixon-7274>
+    <div class="sk-bus">
+      <div class="sk-bus-title">GEN BUS 1</div>
+      <div class="sk-bus-row">
+        <sk-breaker-klixon-7274 value="true" amps="5" label="NAV"></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="true" amps="5" label="COM 1"></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="true" amps="5" label="COM 2"></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="false" tripped amps="7" label="XPDR"></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="true" amps="5" label="TURN CO"></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="true" amps="10" label="FLAP" collared></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="true" amps="5" label="STROBE"></sk-breaker-klixon-7274>
+        <sk-breaker-klixon-7274 value="true" amps="5" label="INST LT"></sk-breaker-klixon-7274>
+      </div>
+    </div>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Klixon 7274</b> and its lookalikes from Wood Electric and Mechanical Products are the little
+  black push-pull breakers that fill a general-aviation breaker panel in rows of eight or more: a round
+  black button standing a few millimetres proud with its amperage printed on the face, on a chrome bushing
+  and hex nut. When the thermal element trips it snaps out on its own, exposing a white nylon collar on the
+  stem that was hidden inside the bushing — a whole row reads at a glance because one white band stands out
+  among black buttons.</p>
+  <p><b>The tells kept here:</b> the white collar that only shows once the button is out; the amperage
+  printed white on the button's face; a chrome hex nut and a hint of bare bushing thread above it once
+  popped; a row of eight under a single white outline with a bus name and a stencil legend under each
+  breaker; one breaker in the row wearing a wider black collar (<code>collared</code>) that is not meant to
+  be reset in flight, so pushing it back in is refused. Click or drag a breaker out to trip it manually,
+  click or press it to reset (unless collared), and the built-in <code>tripped</code> attribute pops it
+  with a 40&nbsp;ms snap and a one-pixel bounce.</p>
+  <p><b>Left out:</b> the rear wire lugs, the printed date-code on the button's underside.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-breaker-klixon-7274> — Klixon 7274-style push-pull thermal breaker ====
+   attributes: value(true|false, true=pushed in/closed) tripped amps collared label scale disabled
+   events: input {value}, change {value} — only from user gestures, never from the value/tripped attributes
+   self-contained: paste this block into any page and use
+   <sk-breaker-klixon-7274 value="true" amps="5"></sk-breaker-klixon-7274> */
+(function () {
+  if (customElements.get("sk-breaker-klixon-7274")) return;
+  const W = 48, H = 80, CX = 24, NUT_Y = 40, IN_Y = -3, OUT_Y = -13;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 6px; top: 6px; width: 36px; height: 46px; cursor: pointer;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 6px; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    :host([disabled]) .grab { cursor: default; }
+    .stem { transform-box: view-box; transform-origin: ${CX}px ${NUT_Y}px; transition: transform 90ms cubic-bezier(.32,1.7,.5,1); }
+    .refuse { animation: sk-brk-shake 160ms ease; }
+    @keyframes sk-brk-shake { 0%,100% { transform: translateX(0); } 30% { transform: translateX(-1px); } 70% { transform: translateX(1px); } }
+    text { font-family: "Inter", "Arial", sans-serif; }
+    .amps { font-size: 5.4px; font-weight: 700; text-anchor: middle; fill: #f0f0ec; }
+    .lbl { font-family: "Roboto Condensed", "Arial Narrow", sans-serif; font-size: 5.6px; font-weight: 500; letter-spacing: 0.08em; text-anchor: middle; fill: #ececea; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="brk-cap" cx="35%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#3c3e42"/><stop offset="0.4" stop-color="#222327"/><stop offset="1" stop-color="#0e0e10"/>
+        </radialGradient>
+        <linearGradient id="brk-wall" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3a3c40"/><stop offset="0.5" stop-color="#17181a"/><stop offset="1" stop-color="#0a0a0b"/>
+        </linearGradient>
+        <linearGradient id="brk-collar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#f4f3ee"/><stop offset="1" stop-color="#b9b8b2"/>
+        </linearGradient>
+        <radialGradient id="brk-nut" cx="34%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#e6e9ec"/><stop offset="0.5" stop-color="#c7cbcf"/><stop offset="1" stop-color="#6d7177"/>
+        </radialGradient>
+        <filter id="brk-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1"/></filter>
+      </defs>
+
+      <!-- panel patch -->
+      <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="3" fill="#131416" stroke="#000" stroke-width="1"/>
+      <rect x="2.4" y="2.4" width="${W - 4.8}" height="${H - 4.8}" rx="2.4" fill="none" stroke="#2a2b2e" stroke-width="0.6"/>
+
+      <!-- long contact shadow, down-right, longer when popped -->
+      <ellipse class="dropshadow" cx="${CX + 3}" cy="${NUT_Y + 6}" rx="10" ry="4" fill="#000" opacity="0.5" filter="url(#brk-soft)"/>
+
+      <!-- faint bushing threads, revealed only once popped -->
+      <g class="threads" opacity="0">
+        <line x1="${CX-4.6}" y1="${NUT_Y-9}" x2="${CX+4.6}" y2="${NUT_Y-9}" stroke="#8a8d90" stroke-width="0.5"/>
+        <line x1="${CX-4.6}" y1="${NUT_Y-7}" x2="${CX+4.6}" y2="${NUT_Y-7}" stroke="#8a8d90" stroke-width="0.5"/>
+        <line x1="${CX-4.6}" y1="${NUT_Y-5}" x2="${CX+4.6}" y2="${NUT_Y-5}" stroke="#8a8d90" stroke-width="0.5"/>
+      </g>
+
+      <!-- moving stem: wall, collar, cap, amps -->
+      <g class="stem">
+        <rect x="${CX - 4.6}" y="${NUT_Y - 22}" width="9.2" height="24" rx="1.6" fill="url(#brk-wall)"/>
+        <rect class="collarband" x="${CX - 5.4}" y="${NUT_Y - 12}" width="10.8" height="3.6" fill="url(#brk-collar)" stroke="#8f8e89" stroke-width="0.3"/>
+        <ellipse class="cap" cx="${CX}" cy="${NUT_Y - 22}" rx="6.4" ry="3.2" fill="url(#brk-cap)" stroke="#000" stroke-width="0.6"/>
+        <ellipse cx="${CX - 1.6}" cy="${NUT_Y - 23}" rx="2.6" ry="1" fill="#5a5c60" opacity="0.6"/>
+        <text class="amps" x="${CX}" y="${NUT_Y - 20.6}"></text>
+      </g>
+
+      <!-- collared ring (wider, drawn when collared attribute is set): fixed at nut, drawn after stem -->
+      <circle class="collarring" cx="${CX}" cy="${NUT_Y}" r="9.4" fill="none" stroke="#0a0a0b" stroke-width="3.4" opacity="0"/>
+
+      <!-- hex nut + bushing, fixed, painted after the stem so it hides the collar when pushed in -->
+      <polygon points="${CX},${NUT_Y-7} ${CX+6.1},${NUT_Y-3.5} ${CX+6.1},${NUT_Y+3.5} ${CX},${NUT_Y+7} ${CX-6.1},${NUT_Y+3.5} ${CX-6.1},${NUT_Y-3.5}"
+        fill="url(#brk-nut)" stroke="#3a3c3f" stroke-width="0.5"/>
+      <circle cx="${CX}" cy="${NUT_Y}" r="4.6" fill="#0e0f10"/>
+
+      <!-- group line + label -->
+      <text class="lbl" x="${CX}" y="${H - 4}"></text>
+    </svg>
+    <div class="grab" role="switch" tabindex="0"></div>
+  </div>`;
+
+  class SkBreakerKlixon7274 extends HTMLElement {
+    static get observedAttributes() { return ["value", "tripped", "amps", "collared", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = true; this._scale = 1;
+      this._stem = this.shadowRoot.querySelector(".stem");
+      this._threads = this.shadowRoot.querySelector(".threads");
+      this._ring = this.shadowRoot.querySelector(".collarring");
+      this._amps = this.shadowRoot.querySelector(".amps");
+      this._lbl = this.shadowRoot.querySelector(".lbl");
+      this._shadow = this.shadowRoot.querySelector(".dropshadow");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._drag = null;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "true");
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = !!(v === true || v === "true"); this._v = v; this.setAttribute("value", String(v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    trip() { this.setAttribute("tripped", ""); this.setAttribute("value", "false"); this._v = false; this._render(); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = (this.getAttribute("value") || "true") === "true";
+      this._tripped = this.hasAttribute("tripped");
+      this._collared = this.hasAttribute("collared");
+      this._amps.textContent = this.getAttribute("amps") || "";
+      this._lbl.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", (this.getAttribute("label") || "breaker") + (this.getAttribute("amps") ? (" " + this.getAttribute("amps") + " amp") : ""));
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      const out = !this._v;
+      this._stem.style.transform = "translateY(" + (out ? OUT_Y : IN_Y) + "px)";
+      this._threads.style.opacity = out ? "0.55" : "0";
+      this._ring.style.opacity = this._collared ? "1" : "0";
+      this._shadow.setAttribute("rx", out ? "13" : "9");
+      this._shadow.setAttribute("cy", String(NUT_Y + (out ? 9 : 5)));
+      this._grab.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+    _set(v, settle) {
+      const changed = v !== this._v;
+      this._v = v; this.setAttribute("value", String(v));
+      if (v) this.removeAttribute("tripped");
+      this._render();
+      if (changed || settle) this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _refuse() {
+      this._stem.classList.remove("refuse"); void this._stem.offsetWidth;
+      this._stem.classList.add("refuse");
+    }
+    _toggle() {
+      if (this.hasAttribute("disabled")) return;
+      if (this._v) { this._set(false, false); this._set(false, true); }
+      else {
+        if (this._collared) { this._refuse(); return; }
+        this._set(true, false); this._set(true, true);
+      }
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._drag = { y: e.clientY, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = (e.clientY - this._drag.y) / this._scale;
+      if (Math.abs(dy) > 5) this._drag.moved = true;
+      if (this._v && dy > 6) { this._set(false, false); }
+      else if (!this._v && dy < -6 && !this._collared) { this._set(true, false); }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+      else this._toggle();
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      switch (e.key) {
+        case " ": case "Enter": case "ArrowUp": case "ArrowDown": case "ArrowLeft": case "ArrowRight":
+          e.preventDefault(); this._toggle(); break;
+        default: return;
+      }
+    }
+  }
+  customElements.define("sk-breaker-klixon-7274", SkBreakerKlixon7274);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
