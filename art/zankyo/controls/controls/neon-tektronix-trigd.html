@@ -75,7 +75,7 @@
   'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }' +
   '.on { opacity: var(--b); }' +
   'text.legend { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500;' +
-  '  font-size: 7px; letter-spacing: 0.06em; text-anchor: middle; fill: #1d1f22; }' +
+  '  font-size: 6.6px; letter-spacing: 0.07em; text-anchor: middle; fill: #1d1f22; }' +
   '</style>' +
   '<div class="wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
   '<defs>' +
@@ -83,7 +83,7 @@
       '<stop offset="0" stop-color="#8a9cae"/><stop offset="0.45" stop-color="#7b8fa3"/><stop offset="1" stop-color="#6d8196"/>' +
     '</linearGradient>' +
     '<linearGradient id="milk" x1="0.2" y1="0" x2="0.7" y2="1">' +
-      '<stop offset="0" stop-color="#e4e0d3"/><stop offset="0.55" stop-color="#d9d5c8"/><stop offset="1" stop-color="#c3bfb2"/>' +
+      '<stop offset="0" stop-color="#dcd7c7"/><stop offset="0.55" stop-color="#d0cbba"/><stop offset="1" stop-color="#b9b4a3"/>' +
     '</linearGradient>' +
     '<radialGradient id="fire" cx="48%" cy="52%" r="58%">' +
       '<stop offset="0" stop-color="#ff9c33" stop-opacity="0.96"/><stop offset="0.5" stop-color="#ff8a1e" stop-opacity="0.78"/>' +
@@ -97,37 +97,38 @@
       '<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>' +
       '<feColorMatrix in="n" type="saturate" values="0"/>' +
     '</filter>' +
-    '<filter id="diff" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.9"/></filter>' +
-    '<filter id="spread" x="-90%" y="-120%" width="280%" height="340%"><feGaussianBlur stdDeviation="3"/></filter>' +
+    '<filter id="diff" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.6"/></filter>' +
+    '<filter id="spread" x="-90%" y="-120%" width="280%" height="340%"><feGaussianBlur stdDeviation="2.2"/></filter>' +
+    '<clipPath id="pclip"><rect x="0" y="0" width="' + W + '" height="' + H + '" rx="0.6"/></clipPath>' +
     '<clipPath id="wclip"><rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" rx="1.2"/></clipPath>' +
   '</defs>' +
 
   // a piece of the scope's blue-grey panel, sitting on whatever it is mounted to
-  '<rect x="0" y="1" width="' + W + '" height="' + (H - 1) + '" rx="1" fill="#000" opacity="0.5" filter="url(#spread)"/>' +
-  '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="1" fill="url(#pan)"/>' +
-  '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="1" filter="url(#grain)" opacity="0.07"/>' +
-  '<rect x="0.25" y="0.25" width="' + (W - 0.5) + '" height="' + (H - 0.5) + '" rx="1" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="0.5"/>' +
+  '<rect x="0" y="1.2" width="' + W + '" height="' + (H - 1) + '" rx="0.6" fill="#000" opacity="0.5" filter="url(#spread)"/>' +
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="0.6" fill="url(#pan)"/>' +
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="0.6" filter="url(#grain)" opacity="0.07"/>' +
+  '<rect x="0.25" y="0.25" width="' + (W - 0.5) + '" height="' + (H - 0.5) + '" rx="0.6" fill="none" stroke="#fff" stroke-opacity="0.1" stroke-width="0.5"/>' +
 
   // the orange the lit lamp throws on the paint around its window
-  '<rect class="on" x="' + (WX - 4) + '" y="' + (WY - 4) + '" width="' + (WW + 8) + '" height="' + (WH + 8) + '" rx="3" fill="#ff8a1e" opacity="0.4" filter="url(#spread)"/>' +
+  '<g clip-path="url(#pclip)"><rect class="on" x="' + (WX - 3) + '" y="' + (WY - 3) + '" width="' + (WW + 6) + '" height="' + (WH + 6) + '" rx="2.5" fill="#ff8a1e" opacity="0.15" filter="url(#spread)"/></g>' +
 
   // the hole in the paint, and the milky diffuser flush in it
   '<rect x="' + (WX - 0.55) + '" y="' + (WY - 0.55) + '" width="' + (WW + 1.1) + '" height="' + (WH + 1.1) + '" rx="1.6" fill="#3f4b57" opacity="0.85"/>' +
   '<rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" rx="1.2" fill="url(#milk)"/>' +
   '<g clip-path="url(#wclip)">' +
     // the bulb sits a few mm behind: a faint shadow through the plastic
-    '<ellipse cx="' + (WX + 14.4) + '" cy="' + (WY + 8.4) + '" rx="8" ry="5.4" fill="#8f8b7e" opacity="0.28" filter="url(#diff)"/>' +
+    '<ellipse cx="' + (WX + 14.4) + '" cy="' + (WY + 8.4) + '" rx="8.4" ry="5.6" fill="#8f8b7e" opacity="0.15" filter="url(#spread)"/>' +
     '<g class="on">' +
       '<rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" fill="url(#fire)"/>' +
       '<g filter="url(#diff)">' +
-        '<rect x="' + (WX + 12.1) + '" y="' + (WY + 3.2) + '" width="1.5" height="9.6" rx="0.7" fill="#ffd9a8"/>' +
-        '<rect x="' + (WX + 15.6) + '" y="' + (WY + 3.5) + '" width="1.5" height="9.2" rx="0.7" fill="#ffc98c"/>' +
+        '<rect x="' + (WX + 11.9) + '" y="' + (WY + 2.7) + '" width="1.7" height="10.6" rx="0.8" fill="#fff0d6"/>' +
+        '<rect x="' + (WX + 15.5) + '" y="' + (WY + 3.1) + '" width="1.7" height="10" rx="0.8" fill="#ffdcab"/>' +
         '<ellipse cx="' + (WX + 14.4) + '" cy="' + (WY + 8) + '" rx="6.2" ry="4.6" fill="#ff8f22" opacity="0.6"/>' +
       '</g>' +
     '</g>' +
     // the diffuser's own sheen and the shadow the paint edge drops on it
     '<rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" fill="url(#lip)"/>' +
-    '<rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" fill="none" stroke="#2a3038" stroke-opacity="0.5" stroke-width="1.4"/>' +
+    '<rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" fill="none" stroke="#2a3038" stroke-opacity="0.34" stroke-width="0.9"/>' +
   '</g>' +
   '<rect x="' + WX + '" y="' + WY + '" width="' + WW + '" height="' + WH + '" rx="1.2" fill="none" stroke="#1f262d" stroke-opacity="0.55" stroke-width="0.5"/>' +
 
@@ -186,8 +187,8 @@
         // on the edge of triggering: random bursts, mostly on, a few of them weak
         if (now >= this._fnext) {
           this._fon = !this._fon;
-          if (this._fon) { this._fnext = now + 60 + Math.random() * 100; this._flvl = 0.55 + Math.random() * 0.45; }
-          else { this._fnext = now + 12 + Math.random() * 30; this._flvl = 0; }
+          if (this._fon) { this._fnext = now + 110 + Math.random() * 180; this._flvl = 0.62 + Math.random() * 0.38; }
+          else { this._fnext = now + 10 + Math.random() * 22; this._flvl = Math.random() < 0.3 ? 0 : 0.26 + Math.random() * 0.2; }
         }
         b = this._flvl;
       }

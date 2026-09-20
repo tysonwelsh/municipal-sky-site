@@ -78,13 +78,17 @@
   /* quarter-sawn oak: drawn vertical grain plus the pale rays */
   function oak() {
     var r = rng(20250920), out = "";
-    for (var i = 0; i < 42; i++) {
-      var x = BX + 3 + (BW - 6) * r(), a = 1 + r() * 4, sw = 0.5 + r() * 2.4, dark = r() > 0.42;
-      out += '<path d="M ' + n(x) + ' ' + BY + ' C ' + n(x + a) + ' ' + n(BY + BH * 0.3) + ' ' + n(x - a) + ' ' + n(BY + BH * 0.66) + ' ' + n(x + a * 0.4) + ' ' + n(BY + BH) + '" fill="none" stroke="' + (dark ? "#5b3610" : "#cfa059") + '" stroke-opacity="' + n(0.22 + r() * 0.36) + '" stroke-width="' + n(sw) + '"/>';
+    for (var i = 0; i < 36; i++) {
+      var x = BX + 3 + (BW - 6) * r(), a = 1 + r() * 5, q = r(), sw = q > 0.86 ? 1.6 + r() * 1.4 : 0.4 + r() * 0.9, dark = r() > 0.4;
+      out += '<path d="M ' + n(x) + ' ' + BY + ' C ' + n(x + a) + ' ' + n(BY + BH * 0.3) + ' ' + n(x - a) + ' ' + n(BY + BH * 0.66) + ' ' + n(x + a * 0.4) + ' ' + n(BY + BH) + '" fill="none" stroke="' + (dark ? "#472a0c" : "#c0904e") + '" stroke-opacity="' + n(q > 0.86 ? 0.3 + r() * 0.24 : 0.10 + r() * 0.18) + '" stroke-width="' + n(sw) + '"/>';
     }
     for (var j = 0; j < 22; j++) {
       var fx = BX + 6 + (BW - 12) * r(), fy = BY + 8 + (BH - 16) * r(), fw = 4 + r() * 11, fh = 1 + r() * 1.5;
       out += '<ellipse cx="' + n(fx) + '" cy="' + n(fy) + '" rx="' + n(fw / 2) + '" ry="' + n(fh / 2) + '" fill="#eac78a" opacity="' + n(0.10 + r() * 0.20) + '" transform="rotate(' + n(-7 + r() * 14) + ' ' + n(fx) + ' ' + n(fy) + ')"/>';
+    }
+    for (var k = 0; k < 4; k++) {
+      var gx = BX + BW * r(), gy = BY + BH * r();
+      out += '<ellipse cx="' + n(gx) + '" cy="' + n(gy) + '" rx="' + n(14 + r() * 26) + '" ry="' + n(22 + r() * 50) + '" fill="#2f1c08" opacity="' + n(0.08 + r() * 0.1) + '" filter="url(#bb9)"/>';
     }
     return out;
   }
@@ -101,14 +105,14 @@
 
   /* an L-shaped corner strap; sx/sy mirror it into each corner */
   function strap(x, y, sx, sy) {
-    var A = 40, B = 44, T = 13;
+    var A = 33, B = 37, T = 10.5;
     var p = 'M ' + x + ' ' + y + ' l ' + (sx * A) + ' 0 l 0 ' + (sy * T) + ' l ' + (-sx * (A - T)) + ' 0 l 0 ' + (sy * (B - T)) + ' l ' + (-sx * T) + ' 0 z';
     return '<g>'
       + '<path d="' + p + '" transform="translate(1.2,1.6)" fill="#241703" opacity="0.45"/>'
       + '<path d="' + p + '" fill="url(#strapg)" stroke="#4b3810" stroke-width="0.7" stroke-linejoin="round"/>'
       + '<path d="' + p + '" fill="none" stroke="#ffe9a4" stroke-opacity="0.35" stroke-width="0.7" transform="translate(-0.5,-0.6)"/>'
-      + screw(x + sx * 26, y + sy * 6.5, 3, 31 + (sx * sy > 0 ? 20 : 0))
-      + screw(x + sx * 6.5, y + sy * 30, 3, 74 + (sx > 0 ? 40 : 0))
+      + screw(x + sx * 22, y + sy * 5.3, 2.6, 31 + (sx * sy > 0 ? 20 : 0))
+      + screw(x + sx * 5.3, y + sy * 25, 2.6, 74 + (sx > 0 ? 40 : 0))
       + '</g>';
   }
 
@@ -126,7 +130,7 @@
   }
 
   function plate() {
-    var px = CX - 54, py = 196, pw = 108, ph = 52;
+    var px = CX - 47, py = 200, pw = 94, ph = 44;
     function line(t, y, size, weight, track) {
       return '<text class="pl lit" x="' + CX + '" y="' + n(y + 0.7) + '" style="font-size:' + size + 'px;font-weight:' + weight + ';letter-spacing:' + track + 'em">' + t + '</text>'
         + '<text class="pl ink" x="' + CX + '" y="' + y + '" style="font-size:' + size + 'px;font-weight:' + weight + ';letter-spacing:' + track + 'em">' + t + '</text>';
@@ -135,25 +139,25 @@
       + '<rect x="' + n(px + 1) + '" y="' + n(py + 1.5) + '" width="' + pw + '" height="' + ph + '" rx="2" fill="#2a1a06" opacity="0.45"/>'
       + '<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" rx="2" fill="url(#plateg)" stroke="#6b5116" stroke-width="0.7"/>'
       + '<rect x="' + n(px + 1.2) + '" y="' + n(py + 1.2) + '" width="' + n(pw - 2.4) + '" height="' + n(ph - 2.4) + '" rx="1.4" fill="none" stroke="#3f2f0c" stroke-opacity="0.5" stroke-width="0.7"/>'
-      + line("BLASTING MACHINE", py + 15, 6.6, 700, 0.1)
-      + line("No. 3", py + 31, 12, 700, 0.04)
-      + line("50 CAP", py + 44, 6, 500, 0.14)
-      + screw(px + 5.5, py + 5.5, 2.4, 18) + screw(px + pw - 5.5, py + 5.5, 2.4, 96)
-      + screw(px + 5.5, py + ph - 5.5, 2.4, 62) + screw(px + pw - 5.5, py + ph - 5.5, 2.4, 8)
+      + line("BLASTING MACHINE", py + 13, 5.8, 700, 0.09)
+      + line("No. 3", py + 27, 10.5, 700, 0.04)
+      + line("50 CAP", py + 37.5, 5.4, 500, 0.14)
+      + screw(px + 5, py + 5, 2.1, 18) + screw(px + pw - 5, py + 5, 2.1, 96)
+      + screw(px + 5, py + ph - 5, 2.1, 62) + screw(px + pw - 5, py + ph - 5, 2.1, 8)
       + '</g>';
   }
 
   var SVG = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">'
     + '<defs>'
     + '<linearGradient id="oakg" x1="0" y1="0" x2="0.8" y2="1">'
-    + '<stop offset="0" stop-color="#b8843e"/><stop offset="0.38" stop-color="#9a6a2f"/><stop offset="0.78" stop-color="#7d5322"/><stop offset="1" stop-color="#5f3d17"/></linearGradient>'
+    + '<stop offset="0" stop-color="#8d6128"/><stop offset="0.36" stop-color="#744d1f"/><stop offset="0.76" stop-color="#553516"/><stop offset="1" stop-color="#37210d"/></linearGradient>'
     + '<linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.7">'
-    + '<stop offset="0" stop-color="#ffd995" stop-opacity="0.34"/><stop offset="0.34" stop-color="#ffd995" stop-opacity="0.05"/>'
-    + '<stop offset="0.62" stop-color="#1a0e02" stop-opacity="0.08"/><stop offset="1" stop-color="#1a0e02" stop-opacity="0.3"/></linearGradient>'
+    + '<stop offset="0" stop-color="#ffdb9a" stop-opacity="0.30"/><stop offset="0.3" stop-color="#ffd995" stop-opacity="0.04"/>'
+    + '<stop offset="0.58" stop-color="#160c02" stop-opacity="0.16"/><stop offset="1" stop-color="#120a01" stop-opacity="0.46"/></linearGradient>'
     + '<linearGradient id="brass" x1="0.2" y1="0" x2="0.8" y2="1">'
     + '<stop offset="0" stop-color="#f0d68a"/><stop offset="0.5" stop-color="#c6a04a"/><stop offset="1" stop-color="#6e5018"/></linearGradient>'
     + '<linearGradient id="strapg" x1="0.1" y1="0" x2="0.9" y2="1">'
-    + '<stop offset="0" stop-color="#e8cd80"/><stop offset="0.35" stop-color="#c09641"/><stop offset="0.75" stop-color="#8f6d25"/><stop offset="1" stop-color="#6a4d14"/></linearGradient>'
+    + '<stop offset="0" stop-color="#f7e5a6"/><stop offset="0.3" stop-color="#d8b258"/><stop offset="0.72" stop-color="#9c7828"/><stop offset="1" stop-color="#6a4d14"/></linearGradient>'
     + '<linearGradient id="plateg" x1="0.1" y1="0" x2="0.9" y2="1">'
     + '<stop offset="0" stop-color="#e3c878"/><stop offset="0.45" stop-color="#c9a850"/><stop offset="1" stop-color="#8d6c22"/></linearGradient>'
     + '<linearGradient id="knurl" x1="0" y1="0" x2="1" y2="0">'
@@ -164,8 +168,8 @@
     + '<stop offset="0" stop-color="#101010"/><stop offset="0.2" stop-color="#3c3c3c"/><stop offset="0.3" stop-color="#5a5a5a"/>'
     + '<stop offset="0.42" stop-color="#242424"/><stop offset="0.78" stop-color="#121212"/><stop offset="0.92" stop-color="#2e2e2e"/><stop offset="1" stop-color="#151515"/></linearGradient>'
     + '<linearGradient id="handle" x1="0" y1="0" x2="0" y2="1">'
-    + '<stop offset="0" stop-color="#8a5c25"/><stop offset="0.14" stop-color="#d9b26a"/><stop offset="0.38" stop-color="#a97632"/><stop offset="0.72" stop-color="#6b4418"/>'
-    + '<stop offset="0.9" stop-color="#4a2d0e"/><stop offset="1" stop-color="#8a5f24"/></linearGradient>'
+    + '<stop offset="0" stop-color="#6f4a1d"/><stop offset="0.15" stop-color="#c99f5c"/><stop offset="0.4" stop-color="#8d5f26"/><stop offset="0.72" stop-color="#553413"/>'
+    + '<stop offset="0.9" stop-color="#37200a"/><stop offset="1" stop-color="#77501e"/></linearGradient>'
     + '<radialGradient id="spark" cx="50%" cy="50%" r="50%">'
     + '<stop offset="0" stop-color="#ffffff"/><stop offset="0.3" stop-color="#cfe6ff"/><stop offset="0.6" stop-color="#5aa8ff" stop-opacity="0.5"/><stop offset="1" stop-color="#2a6cff" stop-opacity="0"/></radialGradient>'
     + '<filter id="bb2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>'
@@ -207,13 +211,15 @@
     + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="' + BH + '" fill="url(#sheen)"/>'
     + '<ellipse cx="' + n(BX + BW * 0.26) + '" cy="' + n(BY + BH * 0.2) + '" rx="' + n(BW * 0.5) + '" ry="' + n(BH * 0.2) + '" fill="#ffe0a6" opacity="0.14" filter="url(#bb9)" transform="rotate(-14 ' + n(BX + BW * 0.3) + ' ' + n(BY + BH * 0.2) + ')"/>'
     /* the lid, and the varnish worn pale along its edges */
-    + '<rect x="' + BX + '" y="' + n(BY + 10.5) + '" width="' + BW + '" height="1.6" fill="#3a2409" opacity="0.6"/>'
-    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="2.4" fill="#e8c489" opacity="0.4"/>'
-    + '<rect x="' + BX + '" y="' + n(BY + 12) + '" width="' + BW + '" height="1.6" fill="#e8c489" opacity="0.22"/>'
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="12" fill="#c08b45" opacity="0.22"/>'
+    + '<rect x="' + BX + '" y="' + n(BY + 11.4) + '" width="' + BW + '" height="1.8" fill="#2e1c06" opacity="0.7"/>'
+    + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="2.6" fill="#f0d29a" opacity="0.5"/>'
+    + '<rect x="' + BX + '" y="' + n(BY + 13.2) + '" width="' + BW + '" height="1.4" fill="#e8c489" opacity="0.28"/>'
     + '<rect x="' + BX + '" y="' + n(BY + BH - 3) + '" width="' + BW + '" height="3" fill="#2a1a05" opacity="0.5"/>'
     + '</g>'
     + '<rect x="' + BX + '" y="' + BY + '" width="' + BW + '" height="' + BH + '" rx="3" fill="none" stroke="#3a2409" stroke-width="1.2"/>'
-    + '<rect x="' + n(BX + 0.8) + '" y="' + n(BY + 0.8) + '" width="' + n(BW - 1.6) + '" height="' + n(BH - 1.6) + '" rx="2.4" fill="none" stroke="#ffd79a" stroke-opacity="0.22" stroke-width="0.8"/>'
+    + '<path d="M ' + n(BX + 0.8) + ' ' + n(BY + BH - 3) + ' L ' + n(BX + 0.8) + ' ' + n(BY + 3) + ' Q ' + n(BX + 0.8) + ' ' + n(BY + 0.8) + ' ' + n(BX + 3) + ' ' + n(BY + 0.8) + ' L ' + n(BX + BW - 3) + ' ' + n(BY + 0.8) + '" fill="none" stroke="#ffd79a" stroke-opacity="0.3" stroke-width="0.9"/>'
+    + '<path d="M ' + n(BX + BW - 0.8) + ' ' + n(BY + 3) + ' L ' + n(BX + BW - 0.8) + ' ' + n(BY + BH - 3) + ' L ' + n(BX + 3) + ' ' + n(BY + BH - 0.8) + '" fill="none" stroke="#150c02" stroke-opacity="0.45" stroke-width="1"/>'
 
     + plate()
     + post(258, false) + post(296, true)

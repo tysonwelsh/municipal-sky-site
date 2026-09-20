@@ -134,9 +134,9 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     .ribhi { stroke: var(--rib); }
-    .lobe, .air, .pool, .cast { mix-blend-mode: screen; will-change: opacity, transform; }
-    .badge { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; font-size: 5.4px; letter-spacing: 0.24em; text-anchor: middle; fill: #0e1114; fill-opacity: 0.6; }
-    .badge2 { font-family: "Oswald", "Archivo Narrow", sans-serif; font-size: 4.4px; letter-spacing: 0.2em; text-anchor: middle; fill: #0e1114; fill-opacity: 0.45; }
+    .lobe, .air, .pool, .cast, .wash { mix-blend-mode: screen; will-change: opacity, transform; }
+    .badge { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; font-size: 5.4px; letter-spacing: 0.24em; text-anchor: middle; fill: #0e1114; fill-opacity: 0.42; }
+    .badge2 { font-family: "Oswald", "Archivo Narrow", sans-serif; font-size: 4.4px; letter-spacing: 0.2em; text-anchor: middle; fill: #0e1114; fill-opacity: 0.3; }
   </style>
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
@@ -152,6 +152,11 @@
           <stop offset="0.62" style="stop-color:var(--mid)" stop-opacity="0.42"/>
           <stop offset="1" style="stop-color:var(--mid)" stop-opacity="0"/>
         </radialGradient>
+        <radialGradient id="washg" cx="50%" cy="62%" r="58%">
+          <stop offset="0" style="stop-color:var(--mid)" stop-opacity="0.85"/>
+          <stop offset="0.55" style="stop-color:var(--mid)" stop-opacity="0.42"/>
+          <stop offset="1" style="stop-color:var(--mid)" stop-opacity="0.06"/>
+        </radialGradient>
         <radialGradient id="airg" cx="50%" cy="50%" r="50%">
           <stop offset="0" style="stop-color:var(--spill)" stop-opacity="0.62"/>
           <stop offset="0.4" style="stop-color:var(--spill)" stop-opacity="0.26"/>
@@ -162,7 +167,7 @@
           <stop offset="0.78" stop-color="#8f8a7f"/><stop offset="1" stop-color="#443f3a"/>
         </radialGradient>
         <radialGradient id="cup" cx="45%" cy="28%" r="78%">
-          <stop offset="0" style="stop-color:var(--inner)" stop-opacity="0.65"/><stop offset="1" stop-color="#120302"/>
+          <stop offset="0" stop-color="#2b0908"/><stop offset="0.6" stop-color="#160403"/><stop offset="1" stop-color="#0b0101"/>
         </radialGradient>
         <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#f4f6f8"/><stop offset="0.14" stop-color="#aeb4bb"/>
@@ -203,9 +208,9 @@
       <g clip-path="url(#domeclip)">
         <rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--back)"/>
         <!-- carrier shaft and motor can -->
-        <rect x="96" y="76" width="8" height="88" style="fill:var(--inner)"/>
+        <rect x="96" y="76" width="8" height="88" fill="#1b0504"/>
         <ellipse cx="${CX}" cy="160" rx="48" ry="12" fill="#1d0504"/>
-        <ellipse cx="${CX}" cy="154" rx="42" ry="9" style="fill:var(--inner)"/>
+        <ellipse cx="${CX}" cy="154" rx="42" ry="9" fill="#250706"/>
         <!-- two sealed-beam lamps in parabolic reflectors, back to back -->
         <g class="refl" transform="translate(144 ${RY})">
           <ellipse cx="0" cy="0" rx="28" ry="25" fill="url(#cup)"/>
@@ -223,6 +228,8 @@
         </g>
         <!-- the glass itself: translucent, so the shapes above stay visible through it -->
         <path d="${domePath()}" fill="url(#glass)" opacity="0.74"/>
+        <!-- both lamps light the whole dome a little, whatever way they face -->
+        <path class="wash" d="${domePath()}" fill="url(#washg)" opacity="0"/>
         <!-- the lit lobe, one per reflector, screened onto the glass -->
         <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="112" rx="52" ry="62" fill="url(#lobeg)" filter="url(#b5)"/></g>
         <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="112" rx="52" ry="62" fill="url(#lobeg)" filter="url(#b5)"/></g>
@@ -278,6 +285,7 @@
       this._air = sr.querySelector(".air");
       this._pool = sr.querySelector(".pool");
       this._cast = sr.querySelector(".cast");
+      this._wash = sr.querySelector(".wash");
       this._tick = this._tick.bind(this);
     }
     connectedCallback() { this.setAttribute("role", "img"); this._read(); this._apply(); }
@@ -328,16 +336,17 @@
         this._refl[k].setAttribute("transform", "translate(" + x.toFixed(2) + " " + RY + ") scale(" + Math.max(0.04, Math.abs(c)).toFixed(3) + " 1)");
         const f = c > 0 ? c * c * lit : 0;              // cos² of the angle to the viewer
         const fs = f.toFixed(3);
-        this._front[k][0].setAttribute("opacity", (f * 0.9).toFixed(3));
-        this._front[k][1].setAttribute("opacity", fs);
+        this._front[k][0].setAttribute("opacity", (lit * (0.10 + 0.82 * (c > 0 ? c * c : 0))).toFixed(3));
+        this._front[k][1].setAttribute("opacity", (lit * (0.06 + 0.9 * (c > 0 ? c * c : 0))).toFixed(3));
         this._lobe[k].setAttribute("opacity", fs);
         this._lobe[k].setAttribute("transform", "translate(" + ((x - CX) * 1.15).toFixed(2) + " 0)");
         if (f > B) { B = f; bx = (x - CX) * 0.8; }
       }
-      this._air.setAttribute("opacity", (0.95 * B).toFixed(3));
+      this._wash.setAttribute("opacity", (lit * (0.30 + 0.20 * B)).toFixed(3));
+      this._air.setAttribute("opacity", (lit * (0.16 + 0.80 * B)).toFixed(3));
       this._air.setAttribute("transform", "translate(" + bx.toFixed(2) + " 0)");
-      this._pool.setAttribute("opacity", (0.75 * B).toFixed(3));
-      this._cast.setAttribute("opacity", (0.17 * B).toFixed(3));
+      this._pool.setAttribute("opacity", (lit * (0.10 + 0.65 * B)).toFixed(3));
+      this._cast.setAttribute("opacity", (lit * (0.05 + 0.14 * B)).toFixed(3));
     }
   }
   customElements.define("sk-beacon-beacon-ray", SkBeaconRay);
