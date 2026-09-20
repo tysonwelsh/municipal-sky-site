@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sargent &amp; Greenleaf 6730 safe dial — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "combo-dial-sg-6730",
+  "element": "sk-combo-sg-6730",
+  "name": "Sargent & Greenleaf 6730 black dial with two indices",
+  "kind": "input",
+  "code": "A13",
+  "type": "Combination dial (safe)",
+  "source": "Sargent & Greenleaf 6730 Group 2 safe dial and ring: black spun-aluminium dial, bright chamfer, knurled edge, 0–99 engraved, fixed ring with an opening index at 12 and a changing index at 11",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["spun aluminium", "black anodising", "engraved numerals", "painted steel door"],
+  "tags": ["safe", "lock", "combination", "endless", "0-99", "inertia", "knurl"],
+  "value": { "model": "delta", "min": 0, "max": 99, "step": 1, "unit": "" },
+  "attributes": ["value", "combination", "phase", "label", "scale", "disabled"],
+  "events": ["input", "change", "open"],
+  "size": { "w": 124, "h": 124 },
+  "notes": "One dial at 50; a second at 0 with combination=\"25-50-75\" and the sequence half done (phase 2: two turns left to 75 will do it). Drag round the dial; it coasts a little. Left (anticlockwise) increases the number."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-combo-sg-6730 value="50" label="SAFE"></sk-combo-sg-6730>
+    <sk-combo-sg-6730 value="0" combination="25-50-75" phase="2" label="SAFE, COMBINATION SET" scale="0.8"></sk-combo-sg-6730>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sargent &amp; Greenleaf 6730</b> is the dial on most of the safes in most of the back offices of the world:
+  a black spun-aluminium dial, 0 to 99 engraved white around a face that shows a faint circular brushing when the
+  light catches it, a bright chamfer stepping down to a knurled edge for the thumb, sitting in a black ring bolted to
+  the door. The ring carries two white marks: the opening index at 12, and, at 11, the changing index that only
+  locksmiths use — the second mark is how you know it is a 6730.</p>
+  <p><b>The tells kept here:</b> both indices, the opening one heavier; numerals every 5 with a tick every unit and a
+  bolder 0, engraved as white fill over a hair of dark shadow and standing radially; the spun sheen as fine
+  concentric rings that turn with the dial under a highlight that does not; the chamfer as a bright ring lit
+  top-left and dark bottom-right; the knurl as ninety-six ridges whose light and dark faces are shaded by where
+  they sit under the lamp, with a thumb-polished patch on the edge; a flat centre disc with a slotted spindle screw;
+  a grime halo on the grey door around the ring. Drag follows the pointer's angle and the dial coasts for a
+  moment; the wheel and arrows step one number (Shift ten); Home and End go to 0 and 99. With
+  <code>combination="25-50-75"</code> the element counts the classic 4 left / 3 right / 2 left / 1 right and fires
+  <code>open</code>; a wrong direction or an overshoot starts you over, as the lock would.</p>
+  <p><b>Left out:</b> the spline key hole in the dial's edge, the ring's mounting screws under the dial, the lock's clicks.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-combo-sg-6730> — S&G 6730 style safe dial, 0–99, endless, with two indices ====
+   attributes: value (0…99 under the opening index) combination ("25-50-75" → tracks 4L/3R/2L/1R and emits open)
+               phase (0…4, reflected while a combination is tracked) label scale disabled
+   events: input {value, delta} while turning, change {value, delta: 0} when it stops, open {value}
+   self-contained: paste this block into any page and use <sk-combo-sg-6730 value="50"></sk-combo-sg-6730> */
+(function () {
+  if (customElements.get("sk-combo-sg-6730")) return;
+  const W = 124, H = 124, C = 62;
+  const P = (r, a) => { const t = a * Math.PI / 180; return [C + r * Math.sin(t), C - r * Math.cos(t)]; };
+  const ann = (r1, r2) => `M ${C - r1} ${C} A ${r1} ${r1} 0 1 0 ${C + r1} ${C} A ${r1} ${r1} 0 1 0 ${C - r1} ${C} Z M ${C - r2} ${C} A ${r2} ${r2} 0 1 0 ${C + r2} ${C} A ${r2} ${r2} 0 1 0 ${C - r2} ${C} Z`;
+  // knurl: 96 ridges, each a light face and a dark face
+  let knurl = "";
+  for (let i = 0; i < 96; i++) {
+    const a = i * 3.75, [x1, y1] = P(42.6, a), [x2, y2] = P(46.4, a), [x3, y3] = P(42.6, a + 1.7), [x4, y4] = P(46.4, a + 1.7);
+    knurl += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="#8c8d8a"/><line x1="${x3.toFixed(2)}" y1="${y3.toFixed(2)}" x2="${x4.toFixed(2)}" y2="${y4.toFixed(2)}" stroke="#1a1b1d"/>`;
+  }
+  // spun sheen: fine concentric rings of slightly varying brightness
+  let spun = "";
+  for (let r = 8; r < 39.5; r += 0.9) { const k = (Math.sin(r * 7.3) + Math.sin(r * 2.1)) * 0.5; spun += `<circle cx="${C}" cy="${C}" r="${r.toFixed(2)}" fill="none" stroke="${k > 0 ? "#fff" : "#000"}" stroke-opacity="${(0.025 + Math.abs(k) * 0.05).toFixed(3)}" stroke-width="0.6"/>`; }
+  // ticks and numerals
+  let ticks = "", nums = "";
+  for (let i = 0; i < 100; i++) {
+    const a = i * 3.6, maj = i % 5 === 0, [x1, y1] = P(maj ? 34.4 : 36, a), [x2, y2] = P(38.3, a);
+    ticks += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke-width="${maj ? 0.9 : 0.6}"/>`;
+    if (maj) nums += `<text class="n${i === 0 ? " z" : ""}" x="${C}" y="${C - 29.6}" transform="rotate(${a} ${C} ${C})">${i}</text>`;
+  }
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { position: absolute; inset: 0; display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .rot { transform-origin: ${C}px ${C}px; transform-box: view-box; }
+    .rot.snap { transition: transform 140ms cubic-bezier(.2,.8,.3,1.05); }
+    .grab { position: absolute; left: 15px; top: 15px; width: 94px; height: 94px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text.n { font-family: "Barlow", "Helvetica Neue", Arial, sans-serif; font-weight: 500; font-size: 6.5px; text-anchor: middle; dominant-baseline: central; }
+    text.n.z { font-weight: 700; font-size: 7.2px; }
+    .label { font-family: "Barlow", Arial, sans-serif; font-weight: 500; font-size: 5.5px; letter-spacing: 0.22em; fill: var(--ink, #1c1f21); text-anchor: middle; opacity: 0.8; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="door" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#979a97"/><stop offset="0.6" stop-color="#8a8d8a"/><stop offset="1" stop-color="#7a7d7a"/>
+        </linearGradient>
+        <radialGradient id="grime" cx="53%" cy="55%" r="52%">
+          <stop offset="0.66" stop-color="#5f625f" stop-opacity="0"/><stop offset="0.82" stop-color="#5f625f" stop-opacity="0.5"/><stop offset="1" stop-color="#6f726f" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="cham" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e6e7e4"/><stop offset="0.35" stop-color="#c2c3c0"/><stop offset="0.65" stop-color="#8e8f8c"/><stop offset="1" stop-color="#5c5d5a"/>
+        </linearGradient>
+        <linearGradient id="chamI" x1="1" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#d8d9d6"/><stop offset="0.5" stop-color="#8a8b88"/><stop offset="1" stop-color="#4a4b48"/>
+        </linearGradient>
+        <linearGradient id="ringf" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2c2d31"/><stop offset="0.5" stop-color="#202124"/><stop offset="1" stop-color="#141517"/>
+        </linearGradient>
+        <linearGradient id="knurlL" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.32"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+        </linearGradient>
+        <radialGradient id="face" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#26272b"/><stop offset="0.75" stop-color="#1d1e21"/><stop offset="1" stop-color="#151618"/>
+        </radialGradient>
+        <linearGradient id="faceL" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.12"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.02"/><stop offset="1" stop-color="#000" stop-opacity="0.18"/>
+        </linearGradient>
+        <radialGradient id="hub" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#3d3e42"/><stop offset="0.7" stop-color="#26272a"/><stop offset="1" stop-color="#141517"/>
+        </radialGradient>
+        <radialGradient id="screw" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#c9cac7"/><stop offset="0.6" stop-color="#7e7f7c"/><stop offset="1" stop-color="#3a3b39"/>
+        </radialGradient>
+        <filter id="f1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="f3" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.6"/></filter>
+        <filter id="fw" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <g id="print"><g class="ticks">${ticks}</g>${nums}</g>
+      </defs>
+
+      <!-- the door: grey paint with a halo of grime around the ring -->
+      <rect width="${W}" height="${H}" fill="url(#door)"/>
+      <rect width="${W}" height="${H}" fill="url(#grime)"/>
+      <text class="label" x="${C}" y="${H - 1.5}"></text>
+
+      <!-- the fixed ring: proud of the door -->
+      <circle cx="${C + 2.5}" cy="${C + 3.5}" r="60" fill="#000" opacity="0.38" filter="url(#f3)"/>
+      <circle cx="${C + 1}" cy="${C + 1.5}" r="60" fill="#000" opacity="0.5" filter="url(#f1)"/>
+      <path d="${ann(60, 47.5)}" fill="url(#ringf)" fill-rule="evenodd"/>
+      <circle cx="${C}" cy="${C}" r="59.3" fill="none" stroke="url(#cham)" stroke-width="1.5"/>
+      <circle cx="${C}" cy="${C}" r="48.2" fill="none" stroke="url(#chamI)" stroke-width="1.3"/>
+      <!-- the well the dial sits in -->
+      <circle cx="${C}" cy="${C}" r="47.5" fill="#0c0d0e"/>
+      <!-- the two indices: opening at 12, changing at 11 -->
+      <line x1="${C}" y1="${C - 49.2}" x2="${C}" y2="${C - 57}" stroke="#f5f5f2" stroke-width="1.7" stroke-linecap="round"/>
+      <line x1="${P(49.2, -30)[0].toFixed(2)}" y1="${P(49.2, -30)[1].toFixed(2)}" x2="${P(55, -30)[0].toFixed(2)}" y2="${P(55, -30)[1].toFixed(2)}" stroke="#f5f5f2" stroke-width="1.1" stroke-linecap="round" opacity="0.9"/>
+
+      <!-- the dial: its shadow in the well, then the turning parts -->
+      <circle cx="${C + 1.2}" cy="${C + 1.8}" r="46.5" fill="#000" opacity="0.7" filter="url(#f1)"/>
+      <g class="rot">
+        <circle cx="${C}" cy="${C}" r="44.5" fill="#3a3b3d"/>
+        <g class="knurl" stroke-width="1.15">${knurl}</g>
+        <!-- thumb-worn brightness on the knurl (at 3 o'clock when the dial reads 0) -->
+        <path d="M ${P(44.5, 70).map(v => v.toFixed(2)).join(" ")} A 44.5 44.5 0 0 1 ${P(44.5, 110).map(v => v.toFixed(2)).join(" ")}" fill="none" stroke="#e8e9e6" stroke-width="3.2" stroke-opacity="0.45" stroke-linecap="round" filter="url(#fw)"/>
+        <circle cx="${C}" cy="${C}" r="39.5" fill="url(#face)"/>
+        <g class="spun">${spun}</g>
+        <g class="print-sh" fill="#000" stroke="#000" opacity="0.55" transform="translate(0.4 0.45)"><use href="#print"/></g>
+        <g class="print-hi" fill="#f2f2ee" stroke="#f2f2ee"><use href="#print"/></g>
+        <circle cx="${C}" cy="${C}" r="6.2" fill="url(#hub)" stroke="#0e0f10" stroke-width="0.5"/>
+        <circle cx="${C}" cy="${C}" r="2.6" fill="url(#screw)" stroke="#232424" stroke-width="0.4"/>
+        <line x1="${C - 2.1}" y1="${C - 0.9}" x2="${C + 2.1}" y2="${C + 0.9}" stroke="#1b1c1c" stroke-width="0.7"/>
+      </g>
+      <!-- fixed light: the knurl's shading, the chamfer, the face's sheen -->
+      <path d="${ann(46.6, 42.5)}" fill="url(#knurlL)" fill-rule="evenodd"/>
+      <circle cx="${C}" cy="${C}" r="46.5" fill="none" stroke="#0a0b0c" stroke-width="0.7" opacity="0.8"/>
+      <path d="${ann(42.5, 39.5)}" fill="url(#cham)" fill-rule="evenodd"/>
+      <circle cx="${C}" cy="${C}" r="39.4" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="0.6"/>
+      <circle cx="${C}" cy="${C}" r="39.5" fill="url(#faceL)"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkComboSG6730 extends HTMLElement {
+    static get observedAttributes() { return ["value", "combination", "phase", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._p = 0; this._scale = 1; this._w = 0; this._raf = 0; this._drag = null;
+      this._combo = null; this._st = { phase: 0, passes: 0, dir: 0, travel: 0 };
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab"); this._rot = $(".rot"); this._label = $(".label");
+      ["_onDown", "_onMove", "_onUp", "_onWheel", "_onKey"].forEach(k => { this[k] = this[k].bind(this); });
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      this._stop(); clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { const x = parseFloat(v); if (!isNaN(x) && this._mod(Math.round(x)) !== this.value) this.value = x; return; }
+      if (n === "phase") { const x = parseInt(v, 10); if (!isNaN(x) && x !== this._st.phase) { this._st = { phase: Math.max(0, Math.min(4, x)), passes: 0, dir: 0, travel: 0 }; this._render(); } return; }
+      this._readAttrs(); this._render();
+    }
+    get value() { return this._mod(Math.round(this._p)); }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._stop(); this._p = Math.floor(this._p / 100) * 100 + this._mod(Math.round(v)); this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get phase() { return this._st.phase; }
+    focus() { this._grab.focus(); }
+
+    _mod(n) { return ((n % 100) + 100) % 100; }
+    _reflect() { this.setAttribute("value", String(this.value)); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._p = Math.floor(this._p / 100) * 100 + this._mod(Math.round(num("value", this._p)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      const c = (this.getAttribute("combination") || "").split(/[-\s,]+/).map(x => parseInt(x, 10)).filter(x => !isNaN(x)).map(x => this._mod(x));
+      this._combo = c.length === 3 ? c : null;
+      const ph = parseInt(this.getAttribute("phase"), 10);
+      if (!isNaN(ph)) this._st.phase = Math.max(0, Math.min(4, ph));
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "combination dial");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "99");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      this._rot.style.transform = "rotate(" + (-this._p * 3.6).toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(this.value));
+      this._grab.setAttribute("aria-valuetext", String(this.value) + (this._combo ? ", step " + this._st.phase + " of 4" : ""));
+      if (this._combo && String(this._st.phase) !== this.getAttribute("phase")) this.setAttribute("phase", String(this._st.phase));
+      if (this._st.phase === 4) this.setAttribute("open", ""); else this.removeAttribute("open");
+    }
+    _emit(type, delta) {
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this.value, delta: delta } }));
+    }
+    /* move the dial by dn numbers (positive = anticlockwise = increasing) */
+    _move(dn, snap) {
+      if (!dn) return;
+      const before = Math.round(this._p), p0 = this._p;
+      this._p += dn;
+      this._rot.classList.toggle("snap", !!snap);
+      const after = Math.round(this._p);
+      this._track(p0, this._p);
+      this._render();
+      if (after !== before) { this._reflect(); this._emit("input", after - before); }
+    }
+    _settle() {
+      // come to rest on a whole number, as the eye reads it
+      this._p = Math.round(this._p); this._rot.classList.add("snap"); this._render();
+      const st = this._st, c = this._combo;
+      if (c && st.phase < 3) {
+        const need = [4, 3, 2][st.phase];
+        if (this.value === c[st.phase] && st.passes === need) { st.phase++; st.passes = 0; st.dir = 0; st.travel = 0; this._render(); }
+      }
+      this._emit("change", 0);
+    }
+    /* the combination tracker: 4L / 3R / 2L / 1R, wrong direction or overshoot starts over */
+    _track(p0, p1) {
+      const c = this._combo; if (!c || p1 === p0) return;
+      const st = this._st, dir = p1 > p0 ? 1 : -1;
+      const want = [1, -1, 1, -1][Math.min(3, st.phase)];
+      if (st.phase === 4) { if (dir === 1 && p1 - p0 > 0) { st.travel += p1 - p0; if (st.travel > 3) { st.phase = 0; st.passes = 0; st.dir = 0; st.travel = 0; } } return; }
+      if (dir !== want) { if (st.phase !== 0 || st.passes) { st.phase = 0; st.passes = 0; } st.dir = 0; st.travel = 0; return; }
+      st.dir = dir;
+      if (st.phase < 3) {
+        const t = c[st.phase];
+        const k0 = Math.floor((dir === 1 ? p0 - t : t - p0) / 100), k1 = Math.floor((dir === 1 ? p1 - t : t - p1) / 100);
+        st.passes += k1 - k0;
+        if (st.passes > [4, 3, 2][st.phase]) { st.phase = 0; st.passes = 0; }
+      } else {
+        st.travel += p0 - p1;
+        const gate = ((c[2] - 95) % 100 + 100) % 100 || 100;
+        if (st.travel >= gate) { st.phase = 4; st.travel = 0; this.dispatchEvent(new CustomEvent("open", { bubbles: true, composed: true, detail: { value: this.value } })); }
+      }
+    }
+    _spin(w) {
+      this._w = w; let last = performance.now();
+      const step = now => {
+        const dt = Math.min(0.05, (now - last) / 1000); last = now;
+        this._w *= Math.exp(-dt / 0.22);
+        this._move(this._w * dt, false);
+        if (Math.abs(this._w) < 2) { this._w = 0; this._raf = 0; this._settle(); return; }
+        this._raf = requestAnimationFrame(step);
+      };
+      this._raf = requestAnimationFrame(step);
+    }
+    _stop() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } this._w = 0; }
+    _ang(e) { const r = this._grab.getBoundingClientRect(); return Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180 / Math.PI; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._stop();
+      this._drag = { a: this._ang(e), t: performance.now(), w: 0, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const a = this._ang(e); let da = a - d.a; da = ((da + 540) % 360) - 180; d.a = a;
+      const now = performance.now(), dt = Math.max(4, now - d.t) / 1000; d.t = now;
+      const dn = -da / 3.6;                                          // clockwise = numbers go down
+      d.w = d.w * 0.55 + (dn / dt) * 0.45;
+      if (dn) d.moved = true;
+      this._move(dn, false);
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const stale = performance.now() - d.t > 90;
+      this._drag = null;
+      if (!stale && Math.abs(d.w) > 12) this._spin(Math.max(-250, Math.min(250, d.w)));
+      else if (d.moved) this._settle();
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._stop();
+      this._move((e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 10 : 1), true);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._settle(), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const s = e.shiftKey ? 10 : 1; let dn;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": dn = s; break;
+        case "ArrowDown": case "ArrowLeft": dn = -s; break;
+        case "PageUp": dn = 10; break;
+        case "PageDown": dn = -10; break;
+        case "Home": dn = -this.value; break;
+        case "End": dn = 99 - this.value; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._stop();
+      this._move(dn, true); this._settle();
+    }
+  }
+  customElements.define("sk-combo-sg-6730", SkComboSG6730);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
