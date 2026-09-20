@@ -659,26 +659,25 @@
    sliding sideways. The CSS here is the materials; the spacing is the physics.
 --------------------------------------------------------------------------- */
 .zk-master { position: relative; display: flex; align-items: center; flex: 0 1 auto; min-width: 0; }
-/* The 11 px foot balances the indicator above, which puts the BARREL — the
+/* The 10 px foot balances the index mark above, which puts the BARREL — the
    thing the eye reads — on the same centre line as the key bed, and takes the
-   whole block to 46 px, over the touch minimum. The block is the grab area. */
+   whole block to 44 px, the touch minimum. The block is the grab area. */
 .zk-wheel {
   position: relative; width: 150px; max-width: 100%;
-  display: flex; flex-direction: column; gap: 4px; padding-bottom: 11px;
+  display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px;
   cursor: ew-resize; touch-action: pan-y;
 }
-/* 指標 — the pointer printed on the casing, over its own etched track */
-.zk-wheel-ind { position: relative; display: block; height: 7px; }
-.zk-wheel-ind::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px;
-  background: linear-gradient(180deg, #08080a, #17171d);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.07);
-}
+/* 指標 — the index mark. It never moves, so it has no track: a track implies
+   something travels along it, and nothing does. It is silk-screened onto the
+   casing and has faded there, so it is a flat printed ochre with no glow and
+   no lit element about it — the only thing lighting this panel is the tally. */
+.zk-wheel-ind { position: relative; display: block; height: 6px; }
 .zk-wheel-ind::after {
-  content: ""; position: absolute; left: 50%; bottom: 1px; margin-left: -4px;
+  content: ""; position: absolute; left: 50%; bottom: 0; margin-left: -4px;
   width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
-  border-top: 6px solid var(--amber);
-  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.7));
+  border-top: 6px solid rgba(188, 170, 136, 0.5);
+  /* a printed edge, not a halo */
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
 }
 /* the wheel itself: rubber, let into the plate. No outer drop shadow —
    everything on this panel is sunk into it, nothing sits on top of it. */
