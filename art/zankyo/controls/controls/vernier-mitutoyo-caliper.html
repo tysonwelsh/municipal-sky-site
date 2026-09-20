@@ -110,9 +110,9 @@
       '<stop offset="0.34" stop-color="#d4d7d8"/><stop offset="0.62" stop-color="#bcc0c2"/>',
       '<stop offset="0.86" stop-color="#a5a9ab"/><stop offset="1" stop-color="#cfd3d5"/></linearGradient>',
     '<linearGradient id="slid" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#eceeef"/><stop offset="0.12" stop-color="#dcdfe0"/>',
-      '<stop offset="0.45" stop-color="#c6cacc"/><stop offset="0.78" stop-color="#aaaeb0"/>',
-      '<stop offset="1" stop-color="#c8cccd"/></linearGradient>',
+      '<stop offset="0" stop-color="#e3e6e8"/><stop offset="0.12" stop-color="#ced2d4"/>',
+      '<stop offset="0.45" stop-color="#b6babd"/><stop offset="0.78" stop-color="#9b9fa2"/>',
+      '<stop offset="1" stop-color="#bcc0c2"/></linearGradient>',
     '<linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#f4f6f7"/><stop offset="0.22" stop-color="#e2e5e6"/>',
       '<stop offset="0.7" stop-color="#c3c7c9"/><stop offset="1" stop-color="#9ea2a4"/></linearGradient>',
@@ -145,12 +145,13 @@
 
   /* ---- the depth rod, out of the far end of the beam ---- */
   '<g class="rodg">',
-    '<rect x="', (BEAM_R - 6), '" y="40" width="240" height="8" rx="1.5" fill="url(#rod)" stroke="#6f7375" stroke-width="0.4"/>',
-    '<rect x="', (BEAM_R - 6), '" y="41" width="240" height="1.4" fill="#fff" opacity="0.4"/>',
+    '<rect x="', (BEAM_R - 300), '" y="40" width="300" height="8" rx="1.5" fill="url(#rod)" stroke="#6f7375" stroke-width="0.4"/>',
+    '<rect x="', (BEAM_R - 300), '" y="41" width="300" height="1.4" fill="#fff" opacity="0.4"/>',
+    '<rect x="', (BEAM_R - 3), '" y="40" width="3" height="8" fill="#8d9193" opacity="0.5"/>',
   '</g>',
 
   /* ---- the fixed jaw ---- */
-  '<path d="M 10 62 L 28 62 L 28 100 L 23 100 Q 12 86 10 62 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
+  '<path d="M 5 62 L 28 62 L 28 100 L 21.5 100 Q 12.5 88 8.5 71 L 5 62 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
   '<path d="M 26.4 63 L 26.4 99" stroke="#8d9194" stroke-width="0.8" opacity="0.6"/>',
   '<path d="M 18 26 L 28 26 L 28 4 L 24.5 2 L 21 4 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
   '<ellipse cx="26" cy="96" rx="2.2" ry="3.4" fill="#fdfefe" opacity="0.5"/>',
@@ -169,10 +170,10 @@
 
   /* ---- the slider: jaws, top bar with the inch vernier, bevelled vernier plate ---- */
   '<g class="slider">',
-    /* shadow the slider casts on the beam */
-    '<rect x="', (X0 - 4), '" y="12" width="108" height="66" rx="3" fill="#000" opacity="0.32" filter="url(#sh)"/>',
+    /* the slider's own shadow, tight under its edges */
+    '<rect x="', (X0 - 3), '" y="14" width="108" height="64" rx="3" fill="#000" opacity="0.4" filter="url(#sh)"/>',
     /* the sliding outside jaw */
-    '<path d="M ', X0, ' 62 L ', (X0 + 17), ' 62 L ', (X0 + 17), ' 86 Q ', (X0 + 12), ' 97 ', X0, ' 100 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
+    '<path d="M ', X0, ' 62 L ', (X0 + 22), ' 62 L ', (X0 + 18.5), ' 71 Q ', (X0 + 14), ' 88 ', (X0 + 6.5), ' 100 L ', X0, ' 100 Z" fill="url(#jaw)" stroke="#75797b" stroke-width="0.5"/>',
     '<path d="M ', (X0 + 1.6), ' 63 L ', (X0 + 1.6), ' 99" stroke="#8d9194" stroke-width="0.8" opacity="0.6"/>',
     '<ellipse cx="', (X0 + 2), '" cy="96" rx="2.2" ry="3.4" fill="#fdfefe" opacity="0.5"/>',
     /* the sliding inside jaw nib */
@@ -190,7 +191,12 @@
     '<rect x="', (X0 - 3), '" y="', BEAM_B, '" width="106" height="15" rx="1.5" fill="url(#plate)" stroke="#75797b" stroke-width="0.5"/>',
     '<rect x="', (X0 - 3), '" y="', BEAM_B, '" width="106" height="15" fill="url(#grain)"/>',
     '<rect x="', (X0 - 3), '" y="', (BEAM_B + 0.5), '" width="106" height="1" fill="#fff" opacity="0.6"/>',
+    '<rect x="', (X0 - 3), '" y="', (BEAM_B + 12.4), '" width="106" height="2.6" fill="#8b8f91" opacity="0.55"/>',
+    '<rect x="', (X0 - 3), '" y="', (BEAM_B + 12.2), '" width="106" height="0.7" fill="#fff" opacity="0.5"/>',
     '<g class="vern"></g>',
+    /* the window through the slider: a recess with the main scale in it */
+    '<rect x="', (X0 + 8), '" y="', BEAM_T, '" width="78" height="', (BEAM_B - BEAM_T), '" fill="none" stroke="#2b2e30" stroke-opacity="0.45" stroke-width="2.6" filter="url(#sh)"/>',
+    '<rect x="', (X0 + 8), '" y="', BEAM_T, '" width="78" height="', (BEAM_B - BEAM_T), '" fill="none" stroke="#fdfeff" stroke-opacity="0.4" stroke-width="0.6"/>',
     /* a hairline of oil where the slider rides the beam */
     '<rect x="', (X0 - 3), '" y="', (BEAM_T - 0.6), '" width="106" height="1.1" fill="#3b3f41" opacity="0.5"/>',
     '<rect x="', (X0 - 3), '" y="', (BEAM_B - 0.5), '" width="106" height="1.1" fill="#3b3f41" opacity="0.38"/>',
@@ -198,9 +204,10 @@
     '<circle class="lockscrew" cx="', (X0 + 48), '" cy="19.5" r="5" fill="url(#screw)" stroke="#5a5d60" stroke-width="0.5"/>',
     '<rect class="lockslot" x="', (X0 + 44), '" y="18.9" width="8" height="1.3" rx="0.4" fill="#303335"/>',
     /* the thumb roller */
-    '<g class="roller"><circle cx="', (X0 + 74), '" cy="80" r="9.5" fill="url(#roll)" stroke="#5d6062" stroke-width="0.5"/>',
+    '<ellipse cx="', (X0 + 83), '" cy="88" rx="10" ry="10" fill="#000" opacity="0.35" filter="url(#sh)"/>',
+    '<g class="roller"><circle cx="', (X0 + 82), '" cy="86" r="9.5" fill="url(#roll)" stroke="#5d6062" stroke-width="0.5"/>',
     '<g class="rknurl"></g>',
-    '<circle cx="', (X0 + 74), '" cy="80" r="3" fill="#7e8184" stroke="#54575a" stroke-width="0.4"/></g>',
+    '<circle cx="', (X0 + 82), '" cy="86" r="3" fill="#7e8184" stroke="#54575a" stroke-width="0.4"/></g>',
   '</g>',
   '</g>',
   '</svg>',
@@ -295,7 +302,7 @@
           stroke: "#171717", "stroke-width": (i % 2 === 0 ? 0.68 : 0.46), "stroke-opacity": (i % 2 === 0 ? 0.95 : 0.78) }));
         if (i % 2 === 0) g.appendChild(mk("text", { x: x, y: BEAM_B + 13.4, "class": "vn" }, String(i / 2)));
       }
-      g.appendChild(mk("text", { x: X0 + 20 * VDIV + 9, y: BEAM_B + 13.4, "class": "ivn" }, "0.05mm"));
+
       // the inch vernier: eight divisions of 7/128 inch on the top bar
       g = r.querySelector(".ivern");
       for (i = 0; i <= 8; i++) {
@@ -304,14 +311,15 @@
           stroke: "#171717", "stroke-width": (i % 4 === 0 ? 0.62 : 0.42), "stroke-opacity": 0.85 }));
         if (i % 4 === 0) g.appendChild(mk("text", { x: x, y: BEAM_T - 7.2, "class": "ivn" }, String(i)));
       }
-      g.appendChild(mk("text", { x: X0 + 8 * IVD + 12, y: BEAM_T - 7.2, "class": "ivn" }, "1/128 in"));
+      g.appendChild(mk("text", { x: X0 + 8 * IVD + 13, y: BEAM_T - 7.2, "class": "ivn" }, "1/128 in"));
+      g.appendChild(mk("text", { x: X0 + 82, y: BEAM_T - 7.2, "class": "ivn" }, "0.05 mm"));
       // the thumb roller's knurl
       g = r.querySelector(".rknurl");
       for (i = 0; i < 34; i++) {
         var a = i * 2 * Math.PI / 34;
         g.appendChild(mk("line", {
-          x1: (X0 + 74 + 6.6 * Math.sin(a)).toFixed(2), y1: (80 - 6.6 * Math.cos(a)).toFixed(2),
-          x2: (X0 + 74 + 9.2 * Math.sin(a)).toFixed(2), y2: (80 - 9.2 * Math.cos(a)).toFixed(2),
+          x1: (X0 + 82 + 6.6 * Math.sin(a)).toFixed(2), y1: (86 - 6.6 * Math.cos(a)).toFixed(2),
+          x2: (X0 + 82 + 9.2 * Math.sin(a)).toFixed(2), y2: (86 - 9.2 * Math.cos(a)).toFixed(2),
           stroke: "#5f6265", "stroke-width": 0.55, "stroke-opacity": 0.75
         }));
       }
@@ -343,7 +351,7 @@
       this._rod.style.transform = "translateX(" + dx.toFixed(2) + "px)";
       // the roller turns as the slider travels
       var deg = dx / (2 * Math.PI * 9.5) * 360;
-      this._roller.style.transformOrigin = (X0 + 74) + "px 80px";
+      this._roller.style.transformOrigin = (X0 + 82) + "px 86px";
       this._roller.style.transform = "rotate(" + deg.toFixed(1) + "deg)";
       // the lock screw sits askew when it is thrown
       var locked = this.hasAttribute("lock");
