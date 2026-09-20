@@ -66,10 +66,10 @@
   if (customElements.get("sk-edgewise-nakamichi")) return;
 
   const W = 200, H = 70;
-  const SX = 42, SW = 148;            // the slot opening
+  const SX = 34, SW = 156;            // the slot opening
   const SH = 17;                      // slot height
   const SY = [15, 37];                // the two slots' tops
-  const X0 = 50, X1 = 182;            // the travel, inset from the slot ends
+  const X0 = 42, X1 = 182;            // the travel, inset from the slot ends
   const TRV = X1 - X0;
   const ARC_R = 1400;                 // the pointer's radius: a long arm behind the panel
   const DBMIN = -40, DBMAX = 5;
@@ -278,7 +278,7 @@
         mk(outer, "rect", { x: SX - 1, y: y + SH - 0.1, width: SW + 2, height: 1.1, fill: "#000", opacity: 0.8 });
         mk(outer, "rect", { x: SX - 1, y: y + SH + 1, width: SW + 2, height: 0.55, fill: "#26272a", opacity: 0.6 });
         // the channel letter, on the panel beside the slot
-        mk(g, "text", { "class": "ch", x: SX - 6, y: y + SH / 2 + 2.6 }, ch);
+        mk(g, "text", { "class": "ch", x: SX - 5.5, y: y + SH / 2 + 2.6 }, ch);
       });
     }
 

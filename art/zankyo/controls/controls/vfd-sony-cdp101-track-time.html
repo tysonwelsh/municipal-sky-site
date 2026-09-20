@@ -32,8 +32,8 @@
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="black">
-    <sk-vfd-cdp101 value="222" track="7" index="1" level="0.62" legends="track min sec play" label="Disc time"></sk-vfd-cdp101>
+  <main class="sk-stage" data-panel="steel">
+    <sk-vfd-cdp101 value="222" track="7" index="1" level="0.97" legends="track min sec play" label="Disc time"></sk-vfd-cdp101>
     <sk-vfd-cdp101 value="0" track="12" index="1" level="0" legends="track index min sec pause repeat" scale="1.35" label="Disc time, paused"></sk-vfd-cdp101>
   </main>
 </div>
@@ -118,7 +118,7 @@
     svg { display: block; width: ${W}px; height: ${H}px; }
     /* --- phosphor --- */
     .gs { stroke: #14211e; stroke-opacity: 0.5; stroke-linecap: round; fill: none; }
-    .gl { fill: #7dffd6; opacity: 0.12; }
+    .gl { fill: #7dffd6; opacity: 0.11; }
     .gb { fill: #14211e; opacity: 0.55; }
     .sg { opacity: 0; transition: opacity 90ms linear; }
     .sg.on { opacity: 1; transition: opacity 60ms linear; }
@@ -130,10 +130,10 @@
     .bar.on { opacity: 1; transition: opacity 40ms linear; }
     .bar.pk { fill: #ffc46a; }
     text { font-family: "Roboto Condensed", "Archivo Narrow", "Arial Narrow", sans-serif; font-weight: 500; }
-    .t6 { font-size: 6.2px; letter-spacing: 0.09em; }
+    .t6 { font-size: 6.6px; letter-spacing: 0.10em; }
     .t5 { font-size: 5.6px; letter-spacing: 0.07em; }
-    .bloom { filter: blur(3.2px); opacity: 0.55; }
-    .glow  { filter: blur(7px);   opacity: 0.20; }
+    .bloom { filter: blur(3.2px); opacity: 0.66; }
+    .glow  { filter: blur(8px);   opacity: 0.26; }
     .soft  { filter: blur(0.35px); }
   </style>
   <div class="wrap">
@@ -144,22 +144,22 @@
           <stop offset="0.8" stop-color="#101113"/><stop offset="1" stop-color="#0a0b0c"/>
         </linearGradient>
         <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#b6bbbe"/><stop offset="0.35" stop-color="#8d9296"/>
-          <stop offset="0.75" stop-color="#6b7074"/><stop offset="1" stop-color="#565b5f"/>
+          <stop offset="0" stop-color="#787d80"/><stop offset="0.35" stop-color="#5d6265"/>
+          <stop offset="0.78" stop-color="#43474a"/><stop offset="1" stop-color="#35393c"/>
         </linearGradient>
         <linearGradient id="smoke" x1="0" y1="0" x2="0.2" y2="1">
           <stop offset="0" stop-color="#16120f"/><stop offset="0.5" stop-color="#0d1110"/><stop offset="1" stop-color="#090b0b"/>
         </linearGradient>
         <linearGradient id="refl" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#8c9a96" stop-opacity="0.10"/>
-          <stop offset="0.55" stop-color="#8c9a96" stop-opacity="0.03"/>
+          <stop offset="0" stop-color="#8c9a96" stop-opacity="0.14"/>
+          <stop offset="0.55" stop-color="#8c9a96" stop-opacity="0.04"/>
           <stop offset="1" stop-color="#8c9a96" stop-opacity="0"/>
         </linearGradient>
         <pattern id="grain" width="4" height="3" patternUnits="userSpaceOnUse">
           <rect width="4" height="1" fill="#fff" fill-opacity="0.022"/>
         </pattern>
         <pattern id="mesh" width="3" height="3" patternUnits="userSpaceOnUse">
-          <path d="M0 0.35H3M0.35 0V3" stroke="#000" stroke-opacity="0.22" stroke-width="0.7"/>
+          <path d="M0 0.3H3M0.3 0V3" stroke="#000" stroke-opacity="0.13" stroke-width="0.42"/>
         </pattern>
         <clipPath id="win"><rect x="10" y="5" width="280" height="64" rx="3"/></clipPath>
       </defs>
@@ -169,10 +169,11 @@
       <rect x="0" y="0" width="${W}" height="75" fill="url(#grain)"/>
       <rect x="0" y="0" width="${W}" height="0.8" fill="#43444a" opacity="0.6"/>
       <!-- chrome hairline + brushed silver skirt -->
-      <rect x="0" y="74" width="${W}" height="1.1" fill="#cfd2d0"/>
-      <rect x="0" y="75.1" width="${W}" height="12.9" fill="url(#silver)"/>
-      <rect x="0" y="75.1" width="${W}" height="12.9" fill="url(#grain)"/>
-      <rect x="0" y="87.2" width="${W}" height="0.8" fill="#000" opacity="0.5"/>
+      <rect x="0" y="73.4" width="${W}" height="0.9" fill="#cfd2d0" opacity="0.85"/>
+      <rect x="0" y="74.3" width="${W}" height="13.7" fill="url(#silver)"/>
+      <rect x="0" y="74.3" width="${W}" height="13.7" fill="url(#grain)"/>
+      <rect x="0" y="74.3" width="${W}" height="0.7" fill="#fff" opacity="0.10"/>
+      <rect x="0" y="86.9" width="${W}" height="1.1" fill="#000" opacity="0.55"/>
 
       <!-- window recess: a shadow all round, then the smoked acrylic -->
       <rect x="8" y="3.4" width="284" height="67" rx="4" fill="#000" opacity="0.75"/>
@@ -189,12 +190,12 @@
         <!-- the anode grid, a shadow mesh in front of the phosphor -->
         <rect x="10" y="5" width="280" height="64" fill="url(#mesh)"/>
         <!-- the smoke, dimming everything behind it -->
-        <rect x="10" y="5" width="280" height="64" fill="#0f0c0a" opacity="0.30"/>
+        <rect x="10" y="5" width="280" height="64" fill="#0f0c0a" opacity="0.22"/>
         <!-- the glow that reaches the front of the acrylic -->
         <g class="glow"><use href="#lit"/></g>
         <!-- one diagonal reflection band on the acrylic -->
         <path d="M 10 5 L 118 5 L 44 69 L 10 69 Z" fill="url(#refl)"/>
-        <path d="M 128 5 L 150 5 L 76 69 L 54 69 Z" fill="#8c9a96" opacity="0.028"/>
+        <path d="M 128 5 L 152 5 L 78 69 L 54 69 Z" fill="#a9b6b2" opacity="0.045"/>
         <!-- moulded bezel edge inside the window -->
         <rect x="10.5" y="5.5" width="279" height="63" rx="2.6" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.2"/>
         <rect x="11.6" y="6.6" width="276.8" height="60.8" rx="2" fill="none" stroke="#3b3a36" stroke-opacity="0.35" stroke-width="0.7"/>
@@ -273,9 +274,9 @@
       // eight-bar level meter, the top bar amber
       this._bars = [];
       for (let i = 0; i < 8; i++) {
-        const y = 54.2 - i * 4.3;
-        mk("rect", { x: 246, y: y, width: 32, height: 2.8, rx: 0.6, class: "gb" }, ghost);
-        this._bars.push(mk("rect", { x: 246, y: y, width: 32, height: 2.8, rx: 0.6, class: "bar" + (i === 7 ? " pk" : "") }, lit));
+        const y = 54.4 - i * 4.4;
+        mk("rect", { x: 246, y: y, width: 32, height: 2.4, rx: 0.5, class: "gb" }, ghost);
+        this._bars.push(mk("rect", { x: 246, y: y, width: 32, height: 2.4, rx: 0.5, class: "bar" + (i === 7 ? " pk" : "") }, lit));
       }
     }
 

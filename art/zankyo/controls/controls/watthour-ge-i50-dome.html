@@ -71,7 +71,7 @@
   var W = 200, H = 240;
   var PLX = 28, PLY = 52, PLW = 144, PLH = 110;
   var DCY = 104, DR = 13.6, DCX = [45.6, 72.8, 100, 127.2, 154.4];   // left to right: 10000 … 1
-  var DISC_X = 100, DISC_Y = 177, DISC_RX = 47, DISC_RY = 9.5, DISC_T = 4.5;
+  var DISC_X = 100, DISC_Y = 176, DISC_RX = 47, DISC_RY = 8.4, DISC_T = 4.2;
   var NS = "http://www.w3.org/2000/svg";
   var DOME = "M 16 200 L 16 118 C 16 58 50 28 100 28 C 150 28 184 58 184 118 L 184 200 Z";
 
@@ -130,7 +130,7 @@
   '      <stop offset="0" stop-color="#f7f2e4"/><stop offset="0.45" stop-color="#efe9d8"/><stop offset="1" stop-color="#d9d2bd"/>',
   '    </linearGradient>',
   '    <linearGradient id="discface" x1="0.1" y1="0" x2="0.9" y2="1">',
-  '      <stop offset="0" stop-color="#f4f4f1"/><stop offset="0.3" stop-color="#c3c5c1"/><stop offset="0.58" stop-color="#dcdedb"/><stop offset="0.82" stop-color="#a3a5a3"/><stop offset="1" stop-color="#7c7e7d"/>',
+  '      <stop offset="0" stop-color="#eceeea"/><stop offset="0.26" stop-color="#b2b4b0"/><stop offset="0.55" stop-color="#d2d4d1"/><stop offset="0.8" stop-color="#93958f"/><stop offset="1" stop-color="#696b6a"/>',
   '    </linearGradient>',
   '    <linearGradient id="discrim" x1="0" y1="0" x2="1" y2="0">',
   '      <stop offset="0" stop-color="#6e7070"/><stop offset="0.22" stop-color="#c9cac6"/><stop offset="0.5" stop-color="#9a9c9a"/><stop offset="0.8" stop-color="#787a79"/><stop offset="1" stop-color="#555756"/>',
@@ -163,8 +163,8 @@
 
   '  <g clip-path="url(#domeclip)">',
   '    <!-- inside the dome -->',
-  '    <rect x="0" y="0" width="200" height="240" fill="#2b2d2e"/>',
-  '    <rect x="0" y="0" width="200" height="240" fill="url(#basetop)" opacity="0.45"/>',
+  '    <rect x="0" y="0" width="200" height="240" fill="#1c1e1f"/>',
+  '    <rect x="0" y="0" width="200" height="240" fill="url(#basetop)" opacity="0.7"/>',
   '    <!-- nameplate -->',
   '    <rect x="' + (PLX + 2) + '" y="' + (PLY + 4) + '" width="' + PLW + '" height="' + PLH + '" rx="3" fill="#000" opacity="0.45" filter="url(#soft1)"/>',
   '    <rect x="' + PLX + '" y="' + PLY + '" width="' + PLW + '" height="' + PLH + '" rx="3" fill="url(#plate)"/>',
@@ -189,6 +189,7 @@
   '    <path d="M 142 164 h 34 v 30 h -34 z" fill="#17181a"/>',
   '    <path d="M 142 164 h 34 v 4 h -34 z" fill="#4d5052"/>',
   '    <!-- the disc: a thin aluminium ellipse, seen edge-on and slightly from above -->',
+  '    <ellipse cx="102" cy="' + (DISC_Y + DISC_T + 7) + '" rx="' + (DISC_RX * 0.95) + '" ry="6" fill="#000" opacity="0.45" filter="url(#soft1)"/>',
   '    <ellipse cx="' + DISC_X + '" cy="' + (DISC_Y + DISC_T) + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="url(#discrim)"/>',
   '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="url(#discface)"/>',
   '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + (DISC_RX * 0.78) + '" ry="' + (DISC_RY * 0.78) + '" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="0.6"/>',
@@ -196,7 +197,7 @@
   '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + (DISC_RX * 0.3) + '" ry="' + (DISC_RY * 0.3) + '" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="0.5"/>',
   '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="none" stroke="#5f6160" stroke-width="0.6"/>',
   '    <path d="M ' + (DISC_X - DISC_RX * 0.86) + ' ' + (DISC_Y - DISC_RY * 0.5) + ' A ' + DISC_RX + ' ' + DISC_RY + ' 0 0 1 ' + (DISC_X + DISC_RX * 0.2) + ' ' + (DISC_Y - DISC_RY * 0.98) + '" fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="1.2"/>',
-  '    <g class="mark"><rect x="-3.2" y="-2" width="6.4" height="8" fill="#0d0d0d"/></g>',
+  '    <g class="mark"><rect x="-3.4" y="-4.6" width="6.8" height="4" fill="#0d0d0d" opacity="0.9"/><rect x="-3.4" y="-1.2" width="6.8" height="7.5" fill="#0b0b0b"/></g>',
   '    <!-- the magnets front jaws, in front of the disc rim -->',
   '    <path d="M 40 ' + (DISC_Y + 2) + ' h 18 v 12 h -18 z" fill="#17181a"/>',
   '    <path d="M 142 ' + (DISC_Y + 2) + ' h 18 v 12 h -18 z" fill="#17181a"/>',
@@ -212,7 +213,7 @@
   '    <path d="' + DOME + '" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.4"/>',
   '    <rect x="36" y="30" width="20" height="172" fill="url(#band)" filter="url(#soft1)"/>',
   '    <rect x="62" y="34" width="6" height="168" fill="#ffffff" opacity="0.13" filter="url(#soft1)"/>',
-  '    <path d="M 170 112 C 177 142 175 176 168 198" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="7" filter="url(#soft1)"/>',
+  '    <path d="M 170 108 C 178 140 176 176 168 198" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="8" filter="url(#soft1)"/>',
   '    <path d="M 44 54 C 56 40 74 33 92 32" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.6" filter="url(#soft1)"/>',
   '  </g>',
   '</svg>',

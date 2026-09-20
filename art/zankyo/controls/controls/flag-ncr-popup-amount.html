@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NCR pop-up amount flags — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "flag-ncr-popup-amount",
+  "element": "sk-flag-ncr-popup",
+  "name": "NCR pop-up amount flags",
+  "kind": "output",
+  "code": "G13.1",
+  "type": "Mechanical flag / annunciator drop",
+  "source": "National Cash Register Class 1000 / Class 21 indication window, Dayton, 1920s–1960s: ivory enamelled flags with black numerals popping up on levers behind bevelled glass",
+  "era": "1940s",
+  "origin": "USA",
+  "materials": ["chrome", "glass", "enamelled steel", "japanned steel"],
+  "tags": ["cash register", "shop", "flag", "annunciator", "amount", "pop-up"],
+  "value": { "model": "digits", "min": 0, "max": 999.99, "step": 0.05, "unit": "$" },
+  "attributes": ["value", "digits", "special", "label", "scale"],
+  "events": [],
+  "size": { "w": 360, "h": 120 },
+  "notes": "Set value (an amount in dollars) and the flags pop up on their levers; set special to raise the red NO SALE / TOTAL / CHARGE flag. The demo rings up $4.75, totals, then NO SALE."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-flag-ncr-popup value="4.75"></sk-flag-ncr-popup>
+    <sk-flag-ncr-popup value="0" special="NO SALE" scale="0.8"></sk-flag-ncr-popup>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>On a <b>National Cash Register</b> of the Class 1000 / Class 21 generation the amount is not printed, it is
+  <i>lifted</i>: strike a key and a tall, narrow, ivory-enamelled steel flag with a black numeral is thrown up on a
+  lever behind the bevelled glass of the indication window, so the customer on the other side of the counter can see
+  what was rung. Among the ivory flags is a red one — <b>NO SALE</b>, <b>TOTAL</b>, <b>CHARGE</b> — and the whole row
+  falls back into its slots with a clack before the next amount goes up.</p>
+  <p><b>The tells kept:</b> the chromed frame with rounded corners, a hard horizon in the plating and a knurled finial
+  at each end; the bevelled glass with its diagonal reflection and the frame's soft shadow falling on the flags; the
+  black japanned interior, the slot plate the flags rise through, and the lever stem visible under each raised flag;
+  flags that rise in 120&nbsp;ms, hit the stop and bounce 3&nbsp;px, and drop in 90&nbsp;ms before a new amount; the
+  row not perfectly aligned — every flag rests a pixel high or low and half a degree off square; the painted
+  <b>$</b> and decimal point on the slot plate; positions with no digit showing only the tips of their lowered flags.</p>
+  <p><b>Left out:</b> the keyboard, the drawer and the printed detail strip below; the NCR crest and scrollwork on the
+  register top (only the scrap of japanned casting that carries the window is here); the clack itself, which is the
+  one tell a screen cannot keep.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-flag-ncr-popup> — NCR pop-up amount flags in a chromed glass window ====
+   attributes: value (dollars) · digits (flag count, default 5) · special ("NO SALE"|"TOTAL"|"CHARGE") · label · scale
+   no events (an output). Set .value or the attribute; the flags drop and pop up on their levers.
+   self-contained: paste this block into any page and use <sk-flag-ncr-popup value="4.75"></sk-flag-ncr-popup> */
+(function () {
+  if (customElements.get("sk-flag-ncr-popup")) return;
+  var W = 360, H = 120;
+  var IX = 26, IY = 14, IW = 308, IH = 72;      // the glass window's interior
+  var PLATE = 76;                                // top of the slot plate
+  var FTOP = 18, FW = 32, FH = 48, DROP = 50;    // flag rest geometry
+  var SPX = 30, SPW = 76;                        // the red special flag
+  var NS = "http://www.w3.org/2000/svg";
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  'text { font-family: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", sans-serif; }',
+  '.num { font-size: 38px; font-weight: 700; text-anchor: middle; fill: #1a1814; }',
+  '.sp { font-size: 15px; font-weight: 700; text-anchor: middle; fill: #fbf6ee; letter-spacing: 0.03em; }',
+  '.paint { font-size: 13px; font-weight: 600; text-anchor: middle; fill: #cdc4ad; }',
+  '.flag { will-change: transform; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '<defs>',
+    '<linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#fbfbf9"/><stop offset="0.22" stop-color="#e2e4e2"/><stop offset="0.46" stop-color="#b6b8b6"/>',
+      '<stop offset="0.47" stop-color="#7d807d"/><stop offset="0.72" stop-color="#c6c8c6"/><stop offset="0.93" stop-color="#8a8c8a"/><stop offset="1" stop-color="#6a6c6a"/>',
+    '</linearGradient>',
+    '<linearGradient id="chromeV" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#f0f0ee"/><stop offset="0.35" stop-color="#c4c6c4"/><stop offset="0.52" stop-color="#8a8c8a"/><stop offset="0.75" stop-color="#dcdedc"/><stop offset="1" stop-color="#8f918f"/>',
+    '</linearGradient>',
+    '<linearGradient id="ivory" x1="0" y1="0" x2="0.35" y2="1">',
+      '<stop offset="0" stop-color="#fbf6e8"/><stop offset="0.18" stop-color="#efe7d2"/><stop offset="0.82" stop-color="#e6ddc5"/><stop offset="1" stop-color="#d8ceb4"/>',
+    '</linearGradient>',
+    '<linearGradient id="redflag" x1="0" y1="0" x2="0.35" y2="1">',
+      '<stop offset="0" stop-color="#d2372f"/><stop offset="0.2" stop-color="#b8241e"/><stop offset="0.85" stop-color="#a11c17"/><stop offset="1" stop-color="#7d120f"/>',
+    '</linearGradient>',
+    '<linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#000" stop-opacity="0.85"/><stop offset="0.28" stop-color="#000" stop-opacity="0.22"/><stop offset="1" stop-color="#000" stop-opacity="0"/>',
+    '</linearGradient>',
+    '<linearGradient id="interior" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#191614"/><stop offset="0.5" stop-color="#121110"/><stop offset="1" stop-color="#0b0a0a"/>',
+    '</linearGradient>',
+    '<linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#2b2822"/><stop offset="0.12" stop-color="#17150f"/><stop offset="1" stop-color="#0a0908"/>',
+    '</linearGradient>',
+    '<linearGradient id="deck" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#4a463e"/><stop offset="0.14" stop-color="#26241f"/><stop offset="0.7" stop-color="#171512"/><stop offset="1" stop-color="#0e0d0c"/>',
+    '</linearGradient>',
+    '<linearGradient id="glassref" x1="0" y1="0" x2="1" y2="1">',
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.15"/><stop offset="0.42" stop-color="#fff" stop-opacity="0.05"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.03"/>',
+    '</linearGradient>',
+    '<clipPath id="win"><rect x="' + IX + '" y="' + IY + '" width="' + IW + '" height="' + IH + '" rx="2"/></clipPath>',
+    '<filter id="fsh" x="-40%" y="-40%" width="200%" height="200%"><feDropShadow dx="1.6" dy="2.4" stdDeviation="1.6" flood-color="#000" flood-opacity="0.65"/></filter>',
+    '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>',
+  '</defs>',
+
+  '<!-- a scrap of the register top the window is bolted to -->',
+  '<rect x="6" y="92" width="348" height="27" rx="3" fill="url(#deck)"/>',
+  '<rect x="6" y="92" width="348" height="1.2" fill="#6a6459" opacity="0.6"/>',
+  '<rect x="14" y="103" width="332" height="2" rx="1" fill="#0a0908"/>',
+  '<rect x="14" y="103" width="332" height="0.8" rx="0.4" fill="#57524a" opacity="0.5"/>',
+
+  '<!-- the window\'s shadow on the deck -->',
+  '<rect x="10" y="10" width="344" height="92" rx="9" fill="#000" opacity="0.6" filter="url(#soft)"/>',
+
+  '<!-- chromed frame -->',
+  '<rect x="4" y="2" width="352" height="96" rx="9" fill="url(#chrome)" stroke="#5c5e5c" stroke-width="0.8"/>',
+  '<rect x="5.4" y="3.4" width="349.2" height="93.2" rx="8" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.9"/>',
+  '<rect x="' + (IX - 4) + '" y="' + (IY - 4) + '" width="' + (IW + 8) + '" height="' + (IH + 8) + '" rx="4" fill="#3a3c3a"/>',
+  '<rect x="' + (IX - 2.6) + '" y="' + (IY - 2.6) + '" width="' + (IW + 5.2) + '" height="' + (IH + 5.2) + '" rx="3" fill="none" stroke="#0d0e0d" stroke-width="1.6"/>',
+
+  '<!-- interior, flags, slot plate: all inside the glass -->',
+  '<g clip-path="url(#win)">',
+    '<rect x="' + IX + '" y="' + IY + '" width="' + IW + '" height="' + IH + '" fill="url(#interior)"/>',
+    '<g class="flags"></g>',
+    '<rect x="' + IX + '" y="' + PLATE + '" width="' + IW + '" height="' + (IY + IH - PLATE) + '" fill="url(#plate)"/>',
+    '<rect x="' + IX + '" y="' + PLATE + '" width="' + IW + '" height="0.9" fill="#4c473e" opacity="0.75"/>',
+    '<g class="slots"></g>',
+    '<text class="paint dollar" x="114" y="' + (PLATE - 3) + '">$</text>',
+    '<circle class="point" cx="240.5" cy="' + (PLATE - 6) + '" r="2.1" fill="#cdc4ad"/>',
+    '<!-- the frame throws a soft shadow down onto the flags -->',
+    '<rect x="' + IX + '" y="' + IY + '" width="' + IW + '" height="26" fill="url(#inner)"/>',
+    '<!-- bevelled glass: a diagonal reflection that is not the shape of the flags -->',
+    '<path d="M ' + IX + ' ' + IY + ' L ' + (IX + 176) + ' ' + IY + ' L ' + (IX + 46) + ' ' + (IY + IH) + ' L ' + IX + ' ' + (IY + IH) + ' Z" fill="url(#glassref)"/>',
+    '<path d="M ' + (IX + 214) + ' ' + IY + ' L ' + (IX + 246) + ' ' + IY + ' L ' + (IX + 132) + ' ' + (IY + IH) + ' L ' + (IX + 112) + ' ' + (IY + IH) + ' Z" fill="#fff" opacity="0.05"/>',
+    '<!-- the bevel: light catches the bottom-right chamfer, the top-left is dark -->',
+    '<path d="M ' + IX + ' ' + IY + ' L ' + (IX + IW) + ' ' + IY + ' L ' + (IX + IW - 3) + ' ' + (IY + 3) + ' L ' + (IX + 3) + ' ' + (IY + 3) + ' L ' + (IX + 3) + ' ' + (IY + IH - 3) + ' L ' + IX + ' ' + (IY + IH) + ' Z" fill="#fff" opacity="0.07"/>',
+    '<path d="M ' + (IX + IW) + ' ' + IY + ' L ' + (IX + IW) + ' ' + (IY + IH) + ' L ' + IX + ' ' + (IY + IH) + ' L ' + (IX + 3) + ' ' + (IY + IH - 3) + ' L ' + (IX + IW - 3) + ' ' + (IY + IH - 3) + ' L ' + (IX + IW - 3) + ' ' + (IY + 3) + ' Z" fill="#fff" opacity="0.13"/>',
+  '</g>',
+
+  '<!-- knurled finials at the ends of the frame -->',
+  '<g class="finial" transform="translate(15 50)">',
+    '<rect x="-6" y="-17" width="12" height="34" rx="4" fill="url(#chromeV)" stroke="#4e504e" stroke-width="0.6"/>',
+    '<g opacity="0.5"><rect x="-4.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="-2.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="0.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="2.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/></g>',
+    '<rect x="-5.2" y="-15.4" width="1.1" height="30.8" rx="0.5" fill="#fff" opacity="0.55"/>',
+  '</g>',
+  '<g class="finial" transform="translate(345 50)">',
+    '<rect x="-6" y="-17" width="12" height="34" rx="4" fill="url(#chromeV)" stroke="#4e504e" stroke-width="0.6"/>',
+    '<g opacity="0.5"><rect x="-4.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="-2.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="0.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="2.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/></g>',
+    '<rect x="-5.2" y="-15.4" width="1.1" height="30.8" rx="0.5" fill="#fff" opacity="0.55"/>',
+  '</g>',
+  '</svg>',
+  '</div>'].join("");
+
+  function mk(t, a) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+
+  class SkFlagNcrPopup extends HTMLElement {
+    static get observedAttributes() { return ["value", "digits", "special", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._digits = 5; this._special = ""; this._scale = 1;
+      this._flags = []; this._raf = 0; this._built = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._flagsG = this.shadowRoot.querySelector(".flags");
+      this._slotsG = this.shadowRoot.querySelector(".slots");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read();
+      this._build();
+      this._update(true);
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "digits") { this._build(); this._update(true); } else this._update(false);
+    }
+    get value() { return this._v; }
+    set value(v) {
+      var n = parseFloat(v); if (isNaN(n)) return;
+      this._v = Math.max(0, n);
+      this.setAttribute("value", String(Math.round(this._v * 100) / 100));
+    }
+    get special() { return this._special; }
+    set special(s) { if (s) this.setAttribute("special", s); else this.removeAttribute("special"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      var num = function (el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._v = Math.max(0, num(this, "value", this._v));
+      this._digits = Math.max(2, Math.min(8, Math.round(num(this, "digits", 5))));
+      this._special = (this.getAttribute("special") || "").trim().toUpperCase();
+      this._scale = Math.max(0.2, num(this, "scale", 1));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _startX() { var total = this._digits * FW + (this._digits - 1) * 9; return IX + IW - 16 - total; }
+    _build() {
+      var g = this._flagsG, s = this._slotsG;
+      while (g.firstChild) g.removeChild(g.firstChild);
+      while (s.firstChild) s.removeChild(s.firstChild);
+      this._flags = [];
+      var self = this, sx = this._startX();
+      var rnd = function (i) { var x = Math.sin(i * 12.9898 + 4.233) * 43758.5453; return x - Math.floor(x); };
+
+      var make = function (x, w, red, i) {
+        var cx = x + w / 2, jY = (rnd(i) - 0.5) * 2.2, tilt = (rnd(i + 31) - 0.5) * 1.0;
+        var outer = mk("g", { "class": "flag" });
+        var inner = mk("g", { transform: "rotate(" + tilt.toFixed(2) + " " + cx + " " + (FTOP + FH / 2) + ")", filter: "url(#fsh)" });
+        // the lever stem under the flag
+        inner.appendChild(mk("rect", { x: cx - 2, y: FTOP + FH - 3, width: 4, height: 18, fill: "#3a3a3a" }));
+        inner.appendChild(mk("rect", { x: cx - 2, y: FTOP + FH - 3, width: 1.2, height: 18, fill: "#6a6a68", opacity: 0.8 }));
+        inner.appendChild(mk("rect", { x: x, y: FTOP, width: w, height: FH, rx: 5, fill: red ? "url(#redflag)" : "url(#ivory)" }));
+        inner.appendChild(mk("rect", { x: x + 1, y: FTOP + 1, width: w - 2, height: 4, rx: 2, fill: "#fff", opacity: red ? 0.22 : 0.42 }));
+        inner.appendChild(mk("rect", { x: x + w - 2.2, y: FTOP + 2, width: 2.2, height: FH - 4, fill: red ? "#6f100d" : "#d0c5a8", opacity: 0.85 }));
+        inner.appendChild(mk("rect", { x: x, y: FTOP, width: w, height: FH, rx: 5, fill: "none", stroke: red ? "#5e0c0a" : "#bdb197", "stroke-width": 0.6, opacity: 0.8 }));
+        var t = mk("text", { "class": red ? "sp" : "num", x: cx, y: red ? FTOP + FH / 2 + 5.5 : FTOP + FH / 2 + 13.5 });
+        inner.appendChild(t);
+        outer.appendChild(inner);
+        g.appendChild(outer);
+        // the slot this flag rises through
+        s.appendChild(mk("rect", { x: x - 1.5, y: PLATE - 0.4, width: w + 3, height: 2.6, rx: 1, fill: "#050505" }));
+        s.appendChild(mk("rect", { x: x - 1.5, y: PLATE + 2, width: w + 3, height: 0.7, rx: 0.3, fill: "#57524a", opacity: 0.55 }));
+        var f = { g: outer, txt: t, cur: null, want: null, phase: "down", p: 0, p0: 0, t0: 0, jY: jY };
+        self._flags.push(f);
+        self._place(f);
+      };
+
+      make(SPX, SPW, true, 0);
+      for (var i = 0; i < this._digits; i++) make(sx + i * (FW + 9), FW, false, i + 1);
+      // the painted $ and decimal point follow the flag row
+      this.shadowRoot.querySelector(".dollar").setAttribute("x", String(sx - 9));
+      this.shadowRoot.querySelector(".point").setAttribute("cx", String(sx + (this._digits - 2) * (FW + 9) - 4.5));
+    }
+    _update(immediate) {
+      var cents = Math.round(this._v * 100);
+      var str = String(cents);
+      var show = this._v > 0.0001;
+      var d = this._digits;
+      if (str.length > d) str = str.slice(-d);
+      while (str.length < d) str = " " + str;
+      this._flags[0].want = this._special || null;
+      for (var i = 0; i < d; i++) {
+        var ch = show ? str.charAt(i) : " ";
+        this._flags[i + 1].want = ch === " " ? null : ch;
+      }
+      var name = show ? ("$" + (Math.round(this._v * 100) / 100).toFixed(2)) : "no amount";
+      this.setAttribute("aria-label", (this.getAttribute("label") || "cash register amount flags") + ": " + name + (this._special ? ", " + this._special : ""));
+      if (immediate) {
+        for (var k = 0; k < this._flags.length; k++) {
+          var f = this._flags[k];
+          f.cur = f.want; f.txt.textContent = f.cur || "";
+          f.p = f.cur ? 1 : 0; f.phase = f.cur ? "up" : "down";
+          this._place(f);
+        }
+        cancelAnimationFrame(this._raf); this._raf = 0;
+        return;
+      }
+      this._kick();
+    }
+    _place(f) {
+      var dy = DROP * (1 - f.p) + f.jY * f.p;
+      f.g.setAttribute("transform", "translate(0 " + dy.toFixed(2) + ")");
+    }
+    _kick() { if (!this._raf) this._raf = requestAnimationFrame(this._tick); }
+    _tick(now) {
+      var busy = false;
+      for (var i = 0; i < this._flags.length; i++) if (this._step(this._flags[i], now)) busy = true;
+      this._raf = busy ? requestAnimationFrame(this._tick) : 0;
+    }
+    _step(f, now) {
+      if (f.want !== f.cur && f.phase !== "drop") { f.phase = "drop"; f.t0 = now; f.p0 = f.p; }
+      if (f.phase === "drop") {
+        var u = Math.min(1, (now - f.t0) / 90);
+        f.p = f.p0 * (1 - u * u);                       // the lever lets go: it falls
+        if (u >= 1) {
+          f.p = 0;
+          if (f.cur !== f.want) { f.cur = f.want; f.txt.textContent = f.cur || ""; }
+          if (f.cur) { f.phase = "rise"; f.t0 = now; } else { f.phase = "down"; this._place(f); return false; }
+        }
+        this._place(f); return true;
+      }
+      if (f.phase === "rise") {
+        var r = Math.min(1, (now - f.t0) / 250);
+        if (r < 0.48) f.p = 1 - Math.pow(1 - r / 0.48, 3);   // 120 ms up, hard stop
+        else { var b = (r - 0.48) / 0.52; f.p = 1 - (3 / DROP) * Math.sin(Math.PI * b) * (1 - b); }  // 3 px bounce
+        if (r >= 1) { f.p = 1; f.phase = "up"; this._place(f); return false; }
+        this._place(f); return true;
+      }
+      return false;
+    }
+    // the idle demo: ring up 4.75, total it, then NO SALE — we drive ourselves
+    demo(t) {
+      var c = t % 10.4, v = 0, sp = "";
+      if (c > 0.5 && c < 2.6) { v = 0.85; }
+      else if (c >= 2.6 && c < 4.6) { v = 4.75; }
+      else if (c >= 4.6 && c < 6.9) { v = 12.00; sp = "TOTAL"; }
+      else if (c >= 7.4 && c < 9.6) { v = 0; sp = "NO SALE"; }
+      if (v !== this._v || sp !== this._special) {
+        this._v = v; this._special = sp;
+        if (sp) this.setAttribute("special", sp); else this.removeAttribute("special");
+        this.setAttribute("value", String(v));
+      }
+      return undefined;
+    }
+  }
+  customElements.define("sk-flag-ncr-popup", SkFlagNcrPopup);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

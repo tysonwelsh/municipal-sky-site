@@ -67,7 +67,7 @@
   const CX = 160, CY = -160;                 // the platter's centre, above the frame
   const RIN = 244, ROUT = 280;               // the rim band
   const SPAN = 0.62;                         // half the visible arc, radians (≈ 71° total)
-  const ROWR = [271.6, 265.4, 259.2, 253];     // the four rows, outermost first
+  const ROWR = [272, 264.8, 257.6, 250.4];     // the four rows, outermost first
   const ROWN = [216, 180, 160, 133];         // 33/60Hz, 33/50Hz, 45/60Hz, 45/50Hz
   const ROWT = ["33 · 60", "33 · 50", "45 · 60", "45 · 50"];
   const TPL = document.createElement("template");
@@ -80,7 +80,7 @@
     svg { overflow: visible; }
     text { font-family: "Michroma", "Eurostile", "Arial Narrow", sans-serif; }
     .leg { font-size: 6.4px; letter-spacing: 0.08em; fill: #f2f3f2; }
-    .leg.off { fill: #8d9190; }
+    .leg.off { fill: #9fa4a1; }
     .row { font-size: 4.6px; letter-spacing: 0.04em; fill: #cfd3d2; opacity: 0.75; }
   </style>
   <div class="wrap">
@@ -224,7 +224,7 @@
       const mg = c.createLinearGradient(0, -20, 0, 120);
       mg.addColorStop(0, "rgba(255,255,255,0.06)"); mg.addColorStop(1, "rgba(0,0,0,0.35)");
       c.fillStyle = mg; c.fillRect(0, 0, W, H);
-      c.lineWidth = 0.55; c.strokeStyle = "rgba(216,220,224,0.07)";
+      c.lineWidth = 0.55; c.strokeStyle = "rgba(216,220,224,0.1)";
       for (let a = -SPAN - 0.1; a <= SPAN + 0.1; a += 0.0115) {
         c.beginPath();
         c.moveTo(CX + 120 * Math.sin(a), CY + 120 * Math.cos(a));
@@ -244,17 +244,17 @@
       rg.addColorStop(0.55, "#9b9ea1"); rg.addColorStop(0.86, "#8f9295"); rg.addColorStop(1, "#5d6063");
       c.fillStyle = rg; c.fill();
       // the black band the dots sit in
-      this._arcPath(c, 250, 275);
-      const bg = c.createLinearGradient(0, CY + 250, 0, CY + 275);
+      this._arcPath(c, 247, 276);
+      const bg = c.createLinearGradient(0, CY + 247, 0, CY + 276);
       bg.addColorStop(0, "#232326"); bg.addColorStop(0.5, "#141416"); bg.addColorStop(1, "#1e1e21");
       c.fillStyle = bg; c.fill();
       // the turned lips either side of the black band
       c.strokeStyle = "rgba(255,255,255,0.3)"; c.lineWidth = 0.8;
-      c.beginPath(); c.arc(CX, CY, 248.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
+      c.beginPath(); c.arc(CX, CY, 245.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
       c.strokeStyle = "rgba(0,0,0,0.55)"; c.lineWidth = 0.9;
-      c.beginPath(); c.arc(CX, CY, 250.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
+      c.beginPath(); c.arc(CX, CY, 247.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
       c.strokeStyle = "rgba(255,255,255,0.16)"; c.lineWidth = 0.7;
-      c.beginPath(); c.arc(CX, CY, 274.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
+      c.beginPath(); c.arc(CX, CY, 275.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
       c.strokeStyle = "rgba(255,255,255,0.22)"; c.lineWidth = 0.8;
       c.beginPath(); c.arc(CX, CY, 276.6, Math.PI / 2 - SPAN - 0.06, Math.PI / 2 + SPAN + 0.06); c.stroke();
       c.strokeStyle = "rgba(0,0,0,0.7)"; c.lineWidth = 1.5;
@@ -298,7 +298,7 @@
         for (let k = k0; k <= k1; k++) {
           const a = a0 + k * step;
           const x = CX + R * Math.sin(a), y = CY + R * Math.cos(a);
-          c.moveTo(x + 1.25, y); c.arc(x, y, 1.25, 0, Math.PI * 2);
+          c.moveTo(x + 1.2, y); c.arc(x, y, 1.2, 0, Math.PI * 2);
         }
         c.fill();
       }
@@ -307,8 +307,8 @@
       this._arcPath(c, RIN - 3, ROUT);
       c.clip();
       c.globalCompositeOperation = "lighter";
-      const g = c.createRadialGradient(27, 97, 4, 27, 97, 76);
-      const s = 0.5 * (0.94 + 0.06 * this._flicker());
+      const g = c.createRadialGradient(27, 97, 3, 27, 97, 58);
+      const s = 0.44 * (0.94 + 0.06 * this._flicker());
       g.addColorStop(0, "rgba(255,132,64," + s.toFixed(3) + ")");
       g.addColorStop(0.3, "rgba(255,112,48," + (s * 0.42).toFixed(3) + ")");
       g.addColorStop(1, "rgba(255,100,40,0)");
