@@ -33,8 +33,8 @@
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="aluminium-black">
-    <sk-toggle-apollo-wicket value="ON" label="SUIT FAN"></sk-toggle-apollo-wicket>
-    <sk-toggle-apollo-wicket value="OFF" label="GLY PUMP"></sk-toggle-apollo-wicket>
+    <sk-toggle-apollo-wicket value="OFF" label="SUIT FAN"></sk-toggle-apollo-wicket>
+    <sk-toggle-apollo-wicket value="ON" label="GLY PUMP"></sk-toggle-apollo-wicket>
     <sk-toggle-apollo-wicket positions="3" value="AUTO" label="O2 FLOW" up="HI" mid="AUTO" down="OFF"></sk-toggle-apollo-wicket>
   </main>
 </div>
@@ -68,7 +68,7 @@
   var TAG = "sk-toggle-apollo-wicket";
   if (customElements.get(TAG)) return;
 
-  var H = 96, CX = 32, CY = 54, LEN = 20, BALL = 4.6, W2 = 64, W3 = 76;
+  var H = 96, CX = 32, CY = 54, LEN = 20, BALL = 5.2, W2 = 64, W3 = 76;
   var TAU = Math.PI * 2, LIGHT = -0.78;           // light direction, radians from "up", above-left
 
   function P(cx, cy, r, a) { return (cx + r * Math.sin(a)).toFixed(2) + "," + (cy - r * Math.cos(a)).toFixed(2); }
@@ -76,11 +76,11 @@
   function starPts(cx, cy, r1, r2, n) { var p = [], i; for (i = 0; i < n * 2; i++) p.push(P(cx, cy, i % 2 ? r2 : r1, i / (n * 2) * TAU)); return p.join(" "); }
   // a flat n-point nut seen face on: top face, then one chamfer facet per flat, lit from above-left
   function nutSVG(cx, cy, R, n, base, top) {
-    var inR = R * 0.80, s = "", i, a0, a1, am, b, o, rot = Math.PI / n;
+    var inR = R * 0.74, s = "", i, a0, a1, am, b, o, rot = Math.PI / n;
     s += '<polygon points="' + polyPts(cx, cy, R, n, rot) + '" fill="' + base + '" stroke="#08090a" stroke-width="0.6" stroke-linejoin="round"/>';
     for (i = 0; i < n; i++) {
       a0 = i / n * TAU + rot; a1 = (i + 1) / n * TAU + rot; am = (a0 + a1) / 2;
-      b = Math.cos(am - LIGHT); o = b > 0 ? b * 0.40 : -b * 0.46;
+      b = Math.cos(am - LIGHT); o = b > 0 ? b * 0.52 : -b * 0.55;
       s += '<polygon points="' + P(cx, cy, R, a0) + " " + P(cx, cy, R, a1) + " " + P(cx, cy, inR, a1) + " " + P(cx, cy, inR, a0) +
            '" fill="' + (b > 0 ? "#ffffff" : "#000000") + '" opacity="' + o.toFixed(3) + '"/>';
     }
@@ -116,12 +116,12 @@
   '<svg class="svg" viewBox="0 0 ' + W2 + ' ' + H + '" aria-hidden="true">',
     '<defs>',
       '<linearGradient id="pan" x1="0" y1="0" x2="0.35" y2="1">',
-        '<stop offset="0" stop-color="#868b90"/><stop offset="0.45" stop-color="#6d7176"/><stop offset="1" stop-color="#585c61"/></linearGradient>',
+        '<stop offset="0" stop-color="#959a9f"/><stop offset="0.45" stop-color="#7a7f84"/><stop offset="1" stop-color="#62666b"/></linearGradient>',
       '<pattern id="grain" width="3" height="3" patternUnits="userSpaceOnUse">',
         '<rect width="1" height="3" fill="#ffffff" opacity="0.055"/><rect x="1.6" width="0.5" height="3" fill="#000000" opacity="0.05"/></pattern>',
       '<linearGradient id="rail" x1="0" y1="0" x2="1" y2="0">',
-        '<stop offset="0" stop-color="#5f6367"/><stop offset="0.12" stop-color="#b3b8bd"/><stop offset="0.38" stop-color="#8d9298"/>',
-        '<stop offset="0.72" stop-color="#6f7378"/><stop offset="0.92" stop-color="#4c5055"/><stop offset="1" stop-color="#787d82"/></linearGradient>',
+        '<stop offset="0" stop-color="#6b7075"/><stop offset="0.1" stop-color="#c0c5ca"/><stop offset="0.3" stop-color="#9ba0a6"/>',
+        '<stop offset="0.62" stop-color="#787d83"/><stop offset="0.88" stop-color="#40444a"/><stop offset="1" stop-color="#6e747a"/></linearGradient>',
       '<linearGradient id="railcap" x1="0" y1="0" x2="0" y2="1">',
         '<stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>',
       '<linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">',
@@ -138,11 +138,13 @@
       '<linearGradient id="nuttop" x1="0" y1="0" x2="0.4" y2="1">',
         '<stop offset="0" stop-color="#3a3d42"/><stop offset="0.55" stop-color="#1e2023"/><stop offset="1" stop-color="#141518"/></linearGradient>',
       '<filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>',
+      '<filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.6"/></filter>',
       '<filter id="flat" x="-70%" y="-70%" width="240%" height="240%">',
         '<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.85 0"/><feGaussianBlur stdDeviation="1.15"/></filter>',
     '</defs>',
 
     '<g class="panel">',
+      '<rect class="pshadow" x="1.6" y="3" width="' + W2 + '" height="' + H + '" rx="3.5" fill="#000" opacity="0.62" filter="url(#soft2)"/>',
       '<rect class="pan" x="0" y="0" width="' + W2 + '" height="' + H + '" rx="3" fill="url(#pan)"/>',
       '<rect class="pan2" x="0" y="0" width="' + W2 + '" height="' + H + '" rx="3" fill="url(#grain)"/>',
       '<rect class="pan3" x="0.5" y="0.5" width="' + (W2 - 1) + '" height="' + (H - 1) + '" rx="2.6" fill="none" stroke="#2c2f32" stroke-opacity="0.55" stroke-width="1"/>',
@@ -168,10 +170,11 @@
     '</g>',
 
     // the panel hole, a hair larger than the bushing: a black crescent up and left
-    '<circle cx="' + (CX - 0.55) + '" cy="' + (CY - 0.65) + '" r="11.6" fill="#0e1012"/>',
+    '<circle cx="' + (CX - 0.6) + '" cy="' + (CY - 0.7) + '" r="12.1" fill="#0e1012"/>',
     // serrated lock washer, then the twelve-point nut
-    '<polygon points="' + starPts(CX, CY, 11.4, 10.3, 26) + '" fill="url(#washg)" stroke="#2a2d31" stroke-width="0.35"/>',
-    nutSVG(CX, CY, 10.2, 12, "#1c1d20", "url(#nuttop)"),
+    '<polygon points="' + starPts(CX, CY, 11.9, 10.6, 26) + '" fill="url(#washg)" stroke="#2a2d31" stroke-width="0.35"/>',
+    nutSVG(CX, CY, 10.6, 12, "#1c1d20", "url(#nuttop)"),
+    '<polygon points="' + polyPts(CX, CY, 7.85, 12, Math.PI / 12) + '" fill="none" stroke="#9aa1a8" stroke-opacity="0.3" stroke-width="0.45"/>',
     // bushing face: lathe rings and the keyway notch at twelve
     '<circle cx="' + CX + '" cy="' + CY + '" r="6.3" fill="url(#bush)" stroke="#0a0b0d" stroke-width="0.5"/>',
     '<circle cx="' + CX + '" cy="' + CY + '" r="5.2" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="0.4"/>',
@@ -181,17 +184,18 @@
 
     // the bat's own shadow on the panel
     '<g class="sh" transform="translate(1.7,2.5)" filter="url(#flat)" opacity="0.5">',
-      '<path class="sh-shaft" d="M ' + (CX - 1.7) + ' ' + (CY + 2) + ' L ' + (CX - 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.7) + ' ' + (CY + 2) + ' Z" fill="#000"/>',
+      '<path class="sh-shaft" d="M ' + (CX - 2.3) + ' ' + (CY + 2) + ' L ' + (CX - 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 2.3) + ' ' + (CY + 2) + ' Z" fill="#000"/>',
       '<circle class="sh-ball" cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="#000"/>',
     '</g>',
 
     // the bat: tapered chrome shaft with a hard highlight down its length, and a ball tip
     '<g class="bat">',
-      '<path class="shaft" d="M ' + (CX - 1.75) + ' ' + (CY + 2.4) + ' L ' + (CX - 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.75) + ' ' + (CY + 2.4) + ' Z" fill="url(#chrome)" stroke="#2e3338" stroke-width="0.28"/>',
+      '<path class="shaft" d="M ' + (CX - 2.35) + ' ' + (CY + 2.4) + ' L ' + (CX - 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 1.7) + ' ' + (CY - LEN) + ' L ' + (CX + 2.35) + ' ' + (CY + 2.4) + ' Z" fill="url(#chrome)" stroke="#2b3035" stroke-width="0.3"/>',
+    '<path class="shaft" d="M ' + (CX - 1.25) + ' ' + (CY + 2) + ' L ' + (CX - 0.85) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.1) + ' ' + (CY - LEN + 0.6) + ' L ' + (CX - 0.45) + ' ' + (CY + 2) + ' Z" fill="#ffffff" opacity="0.75"/>',
       '<g class="ball">',
         '<circle cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="url(#ballg)" stroke="#31363c" stroke-width="0.3"/>',
-        '<ellipse cx="' + (CX - 1.5) + '" cy="' + (CY - LEN - 1.7) + '" rx="1.35" ry="1.05" fill="#ffffff" opacity="0.92" transform="rotate(-28 ' + (CX - 1.5) + ' ' + (CY - LEN - 1.7) + ')"/>',
-        '<path d="M ' + (CX - 3.2) + ' ' + (CY - LEN + 2.9) + ' A ' + BALL + ' ' + BALL + ' 0 0 0 ' + (CX + 3.4) + ' ' + (CY - LEN + 2.6) + '" fill="none" stroke="#c9d0d7" stroke-opacity="0.5" stroke-width="0.7"/>',
+        '<ellipse cx="' + (CX - 1.7) + '" cy="' + (CY - LEN - 1.9) + '" rx="1.5" ry="1.15" fill="#ffffff" opacity="0.95" transform="rotate(-28 ' + (CX - 1.7) + ' ' + (CY - LEN - 1.9) + ')"/>',
+        '<path d="M ' + (CX - 3.6) + ' ' + (CY - LEN + 3.3) + ' A ' + BALL + ' ' + BALL + ' 0 0 0 ' + (CX + 3.8) + ' ' + (CY - LEN + 3.0) + '" fill="none" stroke="#d3dae1" stroke-opacity="0.55" stroke-width="0.8"/>',
       '</g>',
     '</g>',
   '</svg>',
@@ -210,7 +214,7 @@
       this._grab = r.querySelector(".grab");
       this._shaft = r.querySelector(".shaft"); this._ball = r.querySelector(".ball");
       this._shShaft = r.querySelector(".sh-shaft"); this._shBall = r.querySelector(".sh-ball");
-      this._pans = [].slice.call(r.querySelectorAll(".pan, .pan2, .pan3, .pan4, .pan5"));
+      this._pans = [].slice.call(r.querySelectorAll(".pshadow, .pan, .pan2, .pan3, .pan4, .pan5"));
       this._tName = [].slice.call(r.querySelectorAll(".n-name"));
       this._tUp = [].slice.call(r.querySelectorAll(".n-up"));
       this._tDown = [].slice.call(r.querySelectorAll(".n-down"));
@@ -281,8 +285,8 @@
       this._svg.setAttribute("viewBox", "0 0 " + w + " " + H);
       this._svg.style.width = w + "px";
       this._pans.forEach(function (r) {
-        var pad = parseFloat(r.getAttribute("x")) * 2;
-        r.setAttribute("width", String(w - pad));
+        var x = parseFloat(r.getAttribute("x"));
+        r.setAttribute("width", String(w - (r.getAttribute("class") === "pshadow" ? 0 : x * 2)));
       });
       this._tName.forEach(function (t) { t.textContent = this.getAttribute("label") || ""; }, this);
       this._tUp.forEach(function (t) { t.textContent = o[o.length - 1]; });

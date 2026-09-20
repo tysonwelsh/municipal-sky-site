@@ -93,7 +93,7 @@
     .off  { fill: none; stroke: #3a2420; stroke-width: 3.8; stroke-opacity: var(--unlit); }
     .lit  { opacity: 0; transition: opacity 20ms linear; }
     .on > .lit { opacity: 1; }
-    .halo { fill: none; stroke: #ff5a2a; stroke-width: 7.6; stroke-opacity: 0.4; filter: url(#pb); }
+    .halo { fill: none; stroke: #ff5a2a; stroke-width: 8.6; stroke-opacity: 0.5; filter: url(#pb); }
     .bar  { fill: none; stroke: #ff8a3c; stroke-width: 3.8; }
     .hot  { fill: none; stroke: #ffd0a0; stroke-width: 1.5; }
     .dpoff { fill: #3a2420; fill-opacity: var(--unlit); }
@@ -116,7 +116,7 @@
       <stop offset="0.55" stop-color="#2b3134" stop-opacity="0.5"/><stop offset="1" stop-color="#5f6a70" stop-opacity="0.3"/>
     </linearGradient>
     <radialGradient id="pfog" cx="50%" cy="50%" r="60%">
-      <stop offset="0" stop-color="#ff6a3a" stop-opacity="0.5"/><stop offset="0.6" stop-color="#ff5a2a" stop-opacity="0.22"/><stop offset="1" stop-color="#ff4a2a" stop-opacity="0"/>
+      <stop offset="0" stop-color="#ff6a3a" stop-opacity="0.62"/><stop offset="0.6" stop-color="#ff5a2a" stop-opacity="0.3"/><stop offset="1" stop-color="#ff4a2a" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="pred" x1="0" y1="0" x2="0.12" y2="1">
       <stop offset="0" stop-color="#f05a1e"/><stop offset="0.5" stop-color="#e0420f"/><stop offset="1" stop-color="#b62c0a"/>
@@ -227,7 +227,7 @@
       this._built = key;
       let s = DEFS;
       /* the ribbon leads out of the bottom edge */
-      s += '<g opacity="0.85">';
+      s += '<g opacity="0.6">';
       for (let k = 0; k < this._n * 5; k++) {
         const x = PAD + 6 + k * ((w - 2 * PAD - 12) / (this._n * 5 - 1));
         s += '<rect x="' + x.toFixed(2) + '" y="' + (GB - 3) + '" width="1.5" height="11" fill="url(#plead)"/>';

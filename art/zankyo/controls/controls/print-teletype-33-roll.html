@@ -208,12 +208,11 @@
     attributeChangedCallback(n, o, v) {
       if (o === v || !this.isConnected || this._refl) return;
       this._readAttrs();
-      if (n === "columns" || n === "value") { this._cache.clear(); this._linesEl.textContent = ""; }
       this._render();
     }
 
     get value() { return this._text; }
-    set value(v) { this._text = unesc(v == null ? "" : v); this._reflect(); this._cache.clear(); this._linesEl.textContent = ""; this._render(); }
+    set value(v) { var t = unesc(v == null ? "" : v); if (t === this._text) return; this._text = t; this._reflect(); this._render(); }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
     get ribbon() { return this._ribbon; }
@@ -324,7 +323,7 @@
       var start = Math.max(0, lines.length - N), host = this._linesEl, i, sig, c, prev = null;
       this._cache.forEach(function (v, k) { if (k < start || k >= lines.length) { if (v.node.parentNode) v.node.parentNode.removeChild(v.node); this._cache.delete(k); } }, this);
       for (i = start; i < lines.length; i++) {
-        sig = lines[i].map(function (x) { return x.x + x.c + (x.last ? "!" : ""); }).join("");
+        sig = this._cols + ":" + lines[i].map(function (x) { return x.x + x.c + (x.last ? "!" : ""); }).join("");
         c = this._cache.get(i);
         if (!c) { c = { node: document.createElement("div"), sig: null }; c.node.className = "ln"; this._cache.set(i, c); }
         if (c.sig !== sig) { c.node.innerHTML = this._lineHTML(i, lines[i]); c.sig = sig; }

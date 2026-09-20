@@ -82,8 +82,8 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     text { font-family: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", sans-serif; fill: #ecebe4; }
-    .num  { font-size: 10.5px; font-weight: 600; text-anchor: middle; }
-    .sign { font-size: 10.5px; font-weight: 700; text-anchor: middle; }
+    .num  { font-size: 9.5px; font-weight: 600; text-anchor: middle; }
+    .sign { font-size: 9.5px; font-weight: 700; text-anchor: middle; }
     .amp  { font-size: 6px; font-weight: 500; letter-spacing: 0.2em; text-anchor: middle; fill: #d8d6cd; }
     .needle { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
   </style>
@@ -170,7 +170,7 @@
 
         <!-- domed glass: one soft pool top-left, one catch along the lower rim -->
         <circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="url(#dome)"/>
-        <path d="M ${CX - 44} ${CY + 6} Q ${CX - 30} ${CY - 44} ${CX + 20} ${CY - 40} L ${CX + 27} ${CY - 30} Q ${CX - 18} ${CY - 34} ${CX - 33} ${CY + 18} Z" fill="#fff" opacity="0.1"/>
+        <path d="M ${CX - 44} ${CY + 6} Q ${CX - 30} ${CY - 44} ${CX + 20} ${CY - 40} L ${CX + 27} ${CY - 30} Q ${CX - 18} ${CY - 34} ${CX - 33} ${CY + 18} Z" fill="#fff" opacity="0.085" filter="url(#s06)"/>
         <path d="M ${CX - 30} ${CY + 41} A 44 44 0 0 0 ${CX + 34} ${CY + 29}" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="2.6" filter="url(#s06)"/>
         <!-- the bezel's shadow falling on the dial -->
         <circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="7" filter="url(#s2)"/>
@@ -249,7 +249,7 @@
         const [x0, y0] = this._pt(a, RT), [x1, y1] = this._pt(a, RT - len);
         mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: "#ecebe4", "stroke-width": w, "stroke-opacity": op, "stroke-linecap": "butt" });
       };
-      for (let v = -M; v <= M + 0.001; v += 10) tick(v, v === 0 ? 9 : 7.5, v === 0 ? 1.8 : 1.5, 0.95);
+      for (let v = -M; v <= M + 0.001; v += 10) tick(v, v === 0 ? 8.5 : 7, v === 0 ? 1.8 : 1.5, 0.95);
       if (M <= 30) for (let v = -M + 5; v < M; v += 10) tick(v, 4.2, 1, 0.6);
       // three numerals and the two signs
       // the numerals sit upright inside the arc, the signs outboard of them
@@ -257,11 +257,11 @@
         const [x, y] = this._pt(deg, r);
         mk("text", { x: x, y: y + 3.5, "class": cls }, txt);
       };
-      at(-SWEEP / 2, 59, "num", String(M));
-      at(0, 59, "num", "0");
-      at(SWEEP / 2, 59, "num", String(M));
-      at(-SWEEP / 2 - 8, 51, "sign", "−");
-      at(SWEEP / 2 + 8, 51, "sign", "+");
+      at(-SWEEP / 2, 55.5, "num", String(M));
+      at(0, 55.5, "num", "0");
+      at(SWEEP / 2, 55.5, "num", String(M));
+      at(-SWEEP / 2 - 9, 48, "sign", "−");
+      at(SWEEP / 2 + 9, 48, "sign", "+");
     }
 
     _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }

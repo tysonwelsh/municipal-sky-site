@@ -67,7 +67,7 @@
   ':host { display:inline-block; flex:0 0 auto; width:' + W + 'px; height:' + H + 'px; position:relative;',
   '  font-size:10px; -webkit-tap-highlight-color:transparent; }',
   ':host([hidden]) { display:none; }',
-  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  '.wrap { position:absolute; left:0; top:0; width:' + W + 'px; height:' + H + 'px; transform-origin:0 0; }',
   /* ---- the gold plexi panel ---- */
   '.panel { position:absolute; inset:0; border-radius:1.5px; overflow:hidden;',
   '  background:',
@@ -126,7 +126,7 @@
   '.gt { top:-2.6px; opacity:0.9; } .gb { bottom:-2.6px; opacity:0; }',
   ':host(.is-on) .gt { opacity:0; } :host(.is-on) .gb { opacity:0.9; }',
   /* moulded ON + arrow, white paint half worn */
-  '.mark { position:absolute; left:0; right:0; top:1.4px; height:8px; display:flex; align-items:center;',
+  '.mark { position:absolute; left:0; right:0; top:0.9px; height:8px; display:flex; align-items:center;',
   '  justify-content:center; gap:2.5px; pointer-events:none; }',
   '.mark b { font-family:"Barlow","Helvetica Neue",Arial,sans-serif; font-weight:700; font-size:6px;',
   '  letter-spacing:0.1em; color:rgba(236,236,226,0.66); text-shadow:0 0.5px 0 rgba(84,6,10,0.8); }',
