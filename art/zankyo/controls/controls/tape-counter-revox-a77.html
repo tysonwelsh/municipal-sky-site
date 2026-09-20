@@ -326,7 +326,7 @@
         const back = Math.sin(this._rs * Math.PI) * 0.12;              // a touch of overshoot on the way to zero
         pos = this._from.map(d => Math.max(0, d * (1 - e) - back));
       } else pos = this._drumPos();
-      for (let k = 0; k < N; k++) {
+      for (let k = 0; k < this._wheels.length; k++) {
         const p = Math.max(0, pos[k] || 0);
         const fl = Math.floor(p), r = p - fl, d = fl % 10;
         const slots = this._wheels[k];
