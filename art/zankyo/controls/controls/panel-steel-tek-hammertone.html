@@ -157,14 +157,14 @@
       // -- filters: hammertone dimples, or the smooth 465 orange-peel --
       const hammer = mk("filter", { id: "hf" + id, x: "-6%", y: "-6%", width: "112%", height: "112%" });
       hammer.innerHTML = `
-        <feTurbulence type="fractalNoise" baseFrequency="0.38 0.42" numOctaves="2" seed="7" result="n"/>
-        <feDiffuseLighting in="n" surfaceScale="2.8" diffuseConstant="1.35" lighting-color="#ffffff" result="lite">
-          <feDistantLight azimuth="235" elevation="55"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.055 0.06" numOctaves="3" seed="7" result="n"/>
+        <feDiffuseLighting in="n" surfaceScale="3.4" diffuseConstant="1.5" lighting-color="#ffffff" result="lite">
+          <feDistantLight azimuth="235" elevation="50"/>
         </feDiffuseLighting>
         <feComponentTransfer in="lite" result="lite2">
-          <feFuncR type="linear" slope="0.5" intercept="0.16"/>
-          <feFuncG type="linear" slope="0.5" intercept="0.16"/>
-          <feFuncB type="linear" slope="0.5" intercept="0.16"/>
+          <feFuncR type="linear" slope="0.6" intercept="0.06"/>
+          <feFuncG type="linear" slope="0.6" intercept="0.06"/>
+          <feFuncB type="linear" slope="0.6" intercept="0.06"/>
         </feComponentTransfer>
         <feBlend in="SourceGraphic" in2="lite2" mode="hard-light"/>`;
       this._defs.appendChild(hammer);

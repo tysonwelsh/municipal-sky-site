@@ -157,7 +157,10 @@
     }
     connectedCallback() {
       if (!this.hasAttribute("value")) this.setAttribute("value", "1");
-      this._readAttrs(); this._render();
+      const first = !this._everConnected; this._everConnected = true;
+      this._readAttrs();
+      if (first) this._focus = this._value - 1;
+      this._render();
       const g = this._cellsG;
       g.addEventListener("pointerdown", this._onDown);
       g.addEventListener("keydown", this._onKey);
