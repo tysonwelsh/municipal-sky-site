@@ -34,8 +34,8 @@
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="aluminium-black">
     <sk-tape-counter-revox value="0"></sk-tape-counter-revox>
-    <sk-tape-counter-revox value="1247.4" transport="play"></sk-tape-counter-revox>
-    <sk-tape-counter-revox value="3989.55" transport="rewind" scale="1.5"></sk-tape-counter-revox>
+    <sk-tape-counter-revox value="1247.25" transport="play"></sk-tape-counter-revox>
+    <sk-tape-counter-revox value="3989.2" transport="rewind" scale="1.5"></sk-tape-counter-revox>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -69,7 +69,7 @@
   const W = 150, H = 60, N = 4;
   const DX = 13.5, DY = 15.5, DW = 81, DH = 28;      // the drum window inside the chrome frame
   const CY = DY + DH / 2;
-  const R = 41;                                      // apparent drum radius
+  const R = 38;                                      // apparent drum radius
   const STEP = 36;
   const BX = 122, BY = 29.5;                         // the reset button
 
@@ -81,7 +81,7 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; overflow: visible; }
     text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
-    .fig { font-size: 16px; font-weight: 500; text-anchor: middle; fill: #f3f3ee; }
+    .fig { font-size: 13px; font-weight: 500; text-anchor: middle; fill: #f3f3ee; }
     .leg { font-size: 5px; font-weight: 500; letter-spacing: 0.2em; text-anchor: middle; }
     .btn { cursor: pointer; }
     .btng { transition: transform 80ms ease-out; }
@@ -120,8 +120,8 @@
      <stop offset="0.82" stop-color="#101010"/><stop offset="1" stop-color="#232323"/>
     </radialGradient>
     <pattern id="brush" width="6" height="3" patternUnits="userSpaceOnUse">
-     <rect width="6" height="0.8" fill="#d8dad7" opacity="0.55"/>
-     <rect y="1.6" width="6" height="0.6" fill="#b3b5b2" opacity="0.5"/>
+     <rect width="6" height="0.7" fill="#dfe1de" opacity="0.4"/>
+     <rect y="1.5" width="6" height="0.5" fill="#b6b8b5" opacity="0.38"/>
     </pattern>
     <filter id="streak" x="0" y="0" width="100%" height="100%">
      <feTurbulence type="fractalNoise" baseFrequency="0.012 1.6" numOctaves="2" seed="5"/>
@@ -146,22 +146,22 @@
    <path d="M 4 ${H - 2.1} h ${W - 8}" fill="none" stroke="#6f716c" stroke-opacity="0.8" stroke-width="0.8"/>
 
    <!-- the assembly's shadow on the plate -->
-   <rect x="11.5" y="14.2" width="86" height="33" rx="3" fill="#000" opacity="0.42" filter="url(#tight)"/>
+   <rect x="12" y="14.6" width="85" height="32" rx="3" fill="#000" opacity="0.45" filter="url(#tight)"/>
    <ellipse cx="${BX}" cy="${BY + 1.6}" rx="13.6" ry="13.6" fill="#000" opacity="0.4" filter="url(#tight)"/>
 
    <!-- the chrome frame, 2 px thick with 2 px corners -->
-   <rect x="11" y="13" width="86" height="33" rx="3" fill="url(#chrome)" stroke="#5f615c" stroke-width="0.5"/>
-   <rect x="12" y="14" width="84" height="31" rx="2.4" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.5"/>
+   <rect x="11.5" y="13.5" width="85" height="32" rx="2.6" fill="url(#chrome)" stroke="#5a5c57" stroke-width="0.45"/>
+   <rect x="12.2" y="14.2" width="83.6" height="30.6" rx="2.2" fill="none" stroke="#fff" stroke-opacity="0.4" stroke-width="0.4"/>
 
    <!-- the window: rebate, drums, the drums' own cast shadow under the frame -->
    <rect x="${DX - 0.9}" y="${DY - 0.9}" width="${DW + 1.8}" height="${DH + 1.8}" rx="1.4" fill="#0e0e0e"/>
    <rect x="${DX}" y="${DY}" width="${DW}" height="${DH}" rx="1" fill="url(#drum)"/>
    <g clip-path="url(#win)">
     <g id="whg" class="wheels"></g>
-    <use class="ghost" href="#whg" y="-3" opacity="0"/>
+    <use class="ghost" href="#whg" y="-2.6" opacity="0"/>
     <g class="seams"></g>
-    <rect x="${DX - 1}" y="${DY - 1}" width="${DW + 2}" height="${DH + 2}" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.6" filter="url(#tight)"/>
-    <path d="M ${DX} ${DY} L ${DX + 34} ${DY} L ${DX + 8} ${DY + DH} L ${DX} ${DY + DH} Z" fill="#fff" opacity="0.045"/>
+    <rect x="${DX - 1}" y="${DY - 1}" width="${DW + 2}" height="${DH + 2}" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="1.8" filter="url(#tight)"/>
+    <path d="M ${DX} ${DY} L ${DX + 34} ${DY} L ${DX + 8} ${DY + DH} L ${DX} ${DY + DH} Z" fill="#fff" opacity="0.03"/>
    </g>
 
    <!-- the reset button: a shallow black dome in a chrome collar -->
@@ -274,11 +274,15 @@
         const slots = []; slots.cx = DX + cw * (col + 0.5);
         const gw = mk("g", {});
         for (let j = -1; j <= 1; j++) {
-          const t = mk("text", { x: 0, y: 5.6, class: "fig" });
+          const t = mk("text", { x: 0, y: 4.6, class: "fig" });
           t._d = -1; gw.appendChild(t); slots.push(t);
         }
         g.appendChild(gw); this._wheels.push(slots);
-        if (k < N - 1) s.appendChild(mk("rect", { x: (DX + cw * col).toFixed(2), y: DY, width: 0.6, height: DH, fill: "#000", opacity: 0.75 }));
+        if (k < N - 1) {
+          const sx = DX + cw * col;
+          s.appendChild(mk("rect", { x: sx.toFixed(2), y: DY, width: 0.7, height: DH, fill: "#000", opacity: 0.85 }));
+          s.appendChild(mk("rect", { x: (sx + 0.7).toFixed(2), y: DY, width: 0.4, height: DH, fill: "#6d6d6d", opacity: 0.45 }));
+        }
       }
     }
 
@@ -342,7 +346,7 @@
       }
       // fast spin smears: a second copy of the drums at 30 %, three pixels above
       const fast = this._tp === "rewind" || (this._rs > 0 && this._rs < 0.9) || Math.abs(this._vel) > 6;
-      this._ghost.setAttribute("opacity", fast ? "0.3" : "0");
+      this._ghost.setAttribute("opacity", fast ? "0.28" : "0");
       let s = String(Math.floor(this._rs ? 0 : this._disp));
       while (s.length < N) s = "0" + s;
       if (s !== this._lab) { this._lab = s; this.setAttribute("aria-label", "tape counter " + s); }

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marshall red rocker on gold plexi — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Archivo+Narrow:wght@600;700&family=Barlow:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "rocker-marshall-plexi-red",
+  "element": "sk-rocker-marshall-plexi-red",
+  "name": "Marshall red rocker on gold plexi",
+  "kind": "input",
+  "code": "C4",
+  "type": "Rocker switch",
+  "source": "The Bulgin-type red rocker, POWER and STANDBY, on the gold brushed-aluminium panel of a Marshall JTM45 / 1959 Super Lead",
+  "era": "1960s",
+  "origin": "UK",
+  "materials": ["moulded translucent red plastic", "black plastic bezel", "brushed gold anodised aluminium", "red neon pilot"],
+  "tags": ["amplifier", "guitar", "see-saw", "power", "standby", "plexi", "pilot lamp"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "legend", "label", "lamp", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 96, "h": 80 },
+  "notes": "POWER on with its pilot neon lit, STANDBY off, and a larger pair. Click either half, drag up or down the throw, Space/Enter, or the arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-rocker-marshall-plexi-red value="true" legend="POWER" scale="1.5"></sk-rocker-marshall-plexi-red>
+    <sk-rocker-marshall-plexi-red value="false" legend="STANDBY" lamp="off" scale="1.5"></sk-rocker-marshall-plexi-red>
+    <sk-rocker-marshall-plexi-red value="false" legend="POWER" lamp="auto"></sk-rocker-marshall-plexi-red>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Every plexi-panel <b>Marshall</b> from the JTM45 to the 1959 Super Lead carries the same pair of red
+  Bulgin-type rockers at the right-hand end of the gold panel — POWER first, then the neon pilot in its chrome
+  bezel, then STANDBY — silk-screened in black capitals on brushed gold anodised aluminium.</p>
+  <p><b>The tells kept here:</b> the gold itself, brushed with a fine horizontal grain and crossed by one broad
+  diagonal reflection, warm rather than yellow; the rocker as a real see-saw about a visible fulcrum line, the
+  pressed half flush with the bezel and the other half standing proud with its outer edge catching the light;
+  the moulded <i>ON</i> and its arrow in the top half, painted white and half worn away; the translucent
+  moulding, so the compressed half goes darker and the raised half glows red along its edge; the black bezel
+  with a hair of bare aluminium round the cut-out; the neon pilot warming up over 300 ms; and the scuff on the
+  gold where a hand rests to reach across.</p>
+  <p><b>Left out:</b> the Bulgin part number moulded on the side of the body, the mains legend plate, and the
+  sag of a forty-year-old panel that no longer sits flat in the cabinet.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-rocker-marshall-plexi-red> — red see-saw rocker on a gold plexi panel, with its neon pilot ====
+   attributes: value("true"/"false") legend label lamp("auto"|"on"|"off"|"none") scale disabled
+   events: input {value} and change {value} on every user toggle
+   self-contained: paste this block into any page and use <sk-rocker-marshall-plexi-red value="true" legend="POWER"> */
+(function () {
+  if (customElements.get("sk-rocker-marshall-plexi-red")) return;
+  var W = 96, H = 80;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
+  '  -webkit-tap-highlight-color:transparent; }',
+  ':host([hidden]) { display:none; }',
+  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  /* ---- the gold plexi panel ---- */
+  '.panel { position:absolute; inset:0; border-radius:2px; overflow:hidden;',
+  '  background:',
+  '    repeating-linear-gradient(0deg, rgba(255,246,214,0.10) 0 1px, rgba(58,38,6,0.10) 1px 2px),',
+  '    linear-gradient(103deg, rgba(255,255,255,0) 14%, rgba(255,248,214,0.26) 33%, rgba(255,248,214,0.07) 47%, rgba(255,255,255,0) 66%),',
+  '    linear-gradient(178deg, #c6a44e 0%, #b4933f 46%, #9d7d33 78%, #8a6b2b 100%);',
+  '  box-shadow: inset 0 1px 0 rgba(255,246,214,0.45), inset 0 -1px 0 rgba(40,26,4,0.55),',
+  '    inset 1px 0 0 rgba(255,246,214,0.18), 0 1px 2px rgba(0,0,0,0.5); }',
+  '.scuff { position:absolute; left:6px; bottom:5px; width:52px; height:12px; border-radius:50%;',
+  '  background: radial-gradient(50% 50% at 50% 50%, rgba(255,250,224,0.20), rgba(255,250,224,0) 72%);',
+  '  transform: rotate(-3deg); }',
+  '.scratch { position:absolute; height:1px; background: linear-gradient(90deg, rgba(255,252,232,0) , rgba(255,252,232,0.38), rgba(255,252,232,0)); }',
+  '.s1 { left:8px; bottom:11px; width:40px; transform:rotate(-1.4deg); }',
+  '.s2 { left:18px; bottom:8px; width:26px; opacity:0.6; transform:rotate(1deg); }',
+  /* ---- silk-screened legend ---- */
+  '.legend { position:absolute; left:0; top:5px; width:70px; text-align:center;',
+  '  font-family:"Archivo Narrow","Roboto Condensed","Arial Narrow",sans-serif; font-weight:600;',
+  '  font-size:8px; line-height:11px; letter-spacing:0.06em; color:#141414;',
+  '  text-shadow:0 0.5px 0 rgba(255,247,216,0.3); white-space:nowrap; }',
+  /* ---- the black bezel let into the panel ---- */
+  '.bezel { position:absolute; left:5px; top:23px; width:60px; height:34px; border-radius:3.5px;',
+  '  background: linear-gradient(176deg, #26262a 0%, #17171a 38%, #101012 72%, #0a0a0c 100%);',
+  '  box-shadow: 0 0 0 0.6px rgba(232,206,136,0.55), inset 0 1px 0 rgba(255,255,255,0.16),',
+  '    inset 0 -1px 0 rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.6), 0 3px 6px rgba(0,0,0,0.38); }',
+  '.well { position:absolute; left:3.4px; top:3.4px; right:3.4px; bottom:3.4px; border-radius:2px;',
+  '  background:#050506; box-shadow: inset 0 2px 3px rgba(0,0,0,0.9); }',
+  /* ---- the see-saw ---- */
+  '.rock3d { position:absolute; left:4px; top:4px; width:52px; height:26px; perspective:150px; }',
+  '.rock { position:absolute; inset:0; border-radius:2.5px; transform-style:preserve-3d;',
+  '  transform: rotateX(-15deg); transition: transform 80ms cubic-bezier(.2,.9,.3,1.3);',
+  '  background: linear-gradient(177deg, #d32a31 0%, #bb1720 34%, #9d1018 62%, #790c12 86%, #6f0b10 100%);',
+  '  box-shadow: 0 1px 2px rgba(0,0,0,0.65), inset 0 0 6px rgba(255,120,110,0.12); }',
+  ':host(.is-on) .rock { transform: rotateX(15deg); }',
+  '.half { position:absolute; left:0; right:0; height:13px; pointer-events:none; }',
+  '.ht { top:0; border-radius:2.5px 2.5px 0 0;',
+  '  background: linear-gradient(180deg, rgba(255,255,255,0.26), rgba(255,140,130,0.05) 72%, rgba(255,255,255,0)); }',
+  '.hb { bottom:0; border-radius:0 0 2.5px 2.5px;',
+  '  background: linear-gradient(0deg, rgba(0,0,0,0.42), rgba(0,0,0,0.18) 60%, rgba(0,0,0,0)); }',
+  ':host(.is-on) .ht { background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.20) 60%, rgba(0,0,0,0)); }',
+  ':host(.is-on) .hb { background: linear-gradient(0deg, rgba(255,255,255,0.22), rgba(255,140,130,0.06) 72%, rgba(255,255,255,0)); }',
+  '.ful { position:absolute; left:0; right:0; top:13px; height:1px; margin-top:-0.5px;',
+  '  background: rgba(0,0,0,0.5); box-shadow: 0 1px 0 rgba(255,170,160,0.18); }',
+  '.edge { position:absolute; left:2px; right:2px; height:1.6px; border-radius:1.5px;',
+  '  background: linear-gradient(90deg, rgba(255,160,150,0), rgba(255,206,196,0.95) 38%, rgba(255,150,140,0.35));',
+  '  transition: opacity 80ms linear; }',
+  '.et { top:-0.4px; opacity:1; } .eb { bottom:-0.4px; opacity:0; }',
+  ':host(.is-on) .et { opacity:0; } :host(.is-on) .eb { opacity:1; }',
+  '.glow { position:absolute; left:4px; right:4px; height:5px; border-radius:50%; pointer-events:none;',
+  '  background: radial-gradient(50% 50% at 50% 50%, rgba(255,60,50,0.55), rgba(255,60,50,0) 72%);',
+  '  filter: blur(1.4px); transition: opacity 80ms linear; }',
+  '.gt { top:-2.5px; opacity:0.85; } .gb { bottom:-2.5px; opacity:0; }',
+  ':host(.is-on) .gt { opacity:0; } :host(.is-on) .gb { opacity:0.85; }',
+  /* moulded ON + arrow, white paint half worn */
+  '.mark { position:absolute; left:0; right:0; top:2.2px; height:9px; display:flex; align-items:center;',
+  '  justify-content:center; gap:2.5px; pointer-events:none; }',
+  '.mark b { font-family:"Barlow","Helvetica Neue",Arial,sans-serif; font-weight:700; font-size:6px;',
+  '  letter-spacing:0.08em; color:rgba(233,233,222,0.62); text-shadow:0 0.5px 0 rgba(80,6,10,0.75); }',
+  '.arw { width:0; height:0; border-left:2.6px solid transparent; border-right:2.6px solid transparent;',
+  '  border-top:3.4px solid rgba(233,233,222,0.5); filter: drop-shadow(0 0.5px 0 rgba(80,6,10,0.7)); }',
+  /* ---- the neon pilot in its chrome bezel ---- */
+  '.lamp { position:absolute; left:70px; top:30px; width:21px; height:21px; border-radius:50%;',
+  '  background: conic-gradient(from 210deg, #6e737a, #eef1f4 14%, #9aa0a7 30%, #52575e 46%, #cfd4d9 62%, #7b8087 78%, #3e4248 92%, #6e737a);',
+  '  box-shadow: 0 1px 2px rgba(0,0,0,0.6), 0 2px 5px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(0,0,0,0.5); }',
+  '.lamp::after { content:""; position:absolute; left:2.2px; top:2.2px; right:2.2px; bottom:2.2px;',
+  '  border-radius:50%; box-shadow: inset 0 1.5px 2px rgba(0,0,0,0.75); background:#1b0406; }',
+  '.jewel { position:absolute; left:4px; top:4px; width:13px; height:13px; border-radius:50%; z-index:1;',
+  '  background: radial-gradient(60% 55% at 34% 30%, #8c1218, #56090e 52%, #340508 78%, #220305);',
+  '  box-shadow: inset 0 -1px 2px rgba(255,120,110,0.12); transition: background 260ms ease-out; }',
+  '.jewel::after { content:""; position:absolute; left:2px; top:1.6px; width:5px; height:3.4px; border-radius:50%;',
+  '  background: linear-gradient(160deg, rgba(255,255,255,0.7), rgba(255,255,255,0.05)); }',
+  '.halo { position:absolute; left:-4px; top:-4px; width:29px; height:29px; border-radius:50%; opacity:0;',
+  '  background: radial-gradient(50% 50% at 50% 50%, rgba(255,60,45,0.55), rgba(255,40,30,0.18) 46%, rgba(255,40,30,0) 72%);',
+  '  filter: blur(2px); transition: opacity 250ms ease-out; pointer-events:none; }',
+  ':host(.lit) .jewel { background: radial-gradient(58% 52% at 36% 32%, #ffd9cf, #ff5a3c 34%, #f01d16 62%, #a20d10);',
+  '  box-shadow: inset 0 -1px 2px rgba(255,180,150,0.5), 0 0 6px rgba(255,60,40,0.55); transition: background 300ms ease-out; }',
+  ':host(.lit) .halo { opacity:1; transition: opacity 300ms ease-out; }',
+  ':host([lamp="none"]) .lamp { display:none; }',
+  /* ---- the hit area + focus ---- */
+  '.grab { position:absolute; left:3px; top:21px; width:64px; height:38px; border-radius:5px;',
+  '  cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; outline:none; }',
+  ':host([disabled]) .grab { cursor:default; }',
+  '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="panel">',
+  '    <div class="scuff"></div><div class="scratch s1"></div><div class="scratch s2"></div>',
+  '    <div class="legend">POWER</div>',
+  '    <div class="lamp"><div class="halo"></div><div class="jewel"></div></div>',
+  '    <div class="bezel">',
+  '      <div class="well"></div>',
+  '      <div class="rock3d"><div class="rock">',
+  '        <div class="half ht"></div><div class="half hb"></div>',
+  '        <div class="ful"></div>',
+  '        <div class="mark"><b>ON</b><i class="arw"></i></div>',
+  '        <div class="edge et"></div><div class="edge eb"></div>',
+  '        <div class="glow gt"></div><div class="glow gb"></div>',
+  '      </div></div>',
+  '    </div>',
+  '    <div class="grab" role="switch" tabindex="0"></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function truthy(v) { return v === true || v === 1 || v === "true" || v === "1" || v === "on" || v === "yes"; }
+
+  class SkRockerMarshall extends HTMLElement {
+    static get observedAttributes() { return ["value", "legend", "label", "lamp", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._v = false; this._scale = 1; this._wired = false; this._drag = null;
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._legend = r.querySelector(".legend");
+      this._onDown = this._onDown.bind(this);
+      this._onMove = this._onMove.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKey = this._onKey.bind(this);
+      this._onWheel = this._onWheel.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "false");
+      this._read(); this._render();
+      if (this._wired) return;                      /* stage.js re-parents us once: only wire up the once */
+      this._wired = true;
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("keydown", this._onKey);
+      this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+    }
+    disconnectedCallback() { this._endDrag(); }
+    attributeChangedCallback(n, o, v) { if (o === v) return; this._read(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      var b = truthy(v);
+      this._v = b;
+      if (this.getAttribute("value") !== String(b)) this.setAttribute("value", String(b));
+      this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+    blur() { this._grab.blur(); }
+
+    _read() {
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this._v = truthy(this.getAttribute("value"));
+      this._legend.textContent = this.getAttribute("legend") || "POWER";
+      var dis = this.hasAttribute("disabled");
+      this._grab.setAttribute("tabindex", dis ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._grab.setAttribute("aria-label", this.getAttribute("label") || this.getAttribute("legend") || "power");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      this.classList.toggle("is-on", this._v);
+      var lamp = this.getAttribute("lamp") || "auto";
+      var lit = lamp === "on" || (lamp !== "off" && lamp !== "none" && this._v);
+      this.classList.toggle("lit", lit);
+      this._grab.setAttribute("aria-checked", this._v ? "true" : "false");
+    }
+    _emit(t) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: { value: this._v } })); }
+    _set(b, settle) {
+      if (b !== this._v) {
+        this._v = b;
+        this.setAttribute("value", String(b));
+        this._render();
+        this._emit("input");
+        if (settle) this._emit("change");
+        return true;
+      }
+      return false;
+    }
+    /* pointer: a click toggles; dragging up or down the throw picks the half */
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      var b = this.getBoundingClientRect();
+      this._drag = { mid: b.top + b.height * 0.5, y0: e.clientY, moved: false, changed: false };
+    }
+    _onMove(e) {
+      var d = this._drag; if (!d) return;
+      if (Math.abs(e.clientY - d.y0) > 2.5) d.moved = true;
+      if (!d.moved) return;
+      if (this._set(e.clientY < d.mid, false)) d.changed = true;
+    }
+    _onUp(e) {
+      var d = this._drag; if (!d) return;
+      this._endDrag(e);
+      if (!d.moved) { if (this._set(!this._v, false)) d.changed = true; }
+      if (d.changed) this._emit("change");
+    }
+    _endDrag(e) {
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      if (e) { try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {} }
+      this._drag = null;
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      var want = e.deltaY < 0;
+      if (want === this._v) return;                 /* nothing to do: let the page scroll */
+      e.preventDefault();
+      this._set(want, true);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var want = null;
+      switch (e.key) {
+        case " ": case "Spacebar": case "Enter": want = !this._v; break;
+        case "ArrowUp": case "ArrowRight": case "End": want = true; break;
+        case "ArrowDown": case "ArrowLeft": case "Home": want = false; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(want, true);
+    }
+  }
+  customElements.define("sk-rocker-marshall-plexi-red", SkRockerMarshall);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

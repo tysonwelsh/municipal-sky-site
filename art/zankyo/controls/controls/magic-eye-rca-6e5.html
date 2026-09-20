@@ -68,8 +68,8 @@
   if (customElements.get("sk-magic-eye-6e5")) return;
   const W = 96, H = 96;
   const CX = 48, CY = 41;
-  const R_HOLE = 30, R_OUT = 21, R_IN = 10.2, R_CAP = 9.6;
-  const A_OPEN = 45, A_SHUT = 0.7;             // half-angle of the shadow wedge, degrees
+  const R_HOLE = 30, R_OUT = 22, R_IN = 9.8, R_CAP = 9.2;
+  const A_OPEN = 46, A_SHUT = 0.7;             // half-angle of the shadow wedge, degrees
   const RD = Math.PI / 180;
 
   const TPL = document.createElement("template");
@@ -95,11 +95,12 @@
           <stop offset="1" stop-color="#4f5154"/>
         </linearGradient>
         <radialGradient id="pho" gradientUnits="userSpaceOnUse" cx="${CX}" cy="${CY}" r="${R_OUT}">
-          <stop offset="0.44" stop-color="#cdffdc"/>
-          <stop offset="0.52" stop-color="#b6ffcb"/>
-          <stop offset="0.70" stop-color="#7bffa0"/>
-          <stop offset="0.90" stop-color="#4fd47c"/>
-          <stop offset="1" stop-color="#3fbf68"/>
+          <stop offset="0.40" stop-color="#d8ffe4"/>
+          <stop offset="0.47" stop-color="#b6ffcb"/>
+          <stop offset="0.66" stop-color="#7bffa0"/>
+          <stop offset="0.85" stop-color="#48c974"/>
+          <stop offset="0.97" stop-color="#2f9d54"/>
+          <stop offset="1" stop-color="#247f44"/>
         </radialGradient>
         <radialGradient id="glass" gradientUnits="userSpaceOnUse" cx="${CX}" cy="${CY}" r="${R_HOLE}">
           <stop offset="0" stop-color="#0d1b13"/><stop offset="0.75" stop-color="#08120c"/><stop offset="1" stop-color="#040806"/>
@@ -115,7 +116,7 @@
         <clipPath id="hole"><circle cx="${CX}" cy="${CY}" r="${R_HOLE}"/></clipPath>
         <clipPath id="out"><path clip-rule="evenodd" d="M 0 0 H ${W} V ${H} H 0 Z M ${CX - R_OUT} ${CY} a ${R_OUT} ${R_OUT} 0 1 0 ${R_OUT * 2} 0 a ${R_OUT} ${R_OUT} 0 1 0 ${-R_OUT * 2} 0 Z"/></clipPath>
         <clipPath id="ring"><circle cx="${CX}" cy="${CY}" r="${R_OUT + 0.4}"/></clipPath>
-        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.15"/></filter>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.85"/></filter>
         <filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.7"/></filter>
         <filter id="bloom" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2"/></filter>
         <filter id="bloom2" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
@@ -139,7 +140,7 @@
         </g>
         <ellipse cx="22" cy="8" rx="46" ry="26" fill="#fff" opacity="0.06"/>
       </g>
-      <rect x="0.4" y="0.4" width="${W - 0.8}" height="${H - 0.8}" fill="none" stroke="#e0b98a" stroke-opacity="0.16" stroke-width="0.8"/>
+      <rect x="0.4" y="0.4" width="${W - 0.8}" height="${H - 0.8}" fill="none" stroke="#e0b98a" stroke-opacity="0.10" stroke-width="0.8"/>
       <path d="M 0.4 ${H - 0.4} H ${W - 0.4} V 0.4" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="0.8"/>
       <!-- the escutcheon ring, set into the veneer -->
       <circle cx="${CX}" cy="${CY + 2}" r="${R_HOLE + 8}" fill="#000" opacity="0.55" filter="url(#drop)"/>
@@ -152,7 +153,7 @@
       <g clip-path="url(#hole)">
         <circle cx="${CX}" cy="${CY}" r="${R_HOLE}" fill="url(#glass)"/>
         <g class="glow">
-          <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="#54cf80" stroke-width="${R_OUT - R_IN + 3}" opacity="0.38" filter="url(#bloom)"/>
+          <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="#54cf80" stroke-width="${R_OUT - R_IN}" opacity="0.28" filter="url(#bloom)"/>
           <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="url(#pho)" stroke-width="${R_OUT - R_IN}"/>
           <circle cx="${CX}" cy="${CY}" r="${R_IN + 0.8}" fill="none" stroke="#e8fff1" stroke-opacity="0.6" stroke-width="1.1" filter="url(#soft)"/>
         </g>
@@ -162,8 +163,8 @@
         </g>
         <!-- the wedge shadow, its bright lips, and the overlap sliver -->
         <g clip-path="url(#ring)">
-          <path class="wedge" d="" fill="#081409" filter="url(#soft)"/>
-          <path class="lips" d="" fill="none" stroke="#d8ffe6" stroke-opacity="0.45" stroke-width="1.5" filter="url(#soft2)"/>
+          <path class="wedge" d="" fill="#050f07" filter="url(#soft)"/>
+          <path class="lips" d="" fill="none" stroke="#e2fff0" stroke-opacity="0.6" stroke-width="2" filter="url(#soft2)"/>
           <path class="sliver" d="" fill="#e6ffee" opacity="0.92" filter="url(#soft)"/>
         </g>
         <!-- the cathode shield cap, matte black, with the filament's glint under it -->

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apollo CM toggle between wicket guards — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "toggle-apollo-wicket",
+  "element": "sk-toggle-apollo-wicket",
+  "name": "Apollo CM toggle between wicket guards",
+  "kind": "input",
+  "code": "C1",
+  "type": "Toggle switch, bat handle",
+  "source": "Micro Switch / Grace bat toggle between wicket guard bars on the Apollo Command Module Main Display Console, 1966-72",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["chrome-plated brass", "black anodised aluminium", "painted aluminium", "engraved grey panel"],
+  "tags": ["spacecraft", "cockpit", "wicket guard", "bat handle", "hex nut", "engraved legend"],
+  "value": { "model": "steps", "options": ["OFF", "ON"], "unit": "" },
+  "attributes": ["value", "positions", "label", "up", "mid", "down", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 64, "h": 96 },
+  "notes": "Three switches between wicket guards: ON, OFF, and a three-position one resting at AUTO. Click, drag along the throw, wheel or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium-black">
+    <sk-toggle-apollo-wicket value="ON" label="SUIT FAN"></sk-toggle-apollo-wicket>
+    <sk-toggle-apollo-wicket value="OFF" label="GLY PUMP"></sk-toggle-apollo-wicket>
+    <sk-toggle-apollo-wicket positions="3" value="AUTO" label="O2 FLOW" up="HI" mid="AUTO" down="OFF"></sk-toggle-apollo-wicket>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The Apollo Command Module's Main Display Console is a grey aluminium wall of <b>bat toggles</b>, and almost
+  every one of them stands between a pair of <b>wicket guards</b> — two short rails bolted proud of the panel,
+  taller than the bat's throw, so that a pressure-suited glove, a drifting checklist or a floating pen cannot
+  catch the handle sideways. The switches themselves are Micro Switch / Grace parts: a stubby chrome bat with a
+  ball tip on a black anodised bushing, clamped by a big flat twelve-point nut over a serrated lock washer.</p>
+  <p><b>The tells kept here:</b> the two rails, drawn first because they are the first thing you see; the short
+  bat with its spherical tip, which in the up position brings the ball to just under the top of the rails; the
+  twelve-point nut with its chamfer facets alternating light and dark around the light source, and the lock
+  washer's teeth peeking out from under its edge; the black-filled <i>engraved</i> legend on mid-grey paint,
+  the Apollo way round, never white on black; the keyway notch at twelve o'clock and the black crescent where
+  the panel hole is a hair larger than the bushing; the lathe rings on the bushing face; a soft shadow from the
+  rails down and right, a harder, smaller one from the bat. Because the bat leans toward you rather than across
+  the panel, it foreshortens: at the centre stop of the three-position switch you see the ball sitting on the
+  bushing, a little larger for being nearer.</p>
+  <p><b>Left out:</b> the console's module outlines and the circuit-breaker rows around it, the numbered switch
+  index printed beside each group, and the rear wiring lugs. The legends are generic Apollo subsystem words
+  rather than any one panel's exact set.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-toggle-apollo-wicket> — Apollo CM bat toggle between wicket guard rails ====
+   attributes: value ("OFF"|"ON"|mid legend) positions("2"|"3") label up mid down scale disabled
+   events: input {value} while the throw moves, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-toggle-apollo-wicket value="ON"></sk-toggle-apollo-wicket> */
+(function () {
+  var TAG = "sk-toggle-apollo-wicket";
+  if (customElements.get(TAG)) return;
+
+  var H = 96, CX = 32, CY = 54, LEN = 20, BALL = 4.6, W2 = 64, W3 = 76;
+  var TAU = Math.PI * 2, LIGHT = -0.78;           // light direction, radians from "up", above-left
+
+  function P(cx, cy, r, a) { return (cx + r * Math.sin(a)).toFixed(2) + "," + (cy - r * Math.cos(a)).toFixed(2); }
+  function polyPts(cx, cy, r, n, rot) { var p = [], i; for (i = 0; i < n; i++) p.push(P(cx, cy, r, i / n * TAU + rot)); return p.join(" "); }
+  function starPts(cx, cy, r1, r2, n) { var p = [], i; for (i = 0; i < n * 2; i++) p.push(P(cx, cy, i % 2 ? r2 : r1, i / (n * 2) * TAU)); return p.join(" "); }
+  // a flat n-point nut seen face on: top face, then one chamfer facet per flat, lit from above-left
+  function nutSVG(cx, cy, R, n, base, top) {
+    var inR = R * 0.80, s = "", i, a0, a1, am, b, o, rot = Math.PI / n;
+    s += '<polygon points="' + polyPts(cx, cy, R, n, rot) + '" fill="' + base + '" stroke="#08090a" stroke-width="0.6" stroke-linejoin="round"/>';
+    for (i = 0; i < n; i++) {
+      a0 = i / n * TAU + rot; a1 = (i + 1) / n * TAU + rot; am = (a0 + a1) / 2;
+      b = Math.cos(am - LIGHT); o = b > 0 ? b * 0.40 : -b * 0.46;
+      s += '<polygon points="' + P(cx, cy, R, a0) + " " + P(cx, cy, R, a1) + " " + P(cx, cy, inR, a1) + " " + P(cx, cy, inR, a0) +
+           '" fill="' + (b > 0 ? "#ffffff" : "#000000") + '" opacity="' + o.toFixed(3) + '"/>';
+    }
+    s += '<polygon points="' + polyPts(cx, cy, inR, n, rot) + '" fill="' + top + '"/>';
+    return s;
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ' + W2 + 'px; height: ' + H + 'px; position: relative; font-size: 10px;',
+  '  -webkit-tap-highlight-color: transparent; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ' + W2 + 'px; height: ' + H + 'px; overflow: visible; }',
+  'text { font-family: "Josefin Sans", "Futura", "Century Gothic", sans-serif; font-weight: 600; text-anchor: middle; }',
+  '.eng { fill: #111214; }',
+  '.lite { fill: #e9edf0; opacity: 0.30; }',
+  '.t-name { font-size: 7.5px; letter-spacing: 0.08em; }',
+  '.t-throw { font-size: 8.5px; letter-spacing: 0.10em; }',
+  '.t-mid { font-size: 6px; letter-spacing: 0.08em; text-anchor: end; }',
+  '.shaft, .ball, .sh-shaft, .sh-ball { transform-box: view-box; transform-origin: ' + CX + 'px ' + CY + 'px;',
+  '  transition: transform 90ms cubic-bezier(.2,.9,.3,1.15); }',
+  '.wrap.dragging .shaft, .wrap.dragging .ball, .wrap.dragging .sh-shaft, .wrap.dragging .sh-ball { transition: none; }',
+  '.grab { position: absolute; left: 9px; top: 22px; width: 46px; height: 62px; border-radius: 5px;',
+  '  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }',
+  ':host([disabled]) .grab { cursor: default; }',
+  '.grab:focus-visible { box-shadow: 0 0 0 1.5px rgba(22,224,224,0.95), 0 0 9px rgba(22,224,224,0.55); }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg class="svg" viewBox="0 0 ' + W2 + ' ' + H + '" aria-hidden="true">',
+    '<defs>',
+      '<linearGradient id="pan" x1="0" y1="0" x2="0.35" y2="1">',
+        '<stop offset="0" stop-color="#868b90"/><stop offset="0.45" stop-color="#6d7176"/><stop offset="1" stop-color="#585c61"/></linearGradient>',
+      '<pattern id="grain" width="3" height="3" patternUnits="userSpaceOnUse">',
+        '<rect width="1" height="3" fill="#ffffff" opacity="0.055"/><rect x="1.6" width="0.5" height="3" fill="#000000" opacity="0.05"/></pattern>',
+      '<linearGradient id="rail" x1="0" y1="0" x2="1" y2="0">',
+        '<stop offset="0" stop-color="#5f6367"/><stop offset="0.12" stop-color="#b3b8bd"/><stop offset="0.38" stop-color="#8d9298"/>',
+        '<stop offset="0.72" stop-color="#6f7378"/><stop offset="0.92" stop-color="#4c5055"/><stop offset="1" stop-color="#787d82"/></linearGradient>',
+      '<linearGradient id="railcap" x1="0" y1="0" x2="0" y2="1">',
+        '<stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>',
+      '<linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">',
+        '<stop offset="0" stop-color="#4f545b"/><stop offset="0.14" stop-color="#aab1b8"/><stop offset="0.28" stop-color="#f7f9fa"/>',
+        '<stop offset="0.42" stop-color="#dde2e7"/><stop offset="0.60" stop-color="#959ca4"/><stop offset="0.80" stop-color="#5f646b"/>',
+        '<stop offset="0.92" stop-color="#43484e"/><stop offset="1" stop-color="#8b9299"/></linearGradient>',
+      '<radialGradient id="ballg" cx="33%" cy="27%" r="74%">',
+        '<stop offset="0" stop-color="#ffffff"/><stop offset="0.16" stop-color="#eef1f4"/><stop offset="0.46" stop-color="#bcc3ca"/>',
+        '<stop offset="0.74" stop-color="#7d838b"/><stop offset="0.90" stop-color="#474c53"/><stop offset="1" stop-color="#727981"/></radialGradient>',
+      '<radialGradient id="bush" cx="34%" cy="28%" r="78%">',
+        '<stop offset="0" stop-color="#53575d"/><stop offset="0.5" stop-color="#26282c"/><stop offset="1" stop-color="#121316"/></radialGradient>',
+      '<linearGradient id="washg" x1="0" y1="0" x2="0.4" y2="1">',
+        '<stop offset="0" stop-color="#c3c8cd"/><stop offset="0.5" stop-color="#8b9096"/><stop offset="1" stop-color="#565b61"/></linearGradient>',
+      '<linearGradient id="nuttop" x1="0" y1="0" x2="0.4" y2="1">',
+        '<stop offset="0" stop-color="#3a3d42"/><stop offset="0.55" stop-color="#1e2023"/><stop offset="1" stop-color="#141518"/></linearGradient>',
+      '<filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>',
+      '<filter id="flat" x="-70%" y="-70%" width="240%" height="240%">',
+        '<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.85 0"/><feGaussianBlur stdDeviation="1.15"/></filter>',
+    '</defs>',
+
+    '<g class="panel">',
+      '<rect class="pan" x="0" y="0" width="' + W2 + '" height="' + H + '" rx="3" fill="url(#pan)"/>',
+      '<rect class="pan2" x="0" y="0" width="' + W2 + '" height="' + H + '" rx="3" fill="url(#grain)"/>',
+      '<rect class="pan3" x="0.5" y="0.5" width="' + (W2 - 1) + '" height="' + (H - 1) + '" rx="2.6" fill="none" stroke="#2c2f32" stroke-opacity="0.55" stroke-width="1"/>',
+      '<rect class="pan4" x="3.2" y="3.8" width="' + (W2 - 6.4) + '" height="' + (H - 7) + '" rx="1.6" fill="none" stroke="#c8ccd0" stroke-opacity="0.22" stroke-width="0.7"/>',
+      '<rect class="pan5" x="3.2" y="3.2" width="' + (W2 - 6.4) + '" height="' + (H - 7) + '" rx="1.6" fill="none" stroke="#2a2d30" stroke-opacity="0.5" stroke-width="0.7"/>',
+    '</g>',
+
+    '<text class="lite t-name n-name" x="' + CX + '" y="12.6"></text><text class="eng t-name n-name" x="' + CX + '" y="12"></text>',
+    '<text class="lite t-throw n-up" x="' + CX + '" y="23.6"></text><text class="eng t-throw n-up" x="' + CX + '" y="23"></text>',
+    '<text class="lite t-throw n-down" x="' + CX + '" y="90.6"></text><text class="eng t-throw n-down" x="' + CX + '" y="90"></text>',
+    '<text class="lite t-mid n-mid" x="' + (W3 - 4) + '" y="56.7"></text><text class="eng t-mid n-mid" x="' + (W3 - 4) + '" y="56.1"></text>',
+
+    // wicket guard rails: shadow, body, lit left edge, cap highlight
+    '<g class="rails">',
+      '<rect x="14.3" y="28.6" width="5.6" height="53" rx="2.8" fill="#000" opacity="0.42" filter="url(#soft)"/>',
+      '<rect x="45.3" y="28.6" width="5.6" height="53" rx="2.8" fill="#000" opacity="0.42" filter="url(#soft)"/>',
+      '<rect x="12.8" y="27" width="5.6" height="53" rx="2.8" fill="url(#rail)" stroke="#33373b" stroke-width="0.5"/>',
+      '<rect x="43.8" y="27" width="5.6" height="53" rx="2.8" fill="url(#rail)" stroke="#33373b" stroke-width="0.5"/>',
+      '<rect x="13.5" y="28" width="1.5" height="51" rx="0.75" fill="#ffffff" opacity="0.18"/>',
+      '<rect x="44.5" y="28" width="1.5" height="51" rx="0.75" fill="#ffffff" opacity="0.18"/>',
+      '<ellipse cx="15.6" cy="29.4" rx="2.4" ry="1.7" fill="url(#railcap)"/>',
+      '<ellipse cx="46.6" cy="29.4" rx="2.4" ry="1.7" fill="url(#railcap)"/>',
+    '</g>',
+
+    // the panel hole, a hair larger than the bushing: a black crescent up and left
+    '<circle cx="' + (CX - 0.55) + '" cy="' + (CY - 0.65) + '" r="11.6" fill="#0e1012"/>',
+    // serrated lock washer, then the twelve-point nut
+    '<polygon points="' + starPts(CX, CY, 11.4, 10.3, 26) + '" fill="url(#washg)" stroke="#2a2d31" stroke-width="0.35"/>',
+    nutSVG(CX, CY, 10.2, 12, "#1c1d20", "url(#nuttop)"),
+    // bushing face: lathe rings and the keyway notch at twelve
+    '<circle cx="' + CX + '" cy="' + CY + '" r="6.3" fill="url(#bush)" stroke="#0a0b0d" stroke-width="0.5"/>',
+    '<circle cx="' + CX + '" cy="' + CY + '" r="5.2" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="0.4"/>',
+    '<circle cx="' + CX + '" cy="' + CY + '" r="3.9" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="0.4"/>',
+    '<circle cx="' + CX + '" cy="' + CY + '" r="2.7" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="0.4"/>',
+    '<path d="M ' + (CX - 0.9) + ' ' + (CY - 6.3) + ' l 0 1.7 l 1.8 0 l 0 -1.7" fill="#0b0c0e" stroke="#7e848a" stroke-opacity="0.45" stroke-width="0.3"/>',
+
+    // the bat's own shadow on the panel
+    '<g class="sh" transform="translate(1.7,2.5)" filter="url(#flat)" opacity="0.5">',
+      '<path class="sh-shaft" d="M ' + (CX - 1.7) + ' ' + (CY + 2) + ' L ' + (CX - 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.7) + ' ' + (CY + 2) + ' Z" fill="#000"/>',
+      '<circle class="sh-ball" cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="#000"/>',
+    '</g>',
+
+    // the bat: tapered chrome shaft with a hard highlight down its length, and a ball tip
+    '<g class="bat">',
+      '<path class="shaft" d="M ' + (CX - 1.75) + ' ' + (CY + 2.4) + ' L ' + (CX - 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.25) + ' ' + (CY - LEN) + ' L ' + (CX + 1.75) + ' ' + (CY + 2.4) + ' Z" fill="url(#chrome)" stroke="#2e3338" stroke-width="0.28"/>',
+      '<g class="ball">',
+        '<circle cx="' + CX + '" cy="' + (CY - LEN) + '" r="' + BALL + '" fill="url(#ballg)" stroke="#31363c" stroke-width="0.3"/>',
+        '<ellipse cx="' + (CX - 1.5) + '" cy="' + (CY - LEN - 1.7) + '" rx="1.35" ry="1.05" fill="#ffffff" opacity="0.92" transform="rotate(-28 ' + (CX - 1.5) + ' ' + (CY - LEN - 1.7) + ')"/>',
+        '<path d="M ' + (CX - 3.2) + ' ' + (CY - LEN + 2.9) + ' A ' + BALL + ' ' + BALL + ' 0 0 0 ' + (CX + 3.4) + ' ' + (CY - LEN + 2.6) + '" fill="none" stroke="#c9d0d7" stroke-opacity="0.5" stroke-width="0.7"/>',
+      '</g>',
+    '</g>',
+  '</svg>',
+  '<div class="grab" role="switch" tabindex="0"></div>',
+  '</div>'
+  ].join("");
+
+  function SkToggleApolloWicket() { return Reflect.construct(HTMLElement, [], SkToggleApolloWicket); }
+
+  class Sw extends HTMLElement {
+    static get observedAttributes() { return ["value", "positions", "label", "up", "mid", "down", "scale", "disabled"]; }
+    constructor() {
+      super();
+      var r = this.attachShadow({ mode: "open" });
+      r.appendChild(TPL.content.cloneNode(true));
+      this._wrap = r.querySelector(".wrap");
+      this._svg = r.querySelector(".svg");
+      this._grab = r.querySelector(".grab");
+      this._shaft = r.querySelector(".shaft"); this._ball = r.querySelector(".ball");
+      this._shShaft = r.querySelector(".sh-shaft"); this._shBall = r.querySelector(".sh-ball");
+      this._pans = [].slice.call(r.querySelectorAll(".pan, .pan2, .pan3, .pan4, .pan5"));
+      this._tName = [].slice.call(r.querySelectorAll(".n-name"));
+      this._tUp = [].slice.call(r.querySelectorAll(".n-up"));
+      this._tDown = [].slice.call(r.querySelectorAll(".n-down"));
+      this._tMid = [].slice.call(r.querySelectorAll(".n-mid"));
+      this._i = 1; this._n = 2; this._scale = 1; this._w = W2; this._drag = null; this._wired = false;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._opts()[this._i]);
+      this._read(); this._layout(); this._render(true);
+      if (!this._wired) {
+        this._wired = true;
+        this._grab.addEventListener("pointerdown", this._onDown);
+        this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+        this._grab.addEventListener("keydown", this._onKey);
+      }
+    }
+    disconnectedCallback() {
+      if (this._wired) {
+        this._wired = false;
+        this._grab.removeEventListener("pointerdown", this._onDown);
+        this._grab.removeEventListener("wheel", this._onWheel);
+        this._grab.removeEventListener("keydown", this._onKey);
+      }
+      this._endDrag();
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n !== "value") this._layout();
+      this._render(n !== "value");
+    }
+    get value() { return this._opts()[this._i]; }
+    set value(v) { var i = this._index(v); if (i == null) return; this._i = i; this._reflect(); this._render(false); }
+    get position() { return this._i; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+    blur() { this._grab.blur(); }
+
+    _opts() {
+      var up = this.getAttribute("up") || "ON", down = this.getAttribute("down") || "OFF", mid = this.getAttribute("mid") || "AUTO";
+      return this._n === 3 ? [down, mid, up] : [down, up];
+    }
+    _index(v) {
+      var o = this._opts(), i;
+      if (typeof v === "number" && v >= 0 && v < o.length) return Math.round(v);
+      if (typeof v === "boolean") return v ? o.length - 1 : 0;
+      var s = String(v == null ? "" : v).trim().toUpperCase();
+      for (i = 0; i < o.length; i++) if (String(o[i]).toUpperCase() === s) return i;
+      if (s === "TRUE" || s === "1") return o.length - 1;
+      if (s === "FALSE" || s === "0") return 0;
+      return null;
+    }
+    _read() {
+      var p = parseInt(this.getAttribute("positions"), 10);
+      this._n = p === 3 ? 3 : 2;
+      var s = parseFloat(this.getAttribute("scale")); this._scale = isNaN(s) || s <= 0 ? 1 : s;
+      var i = this._index(this.getAttribute("value"));
+      if (i == null) i = Math.min(this._i, this._n - 1);
+      this._i = i;
+    }
+    _layout() {
+      var o = this._opts(), w = this._n === 3 ? W3 : W2, three = this._n === 3;
+      this._w = w;
+      this._svg.setAttribute("viewBox", "0 0 " + w + " " + H);
+      this._svg.style.width = w + "px";
+      this._pans.forEach(function (r) {
+        var pad = parseFloat(r.getAttribute("x")) * 2;
+        r.setAttribute("width", String(w - pad));
+      });
+      this._tName.forEach(function (t) { t.textContent = this.getAttribute("label") || ""; }, this);
+      this._tUp.forEach(function (t) { t.textContent = o[o.length - 1]; });
+      this._tDown.forEach(function (t) { t.textContent = o[0]; });
+      this._tMid.forEach(function (t) { t.textContent = three ? o[1] : ""; t.setAttribute("x", String(w - 4)); });
+      this.style.width = (w * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", this.getAttribute("label") || "toggle switch");
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      if (three) {
+        g.setAttribute("role", "slider");
+        g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "2");
+        g.removeAttribute("aria-checked");
+      } else {
+        g.setAttribute("role", "switch");
+        g.removeAttribute("aria-valuemin"); g.removeAttribute("aria-valuemax"); g.removeAttribute("aria-valuenow");
+      }
+    }
+    _f(i) { return this._n === 3 ? i - 1 : (i ? 1 : -1); }
+    _render(layout) {
+      this._draw(this._f(this._i));
+      var g = this._grab, o = this._opts();
+      if (this._n === 3) { g.setAttribute("aria-valuenow", String(this._i)); g.setAttribute("aria-valuetext", o[this._i]); }
+      else g.setAttribute("aria-checked", this._i === 1 ? "true" : "false");
+    }
+    // f = -1 fully down, 0 pointing at the viewer, +1 fully up; the bat foreshortens as it comes round
+    _draw(f) {
+      var k = 1 + 0.30 * (1 - Math.abs(f));
+      this._shaft.style.transform = "scale(1," + f.toFixed(4) + ")";
+      this._shShaft.style.transform = "scale(1," + f.toFixed(4) + ")";
+      var b = "translate(0px," + (LEN * (1 - f)).toFixed(3) + "px) scale(" + k.toFixed(3) + ")";
+      this._ball.style.transform = b; this._shBall.style.transform = b;
+    }
+    _reflect() { var v = this._opts()[this._i]; if (this.getAttribute("value") !== v) this.setAttribute("value", v); }
+    _set(i, settle) {
+      i = Math.max(0, Math.min(this._n - 1, i));
+      var changed = i !== this._i;
+      this._i = i; this._reflect(); this._render(false);
+      if (changed) this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this.value } }));
+      if (settle && (changed || this._dirty)) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this.value } }));
+      if (changed) this._dirty = true;
+      if (settle) this._dirty = false;
+      return changed;
+    }
+    _endDrag() {
+      if (!this._drag) return;
+      var g = this._grab;
+      g.removeEventListener("pointermove", this._onMove);
+      g.removeEventListener("pointerup", this._onUp);
+      g.removeEventListener("pointercancel", this._onUp);
+      this._wrap.classList.remove("dragging");
+      this._drag = null;
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      var r = this.getBoundingClientRect();
+      this._drag = { y: e.clientY, f0: this._f(this._i), moved: false, above: (e.clientY - r.top) / this._scale < CY };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      var dy = (this._drag.y - e.clientY) / this._scale;
+      if (!this._drag.moved && Math.abs(dy) < 2.5) return;
+      if (!this._drag.moved) { this._drag.moved = true; this._wrap.classList.add("dragging"); }
+      var f = Math.max(-1, Math.min(1, this._drag.f0 + dy / 17));
+      this._draw(f);
+      var i = this._n === 3 ? (f > 0.42 ? 2 : f < -0.42 ? 0 : 1) : (f > 0 ? 1 : 0);
+      if (i !== this._i) { this._i = i; this._reflect(); this._grabAria(); this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this.value } })); this._dirty = true; }
+    }
+    _grabAria() {
+      var g = this._grab;
+      if (this._n === 3) { g.setAttribute("aria-valuenow", String(this._i)); g.setAttribute("aria-valuetext", this.value); }
+      else g.setAttribute("aria-checked", this._i === 1 ? "true" : "false");
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      var moved = this._drag.moved, above = this._drag.above;
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._endDrag();
+      if (moved) { this._set(this._i, true); return; }                 // snap home from wherever the drag left it
+      if (this._n === 3) this._set(this._i + (above ? 1 : -1), true);  // a click moves one position toward the click
+      else this._set(this._i ? 0 : 1, true);                           // a click toggles
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._set(this._i + (e.deltaY < 0 ? 1 : -1), true);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var i = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": i = this._i + 1; break;
+        case "ArrowDown": case "ArrowLeft": i = this._i - 1; break;
+        case "Home": i = 0; break;
+        case "End": i = this._n - 1; break;
+        case " ": case "Spacebar": case "Enter": i = this._n === 3 ? (this._i + 1) % 3 : (this._i ? 0 : 1); break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(i, true);
+    }
+  }
+  customElements.define(TAG, Sw);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

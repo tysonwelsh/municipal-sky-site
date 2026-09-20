@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sperry SP-352 Panaplex panel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "panaplex-sperry-sp352",
+  "element": "sk-panaplex-sp352",
+  "name": "Sperry SP-352 Panaplex panel",
+  "kind": "output",
+  "code": "G6",
+  "type": "Panaplex planar gas-discharge readout",
+  "source": "Sperry Information Displays SP-352 planar neon seven-segment panel, Scottsdale AZ, behind a dark red acrylic filter as fitted to 1970s bench DMMs",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["glass sandwich", "black frit", "neon", "red acrylic filter", "ribbon leads"],
+  "tags": ["panaplex", "neon", "seven-segment", "gas discharge", "dmm", "readout"],
+  "value": { "model": "digits", "min": -99999, "max": 99999, "step": 0.001, "unit": "" },
+  "attributes": ["value", "digits", "filter", "label", "scale"],
+  "events": [],
+  "size": { "w": 360, "h": 80 },
+  "notes": "Set value (a number or a string with a sign and a decimal point) to change the reading; segments strike instantly and the neon fog lags behind. Eight digits behind the red filter, six bare."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-panaplex-sp352 digits="8" value="12.345" label="D C   V O L T S"></sk-panaplex-sp352>
+    <sk-panaplex-sp352 digits="6" value="-0.998" filter="none" label="S P - 3 5 2" scale="0.85"></sk-panaplex-sp352>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sperry SP-352</b> is a Panaplex: two sheets of glass frit-sealed a millimetre apart with neon between
+  them, the anodes and the seven-segment cathodes printed flat on the inside faces. One panel does the whole
+  readout, so a 1970s bench meter gets its digits from a single glass sandwich the size of a stick of gum
+  rather than a row of tubes. Everything is in one plane and there is no depth to it at all.</p>
+  <p><b>The tells kept here:</b> every segment is a <b>pill</b> — a bar with fully rounded ends, not a chamfered
+  hexagon — and the pills of neighbouring segments almost touch at the corners. There is a low orange
+  <b>fog</b> over each digit cell that brightens where segments are struck and lags about 80 ms behind them,
+  while the segments themselves switch in 20 ms, and a two-percent shimmer at 12 Hz stands in for the
+  multiplex flicker. The glass sandwich shows its thickness as a grey-blue line top and bottom inside a thick
+  black frit border, leading zeros are blanked, the minus sign lights in its own cell, the decimal is a bright
+  pill, and gold ribbon leads run out of the bottom edge. Under the default dark-red acrylic the glow goes
+  orange-red and the unlit segments almost vanish; <code>filter="none"</code> shows the bare panel with its
+  unlit cathodes at full strength.</p>
+  <p><b>Left out:</b> the keep-alive cathode in the corner, the getter, and the wide-angle fall-off that makes
+  a real Panaplex dim when you look at it from the side.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-panaplex-sp352> — Sperry SP-352 planar neon seven-segment panel ====
+   attributes: value (number or string with sign/decimal) digits (2–12, default 8) filter ("red" | "none") label scale
+   no events (an output). set .value or the attribute; segments are instant, the fog lags.
+   self-contained: paste this block into any page and use <sk-panaplex-sp352 value="12.345"></sk-panaplex-sp352> */
+(function () {
+  if (customElements.get("sk-panaplex-sp352")) return;
+  const PITCH = 40, PAD = 20, H = 80, GT = 2, GB = 66;
+
+  /* seven pills in a 22 x 40 cell: a thin bar with fully rounded ends, 1 px gaps at the corners */
+  const SEG = [
+    "M4.2 2.6H17.8",   /* a */
+    "M19.4 6.2V16.4",  /* b */
+    "M19.4 23.6V33.8", /* c */
+    "M4.2 37.4H17.8",  /* d */
+    "M2.6 23.6V33.8",  /* e */
+    "M2.6 6.2V16.4",   /* f */
+    "M4.2 20H17.8"     /* g */
+  ];
+  const DIG = {
+    "0": [1,1,1,1,1,1,0], "1": [0,1,1,0,0,0,0], "2": [1,1,0,1,1,0,1], "3": [1,1,1,1,0,0,1],
+    "4": [0,1,1,0,0,1,1], "5": [1,0,1,1,0,1,1], "6": [1,0,1,1,1,1,1], "7": [1,1,1,0,0,0,0],
+    "8": [1,1,1,1,1,1,1], "9": [1,1,1,1,0,1,1], "-": [0,0,0,0,0,0,1], " ": [0,0,0,0,0,0,0]
+  };
+
+  const CSS = `
+    :host { display: inline-block; position: relative; font-size: 10px; line-height: 1;
+      --unlit: 0.55; --shim: 1; -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; isolation: isolate; }
+    text { font-family: "Archivo Narrow", "Share Tech Mono", "Arial Narrow", sans-serif; }
+    .silk { font-size: 6.5px; font-weight: 600; letter-spacing: 0.06em; fill: #9aa2a6; fill-opacity: 0.75; text-anchor: middle; }
+    .seg path, .dp circle { stroke-linecap: round; }
+    .off  { fill: none; stroke: #3a2420; stroke-width: 3.8; stroke-opacity: var(--unlit); }
+    .lit  { opacity: 0; transition: opacity 20ms linear; }
+    .on > .lit { opacity: 1; }
+    .halo { fill: none; stroke: #ff5a2a; stroke-width: 7.6; stroke-opacity: 0.4; filter: url(#pb); }
+    .bar  { fill: none; stroke: #ff8a3c; stroke-width: 3.8; }
+    .hot  { fill: none; stroke: #ffd0a0; stroke-width: 1.5; }
+    .dpoff { fill: #3a2420; fill-opacity: var(--unlit); }
+    .fog  { opacity: 0; transition: opacity 80ms linear; }
+    .redglass { mix-blend-mode: multiply; }
+  `;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = "<style>" + CSS + "</style><div class=\"wrap\"><svg></svg></div>";
+
+  const DEFS = `
+  <defs>
+    <linearGradient id="pface" x1="0" y1="0" x2="0.15" y2="1">
+      <stop offset="0" stop-color="#15110f"/><stop offset="0.5" stop-color="#0e0b0a"/><stop offset="1" stop-color="#080606"/>
+    </linearGradient>
+    <linearGradient id="pfrit" x1="0" y1="0" x2="0.1" y2="1">
+      <stop offset="0" stop-color="#24201e"/><stop offset="0.5" stop-color="#1a1614"/><stop offset="1" stop-color="#0d0b0a"/>
+    </linearGradient>
+    <linearGradient id="pedge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8f9ca4" stop-opacity="0.75"/><stop offset="0.45" stop-color="#5f6a70" stop-opacity="0.5"/>
+      <stop offset="0.55" stop-color="#2b3134" stop-opacity="0.5"/><stop offset="1" stop-color="#5f6a70" stop-opacity="0.3"/>
+    </linearGradient>
+    <radialGradient id="pfog" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#ff6a3a" stop-opacity="0.5"/><stop offset="0.6" stop-color="#ff5a2a" stop-opacity="0.22"/><stop offset="1" stop-color="#ff4a2a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pred" x1="0" y1="0" x2="0.12" y2="1">
+      <stop offset="0" stop-color="#f05a1e"/><stop offset="0.5" stop-color="#e0420f"/><stop offset="1" stop-color="#b62c0a"/>
+    </linearGradient>
+    <linearGradient id="predspec" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.02"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="plead" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c8a05a"/><stop offset="1" stop-color="#7a5a28"/>
+    </linearGradient>
+    <filter id="pb" filterUnits="userSpaceOnUse" x="-20" y="-20" width="64" height="82"><feGaussianBlur stdDeviation="2.6"/></filter>
+    <filter id="pbig" filterUnits="userSpaceOnUse" x="-60" y="-40" width="700" height="180"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>`;
+
+  function cell(i) {
+    let s = '<g class="cell" data-i="' + i + '" transform="translate(' + (PAD + i * PITCH + 1) + ' 14) skewX(-3)">';
+    s += '<rect class="fog" x="-7" y="-6" width="36" height="52" fill="url(#pfog)"/>';
+    for (let k = 0; k < 7; k++) {
+      s += '<g class="seg" data-k="' + k + '">' +
+        '<path class="off" d="' + SEG[k] + '"/>' +
+        '<g class="lit">' +
+          '<path class="halo" d="' + SEG[k] + '"/>' +
+          '<path class="bar" d="' + SEG[k] + '"/>' +
+          '<path class="hot" d="' + SEG[k] + '"/>' +
+        '</g></g>';
+    }
+    s += '<g class="dp">' +
+      '<circle class="dpoff" cx="25.2" cy="37.4" r="1.9"/>' +
+      '<g class="lit">' +
+        '<circle cx="25.2" cy="37.4" r="3.8" fill="#ff5a2a" fill-opacity="0.4" filter="url(#pb)"/>' +
+        '<circle cx="25.2" cy="37.4" r="1.9" fill="#ff8a3c"/>' +
+        '<circle cx="25.2" cy="37.4" r="0.8" fill="#ffd0a0"/>' +
+      '</g></g>';
+    return s + '</g>';
+  }
+
+  class SkPanaplex extends HTMLElement {
+    static get observedAttributes() { return ["value", "digits", "filter", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = "0"; this._n = 8; this._scale = 1; this._red = true; this._built = "";
+      this._raf = 0; this._last = 0; this._cells = []; this._segs = []; this._dps = []; this._fogs = [];
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._svg = this.shadowRoot.querySelector("svg");
+      this._shimmer = this._shimmer.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._ready = true;
+      this._readAttrs(); this._build(); this._render();
+      this._raf = requestAnimationFrame(this._shimmer);
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this._ready) return;
+      this._readAttrs();
+      if (n !== "value") this._build();
+      this._render();
+    }
+    get value() { return this._v; }
+    set value(v) { if (v == null) return; this._v = String(v); this.setAttribute("value", this._v); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { return (12.345 + 0.04 * Math.sin(t * 1.7) + 0.004 * Math.sin(t * 9)).toFixed(3); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._n = Math.max(2, Math.min(12, Math.round(num("digits", 8))));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._red = (this.getAttribute("filter") || "red") === "red";
+      if (this.hasAttribute("value")) this._v = this.getAttribute("value");
+      this.style.setProperty("--unlit", this._red ? "0.15" : "0.55");
+      this.setAttribute("aria-label", (this.getAttribute("label") ? this.getAttribute("label").replace(/\s+/g, " ") + " " : "") +
+        "Panaplex readout " + this._cellText().join("").replace(/\s+/g, " ").trim());
+    }
+    /* right-aligned, leading zeros blanked, the sign in the leftmost cell */
+    _cellText() {
+      let s = String(this._v == null ? "" : this._v).trim().replace(/[−]/g, "-");
+      const neg = s[0] === "-";
+      s = s.replace(/[^0-9.]/g, "");
+      let [ip, fp] = s.split(".");
+      ip = (ip || "").replace(/^0+(?=\d)/, ""); if (ip === "") ip = "0";
+      fp = fp == null ? null : fp;
+      const chars = ip + (fp || "");
+      this._dpAt = fp == null ? -1 : ip.length - 1;            /* index within chars */
+      const out = new Array(this._n).fill(" ");
+      const start = this._n - chars.length;
+      this._dpCell = -1;
+      for (let j = 0; j < chars.length; j++) {
+        const c = start + j; if (c < 1) continue;
+        out[c] = chars[j];
+        if (j === this._dpAt) this._dpCell = c;
+      }
+      if (neg) out[Math.max(0, start - 1)] = "-";
+      return out;
+    }
+    _build() {
+      const w = this._n * PITCH + 2 * PAD;
+      this._w = w;
+      this.style.width = (w * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._svg.setAttribute("width", w); this._svg.setAttribute("height", H);
+      this._svg.setAttribute("viewBox", "0 0 " + w + " " + H);
+      const key = this._n + "|" + this._red;
+      const silk0 = this._svg.querySelector(".silk");
+      if (key === this._built) { if (silk0) silk0.textContent = this.getAttribute("label") || ""; return; }
+      this._built = key;
+      let s = DEFS;
+      /* the ribbon leads out of the bottom edge */
+      s += '<g opacity="0.85">';
+      for (let k = 0; k < this._n * 5; k++) {
+        const x = PAD + 6 + k * ((w - 2 * PAD - 12) / (this._n * 5 - 1));
+        s += '<rect x="' + x.toFixed(2) + '" y="' + (GB - 3) + '" width="1.5" height="11" fill="url(#plead)"/>';
+      }
+      s += '</g>';
+      s += '<rect x="' + (PAD - 8) + '" y="' + (GB + 4) + '" width="' + (w - 2 * PAD + 16) + '" height="5" rx="1" fill="#6b5a22" opacity="0.5"/>';
+      /* the glass sandwich: contact shadow, frit border, the dark face */
+      s += '<rect x="2" y="' + (GT + 4) + '" width="' + (w - 4) + '" height="' + (GB - GT) + '" rx="3" fill="#000" opacity="0.5" filter="url(#pbig)"/>';
+      s += '<rect x="0" y="' + GT + '" width="' + w + '" height="' + (GB - GT) + '" rx="2.5" fill="url(#pfrit)" stroke="#000" stroke-width="0.8"/>';
+      /* the plate thickness, a grey-blue line top and bottom */
+      s += '<rect x="0.8" y="' + (GT + 0.8) + '" width="' + (w - 1.6) + '" height="3" rx="1.2" fill="url(#pedge)"/>';
+      s += '<rect x="0.8" y="' + (GB - 4) + '" width="' + (w - 1.6) + '" height="3" rx="1.2" fill="url(#pedge)"/>';
+      s += '<rect x="' + (PAD - 10) + '" y="' + (GT + 6) + '" width="' + (w - 2 * PAD + 20) + '" height="' + (GB - GT - 14) + '" rx="1.5" fill="url(#pface)"/>';
+      s += '<rect x="' + (PAD - 10) + '" y="' + (GT + 6) + '" width="' + (w - 2 * PAD + 20) + '" height="' + (GB - GT - 14) + '" rx="1.5" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.4"/>';
+      for (let i = 0; i < this._n; i++) s += cell(i);
+      if (this._red) {
+        s += '<g class="redwin">' +
+             '<rect class="redglass" x="-3" y="' + (GT - 3) + '" width="' + (w + 6) + '" height="' + (GB - GT + 6) + '" rx="2" fill="url(#pred)"/>' +
+             '<rect x="-3" y="' + (GT - 3) + '" width="' + (w + 6) + '" height="' + (GB - GT + 6) + '" rx="2" fill="#7a1206" opacity="0.13"/>' +
+             '<path d="M-3 ' + (GT - 3) + 'H' + (w * 0.34).toFixed(0) + 'L-3 ' + (GB - 6) + 'Z" fill="url(#predspec)"/>' +
+             '<rect x="-3" y="' + (GT - 2.4) + '" width="' + (w + 6) + '" height="1.6" fill="#ff9a7a" opacity="0.16"/>' +
+             '<rect x="-3" y="' + (GT - 3) + '" width="' + (w + 6) + '" height="' + (GB - GT + 6) + '" rx="2" fill="none" stroke="#e0705a" stroke-opacity="0.22" stroke-width="0.8"/>' +
+             '</g>';
+      }
+      s += '<text class="silk" x="' + (w / 2).toFixed(1) + '" y="' + (GB - 5.6) + '"></text>';
+      this._svg.innerHTML = s;
+      this._cells = [...this._svg.querySelectorAll(".cell")];
+      this._segs = this._cells.map(c => [...c.querySelectorAll(".seg")]);
+      this._dps = this._cells.map(c => c.querySelector(".dp"));
+      this._fogs = this._cells.map(c => c.querySelector(".fog"));
+      this._shown = new Array(this._n).fill(null);
+      const silk = this._svg.querySelector(".silk");
+      if (silk) silk.textContent = this.getAttribute("label") || "";
+    }
+    _render() {
+      const txt = this._cellText();
+      for (let i = 0; i < this._n; i++) {
+        const c = txt[i] + (i === this._dpCell ? "." : "");
+        if (this._shown[i] === c) continue;                        /* class toggles only, never a rebuild */
+        this._shown[i] = c;
+        const map = DIG[txt[i]] || DIG[" "];
+        const gs = this._segs[i];
+        let lit = 0;
+        for (let k = 0; k < 7; k++) { gs[k].classList.toggle("on", !!map[k]); lit += map[k]; }
+        this._dps[i].classList.toggle("on", i === this._dpCell);
+        this._fogs[i].style.opacity = (lit ? (0.45 + 0.55 * lit / 7) : 0.12).toFixed(3);
+      }
+    }
+    _shimmer(now) {
+      this._raf = requestAnimationFrame(this._shimmer);
+      if (now - this._last < 80) return;                           /* ~12 Hz multiplex flicker */
+      this._last = now;
+      this.style.setProperty("--shim", (0.98 + Math.random() * 0.04).toFixed(3));
+      for (const f of this._fogs) if (f.style.opacity) f.style.filter = "opacity(" + (0.97 + Math.random() * 0.06).toFixed(3) + ")";
+    }
+  }
+  customElements.define("sk-panaplex-sp352", SkPanaplex);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

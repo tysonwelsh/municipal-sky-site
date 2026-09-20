@@ -34,7 +34,7 @@
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="black">
     <sk-flag-ncr-popup value="4.75"></sk-flag-ncr-popup>
-    <sk-flag-ncr-popup value="0" special="NO SALE" scale="0.8"></sk-flag-ncr-popup>
+    <sk-flag-ncr-popup value="12.00" special="TOTAL" scale="0.8"></sk-flag-ncr-popup>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -63,10 +63,10 @@
 (function () {
   if (customElements.get("sk-flag-ncr-popup")) return;
   var W = 360, H = 120;
-  var IX = 26, IY = 14, IW = 308, IH = 72;      // the glass window's interior
-  var PLATE = 76;                                // top of the slot plate
-  var FTOP = 18, FW = 32, FH = 48, DROP = 50;    // flag rest geometry
-  var SPX = 30, SPW = 76;                        // the red special flag
+  var IX = 26, IY = 12, IW = 308, IH = 80;      // the glass window's interior
+  var PLATE = 84;                                // top of the slot plate
+  var FTOP = 16, FW = 34, FH = 60, DROP = 60;    // flag rest geometry
+  var SPX = 32, SPW = 78;                        // the red special flag
   var NS = "http://www.w3.org/2000/svg";
 
   var TPL = document.createElement("template");
@@ -77,17 +77,17 @@
   '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
   'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
   'text { font-family: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", sans-serif; }',
-  '.num { font-size: 38px; font-weight: 700; text-anchor: middle; fill: #1a1814; }',
-  '.sp { font-size: 15px; font-weight: 700; text-anchor: middle; fill: #fbf6ee; letter-spacing: 0.03em; }',
-  '.paint { font-size: 13px; font-weight: 600; text-anchor: middle; fill: #cdc4ad; }',
+  '.num { font-size: 44px; font-weight: 700; text-anchor: middle; fill: #1a1814; }',
+  '.sp { font-size: 16px; font-weight: 700; text-anchor: middle; fill: #fbf6ee; letter-spacing: 0.03em; }',
+  '.paint { font-size: 17px; font-weight: 700; text-anchor: middle; fill: #efe7d2; }',
   '.flag { will-change: transform; }',
   '</style>',
   '<div class="wrap">',
   '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
   '<defs>',
     '<linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#fbfbf9"/><stop offset="0.22" stop-color="#e2e4e2"/><stop offset="0.46" stop-color="#b6b8b6"/>',
-      '<stop offset="0.47" stop-color="#7d807d"/><stop offset="0.72" stop-color="#c6c8c6"/><stop offset="0.93" stop-color="#8a8c8a"/><stop offset="1" stop-color="#6a6c6a"/>',
+      '<stop offset="0" stop-color="#fdfdfb"/><stop offset="0.2" stop-color="#e4e6e4"/><stop offset="0.44" stop-color="#a8aaa8"/>',
+      '<stop offset="0.46" stop-color="#656865"/><stop offset="0.6" stop-color="#9ea09e"/><stop offset="0.86" stop-color="#dcdedc"/><stop offset="1" stop-color="#636563"/>',
     '</linearGradient>',
     '<linearGradient id="chromeV" x1="0" y1="0" x2="1" y2="0">',
       '<stop offset="0" stop-color="#f0f0ee"/><stop offset="0.35" stop-color="#c4c6c4"/><stop offset="0.52" stop-color="#8a8c8a"/><stop offset="0.75" stop-color="#dcdedc"/><stop offset="1" stop-color="#8f918f"/>',
@@ -104,11 +104,14 @@
     '<linearGradient id="interior" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#191614"/><stop offset="0.5" stop-color="#121110"/><stop offset="1" stop-color="#0b0a0a"/>',
     '</linearGradient>',
+    '<linearGradient id="slotshade" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="0.6" stop-color="#000" stop-opacity="0.24"/><stop offset="1" stop-color="#000" stop-opacity="0.58"/>',
+    '</linearGradient>',
     '<linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#2b2822"/><stop offset="0.12" stop-color="#17150f"/><stop offset="1" stop-color="#0a0908"/>',
     '</linearGradient>',
     '<linearGradient id="deck" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#4a463e"/><stop offset="0.14" stop-color="#26241f"/><stop offset="0.7" stop-color="#171512"/><stop offset="1" stop-color="#0e0d0c"/>',
+      '<stop offset="0" stop-color="#5c574c"/><stop offset="0.18" stop-color="#2c2923"/><stop offset="0.7" stop-color="#1b1915"/><stop offset="1" stop-color="#100f0d"/>',
     '</linearGradient>',
     '<linearGradient id="glassref" x1="0" y1="0" x2="1" y2="1">',
       '<stop offset="0" stop-color="#fff" stop-opacity="0.15"/><stop offset="0.42" stop-color="#fff" stop-opacity="0.05"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.03"/>',
@@ -119,17 +122,20 @@
   '</defs>',
 
   '<!-- a scrap of the register top the window is bolted to -->',
-  '<rect x="6" y="92" width="348" height="27" rx="3" fill="url(#deck)"/>',
-  '<rect x="6" y="92" width="348" height="1.2" fill="#6a6459" opacity="0.6"/>',
-  '<rect x="14" y="103" width="332" height="2" rx="1" fill="#0a0908"/>',
-  '<rect x="14" y="103" width="332" height="0.8" rx="0.4" fill="#57524a" opacity="0.5"/>',
+  '<rect x="4" y="98" width="352" height="22" rx="3" fill="url(#deck)"/>',
+  '<rect x="4" y="98" width="352" height="1.6" rx="0.8" fill="#8e8778" opacity="0.75"/>',
+  '<rect x="4" y="100.4" width="352" height="1" fill="#000" opacity="0.5"/>',
+  '<rect x="18" y="110" width="324" height="2.4" rx="1.2" fill="#0a0908"/>',
+  '<rect x="18" y="110" width="324" height="0.9" rx="0.45" fill="#6b6559" opacity="0.55"/>',
+  '<circle cx="30" cy="115" r="2" fill="#0d0c0b"/><circle cx="30" cy="114.4" r="1.5" fill="#7d776b" opacity="0.7"/>',
+  '<circle cx="330" cy="115" r="2" fill="#0d0c0b"/><circle cx="330" cy="114.4" r="1.5" fill="#7d776b" opacity="0.7"/>',
 
   '<!-- the window\'s shadow on the deck -->',
-  '<rect x="10" y="10" width="344" height="92" rx="9" fill="#000" opacity="0.6" filter="url(#soft)"/>',
+  '<rect x="10" y="8" width="344" height="98" rx="9" fill="#000" opacity="0.6" filter="url(#soft)"/>',
 
   '<!-- chromed frame -->',
-  '<rect x="4" y="2" width="352" height="96" rx="9" fill="url(#chrome)" stroke="#5c5e5c" stroke-width="0.8"/>',
-  '<rect x="5.4" y="3.4" width="349.2" height="93.2" rx="8" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.9"/>',
+  '<rect x="4" y="2" width="352" height="102" rx="9" fill="url(#chrome)" stroke="#5c5e5c" stroke-width="0.8"/>',
+  '<rect x="5.4" y="3.4" width="349.2" height="99.2" rx="8" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.9"/>',
   '<rect x="' + (IX - 4) + '" y="' + (IY - 4) + '" width="' + (IW + 8) + '" height="' + (IH + 8) + '" rx="4" fill="#3a3c3a"/>',
   '<rect x="' + (IX - 2.6) + '" y="' + (IY - 2.6) + '" width="' + (IW + 5.2) + '" height="' + (IH + 5.2) + '" rx="3" fill="none" stroke="#0d0e0d" stroke-width="1.6"/>',
 
@@ -137,13 +143,14 @@
   '<g clip-path="url(#win)">',
     '<rect x="' + IX + '" y="' + IY + '" width="' + IW + '" height="' + IH + '" fill="url(#interior)"/>',
     '<g class="flags"></g>',
+    '<rect x="' + IX + '" y="' + (PLATE - 11) + '" width="' + IW + '" height="11" fill="url(#slotshade)"/>',
     '<rect x="' + IX + '" y="' + PLATE + '" width="' + IW + '" height="' + (IY + IH - PLATE) + '" fill="url(#plate)"/>',
     '<rect x="' + IX + '" y="' + PLATE + '" width="' + IW + '" height="0.9" fill="#4c473e" opacity="0.75"/>',
     '<g class="slots"></g>',
-    '<text class="paint dollar" x="114" y="' + (PLATE - 3) + '">$</text>',
-    '<circle class="point" cx="240.5" cy="' + (PLATE - 6) + '" r="2.1" fill="#cdc4ad"/>',
+    '<text class="paint dollar" x="114" y="' + (PLATE + 7) + '">$</text>',
+    '<circle class="point" cx="240.5" cy="' + (PLATE + 3.2) + '" r="2.7" fill="#efe7d2"/>',
     '<!-- the frame throws a soft shadow down onto the flags -->',
-    '<rect x="' + IX + '" y="' + IY + '" width="' + IW + '" height="26" fill="url(#inner)"/>',
+    '<rect x="' + IX + '" y="' + IY + '" width="' + IW + '" height="34" fill="url(#inner)"/>',
     '<!-- bevelled glass: a diagonal reflection that is not the shape of the flags -->',
     '<path d="M ' + IX + ' ' + IY + ' L ' + (IX + 176) + ' ' + IY + ' L ' + (IX + 46) + ' ' + (IY + IH) + ' L ' + IX + ' ' + (IY + IH) + ' Z" fill="url(#glassref)"/>',
     '<path d="M ' + (IX + 214) + ' ' + IY + ' L ' + (IX + 246) + ' ' + IY + ' L ' + (IX + 132) + ' ' + (IY + IH) + ' L ' + (IX + 112) + ' ' + (IY + IH) + ' Z" fill="#fff" opacity="0.05"/>',
@@ -153,12 +160,12 @@
   '</g>',
 
   '<!-- knurled finials at the ends of the frame -->',
-  '<g class="finial" transform="translate(15 50)">',
+  '<g class="finial" transform="translate(15 53)">',
     '<rect x="-6" y="-17" width="12" height="34" rx="4" fill="url(#chromeV)" stroke="#4e504e" stroke-width="0.6"/>',
     '<g opacity="0.5"><rect x="-4.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="-2.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="0.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="2.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/></g>',
     '<rect x="-5.2" y="-15.4" width="1.1" height="30.8" rx="0.5" fill="#fff" opacity="0.55"/>',
   '</g>',
-  '<g class="finial" transform="translate(345 50)">',
+  '<g class="finial" transform="translate(345 53)">',
     '<rect x="-6" y="-17" width="12" height="34" rx="4" fill="url(#chromeV)" stroke="#4e504e" stroke-width="0.6"/>',
     '<g opacity="0.5"><rect x="-4.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="-2.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="0.2" y="-14" width="0.7" height="28" fill="#5c5e5c"/><rect x="2.6" y="-14" width="0.7" height="28" fill="#5c5e5c"/></g>',
     '<rect x="-5.2" y="-15.4" width="1.1" height="30.8" rx="0.5" fill="#fff" opacity="0.55"/>',
@@ -174,7 +181,7 @@
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
       this._v = 0; this._digits = 5; this._special = ""; this._scale = 1;
-      this._flags = []; this._raf = 0; this._built = 0;
+      this._flags = []; this._raf = 0; this._ready = 0;
       this._wrap = this.shadowRoot.querySelector(".wrap");
       this._flagsG = this.shadowRoot.querySelector(".flags");
       this._slotsG = this.shadowRoot.querySelector(".slots");
@@ -184,11 +191,12 @@
       this.setAttribute("role", "img");
       this._read();
       this._build();
+      this._ready = 1;
       this._update(true);
     }
     disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
     attributeChangedCallback(n, o, v) {
-      if (o === v || !this.isConnected) return;
+      if (o === v || !this._ready) return;
       this._read();
       if (n === "digits") { this._build(); this._update(true); } else this._update(false);
     }
@@ -213,7 +221,7 @@
       this.style.height = (H * this._scale) + "px";
       this._wrap.style.transform = "scale(" + this._scale + ")";
     }
-    _startX() { var total = this._digits * FW + (this._digits - 1) * 9; return IX + IW - 16 - total; }
+    _startX() { var total = this._digits * FW + (this._digits - 1) * 8; return IX + IW - 8 - total; }
     _build() {
       var g = this._flagsG, s = this._slotsG;
       while (g.firstChild) g.removeChild(g.firstChild);
@@ -227,13 +235,13 @@
         var outer = mk("g", { "class": "flag" });
         var inner = mk("g", { transform: "rotate(" + tilt.toFixed(2) + " " + cx + " " + (FTOP + FH / 2) + ")", filter: "url(#fsh)" });
         // the lever stem under the flag
-        inner.appendChild(mk("rect", { x: cx - 2, y: FTOP + FH - 3, width: 4, height: 18, fill: "#3a3a3a" }));
-        inner.appendChild(mk("rect", { x: cx - 2, y: FTOP + FH - 3, width: 1.2, height: 18, fill: "#6a6a68", opacity: 0.8 }));
+        inner.appendChild(mk("rect", { x: cx - 2.5, y: FTOP + FH - 3, width: 5, height: 24, fill: "#3a3a3a" }));
+        inner.appendChild(mk("rect", { x: cx - 2.5, y: FTOP + FH - 3, width: 1.4, height: 24, fill: "#77776f", opacity: 0.85 }));
         inner.appendChild(mk("rect", { x: x, y: FTOP, width: w, height: FH, rx: 5, fill: red ? "url(#redflag)" : "url(#ivory)" }));
         inner.appendChild(mk("rect", { x: x + 1, y: FTOP + 1, width: w - 2, height: 4, rx: 2, fill: "#fff", opacity: red ? 0.22 : 0.42 }));
         inner.appendChild(mk("rect", { x: x + w - 2.2, y: FTOP + 2, width: 2.2, height: FH - 4, fill: red ? "#6f100d" : "#d0c5a8", opacity: 0.85 }));
         inner.appendChild(mk("rect", { x: x, y: FTOP, width: w, height: FH, rx: 5, fill: "none", stroke: red ? "#5e0c0a" : "#bdb197", "stroke-width": 0.6, opacity: 0.8 }));
-        var t = mk("text", { "class": red ? "sp" : "num", x: cx, y: red ? FTOP + FH / 2 + 5.5 : FTOP + FH / 2 + 13.5 });
+        var t = mk("text", { "class": red ? "sp" : "num", x: cx, y: red ? FTOP + FH / 2 + 6 : FTOP + FH / 2 + 15.5 });
         inner.appendChild(t);
         outer.appendChild(inner);
         g.appendChild(outer);
@@ -246,10 +254,10 @@
       };
 
       make(SPX, SPW, true, 0);
-      for (var i = 0; i < this._digits; i++) make(sx + i * (FW + 9), FW, false, i + 1);
+      for (var i = 0; i < this._digits; i++) make(sx + i * (FW + 8), FW, false, i + 1);
       // the painted $ and decimal point follow the flag row
-      this.shadowRoot.querySelector(".dollar").setAttribute("x", String(sx - 9));
-      this.shadowRoot.querySelector(".point").setAttribute("cx", String(sx + (this._digits - 2) * (FW + 9) - 4.5));
+      this.shadowRoot.querySelector(".dollar").setAttribute("x", String(sx - 10));
+      this.shadowRoot.querySelector(".point").setAttribute("cx", String(sx + (this._digits - 2) * (FW + 8) - 4));
     }
     _update(immediate) {
       var cents = Math.round(this._v * 100);

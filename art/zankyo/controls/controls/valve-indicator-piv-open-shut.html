@@ -64,7 +64,7 @@
 (function () {
   if (customElements.get("sk-valve-indicator-piv")) return;
   const W = 120, H = 200;
-  const WX = 48, WY = 94, SPAN = 70;             // window centre and the distance between the two words
+  const WX = 48, WY = 94, SPAN = 80;             // window centre and the distance between the two words
 
   const TPL = document.createElement("template");
   TPL.innerHTML = `
@@ -155,8 +155,8 @@
 
       <!-- rust bleeding from under the window bolts -->
       <g>
-        <rect x="23.6" y="132" width="7" height="24" fill="url(#rust)"/>
-        <rect x="65.4" y="132" width="7" height="32" fill="url(#rust)"/>
+        <rect x="23.6" y="132" width="7.5" height="30" fill="url(#rust)"/>
+        <rect x="65.4" y="132" width="7.5" height="38" fill="url(#rust)"/>
         <rect x="23.6" y="56" width="6" height="12" fill="url(#rust)" opacity="0.6"/>
       </g>
 

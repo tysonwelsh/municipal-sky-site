@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teletype Model 33 roll printer — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "print-teletype-33-roll",
+  "element": "sk-print-teletype-33",
+  "name": "Teletype Model 33 roll printer",
+  "kind": "output",
+  "code": "G16",
+  "type": "Impact page printer on roll paper",
+  "source": "Teletype Corporation Model 33 ASR/KSR (1963), Skokie IL — typebox hammer impressions, uppercase only, on cheap yellow-white roll paper",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["roll paper", "inked ribbon", "grey-green painted sheet steel", "rubber platen"],
+  "tags": ["teletype", "printer", "paper", "ascii", "terminal", "basic", "timesharing"],
+  "value": { "model": "text" },
+  "attributes": ["value", "columns", "ribbon", "label", "scale"],
+  "events": [],
+  "demoWords": ["READY.", "10 PRINT \"HELLO\"", "RUN", "HELLO"],
+  "notes": "A BASIC session on the roll. print(str) types at 10 characters a second with the hammer's jolt; value sets the page at once; ribbon fades the ink."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="plastic-grey">
+    <sk-print-teletype-33 columns="52" label="MODEL 33 KSR" value="ATTN ZANKYO 3042\n\nREADY.\n10 PRNIT\b\b\b\b\bXXXXX\n10 PRINT &quot;HELLO&quot;\n20 GOTO 10\nRUN\nHELLO\nHELLO\nHELLO\n^C BREAK IN 20\nREADY.\a"></sk-print-teletype-33>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Teletype Model 33</b> was the terminal of the first timesharing decade: a typebox on a carriage,
+  a rubber platen, an inked ribbon and a roll of cheap yellow-white paper, printing <b>uppercase only</b> at
+  ten characters a second behind a grey-green painted guide bar with a serrated tear edge. Every character is
+  a separate hammer blow, so no two strikes on a real roll are quite the same weight or quite on the baseline.</p>
+  <p><b>The tells kept here:</b> per-character jitter — ±0.4 px of baseline, ±0.5° of rotation and a spread of
+  ink weights with the odd faint strike; the whole paper jolting 1 px as each hammer lands; the 100 ms line
+  advance with a double-strike ghost on the last character of a line; the correction typed as
+  <code>XXXXX</code> struck <i>over</i> the mistake by backspacing the carriage (the machine cannot erase);
+  the <code>BELL</code> at the end of the session as an overprinted dot; the paper's fibre grain, its ragged
+  roll-cut right margin and the shadow where it curls forward out of the slot; the platen with its knob, and
+  the ribbon fading the whole page toward grey as <code>ribbon</code> drops.</p>
+  <p><b>Left out:</b> the machine around the paper — the keyboard, the paper-tape punch and reader, the call
+  control unit. The roll is drawn at <code>columns="52"</code> so the type is legible at card size; the
+  element's default is the machine's real 72-column line, which renders the same page in 7 px type.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-print-teletype-33> — Teletype Model 33 impressions on roll paper ====
+   attributes: value columns ribbon label scale     (value accepts \n \b \a escapes)
+   methods:    print(str) — appends at 10 chars/s;  value — sets the whole page at once
+   no events (an output).
+   self-contained: paste this block into any page and use <sk-print-teletype-33 value="READY."> */
+(function () {
+  "use strict";
+  if (customElements.get("sk-print-teletype-33")) return;
+
+  var W = 320, H = 224;
+  var PL = 12, PW = 296;            // paper: left, width
+  var PTOP = 22, PBOT = 202;        // paper band (the platen covers below)
+  var DEFCOLS = 72;
+
+  // --- the serrated tear bar's teeth, and the roll's ragged right cut ------
+  var teeth = "M 0 20 ";
+  for (var tx = 0; tx < 320; tx += 6.4) teeth += "L " + (tx + 3.2).toFixed(2) + " 25.6 L " + (tx + 6.4).toFixed(2) + " 20 ";
+  teeth += "L 320 5 L 0 5 Z";
+  var rag = [], rs = 0.417;
+  for (var i = 0; i <= 24; i++) {
+    rs = (rs * 9301 + 49297) % 233280 / 233280;
+    rag.push((PW - 0.2 - rs * 2.0).toFixed(2) + "px " + (i * 100 / 24).toFixed(2) + "%");
+  }
+  var CLIP = "polygon(0% 0%, " + rag.join(", ") + ", 0% 100%)";
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
+  '        --cw:5.69px; --lh:9.48px; --fs:9.48px; --ink:#1e1b17; --inkop:1; }',
+  ':host([hidden]) { display:none; }',
+  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  '.vp { position:absolute; inset:0; overflow:hidden; border-radius:2px;',
+  '      background:linear-gradient(180deg,#191917,#101010 60%,#0a0a09); }',
+  '.deck { position:absolute; inset:0; background:radial-gradient(70% 50% at 20% 0%, rgba(255,255,255,0.05), transparent 70%); }',
+  '.paper { position:absolute; left:' + PL + 'px; top:' + PTOP + 'px; width:' + PW + 'px; height:' + (PBOT - PTOP) + 'px;',
+  '   overflow:hidden; clip-path:' + CLIP + ';',
+  '   background-color:#ede4c8;',
+  '   background-image:',
+  '     repeating-linear-gradient(90deg, rgba(160,140,95,0.055) 0 1px, rgba(255,255,255,0) 1px 3px),',
+  '     repeating-linear-gradient(0deg, rgba(160,140,95,0.035) 0 1px, rgba(255,255,255,0) 1px 4px),',
+  '     repeating-linear-gradient(74deg, rgba(120,100,60,0.028) 0 1px, rgba(255,255,255,0) 1px 7px),',
+  '     linear-gradient(90deg, rgba(120,98,52,0.10), rgba(255,255,255,0.05) 22%, rgba(255,255,255,0.06) 72%, rgba(120,98,52,0.13));',
+  '   box-shadow: 0 0 7px rgba(0,0,0,0.55); }',
+  '.lines { position:absolute; left:6px; right:2px; bottom:7px; }',
+  '.ln { position:relative; height:var(--lh); }',
+  '.ln i { position:absolute; display:block; top:0; font-style:normal; font-weight:400;',
+  '   font-family:"Courier Prime","Courier New",Courier,monospace; font-size:var(--fs); line-height:1;',
+  '   color:var(--ink); text-shadow:0 0.45px 0 rgba(255,255,255,0.32); white-space:pre; }',
+  '.ln i.g { opacity:0.30 !important; }',
+  '.ln i.b { font-weight:700; }',
+  '.ln i.f { animation:fl 480ms steps(2) 2; }',
+  '@keyframes fl { 0%,49% { opacity:0.95 } 50%,100% { opacity:0.15 } }',
+  '.curl { position:absolute; left:' + PL + 'px; top:' + PTOP + 'px; width:' + PW + 'px; height:' + (PBOT - PTOP) + 'px;',
+  '   pointer-events:none; clip-path:' + CLIP + ';',
+  '   background:linear-gradient(180deg, rgba(20,14,4,0.72) 0px, rgba(20,14,4,0.30) 7px, rgba(20,14,4,0.06) 16px,',
+  '     rgba(255,255,255,0.10) 30px, rgba(255,255,255,0.0) 52px, rgba(0,0,0,0) 70%, rgba(24,16,4,0.30) 100%); }',
+  '.chrome { position:absolute; inset:0; width:' + W + 'px; height:' + H + 'px; display:block; }',
+  '.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:pre; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="vp">',
+  '    <div class="deck"></div>',
+  '    <div class="paper"><div class="lines"></div></div>',
+  '    <div class="curl"></div>',
+  '    <svg class="chrome" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
+  '      <defs>',
+  '        <linearGradient id="gd" x1="0" y1="0" x2="0.15" y2="1">',
+  '          <stop offset="0" stop-color="#9dac98"/><stop offset="0.35" stop-color="#7d8c7a"/><stop offset="1" stop-color="#55634f"/>',
+  '        </linearGradient>',
+  '        <linearGradient id="tr" x1="0" y1="0" x2="0.1" y2="1">',
+  '          <stop offset="0" stop-color="#d0d3cc"/><stop offset="0.45" stop-color="#a9aca4"/><stop offset="1" stop-color="#6e716b"/>',
+  '        </linearGradient>',
+  '        <linearGradient id="pl" x1="0" y1="0" x2="0" y2="1">',
+  '          <stop offset="0" stop-color="#050505"/><stop offset="0.16" stop-color="#43433f"/><stop offset="0.34" stop-color="#26261f"/>',
+  '          <stop offset="0.72" stop-color="#131311"/><stop offset="1" stop-color="#090908"/>',
+  '        </linearGradient>',
+  '        <radialGradient id="kn" cx="34%" cy="28%" r="72%">',
+  '          <stop offset="0" stop-color="#8d8d87"/><stop offset="0.55" stop-color="#3a3a36"/><stop offset="1" stop-color="#101010"/>',
+  '        </radialGradient>',
+  '        <radialGradient id="sc" cx="34%" cy="28%" r="70%">',
+  '          <stop offset="0" stop-color="#b9bcb4"/><stop offset="0.6" stop-color="#63665f"/><stop offset="1" stop-color="#2a2c28"/>',
+  '        </radialGradient>',
+  '        <filter id="bl" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>',
+  '      </defs>',
+  '      <rect x="0" y="0" width="' + W + '" height="20" fill="url(#gd)"/>',
+  '      <rect x="0" y="0" width="' + W + '" height="1.1" fill="#bccab7" opacity="0.65"/>',
+  '      <rect x="0" y="17.4" width="' + W + '" height="2.6" fill="#44503f" opacity="0.75"/>',
+  '      <path d="' + teeth + '" fill="url(#tr)"/>',
+  '      <path d="' + teeth + '" fill="none" stroke="#e6e8e2" stroke-opacity="0.35" stroke-width="0.6"/>',
+  '      <rect x="0" y="5" width="' + W + '" height="1" fill="#000" opacity="0.35"/>',
+  '      <g opacity="0.9">',
+  '        <circle cx="24" cy="10.5" r="3.1" fill="url(#sc)"/><rect x="21.4" y="9.9" width="5.2" height="1.1" fill="#25271f" transform="rotate(22 24 10.5)"/>',
+  '        <circle cx="296" cy="10.5" r="3.1" fill="url(#sc)"/><rect x="293.4" y="9.9" width="5.2" height="1.1" fill="#25271f" transform="rotate(-38 296 10.5)"/>',
+  '      </g>',
+  '      <rect x="0" y="' + (PBOT - 6) + '" width="' + W + '" height="7" fill="#1a1408" opacity="0.5" filter="url(#bl)"/>',
+  '      <rect x="0" y="' + PBOT + '" width="' + W + '" height="' + (H - PBOT) + '" fill="url(#pl)"/>',
+  '      <rect x="0" y="' + (PBOT + 2.6) + '" width="' + W + '" height="1.1" fill="#6e6e66" opacity="0.5"/>',
+  '      <g opacity="0.22">',
+  '        <rect x="0" y="' + (PBOT + 7) + '" width="' + W + '" height="0.6" fill="#8a8a80"/>',
+  '        <rect x="0" y="' + (PBOT + 12) + '" width="' + W + '" height="0.5" fill="#000"/>',
+  '      </g>',
+  '      <ellipse cx="9" cy="' + (PBOT + 11) + '" rx="12" ry="11" fill="url(#kn)" stroke="#000" stroke-width="0.7"/>',
+  '      <ellipse cx="311" cy="' + (PBOT + 11) + '" rx="12" ry="11" fill="url(#kn)" stroke="#000" stroke-width="0.7"/>',
+  '      <rect x="0" y="0" width="' + W + '" height="' + H + '" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2"/>',
+  '    </svg>',
+  '  </div>',
+  '  <div class="sr" aria-live="polite"></div>',
+  '</div>'].join("\n");
+
+  function rnd(a, b, c) {
+    var x = (a * 73856093) ^ (b * 19349663) ^ (c * 83492791);
+    x = Math.imul(x ^ (x >>> 15), 2246822507); x ^= x >>> 13;
+    return (x >>> 0) % 100000 / 100000;
+  }
+  function esc(s) { return s === "&" ? "&amp;" : s === "<" ? "&lt;" : s === ">" ? "&gt;" : s; }
+  function unesc(s) {
+    return String(s).replace(/\\([nbatr\\])/g, function (m, c) {
+      return c === "n" ? "\n" : c === "b" ? "\b" : c === "a" ? "\x07" : c === "t" ? "    " : c === "r" ? "\r" : "\\";
+    });
+  }
+  function reesc(s) {
+    return String(s).replace(/[\\\n\b\x07\r]/g, function (c) {
+      return c === "\n" ? "\\n" : c === "\b" ? "\\b" : c === "\x07" ? "\\a" : c === "\r" ? "\\r" : "\\\\";
+    });
+  }
+
+  var SESSION = "\x02ATTN ZANKYO 3042\n\x01\nREADY.\n\x0110 PRNIT\b\b\b\b\bXXXXX\n10 PRINT \"HELLO\"\n20 GOTO 10\n\x01RUN\n\x01HELLO\nHELLO\nHELLO\n\x01^C BREAK IN 20\nREADY.\x07\x02";
+
+  class SkPrintTeletype33 extends HTMLElement {
+    static get observedAttributes() { return ["value", "columns", "ribbon", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._text = ""; this._cols = DEFCOLS; this._ribbon = 1; this._scale = 1;
+      this._cache = new Map(); this._q = []; this._timer = 0; this._demoRun = false; this._refl = false;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._paper = this.shadowRoot.querySelector(".paper");
+      this._linesEl = this.shadowRoot.querySelector(".lines");
+      this._sr = this.shadowRoot.querySelector(".sr");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", (this.getAttribute("label") || "teletype") + " printout");
+      this._readAttrs(); this._render();
+    }
+    disconnectedCallback() { clearTimeout(this._timer); this._timer = 0; this._q.length = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected || this._refl) return;
+      this._readAttrs();
+      if (n === "columns" || n === "value") { this._cache.clear(); this._linesEl.textContent = ""; }
+      this._render();
+    }
+
+    get value() { return this._text; }
+    set value(v) { this._text = unesc(v == null ? "" : v); this._reflect(); this._cache.clear(); this._linesEl.textContent = ""; this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get ribbon() { return this._ribbon; }
+    set ribbon(r) { this.setAttribute("ribbon", String(r)); }
+
+    /* append characters at 10 chars/s, the way the machine receives them */
+    print(str) {
+      if (str == null) return;
+      var s = unesc(str), i;
+      for (i = 0; i < s.length; i++) this._q.push(s[i]);
+      if (!this._timer) this._timer = setTimeout(this._tick, 100);
+    }
+    clear() { this.value = ""; }
+    demo() { if (!this._demoRun) { this._demoRun = true; this._session(); } return undefined; }
+
+    _session() { this.value = ""; this._q.length = 0; this.print(SESSION); }
+    _tick() {
+      if (!this._q.length) {
+        this._timer = this._demoRun ? setTimeout(this._session.bind(this), 2400) : 0;
+        return;
+      }
+      var ch = this._q.shift(), d = 100;
+      if (ch === "\x01") d = 520;
+      else if (ch === "\x02") d = 1100;
+      else this._append(ch);
+      this._timer = setTimeout(this._tick, d);
+    }
+    _append(ch) {
+      this._text += ch;
+      this._reflect();
+      this._render();
+      // the hammer: the whole roll jolts 1 px
+      if (this._paper.animate) {
+        if (ch === "\n") this._linesEl.animate([{ transform: "translateY(" + this._lh() + "px)" }, { transform: "translateY(0)" }], { duration: 100, easing: "cubic-bezier(.2,.8,.3,1)" });
+        else this._paper.animate([{ transform: "translateY(-1px)" }, { transform: "translateY(0)" }], { duration: 70, easing: "ease-out" });
+      }
+      if (ch === "\x07") {
+        var last = this._linesEl.lastElementChild, b = last && last.querySelector("i.b");
+        if (b) { b.classList.add("f"); setTimeout(function () { b.classList.remove("f"); }, 1000); }
+      }
+    }
+    _reflect() { this._refl = true; this.setAttribute("value", reesc(this._text)); this._refl = false; }
+
+    _readAttrs() {
+      var num = function (n, d, self) { var x = parseFloat(self.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._cols = Math.max(20, Math.min(132, Math.round(num("columns", DEFCOLS, this))));
+      this._ribbon = Math.max(0, Math.min(1, num("ribbon", 1, this)));
+      this._scale = Math.max(0.2, num("scale", 1, this));
+      if (this.hasAttribute("value")) this._text = unesc(this.getAttribute("value"));
+      var cw = (PW - 10) / this._cols, lh = cw * 1.667, fs = cw / 0.601;
+      this.style.setProperty("--cw", cw.toFixed(3) + "px");
+      this.style.setProperty("--lh", lh.toFixed(3) + "px");
+      this.style.setProperty("--fs", fs.toFixed(3) + "px");
+      // the ribbon ages from black toward grey-brown
+      var r = this._ribbon, mix = function (a, b) { return Math.round(a + (b - a) * (1 - r)); };
+      this.style.setProperty("--ink", "rgb(" + mix(30, 106) + "," + mix(27, 100) + "," + mix(23, 86) + ")");
+      this.style.setProperty("--inkop", (0.55 + 0.45 * r).toFixed(3));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      if (this.hasAttribute("label")) this.setAttribute("aria-label", this.getAttribute("label") + " printout");
+    }
+    _cw() { return (PW - 10) / this._cols; }
+    _lh() { return this._cw() * 1.667; }
+    _maxLines() { return Math.ceil((PBOT - PTOP) / this._lh()) + 2; }
+
+    /* the buffer → lines of cells; \b walks the carriage back so the next
+       character overstrikes, \a prints a bell dot without advancing */
+    _layout() {
+      var t = this._text, lines = [], cur = [], col = 0, i, ch;
+      for (i = 0; i < t.length; i++) {
+        ch = t[i];
+        if (ch === "\n") { if (cur.length) cur[cur.length - 1].last = true; lines.push(cur); cur = []; col = 0; }
+        else if (ch === "\r") col = 0;
+        else if (ch === "\b") col = Math.max(0, col - 1);
+        else if (ch === "\x07") cur.push({ c: "•", x: col, bell: true });
+        else if (ch === "\x01" || ch === "\x02") { /* pause marks */ }
+        else {
+          cur.push({ c: ch.toUpperCase(), x: col });
+          col++;
+          if (col >= this._cols) { lines.push(cur); cur = []; col = 0; }
+        }
+      }
+      lines.push(cur);
+      return lines;
+    }
+    _lineHTML(n, cells) {
+      var cw = this._cw(), out = "", k, c, a, dy, rot, op, g;
+      for (k = 0; k < cells.length; k++) {
+        c = cells[k];
+        a = rnd(n, c.x, k);
+        dy = (rnd(n, c.x, 7) - 0.5) * 0.8;
+        rot = (rnd(n, c.x, 11) - 0.5);
+        op = 0.80 + a * 0.20;
+        if (a < 0.09) op = 0.40 + a * 1.6;               // a faint strike
+        else if (a > 0.93) op = 1;                       // a heavy one
+        out += '<i class="' + (c.bell ? "b" : "") + '" style="left:' + (c.x * cw).toFixed(2) + "px;top:" + dy.toFixed(2) +
+               "px;transform:rotate(" + rot.toFixed(2) + "deg);opacity:" + (op * (0.55 + 0.45 * this._ribbon)).toFixed(3) + '">' + esc(c.c) + "</i>";
+        // the carriage-return double strike: the hammer lands twice on the last character
+        if (c.last && rnd(n, 3, 5) > 0.55) {
+          g = (c.x * cw + 0.7).toFixed(2);
+          out += '<i class="g" style="left:' + g + "px;top:" + (dy + 0.5).toFixed(2) + 'px">' + esc(c.c) + "</i>";
+        }
+      }
+      return out;
+    }
+    _render() {
+      var lines = this._layout(), N = this._maxLines();
+      var start = Math.max(0, lines.length - N), host = this._linesEl, i, sig, c, prev = null;
+      this._cache.forEach(function (v, k) { if (k < start || k >= lines.length) { if (v.node.parentNode) v.node.parentNode.removeChild(v.node); this._cache.delete(k); } }, this);
+      for (i = start; i < lines.length; i++) {
+        sig = lines[i].map(function (x) { return x.x + x.c + (x.last ? "!" : ""); }).join("");
+        c = this._cache.get(i);
+        if (!c) { c = { node: document.createElement("div"), sig: null }; c.node.className = "ln"; this._cache.set(i, c); }
+        if (c.sig !== sig) { c.node.innerHTML = this._lineHTML(i, lines[i]); c.sig = sig; }
+        if (c.node.previousSibling !== prev || c.node.parentNode !== host) host.insertBefore(c.node, prev ? prev.nextSibling : host.firstChild);
+        prev = c.node;
+      }
+      var txt = this._text.replace(/[\x01\x02\b\x07]/g, "");
+      this._sr.textContent = txt.slice(-160);
+    }
+  }
+  customElements.define("sk-print-teletype-33", SkPrintTeletype33);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

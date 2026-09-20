@@ -67,15 +67,15 @@
   if (customElements.get("sk-level-vial")) return;
   const W = 180, H = 70;
   const MID = 90;                  // the vial's centre, in px
-  const K = 27.5;                  // px of bubble travel per unit of value
-  const PIN = 27.5;                // the bubble pins here, against the end of the bore
-  const BRX = 12.5, BRY = 7;       // the bubble at the centre of its travel
-  const LINE = 26.25;              // the etched lines: the bubble touches them at +/- 0.5
+  const K = 30.5;                  // px of bubble travel per unit of value
+  const PIN = 30.5;                // the bubble pins here, against the end of the bore
+  const BRX = 12.5, BRY = 7.5;     // the bubble at the centre of its travel
+  const LINE = 27.75;              // the etched lines: the bubble touches them at +/- 0.5
 
-  const BORE = "M 50 35 Q 50 28.4 57.5 27.3 Q 90 24.6 122.5 27.3 Q 130 28.4 130 35 " +
-               "Q 130 41.6 122.5 43.0 Q 90 44.6 57.5 43.0 Q 50 41.6 50 35 Z";
-  const GLASS = "M 46.6 35 Q 46.6 27.3 55.8 26.1 Q 90 23.2 124.2 26.1 Q 133.4 27.3 133.4 35 " +
-                "Q 133.4 42.7 124.2 43.9 Q 90 46.1 55.8 43.9 Q 46.6 42.7 46.6 35 Z";
+  const BORE = "M 47 35 Q 47 28.4 55 27.3 Q 90 24.8 125 27.3 Q 133 28.4 133 35 " +
+               "Q 133 41.6 125 42.9 Q 90 45.0 55 42.9 Q 47 41.6 47 35 Z";
+  const GLASS = "M 44.4 35 Q 44.4 27.4 54 26.2 Q 90 23.6 126 26.2 Q 135.6 27.4 135.6 35 " +
+                "Q 135.6 42.6 126 43.8 Q 90 46.2 54 43.8 Q 44.4 42.6 44.4 35 Z";
 
   const TPL = document.createElement("template");
   TPL.innerHTML = `
@@ -99,12 +99,12 @@
           <stop offset="0.85" stop-color="#a7a9a6"/><stop offset="1" stop-color="#8e908d"/>
         </linearGradient>
         <linearGradient id="bind" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#f0dda2"/><stop offset="0.3" stop-color="#c9a24c"/>
-          <stop offset="0.75" stop-color="#8e6c2c"/><stop offset="1" stop-color="#6e5220"/>
+          <stop offset="0" stop-color="#e8d296"/><stop offset="0.3" stop-color="#bf9a48"/>
+          <stop offset="0.75" stop-color="#836427"/><stop offset="1" stop-color="#624919"/>
         </linearGradient>
         <linearGradient id="port" x1="0.12" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stop-color="#e3cd85"/><stop offset="0.18" stop-color="#c9a24c"/>
-          <stop offset="0.6" stop-color="#9a7733"/><stop offset="1" stop-color="#6e5220"/>
+          <stop offset="0" stop-color="#dbc179"/><stop offset="0.18" stop-color="#bf9a48"/>
+          <stop offset="0.6" stop-color="#8d6d2d"/><stop offset="1" stop-color="#624919"/>
         </linearGradient>
         <linearGradient id="chamf" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#f7e9b4"/><stop offset="0.25" stop-color="#d3ab55"/>
@@ -113,10 +113,11 @@
         <radialGradient id="scr" cx="34%" cy="28%" r="74%">
           <stop offset="0" stop-color="#f5e6ad"/><stop offset="0.55" stop-color="#bd9846"/><stop offset="1" stop-color="#5d451a"/>
         </radialGradient>
-        <linearGradient id="fluid" gradientUnits="userSpaceOnUse" x1="50" y1="0" x2="130" y2="0">
-          <stop offset="0" stop-color="#7ea132"/><stop offset="0.12" stop-color="#9dc23e"/>
-          <stop offset="0.5" stop-color="#b8d64a"/><stop offset="0.88" stop-color="#9dc23e"/>
-          <stop offset="1" stop-color="#7ea132"/>
+        <linearGradient id="fluid" gradientUnits="userSpaceOnUse" x1="47" y1="0" x2="133" y2="0">
+          <stop offset="0" stop-color="#6d8c26"/><stop offset="0.09" stop-color="#8fb33a"/>
+          <stop offset="0.3" stop-color="#b0d047"/><stop offset="0.5" stop-color="#c2de54"/>
+          <stop offset="0.7" stop-color="#b0d047"/><stop offset="0.91" stop-color="#8fb33a"/>
+          <stop offset="1" stop-color="#6d8c26"/>
         </linearGradient>
         <linearGradient id="fdep" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
@@ -167,7 +168,11 @@
       <!-- the cast-brass port, screwed to the beam -->
       <rect x="31" y="13" width="120" height="48" rx="5" fill="#000" opacity="0.45" filter="url(#s25)"/>
       <rect x="30" y="11" width="120" height="48" rx="5" fill="url(#port)" stroke="#3e2d0f" stroke-width="0.8"/>
-      <path d="M 35 11.8 L 145 11.8" stroke="#ffeeb6" stroke-opacity="0.65" stroke-width="0.9"/>
+      <path d="M 35 11.8 L 145 11.8" stroke="#ffeeb6" stroke-opacity="0.6" stroke-width="0.9"/>
+      <g opacity="0.16" filter="url(#s25)">
+        <ellipse cx="58" cy="19" rx="16" ry="5" fill="#2e2107"/><ellipse cx="118" cy="53" rx="20" ry="5" fill="#2e2107"/>
+        <ellipse cx="96" cy="16" rx="14" ry="4" fill="#fff3c8"/><ellipse cx="40" cy="52" rx="12" ry="4" fill="#2e2107"/>
+      </g>
       <path d="M 30.6 18 Q 30.6 11.6 37 11.6" fill="none" stroke="#ffeeb6" stroke-opacity="0.45" stroke-width="0.8"/>
       <rect x="30" y="11" width="120" height="48" rx="5" fill="none" stroke="#2b1d08" stroke-opacity="0.55" stroke-width="1.6" filter="url(#s12)"/>
       <!-- a line of grime where the port meets the wood -->
@@ -181,31 +186,31 @@
         <path d="${BORE}" fill="url(#fluid)"/>
         <path d="${BORE}" fill="url(#fdep)"/>
         <!-- the fluid deepens and darkens toward the ends of the bore -->
-        <path d="${BORE}" fill="none" stroke="#5f7d18" stroke-opacity="0.55" stroke-width="3.5" filter="url(#s12)"/>
+        <path d="${BORE}" fill="none" stroke="#5f7d18" stroke-opacity="0.45" stroke-width="2.4" filter="url(#s12)"/>
         <!-- the bubble's shadow on the fluid -->
         <ellipse class="sh" cx="90" cy="40" rx="11" ry="2.2" fill="#3f5a10" opacity="0.45" filter="url(#s12)"/>
         <!-- the bubble: a bright meniscus, a dark green rim, a crescent at the top-left -->
         <ellipse class="bu" cx="90" cy="33" rx="${BRX}" ry="${BRY}" fill="url(#bub)" stroke="#65861c" stroke-width="1.1"/>
-        <ellipse class="bu2" cx="90" cy="33" rx="${BRX - 1.6}" ry="${BRY - 1}" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.8" filter="url(#s05)"/>
-        <ellipse class="hi" cx="85" cy="30" rx="4.8" ry="1.5" fill="#ffffff" opacity="0.95" filter="url(#s05)"/>
+        <ellipse class="bu2" cx="90" cy="33" rx="${BRX - 1.6}" ry="${BRY - 1}" fill="none" stroke="#ffffff" stroke-opacity="0.62" stroke-width="0.9" filter="url(#s05)"/>
+        <ellipse class="hi" cx="85" cy="30" rx="4.8" ry="1.5" fill="#ffffff" filter="url(#s05)"/>
         <!-- the two etched lines, and their refraction across the bubble -->
         <g class="etch">
-          <ellipse cx="${MID - LINE}" cy="35" rx="2.8" ry="8.8" fill="none" stroke="#0e0e0e" stroke-width="1.6"/>
-          <ellipse cx="${MID + LINE}" cy="35" rx="2.8" ry="8.8" fill="none" stroke="#0e0e0e" stroke-width="1.6"/>
+          <ellipse cx="${MID - LINE}" cy="35" rx="2.9" ry="9.0" fill="none" stroke="#0e0e0e" stroke-width="1.6"/>
+          <ellipse cx="${MID + LINE}" cy="35" rx="2.9" ry="9.0" fill="none" stroke="#0e0e0e" stroke-width="1.6"/>
         </g>
         <g clip-path="url(#bubclip)">
-          <ellipse cx="${MID - LINE}" cy="35" rx="3.0" ry="9.0" fill="none" stroke="#080808" stroke-width="2.4"/>
-          <ellipse cx="${MID + LINE}" cy="35" rx="3.0" ry="9.0" fill="none" stroke="#080808" stroke-width="2.4"/>
+          <ellipse cx="${MID - LINE}" cy="35" rx="3.1" ry="9.2" fill="none" stroke="#080808" stroke-width="2.4"/>
+          <ellipse cx="${MID + LINE}" cy="35" rx="3.1" ry="9.2" fill="none" stroke="#080808" stroke-width="2.4"/>
         </g>
         <!-- the glass: one long glint along the top, a cooler one below -->
-        <path d="M 58 28.4 Q 90 25.8 122 28.4" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.5" filter="url(#s05)"/>
-        <path d="M 66 41.8 Q 90 43.4 114 41.8" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1" filter="url(#s05)"/>
+        <path d="M 57 29.2 Q 90 26.6 123 29.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.5" filter="url(#s05)"/>
+        <path d="M 65 42.0 Q 90 43.8 115 42.0" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1" filter="url(#s05)"/>
         <!-- the dark inner shadow the chamfer throws on the glass -->
-        <path d="${GLASS}" fill="none" stroke="#1a1405" stroke-opacity="0.6" stroke-width="3.2" filter="url(#s12)"/>
+        <path d="${GLASS}" fill="none" stroke="#1a1405" stroke-opacity="0.5" stroke-width="2.2" filter="url(#s12)"/>
       </g>
       <!-- the glass tube's own edge, and the dark ends of the vial in the port -->
       <path d="${GLASS}" fill="none" stroke="#e9f2c8" stroke-opacity="0.3" stroke-width="0.8"/>
-      <rect x="42.6" y="23.6" width="94.8" height="22.8" rx="10.4" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="3.4" filter="url(#s12)"/>
+      <rect x="42.6" y="23.6" width="94.8" height="22.8" rx="10.4" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="2.4" filter="url(#s12)"/>
       <rect x="41" y="22" width="98" height="26" rx="12" fill="none" stroke="#2b1d08" stroke-width="0.7"/>
       <path d="M 53 22.5 L 127 22.5" stroke="#ffeeb6" stroke-opacity="0.55" stroke-width="0.8"/>
 
@@ -306,7 +311,7 @@
       const u = Math.min(1, Math.abs(off) / PIN);
       const rx = BRX - 3.6 * u * u, ry = BRY - 1.4 * u * u;
       const cx = MID + off;
-      const boreTop = 27.3 - 1.5 * (1 - Math.min(1, Math.pow((cx - MID) / 40, 2)));
+      const boreTop = 27.3 - 1.25 * (1 - Math.min(1, Math.pow((cx - MID) / 43, 2)));
       const cy = boreTop + ry + 0.55;
       const b = this._bu;
       b.setAttribute("cx", cx.toFixed(2)); b.setAttribute("cy", cy.toFixed(2));
@@ -318,8 +323,8 @@
       c2.setAttribute("cx", cx.toFixed(2)); c2.setAttribute("cy", cy.toFixed(2));
       c2.setAttribute("rx", (rx + 0.6).toFixed(2)); c2.setAttribute("ry", (ry + 0.6).toFixed(2));
       const h = this._hi;
-      h.setAttribute("cx", (cx - rx * 0.3).toFixed(2)); h.setAttribute("cy", (cy - ry * 0.44).toFixed(2));
-      h.setAttribute("rx", (rx * 0.34).toFixed(2)); h.setAttribute("ry", (ry * 0.21).toFixed(2));
+      h.setAttribute("cx", (cx - rx * 0.32).toFixed(2)); h.setAttribute("cy", (cy - ry * 0.46).toFixed(2));
+      h.setAttribute("rx", (rx * 0.42).toFixed(2)); h.setAttribute("ry", (ry * 0.25).toFixed(2));
       const s = this._sh;
       s.setAttribute("cx", (cx + 0.6).toFixed(2)); s.setAttribute("cy", (cy + ry * 0.98).toFixed(2));
       s.setAttribute("rx", (rx * 0.82).toFixed(2)); s.setAttribute("ry", (ry * 0.3).toFixed(2));

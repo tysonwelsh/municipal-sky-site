@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ferranti-Packard flip-disc matrix — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "flipdot-ferranti-packard-matrix",
+  "element": "sk-flipdot-ferranti-packard",
+  "name": "Ferranti-Packard yellow flip-disc matrix",
+  "kind": "output",
+  "code": "G11",
+  "type": "Electromechanical flip-disc (flip-dot) matrix",
+  "source": "Ferranti-Packard flip-disc module (Kenyon Taylor, Toronto), as on the Montreal Stock Exchange board of 1961, airport gate signs and transit destination boards",
+  "era": "1960s",
+  "origin": "Canada",
+  "materials": ["matte black steel", "fluorescent yellow painted aluminium discs", "steel pivots"],
+  "tags": ["transit", "airport", "stock board", "bitmap", "electromechanical", "flip dot"],
+  "value": { "model": "bits", "count": 196 },
+  "attributes": ["value", "text", "bitmap", "columns", "rows", "disc", "backlight", "seed", "label", "scale"],
+  "events": [],
+  "size": { "w": 414, "h": 120 },
+  "notes": "A 44-column board reading GATE 12 and a 14-column module holding an arrow bitmap. Set .value to a boolean array (row-major) or a string; the discs flip in a wave from the left."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium">
+    <sk-flipdot-ferranti-packard columns="44" rows="7" text="GATE 12" label="GATE"></sk-flipdot-ferranti-packard>
+    <sk-flipdot-ferranti-packard columns="14" rows="7" label="arrow" seed="9"
+      bitmap=".........#..../..........#.../...........#../##############/...........#../..........#.../.........#...."></sk-flipdot-ferranti-packard>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Kenyon Taylor's <b>flip-disc</b>, built by Ferranti-Packard in Toronto from 1961, is the sign that made a
+  noise. Each dot is a disc of aluminium painted fluorescent yellow on one face and black on the other, pivoted
+  on a wire through its middle with a tiny permanent magnet inside; a pulse through a coil behind the board
+  flips it and it stays there with no power at all. The Montreal Stock Exchange board was the first; then
+  airport gate signs, highway matrix signs, and every transit destination board that clatters when the bus
+  changes route.</p>
+  <p><b>The tells kept here:</b> the discs are a little smaller than their holes, so a dark ring surrounds each
+  one, and the <b>pivot pin</b> shows as a bright speck at three o'clock on every disc; the yellow is matte
+  fluorescent paint with no specular, shaded only top to bottom; the black reverse keeps a faint rim light.
+  A change does not happen all at once — it <b>sweeps</b> across the board column by column, each disc turning
+  about its vertical pivot in about forty milliseconds, so a new word arrives as a ripple of thin edge-on discs.
+  Two discs per module are seeded <b>sticky</b> and arrive eighty milliseconds late, which is what a real board
+  always does. The board is dead matte black with a fine grain, the frame is proud with four slotted screws,
+  and every twenty-eight columns there is the dark gap between two modules.</p>
+  <p><b>Left out:</b> the sound, which is the best part; the coils and the diode matrix behind the board; and
+  the slight variation in paint age from disc to disc.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-flipdot-ferranti-packard> — Ferranti-Packard yellow flip-disc matrix ====
+   attributes: value text bitmap columns rows disc backlight seed label scale
+   no events (an output). set .value to an array of booleans (row-major) or to a string.
+   self-contained: paste this block into any page and use
+   <sk-flipdot-ferranti-packard columns="28" rows="7" text="OUT"></sk-flipdot-ferranti-packard> */
+(function () {
+  if (customElements.get("sk-flipdot-ferranti-packard")) return;
+
+  /* the 5×7 glyph table, ASCII 32…126: five column bytes per glyph, bit 0 = top row */
+  var FONT = "000000000000005f00000003000300147f147f14242a7f2a12231308646236495522500000030000001c2241000041221c002a1c3e1c2a08083e080800703000000808080808006060000020100804023e5149453e00427f400042615149462141454b311814127f1027454545393c4a49493001710905033649494936064949291e003636000000763600000814224100141414141400412214080201510906324979417e7c1211127c7f494949363e414141227f4141221c7f494949417f090909013e4149497a7f0808087f00417f41002040413f017f081422417f404040407f0204027f7f0408107f3e4141413e7f090909063e4151215e7f09192946464949493101017f01013f4040403f1f2040201f7f2018207f63140814630304780403615149454300007f4141020408102041417f000004020102044040404040000102000020545454787f444444383844444420384444447f3854545418087e0909020c5252523e7f0404047800447d40002040403d007f1028440000417f40007c041804787c0404047838444444387e1212120c0c1212127e7c080404084854545424043f4444203c4040207c1c2040201c3c4030403c44281028440e5050503e4464544c44000836414100007f000041413608000c02040806";
+  var GLYPH = [];
+  for (var gi = 0; gi < 95; gi++) { var o = gi * 10, g = []; for (var k = 0; k < 5; k++) g.push(parseInt(FONT.substr(o + k * 2, 2), 16)); GLYPH.push(g); }
+  function glyph(ch) { var i = ch.charCodeAt(0) - 32; return (i >= 0 && i < 95) ? GLYPH[i] : GLYPH[31]; }
+
+  var FR = 11;        // the frame around the board
+  var MOD = 28;       // columns in one Ferranti-Packard module
+  var GAPW = 6;       // the dark gap between two modules
+
+  function mul32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  var CSS = `
+    :host { display: inline-block; position: relative; font-size: 10px; line-height: 1;
+      --pitch: 14px; --hole: 13px; --dot: 11px; --dur: 42ms; --half: 21ms; --step: 3ms;
+      --ylw: #d6e600; --blk: #141414; }
+    :host([hidden]) { display: none; }
+    :host([backlight]) { --ylw: #f0ff40; }
+    .wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .frame { position: relative; border-radius: 4px; background: linear-gradient(160deg, #262626, #1a1a1a 45%, #0f0f0f);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset, 0 -1px 0 rgba(0,0,0,0.9) inset,
+                  0 2px 2px rgba(0,0,0,0.75), 0 8px 18px rgba(0,0,0,0.55); }
+    .board { position: absolute; border-radius: 1px; background-color: #0b0b0b;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.016) 0 1px, rgba(0,0,0,0) 1px 3px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,0.30) 0 1px, rgba(0,0,0,0) 1px 3px),
+        radial-gradient(120% 90% at 20% -10%, rgba(255,255,255,0.055), rgba(255,255,255,0) 60%);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.95), inset 0 -1px 0 rgba(255,255,255,0.035);
+      perspective: 340px; }
+    .seam { position: absolute; top: -1px; bottom: -1px; width: ${GAPW}px;
+      background: linear-gradient(90deg, #000 0 40%, #060606 70%, #1e1e1e 100%);
+      box-shadow: inset 2px 0 3px rgba(0,0,0,0.95); }
+    .cell { position: absolute; display: grid; place-items: center; width: var(--pitch); height: var(--pitch); }
+    .cell::before { content: ""; position: absolute; width: var(--hole); height: var(--hole); border-radius: 50%;
+      background: #040404; box-shadow: inset 0 1px 1.2px rgba(0,0,0,0.95), 0 0 0 0.5px #202020; }
+    .disc { position: relative; width: var(--dot); height: var(--dot); border-radius: 50%;
+      background-color: var(--blk);
+      box-shadow: 0 1px 1.4px rgba(0,0,0,0.85), inset 0 0 0 0.5px rgba(255,255,255,0.065);
+      transform: rotateY(0deg);
+      transition: transform var(--dur) linear var(--d), background-color 0s linear calc(var(--d) + var(--half)); }
+    .disc::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 46%, rgba(0,0,0,0.40)); }
+    .disc.on { background-color: var(--ylw); transform: rotateY(180deg);
+      box-shadow: 0 1px 1.6px rgba(0,0,0,0.9), inset 0 0 0 0.5px rgba(255,255,255,0.16); }
+    .disc.on::after { background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 48%, rgba(0,0,0,0.30)); }
+    :host([backlight]) .disc.on { box-shadow: 0 1px 1.4px rgba(0,0,0,0.85), 0 0 7px rgba(214,255,40,0.35), inset 0 0 0 0.5px rgba(255,255,255,0.18); }
+    .board.noanim .disc { transition: none; }
+    .pin { position: absolute; width: 1.6px; height: 1.6px; border-radius: 50%; background: #9a968c; opacity: 0.6;
+      right: calc((var(--pitch) - var(--hole)) / 2 + 0.2px); top: calc(50% - 0.8px);
+      box-shadow: 0 0.5px 0 rgba(0,0,0,0.8); }
+    .screw { position: absolute; width: 6px; height: 6px; border-radius: 50%;
+      background: radial-gradient(circle at 34% 30%, #8d8b87, #46443f 62%, #171614);
+      box-shadow: 0 0.5px 1px rgba(0,0,0,0.8), inset 0 0 0 0.4px #000; }
+    .screw::after { content: ""; position: absolute; left: 0.7px; right: 0.7px; top: 2.5px; height: 1px;
+      background: #0a0a0a; transform-origin: 50% 50%; }
+  `;
+
+  class SkFlipdot extends HTMLElement {
+    static get observedAttributes() { return ["value", "text", "bitmap", "columns", "rows", "disc", "backlight", "seed", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this._cols = 28; this._rows = 7; this._pitch = 14; this._scale = 1;
+      this._bits = null; this._state = null; this._cells = null;
+      this._raf = 0; this._built = "";
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._build(); this._apply(this._source(), true);
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      var re = (n === "columns" || n === "rows" || n === "disc" || n === "seed");
+      this._read();
+      if (re) { this._build(); this._apply(this._source(), true); }
+      else if (n === "text" || n === "bitmap" || n === "value") this._apply(this._source(), false);
+      else this._aria();
+    }
+    get value() { return this._bits ? Array.prototype.slice.call(this._bits).map(Boolean) : []; }
+    set value(v) {
+      if (v == null) return;
+      if (typeof v === "string") { this.setAttribute("text", v); return; }
+      if (!v.length) return;
+      this._ext = v; this.removeAttribute("text");
+      this._apply(this._fromArray(v), false);
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) {
+      var rowsTxt = ["XYZ 42 1/2 +1/4", "GATE 12", "ACME 108 -3/8", "NOW BOARDING", "PLAT 4  DELAYED"];
+      return this._fromText(rowsTxt[Math.floor(t / 3) % rowsTxt.length]);
+    }
+
+    _read() {
+      var n = function (a, d) { var x = parseFloat(this.getAttribute(a)); return isNaN(x) ? d : x; }.bind(this);
+      this._cols = Math.max(1, Math.min(120, Math.round(n("columns", 28))));
+      this._rows = Math.max(1, Math.min(32, Math.round(n("rows", 7))));
+      this._pitch = Math.max(5, n("disc", 14));
+      this._scale = Math.max(0.2, n("scale", 1));
+      var d = this._dims();
+      this.style.width = (d.W * this._scale) + "px";
+      this.style.height = (d.H * this._scale) + "px";
+      var w = this.shadowRoot.querySelector(".wrap");
+      if (w) w.style.transform = "scale(" + this._scale + ")";
+      this._aria();
+    }
+    _aria() {
+      var t = this.getAttribute("text");
+      this.setAttribute("aria-label", "flip-disc sign" + (t ? ": " + t : (this.getAttribute("label") ? ": " + this.getAttribute("label") : "")));
+    }
+    _dims() {
+      var p = this._pitch, gaps = Math.floor((this._cols - 1) / MOD) * GAPW;
+      return { W: FR * 2 + this._cols * p + gaps, H: FR * 2 + this._rows * p, gaps: gaps, p: p };
+    }
+    _x(c) { return this._pitch * c + Math.floor(c / MOD) * GAPW; }
+
+    _build() {
+      var d = this._dims(), p = this._pitch, cols = this._cols, rows = this._rows;
+      var rnd = mul32(Math.round(parseFloat(this.getAttribute("seed")) || 0) * 7919 + cols * 131 + rows);
+      var boardW = d.W - FR * 2, boardH = d.H - FR * 2;
+      var html = '<style>' + CSS + '</style><div class="wrap"><div class="frame" style="width:' + d.W + 'px;height:' + d.H + 'px">' +
+        '<div class="board noanim" style="left:' + FR + 'px;top:' + FR + 'px;width:' + boardW + 'px;height:' + boardH + 'px;' +
+        '--pitch:' + p + 'px;--hole:' + (p * 0.93).toFixed(2) + 'px;--dot:' + (p * 0.79).toFixed(2) + 'px">';
+      for (var k = 1; k * MOD < cols; k++) html += '<i class="seam" style="left:' + (k * MOD * p + (k - 1) * GAPW) + 'px"></i>';
+      /* two sticky discs per module, seeded: they arrive 80 ms late */
+      var sticky = {};
+      for (var m = 0; m * MOD < cols; m++) for (var q = 0; q < 2; q++) {
+        var sc = m * MOD + Math.floor(rnd() * MOD), sr = Math.floor(rnd() * rows);
+        if (sc < cols) sticky[sr * cols + sc] = 1;
+      }
+      for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
+        var late = sticky[r * cols + c] ? 80 : 0;
+        html += '<i class="cell" style="left:' + this._x(c) + 'px;top:' + (r * p) + 'px">' +
+                '<i class="disc" style="--d:' + (c * 3 + late) + 'ms"></i><i class="pin"></i></i>';
+      }
+      html += '</div>';
+      var sp = FR / 2 - 3;
+      html += '<i class="screw" style="left:' + sp + 'px;top:' + sp + 'px"></i>' +
+              '<i class="screw" style="right:' + sp + 'px;top:' + sp + 'px"></i>' +
+              '<i class="screw" style="left:' + sp + 'px;bottom:' + sp + 'px"></i>' +
+              '<i class="screw" style="right:' + sp + 'px;bottom:' + sp + 'px"></i>' +
+              '</div></div>';
+      this.shadowRoot.innerHTML = html;
+      var screws = this.shadowRoot.querySelectorAll(".screw");
+      for (var si = 0; si < screws.length; si++) screws[si].style.setProperty("transform", "rotate(" + Math.round(rnd() * 180) + "deg)");
+      this._board = this.shadowRoot.querySelector(".board");
+      this._cells = this.shadowRoot.querySelectorAll(".disc");
+      this._state = new Uint8Array(cols * rows);
+      this._bits = new Uint8Array(cols * rows);
+      this.shadowRoot.querySelector(".wrap").style.transform = "scale(" + this._scale + ")";
+      this._built = cols + "/" + rows + "/" + p;
+    }
+
+    /* --- sources: bitmap attribute, text attribute, an array set on .value --- */
+    _source() {
+      var bm = this.getAttribute("bitmap");
+      if (bm) return this._fromBitmap(bm);
+      var t = this.getAttribute("text");
+      if (t != null) return this._fromText(t);
+      if (this._ext) return this._fromArray(this._ext);
+      return new Uint8Array(this._cols * this._rows);
+    }
+    _fromBitmap(s) {
+      var out = new Uint8Array(this._cols * this._rows), lines = String(s).split(/[\/\n]/);
+      for (var r = 0; r < Math.min(this._rows, lines.length); r++) {
+        var L = lines[r];
+        for (var c = 0; c < Math.min(this._cols, L.length); c++) if (L[c] !== "." && L[c] !== " " && L[c] !== "0") out[r * this._cols + c] = 1;
+      }
+      return out;
+    }
+    _fromArray(a) {
+      var out = new Uint8Array(this._cols * this._rows);
+      for (var i = 0; i < out.length && i < a.length; i++) out[i] = a[i] ? 1 : 0;
+      return out;
+    }
+    _fromText(s) {
+      s = String(s);
+      var out = new Uint8Array(this._cols * this._rows);
+      var w = s.length * 6 - 1;
+      var x0 = Math.max(0, Math.floor((this._cols - w) / 2));
+      var y0 = Math.max(0, Math.floor((this._rows - 7) / 2));
+      for (var i = 0; i < s.length; i++) {
+        var g = glyph(s[i]);
+        for (var c = 0; c < 5; c++) {
+          var x = x0 + i * 6 + c; if (x < 0 || x >= this._cols) continue;
+          for (var r = 0; r < 7; r++) {
+            var y = y0 + r; if (y >= this._rows) continue;
+            if ((g[c] >> r) & 1) out[y * this._cols + x] = 1;
+          }
+        }
+      }
+      return out;
+    }
+
+    _apply(bits, instant) {
+      if (!this._cells) return;
+      var n = Math.min(bits.length, this._cells.length), changed = 0;
+      if (instant) this._board.classList.add("noanim");
+      for (var i = 0; i < n; i++) {
+        var b = bits[i] ? 1 : 0;
+        if (this._state[i] !== b) { this._state[i] = b; this._bits[i] = b; this._cells[i].classList.toggle("on", !!b); changed++; }
+      }
+      if (instant && changed >= 0) {
+        var self = this;
+        cancelAnimationFrame(this._raf);
+        this._raf = requestAnimationFrame(function () { self._raf = 0; if (self._board) self._board.classList.remove("noanim"); });
+      }
+    }
+  }
+  customElements.define("sk-flipdot-ferranti-packard", SkFlipdot);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

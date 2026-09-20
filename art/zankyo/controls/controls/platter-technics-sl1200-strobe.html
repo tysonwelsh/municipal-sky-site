@@ -293,14 +293,16 @@
         const N = ROWN[i], R = ROWR[i], step = Math.PI * 2 / N;
         const a0 = this._ph[i] * Math.PI * 2;
         const k0 = Math.ceil((-SPAN - a0) / step), k1 = Math.floor((SPAN - a0) / step);
-        c.fillStyle = "rgba(242,242,240," + (0.82 + 0.18 * lit).toFixed(3) + ")";
+        c.strokeStyle = "rgba(242,242,240," + (0.82 + 0.18 * lit).toFixed(3) + ")";
+        c.lineWidth = 2.5; c.lineCap = "butt";
+        const half = Math.min(step * 0.3, 1.9 / R);       // the cast marks are short tangential dashes
         c.beginPath();
         for (let k = k0; k <= k1; k++) {
-          const a = a0 + k * step;
-          const x = CX + R * Math.sin(a), y = CY + R * Math.cos(a);
-          c.moveTo(x + 1.2, y); c.arc(x, y, 1.2, 0, Math.PI * 2);
+          const a = Math.PI / 2 - (a0 + k * step);
+          c.moveTo(CX + R * Math.cos(a - half), CY + R * Math.sin(a - half));
+          c.arc(CX, CY, R, a - half, a + half);
         }
-        c.fill();
+        c.stroke();
       }
       // the neon's spill on the rim, warm and local
       c.save();

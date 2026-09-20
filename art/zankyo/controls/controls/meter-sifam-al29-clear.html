@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sifam AL29 clear-front meter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "meter-sifam-al29-clear",
+  "element": "sk-meter-sifam-al29",
+  "name": "Sifam AL29 clear-front panel meter",
+  "kind": "output",
+  "code": "F1",
+  "type": "Moving-coil panel meter",
+  "source": "Sifam AL29 \"clear-front\" rectangular panel meter — a solid acrylic block with no bezel, as fitted to Quad-era test gear, BBC and Marconi racks",
+  "era": "1960s",
+  "origin": "UK",
+  "materials": ["cast acrylic", "white card scale", "blued steel", "chrome"],
+  "tags": ["broadcast", "test equipment", "meter", "needle", "clear front", "acrylic", "ballistics"],
+  "value": { "model": "range", "min": 0, "max": 100, "step": 0.1, "unit": "mA" },
+  "attributes": ["value", "unit", "legend", "redline", "scale"],
+  "events": [],
+  "size": { "w": 176, "h": 140 },
+  "notes": "Three instances: 42 mA, 88 V with a red band from 80, and a smaller one in dB. Set value; the needle has light moving-coil ballistics."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium-black">
+    <sk-meter-sifam-al29 value="42"></sk-meter-sifam-al29>
+    <sk-meter-sifam-al29 value="88" unit="V" redline="80"></sk-meter-sifam-al29>
+    <sk-meter-sifam-al29 value="15" unit="dB" legend="LINE LEVEL" scale="0.7"></sk-meter-sifam-al29>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Sifam of Torquay made the <b>AL29</b> and its relations with no bezel at all: the case <i>is</i> a solid
+  block of clear cast acrylic with softly rounded front edges, and the white scale card floats a few
+  millimetres behind its front face. They went into Quad-era test gear, into BBC and Marconi racks, and into
+  anything whose designer wanted the instrument to look like a piece of the panel rather than a fitting
+  bolted through it.</p>
+  <p><b>The tells kept here:</b> no bezel — the card is read <i>through</i> the slab, with the block's
+  rounded top-left edges carrying two bright refracted highlights and its bottom-right edge a dark one with
+  a thin caustic; the four corner bolts and their washers seen inside the block, very slightly out of focus;
+  the card's soft shadow on the dark panel behind it; upright numerals on a 90° arc with a tick every two
+  units and a long one every ten; a hairline blued-steel needle with a tiny curved spade near its tip, on a
+  chrome-cased jewel just above the bottom edge; the chrome zero-adjust screw at bottom centre of the front
+  face with its slot at an idle angle; small polite lettering and a class mark <i>1.5</i> in the corner. The
+  block throws a soft shadow down and right; the matte card does not.</p>
+  <p><b>Left out:</b> the rear terminal block and the moulded-in mounting studs, and the maker's name, which
+  is replaced by a plain legend.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-meter-sifam-al29> — Sifam AL29 clear-front panel meter: a card read through an acrylic block ====
+   attributes: value (0–100) unit legend redline scale
+   no events (an output). set .value or the attribute; the needle has light moving-coil ballistics.
+   self-contained: paste this block into any page and use <sk-meter-sifam-al29 value="40"></sk-meter-sifam-al29> */
+(function () {
+  if (customElements.get("sk-meter-sifam-al29")) return;
+
+  const W = 176, H = 140;
+  const PX = 88, PY = 103;              // the jewel, just above the card's bottom edge
+  const R = 70, SWEEP = 90;
+  const A0 = -SWEEP / 2, A1 = SWEEP / 2;
+  const rad = d => d * Math.PI / 180;
+  const f2 = n => Math.round(n * 100) / 100;
+  const pt = (d, r) => [PX + r * Math.sin(rad(d)), PY - r * Math.cos(rad(d))];
+  function arcp(r, a, b) { const p0 = pt(a, r), p1 = pt(b, r); return `M ${f2(p0[0])} ${f2(p0[1])} A ${r} ${r} 0 0 1 ${f2(p1[0])} ${f2(p1[1])}`; }
+
+  // ---- the printed card, built once ----
+  let SC = `<path d="${arcp(R, A0, A1)}" fill="none" stroke="#1d1c1a" stroke-width="0.9"/>`;
+  for (let v = 0; v <= 100; v += 2) {
+    const a = A0 + (v / 100) * SWEEP, maj = v % 10 === 0;
+    const p0 = pt(a, R), p1 = pt(a, R - (maj ? 7.5 : 3.2));
+    SC += `<line x1="${f2(p0[0])}" y1="${f2(p0[1])}" x2="${f2(p1[0])}" y2="${f2(p1[1])}" stroke="#1d1c1a" stroke-width="${maj ? 1.1 : 0.55}"/>`;
+  }
+  for (let v = 0; v <= 100; v += 20) {
+    const p = pt(A0 + (v / 100) * SWEEP, 54);
+    SC += `<text class="num" x="${f2(p[0])}" y="${f2(p[1])}">${v}</text>`;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Libre Franklin", "Gill Sans", "Helvetica Neue", Arial, sans-serif; fill: #1d1c1a; }
+    .num   { font-size: 7.5px; font-weight: 500; text-anchor: middle; dominant-baseline: middle; }
+    .unit  { font-size: 7px; font-weight: 600; letter-spacing: 0.12em; text-anchor: middle; }
+    .leg   { font-size: 5.2px; font-weight: 500; letter-spacing: 0.22em; text-anchor: middle; fill: #4a4844; }
+    .cls   { font-size: 4.6px; font-weight: 500; letter-spacing: 0.04em; text-anchor: middle; fill: #55534e; }
+    .ned, .neds { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="chamfV" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#eef4f6"/><stop offset="0.045" stop-color="#bcc8cd"/><stop offset="0.08" stop-color="#565f63"/>
+          <stop offset="0.18" stop-color="#262a2d"/><stop offset="0.55" stop-color="#1b1e21"/><stop offset="0.86" stop-color="#0b0d0f"/>
+          <stop offset="0.945" stop-color="#303b3f"/><stop offset="0.978" stop-color="#93a7ae"/><stop offset="1" stop-color="#4f5d62"/>
+        </linearGradient>
+        <linearGradient id="chamfH" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#e4eff2" stop-opacity="0.6"/><stop offset="0.035" stop-color="#9fb0b6" stop-opacity="0.34"/>
+          <stop offset="0.075" stop-color="#05070a" stop-opacity="0.2"/><stop offset="0.15" stop-color="#05070a" stop-opacity="0"/>
+          <stop offset="0.85" stop-color="#05070a" stop-opacity="0"/><stop offset="0.925" stop-color="#05070a" stop-opacity="0.24"/>
+          <stop offset="0.972" stop-color="#7d9298" stop-opacity="0.42"/><stop offset="1" stop-color="#cbdbe0" stop-opacity="0.5"/>
+        </linearGradient>
+        <linearGradient id="face" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#34363a"/><stop offset="0.5" stop-color="#2a2b2c"/><stop offset="1" stop-color="#1f2021"/>
+        </linearGradient>
+        <linearGradient id="card" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#f7f6ef"/><stop offset="0.55" stop-color="#f4f2ea"/><stop offset="1" stop-color="#e4e1d6"/>
+        </linearGradient>
+        <linearGradient id="tint" x1="0" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stop-color="#dfe6ea" stop-opacity="0.16"/><stop offset="0.45" stop-color="#dfe6ea" stop-opacity="0.04"/><stop offset="1" stop-color="#9fb4bd" stop-opacity="0.09"/>
+        </linearGradient>
+        <linearGradient id="spec" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.20"/><stop offset="0.55" stop-color="#ffffff" stop-opacity="0.05"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="hl" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.15"/><stop offset="0.25" stop-color="#ffffff" stop-opacity="0.75"/><stop offset="0.8" stop-color="#ffffff" stop-opacity="0.3"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.08"/>
+        </linearGradient>
+        <linearGradient id="hlv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.6"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.3"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+        </linearGradient>
+        <radialGradient id="chrome" cx="32%" cy="26%" r="76%">
+          <stop offset="0" stop-color="#f6f7f6"/><stop offset="0.4" stop-color="#cfd1d0"/><stop offset="0.72" stop-color="#8d8f90"/><stop offset="1" stop-color="#4e5152"/>
+        </radialGradient>
+        <radialGradient id="bolt" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#b9bcbd"/><stop offset="0.55" stop-color="#7c8082"/><stop offset="1" stop-color="#3b3f41"/>
+        </radialGradient>
+        <filter id="s6" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="s2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.7"/></filter>
+        <filter id="s05" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.5"/></filter>
+        <filter id="s03" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="0.32"/></filter>
+        <clipPath id="blockclip"><rect x="4" y="4" width="168" height="126" rx="11"/></clipPath>
+      </defs>
+
+      <!-- the block's own shadow on the panel, down and to the right -->
+      <rect x="10" y="12" width="168" height="126" rx="11" fill="#000" opacity="0.5" filter="url(#s6)"/>
+
+      <!-- the acrylic slab: the rounded edge band is the refracting chamfer -->
+      <rect x="4" y="4" width="168" height="126" rx="11" fill="url(#chamfV)"/>
+      <rect x="4" y="4" width="168" height="126" rx="11" fill="url(#chamfH)"/>
+      <g clip-path="url(#blockclip)">
+        <!-- the dark panel seen through the block, behind the card -->
+        <rect x="11" y="11" width="154" height="112" rx="6" fill="url(#face)"/>
+
+        <!-- four corner bolts and washers, inside the block and a little out of focus -->
+        <g filter="url(#s05)">
+          <g><circle cx="18" cy="17" r="4.6" fill="#101214"/><circle cx="18" cy="17" r="3.4" fill="url(#bolt)"/><path d="M 15.8 15.3 A 3.4 3.4 0 0 1 20.3 15" fill="none" stroke="#dfe3e4" stroke-opacity="0.6" stroke-width="0.7"/></g>
+          <g><circle cx="158" cy="17" r="4.6" fill="#101214"/><circle cx="158" cy="17" r="3.4" fill="url(#bolt)"/><path d="M 155.8 15.3 A 3.4 3.4 0 0 1 160.3 15" fill="none" stroke="#dfe3e4" stroke-opacity="0.6" stroke-width="0.7"/></g>
+          <g><circle cx="18" cy="117" r="4.6" fill="#101214"/><circle cx="18" cy="117" r="3.4" fill="url(#bolt)"/><path d="M 15.8 115.3 A 3.4 3.4 0 0 1 20.3 115" fill="none" stroke="#dfe3e4" stroke-opacity="0.6" stroke-width="0.7"/></g>
+          <g><circle cx="158" cy="117" r="4.6" fill="#101214"/><circle cx="158" cy="117" r="3.4" fill="url(#bolt)"/><path d="M 155.8 115.3 A 3.4 3.4 0 0 1 160.3 115" fill="none" stroke="#dfe3e4" stroke-opacity="0.6" stroke-width="0.7"/></g>
+        </g>
+
+        <!-- the card, floating a few millimetres behind the front face -->
+        <rect x="28" y="24.5" width="124" height="88" rx="1" fill="#000" opacity="0.55" filter="url(#s2)"/>
+        <rect x="26" y="22" width="124" height="88" rx="1" fill="url(#card)"/>
+        <g class="scaleprint">${SC}</g>
+        <path class="red" d="" fill="none" stroke="#c9302a" stroke-width="3" stroke-linecap="butt"/>
+        <text class="unit" x="88" y="78"></text>
+        <text class="leg" x="88" y="89"></text>
+        <text class="cls" x="140" y="105">1.5</text>
+
+        <!-- the needle's shadow on the card: it floats a few millimetres above it -->
+        <g class="neds" opacity="0.22">
+          <path d="M ${PX} ${PY} L ${PX} ${PY - R + 2}" stroke="#2b3340" stroke-width="1.1" filter="url(#s03)"/>
+        </g>
+        <!-- a hairline blued-steel needle with a small curved spade near the tip -->
+        <g class="ned">
+          <path d="M ${PX} ${PY} L ${PX} ${PY - R + 2}" stroke="#2b3340" stroke-width="0.6"/>
+          <path d="M ${PX - 1.5} ${PY - R + 9} Q ${PX} ${PY - R + 13.5} ${PX + 1.5} ${PY - R + 9} Q ${PX} ${PY - R + 4.5} ${PX - 1.5} ${PY - R + 9} Z" fill="#2b3340"/>
+        </g>
+        <!-- the chrome-cased jewel -->
+        <circle cx="${PX}" cy="${PY}" r="5" fill="url(#chrome)" stroke="#54585a" stroke-width="0.4"/>
+        <circle cx="${PX}" cy="${PY}" r="2.1" fill="#23282c"/>
+        <circle cx="${PX - 1.4}" cy="${PY - 1.6}" r="1.2" fill="#ffffff" opacity="0.5"/>
+
+        <!-- zero adjust, chrome, in the front face below the card -->
+        <circle cx="88" cy="118" r="5" fill="#0e1012" opacity="0.7"/>
+        <circle cx="88" cy="117.4" r="4.1" fill="url(#chrome)" stroke="#4b4f50" stroke-width="0.4"/>
+        <rect x="84.6" y="116.8" width="6.8" height="1.2" rx="0.3" fill="#3a3d3f" transform="rotate(-23 88 117.4)"/>
+
+        <!-- the slab itself: a faint cool tint and one broad reflection that is not the shape of the card -->
+        <rect x="4" y="4" width="168" height="126" rx="11" fill="url(#tint)"/>
+        <g filter="url(#s2)" opacity="0.5">
+          <rect x="5.5" y="34" width="4.5" height="66" fill="#e9e6db"/>
+          <rect x="166" y="34" width="4.5" height="66" fill="#e9e6db"/>
+          <rect x="34" y="5.5" width="108" height="4" fill="#e9e6db" opacity="0.7"/>
+        </g>
+        <path d="M 4 4 L 96 4 L 30 130 L 4 130 Z" fill="url(#spec)"/>
+        <path d="M 120 4 L 150 4 L 78 130 L 62 130 Z" fill="#ffffff" opacity="0.035"/>
+      </g>
+
+      <!-- the rounded front edges: two bright refracted highlights above-left, a dark edge with a caustic below-right -->
+      <path d="M 15 5.1 L 161 5.1" stroke="url(#hl)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M 5.1 16 L 5.1 116" stroke="url(#hlv)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+      <path d="M 6.1 12 A 8 8 0 0 1 13 6.1" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.2"/>
+      <path d="M 18 11.4 L 158 11.4" stroke="#ffffff" stroke-opacity="0.26" stroke-width="0.9" fill="none"/>
+      <path d="M 11.4 20 L 11.4 112" stroke="#ffffff" stroke-opacity="0.16" stroke-width="0.8" fill="none"/>
+      <path d="M 18 128.8 L 158 128.8" stroke="#000000" stroke-opacity="0.55" stroke-width="1.6" fill="none"/>
+      <path d="M 24 127.4 L 152 127.4" stroke="#cfe0e6" stroke-opacity="0.5" stroke-width="0.7" fill="none"/>
+      <path d="M 170.8 24 L 170.8 112" stroke="#cfe0e6" stroke-opacity="0.32" stroke-width="0.7" fill="none"/>
+      <rect x="4" y="4" width="168" height="126" rx="11" fill="none" stroke="#0a0c0d" stroke-opacity="0.65" stroke-width="0.7"/>
+    </svg>
+  </div>`;
+
+  class SkMeterSifamAL29 extends HTMLElement {
+    static get observedAttributes() { return ["value", "unit", "legend", "redline", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._x = A0; this._vel = 0; this._raf = 0; this._last = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._ned = this.shadowRoot.querySelector(".ned");
+      this._neds = this.shadowRoot.querySelector(".neds");
+      this._red = this.shadowRoot.querySelector(".red");
+      this._unit = this.shadowRoot.querySelector(".unit");
+      this._leg = this.shadowRoot.querySelector(".leg");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("role")) this.setAttribute("role", "meter");
+      this._read(); this._x = this._angle(this._v); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._kick(); }
+
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; v = Math.max(0, Math.min(100, v));
+      if (v === this._v) return; this._v = v; this.setAttribute("value", String(Math.round(v * 100) / 100)); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.max(0, Math.min(100, num("value", this._v)));
+      this._unit.textContent = this.getAttribute("unit") || "mA";
+      this._leg.textContent = this.getAttribute("legend") || "MOVING COIL";
+      const rl = this.hasAttribute("redline") ? num("redline", NaN) : NaN;
+      this._red.setAttribute("d", isNaN(rl) ? "" : arcp(R + 3, this._angle(rl), A1));
+      this.setAttribute("aria-valuemin", "0");
+      this.setAttribute("aria-valuemax", "100");
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 10) / 10));
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "panel meter, " + (this.getAttribute("unit") || "mA"));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _angle(v) { return A0 + Math.max(0, Math.min(1, v / 100)) * SWEEP; }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.04, (now - this._last) / 1000); this._last = now;
+      const target = this._angle(this._v);
+      const k = 106, c = 16;                      // light moving coil: ~250 ms, about 2 % overshoot
+      this._vel += (k * (target - this._x) - c * this._vel) * dt;
+      this._x += this._vel * dt;
+      this._paint();
+      if (Math.abs(target - this._x) < 0.02 && Math.abs(this._vel) < 0.05) { this._x = target; this._vel = 0; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const a = Math.max(A0 - 2, Math.min(A1 + 2, this._x));
+      const t = "rotate(" + a.toFixed(2) + "deg)";
+      this._ned.style.transform = t;
+      this._neds.style.transform = "translate(1.2px, 1.6px) " + t;
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 10) / 10));
+    }
+  }
+  customElements.define("sk-meter-sifam-al29", SkMeterSifamAL29);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

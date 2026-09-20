@@ -197,7 +197,8 @@
   '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + (DISC_RX * 0.3) + '" ry="' + (DISC_RY * 0.3) + '" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="0.5"/>',
   '    <ellipse cx="' + DISC_X + '" cy="' + DISC_Y + '" rx="' + DISC_RX + '" ry="' + DISC_RY + '" fill="none" stroke="#5f6160" stroke-width="0.6"/>',
   '    <path d="M ' + (DISC_X - DISC_RX * 0.86) + ' ' + (DISC_Y - DISC_RY * 0.5) + ' A ' + DISC_RX + ' ' + DISC_RY + ' 0 0 1 ' + (DISC_X + DISC_RX * 0.2) + ' ' + (DISC_Y - DISC_RY * 0.98) + '" fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="1.2"/>',
-  '    <g class="mark"><rect x="-3.4" y="-4.6" width="6.8" height="4" fill="#0d0d0d" opacity="0.9"/><rect x="-3.4" y="-1.2" width="6.8" height="7.5" fill="#0b0b0b"/></g>',
+  '    <line class="marktop" stroke="#0d0d0d" stroke-width="3" stroke-linecap="butt"/>',
+  '    <g class="mark"><rect x="-3.4" y="-1.6" width="6.8" height="7.6" fill="#0b0b0b"/></g>',
   '    <!-- the magnets front jaws, in front of the disc rim -->',
   '    <path d="M 40 ' + (DISC_Y + 2) + ' h 18 v 12 h -18 z" fill="#17181a"/>',
   '    <path d="M 142 ' + (DISC_Y + 2) + ' h 18 v 12 h -18 z" fill="#17181a"/>',
@@ -230,6 +231,7 @@
       this._wrap = this.shadowRoot.querySelector(".wrap");
       this._ptrs = this.shadowRoot.querySelectorAll(".ptr");
       this._mark = this.shadowRoot.querySelector(".mark");
+      this._marktop = this.shadowRoot.querySelector(".marktop");
       this._tick = this._tick.bind(this);
     }
     connectedCallback() {
@@ -303,6 +305,11 @@
       }
       // the disc's rim mark: position on the ellipse, width foreshortened, hidden round the back
       var th = this._theta, s = Math.sin(th), c = Math.cos(th);
+      // the mark is painted across the rim and onto the top face: the top part stays visible all the way round
+      this._marktop.setAttribute("x1", (DISC_X + DISC_RX * 0.66 * s).toFixed(2));
+      this._marktop.setAttribute("y1", (DISC_Y + DISC_RY * 0.66 * c).toFixed(2));
+      this._marktop.setAttribute("x2", (DISC_X + DISC_RX * 0.995 * s).toFixed(2));
+      this._marktop.setAttribute("y2", (DISC_Y + DISC_RY * 0.995 * c).toFixed(2));
       if (c > -0.02) {
         var x = DISC_X + DISC_RX * s, y = DISC_Y + DISC_RY * c;
         this._mark.setAttribute("transform", "translate(" + x.toFixed(2) + " " + y.toFixed(2) + ") scale(" + Math.max(0.02, c).toFixed(3) + " 1)");

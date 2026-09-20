@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smiths centre-zero ammeter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "meter-smiths-ammeter-centre",
+  "element": "sk-meter-smiths-ammeter",
+  "name": "Smiths centre-zero ammeter",
+  "kind": "output",
+  "code": "F4",
+  "type": "Centre-zero moving-iron ammeter",
+  "source": "The 52 mm Smiths Industries / Lucas centre-zero ammeter on MG, Triumph and Land Rover dashboards",
+  "era": "1950s",
+  "origin": "UK",
+  "materials": ["chrome bezel", "domed glass", "matte black dial", "black crackle case"],
+  "tags": ["automotive", "dashboard", "centre zero", "charge", "discharge", "needle"],
+  "value": { "model": "range", "min": -30, "max": 30, "unit": "A" },
+  "attributes": ["value", "min", "max", "legend", "scale"],
+  "events": [],
+  "size": { "w": 120, "h": 120 },
+  "notes": "Three gauges: dead on zero with the engine off, +18 on charge, and a −22 discharge at 0.8 scale. Set value in amperes; the needle is a little heavy."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-meter-smiths-ammeter value="0"></sk-meter-smiths-ammeter>
+    <sk-meter-smiths-ammeter value="18"></sk-meter-smiths-ammeter>
+    <sk-meter-smiths-ammeter value="-22" scale="0.8"></sk-meter-smiths-ammeter>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Smiths Industries</b> centre-zero ammeter — badged Lucas on many cars — is the 2-inch gauge that
+  sits in a walnut or crackle-black dash and tells you whether the dynamo is putting current into the battery or
+  the battery is giving it away. It is the plainest instrument on the car: a matte black dial, three numerals
+  (30, 0, 30), a tick every ten amperes, a "−" at one end and a "+" at the other, a long white needle hinged
+  low on the dial, and a chrome bezel rolled over domed glass.</p>
+  <p><b>The tells kept here:</b> only three numerals and the two signs; ticks every ten with a finer one at
+  each five; the needle dead vertical at zero, which is the first state shown; the chrome bezel with its hard
+  <b>horizon</b> — sky above, ground below, and a bright specular where the light comes in above-left; the
+  domed glass with one soft elliptical highlight at the top-left and a curved catch along the lower rim, neither
+  of which is the shape of anything on the dial; the pivot low on the face so the needle is long and the sweep
+  is about 90°; "AMPERES" in small white caps under the zero; and the black-crackle case ring showing as a
+  narrow band outside the chrome. The needle is a little heavy: a damped approach of about 250&nbsp;ms with a
+  small overshoot, stopped when the element leaves the page.</p>
+  <p><b>Left out:</b> the maker's name and the "Lucas" script (a build never reproduces a logo), the two rear
+  studs the cables bolt to, and the slight yellowing the glass takes on after fifty years on a dashboard.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-meter-smiths-ammeter> — 2-inch British car ammeter, centre zero, chrome bezel ====
+   attributes: value(A) min max legend scale      (max="50" gives the ±50 variant)
+   no events (an output). set .value or the attribute; the needle has ballistics.
+   self-contained: paste this block into any page and use <sk-meter-smiths-ammeter value="18"></sk-meter-smiths-ammeter> */
+(function () {
+  if (customElements.get("sk-meter-smiths-ammeter")) return;
+
+  const W = 120, H = 120;
+  const CX = 60, CY = 60;
+  const R_CASE = 59;                 // the crackle case ring
+  const R_BEZ = 56.5;                // chrome, outer
+  const R_IN = 46;                   // chrome, inner — the dial opening
+  const PX = 60, PY = 98;            // the needle's pivot, low on the dial
+  const RT = 60;                     // tick line, measured from the pivot
+  const SWEEP = 90;                  // -45 .. +45
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", sans-serif; fill: #ecebe4; }
+    .num  { font-size: 10.5px; font-weight: 600; text-anchor: middle; }
+    .sign { font-size: 10.5px; font-weight: 700; text-anchor: middle; }
+    .amp  { font-size: 6px; font-weight: 500; letter-spacing: 0.2em; text-anchor: middle; fill: #d8d6cd; }
+    .needle { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <!-- chrome: a hard horizon, sky above and ground below -->
+        <linearGradient id="chrome" x1="0" y1="0" x2="0.12" y2="1">
+          <stop offset="0" stop-color="#fbfbf9"/><stop offset="0.16" stop-color="#e2e3e0"/>
+          <stop offset="0.36" stop-color="#f4f4f2"/><stop offset="0.487" stop-color="#b9bab7"/>
+          <stop offset="0.5" stop-color="#9a9b98"/><stop offset="0.513" stop-color="#43443f"/>
+          <stop offset="0.62" stop-color="#5b5c57"/><stop offset="0.82" stop-color="#3e3f3d"/>
+          <stop offset="1" stop-color="#6e6f6a"/>
+        </linearGradient>
+        <linearGradient id="chromelip" x1="0" y1="0" x2="0.1" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.48" stop-color="#cdcecb"/>
+          <stop offset="0.52" stop-color="#2f302d"/><stop offset="1" stop-color="#7c7d78"/>
+        </linearGradient>
+        <linearGradient id="case" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#2b2b29"/><stop offset="0.5" stop-color="#141413"/><stop offset="1" stop-color="#0a0a09"/>
+        </linearGradient>
+        <radialGradient id="dial" cx="38%" cy="30%" r="86%">
+          <stop offset="0" stop-color="#24241f"/><stop offset="0.55" stop-color="#151513"/><stop offset="1" stop-color="#0b0b0a"/>
+        </radialGradient>
+        <radialGradient id="dome" cx="32%" cy="24%" r="52%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+          <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.07"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="needleg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#f2f1ea"/><stop offset="1" stop-color="#b7b5ac"/>
+        </linearGradient>
+        <radialGradient id="boss" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#b6b4ac"/><stop offset="0.45" stop-color="#4c4b46"/><stop offset="1" stop-color="#121211"/>
+        </radialGradient>
+        <filter id="crackle" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" seed="3" result="t"/>
+          <feColorMatrix type="saturate" values="0"/>
+        </filter>
+        <filter id="dgrain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="9"/>
+          <feColorMatrix type="saturate" values="0"/>
+        </filter>
+        <filter id="s2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="s4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="s06" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.6"/></filter>
+        <clipPath id="face"><circle cx="${CX}" cy="${CY}" r="${R_IN}"/></clipPath>
+        <clipPath id="ring"><circle cx="${CX}" cy="${CY}" r="${R_CASE}"/></clipPath>
+      </defs>
+
+      <!-- shadow: a tight contact shadow and a soft ambient one, down-right -->
+      <circle cx="${CX + 2}" cy="${CY + 5}" r="${R_CASE - 1}" fill="#000" opacity="0.45" filter="url(#s4)"/>
+      <circle cx="${CX + 1}" cy="${CY + 2}" r="${R_CASE}" fill="#000" opacity="0.5" filter="url(#s2)"/>
+
+      <!-- the case: black crackle, showing as a band outside the chrome -->
+      <g clip-path="url(#ring)">
+        <circle cx="${CX}" cy="${CY}" r="${R_CASE}" fill="url(#case)"/>
+        <circle cx="${CX}" cy="${CY}" r="${R_CASE}" filter="url(#crackle)" opacity="0.3" style="mix-blend-mode:overlay"/>
+      </g>
+      <circle cx="${CX}" cy="${CY}" r="${R_CASE}" fill="none" stroke="#000" stroke-width="1" stroke-opacity="0.8"/>
+
+      <!-- the chrome bezel: rolled outer lip, then the broad face with its horizon -->
+      <circle cx="${CX}" cy="${CY}" r="${(R_BEZ + 1.2 + R_BEZ) / 2}" fill="none" stroke="url(#chromelip)" stroke-width="2.4"/>
+      <circle cx="${CX}" cy="${CY}" r="${(R_BEZ + R_IN) / 2}" fill="none" stroke="url(#chrome)" stroke-width="${R_BEZ - R_IN}"/>
+      <!-- specular, above-left, and the reflected light under the far side -->
+      <path d="M ${CX - 51} ${CY - 20} A 51 51 0 0 1 ${CX - 16} ${CY - 48}" fill="none" stroke="#ffffff" stroke-opacity="0.85" stroke-width="6" stroke-linecap="round" filter="url(#s2)"/>
+      <path d="M ${CX - 20} ${CY + 47} A 51 51 0 0 0 ${CX + 30} ${CY + 41}" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3" stroke-linecap="round" filter="url(#s2)"/>
+      <circle cx="${CX}" cy="${CY}" r="${R_IN + 0.8}" fill="none" stroke="#1a1a18" stroke-width="1.6" stroke-opacity="0.9"/>
+
+      <g clip-path="url(#face)">
+        <!-- the dial: matte black -->
+        <circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="url(#dial)"/>
+        <circle cx="${CX}" cy="${CY}" r="${R_IN}" filter="url(#dgrain)" opacity="0.06" style="mix-blend-mode:overlay"/>
+        <g class="scale"></g>
+        <text class="amp" x="${CX}" y="80">AMPERES</text>
+
+        <!-- the needle, long from its low pivot -->
+        <g class="needle">
+          <path d="M ${PX - 1.2} ${PY} L ${PX - 0.55} ${PY - RT + 2} L ${PX + 0.55} ${PY - RT + 2} L ${PX + 1.2} ${PY} Z" fill="#000" opacity="0.45" filter="url(#s06)" transform="translate(1.3 1.3)"/>
+          <path d="M ${PX - 1.2} ${PY + 6} L ${PX - 1.2} ${PY} L ${PX - 0.55} ${PY - RT + 2} L ${PX + 0.55} ${PY - RT + 2} L ${PX + 1.2} ${PY} L ${PX + 1.2} ${PY + 6} Z" fill="url(#needleg)"/>
+        </g>
+        <circle cx="${PX}" cy="${PY}" r="4.4" fill="url(#boss)" stroke="#000" stroke-width="0.6"/>
+        <circle cx="${PX - 1.1}" cy="${PY - 1.3}" r="1.1" fill="#fff" opacity="0.5"/>
+
+        <!-- domed glass: one soft pool top-left, one catch along the lower rim -->
+        <circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="url(#dome)"/>
+        <path d="M ${CX - 44} ${CY + 6} Q ${CX - 30} ${CY - 44} ${CX + 20} ${CY - 40} L ${CX + 27} ${CY - 30} Q ${CX - 18} ${CY - 34} ${CX - 33} ${CY + 18} Z" fill="#fff" opacity="0.1"/>
+        <path d="M ${CX - 30} ${CY + 41} A 44 44 0 0 0 ${CX + 34} ${CY + 29}" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="2.6" filter="url(#s06)"/>
+        <!-- the bezel's shadow falling on the dial -->
+        <circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="7" filter="url(#s2)"/>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkMeterSmithsAmmeter extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "legend", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = -30; this._max = 30; this._scale = 1;
+      this._x = 0; this._vel = 0; this._raf = 0; this._last = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._needle = this.shadowRoot.querySelector(".needle");
+      this._amp = this.shadowRoot.querySelector(".amp");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs(); this._drawScale();
+      this._x = this._angle(this._v); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n !== "value") this._drawScale();
+      this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.min(this._max, Math.max(this._min, v));
+      this.setAttribute("value", String(Math.round(this._v * 100) / 100));
+      this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    /* the dynamo trading current with the battery, plus the odd heavy load */
+    demo(t) {
+      const idle = 5 + 2.6 * Math.sin(t * 0.83) + 1.1 * Math.sin(t * 2.4 + 0.6);
+      const u = t % 11;
+      const load = u < 1.7 ? -24 * Math.sin(Math.PI * u / 1.7) : 0;
+      return idle + load;
+    }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._max = Math.abs(num("max", 30)) || 30;
+      this._min = num("min", -this._max);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      this._amp.textContent = this.getAttribute("legend") || "AMPERES";
+      this.setAttribute("aria-valuemin", this._min);
+      this.setAttribute("aria-valuemax", this._max);
+      this.setAttribute("aria-valuenow", this._v);
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "charge and discharge, amperes");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _angle(v) { return Math.max(-1, Math.min(1, v / this._max)) * (SWEEP / 2); }
+    _pt(deg, r) { const a = deg * Math.PI / 180; return [PX + r * Math.sin(a), PY - r * Math.cos(a)]; }
+
+    _drawScale() {
+      const g = this._scaleG, ns = "http://www.w3.org/2000/svg";
+      while (g.firstChild) g.removeChild(g.firstChild);
+      const mk = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; g.appendChild(e); return e; };
+      const M = this._max;
+      const tick = (v, len, w, op) => {
+        const a = this._angle(v);
+        const [x0, y0] = this._pt(a, RT), [x1, y1] = this._pt(a, RT - len);
+        mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: "#ecebe4", "stroke-width": w, "stroke-opacity": op, "stroke-linecap": "butt" });
+      };
+      for (let v = -M; v <= M + 0.001; v += 10) tick(v, v === 0 ? 8.5 : 7, v === 0 ? 1.8 : 1.5, 0.95);
+      if (M <= 30) for (let v = -M + 5; v < M; v += 10) tick(v, 4, 1, 0.6);
+      // three numerals and the two signs
+      // the numerals sit upright inside the arc, the signs outboard of them
+      const at = (deg, r, cls, txt) => {
+        const [x, y] = this._pt(deg, r);
+        mk("text", { x: x, y: y + 3.5, "class": cls }, txt);
+      };
+      at(-SWEEP / 2, 43, "num", String(M));
+      at(0, 43, "num", "0");
+      at(SWEEP / 2, 43, "num", String(M));
+      at(-SWEEP / 2 - 11, 42, "sign", "−");
+      at(SWEEP / 2 + 11, 42, "sign", "+");
+    }
+
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const target = this._angle(this._v);
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // a heavy-ish needle: 250 ms to 99% of a step, about 3% overshoot
+      const k = 193, c = 20.7;
+      const acc = k * (target - this._x) - c * this._vel;
+      this._vel += acc * dt; this._x += this._vel * dt;
+      this._paint();
+      if (Math.abs(target - this._x) < 0.01 && Math.abs(this._vel) < 0.04) { this._x = target; this._vel = 0; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const a = Math.max(-SWEEP / 2 - 2, Math.min(SWEEP / 2 + 2, this._x));
+      this._needle.style.transform = "rotate(" + a.toFixed(2) + "deg)";
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+    }
+  }
+  customElements.define("sk-meter-smiths-ammeter", SkMeterSmithsAmmeter);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

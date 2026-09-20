@@ -24,7 +24,7 @@
   "value": { "model": "time", "min": 0, "max": 3599, "unit": "s" },
   "attributes": ["value", "track", "index", "legends", "level", "scale", "label"],
   "events": [],
-  "size": { "w": 300, "h": 88 },
+  "size": { "w": 300, "h": 82 },
   "notes": "Two displays: TRACK 7 · 03:42 playing with the level bar up, and TRACK 12 INDEX 1 · 00:00 paused at scale 1.35 so the anode grid over the segments is visible."
 }
 </script>
@@ -65,7 +65,7 @@
 (function () {
   if (customElements.get("sk-vfd-cdp101")) return;
   const NS = "http://www.w3.org/2000/svg";
-  const W = 300, H = 88, SLANT = 2;
+  const W = 300, H = 82, SLANT = 2;
   const SEGS = ["a", "b", "c", "d", "e", "f", "g"];
   const MAP = {
     "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc",
@@ -115,11 +115,12 @@
     :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; line-height: normal; }
     :host([hidden]) { display: none; }
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
-    svg { display: block; width: ${W}px; height: ${H}px; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible;
+           filter: drop-shadow(0 2px 2px rgba(0,0,0,0.65)) drop-shadow(0 7px 14px rgba(0,0,0,0.5)); }
     /* --- phosphor --- */
-    .gs { stroke: #14211e; stroke-opacity: 0.5; stroke-linecap: round; fill: none; }
+    .gs { stroke: #14211e; stroke-opacity: 0.42; stroke-linecap: round; fill: none; }
     .gl { fill: #7dffd6; opacity: 0.11; }
-    .gb { fill: #14211e; opacity: 0.55; }
+    .gb { fill: #14211e; opacity: 0.45; }
     .sg { opacity: 0; transition: opacity 90ms linear; }
     .sg.on { opacity: 1; transition: opacity 60ms linear; }
     .bod { stroke: #7dffd6; stroke-linecap: round; fill: none; }
@@ -143,10 +144,6 @@
           <stop offset="0" stop-color="#26262a"/><stop offset="0.12" stop-color="#191a1d"/>
           <stop offset="0.8" stop-color="#101113"/><stop offset="1" stop-color="#0a0b0c"/>
         </linearGradient>
-        <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#787d80"/><stop offset="0.35" stop-color="#5d6265"/>
-          <stop offset="0.78" stop-color="#43474a"/><stop offset="1" stop-color="#35393c"/>
-        </linearGradient>
         <linearGradient id="smoke" x1="0" y1="0" x2="0.2" y2="1">
           <stop offset="0" stop-color="#16120f"/><stop offset="0.5" stop-color="#0d1110"/><stop offset="1" stop-color="#090b0b"/>
         </linearGradient>
@@ -161,24 +158,22 @@
         <pattern id="mesh" width="3" height="3" patternUnits="userSpaceOnUse">
           <path d="M0 0.3H3M0.3 0V3" stroke="#000" stroke-opacity="0.13" stroke-width="0.42"/>
         </pattern>
-        <clipPath id="win"><rect x="10" y="5" width="280" height="64" rx="3"/></clipPath>
+        <clipPath id="win"><rect x="10" y="6" width="280" height="64" rx="3"/></clipPath>
       </defs>
 
       <!-- black anodised front -->
-      <rect x="0" y="0" width="${W}" height="75" fill="url(#front)"/>
-      <rect x="0" y="0" width="${W}" height="75" fill="url(#grain)"/>
-      <rect x="0" y="0" width="${W}" height="0.8" fill="#43444a" opacity="0.6"/>
-      <!-- chrome hairline + brushed silver skirt -->
-      <rect x="0" y="73.4" width="${W}" height="0.9" fill="#cfd2d0" opacity="0.85"/>
-      <rect x="0" y="74.3" width="${W}" height="13.7" fill="url(#silver)"/>
-      <rect x="0" y="74.3" width="${W}" height="13.7" fill="url(#grain)"/>
-      <rect x="0" y="74.3" width="${W}" height="0.7" fill="#fff" opacity="0.10"/>
-      <rect x="0" y="86.9" width="${W}" height="1.1" fill="#000" opacity="0.55"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#front)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#grain)"/>
+      <rect x="0" y="0" width="${W}" height="0.8" fill="#43444a" opacity="0.55"/>
+      <rect x="0" y="${H - 0.8}" width="${W}" height="0.8" fill="#000" opacity="0.6"/>
+      <!-- the thin chrome line under the window -->
+      <rect x="10" y="75.2" width="280" height="0.9" rx="0.45" fill="#cfd2d0" opacity="0.9"/>
+      <rect x="10" y="76.1" width="280" height="0.6" rx="0.3" fill="#000" opacity="0.5"/>
 
       <!-- window recess: a shadow all round, then the smoked acrylic -->
-      <rect x="8" y="3.4" width="284" height="67" rx="4" fill="#000" opacity="0.75"/>
+      <rect x="8" y="4.4" width="284" height="67" rx="4" fill="#000" opacity="0.75"/>
       <g clip-path="url(#win)">
-        <rect x="10" y="5" width="280" height="64" fill="url(#smoke)"/>
+        <rect x="10" y="6" width="280" height="64" fill="url(#smoke)"/>
 
         <!-- unlit phosphor: every segment is faintly there -->
         <g class="ghost soft"></g>
@@ -188,20 +183,20 @@
         <!-- the phosphor itself -->
         <g id="lit" class="soft"></g>
         <!-- the anode grid, a shadow mesh in front of the phosphor -->
-        <rect x="10" y="5" width="280" height="64" fill="url(#mesh)"/>
+        <rect x="10" y="6" width="280" height="64" fill="url(#mesh)"/>
         <!-- the smoke, dimming everything behind it -->
-        <rect x="10" y="5" width="280" height="64" fill="#0f0c0a" opacity="0.22"/>
+        <rect x="10" y="6" width="280" height="64" fill="#0f0c0a" opacity="0.22"/>
         <!-- the glow that reaches the front of the acrylic -->
         <g class="glow"><use href="#lit"/></g>
         <!-- one diagonal reflection band on the acrylic -->
-        <path d="M 10 5 L 118 5 L 44 69 L 10 69 Z" fill="url(#refl)"/>
-        <path d="M 128 5 L 152 5 L 78 69 L 54 69 Z" fill="#a9b6b2" opacity="0.045"/>
+        <path d="M 10 6 L 118 6 L 44 70 L 10 70 Z" fill="url(#refl)"/>
+        <path d="M 128 6 L 152 6 L 78 70 L 54 70 Z" fill="#a9b6b2" opacity="0.045"/>
         <!-- moulded bezel edge inside the window -->
-        <rect x="10.5" y="5.5" width="279" height="63" rx="2.6" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.2"/>
-        <rect x="11.6" y="6.6" width="276.8" height="60.8" rx="2" fill="none" stroke="#3b3a36" stroke-opacity="0.35" stroke-width="0.7"/>
+        <rect x="10.5" y="6.5" width="279" height="63" rx="2.6" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.2"/>
+        <rect x="11.6" y="7.6" width="276.8" height="60.8" rx="2" fill="none" stroke="#3b3a36" stroke-opacity="0.35" stroke-width="0.7"/>
       </g>
-      <rect x="10" y="5" width="280" height="64" rx="3" fill="none" stroke="#000" stroke-width="1"/>
-      <path d="M 12 68.6 L 288 68.6" stroke="#6a6c6a" stroke-opacity="0.35" stroke-width="0.8"/>
+      <rect x="10" y="6" width="280" height="64" rx="3" fill="none" stroke="#000" stroke-width="1"/>
+      <path d="M 12 69.6 L 288 69.6" stroke="#6a6c6a" stroke-opacity="0.35" stroke-width="0.8"/>
     </svg>
   </div>`;
 
