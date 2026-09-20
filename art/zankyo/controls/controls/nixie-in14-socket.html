@@ -92,18 +92,20 @@
     svg { display: block; overflow: visible; }
     text { font-family: "Share Tech Mono", "Oswald", "Consolas", monospace; }
     .silk { font-size: 7px; letter-spacing: 0.16em; fill: #cfd6cd; fill-opacity: 0.55; text-anchor: middle; }
-    .ghost { fill: none; stroke: #3a2d28; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round;
-      stroke-opacity: calc(0.3 + 0.7 * var(--ghost)); }
+    .ghost { fill: none; stroke: #5c4a40; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round;
+      stroke-opacity: calc(0.42 + 0.58 * var(--ghost)); }
     .cast, .lit { opacity: 0; visibility: hidden;
       transition: opacity 170ms ease-out, visibility 0s linear 170ms; }
     .d.on > .cast, .d.on > .lit { opacity: 1; visibility: visible;
       transition: opacity 110ms ease-in, visibility 0s linear 0s; }
-    .cast path { fill: none; stroke: #ff5a2a; stroke-width: 9; stroke-opacity: 0.1;
+    .cast path { fill: none; stroke: #ff5a2a; stroke-width: 11; stroke-opacity: 0.17;
       stroke-linecap: round; stroke-linejoin: round; filter: url(#b14); }
-    .halo { fill: none; stroke: #ff6a1a; stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round;
-      stroke-opacity: calc(0.45 * var(--flk)); filter: url(#b6); }
-    .body { fill: none; stroke: #ffb26b; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-    .core { fill: none; stroke: #ffd9a8; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round;
+    .halo { fill: none; stroke: #ff6a1a; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+      stroke-opacity: calc(0.8 * var(--flk)); filter: url(#b6); }
+    .gas { fill: none; stroke: #ff8a36; stroke-width: 3.8; stroke-linecap: round; stroke-linejoin: round;
+      stroke-opacity: 0.9; filter: url(#b2); }
+    .body { fill: none; stroke: #ffc184; stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
+    .core { fill: none; stroke: #fff4e2; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
       filter: url(#b1); }
     .lamp { opacity: 0; transition: opacity 110ms ease-in; }
     .lamp.on { opacity: 1; }
@@ -132,10 +134,10 @@
       <stop offset="0" stop-color="#3a2020"/><stop offset="0.5" stop-color="#2b1a1a"/><stop offset="1" stop-color="#1d1111"/>
     </linearGradient>
     <radialGradient id="spillg" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#ff7a30" stop-opacity="0.34"/><stop offset="0.5" stop-color="#ff5a1a" stop-opacity="0.13"/><stop offset="1" stop-color="#ff3a5a" stop-opacity="0"/>
+      <stop offset="0" stop-color="#ff8a40" stop-opacity="0.5"/><stop offset="0.5" stop-color="#ff5a1a" stop-opacity="0.2"/><stop offset="1" stop-color="#ff3a5a" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="tubecast" cx="50%" cy="46%" r="52%">
-      <stop offset="0" stop-color="#ff7a2a" stop-opacity="0.16"/><stop offset="0.6" stop-color="#ff4a1a" stop-opacity="0.06"/><stop offset="1" stop-color="#ff3a5a" stop-opacity="0"/>
+      <stop offset="0" stop-color="#ff7a2a" stop-opacity="0.24"/><stop offset="0.6" stop-color="#ff4a1a" stop-opacity="0.09"/><stop offset="1" stop-color="#ff3a5a" stop-opacity="0"/>
     </radialGradient>
     <pattern id="hex" width="5.196" height="9" patternUnits="userSpaceOnUse">
       <g fill="none" stroke="#3b332e" stroke-width="0.5">
@@ -146,7 +148,8 @@
         <path d="M5.196 6L7.794 7.5L7.794 10.5L5.196 12L2.598 10.5L2.598 7.5Z"/>
       </g>
     </pattern>
-    <filter id="b1" filterUnits="userSpaceOnUse" x="-30" y="-30" width="84" height="102"><feGaussianBlur stdDeviation="1.5"/></filter>
+    <filter id="b1" filterUnits="userSpaceOnUse" x="-30" y="-30" width="84" height="102"><feGaussianBlur stdDeviation="0.9"/></filter>
+    <filter id="b2" filterUnits="userSpaceOnUse" x="-30" y="-30" width="84" height="102"><feGaussianBlur stdDeviation="1.8"/></filter>
     <filter id="b6" filterUnits="userSpaceOnUse" x="-30" y="-30" width="84" height="102"><feGaussianBlur stdDeviation="3"/></filter>
     <filter id="b14" filterUnits="userSpaceOnUse" x="-40" y="-40" width="104" height="122"><feGaussianBlur stdDeviation="7"/></filter>
     <filter id="soft" filterUnits="userSpaceOnUse" x="-40" y="-40" width="140" height="200"><feGaussianBlur stdDeviation="3"/></filter>
@@ -164,6 +167,7 @@
           '<path class="ghost" d="' + GLYPH[d] + '"/>' +
           '<g class="lit">' +
             '<path class="halo" d="' + GLYPH[d] + '"/>' +
+            '<path class="gas" d="' + GLYPH[d] + '"/>' +
             '<path class="body" d="' + GLYPH[d] + '"/>' +
             '<path class="core" d="' + GLYPH[d] + '"/>' +
           '</g>' +
@@ -178,14 +182,15 @@
       '<ellipse cx="26" cy="107" rx="25" ry="5" fill="#000" opacity="0.6" filter="url(#soft)"/>' +
       '<rect x="0" y="84" width="48" height="23" rx="3.5" fill="url(#sock)" stroke="#050404" stroke-width="0.7"/>' +
       '<path d="M2 86.5H46" stroke="#6e6259" stroke-opacity="0.35" stroke-width="0.9"/>' +
+      '<path class="spill" d="M2.5 85.2H45.5" stroke="#ff8a40" stroke-opacity="0.45" stroke-width="2.2"/>' +
       '<path d="M2 105.4H46" stroke="#000" stroke-opacity="0.7" stroke-width="1.2"/>' +
       /* the ring of pin holes on the socket face, seen as an ellipse */
       '<g class="pins" fill="#060505" stroke="#463d38" stroke-opacity="0.5" stroke-width="0.35"></g>' +
       '<rect x="19" y="99" width="10" height="2.4" rx="1.2" fill="#070606" stroke="#463d38" stroke-opacity="0.45" stroke-width="0.35"/>' +
       /* the tube: interior, cathodes, mesh, glass */
       '<path d="' + env + '" fill="url(#inside)"/>' +
-      '<g transform="translate(12 34)">' + stack + '</g>' +
-      '<path d="' + env + '" fill="url(#hex)" opacity="0.3"/>' +
+      '<g transform="translate(12 31)">' + stack + '</g>' +
+      '<path d="' + env + '" fill="url(#hex)" opacity="0.18"/>' +
       '<path d="' + env + '" fill="url(#tubecast)" class="spill"/>' +
       /* glass: the top dome, the tip, the reflections, the edge */
       '<path d="M21 12Q24 3 27 12Z" fill="#141516" opacity="0.85"/>' +
@@ -267,9 +272,8 @@
       /* the board the sockets stand on */
       s += '<rect x="0" y="96" width="' + L.w + '" height="' + (H - 96) + '" fill="url(#board)"/>';
       s += '<rect x="0" y="96" width="' + L.w + '" height="1.2" fill="#6d4a3c" opacity="0.5"/>';
-      s += '<g opacity="0.5" fill="none" stroke="#7a5a2a" stroke-width="0.8">' +
-           '<path d="M4 112H' + (L.w - 4) + '"/><path d="M4 117H' + (L.w * 0.6).toFixed(0) + '"/></g>';
-      s += '<text class="silk" x="' + (L.w / 2).toFixed(1) + '" y="107.5"></text>';
+      s += '<g opacity="0.45" fill="none" stroke="#8a6a2a" stroke-width="0.8">' +
+           '<path d="M5 113.5H' + (L.w - 5) + '"/><path d="M5 120H' + (L.w * 0.55).toFixed(0) + '"/></g>';
       for (let i = 0; i < this._n; i++) s += '<g transform="translate(' + L.xs[i] + ' 0)">' + tube(i) + '</g>';
       /* INS-1 neon colon lamps between the pairs */
       for (const cx of L.cols) {
@@ -285,6 +289,8 @@
         }
         s += '</g>';
       }
+      s += '<rect x="' + (L.w / 2 - 21) + '" y="110" width="42" height="9" fill="#2b1a1a"/>';
+      s += '<text class="silk" x="' + (L.w / 2).toFixed(1) + '" y="117.5"></text>';
       this._svg.innerHTML = s;
       /* the ring of 13 pin holes on each socket face */
       const ns = "http://www.w3.org/2000/svg";

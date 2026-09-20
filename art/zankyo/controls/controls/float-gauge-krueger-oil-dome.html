@@ -225,7 +225,7 @@
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
       this._v = 0.5; this._scale = 1;
-      this._x = 0.5; this._vel = 0; this._w = 0; this._wv = 0;
+      this._x = 0.5; this._vel = 0; this._w = 0; this._wv = 0; this._pend = 0; this._armed = false;
       this._raf = 0; this._last = 0;
       this._g = this.shadowRoot.querySelector(".floatg");
       this._wrap = this.shadowRoot.querySelector(".wrap");
@@ -238,13 +238,13 @@
       this._paint();
     }
     disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
-    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._kick(); }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n === "value") this._arm(); this._kick(); }
     get value() { return this._v; }
     set value(v) {
       v = parseFloat(v); if (isNaN(v)) return;
       v = Math.min(1, Math.max(0, v));
       if (v === this._v) return;
-      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._kick();
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._arm(); this._kick();
     }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
@@ -267,20 +267,25 @@
       this.setAttribute("aria-valuetext", word);
       this.setAttribute("aria-label", (this.getAttribute("label") || "oil tank gauge") + ", " + word);
     }
+    /* remember how far this move is, so the disc rattles in proportion when it lands */
+    _arm() { const d = Math.abs(this._v - this._x); if (d > 0.012) { this._pend = d; this._armed = true; } }
     _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
     _tick(now) {
       const dt = Math.min(0.033, Math.max(0.001, (now - this._last) / 1000)); this._last = now;
-      const prevVel = this._vel;
       const x0 = this._x;
       // the float rises with the oil: an eased approach, about two seconds end to end
       this._x += (this._v - this._x) * (1 - Math.exp(-dt / 0.42));
       this._vel = (this._x - x0) / dt;
-      // the disc rattles on its rod: a light spring driven by the carriage's acceleration
-      const accPx = ((this._vel - prevVel) / dt) * (Y_E - Y_F) * -1;
-      this._wv += (-760 * this._w - 11 * this._wv - accPx * 0.02) * dt;
+      // and the disc rattles on its rod as it lands
+      if (this._armed && Math.abs(this._v - this._x) < 0.03) {
+        this._armed = false;
+        const amp = Math.min(2.8, this._pend * 4.4);
+        this._wv -= Math.sign(this._v - x0) * amp * 27.6;
+      }
+      this._wv += (-760 * this._w - 11 * this._wv) * dt;
       this._w += this._wv * dt;
-      if (this._w > 2.6) { this._w = 2.6; this._wv = 0; }
-      if (this._w < -2.6) { this._w = -2.6; this._wv = 0; }
+      if (this._w > 2.8) { this._w = 2.8; this._wv = 0; }
+      if (this._w < -2.8) { this._w = -2.8; this._wv = 0; }
       this._paint();
       if (Math.abs(this._v - this._x) < 0.0006 && Math.abs(this._w) < 0.015 && Math.abs(this._wv) < 0.06) {
         this._x = this._v; this._vel = 0; this._w = 0; this._wv = 0; this._paint(); this._raf = 0; return;

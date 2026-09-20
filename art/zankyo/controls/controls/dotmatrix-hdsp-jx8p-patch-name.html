@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HDSP 5×7 red LED patch-name display — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dotmatrix-hdsp-jx8p-patch-name",
+  "element": "sk-dotmatrix-hdsp",
+  "name": "HDSP 5×7 red LED alphanumeric row — patch name",
+  "kind": "output",
+  "code": "G10",
+  "type": "LED dot-matrix alphanumeric display",
+  "source": "HP HDSP-2000 / HDSP-2111 smart alphanumeric LED, 5×7 dots per character in 4-character DIPs, as in the Roland JX-8P patch display and the Oberheim Matrix-12",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["black panel", "dark red filter window", "plastic DIP packages", "silk-screen"],
+  "tags": ["synthesizer", "LED", "dot matrix", "5x7", "patch name", "readout"],
+  "value": { "model": "text" },
+  "attributes": ["value", "chars", "rows", "colour", "scroll", "label", "sublabel", "scale"],
+  "events": [],
+  "size": { "w": 439, "h": 85 },
+  "demoWords": ["BRASS SECTION 1", "ANALOG STRINGS", "SYNTH BASS 3", "GLASS HARP  A11", "TAPE ECHO  LEAD"],
+  "notes": "A 16-character red row showing a patch name, and an 8-character two-row green module. Set .value to a string; use | to split the two rows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-dotmatrix-hdsp value="BRASS SECTION 1" chars="16" label="PATCH NAME" sublabel="JX-8P"></sk-dotmatrix-hdsp>
+    <sk-dotmatrix-hdsp value="MATRIX 12|PAGE  2" chars="8" rows="2" colour="green" label="EDIT" sublabel="M-12"></sk-dotmatrix-hdsp>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>HP HDSP-2000</b> family are "smart" alphanumeric LED displays: four characters of 5×7 red dots
+  in one plastic DIP, with the shift register and the character ROM on the die under the window. String four
+  packages end to end and you have the sixteen characters that told a <b>Roland JX-8P</b> owner in 1985 which
+  patch they were on; stack two rows of them and you have an Oberheim Matrix-12. HP put the same part in
+  frequency counters and logic analysers.</p>
+  <p><b>The tells kept here:</b> the dots are tiny, round, individually distinct and <i>crisp</i> — the opposite
+  of a smeared Panaplex — each with a hot pale core and a small bloom; the unlit dots are still faintly there
+  as dark red ghosts, because the filter never quite hides them. Every four characters the black behind the
+  filter changes and the gap widens by one dot column: that is the edge of the next DIP. The glyph table is
+  the HDSP ROM's compact face — a plain (unslashed) zero, an <b>M</b> whose centre stroke only dips to row 3,
+  and a real lowercase with descenders that fit inside the seven rows. The window is a dark red filter with one
+  broad diagonal reflection, and the panel carries a crisp white silk-screened legend and hairline box.</p>
+  <p><b>Left out:</b> the DIP's pins and the PCB behind them, the HDSP's own character-ROM quirks beyond the
+  three above, and the blanking that a real display shows while the shift register clocks.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dotmatrix-hdsp> — HP HDSP-2000 style 5×7 red LED alphanumeric row ====
+   attributes: value chars rows colour(red|green|amber) scroll label sublabel scale
+   no events (an output). set .value to a string; "|" splits the two rows when rows="2".
+   self-contained: paste this block into any page and use <sk-dotmatrix-hdsp value="HELLO"></sk-dotmatrix-hdsp> */
+(function () {
+  if (customElements.get("sk-dotmatrix-hdsp")) return;
+
+  /* the 5×7 glyph table, ASCII 32…126: five column bytes per glyph, bit 0 = top row */
+  var FONT = "000000000000005f00000003000300147f147f14242a7f2a12231308646236495522500000030000001c2241000041221c002a1c3e1c2a08083e080800703000000808080808006060000020100804023e5149453e00427f400042615149462141454b311814127f1027454545393c4a49493001710905033649494936064949291e003636000000763600000814224100141414141400412214080201510906324979417e7c1211127c7f494949363e414141227f4141221c7f494949417f090909013e4149497a7f0808087f00417f41002040413f017f081422417f404040407f0204027f7f0408107f3e4141413e7f090909063e4151215e7f09192946464949493101017f01013f4040403f1f2040201f7f2018207f63140814630304780403615149454300007f4141020408102041417f000004020102044040404040000102000020545454787f444444383844444420384444447f3854545418087e0909020c5252523e7f0404047800447d40002040403d007f1028440000417f40007c041804787c0404047838444444387e1212120c0c1212127e7c080404084854545424043f4444203c4040207c1c2040201c3c4030403c44281028440e5050503e4464544c44000836414100007f000041413608000c02040806";
+  var GLYPH = [];
+  for (var gi = 0; gi < 95; gi++) {
+    var o = gi * 10, gc = [];
+    for (var c5 = 0; c5 < 5; c5++) gc.push(parseInt(FONT.substr(o + c5 * 2, 2), 16));
+    GLYPH.push(gc);
+  }
+  function glyph(ch) { var i = ch.charCodeAt(0) - 32; return (i >= 0 && i < 95) ? GLYPH[i] : GLYPH[31]; }
+
+  var P = 4;            // dot pitch
+  var D = 2.6;          // dot diameter
+  var CW = 5;           // columns per character
+  var CP = 24;          // character pitch (5 columns + 1 blank column)
+  var SEAM = 4;         // extra gap at a DIP package edge (one more dot column)
+  var PKG = 4;          // characters per package
+  var PADW = 13;        // filter window padding around the dot field
+  var BORD = 11, TOP = 20, BOT = 12;    // panel around the window; TOP carries the legend
+
+  function charX(i) { return i * CP + Math.floor(i / PKG) * SEAM; }
+  function dims(chars, rows) {
+    var fieldW = charX(chars - 1) + (CW - 1) * P + D;
+    var totalRows = rows === 2 ? 16 : 7;
+    var fieldH = (totalRows - 1) * P + D;
+    var winW = Math.round(fieldW + PADW * 2), winH = Math.round(fieldH + PADW * 2);
+    return { winW: winW, winH: winH, W: winW + BORD * 2, H: winH + TOP + BOT, fieldW: fieldW, fieldH: fieldH };
+  }
+
+  var CSS = `
+    :host { display: inline-block; position: relative; font-size: 10px; line-height: 1;
+      --lit: url(#ledR); --off: #2a0b09; --win: #170404; --pkg: #120a0a; --bloom: #ff1a0a; }
+    :host([hidden]) { display: none; }
+    :host([colour="green"]) { --lit: url(#ledG); --off: #07240e; --win: #04120a; --pkg: #04170c; --bloom: #19ff55; }
+    :host([colour="amber"]) { --lit: url(#ledA); --off: #2a1704; --win: #150c02; --pkg: #120b03; --bloom: #ff9a10; }
+    .wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    .d { fill: var(--off); }
+    .d.on { fill: var(--lit); }
+    .legend { font-family: "Barlow Semi Condensed", "Barlow", "Arial Narrow", sans-serif; font-weight: 600;
+      font-size: 8px; letter-spacing: 0.22em; fill: #d8d8d4; }
+    .sub { font-family: "Barlow Semi Condensed", "Barlow", "Arial Narrow", sans-serif; font-weight: 500;
+      font-size: 7px; letter-spacing: 0.18em; fill: #8d8d8a; text-anchor: end; }
+  `;
+
+  class SkDotmatrixHdsp extends HTMLElement {
+    static get observedAttributes() { return ["value", "chars", "rows", "colour", "scroll", "label", "sublabel", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this._text = ""; this._chars = 16; this._rows = 1; this._scale = 1;
+      this._off = 0; this._raf = 0; this._last = 0;
+      this._built = ""; this._dots = null; this._state = null;
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._build(); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "chars" || n === "rows") this._build();
+      this._paint(); this._kick();
+    }
+    get value() { return this._text; }
+    set value(v) { v = (v == null ? "" : String(v)); if (v === this._text) return; this._text = v; this._off = 0; this.setAttribute("value", v); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) {
+      var names = ["BRASS SECTION 1", "ANALOG STRINGS", "SYNTH BASS 3", "GLASS HARP  A11", "TAPE ECHO  LEAD"];
+      return names[Math.floor(t / 2.8) % names.length];
+    }
+
+    _read() {
+      var n = function (a, d) { var x = parseFloat(this.getAttribute(a)); return isNaN(x) ? d : x; }.bind(this);
+      this._chars = Math.max(1, Math.min(40, Math.round(n("chars", 16))));
+      this._rows = n("rows", 1) >= 2 ? 2 : 1;
+      this._scale = Math.max(0.2, n("scale", 1));
+      var v = this.getAttribute("value"); this._text = v == null ? this._text : v;
+      var d = dims(this._chars, this._rows);
+      this.style.width = (d.W * this._scale) + "px";
+      this.style.height = (d.H * this._scale) + "px";
+      var w = this.shadowRoot.querySelector(".wrap");
+      if (w) w.style.transform = "scale(" + this._scale + ")";
+      this.setAttribute("aria-label", (this.getAttribute("label") || "LED display") + ": " + this._text.replace(/\|/g, ", "));
+    }
+
+    _build() {
+      var chars = this._chars, rows = this._rows, d = dims(chars, rows);
+      this._dim = d;
+      var fx = BORD + (d.winW - d.fieldW) / 2;
+      var fy = TOP + (d.winH - d.fieldH) / 2;
+      this._fx = fx; this._fy = fy;
+
+      var dots = "", b, r, i, c;
+      for (b = 0; b < rows; b++) for (r = 0; r < 7; r++) for (i = 0; i < chars; i++) for (c = 0; c < CW; c++) {
+        var x = fx + charX(i) + c * P + D / 2, y = fy + (b * 9 + r) * P + D / 2;
+        dots += '<circle class="d" cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="' + (D / 2) + '"/>';
+      }
+      var pkgs = "";
+      for (b = 0; b < rows; b++) {
+        for (var p = 0; p * PKG < chars; p++) {
+          var i0 = p * PKG, i1 = Math.min(chars - 1, i0 + PKG - 1);
+          var x0 = fx + charX(i0) - 3.5, x1 = fx + charX(i1) + (CW - 1) * P + D + 3.5;
+          var y0 = fy + b * 9 * P - 7, y1 = fy + (b * 9 + 6) * P + D + 7;
+          pkgs += '<rect x="' + x0.toFixed(2) + '" y="' + y0.toFixed(2) + '" width="' + (x1 - x0).toFixed(2) +
+                  '" height="' + (y1 - y0).toFixed(2) + '" rx="1.5" fill="var(--pkg)" stroke="#000" stroke-opacity="0.55" stroke-width="0.7"/>';
+        }
+      }
+      var W = d.W, H = d.H, WW = d.winW, WH = d.winH;
+      this.shadowRoot.innerHTML =
+      '<style>' + CSS + '</style><div class="wrap"><svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
+      '<defs>' +
+        '<linearGradient id="pan" x1="0" y1="0" x2="0.25" y2="1">' +
+          '<stop offset="0" stop-color="#2a2a2a"/><stop offset="0.35" stop-color="#1a1a1a"/><stop offset="1" stop-color="#101010"/></linearGradient>' +
+        '<radialGradient id="ledR" cx="36%" cy="32%" r="66%">' +
+          '<stop offset="0" stop-color="#ff9c8a"/><stop offset="0.42" stop-color="#ff3a1e"/><stop offset="1" stop-color="#cf0d04"/></radialGradient>' +
+        '<radialGradient id="ledG" cx="36%" cy="32%" r="66%">' +
+          '<stop offset="0" stop-color="#c8ffb4"/><stop offset="0.42" stop-color="#3bf05a"/><stop offset="1" stop-color="#0a9c22"/></radialGradient>' +
+        '<radialGradient id="ledA" cx="36%" cy="32%" r="66%">' +
+          '<stop offset="0" stop-color="#ffe2a8"/><stop offset="0.42" stop-color="#ffa41a"/><stop offset="1" stop-color="#c86402"/></radialGradient>' +
+        '<linearGradient id="refl" x1="0" y1="0" x2="0.6" y2="1">' +
+          '<stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+        '<linearGradient id="winedge" x1="0" y1="0" x2="0.3" y2="1">' +
+          '<stop offset="0" stop-color="#000"/><stop offset="0.5" stop-color="#050505"/><stop offset="1" stop-color="#3a3a3a"/></linearGradient>' +
+        '<filter id="bloom" x="-3%" y="-45%" width="106%" height="190%">' +
+          '<feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b"/>' +
+          '<feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+        '<filter id="soft" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>' +
+        '<clipPath id="win"><rect x="' + BORD + '" y="' + TOP + '" width="' + WW + '" height="' + WH + '" rx="2"/></clipPath>' +
+      '</defs>' +
+      /* panel */
+      '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="3" fill="url(#pan)"/>' +
+      '<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" rx="2.5" fill="none" stroke="#3b3b3b" stroke-opacity="0.8" stroke-width="1"/>' +
+      '<path d="M 3 0.6 L ' + (W - 3) + ' 0.6" stroke="#5a5a5a" stroke-opacity="0.55" stroke-width="0.8" fill="none"/>' +
+      /* the window is let into the panel: dark lip top-left, lit lip bottom-right */
+      '<rect x="' + (BORD - 1.2) + '" y="' + (TOP - 1.2) + '" width="' + (WW + 2.4) + '" height="' + (WH + 2.4) + '" rx="3" fill="url(#winedge)"/>' +
+      '<g clip-path="url(#win)">' +
+        '<rect x="' + BORD + '" y="' + TOP + '" width="' + WW + '" height="' + WH + '" fill="var(--win)"/>' +
+        '<g>' + pkgs + '</g>' +
+        '<g class="dots" filter="url(#bloom)">' + dots + '</g>' +
+        /* the filter window is glass: one broad diagonal reflection, not the shape of the text */
+        '<path d="M ' + BORD + ' ' + TOP + ' L ' + (BORD + WW * 0.42) + ' ' + TOP + ' L ' + (BORD + WW * 0.10) + ' ' + (TOP + WH) + ' L ' + BORD + ' ' + (TOP + WH) + ' Z" fill="url(#refl)"/>' +
+        '<path d="M ' + (BORD + WW * 0.63) + ' ' + TOP + ' L ' + (BORD + WW * 0.70) + ' ' + TOP + ' L ' + (BORD + WW * 0.47) + ' ' + (TOP + WH) + ' L ' + (BORD + WW * 0.40) + ' ' + (TOP + WH) + ' Z" fill="#fff" opacity="0.035"/>' +
+        /* the bezel casts a shadow onto the filter */
+        '<rect x="' + BORD + '" y="' + TOP + '" width="' + WW + '" height="' + WH + '" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="5" filter="url(#soft)"/>' +
+      '</g>' +
+      '<rect x="' + (BORD - 0.5) + '" y="' + (TOP - 0.5) + '" width="' + (WW + 1) + '" height="' + (WH + 1) + '" rx="2.5" fill="none" stroke="#000" stroke-width="1"/>' +
+      /* silk-screen: legend and a hairline box */
+      '<rect x="' + (BORD - 4.5) + '" y="' + (TOP - 4.5) + '" width="' + (WW + 9) + '" height="' + (WH + 9) + '" rx="3" fill="none" stroke="#d8d8d4" stroke-opacity="0.5" stroke-width="0.7"/>' +
+      '<text class="legend" x="' + (BORD - 4.5) + '" y="12.5"></text>' +
+      '<text class="sub" x="' + (BORD + WW + 4.5) + '" y="12.5"></text>' +
+      '</svg></div>';
+
+      this._dots = this.shadowRoot.querySelectorAll("circle.d");
+      this._state = new Uint8Array(this._dots.length);
+      this.shadowRoot.querySelector(".wrap").style.transform = "scale(" + this._scale + ")";
+      this._legend = this.shadowRoot.querySelector(".legend");
+      this._subEl = this.shadowRoot.querySelector(".sub");
+      this._built = chars + "/" + rows;
+    }
+
+    /* the source column buffer: 5 columns + 1 blank per character, per row block */
+    _buffer() {
+      var parts = String(this._text).split(/[|\n]/);
+      var out = [], b;
+      for (b = 0; b < this._rows; b++) {
+        var s = parts[b] == null ? "" : parts[b], buf = [];
+        for (var i = 0; i < s.length; i++) { var g = glyph(s[i]); for (var c = 0; c < 5; c++) buf.push(g[c]); buf.push(0); }
+        out.push(buf);
+      }
+      return out;
+    }
+
+    _paint() {
+      if (!this._dots) return;
+      var chars = this._chars, rows = this._rows, buf = this._buffer();
+      var scroll = this.hasAttribute("scroll");
+      var off = scroll ? this._off : 0;
+      var idx = 0, b, r, i, c;
+      for (b = 0; b < rows; b++) {
+        var src = buf[b];
+        for (r = 0; r < 7; r++) for (i = 0; i < chars; i++) for (c = 0; c < CW; c++) {
+          var s = i * 6 + c + off;
+          var col = (s >= 0 && s < src.length) ? src[s] : 0;
+          var on = (col >> r) & 1;
+          if (this._state[idx] !== on) { this._state[idx] = on; this._dots[idx].classList.toggle("on", !!on); }
+          idx++;
+        }
+      }
+      if (this._legend) this._legend.textContent = this.getAttribute("label") || "";
+      if (this._subEl) this._subEl.textContent = this.getAttribute("sublabel") || "";
+    }
+
+    _kick() {
+      if (this.hasAttribute("scroll")) { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+      else if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+    }
+    _tick(now) {
+      if (!this.hasAttribute("scroll")) { this._raf = 0; return; }
+      if (now - this._last >= 60) {
+        this._last = now;
+        var len = 0, buf = this._buffer();
+        for (var b = 0; b < buf.length; b++) len = Math.max(len, buf[b].length);
+        this._off = (this._off + 1) % (len + this._chars * 6 || 1);
+        this._paint();
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+  }
+  customElements.define("sk-dotmatrix-hdsp", SkDotmatrixHdsp);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

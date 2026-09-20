@@ -34,7 +34,7 @@
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="black">
     <sk-galvo-scalamp value="-8.5" sensitivity="×1"></sk-galvo-scalamp>
-    <sk-galvo-scalamp value="17.2" sensitivity="×0.1" scale="0.7"></sk-galvo-scalamp>
+    
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -137,7 +137,7 @@
           <stop offset="0" stop-color="#787e80"/><stop offset="0.45" stop-color="#4b5153"/><stop offset="1" stop-color="#32383a"/>
         </linearGradient>
         <linearGradient id="milk" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#bfc4be"/><stop offset="0.2" stop-color="#ced3cc"/><stop offset="0.5" stop-color="#dee3da"/><stop offset="0.8" stop-color="#ced3cc"/><stop offset="1" stop-color="#bfc4be"/>
+          <stop offset="0" stop-color="#a3a8a1"/><stop offset="0.2" stop-color="#b1b6af"/><stop offset="0.5" stop-color="#c3c8c0"/><stop offset="0.8" stop-color="#b1b6af"/><stop offset="1" stop-color="#a3a8a1"/>
         </linearGradient>
         <linearGradient id="edgetop" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#1c2022" stop-opacity="0.62"/><stop offset="1" stop-color="#1c2022" stop-opacity="0"/>
@@ -145,8 +145,8 @@
         <linearGradient id="edgebot" x1="0" y1="1" x2="0" y2="0">
           <stop offset="0" stop-color="#1c2022" stop-opacity="0.55"/><stop offset="1" stop-color="#1c2022" stop-opacity="0"/>
         </linearGradient>
-        <radialGradient id="spotg" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#ffffff"/><stop offset="0.38" stop-color="#fffdf2"/><stop offset="0.7" stop-color="#fff0bc" stop-opacity="0.92"/><stop offset="1" stop-color="#ffe49a" stop-opacity="0"/>
+        <radialGradient id="spotg" cx="50%" cy="46%" r="52%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#fffcec"/><stop offset="0.74" stop-color="#fff4cd" stop-opacity="0.92"/><stop offset="0.89" stop-color="#ffeab0" stop-opacity="0.5"/><stop offset="1" stop-color="#ffe19a" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="halog" cx="50%" cy="50%" r="50%">
           <stop offset="0" stop-color="#fff0b6" stop-opacity="0.95"/><stop offset="0.5" stop-color="#ffe49a" stop-opacity="0.45"/><stop offset="1" stop-color="#ffd980" stop-opacity="0"/>
@@ -189,16 +189,20 @@
       <rect x="21" y="17" width="218" height="48" rx="2.4" fill="none" stroke="#8e9496" stroke-opacity="0.45" stroke-width="0.7"/>
       <rect x="24.2" y="20.2" width="211.6" height="41.6" rx="1.4" fill="#15191b"/>
       <g clip-path="url(#glassclip)">
-        <rect x="25" y="21" width="210" height="40" fill="#adb1ab"/>
+        <rect x="25" y="21" width="210" height="40" fill="#93968f"/>
         <rect class="glow" x="25" y="21" width="210" height="40" fill="url(#milk)"/>
         <g class="scaleprint">${SC}</g>
         <!-- the spot: a soft bright blob with a crisp hairline, blooming on the glass -->
         <g class="spot">
-          <ellipse cx="0" cy="47" rx="24" ry="17" fill="url(#halog)" filter="url(#bl9)"/>
-          <ellipse cx="0" cy="47" rx="14" ry="14" fill="url(#halog)" filter="url(#bl4)"/>
-          <ellipse cx="0" cy="47" rx="10.5" ry="12" fill="url(#spotg)"/>
-          <ellipse cx="0" cy="47" rx="5" ry="8" fill="#ffffff" opacity="0.9" filter="url(#bl2)"/>
-          <rect x="-0.55" y="34" width="1.1" height="26" fill="#161614"/>
+          <g style="mix-blend-mode: screen">
+            <ellipse cx="0" cy="47" rx="30" ry="20" fill="url(#halog)" filter="url(#bl9)"/>
+            <ellipse cx="0" cy="47" rx="17" ry="15" fill="url(#halog)" filter="url(#bl4)"/>
+          </g>
+          <ellipse cx="0" cy="47" rx="11.5" ry="13" fill="url(#spotg)"/>
+          <ellipse cx="0" cy="46" rx="5.4" ry="8" fill="#ffffff" filter="url(#bl2)"/>
+          <rect x="-0.55" y="34" width="1.1" height="26" fill="#171715"/>
+        </g>
+          <rect x="-0.55" y="34" width="1.1" height="26" fill="#171715"/>
         </g>
         <!-- the frame overlaps the glass top and bottom -->
         <rect x="25" y="21" width="210" height="6" fill="url(#edgetop)"/>

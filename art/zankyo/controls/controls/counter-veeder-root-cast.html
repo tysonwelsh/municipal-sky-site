@@ -25,7 +25,7 @@
   "attributes": ["value", "digits", "legend", "serial", "scale", "reset", "resettable"],
   "events": ["change"],
   "size": { "w": 176, "h": 100 },
-  "notes": "Three cases: 01234 at rest, 1234.6 caught mid-roll with the 5 half in, and a resettable one at 00000 — click or press Enter on the knurled knob to zero it."
+  "notes": "Three cases: 01234 at rest, 1234.35 caught mid-roll, the 5 coming up under the 4, and a resettable one at 00000 — click or press Enter on the knurled knob to zero it."
 }
 </script>
 </head>
@@ -34,7 +34,7 @@
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="wrinkle">
     <sk-counter-veeder-root value="1234" reset></sk-counter-veeder-root>
-    <sk-counter-veeder-root value="1234.6" reset serial="No. 4417"></sk-counter-veeder-root>
+    <sk-counter-veeder-root value="1234.35" reset serial="No. 4417"></sk-counter-veeder-root>
     <sk-counter-veeder-root value="0" reset resettable scale="1.25" serial="No. 0021"></sk-counter-veeder-root>
   </main>
 </div>
@@ -95,8 +95,8 @@
   <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">
    <defs>
     <linearGradient id="zinc" x1="0.1" y1="0" x2="0.4" y2="1">
-     <stop offset="0" stop-color="#c2c3bc"/><stop offset="0.1" stop-color="#a8a9a2"/>
-     <stop offset="0.5" stop-color="#8b8c86"/><stop offset="0.86" stop-color="#6b6d64"/><stop offset="1" stop-color="#4c4e46"/>
+     <stop offset="0" stop-color="#b7b8b1"/><stop offset="0.1" stop-color="#9c9d96"/>
+     <stop offset="0.5" stop-color="#7f807a"/><stop offset="0.86" stop-color="#5e6058"/><stop offset="1" stop-color="#42443d"/>
     </linearGradient>
     <linearGradient id="zinc2" x1="0" y1="0" x2="0.15" y2="1">
      <stop offset="0" stop-color="#dedfd8"/><stop offset="0.3" stop-color="#b0b1ab"/>
@@ -122,6 +122,9 @@
      <stop offset="0" stop-color="#4e4c47"/><stop offset="0.28" stop-color="#2c2a27"/>
      <stop offset="0.76" stop-color="#121110"/><stop offset="0.92" stop-color="#3b3834"/><stop offset="1" stop-color="#1b1917"/>
     </linearGradient>
+    <radialGradient id="vig" cx="32%" cy="18%" r="88%">
+     <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="0.6" stop-color="#000" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+    </radialGradient>
     <radialGradient id="hole" cx="38%" cy="30%" r="72%">
      <stop offset="0" stop-color="#262722"/><stop offset="0.68" stop-color="#4b4d45"/><stop offset="1" stop-color="#85867f"/>
     </radialGradient>
@@ -165,8 +168,13 @@
     <g clip-path="url(#body)">
      <rect x="0" y="0" width="${W}" height="${H}" filter="url(#mottle)"/>
      <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)"/>
-     <rect x="16" y="12" width="130" height="76" fill="none" stroke="#f2f3ed" stroke-opacity="0.3" stroke-width="1.6"/>
-     <rect x="14" y="10" width="134" height="80" rx="7" fill="none" stroke="#2f312a" stroke-opacity="0.55" stroke-width="3"/>
+     <rect x="0" y="0" width="${W}" height="${H}" fill="url(#vig)"/>
+     <rect x="16" y="12" width="130" height="76" fill="none" stroke="#f2f3ed" stroke-opacity="0.26" stroke-width="1.4"/>
+     <rect x="14" y="10" width="134" height="80" rx="7" fill="none" stroke="#2b2d26" stroke-opacity="0.6" stroke-width="3"/>
+     <!-- a decade of handling: the casting polished around the reset shaft, a chip off the bottom corner -->
+     <ellipse cx="139" cy="50" rx="16" ry="13" fill="#e6e7e0" opacity="0.1"/>
+     <path d="M 137 88 l 7 -4 l 2 4 z" fill="#d8d9d2" opacity="0.5"/>
+     <path d="M 137 88 l 7 -4" fill="none" stroke="#3a3c35" stroke-opacity="0.5" stroke-width="0.6"/>
     </g>
     <path d="M 24.5 5.6 h 29 M 60 12.5 h 79 a 5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="#e8e9e3" stroke-opacity="0.5" stroke-width="0.9"/>
     <path d="M 16.6 78 a 6 6 0 0 0 6 5.8 M 92.4 94.4 h 29 M 22 87.5 h 69" fill="none" stroke="#33352e" stroke-opacity="0.8" stroke-width="0.9"/>
@@ -185,12 +193,13 @@
     <text class="mark" x="81" y="26.6" fill="#9a9c94"></text>
    </g>
    <g class="serg">
-    <text class="ser" x="81" y="81.2" fill="#c9cac3" opacity="0.5"></text>
-    <text class="ser" x="81" y="80.6" fill="#3c3e37"></text>
+    <text class="ser" x="81" y="81.3" fill="#d3d4cd" opacity="0.45"></text>
+    <text class="ser" x="81" y="80.6" fill="#35372f"></text>
    </g>
 
    <!-- the window: a slot in the casting, raised rim, glass set back, the drums behind -->
-   <rect x="26" y="31" width="110" height="38" rx="5" fill="url(#zinc2)" stroke="#42443c" stroke-width="0.7"/>
+   <rect x="27" y="32.4" width="110" height="38.4" rx="5.5" fill="#24261f" opacity="0.55"/>
+   <rect x="26" y="31" width="110" height="38" rx="5" fill="url(#zinc2)" stroke="#3a3c35" stroke-width="0.8"/>
    <path d="M 31 31.6 h 100 a 4 4 0 0 1 4 4" fill="none" stroke="#f0f1eb" stroke-opacity="0.55" stroke-width="1"/>
    <path d="M 26.6 64 a 4 4 0 0 0 4 4 h 100" fill="none" stroke="#35372f" stroke-opacity="0.85" stroke-width="1"/>
    <rect x="30" y="34" width="102" height="32" rx="2.5" fill="url(#rebate)"/>
@@ -199,7 +208,7 @@
     <g class="wheels"></g>
     <rect x="${DX}" y="${DY}" width="${DW}" height="${DH}" fill="url(#curve)"/>
     <g class="seams"></g>
-    <rect x="${DX - 1}" y="${DY - 1}" width="${DW + 2}" height="${DH + 2}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="3" filter="url(#tight)"/>
+    <rect x="${DX - 1}" y="${DY - 1}" width="${DW + 2}" height="${DH + 2}" fill="none" stroke="#000" stroke-opacity="0.62" stroke-width="3.4" filter="url(#tight)"/>
     <path d="M ${DX} ${DY} L ${DX + 50} ${DY} L ${DX + 12} ${DY + DH} L ${DX} ${DY + DH} Z" fill="url(#glass)"/>
    </g>
    <rect x="${DX - 0.5}" y="${DY - 0.5}" width="${DW + 1}" height="${DH + 1}" fill="none" stroke="#0b0b07" stroke-width="1"/>

@@ -296,8 +296,10 @@
       this._red = this.hasAttribute("redline") ? num("redline", NaN) : 200;
       this._scale = Math.max(0.2, num("scale", 1));
       this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
-      this._u2.textContent = this.getAttribute("unit") || "PER SQUARE INCH";
-      this._legend.textContent = this.getAttribute("legend") || "";
+      const u = this.getAttribute("unit") || "PER SQUARE INCH";
+      if (this._u2.textContent !== u) this._u2.textContent = u;
+      const lg = this.getAttribute("legend") || "";
+      if (this._legend.textContent !== lg) this._legend.textContent = lg;
       const lab = this.getAttribute("label") || "steam pressure";
       this.setAttribute("aria-label", lab + ", pounds per square inch");
       this.setAttribute("aria-valuemin", String(this._min));

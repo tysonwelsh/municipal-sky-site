@@ -69,8 +69,8 @@
   if (customElements.get("sk-compass-whiskey-drum")) return;
   const W = 130, H = 150;
   const CX = 65, R = 38;                       // drum centre and radius, in px
-  const WX = 34, WY = 48, WW = 62, WH = 26;    // the window opening
-  const FIGY = 62, TB = 72;                    // figure baseline, tick bottom
+  const WX = 34, WY = 46, WW = 62, WH = 30;    // the window opening
+  const FIGY = 63, TB = 74;                    // figure baseline, tick bottom
   const LIM = 58;                              // degrees either side of the lubber line that can be seen
   const NS = "http://www.w3.org/2000/svg";
   const LAT = { 0: "N", 90: "E", 180: "S", 270: "W" };
@@ -84,8 +84,8 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     text { font-family: "Barlow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif; }
-    .fig { font-size: 9px; font-weight: 600; fill: #ebe8db; text-anchor: middle; }
-    .fig.card { font-size: 11px; font-weight: 700; }
+    .fig { font-size: 10px; font-weight: 600; fill: #ebe8db; text-anchor: middle; }
+    .fig.card { font-size: 12px; font-weight: 700; }
     .cmp { font-size: 4.4px; font-weight: 600; fill: #7e7f83; letter-spacing: 0.08em; text-anchor: middle; }
     .tt { font-family: "Special Elite", "Courier New", monospace; fill: #2a2a2a; }
     .tt.h { fill: #b7241c; }
@@ -104,6 +104,10 @@
         <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#46484c"/><stop offset="0.45" stop-color="#232427"/><stop offset="1" stop-color="#0e0f10"/>
         </linearGradient>
+        <radialGradient id="front" cx="30%" cy="18%" r="88%">
+          <stop offset="0" stop-color="#3a3d42"/><stop offset="0.38" stop-color="#232427"/>
+          <stop offset="0.78" stop-color="#141516"/><stop offset="1" stop-color="#0c0d0e"/>
+        </radialGradient>
         <linearGradient id="frm" x1="0.1" y1="0" x2="0.8" y2="1">
           <stop offset="0" stop-color="#4b4e53"/><stop offset="0.45" stop-color="#1e1f22"/><stop offset="1" stop-color="#303236"/>
         </linearGradient>
@@ -141,26 +145,40 @@
         <filter id="b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
       </defs>
 
-      <!-- mounting strap, bent tin, behind the can -->
-      <path d="M 13 36 L 13 14 Q 13 7.5 19.5 7.5 L 110.5 7.5 Q 117 7.5 117 14 L 117 36"
-            fill="none" stroke="#050506" stroke-width="7.6" stroke-linecap="round"/>
-      <path d="M 13 36 L 13 14 Q 13 7.5 19.5 7.5 L 110.5 7.5 Q 117 7.5 117 14 L 117 36"
-            fill="none" stroke="url(#strap)" stroke-width="6" stroke-linecap="round"/>
-      <path d="M 14.2 30 L 14.2 14.4 Q 14.2 9.2 19.8 9.2 L 62 9.2" fill="none" stroke="#6b6e74" stroke-opacity="0.5" stroke-width="0.8"/>
-      <g><circle cx="41" cy="9.2" r="2.5" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.9" y="-0.35" width="3.8" height="0.7" fill="#101011" transform="translate(41 9.2) rotate(34)"/></g>
-      <g><circle cx="89" cy="9.2" r="2.5" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.9" y="-0.35" width="3.8" height="0.7" fill="#101011" transform="translate(89 9.2) rotate(-58)"/></g>
-
-      <!-- the can: shadow, body, rounded front -->
-      <rect x="21" y="23" width="94" height="80" rx="17" fill="#000" opacity="0.5" filter="url(#b3)"/>
+      <!-- mounting bracket: a top flange to the windscreen post, two ears down the sides -->
+      <rect x="45" y="5" width="40" height="17" rx="2" fill="#000" opacity="0.45" filter="url(#b3)"/>
+      <rect x="44.5" y="4.5" width="41" height="17" rx="2" fill="url(#strap)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 47 5.3 L 83 5.3" stroke="#83878e" stroke-opacity="0.6" stroke-width="0.8"/>
+      <g><circle cx="54" cy="12" r="2.6" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-2" y="-0.36" width="4" height="0.72" fill="#101011" transform="translate(54 12) rotate(34)"/></g>
+      <g><circle cx="76" cy="12" r="2.6" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-2" y="-0.36" width="4" height="0.72" fill="#101011" transform="translate(76 12) rotate(-58)"/></g>
+      <g class="ears">
+        <rect x="8.5" y="37" width="11" height="38" rx="4" fill="#000" opacity="0.5" filter="url(#b3)"/>
+        <rect x="8" y="35" width="11" height="38" rx="4" fill="url(#strap)" stroke="#000" stroke-width="0.7"/>
+        <path d="M 8.8 40 Q 8.8 35.8 13 35.8" fill="none" stroke="#83878e" stroke-opacity="0.55" stroke-width="0.8"/>
+        <path d="M 16.2 38 L 16.2 70" stroke="#000" stroke-opacity="0.5" stroke-width="0.8"/>
+        <circle cx="13.2" cy="54" r="3" fill="url(#stl)" stroke="#000" stroke-width="0.4"/>
+        <rect x="-2.3" y="-0.4" width="4.6" height="0.8" fill="#101011" transform="translate(13.2 54) rotate(-24)"/>
+        <rect x="111.5" y="37" width="11" height="38" rx="4" fill="#000" opacity="0.5" filter="url(#b3)"/>
+        <rect x="111" y="35" width="11" height="38" rx="4" fill="url(#strap)" stroke="#000" stroke-width="0.7"/>
+        <path d="M 111.8 40 Q 111.8 35.8 116 35.8" fill="none" stroke="#83878e" stroke-opacity="0.4" stroke-width="0.8"/>
+        <path d="M 113.8 38 L 113.8 70" stroke="#000" stroke-opacity="0.5" stroke-width="0.8"/>
+        <circle cx="116.8" cy="54" r="3" fill="url(#stl)" stroke="#000" stroke-width="0.4"/>
+        <rect x="-2.3" y="-0.4" width="4.6" height="0.8" fill="#101011" transform="translate(116.8 54) rotate(63)"/>
+      </g>
+      <!-- the can: a fat black cylinder lying on its side, rounded front -->
+      <rect x="21" y="23" width="94" height="80" rx="17" fill="#000" opacity="0.55" filter="url(#b3)"/>
       <rect x="18" y="18" width="94" height="80" rx="16" fill="url(#cb)" stroke="#000" stroke-width="0.8"/>
       <rect x="18" y="18" width="94" height="80" rx="16" fill="url(#chi)"/>
-      <path d="M 34 18.6 L 96 18.6" stroke="#6e7177" stroke-opacity="0.55" stroke-width="0.9" stroke-linecap="round"/>
-      <path d="M 18.7 34 Q 18.7 18.7 34 18.7" fill="none" stroke="#5a5d63" stroke-opacity="0.5" stroke-width="0.9"/>
-      <rect x="22" y="22" width="86" height="72" rx="13" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="1"/>
-      <rect x="22.9" y="22.9" width="86" height="72" rx="13" fill="none" stroke="#4a4d52" stroke-opacity="0.35" stroke-width="0.6"/>
-      <!-- the lit top face of the cylinder -->
-      <path d="M 27 21 Q 65 15.5 103 21 L 103 32 Q 65 28 27 32 Z" fill="#fff" opacity="0.045"/>
-
+      <path d="M 34 18.6 L 96 18.6" stroke="#787c83" stroke-opacity="0.6" stroke-width="0.9" stroke-linecap="round"/>
+      <path d="M 18.7 34 Q 18.7 18.7 34 18.7" fill="none" stroke="#63666c" stroke-opacity="0.55" stroke-width="0.9"/>
+      <!-- the rim, then the domed front face inside it -->
+      <rect x="22" y="22" width="86" height="72" rx="13" fill="#08090a"/>
+      <rect x="23" y="23" width="84" height="70" rx="12" fill="url(#front)"/>
+      <rect x="23" y="23" width="84" height="70" rx="12" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="1"/>
+      <path d="M 28 91.4 Q 65 96.6 102 91.4" fill="none" stroke="#6a6e76" stroke-opacity="0.4" stroke-width="1.1"/>
+      <path d="M 106.4 40 Q 106.4 24.2 92 24.2" fill="none" stroke="#4a4d53" stroke-opacity="0.3" stroke-width="0.8"/>
+      <!-- the lit top of the cylinder -->
+      <path d="M 27 21.5 Q 65 16 103 21.5 L 103 33 Q 65 28.5 27 33 Z" fill="#fff" opacity="0.05"/>
       <!-- compensator screws on the top face -->
       <g>
         <circle cx="44" cy="29" r="5" fill="#0a0b0c"/>
@@ -176,9 +194,10 @@
       </g>
 
       <!-- window frame, bevelled -->
-      <rect x="29.5" y="43.5" width="71" height="35" rx="4.5" fill="url(#frm)" stroke="#000" stroke-width="0.7"/>
-      <path d="M 33 44.3 L 97 44.3" stroke="#7e828a" stroke-opacity="0.6" stroke-width="0.8"/>
-      <rect x="32.6" y="46.6" width="64.8" height="28.8" rx="3" fill="#0c0d0e"/>
+      <rect x="29.5" y="41.5" width="71" height="39" rx="4.5" fill="url(#frm)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 33 42.3 L 97 42.3" stroke="#8b8f97" stroke-opacity="0.65" stroke-width="0.8"/>
+      <path d="M 33 79.7 L 97 79.7" stroke="#000" stroke-opacity="0.6" stroke-width="0.8"/>
+      <rect x="32.6" y="44.6" width="64.8" height="32.8" rx="3" fill="#0c0d0e"/>
 
       <!-- the drum, seen through the fluid -->
       <g clip-path="url(#win)">
@@ -188,14 +207,14 @@
         <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#dsh)"/>
         <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#dhi)"/>
         <!-- the lubber line, painted on the glass -->
-        <rect x="${CX + 0.4}" y="${WY}" width="1.5" height="${WH}" fill="#000" opacity="0.55"/>
-        <rect x="${CX - 0.75}" y="${WY}" width="1.5" height="${WH}" fill="#f4f2ea"/>
+        <rect x="${CX + 0.55}" y="${WY}" width="1.3" height="${WH}" fill="#000" opacity="0.6"/>
+        <rect x="${CX - 0.55}" y="${WY}" width="1.1" height="${WH}" fill="#f4f2ea"/>
         <!-- fluid: a tint, a glint along the top edge, the bubble -->
         <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#08090b" opacity="0.2"/>
         <rect x="${WX}" y="${WY}" width="${WW}" height="6" fill="url(#gl)"/>
         <g opacity="0.6">
-          <ellipse cx="84" cy="51.3" rx="4.6" ry="2" fill="#cfd3d6"/>
-          <ellipse cx="82.6" cy="50.7" rx="1.7" ry="0.7" fill="#fbfdff"/>
+          <ellipse cx="84" cy="49.6" rx="4.6" ry="2" fill="#cfd3d6"/>
+          <ellipse cx="82.6" cy="49" rx="1.7" ry="0.7" fill="#fbfdff"/>
         </g>
         <!-- glass: one wide reflection, not the shape of the card -->
         <path d="M ${WX} ${WY} L ${WX + 26} ${WY} L ${WX + 8} ${WY + WH} L ${WX} ${WY + WH} Z" fill="#fff" opacity="0.055"/>
@@ -206,30 +225,30 @@
       <path d="M ${WX} ${WY + WH} L ${WX + WW} ${WY + WH}" stroke="#8e9299" stroke-opacity="0.35" stroke-width="0.7"/>
 
       <!-- correction card, typewritten, in a bent-tin frame -->
-      <rect x="20" y="106" width="94" height="43" rx="2.5" fill="#000" opacity="0.45" filter="url(#b3)"/>
-      <rect x="18" y="104" width="94" height="43" rx="2.5" fill="url(#tin)" stroke="#000" stroke-width="0.7"/>
-      <path d="M 20.5 104.9 L 109.5 104.9" stroke="#90949c" stroke-opacity="0.55" stroke-width="0.7"/>
-      <rect x="26.4" y="109.4" width="77.2" height="32.2" fill="#000" opacity="0.6"/>
-      <rect x="27" y="110" width="76" height="31" fill="url(#pap)"/>
-      <rect x="27" y="110" width="76" height="31" fill="#7a5a20" opacity="0.07"/>
+      <rect x="22" y="108" width="90" height="39" rx="2.5" fill="#000" opacity="0.5" filter="url(#b3)"/>
+      <rect x="20" y="106" width="90" height="39" rx="2.5" fill="url(#tin)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 22.5 106.9 L 107.5 106.9" stroke="#9aa0a8" stroke-opacity="0.6" stroke-width="0.7"/>
+      <rect x="25.4" y="110.4" width="79.2" height="31.2" fill="#000" opacity="0.6"/>
+      <rect x="26" y="111" width="78" height="30" fill="url(#pap)"/>
+      <rect x="26" y="111" width="78" height="30" fill="#7a5a20" opacity="0.08"/>
       <g>
-        <text class="tt h" x="30" y="118.6" font-size="5.2">FOR</text>
-        <text class="tt" x="53" y="118.6" font-size="5" text-anchor="middle">N</text>
-        <text class="tt" x="68" y="118.6" font-size="5" text-anchor="middle">E</text>
-        <text class="tt" x="83" y="118.6" font-size="5" text-anchor="middle">S</text>
-        <text class="tt" x="97" y="118.6" font-size="5" text-anchor="middle">W</text>
-        <line x1="29" y1="121.2" x2="101" y2="121.2" stroke="#8a8478" stroke-width="0.4"/>
-        <text class="tt" x="30" y="128.4" font-size="5.2">STEER</text>
-        <text class="tt" x="53" y="128.4" font-size="5" text-anchor="middle">002</text>
-        <text class="tt" x="68" y="128.4" font-size="5" text-anchor="middle">088</text>
-        <text class="tt" x="83" y="128.4" font-size="5" text-anchor="middle">183</text>
-        <text class="tt" x="97" y="128.4" font-size="5" text-anchor="middle">271</text>
-        <line x1="29" y1="131" x2="101" y2="131" stroke="#8a8478" stroke-width="0.4"/>
-        <text class="tt s" x="30" y="137.8">RADIO ON</text>
-        <text class="tt s" x="101" y="137.8" text-anchor="end">12·4·56</text>
+        <text class="tt h" x="29" y="119.4" font-size="5.4">FOR</text>
+        <text class="tt" x="53" y="119.4" font-size="5.2" text-anchor="middle">N</text>
+        <text class="tt" x="68" y="119.4" font-size="5.2" text-anchor="middle">E</text>
+        <text class="tt" x="83" y="119.4" font-size="5.2" text-anchor="middle">S</text>
+        <text class="tt" x="97" y="119.4" font-size="5.2" text-anchor="middle">W</text>
+        <line x1="28" y1="122" x2="102" y2="122" stroke="#8a8478" stroke-width="0.4"/>
+        <text class="tt" x="29" y="129.4" font-size="5.4">STEER</text>
+        <text class="tt" x="53" y="129.4" font-size="5.2" text-anchor="middle">002</text>
+        <text class="tt" x="68" y="129.4" font-size="5.2" text-anchor="middle">088</text>
+        <text class="tt" x="83" y="129.4" font-size="5.2" text-anchor="middle">183</text>
+        <text class="tt" x="97" y="129.4" font-size="5.2" text-anchor="middle">271</text>
+        <line x1="28" y1="132" x2="102" y2="132" stroke="#8a8478" stroke-width="0.4"/>
+        <text class="tt s" x="29" y="138.4">RADIO ON</text>
+        <text class="tt s" x="102" y="138.4" text-anchor="end">12\u00B74\u00B756</text>
       </g>
-      <g><circle cx="22.4" cy="125.5" r="2.4" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.33" width="3.6" height="0.66" fill="#111" transform="translate(22.4 125.5) rotate(71)"/></g>
-      <g><circle cx="107.6" cy="125.5" r="2.4" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.33" width="3.6" height="0.66" fill="#111" transform="translate(107.6 125.5) rotate(-19)"/></g>
+      <g><circle cx="23.4" cy="125.5" r="2.4" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.33" width="3.6" height="0.66" fill="#111" transform="translate(23.4 125.5) rotate(71)"/></g>
+      <g><circle cx="106.6" cy="125.5" r="2.4" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.33" width="3.6" height="0.66" fill="#111" transform="translate(106.6 125.5) rotate(-19)"/></g>
     </svg>
   </div>`;
 
@@ -279,8 +298,8 @@
       const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
       for (let h = 0; h < 360; h += 5) {
         const long = h % 10 === 0;
-        const r = mk("rect", { x: long ? -0.55 : -0.45, y: long ? TB - 6 : TB - 3.2,
-          width: long ? 1.1 : 0.9, height: long ? 6 : 3.2, fill: "#ebe8db", rx: 0.3 });
+        const r = mk("rect", { x: long ? -0.55 : -0.45, y: long ? TB - 6.5 : TB - 3.6,
+          width: long ? 1.15 : 0.9, height: long ? 6.5 : 3.6, fill: "#ebe8db", rx: 0.3 });
         this._g.appendChild(r);
         this._marks.push({ h: h, el: r, on: true, o: -1 });
       }

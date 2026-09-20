@@ -69,7 +69,7 @@
   const SX = 42, SW = 148;            // the slot opening
   const SH = 17;                      // slot height
   const SY = [15, 37];                // the two slots' tops
-  const X0 = 48, X1 = 186;            // the travel, inset from the slot ends
+  const X0 = 50, X1 = 182;            // the travel, inset from the slot ends
   const TRV = X1 - X0;
   const ARC_R = 1400;                 // the pointer's radius: a long arm behind the panel
   const DBMIN = -40, DBMAX = 5;
@@ -100,7 +100,7 @@
     .glow, .warm, .tipwarm { opacity: 0; transition: opacity 160ms ease-out; }
     :host([lit]) .glow { opacity: 1; }
     :host([lit]) .warm { opacity: 1; }
-    :host([lit]) .tipwarm { opacity: 0.9; }
+    :host([lit]) .tipwarm { opacity: 0.75; }
     :host([lit]) .num { fill: #f4efe2; }
     :host([lit]) .ch { fill: #cfcabd; }
   </style>
@@ -115,15 +115,15 @@
           <stop offset="0" stop-color="#0a0b0c"/><stop offset="0.55" stop-color="#0c0d0e"/><stop offset="1" stop-color="#101112"/>
         </linearGradient>
         <linearGradient id="lamp" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0" stop-color="#ffcf82" stop-opacity="0.62"/>
-          <stop offset="0.3" stop-color="#ffbc5e" stop-opacity="0.3"/>
-          <stop offset="0.62" stop-color="#ff9f3a" stop-opacity="0.07"/>
+          <stop offset="0" stop-color="#ffcf82" stop-opacity="0.5"/>
+          <stop offset="0.35" stop-color="#ffbc5e" stop-opacity="0.19"/>
+          <stop offset="0.7" stop-color="#ff9f3a" stop-opacity="0.05"/>
           <stop offset="1" stop-color="#ff9f3a" stop-opacity="0"/>
         </linearGradient>
         <linearGradient id="lampx" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#fff" stop-opacity="0.45"/><stop offset="0.16" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="0.46" stop-color="#fff" stop-opacity="0.72"/><stop offset="0.68" stop-color="#fff" stop-opacity="0.95"/>
-          <stop offset="1" stop-color="#fff" stop-opacity="0.5"/>
+          <stop offset="0" stop-color="#fff" stop-opacity="0.5"/><stop offset="0.22" stop-color="#fff" stop-opacity="0.92"/>
+          <stop offset="0.5" stop-color="#fff" stop-opacity="0.72"/><stop offset="0.74" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0.62"/>
         </linearGradient>
         <linearGradient id="lipdark" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#000" stop-opacity="0.95"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
@@ -230,15 +230,18 @@
     }
 
     _build() {
-      const g = this._slots;
+      const g = this._slots, defs = this.shadowRoot.querySelector("defs");
       ["L", "R"].forEach((ch, i) => {
         const y = SY[i];
-        const s = mk(g, "g", {});
+        const outer = mk(g, "g", {});
+        const cp = mk(defs, "clipPath", { id: "sc" + i });
+        mk(cp, "rect", { x: SX, y: y, width: SW, height: SH });
+        const s = mk(outer, "g", { "clip-path": "url(#sc" + i + ")" });
         // the cut: card behind the opening
         mk(s, "rect", { x: SX, y: y, width: SW, height: SH, fill: "url(#card)" });
         // the lamp, washing up from the bottom of the slot, uneven along its length
-        mk(s, "rect", { "class": "glow", x: SX, y: y + 3, width: SW, height: SH - 3, fill: "url(#lamp)", mask: "url(#lampmask)" });
-        mk(s, "ellipse", { "class": "glow", cx: SX + 52, cy: y + SH + 1, rx: 40, ry: 7, fill: "#ffcf82", opacity: 0.16, filter: "url(#soft)" });
+        mk(s, "rect", { "class": "glow", x: SX, y: y + 7.5, width: SW, height: SH - 7.5, fill: "url(#lamp)", mask: "url(#lampmask)" });
+        mk(s, "ellipse", { "class": "glow", cx: SX + 84, cy: y + SH + 2, rx: 46, ry: 5.5, fill: "#ffcf82", opacity: 0.12, filter: "url(#soft)" });
         // the scale, printed on the card along the top edge of the slot
         const red = mk(s, "g", {});
         mk(red, "rect", { x: X0 + T0 * TRV, y: y + 8.6, width: X1 - (X0 + T0 * TRV) + 3, height: 1.1, fill: "#d13a2b" });
@@ -260,18 +263,19 @@
         // the pointer's tip, all that is visible of it
         const tip = mk(s, "g", { "class": "tip" });
         mk(tip, "path", { d: "M -1.4 0.6 L 1.4 0.6 L 2 7.2 L -2 7.2 Z", fill: "#000", opacity: 0.55, filter: "url(#soft)", transform: "translate(1 0.6)" });
+        mk(tip, "path", { d: "M -1.15 -0.3 L 1.15 -0.3 L 1.8 6.9 L -1.8 6.9 Z", fill: "#000", opacity: 0.5 });
         mk(tip, "path", { d: "M -0.85 0 L 0.85 0 L 1.5 6.6 L -1.5 6.6 Z", fill: "url(#tipg)" });
-        mk(tip, "path", { "class": "tipwarm", d: "M -1.2 3.2 L 1.2 3.2 L 1.5 6.6 L -1.5 6.6 Z", fill: "#ffbe6a", opacity: 0 });
+        mk(tip, "path", { "class": "tipwarm", d: "M -1.25 4.2 L 1.25 4.2 L 1.5 6.6 L -1.5 6.6 Z", fill: "#ffcf8c", opacity: 0 });
         this._tips.push(tip);
         // the lip: shadow inside the top of the cut, light on the top chamfer, dark under the bottom
-        mk(s, "rect", { x: SX, y: y, width: SW, height: 4.5, fill: "url(#lipdark)", opacity: 0.85 });
-        mk(s, "rect", { x: SX, y: y + SH - 1.6, width: SW, height: 1.6, fill: "#000", opacity: 0.55 });
-        mk(s, "rect", { x: SX - 1, y: y - 1.4, width: SW + 2, height: 1.1, fill: "#3a3b3d" });
-        mk(s, "rect", { x: SX - 1, y: y - 0.35, width: SW + 2, height: 0.5, fill: "#000", opacity: 0.8 });
-        mk(s, "rect", { x: SX - 1, y: y + SH, width: SW + 2, height: 1.2, fill: "#000", opacity: 0.75 });
-        mk(s, "rect", { x: SX - 1, y: y + SH + 1.2, width: SW + 2, height: 0.6, fill: "#2a2b2d", opacity: 0.55 });
-        mk(s, "rect", { x: SX - 1, y: y - 1.4, width: 1.2, height: SH + 3, fill: "#000", opacity: 0.6 });
-        mk(s, "rect", { x: SX + SW - 0.2, y: y - 1.4, width: 1.2, height: SH + 3, fill: "#000", opacity: 0.5 });
+        mk(s, "rect", { x: SX, y: y, width: SW, height: 4.5, fill: "url(#lipdark)", opacity: 0.8 });
+        mk(s, "rect", { x: SX, y: y + SH - 1.4, width: SW, height: 1.4, fill: "#000", opacity: 0.45 });
+        mk(s, "rect", { x: SX, y: y, width: 3, height: SH, fill: "#000", opacity: 0.5 });
+        mk(s, "rect", { x: SX + SW - 2.4, y: y, width: 2.4, height: SH, fill: "#000", opacity: 0.4 });
+        mk(outer, "rect", { x: SX - 1, y: y - 1.5, width: SW + 2, height: 1.1, fill: "#3a3b3d" });
+        mk(outer, "rect", { x: SX - 1, y: y - 0.45, width: SW + 2, height: 0.55, fill: "#000", opacity: 0.85 });
+        mk(outer, "rect", { x: SX - 1, y: y + SH - 0.1, width: SW + 2, height: 1.1, fill: "#000", opacity: 0.8 });
+        mk(outer, "rect", { x: SX - 1, y: y + SH + 1, width: SW + 2, height: 0.55, fill: "#26272a", opacity: 0.6 });
         // the channel letter, on the panel beside the slot
         mk(g, "text", { "class": "ch", x: SX - 6, y: y + SH / 2 + 2.6 }, ch);
       });

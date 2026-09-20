@@ -269,9 +269,11 @@
       this._red = this.hasAttribute("redline") ? num("redline", NaN) : (this._speedo ? NaN : 5500);
       this._scale = Math.max(0.2, num("scale", 1));
       this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
-      this._l1.textContent = this._speedo ? "MPH" : "RPM";
-      this._l2.textContent = this._speedo ? "" : "×100";
-      if (this._speedo) this._drawOdo();
+      const l1 = this._speedo ? "MPH" : "RPM", l2 = this._speedo ? "" : "\u00d7100";
+      if (this._l1.textContent !== l1) this._l1.textContent = l1;
+      if (this._l2.textContent !== l2) this._l2.textContent = l2;
+      const od = (this.getAttribute("odo") || "41377") + "|" + this._speedo;
+      if (this._speedo && od !== this._odoKey) { this._odoKey = od; this._drawOdo(); }
       const lab = this.getAttribute("label") || (this._speedo ? "road speed" : "engine speed");
       this.setAttribute("aria-label", lab + ", " + (this._speedo ? "miles per hour" : "revolutions per minute"));
       this.setAttribute("aria-valuemin", String(this._min));
