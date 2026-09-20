@@ -67,7 +67,7 @@
   if (customElements.get("sk-sight-glass-boiler")) return;
   const W = 90, H = 320, CX = 45;
   const GT = 60, GB = 244;                 // top and bottom of the water column in the glass
-  const TL = 38, TW = 14;                  // tube left edge, tube width
+  const TL = 37, TW = 16;                  // tube left edge, tube width
   const NB = 9;                            // bubbles
 
   const TPL = document.createElement("template");
@@ -104,10 +104,10 @@
           <stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
         </linearGradient>
         <pattern id="stA" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(34)">
-          <rect x="0" y="0" width="6.5" height="13" fill="#232323"/>
+          <rect x="0" y="0" width="6.5" height="13" fill="#1c1c1c"/>
         </pattern>
-        <pattern id="stB" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(-34)">
-          <rect x="0" y="0" width="8" height="16" fill="#1d2326"/>
+        <pattern id="stB" width="17" height="17" patternUnits="userSpaceOnUse" patternTransform="rotate(-36)">
+          <rect x="0" y="0" width="8.5" height="17" fill="#132025"/>
         </pattern>
         <clipPath id="pane"><rect x="30" y="${GT - 4}" width="30" height="${GB - GT + 8}"/></clipPath>
         <clipPath id="tubeclip"><rect x="${TL}" y="${GT - 4}" width="${TW}" height="${GB - GT + 8}"/></clipPath>
@@ -137,9 +137,9 @@
         </g>
         <!-- the water: white again, then the stripes the other way, then the tint -->
         <g clip-path="url(#wclip)">
-          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="#f6f4ec"/>
-          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="url(#stB)" opacity="0.95"/>
-          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="#2a4a5a" opacity="0.5"/>
+          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="#cfe4e8"/>
+          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="url(#stB)"/>
+          <rect x="${TL}" y="${GT - 6}" width="${TW}" height="${GB - GT + 14}" fill="#2a4a5a" opacity="0.18"/>
         </g>
         <!-- steam above the water is a shade whiter than the plate -->
         <rect class="steam" x="${TL}" y="${GT - 4}" width="${TW}" height="0" fill="#ffffff" opacity="0.2"/>

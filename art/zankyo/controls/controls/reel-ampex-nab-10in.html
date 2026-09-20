@@ -219,6 +219,11 @@
       <use class="ghost gh1" href="#body" opacity="0"/>
       <use class="ghost gh2" href="#body" opacity="0"/>
       <use class="reel" href="#body"/>
+      <!-- at speed the spokes and the knob smear into the average of metal and what is behind them -->
+      <path class="smear" fill-rule="evenodd" fill="url(#alu)" opacity="0"
+            d="M ${C - 105} ${C} A 105 105 0 1 0 ${C + 105} ${C} A 105 105 0 1 0 ${C - 105} ${C} Z
+               M ${C - 48} ${C} A 48 48 0 1 0 ${C + 48} ${C} A 48 48 0 1 0 ${C - 48} ${C} Z"/>
+      <circle class="smear" cx="${C}" cy="${C}" r="35" fill="url(#lobe)" opacity="0"/>
 
       <!-- the room in the metal: a reflection, so it does not turn -->
       <g clip-path="url(#disc)" pointer-events="none">
@@ -241,6 +246,7 @@
       this._wrap = this.shadowRoot.querySelector(".wrap");
       this._reel = this.shadowRoot.querySelector(".reel");
       this._gh = this.shadowRoot.querySelectorAll(".ghost");
+      this._smear = this.shadowRoot.querySelectorAll(".smear");
       this._pr = this.shadowRoot.querySelectorAll(".packr");
       this._pr2 = this.shadowRoot.querySelector(".packr2");
       this._tick = this._tick.bind(this);
@@ -314,13 +320,15 @@
       const a = this._ang, sp = Math.abs(this._rate);
       this._reel.setAttribute("transform", `rotate(${a.toFixed(2)} ${C} ${C})`);
       // above about two turns a second the spokes smear into a ring
-      const g = Math.min(41, sp * 11);
-      const op = Math.max(0, Math.min(0.45, (sp - 1.4) / 4.5));
+      const g = Math.min(15, sp * 5);
+      const op = Math.max(0, Math.min(0.24, (sp - 1.2) / 9));
+      const sm = Math.max(0, Math.min(0.62, (sp - 1.1) / 3.6));
+      for (let i = 0; i < this._smear.length; i++) this._smear[i].setAttribute("opacity", sm.toFixed(3));
       this._gh[0].setAttribute("transform", `rotate(${(a - g).toFixed(2)} ${C} ${C})`);
       this._gh[1].setAttribute("transform", `rotate(${(a + g).toFixed(2)} ${C} ${C})`);
       this._gh[0].setAttribute("opacity", op.toFixed(3));
       this._gh[1].setAttribute("opacity", op.toFixed(3));
-      this._reel.setAttribute("opacity", (1 - op * 0.95).toFixed(3));
+      this._reel.setAttribute("opacity", (1 - op * 0.6).toFixed(3));
     }
   }
   customElements.define("sk-reel-ampex-nab", SkReelAmpexNab);

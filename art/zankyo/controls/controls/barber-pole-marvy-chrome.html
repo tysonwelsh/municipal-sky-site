@@ -109,7 +109,7 @@
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     .plate { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; font-weight: 600;
              font-size: 5px; letter-spacing: 0.18em; text-anchor: middle; }
-    .lamp, .halo, .glow { transition: opacity 200ms ease; }
+    .lamp, .halo, .glow, .dim { transition: opacity 200ms ease; }
     .rw { display: none; }
     :host([stripes="rw"]) .rwb { display: none; }
     :host([stripes="rw"]) .rw { display: inline; }
@@ -160,9 +160,11 @@
 
       <!-- the wall bracket, behind everything -->
       <g>
-        <rect x="6" y="150" width="108" height="26" rx="4" fill="url(#brk)" stroke="#0e1012" stroke-width="0.8"/>
-        <rect x="6" y="150.8" width="108" height="1.6" fill="#7e838a" opacity="0.5"/>
-        <circle cx="13" cy="163" r="3.4" fill="url(#bolt)"/><circle cx="107" cy="163" r="3.4" fill="url(#bolt)"/>
+        <path d="M 24 152 L 7 157 L 5 171 L 24 175 Z" fill="url(#brk)" stroke="#0e1012" stroke-width="0.7"/>
+        <path d="M 96 152 L 113 157 L 115 171 L 96 175 Z" fill="url(#brk)" stroke="#0e1012" stroke-width="0.7"/>
+        <path d="M 24 152 L 7 157" fill="none" stroke="#8b9097" stroke-opacity="0.5" stroke-width="1"/>
+        <path d="M 96 152 L 113 157" fill="none" stroke="#8b9097" stroke-opacity="0.45" stroke-width="1"/>
+        <circle cx="12" cy="164" r="2.6" fill="url(#bolt)"/><circle cx="108" cy="164" r="2.6" fill="url(#bolt)"/>
       </g>
 
       <!-- the globe -->
@@ -190,6 +192,7 @@
         </g>
         <!-- the lamp inside lifts the stripes a little -->
         <rect class="glow" x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="#ffe9b0" opacity="0"/>
+        <rect class="dim" x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="#0e1218" opacity="0.2"/>
         <!-- cylindrical shading over the stripes -->
         <rect x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="url(#cylsh)"/>
         <!-- the castings' shadow on the glass -->
@@ -228,7 +231,7 @@
       this._scale = 1; this._rate = 1; this._spd = 0; this._off = 0; this._raf = 0; this._last = 0;
       const $ = s => this.shadowRoot.querySelector(s);
       this._wrap = $(".wrap"); this._helix = $(".helix");
-      this._lamp = $(".lamp"); this._halo = $(".halo"); this._glow = $(".glow");
+      this._lamp = $(".lamp"); this._halo = $(".halo"); this._glow = $(".glow"); this._dim = $(".dim");
       this._tick = this._tick.bind(this);
     }
     connectedCallback() {
@@ -266,7 +269,8 @@
       const on = this.hasAttribute("running");
       this._lamp.style.opacity = on ? "1" : "0";
       this._halo.style.opacity = on ? "0.55" : "0";
-      this._glow.style.opacity = on ? "0.10" : "0";
+      this._glow.style.opacity = on ? "0.11" : "0";
+      this._dim.style.opacity = on ? "0" : "0.2";
     }
     _kick() { if (!this._raf) { this._last = performance.now() / 1000; this._raf = requestAnimationFrame(this._tick); } }
     _tick(now) {
