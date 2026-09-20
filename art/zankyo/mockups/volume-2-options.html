@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — volume thumbwheel, second set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   VOLUME THUMBWHEEL — SECOND SET
+   Five wheels, all on the live .zk-rxpanel metal, all a little thicker than
+   the ported roller (16–22 px against its 12).
+
+   THE ONE THING THEY ALL DO THAT THE PORTED ROLLER DOES NOT:
+   every rib, facet and numeral is placed by ANGLE and projected —
+   x = R·sin(θ), foreshortened by cos(θ), faded as it turns away — so the
+   marks CROWD TOWARD THE EDGES the way a real cylinder's do. The ported
+   roller scrolls a flat repeating gradient, which is evenly spaced across
+   its whole width, and that is precisely why it reads as a sliding strip
+   rather than a turning wheel. No amount of restyling fixes that; the
+   spacing is the tell.
+
+   Each wheel carries a little indicator above it showing the level.
+   Nothing here is wired to the engine: this is a look decision only.
+   =========================================================================== */
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 40px 20px 90px;
+  background: radial-gradient(90% 60% at 50% 0%, #17171d, #08080b 70%);
+  font-family: "JetBrains Mono", monospace; color: #d6d2dc;
+}
+.wrap { max-width: 960px; margin: 0 auto; }
+
+/* ------------------------------ zankyo.css (verbatim) ------------------------------ */
+.zankyo-scene {
+  --red: #ff2d55; --red-rgb: 255,45,85;
+  --cyan: #16e0e0; --cyan-rgb: 22,224,224;
+  --magenta: #ff3df0; --magenta-rgb: 255,61,240;
+  --amber: #ffb000; --amber-rgb: 255,176,0;
+  --green: #3ddc84; --green-rgb: 61,220,132;
+  --print: #918c9c; --print-dim: #6a6572;
+}
+.zk-rxpanel {
+  position: relative; min-height: 92px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 5px; border: 1px solid #000;
+  background:
+    radial-gradient(30% 60% at 4% 100%, rgba(96,58,32,0.22), transparent 74%),
+    radial-gradient(18% 34% at 96% 6%, rgba(20,14,10,0.5), transparent 78%),
+    linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -3px 8px rgba(0,0,0,0.55), 0 4px 10px rgba(0,0,0,0.5);
+}
+.zk-bolt {
+  position: absolute; z-index: 4; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #7a7a86, #34343c 55%, #0a0a0d);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -2px 2px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.8), 0 0 0 2px rgba(0,0,0,0.4);
+}
+.zk-bolt::before {
+  content: ""; position: absolute; left: 30%; top: 30%; width: 40%; height: 40%;
+  background: #060608; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  transform: rotate(var(--hex, 0deg));
+}
+.zk-bolt-tl { top: 4px; left: 4px; }
+.zk-bolt-tr { top: 4px; right: 4px; filter: sepia(0.6) brightness(0.8); }
+.zk-bolt-bl { bottom: 4px; left: 4px; filter: sepia(0.3) brightness(0.9); }
+.zk-bolt-br { bottom: 4px; right: 4px; filter: sepia(0.5) brightness(0.85); }
+.zk-gap { flex: 1; min-width: 0; }
+
+/* ------------------------------ page chrome ------------------------------ */
+h1 { font-family: "Orbitron", sans-serif; font-size: 20px; letter-spacing: 0.16em; margin: 0 0 6px; }
+.lede { font-size: 12px; line-height: 1.7; color: #8d8797; margin: 0 0 30px; max-width: 74ch; }
+.lede b { color: #b9b3c4; font-weight: 500; }
+h2 { font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.22em; margin: 40px 0 4px; padding-bottom: 8px; border-bottom: 1px solid #26262d; color: #b9b3c4; }
+h2 span { color: #6a6572; letter-spacing: 0.1em; }
+.opt { margin: 26px 0 0; }
+.opt-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; flex-wrap: wrap; }
+.opt-id { font-family: "Orbitron", sans-serif; font-size: 11px; letter-spacing: 0.18em; color: #0b0b0e; background: #8d8797; padding: 3px 7px 2px; border-radius: 2px; }
+.opt-name { font-family: "Shippori Mincho", serif; font-size: 15px; color: #d6d2dc; }
+.opt-note { font-size: 11.5px; line-height: 1.65; color: #857f90; margin: 9px 0 0; max-width: 80ch; }
+.opt-note b { color: #b9b3c4; font-weight: 500; }
+.is-current .opt-id { background: #4a4a52; color: #cfcad8; }
+.foot { margin-top: 52px; padding-top: 18px; border-top: 1px solid #26262d; font-size: 11px; color: #6a6572; line-height: 1.8; }
+
+/* ===========================================================================
+   SHARED RIG — the grab area, the indicator above, the projected band
+   =========================================================================== */
+.vw { position: relative; width: 190px; flex: none; padding: 0 0 2px; }
+
+/* the little indicator above the wheel: an etched track with a travelling
+   amber pip. W2 swaps the pip for a fixed pointer, because its numbers move. */
+.vw-ind {
+  position: relative; height: 9px; margin: 0 0 5px;
+}
+.vw-ind::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px;
+  background: linear-gradient(180deg, #08080a, #17171d);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.07);
+}
+.vw-pip {
+  position: absolute; bottom: -1px; width: 5px; height: 5px; margin-left: -2.5px;
+  background: var(--amber); border-radius: 1px;
+  box-shadow: 0 0 6px rgba(var(--amber-rgb), 0.9), 0 0 2px rgba(var(--amber-rgb), 1);
+}
+.vw-fixed {
+  position: absolute; left: 50%; bottom: 1px; margin-left: -4px;
+  width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 6px solid var(--amber);
+  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.7));
+}
+
+/* the grab area — always 44 px tall whatever the wheel's own thickness */
+.vw-grab {
+  position: relative; display: flex; align-items: center;
+  height: 44px; cursor: ew-resize; touch-action: pan-y;
+}
+/* the wheel itself: a band cut into the plate. No outer drop shadow —
+   everything on this panel is let INTO it. */
+.vw-band {
+  position: relative; width: 100%; overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px #000, inset 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.08);
+}
+/* the ends of the band fall into the plate's cut edge */
+.vw-band::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; z-index: 4;
+  background: linear-gradient(90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 7%, transparent 16%, transparent 84%, rgba(0,0,0,0.3) 93%, rgba(0,0,0,0.9) 100%);
+}
+.vw-mark { position: absolute; top: 0; bottom: 0; pointer-events: none; }
+.vw-num {
+  position: absolute; top: 50%; pointer-events: none;
+  font-family: "Orbitron", sans-serif; font-size: 9px; line-height: 1;
+  color: #e6e1ee; text-shadow: 0 1px 1px rgba(0,0,0,0.9);
+}
+
+/* ---- W1 machined knurl, 18 px ------------------------------------------ */
+.w1 .vw-band { height: 18px; background: linear-gradient(180deg, #17171c 0%, #55555f 22%, #86868f 50%, #5c5c66 74%, #1b1b21 100%); }
+.w1 .vw-mark { width: 1px; background: rgba(0,0,0,0.55); box-shadow: 1px 0 0 rgba(255,255,255,0.20); }
+
+/* ---- W2 printed number band, 22 px -------------------------------------- */
+.w2 .vw-band { height: 22px; background: linear-gradient(180deg, #101015 0%, #3b3b45 20%, #63636f 50%, #43434d 76%, #131318 100%); }
+.w2 .vw-mark { width: 1px; background: rgba(226,222,236,0.5); top: auto; height: 4px; }
+.w2 .vw-mark-t { top: 1px; }
+.w2 .vw-mark-b { bottom: 1px; }
+
+/* ---- W3 moulded rubber roller, 16 px ------------------------------------ */
+.w3 .vw-band { height: 16px; background: linear-gradient(180deg, #131317 0%, #3d3d45 22%, #55555f 50%, #3a3a43 76%, #111115 100%); }
+/* the mark is the GROOVE between two raised treads: a dark cut with the lit
+   shoulder of the next tread just to its right */
+.w3 .vw-mark { width: 2px; background: rgba(0,0,0,0.62); box-shadow: 2px 0 1px rgba(255,255,255,0.13); }
+/* rubber is matte: a broad soft sheen, no hard specular */
+.w3 .vw-band::before {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: linear-gradient(180deg, transparent 18%, rgba(255,255,255,0.07) 42%, rgba(255,255,255,0.03) 58%, transparent 82%);
+}
+
+/* ---- W4 fluted lighter wheel, 18 px ------------------------------------- */
+.w4 .vw-band { height: 18px; background: linear-gradient(180deg, #17120a 0%, #6a5836 20%, #b39a63 48%, #7d693f 74%, #1a140b 100%); }
+.w4 .vw-mark { width: 2px; background: linear-gradient(90deg, rgba(0,0,0,0.85), rgba(0,0,0,0.25)); box-shadow: 2px 0 1px rgba(255,241,205,0.35); }
+
+/* ---- W5 faceted drum, 20 px --------------------------------------------- */
+.w5 .vw-band { height: 20px; background: #0d0d11; }
+/* each facet is a flat plane, so it takes its own flat tone — no gradient
+   across the facet, which is what separates a polygon from a cylinder */
+.w5 .vw-facet {
+  position: absolute; top: 0; bottom: 0; pointer-events: none;
+  box-shadow: inset -1px 0 0 rgba(0,0,0,0.7);
+}
+
+.hint { font-size: 10.5px; color: #6a6572; margin: 7px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap zankyo-scene">
+
+  <h1>VOLUME THUMBWHEEL — second set</h1>
+  <p class="lede">
+    Five wheels, all thicker than the ported roller (16–22&nbsp;px against its 12), each on the
+    real receive-panel metal. <b>Drag any of them.</b> Every one carries a little indicator
+    above it showing the level.<br /><br />
+    The difference from the roller you have now is not the styling — it is the geometry. Every
+    rib, flute and numeral below is placed by <b>angle</b> and projected onto the flat
+    (<code>x = R·sin θ</code>, squashed by <code>cos θ</code>, faded as it turns away), so the
+    marks <b>crowd toward the edges</b> the way a real cylinder's do. The ported roller scrolls
+    a flat repeating gradient, evenly spaced right across its width — which is exactly why it
+    reads as a strip sliding sideways rather than a wheel turning. That spacing is the whole tell.
+  </p>
+
+  <h2>送り THE WHEELS <span>— drag to turn</span></h2>
+
+  <div class="opt w1">
+    <div class="opt-head"><span class="opt-id">W1</span><span class="opt-name">Machined knurl, 18&nbsp;px</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <span class="zk-gap"></span>
+      <div class="vw" data-wheel="w1">
+        <div class="vw-ind"><span class="vw-pip"></span></div>
+        <div class="vw-grab"><div class="vw-band"></div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      A straight knurl cut into bar stock, lit hard from above. The ribs are <b>2° apart on the
+      drum</b>, so near the centre they are ~3&nbsp;px apart and at the edges they compress into a
+      dense band — the single most convincing cue that this is a cylinder. Brightest and most
+      "machined" of the five; the closest relative to the bolts and the key bed.
+    </p>
+  </div>
+
+  <div class="opt w2">
+    <div class="opt-head"><span class="opt-id">W2</span><span class="opt-name">Printed number band, 22&nbsp;px</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <span class="zk-gap"></span>
+      <div class="vw" data-wheel="w2">
+        <div class="vw-ind"><span class="vw-fixed"></span></div>
+        <div class="vw-grab"><div class="vw-band"></div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      The numbered one. 0–100 in tens printed <b>right around the wheel's circumference</b>,
+      30° apart, with minor ticks every 2 between them — so the print runs off round the back
+      and comes up the other side, and only three or four numbers are ever in view. The
+      indicator above is a <b>fixed</b> pointer here rather than a travelling pip, because on
+      this wheel it is the numbers that move. Thickest of the five; the print needs the room.
+    </p>
+  </div>
+
+  <div class="opt w3">
+    <div class="opt-head"><span class="opt-id">W3</span><span class="opt-name">Moulded rubber roller, 16&nbsp;px</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <span class="zk-gap"></span>
+      <div class="vw" data-wheel="w3">
+        <div class="vw-ind"><span class="vw-pip"></span></div>
+        <div class="vw-grab"><div class="vw-band"></div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      The mouse-wheel: soft black rubber over a hub, with fat moulded treads 5° apart and a
+      broad matte sheen instead of a specular line — rubber does not glint. Quietest of the
+      five and the most obviously <b>grippable</b>; it reads as the one part of the machine you
+      are actually meant to touch all the time. Thinnest here, and the one that asks least for
+      attention.
+    </p>
+  </div>
+
+  <div class="opt w4">
+    <div class="opt-head"><span class="opt-id">W4</span><span class="opt-name">Fluted lighter wheel, 18&nbsp;px</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <span class="zk-gap"></span>
+      <div class="vw" data-wheel="w4">
+        <div class="vw-ind"><span class="vw-pip"></span></div>
+        <div class="vw-grab"><div class="vw-band"></div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      The spark wheel off a petrol lighter: deep-cut flutes in a <b>yellowed brass</b>, each one
+      carrying a hard bright edge where it catches the light. The only warm-metal part on the
+      machine, which makes it read as a component sourced from somewhere else and fitted — very
+      much this piece's story. Most characterful, and the least neutral.
+    </p>
+  </div>
+
+  <div class="opt w5">
+    <div class="opt-head"><span class="opt-id">W5</span><span class="opt-name">Faceted drum, 20&nbsp;px</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <span class="zk-gap"></span>
+      <div class="vw" data-wheel="w5">
+        <div class="vw-ind"><span class="vw-pip"></span></div>
+        <div class="vw-grab"><div class="vw-band"></div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      Turned from hex bar rather than round: <b>40 flat facets</b>, each taking its own flat tone
+      by the angle it presents to the light, with a hard parting line between. Because a facet is
+      flat there is no gradient across it — that hard step from one tone to the next is what
+      separates a polygon from a cylinder, and it gives the wheel a faint ratcheting look as it
+      turns. Most industrial; reads as a part rather than a texture.
+    </p>
+  </div>
+
+  <p class="foot">
+    Dev-only mockup — not linked from the machine, not loaded by <code>index.php</code>, nothing
+    wired to the engine.<br />
+    Substrate (<code>.zk-rxpanel</code>, <code>.zk-bolt</code>) copied verbatim from
+    <code>zankyo.css</code>.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var RAD = Math.PI / 180;
+
+  // 0 → 100 spans 300° of wheel, leaving a blank sector round the back the way
+  // a stopped dial has one. ±62° of that is inside the slot at any moment.
+  var DEG_PER_UNIT = 3;
+  var WINDOW = 62;
+
+  // per-wheel construction: how the marks are spaced, and what they are
+  var SPECS = {
+    w1: { markDeg: 2,  kind: "rib" },
+    w2: { markDeg: 2,  kind: "num" },
+    w3: { markDeg: 5,  kind: "rib" },
+    w4: { markDeg: 4,  kind: "rib" },
+    w5: { markDeg: 9,  kind: "facet" },
+  };
+
+  document.querySelectorAll(".vw").forEach(function (root) {
+    var key   = root.getAttribute("data-wheel");
+    var spec  = SPECS[key];
+    var band  = root.querySelector(".vw-band");
+    var grab  = root.querySelector(".vw-grab");
+    var pip   = root.querySelector(".vw-pip");
+    var val   = 60;
+    var marks = [], nums = [];
+
+    // --- build the drum's furniture, one element per angular position ------
+    if (spec.kind === "facet") {
+      // facets are spans of angle, not lines: each gets its own flat tone
+      for (var f = -180; f < 180; f += spec.markDeg) {
+        var el = document.createElement("span");
+        el.className = "vw-facet";
+        marks.push({ el: el, deg: f, span: spec.markDeg });
+        band.appendChild(el);
+      }
+    } else {
+      for (var d = -180; d < 180; d += spec.markDeg) {
+        var m = document.createElement("span");
+        m.className = "vw-mark";
+        if (spec.kind === "num") m.className += (d % 4 === 0) ? " vw-mark-t" : " vw-mark-b";
+        marks.push({ el: m, deg: d });
+        band.appendChild(m);
+      }
+      if (spec.kind === "num") {
+        for (var v = 0; v <= 100; v += 10) {
+          var n = document.createElement("span");
+          n.className = "vw-num"; n.textContent = v;
+          nums.push({ el: n, deg: v * DEG_PER_UNIT });
+          band.appendChild(n);
+        }
+      }
+    }
+
+    // --- the projection: this is the whole point of the exercise ----------
+    function project(deg) {
+      // wrap to (-180, 180] so marks come round the back correctly
+      var a = ((deg + 180) % 360 + 360) % 360 - 180;
+      return a;
+    }
+    function draw() {
+      var halfW = band.clientWidth / 2;
+      if (!halfW) return;
+      var R = halfW / Math.sin(WINDOW * RAD);
+
+      marks.forEach(function (mk) {
+        var a = project(mk.deg - val * DEG_PER_UNIT);
+        var c = Math.cos(a * RAD);
+        if (Math.abs(a) > WINDOW || c <= 0.02) { mk.el.style.opacity = 0; return; }
+        var x = halfW + R * Math.sin(a * RAD);
+        // fade out BEFORE the slot's edge cuts, so marks turn away rather
+        // than being guillotined mid-stroke
+        var o = Math.max(0, Math.min(1, (c - 0.45) / 0.3));
+        mk.el.style.opacity = o;
+        if (mk.span != null) {
+          // a facet spans angle, so its width is the projected width of that span
+          var x2 = halfW + R * Math.sin(project(mk.deg + mk.span - val * DEG_PER_UNIT) * RAD);
+          mk.el.style.left = Math.min(x, x2) + "px";
+          mk.el.style.width = Math.max(0.5, Math.abs(x2 - x)) + "px";
+          // flat facet, flat tone: brightness by how square-on it faces us
+          // a flat plane's brightness falls off fast as it turns; the extra
+          // specular term is the sheen rolling across the facets as it spins
+          var lum = Math.pow(Math.max(0, c), 3.2);
+          var spec = Math.pow(Math.max(0, c), 22) * 70;
+          var g = Math.round(14 + lum * 122 + spec);
+          mk.el.style.background = "rgb(" + g + "," + g + "," + Math.round(g * 1.07) + ")";
+        } else {
+          mk.el.style.left = x + "px";
+        }
+      });
+
+      nums.forEach(function (nm) {
+        var a = project(nm.deg - val * DEG_PER_UNIT);
+        var c = Math.cos(a * RAD);
+        if (Math.abs(a) > WINDOW || c <= 0.02) { nm.el.style.opacity = 0; return; }
+        var x = halfW + R * Math.sin(a * RAD);
+        nm.el.style.opacity = Math.max(0, Math.min(1, (c - 0.45) / 0.3));
+        nm.el.style.left = x + "px";
+        // the numeral squashes as its patch of drum turns away from us
+        nm.el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
+      });
+
+      if (pip) pip.style.left = (val / 100 * 100) + "%";
+    }
+
+    function set(v) {
+      val = Math.max(0, Math.min(100, v));
+      draw();
+    }
+
+    var lastX = null;
+    grab.addEventListener("pointerdown", function (e) {
+      grab.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
+    });
+    grab.addEventListener("pointermove", function (e) {
+      if (lastX === null) return;
+      var dx = e.clientX - lastX; if (!dx) return;
+      lastX = e.clientX;
+      var R = (band.clientWidth / 2) / Math.sin(WINDOW * RAD);
+      // finger travel → drum rotation → volume
+      set(val + ((dx / R) / RAD) / DEG_PER_UNIT);
+    });
+    function rel(e) { if (lastX !== null) { lastX = null; try { grab.releasePointerCapture(e.pointerId); } catch (_) {} } }
+    grab.addEventListener("pointerup", rel);
+    grab.addEventListener("pointercancel", rel);
+
+    set(60);
+    requestAnimationFrame(draw);
+    window.addEventListener("resize", draw);
+  });
+})();
+</script>
+</body>
+</html>
