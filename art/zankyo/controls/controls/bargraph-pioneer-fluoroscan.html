@@ -85,7 +85,7 @@
     const R = ROWS[r]; let s = "";
     for (let i = 0; i < N; i++) {
       const x = X0 + i * PITCH, c = i >= AMBER ? "am" : "bg";
-      s += `<ellipse class="gl ${c}" cx="${x + SW / 2}" cy="${R.by + R.bh / 2}" rx="${SW * 1.15}" ry="${R.bh * 2.6}"/>`;
+      s += `<ellipse class="gl ${c}" cx="${x + SW / 2}" cy="${R.by + R.bh / 2}" rx="${SW * 1.15}" ry="${R.bh * 2.2}"/>`;
     }
     return s;
   }

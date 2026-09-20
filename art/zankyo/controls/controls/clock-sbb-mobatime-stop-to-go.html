@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swiss railway station clock — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "clock-sbb-mobatime-stop-to-go",
+  "element": "sk-clock-station-stop-to-go",
+  "name": "Swiss railway station clock, stop-to-go",
+  "kind": "output",
+  "code": "F12",
+  "type": "Station clock face",
+  "source": "Hans Hilfiker's 1944 Swiss Federal Railways platform clock as made by Mobatime / Moser-Baer — red ball second hand, stop-to-go",
+  "era": "1940s",
+  "origin": "Switzerland",
+  "materials": ["painted steel", "enamel", "flat glass"],
+  "tags": ["clock", "railway", "minute jump", "second sweep", "red ball", "Hilfiker"],
+  "value": { "model": "time", "min": 0, "max": 86399, "step": 1, "unit": "s" },
+  "attributes": ["value", "run", "label", "scale"],
+  "events": [],
+  "size": { "w": 200, "h": 200 },
+  "notes": "The left clock follows the live time: the second hand sweeps a circle in 58.5 s, waits at 12, and the minute hand jumps. The middle one is frozen at 10:09:30 with run=\"false\"."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-clock-station-stop-to-go label="platform clock"></sk-clock-station-stop-to-go>
+    <sk-clock-station-stop-to-go value="10:09:30" run="false" label="frozen"></sk-clock-station-stop-to-go>
+    <sk-clock-station-stop-to-go value="07:41:57" run="false" label="concourse clock" scale="0.6"></sk-clock-station-stop-to-go>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>In 1944 Hans Hilfiker, an engineer at the Swiss Federal Railways, drew a platform clock with no numerals at
+  all: sixty black bars on a white ground, two black batons, and — added ten years later — a red second hand
+  carrying a disc, the shape of a guard's signalling paddle. Every clock on the network is a slave of one master
+  clock, and the way it keeps step is the thing everybody remembers. The second hand runs its lap in
+  <b>58.5 seconds</b>, stands still at the top, and waits for the master's minute pulse; when the pulse arrives
+  the minute hand snaps forward one bar and the second hand sets off again. A train leaves on the jump, not on
+  the sweep.</p>
+  <p><b>The tells kept here:</b> no figures — sixty minute bars with twelve fatter hour bars, all rectangles
+  ending on one clean ring; square-ended baton hands, the minute hand reaching exactly to the inner end of the
+  minute bars; the red hand with its disc at the tip, about two hour-bars across, with a hot highlight where the
+  light strikes it; the 58.5 s sweep, the 1.5 s pause dead at 12, and a minute jump that lands with a 0.3°
+  bounce over 120 ms — the hour hand carries the same half-degree step; a dead-flat matte dial with only the
+  faintest soft reflection across the flat glass; and a thin matte black rim with a hairline of light on its
+  upper-left shoulder.</p>
+  <p><b>Left out:</b> the SBB/CFF/FFS mark and the maker's name (the dial carries neither on most platform
+  clocks anyway), the double-sided bracket and its arm, and the second hand's real electrical behaviour — here
+  it is a free-running motor synchronised to the host's clock rather than a slave waiting on a wire.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-clock-station-stop-to-go> — 1944 Swiss station clock, red ball second hand ====
+   attributes: value ("HH:MM:SS" | seconds-of-day | Unix ms) · run (default true) · label · scale
+   no events (an output). With no value it follows the live clock; run="false" freezes it at value.
+   self-contained: paste this block into any page and use <sk-clock-station-stop-to-go></sk-clock-station-stop-to-go> */
+(function () {
+  if (customElements.get("sk-clock-station-stop-to-go")) return;
+  var W = 200, H = 200, C = 100;
+  var R_RIM_O = 99, R_RIM_I = 92;
+  var R_BAR_O = 86, R_MIN_I = 74, R_HR_I = 61;
+  var LAP = 58500, PAUSE = 1500, JUMP = 120;
+  var NS = "http://www.w3.org/2000/svg";
+
+  function bars() {
+    var s = "", i, a, w, y, h;
+    for (i = 0; i < 60; i++) {
+      a = i * 6;
+      if (i % 5 === 0) { w = 7.6; h = R_BAR_O - R_HR_I; y = C - R_BAR_O; }
+      else { w = 3.5; h = R_BAR_O - R_MIN_I; y = C - R_BAR_O; }
+      s += '<rect x="' + (C - w / 2) + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#111214"' +
+           (a ? ' transform="rotate(' + a + ' ' + C + ' ' + C + ')"' : '') + '/>';
+    }
+    return s;
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  '  :host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; }',
+  '  :host([hidden]) { display: none; }',
+  '  .wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  '  svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  '  .hand { transform-origin: ' + C + 'px ' + C + 'px; transform-box: view-box; }',
+  '  .hands { filter: drop-shadow(1.4px 2px 1.1px rgba(0,0,0,0.2)); }',
+  '  .sec { filter: drop-shadow(1.6px 2.4px 1.4px rgba(0,0,0,0.22)); }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '  <defs>',
+  '    <linearGradient id="rim" x1="0.15" y1="0" x2="0.8" y2="1">',
+  '      <stop offset="0" stop-color="#34363a"/><stop offset="0.35" stop-color="#1b1c1f"/><stop offset="0.72" stop-color="#0e0f11"/><stop offset="1" stop-color="#232427"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="dial" x1="0.2" y1="0" x2="0.7" y2="1">',
+  '      <stop offset="0" stop-color="#fdfdfb"/><stop offset="0.55" stop-color="#f7f7f4"/><stop offset="1" stop-color="#ececeA"/>',
+  '    </linearGradient>',
+  '    <radialGradient id="ball" cx="34%" cy="28%" r="78%">',
+  '      <stop offset="0" stop-color="#e8493a"/><stop offset="0.5" stop-color="#d5281c"/><stop offset="1" stop-color="#a71a12"/>',
+  '    </radialGradient>',
+  '    <linearGradient id="glassband" x1="0" y1="0" x2="1" y2="1">',
+  '      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="0.42" stop-color="#ffffff" stop-opacity="0.05"/>',
+  '      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.03"/>',
+  '    </linearGradient>',
+  '    <clipPath id="face"><circle cx="' + C + '" cy="' + C + '" r="' + R_RIM_I + '"/></clipPath>',
+  '    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2"/></filter>',
+  '  </defs>',
+
+  '  <circle cx="' + (C + 3) + '" cy="' + (C + 6) + '" r="' + R_RIM_O + '" fill="#000" opacity="0.55" filter="url(#soft)"/>',
+  '  <circle cx="' + C + '" cy="' + C + '" r="' + R_RIM_O + '" fill="url(#rim)"/>',
+  '  <path d="M ' + (C - 70) + ' ' + (C - 70) + ' A 99 99 0 0 1 ' + (C + 58) + ' ' + (C - 80) + '" fill="none" stroke="#6d7076" stroke-opacity="0.55" stroke-width="1.1"/>',
+  '  <circle cx="' + C + '" cy="' + C + '" r="' + R_RIM_I + '" fill="url(#dial)"/>',
+  '  <circle cx="' + C + '" cy="' + C + '" r="' + R_RIM_I + '" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="2.4" filter="url(#soft)" clip-path="url(#face)"/>',
+
+  '  <g>' + bars() + '</g>',
+
+  '  <g class="hands">',
+  '    <g class="hand hour">',
+  '      <rect x="' + (C - 7.6) + '" y="' + (C - 56) + '" width="15.2" height="65" fill="#111214"/>',
+  '    </g>',
+  '    <g class="hand min">',
+  '      <rect x="' + (C - 5.7) + '" y="' + (C - R_MIN_I) + '" width="11.4" height="85" fill="#111214"/>',
+  '    </g>',
+  '  </g>',
+  '  <g class="hand sec">',
+  '    <rect x="' + (C - 1.35) + '" y="' + (C - 59) + '" width="2.7" height="75" fill="#d5281c"/>',
+  '    <circle cx="' + C + '" cy="' + (C - 68) + '" r="9" fill="url(#ball)"/>',
+  '    <circle cx="' + (C - 3) + '" cy="' + (C - 71) + '" r="2.6" fill="#ff5a4e" opacity="0.85"/>',
+  '    <circle cx="' + C + '" cy="' + C + '" r="3.4" fill="#d5281c"/>',
+  '  </g>',
+
+  '  <g clip-path="url(#face)" pointer-events="none">',
+  '    <path d="M ' + (C - 92) + ' ' + (C - 40) + ' L ' + (C + 20) + ' ' + (C - 92) + ' L ' + (C + 92) + ' ' + (C - 46) + ' L ' + (C - 60) + ' ' + (C + 92) + ' Z" fill="url(#glassband)"/>',
+  '    <circle cx="' + C + '" cy="' + C + '" r="' + R_RIM_I + '" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>',
+  '  </g>',
+  '</svg>',
+  '</div>'].join("\n");
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  class SkClockStationStopToGo extends HTMLElement {
+    static get observedAttributes() { return ["value", "run", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._run = true; this._base = null; this._t0 = 0;
+      this._raf = 0; this._prevM = -1; this._jumpAt = -1e9; this._said = -1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._h = this.shadowRoot.querySelector(".hour");
+      this._m = this.shadowRoot.querySelector(".min");
+      this._s = this.shadowRoot.querySelector(".sec");
+      this._tick = this._tick.bind(this);
+      this._tod = 0;
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._prevM = -1; this._jumpAt = -1e9;
+      this._paint(performance.now());
+      if (this._run) this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "value") { this._prevM = -1; this._jumpAt = -1e9; }
+      this._paint(performance.now());
+      if (this._run) this._kick(); else { cancelAnimationFrame(this._raf); this._raf = 0; }
+    }
+    get value() {
+      var t = this._tod, h = Math.floor(t / 3600000) % 24, m = Math.floor(t / 60000) % 60, s = Math.floor(t / 1000) % 60;
+      return pad(h) + ":" + pad(m) + ":" + pad(s);
+    }
+    set value(v) { this.setAttribute("value", String(v)); }
+    get run() { return this._run; }
+    set run(b) { this.setAttribute("run", b ? "true" : "false"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _parse(raw) {
+      if (raw == null || raw === "") return null;
+      var s = String(raw).trim();
+      var m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?$/);
+      if (m) return ((+m[1] % 24) * 3600 + (+m[2]) * 60 + (m[3] ? parseFloat(m[3]) : 0)) * 1000;
+      var n = parseFloat(s);
+      if (isNaN(n)) return null;
+      // a big number is Unix ms; a small one is seconds since midnight
+      if (n >= 1e11) { var d = new Date(n); return ((d.getHours() * 60 + d.getMinutes()) * 60 + d.getSeconds()) * 1000 + d.getMilliseconds(); }
+      return ((n % 86400) + 86400) % 86400 * 1000;
+    }
+    _read() {
+      var sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) ? 1 : Math.max(0.2, sc);
+      var r = this.getAttribute("run");
+      this._run = !(r === "false" || r === "0");
+      var b = this._parse(this.getAttribute("value"));
+      if (b === null) { this._base = null; }
+      else { this._base = b; this._t0 = performance.now(); }
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _now(perf) {
+      if (this._base === null) {
+        var d = new Date();
+        return ((d.getHours() * 60 + d.getMinutes()) * 60 + d.getSeconds()) * 1000 + d.getMilliseconds();
+      }
+      if (!this._run) return this._base;
+      return (this._base + (perf - this._t0)) % 86400000;
+    }
+    _kick() { if (!this._raf) this._raf = requestAnimationFrame(this._tick); }
+    _tick(now) { this._raf = 0; this._paint(now); if (this._run && this.isConnected) this._kick(); }
+
+    _paint(perf) {
+      var tod = this._now(perf);
+      this._tod = tod;
+      var inMin = tod % 60000;
+      var mm = Math.floor(tod / 60000) % 60;
+      var hh = Math.floor(tod / 3600000) % 12;
+
+      // stop-to-go: a full lap in 58.5 s, then dead still at 12 for 1.5 s
+      var sa = inMin < LAP ? (inMin / LAP) * 360 : 360;
+
+      // the minute jump: 120 ms with a 0.3 degree bounce
+      if (this._prevM < 0) { this._prevM = mm; this._jumpAt = -1e9; }
+      else if (mm !== this._prevM) { this._prevM = mm; this._jumpAt = perf; }
+      var p = (perf - this._jumpAt) / JUMP, e = 1;
+      if (p >= 0 && p < 1) e = 1 - Math.exp(-9 * p) * Math.cos(9 * p);
+      var ma = mm * 6 - 6 * (1 - e);
+      var ha = (hh + mm / 60) * 30 - 0.5 * (1 - e);
+
+      this._h.style.transform = "rotate(" + ha.toFixed(3) + "deg)";
+      this._m.style.transform = "rotate(" + ma.toFixed(3) + "deg)";
+      this._s.style.transform = "rotate(" + sa.toFixed(3) + "deg)";
+
+      var sec = Math.floor(tod / 1000);
+      if (sec !== this._said) {
+        this._said = sec;
+        this.setAttribute("aria-label", (this.getAttribute("label") || "station clock") + ", " + this.value);
+      }
+    }
+    // the clock drives itself; the harness should not write a value into it
+    demo() { return undefined; }
+  }
+  customElements.define("sk-clock-station-stop-to-go", SkClockStationStopToGo);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
