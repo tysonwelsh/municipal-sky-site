@@ -71,7 +71,7 @@
 
   // --- the serrated tear bar's teeth, and the roll's ragged right cut ------
   var teeth = "M 0 20 ";
-  for (var tx = 0; tx < 320; tx += 4.7) teeth += "L " + (tx + 2.35).toFixed(2) + " 24.2 L " + (tx + 4.7).toFixed(2) + " 20 ";
+  for (var tx = 0; tx < 320; tx += 4.7) teeth += "L " + (tx + 2.35).toFixed(2) + " 23.4 L " + (tx + 4.7).toFixed(2) + " 20 ";
   teeth += "L 320 11 L 0 11 Z";
   var rag = [], rs = 0.417;
   for (var i = 0; i <= 24; i++) {
@@ -92,12 +92,11 @@
   '.deck { position:absolute; inset:0; background:radial-gradient(70% 50% at 20% 0%, rgba(255,255,255,0.05), transparent 70%); }',
   '.paper { position:absolute; left:' + PL + 'px; top:' + PTOP + 'px; width:' + PW + 'px; height:' + (PBOT - PTOP) + 'px;',
   '   overflow:hidden; clip-path:' + CLIP + ';',
-  '   background-color:#ede4c8;',
+  '   background-color:#ece1c2;',
   '   background-image:',
-  '     repeating-linear-gradient(78deg, rgba(150,128,82,0.05) 0 0.6px, rgba(255,255,255,0) 0.6px 6px),',
-  '     repeating-linear-gradient(-71deg, rgba(150,128,82,0.04) 0 0.5px, rgba(255,255,255,0) 0.5px 9px),',
-  '     repeating-linear-gradient(96deg, rgba(120,100,60,0.03) 0 0.6px, rgba(255,255,255,0) 0.6px 14px),',
-  '     radial-gradient(130% 60% at 18% 12%, rgba(255,255,255,0.16), rgba(255,255,255,0) 62%),',
+  '     repeating-linear-gradient(83deg, rgba(150,128,82,0.028) 0 0.5px, rgba(255,255,255,0) 0.5px 11px),',
+  '     repeating-linear-gradient(-76deg, rgba(150,128,82,0.022) 0 0.5px, rgba(255,255,255,0) 0.5px 17px),',
+  '     radial-gradient(120% 55% at 16% 10%, rgba(255,255,255,0.09), rgba(255,255,255,0) 60%),',
   '     linear-gradient(90deg, rgba(120,98,52,0.10), rgba(255,255,255,0.05) 22%, rgba(255,255,255,0.06) 72%, rgba(120,98,52,0.13));',
   '   box-shadow: 0 0 7px rgba(0,0,0,0.55); }',
   '.lines { position:absolute; left:6px; right:2px; bottom:7px; }',
@@ -128,7 +127,7 @@
   '          <stop offset="0" stop-color="#9dac98"/><stop offset="0.35" stop-color="#7d8c7a"/><stop offset="1" stop-color="#55634f"/>',
   '        </linearGradient>',
   '        <linearGradient id="tr" x1="0" y1="0" x2="0.1" y2="1">',
-  '          <stop offset="0" stop-color="#d0d3cc"/><stop offset="0.45" stop-color="#a9aca4"/><stop offset="1" stop-color="#6e716b"/>',
+  '          <stop offset="0" stop-color="#b6b9b1"/><stop offset="0.4" stop-color="#94978f"/><stop offset="1" stop-color="#5e615b"/>',
   '        </linearGradient>',
   '        <linearGradient id="pl" x1="0" y1="0" x2="0" y2="1">',
   '          <stop offset="0" stop-color="#050505"/><stop offset="0.16" stop-color="#43433f"/><stop offset="0.34" stop-color="#26261f"/>',
@@ -146,7 +145,7 @@
   '      <rect x="0" y="0" width="' + W + '" height="1.1" fill="#bccab7" opacity="0.65"/>',
   '      <rect x="0" y="9.6" width="' + W + '" height="1.8" fill="#44503f" opacity="0.7"/>',
   '      <path d="' + teeth + '" fill="url(#tr)"/>',
-  '      <path d="' + teeth + '" fill="none" stroke="#e6e8e2" stroke-opacity="0.35" stroke-width="0.6"/>',
+  '      <path d="' + teeth + '" fill="none" stroke="#d6d9d2" stroke-opacity="0.22" stroke-width="0.5"/>',
   '      <rect x="0" y="11" width="' + W + '" height="0.9" fill="#000" opacity="0.4"/>',
   '      <g opacity="0.9">',
   '        <circle cx="24" cy="5.4" r="3.1" fill="url(#sc)"/><rect x="21.4" y="4.8" width="5.2" height="1.1" fill="#25271f" transform="rotate(22 24 5.4)"/>',
@@ -154,7 +153,8 @@
   '      </g>',
   '      <rect x="0" y="' + (PBOT - 6) + '" width="' + W + '" height="7" fill="#1a1408" opacity="0.5" filter="url(#bl)"/>',
   '      <rect x="0" y="' + PBOT + '" width="' + W + '" height="' + (H - PBOT) + '" fill="url(#pl)"/>',
-  '      <rect x="0" y="' + (PBOT + 2.6) + '" width="' + W + '" height="1.1" fill="#6e6e66" opacity="0.5"/>',
+  '      <rect x="0" y="' + (PBOT + 2.2) + '" width="' + W + '" height="1.6" fill="#8a8a7e" opacity="0.45"/>',
+  '      <rect x="0" y="' + (PBOT - 0.4) + '" width="' + W + '" height="1" fill="#000" opacity="0.6"/>',
   '      <g opacity="0.22">',
   '        <rect x="0" y="' + (PBOT + 7) + '" width="' + W + '" height="0.6" fill="#8a8a80"/>',
   '        <rect x="0" y="' + (PBOT + 12) + '" width="' + W + '" height="0.5" fill="#000"/>',
