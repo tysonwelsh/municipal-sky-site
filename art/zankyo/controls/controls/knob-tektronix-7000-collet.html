@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tektronix 7000-series collet knob — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-tektronix-7000-collet",
+  "element": "sk-knob-tek-7000",
+  "name": "Tektronix 7000-series grey collet knob, black cap",
+  "kind": "input",
+  "code": "A4",
+  "type": "Collet / instrument knob",
+  "source": "The grey-blue fluted collet knob on Tektronix 7A26 / 7B92 plug-in front panels, 1969–1985",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["grey-blue anodised aluminium", "black plastic cap", "light blue-grey anodised panel, silk-screened"],
+  "tags": ["oscilloscope", "test equipment", "collet", "fine flutes", "hairline", "grey-on-grey", "300 degrees", "concentric"],
+  "value": { "model": "range", "min": 0, "max": 10, "step": 0.1, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "label", "scale", "disabled", "arrows", "inner"],
+  "events": ["input", "change"],
+  "size": { "w": 80, "h": 96 },
+  "notes": "POSITION at 5 (centre) with its direction arrows, and a VARIABLE pair with the red inner knob at CAL at scale 0.9. Drag up/down, wheel, or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium">
+    <sk-knob-tek-7000 value="5" label="POSITION" arrows></sk-knob-tek-7000>
+    <sk-knob-tek-7000 value="7.5" label="VARIABLE" inner="cal" scale="0.9"></sk-knob-tek-7000>
+    <sk-knob-tek-7000 value="2" label="TRIG LEVEL" scale="0.9" disabled></sk-knob-tek-7000>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Tektronix 7000-series plug-in knob</b>: a small turned aluminium collet knob, anodised the same
+  cool grey-blue as the plug-in's panel but a shade darker, with fine flutes cut into the lower half of the
+  side wall only (the upper half is smooth, where the chamfer runs into it), and a black plastic cap insert
+  with one crisp white hairline sitting inside a thin bright chamfer. Under it, the legend in dark condensed
+  silk-screened capitals: POSITION, VARIABLE, TRIG LEVEL. The VARIABLE knobs of a VOLTS/DIV pair are the same
+  knob shrunk, with a red cap, standing concentric in front of the larger one.</p>
+  <p><b>The tells kept here:</b> the 36 flutes on the lower half of the side, placed by angle and projected so
+  they crowd toward the edges and catch the light on the left; the smooth upper half; grey on grey, the knob
+  darker than the panel and both cool; the black cap recessed inside a bright chamfer ring with the white
+  hairline; the panel's horizontal brushed grain; the legend in "Barlow Condensed" caps with a thin printed
+  300-degree arc, tiny arrow-heads for direction when <code>arrows</code> is set, and a CAL mark at the clockwise
+  end when the <code>inner</code> knob is present (<code>inner="cal"</code> or 0–10 sets its angle; it is display
+  only in this build, the coupled pair proper is the A5.2 selector). Drag is vertical (up is clockwise), the
+  wheel steps, arrows step and Shift-arrows step by ten; 300 degrees.</p>
+  <p><b>Left out:</b> the plug-in's release latch and the dots of the graticule illumination, the hex socket in
+  the collet under the cap.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-tek-7000> — Tektronix 7000-series grey fluted collet knob with a black cap and white hairline ====
+   attributes: value min max step label scale disabled arrows inner(cal|0–10)
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-knob-tek-7000 value="5" label="POSITION"></sk-knob-tek-7000> */
+(function () {
+  if (customElements.get("sk-knob-tek-7000")) return;
+  const W = 80, H = 96, CX = 40, CY = 42;
+  const R = 22, RC = 15, BAND = 8;          // knob radius, cap radius, visible side-wall height
+  const RI = 10.5, RIC = 6.5, BANDI = 4;    // the inner (VARIABLE) knob
+  const SWEEP = 300;
+  const f2 = n => (Math.round(n * 100) / 100).toString();
+  const pt = (cx, cy, r, a) => [cx + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+  function arc(cx, cy, r, a0, a1) {
+    const [x0, y0] = pt(cx, cy, r, a0), [x1, y1] = pt(cx, cy, r, a1);
+    return `M ${f2(x0)} ${f2(y0)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f2(x1)} ${f2(y1)}`;
+  }
+  // flutes on the lower half of a cylinder's visible front band, projected: x = R sin θ, width ∝ cos, lit from the left
+  function flutes(cx, cy, r, band, count, top) {
+    let s = "";
+    const pitch = 360 / count;
+    for (let a = 90 + pitch / 2; a < 270; a += pitch) {
+      const t = a * Math.PI / 180, face = -Math.cos(t);          // 1 at the front, 0 at the sides
+      if (face < 0.06) continue;
+      const x = cx + r * Math.sin(t), y0 = cy - r * Math.cos(t) + top, y1 = cy + band - r * Math.cos(t) - 0.4;
+      const left = -Math.sin(t);                                  // +1 on the screen-left side (faces the light)
+      const w = 0.3 + 1.15 * face;
+      const lit = 0.16 + 0.5 * Math.max(0, left), dark = 0.28 + 0.4 * Math.max(0, -left);
+      s += `<line x1="${f2(x - 0.55 * face)}" y1="${f2(y0)}" x2="${f2(x - 0.55 * face)}" y2="${f2(y1)}" stroke="#d6dbdf" stroke-opacity="${f2(lit)}" stroke-width="${f2(w * 0.7)}"/>`;
+      s += `<line x1="${f2(x + 0.25 * face)}" y1="${f2(y0)}" x2="${f2(x + 0.25 * face)}" y2="${f2(y1)}" stroke="#3f464c" stroke-opacity="${f2(dark)}" stroke-width="${f2(w)}"/>`;
+    }
+    return s;
+  }
+  // a knob body at (cx, cy): side band, flutes, top face, chamfers, cap
+  function knob(cx, cy, r, rc, band, count, cap, cls) {
+    return `
+      <ellipse cx="${cx + 2.5}" cy="${cy + band + 2}" rx="${r + 1}" ry="${r - 1}" fill="#000" opacity="0.35" filter="url(#b3)"/>
+      <circle cx="${cx + 0.8}" cy="${cy + band + 0.6}" r="${r}" fill="#000" opacity="0.55" filter="url(#b1)"/>
+      <circle cx="${cx}" cy="${cy + band}" r="${r}" fill="url(#side)"/>
+      <circle cx="${cx}" cy="${cy + band}" r="${r}" fill="url(#sidelr)"/>
+      <g>${flutes(cx, cy, r, band, count, band * 0.42)}</g>
+      <path d="${arc(cx, cy + band, r - 0.3, 110, 250)}" fill="none" stroke="#d3d8dc" stroke-opacity="0.35" stroke-width="0.5"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#top)" stroke="#3a4046" stroke-width="0.5"/>
+      <circle cx="${cx}" cy="${cy}" r="${r - 0.8}" fill="none" stroke="url(#rim)" stroke-width="1.3"/>
+      <circle cx="${cx}" cy="${cy}" r="${(r + rc) / 2 + 0.6}" fill="none" stroke="#000" stroke-opacity="0.07" stroke-width="0.4"/>
+      <circle cx="${cx}" cy="${cy}" r="${(r + rc) / 2 - 1}" fill="none" stroke="#fff" stroke-opacity="0.09" stroke-width="0.4"/>
+      <circle cx="${cx}" cy="${cy}" r="${rc + 0.75}" fill="none" stroke="url(#rim)" stroke-width="1.1"/>
+      <circle cx="${cx}" cy="${cy}" r="${rc}" fill="${cap}"/>
+      <circle cx="${cx}" cy="${cy}" r="${rc}" fill="url(#capsheen)"/>
+      <path d="${arc(cx, cy, rc - 0.5, -175, 5)}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="1" filter="url(#b05)"/>
+      <path d="${arc(cx, cy, rc + 0.15, 25, 155)}" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="0.5"/>
+      <g class="${cls}">
+        <rect x="${cx - 0.55}" y="${cy - rc + 0.9}" width="1.1" height="${rc - 2.4}" rx="0.3" fill="#f2f2ee"/>
+      </g>`;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - R - 3}px; top: ${CY - R - 3}px; width: ${2 * R + 6}px; height: ${2 * R + BAND + 6}px; border-radius: 50%;
+      cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .ptr { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 45ms linear; }
+    .ptr.snap { transition: transform 140ms cubic-bezier(.25,.8,.3,1); }
+    .inner { display: none; }
+    :host([inner]) .inner { display: block; }
+    .arrows { display: none; }
+    :host([arrows]) .arrows { display: block; }
+    :host([arrows]) .plainarc { display: none; }
+    .calmark { display: none; }
+    :host([inner]) .calmark { display: block; }
+    text { font-family: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif; font-weight: 500; fill: #1f2327; }
+    .legend { font-size: 7px; letter-spacing: 0.05em; text-anchor: middle; }
+    .cal { font-size: 5px; letter-spacing: 0.04em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b2bbc2"/><stop offset="1" stop-color="#a3acb3"/></linearGradient>
+        <pattern id="brush" width="1" height="3" patternUnits="userSpaceOnUse">
+          <rect width="1" height="1" fill="#fff" fill-opacity="0.035"/><rect y="1.7" width="1" height="0.6" fill="#000" fill-opacity="0.025"/>
+        </pattern>
+        <radialGradient id="top" cx="34%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#aab2b9"/><stop offset="0.45" stop-color="#8d959c"/><stop offset="1" stop-color="#707880"/>
+        </radialGradient>
+        <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d858c"/><stop offset="0.72" stop-color="#5f666d"/><stop offset="1" stop-color="#8e969c"/></linearGradient>
+        <linearGradient id="sidelr" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.14"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.28"/>
+        </linearGradient>
+        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e6ebee"/><stop offset="0.3" stop-color="#c9cfd4"/><stop offset="0.7" stop-color="#666e75"/><stop offset="1" stop-color="#a0a8ae"/>
+        </linearGradient>
+        <radialGradient id="capsheen" cx="34%" cy="28%" r="70%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.02"/><stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+        </radialGradient>
+        <radialGradient id="grime" cx="50%" cy="50%" r="50%">
+          <stop offset="0.66" stop-color="#1b1e21" stop-opacity="0"/><stop offset="0.82" stop-color="#1b1e21" stop-opacity="1"/><stop offset="1" stop-color="#1b1e21" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="b05" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.5"/></filter>
+        <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- the plug-in's panel: light blue-grey anodised, brushed across -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#plate)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#brush)"/>
+      <path d="M 0.5 ${H - 0.5} L 0.5 0.5 L ${W - 0.5} 0.5" fill="none" stroke="#fff" stroke-opacity="0.35"/>
+      <path d="M ${W - 0.5} 1 L ${W - 0.5} ${H - 0.5} L 1 ${H - 0.5}" fill="none" stroke="#000" stroke-opacity="0.18"/>
+
+      <!-- silk-screen: the 300° arc with end ticks, or the direction arrows; CAL at the clockwise end for a pair -->
+      <g class="print" fill="none" stroke="#1f2327" stroke-opacity="0.85" stroke-width="0.7" stroke-linecap="round">
+        <g class="plainarc">
+          <path d="${arc(CX, CY, 27.5, -150, 150)}"/>
+          <path d="M ${f2(pt(CX, CY, 25.5, -150)[0])} ${f2(pt(CX, CY, 25.5, -150)[1])} L ${f2(pt(CX, CY, 29.5, -150)[0])} ${f2(pt(CX, CY, 29.5, -150)[1])}"/>
+          <path d="M ${f2(pt(CX, CY, 25.5, 150)[0])} ${f2(pt(CX, CY, 25.5, 150)[1])} L ${f2(pt(CX, CY, 29.5, 150)[0])} ${f2(pt(CX, CY, 29.5, 150)[1])}"/>
+        </g>
+        <g class="arrows">
+          <path d="${arc(CX, CY, 27.5, -34, 34)}"/>
+          <path d="M ${f2(pt(CX, CY, 27.5, -34)[0] + 2.2)} ${f2(pt(CX, CY, 27.5, -34)[1] - 2.4)} L ${f2(pt(CX, CY, 27.5, -34)[0])} ${f2(pt(CX, CY, 27.5, -34)[1])} L ${f2(pt(CX, CY, 27.5, -34)[0] + 3.0)} ${f2(pt(CX, CY, 27.5, -34)[1] + 0.9)}" fill="#1f2327" stroke="none"/>
+          <path d="M ${f2(pt(CX, CY, 27.5, 34)[0] - 2.2)} ${f2(pt(CX, CY, 27.5, 34)[1] - 2.4)} L ${f2(pt(CX, CY, 27.5, 34)[0])} ${f2(pt(CX, CY, 27.5, 34)[1])} L ${f2(pt(CX, CY, 27.5, 34)[0] - 3.0)} ${f2(pt(CX, CY, 27.5, 34)[1] + 0.9)}" fill="#1f2327" stroke="none"/>
+        </g>
+      </g>
+      <text class="cal calmark" x="${f2(pt(CX, CY, 33, 150)[0] + 1)}" y="${f2(pt(CX, CY, 33, 150)[1] + 1.5)}">CAL</text>
+      <text class="legend" x="${CX}" y="${H - 6}"></text>
+
+      <!-- finger grime, below-right -->
+      <circle cx="${CX + 3}" cy="${CY + 7}" r="${R + 9}" fill="url(#grime)" opacity="0.12"/>
+
+      <!-- the knob -->
+      ${knob(CX, CY, R, RC, BAND, 36, "#1d1f22", "ptr")}
+      <!-- the VARIABLE inner knob of a pair, standing in front, red cap -->
+      <g class="inner">
+        ${knob(CX, CY, RI, RIC, BANDI, 24, "#b8302a", "ptr ptr-in")}
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkKnobTek7000 extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "scale", "disabled", "arrows", "inner"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 5; this._min = 0; this._max = 10; this._step = 0.1; this._scale = 1;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._grab = q(".grab"); this._wrap = q(".wrap"); this._legend = q(".legend");
+      this._ptr = this.shadowRoot.querySelectorAll(".ptr"); this._ptrIn = q(".ptr-in");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(this._v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 10); this._step = num("step", 0.1);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      const label = this.getAttribute("label") || "";
+      this._legend.textContent = label.toUpperCase();
+      const inner = (this.getAttribute("inner") || "").toLowerCase();
+      this._innerV = inner === "" || inner === "cal" ? this._max : this._clamp(num("inner", this._max));
+      const g = this._grab;
+      g.setAttribute("aria-label", label || "knob");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.round(Math.min(this._max, Math.max(this._min, v)) * 1000) / 1000; }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return -SWEEP / 2 + t * SWEEP; }
+    _render() {
+      const a = this._angle(this._v).toFixed(2);
+      this._ptr[0].style.transform = "rotate(" + a + "deg)";
+      if (this._ptrIn) this._ptrIn.style.transform = "rotate(" + this._angle(this._innerV).toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._ptr[0].classList.remove("snap");
+      this._drag = { y: e.clientY, x: e.clientX, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = this._drag.y - e.clientY, dx = e.clientX - this._drag.x;
+      const px = (dy + dx * 0.35) / this._scale;                    // up or right = clockwise
+      const range = this._max - this._min;
+      const fine = e.shiftKey ? 0.25 : 1;
+      let v = this._drag.v + px * fine * range / 150;               // a small light knob: 150 px for the full 300°
+      v = Math.round(v / this._step) * this._step;
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._ptr[0].classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._ptr[0].classList.add("snap");
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-knob-tek-7000", SkKnobTek7000);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

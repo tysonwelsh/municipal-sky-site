@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simpson 260 range selector — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Archivo+Narrow:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "selector-simpson-260",
+  "element": "sk-sel-simpson-260",
+  "name": "Simpson 260 bar-pointer range selector",
+  "kind": "input",
+  "code": "A5",
+  "type": "Rotary selector switch",
+  "source": "The range switch of a Simpson 260 volt-ohm-milliammeter (series 5/6 look): black phenolic bar-pointer knob on a cream Bakelite face, ranges printed in black and red",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["black moulded phenolic", "cream Bakelite face", "printed legend"],
+  "tags": ["multimeter", "test equipment", "detented", "bar pointer", "12 positions", "wafer switch", "AC red DC black"],
+  "value": { "model": "steps", "options": ["R×1", "R×100", "R×10000", "2.5V", "10V", "50V", "250V", "1000V", "5000V", "10mA", "100mA", "500mA"] },
+  "attributes": ["value", "options", "ac", "groups", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 150, "h": 150 },
+  "notes": "At 10V, and at R×1 at scale 0.75. Drag up/down to click through the detents, click a range to jump, wheel or arrows step; the ring is continuous so 500mA wraps to R×1."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-sel-simpson-260 value="10V" label="RANGE"></sk-sel-simpson-260>
+    <sk-sel-simpson-260 value="R×1" label="RANGE" scale="0.75"></sk-sel-simpson-260>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Simpson 260</b> is the American bench multimeter, made in Chicago from 1936 into the 2000s and
+  hardly changed in looks: a cream-tan Bakelite face with the meter above and, below it, the range switch — a
+  round black phenolic hub with a long moulded bar across it, one end drawn to a sharp nose, a raised spine
+  down its length. The twelve ranges are printed on the face in a ring around it, the resistance and DC ranges
+  in black and the AC in red, each position marked by a short radial line. There is no OFF: the ring is
+  continuous, and the switch clicks straight from 500 mA round to R×1.</p>
+  <p><b>The tells kept here:</b> the bar longer than the hub is wide, its two flanks shaded by the real angle
+  so the lit side changes as it turns, with the bright edge along the spine; the domed plain hub with no
+  set-screw and a dark shadow under it; the cream face with its faint swirl and warmer centre, a grime ring
+  around the hub from decades of thumbs; the legends set tangentially above and below and radially at the
+  sides, "Archivo Narrow" for the plain gothic print, with red for the AC ranges (<code>ac</code>, default 2.5V)
+  and the group headings OHMS / AC VOLTS / DC VOLTS / DC MA around the outside (<code>groups</code>); twelve
+  detents of 30°, and a loud snap that overshoots about two degrees and settles. Drag up or down to click
+  through positions (up is clockwise), click a range to jump to it, wheel or arrows step, Shift-arrows step by
+  three, Home/End go to the ends of the list. <code>options</code> is overridable; the value is the option string.</p>
+  <p><b>Left out:</b> the function switch and the jacks beside it, the ohms-adjust knob, the meter itself.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-sel-simpson-260> — Simpson 260 bar-pointer range switch, 12 detents on a printed cream face ====
+   attributes: value options("a|b|c") ac("2.5V|…" printed red) groups("OHMS:0-2|AC VOLTS:3-5:ac|…") label scale disabled
+   events: input {value} at each detent during a gesture, change {value} when it settles; value is the option string
+   self-contained: paste this block into any page and use <sk-sel-simpson-260 value="10V"></sk-sel-simpson-260> */
+(function () {
+  if (customElements.get("sk-sel-simpson-260")) return;
+  const W = 150, H = 150, CX = 75, CY = 75;
+  const RH = 29, BAND = 4;                 // hub radius, its visible side wall
+  const NOSE = 50, TAIL = 22, HALF = 5.5;  // the bar: nose reach, tail reach, half width
+  const DEFAULT_OPTIONS = ["R×1", "R×100", "R×10000", "2.5V", "10V", "50V", "250V", "1000V", "5000V", "10mA", "100mA", "500mA"];
+  const DEFAULT_AC = ["2.5V"];
+  const DEFAULT_GROUPS = "OHMS:0-2|AC VOLTS:3-5:ac|DC VOLTS:6-8|DC MA:9-11";
+  const INK = "#1c1a16", RED = "#b8241c";
+  const f2 = n => (Math.round(n * 100) / 100).toString();
+  const pt = (r, a) => [CX + r * Math.sin(a * Math.PI / 180), CY - r * Math.cos(a * Math.PI / 180)];
+  function arcPath(r, a0, a1) {   // clockwise from a0 to a1 (degrees from 12 o'clock)
+    const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1);
+    return `M ${f2(x0)} ${f2(y0)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f2(x1)} ${f2(y1)}`;
+  }
+  function arcPathCCW(r, a0, a1) {  // counter-clockwise from a0 down to a1, for text that must read upright below
+    const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1);
+    return `M ${f2(x0)} ${f2(y0)} A ${r} ${r} 0 ${a0 - a1 > 180 ? 1 : 0} 0 ${f2(x1)} ${f2(y1)}`;
+  }
+  const norm = a => ((a % 360) + 360) % 360;
+  // the bar in local coordinates, pointer up (-y)
+  const BAR = `M 0 ${-NOSE} L ${HALF} ${-NOSE + 19} L ${HALF} ${TAIL - HALF} A ${HALF} ${HALF} 0 0 1 ${-HALF} ${TAIL - HALF} L ${-HALF} ${-NOSE + 19} Z`;
+  const FLANK_L = `M 0 ${-NOSE} L ${-HALF} ${-NOSE + 19} L ${-HALF} ${TAIL - HALF} A ${HALF} ${HALF} 0 0 0 0 ${TAIL} Z`;
+  const FLANK_R = `M 0 ${-NOSE} L ${HALF} ${-NOSE + 19} L ${HALF} ${TAIL - HALF} A ${HALF} ${HALF} 0 0 1 0 ${TAIL} Z`;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; inset: 0; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .ring { position: absolute; left: ${CX - RH - 5}px; top: ${CY - RH - 5}px; width: ${2 * RH + 10}px; height: ${2 * RH + 10}px; border-radius: 50%;
+      pointer-events: none; opacity: 0; box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .grab:focus-visible + .ring { opacity: 1; }
+    .bar { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
+    text { font-family: "Archivo Narrow", "Arial Narrow", "Roboto Condensed", sans-serif; font-weight: 500; font-size: 6.5px; }
+    .grp { font-weight: 600; font-size: 6px; letter-spacing: 0.06em; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="face" cx="50%" cy="46%" r="72%">
+          <stop offset="0" stop-color="#e4dabd"/><stop offset="0.45" stop-color="#dbd1b2"/><stop offset="1" stop-color="#cbbf9d"/>
+        </radialGradient>
+        <radialGradient id="hub" cx="34%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#443e35"/><stop offset="0.35" stop-color="#211e1a"/><stop offset="0.8" stop-color="#100f0d"/><stop offset="1" stop-color="#151311"/>
+        </radialGradient>
+        <linearGradient id="hubside" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#060505"/><stop offset="0.7" stop-color="#0d0c0a"/><stop offset="1" stop-color="#3a352d"/></linearGradient>
+        <radialGradient id="grime" cx="50%" cy="50%" r="50%">
+          <stop offset="0.6" stop-color="#9a8f70" stop-opacity="0"/><stop offset="0.78" stop-color="#9a8f70" stop-opacity="0.75"/><stop offset="1" stop-color="#9a8f70" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="b05" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.5"/></filter>
+        <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.3"/></filter>
+        <filter id="b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2"/></filter>
+        <filter id="b6" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+
+      <!-- the cream Bakelite face: warmer at the centre, a faint swirl -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#face)"/>
+      <g opacity="0.5" filter="url(#b6)">
+        <ellipse cx="38" cy="40" rx="40" ry="12" fill="#f1e8cc" transform="rotate(-28 38 40)"/>
+        <ellipse cx="112" cy="118" rx="44" ry="10" fill="#c4b58f" transform="rotate(-22 112 118)"/>
+        <ellipse cx="120" cy="36" rx="26" ry="8" fill="#cdbf9c" transform="rotate(35 120 36)"/>
+      </g>
+      <!-- the printed ring: position lines, ranges, group headings -->
+      <g class="legend"></g>
+      <!-- thumb grime around the hub, heavier below-right -->
+      <circle cx="${CX + 3}" cy="${CY + 4}" r="${RH + 13}" fill="url(#grime)" opacity="0.55"/>
+      <!-- the hub's shadows -->
+      <ellipse cx="${CX + 3}" cy="${CY + BAND + 4}" rx="${RH + 2}" ry="${RH}" fill="#000" opacity="0.5" filter="url(#b3)"/>
+      <circle cx="${CX + 1}" cy="${CY + BAND + 1}" r="${RH}" fill="#000" opacity="0.6" filter="url(#b1)"/>
+      <!-- the hub: a plain cylinder with a slightly domed top -->
+      <circle cx="${CX}" cy="${CY + BAND}" r="${RH}" fill="url(#hubside)"/>
+      <circle cx="${CX}" cy="${CY}" r="${RH}" fill="url(#hub)"/>
+      <circle cx="${CX}" cy="${CY}" r="${RH - 0.4}" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="0.7"/>
+      <path d="${arcPath(RH - 0.5, -160, -30)}" fill="none" stroke="#6a6254" stroke-opacity="0.55" stroke-width="0.7"/>
+      <path d="${arcPath(RH - 0.6, 40, 150)}" fill="none" stroke="#5a5348" stroke-opacity="0.25" stroke-width="0.6"/>
+      <!-- the bar pointer, on a rotating group -->
+      <g class="bar" transform="rotate(0 ${CX} ${CY})">
+        <g transform="translate(${CX} ${CY})">
+          <path class="bar-sh" d="${BAR}" fill="#000" opacity="0.5" filter="url(#b1)"/>
+          <path class="bar-side" d="${BAR}" fill="#070605"/>
+          <path d="${BAR}" fill="#141210"/>
+          <path class="fl" d="${FLANK_L}" fill="#fff" opacity="0.1"/>
+          <path class="fr" d="${FLANK_R}" fill="#fff" opacity="0.1"/>
+          <path d="${BAR}" fill="none" stroke="#3d3830" stroke-opacity="0.7" stroke-width="0.5" stroke-linejoin="round"/>
+          <!-- the raised spine and its bright edge -->
+          <line x1="0" y1="${-NOSE + 2}" x2="0" y2="${TAIL - 3}" stroke="#4a4439" stroke-width="1.1" stroke-linecap="round"/>
+          <line class="spine-hi" x1="-0.45" y1="${-NOSE + 2.5}" x2="-0.45" y2="${TAIL - 3.5}" stroke="#8a8172" stroke-width="0.45" stroke-linecap="round" opacity="0.9"/>
+          <line class="spine-lo" x1="0.5" y1="${-NOSE + 2.5}" x2="0.5" y2="${TAIL - 3.5}" stroke="#000" stroke-width="0.45" stroke-linecap="round" opacity="0.5"/>
+        </g>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+    <div class="ring"></div>
+  </div>`;
+
+  class SkSelSimpson260 extends HTMLElement {
+    static get observedAttributes() { return ["value", "options", "ac", "groups", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._opts = DEFAULT_OPTIONS.slice(); this._i = 0; this._scale = 1;
+      this._ang = 0; this._raf = 0; this._anim = null;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._grab = q(".grab"); this._wrap = q(".wrap"); this._bar = q(".bar"); this._legendG = q(".legend");
+      this._fl = q(".fl"); this._fr = q(".fr"); this._sh = q(".bar-sh"); this._side = q(".bar-side"); this._spHi = q(".spine-hi"); this._spLo = q(".spine-lo");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs(); this._drawLegend();
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._opts[this._i]);
+      this._ang = this._angleOf(this._i); this._paint(this._ang);
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      cancelAnimationFrame(this._raf); this._raf = 0; this._anim = null;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "options" || n === "ac" || n === "groups") this._drawLegend();
+      if (n === "value" || n === "options") this._go(this._i);
+      else this._paint(this._ang);
+    }
+    get value() { return this._opts[this._i]; }
+    set value(v) {
+      const i = this._indexOf(v); if (i < 0) return;
+      this._i = i; this.setAttribute("value", this._opts[i]); this._go(i);
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _indexOf(v) {
+      if (typeof v === "number" && Number.isInteger(v)) return v >= 0 && v < this._opts.length ? v : -1;
+      const s = String(v); let i = this._opts.indexOf(s);
+      if (i < 0) i = this._opts.findIndex(o => o.toLowerCase() === s.toLowerCase());
+      if (i < 0 && /^\d+$/.test(s)) { const k = parseInt(s, 10); if (k < this._opts.length) i = k; }
+      return i;
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const os = this.getAttribute("options");
+      this._opts = os ? os.split("|").map(s => s.trim()).filter(Boolean) : DEFAULT_OPTIONS.slice();
+      if (this._opts.length < 2) this._opts = DEFAULT_OPTIONS.slice();
+      const ac = this.getAttribute("ac");
+      this._ac = ac == null ? DEFAULT_AC : ac.split("|").map(s => s.trim());
+      const gr = this.getAttribute("groups");
+      this._groups = gr == null ? (os ? "" : DEFAULT_GROUPS) : gr;
+      this._scale = Math.max(0.2, num("scale", 1));
+      const i = this._indexOf(this.getAttribute("value")); if (i >= 0) this._i = i; else if (this._i >= this._opts.length) this._i = 0;
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "range");
+      g.setAttribute("aria-valuemin", 0); g.setAttribute("aria-valuemax", this._opts.length - 1);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _step() { return 360 / this._opts.length; }
+    _angleOf(i) { return -75 + i * this._step(); }
+    _drawLegend() {
+      const g = this._legendG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a, text) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (text != null) e.textContent = text; return e; };
+      const n = this._opts.length, step = this._step();
+      const radial = n >= 8;   // with few positions everything can be tangential
+      for (let i = 0; i < n; i++) {
+        const a = this._angleOf(i), t = a * Math.PI / 180, ink = this._ac.indexOf(this._opts[i]) >= 0 ? RED : INK;
+        const [x0, y0] = pt(52.5, a), [x1, y1] = pt(56, a);
+        g.appendChild(mk("line", { x1: f2(x0), y1: f2(y0), x2: f2(x1), y2: f2(y1), stroke: ink, "stroke-width": 1, "stroke-linecap": "butt" }));
+        const s = Math.sin(t), c = Math.cos(t);
+        let tx, ty, rot, anchor;
+        if (radial && Math.abs(s) >= 0.9) {                         // sides: radial, reading outward
+          [tx, ty] = pt(58, a);
+          if (s > 0) { rot = a - 90; anchor = "start"; } else { rot = a + 90; anchor = "end"; }
+          const e = mk("text", { x: f2(tx), y: f2(ty), fill: ink, "text-anchor": anchor, "dominant-baseline": "central", transform: `rotate(${f2(rot)} ${f2(tx)} ${f2(ty)})` }, this._opts[i]);
+          g.appendChild(e);
+        } else if (c >= 0) {                                         // above: tangential, glyphs outward
+          [tx, ty] = pt(59, a); rot = a;
+          g.appendChild(mk("text", { x: f2(tx), y: f2(ty), fill: ink, "text-anchor": "middle", transform: `rotate(${f2(rot)} ${f2(tx)} ${f2(ty)})` }, this._opts[i]));
+        } else {                                                     // below: tangential, turned to read upright
+          [tx, ty] = pt(64.5, a); rot = a - 180;
+          g.appendChild(mk("text", { x: f2(tx), y: f2(ty), fill: ink, "text-anchor": "middle", transform: `rotate(${f2(rot)} ${f2(tx)} ${f2(ty)})` }, this._opts[i]));
+        }
+      }
+      // group headings on arcs outside the ring
+      if (this._groups) {
+        this._groups.split("|").forEach((spec, k) => {
+          const parts = spec.split(":"); if (parts.length < 2) return;
+          const name = parts[0].trim(), rng = parts[1].split("-").map(x => parseInt(x, 10));
+          if (isNaN(rng[0])) return;
+          const i0 = rng[0], i1 = isNaN(rng[1]) ? rng[0] : rng[1];
+          const red = (parts[2] || "").trim().toLowerCase() === "ac";
+          const mid = (this._angleOf(i0) + this._angleOf(i1)) / 2;
+          const below = Math.cos(mid * Math.PI / 180) < 0;
+          const id = "gp" + k;
+          const r = below ? 72.5 : 68;
+          const d = below ? arcPathCCW(r, mid + 40, mid - 40) : arcPath(r, mid - 40, mid + 40);
+          g.appendChild(mk("path", { id, d, fill: "none" }));
+          const tp = mk("textPath", { href: "#" + id, startOffset: "50%", "text-anchor": "middle" }, name);
+          const te = mk("text", { class: "grp", fill: red ? RED : INK });
+          te.appendChild(tp); g.appendChild(te);
+        });
+      }
+    }
+    // ---- motion: a detent snap with ~2° of overshoot, then settle -------
+    _go(i) {
+      const target = this._angleOf(i);
+      let d = norm(target - this._ang); if (d > 180) d -= 360;       // the short way round, so 500mA → R×1 is one click
+      if (Math.abs(d) < 0.01) { this._ang = target; this._paint(this._ang); return; }
+      const over = Math.sign(d) * Math.min(2.2, Math.abs(d) * 0.35);
+      this._anim = { from: this._ang, to: this._ang + d, over, t0: performance.now(), d1: 40 + Math.abs(d) * 0.55, d2: 55 };
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+    }
+    _tick(now) {
+      const A = this._anim; if (!A) { this._raf = 0; return; }
+      const t = now - A.t0;
+      let a;
+      if (t < A.d1) { const u = t / A.d1, e = 1 - Math.pow(1 - u, 3); a = A.from + (A.to + A.over - A.from) * e; }
+      else if (t < A.d1 + A.d2) { const u = (t - A.d1) / A.d2, e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; a = A.to + A.over * (1 - e); }
+      else { a = A.to; this._anim = null; }
+      this._ang = a; this._paint(a);
+      this._raf = this._anim ? requestAnimationFrame(this._tick) : 0;
+    }
+    _paint(a) {
+      this._bar.setAttribute("transform", `rotate(${f2(a)} ${CX} ${CY})`);
+      // the flanks are lit by where the bar points: light from above-left
+      const t = a * Math.PI / 180, lx = -0.6, ly = -0.8;
+      const nl = [-Math.cos(t), -Math.sin(t)], nr = [Math.cos(t), Math.sin(t)];
+      const bl = Math.max(0, nl[0] * lx + nl[1] * ly), br = Math.max(0, nr[0] * lx + nr[1] * ly);
+      this._fl.setAttribute("opacity", f2(0.04 + 0.26 * bl)); this._fr.setAttribute("opacity", f2(0.04 + 0.26 * br));
+      this._spHi.setAttribute("opacity", f2(0.35 + 0.6 * Math.max(bl, br)));
+      // the bar's shadow and side wall stay down-right on screen whatever the angle
+      const loc = (dx, dy) => `translate(${f2(dx * Math.cos(t) + dy * Math.sin(t))} ${f2(-dx * Math.sin(t) + dy * Math.cos(t))})`;
+      this._sh.setAttribute("transform", loc(2, 2.6)); this._side.setAttribute("transform", loc(0.5, 1.6));
+      this._grab.setAttribute("aria-valuenow", String(this._i));
+      this._grab.setAttribute("aria-valuetext", this._opts[this._i]);
+    }
+    // ---- input --------------------------------------------------------
+    _setIndex(i, settle) {
+      const n = this._opts.length; i = ((i % n) + n) % n;
+      const changed = i !== this._i;
+      if (!changed && !settle) return;
+      this._i = i; this.setAttribute("value", this._opts[i]); this._go(i);
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._opts[i] } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._drag = { x: e.clientX, y: e.clientY, acc: 0, moved: false, i: this._i };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const D = this._drag; if (!D) return;
+      const dy = D.y - e.clientY, dx = e.clientX - D.x;
+      const px = (dy + dx * 0.35) / this._scale;                    // up or right = clockwise
+      const per = 22;                                                // pixels per detent
+      const steps = Math.round(px / per);
+      if (Math.abs(px) > 4) D.moved = true;
+      if (steps !== D.acc) { D.acc = steps; this._grab.classList.add("drag"); this._setIndex(D.i + steps, false); }
+    }
+    _onUp(e) {
+      const D = this._drag; if (!D) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._drag = null;
+      if (D.moved) { if (this._i !== D.i) this._setIndex(this._i, true); return; }
+      // a click on a printed range jumps to it (a click on the knob itself does nothing)
+      const r = this._grab.getBoundingClientRect();
+      const x = (e.clientX - r.left) / this._scale - CX, y = (e.clientY - r.top) / this._scale - CY;
+      const dist = Math.hypot(x, y);
+      if (dist < RH + 6 || dist > 78) return;
+      const a = Math.atan2(x, -y) * 180 / Math.PI;                   // degrees clockwise from 12
+      const i = Math.round(norm(a - this._angleOf(0)) / this._step()) % this._opts.length;
+      if (i !== this._i) { this._setIndex(i, false); this._setIndex(i, true); }
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const now = performance.now();
+      if (now - (this._wlast || 0) < 90) return;                     // one detent per notch, not per pixel
+      this._wlast = now;
+      this._setIndex(this._i + (e.deltaY < 0 ? 1 : -1), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._setIndex(this._i, true), 260);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = 3;
+      let i = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": i = this._i + (e.shiftKey ? big : 1); break;
+        case "ArrowDown": case "ArrowLeft": i = this._i - (e.shiftKey ? big : 1); break;
+        case "PageUp": i = this._i + big; break;
+        case "PageDown": i = this._i - big; break;
+        case "Home": i = 0; break;
+        case "End": i = this._opts.length - 1; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._setIndex(i, false); this._setIndex(i, true);
+    }
+  }
+  customElements.define("sk-sel-simpson-260", SkSelSimpson260);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

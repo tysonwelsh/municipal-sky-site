@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VEF Spidola band drum — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Roboto+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "drum-vef-spidola-band",
+  "element": "sk-drum-spidola",
+  "name": "VEF Spidola rotating band drum",
+  "kind": "both",
+  "code": "A8",
+  "type": "Band drum, read through a window",
+  "source": "VEF Spidola portable receiver (Riga, 1960–1970s): the hexagonal band drum behind a chrome-framed window, turned by its knurled rim at the right",
+  "era": "1960s",
+  "origin": "USSR (Latvia)",
+  "materials": ["cream ABS", "chrome-plated pressed steel", "printed card", "black knurled plastic"],
+  "tags": ["radio", "band switch", "drum", "tuning", "window", "cyrillic", "soviet"],
+  "value": { "model": "range", "min": 0, "max": 100, "step": 0.5, "unit": "" },
+  "band": { "model": "steps", "options": ["ДВ", "СВ", "49м", "41м", "31м", "25м"] },
+  "attributes": ["value", "min", "max", "step", "band", "options", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 210, "h": 120 },
+  "notes": "Two drums: СВ with the pointer at two-thirds, and 25м at 0.7. Drag the strip sideways to tune; drag the knurled rim up or down (or wheel on it) to roll the next band in. Arrows tune; the rim has its own focus stop where Up/Down change band."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-drum-spidola value="66.7" band="СВ" label="НАСТРОЙКА"></sk-drum-spidola>
+    <sk-drum-spidola value="28" band="25м" label="НАСТРОЙКА" scale="0.7"></sk-drum-spidola>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>VEF Spidola</b> (Riga, from 1960) is the transistor portable every Soviet flat had, and its signature is
+  the band switch: not a knob but a <b>hexagonal drum</b> behind the dial window, with one printed scale strip glued to each
+  flat. You turn the drum by its knurled rim, which pokes through the cream case at the right of the window, and the
+  next band clicks into view while the old one tilts away at the top. A red hairline pointer rides along the strip and
+  stays put when the band changes, because the tuning capacitor has not moved. The window sits in a chrome-plated
+  pressed frame; below it the case runs into the chrome-edged speaker grille.</p>
+  <p><b>The tells kept here:</b> six flat facets, each a real plane that foreshortens as it tilts (the numerals squash
+  vertically, never curve) with the neighbouring strips peeking in at the top and bottom of the window; the band name
+  in red at the left of every strip (ДВ, СВ, 49м, 41м, 31м, 25м) in a condensed Cyrillic grotesk; the pointer as a
+  separate red hairline above the drum; the pressed chrome frame with its bright bevel; the knurled rim seen edge-on,
+  its ribs placed by angle so they crowd toward the top and bottom of the slot and scroll as you turn it; a
+  two-phase 60° click with a small detent bounce. Drag the strip sideways to tune (the pointer follows the finger);
+  drag the rim up or down to roll the drum; the wheel tunes over the strip and changes band over the rim; the strip
+  is a slider and the rim a spinbutton for the keyboard.</p>
+  <p><b>Left out:</b> the drum's internal switch wafers and the tuning-shaft cord drive; the rest of the case with the
+  telescopic aerial and the ВЭФ badge; the second row of markings (metres) most strips carried.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-drum-spidola> — VEF Spidola hexagonal band drum behind a chrome window, knurled rim at the right ====
+   attributes: value(0…100, pointer) min max step band(name or index) options("ДВ|СВ|…") label scale disabled
+   events: input {value, band} during a gesture, change {value, band} when it settles
+   self-contained: paste this block into any page and use <sk-drum-spidola value="50" band="СВ"></sk-drum-spidola> */
+(function () {
+  if (customElements.get("sk-drum-spidola")) return;
+  const W = 210, H = 120;
+  const WX = 13, WY = 27, WW = 152, WH = 60;         // window opening
+  const CY = WY + WH / 2;                            // the drum's axis, on screen
+  const RC = 44, AP = RC * Math.cos(Math.PI / 6);    // hexagon: circumradius (= facet height) and apothem
+  const XS0 = 47, XS1 = 157;                         // the scale's span along a strip
+  const EX = 171, EY = 12, EW = 26, EH = 90;         // the slot the rim shows through
+  const RR = 45;                                     // rim radius (fills the slot top to bottom)
+  const RIB = 5;                                     // rim ribs every 5°
+  const DEG = Math.PI / 180;
+  const DEFAULT_OPTS = "ДВ|СВ|49м|41м|31м|25м";
+  const SCALES = {
+    "ДВ":  { unit: "кГц", marks: [["150", 0], ["200", .2], ["250", .4], ["300", .6], ["350", .8], ["400", 1]] },
+    "СВ":  { unit: "кГц", marks: [["520", 0], ["600", .13], ["700", .27], ["800", .4], ["1000", .58], ["1200", .75], ["1600", 1]] },
+    "49м": { unit: "МГц", marks: [["5.9", 0], ["6.0", .33], ["6.1", .67], ["6.2", 1]] },
+    "41м": { unit: "МГц", marks: [["7.0", 0], ["7.1", .33], ["7.2", .67], ["7.3", 1]] },
+    "31м": { unit: "МГц", marks: [["9.4", 0], ["9.5", .25], ["9.6", .5], ["9.7", .75], ["9.8", 1]] },
+    "25м": { unit: "МГц", marks: [["11.6", 0], ["11.7", .25], ["11.8", .5], ["11.9", .75], ["12.0", 1]] }
+  };
+  const ns = "http://www.w3.org/2000/svg";
+  const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Roboto Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif; }
+    .band { font-size: 8px; font-weight: 700; fill: #b4261e; letter-spacing: 0.02em; }
+    .num { font-size: 7px; font-weight: 500; fill: #161616; text-anchor: middle; }
+    .unit { font-size: 5px; font-weight: 500; fill: #5a574e; letter-spacing: 0.04em; }
+    .legend { font-size: 6.2px; font-weight: 700; fill: #6f6a5c; letter-spacing: 0.26em; }
+    .pointer { transition: transform 140ms cubic-bezier(.2,.8,.3,1); }
+    .pointer.live { transition: none; }
+    .grab { position: absolute; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; border-radius: 3px; }
+    .grab.strip { left: ${WX}px; top: ${WY}px; width: ${WW}px; height: ${WH}px; cursor: ew-resize; }
+    .grab.edge { left: ${EX}px; top: ${EY}px; width: ${EW}px; height: ${EH}px; cursor: ns-resize; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="case" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f1ede0"/><stop offset="0.5" stop-color="#e7e2d3"/><stop offset="1" stop-color="#d9d3c1"/>
+        </linearGradient>
+        <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fbfbf9"/><stop offset="0.26" stop-color="#e4e4e1"/><stop offset="0.49" stop-color="#7a7a77"/><stop offset="0.53" stop-color="#bdbdba"/><stop offset="0.72" stop-color="#dcdcd9"/><stop offset="1" stop-color="#55554f"/>
+        </linearGradient>
+        <linearGradient id="chromein" x1="1" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#f4f4f1"/><stop offset="0.44" stop-color="#c4c4c1"/><stop offset="0.5" stop-color="#6a6a67"/><stop offset="1" stop-color="#3e3e3c"/>
+        </linearGradient>
+        <linearGradient id="trim" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5e5e5b"/><stop offset="0.35" stop-color="#f2f2ef"/><stop offset="0.6" stop-color="#a9a9a6"/><stop offset="1" stop-color="#4a4a48"/>
+        </linearGradient>
+        <pattern id="grille" width="4" height="14" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="4" height="14" fill="#2d2e2c"/>
+          <rect x="1.2" y="0" width="2.3" height="14" fill="#b8b9b4"/>
+          <rect x="1.2" y="0" width="0.6" height="14" fill="#d9dad5"/>
+          <rect x="3.0" y="0" width="0.5" height="14" fill="#8b8c88"/>
+        </pattern>
+        <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f6f2e7"/><stop offset="1" stop-color="#ebe6d5"/>
+        </linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="0.4" stop-color="#fff" stop-opacity="0.09"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.05"/>
+        </linearGradient>
+        <linearGradient id="rimx" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.55"/><stop offset="0.25" stop-color="#000" stop-opacity="0.05"/><stop offset="0.75" stop-color="#000" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.45"/>
+        </linearGradient>
+        <linearGradient id="slotsh" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.75"/><stop offset="0.12" stop-color="#000" stop-opacity="0"/><stop offset="0.9" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+        </linearGradient>
+        <clipPath id="win"><rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" rx="1.5"/></clipPath>
+        <clipPath id="slot"><rect x="${EX}" y="${EY}" width="${EW}" height="${EH}" rx="3"/></clipPath>
+        <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="softer" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- the cream case: a slice of the front, with the chrome grille edge below -->
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="7" fill="url(#case)" stroke="#a9a390" stroke-width="1"/>
+      <path d="M 7 1 L ${W - 7} 1" stroke="#fff" stroke-opacity="0.7" stroke-width="1"/>
+      <path d="M 1 8 L 1 ${H - 20}" stroke="#fff" stroke-opacity="0.45" stroke-width="1"/>
+      <!-- a faint moulding line across the case, above the window -->
+      <path d="M 8 14 L 165 14" stroke="#c9c3b0" stroke-width="0.6"/>
+      <path d="M 8 14.8 L 165 14.8" stroke="#fff" stroke-opacity="0.6" stroke-width="0.6"/>
+      <!-- chrome trim and grille at the foot -->
+      <rect x="1" y="104" width="${W - 2}" height="16" fill="url(#grille)"/>
+      <rect x="1" y="102" width="${W - 2}" height="3.2" fill="url(#trim)"/>
+      <rect x="1" y="105" width="${W - 2}" height="1" fill="#000" opacity="0.45"/>
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="7" fill="none" stroke="#000" stroke-opacity="0.25" stroke-width="0.6"/>
+
+      <!-- silk-screened name under the window -->
+      <text class="legend" x="14" y="99.5">СПИДОЛА</text>
+      <text class="legend" x="150" y="99.5" style="letter-spacing:0.14em;font-size:5.4px">VEF</text>
+
+      <!-- the frame's shadow on the case -->
+      <rect x="9.5" y="24" width="163" height="70" rx="5" fill="#000" opacity="0.32" filter="url(#softer)"/>
+
+      <!-- the drum through the window -->
+      <g clip-path="url(#win)">
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#2a2622"/>
+        <g class="facets"></g>
+        <!-- the pointer: a red hairline riding above the strip -->
+        <g class="pointer">
+          <line x1="0.9" y1="${WY}" x2="0.9" y2="${WY + WH}" stroke="#000" stroke-opacity="0.35" stroke-width="1.2"/>
+          <line x1="0" y1="${WY}" x2="0" y2="${WY + WH}" stroke="#d0342c" stroke-width="1.1"/>
+          <line x1="-0.25" y1="${WY}" x2="-0.25" y2="${WY + WH}" stroke="#ff8a7a" stroke-opacity="0.55" stroke-width="0.35"/>
+        </g>
+        <!-- inner shadow from the frame, glass -->
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="5" filter="url(#soft)"/>
+        <path d="M ${WX} ${WY} L ${WX + 118} ${WY} L ${WX + 52} ${WY + WH} L ${WX} ${WY + WH} Z" fill="url(#glass)"/>
+        <rect x="${WX + 0.5}" y="${WY + 0.5}" width="${WW - 1}" height="${WH - 1}" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="1"/>
+      </g>
+
+      <!-- the chrome-plated pressed frame: outer face, inner bevel, hairlines -->
+      <path fill-rule="evenodd" fill="url(#chrome)" d="M 12 22 H 166 A 4 4 0 0 1 170 26 V 88 A 4 4 0 0 1 166 92 H 12 A 4 4 0 0 1 8 88 V 26 A 4 4 0 0 1 12 22 Z
+               M ${WX - 2} ${WY - 2} H ${WX + WW + 2} V ${WY + WH + 2} H ${WX - 2} Z"/>
+      <path fill-rule="evenodd" fill="url(#chromein)" d="M ${WX - 2.4} ${WY - 2.4} H ${WX + WW + 2.4} V ${WY + WH + 2.4} H ${WX - 2.4} Z
+               M ${WX} ${WY} H ${WX + WW} V ${WY + WH} H ${WX} Z"/>
+      <rect x="8" y="22" width="162" height="70" rx="4" fill="none" stroke="#3a3a38" stroke-width="0.7"/>
+      <path d="M 12.5 22.6 H 165.5" stroke="#fff" stroke-opacity="0.85" stroke-width="0.7"/>
+      <path d="M 8.6 26.5 V 87.5" stroke="#fff" stroke-opacity="0.7" stroke-width="0.7"/>
+      <path d="M 12.5 91.4 H 165.5" stroke="#2a2a28" stroke-opacity="0.7" stroke-width="0.7"/>
+      <rect x="${WX - 0.35}" y="${WY - 0.35}" width="${WW + 0.7}" height="${WH + 0.7}" fill="none" stroke="#1b1b1a" stroke-width="0.7"/>
+
+      <!-- the knurled rim of the drum, through a slot in the case at the right -->
+      <rect x="${EX + 1}" y="${EY + 2}" width="${EW}" height="${EH}" rx="3" fill="#000" opacity="0.35" filter="url(#soft)"/>
+      <g clip-path="url(#slot)">
+        <rect x="${EX}" y="${EY}" width="${EW}" height="${EH}" fill="#151515"/>
+        <rect class="rimbase" x="${EX + 2}" y="${EY - 4}" width="${EW - 4}" height="${EH + 8}" fill="#2a2a2a"/>
+        <g class="ribs"></g>
+        <rect x="${EX + 2}" y="${EY - 4}" width="${EW - 4}" height="${EH + 8}" fill="url(#rimx)"/>
+        <rect x="${EX}" y="${EY}" width="${EW}" height="${EH}" fill="url(#slotsh)"/>
+        <rect x="${EX}" y="${EY}" width="${EW}" height="${EH}" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="3" filter="url(#soft)"/>
+      </g>
+      <rect x="${EX}" y="${EY}" width="${EW}" height="${EH}" rx="3" fill="none" stroke="#8c8672" stroke-width="0.7"/>
+      <path d="M ${EX + 3} ${EY + EH + 0.9} H ${EX + EW - 3} M ${EX + EW + 0.9} ${EY + 3} V ${EY + EH - 3}" stroke="#fff" stroke-opacity="0.85" stroke-width="0.8"/>
+    </svg>
+    <div class="grab strip" role="slider" tabindex="0"></div>
+    <div class="grab edge" role="spinbutton" tabindex="0"></div>
+  </div>`;
+
+  class SkDrumSpidola extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "band", "options", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 50; this._min = 0; this._max = 100; this._step = 0.5; this._scale = 1;
+      this._opts = DEFAULT_OPTS.split("|"); this._band = 0;
+      this._rot = 0; this._rotTarget = 0; this._raf = 0; this._anim = null;
+      this._facets = []; this._ribs = [];
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._facetG = $(".facets"); this._ribG = $(".ribs"); this._ptr = $(".pointer");
+      this._strip = $(".grab.strip"); this._edge = $(".grab.edge");
+      ["_onStripDown", "_onStripMove", "_onStripUp", "_onEdgeDown", "_onEdgeMove", "_onEdgeUp", "_onStripWheel", "_onEdgeWheel", "_onStripKey", "_onEdgeKey", "_tick"]
+        .forEach(f => { this[f] = this[f].bind(this); });
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(true); this._render();
+      const s = this._strip, e = this._edge;
+      s.addEventListener("pointerdown", this._onStripDown); s.addEventListener("wheel", this._onStripWheel, { passive: false }); s.addEventListener("keydown", this._onStripKey);
+      e.addEventListener("pointerdown", this._onEdgeDown); e.addEventListener("wheel", this._onEdgeWheel, { passive: false }); e.addEventListener("keydown", this._onEdgeKey);
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0; this._anim = null;
+      const s = this._strip, e = this._edge;
+      s.removeEventListener("pointerdown", this._onStripDown); s.removeEventListener("wheel", this._onStripWheel); s.removeEventListener("keydown", this._onStripKey);
+      e.removeEventListener("pointerdown", this._onEdgeDown); e.removeEventListener("wheel", this._onEdgeWheel); e.removeEventListener("keydown", this._onEdgeKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(n === "options"); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this._reflect(); this._render(); }
+    get band() { return this._opts[this._band]; }
+    set band(b) { this._setBand(this._parseBand(b), false); }
+    get bandIndex() { return this._band; }
+    get options() { return this._opts.slice(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._strip.focus(); }
+
+    _parseBand(b) {
+      if (b == null) return this._band;
+      const i = this._opts.indexOf(String(b).trim());
+      if (i >= 0) return i;
+      const n = parseInt(b, 10); if (!isNaN(n)) return ((n % this._opts.length) + this._opts.length) % this._opts.length;
+      return this._band;
+    }
+    _readAttrs(rebuild) {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const opts = (this.getAttribute("options") || DEFAULT_OPTS).split("|").map(s => s.trim()).filter(Boolean);
+      if (rebuild || opts.join("|") !== this._opts.join("|")) { this._opts = opts.length ? opts : DEFAULT_OPTS.split("|"); this._buildFacets(); this._buildRibs(); }
+      this._min = num("min", 0); this._max = num("max", 100); this._step = Math.max(0.01, num("step", 0.5));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      if (this.hasAttribute("band")) { const i = this._parseBand(this.getAttribute("band")); if (i !== this._band || !this._anim) { this._band = i; if (!this._anim) this._rot = this._rotTarget = i * 60; } }
+      const label = this.getAttribute("label") || "tuning";
+      const dis = this.hasAttribute("disabled");
+      const s = this._strip, e = this._edge;
+      s.setAttribute("aria-label", label); s.setAttribute("aria-valuemin", this._min); s.setAttribute("aria-valuemax", this._max);
+      e.setAttribute("aria-label", "band"); e.setAttribute("aria-valuemin", 0); e.setAttribute("aria-valuemax", this._opts.length - 1);
+      for (const g of [s, e]) { g.setAttribute("tabindex", dis ? "-1" : "0"); g.setAttribute("aria-disabled", dis ? "true" : "false"); }
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _reflect() {
+      this.setAttribute("value", String(Math.round(this._v * 1000) / 1000));
+      if (this.getAttribute("band") !== this._opts[this._band]) this.setAttribute("band", this._opts[this._band]);
+    }
+
+    /* ---- the artwork that depends on the options: one strip per facet, the rim's ribs ---- */
+    _buildFacets() {
+      const g = this._facetG; while (g.firstChild) g.removeChild(g.firstChild);
+      this._facets = [];
+      this._opts.forEach((name) => {
+        const f = mk("g", { class: "facet" });
+        const art = mk("g");
+        art.appendChild(mk("rect", { x: 4, y: -RC / 2, width: W - 12, height: RC, fill: "url(#card)" }));
+        // the fold at the top and bottom of the flat, where the card wraps over the drum's edge
+        art.appendChild(mk("line", { x1: 4, y1: -RC / 2 + 0.6, x2: W - 8, y2: -RC / 2 + 0.6, stroke: "#5f594c", "stroke-width": 1.2 }));
+        art.appendChild(mk("line", { x1: 4, y1: -RC / 2 + 1.6, x2: W - 8, y2: -RC / 2 + 1.6, stroke: "#fffdf5", "stroke-width": 0.7, opacity: 0.9 }));
+        art.appendChild(mk("line", { x1: 4, y1: RC / 2 - 0.6, x2: W - 8, y2: RC / 2 - 0.6, stroke: "#6b6455", "stroke-width": 1.2 }));
+        art.appendChild(mk("line", { x1: 4, y1: RC / 2 - 1.8, x2: W - 8, y2: RC / 2 - 1.8, stroke: "#b5ae9b", "stroke-width": 0.8 }));
+        // a faint printed frame line, as on the real strips
+        art.appendChild(mk("line", { x1: 4, y1: -14, x2: W - 8, y2: -14, stroke: "#c8c2ae", "stroke-width": 0.4 }));
+        art.appendChild(mk("line", { x1: 4, y1: 16, x2: W - 8, y2: 16, stroke: "#c8c2ae", "stroke-width": 0.4 }));
+        const bt = mk("text", { x: 18, y: 3, class: "band" }); bt.textContent = name; art.appendChild(bt);
+        const sc = SCALES[name] || { unit: "", marks: Array.from({ length: 11 }, (_, i) => [String(i * 10), i / 10]) };
+        const ut = mk("text", { x: 18.3, y: 11.5, class: "unit" }); ut.textContent = sc.unit; art.appendChild(ut);
+        art.appendChild(mk("line", { x1: XS0 - 3, y1: 8, x2: XS1 + 3, y2: 8, stroke: "#161616", "stroke-width": 0.7 }));
+        const marks = sc.marks;
+        marks.forEach(([txt, t], i) => {
+          const x = XS0 + t * (XS1 - XS0);
+          art.appendChild(mk("line", { x1: x, y1: 8, x2: x, y2: 3.2, stroke: "#161616", "stroke-width": 0.8 }));
+          const n = mk("text", { x: x, y: -3.2, class: "num" }); n.textContent = txt; art.appendChild(n);
+          if (i < marks.length - 1) {
+            const t2 = marks[i + 1][1];
+            for (let k = 1; k < 5; k++) {
+              const xm = XS0 + (t + (t2 - t) * k / 5) * (XS1 - XS0);
+              art.appendChild(mk("line", { x1: xm, y1: 8, x2: xm, y2: 5.6, stroke: "#161616", "stroke-width": 0.5, opacity: 0.85 }));
+            }
+          }
+        });
+        f.appendChild(art);
+        const shade = mk("rect", { x: 4, y: -RC / 2, width: W - 12, height: RC, fill: "#0e0a06", opacity: 0 });
+        f.appendChild(shade);
+        g.appendChild(f);
+        this._facets.push({ g: f, shade });
+      });
+    }
+    _buildRibs() {
+      const g = this._ribG; while (g.firstChild) g.removeChild(g.firstChild);
+      this._ribs = [];
+      const n = Math.round(360 / RIB);
+      for (let j = 0; j < n; j++) {
+        const crest = mk("line", { x1: EX + 2, x2: EX + EW - 2, stroke: "#8a8a8a", "stroke-linecap": "butt" });
+        const groove = mk("line", { x1: EX + 2, x2: EX + EW - 2, stroke: "#0b0b0b", "stroke-linecap": "butt" });
+        g.appendChild(groove); g.appendChild(crest);
+        this._ribs.push({ crest, groove, deg: j * RIB });
+      }
+    }
+
+    /* ---- projection: facets as tilting planes, ribs by angle on the rim ---- */
+    _render() {
+      const rot = this._rot, n = this._opts.length, pitch = 360 / n;
+      this._facets.forEach((f, i) => {
+        let phi = ((rot - i * pitch) % 360 + 540) % 360 - 180;       // (-180, 180], + is toward the top
+        const c = Math.cos(phi * DEG);
+        if (c <= 0.03) { f.g.style.display = "none"; return; }
+        f.g.style.display = "";
+        const yc = CY - AP * Math.sin(phi * DEG);
+        f.g.setAttribute("transform", `translate(0 ${yc.toFixed(2)}) scale(1 ${c.toFixed(4)})`);
+        // a flat plane: one tone across the whole facet; the top-tilted one catches the light, the bottom one falls into shadow
+        const lum = Math.max(0.12, Math.min(1, 0.18 + 0.82 * c + 0.16 * Math.sin(phi * DEG)));
+        f.shade.setAttribute("opacity", (1 - lum).toFixed(3));
+      });
+      // the rim, edge-on: rib j sits at y = CY - RR·sin θ, thins by cos θ, lit from above-left
+      this._ribs.forEach(r => {
+        const th = ((r.deg + rot) % 360 + 360) % 360;
+        const a = th > 180 ? th - 360 : th;
+        const c = Math.cos(a * DEG);
+        if (c <= 0.02) { r.crest.style.display = "none"; r.groove.style.display = "none"; return; }
+        r.crest.style.display = ""; r.groove.style.display = "";
+        const s = Math.sin(a * DEG);
+        const y = CY - RR * s;
+        const half = RR * Math.sin(RIB / 2 * DEG) * c;               // half a rib pitch, projected
+        const diff = Math.max(0, 0.62 * s + 0.72 * c);               // light from above-left-front
+        const spec = Math.pow(Math.max(0, 0.34 * s + 0.94 * c), 26);
+        const lum = 0.16 + 0.55 * diff + 0.9 * spec;
+        const gv = Math.round(Math.min(255, 40 + 150 * lum));
+        r.crest.setAttribute("y1", y - half * 0.45); r.crest.setAttribute("y2", y - half * 0.45);
+        r.crest.setAttribute("stroke-width", Math.max(0.35, half * 0.9).toFixed(2));
+        r.crest.setAttribute("stroke", `rgb(${gv},${gv},${gv})`);
+        r.crest.setAttribute("opacity", Math.min(1, 0.35 + c).toFixed(2));
+        r.groove.setAttribute("y1", y + half * 0.5); r.groove.setAttribute("y2", y + half * 0.5);
+        r.groove.setAttribute("stroke-width", Math.max(0.3, half * 0.8).toFixed(2));
+        r.groove.setAttribute("opacity", Math.min(0.9, 0.4 + 0.6 * c).toFixed(2));
+      });
+      const px = XS0 + (this._v - this._min) / (this._max - this._min || 1) * (XS1 - XS0);
+      this._ptr.style.transform = `translateX(${px.toFixed(2)}px)`;
+      this._strip.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._strip.setAttribute("aria-valuetext", (Math.round(this._v * 10) / 10) + " on " + this._opts[this._band]);
+      this._edge.setAttribute("aria-valuenow", String(this._band));
+      this._edge.setAttribute("aria-valuetext", this._opts[this._band]);
+    }
+
+    /* ---- the click: a two-phase tilt over ~180 ms with a detent bounce ---- */
+    _setBand(i, emit) {
+      const n = this._opts.length;
+      i = ((i % n) + n) % n;
+      // pick the short way round, so the drum never spins the long way
+      let d = i - this._band; if (d > n / 2) d -= n; if (d < -n / 2) d += n;
+      this._band = i;
+      this._rotTarget = this._rotTarget + d * (360 / n);
+      this._reflect();
+      if (this._anim || Math.abs(this._rotTarget - this._rot) > 0.01) {
+        this._anim = { from: this._rot, to: this._rotTarget, t0: performance.now(), dur: 180 * Math.min(2, Math.max(1, Math.abs(d))) };
+        if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+      }
+      if (emit) { this._emit("input"); this._emit("change"); }
+    }
+    _tick(now) {
+      this._raf = 0;
+      const a = this._anim; if (!a) { this._render(); return; }
+      const p = Math.min(1, (now - a.t0) / a.dur);
+      let r;
+      if (p < 0.6) { const q = p / 0.6; r = 0.82 * (1 - (1 - q) * (1 - q)); }
+      else { const q = (p - 0.6) / 0.4; r = 0.82 + 0.18 * ((1 - (1 - q) * (1 - q)) + 0.45 * Math.sin(q * Math.PI) * (1 - q)); }
+      this._rot = a.from + (a.to - a.from) * r;
+      if (p >= 1) { this._rot = a.to; this._anim = null; }
+      this._render();
+      if (this._anim) this._raf = requestAnimationFrame(this._tick);
+    }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this._v, band: this._opts[this._band] } })); }
+    _setValue(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this._reflect(); this._render();
+      this._emit(settle ? "change" : "input");
+    }
+    _dis() { return this.hasAttribute("disabled"); }
+
+    /* ---- the strip: drag sideways, the pointer follows the finger ---- */
+    _onStripDown(e) {
+      if (this._dis() || (e.button && e.button !== 0)) return;
+      e.preventDefault(); this._strip.focus({ preventScroll: true });
+      this._strip.setPointerCapture(e.pointerId); this._strip.classList.add("drag"); this._ptr.classList.add("live");
+      const r = this._strip.getBoundingClientRect();
+      this._sd = { x0: r.left, w: r.width, v: this._v, moved: false };
+      this._strip.addEventListener("pointermove", this._onStripMove);
+      this._strip.addEventListener("pointerup", this._onStripUp); this._strip.addEventListener("pointercancel", this._onStripUp);
+      this._onStripMove(e);
+    }
+    _onStripMove(e) {
+      if (!this._sd) return;
+      const lx = (e.clientX - this._sd.x0) / (this._sd.w / WW);      // in window px, at scale 1
+      const t = (lx - (XS0 - WX)) / (XS1 - XS0);
+      let v = this._min + t * (this._max - this._min);
+      v = Math.round(v / this._step) * this._step;
+      if (v !== this._v) this._sd.moved = true;
+      this._setValue(v, false);
+    }
+    _onStripUp(e) {
+      if (!this._sd) return;
+      this._strip.removeEventListener("pointermove", this._onStripMove);
+      this._strip.removeEventListener("pointerup", this._onStripUp); this._strip.removeEventListener("pointercancel", this._onStripUp);
+      try { this._strip.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._strip.classList.remove("drag"); this._ptr.classList.remove("live");
+      const moved = this._sd.moved; this._sd = null;
+      if (moved) this._setValue(this._v, true);
+    }
+    _onStripWheel(e) {
+      if (this._dis()) return;
+      e.preventDefault();
+      const dir = (e.deltaY || e.deltaX) < 0 ? -1 : 1;
+      this._setValue(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._setValue(this._v, true), 220);
+    }
+    _onStripKey(e) {
+      if (this._dis()) return;
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      v = Math.round(v / this._step) * this._step;
+      this._setValue(v, false); this._setValue(v, true);
+    }
+
+    /* ---- the rim: drag up or down, the drum follows the thumb and drops into the nearest detent ---- */
+    _onEdgeDown(e) {
+      if (this._dis() || (e.button && e.button !== 0)) return;
+      e.preventDefault(); this._edge.focus({ preventScroll: true });
+      this._edge.setPointerCapture(e.pointerId); this._edge.classList.add("drag");
+      this._anim = null; cancelAnimationFrame(this._raf); this._raf = 0;
+      this._ed = { y: e.clientY, rot: this._rot, band: this._band };
+      this._edge.addEventListener("pointermove", this._onEdgeMove);
+      this._edge.addEventListener("pointerup", this._onEdgeUp); this._edge.addEventListener("pointercancel", this._onEdgeUp);
+    }
+    _onEdgeMove(e) {
+      if (!this._ed) return;
+      const dy = (e.clientY - this._ed.y) / this._scale;
+      this._rot = this._ed.rot - dy / RR / DEG;                   // thumb down = rim surface down
+      const n = this._opts.length, pitch = 360 / n;
+      const near = Math.round(this._rot / pitch);
+      const b = ((near % n) + n) % n;
+      if (b !== this._band) { this._band = b; this._reflect(); this._emit("input"); }
+      this._render();
+    }
+    _onEdgeUp(e) {
+      if (!this._ed) return;
+      this._edge.removeEventListener("pointermove", this._onEdgeMove);
+      this._edge.removeEventListener("pointerup", this._onEdgeUp); this._edge.removeEventListener("pointercancel", this._onEdgeUp);
+      try { this._edge.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._edge.classList.remove("drag");
+      const pitch = 360 / this._opts.length;
+      const startBand = this._ed.band; this._ed = null;
+      this._rotTarget = Math.round(this._rot / pitch) * pitch;
+      this._anim = { from: this._rot, to: this._rotTarget, t0: performance.now(), dur: 140 };
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+      if (this._band !== startBand) this._emit("change");
+    }
+    _onEdgeWheel(e) {
+      if (this._dis()) return;
+      e.preventDefault();
+      const now = performance.now(); if (now - (this._ewt || 0) < 240) return; this._ewt = now;
+      this._setBand(this._band + (e.deltaY > 0 ? 1 : -1), true);
+    }
+    _onEdgeKey(e) {
+      if (this._dis()) return;
+      let b = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": case "PageUp": b = this._band + 1; break;
+        case "ArrowDown": case "ArrowLeft": case "PageDown": b = this._band - 1; break;
+        case "Home": b = 0; break;
+        case "End": b = this._opts.length - 1; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._setBand(b, true);
+    }
+  }
+  customElements.define("sk-drum-spidola", SkDrumSpidola);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

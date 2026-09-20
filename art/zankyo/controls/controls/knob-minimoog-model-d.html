@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minimoog Model D knob — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-minimoog-model-d",
+  "element": "sk-knob-minimoog",
+  "name": "Minimoog Model D knob — black, white line, scale on the panel",
+  "kind": "input",
+  "code": "A1",
+  "type": "Potentiometer knob",
+  "source": "Moog Minimoog Model D front panel, 1970–1981: a skirtless black tapered knob with one white line, the 0–10 scale and the legend silk-screened on the matte black panel",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["black phenolic", "white paint", "nickel hex nut", "matte black painted aluminium", "silk-screen"],
+  "tags": ["synthesizer", "audio", "white line", "panel scale", "hex nut", "300 degrees", "walnut"],
+  "value": { "model": "range", "min": 0, "max": 10, "step": 0.1, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "label", "centre", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 96, "h": 116 },
+  "notes": "CUTOFF FREQUENCY at −2 on the centre (−5…+5) scale, EMPHASIS at 7, AMOUNT OF CONTOUR at 0.75 beside a walnut cheek. Drag up/down, wheel, or arrows; Shift-arrows step by ten."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-knob-minimoog value="-2" label="CUTOFF FREQUENCY" centre></sk-knob-minimoog>
+    <sk-knob-minimoog value="7" label="EMPHASIS"></sk-knob-minimoog>
+    <sk-knob-minimoog value="4" label="AMOUNT OF CONTOUR" scale="0.75"></sk-knob-minimoog>
+    <div data-sk-ignore aria-hidden="true" style="width:18px;height:152px;margin-left:-16px;border-radius:2px 7px 7px 2px;background:repeating-linear-gradient(177deg,rgba(0,0,0,.16) 0 1px,transparent 1px 4px,rgba(0,0,0,.09) 4px 6px,transparent 6px 11px),linear-gradient(90deg,#8a5633,#6f4526 55%,#4e2c17);box-shadow:inset 1px 0 0 rgba(255,220,180,.28),inset -1px 0 0 rgba(0,0,0,.5),-3px 0 8px rgba(0,0,0,.65);"></div>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Minimoog Model D</b> knob is the plainest knob on the most famous panel in synthesis: a skirtless
+  black cylinder, a little wider at its base, with a shallow cone for a top and a single white line laid in a
+  moulded groove that runs from the centre of the cone over the edge and a few millimetres down the side.
+  Nothing is printed on the knob. The scale — 0 2 4 6 8 10 with a tick at every unit over 300°, or −5 to +5
+  for the cutoff — and the bold legend above it are silk-screened in white on the matte black aluminium panel,
+  and between the knob and the panel you can see the bright nickel nut and lock washer that hold the pot.</p>
+  <p><b>The tells kept here:</b> the taper (the side shows as a ring around the cone from above); the cone,
+  shaded round the clock so it reads as a cone and not a disc, with a crisp highlight on its top-left rim
+  — black on black, the knob is nothing but its rim and its line; the line continuing over the edge; the hex
+  nut and split washer peeking out below the base; the every-unit ticks ending at 7 and 5 o'clock; the legend
+  in a bold Helvetica-like grotesk; a faint greasy ring where fingers land, off-centre toward below-right;
+  and the walnut cheek at the edge of the demo. The <code>centre</code> attribute switches the printed scale
+  to −5…0…+5 and the value range with it. Drag is vertical (up is clockwise), the wheel steps, arrows step
+  0.1 and Shift-arrows step 1.</p>
+  <p><b>Left out:</b> the D-shaft's flat, the pot's bushing, and the panel's brushed grain under the paint.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-minimoog> — Minimoog Model D black line knob on a silk-screened panel scale ====
+   attributes: value min max step label centre(scale −5…+5) scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-knob-minimoog value="5" label="EMPHASIS"></sk-knob-minimoog> */
+(function () {
+  if (customElements.get("sk-knob-minimoog")) return;
+  const W = 96, H = 116, CX = 48, CY = 68;
+  const RT = 21, RB = 24;                 // radius of the cone's edge, radius of the base (the taper)
+  const SWEEP = 300;
+  const NS = "http://www.w3.org/2000/svg";
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      --ink: #ebe9e2; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - 27}px; top: ${CY - 27}px; width: 54px; height: 54px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .line { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 40ms linear; }
+    .line.snap { transition: transform 120ms cubic-bezier(.2,.9,.3,1.2); }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; fill: var(--ink); }
+    .label { font-size: 7.5px; font-weight: 600; letter-spacing: 0.08em; text-anchor: middle; }
+    .num { font-size: 6.5px; font-weight: 500; text-anchor: middle; dominant-baseline: central; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#c2c2c2"/><stop offset="0.3" stop-color="#8a8a8a" stop-opacity="0.75"/><stop offset="0.45" stop-color="#4a4a4a" stop-opacity="0.35"/>
+          <stop offset="0.6" stop-color="#2a2a2a" stop-opacity="0.15"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="baseEdge" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#6a6a6a" stop-opacity="0.8"/><stop offset="0.5" stop-color="#222" stop-opacity="0.25"/><stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+        </linearGradient>
+        <radialGradient id="grime" cx="56%" cy="62%" r="50%">
+          <stop offset="0.5" stop-color="#7d746a" stop-opacity="0"/><stop offset="0.72" stop-color="#7d746a" stop-opacity="0.2"/><stop offset="1" stop-color="#7d746a" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="nut" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2a2b2a"/><stop offset="0.5" stop-color="#8f918c"/><stop offset="0.78" stop-color="#d6d7d2"/><stop offset="1" stop-color="#858782"/>
+        </linearGradient>
+        <linearGradient id="washer" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2e2f2e"/><stop offset="0.72" stop-color="#a9aba6"/><stop offset="0.9" stop-color="#c9cbc6"/><stop offset="1" stop-color="#5f615d"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.5"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.5"/></filter>
+      </defs>
+
+      <!-- the panel's silk-screen: legend above, scale around -->
+      <text class="label" x="${CX}" y="11"></text>
+      <g class="scale"></g>
+
+      <!-- finger grease on the panel, off-centre toward below-right -->
+      <circle cx="${CX + 2}" cy="${CY + 3}" r="34" fill="url(#grime)"/>
+
+      <!-- ambient shadow of the knob -->
+      <ellipse cx="${CX + 3}" cy="${CY + 5}" rx="26" ry="25" fill="#000" opacity="0.62" filter="url(#softer)"/>
+
+      <!-- the pot's lock washer and hex nut, in the gap under the knob -->
+      <ellipse cx="${CX}" cy="${CY + 26.8}" rx="12.2" ry="4.6" fill="none" stroke="url(#washer)" stroke-width="1.7"/>
+      <g class="nut" stroke="#141514" stroke-width="0.4" stroke-linejoin="round">
+        <polygon class="nut-l" fill="#c4c6c0"/><polygon class="nut-f" fill="#9a9c97"/><polygon class="nut-r" fill="#5a5c58"/>
+        <polygon class="nut-top" fill="url(#nut)"/>
+      </g>
+
+      <!-- contact shadow: darkens the nut just under the base -->
+      <ellipse cx="${CX + 1.5}" cy="${CY + 2.2}" rx="24.5" ry="24.5" fill="#000" opacity="0.8" filter="url(#soft)"/>
+
+      <!-- the knob: side (the tapered wall), base edge, cone, rim -->
+      <g class="side"></g>
+      <circle cx="${CX}" cy="${CY}" r="${RB}" fill="none" stroke="url(#baseEdge)" stroke-width="0.7"/>
+      <g class="top"></g>
+      <circle cx="${CX}" cy="${CY}" r="${RT}" fill="none" stroke="url(#rim)" stroke-width="1.1"/>
+
+      <!-- the white line in its groove: centre → edge → down the side -->
+      <g class="line">
+        <path d="M ${CX} ${CY - 1} L ${CX} ${CY - RB - 0.2}" stroke="#040404" stroke-width="3.9" stroke-opacity="0.85"/>
+        <path d="M ${CX} ${CY - 0.4} L ${CX} ${CY - RT}" stroke="#f1efe8" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M ${CX} ${CY - RT + 0.3} L ${CX} ${CY - RB + 0.15}" stroke="#dcdad2" stroke-width="2.9"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  const grey = v => { v = Math.max(0, Math.min(255, Math.round(v))); return `rgb(${v},${v},${v})`; };
+  const mk = (parent, tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+
+  class SkKnobMinimoog extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "centre", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 5; this._min = 0; this._max = 10; this._step = 0.1; this._scale = 1;
+      this._line = this.shadowRoot.querySelector(".line");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._label = this.shadowRoot.querySelector(".label");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._drawKnob();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawScale(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n !== "value") this._drawScale(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const centre = this.hasAttribute("centre");
+      this._min = num("min", centre ? -5 : 0); this._max = num("max", centre ? 5 : 10); this._step = num("step", 0.1);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "knob");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return -SWEEP / 2 + t * SWEEP; }
+
+    // the knob's body is shaded round the clock: a shallow cone on top, a steep tapered wall below.
+    // one light, above-left; the wall gets a band of reflected light low-right.
+    _drawKnob() {
+      const top = this.shadowRoot.querySelector(".top"), side = this.shadowRoot.querySelector(".side");
+      const N = 64, L = -45 * Math.PI / 180;
+      const pt = (a, r) => [CX + r * Math.sin(a), CY - r * Math.cos(a)];
+      for (let i = 0; i < N; i++) {
+        const a0 = (i / N) * 2 * Math.PI - 0.006, a1 = ((i + 1) / N) * 2 * Math.PI + 0.006, am = (a0 + a1) / 2;
+        const c = Math.cos(am - L), b = 0.5 + 0.5 * c;
+        const [x0, y0] = pt(a0, RT), [x1, y1] = pt(a1, RT);
+        const [X0, Y0] = pt(a0, RB), [X1, Y1] = pt(a1, RB);
+        // cone: mid #151515, lit side to #3b3b3b with a tighter specular toward the light
+        const vt = 9 + 22 * Math.pow(b, 1.5) + 40 * Math.pow(Math.max(0, c), 5);
+        mk(top, "path", { d: `M ${CX} ${CY} L ${x0.toFixed(2)} ${y0.toFixed(2)} A ${RT} ${RT} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`, fill: grey(vt), stroke: grey(vt), "stroke-width": 0.35 });
+        // wall: darker, steeper falloff, reflected light from below-right
+        const refl = Math.pow(Math.max(0, Math.cos(am - Math.PI * 0.72)), 3);
+        const vs = 3 + 34 * Math.pow(b, 1.9) + 20 * refl;
+        mk(side, "path", { d: `M ${x0.toFixed(2)} ${y0.toFixed(2)} L ${X0.toFixed(2)} ${Y0.toFixed(2)} A ${RB} ${RB} 0 0 1 ${X1.toFixed(2)} ${Y1.toFixed(2)} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${RT} ${RT} 0 0 0 ${x0.toFixed(2)} ${y0.toFixed(2)} Z`, fill: grey(vs), stroke: grey(vs), "stroke-width": 0.35 });
+      }
+      // the hex nut: flat sides front and back, seen at a low angle (squashed), with its
+      // three front faces showing as a band under the top outline
+      const r = 10.5, k = 0.5, ny = CY + 21.5, hN = 3.6;
+      const hx = i => [CX + r * Math.cos(i * Math.PI / 3), ny + r * k * Math.sin(i * Math.PI / 3)];
+      const P = xy => xy[0].toFixed(2) + "," + xy[1].toFixed(2);
+      const face = (cls, i0, i1) => { const a = hx(i0), b = hx(i1); this.shadowRoot.querySelector(cls).setAttribute("points", [P(a), P(b), P([b[0], b[1] + hN]), P([a[0], a[1] + hN])].join(" ")); };
+      face(".nut-l", 3, 2); face(".nut-r", 1, 0); face(".nut-f", 2, 1);
+      this.shadowRoot.querySelector(".nut-top").setAttribute("points", [0, 1, 2, 3, 4, 5].map(i => P(hx(i))).join(" "));
+    }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const n = Math.max(1, Math.min(20, Math.round(this._max - this._min)));
+      const every = n > 12 ? 4 : n > 6 ? 2 : 1;
+      const centre = this.hasAttribute("centre");
+      for (let i = 0; i <= n; i++) {
+        const val = this._min + (this._max - this._min) * i / n;
+        const a = this._angle(val) * Math.PI / 180;
+        const zero = centre && Math.abs(val) < 1e-9;
+        const major = i % every === 0 || zero;
+        const r1 = 28.5, r2 = zero ? 33.5 : major ? 32.5 : 31;
+        mk(g, "line", { x1: (CX + r1 * Math.sin(a)).toFixed(2), y1: (CY - r1 * Math.cos(a)).toFixed(2), x2: (CX + r2 * Math.sin(a)).toFixed(2), y2: (CY - r2 * Math.cos(a)).toFixed(2),
+          stroke: "var(--ink)", "stroke-width": major ? 1.15 : 0.85, "stroke-linecap": "butt", opacity: major ? 0.95 : 0.78 });
+        if (major || centre) {
+          const rr = 39.5;
+          const t = mk(g, "text", { x: (CX + rr * Math.sin(a)).toFixed(2), y: (CY - rr * Math.cos(a) + 0.3).toFixed(2), class: "num" });
+          const s = String(Math.round(val * 10) / 10).replace(/\.0$/, "");
+          t.textContent = s.replace("-", "−");
+        }
+      }
+    }
+    _render() {
+      this._line.style.transform = "rotate(" + this._angle(this._v).toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._grab.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._line.classList.remove("snap");
+      this._drag = { y: e.clientY, x: e.clientX, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = this._drag.y - e.clientY, dx = e.clientX - this._drag.x;
+      const px = (dy + dx * 0.35) / this._scale;                    // up or right = clockwise
+      const range = this._max - this._min;
+      const fine = e.shiftKey ? 0.25 : 1;
+      let v = this._drag.v + px * fine * range / 160;               // 160 px for the full sweep
+      v = Math.round(v / this._step) * this._step;
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._line.classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._line.classList.add("snap");
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-knob-minimoog", SkKnobMinimoog);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

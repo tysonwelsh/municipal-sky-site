@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cherry Series 23 thumbwheel decade switch — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "decade-cherry-series-23",
+  "element": "sk-decade-cherry-23",
+  "name": "Cherry Series 23 thumbwheel switch, ganged in a bank",
+  "kind": "input",
+  "code": "A10",
+  "type": "Thumbwheel decade switch",
+  "source": "Cherry Series 23 pushbutton thumbwheel switch (also Digitran, EECO): a numeral in a window, a ▲ and ▼ pusher above and below, the wheel's serrated edge in a slot beside it, modules butted into a bank between aluminium end plates",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["black moulded ABS", "white-on-black numeral wheel", "brushed aluminium end plates"],
+  "tags": ["decade switch", "thumbwheel", "BCD", "test equipment", "counter preset", "bank", "digits"],
+  "value": { "model": "digits", "min": 0, "max": 9999, "step": 1, "unit": "" },
+  "attributes": ["value", "count", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 172, "h": 96 },
+  "notes": "A four-wheel bank reading 0473 and a single wheel at 9 at scale 1.5. Click a pusher, drag or wheel the serrated edge, type a digit, or use the arrows; each wheel wraps on its own, with no carry."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-decade-cherry-23 value="0473" count="4" label="PRESET"></sk-decade-cherry-23>
+    <sk-decade-cherry-23 value="9" count="1" label="RANGE" scale="1.5"></sk-decade-cherry-23>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Cherry Series 23</b> and its Digitran and EECO cousins are the black thumbwheel modules on every 1970s
+  counter, frequency synthesiser and NC machine console: a 10 × 33 mm front with a numeral in a window, a small
+  push-button above and below with a moulded triangle, and the wheel's serrated rim showing in a slot beside the
+  window so the impatient can roll it directly. Each module is one decade; they are butted into a bank with a
+  brushed aluminium plate and a screw at each end, and each wheel wraps on its own, because a decade switch has no
+  carry.</p>
+  <p><b>The tells kept here:</b> the numerals live on a drum, placed by angle (<i>y = R·sin θ</i>, squashed by cos θ,
+  dimmed as they turn away), so the next and previous digits show half-cut above and below the current one; the two
+  pushers with their lighter top edge and moulded ▲ / ▼, which sink when clicked; the serrated edge in its own slot,
+  ribs crowding toward the top and bottom, scrolling with the wheel; the modules butted with no gap and a thin white
+  line printed at each edge; the aluminium end plates with grain and slotted screws; a ~110 ms roll with a small
+  bounce into the detent. Click a pusher, drag the window or the edge (13 px per digit), wheel, arrows, Home/End for
+  0 and 9, type a digit and the focus moves on to the next wheel; Left/Right walk the bank.</p>
+  <p><b>Left out:</b> the BCD/complement output codes and their rear pins; the optional red decimal-point dot on a
+  pusher; the mounting bracket behind the panel.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-decade-cherry-23> — Cherry Series 23 pushbutton thumbwheel decade switch, one wheel or a bank ====
+   attributes: value(integer, zero-padded to count) count label scale disabled
+   events: input {value} while a wheel moves, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-decade-cherry-23 value="0473" count="4"></sk-decade-cherry-23> */
+(function () {
+  if (customElements.get("sk-decade-cherry-23")) return;
+  const MW = 40, H = 96, PLATE = 6;
+  const WX = 5, WY = 34, WW = 20, WH = 28, CYW = 48;   // the numeral window and the drum axis
+  const SX = 28, SY = 33, SW = 7, SH = 30;             // the slot with the serrated edge
+  const RD = 19, RR = 20, RIB = 4;                     // drum radius under the numerals, rim radius, rib pitch (deg)
+  const DEG = Math.PI / 180;
+  const ns = "http://www.w3.org/2000/svg";
+  const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${MW * 4 + 2 * PLATE}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; height: ${H}px; overflow: visible; }
+    text.digit { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 700; font-size: 13px; fill: #f5f5f0; text-anchor: middle; dominant-baseline: central; }
+    .pusher { cursor: pointer; transition: transform 60ms ease-out; }
+    .pusher.down { transform: translateY(0.8px); }
+    .pusher.down .cap { fill: #1a1a1c; }
+    .pusher.down .lit { opacity: 0.35; }
+    :host([disabled]) .pusher { cursor: default; }
+    .grab { position: absolute; top: ${WY - 3}px; width: ${SX + SW - WX + 5}px; height: ${WH + 6}px; border-radius: 3px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+  </style>
+  <div class="wrap">
+    <svg aria-hidden="true">
+      <defs>
+        <linearGradient id="face" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#26262a"/><stop offset="1" stop-color="#151517"/>
+        </linearGradient>
+        <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2f2f33"/><stop offset="1" stop-color="#1c1c1f"/>
+        </linearGradient>
+        <linearGradient id="drum" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2c2c2e"/><stop offset="0.22" stop-color="#1c1c1e"/><stop offset="0.5" stop-color="#0f0f10"/><stop offset="1" stop-color="#040404"/>
+        </linearGradient>
+        <linearGradient id="rimy" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#151517"/><stop offset="0.28" stop-color="#2e2e31"/><stop offset="0.55" stop-color="#1e1e20"/><stop offset="1" stop-color="#060606"/>
+        </linearGradient>
+        <linearGradient id="rimx" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="0.3" stop-color="#000" stop-opacity="0"/><stop offset="0.7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+        </linearGradient>
+        <linearGradient id="inset" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.8"/><stop offset="0.18" stop-color="#000" stop-opacity="0"/><stop offset="0.9" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/>
+        </linearGradient>
+        <linearGradient id="insetx" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.55"/><stop offset="0.22" stop-color="#000" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="alu" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#d6d7d3"/><stop offset="0.35" stop-color="#bcbdb9"/><stop offset="1" stop-color="#9a9b97"/>
+        </linearGradient>
+        <pattern id="alugrain" width="8" height="2" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="8" height="0.6" fill="#fff" fill-opacity="0.16"/>
+          <rect x="0" y="1.2" width="8" height="0.5" fill="#000" fill-opacity="0.12"/>
+        </pattern>
+        <radialGradient id="screw" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#e9eae6"/><stop offset="0.6" stop-color="#8f908c"/><stop offset="1" stop-color="#4a4b48"/>
+        </radialGradient>
+        <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="softer" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <g class="bank"></g>
+    </svg>
+    <div class="grabs"></div>
+  </div>`;
+
+  // the artwork of one module, in its own 40 × 96 coordinates
+  function moduleArt(index) {
+    const g = mk("g");
+    g.appendChild(mk("rect", { x: 0, y: 0, width: MW, height: H, fill: "url(#face)" }));
+    g.appendChild(mk("path", { d: `M 0.5 ${H} V 0.5 H ${MW}`, fill: "none", stroke: "#3b3b40", "stroke-width": 0.7 }));
+    g.appendChild(mk("path", { d: `M 0 ${H - 0.4} H ${MW}`, fill: "none", stroke: "#000", "stroke-width": 0.8 }));
+    // the thin white line printed at the module's edge
+    g.appendChild(mk("line", { x1: MW - 0.6, y1: 3.5, x2: MW - 0.6, y2: H - 3.5, stroke: "#f5f5f0", "stroke-width": 0.7, opacity: 0.85 }));
+    // pushers
+    const pushers = [];
+    [[5, true], [70, false]].forEach(([py, up]) => {
+      const p = mk("g", { class: "pusher", style: "transform-box: fill-box; transform-origin: center;" });
+      p.appendChild(mk("rect", { x: 5.5, y: py + 0.8, width: 29, height: 21, rx: 1.6, fill: "#000", opacity: 0.55, filter: "url(#soft)" }));
+      p.appendChild(mk("rect", { class: "cap", x: 5, y: py, width: 30, height: 21, rx: 1.6, fill: "url(#cap)", stroke: "#0a0a0b", "stroke-width": 0.6 }));
+      p.appendChild(mk("path", { class: "lit", d: `M 6.8 ${py + 0.9} H 33.2`, stroke: "#5c5c62", "stroke-width": 0.9, "stroke-linecap": "round" }));
+      p.appendChild(mk("path", { class: "lit", d: `M 5.9 ${py + 2.5} V ${py + 18.5}`, stroke: "#45454a", "stroke-width": 0.8, "stroke-linecap": "round" }));
+      p.appendChild(mk("path", { d: `M 7 ${py + 20.2} H 33`, stroke: "#000", "stroke-width": 0.9, "stroke-linecap": "round", opacity: 0.8 }));
+      const cy = py + 10.5;
+      const tri = up ? `M 20 ${cy - 4.2} L 25.4 ${cy + 4.2} L 14.6 ${cy + 4.2} Z` : `M 20 ${cy + 4.2} L 14.6 ${cy - 4.2} L 25.4 ${cy - 4.2} Z`;
+      p.appendChild(mk("path", { d: tri, fill: "#000", opacity: 0.55, transform: "translate(0.5 0.7)" }));
+      p.appendChild(mk("path", { d: tri, fill: "#d8d8d4", stroke: "#a9a9a5", "stroke-width": 0.3, "stroke-linejoin": "round" }));
+      p.dataset.dir = up ? "1" : "-1";
+      g.appendChild(p);
+      pushers.push(p);
+    });
+    // the numeral window: the drum behind it
+    const cid = "w" + index, sid = "s" + index;
+    const cp = mk("clipPath", { id: cid }); cp.appendChild(mk("rect", { x: WX, y: WY, width: WW, height: WH, rx: 0.8 })); g.appendChild(cp);
+    const win = mk("g", { "clip-path": `url(#${cid})` });
+    win.appendChild(mk("rect", { x: WX, y: WY, width: WW, height: WH, fill: "url(#drum)" }));
+    const digits = [];
+    for (let d = 0; d < 10; d++) {
+      const dg = mk("g");
+      const t = mk("text", { class: "digit", x: 0, y: 0.5 }); t.textContent = String(d);
+      dg.appendChild(t); win.appendChild(dg); digits.push(dg);
+    }
+    win.appendChild(mk("rect", { x: WX, y: WY, width: WW, height: WH, fill: "url(#inset)" }));
+    win.appendChild(mk("rect", { x: WX, y: WY, width: WW, height: WH, fill: "url(#insetx)" }));
+    g.appendChild(win);
+    g.appendChild(mk("rect", { x: WX, y: WY, width: WW, height: WH, rx: 0.8, fill: "none", stroke: "#000", "stroke-width": 0.8 }));
+    g.appendChild(mk("path", { d: `M ${WX + 1.5} ${WY + WH + 0.9} H ${WX + WW - 0.5} Q ${WX + WW + 0.9} ${WY + WH + 0.9} ${WX + WW + 0.9} ${WY + WH - 0.5} V ${WY + 1.5}`, fill: "none", stroke: "#55555b", "stroke-width": 0.8, "stroke-linecap": "round" }));
+    // the slot beside it with the wheel's serrated rim
+    const sp = mk("clipPath", { id: sid }); sp.appendChild(mk("rect", { x: SX, y: SY, width: SW, height: SH, rx: 1 })); g.appendChild(sp);
+    const slot = mk("g", { "clip-path": `url(#${sid})` });
+    slot.appendChild(mk("rect", { x: SX, y: SY, width: SW, height: SH, fill: "#060606" }));
+    slot.appendChild(mk("rect", { x: SX + 0.9, y: SY - 3, width: SW - 1.8, height: SH + 6, fill: "url(#rimy)" }));
+    const ribG = mk("g"); slot.appendChild(ribG);
+    const ribs = [];
+    for (let j = 0; j < 360 / RIB; j++) {
+      const groove = mk("line", { x1: SX + 0.9, x2: SX + SW - 0.9, stroke: "#000" });
+      const crest = mk("line", { x1: SX + 0.9, x2: SX + SW - 0.9, stroke: "#5a5a5e" });
+      ribG.appendChild(groove); ribG.appendChild(crest);
+      ribs.push({ crest, groove, deg: j * RIB });
+    }
+    slot.appendChild(mk("rect", { x: SX + 0.9, y: SY - 3, width: SW - 1.8, height: SH + 6, fill: "url(#rimx)" }));
+    slot.appendChild(mk("rect", { x: SX, y: SY, width: SW, height: SH, fill: "url(#inset)" }));
+    g.appendChild(slot);
+    g.appendChild(mk("rect", { x: SX, y: SY, width: SW, height: SH, rx: 1, fill: "none", stroke: "#000", "stroke-width": 0.8 }));
+    g.appendChild(mk("path", { d: `M ${SX + 1.5} ${SY + SH + 0.9} H ${SX + SW - 0.5} Q ${SX + SW + 0.9} ${SY + SH + 0.9} ${SX + SW + 0.9} ${SY + SH - 0.5} V ${SY + 1.5}`, fill: "none", stroke: "#55555b", "stroke-width": 0.8, "stroke-linecap": "round" }));
+    return { g, pushers, digits, ribs };
+  }
+
+  class SkDecadeCherry23 extends HTMLElement {
+    static get observedAttributes() { return ["value", "count", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._count = 0; this._scale = 1; this._wheels = []; this._raf = 0;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._svg = $("svg"); this._bank = $(".bank"); this._grabs = $(".grabs");
+      ["_onDown", "_onMove", "_onUp", "_onWheel", "_onKey", "_onPushDown", "_onPushUp", "_tick"].forEach(f => { this[f] = this[f].bind(this); });
+    }
+    connectedCallback() {
+      this.setAttribute("role", "group");
+      this._readAttrs();
+      if (!this.hasAttribute("value")) this._reflect();
+      this._render();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; this._unbind(); }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._wheels.reduce((acc, w) => acc * 10 + w.digit, 0); }
+    set value(v) { this._applyValue(v); this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._wheels[0]) this._wheels[0].grab.focus(); }
+
+    _applyValue(v) {
+      let s = String(v == null ? "" : v).replace(/[^0-9]/g, "");
+      if (!s) s = "0";
+      s = s.slice(-this._count).padStart(this._count, "0");
+      this._wheels.forEach((w, i) => { const d = +s[i]; w.digit = d; w.pos = w.target = d; });     // set from outside: no roll
+    }
+    _reflect() { this.setAttribute("value", this._wheels.map(w => String(w.digit)).join("")); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const count = Math.max(1, Math.min(12, Math.round(num("count", 1))));
+      if (count !== this._count) { this._count = count; this._build(); this._applyValue(this.getAttribute("value") || "0"); }
+      else if (this.hasAttribute("value")) {
+        const cur = this._wheels.map(w => String(w.digit)).join("");
+        const want = (this.getAttribute("value") || "").replace(/[^0-9]/g, "").slice(-count).padStart(count, "0");
+        if (want !== cur) this._applyValue(want);
+      }
+      this._scale = Math.max(0.2, num("scale", 1));
+      const label = this.getAttribute("label") || "thumbwheel switch";
+      const dis = this.hasAttribute("disabled");
+      this.setAttribute("aria-label", label); this.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._wheels.forEach((w, i) => {
+        w.grab.setAttribute("aria-label", label + (this._count > 1 ? ", digit " + (i + 1) + " of " + this._count : ""));
+        w.grab.setAttribute("tabindex", dis ? "-1" : "0"); w.grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      });
+      const bw = MW * this._count + 2 * PLATE;
+      this.style.width = (bw * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+
+    /* ---- the bank: end plate, modules butted, end plate ---- */
+    _unbind() {
+      this._wheels.forEach(w => {
+        w.grab.removeEventListener("pointerdown", this._onDown); w.grab.removeEventListener("wheel", this._onWheel); w.grab.removeEventListener("keydown", this._onKey);
+        w.pushers.forEach(p => { p.removeEventListener("pointerdown", this._onPushDown); p.removeEventListener("pointerup", this._onPushUp); p.removeEventListener("pointercancel", this._onPushUp); p.removeEventListener("pointerleave", this._onPushUp); });
+      });
+    }
+    _build() {
+      this._unbind();
+      const bank = this._bank, gs = this._grabs;
+      while (bank.firstChild) bank.removeChild(bank.firstChild);
+      while (gs.firstChild) gs.removeChild(gs.firstChild);
+      const n = this._count, bw = MW * n + 2 * PLATE;
+      this._svg.setAttribute("viewBox", `0 0 ${bw} ${H}`); this._svg.style.width = bw + "px";
+      // the bank sits proud of the panel: a tight contact shadow and a soft one, down-right
+      bank.appendChild(mk("rect", { x: 3, y: 5, width: bw, height: H, rx: 2, fill: "#000", opacity: 0.45, filter: "url(#softer)" }));
+      bank.appendChild(mk("rect", { x: 1, y: 1.5, width: bw, height: H, rx: 1.5, fill: "#000", opacity: 0.6, filter: "url(#soft)" }));
+      const plate = (x, slotAngle) => {
+        const p = mk("g");
+        p.appendChild(mk("rect", { x: x, y: 0, width: PLATE, height: H, fill: "url(#alu)" }));
+        p.appendChild(mk("rect", { x: x, y: 0, width: PLATE, height: H, fill: "url(#alugrain)" }));
+        p.appendChild(mk("rect", { x: x + 0.35, y: 0.35, width: PLATE - 0.7, height: H - 0.7, fill: "none", stroke: "#fff", "stroke-opacity": 0.55, "stroke-width": 0.6 }));
+        p.appendChild(mk("rect", { x: x, y: 0, width: PLATE, height: H, fill: "none", stroke: "#4a4b48", "stroke-width": 0.7 }));
+        const s = mk("g", { transform: `translate(${x + PLATE / 2} ${H / 2})` });
+        s.appendChild(mk("circle", { r: 2.4, cx: 0.3, cy: 0.4, fill: "#000", opacity: 0.5 }));
+        s.appendChild(mk("circle", { r: 2.2, fill: "url(#screw)", stroke: "#2e2f2c", "stroke-width": 0.45 }));
+        s.appendChild(mk("rect", { x: -1.8, y: -0.4, width: 3.6, height: 0.8, fill: "#111", transform: `rotate(${slotAngle})` }));
+        p.appendChild(s);
+        return p;
+      };
+      bank.appendChild(plate(0, 24));
+      this._wheels = [];
+      for (let i = 0; i < n; i++) {
+        const art = moduleArt(i);
+        const ox = PLATE + MW * i;
+        art.g.setAttribute("transform", `translate(${ox} 0)`);
+        bank.appendChild(art.g);
+        const grab = document.createElement("div");
+        grab.className = "grab"; grab.setAttribute("role", "spinbutton"); grab.setAttribute("tabindex", "0"); grab.dataset.i = String(i);
+        grab.setAttribute("aria-valuemin", "0"); grab.setAttribute("aria-valuemax", "9");
+        grab.style.left = (ox + WX - 2) + "px";
+        gs.appendChild(grab);
+        grab.addEventListener("pointerdown", this._onDown); grab.addEventListener("wheel", this._onWheel, { passive: false }); grab.addEventListener("keydown", this._onKey);
+        art.pushers.forEach(p => { p.dataset.i = String(i); p.addEventListener("pointerdown", this._onPushDown); p.addEventListener("pointerup", this._onPushUp); p.addEventListener("pointercancel", this._onPushUp); p.addEventListener("pointerleave", this._onPushUp); });
+        this._wheels.push({ grab, pushers: art.pushers, digits: art.digits, ribs: art.ribs, digit: 0, pos: 0, target: 0, anim: null });
+      }
+      bank.appendChild(plate(PLATE + MW * n, -57));
+    }
+
+    /* ---- projection: numerals and ribs placed by angle on their drums ---- */
+    _render() {
+      this._wheels.forEach(w => {
+        const pos = w.pos;
+        w.digits.forEach((dg, d) => {
+          let delta = ((d - pos) % 10 + 15) % 10 - 5;                       // -5…5 digits away, + is below
+          const th = delta * 36, c = Math.cos(th * DEG);
+          if (c <= 0.12) { dg.style.display = "none"; return; }
+          dg.style.display = "";
+          const y = CYW + RD * Math.sin(th * DEG);
+          dg.setAttribute("transform", `translate(${WX + WW / 2} ${y.toFixed(2)}) scale(1 ${c.toFixed(4)})`);
+          const lit = Math.pow(Math.max(0, (c - 0.12) / 0.88), 1.4) * (1 - 0.18 * Math.max(0, Math.sin(th * DEG)));
+          dg.setAttribute("opacity", lit.toFixed(3));
+        });
+        w.ribs.forEach(r => {
+          let a = ((r.deg - pos * 36) % 360 + 540) % 360 - 180;            // + is down the slot
+          const c = Math.cos(a * DEG);
+          if (c <= 0.03) { r.crest.style.display = "none"; r.groove.style.display = "none"; return; }
+          r.crest.style.display = ""; r.groove.style.display = "";
+          const s = Math.sin(a * DEG);
+          const y = CYW + RR * s;
+          const half = RR * Math.sin(RIB / 2 * DEG) * c;
+          const diff = Math.max(0, -0.6 * s + 0.74 * c);                    // lit from above
+          const spec = Math.pow(Math.max(0, -0.32 * s + 0.95 * c), 20);
+          const lum = 0.1 + 0.5 * diff + 0.9 * spec;
+          const gv = Math.round(Math.min(255, 34 + 130 * lum));
+          r.crest.setAttribute("y1", y - half * 0.4); r.crest.setAttribute("y2", y - half * 0.4);
+          r.crest.setAttribute("stroke-width", Math.max(0.25, half * 0.8).toFixed(2));
+          r.crest.setAttribute("stroke", `rgb(${gv},${gv},${gv + 3})`);
+          r.groove.setAttribute("y1", y + half * 0.55); r.groove.setAttribute("y2", y + half * 0.55);
+          r.groove.setAttribute("stroke-width", Math.max(0.25, half * 0.7).toFixed(2));
+          r.groove.setAttribute("opacity", (0.5 + 0.5 * c).toFixed(2));
+        });
+        w.grab.setAttribute("aria-valuenow", String(w.digit));
+      });
+    }
+
+    /* ---- the roll: ~110 ms to the next detent with a tiny bounce ---- */
+    _step(i, dir, emit) {
+      const w = this._wheels[i];
+      w.target += dir;
+      w.digit = ((Math.round(w.target) % 10) + 10) % 10;
+      w.anim = { from: w.pos, to: w.target, t0: performance.now(), dur: 110 };
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+      this._reflect();
+      if (emit) { this._emit("input"); this._emit("change"); }
+    }
+    _tick(now) {
+      this._raf = 0; let live = false;
+      this._wheels.forEach(w => {
+        const a = w.anim; if (!a) return;
+        const p = Math.min(1, (now - a.t0) / a.dur);
+        const e = 1 - Math.pow(1 - p, 2.6) * Math.cos(p * 4.4);
+        w.pos = a.from + (a.to - a.from) * e;
+        if (p >= 1) { w.pos = a.to; w.anim = null; } else live = true;
+      });
+      this._render();
+      if (live) this._raf = requestAnimationFrame(this._tick);
+    }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this.value } })); }
+    _dis() { return this.hasAttribute("disabled"); }
+
+    _onPushDown(e) {
+      if (this._dis() || (e.button && e.button !== 0)) return;
+      const p = e.currentTarget; e.preventDefault();
+      p.classList.add("down");
+      this._wheels[+p.dataset.i].grab.focus({ preventScroll: true });
+      this._step(+p.dataset.i, +p.dataset.dir, true);
+    }
+    _onPushUp(e) { e.currentTarget.classList.remove("down"); }
+
+    _onDown(e) {
+      if (this._dis() || (e.button && e.button !== 0)) return;
+      const g = e.currentTarget, i = +g.dataset.i, w = this._wheels[i];
+      e.preventDefault(); g.focus({ preventScroll: true });
+      g.setPointerCapture(e.pointerId); g.classList.add("drag");
+      w.anim = null; w.pos = w.target = Math.round(w.pos);
+      this._drag = { g, i, y: e.clientY, pos: w.pos, digit0: w.digit };
+      g.addEventListener("pointermove", this._onMove); g.addEventListener("pointerup", this._onUp); g.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const w = this._wheels[d.i];
+      const dy = (e.clientY - d.y) / this._scale;
+      w.pos = d.pos - dy / (RR * 36 * DEG);                                  // the rim follows the thumb: 12.6 px per digit
+      const digit = ((Math.round(w.pos) % 10) + 10) % 10;
+      if (digit !== w.digit) { w.digit = digit; w.target = Math.round(w.pos); this._reflect(); this._emit("input"); }
+      this._render();
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      d.g.removeEventListener("pointermove", this._onMove); d.g.removeEventListener("pointerup", this._onUp); d.g.removeEventListener("pointercancel", this._onUp);
+      try { d.g.releasePointerCapture(e.pointerId); } catch (_) {}
+      d.g.classList.remove("drag"); this._drag = null;
+      const w = this._wheels[d.i];
+      w.target = Math.round(w.pos); w.digit = ((w.target % 10) + 10) % 10;
+      w.anim = { from: w.pos, to: w.target, t0: performance.now(), dur: 90 };
+      if (!this._raf) this._raf = requestAnimationFrame(this._tick);
+      this._reflect();
+      if (w.digit !== d.digit0) this._emit("change");
+    }
+    _onWheel(e) {
+      if (this._dis()) return;
+      e.preventDefault();
+      const now = performance.now(); if (now - (this._wt || 0) < 90) return; this._wt = now;
+      this._step(+e.currentTarget.dataset.i, e.deltaY < 0 ? 1 : -1, true);
+    }
+    _onKey(e) {
+      if (this._dis()) return;
+      const i = +e.currentTarget.dataset.i, w = this._wheels[i], n = this._count;
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        let d = +e.key - w.digit; if (d > 5) d -= 10; if (d < -5) d += 10;
+        if (d) this._step(i, d, true);
+        if (i + 1 < n) this._wheels[i + 1].grab.focus();
+        return;
+      }
+      switch (e.key) {
+        case "ArrowUp": this._step(i, 1, true); break;
+        case "ArrowDown": this._step(i, -1, true); break;
+        case "ArrowRight": if (n > 1) { if (i + 1 < n) this._wheels[i + 1].grab.focus(); } else this._step(i, 1, true); break;
+        case "ArrowLeft": if (n > 1) { if (i > 0) this._wheels[i - 1].grab.focus(); } else this._step(i, -1, true); break;
+        case "Home": if (w.digit !== 0) this._step(i, -w.digit, true); break;
+        case "End": if (w.digit !== 9) this._step(i, 9 - w.digit, true); break;
+        default: return;
+      }
+      e.preventDefault();
+    }
+  }
+  customElements.define("sk-decade-cherry-23", SkDecadeCherry23);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
