@@ -25,7 +25,7 @@
   "attributes": ["value", "digits", "legend", "serial", "scale", "reset", "resettable"],
   "events": ["change"],
   "size": { "w": 176, "h": 100 },
-  "notes": "Three cases: 01234 at rest, 1234.6 caught mid-roll with the 5 half in, and a resettable one at 00000 — click or Enter on the knurled knob to zero it."
+  "notes": "Three cases: 01234 at rest, 1234.6 caught mid-roll with the 5 half in, and a resettable one at 00000 — click or press Enter on the knurled knob to zero it."
 }
 </script>
 </head>
@@ -45,366 +45,352 @@
   every jackshaft, press and winder from the 1920s to the 1970s: a sand-cast case with rounded corners, a slot
   cut in the front with a glass insert set back behind a raised rim, five ivory numeral wheels, two mounting ears,
   and a knurled reset knob on a shaft out of the right-hand side.</p>
-  <p><b>The tells kept here:</b> the wheels are drawn as <i>projected cylinders</i> — every figure sits at an angle
-  on the drum (36° per numeral), is placed at <code>y = R·sin θ</code> and squashed by <code>cos θ</code>, so it
+  <p><b>The tells kept here:</b> the wheels are drawn as <i>projected cylinders</i> — every figure sits at its own
+  angle on the drum (36° per numeral), is placed at <code>y = R·sin θ</code> and squashed by <code>cos θ</code>, so it
   flattens about 6 % as it leaves the window; the units wheel rolls continuously while each higher wheel only
   moves during the last tenth of the wheel below it, which makes a row of nines carry like a wave; hair-thin
-  spacer seams between the wheels; the raised window rim lit on its top bevel and shadowed under; the drum
+  spacer seams between the wheels; the raised window rim lit on its top bevel and shadowed underneath; the drum
   curvature darkening the top and bottom of every cell; a faint sand-cast grain over the zinc and a matte sheen,
-  never chrome; the knob's ~24 knurls placed by the same projection so they crowd at its top and bottom edge.
-  An increment takes about 180 ms with a ratchet overshoot; a long jump spins at twelve digits a second and
-  decelerates; a reset rolls every wheel back to zero together in 400 ms while the knob turns 30° and springs back.</p>
+  never chrome; the knob's twenty-four knurls placed by the same projection, so they crowd at its top and bottom
+  edge. An increment takes about 180 ms and settles with a ratchet overshoot; a long jump spins at twelve digits
+  a second and decelerates; a reset rolls every wheel back to zero together in 400 ms while the knob turns 30°
+  and springs back.</p>
   <p><b>Left out:</b> the rear shaft and its worm, the "Veeder-Root" script (the cast wordmark here is generic),
   and the pawl click you would hear rather than see.</p>
 </section>
 <script id="sk-element">
 /* ==== <sk-counter-veeder-root> — cast-case mechanical drum counter with a knurled reset knob ====
    attributes: value digits legend serial scale reset resettable
-   events: "change" {value} only when a user clicks/keys the reset knob. Setting .value never emits.
-   self-contained: paste this block into any page and use <sk-counter-veeder-root value="1234" reset></sk-counter-veeder-root> */
+   events: "change" {value:0} only when a user clicks or keys the reset knob; setting .value never emits.
+   self-contained: paste this block into any page and use
+   <sk-counter-veeder-root value="1234" reset></sk-counter-veeder-root> */
 (function () {
   if (customElements.get("sk-counter-veeder-root")) return;
-  var NS = "http://www.w3.org/2000/svg";
-  var W = 176, WNK = 150, H = 100;          // natural size, and the width without the knob
-  var DX = 25, DY = 37, DW = 96, DH = 26;   // the drum window
-  var CY = DY + DH / 2;                     // drum axis, on screen
-  var R = 38;                               // apparent drum radius: 13 px half-window = sin 20°
-  var STEP = 36;                            // degrees per numeral (ten numerals round the drum)
-  var KX = 160, KY = 50, KR = 17;           // knob centre and radius
-  var KNURLS = 24;
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 176, WNK = 150, H = 100;        // natural size, and the width with the knob hidden
+  const DX = 33, DY = 37, DW = 96, DH = 26; // the drum window
+  const CY = DY + DH / 2;                   // the drums' axis, on screen
+  const R = 38;                             // apparent drum radius (13 px half-window = sin 20°)
+  const STEP = 36;                          // degrees per numeral: ten numerals round the drum
+  const KX = 160, KY = 50, KR = 17;         // reset knob
+  const KN = 24;                            // knurls
 
-  var TPL = document.createElement("template");
-  TPL.innerHTML = [
-  '<style>',
-  '  :host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; }',
-  '  :host([hidden]) { display: none; }',
-  '  .wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
-  '  svg { display: block; overflow: visible; }',
-  '  text { font-family: "Roboto Condensed", "Arial Narrow", "Helvetica Neue", sans-serif; }',
-  '  .fig { font-size: 19px; font-weight: 500; text-anchor: middle; fill: #1a1814; }',
-  '  .mark { font-size: 5px; font-weight: 700; letter-spacing: 0.2em; text-anchor: middle; }',
-  '  .ser { font-size: 4.6px; font-weight: 400; letter-spacing: 0.08em; text-anchor: middle; fill: #4a4c46; }',
-  '  .knob { cursor: default; }',
-  '  :host([resettable]) .knob { cursor: pointer; }',
-  '  .knobhit { fill: transparent; }',
-  '  :host(:focus-visible) { outline: none; }',
-  '  .ring { display: none; }',
-  '  :host(:focus-visible) .ring { display: block; }',
-  '</style>',
-  '<div class="wrap">',
-  '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">',
-  ' <defs>',
-  '  <linearGradient id="zinc" x1="0" y1="0" x2="0.35" y2="1">',
-  '   <stop offset="0" stop-color="#c5c6c0"/><stop offset="0.18" stop-color="#a3a49e"/>',
-  '   <stop offset="0.62" stop-color="#8e8f8a"/><stop offset="1" stop-color="#55574f"/>',
-  '  </linearGradient>',
-  '  <linearGradient id="zinc2" x1="0" y1="0" x2="0.2" y2="1">',
-  '   <stop offset="0" stop-color="#d0d1cb"/><stop offset="0.45" stop-color="#9b9c96"/><stop offset="1" stop-color="#6c6e66"/>',
-  '  </linearGradient>',
-  '  <linearGradient id="rebate" x1="0" y1="0" x2="0.3" y2="1">',
-  '   <stop offset="0" stop-color="#17170f"/><stop offset="1" stop-color="#3a3a33"/>',
-  '  </linearGradient>',
-  '  <linearGradient id="drum" x1="0" y1="0" x2="0" y2="1">',
-  '   <stop offset="0" stop-color="#9a9179"/><stop offset="0.13" stop-color="#cfc5a8"/>',
-  '   <stop offset="0.42" stop-color="#efe6cc"/><stop offset="0.58" stop-color="#eee5ca"/>',
-  '   <stop offset="0.88" stop-color="#c3b99c"/><stop offset="1" stop-color="#8d8571"/>',
-  '  </linearGradient>',
-  '  <linearGradient id="curve" x1="0" y1="0" x2="0" y2="1">',
-  '   <stop offset="0" stop-color="#3a3225" stop-opacity="0.55"/><stop offset="0.16" stop-color="#3a3225" stop-opacity="0.12"/>',
-  '   <stop offset="0.45" stop-color="#3a3225" stop-opacity="0"/><stop offset="0.8" stop-color="#3a3225" stop-opacity="0.14"/>',
-  '   <stop offset="1" stop-color="#2e2819" stop-opacity="0.6"/>',
-  '  </linearGradient>',
-  '  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">',
-  '   <stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="0.46" stop-color="#fff" stop-opacity="0.05"/>',
-  '   <stop offset="0.47" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.03"/>',
-  '  </linearGradient>',
-  '  <linearGradient id="knobg" x1="0" y1="0" x2="0.25" y2="1">',
-  '   <stop offset="0" stop-color="#4c4a45"/><stop offset="0.3" stop-color="#2b2926"/>',
-  '   <stop offset="0.78" stop-color="#131211"/><stop offset="0.93" stop-color="#3a3733"/><stop offset="1" stop-color="#1c1a18"/>',
-  '  </linearGradient>',
-  '  <radialGradient id="hole" cx="38%" cy="32%" r="72%">',
-  '   <stop offset="0" stop-color="#2a2b26"/><stop offset="0.7" stop-color="#4c4e46"/><stop offset="1" stop-color="#7f8079"/>',
-  '  </radialGradient>',
-  '  <filter id="grain" x="0" y="0" width="100%" height="100%">',
-  '   <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="11" result="n"/>',
-  '   <feColorMatrix type="saturate" values="0"/>',
-  '   <feComponentTransfer><feFuncA type="linear" slope="0.1" intercept="0"/></feComponentTransfer>',
-  '  </filter>',
-  '  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>',
-  '  <filter id="tight" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.9"/></filter>',
-  '  <clipPath id="win"><rect x="' + DX + '" y="' + DY + '" width="' + DW + '" height="' + DH + '"/></clipPath>',
-  '  <clipPath id="body"><path d="M 24 5 h 30 v 7 h 86 a 6 6 0 0 1 6 6 v 64 a 6 6 0 0 1 -6 6 h -18 v 7 h -30 v -7 h -38 a 6 6 0 0 1 -6 -6 v -64 a 6 6 0 0 1 6 -6 h 0 z"/></clipPath>',
-  '  <clipPath id="knobclip"><rect x="' + (KX - 13) + '" y="' + (KY - KR) + '" width="26" height="' + (KR * 2) + '" rx="4"/></clipPath>',
-  ' </defs>',
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; outline: none; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    text { font-family: "Roboto Condensed", "Arial Narrow", "Helvetica Neue", sans-serif; }
+    .fig { font-weight: 500; text-anchor: middle; fill: #1a1814; }
+    .mark { font-size: 5px; font-weight: 700; letter-spacing: 0.2em; text-anchor: middle; }
+    .ser { font-size: 4.6px; letter-spacing: 0.08em; text-anchor: middle; fill: #4b4d46; }
+    :host([resettable]) .knob { cursor: pointer; }
+    .hit { fill: transparent; }
+    .ring { display: none; }
+    :host(:focus-visible) .ring { display: block; }
+  </style>
+  <div class="wrap">
+  <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">
+   <defs>
+    <linearGradient id="zinc" x1="0" y1="0" x2="0.35" y2="1">
+     <stop offset="0" stop-color="#c8c9c3"/><stop offset="0.16" stop-color="#a5a6a0"/>
+     <stop offset="0.6" stop-color="#8e8f8a"/><stop offset="1" stop-color="#55574f"/>
+    </linearGradient>
+    <linearGradient id="zinc2" x1="0" y1="0" x2="0.2" y2="1">
+     <stop offset="0" stop-color="#d2d3cd"/><stop offset="0.45" stop-color="#9c9d97"/><stop offset="1" stop-color="#6b6d65"/>
+    </linearGradient>
+    <linearGradient id="rebate" x1="0" y1="0" x2="0.3" y2="1">
+     <stop offset="0" stop-color="#16160f"/><stop offset="1" stop-color="#3a3a33"/>
+    </linearGradient>
+    <linearGradient id="drum" x1="0" y1="0" x2="0" y2="1">
+     <stop offset="0" stop-color="#968d76"/><stop offset="0.13" stop-color="#cdc3a6"/>
+     <stop offset="0.42" stop-color="#efe6cc"/><stop offset="0.58" stop-color="#eee5ca"/>
+     <stop offset="0.88" stop-color="#c0b699"/><stop offset="1" stop-color="#8a826e"/>
+    </linearGradient>
+    <linearGradient id="curve" x1="0" y1="0" x2="0" y2="1">
+     <stop offset="0" stop-color="#352d20" stop-opacity="0.6"/><stop offset="0.17" stop-color="#352d20" stop-opacity="0.12"/>
+     <stop offset="0.45" stop-color="#352d20" stop-opacity="0"/><stop offset="0.8" stop-color="#352d20" stop-opacity="0.16"/>
+     <stop offset="1" stop-color="#2b2417" stop-opacity="0.62"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+     <stop offset="0" stop-color="#fff" stop-opacity="0.14"/><stop offset="0.9" stop-color="#fff" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="knobg" x1="0" y1="0" x2="0.25" y2="1">
+     <stop offset="0" stop-color="#4e4c47"/><stop offset="0.28" stop-color="#2c2a27"/>
+     <stop offset="0.76" stop-color="#121110"/><stop offset="0.92" stop-color="#3b3834"/><stop offset="1" stop-color="#1b1917"/>
+    </linearGradient>
+    <radialGradient id="hole" cx="38%" cy="30%" r="72%">
+     <stop offset="0" stop-color="#262722"/><stop offset="0.68" stop-color="#4b4d45"/><stop offset="1" stop-color="#85867f"/>
+    </radialGradient>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+     <feTurbulence type="fractalNoise" baseFrequency="0.92" numOctaves="3" seed="11"/>
+     <feColorMatrix type="saturate" values="0"/>
+     <feComponentTransfer><feFuncA type="linear" slope="0.11"/></feComponentTransfer>
+    </filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.2"/></filter>
+    <filter id="tight" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>
+    <clipPath id="win"><rect x="${DX}" y="${DY}" width="${DW}" height="${DH}"/></clipPath>
+    <clipPath id="body"><path d="M 24 5 h 30 v 7 h 86 a 6 6 0 0 1 6 6 v 64 a 6 6 0 0 1 -6 6 h -18 v 7 h -30 v -7 h -70 a 6 6 0 0 1 -6 -6 v -64 a 6 6 0 0 1 6 -6 h 2 z"/></clipPath>
+    <clipPath id="knobclip"><rect x="${KX - 13}" y="${KY - KR}" width="26" height="${KR * 2}" rx="4"/></clipPath>
+   </defs>
 
-  ' <!-- ambient + contact shadow on the panel -->',
-  ' <rect x="10" y="18" width="136" height="76" rx="8" fill="#000" opacity="0.5" filter="url(#soft)"/>',
-  ' <rect x="' + (KX - 13) + '" y="' + (KY - KR + 4) + '" width="28" height="' + (KR * 2) + '" rx="5" fill="#000" opacity="0.45" filter="url(#soft)"/>',
+   <!-- ambient and contact shadow on the panel -->
+   <rect x="20" y="17" width="130" height="78" rx="8" fill="#000" opacity="0.5" filter="url(#soft)"/>
+   <rect x="${KX - 11}" y="${KY - KR + 5}" width="26" height="${KR * 2}" rx="5" fill="#000" opacity="0.45" filter="url(#soft)"/>
 
-  ' <!-- the knob: a cylinder on a horizontal shaft, seen edge on -->',
-  ' <g class="knob">',
-  '  <rect x="136" y="45" width="14" height="10" rx="1.5" fill="#43443e"/>',
-  '  <rect x="136" y="45" width="14" height="2" fill="#7e807a" opacity="0.6"/>',
-  '  <rect x="' + (KX - 13) + '" y="' + (KY - KR) + '" width="26" height="' + (KR * 2) + '" rx="4" fill="url(#knobg)" stroke="#0a0a09" stroke-width="0.7"/>',
-  '  <g class="knurl" clip-path="url(#knobclip)"></g>',
-  '  <rect x="' + (KX + 7) + '" y="' + (KY - KR + 1) + '" width="5.5" height="' + (KR * 2 - 2) + '" rx="3" fill="#000" opacity="0.28"/>',
-  '  <rect x="' + (KX + 8.5) + '" y="' + (KY - KR + 2.4) + '" width="1.1" height="' + (KR * 2 - 4.8) + '" rx="0.5" fill="#9a968e" opacity="0.5"/>',
-  '  <rect x="' + (KX - 13) + '" y="' + (KY - KR) + '" width="26" height="6" rx="4" fill="#fff" opacity="0.07"/>',
-  '  <rect class="knobhit" x="' + (KX - 15) + '" y="' + (KY - KR - 2) + '" width="30" height="' + (KR * 2 + 4) + '"/>',
-  '  <rect class="ring" x="' + (KX - 16) + '" y="' + (KY - KR - 3) + '" width="32" height="' + (KR * 2 + 6) + '" rx="6" fill="none" stroke="#49d5e8" stroke-width="1.6"/>',
-  ' </g>',
+   <!-- the reset knob: a cylinder on a horizontal shaft, seen edge-on -->
+   <g class="knob">
+    <rect x="140" y="45.5" width="12" height="9" rx="1.5" fill="#3f403a"/>
+    <rect x="140" y="45.5" width="12" height="1.8" fill="#82847d" opacity="0.55"/>
+    <rect x="${KX - 13}" y="${KY - KR}" width="26" height="${KR * 2}" rx="4" fill="url(#knobg)" stroke="#0a0a09" stroke-width="0.7"/>
+    <g class="knurl" clip-path="url(#knobclip)"></g>
+    <rect x="${KX + 6.5}" y="${KY - KR + 1}" width="6" height="${KR * 2 - 2}" rx="3" fill="#000" opacity="0.3"/>
+    <rect x="${KX + 8.4}" y="${KY - KR + 2.6}" width="1.1" height="${KR * 2 - 5.2}" rx="0.5" fill="#a09c94" opacity="0.45"/>
+    <rect x="${KX - 13}" y="${KY - KR}" width="26" height="5.5" rx="4" fill="#fff" opacity="0.07"/>
+    <rect class="hit" x="${KX - 15}" y="${KY - KR - 2}" width="30" height="${KR * 2 + 4}"/>
+    <rect class="ring" x="${KX - 16}" y="${KY - KR - 3}" width="32" height="${KR * 2 + 6}" rx="6" fill="none" stroke="#49d5e8" stroke-width="1.6"/>
+   </g>
 
-  ' <!-- cast case with two mounting ears -->',
-  ' <g class="case">',
-  '  <path d="M 24 5 h 30 v 7 h 86 a 6 6 0 0 1 6 6 v 64 a 6 6 0 0 1 -6 6 h -18 v 7 h -30 v -7 h -38 a 6 6 0 0 1 -6 -6 v -64 a 6 6 0 0 1 6 -6 h 0 z" fill="url(#zinc)" stroke="#3f4139" stroke-width="0.8"/>',
-  '  <g clip-path="url(#body)"><rect x="0" y="0" width="' + W + '" height="' + H + '" filter="url(#grain)" opacity="0.85"/></g>',
-  '  <path d="M 24 5.6 h 29 M 60 12.4 h 79 a 5 5 0 0 1 5 5" fill="none" stroke="#e2e3dd" stroke-opacity="0.55" stroke-width="0.9"/>',
-  '  <path d="M 10 76 a 6 6 0 0 0 6 6 h 38 v 7 h 29" fill="none" stroke="#3c3e36" stroke-opacity="0.7" stroke-width="0.9"/>',
-  '  <circle cx="39" cy="8.6" r="2.7" fill="url(#hole)"/><circle cx="39" cy="8.6" r="2.7" fill="none" stroke="#3f4139" stroke-width="0.5"/>',
-  '  <circle cx="107" cy="91.4" r="2.7" fill="url(#hole)"/><circle cx="107" cy="91.4" r="2.7" fill="none" stroke="#3f4139" stroke-width="0.5"/>',
-  '  <!-- raised boss where the reset shaft leaves the casting -->',
-  '  <circle cx="139" cy="50" r="7.5" fill="url(#zinc2)" stroke="#43453d" stroke-width="0.6"/>',
-  '  <circle cx="139" cy="50" r="4.4" fill="#2a2b26"/>',
-  ' </g>',
+   <!-- the casting, with two mounting ears -->
+   <g class="case">
+    <path d="M 24 5 h 30 v 7 h 86 a 6 6 0 0 1 6 6 v 64 a 6 6 0 0 1 -6 6 h -18 v 7 h -30 v -7 h -70 a 6 6 0 0 1 -6 -6 v -64 a 6 6 0 0 1 6 -6 h 2 z" fill="url(#zinc)" stroke="#3d3f37" stroke-width="0.8"/>
+    <g clip-path="url(#body)"><rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)"/></g>
+    <path d="M 24.5 5.6 h 29 M 60 12.5 h 79 a 5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="#e8e9e3" stroke-opacity="0.5" stroke-width="0.9"/>
+    <path d="M 16.6 78 a 6 6 0 0 0 6 5.8 M 92.4 94.4 h 29 M 22 87.5 h 69" fill="none" stroke="#33352e" stroke-opacity="0.8" stroke-width="0.9"/>
+    <circle cx="39" cy="8.6" r="2.7" fill="url(#hole)" stroke="#3d3f37" stroke-width="0.5"/>
+    <circle cx="107" cy="91.4" r="2.7" fill="url(#hole)" stroke="#3d3f37" stroke-width="0.5"/>
+    <!-- the raised boss where the reset shaft leaves the casting -->
+    <circle cx="143" cy="50" r="7.5" fill="url(#zinc2)" stroke="#42443c" stroke-width="0.6"/>
+    <circle cx="143" cy="50" r="4.2" fill="#2a2b26"/>
+    <circle cx="143" cy="50" r="4.2" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.8"/>
+   </g>
 
-  ' <!-- cast-in wordmark, raised: lit on the top-left, shadowed below -->',
-  ' <g class="wm">',
-  '  <text class="mark" x="73" y="26.4" fill="#e6e7e1" opacity="0.5"></text>',
-  '  <text class="mark" x="73.5" y="27.4" fill="#41433c" opacity="0.85"></text>',
-  '  <text class="mark markt" x="73.2" y="27" fill="#7b7d76"></text>',
-  ' </g>',
-  ' <text class="ser" x="73" y="80.5"></text>',
+   <!-- the cast-in wordmark: raised, lit on its top-left, shadowed below -->
+   <g class="wm">
+    <text class="mark" x="80.6" y="26.2" fill="#ecede7" opacity="0.5"></text>
+    <text class="mark" x="81.4" y="27.2" fill="#3f413a" opacity="0.85"></text>
+    <text class="mark" x="81" y="26.7" fill="#7d7f78"></text>
+   </g>
+   <text class="ser" x="81" y="80.6"></text>
 
-  ' <!-- window: raised rim, rebate, glass set back, drums -->',
-  ' <rect x="18" y="31" width="110" height="38" rx="5" fill="url(#zinc2)" stroke="#43453d" stroke-width="0.7"/>',
-  ' <path d="M 23 31.6 h 100 a 4 4 0 0 1 4 4" fill="none" stroke="#ecede7" stroke-opacity="0.6" stroke-width="1"/>',
-  ' <path d="M 18.6 64 a 4 4 0 0 0 4 4 h 100" fill="none" stroke="#3a3c34" stroke-opacity="0.8" stroke-width="1"/>',
-  ' <rect x="22" y="34" width="102" height="32" rx="2.5" fill="url(#rebate)"/>',
-  ' <rect x="' + DX + '" y="' + DY + '" width="' + DW + '" height="' + DH + '" fill="url(#drum)"/>',
-  ' <g clip-path="url(#win)">',
-  '  <g class="wheels"></g>',
-  '  <rect x="' + DX + '" y="' + DY + '" width="' + DW + '" height="' + DH + '" fill="url(#curve)"/>',
-  '  <g class="seams"></g>',
-  '  <rect x="' + (DX - 1) + '" y="' + (DY - 1) + '" width="' + (DW + 2) + '" height="' + (DH + 2) + '" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="3" filter="url(#tight)"/>',
-  '  <path d="M ' + DX + ' ' + DY + ' L ' + (DX + 52) + ' ' + DY + ' L ' + (DX + 14) + ' ' + (DY + DH) + ' L ' + DX + ' ' + (DY + DH) + ' Z" fill="url(#glass)"/>',
-  ' </g>',
-  ' <rect x="' + (DX - 0.5) + '" y="' + (DY - 0.5) + '" width="' + (DW + 1) + '" height="' + (DH + 1) + '" fill="none" stroke="#0c0c08" stroke-width="1"/>',
-  '</svg>',
-  '</div>'].join("\n");
+   <!-- the window: a slot in the casting, raised rim, glass set back, the drums behind -->
+   <rect x="26" y="31" width="110" height="38" rx="5" fill="url(#zinc2)" stroke="#42443c" stroke-width="0.7"/>
+   <path d="M 31 31.6 h 100 a 4 4 0 0 1 4 4" fill="none" stroke="#f0f1eb" stroke-opacity="0.55" stroke-width="1"/>
+   <path d="M 26.6 64 a 4 4 0 0 0 4 4 h 100" fill="none" stroke="#35372f" stroke-opacity="0.85" stroke-width="1"/>
+   <rect x="30" y="34" width="102" height="32" rx="2.5" fill="url(#rebate)"/>
+   <rect x="${DX}" y="${DY}" width="${DW}" height="${DH}" fill="url(#drum)"/>
+   <g clip-path="url(#win)">
+    <g class="wheels"></g>
+    <rect x="${DX}" y="${DY}" width="${DW}" height="${DH}" fill="url(#curve)"/>
+    <g class="seams"></g>
+    <rect x="${DX - 1}" y="${DY - 1}" width="${DW + 2}" height="${DH + 2}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="3" filter="url(#tight)"/>
+    <path d="M ${DX} ${DY} L ${DX + 50} ${DY} L ${DX + 12} ${DY + DH} L ${DX} ${DY + DH} Z" fill="url(#glass)"/>
+   </g>
+   <rect x="${DX - 0.5}" y="${DY - 0.5}" width="${DW + 1}" height="${DH + 1}" fill="none" stroke="#0b0b07" stroke-width="1"/>
+  </svg>
+  </div>`;
 
-  function mk(t, a) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+  const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
 
-  var SkCounterVeeder = function () {
-    var self = Reflect.construct(HTMLElement, [], SkCounterVeeder);
-    self.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
-    self._n = 5; self._v = 0; self._disp = 0; self._vel = 0; self._scale = 1;
-    self._raf = 0; self._last = 0; self._reset = 0; self._from = null; self._lab = "";
-    self._svg = self.shadowRoot.querySelector("svg");
-    self._wrap = self.shadowRoot.querySelector(".wrap");
-    self._gW = self.shadowRoot.querySelector(".wheels");
-    self._gS = self.shadowRoot.querySelector(".seams");
-    self._gK = self.shadowRoot.querySelector(".knurl");
-    self._knob = self.shadowRoot.querySelector(".knob");
-    self._tick = self._tick.bind(self);
-    return self;
-  };
-  SkCounterVeeder.prototype = Object.create(HTMLElement.prototype, { constructor: { value: SkCounterVeeder } });
-  Object.setPrototypeOf(SkCounterVeeder, HTMLElement);
-  var P = SkCounterVeeder.prototype;
-
-  SkCounterVeeder.observedAttributes = ["value", "digits", "legend", "serial", "scale", "reset", "resettable"];
-  Object.defineProperty(SkCounterVeeder, "observedAttributes", { get: function () { return ["value", "digits", "legend", "serial", "scale", "reset", "resettable"]; } });
-
-  P.connectedCallback = function () {
-    this.setAttribute("role", "img");
-    if (!this.hasAttribute("tabindex") && this.hasAttribute("resettable")) this.setAttribute("tabindex", "0");
-    this._buildWheels();
-    this._knurl(0);
-    this._read();
-    this._disp = this._v; this._vel = 0;
-    this._paint();
-    if (!this._bound) {
-      this._bound = true;
-      this._knob.addEventListener("click", this._onClick.bind(this));
-      this.addEventListener("keydown", this._onKey.bind(this));
+  class SkCounterVeeder extends HTMLElement {
+    static get observedAttributes() { return ["value", "digits", "legend", "serial", "scale", "reset", "resettable"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._n = 5; this._v = 0; this._disp = 0; this._vel = 0; this._scale = 1;
+      this._raf = 0; this._last = 0; this._rs = 0; this._from = null; this._lab = "";
+      this._svg = this.shadowRoot.querySelector("svg");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._gW = this.shadowRoot.querySelector(".wheels");
+      this._gS = this.shadowRoot.querySelector(".seams");
+      this._gK = this.shadowRoot.querySelector(".knurl");
+      this._knob = this.shadowRoot.querySelector(".knob");
+      this._wheels = [];
+      this._tick = this._tick.bind(this);
     }
-  };
-  P.disconnectedCallback = function () { cancelAnimationFrame(this._raf); this._raf = 0; };
-  P.attributeChangedCallback = function (n, o, v) {
-    if (o === v || !this.isConnected) return;
-    if (n === "digits") { this._read(); this._buildWheels(); this._disp = this._v; this._paint(); return; }
-    this._read();
-    if (n === "value") this._kick(); else this._paint();
-  };
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      if (this.hasAttribute("resettable") && !this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+      this._read();
+      this._buildWheels();
+      this._knurl(0);
+      this._disp = this._v; this._vel = 0;
+      this._paint();
+      if (!this._bound) {
+        this._bound = true;
+        this._knob.addEventListener("click", () => { if (this.hasAttribute("resettable")) this.zero(true); });
+        this.addEventListener("keydown", (e) => {
+          if (!this.hasAttribute("resettable")) return;
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); this.zero(true); }
+        });
+      }
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      const n0 = this._n;
+      this._read();
+      if (n === "digits" && this._n !== n0) { this._buildWheels(); this._disp = this._v; this._paint(); return; }
+      if (n === "value") this._kick(); else this._paint();
+    }
 
-  Object.defineProperty(P, "value", {
-    get: function () { return Math.floor(this._v); },
-    set: function (v) {
+    get value() { return Math.floor(this._v); }
+    set value(v) {
       v = parseFloat(v); if (isNaN(v)) return;
-      var max = Math.pow(10, this._n) - 1;
-      this._v = Math.max(0, Math.min(max, v));
+      this._v = Math.max(0, Math.min(Math.pow(10, this._n) - 1, v));
       this.setAttribute("value", String(Math.round(this._v * 100) / 100));
       this._kick();
     }
-  });
-  Object.defineProperty(P, "scale", { get: function () { return this._scale; }, set: function (s) { this.setAttribute("scale", String(s)); } });
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
 
-  /* a source-specific idle demo: the shaft turns and the counter clicks up */
-  P.demo = function (t) { return (t * 3.4) % Math.pow(10, this._n); };
+    /* the idle demo: the shaft turns and the counter clicks up */
+    demo(t) { return (t * 3.4) % Math.pow(10, this._n); }
 
-  P.reset = function (fromUser) {
-    if (this._reset) return;
-    this._from = this._positions().map(function (p) { return Math.floor(p); });
-    this._reset = 0.0001; this._v = 0; this._disp = 0; this._vel = 0;
-    this.setAttribute("value", "0");
-    this._kick();
-    if (fromUser) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: 0 } }));
-  };
+    /* zero every wheel at once, as the heart cams do */
+    zero(fromUser) {
+      if (this._rs) return;
+      this._from = this._drumPos().map(Math.floor);
+      this._rs = 1e-4; this._v = 0; this._vel = 0; this._disp = 0;
+      this.setAttribute("value", "0");
+      this._kick();
+      if (fromUser) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: 0 } }));
+    }
 
-  P._onClick = function () { if (this.hasAttribute("resettable")) this.reset(true); };
-  P._onKey = function (e) {
-    if (!this.hasAttribute("resettable")) return;
-    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); this.reset(true); }
-  };
+    _read() {
+      const num = (s, d) => { const x = parseFloat(s); return isNaN(x) ? d : x; };
+      this._n = Math.max(2, Math.min(8, Math.round(num(this.getAttribute("digits"), this._n))));
+      this._scale = Math.max(0.2, num(this.getAttribute("scale"), 1));
+      this._v = Math.max(0, Math.min(Math.pow(10, this._n) - 1, num(this.getAttribute("value"), this._v)));
+      const mark = this.getAttribute("legend") || "ROOT COUNTER";
+      this.shadowRoot.querySelectorAll(".mark").forEach(t => { if (t.textContent !== mark) t.textContent = mark; });
+      const ser = this.getAttribute("serial") || "No. 0000";
+      const se = this.shadowRoot.querySelector(".ser"); if (se.textContent !== ser) se.textContent = ser;
+      const hasKnob = this.hasAttribute("reset");
+      this._knob.style.display = hasKnob ? "" : "none";
+      const w = hasKnob ? W : WNK;
+      this._svg.setAttribute("viewBox", `0 0 ${w} ${H}`);
+      this._svg.setAttribute("width", w); this._svg.setAttribute("height", H);
+      this.style.width = (w * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
 
-  P._read = function () {
-    var num = function (s, d) { var x = parseFloat(s); return isNaN(x) ? d : x; };
-    var n = Math.max(2, Math.min(8, Math.round(num(this.getAttribute("digits"), 5))));
-    if (n !== this._n) { this._n = n; }
-    this._scale = Math.max(0.2, num(this.getAttribute("scale"), 1));
-    var max = Math.pow(10, this._n) - 1;
-    this._v = Math.max(0, Math.min(max, num(this.getAttribute("value"), this._v)));
-    var mark = this.getAttribute("legend") || "ROOT COUNTER";
-    var marks = this.shadowRoot.querySelectorAll(".mark");
-    for (var i = 0; i < marks.length; i++) if (marks[i].textContent !== mark) marks[i].textContent = mark;
-    var ser = this.getAttribute("serial") || "No. 0000";
-    var se = this.shadowRoot.querySelector(".ser"); if (se.textContent !== ser) se.textContent = ser;
-    var knob = this.hasAttribute("reset");
-    this._knob.style.display = knob ? "" : "none";
-    var w = knob ? W : WNK;
-    this._svg.setAttribute("viewBox", "0 0 " + w + " " + H);
-    this._svg.setAttribute("width", w); this._svg.setAttribute("height", H);
-    this.style.width = (w * this._scale) + "px";
-    this.style.height = (H * this._scale) + "px";
-    this._wrap.style.transform = "scale(" + this._scale + ")";
-  };
-
-  P._buildWheels = function () {
-    var g = this._gW, s = this._gS;
-    while (g.firstChild) g.removeChild(g.firstChild);
-    while (s.firstChild) s.removeChild(s.firstChild);
-    this._wheels = [];
-    var cw = DW / this._n;
-    var fs = Math.min(19, cw * 1.02);
-    for (var k = 0; k < this._n; k++) {
-      var col = this._n - 1 - k;                        // wheel 0 = units = rightmost column
-      var cx = DX + cw * (col + 0.5);
-      var slots = []; slots.cx = cx;
-      var gw = mk("g", {});
-      for (var j = -1; j <= 1; j++) {
-        var t = mk("text", { x: 0, y: 6.6, class: "fig" });
-        t.style.fontSize = fs.toFixed(1) + "px";
-        t._d = -1;
-        gw.appendChild(t); slots.push(t);
-      }
-      g.appendChild(gw);
-      this._wheels.push(slots);
-      if (k < this._n - 1) {
-        var sx = DX + cw * (col);
-        s.appendChild(mk("rect", { x: sx.toFixed(2), y: DY, width: 0.7, height: DH, fill: "#6d6552", opacity: 0.75 }));
-        s.appendChild(mk("rect", { x: (sx + 0.7).toFixed(2), y: DY, width: 0.5, height: DH, fill: "#fff", opacity: 0.16 }));
+    _buildWheels() {
+      const g = this._gW, s = this._gS;
+      while (g.firstChild) g.removeChild(g.firstChild);
+      while (s.firstChild) s.removeChild(s.firstChild);
+      this._wheels = [];
+      const cw = DW / this._n;
+      const fs = Math.min(19, cw * 1.02);
+      for (let k = 0; k < this._n; k++) {
+        const col = this._n - 1 - k;                 // wheel 0 is the units wheel, the rightmost column
+        const slots = []; slots.cx = DX + cw * (col + 0.5);
+        const gw = mk("g", {});
+        for (let j = -1; j <= 1; j++) {
+          const t = mk("text", { x: 0, y: (fs * 0.35).toFixed(2), class: "fig" });
+          t.style.fontSize = fs.toFixed(1) + "px";
+          t._d = -1;
+          gw.appendChild(t); slots.push(t);
+        }
+        g.appendChild(gw);
+        this._wheels.push(slots);
+        if (k < this._n - 1) {
+          const sx = DX + cw * col;
+          s.appendChild(mk("rect", { x: sx.toFixed(2), y: DY, width: 0.7, height: DH, fill: "#6d6552", opacity: 0.8 }));
+          s.appendChild(mk("rect", { x: (sx + 0.7).toFixed(2), y: DY, width: 0.5, height: DH, fill: "#fff", opacity: 0.18 }));
+        }
       }
     }
-  };
 
-  /* the knurl: ~24 grooves round the knob, placed by angle and foreshortened */
-  P._knurl = function (phase) {
-    var g = this._gK;
-    if (!g.firstChild) {
-      for (var i = 0; i < KNURLS; i++) {
-        g.appendChild(mk("rect", { x: KX - 12, width: 20, fill: "#000", opacity: 0 }));
-        g.appendChild(mk("rect", { x: KX - 12, width: 20, fill: "#8d8a84", opacity: 0 }));
+    /* the knurl: grooves evenly round the knob, placed by angle and foreshortened by cos θ */
+    _knurl(phase) {
+      const g = this._gK;
+      if (!g.firstChild) for (let i = 0; i < KN; i++) {
+        g.appendChild(mk("rect", { x: KX - 13, width: 21, fill: "#000", opacity: 0 }));
+        g.appendChild(mk("rect", { x: KX - 13, width: 21, fill: "#8f8c86", opacity: 0 }));
+      }
+      const d = 360 / KN;
+      for (let k = 0; k < KN; k++) {
+        const th = (phase + k * d) * Math.PI / 180;
+        const c = Math.cos(th);
+        const groove = g.childNodes[k * 2], hi = g.childNodes[k * 2 + 1];
+        if (c <= 0.05) { groove.setAttribute("opacity", 0); hi.setAttribute("opacity", 0); continue; }
+        const y = KY - KR * Math.sin(th);
+        const h = Math.max(0.3, KR * c * (d * Math.PI / 180) * 0.5);
+        groove.setAttribute("y", (y - h / 2).toFixed(2)); groove.setAttribute("height", h.toFixed(2));
+        groove.setAttribute("opacity", (0.52 * c + 0.1).toFixed(3));
+        hi.setAttribute("y", (y - h / 2 - 0.5).toFixed(2)); hi.setAttribute("height", Math.min(0.5, h * 0.55).toFixed(2));
+        hi.setAttribute("opacity", (0.4 * c * c).toFixed(3));
       }
     }
-    var d = 360 / KNURLS, n = g.childNodes.length / 2;
-    for (var k = 0; k < n; k++) {
-      var th = (phase + k * d) * Math.PI / 180;
-      var c = Math.cos(th);
-      var groove = g.childNodes[k * 2], hi = g.childNodes[k * 2 + 1];
-      if (c <= 0.05) { groove.setAttribute("opacity", 0); hi.setAttribute("opacity", 0); continue; }
-      var y = KY - R * 0 - KR * Math.sin(th);
-      var h = Math.max(0.35, KR * c * (d * Math.PI / 180) * 0.52);
-      groove.setAttribute("y", (y - h / 2).toFixed(2)); groove.setAttribute("height", h.toFixed(2));
-      groove.setAttribute("opacity", (0.5 * c + 0.12).toFixed(3));
-      hi.setAttribute("y", (y - h / 2 - 0.55).toFixed(2)); hi.setAttribute("height", Math.min(0.55, h * 0.5).toFixed(2));
-      hi.setAttribute("opacity", (0.42 * c * c).toFixed(3));
+
+    /* the drum position of every wheel: the units wheel rolls all the time,
+       every higher wheel only in the last tenth of the wheel below it */
+    _drumPos() {
+      const out = [], v = this._disp;
+      for (let k = 0; k < this._n; k++) {
+        const x = v / Math.pow(10, k);
+        const fl = Math.floor(x), f = x - fl;
+        const r = (k === 0) ? f : (f > 0.9 ? (f - 0.9) * 10 : 0);
+        out.push((fl % 10) + r);
+      }
+      return out;
     }
-  };
 
-  P._positions = function () {
-    var out = [], v = this._disp;
-    for (var k = 0; k < this._n; k++) {
-      var x = v / Math.pow(10, k);
-      var fl = Math.floor(x), f = x - fl;
-      var d = fl % 10;
-      var r = (k === 0) ? f : (f > 0.9 ? (f - 0.9) * 10 : 0);
-      out.push(d + r);
-    }
-    return out;
-  };
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
 
-  P._kick = function () { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } };
-
-  P._tick = function (now) {
-    var dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
-    if (this._reset) {
-      this._reset = Math.min(1, this._reset + dt / 0.4);
-      this._knurl(-30 * Math.sin(this._reset * Math.PI) * (1 - 0.25 * this._reset));
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      if (this._rs) {
+        this._rs = Math.min(1, this._rs + dt / 0.4);
+        this._knurl(-30 * Math.sin(this._rs * Math.PI));
+        this._paint();
+        if (this._rs >= 1) { this._rs = 0; this._from = null; this._knurl(0); this._paint(); this._raf = 0; return; }
+        this._raf = requestAnimationFrame(this._tick); return;
+      }
+      const diff = this._v - this._disp;
+      if (Math.abs(diff) > 1.2) {                       // a long jump spins and decelerates
+        const sp = Math.min(12, 2.5 + Math.abs(diff) * 1.6) * (diff < 0 ? -1 : 1);
+        this._vel = sp; this._disp += sp * dt;
+      } else {                                          // the ratchet: settles with a small overshoot
+        this._vel += (600 * diff - 34 * this._vel) * dt;
+        this._disp += this._vel * dt;
+        if (Math.abs(this._v - this._disp) < 0.0015 && Math.abs(this._vel) < 0.02) {
+          this._disp = this._v; this._vel = 0; this._paint(); this._raf = 0; return;
+        }
+      }
       this._paint();
-      if (this._reset >= 1) { this._reset = 0; this._from = null; this._knurl(0); this._paint(); this._raf = 0; return; }
-      this._raf = requestAnimationFrame(this._tick); return;
+      this._raf = requestAnimationFrame(this._tick);
     }
-    var diff = this._v - this._disp;
-    if (Math.abs(diff) > 1.2) {
-      var sp = Math.min(12, 2.5 + Math.abs(diff) * 1.6) * (diff < 0 ? -1 : 1);
-      this._vel = sp; this._disp += sp * dt;
-    } else {
-      this._vel += (600 * diff - 34 * this._vel) * dt;      // the ratchet: settles with a small overshoot
-      this._disp += this._vel * dt;
-      if (Math.abs(this._v - this._disp) < 0.0015 && Math.abs(this._vel) < 0.02) {
-        this._disp = this._v; this._vel = 0; this._paint(); this._raf = 0; return;
-      }
-    }
-    this._paint();
-    this._raf = requestAnimationFrame(this._tick);
-  };
 
-  P._paint = function () {
-    var pos;
-    if (this._reset && this._from) {
-      var e = 1 - Math.pow(1 - this._reset, 3);
-      pos = this._from.map(function (d) { return d * (1 - e); });
-    } else pos = this._positions();
-    for (var k = 0; k < this._n && k < pos.length; k++) {
-      var p = Math.max(0, pos[k]);
-      var fl = Math.floor(p), r = p - fl, d = fl % 10;
-      var slots = this._wheels[k];
-      for (var j = -1; j <= 1; j++) {
-        var t = slots[j + 1];
-        var th = (r + j) * STEP * Math.PI / 180;
-        var c = Math.cos(th);
-        var y = CY - R * Math.sin(th);
-        var dg = ((d - j) % 10 + 10) % 10;
-        if (t._d !== dg) { t.textContent = String(dg); t._d = dg; }
-        t.setAttribute("transform", "translate(" + slots.cx.toFixed(2) + "," + y.toFixed(2) + ") scale(1," + Math.max(0, c).toFixed(3) + ")");
-        t.style.opacity = c > 0.1 ? "1" : "0";
+    _paint() {
+      let pos;
+      if (this._rs && this._from) {
+        const e = 1 - Math.pow(1 - this._rs, 3);
+        pos = this._from.map(d => d * (1 - e));
+      } else pos = this._drumPos();
+      for (let k = 0; k < this._wheels.length; k++) {
+        const p = Math.max(0, pos[k] || 0);
+        const fl = Math.floor(p), r = p - fl, d = fl % 10;
+        const slots = this._wheels[k];
+        for (let j = -1; j <= 1; j++) {
+          const t = slots[j + 1];
+          const th = (r + j) * STEP * Math.PI / 180;
+          const c = Math.cos(th), y = CY - R * Math.sin(th);
+          const dg = ((d - j) % 10 + 10) % 10;
+          if (t._d !== dg) { t.textContent = String(dg); t._d = dg; }
+          t.setAttribute("transform", `translate(${slots.cx.toFixed(2)},${y.toFixed(2)}) scale(1,${Math.max(0, c).toFixed(3)})`);
+          t.style.opacity = c > 0.1 ? "1" : "0";
+        }
       }
+      let s = String(Math.floor(this._rs ? 0 : this._disp));
+      while (s.length < this._n) s = "0" + s;
+      if (s !== this._lab) { this._lab = s; this.setAttribute("aria-label", "counter " + s); }
     }
-    var s = String(Math.floor(this._reset ? 0 : this._disp));
-    while (s.length < this._n) s = "0" + s;
-    if (s !== this._lab) { this._lab = s; this.setAttribute("aria-label", "counter " + s); }
-  };
-
+  }
   customElements.define("sk-counter-veeder-root", SkCounterVeeder);
 })();
 </script>

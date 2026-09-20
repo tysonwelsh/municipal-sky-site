@@ -105,7 +105,7 @@
     return out;
   }
   function knurl() {                           // the knurled ring under the dome, same projection
-    let out = ""; const N = 54, Rk = 84;
+    let out = ""; const N = 54, Rk = 88;
     for (let i = 0; i < N; i++) {
       const th = i * 2 * Math.PI / N, c = Math.cos(th);
       if (c <= 0.03) continue;
@@ -117,8 +117,8 @@
     return out;
   }
 
-  const SKIRT = "M 18 180 C 18 194 10 198 5 208 L 3 214 L 197 214 L 195 208 C 190 198 182 194 182 180 Z";
-  const RING = "M 16 163 L 184 163 L 182 181 L 18 181 Z";
+  const SKIRT = "M 15 180 C 15 194 8 198 4 208 L 2 214 L 198 214 L 196 208 C 192 198 185 194 185 180 Z";
+  const RING = "M 12 163 L 188 163 L 186 181 L 14 181 Z";
 
   const TPL = document.createElement("template");
   TPL.innerHTML = `
@@ -259,13 +259,13 @@
       <g clip-path="url(#baseclip)">
         ${knurl()}
         <!-- the ground reflected in the flared skirt -->
-        <path d="M 3 202 L 197 202 L 197 214 L 3 214 Z" fill="#1a1d21" opacity="0.4"/>
-        <path d="M 3 199 L 197 199 L 197 202 L 3 202 Z" fill="#f2f4f6" opacity="0.35"/>
+        <path d="M 2 202 L 198 202 L 198 214 L 2 214 Z" fill="#1a1d21" opacity="0.4"/>
+        <path d="M 2 199 L 198 199 L 198 202 L 2 202 Z" fill="#f2f4f6" opacity="0.35"/>
         <!-- the beam washing across the chrome -->
         <rect class="cast" x="0" y="158" width="${W}" height="58" style="fill:var(--spill)" opacity="0"/>
       </g>
-      <path d="M 18 164 L 182 164" stroke="#ffffff" stroke-opacity="0.8" stroke-width="1"/>
-      <path d="M 18 181 L 182 181" stroke="#0d1013" stroke-opacity="0.7" stroke-width="1"/>
+      <path d="M 14 164 L 186 164" stroke="#ffffff" stroke-opacity="0.8" stroke-width="1"/>
+      <path d="M 15 181 L 185 181" stroke="#0d1013" stroke-opacity="0.7" stroke-width="1"/>
       <text class="badge" x="${CX}" y="193">BEACON RAY</text>
       <text class="badge2" x="${CX}" y="199.5">MODEL 17</text>
     </svg>
