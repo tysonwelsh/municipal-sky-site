@@ -173,11 +173,11 @@
   '    <line x1="34" y1="78.5" x2="166" y2="78.5" stroke="#1c1b18" stroke-opacity="0.4" stroke-width="0.5"/>',
   '    <g class="reg">' + dials() + '</g>',
   '    ' + caps(),
-  '    <text class="kwh" x="100" y="140">KILOWATTHOURS</text>',
-  '    <line x1="34" y1="146" x2="166" y2="146" stroke="#1c1b18" stroke-opacity="0.4" stroke-width="0.5"/>',
-  '    <text class="mono" x="34" y="155">Kh 7.2</text>',
-  '    <text class="mono" x="166" y="155" text-anchor="end">240V  TYPE I-50</text>',
-  '    <text class="sub" x="100" y="155.5">MULTIPLY BY 1</text>',
+  '    <text class="sub" x="100" y="134">MULTIPLY BY 1</text>',
+  '    <text class="kwh" x="100" y="144">KILOWATTHOURS</text>',
+  '    <line x1="34" y1="149" x2="166" y2="149" stroke="#1c1b18" stroke-opacity="0.4" stroke-width="0.5"/>',
+  '    <text class="mono" x="34" y="157">Kh 7.2</text>',
+  '    <text class="mono" x="166" y="157" text-anchor="end">240V  TYPE I-50</text>',
   '    <!-- spindle -->',
   '    <rect x="98.8" y="160" width="2.4" height="20" fill="#3c3e3f"/>',
   '    <!-- brake magnets -->',
@@ -216,7 +216,7 @@
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
       this._kwh = 0; this._rate = 0; this._kh = 7.2; this._run = true; this._scale = 1;
-      this._theta = Math.random() * Math.PI * 2;
+      this._theta = (Math.random() - 0.5) * 2.4;   // stopped at a random mark angle, on the visible side
       this._raf = 0; this._last = 0; this._self = false; this._said = -1;
       this._wrap = this.shadowRoot.querySelector(".wrap");
       this._ptrs = this.shadowRoot.querySelectorAll(".ptr");

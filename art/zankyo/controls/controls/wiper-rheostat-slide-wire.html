@@ -89,17 +89,22 @@
   'text { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; }',
   '.lbl { font-family: "Special Elite", "Courier New", monospace; font-size: 6px; fill: #2a2a2a; text-anchor: middle; }',
   '.cast { font-size: 3.4px; font-weight: 500; letter-spacing: 0.18em; text-anchor: middle; fill: #8f8f8a; opacity: 0.55; }',
-  '.tag { font-size: 5.2px; font-weight: 500; letter-spacing: 0.22em; text-anchor: middle; fill: #7c776c; }',
+  '.tag { font-size: 5.4px; font-weight: 500; letter-spacing: 0.22em; text-anchor: middle; fill: #4e4a42; opacity: 0.8; }',
   '</style>',
   '<div class="wrap">',
   '<svg viewBox="0 0 ', W, ' ', H, '" aria-hidden="true">',
   '<defs>',
     /* the wound cylinder, lit from above-left */
     '<linearGradient id="cyl" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#4c4b46"/><stop offset="0.08" stop-color="#7c7a71"/>',
-      '<stop offset="0.24" stop-color="#a3a197"/><stop offset="0.44" stop-color="#8c8a80"/>',
-      '<stop offset="0.74" stop-color="#55544e"/><stop offset="0.9" stop-color="#6e6d66"/>',
-      '<stop offset="1" stop-color="#3a3935"/></linearGradient>',
+      '<stop offset="0" stop-color="#3b3a36"/><stop offset="0.07" stop-color="#6b6961"/>',
+      '<stop offset="0.20" stop-color="#9a988e"/><stop offset="0.40" stop-color="#8c8a80"/>',
+      '<stop offset="0.70" stop-color="#4e4d48"/><stop offset="0.88" stop-color="#63625c"/>',
+      '<stop offset="1" stop-color="#2e2d2a"/></linearGradient>',
+    '<linearGradient id="tmg" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#000"/><stop offset="0.10" stop-color="#4a4a4a"/>',
+      '<stop offset="0.26" stop-color="#ffffff"/><stop offset="0.58" stop-color="#e8e8e8"/>',
+      '<stop offset="0.80" stop-color="#5a5a5a"/><stop offset="1" stop-color="#0c0c0c"/></linearGradient>',
+    '<mask id="tmask"><rect x="0" y="', TT, '" width="', W, '" height="', (TB - TT), '" fill="url(#tmg)"/></mask>',
     '<linearGradient id="porc" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#bdb9ae"/><stop offset="0.22" stop-color="#e6e2d8"/>',
       '<stop offset="0.6" stop-color="#cdc9bd"/><stop offset="1" stop-color="#8e8b82"/></linearGradient>',
@@ -114,8 +119,8 @@
       '<stop offset="1" stop-color="#b8b6ac" stop-opacity="0"/></linearGradient>',
     '<pattern id="turns" width="1.7" height="4" patternUnits="userSpaceOnUse">',
       '<rect width="1.7" height="4" fill="none"/>',
-      '<line x1="0.30" y1="0" x2="0.30" y2="4" stroke="#33322e" stroke-opacity="0.8" stroke-width="0.66"/>',
-      '<line x1="1.08" y1="0" x2="1.08" y2="4" stroke="#cfcdc3" stroke-opacity="0.26" stroke-width="0.4"/>',
+      '<line x1="0.30" y1="0" x2="0.30" y2="4" stroke="#2b2a27" stroke-opacity="0.85" stroke-width="0.68"/>',
+      '<line x1="1.06" y1="0" x2="1.06" y2="4" stroke="#bdbbb1" stroke-opacity="0.30" stroke-width="0.42"/>',
     '</pattern>',
     '<linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#6e5525"/><stop offset="0.14" stop-color="#d9b76c"/>',
@@ -146,11 +151,11 @@
   '<rect x="', TUBE_L, '" y="', TT, '" width="18" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
   '<rect x="', (TUBE_R - 18), '" y="', TT, '" width="18" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
   '<rect x="', (TUBE_L + 16), '" y="', TT, '" width="', (TUBE_R - TUBE_L - 32), '" height="', (TB - TT), '" fill="url(#cyl)"/>',
-  '<rect x="', (TUBE_L + 16), '" y="', TT, '" width="', (TUBE_R - TUBE_L - 32), '" height="', (TB - TT), '" fill="url(#turns)"/>',
-  /* the pale track the shoe has worn along the crest */
-  '<rect x="', (TUBE_L + 16), '" y="', (TT + 3), '" width="', (TUBE_R - TUBE_L - 32), '" height="6.5" fill="url(#worn)"/>',
+  '<rect x="', (TUBE_L + 16), '" y="', TT, '" width="', (TUBE_R - TUBE_L - 32), '" height="', (TB - TT), '" fill="url(#turns)" mask="url(#tmask)"/>',
   /* the cylinder's own shading, over the turns, so they compress at the crest and the underside */
   '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="4" fill="url(#cylsh)"/>',
+  /* the pale track the shoe has worn along the crest */
+  '<rect x="', (TUBE_L + 16), '" y="', (TT + 4), '" width="', (TUBE_R - TUBE_L - 32), '" height="6" fill="url(#worn)"/>',
   '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="4" fill="none" stroke="#141412" stroke-opacity="0.65" stroke-width="0.7"/>',
 
   /* ---- the cast-iron end frames ---- */
@@ -158,7 +163,7 @@
 
   /* ---- the brass bar ---- */
   '<rect x="18" y="38" width="324" height="7.5" rx="1.6" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.5"/>',
-  '<rect class="polish" x="', SX0, '" y="39.2" width="10" height="2.4" rx="1.2" fill="#f7e6b6" opacity="0.6"/>',
+  '<rect class="polish" x="', SX0, '" y="39" width="10" height="3" rx="1.4" fill="#fdf0c4" opacity="0.72"/>',
   '<rect x="18" y="38.8" width="324" height="1" fill="#fdf2c9" opacity="0.42"/>',
   '<rect x="18" y="44.2" width="324" height="1.1" fill="#2b2008" opacity="0.4"/>',
 
@@ -286,14 +291,15 @@
       var tg = r.querySelector(".terms");
       [[18, 64], [36, 64], [334, 64]].forEach(function (t) {
         var x = t[0], y = t[1];
-        tg.appendChild(mk("ellipse", { cx: x + 1.5, cy: y + 2.5, rx: 7, ry: 4, fill: "#000", opacity: 0.5, filter: "url(#s1)" }));
-        tg.appendChild(mk("rect", { x: x - 6.5, y: y - 3.4, width: 13, height: 6.8, rx: 2, fill: "url(#brass)", stroke: "#4e3a13", "stroke-width": 0.5 }));
-        for (i = 0; i < 9; i++) {
-          tg.appendChild(mk("line", { x1: x - 5.2 + i * 1.3, y1: y - 2.8, x2: x - 5.2 + i * 1.3, y2: y + 2.8,
-            stroke: "#5d4718", "stroke-width": 0.45, "stroke-opacity": 0.55 }));
+        tg.appendChild(mk("ellipse", { cx: x + 2, cy: y + 4, rx: 8, ry: 4, fill: "#000", opacity: 0.55, filter: "url(#s1)" }));
+        tg.appendChild(mk("rect", { x: x - 2.6, y: y - 10, width: 5.2, height: 8, rx: 1.2, fill: "url(#brass)", stroke: "#4e3a13", "stroke-width": 0.4 }));
+        tg.appendChild(mk("rect", { x: x - 7.5, y: y - 4.4, width: 15, height: 8.8, rx: 2.6, fill: "url(#brass)", stroke: "#4e3a13", "stroke-width": 0.5 }));
+        for (i = 0; i < 11; i++) {
+          tg.appendChild(mk("line", { x1: x - 6.2 + i * 1.24, y1: y - 3.6, x2: x - 6.2 + i * 1.24, y2: y + 3.6,
+            stroke: "#4e3a13", "stroke-width": 0.42, "stroke-opacity": 0.5 }));
         }
-        tg.appendChild(mk("rect", { x: x - 6.5, y: y - 3, width: 13, height: 1, fill: "#fdf2c9", opacity: 0.5 }));
-        tg.appendChild(mk("circle", { cx: x, cy: y - 5.4, r: 2.4, fill: "url(#brassblk)", stroke: "#4e3a13", "stroke-width": 0.4 }));
+        tg.appendChild(mk("rect", { x: x - 7, y: y - 4, width: 14, height: 1.2, rx: 0.6, fill: "#fdf2c9", opacity: 0.55 }));
+        tg.appendChild(mk("ellipse", { cx: x, cy: y - 10.4, rx: 3.1, ry: 2.2, fill: "url(#brassblk)", stroke: "#4e3a13", "stroke-width": 0.4 }));
       });
     }
 

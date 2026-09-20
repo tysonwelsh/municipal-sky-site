@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carpenter&#39;s level vial in a brass port — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "level-stanley-vial-brass-port",
+  "element": "sk-level-vial",
+  "name": "Carpenter's level vial in a brass port",
+  "kind": "output",
+  "code": "F10",
+  "type": "Spirit level vial",
+  "source": "The barrel vial of a Stanley No. 30-series rosewood-and-brass carpenter's level",
+  "era": "1930s",
+  "origin": "USA",
+  "materials": ["glass", "spirit", "cast brass", "rosewood", "aluminium"],
+  "tags": ["tool", "bubble", "spirit level", "brass", "rosewood", "signed value"],
+  "value": { "model": "range", "min": -1, "max": 1, "step": 0.01, "unit": "°" },
+  "attributes": ["value", "body", "legend", "scale"],
+  "events": [],
+  "size": { "w": 180, "h": 70 },
+  "notes": "Three vials: dead level at 0, +0.40 with the bubble against the right line, and −0.90 in an aluminium body. The bubble overshoots and wobbles before it settles."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-level-vial value="0"></sk-level-vial>
+    <sk-level-vial value="0.4"></sk-level-vial>
+    <sk-level-vial value="-0.9" body="aluminium" scale="0.8" legend="LEVEL &#183; No. 30A"></sk-level-vial>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>Stanley No. 30-series</b> level is a rosewood beam bound in brass with a cast-brass port let into
+  its face, and inside the port a barrel-ground glass vial of green-yellow spirit with a bubble in it. Two
+  black lines are etched around the glass; when the bubble sits squarely between them the work is level, and
+  a carpenter will tap the beam and watch the bubble swim back and forth before believing it.</p>
+  <p><b>The tells kept here:</b> the vial is <i>barrel</i>-ground, so the bore rises toward the middle and the
+  bubble is biggest and brightest at the centre of its travel, squashing and dimming as it runs to the ends;
+  it rides <i>above</i> the fluid's centre line, hugging the top of the glass, with a white crescent at its
+  top-left, a dark green rim, and a soft shadow dropped on the fluid beneath it. The two etched lines read as
+  short vertical ellipses and thicken where the bubble's curvature refracts them. The brass port's opening is
+  chamfered — bright along its top edge, dark along its lower one — with a dark inner shadow on the glass, two
+  flat-head screws whose slots sit at whatever angle they stopped at, and a line of grime in the joint against
+  the wood. The maker's line is engraved, not printed. The bubble is light and the spirit is viscous: it
+  overshoots about a tenth, wobbles twice, and never quite stops trembling. Driven past ±1 it pins against the
+  end of the vial, flattened. <code>body="aluminium"</code> swaps the rosewood for a grained alloy beam.</p>
+  <p><b>Left out:</b> the level's other two vials (plumb and 45°), the brass top plate with its oval maker's
+  stamp, and the dozen dents a century of site work leaves in the binding.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-level-vial> — carpenter's spirit-level vial in a cast-brass port ====
+   attributes: value (-1..+1 degrees of tilt) body("rosewood"|"aluminium") legend scale
+   no events (an output). set .value or the attribute; the bubble slides with a lag and a wobble.
+   self-contained: paste this block into any page and use <sk-level-vial value="0.3"></sk-level-vial> */
+(function () {
+  if (customElements.get("sk-level-vial")) return;
+  const W = 180, H = 70;
+  const MID = 90;                  // the vial's centre, in px
+  const K = 26;                    // px of bubble travel per unit of value
+  const PIN = 28;                  // the bubble pins here, against the end of the bore
+  const BRX = 14, BRY = 7;         // the bubble at the centre of its travel
+  const LINE = 27;                 // the etched lines: the bubble touches them at +/- 0.5
+
+  const BORE = "M 50 35 Q 50 28.4 57.5 27.3 Q 90 24.6 122.5 27.3 Q 130 28.4 130 35 " +
+               "Q 130 41.6 122.5 43.0 Q 90 44.6 57.5 43.0 Q 50 41.6 50 35 Z";
+  const GLASS = "M 46.6 35 Q 46.6 27.3 55.8 26.1 Q 90 23.2 124.2 26.1 Q 133.4 27.3 133.4 35 " +
+                "Q 133.4 42.7 124.2 43.9 Q 90 46.1 55.8 43.9 Q 46.6 42.7 46.6 35 Z";
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .mk { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; font-weight: 600;
+          font-size: 5px; letter-spacing: 0.3em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="rose" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7a3f2a"/><stop offset="0.35" stop-color="#5a2a1b"/>
+          <stop offset="0.8" stop-color="#4a2318"/><stop offset="1" stop-color="#361a11"/>
+        </linearGradient>
+        <linearGradient id="alu" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#dcdedb"/><stop offset="0.4" stop-color="#c9cbc7"/>
+          <stop offset="0.85" stop-color="#a7a9a6"/><stop offset="1" stop-color="#8e908d"/>
+        </linearGradient>
+        <linearGradient id="bind" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f0dda2"/><stop offset="0.3" stop-color="#c9a24c"/>
+          <stop offset="0.75" stop-color="#8e6c2c"/><stop offset="1" stop-color="#6e5220"/>
+        </linearGradient>
+        <linearGradient id="port" x1="0.12" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#e3cd85"/><stop offset="0.18" stop-color="#c9a24c"/>
+          <stop offset="0.6" stop-color="#9a7733"/><stop offset="1" stop-color="#6e5220"/>
+        </linearGradient>
+        <linearGradient id="chamf" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f7e9b4"/><stop offset="0.25" stop-color="#d3ab55"/>
+          <stop offset="0.62" stop-color="#6b4f1d"/><stop offset="1" stop-color="#3a2a0e"/>
+        </linearGradient>
+        <radialGradient id="scr" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#f5e6ad"/><stop offset="0.55" stop-color="#bd9846"/><stop offset="1" stop-color="#5d451a"/>
+        </radialGradient>
+        <linearGradient id="fluid" gradientUnits="userSpaceOnUse" x1="50" y1="0" x2="130" y2="0">
+          <stop offset="0" stop-color="#7ea132"/><stop offset="0.12" stop-color="#9dc23e"/>
+          <stop offset="0.5" stop-color="#b8d64a"/><stop offset="0.88" stop-color="#9dc23e"/>
+          <stop offset="1" stop-color="#7ea132"/>
+        </linearGradient>
+        <linearGradient id="fdep" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#3f5a10" stop-opacity="0.5"/>
+        </linearGradient>
+        <radialGradient id="bub" cx="34%" cy="26%" r="78%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#f3f7e8"/>
+          <stop offset="0.85" stop-color="#e2ecc9"/><stop offset="1" stop-color="#c9daa4"/>
+        </radialGradient>
+        <clipPath id="bore"><path d="${BORE}"/></clipPath>
+        <clipPath id="bubclip"><ellipse class="bc" cx="90" cy="33" rx="14" ry="7"/></clipPath>
+        <filter id="s05" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.55"/></filter>
+        <filter id="s12" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="s25" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+      </defs>
+
+      <!-- the beam: a scrap of the level body -->
+      <g class="wood">
+        <rect x="0" y="4" width="${W}" height="62" rx="3" fill="url(#rose)"/>
+        <g opacity="0.3" stroke="#2c1509" stroke-width="0.8" fill="none">
+          <path d="M -4 14 Q 60 11 184 16"/><path d="M -4 24 Q 70 21 184 25"/>
+          <path d="M -4 40 Q 56 37 184 42"/><path d="M -4 52 Q 74 49 184 53"/>
+        </g>
+        <g opacity="0.2" stroke="#a5613c" stroke-width="0.6" fill="none">
+          <path d="M -4 19 Q 64 16 184 20"/><path d="M -4 46 Q 66 43 184 47"/><path d="M -4 58 Q 60 55 184 60"/>
+        </g>
+      </g>
+      <g class="metal" style="display:none">
+        <rect x="0" y="4" width="${W}" height="62" rx="3" fill="url(#alu)"/>
+        <g opacity="0.5" stroke="#ffffff" stroke-width="0.5" fill="none">
+          <path d="M 0 12 H 180"/><path d="M 0 20 H 180"/><path d="M 0 30 H 180"/>
+          <path d="M 0 42 H 180"/><path d="M 0 52 H 180"/><path d="M 0 60 H 180"/>
+        </g>
+        <g opacity="0.3" stroke="#6f7270" stroke-width="0.5" fill="none">
+          <path d="M 0 16 H 180"/><path d="M 0 26 H 180"/><path d="M 0 37 H 180"/>
+          <path d="M 0 47 H 180"/><path d="M 0 57 H 180"/>
+        </g>
+      </g>
+      <!-- brass edge binding, top and bottom -->
+      <rect x="0" y="4" width="${W}" height="5.6" fill="url(#bind)"/>
+      <rect x="0" y="4" width="${W}" height="0.9" fill="#ffeeb6" opacity="0.75"/>
+      <rect x="0" y="9.6" width="${W}" height="0.8" fill="#1a0f06" opacity="0.6"/>
+      <rect x="0" y="60.4" width="${W}" height="5.6" fill="url(#bind)"/>
+      <rect x="0" y="60.4" width="${W}" height="0.8" fill="#ffeeb6" opacity="0.5"/>
+      <rect x="0" y="4" width="${W}" height="62" rx="3" fill="none" stroke="#120a05" stroke-opacity="0.75" stroke-width="1"/>
+
+      <!-- the cast-brass port, screwed to the beam -->
+      <rect x="31" y="13" width="120" height="48" rx="5" fill="#000" opacity="0.45" filter="url(#s25)"/>
+      <rect x="30" y="11" width="120" height="48" rx="5" fill="url(#port)" stroke="#3e2d0f" stroke-width="0.8"/>
+      <path d="M 35 11.8 L 145 11.8" stroke="#ffeeb6" stroke-opacity="0.65" stroke-width="0.9"/>
+      <path d="M 30.6 18 Q 30.6 11.6 37 11.6" fill="none" stroke="#ffeeb6" stroke-opacity="0.45" stroke-width="0.8"/>
+      <rect x="30" y="11" width="120" height="48" rx="5" fill="none" stroke="#2b1d08" stroke-opacity="0.55" stroke-width="1.6" filter="url(#s12)"/>
+      <!-- a line of grime where the port meets the wood -->
+      <rect x="30.8" y="11.8" width="120" height="48" rx="5" fill="none" stroke="#1a1207" stroke-opacity="0.35" stroke-width="1.3" filter="url(#s12)"/>
+
+      <!-- the chamfered opening: bright along the top, dark along the bottom -->
+      <rect x="41" y="22" width="98" height="26" rx="12" fill="url(#chamf)"/>
+      <rect x="42.6" y="23.6" width="94.8" height="22.8" rx="10.4" fill="#231a0c"/>
+      <g clip-path="url(#bore)">
+        <!-- the spirit -->
+        <path d="${BORE}" fill="url(#fluid)"/>
+        <path d="${BORE}" fill="url(#fdep)"/>
+        <!-- the bubble's shadow on the fluid -->
+        <ellipse class="sh" cx="90" cy="40" rx="11" ry="2.2" fill="#4a6612" opacity="0.4" filter="url(#s12)"/>
+        <!-- the bubble -->
+        <ellipse class="bu" cx="90" cy="33" rx="${BRX}" ry="${BRY}" fill="url(#bub)" stroke="#6f8f22" stroke-width="0.9"/>
+        <ellipse class="hi" cx="85" cy="30" rx="4.8" ry="1.5" fill="#ffffff" opacity="0.9" filter="url(#s05)"/>
+        <!-- the two etched lines, and their refraction across the bubble -->
+        <g class="etch">
+          <ellipse cx="${MID - LINE}" cy="35" rx="2.7" ry="8.6" fill="none" stroke="#111" stroke-width="1.4"/>
+          <ellipse cx="${MID + LINE}" cy="35" rx="2.7" ry="8.6" fill="none" stroke="#111" stroke-width="1.4"/>
+        </g>
+        <g clip-path="url(#bubclip)">
+          <ellipse cx="${MID - LINE}" cy="35" rx="2.9" ry="8.8" fill="none" stroke="#0c0c0c" stroke-width="2.2"/>
+          <ellipse cx="${MID + LINE}" cy="35" rx="2.9" ry="8.8" fill="none" stroke="#0c0c0c" stroke-width="2.2"/>
+        </g>
+        <!-- the glass: one long glint along the top, a cooler one below -->
+        <path d="M 58 28.6 Q 90 26.0 122 28.6" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="1.5" filter="url(#s05)"/>
+        <path d="M 66 41.6 Q 90 43.2 114 41.6" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1" filter="url(#s05)"/>
+        <!-- the dark inner shadow the chamfer throws on the glass -->
+        <path d="${GLASS}" fill="none" stroke="#1a1405" stroke-opacity="0.55" stroke-width="3" filter="url(#s12)"/>
+      </g>
+      <!-- the glass tube's own edge, and the dark ends of the vial in the port -->
+      <path d="${GLASS}" fill="none" stroke="#e9f2c8" stroke-opacity="0.3" stroke-width="0.8"/>
+      <rect x="42.6" y="23.6" width="94.8" height="22.8" rx="10.4" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="3.4" filter="url(#s12)"/>
+      <rect x="41" y="22" width="98" height="26" rx="12" fill="none" stroke="#2b1d08" stroke-width="0.7"/>
+      <path d="M 53 22.5 L 127 22.5" stroke="#ffeeb6" stroke-opacity="0.55" stroke-width="0.8"/>
+
+      <!-- two flat-head screws, slots wherever they stopped -->
+      <g><circle cx="35.6" cy="35" r="4.6" fill="#241a08" opacity="0.6"/>
+         <circle cx="35.6" cy="34.7" r="4.1" fill="url(#scr)" stroke="#43310f" stroke-width="0.5"/>
+         <rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#3a2a0c" transform="translate(35.6 34.7) rotate(37)"/></g>
+      <g><circle cx="144.4" cy="35" r="4.6" fill="#241a08" opacity="0.6"/>
+         <circle cx="144.4" cy="34.7" r="4.1" fill="url(#scr)" stroke="#43310f" stroke-width="0.5"/>
+         <rect x="-3.2" y="-0.55" width="6.4" height="1.1" fill="#3a2a0c" transform="translate(144.4 34.7) rotate(-68)"/></g>
+
+      <!-- the maker's line, engraved into the brass -->
+      <text class="mk" x="90" y="55.4" fill="#f0dfa8" opacity="0.5">LEVEL &#183; No. 30</text>
+      <text class="mk lg" x="90" y="54.8" fill="#4a360f">LEVEL &#183; No. 30</text>
+    </svg>
+  </div>`;
+
+  class SkLevelVial extends HTMLElement {
+    static get observedAttributes() { return ["value", "body", "legend", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._x = 0; this._vel = 0; this._scale = 1; this._lock = false;
+      this._raf = 0; this._last = 0; this._t = 0; this._px = -999;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._bu = $(".bu"); this._hi = $(".hi"); this._sh = $(".sh"); this._bc = $(".bc");
+      this._wood = $(".wood"); this._metal = $(".metal");
+      this._lg = $(".lg"); this._lgs = this.shadowRoot.querySelectorAll(".mk")[0];
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs();
+      this._x = this._v; this._vel = 0; this._paint(this._x, 0);
+      this._start();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v) return;
+      if (n === "value") {
+        if (this._lock) return;
+        const x = parseFloat(v); if (!isNaN(x)) { this._v = x; this._aria(); }
+        return;
+      }
+      this._readAttrs();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.max(-3, Math.min(3, v));
+      this._lock = true; this.setAttribute("value", String(Math.round(this._v * 100) / 100)); this._lock = false;
+      this._aria();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { return 0.62 * Math.sin(t * 0.45) + 0.24 * Math.sin(t * 1.21 + 0.8); }
+
+    _aria() {
+      this.setAttribute("aria-valuemin", "-1"); this.setAttribute("aria-valuemax", "1");
+      const v = Math.round(this._v * 100) / 100;
+      this.setAttribute("aria-valuenow", String(v));
+      const t = Math.abs(v) < 0.02 ? "level" : (v > 0 ? v.toFixed(2) + " degrees high on the right"
+                                                      : Math.abs(v).toFixed(2) + " degrees high on the left");
+      this.setAttribute("aria-valuetext", t);
+      this.setAttribute("aria-label", (this.getAttribute("legend") || "spirit level") + ", " + t);
+    }
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      const v = parseFloat(this.getAttribute("value"));
+      if (!isNaN(v)) this._v = Math.max(-3, Math.min(3, v));
+      const alu = (this.getAttribute("body") || "rosewood").toLowerCase() === "aluminium";
+      this._wood.style.display = alu ? "none" : "";
+      this._metal.style.display = alu ? "" : "none";
+      const lg = this.getAttribute("legend") || "LEVEL · No. 30";
+      if (this._lg.textContent !== lg) { this._lg.textContent = lg; this._lgs.textContent = lg; }
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._aria();
+    }
+    _start() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      this._t += dt;
+      const k = 130, c = 13;                  // ~10 % overshoot, a wobble, settled in 600 ms
+      this._vel += (k * (this._v - this._x) - c * this._vel) * dt;
+      this._x += this._vel * dt;
+      const tremor = 0.22 * Math.sin(this._t * 7.3) + 0.13 * Math.sin(this._t * 12.1 + 1.7);
+      this._paint(this._x, tremor);
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint(x, tremor) {
+      let off = K * x;
+      off = Math.max(-PIN, Math.min(PIN, off)) + tremor;
+      if (Math.abs(off - this._px) < 0.02) return;
+      this._px = off;
+      const u = Math.min(1, Math.abs(off) / PIN);
+      const rx = BRX - 4.2 * u * u, ry = BRY - 1.4 * u * u;
+      const cx = MID + off;
+      const boreTop = 27.3 - 1.5 * (1 - Math.min(1, Math.pow((cx - MID) / 40, 2)));
+      const cy = boreTop + ry + 0.55;
+      const b = this._bu;
+      b.setAttribute("cx", cx.toFixed(2)); b.setAttribute("cy", cy.toFixed(2));
+      b.setAttribute("rx", rx.toFixed(2)); b.setAttribute("ry", ry.toFixed(2));
+      const c2 = this._bc;
+      c2.setAttribute("cx", cx.toFixed(2)); c2.setAttribute("cy", cy.toFixed(2));
+      c2.setAttribute("rx", (rx + 0.6).toFixed(2)); c2.setAttribute("ry", (ry + 0.6).toFixed(2));
+      const h = this._hi;
+      h.setAttribute("cx", (cx - rx * 0.3).toFixed(2)); h.setAttribute("cy", (cy - ry * 0.44).toFixed(2));
+      h.setAttribute("rx", (rx * 0.34).toFixed(2)); h.setAttribute("ry", (ry * 0.21).toFixed(2));
+      const s = this._sh;
+      s.setAttribute("cx", (cx + 0.6).toFixed(2)); s.setAttribute("cy", (cy + ry * 0.98).toFixed(2));
+      s.setAttribute("rx", (rx * 0.82).toFixed(2)); s.setAttribute("ry", (ry * 0.3).toFixed(2));
+    }
+  }
+  customElements.define("sk-level-vial", SkLevelVial);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

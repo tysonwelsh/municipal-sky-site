@@ -68,7 +68,7 @@
 
   const W = 480, H = 96;
   const WX = 10, WY = 12, WW = 460, WH = 68;        // the glass window
-  const X0 = 58, X1 = 428;                          // the printed FM scale, 88 → 108 MHz
+  const X0 = 63, X1 = 430;                          // the printed FM scale, 88 → 108 MHz
   const FMIN = 88, FMAX = 108;
   const POOLS = [0.14, 0.38, 0.63, 0.87];           // where the four lamps sit along the top edge
 
@@ -204,13 +204,13 @@
         <g class="ink-off">${SCALE}</g>
         <g class="ink-on" mask="url(#poolmask)">${SCALE}</g>
         <!-- STEREO window at the left end -->
-        <rect x="16" y="23" width="34" height="13" rx="1" fill="#181c22"/>
+        
         <g class="stereo-on">
-          <rect x="16" y="23" width="34" height="13" rx="1" fill="#5c0f09"/>
-          <rect x="16" y="23" width="34" height="13" rx="1" fill="#ff4a34" opacity="0.22" filter="url(#soft)"/>
+          <rect x="16" y="23" width="34" height="13" rx="1" fill="#c22012"/>
+          <rect x="16" y="23" width="34" height="13" rx="1" fill="#ff5a42" opacity="0.35" filter="url(#soft)"/>
         </g>
-        <text class="stereo-t st-off" x="33" y="31.5" fill="#23262c">STEREO</text>
-        <g class="stereo-on"><text class="stereo-t" x="33" y="31.5" fill="#ffdcd4">STEREO</text></g>
+        <text class="stereo-t st-off" x="33" y="31.5" fill="#24272d">STEREO</text>
+        <g class="stereo-on"><text class="stereo-t" x="33" y="31.5" fill="#2c0705">STEREO</text></g>
         <!-- the pointer: a red line the full height of the window, casting no light -->
         <g class="ptr">
           <rect x="-1.4" y="${WY + 1}" width="2.8" height="${WH - 2}" fill="url(#ptrg)"/>

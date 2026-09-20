@@ -93,7 +93,7 @@
     let s = "";
     for (let r = R_HUB + 1.4; r < R_PACK; r += 1.8) {
       const light = (Math.round(r * 5) % 2) === 0;
-      s += `<circle cx="${C}" cy="${C}" r="${r.toFixed(1)}" fill="none" stroke="${light ? "#d9a05c" : "#3c2410"}" stroke-opacity="${light ? 0.16 : 0.22}" stroke-width="0.95"/>`;
+      s += `<circle cx="${C}" cy="${C}" r="${r.toFixed(1)}" fill="none" stroke="${light ? "#d9a05c" : "#3c2410"}" stroke-opacity="${light ? 0.1 : 0.15}" stroke-width="0.95"/>`;
     }
     return s;
   }
@@ -101,11 +101,11 @@
     let s = "";
     for (let i = 0; i < 3; i++) {
       const ca = -90 + i * 120;
-      const cx = C + 17 * Math.cos(rad(ca)), cy = C + 17 * Math.sin(rad(ca));
+      const cx = C + 18 * Math.cos(rad(ca)), cy = C + 18 * Math.sin(rad(ca));
       for (let j = -7; j <= 7; j++) {
         const a = ca + j * 8.5;
-        const x0 = cx + 11.4 * Math.cos(rad(a)), y0 = cy + 11.4 * Math.sin(rad(a));
-        const x1 = cx + 15.2 * Math.cos(rad(a)), y1 = cy + 15.2 * Math.sin(rad(a));
+        const x0 = cx + 12.2 * Math.cos(rad(a)), y0 = cy + 12.2 * Math.sin(rad(a));
+        const x1 = cx + 16.2 * Math.cos(rad(a)), y1 = cy + 16.2 * Math.sin(rad(a));
         const lit = Math.cos(rad(a + 45));
         s += `<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" stroke="${lit > 0 ? "#6a6a70" : "#000"}" stroke-opacity="${(0.25 + 0.4 * Math.abs(lit)).toFixed(2)}" stroke-width="1.1"/>`;
       }
@@ -121,7 +121,7 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: hidden; }
     text { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; font-weight: 600; }
-    .mark { font-size: 6px; letter-spacing: 0.24em; fill: #4c5052; }
+    .mark { font-size: 5.4px; letter-spacing: 0.16em; fill: #55595c; }
   </style>
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
@@ -133,7 +133,7 @@
           <stop offset="0" stop-color="#eceef0"/><stop offset="0.35" stop-color="#d0d3d5"/><stop offset="0.72" stop-color="#abaeb1"/><stop offset="1" stop-color="#8e9194"/>
         </radialGradient>
         <radialGradient id="pack" cx="42%" cy="34%" r="70%">
-          <stop offset="0" stop-color="#7a4a1e"/><stop offset="0.5" stop-color="#8d5a25"/><stop offset="0.85" stop-color="#a0682d"/><stop offset="1" stop-color="#6b3f1a"/>
+          <stop offset="0" stop-color="#553113"/><stop offset="0.45" stop-color="#6b3f1a"/><stop offset="0.86" stop-color="#8a5a26"/><stop offset="1" stop-color="#5a3415"/>
         </radialGradient>
         <radialGradient id="hubg" cx="36%" cy="28%" r="76%">
           <stop offset="0" stop-color="#3a3a3e"/><stop offset="0.55" stop-color="#232326"/><stop offset="1" stop-color="#101012"/>
@@ -156,7 +156,7 @@
           <circle cx="${C}" cy="${C}" r="${R_OUT}" fill="#fff"/>
           <path d="${WINS[0]}" fill="#000"/><path d="${WINS[1]}" fill="#000"/><path d="${WINS[2]}" fill="#000"/>
         </mask>
-        <path id="rimarc" d="M ${pt(-146, 101)} A 101 101 0 0 1 ${pt(-34, 101)}" fill="none"/>
+        <path id="rimarc" d="M ${pt(-142, 102.5)} A 102.5 102.5 0 0 1 ${pt(-38, 102.5)}" fill="none"/>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
         <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
         <filter id="wide" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
@@ -176,7 +176,7 @@
             <circle cx="${C}" cy="${C}" r="${R_OUT - 4}" fill="none" stroke="#7e8184" stroke-opacity="0.5" stroke-width="1"/>
             <circle cx="${C}" cy="${C}" r="${R_OUT}" fill="none" stroke="#5f6265" stroke-width="1.4"/>
             <circle cx="${C}" cy="${C}" r="${R_OUT - 1.6}" fill="none" stroke="#fdfdfd" stroke-opacity="0.35" stroke-width="1"/>
-            <text class="mark"><textPath href="#rimarc" startOffset="50%" text-anchor="middle">PRECISION MAGNETIC</textPath></text>
+            <text class="mark"><textPath href="#rimarc" startOffset="50%" text-anchor="middle">PRECISION  MAGNETIC</textPath></text>
           </g>
           <!-- the cut edges of the windows -->
           <g fill="none">
@@ -188,11 +188,11 @@
           <circle cx="${C}" cy="${C}" r="${R_HUB - 1.2}" fill="none" stroke="#54545a" stroke-opacity="0.45" stroke-width="1.1"/>
           <circle cx="${C}" cy="${C}" r="${R_HUB - 7}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="2"/>
           <g fill="url(#lobe)" stroke="#08080a" stroke-width="0.7">
-            <circle cx="${pt(-90, 17)[0]}" cy="${pt(-90, 17)[1]}" r="15.2"/>
-            <circle cx="${pt(30, 17)[0]}" cy="${pt(30, 17)[1]}" r="15.2"/>
-            <circle cx="${pt(150, 17)[0]}" cy="${pt(150, 17)[1]}" r="15.2"/>
+            <circle cx="${pt(-90, 18)[0]}" cy="${pt(-90, 18)[1]}" r="16.2"/>
+            <circle cx="${pt(30, 18)[0]}" cy="${pt(30, 18)[1]}" r="16.2"/>
+            <circle cx="${pt(150, 18)[0]}" cy="${pt(150, 18)[1]}" r="16.2"/>
           </g>
-          <circle cx="${C}" cy="${C}" r="21" fill="url(#lobe)"/>
+          <circle cx="${C}" cy="${C}" r="22" fill="url(#lobe)"/>
           ${knurl()}
           <circle cx="${C}" cy="${C}" r="13" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="1.4"/>
           <circle cx="${C}" cy="${C}" r="6.4" fill="url(#screw)" stroke="#3a3c3e" stroke-width="0.6"/>
@@ -205,13 +205,14 @@
       <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#deck)"/>
       <g opacity="0.35">
         <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
-        <path d="M 0 30 L ${W} 26 M 0 74 L ${W} 70 M 0 132 L ${W} 128 M 0 186 L ${W} 182 M 0 220 L ${W} 216" stroke="#000" stroke-opacity="0.12" stroke-width="0.8"/>
-        <path d="M 0 33 L ${W} 29 M 0 77 L ${W} 73 M 0 135 L ${W} 131 M 0 189 L ${W} 185" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>
+        <path d="M 0 30 L ${W} 26 M 0 74 L ${W} 70 M 0 132 L ${W} 128 M 0 186 L ${W} 182 M 0 220 L ${W} 216" stroke="#000" stroke-opacity="0.07" stroke-width="0.8"/>
+        <path d="M 0 33 L ${W} 29 M 0 77 L ${W} 73 M 0 135 L ${W} 131 M 0 189 L ${W} 185" stroke="#fff" stroke-opacity="0.07" stroke-width="0.8"/>
       </g>
       <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#lamp)"/>
 
       <!-- the reel's shadow on the deck -->
       <circle cx="${C + 9}" cy="${C + 11}" r="${R_OUT - 1}" fill="#1b2420" opacity="0.5" filter="url(#softer)"/>
+      <circle cx="${C + 1}" cy="${C + 2}" r="${R_OUT - 2}" fill="#16211c" opacity="0.3"/>
       <circle cx="${C + 4}" cy="${C + 5}" r="${R_OUT - 1}" fill="#101a16" opacity="0.55" filter="url(#soft)"/>
 
       <!-- the reel: two ghosts for the wind blur, then the reel itself -->
@@ -313,13 +314,13 @@
       const a = this._ang, sp = Math.abs(this._rate);
       this._reel.setAttribute("transform", `rotate(${a.toFixed(2)} ${C} ${C})`);
       // above about two turns a second the spokes smear into a ring
-      const g = Math.min(26, sp * 9);
-      const op = Math.max(0, Math.min(0.5, (sp - 1.6) / 5));
+      const g = Math.min(41, sp * 11);
+      const op = Math.max(0, Math.min(0.45, (sp - 1.4) / 4.5));
       this._gh[0].setAttribute("transform", `rotate(${(a - g).toFixed(2)} ${C} ${C})`);
       this._gh[1].setAttribute("transform", `rotate(${(a + g).toFixed(2)} ${C} ${C})`);
       this._gh[0].setAttribute("opacity", op.toFixed(3));
       this._gh[1].setAttribute("opacity", op.toFixed(3));
-      this._reel.setAttribute("opacity", (1 - op * 0.8).toFixed(3));
+      this._reel.setAttribute("opacity", (1 - op * 0.95).toFixed(3));
     }
   }
   customElements.define("sk-reel-ampex-nab", SkReelAmpexNab);

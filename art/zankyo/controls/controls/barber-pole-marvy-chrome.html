@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marvy chrome barber pole — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "barber-pole-marvy-chrome",
+  "element": "sk-barber-pole-marvy",
+  "name": "Marvy chrome barber pole with the lit globe",
+  "kind": "output",
+  "code": "I11",
+  "type": "Mechanical wave / travelling-stripe indicator",
+  "source": "William Marvy Co. (St Paul) Model 55 / 405 barber pole — a helix turning inside a glass cylinder between chrome castings, a lit frosted globe on top",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["glass", "chrome-plated cast aluminium", "printed helix sleeve", "frosted glass globe"],
+  "tags": ["barber", "street", "helix", "illusion", "motor", "illuminated"],
+  "value": { "model": "boolean" },
+  "attributes": ["running", "rate", "stripes", "scale"],
+  "events": [],
+  "size": { "w": 120, "h": 300 },
+  "notes": "Three poles: stopped, running red-white-blue, and the red-white variant. Set value true/false — the motor spins up over a second and a half and coasts down over two."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="plastic-grey">
+    <sk-barber-pole-marvy></sk-barber-pole-marvy>
+    <sk-barber-pole-marvy running></sk-barber-pole-marvy>
+    <sk-barber-pole-marvy running stripes="rw" rate="0.7"></sk-barber-pole-marvy>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>William Marvy of St Paul built more barber poles than anyone — some fifty thousand of them — and the
+  <b>Model 55</b> is the one everybody pictures: a clear glass cylinder with a printed red-white-blue helix
+  turning inside it on a slow motor, chrome-plated castings top and bottom, and a frosted glass globe over the
+  lamp on top. The helix only turns; the stripes appear to climb for ever, which is the whole trick.</p>
+  <p><b>The tells kept here:</b> the stripes are a real cylindrical projection, not a skewed pattern — each
+  boundary is the curve x = R·sin θ, so the stripes crowd toward the edges and run almost vertical there while
+  they lie diagonal across the middle; a fixed shading over them, dark at both edges with a highlight band just
+  left of centre, and two fixed glass streaks the stripes travel under; one full red-white-blue cycle every
+  ninety pixels of height; the chrome castings with flutes that crowd at their edges too, and a hard horizon
+  across them; the globe warm and haloed when the lamp is on, dead grey-white when it is off; the wall bracket
+  behind with its two bolts. Switching on, the motor takes about a second and a half to come up to speed and
+  coasts for two when it goes off — the light is instant by comparison.</p>
+  <p><b>Left out:</b> the Marvy name on the casting (a generic model plate instead), the mounting arm's full
+  length, and the cylinder's lower drain slot.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-barber-pole-marvy> — a chrome barber pole with a climbing helix and a lit globe ====
+   attributes: running (boolean) · rate (cycles/s, default 1) · stripes (rwb | rw) · scale
+   no events (an output). set .value = true/false, or the running attribute.
+   self-contained: paste this block into any page and use <sk-barber-pole-marvy running></sk-barber-pole-marvy> */
+(function () {
+  if (customElements.get("sk-barber-pole-marvy")) return;
+  const W = 120, H = 300;
+  const CY0 = 84, CY1 = 262, CXC = 60, RAD = 40, PITCH = 90;   // the glass cylinder and the helix pitch
+
+  /* one stripe band of the projected helix: every band is this shape, translated */
+  function band(h) {
+    const N = 26; const up = [], dn = [];
+    for (let i = 0; i <= N; i++) {
+      const th = -Math.PI / 2 + Math.PI * i / N;
+      const x = CXC + RAD * Math.sin(th), s = -PITCH * th / (2 * Math.PI);
+      up.push(x.toFixed(2) + " " + s.toFixed(2));
+      dn.push(x.toFixed(2) + " " + (s + h).toFixed(2));
+    }
+    return "M " + up.join(" L ") + " L " + dn.reverse().join(" L ") + " Z";
+  }
+  function helix(stops) {          // stops: [[colour, height], ...] summing to PITCH
+    let s = "";
+    for (let k = -1; k <= 4; k++) {
+      let y = CY0 + k * PITCH;
+      for (const [c, h] of stops) {
+        s += `<path d="${band(h)}" fill="${c}" transform="translate(0 ${y.toFixed(1)})"/>`;
+        y += h;
+      }
+    }
+    return s;
+  }
+  /* cast flutes on a chrome ring: placed by angle, so they crowd at the edges */
+  function flutes(x0, x1, y0, y1, n) {
+    let s = ""; const cx = (x0 + x1) / 2, R = (x1 - x0) / 2;
+    for (let i = 1; i < n; i++) {
+      const th = -Math.PI / 2 + Math.PI * i / n;
+      const x = cx + R * Math.sin(th), w = Math.max(0.5, 2.1 * Math.cos(th)), b = Math.cos(th);
+      s += `<rect x="${(x - w / 2).toFixed(2)}" y="${y0}" width="${w.toFixed(2)}" height="${y1 - y0}" fill="#ffffff" opacity="${(0.26 * b).toFixed(3)}"/>`;
+      s += `<rect x="${(x + w / 2).toFixed(2)}" y="${y0}" width="${(w * 0.6).toFixed(2)}" height="${y1 - y0}" fill="#000000" opacity="${(0.34 * b).toFixed(3)}"/>`;
+    }
+    return s;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; width: ${W}px; height: ${H}px; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .plate { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; font-weight: 600;
+             font-size: 5px; letter-spacing: 0.18em; text-anchor: middle; }
+    .lamp, .halo, .glow { transition: opacity 200ms ease; }
+    .rw { display: none; }
+    :host([stripes="rw"]) .rwb { display: none; }
+    :host([stripes="rw"]) .rw { display: inline; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fbfcfc"/><stop offset="0.22" stop-color="#d4d8dc"/>
+          <stop offset="0.47" stop-color="#8b9095" stop-opacity="1"/><stop offset="0.5" stop-color="#2b2f33"/>
+          <stop offset="0.53" stop-color="#70757a"/><stop offset="0.76" stop-color="#c6cbd0"/>
+          <stop offset="1" stop-color="#787d82"/>
+        </linearGradient>
+        <linearGradient id="chromeh" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000000" stop-opacity="0.55"/><stop offset="0.14" stop-color="#000000" stop-opacity="0.18"/>
+          <stop offset="0.34" stop-color="#ffffff" stop-opacity="0.22"/><stop offset="0.5" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="0.78" stop-color="#000000" stop-opacity="0.26"/><stop offset="1" stop-color="#000000" stop-opacity="0.62"/>
+        </linearGradient>
+        <linearGradient id="cylsh" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000000" stop-opacity="0.66"/><stop offset="0.07" stop-color="#000000" stop-opacity="0.36"/>
+          <stop offset="0.24" stop-color="#000000" stop-opacity="0.07"/><stop offset="0.36" stop-color="#ffffff" stop-opacity="0.16"/>
+          <stop offset="0.52" stop-color="#000000" stop-opacity="0"/><stop offset="0.74" stop-color="#000000" stop-opacity="0.16"/>
+          <stop offset="0.9" stop-color="#000000" stop-opacity="0.44"/><stop offset="1" stop-color="#000000" stop-opacity="0.7"/>
+        </linearGradient>
+        <radialGradient id="globeOn" cx="42%" cy="60%" r="66%">
+          <stop offset="0" stop-color="#fffdf2"/><stop offset="0.35" stop-color="#fff2cc"/>
+          <stop offset="0.72" stop-color="#f6dda0"/><stop offset="1" stop-color="#d8b878"/>
+        </radialGradient>
+        <radialGradient id="globeOff" cx="36%" cy="30%" r="74%">
+          <stop offset="0" stop-color="#f2f2ef"/><stop offset="0.5" stop-color="#d8d8d4"/>
+          <stop offset="0.85" stop-color="#b4b4ae"/><stop offset="1" stop-color="#8e8e88"/>
+        </radialGradient>
+        <linearGradient id="brk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a4e53"/><stop offset="0.5" stop-color="#2a2d31"/><stop offset="1" stop-color="#17191c"/>
+        </linearGradient>
+        <radialGradient id="bolt" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#9ea3a8"/><stop offset="0.6" stop-color="#4e5257"/><stop offset="1" stop-color="#202225"/>
+        </radialGradient>
+        <clipPath id="cyl"><rect x="20" y="${CY0}" width="80" height="${CY1 - CY0}"/></clipPath>
+        <filter id="b2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="b6" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="b1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1"/></filter>
+      </defs>
+
+      <!-- ambient shadow -->
+      <ellipse cx="64" cy="296" rx="58" ry="9" fill="#000" opacity="0.5" filter="url(#b6)"/>
+      <rect x="66" y="70" width="14" height="220" fill="#000" opacity="0.22" filter="url(#b6)"/>
+
+      <!-- the wall bracket, behind everything -->
+      <g>
+        <rect x="6" y="150" width="108" height="26" rx="4" fill="url(#brk)" stroke="#0e1012" stroke-width="0.8"/>
+        <rect x="6" y="150.8" width="108" height="1.6" fill="#7e838a" opacity="0.5"/>
+        <circle cx="13" cy="163" r="3.4" fill="url(#bolt)"/><circle cx="107" cy="163" r="3.4" fill="url(#bolt)"/>
+      </g>
+
+      <!-- the globe -->
+      <circle class="halo" cx="60" cy="36" r="33" fill="#ffe8b0" opacity="0" filter="url(#b6)"/>
+      <circle cx="60" cy="36" r="27" fill="url(#globeOff)" stroke="#6e6e68" stroke-opacity="0.5" stroke-width="0.7"/>
+      <circle class="lamp" cx="60" cy="36" r="27" fill="url(#globeOn)" opacity="0"/>
+      <ellipse cx="50" cy="25" rx="10" ry="6.5" fill="#ffffff" opacity="0.5" filter="url(#b2)" transform="rotate(-28 50 25)"/>
+      <path d="M 40 50 A 27 27 0 0 0 80 50" fill="none" stroke="#000" stroke-opacity="0.14" stroke-width="3" filter="url(#b2)"/>
+
+      <!-- the top casting -->
+      <path d="M 44 58 L 76 58 L 79 66 L 41 66 Z" fill="url(#chrome)"/>
+      <path d="M 41 66 L 79 66 L 102 78 L 18 78 Z" fill="url(#chrome)"/>
+      <g>${flutes(18, 102, 66, 78, 15)}</g>
+      <rect x="14" y="77" width="92" height="12" rx="2.5" fill="url(#chrome)"/>
+      <g>${flutes(14, 106, 77, 89, 17)}</g>
+      <rect x="14" y="77" width="92" height="12" rx="2.5" fill="url(#chromeh)"/>
+      <rect x="18" y="66" width="84" height="12" fill="url(#chromeh)"/>
+
+      <!-- the glass cylinder -->
+      <g clip-path="url(#cyl)">
+        <rect x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="#1b1d1f"/>
+        <g class="helix">
+          <g class="rwb">${helix([["#c8231d", 27], ["#f6f4ee", 36], ["#1f3b8a", 27]])}</g>
+          <g class="rw">${helix([["#c8231d", 45], ["#f6f4ee", 45]])}</g>
+        </g>
+        <!-- the lamp inside lifts the stripes a little -->
+        <rect class="glow" x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="#ffe9b0" opacity="0"/>
+        <!-- cylindrical shading over the stripes -->
+        <rect x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="url(#cylsh)"/>
+        <!-- the castings' shadow on the glass -->
+        <rect x="20" y="${CY0}" width="80" height="16" fill="#000" opacity="0.4" filter="url(#b2)"/>
+        <rect x="20" y="${CY1 - 14}" width="80" height="16" fill="#000" opacity="0.34" filter="url(#b2)"/>
+        <!-- the glass itself: fixed streaks the stripes travel under, a green cast at the edges -->
+        <rect x="21" y="${CY0}" width="4" height="${CY1 - CY0}" fill="#a8b8b0" opacity="0.30"/>
+        <rect x="95" y="${CY0}" width="4.5" height="${CY1 - CY0}" fill="#8aa096" opacity="0.26"/>
+        <rect x="30.5" y="${CY0 + 2}" width="6" height="${CY1 - CY0 - 6}" rx="3" fill="#ffffff" opacity="0.34" filter="url(#b1)"/>
+        <rect x="41" y="${CY0 + 2}" width="1.6" height="${CY1 - CY0 - 6}" rx="0.8" fill="#ffffff" opacity="0.14"/>
+        <rect x="77" y="${CY0 + 3}" width="2.6" height="${CY1 - CY0 - 8}" rx="1.3" fill="#ffffff" opacity="0.18" filter="url(#b1)"/>
+      </g>
+      <rect x="20" y="${CY0}" width="80" height="${CY1 - CY0}" fill="none" stroke="#0c0d0e" stroke-opacity="0.8" stroke-width="1"/>
+
+      <!-- the base casting -->
+      <rect x="8" y="256" width="104" height="14" rx="2.5" fill="url(#chrome)"/>
+      <g>${flutes(8, 112, 256, 270, 17)}</g>
+      <rect x="8" y="256" width="104" height="14" rx="2.5" fill="url(#chromeh)"/>
+      <path d="M 10 270 L 110 270 L 116 290 L 4 290 Z" fill="url(#chrome)"/>
+      <g>${flutes(6, 114, 270, 290, 19)}</g>
+      <path d="M 10 270 L 110 270 L 116 290 L 4 290 Z" fill="url(#chromeh)"/>
+      <rect x="0" y="288" width="120" height="11" rx="2.5" fill="url(#chrome)"/>
+      <rect x="0" y="288" width="120" height="11" rx="2.5" fill="url(#chromeh)"/>
+      <!-- the cast model plate -->
+      <rect x="42" y="274" width="36" height="10" rx="1.2" fill="#ffffff" opacity="0.10"/>
+      <text class="plate" x="60" y="281.2" fill="#1a1c1e" opacity="0.55">MODEL 55</text>
+      <text class="plate" x="60" y="280.6" fill="#ffffff" opacity="0.4">MODEL 55</text>
+    </svg>
+  </div>`;
+
+  class SkBarberPoleMarvy extends HTMLElement {
+    static get observedAttributes() { return ["running", "rate", "stripes", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._rate = 1; this._spd = 0; this._off = 0; this._raf = 0; this._last = 0;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._helix = $(".helix");
+      this._lamp = $(".lamp"); this._halo = $(".halo"); this._glow = $(".glow");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._light(); this._paint();
+      if (this.hasAttribute("running")) this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "running") { this._light(); this._kick(); }
+    }
+    get value() { return this.hasAttribute("running"); }
+    set value(v) {
+      const on = (v === true || v === 1 || v === "true" || v === "1" || v === "on" || v === "running");
+      if (on === this.hasAttribute("running")) return;
+      if (on) this.setAttribute("running", ""); else this.removeAttribute("running");
+    }
+    get running() { return this.hasAttribute("running"); }
+    set running(v) { this.value = v; }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { return Math.floor(t / 6) % 2 === 0; }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._rate = Math.max(0, Math.min(6, num("rate", 1)));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this.setAttribute("aria-label", "barber pole, " + (this.hasAttribute("running") ? "running" : "stopped"));
+    }
+    _light() {
+      const on = this.hasAttribute("running");
+      this._lamp.style.opacity = on ? "1" : "0";
+      this._halo.style.opacity = on ? "0.55" : "0";
+      this._glow.style.opacity = on ? "0.10" : "0";
+    }
+    _kick() { if (!this._raf) { this._last = performance.now() / 1000; this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const t = now / 1000;
+      const dt = Math.min(0.05, Math.max(0, t - this._last)); this._last = t;
+      const target = this.hasAttribute("running") ? this._rate : 0;
+      const k = target > this._spd ? 2.4 : 1.7;                  // ~1.5 s up, ~2 s to coast down
+      this._spd += (target - this._spd) * (1 - Math.exp(-k * dt));
+      this._off = (this._off + this._spd * PITCH * dt) % PITCH;
+      this._paint();
+      if (this._spd < 0.004 && target === 0) { this._spd = 0; this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() { this._helix.style.transform = "translateY(" + (-this._off).toFixed(2) + "px)"; }
+  }
+  customElements.define("sk-barber-pole-marvy", SkBarberPoleMarvy);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
