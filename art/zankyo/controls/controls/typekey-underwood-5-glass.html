@@ -78,19 +78,17 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
 
     /* the machine's frame behind the stems: japanned black with a gold pinstripe each side */
-    .frame { position: absolute; left: 50%; margin-left: -11px; width: 22px; top: 30px; bottom: 0;
-      background: linear-gradient(180deg, rgba(17,16,14,0) 0%, rgba(17,16,14,0.8) 16%, #121110 38%, #0b0a09 100%);
-      border-radius: 2px 2px 0 0; }
-    .frame::before, .frame::after { content: ""; position: absolute; top: 26%; bottom: 0; width: 1px;
-      background: linear-gradient(180deg, rgba(201,164,60,0), rgba(201,164,60,0.5) 35%, rgba(201,164,60,0.26) 100%); }
-    .frame::before { left: 3.5px; } .frame::after { right: 3.5px; }
+    .frame { position: absolute; left: 50%; margin-left: -19px; width: 38px; top: 22px; bottom: 0;
+      background: radial-gradient(46% 74% at 50% 104%, rgba(8,7,6,0.95), rgba(8,7,6,0.5) 58%, rgba(8,7,6,0) 100%); }
+    .frame::before { content: ""; position: absolute; left: 11px; top: 38%; bottom: 0; width: 1px;
+      background: linear-gradient(180deg, rgba(201,164,60,0), rgba(201,164,60,0.34) 45%, rgba(201,164,60,0.16) 100%); }
 
     /* the lever: flat japanned steel, a hairline of light down its left face */
-    .stem { position: absolute; left: 50%; margin-left: -3.2px; width: 6.4px; top: 26px; bottom: 0;
-      background: linear-gradient(90deg, #070706 0%, #2f2d28 26%, #1a1916 58%, #060605 100%);
-      box-shadow: 2px 0 4px rgba(0,0,0,0.75); transition: filter 60ms linear; }
-    .stem::after { content: ""; position: absolute; left: 1.2px; top: 0; bottom: 0; width: 0.8px;
-      background: linear-gradient(180deg, rgba(196,190,172,0.5), rgba(196,190,172,0.08)); }
+    .stem { position: absolute; left: 50%; margin-left: -3.7px; width: 7.4px; top: 24px; bottom: 0;
+      background: linear-gradient(90deg, #080807 0%, #46433a 14%, #262420 42%, #131210 70%, #040403 100%);
+      box-shadow: 2.5px 0 5px rgba(0,0,0,0.8); transition: filter 60ms linear; }
+    .stem::after { content: ""; position: absolute; left: 1.3px; top: 0; bottom: 0; width: 0.9px;
+      background: linear-gradient(180deg, rgba(214,208,188,0.62), rgba(214,208,188,0.12)); }
     .wrap.clack .stem { filter: brightness(0.5); }
 
     /* the key itself */
@@ -101,10 +99,18 @@
       transition: transform 60ms cubic-bezier(.45,0,.85,.55); }
     :host([disabled]) .key { cursor: default; }
     .key:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 11px rgba(22,224,224,0.55); }
+    .key.down .ring { box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.3),
+        inset 0 0 0 2.7px rgba(0,0,0,0.55),
+        inset 0 0 0 4px rgba(255,255,255,0.26),
+        inset 0 1.3px 0.6px rgba(255,255,255,0.42),
+        inset 0 -1.6px 1.2px rgba(0,0,0,0.45),
+        0 1px 1.4px rgba(0,0,0,0.85),
+        0 3px 5px rgba(0,0,0,0.6); }
 
     /* nickel ring, lit from above-left, with a rolled bead: bright / groove / bright */
     .ring { position: absolute; inset: 0; border-radius: 999px;
-      background: linear-gradient(152deg, #fcfbf2 0%, #e8e8db 11%, #c0c3b4 30%, #949a8d 50%, #666b60 68%, #8f948a 84%, #cbcec0 100%);
+      background: linear-gradient(152deg, #ffffff 0%, #f3f2e4 9%, #dcdecd 24%, #b4b8a7 42%, #878c7c 60%, #6d7266 72%, #aeb2a2 86%, #e4e5d6 100%);
       box-shadow:
         inset 0 0 0 1px rgba(255,255,255,0.34),
         inset 0 0 0 2.7px rgba(0,0,0,0.52),
@@ -115,7 +121,7 @@
         0 7px 13px rgba(0,0,0,0.5); }
     /* plating worn through to brass at the front edge */
     .ring::before { content: ""; position: absolute; inset: 0; border-radius: 999px;
-      background: radial-gradient(130% 62% at 46% 116%, rgba(201,154,74,0.6), rgba(201,154,74,0.18) 44%, rgba(0,0,0,0) 62%); }
+      background: radial-gradient(130% 58% at 46% 116%, rgba(206,158,76,0.52), rgba(206,158,76,0.14) 42%, rgba(0,0,0,0) 60%); }
 
     /* the ring's underside is a dark cup; the glass sits about a millimetre down inside it */
     .cup { position: absolute; inset: 6px; border-radius: 999px; overflow: hidden;
@@ -141,13 +147,16 @@
     :host([worn]) .scuff, .worn .scuff { opacity: 1; }
 
     /* the glass: one wide soft reflection over the top-left, a cool cast, a lit rim at bottom-right */
-    .refl { position: absolute; left: -20%; top: -40%; width: 120%; height: 96%; border-radius: 50%;
-      background: radial-gradient(58% 66% at 42% 66%, rgba(255,255,255,0.42), rgba(255,255,255,0.13) 46%, rgba(255,255,255,0) 74%);
-      transform: rotate(-17deg); filter: blur(1.2px); }
+    .refl { position: absolute; left: -26%; top: -52%; width: 128%; height: 104%; border-radius: 50%;
+      background: radial-gradient(56% 62% at 44% 72%, rgba(255,255,255,0.52), rgba(255,255,255,0.2) 44%, rgba(255,255,255,0) 72%);
+      transform: rotate(-17deg); filter: blur(1.3px); }
+    .spec { position: absolute; left: 12%; top: 9%; width: 30%; height: 13%; border-radius: 50%;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,0.62), rgba(255,255,255,0.12) 58%, rgba(255,255,255,0) 78%);
+      transform: rotate(-26deg); filter: blur(0.9px); }
     .tint { position: absolute; inset: 0;
       background: linear-gradient(158deg, rgba(159,179,196,0.16), rgba(159,179,196,0.03) 46%, rgba(0,0,0,0) 72%); }
     .rim { position: absolute; inset: 0; border-radius: 999px;
-      box-shadow: inset 0 0 0 0.7px rgba(255,255,255,0.09), inset -0.7px -1px 1.4px rgba(233,236,228,0.22); }
+      box-shadow: inset 0 0 0 0.7px rgba(255,255,255,0.1), inset -0.9px -1.2px 1.6px rgba(236,239,230,0.3), inset 1.1px 1.4px 1.6px rgba(0,0,0,0.75); }
   </style>
   <div class="wrap">
     <div class="frame"></div>
@@ -159,6 +168,7 @@
             <div class="paper"><span class="lg"></span><span class="sb"></span></div>
             <div class="scuff"></div>
             <div class="refl"></div>
+            <div class="spec"></div>
             <div class="tint"></div>
             <div class="rim"></div>
           </div>
@@ -256,11 +266,12 @@
       this.setAttribute("pressed", ""); this._applyDown(true);
       this._emit("press");
       clearTimeout(this._t);
-      this._t = setTimeout(() => { this._clack(); this._emit("activate"); }, 60);   // the type-bar hits at the bottom
+      this._t = setTimeout(() => { this._t = 0; this._clack(); this._emit("activate"); }, 60);   // the type-bar hits at the bottom
     }
     _release() {
       if (!this._down) return;
-      this._down = false; clearTimeout(this._t);
+      this._down = false;
+      if (this._t) { clearTimeout(this._t); this._t = 0; this._clack(); this._emit("activate"); }  // a quick tap still types
       this.removeAttribute("pressed"); this._applyDown(false);
       this._emit("release");
     }

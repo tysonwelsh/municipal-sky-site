@@ -66,8 +66,8 @@
 (function () {
   if (customElements.get("sk-bezel-pepsi")) return;
   const W = 144, H = 144, C = 72;
-  const R_TEETH = 72, R_RING = 65.5, R_INS_O = 61.5, R_INS_I = 47, R_DIAL = 45;
-  const TEETH = 96;
+  const R_TEETH = 72, R_RING = 68.5, R_INS_O = 65, R_INS_I = 49, R_DIAL = 47;
+  const TEETH = 100;
   const NS = "http://www.w3.org/2000/svg";
   const TPL = document.createElement("template");
   TPL.innerHTML = `
@@ -212,12 +212,13 @@
         `M ${C - R_INS_I} ${C} A ${R_INS_I} ${R_INS_I} 0 1 1 ${C + R_INS_I} ${C} A ${R_INS_I} ${R_INS_I} 0 1 1 ${C - R_INS_I} ${C} Z`);
       // coin edge: each tooth is two facets whose brightness follows the angle between its normal and the light (above-left)
       const tg = this._teeth, light = -45, half = 180 / TEETH;
-      const shade = (normal) => { const c = Math.cos((normal - light) * Math.PI / 180); const l = Math.round(88 + 82 * c); return `rgb(${l},${l + 1},${l - 1})`; };
+      const shade = (normal) => { const c = Math.cos((normal - light) * Math.PI / 180); const l = Math.max(22, Math.min(238, Math.round(78 + 100 * c))); return `rgb(${l},${l + 1},${l - 1})`; };
+      const P = (deg, r) => { const [x, y] = this._pt(deg, r); return `${x.toFixed(2)} ${y.toFixed(2)}`; };
       for (let i = 0; i < TEETH; i++) {
         const a = i * 360 / TEETH;
-        const [ax, ay] = this._pt(a - half, R_RING - 0.5), [bx, by] = this._pt(a, R_TEETH), [cx, cy] = this._pt(a + half, R_RING - 0.5);
-        this._mk("path", { d: `M ${ax.toFixed(2)} ${ay.toFixed(2)} L ${bx.toFixed(2)} ${by.toFixed(2)} L ${C} ${C} Z`, fill: shade(a - 40) }, tg);
-        this._mk("path", { d: `M ${bx.toFixed(2)} ${by.toFixed(2)} L ${cx.toFixed(2)} ${cy.toFixed(2)} L ${C} ${C} Z`, fill: shade(a + 40) }, tg);
+        // a squared tooth: two facets meeting at a short flat tip, lit by their own normals
+        this._mk("path", { d: `M ${P(a - half, R_RING - 0.5)} L ${P(a - half * 0.4, R_TEETH)} L ${P(a, R_TEETH)} L ${C} ${C} Z`, fill: shade(a - 50) }, tg);
+        this._mk("path", { d: `M ${P(a, R_TEETH)} L ${P(a + half * 0.4, R_TEETH)} L ${P(a + half, R_RING - 0.5)} L ${C} ${C} Z`, fill: shade(a + 50) }, tg);
       }
       this._mk("circle", { cx: C, cy: C, r: R_TEETH, fill: "none", stroke: "#000", "stroke-opacity": 0.45, "stroke-width": 0.6 }, tg);
       // the numerals: even hours only, radial, lume-filled; a triangle at 24
@@ -229,7 +230,7 @@
         const t = this._mk("text", { x: x.toFixed(2), y: y.toFixed(2), class: "num", transform: `rotate(${a} ${x.toFixed(2)} ${y.toFixed(2)})` }, mg);
         t.textContent = String(h);
       }
-      const tri = `M ${C - 4.2} ${C - R_INS_O + 2.2} L ${C + 4.2} ${C - R_INS_O + 2.2} L ${C} ${C - R_INS_I - 2.4} Z`;
+      const tri = `M ${C - 4.4} ${C - R_INS_O + 2.4} L ${C + 4.4} ${C - R_INS_O + 2.4} L ${C} ${C - R_INS_I - 2.6} Z`;
       this._mk("path", { d: tri, class: "lume2", filter: "url(#glow)", opacity: 0.6 }, mg);
       this._mk("path", { d: tri, class: "lume", stroke: "#000", "stroke-opacity": 0.4, "stroke-width": 0.4, "stroke-linejoin": "round" }, mg);
     }

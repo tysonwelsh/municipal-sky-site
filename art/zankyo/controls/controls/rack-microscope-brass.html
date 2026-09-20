@@ -251,10 +251,10 @@
       this._grab2.removeEventListener("wheel", this._onWheel);
       this._grab.removeEventListener("keydown", this._onKey);
     }
-    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected || !this._built) return; this._readAttrs(); this._render(); }
 
     get value() { return this._v; }
-    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); if (this._built) this._render(); }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
     focus() { this._grab.focus(); }
