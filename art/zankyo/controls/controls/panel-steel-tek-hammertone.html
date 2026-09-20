@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tektronix hammertone panel swatch — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "panel-steel-tek-hammertone",
+  "element": "sk-panel-steel-tek-hammer",
+  "name": "Tektronix hammertone panel swatch",
+  "kind": "output",
+  "code": "J2",
+  "type": "Painted steel panel swatch",
+  "source": "Tektronix 535A / 545A / 547 cabinet (1954-70), blue-grey hammertone enamel with a cream anodised front panel set into it",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["hammertone enamel", "steel", "anodised aluminium inset", "nickel screws"],
+  "tags": ["panel", "swatch", "furniture", "test equipment", "hammertone"],
+  "value": { "model": "text" },
+  "attributes": ["value", "finish", "inset", "wear", "width", "height", "scale"],
+  "events": [],
+  "size": { "w": 320, "h": 160 },
+  "notes": "A 320x160 hammertone panel with a cream inset and a legend, a 160x80 blank, and a smooth 465-style finish with a chipped corner."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-panel-steel-tek-hammer value="VOLTS/CM" width="320" height="160"></sk-panel-steel-tek-hammer>
+    <sk-panel-steel-tek-hammer value="" width="160" height="80" inset="none"></sk-panel-steel-tek-hammer>
+    <sk-panel-steel-tek-hammer value="TIME/DIV" width="220" height="120" finish="smooth" wear="0.8"></sk-panel-steel-tek-hammer>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The Tektronix 500-series scope cabinets (535A, 545A, 547) are finished in a specific blue-grey
+  <b>hammertone</b> enamel — a fine all-over pattern of soft round dimples baked onto the steel — with a
+  cream anodised aluminium sub-panel set a millimetre below the surface to carry the controls' engraved
+  legends. It is a swatch other pages can mount instruments on, not a control in itself: `value` is the
+  legend engraved on the cream inset.</p>
+  <p><b>The tells kept here:</b> the dimples are a seeded SVG turbulence run through a diffuse-lighting
+  filter and hard-light blended onto the base colour — never a tiled bitmap — so each one gets its own
+  highlight on the upper-left rim and shadow at lower-right from the same light that lights everything
+  else on the page; a blue-grey that reads faintly metallic; the cream inset sunk behind a dark line at its
+  top-left and a light line at its bottom-right; four proud nickel screws at the inset's corners; radiused
+  (4 px) steel corners; and `finish="smooth"` swaps the dimples for the 465's flatter satin orange-peel.
+  `wear` chips a corner to bare steel with a rust halo. A default `&lt;slot&gt;` lets a host page mount other
+  controls on the swatch.</p>
+  <p><b>Left out:</b> the true Phillips-screw thread count, the cabinet's carrying handle and rear vents,
+  and any Tektronix wordmark (a plain engraved legend stands in).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-panel-steel-tek-hammer> — Tektronix 500-series blue-grey hammertone panel swatch ====
+   attributes: value(engraved legend) finish(hammertone|smooth) inset(none|cream) wear(0..1) width height scale
+   no events (an output/furniture swatch); value updates the legend text only, never rebuilding the panel.
+   self-contained: paste this block into any page and use <sk-panel-steel-tek-hammer value="VOLTS/CM"></sk-panel-steel-tek-hammer> */
+(function () {
+  if (customElements.get("sk-panel-steel-tek-hammer")) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const DEF_W = 320, DEF_H = 160;
+  const BASE = "#5f7284", CREAM = "#e8e2cc", CREAM_HI = "#f2eddb", CREAM_LO = "#d9d3bc";
+  const INK = "#1c2b3c", NICKEL_HI = "#eef0ef", NICKEL_LO = "#6c716f", STEEL_BARE = "#8f8f8a", RUST = "#8b4a2a";
+
+  function mk(tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    .legend { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 600; letter-spacing: 0.08em; text-anchor: middle; dominant-baseline: middle; text-transform: uppercase;
+      text-shadow: 0 -0.6px 0 rgba(13,23,32,0.5); }
+    ::slotted(*) { position: relative; }
+    .slotwrap { position: absolute; display: flex; align-items: center; justify-content: center; }
+  </style>
+  <div class="wrap">
+    <svg><defs></defs><g class="steel"></g><g class="inset"></g><text class="legend"></text></svg>
+    <div class="slotwrap"><slot></slot></div>
+  </div>`;
+
+  let uid = 0;
+
+  class SkPanelSteelTekHammer extends HTMLElement {
+    static get observedAttributes() { return ["value", "finish", "inset", "wear", "width", "height", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._uid = "tekh" + (uid++);
+      this._v = ""; this._scale = 1; this._w = DEF_W; this._h = DEF_H;
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._svg = root.querySelector("svg");
+      this._defs = root.querySelector("defs");
+      this._steelG = root.querySelector(".steel");
+      this._insetG = root.querySelector(".inset");
+      this._legend = root.querySelector(".legend");
+      this._slotwrap = root.querySelector(".slotwrap");
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._readAttrs();
+      this._buildGeometry();
+      this._updateLegend();
+    }
+    disconnectedCallback() {}
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "value") { this._updateLegend(); return; }
+      if (n === "scale") return;
+      this._buildGeometry(); this._updateLegend();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = v == null ? "" : String(v);
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", v); this._updateLegend();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._v = this.getAttribute("value") || "";
+      this._finish = this.getAttribute("finish") === "smooth" ? "smooth" : "hammertone";
+      this._inset = this.getAttribute("inset") === "none" ? "none" : "cream";
+      this._wear = Math.max(0, Math.min(1, num("wear", 0)));
+      this._w = Math.max(48, num("width", DEF_W));
+      this._h = Math.max(32, num("height", DEF_H));
+      this._scale = Math.max(0.2, num("scale", 1));
+    }
+    _layoutHost() {
+      this.style.width = (this._w * this._scale) + "px";
+      this.style.height = (this._h * this._scale) + "px";
+      this._wrap.style.width = this._w + "px"; this._wrap.style.height = this._h + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._svg.setAttribute("viewBox", `0 0 ${this._w} ${this._h}`);
+      this._svg.setAttribute("width", this._w); this._svg.setAttribute("height", this._h);
+    }
+    _buildGeometry() {
+      this._layoutHost();
+      const W = this._w, H = this._h, id = this._uid;
+      while (this._defs.firstChild) this._defs.removeChild(this._defs.firstChild);
+      while (this._steelG.firstChild) this._steelG.removeChild(this._steelG.firstChild);
+      while (this._insetG.firstChild) this._insetG.removeChild(this._insetG.firstChild);
+
+      // -- filters: hammertone dimples, or the smooth 465 orange-peel --
+      const hammer = mk("filter", { id: "hf" + id, x: "-6%", y: "-6%", width: "112%", height: "112%" });
+      hammer.innerHTML = `
+        <feTurbulence type="fractalNoise" baseFrequency="0.38 0.42" numOctaves="2" seed="7" result="n"/>
+        <feDiffuseLighting in="n" surfaceScale="2.8" diffuseConstant="1.35" lighting-color="#ffffff" result="lite">
+          <feDistantLight azimuth="235" elevation="55"/>
+        </feDiffuseLighting>
+        <feComponentTransfer in="lite" result="lite2">
+          <feFuncR type="linear" slope="0.5" intercept="0.16"/>
+          <feFuncG type="linear" slope="0.5" intercept="0.16"/>
+          <feFuncB type="linear" slope="0.5" intercept="0.16"/>
+        </feComponentTransfer>
+        <feBlend in="SourceGraphic" in2="lite2" mode="hard-light"/>`;
+      this._defs.appendChild(hammer);
+      const peel = mk("filter", { id: "pf" + id, x: "-6%", y: "-6%", width: "112%", height: "112%" });
+      peel.innerHTML = `
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="4" result="n"/>
+        <feColorMatrix in="n" type="saturate" values="0" result="g"/>
+        <feComponentTransfer in="g" result="g2">
+          <feFuncR type="linear" slope="0.14" intercept="0.93"/>
+          <feFuncG type="linear" slope="0.14" intercept="0.93"/>
+          <feFuncB type="linear" slope="0.14" intercept="0.93"/>
+        </feComponentTransfer>
+        <feBlend in="SourceGraphic" in2="g2" mode="overlay"/>`;
+      this._defs.appendChild(peel);
+      const nickelGrad = mk("radialGradient", { id: "nk" + id, cx: "35%", cy: "30%", r: "75%" });
+      nickelGrad.innerHTML = `<stop offset="0" stop-color="${NICKEL_HI}"/><stop offset="0.6" stop-color="#9a9d9c"/><stop offset="1" stop-color="${NICKEL_LO}"/>`;
+      this._defs.appendChild(nickelGrad);
+      const rustGrad = mk("radialGradient", { id: "rg" + id, cx: "40%", cy: "35%", r: "70%" });
+      rustGrad.innerHTML = `<stop offset="0" stop-color="${RUST}" stop-opacity="0.85"/><stop offset="0.7" stop-color="${RUST}" stop-opacity="0.35"/><stop offset="1" stop-color="${RUST}" stop-opacity="0"/>`;
+      this._defs.appendChild(rustGrad);
+
+      // -- the steel body --
+      const rx = 4;
+      this._steelG.appendChild(mk("rect", { x: 0, y: 0, width: W, height: H, rx, fill: BASE, filter: `url(#${this._finish === "smooth" ? "pf" : "hf"}${id})` }));
+      // ambient light wash top-left / dark edge bottom-right (agrees with the one light source)
+      const edge = mk("rect", { x: 0.6, y: 0.6, width: W - 1.2, height: H - 1.2, rx, fill: "none", stroke: "#3a4652", "stroke-opacity": "0.7", "stroke-width": "1" });
+      this._steelG.appendChild(edge);
+      const hi = mk("path", { d: `M 10 1 L ${W - 12} 1 Q ${W - 1} 1 ${W - 1} 12`, fill: "none", stroke: "#c9d3da", "stroke-opacity": "0.35", "stroke-width": "1.1" });
+      this._steelG.appendChild(hi);
+
+      // -- wear: a chipped corner exposing bare steel + a rust bloom --
+      if (this._wear > 0) {
+        const cx = W - 9, cy = 9, s = 1 + this._wear * 0.6;
+        const chip = mk("g", { transform: `translate(${cx} ${cy})`, opacity: String(0.35 + 0.65 * this._wear) });
+        chip.appendChild(mk("circle", { cx: 0, cy: 0, r: 9 * s, fill: `url(#rg${id})` }));
+        chip.appendChild(mk("path", { d: `M ${-6*s} ${-2*s} L ${-1*s} ${-6*s} L ${5*s} ${-3*s} L ${4*s} ${3*s} L ${-2*s} ${5*s} Z`, fill: STEEL_BARE, stroke: "#5a5a56", "stroke-width": "0.5" }));
+        chip.appendChild(mk("path", { d: `M ${-4*s} ${-1*s} L ${0} ${-3.4*s} L ${3*s} ${-1.5*s}`, fill: "none", stroke: "#c7c7c2", "stroke-width": "0.6", "stroke-opacity": "0.6" }));
+        this._steelG.appendChild(chip);
+      }
+
+      // -- the cream inset --
+      if (this._inset !== "none") {
+        const m = Math.min(24, W * 0.12, H * 0.22);
+        const ix = m, iy = m, iw = W - m * 2, ih = H - m * 2;
+        this._insetRect = { x: ix, y: iy, w: iw, h: ih };
+        const g = mk("g", {});
+        g.appendChild(mk("rect", { x: ix, y: iy, width: iw, height: ih, rx: 2, fill: CREAM, filter: `url(#pf${id})` }));
+        g.appendChild(mk("rect", { x: ix, y: iy, width: iw, height: ih, rx: 2, fill: "none", stroke: "#00000055", "stroke-width": "1.4" }));
+        // sunk shadow at top-left, lit lip at bottom-right
+        g.appendChild(mk("path", { d: `M ${ix} ${iy+ih} L ${ix} ${iy} L ${ix+iw} ${iy}`, fill: "none", stroke: "#000", "stroke-opacity": "0.4", "stroke-width": "2" }));
+        g.appendChild(mk("path", { d: `M ${ix} ${iy+ih} L ${ix+iw} ${iy+ih} L ${ix+iw} ${iy}`, fill: "none", stroke: CREAM_HI, "stroke-opacity": "0.75", "stroke-width": "1" }));
+        // four nickel Phillips screws at the inset corners
+        const sOff = 7.5, sr = Math.max(2.6, Math.min(4.2, iw * 0.014));
+        [[ix + sOff, iy + sOff], [ix + iw - sOff, iy + sOff], [ix + sOff, iy + ih - sOff], [ix + iw - sOff, iy + ih - sOff]].forEach(([sx, sy], i) => {
+          g.appendChild(mk("circle", { cx: sx, cy: sy, r: sr, fill: `url(#nk${id})`, stroke: "#3d3f3e", "stroke-width": "0.5" }));
+          const rot = [22, -48, 70, -15][i];
+          g.appendChild(mk("rect", { x: sx - sr * 0.75, y: sy - sr * 0.14, width: sr * 1.5, height: sr * 0.28, fill: "#2a2b2a", transform: `rotate(${rot} ${sx} ${sy})` }));
+          g.appendChild(mk("rect", { x: sx - sr * 0.14, y: sy - sr * 0.75, width: sr * 0.28, height: sr * 1.5, fill: "#2a2b2a", transform: `rotate(${rot} ${sx} ${sy})` }));
+        });
+        this._insetG.appendChild(g);
+        this._legend.setAttribute("x", ix + iw / 2);
+        this._legend.setAttribute("y", iy + ih / 2);
+        this._legend.setAttribute("font-size", Math.max(8, Math.min(15, ih * 0.16)));
+        this._legend.style.display = "";
+        this._slotwrap.style.left = ix + "px"; this._slotwrap.style.top = iy + "px";
+        this._slotwrap.style.width = iw + "px"; this._slotwrap.style.height = ih + "px";
+      } else {
+        this._insetRect = null;
+        this._legend.style.display = "none";
+        this._slotwrap.style.left = "8px"; this._slotwrap.style.top = "8px";
+        this._slotwrap.style.width = (W - 16) + "px"; this._slotwrap.style.height = (H - 16) + "px";
+      }
+    }
+    _updateLegend() {
+      if (!this._insetRect) { this.setAttribute("aria-label", this._v || "hammertone panel swatch"); return; }
+      this._legend.setAttribute("fill", INK);
+      this._legend.textContent = this._v;
+      this.setAttribute("aria-label", this._v || "hammertone panel swatch");
+    }
+  }
+  customElements.define("sk-panel-steel-tek-hammer", SkPanelSteelTekHammer);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
