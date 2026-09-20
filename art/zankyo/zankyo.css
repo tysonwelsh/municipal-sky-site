@@ -645,71 +645,79 @@
 }
 .zankyo-scene.is-kyu .zk-tally { animation: zk-led-flicker 0.3s infinite; }
 
-/* --- 音量 THE ROLLER ------------------------------------------------------
-   Owner, second pass: the printed drum is out. This is the ribbed roller from
-   the Onomatopoeia Machine's temperature control (chatbots/onomatopoeia-bot.css,
-   .temp-roller-wheel) turned on its side — same idea, same construction: a
-   capsule with a scrolling rib pattern and a sheen down the middle, sunk into
-   the panel. Nothing is printed on it. The ribs travelling under the finger
-   are the whole of the feedback; there is no scale, pointer or readout.
-   The one thing changed from the original: the barrel is shaded with a real
-   gradient rather than a flat grey, because on this machine it sits in metal
-   and has to read as a turned steel part. */
+/* --- 音量 THE THUMBWHEEL --------------------------------------------------
+   Owner's pick 2026-09-20, mockups/volume-2-options.html option W6. A moulded
+   rubber wheel turned on a vertical axle, with the scale printed on it: 0-100
+   in tens, each numeral on a flat milled into the middle of the tread band,
+   the tread carrying on above and below. A fixed pointer above reads whichever
+   flat has come round to it.
+
+   The treads and the flats are positioned by zankyo-ui.js from their ANGLE on
+   the drum, not at even spacing, so they crowd toward the edges. That is the
+   whole of the illusion: the roller this replaced scrolled an evenly-spaced
+   repeating gradient, and no amount of styling stopped it reading as a strip
+   sliding sideways. The CSS here is the materials; the spacing is the physics.
+--------------------------------------------------------------------------- */
 .zk-master { position: relative; display: flex; align-items: center; flex: 0 1 auto; min-width: 0; }
-/* the grab area: 7 px of padding either side of the barrel takes the target to
-   44 px, the touch minimum. The barrel clips its own knurl, so the hit area
-   has to be a real parent rather than a pseudo-element hanging outside it. */
+/* The 11 px foot balances the indicator above, which puts the BARREL — the
+   thing the eye reads — on the same centre line as the key bed, and takes the
+   whole block to 46 px, over the touch minimum. The block is the grab area. */
 .zk-wheel {
   position: relative; width: 150px; max-width: 100%;
-  /* 16 px either side of a 12 px barrel = a 44 px grab target */
-  padding: 16px 0; cursor: ew-resize; touch-action: pan-y;
+  display: flex; flex-direction: column; gap: 4px; padding-bottom: 11px;
+  cursor: ew-resize; touch-action: pan-y;
 }
-/* the wheel proper, sunk into the plate. Straight-sided (3 px, not a capsule)
-   and with NO outer drop shadow: a shadow under it would read as a part glued
-   onto the panel, and everything else on this plate is let into it. */
+/* 指標 — the pointer printed on the casing, over its own etched track */
+.zk-wheel-ind { position: relative; display: block; height: 7px; }
+.zk-wheel-ind::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px;
+  background: linear-gradient(180deg, #08080a, #17171d);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.zk-wheel-ind::after {
+  content: ""; position: absolute; left: 50%; bottom: 1px; margin-left: -4px;
+  width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 6px solid var(--amber);
+  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.7));
+}
+/* the wheel itself: rubber, let into the plate. No outer drop shadow —
+   everything on this panel is sunk into it, nothing sits on top of it. */
 .zk-wheel-barrel {
-  /* 12 px: the thickness of .temp-roller-wheel on the Onomatopoeia Machine,
-     which is the wheel this is copied from. It was 30 px here and read as a
-     drum rather than a thumbwheel (owner, 2026-09-18). */
-  position: relative; display: block; height: 12px;
-  border-radius: 6px; overflow: hidden;
-  /* the curl of the barrel: dark where the wheel turns away at top and
-     bottom, bright across the middle where it faces the room */
-  background: linear-gradient(180deg, #1a1a20 0%, #4e4e59 20%, #7d7d8a 48%, #61616d 66%, #2b2b33 88%, #131318 100%);
-  box-shadow:
-    0 0 0 1px #000,
-    inset 0 1px 1px rgba(0, 0, 0, 0.6),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.5),
-    0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative; display: block; height: 24px; overflow: hidden; border-radius: 3px;
+  background: linear-gradient(180deg, #08080a 0%, #212127 24%, #31313a 50%, #202027 74%, #08080a 100%);
+  box-shadow: 0 0 0 1px #000, inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-/* the knurl. background-position is driven from zankyo-ui.js, so the ribs
-   travel with the value and the wheel reads as turning rather than sliding. */
-.zk-wheel-ribs {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image: repeating-linear-gradient(90deg,
-    transparent 0px, transparent 2px,
-    rgba(0, 0, 0, 0.34) 2px, rgba(0, 0, 0, 0.34) 4px,
-    transparent 4px, transparent 6px,
-    rgba(255, 255, 255, 0.13) 6px, rgba(255, 255, 255, 0.13) 8px);
-  background-size: 8px 100%;
-  background-position: var(--roller-position, 0px) 0;
-}
-/* the specular band along the crown of the wheel */
-.zk-wheel-sheen {
-  position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1.5px;
-  pointer-events: none;
-  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.13) 50%, transparent 100%);
-}
-/* the ends of the wheel disappear into the panel's cut edge */
+/* the ends of the wheel fall away into the plate's cut edge */
 .zk-wheel-barrel::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
-  background: linear-gradient(90deg, rgba(0,0,0,0.55) 0%, transparent 5%, transparent 95%, rgba(0,0,0,0.55) 100%);
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; z-index: 4;
+  background: linear-gradient(90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 7%, transparent 16%, transparent 84%, rgba(0,0,0,0.3) 93%, rgba(0,0,0,0.9) 100%);
+}
+/* a tread groove. Lit on BOTH shoulders: a highlight on one side only reads as
+   a directional bias, as though the wheel were meant to travel that way. */
+.zk-wheel-tread {
+  position: absolute; top: 0; bottom: 0; width: 3px; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0.07) 0%, rgba(0,0,0,0.30) 22%, rgba(0,0,0,0.66) 50%, rgba(0,0,0,0.30) 78%, rgba(255,255,255,0.07) 100%);
+}
+/* the flat the numeral is printed on, milled into the rubber rather than stuck
+   onto it: shadowed under its top lip, lit along its bottom, no outline, and
+   a fill that continues the wheel's own barrel shading instead of cutting a
+   flat patch out of it. */
+.zk-wheel-plate {
+  position: absolute; top: 50%; z-index: 2;
+  width: 22px; height: 13px; border-radius: 1px;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+  background: linear-gradient(180deg, #191920 0%, #24242b 28%, #2c2c34 50%, #212128 76%, #161619 100%);
+  box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+.zk-wheel-plate i {
+  font-style: normal; font-family: "Orbitron", sans-serif; font-size: 9px; line-height: 1;
+  color: #cbc5d8; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.95);
 }
 /* the range carries the value for the keyboard and the screen reader, but must
    not take the pointer: a native range jumps to the click, and a wheel turns
    under the finger. It stays tabbable. */
 .zk-wheel-input {
-  position: absolute; inset: 16px 0; width: 100%; margin: 0;
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
   opacity: 0; pointer-events: none; -webkit-appearance: none; appearance: none;
 }
 .zk-wheel:focus-within .zk-wheel-barrel { outline: 2px solid var(--cyan); outline-offset: 3px; }
@@ -1506,8 +1514,7 @@
   .zk-rxpanel .zk-key { width: 52px; height: 56px; }
   .zk-rxpanel .zk-key-play .zk-key-glyph { font-size: 20px; }
   .zk-rxpanel .zk-key-stop .zk-key-glyph { font-size: 24px; }
-  .zk-rxpanel .zk-wheel { width: 200px; padding: 17px 0; }
-  .zk-rxpanel .zk-wheel-barrel { height: 14px; }
+  .zk-rxpanel .zk-wheel { width: 200px; }
 
   /* reduced control strip: expandable plate + switch (sample hidden) */
   .zankyo-layer-sample { display: none; }
