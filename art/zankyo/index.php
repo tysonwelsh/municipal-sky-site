@@ -225,22 +225,21 @@ include '../../includes/header.php';
           <span class="zk-tally" id="zankyo-tally" aria-hidden="true"></span>
         </div>
         <span class="zk-rxpanel-gap" aria-hidden="true"></span>
-        <!-- MASTER VOLUME (owner, 2026-09-18, second pass): the printed drum
-             is gone. This is the ribbed roller off the Onomatopoeia Machine's
-             temperature control, laid on its side — a plain knurled wheel that
-             turns under the finger, nothing printed on it. The ribs scroll with
-             the value, which is the whole of the feedback: no scale, no
-             pointer, no numeric readout. -->
+        <!-- MASTER VOLUME (owner's pick, 2026-09-20: mockups/volume-2-options.html
+             option W6). A moulded rubber thumbwheel turned on a vertical axle.
+             The scale is printed on the wheel — 0-100 in tens, each numeral on
+             its own flat milled into the middle of the tread band, with the
+             tread carrying on above and below it — and a fixed 指標 pointer
+             above reads whichever flat has come round to it.
+
+             The treads and flats are placed by zankyo-ui.js, by ANGLE rather
+             than at even spacing, so they crowd toward the edges the way a real
+             cylinder's do. That projection is the whole of the effect; an
+             evenly-spaced pattern reads as a strip sliding sideways. -->
         <div class="zk-master">
-          <!-- .zk-wheel is the GRAB area, padded out to a 44 px touch target;
-               .zk-wheel-barrel is the 30 px of wheel you actually see. The two
-               are separate because the barrel clips its own knurl, so the hit
-               area cannot be a pseudo-element hanging outside it. -->
           <div class="zk-wheel" id="zankyo-master-wheel">
-            <span class="zk-wheel-barrel" aria-hidden="true">
-              <span class="zk-wheel-ribs"></span>
-              <span class="zk-wheel-sheen"></span>
-            </span>
+            <span class="zk-wheel-ind" aria-hidden="true"></span>
+            <span class="zk-wheel-barrel" aria-hidden="true"></span>
             <input type="range" class="zk-wheel-input" id="zankyo-master-vol"
                    min="0" max="100" step="1" value="60" aria-label="Master volume" />
           </div>

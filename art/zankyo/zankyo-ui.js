@@ -756,29 +756,73 @@
   }
 
   // ==========================================================================
-  // 音量 THE MASTER ROLLER — the Onomatopoeia Machine's ribbed temperature
-  // wheel, laid on its side. Nothing is printed on it: the knurl scrolling
-  // under the finger is the entire readout. Dragging right turns the volume
-  // up, which is the convention for a wheel lying across the panel.
+  // 音量 THE MASTER THUMBWHEEL — a moulded rubber wheel on a vertical axle,
+  // with the scale printed on it and a fixed pointer above reading it.
+  //
+  // Every tread and every numbered flat is placed by its ANGLE on the drum and
+  // projected onto the flat panel — x = R·sin(θ), squashed by cos(θ), faded as
+  // it turns away — so the marks crowd toward the edges the way a real
+  // cylinder's do. This is the whole of the effect. The roller this replaced
+  // scrolled an evenly-spaced repeating gradient, which is why it read as a
+  // strip sliding sideways no matter how it was styled.
   // ==========================================================================
-  var ROLLER_PX_PER_UNIT = 2.2;   // rib travel per volume point (ribs repeat every 8 px)
-  var ROLLER_DRAG_GAIN   = 0.55;  // volume points per pixel of finger travel
+  var WHEEL_DEG_PER_UNIT = 3;    // 0 → 100 sweeps 300°, leaving a blank sector round the back
+  var WHEEL_WINDOW       = 62;   // degrees either side of the pointer still inside the slot
+  var WHEEL_TREAD_DEG    = 5;    // one tread groove every 5° of drum
   function wireMasterWheel() {
     var wheel = document.getElementById("zankyo-master-wheel");
     if (!wheel) return;
-    var input = document.getElementById("zankyo-master-vol");
-    var ribs  = wheel.querySelector(".zk-wheel-ribs");
+    var input  = document.getElementById("zankyo-master-vol");
+    var barrel = wheel.querySelector(".zk-wheel-barrel");
+    var RAD = Math.PI / 180;
 
     var initial = 60;
     var st = Z.getState && Z.getState();
     if (st && st.masterVolume != null) initial = pct(st.masterVolume);
+    if (input) input.value = initial;
+
+    // the tread, all the way round the wheel
+    var treads = [];
+    for (var d = -180; d < 180; d += WHEEL_TREAD_DEG) {
+      var t = document.createElement("span");
+      t.className = "zk-wheel-tread";
+      barrel.appendChild(t);
+      treads.push({ el: t, deg: d });
+    }
+    // one milled flat per ten, carrying its printed numeral
+    var plates = [];
+    for (var v = 0; v <= 100; v += 10) {
+      var pl = document.createElement("span");
+      pl.className = "zk-wheel-plate";
+      var lab = document.createElement("i");
+      lab.textContent = v;
+      pl.appendChild(lab);
+      barrel.appendChild(pl);
+      plates.push({ el: pl, deg: v * WHEEL_DEG_PER_UNIT });
+    }
+
+    // wrap an angle into (-180, 180] so marks come round the back correctly
+    function wrap(deg) { return ((deg + 180) % 360 + 360) % 360 - 180; }
 
     function draw(val) {
-      // POSITIVE: a rising value comes from dragging right, and the surface of
-      // a wheel travels with the finger that pushes it. A negative offset
-      // scrolls the knurl left, i.e. backwards against the drag.
-      ribs.style.setProperty("--roller-position", (val * ROLLER_PX_PER_UNIT).toFixed(1) + "px");
+      var halfW = barrel.clientWidth / 2;
+      if (!halfW) return;
+      var R = halfW / Math.sin(WHEEL_WINDOW * RAD);
+
+      function place(el, deg, squash) {
+        var a = wrap(deg - val * WHEEL_DEG_PER_UNIT);
+        var c = Math.cos(a * RAD);
+        if (Math.abs(a) > WHEEL_WINDOW || c <= 0.02) { el.style.opacity = 0; return; }
+        el.style.opacity = Math.max(0, Math.min(1, (c - 0.45) / 0.3));
+        el.style.left = (halfW + R * Math.sin(a * RAD)) + "px";
+        // a flat squashes with the rubber it is milled into; a tread is a
+        // hairline and only needs to fade
+        if (squash) el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
+      }
+      treads.forEach(function (t) { place(t.el, t.deg, false); });
+      plates.forEach(function (p) { place(p.el, p.deg, true); });
     }
+
     function set(val, fromInput) {
       val = Math.max(0, Math.min(100, Math.round(val)));
       if (input && !fromInput) input.value = val;
@@ -786,6 +830,8 @@
       draw(val);
     }
 
+    // drag the wheel: the finger's travel turns the drum, so the wheel moves
+    // under the hand rather than jumping to wherever it was tapped
     var lastX = null;
     wheel.addEventListener("pointerdown", function (e) {
       wheel.setPointerCapture(e.pointerId); lastX = e.clientX; e.preventDefault();
@@ -795,14 +841,21 @@
       var dx = e.clientX - lastX;
       if (!dx) return;
       lastX = e.clientX;
-      set(Number(input.value) + dx * ROLLER_DRAG_GAIN);
+      var R = (barrel.clientWidth / 2) / Math.sin(WHEEL_WINDOW * RAD);
+      // dragging RIGHT brings lower numbers round to the pointer, because the
+      // scale climbs left-to-right across the face of the wheel
+      set(Number(input.value) - ((dx / R) / RAD) / WHEEL_DEG_PER_UNIT);
     });
     function release(e) { if (lastX !== null) { lastX = null; try { wheel.releasePointerCapture(e.pointerId); } catch (_) {} } }
     wheel.addEventListener("pointerup", release);
     wheel.addEventListener("pointercancel", release);
 
     if (input) input.addEventListener("input", function () { set(Number(input.value), true); });
+
     set(initial);
+    // the barrel has no width until layout settles; redraw once it does
+    requestAnimationFrame(function () { draw(Number(input.value)); });
+    window.addEventListener("resize", function () { draw(Number(input.value)); });
   }
 
   renderScale(); renderMixer(); wireMixerToggle(); wireTransport(); wireFarSwitch(); wirePush(); wireLedge(); pollArc();
