@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucas START starter button — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pushbutton-lucas-start-bakelite",
+  "element": "sk-pushbutton-lucas-start",
+  "name": "Lucas START starter push, Bakelite dome in chrome",
+  "kind": "input",
+  "code": "D1",
+  "type": "Momentary push-button",
+  "source": "Lucas / Bosch dash-mounted starter push on a 1930s–50s Austin, Morris, Riley or Bentley; the same button on a Lister engine panel",
+  "era": "1930s",
+  "origin": "UK",
+  "materials": ["bakelite", "chrome-plated brass", "wrinkle-paint panel"],
+  "tags": ["automotive", "dashboard", "starter", "momentary", "knurled ring", "moulded legend"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "pressed", "label", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 96, "h": 96 },
+  "notes": "Three pushes: START at rest, START held down, and a plain unlettered horn push. Click or hold Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wrinkle">
+    <sk-pushbutton-lucas-start legend="START" label="Starter" scale="1.4"></sk-pushbutton-lucas-start>
+    <sk-pushbutton-lucas-start legend="START" label="Starter, held" scale="1.4" pressed></sk-pushbutton-lucas-start>
+    <sk-pushbutton-lucas-start legend="" label="Horn" scale="1.4"></sk-pushbutton-lucas-start>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Lucas starter push</b> is the black button on the dash of a pre-war Austin or Riley, and on the
+  bulkhead of every Lister stationary engine: a 20&nbsp;mm phenolic dome with the word START moulded into its
+  crown, standing proud of a 32&nbsp;mm chrome escutcheon that is let into the panel and held by a knurled lock
+  ring. You press it with a thumb, the solenoid clacks, and it springs back.</p>
+  <p><b>The tells kept here:</b> the dome as a true cap — highlight at ten o'clock, a broad warm mid-tone, a
+  deep core shadow at four o'clock and a thin band of reflected light along the underside rim; the legend
+  moulded in the same material, catching light only on its top-left edges; the escutcheon as a shallow chrome
+  cone with a <b>hard horizon</b>, sky above and ground below; forty-eight knurl facets on the lock ring with
+  every third one brighter; the dome standing proud, casting its own shadow into the escutcheon, and dropping
+  onto a hard stop while the escutcheon never moves; a browner, glossier patch of thumb-polish on the crown;
+  and a hairline of shadow where the escutcheon meets the wrinkle paint, so it reads as let in rather than
+  stuck on.</p>
+  <p><b>Left out:</b> the rear terminals and the fibre washer, the chrome's real environment map (the horizon
+  here is a two-stop gradient, not a room), and the click of the contact, which is the one tell a screen
+  cannot keep.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pushbutton-lucas-start> — Lucas/Bosch Bakelite starter push in a chrome escutcheon ====
+   attributes: legend (default "START") · pressed (show the down state) · label · scale · disabled
+   events: press, release, activate   (momentary — no value)
+   self-contained: paste this block into any page and use <sk-pushbutton-lucas-start></sk-pushbutton-lucas-start> */
+(function () {
+  if (customElements.get("sk-pushbutton-lucas-start")) return;
+  const W = 96, H = 96, CX = 48, CY = 48;
+  const R_DOME = 24.6, R_THROAT = 27, R_CHROME = 39.6, R_K0 = 39.8, R_K1 = 47;
+  const NS = "http://www.w3.org/2000/svg";
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      -webkit-tap-highlight-color: transparent; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .cap { transform-box: view-box; transform-origin: ${CX}px ${CY}px;
+      transition: transform 90ms cubic-bezier(.2,.9,.3,1.3); }
+    .is-down .cap { transform: translateY(3.2px); transition: transform 40ms cubic-bezier(.35,0,.7,1); }
+    .spec { transform-box: view-box; transition: transform 40ms linear; }
+    .is-down .spec { transform: translate(1px, 1px); }
+    .seat { opacity: 0; transition: opacity 90ms linear; }
+    .is-down .seat { opacity: 1; transition-duration: 40ms; }
+    .hit { position: absolute; left: ${CX - 26}px; top: ${CY - 26}px; width: 52px; height: 52px;
+      border-radius: 50%; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+      outline: none; }
+    :host([disabled]) .hit { cursor: default; }
+    .hit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }
+    text { font-family: "Oswald", "Franklin Gothic", "Arial Narrow", sans-serif; font-weight: 600;
+      font-size: 7.6px; letter-spacing: 0.13em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <!-- chrome: sky above a hard horizon, ground below, a little bounce at the bottom edge -->
+        <linearGradient id="chrome" x1="0.22" y1="0" x2="0.58" y2="1">
+          <stop offset="0" stop-color="#eef3f6"/>
+          <stop offset="0.22" stop-color="#d2d9de"/>
+          <stop offset="0.40" stop-color="#9aa2a9"/>
+          <stop offset="0.498" stop-color="#6d7379"/>
+          <stop offset="0.502" stop-color="#1e2225"/>
+          <stop offset="0.62" stop-color="#2b2f33"/>
+          <stop offset="0.85" stop-color="#565c62"/>
+          <stop offset="1" stop-color="#8d959b"/>
+        </linearGradient>
+        <radialGradient id="cone" cx="50%" cy="50%" r="50%">
+          <stop offset="0.6" stop-color="#000" stop-opacity="0.42"/>
+          <stop offset="0.78" stop-color="#000" stop-opacity="0.1"/>
+          <stop offset="0.93" stop-color="#fff" stop-opacity="0.12"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+        </radialGradient>
+        <linearGradient id="throat" x1="0.3" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stop-color="#0a0c0d"/><stop offset="0.5" stop-color="#1a1e21"/><stop offset="1" stop-color="#5f666c"/>
+        </linearGradient>
+        <!-- the phenolic dome -->
+        <radialGradient id="dome" cx="32%" cy="25%" r="86%">
+          <stop offset="0" stop-color="#6a5f4e"/>
+          <stop offset="0.14" stop-color="#443a2c"/>
+          <stop offset="0.40" stop-color="#2c2419"/>
+          <stop offset="0.72" stop-color="#17140f"/>
+          <stop offset="0.93" stop-color="#0b0906"/>
+          <stop offset="1" stop-color="#050403"/>
+        </radialGradient>
+        <radialGradient id="polish" cx="50%" cy="28%" r="55%">
+          <stop offset="0" stop-color="#7a6952" stop-opacity="0.46"/>
+          <stop offset="0.55" stop-color="#3e3325" stop-opacity="0.2"/>
+          <stop offset="1" stop-color="#2c2419" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="hi" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#8c8578" stop-opacity="1"/>
+          <stop offset="0.4" stop-color="#8c8578" stop-opacity="0.42"/>
+          <stop offset="1" stop-color="#8c8578" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="throatClip"><circle cx="${CX}" cy="${CY}" r="${R_THROAT - 0.6}"/></clipPath>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+        <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.4"/></filter>
+      </defs>
+
+      <!-- let into the panel: a hairline of shadow all round, heavier below-right -->
+      <circle cx="${CX + 0.8}" cy="${CY + 1.8}" r="${R_K1 + 0.4}" fill="#000" opacity="0.6" filter="url(#b3)"/>
+      <circle cx="${CX}" cy="${CY}" r="${R_K1 + 0.5}" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.2"/>
+
+      <!-- knurled lock ring (48 facets, built in JS, every third one brighter) -->
+      <g class="knurl"></g>
+
+      <!-- the chrome cone -->
+      <circle cx="${CX}" cy="${CY}" r="${R_CHROME}" fill="url(#chrome)"/>
+      <circle cx="${CX}" cy="${CY}" r="${R_CHROME}" fill="url(#cone)"/>
+      <path d="M ${CX - R_CHROME} ${CY} A ${R_CHROME} ${R_CHROME} 0 0 0 ${CX + R_CHROME} ${CY}"
+            fill="none" stroke="#f4f8fa" stroke-opacity="0.3" stroke-width="0.7"/>
+      <circle cx="${CX}" cy="${CY}" r="${R_CHROME - 0.4}" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="0.7"/>
+      <circle cx="${CX}" cy="${CY}" r="${R_CHROME + 0.2}" fill="none" stroke="#0a0c0d" stroke-opacity="0.85" stroke-width="0.8"/>
+
+      <!-- the throat the dome comes out of -->
+      <circle cx="${CX}" cy="${CY}" r="${R_THROAT}" fill="url(#throat)"/>
+      <circle cx="${CX}" cy="${CY}" r="${R_THROAT - 1}" fill="#080807"/>
+      <g clip-path="url(#throatClip)">
+        <ellipse cx="${CX - 1}" cy="${CY - R_THROAT + 3}" rx="${R_THROAT + 2}" ry="9" fill="#000" opacity="0.9" filter="url(#b1)"/>
+      </g>
+      <!-- the shadow the proud dome casts into the escutcheon -->
+      <ellipse cx="${CX + 2.6}" cy="${CY + 4.2}" rx="${R_DOME + 1.2}" ry="${R_DOME + 0.4}" fill="#000" opacity="0.62" filter="url(#b2)"/>
+
+      <!-- the cap: everything in here travels down on press -->
+      <g class="cap">
+        <circle cx="${CX}" cy="${CY}" r="${R_DOME}" fill="url(#dome)"/>
+        <!-- reflected light on the underside rim -->
+        <path d="M ${CX - 19} ${CY + 15.5} A ${R_DOME} ${R_DOME} 0 0 0 ${CX + 17.5} ${CY + 17.3}"
+              fill="none" stroke="#9a8b72" stroke-opacity="0.34" stroke-width="1.7" filter="url(#b1)"/>
+        <!-- thumb polish on the crown: browner and glossier -->
+        <ellipse cx="${CX}" cy="${CY - 6}" rx="15" ry="11.5" fill="url(#polish)"/>
+        <!-- the moulded legend, in relief: shadow below-right, lit edge above-left -->
+        <g class="legend">
+          <text class="lg-sh" x="${CX + 0.8}" y="${CY + 3.6}" fill="#050403" fill-opacity="0.95"></text>
+          <text class="lg-hi" x="${CX - 0.8}" y="${CY + 2}" fill="#b3a992" fill-opacity="0.6"></text>
+          <text class="lg-fc" x="${CX}" y="${CY + 2.8}" fill="#2b2419" fill-opacity="0.96"></text>
+        </g>
+        <!-- one crisp highlight at ten o'clock -->
+        <ellipse class="spec" cx="${CX - 9}" cy="${CY - 10.4}" rx="7.2" ry="5" fill="url(#hi)"
+                 transform="rotate(-36 ${CX - 9} ${CY - 10.4})"/>
+        <ellipse class="spec" cx="${CX - 10}" cy="${CY - 11.4}" rx="2.6" ry="1.5" fill="#c6bfaf" opacity="0.8"
+                 filter="url(#b1)" transform="rotate(-36 ${CX - 10} ${CY - 11.4})"/>
+        <!-- core shadow, hardest at four o'clock -->
+        <circle cx="${CX}" cy="${CY}" r="${R_DOME}" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="1.6"/>
+      </g>
+      <!-- pressed: it sits deeper, so the throat shades the top of the crown -->
+      <g class="seat" clip-path="url(#throatClip)">
+        <ellipse cx="${CX - 1}" cy="${CY - R_THROAT + 4}" rx="${R_THROAT}" ry="10" fill="#000" opacity="0.5" filter="url(#b2)"/>
+      </g>
+    </svg>
+    <div class="hit" role="button" tabindex="0"></div>
+  </div>`;
+
+  class SkPushLucasStart extends HTMLElement {
+    static get observedAttributes() { return ["legend", "pressed", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._hit = r.querySelector(".hit");
+      this._legend = r.querySelectorAll(".legend text");
+      this._knurl = r.querySelector(".knurl");
+      this._scale = 1; this._down = false; this._keyDown = false;
+      this._onDown = this._onDown.bind(this); this._onUp = this._onUp.bind(this);
+      this._onCancel = this._onCancel.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this); this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+    }
+    connectedCallback() {
+      if (!this._knurl.childNodes.length) this._drawKnurl();
+      this._readAttrs(); this._render();
+      const h = this._hit;
+      h.addEventListener("pointerdown", this._onDown);
+      h.addEventListener("pointerup", this._onUp);
+      h.addEventListener("pointercancel", this._onCancel);
+      h.addEventListener("keydown", this._onKeyDown);
+      h.addEventListener("keyup", this._onKeyUp);
+      h.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      const h = this._hit;
+      h.removeEventListener("pointerdown", this._onDown);
+      h.removeEventListener("pointerup", this._onUp);
+      h.removeEventListener("pointercancel", this._onCancel);
+      h.removeEventListener("keydown", this._onKeyDown);
+      h.removeEventListener("keyup", this._onKeyUp);
+      h.removeEventListener("blur", this._onBlur);
+      this._down = false; this._keyDown = false;
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get pressed() { return this._down || this.hasAttribute("pressed"); }
+    focus(opts) { this._hit.focus(opts); }
+    blur() { this._hit.blur(); }
+
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const lg = this.hasAttribute("legend") ? this.getAttribute("legend") : "START";
+      for (const t of this._legend) t.textContent = lg;
+      const dis = this.hasAttribute("disabled");
+      this._hit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._hit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._hit.setAttribute("aria-label", this.getAttribute("label") || lg || "push button");
+    }
+    _render() {
+      const down = this._down || this.hasAttribute("pressed");
+      this._wrap.classList.toggle("is-down", down);
+      this._hit.setAttribute("aria-pressed", down ? "true" : "false");
+    }
+    _fire(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: {} })); }
+    _press() {
+      if (this.hasAttribute("disabled") || this._down) return;
+      this._down = true; this._render(); this._fire("press");
+    }
+    _release(activate) {
+      if (!this._down) return;
+      this._down = false; this._render(); this._fire("release");
+      if (activate && !this.hasAttribute("disabled")) this._fire("activate");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._hit.focus({ preventScroll: true });
+      try { this._hit.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      if (!this._down) return;
+      e.preventDefault();
+      const r = this._hit.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      try { this._hit.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release(inside);
+    }
+    _onCancel() { this._release(false); }
+    _onKeyDown(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault();
+      if (e.repeat || this._keyDown) return;
+      this._keyDown = true; this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+      e.preventDefault(); this._keyDown = false; this._release(true);
+    }
+    _onBlur() { if (this._keyDown) { this._keyDown = false; this._release(false); } }
+
+    // 48 knurl facets on the lock ring, lit from above-left, every third one brighter
+    _drawKnurl() {
+      const g = this._knurl, N = 48, LIGHT = -45;
+      const pt = (r, a) => [CX + r * Math.sin(a * Math.PI / 180), CY - r * Math.cos(a * Math.PI / 180)];
+      const mix = (t) => {
+        const lo = [24, 28, 32], hi = [238, 243, 246];
+        return "rgb(" + lo.map((c, i) => Math.round(c + (hi[i] - c) * t)).join(",") + ")";
+      };
+      for (let i = 0; i < N; i++) {
+        const a0 = i * (360 / N) - 360 / N / 2, a1 = a0 + 360 / N, am = (a0 + a1) / 2;
+        let t = 0.5 + 0.5 * Math.cos((am - LIGHT) * Math.PI / 180);
+        t = Math.pow(Math.max(0, t), 1.8) * 0.9 + 0.05;
+        if (i % 3 === 0) t = Math.min(1, t + 0.18);
+        const p = [pt(R_K0, a0 + 0.9), pt(R_K1, a0 + 1.5), pt(R_K1, a1 - 1.5), pt(R_K0, a1 - 0.9)];
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", "M " + p.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join(" L ") + " Z");
+        path.setAttribute("fill", mix(t));
+        path.setAttribute("stroke", "#0b0d0e");
+        path.setAttribute("stroke-width", "0.35");
+        path.setAttribute("stroke-opacity", "0.8");
+        g.appendChild(path);
+      }
+      // the ring reads as one turned part: a chrome wash over the facets, and a dark inner edge
+      const donut = (r) => `M ${CX - r} ${CY} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+      const shade = document.createElementNS(NS, "path");
+      shade.setAttribute("d", donut(R_K1) + " " + donut(R_K0));
+      shade.setAttribute("fill", "url(#chrome)");
+      shade.setAttribute("fill-rule", "evenodd");
+      shade.setAttribute("opacity", "0.3");
+      g.appendChild(shade);
+      const edge = document.createElementNS(NS, "circle");
+      edge.setAttribute("cx", CX); edge.setAttribute("cy", CY); edge.setAttribute("r", R_K0 - 0.2);
+      edge.setAttribute("fill", "none"); edge.setAttribute("stroke", "#0d0f11");
+      edge.setAttribute("stroke-opacity", "0.9"); edge.setAttribute("stroke-width", "1");
+      g.appendChild(edge);
+    }
+  }
+  customElements.define("sk-pushbutton-lucas-start", SkPushLucasStart);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

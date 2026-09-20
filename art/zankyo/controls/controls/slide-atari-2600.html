@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atari 2600 silver slide switch — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "slide-atari-2600",
+  "element": "sk-slide-atari-2600",
+  "name": "Atari 2600 silver slide switch",
+  "kind": "input",
+  "code": "B3",
+  "type": "Slide switch",
+  "source": "Atari VCS CX2600 \"six-switch\" front panel: POWER, TV TYPE, LEFT/RIGHT DIFFICULTY, GAME SELECT, GAME RESET, 1977",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["chromed steel", "matte black moulded plastic", "walnut-print vinyl", "silk-screen"],
+  "tags": ["console", "game", "slide switch", "chrome", "woodgrain", "momentary"],
+  "value": { "model": "steps", "options": ["OFF", "ON"] },
+  "attributes": ["value", "options", "label", "momentary", "scuff", "scale", "disabled"],
+  "events": ["input", "change", "press", "release", "activate"],
+  "size": { "w": 88, "h": 44 },
+  "notes": "POWER at ON (with a scuff on its chrome), LEFT DIFFICULTY at B, and a spring-loaded GAME RESET. Click or drag the tip, Space toggles, arrows pick a side. Options are listed left to right: ON is at the left end."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-slide-atari-2600 value="ON" options="ON|OFF" label="POWER" scuff></sk-slide-atari-2600>
+    <sk-slide-atari-2600 value="B" options="A|B" label="LEFT DIFFICULTY"></sk-slide-atari-2600>
+    <sk-slide-atari-2600 options="|" label="GAME RESET" momentary></sk-slide-atari-2600>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Atari VCS</b> of 1977 — the heavy sixer — has six identical chromed slide switches in a row across
+  its black moulded front bezel, above the walnut-print vinyl strip: POWER, TV TYPE, LEFT and RIGHT DIFFICULTY,
+  and the two spring-loaded ones, GAME SELECT and GAME RESET. The chrome tip is the only shiny thing on a
+  black-and-wood front; it travels about 8 mm sideways in its slot and stops hard.</p>
+  <p><b>The tells kept here:</b> the small bright chrome bar with its hard horizon line, rounded and slightly
+  tapered, sitting in a black slot with a dark shadow above it; the black bezel as a raised island with a soft
+  radius and a lit top-left lip; the white silk-screened legends — the option words above the slot ends,
+  ON at the left and OFF at the right, the function name in small capitals to the right; the woodgrain vinyl
+  below, drawn as stripes with a repeating darker figure; a scuff on the POWER switch's chrome. The tip slides
+  in 70 ms with an ease-out; the momentary variant (<code>momentary</code>) springs back in 120 ms and emits
+  <code>press</code>, <code>release</code> and <code>activate</code>. Click toggles; drag the tip across the
+  slot's middle; Space or Enter toggles; Left/Right arrows and Home/End pick a side.</p>
+  <p><b>Left out:</b> the four-switch and Vader front panels, the cartridge slot, the "Atari" fuji and the model
+  number printed on the bezel.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-slide-atari-2600> — Atari VCS front-panel chrome slide switch on the black bezel and woodgrain ====
+   attributes: value options("ON|OFF", listed left to right) label momentary scuff scale disabled
+   events: input {value} and change {value} on a toggle; momentary: press, release, activate
+   self-contained: paste this block into any page and use <sk-slide-atari-2600 value="ON" label="POWER"></sk-slide-atari-2600> */
+(function () {
+  if (customElements.get("sk-slide-atari-2600")) return;
+  const W = 88, H = 44;
+  const X_L = 13, X_R = 31;               // tip centre at the left and right ends of the slot
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 4px; top: 12px; width: 36px; height: 16px; border-radius: 3px; cursor: pointer;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 8px rgba(22,224,224,0.6); }
+    .tip { transition: transform 70ms cubic-bezier(.2,.9,.3,1.05); }
+    .tip.spring { transition: transform 120ms cubic-bezier(.3,.8,.4,1.1); }
+    .tip.drag { transition: none; }
+    text { font-family: "Libre Franklin", "Franklin Gothic Medium", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 6px; letter-spacing: 0.08em; fill: #f3f3f0; }
+    .opt { text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1c1c1c"/><stop offset="0.6" stop-color="#141414"/><stop offset="1" stop-color="#0e0e0e"/>
+        </linearGradient>
+        <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a2c18"/><stop offset="0.08" stop-color="#6c4429"/><stop offset="0.16" stop-color="#5c3a22"/>
+          <stop offset="0.24" stop-color="#7a5030"/><stop offset="0.3" stop-color="#553521"/><stop offset="0.42" stop-color="#6e4629"/>
+          <stop offset="0.5" stop-color="#4e2f1a"/><stop offset="0.6" stop-color="#7a5030"/><stop offset="0.7" stop-color="#5c3a22"/>
+          <stop offset="0.8" stop-color="#6a4328"/><stop offset="0.88" stop-color="#4a2c18"/><stop offset="0.95" stop-color="#5f3d24"/><stop offset="1" stop-color="#3f2413"/>
+        </linearGradient>
+        <pattern id="figure" width="22" height="13" patternUnits="userSpaceOnUse">
+          <path d="M 0 3 Q 6 1.5 11 3 T 22 3" fill="none" stroke="#3a2010" stroke-opacity="0.55" stroke-width="0.6"/>
+          <path d="M 0 8.5 Q 5 10 11 8.5 T 22 8.5" fill="none" stroke="#2f1a0c" stroke-opacity="0.5" stroke-width="0.5"/>
+          <path d="M 0 11.5 Q 8 11 14 11.8 T 22 11.5" fill="none" stroke="#8a5c38" stroke-opacity="0.25" stroke-width="0.4"/>
+        </pattern>
+        <linearGradient id="vinyl" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.08"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f7f8f9"/><stop offset="0.42" stop-color="#e4e6e8"/><stop offset="0.5" stop-color="#7d8286"/>
+          <stop offset="0.56" stop-color="#4a4f53"/><stop offset="0.82" stop-color="#3c4043"/><stop offset="1" stop-color="#8a9094"/>
+        </linearGradient>
+        <linearGradient id="chromeSide" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3c4043"/><stop offset="1" stop-color="#25282b"/>
+        </linearGradient>
+        <linearGradient id="slotShade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000"/><stop offset="0.5" stop-color="#000" stop-opacity="0.2"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </linearGradient>
+        <clipPath id="slotClip"><rect x="6" y="15" width="32" height="10" rx="1.5"/></clipPath>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+        <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+      </defs>
+
+      <!-- the woodgrain vinyl strip below the bezel -->
+      <rect x="0" y="29" width="${W}" height="15" fill="url(#wood)"/>
+      <rect x="0" y="29" width="${W}" height="15" fill="url(#figure)"/>
+      <rect x="0" y="29" width="${W}" height="15" fill="url(#vinyl)"/>
+      <!-- the bezel's shadow falling onto the vinyl -->
+      <rect x="0" y="29" width="${W}" height="4" fill="#000" opacity="0.55" filter="url(#b1)"/>
+
+      <!-- the bezel: a raised black island, lit lip at the top-left -->
+      <rect x="0" y="0" width="${W}" height="31" rx="3" fill="url(#bezel)"/>
+      <path d="M 1 30 L 1 3 Q 1 1 3 1 L ${W - 2} 1" fill="none" stroke="#2e2e2e" stroke-width="0.9"/>
+      <path d="M ${W - 1} 3 L ${W - 1} 28 Q ${W - 1} 30 ${W - 3} 30 L 2 30" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="0.9"/>
+
+      <!-- legends -->
+      <text class="opt optL" x="${X_L}" y="11"></text>
+      <text class="opt optR" x="${X_R}" y="11"></text>
+      <text class="name1" x="44" y="18"></text>
+      <text class="name2" x="44" y="25"></text>
+
+      <!-- the slot: recessed, dark shadow above, a faint lip below -->
+      <rect x="6" y="15" width="32" height="10" rx="1.5" fill="#050505"/>
+      <g clip-path="url(#slotClip)">
+        <rect x="6" y="15" width="32" height="5" fill="url(#slotShade)"/>
+        <rect x="5" y="14" width="34" height="12" rx="2" fill="none" stroke="#000" stroke-width="2" filter="url(#b1)"/>
+      </g>
+      <path d="M 7.5 25.7 L 37 25.7" stroke="#3a3a3a" stroke-width="0.7"/><path d="M 38.4 16.5 L 38.4 24.5" stroke="#333" stroke-width="0.5"/>
+
+      <!-- the chrome tip -->
+      <g class="tip">
+        <rect x="-5" y="-2" width="12" height="8" rx="2" fill="#000" opacity="0.6" filter="url(#b2)"/>
+        <path d="M -5.2 -3.4 L 5.2 -3.4 Q 6.4 -3.4 6.6 -2.2 L 7 2.6 Q 7 4.2 5.4 4.2 L -5.4 4.2 Q -7 4.2 -7 2.6 L -6.6 -2.2 Q -6.4 -3.4 -5.2 -3.4 Z" fill="url(#chromeSide)"/>
+        <path d="M -5 -3.5 L 5 -3.5 Q 6 -3.5 6.2 -2.5 L 6.6 2 Q 6.6 3.5 5 3.5 L -5 3.5 Q -6.6 3.5 -6.6 2 L -6.2 -2.5 Q -6 -3.5 -5 -3.5 Z" fill="url(#chrome)" stroke="#1f2224" stroke-width="0.35"/>
+        <path d="M -5.6 -2.6 Q 0 -3.1 5.6 -2.6" fill="none" stroke="#fff" stroke-opacity="0.9" stroke-width="0.5"/>
+        <path d="M -6.2 0 L 6.2 0" stroke="#fff" stroke-opacity="0.5" stroke-width="0.3"/>
+        <g class="scuff" opacity="0">
+          <path d="M -3.5 -2.4 L -1 1.8 M -2.2 -2.6 L 0.6 1.5" stroke="#b9bdc0" stroke-opacity="0.7" stroke-width="0.35"/>
+          <path d="M 1.5 -1.6 L 4.2 2.4" stroke="#2b2e31" stroke-opacity="0.6" stroke-width="0.35"/>
+          <ellipse cx="2.5" cy="-1.2" rx="1.6" ry="0.7" fill="#c7cacc" fill-opacity="0.35"/>
+        </g>
+      </g>
+    </svg>
+    <div class="grab" tabindex="0"></div>
+  </div>`;
+
+  class SkSlideAtari2600 extends HTMLElement {
+    static get observedAttributes() { return ["value", "options", "label", "momentary", "scuff", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._opts = ["ON", "OFF"]; this._i = 1; this._scale = 1; this._mom = false; this._pressed = false;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._tip = q(".tip"); this._grab = q(".grab"); this._wrap = q(".wrap"); this._scuff = q(".scuff");
+      this._optL = q(".optL"); this._optR = q(".optR"); this._name1 = q(".name1"); this._name2 = q(".name2");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._onKeyUp = this._onKeyUp.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs();
+      if (!this.hasAttribute("value")) this.setAttribute("value", this._opts[this._i]);
+      this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey); g.addEventListener("keyup", this._onKeyUp);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel);
+      g.removeEventListener("keydown", this._onKey); g.removeEventListener("keyup", this._onKeyUp);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return this._opts[this._i]; }
+    set value(v) { const i = this._index(v); if (i < 0) return; this._i = i; this.setAttribute("value", this._opts[i]); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _index(v) {
+      if (v == null) return -1;
+      const s = String(v).trim(); let i = this._opts.indexOf(s);
+      if (i < 0) i = this._opts.findIndex(o => o.toLowerCase() === s.toLowerCase());
+      if (i < 0 && /^[01]$/.test(s)) i = s === "1" ? 0 : 1;
+      if (i < 0 && /^(true|false)$/i.test(s)) i = /^true$/i.test(s) ? 0 : 1;
+      return i;
+    }
+    _readAttrs() {
+      const raw = this.getAttribute("options");
+      const parts = raw == null ? ["ON", "OFF"] : raw.split("|").map(s => s.trim());
+      this._opts = [parts[0] || "", parts[1] || ""];
+      this._mom = this.hasAttribute("momentary");
+      const sc = parseFloat(this.getAttribute("scale")); this._scale = Math.max(0.2, isNaN(sc) ? 1 : sc);
+      const i = this._index(this.getAttribute("value"));
+      this._i = i >= 0 ? i : 1;
+      if (this._mom && !this._pressed) this._i = 1;                    // a momentary rests at the right
+      this._optL.textContent = this._opts[0]; this._optR.textContent = this._opts[1];
+      const label = this.getAttribute("label") || "";
+      const lines = label.includes("|") ? label.split("|") : (label.length > 8 && label.includes(" ") ? [label.slice(0, label.lastIndexOf(" ")), label.slice(label.lastIndexOf(" ") + 1)] : [label]);
+      this._name1.textContent = lines[0] || ""; this._name2.textContent = lines[1] || "";
+      this._name1.setAttribute("y", lines.length > 1 ? "18" : "22");
+      this._scuff.setAttribute("opacity", this.hasAttribute("scuff") || /power/i.test(label) ? "1" : "0");
+      const g = this._grab;
+      g.setAttribute("role", this._mom ? "button" : "switch");
+      g.setAttribute("aria-label", label || "slide switch");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      const left = this._i === 0;
+      this._tip.style.transform = "translate(" + (left ? X_L : X_R) + "px, 20px)";
+      if (this._mom) { this._grab.setAttribute("aria-pressed", left ? "true" : "false"); this._grab.removeAttribute("aria-checked"); }
+      else { this._grab.setAttribute("aria-checked", left ? "true" : "false"); this._grab.removeAttribute("aria-pressed"); }
+      this._grab.setAttribute("aria-valuetext", this._opts[this._i]);
+    }
+    _emit(type, extra) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: Object.assign({ value: this._opts[this._i] }, extra || {}) })); }
+    _go(i, settle) {
+      if (i === this._i) return;
+      this._i = i; this.setAttribute("value", this._opts[i]); this._render();
+      this._emit("input"); if (settle) this._emit("change");
+    }
+    _press() {
+      if (this._pressed) return; this._pressed = true;
+      this._tip.classList.remove("spring");
+      this._i = 0; this.setAttribute("value", this._opts[0]); this._render(); this._emit("press");
+    }
+    _release() {
+      if (!this._pressed) return; this._pressed = false;
+      this._tip.classList.add("spring");
+      this._i = 1; this.setAttribute("value", this._opts[1]); this._render(); this._emit("release"); this._emit("activate");
+    }
+    _localX(e) { const r = this._grab.getBoundingClientRect(); return (e.clientX - r.left) / this._scale + 4; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+      if (this._mom) { this._press(); return; }
+      this._drag = { x: this._localX(e), from: this._i, moved: false };
+      this._tip.classList.add("drag");
+    }
+    _onMove(e) {
+      if (this._mom || !this._drag) return;
+      const x = this._localX(e);
+      if (Math.abs(x - this._drag.x) > 2) this._drag.moved = true;
+      if (this._drag.moved) this._go(x < (X_L + X_R) / 2 ? 0 : 1, false);
+    }
+    _onUp(e) {
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (this._mom) { this._release(); return; }
+      const d = this._drag; this._drag = null; if (!d) return;
+      this._tip.classList.remove("drag");
+      if (!d.moved) { this._go(this._i === 0 ? 1 : 0, true); return; }     // a click toggles
+      if (this._i !== d.from) this._emit("change");
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled") || this._mom) return;
+      const want = e.deltaY < 0 || e.deltaX < 0 ? 0 : 1;
+      if (want === this._i) return;
+      e.preventDefault(); this._go(want, true);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (this._mom) {
+        if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!e.repeat) this._press(); }
+        return;
+      }
+      let i = null;
+      switch (e.key) {
+        case " ": case "Enter": i = this._i === 0 ? 1 : 0; break;
+        case "ArrowLeft": case "ArrowUp": case "Home": i = 0; break;
+        case "ArrowRight": case "ArrowDown": case "End": i = 1; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._go(i, true);
+    }
+    _onKeyUp(e) { if (this._mom && (e.key === " " || e.key === "Enter")) { e.preventDefault(); this._release(); } }
+  }
+  customElements.define("sk-slide-atari-2600", SkSlideAtari2600);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cast-iron valve handwheel, red — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "handwheel-valve-cast-iron-red",
+  "element": "sk-handwheel-valve",
+  "name": "Cast-iron valve handwheel, red, with OPEN arrow",
+  "kind": "input",
+  "code": "A12",
+  "type": "Handwheel / crank",
+  "source": "Industrial gate-valve handwheel (Crane / Nibco / Kitz pattern): five S-curved spokes, a rounded rim with OPEN and an arrow cast into it, red paint chipped to iron, a hex stem nut and a rising stem",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["cast iron", "red enamel", "steel stem", "painted flange"],
+  "tags": ["valve", "industrial", "multi-turn", "endless", "inertia", "wobble"],
+  "value": { "model": "delta", "min": 0, "max": 1, "step": 0.01, "unit": "open" },
+  "attributes": ["value", "turns", "colour", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 170, "h": 170 },
+  "notes": "Red wheel 30 % open (the stem just showing) and a green one fully open at 0.6. Drag round the rim; it coasts, wobbles a little, and bumps at the stops."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-handwheel-valve value="0.3" label="STEAM MAIN"></sk-handwheel-valve>
+    <sk-handwheel-valve value="1" colour="green" label="BYPASS" scale="0.6"></sk-handwheel-valve>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>gate-valve handwheel</b> is the same casting on a Crane, a Nibco, a Kitz, a Soviet one: five spokes with a
+  slight S in them so the shrinking casting does not crack, a rim of rounded section fat enough for a gloved hand,
+  the word OPEN and a curved arrow cast proud on the rim, and in the hub a hex nut through which the stem rises as the
+  gate lifts. Painted red for steam; green for water; black when nobody cared. Seen from above on the bonnet flange.</p>
+  <p><b>The tells kept here:</b> the five S-curved spokes joined to a thick rim, lit by an SVG lighting filter so the
+  rim reads as a highlight ring over a shadow ring and the whole casting has a rough, grainy skin; OPEN and the
+  anticlockwise arrow as raised cast letters whose bevels stay lit from the top-left however the wheel turns; three
+  chips of grey iron with a rust bloom where hands land on the rim; a hex nut in the hub with the bright stem boss
+  growing and casting a longer shadow as the valve opens; a one-degree wobble while it spins. Drag follows the
+  pointer's angle around the hub and the wheel coasts for about a second and a half; the wheel steps finely;
+  arrows step one percent (Shift ten), Home shuts, End opens. Eight turns shut to open by default (<code>turns</code>).</p>
+  <p><b>Left out:</b> the stem's thread, the packing gland below, the brass name tag on a chain.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-handwheel-valve> — cast-iron gate-valve handwheel, multi-turn, with OPEN arrow ====
+   attributes: value (0…1 open) turns (default 8) colour (red|green|black) label scale disabled
+   events: input {value, delta(turns)} while turning, change {value, delta: 0} when it comes to rest
+   self-contained: paste this block into any page and use <sk-handwheel-valve value="0.3"></sk-handwheel-valve> */
+(function () {
+  if (customElements.get("sk-handwheel-valve")) return;
+  const W = 170, H = 170, C = 85;
+  const P = (r, a) => { const t = a * Math.PI / 180; return (C + r * Math.sin(t)).toFixed(2) + " " + (C - r * Math.cos(t)).toFixed(2); };
+  let spokes = "";
+  for (let i = 0; i < 5; i++) { const a = i * 72 + 36; spokes += `M ${P(12, a)} C ${P(29, a - 8)} ${P(47, a + 24)} ${P(63, a + 15)} `; }
+  const hex = (r, rot) => { let s = ""; for (let i = 0; i < 6; i++) s += (i ? " L " : "M ") + P(r, rot + i * 60); return s + " Z"; };
+  const arrow = `M ${P(66.6, -20)} A 66.6 66.6 0 0 0 ${P(66.6, -46)} L ${P(63.4, -46)} A 63.4 63.4 0 0 1 ${P(63.4, -20)} Z M ${P(65, -55)} L ${P(70, -45.5)} L ${P(60, -45.5)} Z`;
+  const chips = [
+    `M ${P(68.5, 12)} L ${P(70.5, 15.5)} L ${P(69, 19.5)} L ${P(64.5, 19)} L ${P(63.5, 14.5)} L ${P(66, 12.5)} Z`,
+    `M ${P(69.5, 63)} L ${P(70.8, 66.5)} L ${P(68.5, 69)} L ${P(65.5, 67)} L ${P(66.5, 63.5)} Z`,
+    `M ${P(62, 212)} L ${P(65.5, 211)} L ${P(67.5, 214.5)} L ${P(65, 218)} L ${P(61, 216)} Z`
+  ];
+  const COL = {
+    red:   { c0: "#b3281e", c0b: "#c4362b", c1: "#e0584a", c2: "#6e1610" },
+    green: { c0: "#2f7a3e", c0b: "#3a8a49", c1: "#63b070", c2: "#173f20" },
+    black: { c0: "#2e2e2f", c0b: "#3a3a3b", c1: "#6a6a6c", c2: "#0e0e0f" }
+  };
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px;
+      --c0: #b3281e; --c0b: #c4362b; --c1: #e0584a; --c2: #6e1610; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { position: absolute; inset: 0; display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .tilt { position: absolute; inset: 0; perspective: 600px; }
+    .tilt > svg { transition: transform 140ms ease-out; transform-origin: 50% 50%; }
+    .rot { transform-origin: ${C}px ${C}px; transform-box: view-box; }
+    .rot.snap { transition: transform 160ms cubic-bezier(.2,.8,.3,1.1); }
+    .grab { position: absolute; left: 10px; top: 10px; width: 150px; height: 150px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Oswald", "Franklin Gothic Medium", "Arial Narrow", sans-serif; font-weight: 600; font-size: 8px; letter-spacing: 0.12em; }
+    .label { font-family: "Oswald", "Arial Narrow", sans-serif; font-size: 6px; letter-spacing: 0.22em; fill: var(--ink, #1c1f21); text-anchor: middle; opacity: 0.85; }
+  </style>
+  <div class="wrap">
+    <svg class="base" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="flange" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#7c8386"/><stop offset="0.5" stop-color="#666d70"/><stop offset="1" stop-color="#4f5558"/>
+        </linearGradient>
+        <radialGradient id="halo" cx="52%" cy="54%" r="55%">
+          <stop offset="0.62" stop-color="#000" stop-opacity="0"/><stop offset="0.8" stop-color="#1a1410" stop-opacity="0.35"/><stop offset="1" stop-color="#000" stop-opacity="0.05"/>
+        </radialGradient>
+        <radialGradient id="bonnet" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#6d7376"/><stop offset="0.7" stop-color="#474c4f"/><stop offset="1" stop-color="#2d3133"/>
+        </radialGradient>
+        <linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#8b9093"/><stop offset="0.55" stop-color="#585d60"/><stop offset="1" stop-color="#34383a"/>
+        </linearGradient>
+        <filter id="fsoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="fsh0" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="fpaint" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n"/>
+          <feColorMatrix in="n" type="matrix" values="0.22 0 0 0 0.89  0.22 0 0 0 0.89  0.22 0 0 0 0.89  0 0 0 0 1" result="g"/>
+          <feComposite in="SourceGraphic" in2="g" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+        </filter>
+      </defs>
+      <g filter="url(#fpaint)">
+        <circle cx="${C + 2}" cy="${C + 3}" r="81" fill="#000" opacity="0.4" filter="url(#fsh0)"/>
+        <circle cx="${C}" cy="${C}" r="81" fill="url(#flange)" stroke="#3c4144" stroke-width="1"/>
+        <circle cx="${C}" cy="${C}" r="79.5" fill="none" stroke="#9aa0a3" stroke-width="0.8" opacity="0.45"/>
+        <circle cx="${C}" cy="${C}" r="81" fill="url(#halo)"/>
+        <!-- rust weep at the lower right of the bonnet -->
+        <ellipse cx="${C + 14}" cy="${C + 33}" rx="9" ry="4" fill="#7a3d1e" opacity="0.35" filter="url(#fsoft)"/>
+        <!-- bonnet: the cast boss the wheel sits on -->
+        <circle cx="${C + 2}" cy="${C + 3}" r="30" fill="#000" opacity="0.5" filter="url(#fsoft)"/>
+        <circle cx="${C}" cy="${C}" r="29" fill="url(#bonnet)" stroke="#2a2d2f" stroke-width="0.8"/>
+        <!-- four flange bolts in the corners -->
+        ${[45, 135, 225, 315].map(a => {
+          const [x, y] = P(74.5, a).split(" ").map(Number);
+          return `<circle cx="${(x + 1.5).toFixed(1)}" cy="${(y + 2).toFixed(1)}" r="6" fill="#000" opacity="0.45" filter="url(#fsoft)"/>
+            <path d="${hex(5.6, a * 0.7).replace(/[-\d.]+ [-\d.]+/g, m => { const [px, py] = m.split(" ").map(Number); return (px + x - C).toFixed(2) + " " + (py + y - C).toFixed(2); })}" fill="url(#bolt)" stroke="#26292b" stroke-width="0.7" stroke-linejoin="round"/>
+            <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="none" stroke="#2d3133" stroke-width="0.9" opacity="0.8"/>`;
+        }).join("")}
+      </g>
+      <text class="label" x="${C}" y="${H - 1.5}"></text>
+    </svg>
+
+    <div class="tilt">
+    <svg class="wheel" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <g id="hwshape">
+          <circle cx="${C}" cy="${C}" r="65" fill="none" stroke="currentColor" stroke-width="12"/>
+          <path d="${spokes}" fill="none" stroke="currentColor" stroke-width="7.6" stroke-linecap="round"/>
+          <circle cx="${C}" cy="${C}" r="17" fill="currentColor"/>
+        </g>
+        <path id="hwarc" d="M ${P(62.3, -40)} A 62.3 62.3 0 0 1 ${P(62.3, 40)}" fill="none"/>
+        <g id="hwcast">
+          <text><textPath href="#hwarc" startOffset="50%" text-anchor="middle">OPEN</textPath></text>
+          <path d="${arrow}"/>
+        </g>
+        <radialGradient id="sect" cx="${C}" cy="${C}" r="72" gradientUnits="userSpaceOnUse">
+          <stop offset="0.82" stop-color="#000" stop-opacity="0.35"/><stop offset="0.87" stop-color="#fff" stop-opacity="0.05"/>
+          <stop offset="0.9" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.95" stop-color="#000" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.4"/>
+        </radialGradient>
+        <radialGradient id="nutg" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#7c7c7a"/><stop offset="0.6" stop-color="#565654"/><stop offset="1" stop-color="#333332"/>
+        </radialGradient>
+        <filter id="fsh1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="fsh2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2"/></filter>
+        <filter id="frust" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.1"/></filter>
+        <filter id="iron" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.11" numOctaves="2" seed="7" result="rough"/>
+          <feDisplacementMap in="SourceGraphic" in2="rough" scale="1.5" xChannelSelector="R" yChannelSelector="G" result="src"/>
+          <feGaussianBlur in="src" stdDeviation="1.9" result="bump"/>
+          <feDiffuseLighting in="bump" surfaceScale="7" diffuseConstant="1.32" lighting-color="#fff" result="diff">
+            <feDistantLight azimuth="225" elevation="49"/>
+          </feDiffuseLighting>
+          <feSpecularLighting in="bump" surfaceScale="7" specularConstant="0.5" specularExponent="22" lighting-color="#fff" result="spec">
+            <feDistantLight azimuth="225" elevation="42"/>
+          </feSpecularLighting>
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="2" result="grain"/>
+          <feColorMatrix in="grain" type="matrix" values="0.42 0 0 0 0.8  0.42 0 0 0 0.8  0.42 0 0 0 0.8  0 0 0 0 1" result="grainL"/>
+          <feComposite in="src" in2="diff" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="lit"/>
+          <feComposite in="lit" in2="grainL" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="lit2"/>
+          <feComposite in="lit2" in2="spec" operator="arithmetic" k1="0" k2="1" k3="0.9" k4="0" result="lit3"/>
+          <feComposite in="lit3" in2="src" operator="in"/>
+        </filter>
+      </defs>
+      <!-- the wheel's shadow on the flange: a soft ambient one and a tight contact one -->
+      <g class="rot sh">
+        <use href="#hwshape" style="color:#000" opacity="0.42" filter="url(#fsh2)" transform="translate(4 6)"/>
+        <use href="#hwshape" style="color:#000" opacity="0.55" filter="url(#fsh1)" transform="translate(1.2 2)"/>
+      </g>
+      <!-- the casting, lit from above-left by the filter -->
+      <g class="lit" filter="url(#iron)">
+        <g class="rot body">
+          <use href="#hwshape" style="color: var(--c0)"/>
+          <circle cx="${C}" cy="${C}" r="65" fill="none" stroke="url(#sect)" stroke-width="12"/>
+          <circle cx="${C}" cy="${C}" r="15" fill="none" stroke="#000" stroke-opacity="0.25" stroke-width="2"/>
+          <!-- chips of bare iron with a rust bloom -->
+          <g class="chips">
+            ${chips.map(d => `<path d="${d}" fill="#7a3d1e" opacity="0.7" filter="url(#frust)" transform="translate(0.6 0.8)"/><path d="${d}" fill="#7d7f7c" stroke="#7a3d1e" stroke-width="0.8" stroke-linejoin="round"/>`).join("")}
+          </g>
+          <!-- OPEN + arrow, cast proud: a lit bevel, a shadow bevel, and the flat top -->
+          <use class="emb-hi" href="#hwcast" style="fill: var(--c1)"/>
+          <use class="emb-sh" href="#hwcast" style="fill: var(--c2)"/>
+          <use href="#hwcast" style="fill: var(--c0b)"/>
+          <!-- the stem nut -->
+          <path d="${hex(10.5, 15)}" fill="url(#nutg)" stroke="#232322" stroke-width="0.7" stroke-linejoin="round"/>
+          <path d="${hex(10.5, 15)}" fill="none" stroke="#9a9a97" stroke-opacity="0.35" stroke-width="0.8" transform="translate(-0.5 -0.5)"/>
+        </g>
+      </g>
+    </svg>
+    </div>
+
+    <svg class="stem" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="steel" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#eef0ee"/><stop offset="0.45" stop-color="#c9cbc9"/><stop offset="0.85" stop-color="#7e807e"/><stop offset="1" stop-color="#55575a"/>
+        </radialGradient>
+        <filter id="fstem" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur class="stemblur" stdDeviation="1"/></filter>
+      </defs>
+      <ellipse class="stemsh" cx="${C + 2}" cy="${C + 3}" r="6" rx="6" ry="6" fill="#000" opacity="0.55" filter="url(#fstem)"/>
+      <circle class="stemtip" cx="${C}" cy="${C}" r="6" fill="url(#steel)" stroke="#3a3c3c" stroke-width="0.6"/>
+      <circle class="stemcore" cx="${C}" cy="${C}" r="3" fill="none" stroke="#5c5e5e" stroke-width="0.7" opacity="0.7"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkHandwheelValve extends HTMLElement {
+    static get observedAttributes() { return ["value", "turns", "colour", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._th = 0; this._T = 8; this._scale = 1; this._w = 0; this._raf = 0; this._drag = null;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._grab = $(".grab"); this._tilt = $(".tilt > svg"); this._label = $(".label");
+      this._rots = Array.from(this.shadowRoot.querySelectorAll(".rot"));
+      this._hi = $(".emb-hi"); this._sh = $(".emb-sh");
+      this._stemsh = $(".stemsh"); this._stemtip = $(".stemtip"); this._stemcore = $(".stemcore"); this._stemblur = $(".stemblur");
+      ["_onDown", "_onMove", "_onUp", "_onWheel", "_onKey"].forEach(k => { this[k] = this[k].bind(this); });
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      this._stop(); clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { const x = parseFloat(v); if (!isNaN(x) && Math.abs(x - this._val()) > 0.0006) this.value = x; return; }
+      this._readAttrs(); this._render();
+    }
+    get value() { return this._val(); }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; v = Math.min(1, Math.max(0, v)); this._stop(); this._th = -v * this._T * 360; this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _val() { return Math.min(1, Math.max(0, -this._th / (this._T * 360))); }
+    _reflect() { this.setAttribute("value", String(Math.round(this._val() * 1000) / 1000)); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const v = this._val();
+      this._T = Math.max(1, Math.round(num("turns", 8)));
+      this._th = -v * this._T * 360;
+      this._scale = Math.max(0.2, num("scale", 1));
+      const c = COL[(this.getAttribute("colour") || "red").toLowerCase()] || COL.red;
+      for (const k in c) this.style.setProperty("--" + k, c[k]);
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "valve handwheel");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "1");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      const th = this._th, v = this._val();
+      const rot = "rotate(" + th.toFixed(2) + "deg)";
+      for (const r of this._rots) r.style.transform = rot;
+      // the cast letters' bevels stay lit from the top-left: rotate the offset the other way
+      const a = th * Math.PI / 180, o = 0.6, cs = Math.cos(a), sn = Math.sin(a);
+      const hx = -o * cs + -o * sn, hy = o * sn - o * cs;
+      this._hi.setAttribute("transform", "translate(" + hx.toFixed(2) + " " + hy.toFixed(2) + ")");
+      this._sh.setAttribute("transform", "translate(" + (-hx).toFixed(2) + " " + (-hy).toFixed(2) + ")");
+      // the stem rises: the boss grows a little and throws a longer, softer shadow
+      const r = 6 + 2.6 * v;
+      this._stemtip.setAttribute("r", r.toFixed(2)); this._stemcore.setAttribute("r", (r * 0.5).toFixed(2));
+      this._stemsh.setAttribute("rx", (r + 0.5 + 1.5 * v).toFixed(2)); this._stemsh.setAttribute("ry", (r + 0.5 + 1.5 * v).toFixed(2));
+      this._stemsh.setAttribute("cx", (C + 1.5 + 4 * v).toFixed(2)); this._stemsh.setAttribute("cy", (C + 2 + 5.5 * v).toFixed(2));
+      this._stemblur.setAttribute("stdDeviation", (0.9 + 1.8 * v).toFixed(2));
+      this._grab.setAttribute("aria-valuenow", String(Math.round(v * 100) / 100));
+      this._grab.setAttribute("aria-valuetext", Math.round(v * 100) + " % open, " + (Math.round(-th / 36) / 10) + " turns");
+    }
+    _emit(type, delta) {
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: this._val(), delta: delta } }));
+    }
+    /* turn by da degrees (clockwise positive); clamps at the stops; returns true if a stop was hit */
+    _move(da, snap) {
+      const lo = -this._T * 360, hi = 0;
+      let th = this._th + da, hit = false;
+      if (th < lo) { th = lo; hit = true; } if (th > hi) { th = hi; hit = true; }
+      const applied = th - this._th;
+      for (const r of this._rots) r.classList.toggle("snap", !!snap);
+      if (applied !== 0) { this._th = th; this._reflect(); this._render(); this._emit("input", applied / 360); }
+      return hit;
+    }
+    _wobble() {
+      const w = this._drag ? this._drag.w : this._w;
+      const t = Math.min(1, Math.abs(w) / 260);
+      const a = this._th * Math.PI / 180;
+      this._tilt.style.transform = t > 0.03 ? "rotate3d(" + Math.cos(a).toFixed(3) + "," + Math.sin(a).toFixed(3) + ",0," + (t * 1.2).toFixed(2) + "deg)" : "";
+    }
+    _spin(w) {
+      this._w = w; let last = performance.now();
+      const step = now => {
+        const dt = Math.min(0.05, (now - last) / 1000); last = now;
+        this._w *= Math.exp(-dt / 0.5);
+        const hit = this._move(this._w * dt, false);
+        if (hit) this._w = -this._w * 0.22;                        // the stiff bump at the stop
+        this._wobble();
+        if (Math.abs(this._w) < 5) { this._w = 0; this._raf = 0; this._wobble(); this._emit("change", 0); return; }
+        this._raf = requestAnimationFrame(step);
+      };
+      this._raf = requestAnimationFrame(step);
+    }
+    _stop() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } this._w = 0; this._wobble(); }
+    _ang(e) { const r = this._grab.getBoundingClientRect(); return Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180 / Math.PI; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._stop();
+      this._drag = { a: this._ang(e), t: performance.now(), w: 0, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const a = this._ang(e); let da = a - d.a; da = ((da + 540) % 360) - 180; d.a = a;
+      const now = performance.now(), dt = Math.max(4, now - d.t) / 1000; d.t = now;
+      d.w = d.w * 0.55 + (da / dt) * 0.45;
+      if (da) d.moved = true;
+      this._move(da, false); this._wobble();
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const stale = performance.now() - d.t > 90;                  // held still before letting go: no coast
+      this._drag = null;
+      if (!stale && Math.abs(d.w) > 40) this._spin(Math.max(-900, Math.min(900, d.w)));
+      else { this._wobble(); if (d.moved) this._emit("change", 0); }
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._stop();
+      const da = (e.deltaY < 0 ? -1 : 1) * 6 * (e.shiftKey ? 5 : 1);   // up = open = anticlockwise
+      this._move(da, true);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._emit("change", 0), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const full = this._T * 360, step = 0.01 * full * (e.shiftKey ? 10 : 1);
+      let da;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": da = -step; break;
+        case "ArrowDown": case "ArrowLeft": da = step; break;
+        case "PageUp": da = -0.1 * full; break;
+        case "PageDown": da = 0.1 * full; break;
+        case "Home": da = -this._th; break;
+        case "End": da = -full - this._th; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._stop();
+      this._move(da, true); this._emit("change", 0);
+    }
+  }
+  customElements.define("sk-handwheel-valve", SkHandwheelValve);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

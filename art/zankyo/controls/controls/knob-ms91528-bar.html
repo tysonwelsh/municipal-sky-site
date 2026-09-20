@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MS91528 MIL-spec bar knob — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Josefin+Sans:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-ms91528-bar",
+  "element": "sk-knob-ms91528",
+  "name": "MS91528 MIL-spec bar knob, black phenolic with a white nose",
+  "kind": "input",
+  "code": "A2",
+  "type": "Bar / pointer knob",
+  "source": "MS91528 / MIL-DTL-91528 standard control knob, as on Apollo Command Module and Space Shuttle panels, US aircraft and ship consoles, 1950s onward",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["black phenolic", "white paint", "grey painted aluminium panel", "steel set-screw"],
+  "tags": ["aerospace", "military", "console", "detented", "selector", "engraved legend", "Apollo"],
+  "value": { "model": "steps", "min": 0, "max": 7, "step": 1, "options": ["OFF", "STBY", "ON", "TEST"] },
+  "attributes": ["value", "options", "min", "max", "step", "mode", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 104, "h": 116 },
+  "notes": "Detented, 30° per position. Primary: OFF/STBY/ON/TEST at ON. Second: default 0–7 at 5. Third: mode=range, a smooth 300° pot. Click a legend to jump; drag, wheel or arrows step."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="grey-enamel">
+    <sk-knob-ms91528 value="ON" options="OFF|STBY|ON|TEST" label="CABIN FAN"></sk-knob-ms91528>
+    <sk-knob-ms91528 value="5" label="CHANNEL" scale="0.8"></sk-knob-ms91528>
+    <sk-knob-ms91528 value="6.4" mode="range" min="0" max="10" step="0.1" label="AUDIO" scale="0.8"></sk-knob-ms91528>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>MS91528</b> is the standard-issue bar knob of American military and aerospace hardware: a black
+  phenolic oblong with a square-shouldered, chamfered pointer nose and a rounded rear, sitting on a serrated
+  round boss, fixed with a socket set-screw. It is the knob on the Apollo Command Module's main display
+  console, on the Shuttle's flight deck, on radar consoles and shipboard radios, and it survives in the
+  catalogues today. The legend is engraved through grey paint and filled white.</p>
+  <p><b>The tells kept here:</b> the bar's flat, sharp-edged top with one thin highlight along its top-left edge,
+  lit from a fixed above-left light however the bar turns (the shading gradients counter-rotate); the
+  white-painted nose as a clean rectangle of paint with a chipped corner; the boss visible beneath the bar with
+  its fine serration ring and the set-screw on the rounded-end side; the ring of engraved white legends in a
+  Futura-like face, each with a short radial line; countersunk Phillips screws at the corners of the panel tile;
+  a hard 30° detent snap. Clicking a legend jumps to it; drag, wheel and arrows step; Home/End go to the ends.
+  <code>mode="range"</code> makes it a smooth 300° potentiometer with a 0–10 scale.</p>
+  <p><b>Left out:</b> the boss's height (it is seen from straight above), the MS part-number moulded into the
+  underside, and the panel's edge-lit plastic overlay used on later Shuttle panels.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-ms91528> — MIL-spec bar knob, detented 30° per position, on a grey panel tile ====
+   attributes: value options("A|B|C") min max step mode("steps"|"range") label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-knob-ms91528 options="OFF|ON" value="ON"></sk-knob-ms91528> */
+(function () {
+  if (customElements.get("sk-knob-ms91528")) return;
+  const W = 104, H = 116, CX = 52, CY = 55;
+  const BAR = `M ${CX - 10.5} ${CY - 33} L ${CX - 7.5} ${CY - 37} L ${CX + 7.5} ${CY - 37} L ${CX + 10.5} ${CY - 33} L ${CX + 10.5} ${CY + 6} A 10.5 10.5 0 0 1 ${CX - 10.5} ${CY + 6} Z`;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: ${CX - 39}px; top: ${CY - 39}px; width: 78px; height: 78px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab, :host([disabled]) .leg { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .rot { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 80ms cubic-bezier(.2,.9,.3,1.15); }
+    :host([mode="range"]) .rot { transition: transform 40ms linear; }
+    .rot.drag { transition: none; }
+    text { font-family: "Josefin Sans", "Futura", "Century Gothic", "Trebuchet MS", sans-serif; font-weight: 600; }
+    .leg text { font-size: 7px; letter-spacing: 0.12em; text-anchor: middle; dominant-baseline: middle; }
+    .leg { cursor: pointer; }
+    .leg .sh { fill: #3a3d40; }
+    .leg .fg { fill: #eeeeea; }
+    .lab { font-size: 6.5px; letter-spacing: 0.2em; text-anchor: middle; fill: #eeeeea; }
+    .lab.sh { fill: #3a3d40; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#777b7f"/><stop offset="0.55" stop-color="#6e7276"/><stop offset="1" stop-color="#63676b"/>
+        </linearGradient>
+        <radialGradient id="csink" cx="42%" cy="38%" r="60%">
+          <stop offset="0" stop-color="#a6a9ac"/><stop offset="0.55" stop-color="#7c8084"/><stop offset="0.85" stop-color="#4d5154"/><stop offset="1" stop-color="#34373a"/>
+        </radialGradient>
+        <radialGradient id="grime" cx="56%" cy="62%" r="50%">
+          <stop offset="0.62" stop-color="#000" stop-opacity="0"/><stop offset="0.82" stop-color="#1a1408" stop-opacity="0.22"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="bossG" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#2e2e2e"/><stop offset="0.6" stop-color="#181818"/><stop offset="1" stop-color="#0b0b0b"/>
+        </radialGradient>
+        <radialGradient id="bossLight" cx="35%" cy="30%" r="68%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+        </radialGradient>
+        <linearGradient id="barTop" class="cr" gradientUnits="userSpaceOnUse" x1="${CX - 34}" y1="${CY - 34}" x2="${CX + 30}" y2="${CY + 30}">
+          <stop offset="0" stop-color="#383838"/><stop offset="0.35" stop-color="#1c1c1c"/><stop offset="0.7" stop-color="#121212"/><stop offset="1" stop-color="#0c0c0c"/>
+        </linearGradient>
+        <linearGradient id="edgeHi" class="cr" gradientUnits="userSpaceOnUse" x1="${CX - 34}" y1="${CY - 34}" x2="${CX + 30}" y2="${CY + 30}">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.08"/><stop offset="0.7" stop-color="#000" stop-opacity="0.3"/><stop offset="1" stop-color="#000" stop-opacity="0.6"/>
+        </linearGradient>
+        <linearGradient id="noseG" class="cr" gradientUnits="userSpaceOnUse" x1="${CX - 12}" y1="${CY - 40}" x2="${CX + 12}" y2="${CY - 20}">
+          <stop offset="0" stop-color="#f7f6f1"/><stop offset="1" stop-color="#e2e0d8"/>
+        </linearGradient>
+        <radialGradient id="screwG" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#4a4a4a"/><stop offset="0.7" stop-color="#262626"/><stop offset="1" stop-color="#101010"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <filter id="softer" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="tight" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+      </defs>
+
+      <!-- the panel tile: grey paint, edge, four countersunk Phillips screws -->
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="3" fill="url(#panel)" stroke="#45494d" stroke-width="1"/>
+      <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="2.5" fill="none" stroke="#fff" stroke-opacity="0.13" stroke-width="0.8"/>
+      <g class="screws">
+        <g transform="translate(8 8)"><circle r="5" fill="url(#csink)"/><circle r="5" fill="none" stroke="#3c3f42" stroke-width="0.6"/><g transform="rotate(14)" fill="#26282b"><rect x="-3.4" y="-0.6" width="6.8" height="1.2"/><rect x="-0.6" y="-3.4" width="1.2" height="6.8"/></g><path d="M -3.6 -1.6 A 4 4 0 0 1 -1.6 -3.6" fill="none" stroke="#d8dadc" stroke-opacity="0.5" stroke-width="0.7"/></g>
+        <g transform="translate(96 8)"><circle r="5" fill="url(#csink)"/><circle r="5" fill="none" stroke="#3c3f42" stroke-width="0.6"/><g transform="rotate(-31)" fill="#26282b"><rect x="-3.4" y="-0.6" width="6.8" height="1.2"/><rect x="-0.6" y="-3.4" width="1.2" height="6.8"/></g><path d="M -3.6 -1.6 A 4 4 0 0 1 -1.6 -3.6" fill="none" stroke="#d8dadc" stroke-opacity="0.5" stroke-width="0.7"/></g>
+        <g transform="translate(8 108)"><circle r="5" fill="url(#csink)"/><circle r="5" fill="none" stroke="#3c3f42" stroke-width="0.6"/><g transform="rotate(38)" fill="#26282b"><rect x="-3.4" y="-0.6" width="6.8" height="1.2"/><rect x="-0.6" y="-3.4" width="1.2" height="6.8"/></g><path d="M -3.6 -1.6 A 4 4 0 0 1 -1.6 -3.6" fill="none" stroke="#d8dadc" stroke-opacity="0.5" stroke-width="0.7"/></g>
+        <g transform="translate(96 108)"><circle r="5" fill="url(#csink)"/><circle r="5" fill="none" stroke="#3c3f42" stroke-width="0.6"/><g transform="rotate(-8)" fill="#26282b"><rect x="-3.4" y="-0.6" width="6.8" height="1.2"/><rect x="-0.6" y="-3.4" width="1.2" height="6.8"/></g><path d="M -3.6 -1.6 A 4 4 0 0 1 -1.6 -3.6" fill="none" stroke="#d8dadc" stroke-opacity="0.5" stroke-width="0.7"/></g>
+      </g>
+
+      <!-- engraved legend ring (built by JS) and the label -->
+      <g class="scale"></g>
+      <text class="lab sh" x="${CX + 0.5}" y="${H - 4.5}"></text>
+      <text class="lab fg" x="${CX}" y="${H - 5}"></text>
+
+      <!-- finger grime, off-centre from below-right -->
+      <circle cx="${CX + 3}" cy="${CY + 4}" r="34" fill="url(#grime)"/>
+
+      <!-- boss shadows: soft ambient and tight contact -->
+      <circle cx="${CX + 2.5}" cy="${CY + 3.5}" r="21" fill="#000" opacity="0.5" filter="url(#softer)"/>
+      <circle cx="${CX + 1}" cy="${CY + 1.5}" r="20.5" fill="#000" opacity="0.65" filter="url(#tight)"/>
+
+      <!-- the serrated boss -->
+      <circle cx="${CX}" cy="${CY}" r="20" fill="url(#bossG)" stroke="#050505" stroke-width="0.6"/>
+      <circle cx="${CX}" cy="${CY}" r="18.6" fill="none" stroke="#454545" stroke-width="2.2" stroke-dasharray="0.75 0.75" opacity="0.9"/>
+      <circle cx="${CX}" cy="${CY}" r="17.2" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.6"/>
+      <circle cx="${CX}" cy="${CY}" r="20" fill="url(#bossLight)"/>
+
+      <!-- the bar's shadows (fixed offset, rotate with the bar) -->
+      <path class="rot bar" data-dx="2.6" data-dy="3.4" d="${BAR}" fill="#000" opacity="0.5" filter="url(#soft)"/>
+      <path class="rot bar" data-dx="1" data-dy="1.4" d="${BAR}" fill="#000" opacity="0.7" filter="url(#tight)"/>
+      <!-- the bar's side (a 20 mm tall knob seen from above shows a sliver of side down-right) -->
+      <path class="rot bar" data-dx="1.3" data-dy="1.7" d="${BAR}" fill="#040404"/>
+      <path class="rot bar" data-dx="0.6" data-dy="0.8" d="${BAR}" fill="#0a0a0a"/>
+
+      <!-- the bar's top, the set-screw, the white nose -->
+      <g class="rot top" data-dx="0" data-dy="0">
+        <g transform="translate(${CX} ${CY + 17.4})">
+          <circle r="2.3" fill="url(#screwG)" stroke="#000" stroke-width="0.5"/>
+          <path d="M 0 -1.3 L 1.13 -0.65 L 1.13 0.65 L 0 1.3 L -1.13 0.65 L -1.13 -0.65 Z" fill="#050505"/>
+          <path d="M -1.7 -0.9 A 2 2 0 0 1 -0.6 -1.9" fill="none" stroke="#8a8a8a" stroke-opacity="0.6" stroke-width="0.5"/>
+        </g>
+        <path d="${BAR}" fill="url(#barTop)" stroke="url(#edgeHi)" stroke-width="0.9" stroke-linejoin="round"/>
+        <!-- white paint on the nose only, edge slightly chipped -->
+        <path d="M ${CX - 9.2} ${CY - 32.4} L ${CX - 7} ${CY - 35.6} L ${CX + 7} ${CY - 35.6} L ${CX + 9.2} ${CY - 32.4} L ${CX + 9.2} ${CY - 25.4} L ${CX + 8.6} ${CY - 25} L ${CX + 6.2} ${CY - 25.4} L ${CX - 9.2} ${CY - 25.2} Z" fill="url(#noseG)"/>
+        <path d="M ${CX + 9.2} ${CY - 27.4} L ${CX + 7.6} ${CY - 25.4} L ${CX + 9.2} ${CY - 25.4} Z" fill="#141414"/>
+        <path d="M ${CX - 9.2} ${CY - 25.2} L ${CX - 7.8} ${CY - 25.2}" stroke="#141414" stroke-width="0.7"/>
+        <path d="M ${CX - 9.2} ${CY - 32.4} L ${CX - 7} ${CY - 35.6} L ${CX + 7} ${CY - 35.6}" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.5"/>
+        <!-- polish where a thumb sits on the rounded end -->
+        <ellipse cx="${CX + 1}" cy="${CY + 3}" rx="6" ry="9" fill="#fff" opacity="0.045"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkKnobMs91528 extends HTMLElement {
+    static get observedAttributes() { return ["value", "options", "min", "max", "step", "mode", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._i = 0; this._v = 0; this._opts = null; this._min = 0; this._max = 7; this._step = 1; this._range = false; this._scale = 1; this._n = 8;
+      this._rots = this.shadowRoot.querySelectorAll(".rot");
+      this._grads = this.shadowRoot.querySelectorAll(".cr");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._labs = this.shadowRoot.querySelectorAll(".lab");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs(); this._drawScale();
+      if (!this.hasAttribute("value")) this._reflect();
+      this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n !== "value") this._drawScale(); this._render(); }
+    get value() { return this._range ? this._v : (this._opts ? this._opts[this._i] : this._min + this._i * this._step); }
+    set value(v) { if (!this._take(v)) return; this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    // parse an incoming value (option string, index, or number); returns false if unusable
+    _take(v) {
+      if (this._range) { const x = parseFloat(v); if (isNaN(x)) return false; this._v = this._clamp(x); return true; }
+      if (this._opts) {
+        const s = String(v).trim();
+        let k = this._opts.findIndex(o => o.toLowerCase() === s.toLowerCase());
+        if (k < 0) { const x = parseInt(s, 10); if (isNaN(x)) return false; k = x; }
+        this._i = Math.max(0, Math.min(this._n - 1, k)); return true;
+      }
+      const x = parseFloat(v); if (isNaN(x)) return false;
+      this._i = Math.max(0, Math.min(this._n - 1, Math.round((x - this._min) / this._step))); return true;
+    }
+    _reflect() { const cur = this.value; this.setAttribute("value", typeof cur === "number" ? String(Math.round(cur * 1000) / 1000) : cur); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._range = this.getAttribute("mode") === "range";
+      const o = this.getAttribute("options");
+      this._opts = (!this._range && o) ? o.split("|").map(s => s.trim()).filter(Boolean) : null;
+      if (this._opts && this._opts.length < 2) this._opts = null;
+      if (this._range) { this._min = num("min", 0); this._max = num("max", 10); this._step = num("step", 0.1); }
+      else if (this._opts) { this._n = this._opts.length; }
+      else { this._min = num("min", 0); this._max = num("max", 7); this._step = Math.max(1e-6, num("step", 1)); this._n = Math.max(2, Math.round((this._max - this._min) / this._step) + 1); }
+      this._scale = Math.max(0.2, num("scale", 1));
+      if (this.hasAttribute("value")) this._take(this.getAttribute("value"));
+      const label = this.getAttribute("label") || "";
+      this._labs.forEach(t => { t.textContent = label; });
+      const g = this._grab;
+      g.setAttribute("aria-label", label || "selector");
+      g.setAttribute("aria-valuemin", this._range ? this._min : 0); g.setAttribute("aria-valuemax", this._range ? this._max : this._n - 1);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _spacing() { return this._range ? 0 : Math.min(30, 300 / (this._n - 1)); }
+    _angleAt(i) { return this._range ? (-150 + 300 * (i - this._min) / (this._max - this._min || 1)) : (-(this._n - 1) * this._spacing() / 2 + i * this._spacing()); }
+    _angle() { return this._range ? this._angleAt(this._v) : this._angleAt(this._i); }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      const marks = [];
+      if (this._range) { for (let k = 0; k <= 10; k++) marks.push({ a: -150 + 30 * k, txt: String(Math.round((this._min + (this._max - this._min) * k / 10) * 10) / 10).replace(/\.0$/, ""), v: this._min + (this._max - this._min) * k / 10 }); }
+      else for (let i = 0; i < this._n; i++) marks.push({ a: this._angleAt(i), txt: this._opts ? this._opts[i] : String(Math.round((this._min + i * this._step) * 100) / 100), v: i });
+      const rr = this._range ? 46.5 : 48;
+      marks.forEach(m => {
+        const a = m.a * Math.PI / 180, s = Math.sin(a), c = Math.cos(a);
+        const grp = mk("g", { class: "leg" });
+        // engraved: a dark edge offset down-right beneath the white fill
+        [[0.5, "#3a3d40"], [0, "#eeeeea"]].forEach(([o, col]) => {
+          grp.appendChild(mk("line", { x1: CX + 39.5 * s + o, y1: CY - 39.5 * c + o, x2: CX + 43.5 * s + o, y2: CY - 43.5 * c + o, stroke: col, "stroke-width": 1, "stroke-linecap": "round" }));
+        });
+        const tx = CX + rr * s, ty = CY - rr * c + 0.6;
+        const sh = mk("text", { x: tx + 0.5, y: ty + 0.5, class: "sh" }); sh.textContent = m.txt;
+        const fg = mk("text", { x: tx, y: ty, class: "fg" }); fg.textContent = m.txt;
+        grp.appendChild(sh); grp.appendChild(fg);
+        grp.addEventListener("click", () => { if (this.hasAttribute("disabled")) return; this._grab.focus({ preventScroll: true }); this._range ? this._setV(m.v, false) : this._setI(m.v, false); this._settle(); });
+        g.appendChild(grp);
+      });
+    }
+    _render() {
+      const a = this._angle();
+      this._rots.forEach(el => { el.style.transform = `translate(${el.dataset.dx}px, ${el.dataset.dy}px) rotate(${a.toFixed(2)}deg)`; });
+      this._grads.forEach(gr => gr.setAttribute("gradientTransform", `rotate(${(-a).toFixed(2)} ${CX} ${CY})`));
+      const g = this._grab;
+      if (this._range) { g.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100)); g.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10)); }
+      else { g.setAttribute("aria-valuenow", String(this._i)); g.setAttribute("aria-valuetext", String(this.value)); }
+    }
+    _emit(settle) { this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this.value } })); }
+    _setI(i, silent) { i = Math.max(0, Math.min(this._n - 1, Math.round(i))); if (i === this._i) return false; this._i = i; this._reflect(); this._render(); if (!silent) this._emit(false); return true; }
+    _setV(v, silent) { v = this._clamp(Math.round(v / this._step) * this._step); if (v === this._v) return false; this._v = v; this._reflect(); this._render(); if (!silent) this._emit(false); return true; }
+    _settle() { this._emit(true); }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      if (this._range) this._rots.forEach(r => r.classList.add("drag"));
+      this._drag = { y: e.clientY, x: e.clientX, i: this._i, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const px = ((this._drag.y - e.clientY) + (e.clientX - this._drag.x) * 0.35) / this._scale;   // up or right = clockwise
+      if (this._range) {
+        const v = this._drag.v + px * (e.shiftKey ? 0.25 : 1) * (this._max - this._min) / 160;
+        if (this._setV(v, false)) this._drag.moved = true;
+      } else {
+        if (this._setI(this._drag.i + Math.round(px / 22), false)) this._drag.moved = true;
+      }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag"); this._rots.forEach(r => r.classList.remove("drag"));
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._settle();
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      const moved = this._range ? this._setV(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false) : this._setI(this._i + dir * (e.shiftKey ? 10 : 1), false);
+      if (moved) { clearTimeout(this._wt); this._wt = setTimeout(() => this._settle(), 220); }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const st = this._range ? this._step : 1, big = st * 10;
+      const cur = this._range ? this._v : this._i, lo = this._range ? this._min : 0, hi = this._range ? this._max : this._n - 1;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = cur + (e.shiftKey ? big : st); break;
+        case "ArrowDown": case "ArrowLeft": v = cur - (e.shiftKey ? big : st); break;
+        case "PageUp": v = cur + (hi - lo) / 10; break;
+        case "PageDown": v = cur - (hi - lo) / 10; break;
+        case "Home": v = lo; break;
+        case "End": v = hi; break;
+        default: return;
+      }
+      e.preventDefault();
+      if (this._range ? this._setV(v, false) : this._setI(v, false)) this._settle();
+    }
+  }
+  customElements.define("sk-knob-ms91528", SkKnobMs91528);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

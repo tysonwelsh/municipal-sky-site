@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lux Minute Minder drum timer — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "timer-lux-minute-minder",
+  "element": "sk-timer-lux",
+  "name": "Lux Minute Minder drum timer",
+  "kind": "both",
+  "code": "A15",
+  "type": "Mechanical kitchen timer",
+  "source": "Lux Clock (Robertshaw) Minute Minder, the white steel drum timer on every 1950s American kitchen counter",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["white-painted steel", "chrome ring", "printed scale"],
+  "tags": ["kitchen", "timer", "countdown", "drum", "bell", "clockwork"],
+  "value": { "model": "time", "min": 0, "max": 3600, "step": 1, "unit": "s" },
+  "attributes": ["value", "label", "paused", "scale", "disabled"],
+  "events": ["input", "change", "ring"],
+  "size": { "w": 120, "h": 136 },
+  "notes": "One timer set to 18 minutes and counting down in real time; a second at zero, at scale 0.8. Turn the top half to set; it rings at zero."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-timer-lux value="1080" label="MINUTE MINDER"></sk-timer-lux>
+    <sk-timer-lux value="0" label="MINUTE MINDER" scale="0.8"></sk-timer-lux>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Lux Minute Minder</b> is the white drum on the kitchen counter: a painted steel can whose top half
+  you twist clockwise to wind the clockwork, printed 0 to 60 around a sloped shoulder, a chrome ring where the
+  halves meet, and a red pointer on the fixed base. It creeps back anticlockwise as it runs and rings a bell
+  at zero. Lux Clock of Waterbury made them from the 1930s; Robertshaw kept making them into the 1970s.</p>
+  <p><b>The tells kept here:</b> the numerals are on the moving part and the red index on the base stays still;
+  the numerals and minute ticks sit on the sloped shoulder and are foreshortened twice, by the cylinder
+  (they crowd at the sides) and by the slope; the chrome rim is a hard, bright band; the painted steel has one
+  soft highlight from above-left and a band of reflected light on the far right; a chip on the base's
+  bottom edge shows steel. Dragging follows the angle around the top; the wheel and arrows step a minute;
+  the countdown runs in <code>requestAnimationFrame</code> with a tick every second and stops when the element
+  leaves the page; at zero the drum shakes and emits <code>ring</code>. A <code>paused</code> attribute holds it.</p>
+  <p><b>Left out:</b> the "LUX" script on the top, the wind-up ratchet click, the bell's sound.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-timer-lux> — Lux Minute Minder white drum kitchen timer, 0–60 minutes ====
+   attributes: value (seconds, 0–3600) label paused scale disabled
+   events: input {value} while turning, change {value} when the hand lets go, ring {} when the countdown reaches zero
+   the value counts down in real time (rAF); setting .value from outside never emits.
+   self-contained: paste this block into any page and use <sk-timer-lux value="600"></sk-timer-lux> */
+(function () {
+  if (customElements.get("sk-timer-lux")) return;
+  const W = 120, H = 136, CX = 60;
+  const TOPY = 34, TOPR = 38, TOPRY = 10.5;     // the flat top of the turning half
+  const R = 50, RY = 14, SHY = 50;              // full drum radius and the y of the shoulder's base
+  const MAX = 3600;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    .shake { position: absolute; inset: 0; }
+    .shake.ring { animation: sk-lux-ring 300ms linear; }
+    @keyframes sk-lux-ring { 0%,100% { transform: translate(0,0); } 15% { transform: translate(2px,0); } 35% { transform: translate(-2px,1px); } 55% { transform: translate(2px,-1px); } 75% { transform: translate(-2px,0); } 90% { transform: translate(1px,0); } }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 6px; top: 18px; width: 108px; height: 66px; border-radius: 40px / 24px; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    text { font-family: "Libre Franklin", "Franklin Gothic Medium", "Helvetica Neue", Arial, sans-serif; }
+    .num { font-size: 7px; font-weight: 500; fill: #161616; text-anchor: middle; dominant-baseline: central; }
+    .word { font-size: 6px; font-weight: 600; fill: #b4261e; letter-spacing: 0.2em; text-anchor: middle; }
+  </style>
+  <div class="wrap"><div class="shake">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="drum" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#a5a298"/><stop offset="0.06" stop-color="#cfccc2"/><stop offset="0.22" stop-color="#f4f2ea"/>
+          <stop offset="0.42" stop-color="#f7f5ee"/><stop offset="0.64" stop-color="#e7e4db"/><stop offset="0.84" stop-color="#c6c3b9"/>
+          <stop offset="0.95" stop-color="#a09d93"/><stop offset="1" stop-color="#b9b6ac"/>
+        </linearGradient>
+        <linearGradient id="base" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#9a978d"/><stop offset="0.06" stop-color="#c4c1b7"/><stop offset="0.22" stop-color="#ebe8df"/>
+          <stop offset="0.42" stop-color="#eeebe2"/><stop offset="0.64" stop-color="#dcd9d0"/><stop offset="0.84" stop-color="#bbb8ae"/>
+          <stop offset="0.95" stop-color="#95928a"/><stop offset="1" stop-color="#aeaba1"/>
+        </linearGradient>
+        <linearGradient id="shoulder" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#b3b0a6"/><stop offset="0.12" stop-color="#e2dfd6"/><stop offset="0.3" stop-color="#f8f6ef"/>
+          <stop offset="0.5" stop-color="#faf8f2"/><stop offset="0.72" stop-color="#ebe8df"/><stop offset="0.9" stop-color="#c9c6bc"/><stop offset="1" stop-color="#b1aea4"/>
+        </linearGradient>
+        <radialGradient id="topface" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#fdfcf8"/><stop offset="0.7" stop-color="#f1eee6"/><stop offset="1" stop-color="#dedbd2"/>
+        </radialGradient>
+        <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5f5f5c"/><stop offset="0.07" stop-color="#d4d4d1"/><stop offset="0.2" stop-color="#fbfbf9"/>
+          <stop offset="0.33" stop-color="#b4b4b1"/><stop offset="0.5" stop-color="#f0f0ee"/><stop offset="0.63" stop-color="#8a8a87"/>
+          <stop offset="0.8" stop-color="#cbcbc8"/><stop offset="0.93" stop-color="#555552"/><stop offset="1" stop-color="#8a8a87"/>
+        </linearGradient>
+        <linearGradient id="vert" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#4a4740" stop-opacity="0.22"/>
+        </linearGradient>
+        <linearGradient id="vert2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.1"/><stop offset="1" stop-color="#3a3730" stop-opacity="0.16"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- shadow on the counter: tight contact, then ambient, both down-right -->
+      <ellipse cx="66" cy="116" rx="54" ry="15" fill="#000" opacity="0.4" filter="url(#softer)"/>
+      <ellipse cx="62" cy="112" rx="50" ry="14" fill="#000" opacity="0.5" filter="url(#soft)"/>
+
+      <!-- the fixed base -->
+      <path d="M 10 65 L 10 110 A ${R} ${RY} 0 0 0 110 110 L 110 65 Z" fill="url(#base)"/>
+      <path d="M 10 65 L 10 110 A ${R} ${RY} 0 0 0 110 110 L 110 65 Z" fill="url(#vert2)"/>
+      <path d="M 10 110 A ${R} ${RY} 0 0 0 110 110" fill="none" stroke="#6d6a62" stroke-opacity="0.7" stroke-width="0.9"/>
+      <path d="M 12 110 A ${R} ${RY} 0 0 0 108 110" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6" transform="translate(0 -1.2)"/>
+      <!-- chip on the bottom edge, bare steel -->
+      <path d="M 19.5 118.2 L 22.8 116.4 L 26.4 117.3 L 25.2 120.1 L 21 120.6 Z" fill="#9c9c98"/>
+      <path d="M 19.5 118.2 L 22.8 116.4 L 26.4 117.3" fill="none" stroke="#5a5852" stroke-width="0.6"/>
+      <!-- the red index and the word -->
+      <path d="M 60 80.5 L 56.6 88 L 63.4 88 Z" fill="#c9302a"/>
+      <path d="M 60 80.5 L 56.6 88 L 63.4 88 Z" fill="none" stroke="#7a1712" stroke-width="0.4" stroke-opacity="0.6"/>
+      <text class="word" x="60" y="104.5">MINUTES</text>
+
+      <!-- the chrome ring between the halves -->
+      <path d="M 10 60 A ${R} ${RY} 0 0 0 110 60 L 110 65 A ${R} ${RY} 0 0 1 10 65 Z" fill="url(#chrome)"/>
+      <path d="M 10 65 A ${R} ${RY} 0 0 0 110 65" fill="none" stroke="#3a3a38" stroke-opacity="0.6" stroke-width="0.8" transform="translate(0 0.6)"/>
+      <path d="M 10 60 A ${R} ${RY} 0 0 0 110 60" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.5"/>
+
+      <!-- the turning half: body, shoulder, top -->
+      <path d="M 10 ${SHY} L 10 60 A ${R} ${RY} 0 0 0 110 60 L 110 ${SHY} A ${R} ${RY} 0 0 1 10 ${SHY} Z" fill="url(#drum)"/>
+      <path d="M 10 ${SHY} L 10 60 A ${R} ${RY} 0 0 0 110 60 L 110 ${SHY} A ${R} ${RY} 0 0 1 10 ${SHY} Z" fill="url(#vert)"/>
+      <path d="M ${CX - TOPR} ${TOPY} L 10 ${SHY} A ${R} ${RY} 0 0 0 110 ${SHY} L ${CX + TOPR} ${TOPY} A ${TOPR} ${TOPRY} 0 0 1 ${CX - TOPR} ${TOPY} Z" fill="url(#shoulder)"/>
+      <path d="M 10 ${SHY} A ${R} ${RY} 0 0 0 110 ${SHY}" fill="none" stroke="#7a776f" stroke-opacity="0.35" stroke-width="0.6"/>
+      <ellipse cx="${CX}" cy="${TOPY}" rx="${TOPR}" ry="${TOPRY}" fill="url(#topface)" stroke="#8d8a82" stroke-opacity="0.55" stroke-width="0.6"/>
+      <!-- the printed scale on the shoulder (placed by angle in JS) -->
+      <g class="ticks"></g>
+      <g class="nums"></g>
+      <!-- silhouette hairlines -->
+      <path d="M 110 ${SHY} L 110 60" fill="none" stroke="#6a675f" stroke-opacity="0.5" stroke-width="0.7"/>
+      <path d="M 110 65 L 110 110" fill="none" stroke="#6a675f" stroke-opacity="0.5" stroke-width="0.7"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div></div>`;
+
+  class SkTimerLux extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "paused", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._raf = 0; this._last = 0; this._shown = -1;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._shake = $(".shake"); this._grab = $(".grab"); this._ticks = $(".ticks"); this._nums = $(".nums");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+      this._buildScale();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs(); this._render(true); this._run();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0; clearTimeout(this._wt); clearTimeout(this._rt);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(true); this._run(); }
+    get value() { return Math.round(this._v); }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._v = this._clamp(v); this._reflect(); this._render(true); this._run(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get paused() { return this.hasAttribute("paused"); }
+    set paused(p) { if (p) this.setAttribute("paused", ""); else this.removeAttribute("paused"); }
+    focus() { this._grab.focus(); }
+    demo() { return undefined; }                       // it animates itself
+
+    _clamp(v) { return Math.min(MAX, Math.max(0, v)); }
+    _reflect() { const s = String(Math.round(this._v)); if (this.getAttribute("value") !== s) this.setAttribute("value", s); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const av = num("value", this._v);
+      if (Math.round(av) !== Math.round(this._v)) this._v = this._clamp(av);
+      const g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", this.getAttribute("label") || "kitchen timer");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", String(MAX));
+      g.setAttribute("tabindex", dis ? "-1" : "0"); g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    // a point on the sloped shoulder: radius r between the top (TOPR) and the base (R)
+    _shoulder(r, th) {
+      const t = (r - TOPR) / (R - TOPR);
+      const yc = TOPY + t * (SHY - TOPY), ry = TOPRY + t * (RY - TOPRY);
+      return [CX + r * Math.sin(th), yc + ry * Math.cos(th), ry];
+    }
+    _buildScale() {
+      const ns = "http://www.w3.org/2000/svg";
+      this._tickEls = []; this._numEls = [];
+      for (let i = 0; i < 60; i++) {
+        const l = document.createElementNS(ns, "line");
+        l.setAttribute("stroke", "#161616"); l.setAttribute("stroke-width", i % 5 === 0 ? 0.9 : 0.6); l.setAttribute("stroke-linecap", "round");
+        this._ticks.appendChild(l); this._tickEls.push(l);
+        if (i % 5 === 0) {
+          const t = document.createElementNS(ns, "text");
+          t.setAttribute("class", "num"); t.textContent = String(i);
+          this._nums.appendChild(t); this._numEls.push({ el: t, i });
+        }
+      }
+    }
+    _render(force) {
+      const sec = Math.floor(this._v + 1e-6);
+      if (!force && sec === this._shown) return;
+      this._shown = sec;
+      const turn = (sec / MAX) * 2 * Math.PI;              // the drum's set angle, clockwise from above
+      for (let i = 0; i < 60; i++) {
+        const th = i * Math.PI / 30 - turn;                  // screen angle: 0 = front (at the index)
+        const c = Math.cos(th), l = this._tickEls[i];
+        if (c < 0.04) { l.setAttribute("opacity", "0"); continue; }
+        const r1 = i % 5 === 0 ? 45.5 : 46.8, [x1, y1] = this._shoulder(r1, th), [x2, y2] = this._shoulder(49.3, th);
+        l.setAttribute("x1", x1.toFixed(2)); l.setAttribute("y1", y1.toFixed(2)); l.setAttribute("x2", x2.toFixed(2)); l.setAttribute("y2", y2.toFixed(2));
+        l.setAttribute("opacity", Math.min(1, c * 2.2).toFixed(2));
+      }
+      for (const { el, i } of this._numEls) {
+        const th = i * Math.PI / 30 - turn, c = Math.cos(th);
+        if (c < 0.06) { el.setAttribute("opacity", "0"); continue; }
+        const [x, y, ry] = this._shoulder(42.3, th);
+        const rot = Math.atan2(-ry * Math.sin(th), 42.3 * c) * 180 / Math.PI;   // baseline tangent to the ellipse
+        el.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${rot.toFixed(1)}) scale(${Math.max(0.12, c).toFixed(3)} 0.86)`);
+        el.setAttribute("opacity", Math.min(1, c * 2).toFixed(2));
+      }
+      const m = Math.floor(sec / 60), s = sec % 60;
+      this._grab.setAttribute("aria-valuenow", String(sec));
+      this._grab.setAttribute("aria-valuetext", m + ":" + (s < 10 ? "0" : "") + s);
+    }
+    // ---- the clockwork ----
+    _run() {
+      const should = this._v > 0 && !this.hasAttribute("paused") && !this._drag && this.isConnected;
+      if (should && !this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); }
+      if (!should && this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+    }
+    _tick(now) {
+      const dt = Math.min(0.5, (now - this._last) / 1000); this._last = now;
+      this._v -= dt;
+      if (this._v <= 0) { this._v = 0; this._raf = 0; this._reflect(); this._render(); this._ring(); return; }
+      if (Math.floor(this._v) !== this._shown) { this._reflect(); this._render(); }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _ring() {
+      this._shake.classList.remove("ring"); void this._shake.offsetWidth; this._shake.classList.add("ring");
+      clearTimeout(this._rt); this._rt = setTimeout(() => this._shake.classList.remove("ring"), 320);
+      this.dispatchEvent(new CustomEvent("ring", { bubbles: true, composed: true, detail: {} }));
+    }
+    // ---- the hand ----
+    _set(v, settle) {
+      v = Math.round(this._clamp(v));
+      if (v === Math.round(this._v) && !settle) return;
+      this._v = v; this._reflect(); this._render(true);
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _pointerAngle(e) {                                   // angle around the top face, de-foreshortened to a view from above
+      const r = this._grab.getBoundingClientRect(), s = this._scale;
+      const dx = (e.clientX - r.left) / s + 6 - CX, dy = ((e.clientY - r.top) / s + 18 - TOPY) * (R / RY);
+      return Math.atan2(dx, dy);                         // 0 at the front, +ve to the right
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._drag = { a: this._pointerAngle(e), v: this._v, moved: false };
+      this._run();
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const a = this._pointerAngle(e);
+      let da = a - this._drag.a;
+      if (da > Math.PI) da -= 2 * Math.PI; else if (da < -Math.PI) da += 2 * Math.PI;
+      this._drag.a = a;
+      const v = this._drag.v - da * MAX / (2 * Math.PI);  // clockwise from above (front moves left) winds it up
+      this._drag.v = this._clamp(v);
+      if (Math.round(this._drag.v) !== Math.round(this._v)) this._drag.moved = true;
+      this._set(this._drag.v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+      this._run();
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(Math.round(this._v / 60) * 60 + dir * 60 * (e.shiftKey ? 5 : 1), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => { this._set(this._v, true); this._run(); }, 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const step = e.shiftKey ? 600 : 60; let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = Math.ceil((this._v - 1e-6) / 60) * 60 + step; break;
+        case "ArrowDown": case "ArrowLeft": v = Math.floor((this._v + 1e-6) / 60) * 60 - step; break;
+        case "PageUp": v = this._v + 300; break;
+        case "PageDown": v = this._v - 300; break;
+        case "Home": v = 0; break;
+        case "End": v = MAX; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._set(v, false); this._set(v, true); this._run();
+    }
+  }
+  customElements.define("sk-timer-lux", SkTimerLux);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

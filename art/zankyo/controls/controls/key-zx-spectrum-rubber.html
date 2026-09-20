@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZX Spectrum 48K grey rubber key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "key-zx-spectrum-rubber",
+  "element": "sk-key-zx-spectrum",
+  "name": "ZX Spectrum 48K grey rubber key",
+  "kind": "input",
+  "code": "D10",
+  "type": "Chiclet / rubber dome key",
+  "source": "Sinclair ZX Spectrum 48K (Rick Dickinson, 1982): forty grey rubber \"dead flesh\" keys with five legends each, in a matte black case with the rainbow stripe",
+  "era": "1980s",
+  "origin": "UK",
+  "materials": ["moulded rubber", "ABS case", "silk-screen"],
+  "tags": ["home computer", "keyboard", "momentary", "dead flesh", "BASIC keyword", "rainbow stripe"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "keyword", "red", "green", "below", "wide", "pressed", "bleed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 54, "h": 62 },
+  "notes": "Three keys from one strip of case (bleed=18 butts them together), the wide SYMBOL SHIFT among them, P held down. Click or press Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-key-zx-spectrum legend="Q" keyword="PLOT" green="SIN" red="&lt;=" below="ASN" bleed="18"></sk-key-zx-spectrum>
+    <sk-key-zx-spectrum legend="P" keyword="PRINT" green="TAB" red="&quot;" below="&#169;" bleed="18" pressed></sk-key-zx-spectrum>
+    <sk-key-zx-spectrum wide keyword="SYMBOL SHIFT" bleed="18"></sk-key-zx-spectrum>
+    <div data-sk-ignore style="align-self:flex-end;width:46px;height:54px;border-radius:1px;box-shadow:0 2px 7px rgba(0,0,0,.6), inset 0 0 6px rgba(0,0,0,.35);background:linear-gradient(107deg,#191919 0 10%,#d92b2b 10% 31%,#f2c400 31% 52%,#2ba84a 52% 73%,#00a8e0 73% 94%,#191919 94%)"></div>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>ZX Spectrum 48K</b> (Sinclair, 1982; industrial design by Rick Dickinson) put forty moulded rubber
+  keys through holes in a matte black ABS case. Each key carries a letter and a BASIC keyword in white; the case
+  around it carries a green extended-mode word above-left, a red symbol-shift character above-right, and a
+  further white word beneath. Five legends per key, because the machine had one key for everything.</p>
+  <p><b>The tells kept here:</b> the "dead flesh" grey — matte, dull, faintly warm, with a grey rim light along
+  the rounded top edge and almost no specular highlight; the key as a rounded slab with a domed face sitting in
+  a hole in the case with a black gap all round and no bezel; the five legend zones in a wide grotesk; the
+  wider SYMBOL SHIFT key that carries only a word; and the rainbow stripe standing at the bottom right, which
+  is the tell from across the room. There is no travel to speak of: pressed, the key compresses one pixel and
+  the rubber flattens (40&nbsp;ms in, 90&nbsp;ms out — rubber creeps back). <code>activate</code> fires on press,
+  as the membrane underneath does.</p>
+  <p><b>Left out:</b> the whole forty-key mat and the membrane ribbon; the moulded ridge between key rows; the
+  case's front lip and the ZX Spectrum badge. The stripe is stage decoration, not part of the element.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-key-zx-spectrum> — Sinclair ZX Spectrum 48K grey rubber key with five legends ====
+   attributes: legend keyword red green below wide pressed bleed(px of case painted either side, to butt keys into one case) scale disabled
+   events: press, activate (on press — there is no travel), release
+   self-contained: paste this block into any page and use
+   <sk-key-zx-spectrum legend="P" keyword="PRINT" green="TAB" red="&quot;" below="©"></sk-key-zx-spectrum> */
+(function () {
+  if (customElements.get("sk-key-zx-spectrum")) return;
+  var W = 54, WW = 78, H = 62;                 // one key pitch wide; wide keys are 78
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
+  '  -webkit-tap-highlight-color:transparent; }',
+  ':host([hidden]) { display:none; }',
+  '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
+  '.box { position:absolute; left:0; top:0; width:' + W + 'px; height:' + H + 'px; }',
+  /* the black ABS case the key sits in */
+  '.case { position:absolute; left:0; top:0; width:100%; height:100%; border-radius:2px;',
+  '  background:',
+  '    repeating-linear-gradient(0deg, rgba(255,255,255,.013) 0 1px, rgba(0,0,0,0) 1px 2px),',
+  '    linear-gradient(180deg, #202020 0%, #1a1a1a 34%, #161616 72%, #111111 100%); }',
+  /* legend zones */
+  '.lg { position:absolute; font-family:"Archivo Narrow","Roboto Condensed","Arial Narrow",sans-serif;',
+  '  font-weight:600; font-size:5.5px; line-height:1; letter-spacing:.045em; white-space:nowrap;',
+  '  text-shadow:0 .5px .5px rgba(0,0,0,.6); }',
+  '.lg.sym { font-size:7.2px; font-weight:700; letter-spacing:0; }',
+  '.green { left:4px; top:3.5px; color:#4fb04a; }',
+  '.red { right:4px; top:3.5px; color:#d92b2b; text-align:right; }',
+  '.below { left:0; right:0; bottom:3.5px; text-align:center; color:#f2f0e8; font-weight:500; }',
+  /* the hole in the case */
+  '.hole { position:absolute; left:3.5px; top:13px; width:47px; height:34px; border-radius:5px;',
+  '  background:#0a0a0a;',
+  '  box-shadow: inset 0 1.6px 2.4px rgba(0,0,0,.95), inset 0 -1px 0 rgba(255,255,255,.055); }',
+  /* the rubber key itself */
+  '.key { position:absolute; left:5.2px; top:14.6px; width:43.6px; height:30.8px; border-radius:3.6px;',
+  '  transform-origin:50% 100%; transition: transform 90ms ease-out, box-shadow 90ms ease-out, filter 90ms ease-out;',
+  '  background:',
+  '    radial-gradient(115% 130% at 34% 8%, rgba(255,253,248,.075), rgba(255,255,255,0) 54%),',
+  '    radial-gradient(150% 120% at 50% 120%, rgba(222,219,211,.13), rgba(0,0,0,0) 56%),',
+  '    linear-gradient(174deg, #858479 0%, #7c7b72 26%, #75746f 60%, #6a6963 88%, #5f5e58 100%);',
+  '  box-shadow: inset 0 1px 0 rgba(240,238,230,.34), inset 0 -1px 0 rgba(224,221,212,.17),',
+  '    inset .8px 0 0 rgba(226,224,215,.10), inset -.8px 0 0 rgba(0,0,0,.20),',
+  '    0 1.4px 1.6px rgba(0,0,0,.72), 0 3px 6px rgba(0,0,0,.45); }',
+  '.key.down { transform: translateY(1px) scaleY(.95); filter: brightness(.94);',
+  '  transition-duration: 40ms;',
+  '  box-shadow: inset 0 .7px 0 rgba(233,231,222,.20), inset 0 -.7px 0 rgba(216,214,204,.08),',
+  '    inset 0 2px 3px rgba(0,0,0,.30), 0 .6px .8px rgba(0,0,0,.7), 0 1.4px 3px rgba(0,0,0,.4); }',
+  /* silk-screen on the rubber */
+  '.letter { position:absolute; left:4.5px; top:3.2px; font-family:"Archivo Narrow","Roboto Condensed","Arial Narrow",sans-serif;',
+  '  font-weight:700; font-size:9.4px; line-height:1; color:#f2f0e8; letter-spacing:.01em;',
+  '  text-shadow:0 .5px .5px rgba(0,0,0,.45); }',
+  '.kw { position:absolute; left:2px; right:2px; bottom:3.4px; text-align:center;',
+  '  font-family:"Archivo Narrow","Roboto Condensed","Arial Narrow",sans-serif; font-weight:600; font-size:5.5px;',
+  '  line-height:1.16; letter-spacing:.05em; color:#f2f0e8; text-shadow:0 .5px .5px rgba(0,0,0,.45);',
+  '  white-space:pre-line; }',
+  ':host([wide]) .kw { bottom:auto; top:50%; transform:translateY(-50%); font-size:5.8px; }',
+  /* the hit area / focus ring */
+  '.hit { position:absolute; left:3.5px; top:13px; width:47px; height:34px; border-radius:5px;',
+  '  cursor:pointer; touch-action:none; outline:none; user-select:none; -webkit-user-select:none; }',
+  ':host([disabled]) .hit { cursor:default; }',
+  '.hit:focus-visible { box-shadow: 0 0 0 1.6px #16e0e0, 0 0 8px rgba(22,224,224,.55); }',
+  '</style>',
+  '<div class="wrap"><div class="box">',
+  '  <div class="case"></div>',
+  '  <div class="lg green" aria-hidden="true"></div>',
+  '  <div class="lg red" aria-hidden="true"></div>',
+  '  <div class="lg below" aria-hidden="true"></div>',
+  '  <div class="hole"></div>',
+  '  <div class="key"><span class="letter" aria-hidden="true"></span><span class="kw" aria-hidden="true"></span></div>',
+  '  <div class="hit" role="button" tabindex="0"></div>',
+  '</div></div>'].join("\n");
+
+  class SkKeyZxSpectrum extends HTMLElement {
+    static get observedAttributes() { return ["legend", "keyword", "red", "green", "below", "wide", "pressed", "bleed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._down = false; this._kb = false;
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap"); this._box = r.querySelector(".box");
+      this._case = r.querySelector(".case");
+      this._key = r.querySelector(".key"); this._hit = r.querySelector(".hit");
+      this._hole = r.querySelector(".hole");
+      this._letter = r.querySelector(".letter"); this._kw = r.querySelector(".kw");
+      this._g = r.querySelector(".green"); this._r = r.querySelector(".red"); this._b = r.querySelector(".below");
+      ["_onDown", "_onUp", "_onKeyDown", "_onKeyUp", "_onBlur"].forEach(function (m) { this[m] = this[m].bind(this); }, this);
+    }
+    connectedCallback() {
+      this._render();
+      var h = this._hit;
+      h.addEventListener("pointerdown", this._onDown);
+      h.addEventListener("pointerup", this._onUp);
+      h.addEventListener("pointercancel", this._onUp);
+      h.addEventListener("keydown", this._onKeyDown);
+      h.addEventListener("keyup", this._onKeyUp);
+      h.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      var h = this._hit;
+      h.removeEventListener("pointerdown", this._onDown);
+      h.removeEventListener("pointerup", this._onUp);
+      h.removeEventListener("pointercancel", this._onUp);
+      h.removeEventListener("keydown", this._onKeyDown);
+      h.removeEventListener("keyup", this._onKeyUp);
+      h.removeEventListener("blur", this._onBlur);
+      this._down = false; this._kb = false;
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._render(); }
+    get pressed() { return this._down || this.hasAttribute("pressed"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(opt) { this._hit.focus(opt); }
+    blur() { this._hit.blur(); }
+
+    _render() {
+      var wide = this.hasAttribute("wide");
+      var w = wide ? WW : W;
+      var s = parseFloat(this.getAttribute("scale")); if (isNaN(s) || s <= 0) s = 1;
+      this._scale = s;
+      this.style.width = (w * s) + "px"; this.style.height = (H * s) + "px";
+      this._wrap.style.transform = s === 1 ? "" : "scale(" + s + ")";
+      this._box.style.width = w + "px";
+      // the hole, the key and the hit area stretch with a wide key
+      var hw = w - 7, kw = w - 10.4;
+      this._hole.style.width = hw + "px"; this._hit.style.width = hw + "px"; this._key.style.width = kw + "px";
+      var legend = this.getAttribute("legend") || "";
+      var keyword = this.getAttribute("keyword") || "";
+      this._letter.textContent = wide ? "" : legend;
+      this._kw.textContent = wide ? keyword.replace(/\s+/, "\n") : keyword;
+      var gt = this.getAttribute("green") || "", rt = this.getAttribute("red") || "", bt = this.getAttribute("below") || "";
+      this._g.textContent = gt; this._r.textContent = rt; this._b.textContent = bt;
+      // a lone symbol (" © , .) is set larger so it reads at the case's legend size
+      this._g.classList.toggle("sym", gt.length === 1);
+      this._r.classList.toggle("sym", rt.length <= 2 && !/[A-Z0-9]/.test(rt));
+      this._b.classList.toggle("sym", bt.length === 1);
+      // the case can be painted beyond the box so a row of keys shares one continuous case
+      var bl = parseFloat(this.getAttribute("bleed")); if (isNaN(bl) || bl < 0) bl = 0;
+      this._case.style.left = (-bl) + "px";
+      this._case.style.width = (w + bl * 2) + "px";
+      this._case.style.borderRadius = bl ? "0" : "2px";
+      var name = (legend || keyword || "key");
+      if (legend && keyword) name = legend + " " + keyword;
+      this._hit.setAttribute("aria-label", name);
+      var dis = this.hasAttribute("disabled");
+      this._hit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._hit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._paint();
+    }
+    _paint() {
+      var on = this._down || this.hasAttribute("pressed");
+      this._key.classList.toggle("down", !!on);
+      this._hit.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d || {} })); }
+    _press() {
+      if (this.hasAttribute("disabled") || this._down) return;
+      this._down = true; this._paint();
+      var d = { legend: this.getAttribute("legend") || this.getAttribute("keyword") || "" };
+      this._emit("press", d);
+      this._emit("activate", d);              // no travel: the membrane closes as the rubber moves
+    }
+    _release() {
+      if (!this._down) return;
+      this._down = false; this._paint();
+      this._emit("release", { legend: this.getAttribute("legend") || this.getAttribute("keyword") || "" });
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      try { this._hit.setPointerCapture(e.pointerId); } catch (_) {}
+      this._hit.focus({ preventScroll: true });
+      this._press();
+    }
+    _onUp(e) {
+      try { this._hit.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release();
+    }
+    _onKeyDown(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._kb = true; this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault(); this._kb = false; this._release();
+    }
+    _onBlur() { if (this._kb) { this._kb = false; this._release(); } }
+  }
+  customElements.define("sk-key-zx-spectrum", SkKeyZxSpectrum);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telemecanique XB2 mushroom E-stop — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "estop-telemecanique-xb2",
+  "element": "sk-estop-telemecanique-xb2",
+  "name": "Telemecanique XB2 40 mm mushroom E-stop",
+  "kind": "input",
+  "code": "D4",
+  "type": "Latching mushroom emergency stop",
+  "source": "Telemecanique XB2-BS \"coup de poing\" 40 mm mushroom with the ZB2-BY9330 yellow ARRÊT D'URGENCE legend plate",
+  "era": "1970s",
+  "origin": "France",
+  "materials": ["polyamide", "chrome-plated zinc", "anodised aluminium plate"],
+  "tags": ["machine tool", "safety", "latching", "twist to release", "coup de poing", "yellow plate"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "collar", "legend", "legend2", "label", "scale", "disabled"],
+  "events": ["input", "change", "press", "release", "activate"],
+  "size": { "w": 180, "h": 180 },
+  "notes": "Press (pointer, Space or Enter) to latch; twist the latched head clockwise by 30° — or Shift+Space — to release. Three heads: released, latched, and the black-collar XB4 variant."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="plastic-grey">
+    <sk-estop-telemecanique-xb2 value="false" label="emergency stop"></sk-estop-telemecanique-xb2>
+    <sk-estop-telemecanique-xb2 value="true" label="emergency stop, latched"></sk-estop-telemecanique-xb2>
+    <sk-estop-telemecanique-xb2 value="false" collar="black" label="emergency stop, XB4"></sk-estop-telemecanique-xb2>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Telemecanique XB2-BS</b> — everyone calls it the <i>coup de poing</i>, the punch — is the 40 mm red
+  mushroom on the front of every French machine tool, lift controller and packaging line since the 1960s, and
+  through Schneider it is still made. The ZB2-BY9330 legend plate is the part that makes it legible from the far
+  end of a workshop: a 60 mm matte yellow aluminium ring, <b>ARRÊT D'URGENCE</b> curved over the top and
+  <b>EMERGENCY STOP</b> curved under the bottom, black on chrome yellow.</p>
+  <p><b>The tells kept here:</b> the flattened glossy dome with its one hard specular and a highlight ring around
+  the upper-left edge; the deep ribbed skirt beneath it — twelve ribs, each shaded by its own angle to the
+  above-left light, so they brighten toward ten o'clock and die at four; the two white moulded arrows turning
+  clockwise on the crown that say <i>turn to release</i>; the chrome collar showing a hard horizon line in the
+  crescent the head's overhang does not cover; the yellow plate as a separate part with a hairline shadow at its
+  edge and two keying flats at the sides; and the palm smudge on the crown, because this is the one control on the
+  machine people hit with a whole hand. Latched, the head sits 4 px lower, the chrome crescent below it closes up
+  and its shadow tightens — the state reads without colour.</p>
+  <p><b>Left out:</b> the rear contact block and its NC/NO flags, the 22.5 mm mounting nut behind the panel, and
+  the moulded <i>TIRER POUR DÉVERROUILLER</i> line that some heads carry instead of the arrows.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-estop-telemecanique-xb2> — 40 mm latching mushroom E-stop on a yellow legend plate ====
+   attributes: value("true"/"false") collar("chrome"|"black") legend legend2 label scale disabled
+   events: press / release (pointer + key edges), activate (on latch),
+           input + change {value:boolean} on both edges
+   gesture: press to latch; twist the latched head ≥30° about its centre (or Shift+Space) to release
+   self-contained: paste this block into any page and use <sk-estop-telemecanique-xb2></sk-estop-telemecanique-xb2> */
+(function () {
+  if (customElements.get("sk-estop-telemecanique-xb2")) return;
+  var W = 180, H = 180, CX = 90, CY = 90;
+  var R_PLATE = 86, R_HOLE = 66, R_HEAD = 57, R_DOME = 47;
+  var UP = 5, DOWN = 1;                       // head lift, released / latched (4 px of travel)
+  var D2R = Math.PI / 180;
+  function px(r, a) { return (CX + r * Math.cos(a * D2R)).toFixed(2) + " " + (CY + r * Math.sin(a * D2R)).toFixed(2); }
+
+  // --- the twelve skirt ribs, each lit by its own angle to the above-left light ---
+  var LX = -0.656, LY = -0.755;               // unit vector toward the light
+  function mix(a, b, t) {
+    var f = function (s, i) { return parseInt(s.substr(1 + i * 2, 2), 16); };
+    var o = "#";
+    for (var i = 0; i < 3; i++) { var v = Math.round(f(a, i) + (f(b, i) - f(a, i)) * t); o += ("0" + Math.max(0, Math.min(255, v)).toString(16)).slice(-2); }
+    return o;
+  }
+  var RIBS = (function () {
+    var s = "", N = 12, halfW = 11.5;
+    for (var i = 0; i < N; i++) {
+      var c = i * 360 / N - 90, a0 = c - halfW, a1 = c + halfW;
+      var I = Math.max(0, Math.cos(c * D2R) * LX + Math.sin(c * D2R) * LY);
+      var col = mix("#7c110e", "#f4544c", 0.18 + 0.82 * I);
+      var top = mix("#8d1512", "#ff7d74", 0.22 + 0.78 * I);
+      var d = "M " + px(R_DOME - 0.5, a0) + " L " + px(R_HEAD, a0) +
+              " A " + R_HEAD + " " + R_HEAD + " 0 0 1 " + px(R_HEAD, a1) +
+              " L " + px(R_DOME - 0.5, a1) +
+              " A " + (R_DOME - 0.5) + " " + (R_DOME - 0.5) + " 0 0 0 " + px(R_DOME - 0.5, a0) + " Z";
+      s += '<path d="' + d + '" fill="' + col + '"/>';
+      // the lit chamfer along each rib's leading edge
+      s += '<path d="M ' + px(R_DOME + 1, a0 + 1.4) + " L " + px(R_HEAD - 1.2, a0 + 1.4) + '" stroke="' + top + '" stroke-width="1.1" stroke-opacity="' + (0.25 + 0.5 * I).toFixed(2) + '" fill="none"/>';
+    }
+    return s;
+  })();
+
+  // --- the two moulded "turn to release" arrows ---
+  function arrow(base) {
+    var RA = 31, a0 = base, a1 = base + 66, tip = base + 80;
+    return '<path d="M ' + px(RA, a0) + " A " + RA + " " + RA + " 0 0 1 " + px(RA, a1) + '" fill="none" stroke-width="3.6" stroke-linecap="round"/>' +
+           '<path d="M ' + px(RA + 6.4, a1) + " L " + px(RA, tip) + " L " + px(RA - 6.4, a1) + ' Z"/>';
+  }
+  var ARROWS = arrow(28) + arrow(208);
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML =
+  '<style>' +
+  ':host{display:inline-block;width:' + W + 'px;height:' + H + 'px;position:relative;font-size:10px;-webkit-tap-highlight-color:transparent}' +
+  ':host([hidden]){display:none}' +
+  '.wrap{position:absolute;inset:0;transform-origin:0 0}' +
+  'svg{display:block;width:' + W + 'px;height:' + H + 'px;overflow:visible}' +
+  'text{font-family:"Barlow","Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:600;fill:#141310}' +
+  '.plate-txt{font-size:11px;letter-spacing:0.055em}' +
+  '.head{transform-box:view-box;transform-origin:' + CX + 'px ' + CY + 'px;transition:transform 120ms cubic-bezier(.2,1.6,.45,1)}' +
+  '.head.down{transition:transform 50ms cubic-bezier(.35,0,.9,.6)}' +
+  '.head.twist{transition:none}' +
+  '.shadow{transition:opacity 120ms ease,transform 120ms ease;transform-box:view-box;transform-origin:' + CX + 'px ' + CY + 'px}' +
+  '.grab{position:absolute;left:' + (CX - R_HEAD) + 'px;top:' + (CY - R_HEAD - UP) + 'px;width:' + (R_HEAD * 2) + 'px;height:' + (R_HEAD * 2) + 'px;' +
+    'border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer}' +
+  '.grab.twisting{cursor:grabbing}' +
+  ':host([disabled]) .grab{cursor:default}' +
+  '.grab:focus-visible{box-shadow:0 0 0 3px #16e0e0,0 0 16px rgba(22,224,224,.6)}' +
+  '</style>' +
+  '<div class="wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs>' +
+    '<clipPath id="flats"><rect x="' + (CX - 80) + '" y="0" width="160" height="' + H + '"/></clipPath>' +
+    '<linearGradient id="plate" x1="0.18" y1="0" x2="0.74" y2="1">' +
+      '<stop offset="0" stop-color="#ffdd3a"/><stop offset="0.42" stop-color="#f5c400"/>' +
+      '<stop offset="0.78" stop-color="#e0b100"/><stop offset="1" stop-color="#c79c00"/></linearGradient>' +
+    '<linearGradient id="chrome" x1="0" y1="0" x2="0.08" y2="1">' +
+      '<stop offset="0" stop-color="#9aa2a8"/><stop offset="0.30" stop-color="#e9edf0"/>' +
+      '<stop offset="0.53" stop-color="#eef2f5"/><stop offset="0.535" stop-color="#4b5156"/>' +
+      '<stop offset="0.72" stop-color="#aab1b7"/><stop offset="0.90" stop-color="#7c8288"/>' +
+      '<stop offset="1" stop-color="#34383b"/></linearGradient>' +
+    '<linearGradient id="black-collar" x1="0" y1="0" x2="0.08" y2="1">' +
+      '<stop offset="0" stop-color="#3a3b3d"/><stop offset="0.34" stop-color="#5a5c5e"/>' +
+      '<stop offset="0.53" stop-color="#63666a"/><stop offset="0.535" stop-color="#17181a"/>' +
+      '<stop offset="0.78" stop-color="#303234"/><stop offset="1" stop-color="#101112"/></linearGradient>' +
+    '<radialGradient id="dome" cx="0.34" cy="0.26" r="0.86">' +
+      '<stop offset="0" stop-color="#ff7f78"/><stop offset="0.20" stop-color="#ef4238"/>' +
+      '<stop offset="0.52" stop-color="#d3241f"/><stop offset="0.82" stop-color="#a01814"/>' +
+      '<stop offset="1" stop-color="#7a100d"/></radialGradient>' +
+    '<radialGradient id="gloss" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.72"/><stop offset="0.55" stop-color="#ffd2ce" stop-opacity="0.22"/>' +
+      '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="palm" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop offset="0" stop-color="#e8e2da" stop-opacity="0.16"/><stop offset="0.62" stop-color="#d8d2ca" stop-opacity="0.09"/>' +
+      '<stop offset="1" stop-color="#d8d2ca" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="holeshade" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop offset="0.86" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/></radialGradient>' +
+    '<filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>' +
+    '<filter id="b5" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>' +
+    '<filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>' +
+    '<path id="arcTop" d="M ' + (CX - 71) + ' ' + CY + ' A 71 71 0 0 1 ' + (CX + 71) + ' ' + CY + '"/>' +
+    '<path id="arcBot" d="M ' + (CX - 79) + ' ' + CY + ' A 79 79 0 0 0 ' + (CX + 79) + ' ' + CY + '"/>' +
+  '</defs>' +
+
+  // ---- the grey enclosure showing round the plate, and the plate's own shadow ----
+  '<g clip-path="url(#flats)">' +
+    '<circle cx="' + CX + '" cy="' + (CY + 3) + '" r="' + (R_PLATE + 1) + '" fill="#000" opacity="0.5" filter="url(#b5)"/>' +
+    '<circle cx="' + CX + '" cy="' + (CY + 1.2) + '" r="' + R_PLATE + '" fill="#000" opacity="0.6" filter="url(#b1)"/>' +
+    // ---- the yellow legend plate: a matte ring, two keying flats ----
+    '<path fill="url(#plate)" fill-rule="evenodd" d="M ' + CX + ' ' + (CY - R_PLATE) + ' A ' + R_PLATE + ' ' + R_PLATE + ' 0 1 1 ' + (CX - 0.01) + ' ' + (CY - R_PLATE) +
+      ' Z M ' + CX + ' ' + (CY - R_HOLE) + ' A ' + R_HOLE + ' ' + R_HOLE + ' 0 1 0 ' + (CX + 0.01) + ' ' + (CY - R_HOLE) + ' Z"/>' +
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R_PLATE - 0.6) + '" fill="none" stroke="#fff3a8" stroke-opacity="0.34" stroke-width="1.2"/>' +
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R_PLATE - 0.3) + '" fill="none" stroke="#8d6f00" stroke-opacity="0.55" stroke-width="1"/>' +
+  '</g>' +
+  '<g clip-path="url(#flats)" opacity="0.5">' +
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R_PLATE - 4) + '" fill="none" stroke="#fff8c8" stroke-opacity="0.12" stroke-width="7"/>' +
+  '</g>' +
+  // the printed legend, curved top and bottom
+  '<text class="plate-txt"><textPath href="#arcTop" startOffset="50%" text-anchor="middle" class="t-top"></textPath></text>' +
+  '<text class="plate-txt"><textPath href="#arcBot" startOffset="50%" text-anchor="middle" class="t-bot"></textPath></text>' +
+  // the plate's inner lip: dark at the top-left, lit at the bottom-right
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R_HOLE + 0.8) + '" fill="none" stroke="#7d6200" stroke-opacity="0.75" stroke-width="1.6"/>' +
+  '<path d="M ' + px(R_HOLE + 1.6, 140) + ' A ' + (R_HOLE + 1.6) + ' ' + (R_HOLE + 1.6) + ' 0 0 1 ' + px(R_HOLE + 1.6, 20) + '" fill="none" stroke="#ffe680" stroke-opacity="0.4" stroke-width="1.3"/>' +
+
+  // ---- the collar in the hole ----
+  '<circle class="collar" cx="' + CX + '" cy="' + CY + '" r="' + R_HOLE + '" fill="url(#chrome)"/>' +
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_HOLE + '" fill="url(#holeshade)"/>' +
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R_HOLE - 0.6) + '" fill="none" stroke="#121415" stroke-opacity="0.75" stroke-width="1.2"/>' +
+
+  // ---- the head's shadow on the collar, then the head itself ----
+  '<g class="shadow"><ellipse cx="' + CX + '" cy="' + (CY + 5) + '" rx="' + (R_HEAD - 1) + '" ry="' + (R_HEAD - 3) + '" fill="#07090a" opacity="0.72" filter="url(#b5)"/></g>' +
+
+  '<g class="head">' +
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_HEAD + '" fill="#5e0c0a"/>' +
+    '<g class="ribs">' + RIBS + '</g>' +
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R_HEAD - 0.5) + '" fill="none" stroke="#460806" stroke-opacity="0.85" stroke-width="1.1"/>' +
+    '<path d="M ' + px(R_HEAD - 0.8, 200) + ' A ' + (R_HEAD - 0.8) + ' ' + (R_HEAD - 0.8) + ' 0 0 1 ' + px(R_HEAD - 0.8, 300) + '" fill="none" stroke="#ff8f86" stroke-opacity="0.35" stroke-width="1.4"/>' +
+    // the crown
+    '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_DOME + '" fill="url(#dome)"/>' +
+    '<path d="M ' + px(R_DOME - 1.6, 18) + ' A ' + (R_DOME - 1.6) + ' ' + (R_DOME - 1.6) + ' 0 0 1 ' + px(R_DOME - 1.6, 128) + '" fill="none" stroke="#ff9c8e" stroke-opacity="0.30" stroke-width="2.6" filter="url(#b1)"/>' +
+    '<path d="M ' + px(R_DOME - 2.6, 186) + ' A ' + (R_DOME - 2.6) + ' ' + (R_DOME - 2.6) + ' 0 0 1 ' + px(R_DOME - 2.6, 286) + '" fill="none" stroke="#ffd9d4" stroke-opacity="0.55" stroke-width="2.2" filter="url(#b1)"/>' +
+    '<ellipse cx="' + (CX - 15) + '" cy="' + (CY - 20) + '" rx="20" ry="13" fill="url(#gloss)" transform="rotate(-28 ' + (CX - 15) + ' ' + (CY - 20) + ')"/>' +
+    '<ellipse cx="' + (CX - 21) + '" cy="' + (CY - 24) + '" rx="6.5" ry="3.4" fill="#fff" opacity="0.62" transform="rotate(-30 ' + (CX - 21) + ' ' + (CY - 24) + ')"/>' +
+    // the palm smudge, off-centre toward the hand
+    '<ellipse cx="' + (CX + 5) + '" cy="' + (CY + 7) + '" rx="30" ry="26" fill="url(#palm)"/>' +
+    // "turn to release"
+    '<g transform="translate(0.7,1.1)" fill="#5e0c0a" stroke="#5e0c0a" opacity="0.45">' + ARROWS + '</g>' +
+    '<g fill="#f4f2ec" stroke="#f4f2ec" opacity="0.94">' + ARROWS + '</g>' +
+  '</g>' +
+  '</svg>' +
+  '<div class="grab" role="switch" tabindex="0"></div></div>';
+
+
+  class SkEstopXB2 extends HTMLElement {
+    static get observedAttributes() { return ["value", "collar", "legend", "legend2", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._v = false; this._scale = 1; this._twistDeg = 0;
+      this._head = r.querySelector(".head");
+      this._shadow = r.querySelector(".shadow");
+      this._collar = r.querySelector(".collar");
+      this._grab = r.querySelector(".grab");
+      this._wrap = r.querySelector(".wrap");
+      this._top = r.querySelector(".t-top");
+      this._bot = r.querySelector(".t-bot");
+      this._onDown = this._onDown.bind(this);
+      this._onMove = this._onMove.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "false");
+      this._read(); this._render();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("keydown", this._onKeyDown);
+      this._grab.addEventListener("keyup", this._onKeyUp);
+    }
+    disconnectedCallback() {
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("keydown", this._onKeyDown);
+      this._grab.removeEventListener("keyup", this._onKeyUp);
+      this._endDrag();
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      var b = (v === true || v === "true" || v === 1 || v === "1" || v === "on");
+      this._v = b; this._twistDeg = 0;
+      if (this.getAttribute("value") !== String(b)) this.setAttribute("value", String(b));
+      this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+    blur() { this._grab.blur(); }
+
+    _read() {
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      var a = this.getAttribute("value");
+      this._v = (a === "true" || a === "1" || a === "on");
+      this._top.textContent = this.getAttribute("legend") || "ARRÊT D'URGENCE";
+      this._bot.textContent = this.getAttribute("legend2") || "EMERGENCY STOP";
+      this._collar.setAttribute("fill", this.getAttribute("collar") === "black" ? "url(#black-collar)" : "url(#chrome)");
+      var dis = this.hasAttribute("disabled");
+      this._grab.setAttribute("tabindex", dis ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._grab.setAttribute("aria-label", this.getAttribute("label") || "emergency stop");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      var lift = this._v ? DOWN : UP;
+      this._head.style.transform = "translate(0px," + (-lift) + "px) rotate(" + this._twistDeg.toFixed(2) + "deg)";
+      this._shadow.style.opacity = this._v ? "0.62" : "1";
+      this._shadow.style.transform = this._v ? "translate(0px,-3px) scale(0.985)" : "none";
+      this._grab.setAttribute("aria-checked", this._v ? "true" : "false");
+      this._grab.setAttribute("aria-pressed", this._v ? "true" : "false");
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _setLatched(b) {
+      if (b === this._v) return;
+      this._v = b; this._twistDeg = 0;
+      this.setAttribute("value", String(b));
+      this._head.classList.remove("twist");
+      this._head.classList.toggle("down", b);
+      this._render();
+      if (b) this._emit("activate", { value: true });
+      this._emit("input", { value: b });
+      this._emit("change", { value: b });
+    }
+
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._grab.setPointerCapture(e.pointerId); } catch (_) {}
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+      this._emit("press", { value: this._v });
+      if (!this._v) { this._setLatched(true); this._drag = null; return; }
+      // latched: begin the twist
+      var b = this.getBoundingClientRect();
+      this._drag = { cx: b.left + b.width / 2, cy: b.top + b.height / 2, a0: null, acc: 0 };
+      this._drag.a0 = this._ang(e);
+      this._grab.classList.add("twisting");
+      this._head.classList.add("twist");
+    }
+    _ang(e) {
+      var d = this._drag;
+      return Math.atan2(e.clientY - d.cy, e.clientX - d.cx) * 180 / Math.PI;
+    }
+    _onMove(e) {
+      var d = this._drag; if (!d) return;
+      var a = this._ang(e), delta = a - d.a0;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
+      d.acc += delta; d.a0 = a;
+      this._twistDeg = Math.max(-34, Math.min(34, d.acc));
+      this._render();
+      if (Math.abs(d.acc) >= 30) { this._endDrag(); this._setLatched(false); }
+    }
+    _onUp() {
+      var released = !!this._drag;
+      this._endDrag();
+      if (released && this._v) { this._twistDeg = 0; this._render(); }
+      this._emit("release", { value: this._v });
+    }
+    _endDrag() {
+      if (!this._drag) return;
+      this._drag = null;
+      this._grab.classList.remove("twisting");
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._keyHeld = true;
+      this._emit("press", { value: this._v });
+      if (this._v) { if (e.shiftKey) this._setLatched(false); }
+      else this._setLatched(true);
+    }
+    _onKeyUp(e) {
+      if (!this._keyHeld) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      this._keyHeld = false;
+      this._emit("release", { value: this._v });
+    }
+  }
+  customElements.define("sk-estop-telemecanique-xb2", SkEstopXB2);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

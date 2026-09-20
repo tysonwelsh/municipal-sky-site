@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technics SL-1200 MK2 pitch slider — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "slider-technics-sl1200-pitch",
+  "element": "sk-slider-technics-sl1200-pitch",
+  "name": "Technics SL-1200 MK2 pitch slider",
+  "kind": "input",
+  "code": "B2",
+  "type": "Linear slider with centre detent",
+  "source": "Technics SL-1200 MK2 turntable pitch control with the quartz-lock lamp, 1979",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["silver-anodised aluminium", "satin black plastic", "brushed silver plinth", "green LED", "silk-screen"],
+  "tags": ["turntable", "DJ", "pitch", "slider", "detent", "quartz lock", "LED"],
+  "value": { "model": "range", "min": -8, "max": 8, "step": 0.05, "unit": "%" },
+  "attributes": ["value", "min", "max", "step", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 64, "h": 380 },
+  "notes": "Three sliders: at 0 with the green quartz-lock lamp lit, at +3.6 (lamp dark), and a small one at −5. Drag the cap; it is pulled into the detent within ±0.3 % of centre. − is at the top, + at the bottom, as on the deck."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium">
+    <sk-slider-technics-sl1200-pitch value="0" label="PITCH ADJ"></sk-slider-technics-sl1200-pitch>
+    <sk-slider-technics-sl1200-pitch value="3.6" label="PITCH ADJ"></sk-slider-technics-sl1200-pitch>
+    <sk-slider-technics-sl1200-pitch value="-5" label="PITCH ADJ" scale="0.7"></sk-slider-technics-sl1200-pitch>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Technics SL-1200 MK2</b> pitch control is the long black slot plate on the right of the silver plinth:
+  a flat, cool, silver-anodised aluminium cap with fine ridges across it, a white scale printed down the plate
+  from −8 at the top to +8 at the bottom, a longer white centre line at 0, and beside it the small rectangular
+  window of the green quartz-lock lamp that lights only when the slider is exactly at zero. The MK2 has a
+  mechanical click at the centre; the MK3D famously deleted it.</p>
+  <p><b>The tells kept here:</b> the matte black plate let into the brushed silver, with the recess shadow at its
+  top-left; the ridged metal cap that is shinier in the middle where thumbs have polished it, standing proud with
+  a contact shadow; the mirror-image scale in a Helvetica-like face, − at the top and + at the bottom; the centre
+  line and the green lamp right beside it, on at 0 and off the moment the cap leaves; the detent — within
+  ±0.3 % of centre the cap is pulled to 0 with a 30 ms click and seats a hair deeper; "PITCH ADJ" printed below
+  the slot. The cap follows the pointer exactly; the wheel steps 0.05 % (Shift 0.5); arrows step 0.05 %
+  (Shift 0.5); Home/End go to −8 and +8.</p>
+  <p><b>Left out:</b> the rest of the plinth (strobe, start/stop, the "Technics" script), the reset button of
+  the later M5G, the ±16 % range switch of the MK5.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-slider-technics-sl1200-pitch> — SL-1200 MK2 pitch slider with centre detent and quartz-lock lamp ====
+   attributes: value min max step label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-slider-technics-sl1200-pitch value="0"></sk-slider-technics-sl1200-pitch> */
+(function () {
+  if (customElements.get("sk-slider-technics-sl1200-pitch")) return;
+  const W = 64, H = 380;
+  const CX = 30;                                   // slot centre x
+  const Y_TOP = 40, Y_BOT = 340, Y_MID = 190;      // cap centre at -8, +8, 0 (300 px travel)
+  const TRAVEL = Y_BOT - Y_TOP;
+  const DETENT = 0.3;                              // % of pull toward the centre click
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 6px; top: 8px; width: 52px; height: 364px; border-radius: 2px; cursor: ns-resize;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .cap { transition: none; }
+    .cap.click { transition: transform 30ms cubic-bezier(.2,.9,.3,1.2); }
+    .cap.settle { transition: transform 60ms ease-out; }
+    .capBody { transition: transform 30ms ease-out; }
+    .cap.seat .capBody { transform: translate(0.4px, 0.5px); }
+    .shadowA, .shadowB { transition: opacity 30ms ease-out; }
+    .cap.seat .shadowA { opacity: 0.32; }
+    .cap.seat .shadowB { opacity: 0.45; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500; fill: #eeeeea; }
+    .num { font-size: 6.5px; text-anchor: middle; }
+    .sign { font-size: 8px; text-anchor: middle; font-weight: 600; }
+    .label { font-size: 6px; font-weight: 600; letter-spacing: 0.1em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="plinth" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#c9ccca"/><stop offset="0.35" stop-color="#b7bab8"/><stop offset="1" stop-color="#a6a9a7"/>
+        </linearGradient>
+        <pattern id="brush" width="3" height="4" patternUnits="userSpaceOnUse">
+          <rect width="0.7" height="4" fill="#fff" fill-opacity="0.16"/>
+          <rect x="1.6" width="0.5" height="4" fill="#000" fill-opacity="0.07"/>
+        </pattern>
+        <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#dcdedd" stop-opacity="0.55"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.06"/>
+        </linearGradient>
+        <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1c1d1f"/><stop offset="0.5" stop-color="#17181a"/><stop offset="1" stop-color="#141517"/>
+        </linearGradient>
+        <linearGradient id="slotV" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#000"/><stop offset="0.4" stop-color="#0c0c0d"/><stop offset="1" stop-color="#050505"/>
+        </linearGradient>
+        <linearGradient id="capTop" x1="0" y1="0" x2="1" y2="0.25">
+          <stop offset="0" stop-color="#dfe2e4"/><stop offset="0.5" stop-color="#cfd2d4"/><stop offset="1" stop-color="#bcbfc2"/>
+        </linearGradient>
+        <linearGradient id="capSide" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9ea2a5"/><stop offset="1" stop-color="#6e7275"/>
+        </linearGradient>
+        <radialGradient id="polish" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.5"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="win" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.25"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0.1"/>
+        </linearGradient>
+        <radialGradient id="ledOn" cx="40%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#d6ffdf"/><stop offset="0.3" stop-color="#48ff6a"/><stop offset="1" stop-color="#17a637"/>
+        </radialGradient>
+        <clipPath id="plateClip"><rect x="6" y="8" width="52" height="364" rx="1.5"/></clipPath>
+        <clipPath id="slotClip"><rect x="27" y="30" width="6" height="320" rx="1"/></clipPath>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>
+        <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="b3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- the plinth: brushed silver, one broad soft light across the grain -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#plinth)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#brush)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#sheen)"/>
+
+      <!-- the black plate, let into the plinth: lit lip bottom-right, shadow top-left -->
+      <rect x="6.5" y="8.5" width="52" height="364" rx="1.5" fill="none" stroke="#dcdedd" stroke-opacity="0.9" stroke-width="0.8"/>
+      <rect x="6" y="8" width="52" height="364" rx="1.5" fill="url(#plate)"/>
+      <g clip-path="url(#plateClip)">
+        <rect x="5" y="7" width="54" height="366" rx="2" fill="none" stroke="#000" stroke-width="3" filter="url(#b2)"/>
+        <path d="M 6 372 L 6 8 L 58 8" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.5" filter="url(#b1)"/>
+      </g>
+      <path d="M 58 9 L 58 372 L 6 372" fill="none" stroke="#3a3c3e" stroke-opacity="0.7" stroke-width="0.6"/>
+
+      <!-- the scale, printed white; - at the top, + at the bottom -->
+      <g class="scale"></g>
+      <text class="label" x="32" y="365"></text>
+
+      <!-- the slot -->
+      <rect x="27" y="30" width="6" height="320" rx="1" fill="url(#slotV)"/>
+      <g clip-path="url(#slotClip)">
+        <rect x="26" y="29" width="8" height="322" fill="none" stroke="#000" stroke-width="2.5" filter="url(#b1)"/>
+        <rect x="27" y="30" width="6" height="5" fill="#000" filter="url(#b1)"/>
+      </g>
+      <path d="M 33.4 32 L 33.4 348" stroke="#3a3c3e" stroke-opacity="0.55" stroke-width="0.5"/>
+
+      <!-- the quartz-lock lamp: a green LED under a small clear window beside the centre mark -->
+      <rect class="lampGlow" x="38" y="182" width="16" height="16" rx="4" fill="#48ff6a" opacity="0" filter="url(#b3)"/>
+      <rect x="41" y="185.5" width="10" height="9" rx="0.8" fill="#000" opacity="0.5" filter="url(#b1)"/>
+      <rect x="41" y="185" width="10" height="9" rx="0.8" fill="#0a0d0b" stroke="#2a2c2d" stroke-width="0.5"/>
+      <rect class="lamp" x="42.3" y="186.3" width="7.4" height="6.4" rx="0.5" fill="#163a1e"/>
+      <rect x="41" y="185" width="10" height="9" rx="0.8" fill="url(#win)"/>
+
+      <!-- the cap: silver-anodised, flat, eight ridges across, polished in the middle -->
+      <g class="cap">
+        <rect class="shadowA" x="22" y="-17" width="20" height="40" rx="1.5" fill="#000" opacity="0.45" filter="url(#b2)"/>
+        <rect class="shadowB" x="21" y="-18.5" width="20" height="40" rx="1.5" fill="#000" opacity="0.6" filter="url(#b1)"/>
+        <g class="capBody">
+          <rect x="20" y="-20" width="20.8" height="42.5" rx="1.5" fill="url(#capSide)" stroke="#5f6366" stroke-width="0.4"/>
+          <rect x="20" y="-20" width="20" height="40" rx="1.5" fill="url(#capTop)" stroke="#8c9093" stroke-width="0.5"/>
+          <g class="ridges" stroke-linecap="butt"></g>
+          <ellipse cx="30" cy="0" rx="7" ry="13" fill="url(#polish)"/>
+          <path d="M 21 19 L 21 -19 Q 21 -19.5 21.5 -19.5 L 39 -19.5" fill="none" stroke="#f2f4f5" stroke-opacity="0.8" stroke-width="0.5"/>
+          <path d="M 39.5 -18 L 39.5 19.5 L 21.5 19.5" fill="none" stroke="#7d8184" stroke-opacity="0.8" stroke-width="0.5"/>
+        </g>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkSliderTechnicsPitch extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = -8; this._max = 8; this._step = 0.05; this._scale = 1;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._cap = q(".cap"); this._grab = q(".grab"); this._wrap = q(".wrap"); this._label = q(".label"); this._scaleG = q(".scale");
+      this._lamp = q(".lamp"); this._glow = q(".lampGlow"); this._ridges = q(".ridges");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._drawRidges();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawScale(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      clearTimeout(this._wt); clearTimeout(this._ct);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n !== "value") this._drawScale(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = this._q(v); this.setAttribute("value", String(this._v)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", -8); this._max = num("max", 8); this._step = Math.max(0.01, num("step", 0.05));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._q(this._clamp(num("value", this._v)));
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "pitch");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("aria-orientation", "vertical");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _q(v) { return Math.round(Math.round(v / this._step) * this._step * 100) / 100; }
+    _y(v) { const t = (v - this._min) / (this._max - this._min || 1); return Y_TOP + t * TRAVEL; }
+    _drawRidges() {
+      const ns = "http://www.w3.org/2000/svg"; const g = this._ridges;
+      for (let i = 0; i < 8; i++) {
+        const y = -14 + i * 4;
+        const d = document.createElementNS(ns, "line"); d.setAttribute("x1", 22); d.setAttribute("x2", 38); d.setAttribute("y1", y); d.setAttribute("y2", y);
+        d.setAttribute("stroke", "#8c9093"); d.setAttribute("stroke-width", 0.8); g.appendChild(d);
+        const l = document.createElementNS(ns, "line"); l.setAttribute("x1", 22); l.setAttribute("x2", 38); l.setAttribute("y1", y + 0.7); l.setAttribute("y2", y + 0.7);
+        l.setAttribute("stroke", "#f3f5f6"); l.setAttribute("stroke-width", 0.5); l.setAttribute("stroke-opacity", 0.8); g.appendChild(l);
+      }
+    }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      const lo = Math.ceil(this._min), hi = Math.floor(this._max);
+      for (let v = lo; v <= hi; v++) {
+        const y = this._y(v);
+        const major = v % 2 === 0, centre = v === 0;
+        const x1 = centre ? 15 : major ? 18.5 : 21;
+        g.appendChild(mk("line", { x1: x1, y1: y, x2: 24.5, y2: y, stroke: "#eeeeea", "stroke-width": centre ? 1.2 : major ? 0.8 : 0.6, opacity: major ? 1 : 0.75 }));
+        if (centre) g.appendChild(mk("line", { x1: 35.5, y1: y, x2: 39.5, y2: y, stroke: "#eeeeea", "stroke-width": 1.2 }));
+        if (major) { const t = mk("text", { x: 12, y: y + 2.3, class: "num" }); t.textContent = String(Math.abs(v)); g.appendChild(t); }
+      }
+      const minus = mk("text", { x: 12, y: this._y(this._min) - 8, class: "sign" }); minus.textContent = "−"; g.appendChild(minus);
+      const plus = mk("text", { x: 12, y: this._y(this._max) + 13, class: "sign" }); plus.textContent = "+"; g.appendChild(plus);
+    }
+    _render() {
+      const at0 = Math.abs(this._v) < 1e-9;
+      this._cap.style.transform = "translate(0px," + this._y(this._v).toFixed(2) + "px)";
+      this._cap.classList.toggle("seat", at0);
+      this._lamp.setAttribute("fill", at0 ? "url(#ledOn)" : "#163a1e");
+      this._glow.setAttribute("opacity", at0 ? "0.6" : "0");
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      this._grab.setAttribute("aria-valuetext", (this._v > 0 ? "+" : "") + this._v.toFixed(2) + " %");
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _localY(e) { const r = this._grab.getBoundingClientRect(); return (e.clientY - r.top) / this._scale + 8; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._cap.classList.remove("settle", "click");
+      const y = this._localY(e), cy = this._y(this._v);
+      const onCap = Math.abs(y - cy) <= 22;
+      this._drag = { off: onCap ? cy - y : 0, moved: false, snapped: Math.abs(this._v) < 1e-9 };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+      if (!onCap) this._onMove(e);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const cy = this._localY(e) + this._drag.off;
+      const t = Math.min(1, Math.max(0, (cy - Y_TOP) / TRAVEL));
+      let v = this._min + t * (this._max - this._min);
+      const pulled = Math.abs(v) <= DETENT;
+      v = pulled ? 0 : this._q(v);
+      // the click: a 30 ms snap into (or out of) the detent
+      if (pulled !== this._drag.snapped) { this._cap.classList.add("click"); clearTimeout(this._ct); this._ct = setTimeout(() => this._cap.classList.remove("click"), 40); }
+      this._drag.snapped = pulled;
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const dir = e.deltaY < 0 ? -1 : 1;                  // wheel up moves the cap up: toward minus
+      const v = this._q(this._v + dir * this._step * (e.shiftKey ? 10 : 1));
+      if (v === this._v) return;
+      e.preventDefault();
+      this._cap.classList.add("settle");
+      this._set(v, false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const s = this._step * (e.shiftKey ? 10 : 1);
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowLeft": v = this._v - s; break;      // up the slot is minus
+        case "ArrowDown": case "ArrowRight": v = this._v + s; break;
+        case "PageUp": v = this._v - this._step * 20; break;
+        case "PageDown": v = this._v + this._step * 20; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._cap.classList.add("settle");
+      v = this._q(v);
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-slider-technics-sl1200-pitch", SkSliderTechnicsPitch);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

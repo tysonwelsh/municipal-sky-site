@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GM headlight switch, pull for park, pull for headlamps — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-gm-headlight-pull",
+  "element": "sk-knob-gm-headlight",
+  "name": "GM headlight switch, pull for park, pull for headlamps",
+  "kind": "input",
+  "code": "A20",
+  "type": "Pull-and-turn knob",
+  "source": "General Motors C/K pickup and passenger-car headlamp switch, 1955–1995: pull once for park, twice for headlamps, turn to dim the dash, turn past the detent for the dome light",
+  "era": "1970s",
+  "origin": "USA",
+  "materials": ["black plastic", "chrome-plated steel shaft", "chrome bezel", "grained vinyl dash"],
+  "tags": ["automotive", "dashboard", "pull switch", "rheostat", "dome light", "two stops"],
+  "value": { "model": "steps", "options": ["OFF", "PARK", "HEAD"], "unit": "" },
+  "attributes": ["value", "dim", "dome", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 116, "h": 116 },
+  "notes": "OFF pushed in, and HEAD pulled out to the second stop with the dash dimmed to 0.7 and the dome light on. Click or drag outward to pull; drag up/down or wheel to dim; the last click clockwise lights the dome."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-knob-gm-headlight value="OFF" label="LIGHTS"></sk-knob-gm-headlight>
+    <sk-knob-gm-headlight value="HEAD" dim="0.7" dome label="LIGHTS" scale="0.85"></sk-knob-gm-headlight>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>GM headlamp switch</b> sat at the left of the dash of every Chevrolet, GMC, Pontiac, Buick and
+  Oldsmobile for forty years: a plain black knob on a chrome shaft through a chrome bezel. Pull it one click
+  for the parking lamps, a second click for the headlamps; turn it to run the rheostat that dims the instrument
+  lights, and turn it past the last detent, with a click, to light the dome lamp. Ford and Chrysler did the same
+  thing with a different knob.</p>
+  <p><b>The tells kept here:</b> the shaft, drawn in a raked side elevation so that more chrome shows and the
+  knob's shadow on the dash lengthens as it comes out to its two stops; the black satin knob with its stamped
+  headlamp pictogram whose top edges catch the light, turning with the rheostat; the dash legend that follows
+  <code>dim</code>; the small dome-lamp glyph that lights on the last clockwise click, with a warm cast on the
+  vinyl around it; the chrome bezel with pitting where the plating has lifted. A click pulls one stop (OFF, PARK,
+  HEAD, and back in); an outward drag pulls, an inward drag pushes; a vertical drag or the wheel turns for
+  <code>dim</code>, and going on past full brightness clicks the dome on. Space pulls, arrows dim, Home is dark,
+  End is the dome. Events carry <code>{ value, dim, dome }</code>.</p>
+  <p><b>Left out:</b> the wiper switch and cigarette lighter that keep it company on the dash, the ignition-key
+  buzzer, the plating flaking off the shaft on a rusty truck.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-gm-headlight> — GM pull-for-park, pull-for-headlamps, turn-to-dim switch in a raked side view ====
+   attributes: value(OFF|PARK|HEAD) dim(0…1) dome(boolean) label scale disabled
+   properties: value, dim, dome, scale — setting them re-renders and emits nothing
+   events: input / change with detail { value, dim, dome }
+   self-contained: paste this block into any page and use <sk-knob-gm-headlight value="HEAD" dim="0.7" dome></sk-knob-gm-headlight> */
+(function () {
+  if (customElements.get("sk-knob-gm-headlight")) return;
+  const W = 116, H = 116;
+  const BX = 30, CY = 62;                 // the bezel's centre on the dash
+  const K = 0.6, F = 0.8;                 // raked view: depth foreshortening, face foreshortening
+  const RY = 22, RX = RY * F;             // the knob's radius
+  const SW = 16 * K;                      // the knob body's visible depth
+  const PULL = 10;                        // px per stop
+  const POS = ["OFF", "PARK", "HEAD"];
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 14px; top: 30px; width: 78px; height: 64px; border-radius: 30px; cursor: pointer;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .knob, .shade { transition: transform 110ms cubic-bezier(.2,.9,.3,1.15); }
+    .pict { transition: transform 60ms linear; }
+    .pict.snap { transition: transform 90ms cubic-bezier(.2,.9,.3,1.2); }
+    .legend { transition: opacity 120ms linear; }
+    .dome-on { transition: opacity 90ms linear; }
+    text { font-family: "Libre Franklin", "Franklin Gothic Medium", "Arial", sans-serif; font-weight: 600; }
+    .lbl { font-size: 6px; letter-spacing: 0.18em; text-anchor: middle; fill: #e6e6e2; }
+    .sub { font-size: 4.2px; letter-spacing: 0.14em; text-anchor: middle; fill: #e6e6e2; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="dash" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#1e1e22"/><stop offset="0.5" stop-color="#17171a"/><stop offset="1" stop-color="#101012"/>
+        </linearGradient>
+        <pattern id="grain" patternUnits="userSpaceOnUse" width="5" height="4">
+          <circle cx="1" cy="1" r="0.7" fill="#fff" opacity="0.045"/><circle cx="3.5" cy="3" r="0.6" fill="#000" opacity="0.3"/><circle cx="4" cy="0.6" r="0.4" fill="#fff" opacity="0.03"/>
+        </pattern>
+        <linearGradient id="chromeV" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f6f6f4"/><stop offset="0.28" stop-color="#c9c9c6"/><stop offset="0.5" stop-color="#5a5a58"/><stop offset="0.56" stop-color="#3e3e3c"/><stop offset="0.75" stop-color="#d6d6d3"/><stop offset="1" stop-color="#6e6e6b"/>
+        </linearGradient>
+        <linearGradient id="bezel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f2f2ef"/><stop offset="0.35" stop-color="#d8d8d5"/><stop offset="0.6" stop-color="#7c7c79"/><stop offset="0.8" stop-color="#c4c4c1"/><stop offset="1" stop-color="#5a5a58"/>
+        </linearGradient>
+        <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a4a4e"/><stop offset="0.18" stop-color="#2a2a2d"/><stop offset="0.6" stop-color="#121214"/><stop offset="0.9" stop-color="#0c0c0d"/><stop offset="1" stop-color="#2c2c2e"/>
+        </linearGradient>
+        <radialGradient id="face" cx="36%" cy="30%" r="74%">
+          <stop offset="0" stop-color="#3b3b40"/><stop offset="0.45" stop-color="#232326"/><stop offset="0.85" stop-color="#141416"/><stop offset="1" stop-color="#0a0a0b"/>
+        </radialGradient>
+        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#8a8a8e"/><stop offset="0.45" stop-color="#3a3a3e"/><stop offset="1" stop-color="#3f3f42"/>
+        </linearGradient>
+        <radialGradient id="cast" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffcf7a" stop-opacity="0.45"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="1.8"/></filter>
+      </defs>
+
+      <!-- the dash: black grained vinyl -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#dash)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="3" fill="url(#grain)"/>
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="3" fill="none" stroke="#000" stroke-opacity="0.6"/>
+
+      <!-- silk-screened legend, lit by the dash lamps -->
+      <g class="legend">
+        <text class="lbl" x="58" y="19"></text>
+        <text class="sub" x="58" y="27">PULL · TURN TO DIM</text>
+      </g>
+      <!-- the dome lamp: a glyph that lights on the last click -->
+      <g transform="translate(97 88)">
+        <ellipse class="dome-cast" cx="0" cy="0" rx="18" ry="14" fill="url(#cast)" opacity="0"/>
+        <path d="M -6 2 A 6 6 0 0 1 6 2 Z" fill="#26262a" stroke="#8c8c88" stroke-width="0.7"/>
+        <rect x="-7.5" y="2" width="15" height="2" rx="0.6" fill="#9a9a96"/>
+        <g class="dome-on" opacity="0">
+          <path d="M -6 2 A 6 6 0 0 1 6 2 Z" fill="#ffd67a" filter="url(#glow)"/>
+          <path d="M -6 2 A 6 6 0 0 1 6 2 Z" fill="#ffe3a0"/>
+        </g>
+        <text class="sub" x="0" y="11" style="letter-spacing:0.1em">DOME</text>
+      </g>
+
+      <!-- the knob's shadow on the dash: lengthens with the pull -->
+      <g class="shade">
+        <ellipse cx="${BX + SW + 4}" cy="${CY + 7}" rx="${RX + 3}" ry="${RY}" fill="#000" opacity="0.55" filter="url(#softer)"/>
+      </g>
+      <!-- bezel: a chrome ring let into the dash, pitted -->
+      <ellipse cx="${BX + 1.5}" cy="${CY + 2}" rx="12" ry="14.5" fill="#000" opacity="0.5" filter="url(#soft)"/>
+      <ellipse cx="${BX}" cy="${CY}" rx="10.4" ry="13" fill="url(#bezel)" stroke="#2a2a28" stroke-width="0.5"/>
+      <ellipse cx="${BX}" cy="${CY}" rx="6.4" ry="8" fill="#060606"/>
+      <path d="M ${BX + 3} ${CY + 6.5} A 6.4 8 0 0 0 ${BX + 6.2} ${CY - 1}" fill="none" stroke="#c9c9c6" stroke-opacity="0.5" stroke-width="0.6"/>
+      <g fill="#3a3a38">
+        <circle cx="${BX - 6}" cy="${CY - 8}" r="0.55"/><circle cx="${BX + 7.5}" cy="${CY + 6}" r="0.5"/><circle cx="${BX - 8.5}" cy="${CY + 3}" r="0.45"/>
+        <circle cx="${BX + 2}" cy="${CY - 11.2}" r="0.5"/><circle cx="${BX + 8.2}" cy="${CY - 5.5}" r="0.4"/>
+      </g>
+      <!-- the chrome shaft, long enough for the full pull; the knob covers what is not out -->
+      <rect x="${BX}" y="${CY - 5}" width="${SW + PULL * 2 + 6}" height="10" fill="url(#chromeV)"/>
+      <rect x="${BX}" y="${CY - 5}" width="${SW + PULL * 2 + 6}" height="10" fill="#000" opacity="0.18"/>
+
+      <!-- the knob -->
+      <g class="knob">
+        <path d="M ${BX + 2} ${CY - RY} L ${BX + 2 + SW} ${CY - RY} A ${RX} ${RY} 0 0 1 ${BX + 2 + SW} ${CY + RY} L ${BX + 2} ${CY + RY} A ${RX} ${RY} 0 0 1 ${BX + 2} ${CY - RY} Z" fill="url(#body)"/>
+        <path d="M ${BX + 2} ${CY - RY} L ${BX + 2 + SW} ${CY - RY}" stroke="#7a7a7e" stroke-opacity="0.6" stroke-width="0.8"/>
+        <path d="M ${BX + 2} ${CY + RY} L ${BX + 2 + SW} ${CY + RY}" stroke="#4a4a4e" stroke-opacity="0.5" stroke-width="0.8"/>
+        <!-- the flat face with its chamfer -->
+        <ellipse cx="${BX + 2 + SW}" cy="${CY}" rx="${RX}" ry="${RY}" fill="url(#face)" stroke="url(#rim)" stroke-width="1.4"/>
+        <ellipse cx="${BX + 2 + SW}" cy="${CY}" rx="${RX - 1.8}" ry="${RY - 1.8}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="0.6"/>
+        <ellipse cx="${BX + 2 + SW - 6}" cy="${CY - 9}" rx="6" ry="4.5" fill="#fff" opacity="0.1" filter="url(#soft)" transform="rotate(-40 ${BX + 2 + SW - 6} ${CY - 9})"/>
+        <!-- stamped headlamp pictogram, turning with the rheostat -->
+        <g transform="translate(${BX + 2 + SW} ${CY}) scale(${F} 1)">
+          <g class="pict">
+            <g transform="translate(-0.35 -0.45)" stroke="#f4f4f0" stroke-opacity="0.55" fill="none" stroke-width="1.2" stroke-linecap="round">
+              <path d="M -1 -7 A 7 7 0 0 0 -1 7 Z"/><path d="M 2 -6 l 6 -1.5 M 2 -2.5 l 6 -0.7 M 2 1.5 l 6 0.7 M 2 5 l 6 1.5"/>
+            </g>
+            <g transform="translate(0.35 0.45)" stroke="#000" stroke-opacity="0.7" fill="none" stroke-width="1.2" stroke-linecap="round">
+              <path d="M -1 -7 A 7 7 0 0 0 -1 7 Z"/><path d="M 2 -6 l 6 -1.5 M 2 -2.5 l 6 -0.7 M 2 1.5 l 6 0.7 M 2 5 l 6 1.5"/>
+            </g>
+            <g stroke="#d8d8d4" fill="none" stroke-width="1.1" stroke-linecap="round">
+              <path d="M -1 -7 A 7 7 0 0 0 -1 7 Z" fill="#2a2a2e"/><path d="M 2 -6 l 6 -1.5 M 2 -2.5 l 6 -0.7 M 2 1.5 l 6 0.7 M 2 5 l 6 1.5"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkKnobGmHeadlight extends HTMLElement {
+    static get observedAttributes() { return ["value", "dim", "dome", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._p = 0; this._dim = 1; this._dome = false; this._scale = 1;
+      const q = s => this.shadowRoot.querySelector(s);
+      this._knob = q(".knob"); this._shade = q(".shade"); this._pict = q(".pict"); this._legend = q(".legend");
+      this._domeOn = q(".dome-on"); this._domeCast = q(".dome-cast"); this._lbl = q(".lbl");
+      this._grab = q(".grab"); this._wrap = q(".wrap");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs(); this._render();
+      if (!this.hasAttribute("value")) this.setAttribute("value", POS[this._p]);
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+    get value() { return POS[this._p]; }
+    set value(v) { const i = this._resolve(v); if (i < 0) return; this._p = i; this.setAttribute("value", POS[i]); this._render(); }
+    get dim() { return this._dim; }
+    set dim(d) { d = parseFloat(d); if (isNaN(d)) return; this._dim = Math.min(1, Math.max(0, d)); this.setAttribute("dim", String(Math.round(this._dim * 1000) / 1000)); this._render(); }
+    get dome() { return this._dome; }
+    set dome(b) { this._dome = !!b && b !== "false"; if (this._dome) this.setAttribute("dome", ""); else this.removeAttribute("dome"); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _resolve(v) {
+      if (v == null) return -1;
+      const s = String(v).trim().toUpperCase();
+      let i = POS.indexOf(s);
+      if (i < 0 && /^[0-2]$/.test(s)) i = parseInt(s, 10);
+      return i;
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const i = this._resolve(this.getAttribute("value")); if (i >= 0) this._p = i;
+      this._dim = Math.min(1, Math.max(0, num("dim", this._dim)));
+      this._dome = this.hasAttribute("dome") && this.getAttribute("dome") !== "false";
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._lbl.textContent = this.getAttribute("label") || "LIGHTS";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "headlight switch");
+      g.setAttribute("aria-valuemin", "0"); g.setAttribute("aria-valuemax", "2");
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _render() {
+      const pull = this._p * PULL;
+      this._knob.style.transform = "translate(" + pull + "px, 0)";
+      this._shade.style.transform = "translate(" + (pull * 1.35) + "px, " + (pull * 0.55) + "px)";
+      const ang = -55 + 110 * this._dim + (this._dome ? 16 : 0);
+      this._pict.style.transform = "rotate(" + ang.toFixed(1) + "deg)";
+      this._legend.style.opacity = (0.28 + 0.72 * this._dim).toFixed(3);
+      this._domeOn.style.opacity = this._dome ? "1" : "0";
+      this._domeCast.style.opacity = this._dome ? "1" : "0";
+      this._grab.setAttribute("aria-valuenow", String(this._p));
+      this._grab.setAttribute("aria-valuetext", POS[this._p] + ", dash " + Math.round(this._dim * 100) + "%" + (this._dome ? ", dome on" : ""));
+    }
+    _reflect() {
+      this.setAttribute("value", POS[this._p]);
+      this.setAttribute("dim", String(Math.round(this._dim * 1000) / 1000));
+      if (this._dome) this.setAttribute("dome", ""); else this.removeAttribute("dome");
+    }
+    _emit(type) {
+      this._reflect(); this._render();
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { value: POS[this._p], dim: this._dim, dome: this._dome } }));
+    }
+    _pullTo(i, settle) {
+      i = Math.min(2, Math.max(0, i));
+      if (i === this._p) return false;
+      this._p = i; this._emit("input"); if (settle) this._emit("change"); return true;
+    }
+    // turn: a raw rheostat position in 0…1, and the dome click just past 1
+    _turnTo(raw, settle) {
+      const dim = Math.min(1, Math.max(0, raw));
+      const dome = raw > 1.14;
+      if (dim === this._dim && dome === this._dome) return false;
+      if (dome !== this._dome) this._pict.classList.add("snap"); else this._pict.classList.remove("snap");
+      this._dim = Math.round(dim * 200) / 200; this._dome = dome;
+      this._emit("input"); if (settle) this._emit("change"); return true;
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._drag = { x: e.clientX, y: e.clientY, p: this._p, raw: this._dim + (this._dome ? 0.3 : 0), mode: null, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const dx = (e.clientX - d.x) / this._scale, dy = (d.y - e.clientY) / this._scale;
+      if (!d.mode) {
+        if (Math.hypot(dx, dy) < 5) return;
+        d.mode = Math.abs(dx) > Math.abs(dy) ? "pull" : "turn";
+        this._grab.classList.add("drag");
+      }
+      d.moved = true;
+      if (d.mode === "pull") { if (this._pullTo(d.p + Math.round(dx / 14), false)) d.moved = true; }
+      else this._turnTo(d.raw + dy / 110, false);
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      this._drag = null;
+      if (d.moved) { this._emit("change"); return; }
+      // a plain click: pull the next stop, and from HEAD push it back in
+      this._pullTo((this._p + 1) % 3, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      const up = e.deltaY < 0, step = e.shiftKey ? 0.25 : 0.05;
+      let raw;
+      if (up) raw = this._dome ? 1.3 : (this._dim >= 1 ? 1.3 : this._dim + step);
+      else raw = this._dome ? 1 : this._dim - step;
+      if (this._turnTo(raw, false)) { clearTimeout(this._wt); this._wt = setTimeout(() => this._emit("change"), 220); }
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const step = e.shiftKey ? 0.5 : 0.05;
+      switch (e.key) {
+        case " ": case "Enter": case "Spacebar": this._pullTo((this._p + 1) % 3, true); break;
+        case "PageUp": this._pullTo(this._p + 1, true); break;
+        case "PageDown": this._pullTo(this._p - 1, true); break;
+        case "ArrowUp": case "ArrowRight": this._turnTo(this._dome ? 1.3 : Math.min(1, this._dim + step), true); break;
+        case "ArrowDown": case "ArrowLeft": this._turnTo(this._dome ? 1 : this._dim - step, true); break;
+        case "Home": this._turnTo(0, true); break;
+        case "End": this._turnTo(1.3, true); break;
+        default: return;
+      }
+      e.preventDefault();
+    }
+  }
+  customElements.define("sk-knob-gm-headlight", SkKnobGmHeadlight);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
