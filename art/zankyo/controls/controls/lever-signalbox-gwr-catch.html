@@ -180,7 +180,7 @@
     constructor() {
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
-      this._v = false; this._scale = 1; this._squeezed = false; this._built = false;
+      this._v = false; this._scale = 1; this._squeezed = false;
       this._lever = this.shadowRoot.querySelector(".lever");
       this._svg = this.shadowRoot.querySelector("svg");
       this._grab = this.shadowRoot.querySelector(".grab");
@@ -194,15 +194,12 @@
     connectedCallback() {
       if (!this.hasAttribute("value")) this.setAttribute("value", "false");
       this._readAttrs(); this._render();
-      if (this._built) return; this._built = true;
       const g = this._grab;
       g.addEventListener("pointerdown", this._onDown);
       g.addEventListener("wheel", this._onWheel, { passive: false });
       g.addEventListener("keydown", this._onKey);
-      g.addEventListener("keyup", this._onKeyUp = () => this._releaseSqueeze());
     }
     disconnectedCallback() {
-      clearTimeout(this._squeezeT);
       const g = this._grab;
       g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
     }

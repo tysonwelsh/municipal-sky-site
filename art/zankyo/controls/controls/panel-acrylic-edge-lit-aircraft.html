@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aircraft edge-lit acrylic panel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "panel-acrylic-edge-lit-aircraft",
+  "element": "sk-panel-acrylic-edge-lit",
+  "name": "Aircraft edge-lit acrylic panel",
+  "kind": "output",
+  "code": "J8",
+  "type": "Panel swatch — edge-lit engraved acrylic",
+  "source": "Integrally lit cockpit annunciator panels (Grimes, Boeing, Douglas, 1940s–): clear acrylic painted black, legends engraved through the paint, lit from the sheet edge",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["acrylic sheet", "satin black paint"],
+  "tags": ["panel", "swatch", "aircraft", "cockpit", "edge-lit", "engraved", "night mode"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "legend", "width", "height", "lit", "color", "brightness", "wear", "scale"],
+  "events": [],
+  "size": { "w": 240, "h": 64 },
+  "notes": "value (or legend) is the engraved legend. Toggle lit and color to see it dark, edge-lit white, and night-mode red."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-panel-acrylic-edge-lit width="240" height="64" value="FUEL PUMP"></sk-panel-acrylic-edge-lit>
+    <sk-panel-acrylic-edge-lit width="240" height="64" value="FUEL PUMP" lit></sk-panel-acrylic-edge-lit>
+    <sk-panel-acrylic-edge-lit width="200" height="56" value="GEAR DOWN" lit color="red" brightness="0.4" wear="0.6"></sk-panel-acrylic-edge-lit>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Cockpit annunciator and placard panels from Grimes, Boeing and Douglas were built the same way from the
+  1940s on: a clear acrylic sheet painted satin black on the face, with the legend and index lines engraved
+  right through the paint to the white backing. Lamps fed into the sheet's edge light the whole piece by total
+  internal reflection, so only the engraved cuts and the sheet's own edge ever glow.</p>
+  <p><b>The tells kept here:</b> unlit, the legend is a flat pale grey — the white backing showing through a
+  paint cut, with a cutter's faint fuzz; lit, each letter glows evenly from within with a soft halo bleeding
+  into the black around it, and nothing else on the panel lights up; the sheet's own edge is the brightest line
+  on the piece; <code>color="red"</code> switches to the saturated, low-halo red of night lighting; the black
+  paint carries one soft satin reflection so it reads as glossy plastic, not chalk. <code>brightness</code>
+  dims the glow and the edge line together, the way a cockpit rheostat would. Lamps fade up over about 150&nbsp;ms
+  and down over about 300&nbsp;ms. With <code>wear</code>, a chip in the paint near a screw leaks a small
+  irregular fleck of light when lit.</p>
+  <p><b>Left out:</b> the panel's mounting frame and the specific wording of any real aircraft placard (the
+  legends here are generic).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-panel-acrylic-edge-lit> — edge-lit engraved black acrylic annunciator panel ====
+   attributes: value legend width height lit color(white|red) brightness(0..1) wear(0..1) scale
+   no events (an output). Has a default <slot>: mount a control on the panel.
+   self-contained: paste this block into any page and use
+   <sk-panel-acrylic-edge-lit value="FUEL PUMP" lit></sk-panel-acrylic-edge-lit> */
+(function () {
+  if (customElements.get("sk-panel-acrylic-edge-lit")) return;
+  var DW = 240, DH = 64;
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; line-height: 1;',
+  '        -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;',
+  '        --engrave: #cfd2d6; --paint: #141516; --sheen: #26282a;',
+  '        --glow: #fdfcf6; --halo: rgba(255,250,230,.38); --edgeglow: #ffe9c0; }',
+  ':host([hidden]) { display: none; }',
+  ':host([color="red"]) { --glow: #ff3a2c; --halo: rgba(255,60,40,.30); --edgeglow: #ff5a48; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  '.plate { position: absolute; inset: 0; overflow: hidden; border-radius: 4px;',
+  '  background: linear-gradient(150deg, #1c1d1e 0%, var(--paint) 45%, #0a0a0b 100%);',
+  '  box-shadow: 0 8px 16px rgba(0,0,0,.5), 0 2px 4px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.7); }',
+  '.satin { position: absolute; left: -10%; top: -60%; width: 70%; height: 140%; pointer-events: none;',
+  '  background: radial-gradient(closest-side, var(--sheen) 0%, rgba(38,40,42,.35) 45%, rgba(38,40,42,0) 75%);',
+  '  opacity: .55; }',
+  '.edgeline { position: absolute; inset: 1px; pointer-events: none; border-radius: 3px;',
+  '  box-shadow: 0 0 0 1px rgba(120,110,90,.18) inset; opacity: .5; transition: opacity .3s ease, box-shadow .3s ease; }',
+  ':host([lit]) .edgeline {',
+  '  box-shadow: 0 0 0 1.4px var(--edgeglow) inset, 0 0 5px 1px var(--edgeglow), 0 0 10px 2px var(--edgeglow);',
+  '  opacity: calc(var(--bright, 1)); transition: opacity .15s ease, box-shadow .15s ease; }',
+  '.legendwrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
+  '  pointer-events: none; }',
+  '.legend { position: relative; font-family: "Josefin Sans", "Futura", sans-serif; font-weight: 600;',
+  '  font-size: 13px; letter-spacing: 0.18em; white-space: pre; text-align: center;',
+  '  color: var(--engrave); opacity: .82; filter: blur(.15px);',
+  '  transition: opacity .3s ease; }',
+  ':host([lit]) .legend { opacity: 0; transition: opacity .15s ease; }',
+  '.glow { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
+  '  pointer-events: none; font-family: "Josefin Sans", "Futura", sans-serif; font-weight: 600;',
+  '  font-size: 13px; letter-spacing: 0.18em; white-space: pre; text-align: center;',
+  '  color: var(--glow); opacity: 0; transition: opacity .3s ease; }',
+  '.glow .core { text-shadow: 0 0 2px var(--glow), 0 0 5px var(--halo), 0 0 11px var(--halo); }',
+  ':host([lit]) .glow { opacity: calc(var(--bright, 1)); transition: opacity .15s ease; }',
+  '.screw { position: absolute; width: 6px; height: 6px; border-radius: 50%; pointer-events: none;',
+  '  background: radial-gradient(circle at 34% 30%, #dfe1e3, #b9bcc0 45%, #6e7074 100%);',
+  '  box-shadow: 0 1px 1px rgba(0,0,0,.6); }',
+  '.screw::after { content: ""; position: absolute; left: 1px; top: 2.6px; width: 4px; height: .8px;',
+  '  background: #3a3b3c; transform: rotate(24deg); }',
+  '.chip { position: absolute; width: 3px; height: 2.4px; border-radius: 40% 60% 55% 45%; pointer-events: none;',
+  '  background: var(--engrave); opacity: .3; transition: opacity .3s ease, background .3s ease; }',
+  ':host([lit]) .chip { background: var(--glow); box-shadow: 0 0 3px 1px var(--halo);',
+  '  opacity: calc(var(--wear, 0) * var(--bright, 1)); transition: opacity .15s ease, background .15s ease; }',
+  '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
+  '  pointer-events: none; }',
+  '::slotted(*) { pointer-events: auto; }',
+  '</style>',
+  '<div class="wrap">',
+  '  <div class="plate">',
+  '    <div class="satin"></div>',
+  '    <div class="legendwrap"><div class="legend"></div></div>',
+  '    <div class="glow"><div class="core"></div></div>',
+  '    <div class="edgeline"></div>',
+  '    <div class="screw s1"></div><div class="screw s2"></div><div class="screw s3"></div><div class="screw s4"></div>',
+  '    <div class="chip"></div>',
+  '    <div class="slotlayer"><slot></slot></div>',
+  '  </div>',
+  '</div>'].join("\n");
+
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  class SkPanelAcrylicEdgeLit extends HTMLElement {
+    static get observedAttributes() {
+      return ["value", "legend", "width", "height", "lit", "color", "brightness", "wear", "scale"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._legend = r.querySelector(".legend");
+      this._glowCore = r.querySelector(".glow .core");
+      this._screws = [r.querySelector(".s1"), r.querySelector(".s2"), r.querySelector(".s3"), r.querySelector(".s4")];
+      this._chip = r.querySelector(".chip");
+      this._v = "";
+    }
+    connectedCallback() {                       // idempotent: stage.js re-parents us once
+      this.setAttribute("role", "img");
+      this._sync();
+    }
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      var w = clamp(num(this, "width", DW), 60, 4000);
+      var h = clamp(num(this, "height", DH), 26, 4000);
+      var s = clamp(num(this, "scale", 1), 0.1, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      var pad = Math.max(6, Math.round(w * 0.035));
+      this._screws[0].style.left = pad + "px"; this._screws[0].style.top = pad + "px";
+      this._screws[1].style.right = pad + "px"; this._screws[1].style.top = pad + "px";
+      this._screws[2].style.left = pad + "px"; this._screws[2].style.bottom = pad + "px";
+      this._screws[3].style.right = pad + "px"; this._screws[3].style.bottom = pad + "px";
+      this._chip.style.left = (pad + 9) + "px";
+      this._chip.style.top = (h - pad - 5) + "px";
+
+      var bright = clamp(num(this, "brightness", 1), 0, 1);
+      this.style.setProperty("--bright", bright.toFixed(2));
+      var wear = clamp(num(this, "wear", 0), 0, 1);
+      this.style.setProperty("--wear", wear.toFixed(2));
+
+      var txt = this.getAttribute("value");
+      if (txt == null) txt = this.getAttribute("legend");
+      txt = txt == null ? "" : txt;
+      this._v = txt;
+      this._legend.textContent = txt;
+      this._glowCore.textContent = txt;
+      var fs = h < 48 ? 10 : Math.min(15, Math.round(h * 0.2));
+      this._legend.style.fontSize = fs + "px";
+      this._glowCore.parentElement.style.fontSize = fs + "px";
+
+      var lit = this.hasAttribute("lit");
+      var col = this.getAttribute("color") === "red" ? "night red" : "white";
+      this.setAttribute("aria-label", (txt || "blank") + " placard, " + (lit ? "lit " + col : "unlit"));
+    }
+  }
+  customElements.define("sk-panel-acrylic-edge-lit", SkPanelAcrylicEdgeLit);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

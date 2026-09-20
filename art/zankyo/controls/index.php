@@ -222,7 +222,7 @@ const SECTIONS = <?php echo json_encode($sections, JSON_UNESCAPED_UNICODE); ?>;
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
   function card(i, idx) {
     const thumb = (live.checked || !i.shot)
-      ? `<iframe loading="lazy" src="${esc(i.file)}?embed${live.checked ? "" : "&still"}" title="${esc(i.name)}"></iframe>`
+      ? `<iframe loading="lazy" src="${esc(i.file)}#embed${live.checked ? "" : "&still"}" title="${esc(i.name)}"></iframe>`
       : `<img loading="lazy" src="${esc(i.shot)}" alt="${esc(i.name)}">`;
     return `<article class="card${i.broken ? " broken" : ""}${live.checked ? " live" : ""}" tabindex="0" data-i="${idx}">
       <div class="thumb">${thumb}<span class="code">${esc(i.code || "?")}</span><span class="kind ${esc(i.kind || "")}">${esc((i.kind || "").toUpperCase())}</span></div>
@@ -266,7 +266,7 @@ const SECTIONS = <?php echo json_encode($sections, JSON_UNESCAPED_UNICODE); ?>;
     $("#dfoot").innerHTML = `<span>element <code>&lt;${esc(i.element || "?")}&gt;</code></span><span>value <code>${esc((i.value || {}).model || "?")}</code></span>`
       + `<span>attributes <code>${esc((i.attributes || []).join(" "))}</code></span><span>events <code>${esc((i.events || []).join(" ") || "—")}</code></span>`
       + `<span>${esc((i.materials || []).join(", "))}</span><span>${esc((i.tags || []).join(", "))}</span><span>${(i.bytes / 1024).toFixed(0)} KB</span>`;
-    frame.src = i.file + "?still";
+    frame.src = i.file + "#still";
     detail.classList.add("open"); document.body.style.overflow = "hidden";
     $("#close").focus();
   }

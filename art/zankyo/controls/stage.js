@@ -20,7 +20,9 @@
 (function () {
   "use strict";
 
-  var q = new URLSearchParams(location.search);
+  // options come from the query string or the hash (#embed&still), so hosts that
+  // cannot serve a path with a query string still get the embed view
+  var q = new URLSearchParams((location.search || "").replace(/^\?/, "") + "&" + (location.hash || "").replace(/^#/, ""));
   var EMBED = q.has("embed");
   var STILL = q.has("still");
 
@@ -154,7 +156,7 @@
       var s = $("#sk-element"); if (!s) { copy.textContent = "no #sk-element script"; return; }
       navigator.clipboard.writeText(s.textContent).then(function () { copy.textContent = "copied ✓"; setTimeout(function () { copy.textContent = "copy element code"; }, 1400); });
     } });
-    var open = el("a", { href: location.pathname + "?embed", target: "_blank", text: "embed view ↗" });
+    var open = el("a", { href: location.pathname + "#embed", target: "_blank", text: "embed view ↗" });
     right.appendChild(el("label", {}, [el("span", { text: "source" }), copy, open]));
 
     var kv = el("dl", { "class": "sk-kv" });

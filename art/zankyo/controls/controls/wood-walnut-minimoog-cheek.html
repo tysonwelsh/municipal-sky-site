@@ -178,7 +178,8 @@
       this._wrap = r.querySelector(".wrap");
       this._label = r.querySelector(".label");
       this._wear1 = r.querySelector(".wear1");
-      this._v = null;
+      this._turb = r.querySelector("#wg feTurbulence");
+      this._v = null; this._lastHoriz = null;
     }
     connectedCallback() {                     // idempotent: stage.js re-parents us once
       this.setAttribute("role", "img");
@@ -207,6 +208,13 @@
       if (txt !== this._v) { this._v = txt; this._label.textContent = txt; }
       var wear = clamp(num(this, "wear", 0), 0, 1);
       this._wear1.style.opacity = (wear * 0.5).toFixed(2);
+
+      // grain streaks run with the long axis: fine variation across the grain,
+      // slow wavy variation along it, so the noise reads as long fibres, not bands.
+      if (this._turb && horiz !== this._lastHoriz) {
+        this._lastHoriz = horiz;
+        this._turb.setAttribute("baseFrequency", horiz ? "0.006 0.20" : "0.11 0.018");
+      }
 
       this.setAttribute("aria-label", (txt ? txt + " — " : "") + "oiled walnut end cheek" + (horiz ? ", horizontal grain" : ", vertical grain"));
     }
