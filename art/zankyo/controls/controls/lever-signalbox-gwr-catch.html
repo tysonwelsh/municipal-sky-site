@@ -286,7 +286,7 @@
       this._apply(ang);
       const tentative = ang > SWEEP / 2;
       if (tentative !== this._v) {
-        this._v = tentative; this.setAttribute("value", tentative ? "true" : "false");
+        this._v = tentative;   // live only; the attribute reflects once the gesture settles
         this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._v } }));
       }
     }

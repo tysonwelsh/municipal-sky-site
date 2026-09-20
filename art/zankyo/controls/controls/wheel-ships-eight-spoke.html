@@ -109,8 +109,7 @@
     .hit.drag { cursor: grabbing; }
     .hit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 16px rgba(22,224,224,0.5); border-radius: 50%; }
     :host([disabled]) .hit { cursor: default; }
-    .wheelgrp.thud { animation: thud 150ms ease-out; }
-    @keyframes thud { 0% { transform: scale(1); } 40% { transform: scale(1.012); } 100% { transform: scale(1); } }
+    .wheelgrp { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
   </style>
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
@@ -244,7 +243,8 @@
       return Math.abs(Math.round(v * 10) / 10) + "° " + (v > 0 ? "starboard" : "port");
     }
     _paint() {
-      this._grp.style.transform = "rotate(" + this._wheelDeg.toFixed(2) + "deg)";
+      const bump = (this._thudT && performance.now() < this._thudT) ? 1.012 : 1;
+      this._grp.style.transform = "rotate(" + this._wheelDeg.toFixed(2) + "deg) scale(" + bump + ")";
       this._hit.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
       this._hit.setAttribute("aria-valuetext", this._valuetext(this._v));
     }
@@ -262,7 +262,7 @@
       this._paint();
       this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
     }
-    _thud() { this._grp.classList.remove("thud"); void this._grp.offsetWidth; this._grp.classList.add("thud"); }
+    _thud() { this._thudT = performance.now() + 140; setTimeout(() => this._paint(), 145); }
     _onDown(e) {
       if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
       e.preventDefault();

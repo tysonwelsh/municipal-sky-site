@@ -328,7 +328,8 @@
       v = this._clamp(v);
       const changed = v !== this._v;
       if (!changed && !settle) return;
-      this._v = v; this.setAttribute("value", String(v));
+      this._v = v;                                    // live only; the attribute reflects once settled
+      if (settle) this.setAttribute("value", String(v));
       this._render(false);
       if (changed || settle) {
         this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
