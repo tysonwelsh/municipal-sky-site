@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chicken-head knob, brown Bakelite — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knob-chicken-head-bakelite",
+  "element": "sk-knob-chicken-head",
+  "name": "Chicken-head knob, brown Bakelite",
+  "kind": "input",
+  "code": "A2",
+  "type": "Chicken-head / pointer knob",
+  "source": "Daka-Ware phenolic pointer knob, as on a 1950s Fender tweed amplifier, a Hammond tonewheel organ's drawbar chassis, an Ampex 350",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["bakelite", "brass", "silk-screened panel"],
+  "tags": ["amplifier", "audio", "wedge pointer", "set-screw", "1-10 scale", "reference build"],
+  "value": { "model": "range", "min": 1, "max": 10, "step": 0.1, "unit": "" },
+  "attributes": ["value", "min", "max", "step", "label", "scale", "disabled", "sweep"],
+  "events": ["input", "change"],
+  "size": { "w": 110, "h": 128 },
+  "notes": "Two instances: GAIN at 6.5 and a smaller TONE at 3. Drag up/down, wheel, or arrows."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wrinkle">
+    <sk-knob-chicken-head value="6.5" label="VOLUME"></sk-knob-chicken-head>
+    <sk-knob-chicken-head value="3" label="TONE" scale="0.8"></sk-knob-chicken-head>
+    <sk-knob-chicken-head value="8.2" label="PRESENCE" scale="0.8" disabled></sk-knob-chicken-head>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Daka-Ware pointer knob</b> is the one on every tweed and blackface Fender, on Hammond chassis, on
+  Ampex and RCA broadcast gear: a moulded phenolic body with a flat-topped wedge that reads as a pointer from
+  across the room, a brass set-screw into the shaft's flat, and the scale printed on the panel around it,
+  1 to 10 over 300 degrees.</p>
+  <p><b>The tells kept here:</b> the wedge's flat top and rounded tip; the slight dome of the body catching one
+  highlight; a set-screw on the skirt at 4 o'clock; the panel's silk-screened numerals in a Futura-like face
+  with heavier majors at 1, 5 and 10; a ring of finger grime that is off-centre because hands come from
+  below-right; a soft contact shadow under the skirt so it sits <i>on</i> the panel rather than floating.
+  Drag is vertical (up is clockwise), the wheel steps, arrows step and Shift-arrows step by ten.</p>
+  <p><b>Left out:</b> the shaft's D-flat visible in a rear view, the mould seam.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knob-chicken-head> — Daka-Ware style pointer knob on a printed 1–10 scale ====
+   attributes: value min max step label scale disabled sweep(deg, default 300)
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-knob-chicken-head value="5"></sk-knob-chicken-head> */
+(function () {
+  if (customElements.get("sk-knob-chicken-head")) return;
+  const W = 110, H = 128, CX = 55, CY = 62;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent;
+      --ink: #e3dccb; --ink-dim: #a49c88; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 12px; top: 18px; width: 86px; height: 86px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .knob { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 40ms linear; }
+    .knob.snap { transition: transform 120ms cubic-bezier(.2,.9,.3,1.2); }
+    text { font-family: "Josefin Sans", "Futura", "Trebuchet MS", sans-serif; font-weight: 600; fill: var(--ink); }
+    .label { font-size: 8.5px; letter-spacing: 0.22em; fill: var(--ink-dim); text-anchor: middle; }
+    .num { font-size: 8px; text-anchor: middle; dominant-baseline: middle; }
+    .num.major { font-size: 9.5px; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <radialGradient id="body" cx="36%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#8a5a35"/><stop offset="0.35" stop-color="#5a3a20"/><stop offset="0.8" stop-color="#2c1a0d"/><stop offset="1" stop-color="#1a0f07"/>
+        </radialGradient>
+        <radialGradient id="skirt" cx="40%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#4a2f1a"/><stop offset="0.7" stop-color="#261608"/><stop offset="1" stop-color="#150b04"/>
+        </radialGradient>
+        <linearGradient id="top" x1="0" y1="0" x2="0.5" y2="1">
+          <stop offset="0" stop-color="#9a6a42" stop-opacity="0.85"/><stop offset="0.5" stop-color="#6a4526" stop-opacity="0.5"/><stop offset="1" stop-color="#2a170a" stop-opacity="0.6"/>
+        </linearGradient>
+        <radialGradient id="sheen" cx="30%" cy="22%" r="55%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="grime" cx="58%" cy="66%" r="50%">
+          <stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="0.78" stop-color="#160c04" stop-opacity="0.42"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="brass" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#f1d98a"/><stop offset="0.6" stop-color="#a3803a"/><stop offset="1" stop-color="#4f3a12"/>
+        </radialGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2"/></filter>
+        <filter id="softer" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+
+      <!-- the panel's printing: label, ticks, numerals -->
+      <text class="label" x="${CX}" y="${H - 5}"></text>
+      <g class="scale"></g>
+
+      <!-- grime ring where the fingers land -->
+      <circle cx="${CX + 3}" cy="${CY + 4}" r="44" fill="url(#grime)"/>
+
+      <!-- contact shadow and ambient shadow -->
+      <ellipse cx="${CX + 2}" cy="${CY + 5}" rx="31" ry="30" fill="#000" opacity="0.55" filter="url(#softer)"/>
+      <ellipse cx="${CX + 1}" cy="${CY + 2}" rx="30" ry="29.5" fill="#000" opacity="0.7" filter="url(#soft)"/>
+
+      <g class="knob">
+        <!-- skirt: the wider base, with the set-screw -->
+        <circle cx="${CX}" cy="${CY}" r="30" fill="url(#skirt)" stroke="#0a0503" stroke-width="0.8"/>
+        <circle cx="${CX}" cy="${CY}" r="29" fill="none" stroke="#7a5030" stroke-opacity="0.35" stroke-width="0.8"/>
+        <g transform="rotate(118 ${CX} ${CY})">
+          <circle cx="${CX}" cy="${CY - 26.5}" r="2.6" fill="url(#brass)" stroke="#2a1c06" stroke-width="0.5"/>
+          <rect x="${CX - 2}" y="${CY - 27}" width="4" height="1" fill="#2a1c06" opacity="0.8" transform="rotate(30 ${CX} ${CY - 26.5})"/>
+        </g>
+        <!-- the wedge body: a circle with a flat-topped pointer -->
+        <path class="body" d="M ${CX} ${CY - 45} L ${CX - 9} ${CY - 22} A 24 24 0 1 0 ${CX + 9} ${CY - 22} Z"
+              fill="url(#body)" stroke="#2c1a0d" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M ${CX} ${CY - 45} L ${CX - 9} ${CY - 22} A 24 24 0 1 0 ${CX + 9} ${CY - 22} Z" fill="url(#body)"/>
+        <!-- the flat top of the wedge, a shade lighter, inset -->
+        <path d="M ${CX} ${CY - 41} L ${CX - 6.5} ${CY - 21} A 20 20 0 1 0 ${CX + 6.5} ${CY - 21} Z" fill="url(#top)" stroke="#a97a4e" stroke-opacity="0.22" stroke-width="0.6" stroke-linejoin="round"/>
+        <!-- the sheen -->
+        <ellipse cx="${CX - 6}" cy="${CY - 14}" rx="15" ry="20" fill="url(#sheen)"/>
+        <!-- reflected light on the lower edge -->
+        <path d="M ${CX - 20} ${CY + 14} A 24 24 0 0 0 ${CX + 20} ${CY + 14}" fill="none" stroke="#c08a55" stroke-opacity="0.22" stroke-width="1.2"/>
+      </g>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkKnobChickenHead extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "scale", "disabled", "sweep"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 5; this._min = 1; this._max = 10; this._step = 0.1; this._sweep = 300; this._scale = 1;
+      this._knob = this.shadowRoot.querySelector(".knob");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._label = this.shadowRoot.querySelector(".label");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawScale(); this._render();
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n !== "value") this._drawScale(); this._render(); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 1); this._max = num("max", 10); this._step = num("step", 0.1); this._sweep = Math.min(340, Math.max(60, num("sweep", 300)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab;
+      g.setAttribute("aria-label", this.getAttribute("label") || "knob");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      g.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return -this._sweep / 2 + t * this._sweep; }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const n = Math.round(this._max - this._min); const steps = n <= 12 ? n : 10;
+      for (let i = 0; i <= steps; i++) {
+        const val = this._min + (this._max - this._min) * i / steps;
+        const a = this._angle(val) * Math.PI / 180;
+        const major = i === 0 || i === steps || (steps % 2 === 0 && i === steps / 2) || i % 5 === 0;
+        const r1 = 36.5, r2 = major ? 41 : 39.5;
+        const t = document.createElementNS(ns, "line");
+        t.setAttribute("x1", CX + r1 * Math.sin(a)); t.setAttribute("y1", CY - r1 * Math.cos(a));
+        t.setAttribute("x2", CX + r2 * Math.sin(a)); t.setAttribute("y2", CY - r2 * Math.cos(a));
+        t.setAttribute("stroke", "var(--ink)"); t.setAttribute("stroke-width", major ? 1.4 : 0.9); t.setAttribute("stroke-linecap", "round"); t.setAttribute("opacity", major ? 0.95 : 0.7);
+        g.appendChild(t);
+        const tx = document.createElementNS(ns, "text");
+        const rr = 48.5;
+        tx.setAttribute("x", CX + rr * Math.sin(a)); tx.setAttribute("y", CY - rr * Math.cos(a) + 0.5);
+        tx.setAttribute("class", "num" + (major ? " major" : ""));
+        tx.textContent = String(Math.round(val * 10) / 10).replace(/\.0$/, "");
+        g.appendChild(tx);
+        // half ticks
+        if (i < steps) {
+          const a2 = this._angle(val + (this._max - this._min) / steps / 2) * Math.PI / 180;
+          const h = document.createElementNS(ns, "line");
+          h.setAttribute("x1", CX + 36.5 * Math.sin(a2)); h.setAttribute("y1", CY - 36.5 * Math.cos(a2));
+          h.setAttribute("x2", CX + 38.3 * Math.sin(a2)); h.setAttribute("y2", CY - 38.3 * Math.cos(a2));
+          h.setAttribute("stroke", "var(--ink)"); h.setAttribute("stroke-width", 0.7); h.setAttribute("opacity", 0.45);
+          g.appendChild(h);
+        }
+      }
+    }
+    _render() {
+      this._knob.style.transform = "rotate(" + this._angle(this._v).toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._grab.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10));
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag"); this._knob.classList.remove("snap");
+      this._drag = { y: e.clientY, x: e.clientX, v: this._v, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const dy = this._drag.y - e.clientY, dx = e.clientX - this._drag.x;
+      const px = (dy + dx * 0.35) / this._scale;                    // up or right = clockwise
+      const range = this._max - this._min;
+      const fine = e.shiftKey ? 0.25 : 1;
+      let v = this._drag.v + px * fine * range / 160;               // 160 px for the full sweep
+      v = Math.round(v / this._step) * this._step;
+      if (v !== this._v) this._drag.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      const moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._knob.classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 10 : 2), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 10, r = this._max - this._min;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + r / 10; break;
+        case "PageDown": v = this._v - r / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._knob.classList.add("snap");
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-knob-chicken-head", SkKnobChickenHead);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

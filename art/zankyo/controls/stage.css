@@ -1,0 +1,242 @@
+/* ===========================================================================
+   CONTROLS — stage.css
+   The demo-page shell shared by every control in controls/*.html.
+   A control's own look lives inside its custom element (shadow DOM); this
+   file only styles the page around it: the header, the stage the control is
+   mounted on, the bench (readout + drivers), the notes, and embed mode.
+   =========================================================================== */
+:root {
+  color-scheme: dark;
+  --sk-bg: #0b0b0e;
+  --sk-ink: #d6d2dc;
+  --sk-ink-dim: #8d8797;
+  --sk-ink-faint: #5c5765;
+  --sk-rule: #24242b;
+  --sk-cyan: #16e0e0;
+  --sk-amber: #ffb000;
+  --sk-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sk-display: "Orbitron", "JetBrains Mono", sans-serif;
+  --sk-serif: "Shippori Mincho", Georgia, serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: radial-gradient(90% 60% at 50% 0%, #17171d, var(--sk-bg) 70%);
+  color: var(--sk-ink);
+  font-family: var(--sk-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 26px 20px 60px;
+}
+a { color: var(--sk-cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ------------------------------ header ------------------------------ */
+.sk-head { max-width: 1040px; margin: 0 auto 18px; }
+.sk-head h1 {
+  font-family: var(--sk-display); font-weight: 700; font-size: 17px; letter-spacing: 0.14em;
+  margin: 0 0 4px; color: #e6e1ee;
+}
+.sk-head .sk-code {
+  display: inline-block; font-family: var(--sk-display); font-size: 10px; letter-spacing: 0.18em;
+  color: #0b0b0e; background: #8d8797; padding: 3px 7px 2px; border-radius: 2px; margin-right: 10px;
+  vertical-align: 2px;
+}
+.sk-head .sk-source { font-family: var(--sk-serif); font-size: 14px; color: #b9b3c4; margin: 0; }
+.sk-head .sk-line { color: var(--sk-ink-dim); font-size: 11px; margin: 4px 0 0; }
+.sk-head .sk-line b { color: #b9b3c4; font-weight: 500; }
+.sk-head .sk-crumb { font-size: 11px; color: var(--sk-ink-faint); margin: 0 0 10px; letter-spacing: 0.08em; }
+
+/* ------------------------------ stage ------------------------------ */
+/* The control is mounted on a panel swatch. data-panel picks the material.
+   Every panel is a plate with a lip: things placed on it should read as
+   set into or standing on a real surface. */
+.sk-stage-wrap { max-width: 1040px; margin: 0 auto; }
+.sk-stage {
+  position: relative;
+  min-height: 300px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 36px;
+  padding: 40px 36px;
+  border-radius: 6px;
+  border: 1px solid #000;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -3px 8px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.55);
+  background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  overflow: hidden;
+}
+.sk-stage > * { position: relative; z-index: 1; }
+/* a light source from above-left, on every panel */
+.sk-stage::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(70% 55% at 22% 0%, rgba(255,255,255,0.07), transparent 70%);
+}
+
+/* --- materials --- */
+.sk-stage[data-panel="steel"] {
+  background:
+    radial-gradient(30% 60% at 4% 100%, rgba(96,58,32,0.18), transparent 74%),
+    linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+}
+.sk-stage[data-panel="black"] {
+  background: linear-gradient(180deg, #17171a, #0c0c0e);
+}
+.sk-stage[data-panel="aluminium"] {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #b8b9bd, #8f9095 55%, #7c7d82);
+  color: #1a1a1e;
+}
+.sk-stage[data-panel="aluminium-black"] {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #34343a, #1f1f24 55%, #18181c);
+}
+.sk-stage[data-panel="hammertone"] {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.09) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,0.07) 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 80%, rgba(0,0,0,0.25) 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 15%, rgba(0,0,0,0.22) 0 2px, transparent 3px),
+    linear-gradient(180deg, #5f6a6c, #48525a 70%, #3c454c);
+  background-size: 11px 13px, 17px 15px, 13px 19px, 19px 11px, auto;
+}
+.sk-stage[data-panel="wrinkle"] {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(255,255,255,0.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 60% 70%, rgba(0,0,0,0.35) 0 1px, transparent 2.5px),
+    linear-gradient(180deg, #2b2b2a, #1e1e1d 70%, #171716);
+  background-size: 5px 6px, 7px 5px, auto;
+}
+.sk-stage[data-panel="olive"] {
+  background:
+    radial-gradient(circle at 60% 70%, rgba(0,0,0,0.3) 0 1px, transparent 2.5px),
+    linear-gradient(180deg, #4b5a3f, #3a4731 70%, #2f3928);
+  background-size: 6px 5px, auto;
+}
+.sk-stage[data-panel="grey-enamel"] {
+  background: linear-gradient(180deg, #8e9498, #7a8085 70%, #6d7378);
+  color: #16181a;
+}
+.sk-stage[data-panel="bakelite"] {
+  background:
+    radial-gradient(60% 40% at 30% 20%, rgba(120,70,30,0.35), transparent 70%),
+    radial-gradient(40% 50% at 80% 80%, rgba(20,8,2,0.5), transparent 70%),
+    linear-gradient(180deg, #4a2a16, #2d1a0e 70%, #1f120a);
+}
+.sk-stage[data-panel="bakelite-black"] {
+  background:
+    radial-gradient(60% 40% at 30% 20%, rgba(255,255,255,0.08), transparent 70%),
+    linear-gradient(180deg, #1c1a19, #100f0e 70%, #0a0a09);
+}
+.sk-stage[data-panel="brass"] {
+  background:
+    radial-gradient(60% 50% at 25% 10%, rgba(255,230,150,0.25), transparent 70%),
+    linear-gradient(180deg, #9a7a3a, #7a5f2b 60%, #5e4820);
+  color: #2a1e08;
+}
+.sk-stage[data-panel="chrome"] {
+  background: linear-gradient(180deg, #f2f3f5 0%, #b9bcc2 30%, #6d7178 50%, #c9ccd2 52%, #e6e8eb 70%, #9ea2a8 100%);
+  color: #1a1a1e;
+}
+.sk-stage[data-panel="wood"] {
+  background:
+    repeating-linear-gradient(94deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 9px, rgba(0,0,0,0.07) 9px 12px, transparent 12px 23px),
+    linear-gradient(180deg, #6b3f22, #4f2d17 70%, #3f2312);
+}
+.sk-stage[data-panel="beige"] {
+  background: linear-gradient(180deg, #d9d2be, #c8c0aa 70%, #b9b19c);
+  color: #2a271f;
+}
+.sk-stage[data-panel="putty"] {
+  background: linear-gradient(180deg, #b7b3a8, #a29e93 70%, #96928a);
+  color: #24221e;
+}
+.sk-stage[data-panel="plastic-grey"] {
+  background: linear-gradient(180deg, #4a4c52, #383a40 70%, #2f3136);
+}
+.sk-stage[data-panel="white"] {
+  background: linear-gradient(180deg, #ececea, #d9d9d5 70%, #cfcfca);
+  color: #202020;
+}
+.sk-stage[data-panel="cream"] {
+  background: linear-gradient(180deg, #ece2c8, #dccfae 70%, #cfc19d);
+  color: #3a3222;
+}
+.sk-stage[data-panel="navy"] {
+  background: linear-gradient(180deg, #1f2a3d, #16202f 70%, #101826);
+}
+.sk-stage[data-panel="red"] {
+  background: linear-gradient(180deg, #8d2020, #6b1515 70%, #521010);
+}
+.sk-stage[data-panel="soviet"] {
+  background:
+    radial-gradient(circle at 60% 70%, rgba(0,0,0,0.25) 0 1px, transparent 2.5px),
+    linear-gradient(180deg, #5b6b62, #465349 70%, #3a453d);
+  background-size: 7px 6px, auto;
+}
+.sk-stage[data-panel="none"] { background: transparent; border-color: transparent; box-shadow: none; }
+.sk-stage[data-panel="none"]::before { display: none; }
+
+/* ------------------------------ bench ------------------------------ */
+.sk-bench {
+  max-width: 1040px; margin: 14px auto 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;
+  padding: 14px 16px; border: 1px solid var(--sk-rule); border-radius: 4px;
+  background: rgba(0,0,0,0.25);
+}
+@media (max-width: 720px) { .sk-bench { grid-template-columns: 1fr; } }
+.sk-bench h2 {
+  font-family: var(--sk-display); font-size: 10px; letter-spacing: 0.22em; color: var(--sk-ink-dim);
+  margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--sk-rule);
+}
+.sk-bench label { display: flex; align-items: center; gap: 10px; margin: 6px 0; color: var(--sk-ink-dim); }
+.sk-bench label > span:first-child { min-width: 72px; color: var(--sk-ink-faint); letter-spacing: 0.06em; font-size: 10px; text-transform: uppercase; }
+.sk-bench input[type="range"] { flex: 1; accent-color: var(--sk-cyan); }
+.sk-bench input[type="text"], .sk-bench select {
+  font: inherit; color: var(--sk-ink); background: #101014; border: 1px solid #2a2a32; border-radius: 3px; padding: 3px 6px;
+}
+.sk-bench button {
+  font: inherit; font-size: 11px; color: var(--sk-ink); background: #1a1a20; border: 1px solid #34343c; border-radius: 3px;
+  padding: 4px 10px; cursor: pointer;
+}
+.sk-bench button:hover { border-color: var(--sk-cyan); }
+.sk-readout {
+  font-variant-numeric: tabular-nums; color: var(--sk-cyan); background: rgba(2,8,10,0.92);
+  border: 1px solid #000; border-radius: 2px; padding: 2px 8px; min-width: 96px; text-align: right; display: inline-block;
+}
+.sk-readout.is-changed { color: #fff; text-shadow: 0 0 6px rgba(22,224,224,0.8); }
+.sk-events { font-size: 11px; color: var(--sk-ink-faint); max-height: 92px; overflow: auto; white-space: pre; margin: 6px 0 0; }
+.sk-kv { display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px; font-size: 11px; margin: 0; }
+.sk-kv dt { color: var(--sk-ink-faint); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; }
+.sk-kv dd { margin: 0; color: var(--sk-ink-dim); }
+.sk-kv code { color: #b9b3c4; }
+
+/* ------------------------------ notes ------------------------------ */
+.sk-notes {
+  max-width: 1040px; margin: 22px auto 0; color: var(--sk-ink-dim); font-size: 11.5px; line-height: 1.7;
+}
+.sk-notes h2 { font-family: var(--sk-display); font-size: 11px; letter-spacing: 0.22em; color: #b9b3c4; margin: 0 0 6px; }
+.sk-notes p { margin: 0 0 8px; max-width: 80ch; }
+.sk-notes b { color: #b9b3c4; font-weight: 500; }
+.sk-notes ul { margin: 0 0 8px; padding-left: 18px; }
+
+/* ------------------------------ embed mode ------------------------------ */
+/* ?embed — the gallery's card and the screenshot tool: only the stage, filling
+   the viewport, the control centred. stage.js adds the class and scales the
+   contents down if they would overflow. */
+html.sk-embed, html.sk-embed body { height: 100%; overflow: hidden; }
+html.sk-embed body { padding: 0; background: var(--sk-bg); }
+html.sk-embed .sk-head, html.sk-embed .sk-bench, html.sk-embed .sk-notes, html.sk-embed .sk-embed-hide { display: none !important; }
+html.sk-embed .sk-stage-wrap { max-width: none; height: 100%; }
+html.sk-embed .sk-stage {
+  height: 100%; min-height: 0; border-radius: 0; border: 0; padding: 18px;
+  box-shadow: none;
+}
+html.sk-embed .sk-stage > .sk-fit {
+  display: flex; align-items: center; justify-content: center; gap: 36px; flex-wrap: nowrap;
+  transform-origin: center center;
+}
+
+/* ------------------------------ focus ------------------------------ */
+/* Custom elements should draw their own focus ring in the shadow root; this is
+   the fallback for the host so keyboard users always see something. */
+:where(.sk-stage) > :focus-visible { outline: 2px solid var(--sk-cyan); outline-offset: 6px; border-radius: 4px; }
