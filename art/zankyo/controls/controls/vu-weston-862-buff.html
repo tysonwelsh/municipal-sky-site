@@ -92,11 +92,11 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     text { font-family: "Oswald", "Archivo Narrow", "Arial Narrow", sans-serif; fill: #1a1814; }
-    .db   { font-size: 8.6px; font-weight: 500; text-anchor: middle; }
+    .db   { font-size: 8px;   font-weight: 500; text-anchor: middle; }
     .pct  { font-size: 7px;   font-weight: 400; text-anchor: middle; fill: #2b271f; }
     .red  { fill: #b2231a; }
     .vu   { font-size: 10px; font-weight: 600; text-anchor: middle; letter-spacing: 0.06em; }
-    .maker { font-size: 5.2px; font-weight: 400; letter-spacing: 0.2em; text-anchor: middle; fill: #756945; }
+    .maker { font-size: 4.8px; font-weight: 400; letter-spacing: 0.18em; text-anchor: middle; fill: #7d7152; }
     .needle { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
     /* the lamp: off by default, on with [lit] */
     .litcard, .pool, .poolb, .warmrim { opacity: 0; transition: opacity 140ms ease-out; }
@@ -189,8 +189,8 @@
 
         <!-- pointer: a plain black knife, no spade -->
         <g class="needle">
-          <path d="M ${PX - 1.8} ${PY - 3} L ${PX - 0.8} ${PY - RT - 5} L ${PX + 0.8} ${PY - RT - 5} L ${PX + 1.8} ${PY - 3} Z" fill="#000" opacity="0.28" filter="url(#b08)" transform="translate(1.6 1.6)"/>
-          <path d="M ${PX - 1.8} ${PY - 3} L ${PX - 0.8} ${PY - RT - 5} L ${PX + 0.8} ${PY - RT - 5} L ${PX + 1.8} ${PY - 3} Z" fill="#0e0d0c"/>
+          <path d="M ${PX - 1.5} ${PY - 3} L ${PX - 0.75} ${PY - RT - 5} L ${PX + 0.75} ${PY - RT - 5} L ${PX + 1.5} ${PY - 3} Z" fill="#000" opacity="0.28" filter="url(#b08)" transform="translate(1.6 1.6)"/>
+          <path d="M ${PX - 1.5} ${PY - 3} L ${PX - 0.75} ${PY - RT - 5} L ${PX + 0.75} ${PY - RT - 5} L ${PX + 1.5} ${PY - 3} Z" fill="#0e0d0c"/>
           <path d="M ${PX - 0.55} ${PY - 26} L ${PX - 0.3} ${PY - RT - 2.5} L ${PX + 0.1} ${PY - RT - 2.5} L ${PX + 0.35} ${PY - 26} Z" fill="#605a52" opacity="0.55"/>
         </g>
         <!-- chrome pivot cap -->
