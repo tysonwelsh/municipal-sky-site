@@ -67,9 +67,9 @@
   const W = 260, H = 200;
   const CX = 130, U = 3.72;              // scale centre and px per mm
   const SPOTY = 49;                      // the spot's centre line on the glass
-  const KX = 62, KY = 140;               // sensitivity knob centre
+  const KX = 62, KY = 146;               // sensitivity knob centre
   const f2 = n => Math.round(n * 100) / 100;
-  const POS = { "×1": -62, "x1": -62, "×0.1": -21, "x0.1": -21, "×0.01": 21, "x0.01": 21, "CLAMP": 62, "clamp": 62 };
+  const POS = { "×1": -80, "x1": -80, "×0.1": -27, "x0.1": -27, "×0.01": 27, "x0.01": 27, "CLAMP": 80, "clamp": 80 };
 
   // ---- the printed scale, built once ----
   let SC = "";
@@ -82,10 +82,10 @@
   }
   // the knob's printed skirt
   let SK = "";
-  [["×1", -62], ["×0.1", -21], ["×0.01", 21], ["CLAMP", 62]].forEach(function (p) {
+  [["×1", -80], ["×0.1", -27], ["×0.01", 27], ["CLAMP", 80]].forEach(function (p) {
     const a = p[1] * Math.PI / 180;
-    SK += `<text class="skirt" x="${f2(KX + 29 * Math.sin(a))}" y="${f2(KY - 29 * Math.cos(a) + 1.8)}">${p[0]}</text>`;
-    SK += `<line x1="${f2(KX + 20.5 * Math.sin(a))}" y1="${f2(KY - 20.5 * Math.cos(a))}" x2="${f2(KX + 23.5 * Math.sin(a))}" y2="${f2(KY - 23.5 * Math.cos(a))}" stroke="#4a5052" stroke-width="0.8"/>`;
+    SK += `<text class="skirt" x="${f2(KX + 30.5 * Math.sin(a))}" y="${f2(KY - 30.5 * Math.cos(a) + 1.8)}">${p[0]}</text>`;
+    SK += `<line x1="${f2(KX + 19.5 * Math.sin(a))}" y1="${f2(KY - 19.5 * Math.cos(a))}" x2="${f2(KX + 23 * Math.sin(a))}" y2="${f2(KY - 23 * Math.cos(a))}" stroke="#4a5052" stroke-width="0.8"/>`;
   });
 
   const TPL = document.createElement("template");
@@ -118,13 +118,13 @@
           <stop offset="0.88" stop-color="#4e5456" stop-opacity="0.4"/>
           <stop offset="1" stop-color="#5b6062" stop-opacity="0.1"/>
         </radialGradient>
-        <pattern id="hammer" width="23" height="19" patternUnits="userSpaceOnUse">
-          <circle cx="5" cy="4" r="4.8" fill="url(#dimp)"/>
-          <circle cx="15" cy="8" r="4.3" fill="url(#dimp)"/>
-          <circle cx="8" cy="14.5" r="4.6" fill="url(#dimp)"/>
-          <circle cx="20" cy="16.5" r="4.1" fill="url(#dimp)"/>
-          <circle cx="0.5" cy="11.5" r="3.7" fill="url(#dimp)"/>
-          <circle cx="23" cy="2.5" r="3.9" fill="url(#dimp)"/>
+        <pattern id="hammer" width="16" height="13" patternUnits="userSpaceOnUse">
+          <circle cx="3.5" cy="3" r="3.5" fill="url(#dimp)"/>
+          <circle cx="11" cy="5.5" r="3.2" fill="url(#dimp)"/>
+          <circle cx="7" cy="10.5" r="3.4" fill="url(#dimp)"/>
+          <circle cx="14.5" cy="11" r="3.0" fill="url(#dimp)"/>
+          <circle cx="0" cy="9" r="2.9" fill="url(#dimp)"/>
+          <circle cx="16" cy="1.5" r="3.1" fill="url(#dimp)"/>
         </pattern>
         <filter id="mot" x="-2%" y="-2%" width="104%" height="104%">
           <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="5" result="n"/>
@@ -137,7 +137,7 @@
           <stop offset="0" stop-color="#787e80"/><stop offset="0.45" stop-color="#4b5153"/><stop offset="1" stop-color="#32383a"/>
         </linearGradient>
         <linearGradient id="milk" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#dcded9"/><stop offset="0.22" stop-color="#eaece7"/><stop offset="0.5" stop-color="#f6f7f2"/><stop offset="0.78" stop-color="#eaece7"/><stop offset="1" stop-color="#dcded9"/>
+          <stop offset="0" stop-color="#bfc4be"/><stop offset="0.2" stop-color="#ced3cc"/><stop offset="0.5" stop-color="#dee3da"/><stop offset="0.8" stop-color="#ced3cc"/><stop offset="1" stop-color="#bfc4be"/>
         </linearGradient>
         <linearGradient id="edgetop" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#1c2022" stop-opacity="0.62"/><stop offset="1" stop-color="#1c2022" stop-opacity="0"/>
@@ -146,10 +146,10 @@
           <stop offset="0" stop-color="#1c2022" stop-opacity="0.55"/><stop offset="1" stop-color="#1c2022" stop-opacity="0"/>
         </linearGradient>
         <radialGradient id="spotg" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#ffffff"/><stop offset="0.3" stop-color="#fffbe8"/><stop offset="0.62" stop-color="#fff2c4" stop-opacity="0.8"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.38" stop-color="#fffdf2"/><stop offset="0.7" stop-color="#fff0bc" stop-opacity="0.92"/><stop offset="1" stop-color="#ffe49a" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="halog" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#ffe9a8" stop-opacity="0.62"/><stop offset="0.55" stop-color="#ffe3a0" stop-opacity="0.22"/><stop offset="1" stop-color="#ffdf98" stop-opacity="0"/>
+          <stop offset="0" stop-color="#fff0b6" stop-opacity="0.95"/><stop offset="0.5" stop-color="#ffe49a" stop-opacity="0.45"/><stop offset="1" stop-color="#ffd980" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="knob" cx="33%" cy="26%" r="78%">
           <stop offset="0" stop-color="#4a4541"/><stop offset="0.35" stop-color="#2a2724"/><stop offset="0.82" stop-color="#151311"/><stop offset="1" stop-color="#2c2926"/>
@@ -174,7 +174,7 @@
       <rect x="7" y="11" width="252" height="192" rx="9" fill="#000" opacity="0.55" filter="url(#bl35)"/>
       <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#box)"/>
       <rect x="3" y="3" width="254" height="194" rx="9" fill="#b3b8ba" filter="url(#mot)" opacity="0.5"/>
-      <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#hammer)"/>
+      <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#hammer)" opacity="0.6"/>
       <rect x="3" y="3" width="254" height="194" rx="9" fill="url(#boxlight)"/>
       <path d="M 12 3.6 L 248 3.6 M 3.6 12 L 3.6 188" fill="none" stroke="#cfd4d5" stroke-opacity="0.55" stroke-width="1.1"/>
       <path d="M 12 196.4 L 248 196.4 M 256.4 12 L 256.4 188" fill="none" stroke="#2f3436" stroke-opacity="0.6" stroke-width="1.1"/>
@@ -189,7 +189,7 @@
       <rect x="21" y="17" width="218" height="48" rx="2.4" fill="none" stroke="#8e9496" stroke-opacity="0.45" stroke-width="0.7"/>
       <rect x="24.2" y="20.2" width="211.6" height="41.6" rx="1.4" fill="#15191b"/>
       <g clip-path="url(#glassclip)">
-        <rect x="25" y="21" width="210" height="40" fill="#c9ccc6"/>
+        <rect x="25" y="21" width="210" height="40" fill="#adb1ab"/>
         <rect class="glow" x="25" y="21" width="210" height="40" fill="url(#milk)"/>
         <g class="scaleprint">${SC}</g>
         <!-- the spot: a soft bright blob with a crisp hairline, blooming on the glass -->
