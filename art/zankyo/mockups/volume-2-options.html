@@ -169,6 +169,39 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
   box-shadow: inset -1px 0 0 rgba(0,0,0,0.7);
 }
 
+/* ---- W6 moulded rubber + printed number plates, 24 px -------------------
+   The reworked W3. Three changes:
+   1. Back to the DARK compound — lightening it took the rubber out of it.
+   2. The tread highlight is symmetric. W3 carried `box-shadow: 2px 0 ...`,
+      a lit shoulder on the RIGHT of every groove only, which reads as a
+      directional bias — as though the wheel were meant to travel that way.
+      A groove in rubber catches light on BOTH shoulders.
+   3. The numbers are not printed on the rubber. Each sits on its own little
+      moulded flat let into the middle of the tread band, and the treads carry
+      on above and below it. No tick marks. */
+.w6 .vw-band { height: 24px; background: linear-gradient(180deg, #08080a 0%, #212127 24%, #31313a 50%, #202027 74%, #08080a 100%); }
+/* symmetric groove: dark valley, both shoulders lit equally */
+.w6 .vw-mark {
+  width: 3px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.07) 0%, rgba(0,0,0,0.30) 22%, rgba(0,0,0,0.66) 50%, rgba(0,0,0,0.30) 78%, rgba(255,255,255,0.07) 100%);
+}
+/* the moulded flat the number is printed on. It sits over the treads in the
+   middle band only, so the tread keeps running above and below it. */
+.w6 .vw-plate {
+  position: absolute; top: 50%; z-index: 2;
+  width: 22px; height: 13px; border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #43434d 0%, #34343d 45%, #26262d 100%);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.65),
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    inset 0 -1px 0 rgba(0,0,0,0.45);
+}
+.w6 .vw-plate i {
+  font-style: normal; font-family: "Orbitron", sans-serif; font-size: 9px; line-height: 1;
+  color: #ece7f4; text-shadow: 0 1px 1px rgba(0,0,0,0.9);
+}
+
 .hint { font-size: 10.5px; color: #6a6572; margin: 7px 0 0; }
 </style>
 </head>
@@ -288,6 +321,28 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
     </p>
   </div>
 
+  <div class="opt w6">
+    <div class="opt-head"><span class="opt-id">W6</span><span class="opt-name">Moulded rubber + printed number plates, 24&nbsp;px &mdash; the reworked W3</span></div>
+    <div class="zk-rxpanel">
+      <span class="zk-bolt zk-bolt-tl" style="--hex:33deg"></span><span class="zk-bolt zk-bolt-tr" style="--hex:-8deg"></span>
+      <span class="zk-bolt zk-bolt-bl" style="--hex:17deg"></span><span class="zk-bolt zk-bolt-br" style="--hex:-41deg"></span>
+      <span class="zk-gap"></span>
+      <div class="vw" data-wheel="w6">
+        <div class="vw-ind"><span class="vw-fixed"></span></div>
+        <div class="vw-grab"><div class="vw-band"></div></div>
+      </div>
+    </div>
+    <p class="opt-note">
+      W3 reworked. <b>Darker compound</b> — lightening it took the rubber out of it. The tread
+      highlight is now <b>symmetric</b>: W3 lit only the right shoulder of every groove, which is
+      the rightward bias you spotted, as though the wheel were meant to travel that way. And the
+      numbers are <b>not printed on the rubber</b> — each sits on its own little moulded flat let
+      into the middle of the tread band, with the tread carrying on above and below it. No tick
+      marks. Thickest of the set at 24&nbsp;px, because the plates need a band of their own with
+      rubber left either side of it. Read under the fixed pointer, like W2.
+    </p>
+  </div>
+
   <p class="foot">
     Dev-only mockup — not linked from the machine, not loaded by <code>index.php</code>, nothing
     wired to the engine.<br />
@@ -313,6 +368,7 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
     w3: { markDeg: 5,  kind: "rib" },
     w4: { markDeg: 4,  kind: "rib" },
     w5: { markDeg: 9,  kind: "facet" },
+    w6: { markDeg: 5,  kind: "rib", plates: true },
   };
 
   document.querySelectorAll(".vw").forEach(function (root) {
@@ -322,7 +378,7 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
     var grab  = root.querySelector(".vw-grab");
     var pip   = root.querySelector(".vw-pip");
     var val   = 60;
-    var marks = [], nums = [];
+    var marks = [], nums = [], plates = [];
 
     // --- build the drum's furniture, one element per angular position ------
     if (spec.kind === "facet") {
@@ -340,6 +396,17 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
         if (spec.kind === "num") m.className += (d % 4 === 0) ? " vw-mark-t" : " vw-mark-b";
         marks.push({ el: m, deg: d });
         band.appendChild(m);
+      }
+      if (spec.plates) {
+        // one moulded flat per ten, carrying its printed numeral
+        for (var pv = 0; pv <= 100; pv += 10) {
+          var pl = document.createElement("span");
+          pl.className = "vw-plate";
+          var lab = document.createElement("i"); lab.textContent = pv;
+          pl.appendChild(lab);
+          plates.push({ el: pl, deg: pv * DEG_PER_UNIT });
+          band.appendChild(pl);
+        }
       }
       if (spec.kind === "num") {
         for (var v = 0; v <= 100; v += 10) {
@@ -397,6 +464,18 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
         nm.el.style.left = x + "px";
         // the numeral squashes as its patch of drum turns away from us
         nm.el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
+      });
+
+      plates.forEach(function (pl) {
+        var a = project(pl.deg - val * DEG_PER_UNIT);
+        var c = Math.cos(a * RAD);
+        if (Math.abs(a) > WINDOW || c <= 0.02) { pl.el.style.opacity = 0; return; }
+        var x = halfW + R * Math.sin(a * RAD);
+        pl.el.style.opacity = Math.max(0, Math.min(1, (c - 0.45) / 0.3));
+        pl.el.style.left = x + "px";
+        // the plate is a flat moulded into a curved surface, so it squashes
+        // with the rubber it is set into
+        pl.el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
       });
 
       if (pip) pip.style.left = (val / 100 * 100) + "%";
