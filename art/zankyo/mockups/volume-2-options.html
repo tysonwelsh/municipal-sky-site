@@ -187,19 +187,29 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
 }
 /* the moulded flat the number is printed on. It sits over the treads in the
    middle band only, so the tread keeps running above and below it. */
+/* The flat is SUNK into the rubber, not stuck onto it. Three things do that:
+   1. Lighting inverts. A raised tile is lit on its top edge with a dark ring
+      round it; a recess is SHADOWED at the top (the upper lip overhangs it)
+      and catches light along the bottom, with no outer ring and no drop
+      shadow at all. The ring was most of what made these read as tiles.
+   2. The fill continues the wheel's own barrel shading — the same three
+      tones the band passes through across the plate's band of height, just
+      darker, because a recess sits in shadow. A flat colour cuts a hole in
+      the cylinder's lighting and the illusion goes with it.
+   3. Barely any corner radius, so it reads as milled rather than as a label. */
 .w6 .vw-plate {
   position: absolute; top: 50%; z-index: 2;
-  width: 22px; height: 13px; border-radius: 2px;
+  width: 22px; height: 13px; border-radius: 1px;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(180deg, #43434d 0%, #34343d 45%, #26262d 100%);
+  background: linear-gradient(180deg, #191920 0%, #24242b 28%, #2c2c34 50%, #212128 76%, #161619 100%);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,0.65),
-    inset 0 1px 0 rgba(255,255,255,0.16),
-    inset 0 -1px 0 rgba(0,0,0,0.45);
+    inset 0 2px 2px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
+/* printed into the recess, so it sits in the recess's shade */
 .w6 .vw-plate i {
   font-style: normal; font-family: "Orbitron", sans-serif; font-size: 9px; line-height: 1;
-  color: #ece7f4; text-shadow: 0 1px 1px rgba(0,0,0,0.9);
+  color: #cbc5d8; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.95);
 }
 
 .hint { font-size: 10.5px; color: #6a6572; margin: 7px 0 0; }
@@ -337,8 +347,10 @@ h2 span { color: #6a6572; letter-spacing: 0.1em; }
       highlight is now <b>symmetric</b>: W3 lit only the right shoulder of every groove, which is
       the rightward bias you spotted, as though the wheel were meant to travel that way. And the
       numbers are <b>not printed on the rubber</b> — each sits on its own little moulded flat let
-      into the middle of the tread band, with the tread carrying on above and below it. No tick
-      marks. Thickest of the set at 24&nbsp;px, because the plates need a band of their own with
+      into the middle of the tread band, with the tread carrying on above and below it. The flat
+      is <b>sunk</b>, not stuck on: it is shadowed along its top lip and lit along its bottom,
+      it carries no outline, and its fill continues the wheel&rsquo;s own barrel shading rather
+      than cutting a flat patch out of it. No tick marks. Thickest of the set at 24&nbsp;px, because the plates need a band of their own with
       rubber left either side of it. Read under the fixed pointer, like W2.
     </p>
   </div>
