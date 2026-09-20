@@ -239,7 +239,9 @@ include '../../includes/header.php';
         <div class="zk-master">
           <div class="zk-wheel" id="zankyo-master-wheel">
             <span class="zk-wheel-ind" aria-hidden="true"></span>
-            <span class="zk-wheel-barrel" aria-hidden="true"></span>
+            <span class="zk-wheel-barrel" aria-hidden="true">
+              <span class="zk-wheel-sheen"></span>
+            </span>
             <input type="range" class="zk-wheel-input" id="zankyo-master-vol"
                    min="0" max="100" step="1" value="60" aria-label="Master volume" />
           </div>

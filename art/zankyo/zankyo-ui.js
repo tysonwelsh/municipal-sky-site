@@ -766,9 +766,22 @@
   // scrolled an evenly-spaced repeating gradient, which is why it read as a
   // strip sliding sideways no matter how it was styled.
   // ==========================================================================
-  var WHEEL_DEG_PER_UNIT = 3;    // 0 → 100 sweeps 300°, leaving a blank sector round the back
-  var WHEEL_WINDOW       = 62;   // degrees either side of the pointer still inside the slot
+  // 3.2°/unit puts 0→100 across 320° and leaves a 40° blank sector behind the
+  // scale. Two things fall out of that, and they are the same decision:
+  //   · the printed tens sit further apart (50 px against 42), and the same
+  //     finger travel turns fewer units, so the volume is finer to set;
+  //   · at an end stop the far end of the scale has come round to exactly 40°
+  //     off the pointer — inside the 52° slot, but out in the fade — so you
+  //     catch the other side of the wheel peeking in at the edge while the
+  //     value itself stops dead at 0 or 100.
+  var WHEEL_DEG_PER_UNIT = 3.2;
+  var WHEEL_WINDOW       = 52;   // degrees either side of the pointer still inside the slot
   var WHEEL_TREAD_DEG    = 5;    // one tread groove every 5° of drum
+  var WHEEL_SEAM_DEG     = 340;  // the band's join, in the middle of the blank sector
+  // the fade is tuned to the slot: opacity reaches 0 at 52°, just as the edge
+  // cuts, so nothing is ever guillotined mid-stroke
+  var WHEEL_FADE_C0      = 0.62;
+  var WHEEL_FADE_SPAN    = 0.22;
   function wireMasterWheel() {
     var wheel = document.getElementById("zankyo-master-wheel");
     if (!wheel) return;
@@ -781,14 +794,22 @@
     if (st && st.masterVolume != null) initial = pct(st.masterVolume);
     if (input) input.value = initial;
 
-    // the tread, all the way round the wheel
+    // the tread, all the way round the wheel — the rubber is continuous even
+    // where the printing stops, which is what makes the blank sector read as
+    // the back of the wheel rather than as a gap
     var treads = [];
-    for (var d = -180; d < 180; d += WHEEL_TREAD_DEG) {
+    for (var d = -180, ti = 0; d < 180; d += WHEEL_TREAD_DEG, ti++) {
       var t = document.createElement("span");
       t.className = "zk-wheel-tread";
       barrel.appendChild(t);
-      treads.push({ el: t, deg: d });
+      // moulding and wear are never perfectly even; a mechanically identical
+      // knurl is one of the things that gives away a drawn wheel
+      treads.push({ el: t, deg: d, wear: 0.80 + (((ti * 29) % 13) / 13) * 0.32 });
     }
+    // the band's join, out in the blank sector
+    var seam = document.createElement("span");
+    seam.className = "zk-wheel-seam";
+    barrel.appendChild(seam);
     // one milled flat per ten, carrying its printed numeral
     var plates = [];
     for (var v = 0; v <= 100; v += 10) {
@@ -818,18 +839,20 @@
       if (!halfW) return;
       var R = halfW / Math.sin(WHEEL_WINDOW * RAD);
 
-      function place(el, deg, squash) {
+      function place(el, deg, squash, wear) {
         var a = wrap(deg - val * WHEEL_DEG_PER_UNIT);
         var c = Math.cos(a * RAD);
         if (Math.abs(a) > WHEEL_WINDOW || c <= 0.02) { el.style.opacity = 0; return; }
-        el.style.opacity = Math.max(0, Math.min(1, (c - 0.45) / 0.3));
+        var o = Math.max(0, Math.min(1, (c - WHEEL_FADE_C0) / WHEEL_FADE_SPAN));
+        el.style.opacity = (wear ? Math.min(1, o * wear) : o).toFixed(3);
         el.style.left = (halfW + R * Math.sin(a * RAD)) + "px";
         // a flat squashes with the rubber it is milled into; a tread is a
         // hairline and only needs to fade
         if (squash) el.style.transform = "translate(-50%, -50%) scaleX(" + c.toFixed(3) + ")";
       }
-      treads.forEach(function (t) { place(t.el, t.deg, false); });
+      treads.forEach(function (t) { place(t.el, t.deg, false, t.wear); });
       plates.forEach(function (p) { place(p.el, p.deg, true); });
+      place(seam, WHEEL_SEAM_DEG, false);
     }
 
     function set(val, fromInput) {
