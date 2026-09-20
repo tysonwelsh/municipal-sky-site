@@ -84,8 +84,8 @@
     svg { display: block; overflow: visible; }
     text { font-family: "Roboto Condensed", "Arial Narrow", "Helvetica Neue", sans-serif; }
     .fig { font-weight: 500; text-anchor: middle; fill: #1a1814; }
-    .mark { font-size: 5px; font-weight: 700; letter-spacing: 0.2em; text-anchor: middle; }
-    .ser { font-size: 4.6px; letter-spacing: 0.08em; text-anchor: middle; fill: #4b4d46; }
+    .mark { font-size: 5.6px; font-weight: 700; letter-spacing: 0.22em; text-anchor: middle; }
+    .ser { font-size: 5.2px; letter-spacing: 0.1em; text-anchor: middle; }
     :host([resettable]) .knob { cursor: pointer; }
     .hit { fill: transparent; }
     .ring { display: none; }
@@ -94,12 +94,13 @@
   <div class="wrap">
   <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">
    <defs>
-    <linearGradient id="zinc" x1="0" y1="0" x2="0.35" y2="1">
-     <stop offset="0" stop-color="#c8c9c3"/><stop offset="0.16" stop-color="#a5a6a0"/>
-     <stop offset="0.6" stop-color="#8e8f8a"/><stop offset="1" stop-color="#55574f"/>
+    <linearGradient id="zinc" x1="0.1" y1="0" x2="0.4" y2="1">
+     <stop offset="0" stop-color="#c2c3bc"/><stop offset="0.1" stop-color="#a8a9a2"/>
+     <stop offset="0.5" stop-color="#8b8c86"/><stop offset="0.86" stop-color="#6b6d64"/><stop offset="1" stop-color="#4c4e46"/>
     </linearGradient>
-    <linearGradient id="zinc2" x1="0" y1="0" x2="0.2" y2="1">
-     <stop offset="0" stop-color="#d2d3cd"/><stop offset="0.45" stop-color="#9c9d97"/><stop offset="1" stop-color="#6b6d65"/>
+    <linearGradient id="zinc2" x1="0" y1="0" x2="0.15" y2="1">
+     <stop offset="0" stop-color="#dedfd8"/><stop offset="0.3" stop-color="#b0b1ab"/>
+     <stop offset="0.72" stop-color="#85867f"/><stop offset="1" stop-color="#5c5e56"/>
     </linearGradient>
     <linearGradient id="rebate" x1="0" y1="0" x2="0.3" y2="1">
      <stop offset="0" stop-color="#16160f"/><stop offset="1" stop-color="#3a3a33"/>
@@ -125,9 +126,14 @@
      <stop offset="0" stop-color="#262722"/><stop offset="0.68" stop-color="#4b4d45"/><stop offset="1" stop-color="#85867f"/>
     </radialGradient>
     <filter id="grain" x="0" y="0" width="100%" height="100%">
-     <feTurbulence type="fractalNoise" baseFrequency="0.92" numOctaves="3" seed="11"/>
+     <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="3" seed="11"/>
      <feColorMatrix type="saturate" values="0"/>
-     <feComponentTransfer><feFuncA type="linear" slope="0.11"/></feComponentTransfer>
+     <feComponentTransfer><feFuncA type="linear" slope="0.17"/></feComponentTransfer>
+    </filter>
+    <filter id="mottle" x="0" y="0" width="100%" height="100%">
+     <feTurbulence type="fractalNoise" baseFrequency="0.06 0.09" numOctaves="2" seed="4"/>
+     <feColorMatrix type="saturate" values="0"/>
+     <feComponentTransfer><feFuncA type="linear" slope="0.13"/></feComponentTransfer>
     </filter>
     <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.2"/></filter>
     <filter id="tight" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>
@@ -156,7 +162,12 @@
    <!-- the casting, with two mounting ears -->
    <g class="case">
     <path d="M 24 5 h 30 v 7 h 86 a 6 6 0 0 1 6 6 v 64 a 6 6 0 0 1 -6 6 h -18 v 7 h -30 v -7 h -70 a 6 6 0 0 1 -6 -6 v -64 a 6 6 0 0 1 6 -6 h 2 z" fill="url(#zinc)" stroke="#3d3f37" stroke-width="0.8"/>
-    <g clip-path="url(#body)"><rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)"/></g>
+    <g clip-path="url(#body)">
+     <rect x="0" y="0" width="${W}" height="${H}" filter="url(#mottle)"/>
+     <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)"/>
+     <rect x="16" y="12" width="130" height="76" fill="none" stroke="#f2f3ed" stroke-opacity="0.3" stroke-width="1.6"/>
+     <rect x="14" y="10" width="134" height="80" rx="7" fill="none" stroke="#2f312a" stroke-opacity="0.55" stroke-width="3"/>
+    </g>
     <path d="M 24.5 5.6 h 29 M 60 12.5 h 79 a 5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="#e8e9e3" stroke-opacity="0.5" stroke-width="0.9"/>
     <path d="M 16.6 78 a 6 6 0 0 0 6 5.8 M 92.4 94.4 h 29 M 22 87.5 h 69" fill="none" stroke="#33352e" stroke-opacity="0.8" stroke-width="0.9"/>
     <circle cx="39" cy="8.6" r="2.7" fill="url(#hole)" stroke="#3d3f37" stroke-width="0.5"/>
@@ -169,11 +180,14 @@
 
    <!-- the cast-in wordmark: raised, lit on its top-left, shadowed below -->
    <g class="wm">
-    <text class="mark" x="80.6" y="26.2" fill="#ecede7" opacity="0.5"></text>
-    <text class="mark" x="81.4" y="27.2" fill="#3f413a" opacity="0.85"></text>
-    <text class="mark" x="81" y="26.7" fill="#7d7f78"></text>
+    <text class="mark" x="80.4" y="25.9" fill="#f3f4ee" opacity="0.55"></text>
+    <text class="mark" x="81.5" y="27.2" fill="#35372f" opacity="0.9"></text>
+    <text class="mark" x="81" y="26.6" fill="#9a9c94"></text>
    </g>
-   <text class="ser" x="81" y="80.6"></text>
+   <g class="serg">
+    <text class="ser" x="81" y="81.2" fill="#c9cac3" opacity="0.5"></text>
+    <text class="ser" x="81" y="80.6" fill="#3c3e37"></text>
+   </g>
 
    <!-- the window: a slot in the casting, raised rim, glass set back, the drums behind -->
    <rect x="26" y="31" width="110" height="38" rx="5" fill="url(#zinc2)" stroke="#42443c" stroke-width="0.7"/>
@@ -267,7 +281,7 @@
       const mark = this.getAttribute("legend") || "ROOT COUNTER";
       this.shadowRoot.querySelectorAll(".mark").forEach(t => { if (t.textContent !== mark) t.textContent = mark; });
       const ser = this.getAttribute("serial") || "No. 0000";
-      const se = this.shadowRoot.querySelector(".ser"); if (se.textContent !== ser) se.textContent = ser;
+      this.shadowRoot.querySelectorAll(".ser").forEach(t => { if (t.textContent !== ser) t.textContent = ser; });
       const hasKnob = this.hasAttribute("reset");
       this._knob.style.display = hasKnob ? "" : "none";
       const w = hasKnob ? W : WNK;
@@ -310,7 +324,7 @@
       const g = this._gK;
       if (!g.firstChild) for (let i = 0; i < KN; i++) {
         g.appendChild(mk("rect", { x: KX - 13, width: 21, fill: "#000", opacity: 0 }));
-        g.appendChild(mk("rect", { x: KX - 13, width: 21, fill: "#8f8c86", opacity: 0 }));
+        g.appendChild(mk("rect", { x: KX - 13, width: 21, fill: "#c3bfb6", opacity: 0 }));
       }
       const d = 360 / KN;
       for (let k = 0; k < KN; k++) {
@@ -321,9 +335,9 @@
         const y = KY - KR * Math.sin(th);
         const h = Math.max(0.3, KR * c * (d * Math.PI / 180) * 0.5);
         groove.setAttribute("y", (y - h / 2).toFixed(2)); groove.setAttribute("height", h.toFixed(2));
-        groove.setAttribute("opacity", (0.52 * c + 0.1).toFixed(3));
+        groove.setAttribute("opacity", (0.6 * c + 0.14).toFixed(3));
         hi.setAttribute("y", (y - h / 2 - 0.5).toFixed(2)); hi.setAttribute("height", Math.min(0.5, h * 0.55).toFixed(2));
-        hi.setAttribute("opacity", (0.4 * c * c).toFixed(3));
+        hi.setAttribute("opacity", (0.66 * c * c).toFixed(3));
       }
     }
 

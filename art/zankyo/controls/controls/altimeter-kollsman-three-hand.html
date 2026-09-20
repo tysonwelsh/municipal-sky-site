@@ -32,7 +32,7 @@
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="black">
+  <main class="sk-stage" data-panel="olive">
     <sk-altimeter-kollsman value="4500" label="altitude"></sk-altimeter-kollsman>
     <sk-altimeter-kollsman value="12340" qnh="30.12" label="altitude" scale="0.8"></sk-altimeter-kollsman>
   </main>
@@ -76,8 +76,8 @@
   // --- static ornament -------------------------------------------------
   let seed = 74113; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
   let crackle = "";
-  for (let i = 0; i < 520; i++) {                 // the crackle paint's speckle
-    const x = rnd() * W, y = rnd() * H, a = rnd() * 6.28, l = 0.8 + rnd() * 2.6;
+  for (let i = 0; i < 1100; i++) {               // the crackle paint's speckle
+    const x = rnd() * W, y = rnd() * H, a = rnd() * 6.28, l = 0.5 + rnd() * 1.5;
     crackle += `M ${f(x)} ${f(y)} l ${f(Math.cos(a) * l)} ${f(Math.sin(a) * l)} `;
   }
   let knurl = "";                                  // the setting knob, knurled by angle
@@ -143,6 +143,7 @@
         </pattern>
         <clipPath id="k-dialclip"><circle cx="${CX}" cy="${CY}" r="64"/></clipPath>
         <clipPath id="k-caseclip"><rect x="4" y="4" width="160" height="160" rx="7"/></clipPath>
+        <clipPath id="k-bezclip"><path d="M ${CX} ${CY - 78} A 78 78 0 1 1 ${CX - 0.01} ${CY - 78} Z M ${CX} ${CY - 65.5} A 65.5 65.5 0 1 0 ${CX + 0.01} ${CY - 65.5} Z" clip-rule="evenodd"/></clipPath>
         <clipPath id="k-flagclip"><path d="${FLAG_D}"/></clipPath>
         <filter id="k-b1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"/></filter>
         <filter id="k-b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
@@ -153,8 +154,8 @@
       <!-- square mounting flange, black crackle -->
       <g clip-path="url(#k-caseclip)">
         <rect x="4" y="4" width="160" height="160" rx="7" fill="url(#k-case)"/>
-        <path d="${crackle}" stroke="#5e6063" stroke-opacity="0.8" stroke-width="0.6" fill="none" stroke-linecap="round"/>
-        <path d="${crackle}" stroke="#090a0b" stroke-opacity="0.6" stroke-width="0.55" fill="none"
+        <path d="${crackle}" stroke="#55575b" stroke-opacity="0.42" stroke-width="0.5" fill="none" stroke-linecap="round"/>
+        <path d="${crackle}" stroke="#0b0c0d" stroke-opacity="0.45" stroke-width="0.5" fill="none"
               stroke-linecap="round" transform="translate(0.7 0.7)"/>
         <path d="M 4 11 Q 4 4 11 4 L 157 4" fill="none" stroke="#6e7073" stroke-opacity="0.45" stroke-width="1"/>
       </g>
@@ -186,6 +187,10 @@
       <path d="M 31 35 A 73 73 0 0 1 86 11" fill="none" stroke="#8d9094" stroke-opacity="0.6" stroke-width="2.2"/>
       <path d="M 27 44 A 76.5 76.5 0 0 1 80 7.6" fill="none" stroke="#6a6c70" stroke-opacity="0.35" stroke-width="1.6"/>
       <path d="M 26 116 A 72 72 0 0 0 52 141" fill="none" stroke="#5a5c5e" stroke-opacity="0.28" stroke-width="1.4"/>
+      <g clip-path="url(#k-bezclip)">
+        <path d="${crackle}" stroke="#5a5c60" stroke-opacity="0.34" stroke-width="0.5" fill="none" stroke-linecap="round"/>
+        <path d="${crackle}" stroke="#0b0c0d" stroke-opacity="0.4" stroke-width="0.5" fill="none" stroke-linecap="round" transform="translate(0.7 0.7)"/>
+      </g>
       <circle cx="${CX}" cy="${CY}" r="65.5" fill="#0a0a0b"/>
 
       <g clip-path="url(#k-dialclip)">

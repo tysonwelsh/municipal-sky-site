@@ -194,7 +194,7 @@
     return s === "true" || s === "1" || s === "on" || s === "lit" || s === "yes" || s === "";
   }
 
-  var ANCHOR = "http://www.w3.org/2000/svg";
+  var SVGNS = "http://www.w3.org/2000/svg";
 
   class SkLitLegendOnAir extends HTMLElement {
     static get observedAttributes() { return ["value", "label", "scale", "lang"]; }
@@ -207,7 +207,6 @@
       this._blm = this.shadowRoot.querySelector(".bloomtext");
       this._blw = this.shadowRoot.querySelector(".bloomwide");
       this._label = "ON AIR";
-      this._fitDone = false;
     }
     connectedCallback() {
       this.setAttribute("role", "img");
@@ -248,12 +247,12 @@
     _setLabel() {
       this._label = this.getAttribute("label") || "ON AIR";
       var chars = Array.from(this._label);
-      [this._ink, this._blm, this._blw].forEach(function (t, isBloom) {
+      [this._ink, this._blm, this._blw].forEach(function (t, i) {
         while (t.firstChild) t.removeChild(t.firstChild);
         chars.forEach(function (ch, i) {
-          var sp = document.createElementNS(ANCHOR, "tspan");
+          var sp = document.createElementNS(SVGNS, "tspan");
           sp.textContent = ch;
-          if (!isBloom) {
+          if (i === 0) {
             /* hand-cut letters: the stroke widths are not quite equal */
             var seed = (ch.charCodeAt(0) * 37 + i * 61) % 13;
             sp.setAttribute("stroke-width", (0.1 + seed * 0.055).toFixed(2));
@@ -278,14 +277,12 @@
     }
     _fit() {
       var max = GW - 22;
-      var self = this;
       [this._ink, this._blm, this._blw].forEach(function (t) {
         t.removeAttribute("textLength");
         t.removeAttribute("lengthAdjust");
         var len = 0;
         try { len = t.getComputedTextLength(); } catch (e) { len = 0; }
         if (len > max) { t.setAttribute("textLength", max); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); }
-        self._fitDone = true;
       });
     }
     _paint() {

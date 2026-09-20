@@ -281,7 +281,7 @@
     }
     connectedCallback() { this.setAttribute("role", "img"); this._read(); this._paint(); this._maybeRun(); }
     disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
-    attributeChangedCallback(o1, o, v) { if (o === v || !this.isConnected) return; this._read(); this._paint(); this._maybeRun(); }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._paint(); this._maybeRun(); }
 
     get value() { return this._bits.slice(); }
     set value(v) {

@@ -213,12 +213,13 @@
     }
     connectedCallback() {
       this.setAttribute("role", "img");
+      this._ready = true;
       this._readAttrs(); this._build(); this._render();
       this._last = 0; this._raf = requestAnimationFrame(this._flicker);
     }
     disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
     attributeChangedCallback(n, o, v) {
-      if (o === v || !this.isConnected) return;
+      if (o === v || !this._ready) return;
       this._readAttrs();
       if (n !== "value") this._build();
       this._render();
