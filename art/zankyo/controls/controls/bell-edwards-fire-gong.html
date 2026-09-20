@@ -74,18 +74,18 @@
     :host([hidden]) { display: none; }
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
-    .cast { font-family: "Anton", "Oswald", "Arial Narrow", sans-serif; font-size: 19px;
-            letter-spacing: 0.14em; text-anchor: middle; }
+    .cast { font-family: "Anton", "Oswald", "Arial Narrow", sans-serif; font-size: 21px;
+            letter-spacing: 0.15em; text-anchor: middle; }
     .ghost { opacity: 0; }
     .hide { display: none; }
   </style>
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
       <defs>
-        <radialGradient id="face" cx="33%" cy="26%" r="82%">
-          <stop offset="0" stop-color="#f2755c"/><stop offset="0.14" stop-color="#e8503f"/>
-          <stop offset="0.48" stop-color="#c7241f"/><stop offset="0.80" stop-color="#9c1813"/>
-          <stop offset="1" stop-color="#7d1210"/>
+        <radialGradient id="face" cx="36%" cy="29%" r="92%">
+          <stop offset="0" stop-color="#f07d64"/><stop offset="0.22" stop-color="#e8503f"/>
+          <stop offset="0.60" stop-color="#cf2a22"/><stop offset="0.86" stop-color="#ae1e18"/>
+          <stop offset="1" stop-color="#8f1511"/>
         </radialGradient>
         <linearGradient id="rim" x1="0.15" y1="0" x2="0.85" y2="1">
           <stop offset="0" stop-color="#ff9a83"/><stop offset="0.28" stop-color="#d43a2c"/>
@@ -133,32 +133,41 @@
 
       <!-- conduit dropping into the top of the box -->
       <g>
-        <rect x="80" y="-4" width="19" height="34" fill="url(#cond)"/>
-        <rect x="77" y="18" width="25" height="11" rx="2.5" fill="url(#cond)" stroke="#1d1f20" stroke-width="0.6"/>
-        <rect x="77" y="18" width="25" height="2.4" fill="#b9bdc0" opacity="0.5"/>
-        <ellipse cx="90" cy="40" rx="24" ry="14" fill="#8a1712"/>
-        <ellipse cx="90" cy="38" rx="24" ry="14" fill="url(#box)"/>
+        <rect x="79" y="-4" width="23" height="36" fill="url(#cond)"/>
+        <rect x="76" y="-2" width="29" height="9" rx="2.5" fill="url(#cond)" stroke="#1d1f20" stroke-width="0.6"/>
+        <rect x="76" y="-1.4" width="29" height="2" fill="#c2c6c9" opacity="0.45"/>
+        <rect x="75" y="16" width="31" height="13" rx="3" fill="url(#cond)" stroke="#1d1f20" stroke-width="0.6"/>
+        <rect x="75" y="16.6" width="31" height="2.6" fill="#c2c6c9" opacity="0.45"/>
+        <ellipse cx="90" cy="34" rx="27" ry="10" fill="#6d100c"/>
+        <ellipse cx="90" cy="32" rx="27" ry="10" fill="url(#box)"/>
       </g>
 
       <!-- the red cast back box, peeking below the gong -->
-      <circle cx="92" cy="113" r="69" fill="url(#box)"/>
-      <circle cx="92" cy="113" r="69" fill="none" stroke="#4e0a07" stroke-width="1"/>
-      <path d="M 27 138 A 69 69 0 0 0 157 138" fill="none" stroke="#e0665a" stroke-opacity="0.35" stroke-width="1.4"/>
+      <circle cx="92" cy="106" r="70" fill="url(#box)"/>
+      <circle cx="92" cy="106" r="70" fill="none" stroke="#4e0a07" stroke-width="1.2"/>
+      <path d="M 30 137 A 70 70 0 0 0 154 137" fill="none" stroke="#f08272" stroke-opacity="0.4" stroke-width="1.6"/>
 
       <!-- the hammer, behind the gong: only the head shows past the rim at 4 o'clock -->
       <g class="ghost">
         <g transform="rotate(30 ${CX} ${CY})"><g class="gin">
           <rect x="112" y="93.5" width="56" height="9" rx="3" fill="url(#arm)"/>
-          <circle cx="171" cy="98" r="8" fill="url(#head)" stroke="#000" stroke-width="0.6"/>
+          <circle cx="172" cy="98" r="9" fill="url(#head)" stroke="#000" stroke-width="0.6"/>
         </g></g>
       </g>
       <g>
         <g transform="rotate(30 ${CX} ${CY})"><g class="hin">
           <rect x="112" y="93.5" width="56" height="9" rx="3" fill="url(#arm)"/>
           <rect x="112" y="94" width="56" height="1.6" rx="0.8" fill="#8f9296" opacity="0.35"/>
-          <circle cx="171" cy="98" r="8" fill="url(#head)" stroke="#000" stroke-width="0.6"/>
-          <circle cx="168.5" cy="95" r="2.6" fill="#b9bcc0" opacity="0.35"/>
+          <circle cx="172" cy="98" r="9" fill="url(#head)" stroke="#000" stroke-width="0.6"/>
+          <circle cx="169" cy="94.6" r="2.8" fill="#b9bcc0" opacity="0.38"/>
         </g></g>
+      </g>
+
+      <!-- the gong's shadow on the box -->
+      <ellipse cx="93" cy="104" rx="76" ry="76" fill="#000" opacity="0.5" filter="url(#soft)"/>
+      <!-- a blurred ghost of the gong: what a 20 Hz shake looks like -->
+      <g class="shiver" opacity="0">
+        <circle cx="${CX}" cy="${CY}" r="${R}" fill="url(#rim)" filter="url(#soft)"/>
       </g>
 
       <!-- the gong -->
@@ -167,7 +176,9 @@
         <circle cx="${CX}" cy="${CY}" r="${R}" fill="url(#rim)"/>
         <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#3d0705" stroke-width="1" opacity="0.8"/>
         <!-- domed face -->
+        <circle cx="${CX}" cy="${CY}" r="${R - 6}" fill="#3d0705" opacity="0.55" filter="url(#tiny)"/>
         <circle cx="${CX}" cy="${CY}" r="${R - 7}" fill="url(#face)"/>
+        <ellipse cx="62" cy="60" rx="30" ry="20" fill="#fff" opacity="0.12" filter="url(#soft)" transform="rotate(-24 62 60)"/>
         <!-- spun lathe rings -->
         <circle cx="${CX}" cy="${CY}" r="26" fill="none" stroke="#fff" stroke-opacity="0.05" stroke-width="1"/>
         <circle cx="${CX}" cy="${CY}" r="44" fill="none" stroke="#fff" stroke-opacity="0.045" stroke-width="1"/>
@@ -186,9 +197,9 @@
         <path d="M ${CX - 6.1} ${CY - 3.5} L ${CX} ${CY - 7} L ${CX + 6.1} ${CY - 3.5}" fill="none" stroke="#c6c8ca" stroke-opacity="0.55" stroke-width="0.8"/>
         <!-- chip on the rim to bare steel, and a scuff -->
         <g transform="rotate(232 ${CX} ${CY})">
-          <path d="M 83.5 21.5 L 91 18.8 L 96.5 22.6 L 94.2 28.8 L 86 27.6 Z" fill="url(#steel)"/>
-          <path d="M 83.5 21.5 L 91 18.8 L 96.5 22.6" fill="none" stroke="#5e0c0a" stroke-width="0.9"/>
-          <path d="M 96.5 22.6 L 94.2 28.8 L 86 27.6 Z" fill="none" stroke="#ffb9a8" stroke-opacity="0.35" stroke-width="0.7"/>
+          <path d="M 85.5 21.8 L 91.5 19.6 L 95.4 23 L 93.4 27.6 L 87 26.8 Z" fill="url(#steel)" opacity="0.88"/>
+          <path d="M 85.5 21.8 L 91.5 19.6 L 95.4 23" fill="none" stroke="#5e0c0a" stroke-width="0.8"/>
+          <path d="M 95.4 23 L 93.4 27.6 L 87 26.8 Z" fill="none" stroke="#ffb9a8" stroke-opacity="0.28" stroke-width="0.6"/>
         </g>
         <g transform="rotate(58 ${CX} ${CY})">
           <path d="M 96 26 L 104 30 L 100 33" fill="none" stroke="#f2a08e" stroke-opacity="0.4" stroke-width="1.1" stroke-linecap="round"/>
@@ -212,7 +223,7 @@
       this._amp = 0; this._raf = 0; this._last = 0; this._hit = -9; this._sw = -9; this._demoK = -1;
       const $ = s => this.shadowRoot.querySelector(s);
       this._wrap = $(".wrap"); this._bell = $(".bell"); this._hin = $(".hin"); this._gin = $(".gin");
-      this._ghost = $(".ghost"); this._legend = $(".legend");
+      this._ghost = $(".ghost"); this._legend = $(".legend"); this._shiver = $(".shiver");
       this._texts = this.shadowRoot.querySelectorAll(".cast");
       this._tick = this._tick.bind(this);
       this._onClick = () => { if (!this.hasAttribute("ringing")) this.strike(); };
@@ -279,7 +290,7 @@
       const ring = this.hasAttribute("ringing");
       let ham = 0, amp;
       if (ring) {
-        this._amp += (2.1 - this._amp) * Math.min(1, dt * 14);
+        this._amp += (3.0 - this._amp) * Math.min(1, dt * 14);
         amp = this._amp;
         ham = Math.sin(t * Math.PI * 40) > 0 ? 1 : 0;
       } else {
@@ -298,7 +309,10 @@
       this._bell.style.transform = "translate(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px)";
       this._hin.style.transform = "translate(" + (-9 * ham).toFixed(2) + "px,0)";
       this._gin.style.transform = "translate(" + (-9 * (1 - ham)).toFixed(2) + "px,0)";
-      this._ghost.style.opacity = ring ? "0.45" : "0";
+      this._ghost.style.opacity = ring ? "0.5" : "0";
+      const a = Math.min(1, Math.sqrt(dx * dx + dy * dy) / 2.2);
+      this._shiver.style.opacity = (a * 0.7).toFixed(3);
+      this._shiver.style.transform = "translate(" + (-dx * 2.4).toFixed(2) + "px," + (-dy * 2.4).toFixed(2) + "px)";
     }
   }
   customElements.define("sk-bell-edwards-fire", SkBellEdwardsFire);

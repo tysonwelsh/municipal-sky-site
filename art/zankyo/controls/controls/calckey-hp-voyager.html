@@ -82,7 +82,7 @@
     /* the brushed-and-lacquered case, one light from above-left */
     .case { position: absolute; inset: 0;
       background:
-        repeating-linear-gradient(0deg, rgba(255,248,232,0.01) 0 0.7px, rgba(0,0,0,0.016) 0.7px 1.7px),
+        repeating-linear-gradient(0deg, rgba(255,248,232,0.008) 0 0.6px, rgba(0,0,0,0.014) 0.6px 1.4px),
         radial-gradient(130% 80% at 18% -14%, rgba(255,240,214,0.13), rgba(0,0,0,0) 64%),
         linear-gradient(162deg, #35312d 0%, #2b2826 46%, #1f1d1b 100%); }
 
@@ -104,7 +104,6 @@
 
     .top { position: absolute; left: 0; right: 0; top: 0; bottom: ${FRONT}px; border-radius: 2.2px 2.2px 0 0;
       background:
-        repeating-linear-gradient(101deg, rgba(0,0,0,0.028) 0 0.7px, rgba(255,255,255,0.022) 0.7px 1.6px),
         linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0) 26%, rgba(0,0,0,0.04) 100%),
         linear-gradient(90deg, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.05) 11%, rgba(255,255,255,0.015) 46%, rgba(255,255,255,0.065) 80%, rgba(0,0,0,0.15) 100%),
         linear-gradient(180deg, var(--key) 0%, var(--key) 86%, var(--side) 100%);
@@ -118,7 +117,6 @@
     /* the front slope: a lighter shade, narrowing toward the bottom, carrying the blue g legend */
     .front { position: absolute; left: 0; right: 0; bottom: 0; height: ${FRONT}px;
       background:
-        repeating-linear-gradient(101deg, rgba(0,0,0,0.03) 0 0.7px, rgba(255,255,255,0.02) 0.7px 1.6px),
         linear-gradient(180deg, var(--front) 0%, var(--front) 46%, var(--frontLo) 100%);
       clip-path: polygon(0 0, 100% 0, calc(100% - 1.1px) 100%, 1.1px 100%);
       display: flex; align-items: center; justify-content: center; }
@@ -133,7 +131,7 @@
     .g { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 600; font-size: 5.4px;
       letter-spacing: 0.06em; color: #5aa9e6; line-height: 1; white-space: nowrap;
       transform: translateY(-0.4px); text-shadow: 0 0.4px 0.5px rgba(0,0,0,0.5); }
-    .key:focus-visible .top { box-shadow: 0 0 0 1.5px #16e0e0, 0 0 8px rgba(22,224,224,0.6), inset 0 0.6px 0 rgba(255,255,255,0.22); }
+    .key:focus-visible { border-radius: 2.6px; box-shadow: 0 0 0 1.5px #16e0e0, 0 0 9px rgba(22,224,224,0.55); }
   </style>
   <div class="wrap">
     <div class="case"></div>

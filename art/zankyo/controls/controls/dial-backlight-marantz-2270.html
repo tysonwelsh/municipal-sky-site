@@ -34,7 +34,7 @@
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="wood">
     <sk-dial-backlight-marantz value="101.1" lit="true" am stereo label="TUNING"></sk-dial-backlight-marantz>
-    <sk-dial-backlight-marantz value="94.7" lit="false" scale="0.5" label="TUNING"></sk-dial-backlight-marantz>
+    <sk-dial-backlight-marantz value="94.7" lit="false" scale="0.42" label="TUNING"></sk-dial-backlight-marantz>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -68,7 +68,7 @@
 
   const W = 480, H = 96;
   const WX = 10, WY = 12, WW = 460, WH = 68;        // the glass window
-  const X0 = 58, X1 = 440;                          // the printed FM scale, 88 → 108 MHz
+  const X0 = 58, X1 = 428;                          // the printed FM scale, 88 → 108 MHz
   const FMIN = 88, FMAX = 108;
   const POOLS = [0.14, 0.38, 0.63, 0.87];           // where the four lamps sit along the top edge
 
@@ -85,16 +85,16 @@
       if (major) nums += '<text class="num" x="' + x + '" y="34">' + Math.round(f) + '</text>';
     }
     // AM: 540…1600 kHz, crowding toward the top end as a real dial does
-    let am = '<g class="amrow"><path class="tk" d="';
+    let am = '<g class="amrow"><path class="tk" d="M ' + X0 + ' 66 H ' + X1 + ' ';
     for (let f = 540; f <= 1600; f += 20) am += 'M ' + amX(f).toFixed(2) + ' 66 V ' + (f % 100 === 0 ? 71 : 68.5) + ' ';
     am += '" stroke-width="0.7"/>';
     [55, 60, 70, 80, 100, 120, 140, 160].forEach(n => {
       am += '<text class="num am" x="' + amX(n * 10).toFixed(2) + '" y="62">' + n + '</text>';
     });
-    am += '<text class="unit" x="' + (X1 + 9) + '" y="62">kHz</text></g>';
-    return '<path class="tk" d="' + "" + '"/>' +
+    am += '<text class="unit" x="' + (X1 + 24) + '" y="62">kHz</text></g>';
+    return '<path class="tk" d="M ' + X0 + ' 38 H ' + X1 + '" stroke-width="0.7"/>' +
       '<g class="tk">' + ticks + '</g>' + nums +
-      '<text class="unit" x="' + (X1 + 9) + '" y="34">MHz</text>' + am;
+      '<text class="unit" x="' + (X1 + 24) + '" y="34">MHz</text>' + am;
   }
   const SCALE = scaleMarkup();
 
@@ -106,7 +106,7 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; text-anchor: middle; }
-    .num { font-size: 9px; font-weight: 500; letter-spacing: 0.01em; }
+    .num { font-size: 9.5px; font-weight: 500; letter-spacing: 0.01em; }
     .num.am { font-size: 7.5px; font-weight: 400; }
     .unit { font-size: 6.5px; font-weight: 500; letter-spacing: 0.08em; }
     .stereo-t { font-size: 5.2px; font-weight: 600; letter-spacing: 0.14em; }
@@ -142,13 +142,14 @@
           <stop offset="0" stop-color="#1e2027"/><stop offset="0.55" stop-color="#16181d"/><stop offset="1" stop-color="#101216"/>
         </linearGradient>
         <linearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#2f6098"/><stop offset="0.45" stop-color="#234a7a"/>
-          <stop offset="1" stop-color="#16304f"/>
+          <stop offset="0" stop-color="#27527f"/><stop offset="0.5" stop-color="#1b3c63"/>
+          <stop offset="1" stop-color="#102539"/>
         </linearGradient>
         <radialGradient id="pool" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#f4ecd8" stop-opacity="0.85"/>
-          <stop offset="0.18" stop-color="#bcd6f2" stop-opacity="0.8"/>
-          <stop offset="0.5" stop-color="#7fb0e8" stop-opacity="0.45"/>
+          <stop offset="0" stop-color="#fff4dc" stop-opacity="0.9"/>
+          <stop offset="0.10" stop-color="#cfe2f6" stop-opacity="0.72"/>
+          <stop offset="0.34" stop-color="#7fb0e8" stop-opacity="0.32"/>
+          <stop offset="0.66" stop-color="#5f96d4" stop-opacity="0.14"/>
           <stop offset="1" stop-color="#4f86c6" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="poolw" cx="50%" cy="50%" r="50%">
@@ -156,17 +157,20 @@
           <stop offset="0.45" stop-color="#fff" stop-opacity="0.55"/>
           <stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </radialGradient>
+        <radialGradient id="vig" cx="50%" cy="20%" r="72%">
+          <stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#040b14" stop-opacity="0.45"/>
+        </radialGradient>
         <linearGradient id="ptrg" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#7a1109"/><stop offset="0.35" stop-color="#ff3b2e"/>
           <stop offset="0.7" stop-color="#e02618"/><stop offset="1" stop-color="#6d0f08"/>
         </linearGradient>
         <linearGradient id="refl" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.25" stop-color="#fff" stop-opacity="0.09"/>
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.25" stop-color="#fff" stop-opacity="0.13"/>
           <stop offset="0.62" stop-color="#fff" stop-opacity="0.04"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </linearGradient>
         <mask id="poolmask">
-          <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#4a4a4a"/>
-          ${POOLS.map(p => '<ellipse cx="' + (WX + p * WW).toFixed(1) + '" cy="' + (WY + 4) + '" rx="86" ry="74" fill="url(#poolw)"/>').join("")}
+          <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#343434"/>
+          ${POOLS.map(p => '<ellipse cx="' + (WX + p * WW).toFixed(1) + '" cy="' + (WY - 1) + '" rx="96" ry="86" fill="url(#poolw)"/>').join("")}
         </mask>
         <clipPath id="winclip"><rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" rx="1.5"/></clipPath>
         <filter id="soft" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="2.5"/></filter>
@@ -184,7 +188,7 @@
 
       <!-- the window is let into the fascia: dark lip top-left, lit lip bottom-right -->
       <rect x="${WX - 1.5}" y="${WY - 1.5}" width="${WW + 3}" height="${WH + 3}" rx="2.5" fill="#6f6752"/>
-      <path d="M ${WX - 1.5} ${WY + WH + 1.5} H ${WX + WW + 1.5} V ${WY - 1.5}" fill="none" stroke="#f2ebd8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <path d="M ${WX - 1.5} ${WY + WH + 1.5} H ${WX + WW + 1.5} V ${WY - 1.5}" fill="none" stroke="#f2ebd8" stroke-width="0.9" stroke-opacity="0.55"/>
 
       <g clip-path="url(#winclip)">
         <!-- smoked glass, unlit -->
@@ -192,20 +196,21 @@
         <!-- the lamps: a base wash plus four pools along the top edge -->
         <g class="glow">
           <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#wash)" opacity="0.92"/>
-          ${POOLS.map(p => '<ellipse cx="' + (WX + p * WW).toFixed(1) + '" cy="' + (WY + 3) + '" rx="88" ry="76" fill="url(#pool)"/>').join("")}
-          <rect x="${WX}" y="${WY + WH - 22}" width="${WW}" height="22" fill="#0e1c2e" opacity="0.45"/>
+          ${POOLS.map(p => '<ellipse cx="' + (WX + p * WW).toFixed(1) + '" cy="' + (WY - 2) + '" rx="92" ry="84" fill="url(#pool)"/>').join("")}
+          <rect x="${WX}" y="${WY + WH - 30}" width="${WW}" height="30" fill="#0a1626" opacity="0.3"/>
+          <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#vig)"/>
         </g>
         <!-- the scale, printed on the back of the glass -->
         <g class="ink-off">${SCALE}</g>
         <g class="ink-on" mask="url(#poolmask)">${SCALE}</g>
         <!-- STEREO window at the left end -->
-        <rect x="16" y="22" width="36" height="15" rx="1.5" fill="#1b1216" stroke="#000" stroke-opacity="0.5" stroke-width="0.6"/>
+        <rect x="16" y="23" width="34" height="13" rx="1" fill="#181c22"/>
         <g class="stereo-on">
-          <rect x="16" y="22" width="36" height="15" rx="1.5" fill="#8e1a10"/>
-          <rect x="16" y="22" width="36" height="15" rx="1.5" fill="#ff4a34" opacity="0.55" filter="url(#soft)"/>
+          <rect x="16" y="23" width="34" height="13" rx="1" fill="#5c0f09"/>
+          <rect x="16" y="23" width="34" height="13" rx="1" fill="#ff4a34" opacity="0.22" filter="url(#soft)"/>
         </g>
-        <text class="stereo-t st-off" x="34" y="32" fill="#2a2024">STEREO</text>
-        <g class="stereo-on"><text class="stereo-t" x="34" y="32" fill="#ffe8e2">STEREO</text></g>
+        <text class="stereo-t st-off" x="33" y="31.5" fill="#23262c">STEREO</text>
+        <g class="stereo-on"><text class="stereo-t" x="33" y="31.5" fill="#ffdcd4">STEREO</text></g>
         <!-- the pointer: a red line the full height of the window, casting no light -->
         <g class="ptr">
           <rect x="-1.4" y="${WY + 1}" width="2.8" height="${WH - 2}" fill="url(#ptrg)"/>

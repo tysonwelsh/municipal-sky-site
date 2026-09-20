@@ -175,8 +175,8 @@
     .key { transform-box: view-box; transform-origin: 0 0; transition: transform 60ms cubic-bezier(.2,.85,.4,1); }
     .key.rise { transition: transform 90ms cubic-bezier(.2,.9,.3,1.25); }
     .key.down { transform: translateY(${TRAVEL}px); }
-    .hits { position: absolute; inset: 0; }
-    .hit { position: absolute; border-radius: 2px; cursor: pointer; touch-action: none; outline: none;
+    .hits { position: absolute; inset: 0; pointer-events: none; }
+    .hit { position: absolute; border-radius: 2px; pointer-events: auto; cursor: pointer; touch-action: none; outline: none;
       user-select: none; -webkit-user-select: none; }
     .hit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
     :host([disabled]) .hit, :host([disabled]) .hot { cursor: default; }

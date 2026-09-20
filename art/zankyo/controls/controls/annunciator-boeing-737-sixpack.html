@@ -81,6 +81,10 @@
              '<span class="ghost">' + d.t + '</span><span class="lit">' + d.t + '</span>' +
            '</div>';
   }).join("");
+  // the light a lit cap throws on the bezel and the glareshield around it
+  var tileSpill = TILES.map(function (d, i) {
+    return '<i class="spill" style="--b:var(--b' + i + ');left:' + (4 + d.c * 68 - 7) + 'px;top:' + (4 + d.r * 34 - 7) + 'px;width:78px;height:44px"></i>';
+  }).join("");
 
   function cap(cls, idx, l1, l2) {
     return '<div class="cap ' + cls + '" style="--b:var(--b' + idx + ')" tabindex="0" role="button">' +
@@ -139,12 +143,17 @@
   // the lamp behind tints the face, brighter at the end the lamp sits
   '.wash { position: absolute; inset: 0; opacity: var(--b); pointer-events: none;' +
   '  background: radial-gradient(116% 86% at 50% 26%, rgba(var(--lrgb),0.2), rgba(var(--lrgb),0.07) 52%, rgba(var(--lrgb),0) 80%); }' +
+  '.spill { position: absolute; pointer-events: none; opacity: var(--b); filter: blur(3.5px); --lrgb: 255,179,36;' +
+  '  background: radial-gradient(closest-side, rgba(var(--lrgb),0.26), rgba(var(--lrgb),0) 100%); }' +
+  '.spill.red { --lrgb: 255,58,46; }' +
   '.ring { position: absolute; inset: 0; border-radius: 2px; pointer-events: none; }' +
   '.cap:focus-visible .ring { box-shadow: inset 0 0 0 1.5px #16e0e0, 0 0 8px rgba(22,224,224,0.55); }' +
   '</style>' +
   '<div class="wrap"><div class="shield">' +
+    '<i class="spill" style="--b:var(--b6);left:-2px;top:20px;width:72px;height:72px"></i>' +
     cap("mc", 6, "MASTER", "CAUTION") +
-    '<div class="six">' + tileHTML + '</div>' +
+    '<div class="six">' + tileSpill + tileHTML + '</div>' +
+    '<i class="spill red" style="--b:var(--b7);left:198px;top:20px;width:72px;height:72px"></i>' +
     cap("fw", 7, "FIRE", "WARN") +
   '</div></div>';
 

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taylor enamelled-tin wall thermometer — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Roboto+Condensed:wght@400;500;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "thermometer-taylor-tin-wall",
+  "element": "sk-thermometer-taylor-tin",
+  "name": "Taylor enamelled-tin wall thermometer",
+  "kind": "output",
+  "code": "I1",
+  "type": "Thermometer / column",
+  "source": "Taylor Instrument (Rochester NY) enamelled-steel wall thermometer, the feed-store advertising version — a red-spirit tube clipped to a white plate with Fahrenheit and Celsius scales",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["porcelain-enamelled steel", "glass", "red spirit", "brass clips"],
+  "tags": ["weather", "outdoor", "advertising", "enamel", "chipped", "spirit column"],
+  "value": { "model": "range", "min": -40, "max": 120, "step": 0.5, "unit": "°F" },
+  "attributes": ["value", "min", "max", "brand", "place", "slogan", "label", "scale"],
+  "events": [],
+  "size": { "w": 80, "h": 300 },
+  "notes": "Three plates: a mild 72 °F, a hard frost with the column down in the bulb neck, and 105 °F. Set value and the spirit creeps up over a second and a half."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-thermometer-taylor-tin value="72" scale="0.67" label="porch thermometer"></sk-thermometer-taylor-tin>
+    <sk-thermometer-taylor-tin value="-12" scale="0.67" slogan="COLD SNAP · JANUARY" label="thermometer, hard frost"></sk-thermometer-taylor-tin>
+    <sk-thermometer-taylor-tin value="105" scale="0.67" slogan="HOT · IN THE SUN" label="thermometer, heat wave"></sk-thermometer-taylor-tin>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Taylor Instrument of Rochester, New York made the wall thermometer that hung by the back door of every
+  feed store, garage and soda cooler in America: a strip of steel dipped in white porcelain enamel, rolled at
+  the edges, two holes for the nails, a glass tube of red spirit held on by two brass spring clips, and the
+  Fahrenheit scale printed down one side of it with the Celsius down the other. The advertiser paid for the
+  block at the top and the slogan at the bottom.</p>
+  <p><b>The tells kept here:</b> the thin red column with its clearly rounded meniscus and the fat bulb below
+  it, the long white highlight down the glass and the grey shadow on its right; ticks every two degrees and a
+  numeral every ten, Fahrenheit left and Celsius right, printed straight onto the enamel; two brass clips,
+  polished on their crowns and dark in the crease; the chips — one at a top corner, one at the bottom, and a
+  ring of them round each nail hole — showing rust and bare steel, because this hung outside for forty winters;
+  the blue-grey shading where the enamel rolls over the edge and one soft gloss reflection across the top left.
+  The spirit is slow: it eases to a new reading over about a second and a half and the meniscus keeps its
+  shape all the way.</p>
+  <p><b>Left out:</b> the advertiser's own artwork (a generic wordmark stands in), the paper tag on the back,
+  and the second decimal scale some models carried for canning.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-thermometer-taylor-tin> — Taylor enamelled-tin wall thermometer, red spirit ====
+   attributes: value min max brand place slogan label scale
+   no events (an output). set .value or the attribute; the column eases over ~1.5 s.
+   self-contained: paste this block into any page and use <sk-thermometer-taylor-tin value="68"></sk-thermometer-taylor-tin> */
+(function () {
+  if (customElements.get("sk-thermometer-taylor-tin")) return;
+  const W = 80, H = 300, CXT = 40;              // plate, tube centre
+  const TOP = 54, BOT = 238;                    // y of max and min on the scale
+  const BULB = 264, BR = 7;                     // bulb centre y, radius
+  const NS = "http://www.w3.org/2000/svg";
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif; fill: #1a1a1a; }
+    .num { font-size: 7px; font-weight: 700; }
+    .numF { text-anchor: end; }
+    .numC { text-anchor: start; }
+    .tag { font-size: 6px; font-weight: 500; fill: #2a2a28; }
+    .brand { font-family: "Oswald", "Roboto Condensed", Arial, sans-serif; font-weight: 700; font-size: 12px;
+      fill: #fdf6f0; text-anchor: middle; letter-spacing: 0.09em; }
+    .place { font-size: 5.4px; font-weight: 500; fill: #3a3733; text-anchor: middle; letter-spacing: 0.12em; }
+    .slogan { font-size: 5.4px; font-weight: 400; fill: #2c2a26; text-anchor: middle; letter-spacing: 0.08em; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="enam" x1="0" y1="0" x2="1" y2="0.25">
+          <stop offset="0" stop-color="#d9d8d2"/><stop offset="0.10" stop-color="#f4f2ea"/>
+          <stop offset="0.62" stop-color="#f2efe6"/><stop offset="0.9" stop-color="#e2e0d8"/><stop offset="1" stop-color="#cfcec8"/>
+        </linearGradient>
+        <linearGradient id="gloss" x1="0" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.35" stop-color="#ffffff" stop-opacity="0.13"/><stop offset="0.75" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="rolled" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#b9bdb8"/><stop offset="0.16" stop-color="#ffffff"/><stop offset="0.34" stop-color="#fafaf5"/>
+          <stop offset="0.72" stop-color="#eceae2"/><stop offset="0.9" stop-color="#c9c7bf"/><stop offset="1" stop-color="#a9a9a2"/>
+        </linearGradient>
+        <linearGradient id="spirit" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#9c1410"/><stop offset="0.3" stop-color="#e8352b"/><stop offset="0.55" stop-color="#d8231c"/><stop offset="1" stop-color="#8e1410"/>
+        </linearGradient>
+        <radialGradient id="bulbg" cx="34%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#f4655a"/><stop offset="0.35" stop-color="#e02a22"/><stop offset="0.8" stop-color="#b01a14"/><stop offset="1" stop-color="#6d0f0b"/>
+        </radialGradient>
+        <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a6d2c"/><stop offset="0.22" stop-color="#e8cf7a"/><stop offset="0.45" stop-color="#c9a24c"/>
+          <stop offset="0.78" stop-color="#8a6d2c"/><stop offset="1" stop-color="#5e4a1c"/>
+        </linearGradient>
+        <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e03028"/><stop offset="0.5" stop-color="#c61f18"/><stop offset="1" stop-color="#9e1410"/>
+        </linearGradient>
+        <radialGradient id="rust" cx="40%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#9a5228"/><stop offset="0.55" stop-color="#7a3a1e"/><stop offset="1" stop-color="#5a2a14"/>
+        </radialGradient>
+        <radialGradient id="hole" cx="38%" cy="32%" r="72%">
+          <stop offset="0" stop-color="#3a3a38"/><stop offset="0.6" stop-color="#151514"/><stop offset="1" stop-color="#050505"/>
+        </radialGradient>
+        <filter id="sft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="sft2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.6"/></filter>
+        <clipPath id="plateclip"><rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="4"/></clipPath>
+        <clipPath id="tubeclip"><rect x="${CXT - 4}" y="38" width="8" height="${BULB + BR - 38}" rx="4"/></clipPath>
+      </defs>
+
+      <!-- the plate stands off the wall -->
+      <rect x="4" y="7" width="${W - 6}" height="${H - 6}" rx="5" fill="#000" opacity="0.45" filter="url(#sft)"/>
+      <g clip-path="url(#plateclip)">
+        <rect x="2" y="2" width="${W - 4}" height="${H - 4}" fill="url(#enam)"/>
+        <!-- the rolled edge catches the light along the top and left -->
+        <rect x="2" y="2" width="${W - 4}" height="3.4" fill="url(#rolled)"/>
+        <rect x="2" y="2" width="3" height="${H - 4}" fill="url(#rolled)" opacity="0.55"/>
+        <rect x="2" y="${H - 6}" width="${W - 4}" height="4" fill="#b9b8b2" opacity="0.5"/>
+        <rect x="${W - 6}" y="2" width="4" height="${H - 4}" fill="#c4c3bd" opacity="0.45"/>
+        <!-- one soft gloss across the top-left -->
+        <path d="M 2 2 L ${W - 4} 2 L 2 ${H * 0.52} Z" fill="url(#gloss)"/>
+        <!-- chips: a top corner, a bottom corner, and rust creeping from them -->
+        <path d="M ${W - 2} 2 L ${W - 2} 19 L ${W - 12} 4.5 L ${W - 9} 9 L ${W - 13} 2 Z" fill="url(#rust)"/>
+        <path d="M ${W - 2} 2 L ${W - 2} 12 L ${W - 9} 3 Z" fill="#6e6e6e"/>
+        <path d="M 2 ${H - 2} L 2 ${H - 26} L 7 ${H - 14} L 10 ${H - 20} L 13 ${H - 4} L 16 ${H - 2} Z" fill="url(#rust)"/>
+        <path d="M 2 ${H - 2} L 2 ${H - 18} L 8 ${H - 7} L 11 ${H - 2} Z" fill="#6e6e6e" opacity="0.85"/>
+        <circle cx="66" cy="196" r="2.1" fill="#8a4524" opacity="0.5"/>
+        <circle cx="12" cy="120" r="1.5" fill="#8a4524" opacity="0.42"/>
+      </g>
+
+      <!-- the advertiser's block -->
+      <rect x="7" y="19" width="${W - 14}" height="21" rx="2" fill="url(#bar)"/>
+      <rect x="7" y="19" width="${W - 14}" height="1.6" fill="#fff" opacity="0.28"/>
+      <text class="brand" x="${CXT}" y="34">TAYLOR</text>
+      <text class="place" x="${CXT}" y="48">ROCHESTER · N.Y.</text>
+      <!-- the scales, printed on the enamel -->
+      <g class="scaleF"></g>
+      <g class="scaleC"></g>
+      <text class="tag" x="24" y="51" text-anchor="end">&#176;F</text>
+      <text class="tag" x="56" y="51">&#176;C</text>
+      <text class="slogan" x="${CXT}" y="283">ALWAYS ACCURATE</text>
+
+      <!-- the nail holes, chipped round the rim -->
+      <g class="holes">
+        <circle cx="${CXT}" cy="11" r="4.4" fill="#cfccc2"/><circle cx="${CXT}" cy="11" r="3" fill="url(#hole)"/>
+        <path d="M ${CXT - 5} 8 a 5 5 0 0 1 4 -3.6 l -0.6 2.2 a 3.2 3.2 0 0 0 -2.2 2 Z" fill="#7a3a1e"/>
+        <circle cx="${CXT}" cy="291" r="4.4" fill="#cfccc2"/><circle cx="${CXT}" cy="291" r="3" fill="url(#hole)"/>
+        <path d="M ${CXT + 5} 293 a 5 5 0 0 1 -4.4 3.4 l 0.5 -2.2 a 3.2 3.2 0 0 0 2.4 -1.8 Z" fill="#7a3a1e"/>
+      </g>
+
+      <!-- the glass tube and the spirit -->
+      <ellipse cx="${CXT + 2}" cy="${BULB + 1}" rx="${BR + 1.5}" ry="${BR + 1.5}" fill="#000" opacity="0.3" filter="url(#sft2)"/>
+      <rect x="${CXT - 4.6}" y="37" width="9.6" height="${BULB - 37}" rx="4.8" fill="#000" opacity="0.18" filter="url(#sft2)"/>
+      <rect x="${CXT - 4}" y="38" width="8" height="${BULB - 34}" rx="4" fill="url(#glass)"/>
+      <rect x="${CXT - 2}" y="40" width="4" height="${BULB - 38}" fill="#fafaf5"/>
+      <g clip-path="url(#tubeclip)">
+        <rect class="col" x="${CXT - 1.6}" y="0" width="3.2" height="0" fill="url(#spirit)"/>
+        <ellipse class="men" cx="${CXT}" cy="0" rx="1.8" ry="1.5" fill="#e8463c"/>
+        <rect class="menhi" x="${CXT - 1.6}" y="0" width="3.2" height="1" fill="#ff8a7a" opacity="0.7"/>
+      </g>
+      <circle cx="${CXT}" cy="${BULB}" r="${BR}" fill="url(#bulbg)" stroke="#5e0f0a" stroke-width="0.5"/>
+      <ellipse cx="${CXT - 2.4}" cy="${BULB - 2.6}" rx="2.2" ry="1.5" fill="#fff" opacity="0.55" transform="rotate(-32 ${CXT - 2.4} ${BULB - 2.6})"/>
+      <path d="M ${CXT - 5.4} ${BULB + 3} a ${BR} ${BR} 0 0 0 ${BR * 1.55} 0" fill="none" stroke="#ff7a6a" stroke-opacity="0.3" stroke-width="1"/>
+      <!-- the glass in front of it all: one long highlight left of centre -->
+      <rect x="${CXT - 2.6}" y="40" width="1.1" height="${BULB - 44}" fill="#fff" opacity="0.55"/>
+      <rect x="${CXT + 2.1}" y="40" width="1.2" height="${BULB - 44}" fill="#8f938e" opacity="0.4"/>
+
+      <!-- two brass spring clips -->
+      <g class="clip" transform="translate(0 44)">
+        <rect x="${CXT - 11}" y="0.8" width="22" height="9" rx="2" fill="#000" opacity="0.25" filter="url(#sft2)"/>
+        <rect x="${CXT - 11}" y="0" width="22" height="8.6" rx="2.4" fill="url(#brass)" stroke="#5e4a1c" stroke-width="0.4"/>
+        <rect x="${CXT - 5.2}" y="0" width="10.4" height="8.6" rx="1.4" fill="#000" opacity="0.28"/>
+        <rect x="${CXT - 10}" y="1.5" width="20" height="1.2" fill="#ffeeb0" opacity="0.5"/>
+        <circle cx="${CXT - 8}" cy="4.3" r="0.9" fill="#4a3a14" opacity="0.7"/>
+        <circle cx="${CXT + 8}" cy="4.3" r="0.9" fill="#4a3a14" opacity="0.7"/>
+      </g>
+      <g class="clip" transform="translate(0 243)">
+        <rect x="${CXT - 11}" y="0.8" width="22" height="9" rx="2" fill="#000" opacity="0.25" filter="url(#sft2)"/>
+        <rect x="${CXT - 11}" y="0" width="22" height="8.6" rx="2.4" fill="url(#brass)" stroke="#5e4a1c" stroke-width="0.4"/>
+        <rect x="${CXT - 5.2}" y="0" width="10.4" height="8.6" rx="1.4" fill="#000" opacity="0.28"/>
+        <rect x="${CXT - 10}" y="1.5" width="20" height="1.2" fill="#ffeeb0" opacity="0.5"/>
+        <path d="M ${CXT - 11} 6 h 22" stroke="#5f8a6a" stroke-opacity="0.35" stroke-width="1.2"/>
+        <circle cx="${CXT - 8}" cy="4.3" r="0.9" fill="#4a3a14" opacity="0.7"/>
+        <circle cx="${CXT + 8}" cy="4.3" r="0.9" fill="#4a3a14" opacity="0.7"/>
+      </g>
+      <!-- the enamel's own edge, last -->
+      <rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="4" fill="none" stroke="#9d9c96" stroke-width="0.8"/>
+      <rect x="3.2" y="3.2" width="${W - 6.4}" height="${H - 6.4}" rx="3.2" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.7"/>
+    </svg>
+  </div>`;
+
+  class SkThermometerTaylorTin extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "brand", "place", "slogan", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const sr = this.shadowRoot;
+      this._wrap = sr.querySelector(".wrap");
+      this._col = sr.querySelector(".col"); this._men = sr.querySelector(".men"); this._hi = sr.querySelector(".menhi");
+      this._gF = sr.querySelector(".scaleF"); this._gC = sr.querySelector(".scaleC");
+      this._min = -40; this._max = 120; this._v = 68; this._x = 68; this._scale = 1;
+      this._raf = 0; this._last = 0;
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs(); this._drawScales();
+      this._x = this._v; this._paint();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "min" || n === "max") { this._drawScales(); this._x = this._v; this._paint(); return; }
+      this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.min(this._max, Math.max(this._min, v));
+      this.setAttribute("value", String(Math.round(this._v * 10) / 10));
+      this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", -40); this._max = num("max", 120);
+      if (this._max - this._min < 1) this._max = this._min + 1;
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      this._scale = Math.max(0.2, num("scale", 1));
+      const sr = this.shadowRoot;
+      sr.querySelector(".brand").textContent = this.getAttribute("brand") || "TAYLOR";
+      sr.querySelector(".place").textContent = this.getAttribute("place") || "ROCHESTER · N.Y.";
+      sr.querySelector(".slogan").textContent = this.getAttribute("slogan") || "ALWAYS ACCURATE";
+      this.setAttribute("aria-valuemin", this._min); this.setAttribute("aria-valuemax", this._max);
+      this.setAttribute("aria-valuenow", Math.round(this._v * 10) / 10);
+      this.setAttribute("aria-valuetext", (Math.round(this._v * 10) / 10) + " °F");
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", this.getAttribute("label") || "wall thermometer, degrees Fahrenheit");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _yF(f) { return BOT - (f - this._min) / (this._max - this._min) * (BOT - TOP); }
+
+    _drawScales() {
+      const mk = (t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+      const gF = this._gF, gC = this._gC;
+      while (gF.firstChild) gF.removeChild(gF.firstChild);
+      while (gC.firstChild) gC.removeChild(gC.firstChild);
+      // Fahrenheit, left of the tube: a tick every 2, a numeral every 10
+      const f0 = Math.ceil(this._min / 2) * 2;
+      for (let f = f0; f <= this._max + 0.001; f += 2) {
+        const y = this._yF(f), maj = Math.abs(f % 10) < 0.001;
+        gF.appendChild(mk("line", { x1: 34, y1: y, x2: maj ? 26 : 30.5, y2: y, stroke: "#1a1a1a",
+          "stroke-width": maj ? 1 : 0.55, "stroke-opacity": maj ? 0.92 : 0.66 }));
+        if (maj) gF.appendChild(mk("text", { x: 24, y: y + 2.5, class: "num numF" }, String(Math.round(f))));
+      }
+      // Celsius, right of the tube
+      const cMin = (this._min - 32) * 5 / 9, cMax = (this._max - 32) * 5 / 9;
+      const c0 = Math.ceil(cMin / 2) * 2;
+      for (let c = c0; c <= cMax + 0.001; c += 2) {
+        const y = this._yF(c * 9 / 5 + 32), maj = Math.abs(c % 10) < 0.001;
+        gC.appendChild(mk("line", { x1: 46, y1: y, x2: maj ? 54 : 49.5, y2: y, stroke: "#1a1a1a",
+          "stroke-width": maj ? 1 : 0.55, "stroke-opacity": maj ? 0.92 : 0.66 }));
+        if (maj) gC.appendChild(mk("text", { x: 56, y: y + 2.5, class: "num numC" }, String(Math.round(c))));
+      }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      let dt = (now - this._last) / 1000; this._last = now;
+      if (!(dt > 0)) dt = 0.016; if (dt > 0.1) dt = 0.1;
+      const k = 1 - Math.exp(-dt / 0.42);                  // spirit is slow: ~1.5 s to settle
+      this._x += (this._v - this._x) * k;
+      this._paint();
+      if (Math.abs(this._v - this._x) < 0.02) { this._x = this._v; this._paint(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const y = this._yF(this._x);
+      this._col.setAttribute("y", y.toFixed(2));
+      this._col.setAttribute("height", Math.max(0, BULB + BR - y).toFixed(2));
+      this._men.setAttribute("cy", (y + 0.5).toFixed(2));
+      this._hi.setAttribute("y", (y + 1.4).toFixed(2));
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 10) / 10));
+    }
+  }
+  customElements.define("sk-thermometer-taylor-tin", SkThermometerTaylorTin);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

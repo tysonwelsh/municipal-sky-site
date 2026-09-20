@@ -35,7 +35,7 @@
   <main class="sk-stage" data-panel="plastic-grey">
     <sk-tower-light-patlite value="0,0,0" label="IDLE" scale="0.85"></sk-tower-light-patlite>
     <sk-tower-light-patlite value="0,0,1" label="RUNNING" scale="0.85"></sk-tower-light-patlite>
-    <sk-tower-light-patlite value="1,1,0" label="FAULT" scale="0.85" flash="red"></sk-tower-light-patlite>
+    <sk-tower-light-patlite value="1,1,0" label="FAULT" scale="0.85"></sk-tower-light-patlite>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -166,8 +166,8 @@
         /* the tinted clear body */
         '<rect x="4" y="' + y + '" width="56" height="' + TH + '" fill="url(#off-' + c.k + ')"/>' +
         /* the pale reflector and lamp, seen through the plastic */
-        '<rect x="' + (CX - 14) + '" y="' + (y + 5) + '" width="28" height="' + (TH - 10) + '" rx="3" fill="' + c.refl + '" opacity="0.16"/>' +
-        '<rect x="' + (CX - 4) + '" y="' + (y + 13) + '" width="8" height="' + (TH - 26) + '" rx="4" fill="' + c.refl + '" opacity="0.26"/>' +
+        '<rect x="' + (CX - 14) + '" y="' + (y + 5) + '" width="28" height="' + (TH - 10) + '" rx="3" fill="' + c.refl + '" opacity="0.11"/>' +
+        '<rect x="' + (CX - 4) + '" y="' + (y + 13) + '" width="8" height="' + (TH - 26) + '" rx="4" fill="' + c.refl + '" opacity="0.17"/>' +
         ribs(y + 1, TH - 2, false) +
         /* lit */
         '<g class="on">' +
@@ -220,12 +220,12 @@
   '  <rect x="10" y="' + CAPY + '" width="44" height="' + CAPH + '" rx="3"/>',
   '  <rect x="4" y="' + TOP + '" width="56" height="150" rx="2"/>',
   '  <rect x="26" y="' + (POLEY - 2) + '" width="12" height="' + (BASEY - POLEY + 4) + '"/>',
-  '  <rect x="0" y="' + BASEY + '" width="64" height="14" rx="3"/>',
+  '  <rect x="0" y="' + BASEY + '" width="64" height="14" rx="6.5"/>',
   '</g>',
   '<ellipse cx="34" cy="' + (BASEY + 15) + '" rx="30" ry="4" fill="#000" opacity="0.5" filter="url(#b3)"/>',
 
   /* base flange and pole */
-  '<rect x="0" y="' + BASEY + '" width="64" height="14" rx="3" fill="url(#base)" stroke="#000" stroke-width="0.6"/>',
+  '<rect x="0" y="' + BASEY + '" width="64" height="14" rx="6.5" fill="url(#base)" stroke="#000" stroke-width="0.6"/>',
   '<rect x="1" y="' + (BASEY + 0.6) + '" width="62" height="1" fill="#8e9094" opacity="0.5"/>',
   '<ellipse cx="32" cy="' + (BASEY + 1.5) + '" rx="30" ry="2" fill="#000" opacity="0.25"/>',
   '<g><circle cx="13" cy="' + (BASEY + 7) + '" r="3.1" fill="url(#screwg)" stroke="#000" stroke-width="0.5"/>',

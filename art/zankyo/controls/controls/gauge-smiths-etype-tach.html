@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smiths black-dial tachometer, chrome bezel — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "gauge-smiths-etype-tach",
+  "element": "sk-gauge-smiths-tach",
+  "name": "Smiths black-dial tachometer, chrome bezel",
+  "kind": "output",
+  "code": "F6",
+  "type": "Automotive gauge",
+  "source": "Smiths Industries RV-series tachometer and SN-series speedometer as fitted to the Jaguar E-Type Series 1 and Mk2, 1961–1968",
+  "era": "1960s",
+  "origin": "UK",
+  "materials": ["chrome", "matte black dial", "domed glass", "printed aluminium"],
+  "tags": ["automotive", "jaguar", "tachometer", "speedometer", "odometer", "needle", "ballistics", "chrome"],
+  "value": { "model": "range", "min": 0, "max": 6000, "step": 10, "unit": "rpm" },
+  "attributes": ["value", "min", "max", "redline", "dial", "odo", "label", "scale"],
+  "events": [],
+  "size": { "w": 200, "h": 200 },
+  "notes": "Set value to move the needle; it lags like a magnetic-drag instrument and flutters at idle. dial=\"speedo\" swaps the face to 0–160 mph with the five-drum odometer (the attribute is named dial, not role, because role belongs to ARIA)."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-gauge-smiths-tach value="3200" redline="5500" label="engine speed"></sk-gauge-smiths-tach>
+    <sk-gauge-smiths-tach dial="speedo" value="72" odo="41377" label="road speed" scale="0.72"></sk-gauge-smiths-tach>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The pair of big Smiths instruments in the middle of a <b>Jaguar E-Type</b> binnacle — an RV-series
+  tachometer and an SN-series speedometer, five inches across, matte black dials, white printing, and a
+  chrome bezel so fat it is the first thing you see. Between the bezel and the domed glass is a thin black
+  rubber seal. The tachometer carries a small inset clock at six o'clock; the speedometer carries the
+  five-drum odometer with a red trip digit in the same place.</p>
+  <p><b>The tells kept here:</b> the figures run 0 to 60 in hundreds over 270 degrees from about seven
+  o'clock, every one of them upright to the page and slightly condensed; the red is a thin painted <i>line</i>
+  inside the tick ring from 5,500 to 6,000, not a wedge; the bezel is twelve pixels of chrome with a hard
+  horizon — sky above the middle, ground below — a bright top-left highlight and a dark lower right; the
+  needle is a white blade with its own shadow, rising from a big black boss with a chrome ring and a dome
+  highlight; "RPM ×100" in two lines above the boss and "MADE IN ENGLAND" in tiny caps below it; the black
+  is not flat but lifts a little toward the centre under the domed glass, which carries one soft elliptical
+  glint in the upper left. The needle has <b>magnetic-drag lag</b>: about 400 ms with a two per cent
+  overshoot, and a half-degree flutter whenever the engine is under a thousand.</p>
+  <p><b>Left out:</b> the Smiths wordmark and the chronometric tick of the earlier instruments; the odometer
+  drums do not roll between digits (they are set, not animated); the setting attribute is called
+  <code>dial</code> rather than <code>role</code> so that the host can keep <code>role="meter"</code>.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-gauge-smiths-tach> — Smiths RV/SN instrument, black dial, chrome bezel ====
+   attributes: value min max redline dial("tach"|"speedo") odo label scale
+   no events (an output). set .value or the attribute; the needle has magnetic-drag ballistics.
+   self-contained: paste this block into any page and use
+   <sk-gauge-smiths-tach value="3200"></sk-gauge-smiths-tach> */
+(function () {
+  if (customElements.get("sk-gauge-smiths-tach")) return;
+  const W = 200, H = 200, CX = 100, CY = 100;
+  const A0 = -135, SWEEP = 270;
+  const R_TICK = 78, R_NUM = 57.5, R_RED = 68.5;
+  const NS = "http://www.w3.org/2000/svg";
+  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; };
+  const f = n => (Math.round(n * 100) / 100);
+  const arcD = (r, a0, a1) => { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M ${f(x0)} ${f(y0)} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f(x1)} ${f(y1)}`; };
+  // the little clock's chapter dots, placed by angle
+  let clockDots = "";
+  for (let i = 0; i < 12; i++) {
+    const a = i * 30, r = 14.5, s = i % 3 === 0 ? 1.5 : 0.9;
+    const x = 100 + r * Math.sin(a * Math.PI / 180), y = 148 - r * Math.cos(a * Math.PI / 180);
+    clockDots += `<circle cx="${f(x)}" cy="${f(y)}" r="${s}" fill="#cfccc2"/>`;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif; fill: #efece3; }
+    .num { font-size: 15px; font-weight: 500; text-anchor: middle; dominant-baseline: middle; }
+    .cap { font-size: 8px; font-weight: 500; letter-spacing: 0.15em; text-anchor: middle; }
+    .tiny { font-size: 5.6px; font-weight: 500; letter-spacing: 0.16em; text-anchor: middle; fill: #b6b2a8; }
+    .odod { font-size: 13px; font-weight: 500; text-anchor: middle; dominant-baseline: middle; }
+    .needle { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
+    .clock, .odo { display: none; }
+    :host(:not([dial="speedo"])) .clock { display: block; }
+    :host([dial="speedo"]) .odo { display: block; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <!-- chrome: a hard horizon, sky above, ground below -->
+        <linearGradient id="s-chrome" x1="0" y1="0" x2="0.18" y2="1">
+          <stop offset="0" stop-color="#cfd3d5"/><stop offset="0.16" stop-color="#f7f8f7"/>
+          <stop offset="0.42" stop-color="#b3b7b9"/><stop offset="0.495" stop-color="#8a8c8d"/>
+          <stop offset="0.5" stop-color="#303234"/><stop offset="0.56" stop-color="#55585a"/>
+          <stop offset="0.82" stop-color="#9ea2a3"/><stop offset="0.94" stop-color="#6a6d6e"/>
+          <stop offset="1" stop-color="#3a3b3c"/>
+        </linearGradient>
+        <linearGradient id="s-chrome2" x1="0.1" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e9e9e6"/><stop offset="0.3" stop-color="#b6babb"/>
+          <stop offset="0.495" stop-color="#787b7c"/><stop offset="0.5" stop-color="#26282a"/>
+          <stop offset="0.62" stop-color="#75797a"/><stop offset="0.88" stop-color="#c3c7c8"/>
+          <stop offset="1" stop-color="#5a5c5d"/>
+        </linearGradient>
+        <radialGradient id="s-dial" cx="50%" cy="46%" r="62%">
+          <stop offset="0" stop-color="#202124"/><stop offset="0.45" stop-color="#151618"/>
+          <stop offset="0.82" stop-color="#0f0f10"/><stop offset="1" stop-color="#0a0a0b"/>
+        </radialGradient>
+        <radialGradient id="s-boss" cx="36%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#3c3d3f"/><stop offset="0.45" stop-color="#1c1d1e"/>
+          <stop offset="0.86" stop-color="#0c0c0d"/><stop offset="1" stop-color="#242527"/>
+        </radialGradient>
+        <linearGradient id="s-ring" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#f1f1ee"/><stop offset="0.45" stop-color="#9a9d9e"/>
+          <stop offset="0.7" stop-color="#4c4e4f"/><stop offset="1" stop-color="#b6b9ba"/>
+        </linearGradient>
+        <linearGradient id="s-needle" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#cfccc1"/><stop offset="0.35" stop-color="#f7f5ee"/>
+          <stop offset="1" stop-color="#c5c2b7"/>
+        </linearGradient>
+        <linearGradient id="s-drum" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0.85"/><stop offset="0.22" stop-color="#000" stop-opacity="0.2"/>
+          <stop offset="0.45" stop-color="#fff" stop-opacity="0.06"/><stop offset="0.72" stop-color="#000" stop-opacity="0.25"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.9"/>
+        </linearGradient>
+        <radialGradient id="s-glint" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.05"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="s-dialclip"><circle cx="${CX}" cy="${CY}" r="84"/></clipPath>
+        <filter id="s-b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
+        <filter id="s-b4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.4"/></filter>
+      </defs>
+
+      <ellipse cx="${CX + 3}" cy="${CY + 8}" rx="97" ry="96" fill="#000" opacity="0.55" filter="url(#s-b4)"/>
+
+      <!-- chrome bezel: rolled outer edge, then the flat inner face -->
+      <circle cx="${CX}" cy="${CY}" r="98" fill="url(#s-chrome)"/>
+      <circle cx="${CX}" cy="${CY}" r="98" fill="none" stroke="#1d1e1f" stroke-opacity="0.75" stroke-width="0.8"/>
+      <circle cx="${CX}" cy="${CY}" r="91.5" fill="url(#s-chrome2)"/>
+      <circle cx="${CX}" cy="${CY}" r="91.5" fill="none" stroke="#2a2c2d" stroke-opacity="0.6" stroke-width="0.6"/>
+      <!-- the light, above-left -->
+      <ellipse cx="52" cy="26" rx="34" ry="17" fill="#ffffff" opacity="0.5" filter="url(#s-b4)" transform="rotate(-38 52 26)"/>
+      <ellipse cx="150" cy="170" rx="24" ry="11" fill="#000000" opacity="0.28" filter="url(#s-b4)" transform="rotate(-38 150 170)"/>
+      <!-- thin black rubber seal -->
+      <circle cx="${CX}" cy="${CY}" r="85.6" fill="none" stroke="#0b0b0c" stroke-width="3.4"/>
+      <circle cx="${CX}" cy="${CY}" r="87.2" fill="none" stroke="#3a3c3d" stroke-opacity="0.5" stroke-width="0.6"/>
+
+      <g clip-path="url(#s-dialclip)">
+        <circle cx="${CX}" cy="${CY}" r="84" fill="url(#s-dial)"/>
+        <g class="scale"></g>
+
+        <!-- inset clock at 6 o'clock (tachometer) -->
+        <g class="clock">
+          <circle cx="100" cy="148" r="20.5" fill="#0a0a0b"/>
+          <circle cx="100" cy="148" r="19.4" fill="none" stroke="url(#s-ring)" stroke-width="1.6"/>
+          <circle cx="100" cy="148" r="18.2" fill="#131315"/>
+          <circle cx="100" cy="148" r="18.2" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="2.6" filter="url(#s-b1)"/>
+          ${clockDots}
+          <path d="M 100 148 L 91.5 143.5" stroke="#efece3" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M 100 148 L 107 139.5" stroke="#efece3" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="100" cy="148" r="1.5" fill="#cfccc2"/>
+        </g>
+
+        <!-- odometer at 6 o'clock (speedometer) -->
+        <g class="odo">
+          <rect x="72" y="137.5" width="56" height="18" rx="2" fill="#000"/>
+          <rect x="73.2" y="138.7" width="53.6" height="15.6" rx="1.4" fill="#1a1a1a"/>
+          <g class="odigits"></g>
+          <rect x="73.2" y="138.7" width="53.6" height="15.6" rx="1.4" fill="url(#s-drum)"/>
+          <g stroke="#000" stroke-opacity="0.65" stroke-width="0.7">
+            <path d="M 83.9 138.7 V 154.3"/><path d="M 94.6 138.7 V 154.3"/>
+            <path d="M 105.3 138.7 V 154.3"/><path d="M 116 138.7 V 154.3"/>
+          </g>
+          <rect x="72" y="137.5" width="56" height="18" rx="2" fill="none" stroke="#6c6f70" stroke-opacity="0.45" stroke-width="0.7"/>
+          <text class="tiny" x="100" y="164">MILES</text>
+        </g>
+
+        <!-- legends -->
+        <text class="cap l1" x="${CX}" y="62">RPM</text>
+        <text class="cap l2" x="${CX}" y="74">×100</text>
+        <text class="tiny" x="${CX}" y="123">MADE IN ENGLAND</text>
+
+        <!-- needle: its shadow, then the white blade -->
+        <g transform="translate(2.2 3)">
+          <g class="needle">
+            <path d="M ${CX - 1.9} ${CY + 14} L ${CX - 1.7} ${CY - 60} L ${CX} ${CY - 77}
+                     L ${CX + 1.7} ${CY - 60} L ${CX + 1.9} ${CY + 14} Z" fill="#000" opacity="0.35" filter="url(#s-b1)"/>
+          </g>
+        </g>
+        <g class="needle">
+          <path d="M ${CX - 2.9} ${CY + 15} L ${CX - 1.55} ${CY - 58} L ${CX} ${CY - 77}
+                   L ${CX + 1.55} ${CY - 58} L ${CX + 2.9} ${CY + 15} Z" fill="url(#s-needle)"/>
+          <path d="M ${CX - 0.5} ${CY + 12} L ${CX - 0.5} ${CY - 58} L ${CX} ${CY - 70}
+                   L ${CX + 0.5} ${CY - 58} L ${CX + 0.5} ${CY + 12} Z" fill="#fffdf6" opacity="0.6"/>
+        </g>
+        <!-- boss: big, black, domed, with a chrome ring -->
+        <circle cx="${CX}" cy="${CY}" r="15" fill="none" stroke="url(#s-ring)" stroke-width="2.2"/>
+        <circle cx="${CX}" cy="${CY}" r="13.4" fill="url(#s-boss)"/>
+        <ellipse cx="${CX - 4.4}" cy="${CY - 5.2}" rx="5.4" ry="3.6" fill="#fff" opacity="0.13" transform="rotate(-38 ${CX - 4.4} ${CY - 5.2})"/>
+
+        <!-- domed glass: one soft elliptical glint, upper left -->
+        <ellipse cx="62" cy="52" rx="52" ry="34" fill="url(#s-glint)" transform="rotate(-34 62 52)"/>
+        <path d="M 22 44 A 84 84 0 0 1 96 16.2 L 70 92 Z" fill="#fff" opacity="0.035"/>
+        <circle cx="${CX}" cy="${CY}" r="84" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="7" filter="url(#s-b4)"/>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkGaugeSmithsTach extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "redline", "dial", "odo", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 6000; this._red = 5500; this._scale = 1; this._speedo = false;
+      this._x = A0; this._vel = 0; this._ph = 0; this._raf = 0; this._last = 0;
+      const R = this.shadowRoot;
+      this._needles = R.querySelectorAll(".needle");
+      this._wrap = R.querySelector(".wrap");
+      this._scaleG = R.querySelector(".scale");
+      this._l1 = R.querySelector(".l1"); this._l2 = R.querySelector(".l2");
+      this._odigits = R.querySelector(".odigits");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._read(); this._drawScale();
+      this._x = this._angle(this._v); this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read(); if (n !== "value") this._drawScale(); this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return;
+      v = Math.min(this._max, Math.max(this._min, v));
+      if (v === this._v) return; this._v = v;
+      this.setAttribute("value", String(Math.round(v))); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { const m = this._max;
+      const g = 0.5 + 0.42 * Math.sin(t * 0.5) + 0.07 * Math.sin(t * 2.3);
+      return Math.max(m * 0.04, Math.min(m, m * g)); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._speedo = this.getAttribute("dial") === "speedo";
+      this._min = num("min", 0);
+      this._max = num("max", this._speedo ? 160 : 6000);
+      if (this._max <= this._min) this._max = this._min + 1;
+      this._red = this.hasAttribute("redline") ? num("redline", NaN) : (this._speedo ? NaN : 5500);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      this._l1.textContent = this._speedo ? "MPH" : "RPM";
+      this._l2.textContent = this._speedo ? "" : "×100";
+      if (this._speedo) this._drawOdo();
+      const lab = this.getAttribute("label") || (this._speedo ? "road speed" : "engine speed");
+      this.setAttribute("aria-label", lab + ", " + (this._speedo ? "miles per hour" : "revolutions per minute"));
+      this.setAttribute("aria-valuemin", String(this._min));
+      this.setAttribute("aria-valuemax", String(this._max));
+      this.setAttribute("aria-valuenow", String(Math.round(this._v)));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _drawOdo() {
+      const g = this._odigits; while (g.firstChild) g.removeChild(g.firstChild);
+      const s = (this.getAttribute("odo") || "41377").replace(/\D/g, "").slice(-5).padStart(5, "0");
+      for (let i = 0; i < 5; i++) {
+        const x = 73.2 + i * 10.72, trip = i === 4;
+        if (trip) {
+          const r = document.createElementNS(NS, "rect");
+          r.setAttribute("x", f(x)); r.setAttribute("y", "138.7");
+          r.setAttribute("width", "10.72"); r.setAttribute("height", "15.6"); r.setAttribute("fill", "#8d1a12");
+          g.appendChild(r);
+        }
+        const t = document.createElementNS(NS, "text");
+        t.setAttribute("class", "odod"); t.setAttribute("x", f(x + 5.36)); t.setAttribute("y", "147.2");
+        if (trip) t.setAttribute("fill", "#f6efe8");
+        t.textContent = s[i];
+        g.appendChild(t);
+      }
+    }
+    _angle(v) { return A0 + (v - this._min) / (this._max - this._min) * SWEEP; }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      const range = this._max - this._min;
+      const figure = this._speedo ? 20 : 1000;
+      const minor = this._speedo ? 5 : 200;
+      const n = Math.round(range / minor);
+      for (let i = 0; i <= n; i++) {
+        const val = this._min + i * minor, a = this._angle(val);
+        const isFig = Math.abs(val / figure - Math.round(val / figure)) < 1e-6;
+        const [x0, y0] = pt(a, R_TICK), [x1, y1] = pt(a, R_TICK - (isFig ? 8.5 : 4.5));
+        g.appendChild(mk("line", { x1: f(x0), y1: f(y0), x2: f(x1), y2: f(y1),
+          stroke: "#efece3", "stroke-width": isFig ? 2.1 : 0.9, "stroke-linecap": "butt" }));
+        if (isFig) {
+          const [tx, ty] = pt(a, R_NUM);
+          const t = mk("text", { x: f(tx), y: f(ty), class: "num" });
+          t.textContent = String(Math.round(this._speedo ? val : val / 100));
+          g.appendChild(t);
+        }
+      }
+      // the red is a thin line inside the tick ring, not a wedge
+      if (!isNaN(this._red) && this._red > this._min && this._red < this._max) {
+        g.appendChild(mk("path", { d: arcD(R_RED, this._angle(this._red), this._angle(this._max)),
+          fill: "none", stroke: "#c9271f", "stroke-width": 2.2 }));
+      }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const target = this._angle(this._v);
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // magnetic-drag lag: ~400 ms, about 2 % overshoot
+      const k = 164, c = 20;
+      this._vel += (k * (target - this._x) - c * this._vel) * dt;
+      this._x += this._vel * dt;
+      this._ph += dt;
+      this._paint();
+      const idle = !this._speedo && this._v > 0 && this._v < 1000;
+      if (!idle && Math.abs(target - this._x) < 0.02 && Math.abs(this._vel) < 0.06) {
+        this._x = target; this._vel = 0; this._paint(); this._raf = 0; return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const idle = !this._speedo && this._v > 0 && this._v < 1000;
+      const flut = idle ? 0.5 * Math.sin(this._ph * 17) * Math.sin(this._ph * 6.1) : 0;
+      const a = Math.max(A0 - 3, Math.min(A0 + SWEEP + 3, this._x + flut));
+      const s = "rotate(" + a.toFixed(2) + "deg)";
+      this._needles.forEach(nd => { nd.style.transform = s; });
+      this.setAttribute("aria-valuenow", String(Math.round(this._v)));
+    }
+  }
+  customElements.define("sk-gauge-smiths-tach", SkGaugeSmithsTach);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

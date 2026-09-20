@@ -87,8 +87,8 @@
     var b = BASE[name] || BASE.red, clear = name === "clear";
     return {
       mid: b,
-      lo: dark(b, 0.20),
-      edge: dark(b, 0.30),
+      lo: dark(b, 0.12),
+      edge: dark(b, 0.26),
       glow: lite(b, clear ? 0.45 : 0.34),
       pipe: lite(b, 0.78),
       rimT: lite(b, 0.30),
@@ -125,14 +125,14 @@
     '<radialGradient id="capg" cx="0.5" cy="0.5" r="0.5">' +
       '<stop class="s-mid" offset="0"/><stop class="s-mid2" offset="0.94"/>' +
       '<stop class="s-lo" offset="0.982"/><stop class="s-edge" offset="1"/></radialGradient>' +
-    '<radialGradient id="coreg" cx="0.5" cy="0.56" r="0.66">' +
-      '<stop class="s-glow" offset="0" stop-opacity="0.26"/><stop class="s-glow2" offset="0.7" stop-opacity="0.12"/>' +
+    '<radialGradient id="coreg" cx="0.5" cy="0.55" r="0.95">' +
+      '<stop class="s-glow" offset="0" stop-opacity="0.24"/><stop class="s-glow2" offset="0.93" stop-opacity="0.22"/>' +
       '<stop class="s-glow3" offset="1" stop-opacity="0"/></radialGradient>' +
     '<linearGradient id="tilt" x1="0.2" y1="0" x2="0.72" y2="1">' +
-      '<stop offset="0" stop-color="#fff" stop-opacity="0.05"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/>' +
-      '<stop offset="1" stop-color="#000" stop-opacity="0.045"/></linearGradient>' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.03"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/>' +
+      '<stop offset="1" stop-color="#000" stop-opacity="0.028"/></linearGradient>' +
     '<radialGradient id="spec" cx="0.5" cy="0.5" r="0.5">' +
-      '<stop offset="0" stop-color="#fff" stop-opacity="0.30"/><stop offset="0.58" stop-color="#fff" stop-opacity="0.10"/>' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.11"/>' +
       '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
     '<radialGradient id="grime" cx="0.5" cy="0.5" r="0.5">' +
       '<stop offset="0.92" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.45"/></radialGradient>' +
@@ -156,15 +156,15 @@
     '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_GAP + '" fill="#0b0b0c"/>' +
     '<circle class="gapdark" cx="' + CX + '" cy="' + CY + '" r="' + (R_GAP - 0.2) + '" fill="#000"/>' +
 
-    '<g class="capshadow"><ellipse cx="' + CX + '" cy="' + (CY + 0.8) + '" rx="' + (R_CAP - 0.4) + '" ry="' + (R_CAP - 0.8) + '" fill="#000" opacity="0.5" filter="url(#s1)"/></g>' +
+    '<g class="capshadow"><ellipse cx="' + CX + '" cy="' + (CY + 0.4) + '" rx="' + (R_CAP - 0.6) + '" ry="' + (R_CAP - 0.8) + '" fill="#000" opacity="0.28" filter="url(#s1)"/></g>' +
 
     // the plunger: flat to 85 % of the radius, then a two-pixel roll
     '<g class="cap">' +
       '<circle class="capface" cx="' + CX + '" cy="' + CY + '" r="' + R_CAP + '" fill="url(#capg)"/>' +
       '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_CAP + '" fill="url(#coreg)"/>' +
       '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_CAP + '" fill="url(#tilt)"/>' +
-      '<circle class="pipe2" cx="' + CX + '" cy="' + CY + '" r="' + (R_CAP - 0.9) + '" fill="none" stroke-opacity="0.5" stroke-width="1.2"/>' +
-      '<path class="pipe" d="' + arc(R_CAP - 1.1, 188, 312) + '" fill="none" stroke-opacity="0.72" stroke-width="1.5"/>' +
+      '<circle class="pipe2" cx="' + CX + '" cy="' + CY + '" r="' + (R_CAP - 0.85) + '" fill="none" stroke-opacity="0.42" stroke-width="1"/>' +
+      '<path class="pipe" d="' + arc(R_CAP - 0.9, 202, 300) + '" fill="none" stroke-opacity="0.45" stroke-width="1.1"/>' +
       '<ellipse cx="' + (CX - 7) + '" cy="' + (CY - 12) + '" rx="23" ry="8" fill="url(#spec)" transform="rotate(-19 ' + (CX - 7) + ' ' + (CY - 12) + ')"/>' +
       '<ellipse cx="' + (CX - 15) + '" cy="' + (CY - 15.5) + '" rx="7" ry="2.4" fill="#fff" opacity="0.42" transform="rotate(-19 ' + (CX - 15) + ' ' + (CY - 15.5) + ')"/>' +
       '<path d="' + arc(R_CAP - 5, 22, 132) + '" fill="none" stroke="#fff" stroke-opacity="0.10" stroke-width="5" filter="url(#s35)"/>' +

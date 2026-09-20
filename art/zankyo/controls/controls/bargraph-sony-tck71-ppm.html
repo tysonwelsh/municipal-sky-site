@@ -81,10 +81,18 @@
     for (let i = 0; i < N; i++) {
       const x = X0 + i * PITCH, c = i < 7 ? "g" : (i < 10 ? "a" : "r");
       s += `<g class="seg ${c}">` +
-        `<ellipse class="glow" cx="${x + LW / 2}" cy="${R.ly + LH / 2}" rx="${LW * 1.08}" ry="${LH * 1.85}"/>` +
         `<rect class="face" x="${x}" y="${R.ly}" width="${LW}" height="${LH}" rx="1"/>` +
         `<rect class="sheen" x="${x}" y="${R.ly}" width="${LW}" height="${LH}" rx="1"/>` +
         `</g>`;
+    }
+    return s;
+  }
+  // the bloom scatters in the acrylic, so it sits in front of the smoke
+  function glows(r) {
+    const R = ROWS[r]; let s = "";
+    for (let i = 0; i < N; i++) {
+      const x = X0 + i * PITCH, c = i < 7 ? "g" : (i < 10 ? "a" : "r");
+      s += `<ellipse class="gl ${c}" cx="${x + LW / 2}" cy="${R.ly + LH / 2}" rx="${LW * 1.05}" ry="${LH * 1.8}"/>`;
     }
     return s;
   }
@@ -104,7 +112,8 @@
       <rect x="${WINX}" y="${R.wy}" width="${WINW}" height="${WINH}" rx="1.4" fill="#0d0e10"/>
       <g clip-path="url(#${R.clip})">
         ${segs(r)}
-        <rect x="${WINX}" y="${R.wy}" width="${WINW}" height="${WINH}" fill="#0a0b0d" opacity="0.34"/>
+        <rect x="${WINX}" y="${R.wy}" width="${WINW}" height="${WINH}" fill="#0a0b0d" opacity="0.26"/>
+        ${glows(r)}
         <path d="M ${WINX} ${R.wy} L ${WINX + 64} ${R.wy} L ${WINX + 30} ${R.wy + WINH} L ${WINX} ${R.wy + WINH} Z" fill="url(#glass)"/>
         <rect x="${WINX}" y="${R.wy}" width="${WINW}" height="${WINH}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="2.4"/>
       </g>
@@ -125,13 +134,12 @@
     .tiny { font-size: 5.5px; font-weight: 500; letter-spacing: 0.16em; fill: #8d8b83; }
     .sheen { fill: url(#ledsheen); opacity: 0.6; }
     .seg.on .sheen { opacity: 0.9; }
-    .glow { opacity: 0; }
     .g .face { fill: #0f2a17; } .a .face { fill: #3a2705; } .r .face { fill: #3a0d0c; }
-    .g .glow { fill: url(#glowG); } .a .glow { fill: url(#glowA); } .r .glow { fill: url(#glowR); }
+    .gl { opacity: 0; } .gl.g { fill: url(#glowG); } .gl.a { fill: url(#glowA); } .gl.r { fill: url(#glowR); }
+    .gl.on { opacity: 0.95; } .gl.pk { opacity: 1; }
     .seg.on.g .face { fill: #3dff73; } .seg.on.a .face { fill: #ffb524; } .seg.on.r .face { fill: #ff2f26; }
     .seg.pk.g .face { fill: #7bff9d; } .seg.pk.a .face { fill: #ffd167; } .seg.pk.r .face { fill: #ff7a6d; }
-    .seg.on .glow { opacity: 0.95; }
-    .seg.pk .glow { opacity: 1; }
+
   </style>
   <div class="wrap">
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
@@ -209,7 +217,9 @@
       this._hold = 1500; this._scale = 1; this._raf = 0; this._last = 0;
       this._wrap = this.shadowRoot.querySelector(".wrap");
       const all = this.shadowRoot.querySelectorAll(".seg");
+      const gls = this.shadowRoot.querySelectorAll(".gl");
       this._segs = [Array.prototype.slice.call(all, 0, N), Array.prototype.slice.call(all, N, N * 2)];
+      this._glows = [Array.prototype.slice.call(gls, 0, N), Array.prototype.slice.call(gls, N, N * 2)];
       this._tick = this._tick.bind(this);
     }
     connectedCallback() {
@@ -281,10 +291,10 @@
         let pk = -1;
         if (p > MIN) { for (let i = 0; i < N; i++) if (p >= TH[i]) pk = i; }
         for (let i = 0; i < N; i++) {
-          const g = this._segs[r][i];
-          const on = v > MIN && v >= TH[i];
-          g.classList.toggle("pk", i === pk);
-          g.classList.toggle("on", on || i === pk);
+          const on = (v > MIN && v >= TH[i]) || i === pk;
+          const g = this._segs[r][i], gl = this._glows[r][i];
+          g.classList.toggle("pk", i === pk); g.classList.toggle("on", on);
+          gl.classList.toggle("pk", i === pk); gl.classList.toggle("on", on);
         }
       }
       this.setAttribute("aria-valuenow", String(Math.round(this._t[0] * 10) / 10));

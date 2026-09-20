@@ -117,20 +117,21 @@
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>
         <linearGradient id="chrome" x1="0" y1="0" x2="0.08" y2="1">
-          <stop offset="0" stop-color="#f4f7f8"/>
-          <stop offset="0.26" stop-color="#dde3e6"/>
-          <stop offset="0.40" stop-color="#9aa2a7"/>
-          <stop offset="0.415" stop-color="#454d52"/>
-          <stop offset="0.47" stop-color="#6f7478"/>
-          <stop offset="0.66" stop-color="#c6cdd1"/>
-          <stop offset="0.88" stop-color="#eef2f4"/>
-          <stop offset="1" stop-color="#a9b0b4"/>
+          <stop offset="0" stop-color="#aab2b7"/>
+          <stop offset="0.10" stop-color="#e8edef"/>
+          <stop offset="0.30" stop-color="#f7fafb"/>
+          <stop offset="0.44" stop-color="#b7bec2"/>
+          <stop offset="0.445" stop-color="#2b3236"/>
+          <stop offset="0.52" stop-color="#565e63"/>
+          <stop offset="0.70" stop-color="#aab2b7"/>
+          <stop offset="0.90" stop-color="#eef3f5"/>
+          <stop offset="1" stop-color="#8e969b"/>
         </linearGradient>
         <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
-          <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.05"/>
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+          <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.03"/>
           <stop offset="0.7" stop-color="#ffffff" stop-opacity="0"/>
-          <stop offset="1" stop-color="#ffffff" stop-opacity="0.10"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0.07"/>
         </linearGradient>
         <linearGradient id="stemg" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#4e5459"/><stop offset="0.14" stop-color="#cfd6da"/>
@@ -177,7 +178,8 @@
 
       <!-- the leather boot the plate is screwed down onto -->
       <path class="bootd" fill="url(#hide)"/>
-      <path class="bootd" fill="#000" opacity="0.35"/>
+      <path class="bootd" fill="#000" opacity="0.28"/>
+      <path class="bootd" fill="none" stroke="#5c534c" stroke-opacity="0.45" stroke-width="1" transform="translate(-0.6,-0.8)"/>
       <g class="bootcreases" stroke="#3a3735" stroke-opacity="0.5" stroke-width="0.7" fill="none"></g>
       <!-- the plate's shadow on the leather -->
       <path class="plateshadow" fill="#000" opacity="0.6" filter="url(#s2)"/>
@@ -187,7 +189,7 @@
       <g clip-path="url(#plateclip)">
         <path class="plated" fill="url(#sheen)"/>
         <!-- the polished rounded lip: bright along the near edge, dark along the far one -->
-        <path class="plated" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.4"
+        <path class="plated" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="2.2"
               transform="translate(0,-1.6)"/>
         <path class="plated" fill="none" stroke="#2c3236" stroke-opacity="0.7" stroke-width="2"
               transform="translate(0,1.6)"/>
@@ -212,8 +214,9 @@
       <g class="ballg">
         <circle class="ball" r="${BR}" fill="url(#ballblack)"/>
         <!-- core shadow and the band of reflected light on the far underside -->
-        <path class="refl" d="M ${-BR * 0.82} ${BR * 0.42} A ${BR} ${BR} 0 0 0 ${BR * 0.62} ${BR * 0.72}"
-              fill="none" stroke="#7d8286" stroke-opacity="0.35" stroke-width="1.6"/>
+        <ellipse cx="${BR * 0.22}" cy="${BR * 0.26}" rx="${BR * 0.72}" ry="${BR * 0.66}" fill="#000" opacity="0.30" filter="url(#s2)"/>
+        <path class="refl" d="M ${-BR * 0.80} ${BR * 0.46} A ${BR} ${BR} 0 0 0 ${BR * 0.70} ${BR * 0.62}"
+              fill="none" stroke="#9aa0a4" stroke-opacity="0.55" stroke-width="2"/>
         <!-- the crown, engraved with the pattern -->
         <g class="crown" transform="translate(0 ${-BR * 0.30})">
           <g class="crownlines"></g>
@@ -246,12 +249,14 @@
     }
     connectedCallback() {
       if (!this.hasAttribute("value")) this.setAttribute("value", "N");
-      this._buildPlate(); this._buildCrown();
+      if (!this._built) { this._buildPlate(); this._buildCrown(); this._built = true; }
+      cancelAnimationFrame(this._raf); this._raf = 0; this._anim = null;
       this._readAttrs();
       const p = POS[this._v] || POS.N;
       this._slot = p[0]; this._row = p[1];
       this._u = SLOTU[this._slot]; this._vv = ROWV[this._row];
       this._paint();
+      this._ready = true;
       const g = this._grab;
       g.addEventListener("pointerdown", this._onDown);
       g.addEventListener("wheel", this._onWheel, { passive: false });
@@ -269,7 +274,7 @@
     }
     _reflect(v) { this._refl = true; this.setAttribute("value", v); this._refl = false; }
     attributeChangedCallback(n, o, nv) {
-      if (o === nv || !this.isConnected || this._refl) return;
+      if (o === nv || !this.isConnected || this._refl || !this._ready) return;
       this._readAttrs();
       if (n === "value") {
         const p = POS[this._v] || POS.N;
@@ -391,7 +396,7 @@
       // the stem, a chromed cylinder standing in the slot
       const dx = bx - gx, dy = by - gy, L = Math.hypot(dx, dy) || 1;
       const nx = -dy / L, ny = dx / L;
-      const w0 = 3.1, w1 = 4.3;
+      const w0 = 3.7, w1 = 5.2;
       const ex = bx - dx / L * BR * bs * 0.72, ey = by - dy / L * BR * bs * 0.72;
       this._stem.setAttribute("d",
         `M ${(gx - nx * w0).toFixed(2)} ${(gy - ny * w0).toFixed(2)}
@@ -419,9 +424,10 @@
         detail: { value: this._v, x: Math.round((this._u + 1) / 2 * 1000) / 1000, y: Math.round((this._vv + 1) / 2 * 1000) / 1000 } }));
     }
     _name(slot, row) { return NAME[slot][row]; }
-    _setValue(name, quiet) {
+    _setValue(name, quiet, reflect) {
       if (name === this._v) return;
-      this._v = name; this._reflect(name);
+      this._v = name;
+      if (reflect) this._reflect(name);          // the attribute shows the settled gear, not the crossings
       if (!quiet) this._emit("input");
     }
     // walk to (slot,row) along the gate: out to the bar, across, then into the slot
@@ -460,7 +466,8 @@
         else {
           this._anim = null;
           const name = Math.abs(this._vv) > 0.3 ? this._name(this._nearSlot(), this._vv < 0 ? 0 : 2) : "N";
-          this._setValue(name, !a.emit);
+          this._setValue(name, !a.emit, true);
+          this._reflect(this._v);
           if (a.emit) this._emit("change", true);
           this._shudT = now;                                     // the metallic shudder as it hits the stop
           this._raf = requestAnimationFrame(this._tick);
@@ -472,7 +479,7 @@
         this._vv = a.from[1] + (to[1] - a.from[1]) * e;
         // crossing the bar reports neutral
         const nm = Math.abs(this._vv) > 0.45 ? this._name(this._nearSlot(), this._vv < 0 ? 0 : 2) : "N";
-        this._setValue(nm, !a.emit);
+        this._setValue(nm, !a.emit, false);
       }
       this._paint();
       this._raf = requestAnimationFrame(this._tick);
@@ -518,7 +525,7 @@
         this._vv = Math.max(-0.62, Math.min(0.62, rv));           // in a slot: only along it
       }
       const nm = Math.abs(this._vv) > 0.45 ? this._name(this._nearSlot(), this._vv < 0 ? 0 : 2) : "N";
-      this._setValue(nm);
+      this._setValue(nm, true, false);
       this._emit("input");
       this._paint();
     }

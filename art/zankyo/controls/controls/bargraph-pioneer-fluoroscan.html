@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pioneer Fluoroscan bar meter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "bargraph-pioneer-fluoroscan",
+  "element": "sk-bargraph-fluoroscan",
+  "name": "Pioneer Fluoroscan fluorescent bar meter",
+  "kind": "output",
+  "code": "H6",
+  "type": "Fluorescent (VFD) bar meter",
+  "source": "The twin blue-green VFD bar meters Pioneer called Fluoroscan, on the CT-F950 / CT-F1250 cassette decks and the SA-9800 amplifier",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["brushed aluminium fascia", "smoked acrylic", "vacuum fluorescent display"],
+  "tags": ["cassette deck", "amplifier", "vfd", "phosphor", "bargraph", "silver fascia"],
+  "value": { "model": "range", "min": -20, "max": 5, "step": 1, "unit": "dB" },
+  "attributes": ["value", "value2", "peak", "peak2", "scale"],
+  "events": [],
+  "size": { "w": 240, "h": 64 },
+  "notes": "value drives the upper (L) bar, value2 the lower (R); peak/peak2 add the optional hold dots."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-bargraph-fluoroscan value="-3" value2="-6" peak="3" peak2="-1" scale="1.25"></sk-bargraph-fluoroscan>
+    <sk-bargraph-fluoroscan value="-20" value2="-14" scale="0.6"></sk-bargraph-fluoroscan>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p><b>Fluoroscan</b> was Pioneer's name for the vacuum-fluorescent bar meters it put across the CT-F950 and
+  CT-F1250 cassette decks and the SA-9800 amplifier in the late seventies: two rows of short, wide phosphor
+  segments on a glass plate behind a smoked acrylic window let into the brushed silver fascia, with the dB
+  figures printed white on the tube's own black mask so they seem to float in the dark.</p>
+  <p><b>The tells kept here:</b> the glow is <i>phosphor</i>, not LED — blue-green, soft-edged, with the fine
+  grid of the tube's control wires laid over it, and the top three segments the same fuzzy glow in amber
+  rather than a hard red; unlit segments survive as barely-there ghosts, so the ladder is readable at silence;
+  the smoked window swallows the mask so the bars float, with one long horizontal reflection picked up from
+  the fascia's brushed grain; the extended Eurostile legend, wide-letterspaced, on the silver below. The
+  ballistics are a 20 ms rise and a 600 ms fall per 20 dB, a segment fades up in 40 ms and its phosphor takes
+  about 30 ms to die away, and the whole tube shimmers by about one per cent.</p>
+  <p><b>Left out:</b> the deck's memory and Dolby lamps at the right of the real window, and the tube's pin
+  stems and getter flash, which are hidden behind the mask on the real thing too.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-bargraph-fluoroscan> — Pioneer "Fluoroscan" twin VFD bar meter behind a smoked window ====
+   attributes: value (dB, L) · value2 (dB, R) · peak · peak2 (dB, optional hold dots) · scale
+   no events (an output). set .value / .value2 or the attributes.
+   self-contained: paste this block into any page and use <sk-bargraph-fluoroscan value="-6"></sk-bargraph-fluoroscan> */
+(function () {
+  if (customElements.get("sk-bargraph-fluoroscan")) return;
+  const W = 240, H = 64;
+  const TH = [-20, -18, -16, -14, -12, -10, -8, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 5];
+  const N = TH.length, MIN = TH[0], MAX = TH[N - 1], AMBER = N - 3;   // the top three segments are amber
+  const NUMS = { 0: "−20", 5: "−10", 8: "−5", 10: "−3", 13: "0", 16: "+3", 17: "+5" };
+  const SW = 8.6, PITCH = 11.2, X0 = 20;
+  const WINX = 14, WINW = 212, WINY = 5, WINH = 40;
+  const ROWS = [
+    { by: 9,  bh: 6, tick: 16.4, num: 23.4, lab: "L", laby: 14.4 },
+    { by: 28, bh: 6, tick: 35.4, num: 42.4, lab: "R", laby: 33.4 }
+  ];
+  const FALL = 20 / 0.6;    // dB per second
+
+  function bars(r, cls) {
+    const R = ROWS[r]; let s = "";
+    for (let i = 0; i < N; i++) {
+      const x = X0 + i * PITCH, c = i >= AMBER ? "am" : "bg";
+      s += `<rect class="${cls} ${c}" x="${x}" y="${R.by}" width="${SW}" height="${R.bh}" rx="0.8"/>`;
+    }
+    return s;
+  }
+  function glows(r) {
+    const R = ROWS[r]; let s = "";
+    for (let i = 0; i < N; i++) {
+      const x = X0 + i * PITCH, c = i >= AMBER ? "am" : "bg";
+      s += `<ellipse class="gl ${c}" cx="${x + SW / 2}" cy="${R.by + R.bh / 2}" rx="${SW * 1.15}" ry="${R.bh * 2.1}"/>`;
+    }
+    return s;
+  }
+  function scaleRow(r) {
+    const R = ROWS[r]; let s = "";
+    for (const k in NUMS) {
+      const cx = X0 + (+k) * PITCH + SW / 2;
+      s += `<line x1="${cx}" y1="${R.tick}" x2="${cx}" y2="${R.tick + 1.6}" stroke="#cfe0dc" stroke-opacity="0.5" stroke-width="0.7"/>` +
+           `<text class="num" x="${cx}" y="${R.num}">${NUMS[k]}</text>`;
+    }
+    return s;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; line-height: 1; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .num { font-size: 6px; font-weight: 500; text-anchor: middle; fill: #dfe9e6; fill-opacity: 0.72; }
+    .chan { font-size: 6.5px; font-weight: 600; text-anchor: middle; fill: #3a3a38; }
+    .brand { font-family: "Michroma", "Eurostile", "Arial Black", sans-serif; font-size: 7px; letter-spacing: 0.18em; fill: #2b2b2b; }
+    .db { font-size: 6px; font-weight: 500; text-anchor: end; fill: #3a3a38; letter-spacing: 0.06em; }
+    .ghost.bg { fill: #1d2a2b; } .ghost.am { fill: #272220; }
+    .v { opacity: 0; transition: opacity 30ms linear; }        /* phosphor dies away in ~30 ms */
+    .v.on { opacity: 1; transition: opacity 40ms linear; }     /* and lights in ~40 ms */
+    .v.bg { fill: #7ff5df; } .v.am { fill: #ffb347; }
+    .gl { opacity: 0; transition: opacity 30ms linear; }
+    .gl.on { opacity: 1; transition: opacity 40ms linear; }
+    .gl.bg { fill: url(#glowB); } .gl.am { fill: url(#glowA); }
+    .tube { animation: sk-flick 90ms linear infinite alternate; }
+    @keyframes sk-flick { from { opacity: 0.985; } to { opacity: 1; } }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="fascia" x1="0" y1="0" x2="0.12" y2="1">
+          <stop offset="0" stop-color="#e2e2de"/><stop offset="0.28" stop-color="#d8d8d4"/>
+          <stop offset="0.72" stop-color="#c6c6c1"/><stop offset="1" stop-color="#b4b4af"/>
+        </linearGradient>
+        <linearGradient id="fhi" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.16" stop-color="#fff" stop-opacity="0.5"/>
+          <stop offset="0.34" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="edge" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.75"/><stop offset="0.3" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="0.7" stop-color="#4a4a46" stop-opacity="0"/><stop offset="1" stop-color="#4a4a46" stop-opacity="0.75"/>
+        </linearGradient>
+        <linearGradient id="winlip" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#8a8a86"/><stop offset="0.5" stop-color="#d2d2ce"/><stop offset="1" stop-color="#f2f2ee"/>
+        </linearGradient>
+        <linearGradient id="refl" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.42" stop-color="#cfe6f2" stop-opacity="0.15"/>
+          <stop offset="0.55" stop-color="#cfe6f2" stop-opacity="0.09"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#7ff5df" stop-opacity="0.5"/><stop offset="0.42" stop-color="#7ff5df" stop-opacity="0.2"/><stop offset="1" stop-color="#7ff5df" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffb347" stop-opacity="0.5"/><stop offset="0.42" stop-color="#ffb347" stop-opacity="0.2"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+        </radialGradient>
+        <pattern id="brush" width="3" height="3" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="3" height="1" fill="#fff" fill-opacity="0.35"/>
+          <rect x="0" y="1.6" width="3" height="0.7" fill="#000" fill-opacity="0.05"/>
+        </pattern>
+        <pattern id="mesh" width="2.2" height="2.2" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="0.7" height="2.2" fill="#000" fill-opacity="0.2"/>
+          <rect x="0" y="0" width="2.2" height="0.5" fill="#000" fill-opacity="0.13"/>
+        </pattern>
+        <filter id="fuzz" x="-8%" y="-40%" width="116%" height="180%"><feGaussianBlur stdDeviation="0.38"/></filter>
+        <clipPath id="win"><rect x="${WINX}" y="${WINY}" width="${WINW}" height="${WINH}" rx="1.6"/></clipPath>
+        <clipPath id="plate"><rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2.5"/></clipPath>
+      </defs>
+
+      <rect x="3" y="4" width="${W - 6}" height="${H - 5}" rx="4" fill="#000" opacity="0.35"/>
+      <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2.5" fill="url(#fascia)"/>
+      <g clip-path="url(#plate)">
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#brush)" opacity="0.18"/>
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#fhi)"/>
+      </g>
+
+      <!-- the window, let into the fascia -->
+      <rect x="${WINX - 1}" y="${WINY - 1}" width="${WINW + 2}" height="${WINH + 2}" rx="2.2" fill="url(#winlip)"/>
+      <rect x="${WINX}" y="${WINY}" width="${WINW}" height="${WINH}" rx="1.6" fill="#131518"/>
+      <g clip-path="url(#win)">
+        <g class="tube">
+          ${bars(0, "ghost")}${bars(1, "ghost")}
+          <g filter="url(#fuzz)">${bars(0, "v")}${bars(1, "v")}</g>
+        </g>
+        <!-- the control-wire grid sits in front of the phosphor -->
+        <rect x="${X0 - 1}" y="${ROWS[0].by - 0.6}" width="${N * PITCH}" height="${ROWS[0].bh + 1.2}" fill="url(#mesh)"/>
+        <rect x="${X0 - 1}" y="${ROWS[1].by - 0.6}" width="${N * PITCH}" height="${ROWS[1].bh + 1.2}" fill="url(#mesh)"/>
+        <!-- the scale, printed white on the tube's black mask -->
+        <g>${scaleRow(0)}${scaleRow(1)}</g>
+        <!-- smoked acrylic -->
+        <rect x="${WINX}" y="${WINY}" width="${WINW}" height="${WINH}" fill="#0b0d10" opacity="0.4"/>
+        <!-- the bloom scatters in the acrylic, in front of the smoke -->
+        <g class="tube">${glows(0)}${glows(1)}</g>
+        <!-- one reflection: a long band of the fascia's brushed grain -->
+        <rect x="${WINX}" y="${WINY + 1}" width="${WINW}" height="11" fill="url(#refl)"/>
+        <rect x="${WINX}" y="${WINY}" width="${WINW}" height="0.7" fill="#fff" opacity="0.13"/>
+        <rect x="${WINX}" y="${WINY}" width="${WINW}" height="${WINH}" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="3"/>
+      </g>
+
+      <text class="chan" x="7" y="${ROWS[0].laby}">L</text>
+      <text class="chan" x="7" y="${ROWS[1].laby}">R</text>
+      <text class="brand" x="${WINX}" y="57">FLUOROSCAN</text>
+      <text class="db" x="${WINX + WINW}" y="57">dB</text>
+      <rect x="0.9" y="0.9" width="${W - 1.8}" height="${H - 1.8}" rx="2.1" fill="none" stroke="url(#edge)" stroke-width="0.9"/>
+    </svg>
+  </div>`;
+
+  const clamp = v => Math.max(MIN, Math.min(MAX, v));
+
+  class SkBargraphFluoroscan extends HTMLElement {
+    static get observedAttributes() { return ["value", "value2", "peak", "peak2", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._t = [MIN, MIN]; this._c = [MIN, MIN]; this._p = [null, null];
+      this._scale = 1; this._raf = 0; this._last = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      const v = this.shadowRoot.querySelectorAll(".v"), g = this.shadowRoot.querySelectorAll(".gl");
+      this._bars = [Array.prototype.slice.call(v, 0, N), Array.prototype.slice.call(v, N, N * 2)];
+      this._glows = [Array.prototype.slice.call(g, 0, N), Array.prototype.slice.call(g, N, N * 2)];
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this.setAttribute("aria-valuemin", String(MIN));
+      this.setAttribute("aria-valuemax", String(MAX));
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "recording level, dB");
+      this._read(); this._c = [this._t[0], this._t[1]];
+      this._paint(); this._kick();
+    }
+    disconnectedCallback() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._kick(); }
+
+    get value() { return this._t[0]; }
+    set value(v) { this._set(0, v, "value"); }
+    get value2() { return this._t[1]; }
+    set value2(v) { this._set(1, v, "value2"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    _set(i, v, attr) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._t[i] = clamp(v);
+      this.setAttribute(attr, String(Math.round(v * 100) / 100));   // reflects; never emits
+      this._kick();
+    }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._t[0] = clamp(num("value", this._t[0]));
+      this._t[1] = clamp(num("value2", this._t[1]));
+      this._p[0] = this.hasAttribute("peak") ? clamp(num("peak", MIN)) : null;
+      this._p[1] = this.hasAttribute("peak2") ? clamp(num("peak2", MIN)) : null;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      let busy = false;
+      for (let r = 0; r < 2; r++) {
+        const t = this._t[r]; let c = this._c[r];
+        if (t > c) { c += (t - c) * Math.min(1, dt / 0.02); if (t - c < 0.05) c = t; }   // 20 ms rise
+        else if (t < c) { c = Math.max(t, c - FALL * dt); }                              // 20 dB in 600 ms
+        this._c[r] = c;
+        if (c !== t) busy = true;
+      }
+      this._paint();
+      this._raf = busy ? requestAnimationFrame(this._tick) : 0;
+    }
+    // cheap: nothing is created, only one class per segment is toggled
+    _paint() {
+      for (let r = 0; r < 2; r++) {
+        const v = this._c[r], p = this._p[r];
+        let pk = -1;
+        if (p != null && p > MIN) { for (let i = 0; i < N; i++) if (p >= TH[i]) pk = i; }
+        for (let i = 0; i < N; i++) {
+          const on = (v > MIN && v >= TH[i]) || i === pk;
+          this._bars[r][i].classList.toggle("on", on);
+          this._glows[r][i].classList.toggle("on", on);
+        }
+      }
+      this.setAttribute("aria-valuenow", String(Math.round(this._t[0] * 10) / 10));
+      this.setAttribute("aria-valuetext", "L " + Math.round(this._t[0]) + " dB, R " + Math.round(this._t[1]) + " dB");
+    }
+    // the harness's idle animation: two channels of programme material
+    demo(t) {
+      const n = (a, b, c) => 0.54 + 0.3 * Math.sin(t * a) + 0.12 * Math.sin(t * b + 1.1) + 0.08 * Math.sin(t * c + 2.2);
+      const toDb = x => MIN + (MAX - MIN) * Math.max(0, Math.min(1, x));
+      this.value2 = toDb(n(1.9, 5.7, 11.9) - 0.05);
+      return toDb(n(2.3, 6.7, 13.1));
+    }
+  }
+  customElements.define("sk-bargraph-fluoroscan", SkBargraphFluoroscan);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
