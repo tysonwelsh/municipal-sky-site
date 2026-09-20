@@ -32,7 +32,7 @@
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="bakelite-black">
+  <main class="sk-stage" data-panel="hammertone">
     <sk-dekatron-gs10c value="7" label="UNITS"></sk-dekatron-gs10c>
     <sk-dekatron-gs10c value="0" spin="36" label="TENS"></sk-dekatron-gs10c>
     <sk-dekatron-gs10c value="3" glow="purple" escutcheon="off" scale="1.3" label="OG-4"></sk-dekatron-gs10c>
@@ -135,10 +135,10 @@
           <stop offset="0" stop-color="#3a352f"/><stop offset="0.45" stop-color="#1f1c19"/><stop offset="1" stop-color="#0c0b0a"/>
         </radialGradient>
         <radialGradient id="inside" cx="42%" cy="34%" r="72%">
-          <stop offset="0" stop-color="#1b1a20"/><stop offset="0.6" stop-color="#121116"/><stop offset="1" stop-color="#07070a"/>
+          <stop offset="0" stop-color="#16151b"/><stop offset="0.6" stop-color="#0d0c11"/><stop offset="1" stop-color="#050507"/>
         </radialGradient>
         <radialGradient id="mica" cx="42%" cy="34%" r="66%">
-          <stop offset="0" stop-color="#b8b0a0" stop-opacity="0.22"/><stop offset="0.72" stop-color="#8d8677" stop-opacity="0.11"/><stop offset="1" stop-color="#6a655c" stop-opacity="0"/>
+          <stop offset="0" stop-color="#b8b0a0" stop-opacity="0.17"/><stop offset="0.72" stop-color="#8d8677" stop-opacity="0.08"/><stop offset="1" stop-color="#6a655c" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="anode" cx="34%" cy="28%" r="76%">
           <stop offset="0" stop-color="#4a4640"/><stop offset="0.55" stop-color="#2c2a26"/><stop offset="1" stop-color="#16150f"/>
@@ -150,7 +150,7 @@
           <stop offset="0" stop-color="var(--core)"/><stop offset="0.45" stop-color="var(--body)"/><stop offset="1" stop-color="var(--halo)"/>
         </radialGradient>
         <radialGradient id="hl" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="var(--halo)" stop-opacity="0.55"/><stop offset="0.5" stop-color="var(--halo)" stop-opacity="0.22"/><stop offset="1" stop-color="var(--halo)" stop-opacity="0"/>
+          <stop offset="0" stop-color="var(--halo)" stop-opacity="0.72"/><stop offset="0.5" stop-color="var(--halo)" stop-opacity="0.26"/><stop offset="1" stop-color="var(--halo)" stop-opacity="0"/>
         </radialGradient>
         <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.2"/></filter>
         <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2"/></filter>
@@ -166,7 +166,7 @@
       <path d="M ${f(pt(40, 59.2)[0])} ${f(pt(40, 59.2)[1])} A 59.2 59.2 0 0 1 ${f(pt(150, 59.2)[0])} ${f(pt(150, 59.2)[1])}"
             fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1.4" stroke-linecap="round"/>
       <!-- the keyway slot in the holder -->
-      <g transform="rotate(198 ${C} ${C})">
+      <g transform="rotate(18 ${C} ${C})">
         <rect x="${C - 2.4}" y="${C + 49}" width="4.8" height="9" rx="1.6" fill="#050505"/>
         <rect x="${C - 2.4}" y="${C + 49}" width="4.8" height="9" rx="1.6" fill="none" stroke="#4e4842" stroke-opacity="0.5" stroke-width="0.6"/>
       </g>
@@ -187,18 +187,19 @@
         <!-- the glow: a group that rotates about the tube's axis -->
         <g class="trail"></g>
         <g class="glowg">
-          <circle class="cast" cx="${C}" cy="${C - RC}" r="20" fill="url(#hl)" opacity="0.5"/>
-          <circle cx="${f(pt(-12, RC)[0])}" cy="${f(pt(-12, RC)[1])}" r="2.1" fill="var(--guide)" opacity="0.12"/>
-          <circle cx="${f(pt(12, RC)[0])}" cy="${f(pt(12, RC)[1])}" r="2.1" fill="var(--guide)" opacity="0.12"/>
-          <circle cx="${C}" cy="${C - RC}" r="6.2" fill="url(#hl)" filter="url(#soft2)"/>
-          <circle cx="${C}" cy="${C - RC}" r="3.5" fill="url(#dot)"/>
-          <circle cx="${C - 0.4}" cy="${C - RC - 0.5}" r="1.35" fill="var(--core)"/>
+          <circle class="cast" cx="${C}" cy="${C - RC}" r="25" fill="url(#hl)" opacity="0.85"/>
+          <circle cx="${f(pt(-12, RC)[0])}" cy="${f(pt(-12, RC)[1])}" r="2.4" fill="var(--guide)" opacity="0.2"/>
+          <circle cx="${f(pt(12, RC)[0])}" cy="${f(pt(12, RC)[1])}" r="2.4" fill="var(--guide)" opacity="0.2"/>
+          <circle cx="${C}" cy="${C - RC}" r="8.4" fill="url(#hl)" filter="url(#soft2)"/>
+          <circle cx="${C}" cy="${C - RC}" r="3.9" fill="url(#dot)"/>
+          <circle cx="${C - 0.45}" cy="${C - RC - 0.55}" r="1.6" fill="var(--core)"/>
         </g>
 
         <!-- the dome: one broad reflection, not the shape of anything under it -->
-        <ellipse cx="38" cy="31" rx="27" ry="12.5" transform="rotate(-40 38 31)" fill="url(#gloss)" opacity="0.55"/>
+        <ellipse cx="36" cy="29" rx="29" ry="11" transform="rotate(-42 36 29)" fill="url(#gloss)" opacity="0.8"/>
+        <ellipse cx="78" cy="92" rx="18" ry="6" transform="rotate(-30 78 92)" fill="url(#gloss)" opacity="0.18"/>
         <path d="M ${f(RIM0[0])} ${f(RIM0[1])} A 46.2 46.2 0 0 1 ${f(RIM1[0])} ${f(RIM1[1])}"
-              fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round"/>
+              fill="none" stroke="#fff" stroke-opacity="0.62" stroke-width="2" stroke-linecap="round"/>
         <circle cx="${C}" cy="${C}" r="47.5" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="5" filter="url(#soft2)"/>
       </g>
       <circle cx="${C}" cy="${C}" r="47.6" fill="none" stroke="#9aa4a8" stroke-opacity="0.45" stroke-width="1.2"/>

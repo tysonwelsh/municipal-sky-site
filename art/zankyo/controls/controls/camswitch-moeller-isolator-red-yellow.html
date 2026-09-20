@@ -67,7 +67,7 @@
   if (customElements.get(TAG)) return;
   var W = 112, H = 112, CX = 56, CY = 56;
   var A0 = -60, STEP = 60;                    // position 0 at ten o'clock, 60° per step, clockwise
-  var HANDLE = "M 49 27 A 7 7 0 0 1 63 27 L 67 68 A 12 12 0 0 1 45 68 Z";
+  var HANDLE = "M 48.6 25 A 7.4 7.4 0 0 1 63.4 25 L 67.4 69 A 12.4 12.4 0 0 1 44.6 69 Z";
 
   var TPL = document.createElement("template");
   TPL.innerHTML = [
@@ -90,6 +90,10 @@
   '.leg{font-size:5px;font-weight:600;letter-spacing:.1em;text-anchor:middle;fill:#1c1c1a}',
   '.leg.sub{font-size:4.4px;fill:#3a3520;letter-spacing:.14em}',
   ':host([variant="control"]) .leg{fill:#26262a}',
+  ':host([variant="control"]) .rimhi{stroke:#ffffff}',
+  ':host([variant="control"]) .rimlo{stroke:#6a6a64}',
+  ':host([variant="control"]) .rimed{stroke:#7c7c76}',
+  ':host([variant="control"]) .boss{stroke:#8e8e88}',
   ':host([variant="control"]) .leg.sub{fill:#55555a}',
   '</style>',
   '<div class="wrap">',
@@ -110,7 +114,9 @@
   '  <radialGradient id="screw" cx="34%" cy="28%" r="74%">',
   '   <stop offset="0" stop-color="#d8dbdd"/><stop offset=".55" stop-color="#9fa3a6"/><stop offset="1" stop-color="#5e6265"/></radialGradient>',
   '  <radialGradient id="lit" cx="50%" cy="50%" r="50%">',
-  '   <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".55" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>',
+  '   <stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>',
+  '  <linearGradient id="spec" x1="0" y1="0" x2="1" y2="0">',
+  '   <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".34" stop-color="#fff" stop-opacity=".5"/><stop offset=".46" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>',
   '  <radialGradient id="dark" cx="50%" cy="50%" r="50%">',
   '   <stop offset="0" stop-color="#2a0603" stop-opacity=".5"/><stop offset="1" stop-color="#2a0603" stop-opacity="0"/></radialGradient>',
   '  <linearGradient id="brass" x1="0" y1="0" x2=".6" y2="1">',
@@ -125,9 +131,11 @@
   ' <rect x="1.5" y="1.5" width="' + (W - 3) + '" height="' + (H - 3) + '" rx="4" fill="none" stroke="#e6eae5" stroke-opacity=".5"/>',
   ' <rect x="11" y="12" width="92" height="92" rx="8" fill="#000" opacity=".4" filter="url(#b2)"/>',
   ' <rect class="plate" x="10" y="10" width="92" height="92" rx="8" fill="url(#plate)"/>',
-  ' <path d="M 18 10 H 94 A 8 8 0 0 1 102 18" fill="none" stroke="#fff3a8" stroke-opacity=".75" stroke-width="1.2"/>',
-  ' <path d="M 10 94 A 8 8 0 0 0 18 102 H 94" fill="none" stroke="#7c6000" stroke-opacity=".45" stroke-width="1.2"/>',
-  ' <rect x="10.6" y="10.6" width="90.8" height="90.8" rx="7.5" fill="none" stroke="#8a6d00" stroke-opacity=".35" stroke-width=".8"/>',
+  ' <path class="rimhi" d="M 18 10 H 94 A 8 8 0 0 1 102 18" fill="none" stroke="#fff3a8" stroke-opacity=".75" stroke-width="1.2"/>',
+  ' <path class="rimlo" d="M 10 94 A 8 8 0 0 0 18 102 H 94" fill="none" stroke="#7c6000" stroke-opacity=".45" stroke-width="1.2"/>',
+  ' <rect class="rimed" x="10.6" y="10.6" width="90.8" height="90.8" rx="7.5" fill="none" stroke="#8a6d00" stroke-opacity=".35" stroke-width=".8"/>',
+  ' <ellipse cx="56" cy="57" rx="25" ry="24.5" fill="#000" opacity=".07" filter="url(#b2)"/>',
+  ' <circle class="boss" cx="56" cy="56" r="23" fill="none" stroke="#b08c00" stroke-opacity=".3" stroke-width="1"/>',
   ' <g class="print"></g>',
   ' <g class="screws"></g>',
   ' <ellipse cx="59" cy="60" rx="19" ry="18" fill="#000" opacity=".3" filter="url(#b2)"/>',
@@ -135,7 +143,8 @@
   ' <circle cx="' + CX + '" cy="' + CY + '" r="16.2" fill="none" stroke="#5a5a62" stroke-opacity=".7" stroke-width=".9"/>',
   ' <path d="M 43 62 A 15 15 0 0 0 69 62" fill="none" stroke="#8b8b96" stroke-opacity=".35" stroke-width="1"/>',
   ' <g class="lug"><rect x="70" y="60" width="7" height="5" rx="1.6" fill="#191a1e"/><rect x="70.4" y="60.4" width="6.2" height="1.4" rx=".7" fill="#4c4d55" opacity=".8"/></g>',
-  ' <g transform="translate(4.5,6)" opacity=".45"><g class="rot sh"><path d="' + HANDLE + '" fill="#000" filter="url(#b2)"/></g></g>',
+  ' <g class="lockA" style="display:none"><path d="M 67.2 58.5 A 5.6 6.4 0 0 1 78.4 58.5 L 78.4 70 L 75.6 70 L 75.6 59 A 2.8 3.4 0 0 0 70 59 L 70 70 L 67.2 70 Z" fill="#8a6a22"/></g>',
+  ' <g transform="translate(5,6.5)" opacity=".5"><g class="rot sh"><path d="' + HANDLE + '" fill="#000" filter="url(#b2)"/></g></g>',
   ' <g transform="translate(1.6,2.2)" opacity=".5"><g class="rot sh2"><path d="' + HANDLE + '" fill="#000" filter="url(#b1)"/></g></g>',
   ' <g class="rot handle">',
   '  <path class="hbody" d="' + HANDLE + '" fill="url(#hand)"/>',
@@ -143,19 +152,22 @@
   '   <g class="counter">',
   '    <ellipse cx="' + (CX - 13) + '" cy="' + (CY - 26) + '" rx="26" ry="34" fill="url(#lit)"/>',
   '    <ellipse cx="' + (CX + 16) + '" cy="' + (CY + 18) + '" rx="22" ry="30" fill="url(#dark)"/>',
+  '    <rect x="' + (CX - 30) + '" y="' + (CY - 46) + '" width="30" height="92" fill="url(#spec)"/>',
   '   </g>',
   '   <path d="' + HANDLE + '" fill="none" stroke="#5e0f0c" stroke-opacity=".55" stroke-width="1.6"/>',
   '  </g>',
-  '  <rect class="stripe" x="54.1" y="22" width="3.8" height="42" rx="1.9" fill="#f4f4f0"/>',
-  '  <rect x="54.1" y="22" width="1.5" height="42" rx=".75" fill="#fff" opacity=".7"/>',
+  '  <rect x="54.6" y="21" width="3.4" height="44" rx="1.7" fill="#000" opacity=".3"/>',
+  '  <rect class="stripe" x="54.2" y="20.4" width="3.4" height="44" rx="1.7" fill="#f4f4f0"/>',
+  '  <rect x="54.4" y="20.6" width="1.3" height="43.6" rx=".65" fill="#fff" opacity=".75"/>',
   '  <ellipse class="hole" cx="' + CX + '" cy="73" rx="3.4" ry="2.8" fill="#4a0d0a"/>',
   '  <ellipse cx="' + CX + '" cy="72.3" rx="3.4" ry="2.4" fill="#000" opacity=".55"/>',
   ' </g>',
-  ' <g class="lock" style="display:none">',
-  '  <path d="M 66.5 60 A 5.5 6.5 0 0 1 77.5 60 L 77.5 66 L 74.5 66 L 74.5 60.5 A 2.6 3.4 0 0 0 69.5 60.5 L 69.5 66 L 66.5 66 Z" fill="url(#brass)"/>',
-  '  <rect x="63.5" y="65" width="17" height="13" rx="2.4" fill="url(#brass)" stroke="#57400f" stroke-width=".6"/>',
-  '  <rect x="64.4" y="65.8" width="15.2" height="3" rx="1.5" fill="#ffe9a8" opacity=".45"/>',
-  '  <circle cx="72" cy="71" r="1.9" fill="#4a3810"/><rect x="71.2" y="71" width="1.6" height="3.4" fill="#4a3810"/>',
+  ' <g class="lockB" style="display:none">',
+  '  <ellipse cx="73" cy="80" rx="10" ry="4" fill="#000" opacity=".3" filter="url(#b2)"/>',
+  '  <path d="M 67.2 58.5 A 5.6 6.4 0 0 1 78.4 58.5 L 78.4 68 L 75.6 68 L 75.6 59 A 2.8 3.4 0 0 0 70 59 L 70 68 L 67.2 68 Z" fill="url(#brass)" opacity=".92"/>',
+  '  <rect x="64.6" y="66" width="16.4" height="13" rx="2.4" fill="url(#brass)" stroke="#57400f" stroke-width=".6"/>',
+  '  <rect x="65.5" y="66.8" width="14.6" height="2.8" rx="1.4" fill="#ffe9a8" opacity=".45"/>',
+  '  <circle cx="72.8" cy="72" r="1.9" fill="#4a3810"/><rect x="72" y="72" width="1.6" height="3.4" fill="#4a3810"/>',
   ' </g>',
   '</svg>',
   '<div class="grab" role="slider" tabindex="0"></div>',
@@ -178,7 +190,7 @@
       this._counter = r.querySelector(".counter");
       this._print = r.querySelector(".print");
       this._screws = r.querySelector(".screws");
-      this._lockG = r.querySelector(".lock");
+      this._lockA = r.querySelector(".lockA"); this._lockB = r.querySelector(".lockB");
       this._lug = r.querySelector(".lug");
       this._plate = r.querySelector(".plate");
       this._hbody = r.querySelector(".hbody");
@@ -299,7 +311,7 @@
       this._counter.style.transform = "rotate(" + (-a) + "deg)";
       if (hard) { var rr = this._rots; requestAnimationFrame(function () { for (var j = 0; j < rr.length; j++) rr[j].classList.remove("free"); }); }
       var lk = this._frozen() && this._i === 0;
-      this._lockG.style.display = lk ? "" : "none";
+      this._lockA.style.display = lk ? "" : "none"; this._lockB.style.display = lk ? "" : "none";
       this._lug.style.display = this._i === 0 ? "" : "none";
       this._grab.setAttribute("aria-valuenow", String(this._i));
       this._grab.setAttribute("aria-valuetext", this._labels[this._i]);

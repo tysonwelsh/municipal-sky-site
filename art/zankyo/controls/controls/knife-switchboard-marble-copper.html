@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marble switchboard copper knife switch — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Libre+Franklin:wght@500;600&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "knife-switchboard-marble-copper",
+  "element": "sk-knife-switchboard-marble-copper",
+  "name": "Marble switchboard copper knife switch",
+  "kind": "input",
+  "code": "C7",
+  "type": "Knife switch",
+  "source": "The open copper knife switches on white-marble power-station and mill switchboards (GE, Westinghouse, Cutler-Hammer), 1890s–1930s",
+  "era": "pre-1900",
+  "origin": "USA",
+  "materials": ["copper", "white marble", "brass", "composition handle"],
+  "tags": ["switchboard", "power station", "open blade", "verdigris", "marble", "bare metal"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "poles", "throw", "board", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 200, "h": 170 },
+  "notes": "Two-pole switch closed and open on marble, and a single pole on slate. Drag the handle, click, or press Space; the blades swing out toward you and the jaws bite as they close."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-knife-switchboard-marble-copper value="true" poles="2" label="MAIN"></sk-knife-switchboard-marble-copper>
+    <sk-knife-switchboard-marble-copper value="false" poles="2" label="FEEDER 2"></sk-knife-switchboard-marble-copper>
+    <sk-knife-switchboard-marble-copper value="true" poles="1" board="slate" label="EXCITER" scale="0.7"></sk-knife-switchboard-marble-copper>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Before anything was enclosed, a generating station's switchboard was a wall of <b>white marble</b> slabs with
+  the conductors screwed to the face of it: bare copper knife switches, brass terminal nuts, and a black
+  composition handle to put your hand on. General Electric, Westinghouse and Cutler-Hammer all built them the
+  same way between the 1890s and the 1930s, and the look — warm metal on cold stone — is the whole reason the
+  things are still photographed.</p>
+  <p><b>The tells kept here:</b> flat copper bars, not rods, pivoting in copper hinge blocks at the bottom and
+  wedging into sprung jaws at the top; the jaws' slot visible when the switch is open and the leaves relaxed;
+  the blades leaning <i>out of the board toward you</i> when open, foreshortened, with the handle bar in front
+  and its shadow thrown across the marble; the turned black handle, thicker in the middle, on its copper
+  cross-bar; big brass hex nuts with a bit of wire lug showing; two soft grey veins and a bevel on the slab's
+  edge; and green-black verdigris where copper sits on copper at the hinges. The throw is heavy — 260 ms — and
+  the jaws take the blade with a 2 px bite in the last tenth.</p>
+  <p><b>Left out:</b> the arcing horns some station switches carried, the wall behind the board, and the
+  barrier boards between poles. <code>poles</code> takes 1–3, <code>board="slate"</code> gives the black
+  variant, and <code>throw="double"</code> adds a second set of jaws above, the value then stepping
+  DOWN · OPEN · UP.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-knife-switchboard-marble-copper> — open copper knife switch on a marble switchboard ====
+   attributes: value(boolean) poles(1|2|3) throw(single|double) board(marble|slate) label scale disabled
+   events: input {value} when the blade crosses over, change {value} when the throw settles
+   self-contained: paste this block into any page and use
+   <sk-knife-switchboard-marble-copper value="true" poles="2" label="MAIN"></sk-knife-switchboard-marble-copper> */
+(function () {
+  var TAG = "sk-knife-switchboard-marble-copper";
+  if (customElements.get(TAG)) return;
+
+  var H = 170, GAP = 60;
+  /* oblique projection: a point z px out of the board is drawn at (KX*z, KY*z);
+     its shadow falls on the board at (SX*z, SY*z) — one light, above-left. */
+  var KX = -0.46, KY = 0.20, SX = 0.30, SY = 0.22;
+  var R = function (n) { return Math.round(n * 100) / 100; };
+  var CL = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+
+  var CSS = [
+    ':host{display:inline-block;position:relative;font-size:10px;touch-action:none;cursor:pointer;',
+    '-webkit-tap-highlight-color:transparent;outline:none;}',
+    ':host([hidden]){display:none}:host([disabled]){cursor:default}',
+    '.wrap{position:absolute;left:0;top:0;transform-origin:0 0}',
+    'svg{display:block;overflow:visible;user-select:none;-webkit-user-select:none}',
+    '.focus{opacity:0;transition:opacity 90ms linear}',
+    ':host(:focus-visible) .focus{opacity:1}',
+    'text{font-family:"Libre Franklin","Helvetica Neue",Arial,sans-serif;font-weight:600}',
+    '.tag{font-size:7px;letter-spacing:.12em;text-anchor:middle}'
+  ].join("");
+
+  function defs() {
+    return [
+      '<linearGradient id="mar" x1="0" y1="0" x2="0.75" y2="1">',
+      '<stop offset="0" stop-color="#f6f4ee"/><stop offset=".45" stop-color="#ece9e2"/><stop offset="1" stop-color="#d9d5cb"/></linearGradient>',
+      '<linearGradient id="sla" x1="0" y1="0" x2="0.7" y2="1">',
+      '<stop offset="0" stop-color="#3a3d40"/><stop offset=".5" stop-color="#2a2c2e"/><stop offset="1" stop-color="#1c1e20"/></linearGradient>',
+      '<radialGradient id="wash" cx="76%" cy="86%" r="70%">',
+      '<stop offset="0" stop-color="#e2dcd0" stop-opacity=".55"/><stop offset="1" stop-color="#e2dcd0" stop-opacity="0"/></radialGradient>',
+      '<linearGradient id="bev" x1="0" y1="0" x2="0.6" y2="1">',
+      '<stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".45" stop-color="#ffffff" stop-opacity=".25"/>',
+      '<stop offset=".55" stop-color="#8d887e" stop-opacity=".35"/><stop offset="1" stop-color="#6f6a61" stop-opacity=".7"/></linearGradient>',
+      /* copper: a rolled bar, highlight left of centre */
+      '<linearGradient id="cop" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#6d3d20"/><stop offset=".14" stop-color="#a8613341"/><stop offset=".15" stop-color="#a86133"/>',
+      '<stop offset=".3" stop-color="#e2a070"/><stop offset=".46" stop-color="#c07f4a"/><stop offset=".68" stop-color="#b7703f"/>',
+      '<stop offset=".88" stop-color="#8a5430"/><stop offset="1" stop-color="#63371c"/></linearGradient>',
+      '<linearGradient id="cop2" x1="0" y1="0" x2="0.35" y2="1">',
+      '<stop offset="0" stop-color="#d8955f"/><stop offset=".3" stop-color="#b7703f"/><stop offset=".75" stop-color="#8b5230"/>',
+      '<stop offset="1" stop-color="#5e3419"/></linearGradient>',
+      '<linearGradient id="jaw" x1="0" y1="0" x2="0.4" y2="1">',
+      '<stop offset="0" stop-color="#cf8a58"/><stop offset=".35" stop-color="#a8663a"/><stop offset="1" stop-color="#6a3c1f"/></linearGradient>',
+      '<radialGradient id="bra" cx="34%" cy="28%" r="76%">',
+      '<stop offset="0" stop-color="#f0dca4"/><stop offset=".45" stop-color="#c9a45a"/><stop offset=".85" stop-color="#8e7132"/>',
+      '<stop offset="1" stop-color="#5a4718"/></radialGradient>',
+      '<radialGradient id="verd" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0" stop-color="#2f6f55" stop-opacity=".85"/><stop offset=".6" stop-color="#27543f" stop-opacity=".5"/>',
+      '<stop offset="1" stop-color="#1c3226" stop-opacity="0"/></radialGradient>',
+      '<linearGradient id="grip" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#4b4643"/><stop offset=".2" stop-color="#2b2725"/><stop offset=".52" stop-color="#100e0d"/>',
+      '<stop offset=".8" stop-color="#1c1917"/><stop offset="1" stop-color="#413c38"/></linearGradient>',
+      '<linearGradient id="plate" x1="0" y1="0" x2="0.3" y2="1">',
+      '<stop offset="0" stop-color="#e2cb8e"/><stop offset=".4" stop-color="#c9a45a"/><stop offset="1" stop-color="#8d6f2d"/></linearGradient>',
+      '<filter id="vb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2"/></filter>',
+      '<filter id="sb" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>',
+      '<filter id="sb2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.4"/></filter>'
+    ].join("");
+  }
+
+  function geo(poles, dbl) {
+    var W = poles === 1 ? 100 : 80 + poles * GAP;
+    var xs = [], i;
+    for (i = 0; i < poles; i++) xs.push(W / 2 + (i - (poles - 1) / 2) * GAP);
+    var g = { W: W, xs: xs, dbl: dbl, cx: W / 2 };
+    if (dbl) {
+      g.pivotY = 85; g.L = 52; g.hinge = [74, 96]; g.cheek = [86, 96];
+      g.jaws = [{ b0: 12, b1: 28, l0: 28, l1: 50, up: 1 }, { b0: 142, b1: 158, l0: 142, l1: 120, up: 0 }];
+      g.plate = { x: W - 52, y: 4 };
+    } else {
+      g.pivotY = 126; g.L = 86; g.hinge = [112, 146]; g.cheek = [129, 146];
+      g.jaws = [{ b0: 22, b1: 42, l0: 42, l1: 70, up: 1 }];
+      g.plate = { x: W / 2 - 24, y: 149 };
+    }
+    g.dh = 0.6 * g.L;
+    return g;
+  }
+
+  /* ---- static furniture ------------------------------------------------ */
+  function hex(x, y, r) {
+    var p = [], i, a;
+    for (i = 0; i < 6; i++) { a = (i * 60 - 90) * Math.PI / 180; p.push(R(x + r * Math.cos(a)) + " " + R(y + r * Math.sin(a))); }
+    return '<path d="M ' + p.join(" L ") + ' Z" fill="url(#bra)" stroke="#4a3a12" stroke-width=".6" stroke-linejoin="round"/>' +
+      '<path d="M ' + p[4] + ' L ' + p[5] + ' L ' + p[0] + '" fill="none" stroke="#fdf0c2" stroke-opacity=".55" stroke-width=".8"/>' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + R(r * 0.42) + '" fill="#7d6228" stroke="#e8d59a" stroke-opacity=".4" stroke-width=".5"/>';
+  }
+
+  function lug(x, y, up) {
+    var d = up ? -1 : 1;
+    return '<rect x="' + R(x - 4.5) + '" y="' + R(up ? y - 14 : y) + '" width="9" height="14" rx="1.5" fill="#241f1b"/>' +
+      '<rect x="' + R(x - 4.5) + '" y="' + R(up ? y - 14 : y) + '" width="3" height="14" fill="#3d3631" opacity=".8"/>' +
+      '<rect x="' + R(x - 6) + '" y="' + R(y + d * 2 - 2) + '" width="12" height="4" rx="1.6" fill="url(#cop2)"/>';
+  }
+
+  function build(g, board, label) {
+    var W = g.W, o = [], i, j, x, jw;
+    o.push('<clipPath id="pc"><rect x="0" y="0" width="' + W + '" height="' + H + '" rx="1.5"/></clipPath>');
+    o.push('<g clip-path="url(#pc)">');
+    o.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#' + (board === "slate" ? "sla" : "mar") + ')"/>');
+    if (board === "slate") {
+      o.push('<g filter="url(#vb)" opacity=".5"><path d="M -4 ' + R(H * 0.3) + ' C ' + R(W * 0.4) + ' ' + R(H * 0.2) + ', ' + R(W * 0.6) + ' ' + R(H * 0.42) + ', ' + (W + 4) + ' ' + R(H * 0.3) + '" stroke="#4a4e51" stroke-width="9" fill="none"/>' +
+        '<path d="M -4 ' + R(H * 0.74) + ' C ' + R(W * 0.35) + ' ' + R(H * 0.66) + ', ' + R(W * 0.7) + ' ' + R(H * 0.86) + ', ' + (W + 4) + ' ' + R(H * 0.72) + '" stroke="#202325" stroke-width="11" fill="none"/></g>');
+    } else {
+      o.push('<g filter="url(#vb)"><path d="M -4 ' + R(H * 0.24) + ' C ' + R(W * 0.3) + ' ' + R(H * 0.33) + ', ' + R(W * 0.5) + ' ' + R(H * 0.08) + ', ' + (W + 4) + ' ' + R(H * 0.2) + '" stroke="#b9b5ad" stroke-width="4.5" fill="none" opacity=".55"/>' +
+        '<path d="M -4 ' + R(H * 0.66) + ' C ' + R(W * 0.28) + ' ' + R(H * 0.52) + ', ' + R(W * 0.62) + ' ' + R(H * 0.84) + ', ' + (W + 4) + ' ' + R(H * 0.62) + '" stroke="#c6c2b9" stroke-width="7" fill="none" opacity=".5"/>' +
+        '<path d="M ' + R(W * 0.14) + ' ' + (H + 4) + ' C ' + R(W * 0.32) + ' ' + R(H * 0.7) + ', ' + R(W * 0.2) + ' ' + R(H * 0.42) + ', ' + R(W * 0.4) + ' -4" stroke="#b5b1a8" stroke-width="2.6" fill="none" opacity=".4"/></g>');
+      o.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#wash)"/>');
+    }
+    o.push('</g>');
+    /* bevelled edge */
+    o.push('<rect x="1.1" y="1.1" width="' + R(W - 2.2) + '" height="' + R(H - 2.2) + '" rx="1" fill="none" stroke="url(#bev)" stroke-width="2.2"/>');
+    o.push('<rect x="0.4" y="0.4" width="' + R(W - 0.8) + '" height="' + R(H - 0.8) + '" rx="1.5" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="0.8"/>');
+
+    /* ---- jaw blocks and slots (behind the blades) ---- */
+    for (j = 0; j < g.jaws.length; j++) {
+      jw = g.jaws[j];
+      for (i = 0; i < g.xs.length; i++) {
+        x = g.xs[i];
+        o.push('<rect x="' + R(x - 15) + '" y="' + R(jw.b0 + 2) + '" width="30" height="' + R(jw.b1 - jw.b0) + '" rx="2" fill="#000" opacity=".3" filter="url(#sb)"/>');
+        o.push(lug(x, jw.up ? jw.b0 : jw.b1, jw.up));
+        o.push('<rect x="' + R(x - 15) + '" y="' + R(jw.b0) + '" width="30" height="' + R(jw.b1 - jw.b0) + '" rx="2" fill="url(#cop2)" stroke="#4a2a12" stroke-width=".7"/>');
+        o.push('<rect x="' + R(x - 14) + '" y="' + R(jw.b0 + 1) + '" width="28" height="2" rx="1" fill="#f0b98a" opacity=".45"/>');
+        o.push(hex(x, (jw.b0 + jw.b1) / 2, 6.4));
+        /* the slot the blade wedges into */
+        o.push('<rect x="' + R(x - 3.2) + '" y="' + R(Math.min(jw.l0, jw.l1)) + '" width="6.4" height="' + R(Math.abs(jw.l1 - jw.l0)) + '" fill="#2b1608"/>');
+      }
+    }
+    /* ---- hinge blocks (back half) ---- */
+    for (i = 0; i < g.xs.length; i++) {
+      x = g.xs[i];
+      o.push('<rect x="' + R(x - 15) + '" y="' + R(g.hinge[0] + 2) + '" width="30" height="' + R(g.hinge[1] - g.hinge[0]) + '" rx="2" fill="#000" opacity=".32" filter="url(#sb)"/>');
+      if (!g.dbl) o.push(lug(x, g.hinge[1], 0));
+      o.push('<rect x="' + R(x - 15) + '" y="' + R(g.hinge[0]) + '" width="30" height="' + R(g.hinge[1] - g.hinge[0]) + '" rx="2" fill="url(#cop2)" stroke="#4a2a12" stroke-width=".7"/>');
+      o.push('<ellipse cx="' + R(x) + '" cy="' + R(g.hinge[0] + 3) + '" rx="17" ry="7" fill="url(#verd)"/>');
+    }
+    return o.join("");
+  }
+
+  function bladeArt(L) {
+    return '<path d="M -9 -8 L 9 -8 L 9 ' + R(L - 5) + ' L 5 ' + R(L) + ' L -5 ' + R(L) + ' L -9 ' + R(L - 5) + ' Z" fill="url(#cop)" stroke="#57301a" stroke-width=".7" stroke-linejoin="round"/>' +
+      '<rect x="-6.6" y="-6" width="1.6" height="' + R(L) + '" fill="#f3c69c" opacity=".45"/>' +
+      '<rect x="6.2" y="-6" width="1.4" height="' + R(L) + '" fill="#4e2a13" opacity=".4"/>' +
+      '<path d="M -4 ' + R(L * 0.26) + ' q 5 6 9 1 l 0 9 q -6 4 -9 -2 Z" fill="#5c3320" opacity=".22"/>' +
+      '<ellipse cx="-1" cy="' + R(L * 0.7) + '" rx="6" ry="9" fill="#6a3c22" opacity=".16"/>' +
+      '<circle cx="0" cy="' + R(L - 12) + '" r="2.1" fill="#8a5430" stroke="#4e2a13" stroke-width=".5"/>';
+  }
+
+  function handleArt(g) {
+    var span = g.xs.length > 1 ? (g.xs[g.xs.length - 1] - g.xs[0]) : 0;
+    var BW = span + 70, GL = span / 2 + (g.xs.length > 1 ? 13 : 17), o = [], i;
+    /* copper cross-bar with straps down to each blade */
+    for (i = 0; i < g.xs.length; i++) {
+      o.push('<rect x="' + R(g.xs[i] - g.cx - 9) + '" y="-4" width="18" height="13" rx="2" fill="url(#cop2)" stroke="#4a2a12" stroke-width=".6"/>');
+      o.push('<rect x="' + R(g.xs[i] - g.cx - 8) + '" y="-3" width="3" height="11" fill="#eeb384" opacity=".4"/>');
+    }
+    o.push('<rect x="' + R(-BW / 2) + '" y="-3.4" width="' + R(BW) + '" height="6.8" rx="3.4" fill="url(#cop2)" stroke="#4a2a12" stroke-width=".6"/>');
+    o.push('<rect x="' + R(-BW / 2 + 2) + '" y="-2.6" width="' + R(BW - 4) + '" height="1.8" rx="1" fill="#f2c094" opacity=".5"/>');
+    /* the turned composition grip, thicker in the middle */
+    o.push('<path d="M ' + R(-GL) + ' -4.6 Q 0 -8.2 ' + R(GL) + ' -4.6 L ' + R(GL) + ' 4.6 Q 0 8.2 ' + R(-GL) + ' 4.6 Z" fill="url(#grip)"/>');
+    o.push('<rect x="' + R(-GL - 3) + '" y="-4.2" width="3.4" height="8.4" rx="1.4" fill="url(#grip)"/>');
+    o.push('<rect x="' + R(GL - 0.4) + '" y="-4.2" width="3.4" height="8.4" rx="1.4" fill="url(#grip)"/>');
+    o.push('<path d="M ' + R(-GL + 4) + ' -4.2 Q 0 -7.4 ' + R(GL - 4) + ' -4.2" fill="none" stroke="#8d8781" stroke-opacity=".5" stroke-width="1.1"/>');
+    o.push('<path d="M ' + R(-GL + 6) + ' 5.4 Q 0 7.6 ' + R(GL - 6) + ' 5.4" fill="none" stroke="#6d6660" stroke-opacity=".35" stroke-width="1"/>');
+    o.push('<path d="M ' + R(-GL + 5) + ' -5.6 L ' + R(-GL + 5) + ' 5.9" stroke="#000" stroke-opacity=".55" stroke-width="1.1"/>');
+    o.push('<path d="M ' + R(GL - 5) + ' -5.6 L ' + R(GL - 5) + ' 5.9" stroke="#000" stroke-opacity=".55" stroke-width="1.1"/>');
+    return o.join("");
+  }
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = '<style>' + CSS + '</style><div class="wrap"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<defs class="d"></defs><g class="static"></g><g class="shad"></g><g class="blades"></g>' +
+    '<g class="cheeks"></g><g class="leaves"></g><g class="hshad"></g><g class="handle"></g><g class="plate"></g>' +
+    '<rect class="focus" x="2.5" y="2.5" width="10" height="10" rx="2" fill="none" stroke="#16e0e0" stroke-width="2"/>' +
+    '</svg></div>';
+
+  class Knife extends HTMLElement {
+    static get observedAttributes() { return ["value", "poles", "throw", "board", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var s = this.shadowRoot;
+      this._svg = s.querySelector("svg"); this._wrap = s.querySelector(".wrap");
+      this._st = s.querySelector(".static"); this._sh = s.querySelector(".shad");
+      this._bl = s.querySelector(".blades"); this._ch = s.querySelector(".cheeks");
+      this._lv = s.querySelector(".leaves"); this._hs = s.querySelector(".hshad");
+      this._hd = s.querySelector(".handle"); this._pl = s.querySelector(".plate");
+      this._fr = s.querySelector(".focus");
+      s.querySelector(".d").innerHTML = defs();
+      this._sig = ""; this._scale = 1; this._dbl = false; this._v = true;
+      this._psi = 90; this._bite = 0; this._raf = 0; this._drag = null; this._reflect = false;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this);
+      this._onUp = this._onUp.bind(this); this._onKey = this._onKey.bind(this); this._onWheel = this._onWheel.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "true");
+      this._sync(true);
+      this.addEventListener("pointerdown", this._onDown);
+      this.addEventListener("keydown", this._onKey);
+      this.addEventListener("wheel", this._onWheel, { passive: false });
+    }
+    disconnectedCallback() {
+      this.removeEventListener("pointerdown", this._onDown);
+      this.removeEventListener("keydown", this._onKey);
+      this.removeEventListener("wheel", this._onWheel);
+      if (this._raf) cancelAnimationFrame(this._raf);
+      this._raf = 0; this._drag = null;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected || this._reflect) return;
+      this._sync(n !== "scale" && n !== "label");
+    }
+    get value() { return this._v; }
+    set value(v) {
+      var nv = this._coerce(v);
+      this._v = nv; this._reflect = true; this.setAttribute("value", this._str(nv)); this._reflect = false;
+      if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+      this._psi = this._psiFor(nv); this._bite = 0; this._aria(); this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _coerce(v) {
+      if (this._dbl) { var s = String(v).toUpperCase(); return (s === "UP" || s === "DOWN") ? s : "OPEN"; }
+      if (typeof v === "boolean") return v;
+      return !/^(false|0|off|open|no|null|undefined)$/i.test(String(v));
+    }
+    _str(v) { return this._dbl ? v : (v ? "true" : "false"); }
+    _psiFor(v) { return this._dbl ? (v === "UP" ? 90 : v === "DOWN" ? -90 : 0) : (v ? 90 : 30); }
+
+    _sync(hard) {
+      var poles = CL(parseInt(this.getAttribute("poles"), 10) || 2, 1, 3);
+      var dbl = (this.getAttribute("throw") || "single").toLowerCase() === "double";
+      var board = this.getAttribute("board") === "slate" ? "slate" : "marble";
+      var label = this.getAttribute("label") || "";
+      var sig = poles + "|" + dbl + "|" + board + "|" + label;
+      this._dbl = dbl;
+      if (sig !== this._sig) {
+        this._sig = sig; this._g = geo(poles, dbl); this._build(board, label);
+      }
+      var sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) ? 1 : Math.max(0.2, sc);
+      this.style.width = R(this._g.W * this._scale) + "px";
+      this.style.height = R(H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._svg.setAttribute("viewBox", "0 0 " + this._g.W + " " + H);
+      this._svg.setAttribute("width", this._g.W); this._svg.setAttribute("height", H);
+      this._v = this._coerce(this.getAttribute("value"));
+      if (hard && !this._drag) { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } this._psi = this._psiFor(this._v); this._bite = 0; }
+      this._aria(); this._paint();
+    }
+    _build(board, label) {
+      var g = this._g, i, j, jw, o;
+      this._st.innerHTML = build(g, board, label);
+      o = [];
+      for (i = 0; i < g.xs.length; i++) o.push('<g class="bs"><path d="M -9 -8 L 9 -8 L 9 ' + R(g.L - 5) + ' L 5 ' + R(g.L) + ' L -5 ' + R(g.L) + ' L -9 ' + R(g.L - 5) + ' Z" fill="#241a12" opacity=".5"/></g>');
+      this._sh.innerHTML = '<g filter="url(#sb)">' + o.join("") + '</g>';
+      o = [];
+      for (i = 0; i < g.xs.length; i++) o.push('<g class="b">' + bladeArt(g.L) + '</g>');
+      this._bl.innerHTML = o.join("");
+      /* hinge cheek + pivot bolt, drawn over the blade's tail */
+      o = [];
+      for (i = 0; i < g.xs.length; i++) {
+        o.push('<rect x="' + R(g.xs[i] - 15) + '" y="' + R(g.cheek[0]) + '" width="30" height="' + R(g.cheek[1] - g.cheek[0]) + '" rx="2" fill="url(#cop2)" stroke="#4a2a12" stroke-width=".7"/>');
+        o.push('<rect x="' + R(g.xs[i] - 14) + '" y="' + R(g.cheek[0] + 0.8) + '" width="28" height="1.6" rx=".8" fill="#f0b98a" opacity=".4"/>');
+        o.push('<ellipse cx="' + R(g.xs[i] - 6) + '" cy="' + R(g.cheek[0] + 4) + '" rx="12" ry="5" fill="url(#verd)" opacity=".8"/>');
+        o.push('<circle cx="' + R(g.xs[i]) + '" cy="' + R(g.pivotY) + '" r="4.4" fill="url(#bra)" stroke="#4a3a12" stroke-width=".6"/>');
+        o.push('<path d="M ' + R(g.xs[i] - 2.6) + ' ' + R(g.pivotY - 1.4) + ' l 5.2 2.8" stroke="#4a3a12" stroke-width="1" opacity=".8"/>');
+      }
+      this._ch.innerHTML = o.join("");
+      /* jaw leaves, drawn over the blade tip */
+      o = [];
+      for (j = 0; j < g.jaws.length; j++) {
+        jw = g.jaws[j];
+        for (i = 0; i < g.xs.length; i++) o.push(this._leafPair(g.xs[i], jw));
+      }
+      this._lv.innerHTML = o.join("");
+      this._hs.innerHTML = '<g filter="url(#sb2)"><rect class="hsr" x="0" y="-5" width="10" height="10" rx="4" fill="#20180f" opacity=".5"/></g>';
+      this._hd.innerHTML = '<g class="hg">' + handleArt(g) + '</g>';
+      /* engraved brass tag */
+      this._pl.innerHTML = label ? '<g><rect x="' + R(g.plate.x + 1) + '" y="' + R(g.plate.y + 1.5) + '" width="48" height="14" rx="1.5" fill="#000" opacity=".28" filter="url(#sb)"/>' +
+        '<rect x="' + R(g.plate.x) + '" y="' + R(g.plate.y) + '" width="48" height="14" rx="1.5" fill="url(#plate)" stroke="#6e5620" stroke-width=".6"/>' +
+        '<circle cx="' + R(g.plate.x + 4) + '" cy="' + R(g.plate.y + 7) + '" r="1.1" fill="#7d6228"/>' +
+        '<circle cx="' + R(g.plate.x + 44) + '" cy="' + R(g.plate.y + 7) + '" r="1.1" fill="#7d6228"/>' +
+        '<text class="tag" x="' + R(g.plate.x + 24) + '" y="' + R(g.plate.y + 10.2) + '" fill="#fbeec2" opacity=".45">' + label + '</text>' +
+        '<text class="tag" x="' + R(g.plate.x + 24) + '" y="' + R(g.plate.y + 9.6) + '" fill="#4a3a14">' + label + '</text></g>' : "";
+      this._fr.setAttribute("width", R(g.W - 5)); this._fr.setAttribute("height", R(H - 5));
+      this._bsG = this._sh.querySelectorAll(".bs");
+      this._bG = this._bl.querySelectorAll(".b");
+      this._lG = this._lv.querySelectorAll(".lf");
+      this._hgG = this._hd.querySelector(".hg");
+      this._hsR = this._hs.querySelector(".hsr");
+    }
+    _leafPair(x, jw) {
+      var y0 = jw.l0, y1 = jw.l1, d = y1 > y0 ? 1 : -1, len = Math.abs(y1 - y0);
+      var tip = y0 + d * len, mid = y0 + d * len * 0.55;
+      function leaf(sgn) {
+        return '<g class="lf" data-s="' + sgn + '">' +
+          '<path d="M ' + R(x + sgn * 3.2) + ' ' + R(y0) + ' L ' + R(x + sgn * 12) + ' ' + R(y0) +
+          ' L ' + R(x + sgn * 11) + ' ' + R(mid) + ' Q ' + R(x + sgn * 9.5) + ' ' + R(tip + d * 2.5) + ' ' + R(x + sgn * 4) + ' ' + R(tip) +
+          ' L ' + R(x + sgn * 3.2) + ' ' + R(mid) + ' Z" fill="url(#jaw)" stroke="#5a3218" stroke-width=".7" stroke-linejoin="round"/>' +
+          '<path d="M ' + R(x + sgn * 4.6) + ' ' + R(y0 + d * 2) + ' L ' + R(x + sgn * 4.6) + ' ' + R(mid) + '" stroke="#f0b98a" stroke-opacity=".4" stroke-width="1.2"/>' +
+          '<circle cx="' + R(x + sgn * 7.6) + '" cy="' + R(y0 + d * 6) + '" r="1.9" fill="#c98551" stroke="#5a3218" stroke-width=".5"/>' +
+          '</g>';
+      }
+      /* the spring band across both leaves */
+      var band = '<g class="lf" data-s="0"><rect x="' + R(x - 13) + '" y="' + R(Math.min(y0, tip) + (d > 0 ? len * 0.62 : len * 0.2)) + '" width="26" height="4.6" rx="2.3" fill="url(#cop2)" stroke="#4a2a12" stroke-width=".55"/>' +
+        '<rect x="' + R(x - 12) + '" y="' + R(Math.min(y0, tip) + (d > 0 ? len * 0.62 : len * 0.2) + 0.7) + '" width="24" height="1.4" rx=".7" fill="#f2c094" opacity=".45"/></g>';
+      return leaf(-1) + leaf(1) + band;
+    }
+    _aria() {
+      this.setAttribute("role", "switch");
+      this.setAttribute("aria-label", (this.getAttribute("label") || "knife switch") + (this._dbl ? " double-throw" : ""));
+      this.setAttribute("aria-checked", this._dbl ? (this._v === "UP" ? "true" : this._v === "DOWN" ? "false" : "mixed") : (this._v ? "true" : "false"));
+      var dis = this.hasAttribute("disabled");
+      this.setAttribute("tabindex", dis ? "-1" : "0");
+      this.setAttribute("aria-disabled", dis ? "true" : "false");
+    }
+    _paint() {
+      var g = this._g, p = this._psi * Math.PI / 180, c = Math.cos(p), s = Math.sin(p), i;
+      var a = 1 + 0.14 * c, bx = KX * c, by = -s + KY * c;
+      var bite = this._bite, jx = bite * 1.6;
+      for (i = 0; i < this._bG.length; i++) {
+        this._bG[i].setAttribute("transform", "matrix(" + R(a) + ",0," + R(bx) + "," + R(by) + "," + R(g.xs[i] + bx * jx) + "," + R(g.pivotY + by * jx) + ")");
+        this._bsG[i].setAttribute("transform", "matrix(1,0," + R(SX * c) + "," + R(-s + SY * c) + "," + R(g.xs[i] + 1.6) + "," + R(g.pivotY + 2) + ")");
+      }
+      /* jaws: spread when the blade is in them, relaxed when it is not */
+      var inJaw = Math.abs(Math.abs(this._psi) - 90) < 14 ? 1 : 0;
+      var sp = inJaw * 1.25 + bite * 1.6;
+      for (i = 0; i < this._lG.length; i++) {
+        var sg = parseFloat(this._lG[i].getAttribute("data-s"));
+        this._lG[i].setAttribute("transform", "translate(" + R(sg * sp) + ",0)");
+      }
+      var hx = g.cx + bx * g.dh + bx * jx, hy = g.pivotY + by * g.dh + by * jx;
+      this._hgG.setAttribute("transform", "translate(" + R(hx) + "," + R(hy) + ") scale(" + R(a) + "," + R(1 + 0.08 * c) + ")");
+      var sx = g.cx + SX * c * g.dh + 1.6, sy = g.pivotY + (-s + SY * c) * g.dh + 2.4;
+      var span = g.xs.length > 1 ? (g.xs[g.xs.length - 1] - g.xs[0]) : 0, bw = span + 72;
+      this._hsR.setAttribute("x", R(sx - bw / 2)); this._hsR.setAttribute("y", R(sy - 5));
+      this._hsR.setAttribute("width", R(bw)); this._hsR.setAttribute("height", "10");
+      this._hsR.setAttribute("opacity", R(0.5 - 0.16 * c));
+    }
+    /* ---- motion: a heavy 260 ms throw, the jaws biting at the end ---- */
+    _throw(target, emit) {
+      var self = this, from = this._psi, to = this._psiFor(target), t0 = performance.now();
+      var dur = 260 * Math.min(1, Math.abs(to - from) / 60 + 0.25);
+      if (this._raf) cancelAnimationFrame(this._raf);
+      var closing = Math.abs(Math.abs(to) - 90) < 1;
+      this._v = target; this._aria();
+      if (emit) this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: target } }));
+      var step = function (now) {
+        var t = Math.min(1, (now - t0) / dur), e;
+        /* slow out of the jaws, then the last tenth is taken fast */
+        e = t < 0.86 ? (0.5 - 0.5 * Math.cos(Math.PI * (t / 0.86))) * 0.9 : 0.9 + 0.1 * ((t - 0.86) / 0.14);
+        self._psi = from + (to - from) * e;
+        self._bite = closing ? (t < 0.88 ? 0 : Math.sin((t - 0.88) / 0.12 * Math.PI)) : 0;
+        self._paint();
+        if (t < 1) { self._raf = requestAnimationFrame(step); return; }
+        self._psi = to;
+        if (closing) {
+          var b0 = performance.now();
+          var settle = function (n2) {
+            var u = Math.min(1, (n2 - b0) / 120);
+            self._bite = Math.sin(Math.PI * u) * (1 - u) * 1.15; self._paint();
+            if (u < 1) { self._raf = requestAnimationFrame(settle); return; }
+            self._bite = 0; self._raf = 0; self._paint(); self._settle(target, emit);
+          };
+          self._raf = requestAnimationFrame(settle);
+        } else { self._bite = 0; self._raf = 0; self._paint(); self._settle(target, emit); }
+      };
+      this._raf = requestAnimationFrame(step);
+    }
+    _settle(v, emit) {
+      this._reflect = true; this.setAttribute("value", this._str(v)); this._reflect = false;
+      this._aria();
+      if (emit) this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _next(dir) {
+      if (this._dbl) {
+        var order = ["DOWN", "OPEN", "UP"], i = CL(order.indexOf(this._v) + dir, 0, 2);
+        return order[i];
+      }
+      return dir > 0 ? true : false;
+    }
+    _toggle() {
+      if (this.hasAttribute("disabled")) return;
+      var t = this._dbl ? (this._v === "UP" ? "OPEN" : this._v === "OPEN" ? "DOWN" : "UP") : !this._v;
+      this._throw(t, true);
+    }
+    /* ---- pointer: the blade follows the handle's angle ---- */
+    _lim() { return this._dbl ? [-90, 90] : [30, 90]; }
+    _psiFromPoint(cx, cy) {
+      var g = this._g, r = this.getBoundingClientRect(), sc = this._scale;
+      var mx = (cx - r.left) / sc, my = (cy - r.top) / sc;
+      var phi = Math.atan2(g.xs[0] - mx + (g.cx - g.xs[0]), g.pivotY - my);
+      if (phi < 0) phi = 0;
+      var lim = this._lim(), span = lim[1] - lim[0];
+      var phiMax = this._dbl ? Math.PI : 0.885;
+      return CL(lim[1] - (phi / phiMax) * span, lim[0], lim[1]);
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this.focus({ preventScroll: true });
+      if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; this._bite = 0; }
+      this.setPointerCapture(e.pointerId);
+      this._drag = { moved: false, v: this._v, p0: this._psi, x: e.clientX, y: e.clientY };
+      this.addEventListener("pointermove", this._onMove);
+      this.addEventListener("pointerup", this._onUp);
+      this.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      if (!this._drag.moved && Math.abs(e.clientX - this._drag.x) + Math.abs(e.clientY - this._drag.y) < 3) return;
+      this._drag.moved = true;
+      this._psi = this._psiFromPoint(e.clientX, e.clientY);
+      this._paint();
+      var nv = this._dbl ? (this._psi > 45 ? "UP" : this._psi < -45 ? "DOWN" : "OPEN") : (this._psi > 62);
+      if (nv !== this._v) {
+        this._v = nv; this._aria();
+        this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: nv } }));
+      }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this.removeEventListener("pointermove", this._onMove);
+      this.removeEventListener("pointerup", this._onUp);
+      this.removeEventListener("pointercancel", this._onUp);
+      try { this.releasePointerCapture(e.pointerId); } catch (_) {}
+      var d = this._drag; this._drag = null;
+      if (!d.moved) { this._toggle(); return; }
+      var t = this._dbl ? (this._psi > 45 ? "UP" : this._psi < -45 ? "DOWN" : "OPEN") : (this._psi > 62);
+      this._v = d.v; this._throw(t, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      var t = this._dbl ? this._next(e.deltaY < 0 ? 1 : -1) : (e.deltaY < 0);
+      if (t === this._v) return;
+      e.preventDefault();
+      this._throw(t, true);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var t = null;
+      switch (e.key) {
+        case " ": case "Spacebar": case "Enter": e.preventDefault(); this._toggle(); return;
+        case "ArrowUp": case "ArrowRight": t = this._next(1); break;
+        case "ArrowDown": case "ArrowLeft": t = this._next(-1); break;
+        case "Home": t = this._dbl ? "DOWN" : false; break;
+        case "End": t = this._dbl ? "UP" : true; break;
+        default: return;
+      }
+      e.preventDefault();
+      if (t === this._v) return;
+      this._throw(t, true);
+    }
+  }
+  customElements.define(TAG, Knife);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
