@@ -1,3 +1,4 @@
 shots/*.png
 shots/*.bench.jpg
 tools/report.json
+parts/
