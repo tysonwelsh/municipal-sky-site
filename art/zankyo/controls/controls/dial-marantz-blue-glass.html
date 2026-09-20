@@ -67,7 +67,7 @@
   const GX = 66, GY = 10, GW = 288, GH = 90;            // the glass
   const XS0 = 96, XS1 = 332;                             // the scale span
   const FX = 389, FR = 27, FY0 = 41, FH = 28;            // flywheel: centre x, radius, rim band top, rim height
-  const NR = 44;                                         // knurl ridges around the rim
+  const NR = 34;                                         // knurl ridges around the rim
   const BANDS = { FM: { min: 88, max: 108, step: 0.1, unit: "MHz", log: false }, AM: { min: 530, max: 1600, step: 10, unit: "kHz", log: true } };
   const f = n => n.toFixed(2);
   const meter = (x, y, w, h, label, frac) => {
@@ -190,7 +190,8 @@
         <path class="kn3" fill="#6b6e74" opacity="0.28"/>
         <path class="kn2" fill="#6b6e74" opacity="0.6"/>
         <path class="kn1" fill="#8a8d93" opacity="0.95"/>
-        <path class="knS" fill="#0c0d10" opacity="0.75"/>
+        <path class="knS" fill="#0c0d10" opacity="0.8"/>
+        <rect x="${FX - FR}" y="${FY0}" width="${2 * FR}" height="${FH}" fill="url(#rimSpec)"/>
         <rect x="${FX - FR}" y="${FY0}" width="${2 * FR}" height="${FH}" fill="url(#rimEnds)"/>
         <rect x="${FX - FR}" y="${FY0}" width="${2 * FR}" height="1.2" fill="#fff" opacity="0.18"/>
         <rect x="${FX - FR}" y="${FY0 + FH - 2}" width="${2 * FR}" height="2" fill="#000" opacity="0.5"/>
@@ -314,7 +315,7 @@
       for (let i = 0; i < NR; i++) {
         const th = i * 2 * Math.PI / NR + off, c = Math.cos(th), s = Math.sin(th);
         if (c < 0.03) continue;
-        const rx = FX + FR * s, w = Math.max(0.6, 1.9 * c);
+        const rx = FX + FR * s, w = Math.max(0.7, 2.7 * c);
         const l = c * (0.78 - 0.32 * s);                                 // lit from above-left: ridges on the left face the light
         const b = l > 0.6 ? 0 : l > 0.3 ? 1 : 2;
         d[b] += `M${f(rx - w / 2)} ${FY0}h${f(w)}v${FH}h${f(-w)}z`;

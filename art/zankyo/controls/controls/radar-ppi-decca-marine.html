@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decca hooded marine PPI — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "radar-ppi-decca-marine",
+  "element": "sk-radar-ppi-decca",
+  "name": "Decca hooded marine PPI",
+  "kind": "output",
+  "code": "H13",
+  "type": "Radar PPI",
+  "source": "Decca RM 916 / Decca 101 marine radar display — a hooded 12-inch tube in a grey console, long-persistence phosphor that flashes blue and fades yellow-green",
+  "era": "1960s",
+  "origin": "UK",
+  "materials": ["long-persistence CRT", "black rubber hood", "engraved bearing ring", "grey hammertone console"],
+  "tags": ["marine", "radar", "phosphor", "sweep", "afterglow", "bridge", "ship"],
+  "value": { "model": "waveform", "count": 360, "min": 0, "max": 1, "unit": "" },
+  "attributes": ["value", "targets", "ebl", "vrm", "rpm", "range-rings", "range", "clutter", "label", "scale"],
+  "events": [],
+  "size": { "w": 380, "h": 412 },
+  "notes": "value is the nearest echo range per degree of bearing; the sweep runs continuously and repaints it. Two sets: a 6-mile picture with a coast and three ships, and a 3-mile picture with heavy sea clutter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="hammertone">
+    <sk-radar-ppi-decca ebl="47" vrm="0.62" range="6" clutter="0.35" label="RM 916 PPI, 6 mile range"></sk-radar-ppi-decca>
+    <sk-radar-ppi-decca ebl="303" vrm="0.34" range="3" clutter="0.9" rpm="30" range-rings="3" scale="0.55" label="RM 916 PPI, 3 mile range, heavy sea clutter"></sk-radar-ppi-decca>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Decca RM 916</b> and its ancestor the Decca 101 are the radar sets on every British-built ship's
+  bridge from the late fifties on: a big round long-persistence tube sunk into a grey console under a black
+  rubber viewing hood, with the bearing scale engraved 0–360 around the glass, four range rings, a heading
+  marker straight up, and a bearing cursor (the EBL) and a variable range marker (the VRM) you crank onto a
+  target to read its bearing and distance off the plates below.</p>
+  <p><b>The tells kept here:</b> the <i>two-colour persistence</i> — the sweep paints each return as a cold
+  blue-white flash that turns yellow-green within a breath and then fades over one whole revolution, so every
+  echo is a blue tip on a yellow tail and a wedge of brightness follows the sweep round; the sweep line itself
+  as a thin bright radius with a soft bloom; a ragged coastline down one side with the radar shadow behind the
+  headlands; sea clutter as a speckled disc round the centre that is re-randomised on every pass; ships that
+  creep a few pixels a revolution; the dashed EBL and the dotted VRM ring; the rubber hood as a dark soft-edged
+  tunnel; and the engraved white bearing ring with 000 at the top. The phosphor lives on a canvas with a
+  per-frame decay, so setting <code>value</code> sixty times a second costs three arc strokes.</p>
+  <p><b>Left out:</b> the mechanical bearing cursor and its perspex arm, the range/brilliance/gain knobs down
+  the side of the console, the interscan and the true-motion gearbox, and the ship's name on the maker's plate.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-radar-ppi-decca> — Decca hooded marine PPI, two-colour long-persistence ====
+   attributes: value (360 numbers 0..1, nearest echo range per degree — usually set as a property)
+               targets="bearing,range,size;…"  ebl=<deg>  vrm=0..1  rpm=24  range-rings=4
+               range=<NM shown on the plate>  clutter=0..1  label  scale
+   no events (an output). the sweep animates itself; RAF stops on disconnect.
+   self-contained: paste this block into any page and use <sk-radar-ppi-decca></sk-radar-ppi-decca> */
+(function () {
+  if (customElements.get("sk-radar-ppi-decca")) return;
+  const W = 380, H = 412, CX = 190, CY = 190, RS = 160, SC = 320, HC = SC / 2;
+  const D2R = Math.PI / 180, NS = "http://www.w3.org/2000/svg";
+  const AW = 0.0118;                                   // half-width of one bearing cell, radians
+
+  function lcg(seed) { let s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // per-bearing band depth: a coast is a ragged band, not a hairline
+  const DEP = (function () { const r = lcg(7712), a = new Array(360); for (let i = 0; i < 360; i++) a[i] = 2.2 + 6.5 * r() * r(); return a; })();
+  const SWELL = (function () { const r = lcg(9931), a = new Array(360); for (let i = 0; i < 360; i++) a[i] = r(); return a; })();
+
+  function baseScene() {
+    const w = new Array(360).fill(0), rnd = lcg(20240917);
+    let r = 0.60;
+    for (let d = 0; d < 360; d++) {
+      if (d >= 194 && d <= 326) {                       // the coast, down the west side
+        const u = (d - 194) / 132;
+        r += (rnd() - 0.5) * 0.05; r = Math.max(0.44, Math.min(0.9, r));
+        w[d] = Math.max(0.2, r + 0.15 * Math.sin(u * Math.PI * 2.3) - 0.12 * Math.sin(u * Math.PI));
+      }
+      if (d >= 36 && d <= 53) w[d] = 0.45 + 0.055 * Math.sin((d - 36) / 17 * Math.PI) + (rnd() - 0.5) * 0.02;  // an island
+      if (d >= 146 && d <= 158) w[d] = 0.285 + (rnd() - 0.5) * 0.014;                                          // a breakwater
+      if (d >= 96 && d <= 101) w[d] = 0.82 + (rnd() - 0.5) * 0.02;                                             // a far shore
+    }
+    return w;
+  }
+
+  function parseTargets(s) {
+    const out = [], rnd = lcg(4242);
+    String(s || "").split(";").forEach(function (t) {
+      const p = t.split(",").map(parseFloat);
+      if (p.length >= 2 && !isNaN(p[0]) && !isNaN(p[1]))
+        out.push({ b: ((p[0] % 360) + 360) % 360, r: Math.max(0.04, Math.min(0.96, p[1])), s: isNaN(p[2]) ? 1 : p[2],
+                   db: (rnd() - 0.5) * 2.6, dr: (rnd() - 0.5) * 0.012 });
+    });
+    return out;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg, canvas { position: absolute; display: block; pointer-events: none; }
+    svg { left: 0; top: 0; width: ${W}px; height: ${H}px; overflow: visible; }
+    canvas { left: ${CX - RS}px; top: ${CY - RS}px; width: ${SC}px; height: ${SC}px; border-radius: 50%; }
+    text { font-family: "Barlow", "Helvetica Neue", Arial, sans-serif; font-weight: 500; }
+    .bn { font-size: 7px; fill: #f0efe8; text-anchor: middle; }
+    .bn.card { font-weight: 600; fill: #ffffff; }
+    .plate { font-size: 7px; fill: #dfe6dc; letter-spacing: 0.09em; }
+    .plate.k { fill: #93a39a; }
+    .maker { font-size: 6px; fill: #55636a; letter-spacing: 0.26em; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg class="under" aria-hidden="true">
+      <defs>
+        <linearGradient id="csl" x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0" stop-color="#8d9ba2"/><stop offset="0.45" stop-color="#717f87"/><stop offset="1" stop-color="#535f66"/>
+        </linearGradient>
+        <linearGradient id="cslip" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#b6c2c7" stop-opacity="0.75"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="scrn" cx="50%" cy="46%" r="62%">
+          <stop offset="0" stop-color="#101613"/><stop offset="0.72" stop-color="#0b0f0d"/><stop offset="1" stop-color="#070907"/>
+        </radialGradient>
+        <radialGradient id="hood" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="0.78" stop-color="#000" stop-opacity="0"/>
+          <stop offset="0.93" stop-color="#010201" stop-opacity="0.42"/><stop offset="1" stop-color="#000" stop-opacity="0.86"/>
+        </radialGradient>
+        <radialGradient id="rubber" cx="42%" cy="34%" r="70%">
+          <stop offset="0" stop-color="#25282a"/><stop offset="0.55" stop-color="#101212"/><stop offset="1" stop-color="#040505"/>
+        </radialGradient>
+        <linearGradient id="glare" x1="0.1" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stop-color="#cfe6ff" stop-opacity="0.085"/><stop offset="0.5" stop-color="#cfe6ff" stop-opacity="0.012"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="scrw" cx="34%" cy="28%" r="72%">
+          <stop offset="0" stop-color="#c3ccd1"/><stop offset="0.6" stop-color="#6d777d"/><stop offset="1" stop-color="#2b3134"/>
+        </radialGradient>
+        <linearGradient id="engr" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#171b1c"/><stop offset="1" stop-color="#242a2b"/>
+        </linearGradient>
+        <filter id="sft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter>
+      </defs>
+      <!-- console slab -->
+      <rect x="2" y="3" width="${W - 4}" height="${H - 6}" rx="10" fill="#0a0c0d" opacity="0.6" filter="url(#sft)"/>
+      <rect x="1" y="1" width="${W - 2}" height="${H - 3}" rx="9" fill="url(#csl)" stroke="#2f383d" stroke-width="1"/>
+      <path d="M 10 1.6 L ${W - 10} 1.6" stroke="url(#cslip)" stroke-width="1.6" fill="none"/>
+      <!-- the bearing ring is let into the console: a countersink -->
+      <circle cx="${CX}" cy="${CY}" r="${RS + 31}" fill="#0d1011" opacity="0.55" filter="url(#sft)"/>
+      <circle cx="${CX}" cy="${CY}" r="${RS + 30}" fill="#111414" stroke="#0a0d0d" stroke-width="1"/>
+      <circle cx="${CX}" cy="${CY}" r="${RS + 29}" fill="none" stroke="#9aa8ae" stroke-opacity="0.22" stroke-width="1"/>
+      <g class="ring"></g>
+      <!-- rubber hood -->
+      <circle cx="${CX}" cy="${CY}" r="${RS + 6}" fill="url(#rubber)"/>
+      <circle cx="${CX}" cy="${CY}" r="${RS + 2.5}" fill="none" stroke="#000" stroke-width="5" opacity="0.85"/>
+      <!-- the tube face -->
+      <circle cx="${CX}" cy="${CY}" r="${RS}" fill="url(#scrn)"/>
+      <g class="rings"></g>
+    </svg>
+    <canvas class="phos" width="${SC * 2}" height="${SC * 2}"></canvas>
+    <canvas class="live" width="${SC * 2}" height="${SC * 2}"></canvas>
+    <svg class="over" aria-hidden="true">
+      <g class="marks"></g>
+      <circle cx="${CX}" cy="${CY}" r="${RS}" fill="url(#hood)"/>
+      <ellipse cx="${CX - 52}" cy="${CY - 62}" rx="86" ry="56" fill="url(#glare)" transform="rotate(-24 ${CX - 52} ${CY - 62})"/>
+      <circle cx="${CX}" cy="${CY}" r="${RS}" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="3"/>
+      <!-- engraved plates on the console apron -->
+      <g class="plates"></g>
+      <text class="maker" x="${CX}" y="${H - 6}">MARINE RADAR · TYPE RM 916</text>
+      <g class="screws">
+        <g transform="translate(13 13)"><circle r="4.2" fill="url(#scrw)" stroke="#20262a" stroke-width="0.7"/><rect x="-3.2" y="-0.5" width="6.4" height="1" fill="#1b2023" transform="rotate(34)"/></g>
+        <g transform="translate(${W - 13} 13)"><circle r="4.2" fill="url(#scrw)" stroke="#20262a" stroke-width="0.7"/><rect x="-3.2" y="-0.5" width="6.4" height="1" fill="#1b2023" transform="rotate(-58)"/></g>
+        <g transform="translate(13 ${H - 13})"><circle r="4.2" fill="url(#scrw)" stroke="#20262a" stroke-width="0.7"/><rect x="-3.2" y="-0.5" width="6.4" height="1" fill="#1b2023" transform="rotate(12)"/></g>
+        <g transform="translate(${W - 13} ${H - 13})"><circle r="4.2" fill="url(#scrw)" stroke="#20262a" stroke-width="0.7"/><rect x="-3.2" y="-0.5" width="6.4" height="1" fill="#1b2023" transform="rotate(-25)"/></g>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkRadarPpiDecca extends HTMLElement {
+    static get observedAttributes() { return ["value", "targets", "ebl", "vrm", "rpm", "range-rings", "range", "clutter", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      const sr = this.shadowRoot;
+      this._wrap = sr.querySelector(".wrap");
+      this._pc = sr.querySelector("canvas.phos").getContext("2d");
+      this._lc = sr.querySelector("canvas.live").getContext("2d");
+      this._pc.setTransform(2, 0, 0, 2, 0, 0); this._lc.setTransform(2, 0, 0, 2, 0, 0);
+      this._ringG = sr.querySelector(".ring"); this._ringsG = sr.querySelector(".rings");
+      this._marks = sr.querySelector(".marks"); this._platesG = sr.querySelector(".plates");
+      this._base = baseScene();
+      this._wave = this._base.slice();
+      this._tgSrc = "35,0.42,1.4;118,0.70,0.9;308,0.29,1.7";
+      this._tg = parseTargets(this._tgSrc);
+      this._rpm = 24; this._ebl = 47; this._vrm = 0.62; this._rings = 4; this._clut = 0.35; this._rangeNM = 6; this._scale = 1;
+      this._acc = 0; this._a = 0; this._raf = 0; this._last = 0;
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._readAttrs(); this._drawStatic();
+      this._prime();
+      this._live();
+      this._last = performance.now();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { this.value = v; return; }
+      this._readAttrs(); this._drawStatic();
+    }
+    get value() { return this._wave.slice(); }
+    set value(v) {
+      if (typeof v === "string") v = v.split(/[,\s]+/);
+      if (!v || typeof v.length !== "number" || !v.length) return;
+      const n = v.length, w = this._wave;
+      for (let i = 0; i < 360; i++) {
+        let x = +v[n === 360 ? i : Math.floor(i * n / 360)];
+        w[i] = (x > 0) ? (x > 1 ? 1 : x) : 0;
+      }
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    // a source-specific idle picture: the same coast with a slow swell on it
+    demo(t) {
+      const out = this._demoArr || (this._demoArr = new Array(360)), b = this._base;
+      for (let i = 0; i < 360; i++) out[i] = b[i] > 0 ? Math.max(0.05, Math.min(0.97, b[i] + 0.012 * Math.sin(t * 0.6 + SWELL[i] * 9))) : 0;
+      return out;
+    }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._rpm = Math.max(2, Math.min(120, num("rpm", 24)));
+      this._ebl = ((num("ebl", 47) % 360) + 360) % 360;
+      this._vrm = Math.max(0.04, Math.min(1, num("vrm", 0.62)));
+      this._rings = Math.max(1, Math.min(8, Math.round(num("range-rings", 4))));
+      this._clut = Math.max(0, Math.min(1, num("clutter", 0.35)));
+      this._rangeNM = num("range", 6);
+      this._scale = Math.max(0.2, num("scale", 1));
+      const ts = this.getAttribute("targets");
+      if (ts != null && ts !== this._tgSrc) { this._tgSrc = ts; this._tg = parseTargets(ts); }
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", this.getAttribute("label") || "marine radar plan position indicator");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+
+    _drawStatic() {
+      const mk = (t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+      const pt = (deg, r) => [CX + r * Math.sin(deg * D2R), CY - r * Math.cos(deg * D2R)];
+      // --- engraved bearing ring, 000 at the top ---
+      const g = this._ringG; while (g.firstChild) g.removeChild(g.firstChild);
+      for (let d = 0; d < 360; d += 2) {
+        const maj = d % 10 === 0, card = d % 90 === 0;
+        const r0 = RS + 8, r1 = r0 + (card ? 8 : maj ? 6 : 3);
+        const [x0, y0] = pt(d, r0), [x1, y1] = pt(d, r1);
+        g.appendChild(mk("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: card ? "#ffffff" : "#dcdbd3",
+          "stroke-opacity": maj ? 0.95 : 0.5, "stroke-width": card ? 1.5 : maj ? 1.1 : 0.7 }));
+        if (maj) {
+          const [tx, ty] = pt(d, RS + 21.5);
+          g.appendChild(mk("text", { x: tx, y: ty + 2.4, class: "bn" + (card ? " card" : ""), transform: `rotate(${d} ${tx} ${ty})` },
+            ("00" + d).slice(-3)));
+        }
+      }
+      // --- range rings ---
+      const rg = this._ringsG; while (rg.firstChild) rg.removeChild(rg.firstChild);
+      for (let i = 1; i <= this._rings; i++)
+        rg.appendChild(mk("circle", { cx: CX, cy: CY, r: (RS * i / this._rings).toFixed(2), fill: "none",
+          stroke: "#3a5a3a", "stroke-opacity": i === this._rings ? 0.42 : 0.6, "stroke-width": 0.8 }));
+      // --- heading marker, EBL, VRM ---
+      const m = this._marks; while (m.firstChild) m.removeChild(m.firstChild);
+      m.appendChild(mk("line", { x1: CX, y1: CY - 4, x2: CX, y2: CY - RS + 1, stroke: "#9ad0a0", "stroke-opacity": 0.85, "stroke-width": 1.1 }));
+      const [ex, ey] = pt(this._ebl, RS - 1);
+      m.appendChild(mk("line", { x1: CX, y1: CY, x2: ex, y2: ey, stroke: "#e8ffb0", "stroke-opacity": 0.8, "stroke-width": 1, "stroke-dasharray": "7 5" }));
+      m.appendChild(mk("circle", { cx: CX, cy: CY, r: (this._vrm * RS).toFixed(2), fill: "none", stroke: "#e8ffb0",
+        "stroke-opacity": 0.75, "stroke-width": 1, "stroke-dasharray": "1.6 4.4" }));
+      // --- engraved plates on the apron ---
+      const p = this._platesG; while (p.firstChild) p.removeChild(p.firstChild);
+      const rows = [["RANGE", this._rangeNM.toFixed(0) + " NM"], ["EBL", ("00" + Math.round(this._ebl)).slice(-3) + "°"], ["VRM", (this._vrm * this._rangeNM).toFixed(2) + " NM"]];
+      rows.forEach(function (r, i) {
+        const x = 16 + i * 117, y = H - 30;
+        p.appendChild(mk("rect", { x: x, y: y, width: 110, height: 17, rx: 2.5, fill: "url(#engr)", stroke: "#3c464b", "stroke-width": 0.8 }));
+        p.appendChild(mk("rect", { x: x + 0.6, y: y + 16.2, width: 108.8, height: 1, fill: "#aab6bb", opacity: 0.35 }));
+        p.appendChild(mk("text", { x: x + 7, y: y + 12, class: "plate k" }, r[0]));
+        p.appendChild(mk("text", { x: x + 44, y: y + 12, class: "plate" }, r[1]));
+      });
+    }
+
+    // ---- the phosphor ----
+    _fade(a) {
+      const pc = this._pc;
+      pc.globalCompositeOperation = "destination-out";
+      pc.fillStyle = "rgba(0,0,0," + a + ")";
+      pc.fillRect(0, 0, SC, SC);
+      pc.globalCompositeOperation = "source-over";
+    }
+    _paintBearing(d) {
+      const pc = this._pc, rad = (d - 90) * D2R, w = this._wave[d];
+      if (w > 0.03) {
+        const rr = w * RS, dep = Math.min(11, DEP[d] * (0.55 + 0.9 * w));
+        pc.lineWidth = dep;
+        pc.strokeStyle = "rgba(200,216,112,0.9)";
+        pc.beginPath(); pc.arc(HC, HC, Math.min(RS - 1, rr + dep * 0.42), rad - AW, rad + AW); pc.stroke();
+        pc.lineWidth = 1.5; pc.strokeStyle = "rgba(232,244,168,0.92)";
+        pc.beginPath(); pc.arc(HC, HC, rr, rad - AW, rad + AW); pc.stroke();
+      }
+      const tg = this._tg;
+      for (let i = 0; i < tg.length; i++) {
+        const t = tg[i];
+        if (Math.floor(t.b) !== d) continue;
+        const aw = (0.55 + t.s * 0.55) * D2R, trad = (t.b - 90) * D2R;
+        pc.lineWidth = 2.1 + t.s * 1.5; pc.strokeStyle = "rgba(214,226,124,0.95)";
+        pc.beginPath(); pc.arc(HC, HC, t.r * RS, trad - aw, trad + aw); pc.stroke();
+      }
+      const cl = this._clut;                                    // sea clutter round the centre
+      if (cl > 0.02) {
+        const n = 1 + (Math.random() < cl * 2 ? 2 : 0);
+        for (let i = 0; i < n; i++) {
+          const q = Math.random() * Math.random(), rr = 3 + q * (0.34 * RS) * (0.45 + cl);
+          const j = rad + (Math.random() - 0.5) * 0.022;
+          pc.fillStyle = "rgba(150,168,88," + (0.55 * cl * (1 - rr / (0.4 * RS))).toFixed(3) + ")";
+          pc.fillRect(HC + rr * Math.cos(j), HC + rr * Math.sin(j), 1.4, 1.4);
+        }
+      }
+    }
+    _prime() {
+      const pc = this._pc;
+      pc.setTransform(1, 0, 0, 1, 0, 0); pc.clearRect(0, 0, SC * 2, SC * 2); pc.setTransform(2, 0, 0, 2, 0, 0);
+      const per = 1 - Math.pow(0.02, 4 / 360);
+      for (let i = 0; i < 90; i++) {
+        this._fade(per);
+        for (let k = 0; k < 4; k++) this._paintBearing((((Math.floor(this._a) - 359 + i * 4 + k) % 360) + 360) % 360);
+      }
+    }
+    _live() {
+      const lc = this._lc, a = this._a, rad = (a - 90) * D2R;
+      lc.clearRect(0, 0, SC, SC);
+      // the wedge of afterglow the sweep drags behind it
+      for (let i = 0; i < 16; i++) {
+        const a0 = (a - (i + 1) * 2.6 - 90) * D2R, a1 = (a - i * 2.6 - 90) * D2R;
+        lc.beginPath(); lc.moveTo(HC, HC); lc.arc(HC, HC, RS, a0, a1); lc.closePath();
+        lc.fillStyle = "rgba(146,198,255," + (0.032 * (1 - i / 16)).toFixed(4) + ")"; lc.fill();
+      }
+      // the newest returns, still blue-white
+      const fi = Math.floor(a);
+      for (let i = 0; i < 12; i++) {
+        const d = (((fi - i) % 360) + 360) % 360, k = 1 - i / 12, r = this._wave[d], dr = (d - 90) * D2R;
+        if (r > 0.03) {
+          lc.lineWidth = 2.6; lc.strokeStyle = "rgba(223,243,255," + (0.92 * k).toFixed(3) + ")";
+          lc.beginPath(); lc.arc(HC, HC, r * RS, dr - AW, dr + AW); lc.stroke();
+        }
+        const tg = this._tg;
+        for (let j = 0; j < tg.length; j++) {
+          const t = tg[j]; if (Math.floor(t.b) !== d) continue;
+          const aw = (0.55 + t.s * 0.55) * D2R, trad = (t.b - 90) * D2R;
+          lc.lineWidth = 2.4 + t.s * 1.4; lc.strokeStyle = "rgba(232,248,255," + (0.95 * k).toFixed(3) + ")";
+          lc.beginPath(); lc.arc(HC, HC, t.r * RS, trad - aw, trad + aw); lc.stroke();
+        }
+      }
+      // the sweep line and its bloom
+      const x = HC + RS * Math.cos(rad), y = HC + RS * Math.sin(rad);
+      lc.lineCap = "round";
+      const pass = [[7, "rgba(207,230,255,0.10)"], [3.4, "rgba(207,230,255,0.24)"], [1.3, "rgba(238,248,255,0.95)"]];
+      for (let i = 0; i < 3; i++) {
+        lc.lineWidth = pass[i][0]; lc.strokeStyle = pass[i][1];
+        lc.beginPath(); lc.moveTo(HC, HC); lc.lineTo(x, y); lc.stroke();
+      }
+      lc.fillStyle = "rgba(223,243,255,0.55)";
+      lc.beginPath(); lc.arc(HC, HC, 2.6, 0, 6.2832); lc.fill();
+    }
+    _tick(now) {
+      this._raf = requestAnimationFrame(this._tick);
+      let dt = (now - this._last) / 1000; this._last = now;
+      if (!(dt > 0)) dt = 0.016; if (dt > 0.1) dt = 0.1;
+      const rev = 60 / this._rpm;
+      this._fade(1 - Math.pow(0.02, dt / rev));
+      const tg = this._tg;
+      for (let i = 0; i < tg.length; i++) {
+        const t = tg[i];
+        t.b = (t.b + t.db * dt + 360) % 360;
+        t.r = Math.max(0.06, Math.min(0.94, t.r + t.dr * dt));
+      }
+      const prev = this._acc; this._acc += this._rpm * 6 * dt;
+      const from = Math.floor(prev), to = Math.floor(this._acc);
+      for (let d = from + 1; d <= to; d++) this._paintBearing((((d % 360) + 360) % 360));
+      this._a = this._acc % 360;
+      if (this._acc > 360000) this._acc -= 360000;
+      this._live();
+    }
+  }
+  customElements.define("sk-radar-ppi-decca", SkRadarPpiDecca);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
