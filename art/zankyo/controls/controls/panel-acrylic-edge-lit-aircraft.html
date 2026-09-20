@@ -105,7 +105,7 @@
   '.screw::after { content: ""; position: absolute; left: 1px; top: 2.6px; width: 4px; height: .8px;',
   '  background: #3a3b3c; transform: rotate(24deg); }',
   '.chip { position: absolute; width: 3px; height: 2.4px; border-radius: 40% 60% 55% 45%; pointer-events: none;',
-  '  background: var(--engrave); opacity: .3; transition: opacity .3s ease, background .3s ease; }',
+  '  background: var(--engrave); opacity: calc(var(--wear, 0) * .35); transition: opacity .3s ease, background .3s ease; }',
   ':host([lit]) .chip { background: var(--glow); box-shadow: 0 0 3px 1px var(--halo);',
   '  opacity: calc(var(--wear, 0) * var(--bright, 1)); transition: opacity .15s ease, background .15s ease; }',
   '.slotlayer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',

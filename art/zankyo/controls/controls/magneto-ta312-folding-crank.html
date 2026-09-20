@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TA-312/PT folding magneto crank — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Roboto+Condensed:wght@500;600&family=Oswald:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "magneto-ta312-folding-crank",
+  "element": "sk-magneto-ta312-folding-crank",
+  "name": "TA-312/PT folding magneto crank",
+  "kind": "input",
+  "code": "E10",
+  "type": "Magneto crank",
+  "source": "TA-312/PT field telephone (Stromberg-Carlson and others for the US Army, 1950s–90s): the folding generator crank on the end of the olive-drab box, a black knob on a zinc-plated folding arm",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["olive-drab moulded ABS", "zinc-plated steel", "black phenolic knob", "chrome hub cap"],
+  "tags": ["field telephone", "military", "magneto", "endless", "folding", "generator"],
+  "value": { "model": "delta", "unit": "turns" },
+  "attributes": ["value", "folded", "label", "scale", "disabled"],
+  "events": ["input", "change", "ring"],
+  "size": { "w": 160, "h": 160 },
+  "notes": "Click the hub (or Space) to unfold, then drag the knob round the hub to turn; a turn and a half inside 1.5 s fires ring. One folded, one unfolded and mid-turn."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="olive">
+    <sk-magneto-ta312-folding-crank label="GENERATOR" folded></sk-magneto-ta312-folding-crank>
+    <sk-magneto-ta312-folding-crank label="GENERATOR" value="2.25" scale="0.85"></sk-magneto-ta312-folding-crank>
+    <sk-magneto-ta312-folding-crank label="GENERATOR" scale="0.85" disabled></sk-magneto-ta312-folding-crank>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>TA-312/PT</b> field telephone rides in a canvas case with an olive-drab moulded box, a black
+  handset in spring clips, and, on the box's right end, a folding hand generator: a zinc-plated steel crank
+  folded flush against the case until it is wanted, with a black phenolic knob on its end and a chrome hub cap
+  where it pivots.</p>
+  <p><b>The tells kept here:</b> the crank folded flat and tucked against the box, and a swing out to a working
+  angle before it will turn; once deployed the knob describes a fixed circle around the hub while its own
+  highlight stays put &mdash; it rotates on its own pin, not with the arm; the chrome hub cap with a slotted
+  screw, the one bright thing on the moulded olive; the box's satin grain and a data plate rivetted to it; the
+  paint worn pale at the corner a strap has rubbed for forty years. A turn and a half inside a second and a
+  half rings the (unseen) exchange, as the real magneto does.</p>
+  <p><b>Left out:</b> the true two-hinge fold of the real arm (modelled here as one swing to stow or deploy),
+  the handset, the CB/LB selector and the buzzer knob — this build is the crank alone, as the brief asks for.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-magneto-ta312-folding-crank> — TA-312/PT folding generator crank on the olive-drab box end ====
+   attributes: value (turns, float, accumulates, endless) folded(reflects) label scale disabled
+   events: input {value, delta} per 1/8 turn while turning, change {value, delta:0} when it settles,
+           ring {} after 1.5 turns inside 1.5 s
+   self-contained: paste this block into any page and use <sk-magneto-ta312-folding-crank></sk-magneto-ta312-folding-crank> */
+(function () {
+  if (customElements.get("sk-magneto-ta312-folding-crank")) return;
+  const W = 160, H = 160, HX = 100, HY = 72, R = 34, DET = 45;
+  const STOW = 148, DEPLOY = -18;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Roboto Condensed", "Arial Narrow", sans-serif; }
+    .plate-t { font-size: 5px; letter-spacing: 0.05em; fill: #ece9e0; }
+    .label { font-family: "Oswald", "Arial Narrow", sans-serif; font-size: 7px; letter-spacing: 0.2em; fill: #cfd0b8; text-anchor: middle; }
+    .crank { transform-origin: ${HX}px ${HY}px; transform-box: view-box; }
+    .crank.anim { transition: transform 380ms cubic-bezier(.24,.9,.32,1.25); }
+    .knob { transform-box: view-box; }
+    .knob.anim { transition: transform 380ms cubic-bezier(.24,.9,.32,1.25); }
+    .hub { position: absolute; left: ${HX - 13}px; top: ${HY - 13}px; width: 26px; height: 26px; border-radius: 50%;
+      cursor: pointer; touch-action: none; }
+    :host([disabled]) .hub { cursor: default; }
+    .knobgrab { position: absolute; width: 40px; height: 40px; border-radius: 50%; cursor: grab;
+      touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .knobgrab.drag { cursor: grabbing; }
+    :host([disabled]) .knobgrab { cursor: default; }
+    .knobgrab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="od" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#5e6828"/><stop offset="0.5" stop-color="#4b5320"/><stop offset="1" stop-color="#333914"/>
+        </linearGradient>
+        <radialGradient id="odsheen" cx="30%" cy="20%" r="80%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.14"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="chrome" cx="34%" cy="28%" r="75%">
+          <stop offset="0" stop-color="#f2f5f6"/><stop offset="0.4" stop-color="#c6ccd0"/><stop offset="0.78" stop-color="#8a9096"/><stop offset="1" stop-color="#4a5054"/>
+        </radialGradient>
+        <linearGradient id="arm" x1="0" y1="0" x2="1" y2="0.4">
+          <stop offset="0" stop-color="#c7cbce"/><stop offset="0.3" stop-color="#8a9095"/><stop offset="0.6" stop-color="#dfe3e5"/><stop offset="1" stop-color="#6b7075"/>
+        </linearGradient>
+        <radialGradient id="knobG" cx="30%" cy="24%" r="85%">
+          <stop offset="0" stop-color="#4a4a4a"/><stop offset="0.18" stop-color="#1e1e1e"/><stop offset="0.6" stop-color="#0f0f0f"/><stop offset="1" stop-color="#050505"/>
+        </radialGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="softer" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.4"/></filter>
+      </defs>
+
+      <!-- the box: end of the olive-drab moulded case -->
+      <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="9" fill="url(#od)" stroke="#20240d" stroke-width="1.4"/>
+      <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="9" fill="url(#odsheen)"/>
+      <rect x="3" y="2.5" width="${W - 6}" height="4" rx="2" fill="#fff" opacity="0.12"/>
+      <!-- grain speckle -->
+      <g opacity="0.16" stroke="#232710" stroke-width="0.6">
+        <path d="M 10 30 l 6 -2 M 30 100 l 7 1 M 70 140 l 5 -3 M 120 40 l 6 1 M 50 20 l 5 2 M 100 120 l 6 -1"/>
+      </g>
+      <!-- wear: paint worn pale at a corner a strap has rubbed -->
+      <path d="M ${W - 2} ${H - 2} L ${W - 26} ${H - 2} L ${W - 2} ${H - 26} Z" fill="#8a9060" opacity="0.28"/>
+      <!-- data plate -->
+      <rect x="10" y="10" width="56" height="16" rx="1.5" fill="#0e0e0d" stroke="#000" stroke-width="0.6"/>
+      <text class="plate-t" x="13" y="17">TELEPHONE SET, FIELD</text>
+      <text class="plate-t" x="13" y="23" opacity="0.85">TA-312/PT</text>
+      <!-- two rivets -->
+      <circle cx="12.5" cy="12.5" r="1" fill="#3a3a34"/><circle cx="63.5" cy="23.5" r="1" fill="#3a3a34"/>
+
+      <!-- shadow the whole crank assembly casts on the box -->
+      <ellipse class="csh" cx="${HX + 3}" cy="${HY + 5}" rx="30" ry="26" fill="#000" opacity="0.32" filter="url(#softer)"/>
+
+      <!-- the crank: rotates about the hub -->
+      <g class="crank">
+        <path d="M ${HX} ${HY} C ${HX - 3} ${HY - 12}, ${HX + 3} ${HY - 22}, ${HX} ${HY - R}"
+              fill="none" stroke="url(#arm)" stroke-width="7" stroke-linecap="round"/>
+        <path d="M ${HX} ${HY} C ${HX - 3} ${HY - 12}, ${HX + 3} ${HY - 22}, ${HX} ${HY - R}"
+              fill="none" stroke="#e9edee" stroke-width="1.6" stroke-linecap="round" opacity="0.55" transform="translate(-1.4 0)"/>
+        <path d="M ${HX} ${HY} C ${HX - 3} ${HY - 12}, ${HX + 3} ${HY - 22}, ${HX} ${HY - R}"
+              fill="none" stroke="#20242a" stroke-width="1.2" stroke-linecap="round" opacity="0.55" transform="translate(1.8 0)"/>
+      </g>
+
+      <!-- the hub cap: fixed, does not rotate -->
+      <circle cx="${HX + 1.6}" cy="${HY + 2.4}" r="10.5" fill="#000" opacity="0.35" filter="url(#soft)"/>
+      <circle cx="${HX}" cy="${HY}" r="9.5" fill="url(#chrome)" stroke="#20262a" stroke-width="1"/>
+      <circle cx="${HX}" cy="${HY}" r="9.5" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="0.8"/>
+      <rect x="${HX - 3.6}" y="${HY - 0.6}" width="7.2" height="1.2" fill="#12171a" transform="rotate(-30 ${HX} ${HY})"/>
+
+      <!-- the knob: translated only, never rotated, so its own highlight stays fixed -->
+      <g class="knob">
+        <ellipse cx="1.4" cy="2" rx="10" ry="8.4" fill="#000" opacity="0.4" filter="url(#soft)"/>
+        <circle r="9.5" fill="url(#knobG)" stroke="#000" stroke-width="0.6"/>
+        <circle r="8" fill="none" stroke="#3a3a3a" stroke-opacity="0.5" stroke-width="0.8"/>
+        <ellipse cx="-3.1" cy="-3.4" rx="3" ry="2" fill="#fff" opacity="0.28"/>
+      </g>
+
+      <text class="label" x="${HX - 42}" y="${H - 6}"></text>
+    </svg>
+    <div class="hub" role="button" aria-hidden="true"></div>
+    <div class="knobgrab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkMagnetoTa312FoldingCrank extends HTMLElement {
+    static get observedAttributes() { return ["value", "folded", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._theta = STOW; this._folded = true; this._det = Math.round(STOW / DET);
+      this._v = 0; this._v0 = 0; this._drag = null; this._ringBuf = [];
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._crank = $(".crank"); this._knob = $(".knob");
+      this._hub = $(".hub"); this._grab = $(".knobgrab"); this._label = $(".label");
+      ["_onHub", "_onDown", "_onMove", "_onUp", "_onWheel", "_onKey"].forEach(k => { this[k] = this[k].bind(this); });
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs(); this._render();
+      this._hub.addEventListener("pointerdown", this._onHub);
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      this._hub.removeEventListener("pointerdown", this._onHub);
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+      clearTimeout(this._wt);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "value") { const x = parseFloat(v); if (!isNaN(x) && Math.abs(x - this._v) > 0.0006) this.value = x; return; }
+      this._readAttrs(); this._render();
+    }
+    get value() { return Math.round(this._v * 1000) / 1000; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; this._v = v; if (!this._folded) { this._theta = DEPLOY + v * 360; this._det = Math.round(this._theta / DET); } this._reflect(); this._render(); }
+    get folded() { return this._folded; }
+    set folded(f) { this._toggleFold(!!f); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _reflect() { this.setAttribute("value", String(Math.round(this._v * 1000) / 1000)); }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      const v = num("value", this._v); if (Math.abs(v - this._v) > 0.0006) this._v = v;
+      const fAttr = this.hasAttribute("folded");
+      if (fAttr !== this._folded) { this._folded = fAttr; this._theta = fAttr ? STOW : DEPLOY + this._v * 360; this._det = Math.round(this._theta / DET); }
+      this._label.textContent = this.getAttribute("label") || "";
+      const g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", (this.getAttribute("label") || "magneto crank") + (this._folded ? ", folded" : ""));
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._hub.style.pointerEvents = dis ? "none" : "auto";
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _knobPos() {
+      const a = this._theta * Math.PI / 180;
+      return [HX + R * Math.sin(a), HY - R * Math.cos(a)];
+    }
+    _render() {
+      this._crank.style.transform = "rotate(" + this._theta.toFixed(2) + "deg)";
+      const [kx, ky] = this._knobPos();
+      this._knob.style.transform = "translate(" + kx.toFixed(2) + "px," + ky.toFixed(2) + "px)";
+      this._grab.style.left = (kx - 20) + "px"; this._grab.style.top = (ky - 20) + "px";
+      this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._grab.setAttribute("aria-valuetext", (Math.round(this._v * 100) / 100) + " turns" + (this._folded ? ", folded" : ""));
+    }
+    _emit(t, delta) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: { value: this.value, delta: delta || 0 } })); }
+    _ringCheck(dTurns) {
+      const now = performance.now();
+      this._ringBuf.push({ t: now, d: Math.abs(dTurns) });
+      this._ringBuf = this._ringBuf.filter(s => now - s.t <= 1500);
+      const sum = this._ringBuf.reduce((a, s) => a + s.d, 0);
+      if (sum >= 1.5) { this._ringBuf = []; this.dispatchEvent(new CustomEvent("ring", { bubbles: true, composed: true, detail: {} })); }
+    }
+    _toggleFold(anim) {
+      if (this.hasAttribute("disabled")) return;
+      this._folded = !this._folded;
+      const target = this._folded ? STOW : DEPLOY + this._v * 360;
+      let diff = ((target - this._theta) % 360 + 540) % 360 - 180;
+      this._crank.classList.add("anim"); this._knob.classList.add("anim");
+      this._theta = this._theta + diff;
+      this._det = Math.round(this._theta / DET);
+      if (this._folded) this.setAttribute("folded", ""); else this.removeAttribute("folded");
+      this._render();
+      clearTimeout(this._ft);
+      this._ft = setTimeout(() => { this._crank.classList.remove("anim"); this._knob.classList.remove("anim"); }, 400);
+    }
+    _onHub(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._toggleFold();
+    }
+    _turnTo(theta, emit) {
+      this._theta = theta;
+      const det = Math.round(theta / DET);
+      let stepped = 0;
+      if (det !== this._det) { stepped = (det - this._det) * 0.125; this._det = det; this._v += stepped; }
+      this._render();
+      if (stepped && emit) { this._emit("input", stepped); this._ringCheck(stepped); }
+    }
+    _ang(e) { const r = this._hub.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2; return Math.atan2(e.clientX - cx, -(e.clientY - cy)) * 180 / Math.PI; }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      if (this._folded) { e.preventDefault(); this._toggleFold(); return; }
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._grab.classList.add("drag");
+      this._v0 = this._v;
+      this._drag = { a: this._ang(e) };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const a = this._ang(e); let da = a - d.a; da = ((da + 540) % 360) - 180; d.a = a;
+      this._turnTo(this._theta + da, true);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._grab.classList.remove("drag");
+      this._drag = null;
+      this._reflect();
+      if (this._v !== this._v0) this._emit("change", this._v - this._v0);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled") || this._folded) return;
+      e.preventDefault();
+      this._v0 = this._v;
+      this._turnTo(this._theta + (e.deltaY < 0 ? DET : -DET), true);
+      this._reflect();
+      clearTimeout(this._wt); this._wt = setTimeout(() => { if (this._v !== this._v0) this._emit("change", this._v - this._v0); }, 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!e.repeat) this._toggleFold(); return; }
+      if (this._folded) return;
+      let da = 0;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": da = e.shiftKey ? 360 : DET; break;
+        case "ArrowDown": case "ArrowLeft": da = e.shiftKey ? -360 : -DET; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._v0 = this._v;
+      this._turnTo(this._theta + da, true);
+      this._reflect();
+      if (this._v !== this._v0) this._emit("change", this._v - this._v0);
+    }
+  }
+  customElements.define("sk-magneto-ta312-folding-crank", SkMagnetoTa312FoldingCrank);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

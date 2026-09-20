@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screw-head set — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "fastener-screw-head-set",
+  "element": "sk-fastener-screw",
+  "name": "Screw-head set, by era and finish",
+  "kind": "output",
+  "code": "J11",
+  "type": "Panel swatch — fastener heads",
+  "source": "The drive recesses of a century: slotted brass on radio cabinets and Leica cheese-heads, Phillips nickel pan-heads on Tektronix and Fender, Pozidriv on Dual and Revox, JIS with its dot on Sony and Technics, black hex socket on Moog and Eurorack, Torx on 1980s automotive, cad-plated yellow on military gear",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["nickel", "brass", "black-oxide steel", "zinc", "cadmium plate", "stainless steel"],
+  "tags": ["fastener", "screw", "hardware", "swatch", "furniture"],
+  "value": { "model": "text", "unit": "" },
+  "attributes": ["value", "drive", "head", "finish", "washer", "angle", "scale"],
+  "events": [],
+  "size": { "w": 36, "h": 36 },
+  "notes": "drive and finish take comma lists and lay out a grid (the longer list runs across); a single value on both gives one close-up head."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-fastener-screw drive="slotted,phillips,pozi,jis,hex,torx,thumb" finish="nickel,brass,black-oxide,zinc,cad-yellow"></sk-fastener-screw>
+    <sk-fastener-screw drive="hex" finish="black-oxide" head="button" washer="cup" scale="1.8"></sk-fastener-screw>
+    <sk-fastener-screw drive="phillips" finish="cad-yellow" head="pan" washer="star" scale="1.8"></sk-fastener-screw>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A century of <b>drive recesses</b>: the straight slot of pre-war brass, Phillips' tapered cross that took
+  over 1950s American gear, Pozidriv's four extra ticks on European hi-fi, JIS's telltale dot beside a
+  Phillips-like cross on Japanese chassis, the hex socket of black-anodised synth panels, Torx on 1980s
+  automotive trim, and the plain knurled ring of a thumbscrew. Each finish reads by the colour and hardness of
+  its highlight as much as by the metal itself.</p>
+  <p><b>The tells kept here:</b> the recess is drawn specific to each drive — a tapered rounded-centre cross for
+  Phillips, the four 45° ticks added for Pozidriv, a small dot for JIS, a dark hexagonal well, a six-lobed
+  Torx star, a knurled rim with no recess for the thumbscrew; every head is a small dome lit from above-left
+  with a shadow rim below-right and its own contact shadow; finish reads in the highlight — nickel hard and
+  cool, brass warm, black-oxide nearly flat, cad-yellow with a green-to-orange shimmer; slots and crosses sit
+  at random angles unless <code>angle</code> is set; a cup washer's black nylon dish and a star washer's
+  twelve teeth sit under the head as their own ring.</p>
+  <p><b>Left out:</b> the burr-and-grime wear state (the entry allows it; this build keeps every head pristine),
+  and Pozidriv's and JIS's rarer head-shape variants.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-fastener-screw> — a screw-head swatch: one head, or a drive×finish grid ====
+   attributes: value(unused) drive(comma list: slotted|phillips|pozi|jis|hex|torx|thumb)
+               head(pan|round|oval|cheese|button) finish(comma list: nickel|brass|black-oxide|zinc|cad-yellow|stainless)
+               washer(none|flat|cup|star|dress) angle(deg, fixed slot angle) scale
+   no events (an output). self-contained: paste this block into any page and use
+   <sk-fastener-screw drive="phillips" finish="nickel"></sk-fastener-screw> */
+(function () {
+  if (customElements.get("sk-fastener-screw")) return;
+  var CELL = 20, PAD = 8, HR = 6;
+  var NS = "http://www.w3.org/2000/svg";
+  var FINISH = {
+    "nickel":      { hi: "#f2f2f2", mid: "#a2a2a2", lo: "#3c3c3c", wall: "#eee" },
+    "brass":       { hi: "#f1dc93", mid: "#b08a3c", lo: "#5c4318", wall: "#f6e6ac" },
+    "black-oxide": { hi: "#55555a", mid: "#333336", lo: "#161618", wall: "#5c5c60" },
+    "zinc":        { hi: "#e6ebef", mid: "#a7afb6", lo: "#565d63", wall: "#eef2f5" },
+    "cad-yellow":  { hi: "#e7d878", mid: "#c6a83f", lo: "#7a6a1e", wall: "#d9c85a" },
+    "stainless":   { hi: "#e2e4e4", mid: "#a9abab", lo: "#606262", wall: "#e8eaea" }
+  };
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; position: relative; font-size: 10px; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; left: 0; top: 0; transform-origin: 0 0; }',
+  'svg { display: block; overflow: visible; }',
+  '</style>',
+  '<div class="wrap"><svg class="stage" xmlns="http://www.w3.org/2000/svg"></svg></div>'
+  ].join("\n");
+
+  function mk(tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function num(el, n, d) { var x = parseFloat(el.getAttribute(n)); return isNaN(x) ? d : x; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function splitList(v, def) {
+    if (!v) return def.slice();
+    var out = v.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+    return out.length ? out : def.slice();
+  }
+  function rnd(seed) { var x = Math.sin(seed * 12.9898 + 4.1414) * 43758.5453; return x - Math.floor(x); }
+
+  // one <defs> gradient per finish, built once and reused by id
+  function buildDefs(svg) {
+    var defs = mk("defs", {});
+    Object.keys(FINISH).forEach(function (name) {
+      var f = FINISH[name];
+      var g = mk("radialGradient", { id: "hd-" + name, cx: "34%", cy: "28%", r: "72%" });
+      g.appendChild(mk("stop", { offset: "0", "stop-color": f.hi }));
+      g.appendChild(mk("stop", { offset: "0.55", "stop-color": f.mid }));
+      g.appendChild(mk("stop", { offset: "1", "stop-color": f.lo }));
+      defs.appendChild(g);
+    });
+    var cup = mk("radialGradient", { id: "washer-cup", cx: "35%", cy: "30%", r: "75%" });
+    cup.appendChild(mk("stop", { offset: "0", "stop-color": "#3a3a3d" }));
+    cup.appendChild(mk("stop", { offset: "0.7", "stop-color": "#1c1c1e" }));
+    cup.appendChild(mk("stop", { offset: "1", "stop-color": "#0c0c0d" }));
+    defs.appendChild(cup);
+    var dress = mk("linearGradient", { id: "washer-dress", x1: "0", y1: "0", x2: "0", y2: "1" });
+    dress.appendChild(mk("stop", { offset: "0", "stop-color": "#f2f2f2" }));
+    dress.appendChild(mk("stop", { offset: "0.5", "stop-color": "#c7c7c7" }));
+    dress.appendChild(mk("stop", { offset: "1", "stop-color": "#7c7c7c" }));
+    defs.appendChild(dress);
+    var sh = mk("filter", { id: "cshadow", x: "-60%", y: "-60%", width: "220%", height: "220%" });
+    sh.appendChild(mk("feGaussianBlur", { stdDeviation: "0.6" }));
+    defs.appendChild(sh);
+    svg.appendChild(defs);
+  }
+
+  // washer, drawn under the head, centred at 0,0
+  function buildWasher(type) {
+    var g = mk("g", {});
+    if (type === "cup") {
+      g.appendChild(mk("ellipse", { cx: 0.4, cy: 0.6, rx: HR + 3.4, ry: HR + 3.4, fill: "#000", opacity: 0.4, filter: "url(#cshadow)" }));
+      g.appendChild(mk("circle", { r: HR + 3, fill: "url(#washer-cup)", stroke: "#050506", "stroke-width": 0.5 }));
+      g.appendChild(mk("circle", { r: HR + 3, fill: "none", stroke: "#4a4a4d", "stroke-width": 0.6, "stroke-opacity": 0.5, cx: -0.3, cy: -0.3 }));
+    } else if (type === "flat") {
+      g.appendChild(mk("circle", { r: HR + 2.6, fill: "none", stroke: "#9a9a9a", "stroke-width": 1.6 }));
+      g.appendChild(mk("circle", { r: HR + 2.6, fill: "none", stroke: "#e8e8e8", "stroke-width": 0.5, cx: -0.4, cy: -0.4 }));
+    } else if (type === "star") {
+      g.appendChild(mk("circle", { r: HR + 2.8, fill: "none", stroke: "#b9b9b9", "stroke-width": 1.4 }));
+      for (var i = 0; i < 12; i++) {
+        var a = (i / 12) * Math.PI * 2;
+        var r1 = HR + 1.9, r2 = HR + 3.9;
+        g.appendChild(mk("line", {
+          x1: r1 * Math.cos(a), y1: r1 * Math.sin(a), x2: r2 * Math.cos(a), y2: r2 * Math.sin(a),
+          stroke: "#cfcfcf", "stroke-width": 0.9
+        }));
+      }
+    } else if (type === "dress") {
+      g.appendChild(mk("circle", { r: HR + 3.6, fill: "url(#washer-dress)", stroke: "#5a5a5a", "stroke-width": 0.5 }));
+      g.appendChild(mk("circle", { r: HR + 1.4, fill: "none", stroke: "#8a8a8a", "stroke-width": 0.5 }));
+    }
+    return g;
+  }
+
+  // the recess, drawn centred at 0,0, angle in degrees
+  function buildRecess(drive, angle, wall) {
+    var g = mk("g", { transform: "rotate(" + angle.toFixed(1) + ")" });
+    var dark = "#101012";
+    if (drive === "slotted") {
+      g.appendChild(mk("rect", { x: -HR + 1.4, y: -0.9, width: (HR - 1.4) * 2, height: 1.8, rx: 0.5, fill: dark }));
+      g.appendChild(mk("rect", { x: -HR + 1.4, y: 0.35, width: (HR - 1.4) * 2, height: 0.5, fill: wall, opacity: 0.55 }));
+    } else if (drive === "phillips" || drive === "pozi" || drive === "jis") {
+      [0, 90].forEach(function (r) {
+        var gg = mk("g", { transform: "rotate(" + r + ")" });
+        gg.appendChild(mk("path", { d: "M -1.1 -" + (HR - 1) + " L 1.1 -" + (HR - 1) + " L 0.35 -0.4 L -0.35 -0.4 Z", fill: dark }));
+        gg.appendChild(mk("path", { d: "M -1.1 " + (HR - 1) + " L 1.1 " + (HR - 1) + " L 0.35 0.4 L -0.35 0.4 Z", fill: dark }));
+        g.appendChild(gg);
+      });
+      g.appendChild(mk("circle", { r: 0.9, fill: dark }));
+      g.appendChild(mk("circle", { r: 0.35, fill: wall, opacity: 0.5, cx: -0.25, cy: -0.25 }));
+      if (drive === "pozi") {
+        [45, 135, 225, 315].forEach(function (a) {
+          var rad = a * Math.PI / 180, r1 = 2.2, r2 = 3.6;
+          g.appendChild(mk("line", { x1: r1 * Math.cos(rad), y1: r1 * Math.sin(rad), x2: r2 * Math.cos(rad), y2: r2 * Math.sin(rad), stroke: dark, "stroke-width": 0.7 }));
+        });
+      }
+      if (drive === "jis") g.appendChild(mk("circle", { r: 0.55, cx: HR - 1.6, cy: -(HR - 1.6), fill: dark }));
+    } else if (drive === "hex") {
+      var pts = [];
+      for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; pts.push((3.4 * Math.cos(a)).toFixed(2) + "," + (3.4 * Math.sin(a)).toFixed(2)); }
+      g.appendChild(mk("polygon", { points: pts.join(" "), fill: dark }));
+      g.appendChild(mk("polygon", { points: pts.join(" "), fill: "none", stroke: wall, "stroke-width": 0.35, "stroke-opacity": 0.4 }));
+    } else if (drive === "torx") {
+      var p2 = [];
+      for (var j = 0; j < 12; j++) {
+        var ang = j * Math.PI / 6;
+        var rr = (j % 2 === 0) ? 3.6 : 2.1;
+        p2.push((rr * Math.cos(ang)).toFixed(2) + "," + (rr * Math.sin(ang)).toFixed(2));
+      }
+      g.appendChild(mk("polygon", { points: p2.join(" "), fill: dark }));
+    } else if (drive === "thumb") {
+      for (var k = 0; k < 16; k++) {
+        var ak = (k / 16) * Math.PI * 2;
+        var rx0 = HR - 0.6, rx1 = HR + 0.3;
+        g.appendChild(mk("line", {
+          x1: rx0 * Math.cos(ak), y1: rx0 * Math.sin(ak), x2: rx1 * Math.cos(ak), y2: rx1 * Math.sin(ak),
+          stroke: "#0c0c0d", "stroke-width": 0.8
+        }));
+      }
+    }
+    return g;
+  }
+
+  function buildHead(drive, finish, head, washer, angle) {
+    var g = mk("g", {});
+    if (washer && washer !== "none") g.appendChild(buildWasher(washer));
+    g.appendChild(mk("ellipse", { cx: 0.5, cy: 0.7, rx: HR + 0.6, ry: HR + 0.6, fill: "#000", opacity: 0.4, filter: "url(#cshadow)" }));
+    var rx = head === "oval" ? HR + 1.4 : HR, ry = head === "oval" ? HR - 1.2 : HR;
+    var f = FINISH[finish] || FINISH.nickel;
+    g.appendChild(mk("ellipse", { cx: 0, cy: 0, rx: rx, ry: ry, fill: "url(#hd-" + (FINISH[finish] ? finish : "nickel") + ")", stroke: f.lo, "stroke-width": 0.5 }));
+    if (head === "cheese" || head === "button") {
+      g.appendChild(mk("ellipse", { cx: -0.4, cy: -0.5, rx: rx * (head === "button" ? 0.62 : 0.5), ry: ry * (head === "button" ? 0.62 : 0.5), fill: f.hi, opacity: head === "button" ? 0.5 : 0.32 }));
+    }
+    g.appendChild(mk("path", {
+      d: "M " + (-rx * 0.75) + " " + (ry * 0.5) + " A " + rx + " " + ry + " 0 0 0 " + (rx * 0.75) + " " + (ry * 0.5),
+      fill: "none", stroke: f.hi, "stroke-opacity": 0.35, "stroke-width": 0.6
+    }));
+    g.appendChild(buildRecess(drive, angle, f.wall));
+    return g;
+  }
+
+  class SkFastenerScrew extends HTMLElement {
+    static get observedAttributes() { return ["value", "drive", "head", "finish", "washer", "angle", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._svg = r.querySelector(".stage");
+      this._v = "";
+    }
+    connectedCallback() { this.setAttribute("role", "img"); this._sync(); }   // idempotent: stage.js re-parents us once
+    attributeChangedCallback() { this._sync(); }
+
+    get value() { return this._v; }
+    set value(v) { v = v == null ? "" : String(v); if (v === this._v) return; this.setAttribute("value", v); }
+    get scale() { return num(this, "scale", 1); }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _sync() {
+      if (!this._wrap) return;
+      this._v = this.getAttribute("value") || "";
+      var driveList = splitList(this.getAttribute("drive"), ["slotted"]);
+      var finishList = splitList(this.getAttribute("finish"), ["nickel"]).filter(function (f) { return FINISH[f]; });
+      if (!finishList.length) finishList = ["nickel"];
+      var head = this.getAttribute("head") || "pan";
+      var washer = this.getAttribute("washer") || "none";
+      var fixedAngle = this.hasAttribute("angle") ? num(this, "angle", 0) : null;
+
+      var colsIsDrive = driveList.length >= finishList.length;
+      var cols = colsIsDrive ? driveList : finishList;
+      var rows = colsIsDrive ? finishList : driveList;
+
+      var w = PAD * 2 + cols.length * CELL;
+      var h = PAD * 2 + rows.length * CELL;
+      var s = clamp(num(this, "scale", 1), 0.3, 8);
+      this.style.width = (w * s) + "px";
+      this.style.height = (h * s) + "px";
+      this._wrap.style.width = w + "px";
+      this._wrap.style.height = h + "px";
+      this._wrap.style.transform = s === 1 ? "none" : "scale(" + s + ")";
+
+      var svg = this._svg;
+      svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      svg.setAttribute("width", w); svg.setAttribute("height", h);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      buildDefs(svg);
+
+      for (var ri = 0; ri < rows.length; ri++) {
+        for (var ci = 0; ci < cols.length; ci++) {
+          var drive = colsIsDrive ? cols[ci] : rows[ri];
+          var finish = colsIsDrive ? rows[ri] : cols[ci];
+          var cx = PAD + CELL / 2 + ci * CELL, cy = PAD + CELL / 2 + ri * CELL;
+          var angle = fixedAngle != null ? fixedAngle : Math.round(rnd(ri * 31 + ci * 7 + 3) * 160 - 80);
+          var g = mk("g", { transform: "translate(" + cx + "," + cy + ")" });
+          g.appendChild(buildHead(drive, finish, head, washer, angle));
+          svg.appendChild(g);
+        }
+      }
+
+      var count = rows.length * cols.length;
+      this.setAttribute("aria-label", count > 1
+        ? (driveList.length + " drives × " + finishList.length + " finishes, screw-head set")
+        : (driveList[0] + " " + head + "-head screw, " + finishList[0] + (washer !== "none" ? ", " + washer + " washer" : "")));
+    }
+  }
+  customElements.define("sk-fastener-screw", SkFastenerScrew);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBM 80-column card in the hopper — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Mono:wght@500;600&family=Roboto+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "insert-ibm-80-column-card",
+  "element": "sk-insert-ibm-80-column-card",
+  "name": "IBM 80-column card in the hopper",
+  "kind": "input",
+  "code": "E7",
+  "type": "Card-in-slot reader",
+  "source": "The IBM 5081 80-column punched card (1928 form) in the read hopper of an IBM 029 keypunch / 402 tabulator, corner cut top-left, 12 rows over 80 columns",
+  "era": "1920s",
+  "origin": "USA",
+  "materials": ["manila card stock", "satin steel", "chrome"],
+  "tags": ["punch card", "computing", "hopper", "hollerith", "keyboard"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "text", "stock", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 420, "h": 210 },
+  "notes": "Three stations: empty with a full hopper, a manila card seated reading HELLO WORLD 1962, and a salmon card seated."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-insert-ibm-80-column-card label="CARD READER"></sk-insert-ibm-80-column-card>
+    <sk-insert-ibm-80-column-card value text="HELLO WORLD 1962" label="CARD READER" scale="0.86"></sk-insert-ibm-80-column-card>
+    <sk-insert-ibm-80-column-card value text="ZANKYO JOB 07" stock="salmon" label="CARD READER" scale="0.86"></sk-insert-ibm-80-column-card>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>The <b>IBM 80-column card</b> — the 1928 Hollerith form, 7⅜ by 3¼ inches, corner cut top-left so a
+back-to-front or upside-down card is obvious at a glance — fed every tabulator, sorter, and keypunch
+from the 1930s to the 1970s. A spring-loaded hopper holds a deck on edge under a chrome weight; the read
+station pulls one card at a time under a guide with a column pointer, twelve rows of tiny holes running
+down each of its eighty columns.</p>
+<p><b>The tells kept here:</b> the 45° corner cut and the deck's stepped-diagonal shadow behind the
+weight; the dense grey column-of-digits printing that reads as texture at a glance and as ten digits up
+close; real punches — the <code>text</code> attribute is encoded in simplified Hollerith code (a digit
+punches its own row; a letter punches a zone row, 12, 11 or 0, plus a digit row) and the interpreted
+characters are printed along the top edge the way an IBM 029 printed them; the satin-steel hopper and its
+chrome weight bar; the card's slight edge rounding and its hard 1&nbsp;px shadow on the guide. Click the
+station or press Space to feed a card in or eject it.</p>
+<p><b>Left out:</b> the moving read brushes, the stacker the card falls into after reading, the
+"DO NOT FOLD SPINDLE OR MUTILATE" legend some decks carried.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-insert-ibm-80-column-card> — an 80-column card feeding from a hopper into a read station ====
+   attributes: value(bool, present) text(<=80 chars, printed + punched) stock(manila|cream|salmon|blue|green) label scale disabled
+   events: input {value} as the card starts moving, change {value,text} when it settles
+   self-contained: paste this block into any page and use <sk-insert-ibm-80-column-card value text="HI"></sk-insert-ibm-80-column-card> */
+(function () {
+  if (customElements.get("sk-insert-ibm-80-column-card")) return;
+  const W = 420, H = 210;
+  const CARDW = 250, CARDH = 114, CARDX = 128, CARDY = 46;
+  const COLS = 80, ROWS = 12;                 // 12, 11, 0..9
+  const PADL = 14, PADR = 6, PADT = 20, PADB = 8;
+  const usableW = CARDW - PADL - PADR, usableH = CARDH - PADT - PADB;
+  const pitch = usableW / COLS;
+  const rowH = usableH / ROWS;
+
+  const STOCKS = {
+    manila: ["#ecdead", "#e0cf90", "#a8925c"],
+    cream: ["#f3ecd8", "#e8ddbf", "#b7a97e"],
+    salmon: ["#f3bfa6", "#e8a888", "#b06f52"],
+    blue: ["#c3d6ea", "#aac3de", "#7691ac"],
+    green: ["#c8e4bf", "#b0d6a5", "#7ba36e"]
+  };
+
+  function rowIndex(ch) {
+    if (ch >= "0" && ch <= "9") return [Number(ch) + 2];
+    if (ch >= "A" && ch <= "I") return [0, (ch.charCodeAt(0) - 64) + 2];
+    if (ch >= "J" && ch <= "R") return [1, (ch.charCodeAt(0) - 73) + 2];
+    if (ch >= "S" && ch <= "Z") return [2, (ch.charCodeAt(0) - 82) + 2];
+    return [];
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .grab { position: absolute; left: 10px; top: 10px; width: 400px; height: 160px; cursor: pointer;
+      touch-action: manipulation; user-select: none; -webkit-user-select: none; outline: none; border-radius: 10px; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: inset 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.55); }
+    text { font-family: "IBM Plex Mono", "JetBrains Mono", monospace; }
+    .label { font-size: 8px; letter-spacing: 0.22em; fill: #cfd3d6; text-anchor: middle; font-family: "Roboto Condensed","Arial Narrow",sans-serif; }
+    .placard { font-size: 6.5px; letter-spacing: 0.14em; fill: #9aa0a3; font-family: "Roboto Condensed","Arial Narrow",sans-serif; }
+    .interp { font-size: 7.2px; letter-spacing: 0.06em; fill: #6b6248; }
+    .cardgrp { transition: transform 260ms cubic-bezier(.22,.85,.32,1.2); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c7cbcd"/><stop offset="0.5" stop-color="#9aa0a3"/><stop offset="1" stop-color="#75797c"/>
+        </linearGradient>
+        <linearGradient id="steelDark" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8b9093"/><stop offset="1" stop-color="#54585a"/>
+        </linearGradient>
+        <linearGradient id="chromeBar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f4f6f7"/><stop offset="0.3" stop-color="#cfd3d5"/><stop offset="0.5" stop-color="#8b9092"/>
+          <stop offset="0.55" stop-color="#eef0f1"/><stop offset="1" stop-color="#565b5d"/>
+        </linearGradient>
+        <linearGradient id="throat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0c0e10"/><stop offset="0.5" stop-color="#1c2023"/><stop offset="1" stop-color="#101214"/>
+        </linearGradient>
+        <linearGradient id="cardface" x1="0" y1="0" x2="0" y2="1">
+          <stop id="cf0" offset="0" stop-color="#ecdead"/><stop id="cf1" offset="0.6" stop-color="#e0cf90"/><stop id="cf2" offset="1" stop-color="#a8925c"/>
+        </linearGradient>
+        <pattern id="digits" x="0" y="0" width="${pitch.toFixed(3)}" height="${usableH.toFixed(3)}" patternUnits="userSpaceOnUse">
+          ${Array.from({length:10},(_,i)=>`<text x="${(pitch/2).toFixed(2)}" y="${(rowH*(i+1)-1).toFixed(2)}" font-size="3.1" text-anchor="middle" fill="#8b7f5e">${i}</text>`).join("")}
+        </pattern>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
+      </defs>
+
+      <ellipse cx="${W/2}" cy="${H-16}" rx="160" ry="8" fill="#000" opacity="0.28" filter="url(#soft2)"/>
+      <text class="label" x="${W/2}" y="${H-8}"></text>
+
+      <!-- read-station housing / throat -->
+      <g>
+        <rect x="96" y="24" width="300" height="150" rx="10" fill="url(#steelDark)" stroke="#3c3f41" stroke-width="1"/>
+        <rect x="102" y="30" width="288" height="138" rx="8" fill="url(#throat)"/>
+        <!-- placards -->
+        <text class="placard" x="376" y="46" text-anchor="end">FEED</text>
+        <text class="placard" x="376" y="158" text-anchor="end">REL</text>
+      </g>
+
+      <!-- hopper: stack of cards on edge, seen from the side, with a chrome weight -->
+      <g>
+        <path d="M 18 168 L 18 70 Q 18 60 28 60 L 92 60 Q 100 60 100 70 L 100 168 Z" fill="url(#steel)" stroke="#4c4f51" stroke-width="1"/>
+        <rect x="24" y="150" width="70" height="12" rx="1.5" fill="#0e0e0d"/>
+        <g class="deck"></g>
+        <rect x="52" y="66" width="10" height="34" fill="url(#chromeBar)" opacity="0.85"/>
+        <rect class="weight" x="26" y="98.8" width="66" height="14" rx="3" fill="url(#chromeBar)" stroke="#3d4143" stroke-width="0.8"/>
+      </g>
+
+      <!-- the card, sliding between hopper and read station -->
+      <clipPath id="stage-clip"><rect x="100" y="18" width="300" height="164"/></clipPath>
+      <g clip-path="url(#stage-clip)">
+        <g class="cardgrp">
+          <g transform="translate(${CARDX} ${CARDY})">
+            <rect x="1" y="2" width="${CARDW}" height="${CARDH}" rx="3" fill="#000" opacity="0.35" filter="url(#soft)"/>
+            <path class="cardbody" d="M 14 0 L ${CARDW} 0 L ${CARDW} ${CARDH} L 0 ${CARDH} L 0 14 Z"
+                  fill="url(#cardface)" stroke="#00000055" stroke-width="0.8"/>
+            <rect x="${PADL}" y="${PADT}" width="${usableW}" height="${usableH}" fill="url(#digits)" opacity="0.55"/>
+            <line x1="${PADL}" y1="${PADT - 3}" x2="${CARDW - PADR}" y2="${PADT - 3}" stroke="#00000030" stroke-width="0.6"/>
+            <text class="interp" x="${PADL + 2}" y="12"></text>
+            <g class="punches"></g>
+            <path d="M 14 0 L 24 0 L 0 24 L 0 14 Z" fill="#00000022"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- column pointer rail over the throat -->
+      <rect x="106" y="34" width="280" height="3" rx="1.5" fill="#050505"/>
+      <g class="pointer">
+        <path d="M -4 30 L 4 30 L 0 38 Z" fill="#d63b2f"/>
+      </g>
+      <!-- guide lip shadow onto the card -->
+      <rect x="102" y="30" width="288" height="138" rx="8" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="5" filter="url(#soft)"/>
+    </svg>
+    <div class="grab" role="switch" tabindex="0"></div>
+  </div>`;
+
+  class SkInsertIbmCard extends HTMLElement {
+    static get observedAttributes() { return ["value", "text", "stock", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._present = false; this._text = ""; this._stock = "manila"; this._scale = 1;
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._label = this.shadowRoot.querySelector(".label");
+      this._cardgrp = this.shadowRoot.querySelector(".cardgrp");
+      this._cardbody = this.shadowRoot.querySelector(".cardbody");
+      this._interp = this.shadowRoot.querySelector(".interp");
+      this._punches = this.shadowRoot.querySelector(".punches");
+      this._deck = this.shadowRoot.querySelector(".deck");
+      this._weight = this.shadowRoot.querySelector(".weight");
+      this._pointer = this.shadowRoot.querySelector(".pointer");
+      this._cf0 = this.shadowRoot.getElementById("cf0"); this._cf1 = this.shadowRoot.getElementById("cf1"); this._cf2 = this.shadowRoot.getElementById("cf2");
+      this._onClick = this._onClick.bind(this); this._onKey = this._onKey.bind(this);
+      this._drawDeck();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) { /* absent = false, present state is opt-in */ }
+      this._readAttrs(); this._render(true);
+      this._grab.addEventListener("click", this._onClick);
+      this._grab.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      this._grab.removeEventListener("click", this._onClick);
+      this._grab.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(false); }
+    get value() { return this._present; }
+    set value(v) { v = !!v; this._present = v; if (v) this.setAttribute("value", ""); else this.removeAttribute("value"); this._render(false); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _drawDeck() {
+      const ns = "http://www.w3.org/2000/svg";
+      for (let i = 0; i < 11; i++) {
+        const y = 148 - i * 3.2;
+        const notch = 6 + (i % 3) * 0.6;
+        const r = document.createElementNS(ns, "path");
+        r.setAttribute("d", `M 26 ${y} L 90 ${y} L 90 ${y + 2.2} L 26 ${y + 2.2} Z`);
+        r.setAttribute("fill", i % 2 ? "#d9c98d" : "#cdbc7c");
+        this._deck.appendChild(r);
+        const cut = document.createElementNS(ns, "path");
+        cut.setAttribute("d", `M 26 ${y} L ${26 + notch} ${y} L 26 ${y + notch} Z`);
+        cut.setAttribute("fill", "#171614");
+        this._deck.appendChild(cut);
+      }
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._present = this.hasAttribute("value");
+      this._text = (this.getAttribute("text") || "").toUpperCase().slice(0, COLS);
+      this._stock = STOCKS[this.getAttribute("stock")] ? this.getAttribute("stock") : "manila";
+      const c = STOCKS[this._stock];
+      this._cf0.setAttribute("stop-color", c[0]); this._cf1.setAttribute("stop-color", c[1]); this._cf2.setAttribute("stop-color", c[2]);
+      this._label.textContent = this.getAttribute("label") || "";
+      this._grab.setAttribute("aria-label", (this.getAttribute("label") || "80-column card reader"));
+      this._grab.setAttribute("aria-checked", this._present ? "true" : "false");
+      this._grab.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._drawPunches();
+    }
+    _drawPunches() {
+      const g = this._punches; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      this._interp.textContent = this._text;
+      for (let i = 0; i < this._text.length; i++) {
+        const ch = this._text[i];
+        if (ch === " ") continue;
+        const rows = rowIndex(ch);
+        const x = PADL + i * pitch + pitch * 0.14;
+        const w = pitch * 0.62;
+        rows.forEach(ri => {
+          const y = PADT + ri * rowH + rowH * 0.16;
+          const h = rowH * 0.68;
+          const r = document.createElementNS(ns, "rect");
+          r.setAttribute("x", x.toFixed(2)); r.setAttribute("y", y.toFixed(2));
+          r.setAttribute("width", w.toFixed(2)); r.setAttribute("height", h.toFixed(2));
+          r.setAttribute("rx", "0.4"); r.setAttribute("fill", "#171410");
+          g.appendChild(r);
+        });
+      }
+    }
+    _render(initial) {
+      const seatedX = 0, ejectedX = -300;
+      this._cardgrp.style.transition = initial ? "none" : "";
+      this._cardgrp.style.transform = `translateX(${this._present ? seatedX : ejectedX}px)`;
+      const px = this._present ? 106 + 280 * 0.42 : 106 + 6;
+      this._pointer.setAttribute("transform", `translate(${px} 0)`);
+    }
+    _toggle() {
+      if (this.hasAttribute("disabled")) return;
+      const next = !this._present;
+      this._present = next;
+      if (next) this.setAttribute("value", ""); else this.removeAttribute("value");
+      this._render(false);
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: this._present, text: this._text } }));
+      clearTimeout(this._t);
+      this._t = setTimeout(() => {
+        this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._present, text: this._text } }));
+      }, 260);
+    }
+    _onClick(e) { if (this.hasAttribute("disabled")) return; this._grab.focus({ preventScroll: true }); this._toggle(); }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") { e.preventDefault(); this._toggle(); }
+      else if (e.key === "Escape" && this._present) { e.preventDefault(); this._toggle(); }
+    }
+  }
+  customElements.define("sk-insert-ibm-80-column-card", SkInsertIbmCard);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

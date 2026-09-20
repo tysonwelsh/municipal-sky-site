@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Honeywell T87 "Round" thermostat — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "preset-honeywell-t87-round",
+  "element": "sk-preset-honeywell-t87-round",
+  "name": "Honeywell T87 \"Round\" thermostat",
+  "kind": "both",
+  "code": "E15.1",
+  "type": "Dial-and-window preset",
+  "source": "Honeywell T87 \"The Round\" (Henry Dreyfuss, 1953), the gold-anodised wall thermostat with a rotating outer ring and a curved set-point window",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["anodised aluminium", "acrylic window", "brass sub-base"],
+  "tags": ["hvac", "thermostat", "dreyfuss", "cover-on"],
+  "value": { "model": "range", "min": 50, "max": 90, "step": 1, "unit": "°F" },
+  "attributes": ["value", "min", "max", "units", "temperature", "finish", "heat", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 240, "h": 240 },
+  "notes": "Gold at 72 with the room at 68 (heat on); a white one at 65; a silver one in °C."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-preset-honeywell-t87-round value="72" temperature="68" heat></sk-preset-honeywell-t87-round>
+    <sk-preset-honeywell-t87-round value="65" temperature="70" finish="white" scale="0.85"></sk-preset-honeywell-t87-round>
+    <sk-preset-honeywell-t87-round value="21" temperature="19" finish="silver" units="c" min="10" max="30" scale="0.85"></sk-preset-honeywell-t87-round>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>Henry Dreyfuss drew <b>The Round</b> for Honeywell in 1953 and it is still on walls today: a convex dome of
+spun, gold-anodised aluminium (later white or chrome), an outer ring you turn with two fingers, a curved window
+at the top where a cylindrical drum of black numerals scrolls past a fixed red pointer to set the temperature,
+and a small thermometer window below showing the room's actual reading — which does not move with the ring.</p>
+<p><b>The tells kept here:</b> the dome's radial brushed highlight, bright at ten o'clock and dark at four,
+sweeping as one piece with the ring; the set-point numerals foreshortening as they near the window's edges, the
+way text does wrapped around a cylinder; the thermometer needle's slow, independent ballistic; a heat-on dot that
+lights when the setting is above the room. Turning the ring is an angle-follow drag, like a tuning dial, plus
+wheel and arrows.</p>
+<p><b>Left out:</b> the wall sub-base and its low-voltage terminals, the mercury switch inside, and the interior
+this cover sits over (another build's job).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-preset-honeywell-t87-round> — Honeywell T87 "Round" thermostat cover ====
+   attributes: value min max units(f|c) temperature finish(gold|white|silver) heat scale disabled
+   value: range set-point; events: input during the drag, change when it settles
+   self-contained: paste this block into any page and use <sk-preset-honeywell-t87-round value="72"></sk-preset-honeywell-t87-round> */
+(function () {
+  if (customElements.get("sk-preset-honeywell-t87-round")) return;
+  const W = 240, H = 240, CX = 120, CY = 116;
+  const SWEEP = 300;
+  const NS = "http://www.w3.org/2000/svg";
+  function sn(t, a) { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; }
+
+  const WIN = { x: 74, y: 26, w: 92, h: 26, cx: 120, cy: 39 };
+  const TWIN = { x: 92, y: 156, w: 56, h: 30 };
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display:inline-block; width:${W}px; height:${H}px; position:relative; font-size:10px; -webkit-tap-highlight-color:transparent;
+      --gold-a:#dcb85a; --gold-b:#b8933f; --gold-c:#8a6a2c; --gold-hi:#f6e6a8;
+      --white-a:#f5f2ea; --white-b:#d9d4c8; --white-c:#b6b0a0; --white-hi:#ffffff;
+      --silver-a:#dfe2e2; --silver-b:#c9ccce; --silver-c:#9aa0a4; --silver-hi:#ffffff; }
+    :host([hidden]) { display:none; }
+    .wrap { position:absolute; inset:0; transform-origin:0 0; }
+    svg { position:absolute; inset:0; overflow:visible; }
+    text { font-family:"Libre Franklin","Arial Narrow",sans-serif; }
+    .word { font-family:"Josefin Sans","Futura",sans-serif; }
+    .ring { cursor: grab; touch-action:none; outline:none; }
+    .ring.drag { cursor: grabbing; }
+    :host([disabled]) .ring { cursor:default; }
+    .ringgrp { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 60ms linear; }
+    .ringgrp.snap { transition: transform 140ms cubic-bezier(.2,.9,.3,1.15); }
+    .ring:focus-visible { outline:none; }
+    .ring:focus-visible ~ .focusring, .ring:focus-visible + .focusring { opacity:1; }
+    .num { font-size:15px; font-weight:500; text-anchor:middle; dominant-baseline:middle; fill:#141210; }
+    .tnum { font-size:7px; text-anchor:middle; fill:#141210; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}">
+      <defs>
+        <filter id="tsoft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+        <radialGradient id="dome" cx="34%" cy="28%" r="75%">
+          <stop class="dstop0" offset="0" stop-color="#f6e6a8"/>
+          <stop class="dstop1" offset="0.45" stop-color="#c9a44a"/>
+          <stop class="dstop2" offset="0.8" stop-color="#8a6a2c"/>
+          <stop class="dstop3" offset="1" stop-color="#5f4a1f"/>
+        </radialGradient>
+        <radialGradient id="ringGrad" cx="35%" cy="25%" r="75%">
+          <stop class="rstop0" offset="0" stop-color="#f0dc9a"/>
+          <stop class="rstop1" offset="0.5" stop-color="#b8933f"/>
+          <stop class="rstop2" offset="1" stop-color="#6e551f"/>
+        </radialGradient>
+        <clipPath id="winclip"><rect x="${WIN.x}" y="${WIN.y}" width="${WIN.w}" height="${WIN.h}" rx="13"/></clipPath>
+        <clipPath id="twinclip"><rect x="${TWIN.x}" y="${TWIN.y}" width="${TWIN.w}" height="${TWIN.h}" rx="4"/></clipPath>
+      </defs>
+
+      <!-- wall shadow -->
+      <ellipse cx="${CX + 6}" cy="${CY + 8}" rx="98" ry="94" fill="#000" opacity="0.28" filter="url(#tsoft)"/>
+
+      <g class="ring" tabindex="0" role="slider" aria-label="set temperature">
+        <g class="ringgrp">
+          <circle cx="${CX}" cy="${CY}" r="112" fill="url(#ringGrad)" stroke="#3a2c10" stroke-width="1"/>
+          <circle cx="${CX}" cy="${CY}" r="112" fill="none" stroke="#000" stroke-opacity="0.25" stroke-width="6"/>
+          <!-- knurl hint on the underside edge -->
+          <g class="knurl" stroke="#3a2c10" stroke-width="1" opacity="0.5"></g>
+          <circle cx="${CX}" cy="${CY}" r="97" fill="#00000030"/>
+        </g>
+      </g>
+      <circle class="focusring" cx="${CX}" cy="${CY}" r="115" fill="none" stroke="#16e0e0" stroke-width="2.5" opacity="0" style="filter:drop-shadow(0 0 5px rgba(22,224,224,0.7))"/>
+
+      <!-- dome -->
+      <circle cx="${CX}" cy="${CY}" r="94" fill="url(#dome)" stroke="#3a2c10" stroke-width="1"/>
+      <path class="sweep" d="" fill="#ffffff" opacity="0.16"/>
+      <circle cx="${CX}" cy="${CY}" r="94" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="1.4"/>
+
+      <!-- set-point window -->
+      <g clip-path="url(#winclip)">
+        <rect x="${WIN.x - 4}" y="${WIN.y - 4}" width="${WIN.w + 8}" height="${WIN.h + 8}" fill="#efe6cf"/>
+        <g class="drum"></g>
+        <rect x="${WIN.x}" y="${WIN.y}" width="${WIN.w}" height="${WIN.h}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="4" filter="url(#tsoft)"/>
+      </g>
+      <rect x="${WIN.x}" y="${WIN.y}" width="${WIN.w}" height="${WIN.h}" rx="13" fill="none" stroke="#2a2010" stroke-width="1.4"/>
+      <rect x="${WIN.x}" y="${WIN.y}" width="${WIN.w}" height="${WIN.h/2}" rx="13" fill="#fff" opacity="0.14"/>
+      <path d="M ${WIN.cx} ${WIN.y - 3} L ${WIN.cx - 5} ${WIN.y + 6} L ${WIN.cx + 5} ${WIN.y + 6} Z" fill="#d6332a" stroke="#6b1a14" stroke-width="0.6"/>
+
+      <!-- thermometer window -->
+      <g clip-path="url(#twinclip)">
+        <rect x="${TWIN.x}" y="${TWIN.y}" width="${TWIN.w}" height="${TWIN.h}" fill="#efe6cf"/>
+        <g class="tscale"></g>
+        <g class="needle" style="transform-origin:${TWIN.x + TWIN.w/2}px ${TWIN.y + TWIN.h + 10}px">
+          <line x1="${TWIN.x + TWIN.w/2}" y1="${TWIN.y + TWIN.h + 8}" x2="${TWIN.x + TWIN.w/2}" y2="${TWIN.y + 4}" stroke="#141210" stroke-width="1.4" stroke-linecap="round"/>
+        </g>
+      </g>
+      <rect x="${TWIN.x}" y="${TWIN.y}" width="${TWIN.w}" height="${TWIN.h}" rx="4" fill="none" stroke="#2a2010" stroke-width="1.2"/>
+
+      <!-- centre disc, smooth and slightly raised -->
+      <circle cx="${CX}" cy="${CY + 40}" r="8" fill="url(#dome)" stroke="#3a2c10" stroke-width="0.8" opacity="0.95"/>
+      <circle class="heatdot" cx="${CX}" cy="${CY + 40}" r="3" fill="#3a2c10"/>
+
+      <!-- cover ring wordmark -->
+      <text class="word" x="${CX}" y="${CY + 92}" text-anchor="middle" font-size="4.6" letter-spacing="0.18em" fill="#efe6cf" opacity="0.85">ROUND THERMOSTAT</text>
+    </svg>
+  </div>`;
+
+  function polar(cx, cy, r, deg) { const a = (deg - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+
+  class SkT87 extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "units", "temperature", "finish", "heat", "scale", "disabled", "label"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 72; this._min = 50; this._max = 90; this._scale = 1;
+      this._temp = 70; this._tx = 70; this._tvel = 0; this._raf = 0; this._last = 0;
+      this._built = false;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this); this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this._built) { this._build(); this._built = true; }
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawKnurl(); this._drawDrum(); this._drawTScale();
+      this._tx = this._temp; this._render();
+      this._ring.addEventListener("pointerdown", this._onDown);
+      this._ring.addEventListener("wheel", this._onWheel, { passive: false });
+      this._ring.addEventListener("keydown", this._onKey);
+      this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._ring.removeEventListener("pointerdown", this._onDown);
+      this._ring.removeEventListener("wheel", this._onWheel);
+      this._ring.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this._built) return;
+      this._readAttrs();
+      if (n === "finish") this._applyFinish();
+      if (n === "min" || n === "max" || n === "units") this._drawDrum();
+      if (n === "temperature") this._drawTScale();
+      this._render();
+    }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v))); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _build() {
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._ring = root.querySelector(".ring");
+      this._ringGrp = root.querySelector(".ringgrp");
+      this._drumG = root.querySelector(".drum");
+      this._sweep = root.querySelector(".sweep");
+      this._knurl = root.querySelector(".knurl");
+      this._tscale = root.querySelector(".tscale");
+      this._needle = root.querySelector(".needle");
+      this._heatdot = root.querySelector(".heatdot");
+      const [ax, ay] = polar(CX, CY, 94, -140), [bx, by] = polar(CX, CY, 94, -30);
+      this._sweep.setAttribute("d", `M ${CX} ${CY} L ${ax} ${ay} A 94 94 0 0 1 ${bx} ${by} Z`);
+    }
+    _drawKnurl() {
+      while (this._knurl.firstChild) this._knurl.removeChild(this._knurl.firstChild);
+      for (let i = 0; i < 60; i++) {
+        const a = i * 6;
+        const [x1, y1] = polar(CX, CY, 111, a), [x2, y2] = polar(CX, CY, 106, a);
+        this._knurl.appendChild(sn("line", { x1, y1, x2, y2 }));
+      }
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _angleFor(v) { const t = (v - this._min) / (this._max - this._min || 1); return -SWEEP / 2 + t * SWEEP; }
+    _valueForAngle(a) {
+      let t = (a + SWEEP / 2) / SWEEP;
+      t = Math.max(0, Math.min(1, t));
+      return this._min + t * (this._max - this._min);
+    }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const units = (this.getAttribute("units") || "f").toLowerCase();
+      const dMin = units === "c" ? 10 : 50, dMax = units === "c" ? 30 : 90;
+      this._min = num("min", dMin); this._max = num("max", dMax); this._units = units === "c" ? "°C" : "°F";
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._temp = num("temperature", this._temp);
+      this._heat = this.hasAttribute("heat");
+      this._disabled = this.hasAttribute("disabled");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._ring.setAttribute("tabindex", this._disabled ? "-1" : "0");
+      this._ring.setAttribute("aria-valuemin", this._min); this._ring.setAttribute("aria-valuemax", this._max);
+      this._ring.setAttribute("aria-disabled", this._disabled ? "true" : "false");
+      this._applyFinish();
+    }
+    _applyFinish() {
+      const f = this.getAttribute("finish") || "gold";
+      const s = this.shadowRoot;
+      const map = {
+        gold: ["#f6e6a8", "#c9a44a", "#8a6a2c", "#5f4a1f", "#f0dc9a", "#b8933f", "#6e551f"],
+        white: ["#ffffff", "#efeae0", "#d9d4c8", "#b6b0a0", "#ffffff", "#e4dfd2", "#c3bdae"],
+        silver: ["#ffffff", "#dfe2e2", "#c9ccce", "#9aa0a4", "#f2f4f4", "#c9ccce", "#8e9296"]
+      };
+      const c = map[f] || map.gold;
+      s.querySelector(".dstop0").setAttribute("stop-color", c[0]);
+      s.querySelector(".dstop1").setAttribute("stop-color", c[1]);
+      s.querySelector(".dstop2").setAttribute("stop-color", c[2]);
+      s.querySelector(".dstop3").setAttribute("stop-color", c[3]);
+      s.querySelector(".rstop0").setAttribute("stop-color", c[4]);
+      s.querySelector(".rstop1").setAttribute("stop-color", c[5]);
+      s.querySelector(".rstop2").setAttribute("stop-color", c[6]);
+    }
+    _drawDrum() {
+      while (this._drumG.firstChild) this._drumG.removeChild(this._drumG.firstChild);
+      const SP = 20;
+      for (let v = this._min; v <= this._max; v++) {
+        const t = sn("text", { class: "num", "data-v": v, y: WIN.cy + 5 });
+        t.textContent = String(v);
+        this._drumG.appendChild(t);
+      }
+    }
+    _drawTScale() {
+      while (this._tscale.firstChild) this._tscale.removeChild(this._tscale.firstChild);
+      const lo = this._min - 10, hi = this._max + 10;
+      const y0 = TWIN.y + TWIN.h - 4, y1 = TWIN.y + 6;
+      for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) {
+        const y = y0 + (v - lo) / (hi - lo) * (y1 - y0);
+        this._tscale.appendChild(sn("line", { x1: TWIN.x + 4, y1: y, x2: TWIN.x + 10, y2: y, stroke: "#141210", "stroke-width": 0.8 }));
+        const t = sn("text", { class: "tnum", x: TWIN.x + TWIN.w - 12, y: y + 2 });
+        t.textContent = String(v);
+        this._tscale.appendChild(t);
+      }
+      this._tLo = lo; this._tHi = hi; this._tY0 = y0; this._tY1 = y1;
+    }
+    _render() {
+      const ang = this._angleFor(this._v);
+      this._ringGrp.style.transform = "rotate(" + ang.toFixed(2) + "deg)";
+      this._ring.setAttribute("aria-valuenow", String(Math.round(this._v)));
+      this._ring.setAttribute("aria-valuetext", Math.round(this._v) + this._units);
+      // drum: position each numeral by its offset from the current value, foreshortened near the window edges
+      const nodes = this._drumG.querySelectorAll("text");
+      nodes.forEach((t) => {
+        const v = parseFloat(t.getAttribute("data-v"));
+        const off = v - this._v;
+        const x = WIN.cx + off * 20;
+        const edge = Math.max(0, Math.min(1, Math.abs(off) / 3.4));
+        const sx = 1 - edge * 0.55;
+        const op = Math.max(0, 1 - edge * 1.15);
+        t.setAttribute("x", x);
+        t.setAttribute("transform", `translate(${x} 0) scale(${sx} 1) translate(${-x} 0)`);
+        t.style.opacity = op;
+      });
+      this._heatdot.style.fill = this._heat ? "#d6332a" : "#3a2c10";
+      this._heatdot.style.filter = this._heat ? "drop-shadow(0 0 3px #d6332a)" : "none";
+    }
+    _paintNeedle() {
+      const t = Math.max(this._tLo, Math.min(this._tHi, this._tx));
+      const y = this._tY0 + (t - this._tLo) / (this._tHi - this._tLo) * (this._tY1 - this._tY0);
+      const dy = y - (TWIN.y + TWIN.h + 8);
+      this._needle.style.transform = `translateY(${dy}px)`;
+      this._needle.setAttribute("transform", "");
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      const k = 30, c = 9;
+      const acc = k * (this._temp - this._tx) - c * this._tvel;
+      this._tvel += acc * dt; this._tx += this._tvel * dt;
+      this._paintNeedle();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      if (v === this._v && !settle) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v)));
+      this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _onDown(e) {
+      if (this._disabled || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._ring.focus({ preventScroll: true });
+      this._ring.setPointerCapture(e.pointerId);
+      this._ring.classList.add("drag"); this._ringGrp.classList.remove("snap");
+      this._drag = true; this._moved = false;
+      this._ring.addEventListener("pointermove", this._onMove);
+      this._ring.addEventListener("pointerup", this._onUp); this._ring.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const rect = this._wrap.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / this._scale, py = (e.clientY - rect.top) / this._scale;
+      const a = Math.atan2(px - CX, -(py - CY)) * 180 / Math.PI;
+      const v = Math.round(this._valueForAngle(a));
+      if (v !== this._v) this._moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._ring.removeEventListener("pointermove", this._onMove);
+      this._ring.removeEventListener("pointerup", this._onUp); this._ring.removeEventListener("pointercancel", this._onUp);
+      try { this._ring.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._ring.classList.remove("drag"); this._drag = false;
+      if (this._moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this._disabled) return;
+      e.preventDefault();
+      this._ringGrp.classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * (e.shiftKey ? 5 : 1), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this._disabled) return;
+      let v = null;
+      const big = e.shiftKey ? 5 : 1;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + big; break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - big; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._ringGrp.classList.add("snap");
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-preset-honeywell-t87-round", SkT87);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

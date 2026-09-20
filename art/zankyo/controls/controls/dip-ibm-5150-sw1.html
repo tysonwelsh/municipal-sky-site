@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBM PC 5150 DIP switch block — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "dip-ibm-5150-sw1",
+  "element": "sk-dip-ibm-5150-sw1",
+  "name": "IBM PC 5150 motherboard DIP switch block",
+  "kind": "input",
+  "code": "C9.1",
+  "type": "DIP switch block",
+  "source": "SW1 / SW2, the two 8-way slide DIP switch blocks on the IBM PC 5150 system board, 1981",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["moulded plastic block", "ivory slider nubs", "green solder-mask PCB", "tin-plated pins"],
+  "tags": ["computer", "motherboard", "configuration", "binary", "PCB", "silk-screen"],
+  "value": { "model": "bits", "count": 8 },
+  "attributes": ["value", "count", "body", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 128, "h": 80 },
+  "notes": "SW1 set to 01100011 (blue); a red 4-way block; the same block at scale 2.5."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-dip-ibm-5150-sw1 value="01100011" label="SW1"></sk-dip-ibm-5150-sw1>
+    <sk-dip-ibm-5150-sw1 value="1010" count="4" body="red" label="SW2"></sk-dip-ibm-5150-sw1>
+    <sk-dip-ibm-5150-sw1 value="10010110" label="SW1" scale="2.5"></sk-dip-ibm-5150-sw1>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>IBM PC 5150</b> motherboard carries two eight-way slide DIP blocks, SW1 and SW2, soldered
+  straight to the board: a moulded blue (some batches brick red) plastic body with eight tiny ivory
+  slider nubs in a row, each in its own dark well, "ON" silk-screened at the top edge with a little
+  arrow and the numerals 1–8 along the bottom, on a green board with a couple of pale traces and a
+  "SW1" silk-screen label beside it.</p>
+  <p><b>The tells kept here:</b> the blue-and-ivory colour pairing; the nub filling only the top or
+  bottom half of its well so the other half stays dark; the block seen dead-on from above with a
+  bevelled, slightly domed face; the tin pins peeking from the board under the block's long edges;
+  one nub sitting two degrees askew as if a pen had nudged it; and a cursor that turns to a crosshair
+  over the nubs, because a real finger is too big for them. A click flips one nub, a drag along the
+  row sets every nub it passes to the direction of the drag, and arrows move a focus box between nubs
+  with Space to flip the one that's focused.</p>
+  <p><b>Left out:</b> the chip's part-number moulding, the board's other components, and the pin count
+  matching a real 16-pin DIP package exactly.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-dip-ibm-5150-sw1> — IBM PC 5150-style 8-way slide DIP switch block ====
+   attributes: value(bitstring "01100011") count(4..12, default 8) body("blue"|"red") label scale disabled
+   events: input {value:[bool]} while dragging/toggling, change {value} when the gesture settles
+   self-contained: paste this block into any page and use <sk-dip-ibm-5150-sw1 value="01100011"> */
+(function () {
+  if (customElements.get("sk-dip-ibm-5150-sw1")) return;
+  const PITCH = 10, WELL_W = 6, TOP_H = 9, BAND_H = 23, BOT_H = 8, BLOCK_H = TOP_H + BAND_H + BOT_H;
+  const MARGIN = 24, BOARD_H = 80, BLOCK_Y = (BOARD_H - BLOCK_H) / 2;
+  const NUB_H = (BAND_H - 3) / 2;
+
+  function bitsFromAttr(v, n) {
+    const out = [];
+    if (Array.isArray(v)) { for (let i = 0; i < n; i++) out.push(!!v[i]); return out; }
+    const s = (v == null ? "" : String(v)).trim();
+    if (/^[01]+$/.test(s)) { for (let i = 0; i < n; i++) out.push(s.charAt(i) === "1"); return out; }
+    if (s.indexOf(",") >= 0) { const p = s.split(","); for (let i = 0; i < n; i++) out.push(/^(true|1|on)$/i.test((p[i] || "").trim())); return out; }
+    for (let i = 0; i < n; i++) out.push(false);
+    return out;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display:inline-block; position:relative; font-size:10px; -webkit-tap-highlight-color:transparent;
+      --blue-l:#4677c4; --blue:#2c5aa0; --blue-d:#1d3d6e;
+      --red-l:#cf5744; --red:#b83a2c; --red-d:#7a2015; }
+    :host([hidden]) { display:none; }
+    .wrap { position:absolute; left:0; top:0; transform-origin:0 0; }
+    .board { position:relative; height:${BOARD_H}px; border-radius:2px; overflow:visible;
+      background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,0.035) 0 1px, rgba(0,0,0,0.05) 1px 3px),
+        linear-gradient(160deg, #226b3c 0%, #1e6b3a 45%, #175a30 100%);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5); }
+    .trace { position:absolute; height:0.8px; background:linear-gradient(90deg, rgba(47,138,78,0), rgba(120,206,158,0.5), rgba(47,138,78,0)); }
+    .silk { position:absolute; right:6px; top:5px; font-family:"Share Tech Mono","Courier New",monospace; font-size:6px; letter-spacing:0.1em; color:#f0f0ea; opacity:0.8; }
+    .pins { position:absolute; left:${MARGIN}px; height:5px; }
+    .pin { position:absolute; width:2px; height:5px; border-radius:0.5px; background:linear-gradient(180deg,#e6e8ea,#9a9ea3 55%,#6f7377); }
+    .shine { position:absolute; width:9px; height:3.5px; border-radius:50%; background:radial-gradient(#fff,rgba(255,255,255,0) 70%); opacity:0.14; filter:blur(0.8px); }
+    .block { position:absolute; left:${MARGIN}px; top:${BLOCK_Y}px; height:${BLOCK_H}px; border-radius:1.5px;
+      --body-l: var(--blue-l); --body: var(--blue); --body-d: var(--blue-d);
+      background: linear-gradient(135deg, var(--body-l) 0%, var(--body) 45%, var(--body-d) 100%);
+      box-shadow: 0 2px 2px rgba(0,0,0,0.45), 0 4px 7px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.35); }
+    :host([body="red"]) .block { --body-l: var(--red-l); --body: var(--red); --body-d: var(--red-d); }
+    .onrow { position:absolute; left:3px; top:1px; height:${TOP_H - 1}px; display:flex; align-items:center; gap:2px; }
+    .onrow .lbl { font-family:"Inter","Helvetica Neue",Arial,sans-serif; font-weight:600; font-size:4.4px; letter-spacing:0.09em; color:#f5f5f2; opacity:0.94; }
+    .onrow .arrow { font-size:4.4px; color:#f5f5f2; opacity:0.94; line-height:1; }
+    .row { position:absolute; left:0; top:${TOP_H}px; height:${BAND_H}px; outline:none; }
+    .cell { position:absolute; top:0; width:${PITCH}px; height:${BAND_H}px; outline:none; cursor:crosshair; touch-action:none; }
+    :host([disabled]) .cell { cursor:default; }
+    .slot { position:absolute; left:${(PITCH - WELL_W) / 2}px; top:1px; width:${WELL_W}px; height:${BAND_H - 2}px; border-radius:0 0 1px 1px;
+      background:#0f1a2e; box-shadow: inset 0 1px 2px rgba(0,0,0,0.85), inset 0 0 0 0.5px rgba(0,0,0,0.6); }
+    .nub { position:absolute; left:${(PITCH - WELL_W) / 2 + 0.5}px; top:1.2px; width:${WELL_W - 1}px; height:${NUB_H}px; border-radius:0.5px;
+      background: linear-gradient(135deg, #fdfbf6 0%, #eeeae0 45%, #a9a59a 100%);
+      box-shadow: 0 0.5px 1px rgba(0,0,0,0.45), inset 0 0.5px 0 rgba(255,255,255,0.7);
+      transform: translateY(0px) rotate(0deg); transition: transform 40ms linear; }
+    .cell.off .nub { transform: translateY(${NUB_H + 0.6}px) rotate(0deg); }
+    .cell.askew .nub { transform: translateY(0px) rotate(2deg); }
+    .cell.askew.off .nub { transform: translateY(${NUB_H + 0.6}px) rotate(2deg); }
+    .cell:focus-visible .slot { box-shadow: inset 0 1px 2px rgba(0,0,0,0.85), 0 0 0 1.3px #16e0e0, 0 0 5px rgba(22,224,224,0.65); }
+    .nums { position:absolute; left:0; top:${TOP_H + BAND_H}px; height:${BOT_H}px; }
+    .num { position:absolute; top:0.5px; width:${PITCH}px; text-align:center; font-family:"Inter","Helvetica Neue",Arial,sans-serif; font-weight:600; font-size:4.2px; color:#f5f5f2; opacity:0.85; }
+  </style>
+  <div class="wrap">
+    <div class="board">
+      <div class="trace" style="left:6px; top:11px; width:24px; transform:rotate(-4deg);"></div>
+      <div class="trace" style="right:32px; top:70px; width:20px; transform:rotate(3deg);"></div>
+      <div class="silk">SW1</div>
+      <div class="pins top"></div>
+      <div class="pins bottom"></div>
+      <div class="shine"></div>
+      <div class="block">
+        <div class="onrow"><span class="lbl">ON</span><span class="arrow">&#9650;</span></div>
+        <div class="row" role="group"></div>
+        <div class="nums"></div>
+      </div>
+    </div>
+  </div>`;
+
+  class SkDipIbm5150 extends HTMLElement {
+    static get observedAttributes() { return ["value", "count", "body", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: "open" });
+      root.appendChild(TPL.content.cloneNode(true));
+      this._board = root.querySelector(".board");
+      this._block = root.querySelector(".block");
+      this._row = root.querySelector(".row");
+      this._nums = root.querySelector(".nums");
+      this._pinsTop = root.querySelector(".pins.top") || root.querySelectorAll(".pins")[0];
+      this._pinsBot = root.querySelectorAll(".pins")[1];
+      this._shine = root.querySelector(".shine");
+      this._wrap = root.querySelector(".wrap");
+      this._n = 8; this._bits = []; this._cells = []; this._scale = 1; this._focus = 0;
+      this._drag = null;
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0".repeat(this._countAttr()));
+      this._readAttrs();
+      this._render();
+      const r = this._row;
+      r.addEventListener("pointerdown", this._onDown);
+      r.addEventListener("wheel", this._onWheel, { passive: false });
+      r.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const r = this._row;
+      r.removeEventListener("pointerdown", this._onDown);
+      r.removeEventListener("wheel", this._onWheel);
+      r.removeEventListener("keydown", this._onKey);
+      this._endDrag();
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._bits.slice(); }
+    set value(v) { this._bits = bitsFromAttr(v, this._n); this._reflect(); this._render(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { const c = this._cells[this._focus] || this._cells[0]; if (c) c.focus(o); }
+    blur() { const c = this._cells[this._focus]; if (c) c.blur(); }
+
+    _countAttr() {
+      let n = parseInt(this.getAttribute("count"), 10);
+      return isNaN(n) ? 8 : Math.max(4, Math.min(12, n));
+    }
+    _readAttrs() {
+      const n = this._countAttr();
+      if (n !== this._n || this._cells.length !== n) { this._n = n; this._build(); }
+      this._bits = bitsFromAttr(this.getAttribute("value"), this._n);
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      const W = this._n * PITCH + MARGIN * 2;
+      this._W = W;
+      this._board.style.width = W + "px";
+      this._pinsBot.style.top = (BLOCK_Y + BLOCK_H) + "px";
+      this._pinsTop.style.top = (BLOCK_Y - 5) + "px";
+      this._shine.style.left = (MARGIN - 3) + "px";
+      this._shine.style.top = (BLOCK_Y - 6) + "px";
+      this._block.style.width = (this._n * PITCH) + "px";
+      this._row.style.width = (this._n * PITCH) + "px";
+      this._nums.style.width = (this._n * PITCH) + "px";
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (BOARD_H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._row.setAttribute("aria-label", (this.getAttribute("label") || "DIP switch block") + ", " + this._n + " positions");
+      this._row.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+    }
+    _build() {
+      const n = this._n;
+      this._row.textContent = ""; this._nums.textContent = ""; this._cells = [];
+      this._pinsTop && (this._pinsTop.textContent = "");
+      this._pinsBot && (this._pinsBot.textContent = "");
+      if (this._focus >= n) this._focus = 0;
+      const askewIdx = Math.min(2, n - 1);
+      for (let i = 0; i < n; i++) {
+        const c = document.createElement("div");
+        c.className = "cell" + (i === askewIdx ? " askew" : "");
+        c.style.left = (i * PITCH) + "px";
+        c.setAttribute("role", "switch");
+        c.setAttribute("tabindex", i === this._focus ? "0" : "-1");
+        c.setAttribute("aria-label", "switch " + (i + 1));
+        c.innerHTML = '<div class="slot"></div><div class="nub"></div>';
+        this._row.appendChild(c);
+        this._cells.push(c);
+        const num = document.createElement("div");
+        num.className = "num"; num.style.left = (i * PITCH) + "px"; num.textContent = String(i + 1);
+        this._nums.appendChild(num);
+        if (this._pinsTop) { const p = document.createElement("div"); p.className = "pin"; p.style.left = (i * PITCH + PITCH / 2 - 1) + "px"; this._pinsTop.appendChild(p); }
+        if (this._pinsBot) { const p = document.createElement("div"); p.className = "pin"; p.style.left = (i * PITCH + PITCH / 2 - 1) + "px"; this._pinsBot.appendChild(p); }
+      }
+    }
+    _render() {
+      for (let i = 0; i < this._cells.length; i++) {
+        const c = this._cells[i], on = !!this._bits[i];
+        c.classList.toggle("off", !on);
+        c.setAttribute("aria-checked", on ? "true" : "false");
+        c.setAttribute("tabindex", (i === this._focus && !this.hasAttribute("disabled")) ? "0" : "-1");
+      }
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _reflect() { this.setAttribute("value", this._bits.map(b => b ? "1" : "0").join("")); }
+    _setBit(i, val, settle) {
+      if (i < 0 || i >= this._n) return false;
+      const changed = !!this._bits[i] !== val;
+      if (changed) { this._bits[i] = val; this._render(); }
+      if (changed || settle) this._emit("input", { value: this.value, index: i });
+      if (settle) { this._reflect(); this._emit("change", { value: this.value, index: i }); }
+      return changed;
+    }
+    _indexAt(e) {
+      const b = this._row.getBoundingClientRect();
+      const x = (e.clientX - b.left) / this._scale;
+      return Math.max(0, Math.min(this._n - 1, Math.floor(x / PITCH)));
+    }
+    _moveFocus(i) {
+      this._focus = Math.max(0, Math.min(this._n - 1, i));
+      this._render();
+      const c = this._cells[this._focus]; if (c) c.focus({ preventScroll: true });
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      const i = this._indexAt(e);
+      this._focus = i; this._render();
+      const c = this._cells[i]; if (c) c.focus({ preventScroll: true });
+      try { this._row.setPointerCapture(e.pointerId); } catch (_) {}
+      this._drag = { i0: i, x0: e.clientX, y0: e.clientY, dir: null, last: i, moved: false };
+      this._row.addEventListener("pointermove", this._onMove);
+      this._row.addEventListener("pointerup", this._onUp);
+      this._row.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      const d = this._drag; if (!d) return;
+      const dx = e.clientX - d.x0, dy = d.y0 - e.clientY;
+      if (d.dir === null) {
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          d.moved = true; d.dir = dy >= 0; d.last = d.i0;
+          this._setBit(d.i0, d.dir, false);
+        } else return;
+      }
+      const i = this._indexAt(e);
+      if (i !== d.last) {
+        const step = i > d.last ? 1 : -1;
+        for (let k = d.last + step; ; k += step) { this._setBit(k, d.dir, false); if (k === i) break; }
+        d.last = i;
+      }
+    }
+    _onUp(e) {
+      const d = this._drag; if (!d) return;
+      this._endDrag(e);
+      if (!d.moved) { this._setBit(d.i0, !this._bits[d.i0], true); }
+      else { this._reflect(); this._emit("change", { value: this.value }); }
+    }
+    _endDrag(e) {
+      this._row.removeEventListener("pointermove", this._onMove);
+      this._row.removeEventListener("pointerup", this._onUp);
+      this._row.removeEventListener("pointercancel", this._onUp);
+      if (e) { try { this._row.releasePointerCapture(e.pointerId); } catch (_) {} }
+      this._drag = null;
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      const i = this._indexAt(e), want = e.deltaY < 0;
+      if (!!this._bits[i] === want) return;
+      e.preventDefault();
+      this._setBit(i, want, true);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const i = this._focus;
+      switch (e.key) {
+        case "ArrowLeft": e.preventDefault(); this._moveFocus(i - 1); return;
+        case "ArrowRight": e.preventDefault(); this._moveFocus(i + 1); return;
+        case "Home": e.preventDefault(); this._moveFocus(0); return;
+        case "End": e.preventDefault(); this._moveFocus(this._n - 1); return;
+        case "ArrowUp": e.preventDefault(); this._setBit(i, true, true); return;
+        case "ArrowDown": e.preventDefault(); this._setBit(i, false, true); return;
+        case " ": case "Spacebar": case "Enter": e.preventDefault(); this._setBit(i, !this._bits[i], true); return;
+        default: return;
+      }
+    }
+  }
+  customElements.define("sk-dip-ibm-5150-sw1", SkDipIbm5150);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

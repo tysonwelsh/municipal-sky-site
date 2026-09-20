@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBM 402 plugboard, wired — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Archivo+Narrow:wght@500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "plugboard-ibm-402-wired",
+  "element": "sk-plugboard-ibm-402-wired",
+  "name": "IBM 402 tabulator plugboard, wired",
+  "kind": "input",
+  "code": "E11",
+  "type": "Pin matrix / diode matrix",
+  "source": "IBM 402 / 407 / 604 control panel (1948–49): a removable black phenolic plugboard with a grid of brass hub holes and short self-contacting wires plugged between them, coloured by length",
+  "era": "1940s",
+  "origin": "USA",
+  "materials": ["black phenolic board", "brass hub rings", "cotton-covered wire", "chrome plug tips", "satin-steel frame"],
+  "tags": ["tabulator", "computing", "plugboard", "wiring", "grid of booleans"],
+  "value": { "model": "bits", "count": 968 },
+  "attributes": ["rows", "cols", "wires", "label", "scale", "disabled"],
+  "events": ["change"],
+  "size": { "w": 636, "h": 346 },
+  "notes": "Click a hub, then another, to run a wire between them (colour chosen automatically by length); click a wire to pull it. A busy 22×44 slice and a light 10×18 one."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="bakelite-black">
+    <sk-plugboard-ibm-402-wired label="control panel" scale="0.65"
+      wires="1,2,4,9,yellow;2,1,10,30,black;3,5,3,20,red;5,2,18,6,blue;6,30,20,33,red;8,10,8,40,black;9,3,9,7,yellow;10,20,2,25,blue;12,8,12,38,black;13,15,4,15,red;14,1,14,44,black;15,22,6,22,red;16,5,16,10,yellow;17,28,9,28,blue;18,18,18,24,yellow;19,2,19,42,black;20,12,11,12,red;21,33,13,33,blue;22,7,22,17,red;7,36,17,36,blue"></sk-plugboard-ibm-402-wired>
+    <sk-plugboard-ibm-402-wired label="light panel" rows="10" cols="18" scale="1"
+      wires="1,1,4,10,red;3,3,3,14,yellow;7,2,9,16,blue"></sk-plugboard-ibm-402-wired>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>IBM 402 / 407</b> tabulator's control panel is a black phenolic board a machine-room clerk could
+  lift out and swap: hundreds of brass hub holes in labelled rows, and between them, plugged by hand, hundreds
+  of short self-contacting wires in yellow, red, blue and black &mdash; the colour telling a technician the
+  wire's length at a glance.</p>
+  <p><b>The tells kept here:</b> the sheer density of the wiring &mdash; wires arcing up and across each other,
+  each with a bright chrome tip standing proud in its hub; the colour coding by distance (short yellow, longer
+  red, longer still blue, longest black); the tight grid of brass rings on black phenolic with silk-screened
+  column numerals; the board as a slab in a satin-steel frame. Click a hub, then a second hub, to run a wire;
+  click an existing wire to pull it; arrow keys move a cursor ring and Space picks or completes.</p>
+  <p><b>Left out:</b> the row group labels (READING, PRINT, COUNTER ENTRY …), the carrying handle, and the
+  true 40&times;66 board — this is a manageable slice, as the entry allows.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-plugboard-ibm-402-wired> — IBM 402 tabulator plugboard, coloured wires between brass hubs ====
+   attributes: rows cols (grid size, default 22x44) wires ("r1,c1,r2,c2,colour;...", reflects) label scale disabled
+   events: change {pairs} whenever a wire is added or removed
+   keyboard: arrows move the cursor, Space picks a hub / completes a wire started at the cursor, Delete pulls a wire at the cursor
+   self-contained: paste this block into any page and use <sk-plugboard-ibm-402-wired></sk-plugboard-ibm-402-wired> */
+(function () {
+  if (customElements.get("sk-plugboard-ibm-402-wired")) return;
+  const PITCH = 14, MARGIN_L = 20, MARGIN_T = 26, MARGIN_R = 14, MARGIN_B = 14;
+  const COLORS = { yellow: "#e8c43a", red: "#c8322b", blue: "#2c5aa0", black: "#1e1e1e", green: "#3f8f5a" };
+  const COL_ORDER = ["yellow", "red", "blue", "black"];
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; overflow: visible; }
+    text { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; }
+    .colnum { font-family: "IBM Plex Mono", "Courier New", monospace; font-size: 4.6px; fill: #a49a86; text-anchor: middle; }
+    .label { font-size: 7.5px; letter-spacing: 0.2em; fill: #cfc7b3; text-anchor: middle; }
+    .cursor { fill: none; stroke: #16e0e0; stroke-width: 1.4; opacity: 0; pointer-events: none; }
+    .cursor.on { opacity: 0.95; }
+    .pick { fill: none; stroke: #fff; stroke-width: 1.1; opacity: 0; pointer-events: none; }
+    .pick.on { opacity: 0.85; }
+    .wireg { transition: opacity 150ms ease-out; }
+    .grab { position: absolute; inset: 0; cursor: crosshair; touch-action: none; outline: none; user-select: none; -webkit-user-select: none; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: inset 0 0 0 2px #16e0e0; }
+  </style>
+  <div class="wrap">
+    <svg aria-hidden="true">
+      <defs>
+        <radialGradient id="board" cx="40%" cy="30%" r="90%">
+          <stop offset="0" stop-color="#28261f"/><stop offset="0.6" stop-color="#1a1917"/><stop offset="1" stop-color="#0e0d0b"/>
+        </radialGradient>
+        <radialGradient id="hub" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#f0d789"/><stop offset="0.55" stop-color="#c9a44a"/><stop offset="0.85" stop-color="#7c5e20"/><stop offset="1" stop-color="#4a3812"/>
+        </radialGradient>
+        <radialGradient id="tip" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#f4f7f8"/><stop offset="0.45" stop-color="#c6ccd0"/><stop offset="1" stop-color="#6b7075"/>
+        </radialGradient>
+        <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c2c6c8"/><stop offset="0.5" stop-color="#8f9497"/><stop offset="1" stop-color="#63686b"/>
+        </linearGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+        <filter id="softer" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+      <rect class="frameRect" fill="url(#frame)" stroke="#3a3d3f" stroke-width="1"/>
+      <rect class="boardsh" fill="#000" opacity="0.5" filter="url(#softer)"/>
+      <rect class="boardRect" fill="url(#board)" rx="3"/>
+      <g class="scuffs" stroke="#3a382f" stroke-width="0.6" opacity="0.35"></g>
+      <g class="colnums"></g>
+      <g class="wires"></g>
+      <g class="hubs"></g>
+      <rect class="cursor" width="10" height="10" rx="2"/>
+      <rect class="pick" width="8" height="8" rx="1.6"/>
+      <text class="label"></text>
+    </svg>
+    <div class="grab" role="group" tabindex="0"></div>
+  </div>`;
+
+  class SkPlugboardIbm402Wired extends HTMLElement {
+    static get observedAttributes() { return ["rows", "cols", "wires", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._rows = 22; this._cols = 44; this._scale = 1; this._wires = [];
+      this._cur = { r: 0, c: 0 }; this._pending = null;
+      const $ = s => this.shadowRoot.querySelector(s);
+      this._wrap = $(".wrap"); this._svg = $("svg"); this._grab = $(".grab"); this._label = $(".label");
+      this._hubsG = $(".hubs"); this._wiresG = $(".wires"); this._colnumsG = $(".colnums"); this._scuffsG = $(".scuffs");
+      this._cursor = $(".cursor"); this._pick = $(".pick");
+      this._frameRect = $(".frameRect"); this._boardRect = $(".boardRect"); this._boardsh = $(".boardsh");
+      this._focused = false;
+      this._onDown = this._onDown.bind(this); this._onKey = this._onKey.bind(this);
+      this._onFocus = (e) => { this._focused = e.type === "focus"; this._drawCursor(); };
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("rows")) this.setAttribute("rows", "22");
+      if (!this.hasAttribute("cols")) this.setAttribute("cols", "44");
+      this._readAttrs();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._grab.addEventListener("keydown", this._onKey);
+      this._grab.addEventListener("focus", this._onFocus);
+      this._grab.addEventListener("blur", this._onFocus);
+    }
+    disconnectedCallback() {
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._grab.removeEventListener("keydown", this._onKey);
+      this._grab.removeEventListener("focus", this._onFocus);
+      this._grab.removeEventListener("blur", this._onFocus);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+    }
+    get value() { return this._wires.map(w => ({ r1: w.r1, c1: w.c1, r2: w.r2, c2: w.c2, colour: w.colour })); }
+    set value(_) { /* set via the wires attribute; the value list is not settable directly */ }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+
+    _geom() {
+      const w = MARGIN_L + (this._cols - 1) * PITCH + MARGIN_R;
+      const h = MARGIN_T + (this._rows - 1) * PITCH + MARGIN_B;
+      return { w, h };
+    }
+    _hubXY(r, c) { return [MARGIN_L + c * PITCH, MARGIN_T + r * PITCH]; }
+    _parseWires(str) {
+      const out = [];
+      (str || "").split(";").forEach(seg => {
+        seg = seg.trim(); if (!seg) return;
+        const p = seg.split(",").map(s => s.trim());
+        if (p.length < 4) return;
+        const r1 = +p[0], c1 = +p[1], r2 = +p[2], c2 = +p[3];
+        if ([r1, c1, r2, c2].some(isNaN)) return;
+        let colour = (p[4] || "").toLowerCase();
+        if (!COLORS[colour]) colour = null;
+        out.push({ r1, c1, r2, c2, colour });
+      });
+      return out;
+    }
+    _serializeWires() {
+      return this._wires.map(w => [w.r1, w.c1, w.r2, w.c2, w.colour].join(",")).join(";");
+    }
+    _colourFor(r1, c1, r2, c2) {
+      const rr = this._rows - 1 || 1, cc = this._cols - 1 || 1;
+      const d = Math.hypot((r1 - r2) / rr, (c1 - c2) / cc);
+      if (d < 0.18) return "yellow"; if (d < 0.36) return "red"; if (d < 0.58) return "blue"; return "black";
+    }
+    _readAttrs() {
+      const numInt = (n, d) => { const x = parseInt(this.getAttribute(n), 10); return isNaN(x) ? d : x; };
+      const rows = Math.max(2, Math.min(60, numInt("rows", 22)));
+      const cols = Math.max(2, Math.min(80, numInt("cols", 44)));
+      const gridChanged = rows !== this._rows || cols !== this._cols;
+      this._rows = rows; this._cols = cols;
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      if (this.hasAttribute("wires")) {
+        const parsed = this._parseWires(this.getAttribute("wires"));
+        parsed.forEach(w => { if (!w.colour) w.colour = this._colourFor(w.r1, w.c1, w.r2, w.c2); });
+        this._wires = parsed;
+      } else if (gridChanged) this._wires = [];
+      this._cur.r = Math.min(this._cur.r, this._rows - 1); this._cur.c = Math.min(this._cur.c, this._cols - 1);
+      this._label.textContent = this.getAttribute("label") || "";
+      const { w, h } = this._geom();
+      this._svg.setAttribute("viewBox", "0 0 " + w + " " + (h + 12));
+      this._svg.setAttribute("width", w); this._svg.setAttribute("height", h + 12);
+      this._frameRect.setAttribute("x", 0); this._frameRect.setAttribute("y", 0);
+      this._frameRect.setAttribute("width", w); this._frameRect.setAttribute("height", h); this._frameRect.setAttribute("rx", 4);
+      this._boardRect.setAttribute("x", 4); this._boardRect.setAttribute("y", 4);
+      this._boardRect.setAttribute("width", w - 8); this._boardRect.setAttribute("height", h - 8);
+      this._boardsh.setAttribute("x", 2); this._boardsh.setAttribute("y", 4);
+      this._boardsh.setAttribute("width", w - 4); this._boardsh.setAttribute("height", h - 4);
+      this._label.setAttribute("x", w / 2); this._label.setAttribute("y", h + 9);
+      if (gridChanged || !this._built) { this._buildGrid(); this._built = true; }
+      const g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", (this.getAttribute("label") || "plugboard") + ", " + this._wires.length + " wires");
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (w * this._scale) + "px"; this.style.height = ((h + 12) * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._drawWires(); this._drawCursor();
+    }
+    _buildGrid() {
+      while (this._hubsG.firstChild) this._hubsG.removeChild(this._hubsG.firstChild);
+      while (this._colnumsG.firstChild) this._colnumsG.removeChild(this._colnumsG.firstChild);
+      while (this._scuffsG.firstChild) this._scuffsG.removeChild(this._scuffsG.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      for (let c = 0; c < this._cols; c += 5) {
+        const [x, y] = this._hubXY(-1, c);
+        const t = mk("text", { class: "colnum", x, y: y + 10 }); t.textContent = String(c + 1); this._colnumsG.appendChild(t);
+      }
+      for (let r = 0; r < this._rows; r++) for (let c = 0; c < this._cols; c++) {
+        const [x, y] = this._hubXY(r, c);
+        this._hubsG.appendChild(mk("circle", { cx: x, cy: y, r: 2.6, fill: "#050504" }));
+        this._hubsG.appendChild(mk("circle", { cx: x, cy: y, r: 2.5, fill: "none", stroke: "url(#hub)", "stroke-width": 1 }));
+        this._hubsG.appendChild(mk("circle", { cx: x, cy: y, r: 0.9, fill: "#000" }));
+      }
+      // a few fine scratches around the busiest-looking corner, and a couple of dulled hubs
+      const [sx, sy] = this._hubXY(2, 4);
+      this._scuffsG.appendChild(mk("path", { d: `M ${sx - 8} ${sy - 3} l 14 5 M ${sx - 6} ${sy + 6} l 12 -3` }));
+    }
+    _wireD(x1, y1, x2, y2, seed) {
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+      const jig = ((seed * 47) % 7) - 3;                 // a little per-wire variety, deterministic
+      const bow = Math.min(34, 8 + len * 0.22) + jig;
+      const cx = mx - bow * 0.5, cy = my - bow;           // bows up and to the left
+      return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+    }
+    _drawWires() {
+      while (this._wiresG.firstChild) this._wiresG.removeChild(this._wiresG.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      this._wires.forEach((w, i) => {
+        const [x1, y1] = this._hubXY(w.r1, w.c1), [x2, y2] = this._hubXY(w.r2, w.c2);
+        const d = this._wireD(x1, y1, x2, y2, i + 1);
+        const col = COLORS[w.colour] || COLORS.black;
+        const g = mk("g", { class: "wireg", "data-i": i });
+        g.appendChild(mk("path", { d, fill: "none", stroke: "#000", "stroke-opacity": 0.4, "stroke-width": 3.6, transform: "translate(0.6 1)" }));
+        g.appendChild(mk("path", { d, fill: "none", stroke: col, "stroke-width": 2.6, "stroke-linecap": "round", style: "cursor:pointer" }));
+        g.appendChild(mk("path", { d, fill: "none", stroke: "#fff", "stroke-opacity": 0.3, "stroke-width": 0.8 }));
+        [[x1, y1], [x2, y2]].forEach(([x, y]) => {
+          g.appendChild(mk("circle", { cx: x, cy: y, r: 2.2, fill: "url(#tip)", stroke: "#2a2a2a", "stroke-width": 0.4 }));
+          g.appendChild(mk("circle", { cx: x, cy: y, r: 0.9, fill: "#1a1a1a" }));
+        });
+        this._wiresG.appendChild(g);
+      });
+    }
+    _drawCursor() {
+      const [x, y] = this._hubXY(this._cur.r, this._cur.c);
+      this._cursor.setAttribute("x", x - 5); this._cursor.setAttribute("y", y - 5);
+      this._cursor.classList.toggle("on", this._focused);
+      if (this._pending) {
+        const [px, py] = this._hubXY(this._pending.r, this._pending.c);
+        this._pick.setAttribute("x", px - 4); this._pick.setAttribute("y", py - 4);
+        this._pick.classList.add("on");
+      } else this._pick.classList.remove("on");
+    }
+    _wireIndexAt(r, c) {
+      return this._wires.findIndex(w => (w.r1 === r && w.c1 === c) || (w.r2 === r && w.c2 === c));
+    }
+    _commitChange() {
+      this.setAttribute("wires", this._serializeWires());
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { pairs: this.value } }));
+    }
+    _connect(r1, c1, r2, c2) {
+      if (r1 === r2 && c1 === c2) return;
+      const colour = this._colourFor(r1, c1, r2, c2);
+      this._wires.push({ r1, c1, r2, c2, colour });
+      this._drawWires(); this._commitChange();
+    }
+    _removeWireAt(idx) {
+      if (idx < 0) return;
+      const g = this._wiresG.children[idx];
+      if (g) { g.style.opacity = "0"; }
+      this._wires.splice(idx, 1);
+      setTimeout(() => this._drawWires(), 160);
+      this._commitChange();
+    }
+    _pickHub(r, c) {
+      if (this._pending) {
+        if (this._pending.r === r && this._pending.c === c) { this._pending = null; }
+        else { this._connect(this._pending.r, this._pending.c, r, c); this._pending = null; }
+      } else this._pending = { r, c };
+      this._drawCursor();
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      this._grab.focus({ preventScroll: true });
+      const target = e.target;
+      if (target && target.tagName === "path" && target.parentNode && target.parentNode.classList.contains("wireg")) {
+        e.preventDefault();
+        this._removeWireAt(+target.parentNode.getAttribute("data-i"));
+        return;
+      }
+      const rect = this._svg.getBoundingClientRect();
+      const vb = this._svg.viewBox.baseVal;
+      const x = (e.clientX - rect.left) / rect.width * vb.width;
+      const y = (e.clientY - rect.top) / rect.height * vb.height;
+      let best = null, bd = 1e9;
+      for (let r = 0; r < this._rows; r++) for (let c = 0; c < this._cols; c++) {
+        const [hx, hy] = this._hubXY(r, c);
+        const d = (hx - x) * (hx - x) + (hy - y) * (hy - y);
+        if (d < bd) { bd = d; best = { r, c }; }
+      }
+      if (!best || bd > (PITCH * 0.65) * (PITCH * 0.65)) return;
+      e.preventDefault();
+      this._cur = best;
+      this._pickHub(best.r, best.c);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const c = this._cur;
+      switch (e.key) {
+        case "ArrowUp": c.r = Math.max(0, c.r - 1); break;
+        case "ArrowDown": c.r = Math.min(this._rows - 1, c.r + 1); break;
+        case "ArrowLeft": c.c = Math.max(0, c.c - 1); break;
+        case "ArrowRight": c.c = Math.min(this._cols - 1, c.c + 1); break;
+        case " ": case "Enter": e.preventDefault(); this._pickHub(c.r, c.c); return;
+        case "Delete": case "Backspace": { e.preventDefault(); const idx = this._wireIndexAt(c.r, c.c); if (idx >= 0) this._removeWireAt(idx); return; }
+        default: return;
+      }
+      e.preventDefault();
+      this._drawCursor();
+    }
+  }
+  customElements.define("sk-plugboard-ibm-402-wired", SkPlugboardIbm402Wired);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

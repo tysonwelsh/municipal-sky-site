@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casio F-91W digital watch face — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "lcd-casio-f91w",
+  "element": "sk-lcd-casio-f91w",
+  "name": "Casio F-91W digital watch face",
+  "kind": "output",
+  "code": "G9",
+  "type": "Reflective segment LCD",
+  "source": "Casio F-91W (1989/91) digital watch face, the most-copied LCD face in the world",
+  "era": "1990s",
+  "origin": "Japan",
+  "materials": ["black resin", "TN LCD panel", "printed glass mask"],
+  "tags": ["watch", "lcd", "seven-segment", "digital", "time"],
+  "value": { "model": "time", "unit": "s" },
+  "attributes": ["value", "ampm", "date", "day", "alarm", "signal", "light", "scale"],
+  "events": [],
+  "size": { "w": 160, "h": 120 },
+  "notes": "Three faces: 24h at 10:08:58 with the alarm flag set, a 12h face with LIGHT on, and a small 24h face."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-lcd-casio-f91w value="36538" date="6-14" day="SA" alarm></sk-lcd-casio-f91w>
+    <sk-lcd-casio-f91w value="81667" ampm date="12-25" day="TH" signal light></sk-lcd-casio-f91w>
+    <sk-lcd-casio-f91w value="3600" date="1-1" day="TH" scale="0.85"></sk-lcd-casio-f91w>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Casio F-91W</b> (1989) is the best-selling watch ever made and the most-cloned LCD face in the
+  world: a moulded black resin case around a reflective TN LCD, showing HH:MM big, seconds smaller at the
+  right, a tiny day and date top-left, and small alarm/signal flags along a printed rule under the top edge.
+  A single micro-lamp behind the glass tints the whole field green-amber when the LIGHT button is held.</p>
+  <p><b>The tells kept here:</b> slanted seven-segment digits built as SVG paths, never a font; every unlit
+  segment stays faintly visible as a grey-green ghost, the LCD's most recognisable quality; each lit segment
+  carries a small offset duplicate underneath (the polariser's doubled image), so the digits read as very
+  slightly embossed; a 5×7 blocky glass-mask font for the day letters and the AM/PM flag; alarm and signal
+  pictograms that ghost the same way as the digits; a warm amber-green wash from the lower-left corner when
+  `light` is set; and the resin bezel's small "LIGHT · ALARM · MODE" legends with a thin cyan rule above the
+  glass. Segments switch on hard and fade off over ~90 ms, the LCD's characteristic slow release.</p>
+  <p><b>Left out:</b> the full 14-segment day/date table (a compact 5×7 block font stands in), the stopwatch
+  and alarm-set modes, and the four case buttons.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-lcd-casio-f91w> — Casio F-91W style reflective segment LCD watch face ====
+   attributes: value(seconds of day 0..86399) ampm date("M-D") day("SA"...) alarm signal light scale
+   no events (an output); value drives the display only, ballistics not needed (LCD switches instantly)
+   self-contained: paste this block into any page and use <sk-lcd-casio-f91w value="36538"></sk-lcd-casio-f91w> */
+(function () {
+  if (customElements.get("sk-lcd-casio-f91w")) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 160, H = 120;
+  const FIELD = "#a8b39c", LIT = "#1c1e1a", SHADOW = "#12140f", GHOST = "#8d9a83";
+  const LEGEND = "#e6e8e2", CYAN = "#2ab5c8";
+
+  const DIGITS = { // a b c d e f g
+    0: [1,1,1,1,1,1,0], 1: [0,1,1,0,0,0,0], 2: [1,1,0,1,1,0,1], 3: [1,1,1,1,0,0,1], 4: [0,1,1,0,0,1,1],
+    5: [1,0,1,1,0,1,1], 6: [1,0,1,1,1,1,1], 7: [1,1,1,0,0,0,0], 8: [1,1,1,1,1,1,1], 9: [1,1,1,1,0,1,1]
+  };
+  const SEGKEYS = ["a","b","c","d","e","f","g"];
+  const FONT = {
+    S: ["01111","10000","10000","01110","00001","00001","11110"],
+    U: ["10001","10001","10001","10001","10001","10001","01110"],
+    M: ["10001","11011","10101","10101","10001","10001","10001"],
+    O: ["01110","10001","10001","10001","10001","10001","01110"],
+    T: ["11111","00100","00100","00100","00100","00100","00100"],
+    W: ["10001","10001","10001","10101","10101","11011","10001"],
+    E: ["11111","10000","10000","11110","10000","10000","11111"],
+    H: ["10001","10001","10001","11111","10001","10001","10001"],
+    F: ["11111","10000","10000","11110","10000","10000","10000"],
+    R: ["11110","10001","10001","11110","10100","10010","10001"],
+    A: ["01110","10001","10001","11111","10001","10001","10001"],
+    P: ["11110","10001","10001","11110","10000","10000","10000"]
+  };
+
+  function mk(tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function hseg(x0, x1, y, th) { const e = th / 2; return `M${x0} ${y}L${x0+e} ${y-th/2}L${x1-e} ${y-th/2}L${x1} ${y}L${x1-e} ${y+th/2}L${x0+e} ${y+th/2}Z`; }
+  function vseg(x, y0, y1, th) { const e = th / 2; return `M${x} ${y0}L${x+th/2} ${y0+e}L${x+th/2} ${y1-e}L${x} ${y1}L${x-th/2} ${y1-e}L${x-th/2} ${y0+e}Z`; }
+
+  function buildDigit(parent, x, y, w, h, th, skew) {
+    const g = mk("g", { transform: `translate(${x} ${y}) skewX(${skew})` });
+    const pad = th * 0.55, my = h / 2;
+    const d = {
+      a: hseg(pad, w - pad, 0, th), g: hseg(pad, w - pad, my, th), d: hseg(pad, w - pad, h, th),
+      f: vseg(0, pad, my - pad * 0.5, th), b: vseg(w, pad, my - pad * 0.5, th),
+      e: vseg(0, my + pad * 0.5, h - pad, th), c: vseg(w, my + pad * 0.5, h - pad, th)
+    };
+    const segs = {};
+    SEGKEYS.forEach(k => {
+      g.appendChild(mk("path", { d: d[k], fill: GHOST, opacity: "0.4" }));
+      const on = mk("g", { opacity: "0" });
+      on.appendChild(mk("path", { d: d[k], fill: SHADOW, opacity: "0.55", transform: "translate(0.6 0.6)" }));
+      on.appendChild(mk("path", { d: d[k], fill: LIT }));
+      g.appendChild(on);
+      segs[k] = on;
+    });
+    parent.appendChild(g);
+    return { set(n) {
+      const bits = (n === null || n === undefined) ? [0,0,0,0,0,0,0] : DIGITS[n];
+      SEGKEYS.forEach((k, i) => {
+        const el = segs[k], on = !!bits[i];
+        if (on) { el.style.transition = "none"; el.style.opacity = "1"; }
+        else { el.style.transition = "opacity 90ms ease-out"; el.style.opacity = "0"; }
+      });
+    } };
+  }
+
+  function letterGroup(str, cell, color) {
+    const g = mk("g", {});
+    let cx = 0;
+    for (const ch of str) {
+      const pat = FONT[ch];
+      if (pat) for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (pat[r][c] === "1")
+        g.appendChild(mk("rect", { x: cx + c * cell, y: r * cell, width: cell * 0.92, height: cell * 0.92, fill: color }));
+      cx += 5 * cell + cell * 0.8;
+    }
+    return g;
+  }
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Roboto Condensed", "Arial Narrow", sans-serif; }
+    .legend { font-size: 6.5px; font-weight: 500; letter-spacing: 0.14em; fill: ${LEGEND}; }
+    .wr { font-size: 4.6px; font-weight: 500; letter-spacing: 0.08em; fill: #9aa19a; text-anchor: middle; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <radialGradient id="bez" cx="34%" cy="26%" r="85%">
+          <stop offset="0" stop-color="#3a3a38"/><stop offset="0.45" stop-color="#1c1c1a"/><stop offset="1" stop-color="#0a0a09"/>
+        </radialGradient>
+        <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#b3bea6"/><stop offset="0.55" stop-color="${FIELD}"/><stop offset="1" stop-color="#98a58c"/>
+        </linearGradient>
+        <radialGradient id="lightTint" cx="15%" cy="95%" r="110%">
+          <stop offset="0" stop-color="#c9c064" stop-opacity="0.85"/><stop offset="0.55" stop-color="#b8b070" stop-opacity="0.45"/><stop offset="1" stop-color="#b8b070" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="clipDisp"><rect x="0" y="0" width="116" height="64" rx="4"/></clipPath>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter>
+      </defs>
+
+      <!-- contact shadow on the panel -->
+      <ellipse cx="82" cy="117" rx="66" ry="6" fill="#000" opacity="0.4" filter="url(#soft)"/>
+
+      <!-- resin case -->
+      <rect x="1.5" y="1.5" width="${W-3}" height="${H-3}" rx="20" fill="url(#bez)" stroke="#000" stroke-width="1"/>
+      <path d="M 10 3 Q 4 3 4 9" fill="none" stroke="#55554f" stroke-opacity="0.6" stroke-width="1.1"/>
+      <rect x="4" y="4" width="${W-8}" height="${H-8}" rx="17" fill="none" stroke="#050505" stroke-opacity="0.6" stroke-width="1"/>
+
+      <!-- cyan rule above the glass -->
+      <line x1="22" y1="15" x2="138" y2="15" stroke="${CYAN}" stroke-width="1" opacity="0.75"/>
+
+      <g transform="translate(22 18)" clip-path="url(#clipDisp)">
+        <rect x="0" y="0" width="116" height="64" fill="url(#field)"/>
+        <rect class="lighttint" x="0" y="0" width="116" height="64" fill="url(#lightTint)" opacity="0"/>
+        <line x1="4" y1="14" x2="112" y2="14" stroke="#7c8a72" stroke-width="0.6" opacity="0.5"/>
+
+        <g class="dayg" transform="translate(4 3) skewX(-8)"></g>
+        <g class="datedigits" transform="skewX(-8)"></g>
+        <rect class="hyphen" x="30.6" y="7.6" width="3" height="1.2" fill="${LIT}" opacity="0.85" transform="skewX(-8)"/>
+        <g class="ampmA" transform="translate(63 3) skewX(-8)" opacity="0"></g>
+        <g class="ampmP" transform="translate(63 3) skewX(-8)" opacity="0"></g>
+
+        <g class="alarmg" transform="translate(83 2)">
+          <path class="alarmghost" d="M4 1 C2.1 1 1.3 2.7 1.3 4.5 L1.3 5.9 L0.5 7 L7.5 7 L6.7 5.9 L6.7 4.5 C6.7 2.7 5.9 1 4 1 Z" fill="${GHOST}" opacity="0.4"/>
+          <circle class="alarmghost" cx="4" cy="8" r="0.9" fill="${GHOST}" opacity="0.4"/>
+          <g class="alarmon" opacity="0">
+            <path d="M4 1 C2.1 1 1.3 2.7 1.3 4.5 L1.3 5.9 L0.5 7 L7.5 7 L6.7 5.9 L6.7 4.5 C6.7 2.7 5.9 1 4 1 Z" fill="${LIT}"/>
+            <circle cx="4" cy="8" r="0.9" fill="${LIT}"/>
+          </g>
+        </g>
+
+        <g class="signalg" transform="translate(97 2)">
+          <g class="sigghost" fill="none" stroke="${GHOST}" stroke-width="1" opacity="0.4" stroke-linecap="round">
+            <path d="M4.9 6.9 A3 3 0 0 1 9.1 6.9"/>
+            <path d="M2.8 4.8 A6 6 0 0 1 11.2 4.8"/>
+            <path d="M0.6 2.6 A9 9 0 0 1 13.4 2.6"/>
+          </g>
+          <circle class="sigghost" cx="7" cy="9" r="0.9" fill="${GHOST}" opacity="0.4"/>
+          <g class="sigon" opacity="0">
+            <g fill="none" stroke="${LIT}" stroke-width="1" stroke-linecap="round">
+              <path d="M4.9 6.9 A3 3 0 0 1 9.1 6.9"/>
+              <path d="M2.8 4.8 A6 6 0 0 1 11.2 4.8"/>
+              <path d="M0.6 2.6 A9 9 0 0 1 13.4 2.6"/>
+            </g>
+            <circle cx="7" cy="9" r="0.9" fill="${LIT}"/>
+          </g>
+        </g>
+
+        <g class="maing"></g>
+        <g class="secg"></g>
+        <rect x="45.3" y="27" width="3.2" height="3.2" fill="${LIT}"/>
+        <rect x="45.3" y="39" width="3.2" height="3.2" fill="${LIT}"/>
+
+        <rect x="0" y="0" width="116" height="64" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="4" filter="url(#soft)"/>
+      </g>
+
+      <text class="legend" x="14" y="102">LIGHT</text>
+      <text class="legend" x="80" y="102" text-anchor="middle">ALARM</text>
+      <text class="legend" x="146" y="102" text-anchor="end">MODE</text>
+      <text class="wr" x="80" y="112">30M WR</text>
+    </svg>
+  </div>`;
+
+  class SkLcdCasioF91w extends HTMLElement {
+    static get observedAttributes() { return ["value", "ampm", "date", "day", "alarm", "signal", "light", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._demoBase = null;
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._dayg = root.querySelector(".dayg");
+      this._ampmA = root.querySelector(".ampmA");
+      this._ampmP = root.querySelector(".ampmP");
+      this._ampmA.appendChild(letterGroup("AM", 1, LIT));
+      this._ampmP.appendChild(letterGroup("PM", 1, LIT));
+      this._alarmOn = root.querySelector(".alarmon");
+      this._sigOn = root.querySelector(".sigon");
+      this._tint = root.querySelector(".lighttint");
+      const dd = root.querySelector(".datedigits");
+      this._dateSlots = [
+        buildDigit(dd, 20, 4, 4.2, 8.4, 1.3, -8),
+        buildDigit(dd, 25.4, 4, 4.2, 8.4, 1.3, -8),
+        buildDigit(dd, 35.1, 4, 4.2, 8.4, 1.3, -8),
+        buildDigit(dd, 40.5, 4, 4.2, 8.4, 1.3, -8)
+      ];
+      const mg = root.querySelector(".maing");
+      this._mainSlots = [
+        buildDigit(mg, 8, 19, 15, 30, 3.6, -10),
+        buildDigit(mg, 26, 19, 15, 30, 3.6, -10),
+        buildDigit(mg, 53, 19, 15, 30, 3.6, -10),
+        buildDigit(mg, 71, 19, 15, 30, 3.6, -10)
+      ];
+      const sg = root.querySelector(".secg");
+      this._secSlots = [
+        buildDigit(sg, 94, 27, 7.5, 15, 2.1, -10),
+        buildDigit(sg, 104, 27, 7.5, 15, 2.1, -10)
+      ];
+      this._svg = root.querySelector("svg");
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this.setAttribute("role", "img");
+      this._readAttrs();
+      this._demoBase = this._v;
+      this._renderStatic();
+      this._render();
+    }
+    disconnectedCallback() {}
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "value") { this._render(); return; }
+      if (n === "scale") return;
+      this._renderStatic(); this._render();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseInt(v, 10); if (isNaN(v)) return;
+      v = ((v % 86400) + 86400) % 86400;
+      if (v === this._v) return;
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { if (this._demoBase == null) return undefined; return Math.floor(this._demoBase + t) % 86400; }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      let v = num("value", this._v); v = ((Math.round(v) % 86400) + 86400) % 86400;
+      this._v = v;
+      this._ampm = this.hasAttribute("ampm");
+      this._alarm = this.hasAttribute("alarm");
+      this._signal = this.hasAttribute("signal");
+      this._light = this.hasAttribute("light");
+      this._date = this.getAttribute("date") || "";
+      this._day = (this.getAttribute("day") || "").toUpperCase().slice(0, 2);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _renderStatic() {
+      this._tint.style.transition = "opacity 90ms ease-out";
+      this._tint.setAttribute("opacity", this._light ? "0.85" : "0");
+      this._alarmOn.style.transition = "opacity 90ms ease-out";
+      this._alarmOn.setAttribute("opacity", this._alarm ? "1" : "0");
+      this._sigOn.style.transition = "opacity 90ms ease-out";
+      this._sigOn.setAttribute("opacity", this._signal ? "1" : "0");
+      while (this._dayg.firstChild) this._dayg.removeChild(this._dayg.firstChild);
+      if (this._day) this._dayg.appendChild(letterGroup(this._day, 1.05, LIT));
+      const parts = this._date.split("-");
+      const mo = parseInt(parts[0], 10), da = parseInt(parts[1], 10);
+      this._dateSlots[0].set(!isNaN(mo) && mo >= 10 ? Math.floor(mo / 10) : null);
+      this._dateSlots[1].set(!isNaN(mo) ? mo % 10 : null);
+      this._dateSlots[2].set(!isNaN(da) && da >= 10 ? Math.floor(da / 10) : null);
+      this._dateSlots[3].set(!isNaN(da) ? da % 10 : null);
+    }
+    _render() {
+      const v = this._v;
+      const h = Math.floor(v / 3600) % 24, m = Math.floor(v / 60) % 60, s = v % 60;
+      let hour12 = h % 12; if (hour12 === 0) hour12 = 12;
+      const dh = this._ampm ? hour12 : h;
+      this._mainSlots[0].set(this._ampm && dh < 10 ? null : Math.floor(dh / 10));
+      this._mainSlots[1].set(dh % 10);
+      this._mainSlots[2].set(Math.floor(m / 10));
+      this._mainSlots[3].set(m % 10);
+      this._secSlots[0].set(Math.floor(s / 10));
+      this._secSlots[1].set(s % 10);
+      const isPM = h >= 12;
+      this._ampmA.style.transition = "none"; this._ampmP.style.transition = "none";
+      this._ampmA.setAttribute("opacity", this._ampm && !isPM ? "1" : "0");
+      this._ampmP.setAttribute("opacity", this._ampm && isPM ? "1" : "0");
+      const hh = String(dh).padStart(this._ampm ? 1 : 2, "0");
+      const mm = String(m).padStart(2, "0"), ss = String(s).padStart(2, "0");
+      const ampmTxt = this._ampm ? (isPM ? " PM" : " AM") : "";
+      this.setAttribute("aria-label", `${hh}:${mm}:${ss}${ampmTxt}${this._day ? ", " + this._day : ""}${this._date ? " " + this._date : ""}`);
+    }
+  }
+  customElements.define("sk-lcd-casio-f91w", SkLcdCasioF91w);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

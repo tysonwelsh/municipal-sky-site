@@ -82,7 +82,7 @@
    <sk-breaker-klixon-7274 value="true" amps="5"></sk-breaker-klixon-7274> */
 (function () {
   if (customElements.get("sk-breaker-klixon-7274")) return;
-  const W = 48, H = 80, CX = 24, NUT_Y = 40, IN_Y = -3, OUT_Y = -13;
+  const W = 48, H = 80, CX = 24, NUT_Y = 40, CAP_Y = 20.2, WALL_TOP = 23.4, WALL_BOTTOM = 55, COLLAR_Y = 25.4, COLLAR_H = 3.6, IN_Y = 8, OUT_Y = 0;
   const TPL = document.createElement("template");
   TPL.innerHTML = `
   <style>
@@ -127,20 +127,21 @@
       <!-- long contact shadow, down-right, longer when popped -->
       <ellipse class="dropshadow" cx="${CX + 3}" cy="${NUT_Y + 6}" rx="10" ry="4" fill="#000" opacity="0.5" filter="url(#brk-soft)"/>
 
-      <!-- faint bushing threads, revealed only once popped -->
+      <!-- faint bushing threads, revealed only once popped (the gap the collar clears) -->
       <g class="threads" opacity="0">
-        <line x1="${CX-4.6}" y1="${NUT_Y-9}" x2="${CX+4.6}" y2="${NUT_Y-9}" stroke="#8a8d90" stroke-width="0.5"/>
-        <line x1="${CX-4.6}" y1="${NUT_Y-7}" x2="${CX+4.6}" y2="${NUT_Y-7}" stroke="#8a8d90" stroke-width="0.5"/>
-        <line x1="${CX-4.6}" y1="${NUT_Y-5}" x2="${CX+4.6}" y2="${NUT_Y-5}" stroke="#8a8d90" stroke-width="0.5"/>
+        <line x1="${CX-4.6}" y1="30" x2="${CX+4.6}" y2="30" stroke="#8a8d90" stroke-width="0.5"/>
+        <line x1="${CX-4.6}" y1="31.3" x2="${CX+4.6}" y2="31.3" stroke="#8a8d90" stroke-width="0.5"/>
+        <line x1="${CX-4.6}" y1="32.6" x2="${CX+4.6}" y2="32.6" stroke="#8a8d90" stroke-width="0.5"/>
       </g>
 
-      <!-- moving stem: wall, collar, cap, amps -->
+      <!-- moving stem: wall, collar, cap, amps. Local (untranslated) pose is the popped/OUT look;
+           translating it down by IN_Y tucks the collar behind the nut for the pushed-in look. -->
       <g class="stem">
-        <rect x="${CX - 4.6}" y="${NUT_Y - 22}" width="9.2" height="24" rx="1.6" fill="url(#brk-wall)"/>
-        <rect class="collarband" x="${CX - 5.4}" y="${NUT_Y - 12}" width="10.8" height="3.6" fill="url(#brk-collar)" stroke="#8f8e89" stroke-width="0.3"/>
-        <ellipse class="cap" cx="${CX}" cy="${NUT_Y - 22}" rx="6.4" ry="3.2" fill="url(#brk-cap)" stroke="#000" stroke-width="0.6"/>
-        <ellipse cx="${CX - 1.6}" cy="${NUT_Y - 23}" rx="2.6" ry="1" fill="#5a5c60" opacity="0.6"/>
-        <text class="amps" x="${CX}" y="${NUT_Y - 20.6}"></text>
+        <rect x="${CX - 4.6}" y="${WALL_TOP}" width="9.2" height="${WALL_BOTTOM - WALL_TOP}" rx="1.6" fill="url(#brk-wall)"/>
+        <rect class="collarband" x="${CX - 5.4}" y="${COLLAR_Y}" width="10.8" height="${COLLAR_H}" fill="url(#brk-collar)" stroke="#8f8e89" stroke-width="0.3"/>
+        <ellipse class="cap" cx="${CX}" cy="${CAP_Y}" rx="6.4" ry="3.2" fill="url(#brk-cap)" stroke="#000" stroke-width="0.6"/>
+        <ellipse cx="${CX - 1.6}" cy="${CAP_Y - 1}" rx="2.6" ry="1" fill="#5a5c60" opacity="0.6"/>
+        <text class="amps" x="${CX}" y="${CAP_Y + 1.4}"></text>
       </g>
 
       <!-- collared ring (wider, drawn when collared attribute is set): fixed at nut, drawn after stem -->

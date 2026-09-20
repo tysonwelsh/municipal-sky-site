@@ -174,14 +174,17 @@
         </g>
       </g>
 
-      <!-- rubber boot -->
+      <!-- rubber boot: a ridged frustum, wide at the panel, narrow at the shaft -->
       <g class="boot">
-        <ellipse cx="${PX}" cy="${PY + 10}" rx="34" ry="20" fill="#000" opacity="0.35" filter="url(#soft)"/>
-        <ellipse cx="${PX}" cy="${PY + 6}" rx="30" ry="17" fill="url(#bootGrad)" stroke="#000" stroke-width="0.7"/>
-        <ellipse cx="${PX}" cy="${PY - 2}" rx="24" ry="13.5" fill="url(#bootGrad)" stroke="#2c2c2c" stroke-width="0.6"/>
-        <ellipse cx="${PX}" cy="${PY - 9}" rx="17" ry="10" fill="url(#bootGrad)" stroke="#3a3a3a" stroke-width="0.5"/>
-        <ellipse cx="${PX}" cy="${PY - 6}" rx="24" ry="13.5" fill="none" stroke="#4a4a4a" stroke-opacity="0.4" stroke-width="0.8"/>
-        <ellipse cx="${PX}" cy="${PY + 2}" rx="30" ry="17" fill="none" stroke="#4a4a4a" stroke-opacity="0.3" stroke-width="0.8"/>
+        <ellipse cx="${PX + 2}" cy="${PY + 14}" rx="33" ry="12" fill="#000" opacity="0.4" filter="url(#soft)"/>
+        <path d="M ${PX - 30} ${PY + 8} A 30 11 0 1 0 ${PX + 30} ${PY + 8} L ${PX + 15} ${PY - 12} A 15 7 0 1 0 ${PX - 15} ${PY - 12} Z"
+              fill="url(#bootGrad)" stroke="#000" stroke-width="0.7"/>
+        <ellipse cx="${PX}" cy="${PY + 8}" rx="30" ry="11" fill="none" stroke="#57574f" stroke-opacity="0.4" stroke-width="0.9"/>
+        <path class="ridge1" d="M ${PX - 25} ${PY + 1} A 25 9.5 0 0 0 ${PX + 25} ${PY + 1}" fill="none" stroke="#4a4a46" stroke-opacity="0.55" stroke-width="1"/>
+        <path class="ridge1b" d="M ${PX - 25} ${PY - 1.5} A 25 9.5 0 0 1 ${PX + 25} ${PY - 1.5}" fill="none" stroke="#020202" stroke-opacity="0.5" stroke-width="1"/>
+        <path class="ridge2" d="M ${PX - 19} ${PY - 6.5} A 19 8 0 0 0 ${PX + 19} ${PY - 6.5}" fill="none" stroke="#4a4a46" stroke-opacity="0.5" stroke-width="0.9"/>
+        <path class="ridge2b" d="M ${PX - 19} ${PY - 8.5} A 19 8 0 0 1 ${PX + 19} ${PY - 8.5}" fill="none" stroke="#020202" stroke-opacity="0.45" stroke-width="0.9"/>
+        <ellipse cx="${PX}" cy="${PY - 12}" rx="15" ry="6.5" fill="url(#bootGrad)" stroke="#3a3a3a" stroke-width="0.6"/>
       </g>
 
       <!-- the stick: tapered polygon + grip, recomputed on tilt -->
@@ -215,13 +218,12 @@
     constructor() {
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
-      this._x = 0; this._y = 0;        // committed (settled) value — mirrors the attribute
-      this._nx = 0; this._ny = 0;      // live visual position, -1..1
-      this._vx = 0; this._vy = 0;      // spring velocities for return-to-centre
+      this._x = 0; this._y = 0;        // committed value — mirrors the attribute, updated immediately on input
+      this._nx = 0; this._ny = 0;      // visual stick position, -1..1 — springs toward {_x,_y}
+      this._vx = 0; this._vy = 0;      // spring velocities (cosmetic only)
       this._fire = false;
       this._scale = 1; this._analog = false;
-      this._raf = 0; this._returning = false; this._dwellUntil = 0;
-      this._heldKeys = new Set();
+      this._raf = 0;
       this._wrap = this.shadowRoot.querySelector(".wrap");
       this._stickHit = this.shadowRoot.querySelector(".stickhit");
       this._fireHit = this.shadowRoot.querySelector(".firehit");
@@ -264,6 +266,7 @@
       s.removeEventListener("wheel", this._onWheel);
       f.removeEventListener("pointerdown", this._onFireDown);
       cancelAnimationFrame(this._raf); this._raf = 0;
+      clearTimeout(this._idleT);
     }
     attributeChangedCallback(n, o, v) {
       if (o === v || !this.isConnected) return;
@@ -277,6 +280,7 @@
       else if (typeof v === "string") { const p = v.split(","); x = parseFloat(p[0]); y = parseFloat(p[1]); }
       x = clamp(parseFloat(x), -1, 1); y = clamp(parseFloat(y), -1, 1);
       if (isNaN(x) || isNaN(y)) return;
+      clearTimeout(this._idleT); cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
       this._x = x; this._y = y; this._nx = x; this._ny = y;
       this.setAttribute("value", round2(x) + "," + round2(y));
       this._render();
@@ -304,75 +308,79 @@
       this._wrap.style.transform = "scale(" + this._scale + ")";
     }
     _stickGeom(nx, ny) {
+      // tipX,tipY is the very top of the assembly (the cap's centre); the grip sits just below it,
+      // and the shaft tapers up from the pivot into the grip's base — no gap between the parts.
       const tipX = TIPX0 + nx * MAXDX, tipY = TIPY0 + ny * MAXDY;
       const dx = tipX - PX, dy = tipY - PY, len = Math.hypot(dx, dy) || 1;
       const ux = dx / len, uy = dy / len, perpX = -uy, perpY = ux;
-      const baseHalf = 7.5, tipHalf = 5.5;
-      const gripT = 0.86, gx = PX + dx * gripT, gy = PY + dy * gripT;
+      const GRIP_RY = 9, GRIP_LEN = 15;                   // the grip's own extent along the shaft axis
+      const baseHalf = 8, tipHalf = 5.5;
+      const gx = PX + ux * (len - GRIP_RY), gy = PY + uy * (len - GRIP_RY);          // grip centre
+      const bx = PX + ux * (len - GRIP_LEN), by = PY + uy * (len - GRIP_LEN);        // shaft narrows here
       const p1x = PX + perpX * baseHalf, p1y = PY + perpY * baseHalf;
       const p2x = PX - perpX * baseHalf, p2y = PY - perpY * baseHalf;
-      const p3x = gx - perpX * tipHalf, p3y = gy - perpY * tipHalf;
-      const p4x = gx + perpX * tipHalf, p4y = gy + perpY * tipHalf;
+      const p3x = bx - perpX * tipHalf, p3y = by - perpY * tipHalf;
+      const p4x = bx + perpX * tipHalf, p4y = by + perpY * tipHalf;
       this._body.setAttribute("d", `M ${p1x} ${p1y} L ${p3x} ${p3y} L ${p4x} ${p4y} L ${p2x} ${p2y} Z`);
       const ang = Math.atan2(dy, dx) * 180 / Math.PI + 90;
       this._grip.setAttribute("cx", gx); this._grip.setAttribute("cy", gy);
-      this._grip.setAttribute("rx", 12); this._grip.setAttribute("ry", 8.4);
+      this._grip.setAttribute("rx", 11.5); this._grip.setAttribute("ry", GRIP_RY);
       this._grip.setAttribute("transform", `rotate(${ang.toFixed(1)} ${gx} ${gy})`);
-      this._flat1.setAttribute("x1", gx - perpX * 5); this._flat1.setAttribute("y1", gy - perpY * 5 - 4.5);
-      this._flat1.setAttribute("x2", gx - perpX * 5); this._flat1.setAttribute("y2", gy - perpY * 5 + 4.5);
-      this._flat2.setAttribute("x1", gx + perpX * 1); this._flat2.setAttribute("y1", gy + perpY * 1 - 4.5);
-      this._flat2.setAttribute("x2", gx + perpX * 1); this._flat2.setAttribute("y2", gy + perpY * 1 + 4.5);
-      this._cap.setAttribute("cx", tipX); this._cap.setAttribute("cy", tipY);
-      this._cap.setAttribute("transform", `rotate(${ang.toFixed(1)} ${tipX} ${tipY})`);
-      this._capsheen.setAttribute("cx", tipX - perpX * 1.6); this._capsheen.setAttribute("cy", tipY - perpY * 1.6 - 0.6);
-      this._boot.style.transform = `translate(${(nx * 3).toFixed(1)}px, ${(ny * 2).toFixed(1)}px) skewX(${(nx * 6).toFixed(1)}deg)`;
+      this._flat1.setAttribute("x1", gx - perpX * 5); this._flat1.setAttribute("y1", gy - perpY * 5 - 5.5);
+      this._flat1.setAttribute("x2", gx - perpX * 5); this._flat1.setAttribute("y2", gy - perpY * 5 + 5.5);
+      this._flat2.setAttribute("x1", gx + perpX * 1); this._flat2.setAttribute("y1", gy + perpY * 1 - 5.5);
+      this._flat2.setAttribute("x2", gx + perpX * 1); this._flat2.setAttribute("y2", gy + perpY * 1 + 5.5);
+      this._cap.setAttribute("cx", tipX); this._cap.setAttribute("cy", tipY - 2);
+      this._cap.setAttribute("transform", `rotate(${ang.toFixed(1)} ${tipX} ${tipY - 2})`);
+      this._capsheen.setAttribute("cx", tipX - perpX * 1.6); this._capsheen.setAttribute("cy", tipY - 2 - perpY * 1.6 - 0.5);
+      this._boot.style.transform = `translate(${(nx * 3).toFixed(1)}px, ${(ny * 1.5).toFixed(1)}px) skewX(${(nx * 5).toFixed(1)}deg)`;
     }
     _render() { this._stickGeom(this._nx, this._ny); this._updateAria(); }
     _updateAria() {
       this._stickHit.setAttribute("aria-valuetext", dirName(this._x, this._y));
     }
-    _liveValue() {
-      if (this._analog) return { x: round2(this._nx), y: round2(this._ny) };
-      const vx = Math.abs(this._nx) > DEAD ? Math.sign(this._nx) : 0;
-      const vy = Math.abs(this._ny) > DEAD ? Math.sign(this._ny) : 0;
+    _valueFromRaw(nx, ny) {
+      if (this._analog) return { x: round2(nx), y: round2(ny) };
+      const vx = Math.abs(nx) > DEAD ? Math.sign(nx) : 0;
+      const vy = Math.abs(ny) > DEAD ? Math.sign(ny) : 0;
       return { x: vx, y: vy };
     }
     _emit(type, extra) {
-      const v = this._liveValue();
-      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: Object.assign({ x: v.x, y: v.y, fire: this._fire }, extra || {}) }));
-      return v;
+      this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: Object.assign({ x: this._x, y: this._y, fire: this._fire }, extra || {}) }));
     }
+    // commit is the settled, logical reading: it writes the attribute immediately (SPEC: property mirrors
+    // the attribute) and kicks a purely cosmetic spring so the stick's visual position eases to match —
+    // the spring's own RAF ticks never touch the attribute, only _commit does.
     _commit(v) {
       this._x = v.x; this._y = v.y;
       this.setAttribute("value", round2(v.x) + "," + round2(v.y));
+      this._kick();
     }
     _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
     _tick(now) {
       const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
-      const k = 210, c = 15;
-      const ax = k * (0 - this._nx) - c * this._vx, ay = k * (0 - this._ny) - c * this._vy;
+      const tx = this._x, ty = this._y;
+      const k = 260, c = 17;
+      const ax = k * (tx - this._nx) - c * this._vx, ay = k * (ty - this._ny) - c * this._vy;
       this._vx += ax * dt; this._nx += this._vx * dt;
       this._vy += ay * dt; this._ny += this._vy * dt;
       this._stickGeom(this._nx, this._ny);
-      if (Math.abs(this._nx) < 0.01 && Math.abs(this._ny) < 0.01 && Math.abs(this._vx) < 0.03 && Math.abs(this._vy) < 0.03) {
-        this._nx = 0; this._ny = 0; this._vx = 0; this._vy = 0;
-        this._stickGeom(0, 0);
-        this._commit({ x: 0, y: 0 });
-        this._emit("change");
-        this._updateAria();
-        this._raf = 0; this._returning = false;
+      if (Math.abs(tx - this._nx) < 0.01 && Math.abs(ty - this._ny) < 0.01 && Math.abs(this._vx) < 0.03 && Math.abs(this._vy) < 0.03) {
+        this._nx = tx; this._ny = ty; this._vx = 0; this._vy = 0;
+        this._stickGeom(this._nx, this._ny);
+        this._raf = 0;
         return;
       }
       this._raf = requestAnimationFrame(this._tick);
     }
-    _startReturn(afterMs) {
-      clearTimeout(this._returnT);
-      this._returnT = setTimeout(() => { this._returning = true; this._kick(); }, afterMs || 0);
+    _armIdleReturn() {
+      clearTimeout(this._idleT);
+      this._idleT = setTimeout(() => { this._commit({ x: 0, y: 0 }); this._emit("change"); this._updateAria(); }, 650);
     }
     _onStickDown(e) {
       if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
       e.preventDefault();
-      clearTimeout(this._returnT); cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
+      clearTimeout(this._idleT);
       this._stickHit.focus({ preventScroll: true });
       this._stickHit.setPointerCapture(e.pointerId);
       this._stickHit.classList.add("drag");
@@ -383,9 +391,13 @@
     }
     _onStickMove(e) {
       if (!this._drag) return;
+      cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
       const dx = (e.clientX - this._drag.x) / this._scale, dy = (e.clientY - this._drag.y) / this._scale;
       this._nx = clamp(dx / 40, -1, 1); this._ny = clamp(dy / 40, -1, 1);
       this._stickGeom(this._nx, this._ny);
+      const v = this._valueFromRaw(this._nx, this._ny);
+      this._x = v.x; this._y = v.y;
+      this.setAttribute("value", round2(v.x) + "," + round2(v.y));
       this._emit("input"); this._updateAria();
     }
     _onStickUp(e) {
@@ -396,48 +408,36 @@
       try { this._stickHit.releasePointerCapture(e.pointerId); } catch (_) {}
       this._stickHit.classList.remove("drag");
       this._drag = null;
-      this._startReturn(0);
+      this._commit({ x: 0, y: 0 });
+      this._emit("change"); this._updateAria();
     }
     _onWheel(e) {
       if (this.hasAttribute("disabled")) return;
       e.preventDefault();
-      clearTimeout(this._returnT); cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
-      this._ny = clamp(this._ny + (e.deltaY < 0 ? -0.5 : 0.5), -1, 1);
-      this._stickGeom(this._nx, this._ny);
+      const ny = clamp((this._analog ? this._ny : this._y) + (e.deltaY < 0 ? -0.6 : 0.6), -1, 1);
+      const v = this._valueFromRaw(this._x, ny);
+      this._commit(v);
       this._emit("input"); this._updateAria();
-      this._startReturn(180);
-    }
-    _recomputeHeld() {
-      let nx = 0, ny = 0;
-      this._heldKeys.forEach(k => {
-        if (k === "ArrowLeft") nx -= 1; else if (k === "ArrowRight") nx += 1;
-        else if (k === "ArrowUp") ny -= 1; else if (k === "ArrowDown") ny += 1;
-      });
-      this._nx = clamp(nx, -1, 1); this._ny = clamp(ny, -1, 1);
-      this._stickGeom(this._nx, this._ny);
-      this._emit("input"); this._updateAria();
+      this._armIdleReturn();
     }
     _onKeyDown(e) {
       if (this.hasAttribute("disabled")) return;
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.key) >= 0) {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home"].indexOf(e.key) >= 0) {
         e.preventDefault();
-        clearTimeout(this._returnT); cancelAnimationFrame(this._raf); this._raf = 0; this._vx = 0; this._vy = 0;
-        this._heldKeys.add(e.key);
-        this._dwellUntil = performance.now() + 180;
-        this._recomputeHeld();
+        let x = this._x, y = this._y;
+        if (e.key === "Home") { x = 0; y = 0; }
+        else if (e.key === "ArrowUp") y = -1; else if (e.key === "ArrowDown") y = 1;
+        else if (e.key === "ArrowLeft") x = -1; else if (e.key === "ArrowRight") x = 1;
+        this._commit({ x, y });
+        this._emit("input"); this._emit("change"); this._updateAria();
+        if (x === 0 && y === 0) clearTimeout(this._idleT); else this._armIdleReturn();
       } else if ((e.key === " " || e.key === "Spacebar" || e.key === "Enter") && !e.repeat) {
         e.preventDefault();
         this._setFire(true);
       }
     }
     _onKeyUp(e) {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.key) >= 0) {
-        this._heldKeys.delete(e.key);
-        if (this._heldKeys.size) { this._recomputeHeld(); }
-        else { const wait = Math.max(0, this._dwellUntil - performance.now()); this._startReturn(wait); }
-      } else if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") {
-        this._setFire(false);
-      }
+      if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") this._setFire(false);
     }
     _setFire(on) {
       if (this._fire === on) return;

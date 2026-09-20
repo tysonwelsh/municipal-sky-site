@@ -133,10 +133,10 @@
         <path class="slot" d="M ${CX - 3.4} ${CY - 8} L ${CX - 1.6} ${CY - 1} L ${CX + 1.6} ${CY - 1} L ${CX + 3.4} ${CY - 8} Z" fill="#050506"/>
         <!-- the key: bow (rectangle with a hole) standing up out of the barrel -->
         <g class="keybow">
-          <rect x="${CX - 4}" y="${CY - 30}" width="8" height="16" rx="1.4" fill="url(#ks-key)" stroke="#4a3c18" stroke-width="0.6"/>
-          <circle cx="${CX}" cy="${CY - 25}" r="2" fill="#151210" stroke="#6e5c2c" stroke-width="0.4"/>
-          <rect x="${CX - 4}" y="${CY - 15}" width="8" height="6" fill="url(#ks-key)" stroke="#4a3c18" stroke-width="0.6"/>
-          <rect x="${CX - 1.2}" y="${CY - 30}" width="1" height="30" fill="#fff" opacity="0.35"/>
+          <rect x="${CX - 3.6}" y="${CY - 26}" width="7.2" height="12.5" rx="1.3" fill="url(#ks-key)" stroke="#4a3c18" stroke-width="0.6"/>
+          <circle cx="${CX}" cy="${CY - 21.5}" r="1.8" fill="#151210" stroke="#6e5c2c" stroke-width="0.4"/>
+          <rect x="${CX - 3.6}" y="${CY - 14}" width="7.2" height="5.5" fill="url(#ks-key)" stroke="#4a3c18" stroke-width="0.6"/>
+          <rect x="${CX - 1}" y="${CY - 26}" width="0.9" height="24" fill="#fff" opacity="0.35"/>
         </g>
       </g>
 
@@ -203,7 +203,7 @@
     }
     _drawScale() {
       const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
-      const ns = "http://www.w3.org/2000/svg", r = 30;
+      const ns = "http://www.w3.org/2000/svg", r = 33;
       OPTS.forEach((opt, i) => {
         const a = ANGLES[i] * Math.PI / 180;
         const t = document.createElementNS(ns, "text");

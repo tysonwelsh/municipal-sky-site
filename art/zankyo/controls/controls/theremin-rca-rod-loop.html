@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RCA Theremin, chrome rod &amp; loop — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "theremin-rca-rod-loop",
+  "element": "sk-theremin-rca-rod-loop",
+  "name": "RCA Theremin, chrome rod & loop",
+  "kind": "input",
+  "code": "E14.1",
+  "type": "Contactless sensor (theremin antennas)",
+  "source": "The RCA Theremin (1929, Leon Theremin / RCA Victor) on its walnut cabinet, with the Moog Etherwave's smaller box as the era's descendant",
+  "era": "1920s",
+  "origin": "USA",
+  "materials": ["walnut veneer", "chrome-plated brass", "grille cloth"],
+  "tags": ["instrument", "no-contact", "xy", "theremin"],
+  "value": { "model": "xy" },
+  "attributes": ["value", "field", "demo", "scale", "disabled"],
+  "events": ["input"],
+  "size": { "w": 480, "h": 400 },
+  "notes": "Move the pointer near the rod (pitch) or the loop (volume); no click, no drag. One shows the sensing field."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-theremin-rca-rod-loop scale="0.42"></sk-theremin-rca-rod-loop>
+    <sk-theremin-rca-rod-loop scale="0.42" field></sk-theremin-rca-rod-loop>
+    <sk-theremin-rca-rod-loop scale="0.42" demo></sk-theremin-rca-rod-loop>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+<h2>THE SOURCE</h2>
+<p>The <b>RCA Theremin</b> was sold as a piece of furniture: a walnut cabinet with a cloth speaker grille, standing
+on turned legs, with a vertical chrome pitch antenna rising from one end and a horizontal chrome volume loop
+projecting from the other. Leon Theremin's instrument is played without touching it at all — the two antennas
+sense the capacitance of a hand at a distance, one antenna raising pitch as a hand nears, the other lowering
+volume as a hand nears its loop.</p>
+<p><b>The tells kept here:</b> two plain polished chrome tubes with a hard specular highlight; the response as
+<i>distance</i>, not contact, with a soft hand cursor near each antenna that lags the pointer a little; the
+optional faint contour rings showing the sensing field, tighter near the rod because the pitch response is
+exponential; the cabinet as furniture, complete with grille cloth and a pilot lamp. The whole element is tall
+because the rod has to be.</p>
+<p><b>Left out:</b> the internal vacuum-tube oscillators, the volume loop's true RF near-field shape (approximated
+here as simple radial distance), and the Moog Etherwave's smaller box (not modelled as a separate variant).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-theremin-rca-rod-loop> — RCA-style theremin: chrome rod (pitch) + loop (volume), no contact ====
+   attributes: value(JSON {x,y}) field demo scale disabled
+   value: xy, x=pitch 0..1 (distance to rod), y=volume 0..1 (distance to loop)
+   events: input {x,y} continuously while the pointer is over the element
+   self-contained: paste this block into any page and use <sk-theremin-rca-rod-loop></sk-theremin-rca-rod-loop> */
+(function () {
+  if (customElements.get("sk-theremin-rca-rod-loop")) return;
+  const W = 480, H = 400;
+  const CAB = { x: 26, y: 280, w: 428, h: 92 };
+  const ROD_X = 372, ROD_TOP = 26, ROD_BASE = CAB.y + 4;
+  const LOOP_CX = 62, LOOP_CY = 214, LOOP_R = 34;
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display:inline-block; width:${W}px; height:${H}px; position:relative; font-size:10px; -webkit-tap-highlight-color:transparent; }
+    :host([hidden]) { display:none; }
+    .wrap { position:absolute; inset:0; transform-origin:0 0; touch-action:none; outline:none; cursor: crosshair; }
+    svg { position:absolute; inset:0; overflow:visible; }
+    text { font-family:"Libre Franklin","Georgia",serif; }
+    .knoblbl { font-family:"Josefin Sans","Futura",sans-serif; }
+    :host(:focus-visible) .wrap { box-shadow: 0 0 0 3px #16e0e0, 0 0 14px rgba(22,224,224,0.5); border-radius: 10px; }
+  </style>
+  <div class="wrap" tabindex="0" role="application" aria-label="theremin: move the pointer near the rod for pitch, near the loop for volume">
+    <svg viewBox="0 0 ${W} ${H}">
+      <defs>
+        <linearGradient id="walnut" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7a5334"/><stop offset="0.12" stop-color="#8a6540"/><stop offset="0.5" stop-color="#5b3a22"/><stop offset="1" stop-color="#3f2716"/>
+        </linearGradient>
+        <linearGradient id="walnuttop" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#8a6540"/><stop offset="0.5" stop-color="#6b4a2c"/><stop offset="1" stop-color="#7a5334"/>
+        </linearGradient>
+        <radialGradient id="chrome" cx="30%" cy="15%" r="90%">
+          <stop offset="0" stop-color="#f5f7f8"/><stop offset="0.18" stop-color="#c7ccce"/><stop offset="0.35" stop-color="#7b8085"/>
+          <stop offset="0.55" stop-color="#e6e9eb"/><stop offset="0.75" stop-color="#54585c"/><stop offset="1" stop-color="#9aa0a4"/>
+        </radialGradient>
+        <radialGradient id="lamp" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#fff3c9"/><stop offset="0.5" stop-color="#f2a83b"/><stop offset="1" stop-color="#a5641a"/>
+        </radialGradient>
+        <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="soft2" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="10"/></filter>
+        <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse">
+          <rect width="4" height="4" fill="#a08a60"/><path d="M0 0h4M0 4h4" stroke="#8a7550" stroke-width="1"/>
+        </pattern>
+      </defs>
+
+      <!-- floor contact shadow -->
+      <ellipse cx="${CAB.x + CAB.w/2}" cy="${CAB.y + CAB.h + 24}" rx="${CAB.w/2 + 6}" ry="14" fill="#000" opacity="0.4" filter="url(#soft)"/>
+
+      <!-- field contours (decorative aid) -->
+      <g class="field-g" opacity="0">
+        <g class="rod-rings"></g>
+        <g class="loop-rings"></g>
+      </g>
+
+      <!-- legs -->
+      <g fill="url(#walnut)" stroke="#2c1c10" stroke-width="0.6">
+        <rect x="${CAB.x + 14}" y="${CAB.y + CAB.h - 4}" width="10" height="34" rx="2"/>
+        <rect x="${CAB.x + CAB.w - 24}" y="${CAB.y + CAB.h - 4}" width="10" height="34" rx="2"/>
+      </g>
+
+      <!-- cabinet -->
+      <rect x="${CAB.x}" y="${CAB.y}" width="${CAB.w}" height="${CAB.h}" rx="10" fill="url(#walnut)" stroke="#2c1c10" stroke-width="1.2"/>
+      <rect x="${CAB.x}" y="${CAB.y}" width="${CAB.w}" height="10" rx="5" fill="url(#walnuttop)" opacity="0.9"/>
+      <rect x="${CAB.x + 3}" y="${CAB.y + 3}" width="${CAB.w - 6}" height="${CAB.h - 6}" rx="8" fill="none" stroke="#9a7247" stroke-opacity="0.35" stroke-width="1"/>
+      <!-- grille -->
+      <rect x="${CAB.x + 150}" y="${CAB.y + 18}" width="150" height="56" rx="8" fill="url(#weave)" stroke="#3f2716" stroke-width="1.5"/>
+      <rect x="${CAB.x + 150}" y="${CAB.y + 18}" width="150" height="56" rx="8" fill="#000" opacity="0.15"/>
+      <!-- placard -->
+      <text x="${CAB.x + CAB.w/2}" y="${CAB.y + CAB.h - 10}" text-anchor="middle" font-size="6" letter-spacing="0.16em" fill="#e7d9ba" opacity="0.8">RADIO&#160;&#160;THEREMIN</text>
+      <!-- pilot lamp + knobs -->
+      <circle cx="${CAB.x + 30}" cy="${CAB.y + 30}" r="5.5" fill="url(#lamp)"><animate attributeName="opacity" values="0.85;1;0.85" dur="2.4s" repeatCount="indefinite"/></circle>
+      <circle cx="${CAB.x + 30}" cy="${CAB.y + 30}" r="8" fill="#f2a83b" opacity="0.25" filter="url(#soft)"/>
+      <circle cx="${CAB.x + 340}" cy="${CAB.y + 60}" r="8" fill="#17140f" stroke="#000"/>
+      <circle cx="${CAB.x + 366}" cy="${CAB.y + 60}" r="8" fill="#17140f" stroke="#000"/>
+
+      <!-- volume loop: bent chrome tube -->
+      <g class="loop">
+        <path d="M ${CAB.x + 6} ${ROD_BASE} L ${CAB.x - 22} ${CAB.y - 6}
+                 A ${LOOP_R} ${LOOP_R} 0 1 1 ${CAB.x - 22} ${LOOP_CY + LOOP_R}"
+              fill="none" stroke="url(#chrome)" stroke-width="7" stroke-linecap="round"/>
+        <path d="M ${CAB.x + 6} ${ROD_BASE} L ${CAB.x - 22} ${CAB.y - 6}
+                 A ${LOOP_R} ${LOOP_R} 0 1 1 ${CAB.x - 22} ${LOOP_CY + LOOP_R}"
+              fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.4"/>
+        <circle cx="${CAB.x + 6}" cy="${ROD_BASE}" r="6" fill="#3a3f43"/>
+      </g>
+
+      <!-- pitch rod -->
+      <g class="rod">
+        <rect x="${ROD_X - 3.4}" y="${ROD_TOP}" width="6.8" height="${ROD_BASE - ROD_TOP}" rx="3.4" fill="url(#chrome)" stroke="#40454a" stroke-width="0.6"/>
+        <rect x="${ROD_X - 0.9}" y="${ROD_TOP + 2}" width="1.4" height="${ROD_BASE - ROD_TOP - 6}" fill="#ffffff" opacity="0.75"/>
+        <circle cx="${ROD_X}" cy="${ROD_TOP}" r="5.4" fill="url(#chrome)" stroke="#40454a" stroke-width="0.6"/>
+        <circle cx="${ROD_X}" cy="${ROD_BASE}" r="6.5" fill="#3a3f43"/>
+      </g>
+
+      <!-- hand cursors -->
+      <g class="hand hand-rod" opacity="0">
+        <ellipse rx="15" ry="20" fill="#8a8d8b" opacity="0.35" filter="url(#soft2)"/>
+        <ellipse rx="9" ry="13" fill="#c9cac6" opacity="0.28"/>
+      </g>
+      <g class="hand hand-loop" opacity="0">
+        <ellipse rx="15" ry="20" fill="#8a8d8b" opacity="0.35" filter="url(#soft2)"/>
+        <ellipse rx="9" ry="13" fill="#c9cac6" opacity="0.28"/>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkTheremin extends HTMLElement {
+    static get observedAttributes() { return ["value", "field", "demo", "scale", "disabled", "label"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._x = 0.15; this._y = 0.8; this._present = false;
+      this._hx = ROD_X - 30; this._hy = 150; this._lx = LOOP_CX + 40; this._ly = LOOP_CY;
+      this._built = false; this._raf = 0; this._last = 0; this._t0 = performance.now();
+      this._onMove = this._onMove.bind(this); this._onLeave = this._onLeave.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this._built) { this._build(); this._built = true; }
+      this._readAttrs(); this._drawRings(); this._paint();
+      this._wrap.addEventListener("pointermove", this._onMove);
+      this._wrap.addEventListener("pointerleave", this._onLeave);
+      this._wrap.addEventListener("wheel", this._onWheel, { passive: false });
+      this._wrap.addEventListener("keydown", this._onKey);
+      this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._wrap.removeEventListener("pointermove", this._onMove);
+      this._wrap.removeEventListener("pointerleave", this._onLeave);
+      this._wrap.removeEventListener("wheel", this._onWheel);
+      this._wrap.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this._built) return; this._readAttrs(); if (n === "field") this._drawRings(); }
+    get value() { return { x: this._x, y: this._y }; }
+    set value(v) { if (!v) return; if (typeof v.x === "number") this._x = v.x; if (typeof v.y === "number") this._y = v.y; this._reflect(); this._paint(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _build() {
+      const root = this.shadowRoot;
+      this._wrap = root.querySelector(".wrap");
+      this._fieldG = root.querySelector(".field-g");
+      this._rodRings = root.querySelector(".rod-rings");
+      this._loopRings = root.querySelector(".loop-rings");
+      this._handRod = root.querySelector(".hand-rod");
+      this._handLoop = root.querySelector(".hand-loop");
+    }
+    _drawRings() {
+      while (this._rodRings.firstChild) this._rodRings.removeChild(this._rodRings.firstChild);
+      while (this._loopRings.firstChild) this._loopRings.removeChild(this._loopRings.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      // pitch field: tighter near the rod (exponential feel), drawn as nested vertical capsules
+      const rDists = [18, 40, 70, 112, 168];
+      rDists.forEach((d) => {
+        const r = document.createElementNS(ns, "rect");
+        r.setAttribute("x", ROD_X - d); r.setAttribute("y", ROD_TOP - 10);
+        r.setAttribute("width", d * 2); r.setAttribute("height", ROD_BASE - ROD_TOP + 20);
+        r.setAttribute("rx", d); r.setAttribute("fill", "none"); r.setAttribute("stroke", "#ffffff");
+        r.setAttribute("stroke-opacity", "0.12"); r.setAttribute("stroke-width", "1");
+        this._rodRings.appendChild(r);
+      });
+      [20, 45, 75, 115].forEach((r0) => {
+        const c = document.createElementNS(ns, "circle");
+        c.setAttribute("cx", LOOP_CX); c.setAttribute("cy", LOOP_CY); c.setAttribute("r", r0);
+        c.setAttribute("fill", "none"); c.setAttribute("stroke", "#ffffff"); c.setAttribute("stroke-opacity", "0.12"); c.setAttribute("stroke-width", "1");
+        this._loopRings.appendChild(c);
+      });
+    }
+    _readAttrs() {
+      this._scale = Math.max(0.2, parseFloat(this.getAttribute("scale")) || 1);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._disabled = this.hasAttribute("disabled");
+      this._demo = this.hasAttribute("demo");
+      this._fieldG.style.opacity = this.hasAttribute("field") ? "1" : "0";
+      this._wrap.setAttribute("tabindex", this._disabled ? "-1" : "0");
+      this.setAttribute("role", "group");
+      this.setAttribute("aria-label", this.getAttribute("label") || "theremin");
+    }
+    _reflect() {
+      this.setAttribute("value", JSON.stringify({ x: Math.round(this._x * 1000) / 1000, y: Math.round(this._y * 1000) / 1000 }));
+    }
+    _emit() {
+      this._reflect();
+      this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { x: this._x, y: this._y } }));
+    }
+    _fromPointer(px, py) {
+      const rodDist = Math.abs(px - ROD_X);
+      const x = Math.max(0, Math.min(1, Math.exp(-rodDist / 80)));
+      const loopDist = Math.hypot(px - LOOP_CX, py - LOOP_CY);
+      const y = Math.max(0, Math.min(1, loopDist / 190));
+      this._x = x; this._y = y;
+      this._hxT = ROD_X - Math.max(-6, Math.min(60, px - ROD_X)) * -0.4 + (px - ROD_X) * 0.4;
+      this._hxT = ROD_X + (px - ROD_X) * 0.4;
+      this._hyT = Math.max(ROD_TOP + 10, Math.min(ROD_BASE - 10, py));
+      this._lxT = LOOP_CX + (px - LOOP_CX) * 0.4;
+      this._lyT = LOOP_CY + (py - LOOP_CY) * 0.4;
+      this._present = true;
+      this._emit();
+    }
+    _onMove(e) {
+      if (this._disabled || this._demo) return;
+      const rect = this._wrap.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / this._scale;
+      const py = (e.clientY - rect.top) / this._scale;
+      this._fromPointer(px, py);
+    }
+    _onLeave() { if (this._disabled) return; this._present = false; }
+    _onWheel(e) {
+      if (this._disabled) return;
+      e.preventDefault();
+      this._x = Math.max(0, Math.min(1, this._x + (e.deltaY < 0 ? 0.02 : -0.02)));
+      this._emit();
+    }
+    _onKey(e) {
+      if (this._disabled) return;
+      const step = e.shiftKey ? 0.1 : 0.02;
+      switch (e.key) {
+        case "ArrowRight": this._x = Math.min(1, this._x + step); break;
+        case "ArrowLeft": this._x = Math.max(0, this._x - step); break;
+        case "ArrowUp": this._y = Math.min(1, this._y + step); break;
+        case "ArrowDown": this._y = Math.max(0, this._y - step); break;
+        default: return;
+      }
+      e.preventDefault();
+      this._present = true;
+      this._hxT = ROD_X - (1 - this._x) * 100; this._hyT = (ROD_TOP + ROD_BASE) / 2;
+      this._lxT = LOOP_CX + this._y * 100; this._lyT = LOOP_CY;
+      this._emit();
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.06, (now - this._last) / 1000); this._last = now;
+      if (this._demo) {
+        const t = (now - this._t0) / 1000;
+        const px = ROD_X - 60 + Math.sin(t * 6.28 / 1.0) * 3 - 40 * (0.5 + 0.5 * Math.sin(t * 0.4));
+        const py = (ROD_TOP + ROD_BASE) / 2 + Math.sin(t * 0.6) * 60;
+        this._fromPointer(px, py);
+      }
+      const a = 1 - Math.exp(-dt / 0.05);
+      this._hx += (this._hxT - this._hx) * a || 0; this._hy += ((this._hyT || this._hy) - this._hy) * a || 0;
+      this._lx += ((this._lxT || this._lx) - this._lx) * a || 0; this._ly += ((this._lyT || this._ly) - this._ly) * a || 0;
+      this._paint();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      this._handRod.setAttribute("transform", `translate(${this._hx || (ROD_X - 40)} ${this._hy || 150})`);
+      this._handLoop.setAttribute("transform", `translate(${this._lx || (LOOP_CX + 40)} ${this._ly || LOOP_CY})`);
+      this._handRod.style.opacity = this._present ? "1" : "0";
+      this._handLoop.style.opacity = this._present ? "1" : "0";
+    }
+  }
+  customElements.define("sk-theremin-rca-rod-loop", SkTheremin);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
