@@ -796,6 +796,15 @@
       pl.className = "zk-wheel-plate";
       var lab = document.createElement("i");
       lab.textContent = v;
+      // wear, deterministic per numeral so it never shimmers as the wheel
+      // turns: a slight tilt, a sub-pixel offset off register, and its own ink
+      // density. Print laid down on a moulded part is never identical twice,
+      // and identical numerals are what give away type pretending to be print.
+      var wear = ((v * 37) % 11) / 11;
+      lab.style.transform =
+        "rotate(" + (wear * 1.7 - 0.85).toFixed(2) + "deg)" +
+        " translate(" + (wear * 0.9 - 0.45).toFixed(2) + "px," + ((1 - wear) * 0.7 - 0.35).toFixed(2) + "px)";
+      lab.style.opacity = (0.80 + wear * 0.18).toFixed(2);
       pl.appendChild(lab);
       barrel.appendChild(pl);
       plates.push({ el: pl, deg: v * WHEEL_DEG_PER_UNIT });
