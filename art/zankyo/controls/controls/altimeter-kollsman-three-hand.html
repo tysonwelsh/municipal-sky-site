@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kollsman three-hand altimeter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "altimeter-kollsman-three-hand",
+  "element": "sk-altimeter-kollsman",
+  "name": "Kollsman three-hand altimeter",
+  "kind": "output",
+  "code": "F7",
+  "type": "Aircraft instrument",
+  "source": "Kollsman sensitive altimeter, Type C-12 and the AN-5760 pattern, USAAF/RAF 1940s onward",
+  "era": "1940s",
+  "origin": "USA",
+  "materials": ["black crackle paint", "matte dial", "radium-style lume", "glass"],
+  "tags": ["aviation", "cockpit", "altimeter", "three hands", "kollsman window", "lume", "ballistics"],
+  "value": { "model": "range", "min": 0, "max": 20000, "step": 10, "unit": "ft" },
+  "attributes": ["value", "min", "max", "qnh", "flag", "label", "scale"],
+  "events": [],
+  "size": { "w": 168, "h": 168 },
+  "notes": "Set value in feet; the three hands are geared 1 : 10 : 100 and lag a little. Below 10,000 ft the crosshatch flag shows in its window at 8 o'clock and slides out as you climb through it. qnh sets the Kollsman window."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-altimeter-kollsman value="4500" label="altitude"></sk-altimeter-kollsman>
+    <sk-altimeter-kollsman value="12340" qnh="30.12" label="altitude" scale="0.8"></sk-altimeter-kollsman>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Kollsman sensitive altimeter</b> — the C-12 and the AN-5760 pattern that filled American and
+  British cockpits from the war onward — is a three-and-an-eighth-inch instrument in a black crackle case:
+  ten numerals round the dial with nought at the top, three hands on one boss reading hundreds, thousands and
+  ten-thousands of feet, a barometric window at three o'clock showing inches of mercury, a smaller one at
+  nine in millibars, a knurled setting knob at seven, and a striped flag that shows in a little window while
+  you are below ten thousand feet and slides away as you climb through it.</p>
+  <p><b>The tells kept here:</b> the hands are geared exactly 1 : 10 : 100 — the long thin hundreds hand with
+  its lume tip turns once per thousand feet, the short broad spade with the black centre stripe once per ten
+  thousand, and the hairline with the little white triangle rides the rim once per hundred thousand; long
+  lume bars sit halfway between the numerals with a faint green halo; the Kollsman window is a recess with a
+  highlight along its top edge and a hairline index; the knurl on the knob is drawn by angle so it crowds at
+  the edges; the case is black crackle — a fine random speckle — with a bevel highlight on the bezel's upper
+  left and four tiny screws at the corners of the square mounting flange behind the round bezel; the arc of
+  "CALIBRATED TO 20,000 FEET" sits inside the bottom of the dial.</p>
+  <p><b>Left out:</b> the rear static connection and the instrument's serial plate; the barometric drums do
+  not roll as the knob turns (the knob is decoration — this is an output, not an input); the hundreds hand's
+  quiver decays after a couple of seconds instead of running forever, so a gallery of these is cheap.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-altimeter-kollsman> — Kollsman C-12 / AN-5760 three-hand sensitive altimeter ====
+   attributes: value min max qnh flag label scale
+   no events (an output). set .value or the attribute; the hands are geared 1:10:100 and lag.
+   self-contained: paste this block into any page and use
+   <sk-altimeter-kollsman value="4500" qnh="29.92"></sk-altimeter-kollsman> */
+(function () {
+  if (customElements.get("sk-altimeter-kollsman")) return;
+  const W = 168, H = 168, CX = 84, CY = 84;
+  const R_TICK = 61, R_NUM = 45.5;
+  const FLAG_A = 234;                        // the crosshatch window, about 8 o'clock
+  const NS = "http://www.w3.org/2000/svg";
+  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; };
+  const f = n => (Math.round(n * 100) / 100);
+
+  // --- static ornament -------------------------------------------------
+  let seed = 74113; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  let crackle = "";
+  for (let i = 0; i < 520; i++) {                 // the crackle paint's speckle
+    const x = rnd() * W, y = rnd() * H, a = rnd() * 6.28, l = 0.8 + rnd() * 2.6;
+    crackle += `M ${f(x)} ${f(y)} l ${f(Math.cos(a) * l)} ${f(Math.sin(a) * l)} `;
+  }
+  let knurl = "";                                  // the setting knob, knurled by angle
+  const [KX, KY] = pt(210, 74);
+  for (let i = 0; i < 30; i++) {
+    const a = i * 12, s = Math.sin(a * Math.PI / 180), c = Math.cos(a * Math.PI / 180);
+    knurl += `M ${f(KX + 5.4 * s)} ${f(KY - 5.4 * c)} L ${f(KX + 10.2 * s)} ${f(KY - 10.2 * c)} `;
+  }
+  // the sector window that the crosshatch flag lives in
+  const sect = (a0, a1, r0, r1) => {
+    const [x0, y0] = pt(a0, r1), [x1, y1] = pt(a1, r1), [x2, y2] = pt(a1, r0), [x3, y3] = pt(a0, r0);
+    return `M ${f(x0)} ${f(y0)} A ${r1} ${r1} 0 0 1 ${f(x1)} ${f(y1)} L ${f(x2)} ${f(y2)} A ${r0} ${r0} 0 0 0 ${f(x3)} ${f(y3)} Z`;
+  };
+  const FLAG_D = sect(FLAG_A - 12, FLAG_A + 12, 33, 47);
+  const [FDX, FDY] = [-Math.sin(FLAG_A * Math.PI / 180) * 22, Math.cos(FLAG_A * Math.PI / 180) * 22];
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Barlow", "Helvetica Neue", Arial, sans-serif; fill: #e8e4d4; }
+    .num { font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
+    .cap { font-size: 5px; font-weight: 500; letter-spacing: 0.15em; text-anchor: middle; fill: #cdc9ba; }
+    .cap2 { font-size: 4px; font-weight: 500; letter-spacing: 0.1em; fill: #b3b0a2; }
+    .drum { font-size: 9px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
+    .drum.mb { font-size: 7px; }
+    .hand { transform-origin: ${CX}px ${CY}px; transform-box: view-box; }
+    .flagmove { transition: transform 400ms cubic-bezier(.3,.7,.3,1); }
+    .flagmove.out { transform: translate(${f(FDX)}px, ${f(FDY)}px); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="k-case" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#3a3b3d"/><stop offset="0.4" stop-color="#262729"/>
+          <stop offset="1" stop-color="#161718"/>
+        </linearGradient>
+        <linearGradient id="k-bez" x1="0.12" y1="0.02" x2="0.88" y2="0.98">
+          <stop offset="0" stop-color="#4a4b4e"/><stop offset="0.3" stop-color="#2d2e30"/>
+          <stop offset="0.74" stop-color="#151617"/><stop offset="1" stop-color="#303133"/>
+        </linearGradient>
+        <radialGradient id="k-dial" cx="46%" cy="40%" r="70%">
+          <stop offset="0" stop-color="#17181a"/><stop offset="0.6" stop-color="#101112"/>
+          <stop offset="1" stop-color="#090a0b"/>
+        </radialGradient>
+        <radialGradient id="k-knob" cx="34%" cy="28%" r="76%">
+          <stop offset="0" stop-color="#48484a"/><stop offset="0.5" stop-color="#1c1c1d"/>
+          <stop offset="1" stop-color="#0c0c0d"/>
+        </radialGradient>
+        <radialGradient id="k-boss" cx="34%" cy="28%" r="76%">
+          <stop offset="0" stop-color="#4a4a4c"/><stop offset="0.6" stop-color="#1a1a1b"/>
+          <stop offset="1" stop-color="#0b0b0c"/>
+        </radialGradient>
+        <linearGradient id="k-glass" x1="0" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="0.4" stop-color="#fff" stop-opacity="0.035"/>
+          <stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.02"/>
+        </linearGradient>
+        <pattern id="k-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="4" height="4" fill="#111111"/><rect width="4" height="2" fill="#ffffff"/>
+        </pattern>
+        <clipPath id="k-dialclip"><circle cx="${CX}" cy="${CY}" r="64"/></clipPath>
+        <clipPath id="k-caseclip"><rect x="4" y="4" width="160" height="160" rx="7"/></clipPath>
+        <clipPath id="k-flagclip"><path d="${FLAG_D}"/></clipPath>
+        <filter id="k-b1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="k-b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <rect x="7" y="10" width="160" height="160" rx="7" fill="#000" opacity="0.6" filter="url(#k-b3)"/>
+
+      <!-- square mounting flange, black crackle -->
+      <g clip-path="url(#k-caseclip)">
+        <rect x="4" y="4" width="160" height="160" rx="7" fill="url(#k-case)"/>
+        <path d="${crackle}" stroke="#4a4b4d" stroke-opacity="0.5" stroke-width="0.6" fill="none" stroke-linecap="round"/>
+        <path d="${crackle}" stroke="#0a0a0b" stroke-opacity="0.35" stroke-width="0.5" fill="none"
+              stroke-linecap="round" transform="translate(0.7 0.7)"/>
+        <path d="M 4 11 Q 4 4 11 4 L 157 4" fill="none" stroke="#6e7073" stroke-opacity="0.45" stroke-width="1"/>
+      </g>
+      <!-- four screws at the flange corners -->
+      <g>
+        <circle cx="16" cy="16" r="3.1" fill="#26272a" stroke="#0a0a0b" stroke-width="0.5"/>
+        <path d="M 13.6 15 L 18.4 17" stroke="#63666a" stroke-width="0.8"/>
+        <circle cx="152" cy="16" r="3.1" fill="#26272a" stroke="#0a0a0b" stroke-width="0.5"/>
+        <path d="M 150.4 13.8 L 153.6 18.2" stroke="#5b5e61" stroke-width="0.8"/>
+        <circle cx="16" cy="152" r="3.1" fill="#26272a" stroke="#0a0a0b" stroke-width="0.5"/>
+        <path d="M 14.2 154.4 L 17.8 149.6" stroke="#5b5e61" stroke-width="0.8"/>
+        <circle cx="152" cy="152" r="3.1" fill="#26272a" stroke="#0a0a0b" stroke-width="0.5"/>
+        <path d="M 149.7 151.2 L 154.3 152.8" stroke="#55585b" stroke-width="0.8"/>
+      </g>
+
+      <!-- the setting knob at 7 o'clock, on the case, under the bezel -->
+      <g>
+        <ellipse cx="${f(KX + 2)} " cy="${f(KY + 3)}" rx="11" ry="10" fill="#000" opacity="0.6" filter="url(#k-b1)"/>
+        <circle cx="${f(KX)}" cy="${f(KY)}" r="10.6" fill="url(#k-knob)" stroke="#08080a" stroke-width="0.7"/>
+        <path d="${knurl}" stroke="#575759" stroke-opacity="0.75" stroke-width="0.8" fill="none"/>
+        <circle cx="${f(KX)}" cy="${f(KY)}" r="5.2" fill="#242426" stroke="#0a0a0b" stroke-width="0.5"/>
+        <path d="M ${f(KX - 6.6)} ${f(KY - 6)} A 9.6 9.6 0 0 1 ${f(KX + 2)} ${f(KY - 10.2)}"
+              fill="none" stroke="#3a3a3b" stroke-width="1.6" stroke-linecap="round"/>
+      </g>
+
+      <!-- round bezel -->
+      <circle cx="${CX}" cy="${CY}" r="78" fill="url(#k-bez)"/>
+      <circle cx="${CX}" cy="${CY}" r="78" fill="none" stroke="#08080a" stroke-opacity="0.9" stroke-width="1"/>
+      <path d="M 33 33 A 72 72 0 0 1 84 12" fill="none" stroke="#7b7d80" stroke-opacity="0.5" stroke-width="1.6"/>
+      <path d="M 26 116 A 72 72 0 0 0 52 141" fill="none" stroke="#5a5c5e" stroke-opacity="0.28" stroke-width="1.4"/>
+      <circle cx="${CX}" cy="${CY}" r="65.5" fill="#0a0a0b"/>
+
+      <g clip-path="url(#k-dialclip)">
+        <circle cx="${CX}" cy="${CY}" r="64" fill="url(#k-dial)"/>
+        <g class="scale"></g>
+
+        <!-- the crosshatch flag window -->
+        <g>
+          <path d="${FLAG_D}" fill="#000"/>
+          <g clip-path="url(#k-flagclip)">
+            <g class="flagmove">
+              <path d="${FLAG_D}" fill="url(#k-hatch)" opacity="0.92"/>
+            </g>
+          </g>
+          <path d="${FLAG_D}" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.4" filter="url(#k-b1)"/>
+          <path d="${FLAG_D}" fill="none" stroke="#54565a" stroke-opacity="0.7" stroke-width="0.7"/>
+        </g>
+
+        <!-- Kollsman window at 3 o'clock (inches of mercury) -->
+        <g>
+          <rect x="99" y="76.5" width="27" height="15" rx="1.6" fill="#000"/>
+          <rect x="100" y="77.5" width="25" height="13" rx="1.2" fill="#171819"/>
+          <text class="drum inhg" x="112.5" y="84.6">29 92</text>
+          <rect x="100" y="77.5" width="25" height="13" rx="1.2" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="2" filter="url(#k-b1)"/>
+          <path d="M 100.6 77.9 L 124.4 77.9" stroke="#8d8f92" stroke-opacity="0.65" stroke-width="0.8"/>
+          <path d="M 112.5 76.9 L 112.5 92" stroke="#e8e4d4" stroke-opacity="0.35" stroke-width="0.5"/>
+          <rect x="99" y="76.5" width="27" height="15" rx="1.6" fill="none" stroke="#3e4043" stroke-opacity="0.8" stroke-width="0.6"/>
+        </g>
+        <!-- millibar window at 9 o'clock -->
+        <g>
+          <rect x="43" y="78" width="21" height="12" rx="1.4" fill="#000"/>
+          <rect x="43.9" y="78.9" width="19.2" height="10.2" rx="1" fill="#171819"/>
+          <text class="drum mb" x="53.5" y="84.4">1013</text>
+          <rect x="43.9" y="78.9" width="19.2" height="10.2" rx="1" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.8" filter="url(#k-b1)"/>
+          <path d="M 44.4 79.3 L 62.6 79.3" stroke="#8d8f92" stroke-opacity="0.6" stroke-width="0.7"/>
+          <rect x="43" y="78" width="21" height="12" rx="1.4" fill="none" stroke="#3e4043" stroke-opacity="0.8" stroke-width="0.6"/>
+        </g>
+
+        <!-- legends -->
+        <text class="cap" x="${CX}" y="54">ALT</text>
+        <path d="M 70 63.5 L 78 63.5 L 79.6 64.6 L 78 65.7 L 70 65.7 Z" fill="#cdc9ba" opacity="0.8"/>
+        <text class="cap2" x="81.5" y="66">1000 FEET</text>
+        <path d="M 70 70.8 L 79.2 70.8 L 80.6 71.4 L 79.2 72 L 70 72 Z" fill="#cdc9ba" opacity="0.6"/>
+        <text class="cap2" x="81.5" y="72.6">100 FEET</text>
+        <path id="k-calarc" d="${(function () { const [x0, y0] = pt(230, 27), [x1, y1] = pt(130, 27); return `M ${f(x0)} ${f(y0)} A 27 27 0 0 0 ${f(x1)} ${f(y1)}`; })()}" fill="none"/>
+        <text class="cap2" style="letter-spacing:0.06em"><textPath href="#k-calarc" startOffset="50%" text-anchor="middle">CALIBRATED TO 20,000 FEET</textPath></text>
+
+        <!-- hands: ten-thousands hairline + triangle, thousands spade, hundreds blade -->
+        <g class="hand h10k">
+          <path d="M ${CX - 0.7} ${CY} L ${CX - 0.7} ${CY - 54} L ${CX + 0.7} ${CY - 54} L ${CX + 0.7} ${CY} Z" fill="#dedaca"/>
+          <path d="M ${CX} ${CY - 63} L ${CX - 4.2} ${CY - 53.5} L ${CX + 4.2} ${CY - 53.5} Z" fill="#f0ede2" stroke="#0b0b0c" stroke-width="0.4"/>
+        </g>
+        <g transform="translate(1.6 2.2)">
+          <g class="hand h1k"><path d="M ${CX - 1.6} ${CY + 9} L ${CX - 3.6} ${CY - 22} L ${CX} ${CY - 41}
+             L ${CX + 3.6} ${CY - 22} L ${CX + 1.6} ${CY + 9} Z" fill="#000" opacity="0.45" filter="url(#k-b1)"/></g>
+          <g class="hand h100"><path d="M ${CX - 1.5} ${CY + 12} L ${CX - 1.5} ${CY - 44} L ${CX} ${CY - 58}
+             L ${CX + 1.5} ${CY - 44} L ${CX + 1.5} ${CY + 12} Z" fill="#000" opacity="0.45" filter="url(#k-b1)"/></g>
+        </g>
+        <g class="hand h1k">
+          <path d="M ${CX - 1.7} ${CY + 10} L ${CX - 3.9} ${CY - 21} L ${CX} ${CY - 41.5}
+                   L ${CX + 3.9} ${CY - 21} L ${CX + 1.7} ${CY + 10} Z" fill="#f0ede2" stroke="#0b0b0c" stroke-width="0.4"/>
+          <path d="M ${CX - 0.75} ${CY + 8} L ${CX - 1.5} ${CY - 22} L ${CX} ${CY - 36}
+                   L ${CX + 1.5} ${CY - 22} L ${CX + 0.75} ${CY + 8} Z" fill="#0e0f10"/>
+        </g>
+        <g class="hand h100">
+          <path d="M ${CX - 1.55} ${CY + 13} L ${CX - 1.55} ${CY - 46} L ${CX} ${CY - 58.5}
+                   L ${CX + 1.55} ${CY - 46} L ${CX + 1.55} ${CY + 13} Z" fill="#f0ede2" stroke="#0b0b0c" stroke-width="0.35"/>
+          <path d="M ${CX - 1.35} ${CY - 46.5} L ${CX} ${CY - 57.5} L ${CX + 1.35} ${CY - 46.5} Z" fill="#cfd8a8"/>
+        </g>
+        <circle cx="${CX}" cy="${CY}" r="6.2" fill="url(#k-boss)" stroke="#000" stroke-width="0.6"/>
+        <circle cx="${CX - 1.8}" cy="${CY - 2}" r="2" fill="#7c7e80" opacity="0.5"/>
+
+        <!-- glass: one broad reflection -->
+        <path d="M 22 36 L 96 22 L 52 148 L 24 132 Z" fill="url(#k-glass)"/>
+        <circle cx="${CX}" cy="${CY}" r="64" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="6" filter="url(#k-b3)"/>
+      </g>
+      <circle cx="${CX}" cy="${CY}" r="64.5" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1"/>
+    </svg>
+  </div>`;
+
+  class SkAltimeterKollsman extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "qnh", "flag", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 20000; this._scale = 1; this._flagOn = true;
+      this._x = 0; this._vel = 0; this._q = 0; this._ph = 0; this._raf = 0; this._last = 0;
+      const R = this.shadowRoot;
+      this._h100 = R.querySelectorAll(".h100");
+      this._h1k = R.querySelectorAll(".h1k");
+      this._h10k = R.querySelectorAll(".h10k");
+      this._wrap = R.querySelector(".wrap");
+      this._scaleG = R.querySelector(".scale");
+      this._flag = R.querySelector(".flagmove");
+      this._inhg = R.querySelector(".inhg");
+      this._mb = R.querySelector(".mb");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._read(); this._drawScale();
+      this._x = this._v; this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read(); if (n === "min" || n === "max") this._drawScale();
+      if (n === "value") this._q = 0.2;
+      this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return;
+      v = Math.min(this._max, Math.max(this._min, v));
+      if (v === this._v) return; this._v = v; this._q = 0.2;
+      this.setAttribute("value", String(Math.round(v))); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    demo(t) { return Math.max(0, Math.min(this._max, 9500 + 9000 * Math.sin(t * 0.17) + 400 * Math.sin(t * 1.3))); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 20000);
+      if (this._max <= this._min) this._max = this._min + 1;
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(this._min, num("value", this._v)));
+      const fa = this.getAttribute("flag");
+      this._flagOn = !(fa === "false" || fa === "0" || fa === "off");
+      const q = num("qnh", 29.92);
+      const qs = q.toFixed(2).replace(".", " ");
+      if (this._inhg.textContent !== qs) this._inhg.textContent = qs;
+      const mb = String(Math.round(q * 33.8639));
+      if (this._mb.textContent !== mb) this._mb.textContent = mb;
+      const lab = this.getAttribute("label") || "altitude";
+      this.setAttribute("aria-label", lab + ", feet, altimeter set " + q.toFixed(2) + " inches of mercury");
+      this.setAttribute("aria-valuemin", String(this._min));
+      this.setAttribute("aria-valuemax", String(this._max));
+      this.setAttribute("aria-valuenow", String(Math.round(this._v)));
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      for (let i = 0; i < 50; i++) {                       // a tick every 20 ft
+        const a = i * 7.2, isNum = i % 5 === 0, isHalf = i % 5 === 2 || i % 5 === 3;
+        if (isHalf) continue;
+        const [x0, y0] = pt(a, R_TICK), [x1, y1] = pt(a, R_TICK - (isNum ? 7 : 3.4));
+        g.appendChild(mk("line", { x1: f(x0), y1: f(y0), x2: f(x1), y2: f(y1),
+          stroke: "#e8e4d4", "stroke-width": isNum ? 2 : 0.9 }));
+      }
+      for (let i = 0; i < 10; i++) {                       // the long lume bar between numerals
+        const a = i * 36 + 18;
+        const [x0, y0] = pt(a, R_TICK - 0.5), [x1, y1] = pt(a, R_TICK - 11);
+        g.appendChild(mk("line", { x1: f(x0), y1: f(y0), x2: f(x1), y2: f(y1),
+          stroke: "#b8c48a", "stroke-width": 5, opacity: 0.32, filter: "url(#k-b1)" }));
+        g.appendChild(mk("line", { x1: f(x0), y1: f(y0), x2: f(x1), y2: f(y1),
+          stroke: "#cfd8a8", "stroke-width": 2.6, "stroke-linecap": "round" }));
+      }
+      for (let i = 0; i < 10; i++) {                       // ten numerals, 0 at the top
+        const a = i * 36, [tx, ty] = pt(a, R_NUM);
+        const t = mk("text", { x: f(tx), y: f(ty), class: "num" });
+        t.textContent = String(i);
+        g.appendChild(t);
+      }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // light damped lag, about 350 ms
+      const k = 180, c = 22.8, sc = Math.max(1, this._max) / 1000;
+      const err = (this._v - this._x) / sc;
+      this._vel += (k * err - c * this._vel) * dt;
+      this._x += this._vel * sc * dt;
+      this._ph += dt;
+      this._q *= Math.pow(0.36, dt);
+      this._paint();
+      if (Math.abs(this._v - this._x) < 0.5 && Math.abs(this._vel) < 0.3 && this._q < 0.01) {
+        this._x = this._v; this._vel = 0; this._q = 0; this._paint(); this._raf = 0; return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const v = this._x;
+      const quiver = this._q * Math.sin(this._ph * 2 * Math.PI * 5.5);
+      const a100 = (v / 1000) * 360 + quiver, a1k = (v / 10000) * 360, a10k = (v / 100000) * 360;
+      this._h100.forEach(n => { n.style.transform = "rotate(" + a100.toFixed(2) + "deg)"; });
+      this._h1k.forEach(n => { n.style.transform = "rotate(" + a1k.toFixed(2) + "deg)"; });
+      this._h10k.forEach(n => { n.style.transform = "rotate(" + a10k.toFixed(2) + "deg)"; });
+      const out = !this._flagOn || this._v >= 10000;
+      if (this._flag.classList.contains("out") !== out) this._flag.classList.toggle("out", out);
+      this.setAttribute("aria-valuenow", String(Math.round(this._v)));
+    }
+  }
+  customElements.define("sk-altimeter-kollsman", SkAltimeterKollsman);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

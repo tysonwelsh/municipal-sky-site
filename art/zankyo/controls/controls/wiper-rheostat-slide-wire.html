@@ -67,8 +67,8 @@
   var NS = "http://www.w3.org/2000/svg";
   var W = 360, H = 112;
   var SX0 = 56, SX1 = 304;          // the shoe's travel along the bar
-  var TUBE_L = 44, TUBE_R = 316;    // the tube's ends
-  var TT = 52, TB = 90;             // the tube's top and bottom
+  var TUBE_L = 34, TUBE_R = 326;    // the tube's ends
+  var TT = 54, TB = 86;             // the tube's top and bottom
 
   var TPL = document.createElement("template");
   TPL.innerHTML = [
@@ -79,7 +79,7 @@
   '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
   'svg { display: block; width: ', W, 'px; height: ', H, 'px; overflow: visible; }',
   '.track, .grab { position: absolute; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }',
-  '.track { left: 44px; top: 30px; width: 272px; height: 34px; cursor: pointer; }',
+  '.track { left: 40px; top: 30px; width: 280px; height: 30px; cursor: pointer; }',
   '.grab { top: 8px; height: 58px; width: 34px; left: 0; cursor: ew-resize; border-radius: 4px; }',
   ':host([disabled]) .track, :host([disabled]) .grab { cursor: default; }',
   '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }',
@@ -88,7 +88,7 @@
   '.slider.bob { transform: translateY(1px); }',
   'text { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; }',
   '.lbl { font-family: "Special Elite", "Courier New", monospace; font-size: 6px; fill: #2a2a2a; text-anchor: middle; }',
-  '.cast { font-size: 3.8px; font-weight: 500; letter-spacing: 0.18em; text-anchor: middle; fill: #8f8f8a; opacity: 0.55; }',
+  '.cast { font-size: 3.4px; font-weight: 500; letter-spacing: 0.18em; text-anchor: middle; fill: #8f8f8a; opacity: 0.55; }',
   '.tag { font-size: 5.2px; font-weight: 500; letter-spacing: 0.22em; text-anchor: middle; fill: #7c776c; }',
   '</style>',
   '<div class="wrap">',
@@ -103,13 +103,19 @@
     '<linearGradient id="porc" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#bdb9ae"/><stop offset="0.22" stop-color="#e6e2d8"/>',
       '<stop offset="0.6" stop-color="#cdc9bd"/><stop offset="1" stop-color="#8e8b82"/></linearGradient>',
+    '<linearGradient id="cylsh" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#000" stop-opacity="0.74"/><stop offset="0.09" stop-color="#000" stop-opacity="0.26"/>',
+      '<stop offset="0.19" stop-color="#fff" stop-opacity="0.24"/><stop offset="0.31" stop-color="#fff" stop-opacity="0.08"/>',
+      '<stop offset="0.46" stop-color="#000" stop-opacity="0"/><stop offset="0.64" stop-color="#000" stop-opacity="0.2"/>',
+      '<stop offset="0.84" stop-color="#000" stop-opacity="0.58"/><stop offset="0.94" stop-color="#000" stop-opacity="0.24"/>',
+      '<stop offset="1" stop-color="#fff" stop-opacity="0.12"/></linearGradient>',
     '<linearGradient id="worn" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#b8b6ac" stop-opacity="0"/><stop offset="0.45" stop-color="#cbc9bf" stop-opacity="0.85"/>',
       '<stop offset="1" stop-color="#b8b6ac" stop-opacity="0"/></linearGradient>',
     '<pattern id="turns" width="1.7" height="4" patternUnits="userSpaceOnUse">',
       '<rect width="1.7" height="4" fill="none"/>',
-      '<line x1="0.28" y1="0" x2="0.28" y2="4" stroke="#3f3e39" stroke-opacity="0.75" stroke-width="0.62"/>',
-      '<line x1="1.06" y1="0" x2="1.06" y2="4" stroke="#d8d6cc" stroke-opacity="0.34" stroke-width="0.42"/>',
+      '<line x1="0.30" y1="0" x2="0.30" y2="4" stroke="#33322e" stroke-opacity="0.8" stroke-width="0.66"/>',
+      '<line x1="1.08" y1="0" x2="1.08" y2="4" stroke="#cfcdc3" stroke-opacity="0.26" stroke-width="0.4"/>',
     '</pattern>',
     '<linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#6e5525"/><stop offset="0.14" stop-color="#d9b76c"/>',
@@ -135,44 +141,47 @@
   '<ellipse cx="184" cy="102" rx="166" ry="7" fill="#000" opacity="0.42" filter="url(#s2)"/>',
 
   /* ---- the wound tube ---- */
-  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="5" fill="url(#cyl)"/>',
-  '<rect x="', (TUBE_L + 8), '" y="', (TT + 1), '" width="', (TUBE_R - TUBE_L - 16), '" height="', (TB - TT - 2), '" fill="url(#turns)"/>',
+  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="4" fill="url(#cyl)"/>',
+  /* bare glazed porcelain at each end, then the winding over the rest */
+  '<rect x="', TUBE_L, '" y="', TT, '" width="18" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
+  '<rect x="', (TUBE_R - 18), '" y="', TT, '" width="18" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
+  '<rect x="', (TUBE_L + 16), '" y="', TT, '" width="', (TUBE_R - TUBE_L - 32), '" height="', (TB - TT), '" fill="url(#cyl)"/>',
+  '<rect x="', (TUBE_L + 16), '" y="', TT, '" width="', (TUBE_R - TUBE_L - 32), '" height="', (TB - TT), '" fill="url(#turns)"/>',
   /* the pale track the shoe has worn along the crest */
-  '<rect x="', (TUBE_L + 8), '" y="', (TT + 3.5), '" width="', (TUBE_R - TUBE_L - 16), '" height="7" fill="url(#worn)"/>',
-  /* bare glazed porcelain showing at each end */
-  '<rect x="', TUBE_L, '" y="', TT, '" width="9" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
-  '<rect x="', (TUBE_R - 9), '" y="', TT, '" width="9" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
-  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="5" fill="none" stroke="#1a1a18" stroke-opacity="0.6" stroke-width="0.7"/>',
-  '<rect x="', (TUBE_L + 1), '" y="', (TT + 0.8), '" width="', (TUBE_R - TUBE_L - 2), '" height="0.8" fill="#e6e2d8" opacity="0.22"/>',
+  '<rect x="', (TUBE_L + 16), '" y="', (TT + 3), '" width="', (TUBE_R - TUBE_L - 32), '" height="6.5" fill="url(#worn)"/>',
+  /* the cylinder's own shading, over the turns, so they compress at the crest and the underside */
+  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="4" fill="url(#cylsh)"/>',
+  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="4" fill="none" stroke="#141412" stroke-opacity="0.65" stroke-width="0.7"/>',
 
   /* ---- the cast-iron end frames ---- */
   '<g class="frames"></g>',
 
   /* ---- the brass bar ---- */
-  '<rect x="20" y="38" width="320" height="9" rx="2" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.5"/>',
-  '<rect class="polish" x="', SX0, '" y="39" width="10" height="3" rx="1.5" fill="#f4e0ab" opacity="0.55"/>',
-  '<rect x="20" y="39" width="320" height="1.2" fill="#fdf2c9" opacity="0.4"/>',
+  '<rect x="18" y="38" width="324" height="7.5" rx="1.6" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.5"/>',
+  '<rect class="polish" x="', SX0, '" y="39.2" width="10" height="2.4" rx="1.2" fill="#f7e6b6" opacity="0.6"/>',
+  '<rect x="18" y="38.8" width="324" height="1" fill="#fdf2c9" opacity="0.42"/>',
+  '<rect x="18" y="44.2" width="324" height="1.1" fill="#2b2008" opacity="0.4"/>',
 
   /* ---- the terminals ---- */
   '<g class="terms"></g>',
 
   /* ---- the typed label on the left frame ---- */
-  '<g transform="rotate(-1.6 28 88)">',
-    '<rect x="9" y="76" width="40" height="21" rx="0.6" fill="#000" opacity="0.4" filter="url(#s1)"/>',
-    '<rect x="9" y="75" width="40" height="21" rx="0.6" fill="url(#paper)"/>',
-    '<path d="M 49 75 L 49 82 Q 44 79.5 44.5 75 Z" fill="#fbf6e6"/>',
-    '<path d="M 49 75 L 44.5 75 Q 44 79.5 49 82" fill="none" stroke="#b6ac8c" stroke-width="0.4"/>',
-    '<text class="lbl" x="29" y="85"></text>',
-    '<text class="lbl" x="29" y="93" style="font-size:5px">2 A  D.C.</text>',
+  '<g transform="rotate(-1.8 28 86)">',
+    '<rect x="8" y="75" width="38" height="20" rx="0.6" fill="#000" opacity="0.42" filter="url(#s1)"/>',
+    '<rect x="8" y="74" width="38" height="20" rx="0.6" fill="url(#paper)"/>',
+    '<path d="M 46 74 L 46 81 Q 41.4 78.6 41.8 74 Z" fill="#fcf8ea"/>',
+    '<path d="M 46 74 L 41.8 74 Q 41.4 78.6 46 81" fill="none" stroke="#b6ac8c" stroke-width="0.4"/>',
+    '<text class="lbl" x="26" y="83"></text>',
+    '<text class="lbl" x="26" y="91" style="font-size:4.6px">2 A  D.C.</text>',
   '</g>',
 
   /* ---- the slider: brass block on the bar, spring finger on the winding, Bakelite knob ---- */
   '<g class="slider">',
-    '<ellipse cx="', (SX0 + 2), '" cy="60" rx="15" ry="4" fill="#000" opacity="0.4" filter="url(#s1)"/>',
+    '<ellipse cx="', (SX0 + 2), '" cy="57" rx="16" ry="4" fill="#000" opacity="0.42" filter="url(#s1)"/>',
     /* the spring finger and its shoe on the winding */
-    '<path d="M ', (SX0 - 3), ' 48 L ', (SX0 - 3), ' 56 Q ', (SX0 - 3), ' 59 ', SX0, ' 59 L ', (SX0 + 5), ' 59 Q ', (SX0 + 8), ' 59 ', (SX0 + 8), ' 56 L ', (SX0 + 8), ' 48 Z" fill="url(#brassblk)" stroke="#4e3a13" stroke-width="0.5"/>',
-    '<rect x="', (SX0 - 5), '" y="56" width="15" height="3.6" rx="1.4" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.4"/>',
-    '<rect x="', (SX0 - 4), '" y="56.6" width="13" height="1" fill="#f6e4b0" opacity="0.5"/>',
+    '<path d="M ', (SX0 - 3), ' 46 L ', (SX0 - 3), ' 53 Q ', (SX0 - 3), ' 56 ', SX0, ' 56 L ', (SX0 + 5), ' 56 Q ', (SX0 + 8), ' 56 ', (SX0 + 8), ' 53 L ', (SX0 + 8), ' 46 Z" fill="url(#brassblk)" stroke="#4e3a13" stroke-width="0.5"/>',
+    '<rect x="', (SX0 - 6), '" y="53.6" width="17" height="3.4" rx="1.3" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.4"/>',
+    '<rect x="', (SX0 - 5), '" y="54.2" width="15" height="0.9" fill="#f6e4b0" opacity="0.55"/>',
     /* the block that rides the bar */
     '<rect x="', (SX0 - 13), '" y="31" width="26" height="20" rx="2.5" fill="url(#brassblk)" stroke="#4e3a13" stroke-width="0.6"/>',
     '<rect x="', (SX0 - 12), '" y="32" width="24" height="1.4" rx="0.7" fill="#fdf2c9" opacity="0.55"/>',
@@ -249,30 +258,33 @@
       if (this._built) return; this._built = true;
       var r = this.shadowRoot, g = r.querySelector(".frames"), i;
       // two cast-iron end frames: a foot, a standard, and a slotted ear the bar sits in
-      [[8, 1], [314, -1]].forEach(function (f) {
-        var x = f[0], s = f[1], cx = x + 19;
-        g.appendChild(mk("ellipse", { cx: cx + 2 * s, cy: 100, rx: 22, ry: 5, fill: "#000", opacity: 0.45, filter: "url(#s1)" }));
+      [26, 334].forEach(function (cx) {
+        g.appendChild(mk("ellipse", { cx: cx + 2, cy: 100, rx: 25, ry: 5, fill: "#000", opacity: 0.45, filter: "url(#s1)" }));
         g.appendChild(mk("path", {
-          d: "M " + (cx - 6) + " 30 L " + (cx + 6) + " 30 L " + (cx + 7) + " 66 L " + (cx + 19) + " 92 " +
-             "Q " + (cx + 21) + " 99 " + (cx + 14) + " 99 L " + (cx - 14) + " 99 " +
-             "Q " + (cx - 21) + " 99 " + (cx - 19) + " 92 L " + (cx - 7) + " 66 Z",
+          d: "M " + (cx - 8) + " 30 L " + (cx + 8) + " 30 L " + (cx + 10) + " 45 " +
+             "Q " + (cx + 17) + " 56 " + (cx + 18) + " 74 L " + (cx + 22) + " 93 " +
+             "Q " + (cx + 24) + " 99 " + (cx + 17) + " 99 L " + (cx - 17) + " 99 " +
+             "Q " + (cx - 24) + " 99 " + (cx - 22) + " 93 L " + (cx - 18) + " 74 " +
+             "Q " + (cx - 17) + " 56 " + (cx - 10) + " 45 Z",
           fill: "url(#iron)", stroke: "#000", "stroke-width": 0.6
         }));
         // the slot the brass bar sits in
-        g.appendChild(mk("rect", { x: cx - 5, y: 36, width: 10, height: 13, rx: 1.5, fill: "#080807", opacity: 0.85 }));
-        // a lit edge down the frame's left, and chipped paint
-        g.appendChild(mk("path", { d: "M " + (cx - 5.4) + " 31 L " + (cx - 6.4) + " 66 L " + (cx - 17.6) + " 91",
-          fill: "none", stroke: "#6e6e6a", "stroke-opacity": 0.5, "stroke-width": 0.9 }));
-        g.appendChild(mk("path", { d: "M " + (cx - 15) + " 96.5 L " + (cx - 11) + " 94.5 L " + (cx - 10) + " 97.5 Z",
-          fill: "#8f8f8a", opacity: 0.48 }));
-        g.appendChild(mk("path", { d: "M " + (cx + 5.5) + " 33 L " + (cx + 8) + " 35.5 L " + (cx + 5.2) + " 37 Z",
-          fill: "#8f8f8a", opacity: 0.32 }));
+        g.appendChild(mk("rect", { x: cx - 6, y: 36, width: 12, height: 12, rx: 1.5, fill: "#070706" }));
+        g.appendChild(mk("rect", { x: cx - 6, y: 36, width: 12, height: 1, fill: "#6e6e6a", opacity: 0.4 }));
+        // the lit edge down the frame's left side
+        g.appendChild(mk("path", { d: "M " + (cx - 7.2) + " 31 L " + (cx - 9.2) + " 45.5 Q " + (cx - 16) + " 56.5 " + (cx - 17) + " 74 L " + (cx - 20.8) + " 92",
+          fill: "none", stroke: "#75756f", "stroke-opacity": 0.5, "stroke-width": 1 }));
+        // chipped paint at the edges, bare metal underneath
+        g.appendChild(mk("path", { d: "M " + (cx - 20.4) + " 94 L " + (cx - 17.5) + " 92.4 L " + (cx - 15.8) + " 94.6 L " + (cx - 18.4) + " 96.2 Z",
+          fill: "#8f8f8a", opacity: 0.45 }));
+        g.appendChild(mk("path", { d: "M " + (cx + 8.6) + " 32.4 L " + (cx + 10.6) + " 34.4 L " + (cx + 9.4) + " 36.6 L " + (cx + 8.2) + " 34.6 Z",
+          fill: "#8f8f8a", opacity: 0.3 }));
       });
-      g.appendChild(mk("text", { x: 333, y: 90, "class": "cast" }, "ENGLAND"));
+      g.appendChild(mk("text", { x: 334, y: 92, "class": "cast" }, "ENGLAND"));
 
       // three brass terminals with knurled nuts
       var tg = r.querySelector(".terms");
-      [[27, 70], [333, 70], [27, 56]].forEach(function (t) {
+      [[18, 64], [36, 64], [334, 64]].forEach(function (t) {
         var x = t[0], y = t[1];
         tg.appendChild(mk("ellipse", { cx: x + 1.5, cy: y + 2.5, rx: 7, ry: 4, fill: "#000", opacity: 0.5, filter: "url(#s1)" }));
         tg.appendChild(mk("rect", { x: x - 6.5, y: y - 3.4, width: 13, height: 6.8, rx: 2, fill: "url(#brass)", stroke: "#4e3a13", "stroke-width": 0.5 }));
@@ -318,10 +330,10 @@
       this._grab.style.top = (8 * s) + "px";
       this._grab.style.width = (34 * s) + "px";
       this._grab.style.height = (58 * s) + "px";
-      this._track.style.left = (44 * s) + "px";
+      this._track.style.left = (40 * s) + "px";
       this._track.style.top = (30 * s) + "px";
-      this._track.style.width = (272 * s) + "px";
-      this._track.style.height = (34 * s) + "px";
+      this._track.style.width = (280 * s) + "px";
+      this._track.style.height = (30 * s) + "px";
       var shown = Math.round(this._v * 10) / 10;
       this._grab.setAttribute("aria-valuenow", String(shown));
       this._grab.setAttribute("aria-valuetext", shown + " ohms");

@@ -72,8 +72,8 @@
     arrow: {
       d: "M48 14 L70.5 48 L61 48 L61 88 L35 88 L35 48 L25.5 48 Z",
       tx: 48, ty: 43, fs: 8.2, max: 30,
-      hot: [43, 52, 23, 26],
-      dim: '<ellipse cx="48" cy="22" rx="11" ry="8" fill="#a07a20" opacity="0.13"/>'
+      hot: [45, 43, 27, 31],
+      dim: '<ellipse cx="48" cy="19" rx="9" ry="6" fill="#c08a1c" opacity="0.1"/>'
     },
     round: {
       d: "M26 54 a22 22 0 1 0 44 0 a22 22 0 1 0 -44 0 Z",
@@ -94,12 +94,12 @@
     return [
       '<g class="k k-' + key + '">',
       /* the routed hole: the dark wood seam around the insert */
-      '  <path d="' + s.d + '" fill="#6b4a2a" stroke="#4a3018" stroke-width="2.6" stroke-linejoin="round"/>',
+      '  <path d="' + s.d + '" fill="#6b4a2a" stroke="#4a3018" stroke-width="2.1" stroke-linejoin="round"/>',
       /* the printed red keyline on the wood, following the insert and stopping */
       '  <path d="' + s.d + '" fill="none" stroke="#d0342b" stroke-width="11" stroke-linejoin="round" opacity="0.9"/>',
       '  <path d="' + s.d + '" fill="none" stroke="#ece0c0" stroke-width="7.6" stroke-linejoin="round"/>',
       /* the light spilling out onto the lacquer around the hole */
-      '  <path class="on glowspill" d="' + s.d + '" fill="none" stroke="#ffd36a" stroke-width="7" stroke-linejoin="round" filter="url(#b3)"/>',
+      '  <path class="on glowspill" d="' + s.d + '" fill="none" stroke="#ffd87e" stroke-width="10" stroke-linejoin="round" filter="url(#b3)"/>',
       /* the insert itself: milky plastic */
       '  <g clip-path="url(#clip-' + key + ')">',
       '    <path d="' + s.d + '" fill="url(#milky)"/>',
@@ -109,7 +109,7 @@
       '      ' + s.dim,
       '    </g>',
       /* the plywood's thickness shows as a thin shadow inside the top-left of the hole */
-      '    <path d="' + s.d + '" fill="none" stroke="#4a3a20" stroke-opacity="0.5" stroke-width="3" filter="url(#b1)"',
+      '    <path d="' + s.d + '" fill="none" stroke="#4a3a20" stroke-opacity="0.38" stroke-width="1.7" filter="url(#b1)"',
       '          transform="translate(-1.1 -1.2)"/>',
       '    <path d="' + s.d + '" fill="none" stroke="#fffaea" stroke-opacity="0.45" stroke-width="1.3"',
       '          transform="translate(0.8 0.9)"/>',
@@ -141,7 +141,7 @@
   /* the lamp: incandescent, ~120 ms up and ~250 ms down */
   '.on { opacity: 0; transition: opacity 250ms cubic-bezier(.4,0,.8,.6); }',
   '.is-on .on { opacity: 1; transition: opacity 120ms cubic-bezier(.2,.6,.4,1); }',
-  '.is-on .glowspill { opacity: 0.5; }',
+  '.is-on .glowspill { opacity: 0.62; }',
   '.k { display: none; }',
   '.k-arrow { display: inline; }',
   ':host([shape="round"]) .k-arrow, :host([shape="rect"]) .k-arrow { display: none; }',
@@ -158,21 +158,21 @@
   '    <stop offset="0" stop-color="#f4e9cd"/><stop offset="0.55" stop-color="#efe2c2"/><stop offset="1" stop-color="#e2d2ad"/>',
   '  </linearGradient>',
   '  <linearGradient id="milky" x1="0.2" y1="0" x2="0.8" y2="1">',
-  '    <stop offset="0" stop-color="#f3ebdb"/><stop offset="0.55" stop-color="#e9e0cf"/><stop offset="1" stop-color="#dbd0bb"/>',
+  '    <stop offset="0" stop-color="#f4ecd9"/><stop offset="0.55" stop-color="#ebe1c9"/><stop offset="1" stop-color="#ded2b4"/>',
   '  </linearGradient>',
   '  <linearGradient id="litfill" x1="0.3" y1="0" x2="0.7" y2="1">',
-  '    <stop offset="0" stop-color="#fff1b3"/><stop offset="0.45" stop-color="#ffe79c"/><stop offset="1" stop-color="#ffd36a"/>',
+  '    <stop offset="0" stop-color="#ffe490"/><stop offset="0.5" stop-color="#ffdd85"/><stop offset="1" stop-color="#ffcb5c"/>',
   '  </linearGradient>',
   '  <radialGradient id="hotspot" cx="50%" cy="50%" r="50%">',
-  '    <stop offset="0" stop-color="#fffbe0"/><stop offset="0.45" stop-color="#fff3bc" stop-opacity="0.8"/>',
-  '    <stop offset="1" stop-color="#ffe89a" stop-opacity="0"/>',
+  '    <stop offset="0" stop-color="#fffdf0"/><stop offset="0.4" stop-color="#fff8cf" stop-opacity="0.9"/>',
+  '    <stop offset="1" stop-color="#fff1b3" stop-opacity="0"/>',
   '  </radialGradient>',
   '  <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1">',
-  '    <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.04"/>',
+  '    <stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.06"/>',
   '    <stop offset="1" stop-color="#fff" stop-opacity="0"/>',
   '  </linearGradient>',
   '  <pattern id="screen" width="2" height="2" patternUnits="userSpaceOnUse">',
-  '    <rect width="2" height="2" fill="none"/><circle cx="0.6" cy="0.6" r="0.42" fill="#6b5a3a" opacity="0.2"/>',
+  '    <rect width="2" height="2" fill="none"/><circle cx="0.6" cy="0.6" r="0.4" fill="#8a6a3a" opacity="0.18"/>',
   '  </pattern>',
   '  <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>',
   '  <filter id="b3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>',
@@ -197,7 +197,7 @@
   '  <path d="M 98 84 Q 80 92 82 120" fill="none" stroke="#2b57a3" stroke-width="2.2" opacity="0.9"/>',
   '</g>',
   /* the screen texture of the print */
-  '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#screen)" opacity="0.5"/>',
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#screen)" opacity="0.38"/>',
   /* the legend printed on the wood beside the insert */
   '<text class="legend" x="48" y="102">WHEN LIT</text>',
 

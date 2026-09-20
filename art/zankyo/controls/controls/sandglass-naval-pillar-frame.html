@@ -66,7 +66,7 @@
   const W = 100, H = 220, CX = 50, NECK = 110;
   const TOPD = "M 45.5 110 C 43 90, 18 86, 18 60 C 18 38, 28 26, 50 26 C 72 26, 83 38, 83 61 C 83 87, 57 90, 54.5 110";
   const BOTD = "M 45.5 110 C 43 130, 17 134, 17 159 C 17 181, 28 194, 50 194 C 72 194, 82 182, 82 159 C 82 134, 57 130, 54.5 110";
-  const TOPF = 34, TOPE = 108;           // sand level in the top bulb, full and empty
+  const TOPF = 34, TOPE = 97;            // sand level in the top bulb, full and empty (empty = just above the cord)
   const FLOOR = 192, BH = 78;            // floor of the bottom bulb and its inside height
 
   /* a turned pillar: a shaft with beads and rings, lit from the left */
@@ -120,18 +120,19 @@
           <stop offset="1" stop-color="#6d5220"/>
         </linearGradient>
         <linearGradient id="cord" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#2e2415"/><stop offset="0.3" stop-color="#7a6339"/>
-          <stop offset="0.6" stop-color="#5a4a30"/><stop offset="1" stop-color="#241b0e"/>
+          <stop offset="0" stop-color="#241a0d"/><stop offset="0.26" stop-color="#6d5a35"/>
+          <stop offset="0.55" stop-color="#4e4029"/><stop offset="1" stop-color="#1d150a"/>
         </linearGradient>
         <linearGradient id="glassg" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#cfe2e4" stop-opacity="0.22"/><stop offset="0.3" stop-color="#eaf4f4" stop-opacity="0.07"/>
           <stop offset="0.72" stop-color="#9fb4b6" stop-opacity="0.07"/><stop offset="1" stop-color="#c2d6d8" stop-opacity="0.2"/>
         </linearGradient>
         <pattern id="speck" width="5" height="5" patternUnits="userSpaceOnUse">
-          <circle cx="1" cy="1.4" r="0.45" fill="#ffffff" opacity="0.4"/>
-          <circle cx="3.4" cy="3.2" r="0.42" fill="#8f8570" opacity="0.4"/>
-          <circle cx="4.3" cy="0.7" r="0.3" fill="#6f6857" opacity="0.32"/>
-          <circle cx="1.8" cy="4.2" r="0.3" fill="#ffffff" opacity="0.22"/>
+          <circle cx="1" cy="1.4" r="0.4" fill="#ffffff" opacity="0.2"/>
+          <circle cx="3.6" cy="3.1" r="0.38" fill="#8f8570" opacity="0.22"/>
+          <circle cx="4.4" cy="0.6" r="0.28" fill="#6f6857" opacity="0.16"/>
+          <circle cx="1.6" cy="4.3" r="0.26" fill="#ffffff" opacity="0.12"/>
+          <circle cx="2.7" cy="1.9" r="0.22" fill="#6f6857" opacity="0.12"/>
         </pattern>
         <clipPath id="ctop"><path d="${TOPD} Z"/></clipPath>
         <clipPath id="cbot"><path d="${BOTD} Z"/></clipPath>
@@ -173,6 +174,10 @@
         <path d="M 70 36 C 76 46, 76 72, 72 86" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" stroke-linecap="round" filter="url(#b1)"/>
         <path d="M 27 134 C 22 146, 22 172, 27 184" fill="none" stroke="#ffffff" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" filter="url(#b1)"/>
         <path d="M 71 132 C 76 144, 76 170, 71 182" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2" stroke-linecap="round" filter="url(#b1)"/>
+        <path d="M 19.5 44 C 16.5 54, 16.5 78, 20 90" fill="none" stroke="#8fb0a6" stroke-opacity="0.35" stroke-width="1.2"/>
+        <path d="M 81.5 46 C 84.5 56, 84 78, 80.5 90" fill="none" stroke="#8fb0a6" stroke-opacity="0.3" stroke-width="1.2"/>
+        <path d="M 18.5 140 C 15.6 150, 15.6 174, 19 186" fill="none" stroke="#8fb0a6" stroke-opacity="0.32" stroke-width="1.2"/>
+        <path d="M 80.8 142 C 83.6 152, 83.2 174, 80 186" fill="none" stroke="#8fb0a6" stroke-opacity="0.28" stroke-width="1.2"/>
         <!-- a seed bubble in the shoulder -->
         <ellipse cx="68" cy="47" rx="1.7" ry="2.3" fill="#ffffff" opacity="0.28"/>
         <ellipse cx="67.5" cy="46.3" rx="0.6" ry="0.8" fill="#ffffff" opacity="0.7"/>
@@ -180,12 +185,16 @@
         <!-- the cord binding at the waist -->
         <g>
           <rect x="41.5" y="101" width="17" height="19" rx="2.5" fill="#241b0e" opacity="0.5"/>
-          <rect x="42" y="101.5" width="16" height="3.6" rx="1.6" fill="url(#cord)"/>
-          <rect x="41.6" y="105" width="16.8" height="3.6" rx="1.6" fill="url(#cord)"/>
-          <rect x="41.4" y="108.5" width="17.2" height="3.6" rx="1.6" fill="url(#cord)"/>
-          <rect x="41.6" y="112" width="16.8" height="3.6" rx="1.6" fill="url(#cord)"/>
-          <rect x="42" y="115.5" width="16" height="3.6" rx="1.6" fill="url(#cord)"/>
-          <path d="M 43 102.6 L 57 102.6 M 43 109.6 L 57 109.6 M 43 116.6 L 57 116.6" stroke="#a78a54" stroke-opacity="0.35" stroke-width="0.5"/>
+          <rect x="42.2" y="101.2" width="15.6" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.9" y="104" width="16.2" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.6" y="106.8" width="16.8" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.5" y="109.6" width="17" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.6" y="112.4" width="16.8" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="41.9" y="115.2" width="16.2" height="3" rx="1.4" fill="url(#cord)"/>
+          <rect x="42.2" y="118" width="15.6" height="2.6" rx="1.2" fill="url(#cord)"/>
+          <path d="M 43.4 102 L 56.6 102 M 43.2 107.6 L 56.8 107.6 M 43.2 113.2 L 56.8 113.2"
+                stroke="#9a8250" stroke-opacity="0.3" stroke-width="0.45"/>
+          <path d="M 58.4 101.5 C 60.5 104, 60.5 116, 58.2 119.6" fill="none" stroke="#1d150a" stroke-opacity="0.5" stroke-width="0.8"/>
         </g>
 
         <!-- the two front pillars -->
@@ -333,7 +342,7 @@
       // --- the bottom bulb: a cone at the angle of repose drowning in its own level
       const g = 1 - f;
       const Lb = FLOOR - BH * Math.pow(g, 1.45);
-      const P = 26 * Math.pow(Math.max(0, 1 - g), 0.8) * Math.min(1, g * 5);
+      const P = 31 * Math.pow(Math.max(0, 1 - g), 0.75) * Math.min(1, g * 4.5);
       const wb = P * 1.54 + 3;
       const dB = g <= 0.001 ? "" :
         `M -12 ${Lb.toFixed(1)} L ${(CX - wb).toFixed(1)} ${Lb.toFixed(1)} L ${CX} ${(Lb - P).toFixed(1)} L ${(CX + wb).toFixed(1)} ${Lb.toFixed(1)} L 112 ${Lb.toFixed(1)} L 112 210 L -12 210 Z`;

@@ -210,7 +210,7 @@
       this.setAttribute("aria-valuemin", "0");
       this.setAttribute("aria-valuemax", "1");
       if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "CHECK lamp");
-      this._read(); this._paint(true);
+      this._read(); this._paint();
     }
     disconnectedCallback() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; }
     attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._paint(); }
@@ -237,16 +237,12 @@
       this._wrap.style.transform = "scale(" + this._scale + ")";
     }
     // instant, as an LED is; one frame of bloom on the way up; battery only scales brightness
-    _paint(initial) {
+    _paint() {
       const lit = this._v ? (0.35 + 0.65 * this._bat) : 0;
       const was = this._wrap.classList.contains("on");
       this._litG.style.opacity = String(lit);
       this._halo.style.opacity = String(lit * lit * 0.9);
-      if (this._v !== was) {
-        if (initial) this._wrap.style.animation = "none";
-        this._wrap.classList.toggle("on", this._v);
-        if (initial) { void this._wrap.offsetWidth; this._wrap.style.animation = ""; }
-      }
+      if (this._v !== was) this._wrap.classList.toggle("on", this._v);   // the class change fires the bloom
       this.setAttribute("aria-valuenow", this._v ? "1" : "0");
       this.setAttribute("aria-valuetext", this._v ? (this._bat < 0.6 ? "on, battery low" : "on") : "off");
     }

@@ -72,7 +72,7 @@
   const b2d = b => CC / b + CA;
   const d2b = d => CC / (d - CA);
   const TEMPI = [40,42,44,46,48,50,52,54,56,58,60,63,66,69,72,76,80,84,88,92,96,100,104,108,112,116,120,126,132,138,144,152,160,168,176,184,192,200,208];
-  const NAMES = [["Largo", 64, 17], ["Adagio", 96, 19], ["Andante", 124, 22], ["Allegro", 149, 21], ["Presto", 172, 18]];
+  const NAMES = [["Largo", 63, 15], ["Adagio", 96, 17], ["Andante", 124, 20], ["Allegro", 149, 19], ["Presto", 171, 16]];
   const OPEN_TOP = 30, OPEN_BOT = 214;
   const halfOpen = y => 18 + 0.159314 * (y - 16);
   const OP = `M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} Z`;
@@ -96,7 +96,7 @@
     .name { font-size: 5.6px; font-weight: 400; font-style: italic; text-anchor: middle; fill: #4a3c2a; }
     .bellnum { font-size: 4.6px; font-weight: 600; text-anchor: middle; fill: #4a3c2a; }
     .plate { font-size: 5.2px; font-weight: 600; letter-spacing: 0.26em; text-anchor: middle; fill: #f0d79a; }
-    .wnum { font-size: 6.2px; font-weight: 600; text-anchor: middle; fill: #1d1811; }
+    .wnum { font-size: 6.8px; font-weight: 600; text-anchor: middle; fill: #1d1811; }
     .pend { transform-box: view-box; transform-origin: ${PX}px ${PY}px; }
   </style>
   <div class="wrap">
@@ -176,7 +176,12 @@
       <path class="ap" d="${OP}" fill="url(#card)" transform="translate(0 1.6) scale(0.965) translate(2.45 0)"/>
       <g clip-path="url(#openclip)">
         <path d="${OP}" fill="url(#card)"/>
-        <path d="${OP}" fill="#8a6a22" opacity="0.1"/>
+        <path d="${OP}" fill="#8a6a22" opacity="0.09"/>
+        <path d="${OP}" fill="none" stroke="#a8863a" stroke-opacity="0.45" stroke-width="9" filter="url(#sh2)"/>
+        <circle cx="42" cy="120" r="1.6" fill="#b09656" opacity="0.3"/>
+        <circle cx="96" cy="78" r="1.1" fill="#b09656" opacity="0.26"/>
+        <circle cx="34" cy="176" r="2.1" fill="#b09656" opacity="0.22"/>
+        <circle cx="104" cy="160" r="1.4" fill="#b09656" opacity="0.28"/>
         <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)" opacity="0.1" style="mix-blend-mode:multiply"/>
 
         <!-- printed scale, tempo names, bell scale -->
@@ -190,7 +195,7 @@
           <path d="M 89 201.5 L 109 201.5" stroke="#6a4c14" stroke-width="0.7"/>
           <rect x="97.6" y="186" width="2.8" height="4" rx="1.2" fill="url(#brass2)" stroke="#4a340f" stroke-width="0.3"/>
           <g class="hammer">
-            <path d="M 78 207 L 86 200" stroke="#20201e" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M 82 208 L 86.4 200" stroke="#20201e" stroke-width="1.2" stroke-linecap="round"/>
             <circle cx="86.4" cy="199.6" r="2" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.3"/>
           </g>
           <circle class="bellflash" cx="99" cy="196" r="9" fill="#ffd489" opacity="0" filter="url(#glow)"/>
@@ -201,26 +206,30 @@
           <path d="M 68.7 ${PY - ROD} L 71.3 ${PY - ROD} L 71.9 ${PY + 30} L 68.1 ${PY + 30} Z" fill="url(#rod)"/>
           <path d="M 69.1 ${PY - ROD + 2} L 69.8 ${PY - ROD + 2} L 70.2 ${PY + 24} L 69.4 ${PY + 24} Z" fill="#f2f4f6" opacity="0.5"/>
           <rect x="60" y="${PY + 4}" width="20" height="26" rx="4" fill="url(#bob)"/>
-          <circle cx="${PX}" cy="${PY}" r="5.6" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.5"/>
-          <circle cx="${PX}" cy="${PY}" r="1.7" fill="#241a06"/>
+          <circle cx="${PX}" cy="${PY}" r="6.2" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.6"/>
+          <path d="M ${PX - 5} ${PY - 3.6} A 6.2 6.2 0 0 1 ${PX + 3.6} ${PY - 5}" fill="none" stroke="#ffeab8" stroke-opacity="0.65" stroke-width="0.9"/>
+          <circle cx="${PX}" cy="${PY}" r="1.9" fill="#241a06"/>
           <g class="weight">
-            <path d="M -9.4 6.6 L -7.4 -7.4 L 7.4 -7.4 L 9.4 6.6 Z" fill="#2a1c06" opacity="0.5" filter="url(#sh1)" transform="translate(1.4 1.6)"/>
-            <path d="M -9.4 6.6 L -7.4 -7.4 L 7.4 -7.4 L 9.4 6.6 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.6"/>
-            <path d="M -7.4 -7.4 L 7.4 -7.4 L 7.1 -5.6 L -7.1 -5.6 Z" fill="#ffeab8" opacity="0.55"/>
-            <path d="M -9.1 4.6 L 9.1 4.6 L 9.4 6.6 L -9.4 6.6 Z" fill="#f6dfa0" opacity="0.28"/>
-            <rect x="-6.2" y="-4.1" width="12.4" height="8" rx="1" fill="#1d1811"/>
-            <rect x="-5.6" y="-3.5" width="11.2" height="6.8" rx="0.6" fill="#ede3c4"/>
-            <text class="wnum" x="0" y="1.9">120</text>
-            <path d="M -9.4 6.6 L 9.4 6.6" stroke="#2a1c06" stroke-width="0.7"/>
+            <path d="M -11 8 L -8.6 -8 L 8.6 -8 L 11 8 Z" fill="#2a1c06" opacity="0.5" filter="url(#sh1)" transform="translate(1.6 1.8)"/>
+            <path d="M -11 8 L -8.6 -8 L 8.6 -8 L 11 8 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.6"/>
+            <path d="M -8.6 -8 L 8.6 -8 L 8.3 -6 L -8.3 -6 Z" fill="#ffeab8" opacity="0.6"/>
+            <path d="M -10.7 5.8 L 10.7 5.8 L 11 8 L -11 8 Z" fill="#f6dfa0" opacity="0.3"/>
+            <rect x="-7.4" y="-4.8" width="14.8" height="9.6" rx="1.2" fill="#1d1811"/>
+            <rect x="-6.7" y="-4.1" width="13.4" height="8.2" rx="0.7" fill="#ede3c4"/>
+            <rect x="-6.7" y="-4.1" width="13.4" height="2" rx="0.7" fill="#9b8f6a" opacity="0.45"/>
+            <text class="wnum" x="0" y="2.4">120</text>
+            <path d="M -11 8 L 11 8" stroke="#2a1c06" stroke-width="0.8"/>
           </g>
         </g>
 
         <!-- the frame's shadow falling onto the card -->
-        <path d="${OP}" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="7" filter="url(#sh2)"/>
+        <path d="${OP}" fill="none" stroke="#000" stroke-opacity="0.42" stroke-width="5" filter="url(#sh2)"/>
       </g>
       <path d="${OP}" fill="none" stroke="#1a0d05" stroke-width="1"/>
-      <path d="M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP}" stroke="#c08a52" stroke-opacity="0.3" stroke-width="0.8"/>
-      <path d="M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT}" stroke="#c08a52" stroke-opacity="0.26" stroke-width="0.8"/>
+      <path d="M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP) - 1.4} ${OPEN_TOP + 1.6} L ${PX - halfOpen(OPEN_TOP) + 1.4} ${OPEN_TOP + 1.6} Z" fill="#120903" opacity="0.8"/>
+      <path d="M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX - halfOpen(OPEN_BOT) + 1.8} ${OPEN_BOT} L ${PX - halfOpen(OPEN_TOP) + 1.8} ${OPEN_TOP} Z" fill="#150b04" opacity="0.6"/>
+      <path d="M ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX + halfOpen(OPEN_BOT) - 1.6} ${OPEN_BOT} L ${PX + halfOpen(OPEN_TOP) - 1.6} ${OPEN_TOP} Z" fill="#d9a468" opacity="0.3"/>
+      <path d="M ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX + halfOpen(OPEN_BOT) - 1.6} ${OPEN_BOT - 1.8} L ${PX - halfOpen(OPEN_BOT) + 1.6} ${OPEN_BOT - 1.8} Z" fill="#e0ab6e" opacity="0.34"/>
 
       <!-- the cap and the base moulding -->
       <path d="M 39 10 L 101 10 L 99.3 17 L 40.7 17 Z" fill="url(#plinth)" stroke="#1b0e05" stroke-width="0.7"/>
@@ -308,30 +317,31 @@
       const g = this._print; while (g.firstChild) g.removeChild(g.firstChild);
       const ns = "http://www.w3.org/2000/svg";
       const mk = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; g.appendChild(e); return e; };
-      let lastY = -99;
-      for (const b of TEMPI) {
+      let lastY = 1e9;
+      for (let i = TEMPI.length - 1; i >= 0; i--) {
+        const b = TEMPI[i];
         if (b < this._min || b > this._max) continue;
         const y = PY - b2d(b);
-        const show = y - lastY >= 7.2;
-        mk("line", { x1: show ? 56.8 : 58.8, y1: y, x2: 63.4, y2: y, stroke: "#2a231a", "stroke-width": show ? 0.9 : 0.5, opacity: show ? 0.95 : 0.55 });
+        const show = lastY - y >= 7.2;
+        mk("line", { x1: show ? 59.2 : 61, y1: y, x2: 65.4, y2: y, stroke: "#2a231a", "stroke-width": show ? 0.9 : 0.5, opacity: show ? 0.95 : 0.55 });
         if (show) {
-          const s = String(b);
-          mk("text", { x: 55.2 - (s.length > 2 ? 10.2 : 7.4), y: y + 2.2, class: "num", textLength: s.length > 2 ? 10.2 : 7.4, lengthAdjust: "spacingAndGlyphs" }, s);
+          const t = String(b);
+          mk("text", { x: 58, y: y + 2.2, class: "num", textLength: t.length > 2 ? 10 : 7.2, lengthAdjust: "spacingAndGlyphs" }, t);
           lastY = y;
         }
       }
       for (const [nm, y, len] of NAMES) mk("text", { x: 85, y: y, class: "name", textLength: len, lengthAdjust: "spacingAndGlyphs", transform: `rotate(-90 85 ${y})` }, nm);
       // the bell lever and its 0 2 3 4 6, on the wide lower part of the card
       const bells = [0, 2, 3, 4, 6];
-      mk("rect", { x: 22, y: 189.4, width: 42, height: 6.4, rx: 3.2, fill: "#cdbe98" });
-      mk("rect", { x: 22.7, y: 190.1, width: 40.6, height: 5, rx: 2.5, fill: "#6d5f43", opacity: 0.5 });
+      mk("rect", { x: 26, y: 189.4, width: 42, height: 6.4, rx: 3.2, fill: "#cdbe98" });
+      mk("rect", { x: 26.7, y: 190.1, width: 40.6, height: 5, rx: 2.5, fill: "#6d5f43", opacity: 0.5 });
       bells.forEach((b, i) => {
-        const x = 25.4 + i * 9.3;
+        const x = 29.4 + i * 9.3;
         mk("line", { x1: x, y1: 197.4, x2: x, y2: 199.4, stroke: "#4a3c2a", "stroke-width": 0.5 });
         mk("text", { x: x - 2.4, y: 204.6, class: "bellnum", textLength: 4.8, lengthAdjust: "spacingAndGlyphs" }, String(b));
       });
       const sel = Math.max(0, bells.indexOf(this._bell));
-      const lx = 25.4 + sel * 9.3;
+      const lx = 29.4 + sel * 9.3;
       mk("rect", { x: lx - 3.2, y: 187.4, width: 6.4, height: 10.4, rx: 1.4, fill: "url(#brass)", stroke: "#4a340f", "stroke-width": 0.4 });
       mk("rect", { x: lx - 2.6, y: 188, width: 5.2, height: 1, fill: "#ffeab8", opacity: 0.6 });
     }
@@ -372,7 +382,7 @@
       if (this._flash > 0) {
         this._flash = Math.max(0, this._flash - dt / 0.22);
         this._flashEl.setAttribute("opacity", (this._flash * 0.8).toFixed(3));
-        this._hammer.setAttribute("transform", `rotate(${(-14 * this._flash).toFixed(2)} 48 205)`);
+        this._hammer.setAttribute("transform", `rotate(${(-16 * this._flash).toFixed(2)} 82 208)`);
       }
       if (run || this._flash > 0) { this._raf = requestAnimationFrame(this._tick); }
       else { this._pend.style.transform = "rotate(0deg)"; this._raf = 0; }

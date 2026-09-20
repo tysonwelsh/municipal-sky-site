@@ -72,7 +72,7 @@
   const W = 360, H = 300;
   const SX = 20, SY = 20, SW = 320, SH = 256;        // the screen inside the bezel
   const DX = SW / 10, DY = SH / 8;                   // one division
-  const BG = "#141c17";                              // the tube face with no beam
+  const BG = "#121a16";                              // the tube face with no beam
   const Y100 = 1.5 * DY, Y0 = 6.5 * DY;              // the dotted rise-time lines
 
   const TPL = document.createElement("template");
@@ -86,7 +86,7 @@
     canvas { left: ${SX}px; top: ${SY}px; width: ${SW}px; height: ${SH}px; }
     .front { pointer-events: none; }
     text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
-    .leg { font-size: 6.5px; font-weight: 500; letter-spacing: 0.1em; fill: #7c838c; text-anchor: middle; }
+    .leg { font-size: 6px; font-weight: 500; letter-spacing: 0.24em; fill: #50565e; fill-opacity: 0.75; text-anchor: middle; }
   </style>
   <div class="wrap">
     <svg class="back" viewBox="0 0 ${W} ${H}" aria-hidden="true">
@@ -111,7 +111,7 @@
       <rect x="8.5" y="8.5" width="${W - 17}" height="${H - 17}" rx="5" fill="none" stroke="#45454b" stroke-width="0.9" stroke-opacity="0.7"/>
       <!-- the tube face is let into the bezel -->
       <rect x="${SX - 4}" y="${SY - 4}" width="${SW + 8}" height="${SH + 8}" rx="4" fill="url(#recess)"/>
-      <rect x="${SX - 0.5}" y="${SY - 0.5}" width="${SW + 1}" height="${SH + 1}" fill="${BG}" stroke="#000" stroke-width="1"/>
+      <rect x="${SX - 0.5}" y="${SY - 0.5}" width="${SW + 1}" height="${SH + 1}" fill="#121a16" stroke="#000" stroke-width="1"/>
       <!-- four corner screws -->
       <g>
         <g transform="translate(11 11)"><circle r="3.2" fill="url(#screwg)"/><rect x="-2.4" y="-0.45" width="4.8" height="0.9" fill="#0a0a0b" transform="rotate(34)"/></g>
@@ -126,7 +126,7 @@
       <defs>
         <radialGradient id="vig" cx="50%" cy="46%" r="66%">
           <stop offset="0.55" stop-color="#000" stop-opacity="0"/>
-          <stop offset="1" stop-color="#000" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.68"/>
         </radialGradient>
         <linearGradient id="glassr" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#cfe6d8" stop-opacity="0.10"/>
@@ -208,7 +208,7 @@
       const c = this._ctx;
       c.globalCompositeOperation = "source-over";
       // persistence: the last frames fade toward the dark face (~80 ms)
-      c.fillStyle = "rgba(20,28,23,0.30)";
+      c.fillStyle = "rgba(18,26,22,0.30)";
       c.fillRect(0, 0, SW, SH);
       this._graticule(c);
       c.globalCompositeOperation = "lighter";
@@ -219,8 +219,8 @@
 
     _graticule(c) {
       const il = this._illum;
-      const r = Math.round(92 + il * 112), g = Math.round(138 + il * 114), b = Math.round(106 + il * 74);
-      c.strokeStyle = "rgba(" + r + "," + g + "," + b + "," + (0.42 + il * 0.42).toFixed(3) + ")";
+      const r = Math.round(92 + il * 96), g = Math.round(138 + il * 96), b = Math.round(106 + il * 64);
+      c.strokeStyle = "rgba(" + r + "," + g + "," + b + "," + (0.38 + il * 0.30).toFixed(3) + ")";
       c.lineWidth = 1;
       c.beginPath();
       for (let i = 0; i <= 10; i++) { const x = Math.round(i * DX) + 0.5; c.moveTo(x, 0); c.lineTo(x, SH); }
@@ -230,8 +230,8 @@
       c.lineWidth = 1;
       c.beginPath();
       const cx = Math.round(5 * DX) + 0.5, cy = Math.round(4 * DY) + 0.5;
-      for (let i = 1; i < 50; i++) { const x = Math.round(i * DX / 5) + 0.5; if (i % 5 === 0) continue; c.moveTo(x, cy - 3); c.lineTo(x, cy + 3); }
-      for (let j = 1; j < 40; j++) { const y = Math.round(j * DY / 5) + 0.5; if (j % 5 === 0) continue; c.moveTo(cx - 3, y); c.lineTo(cx + 3, y); }
+      for (let i = 1; i < 50; i++) { const x = Math.round(i * DX / 5) + 0.5; if (i % 5 === 0) continue; c.moveTo(x, cy - 2.4); c.lineTo(x, cy + 2.4); }
+      for (let j = 1; j < 40; j++) { const y = Math.round(j * DY / 5) + 0.5; if (j % 5 === 0) continue; c.moveTo(cx - 2.4, y); c.lineTo(cx + 2.4, y); }
       c.stroke();
       // the dotted 0 % and 100 % rise-time lines, and the 10 % / 90 % marks at the left
       c.setLineDash([1.5, 4.5]);
@@ -263,20 +263,20 @@
       c.moveTo(0, clampY(w[0]));
       for (let i = 1; i < n; i++) c.lineTo(i * step, clampY(w[i]));
       const blur = 1 + (1 - f) * 2.4;
-      c.lineWidth = 6.5 * blur; c.strokeStyle = "rgba(60,240,100," + (0.035 + 0.05 * I).toFixed(3) + ")"; c.stroke();
-      c.lineWidth = 3.0 * blur; c.strokeStyle = "rgba(90,255,128," + (0.05 + 0.11 * I).toFixed(3) + ")"; c.stroke();
-      c.lineWidth = 1.5 * blur; c.strokeStyle = "rgba(108,255,140," + (0.18 + 0.42 * I).toFixed(3) + ")"; c.stroke();
+      c.lineWidth = 9 * blur; c.strokeStyle = "rgba(46,220,86," + (0.025 + 0.045 * I).toFixed(3) + ")"; c.stroke();
+      c.lineWidth = 3.6 * blur; c.strokeStyle = "rgba(74,246,110," + (0.04 + 0.09 * I).toFixed(3) + ")"; c.stroke();
+      c.lineWidth = 1.25 * blur; c.strokeStyle = "rgba(118,255,146," + (0.20 + 0.46 * I).toFixed(3) + ")"; c.stroke();
       // where the beam moves slowly it dwells: fatter, and with a white-green core
       c.beginPath();
       let any = false;
       for (let i = 1; i < n; i++) {
         const y0 = clampY(w[i - 1]), y1 = clampY(w[i]);
-        if (Math.abs(y1 - y0) > 1.6) continue;
+        if (Math.abs(y1 - y0) > 1.3) continue;
         c.moveTo((i - 1) * step, y0); c.lineTo(i * step, y1); any = true;
       }
       if (any) {
-        c.lineWidth = 2.2 * blur; c.strokeStyle = "rgba(150,255,175," + (0.10 + 0.22 * I).toFixed(3) + ")"; c.stroke();
-        c.lineWidth = 0.9; c.strokeStyle = "rgba(216,255,224," + (0.20 + 0.45 * I).toFixed(3) + ")"; c.stroke();
+        c.lineWidth = 2.6 * blur; c.strokeStyle = "rgba(140,255,168," + (0.07 + 0.17 * I).toFixed(3) + ")"; c.stroke();
+        c.lineWidth = 0.85; c.strokeStyle = "rgba(222,255,230," + (0.24 + 0.5 * I).toFixed(3) + ")"; c.stroke();
       }
       this._glyph(c, id, clampY(w[0]), I);
     }
