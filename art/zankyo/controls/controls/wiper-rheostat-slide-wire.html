@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School slide-wire rheostat — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Libre+Franklin:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "wiper-rheostat-slide-wire",
+  "element": "sk-wiper-rheostat-slide-wire",
+  "name": "School slide-wire rheostat",
+  "kind": "input",
+  "code": "B12.1",
+  "type": "Trolley on a rail / potentiometer wiper",
+  "source": "The physics-lab tubular rheostat — Philip Harris and Griffin & George in Britain, Ruhstrat of Göttingen, Leybold: a wound ceramic tube on cast end-frames with a brass bar and a sliding shoe",
+  "era": "1930s",
+  "origin": "UK",
+  "materials": ["glazed porcelain", "nichrome wire", "cast iron", "brass", "bakelite", "paper label"],
+  "tags": ["laboratory", "physics", "resistance", "wound coil", "slider", "terminals"],
+  "value": { "model": "range", "min": 0, "max": 100, "step": 0.5, "unit": "Ω" },
+  "attributes": ["value", "min", "max", "step", "ohms", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 360, "h": 112 },
+  "notes": "Two of them: one run out to 25 Ω, one to 80 Ω at 0.6 scale. Drag the knob, or click anywhere on the brass bar and the shoe goes there; the wheel and the arrows step half an ohm."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="beige">
+    <sk-wiper-rheostat-slide-wire value="25" label="RHEOSTAT" ohms="100"></sk-wiper-rheostat-slide-wire>
+    <sk-wiper-rheostat-slide-wire value="80" label="RHEOSTAT" ohms="100" scale="0.6"></sk-wiper-rheostat-slide-wire>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Every school physics laboratory in Britain between the wars had one of these on the bench: a glazed porcelain
+  tube wound end to end with a tight helix of dull nichrome, carried on two black cast-iron end frames, with a
+  brass bar above it and a brass shoe sliding on the bar and pressing on the winding. Three terminals with
+  knurled nuts — two ends of the winding, one on the bar — let it be wired as a rheostat or as a potential
+  divider, and a typed paper label gave its ohms and its current rating.</p>
+  <p><b>The tells kept here:</b> the winding runs the whole length of the tube as a fine repeating pattern of
+  turns, compressed into the cylinder's shading at the crest and the underside, with a <b>pale worn track</b>
+  along the top where the shoe has scraped the oxide off; a glimpse of the bare glazed porcelain at each end; the
+  brass bar polished bright only along the stretch the slider has travelled; the spring finger reaching down from
+  the slider block to touch the wire; a black Bakelite knob on top; three brass terminals with knurled nuts;
+  chipped black paint on the frames' edges; and the typed label, glued to the left frame and lifting at its
+  corner.</p>
+  <p><b>Left out:</b> the individual turns are a repeating gradient rather than a hundred and fifty drawn wires —
+  at this size they are a pixel and a half apart and a drawn turn would alias into mush. The rear terminal posts
+  and the bench clamp are not shown.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-wiper-rheostat-slide-wire> — wound-tube laboratory rheostat with a sliding shoe ====
+   attributes: value min max step ohms label scale disabled
+   events: input {value} while the shoe moves, change {value} when it settles
+   self-contained: paste this block into any page and use
+   <sk-wiper-rheostat-slide-wire value="40"></sk-wiper-rheostat-slide-wire> */
+(function () {
+  if (customElements.get("sk-wiper-rheostat-slide-wire")) return;
+  var NS = "http://www.w3.org/2000/svg";
+  var W = 360, H = 112;
+  var SX0 = 56, SX1 = 304;          // the shoe's travel along the bar
+  var TUBE_L = 44, TUBE_R = 316;    // the tube's ends
+  var TT = 52, TB = 90;             // the tube's top and bottom
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ', W, 'px; height: ', H, 'px; position: relative; font-size: 10px;',
+  '  -webkit-tap-highlight-color: transparent; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ', W, 'px; height: ', H, 'px; overflow: visible; }',
+  '.track, .grab { position: absolute; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }',
+  '.track { left: 44px; top: 30px; width: 272px; height: 34px; cursor: pointer; }',
+  '.grab { top: 8px; height: 58px; width: 34px; left: 0; cursor: ew-resize; border-radius: 4px; }',
+  ':host([disabled]) .track, :host([disabled]) .grab { cursor: default; }',
+  '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }',
+  '.slider { transform-box: view-box; transform-origin: 0 0; transition: transform 40ms linear; }',
+  '.slider.ease { transition: transform 150ms cubic-bezier(.3,.85,.35,1); }',
+  '.slider.bob { transform: translateY(1px); }',
+  'text { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; }',
+  '.lbl { font-family: "Special Elite", "Courier New", monospace; font-size: 6px; fill: #2a2a2a; text-anchor: middle; }',
+  '.cast { font-size: 3.8px; font-weight: 500; letter-spacing: 0.18em; text-anchor: middle; fill: #8f8f8a; opacity: 0.55; }',
+  '.tag { font-size: 5.2px; font-weight: 500; letter-spacing: 0.22em; text-anchor: middle; fill: #7c776c; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ', W, ' ', H, '" aria-hidden="true">',
+  '<defs>',
+    /* the wound cylinder, lit from above-left */
+    '<linearGradient id="cyl" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#4c4b46"/><stop offset="0.08" stop-color="#7c7a71"/>',
+      '<stop offset="0.24" stop-color="#a3a197"/><stop offset="0.44" stop-color="#8c8a80"/>',
+      '<stop offset="0.74" stop-color="#55544e"/><stop offset="0.9" stop-color="#6e6d66"/>',
+      '<stop offset="1" stop-color="#3a3935"/></linearGradient>',
+    '<linearGradient id="porc" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#bdb9ae"/><stop offset="0.22" stop-color="#e6e2d8"/>',
+      '<stop offset="0.6" stop-color="#cdc9bd"/><stop offset="1" stop-color="#8e8b82"/></linearGradient>',
+    '<linearGradient id="worn" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#b8b6ac" stop-opacity="0"/><stop offset="0.45" stop-color="#cbc9bf" stop-opacity="0.85"/>',
+      '<stop offset="1" stop-color="#b8b6ac" stop-opacity="0"/></linearGradient>',
+    '<pattern id="turns" width="1.7" height="4" patternUnits="userSpaceOnUse">',
+      '<rect width="1.7" height="4" fill="none"/>',
+      '<line x1="0.28" y1="0" x2="0.28" y2="4" stroke="#3f3e39" stroke-opacity="0.75" stroke-width="0.62"/>',
+      '<line x1="1.06" y1="0" x2="1.06" y2="4" stroke="#d8d6cc" stroke-opacity="0.34" stroke-width="0.42"/>',
+    '</pattern>',
+    '<linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#6e5525"/><stop offset="0.14" stop-color="#d9b76c"/>',
+      '<stop offset="0.36" stop-color="#e9cd8a"/><stop offset="0.6" stop-color="#b48f4c"/>',
+      '<stop offset="0.86" stop-color="#6c521f"/><stop offset="1" stop-color="#9d7c39"/></linearGradient>',
+    '<linearGradient id="brassblk" x1="0" y1="0" x2="0.3" y2="1">',
+      '<stop offset="0" stop-color="#f0d69a"/><stop offset="0.3" stop-color="#c9a459"/>',
+      '<stop offset="0.72" stop-color="#8e6d2e"/><stop offset="1" stop-color="#b8924a"/></linearGradient>',
+    '<linearGradient id="iron" x1="0.15" y1="0" x2="0.6" y2="1">',
+      '<stop offset="0" stop-color="#4a4a48"/><stop offset="0.18" stop-color="#2a2a29"/>',
+      '<stop offset="0.7" stop-color="#1b1b1a"/><stop offset="1" stop-color="#0d0d0c"/></linearGradient>',
+    '<radialGradient id="knob" cx="34%" cy="26%" r="76%">',
+      '<stop offset="0" stop-color="#585049"/><stop offset="0.42" stop-color="#2a2622"/>',
+      '<stop offset="0.86" stop-color="#151311"/><stop offset="1" stop-color="#37322c"/></radialGradient>',
+    '<linearGradient id="paper" x1="0" y1="0" x2="0.3" y2="1">',
+      '<stop offset="0" stop-color="#f6f0da"/><stop offset="0.5" stop-color="#efe7cc"/>',
+      '<stop offset="1" stop-color="#ddd3b4"/></linearGradient>',
+    '<filter id="s1" x="-40%" y="-60%" width="180%" height="240%"><feGaussianBlur stdDeviation="1.4"/></filter>',
+    '<filter id="s2" x="-40%" y="-60%" width="180%" height="240%"><feGaussianBlur stdDeviation="3.6"/></filter>',
+  '</defs>',
+
+  /* the whole thing's shadow on the bench */
+  '<ellipse cx="184" cy="102" rx="166" ry="7" fill="#000" opacity="0.42" filter="url(#s2)"/>',
+
+  /* ---- the wound tube ---- */
+  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="5" fill="url(#cyl)"/>',
+  '<rect x="', (TUBE_L + 8), '" y="', (TT + 1), '" width="', (TUBE_R - TUBE_L - 16), '" height="', (TB - TT - 2), '" fill="url(#turns)"/>',
+  /* the pale track the shoe has worn along the crest */
+  '<rect x="', (TUBE_L + 8), '" y="', (TT + 3.5), '" width="', (TUBE_R - TUBE_L - 16), '" height="7" fill="url(#worn)"/>',
+  /* bare glazed porcelain showing at each end */
+  '<rect x="', TUBE_L, '" y="', TT, '" width="9" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
+  '<rect x="', (TUBE_R - 9), '" y="', TT, '" width="9" height="', (TB - TT), '" rx="4" fill="url(#porc)"/>',
+  '<rect x="', TUBE_L, '" y="', TT, '" width="', (TUBE_R - TUBE_L), '" height="', (TB - TT), '" rx="5" fill="none" stroke="#1a1a18" stroke-opacity="0.6" stroke-width="0.7"/>',
+  '<rect x="', (TUBE_L + 1), '" y="', (TT + 0.8), '" width="', (TUBE_R - TUBE_L - 2), '" height="0.8" fill="#e6e2d8" opacity="0.22"/>',
+
+  /* ---- the cast-iron end frames ---- */
+  '<g class="frames"></g>',
+
+  /* ---- the brass bar ---- */
+  '<rect x="20" y="38" width="320" height="9" rx="2" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.5"/>',
+  '<rect class="polish" x="', SX0, '" y="39" width="10" height="3" rx="1.5" fill="#f4e0ab" opacity="0.55"/>',
+  '<rect x="20" y="39" width="320" height="1.2" fill="#fdf2c9" opacity="0.4"/>',
+
+  /* ---- the terminals ---- */
+  '<g class="terms"></g>',
+
+  /* ---- the typed label on the left frame ---- */
+  '<g transform="rotate(-1.6 28 88)">',
+    '<rect x="9" y="76" width="40" height="21" rx="0.6" fill="#000" opacity="0.4" filter="url(#s1)"/>',
+    '<rect x="9" y="75" width="40" height="21" rx="0.6" fill="url(#paper)"/>',
+    '<path d="M 49 75 L 49 82 Q 44 79.5 44.5 75 Z" fill="#fbf6e6"/>',
+    '<path d="M 49 75 L 44.5 75 Q 44 79.5 49 82" fill="none" stroke="#b6ac8c" stroke-width="0.4"/>',
+    '<text class="lbl" x="29" y="85"></text>',
+    '<text class="lbl" x="29" y="93" style="font-size:5px">2 A  D.C.</text>',
+  '</g>',
+
+  /* ---- the slider: brass block on the bar, spring finger on the winding, Bakelite knob ---- */
+  '<g class="slider">',
+    '<ellipse cx="', (SX0 + 2), '" cy="60" rx="15" ry="4" fill="#000" opacity="0.4" filter="url(#s1)"/>',
+    /* the spring finger and its shoe on the winding */
+    '<path d="M ', (SX0 - 3), ' 48 L ', (SX0 - 3), ' 56 Q ', (SX0 - 3), ' 59 ', SX0, ' 59 L ', (SX0 + 5), ' 59 Q ', (SX0 + 8), ' 59 ', (SX0 + 8), ' 56 L ', (SX0 + 8), ' 48 Z" fill="url(#brassblk)" stroke="#4e3a13" stroke-width="0.5"/>',
+    '<rect x="', (SX0 - 5), '" y="56" width="15" height="3.6" rx="1.4" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.4"/>',
+    '<rect x="', (SX0 - 4), '" y="56.6" width="13" height="1" fill="#f6e4b0" opacity="0.5"/>',
+    /* the block that rides the bar */
+    '<rect x="', (SX0 - 13), '" y="31" width="26" height="20" rx="2.5" fill="url(#brassblk)" stroke="#4e3a13" stroke-width="0.6"/>',
+    '<rect x="', (SX0 - 12), '" y="32" width="24" height="1.4" rx="0.7" fill="#fdf2c9" opacity="0.55"/>',
+    '<rect x="', (SX0 - 13), '" y="38" width="26" height="9" fill="#2b2008" opacity="0.28"/>',
+    '<circle cx="', (SX0 + 8), '" cy="46" r="2.4" fill="url(#brass)" stroke="#4e3a13" stroke-width="0.35"/>',
+    /* the black Bakelite knob */
+    '<rect x="', (SX0 - 3), '" y="24" width="6" height="9" rx="1" fill="url(#brassblk)" stroke="#4e3a13" stroke-width="0.4"/>',
+    '<ellipse cx="', SX0, '" cy="18" rx="9" ry="8" fill="url(#knob)" stroke="#0a0908" stroke-width="0.6"/>',
+    '<ellipse cx="', (SX0 - 3), '" cy="14" rx="3.6" ry="2.6" fill="#fff" opacity="0.22"/>',
+    '<path d="M ', (SX0 - 7), ' 22 Q ', SX0, ' 27 ', (SX0 + 7), ' 22" fill="none" stroke="#6b625a" stroke-opacity="0.45" stroke-width="0.8"/>',
+  '</g>',
+  '<text class="tag" x="184" y="109"></text>',
+  '</svg>',
+  '<div class="track"></div>',
+  '<div class="grab" role="slider" tabindex="0"></div>',
+  '</div>'].join("");
+
+  function mk(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  class SkRheostatSlideWire extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "ohms", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = 0; this._max = 100; this._step = 0.5; this._scale = 1; this._built = false;
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._sl = r.querySelector(".slider");
+      this._grab = r.querySelector(".grab");
+      this._track = r.querySelector(".track");
+      this._polish = r.querySelector(".polish");
+      this._lbl = r.querySelector(".lbl");
+      this._tag = r.querySelector(".tag");
+      this._onDown = this._onDown.bind(this); this._onTrack = this._onTrack.bind(this);
+      this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._build(); this._readAttrs(); this._render();
+      this._grab.addEventListener("pointerdown", this._onDown);
+      this._track.addEventListener("pointerdown", this._onTrack);
+      this._grab.addEventListener("wheel", this._onWheel, { passive: false });
+      this._track.addEventListener("wheel", this._onWheel, { passive: false });
+      this._grab.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      clearTimeout(this._wt); clearTimeout(this._bt);
+      this._grab.removeEventListener("pointerdown", this._onDown);
+      this._track.removeEventListener("pointerdown", this._onTrack);
+      this._grab.removeEventListener("wheel", this._onWheel);
+      this._track.removeEventListener("wheel", this._onWheel);
+      this._grab.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected || !this._built) return; this._readAttrs(); this._render(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = this._clamp(parseFloat(v)); if (isNaN(v)) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 100) / 100));
+      if (this._built) this._render();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    /* ---------- one-time geometry ---------- */
+    _build() {
+      if (this._built) return; this._built = true;
+      var r = this.shadowRoot, g = r.querySelector(".frames"), i;
+      // two cast-iron end frames: a foot, a standard, and a slotted ear the bar sits in
+      [[8, 1], [314, -1]].forEach(function (f) {
+        var x = f[0], s = f[1], cx = x + 19;
+        g.appendChild(mk("ellipse", { cx: cx + 2 * s, cy: 100, rx: 22, ry: 5, fill: "#000", opacity: 0.45, filter: "url(#s1)" }));
+        g.appendChild(mk("path", {
+          d: "M " + (cx - 6) + " 30 L " + (cx + 6) + " 30 L " + (cx + 7) + " 66 L " + (cx + 19) + " 92 " +
+             "Q " + (cx + 21) + " 99 " + (cx + 14) + " 99 L " + (cx - 14) + " 99 " +
+             "Q " + (cx - 21) + " 99 " + (cx - 19) + " 92 L " + (cx - 7) + " 66 Z",
+          fill: "url(#iron)", stroke: "#000", "stroke-width": 0.6
+        }));
+        // the slot the brass bar sits in
+        g.appendChild(mk("rect", { x: cx - 5, y: 36, width: 10, height: 13, rx: 1.5, fill: "#080807", opacity: 0.85 }));
+        // a lit edge down the frame's left, and chipped paint
+        g.appendChild(mk("path", { d: "M " + (cx - 5.4) + " 31 L " + (cx - 6.4) + " 66 L " + (cx - 17.6) + " 91",
+          fill: "none", stroke: "#6e6e6a", "stroke-opacity": 0.5, "stroke-width": 0.9 }));
+        g.appendChild(mk("path", { d: "M " + (cx - 15) + " 96.5 L " + (cx - 11) + " 94.5 L " + (cx - 10) + " 97.5 Z",
+          fill: "#8f8f8a", opacity: 0.48 }));
+        g.appendChild(mk("path", { d: "M " + (cx + 5.5) + " 33 L " + (cx + 8) + " 35.5 L " + (cx + 5.2) + " 37 Z",
+          fill: "#8f8f8a", opacity: 0.32 }));
+      });
+      g.appendChild(mk("text", { x: 333, y: 90, "class": "cast" }, "ENGLAND"));
+
+      // three brass terminals with knurled nuts
+      var tg = r.querySelector(".terms");
+      [[27, 70], [333, 70], [27, 56]].forEach(function (t) {
+        var x = t[0], y = t[1];
+        tg.appendChild(mk("ellipse", { cx: x + 1.5, cy: y + 2.5, rx: 7, ry: 4, fill: "#000", opacity: 0.5, filter: "url(#s1)" }));
+        tg.appendChild(mk("rect", { x: x - 6.5, y: y - 3.4, width: 13, height: 6.8, rx: 2, fill: "url(#brass)", stroke: "#4e3a13", "stroke-width": 0.5 }));
+        for (i = 0; i < 9; i++) {
+          tg.appendChild(mk("line", { x1: x - 5.2 + i * 1.3, y1: y - 2.8, x2: x - 5.2 + i * 1.3, y2: y + 2.8,
+            stroke: "#5d4718", "stroke-width": 0.45, "stroke-opacity": 0.55 }));
+        }
+        tg.appendChild(mk("rect", { x: x - 6.5, y: y - 3, width: 13, height: 1, fill: "#fdf2c9", opacity: 0.5 }));
+        tg.appendChild(mk("circle", { cx: x, cy: y - 5.4, r: 2.4, fill: "url(#brassblk)", stroke: "#4e3a13", "stroke-width": 0.4 }));
+      });
+    }
+
+    /* ---------- attributes ---------- */
+    _readAttrs() {
+      var self = this;
+      var num = function (n, d) { var x = parseFloat(self.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 0); this._max = num("max", 100); this._step = Math.max(0.01, num("step", 0.5));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      var ohms = this.getAttribute("ohms");
+      if (ohms == null) ohms = String(Math.round(this._max));
+      this._lbl.textContent = ohms + " Ω";
+      this._tag.textContent = this.getAttribute("label") || "";
+      var g = this._grab, dis = this.hasAttribute("disabled");
+      g.setAttribute("aria-label", (this.getAttribute("label") || "rheostat") + ", ohms");
+      g.setAttribute("aria-valuemin", this._min); g.setAttribute("aria-valuemax", this._max);
+      g.setAttribute("tabindex", dis ? "-1" : "0");
+      g.setAttribute("aria-disabled", dis ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _x(v) { return SX0 + (v - this._min) / ((this._max - this._min) || 1) * (SX1 - SX0); }
+
+    /* ---------- paint ---------- */
+    _render() {
+      var x = this._x(this._v), dx = x - SX0;
+      this._sl.style.transform = "translateX(" + dx.toFixed(2) + "px)";
+      // the bar is polished bright over the stretch the slider has travelled
+      this._polish.setAttribute("width", Math.max(10, dx + 10).toFixed(2));
+      var s = this._scale;
+      this._grab.style.left = ((x - 17) * s) + "px";
+      this._grab.style.top = (8 * s) + "px";
+      this._grab.style.width = (34 * s) + "px";
+      this._grab.style.height = (58 * s) + "px";
+      this._track.style.left = (44 * s) + "px";
+      this._track.style.top = (30 * s) + "px";
+      this._track.style.width = (272 * s) + "px";
+      this._track.style.height = (34 * s) + "px";
+      var shown = Math.round(this._v * 10) / 10;
+      this._grab.setAttribute("aria-valuenow", String(shown));
+      this._grab.setAttribute("aria-valuetext", shown + " ohms");
+    }
+
+    _set(v, settle) {
+      var before = this._v;
+      v = this._clamp(Math.round(v / this._step) * this._step);
+      v = Math.round(v * 1000) / 1000;
+      if (v === this._v && !settle) return;
+      if (v !== before && (v === this._min || v === this._max)) this._bob();
+      this._v = v; this.setAttribute("value", String(v)); this._render();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: v } }));
+    }
+    _bob() {
+      var sl = this._sl, self = this;
+      sl.classList.add("bob");
+      clearTimeout(this._bt);
+      this._bt = setTimeout(function () { sl.classList.remove("bob"); }, 90);
+    }
+
+    /* ---------- gestures: the shoe follows the pointer along the bar ---------- */
+    _begin(e, grabOffset) {
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._sl.classList.remove("ease");
+      this._drag = { x: e.clientX, off: grabOffset, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp);
+      this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      var rect = this.getBoundingClientRect();
+      this._begin(e, (e.clientX - rect.left) / this._scale - this._x(this._v));
+    }
+    _onTrack(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._sl.classList.add("ease");
+      var rect = this.getBoundingClientRect();
+      this._set(this._fromX((e.clientX - rect.left) / this._scale), false);
+      this._begin(e, 0);
+      this._drag.moved = true;
+    }
+    _fromX(px) {
+      var t = (px - SX0) / (SX1 - SX0);
+      return this._min + t * (this._max - this._min);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      var rect = this.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / this._scale - this._drag.off;
+      if (Math.abs(e.clientX - this._drag.x) > 0.5) this._drag.moved = true;
+      this._set(this._fromX(px), false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp);
+      this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      var moved = this._drag.moved; this._drag = null;
+      if (moved) this._set(this._v, true);
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._sl.classList.add("ease");
+      this._set(this._v + (e.deltaY < 0 ? 1 : -1) * this._step * (e.shiftKey ? 10 : 1), false);
+      clearTimeout(this._wt);
+      var self = this;
+      this._wt = setTimeout(function () { self._set(self._v, true); }, 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      var big = this._step * 10, v = null;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowUp": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowLeft": case "ArrowDown": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "PageUp": v = this._v + (this._max - this._min) / 10; break;
+        case "PageDown": v = this._v - (this._max - this._min) / 10; break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._sl.classList.add("ease");
+      this._set(v, false); this._set(this._v, true);
+    }
+  }
+  customElements.define("sk-wiper-rheostat-slide-wire", SkRheostatSlideWire);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

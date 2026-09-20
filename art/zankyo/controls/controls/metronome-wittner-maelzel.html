@@ -32,7 +32,7 @@
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="wood">
+  <main class="sk-stage" data-panel="black">
     <sk-metronome-wittner value="60" label="TEMPO"></sk-metronome-wittner>
     <sk-metronome-wittner value="120" label="TEMPO" bell="4" running scale="0.92"></sk-metronome-wittner>
     <sk-metronome-wittner value="208" label="TEMPO" bell="0" running scale="0.92"></sk-metronome-wittner>
@@ -72,7 +72,7 @@
   const b2d = b => CC / b + CA;
   const d2b = d => CC / (d - CA);
   const TEMPI = [40,42,44,46,48,50,52,54,56,58,60,63,66,69,72,76,80,84,88,92,96,100,104,108,112,116,120,126,132,138,144,152,160,168,176,184,192,200,208];
-  const NAMES = [["Largo", 66], ["Adagio", 96], ["Andante", 122], ["Allegro", 145], ["Presto", 162]];
+  const NAMES = [["Largo", 64, 17], ["Adagio", 96, 19], ["Andante", 124, 22], ["Allegro", 149, 21], ["Presto", 172, 18]];
   const OPEN_TOP = 30, OPEN_BOT = 214;
   const halfOpen = y => 18 + 0.159314 * (y - 16);
   const OP = `M ${PX - halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_TOP)} ${OPEN_TOP} L ${PX + halfOpen(OPEN_BOT)} ${OPEN_BOT} L ${PX - halfOpen(OPEN_BOT)} ${OPEN_BOT} Z`;
@@ -103,8 +103,8 @@
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>
         <linearGradient id="walnut" x1="0.1" y1="0" x2="0.95" y2="1">
-          <stop offset="0" stop-color="#8a5630"/><stop offset="0.28" stop-color="#6d4224"/>
-          <stop offset="0.62" stop-color="#502e19"/><stop offset="1" stop-color="#341c0e"/>
+          <stop offset="0" stop-color="#9a5f33"/><stop offset="0.24" stop-color="#7a4726"/>
+          <stop offset="0.58" stop-color="#4e2c17"/><stop offset="1" stop-color="#2a1509"/>
         </linearGradient>
         <linearGradient id="plinth" x1="0" y1="0" x2="0.4" y2="1">
           <stop offset="0" stop-color="#7c4a29"/><stop offset="0.5" stop-color="#553119"/><stop offset="1" stop-color="#2a1509"/>
@@ -116,8 +116,8 @@
           <stop offset="0" stop-color="#f4ecd2"/><stop offset="0.55" stop-color="#efe6c8"/><stop offset="1" stop-color="#d9caa2"/>
         </linearGradient>
         <linearGradient id="rod" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#5d5d61"/><stop offset="0.34" stop-color="#cfd1d4"/>
-          <stop offset="0.6" stop-color="#8e9095"/><stop offset="1" stop-color="#4a4a4e"/>
+          <stop offset="0" stop-color="#4a4a50"/><stop offset="0.3" stop-color="#e6e9ec"/>
+          <stop offset="0.58" stop-color="#9a9da2"/><stop offset="1" stop-color="#3a3a40"/>
         </linearGradient>
         <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0.7">
           <stop offset="0" stop-color="#f3dfa2"/><stop offset="0.22" stop-color="#c9a24c"/>
@@ -130,7 +130,7 @@
           <stop offset="0" stop-color="#3c3c40"/><stop offset="0.6" stop-color="#17171a"/><stop offset="1" stop-color="#08080a"/>
         </radialGradient>
         <filter id="grain" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.62 0.011" numOctaves="4" seed="11" result="t"/>
+          <feTurbulence type="fractalNoise" baseFrequency="0.9 0.016" numOctaves="4" seed="11" result="t"/>
           <feColorMatrix in="t" type="saturate" values="0"/>
           <feComponentTransfer><feFuncA type="linear" slope="0.55" intercept="0"/></feComponentTransfer>
         </filter>
@@ -148,12 +148,15 @@
       <!-- the pyramid case -->
       <path d="M 9 221 L 41.5 16 L 98.5 16 L 131 221 Z" fill="url(#walnut)"/>
       <g clip-path="url(#caseclip)">
-        <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)" opacity="0.22" style="mix-blend-mode:overlay"/>
+        <rect x="0" y="0" width="${W}" height="${H}" filter="url(#grain)" opacity="0.3" style="mix-blend-mode:overlay"/>
         <path d="M 26 221 C 40 150 46 86 52 16" fill="none" stroke="#2c1608" stroke-opacity="0.3" stroke-width="1.6"/>
         <path d="M 46 221 C 54 150 58 84 62 16" fill="none" stroke="#2c1608" stroke-opacity="0.18" stroke-width="1"/>
         <path d="M 112 221 C 104 150 98 86 92 16" fill="none" stroke="#2c1608" stroke-opacity="0.26" stroke-width="1.3"/>
-        <path d="M 9 221 L 41.5 16 L 52 16 L 22 221 Z" fill="#fff" opacity="0.07"/>
-        <path d="M 131 221 L 98.5 16 L 90 16 L 120 221 Z" fill="#000" opacity="0.3"/>
+        <path d="M 9 221 L 41.5 16 L 50 16 L 20 221 Z" fill="#ffdcae" opacity="0.13"/>
+        <path d="M 9 221 L 41.5 16 L 44 16 L 13 221 Z" fill="#ffe6c4" opacity="0.16"/>
+        <path d="M 131 221 L 98.5 16 L 88 16 L 121 221 Z" fill="#000" opacity="0.38"/>
+        <path d="M 131 221 L 98.5 16 L 95 16 L 127 221 Z" fill="#000" opacity="0.3"/>
+        <path d="M 9 221 L 131 221 L 131 200 L 9 200 Z" fill="#000" opacity="0.22"/>
       </g>
       <path d="M 9 221 L 41.5 16 L 98.5 16 L 131 221 Z" fill="none" stroke="#1b0e05" stroke-width="0.9"/>
       <path d="M 10.6 219 L 42.4 18" fill="none" stroke="#c08a52" stroke-opacity="0.34" stroke-width="0.9"/>
@@ -179,17 +182,18 @@
         <!-- printed scale, tempo names, bell scale -->
         <g class="print"></g>
 
-        <!-- the bell and its hammer -->
+        <!-- the bell and its hammer, low in the case where the movement is -->
         <g class="bellgrp">
-          <ellipse cx="38" cy="199" rx="9" ry="2.2" fill="#2a1a08" opacity="0.4"/>
-          <path d="M 30 197 q 0 -10 8 -10 q 8 0 8 10 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.5"/>
-          <path d="M 31.5 196 q 0.6 -8 6 -8.6" fill="none" stroke="#ffe9b4" stroke-opacity="0.7" stroke-width="0.8"/>
-          <circle cx="38" cy="186" r="1.3" fill="url(#brass2)"/>
+          <ellipse cx="99" cy="203" rx="10" ry="2.4" fill="#2a1a08" opacity="0.45"/>
+          <path d="M 89 201.5 q 0 -12 10 -12 q 10 0 10 12 Z" fill="url(#brass)" stroke="#4a340f" stroke-width="0.55"/>
+          <path d="M 91 200.5 q 0.5 -9.5 6.6 -10.4" fill="none" stroke="#ffeec4" stroke-opacity="0.75" stroke-width="1"/>
+          <path d="M 89 201.5 L 109 201.5" stroke="#6a4c14" stroke-width="0.7"/>
+          <rect x="97.6" y="186" width="2.8" height="4" rx="1.2" fill="url(#brass2)" stroke="#4a340f" stroke-width="0.3"/>
           <g class="hammer">
-            <path d="M 48 205 L 44 197" stroke="#20201e" stroke-width="1.1" stroke-linecap="round"/>
-            <circle cx="44" cy="196.6" r="1.7" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.3"/>
+            <path d="M 78 207 L 86 200" stroke="#20201e" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="86.4" cy="199.6" r="2" fill="url(#brass2)" stroke="#3a2a0c" stroke-width="0.3"/>
           </g>
-          <circle class="bellflash" cx="38" cy="193" r="7" fill="#ffd489" opacity="0" filter="url(#glow)"/>
+          <circle class="bellflash" cx="99" cy="196" r="9" fill="#ffd489" opacity="0" filter="url(#glow)"/>
         </g>
 
         <!-- the pendulum: rod, bob below the pivot, sliding weight -->
@@ -308,24 +312,28 @@
       for (const b of TEMPI) {
         if (b < this._min || b > this._max) continue;
         const y = PY - b2d(b);
-        const show = y - lastY >= 6;
-        mk("line", { x1: show ? 57 : 58.6, y1: y, x2: 63.5, y2: y, stroke: "#2a231a", "stroke-width": show ? 0.85 : 0.5, opacity: show ? 0.95 : 0.6 });
-        if (show) { mk("text", { x: 55.4, y: y + 2.2, class: "num" }, String(b)); lastY = y; }
+        const show = y - lastY >= 7.2;
+        mk("line", { x1: show ? 56.8 : 58.8, y1: y, x2: 63.4, y2: y, stroke: "#2a231a", "stroke-width": show ? 0.9 : 0.5, opacity: show ? 0.95 : 0.55 });
+        if (show) {
+          const s = String(b);
+          mk("text", { x: 55.2 - (s.length > 2 ? 10.2 : 7.4), y: y + 2.2, class: "num", textLength: s.length > 2 ? 10.2 : 7.4, lengthAdjust: "spacingAndGlyphs" }, s);
+          lastY = y;
+        }
       }
-      for (const [nm, y] of NAMES) mk("text", { x: 84.5, y: y, class: "name", transform: `rotate(-90 84.5 ${y})` }, nm);
-      // the bell lever's scale, down the left of the card
+      for (const [nm, y, len] of NAMES) mk("text", { x: 85, y: y, class: "name", textLength: len, lengthAdjust: "spacingAndGlyphs", transform: `rotate(-90 85 ${y})` }, nm);
+      // the bell lever and its 0 2 3 4 6, on the wide lower part of the card
       const bells = [0, 2, 3, 4, 6];
-      mk("rect", { x: 35.5, y: 136, width: 7, height: 52, rx: 3.4, fill: "#cdbe98" });
-      mk("rect", { x: 36.2, y: 136.7, width: 5.6, height: 50.6, rx: 2.8, fill: "#6d5f43", opacity: 0.55 });
+      mk("rect", { x: 22, y: 189.4, width: 42, height: 6.4, rx: 3.2, fill: "#cdbe98" });
+      mk("rect", { x: 22.7, y: 190.1, width: 40.6, height: 5, rx: 2.5, fill: "#6d5f43", opacity: 0.5 });
       bells.forEach((b, i) => {
-        const y = 141 + i * 10.6;
-        mk("line", { x1: 43.6, y1: y, x2: 46, y2: y, stroke: "#4a3c2a", "stroke-width": 0.5 });
-        mk("text", { x: 49.4, y: y + 1.7, class: "bellnum" }, String(b));
+        const x = 25.4 + i * 9.3;
+        mk("line", { x1: x, y1: 197.4, x2: x, y2: 199.4, stroke: "#4a3c2a", "stroke-width": 0.5 });
+        mk("text", { x: x - 2.4, y: 204.6, class: "bellnum", textLength: 4.8, lengthAdjust: "spacingAndGlyphs" }, String(b));
       });
-      const sel = bells.indexOf(this._bell) < 0 ? 0 : bells.indexOf(this._bell);
-      const ly = 141 + sel * 10.6;
-      mk("rect", { x: 33.4, y: ly - 3.2, width: 11.4, height: 6.4, rx: 1.4, fill: "url(#brass)", stroke: "#4a340f", "stroke-width": 0.4 });
-      mk("rect", { x: 34, y: ly - 2.6, width: 10.2, height: 1, fill: "#ffeab8", opacity: 0.6 });
+      const sel = Math.max(0, bells.indexOf(this._bell));
+      const lx = 25.4 + sel * 9.3;
+      mk("rect", { x: lx - 3.2, y: 187.4, width: 6.4, height: 10.4, rx: 1.4, fill: "url(#brass)", stroke: "#4a340f", "stroke-width": 0.4 });
+      mk("rect", { x: lx - 2.6, y: 188, width: 5.2, height: 1, fill: "#ffeab8", opacity: 0.6 });
     }
 
     _paint() {

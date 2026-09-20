@@ -33,7 +33,7 @@
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="wood">
-    <sk-gauge-smiths-tach value="3200" redline="5500" label="engine speed"></sk-gauge-smiths-tach>
+    <sk-gauge-smiths-tach value="5800" redline="5500" label="engine speed"></sk-gauge-smiths-tach>
     <sk-gauge-smiths-tach dial="speedo" value="72" odo="41377" label="road speed" scale="0.72"></sk-gauge-smiths-tach>
   </main>
 </div>
@@ -141,6 +141,7 @@
           <stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </radialGradient>
         <clipPath id="s-dialclip"><circle cx="${CX}" cy="${CY}" r="84"/></clipPath>
+        <clipPath id="s-bezclip"><path d="M ${CX} ${CY - 98} A 98 98 0 1 1 ${CX - 0.01} ${CY - 98} Z M ${CX} ${CY - 85} A 85 85 0 1 0 ${CX + 0.01} ${CY - 85} Z" clip-rule="evenodd"/></clipPath>
         <filter id="s-b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
         <filter id="s-b4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.4"/></filter>
       </defs>
@@ -152,9 +153,12 @@
       <circle cx="${CX}" cy="${CY}" r="98" fill="none" stroke="#1d1e1f" stroke-opacity="0.75" stroke-width="0.8"/>
       <circle cx="${CX}" cy="${CY}" r="91.5" fill="url(#s-chrome2)"/>
       <circle cx="${CX}" cy="${CY}" r="91.5" fill="none" stroke="#2a2c2d" stroke-opacity="0.6" stroke-width="0.6"/>
-      <!-- the light, above-left -->
-      <ellipse cx="52" cy="26" rx="34" ry="17" fill="#ffffff" opacity="0.5" filter="url(#s-b4)" transform="rotate(-38 52 26)"/>
-      <ellipse cx="150" cy="170" rx="24" ry="11" fill="#000000" opacity="0.28" filter="url(#s-b4)" transform="rotate(-38 150 170)"/>
+      <!-- the light, above-left: kept on the metal -->
+      <g clip-path="url(#s-bezclip)">
+        <ellipse cx="50" cy="24" rx="32" ry="15" fill="#ffffff" opacity="0.55" filter="url(#s-b4)" transform="rotate(-38 50 24)"/>
+        <ellipse cx="24" cy="66" rx="9" ry="20" fill="#ffffff" opacity="0.3" filter="url(#s-b4)" transform="rotate(-24 24 66)"/>
+        <ellipse cx="152" cy="172" rx="24" ry="11" fill="#000000" opacity="0.34" filter="url(#s-b4)" transform="rotate(-38 152 172)"/>
+      </g>
       <!-- thin black rubber seal -->
       <circle cx="${CX}" cy="${CY}" r="85.6" fill="none" stroke="#0b0b0c" stroke-width="3.4"/>
       <circle cx="${CX}" cy="${CY}" r="87.2" fill="none" stroke="#3a3c3d" stroke-opacity="0.5" stroke-width="0.6"/>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collins-pattern S-meter — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Libre+Franklin:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "smeter-collins-kwm2",
+  "element": "sk-smeter-collins",
+  "name": "Collins-pattern S-meter, S1–9 black / +dB red",
+  "kind": "output",
+  "code": "F14",
+  "type": "S-meter (signal strength)",
+  "source": "The small square S-meter on a Collins 75A-4 / KWM-2 / 51S-1, set in the grey-green St. James Gray wrinkle panel",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["phenolic", "glass", "wrinkle paint", "chrome", "paper scale card"],
+  "tags": ["radio", "amateur", "receiver", "meter", "needle", "s-units", "lit face", "wrinkle panel"],
+  "value": { "model": "range", "min": 0, "max": 100, "step": 0.1, "unit": "S-UNITS" },
+  "attributes": ["value", "unit", "legend", "lit", "scale"],
+  "events": [],
+  "size": { "w": 140, "h": 120 },
+  "notes": "0–50 reads S1–S9 in black, 50–100 reads +0…+60 dB over nine in red. Three instances: S7, S9+30, and a smaller one at S3."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-smeter-collins value="37.5"></sk-smeter-collins>
+    <sk-smeter-collins value="75"></sk-smeter-collins>
+    <sk-smeter-collins value="12.5" scale="0.8"></sk-smeter-collins>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Collins receivers and transceivers — the <b>75A-4</b>, the <b>KWM-2</b>, the <b>51S-1</b> — carry a small
+  square signal-strength meter let into the grey-green wrinkle paint the factory called <i>St. James Gray</i>.
+  It is a two-inch movement behind a square black phenolic flange and a slightly domed glass, and the card
+  behind it is lit from the dial lamps so the whole face sits in a warm pool of light.</p>
+  <p><b>The tells kept here:</b> the scale changes colour at nine — black figures <i>1 3 5 7 9</i> over the
+  left, red <i>+20 +40 +60</i> compressed over the right, with a fat red tick standing at S9 itself; the
+  90° arc on a square face with the pivot low and a small black boss; the knife-edge pointer with its
+  counterweight cross peeking below the boss; four fine screws in the flange and a slotted zero-adjust under
+  the window; the wrinkle panel's fine random cell texture with two chrome hex screws at the meter's
+  corners; "S-UNITS" and "DB OVER S9" set tiny under their halves of the arc. The movement is fast — about
+  150 ms up, 400 ms back down as the AGC lets go — and at rest the needle <b>breathes</b> a little on band
+  noise.</p>
+  <p><b>Left out:</b> the meter's rear terminals and the zero-set potentiometer behind the panel; the
+  manufacturer's script on the card, which is replaced by a plain caption.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-smeter-collins> — Collins-pattern S-meter, S1–9 in black, +dB over nine in red ====
+   attributes: value (0–100) unit legend lit scale
+   no events (an output). set .value or the attribute; the needle has S-meter ballistics.
+   self-contained: paste this block into any page and use <sk-smeter-collins value="40"></sk-smeter-collins> */
+(function () {
+  if (customElements.get("sk-smeter-collins")) return;
+
+  const W = 140, H = 120;
+  const PX = 70, PY = 78;          // pivot, low on the card
+  const R = 51;                    // scale radius
+  const SWEEP = 90;                // total degrees
+  const BREAK = 0.55;              // the fraction of the sweep where S9 (value 50) sits
+  const A0 = -SWEEP / 2, A1 = SWEEP / 2, A9 = A0 + BREAK * SWEEP;
+
+  const rad = d => d * Math.PI / 180;
+  const f2 = n => Math.round(n * 100) / 100;
+  const pt = (d, r) => [PX + r * Math.sin(rad(d)), PY - r * Math.cos(rad(d))];
+  function arcp(r, a, b) { const p0 = pt(a, r), p1 = pt(b, r); return `M ${f2(p0[0])} ${f2(p0[1])} A ${r} ${r} 0 0 1 ${f2(p1[0])} ${f2(p1[1])}`; }
+  function tick(d, r0, r1, col, w) { const a = pt(d, r0), b = pt(d, r1); return `<line x1="${f2(a[0])}" y1="${f2(a[1])}" x2="${f2(b[0])}" y2="${f2(b[1])}" stroke="${col}" stroke-width="${w}"/>`; }
+  function lbl(d, r, cls, t) { const p = pt(d, r); return `<text class="${cls}" x="${f2(p[0])}" y="${f2(p[1])}" transform="rotate(${f2(d)} ${f2(p[0])} ${f2(p[1])})">${t}</text>`; }
+  function hexp(cx, cy, r) { let s = ""; for (let i = 0; i < 6; i++) { const a = rad(i * 60); s += (i ? "L" : "M") + f2(cx + r * Math.cos(a)) + " " + f2(cy + r * Math.sin(a)) + " "; } return s + "Z"; }
+
+  // ---- the printed card, built once ----
+  let SC = "";
+  SC += `<path d="${arcp(R, A0, A9)}" fill="none" stroke="#1b1a17" stroke-width="1.15"/>`;
+  SC += `<path d="${arcp(R, A9, A1)}" fill="none" stroke="#c1272d" stroke-width="1.15"/>`;
+  for (let i = 0; i <= 8; i++) {                        // S1 … S9, one tick per S-unit
+    const a = A0 + (i / 8) * BREAK * SWEEP, maj = i % 2 === 0;
+    SC += tick(a, R, R - (maj ? 6.5 : 3.2), "#1b1a17", maj ? 1.05 : 0.65);
+  }
+  for (let k = 1; k <= 6; k++) {                        // +10 … +60 dB, one tick per 10 dB
+    const a = A9 + (k / 6) * (1 - BREAK) * SWEEP, maj = k % 2 === 0;
+    SC += tick(a, R, R - (maj ? 6.5 : 3.2), "#c1272d", maj ? 1.05 : 0.65);
+  }
+  SC += tick(A9, R + 0.6, R - 10, "#c1272d", 2.4);      // the fat red tick standing at nine
+  ["1", "3", "5", "7", "9"].forEach((t, j) => { SC += lbl(A0 + (j / 4) * BREAK * SWEEP, 39, "sn", t); });
+  ["+20", "+40", "+60"].forEach((t, j) => { SC += lbl(A9 + ((j + 1) / 3) * (1 - BREAK) * SWEEP, 42.5, "dbn", t); });
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; fill: #1b1a17; }
+    .sn  { font-size: 8px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
+    .dbn { font-size: 5.5px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; fill: #c1272d; }
+    .cap { font-size: 4.2px; font-weight: 500; letter-spacing: 0.2em; text-anchor: middle; fill: #34322c; }
+    .capr{ fill: #9a3630; }
+    .mark{ font-size: 4px; font-weight: 500; letter-spacing: 0.22em; text-anchor: middle; fill: #5d5a51; }
+    .ptr, .ptrs { transform-origin: ${PX}px ${PY}px; transform-box: view-box; }
+    .pool { opacity: 1; transition: opacity 180ms ease; }
+    .dark .pool { opacity: 0; }
+    .dark .card { filter: saturate(0.7) brightness(0.72); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="pan" x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0" stop-color="#7b876f"/><stop offset="0.5" stop-color="#6f7b6e"/><stop offset="1" stop-color="#5d6a5e"/>
+        </linearGradient>
+        <linearGradient id="panl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.13"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.02"/><stop offset="1" stop-color="#000000" stop-opacity="0.22"/>
+        </linearGradient>
+        <linearGradient id="flg" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#3b3630"/><stop offset="0.35" stop-color="#211e1b"/><stop offset="1" stop-color="#100e0d"/>
+        </linearGradient>
+        <radialGradient id="card" cx="50%" cy="62%" r="78%">
+          <stop offset="0" stop-color="#f6f2e6"/><stop offset="0.62" stop-color="#f1ede0"/><stop offset="1" stop-color="#d9d2be"/>
+        </radialGradient>
+        <radialGradient id="warm" cx="50%" cy="86%" r="72%">
+          <stop offset="0" stop-color="#ffdf9e" stop-opacity="0.55"/><stop offset="0.45" stop-color="#ffe6b4" stop-opacity="0.26"/><stop offset="1" stop-color="#ffeec8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="0.3" stop-color="#ffffff" stop-opacity="0.05"/><stop offset="0.52" stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.03"/>
+        </linearGradient>
+        <radialGradient id="dome" cx="34%" cy="22%" r="86%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/><stop offset="0.55" stop-color="#ffffff" stop-opacity="0.0"/><stop offset="1" stop-color="#1a1a16" stop-opacity="0.16"/>
+        </radialGradient>
+        <radialGradient id="chr" cx="32%" cy="26%" r="78%">
+          <stop offset="0" stop-color="#f4f5f5"/><stop offset="0.42" stop-color="#b9bcbd"/><stop offset="0.75" stop-color="#7d8183"/><stop offset="1" stop-color="#4a4e50"/>
+        </radialGradient>
+        <radialGradient id="scr" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#8e8c86"/><stop offset="0.6" stop-color="#46433e"/><stop offset="1" stop-color="#16150f"/>
+        </radialGradient>
+        <radialGradient id="boss" cx="34%" cy="28%" r="74%">
+          <stop offset="0" stop-color="#5c5750"/><stop offset="0.7" stop-color="#1d1b18"/><stop offset="1" stop-color="#0a0a08"/>
+        </radialGradient>
+        <filter id="wrkd" x="-2%" y="-2%" width="104%" height="104%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="4" seed="11" result="n"/>
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.306  0 0 0 0 0.341  0 0 0 0 0.302  1.7 0 0 0 -0.92"/>
+        </filter>
+        <filter id="wrkl" x="-2%" y="-2%" width="104%" height="104%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="4" seed="11" result="n"/>
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.54  0 0 0 0 0.588  0 0 0 0 0.54  -1.7 0 0 0 0.78"/>
+        </filter>
+        <filter id="b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.6"/></filter>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>
+        <filter id="b05" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.45"/></filter>
+        <clipPath id="win"><rect x="22" y="17" width="96" height="70" rx="2"/></clipPath>
+      </defs>
+
+      <!-- ---- the panel scrap: St. James Gray wrinkle ---- -->
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="url(#pan)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="#6f7b6e" filter="url(#wrkd)" opacity="0.9"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="#6f7b6e" filter="url(#wrkl)" opacity="0.7"/>
+      <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="url(#panl)"/>
+
+      <!-- ---- the meter: square black phenolic flange ---- -->
+      <rect x="14.5" y="11" width="116" height="96" rx="6" fill="#000" opacity="0.5" filter="url(#b3)"/>
+      <rect x="12" y="8" width="116" height="96" rx="6" fill="url(#flg)" stroke="#070706" stroke-width="0.8"/>
+      <path d="M 18 8.6 L 122 8.6 M 12.6 14 L 12.6 98" fill="none" stroke="#5a544b" stroke-opacity="0.55" stroke-width="0.9"/>
+      <rect x="19.6" y="14.6" width="100.8" height="74.8" rx="3.4" fill="#0a0a08"/>
+      <rect x="20.6" y="15.6" width="98.8" height="72.8" rx="3" fill="none" stroke="#2c2924" stroke-width="0.7"/>
+
+      <!-- ---- the lit card ---- -->
+      <g clip-path="url(#win)">
+        <rect class="card" x="22" y="17" width="96" height="70" fill="url(#card)"/>
+        <rect class="pool" x="22" y="17" width="96" height="70" fill="url(#warm)"/>
+        <text class="mark" x="70" y="24">SIGNAL STRENGTH</text>
+        <g class="scale">${SC}</g>
+        <text class="cap unitcap" x="47" y="68">S-UNITS</text>
+        <text class="cap capr" x="95" y="68">DB OVER S9</text>
+        <text class="mark" x="70" y="84.5"></text>
+
+        <!-- needle shadow on the card, thrown down-right by the lamp behind and above-left -->
+        <g class="ptrs" opacity="0.26">
+          <path d="M 71.6 80 L 70.4 62 L 71.6 29.5 L 72.8 62 Z" fill="#40392c" filter="url(#b05)"/>
+        </g>
+        <!-- the knife-edge pointer with its counterweight cross -->
+        <g class="ptr">
+          <path d="M ${PX} ${PY} L ${PX - 1.35} ${PY - 18} L ${PX} ${PY - R + 1.5} L ${PX + 1.35} ${PY - 18} Z" fill="#111110"/>
+          <rect x="${PX - 4.6}" y="${PY + 6.2}" width="9.2" height="1.3" fill="#111110"/>
+          <rect x="${PX - 0.65}" y="${PY}" width="1.3" height="9" fill="#111110"/>
+        </g>
+        <circle cx="${PX}" cy="${PY}" r="4.2" fill="url(#boss)" stroke="#000" stroke-width="0.5"/>
+        <circle cx="${PX - 1.1}" cy="${PY - 1.3}" r="1.1" fill="#7d776d" opacity="0.55"/>
+
+        <!-- glass: slightly domed, one low glint, and the bezel's shadow on the card -->
+        <rect x="22" y="17" width="96" height="70" fill="url(#dome)"/>
+        <path d="M 22 17 L 86 17 L 40 87 L 22 87 Z" fill="url(#glass)"/>
+        <ellipse cx="46" cy="30" rx="34" ry="7" fill="#ffffff" opacity="0.07" transform="rotate(-9 46 30)"/>
+        <rect x="22" y="17" width="96" height="70" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="5" filter="url(#b1)"/>
+      </g>
+      <rect x="22" y="17" width="96" height="70" rx="2" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="0.7"/>
+
+      <!-- four fine screws in the flange, slots at odd angles -->
+      <g>
+        <g transform="translate(16.6 12.6)"><circle r="2.4" fill="url(#scr)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.32" width="3.6" height="0.64" fill="#0a0a08" transform="rotate(34)"/></g>
+        <g transform="translate(123.4 12.6)"><circle r="2.4" fill="url(#scr)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.32" width="3.6" height="0.64" fill="#0a0a08" transform="rotate(-58)"/></g>
+        <g transform="translate(16.6 99.4)"><circle r="2.4" fill="url(#scr)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.32" width="3.6" height="0.64" fill="#0a0a08" transform="rotate(77)"/></g>
+        <g transform="translate(123.4 99.4)"><circle r="2.4" fill="url(#scr)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.32" width="3.6" height="0.64" fill="#0a0a08" transform="rotate(-16)"/></g>
+      </g>
+      <!-- zero adjust, in a countersink under the window -->
+      <circle cx="70" cy="96" r="4.6" fill="#080807"/>
+      <circle cx="70" cy="96" r="3.2" fill="url(#scr)" stroke="#000" stroke-width="0.4"/>
+      <rect x="67.4" y="95.55" width="5.2" height="0.9" fill="#0a0a08" transform="rotate(-11 70 96)"/>
+
+      <!-- two chrome hex screws holding the scrap to the chassis -->
+      <g>
+        <path d="${hexp(7.5, 6.5, 4.6)}" fill="#0c0f0c" opacity="0.5" transform="translate(0.8 1)"/>
+        <path d="${hexp(7.5, 6.5, 4.6)}" fill="url(#chr)" stroke="#3a3e3c" stroke-width="0.4"/>
+        <circle cx="7.5" cy="6.5" r="1.5" fill="#6d7273" opacity="0.7"/>
+        <path d="${hexp(132.5, 113.5, 4.6)}" fill="#0c0f0c" opacity="0.5" transform="translate(0.8 1)"/>
+        <path d="${hexp(132.5, 113.5, 4.6)}" fill="url(#chr)" stroke="#3a3e3c" stroke-width="0.4"/>
+        <circle cx="132.5" cy="113.5" r="1.5" fill="#6d7273" opacity="0.7"/>
+      </g>
+    </svg>
+  </div>`;
+
+  class SkSMeterCollins extends HTMLElement {
+    static get observedAttributes() { return ["value", "unit", "legend", "lit", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._x = A0; this._raf = 0; this._last = 0;
+      this._svg = this.shadowRoot.querySelector("svg");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._ptrs = this.shadowRoot.querySelectorAll(".ptr, .ptrs");
+      this._unitEl = this.shadowRoot.querySelector(".unitcap");
+      this._legEl = this.shadowRoot.querySelectorAll(".mark")[1];
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("role")) this.setAttribute("role", "meter");
+      this._read();
+      this._x = this._angle(this._v);
+      this._paint();
+      this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._kick(); }
+
+    get value() { return this._v; }
+    set value(v) { v = parseFloat(v); if (isNaN(v)) return; v = Math.max(0, Math.min(100, v));
+      if (v === this._v) return; this._v = v; this.setAttribute("value", String(Math.round(v * 100) / 100)); this._kick(); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.max(0, Math.min(100, num("value", this._v)));
+      const litAttr = this.getAttribute("lit");
+      this._lit = !(litAttr === "false" || litAttr === "0");
+      this._svg.classList.toggle("dark", !this._lit);
+      this._unitEl.textContent = this.getAttribute("unit") || "S-UNITS";
+      this._legEl.textContent = this.getAttribute("legend") || "";
+      this.setAttribute("aria-valuemin", "0");
+      this.setAttribute("aria-valuemax", "100");
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 10) / 10));
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "signal strength, S units");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _angle(v) {
+      const t = Math.max(0, Math.min(1, v / 100));
+      const f = t <= 0.5 ? (t / 0.5) * BREAK : BREAK + ((t - 0.5) / 0.5) * (1 - BREAK);
+      return A0 + f * SWEEP;
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // band noise: the needle never sits perfectly still — 2 Hz, about ±1 % of full scale
+      const breath = this._lit ? 0.45 * Math.sin(now * 0.0125664) + 0.18 * Math.sin(now * 0.0289) : 0;
+      const target = this._angle(this._v) + breath;
+      // an S-meter is fast up (AGC attack ~150 ms) and lazy down (~400 ms)
+      const tau = target > this._x ? 0.065 : 0.17;
+      this._x += (target - this._x) * (1 - Math.exp(-dt / tau));
+      this._paint();
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      const a = Math.max(A0 - 2.5, Math.min(A1 + 2.5, this._x));
+      const t = "rotate(" + a.toFixed(2) + "deg)";
+      for (let i = 0; i < this._ptrs.length; i++) this._ptrs[i].style.transform = t;
+    }
+    demo(t) {   // a signal fading up and down the S-scale with speech on it
+      const s = 0.5 + 0.34 * Math.sin(t * 0.37) + 0.1 * Math.sin(t * 1.1 + 1);
+      const speech = Math.max(0, Math.sin(t * 5.3)) * 0.07 * Math.max(0, Math.sin(t * 0.8));
+      return Math.max(0, Math.min(100, (s + speech) * 100));
+    }
+  }
+  customElements.define("sk-smeter-collins", SkSMeterCollins);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

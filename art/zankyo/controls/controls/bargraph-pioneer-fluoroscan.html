@@ -85,7 +85,7 @@
     const R = ROWS[r]; let s = "";
     for (let i = 0; i < N; i++) {
       const x = X0 + i * PITCH, c = i >= AMBER ? "am" : "bg";
-      s += `<ellipse class="gl ${c}" cx="${x + SW / 2}" cy="${R.by + R.bh / 2}" rx="${SW * 1.15}" ry="${R.bh * 2.1}"/>`;
+      s += `<ellipse class="gl ${c}" cx="${x + SW / 2}" cy="${R.by + R.bh / 2}" rx="${SW * 1.15}" ry="${R.bh * 2.6}"/>`;
     }
     return s;
   }
@@ -111,7 +111,7 @@
     .chan { font-size: 6.5px; font-weight: 600; text-anchor: middle; fill: #3a3a38; }
     .brand { font-family: "Michroma", "Eurostile", "Arial Black", sans-serif; font-size: 7px; letter-spacing: 0.18em; fill: #2b2b2b; }
     .db { font-size: 6px; font-weight: 500; text-anchor: end; fill: #3a3a38; letter-spacing: 0.06em; }
-    .ghost.bg { fill: #1d2a2b; } .ghost.am { fill: #272220; }
+    .ghost.bg { fill: #23373a; } .ghost.am { fill: #33291f; }
     .v { opacity: 0; transition: opacity 30ms linear; }        /* phosphor dies away in ~30 ms */
     .v.on { opacity: 1; transition: opacity 40ms linear; }     /* and lights in ~40 ms */
     .v.bg { fill: #7ff5df; } .v.am { fill: #ffb347; }
@@ -125,11 +125,11 @@
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
       <defs>
         <linearGradient id="fascia" x1="0" y1="0" x2="0.12" y2="1">
-          <stop offset="0" stop-color="#e2e2de"/><stop offset="0.28" stop-color="#d8d8d4"/>
-          <stop offset="0.72" stop-color="#c6c6c1"/><stop offset="1" stop-color="#b4b4af"/>
+          <stop offset="0" stop-color="#d9d9d2"/><stop offset="0.3" stop-color="#c8c8c1"/>
+          <stop offset="0.72" stop-color="#b4b4ad"/><stop offset="1" stop-color="#9d9d96"/>
         </linearGradient>
         <linearGradient id="fhi" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.16" stop-color="#fff" stop-opacity="0.5"/>
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.16" stop-color="#fff" stop-opacity="0.42"/>
           <stop offset="0.34" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </linearGradient>
         <linearGradient id="edge" x1="0.1" y1="0" x2="0.9" y2="1">
@@ -137,24 +137,24 @@
           <stop offset="0.7" stop-color="#4a4a46" stop-opacity="0"/><stop offset="1" stop-color="#4a4a46" stop-opacity="0.75"/>
         </linearGradient>
         <linearGradient id="winlip" x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0" stop-color="#8a8a86"/><stop offset="0.5" stop-color="#d2d2ce"/><stop offset="1" stop-color="#f2f2ee"/>
+          <stop offset="0" stop-color="#6e6e6a"/><stop offset="0.45" stop-color="#a9a9a4"/><stop offset="1" stop-color="#e4e4df"/>
         </linearGradient>
         <linearGradient id="refl" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.42" stop-color="#cfe6f2" stop-opacity="0.15"/>
-          <stop offset="0.55" stop-color="#cfe6f2" stop-opacity="0.09"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.42" stop-color="#cfe6f2" stop-opacity="0.2"/>
+          <stop offset="0.55" stop-color="#cfe6f2" stop-opacity="0.12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </linearGradient>
         <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#7ff5df" stop-opacity="0.5"/><stop offset="0.42" stop-color="#7ff5df" stop-opacity="0.2"/><stop offset="1" stop-color="#7ff5df" stop-opacity="0"/>
+          <stop offset="0" stop-color="#7ff5df" stop-opacity="0.55"/><stop offset="0.42" stop-color="#7ff5df" stop-opacity="0.24"/><stop offset="1" stop-color="#7ff5df" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#ffb347" stop-opacity="0.5"/><stop offset="0.42" stop-color="#ffb347" stop-opacity="0.2"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+          <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/><stop offset="0.42" stop-color="#ffb347" stop-opacity="0.24"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
         </radialGradient>
-        <pattern id="brush" width="3" height="3" patternUnits="userSpaceOnUse">
-          <rect x="0" y="0" width="3" height="1" fill="#fff" fill-opacity="0.35"/>
-          <rect x="0" y="1.6" width="3" height="0.7" fill="#000" fill-opacity="0.05"/>
+        <pattern id="brush" width="2.4" height="2.4" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="2.4" height="1.2" fill="#fff" fill-opacity="0.2"/>
+          <rect x="0" y="1.2" width="2.4" height="1.2" fill="#000" fill-opacity="0.07"/>
         </pattern>
         <pattern id="mesh" width="2.2" height="2.2" patternUnits="userSpaceOnUse">
-          <rect x="0" y="0" width="0.7" height="2.2" fill="#000" fill-opacity="0.2"/>
+          <rect x="0" y="0" width="0.7" height="2.2" fill="#000" fill-opacity="0.24"/>
           <rect x="0" y="0" width="2.2" height="0.5" fill="#000" fill-opacity="0.13"/>
         </pattern>
         <filter id="fuzz" x="-8%" y="-40%" width="116%" height="180%"><feGaussianBlur stdDeviation="0.38"/></filter>
@@ -165,7 +165,7 @@
       <rect x="3" y="4" width="${W - 6}" height="${H - 5}" rx="4" fill="#000" opacity="0.35"/>
       <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="2.5" fill="url(#fascia)"/>
       <g clip-path="url(#plate)">
-        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#brush)" opacity="0.18"/>
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#brush)"/>
         <rect x="0" y="0" width="${W}" height="${H}" fill="url(#fhi)"/>
       </g>
 

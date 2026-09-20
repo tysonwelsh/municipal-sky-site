@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aircraft whiskey compass, drum card — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "compass-airpath-whiskey-drum",
+  "element": "sk-compass-whiskey-drum",
+  "name": "Aircraft \"whiskey\" compass, vertical drum card",
+  "kind": "output",
+  "code": "F8",
+  "type": "Magnetic compass, drum card in a window",
+  "source": "Airpath C2300 / Kollsman B-16 magnetic compass on the windscreen post of a light aircraft",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["black-painted aluminium", "glass", "compass fluid", "brass", "tinplate", "paper"],
+  "tags": ["aviation", "compass", "drum card", "cylinder projection", "fluid damping", "correction card"],
+  "value": { "model": "range", "min": 0, "max": 360, "step": 1, "unit": "°" },
+  "attributes": ["value", "card", "label", "scale"],
+  "events": [],
+  "size": { "w": 130, "h": 150 },
+  "notes": "Three headings: 045, 270 with W under the lubber line, and a Cyrillic card at 180. Set value to swing the card; it leads and settles like fluid."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="olive">
+    <sk-compass-whiskey-drum value="45" label="magnetic heading"></sk-compass-whiskey-drum>
+    <sk-compass-whiskey-drum value="270" label="magnetic heading"></sk-compass-whiskey-drum>
+    <sk-compass-whiskey-drum value="180" card="cyrillic" scale="0.8" label="магнитный курс"></sk-compass-whiskey-drum>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Airpath C2300</b> and its Kollsman cousin is the little black can clamped to the windscreen post of
+  every light aeroplane: a fluid-filled bowl holding a <b>vertical drum card</b> — white marks on a black
+  cylinder — read through a small rectangular window against a fixed white lubber line. It is called the
+  whiskey compass for the fluid, and it is the only instrument in the aeroplane that is always telling the
+  truth and always telling it late.</p>
+  <p><b>The tells kept here:</b> the card is a <i>drum</i>, so the figures are placed by angle
+  (<code>x = R·sin θ</code>, width and brightness ∝ <code>cos θ</code>) and crowd toward the window's edges
+  until they vanish into the cylinder's shadow. It reads <b>backwards to a map</b> — E sits to the
+  <i>left</i> of N, because you are looking at the far side of the card. A figure every 30° with the zero
+  dropped (3, 6, 12, 15…), N E S W at the cardinals, a long tick at every 10° and a short one at every 5°.
+  The window is small and the body is fat: a rounded black can with a bevelled frame, two brass compensator
+  screws on the top face marked N‑S and E‑W, a bent-tin mounting strap, and the typewritten correction card
+  in its own tin frame underneath. A bubble sits at the top of the fluid and a glint runs along the window's
+  top edge. The card is liquid-damped: it leads the turn, overswings about 8°, takes two decaying swings to
+  settle, and sways a degree when nothing is happening. <code>card="cyrillic"</code> swaps N E S W for С В Ю З.</p>
+  <p><b>Left out:</b> the rear of the can and its cable, the deviation caused by the aeroplane's own iron
+  (the correction card's figures are decorative), and the acceleration errors — a real whiskey compass also
+  lies when you speed up on an easterly heading.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-compass-whiskey-drum> — aircraft magnetic compass, vertical drum card in a window ====
+   attributes: value (0-360 degrees) card("latin"|"cyrillic") label scale
+   no events (an output). set .value or the attribute; the card swings with fluid damping.
+   self-contained: paste this block into any page and use <sk-compass-whiskey-drum value="45"></sk-compass-whiskey-drum> */
+(function () {
+  if (customElements.get("sk-compass-whiskey-drum")) return;
+  const W = 130, H = 150;
+  const CX = 65, R = 38;                       // drum centre and radius, in px
+  const WX = 34, WY = 48, WW = 62, WH = 26;    // the window opening
+  const FIGY = 62, TB = 72;                    // figure baseline, tick bottom
+  const LIM = 58;                              // degrees either side of the lubber line that can be seen
+  const NS = "http://www.w3.org/2000/svg";
+  const LAT = { 0: "N", 90: "E", 180: "S", 270: "W" };
+  const CYR = { 0: "С", 90: "В", 180: "Ю", 270: "З" };
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Barlow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif; }
+    .fig { font-size: 9px; font-weight: 600; fill: #ebe8db; text-anchor: middle; }
+    .fig.card { font-size: 11px; font-weight: 700; }
+    .cmp { font-size: 4.4px; font-weight: 600; fill: #7e7f83; letter-spacing: 0.08em; text-anchor: middle; }
+    .tt { font-family: "Special Elite", "Courier New", monospace; fill: #2a2a2a; }
+    .tt.h { fill: #b7241c; }
+    .tt.s { font-size: 4.6px; fill: #55524b; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="cb" x1="0.15" y1="0" x2="0.75" y2="1">
+          <stop offset="0" stop-color="#3a3b3e"/><stop offset="0.22" stop-color="#232427"/>
+          <stop offset="0.65" stop-color="#151618"/><stop offset="1" stop-color="#0a0b0c"/>
+        </linearGradient>
+        <radialGradient id="chi" cx="30%" cy="16%" r="62%">
+          <stop offset="0" stop-color="#5c5f65" stop-opacity="0.55"/><stop offset="1" stop-color="#5c5f65" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#46484c"/><stop offset="0.45" stop-color="#232427"/><stop offset="1" stop-color="#0e0f10"/>
+        </linearGradient>
+        <linearGradient id="frm" x1="0.1" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#4b4e53"/><stop offset="0.45" stop-color="#1e1f22"/><stop offset="1" stop-color="#303236"/>
+        </linearGradient>
+        <linearGradient id="dsh" gradientUnits="userSpaceOnUse" x1="${WX}" y1="0" x2="${WX + WW}" y2="0">
+          <stop offset="0" stop-color="#000" stop-opacity="0.92"/>
+          <stop offset="0.09" stop-color="#000" stop-opacity="0.46"/>
+          <stop offset="0.26" stop-color="#000" stop-opacity="0.05"/>
+          <stop offset="0.42" stop-color="#000" stop-opacity="0"/>
+          <stop offset="0.62" stop-color="#000" stop-opacity="0.10"/>
+          <stop offset="0.86" stop-color="#000" stop-opacity="0.52"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.94"/>
+        </linearGradient>
+        <linearGradient id="dhi" gradientUnits="userSpaceOnUse" x1="${WX}" y1="0" x2="${WX + WW}" y2="0">
+          <stop offset="0.10" stop-color="#cfe2ff" stop-opacity="0"/>
+          <stop offset="0.30" stop-color="#cfe2ff" stop-opacity="0.055"/>
+          <stop offset="0.52" stop-color="#cfe2ff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.11"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="brs" cx="34%" cy="28%" r="72%">
+          <stop offset="0" stop-color="#f2e0a4"/><stop offset="0.5" stop-color="#b69645"/><stop offset="1" stop-color="#5e4718"/>
+        </radialGradient>
+        <radialGradient id="stl" cx="34%" cy="28%" r="72%">
+          <stop offset="0" stop-color="#a9a9a6"/><stop offset="0.6" stop-color="#55565a"/><stop offset="1" stop-color="#1c1d1f"/>
+        </radialGradient>
+        <linearGradient id="tin" x1="0.1" y1="0" x2="0.7" y2="1">
+          <stop offset="0" stop-color="#70737a"/><stop offset="0.35" stop-color="#3b3d42"/><stop offset="1" stop-color="#1a1b1d"/>
+        </linearGradient>
+        <linearGradient id="pap" x1="0.2" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#f7f4ea"/><stop offset="0.55" stop-color="#efe9da"/><stop offset="1" stop-color="#ddd4bd"/>
+        </linearGradient>
+        <clipPath id="win"><rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" rx="2.5"/></clipPath>
+        <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.8"/></filter>
+        <filter id="b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- mounting strap, bent tin, behind the can -->
+      <path d="M 13 36 L 13 14 Q 13 7.5 19.5 7.5 L 110.5 7.5 Q 117 7.5 117 14 L 117 36"
+            fill="none" stroke="#050506" stroke-width="7.6" stroke-linecap="round"/>
+      <path d="M 13 36 L 13 14 Q 13 7.5 19.5 7.5 L 110.5 7.5 Q 117 7.5 117 14 L 117 36"
+            fill="none" stroke="url(#strap)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 14.2 30 L 14.2 14.4 Q 14.2 9.2 19.8 9.2 L 62 9.2" fill="none" stroke="#6b6e74" stroke-opacity="0.5" stroke-width="0.8"/>
+      <g><circle cx="41" cy="9.2" r="2.5" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.9" y="-0.35" width="3.8" height="0.7" fill="#101011" transform="translate(41 9.2) rotate(34)"/></g>
+      <g><circle cx="89" cy="9.2" r="2.5" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.9" y="-0.35" width="3.8" height="0.7" fill="#101011" transform="translate(89 9.2) rotate(-58)"/></g>
+
+      <!-- the can: shadow, body, rounded front -->
+      <rect x="21" y="23" width="94" height="80" rx="17" fill="#000" opacity="0.5" filter="url(#b3)"/>
+      <rect x="18" y="18" width="94" height="80" rx="16" fill="url(#cb)" stroke="#000" stroke-width="0.8"/>
+      <rect x="18" y="18" width="94" height="80" rx="16" fill="url(#chi)"/>
+      <path d="M 34 18.6 L 96 18.6" stroke="#6e7177" stroke-opacity="0.55" stroke-width="0.9" stroke-linecap="round"/>
+      <path d="M 18.7 34 Q 18.7 18.7 34 18.7" fill="none" stroke="#5a5d63" stroke-opacity="0.5" stroke-width="0.9"/>
+      <rect x="22" y="22" width="86" height="72" rx="13" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="1"/>
+      <rect x="22.9" y="22.9" width="86" height="72" rx="13" fill="none" stroke="#4a4d52" stroke-opacity="0.35" stroke-width="0.6"/>
+      <!-- the lit top face of the cylinder -->
+      <path d="M 27 21 Q 65 15.5 103 21 L 103 32 Q 65 28 27 32 Z" fill="#fff" opacity="0.045"/>
+
+      <!-- compensator screws on the top face -->
+      <g>
+        <circle cx="44" cy="29" r="5" fill="#0a0b0c"/>
+        <circle cx="44" cy="28.6" r="4" fill="url(#brs)" stroke="#3b2d0d" stroke-width="0.4"/>
+        <rect x="-3.1" y="-0.5" width="6.2" height="1" fill="#3a2c0c" transform="translate(44 28.6) rotate(22)"/>
+        <text class="cmp" x="44" y="39.4">N-S</text>
+      </g>
+      <g>
+        <circle cx="86" cy="29" r="5" fill="#0a0b0c"/>
+        <circle cx="86" cy="28.6" r="4" fill="url(#brs)" stroke="#3b2d0d" stroke-width="0.4"/>
+        <rect x="-3.1" y="-0.5" width="6.2" height="1" fill="#3a2c0c" transform="translate(86 28.6) rotate(-49)"/>
+        <text class="cmp" x="86" y="39.4">E-W</text>
+      </g>
+
+      <!-- window frame, bevelled -->
+      <rect x="29.5" y="43.5" width="71" height="35" rx="4.5" fill="url(#frm)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 33 44.3 L 97 44.3" stroke="#7e828a" stroke-opacity="0.6" stroke-width="0.8"/>
+      <rect x="32.6" y="46.6" width="64.8" height="28.8" rx="3" fill="#0c0d0e"/>
+
+      <!-- the drum, seen through the fluid -->
+      <g clip-path="url(#win)">
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#0b0c0d"/>
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#101418"/>
+        <g class="marks"></g>
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#dsh)"/>
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="url(#dhi)"/>
+        <!-- the lubber line, painted on the glass -->
+        <rect x="${CX + 0.4}" y="${WY}" width="1.5" height="${WH}" fill="#000" opacity="0.55"/>
+        <rect x="${CX - 0.75}" y="${WY}" width="1.5" height="${WH}" fill="#f4f2ea"/>
+        <!-- fluid: a tint, a glint along the top edge, the bubble -->
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="#08090b" opacity="0.2"/>
+        <rect x="${WX}" y="${WY}" width="${WW}" height="6" fill="url(#gl)"/>
+        <g opacity="0.6">
+          <ellipse cx="84" cy="51.3" rx="4.6" ry="2" fill="#cfd3d6"/>
+          <ellipse cx="82.6" cy="50.7" rx="1.7" ry="0.7" fill="#fbfdff"/>
+        </g>
+        <!-- glass: one wide reflection, not the shape of the card -->
+        <path d="M ${WX} ${WY} L ${WX + 26} ${WY} L ${WX + 8} ${WY + WH} L ${WX} ${WY + WH} Z" fill="#fff" opacity="0.055"/>
+        <!-- the frame's shadow falling on the card -->
+        <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="4" filter="url(#b1)"/>
+      </g>
+      <rect x="${WX}" y="${WY}" width="${WW}" height="${WH}" rx="2.5" fill="none" stroke="#000" stroke-width="0.8"/>
+      <path d="M ${WX} ${WY + WH} L ${WX + WW} ${WY + WH}" stroke="#8e9299" stroke-opacity="0.35" stroke-width="0.7"/>
+
+      <!-- correction card, typewritten, in a bent-tin frame -->
+      <rect x="20" y="106" width="94" height="43" rx="2.5" fill="#000" opacity="0.45" filter="url(#b3)"/>
+      <rect x="18" y="104" width="94" height="43" rx="2.5" fill="url(#tin)" stroke="#000" stroke-width="0.7"/>
+      <path d="M 20.5 104.9 L 109.5 104.9" stroke="#90949c" stroke-opacity="0.55" stroke-width="0.7"/>
+      <rect x="26.4" y="109.4" width="77.2" height="32.2" fill="#000" opacity="0.6"/>
+      <rect x="27" y="110" width="76" height="31" fill="url(#pap)"/>
+      <rect x="27" y="110" width="76" height="31" fill="#7a5a20" opacity="0.07"/>
+      <g>
+        <text class="tt h" x="30" y="118.6" font-size="5.2">FOR</text>
+        <text class="tt" x="53" y="118.6" font-size="5" text-anchor="middle">N</text>
+        <text class="tt" x="68" y="118.6" font-size="5" text-anchor="middle">E</text>
+        <text class="tt" x="83" y="118.6" font-size="5" text-anchor="middle">S</text>
+        <text class="tt" x="97" y="118.6" font-size="5" text-anchor="middle">W</text>
+        <line x1="29" y1="121.2" x2="101" y2="121.2" stroke="#8a8478" stroke-width="0.4"/>
+        <text class="tt" x="30" y="128.4" font-size="5.2">STEER</text>
+        <text class="tt" x="53" y="128.4" font-size="5" text-anchor="middle">002</text>
+        <text class="tt" x="68" y="128.4" font-size="5" text-anchor="middle">088</text>
+        <text class="tt" x="83" y="128.4" font-size="5" text-anchor="middle">183</text>
+        <text class="tt" x="97" y="128.4" font-size="5" text-anchor="middle">271</text>
+        <line x1="29" y1="131" x2="101" y2="131" stroke="#8a8478" stroke-width="0.4"/>
+        <text class="tt s" x="30" y="137.8">RADIO ON</text>
+        <text class="tt s" x="101" y="137.8" text-anchor="end">12·4·56</text>
+      </g>
+      <g><circle cx="22.4" cy="125.5" r="2.4" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.33" width="3.6" height="0.66" fill="#111" transform="translate(22.4 125.5) rotate(71)"/></g>
+      <g><circle cx="107.6" cy="125.5" r="2.4" fill="url(#stl)" stroke="#000" stroke-width="0.4"/><rect x="-1.8" y="-0.33" width="3.6" height="0.66" fill="#111" transform="translate(107.6 125.5) rotate(-19)"/></g>
+    </svg>
+  </div>`;
+
+  class SkCompassWhiskeyDrum extends HTMLElement {
+    static get observedAttributes() { return ["value", "card", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._scale = 1; this._x = 0; this._vel = 0;
+      this._raf = 0; this._last = 0; this._t = 0; this._lock = false;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._g = this.shadowRoot.querySelector(".marks");
+      this._marks = []; this._cards = [];
+      this._tick = this._tick.bind(this);
+      this._build();
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._readAttrs();
+      this._x = this._v; this._vel = 0;
+      this._paint(this._x);
+      this._start();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v) return;
+      if (n === "value") {
+        if (this._lock) return;
+        const x = parseFloat(v); if (!isNaN(x)) { this._v = ((x % 360) + 360) % 360; this._aria(); }
+        return;
+      }
+      this._readAttrs();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = ((v % 360) + 360) % 360;
+      this._lock = true; this.setAttribute("value", String(Math.round(this._v * 10) / 10)); this._lock = false;
+      this._aria();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    // a gentle idle: a slow turn with a little weaving, so the stage shows life
+    demo(t) { return (28 + t * 7 + 26 * Math.sin(t * 0.33) + 6 * Math.sin(t * 0.91)) % 360; }
+
+    _build() {
+      const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      for (let h = 0; h < 360; h += 5) {
+        const long = h % 10 === 0;
+        const r = mk("rect", { x: long ? -0.55 : -0.45, y: long ? TB - 6 : TB - 3.2,
+          width: long ? 1.1 : 0.9, height: long ? 6 : 3.2, fill: "#ebe8db", rx: 0.3 });
+        this._g.appendChild(r);
+        this._marks.push({ h: h, el: r, on: true, o: -1 });
+      }
+      for (let h = 0; h < 360; h += 30) {
+        const isCard = (h % 90 === 0);
+        const t = mk("text", { x: 0, y: FIGY, class: "fig" + (isCard ? " card" : "") });
+        t.textContent = isCard ? LAT[h] : String(h / 10);
+        this._g.appendChild(t);
+        const m = { h: h, el: t, on: true, o: -1, cardinal: isCard ? h : -1 };
+        this._marks.push(m);
+        if (isCard) this._cards.push(m);
+      }
+    }
+    _setCard() {
+      const cyr = (this.getAttribute("card") || "latin").toLowerCase() === "cyrillic";
+      this._cards.forEach(m => { const s = (cyr ? CYR : LAT)[m.cardinal]; if (m.el.textContent !== s) m.el.textContent = s; });
+    }
+    _readAttrs() {
+      const s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      const v = parseFloat(this.getAttribute("value"));
+      if (!isNaN(v)) this._v = ((v % 360) + 360) % 360;
+      this._setCard();
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._aria();
+    }
+    _aria() {
+      this.setAttribute("aria-valuemin", "0"); this.setAttribute("aria-valuemax", "360");
+      const d = Math.round(this._v) % 360;
+      this.setAttribute("aria-valuenow", String(d));
+      this.setAttribute("aria-valuetext", ("00" + d).slice(-3) + " degrees");
+      const l = this.getAttribute("label") || "magnetic heading";
+      this.setAttribute("aria-label", l + " " + ("00" + d).slice(-3) + " degrees");
+    }
+    _start() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      this._t += dt;
+      // shortest way round, so 350 -> 010 swings through north
+      let d = ((this._v - this._x) % 360 + 540) % 360 - 180;
+      const k = 90, c = 11.5;                                  // ~8 deg overshoot, two swings, settles in 700 ms
+      this._vel += (k * d - c * this._vel) * dt;
+      this._x += this._vel * dt;
+      this._x = ((this._x % 360) + 360) % 360;
+      const sway = 1.0 * Math.sin(this._t * 0.85) + 0.35 * Math.sin(this._t * 2.13 + 1.1);
+      this._paint(this._x + sway * 0.6);
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint(h) {
+      const RD = Math.PI / 180;
+      for (let i = 0; i < this._marks.length; i++) {
+        const m = this._marks[i];
+        let d = ((m.h - h) % 360 + 540) % 360 - 180;
+        if (d > LIM || d < -LIM) { if (m.on) { m.el.setAttribute("display", "none"); m.on = false; } continue; }
+        if (!m.on) { m.el.removeAttribute("display"); m.on = true; }
+        const a = d * RD, c = Math.cos(a);
+        const x = CX - R * Math.sin(a);                        // E is to the LEFT of N: the far side of the card
+        m.el.setAttribute("transform", "translate(" + x.toFixed(2) + " 0) scale(" + Math.max(0.1, c).toFixed(3) + " 1)");
+        const o = 0.26 + 0.74 * c;
+        if (Math.abs(o - m.o) > 0.012) { m.el.setAttribute("opacity", o.toFixed(2)); m.o = o; }
+      }
+    }
+  }
+  customElements.define("sk-compass-whiskey-drum", SkCompassWhiskeyDrum);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

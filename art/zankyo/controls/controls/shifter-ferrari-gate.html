@@ -117,15 +117,14 @@
     <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>
         <linearGradient id="chrome" x1="0" y1="0" x2="0.08" y2="1">
-          <stop offset="0" stop-color="#aab2b7"/>
-          <stop offset="0.10" stop-color="#e8edef"/>
-          <stop offset="0.30" stop-color="#f7fafb"/>
-          <stop offset="0.44" stop-color="#b7bec2"/>
-          <stop offset="0.445" stop-color="#2b3236"/>
-          <stop offset="0.52" stop-color="#565e63"/>
-          <stop offset="0.70" stop-color="#aab2b7"/>
-          <stop offset="0.90" stop-color="#eef3f5"/>
-          <stop offset="1" stop-color="#8e969b"/>
+          <stop offset="0" stop-color="#7f878c"/>
+          <stop offset="0.14" stop-color="#6a7276"/>
+          <stop offset="0.30" stop-color="#99a1a6"/>
+          <stop offset="0.315" stop-color="#f4f8fa"/>
+          <stop offset="0.52" stop-color="#dae1e4"/>
+          <stop offset="0.74" stop-color="#f6fafb"/>
+          <stop offset="0.92" stop-color="#c0c7cb"/>
+          <stop offset="1" stop-color="#8b9297"/>
         </linearGradient>
         <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.6">
           <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
@@ -193,6 +192,10 @@
               transform="translate(0,-1.6)"/>
         <path class="plated" fill="none" stroke="#2c3236" stroke-opacity="0.7" stroke-width="2"
               transform="translate(0,1.6)"/>
+        <path class="plated" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.8"
+              transform="translate(-1.5,0)"/>
+        <path class="plated" fill="none" stroke="#2c3236" stroke-opacity="0.5" stroke-width="1.6"
+              transform="translate(1.5,0)"/>
       </g>
       <path class="plated" fill="none" stroke="#31383c" stroke-width="0.8" stroke-opacity="0.9"/>
 
@@ -208,7 +211,7 @@
       <g class="screws"></g>
 
       <!-- the knob's shadow on the plate, then the stem and the ball -->
-      <ellipse class="ballsh" fill="#000" opacity="0.45" filter="url(#s2)"/>
+      <ellipse class="ballsh" fill="#000" opacity="0.34" filter="url(#s2)"/>
       <path class="stem" fill="url(#stemg)" stroke="#2f3438" stroke-width="0.5"/>
       <path class="stemhi" fill="#ffffff" opacity="0.5"/>
       <g class="ballg">
@@ -408,8 +411,8 @@
          L ${(ex - nx * w1 * 0.5).toFixed(2)} ${(ey - ny * w1 * 0.5).toFixed(2)}
          L ${(ex - nx * w1 * 0.1).toFixed(2)} ${(ey - ny * w1 * 0.1).toFixed(2)}
          L ${(gx - nx * w0 * 0.1).toFixed(2)} ${(gy - ny * w0 * 0.1).toFixed(2)} Z`);
-      this._ballsh.setAttribute("cx", (gx + 9).toFixed(2));
-      this._ballsh.setAttribute("cy", (gy + 5).toFixed(2));
+      this._ballsh.setAttribute("cx", (gx + 11).toFixed(2));
+      this._ballsh.setAttribute("cy", (gy + 6).toFixed(2));
       this._ballsh.setAttribute("rx", (BR * 0.86).toFixed(2));
       this._ballsh.setAttribute("ry", (BR * 0.30).toFixed(2));
       this._ballg.setAttribute("transform", `translate(${bx.toFixed(2)} ${by.toFixed(2)}) scale(${bs.toFixed(3)})`);

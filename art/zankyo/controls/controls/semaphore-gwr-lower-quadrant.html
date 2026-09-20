@@ -82,7 +82,7 @@
     .plate { font-size: 5px; font-weight: 600; letter-spacing: 0.14em; fill: #f2f0e8; }
     .nightsky, .veil { opacity: 0; transition: opacity 420ms ease; }
     .wrap.is-night .nightsky { opacity: 1; }
-    .wrap.is-night .veil { opacity: 0.6; }
+    .wrap.is-night .veil { opacity: 0.7; }
     .dayonly { transition: opacity 420ms ease; }
     .wrap.is-night .dayonly { opacity: 0.12; }
     .lamp-a, .lamp-b { opacity: 0; transition: opacity 240ms ease; }
@@ -123,7 +123,7 @@
           <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#f2f0e8"/><stop offset="1" stop-color="#bdbab0"/>
         </linearGradient>
         <linearGradient id="cast" x1="0" y1="0" x2="0.6" y2="1">
-          <stop offset="0" stop-color="#43433f"/><stop offset="0.4" stop-color="#232320"/><stop offset="1" stop-color="#0e0e0c"/>
+          <stop offset="0" stop-color="#55554f"/><stop offset="0.4" stop-color="#2c2c28"/><stop offset="1" stop-color="#121210"/>
         </linearGradient>
         <linearGradient id="lampg" x1="0" y1="0" x2="1" y2="0.4">
           <stop offset="0" stop-color="#3a3a36"/><stop offset="0.35" stop-color="#1f1f1d"/><stop offset="1" stop-color="#0b0b0a"/>
@@ -203,11 +203,11 @@
       <g class="rot">
         <!-- home arm: red with a white band -->
         <g class="armhome">
-          <rect x="${PX + 2}" y="${PY - 11}" width="124" height="22" rx="1.5" fill="url(#armr)" stroke="#5e0d0a" stroke-width="0.8"/>
-          <rect x="${PX + 100}" y="${PY - 11}" width="13" height="22" fill="url(#white)"/>
-          <rect x="${PX + 2}" y="${PY - 10}" width="124" height="1.2" fill="#ff8a7c" opacity="0.35"/>
-          <rect x="${PX + 2}" y="${PY + 8.4}" width="124" height="1.4" fill="#4d0a08" opacity="0.5"/>
-          <rect x="${PX + 2}" y="${PY - 3}" width="124" height="4" fill="#fff" opacity="0.06"/>
+          <path d="M ${PX + 124} ${PY - 11} L ${PX} ${PY - 11} A 11 11 0 0 0 ${PX} ${PY + 11} L ${PX + 124} ${PY + 11} Z" fill="url(#armr)" stroke="#5e0d0a" stroke-width="0.8" stroke-linejoin="round"/>
+          <rect x="${PX + 98}" y="${PY - 11}" width="13" height="22" fill="url(#white)"/>
+          <rect x="${PX + 4}" y="${PY - 10}" width="120" height="1.2" fill="#ff8a7c" opacity="0.35"/>
+          <rect x="${PX + 4}" y="${PY + 8.4}" width="120" height="1.4" fill="#4d0a08" opacity="0.5"/>
+          <rect x="${PX + 4}" y="${PY - 3}" width="120" height="4" fill="#fff" opacity="0.06"/>
           <path d="M ${PX + 118} ${PY + 11} l 5 0 l -1 -4 Z" fill="#59544a" opacity="0.8"/>
           <path d="M ${PX + 58} ${PY - 11} l 7 0 l -3 3 Z" fill="#8e837a" opacity="0.5"/>
           <ellipse cx="${PX + 86}" cy="${PY + 4}" rx="9" ry="3" fill="#6d4a32" opacity="0.2"/>
@@ -218,10 +218,10 @@
         </g>
         <!-- distant arm: yellow fishtail with a black chevron -->
         <g class="armdist">
-          <path d="M ${PX + 2} ${PY - 11} L ${PX + 126} ${PY - 11} L ${PX + 116} ${PY} L ${PX + 126} ${PY + 11} L ${PX + 2} ${PY + 11} Z" fill="url(#army)" stroke="#6a4c06" stroke-width="0.8" stroke-linejoin="round"/>
-          <path d="M ${PX + 96} ${PY - 11} L ${PX + 106} ${PY - 11} L ${PX + 96} ${PY} L ${PX + 106} ${PY + 11} L ${PX + 96} ${PY + 11} L ${PX + 86} ${PY} Z" fill="#141210"/>
-          <rect x="${PX + 2}" y="${PY - 10}" width="120" height="1.2" fill="#ffe9a0" opacity="0.4"/>
-          <rect x="${PX + 2}" y="${PY + 8.4}" width="120" height="1.4" fill="#5c4104" opacity="0.5"/>
+          <path d="M ${PX + 124} ${PY - 11} L ${PX} ${PY - 11} A 11 11 0 0 0 ${PX} ${PY + 11} L ${PX + 124} ${PY + 11} L ${PX + 114} ${PY} Z" fill="url(#army)" stroke="#6a4c06" stroke-width="0.8" stroke-linejoin="round"/>
+          <path d="M ${PX + 94} ${PY - 11} L ${PX + 104} ${PY - 11} L ${PX + 94} ${PY} L ${PX + 104} ${PY + 11} L ${PX + 94} ${PY + 11} L ${PX + 84} ${PY} Z" fill="#141210"/>
+          <rect x="${PX + 4}" y="${PY - 10}" width="116" height="1.2" fill="#ffe9a0" opacity="0.4"/>
+          <rect x="${PX + 4}" y="${PY + 8.4}" width="116" height="1.4" fill="#5c4104" opacity="0.5"/>
         </g>
         <!-- spectacle plate: a figure-of-eight casting carrying the two glasses -->
         <g>
@@ -229,8 +229,8 @@
           <path d="M ${(A.x - 6).toFixed(2)} ${(A.y - 12).toFixed(2)} L ${(B.x - 2).toFixed(2)} ${(B.y - 13.5).toFixed(2)} L ${(B.x + 4).toFixed(2)} ${(B.y + 13).toFixed(2)} L ${(A.x + 3).toFixed(2)} ${(A.y + 13.5).toFixed(2)} Z" fill="url(#cast)"/>
           <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="13.6" fill="url(#cast)" stroke="#000" stroke-width="0.7"/>
           <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="13.6" fill="url(#cast)" stroke="#000" stroke-width="0.7"/>
-          <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="9.5" fill="#4a120c"/>
-          <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="9.5" fill="#16305c"/>
+          <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="9.5" fill="#3e0f0a"/>
+          <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="9.5" fill="#132340"/>
           <circle cx="${A.x.toFixed(2)}" cy="${A.y.toFixed(2)}" r="10.2" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1.6"/>
           <circle cx="${B.x.toFixed(2)}" cy="${B.y.toFixed(2)}" r="10.2" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="1.6"/>
           <path d="M ${(A.x - 9).toFixed(2)} ${(A.y - 10).toFixed(2)} A 13.6 13.6 0 0 1 ${(A.x + 6).toFixed(2)} ${(A.y - 12.2).toFixed(2)}" fill="none" stroke="#7b7b74" stroke-opacity="0.6" stroke-width="1.1"/>

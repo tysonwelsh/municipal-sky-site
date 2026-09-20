@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gottlieb arrow insert, plywood playfield — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pinball-insert-gottlieb-arrow",
+  "element": "sk-pinball-insert-gottlieb",
+  "name": "Gottlieb \"SPECIAL WHEN LIT\" arrow insert",
+  "kind": "output",
+  "code": "H9.1",
+  "type": "Pinball / arcade lamp insert",
+  "source": "A Gottlieb wedgehead playfield (King of Diamonds, Slick Chick era) — a translucent printed plastic insert let flush into painted birch plywood with a #44 bayonet lamp under it",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["translucent plastic", "birch plywood", "screen-printed enamel", "lacquer"],
+  "tags": ["pinball", "playfield", "insert", "lamp", "wear", "special when lit"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "label", "shape", "flash", "pulse", "scale"],
+  "events": [],
+  "size": { "w": 96, "h": 120 },
+  "notes": "Set value true/false: the lamp under the insert warms over ~120 ms and cools over ~250 ms, the milky plastic goes yellow-white with an off-centre hot spot and the red print turns translucent orange. Three instances: the arrow dark, the arrow lit, and the rect shape lit with EXTRA BALL."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-pinball-insert-gottlieb value="false" label="SPECIAL"></sk-pinball-insert-gottlieb>
+    <sk-pinball-insert-gottlieb value="true" label="SPECIAL"></sk-pinball-insert-gottlieb>
+    <sk-pinball-insert-gottlieb value="true" label="EXTRA BALL" shape="rect"></sk-pinball-insert-gottlieb>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>Gottlieb wedgehead</b> playfield is birch plywood, screen-printed in flat colours and lacquered, with
+  holes routed through it for the <b>inserts</b>: little slabs of milky translucent plastic, printed on top in
+  red, dropped in flush and lit from underneath by a #44 bayonet lamp in a socket. The arrow says SPECIAL;
+  the words WHEN LIT are printed on the wood beside it, because the arrow only means anything when the lamp
+  is on.</p>
+  <p><b>The tells kept here:</b> the insert is a different material from the playfield — a hard edge with the
+  dark routed wood seam around it, and a thin shadow inside the top-left of the hole from the plywood's
+  thickness. Unlit it is dull ivory with a red word on it; lit it goes yellow-white with a <b>hot spot that is
+  not in the middle</b> (the lamp never is), the tip of the arrow stays dimmer, and the red print turns
+  translucent orange while the light spills a little way onto the lacquer around the hole. The printed art —
+  a red keyline that follows the insert and stops, blue border rules — carries a fine screen texture, and the
+  ball has worn a curved swirl through the lacquer to bare wood on the way past. The lamp is
+  <b>incandescent</b>: ~120 ms up, ~250 ms down.</p>
+  <p><b>Left out:</b> the lamp socket and wiring under the board, the insert's chamfered underside, the
+  cigarette burn and the screw holes of a real forty-year-old playfield. <code>shape</code> gives the round
+  and rectangular inserts from the same game; <code>flash</code> is the 4 Hz attract-mode blink.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pinball-insert-gottlieb> — a 1960s translucent playfield insert in painted birch plywood ====
+   attributes: value ("true"/"false") · label (default "SPECIAL") · shape (arrow | round | rect)
+               · flash (4 Hz attract blink) · pulse (0.8 Hz breathe) · scale
+   no events (an output). set .value = true/false; the lamp warms and cools.
+   self-contained: paste this block into any page and use <sk-pinball-insert-gottlieb value="true"></sk-pinball-insert-gottlieb> */
+(function () {
+  if (customElements.get("sk-pinball-insert-gottlieb")) return;
+  var W = 96, H = 120;
+
+  var SHAPES = {
+    arrow: {
+      d: "M48 16 L70.5 50 L61 50 L61 92 L35 92 L35 50 L25.5 50 Z",
+      tx: 48, ty: 45, fs: 8.2, max: 30,
+      hot: [43, 58, 19, 21],
+      dim: '<ellipse cx="48" cy="26" rx="13" ry="11" fill="#6a4a10" opacity="0.16"/>'
+    },
+    round: {
+      d: "M26 54 a22 22 0 1 0 44 0 a22 22 0 1 0 -44 0 Z",
+      tx: 48, ty: 59, fs: 12, max: 34,
+      hot: [43, 50, 16, 16],
+      dim: ''
+    },
+    rect: {
+      d: "M17 37 h62 a3 3 0 0 1 3 3 v28 a3 3 0 0 1 -3 3 h-62 a3 3 0 0 1 -3 -3 v-28 a3 3 0 0 1 3 -3 Z",
+      tx: 48, ty: 58.5, fs: 9.2, max: 56,
+      hot: [40, 51, 24, 13],
+      dim: ''
+    }
+  };
+
+  function insert(key) {
+    var s = SHAPES[key];
+    return [
+      '<g class="k k-' + key + '">',
+      /* the routed hole: the dark wood seam around the insert */
+      '  <path d="' + s.d + '" fill="#6b4a2a" stroke="#4a3018" stroke-width="3.4" stroke-linejoin="round"/>',
+      /* the printed red keyline on the wood, following the insert and stopping */
+      '  <path d="' + s.d + '" fill="none" stroke="#d0342b" stroke-width="1.3" stroke-linejoin="round"',
+      '        transform="translate(48 56) scale(1.16) translate(-48 -56)" opacity="0.88" class="art"/>',
+      /* the light spilling out onto the lacquer around the hole */
+      '  <path class="on glowspill" d="' + s.d + '" fill="none" stroke="#ffd36a" stroke-width="7" stroke-linejoin="round" filter="url(#b3)"/>',
+      /* the insert itself: milky plastic */
+      '  <g clip-path="url(#clip-' + key + ')">',
+      '    <path d="' + s.d + '" fill="url(#milky)"/>',
+      '    <g class="on">',
+      '      <path d="' + s.d + '" fill="url(#litfill)"/>',
+      '      <ellipse cx="' + s.hot[0] + '" cy="' + s.hot[1] + '" rx="' + s.hot[2] + '" ry="' + s.hot[3] + '" fill="url(#hotspot)"/>',
+      '      ' + s.dim,
+      '    </g>',
+      /* the plywood's thickness shows as a thin shadow inside the top-left of the hole */
+      '    <path d="' + s.d + '" fill="none" stroke="#4a3a20" stroke-opacity="0.55" stroke-width="3" filter="url(#b1)"',
+      '          transform="translate(1.1 1.1)"/>',
+      '    <path d="' + s.d + '" fill="none" stroke="#fff8e0" stroke-opacity="0.4" stroke-width="1.2"',
+      '          transform="translate(-0.7 -0.9)"/>',
+      /* the screen-printed word */
+      '    <text class="print t-' + key + '" x="' + s.tx + '" y="' + s.ty + '" style="font-size:' + s.fs + 'px"></text>',
+      '  </g>',
+      /* the hard edge of the plastic */
+      '  <path d="' + s.d + '" fill="none" stroke="#2f2113" stroke-opacity="0.75" stroke-width="0.9" stroke-linejoin="round"/>',
+      '</g>'
+    ].join("\n");
+  }
+
+  var clips = ["arrow", "round", "rect"].map(function (k) {
+    return '<clipPath id="clip-' + k + '"><path d="' + SHAPES[k].d + '"/></clipPath>';
+  }).join("\n");
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; line-height: 1; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  'text { font-family: "Oswald", "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700;',
+  '       letter-spacing: 0.04em; text-anchor: middle; }',
+  '.print { fill: #b8241c; transition: fill 250ms ease-in; }',
+  '.is-on .print { fill: #ff5f3a; transition: fill 120ms ease-out; }',
+  '.legend { font-size: 6.4px; fill: #c0392f; letter-spacing: 0.1em; font-weight: 500; }',
+  /* the lamp: incandescent, ~120 ms up and ~250 ms down */
+  '.on { opacity: 0; transition: opacity 250ms cubic-bezier(.4,0,.8,.6); }',
+  '.is-on .on { opacity: 1; transition: opacity 120ms cubic-bezier(.2,.6,.4,1); }',
+  '.is-on .glowspill { opacity: 0.5; }',
+  '.k { display: none; }',
+  '.k-arrow { display: inline; }',
+  ':host([shape="round"]) .k-arrow, :host([shape="rect"]) .k-arrow { display: none; }',
+  ':host([shape="round"]) .k-round, :host([shape="rect"]) .k-rect { display: inline; }',
+  '@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.06; } }',
+  '@keyframes breathe { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }',
+  ':host([flash]) .is-on .on { animation: blink 250ms steps(1, end) infinite; }',
+  ':host([pulse]) .is-on .on { animation: breathe 1250ms ease-in-out infinite; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '<defs>',
+  '  <linearGradient id="wood" x1="0" y1="0" x2="0.4" y2="1">',
+  '    <stop offset="0" stop-color="#f4e9cd"/><stop offset="0.55" stop-color="#efe2c2"/><stop offset="1" stop-color="#e2d2ad"/>',
+  '  </linearGradient>',
+  '  <linearGradient id="milky" x1="0.2" y1="0" x2="0.8" y2="1">',
+  '    <stop offset="0" stop-color="#efe7d8"/><stop offset="0.55" stop-color="#e6dccb"/><stop offset="1" stop-color="#d6cbb6"/>',
+  '  </linearGradient>',
+  '  <linearGradient id="litfill" x1="0.3" y1="0" x2="0.7" y2="1">',
+  '    <stop offset="0" stop-color="#fff5c8"/><stop offset="0.5" stop-color="#ffe89a"/><stop offset="1" stop-color="#ffd36a"/>',
+  '  </linearGradient>',
+  '  <radialGradient id="hotspot" cx="50%" cy="50%" r="50%">',
+  '    <stop offset="0" stop-color="#fffbe0"/><stop offset="0.45" stop-color="#fff3bc" stop-opacity="0.8"/>',
+  '    <stop offset="1" stop-color="#ffe89a" stop-opacity="0"/>',
+  '  </radialGradient>',
+  '  <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1">',
+  '    <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.04"/>',
+  '    <stop offset="1" stop-color="#fff" stop-opacity="0"/>',
+  '  </linearGradient>',
+  '  <pattern id="screen" width="2" height="2" patternUnits="userSpaceOnUse">',
+  '    <rect width="2" height="2" fill="none"/><circle cx="0.6" cy="0.6" r="0.42" fill="#6b5a3a" opacity="0.2"/>',
+  '  </pattern>',
+  '  <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.9"/></filter>',
+  '  <filter id="b3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>',
+  '  <filter id="b2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.8"/></filter>',
+  clips,
+  '</defs>',
+
+  /* ---- the playfield: painted, screen-printed, lacquered birch ---- */
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#wood)"/>',
+  /* a little grain through the paint */
+  '<g opacity="0.3" fill="#cdb88c">',
+  '  <rect x="9" y="0" width="0.8" height="' + H + '"/><rect x="27" y="0" width="0.6" height="' + H + '"/>',
+  '  <rect x="58" y="0" width="0.7" height="' + H + '"/><rect x="83" y="0" width="0.5" height="' + H + '"/>',
+  '</g>',
+  /* the printed art: blue border rules and a red rule, running up to the insert */
+  '<g class="art">',
+  '  <rect x="0" y="6.5" width="' + W + '" height="2.6" fill="#2b57a3"/>',
+  '  <rect x="0" y="10.6" width="' + W + '" height="1" fill="#d0342b"/>',
+  '  <rect x="0" y="108" width="' + W + '" height="2.6" fill="#2b57a3"/>',
+  '  <rect x="0" y="105" width="' + W + '" height="1" fill="#d0342b"/>',
+  '  <path d="M -2 84 Q 16 92 14 120" fill="none" stroke="#2b57a3" stroke-width="2.2" opacity="0.9"/>',
+  '  <path d="M 98 84 Q 80 92 82 120" fill="none" stroke="#2b57a3" stroke-width="2.2" opacity="0.9"/>',
+  '</g>',
+  /* the screen texture of the print */
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#screen)" opacity="0.5"/>',
+  /* the legend printed on the wood beside the insert */
+  '<text class="legend" x="48" y="101">WHEN LIT</text>',
+
+  /* ---- the insert (one of three shapes) ---- */
+  insert("arrow"), insert("round"), insert("rect"),
+
+  /* ---- wear: the ball has worn the lacquer to bare wood on its way past ---- */
+  '<g opacity="0.85">',
+  '  <path d="M 4 112 Q 30 96 46 108 Q 62 120 92 104" fill="none" stroke="#c9a96e" stroke-width="3.4" opacity="0.5" filter="url(#b2)"/>',
+  '  <path d="M 6 110 Q 32 95 47 106 Q 63 117 93 102" fill="none" stroke="#b8935a" stroke-width="0.8" opacity="0.45"/>',
+  '  <path d="M 82 18 Q 88 40 79 62" fill="none" stroke="#fffdf4" stroke-width="0.7" opacity="0.3"/>',
+  '  <path d="M 10 30 Q 6 46 12 58" fill="none" stroke="#fffdf4" stroke-width="0.6" opacity="0.22"/>',
+  '</g>',
+
+  /* ---- the clear coat: one broad reflection, and the lit edge of the board ---- */
+  '<path d="M 0 0 L 62 0 L 0 84 Z" fill="url(#coat)"/>',
+  '<rect x="0" y="0" width="' + W + '" height="0.9" fill="#fffaea" opacity="0.5"/>',
+  '<rect x="0" y="' + (H - 1) + '" width="' + W + '" height="1" fill="#6b4a2a" opacity="0.45"/>',
+  '</svg>',
+  '</div>'].join("\n");
+
+  function truthy(v) {
+    if (v === true) return true;
+    if (v === false || v == null) return false;
+    var s = String(v).toLowerCase();
+    return s === "true" || s === "1" || s === "on" || s === "lit" || s === "yes" || s === "";
+  }
+
+  class SkPinballInsert extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "shape", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = false; this._scale = 1; this._shape = "arrow"; this._label = "SPECIAL";
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._setLabel(); this._paint();
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { this._fit(); }.bind(this)).catch(function () {});
+      }
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "label" || n === "shape") this._setLabel();
+      this._paint();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      var b = truthy(v);
+      if (b === this._v && this.getAttribute("value") === String(b)) return;
+      this._v = b;
+      if (this.getAttribute("value") !== String(b)) this.setAttribute("value", String(b));
+      this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get label() { return this._label; }
+    set label(t) { this.setAttribute("label", t); }
+
+    _read() {
+      var sc = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(sc) ? 1 : Math.max(0.2, sc);
+      this._shape = SHAPES[this.getAttribute("shape")] ? this.getAttribute("shape") : "arrow";
+      this._v = this.hasAttribute("value") ? truthy(this.getAttribute("value")) : this._v;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _setLabel() {
+      this._label = this.getAttribute("label") || "SPECIAL";
+      var txt = this._label;
+      var all = this.shadowRoot.querySelectorAll(".print");
+      for (var i = 0; i < all.length; i++) all[i].textContent = txt;
+      this._fit();
+    }
+    _fit() {
+      var t = this.shadowRoot.querySelector(".t-" + this._shape);
+      if (!t) return;
+      var max = SHAPES[this._shape].max, len = 0;
+      t.removeAttribute("textLength"); t.removeAttribute("lengthAdjust");
+      try { len = t.getComputedTextLength(); } catch (e) { len = 0; }
+      if (len > max) { t.setAttribute("textLength", max); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); }
+    }
+    _paint() {
+      this._wrap.classList.toggle("is-on", this._v);
+      this.setAttribute("aria-label", this._label + " insert, " + (this._v ? "lit" : "unlit"));
+    }
+  }
+  customElements.define("sk-pinball-insert-gottlieb", SkPinballInsert);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

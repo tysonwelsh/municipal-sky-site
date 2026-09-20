@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toledo "honest weight" fan dial — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Courier+Prime:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "scale-toledo-honest-weight-fan",
+  "element": "sk-scale-toledo-fan",
+  "name": "Toledo \"honest weight\" fan dial",
+  "kind": "output",
+  "code": "F11",
+  "type": "Fan-dial weighing scale",
+  "source": "Toledo Scale Co. Model 2081/2181 fan-dial grocer's scale — white porcelain enamel on a cast-iron frame",
+  "era": "1920s",
+  "origin": "USA",
+  "materials": ["porcelain enamel", "cast iron", "chrome plate", "brass"],
+  "tags": ["scale", "weight", "grocer", "porcelain", "pendulum", "fan dial"],
+  "value": { "model": "range", "min": 0, "max": 30, "step": 0.01, "unit": "lb" },
+  "attributes": ["value", "max", "label", "scale"],
+  "events": [],
+  "size": { "w": 320, "h": 220 },
+  "notes": "Set value in pounds; the pendulum-and-cam pointer swings past and settles back. The small dial is a 10 lb capacity, so its ounce comb is the full sixteen per pound."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="cream">
+    <sk-scale-toledo-fan value="14.75" label="counter scale"></sk-scale-toledo-fan>
+    <sk-scale-toledo-fan value="2.375" max="10" label="candy scale" scale="0.55"></sk-scale-toledo-fan>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Toledo Scale Company</b> built its trade on a pendulum-and-cam mechanism instead of a spring, and
+  advertised it with the phrase painted on the dial itself: <i>no springs — honest weight</i>. A spring creeps
+  and ages; a pendulum weighs the same in 1921 and 1951. The counter model's dial is a <b>fan</b> — a 170°
+  sector of white porcelain enamel standing on a squat cast-iron frame, the pointer pivoting at the bottom
+  centre so the whole scale can sit low on a grocer's counter under the customer's eye.</p>
+  <p><b>The tells kept here:</b> the fan sector with the pivot at the bottom and the near-horizontal side edges;
+  pounds in large black slab-serif figures with a comb of subdivisions between them and a red tick at every
+  whole pound; the narrow chrome bezel that follows the arc and returns down both sides; the porcelain's soft
+  above-left sheen and its crazing; the frame's cream enamel chipped through to dark iron at the shoulder and
+  at the plinth's corner; the slogan in two arcs above the pivot with the capacity line beneath; the long
+  tapered black blade with its round counterweight swinging in a recess cut into the casting; and a hint of the
+  brass pan below. The pointer <b>swings past the weight and comes back</b> — three decaying swings over about
+  nine-tenths of a second, then dead still, because there is no spring to tremble.</p>
+  <p><b>Left out:</b> the Toledo shield and script logo (the phrase is generic, the logo is not), the rear
+  column and the pan's full body, and — at 30 lb capacity — the true sixteen-per-pound ounce comb, whose ticks
+  would fall 0.8 px apart at this size; the comb steps down to quarter-pounds and only returns to full ounces
+  on the 10 lb dial, where there is room for them.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-scale-toledo-fan> — Toledo fan-dial scale, white porcelain on cast iron ====
+   attributes: value (lb) · max (10 | 30 | 60) · label · scale
+   no events (an output). set .value or the attribute; the pointer has pendulum ballistics.
+   self-contained: paste this block into any page and use <sk-scale-toledo-fan value="6"></sk-scale-toledo-fan> */
+(function () {
+  if (customElements.get("sk-scale-toledo-fan")) return;
+  var W = 320, H = 220, PX = 160, PY = 186, SPAN = 170;
+  var R_FRAME = 158, R_BEZEL = 149, R_DIAL = 143;
+  var R_OUT = 140, R_LB = 126, R_Q = 132, R_OZ = 136;
+  var R_RED_O = 127, R_RED_I = 121, R_NUM = 112, R_TIP = 138;
+  var NS = "http://www.w3.org/2000/svg";
+
+  function P(deg, r) { var a = deg * Math.PI / 180; return [PX + r * Math.sin(a), PY - r * Math.cos(a)]; }
+  function f2(n) { return (Math.round(n * 100) / 100); }
+  function fan(r) {
+    var a = P(-SPAN / 2, r), b = P(SPAN / 2, r);
+    return "M " + PX + " " + PY + " L " + f2(a[0]) + " " + f2(a[1]) + " A " + r + " " + r + " 0 0 1 " + f2(b[0]) + " " + f2(b[1]) + " Z";
+  }
+  function arcP(r, a0, a1) {
+    var a = P(a0, r), b = P(a1, r);
+    return "M " + f2(a[0]) + " " + f2(a[1]) + " A " + r + " " + r + " 0 0 1 " + f2(b[0]) + " " + f2(b[1]);
+  }
+  var fl = P(-86, R_FRAME), fr = P(86, R_FRAME);
+  var FRAME = "M " + f2(fl[0]) + " " + f2(fl[1]) + " A " + R_FRAME + " " + R_FRAME + " 0 0 1 " + f2(fr[0]) + " " + f2(fr[1]) +
+              " L 301 188 L 253 197 L 239 210 L 81 210 L 67 197 L 19 188 Z";
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  '  :host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; }',
+  '  :host([hidden]) { display: none; }',
+  '  .wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  '  svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  '  text { font-family: "Courier Prime", "Courier New", Courier, monospace; fill: #17150f; }',
+  '  .num { font-size: 13px; font-weight: 700; text-anchor: middle; }',
+  '  .slog { font-family: "Bebas Neue", "Oswald", "Arial Narrow", sans-serif; font-size: 10px; letter-spacing: 0.2em; fill: #23201a; }',
+  '  .cap { font-family: "Bebas Neue", "Oswald", "Arial Narrow", sans-serif; font-size: 8px; letter-spacing: 0.22em; text-anchor: middle; fill: #4a4438; }',
+  '  .pointer { transform-origin: ' + PX + 'px ' + PY + 'px; transform-box: view-box; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '  <defs>',
+  '    <radialGradient id="porc" cx="34%" cy="4%" r="98%">',
+  '      <stop offset="0" stop-color="#fdfbf6"/><stop offset="0.5" stop-color="#f6f3ea"/><stop offset="1" stop-color="#e5e0d4"/>',
+  '    </radialGradient>',
+  '    <radialGradient id="sheen" cx="22%" cy="2%" r="70%">',
+  '      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.12"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>',
+  '    </radialGradient>',
+  '    <linearGradient id="chrome" x1="0" y1="0" x2="0.25" y2="1">',
+  '      <stop offset="0" stop-color="#ffffff"/><stop offset="0.18" stop-color="#e4e4e1"/><stop offset="0.46" stop-color="#b6b8b8"/>',
+  '      <stop offset="0.52" stop-color="#f2f2f0"/><stop offset="0.78" stop-color="#8b8d8e"/><stop offset="1" stop-color="#cfd0cd"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="iron" x1="0.15" y1="0" x2="0.7" y2="1">',
+  '      <stop offset="0" stop-color="#f6efdb"/><stop offset="0.42" stop-color="#ece3cc"/><stop offset="0.8" stop-color="#d6cbae"/><stop offset="1" stop-color="#b9ab8c"/>',
+  '    </linearGradient>',
+  '    <linearGradient id="brass" x1="0" y1="0" x2="0.2" y2="1">',
+  '      <stop offset="0" stop-color="#e6cb86"/><stop offset="0.3" stop-color="#c9a24c"/><stop offset="0.75" stop-color="#8d6f2c"/><stop offset="1" stop-color="#6b5320"/>',
+  '    </linearGradient>',
+  '    <radialGradient id="recess" cx="34%" cy="26%" r="80%">',
+  '      <stop offset="0" stop-color="#4a4238"/><stop offset="0.6" stop-color="#2a261e"/><stop offset="1" stop-color="#14120e"/>',
+  '    </radialGradient>',
+  '    <radialGradient id="boss" cx="33%" cy="28%" r="74%">',
+  '      <stop offset="0" stop-color="#6a655c"/><stop offset="0.6" stop-color="#22201c"/><stop offset="1" stop-color="#0b0a09"/>',
+  '    </radialGradient>',
+  '    <clipPath id="dialclip"><path d="' + fan(R_DIAL) + '"/></clipPath>',
+  '    <clipPath id="frameclip"><path d="' + FRAME + '"/></clipPath>',
+  '    <path id="arcA" d="' + arcP(92, -45, 45) + '"/>',
+  '    <path id="arcB" d="' + arcP(72, -42, 42) + '"/>',
+  '    <filter id="sh" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="4"/></filter>',
+  '    <filter id="sh2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>',
+  '  </defs>',
+
+  '  <!-- shadow on the counter -->',
+  '  <path d="' + FRAME + '" fill="#000" opacity="0.5" filter="url(#sh)" transform="translate(4 7)"/>',
+  '  <!-- the pan, hinted below the frame -->',
+  '  <path d="M 26 220 C 30 206 72 198 160 198 C 248 198 290 206 294 220 Z" fill="url(#brass)"/>',
+  '  <path d="M 30 214 C 44 204 92 200 160 200 C 228 200 276 204 290 214" fill="none" stroke="#f0dba2" stroke-opacity="0.55" stroke-width="1.2"/>',
+
+  '  <!-- cast-iron frame, cream enamel -->',
+  '  <path d="' + FRAME + '" fill="url(#iron)" stroke="#9c8e70" stroke-width="0.9"/>',
+  '  <g clip-path="url(#frameclip)">',
+  '    <path d="' + arcP(155, -86, 86) + '" fill="none" stroke="#fdf7e4" stroke-opacity="0.85" stroke-width="1.6"/>',
+  '    <path d="' + arcP(151.5, -86, 86) + '" fill="none" stroke="#b9ab8c" stroke-opacity="0.7" stroke-width="1"/>',
+  '    <path d="M 67 197 L 253 197" fill="none" stroke="#fdf7e4" stroke-opacity="0.6" stroke-width="1.4"/>',
+  '    <path d="M 74 203 L 246 203" fill="none" stroke="#b09f7e" stroke-opacity="0.6" stroke-width="1"/>',
+  '    <path d="' + FRAME + '" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="5" filter="url(#sh2)"/>',
+  '    <!-- chipped enamel, dark iron beneath -->',
+  '    <path d="M 29.2 93.6 L 38.4 99.2 L 35.4 106.4 L 27.2 100.6 Z" fill="#4a4238"/>',
+  '    <path d="M 30.6 95.4 L 36.8 99.4 L 34.8 103.6 L 29 100 Z" fill="#332e27"/>',
+  '    <path d="M 231 204 L 241 207.4 L 237.6 211.6 L 228 208.8 Z" fill="#4a4238"/>',
+  '    <path d="M 233 205.6 L 239 207.8 L 236.6 210.4 L 230.6 208.4 Z" fill="#332e27"/>',
+  '    <path d="M 118 208 L 126 206.6 L 124.6 210 L 117 210.4 Z" fill="#4a4238" opacity="0.8"/>',
+  '  </g>',
+
+  '  <!-- chrome bezel: follows the arc and returns down the sides -->',
+  '  <path d="' + fan(R_BEZEL) + '" fill="url(#chrome)"/>',
+  '  <path d="' + arcP(R_BEZEL - 0.6, -85, 85) + '" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="1"/>',
+
+  '  <!-- porcelain dial -->',
+  '  <path d="' + fan(R_DIAL) + '" fill="url(#porc)"/>',
+  '  <g clip-path="url(#dialclip)">',
+  '    <g class="craze" stroke="#c9c3b3" stroke-width="0.6" fill="none" opacity="0.2">',
+  '      <path d="M 52 150 C 66 132 62 116 76 104"/>',
+  '      <path d="M 76 104 C 88 96 92 84 88 72"/>',
+  '      <path d="M 214 60 C 226 72 224 88 236 98"/>',
+  '      <path d="M 236 98 C 248 108 246 124 258 136"/>',
+  '      <path d="M 128 52 C 136 62 134 74 142 82"/>',
+  '      <path d="M 186 158 C 196 146 194 134 204 126"/>',
+  '    </g>',
+  '    <g class="scale"></g>',
+  '    <text class="slog" text-anchor="middle"><textPath href="#arcA" startOffset="50%">NO SPRINGS</textPath></text>',
+  '    <text class="slog" text-anchor="middle"><textPath href="#arcB" startOffset="50%">HONEST WEIGHT</textPath></text>',
+  '    <text class="cap" x="' + PX + '" y="150"></text>',
+  '    <path d="' + fan(R_DIAL) + '" fill="url(#sheen)"/>',
+  '    <path d="' + fan(R_DIAL) + '" fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="5" filter="url(#sh2)"/>',
+  '  </g>',
+  '  <path d="' + arcP(R_DIAL - 0.5, -85, 85) + '" fill="none" stroke="#b9b09b" stroke-opacity="0.5" stroke-width="1"/>',
+
+  '  <!-- pivot recess, pointer, boss -->',
+  '  <circle cx="' + PX + '" cy="' + PY + '" r="19.5" fill="url(#recess)"/>',
+  '  <circle cx="' + PX + '" cy="' + PY + '" r="19.5" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="2.6" filter="url(#sh2)"/>',
+  '  <circle cx="' + (PX + 0.6) + '" cy="' + (PY + 1) + '" r="18.6" fill="none" stroke="#d8cfb4" stroke-opacity="0.45" stroke-width="0.9"/>',
+  '  <g class="pointer" opacity="0.32" transform-origin="' + PX + ' ' + PY + '">',
+  '    <path d="M ' + (PX - 2.8) + ' ' + (PY - 4) + ' L ' + (PX - 0.75) + ' ' + (PY - R_TIP) + ' L ' + (PX + 0.75) + ' ' + (PY - R_TIP) + ' L ' + (PX + 2.8) + ' ' + (PY - 4) + ' Z" fill="#000" filter="url(#sh2)" transform="translate(2.5 3)"/>',
+  '  </g>',
+  '  <g class="pointer">',
+  '    <path d="M ' + (PX - 2.8) + ' ' + (PY - 4) + ' L ' + (PX - 0.75) + ' ' + (PY - R_TIP) + ' L ' + (PX + 0.75) + ' ' + (PY - R_TIP) + ' L ' + (PX + 2.8) + ' ' + (PY - 4) + ' Z" fill="#101010"/>',
+  '    <path d="M ' + (PX - 1.9) + ' ' + (PY - 30) + ' L ' + (PX - 0.55) + ' ' + (PY - 110) + ' L ' + (PX - 0.2) + ' ' + (PY - 110) + ' L ' + (PX - 1.1) + ' ' + (PY - 30) + ' Z" fill="#4c4a46" opacity="0.7"/>',
+  '    <circle cx="' + PX + '" cy="' + (PY + 15.5) + '" r="6.4" fill="#141312"/>',
+  '    <circle cx="' + (PX - 2) + '" cy="' + (PY + 13.6) + '" r="2.1" fill="#6d6a64" opacity="0.65"/>',
+  '  </g>',
+  '  <circle cx="' + PX + '" cy="' + PY + '" r="6.6" fill="url(#boss)" stroke="#000" stroke-width="0.6"/>',
+  '  <circle cx="' + (PX - 1.8) + '" cy="' + (PY - 1.8) + '" r="1.5" fill="#8d887e" opacity="0.7"/>',
+  '</svg>',
+  '</div>'].join("\n");
+
+  class SkScaleToledoFan extends HTMLElement {
+    static get observedAttributes() { return ["value", "max", "label", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._max = 30; this._scale = 1;
+      this._a = 0; this._vel = 0; this._raf = 0; this._last = 0; this._drawnMax = -1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._capT = this.shadowRoot.querySelector(".cap");
+      this._pointers = this.shadowRoot.querySelectorAll(".pointer");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this._read(); this._drawScale();
+      this._a = this._angle(this._v); this._vel = 0; this._paint(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read(); if (n === "max") this._drawScale(); this._kick();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.min(this._max, Math.max(0, v));
+      this.setAttribute("value", String(Math.round(this._v * 100) / 100));
+      this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      var self = this;
+      var num = function (n, d) { var x = parseFloat(self.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._max = Math.max(1, num("max", 30));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = Math.min(this._max, Math.max(0, num("value", this._v)));
+      this.setAttribute("aria-valuemin", "0");
+      this.setAttribute("aria-valuemax", String(this._max));
+      this.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this.setAttribute("aria-label", (this.getAttribute("label") || "weighing scale") + ", pounds");
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      this._capT.textContent = "CAPACITY " + (Math.round(this._max * 10) / 10) + " LB";
+    }
+    _angle(v) { return -SPAN / 2 + (v / this._max) * SPAN; }
+
+    _drawScale() {
+      if (this._drawnMax === this._max) return;
+      this._drawnMax = this._max;
+      var g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      var mk = function (t, a) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; };
+      var max = this._max;
+      // the comb: sixteen ounce ticks per pound where they fit, else quarters, else halves
+      var perLbPx = (SPAN / max) * Math.PI / 180 * R_OUT;
+      var sub = 1;
+      [16, 8, 4, 2].forEach(function (d) { if (sub === 1 && perLbPx / d >= 2.2) sub = d; });
+      g.appendChild(mk("path", { d: arcP(R_OUT, -SPAN / 2, SPAN / 2), fill: "none", stroke: "#17150f", "stroke-width": 1.1 }));
+      var total = max * sub, i, a, p0, p1, v;
+      for (i = 0; i <= total; i++) {
+        v = i / sub;
+        a = this._angle(v);
+        var isLb = i % sub === 0;
+        var isQ = !isLb && (i % (sub / 4) === 0) && sub >= 4;
+        var ri = isLb ? R_LB : (isQ ? R_Q : R_OZ);
+        p0 = P(a, ri); p1 = P(a, R_OUT);
+        g.appendChild(mk("line", { x1: f2(p0[0]), y1: f2(p0[1]), x2: f2(p1[0]), y2: f2(p1[1]),
+          stroke: "#17150f", "stroke-width": isLb ? 1.5 : (isQ ? 0.85 : 0.4), "stroke-opacity": isLb ? 1 : (isQ ? 0.92 : 0.62) }));
+      }
+      // the red marker at every whole pound
+      for (i = 0; i <= max; i++) {
+        a = this._angle(i);
+        p0 = P(a, R_RED_I); p1 = P(a, R_RED_O);
+        g.appendChild(mk("line", { x1: f2(p0[0]), y1: f2(p0[1]), x2: f2(p1[0]), y2: f2(p1[1]), stroke: "#b9231a", "stroke-width": 1.3 }));
+      }
+      // figures
+      var step = max <= 10 ? 1 : (max <= 30 ? 2 : 5);
+      for (i = 0; i <= max; i += step) {
+        a = this._angle(i);
+        var pt = P(a, R_NUM);
+        var t = mk("text", { x: f2(pt[0]), y: f2(pt[1] + 4.6), "class": "num", transform: "rotate(" + f2(a) + " " + f2(pt[0]) + " " + f2(pt[1]) + ")" });
+        t.textContent = String(i);
+        g.appendChild(t);
+      }
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      var target = this._angle(this._v);
+      var dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      // pendulum-and-cam: heavy, three decaying swings, then dead still
+      var k = 150, c = 11.5;
+      this._vel += (k * (target - this._a) - c * this._vel) * dt;
+      this._a += this._vel * dt;
+      this._paint();
+      if (Math.abs(target - this._a) < 0.015 && Math.abs(this._vel) < 0.04) {
+        this._a = target; this._vel = 0; this._paint(); this._raf = 0; return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _paint() {
+      var a = Math.max(-SPAN / 2 - 2.5, Math.min(SPAN / 2 + 2.5, this._a));
+      var s = "rotate(" + f2(a) + "deg)";
+      for (var i = 0; i < this._pointers.length; i++) this._pointers[i].style.transform = s;
+    }
+    demo(t) {
+      var seq = [0, 2.375, 7.5, 14.75, 22.3, 5];
+      var v = seq[Math.floor(t / 2.6) % seq.length];
+      return Math.min(this._max, v);
+    }
+  }
+  customElements.define("sk-scale-toledo-fan", SkScaleToledoFan);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
