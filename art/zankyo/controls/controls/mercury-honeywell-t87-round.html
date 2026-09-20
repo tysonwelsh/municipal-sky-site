@@ -187,8 +187,8 @@
 
       <!-- gold setpoint ring -->
       <g class="ring">
-        <path d="M ${CX} ${CY - R_OUT} A ${R_OUT} ${R_OUT} 0 1 1 ${CX - 0.01} ${CY - R_OUT} Z
-                 M ${CX} ${CY - R_IN} A ${R_IN} ${R_IN} 0 1 0 ${CX - 0.01} ${CY - R_IN} Z"
+        <path d="M ${CX} ${CY - R_OUT} A ${R_OUT} ${R_OUT} 0 1 1 ${CX} ${CY + R_OUT} A ${R_OUT} ${R_OUT} 0 1 1 ${CX} ${CY - R_OUT} Z
+                 M ${CX} ${CY - R_IN} A ${R_IN} ${R_IN} 0 1 1 ${CX} ${CY + R_IN} A ${R_IN} ${R_IN} 0 1 1 ${CX} ${CY - R_IN} Z"
               fill="url(#gold)" fill-rule="evenodd" stroke="#4a3712" stroke-width="0.8"/>
         <path d="M ${CX - R_OUT + 3} ${CY - R_OUT * 0.5} A ${R_OUT - 3} ${R_OUT - 3} 0 0 1 ${CX + R_OUT * 0.55} ${CY - R_OUT * 0.72}"
               fill="none" stroke="url(#goldsheen)" stroke-width="10" stroke-linecap="round"/>
