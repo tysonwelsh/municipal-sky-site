@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon Ray rotating beacon — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "beacon-federal-beacon-ray",
+  "element": "sk-beacon-beacon-ray",
+  "name": "Beacon Ray rotating beacon",
+  "kind": "output",
+  "code": "H10",
+  "type": "Rotating beacon",
+  "source": "Federal Sign & Signal Beacon Ray Model 17 — a chrome base with a ribbed red dome and two sealed-beam lamps on a rotating carrier",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["chrome-plated cast base", "red glass dome", "sealed-beam lamps", "parabolic reflectors"],
+  "tags": ["emergency", "warning light", "rotating", "glass", "chrome", "police", "fire"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "rpm", "color", "phase", "scale"],
+  "events": [],
+  "size": { "w": 200, "h": 220 },
+  "notes": "value true runs the carrier at rpm; the lobe crosses the dome twice per revolution, broken into bars by the flutes. Three domes: red running, amber running, and one switched off."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-beacon-beacon-ray value="true" rpm="90" phase="-38"></sk-beacon-beacon-ray>
+    <sk-beacon-beacon-ray value="true" rpm="120" color="amber" phase="24"></sk-beacon-beacon-ray>
+    <sk-beacon-beacon-ray value="false"></sk-beacon-beacon-ray>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Federal Sign &amp; Signal Beacon Ray</b>, Model 17 and its 173 cousin, is the chrome-and-red
+  "gumball" that sat on every American patrol car, ambulance and fire chief's sedan from the late 1940s on:
+  a cast chrome base with a flared skirt and a knurled ring, a 7-inch red glass dome moulded with vertical
+  beehive flutes, and inside it a carrier turning at about 90 rpm carrying two sealed-beam lamps in
+  parabolic reflectors, back to back — so the beam passes you twice a turn.</p>
+  <p><b>The tells kept here:</b> the beam is not a blink, it is a <b>lobe that crosses the dome</b>, brightest
+  when a reflector squares up to you and dying away as it turns, its brightness following cos² of the angle;
+  the flutes chop that lobe into bright bars and crowd toward the dome's edges by true cylinder projection
+  (<code>x = R·sin θ</code>, width ∝ <code>cos θ</code>); the dome is translucent, so unlit you can still see
+  the reflectors, the lamp bases and the carrier shaft as dark shapes inside it; the chrome base carries a
+  hard horizon line with sky above and ground below; the top cap is a small flat disc with a screw; and the
+  flash spills out — a warm cast on the chrome, a pool on the panel, and a halo in the air that pulses with
+  every pass.</p>
+  <p><b>Left out:</b> the rotating mechanism's gear noise, the sealed-beam's filament detail, the rubber
+  gasket at the dome foot, and the maker's full badge (a plain etched legend stands in for it). The
+  <code>phase</code> attribute is a demo convenience — it only sets where the carrier starts, so a still
+  screenshot can be taken with the beam facing the camera.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-beacon-beacon-ray> — 1950s Federal Beacon Ray rotating beacon ====
+   attributes: value ("true"/"false" — running) · rpm (default 90) · color (red|amber|blue)
+               phase (degrees, where the carrier starts) · scale
+   no events (an output). set .value = true/false.
+   self-contained: paste this block into any page and use
+   <sk-beacon-beacon-ray value="true"></sk-beacon-beacon-ray> */
+(function () {
+  if (customElements.get("sk-beacon-beacon-ray")) return;
+
+  const W = 200, H = 220;
+  const CX = 100, BASE = 160, TOP = 26;      // dome foot / dome cap
+  const R = 90, RCAP = 15;                   // dome radius at the foot / at the cap
+  const L = Math.sqrt(R * R - RCAP * RCAP);
+  const RC = 42, RY = 104;                   // reflector orbit radius, reflector height
+  const NRIB = 48;
+
+  const rAt = t => Math.sqrt(Math.max(0, R * R - L * L * t * t));   // dome radius at parameter t
+  const yAt = t => BASE - (BASE - TOP) * t;
+
+  function domePath() {
+    const N = 26; let d = "M " + (CX - R) + " " + BASE;
+    for (let i = 1; i <= N; i++) { const t = i / N; d += " L " + (CX - rAt(t)).toFixed(2) + " " + yAt(t).toFixed(2); }
+    d += " A " + RCAP + " " + (RCAP * 0.8) + " 0 0 1 " + (CX + RCAP) + " " + TOP;
+    for (let i = N; i >= 1; i--) { const t = i / N; d += " L " + (CX + rAt(t)).toFixed(2) + " " + yAt(t).toFixed(2); }
+    return d + " Z";
+  }
+  function ribPath(th) {                       // a meridian of the dome at azimuth th
+    const N = 12, s = Math.sin(th); let d = "";
+    for (let i = 0; i <= N; i++) { const t = i / N; d += (i ? " L " : "M ") + (CX + rAt(t) * s).toFixed(2) + " " + yAt(t).toFixed(2); }
+    return d;
+  }
+  function ribs() {                            // flutes, placed by angle so they crowd at the edges
+    let out = "";
+    for (let i = 0; i < NRIB; i++) {
+      const th = i * 2 * Math.PI / NRIB, c = Math.cos(th);
+      if (c <= 0.04) continue;
+      const w = (2.4 * c + 0.3).toFixed(2), o = (0.10 + 0.34 * c).toFixed(3);
+      const th2 = th - Math.PI / NRIB, c2 = Math.cos(th2);
+      out += '<path d="' + ribPath(th) + '" fill="none" stroke="#25060a" stroke-opacity="' + o + '" stroke-width="' + w + '"/>';
+      if (c2 > 0.05) out += '<path d="' + ribPath(th2) + '" fill="none" class="ribhi" stroke-opacity="' + (0.08 + 0.30 * c2).toFixed(3) + '" stroke-width="' + (1.5 * c2 + 0.25).toFixed(2) + '"/>';
+    }
+    return out;
+  }
+  function knurl() {                           // the knurled ring under the dome, same projection
+    let out = ""; const N = 56, Rk = 84;
+    for (let i = 0; i < N; i++) {
+      const th = i * 2 * Math.PI / N, c = Math.cos(th);
+      if (c <= 0.03) continue;
+      const x = (CX + Rk * Math.sin(th)).toFixed(2);
+      out += '<line x1="' + x + '" y1="159" x2="' + x + '" y2="175" stroke="#20242a" stroke-opacity="' + (0.5 * c).toFixed(3) + '" stroke-width="' + (1.1 * c + 0.2).toFixed(2) + '"/>';
+      const x2 = (CX + Rk * Math.sin(th + Math.PI / N)).toFixed(2);
+      out += '<line x1="' + x2 + '" y1="159" x2="' + x2 + '" y2="175" stroke="#ffffff" stroke-opacity="' + (0.42 * c).toFixed(3) + '" stroke-width="' + (0.9 * c + 0.2).toFixed(2) + '"/>';
+    }
+    return out;
+  }
+
+  const SKIRT = "M 16 174 C 16 190 8 194 4 206 L 4 210 L 196 210 L 196 206 C 192 194 184 190 184 174 Z";
+  const RING = "M 14 156 L 186 156 L 184 176 L 16 176 Z";
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host {
+      display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px;
+      --core: #fff1e8; --mid: #ff4a26; --spill: #ff3b22;
+      --g1: #a8332a; --g2: #7a1512; --g3: #3c0908; --rib: #b34a44; --inner: #3a0d0b;
+    }
+    :host([hidden]) { display: none; }
+    :host([color="amber"]) { --core: #fff9e2; --mid: #ffab22; --spill: #ff9d0f; --g1: #c98c22; --g2: #9d6410; --g3: #402a07; --rib: #e6bb63; --inner: #3a2606; }
+    :host([color="blue"])  { --core: #ecf5ff; --mid: #4a90ff; --spill: #2f7bff; --g1: #2c4f93; --g2: #17316c; --g3: #0a1733; --rib: #7ba2dd; --inner: #0d1a3a; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    .ribhi { stroke: var(--rib); }
+    .badge { font-family: "Archivo Narrow", "Arial Narrow", sans-serif; font-size: 5.2px; letter-spacing: 0.22em; text-anchor: middle; fill: #f2f4f6; fill-opacity: 0.75; }
+    .badge2 { font-family: "Oswald", "Archivo Narrow", sans-serif; font-size: 4.4px; letter-spacing: 0.18em; text-anchor: middle; fill: #10131a; fill-opacity: 0.55; }
+    .lobe, .air, .pool, .cast, .front { will-change: opacity, transform; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <radialGradient id="glass" cx="34%" cy="20%" r="82%">
+          <stop offset="0" style="stop-color:var(--g1)"/>
+          <stop offset="0.52" style="stop-color:var(--g2)"/>
+          <stop offset="1" style="stop-color:var(--g3)"/>
+        </radialGradient>
+        <radialGradient id="lobeg" cx="50%" cy="50%" r="50%">
+          <stop offset="0" style="stop-color:var(--core)" stop-opacity="0.95"/>
+          <stop offset="0.28" style="stop-color:var(--mid)" stop-opacity="0.82"/>
+          <stop offset="0.70" style="stop-color:var(--mid)" stop-opacity="0.30"/>
+          <stop offset="1" style="stop-color:var(--mid)" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="airg" cx="50%" cy="50%" r="50%">
+          <stop offset="0" style="stop-color:var(--spill)" stop-opacity="0.55"/>
+          <stop offset="0.45" style="stop-color:var(--spill)" stop-opacity="0.22"/>
+          <stop offset="1" style="stop-color:var(--spill)" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="dish" cx="42%" cy="34%" r="70%">
+          <stop offset="0" stop-color="#fffdf4"/><stop offset="0.35" stop-color="#e2ded0"/>
+          <stop offset="0.75" stop-color="#9a958a"/><stop offset="1" stop-color="#4e4a44"/>
+        </radialGradient>
+        <radialGradient id="cup" cx="45%" cy="30%" r="75%">
+          <stop offset="0" style="stop-color:var(--inner)"/><stop offset="1" stop-color="#1a0503"/>
+        </radialGradient>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f6f7f8"/><stop offset="0.20" stop-color="#cfd4d9"/>
+          <stop offset="0.46" stop-color="#6c7178"/><stop offset="0.50" stop-color="#2b2e33"/>
+          <stop offset="0.545" stop-color="#b9bfc5"/><stop offset="0.72" stop-color="#e8ebee"/>
+          <stop offset="0.88" stop-color="#8c9198"/><stop offset="1" stop-color="#3a3d42"/>
+        </linearGradient>
+        <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fdfdfe"/><stop offset="0.28" stop-color="#c3c8ce"/>
+          <stop offset="0.55" stop-color="#585d64"/><stop offset="0.72" stop-color="#d4d8dd"/>
+          <stop offset="1" stop-color="#7d8288"/>
+        </linearGradient>
+        <linearGradient id="cap" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#d8dce0"/><stop offset="0.5" stop-color="#8b9097"/><stop offset="1" stop-color="#43474d"/>
+        </linearGradient>
+        <linearGradient id="spec" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+          <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.07"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <clipPath id="domeclip"><path d="${domePath()}"/></clipPath>
+        <clipPath id="baseclip"><path d="${SKIRT}"/><path d="${RING}"/></clipPath>
+        <filter id="b3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="b6" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+        <filter id="b10" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="10"/></filter>
+      </defs>
+
+      <!-- the beam in the air, and its pool on the panel -->
+      <ellipse class="pool" cx="${CX}" cy="208" rx="150" ry="30" fill="url(#airg)" opacity="0" filter="url(#b10)"/>
+      <ellipse class="air" cx="${CX}" cy="100" rx="142" ry="120" fill="url(#airg)" opacity="0" filter="url(#b10)"/>
+
+      <!-- contact + ambient shadow under the base -->
+      <ellipse cx="104" cy="212" rx="96" ry="12" fill="#000" opacity="0.5" filter="url(#b6)"/>
+      <ellipse cx="102" cy="209" rx="86" ry="5" fill="#000" opacity="0.65" filter="url(#b3)"/>
+
+      <!-- ============ the dome and what turns inside it ============ -->
+      <g clip-path="url(#domeclip)">
+        <!-- inside of the far side of the glass -->
+        <rect x="0" y="0" width="${W}" height="${H}" fill="#150303"/>
+        <!-- carrier shaft and motor can -->
+        <rect x="96" y="60" width="8" height="96" fill="#2a0e0b"/>
+        <ellipse cx="${CX}" cy="152" rx="46" ry="12" fill="#240907"/>
+        <ellipse cx="${CX}" cy="146" rx="40" ry="9" fill="#37100c"/>
+        <!-- two sealed-beam lamps in parabolic reflectors, back to back -->
+        <g class="refl" transform="translate(140 ${RY})">
+          <ellipse cx="0" cy="0" rx="27" ry="24" fill="url(#cup)"/>
+          <ellipse class="front" cx="0" cy="0" rx="26" ry="23" fill="url(#dish)" opacity="0"/>
+          <ellipse class="front" cx="0" cy="0" rx="12" ry="11" fill="var(--core)" opacity="0"/>
+          <ellipse cx="0" cy="0" rx="27" ry="24" fill="none" stroke="#120302" stroke-width="1.4" stroke-opacity="0.8"/>
+        </g>
+        <g class="refl" transform="translate(60 ${RY})">
+          <ellipse cx="0" cy="0" rx="27" ry="24" fill="url(#cup)"/>
+          <ellipse class="front" cx="0" cy="0" rx="26" ry="23" fill="url(#dish)" opacity="0"/>
+          <ellipse class="front" cx="0" cy="0" rx="12" ry="11" fill="var(--core)" opacity="0"/>
+          <ellipse cx="0" cy="0" rx="27" ry="24" fill="none" stroke="#120302" stroke-width="1.4" stroke-opacity="0.8"/>
+        </g>
+        <!-- the glass itself: translucent, so the shapes above stay visible through it -->
+        <path d="${domePath()}" fill="url(#glass)" opacity="0.76"/>
+        <!-- the lit lobe, one per reflector -->
+        <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="102" rx="54" ry="66" fill="url(#lobeg)" filter="url(#b6)"/></g>
+        <g class="lobe" opacity="0"><ellipse cx="${CX}" cy="102" rx="54" ry="66" fill="url(#lobeg)" filter="url(#b6)"/></g>
+        <!-- the flutes, over the lobe: they chop it into bars -->
+        <g>${ribs()}</g>
+        <!-- the glass gets darker at the foot, where the ring shades it -->
+        <rect x="0" y="130" width="${W}" height="34" fill="#150303" opacity="0.45" filter="url(#b6)"/>
+        <!-- one specular from the light above-left, shaped by the room, not by the dome -->
+        <ellipse cx="60" cy="62" rx="26" ry="40" fill="url(#spec)" transform="rotate(-18 60 62)"/>
+        <ellipse cx="47" cy="52" rx="5" ry="11" fill="#fff" opacity="0.5" transform="rotate(-20 47 52)"/>
+      </g>
+      <!-- rim of the glass -->
+      <path d="${domePath()}" fill="none" stroke="#1a0404" stroke-opacity="0.85" stroke-width="1.2"/>
+      <path d="M ${CX - R} ${BASE} L ${(CX - rAt(0.5)).toFixed(2)} ${yAt(0.5).toFixed(2)}" fill="none" stroke="#ffd9cf" stroke-opacity="0.18" stroke-width="1.4"/>
+
+      <!-- the cap: a small flat disc with a screw -->
+      <ellipse cx="${CX}" cy="${TOP}" rx="${RCAP}" ry="${(RCAP * 0.42).toFixed(1)}" fill="url(#cap)" stroke="#2a2d31" stroke-width="0.7"/>
+      <ellipse cx="${CX}" cy="${TOP - 0.7}" rx="${RCAP - 4}" ry="${(RCAP * 0.28).toFixed(1)}" fill="#b9bec4" opacity="0.5"/>
+      <circle cx="${CX}" cy="${TOP}" r="2.4" fill="#5e6369" stroke="#24272b" stroke-width="0.5"/>
+      <rect x="${CX - 1.9}" y="${TOP - 0.45}" width="3.8" height="0.9" fill="#1b1e21" transform="rotate(22 ${CX} ${TOP})"/>
+
+      <!-- ============ the chrome base ============ -->
+      <path d="${SKIRT}" fill="url(#chrome)" stroke="#23262a" stroke-width="0.8"/>
+      <path d="${RING}" fill="url(#ring)" stroke="#23262a" stroke-width="0.7"/>
+      <g clip-path="url(#baseclip)">
+        ${knurl()}
+        <!-- the ground reflected in the flared skirt -->
+        <path d="M 4 196 L 196 196 L 196 210 L 4 210 Z" fill="#1b1e22" opacity="0.35"/>
+        <!-- the beam washing across the chrome -->
+        <rect class="cast" x="0" y="150" width="${W}" height="66" fill="var(--spill)" opacity="0"/>
+      </g>
+      <path d="M 16 157 L 184 157" stroke="#ffffff" stroke-opacity="0.75" stroke-width="1"/>
+      <path d="M 16 176 L 184 176" stroke="#0e1114" stroke-opacity="0.65" stroke-width="1"/>
+      <path d="M 5 208 L 195 208" stroke="#ffffff" stroke-opacity="0.25" stroke-width="0.8"/>
+      <text class="badge" x="${CX}" y="190">BEACON RAY</text>
+      <text class="badge2" x="${CX}" y="197">MODEL 17</text>
+    </svg>
+  </div>`;
+
+  class SkBeaconRay extends HTMLElement {
+    static get observedAttributes() { return ["value", "rpm", "color", "phase", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._run = false; this._rpm = 90; this._phase = 0; this._scale = 1;
+      this._raf = 0; this._t0 = 0; this._a = 0.7;
+      const sr = this.shadowRoot;
+      this._wrap = sr.querySelector(".wrap");
+      this._refl = sr.querySelectorAll(".refl");
+      this._lobe = sr.querySelectorAll(".lobe");
+      this._front = [this._refl[0].querySelectorAll(".front"), this._refl[1].querySelectorAll(".front")];
+      this._air = sr.querySelector(".air");
+      this._pool = sr.querySelector(".pool");
+      this._cast = sr.querySelector(".cast");
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._apply();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._apply(); }
+
+    get value() { return this._run; }
+    set value(v) {
+      const on = (v === true || v === 1 || v === "true" || v === "1" || v === "on");
+      if (on === this._run) return;
+      this._run = on; this.setAttribute("value", on ? "true" : "false");
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      const raw = (this.getAttribute("value") || "").toLowerCase();
+      this._run = raw === "true" || raw === "1" || raw === "on";
+      this._rpm = Math.max(0, num("rpm", 90));
+      this._phase = num("phase", 0);
+      this._scale = Math.max(0.2, num("scale", 1));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      const col = this.getAttribute("color") || "red";
+      this.setAttribute("aria-label", this._run
+        ? col + " rotating beacon, running at " + Math.round(this._rpm) + " rpm"
+        : col + " rotating beacon, off");
+    }
+    _apply() {
+      if (this._run && this._rpm > 0) { if (!this._raf) { this._t0 = 0; this._raf = requestAnimationFrame(this._tick); } }
+      else { cancelAnimationFrame(this._raf); this._raf = 0; this._paint(this._run ? this._a : 0.62, this._run ? 1 : 0); }
+    }
+    _tick(now) {
+      if (!this._t0) this._t0 = now;
+      this._a = this._phase * Math.PI / 180 + ((now - this._t0) / 1000) * (this._rpm / 60) * 2 * Math.PI;
+      this._paint(this._a, 1);
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    // lit: 1 while the lamps are on, 0 when the beacon is off
+    _paint(a, lit) {
+      let B = 0;
+      for (let k = 0; k < 2; k++) {
+        const ak = a + k * Math.PI, c = Math.cos(ak), s = Math.sin(ak);
+        const x = CX + RC * s;
+        this._refl[k].setAttribute("transform", "translate(" + x.toFixed(2) + " " + RY + ") scale(" + Math.max(0.04, Math.abs(c)).toFixed(3) + " 1)");
+        const f = c > 0 ? c * c * lit : 0;              // cos² of the angle to the viewer
+        const fs = f.toFixed(3);
+        this._front[k][0].setAttribute("opacity", (f * 0.92).toFixed(3));
+        this._front[k][1].setAttribute("opacity", fs);
+        this._lobe[k].setAttribute("opacity", fs);
+        this._lobe[k].setAttribute("transform", "translate(" + ((x - CX) * 1.08).toFixed(2) + " 0)");
+        if (f > B) B = f;
+      }
+      this._air.setAttribute("opacity", (0.85 * B).toFixed(3));
+      this._pool.setAttribute("opacity", (0.7 * B).toFixed(3));
+      this._cast.setAttribute("opacity", (0.34 * B).toFixed(3));
+    }
+  }
+  customElements.define("sk-beacon-beacon-ray", SkBeaconRay);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

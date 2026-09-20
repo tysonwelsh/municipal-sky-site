@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boss compact-pedal CHECK LED — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "led-boss-pedal-check",
+  "element": "sk-led-boss-check",
+  "name": "Boss compact-pedal CHECK LED",
+  "kind": "output",
+  "code": "H4",
+  "type": "LED indicator",
+  "source": "The red 5 mm CHECK LED in its black nylon bezel above the treadle of a Boss compact pedal (DS-1, OD-1, CE-2, DD-3)",
+  "era": "1970s",
+  "origin": "Japan",
+  "materials": ["enamelled diecast aluminium", "black nylon bezel", "diffused red epoxy"],
+  "tags": ["guitar pedal", "stompbox", "led", "indicator", "battery", "orange enamel"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "battery", "scale"],
+  "events": [],
+  "size": { "w": 40, "h": 48 },
+  "notes": "Three instances: off, lit, and lit on a dying 9 V battery (battery=0.4) — dimmer, still red."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="steel">
+    <sk-led-boss-check value="false" scale="2.6"></sk-led-boss-check>
+    <sk-led-boss-check value="true" scale="2.6"></sk-led-boss-check>
+    <sk-led-boss-check value="true" battery="0.4" scale="2.6"></sk-led-boss-check>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Every <b>Boss compact pedal</b> since the 1977 OD-1 carries the same lamp: one 5 mm diffused red LED
+  pushed through a black nylon clip bezel in the sloping top of the enamelled diecast box, just above the
+  treadle, with <b>CHECK</b> screened beside it. It is a battery light as much as a bypass light — Boss's
+  instruction is to watch it and change the 9 V when it goes dim. This one sits in DS-1 orange.</p>
+  <p><b>The tells kept here:</b> the dome is <i>diffused</i>, so unlit it is a dull red plastic disc and never
+  black; the bezel is flat matte nylon with a fine mould seam at six o'clock and only a whisper of a rim
+  highlight at the top-left; lit, the dome glows evenly from one hot spot at eleven o'clock with a darker ring
+  at its base where the bezel shades it, and the halo stains the orange enamel a hotter red; the cast box's
+  fine orange-peel texture runs under everything, with a boot scuff and one chipped edge where the enamel has
+  been kicked off. Switching is instant, as an LED is, with a single frame of bloom; <code>battery</code>
+  scales the brightness from 1 down to 0.35 <i>without</i> shifting the hue.</p>
+  <p><b>Left out:</b> the pedal's screened name plate, the treadle and its rubber pad, the thumbscrew — this is
+  a crop of the box around the lamp, which is what a host page wants to paste next to something else.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-led-boss-check> — Boss compact-pedal red 5 mm CHECK LED in a black bezel ====
+   attributes: value (boolean: "" | "true" | "false") · battery (0…1, dims a dying 9 V) · scale
+   no events (an output). set .value or the attribute.
+   self-contained: paste this block into any page and use <sk-led-boss-check value="true"></sk-led-boss-check> */
+(function () {
+  if (customElements.get("sk-led-boss-check")) return;
+  const W = 40, H = 48, CX = 20, CY = 19;
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; line-height: 1; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .legend { font-size: 6.5px; font-weight: 600; letter-spacing: 0.06em; text-anchor: middle; fill: #2a1a12; fill-opacity: 0.9; }
+    .lit, .halo { opacity: 0; }
+    .flash { opacity: 0; transform-box: view-box; transform-origin: ${CX}px ${CY}px; }
+    .wrap.on .flash { animation: sk-bloom 150ms ease-out 1; }
+    @keyframes sk-bloom { 0% { opacity: 0.85; transform: scale(1.28); } 100% { opacity: 0; transform: scale(1); } }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="enamel" x1="0.05" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stop-color="#ff9150"/><stop offset="0.3" stop-color="#f4762a"/>
+          <stop offset="0.66" stop-color="#ee6a1c"/><stop offset="1" stop-color="#d1551a"/>
+        </linearGradient>
+        <radialGradient id="vig" cx="38%" cy="30%" r="82%">
+          <stop offset="0.45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#6b2503" stop-opacity="0.32"/>
+        </radialGradient>
+        <linearGradient id="bezel" x1="0.1" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#3a3a3a"/><stop offset="0.35" stop-color="#1d1d1d"/>
+          <stop offset="0.72" stop-color="#101010"/><stop offset="1" stop-color="#050505"/>
+        </linearGradient>
+        <radialGradient id="domeOff" cx="36%" cy="29%" r="80%">
+          <stop offset="0" stop-color="#a03a2e"/><stop offset="0.42" stop-color="#7e221b"/>
+          <stop offset="0.78" stop-color="#5e1611"/><stop offset="1" stop-color="#420f0c"/>
+        </radialGradient>
+        <radialGradient id="domeLit" cx="36%" cy="29%" r="82%">
+          <stop offset="0" stop-color="#ffd8d0"/><stop offset="0.16" stop-color="#ff8172"/>
+          <stop offset="0.44" stop-color="#ff4a3c"/><stop offset="0.8" stop-color="#ff1a12"/>
+          <stop offset="1" stop-color="#d81109"/>
+        </radialGradient>
+        <radialGradient id="domeShade" cx="38%" cy="27%" r="78%">
+          <stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+        </radialGradient>
+        <filter id="peel" x="-2%" y="-2%" width="104%" height="104%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="3" seed="11" result="n"/>
+          <feColorMatrix in="n" type="saturate" values="0" result="g"/>
+          <feComponentTransfer in="g"><feFuncA type="linear" slope="0.6" intercept="0"/></feComponentTransfer>
+        </filter>
+        <filter id="b05" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.45"/></filter>
+        <filter id="b12" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1"/></filter>
+        <filter id="b18" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.8"/></filter>
+        <filter id="b30" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+        <clipPath id="plate"><rect x="0.5" y="0.5" width="39" height="47" rx="4"/></clipPath>
+      </defs>
+
+      <!-- the enamelled box, sitting on whatever it is pasted onto -->
+      <rect x="2.2" y="3.4" width="36" height="44.6" rx="4.5" fill="#000" opacity="0.42" filter="url(#b18)"/>
+      <g style="isolation: isolate">
+        <rect x="0.5" y="0.5" width="39" height="47" rx="4" fill="url(#enamel)"/>
+        <g clip-path="url(#plate)">
+          <!-- fine cast orange-peel -->
+          <rect x="0" y="0" width="40" height="48" filter="url(#peel)" opacity="0.5" style="mix-blend-mode: overlay"/>
+          <rect x="0" y="0" width="40" height="48" fill="url(#vig)"/>
+          <!-- where boots land: a soft scuff and a chipped edge showing bare alloy -->
+          <ellipse cx="29" cy="44" rx="11" ry="3.4" fill="#fff" opacity="0.09" filter="url(#b12)" transform="rotate(-9 29 44)"/>
+          <path d="M 7.6 47.6 L 11.2 47.6 L 10.2 45.9 L 8.4 46.2 Z" fill="#cfc6b6" opacity="0.85"/>
+          <path d="M 7.6 47.6 L 11.2 47.6 L 10.2 45.9" fill="none" stroke="#7a3a12" stroke-width="0.4" stroke-opacity="0.7"/>
+          <!-- the lamp stains the enamel -->
+          <circle class="halo" cx="${CX}" cy="${CY}" r="15.5" fill="#ff2a1e" filter="url(#b30)"/>
+          <circle class="flash" cx="${CX}" cy="${CY}" r="16" fill="#ff7a5c" filter="url(#b30)"/>
+        </g>
+        <!-- lit edge above-left, dark edge below-right -->
+        <path d="M 1 14 L 1 5 Q 1 1 5 1 L 20 1" fill="none" stroke="#ffd0a8" stroke-opacity="0.45" stroke-width="0.8"/>
+        <path d="M 39 34 L 39 43 Q 39 47 35 47 L 20 47" fill="none" stroke="#7c3005" stroke-opacity="0.45" stroke-width="0.8"/>
+      </g>
+
+      <!-- the black nylon clip bezel -->
+      <ellipse cx="21" cy="20.4" rx="14.6" ry="14.2" fill="#3a1502" opacity="0.5" filter="url(#b12)"/>
+      <circle cx="${CX}" cy="${CY}" r="14" fill="url(#bezel)"/>
+      <path d="M 9.6 10.1 A 14 14 0 0 1 28.6 8.2" fill="none" stroke="#454545" stroke-width="0.9" stroke-opacity="0.85" stroke-linecap="round"/>
+      <path d="M 8.2 27.2 A 14 14 0 0 0 26 32.4" fill="none" stroke="#2a2a2a" stroke-width="0.7" stroke-opacity="0.5" stroke-linecap="round"/>
+      <circle cx="${CX}" cy="${CY}" r="14" fill="none" stroke="#000" stroke-width="0.6" stroke-opacity="0.8"/>
+      <!-- the mould seam of the clip, at six o'clock -->
+      <path d="M 19.5 32.98 L 19.5 28.6" stroke="#000" stroke-width="0.55" stroke-opacity="0.9"/>
+      <path d="M 20.15 32.95 L 20.15 28.6" stroke="#4a4a4a" stroke-width="0.4" stroke-opacity="0.7"/>
+
+      <!-- the hole the dome sits in -->
+      <circle cx="${CX}" cy="${CY}" r="9.7" fill="#090504"/>
+      <circle cx="${CX}" cy="${CY}" r="9.7" fill="none" stroke="#000" stroke-width="1.8" stroke-opacity="0.85" filter="url(#b05)"/>
+
+      <!-- diffused red epoxy dome: dull red when off, evenly glowing when lit -->
+      <circle cx="${CX}" cy="${CY}" r="9" fill="url(#domeOff)"/>
+      <g class="lit">
+        <circle cx="${CX}" cy="${CY}" r="10.6" fill="#ff3a2c" opacity="0.5" filter="url(#b12)"/>
+        <circle cx="${CX}" cy="${CY}" r="9" fill="url(#domeLit)"/>
+      </g>
+      <circle cx="${CX}" cy="${CY}" r="9" fill="url(#domeShade)"/>
+      <path d="M 12.2 24.4 A 9 9 0 0 0 27.6 24.6" fill="none" stroke="#000" stroke-width="1.6" stroke-opacity="0.32" filter="url(#b05)"/>
+      <circle cx="${CX}" cy="${CY}" r="9" fill="none" stroke="#b1564b" stroke-width="0.7" stroke-opacity="0.55"/>
+      <ellipse cx="16.5" cy="15.2" rx="2.7" ry="1.8" fill="#fff" opacity="0.3" filter="url(#b05)" transform="rotate(-38 16.5 15.2)"/>
+
+      <text class="legend" x="${CX}" y="41.6">CHECK</text>
+    </svg>
+  </div>`;
+
+  const truthy = v => v === true || v === "" || v === "true" || v === "on" || v === "1" || v === 1;
+
+  class SkLedBossCheck extends HTMLElement {
+    static get observedAttributes() { return ["value", "battery", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = false; this._bat = 1; this._scale = 1; this._raf = 0;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._litG = this.shadowRoot.querySelector(".lit");
+      this._halo = this.shadowRoot.querySelector(".halo");
+    }
+    connectedCallback() {
+      this.setAttribute("role", "meter");
+      this.setAttribute("aria-valuemin", "0");
+      this.setAttribute("aria-valuemax", "1");
+      if (!this.hasAttribute("aria-label")) this.setAttribute("aria-label", "CHECK lamp");
+      this._read(); this._paint(true);
+    }
+    disconnectedCallback() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); this._paint(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      const b = truthy(v);
+      this._v = b;
+      this.setAttribute("value", b ? "true" : "false");   // reflects; never emits
+      this._paint();
+    }
+    get battery() { return this._bat; }
+    set battery(v) { this.setAttribute("battery", String(v)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._bat = Math.max(0, Math.min(1, num("battery", 1)));
+      this._v = this.hasAttribute("value") ? truthy(this.getAttribute("value")) : this._v;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    // instant, as an LED is; one frame of bloom on the way up; battery only scales brightness
+    _paint(initial) {
+      const lit = this._v ? (0.35 + 0.65 * this._bat) : 0;
+      const was = this._wrap.classList.contains("on");
+      this._litG.style.opacity = String(lit);
+      this._halo.style.opacity = String(lit * 0.55);
+      if (this._v !== was) {
+        if (initial) this._wrap.style.animation = "none";
+        this._wrap.classList.toggle("on", this._v);
+        if (initial) { void this._wrap.offsetWidth; this._wrap.style.animation = ""; }
+      }
+      this.setAttribute("aria-valuenow", this._v ? "1" : "0");
+      this.setAttribute("aria-valuetext", this._v ? (this._bat < 0.6 ? "on, battery low" : "on") : "off");
+    }
+  }
+  customElements.define("sk-led-boss-check", SkLedBossCheck);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

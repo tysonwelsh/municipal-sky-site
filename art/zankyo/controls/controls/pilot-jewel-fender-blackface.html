@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fender blackface jewel pilot lamp — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "pilot-jewel-fender-blackface",
+  "element": "sk-pilot-jewel-fender",
+  "name": "Fender blackface jewel pilot lamp",
+  "kind": "output",
+  "code": "H1",
+  "type": "Pilot lamp with jewel lens",
+  "source": "The faceted red jewel over a #47 bayonet lamp in a fluted chrome bezel, as on a blackface Fender Deluxe Reverb, Twin Reverb or Bassman",
+  "era": "1960s",
+  "origin": "USA",
+  "materials": ["chrome-plated brass", "faceted acrylic jewel", "incandescent lamp", "black panel"],
+  "tags": ["amplifier", "pilot lamp", "jewel", "incandescent", "chrome bezel", "faceted"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "color", "label", "flicker", "scale"],
+  "events": [],
+  "size": { "w": 64, "h": 80 },
+  "notes": "Three lamps: red lit, red dark with the bulb and filament visible inside the jewel, and a smaller amber one lit. Set value to light them; they warm up over 140 ms and cool through orange over 320 ms."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-pilot-jewel-fender value="true" color="red" label="PILOT" scale="2.6"></sk-pilot-jewel-fender>
+    <sk-pilot-jewel-fender value="false" color="red" label="PILOT" scale="2.6"></sk-pilot-jewel-fender>
+    <sk-pilot-jewel-fender value="true" color="amber" label="STANDBY" scale="2"></sk-pilot-jewel-fender>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>On a blackface <b>Fender</b> — a Deluxe Reverb, a Twin, a Bassman — the pilot lamp is a one-inch faceted
+  acrylic jewel screwed into a fluted chrome bezel, with a plain <b>#47 bayonet bulb</b> behind it. It stands
+  well proud of the black tolex-covered panel, next to the power switch, and it is the one bright thing on the
+  whole front of the amplifier.</p>
+  <p><b>The tells kept here:</b> the dome is cut in three rings of facets — eight trapezoids outside, eight
+  more inside them, eight triangles meeting at the centre — each one a flat plane with its own shading, so the
+  lit lamp reads as a <i>starburst</i> and not a smooth glow. The brightest facets are the ones nearest the
+  filament, which sits low and to the left, never in the middle of the dome; the upper facets run cooler and
+  dimmer. Unlit, the jewel is deep wine red and you can see the pale bulb glass and its little hairpin filament
+  through the centre facets. The bezel's twenty-four flutes are shaded one by one against a single light
+  above-left, it casts a crescent shadow down and right onto the panel, and when the lamp is on the flutes
+  nearest the jewel pick up a pink tint and a soft red halo spreads onto the panel. The acrylic is yellowed and
+  has two hairline crazing cracks on the outer facets, and one white specular glint sits at eleven o'clock
+  whether the lamp is lit or not. It is an incandescent: 140 ms to come up, 320 ms to die, going orange on
+  the way down.</p>
+  <p><b>Left out:</b> the threaded barrel and spring clip behind the panel, the bulb's bayonet pins, and the
+  amp's own script logo. <code>color</code> also accepts <code>blue</code> and <code>green</code>, and
+  <code>flicker</code> adds the 8 Hz shimmer of a tired lamp.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-pilot-jewel-fender> — faceted jewel pilot lamp in a fluted chrome bezel ====
+   attributes: value (boolean) · color (red|amber|blue|green) · label · flicker · scale
+   no events (an output). set .value or the attribute; the lamp has incandescent ballistics.
+   self-contained: paste this block into any page and use <sk-pilot-jewel-fender value="true"></sk-pilot-jewel-fender> */
+(function () {
+  if (customElements.get("sk-pilot-jewel-fender")) return;
+  var W = 64, H = 80, CX = 32, CY = 32, RB = 28, RJ = 22;
+  var FX = 28.2, FY = 38.6;                       // the filament: low and off-centre left
+
+  function pt(r, a) { var t = a * Math.PI / 180; return [CX + r * Math.sin(t), CY - r * Math.cos(t)]; }
+  function f2(n) { return Math.round(n * 100) / 100; }
+  function hx(c) { return [parseInt(c.substr(1, 2), 16), parseInt(c.substr(3, 2), 16), parseInt(c.substr(5, 2), 16)]; }
+  function mixv(a, b, t) { t = Math.max(0, Math.min(1, t)); return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function rgb(v) { return "rgb(" + Math.round(v[0]) + "," + Math.round(v[1]) + "," + Math.round(v[2]) + ")"; }
+  function nrm(v) { var m = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) || 1; return [v[0] / m, v[1] / m, v[2] / m]; }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
+  var L = nrm([-0.50, -0.58, 0.64]);              // one light, above-left, toward the viewer
+  var GB = nrm([0.25, 0.90, 0.32]);               // bounce from below-right
+
+  // ---- the faceted dome: 8 outer trapezoids, 8 middle, 8 centre triangles ----
+  var RINGS = [
+    { ro: RJ,   ri: 15.2, n: 8, off: 22.5, tilt: 57, arc: 1 },
+    { ro: 15.2, ri: 8.2,  n: 8, off: 0,    tilt: 33, arc: 0 },
+    { ro: 8.2,  ri: 0,    n: 8, off: 22.5, tilt: 13, arc: 0 }
+  ];
+  var FACETS = [];
+  RINGS.forEach(function (R) {
+    var step = 360 / R.n;
+    for (var k = 0; k < R.n; k++) {
+      var a0 = R.off + k * step, a1 = a0 + step, am = a0 + step / 2;
+      var p0 = pt(R.ro, a0), p1 = pt(R.ro, a1), p2 = pt(R.ri, a1), p3 = pt(R.ri, a0), d;
+      if (R.arc) d = "M " + f2(p0[0]) + " " + f2(p0[1]) + " A " + R.ro + " " + R.ro + " 0 0 1 " + f2(p1[0]) + " " + f2(p1[1]) + " L " + f2(p2[0]) + " " + f2(p2[1]) + " L " + f2(p3[0]) + " " + f2(p3[1]) + " Z";
+      else if (R.ri < 0.01) d = "M " + f2(p0[0]) + " " + f2(p0[1]) + " L " + f2(p1[0]) + " " + f2(p1[1]) + " L " + CX + " " + CY + " Z";
+      else d = "M " + f2(p0[0]) + " " + f2(p0[1]) + " L " + f2(p1[0]) + " " + f2(p1[1]) + " L " + f2(p2[0]) + " " + f2(p2[1]) + " L " + f2(p3[0]) + " " + f2(p3[1]) + " Z";
+      var t = R.tilt * Math.PI / 180, ar = am * Math.PI / 180;
+      var n = [Math.sin(t) * Math.sin(ar), -Math.sin(t) * Math.cos(ar), Math.cos(t)];
+      var rc = R.ri < 0.01 ? R.ro * 0.48 : (R.ro + R.ri) / 2;
+      var c = pt(rc, am);
+      FACETS.push({ d: d, n: n, cx: c[0], cy: c[1] });
+    }
+  });
+  var imax = 0;
+  FACETS.forEach(function (f) {
+    var dd = Math.sqrt((f.cx - FX) * (f.cx - FX) + (f.cy - FY) * (f.cy - FY));
+    f.i = (1 / (1 + Math.pow(dd / 10.5, 1.95))) * (0.66 + 0.34 * f.n[2]);
+    f.dl = Math.max(0, dot(f.n, L));
+    f.gl = Math.max(0, dot(f.n, GB));
+    f.up = Math.max(0, -f.n[1]);                  // upper facets, for the cooler cast
+    if (f.i > imax) imax = f.i;
+  });
+  FACETS.forEach(function (f) { f.i = f.i / imax; });
+
+  // ---- the bezel: 24 radial flutes, each shaded as two half-planes ----
+  var CHROME_LO = hx("#2b2b2d"), CHROME_HI = hx("#fdfdfd"), CHROME_GB = hx("#cdd1d6");
+  var flutes = "", NF = 24, RI = RJ + 1.3;
+  for (var k = 0; k < NF; k++) {
+    var b0 = k * 360 / NF, b2 = b0 + 360 / NF, bm = (b0 + b2) / 2;
+    [[b0, bm, -1], [bm, b2, 1]].forEach(function (h) {
+      var a0 = h[0], a1 = h[1], am = (a0 + a1) / 2, sg = h[2];
+      var q0 = pt(RB, a0), q1 = pt(RB, a1), q2 = pt(RI, a1), q3 = pt(RI, a0);
+      var d = "M " + f2(q0[0]) + " " + f2(q0[1]) + " A " + RB + " " + RB + " 0 0 1 " + f2(q1[0]) + " " + f2(q1[1]) +
+              " L " + f2(q2[0]) + " " + f2(q2[1]) + " A " + RI + " " + RI + " 0 0 0 " + f2(q3[0]) + " " + f2(q3[1]) + " Z";
+      var ar = am * Math.PI / 180;
+      var rad = [Math.sin(ar), -Math.cos(ar), 0], tan = [Math.cos(ar), Math.sin(ar), 0];
+      var n = nrm([0.78 * rad[0] + sg * 0.26 * tan[0], 0.78 * rad[1] + sg * 0.26 * tan[1], 0.58]);
+      var v = dot(n, L);
+      var c = mixv(CHROME_LO, CHROME_HI, Math.pow(Math.max(0, Math.min(1, (v + 0.22) / 0.98)), 0.78));
+      c = mixv(c, CHROME_GB, Math.max(0, dot(n, GB)) * 0.42);
+      flutes += '<path d="' + d + '" fill="' + rgb(c) + '"/>';
+    });
+  }
+
+  var PAL = {
+    red:   { off: ["#40080a", "#8a2020"], deep: "#a5100a", on: ["#ff3b22", "#ffb4a0"], hot: "#ffdcc4", cool: "#b81d2c", halo: "255,70,40",  spill: "#ff6a48" },
+    amber: { off: ["#33200a", "#8a5a12"], deep: "#a86408", on: ["#ff9a10", "#ffe2a6"], hot: "#fff0cf", cool: "#b3760f", halo: "255,170,30", spill: "#ffb84a" },
+    blue:  { off: ["#0b1734", "#22407e"], deep: "#14379c", on: ["#3f8bff", "#cadcff"], hot: "#d8e8ff", cool: "#2a52c8", halo: "70,140,255", spill: "#6aa5ff" },
+    green: { off: ["#082c1a", "#1a6b3c"], deep: "#0a7a3a", on: ["#2bf07a", "#ccffdd"], hot: "#ddffe8", cool: "#14a058", halo: "50,235,120", spill: "#5bff9c" }
+  };
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML =
+  '<style>' +
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; --b: 0; --hot: 0; }' +
+  ':host([hidden]) { display: none; }' +
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }' +
+  'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }' +
+  '.lit { opacity: var(--b); }' +
+  '.hot { opacity: var(--hot); }' +
+  '.halo { opacity: var(--b); }' +
+  'text.label { font-family: "Josefin Sans", "Futura", "Century Gothic", "Trebuchet MS", sans-serif; font-weight: 600;' +
+  '  font-size: 8px; letter-spacing: 0.12em; text-anchor: middle; fill: #e8e4d8; }' +
+  '</style>' +
+  '<div class="wrap"><svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
+  '<defs>' +
+    '<radialGradient id="halo" cx="50%" cy="52%" r="50%">' +
+      '<stop offset="0" stop-color="rgba(0,0,0,0)" class="h0"/><stop offset="0.52" stop-color="rgba(0,0,0,0)" class="h1"/><stop offset="1" stop-color="rgba(0,0,0,0)" class="h2"/>' +
+    '</radialGradient>' +
+    '<linearGradient id="chrome" x1="0.18" y1="0" x2="0.72" y2="1">' +
+      '<stop offset="0" stop-color="#fafafa"/><stop offset="0.36" stop-color="#d2d2d4"/><stop offset="0.46" stop-color="#8f9094"/>' +
+      '<stop offset="0.5" stop-color="#3a3b3e"/><stop offset="0.56" stop-color="#6e7074"/><stop offset="0.82" stop-color="#a9abae"/><stop offset="1" stop-color="#5c5e61"/>' +
+    '</linearGradient>' +
+    '<radialGradient id="well" cx="32%" cy="26%" r="78%">' +
+      '<stop offset="0.62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.72"/>' +
+    '</radialGradient>' +
+    '<radialGradient id="bulb" cx="42%" cy="38%" r="62%">' +
+      '<stop offset="0" stop-color="#d8d2c6" stop-opacity="0.5"/><stop offset="0.7" stop-color="#8f877a" stop-opacity="0.22"/><stop offset="1" stop-color="#4a443c" stop-opacity="0"/>' +
+    '</radialGradient>' +
+    '<filter id="b1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.8"/></filter>' +
+    '<filter id="b2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>' +
+    '<filter id="b4" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4"/></filter>' +
+  '</defs>' +
+
+  // the red halo thrown on the panel
+  '<circle class="halo" cx="' + CX + '" cy="' + (CY + 1) + '" r="36" fill="url(#halo)"/>' +
+  // the bezel stands proud: a crescent shadow down-right, soft then tight
+  '<circle cx="' + (CX + 4.5) + '" cy="' + (CY + 5.5) + '" r="' + RB + '" fill="#000" opacity="0.5" filter="url(#b4)"/>' +
+  '<circle cx="' + (CX + 2) + '" cy="' + (CY + 2.6) + '" r="' + (RB - 0.5) + '" fill="#000" opacity="0.62" filter="url(#b2)"/>' +
+  // bezel body, then the flutes on top of it
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + RB + '" fill="url(#chrome)"/>' +
+  '<g opacity="0.8">' + flutes + '</g>' +
+  // outer edge: a dark hairline and a lit chamfer top-left
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + (RB - 0.35) + '" fill="none" stroke="#0e0e10" stroke-opacity="0.75" stroke-width="0.7"/>' +
+  '<path d="M ' + f2(pt(RB - 0.9, -78)[0]) + ' ' + f2(pt(RB - 0.9, -78)[1]) + ' A ' + (RB - 0.9) + ' ' + (RB - 0.9) + ' 0 0 1 ' + f2(pt(RB - 0.9, -6)[0]) + ' ' + f2(pt(RB - 0.9, -6)[1]) + '" fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="0.8"/>' +
+  // the pink spill the lit jewel throws onto the nearest flutes
+  '<circle class="spill" cx="' + CX + '" cy="' + (CY + 1) + '" r="' + (RJ + 3.4) + '" fill="none" stroke="#ff6a48" stroke-width="3.4" opacity="0" filter="url(#b2)"/>' +
+  // the inner lip of the bezel and the well the jewel sits in
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + (RJ + 0.6) + '" fill="none" stroke="#151517" stroke-width="1.1" stroke-opacity="0.9"/>' +
+  '<path d="M ' + f2(pt(RJ + 0.9, 105)[0]) + ' ' + f2(pt(RJ + 0.9, 105)[1]) + ' A ' + (RJ + 0.9) + ' ' + (RJ + 0.9) + ' 0 0 1 ' + f2(pt(RJ + 0.9, 178)[0]) + ' ' + f2(pt(RJ + 0.9, 178)[1]) + '" fill="none" stroke="#e6e8ea" stroke-opacity="0.5" stroke-width="0.7"/>' +
+  // the bulb behind the jewel: pale glass, a hairpin filament, both slightly off-centre
+  '<g class="lamp">' +
+    '<ellipse cx="' + FX + '" cy="' + (FY - 2.5) + '" rx="9.5" ry="8" fill="url(#bulb)"/>' +
+    '<path d="M ' + (FX - 3.4) + ' ' + (FY + 3.2) + ' L ' + (FX - 2.3) + ' ' + (FY - 2.6) + ' Q ' + FX + ' ' + (FY - 6.4) + ' ' + (FX + 2.3) + ' ' + (FY - 2.6) + ' L ' + (FX + 3.4) + ' ' + (FY + 3.2) + '" fill="none" stroke="#84604c" stroke-width="0.9" stroke-linecap="round"/>' +
+    '<ellipse cx="' + (FX - 4.6) + '" cy="' + (FY - 5.4) + '" rx="1.9" ry="1.1" fill="#c9c2b8" opacity="0.4" transform="rotate(-28 ' + (FX - 4.6) + ' ' + (FY - 5.4) + ')"/>' +
+  '</g>' +
+  // the jewel: three groups of facets — dark, lit, and the hot core near the filament
+  '<g class="facets-off">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g>' +
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + RJ + '" fill="#d8b070" opacity="0.07"/>' +
+  '<g class="lit"><g class="facets-on">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g>' +
+    '<ellipse class="fil" cx="' + FX + '" cy="' + (FY - 2) + '" rx="3.6" ry="2.6" fill="#ffe9d6" opacity="0.38" filter="url(#b2)"/>' +
+  '</g>' +
+  '<g class="hot"><g class="facets-hot">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g></g>' +
+  '<g class="facets-edge" fill="none" stroke="rgba(40,0,0,0.55)" stroke-width="0.4">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g>' +
+  // the jewel is crazed: two hairline cracks catching the light on the outer facets
+  '<path d="M 18.5 24.2 Q 15.6 28.4 16.4 33.6" fill="none" stroke="#ffd8cf" stroke-opacity="0.22" stroke-width="0.4"/>' +
+  '<path d="M 41.4 22.6 Q 44.8 26.2 45.2 30.4" fill="none" stroke="#ffd8cf" stroke-opacity="0.16" stroke-width="0.35"/>' +
+  // the bezel lip's shadow falling across the top-left of the jewel
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + RJ + '" fill="url(#well)"/>' +
+  // one specular glint at eleven o clock, lit or not
+  '<ellipse cx="24.6" cy="20.4" rx="4.6" ry="2.5" fill="#fff" opacity="0.4" transform="rotate(-34 24.6 20.4)" filter="url(#b1)"/>' +
+  '<ellipse cx="23.4" cy="19.6" rx="2.1" ry="1.05" fill="#fff" opacity="0.6" transform="rotate(-34 23.4 19.6)"/>' +
+  '<text class="label" x="' + CX + '" y="' + (H - 5) + '"></text>' +
+  '</svg></div>';
+
+  class SkPilotJewelFender extends HTMLElement {
+    static get observedAttributes() { return ["value", "color", "label", "flicker", "scale"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._label = r.querySelector("text.label");
+      this._off = r.querySelectorAll(".facets-off path");
+      this._on = r.querySelectorAll(".facets-on path");
+      this._hotP = r.querySelectorAll(".facets-hot path");
+      this._halo = [r.querySelector(".h0"), r.querySelector(".h1"), r.querySelector(".h2")];
+      this._spill = r.querySelector(".spill");
+      this._v = false; this._scale = 1; this._col = "red";
+      this._b = 0; this._h = 0; this._raf = 0; this._last = 0; this._t = 0;
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read(); this._paint();
+      this._b = this._v ? 1 : 0; this._h = this._v ? 1 : 0;
+      this._apply(); this._kick();
+    }
+    disconnectedCallback() { cancelAnimationFrame(this._raf); this._raf = 0; }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); if (n === "color") this._paint(); this._kick(); }
+
+    get value() { return this._v; }
+    set value(v) {
+      var b = (v === true || v === 1 || v === "" || v === "true" || v === "1" || v === "on");
+      this._v = b; this.setAttribute("value", b ? "true" : "false"); this._aria(); this._kick();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _read() {
+      var s = parseFloat(this.getAttribute("scale")); this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+      var av = this.getAttribute("value");
+      this._v = av == null ? this._v : (av === "" || av === "true" || av === "1" || av === "on");
+      var c = (this.getAttribute("color") || "red").toLowerCase();
+      this._col = PAL[c] ? c : "red";
+      this._label.textContent = this.getAttribute("label") || "";
+      this._aria();
+    }
+    _aria() {
+      this.setAttribute("aria-label", (this.getAttribute("label") || "pilot lamp") + ", " + this._col + ", " + (this._v ? "lit" : "dark"));
+    }
+    _paint() {
+      var p = PAL[this._col], off0 = hx(p.off[0]), off1 = hx(p.off[1]), on0 = hx(p.on[0]), on1 = hx(p.on[1]), cool = hx(p.cool), white = [255, 255, 255];
+      var deep = hx(p.deep);
+      for (var i = 0; i < FACETS.length; i++) {
+        var f = FACETS[i];
+        // unlit: deep wine, the facet planes catching the outside light; left a little translucent
+        // so the bulb glass and its filament show through the middle of the dome
+        var cu = mixv(off0, off1, Math.pow(f.dl, 0.85) * 1.05);
+        cu = mixv(cu, white, Math.pow(f.dl, 9) * 0.55 + f.gl * 0.06);
+        this._off[i].setAttribute("fill", rgb(cu));
+        this._off[i].setAttribute("fill-opacity", (i >= 16 ? 0.74 : 0.88).toFixed(2));
+        // lit: only the facets right at the filament go pale; the rest stay a saturated red
+        var cl = mixv(deep, on0, Math.pow(f.i, 0.7));
+        cl = mixv(cl, on1, Math.pow(f.i, 3.2));
+        cl = mixv(cl, cool, (1 - f.i) * f.up * 0.45);
+        this._on[i].setAttribute("fill", rgb(cl));
+        this._on[i].setAttribute("fill-opacity", (0.6 + 0.4 * Math.pow(f.i, 0.7)).toFixed(3));
+        // the hot core: only the two or three facets right over the filament
+        this._hotP[i].setAttribute("fill", p.hot);
+        this._hotP[i].setAttribute("fill-opacity", (Math.max(0, (f.i - 0.8) / 0.2) * 0.85).toFixed(3));
+      }
+      this._halo[0].setAttribute("stop-color", "rgba(" + p.halo + ",0.42)");
+      this._halo[1].setAttribute("stop-color", "rgba(" + p.halo + ",0.20)");
+      this._halo[2].setAttribute("stop-color", "rgba(" + p.halo + ",0)");
+      this._spill.setAttribute("stroke", p.spill);
+    }
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      var dt = Math.min(0.05, (now - this._last) / 1000); this._last = now; this._t += dt;
+      var tgt = this._v ? 1 : 0;
+      // incandescent: ~140 ms up, ~320 ms down, and the hot core dies first so it goes orange
+      this._b += (tgt - this._b) * Math.min(1, dt / (this._v ? 0.055 : 0.125));
+      this._h += (tgt - this._h) * Math.min(1, dt / (this._v ? 0.048 : 0.062));
+      this._apply();
+      var done = Math.abs(tgt - this._b) < 0.002 && Math.abs(tgt - this._h) < 0.002;
+      if (done && !this.hasAttribute("flicker")) { this._b = tgt; this._h = tgt; this._apply(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _apply() {
+      var b = this._b;
+      if (this.hasAttribute("flicker") && this._v) b *= 1 - 0.02 * (1 + Math.sin(this._t * 2 * Math.PI * 8)) / 2;
+      this.style.setProperty("--b", Math.max(0, b).toFixed(3));
+      this.style.setProperty("--hot", Math.max(0, (this._h - 0.5) * 2).toFixed(3));
+      this._spill.setAttribute("opacity", (Math.max(0, b) * 0.32).toFixed(3));
+    }
+  }
+  customElements.define("sk-pilot-jewel-fender", SkPilotJewelFender);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

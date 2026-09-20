@@ -68,7 +68,7 @@
   const W = 64, H = 168, CX = 32, TRAVEL = 80, TY0 = 40;     // TY0: the knob's back-rim centre when pushed in
   const TPL = document.createElement("template");
   let knurl = "";
-  for (let i = 0; i < 22; i++) knurl += `<line class="kn" x1="0" y1="0" x2="0" y2="0" stroke="#e05a5f" stroke-width="1"/>`;
+  for (let i = 0; i < 22; i++) knurl += `<line class="kn" x1="0" y1="0" x2="0" y2="0" stroke="#5a1114" stroke-width="1"/><line class="kn" x1="0" y1="0" x2="0" y2="0" stroke="#f3a0a3" stroke-width="1"/>`;
   TPL.innerHTML = `
   <style>
     :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
@@ -108,14 +108,14 @@
         <linearGradient id="blkSide" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#050505"/><stop offset="0.25" stop-color="#3a3a3a"/><stop offset="0.45" stop-color="#232323"/><stop offset="0.8" stop-color="#0c0c0c"/><stop offset="1" stop-color="#2a2a2a"/>
         </linearGradient>
-        <radialGradient id="blkFace" cx="36%" cy="30%" r="72%">
-          <stop offset="0" stop-color="#3f3f3f"/><stop offset="0.5" stop-color="#1c1c1c"/><stop offset="1" stop-color="#0a0a0a"/>
+        <radialGradient id="blkFace" cx="40%" cy="36%" r="70%">
+          <stop offset="0" stop-color="#2c2c2c"/><stop offset="0.7" stop-color="#1b1b1b"/><stop offset="0.93" stop-color="#101010"/><stop offset="1" stop-color="#2a2a2a"/>
         </radialGradient>
         <linearGradient id="redSide" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#5a1114"/><stop offset="0.25" stop-color="#d63a40"/><stop offset="0.45" stop-color="#c1272d"/><stop offset="0.8" stop-color="#7f1a1e"/><stop offset="1" stop-color="#a8262b"/>
         </linearGradient>
-        <radialGradient id="redFace" cx="36%" cy="30%" r="72%">
-          <stop offset="0" stop-color="#e2666a"/><stop offset="0.45" stop-color="#c1272d"/><stop offset="1" stop-color="#7f1a1e"/>
+        <radialGradient id="redFace" cx="40%" cy="36%" r="70%">
+          <stop offset="0" stop-color="#d4474c"/><stop offset="0.7" stop-color="#c1272d"/><stop offset="0.93" stop-color="#8a1c20"/><stop offset="1" stop-color="#d0464b"/>
         </radialGradient>
         <radialGradient id="btn" cx="36%" cy="30%" r="70%">
           <stop offset="0" stop-color="#4a4a4a"/><stop offset="0.6" stop-color="#151515"/><stop offset="1" stop-color="#000"/>
@@ -129,7 +129,7 @@
       </defs>
 
       <!-- the grey painted panel with its engraved legend and the ring of wear around the hole -->
-      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#panel)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
       <text class="legend sh" x="${CX + 0.4}" y="11.5"></text>
       <text class="legend" x="${CX}" y="11"></text>
       <circle cx="${CX}" cy="38" r="26" fill="url(#wear)"/>
@@ -155,7 +155,7 @@
           <rect x="${CX - 24}" y="${TY0}" width="48" height="14" fill="url(#blkSide)"/>
           <ellipse cx="${CX}" cy="${TY0 + 14}" rx="24" ry="21.5" fill="url(#blkFace)" stroke="#000" stroke-width="0.8"/>
           <ellipse cx="${CX}" cy="${TY0 + 14}" rx="22" ry="19.5" fill="none" stroke="#3a3a3a" stroke-opacity="0.6" stroke-width="0.6"/>
-          <ellipse cx="${CX - 9}" cy="${TY0 + 4}" rx="10" ry="6" fill="url(#spec)"/>
+          <ellipse cx="${CX - 10}" cy="${TY0 - 1}" rx="9" ry="4" fill="url(#spec)"/>
           <g transform="translate(0 ${TY0 - 20})">
             <text class="face"><textPath href="#skct-arc" startOffset="50%">THROTTLE</textPath></text>
           </g>
@@ -168,7 +168,7 @@
           <g class="knurls">${knurl}</g>
           <ellipse cx="${CX}" cy="${TY0 + 12}" rx="20.5" ry="18.5" fill="url(#redFace)" stroke="#5a1114" stroke-width="0.8"/>
           <ellipse cx="${CX}" cy="${TY0 + 12}" rx="17" ry="15.3" fill="none" stroke="#7f1a1e" stroke-opacity="0.7" stroke-width="0.6"/>
-          <ellipse cx="${CX - 8}" cy="${TY0 + 3}" rx="9" ry="5.5" fill="url(#spec)"/>
+          <ellipse cx="${CX - 8}" cy="${TY0 - 1}" rx="8" ry="3.5" fill="url(#spec)"/>
           <path d="M ${CX - 19} ${TY0 - 3} A 20.5 18.5 0 0 1 ${CX - 4} ${TY0 - 18}" fill="none" stroke="#f08a8e" stroke-opacity="0.6" stroke-width="1"/>
           <circle cx="${CX}" cy="${TY0 + 12}" r="6.2" fill="#d9dbdd" stroke="#6a6d70" stroke-width="0.5"/>
           <g class="btn">
@@ -249,18 +249,19 @@
       this._shaft.style.height = len + "px"; this._shsh.style.height = (len + 2) + "px";
       if (this._mix) {
         // ~40 knurls round the skirt: x = R·sin θ, width and brightness ∝ cos θ, crowding at the sides; the vernier twist shifts their phase
-        const R = 20.5, N = 40;
+        const R = 20.5, RY = 18.5, N = 40;
         for (let i = 0; i < this._kn.length; i++) {
-          const k = i - 11;
+          const k = (i >> 1) - 11, lit = (i & 1) === 1;
           let th = (k * 360 / N + this._phase) * Math.PI / 180;
           th = ((th + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
           const c = Math.cos(th), l = this._kn[i];
-          if (c <= 0.05) { l.setAttribute("opacity", "0"); continue; }
-          const x = CX + R * Math.sin(th);
+          if (c <= 0.06) { l.setAttribute("opacity", "0"); continue; }
+          const x = CX + R * Math.sin(th) + (lit ? -0.5 * c : 0.5 * c), top = TY0 - RY * c;
           l.setAttribute("x1", x.toFixed(2)); l.setAttribute("x2", x.toFixed(2));
-          l.setAttribute("y1", (TY0 + 18.5 * (1 - c) * 0.35).toFixed(2)); l.setAttribute("y2", (TY0 + 12).toFixed(2));
-          l.setAttribute("stroke-width", (0.4 + 1.1 * c).toFixed(2));
-          l.setAttribute("opacity", (0.15 + 0.55 * c * (th < -0.3 ? 1 : 0.55)).toFixed(2));   // lit from the left
+          l.setAttribute("y1", (top + 0.6).toFixed(2)); l.setAttribute("y2", (top + 12.2).toFixed(2));
+          l.setAttribute("stroke-width", (0.3 + 0.9 * c).toFixed(2));
+          const side = Math.sin(th);                                                  // lit from the left
+          l.setAttribute("opacity", (lit ? 0.25 + 0.6 * c * (side < 0 ? 1 : 0.45) : 0.35 + 0.45 * c).toFixed(2));
         }
       }
       this._grab.setAttribute("aria-valuenow", String(this._v));

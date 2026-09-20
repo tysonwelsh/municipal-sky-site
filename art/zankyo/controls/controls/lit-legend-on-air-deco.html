@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deco "ON AIR" studio box — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Bebas+Neue&family=Noto+Sans:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "lit-legend-on-air-deco",
+  "element": "sk-lit-legend-on-air",
+  "name": "Deco \"ON AIR\" studio box, red glass",
+  "kind": "output",
+  "code": "H7.1",
+  "type": "Lit legend / lit tag",
+  "source": "The 1930s–50s broadcast studio door light — a shop-made steel box with a stepped Deco frame, a red glass face with the letters left clear, two lamps inside",
+  "era": "1930s",
+  "origin": "USA",
+  "materials": ["painted steel", "red glass", "incandescent lamps"],
+  "tags": ["broadcast", "studio", "door light", "on air", "red glass", "reverse-painted"],
+  "value": { "model": "boolean" },
+  "attributes": ["value", "label", "scale", "lang"],
+  "events": [],
+  "size": { "w": 288, "h": 120 },
+  "notes": "Set value true/false: two lamps warm up 40 ms apart over ~200 ms and cool over ~400 ms, the letters go from a dark ghost to white, and the glass blooms onto the frame and the wall. A second, smaller box reads RECORDING and is dark."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="beige">
+    <sk-lit-legend-on-air value="true" label="ON AIR"></sk-lit-legend-on-air>
+    <sk-lit-legend-on-air value="false" label="RECORDING" scale="0.78"></sk-lit-legend-on-air>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Every American studio of the 1930s had one of these over the door: a shop-made steel box about twelve
+  inches by five, a <b>stepped Deco frame</b> of three concentric ledges, and a face of <b>red glass</b> with
+  the letters left clear — the glass is painted red on the back and the letters are scraped out of the paint,
+  so they are holes in the red, not a legend printed on a tile. Two lamps inside, wired to the transmitter's
+  relay. It hangs off the wall on a bracket and throws a shadow down the plaster.</p>
+  <p><b>The tells kept here:</b> the three ledges, each with its riser in shadow at the top-left and lit at the
+  bottom-right the way a recess is; the two lamps as two hot spots with a cooler band between them and dark
+  corners; the letters as clear glass — dark maroon ghosts when the box is out, white with a warm bloom when
+  it is lit; one broad diagonal reflection across the glass that has nothing to do with the lettering under
+  it; the red light spilling onto the frame's inner ledges and onto the wall around the box. The lamps are
+  <b>incandescent</b>: they take about 200 ms to come up, the second one 40 ms behind the first, and about
+  400 ms to die. The lettering is hand-cut, so the stroke widths are not quite equal from letter to letter.</p>
+  <p><b>Left out:</b> the conduit and the flexible cord, the ventilation louvres in the top of the box, the
+  glass's ripple. A long label (including Cyrillic, with <code>lang="ru"</code>) is squeezed to fit rather
+  than run onto a second line — the real boxes were made to the word.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-lit-legend-on-air> — 1930s studio door light: stepped Deco steel box, red glass, clear letters ====
+   attributes: value ("true"/"false") · label (default "ON AIR") · scale · lang (ru → Noto Sans for Cyrillic)
+   no events (an output). set .value = true/false; two incandescent lamps warm and cool.
+   self-contained: paste this block into any page and use <sk-lit-legend-on-air value="true"></sk-lit-legend-on-air> */
+(function () {
+  if (customElements.get("sk-lit-legend-on-air")) return;
+  var W = 288, H = 120;
+  var GX = 12, GY = 12, GW = 264, GH = 96;      // the glass
+  var TPL = document.createElement("template");
+  TPL.innerHTML = [
+  '<style>',
+  ':host { display: inline-block; width: ' + W + 'px; height: ' + H + 'px; position: relative; font-size: 10px; line-height: 1; }',
+  ':host([hidden]) { display: none; }',
+  '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
+  'svg { display: block; width: ' + W + 'px; height: ' + H + 'px; overflow: visible; }',
+  '.lbl { font-family: "Bebas Neue", "Oswald", "Arial Narrow", sans-serif; font-size: 60px;',
+  '       letter-spacing: 0.15em; text-anchor: middle; }',
+  ':host(:lang(ru)) .lbl, :host(:lang(uk)) .lbl, :host(:lang(bg)) .lbl {',
+  '       font-family: "Noto Sans", "Oswald", sans-serif; font-weight: 700; font-size: 38px; letter-spacing: 0.06em; }',
+  /* the ink of the letters: a dark maroon ghost, white when lit */
+  '.ink { color: #6b1f1f; transition: color 400ms ease-in; }',
+  '.is-on .ink { color: #fff3ea; transition: color 200ms ease-out 30ms; }',
+  '.ink text { fill: currentColor; stroke: currentColor; paint-order: stroke fill; }',
+  /* every lamp-driven layer fades with an incandescent curve */
+  '.f { opacity: 0; transition: opacity 400ms cubic-bezier(.4,0,.8,.6); }',
+  '.is-on .f { opacity: 1; transition: opacity 200ms cubic-bezier(.2,.5,.4,1); }',
+  '.is-on .lampB { transition-delay: 40ms; }',
+  '.is-on .bloom { opacity: 0.62; }',
+  '.is-on .spill { opacity: 0.5; }',
+  '.is-on .wallglow { opacity: 1; transition-duration: 280ms; }',
+  '.wallglow { transition-duration: 520ms; }',
+  '</style>',
+  '<div class="wrap">',
+  '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true">',
+  '<defs>',
+  '  <linearGradient id="frame" x1="0" y1="0" x2="0.7" y2="1">',
+  '    <stop offset="0" stop-color="#453e35"/><stop offset="0.45" stop-color="#2a2622"/><stop offset="1" stop-color="#16130f"/>',
+  '  </linearGradient>',
+  '  <radialGradient id="glassoff" cx="50%" cy="42%" r="72%">',
+  '    <stop offset="0" stop-color="#5a1111"/><stop offset="0.6" stop-color="#4d0b0b"/><stop offset="1" stop-color="#2a0605"/>',
+  '  </radialGradient>',
+  '  <linearGradient id="litbase" x1="0" y1="0" x2="0" y2="1">',
+  '    <stop offset="0" stop-color="#ff4a3a"/><stop offset="0.55" stop-color="#e8261c"/><stop offset="1" stop-color="#c41a12"/>',
+  '  </linearGradient>',
+  '  <radialGradient id="hot" cx="50%" cy="50%" r="50%">',
+  '    <stop offset="0" stop-color="#ffb4a4" stop-opacity="0.95"/><stop offset="0.3" stop-color="#ff8a76" stop-opacity="0.7"/><stop offset="0.62" stop-color="#ff6a50" stop-opacity="0.3"/>',
+  '    <stop offset="1" stop-color="#ff5a44" stop-opacity="0"/>',
+  '  </radialGradient>',
+  '  <linearGradient id="cool" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0.24" stop-color="#2e0705" stop-opacity="0"/><stop offset="0.5" stop-color="#2e0705" stop-opacity="0.13"/>
+    <stop offset="0.76" stop-color="#2e0705" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="vig" cx="50%" cy="50%" r="58%">',
+  '    <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="0.78" stop-color="#000" stop-opacity="0.10"/>',
+  '    <stop offset="1" stop-color="#000" stop-opacity="0.42"/>',
+  '  </radialGradient>',
+  '  <linearGradient id="refl" x1="0" y1="0" x2="1" y2="1">',
+  '    <stop offset="0" stop-color="#fff" stop-opacity="0.20"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.06"/>',
+  '    <stop offset="1" stop-color="#fff" stop-opacity="0"/>',
+  '  </linearGradient>',
+  '  <radialGradient id="wg" cx="50%" cy="50%" r="50%">',
+  '    <stop offset="0" stop-color="#ff5a3c" stop-opacity="0.55"/><stop offset="0.42" stop-color="#ff4a30" stop-opacity="0.24"/>',
+  '    <stop offset="1" stop-color="#ff4028" stop-opacity="0"/>',
+  '  </radialGradient>',
+  '  <radialGradient id="screwg" cx="35%" cy="30%" r="70%">',
+  '    <stop offset="0" stop-color="#8d8880"/><stop offset="0.65" stop-color="#3d3833"/><stop offset="1" stop-color="#15120f"/>',
+  '  </radialGradient>',
+  '  <clipPath id="glassclip"><rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" rx="1.5"/></clipPath>',
+  '  <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.1"/></filter>
+  <filter id="b2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>',
+  '  <filter id="b4" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>',
+  '  <filter id="b7" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>',
+  '</defs>',
+
+  /* --- the wall behind: the red glow when lit --- */
+  '<ellipse class="f wallglow" cx="144" cy="62" rx="196" ry="104" fill="url(#wg)"/>',
+
+  /* --- the bracket the box hangs on, and its shadow --- */
+  '<rect x="122" y="-13" width="44" height="26" rx="2" fill="#000" opacity="0.35" filter="url(#b4)" transform="translate(4 6)"/>',
+  '<rect x="122" y="-13" width="44" height="26" rx="2" fill="#241f1b"/>',
+  '<rect x="122" y="-13" width="44" height="3" fill="#5b5348" opacity="0.5"/>',
+  '<circle cx="144" cy="-6" r="3.2" fill="url(#screwg)" stroke="#000" stroke-width="0.5"/>',
+  '<rect x="141.4" y="-6.7" width="5.2" height="1.3" fill="#0a0908" transform="rotate(-24 144 -6)"/>',
+
+  /* --- the box stands proud: a soft ambient shadow and a tight contact shadow --- */
+  '<rect x="8" y="12" width="' + W + '" height="' + H + '" rx="3" fill="#000" opacity="0.34" filter="url(#b7)"/>',
+  '<rect x="3" y="5" width="' + W + '" height="' + H + '" rx="3" fill="#000" opacity="0.42" filter="url(#b2)"/>',
+
+  /* --- the stepped Deco frame: three ledges --- */
+  '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="2.5" fill="url(#frame)"/>',
+  '<path d="M1.2 116 L1.2 3 Q1.2 1.2 3 1.2 L285 1.2" fill="none" stroke="#7a7064" stroke-opacity="0.5" stroke-width="1.2"/>',
+  '<path d="M3 118.8 L285 118.8 Q286.8 118.8 286.8 117 L286.8 4" fill="none" stroke="#070605" stroke-opacity="0.85" stroke-width="1.2"/>',
+  /* ledge 1 */
+  '<rect x="5" y="5" width="278" height="110" rx="2" fill="#2f2a25"/>',
+  '<path d="M5.6 114 L5.6 5.6 L282 5.6" fill="none" stroke="#100e0c" stroke-opacity="0.9" stroke-width="1.6"/>',
+  '<path d="M6 114.4 L282.4 114.4 L282.4 6" fill="none" stroke="#6b6155" stroke-opacity="0.45" stroke-width="1.2"/>',
+  /* ledge 2 */
+  '<rect x="8.5" y="8.5" width="271" height="103" rx="1.8" fill="#272220"/>',
+  '<path d="M9.1 110.5 L9.1 9.1 L278.5 9.1" fill="none" stroke="#0d0b0a" stroke-opacity="0.9" stroke-width="1.6"/>',
+  '<path d="M9.5 110.9 L278.9 110.9 L278.9 9.5" fill="none" stroke="#615849" stroke-opacity="0.42" stroke-width="1.1"/>',
+  /* ledge 3 — the glass retainer */
+  '<rect x="10.6" y="10.6" width="266.8" height="98.8" rx="1.6" fill="#1e1a17"/>',
+
+  /* --- the glass --- */
+  '<g clip-path="url(#glassclip)">',
+  '  <rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" fill="url(#glassoff)"/>',
+  /* lit: the red flood, then the two lamps */
+  '  <rect class="f" x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" fill="url(#litbase)"/>',
+  '  <ellipse class="f" cx="78" cy="58" rx="66" ry="54" fill="url(#hot)"/>',
+  '  <ellipse class="f lampB" cx="212" cy="58" rx="66" ry="54" fill="url(#hot)"/>',
+  /* the glass is darker at the corners and a shade cooler between the lamps */
+  '  <rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" fill="url(#vig)"/>',
+  '  <rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" fill="url(#cool)"/>',
+  /* the letters: a warm bloom under, the clear glass over */
+  '  <g class="f bloom"><text class="lbl bloomtext" x="144" y="80" fill="#ffd9c8" filter="url(#b4)"></text></g>',
+  '  <g class="ink"><text class="lbl inktext" x="144" y="80"></text></g>',
+  /* one broad diagonal reflection, nothing like the shape of the letters */
+  '  <path d="M ' + GX + ' ' + GY + ' L 128 ' + GY + ' L 58 ' + (GY + GH) + ' L ' + GX + ' ' + (GY + GH) + ' Z" fill="url(#refl)"/>',
+  '  <path d="M 196 ' + GY + ' L 228 ' + GY + ' L 176 ' + (GY + GH) + ' L 160 ' + (GY + GH) + ' Z" fill="#fff" opacity="0.05"/>',
+  /* the rebate: an inner shadow at the top-left of the glass */
+  '  <rect x="' + (GX - 3) + '" y="' + (GY - 3) + '" width="' + (GW + 6) + '" height="' + (GH + 6) + '" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="4" filter="url(#b1)"/>',
+  '</g>',
+  /* the glass blooms onto the frame around it */
+  '<rect class="f spill" x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" rx="1.5" fill="none" stroke="#ff5a3c" stroke-width="9" filter="url(#b4)"/>',
+  /* the retainer's own lit lip, over the spill */
+  '<rect x="11.4" y="11.4" width="265.2" height="97.2" rx="1.4" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="1"/>',
+  '</svg>',
+  '</div>'].join("\n");
+
+  function truthy(v) {
+    if (v === true) return true;
+    if (v === false || v == null) return false;
+    var s = String(v).toLowerCase();
+    return s === "true" || s === "1" || s === "on" || s === "lit" || s === "yes" || s === "";
+  }
+
+  var ANCHOR = "http://www.w3.org/2000/svg";
+
+  class SkLitLegendOnAir extends HTMLElement {
+    static get observedAttributes() { return ["value", "label", "scale", "lang"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = false; this._scale = 1;
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._ink = this.shadowRoot.querySelector(".inktext");
+      this._blm = this.shadowRoot.querySelector(".bloomtext");
+      this._label = "ON AIR";
+      this._fitDone = false;
+    }
+    connectedCallback() {
+      this.setAttribute("role", "img");
+      this._read();
+      this._setLabel();
+      this._paint();
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { this._fit(); }.bind(this)).catch(function () {});
+      }
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._read();
+      if (n === "label" || n === "lang") this._setLabel();
+      this._paint();
+    }
+    get value() { return this._v; }
+    set value(v) {
+      var b = truthy(v);
+      if (b === this._v && this.getAttribute("value") === String(b)) return;
+      this._v = b;
+      if (this.getAttribute("value") !== String(b)) this.setAttribute("value", String(b));
+      this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    get label() { return this._label; }
+    set label(t) { this.setAttribute("label", t); }
+
+    _read() {
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      this._v = this.hasAttribute("value") ? truthy(this.getAttribute("value")) : this._v;
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _setLabel() {
+      this._label = this.getAttribute("label") || "ON AIR";
+      var chars = Array.from(this._label);
+      [this._ink, this._blm].forEach(function (t, isBloom) {
+        while (t.firstChild) t.removeChild(t.firstChild);
+        chars.forEach(function (ch, i) {
+          var sp = document.createElementNS(ANCHOR, "tspan");
+          sp.textContent = ch;
+          if (!isBloom) {
+            /* hand-cut letters: the stroke widths are not quite equal */
+            var seed = (ch.charCodeAt(0) * 37 + i * 61) % 13;
+            sp.setAttribute("stroke-width", (0.1 + seed * 0.055).toFixed(2));
+            sp.setAttribute("dy", ((seed % 3) - 1) * 0.28);
+            if (i) sp.setAttribute("dx", "0");
+          }
+          t.appendChild(sp);
+        });
+        /* the tspan dy values accumulate; pull the last one back to the baseline */
+      });
+      this._fixBaseline();
+      this._fit();
+    }
+    _fixBaseline() {
+      /* dy on tspans is cumulative — make each one relative to the baseline instead */
+      var run = 0, kids = this._ink.childNodes;
+      for (var i = 0; i < kids.length; i++) {
+        var want = parseFloat(kids[i].getAttribute("dy")) || 0;
+        kids[i].setAttribute("dy", (want - run).toFixed(2));
+        run = want;
+      }
+    }
+    _fit() {
+      var max = GW - 22;
+      var self = this;
+      [this._ink, this._blm].forEach(function (t) {
+        t.removeAttribute("textLength");
+        t.removeAttribute("lengthAdjust");
+        var len = 0;
+        try { len = t.getComputedTextLength(); } catch (e) { len = 0; }
+        if (len > max) { t.setAttribute("textLength", max); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); }
+        self._fitDone = true;
+      });
+    }
+    _paint() {
+      this._wrap.classList.toggle("is-on", this._v);
+      this.setAttribute("aria-label", this._label + " sign, " + (this._v ? "lit" : "dark"));
+    }
+  }
+  customElements.define("sk-lit-legend-on-air", SkLitLegendOnAir);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

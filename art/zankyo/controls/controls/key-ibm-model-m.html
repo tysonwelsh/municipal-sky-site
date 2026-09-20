@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBM Model M key — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "key-ibm-model-m",
+  "element": "sk-key-ibm-model-m",
+  "name": "IBM Model M buckling-spring key",
+  "kind": "input",
+  "code": "D8",
+  "type": "Terminal / computer key",
+  "source": "IBM Model M (1391401) Enhanced Keyboard, 1985: two-piece pearl PBT caps with dye-sublimated legends over a buckling-spring switch, in a pebble-grey case",
+  "era": "1980s",
+  "origin": "USA",
+  "materials": ["pearl PBT", "pebble-grey ABS case", "dye-sublimated legend"],
+  "tags": ["keyboard", "key", "momentary", "buckling spring", "dye-sub", "cylindrical dish"],
+  "value": { "model": "momentary" },
+  "attributes": ["legend", "sub", "width", "tone", "row", "shine", "pressed", "scale", "disabled"],
+  "events": ["press", "release", "activate"],
+  "size": { "w": 56, "h": 56 },
+  "notes": "Three caps off the home row: a pearl A, a pebble-grey 1.75u Caps Lock on two lines, and a 2.25u Enter held down past the spring's snap. Press with the mouse, a finger, or Space/Enter."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-key-ibm-model-m legend="A" row="3"></sk-key-ibm-model-m>
+    <sk-key-ibm-model-m legend="Caps" sub="Lock" tone="grey" width="1.75" row="3"></sk-key-ibm-model-m>
+    <sk-key-ibm-model-m legend="Enter" width="2.25" row="3" pressed></sk-key-ibm-model-m>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>IBM Model M</b> of 1985 put a buckling spring under a two-piece pearl PBT keycap: press it and the
+  spring bows sideways about two millimetres down, throwing the hammer against the membrane with a crack you
+  can hear two rooms away, and the cap drops the rest of its travel in one go. The legends are
+  <b>dye-sublimated</b> — soaked into the plastic rather than printed on it — so they are grey, slightly soft
+  at the edge, and they never wear off.</p>
+  <p><b>The tells kept here:</b> the cap as a truncated pyramid with thick walls and a cylindrical dish across
+  the top, dark at the left of the dish and bright toward the right where the curve turns back into the light;
+  the hairline seam around the skirt where the shell meets its base, sitting two pixels proud of the case; the
+  grey legend at the <i>top-left</i> of the dish for letters and centred for words; pearl for the alphas and
+  pebble grey for the modifiers; the fine matte PBT grain; the polished, slightly warmer top of a much-used cap
+  (Enter, here); and the case's hairline-textured pebble grey with the dark base plate showing in the gap
+  between caps. The travel is two-stage — two pixels of load, then a snap through the remaining two — and
+  <code>activate</code> fires at the snap, not at the bottom.</p>
+  <p><b>Left out:</b> the case's three status LEDs and its badge, the barrel plate under the caps, and the
+  flip-out feet. The <code>row</code> attribute tilts the top face (4°, 2°, 0°, −2°, −4° from the number row
+  down) but all three caps here are from the home row, so they stand level.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-key-ibm-model-m> — pearl-and-grey buckling-spring keycap ====
+   attributes: legend sub width(units) tone(pearl|grey) row(1-5) shine pressed scale disabled
+   events: press / release, activate (at the spring's snap, ~30 ms into the travel)
+   momentary: no value. self-contained: paste this block into any page and use
+   <sk-key-ibm-model-m legend="A"></sk-key-ibm-model-m> */
+(function () {
+  const TAG = "sk-key-ibm-model-m";
+  if (customElements.get(TAG)) return;
+  const U = 56;                                     // one key unit: the 19.05 mm pitch
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent;
+      --top: #edebe5; --wa: #f4f3ee; --wb: #dedad2; --wc: #bab6ac; --wd: #928e86; }
+    :host([hidden]) { display: none; }
+    :host([tone="grey"]) { --top: #aeaaa2; --wa: #c6c2ba; --wb: #b0aca3; --wc: #8f8c84; --wd: #6e6b63; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+
+    /* the pebble-grey case, hairline-textured */
+    .case { position: absolute; inset: 0; border-radius: 2.5px;
+      background:
+        repeating-linear-gradient(93deg, rgba(0,0,0,0.045) 0 0.5px, rgba(255,255,255,0.03) 0.5px 1.4px),
+        linear-gradient(158deg, #bdb9b0 0%, #aeaaa1 46%, #8f8b83 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1.5px 0 rgba(0,0,0,0.25),
+                  0 2px 4px rgba(0,0,0,0.5), 0 6px 14px rgba(0,0,0,0.35); }
+    /* the dark base plate showing in the gap around the cap */
+    .well { position: absolute; left: 2.5px; right: 2.5px; top: 3px; bottom: 3px; border-radius: 4px;
+      background: #2b2a28;
+      box-shadow: inset 0 1px 1.5px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.14); }
+
+    /* the cap: a truncated pyramid, thick walls, sharp corners */
+    .cap { position: absolute; left: 3.6px; right: 3.6px; top: 4px; bottom: 4.6px; border-radius: 3px 3px 4px 4px;
+      --drop: 0 2px 2px rgba(0,0,0,0.55), 0 5px 9px rgba(0,0,0,0.4);
+      background: linear-gradient(162deg, var(--wa) 0%, var(--wb) 26%, var(--wc) 58%, var(--wd) 100%);
+      box-shadow: var(--drop), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -2.5px 2.5px rgba(0,0,0,0.2), inset 1px 0 0 rgba(255,255,255,0.22), inset -1px 0 0 rgba(0,0,0,0.2);
+      outline: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+      transition: transform 95ms cubic-bezier(.2,.8,.35,1); }
+    .cap.d1 { transform: translateY(2px); transition: transform 30ms cubic-bezier(.4,0,1,.6); }
+    .cap.d2 { transform: translateY(4px); transition: transform 10ms linear;
+      --drop: 0 1px 1px rgba(0,0,0,0.62), 0 2px 3px rgba(0,0,0,0.34); }
+    :host([disabled]) .cap { cursor: default; }
+    .cap:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 11px rgba(22,224,224,0.55), var(--drop), inset 0 1px 0 rgba(255,255,255,0.5); }
+
+    /* the hairline seam where the shell meets its base */
+    .seam { position: absolute; left: 1.4px; right: 1.4px; bottom: 3px; height: 1px; border-radius: 1px;
+      background: rgba(0,0,0,0.22); box-shadow: 0 1px 0 rgba(255,255,255,0.3); }
+
+    /* the top face: a cylindrical dish, concave left-to-right, in fine matte PBT */
+    .top { position: absolute; left: 6px; right: 6px; top: var(--bw, 5px); bottom: var(--fw, 9px); border-radius: 2.5px;
+      background:
+        repeating-linear-gradient(107deg, rgba(0,0,0,0.032) 0 0.6px, rgba(255,255,255,0.03) 0.6px 1.5px),
+        linear-gradient(90deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.10) 16%, rgba(0,0,0,0.02) 42%, rgba(255,255,255,0.14) 74%, rgba(255,255,255,0.2) 92%, rgba(255,255,255,0.02) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.06) 24%, rgba(0,0,0,0.05) 74%, rgba(0,0,0,0.16) 100%),
+        var(--top);
+      box-shadow: inset 0 0 0 0.6px rgba(255,255,255,0.35), inset 0 -0.6px 0 rgba(0,0,0,0.10),
+                  0 1.6px 2.6px rgba(0,0,0,0.38), 0 0.5px 0 rgba(255,255,255,0.3); }
+    /* the polish on a much-used cap */
+    .gloss { position: absolute; inset: 0; border-radius: 2.5px; opacity: 0;
+      background: radial-gradient(74% 92% at 36% 20%, rgba(255,251,232,0.5), rgba(255,247,222,0.14) 52%, rgba(0,0,0,0) 78%); }
+    :host([shine]) .gloss, .wrap.shine .gloss { opacity: 1; }
+
+    /* dye-sub legends: grey, soft-edged, top-left for letters and centred for words */
+    .lgs { position: absolute; inset: 0; display: flex; flex-direction: column; filter: blur(0.3px); }
+    .lgs.letter { align-items: flex-start; justify-content: flex-start; padding: 4px 0 0 5px; }
+    .lgs.word { align-items: center; justify-content: center; }
+    .lg, .sb { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500;
+      color: #4a4a48; line-height: 1.16; letter-spacing: 0.01em; display: block; }
+    .lgs.letter .lg { font-size: 9px; }
+    .lgs.word .lg, .lgs.word .sb { font-size: 7px; }
+    .lg:empty, .sb:empty { display: none; }
+  </style>
+  <div class="wrap">
+    <div class="case"></div>
+    <div class="well"></div>
+    <div class="cap" role="button" tabindex="0">
+      <div class="seam"></div>
+      <div class="top">
+        <div class="gloss"></div>
+        <div class="lgs"><span class="lg"></span><span class="sb"></span></div>
+      </div>
+    </div>
+  </div>`;
+
+  class SkKeyIbmModelM extends HTMLElement {
+    static get observedAttributes() { return ["legend", "sub", "width", "tone", "row", "shine", "pressed", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._scale = 1; this._u = 1; this._down = false; this._st = 0;
+      const r = this.shadowRoot;
+      this._wrap = r.querySelector(".wrap");
+      this._cap = r.querySelector(".cap");
+      this._top = r.querySelector(".top");
+      this._lgs = r.querySelector(".lgs");
+      this._lg = r.querySelector(".lg");
+      this._sb = r.querySelector(".sb");
+      this._onDown = this._onDown.bind(this);
+      this._onUp = this._onUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      this._onBlur = this._onBlur.bind(this);
+    }
+    connectedCallback() {
+      this._readAttrs();
+      const c = this._cap;
+      c.addEventListener("pointerdown", this._onDown);
+      c.addEventListener("pointerup", this._onUp);
+      c.addEventListener("pointercancel", this._onUp);
+      c.addEventListener("keydown", this._onKeyDown);
+      c.addEventListener("keyup", this._onKeyUp);
+      c.addEventListener("blur", this._onBlur);
+    }
+    disconnectedCallback() {
+      const c = this._cap;
+      c.removeEventListener("pointerdown", this._onDown);
+      c.removeEventListener("pointerup", this._onUp);
+      c.removeEventListener("pointercancel", this._onUp);
+      c.removeEventListener("keydown", this._onKeyDown);
+      c.removeEventListener("keyup", this._onKeyUp);
+      c.removeEventListener("blur", this._onBlur);
+      clearTimeout(this._st);
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      if (n === "pressed") { this._show(this.hasAttribute("pressed")); return; }
+      this._readAttrs();
+    }
+    get pressed() { return this.hasAttribute("pressed"); }
+    set pressed(b) { if (b) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    get legend() { return this.getAttribute("legend") || ""; }
+    set legend(s) { this.setAttribute("legend", s == null ? "" : String(s)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._cap.focus(o); }
+    blur() { this._cap.blur(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._u = Math.max(1, num("width", 1));
+      const w = U * this._u, h = U;
+      this.style.width = (w * this._scale) + "px";
+      this.style.height = (h * this._scale) + "px";
+      this._wrap.style.width = w + "px"; this._wrap.style.height = h + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+
+      // row profile: the number row tilts back, the bottom row tilts forward
+      const row = Math.min(5, Math.max(1, Math.round(num("row", 3))));
+      const tilt = (3 - row) * 2;                                  // +4 … -4 degrees
+      this._top.style.setProperty("--bw", (5 - tilt * 0.42).toFixed(2) + "px");
+      this._top.style.setProperty("--fw", (9 + tilt * 0.82).toFixed(2) + "px");
+
+      const lg = this.getAttribute("legend") || "";
+      const sb = this.getAttribute("sub") || "";
+      this._lg.textContent = lg; this._sb.textContent = sb;
+      const isLetter = !sb && lg.length <= 2;
+      this._lgs.className = "lgs " + (isLetter ? "letter" : "word");
+      this._wrap.classList.toggle("shine", /^(e|enter|space|return)$/i.test(lg));
+
+      const c = this._cap, dis = this.hasAttribute("disabled");
+      c.setAttribute("aria-label", (lg + (sb ? " " + sb : "")).trim() || "key");
+      c.setAttribute("aria-disabled", dis ? "true" : "false");
+      c.setAttribute("tabindex", dis ? "-1" : "0");
+      this._show(this.hasAttribute("pressed"));
+    }
+    // the static picture of a state, with no events and no staging
+    _show(on) {
+      clearTimeout(this._st); this._st = 0;
+      this._cap.classList.toggle("d1", !!on);
+      this._cap.classList.toggle("d2", !!on);
+    }
+    _emit(type) { this.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail: { legend: this.getAttribute("legend") || "" } })); }
+    _snap() { this._st = 0; this._cap.classList.add("d2"); this._emit("activate"); }
+    _press() {
+      if (this._down || this.hasAttribute("disabled")) return;
+      this._down = true;
+      this.setAttribute("pressed", "");
+      this._cap.classList.add("d1"); this._cap.classList.remove("d2");
+      this._emit("press");
+      clearTimeout(this._st);
+      this._st = setTimeout(() => this._snap(), 30);               // the spring buckles
+    }
+    _release() {
+      if (!this._down) return;
+      this._down = false;
+      if (this._st) { clearTimeout(this._st); this._snap(); }      // a quick tap still buckles the spring
+      this.removeAttribute("pressed");
+      this._cap.classList.remove("d1", "d2");
+      this._emit("release");
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._cap.focus({ preventScroll: true });
+      try { this._cap.setPointerCapture(e.pointerId); } catch (_) {}
+      this._press();
+    }
+    _onUp(e) {
+      try { this._cap.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._release();
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      if (e.repeat) return;
+      this._press();
+    }
+    _onKeyUp(e) {
+      if (e.key !== " " && e.key !== "Spacebar" && e.key !== "Enter") return;
+      e.preventDefault();
+      this._release();
+    }
+    _onBlur() { this._release(); }
+  }
+  customElements.define(TAG, SkKeyIbmModelM);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

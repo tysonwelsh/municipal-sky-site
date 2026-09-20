@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B-52 guarded JETTISON push — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "guarded-b52-jettison",
+  "element": "sk-guarded-b52-jettison",
+  "name": "B-52 guarded JETTISON push",
+  "kind": "input",
+  "code": "D5",
+  "type": "Guarded momentary push",
+  "source": "Boeing B-52 / B-47 weapon-jettison push: a red Cutler-Hammer push under a hinged red-anodised aluminium flip-guard on a black wrinkle panel",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["anodised aluminium", "phenolic", "wrinkle-finish aluminium panel"],
+  "tags": ["aircraft", "bomber", "safety guard", "two-stage", "stencil", "momentary"],
+  "value": { "model": "momentary" },
+  "attributes": ["guard", "pressed", "legend", "label", "scale", "disabled"],
+  "events": ["press", "release", "activate", "change"],
+  "size": { "w": 136, "h": 170 },
+  "notes": "Two stages: click the lid (or Enter) to flip the guard up, then press the push (or Space) for activate. Three panels: guard closed, guard open, guard open and held down."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="aluminium-black">
+    <sk-guarded-b52-jettison guard="closed" label="jettison"></sk-guarded-b52-jettison>
+    <sk-guarded-b52-jettison guard="open" label="jettison"></sk-guarded-b52-jettison>
+    <sk-guarded-b52-jettison guard="open" pressed label="jettison"></sk-guarded-b52-jettison>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>On a B-52's pilot and bombardier panels the pushes that cannot be pressed by accident live under
+  <b>red-anodised aluminium flip-guards</b>: a machined lid with a rolled free edge and a finger notch, sprung so
+  it snaps shut on its own, stencilled with the same word that is silk-screened on the black wrinkle panel below
+  it. <b>JETTISON</b> is the one everybody remembers. The push underneath is an ordinary Cutler-Hammer red dome in
+  a black rim — deliberately ordinary, because the guard is the safety, not the button.</p>
+  <p><b>The tells kept here:</b> the anodised red with a directional brushing grain across the lid and one broad
+  highlight band lying over it; the rolled front edge and the notch you hook a gloved finger into; the stencil, cut
+  with two bridges through the closed counter of the <b>O</b> so the island stays attached, as a real stencil brush
+  demands; the bare-aluminium hinge pin and its two knuckles; the second JETTISON silk-screened on the panel; the
+  wrinkle paint as a fine crinkle with a chip at the lower-left of the cutout showing bare metal. The lid flips in
+  160 ms and bounces once against its stop; closing snaps. The push travels 2 px and stops hard.</p>
+  <p><b>Left out</b>, and one deliberate change: the guard's coil spring and the two panel screws that hold the
+  bracket; and the hinge is drawn at the <i>top</i> of the lid rather than the bottom, so that the open guard
+  stands clear above the push the way it does in the cockpit photographs instead of falling across the panel below
+  it.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-guarded-b52-jettison> — red-anodised flip-guard over a red JETTISON push ====
+   attributes: guard("open"|"closed") pressed legend label scale disabled
+   events: change {guard:boolean} when the lid flips; press / release / activate on the push
+           (activate only fires with the guard open)
+   keyboard: Enter flips the guard, Space presses
+   self-contained: paste this block into any page and use <sk-guarded-b52-jettison></sk-guarded-b52-jettison> */
+(function () {
+  if (customElements.get("sk-guarded-b52-jettison")) return;
+  var W = 136, H = 170;
+  var PX = 68, PY = 92;                 // the push's centre
+  var WELL = 30;                        // the panel cutout
+  var LW = 47.5, LH = 61, HY = 57.5;    // the lid, and the hinge line at its top
+  var LX = PX - LW / 2;
+  var D2R = Math.PI / 180;
+  function pt(cx, cy, r, a) { return (cx + r * Math.cos(a * D2R)).toFixed(2) + " " + (cy + r * Math.sin(a * D2R)).toFixed(2); }
+  function arc(cx, cy, r, a0, a1, sw) { return "M " + pt(cx, cy, r, a0) + " A " + r + " " + r + " 0 0 " + (sw === undefined ? 1 : sw) + " " + pt(cx, cy, r, a1); }
+
+  // the stencil, drawn letter by letter at a fixed pitch so the bridges land on the O
+  var WORD = "JETTISON", PITCH = 5.3, BASE = 34.5;
+  var SX = LW / 2 - (WORD.length - 1) * PITCH / 2;
+  var OI = WORD.indexOf("O"), OX = SX + OI * PITCH;
+  var STENCIL = (function () {
+    var s = "";
+    for (var i = 0; i < WORD.length; i++) s += '<text x="' + (SX + i * PITCH).toFixed(2) + '" y="' + BASE + '">' + WORD[i] + "</text>";
+    return s;
+  })();
+
+  var TPL = document.createElement("template");
+  TPL.innerHTML =
+  '<style>' +
+  ':host{display:inline-block;width:' + W + 'px;height:' + H + 'px;position:relative;font-size:10px;-webkit-tap-highlight-color:transparent}' +
+  ':host([hidden]){display:none}' +
+  '.wrap{position:absolute;inset:0;transform-origin:0 0;perspective:320px;perspective-origin:' + PX + 'px ' + (PY + 6) + 'px}' +
+  'svg.panel{display:block;width:' + W + 'px;height:' + H + 'px;overflow:visible}' +
+  'text{font-family:"Oswald","Roboto Condensed","Arial Narrow",sans-serif}' +
+  // ---- the lid ----
+  '.lid{position:absolute;left:' + LX + 'px;top:' + HY + 'px;width:' + LW + 'px;height:' + LH + 'px;' +
+    'transform-origin:50% 0;transform-style:preserve-3d;transform:rotateX(0deg);' +
+    'transition:transform 160ms cubic-bezier(.18,1.55,.45,1)}' +
+  ':host([guard="open"]) .lid{transform:rotateX(112deg)}' +
+  '.face{position:absolute;inset:0;border-radius:3px;backface-visibility:hidden;overflow:hidden}' +
+  '.out{' +
+    'background:' +
+      'linear-gradient(101deg,rgba(255,255,255,0) 18%,rgba(255,236,232,.40) 38%,rgba(255,255,255,0) 58%),' +
+      'repeating-linear-gradient(88deg,rgba(255,255,255,.085) 0 1px,rgba(0,0,0,.075) 1px 2px),' +
+      'linear-gradient(160deg,#d6463f 0%,#bd2720 42%,#a01d17 74%,#6f1410 100%);' +
+    'box-shadow:inset 0 1px 0 rgba(255,190,182,.55),inset -1px -1px 0 rgba(60,8,6,.7),' +
+      '1px 2px 3px rgba(0,0,0,.55),3px 6px 9px rgba(0,0,0,.45)}' +
+  '.in{transform:rotateY(180deg);' +
+    'background:' +
+      'radial-gradient(70% 55% at 32% 26%,rgba(255,170,160,.22),transparent 70%),' +
+      'repeating-linear-gradient(88deg,rgba(255,255,255,.05) 0 1px,rgba(0,0,0,.09) 1px 2px),' +
+      'linear-gradient(200deg,#7d1812 0%,#5e100c 55%,#430907 100%);' +
+    'box-shadow:inset 0 0 0 1px rgba(20,4,3,.8),inset 0 2px 5px rgba(0,0,0,.6),0 3px 7px rgba(0,0,0,.6)}' +
+  '.in .pocket{position:absolute;left:5px;right:5px;top:6px;bottom:9px;border-radius:2px;' +
+    'background:linear-gradient(200deg,#6d130e,#4a0a07);box-shadow:inset 1px 1px 2px rgba(0,0,0,.7),inset -1px -1px 0 rgba(190,90,80,.18)}' +
+  // the rolled free edge and the finger notch, at the bottom of the lid
+  '.roll{position:absolute;left:0;right:0;bottom:0;height:7px;' +
+    'background:linear-gradient(180deg,rgba(255,160,150,.30),rgba(255,120,110,.12) 42%,rgba(60,8,6,.55));' +
+    'border-radius:0 0 3px 3px;box-shadow:inset 0 1px 0 rgba(255,200,192,.5)}' +
+  '.notch{position:absolute;left:50%;bottom:-1px;width:15px;height:8px;margin-left:-7.5px;' +
+    'border-radius:8px 8px 0 0;background:#0b0b0a;box-shadow:inset 0 2px 2px rgba(0,0,0,.9),0 -1px 0 rgba(255,175,165,.45)}' +
+  '.stencil{position:absolute;inset:0;width:100%;height:100%;overflow:visible}' +
+  '.stencil text{font-size:9px;font-weight:600;text-anchor:middle;fill:#efefe9;letter-spacing:0}' +
+  // ---- hit areas and focus ----
+  '.grab{position:absolute;left:24px;top:22px;width:88px;height:104px;border-radius:5px;outline:none;pointer-events:none}' +
+  '.grab:focus-visible{box-shadow:0 0 0 2px #16e0e0,0 0 14px rgba(22,224,224,.6)}' +
+  '.hit{position:absolute;pointer-events:auto;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}' +
+  '.hit-lid{left:' + LX + 'px;top:' + HY + 'px;width:' + LW + 'px;height:' + LH + 'px;border-radius:3px}' +
+  ':host([guard="open"]) .hit-lid{left:38.7px;top:28.6px;width:58.6px;height:29.4px;border-radius:2px}' +
+  '.hit-push{left:' + (PX - 21) + 'px;top:' + (PY - 21) + 'px;width:42px;height:42px;border-radius:50%;pointer-events:none}' +
+  ':host([guard="open"]) .hit-push{pointer-events:auto}' +
+  ':host([disabled]) .hit{cursor:default}' +
+  '.push{transform-box:view-box;transform-origin:' + PX + 'px ' + PY + 'px;transition:transform 40ms cubic-bezier(.4,0,.9,.6)}' +
+  ':host([pressed]) .push{transform:translate(0px,2px)}' +
+  '.pshadow{transition:opacity 40ms linear}' +
+  ':host([pressed]) .pshadow{opacity:.5}' +
+  '</style>' +
+
+  '<div class="wrap">' +
+  '<svg class="panel" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs>' +
+    '<linearGradient id="plate" x1="0.1" y1="0" x2="0.5" y2="1">' +
+      '<stop offset="0" stop-color="#2e2e2b"/><stop offset="0.45" stop-color="#20201e"/>' +
+      '<stop offset="1" stop-color="#151514"/></linearGradient>' +
+    '<filter id="crinkle" x="0%" y="0%" width="100%" height="100%">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="4" seed="17" result="t"/>' +
+      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0.55 0 0 0 0 0.55 0 0 0 0 0.55 1.1 0 0 0 -0.42"/>' +
+    '</filter>' +
+    '<radialGradient id="well" cx="0.38" cy="0.3" r="0.85">' +
+      '<stop offset="0" stop-color="#1d1d1b"/><stop offset="0.6" stop-color="#101010"/>' +
+      '<stop offset="1" stop-color="#050505"/></radialGradient>' +
+    '<radialGradient id="dome" cx="0.35" cy="0.27" r="0.92">' +
+      '<stop offset="0" stop-color="#ff8375"/><stop offset="0.26" stop-color="#e6392c"/>' +
+      '<stop offset="0.62" stop-color="#c8281f"/><stop offset="0.88" stop-color="#94170f"/>' +
+      '<stop offset="1" stop-color="#6d0f0a"/></radialGradient>' +
+    '<radialGradient id="pgloss" cx="0.5" cy="0.5" r="0.5">' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+    '<linearGradient id="pin" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#e2e6e8"/><stop offset="0.38" stop-color="#b9bdc0"/>' +
+      '<stop offset="0.62" stop-color="#6e7376"/><stop offset="1" stop-color="#3c4042"/></linearGradient>' +
+    '<filter id="pb" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>' +
+    '<filter id="pb1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.9"/></filter>' +
+    '<clipPath id="plateclip"><rect x="3" y="20" width="130" height="146" rx="3"/></clipPath>' +
+  '</defs>' +
+
+    // ---- the black wrinkle panel ----
+    '<rect x="4" y="22" width="130" height="146" rx="3" fill="#000" opacity="0.5" filter="url(#pb)"/>' +
+    '<rect x="3" y="20" width="130" height="146" rx="3" fill="url(#plate)"/>' +
+    '<g clip-path="url(#plateclip)">' +
+      '<rect x="3" y="20" width="130" height="146" filter="url(#crinkle)" opacity="0.55" style="mix-blend-mode:overlay"/>' +
+      '<rect x="3" y="20" width="130" height="146" fill="none" stroke="#4a4a45" stroke-opacity="0.5" stroke-width="2"/>' +
+      '<path d="M3 20 L133 20" stroke="#5a5a54" stroke-opacity="0.45" stroke-width="1.4"/>' +
+      '<path d="M3 165.2 L133 165.2" stroke="#000" stroke-opacity="0.6" stroke-width="1.6"/>' +
+    '</g>' +
+
+    // ---- the cutout: a recessed well with a bevelled lip ----
+    '<circle cx="' + PX + '" cy="' + PY + '" r="' + (WELL + 1.4) + '" fill="#0b0b0a"/>' +
+    '<path d="' + arc(PX, PY, WELL + 1, 168, 12, 0) + '" fill="none" stroke="#6b6b64" stroke-opacity="0.55" stroke-width="1.6"/>' +
+    '<path d="' + arc(PX, PY, WELL + 1, 190, 350) + '" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="2"/>' +
+    '<circle cx="' + PX + '" cy="' + PY + '" r="' + WELL + '" fill="url(#well)"/>' +
+    '<path d="' + arc(PX, PY, WELL - 1.2, 192, 348) + '" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="3" filter="url(#pb1)"/>' +
+    // the chip at the lower-left of the cutout, bare metal under the paint
+    '<path d="M ' + pt(PX, PY, WELL + 0.5, 206) + ' L ' + pt(PX, PY, WELL + 6.5, 202) + ' L ' + pt(PX, PY, WELL + 7.5, 213) +
+      ' L ' + pt(PX, PY, WELL + 3, 220) + ' Z" fill="#8f918c" opacity="0.62"/>' +
+    '<path d="M ' + pt(PX, PY, WELL + 0.5, 206) + ' L ' + pt(PX, PY, WELL + 6.5, 202) + ' L ' + pt(PX, PY, WELL + 7.5, 213) +
+      ' L ' + pt(PX, PY, WELL + 3, 220) + ' Z" fill="none" stroke="#050505" stroke-opacity="0.7" stroke-width="0.7"/>' +
+
+    // ---- the push ----
+    '<g class="pshadow"><ellipse cx="' + PX + '" cy="' + (PY + 3) + '" rx="21" ry="20" fill="#000" opacity="0.8" filter="url(#pb)"/></g>' +
+    '<g class="push">' +
+      '<circle cx="' + PX + '" cy="' + PY + '" r="21" fill="#191917"/>' +
+      '<path d="' + arc(PX, PY, 20.2, 186, 300) + '" fill="none" stroke="#6d6d67" stroke-opacity="0.6" stroke-width="1.4"/>' +
+      '<path d="' + arc(PX, PY, 20.2, 10, 130) + '" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.4"/>' +
+      '<circle cx="' + PX + '" cy="' + PY + '" r="18" fill="url(#dome)"/>' +
+      '<path d="' + arc(PX, PY, 16.2, 190, 285) + '" fill="none" stroke="#ffd6cf" stroke-opacity="0.55" stroke-width="2" filter="url(#pb1)"/>' +
+      '<path d="' + arc(PX, PY, 16.6, 25, 135) + '" fill="none" stroke="#ff8a78" stroke-opacity="0.3" stroke-width="1.6"/>' +
+      '<ellipse cx="' + (PX - 5.5) + '" cy="' + (PY - 7) + '" rx="7.6" ry="4.4" fill="url(#pgloss)" transform="rotate(-32 ' + (PX - 5.5) + ' ' + (PY - 7) + ')"/>' +
+    '</g>' +
+
+    // ---- the hinge: two knuckles and a bare aluminium pin ----
+    '<rect x="' + (PX - 26) + '" y="' + (HY - 3.4) + '" width="52" height="5.4" rx="2.6" fill="#141413"/>' +
+    '<rect x="' + (PX - 24) + '" y="' + (HY - 3) + '" width="48" height="4.2" rx="2.1" fill="url(#pin)"/>' +
+    '<rect x="' + (PX - 17) + '" y="' + (HY - 3.6) + '" width="9" height="5.6" rx="2.6" fill="#8e1a14"/>' +
+    '<rect x="' + (PX + 8) + '" y="' + (HY - 3.6) + '" width="9" height="5.6" rx="2.6" fill="#8e1a14"/>' +
+    '<rect x="' + (PX - 17) + '" y="' + (HY - 3.6) + '" width="9" height="1.4" rx="0.7" fill="#d6463f" opacity="0.8"/>' +
+    '<rect x="' + (PX + 8) + '" y="' + (HY - 3.6) + '" width="9" height="1.4" rx="0.7" fill="#d6463f" opacity="0.8"/>' +
+
+    // ---- the panel's own silk-screened legend ----
+    '<text class="panel-legend" x="' + PX + '" y="148" text-anchor="middle" font-size="10.5" font-weight="500" ' +
+      'letter-spacing="1.5" fill="#eeeeea" fill-opacity="0.92"></text>' +
+    '<path d="M ' + (PX - 40) + ' 154.5 L ' + (PX + 40) + ' 154.5" stroke="#eeeeea" stroke-opacity="0.3" stroke-width="0.8"/>' +
+  '</svg>' +
+
+  '<div class="lid">' +
+    '<div class="face in"><div class="pocket"></div></div>' +
+    '<div class="face out">' +
+      '<svg class="stencil" viewBox="0 0 ' + LW + ' ' + LH + '"><defs><mask id="bridges">' +
+        '<rect x="0" y="0" width="' + LW + '" height="' + LH + '" fill="#fff"/>' +
+        '<rect x="' + (OX - 3.1) + '" y="' + (BASE - 6.6) + '" width="1.5" height="3.6" fill="#000" transform="rotate(45 ' + (OX - 2.35) + ' ' + (BASE - 4.8) + ')"/>' +
+        '<rect x="' + (OX + 1.6) + '" y="' + (BASE - 3.6) + '" width="1.5" height="3.6" fill="#000" transform="rotate(45 ' + (OX + 2.35) + ' ' + (BASE - 1.8) + ')"/>' +
+      '</mask></defs>' +
+      '<g class="word" mask="url(#bridges)">' + STENCIL + '</g></svg>' +
+      '<div class="roll"></div><div class="notch"></div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="grab" role="button" tabindex="0">' +
+    '<div class="hit hit-lid"></div><div class="hit hit-push"></div>' +
+  '</div></div>';
+
+  class SkGuardedB52 extends HTMLElement {
+    static get observedAttributes() { return ["guard", "pressed", "legend", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      var r = this.shadowRoot;
+      this._scale = 1; this._keyHeld = false; this._pdown = false;
+      this._wrap = r.querySelector(".wrap");
+      this._grab = r.querySelector(".grab");
+      this._hitLid = r.querySelector(".hit-lid");
+      this._hitPush = r.querySelector(".hit-push");
+      this._legend = r.querySelector(".panel-legend");
+      this._word = r.querySelector(".word");
+      this._onLid = this._onLid.bind(this);
+      this._onPushDown = this._onPushDown.bind(this);
+      this._onPushUp = this._onPushUp.bind(this);
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("guard")) this.setAttribute("guard", "closed");
+      this._read();
+      this._hitLid.addEventListener("pointerdown", this._onLid);
+      this._hitPush.addEventListener("pointerdown", this._onPushDown);
+      this._hitPush.addEventListener("pointerup", this._onPushUp);
+      this._hitPush.addEventListener("pointercancel", this._onPushUp);
+      this._grab.addEventListener("keydown", this._onKeyDown);
+      this._grab.addEventListener("keyup", this._onKeyUp);
+    }
+    disconnectedCallback() {
+      this._hitLid.removeEventListener("pointerdown", this._onLid);
+      this._hitPush.removeEventListener("pointerdown", this._onPushDown);
+      this._hitPush.removeEventListener("pointerup", this._onPushUp);
+      this._hitPush.removeEventListener("pointercancel", this._onPushUp);
+      this._grab.removeEventListener("keydown", this._onKeyDown);
+      this._grab.removeEventListener("keyup", this._onKeyUp);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._read(); }
+
+    get value() { return this.hasAttribute("pressed"); }
+    set value(v) { if (v === true || v === "true" || v === 1) this.setAttribute("pressed", ""); else this.removeAttribute("pressed"); }
+    get guard() { return this.getAttribute("guard") === "open"; }
+    set guard(v) { this.setAttribute("guard", v ? "open" : "closed"); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus(o) { this._grab.focus(o); }
+    blur() { this._grab.blur(); }
+
+    _read() {
+      var s = parseFloat(this.getAttribute("scale"));
+      this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
+      var word = (this.getAttribute("legend") || "JETTISON").toUpperCase();
+      this._legend.textContent = word;
+      if (word !== WORD && this._word) {
+        var pitch = PITCH, sx = LW / 2 - (word.length - 1) * pitch / 2, out = "";
+        for (var i = 0; i < word.length; i++) out += '<text x="' + (sx + i * pitch).toFixed(2) + '" y="' + BASE + '">' + word[i] + "</text>";
+        this._word.innerHTML = out;
+      }
+      var dis = this.hasAttribute("disabled");
+      this._grab.setAttribute("tabindex", dis ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._grab.setAttribute("aria-pressed", this.hasAttribute("pressed") ? "true" : "false");
+      this._grab.setAttribute("aria-label", (this.getAttribute("label") || word) + ", guard " + (this.guard ? "open" : "closed"));
+      this.style.width = (W * this._scale) + "px";
+      this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _emit(t, d) { this.dispatchEvent(new CustomEvent(t, { bubbles: true, composed: true, detail: d })); }
+    _flip(open) {
+      if (open === this.guard) return;
+      if (!open) this.removeAttribute("pressed");
+      this.setAttribute("guard", open ? "open" : "closed");
+      this._emit("change", { guard: open });
+    }
+    _down() {
+      if (this.hasAttribute("pressed")) return;
+      this.setAttribute("pressed", "");
+      this._grab.setAttribute("aria-pressed", "true");
+      this._emit("press", {});
+    }
+    _up(fire) {
+      if (!this.hasAttribute("pressed")) return;
+      this.removeAttribute("pressed");
+      this._grab.setAttribute("aria-pressed", "false");
+      this._emit("release", {});
+      if (fire) this._emit("activate", {});
+    }
+
+    _onLid(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._flip(!this.guard);
+    }
+    _onPushDown(e) {
+      if (this.hasAttribute("disabled") || !this.guard || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      try { this._hitPush.setPointerCapture(e.pointerId); } catch (_) {}
+      this._pdown = true;
+      this._down();
+    }
+    _onPushUp(e) {
+      if (!this._pdown) return;
+      this._pdown = false;
+      try { this._hitPush.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._up(e.type === "pointerup");
+    }
+    _onKeyDown(e) {
+      if (this.hasAttribute("disabled")) return;
+      if (e.key === "Enter") { e.preventDefault(); if (!e.repeat) this._flip(!this.guard); return; }
+      if (e.key !== " " && e.key !== "Spacebar") return;
+      e.preventDefault();
+      if (e.repeat || !this.guard) return;
+      this._keyHeld = true;
+      this._down();
+    }
+    _onKeyUp(e) {
+      if (!this._keyHeld) return;
+      if (e.key !== " " && e.key !== "Spacebar") return;
+      this._keyHeld = false;
+      this._up(true);
+    }
+  }
+  customElements.define("sk-guarded-b52-jettison", SkGuardedB52);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

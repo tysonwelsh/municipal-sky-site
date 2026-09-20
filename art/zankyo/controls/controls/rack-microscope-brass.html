@@ -25,14 +25,14 @@
   "attributes": ["value", "min", "max", "step", "fine", "label", "scale", "disabled"],
   "events": ["input", "change"],
   "size": { "w": 128, "h": 240 },
-  "notes": "Three stands: racked down to 8 mm, run up to 25 mm with the tube high, and a small one at 0.6. Drag the tube or the knobs up and down; the knurl scrolls one turn per 6 mm."
+  "notes": "Three stands: racked down to 8 mm, run up to 25 mm with the tube high, and a small one at 0.6 scale. Drag the tube or the knobs up and down; the knurl scrolls one turn per 6 mm."
 }
 </script>
 </head>
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="wood">
+  <main class="sk-stage" data-panel="black">
     <sk-rack-microscope-brass value="8" label="COARSE"></sk-rack-microscope-brass>
     <sk-rack-microscope-brass value="25" label="COARSE"></sk-rack-microscope-brass>
     <sk-rack-microscope-brass value="17.5" label="COARSE" scale="0.6"></sk-rack-microscope-brass>
@@ -45,17 +45,18 @@
   Wetzlar — focused by a <b>rack and pinion</b>: a strip of teeth cut diagonally across the face of the limb, a
   pinion in a cast housing, and a pair of knurled brass heads on a common axle so either hand could drive it.
   The whole stand was lacquered brass on a japanned horseshoe foot, and a fine-focus micrometer with a silvered
-  divided drum sat beside the limb for the last half millimetre.</p>
+  divided drum stood beside the limb for the last half millimetre.</p>
   <p><b>The tells kept here:</b> the rack's teeth are cut on the diagonal, bright on the top land and dark in the
   root; the lacquer is duller and more orange on the flat faces and worn through to bright brass on the knobs and
-  on the front of the rack, where hands and the pinion have been. The knurl is a straight knurl of 48 ridges
-  <i>projected</i> around the rim, so it crowds at the top and bottom of each knob and scrolls one full turn per
-  6 mm of climb. A window in the housing shows a tooth or two of the pinion meshing. The body tube and its collar
-  ride up with the rack; the micrometer's silvered drum, an engraved <i>LONDON</i>, a serial number and a ring of
-  old dust at the foot finish it.</p>
-  <p><b>Left out:</b> the sub-stage mirror and condenser, the objective nosepiece thread, the stage plate and its
-  clips — this is the limb alone, which is the control. The <code>fine</code> attribute shifts the tube ±0.5 mm
-  without turning the coarse knobs, as the micrometer would.</p>
+  on the front of the rack, where hands and the pinion have been. The knurl is a straight knurl of 44 ridges
+  <i>projected</i> around the rim, so it crowds at the top and bottom of each knob, and it scrolls one full turn
+  per 6 mm of climb. A window in the housing shows the pinion's teeth meshing with the rack. The draw-tube,
+  eyepiece and slide collar ride up together; the micrometer's silvered drum, an engraved <i>LONDON</i>, a serial
+  number, chipped japan on the horseshoe foot and a ring of old dust at its base finish it.</p>
+  <p><b>Left out:</b> the sub-stage mirror and condenser, the objective nosepiece, the stage plate and its clips —
+  this is the limb alone, which is the control. The <code>fine</code> attribute shifts the tube ±0.5 mm without
+  turning the coarse knobs, as the micrometer screw would; the drag is geared down to a deliberate 250 px for the
+  full 30 mm rather than the rack's true pitch.</p>
 </section>
 <script id="sk-element">
 /* ==== <sk-rack-microscope-brass> — Victorian brass coarse-focus rack and pinion ====
@@ -67,12 +68,13 @@
   if (customElements.get("sk-rack-microscope-brass")) return;
   var NS = "http://www.w3.org/2000/svg";
   var W = 128, H = 240;
-  var TRAVEL = 34;                     // px the tube climbs over the whole range
+  var TRAVEL = 30;                     // px the tube climbs over the whole range
   var RX0 = 56, RX1 = 72;              // the rack bar's left and right edges
-  var RTOP = 120, RBOT = 214;          // the rack bar at value = min
-  var KLY = 189, KR = 22, KHW = 11;    // knob centre-y, radius, half-width
-  var KLX = 18, KRX = 110;             // the two knob centres
-  var RIDGES = 48;
+  var RTOP = 124, RBOT = 214;          // the rack bar at value = min
+  var KY = 187, KR = 23, KHW = 12;     // knob centre-y, radius, half-width
+  var KLX = 15, KRX = 113;             // the two knob centres
+  var PCX = 64, PCY = 192;             // the pinion
+  var RIDGES = 44;
 
   var TPL = document.createElement("template");
   TPL.innerHTML = [
@@ -83,125 +85,141 @@
   '.wrap { position: absolute; inset: 0; transform-origin: 0 0; }',
   'svg { display: block; width: ', W, 'px; height: ', H, 'px; overflow: visible; }',
   '.grab, .grab2 { position: absolute; touch-action: none; user-select: none; -webkit-user-select: none;',
-  '  cursor: ns-resize; outline: none; border-radius: 10px; }',
-  '.grab { left: 2px; top: 160px; width: 124px; height: 58px; }',
-  '.grab2 { left: 36px; top: 6px; width: 56px; height: 128px; }',
+  '  cursor: ns-resize; outline: none; border-radius: 12px; }',
+  '.grab { left: 1px; top: 160px; width: 126px; height: 56px; }',
+  '.grab2 { left: 40px; top: 8px; width: 48px; height: 122px; }',
   ':host([disabled]) .grab, :host([disabled]) .grab2 { cursor: default; }',
   '.grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 12px rgba(22,224,224,0.55); }',
   '.mover { transform-box: view-box; transform-origin: 0 0; transition: transform 50ms linear; }',
-  '.mover.ease { transition: transform 150ms cubic-bezier(.3,.8,.35,1); }',
-  '.pin { transform-box: view-box; transform-origin: 64px 196px; transition: transform 50ms linear; }',
+  '.mover.ease { transition: transform 160ms cubic-bezier(.3,.8,.35,1); }',
+  '.pin { transform-box: view-box; transform-origin: ', PCX, 'px ', PCY, 'px; transition: transform 50ms linear; }',
   'text { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; }',
-  '.eng { font-size: 5px; font-style: italic; letter-spacing: 0.1em; text-anchor: middle; fill: #c9ab6a; opacity: 0.5; }',
-  '.ser { font-size: 4.2px; font-style: italic; letter-spacing: 0.06em; text-anchor: middle; fill: #f0dcab; opacity: 0.38; }',
-  '.lab { font-size: 6px; font-weight: 500; letter-spacing: 0.26em; text-anchor: middle; fill: #b79a63; opacity: 0.85; }',
+  '.eng { font-size: 5px; font-style: italic; letter-spacing: 0.14em; text-anchor: middle; fill: #b9a071; opacity: 0.55; }',
+  '.ser { font-size: 4.2px; font-style: italic; letter-spacing: 0.06em; text-anchor: middle; fill: #2a1d09; opacity: 0.5; }',
+  '.lab { font-size: 5.8px; font-weight: 500; letter-spacing: 0.26em; text-anchor: middle; fill: #9d8a68; opacity: 0.8; }',
   '</style>',
   '<div class="wrap">',
   '<svg viewBox="0 0 ', W, ' ', H, '" aria-hidden="true">',
   '<defs>',
-    '<linearGradient id="bv" x1="0" y1="0" x2="1" y2="0">',
-      '<stop offset="0" stop-color="#6d4f22"/><stop offset="0.10" stop-color="#c7a45f"/>',
-      '<stop offset="0.26" stop-color="#e6c27a"/><stop offset="0.50" stop-color="#b58a45"/>',
-      '<stop offset="0.76" stop-color="#6a4d23"/><stop offset="0.90" stop-color="#9c7735"/>',
-      '<stop offset="1" stop-color="#4a3416"/></linearGradient>',
-    '<linearGradient id="bvd" x1="0" y1="0" x2="1" y2="0">',
-      '<stop offset="0" stop-color="#4f3a18"/><stop offset="0.12" stop-color="#a8853f"/>',
-      '<stop offset="0.30" stop-color="#c2a05a"/><stop offset="0.55" stop-color="#906d32"/>',
-      '<stop offset="0.80" stop-color="#553d1a"/><stop offset="0.92" stop-color="#86682e"/>',
-      '<stop offset="1" stop-color="#3b2a11"/></linearGradient>',
-    '<linearGradient id="kn" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#6d5024"/><stop offset="0.10" stop-color="#d9bb7a"/>',
-      '<stop offset="0.28" stop-color="#f2dc9c"/><stop offset="0.54" stop-color="#b58a45"/>',
-      '<stop offset="0.80" stop-color="#5d4320"/><stop offset="0.93" stop-color="#a5813d"/>',
-      '<stop offset="1" stop-color="#3f2c11"/></linearGradient>',
+    /* lacquered brass on a flat/round vertical face: dull, orange, one soft highlight left of centre */
+    '<linearGradient id="lac" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#4e3612"/><stop offset="0.09" stop-color="#9b7331"/>',
+      '<stop offset="0.24" stop-color="#c0964a"/><stop offset="0.40" stop-color="#ab8039"/>',
+      '<stop offset="0.66" stop-color="#6d4e1d"/><stop offset="0.84" stop-color="#8f6a2a"/>',
+      '<stop offset="1" stop-color="#32220b"/></linearGradient>',
+    '<linearGradient id="lacd" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#3b2810"/><stop offset="0.12" stop-color="#7e5d25"/>',
+      '<stop offset="0.30" stop-color="#9c7734"/><stop offset="0.52" stop-color="#7c5b22"/>',
+      '<stop offset="0.76" stop-color="#4b360f"/><stop offset="0.90" stop-color="#6e5220"/>',
+      '<stop offset="1" stop-color="#241804"/></linearGradient>',
+    /* brass worn bright by hands: the knobs, the pinion, the tooth lands */
+    '<linearGradient id="brt" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#6a4d1e"/><stop offset="0.08" stop-color="#d7bc7e"/>',
+      '<stop offset="0.24" stop-color="#f7e8ba"/><stop offset="0.44" stop-color="#d3b063"/>',
+      '<stop offset="0.72" stop-color="#6f5021"/><stop offset="0.90" stop-color="#bb9450"/>',
+      '<stop offset="1" stop-color="#3a2809"/></linearGradient>',
+    '<linearGradient id="brtH" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#8a6626"/><stop offset="0.22" stop-color="#f4e2ad"/>',
+      '<stop offset="0.55" stop-color="#d0ac60"/><stop offset="1" stop-color="#6b4c1b"/></linearGradient>',
     '<linearGradient id="tooth" x1="0" y1="0" x2="1" y2="0">',
-      '<stop offset="0" stop-color="#ad8542"/><stop offset="0.35" stop-color="#f2dc9c"/>',
-      '<stop offset="0.7" stop-color="#d7b871"/><stop offset="1" stop-color="#8e6b30"/></linearGradient>',
+      '<stop offset="0" stop-color="#9c7534"/><stop offset="0.30" stop-color="#f6e6b2"/>',
+      '<stop offset="0.62" stop-color="#d4b46c"/><stop offset="1" stop-color="#7d5b25"/></linearGradient>',
     '<linearGradient id="rackbg" x1="0" y1="0" x2="1" y2="0">',
-      '<stop offset="0" stop-color="#3a2810"/><stop offset="0.5" stop-color="#4c3718"/>',
-      '<stop offset="1" stop-color="#2a1c0b"/></linearGradient>',
+      '<stop offset="0" stop-color="#2a1c08"/><stop offset="0.5" stop-color="#4c3718"/>',
+      '<stop offset="1" stop-color="#1d1305"/></linearGradient>',
     '<linearGradient id="silv" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#8e8e88"/><stop offset="0.25" stop-color="#d8d8d2"/>',
-      '<stop offset="0.55" stop-color="#eeeee8"/><stop offset="0.8" stop-color="#9a9a94"/>',
-      '<stop offset="1" stop-color="#6e6e69"/></linearGradient>',
-    '<linearGradient id="japan" x1="0" y1="0" x2="0.4" y2="1">',
-      '<stop offset="0" stop-color="#3a3632"/><stop offset="0.35" stop-color="#1d1b19"/>',
-      '<stop offset="1" stop-color="#0c0b0a"/></linearGradient>',
+      '<stop offset="0" stop-color="#7f7f79"/><stop offset="0.2" stop-color="#d8d8d2"/>',
+      '<stop offset="0.5" stop-color="#f0f0ea"/><stop offset="0.78" stop-color="#9a9a94"/>',
+      '<stop offset="1" stop-color="#63635e"/></linearGradient>',
+    '<linearGradient id="japan" x1="0.1" y1="0" x2="0.6" y2="1">',
+      '<stop offset="0" stop-color="#46423c"/><stop offset="0.22" stop-color="#211f1c"/>',
+      '<stop offset="0.7" stop-color="#121110"/><stop offset="1" stop-color="#070706"/></linearGradient>',
+    '<linearGradient id="groove" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#150d03"/><stop offset="0.35" stop-color="#2c1e08"/>',
+      '<stop offset="1" stop-color="#0d0802"/></linearGradient>',
     '<radialGradient id="dust" cx="50%" cy="50%" r="50%">',
-      '<stop offset="0.4" stop-color="#000" stop-opacity="0"/><stop offset="0.75" stop-color="#241a0c" stop-opacity="0.5"/>',
+      '<stop offset="0.35" stop-color="#000" stop-opacity="0"/><stop offset="0.72" stop-color="#2b2113" stop-opacity="0.55"/>',
       '<stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>',
-    '<filter id="sf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>',
+    '<linearGradient id="tarn" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#1d2a14" stop-opacity="0.34"/><stop offset="0.5" stop-color="#1d2a14" stop-opacity="0.04"/>',
+      '<stop offset="1" stop-color="#1d2a14" stop-opacity="0.30"/></linearGradient>',
+    '<filter id="sf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.8"/></filter>',
     '<filter id="sf2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4.5"/></filter>',
-    '<clipPath id="slot"><rect x="52" y="172" width="24" height="34" rx="2"/></clipPath>',
+    '<clipPath id="slot"><rect x="54" y="170" width="20" height="34" rx="2"/></clipPath>',
   '</defs>',
 
-  /* ambient shadow of the whole stand on the bench */
-  '<ellipse cx="72" cy="232" rx="52" ry="9" fill="#000" opacity="0.5" filter="url(#sf2)"/>',
+  /* the stand's shadow on the bench */
+  '<ellipse cx="70" cy="234" rx="56" ry="9" fill="#000" opacity="0.5" filter="url(#sf2)"/>',
 
-  /* ---- fine-focus micrometer, fixed beside the limb ---- */
-  '<rect x="84" y="90" width="14" height="9" rx="2" fill="url(#bvd)"/>',
-  '<rect x="96" y="60" width="22" height="42" rx="4" fill="url(#bv)" stroke="#33240e" stroke-width="0.6"/>',
-  '<rect x="96" y="72" width="22" height="13" fill="url(#silv)"/>',
+  /* ---- fine-focus micrometer, fixed, on the left of the limb ---- */
+  '<rect x="29" y="108" width="18" height="18" rx="3" fill="url(#lacd)" stroke="#241804" stroke-width="0.5"/>',
+  '<rect x="9" y="70" width="25" height="48" rx="4" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>',
+  '<g class="mknurl"></g>',
+  '<rect x="9" y="86" width="25" height="14" fill="url(#silv)"/>',
   '<g class="mtick"></g>',
-  '<rect x="96" y="72" width="22" height="13" fill="none" stroke="#5c5c56" stroke-width="0.5"/>',
-  '<rect x="99" y="61" width="16" height="10" rx="1.5" fill="none" stroke="#f0dcab" stroke-opacity="0.28" stroke-width="0.6"/>',
-  '<line x1="107" y1="86" x2="107" y2="101" stroke="#2a1d0a" stroke-width="0.7" opacity="0.5"/>',
+  '<rect x="9" y="86" width="25" height="14" fill="none" stroke="#54544f" stroke-width="0.5"/>',
+  '<rect x="10.4" y="71" width="1.6" height="46" fill="#fff" opacity="0.15"/>',
 
-  /* ---- the limb: a fixed brass upright with a groove for the rack ---- */
-  '<rect x="42" y="84" width="44" height="134" rx="5" fill="url(#bv)" stroke="#2e2009" stroke-width="0.7"/>',
-  '<rect x="53" y="88" width="22" height="128" rx="2" fill="#2e2109" opacity="0.85"/>',
-  '<rect x="53" y="88" width="22" height="128" rx="2" fill="none" stroke="#e6c27a" stroke-opacity="0.22" stroke-width="0.6"/>',
-  '<rect x="76" y="88" width="1.6" height="128" fill="#f4e0ae" opacity="0.13"/>',
+  /* ---- the limb: fixed brass upright with the rack groove down its face ---- */
+  '<rect x="44" y="92" width="40" height="122" rx="5" fill="url(#lac)" stroke="#241804" stroke-width="0.7"/>',
+  '<rect x="44" y="92" width="40" height="122" rx="5" fill="url(#tarn)"/>',
+  '<rect x="54" y="96" width="20" height="116" rx="2" fill="url(#groove)"/>',
+  '<rect x="54" y="96" width="20" height="116" rx="2" fill="none" stroke="#e6c27a" stroke-opacity="0.2" stroke-width="0.6"/>',
+  '<rect x="75" y="96" width="1.5" height="116" fill="#f4e0ae" opacity="0.12"/>',
 
-  /* ---- the rack + collar + tube: everything that climbs ---- */
+  /* ---- the rack, the collar, the tube: everything that climbs ---- */
   '<g class="mover">',
     '<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#rackbg)"/>',
     '<g class="teeth"></g>',
-    '<rect x="', RX0, '" y="', RTOP, '" width="0.9" height="', (RBOT - RTOP), '" fill="#1d1408" opacity="0.7"/>',
 
-    /* the body tube */
-    '<rect x="50" y="52" width="28" height="60" rx="2" fill="url(#bv)" stroke="#2e2009" stroke-width="0.6"/>',
-    '<rect x="55.5" y="53" width="2.2" height="58" fill="#fff" opacity="0.16"/>',
-    /* the eyepiece: a slightly wider collar with a knurl band */
-    '<rect x="46" y="42" width="36" height="13" rx="2" fill="url(#bv)" stroke="#2e2009" stroke-width="0.6"/>',
+    /* body tube */
+    '<rect x="53" y="52" width="22" height="60" rx="1.5" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>',
+    '<rect x="57.4" y="53" width="1.9" height="58" fill="#fff" opacity="0.17"/>',
+    /* draw tube */
+    '<rect x="56" y="40" width="16" height="15" rx="1" fill="url(#lacd)" stroke="#241804" stroke-width="0.5"/>',
+    /* eyepiece cap with its knurl band */
+    '<path d="M 49 30.5 L 79 30.5 L 76.5 43 L 51.5 43 Z" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>','<rect x="49" y="28" width="30" height="3.4" rx="1.2" fill="url(#lacd)" stroke="#241804" stroke-width="0.5"/>','<ellipse cx="64" cy="29.7" rx="9.5" ry="1.5" fill="#0b0906"/>',
     '<g class="eyeknurl"></g>',
-    '<rect x="48" y="38" width="32" height="6" rx="1.5" fill="url(#bvd)" stroke="#2e2009" stroke-width="0.5"/>',
-    /* the slide collar that carries the rack */
-    '<rect x="40" y="100" width="48" height="22" rx="3" fill="url(#bv)" stroke="#2e2009" stroke-width="0.7"/>',
-    '<rect x="41" y="101.5" width="46" height="1.4" fill="#f6e4b4" opacity="0.28"/>',
-    '<circle cx="79" cy="111" r="3" fill="url(#kn)" stroke="#2a1d0a" stroke-width="0.4"/>',
-    '<rect x="76.6" y="110.4" width="4.8" height="1.1" fill="#2a1d0a" opacity="0.75" transform="rotate(24 79 111)"/>',
+    '<path d="M 50 31.4 L 78 31.4" stroke="#f6e4b4" stroke-opacity="0.3" stroke-width="1"/>',
+    /* slide collar carrying the rack, with its clamp screw */
+    '<rect x="44" y="106" width="40" height="20" rx="3" fill="url(#lac)" stroke="#241804" stroke-width="0.7"/>',
+    '<rect x="44.8" y="107.2" width="38.4" height="1.5" rx="0.7" fill="#f6e4b4" opacity="0.33"/>',
+    '<circle cx="78" cy="116" r="3.1" fill="url(#brt)" stroke="#241804" stroke-width="0.4"/>',
+    '<rect x="75.5" y="115.4" width="5" height="1.1" fill="#241804" opacity="0.8" transform="rotate(26 78 116)"/>',
   '</g>',
 
-  /* ---- the pinion housing, fixed, in front of the rack ---- */
-  '<ellipse cx="66" cy="214" rx="38" ry="7" fill="#000" opacity="0.45" filter="url(#sf)"/>',
-  '<rect x="30" y="164" width="68" height="50" rx="9" fill="url(#bv)" stroke="#2e2009" stroke-width="0.8"/>',
-  '<rect x="31.5" y="165.5" width="65" height="1.6" rx="0.8" fill="#f6e4b4" opacity="0.3"/>',
-  /* the slot: the pinion meshing with the rack */
-  '<rect x="52" y="172" width="24" height="34" rx="2" fill="#140d05"/>',
+  /* ---- the pinion housing, fixed, standing in front of the limb ---- */
+  '<ellipse cx="66" cy="212" rx="40" ry="7" fill="#000" opacity="0.45" filter="url(#sf)"/>',
+  '<rect x="26" y="162" width="76" height="50" rx="9" fill="url(#lac)" stroke="#241804" stroke-width="0.8"/>',
+  '<rect x="27.4" y="163.4" width="73.2" height="1.7" rx="0.85" fill="#f6e4b4" opacity="0.32"/>',
+  '<rect x="26" y="162" width="76" height="50" rx="9" fill="url(#tarn)"/>',
+  /* the window: the pinion meshing with the rack */
+  '<rect x="54" y="170" width="20" height="34" rx="2" fill="#0e0903"/>',
   '<g clip-path="url(#slot)">',
     '<g class="mover2">',
       '<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#rackbg)"/>',
       '<g class="teeth2"></g>',
     '</g>',
     '<g class="pin"><g class="pinteeth"></g>',
-      '<circle cx="64" cy="196" r="7" fill="url(#bvd)"/>',
-      '<circle cx="64" cy="196" r="2.2" fill="#2a1d0a"/>',
+      '<circle cx="', PCX, '" cy="', PCY, '" r="7" fill="url(#brtH)"/>',
+      '<circle cx="', PCX, '" cy="', PCY, '" r="2.2" fill="#2a1d0a"/>',
     '</g>',
   '</g>',
-  '<rect x="52" y="172" width="24" height="34" rx="2" fill="none" stroke="#221708" stroke-width="1.4"/>',
-  '<rect x="52.8" y="172.8" width="22.4" height="32.4" rx="1.6" fill="none" stroke="#f4e0ae" stroke-opacity="0.2" stroke-width="0.6"/>',
-  '<text class="ser" x="64" y="211">No 1042</text>',
+  '<rect x="54" y="170" width="20" height="34" rx="2" fill="none" stroke="#1d1305" stroke-width="1.5"/>',
+  '<rect x="54.8" y="170.8" width="18.4" height="32.4" rx="1.5" fill="none" stroke="#f4e0ae" stroke-opacity="0.2" stroke-width="0.6"/>',
+  '<text class="ser" x="', PCX, '" y="209">No 1042</text>',
 
   /* ---- the twin knurled knobs on the pinion axle ---- */
   '<g class="knobs"></g>',
 
-  /* ---- the japanned foot ---- */
-  '<path d="M 46 212 L 82 212 L 96 232 Q 98 238 91 238 L 37 238 Q 30 238 32 232 Z" fill="url(#japan)" stroke="#000" stroke-width="0.6"/>',
-  '<path d="M 47 213.5 L 81 213.5 L 92 231" fill="none" stroke="#6b6560" stroke-opacity="0.45" stroke-width="0.8"/>',
-  '<ellipse cx="64" cy="215" rx="34" ry="6" fill="url(#dust)"/>',
-  '<text class="eng" x="64" y="226">LONDON</text>',
-  '<text class="lab" x="64" y="236"></text>',
+  /* ---- the japanned horseshoe foot ---- */
+  '<path d="M 44 208 L 84 208 L 108 230 Q 118 238 106 238 L 22 238 Q 10 238 20 230 Z" fill="url(#japan)" stroke="#000" stroke-width="0.6"/>',
+  '<path d="M 45 209.5 L 83 209.5 L 105 230.5" fill="none" stroke="#7d7772" stroke-opacity="0.5" stroke-width="0.9"/>',
+  '<path d="M 22 237 L 104 237" fill="none" stroke="#4d4843" stroke-opacity="0.35" stroke-width="0.7"/>',
+  '<path d="M 21.5 232.5 L 24.5 229.5 L 26 233 Z" fill="#8f8f8a" opacity="0.38"/>','<path d="M 99 236 L 103 233.5 L 104 236.5 Z" fill="#8f8f8a" opacity="0.3"/>',
+  '<ellipse cx="64" cy="210" rx="38" ry="6" fill="url(#dust)"/>',
+  '<text class="eng" x="64" y="223">LONDON</text>',
+  '<text class="lab" x="64" y="234"></text>',
   '</svg>',
   '<div class="grab2"></div>',
   '<div class="grab" role="slider" tabindex="0"></div>',
@@ -228,15 +246,13 @@
       this._grab2 = r.querySelector(".grab2");
       this._lab = r.querySelector(".lab");
       this._knobs = r.querySelector(".knobs");
-      this._ridge = [];
-      this._built = false;
+      this._ridge = []; this._built = false;
       this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this);
       this._onUp = this._onUp.bind(this); this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
     }
     connectedCallback() {
       if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
-      this._build();
-      this._readAttrs(); this._render();
+      this._build(); this._readAttrs(); this._render();
       this._grab.addEventListener("pointerdown", this._onDown);
       this._grab2.addEventListener("pointerdown", this._onDown);
       this._grab.addEventListener("wheel", this._onWheel, { passive: false });
@@ -254,7 +270,11 @@
     attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected || !this._built) return; this._readAttrs(); this._render(); }
 
     get value() { return this._v; }
-    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000)); if (this._built) this._render(); }
+    set value(v) {
+      v = this._clamp(parseFloat(v)); if (isNaN(v)) return;
+      this._v = v; this.setAttribute("value", String(Math.round(v * 1000) / 1000));
+      if (this._built) this._render();
+    }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
     focus() { this._grab.focus(); }
@@ -262,72 +282,71 @@
     /* ---------- one-time geometry ---------- */
     _build() {
       if (this._built) return; this._built = true;
-      var i, y;
-      // the rack: teeth cut on the diagonal, bright land, dark root
-      var pitch = 5.6, slant = 5, land = 2.7;
-      var t1 = this.shadowRoot.querySelector(".teeth"), t2 = this.shadowRoot.querySelector(".teeth2");
-      for (y = RTOP + 1; y < RBOT - 6; y += pitch) {
-        var d = "M " + RX0 + " " + (y + slant) + " L " + RX1 + " " + y + " L " + RX1 + " " + (y + land) +
-                " L " + RX0 + " " + (y + slant + land) + " Z";
-        t1.appendChild(mk("path", { d: d, fill: "url(#tooth)" }));
-        t2.appendChild(mk("path", { d: d, fill: "url(#tooth)" }));
-        var d2 = "M " + RX0 + " " + (y + slant + land) + " L " + RX1 + " " + (y + land);
-        t1.appendChild(mk("path", { d: d2, fill: "none", stroke: "#2a1c0b", "stroke-width": 0.8, "stroke-opacity": 0.85 }));
-        t2.appendChild(mk("path", { d: d2, fill: "none", stroke: "#2a1c0b", "stroke-width": 0.8, "stroke-opacity": 0.85 }));
+      var r = this.shadowRoot, i, y, x;
+      // the rack: teeth cut diagonally, bright top land, dark root
+      var pitch = 3.6, slant = 1.7, land = 2.5;
+      var t1 = r.querySelector(".teeth"), t2 = r.querySelector(".teeth2");
+      for (y = RTOP + 1.5; y < RBOT - 5; y += pitch) {
+        var d = "M " + RX0 + " " + (y + slant).toFixed(2) + " L " + RX1 + " " + y.toFixed(2) +
+                " L " + RX1 + " " + (y + land).toFixed(2) + " L " + RX0 + " " + (y + slant + land).toFixed(2) + " Z";
+        var d2 = "M " + RX0 + " " + (y + slant + land).toFixed(2) + " L " + RX1 + " " + (y + land).toFixed(2);
+        [t1, t2].forEach(function (g) {
+          g.appendChild(mk("path", { d: d, fill: "url(#tooth)" }));
+          g.appendChild(mk("path", { d: d2, fill: "none", stroke: "#241804", "stroke-width": 0.75, "stroke-opacity": 0.9 }));
+        });
       }
-      // the pinion: twelve teeth on a small gear
-      var pg = this.shadowRoot.querySelector(".pinteeth"), N = 12, R1 = 8.4, R2 = 12.6;
+      // the pinion: twelve teeth on a small bright gear
+      var pg = r.querySelector(".pinteeth"), N = 12, R1 = 8.2, R2 = 12.2;
       for (i = 0; i < N; i++) {
-        var a0 = i * 2 * Math.PI / N, w = 0.36 * 2 * Math.PI / N, w2 = 0.24 * 2 * Math.PI / N;
-        var pts = [
-          [64 + R1 * Math.sin(a0 - w), 196 - R1 * Math.cos(a0 - w)],
-          [64 + R2 * Math.sin(a0 - w2), 196 - R2 * Math.cos(a0 - w2)],
-          [64 + R2 * Math.sin(a0 + w2), 196 - R2 * Math.cos(a0 + w2)],
-          [64 + R1 * Math.sin(a0 + w), 196 - R1 * Math.cos(a0 + w)]
-        ];
-        pg.appendChild(mk("polygon", {
-          points: pts.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" "),
-          fill: "url(#kn)", stroke: "#2a1c0b", "stroke-width": 0.4
-        }));
+        var a0 = i * 2 * Math.PI / N, w = 0.36 * 2 * Math.PI / N, w2 = 0.23 * 2 * Math.PI / N;
+        var pts = [[R1, a0 - w], [R2, a0 - w2], [R2, a0 + w2], [R1, a0 + w]].map(function (p) {
+          return (PCX + p[0] * Math.sin(p[1])).toFixed(2) + "," + (PCY - p[0] * Math.cos(p[1])).toFixed(2);
+        }).join(" ");
+        pg.appendChild(mk("polygon", { points: pts, fill: "url(#brtH)", stroke: "#241804", "stroke-width": 0.4 }));
       }
-      pg.appendChild(mk("circle", { cx: 64, cy: 196, r: R1 + 0.6, fill: "url(#bvd)" }));
-      // the micrometer drum's fine graduations
-      var mt = this.shadowRoot.querySelector(".mtick");
-      for (i = 0; i < 13; i++) {
-        var mx = 97 + i * 1.65;
-        mt.appendChild(mk("line", { x1: mx, y1: 73, x2: mx, y2: (i % 5 === 0 ? 80 : 77), stroke: "#4a4a45", "stroke-width": 0.45, opacity: 0.8 }));
+      pg.appendChild(mk("circle", { cx: PCX, cy: PCY, r: R1 + 0.5, fill: "url(#brtH)" }));
+      // the micrometer drum's fine graduations, and the knurl on its head
+      var mt = r.querySelector(".mtick");
+      for (i = 0; i < 15; i++) {
+        x = 10 + i * 1.6;
+        mt.appendChild(mk("line", { x1: x, y1: 87, x2: x, y2: (i % 5 === 0 ? 95 : 91.5), stroke: "#43433e", "stroke-width": 0.45, opacity: 0.85 }));
       }
-      // the eyepiece's fine knurl (a static band)
-      var ek = this.shadowRoot.querySelector(".eyeknurl");
-      for (i = 0; i < 18; i++) {
-        var ex = 47.5 + i * 1.85;
-        ek.appendChild(mk("line", { x1: ex, y1: 43.5, x2: ex, y2: 53.5, stroke: "#3a2a10", "stroke-width": 0.55, opacity: 0.45 }));
+      var mk2 = r.querySelector(".mknurl");
+      for (i = 0; i < 12; i++) {
+        x = 10.5 + i * 1.95;
+        mk2.appendChild(mk("line", { x1: x, y1: 72, x2: x, y2: 84, stroke: "#2e2007", "stroke-width": 0.6, opacity: 0.4 }));
+        mk2.appendChild(mk("line", { x1: x, y1: 102, x2: x, y2: 116, stroke: "#2e2007", "stroke-width": 0.6, opacity: 0.4 }));
       }
-      // the two knurled knobs: cylinder bodies, then a pool of ridge lines
-      var g = this._knobs, kx;
-      for (var k = 0; k < 2; k++) {
+      // the eyepiece's fine knurl
+      var ek = r.querySelector(".eyeknurl");
+      for (i = 0; i < 17; i++) {
+        x = 51.5 + i * 1.6;
+        ek.appendChild(mk("line", { x1: x, y1: 32.4, x2: x, y2: 42.2, stroke: "#2e2007", "stroke-width": 0.55, opacity: 0.42 }));
+      }
+      // the two knurled knobs: cylinder bodies, a pool of ridge lines, then the rim
+      var g = this._knobs, kx, k;
+      for (k = 0; k < 2; k++) {
         kx = k ? KRX : KLX;
-        g.appendChild(mk("ellipse", { cx: kx + 2, cy: KLY + 4, rx: KHW + 2, ry: KR + 2, fill: "#000", opacity: 0.45, filter: "url(#sf)" }));
-        g.appendChild(mk("rect", { x: kx - KHW, y: KLY - KR, width: KHW * 2, height: KR * 2, rx: 3.5, fill: "url(#kn)", stroke: "#33240e", "stroke-width": 0.7 }));
+        g.appendChild(mk("ellipse", { cx: kx + 2.5, cy: KY + 4, rx: KHW + 2, ry: KR + 1, fill: "#000", opacity: 0.5, filter: "url(#sf)" }));
+        g.appendChild(mk("rect", { x: kx - KHW, y: KY - KR, width: KHW * 2, height: KR * 2, rx: 3.5, fill: "url(#brt)", stroke: "#2e2007", "stroke-width": 0.7 }));
       }
       for (k = 0; k < 2; k++) {
         kx = k ? KRX : KLX;
         var pool = [];
-        for (i = 0; i < 27; i++) {
-          var ln = mk("line", { x1: kx - KHW + 1.6, x2: kx + KHW - 1.6, y1: KLY, y2: KLY, stroke: "#2e2007", "stroke-width": 0.75, opacity: 0 });
+        for (i = 0; i < 26; i++) {
+          var ln = mk("line", { x1: kx - KHW + 1.5, x2: kx + KHW - 1.5, y1: KY, y2: KY, stroke: "#2e2007", "stroke-width": 0.7, opacity: 0 });
           g.appendChild(ln); pool.push(ln);
         }
         this._ridge.push(pool);
       }
       for (k = 0; k < 2; k++) {
         kx = k ? KRX : KLX;
-        // the outer end face, a sliver of the disc, and the rim highlight
-        g.appendChild(mk("rect", { x: kx - KHW, y: KLY - KR, width: KHW * 2, height: KR * 2, rx: 3.5, fill: "none", stroke: "#f6e4b4", "stroke-opacity": 0.3, "stroke-width": 0.7 }));
-        g.appendChild(mk("rect", { x: kx - KHW + 0.8, y: KLY - KR + 1.2, width: 1.5, height: KR * 2 - 2.4, fill: "#fff", opacity: 0.14 }));
+        g.appendChild(mk("rect", { x: kx - KHW, y: KY - KR, width: KHW * 2, height: KR * 2, rx: 3.5, fill: "none", stroke: "#f7e8ba", "stroke-opacity": 0.32, "stroke-width": 0.7 }));
+        g.appendChild(mk("rect", { x: kx - KHW + 1, y: KY - KR + 1.4, width: 1.6, height: KR * 2 - 2.8, rx: 0.8, fill: "#fff", opacity: 0.16 }));
       }
-      // the axle collars where the knobs meet the housing
-      g.appendChild(mk("rect", { x: KLX + KHW, y: KLY - 7, width: 6, height: 14, rx: 2, fill: "url(#bvd)" }));
-      g.appendChild(mk("rect", { x: KRX - KHW - 6, y: KLY - 7, width: 6, height: 14, rx: 2, fill: "url(#bvd)" }));
+      // axle collars between the knobs and the housing
+      g.appendChild(mk("rect", { x: KLX + KHW - 0.5, y: KY - 7, width: 6, height: 14, rx: 2, fill: "url(#lacd)" }));
+      g.appendChild(mk("rect", { x: KRX - KHW - 5.5, y: KY - 7, width: 6, height: 14, rx: 2, fill: "url(#lacd)" }));
     }
 
     /* ---------- attributes ---------- */
@@ -351,14 +370,12 @@
 
     /* ---------- paint ---------- */
     _render() {
-      var span = (this._max - this._min) || 1;
-      var mmPx = TRAVEL / span;
-      var t = (this._v - this._min) * mmPx + this._fine * mmPx * (span / 30);
+      var span = (this._max - this._min) || 1, pxPerMm = TRAVEL / span;
+      var t = (this._v - this._min) * pxPerMm + this._fine * pxPerMm;
       var tr = "translateY(" + (-t).toFixed(2) + "px)";
       this._mover.style.transform = tr;
       this._mover2.style.transform = tr;
-      // one turn of the knob per 6 mm of climb
-      var deg = (this._v / 6) * 360;
+      var deg = (this._v / 6) * 360;                       // one turn of the knobs per 6 mm
       this._pin.style.transform = "rotate(" + (-deg).toFixed(2) + "deg)";
       var phase = (-deg * Math.PI / 180) % (2 * Math.PI);
       for (var k = 0; k < 2; k++) {
@@ -366,16 +383,15 @@
         for (var i = 0; i < RIDGES; i++) {
           var th = phase + i * 2 * Math.PI / RIDGES;
           th = ((th % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-          if (th >= Math.PI) continue;
-          if (used >= pool.length) break;
+          if (th >= Math.PI || used >= pool.length) continue;
           var s = Math.sin(th);
-          var y = KLY - (KR - 1.2) * Math.cos(th);
+          var y = KY - (KR - 1.4) * Math.cos(th);
           var ln = pool[used++];
           ln.setAttribute("y1", y.toFixed(2)); ln.setAttribute("y2", y.toFixed(2));
-          ln.setAttribute("opacity", (0.14 + 0.52 * s).toFixed(3));
-          ln.setAttribute("stroke-width", (0.45 + 0.4 * s).toFixed(2));
-          ln.setAttribute("x1", (kx - (KHW - 1.4)).toFixed(2));
-          ln.setAttribute("x2", (kx + (KHW - 1.4)).toFixed(2));
+          ln.setAttribute("opacity", (0.10 + 0.62 * s).toFixed(3));
+          ln.setAttribute("stroke-width", (0.4 + 0.45 * s).toFixed(2));
+          ln.setAttribute("x1", (kx - (KHW - 1.5 - 1.2 * (1 - s))).toFixed(2));
+          ln.setAttribute("x2", (kx + (KHW - 1.5 - 1.2 * (1 - s))).toFixed(2));
         }
         for (; used < pool.length; used++) pool[used].setAttribute("opacity", 0);
       }
@@ -407,11 +423,10 @@
     }
     _onMove(e) {
       if (!this._drag) return;
-      var dy = (this._drag.y - e.clientY) / this._scale;      // up = the tube climbs
-      var mmPerPx = (this._max - this._min) / 250;            // a deliberate, geared feel
-      var v = this._drag.v + dy * mmPerPx * (e.shiftKey ? 0.25 : 1);
+      var dy = (this._drag.y - e.clientY) / this._scale;        // up = the tube climbs
+      var mmPerPx = (this._max - this._min) / 250;
       if (Math.abs(dy) > 0.5) this._drag.moved = true;
-      this._set(v, false);
+      this._set(this._drag.v + dy * mmPerPx * (e.shiftKey ? 0.25 : 1), false);
     }
     _onUp(e) {
       if (!this._drag) return;

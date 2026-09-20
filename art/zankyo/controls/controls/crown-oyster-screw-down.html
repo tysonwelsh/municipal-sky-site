@@ -63,7 +63,7 @@
   if (customElements.get("sk-crown-oyster")) return;
   const W = 120, H = 84, CY = 42;
   const N = 30;                       // ridges around the crown
-  const CR = 13, CX0 = 44, CLEN = 16; // crown radius, inner face x at position 0, cylinder length
+  const CR = 13.5, CX0 = 44, CLEN = 18; // crown radius, inner face x at position 0, cylinder length
   const PULL = 4.5;                   // px per position (1.2 mm)
   const TPL = document.createElement("template");
   TPL.innerHTML = `
@@ -71,8 +71,8 @@
     :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
     :host([hidden]) { display: none; }
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
-    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
-    .grab { position: absolute; left: 38px; top: 24px; width: 54px; height: 36px; border-radius: 6px; cursor: ns-resize;
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: hidden; }
+    .grab { position: absolute; left: 38px; top: 24px; width: 56px; height: 36px; border-radius: 6px; cursor: ns-resize;
       touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
     .grab.drag { cursor: grabbing; }
     :host([disabled]) .grab { cursor: default; }
@@ -136,20 +136,20 @@
 
       <!-- the two crown guards: polished horns from the case -->
       <g class="guards">
-        <path d="M 30 8 C 42 6.5 57 11 63 20 C 66 24.5 64 28.5 58 29 L 46 29 C 42 29 40 27.5 37 25.5 L 35 12 Z" fill="#000" opacity="0.5" filter="url(#soft)" transform="translate(2 2.5)"/>
-        <path class="guardTop" d="M 30 8 C 42 6.5 57 11 63 20 C 66 24.5 64 28.5 58 29 L 46 29 C 42 29 40 27.5 37 25.5 L 35 12 Z" fill="url(#polish)" stroke="#2f302d" stroke-width="0.6" stroke-linejoin="round"/>
-        <path d="M 31.5 9 C 42 7.8 55 11.5 60.5 19" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="0.7"/>
+        <path d="M 24 2 C 40 1 56 7 62 16 C 65.5 21 64 27 57.5 27.8 L 38 27.8 C 33 27.8 30 23 28 16 Z" fill="#000" opacity="0.55" filter="url(#soft)" transform="translate(2.5 3)"/>
+        <path class="guardTop" d="M 24 2 C 40 1 56 7 62 16 C 65.5 21 64 27 57.5 27.8 L 38 27.8 C 33 27.8 30 23 28 16 Z" fill="url(#polish)" stroke="#2f302d" stroke-width="0.6" stroke-linejoin="round"/>
+        <path d="M 27 3.2 C 41 2.2 55 8 60.5 16.5" fill="none" stroke="#fff" stroke-opacity="0.75" stroke-width="0.7"/>
         <!-- the scratch -->
-        <path d="M 45 14.5 L 56.5 21.5" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="0.45"/>
-        <path d="M 45.3 15.1 L 56.8 22.1" fill="none" stroke="#4a4b48" stroke-opacity="0.55" stroke-width="0.4"/>
-        <path d="M 30 76 C 42 77.5 57 73 63 64 C 66 59.5 64 55.5 58 55 L 46 55 C 42 55 40 56.5 37 58.5 L 35 72 Z" fill="#000" opacity="0.5" filter="url(#soft)" transform="translate(2 2.5)"/>
-        <path d="M 30 76 C 42 77.5 57 73 63 64 C 66 59.5 64 55.5 58 55 L 46 55 C 42 55 40 56.5 37 58.5 L 35 72 Z" fill="url(#polish)" stroke="#2f302d" stroke-width="0.6" stroke-linejoin="round"/>
-        <path d="M 46 55.5 L 58 55.5 C 63 55.5 64.5 59 62.5 63" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+        <path d="M 44 10.5 L 56.5 18.5" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="0.45"/>
+        <path d="M 44.3 11.1 L 56.8 19.1" fill="none" stroke="#4a4b48" stroke-opacity="0.55" stroke-width="0.4"/>
+        <path d="M 24 82 C 40 83 56 77 62 68 C 65.5 63 64 57 57.5 56.2 L 38 56.2 C 33 56.2 30 61 28 68 Z" fill="#000" opacity="0.55" filter="url(#soft)" transform="translate(2.5 3)"/>
+        <path d="M 24 82 C 40 83 56 77 62 68 C 65.5 63 64 57 57.5 56.2 L 38 56.2 C 33 56.2 30 61 28 68 Z" fill="url(#polish)" stroke="#2f302d" stroke-width="0.6" stroke-linejoin="round"/>
+        <path d="M 39 56.8 L 57.5 56.8 C 62.5 57 64 61 62 65" fill="none" stroke="#fff" stroke-opacity="0.4" stroke-width="0.6"/>
       </g>
 
       <!-- the crown: cylinder, knurl, dome -->
       <g class="crown">
-        <ellipse cx="${CX0 + 10}" cy="${CY + 15}" rx="14" ry="3.5" fill="#000" opacity="0.45" filter="url(#soft)"/>
+        <ellipse cx="${CX0 + 11}" cy="${CY + 15.5}" rx="15" ry="3.5" fill="#000" opacity="0.45" filter="url(#soft)"/>
         <rect x="${CX0}" y="${CY - CR}" width="${CLEN}" height="${CR * 2}" fill="url(#crownv)"/>
         <g class="knurl" clip-path="url(#crownclip)"></g>
         <!-- smooth rims at both ends of the knurl -->
