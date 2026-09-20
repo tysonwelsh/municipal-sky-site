@@ -69,8 +69,8 @@
   var W = 200, H = 200, C = 100;
   var R_RIM_O = 99, R_RIM_I = 92;
   var R_BAR_O = 86, R_MIN_I = 74, R_HR_I = 61;
-  var LAP = 58500, PAUSE = 1500, JUMP = 120;
-  var NS = "http://www.w3.org/2000/svg";
+  var LAP = 58500;           // the second hand's lap; the remaining 1500 ms is the pause at 12
+  var JUMP = 120;            // the minute hand's jump, with a 0.3 degree bounce
 
   function bars() {
     var s = "", i, a, w, y, h;

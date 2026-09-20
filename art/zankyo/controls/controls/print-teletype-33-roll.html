@@ -33,7 +33,7 @@
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="plastic-grey">
-    <sk-print-teletype-33 columns="52" label="MODEL 33 KSR" value="ATTN ZANKYO 3042\n\nREADY.\n10 PRNIT\b\b\b\b\bXXXXX\n10 PRINT &quot;HELLO&quot;\n20 GOTO 10\nRUN\nHELLO\nHELLO\nHELLO\n^C BREAK IN 20\nREADY.\a"></sk-print-teletype-33>
+    <sk-print-teletype-33 columns="52" label="MODEL 33 KSR" value="ZANKYO MUNICIPAL SKY  TTY 3042\nON AT 14.22  24 JULY\n\nREADY.\n10 PRNIT\b\b\b\b\bXXXXX\n10 PRINT &quot;HELLO&quot;\n20 GOTO 10\nRUN\nHELLO\nHELLO\nHELLO\n^C BREAK IN 20\nREADY.\a"></sk-print-teletype-33>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -71,12 +71,12 @@
 
   // --- the serrated tear bar's teeth, and the roll's ragged right cut ------
   var teeth = "M 0 20 ";
-  for (var tx = 0; tx < 320; tx += 6.4) teeth += "L " + (tx + 3.2).toFixed(2) + " 25.6 L " + (tx + 6.4).toFixed(2) + " 20 ";
-  teeth += "L 320 5 L 0 5 Z";
+  for (var tx = 0; tx < 320; tx += 4.7) teeth += "L " + (tx + 2.35).toFixed(2) + " 24.2 L " + (tx + 4.7).toFixed(2) + " 20 ";
+  teeth += "L 320 11 L 0 11 Z";
   var rag = [], rs = 0.417;
   for (var i = 0; i <= 24; i++) {
     rs = (rs * 9301 + 49297) % 233280 / 233280;
-    rag.push((PW - 0.2 - rs * 2.0).toFixed(2) + "px " + (i * 100 / 24).toFixed(2) + "%");
+    rag.push((PW - 0.3 - rs * 3.4).toFixed(2) + "px " + (i * 100 / 24).toFixed(2) + "%");
   }
   var CLIP = "polygon(0% 0%, " + rag.join(", ") + ", 0% 100%)";
 
@@ -94,16 +94,18 @@
   '   overflow:hidden; clip-path:' + CLIP + ';',
   '   background-color:#ede4c8;',
   '   background-image:',
-  '     repeating-linear-gradient(90deg, rgba(160,140,95,0.055) 0 1px, rgba(255,255,255,0) 1px 3px),',
-  '     repeating-linear-gradient(0deg, rgba(160,140,95,0.035) 0 1px, rgba(255,255,255,0) 1px 4px),',
-  '     repeating-linear-gradient(74deg, rgba(120,100,60,0.028) 0 1px, rgba(255,255,255,0) 1px 7px),',
+  '     repeating-linear-gradient(78deg, rgba(150,128,82,0.05) 0 0.6px, rgba(255,255,255,0) 0.6px 6px),',
+  '     repeating-linear-gradient(-71deg, rgba(150,128,82,0.04) 0 0.5px, rgba(255,255,255,0) 0.5px 9px),',
+  '     repeating-linear-gradient(96deg, rgba(120,100,60,0.03) 0 0.6px, rgba(255,255,255,0) 0.6px 14px),',
+  '     radial-gradient(130% 60% at 18% 12%, rgba(255,255,255,0.16), rgba(255,255,255,0) 62%),',
   '     linear-gradient(90deg, rgba(120,98,52,0.10), rgba(255,255,255,0.05) 22%, rgba(255,255,255,0.06) 72%, rgba(120,98,52,0.13));',
   '   box-shadow: 0 0 7px rgba(0,0,0,0.55); }',
   '.lines { position:absolute; left:6px; right:2px; bottom:7px; }',
   '.ln { position:relative; height:var(--lh); }',
-  '.ln i { position:absolute; display:block; top:0; font-style:normal; font-weight:400;',
+  '.ln i { position:absolute; display:block; top:0; font-style:normal; font-weight:700;',
   '   font-family:"Courier Prime","Courier New",Courier,monospace; font-size:var(--fs); line-height:1;',
-  '   color:var(--ink); text-shadow:0 0.45px 0 rgba(255,255,255,0.32); white-space:pre; }',
+  '   color:var(--ink); text-shadow:0 0.5px 0 rgba(255,255,255,0.22); white-space:pre; }',
+  '.ln i.l { font-weight:400; }',
   '.ln i.g { opacity:0.30 !important; }',
   '.ln i.b { font-weight:700; }',
   '.ln i.f { animation:fl 480ms steps(2) 2; }',
@@ -142,13 +144,13 @@
   '      </defs>',
   '      <rect x="0" y="0" width="' + W + '" height="20" fill="url(#gd)"/>',
   '      <rect x="0" y="0" width="' + W + '" height="1.1" fill="#bccab7" opacity="0.65"/>',
-  '      <rect x="0" y="17.4" width="' + W + '" height="2.6" fill="#44503f" opacity="0.75"/>',
+  '      <rect x="0" y="9.6" width="' + W + '" height="1.8" fill="#44503f" opacity="0.7"/>',
   '      <path d="' + teeth + '" fill="url(#tr)"/>',
   '      <path d="' + teeth + '" fill="none" stroke="#e6e8e2" stroke-opacity="0.35" stroke-width="0.6"/>',
-  '      <rect x="0" y="5" width="' + W + '" height="1" fill="#000" opacity="0.35"/>',
+  '      <rect x="0" y="11" width="' + W + '" height="0.9" fill="#000" opacity="0.4"/>',
   '      <g opacity="0.9">',
-  '        <circle cx="24" cy="10.5" r="3.1" fill="url(#sc)"/><rect x="21.4" y="9.9" width="5.2" height="1.1" fill="#25271f" transform="rotate(22 24 10.5)"/>',
-  '        <circle cx="296" cy="10.5" r="3.1" fill="url(#sc)"/><rect x="293.4" y="9.9" width="5.2" height="1.1" fill="#25271f" transform="rotate(-38 296 10.5)"/>',
+  '        <circle cx="24" cy="5.4" r="3.1" fill="url(#sc)"/><rect x="21.4" y="4.8" width="5.2" height="1.1" fill="#25271f" transform="rotate(22 24 5.4)"/>',
+  '        <circle cx="296" cy="5.4" r="3.1" fill="url(#sc)"/><rect x="293.4" y="4.8" width="5.2" height="1.1" fill="#25271f" transform="rotate(-38 296 5.4)"/>',
   '      </g>',
   '      <rect x="0" y="' + (PBOT - 6) + '" width="' + W + '" height="7" fill="#1a1408" opacity="0.5" filter="url(#bl)"/>',
   '      <rect x="0" y="' + PBOT + '" width="' + W + '" height="' + (H - PBOT) + '" fill="url(#pl)"/>',
@@ -182,7 +184,7 @@
     });
   }
 
-  var SESSION = "\x02ATTN ZANKYO 3042\n\x01\nREADY.\n\x0110 PRNIT\b\b\b\b\bXXXXX\n10 PRINT \"HELLO\"\n20 GOTO 10\n\x01RUN\n\x01HELLO\nHELLO\nHELLO\n\x01^C BREAK IN 20\nREADY.\x07\x02";
+  var SESSION = "\x02ZANKYO MUNICIPAL SKY  TTY 3042\nON AT 14.22  24 JULY\n\x01\nREADY.\n\x0110 PRNIT\b\b\b\b\bXXXXX\n10 PRINT \"HELLO\"\n20 GOTO 10\n\x01RUN\n\x01HELLO\nHELLO\nHELLO\n\x01^C BREAK IN 20\nREADY.\x07\x02";
 
   class SkPrintTeletype33 extends HTMLElement {
     static get observedAttributes() { return ["value", "columns", "ribbon", "label", "scale"]; }
@@ -307,7 +309,7 @@
         op = 0.80 + a * 0.20;
         if (a < 0.09) op = 0.40 + a * 1.6;               // a faint strike
         else if (a > 0.93) op = 1;                       // a heavy one
-        out += '<i class="' + (c.bell ? "b" : "") + '" style="left:' + (c.x * cw).toFixed(2) + "px;top:" + dy.toFixed(2) +
+        out += '<i class="' + (c.bell ? "b" : a < 0.16 ? "l" : "") + '" style="left:' + (c.x * cw).toFixed(2) + "px;top:" + dy.toFixed(2) +
                "px;transform:rotate(" + rot.toFixed(2) + "deg);opacity:" + (op * (0.55 + 0.45 * this._ribbon)).toFixed(3) + '">' + esc(c.c) + "</i>";
         // the carriage-return double strike: the hammer lands twice on the last character
         if (c.last && rnd(n, 3, 5) > 0.55) {

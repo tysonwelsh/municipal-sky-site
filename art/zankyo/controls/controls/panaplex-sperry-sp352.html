@@ -33,8 +33,8 @@
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="black">
-    <sk-panaplex-sp352 digits="8" value="12.345" label="D C   V O L T S"></sk-panaplex-sp352>
-    <sk-panaplex-sp352 digits="6" value="-0.998" filter="none" label="S P - 3 5 2" scale="0.85"></sk-panaplex-sp352>
+    <sk-panaplex-sp352 digits="8" value="12.345" label="DC VOLTS"></sk-panaplex-sp352>
+    <sk-panaplex-sp352 digits="6" value="-0.998" filter="none" label="SP-352" scale="0.85"></sk-panaplex-sp352>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -88,7 +88,7 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; overflow: visible; isolation: isolate; }
     text { font-family: "Archivo Narrow", "Share Tech Mono", "Arial Narrow", sans-serif; }
-    .silk { font-size: 6.5px; font-weight: 600; letter-spacing: 0.06em; fill: #9aa2a6; fill-opacity: 0.75; text-anchor: middle; }
+    .silk { font-size: 6.5px; font-weight: 600; letter-spacing: 0.3em; fill: #9aa2a6; fill-opacity: 0.75; text-anchor: middle; }
     .seg path, .dp circle { stroke-linecap: round; }
     .off  { fill: none; stroke: #3a2420; stroke-width: 3.8; stroke-opacity: var(--unlit); }
     .lit  { opacity: 0; transition: opacity 20ms linear; }
@@ -97,7 +97,7 @@
     .bar  { fill: none; stroke: #ff8a3c; stroke-width: 3.8; }
     .hot  { fill: none; stroke: #ffd0a0; stroke-width: 1.5; }
     .dpoff { fill: #3a2420; fill-opacity: var(--unlit); }
-    .fog  { opacity: 0; transition: opacity 80ms linear; }
+    .fog  { opacity: calc(var(--f, 0) * var(--shim, 1)); transition: opacity 80ms linear; }
     .redglass { mix-blend-mode: multiply; }
   `;
   const TPL = document.createElement("template");
@@ -132,7 +132,7 @@
   </defs>`;
 
   function cell(i) {
-    let s = '<g class="cell" data-i="' + i + '" transform="translate(' + (PAD + i * PITCH + 1) + ' 14) skewX(-3)">';
+    let s = '<g class="cell" data-i="' + i + '" transform="translate(' + (PAD + i * PITCH - 0.5) + ' 12.6) scale(1.07) skewX(-3)">';
     s += '<rect class="fog" x="-7" y="-6" width="36" height="52" fill="url(#pfog)"/>';
     for (let k = 0; k < 7; k++) {
       s += '<g class="seg" data-k="' + k + '">' +
@@ -245,11 +245,11 @@
       for (let i = 0; i < this._n; i++) s += cell(i);
       if (this._red) {
         s += '<g class="redwin">' +
-             '<rect class="redglass" x="-3" y="' + (GT - 3) + '" width="' + (w + 6) + '" height="' + (GB - GT + 6) + '" rx="2" fill="url(#pred)"/>' +
-             '<rect x="-3" y="' + (GT - 3) + '" width="' + (w + 6) + '" height="' + (GB - GT + 6) + '" rx="2" fill="#7a1206" opacity="0.13"/>' +
-             '<path d="M-3 ' + (GT - 3) + 'H' + (w * 0.34).toFixed(0) + 'L-3 ' + (GB - 6) + 'Z" fill="url(#predspec)"/>' +
-             '<rect x="-3" y="' + (GT - 2.4) + '" width="' + (w + 6) + '" height="1.6" fill="#ff9a7a" opacity="0.16"/>' +
-             '<rect x="-3" y="' + (GT - 3) + '" width="' + (w + 6) + '" height="' + (GB - GT + 6) + '" rx="2" fill="none" stroke="#e0705a" stroke-opacity="0.22" stroke-width="0.8"/>' +
+             '<rect class="redglass" x="1.5" y="' + (GT + 5) + '" width="' + (w - 3) + '" height="' + (GB - GT - 10) + '" rx="1.5" fill="url(#pred)"/>' +
+             '<rect x="1.5" y="' + (GT + 5) + '" width="' + (w - 3) + '" height="' + (GB - GT - 10) + '" rx="1.5" fill="#7a1206" opacity="0.1"/>' +
+             '<path d="M1.5 ' + (GT + 5) + 'H' + (w * 0.3).toFixed(0) + 'L1.5 ' + (GB - 9) + 'Z" fill="url(#predspec)"/>' +
+             '<rect x="1.5" y="' + (GT + 5) + '" width="' + (w - 3) + '" height="1.2" fill="#ff9a7a" opacity="0.12"/>' +
+             '<rect x="1.5" y="' + (GT + 5) + '" width="' + (w - 3) + '" height="' + (GB - GT - 10) + '" rx="1.5" fill="none" stroke="#c05a44" stroke-opacity="0.16" stroke-width="0.7"/>' +
              '</g>';
       }
       s += '<text class="silk" x="' + (w / 2).toFixed(1) + '" y="' + (GB - 5.6) + '"></text>';
@@ -273,15 +273,14 @@
         let lit = 0;
         for (let k = 0; k < 7; k++) { gs[k].classList.toggle("on", !!map[k]); lit += map[k]; }
         this._dps[i].classList.toggle("on", i === this._dpCell);
-        this._fogs[i].style.opacity = (lit ? (0.45 + 0.55 * lit / 7) : 0.12).toFixed(3);
+        this._fogs[i].style.setProperty("--f", (lit ? (0.55 + 0.45 * lit / 7) : 0.14).toFixed(3));
       }
     }
     _shimmer(now) {
       this._raf = requestAnimationFrame(this._shimmer);
       if (now - this._last < 80) return;                           /* ~12 Hz multiplex flicker */
       this._last = now;
-      this.style.setProperty("--shim", (0.98 + Math.random() * 0.04).toFixed(3));
-      for (const f of this._fogs) if (f.style.opacity) f.style.filter = "opacity(" + (0.97 + Math.random() * 0.06).toFixed(3) + ")";
+      this.style.setProperty("--shim", (0.975 + Math.random() * 0.05).toFixed(3));
     }
   }
   customElements.define("sk-panaplex-sp352", SkPanaplex);

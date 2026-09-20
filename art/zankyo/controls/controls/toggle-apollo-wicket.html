@@ -102,8 +102,10 @@
   '.t-name { font-size: 7.5px; letter-spacing: 0.08em; }',
   '.t-throw { font-size: 8.5px; letter-spacing: 0.10em; }',
   '.t-mid { font-size: 6px; letter-spacing: 0.08em; text-anchor: end; }',
-  '.shaft, .ball, .sh-shaft, .sh-ball { transform-box: view-box; transform-origin: ' + CX + 'px ' + CY + 'px;',
+  '.shaft, .ball, .sh-shaft, .sh-ball { transform-box: view-box;',
   '  transition: transform 90ms cubic-bezier(.2,.9,.3,1.15); }',
+  '.shaft, .sh-shaft { transform-origin: ' + CX + 'px ' + CY + 'px; }',
+  '.ball, .sh-ball { transform-origin: ' + CX + 'px ' + (CY - LEN) + 'px; }',
   '.wrap.dragging .shaft, .wrap.dragging .ball, .wrap.dragging .sh-shaft, .wrap.dragging .sh-ball { transition: none; }',
   '.grab { position: absolute; left: 9px; top: 22px; width: 46px; height: 62px; border-radius: 5px;',
   '  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }',
@@ -197,8 +199,6 @@
   '</div>'
   ].join("");
 
-  function SkToggleApolloWicket() { return Reflect.construct(HTMLElement, [], SkToggleApolloWicket); }
-
   class Sw extends HTMLElement {
     static get observedAttributes() { return ["value", "positions", "label", "up", "mid", "down", "scale", "disabled"]; }
     constructor() {
@@ -220,8 +220,9 @@
       this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
     }
     connectedCallback() {
+      this._read();
       if (!this.hasAttribute("value")) this.setAttribute("value", this._opts()[this._i]);
-      this._read(); this._layout(); this._render(true);
+      this._layout(); this._render(true);
       if (!this._wired) {
         this._wired = true;
         this._grab.addEventListener("pointerdown", this._onDown);
