@@ -33,8 +33,8 @@
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="steel">
-    <sk-tape-reader-teletype-33-asr scale="0.62" value="HELLO WORLD" mode="stop"></sk-tape-reader-teletype-33-asr>
-    <sk-tape-reader-teletype-33-asr scale="0.62" value="RUN100 PRINT X" mode="start" punch></sk-tape-reader-teletype-33-asr>
+    <sk-tape-reader-teletype-33-asr scale="0.95" value="HELLO WORLD" mode="stop"></sk-tape-reader-teletype-33-asr>
+    <sk-tape-reader-teletype-33-asr scale="0.95" value="RUN100 PRINT X" mode="start" punch></sk-tape-reader-teletype-33-asr>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -85,10 +85,12 @@ is only suggested by the tape curling off both edges.</p>
     text { font-family:"Roboto Condensed","Arial Narrow",sans-serif; }
     .tapewin { position:absolute; left:0; top:0; width:${W}px; height:${H}px; overflow:hidden; }
     .lid { position:absolute; left:${HOUSE.x + 34}px; top:${TAPE_TOP - 14}px; width:${HOUSE.w - 68}px; height:${TAPE_H + 26}px;
-      border-radius:6px; background:linear-gradient(160deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.16) 100%);
-      border:1px solid rgba(255,255,255,0.5); box-shadow:0 2px 6px rgba(0,0,0,0.25), inset 0 0 10px rgba(255,255,255,0.15);
+      border-radius:6px; background:linear-gradient(160deg, rgba(255,255,255,0.55), rgba(255,255,255,0.10) 38%, rgba(210,225,230,0.05) 55%, rgba(255,255,255,0.22) 100%);
+      border:1.5px solid rgba(255,255,255,0.75); border-top:2px solid rgba(255,255,255,0.9);
+      box-shadow:0 2px 6px rgba(0,0,0,0.3), inset 0 0 12px rgba(255,255,255,0.25), inset 0 8px 10px -6px rgba(255,255,255,0.6);
       transform-origin: 50% 0%; transition: transform 260ms cubic-bezier(.2,.8,.3,1.1), opacity 260ms; cursor:pointer; z-index:5; }
     .lid.open { transform: rotateX(58deg) translateY(-6px); opacity:0.55; }
+    .lid::before { content:""; position:absolute; left:6px; right:6px; top:2px; height:1.5px; background:rgba(255,255,255,0.9); border-radius:1px; }
     .lever-knob { position:absolute; width:14px; height:9px; border-radius:2px; left:${LEVER_X - 7}px;
       background:linear-gradient(160deg,#3a3a3a,#111 70%); box-shadow:0 2px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
       cursor:pointer; transition: top 140ms cubic-bezier(.3,.7,.3,1.3); z-index:6; }

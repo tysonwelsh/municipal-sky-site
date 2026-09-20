@@ -33,9 +33,9 @@
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
   <main class="sk-stage" data-panel="wood">
-    <sk-theremin-rca-rod-loop scale="0.42"></sk-theremin-rca-rod-loop>
-    <sk-theremin-rca-rod-loop scale="0.42" field></sk-theremin-rca-rod-loop>
-    <sk-theremin-rca-rod-loop scale="0.42" demo></sk-theremin-rca-rod-loop>
+    <sk-theremin-rca-rod-loop scale="0.52"></sk-theremin-rca-rod-loop>
+    <sk-theremin-rca-rod-loop scale="0.52" field demo></sk-theremin-rca-rod-loop>
+    <sk-theremin-rca-rod-loop scale="0.52" demo></sk-theremin-rca-rod-loop>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -152,12 +152,12 @@ here as simple radial distance), and the Moog Etherwave's smaller box (not model
 
       <!-- hand cursors -->
       <g class="hand hand-rod" opacity="0">
-        <ellipse rx="15" ry="20" fill="#8a8d8b" opacity="0.35" filter="url(#soft2)"/>
-        <ellipse rx="9" ry="13" fill="#c9cac6" opacity="0.28"/>
+        <ellipse rx="17" ry="23" fill="#d8d6cd" opacity="0.5" filter="url(#soft)"/>
+        <ellipse rx="10" ry="15" fill="#efece2" opacity="0.55"/>
       </g>
       <g class="hand hand-loop" opacity="0">
-        <ellipse rx="15" ry="20" fill="#8a8d8b" opacity="0.35" filter="url(#soft2)"/>
-        <ellipse rx="9" ry="13" fill="#c9cac6" opacity="0.28"/>
+        <ellipse rx="17" ry="23" fill="#d8d6cd" opacity="0.5" filter="url(#soft)"/>
+        <ellipse rx="10" ry="15" fill="#efece2" opacity="0.55"/>
       </g>
     </svg>
   </div>`;
@@ -216,14 +216,14 @@ here as simple radial distance), and the Moog Etherwave's smaller box (not model
         const r = document.createElementNS(ns, "rect");
         r.setAttribute("x", ROD_X - d); r.setAttribute("y", ROD_TOP - 10);
         r.setAttribute("width", d * 2); r.setAttribute("height", ROD_BASE - ROD_TOP + 20);
-        r.setAttribute("rx", d); r.setAttribute("fill", "none"); r.setAttribute("stroke", "#ffffff");
-        r.setAttribute("stroke-opacity", "0.12"); r.setAttribute("stroke-width", "1");
+        r.setAttribute("rx", d); r.setAttribute("fill", "none"); r.setAttribute("stroke", "#bfe8ff");
+        r.setAttribute("stroke-opacity", "0.32"); r.setAttribute("stroke-width", "1.1");
         this._rodRings.appendChild(r);
       });
       [20, 45, 75, 115].forEach((r0) => {
         const c = document.createElementNS(ns, "circle");
         c.setAttribute("cx", LOOP_CX); c.setAttribute("cy", LOOP_CY); c.setAttribute("r", r0);
-        c.setAttribute("fill", "none"); c.setAttribute("stroke", "#ffffff"); c.setAttribute("stroke-opacity", "0.12"); c.setAttribute("stroke-width", "1");
+        c.setAttribute("fill", "none"); c.setAttribute("stroke", "#bfe8ff"); c.setAttribute("stroke-opacity", "0.32"); c.setAttribute("stroke-width", "1.1");
         this._loopRings.appendChild(c);
       });
     }
