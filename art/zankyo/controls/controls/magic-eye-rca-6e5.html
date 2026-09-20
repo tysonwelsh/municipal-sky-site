@@ -68,7 +68,7 @@
   if (customElements.get("sk-magic-eye-6e5")) return;
   const W = 96, H = 96;
   const CX = 48, CY = 41;
-  const R_HOLE = 30, R_OUT = 25.5, R_IN = 12.5, R_CAP = 12;
+  const R_HOLE = 30, R_OUT = 21, R_IN = 10.2, R_CAP = 9.6;
   const A_OPEN = 45, A_SHUT = 0.7;             // half-angle of the shadow wedge, degrees
   const RD = Math.PI / 180;
 
@@ -111,8 +111,10 @@
           <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.03"/>
           <stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </linearGradient>
+        <clipPath id="pnl"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath>
         <clipPath id="hole"><circle cx="${CX}" cy="${CY}" r="${R_HOLE}"/></clipPath>
-        <clipPath id="ring"><circle cx="${CX}" cy="${CY}" r="${R_OUT + 0.5}"/></clipPath>
+        <clipPath id="out"><path clip-rule="evenodd" d="M 0 0 H ${W} V ${H} H 0 Z M ${CX - R_OUT} ${CY} a ${R_OUT} ${R_OUT} 0 1 0 ${R_OUT * 2} 0 a ${R_OUT} ${R_OUT} 0 1 0 ${-R_OUT * 2} 0 Z"/></clipPath>
+        <clipPath id="ring"><circle cx="${CX}" cy="${CY}" r="${R_OUT + 0.4}"/></clipPath>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.15"/></filter>
         <filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.7"/></filter>
         <filter id="bloom" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2"/></filter>
@@ -125,18 +127,20 @@
       </defs>
 
       <!-- walnut veneer scrap -->
-      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#wal)"/>
-      <g opacity="0.22" stroke="#2a1809" stroke-width="0.7" fill="none">
-        <path d="M -4 9 Q 40 5 100 12"/><path d="M -4 24 Q 46 19 100 27"/>
-        <path d="M -4 44 Q 38 40 100 46"/><path d="M -4 63 Q 48 58 100 66"/>
-        <path d="M -4 83 Q 42 79 100 87"/>
+      <g clip-path="url(#pnl)">
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#wal)"/>
+        <g opacity="0.24" stroke="#26150a" stroke-width="0.8" fill="none">
+          <path d="M -6 9 Q 40 4 102 12"/><path d="M -6 25 Q 46 19 102 28"/>
+          <path d="M -6 45 Q 38 40 102 47"/><path d="M -6 64 Q 48 58 102 67"/>
+          <path d="M -6 84 Q 42 78 102 88"/>
+        </g>
+        <g opacity="0.18" stroke="#9a6b3e" stroke-width="0.5" fill="none">
+          <path d="M -6 17 Q 44 12 102 20"/><path d="M -6 55 Q 40 50 102 57"/><path d="M -6 75 Q 50 69 102 78"/>
+        </g>
+        <ellipse cx="22" cy="8" rx="46" ry="26" fill="#fff" opacity="0.06"/>
       </g>
-      <g opacity="0.16" stroke="#8a5f38" stroke-width="0.5" fill="none">
-        <path d="M -4 16 Q 44 12 100 19"/><path d="M -4 54 Q 40 50 100 56"/><path d="M -4 74 Q 50 70 100 77"/>
-      </g>
-      <rect x="0" y="0" width="${W}" height="${H}" fill="#000" opacity="0.0"/>
-      <ellipse cx="26" cy="12" rx="44" ry="26" fill="#fff" opacity="0.05"/>
-
+      <rect x="0.4" y="0.4" width="${W - 0.8}" height="${H - 0.8}" fill="none" stroke="#e0b98a" stroke-opacity="0.16" stroke-width="0.8"/>
+      <path d="M 0.4 ${H - 0.4} H ${W - 0.4} V 0.4" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="0.8"/>
       <!-- the escutcheon ring, set into the veneer -->
       <circle cx="${CX}" cy="${CY + 2}" r="${R_HOLE + 8}" fill="#000" opacity="0.55" filter="url(#drop)"/>
       <circle cx="${CX}" cy="${CY}" r="${(R_HOLE + 39) / 2}" fill="none" stroke="url(#chr)" stroke-width="9"/>
@@ -148,39 +152,38 @@
       <g clip-path="url(#hole)">
         <circle cx="${CX}" cy="${CY}" r="${R_HOLE}" fill="url(#glass)"/>
         <g class="glow">
-          <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="#5bd889" stroke-width="${R_OUT - R_IN}" opacity="0.5" filter="url(#bloom)"/>
+          <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="#54cf80" stroke-width="${R_OUT - R_IN + 3}" opacity="0.38" filter="url(#bloom)"/>
           <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="url(#pho)" stroke-width="${R_OUT - R_IN}"/>
-          <circle cx="${CX}" cy="${CY}" r="${R_IN + 0.9}" fill="none" stroke="#e6fff0" stroke-opacity="0.55" stroke-width="1.2" filter="url(#soft)"/>
+          <circle cx="${CX}" cy="${CY}" r="${R_IN + 0.8}" fill="none" stroke="#e8fff1" stroke-opacity="0.6" stroke-width="1.1" filter="url(#soft)"/>
         </g>
         <!-- phosphor grain -->
-        <g clip-path="url(#ring)" style="mix-blend-mode:overlay" opacity="0.10">
+        <g clip-path="url(#ring)" style="mix-blend-mode:overlay" opacity="0.12">
           <rect x="${CX - R_OUT}" y="${CY - R_OUT}" width="${R_OUT * 2}" height="${R_OUT * 2}" filter="url(#grain)"/>
         </g>
         <!-- the wedge shadow, its bright lips, and the overlap sliver -->
         <g clip-path="url(#ring)">
-          <path class="wedge" d="" fill="#0b1a10" filter="url(#soft)"/>
-          <path class="lips" d="" fill="none" stroke="#d6ffe4" stroke-opacity="0.5" stroke-width="1.6" filter="url(#soft2)"/>
-          <path class="sliver" d="" fill="#dfffe8" opacity="0.9" filter="url(#soft)"/>
+          <path class="wedge" d="" fill="#081409" filter="url(#soft)"/>
+          <path class="lips" d="" fill="none" stroke="#d8ffe6" stroke-opacity="0.45" stroke-width="1.5" filter="url(#soft2)"/>
+          <path class="sliver" d="" fill="#e6ffee" opacity="0.92" filter="url(#soft)"/>
         </g>
-        <!-- the cathode shield cap -->
+        <!-- the cathode shield cap, matte black, with the filament's glint under it -->
+        <circle cx="${CX}" cy="${CY}" r="${R_CAP + 0.9}" fill="#050a06"/>
         <circle cx="${CX}" cy="${CY}" r="${R_CAP}" fill="url(#cap)"/>
-        <circle cx="${CX}" cy="${CY}" r="${R_CAP}" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="0.8"/>
-        <path d="M ${CX - 9.2} ${CY + 7.7} Q ${CX} ${CY + 14.4} ${CX + 9.2} ${CY + 7.7}" fill="none"
-              stroke="#ff9b4a" stroke-opacity="0.4" stroke-width="1.7" filter="url(#soft)"/>
-        <circle cx="${CX - 1.5}" cy="${CY - 2}" r="1.5" fill="#ffb066" opacity="0.18" filter="url(#soft)"/>
+        <path d="M ${CX - 7.4} ${CY + 6.1} Q ${CX} ${CY + 11.6} ${CX + 7.4} ${CY + 6.1}" fill="none"
+              stroke="#ff9b4a" stroke-opacity="0.4" stroke-width="1.5" filter="url(#soft)"/>
+        <circle cx="${CX - 1.2}" cy="${CY - 1.6}" r="1.3" fill="#ffb066" opacity="0.16" filter="url(#soft)"/>
         <!-- the escutcheon's shadow on the glass, and the dome reflection -->
-        <circle cx="${CX}" cy="${CY}" r="${R_HOLE}" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="7" filter="url(#soft2)"/>
+        <circle cx="${CX}" cy="${CY}" r="${R_HOLE}" fill="none" stroke="#000" stroke-opacity="0.9" stroke-width="8" filter="url(#soft2)"/>
         <ellipse cx="${CX - 11}" cy="${CY - 15}" rx="17" ry="9" transform="rotate(-28 ${CX - 11} ${CY - 15})" fill="url(#dome)"/>
       </g>
-
       <!-- the bloom spilling past the ring, onto the chrome -->
-      <g class="glow2" opacity="0.3">
-        <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="#6effa6" stroke-width="${R_OUT - R_IN + 6}" filter="url(#bloom2)"/>
+      <g class="glow2" opacity="0.34" clip-path="url(#out)">
+        <circle cx="${CX}" cy="${CY}" r="${(R_OUT + R_IN) / 2}" fill="none" stroke="#6effa6" stroke-width="${R_OUT - R_IN + 5}" filter="url(#bloom2)"/>
       </g>
       <circle cx="${CX}" cy="${CY}" r="${R_HOLE + 0.4}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="0.9"/>
 
-      <text class="leg" x="${CX}" y="${H - 4.4}" fill="#1c1006" opacity="0.7">TUNING</text>
-      <text class="leg lg" x="${CX}" y="${H - 5}" fill="#e2d3b6">TUNING</text>
+      <text class="leg" x="${CX}" y="${H - 4.2}" fill="#170d04" opacity="0.75">TUNING</text>
+      <text class="leg lg" x="${CX}" y="${H - 4.9}" fill="#ead9ba">TUNING</text>
     </svg>
   </div>`;
 
@@ -279,9 +282,9 @@
       if (Math.abs(a - this._da) > 0.05) {
         this._da = a;
         if (a > 0.3) {
-          this._wedge.setAttribute("d", this._sector(a, 0, R_OUT + 2));
+          this._wedge.setAttribute("d", this._sector(a, 0, R_OUT + 1.5));
           this._sliver.setAttribute("d", "");
-          const e = a + 2.1, r0 = R_IN - 0.5, r1 = R_OUT + 0.5, d = [];
+          const e = a + 2.4, r0 = R_IN - 0.6, r1 = R_OUT + 0.6, d = [];
           [-1, 1].forEach(function (s) {
             const ang = (90 + s * e) * RD;
             d.push("M " + (CX + r0 * Math.cos(ang)).toFixed(2) + " " + (CY + r0 * Math.sin(ang)).toFixed(2) +
@@ -295,7 +298,7 @@
         }
       }
       const o = bright.toFixed(3);
-      if (this._glow.style.opacity !== o) { this._glow.style.opacity = o; this._glow2.style.opacity = (0.3 * bright).toFixed(3); }
+      if (this._glow.style.opacity !== o) { this._glow.style.opacity = o; this._glow2.style.opacity = (0.34 * bright).toFixed(3); }
     }
   }
   customElements.define("sk-magic-eye-6e5", SkMagicEye6E5);

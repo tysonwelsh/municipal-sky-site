@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sony CDP-101 track/time VFD — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&family=Shippori+Mincho:wght@500&family=Roboto+Condensed:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "vfd-sony-cdp101-track-time",
+  "element": "sk-vfd-cdp101",
+  "name": "Sony CDP-101 track/time VFD",
+  "kind": "output",
+  "code": "G7.1",
+  "type": "VFD (vacuum fluorescent) track/time display",
+  "source": "Sony CDP-101 (1982), the first CD player — a cyan-green vacuum fluorescent display behind a smoked acrylic window on a black-and-silver front",
+  "era": "1980s",
+  "origin": "Japan",
+  "materials": ["vacuum fluorescent glass", "smoked acrylic", "black anodised aluminium", "chrome trim"],
+  "tags": ["cd player", "hi-fi", "seven-segment", "phosphor", "smoked window", "anode grid"],
+  "value": { "model": "time", "min": 0, "max": 3599, "unit": "s" },
+  "attributes": ["value", "track", "index", "legends", "level", "scale", "label"],
+  "events": [],
+  "size": { "w": 300, "h": 88 },
+  "notes": "Two displays: TRACK 7 · 03:42 playing with the level bar up, and TRACK 12 INDEX 1 · 00:00 paused at scale 1.35 so the anode grid over the segments is visible."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="black">
+    <sk-vfd-cdp101 value="222" track="7" index="1" level="0.62" legends="track min sec play" label="Disc time"></sk-vfd-cdp101>
+    <sk-vfd-cdp101 value="0" track="12" index="1" level="0" legends="track index min sec pause repeat" scale="1.35" label="Disc time, paused"></sk-vfd-cdp101>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>The <b>Sony CDP-101</b> of 1982 was the first Compact Disc player sold to anyone, and its readout set the
+  house style for a decade of Japanese hi-fi: a <b>cyan-green vacuum fluorescent display</b> sitting well behind a
+  sheet of smoked acrylic, on a black front with a chrome hairline and a brushed silver skirt. Nothing on it has a
+  hard edge — the phosphor is diffuse, the smoke softens it further, and the whole window glows faintly around the
+  numerals.</p>
+  <p><b>The tells kept here:</b> the phosphor is minty and cool, not green, brighter down the centre of each
+  segment, with a bloom that spills onto the smoke; the <b>anode grid</b> is drawn as a fine 3&nbsp;px mesh over the
+  lit segments only, which is what makes a VFD look like a VFD and not an LED; every <b>unlit segment</b> is still
+  faintly there, a ghost at about a tenth of the lit value; the legends light <i>as words</i> — TRACK, MIN and SEC
+  stay on, PLAY ▶ and PAUSE ‖ and REPEAT come and go, and the ones that are off are just visible; a small eight-bar
+  <b>level meter</b> at the right whose top bar is amber, the period's way of marking peak; the window has a dark
+  moulded bezel edge and one diagonal reflection band that is not the shape of anything behind it. Segments fade up
+  in about 60&nbsp;ms and down in 90, so the seconds do not snap; a change of track blanks the number for 100&nbsp;ms
+  before it relights, exactly as the real transport does when it re-reads the subcode.</p>
+  <p><b>Left out:</b> the CDP-101's fifteen-step music calendar and its AMS legends, the wired remote socket, and the
+  Sony wordmark (a plain chrome line stands in for it).</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-vfd-cdp101> — Sony CDP-101 cyan-green VFD behind a smoked window ====
+   attributes: value (seconds) track index legends level scale label
+   no events (an output). set .value or the attribute; segments fade, the bar has ballistics.
+   self-contained: paste this block into any page and use <sk-vfd-cdp101 value="222" track="7"></sk-vfd-cdp101> */
+(function () {
+  if (customElements.get("sk-vfd-cdp101")) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 300, H = 88, SLANT = 2;
+  const SEGS = ["a", "b", "c", "d", "e", "f", "g"];
+  const MAP = {
+    "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc",
+    "5": "afgcd", "6": "afgecd", "7": "abc", "8": "abcdefg", "9": "abcdfg",
+    "-": "g", " ": ""
+  };
+  const LEGENDS = ["track", "index", "min", "sec", "repeat", "play", "pause"];
+
+  function mk(t, a, p) {
+    const e = document.createElementNS(NS, t);
+    for (const k in a) e.setAttribute(k, a[k]);
+    if (p) p.appendChild(e);
+    return e;
+  }
+  // pill-ended seven-segment geometry inside a w × h box, stroke t, gap g
+  function geom(w, h, t, g) {
+    const r = t / 2, m = h / 2;
+    return {
+      a: [g + r, r, w - g - r, r],
+      g: [g + r, m, w - g - r, m],
+      d: [g + r, h - r, w - g - r, h - r],
+      f: [r, g + r, r, m - r - g - r],
+      b: [w - r, g + r, w - r, m - r - g - r],
+      e: [r, m + r + g + r, r, h - g - r],
+      c: [w - r, m + r + g + r, w - r, h - g - r]
+    };
+  }
+  const TAN = Math.tan(SLANT * Math.PI / 180);
+  function digit(parent, x, y, w, h, t, g, ghost) {
+    const grp = mk("g", { transform: "translate(" + (x + (h / 2) * TAN) + " " + y + ") skewX(" + (-SLANT) + ")" }, parent);
+    const P = geom(w, h, t, g), out = {};
+    SEGS.forEach(function (k) {
+      const p = P[k], d = "M" + p[0] + " " + p[1] + "L" + p[2] + " " + p[3];
+      if (ghost) { mk("path", { d: d, "stroke-width": t, class: "gs" }, grp); return; }
+      const gg = mk("g", { class: "sg" }, grp);
+      mk("path", { d: d, "stroke-width": t, class: "bod" }, gg);
+      mk("path", { d: d, "stroke-width": t * 0.40, class: "cor" }, gg);
+      out[k] = gg;
+    });
+    return out;
+  }
+
+  // ---- static template -------------------------------------------------
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; font-size: 10px; line-height: normal; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; }
+    /* --- phosphor --- */
+    .gs { stroke: #14211e; stroke-opacity: 0.5; stroke-linecap: round; fill: none; }
+    .gl { fill: #7dffd6; opacity: 0.12; }
+    .gb { fill: #14211e; opacity: 0.55; }
+    .sg { opacity: 0; transition: opacity 90ms linear; }
+    .sg.on { opacity: 1; transition: opacity 60ms linear; }
+    .bod { stroke: #7dffd6; stroke-linecap: round; fill: none; }
+    .cor { stroke: #d6fff2; stroke-linecap: round; fill: none; opacity: 0.62; }
+    .lg { fill: #8dffe0; opacity: 0; transition: opacity 90ms linear; }
+    .lg.on { opacity: 1; transition: opacity 60ms linear; }
+    .bar { fill: #7dffd6; opacity: 0; transition: opacity 70ms linear; }
+    .bar.on { opacity: 1; transition: opacity 40ms linear; }
+    .bar.pk { fill: #ffc46a; }
+    text { font-family: "Roboto Condensed", "Archivo Narrow", "Arial Narrow", sans-serif; font-weight: 500; }
+    .t6 { font-size: 6.2px; letter-spacing: 0.09em; }
+    .t5 { font-size: 5.6px; letter-spacing: 0.07em; }
+    .bloom { filter: blur(3.2px); opacity: 0.55; }
+    .glow  { filter: blur(7px);   opacity: 0.20; }
+    .soft  { filter: blur(0.35px); }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-hidden="true">
+      <defs>
+        <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#26262a"/><stop offset="0.12" stop-color="#191a1d"/>
+          <stop offset="0.8" stop-color="#101113"/><stop offset="1" stop-color="#0a0b0c"/>
+        </linearGradient>
+        <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#b6bbbe"/><stop offset="0.35" stop-color="#8d9296"/>
+          <stop offset="0.75" stop-color="#6b7074"/><stop offset="1" stop-color="#565b5f"/>
+        </linearGradient>
+        <linearGradient id="smoke" x1="0" y1="0" x2="0.2" y2="1">
+          <stop offset="0" stop-color="#16120f"/><stop offset="0.5" stop-color="#0d1110"/><stop offset="1" stop-color="#090b0b"/>
+        </linearGradient>
+        <linearGradient id="refl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#8c9a96" stop-opacity="0.10"/>
+          <stop offset="0.55" stop-color="#8c9a96" stop-opacity="0.03"/>
+          <stop offset="1" stop-color="#8c9a96" stop-opacity="0"/>
+        </linearGradient>
+        <pattern id="grain" width="4" height="3" patternUnits="userSpaceOnUse">
+          <rect width="4" height="1" fill="#fff" fill-opacity="0.022"/>
+        </pattern>
+        <pattern id="mesh" width="3" height="3" patternUnits="userSpaceOnUse">
+          <path d="M0 0.35H3M0.35 0V3" stroke="#000" stroke-opacity="0.22" stroke-width="0.7"/>
+        </pattern>
+        <clipPath id="win"><rect x="10" y="5" width="280" height="64" rx="3"/></clipPath>
+      </defs>
+
+      <!-- black anodised front -->
+      <rect x="0" y="0" width="${W}" height="75" fill="url(#front)"/>
+      <rect x="0" y="0" width="${W}" height="75" fill="url(#grain)"/>
+      <rect x="0" y="0" width="${W}" height="0.8" fill="#43444a" opacity="0.6"/>
+      <!-- chrome hairline + brushed silver skirt -->
+      <rect x="0" y="74" width="${W}" height="1.1" fill="#cfd2d0"/>
+      <rect x="0" y="75.1" width="${W}" height="12.9" fill="url(#silver)"/>
+      <rect x="0" y="75.1" width="${W}" height="12.9" fill="url(#grain)"/>
+      <rect x="0" y="87.2" width="${W}" height="0.8" fill="#000" opacity="0.5"/>
+
+      <!-- window recess: a shadow all round, then the smoked acrylic -->
+      <rect x="8" y="3.4" width="284" height="67" rx="4" fill="#000" opacity="0.75"/>
+      <g clip-path="url(#win)">
+        <rect x="10" y="5" width="280" height="64" fill="url(#smoke)"/>
+
+        <!-- unlit phosphor: every segment is faintly there -->
+        <g class="ghost soft"></g>
+
+        <!-- bloom behind the lit phosphor -->
+        <g class="bloom"><use href="#lit"/></g>
+        <!-- the phosphor itself -->
+        <g id="lit" class="soft"></g>
+        <!-- the anode grid, a shadow mesh in front of the phosphor -->
+        <rect x="10" y="5" width="280" height="64" fill="url(#mesh)"/>
+        <!-- the smoke, dimming everything behind it -->
+        <rect x="10" y="5" width="280" height="64" fill="#0f0c0a" opacity="0.30"/>
+        <!-- the glow that reaches the front of the acrylic -->
+        <g class="glow"><use href="#lit"/></g>
+        <!-- one diagonal reflection band on the acrylic -->
+        <path d="M 10 5 L 118 5 L 44 69 L 10 69 Z" fill="url(#refl)"/>
+        <path d="M 128 5 L 150 5 L 76 69 L 54 69 Z" fill="#8c9a96" opacity="0.028"/>
+        <!-- moulded bezel edge inside the window -->
+        <rect x="10.5" y="5.5" width="279" height="63" rx="2.6" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="2.2"/>
+        <rect x="11.6" y="6.6" width="276.8" height="60.8" rx="2" fill="none" stroke="#3b3a36" stroke-opacity="0.35" stroke-width="0.7"/>
+      </g>
+      <rect x="10" y="5" width="280" height="64" rx="3" fill="none" stroke="#000" stroke-width="1"/>
+      <path d="M 12 68.6 L 288 68.6" stroke="#6a6c6a" stroke-opacity="0.35" stroke-width="0.8"/>
+    </svg>
+  </div>`;
+
+  class SkVfdCdp101 extends HTMLElement {
+    static get observedAttributes() { return ["value", "track", "index", "legends", "level", "scale", "label"]; }
+
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._trk = 1; this._idx = 1; this._scale = 1;
+      this._lv = 0; this._lvNow = 0; this._raf = 0; this._last = 0;
+      this._blank = 0; this._blankT = 0;
+      this._lastLabel = "";
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._tick = this._tick.bind(this);
+      this._build();
+    }
+
+    // ---- one-time DOM -------------------------------------------------
+    _build() {
+      const root = this.shadowRoot;
+      const ghost = root.querySelector(".ghost");
+      const lit = root.querySelector("#lit");
+
+      // digit fields: [x, y, w, h, thickness, gap]
+      const TRK = [[20, 27, 14, 22, 2.6, 1.7], [36, 27, 14, 22, 2.6, 1.7]];
+      const IDX = [[66, 27, 14, 22, 2.6, 1.7], [82, 27, 14, 22, 2.6, 1.7]];
+      const TIM = [[120, 25, 22, 32, 3.6, 2.3], [146, 25, 22, 32, 3.6, 2.3],
+                   [182, 25, 22, 32, 3.6, 2.3], [208, 25, 22, 32, 3.6, 2.3]];
+      const all = TRK.concat(IDX, TIM);
+      all.forEach(function (d) { digit(ghost, d[0], d[1], d[2], d[3], d[4], d[5], true); });
+      this._trkD = TRK.map(function (d) { return digit(lit, d[0], d[1], d[2], d[3], d[4], d[5], false); });
+      this._idxD = IDX.map(function (d) { return digit(lit, d[0], d[1], d[2], d[3], d[4], d[5], false); });
+      this._timD = TIM.map(function (d) { return digit(lit, d[0], d[1], d[2], d[3], d[4], d[5], false); });
+
+      // colon: two squares, always lit
+      [33.6, 46.0].forEach(function (y) {
+        mk("rect", { x: 172.4, y: y, width: 3.6, height: 3.6, rx: 0.7, class: "gb" }, ghost);
+        const g = mk("g", { class: "sg on" }, lit);
+        mk("rect", { x: 172.4, y: y, width: 3.6, height: 3.6, rx: 0.7, fill: "#7dffd6" }, g);
+        mk("rect", { x: 173.3, y: y + 0.9, width: 1.8, height: 1.8, fill: "#d6fff2", opacity: 0.6 }, g);
+      });
+
+      // word legends — drawn twice: a ghost at 12 % and the lit word
+      const words = [
+        ["track",  "TRACK",  20,   19.4, "start", "t6"],
+        ["index",  "INDEX",  66,   19.4, "start", "t6"],
+        ["min",    "MIN",    142,  19.4, "middle", "t6"],
+        ["sec",    "SEC",    204,  19.4, "middle", "t6"],
+        ["repeat", "REPEAT", 246,  19.4, "start", "t5"],
+        ["play",   "PLAY",   28,   62.2, "start", "t6"],
+        ["pause",  "PAUSE",  70,   62.2, "start", "t6"]
+      ];
+      this._lgs = {};
+      const self = this;
+      words.forEach(function (w) {
+        const gt = mk("text", { x: w[2], y: w[3], "text-anchor": w[4], class: "gl " + w[5] }, ghost);
+        gt.textContent = w[1];
+        const lt = mk("text", { x: w[2], y: w[3], "text-anchor": w[4], class: "lg " + w[5] }, lit);
+        lt.textContent = w[1];
+        self._lgs[w[0]] = [lt];
+      });
+      // ▶ and ‖ pictograms, tied to PLAY and PAUSE
+      const tri = "M 20 57.6 L 26 60 L 20 62.4 Z";
+      mk("path", { d: tri, class: "gl" }, ghost);
+      this._lgs.play.push(mk("path", { d: tri, class: "lg" }, lit));
+      mk("path", { d: "M 62 57.6 h 1.9 v 4.8 h -1.9 z M 65.4 57.6 h 1.9 v 4.8 h -1.9 z", class: "gl" }, ghost);
+      this._lgs.pause.push(mk("path", { d: "M 62 57.6 h 1.9 v 4.8 h -1.9 z M 65.4 57.6 h 1.9 v 4.8 h -1.9 z", class: "lg" }, lit));
+
+      // eight-bar level meter, the top bar amber
+      this._bars = [];
+      for (let i = 0; i < 8; i++) {
+        const y = 54.2 - i * 4.3;
+        mk("rect", { x: 246, y: y, width: 32, height: 2.8, rx: 0.6, class: "gb" }, ghost);
+        this._bars.push(mk("rect", { x: 246, y: y, width: 32, height: 2.8, rx: 0.6, class: "bar" + (i === 7 ? " pk" : "") }, lit));
+      }
+    }
+
+    // ---- lifecycle ----------------------------------------------------
+    connectedCallback() {
+      this.setAttribute("role", "timer");
+      this._read(); this._paint(); this._kick();
+    }
+    disconnectedCallback() {
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      clearTimeout(this._blankT); this._blankT = 0;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v) return;
+      if (n === "track" && o !== null && this.isConnected) this._blankTrack();
+      this._read(); this._paint(); this._kick();
+    }
+
+    get value() { return this._v; }
+    set value(v) {
+      v = parseFloat(v); if (isNaN(v)) return;
+      this._v = Math.max(0, v);
+      this.setAttribute("value", String(Math.round(this._v * 100) / 100));
+    }
+    get track() { return this._trk; }
+    set track(t) { this.setAttribute("track", String(t)); }
+    get level() { return this._lv; }
+    set level(l) { this.setAttribute("level", String(l)); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+
+    _num(n, d) { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; }
+
+    _read() {
+      this._v = Math.max(0, this._num("value", this._v));
+      this._trk = Math.max(0, Math.min(99, Math.round(this._num("track", this._trk))));
+      this._idx = Math.max(0, Math.min(99, Math.round(this._num("index", this._idx))));
+      this._lv = Math.max(0, Math.min(1, this._num("level", this._lv)));
+      const s = Math.max(0.2, this._num("scale", 1));
+      if (s !== this._scale || !this._sized) {
+        this._scale = s; this._sized = true;
+        this.style.width = (W * s) + "px"; this.style.height = (H * s) + "px";
+        this._wrap.style.transform = "scale(" + s + ")";
+      }
+      // legends: a name list, or a bitmask over TRACK INDEX MIN SEC REPEAT PLAY PAUSE
+      const raw = this.getAttribute("legends");
+      let on;
+      if (raw === null) on = { track: 1, min: 1, sec: 1 };
+      else if (/^\d+$/.test(raw.trim())) {
+        const m = parseInt(raw, 10); on = {};
+        LEGENDS.forEach(function (k, i) { if (m & (1 << i)) on[k] = 1; });
+      } else {
+        on = {}; raw.toLowerCase().split(/[\s,|]+/).forEach(function (k) { if (k) on[k] = 1; });
+      }
+      this._on = on;
+    }
+
+    _blankTrack() {
+      this._blank = 1;
+      clearTimeout(this._blankT);
+      const self = this;
+      this._blankT = setTimeout(function () { self._blank = 0; self._paint(); }, 100);
+    }
+
+    _setDigit(d, ch) {
+      const on = MAP[ch] || "";
+      for (const k in d) d[k].classList.toggle("on", on.indexOf(k) >= 0);
+    }
+
+    _paint() {
+      const secs = Math.floor(this._v);
+      const mm = Math.min(99, Math.floor(secs / 60)), ss = secs % 60;
+      const t2 = function (n) { return (n < 10 ? "0" : "") + n; };
+      const time = t2(mm) + t2(ss);
+      for (let i = 0; i < 4; i++) this._setDigit(this._timD[i], time[i]);
+
+      const tk = this._blank ? "  " : t2(this._trk);
+      const ix = t2(this._idx);
+      this._setDigit(this._trkD[0], tk[0]); this._setDigit(this._trkD[1], tk[1]);
+      const showIdx = !!this._on.index;
+      this._setDigit(this._idxD[0], showIdx ? ix[0] : " ");
+      this._setDigit(this._idxD[1], showIdx ? ix[1] : " ");
+
+      const on = this._on, lgs = this._lgs;
+      for (const k in lgs) {
+        const lit = !!on[k];
+        lgs[k].forEach(function (n) { n.classList.toggle("on", lit); });
+      }
+
+      const lab = (this.getAttribute("label") || "CD track and time") +
+        ": track " + this._trk + ", " + t2(mm) + ":" + t2(ss);
+      if (lab !== this._lastLabel) { this._lastLabel = lab; this.setAttribute("aria-label", lab); }
+    }
+
+    _paintBar() {
+      const n = Math.round(this._lvNow * 8);
+      for (let i = 0; i < 8; i++) this._bars[i].classList.toggle("on", i < n);
+    }
+
+    _kick() { if (!this._raf) { this._last = performance.now(); this._raf = requestAnimationFrame(this._tick); } }
+    _tick(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000); this._last = now;
+      const target = this._lv;
+      // 40 ms attack, 300 ms decay
+      const tau = target > this._lvNow ? 0.040 : 0.300;
+      this._lvNow += (target - this._lvNow) * (1 - Math.exp(-dt / tau));
+      this._paintBar();
+      if (Math.abs(target - this._lvNow) < 0.002) { this._lvNow = target; this._paintBar(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+
+    // a source-specific idle animation: the transport plays a disc
+    demo(t) {
+      const lv = 0.42 + 0.30 * Math.sin(t * 2.1) + 0.16 * Math.sin(t * 7.7 + 1.1) + 0.08 * Math.sin(t * 19.3);
+      this.setAttribute("level", String(Math.max(0, Math.min(1, lv)).toFixed(3)));
+      const tk = 5 + (Math.floor(t / 16) % 6);
+      if (tk !== this._trk) this.setAttribute("track", String(tk));
+      if (!this._on.play) this.setAttribute("legends", "track min sec play");
+      return (222 + t) % 3600;
+    }
+  }
+  customElements.define("sk-vfd-cdp101", SkVfdCdp101);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
