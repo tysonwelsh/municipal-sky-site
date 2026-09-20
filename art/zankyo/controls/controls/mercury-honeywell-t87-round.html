@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Honeywell T87 "Round" thermostat — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "mercury-honeywell-t87-round",
+  "element": "sk-mercury-honeywell-t87-round",
+  "name": "Honeywell T87 \"Round\" thermostat",
+  "kind": "both",
+  "code": "C18",
+  "type": "Mercury tilt switch in a thermostat",
+  "source": "The Honeywell T87 round thermostat (Henry Dreyfuss, 1953): the gold setpoint ring over a bimetal coil and mercury vial",
+  "era": "1950s",
+  "origin": "USA",
+  "materials": ["anodised aluminium", "bimetal", "glass", "mercury", "brass", "moulded plastic"],
+  "tags": ["thermostat", "hvac", "mercury switch", "dreyfuss", "setpoint"],
+  "value": { "model": "range", "min": 50, "max": 90, "step": 1, "unit": "°F" },
+  "attributes": ["value", "min", "max", "step", "temp", "cover", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 200, "h": 200 },
+  "notes": "Cover on at 70° calling (temp 68°); cover off showing the coil and a closed vial; cover off at 70° with temp 74° (open). Turn the gold ring; the coil and bead follow temp."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="putty">
+    <sk-mercury-honeywell-t87-round value="70" temp="68" cover="on" scale="0.9"></sk-mercury-honeywell-t87-round>
+    <sk-mercury-honeywell-t87-round value="70" temp="74" cover="off" scale="0.9"></sk-mercury-honeywell-t87-round>
+    <sk-mercury-honeywell-t87-round value="66" temp="66" cover="off" scale="0.62"></sk-mercury-honeywell-t87-round>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>Henry Dreyfuss's <b>Honeywell T87</b> "Round" (1953) put the whole mechanism behind glass: a wide
+  gold-anodised ring is itself the setpoint dial, turning to bring one of its own printed numbers under a
+  fixed window; behind it a flat bimetal coil unwinds with room temperature, carrying a small glass vial with
+  a bead of mercury at its free end. As the coil turns, the vial tilts until the bead rolls across and bridges
+  two wire contacts — no spring, no click, just gravity and a bead of metal closing a heating circuit.</p>
+  <p><b>The tells kept here:</b> the ring's own printed 50–90 scale turning past a stationary window, rather
+  than a pointer moving over a fixed dial; the flat spiral of blue-grey bimetal with a copper edge; the glass
+  vial riding tangent to the coil's free end, its bead rolling to the contact end with a small delay and a
+  settling wobble when the room is colder than the setpoint; a soft amber glow at the base while it is
+  "calling"; the clear cover disc with its own small room-thermometer scale and red pointer, removable with
+  the <code>cover</code> attribute to show the works; the brass anticipator slider at the coil's centre.</p>
+  <p><b>Left out:</b> the wall plate and mounting screws, the true two-thermometer (heat/cool) variant, and the
+  exact Dreyfuss typeface — substituted with a close condensed sans.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-mercury-honeywell-t87-round> — Dreyfuss T87 round thermostat with a mercury tilt switch ====
+   attributes: value(50-90 setpoint) min max step temp(room °F) cover(on|off) scale disabled
+   events: input {value} / change {value} while turning the ring;
+           change {on} whenever the computed mercury-switch state flips (temp vs value)
+   self-contained: paste this block into any page and use
+   <sk-mercury-honeywell-t87-round value="70" temp="68"></sk-mercury-honeywell-t87-round> */
+(function () {
+  if (customElements.get("sk-mercury-honeywell-t87-round")) return;
+  const W = 200, H = 200, CX = 100, CY = 100;
+  const R_OUT = 90, R_IN = 64;
+  const SWEEP = 120;
+  const COIL_CX = 100, COIL_CY = 104;
+
+  function spiral(cx, cy, r0, r1, turns, steps) {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps, th = t * turns * Math.PI * 2 - Math.PI * 0.5;
+      const r = r0 + (r1 - r0) * t;
+      pts.push([cx + r * Math.cos(th), cy + r * Math.sin(th)]);
+    }
+    return pts;
+  }
+  const COIL_PTS = spiral(COIL_CX, COIL_CY, 5, 42, 2.4, 72);
+  const COIL_END = COIL_PTS[COIL_PTS.length - 1];
+  const COIL_PREV = COIL_PTS[COIL_PTS.length - 3];
+  const END_ANGLE = Math.atan2(COIL_END[1] - COIL_PREV[1], COIL_END[0] - COIL_PREV[0]) * 180 / Math.PI;
+  const COIL_D = "M " + COIL_PTS.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L ");
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Libre Franklin", "Arial Narrow", sans-serif; fill: #201a08; }
+    .num { font-size: 7px; font-weight: 700; text-anchor: middle; }
+    .thermnum { font-size: 5px; font-weight: 500; text-anchor: middle; fill: #3a3428; }
+    .ring { transform-origin: ${CX}px ${CY}px; transform-box: view-box; transition: transform 60ms linear; }
+    .ring.snap { transition: transform 140ms cubic-bezier(.2,.9,.3,1.15); }
+    .coil { transform-origin: ${COIL_CX}px ${COIL_CY}px; transform-box: view-box; transition: transform 400ms cubic-bezier(.25,.8,.3,1); }
+    .bead { transition: transform 180ms cubic-bezier(.34,1.5,.6,1); }
+    .grab { position: absolute; left: ${CX - R_OUT}px; top: ${CY - R_OUT}px; width: ${2 * R_OUT}px; height: ${2 * R_OUT}px;
+      border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    .grab.drag { cursor: grabbing; }
+    :host([disabled]) .grab { cursor: default; }
+    .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .cover-on .coilwrap { opacity: 0.6; }
+    .cover-on .covergroup { display: block; }
+    .cover-off .covergroup { display: none; }
+    .glow { transition: opacity 250ms ease; }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" class="root cover-on" aria-hidden="true">
+      <defs>
+        <radialGradient id="wall" cx="35%" cy="20%" r="90%">
+          <stop offset="0" stop-color="#e9e3d0"/><stop offset="1" stop-color="#cfc8b2"/>
+        </radialGradient>
+        <radialGradient id="base" cx="35%" cy="28%" r="80%">
+          <stop offset="0" stop-color="#f4efe0"/><stop offset="0.7" stop-color="#e2dac2"/><stop offset="1" stop-color="#c8bd9e"/>
+        </radialGradient>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f3dd97"/><stop offset="0.35" stop-color="#c9a24a"/><stop offset="0.7" stop-color="#a3792f"/><stop offset="1" stop-color="#7d5a20"/>
+        </linearGradient>
+        <linearGradient id="goldsheen" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.55"/><stop offset="0.4" stop-color="#fff" stop-opacity="0.08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="coilgrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#8892a0"/><stop offset="0.5" stop-color="#5f6a78"/><stop offset="1" stop-color="#3c4450"/>
+        </linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#eaf3fa" stop-opacity="0.75"/><stop offset="1" stop-color="#bcd3e2" stop-opacity="0.45"/>
+        </linearGradient>
+        <radialGradient id="bead" cx="35%" cy="30%" r="70%">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.4" stop-color="#dfe3e8"/><stop offset="1" stop-color="#8a9096"/>
+        </radialGradient>
+        <radialGradient id="callglow" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffae42" stop-opacity="0.55"/><stop offset="1" stop-color="#ffae42" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="coverGrad" cx="30%" cy="22%" r="80%">
+          <stop offset="0" stop-color="#f4f7f9" stop-opacity="0.5"/><stop offset="0.5" stop-color="#dce3e8" stop-opacity="0.28"/><stop offset="1" stop-color="#c7ced4" stop-opacity="0.22"/>
+        </radialGradient>
+        <clipPath id="innerhole"><circle cx="${CX}" cy="${CY}" r="${R_IN}"/></clipPath>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+
+      <!-- wall patch -->
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#wall)"/>
+      <!-- ambient + contact shadow -->
+      <ellipse cx="${CX + 4}" cy="${CY + R_OUT - 2}" rx="${R_OUT - 6}" ry="10" fill="#000" opacity="0.28" filter="url(#soft)"/>
+      <circle cx="${CX + 3}" cy="${CY + 4}" r="${R_OUT}" fill="#000" opacity="0.20" filter="url(#soft)"/>
+
+      <!-- cream base disc (behind the ring, holds the coil) -->
+      <circle cx="${CX}" cy="${CY}" r="${R_IN + 6}" fill="url(#base)" stroke="#00000022" stroke-width="1"/>
+
+      <!-- calling glow -->
+      <circle class="glow" cx="${CX}" cy="${CY}" r="${R_IN + 4}" fill="url(#callglow)" opacity="0"/>
+
+      <g clip-path="url(#innerhole)">
+        <g class="coilwrap">
+          <g class="coil">
+            <path d="${COIL_D}" fill="none" stroke="url(#coilgrad)" stroke-width="3.4" stroke-linecap="round"/>
+            <path d="${COIL_D}" fill="none" stroke="#b7703f" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" transform="translate(0.6 0.6)"/>
+            <!-- vial at the coil's free end -->
+            <g class="vial" transform="translate(${COIL_END[0].toFixed(1)} ${COIL_END[1].toFixed(1)}) rotate(${END_ANGLE.toFixed(1)})">
+              <rect x="-10" y="-3.4" width="20" height="6.8" rx="3.2" fill="url(#glass)" stroke="#7f97a8" stroke-width="0.6"/>
+              <line x1="7" y1="-1.2" x2="12" y2="-1.2" stroke="#c9ccd0" stroke-width="1"/>
+              <line x1="7" y1="1.2" x2="12" y2="1.2" stroke="#c9ccd0" stroke-width="1"/>
+              <circle class="bead" cx="0" cy="0" r="2.6" fill="url(#bead)" stroke="#6e737a" stroke-width="0.4"/>
+            </g>
+          </g>
+          <!-- anticipator: decorative -->
+          <g transform="translate(${COIL_CX - 12} ${COIL_CY + 2})" aria-hidden="true">
+            <rect x="0" y="0" width="24" height="3" rx="1.5" fill="#9a8248" stroke="#5a4a20" stroke-width="0.4"/>
+            <circle cx="16" cy="1.5" r="2.2" fill="#e8cf88" stroke="#5a4a20" stroke-width="0.5"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- cover: clear disc + room thermometer -->
+      <g class="covergroup">
+        <circle cx="${CX}" cy="${CY}" r="${R_IN + 2}" fill="url(#coverGrad)"/>
+        <path d="M ${CX - R_IN} ${CY - R_IN * 0.3} A ${R_IN} ${R_IN} 0 0 1 ${CX + R_IN * 0.5} ${CY - R_IN * 0.85}" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="4"/>
+        <!-- thermometer track -->
+        <rect x="${CX + 30}" y="${CY - 34}" width="5" height="62" rx="2.5" fill="#efe9d8" stroke="#8a8368" stroke-width="0.6"/>
+        <g class="thermticks"></g>
+        <path class="thermptr" d="M 0 0 L 8 -3 L 8 3 Z" fill="#c0272a"/>
+      </g>
+
+      <!-- gold setpoint ring -->
+      <g class="ring">
+        <path d="M ${CX} ${CY - R_OUT} A ${R_OUT} ${R_OUT} 0 1 1 ${CX - 0.01} ${CY - R_OUT} Z
+                 M ${CX} ${CY - R_IN} A ${R_IN} ${R_IN} 0 1 0 ${CX - 0.01} ${CY - R_IN} Z"
+              fill="url(#gold)" fill-rule="evenodd" stroke="#4a3712" stroke-width="0.8"/>
+        <path d="M ${CX - R_OUT + 3} ${CY - R_OUT * 0.5} A ${R_OUT - 3} ${R_OUT - 3} 0 0 1 ${CX + R_OUT * 0.55} ${CY - R_OUT * 0.72}"
+              fill="none" stroke="url(#goldsheen)" stroke-width="10" stroke-linecap="round"/>
+        <g class="scale"></g>
+      </g>
+
+      <!-- fixed reading window at top -->
+      <path d="M ${CX - 5} ${CY - R_OUT - 3} L ${CX + 5} ${CY - R_OUT - 3} L ${CX} ${CY - R_OUT + 8} Z" fill="#1a1508" opacity="0.85"/>
+      <rect x="${CX - 8}" y="${CY - R_OUT - 7}" width="16" height="6" rx="1.5" fill="#e9edf0" stroke="#000" stroke-width="0.6" opacity="0.92"/>
+    </svg>
+    <div class="grab" role="slider" tabindex="0"></div>
+  </div>`;
+
+  class SkT87 extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "temp", "cover", "scale", "disabled"]; }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
+      this._v = 70; this._min = 50; this._max = 90; this._step = 1; this._temp = 70; this._scale = 1; this._on = false; this._initialized = false;
+      this._root = this.shadowRoot.querySelector(".root");
+      this._ring = this.shadowRoot.querySelector(".ring");
+      this._coil = this.shadowRoot.querySelector(".coil");
+      this._bead = this.shadowRoot.querySelector(".bead");
+      this._glow = this.shadowRoot.querySelector(".glow");
+      this._thermptr = this.shadowRoot.querySelector(".thermptr");
+      this._thermticks = this.shadowRoot.querySelector(".thermticks");
+      this._scaleG = this.shadowRoot.querySelector(".scale");
+      this._grab = this.shadowRoot.querySelector(".grab");
+      this._wrap = this.shadowRoot.querySelector(".wrap");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheel = this._onWheel.bind(this); this._onKey = this._onKey.bind(this);
+      // drawn once, from constants only, so it exists before any parser-set attribute reaction fires
+      this._drawTherm(); this._drawScale();
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", String(this._v));
+      this._readAttrs(); this._drawScale(); this._render(true);
+      this._initialized = true;
+      const g = this._grab;
+      g.addEventListener("pointerdown", this._onDown);
+      g.addEventListener("wheel", this._onWheel, { passive: false });
+      g.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const g = this._grab;
+      g.removeEventListener("pointerdown", this._onDown); g.removeEventListener("wheel", this._onWheel); g.removeEventListener("keydown", this._onKey);
+    }
+    attributeChangedCallback(n, o, v) { if (o === v || !this.isConnected) return; this._readAttrs(); if (n === "min" || n === "max") this._drawScale(); this._render(false); }
+    get value() { return this._v; }
+    set value(v) { v = this._clamp(parseFloat(v)); if (isNaN(v)) return; this._v = v; this.setAttribute("value", String(v)); this._render(false); }
+    get temp() { return this._temp; }
+    set temp(t) { t = parseFloat(t); if (isNaN(t)) return; this._temp = t; this.setAttribute("temp", String(t)); this._render(false); }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._grab.focus(); }
+
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", 50); this._max = num("max", 90); this._step = Math.max(1, num("step", 1));
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = this._clamp(num("value", this._v));
+      this._temp = num("temp", this._temp);
+      const coverOff = this.getAttribute("cover") === "off";
+      this._root.classList.toggle("cover-on", !coverOff);
+      this._root.classList.toggle("cover-off", coverOff);
+      this._grab.setAttribute("aria-label", "setpoint");
+      this._grab.setAttribute("aria-valuemin", this._min); this._grab.setAttribute("aria-valuemax", this._max);
+      this._grab.setAttribute("tabindex", this.hasAttribute("disabled") ? "-1" : "0");
+      this._grab.setAttribute("aria-disabled", this.hasAttribute("disabled") ? "true" : "false");
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _clamp(v) { return Math.min(this._max, Math.max(this._min, v)); }
+    _angle(v) { const t = (v - this._min) / (this._max - this._min || 1); return -SWEEP / 2 + t * SWEEP; }
+    _drawScale() {
+      const g = this._scaleG; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const range = this._max - this._min;
+      for (let i = 0; i <= range; i++) {
+        const val = this._min + i;
+        const a = this._angle(val) * Math.PI / 180;
+        const isMajor = i % 5 === 0;
+        const r1 = R_OUT - 3, r2 = isMajor ? R_OUT - 10 : R_OUT - 7;
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute("x1", CX + r1 * Math.sin(a)); line.setAttribute("y1", CY - r1 * Math.cos(a));
+        line.setAttribute("x2", CX + r2 * Math.sin(a)); line.setAttribute("y2", CY - r2 * Math.cos(a));
+        line.setAttribute("stroke", "#241b09"); line.setAttribute("stroke-width", isMajor ? 1.3 : 0.7); line.setAttribute("opacity", isMajor ? 0.85 : 0.5);
+        g.appendChild(line);
+        if (isMajor) {
+          const rr = R_OUT - 18;
+          const t = document.createElementNS(ns, "text");
+          t.setAttribute("x", CX + rr * Math.sin(a)); t.setAttribute("y", CY - rr * Math.cos(a) + 2.4);
+          t.setAttribute("class", "num");
+          t.textContent = String(val);
+          g.appendChild(t);
+        }
+      }
+    }
+    _drawTherm() {
+      const g = this._thermticks; while (g.firstChild) g.removeChild(g.firstChild);
+      const ns = "http://www.w3.org/2000/svg";
+      const x0 = CX + 30, top = CY - 34, bot = CY + 28;
+      for (let t = 55; t <= 85; t += 10) {
+        const y = top + (85 - t) / 30 * (bot - top);
+        const ln = document.createElementNS(ns, "line");
+        ln.setAttribute("x1", x0 - 2); ln.setAttribute("y1", y); ln.setAttribute("x2", x0); ln.setAttribute("y2", y);
+        ln.setAttribute("stroke", "#5a5340"); ln.setAttribute("stroke-width", "0.7");
+        g.appendChild(ln);
+        const txt = document.createElementNS(ns, "text");
+        txt.setAttribute("x", x0 - 6); txt.setAttribute("y", y + 1.8); txt.setAttribute("class", "thermnum");
+        txt.textContent = String(t);
+        g.appendChild(txt);
+      }
+      this._thermTop = top; this._thermBot = bot; this._thermX = x0;
+    }
+    _tiltAngle() { return Math.max(-45, Math.min(45, (this._v - this._temp) * 1.8)); }
+    _render(initial) {
+      const ang = this._angle(this._v);
+      this._ring.style.transform = "rotate(" + (-ang).toFixed(2) + "deg)";
+      this._grab.setAttribute("aria-valuenow", String(this._v));
+      const tilt = this._tiltAngle();
+      this._coil.style.transform = "rotate(" + tilt.toFixed(2) + "deg)";
+      const on = this._v > this._temp;
+      this._bead.setAttribute("cx", on ? "6" : "-6");
+      this._glow.style.opacity = on ? "1" : "0";
+      const tx = this._thermX, clampT = Math.max(55, Math.min(85, this._temp));
+      const y = this._thermTop + (85 - clampT) / 30 * (this._thermBot - this._thermTop);
+      this._thermptr.setAttribute("transform", "translate(" + tx + " " + y + ")");
+      this._grab.setAttribute("aria-valuetext", this._v + "°F, " + (on ? "calling for heat" : "idle"));
+      if (initial || !this._initialized) { this._on = on; return; }
+      if (on !== this._on) {
+        this._on = on;
+        this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { on: this._on } }));
+      }
+    }
+    _set(v, settle) {
+      v = this._clamp(v);
+      const changed = v !== this._v;
+      if (!changed && !settle) return;
+      this._v = v; this.setAttribute("value", String(v));
+      this._render(false);
+      if (changed || settle) {
+        this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+      }
+    }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      this._grab.focus({ preventScroll: true });
+      this._grab.setPointerCapture(e.pointerId);
+      this._ring.classList.remove("snap");
+      const rect = this._grab.getBoundingClientRect();
+      this._drag = { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2, moved: false };
+      this._grab.addEventListener("pointermove", this._onMove);
+      this._grab.addEventListener("pointerup", this._onUp); this._grab.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const d = this._drag;
+      const dx = e.clientX - d.cx, dy = d.cy - e.clientY;
+      let ang = Math.atan2(dx, dy) * 180 / Math.PI;
+      ang = Math.max(-SWEEP / 2, Math.min(SWEEP / 2, ang));
+      const t = (ang + SWEEP / 2) / SWEEP;
+      let v = this._min + t * (this._max - this._min);
+      v = Math.round(v / this._step) * this._step;
+      d.moved = true;
+      this._set(v, false);
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._grab.removeEventListener("pointermove", this._onMove);
+      this._grab.removeEventListener("pointerup", this._onUp); this._grab.removeEventListener("pointercancel", this._onUp);
+      try { this._grab.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (this._drag.moved) this._set(this._v, true);
+      this._drag = null;
+    }
+    _onWheel(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      this._ring.classList.add("snap");
+      const dir = e.deltaY < 0 ? 1 : -1;
+      this._set(this._v + dir * this._step * (e.shiftKey ? 5 : 1), false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      const big = this._step * 5;
+      let v = null;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big : this._step); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big : this._step); break;
+        case "Home": v = this._min; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      this._ring.classList.add("snap");
+      v = Math.round(v / this._step) * this._step;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-mercury-honeywell-t87-round", SkT87);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>

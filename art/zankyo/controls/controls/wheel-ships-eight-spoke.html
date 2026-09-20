@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ship's wheel, eight-spoke — CONTROLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Libre+Franklin:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stage.css">
+<script type="application/json" id="sk-meta">
+{
+  "id": "wheel-ships-eight-spoke",
+  "element": "sk-wheel-ships-eight-spoke",
+  "name": "Ship's wheel, eight-spoke",
+  "kind": "input",
+  "code": "E4",
+  "type": "Steering wheel / yoke",
+  "source": "Clipper / steam-era ship's wheel (Brown Bros. of Edinburgh, Hastie's of Glasgow, ~1850–1920)",
+  "era": "pre-1900",
+  "origin": "UK",
+  "materials": ["oiled teak rim", "turned mahogany spokes", "brass hub and ferrules", "rope"],
+  "tags": ["nautical", "helm", "rudder", "multi-turn", "king spoke"],
+  "value": { "model": "range", "min": -35, "max": 35, "step": 0.5, "unit": "°" },
+  "attributes": ["value", "min", "max", "step", "turns", "endless", "return", "label", "scale", "disabled"],
+  "events": ["input", "change"],
+  "size": { "w": 360, "h": 360 },
+  "notes": "Two instances: amidships (king spoke up) and one held at 15° starboard, one and a half turns over. Drag the rim or a handle; the wheel takes three turns lock-to-lock."
+}
+</script>
+</head>
+<body>
+<header class="sk-head"></header>
+<div class="sk-stage-wrap">
+  <main class="sk-stage" data-panel="wood">
+    <sk-wheel-ships-eight-spoke label="RUDDER"></sk-wheel-ships-eight-spoke>
+    <sk-wheel-ships-eight-spoke label="RUDDER" value="15" scale="0.62"></sk-wheel-ships-eight-spoke>
+  </main>
+</div>
+<aside class="sk-bench"></aside>
+<section class="sk-notes">
+  <h2>THE SOURCE</h2>
+  <p>A <b>clipper- and steam-era ship's wheel</b>: a segmented, oiled-teak rim in eight scarfed sections joined by
+  brass ferrules, turned mahogany spokes passing through the rim into baluster handles beyond it, and a domed
+  brass hub carrying the maker's plate. The <b>king spoke</b> — brass-sleeved here — points straight up when the
+  rudder is amidships, so a helmsman can feel the wheel's position without looking.</p>
+  <p><b>The tells kept here:</b> the spokes running through the rim into turned, foreshortened handles that swell
+  and neck like lathed wood; eight scarf joints, each with a brass ferrule band; the domed hub with a horizon
+  highlight and an engraved maker's plate curving around the boss; grain streaks following the rim's own curve;
+  darker "hand-oil" shading at the handle swells and a paler forward face on the rim. The wheel takes several
+  turns lock-to-lock: dragging the rim or a handle turns it by the pointer's angle around the hub (accumulating
+  past 360°, not by a single snapped angle), the rudder value derived from the gearing set by <code>turns</code>;
+  the ends thud gently. Arrows step 5° of rudder; the wheel steps too; <code>return</code> adds a slow 2 s spring
+  home; <code>endless</code> removes the lock stops for a valve-wheel-style demo.</p>
+  <p><b>Left out:</b> the pedestal, the engine-room telegraph, the rope Turk's-head texture (a plain brass sleeve
+  stands in for it), the exact scarf-joint carpentry.</p>
+</section>
+<script id="sk-element">
+/* ==== <sk-wheel-ships-eight-spoke> — oiled-teak ship's wheel, eight turned spokes, king spoke marked ====
+   attributes: value(rudder deg) min max step turns(default 3) endless return label scale disabled
+   events: input {value} during a gesture, change {value} when it settles
+   self-contained: paste this block into any page and use <sk-wheel-ships-eight-spoke></sk-wheel-ships-eight-spoke> */
+(function () {
+  if (customElements.get("sk-wheel-ships-eight-spoke")) return;
+  const W = 360, H = 360, CX = 180, CY = 180;
+  const HUBR = 26, RIM_IN = 104, RIM_OUT = 128, TIP = 152;
+  const ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+  const spokeRows = [
+    [HUBR, 8], [50, 6.6], [90, 6.4], [RIM_IN - 3, 7.2], [RIM_OUT + 3, 7.2],
+    [122, 8], [133, 11.5], [143, 6.6], [TIP - 5, 6.4]
+  ];
+  function spokePathD() {
+    const left = spokeRows.map(([r, w]) => `${CX - w} ${CY - r}`);
+    const right = spokeRows.slice().reverse().map(([r, w]) => `${CX + w} ${CY - r}`);
+    return "M " + left.join(" L ") + " L " + right.join(" L ") + " Z";
+  }
+  const spokesMarkup = ANGLES.map((a, i) => `
+    <g transform="rotate(${a} ${CX} ${CY})">
+      <use href="#spokeShape" fill="url(#spokeGrad)" stroke="#1c0f06" stroke-width="0.7"/>
+      <ellipse cx="${CX - 2}" cy="${CY - 132}" rx="9" ry="6" fill="#2a1810" opacity="0.28"/>
+      <line x1="${CX - 6.5}" y1="${CY - RIM_OUT - 4}" x2="${CX + 6.5}" y2="${CY - RIM_OUT - 4}" stroke="#1c0f06" stroke-opacity="0.4" stroke-width="0.8"/>
+      <line x1="${CX - 6.5}" y1="${CY - 140}" x2="${CX + 6.5}" y2="${CY - 140}" stroke="#1c0f06" stroke-opacity="0.4" stroke-width="0.8"/>
+      <ellipse class="knob" cx="${CX}" cy="${CY - TIP + 2}" rx="8.6" ry="6.4" fill="url(#gripGrad)" stroke="#160b05" stroke-width="0.6"/>
+      <ellipse cx="${CX - 2.4}" cy="${CY - TIP - 0.6}" rx="3.4" ry="2" fill="#fff" opacity="${i === 0 ? 0.22 : 0.3}"/>
+      ${i === 0 ? `<rect x="${CX - 5}" y="${CY - RIM_OUT - 6}" width="10" height="20" rx="2" fill="url(#brassGrad)" stroke="#4a3512" stroke-width="0.5"/>` : ""}
+    </g>`).join("");
+  const ferruleMarkup = ANGLES.map(a => `
+    <rect x="${CX - 3}" y="${CY - RIM_OUT + 1}" width="6" height="${RIM_OUT - RIM_IN - 2}" rx="1.4"
+      fill="url(#brassGrad)" stroke="#4a3512" stroke-width="0.5" transform="rotate(${a + 22.5} ${CX} ${CY})"/>`).join("");
+  const grainMarkup = Array.from({ length: 14 }).map((_, i) => {
+    const rr = RIM_IN + 3 + (i % 4) * 5.5, a0 = (i * 137) % 360, a1 = a0 + 18 + (i % 3) * 6;
+    const p0 = [CX + rr * Math.sin(a0 * Math.PI / 180), CY - rr * Math.cos(a0 * Math.PI / 180)];
+    const p1 = [CX + rr * Math.sin(a1 * Math.PI / 180), CY - rr * Math.cos(a1 * Math.PI / 180)];
+    return `<path d="M ${p0[0].toFixed(1)} ${p0[1].toFixed(1)} A ${rr} ${rr} 0 0 1 ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}" fill="none" stroke="#5b3a1f" stroke-opacity="0.3" stroke-width="1"/>`;
+  }).join("");
+
+  const TPL = document.createElement("template");
+  TPL.innerHTML = `
+  <style>
+    :host { display: inline-block; width: ${W}px; height: ${H}px; position: relative; -webkit-tap-highlight-color: transparent; font-size: 10px; }
+    :host([hidden]) { display: none; }
+    .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
+    svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
+    text { font-family: "Libre Franklin", "Arial", sans-serif; font-weight: 700; }
+    .label { font-size: 9.5px; letter-spacing: 0.24em; fill: #cabf9a; text-anchor: middle; font-family: "JetBrains Mono", monospace; font-weight: 400; }
+    .plate { font-size: 5.6px; letter-spacing: 0.14em; fill: #4a3512; }
+    .hit { position: absolute; left: ${CX - TIP - 10}px; top: ${CY - TIP - 10}px; width: ${(TIP + 10) * 2}px; height: ${(TIP + 10) * 2}px;
+      border-radius: 50%; cursor: grab; touch-action: none; outline: none; -webkit-user-select: none; user-select: none; }
+    .hit.drag { cursor: grabbing; }
+    .hit:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 16px rgba(22,224,224,0.5); border-radius: 50%; }
+    :host([disabled]) .hit { cursor: default; }
+    .wheelgrp.thud { animation: thud 150ms ease-out; }
+    @keyframes thud { 0% { transform: scale(1); } 40% { transform: scale(1.012); } 100% { transform: scale(1); } }
+  </style>
+  <div class="wrap">
+    <svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs>
+        <path id="spokeShape" d="${spokePathD()}"/>
+        <linearGradient id="spokeGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#a06840"/><stop offset="0.3" stop-color="#7a4a2c"/><stop offset="0.65" stop-color="#4a2c1a"/><stop offset="1" stop-color="#2e1a0f"/>
+        </linearGradient>
+        <radialGradient id="gripGrad" cx="32%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#a8734a"/><stop offset="0.5" stop-color="#6a4128"/><stop offset="1" stop-color="#2c1a0f"/>
+        </radialGradient>
+        <linearGradient id="brassGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#f0dc9a"/><stop offset="0.4" stop-color="#c9a44a"/><stop offset="0.75" stop-color="#8a6a25"/><stop offset="1" stop-color="#5c4416"/>
+        </linearGradient>
+        <radialGradient id="hubGrad" cx="33%" cy="26%" r="80%">
+          <stop offset="0" stop-color="#f3e2a8"/><stop offset="0.35" stop-color="#c9a44a"/><stop offset="0.7" stop-color="#8a6a25"/><stop offset="1" stop-color="#4a3512"/>
+        </radialGradient>
+        <radialGradient id="rimBase" cx="40%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#8a5a34"/><stop offset="0.55" stop-color="#6a4326"/><stop offset="1" stop-color="#43290f"/>
+        </radialGradient>
+        <linearGradient id="rimPale" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#c69a63" stop-opacity="0.22"/>
+        </linearGradient>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.4"/></filter>
+        <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+      </defs>
+
+      <!-- cast shadow on the deck -->
+      <ellipse cx="${CX + 6}" cy="${CY + 14}" rx="${TIP - 4}" ry="${(TIP - 4) * 0.42}" fill="#000" opacity="0.4" filter="url(#soft2)"/>
+
+      <g class="wheelgrp">
+        <!-- rim -->
+        <circle cx="${CX}" cy="${CY}" r="${(RIM_IN + RIM_OUT) / 2}" fill="none" stroke="url(#rimBase)" stroke-width="${RIM_OUT - RIM_IN}"/>
+        <circle cx="${CX}" cy="${CY}" r="${(RIM_IN + RIM_OUT) / 2}" fill="none" stroke="url(#rimPale)" stroke-width="${RIM_OUT - RIM_IN}"/>
+        <circle cx="${CX}" cy="${CY}" r="${RIM_OUT}" fill="none" stroke="#2a1a0d" stroke-width="1.1"/>
+        <circle cx="${CX}" cy="${CY}" r="${RIM_IN}" fill="none" stroke="#1c1108" stroke-width="1.1"/>
+        <circle cx="${CX}" cy="${CY}" r="${RIM_OUT - 1.5}" fill="none" stroke="#c69a63" stroke-opacity="0.35" stroke-width="1"/>
+        <g class="grain">${grainMarkup}</g>
+        <g class="ferrules">${ferruleMarkup}</g>
+        <g class="spokes">${spokesMarkup}</g>
+      </g>
+
+      <!-- fixed hub, on top, not rotating -->
+      <circle cx="${CX + 2}" cy="${CY + 3}" r="${HUBR + 3}" fill="#000" opacity="0.4" filter="url(#soft)"/>
+      <circle cx="${CX}" cy="${CY}" r="${HUBR + 2}" fill="#241708" stroke="#0a0603" stroke-width="1"/>
+      <circle cx="${CX}" cy="${CY}" r="${HUBR}" fill="url(#hubGrad)" stroke="#3a2a0e" stroke-width="0.8"/>
+      <path d="M ${CX - HUBR + 4} ${CY - 6} A ${HUBR - 4} ${HUBR - 4} 0 0 1 ${CX + HUBR - 4} ${CY - 6}" fill="none" stroke="#fff" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round"/>
+      <path d="M ${CX - HUBR + 6} ${CY + 10} A ${HUBR - 6} ${HUBR - 6} 0 0 0 ${CX + HUBR - 6} ${CY + 10}" fill="none" stroke="#3a2a0e" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
+      <path id="plateArc" d="M ${CX - 18} ${CY + 9} A 19 19 0 0 1 ${CX + 18} ${CY + 9}" fill="none"/>
+      <text class="plate" text-anchor="middle"><textPath href="#plateArc" startOffset="50%">BROWN BROS · EDINBURGH</textPath></text>
+
+      <text class="label" x="${CX}" y="${H - 10}"></text>
+    </svg>
+    <div class="hit" role="slider" tabindex="0"></div>
+  </div>`;
+
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function norm180(d) { d = ((d + 180) % 360 + 360) % 360 - 180; return d; }
+
+  class SkWheel extends HTMLElement {
+    static get observedAttributes() { return ["value", "min", "max", "step", "turns", "endless", "return", "label", "scale", "disabled"]; }
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: "open" });
+      root.appendChild(TPL.content.cloneNode(true));
+      this._v = 0; this._min = -35; this._max = 35; this._step = 0.5; this._turns = 3;
+      this._endless = false; this._return = false; this._scale = 1;
+      this._wheelDeg = 0; this._raf = 0;
+      this._wrap = root.querySelector(".wrap");
+      this._hit = root.querySelector(".hit");
+      this._grp = root.querySelector(".wheelgrp");
+      this._label = root.querySelector(".label");
+      this._onDown = this._onDown.bind(this); this._onMove = this._onMove.bind(this); this._onUp = this._onUp.bind(this);
+      this._onWheelEvt = this._onWheelEvt.bind(this); this._onKey = this._onKey.bind(this);
+      this._tick = this._tick.bind(this);
+    }
+    connectedCallback() {
+      if (!this.hasAttribute("value")) this.setAttribute("value", "0");
+      this._readAttrs();
+      this._wheelDeg = this._degPerRudder() * this._v;
+      this._paint();
+      const h = this._hit;
+      h.addEventListener("pointerdown", this._onDown);
+      h.addEventListener("wheel", this._onWheelEvt, { passive: false });
+      h.addEventListener("keydown", this._onKey);
+    }
+    disconnectedCallback() {
+      const h = this._hit;
+      h.removeEventListener("pointerdown", this._onDown);
+      h.removeEventListener("wheel", this._onWheelEvt);
+      h.removeEventListener("keydown", this._onKey);
+      cancelAnimationFrame(this._raf); this._raf = 0;
+    }
+    attributeChangedCallback(n, o, v) {
+      if (o === v || !this.isConnected) return;
+      this._readAttrs();
+      if (n === "value") { this._wheelDeg = this._degPerRudder() * this._v; this._paint(); }
+    }
+    get value() { return this._v; }
+    set value(v) {
+      v = clamp(parseFloat(v), this._min, this._max);
+      if (isNaN(v)) return;
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._v = v; this._wheelDeg = this._degPerRudder() * v;
+      this.setAttribute("value", String(Math.round(v * 100) / 100));
+      this._paint();
+    }
+    get scale() { return this._scale; }
+    set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { this._hit.focus(); }
+
+    _degPerRudder() { const span = this._max - this._min || 70; return (this._turns * 360) / span; }
+    _readAttrs() {
+      const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
+      this._min = num("min", -35); this._max = num("max", 35); this._step = num("step", 0.5);
+      this._turns = Math.max(0.5, num("turns", 3));
+      this._endless = this.hasAttribute("endless"); this._return = this.hasAttribute("return");
+      this._scale = Math.max(0.2, num("scale", 1));
+      this._v = clamp(num("value", this._v), this._min, this._max);
+      this._label.textContent = this.getAttribute("label") || "";
+      const dis = this.hasAttribute("disabled");
+      this._hit.setAttribute("tabindex", dis ? "-1" : "0");
+      this._hit.setAttribute("aria-disabled", dis ? "true" : "false");
+      this._hit.setAttribute("aria-label", this.getAttribute("label") || "ship's wheel");
+      this._hit.setAttribute("aria-valuemin", this._min); this._hit.setAttribute("aria-valuemax", this._max);
+      this.style.width = (W * this._scale) + "px"; this.style.height = (H * this._scale) + "px";
+      this._wrap.style.transform = "scale(" + this._scale + ")";
+    }
+    _valuetext(v) {
+      if (Math.abs(v) < 0.05) return "amidships";
+      return Math.abs(Math.round(v * 10) / 10) + "° " + (v > 0 ? "starboard" : "port");
+    }
+    _paint() {
+      this._grp.style.transform = "rotate(" + this._wheelDeg.toFixed(2) + "deg)";
+      this._hit.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
+      this._hit.setAttribute("aria-valuetext", this._valuetext(this._v));
+    }
+    _rudderFromDeg(deg) {
+      let v = deg / this._degPerRudder();
+      v = clamp(Math.round(v / this._step) * this._step, this._min, this._max);
+      return v;
+    }
+    _set(v, settle) {
+      v = clamp(v, this._min, this._max);
+      const clampedHit = !this._endless && (v === this._min || v === this._max) && v !== this._v ? false : null;
+      if (v === this._v && !settle) return;
+      this._v = v;
+      this.setAttribute("value", String(Math.round(v * 100) / 100));
+      this._paint();
+      this.dispatchEvent(new CustomEvent(settle ? "change" : "input", { bubbles: true, composed: true, detail: { value: this._v } }));
+    }
+    _thud() { this._grp.classList.remove("thud"); void this._grp.offsetWidth; this._grp.classList.add("thud"); }
+    _onDown(e) {
+      if (this.hasAttribute("disabled") || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      this._hit.focus({ preventScroll: true });
+      this._hit.setPointerCapture(e.pointerId);
+      this._hit.classList.add("drag");
+      const r = this.getBoundingClientRect();
+      const cx = r.left + (CX * this._scale), cy = r.top + (CY * this._scale);
+      const ang = Math.atan2(e.clientX - cx, -(e.clientY - cy)) * 180 / Math.PI;
+      this._drag = { cx, cy, lastAngle: ang };
+      this._hit.addEventListener("pointermove", this._onMove);
+      this._hit.addEventListener("pointerup", this._onUp); this._hit.addEventListener("pointercancel", this._onUp);
+    }
+    _onMove(e) {
+      if (!this._drag) return;
+      const ang = Math.atan2(e.clientX - this._drag.cx, -(e.clientY - this._drag.cy)) * 180 / Math.PI;
+      const delta = norm180(ang - this._drag.lastAngle);
+      this._drag.lastAngle = ang;
+      let target = this._wheelDeg + delta;
+      const halfSpan = this._degPerRudder() * (this._max - this._min) / 2;
+      const rudderMid = (this._max + this._min) / 2 * this._degPerRudder();
+      const lo = rudderMid - halfSpan, hi = rudderMid + halfSpan;
+      if (!this._endless) {
+        if (target < lo) { target = lo; if (this._wheelDeg > lo + 0.5) this._thud(); }
+        if (target > hi) { target = hi; if (this._wheelDeg < hi - 0.5) this._thud(); }
+      }
+      this._wheelDeg = target;
+      const v = this._rudderFromDeg(this._wheelDeg);
+      this._paint();
+      if (v !== this._v) { this._v = v; this.setAttribute("value", String(Math.round(v * 100) / 100)); this.dispatchEvent(new CustomEvent("input", { bubbles: true, composed: true, detail: { value: v } })); }
+    }
+    _onUp(e) {
+      if (!this._drag) return;
+      this._hit.removeEventListener("pointermove", this._onMove);
+      this._hit.removeEventListener("pointerup", this._onUp); this._hit.removeEventListener("pointercancel", this._onUp);
+      try { this._hit.releasePointerCapture(e.pointerId); } catch (_) {}
+      this._hit.classList.remove("drag");
+      this._drag = null;
+      this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this._v } }));
+      if (this._return && Math.abs(this._v) > 0.001) this._kickReturn();
+    }
+    _kickReturn() {
+      this._retStart = this._wheelDeg; this._retT0 = performance.now();
+      cancelAnimationFrame(this._raf); this._raf = requestAnimationFrame(this._tick);
+    }
+    _tick(now) {
+      const t = Math.min(1, (now - this._retT0) / 2000);
+      const ease = 1 - Math.pow(1 - t, 3);
+      this._wheelDeg = this._retStart * (1 - ease);
+      this._paint();
+      if (t >= 1) {
+        this._raf = 0; this._wheelDeg = 0; this._v = 0; this.setAttribute("value", "0"); this._paint();
+        this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: 0 } }));
+        return;
+      }
+      this._raf = requestAnimationFrame(this._tick);
+    }
+    _onWheelEvt(e) {
+      if (this.hasAttribute("disabled")) return;
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      const dir = e.deltaY < 0 ? 1 : -1;
+      const v = clamp(this._v + dir * this._step * (e.shiftKey ? 10 : 2), this._min, this._max);
+      this._wheelDeg = this._degPerRudder() * v;
+      this._set(v, false);
+      clearTimeout(this._wt); this._wt = setTimeout(() => this._set(this._v, true), 220);
+    }
+    _onKey(e) {
+      if (this.hasAttribute("disabled")) return;
+      let v = null;
+      const big = 5;
+      switch (e.key) {
+        case "ArrowUp": case "ArrowRight": v = this._v + (e.shiftKey ? big * 2 : big); break;
+        case "ArrowDown": case "ArrowLeft": v = this._v - (e.shiftKey ? big * 2 : big); break;
+        case "Home": v = 0; break;
+        case "End": v = this._max; break;
+        default: return;
+      }
+      e.preventDefault();
+      cancelAnimationFrame(this._raf); this._raf = 0;
+      v = clamp(Math.round(v / this._step) * this._step, this._min, this._max);
+      this._wheelDeg = this._degPerRudder() * v;
+      this._set(v, false); this._set(v, true);
+    }
+  }
+  customElements.define("sk-wheel-ships-eight-spoke", SkWheel);
+})();
+</script>
+<script src="../stage.js"></script>
+</body>
+</html>
