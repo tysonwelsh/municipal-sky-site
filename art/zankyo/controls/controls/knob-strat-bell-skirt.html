@@ -22,10 +22,10 @@
   "materials": ["aged ABS", "printed numerals", "3-ply pickguard", "steel screw"],
   "tags": ["guitar", "bell knob", "skirt", "no pointer", "volume", "tone", "cone projection"],
   "value": { "model": "range", "min": 1, "max": 10, "step": 0.1, "unit": "" },
-  "attributes": ["value", "min", "max", "step", "label", "finish", "scale", "disabled"],
+  "attributes": ["value", "min", "max", "step", "label", "finish", "index", "scale", "disabled"],
   "events": ["input", "change"],
   "size": { "w": 84, "h": 100 },
-  "notes": "VOLUME at 10, TONE at 6, and a fresh-white TONE at 3 at scale 0.8. Read the numeral nearest the wear mark at 12. Drag up/down, wheel, or arrows."
+  "notes": "VOLUME at 10, TONE at 6, and a fresh-white TONE at 3 at scale 0.8. Read the numeral facing you, over the wear mark at the front (index=\"12\" moves the mark to the top). Drag up/down, wheel, or arrows."
 }
 </script>
 </head>
@@ -51,8 +51,10 @@
   with its own affine matrix, so it stands upright at the front, lies on its side at 3 and 9, and is squashed
   and inverted at the back; concentric turning rings and one soft highlight on the top; the numerals at
   5, 6 and 7 rubbed thin by a decade of thumbs; the skirt yellowed warmer than the top, with a
-  <code>finish="fresh"</code> attribute for a new knob; a faint wear mark on the pickguard at 12 that serves
-  as the index; the pickguard's bevel with the black ply, and one of its screws. Drag is vertical (up is
+  <code>finish="fresh"</code> attribute for a new knob; a faint wear mark on the pickguard that serves as the
+  index — at the front, where the numeral facing you stands upright (seen from above, the numeral at the far
+  side is inverted and a 6 reads as a 9), with <code>index="12"</code> to put the mark at the top instead;
+  the pickguard's bevel with the black ply, and one of its screws. Drag is vertical (up is
   clockwise), the wheel steps, arrows step and Shift-arrows step by ten.</p>
   <p><b>Left out:</b> the split-shaft pot's D-flat inside the knob, and the mould's parting line on the skirt.</p>
 </section>
@@ -85,6 +87,7 @@
     .grab.drag { cursor: grabbing; }
     :host([disabled]) .grab { cursor: default; }
     .grab:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 10px rgba(22,224,224,0.6); }
+    .ix12 { display: none; } :host([index="12"]) .ix12 { display: initial; } :host([index="12"]) .ix6 { display: none; }
     text { font-family: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif; fill: var(--ink); }
     .num { font-size: 7.2px; font-weight: 500; text-anchor: middle; dominant-baseline: central; }
     .word { font-size: 5.5px; font-weight: 600; letter-spacing: 0.1em; text-anchor: middle; dominant-baseline: central; opacity: 0.86; }
@@ -142,9 +145,15 @@
         <circle r="4.4" fill="url(#screwG)" stroke="#6a6a66" stroke-width="0.5"/>
         <g transform="rotate(22)" fill="#3a3a38"><rect x="-3" y="-0.55" width="6" height="1.1"/><rect x="-0.55" y="-3" width="1.1" height="6"/></g>
       </g>
-      <!-- the index: a wear mark on the pickguard at 12 -->
-      <ellipse cx="${CX}" cy="${CY - RYB - 3.5}" rx="4.5" ry="1.6" fill="#8a7e5c" opacity="0.28" filter="url(#tight)"/>
-      <path d="M ${CX - 2.5} ${CY - RYB - 4.2} L ${CX + 2.5} ${CY - RYB - 3.4}" stroke="#6b6046" stroke-opacity="0.45" stroke-width="0.5"/>
+      <!-- the index: a wear mark on the pickguard, at 6 (the front, default) or at 12 -->
+      <g class="ix6">
+        <ellipse cx="${CX}" cy="${CY + RYB + 4}" rx="4.5" ry="1.6" fill="#8a7e5c" opacity="0.3" filter="url(#tight)"/>
+        <path d="M ${CX - 2.5} ${CY + RYB + 3.4} L ${CX + 2.5} ${CY + RYB + 4.2}" stroke="#6b6046" stroke-opacity="0.5" stroke-width="0.5"/>
+      </g>
+      <g class="ix12">
+        <ellipse cx="${CX}" cy="${CY - RYB - 3.5}" rx="4.5" ry="1.6" fill="#8a7e5c" opacity="0.3" filter="url(#tight)"/>
+        <path d="M ${CX - 2.5} ${CY - RYB - 4.2} L ${CX + 2.5} ${CY - RYB - 3.4}" stroke="#6b6046" stroke-opacity="0.5" stroke-width="0.5"/>
+      </g>
 
       <!-- grime and shadows under the skirt -->
       <ellipse cx="${CX + 3}" cy="${CY + 3}" rx="${RB + 8}" ry="${f(RYB + 8)}" fill="url(#grime)"/>
@@ -185,7 +194,7 @@
   </div>`;
 
   class SkKnobStratBell extends HTMLElement {
-    static get observedAttributes() { return ["value", "min", "max", "step", "label", "finish", "scale", "disabled"]; }
+    static get observedAttributes() { return ["value", "min", "max", "step", "label", "finish", "index", "scale", "disabled"]; }
     constructor() {
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
@@ -221,6 +230,7 @@
       const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
       this._min = num("min", 1); this._max = num("max", 10); this._step = num("step", 0.1);
       this._scale = Math.max(0.2, num("scale", 1));
+      this._idx = this.getAttribute("index") === "12" ? 0 : 180;      // where the reading numeral sits: the front (6 o'clock) unless asked for 12
       this._v = this._clamp(num("value", this._v));
       const label = this.getAttribute("label") || "VOLUME";
       this._word.textContent = label;
@@ -254,7 +264,7 @@
       const rho = this._rot(this._v);
       const z = 4.6, R = RB - z;                      // the numerals sit mid-slope
       for (const nm of this._nums) {
-        const phi = (nm.phi + rho) * Math.PI / 180, s = Math.sin(phi), c = Math.cos(phi);
+        const phi = (nm.phi + rho + this._idx) * Math.PI / 180, s = Math.sin(phi), c = Math.cos(phi);
         // glyph x axis and up axis on the cone, projected: see notes
         const a = -c, b = -s * SE;
         const ux = -s * CA, uy = c * CA * SE - SA * CE;
@@ -262,7 +272,7 @@
         nm.el.setAttribute("transform", `matrix(${f(a)} ${f(b)} ${f(-ux)} ${f(-uy)} ${f(tx)} ${f(ty)})`);
       }
       // the word on the top rotates with the knob, on a disc squashed by the view
-      const r = rho * Math.PI / 180, cr = Math.cos(r), sr = Math.sin(r), dy = 1.2;
+      const r = (rho + this._idx + 180) * Math.PI / 180, cr = Math.cos(r), sr = Math.sin(r), dy = 1.2;
       this._word.setAttribute("transform", `matrix(${f(cr)} ${f(sr * SE)} ${f(-sr)} ${f(cr * SE)} ${f(CX - dy * sr)} ${f(TY + dy * cr * SE)})`);
       this._grab.setAttribute("aria-valuenow", String(Math.round(this._v * 100) / 100));
       this._grab.setAttribute("aria-valuetext", String(Math.round(this._v * 10) / 10));

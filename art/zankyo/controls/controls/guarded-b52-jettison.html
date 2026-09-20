@@ -42,20 +42,21 @@
 <section class="sk-notes">
   <h2>THE SOURCE</h2>
   <p>On a B-52's pilot and bombardier panels the pushes that cannot be pressed by accident live under
-  <b>red-anodised aluminium flip-guards</b>: a machined lid with a rolled free edge and a finger notch, sprung so
-  it snaps shut on its own, stencilled with the same word that is silk-screened on the black wrinkle panel below
-  it. <b>JETTISON</b> is the one everybody remembers. The push underneath is an ordinary Cutler-Hammer red dome in
-  a black rim — deliberately ordinary, because the guard is the safety, not the button.</p>
-  <p><b>The tells kept here:</b> the anodised red with a directional brushing grain across the lid and one broad
-  highlight band lying over it; the rolled front edge and the notch you hook a gloved finger into; the stencil, cut
-  with two bridges through the closed counter of the <b>O</b> so the island stays attached, as a real stencil brush
-  demands; the bare-aluminium hinge pin and its two knuckles; the second JETTISON silk-screened on the panel; the
-  wrinkle paint as a fine crinkle with a chip at the lower-left of the cutout showing bare metal. The lid flips in
-  160 ms and bounces once against its stop; closing snaps. The push travels 2 px and stops hard.</p>
-  <p><b>Left out</b>, and one deliberate change: the guard's coil spring and the two panel screws that hold the
-  bracket; and the hinge is drawn at the <i>top</i> of the lid rather than the bottom, so that the open guard
-  stands clear above the push the way it does in the cockpit photographs instead of falling across the panel below
-  it.</p>
+  <b>red-anodised aluminium flip-guards</b>: a machined lid with a rolled free edge and a finger notch, on a
+  bracket screwed to the panel, sprung so it snaps shut on its own, stencilled with the same word that is
+  silk-screened on the black wrinkle panel below it. <b>JETTISON</b> is the one everybody remembers. The push
+  underneath is an ordinary Cutler-Hammer red dome in a black rim — deliberately ordinary, because the guard is
+  the safety, not the button.</p>
+  <p><b>The tells kept here:</b> the anodised red with a directional brushing grain running across the lid and one
+  broad highlight band lying over it; the rolled front edge and the notch you hook a gloved finger into; the
+  stencil, cut with two bridges through the closed counter of the <b>O</b> so the island stays attached, as a real
+  stencil brush demands; the bare-aluminium hinge pin between two red knuckles on a screwed bracket; the second
+  JETTISON silk-screened on the panel; the wrinkle paint as a fine crinkle with a chip at the lower-left of the
+  mounting hole showing bare metal. The lid flips in 160 ms and bounces once against its stop; closing snaps. The
+  push travels 2 px and stops hard, and <code>activate</code> only fires with the guard open.</p>
+  <p><b>Left out</b>, and one deliberate change: the guard's coil spring, and the hinge is drawn at the <i>top</i>
+  of the lid rather than the bottom, so that the open guard stands clear above the push the way it does in the
+  cockpit photographs instead of falling across the panel below it.</p>
 </section>
 <script id="sk-element">
 /* ==== <sk-guarded-b52-jettison> — red-anodised flip-guard over a red JETTISON push ====
@@ -67,68 +68,74 @@
 (function () {
   if (customElements.get("sk-guarded-b52-jettison")) return;
   var W = 136, H = 170;
-  var PX = 68, PY = 92;                 // the push's centre
-  var WELL = 30;                        // the panel cutout
-  var LW = 47.5, LH = 61, HY = 57.5;    // the lid, and the hinge line at its top
-  var LX = PX - LW / 2;
+  var PX = 68, PY = 94;                 // the push's centre
+  var HOLE = 24, RIM = 20, DOME = 17.5;
+  var LW = 52, LH = 62, HY = 59, LX = PX - LW / 2;
+  var PERSP = 320, POY = PY + 6;        // the CSS perspective and its origin
+  var OPEN = 112;                       // the lid's open angle
   var D2R = Math.PI / 180;
+  // where the open lid lands on screen, so the hit area follows it
+  var OZ = LH * Math.sin(OPEN * D2R), OS = PERSP / (PERSP - OZ);
+  var OYE = (HY + LH * Math.cos(OPEN * D2R));
+  var OPEN_TOP = POY + (OYE - POY) * OS, OPEN_HW = (LW / 2) * OS;
+
   function pt(cx, cy, r, a) { return (cx + r * Math.cos(a * D2R)).toFixed(2) + " " + (cy + r * Math.sin(a * D2R)).toFixed(2); }
   function arc(cx, cy, r, a0, a1, sw) { return "M " + pt(cx, cy, r, a0) + " A " + r + " " + r + " 0 0 " + (sw === undefined ? 1 : sw) + " " + pt(cx, cy, r, a1); }
 
   // the stencil, drawn letter by letter at a fixed pitch so the bridges land on the O
-  var WORD = "JETTISON", PITCH = 5.3, BASE = 34.5;
-  var SX = LW / 2 - (WORD.length - 1) * PITCH / 2;
-  var OI = WORD.indexOf("O"), OX = SX + OI * PITCH;
-  var STENCIL = (function () {
-    var s = "";
-    for (var i = 0; i < WORD.length; i++) s += '<text x="' + (SX + i * PITCH).toFixed(2) + '" y="' + BASE + '">' + WORD[i] + "</text>";
-    return s;
-  })();
+  var WORD = "JETTISON", PITCH = 5.7, BASE = 34;
+  function letters(word) {
+    var sx = LW / 2 - (word.length - 1) * PITCH / 2, out = "";
+    for (var i = 0; i < word.length; i++) out += '<text x="' + (sx + i * PITCH).toFixed(2) + '" y="' + BASE + '">' + word.charAt(i) + "</text>";
+    return out;
+  }
+  var OX = LW / 2 - (WORD.length - 1) * PITCH / 2 + WORD.indexOf("O") * PITCH;
 
   var TPL = document.createElement("template");
   TPL.innerHTML =
   '<style>' +
   ':host{display:inline-block;width:' + W + 'px;height:' + H + 'px;position:relative;font-size:10px;-webkit-tap-highlight-color:transparent}' +
   ':host([hidden]){display:none}' +
-  '.wrap{position:absolute;inset:0;transform-origin:0 0;perspective:320px;perspective-origin:' + PX + 'px ' + (PY + 6) + 'px}' +
+  '.wrap{position:absolute;inset:0;transform-origin:0 0;perspective:' + PERSP + 'px;perspective-origin:' + PX + 'px ' + POY + 'px}' +
   'svg.panel{display:block;width:' + W + 'px;height:' + H + 'px;overflow:visible}' +
   'text{font-family:"Oswald","Roboto Condensed","Arial Narrow",sans-serif}' +
-  // ---- the lid ----
   '.lid{position:absolute;left:' + LX + 'px;top:' + HY + 'px;width:' + LW + 'px;height:' + LH + 'px;' +
     'transform-origin:50% 0;transform-style:preserve-3d;transform:rotateX(0deg);' +
     'transition:transform 160ms cubic-bezier(.18,1.55,.45,1)}' +
-  ':host([guard="open"]) .lid{transform:rotateX(112deg)}' +
-  '.face{position:absolute;inset:0;border-radius:3px;backface-visibility:hidden;overflow:hidden}' +
+  ':host([guard="open"]) .lid{transform:rotateX(' + OPEN + 'deg)}' +
+  '.face{position:absolute;inset:0;border-radius:3px;backface-visibility:hidden}' +
   '.out{' +
     'background:' +
-      'linear-gradient(101deg,rgba(255,255,255,0) 18%,rgba(255,236,232,.40) 38%,rgba(255,255,255,0) 58%),' +
-      'repeating-linear-gradient(88deg,rgba(255,255,255,.085) 0 1px,rgba(0,0,0,.075) 1px 2px),' +
-      'linear-gradient(160deg,#d6463f 0%,#bd2720 42%,#a01d17 74%,#6f1410 100%);' +
-    'box-shadow:inset 0 1px 0 rgba(255,190,182,.55),inset -1px -1px 0 rgba(60,8,6,.7),' +
-      '1px 2px 3px rgba(0,0,0,.55),3px 6px 9px rgba(0,0,0,.45)}' +
+      'linear-gradient(104deg,rgba(255,255,255,0) 16%,rgba(255,232,228,.34) 37%,rgba(255,255,255,0) 60%),' +
+      'repeating-linear-gradient(178deg,rgba(255,255,255,.075) 0 1px,rgba(0,0,0,.065) 1px 2px),' +
+      'linear-gradient(158deg,#e2524a 0%,#c92e26 38%,#ab211a 72%,#7d1611 100%);' +
+    'box-shadow:inset 0 1px 0 rgba(255,193,185,.6),inset 0 -1px 0 rgba(60,8,6,.8),inset -1px 0 0 rgba(60,8,6,.5),' +
+      '1px 2px 3px rgba(0,0,0,.6),3px 7px 11px rgba(0,0,0,.5)}' +
   '.in{transform:rotateY(180deg);' +
     'background:' +
-      'radial-gradient(70% 55% at 32% 26%,rgba(255,170,160,.22),transparent 70%),' +
-      'repeating-linear-gradient(88deg,rgba(255,255,255,.05) 0 1px,rgba(0,0,0,.09) 1px 2px),' +
-      'linear-gradient(200deg,#7d1812 0%,#5e100c 55%,#430907 100%);' +
-    'box-shadow:inset 0 0 0 1px rgba(20,4,3,.8),inset 0 2px 5px rgba(0,0,0,.6),0 3px 7px rgba(0,0,0,.6)}' +
-  '.in .pocket{position:absolute;left:5px;right:5px;top:6px;bottom:9px;border-radius:2px;' +
-    'background:linear-gradient(200deg,#6d130e,#4a0a07);box-shadow:inset 1px 1px 2px rgba(0,0,0,.7),inset -1px -1px 0 rgba(190,90,80,.18)}' +
-  // the rolled free edge and the finger notch, at the bottom of the lid
-  '.roll{position:absolute;left:0;right:0;bottom:0;height:7px;' +
-    'background:linear-gradient(180deg,rgba(255,160,150,.30),rgba(255,120,110,.12) 42%,rgba(60,8,6,.55));' +
-    'border-radius:0 0 3px 3px;box-shadow:inset 0 1px 0 rgba(255,200,192,.5)}' +
-  '.notch{position:absolute;left:50%;bottom:-1px;width:15px;height:8px;margin-left:-7.5px;' +
-    'border-radius:8px 8px 0 0;background:#0b0b0a;box-shadow:inset 0 2px 2px rgba(0,0,0,.9),0 -1px 0 rgba(255,175,165,.45)}' +
+      'radial-gradient(75% 60% at 34% 24%,rgba(255,168,158,.18),transparent 72%),' +
+      'repeating-linear-gradient(178deg,rgba(255,255,255,.04) 0 1px,rgba(0,0,0,.07) 1px 2px),' +
+      'linear-gradient(200deg,#9c2a22 0%,#6e1611 58%,#4d0c09 100%);' +
+    'box-shadow:inset 0 0 0 1px rgba(20,4,3,.85),inset 0 2px 6px rgba(0,0,0,.55),0 4px 9px rgba(0,0,0,.6)}' +
+  '.pocket{position:absolute;left:5px;right:5px;top:8px;bottom:10px;border-radius:2px;' +
+    'background:linear-gradient(200deg,#8a201a,#571010);box-shadow:inset 1px 1px 2px rgba(0,0,0,.7),inset -1px -1px 0 rgba(215,120,108,.2)}' +
+  '.roll{position:absolute;left:0;right:0;bottom:0;height:5.5px;border-radius:0 0 3px 3px;' +
+    'background:linear-gradient(180deg,rgba(255,166,156,.34),rgba(255,120,110,.10) 45%,rgba(55,7,5,.6));' +
+    'box-shadow:inset 0 1px 0 rgba(255,205,197,.55)}' +
+  '.in .roll{background:linear-gradient(180deg,rgba(255,150,140,.18),rgba(40,5,4,.5))}' +
+  '.notch{position:absolute;left:50%;bottom:-1px;width:13px;height:5.5px;margin-left:-6.5px;' +
+    'border-radius:7px 7px 0 0;background:#0a0a09;box-shadow:inset 0 2px 2px rgba(0,0,0,.9),0 -1px 0 rgba(255,178,168,.5)}' +
+  '.in .notch{background:#100303;box-shadow:inset 0 2px 2px rgba(0,0,0,.9),0 -1px 0 rgba(190,90,80,.35)}' +
   '.stencil{position:absolute;inset:0;width:100%;height:100%;overflow:visible}' +
-  '.stencil text{font-size:9px;font-weight:600;text-anchor:middle;fill:#efefe9;letter-spacing:0}' +
-  // ---- hit areas and focus ----
-  '.grab{position:absolute;left:24px;top:22px;width:88px;height:104px;border-radius:5px;outline:none;pointer-events:none}' +
+  '.stencil text{font-size:8.6px;font-weight:600;text-anchor:middle;fill:#efefe9}' +
+  '.grab{position:absolute;left:22px;top:20px;width:92px;height:106px;border-radius:5px;outline:none;pointer-events:none}' +
   '.grab:focus-visible{box-shadow:0 0 0 2px #16e0e0,0 0 14px rgba(22,224,224,.6)}' +
   '.hit{position:absolute;pointer-events:auto;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}' +
   '.hit-lid{left:' + LX + 'px;top:' + HY + 'px;width:' + LW + 'px;height:' + LH + 'px;border-radius:3px}' +
-  ':host([guard="open"]) .hit-lid{left:38.7px;top:28.6px;width:58.6px;height:29.4px;border-radius:2px}' +
-  '.hit-push{left:' + (PX - 21) + 'px;top:' + (PY - 21) + 'px;width:42px;height:42px;border-radius:50%;pointer-events:none}' +
+  ':host([guard="open"]) .hit-lid{left:' + (PX - OPEN_HW).toFixed(2) + 'px;top:' + OPEN_TOP.toFixed(2) + 'px;' +
+    'width:' + (OPEN_HW * 2).toFixed(2) + 'px;height:' + (HY - OPEN_TOP).toFixed(2) + 'px;border-radius:2px}' +
+  '.hit-push{left:' + (PX - RIM - 1) + 'px;top:' + (PY - RIM - 1) + 'px;width:' + (RIM * 2 + 2) + 'px;height:' + (RIM * 2 + 2) + 'px;' +
+    'border-radius:50%;pointer-events:none}' +
   ':host([guard="open"]) .hit-push{pointer-events:auto}' +
   ':host([disabled]) .hit{cursor:default}' +
   '.push{transform-box:view-box;transform-origin:' + PX + 'px ' + PY + 'px;transition:transform 40ms cubic-bezier(.4,0,.9,.6)}' +
@@ -140,86 +147,94 @@
   '<div class="wrap">' +
   '<svg class="panel" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs>' +
     '<linearGradient id="plate" x1="0.1" y1="0" x2="0.5" y2="1">' +
-      '<stop offset="0" stop-color="#2e2e2b"/><stop offset="0.45" stop-color="#20201e"/>' +
-      '<stop offset="1" stop-color="#151514"/></linearGradient>' +
+      '<stop offset="0" stop-color="#2f2f2c"/><stop offset="0.45" stop-color="#212120"/>' +
+      '<stop offset="1" stop-color="#161615"/></linearGradient>' +
     '<filter id="crinkle" x="0%" y="0%" width="100%" height="100%">' +
-      '<feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="4" seed="17" result="t"/>' +
-      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0.55 0 0 0 0 0.55 0 0 0 0 0.55 1.1 0 0 0 -0.42"/>' +
+      '<feTurbulence type="fractalNoise" baseFrequency="1.15" numOctaves="2" seed="17" result="t"/>' +
+      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0.55 0 0 0 0 0.55 0 0 0 0 0.55 0.75 0 0 0 -0.3"/>' +
     '</filter>' +
-    '<radialGradient id="well" cx="0.38" cy="0.3" r="0.85">' +
-      '<stop offset="0" stop-color="#1d1d1b"/><stop offset="0.6" stop-color="#101010"/>' +
+    '<radialGradient id="hole" cx="0.4" cy="0.32" r="0.85">' +
+      '<stop offset="0" stop-color="#1c1c1a"/><stop offset="0.65" stop-color="#101010"/>' +
       '<stop offset="1" stop-color="#050505"/></radialGradient>' +
     '<radialGradient id="dome" cx="0.35" cy="0.27" r="0.92">' +
-      '<stop offset="0" stop-color="#ff8375"/><stop offset="0.26" stop-color="#e6392c"/>' +
+      '<stop offset="0" stop-color="#ff8878"/><stop offset="0.26" stop-color="#e83c2e"/>' +
       '<stop offset="0.62" stop-color="#c8281f"/><stop offset="0.88" stop-color="#94170f"/>' +
       '<stop offset="1" stop-color="#6d0f0a"/></radialGradient>' +
     '<radialGradient id="pgloss" cx="0.5" cy="0.5" r="0.5">' +
-      '<stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.62"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
     '<linearGradient id="pin" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#e2e6e8"/><stop offset="0.38" stop-color="#b9bdc0"/>' +
-      '<stop offset="0.62" stop-color="#6e7376"/><stop offset="1" stop-color="#3c4042"/></linearGradient>' +
+      '<stop offset="0" stop-color="#e6eaec"/><stop offset="0.36" stop-color="#b9bdc0"/>' +
+      '<stop offset="0.6" stop-color="#6e7376"/><stop offset="1" stop-color="#3a3e40"/></linearGradient>' +
+    '<linearGradient id="brk" x1="0" y1="0" x2="0.1" y2="1">' +
+      '<stop offset="0" stop-color="#d6463f"/><stop offset="0.45" stop-color="#ad2119"/>' +
+      '<stop offset="1" stop-color="#6f1410"/></linearGradient>' +
     '<filter id="pb" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>' +
     '<filter id="pb1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.9"/></filter>' +
     '<clipPath id="plateclip"><rect x="3" y="20" width="130" height="146" rx="3"/></clipPath>' +
   '</defs>' +
 
-    // ---- the black wrinkle panel ----
-    '<rect x="4" y="22" width="130" height="146" rx="3" fill="#000" opacity="0.5" filter="url(#pb)"/>' +
+    '<rect x="4" y="22.5" width="130" height="146" rx="3" fill="#000" opacity="0.5" filter="url(#pb)"/>' +
     '<rect x="3" y="20" width="130" height="146" rx="3" fill="url(#plate)"/>' +
     '<g clip-path="url(#plateclip)">' +
-      '<rect x="3" y="20" width="130" height="146" filter="url(#crinkle)" opacity="0.55" style="mix-blend-mode:overlay"/>' +
-      '<rect x="3" y="20" width="130" height="146" fill="none" stroke="#4a4a45" stroke-opacity="0.5" stroke-width="2"/>' +
-      '<path d="M3 20 L133 20" stroke="#5a5a54" stroke-opacity="0.45" stroke-width="1.4"/>' +
-      '<path d="M3 165.2 L133 165.2" stroke="#000" stroke-opacity="0.6" stroke-width="1.6"/>' +
+      '<rect x="3" y="20" width="130" height="146" filter="url(#crinkle)" opacity="0.26" style="mix-blend-mode:overlay"/>' +
+      '<rect x="3.7" y="20.7" width="128.6" height="144.6" rx="3" fill="none" stroke="#5e5e57" stroke-opacity="0.4" stroke-width="1.4"/>' +
+      '<path d="M3 164.6 L133 164.6" stroke="#000" stroke-opacity="0.65" stroke-width="2.2"/>' +
+      '<path d="M131.4 20 L131.4 166" stroke="#000" stroke-opacity="0.45" stroke-width="2"/>' +
     '</g>' +
 
-    // ---- the cutout: a recessed well with a bevelled lip ----
-    '<circle cx="' + PX + '" cy="' + PY + '" r="' + (WELL + 1.4) + '" fill="#0b0b0a"/>' +
-    '<path d="' + arc(PX, PY, WELL + 1, 168, 12, 0) + '" fill="none" stroke="#6b6b64" stroke-opacity="0.55" stroke-width="1.6"/>' +
-    '<path d="' + arc(PX, PY, WELL + 1, 190, 350) + '" fill="none" stroke="#000" stroke-opacity="0.75" stroke-width="2"/>' +
-    '<circle cx="' + PX + '" cy="' + PY + '" r="' + WELL + '" fill="url(#well)"/>' +
-    '<path d="' + arc(PX, PY, WELL - 1.2, 192, 348) + '" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="3" filter="url(#pb1)"/>' +
-    // the chip at the lower-left of the cutout, bare metal under the paint
-    '<path d="M ' + pt(PX, PY, WELL + 0.5, 206) + ' L ' + pt(PX, PY, WELL + 6.5, 202) + ' L ' + pt(PX, PY, WELL + 7.5, 213) +
-      ' L ' + pt(PX, PY, WELL + 3, 220) + ' Z" fill="#8f918c" opacity="0.62"/>' +
-    '<path d="M ' + pt(PX, PY, WELL + 0.5, 206) + ' L ' + pt(PX, PY, WELL + 6.5, 202) + ' L ' + pt(PX, PY, WELL + 7.5, 213) +
-      ' L ' + pt(PX, PY, WELL + 3, 220) + ' Z" fill="none" stroke="#050505" stroke-opacity="0.7" stroke-width="0.7"/>' +
+    // ---- the mounting hole: a shallow recess with a bevelled lip and a chipped corner ----
+    '<path d="' + arc(PX, PY, HOLE + 0.9, 170, 10, 0) + '" fill="none" stroke="#70706a" stroke-opacity="0.5" stroke-width="1.5"/>' +
+    '<path d="' + arc(PX, PY, HOLE + 0.9, 190, 350) + '" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="1.8"/>' +
+    '<circle cx="' + PX + '" cy="' + PY + '" r="' + HOLE + '" fill="url(#hole)"/>' +
+    '<path d="' + arc(PX, PY, HOLE - 1, 194, 346) + '" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="2.6" filter="url(#pb1)"/>' +
+    '<path d="M ' + pt(PX, PY, HOLE + 0.4, 203) + ' L ' + pt(PX, PY, HOLE + 6, 199) + ' L ' + pt(PX, PY, HOLE + 7, 211) +
+      ' L ' + pt(PX, PY, HOLE + 2.6, 218) + ' Z" fill="#96988f" opacity="0.6"/>' +
+    '<path d="M ' + pt(PX, PY, HOLE + 0.4, 203) + ' L ' + pt(PX, PY, HOLE + 6, 199) + ' L ' + pt(PX, PY, HOLE + 7, 211) +
+      ' L ' + pt(PX, PY, HOLE + 2.6, 218) + ' Z" fill="none" stroke="#050505" stroke-opacity="0.75" stroke-width="0.7"/>' +
 
     // ---- the push ----
-    '<g class="pshadow"><ellipse cx="' + PX + '" cy="' + (PY + 3) + '" rx="21" ry="20" fill="#000" opacity="0.8" filter="url(#pb)"/></g>' +
+    '<g class="pshadow"><ellipse cx="' + PX + '" cy="' + (PY + 3) + '" rx="' + RIM + '" ry="' + (RIM - 1) + '" fill="#000" opacity="0.85" filter="url(#pb)"/></g>' +
     '<g class="push">' +
-      '<circle cx="' + PX + '" cy="' + PY + '" r="21" fill="#191917"/>' +
-      '<path d="' + arc(PX, PY, 20.2, 186, 300) + '" fill="none" stroke="#6d6d67" stroke-opacity="0.6" stroke-width="1.4"/>' +
-      '<path d="' + arc(PX, PY, 20.2, 10, 130) + '" fill="none" stroke="#000" stroke-opacity="0.8" stroke-width="1.4"/>' +
-      '<circle cx="' + PX + '" cy="' + PY + '" r="18" fill="url(#dome)"/>' +
-      '<path d="' + arc(PX, PY, 16.2, 190, 285) + '" fill="none" stroke="#ffd6cf" stroke-opacity="0.55" stroke-width="2" filter="url(#pb1)"/>' +
-      '<path d="' + arc(PX, PY, 16.6, 25, 135) + '" fill="none" stroke="#ff8a78" stroke-opacity="0.3" stroke-width="1.6"/>' +
-      '<ellipse cx="' + (PX - 5.5) + '" cy="' + (PY - 7) + '" rx="7.6" ry="4.4" fill="url(#pgloss)" transform="rotate(-32 ' + (PX - 5.5) + ' ' + (PY - 7) + ')"/>' +
+      '<circle cx="' + PX + '" cy="' + PY + '" r="' + RIM + '" fill="#1b1b19"/>' +
+      '<path d="' + arc(PX, PY, RIM - 0.8, 184, 300) + '" fill="none" stroke="#7a7a73" stroke-opacity="0.6" stroke-width="1.4"/>' +
+      '<path d="' + arc(PX, PY, RIM - 0.8, 8, 132) + '" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="1.4"/>' +
+      '<circle cx="' + PX + '" cy="' + PY + '" r="' + DOME + '" fill="url(#dome)"/>' +
+      '<path d="' + arc(PX, PY, DOME - 1.6, 188, 284) + '" fill="none" stroke="#ffdbd4" stroke-opacity="0.6" stroke-width="2" filter="url(#pb1)"/>' +
+      '<path d="' + arc(PX, PY, DOME - 1.2, 25, 138) + '" fill="none" stroke="#ff8d7a" stroke-opacity="0.32" stroke-width="1.5"/>' +
+      '<ellipse cx="' + (PX - 5.5) + '" cy="' + (PY - 6.8) + '" rx="7.4" ry="4.2" fill="url(#pgloss)" transform="rotate(-32 ' + (PX - 5.5) + ' ' + (PY - 6.8) + ')"/>' +
     '</g>' +
 
-    // ---- the hinge: two knuckles and a bare aluminium pin ----
-    '<rect x="' + (PX - 26) + '" y="' + (HY - 3.4) + '" width="52" height="5.4" rx="2.6" fill="#141413"/>' +
-    '<rect x="' + (PX - 24) + '" y="' + (HY - 3) + '" width="48" height="4.2" rx="2.1" fill="url(#pin)"/>' +
-    '<rect x="' + (PX - 17) + '" y="' + (HY - 3.6) + '" width="9" height="5.6" rx="2.6" fill="#8e1a14"/>' +
-    '<rect x="' + (PX + 8) + '" y="' + (HY - 3.6) + '" width="9" height="5.6" rx="2.6" fill="#8e1a14"/>' +
-    '<rect x="' + (PX - 17) + '" y="' + (HY - 3.6) + '" width="9" height="1.4" rx="0.7" fill="#d6463f" opacity="0.8"/>' +
-    '<rect x="' + (PX + 8) + '" y="' + (HY - 3.6) + '" width="9" height="1.4" rx="0.7" fill="#d6463f" opacity="0.8"/>' +
+    // ---- the guard bracket: red anodised, two screws, a bare aluminium pin between two knuckles ----
+    '<rect x="' + (PX - 30) + '" y="' + (HY - 8) + '" width="60" height="9.5" rx="2" fill="#000" opacity="0.45" filter="url(#pb1)"/>' +
+    '<rect x="' + (PX - 30) + '" y="' + (HY - 9) + '" width="60" height="9" rx="2" fill="url(#brk)"/>' +
+    '<rect x="' + (PX - 30) + '" y="' + (HY - 9) + '" width="60" height="1.4" rx="0.7" fill="#ff9c93" opacity="0.4"/>' +
+    '<circle cx="' + (PX - 25) + '" cy="' + (HY - 4.4) + '" r="2.2" fill="#9aa0a3"/>' +
+    '<circle cx="' + (PX - 25) + '" cy="' + (HY - 4.4) + '" r="2.2" fill="none" stroke="#2d1210" stroke-opacity="0.8" stroke-width="0.6"/>' +
+    '<path d="M ' + (PX - 26.6) + ' ' + (HY - 5.4) + ' L ' + (PX - 23.4) + ' ' + (HY - 3.4) + '" stroke="#31383a" stroke-width="0.8"/>' +
+    '<circle cx="' + (PX + 25) + '" cy="' + (HY - 4.4) + '" r="2.2" fill="#9aa0a3"/>' +
+    '<circle cx="' + (PX + 25) + '" cy="' + (HY - 4.4) + '" r="2.2" fill="none" stroke="#2d1210" stroke-opacity="0.8" stroke-width="0.6"/>' +
+    '<path d="M ' + (PX + 23.6) + ' ' + (HY - 3.2) + ' L ' + (PX + 26.4) + ' ' + (HY - 5.6) + '" stroke="#31383a" stroke-width="0.8"/>' +
+    '<rect x="' + (PX - 19) + '" y="' + (HY - 3.2) + '" width="38" height="4.6" rx="2.3" fill="url(#pin)"/>' +
+    '<rect x="' + (PX - 19) + '" y="' + (HY - 3.2) + '" width="9" height="4.6" rx="2.3" fill="#a5221b"/>' +
+    '<rect x="' + (PX + 10) + '" y="' + (HY - 3.2) + '" width="9" height="4.6" rx="2.3" fill="#a5221b"/>' +
+    '<rect x="' + (PX - 19) + '" y="' + (HY - 3.2) + '" width="9" height="1.2" rx="0.6" fill="#e8655c" opacity="0.75"/>' +
+    '<rect x="' + (PX + 10) + '" y="' + (HY - 3.2) + '" width="9" height="1.2" rx="0.6" fill="#e8655c" opacity="0.75"/>' +
 
-    // ---- the panel's own silk-screened legend ----
     '<text class="panel-legend" x="' + PX + '" y="148" text-anchor="middle" font-size="10.5" font-weight="500" ' +
-      'letter-spacing="1.5" fill="#eeeeea" fill-opacity="0.92"></text>' +
-    '<path d="M ' + (PX - 40) + ' 154.5 L ' + (PX + 40) + ' 154.5" stroke="#eeeeea" stroke-opacity="0.3" stroke-width="0.8"/>' +
+      'letter-spacing="1.6" fill="#eeeeea" fill-opacity="0.92"></text>' +
   '</svg>' +
 
   '<div class="lid">' +
-    '<div class="face in"><div class="pocket"></div></div>' +
+    '<div class="face in"><div class="pocket"></div><div class="roll"></div><div class="notch"></div></div>' +
     '<div class="face out">' +
       '<svg class="stencil" viewBox="0 0 ' + LW + ' ' + LH + '"><defs><mask id="bridges">' +
         '<rect x="0" y="0" width="' + LW + '" height="' + LH + '" fill="#fff"/>' +
-        '<rect x="' + (OX - 3.1) + '" y="' + (BASE - 6.6) + '" width="1.5" height="3.6" fill="#000" transform="rotate(45 ' + (OX - 2.35) + ' ' + (BASE - 4.8) + ')"/>' +
-        '<rect x="' + (OX + 1.6) + '" y="' + (BASE - 3.6) + '" width="1.5" height="3.6" fill="#000" transform="rotate(45 ' + (OX + 2.35) + ' ' + (BASE - 1.8) + ')"/>' +
+        '<rect x="' + (OX - 3.2).toFixed(2) + '" y="' + (BASE - 6.8) + '" width="1.5" height="3.8" fill="#000" ' +
+          'transform="rotate(45 ' + (OX - 2.45).toFixed(2) + ' ' + (BASE - 4.9) + ')"/>' +
+        '<rect x="' + (OX + 1.7).toFixed(2) + '" y="' + (BASE - 3.8) + '" width="1.5" height="3.8" fill="#000" ' +
+          'transform="rotate(45 ' + (OX + 2.45).toFixed(2) + ' ' + (BASE - 1.9) + ')"/>' +
       '</mask></defs>' +
-      '<g class="word" mask="url(#bridges)">' + STENCIL + '</g></svg>' +
+      '<g class="word" mask="url(#bridges)">' + letters(WORD) + '</g></svg>' +
       '<div class="roll"></div><div class="notch"></div>' +
     '</div>' +
   '</div>' +
@@ -279,12 +294,10 @@
     _read() {
       var s = parseFloat(this.getAttribute("scale"));
       this._scale = isNaN(s) ? 1 : Math.max(0.2, s);
-      var word = (this.getAttribute("legend") || "JETTISON").toUpperCase();
-      this._legend.textContent = word;
-      if (word !== WORD && this._word) {
-        var pitch = PITCH, sx = LW / 2 - (word.length - 1) * pitch / 2, out = "";
-        for (var i = 0; i < word.length; i++) out += '<text x="' + (sx + i * pitch).toFixed(2) + '" y="' + BASE + '">' + word[i] + "</text>";
-        this._word.innerHTML = out;
+      var word = (this.getAttribute("legend") || WORD).toUpperCase();
+      if (this._legend.textContent !== word) {
+        this._legend.textContent = word;
+        if (word !== WORD) this._word.innerHTML = letters(word);
       }
       var dis = this.hasAttribute("disabled");
       this._grab.setAttribute("tabindex", dis ? "-1" : "0");

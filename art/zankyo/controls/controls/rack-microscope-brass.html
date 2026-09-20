@@ -69,7 +69,7 @@
   var NS = "http://www.w3.org/2000/svg";
   var W = 128, H = 240;
   var TRAVEL = 30;                     // px the tube climbs over the whole range
-  var RX0 = 56, RX1 = 72;              // the rack bar's left and right edges
+  var RX0 = 55, RX1 = 73;              // the rack bar's left and right edges
   var RTOP = 124, RBOT = 214;          // the rack bar at value = min
   var KY = 187, KR = 23, KHW = 12;     // knob centre-y, radius, half-width
   var KLX = 15, KRX = 113;             // the two knob centres
@@ -95,7 +95,7 @@
   '.pin { transform-box: view-box; transform-origin: ', PCX, 'px ', PCY, 'px; transition: transform 50ms linear; }',
   'text { font-family: "Libre Franklin", "Helvetica Neue", Helvetica, Arial, sans-serif; }',
   '.eng { font-size: 5px; font-style: italic; letter-spacing: 0.14em; text-anchor: middle; fill: #b9a071; opacity: 0.55; }',
-  '.ser { font-size: 4.2px; font-style: italic; letter-spacing: 0.06em; text-anchor: middle; fill: #2a1d09; opacity: 0.5; }',
+  '.ser { font-size: 3.9px; font-style: italic; letter-spacing: 0.06em; text-anchor: middle; fill: #2a1d09; opacity: 0.5; }',
   '.lab { font-size: 5.8px; font-weight: 500; letter-spacing: 0.26em; text-anchor: middle; fill: #9d8a68; opacity: 0.8; }',
   '</style>',
   '<div class="wrap">',
@@ -121,9 +121,12 @@
     '<linearGradient id="brtH" x1="0" y1="0" x2="1" y2="0">',
       '<stop offset="0" stop-color="#8a6626"/><stop offset="0.22" stop-color="#f4e2ad"/>',
       '<stop offset="0.55" stop-color="#d0ac60"/><stop offset="1" stop-color="#6b4c1b"/></linearGradient>',
-    '<linearGradient id="tooth" x1="0" y1="0" x2="1" y2="0">',
-      '<stop offset="0" stop-color="#9c7534"/><stop offset="0.30" stop-color="#f6e6b2"/>',
-      '<stop offset="0.62" stop-color="#d4b46c"/><stop offset="1" stop-color="#7d5b25"/></linearGradient>',
+    '<linearGradient id="tooth" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="#fbf0cd"/><stop offset="0.22" stop-color="#e2c684"/>',
+      '<stop offset="0.6" stop-color="#a87f38"/><stop offset="1" stop-color="#6b4d1c"/></linearGradient>',
+    '<linearGradient id="racksh" x1="0" y1="0" x2="1" y2="0">',
+      '<stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="0.28" stop-color="#000" stop-opacity="0"/>',
+      '<stop offset="0.72" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/></linearGradient>',
     '<linearGradient id="rackbg" x1="0" y1="0" x2="1" y2="0">',
       '<stop offset="0" stop-color="#2a1c08"/><stop offset="0.5" stop-color="#4c3718"/>',
       '<stop offset="1" stop-color="#1d1305"/></linearGradient>',
@@ -170,7 +173,7 @@
   /* ---- the rack, the collar, the tube: everything that climbs ---- */
   '<g class="mover">',
     '<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#rackbg)"/>',
-    '<g class="teeth"></g>',
+    '<g class="teeth"></g>','<rect x="', RX0, '" y="', RTOP, '" width="', (RX1 - RX0), '" height="', (RBOT - RTOP), '" fill="url(#racksh)"/>',
 
     /* body tube */
     '<rect x="53" y="52" width="22" height="60" rx="1.5" fill="url(#lac)" stroke="#241804" stroke-width="0.6"/>',
@@ -207,7 +210,7 @@
   '</g>',
   '<rect x="54" y="170" width="20" height="34" rx="2" fill="none" stroke="#1d1305" stroke-width="1.5"/>',
   '<rect x="54.8" y="170.8" width="18.4" height="32.4" rx="1.5" fill="none" stroke="#f4e0ae" stroke-opacity="0.2" stroke-width="0.6"/>',
-  '<text class="ser" x="', PCX, '" y="209">No 1042</text>',
+  '<text class="ser" x="88" y="180">No 1042</text>',
 
   /* ---- the twin knurled knobs on the pinion axle ---- */
   '<g class="knobs"></g>',
@@ -216,7 +219,7 @@
   '<path d="M 44 208 L 84 208 L 108 230 Q 118 238 106 238 L 22 238 Q 10 238 20 230 Z" fill="url(#japan)" stroke="#000" stroke-width="0.6"/>',
   '<path d="M 45 209.5 L 83 209.5 L 105 230.5" fill="none" stroke="#7d7772" stroke-opacity="0.5" stroke-width="0.9"/>',
   '<path d="M 22 237 L 104 237" fill="none" stroke="#4d4843" stroke-opacity="0.35" stroke-width="0.7"/>',
-  '<path d="M 21.5 232.5 L 24.5 229.5 L 26 233 Z" fill="#8f8f8a" opacity="0.38"/>','<path d="M 99 236 L 103 233.5 L 104 236.5 Z" fill="#8f8f8a" opacity="0.3"/>',
+  '<path d="M 22.5 233.5 L 24.6 231.4 L 25.4 234 Z" fill="#9a9a95" opacity="0.4"/>','<path d="M 101 236.4 L 103.4 234.6 L 104 236.8 Z" fill="#9a9a95" opacity="0.32"/>',
   '<ellipse cx="64" cy="210" rx="38" ry="6" fill="url(#dust)"/>',
   '<text class="eng" x="64" y="223">LONDON</text>',
   '<text class="lab" x="64" y="234"></text>',
@@ -284,7 +287,7 @@
       if (this._built) return; this._built = true;
       var r = this.shadowRoot, i, y, x;
       // the rack: teeth cut diagonally, bright top land, dark root
-      var pitch = 3.6, slant = 1.7, land = 2.5;
+      var pitch = 3.2, slant = 0.9, land = 2.0;
       var t1 = r.querySelector(".teeth"), t2 = r.querySelector(".teeth2");
       for (y = RTOP + 1.5; y < RBOT - 5; y += pitch) {
         var d = "M " + RX0 + " " + (y + slant).toFixed(2) + " L " + RX1 + " " + y.toFixed(2) +

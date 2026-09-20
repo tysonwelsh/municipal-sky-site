@@ -24,7 +24,7 @@
   "value": { "model": "digits", "min": 0, "max": 9, "step": 1, "unit": "" },
   "attributes": ["value", "dialed", "pulled", "body", "number", "label", "scale", "disabled"],
   "events": ["input", "change", "pulse"],
-  "size": { "w": 156, "h": 156 },
+  "size": { "w": 156, "h": 166 },
   "notes": "A black 500 at rest and a beige one held mid-pull on 7 at 0.8. Drag a hole clockwise to the stop and let go: the wheel purrs back at ten pulses a second and the digit is committed; number keys dial too."
 }
 </script>
@@ -65,7 +65,7 @@
    self-contained: paste this block into any page and use <sk-phone-dial-we-500></sk-phone-dial-we-500> */
 (function () {
   if (customElements.get("sk-phone-dial-we-500")) return;
-  const W = 156, H = 156, C = 78, HR = 44, HOLE = 10, STOP = 120, SPEED = 300, PULL = 400;
+  const W = 156, H = 166, C = 78, HR = 44, HOLE = 10, STOP = 120, SPEED = 300, PULL = 400;
   const A = n => n === 0 ? 150 : 60 - 30 * (n - 1);                      // where hole n sits at rest, degrees clockwise from 12
   const stopOf = n => { let s = STOP - A(n); return s < 0 ? s + 360 : s; }; // how far hole n travels to the stop
   const P = (r, a) => { const t = a * Math.PI / 180; return [C + r * Math.sin(t), C - r * Math.cos(t)]; };
@@ -82,14 +82,14 @@
   for (let n = 0; n < 10; n++) {
     mholes += `<circle class="mh" cx="${C}" cy="${C}" r="${HOLE}" fill="#000"/>`;
     holes += `<g class="hole">
-      <path d="M ${-HOLE * 0.707} ${-HOLE * 0.707} A ${HOLE} ${HOLE} 0 0 0 ${HOLE * 0.707} ${HOLE * 0.707}" fill="none" stroke="#000" stroke-opacity="0.22" stroke-width="2.6" filter="url(#fh)" transform="translate(0.6 0.6)"/>
-      <path d="M ${HOLE * 0.707} ${-HOLE * 0.707} A ${HOLE} ${HOLE} 0 0 1 ${-HOLE * 0.707} ${HOLE * 0.707}" fill="none" stroke="#b9b9b4" stroke-opacity="0.9" stroke-width="1.2"/>
-      <path d="M ${HOLE * 0.707} ${-HOLE * 0.707} A ${HOLE} ${HOLE} 0 0 1 ${-HOLE * 0.707} ${HOLE * 0.707}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="0.5" transform="translate(-0.4 -0.4)"/>
-      <path d="M ${-HOLE * 0.707} ${HOLE * 0.707} A ${HOLE} ${HOLE} 0 0 0 ${HOLE * 0.707} ${-HOLE * 0.707}" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="1.1"/>
+      <circle r="${HOLE - 1.6}" fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="3" filter="url(#fh)" transform="translate(0.9 1.1)" clip-path="url(#hc)"/>
+      <circle r="${HOLE - 0.4}" fill="none" stroke="#a9a9a3" stroke-opacity="0.9" stroke-width="0.8"/>
+      <path d="M ${HOLE * 0.707} ${-HOLE * 0.707} A ${HOLE} ${HOLE} 0 0 1 ${-HOLE * 0.707} ${HOLE * 0.707}" fill="none" stroke="#6e6e6a" stroke-opacity="0.55" stroke-width="0.7"/>
+      <path d="M ${-HOLE * 0.707} ${HOLE * 0.707} A ${HOLE} ${HOLE} 0 0 0 ${HOLE * 0.707} ${-HOLE * 0.707}" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="0.9" transform="translate(0.3 0.3)"/>
     </g>`;
   }
   // the finger stop: a hooked chrome tab at 4 o'clock, its foot toward the finger
-  const stopPts = [[-3.5, -81], [3.5, -81], [3.5, -56], [-10, -56], [-10, -62.5], [-3.5, -62.5]].map(([x, y]) => R(x, y, STOP).join(" ")).join(" L ");
+  const stopPts = [[-3, -76], [3, -76], [3, -56.5], [-11, -56.5], [-11, -62], [-3, -62]].map(([x, y]) => R(x, y, STOP).join(" ")).join(" L ");
   const TPL = document.createElement("template");
   TPL.innerHTML = `
   <style>
@@ -123,7 +123,7 @@
           <stop offset="0" stop-color="#000" stop-opacity="0.6"/><stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.35"/>
         </linearGradient>
         <radialGradient id="plate" cx="45%" cy="42%" r="60%">
-          <stop offset="0" stop-color="#f7f5ee"/><stop offset="0.8" stop-color="#f1efe7"/><stop offset="1" stop-color="#e2dfd5"/>
+          <stop offset="0" stop-color="#efece3"/><stop offset="0.8" stop-color="#e9e6dc"/><stop offset="1" stop-color="#d9d6cb"/>
         </radialGradient>
         <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#f4f4f1"/><stop offset="0.42" stop-color="#e9e9e6"/><stop offset="0.5" stop-color="#6e6e6b"/><stop offset="0.62" stop-color="#9c9c98"/><stop offset="1" stop-color="#d7d7d3"/>
@@ -132,10 +132,10 @@
           <stop offset="0" stop-color="#f6f6f3"/><stop offset="0.35" stop-color="#bdbdb9"/><stop offset="0.55" stop-color="#6e6e6b"/><stop offset="0.8" stop-color="#c9c9c5"/><stop offset="1" stop-color="#8e8e8a"/>
         </linearGradient>
         <radialGradient id="tint" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.9" stop-color="#fff" stop-opacity="0.18"/><stop offset="1" stop-color="#fff" stop-opacity="0.3"/>
+          <stop offset="0" stop-color="#fff" stop-opacity="0.2"/><stop offset="0.9" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0.4"/>
         </radialGradient>
         <linearGradient id="refl" x1="0" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity="0.42"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="0" stop-color="#fff" stop-opacity="0.55"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
         </linearGradient>
         <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#fff" stop-opacity="0.9"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#fff" stop-opacity="0.75"/>
@@ -145,13 +145,14 @@
         <filter id="f4" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.5"/></filter>
         <mask id="wm"><rect width="${W}" height="${H}" fill="#fff"/>${mholes}</mask>
         <clipPath id="wellc"><circle cx="${C}" cy="${C}" r="75.5"/></clipPath>
+        <clipPath id="hc"><circle r="${HOLE}"/></clipPath>
         <g id="pprint">${print}</g>
       </defs>
 
       <!-- the body: a slice of the telephone's shell around the dial well -->
       <rect width="${W}" height="${H}" fill="url(#bodyg)"/>
       <rect width="${W}" height="${H}" fill="url(#bodyhi)"/>
-      <text class="label" x="${C}" y="${H - 2}"></text>
+      <text class="label" x="${C}" y="${H - 3}"></text>
       <circle cx="${C}" cy="${C}" r="75.5" fill="#050505"/>
       <!-- number plate, set down in the well -->
       <circle cx="${C}" cy="${C}" r="73.5" fill="url(#plate)"/>
@@ -160,9 +161,9 @@
       </g>
       <circle cx="${C}" cy="${C}" r="75.7" fill="none" stroke="url(#lip)" stroke-width="1.2"/>
       <!-- thumb-worn bright patch by the 5 and 6 -->
-      <ellipse cx="${P(52, -76)[0].toFixed(1)}" cy="${P(52, -76)[1].toFixed(1)}" rx="17" ry="9" transform="rotate(14 ${P(52, -76)[0].toFixed(1)} ${P(52, -76)[1].toFixed(1)})" fill="#fff" opacity="0.7" filter="url(#f4)"/>
+      <ellipse cx="${P(52, -76)[0].toFixed(1)}" cy="${P(52, -76)[1].toFixed(1)}" rx="17" ry="9" transform="rotate(14 ${P(52, -76)[0].toFixed(1)} ${P(52, -76)[1].toFixed(1)})" fill="#fff" opacity="0.95" filter="url(#f4)"/>
       <!-- the plate's print: a ghost through the acrylic, then the print -->
-      <g opacity="0.22" transform="translate(0.55 0.5)"><use href="#pprint"/></g>
+      <g opacity="0.14" transform="translate(0.3 0.3)"><use href="#pprint"/></g>
       <use href="#pprint"/>
       <circle cx="${C}" cy="${C}" r="72.8" fill="none" stroke="#9a9890" stroke-width="0.5" opacity="0.7"/>
 
@@ -185,7 +186,8 @@
 
       <!-- the finger stop -->
       <path d="M ${stopPts} Z" fill="#000" opacity="0.5" filter="url(#f2)" transform="translate(1.5 2.2)"/>
-      <path d="M ${stopPts} Z" fill="url(#chrome)" stroke="#4d4d4a" stroke-width="0.5" stroke-linejoin="round"/>
+      <path d="M ${stopPts} Z" fill="url(#chrome)" stroke="url(#chrome)" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M ${stopPts} Z" fill="none" stroke="#3e3e3b" stroke-width="0.5" stroke-linejoin="round" transform="translate(0.5 0.6)" opacity="0.7"/>
     </svg>
     <div class="grab" role="slider" tabindex="0"></div>
   </div>`;

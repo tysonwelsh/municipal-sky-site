@@ -115,7 +115,7 @@
   FACETS.forEach(function (f) { f.i = f.i / imax; });
 
   // ---- the bezel: 24 radial flutes, each shaded as two half-planes ----
-  var CHROME_LO = hx("#2b2b2d"), CHROME_HI = hx("#fdfdfd"), CHROME_GB = hx("#cdd1d6");
+  var CHROME_LO = hx("#3c3d40"), CHROME_HI = hx("#f4f4f5"), CHROME_GB = hx("#c6cad0");
   var flutes = "", NF = 24, RI = RJ + 1.3;
   for (var k = 0; k < NF; k++) {
     var b0 = k * 360 / NF, b2 = b0 + 360 / NF, bm = (b0 + b2) / 2;
@@ -126,9 +126,9 @@
               " L " + f2(q2[0]) + " " + f2(q2[1]) + " A " + RI + " " + RI + " 0 0 0 " + f2(q3[0]) + " " + f2(q3[1]) + " Z";
       var ar = am * Math.PI / 180;
       var rad = [Math.sin(ar), -Math.cos(ar), 0], tan = [Math.cos(ar), Math.sin(ar), 0];
-      var n = nrm([0.78 * rad[0] + sg * 0.26 * tan[0], 0.78 * rad[1] + sg * 0.26 * tan[1], 0.58]);
+      var n = nrm([0.84 * rad[0] + sg * 0.17 * tan[0], 0.84 * rad[1] + sg * 0.17 * tan[1], 0.52]);
       var v = dot(n, L);
-      var c = mixv(CHROME_LO, CHROME_HI, Math.pow(Math.max(0, Math.min(1, (v + 0.22) / 0.98)), 0.78));
+      var c = mixv(CHROME_LO, CHROME_HI, Math.pow(Math.max(0, Math.min(1, (v + 0.26) / 1.02)), 0.82));
       c = mixv(c, CHROME_GB, Math.max(0, dot(n, GB)) * 0.42);
       flutes += '<path d="' + d + '" fill="' + rgb(c) + '"/>';
     });
@@ -136,7 +136,7 @@
 
   var PAL = {
     red:   { off: ["#40080a", "#8a2020"], deep: "#a5100a", on: ["#ff3b22", "#ffb4a0"], hot: "#ffdcc4", cool: "#b81d2c", halo: "255,70,40",  spill: "#ff6a48" },
-    amber: { off: ["#33200a", "#8a5a12"], deep: "#a86408", on: ["#ff9a10", "#ffe2a6"], hot: "#fff0cf", cool: "#b3760f", halo: "255,170,30", spill: "#ffb84a" },
+    amber: { off: ["#33200a", "#8a5a12"], deep: "#c47a05", on: ["#ffae1a", "#ffe9b8"], hot: "#fff0cf", cool: "#b3760f", halo: "255,170,30", spill: "#ffb84a" },
     blue:  { off: ["#0b1734", "#22407e"], deep: "#14379c", on: ["#3f8bff", "#cadcff"], hot: "#d8e8ff", cool: "#2a52c8", halo: "70,140,255", spill: "#6aa5ff" },
     green: { off: ["#082c1a", "#1a6b3c"], deep: "#0a7a3a", on: ["#2bf07a", "#ccffdd"], hot: "#ddffe8", cool: "#14a058", halo: "50,235,120", spill: "#5bff9c" }
   };
@@ -166,8 +166,11 @@
     '<radialGradient id="well" cx="32%" cy="26%" r="78%">' +
       '<stop offset="0.62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.72"/>' +
     '</radialGradient>' +
+    '<radialGradient id="dome" cx="30%" cy="23%" r="72%">' +
+      '<stop offset="0" stop-color="#fff" stop-opacity="0.2"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
+    '</radialGradient>' +
     '<radialGradient id="bulb" cx="42%" cy="38%" r="62%">' +
-      '<stop offset="0" stop-color="#d8d2c6" stop-opacity="0.5"/><stop offset="0.7" stop-color="#8f877a" stop-opacity="0.22"/><stop offset="1" stop-color="#4a443c" stop-opacity="0"/>' +
+      '<stop offset="0" stop-color="#e2dccf" stop-opacity="0.34"/><stop offset="0.7" stop-color="#9a9183" stop-opacity="0.16"/><stop offset="1" stop-color="#4a443c" stop-opacity="0"/>' +
     '</radialGradient>' +
     '<filter id="b1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.8"/></filter>' +
     '<filter id="b2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>' +
@@ -181,7 +184,7 @@
   '<circle cx="' + (CX + 2) + '" cy="' + (CY + 2.6) + '" r="' + (RB - 0.5) + '" fill="#000" opacity="0.62" filter="url(#b2)"/>' +
   // bezel body, then the flutes on top of it
   '<circle cx="' + CX + '" cy="' + CY + '" r="' + RB + '" fill="url(#chrome)"/>' +
-  '<g opacity="0.8">' + flutes + '</g>' +
+  '<g opacity="0.62">' + flutes + '</g>' +
   // outer edge: a dark hairline and a lit chamfer top-left
   '<circle cx="' + CX + '" cy="' + CY + '" r="' + (RB - 0.35) + '" fill="none" stroke="#0e0e10" stroke-opacity="0.75" stroke-width="0.7"/>' +
   '<path d="M ' + f2(pt(RB - 0.9, -78)[0]) + ' ' + f2(pt(RB - 0.9, -78)[1]) + ' A ' + (RB - 0.9) + ' ' + (RB - 0.9) + ' 0 0 1 ' + f2(pt(RB - 0.9, -6)[0]) + ' ' + f2(pt(RB - 0.9, -6)[1]) + '" fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="0.8"/>' +
@@ -190,19 +193,21 @@
   // the inner lip of the bezel and the well the jewel sits in
   '<circle cx="' + CX + '" cy="' + CY + '" r="' + (RJ + 0.6) + '" fill="none" stroke="#151517" stroke-width="1.1" stroke-opacity="0.9"/>' +
   '<path d="M ' + f2(pt(RJ + 0.9, 105)[0]) + ' ' + f2(pt(RJ + 0.9, 105)[1]) + ' A ' + (RJ + 0.9) + ' ' + (RJ + 0.9) + ' 0 0 1 ' + f2(pt(RJ + 0.9, 178)[0]) + ' ' + f2(pt(RJ + 0.9, 178)[1]) + '" fill="none" stroke="#e6e8ea" stroke-opacity="0.5" stroke-width="0.7"/>' +
-  // the bulb behind the jewel: pale glass, a hairpin filament, both slightly off-centre
-  '<g class="lamp">' +
-    '<ellipse cx="' + FX + '" cy="' + (FY - 2.5) + '" rx="9.5" ry="8" fill="url(#bulb)"/>' +
-    '<path d="M ' + (FX - 3.4) + ' ' + (FY + 3.2) + ' L ' + (FX - 2.3) + ' ' + (FY - 2.6) + ' Q ' + FX + ' ' + (FY - 6.4) + ' ' + (FX + 2.3) + ' ' + (FY - 2.6) + ' L ' + (FX + 3.4) + ' ' + (FY + 3.2) + '" fill="none" stroke="#84604c" stroke-width="0.9" stroke-linecap="round"/>' +
-    '<ellipse cx="' + (FX - 4.6) + '" cy="' + (FY - 5.4) + '" rx="1.9" ry="1.1" fill="#c9c2b8" opacity="0.4" transform="rotate(-28 ' + (FX - 4.6) + ' ' + (FY - 5.4) + ')"/>' +
-  '</g>' +
   // the jewel: three groups of facets — dark, lit, and the hot core near the filament
   '<g class="facets-off">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g>' +
   '<circle cx="' + CX + '" cy="' + CY + '" r="' + RJ + '" fill="#d8b070" opacity="0.07"/>' +
+  // the bulb seen through the jewel: pale glass, a hairpin filament, both slightly off-centre
+  '<g class="lamp">' +
+    '<ellipse cx="' + FX + '" cy="' + (FY - 2.5) + '" rx="9.5" ry="8" fill="url(#bulb)"/>' +
+    '<path d="M ' + (FX - 3.4) + ' ' + (FY + 3.2) + ' L ' + (FX - 2.3) + ' ' + (FY - 2.6) + ' Q ' + FX + ' ' + (FY - 6.4) + ' ' + (FX + 2.3) + ' ' + (FY - 2.6) + ' L ' + (FX + 3.4) + ' ' + (FY + 3.2) + '" fill="none" stroke="#a07a60" stroke-width="0.9" stroke-opacity="0.75" stroke-linecap="round"/>' +
+    '<ellipse cx="' + (FX - 4.6) + '" cy="' + (FY - 5.4) + '" rx="1.9" ry="1.1" fill="#c9c2b8" opacity="0.4" transform="rotate(-28 ' + (FX - 4.6) + ' ' + (FY - 5.4) + ')"/>' +
+  '</g>' +
   '<g class="lit"><g class="facets-on">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g>' +
     '<ellipse class="fil" cx="' + FX + '" cy="' + (FY - 2) + '" rx="3.6" ry="2.6" fill="#ffe9d6" opacity="0.38" filter="url(#b2)"/>' +
   '</g>' +
   '<g class="hot"><g class="facets-hot">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g></g>' +
+  '<circle cx="' + CX + '" cy="' + CY + '" r="' + RJ + '" fill="url(#dome)"/>' +
+  '<path d="M ' + f2(pt(RJ - 1.6, 128)[0]) + ' ' + f2(pt(RJ - 1.6, 128)[1]) + ' A ' + (RJ - 1.6) + ' ' + (RJ - 1.6) + ' 0 0 1 ' + f2(pt(RJ - 1.6, 212)[0]) + ' ' + f2(pt(RJ - 1.6, 212)[1]) + '" fill="none" stroke="#ffb9a4" stroke-opacity="0.2" stroke-width="1.6"/>' +
   '<g class="facets-edge" fill="none" stroke="rgba(40,0,0,0.55)" stroke-width="0.4">' + FACETS.map(function (f) { return '<path d="' + f.d + '"/>'; }).join("") + '</g>' +
   // the jewel is crazed: two hairline cracks catching the light on the outer facets
   '<path d="M 18.5 24.2 Q 15.6 28.4 16.4 33.6" fill="none" stroke="#ffd8cf" stroke-opacity="0.22" stroke-width="0.4"/>' +

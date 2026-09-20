@@ -147,7 +147,7 @@
         ${PINS.map(x => `<circle cx="${x}" cy="2.4" r="1.05" fill="#c9a24a"/><circle cx="${x}" cy="2.4" r="0.7" fill="url(#tin)"/><ellipse cx="${x}" cy="1.9" rx="0.55" ry="0.7" fill="url(#tin)"/>`).join("")}
       </g>
       <!-- pins from the pads up into the body -->
-      ${PINS.map(x => { const [px, py] = P(x, 2.4, 0); return `<rect x="${(px - 0.7).toFixed(2)}" y="${py.toFixed(2)}" width="1.4" height="${(STAND * -EZ[1]).toFixed(2)}" fill="url(#ping)"/>`; }).join("")}
+      ${PINS.map(x => { const [px, py] = P(x, 2.4, 0); return `<rect x="${(px - 0.9).toFixed(2)}" y="${py.toFixed(2)}" width="1.8" height="${(STAND * -EZ[1]).toFixed(2)}" fill="url(#ping)"/><rect x="${(px + 0.5).toFixed(2)}" y="${py.toFixed(2)}" width="0.4" height="${(STAND * -EZ[1]).toFixed(2)}" fill="#000" opacity="0.3"/>`; }).join("")}
 
       <!-- the body: front face, end face, top face, each drawn in its own plane -->
       <g transform="${FRONT}">

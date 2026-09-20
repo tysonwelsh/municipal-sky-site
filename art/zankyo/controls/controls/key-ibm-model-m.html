@@ -42,21 +42,22 @@
 <section class="sk-notes">
   <h2>THE SOURCE</h2>
   <p>The <b>IBM Model M</b> of 1985 put a buckling spring under a two-piece pearl PBT keycap: press it and the
-  spring bows sideways about two millimetres down, throwing the hammer against the membrane with a crack you
-  can hear two rooms away, and the cap drops the rest of its travel in one go. The legends are
+  spring bows sideways about two millimetres down, throwing a hammer at the membrane with a crack you can hear
+  two rooms away, and the cap drops the rest of its travel in one go. The legends are
   <b>dye-sublimated</b> — soaked into the plastic rather than printed on it — so they are grey, slightly soft
   at the edge, and they never wear off.</p>
-  <p><b>The tells kept here:</b> the cap as a truncated pyramid with thick walls and a cylindrical dish across
-  the top, dark at the left of the dish and bright toward the right where the curve turns back into the light;
-  the hairline seam around the skirt where the shell meets its base, sitting two pixels proud of the case; the
+  <p><b>The tells kept here:</b> the cap drawn as a real truncated pyramid — four separate walls, the left one
+  lit, the right one in shade, the back one bright, the front one tall and dropping into the shadow the top
+  face casts on it; a cylindrical dish across that top face, dark at the left and turning bright where the
+  curve comes back up into the light; the hairline seam around the skirt where the shell meets its base; the
   grey legend at the <i>top-left</i> of the dish for letters and centred for words; pearl for the alphas and
-  pebble grey for the modifiers; the fine matte PBT grain; the polished, slightly warmer top of a much-used cap
-  (Enter, here); and the case's hairline-textured pebble grey with the dark base plate showing in the gap
-  between caps. The travel is two-stage — two pixels of load, then a snap through the remaining two — and
+  pebble grey for the modifiers; the fine matte PBT grain on every face; the polish on a much-used cap (Enter,
+  here); and the pebble-grey hairline-textured case with the dark base plate showing in the gap between caps.
+  The travel is two-stage — two pixels of load, then a snap through the remaining two — and
   <code>activate</code> fires at the snap, not at the bottom.</p>
   <p><b>Left out:</b> the case's three status LEDs and its badge, the barrel plate under the caps, and the
   flip-out feet. The <code>row</code> attribute tilts the top face (4°, 2°, 0°, −2°, −4° from the number row
-  down) but all three caps here are from the home row, so they stand level.</p>
+  down) by trading front wall for back wall; all three caps here are from the home row, so they stand level.</p>
 </section>
 <script id="sk-element">
 /* ==== <sk-key-ibm-model-m> — pearl-and-grey buckling-spring keycap ====
@@ -67,67 +68,61 @@
 (function () {
   const TAG = "sk-key-ibm-model-m";
   if (customElements.get(TAG)) return;
-  const U = 56;                                     // one key unit: the 19.05 mm pitch
+  const U = 56;                       // one key unit: the 19.05 mm pitch
+  const PAD = 4.4, TOP = 4.6, BOT = 5.4; // the cap's footprint inside the cell
+  const CH = U - TOP - BOT;            // cap height
+  const SIDE = 6.2;                    // wall thickness seen from the front-above
 
   const TPL = document.createElement("template");
   TPL.innerHTML = `
   <style>
     :host { display: inline-block; position: relative; font-size: 10px; -webkit-tap-highlight-color: transparent;
-      --top: #edebe5; --wa: #f4f3ee; --wb: #dedad2; --wc: #bab6ac; --wd: #928e86; }
+      --top: #e7e5df;
+      --b1: #f4f2ed; --b2: #dedbd3;     /* back wall  */
+      --l1: #efede7; --l2: #d4d0c7;     /* left wall  */
+      --r1: #c0bcb3; --r2: #a8a49c;     /* right wall */
+      --f1: #cfcbc2; --f2: #b4b0a7;     /* front wall */
+      --ink: #46463f; }
     :host([hidden]) { display: none; }
-    :host([tone="grey"]) { --top: #aeaaa2; --wa: #c6c2ba; --wb: #b0aca3; --wc: #8f8c84; --wd: #6e6b63; }
+    :host([tone="grey"]) {
+      --top: #aeaaa2;
+      --b1: #c9c5bd; --b2: #b2aea5;
+      --l1: #c6c2ba; --l2: #a5a199;
+      --r1: #8f8b84; --r2: #77746d;
+      --f1: #9d9992; --f2: #807d76;
+      --ink: #3c3c3a; }
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
 
-    /* the pebble-grey case, hairline-textured */
+    /* the pebble-grey case, hairline-textured, lit from above-left */
     .case { position: absolute; inset: 0; border-radius: 2.5px;
       background:
         repeating-linear-gradient(93deg, rgba(0,0,0,0.045) 0 0.5px, rgba(255,255,255,0.03) 0.5px 1.4px),
         linear-gradient(158deg, #bdb9b0 0%, #aeaaa1 46%, #8f8b83 100%);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1.5px 0 rgba(0,0,0,0.25),
-                  0 2px 4px rgba(0,0,0,0.5), 0 6px 14px rgba(0,0,0,0.35); }
-    /* the dark base plate showing in the gap around the cap */
-    .well { position: absolute; left: 2.5px; right: 2.5px; top: 3px; bottom: 3px; border-radius: 4px;
-      background: #2b2a28;
-      box-shadow: inset 0 1px 1.5px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.14); }
+                  0 2px 4px rgba(0,0,0,0.5), 0 7px 15px rgba(0,0,0,0.38); }
+    /* the dark base plate, seen in the gap around the cap */
+    .well { position: absolute; left: 2.6px; right: 2.6px; top: 2.8px; bottom: 3.4px; border-radius: 4px;
+      background: #2b2a28; box-shadow: inset 0 1px 1.6px rgba(0,0,0,0.65); }
 
-    /* the cap: a truncated pyramid, thick walls, sharp corners */
-    .cap { position: absolute; left: 3.6px; right: 3.6px; top: 4px; bottom: 4.6px; border-radius: 3px 3px 4px 4px;
-      --drop: 0 2px 2px rgba(0,0,0,0.55), 0 5px 9px rgba(0,0,0,0.4);
-      background: linear-gradient(162deg, var(--wa) 0%, var(--wb) 26%, var(--wc) 58%, var(--wd) 100%);
-      box-shadow: var(--drop), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -2.5px 2.5px rgba(0,0,0,0.2), inset 1px 0 0 rgba(255,255,255,0.22), inset -1px 0 0 rgba(0,0,0,0.2);
+    /* the cap: an SVG truncated pyramid that travels */
+    .cap { position: absolute; left: ${PAD}px; top: ${TOP}px; height: ${CH}px;
       outline: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+      filter: drop-shadow(0 1.5px 1.5px rgba(0,0,0,0.55)) drop-shadow(0 5px 6px rgba(0,0,0,0.3));
       transition: transform 95ms cubic-bezier(.2,.8,.35,1); }
     .cap.d1 { transform: translateY(2px); transition: transform 30ms cubic-bezier(.4,0,1,.6); }
     .cap.d2 { transform: translateY(4px); transition: transform 10ms linear;
-      --drop: 0 1px 1px rgba(0,0,0,0.62), 0 2px 3px rgba(0,0,0,0.34); }
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.65)) drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
     :host([disabled]) .cap { cursor: default; }
-    .cap:focus-visible { box-shadow: 0 0 0 2px #16e0e0, 0 0 11px rgba(22,224,224,0.55), var(--drop), inset 0 1px 0 rgba(255,255,255,0.5); }
+    .cap svg { display: block; }
+    .cap:focus-visible .ring { stroke: #16e0e0; stroke-width: 1.6; stroke-opacity: 1; }
 
-    /* the hairline seam where the shell meets its base */
-    .seam { position: absolute; left: 1.4px; right: 1.4px; bottom: 3px; height: 1px; border-radius: 1px;
-      background: rgba(0,0,0,0.22); box-shadow: 0 1px 0 rgba(255,255,255,0.3); }
-
-    /* the top face: a cylindrical dish, concave left-to-right, in fine matte PBT */
-    .top { position: absolute; left: 6px; right: 6px; top: var(--bw, 5px); bottom: var(--fw, 9px); border-radius: 2.5px;
-      background:
-        repeating-linear-gradient(107deg, rgba(0,0,0,0.032) 0 0.6px, rgba(255,255,255,0.03) 0.6px 1.5px),
-        linear-gradient(90deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.10) 16%, rgba(0,0,0,0.02) 42%, rgba(255,255,255,0.14) 74%, rgba(255,255,255,0.2) 92%, rgba(255,255,255,0.02) 100%),
-        linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.06) 24%, rgba(0,0,0,0.05) 74%, rgba(0,0,0,0.16) 100%),
-        var(--top);
-      box-shadow: inset 0 0 0 0.6px rgba(255,255,255,0.35), inset 0 -0.6px 0 rgba(0,0,0,0.10),
-                  0 1.6px 2.6px rgba(0,0,0,0.38), 0 0.5px 0 rgba(255,255,255,0.3); }
-    /* the polish on a much-used cap */
-    .gloss { position: absolute; inset: 0; border-radius: 2.5px; opacity: 0;
-      background: radial-gradient(74% 92% at 36% 20%, rgba(255,251,232,0.5), rgba(255,247,222,0.14) 52%, rgba(0,0,0,0) 78%); }
-    :host([shine]) .gloss, .wrap.shine .gloss { opacity: 1; }
-
-    /* dye-sub legends: grey, soft-edged, top-left for letters and centred for words */
-    .lgs { position: absolute; inset: 0; display: flex; flex-direction: column; filter: blur(0.3px); }
-    .lgs.letter { align-items: flex-start; justify-content: flex-start; padding: 4px 0 0 5px; }
+    /* dye-sub legends: grey, soft-edged, top-left of the dish for letters, centred for words */
+    .lgs { position: absolute; display: flex; flex-direction: column; filter: blur(0.3px); }
+    .lgs.letter { align-items: flex-start; justify-content: flex-start; padding: 2.5px 0 0 3px; }
     .lgs.word { align-items: center; justify-content: center; }
     .lg, .sb { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500;
-      color: #4a4a48; line-height: 1.16; letter-spacing: 0.01em; display: block; }
-    .lgs.letter .lg { font-size: 9px; }
+      color: var(--ink); line-height: 1.2; letter-spacing: 0.01em; display: block; }
+    .lgs.letter .lg { font-size: 9.5px; }
     .lgs.word .lg, .lgs.word .sb { font-size: 7px; }
     .lg:empty, .sb:empty { display: none; }
   </style>
@@ -135,11 +130,7 @@
     <div class="case"></div>
     <div class="well"></div>
     <div class="cap" role="button" tabindex="0">
-      <div class="seam"></div>
-      <div class="top">
-        <div class="gloss"></div>
-        <div class="lgs"><span class="lg"></span><span class="sb"></span></div>
-      </div>
+      <div class="lgs"><span class="lg"></span><span class="sb"></span></div>
     </div>
   </div>`;
 
@@ -148,11 +139,10 @@
     constructor() {
       super();
       this.attachShadow({ mode: "open" }).appendChild(TPL.content.cloneNode(true));
-      this._scale = 1; this._u = 1; this._down = false; this._st = 0;
+      this._scale = 1; this._u = 1; this._row = 3; this._down = false; this._st = 0; this._geom = "";
       const r = this.shadowRoot;
       this._wrap = r.querySelector(".wrap");
       this._cap = r.querySelector(".cap");
-      this._top = r.querySelector(".top");
       this._lgs = r.querySelector(".lgs");
       this._lg = r.querySelector(".lg");
       this._sb = r.querySelector(".sb");
@@ -200,24 +190,18 @@
       const num = (n, d) => { const x = parseFloat(this.getAttribute(n)); return isNaN(x) ? d : x; };
       this._scale = Math.max(0.2, num("scale", 1));
       this._u = Math.max(1, num("width", 1));
-      const w = U * this._u, h = U;
+      this._row = Math.min(5, Math.max(1, Math.round(num("row", 3))));
+      const w = U * this._u;
       this.style.width = (w * this._scale) + "px";
-      this.style.height = (h * this._scale) + "px";
-      this._wrap.style.width = w + "px"; this._wrap.style.height = h + "px";
+      this.style.height = (U * this._scale) + "px";
+      this._wrap.style.width = w + "px"; this._wrap.style.height = U + "px";
       this._wrap.style.transform = "scale(" + this._scale + ")";
-
-      // row profile: the number row tilts back, the bottom row tilts forward
-      const row = Math.min(5, Math.max(1, Math.round(num("row", 3))));
-      const tilt = (3 - row) * 2;                                  // +4 … -4 degrees
-      this._top.style.setProperty("--bw", (5 - tilt * 0.42).toFixed(2) + "px");
-      this._top.style.setProperty("--fw", (9 + tilt * 0.82).toFixed(2) + "px");
+      this._build(w);
 
       const lg = this.getAttribute("legend") || "";
       const sb = this.getAttribute("sub") || "";
       this._lg.textContent = lg; this._sb.textContent = sb;
-      const isLetter = !sb && lg.length <= 2;
-      this._lgs.className = "lgs " + (isLetter ? "letter" : "word");
-      this._wrap.classList.toggle("shine", /^(e|enter|space|return)$/i.test(lg));
+      this._lgs.className = "lgs " + (!sb && lg.length <= 2 ? "letter" : "word");
 
       const c = this._cap, dis = this.hasAttribute("disabled");
       c.setAttribute("aria-label", (lg + (sb ? " " + sb : "")).trim() || "key");
@@ -225,7 +209,80 @@
       c.setAttribute("tabindex", dis ? "-1" : "0");
       this._show(this.hasAttribute("pressed"));
     }
-    // the static picture of a state, with no events and no staging
+
+    // the cap, drawn face by face so the light is honest on each wall
+    _build(w) {
+      const CW = w - PAD * 2;
+      const tilt = (3 - this._row) * 2;                 // +4° (number row, tilts back) … -4° (bottom row)
+      const bw = 7 - tilt * 0.55, fw = 11 + tilt * 1.05;  // back wall / front wall, seen from the front-above
+      const tl = SIDE, tr = CW - SIDE, tt = bw, tb = CH - fw;
+      const shine = this.hasAttribute("shine") || /^(e|enter|space|return)$/i.test(this.getAttribute("legend") || "");
+      const key = [CW, this._row, shine].join("|");
+      if (key !== this._geom) {
+        this._geom = key;
+        const g = `
+        <svg width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}" aria-hidden="true">
+          <defs>
+            <linearGradient id="gb" x1="0.2" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="var(--b1)"/><stop offset="1" stop-color="var(--b2)"/></linearGradient>
+            <linearGradient id="gl" x1="0" y1="0" x2="1" y2="0.4"><stop offset="0" stop-color="var(--l1)"/><stop offset="1" stop-color="var(--l2)"/></linearGradient>
+            <linearGradient id="gr" x1="1" y1="0" x2="0" y2="0.4"><stop offset="0" stop-color="var(--r2)"/><stop offset="1" stop-color="var(--r1)"/></linearGradient>
+            <linearGradient id="gf" x1="0.3" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="var(--f2)"/><stop offset="0.72" stop-color="var(--f1)"/><stop offset="1" stop-color="var(--f2)"/></linearGradient>
+            <linearGradient id="dh" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#000" stop-opacity="0.26"/><stop offset="0.16" stop-color="#000" stop-opacity="0.09"/>
+              <stop offset="0.44" stop-color="#fff" stop-opacity="0"/><stop offset="0.76" stop-color="#fff" stop-opacity="0.15"/>
+              <stop offset="0.93" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0.02"/>
+            </linearGradient>
+            <linearGradient id="dv" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.03"/>
+              <stop offset="0.78" stop-color="#000" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.16"/>
+            </linearGradient>
+            <radialGradient id="gloss" cx="34%" cy="18%" r="72%">
+              <stop offset="0" stop-color="#fffbe8" stop-opacity="${shine ? 0.5 : 0}"/><stop offset="0.55" stop-color="#fff7de" stop-opacity="${shine ? 0.12 : 0}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="grain" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(17)">
+              <rect width="1.1" height="2.4" fill="#000" opacity="0.016"/>
+              <rect x="1.1" width="0.8" height="2.4" fill="#fff" opacity="0.02"/>
+              <rect y="1.2" width="2.4" height="0.5" fill="#000" opacity="0.012"/>
+            </pattern>
+            <clipPath id="cc"><rect x="0" y="0" width="${CW}" height="${CH}" rx="3.2"/></clipPath>
+            <filter id="sh" x="-20%" y="-60%" width="140%" height="260%"><feGaussianBlur stdDeviation="1.1"/></filter>
+          </defs>
+          <g clip-path="url(#cc)">
+            <rect width="${CW}" height="${CH}" fill="var(--f1)"/>
+            <path d="M0 0 H${CW} L${tr} ${tt} H${tl} Z" fill="url(#gb)"/>
+            <path d="M0 0 L${tl} ${tt} V${tb} L0 ${CH} Z" fill="url(#gl)"/>
+            <path d="M${CW} 0 L${tr} ${tt} V${tb} L${CW} ${CH} Z" fill="url(#gr)"/>
+            <path d="M0 ${CH} L${tl} ${tb} H${tr} L${CW} ${CH} Z" fill="url(#gf)"/>
+            <rect width="${CW}" height="${CH}" fill="url(#grain)"/>
+            <!-- the shadow the top face throws down the front wall -->
+            <path d="M${tl} ${tb + 0.6} H${tr}" stroke="#000" stroke-opacity="0.34" stroke-width="2.2" filter="url(#sh)"/>
+            <!-- the two-piece seam around the skirt, and the lit bottom lip -->
+            <path d="M0 ${CH - 3.6} H${CW}" stroke="#000" stroke-opacity="0.22" stroke-width="0.9"/>
+            <path d="M0 ${CH - 2.7} H${CW}" stroke="#fff" stroke-opacity="0.3" stroke-width="0.8"/>
+            <path d="M0 ${CH - 0.5} H${CW}" stroke="#fff" stroke-opacity="0.13" stroke-width="1"/>
+          </g>
+          <rect x="0.4" y="0.4" width="${CW - 0.8}" height="${CH - 0.8}" rx="3" fill="none" stroke="#000" stroke-opacity="0.32" stroke-width="0.8"/>
+          <!-- the top face: base colour, cylindrical dish, grain, polish, lit lip -->
+          <g>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="var(--top)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#dh)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#dv)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#grain)"/>
+            <rect x="${tl}" y="${tt}" width="${tr - tl}" height="${tb - tt}" rx="2.4" fill="url(#gloss)"/>
+            <rect x="${tl + 0.35}" y="${tt + 0.35}" width="${tr - tl - 0.7}" height="${tb - tt - 0.7}" rx="2.2" fill="none" stroke="#fff" stroke-opacity="0.24" stroke-width="0.7"/>
+          </g>
+          <rect class="ring" x="0.8" y="0.8" width="${CW - 1.6}" height="${CH - 1.6}" rx="3" fill="none" stroke="#16e0e0" stroke-opacity="0" stroke-width="1.6"/>
+        </svg>`;
+        const old = this._cap.querySelector("svg");
+        if (old) old.remove();
+        this._cap.insertAdjacentHTML("afterbegin", g);
+      }
+      this._cap.style.width = CW + "px";
+      this._lgs.style.left = tl + "px"; this._lgs.style.top = tt + "px";
+      this._lgs.style.width = (tr - tl) + "px"; this._lgs.style.height = (tb - tt) + "px";
+    }
+
+    // the static picture of a state: no events, no staging
     _show(on) {
       clearTimeout(this._st); this._st = 0;
       this._cap.classList.toggle("d1", !!on);
@@ -240,12 +297,12 @@
       this._cap.classList.add("d1"); this._cap.classList.remove("d2");
       this._emit("press");
       clearTimeout(this._st);
-      this._st = setTimeout(() => this._snap(), 30);               // the spring buckles
+      this._st = setTimeout(() => this._snap(), 30);            // the spring buckles
     }
     _release() {
       if (!this._down) return;
       this._down = false;
-      if (this._st) { clearTimeout(this._st); this._snap(); }      // a quick tap still buckles the spring
+      if (this._st) { clearTimeout(this._st); this._snap(); }   // a quick tap still buckles the spring
       this.removeAttribute("pressed");
       this._cap.classList.remove("d1", "d2");
       this._emit("release");

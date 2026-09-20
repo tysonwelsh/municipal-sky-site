@@ -84,7 +84,7 @@
   '.f { opacity: 0; transition: opacity 400ms cubic-bezier(.4,0,.8,.6); }',
   '.is-on .f { opacity: 1; transition: opacity 200ms cubic-bezier(.2,.5,.4,1); }',
   '.is-on .lampB { transition-delay: 40ms; }',
-  '.is-on .bloom { opacity: 0.62; }',
+  '.is-on .bloom { opacity: 0.8; }',
   '.is-on .spill { opacity: 0.5; }',
   '.is-on .wallglow { opacity: 1; transition-duration: 280ms; }',
   '.wallglow { transition-duration: 520ms; }',
@@ -125,8 +125,8 @@
   '    <stop offset="0" stop-color="#8d8880"/><stop offset="0.65" stop-color="#3d3833"/><stop offset="1" stop-color="#15120f"/>',
   '  </radialGradient>',
   '  <clipPath id="glassclip"><rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" rx="1.5"/></clipPath>',
-  '  <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.1"/></filter>
-  <filter id="b2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>',
+  '  <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.1"/></filter>',
+  '  <filter id="b2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>',
   '  <filter id="b4" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>',
   '  <filter id="b7" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>',
   '</defs>',
@@ -171,7 +171,8 @@
   '  <rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" fill="url(#vig)"/>',
   '  <rect x="' + GX + '" y="' + GY + '" width="' + GW + '" height="' + GH + '" fill="url(#cool)"/>',
   /* the letters: a warm bloom under, the clear glass over */
-  '  <g class="f bloom"><text class="lbl bloomtext" x="144" y="80" fill="#ffd9c8" filter="url(#b4)"></text></g>',
+  '  <g class="f bloom"><text class="lbl bloomwide" x="144" y="80" fill="#ffbfa8" filter="url(#b7)"></text></g>',
+  '  <g class="f bloom"><text class="lbl bloomtext" x="144" y="80" fill="#ffe2d2" filter="url(#b4)"></text></g>',
   '  <g class="ink"><text class="lbl inktext" x="144" y="80"></text></g>',
   /* one broad diagonal reflection, nothing like the shape of the letters */
   '  <path d="M ' + GX + ' ' + GY + ' L 128 ' + GY + ' L 58 ' + (GY + GH) + ' L ' + GX + ' ' + (GY + GH) + ' Z" fill="url(#refl)"/>',
@@ -204,6 +205,7 @@
       this._wrap = this.shadowRoot.querySelector(".wrap");
       this._ink = this.shadowRoot.querySelector(".inktext");
       this._blm = this.shadowRoot.querySelector(".bloomtext");
+      this._blw = this.shadowRoot.querySelector(".bloomwide");
       this._label = "ON AIR";
       this._fitDone = false;
     }
@@ -246,7 +248,7 @@
     _setLabel() {
       this._label = this.getAttribute("label") || "ON AIR";
       var chars = Array.from(this._label);
-      [this._ink, this._blm].forEach(function (t, isBloom) {
+      [this._ink, this._blm, this._blw].forEach(function (t, isBloom) {
         while (t.firstChild) t.removeChild(t.firstChild);
         chars.forEach(function (ch, i) {
           var sp = document.createElementNS(ANCHOR, "tspan");
@@ -277,7 +279,7 @@
     _fit() {
       var max = GW - 22;
       var self = this;
-      [this._ink, this._blm].forEach(function (t) {
+      [this._ink, this._blm, this._blw].forEach(function (t) {
         t.removeAttribute("textLength");
         t.removeAttribute("lengthAdjust");
         var len = 0;

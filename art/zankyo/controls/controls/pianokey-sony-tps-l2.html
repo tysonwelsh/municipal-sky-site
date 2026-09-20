@@ -85,11 +85,11 @@
     funcs.forEach((fn, i) => {
       const x = L.kx + i * L.pitch, cx = x + L.kw / 2, cy = KY + 8.4;
       const wear = fn === "play"
-        ? `<ellipse cx="${cx}" cy="${KY + 22}" rx="${L.kw * 0.26}" ry="4.2" fill="#9aa3a8" opacity="0.3" filter="url(#sf)"/>
+        ? `<ellipse cx="${cx}" cy="${KY + 22}" rx="${L.kw * 0.26}" ry="4.2" fill="#aab3b8" opacity="0.26" filter="url(#sf)"/>
            <ellipse cx="${cx - 2}" cy="${KY + 19}" rx="${L.kw * 0.17}" ry="3" fill="#7b858a" opacity="0.18" filter="url(#sf)"/>` : "";
       g += `<g class="key k${i}">
-        <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.8" fill="url(#chr)"/>
-        <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.8" fill="url(#dome)"/>
+        <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.2" fill="url(#chr)"/>
+        <rect x="${x}" y="${KY}" width="${L.kw}" height="${KH}" rx="1.2" fill="url(#dome)"/>
         ${wear}
         <path d="M ${x + 1.6} ${KY + 0.7} H ${x + L.kw - 1.6}" stroke="#ffffff" stroke-opacity="0.8" stroke-width="0.9" stroke-linecap="round"/>
         <path d="M ${x + 1.6} ${KY + KH - 0.5} H ${x + L.kw - 1.6}" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.8" stroke-linecap="round"/>
@@ -118,17 +118,17 @@
       <svg viewBox="0 0 ${S.w} ${S.h}" width="${S.w}" height="${S.h}">
         <defs>
           <linearGradient id="chr" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#ffffff"/><stop offset="0.07" stop-color="#eff5f8"/>
-            <stop offset="0.34" stop-color="#c3ccd2"/><stop offset="0.47" stop-color="#a7b0b7"/>
-            <stop offset="0.50" stop-color="#96a0a7"/>
-            <stop offset="0.505" stop-color="#2b3035"/><stop offset="0.63" stop-color="#3a4046"/>
-            <stop offset="0.84" stop-color="#576067"/><stop offset="0.94" stop-color="#8d969d"/>
-            <stop offset="0.985" stop-color="#cfd7db"/><stop offset="1" stop-color="#e8eef1"/>
+            <stop offset="0" stop-color="#ffffff"/><stop offset="0.06" stop-color="#f2f7fa"/>
+            <stop offset="0.32" stop-color="#d4dce1"/><stop offset="0.52" stop-color="#bcc5cb"/>
+            <stop offset="0.60" stop-color="#9fa8b0"/>
+            <stop offset="0.607" stop-color="#1e2226"/><stop offset="0.74" stop-color="#2b3137"/>
+            <stop offset="0.89" stop-color="#48515a"/><stop offset="0.955" stop-color="#8b949c"/>
+            <stop offset="0.99" stop-color="#d2dade"/><stop offset="1" stop-color="#eef4f6"/>
           </linearGradient>
           <linearGradient id="dome" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stop-color="#000000" stop-opacity="0.3"/>
             <stop offset="0.07" stop-color="#000000" stop-opacity="0.06"/>
-            <stop offset="0.20" stop-color="#ffffff" stop-opacity="0.18"/>
+            <stop offset="0.20" stop-color="#ffffff" stop-opacity="0.12"/>
             <stop offset="0.52" stop-color="#ffffff" stop-opacity="0"/>
             <stop offset="0.90" stop-color="#000000" stop-opacity="0.14"/>
             <stop offset="1" stop-color="#000000" stop-opacity="0.36"/>

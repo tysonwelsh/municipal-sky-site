@@ -112,6 +112,9 @@
         <linearGradient id="vert" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#4a4740" stop-opacity="0.22"/>
         </linearGradient>
+        <linearGradient id="domev" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#5a574f" stop-opacity="0.2"/>
+        </linearGradient>
         <linearGradient id="vert2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fff" stop-opacity="0.1"/><stop offset="1" stop-color="#3a3730" stop-opacity="0.16"/>
         </linearGradient>
@@ -147,6 +150,8 @@
       <path d="M ${CX - TOPR} ${TOPY} L 10 ${SHY} A ${R} ${RY} 0 0 0 110 ${SHY} L ${CX + TOPR} ${TOPY} A ${TOPR} ${TOPRY} 0 0 1 ${CX - TOPR} ${TOPY} Z" fill="url(#shoulder)"/>
       <path d="M 10 ${SHY} A ${R} ${RY} 0 0 0 110 ${SHY}" fill="none" stroke="#7a776f" stroke-opacity="0.35" stroke-width="0.6"/>
       <ellipse cx="${CX}" cy="${TOPY}" rx="${TOPR}" ry="${TOPRY}" fill="url(#topface)" stroke="#8d8a82" stroke-opacity="0.55" stroke-width="0.6"/>
+      <ellipse cx="${CX}" cy="${TOPY}" rx="${TOPR}" ry="${TOPRY}" fill="url(#domev)"/>
+      <path d="M ${CX - TOPR + 3} ${TOPY + 1} A ${TOPR} ${TOPRY} 0 0 0 ${CX + TOPR - 3} ${TOPY + 1}" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.7"/>
       <!-- the printed scale on the shoulder (placed by angle in JS) -->
       <g class="ticks"></g>
       <g class="nums"></g>

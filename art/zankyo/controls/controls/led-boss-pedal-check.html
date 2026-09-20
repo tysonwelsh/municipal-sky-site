@@ -71,7 +71,7 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
-    .legend { font-size: 6.5px; font-weight: 600; letter-spacing: 0.06em; text-anchor: middle; fill: #2a1a12; fill-opacity: 0.9; }
+    .legend { font-size: 6px; font-weight: 600; letter-spacing: 0.08em; text-anchor: middle; fill: #2a1a12; fill-opacity: 0.82; }
     .lit, .halo { opacity: 0; }
     .flash { opacity: 0; transform-box: view-box; transform-origin: ${CX}px ${CY}px; }
     .wrap.on .flash { animation: sk-bloom 150ms ease-out 1; }
@@ -88,63 +88,86 @@
           <stop offset="0.45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#6b2503" stop-opacity="0.32"/>
         </radialGradient>
         <linearGradient id="bezel" x1="0.1" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stop-color="#3a3a3a"/><stop offset="0.35" stop-color="#1d1d1d"/>
-          <stop offset="0.72" stop-color="#101010"/><stop offset="1" stop-color="#050505"/>
+          <stop offset="0" stop-color="#2f2f2f"/><stop offset="0.38" stop-color="#191919"/>
+          <stop offset="0.74" stop-color="#0e0e0e"/><stop offset="1" stop-color="#070707"/>
         </linearGradient>
-        <radialGradient id="domeOff" cx="36%" cy="29%" r="80%">
-          <stop offset="0" stop-color="#a03a2e"/><stop offset="0.42" stop-color="#7e221b"/>
-          <stop offset="0.78" stop-color="#5e1611"/><stop offset="1" stop-color="#420f0c"/>
+        <radialGradient id="domeOff" cx="38%" cy="32%" r="86%">
+          <stop offset="0" stop-color="#8e2b23"/><stop offset="0.5" stop-color="#7c231b"/>
+          <stop offset="0.82" stop-color="#671b15"/><stop offset="1" stop-color="#4e1310"/>
         </radialGradient>
-        <radialGradient id="domeLit" cx="36%" cy="29%" r="82%">
-          <stop offset="0" stop-color="#ffd8d0"/><stop offset="0.16" stop-color="#ff8172"/>
-          <stop offset="0.44" stop-color="#ff4a3c"/><stop offset="0.8" stop-color="#ff1a12"/>
-          <stop offset="1" stop-color="#d81109"/>
+        <radialGradient id="domeLit" cx="37%" cy="31%" r="86%">
+          <stop offset="0" stop-color="#ffe4dd"/><stop offset="0.11" stop-color="#ff8878"/>
+          <stop offset="0.34" stop-color="#ff5245"/><stop offset="0.72" stop-color="#ff2a20"/>
+          <stop offset="1" stop-color="#e5140b"/>
         </radialGradient>
         <radialGradient id="domeShade" cx="38%" cy="27%" r="78%">
-          <stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+          <stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.38"/>
         </radialGradient>
-        <filter id="peel" x="-2%" y="-2%" width="104%" height="104%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="3" seed="11" result="n"/>
-          <feColorMatrix in="n" type="saturate" values="0" result="g"/>
-          <feComponentTransfer in="g"><feFuncA type="linear" slope="0.6" intercept="0"/></feComponentTransfer>
-        </filter>
-        <filter id="b05" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="0.45"/></filter>
-        <filter id="b12" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1"/></filter>
-        <filter id="b18" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.8"/></filter>
-        <filter id="b30" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
-        <clipPath id="plate"><rect x="0.5" y="0.5" width="39" height="47" rx="4"/></clipPath>
+        <pattern id="peelA" width="3.2" height="3.2" patternUnits="userSpaceOnUse" patternTransform="rotate(13)">
+          <circle cx="1" cy="1" r="0.86" fill="#fff" fill-opacity="0.07"/>
+          <circle cx="1.3" cy="1.35" r="0.74" fill="#000" fill-opacity="0.06"/>
+          <circle cx="2.55" cy="2.45" r="0.6" fill="#fff" fill-opacity="0.05"/>
+          <circle cx="2.75" cy="2.68" r="0.5" fill="#000" fill-opacity="0.045"/>
+        </pattern>
+        <pattern id="peelB" width="4.7" height="4.7" patternUnits="userSpaceOnUse" patternTransform="rotate(-37)">
+          <circle cx="1.5" cy="1.5" r="1.15" fill="#fff" fill-opacity="0.045"/>
+          <circle cx="1.85" cy="1.95" r="1" fill="#000" fill-opacity="0.04"/>
+          <circle cx="3.7" cy="3.6" r="0.8" fill="#fff" fill-opacity="0.035"/>
+          <circle cx="3.95" cy="3.9" r="0.7" fill="#000" fill-opacity="0.03"/>
+        </pattern>
+        <filter id="b05" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="0.45"/></filter>
+        <filter id="b12" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="1.1"/></filter>
+        <filter id="b18" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="1.8"/></filter>
+        <filter id="b30" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="3"/></filter>
+        <radialGradient id="sheen" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.07"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="scuff" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.13"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="bezTop" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#2b2b2b"/><stop offset="0.5" stop-color="#1a1a1a"/><stop offset="1" stop-color="#101010"/>
+        </linearGradient>
+        <clipPath id="plate"><rect x="0.5" y="0.5" width="39" height="47" rx="2.6"/></clipPath>
       </defs>
 
       <!-- the enamelled box, sitting on whatever it is pasted onto -->
-      <rect x="2.2" y="3.4" width="36" height="44.6" rx="4.5" fill="#000" opacity="0.42" filter="url(#b18)"/>
-      <g style="isolation: isolate">
-        <rect x="0.5" y="0.5" width="39" height="47" rx="4" fill="url(#enamel)"/>
+      <rect x="2.2" y="3.4" width="36" height="44.6" rx="3" fill="#000" opacity="0.38" filter="url(#b18)"/>
+      <g>
+        <rect x="0.5" y="0.5" width="39" height="47" rx="2.6" fill="url(#enamel)"/>
         <g clip-path="url(#plate)">
           <!-- fine cast orange-peel -->
-          <rect x="0" y="0" width="40" height="48" filter="url(#peel)" opacity="0.5" style="mix-blend-mode: overlay"/>
+          <rect x="-6" y="-6" width="54" height="62" fill="url(#peelA)"/>
+          <rect x="-6" y="-6" width="54" height="62" fill="url(#peelB)"/>
           <rect x="0" y="0" width="40" height="48" fill="url(#vig)"/>
-          <!-- where boots land: a soft scuff and a chipped edge showing bare alloy -->
-          <ellipse cx="29" cy="44" rx="11" ry="3.4" fill="#fff" opacity="0.09" filter="url(#b12)" transform="rotate(-9 29 44)"/>
-          <path d="M 7.6 47.6 L 11.2 47.6 L 10.2 45.9 L 8.4 46.2 Z" fill="#cfc6b6" opacity="0.85"/>
-          <path d="M 7.6 47.6 L 11.2 47.6 L 10.2 45.9" fill="none" stroke="#7a3a12" stroke-width="0.4" stroke-opacity="0.7"/>
+          <!-- the enamel is glossy: one broad soft sheen from above-left -->
+          <ellipse cx="11" cy="7" rx="17" ry="11" fill="url(#sheen)" transform="rotate(-24 11 7)"/>
+          <!-- where boots land: a soft scuff and one chipped corner showing bare alloy -->
+          <ellipse cx="27" cy="44.6" rx="11" ry="3.6" fill="url(#scuff)" transform="rotate(-8 27 44.6)"/>
+          <path d="M 36.2 47.6 L 39.6 45.1 L 39.6 47.6 Z" fill="#c9c0b0" opacity="0.8"/>
+          <path d="M 36.2 47.6 L 39.6 45.1" fill="none" stroke="#7a3a12" stroke-width="0.45" stroke-opacity="0.75"/>
           <!-- the lamp stains the enamel -->
-          <circle class="halo" cx="${CX}" cy="${CY}" r="15.5" fill="#ff2a1e" filter="url(#b30)"/>
-          <circle class="flash" cx="${CX}" cy="${CY}" r="16" fill="#ff7a5c" filter="url(#b30)"/>
+          <g class="halo">
+            <circle cx="${CX}" cy="${CY}" r="19" fill="#ff2a1e" opacity="0.45" filter="url(#b30)"/>
+            <circle cx="${CX}" cy="${CY}" r="15.2" fill="none" stroke="#ff3a24" stroke-width="3.4" opacity="0.6" filter="url(#b18)"/>
+          </g>
+          <circle class="flash" cx="${CX}" cy="${CY}" r="17" fill="#ff7a5c" filter="url(#b30)"/>
         </g>
         <!-- lit edge above-left, dark edge below-right -->
-        <path d="M 1 14 L 1 5 Q 1 1 5 1 L 20 1" fill="none" stroke="#ffd0a8" stroke-opacity="0.45" stroke-width="0.8"/>
-        <path d="M 39 34 L 39 43 Q 39 47 35 47 L 20 47" fill="none" stroke="#7c3005" stroke-opacity="0.45" stroke-width="0.8"/>
+        <path d="M 1 14 L 1 4 Q 1 1 4 1 L 20 1" fill="none" stroke="#ffd0a8" stroke-opacity="0.45" stroke-width="0.8"/>
+        <path d="M 39 34 L 39 44 Q 39 47 36 47 L 20 47" fill="none" stroke="#7c3005" stroke-opacity="0.45" stroke-width="0.8"/>
       </g>
 
       <!-- the black nylon clip bezel -->
       <ellipse cx="21" cy="20.4" rx="14.6" ry="14.2" fill="#3a1502" opacity="0.5" filter="url(#b12)"/>
       <circle cx="${CX}" cy="${CY}" r="14" fill="url(#bezel)"/>
-      <path d="M 9.6 10.1 A 14 14 0 0 1 28.6 8.2" fill="none" stroke="#454545" stroke-width="0.9" stroke-opacity="0.85" stroke-linecap="round"/>
-      <path d="M 8.2 27.2 A 14 14 0 0 0 26 32.4" fill="none" stroke="#2a2a2a" stroke-width="0.7" stroke-opacity="0.5" stroke-linecap="round"/>
-      <circle cx="${CX}" cy="${CY}" r="14" fill="none" stroke="#000" stroke-width="0.6" stroke-opacity="0.8"/>
+      <circle cx="${CX}" cy="${CY}" r="13.1" fill="url(#bezTop)"/>
+      <path d="M 10.2 10.8 A 13.1 13.1 0 0 1 28.2 9" fill="none" stroke="#3e3e3e" stroke-width="0.7" stroke-opacity="0.55" stroke-linecap="round"/>
+      <circle cx="${CX}" cy="${CY}" r="10.5" fill="#0c0c0c"/>
+      <circle cx="${CX}" cy="${CY}" r="14" fill="none" stroke="#000" stroke-width="0.6" stroke-opacity="0.85"/>
       <!-- the mould seam of the clip, at six o'clock -->
-      <path d="M 19.5 32.98 L 19.5 28.6" stroke="#000" stroke-width="0.55" stroke-opacity="0.9"/>
-      <path d="M 20.15 32.95 L 20.15 28.6" stroke="#4a4a4a" stroke-width="0.4" stroke-opacity="0.7"/>
+      <path d="M 19.5 32.98 L 19.5 29.4" stroke="#000" stroke-width="0.55" stroke-opacity="0.9"/>
+      <path d="M 20.15 32.95 L 20.15 29.4" stroke="#4a4a4a" stroke-width="0.4" stroke-opacity="0.7"/>
 
       <!-- the hole the dome sits in -->
       <circle cx="${CX}" cy="${CY}" r="9.7" fill="#090504"/>
@@ -159,7 +182,7 @@
       <circle cx="${CX}" cy="${CY}" r="9" fill="url(#domeShade)"/>
       <path d="M 12.2 24.4 A 9 9 0 0 0 27.6 24.6" fill="none" stroke="#000" stroke-width="1.6" stroke-opacity="0.32" filter="url(#b05)"/>
       <circle cx="${CX}" cy="${CY}" r="9" fill="none" stroke="#b1564b" stroke-width="0.7" stroke-opacity="0.55"/>
-      <ellipse cx="16.5" cy="15.2" rx="2.7" ry="1.8" fill="#fff" opacity="0.3" filter="url(#b05)" transform="rotate(-38 16.5 15.2)"/>
+      <ellipse cx="16.4" cy="14.9" rx="2.2" ry="1.25" fill="#fff" opacity="0.26" filter="url(#b05)" transform="rotate(-38 16.4 14.9)"/>
 
       <text class="legend" x="${CX}" y="41.6">CHECK</text>
     </svg>
@@ -213,7 +236,7 @@
       const lit = this._v ? (0.35 + 0.65 * this._bat) : 0;
       const was = this._wrap.classList.contains("on");
       this._litG.style.opacity = String(lit);
-      this._halo.style.opacity = String(lit * 0.55);
+      this._halo.style.opacity = String(lit * lit * 0.9);
       if (this._v !== was) {
         if (initial) this._wrap.style.animation = "none";
         this._wrap.classList.toggle("on", this._v);

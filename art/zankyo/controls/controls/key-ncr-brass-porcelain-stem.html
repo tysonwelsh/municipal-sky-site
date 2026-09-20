@@ -25,17 +25,17 @@
   "attributes": ["legend", "color", "stem", "crazed", "pressed", "scale", "disabled"],
   "events": ["press", "release", "activate"],
   "size": { "w": 60, "h": 190 },
-  "notes": "Three keys of a denomination column over the brass case: a crazed 5¢, an amber 10¢ held down, and NO SALE on the short stem. Click, or press Space/Enter."
+  "notes": "Three keys of a denomination column over the brass case: a crazed 5¢ standing highest, an amber 10¢ driven down against its identical neighbour, and NO SALE. Click, or press Space/Enter."
 }
 </script>
 </head>
 <body>
 <header class="sk-head"></header>
 <div class="sk-stage-wrap">
-  <main class="sk-stage" data-panel="brass">
-    <sk-key-ncr-porcelain-stem legend="5&#162;" stem="116" crazed></sk-key-ncr-porcelain-stem>
-    <sk-key-ncr-porcelain-stem legend="10&#162;" color="amber" stem="96" pressed></sk-key-ncr-porcelain-stem>
-    <sk-key-ncr-porcelain-stem legend="NO SALE" color="red" stem="76"></sk-key-ncr-porcelain-stem>
+  <main class="sk-stage" data-panel="black">
+    <sk-key-ncr-porcelain-stem legend="5&#162;" stem="116" scale="1.1" crazed style="margin-right:-36px"></sk-key-ncr-porcelain-stem>
+    <sk-key-ncr-porcelain-stem legend="10&#162;" color="amber" stem="96" scale="1.1" pressed style="margin-right:-36px"></sk-key-ncr-porcelain-stem>
+    <sk-key-ncr-porcelain-stem legend="NO SALE" color="red" stem="96" scale="1.1"></sk-key-ncr-porcelain-stem>
   </main>
 </div>
 <aside class="sk-bench"></aside>
@@ -72,12 +72,12 @@
   TPL.innerHTML = [
   '<style>',
   ':host { display:inline-block; width:' + W + 'px; height:' + H + 'px; position:relative; font-size:10px;',
-  '  --p0:#ffffff; --p1:#f5f1e6; --p2:#e7e1d1; --p3:#cdc7b8; --ink:#1a1815;',
+  '  --p0:#fefdfa; --p1:#f8f5ec; --p2:#f0ebdd; --p3:#e1dacb; --ink:#1a1815;',
   '  -webkit-tap-highlight-color:transparent; }',
   ':host([hidden]) { display:none; }',
-  ':host([color="amber"]) { --p0:#fff5d8; --p1:#f3d692; --p2:#dfb45c; --p3:#a97c28; }',
-  ':host([color="green"]) { --p0:#f0f6e6; --p1:#cbdab1; --p2:#a8bc89; --p3:#6f845a; }',
-  ':host([color="red"])   { --p0:#ffe6dc; --p1:#eaa897; --p2:#cd6f5c; --p3:#8d3a2c; }',
+  ':host([color="amber"]) { --p0:#fef6e0; --p1:#f7e6bd; --p2:#eed49a; --p3:#d6b268; }',
+  ':host([color="green"]) { --p0:#f5f9ec; --p1:#e0e9cd; --p2:#cbd8b4; --p3:#a8b98e; }',
+  ':host([color="red"])   { --p0:#fdeae2; --p1:#f0c6b9; --p2:#e2a897; --p3:#c07f6c; }',
   '.wrap { position:absolute; inset:0; transform-origin:0 0; }',
   'svg { display:block; width:' + W + 'px; height:' + H + 'px; overflow:visible; }',
   'text { font-family:"Libre Franklin","Franklin Gothic",Helvetica,Arial,sans-serif; font-weight:700;',
@@ -98,14 +98,14 @@
   '<div class="wrap">',
   '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">',
   '<defs>',
-  '  <radialGradient id="porc" cx="32%" cy="24%" r="82%">',
-  '    <stop offset="0" stop-color="var(--p0)"/><stop offset="0.3" stop-color="var(--p1)"/>',
-  '    <stop offset="0.72" stop-color="var(--p2)"/><stop offset="1" stop-color="var(--p3)"/>',
+  '  <radialGradient id="porc" cx="34%" cy="26%" r="88%">',
+  '    <stop offset="0" stop-color="var(--p0)"/><stop offset="0.55" stop-color="var(--p1)"/>',
+  '    <stop offset="0.88" stop-color="var(--p2)"/><stop offset="1" stop-color="var(--p3)"/>',
   '  </radialGradient>',
   '  <linearGradient id="nick" x1="0" y1="0" x2="1" y2="0.25">',
-  '    <stop offset="0" stop-color="#4a4f4c"/><stop offset="0.16" stop-color="#cfd4d1"/><stop offset="0.32" stop-color="#f4f6f4"/>',
-  '    <stop offset="0.52" stop-color="#aeb4b0"/><stop offset="0.72" stop-color="#6f7571"/><stop offset="0.88" stop-color="#dde1de"/>',
-  '    <stop offset="1" stop-color="#454a47"/>',
+  '    <stop offset="0" stop-color="#6d736f"/><stop offset="0.14" stop-color="#e2e6e3"/><stop offset="0.3" stop-color="#fbfcfb"/>',
+  '    <stop offset="0.5" stop-color="#c6ccc8"/><stop offset="0.7" stop-color="#868c88"/><stop offset="0.87" stop-color="#eef1ef"/>',
+  '    <stop offset="1" stop-color="#5a605c"/>',
   '  </linearGradient>',
   '  <linearGradient id="stemg" x1="0" y1="0" x2="1" y2="0">',
   '    <stop offset="0" stop-color="#3f4441"/><stop offset="0.14" stop-color="#9aa19c"/><stop offset="0.3" stop-color="#eef1ee"/>',
@@ -116,12 +116,12 @@
   '    <stop offset="0" stop-color="#e3bd70"/><stop offset="0.14" stop-color="#c79c44"/><stop offset="0.46" stop-color="#b8862e"/>',
   '    <stop offset="0.8" stop-color="#8d6420"/><stop offset="1" stop-color="#6b4b14"/>',
   '  </linearGradient>',
-  '  <linearGradient id="japan" x1="0" y1="0" x2="0.3" y2="1">',
+  '  <linearGradient id="japan" x1="0" y1="0" x2="0" y2="1">',
   '    <stop offset="0" stop-color="#34302e"/><stop offset="0.16" stop-color="#1c1a19"/><stop offset="0.7" stop-color="#121110"/>',
   '    <stop offset="1" stop-color="#090909"/>',
   '  </linearGradient>',
   '  <clipPath id="cut"><rect x="-14" y="-40" width="88" height="' + (CUT + 40) + '"/></clipPath>',
-  '  <clipPath id="face"><circle cx="30" cy="' + CY0 + '" r="22"/></clipPath>',
+  '  <clipPath id="face"><circle cx="30" cy="' + CY0 + '" r="21.6"/></clipPath>',
   '  <filter id="b1" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>',
   '  <filter id="b3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.8"/></filter>',
   '</defs>',
@@ -132,7 +132,7 @@
   '  <rect x="0" y="158" width="60" height="1.2" fill="#f0d494" opacity="0.75"/>',
   '  <rect x="0" y="188.4" width="60" height="1.6" fill="#4a330c" opacity="0.8"/>',
   /* scrollwork in low relief: a dark pass down-right, a light pass up-left */
-  '  <g fill="none" stroke-linecap="round">',
+  '  <g fill="none" stroke-width="1.1" stroke-linecap="round">',
   '    <g transform="translate(0.7 0.7)" stroke="#5e400f" stroke-opacity="0.85">',
   '      <path class="sc" d="M 3 185 C 3 170 15 163 21 170 C 25 175 20 180 17 177 C 15 175 17 172 19 173"/>',
   '      <path class="sc" d="M 57 185 C 57 170 45 163 39 170 C 35 175 40 180 43 177 C 45 175 43 172 41 173"/>',
@@ -155,7 +155,6 @@
   '<g class="frame">',
   '  <rect x="0" y="128" width="60" height="31" fill="url(#japan)"/>',
   '  <rect x="0" y="128" width="60" height="1" fill="#6a6360" opacity="0.65"/>',
-  '  <rect x="0" y="133.4" width="60" height="0.6" fill="#caa martial" opacity="0"/>',
   '  <rect x="0" y="152" width="60" height="0.7" fill="#c9a44e" opacity="0.55"/>',
   '  <rect x="0" y="156.6" width="60" height="2.4" fill="#000" opacity="0.5"/>',
   /* the hole the stem runs in, with its nickel escutcheon */
@@ -169,19 +168,19 @@
   '  <rect class="stem" x="23.6" y="30" width="12.8" height="130" fill="url(#stemg)"/>',
   '  <rect class="stemtop" x="23.6" y="30" width="12.8" height="3" fill="#fbfdfb" opacity="0.35"/>',
   '  <g class="head">',
-  '    <ellipse cx="33" cy="' + (CY0 + 4) + '" rx="22.5" ry="21.5" fill="#000" opacity="0.34" filter="url(#b3)"/>',
-  '    <circle cx="30" cy="' + (CY0 + 1.8) + '" r="23.4" fill="url(#nick)"/>',
-  '    <circle cx="30" cy="' + (CY0 + 1.8) + '" r="23.4" fill="none" stroke="#2c302e" stroke-opacity="0.5" stroke-width="0.7"/>',
+  '    <ellipse cx="33" cy="' + (CY0 + 5) + '" rx="22" ry="21" fill="#000" opacity="0.30" filter="url(#b3)"/>',
+  '    <circle cx="30" cy="' + (CY0 + 1.8) + '" r="23.8" fill="url(#nick)"/>',
+  '    <circle cx="30" cy="' + (CY0 + 2.2) + '" r="23.8" fill="none" stroke="#232726" stroke-opacity="0.5" stroke-width="0.7"/>',
   '    <path class="worn" d="M 46.5 ' + (CY0 + 12) + ' A 23 23 0 0 1 30 ' + (CY0 + 25) + '" fill="none" stroke="#b8862e" stroke-opacity="0.6" stroke-width="2.6" stroke-linecap="round"/>',
-  '    <circle cx="30" cy="' + CY0 + '" r="22.1" fill="url(#porc)"/>',
+  '    <circle cx="30" cy="' + CY0 + '" r="21.6" fill="url(#porc)"/>',
   '    <g clip-path="url(#face)">',
   '      <ellipse cx="20" cy="' + (CY0 + 11) + '" rx="17" ry="12" fill="#d9dde0" opacity="0.26" filter="url(#b3)"/>',
-  '      <ellipse cx="36" cy="' + (CY0 + 16) + '" rx="16" ry="9" fill="#8d8878" opacity="0.20" filter="url(#b3)"/>',
+  '      <ellipse cx="36" cy="' + (CY0 + 16) + '" rx="16" ry="9" fill="#8d8878" opacity="0.15" filter="url(#b3)"/>',
   '      <g class="craze" opacity="0"></g>',
   '    </g>',
-  '    <ellipse cx="22" cy="' + (CY0 - 9) + '" rx="7.4" ry="4.4" transform="rotate(-26 22 ' + (CY0 - 9) + ')" fill="#fff" opacity="0.72" filter="url(#b1)"/>',
+  '    <ellipse cx="22" cy="' + (CY0 - 9) + '" rx="6.6" ry="3.6" transform="rotate(-26 22 ' + (CY0 - 9) + ')" fill="#fff" opacity="0.5" filter="url(#b1)"/>',
   '    <ellipse cx="20.4" cy="' + (CY0 - 10.4) + '" rx="2.6" ry="1.5" transform="rotate(-26 20.4 ' + (CY0 - 10.4) + ')" fill="#fff" opacity="0.95"/>',
-  '    <circle cx="30" cy="' + CY0 + '" r="22.1" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.7"/>',
+  '    <circle cx="30" cy="' + CY0 + '" r="21.6" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.7"/>',
   '    <text class="t1" x="30" y="' + (CY0 + 5) + '"></text>',
   '    <text class="t2 l1" x="30" y="' + (CY0 - 1) + '"></text>',
   '    <text class="t2 l2" x="30" y="' + (CY0 + 7.5) + '"></text>',
@@ -242,21 +241,21 @@
       // fine hairlines in the glaze, from a fixed seed so every 5¢ is crazed the same way
       var seed = 7;
       function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
-      for (var i = 0; i < 13; i++) {
-        var a = rnd() * Math.PI * 2, r0 = 4 + rnd() * 16;
+      for (var i = 0; i < 9; i++) {
+        var a = rnd() * Math.PI * 2, r0 = 5 + rnd() * 13;
         var x = 30 + Math.cos(a) * r0, y = CY0 + Math.sin(a) * r0;
         var d = "M " + x.toFixed(1) + " " + y.toFixed(1);
         var dir = rnd() * Math.PI * 2;
         for (var j = 0; j < 3; j++) {
           dir += (rnd() - 0.5) * 1.6;
-          var len = 2 + rnd() * 6;
+          var len = 1.4 + rnd() * 3.4;
           x += Math.cos(dir) * len; y += Math.sin(dir) * len;
           d += " L " + x.toFixed(1) + " " + y.toFixed(1);
         }
         var p = document.createElementNS(ns, "path");
         p.setAttribute("d", d); p.setAttribute("fill", "none");
-        p.setAttribute("stroke", "#8e8a80"); p.setAttribute("stroke-width", (0.28 + rnd() * 0.22).toFixed(2));
-        p.setAttribute("stroke-opacity", (0.35 + rnd() * 0.35).toFixed(2));
+        p.setAttribute("stroke", "#8e8a80"); p.setAttribute("stroke-width", (0.2 + rnd() * 0.16).toFixed(2));
+        p.setAttribute("stroke-opacity", (0.26 + rnd() * 0.26).toFixed(2));
         g.appendChild(p);
       }
     }

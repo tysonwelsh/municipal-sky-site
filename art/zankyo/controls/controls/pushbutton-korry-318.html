@@ -68,10 +68,10 @@
   const W = 72, H = 72, WW = 96, WH = 52;
   const LAMPS = {
     off:   null,
-    amber: { c: "#ffb000", spot: "rgba(255,176,0,0.12)", wash: "rgba(255,150,0,0.045)", glow: "rgba(255,176,0,0.6)" },
-    white: { c: "#f4f6ff", spot: "rgba(236,242,255,0.11)", wash: "rgba(225,232,255,0.04)", glow: "rgba(244,246,255,0.55)" },
-    blue:  { c: "#58b6ff", spot: "rgba(88,182,255,0.12)", wash: "rgba(70,160,255,0.045)", glow: "rgba(88,182,255,0.6)" },
-    green: { c: "#35c26b", spot: "rgba(53,194,107,0.13)", wash: "rgba(40,180,95,0.045)", glow: "rgba(53,194,107,0.6)" }
+    amber: { c: "#ffb000", spot: "rgba(255,176,0,0.055)", wash: "rgba(255,150,0,0.16)", glow: "rgba(255,176,0,0.6)" },
+    white: { c: "#f4f6ff", spot: "rgba(236,242,255,0.05)", wash: "rgba(225,232,255,0.14)", glow: "rgba(244,246,255,0.55)" },
+    blue:  { c: "#58b6ff", spot: "rgba(88,182,255,0.055)", wash: "rgba(70,160,255,0.16)", glow: "rgba(88,182,255,0.6)" },
+    green: { c: "#35c26b", spot: "rgba(53,194,107,0.06)", wash: "rgba(40,180,95,0.16)", glow: "rgba(53,194,107,0.6)" }
   };
 
   const TPL = document.createElement("template");
@@ -119,7 +119,8 @@
         radial-gradient(circle at 61% 48%, var(--spot) 0%, transparent 38%),
         radial-gradient(circle at 84% 48%, var(--spot) 0%, transparent 38%);
       filter: blur(1.6px); }
-    .wash { position: absolute; inset: 0; background: var(--wash); }
+    .wash { position: absolute; inset: 0; filter: blur(2px);
+      background: radial-gradient(58% 64% at 50% 50%, var(--wash) 0%, transparent 74%); }
     .tx { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       font-family: "Oswald", "DIN Alternate", "Arial Narrow", sans-serif; font-weight: 500;
       font-size: var(--fs); letter-spacing: 0.06em; line-height: 1; color: var(--c);
@@ -128,9 +129,9 @@
     .hair { position: absolute; left: 0; right: 0; top: 50%; height: 1.2px; margin-top: -0.6px; z-index: 2;
       background: linear-gradient(180deg, rgba(0,0,0,0.95) 0 60%, rgba(255,255,255,0.07) 60% 100%); }
     .reflect { position: absolute; inset: 0; z-index: 3; pointer-events: none;
-      clip-path: polygon(0 0, 100% 0, 100% 26%, 0 46%);
+      clip-path: polygon(0 0, 100% 0, 100% 20%, 0 38%);
       background:
-        linear-gradient(170deg, rgba(206,228,255,0.10) 0%, rgba(186,210,248,0.03) 46%, rgba(255,255,255,0) 82%),
+        linear-gradient(170deg, rgba(206,228,255,0.085) 0%, rgba(186,210,248,0.025) 46%, rgba(255,255,255,0) 82%),
         linear-gradient(100deg, rgba(210,230,255,0.05) 0%, rgba(255,255,255,0) 60%); }
   </style>
   <div class="wrap">
