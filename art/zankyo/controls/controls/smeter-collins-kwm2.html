@@ -91,7 +91,7 @@
   }
   SC += tick(A9, R + 0.6, R - 10, "#c1272d", 2.4);      // the fat red tick standing at nine
   ["1", "3", "5", "7", "9"].forEach((t, j) => { SC += lbl(A0 + (j / 4) * BREAK * SWEEP, 39, "sn", t); });
-  ["+20", "+40", "+60"].forEach((t, j) => { SC += lbl(A9 + ((j + 1) / 3) * (1 - BREAK) * SWEEP, 47, "dbn", t); });
+  ["+20", "+40", "+60"].forEach((t, j) => { SC += lbl(A9 + ((j + 1) / 3) * (1 - BREAK) * SWEEP, [46.5, 47, 49.5][j], "dbn", t); });
 
   const TPL = document.createElement("template");
   TPL.innerHTML = `
@@ -101,8 +101,8 @@
     .wrap { position: absolute; inset: 0; transform-origin: 0 0; }
     svg { display: block; width: ${W}px; height: ${H}px; overflow: visible; }
     text { font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif; fill: #1b1a17; }
-    .sn  { font-size: 7.5px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
-    .dbn { font-size: 5px; letter-spacing: -0.02em; font-weight: 600; text-anchor: middle; dominant-baseline: middle; fill: #c1272d; }
+    .sn  { font-size: 6.5px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
+    .dbn { font-size: 4.2px; letter-spacing: -0.02em; font-weight: 600; text-anchor: middle; dominant-baseline: middle; fill: #c1272d; }
     .cap { font-size: 3.8px; font-weight: 500; letter-spacing: 0.15em; text-anchor: middle; fill: #34322c; }
     .capr{ fill: #9a3630; }
     .mark{ font-size: 3.6px; font-weight: 500; letter-spacing: 0.1em; text-anchor: middle; fill: #514e46; }

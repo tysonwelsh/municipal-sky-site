@@ -66,9 +66,9 @@
   var W = 300, H = 250, NS = "http://www.w3.org/2000/svg";
   // rows: x y w h  n(drums) dw  redAfter redW  fontSize
   var ROWS = [
-    { key: "sale",  x: 30,  y: 46,  w: 240, h: 48, n: 5, dw: 34, redAfter: 3, redW: 14, fs: 30 },
-    { key: "gal",   x: 30,  y: 136, w: 240, h: 40, n: 3, dw: 32, redAfter: 2, redW: 12, fs: 26 },
-    { key: "price", x: 102, y: 213, w: 96,  h: 22, n: 3, dw: 22, redAfter: 2, redW: 8,  fs: 16 }
+    { key: "sale",  x: 30,  y: 46,  w: 240, h: 42, n: 5, dw: 34, redAfter: 3, redW: 14, fs: 30 },
+    { key: "gal",   x: 30,  y: 126, w: 240, h: 36, n: 3, dw: 32, redAfter: 2, redW: 12, fs: 26 },
+    { key: "price", x: 102, y: 198, w: 96,  h: 22, n: 3, dw: 22, redAfter: 2, redW: 8,  fs: 16 }
   ];
 
   var TPL = document.createElement("template");
@@ -94,12 +94,12 @@
       '<stop offset="0.5" stop-color="#63665f"/><stop offset="0.66" stop-color="#a8aaa6"/><stop offset="0.9" stop-color="#e6e8e4"/><stop offset="1" stop-color="#7d7f7b"/>',
     '</linearGradient>',
     '<linearGradient id="drumface" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#b9b3a4"/><stop offset="0.16" stop-color="#e8e4da"/><stop offset="0.42" stop-color="#fbf9f4"/><stop offset="0.62" stop-color="#f1eee5"/><stop offset="0.86" stop-color="#cdc7b8"/><stop offset="1" stop-color="#a49d8e"/>',
+      '<stop offset="0" stop-color="#a49d8e"/><stop offset="0.18" stop-color="#ebe7dd"/><stop offset="0.44" stop-color="#fdfcf9"/><stop offset="0.68" stop-color="#f3f0e7"/><stop offset="0.88" stop-color="#c6bfb0"/><stop offset="1" stop-color="#948d80"/>',
     '</linearGradient>',
     '<linearGradient id="cyl" x1="0" y1="0" x2="0" y2="1">',
-      '<stop offset="0" stop-color="#000" stop-opacity="0.72"/><stop offset="0.1" stop-color="#000" stop-opacity="0.38"/>',
-      '<stop offset="0.26" stop-color="#000" stop-opacity="0.08"/><stop offset="0.42" stop-color="#fff" stop-opacity="0.16"/>',
-      '<stop offset="0.6" stop-color="#000" stop-opacity="0.04"/><stop offset="0.84" stop-color="#000" stop-opacity="0.4"/><stop offset="1" stop-color="#000" stop-opacity="0.76"/>',
+      '<stop offset="0" stop-color="#000" stop-opacity="0.62"/><stop offset="0.12" stop-color="#000" stop-opacity="0.26"/>',
+      '<stop offset="0.3" stop-color="#000" stop-opacity="0.03"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.14"/>',
+      '<stop offset="0.64" stop-color="#000" stop-opacity="0.02"/><stop offset="0.86" stop-color="#000" stop-opacity="0.3"/><stop offset="1" stop-color="#000" stop-opacity="0.66"/>',
     '</linearGradient>',
     '<linearGradient id="recess" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="#0d0c0b"/><stop offset="1" stop-color="#2b2822"/>',
@@ -118,11 +118,10 @@
   '<path d="M 11 60 l 3.5 1.6 l -1.4 3.4 l -3.4 -2 z" fill="#8a8478"/>',
   '<path d="M 150 241 l 7 1.6 l -6 1.6 l -6 -1.4 z" fill="#8a8478" opacity="0.55"/>',
   '<!-- legends -->',
-  '<text class="leg red" x="150" y="31" style="font-size:14px">THIS SALE</text>',
-  '<text class="leg" x="150" y="124" style="font-size:14px">GALLONS</text>',
-  '<text class="leg" x="150" y="205" style="font-size:11px">PRICE PER GALLON</text>',
-  '<text class="mark" x="42" y="77" style="font-size:19px">$</text>',
-  '<text class="mark" x="207" y="230" style="font-size:13px">&#162;</text>',
+  '<text class="leg red" x="150" y="31" style="font-size:15px">THIS SALE $</text>',
+  '<text class="leg" x="150" y="112" style="font-size:15px">GALLONS</text>',
+  '<text class="leg" x="150" y="186" style="font-size:11px">PRICE PER GALLON</text>',
+  '<text class="mark" x="226" y="216" style="font-size:15px">&#162;</text>',
   '<g class="rows"></g>',
   '</svg>',
   '</div>'].join("");
@@ -230,7 +229,7 @@
         self.shadowRoot.querySelector("defs").appendChild(cp);
         var inner = mk("g", { "clip-path": "url(#" + clipId + ")" });
 
-        var drums = [], cx = sx, R = cfg.h * 0.62;
+        var drums = [], cx = sx, R = cfg.fs * 1.62;   // ten numerals round the drum: pitch = one numeral height
         for (var i = 0; i < cfg.n; i++) {
           if (i === cfg.redAfter) {
             inner.appendChild(mk("rect", { x: cx, y: cfg.y, width: cfg.redW, height: cfg.h, fill: "url(#red)" }));
