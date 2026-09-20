@@ -197,6 +197,7 @@ is only suggested by the tape curling off both edges.</p>
     set value(v) { this._v = v == null ? "" : String(v); this.setAttribute("value", this._v); this._layoutTape(); this._render(); }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { if (this._wrap) this._wrap.focus(); }
 
     _build() {
       const root = this.shadowRoot;

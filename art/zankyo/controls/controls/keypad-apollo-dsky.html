@@ -187,6 +187,7 @@ connector, and the AGC's actual verb/noun program logic — this reproduces the 
     set value(v) { this._v = v == null ? "" : String(v); this.setAttribute("value", this._v); }
     get scale() { return this._scale; }
     set scale(s) { this.setAttribute("scale", String(s)); }
+    focus() { const t = this._keyEls && this._keyEls.find(k => k.getAttribute("tabindex") === "0"); if (t) t.focus(); }
 
     _build() {
       const root = this.shadowRoot;
