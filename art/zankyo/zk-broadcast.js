@@ -1796,7 +1796,7 @@
     // hunt or a drift is before the in-point — so the play at the cue is a
     // play, not a seek.
     var startPos = a.inS;
-    try { if (a.rx) startPos = headPlan(a.rx, a.rate || 1)[0].cuePos; } catch (e0) {}
+    try { if (a.rx) startPos = headPlan(a.rx, (a.rate || 1) * headGlide(a.wantT0))[0].cuePos; } catch (e0) {}
     // …and a 走's second reel is fetched once now, into the cache, so the swap
     // inside the sweep is a cache read rather than a cold load mid-signal. (The
     // reels are served immutable for a year; a failure here costs nothing but
@@ -2253,6 +2253,13 @@
     for (i = 0; i < ws.length; i++) if (inS >= ws[i][0] - 1e-3 && inS < ws[i][1]) return ws[i];
     return null;
   }
+  // On a 螺/弛 night every reel runs at rate × glideMul(t) — up to 26 % slow —
+  // so the pre-roll has to be threaded at the rate the reel will actually run
+  // at, or the head reaches its in-point that much late (measured, seed 4 at
+  // far 0.9: 0.6 s behind at the lock, into the window's splice at full level).
+  // The glide moves a few cents a second; its value at t0 is the rate for the
+  // seconds that matter.
+  function headGlide(t) { try { var T = tl(); return (T.gliding && T.gliding() && T.glideMul && t != null) ? T.glideMul(t) : 1; } catch (e) { return 1; } }
   function headPlan(P, rate) {
     rate = rate || 1;
     var out = [], n = P.segments.length, i;
@@ -2463,7 +2470,7 @@
       // two places at once) and the pieces are seeks, scheduled below.
       var head = ms;
       if (buffered) {
-        var HPb = headPlan(P, rate);                        // Q0: the same starts the element takes, so the two modes cannot drift
+        var HPb = headPlan(P, rate * headGlide(t0));        // Q0: the same starts the element takes, so the two modes cannot drift
         var startPiece = function (k, bk) {
           var sk = P.segments[k];
           var bs = N(c.createBufferSource());
@@ -2536,7 +2543,7 @@
       // silence. It fades out over 0.35 s as it reaches the window's edge and
       // the band's static takes its place until the cut. The cut, the burst
       // and the dead tube keep their times.
-      var HPe = headPlan(P, rate), hLast = HPe[HPe.length - 1];
+      var HPe = headPlan(P, rate * headGlide(t0)), hLast = HPe[HPe.length - 1];
       if (hLast.overrunS > 0.05 && isFinite(hLast.edgePos)) {
         var tEdge = t0 + hLast.at + (hLast.edgePos - hLast.pos) / rate;
         if (tEdge < cut - 0.05) {
@@ -2623,7 +2630,7 @@
     // reception is still alive and is recorded on its handle, so a teardown
     // cancels what has not happened yet instead of letting it land on an
     // element the next reception now owns.
-    var HP = headPlan(P, rate);
+    var HP = headPlan(P, rate * headGlide(t0));
     function onCue(at, fn) {
       T.lane("broadcast").at(at, function (t) {
         var lead = Math.max(0, (t - c.currentTime) * 1000);

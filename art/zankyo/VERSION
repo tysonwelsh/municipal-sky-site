@@ -1,1 +1,1 @@
-2.1.0-rc.93 — a broadcast's sound is decoded before it airs, so it no longer drops out when the computer is busy
+2.1.0-rc.94 — on the far nights where the whole station slows or spirals, a broadcast still arrives on its first word instead of just before it
