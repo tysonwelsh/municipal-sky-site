@@ -148,14 +148,6 @@ include '../../includes/header.php';
               </div>
             </div>
           </div>
-
-          <!-- the chin carries only the power lamp, and now sits below BOTH
-               screens — it is the casing's foot, not the tube's (owner,
-               2026-09-18) -->
-          <div class="zk-monitor-chin">
-            <span class="zk-chin-spacer"></span>
-            <span class="zk-led" aria-hidden="true"></span>
-          </div>
         </div>
 
       </div>

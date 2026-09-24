@@ -193,7 +193,6 @@
 .zankyo-scene.is-kyu .zankyo-title { text-shadow: -1.5px 0 var(--red), 1.5px 0 var(--cyan), 0 0 20px rgba(var(--red-rgb), 0.6); }
 .zankyo-scene.is-kyu .zankyo-frame { animation: zk-shake 0.16s infinite; }
 .zankyo-scene.is-kyu .zankyo-scanlines { opacity: 0.8; }
-.zankyo-scene.is-kyu .zk-led { animation: zk-led-flicker 0.3s infinite; }
 @keyframes zk-shake { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-1px,1px); } 50% { transform: translate(1px,-1px); } 75% { transform: translate(-1px,0); } }
 @keyframes zk-led-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
@@ -239,10 +238,10 @@
 @keyframes zk-glitch { 0%,92%,100% { transform: translate(0,0); } 93% { transform: translate(-2px,1px); } 96% { transform: translate(2px,-1px); } }
 
 /* ---------------------------------------------------------------------------
-   CRT MONITOR — plastic housing, recessed curved glass, power LED
+   CRT MONITOR — plastic housing, recessed curved glass
 --------------------------------------------------------------------------- */
 .zk-monitor {
-  position: relative; margin-bottom: 18px; padding: 13px 13px 0;
+  position: relative; margin-bottom: 18px; padding: 13px;   /* no chin since the power lamp came off (2026-09-24): the foot is the same wall as the sides */
   border-radius: 9px; border: 1px solid #000;
   background:
     radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%),
@@ -287,20 +286,6 @@
   content: ""; position: absolute; right: 8%; bottom: 6%; width: 60px; height: 34px; border-radius: 50%;
   background: radial-gradient(closest-side, rgba(190, 200, 210, 0.045), transparent 75%);
   transform: rotate(-18deg);
-}
-.zk-monitor-chin {
-  position: relative; display: flex; align-items: center; gap: 8px;
-  padding: 7px 6px 8px;
-}
-.zk-chin-spacer { flex: 1; }
-.zk-led {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #3a1218, #1d0a0d 70%);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-.zankyo-scene.is-on .zk-led {
-  background: radial-gradient(circle at 35% 30%, #ff8ba4, var(--red) 60%);
-  box-shadow: 0 0 8px rgba(var(--red-rgb), 0.8), 0 0 2px rgba(var(--red-rgb), 0.9), inset 0 0 2px rgba(255,255,255,0.5);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1522,7 +1507,7 @@
   .zk-boot { gap: 6px; }
   .zk-boot-line { font-size: 10px; }
   .zankyo-viz { height: 128px; }
-  .zk-monitor { padding: 9px 9px 0; }
+  .zk-monitor { padding: 9px; }
 
   /* bargraph: slimmer cells, and a tighter gutter to the tube above */
   .zk-bargraph { margin-top: 9px; padding: 0; gap: 3px 8px; }
