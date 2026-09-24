@@ -32,6 +32,7 @@ const path = require("path");
 const CHROME = process.env.ZK_CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+function guard(ms) { return new Promise((r) => { const h = setTimeout(r, ms); if (h.unref) h.unref(); }); }   // a timer that never keeps the process alive
 
 async function launch(opts) {
   opts = opts || {};
@@ -95,7 +96,10 @@ function connect(url) {
       // An expression evaluated in the page, its value returned by value.
       // Promises are awaited. A thrown error comes back as a rejection here.
       const evaluate = async (expr, timeoutMs) => {
-        const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true, timeout: timeoutMs || 60000 });
+        // (bounded here too: `timeout` limits the page's execution, not an
+        // answer that never comes back)
+        const r = await Promise.race([send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true, timeout: timeoutMs || 60000 }),
+          guard((timeoutMs || 60000) + 15000).then(() => { throw new Error("cdp: no answer to Runtime.evaluate in " + Math.round(((timeoutMs || 60000) + 15000) / 1000) + " s"); })]);
         if (r.exceptionDetails) throw new Error("page: " + (r.exceptionDetails.exception && r.exceptionDetails.exception.description || r.exceptionDetails.text));
         return r.result ? r.result.value : undefined;
       };
@@ -110,8 +114,11 @@ function connect(url) {
 async function clickSelector(page, sel) {
   const box = await page.eval("(function(){var e=document.querySelector(" + JSON.stringify(sel) + ");if(!e)return null;e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()");
   if (!box) throw new Error("no element " + sel);
+  // (Q0 r3: bounded. Under a load of ~55 a headless renderer once never
+  // acknowledged the input, and the probe waited on it for good — two 600 s
+  // runs still waiting at 30 min, their pages playing on.)
   for (const type of ["mousePressed", "mouseReleased"]) {
-    await page.send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1 });
+    await Promise.race([page.send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1 }), guard(15000)]);
   }
   return box;
 }

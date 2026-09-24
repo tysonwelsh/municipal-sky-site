@@ -262,9 +262,9 @@ function inHole(rx, rel) { for (const h of rx.holes || []) if (rel >= h.atS - 0.
 // ============================================================================
 function analyze(dirs) {
   const quiet = flag("quiet");
-  const K = ["head gap", "stall", "late start", "splice", "end of file", "wrong reel", "conflict", "overlap", "lip sync", "faded", "dead press", "picture stall"];
+  const K = ["head gap", "stall", "late start", "splice", "end of file", "wrong reel", "conflict", "overlap", "lip sync", "faded", "dead press", "picture stall", "picture freeze"];
   const all = { receptions: 0, auditions: 0, found: {}, unintended: {}, gapMsU: 0, waiting: 0, fallbacks: 0, drops: 0, holes: 0, tapMiss: 0, tapN: 0, consoleErr: 0, shapes: {},
-    sync: [], faded: [], picStall: [], presses: 0, answers: {}, pressWaits: [], stats: [] };
+    sync: [], faded: [], picStall: [], presses: 0, answers: {}, pressWaits: [], stats: [], freeze: [], land: [], runLand: [] };
   for (const k of K) { all.found[k] = 0; all.unintended[k] = 0; }
   const unintended = [];
   const man = manifestById();
@@ -299,15 +299,64 @@ function analyze(dirs) {
       for (const e of rx.err || []) console.log("   page error: " + e);
     }
     const recs = rx.ev.filter((e) => /受信$/.test(e.label) && e.signal && e.signal.rx);
+    // (Q0 r3) THE PICTURE'S FREEZES, from the media events — the critic's
+    // tools/pic-freeze.js, folded in. A freeze runs from a `seeking` or a
+    // `waiting` to the next `seeked` or `playing`: the tube holds one frame.
+    // It is a PAGE SEEK's when it begins within 60 ms of a set:currentTime the
+    // page made on that element, and its length is then that seek's landing
+    // time — the machine's load, reported on every run.
+    const freezesOf = (id) => {
+      if (freezeCache[id]) return freezeCache[id];
+      const ms = rx.media.filter((m) => m.id === id && m.t != null).sort((x, y) => x.t - y.t), out = [];
+      let st = null, bySeek = false;
+      for (const m of ms) {
+        if ((m.ty === "seeking" || m.ty === "waiting") && st == null) { st = m.t; bySeek = rx.calls.some((c) => c.s && c.s.id === id && c.m === "set:currentTime" && Math.abs(c.t - m.t) < 0.06); }
+        else if ((m.ty === "seeked" || m.ty === "playing") && st != null) { out.push({ a: st, b: m.t, bySeek }); st = null; }
+      }
+      if (st != null) out.push({ a: st, b: Infinity, bySeek });
+      return (freezeCache[id] = out);
+    };
+    const freezeCache = {}, runLand = [];
+    // (Q0 r3) THE AUDIO CLOCK AGAINST THE WALL. The recorder stamps each poll
+    // with performance.now() too, so the audio clock's rate can be read over
+    // any 1.5 s. Headless Chrome's muted output is a fake sink on a timer, and
+    // under load it renders in bursts: 5.6× the wall for 8.5 s at a run's
+    // start was measured (r3, three Chromes launched at once). There is no
+    // sound position to hold a picture to while the reference itself runs at
+    // five times real time, and no real device can do it, so lip-sync polls
+    // inside such an excursion (the clock outside 0.8–1.25× the wall) are not
+    // offsets; they are counted and reported beside the piece, never hidden.
+    const wallPts = rx.polls.filter((q) => q[6] != null).map((q) => [q[0], q[6] / 1000]).sort((x, y) => x[0] - y[0]);
+    const idxAt = (t) => { let lo = 0, hi = wallPts.length; while (lo < hi) { const m = (lo + hi) >> 1; if (wallPts[m][0] < t) lo = m + 1; else hi = m; } return lo; };
+    const clockAt = (t) => {
+      if (wallPts.length < 10) return 1;
+      const i0 = idxAt(t - 0.75), i1 = Math.min(wallPts.length - 1, idxAt(t + 0.75));
+      if (i1 <= i0) return 1;
+      const da = wallPts[i1][0] - wallPts[i0][0], dw = wallPts[i1][1] - wallPts[i0][1];
+      return da > 0.5 && dw > 0 ? da / dw : 1;
+    };
+    const excursion = (t) => { const r = clockAt(t); return r > 1.25 || r < 0.8; };
+    all.clockX = all.clockX || [];
     if (rx.state && rx.state.stats) all.stats.push({ run: path.basename(d), fallbacks: rx.state.stats.fallbacks, demoted: rx.state.stats.demoted || null, picSeeks: rx.state.stats.picSeeks || 0,
-      audBlocked: rx.state.stats.audBlocked || 0, audLate: rx.state.stats.audLate || 0, reelsMode: rx.state.reelsMode });
+      audBlocked: rx.state.stats.audBlocked || 0, audLate: rx.state.stats.audLate || 0, reelsMode: rx.state.reelsMode,
+      audStandIn: rx.state.stats.audStandIn || 0, audRescued: rx.state.stats.audRescued || 0, lockSlow: rx.state.stats.lockSlow || 0,   // (Q0 r3)
+      picCatches: rx.state.stats.picCatches || 0, picClk: rx.state.stats.picClk || 1, picReloads: rx.state.stats.picReloads || 0, reelNet: rx.state.stats.reelNet || null });
     // (Q0 r2) THE PRESS: every 受信 press made while nothing was on the air
     // must be answered by a reel within 6 s — the owner's rc.77 rule, and the
     // critic's reading (tools/rx-critic.js), whatever dial() said it did.
     const critF = path.join(d, "crit.json");
     const crit = fs.existsSync(critF) ? JSON.parse(fs.readFileSync(critF, "utf8")) : null;
+    // (Q0 r3) a press the page answered "audition" and then dropped at its
+    // landing (stats.audLateAt) is a dead press whatever came after it
+    const lateAt = (rx.state && rx.state.stats && rx.state.stats.audLateAt) || [];
     if (crit && crit.dial) for (const p of crit.dial) {
       if (p.t == null || p.t > lastT - 40) continue;
+      if (lateAt.some((x) => Math.abs(x - p.t) < 0.05)) {
+        all.presses++; all.answers[p.r] = (all.answers[p.r] || 0) + 1; all.found["dead press"]++; all.unintended["dead press"]++;
+        unintended.push({ run: path.basename(d), kind: "dead press", at: p.t, dur: 0, why: "press answered " + p.r + " and dropped when its reel landed (audLate)" });
+        if (!quiet) console.log("   ! UNINTENDED dead press @" + p.t.toFixed(1) + " → " + p.r + " · dropped at its landing (audLate)");
+        continue;
+      }
       all.presses++; all.answers[p.r] = (all.answers[p.r] || 0) + 1;
       const onAir = recs.some((e) => e.signal.t0 - 4.5 <= p.t && p.t <= e.signal.t0 + e.signal.rx.spanS + 0.8);
       const next = recs.map((e) => e.signal.t0).filter((x) => x > p.t - 0.01).sort((x, y) => x - y)[0];
@@ -570,26 +619,60 @@ function analyze(dirs) {
       //        position, polled) against the sound (the head the page
       //        threaded, run at its rate and the glide's), over every settled
       //        piece — from 0.5 s after it opens to its end. The gate is the
-      //        critic's: |picture − sound| ≤ 120 ms on ≥ 95 % of each piece. ---
+      //        critic's: |picture − sound| ≤ 120 ms on ≥ 95 % of each piece.
+      //        (Q0 r3, the critic's r2 terms) A piece may miss that only where
+      //        a page seek in it took more than 0.5 s to land — listed, with
+      //        that time — and no piece may sit beyond 150 ms at the median.
+      //        Polls where the element has no frame (readyState < 2) are not
+      //        offsets; they are the freezes and stalls below. ---
       if (bufModeP && s.head && s.head.length && vid != null) {
+        const frz = freezesOf(vid);
+        for (const f of frz) if (f.bySeek && f.b >= t0 - 1 && f.a <= t0 + P.spanS && !f.seen) { f.seen = true; if (isFinite(f.b)) { runLand.push(f.b - f.a); all.land.push(f.b - f.a); } }
         for (let si = 0; si < P.segments.length; si++) {
           const sg = P.segments[si], a0 = t0 + sg.atS + 0.5, a1 = t0 + sg.atS + sg.onS + (sg.holeS || 0) - 0.1;
-          // Only where the element HAS a frame (readyState ≥ 2). A player that
-          // cannot produce one is not out of sync, it is stalled: its media
-          // pipeline starved (measured at a load average of ~50 — seeks, a
-          // reload and play() all went unanswered for up to 19 s). That is
-          // reported as its own reading, "picture stall", in seconds; the sound
-          // does not depend on it in decoded mode.
-          const offs = []; let stallN = 0, allN = 0;
-          for (const q of pl) { if (q[0] < a0 || q[0] > a1) continue; allN++; if (q[3] < 2) { stallN++; continue; } const p = posRaw(q[0]); if (p != null) offs.push(q[2] - p); }
+          // (Q0 r3) FROZEN, per settled piece: the tools/pic-freeze.js reading
+          // and its gate — frozen ≤ 5 % of the piece, ≤ 2 page seeks in it
+          if (a1 - a0 >= 1) {
+            let fr = 0, frSeek = 0; const slow = [];
+            for (const f of frz) {
+              const o = Math.max(0, Math.min(a1, f.b) - Math.max(a0, f.a)); if (o <= 0) continue;
+              fr += o; if (f.bySeek) { frSeek += o; slow.push(isFinite(f.b) ? f.b - f.a : Infinity); }
+            }
+            const nSeek = rx.calls.filter((c) => c.s && c.s.id === vid && c.m === "set:currentTime" && c.t >= a0 && c.t <= a1).length;
+            all.freeze.push({ run: path.basename(d), id: s.id, aud, piece: si, s: a1 - a0, fr, frSeek, nSeek });
+            if (fr / (a1 - a0) > 0.05 || nSeek > 2)
+              push({ kind: "picture freeze", at: +sg.atS.toFixed(2), dur: +fr.toFixed(2), env: 1, intended: false,
+                why: "piece " + si + ": the tube held a frame for " + fr.toFixed(2) + " s of " + (a1 - a0).toFixed(1) + " (" + (100 * fr / (a1 - a0)).toFixed(1) + " %; " + frSeek.toFixed(2) + " s from page seeks) · " + nSeek + " page seeks · landings " + slow.map((x) => isFinite(x) ? x.toFixed(2) : "∞").join(", ") });
+          }
+          const slowSeek = frz.filter((f) => f.bySeek && f.b > a0 && f.a < a1).map((f) => f.b - f.a).filter((x) => x > 0.5);
+          const inSeekFreeze = (t) => frz.some((f) => f.bySeek && t >= f.a && t <= f.b);
+          const offs = []; let stallN = 0, allN = 0, xN = 0, xMax = 1;
+          for (const q of pl) { if (q[0] < a0 || q[0] > a1) continue; allN++; if (q[3] < 2) { if (!inSeekFreeze(q[0])) stallN++; continue; }
+            if (excursion(q[0])) { xN++; const r = clockAt(q[0]); if (Math.abs(Math.log(r)) > Math.abs(Math.log(xMax))) xMax = r; continue; }
+            const p = posRaw(q[0]); if (p != null) offs.push(q[2] - p); }
+          const xS = allN ? (a1 - a0) * xN / allN : 0;
+          if (xN) all.clockX.push({ run: path.basename(d), id: s.id, aud, piece: si, s: +xS.toFixed(1), r: +xMax.toFixed(2) });
+          // PICTURE STALL: no frame, and not because the page sought (that is
+          // the freeze above, and gated there) — the media pipeline starved;
+          // the sound is the buffer's and plays on. Reported, not gated.
           if (stallN && allN) { const secs = (a1 - a0) * stallN / allN; all.picStall.push({ run: path.basename(d), id: s.id, aud, piece: si, s: +secs.toFixed(1) });
-            if (secs >= 1) push({ kind: "picture stall", at: +sg.atS.toFixed(2), dur: +secs.toFixed(2), env: 1, intended: false, covered: true, why: "piece " + si + ": the element had no frame (readyState < 2) for " + secs.toFixed(1) + " s of " + (a1 - a0).toFixed(1) + " — the sound plays on; the tube holds its last frame" }); }
+            if (secs >= 1) push({ kind: "picture stall", at: +sg.atS.toFixed(2), dur: +secs.toFixed(2), env: 1, intended: false, covered: true, why: "piece " + si + ": the element had no frame (readyState < 2, no page seek in flight) for " + secs.toFixed(1) + " s of " + (a1 - a0).toFixed(1) + " — the sound plays on; the tube holds its last frame" }); }
           if (offs.length < 10) continue;
+          // (Q0 r3) the AUDIO clock against the wall over the piece, where the
+          // recorder stamped its polls with both: a reading of the machine,
+          // reported beside a miss, never used to excuse one
+          const pw = pl.filter((q) => q[0] >= a0 && q[0] <= a1 && q[6] != null);
+          const clkW = pw.length > 5 ? (pw[pw.length - 1][0] - pw[0][0]) / ((pw[pw.length - 1][6] - pw[0][6]) / 1000) : null;
           const okShare = offs.filter((o) => Math.abs(o) <= 0.12).length / offs.length;
           const so = offs.slice().sort((x, y) => x - y), med = so[so.length >> 1], worst = Math.abs(so[0]) > Math.abs(so[so.length - 1]) ? so[0] : so[so.length - 1];
-          all.sync.push({ run: path.basename(d), id: s.id, aud, piece: si, n: offs.length, okShare, med, worst });
-          if (okShare < 0.95) push({ kind: "lip sync", at: +sg.atS.toFixed(2), dur: +sg.onS.toFixed(2), env: 1, intended: false,
-            why: "piece " + si + ": picture within 120 ms of the sound on " + (okShare * 100).toFixed(0) + " % of " + offs.length + " polls · median " + (med * 1000).toFixed(0) + " ms · worst " + (worst * 1000).toFixed(0) + " ms" });
+          all.sync.push({ run: path.basename(d), id: s.id, aud, piece: si, n: offs.length, okShare, med, worst, slow: slowSeek.length > 0 });
+          const excused = slowSeek.length > 0 && Math.abs(med) <= 0.15;
+          if (okShare < 0.95 || Math.abs(med) > 0.15) push({ kind: "lip sync", at: +sg.atS.toFixed(2), dur: +sg.onS.toFixed(2), env: 1, intended: excused,
+            why: "piece " + si + ": picture within 120 ms of the sound on " + (okShare * 100).toFixed(0) + " % of " + offs.length + " polls · median " + (med * 1000).toFixed(0) + " ms · worst " + (worst * 1000).toFixed(0) + " ms" +
+              (Math.abs(med) > 0.15 ? " · MEDIAN beyond 150 ms" : excused ? " · excused: a page seek in it took " + slowSeek.map((x) => isFinite(x) ? x.toFixed(2) : "∞").join(", ") + " s to land" : " · no seek over 0.5 s to excuse it") +
+              (clkW != null && (clkW < 0.8 || clkW > 1.25) ? " · the audio clock ran at " + clkW.toFixed(2) + "× the wall" : "") +
+              (xN ? " · " + xS.toFixed(1) + " s not counted: the audio clock at up to " + xMax.toFixed(2) + "× the wall" : "") });
+          else if (xN && !quiet) console.log("       (lip sync, piece " + si + ": " + xS.toFixed(1) + " s not counted — the audio clock ran at up to " + xMax.toFixed(2) + "× the wall; the rest within 120 ms on " + (okShare * 100).toFixed(0) + " %)");
         }
       }
       // --- 6. (Q0 r2) FADED: seconds where the page has faded the reel out at
@@ -629,8 +712,11 @@ function analyze(dirs) {
         for (const f of found) console.log("     " + (f.intended ? "  intended " : f.covered ? "  covered  " : "! UNINTENDED ") + f.kind + " @" + f.at + "s " + (f.dur * 1000).toFixed(0) + " ms env " + f.env + " — " + f.why);
       }
     }
+    { const a = runLand.slice().sort((x, y) => x - y), q = (p) => a.length ? a[Math.min(a.length - 1, Math.floor(a.length * p))] : NaN;
+      all.runLand.push({ run: path.basename(d), n: a.length, p50: q(0.5), p90: q(0.9), max: a.length ? a[a.length - 1] : NaN }); }
   }
   const U = K.reduce((a, k) => a + all.unintended[k], 0);
+  const qq = (arr, p) => { const a = arr.slice().sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * p))] : NaN; };
   console.log("\n== TOTAL over " + dirs.length + " run(s): " + all.receptions + " receptions + " + all.auditions + " auditions (" + Object.keys(all.shapes).length + " shapes)");
   console.log("   " + K.map((k) => k + " " + all.found[k] + "/" + all.unintended[k] + "u").join(" · ") + " · unintended silence " + all.gapMsU.toFixed(0) + " ms");
   console.log("   waiting events " + all.waiting + " · fallbacks " + all.fallbacks + " · tap misses " + all.tapMiss + "/" + all.tapN + " · console errors " + all.consoleErr);
@@ -640,6 +726,14 @@ function analyze(dirs) {
     const okS = all.sync.map((x) => x.okShare).sort((x, y) => x - y), med = all.sync.map((x) => x.med).sort((x, y) => x - y);
     console.log("   lip sync (decoded): " + all.sync.length + " settled pieces · within 120 ms: min " + (okS[0] * 100).toFixed(0) + " % / median " + (okS[okS.length >> 1] * 100).toFixed(0) + " % · median offset " + (med[med.length >> 1] * 1000).toFixed(0) + " ms (range " + (med[0] * 1000).toFixed(0) + " … " + (med[med.length - 1] * 1000).toFixed(0) + ") · " + all.sync.filter((x) => x.okShare < 0.95).length + " pieces under 95 %");
   }
+  if (all.freeze.length) {
+    const fs2 = all.freeze, sec = fs2.reduce((a, x) => a + x.s, 0), fr = fs2.reduce((a, x) => a + x.fr, 0), frS = fs2.reduce((a, x) => a + x.frSeek, 0);
+    console.log("   picture freeze (decoded, settled pieces): " + fs2.length + " pieces, " + sec.toFixed(0) + " s · frozen " + fr.toFixed(1) + " s (" + (100 * fr / sec).toFixed(1) + " %; " + frS.toFixed(1) + " s from page seeks) · page seeks " + fs2.reduce((a, x) => a + x.nSeek, 0) +
+      " · pieces over (frozen > 5 % or > 2 seeks): " + fs2.filter((x) => x.fr / x.s > 0.05 || x.nSeek > 2).length);
+  }
+  for (const rl of all.runLand) console.log("   seek landing " + rl.run + ": " + rl.n + " page seeks · p50 " + (isNaN(rl.p50) ? "-" : rl.p50.toFixed(2)) + " s · p90 " + (isNaN(rl.p90) ? "-" : rl.p90.toFixed(2)) + " s · max " + (isNaN(rl.max) ? "-" : rl.max.toFixed(2)) + " s");
+  if (all.land.length > 1 && all.runLand.length > 1) console.log("   seek landing, all runs: " + all.land.length + " · p50 " + qq(all.land, 0.5).toFixed(2) + " s · p90 " + qq(all.land, 0.9).toFixed(2) + " s");
+  if (all.clockX && all.clockX.length) console.log("   audio-clock excursions (the machine's audio clock outside 0.8–1.25× the wall; those lip-sync polls not counted): " + all.clockX.length + " pieces, " + all.clockX.reduce((a2, x) => a2 + x.s, 0).toFixed(1) + " s · " + all.clockX.map((x) => x.run.split("-")[0] + " " + x.id + " " + x.s + " s @" + x.r + "×").join(", "));
   if (all.picStall.length) console.log("   picture stalls (the element had no frame; reported, not gated — the sound is the buffer's): " + all.picStall.filter((x) => x.s >= 1).length + " pieces ≥ 1 s, " + all.picStall.reduce((a2, x) => a2 + x.s, 0).toFixed(1) + " s in all · " + all.picStall.filter((x) => x.s >= 1).map((x) => x.id + " " + x.s + " s").join(", "));
   const fb = all.faded.filter((x) => x.aud), fr = all.faded.filter((x) => !x.aud);
   console.log("   faded at env ≥ 0.5: auditions " + fb.length + " edges, " + fb.reduce((a, x) => a + x.s, 0).toFixed(1) + " s (max " + (fb.length ? Math.max(...fb.map((x) => x.s)).toFixed(2) : "0") + ") · broadcasts " + fr.length + " edges, " + fr.reduce((a, x) => a + x.s, 0).toFixed(1) + " s (max " + (fr.length ? Math.max(...fr.map((x) => x.s)).toFixed(2) : "0") + ")" + (fr.some((x) => x.whole || x.sped) ? " · declared (whole thought / tuned reel sped up): " + fr.filter((x) => x.whole || x.sped).map((x) => x.id + " " + x.s.toFixed(2)).join(", ") : ""));
