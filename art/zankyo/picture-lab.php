@@ -14,12 +14,15 @@
 //
 //   · a reel (or the test card), and the frame it is paused on
 //   · texture: Math.random, or a seeded stream (pixel-reproducible captures)
-//   · the character: drawn, or forced (axes as JSON; archetypes and single
-//     impairments arrive with P1/P2 and are refused by name until then)
+//   · the character: drawn, or forced — an archetype (§4.1, and 今 for rc.91's
+//     look restated), one P1 kind alone ({"impairment":"影","sev":0.5}), or
+//     axes as JSON; P2's kinds are refused by name
 //   · the shape: 即/探/浮 × 常/戻/断/走 × 切/残/絶, and the time on air
 //   · LIVE (the page's clock and rAF) or FROZEN (step frame by frame)
-//   · a strip capture of one reception (PNG), and a 4×3 contact sheet: the
-//     same reel under twelve receptions, side by side, at the same moment
+//   · a strip capture of one reception (PNG); a 4×3 contact sheet: the same
+//     reel under twelve receptions, side by side, at the same moment (it
+//     honours the force field, so "one archetype × 12 seeds" is a force away);
+//     and the ARCHETYPE sheet: the eight archetypes, 4×2, at one severity
 // ============================================================================
 $page_title = "Picture Lab — ZANKYŌ · Municipal Sky";
 $page_description = "A private bench for the ZANKYŌ second set's picture.";
@@ -62,7 +65,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
 }
 ?>
 <div class="zpl">
-  <h1>映り · PICTURE LAB <span class="zpl-sub">PLAN-SIGNAL-PICTURE §6.1 · P0: one character, rc.91's look</span></h1>
+  <h1>映り · PICTURE LAB <span class="zpl-sub">PLAN-SIGNAL-PICTURE §6.1 · P1: the character drawn per reception</span></h1>
   <p>The tube above is driven from here, not by the receiver. <b>Do not press PLAY</b> on this page. Choose a reel and a shape,
      press <b>receive</b>, then step it frozen or let it run live. Captures are exact when the texture is seeded.</p>
   <div class="zpl-row">
@@ -79,7 +82,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
     <label>dropouts <input type="checkbox" id="zpl-drops" checked /></label>
   </div>
   <div class="zpl-row">
-    <label class="zpl-wide">force <input type="text" id="zpl-force" placeholder='{"axes":{"tear":{"amp":6}}}  ·  blank = as drawn' /></label>
+    <label class="zpl-wide">force <input type="text" id="zpl-force" placeholder='{"archetype":"遠","sev":0.8}  ·  {"impairment":"影","sev":0.5}  ·  {"archetype":"今"}  ·  blank = as drawn' /></label>
   </div>
   <div class="zpl-row">
     <button type="button" id="zpl-rx">receive</button>
@@ -92,6 +95,8 @@ if ($zk_a0 === false || $zk_b0 === false) {
     <span class="zpl-sep"></span>
     <button type="button" id="zpl-strip">capture strip</button>
     <button type="button" id="zpl-sheet">contact sheet 4×3</button>
+    <button type="button" id="zpl-arch">archetypes 4×2</button>
+    <label>at sev <input type="number" id="zpl-arch-sev" value="0.65" min="0" max="1" step="0.05" style="width:4em" /></label>
     <label>sheet at <input type="number" id="zpl-sheet-at" value="3" min="0" step="0.5" style="width:4em" /> s into the hold</label>
   </div>
   <div class="zpl-state" id="zpl-state">—</div>
@@ -194,7 +199,9 @@ if ($zk_a0 === false || $zk_b0 === false) {
     });
   }
   function applyTexture() { var t = $("zpl-tex").value.trim(); D.seedTexture(t === "" ? null : +t); }
+  var forceOverride = null;                                 // the archetype sheet's, for one reception at a time
   function applyForce() {
+    if (forceOverride) return D.force(forceOverride);
     var f = $("zpl-force").value.trim(), r = { ok: true };
     if (!f) { D.force(null); return r; }
     try { r = D.force(JSON.parse(f)); } catch (e) { r = { ok: false, why: "not JSON: " + e.message }; }
@@ -220,10 +227,11 @@ if ($zk_a0 === false || $zk_b0 === false) {
     note((D.frozen() ? "FROZEN" : "LIVE") + "  ·  clock " + (D.clock() / 1000).toFixed(3) + " s  ·  phase " + s.phase + "  ·  strength " + s.strength.toFixed(3) +
          (e != null && e > -0.5 && e < cur.P.spanS + 2.5 ? "  ·  " + e.toFixed(2) + " s into the reception (span " + cur.P.spanS.toFixed(1) + " s)" : "") +
          "\nframe " + s.frameMs + " ms mean · " + s.worstMs + " ms worst · canvas filter " + (s.hasFilter ? "yes" : "no (the Safari path)"));
-    $("zpl-ch").textContent = "character  " + JSON.stringify(D.character());
+    var ch = D.character();
+    $("zpl-ch").textContent = "character  " + (ch.archetype || ch.name) + " · " + ch.tier + " · sev " + ch.sev + " · kinds " + JSON.stringify(ch.kinds) + "\n" + JSON.stringify(ch);
   }
 
-  $("zpl-rx").addEventListener("click", function () { receive(+$("zpl-seed").value || 0).then(show); });
+  $("zpl-rx").addEventListener("click", function () { receive(+$("zpl-seed").value || 0).then(function (c) { if (c) show(); }); });   // a refusal stays on screen
   $("zpl-frz").addEventListener("click", function () { stopRun(); D.freeze(); show(); });
   $("zpl-s1").addEventListener("click", function () { stopRun(); if (!D.frozen()) D.freeze(); stepN(1); });
   $("zpl-s10").addEventListener("click", function () { stopRun(); if (!D.frozen()) D.freeze(); stepN(10); });
@@ -274,6 +282,27 @@ if ($zk_a0 === false || $zk_b0 === false) {
           runTo(c.t0 + c.P.segments[0].atS + at);
           sx.drawImage(tube, (k % 4) * w, Math.floor(k / 4) * h, w, h);
           sx.fillStyle = "rgba(200,255,210,0.8)"; sx.font = "11px monospace"; sx.fillText("seed " + (base + k), (k % 4) * w + 6, Math.floor(k / 4) * h + 14);
+          finish();
+        }
+        k++; next();
+      });
+    })();
+  });
+  $("zpl-arch").addEventListener("click", function () {
+    stopRun(); if (!D.frozen()) D.freeze(); finish();
+    var tube = tubeCanvas(), w = Math.round(tube.width / 2), h = Math.round(tube.height / 2), at = +$("zpl-sheet-at").value || 0, sev = +$("zpl-arch-sev").value;
+    var ids = window.ZankyoPicture.ARCHETYPES.map(function (a) { return a.id; });
+    var sheet = document.createElement("canvas"); sheet.width = w * 4; sheet.height = h * 2;
+    var sx = sheet.getContext("2d"); sx.fillStyle = "#000"; sx.fillRect(0, 0, sheet.width, sheet.height);
+    var seed = +$("zpl-seed").value || 0, k = 0;
+    (function next() {
+      if (k >= ids.length) { forceOverride = null; output(sheet, "archetypes-" + ($("zpl-reel").value || "card") + "-" + seed + ".png"); show(); return; }
+      forceOverride = { archetype: ids[k], sev: isFinite(sev) ? sev : 0.65 };
+      receive(seed + k).then(function (c) {                   // a seed each: one seed would put every archetype on the same envelopes and lull
+        if (c) {
+          runTo(c.t0 + c.P.segments[0].atS + at);
+          sx.drawImage(tube, (k % 4) * w, Math.floor(k / 4) * h, w, h);
+          sx.fillStyle = "rgba(200,255,210,0.8)"; sx.font = "11px monospace"; sx.fillText(ids[k] + " · sev " + forceOverride.sev + " · seed " + (seed + k), (k % 4) * w + 6, Math.floor(k / 4) * h + 14);
           finish();
         }
         k++; next();
