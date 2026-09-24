@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — crack options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../zankyo.css" />
+<style>
+/* ===========================================================================
+   THE CRACK — first set of options (dev-only mockup, 2026-09-24).
+   The owner likes the SHAPES of the cracks, but they read as white lines
+   drawn over the screen rather than breaks IN the glass. Same pattern data,
+   same tube, same glass and scanlines as the live set (zankyo.css is the
+   real stylesheet); only the crack's rendering changes. Each option is shown
+   on the dark tube (most of the night) and over a picture (a frame from
+   bbc1-ni-closedown-1973 through the live P39 ramp, the shards slipped the
+   way compose() slips them).
+   =========================================================================== */
+body { margin: 0; padding: 36px 20px 90px; background: #f4f2ee; font-family: "JetBrains Mono", monospace; color: #3a3640; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+h1 { font-family: "Orbitron", sans-serif; font-size: 18px; letter-spacing: 0.1em; color: #111; margin: 0 0 8px; }
+.lede { font-size: 13px; line-height: 1.6; margin: 0 0 10px; }
+.ctl { font-size: 12px; margin: 0 0 26px; }
+.ctl button { font: inherit; padding: 4px 10px; margin-right: 6px; border: 1px solid #999; background: #fff; cursor: pointer; }
+.ctl button.on { background: #111; color: #fff; border-color: #111; }
+.opt { margin: 30px 0 8px; font-size: 13px; line-height: 1.5; }
+.opt b { font-family: "Orbitron", sans-serif; font-size: 15px; letter-spacing: 0.08em; color: #111; margin-right: 8px; }
+.opt span { font-family: "Shippori Mincho", serif; font-weight: 700; }
+.opt p { margin: 4px 0 0; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.bezel { padding: 14px; border-radius: 12px; background: linear-gradient(180deg, #2a2723, #16140f); box-shadow: 0 6px 16px rgba(0,0,0,0.4); }
+
+.bezel .zankyo-scene { padding: 0; min-height: 0; background: none; }
+.cap { font-size: 11px; color: #777; margin-top: 6px; text-align: center; }
+.zk-crack.lit { mix-blend-mode: color-dodge; }   /* option D: the light in the crack is the picture's light */
+@media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ZANKYŌ · crack options</h1>
+  <p class="lede">The same crack shapes, rendered four ways. Each option is shown on the dark screen (how the set looks most of the night) and with a picture on it. Option A is today's crack, for comparison. Use the buttons to switch between the night's four crack patterns.</p>
+  <div class="ctl" id="ctl"></div>
+  <div id="opts"></div>
+</div>
+
+<script>
+(function () {
+  // ---- the pattern data, verbatim from zk-set.js (A and D shown; B, C follow the same grammar) ----
+  var A0 = [296, 74];
+  var PATS = {
+    A: { stars: [[A0[0], A0[1], 7]],
+      cracks: [
+        [[322, -2], [312, 28], [310, 40], A0],
+        [A0, [262, 118], [250, 130], [228, 160], [215, 175], [200, 214], [190, 240], [178, 272], [170, 302]],
+        [A0, [318, 82], [340, 90], [366, 92], [402, 105]],
+        [[215, 175], [186, 170], [160, 168], [136, 176], [110, 180], [84, 172], [60, 176], [30, 186], [-2, 190]],
+        [[250, 130], [258, 146], [262, 150], [259, 162], [258, 172]],
+        [[340, 90], [346, 108], [343, 122]],
+        [[110, 180], [104, 196], [108, 212]],
+      ],
+      chip: [[0, 262], [16, 268], [26, 282], [40, 288], [48, 302], [-2, 302]],
+      shards: [
+        { poly: [[0, 0], [322, 0], [312, 28], [310, 40], A0, [262, 118], [250, 130], [228, 160], [215, 175], [186, 170], [160, 168], [136, 176], [110, 180], [84, 172], [60, 176], [30, 186], [0, 190]], dx: 0, dy: 0, a: 1 },
+        { poly: [[322, 0], [400, 0], [400, 105], [366, 92], [340, 90], [318, 82], A0, [310, 40], [312, 28]], dx: 3, dy: -2, a: 0.93 },
+        { poly: [A0, [318, 82], [340, 90], [366, 92], [400, 105], [400, 300], [170, 300], [178, 272], [190, 240], [200, 214], [215, 175], [228, 160], [250, 130], [262, 118]], dx: -4, dy: 3, a: 1 },
+        { poly: [[0, 190], [30, 186], [60, 176], [84, 172], [110, 180], [136, 176], [160, 168], [186, 170], [215, 175], [200, 214], [190, 240], [178, 272], [170, 300], [0, 300]], dx: 2, dy: 5, a: 0.96 },
+      ] },
+  };
+  var D0 = [212, 58], D1 = [330, 230];
+  PATS.D = { stars: [[D0[0], D0[1], 7], [D1[0], D1[1], 5]],
+    cracks: [
+      [D0, [196, 84], [176, 110], [162, 146], [140, 176], [126, 212], [104, 244], [92, 276], [86, 302]],
+      [D0, [240, 66], [272, 60], [304, 70], [336, 64], [366, 74], [402, 68]],
+      [[162, 146], [130, 140], [96, 148], [60, 140], [30, 150], [-2, 144]],
+      [D0, [218, 30], [210, -2]],
+      [[272, 60], [278, 80], [272, 96]],
+      [D1, [318, 214], [312, 200]],
+      [D1, [346, 244], [352, 260]],
+    ],
+    chip: [[-2, 268], [12, 276], [24, 290], [30, 302], [-2, 302]],
+    shards: [
+      { poly: [[0, 0], [210, 0], [218, 30], D0, [196, 84], [176, 110], [162, 146], [130, 140], [96, 148], [60, 140], [30, 150], [0, 144]], dx: -2, dy: -2, a: 0.96 },
+      { poly: [[210, 0], [400, 0], [400, 68], [366, 74], [336, 64], [304, 70], [272, 60], [240, 66], D0, [218, 30]], dx: -4, dy: 2, a: 0.93 },
+      { poly: [[0, 144], [30, 150], [60, 140], [96, 148], [130, 140], [162, 146], [140, 176], [126, 212], [104, 244], [92, 276], [86, 300], [0, 300]], dx: 2, dy: 3, a: 1 },
+      { poly: [D0, [240, 66], [272, 60], [304, 70], [336, 64], [366, 74], [400, 68], [400, 300], [86, 300], [92, 276], [104, 244], [126, 212], [140, 176], [162, 146], [176, 110], [196, 84]], dx: 3, dy: -3, a: 1 },
+    ] };
+
+  var CRACK_W = [1.1, 1.4, 1.0, 1.1, 0.5, 0.45, 0.5];
+  var CRACK_DASH = ["11 7 4 15 19 5", "16 6 9 13 5 21 12 4", "8 10 14 5 6 17", "13 9 6 4 18 7 10 12", "6 9 4 11", "5 8", "7 6 3 9"];
+  var NS = ' vector-effect="non-scaling-stroke"';
+  function ptsToPath(pl) { return "M" + pl.map(function (p) { return (+p[0]).toFixed(1) + " " + (+p[1]).toFixed(1); }).join(" L"); }
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // the wander a real fracture has at small scale: every segment subdivided at
+  // ~4 units, pushed sideways by two slow sines and a little grit; ends pinned
+  function wander(pl, seed) {
+    var R = rng(seed), out = [pl[0]], ph1 = R() * 6.3, ph2 = R() * 6.3, s = 0;
+    for (var i = 1; i < pl.length; i++) {
+      var p = pl[i - 1], q = pl[i], dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy), n = Math.max(1, Math.round(L / 4));
+      var nx = -dy / L, ny = dx / L;
+      for (var k = 1; k <= n; k++) {
+        var t = k / n; s += L / n;
+        var off = (k === n) ? 0 : (0.9 * Math.sin(s / 7 + ph1) + 0.5 * Math.sin(s / 2.3 + ph2) + (R() - 0.5) * 0.9);
+        out.push([p[0] + dx * t + nx * off, p[1] + dy * t + ny * off]);
+      }
+    }
+    return out;
+  }
+  // split a polyline into runs of n points, each with its own weight
+  function runs(pl, n) { var o = []; for (var i = 0; i < pl.length - 1; i += n) o.push(pl.slice(i, Math.min(pl.length, i + n + 1))); return o; }
+
+  // the chip, as today (it already reads as a missing flake)
+  function chipSVG(P) {
+    var chip = ptsToPath(P.chip) + " Z";
+    return '<path d="' + chip + '" fill="#040605"/>' +
+      '<path d="' + chip + '" fill="none" stroke="rgba(120,140,120,0.32)" stroke-width="2.4"' + NS + '/>' +
+      '<path d="' + chip + '" fill="none" stroke="rgba(230,255,235,0.5)" stroke-width="0.8"' + NS + ' stroke-dasharray="9 4 14 3"/>';
+  }
+
+  // ---------------------------------------------------------------- A · today (verbatim buildCrackSVG)
+  function svgToday(P) {
+    var paths = P.cracks.map(ptsToPath), d = paths.join(" "), star = "";
+    P.stars.forEach(function (s) {
+      for (var i = 0; i < s[2]; i++) {
+        var a = -0.4 + i * (6.5 / s[2]), r0 = 2 + (i % 3), r1 = 7 + ((i * 5) % 9);
+        star += "M" + (s[0] + Math.cos(a) * r0).toFixed(1) + " " + (s[1] + Math.sin(a) * r0).toFixed(1) + " L" + (s[0] + Math.cos(a + 0.1) * r1).toFixed(1) + " " + (s[1] + Math.sin(a + 0.1) * r1).toFixed(1) + " ";
+      }
+    });
+    var html = '<defs><filter id="bA" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>' + chipSVG(P) +
+      '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="2"' + NS + ' transform="translate(1.1 1.3)" filter="url(#bA)"/>';
+    P.cracks.forEach(function (pl, i) {
+      var w = CRACK_W[i % 7], dash = CRACK_DASH[i % 7], deep = i < 4;
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(190,215,200,0.2)" stroke-width="' + (w * 1.7).toFixed(2) + '"' + NS + ' filter="url(#bA)"/>';
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(235,250,240,' + (deep ? 0.34 : 0.22) + ')" stroke-width="' + w.toFixed(2) + '"' + NS + ' stroke-linecap="round"/>';
+      html += '<path d="' + paths[i] + '" fill="none" stroke="rgba(255,255,250,' + (deep ? 0.7 : 0.45) + ')" stroke-width="' + (w * 0.8).toFixed(2) + '"' + NS + ' stroke-linecap="round" stroke-dasharray="' + dash + '"/>';
+    });
+    html += '<path d="' + star + '" fill="none" stroke="rgba(240,255,245,0.55)" stroke-width="0.6"' + NS + '/>';
+    P.stars.forEach(function (s) { html += '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="' + (s[2] >= 7 ? 2.2 : 1.4) + '" fill="rgba(240,255,245,0.3)" filter="url(#bA)"/>'; });
+    return html;
+  }
+
+  // shared by B–D: the wandering path, run by run, with a weight that swells
+  // and thins along it and dead-end hairlines that fade to nothing at the tip
+  function crackRuns(P, fn) {
+    var out = "";
+    P.cracks.forEach(function (pl, i) {
+      var W = wander(pl, 101 + i * 17), R = rng(900 + i), deep = i < 4, rs = runs(W, 3);
+      rs.forEach(function (seg, k) {
+        var u = k / Math.max(1, rs.length - 1);
+        var tip = deep ? 1 : Math.max(0.08, 1 - u * 0.95);          // hairlines die out
+        var swell = 0.7 + 0.5 * R();                                  // no two runs the same weight
+        out += fn(ptsToPath(seg), i, deep, tip * swell, R);
+      });
+    });
+    return out;
+  }
+  // the crushed spot at the blow: a frosted core and a few spall flakes knocked out of the surface
+  function impact(P, strength) {
+    var h = "";
+    P.stars.forEach(function (s, si) {
+      var R = rng(55 + si), big = s[2] >= 7;
+      h += '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="' + (big ? 4.5 : 3) + '" fill="url(#frost)" opacity="' + strength + '"/>';
+      var n = big ? 7 : 4;
+      for (var k = 0; k < n; k++) {
+        var a = R() * 6.3, r = 3 + R() * (big ? 7 : 4), sz = 1.2 + R() * 2.2, pts = [];
+        for (var j = 0; j < 3 + (R() < 0.5 ? 1 : 0); j++) { var b = a + j * 2.1 + R() * 0.6; pts.push([s[0] + Math.cos(a) * r + Math.cos(b) * sz, s[1] + Math.sin(a) * r + Math.sin(b) * sz]); }
+        h += '<path d="' + ptsToPath(pts) + ' Z" fill="rgba(220,240,225,' + (0.08 + R() * 0.1) * strength + ')" stroke="rgba(0,0,0,' + 0.5 * strength + ')" stroke-width="0.5"' + NS + '/>';
+      }
+      // the radial hairlines, wandering and dying out
+      for (var i = 0; i < s[2]; i++) {
+        var a2 = -0.4 + i * (6.5 / s[2]), r0 = 2 + (i % 3), r1 = 7 + ((i * 5) % 9) + R() * 5;
+        var line = wander([[s[0] + Math.cos(a2) * r0, s[1] + Math.sin(a2) * r0], [s[0] + Math.cos(a2 + 0.1) * r1, s[1] + Math.sin(a2 + 0.1) * r1]], 300 + i + si * 20);
+        h += '<path d="' + ptsToPath(line) + '" fill="none" stroke="rgba(0,0,0,' + 0.5 * strength + ')" stroke-width="0.6"' + NS + '/>';
+        h += '<path d="' + ptsToPath(line.slice(0, Math.ceil(line.length / 2) + 1)) + '" fill="none" stroke="rgba(235,250,240,' + 0.35 * strength + ')" stroke-width="0.5"' + NS + ' transform="translate(-0.5 -0.4)"/>';
+      }
+    });
+    return h;
+  }
+  var DEFS = '<defs><radialGradient id="frost"><stop offset="0" stop-color="rgba(230,245,235,0.55)"/><stop offset="0.6" stop-color="rgba(200,225,210,0.18)"/><stop offset="1" stop-color="rgba(200,225,210,0)"/></radialGradient>' +
+             '<filter id="soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0.7"/></filter></defs>';
+
+  // ---------------------------------------------------------------- B · hairline
+  // Mostly a dark line: the break is a gap in the glass, and a gap reads dark.
+  // Light only where a facet happens to face the room — short, sparse glints.
+  function svgHairline(P) {
+    return DEFS + chipSVG(P) + crackRuns(P, function (d, i, deep, w, R) {
+      var h = '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,' + (0.55 * Math.min(1, w + 0.2)).toFixed(2) + ')" stroke-width="' + (0.9 * w + 0.3).toFixed(2) + '"' + NS + ' stroke-linecap="round"/>';
+      // the room's light, faintly, all along the break — so it reads as one line on a dark tube
+      h += '<path d="' + d + '" fill="none" stroke="rgba(225,240,230,' + (0.13 * w).toFixed(3) + ')" stroke-width="0.5"' + NS + ' transform="translate(-0.45 -0.4)"/>';
+      if (R() < (deep ? 0.35 : 0.2)) h += '<path d="' + d + '" fill="none" stroke="rgba(240,252,244,' + (0.55 * w).toFixed(2) + ')" stroke-width="0.55"' + NS + ' stroke-linecap="round"/>';
+      return h;
+    }) + impact(P, 0.7);
+  }
+
+  // ---------------------------------------------------------------- C · two edges
+  // A real break has two faces: the near edge catches light, the far edge sits
+  // in shadow, and between them the glass is dark. Drawn as three hairlines a
+  // pixel apart. The light edge comes and goes along the run.
+  function svgBevel(P) {
+    return DEFS + chipSVG(P) + crackRuns(P, function (d, i, deep, w, R) {
+      var lit = R();
+      var h = '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,' + (0.5 * Math.min(1, w + 0.2)).toFixed(2) + ')" stroke-width="' + (1.3 * w + 0.4).toFixed(2) + '"' + NS + ' transform="translate(0.55 0.6)" filter="url(#soft)"/>';
+      h += '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,' + (0.6 * Math.min(1, w + 0.2)).toFixed(2) + ')" stroke-width="' + (0.7 * w + 0.25).toFixed(2) + '"' + NS + '/>';
+      h += '<path d="' + d + '" fill="none" stroke="rgba(235,250,240,' + ((0.08 + 0.38 * lit * lit) * w).toFixed(2) + ')" stroke-width="0.5"' + NS + ' transform="translate(-0.5 -0.45)"/>';
+      return h;
+    }) + impact(P, 0.85);
+  }
+
+  // ---------------------------------------------------------------- D · lit by the picture
+  // C's two edges, and the light INSIDE the crack is the picture's own light:
+  // the break scatters whatever the phosphor is doing behind it, so it all but
+  // vanishes on the dark tube and flares where the image is bright. Rendered
+  // as a second layer with color-dodge over the tube.
+  function svgLitLayer(P) {
+    return crackRuns(P, function (d, i, deep, w, R) {
+      return '<path d="' + d + '" fill="none" stroke="rgba(150,190,160,' + (0.55 * w).toFixed(2) + ')" stroke-width="' + (1.2 * w + 0.4).toFixed(2) + '"' + NS + ' stroke-linecap="round"/>';
+    });
+  }
+
+  var OPTS = [
+    { key: 'A', name: '今 · Today', note: 'The current crack, for comparison: soft pale strokes with a bright dashed glint on top. Pale everywhere, so it reads as a line drawn over the screen.', svg: svgToday },
+    { key: 'B', name: '細 · Hairline', note: 'Mostly a thin dark line, because a crack is a gap in the glass. It wanders slightly and the dead-end cracks fade out to nothing. A faint line of reflected light runs along it, brighter only in a few short glints where a sliver of the break faces the room. The point of impact has a frosted crush and a few chips knocked out of the surface. The quietest option.', svg: svgHairline },
+    { key: 'C', name: '縁 · Two edges', note: 'Each break shows both of its faces: a shadowed far edge, a dark gap, and a near edge that catches the light in some stretches and not others. This gives the break depth, as if the glass has some thickness. Same frosted point of impact as B.', svg: svgBevel },
+    { key: 'D', name: '光 · Lit by the picture', note: 'The edges from C, plus the crack picks up the picture\'s own light: it nearly disappears on the dark screen and glows where the image behind it is bright, the way a real crack scatters the light passing through it. It changes as the picture plays.', svg: svgBevel, lit: svgLitLayer },
+  ];
+
+  // ---------------------------------------------------------------- the tube picture (live P39 ramp, shards slipped)
+  var LUT = [];
+  (function () {
+    var stops = [[0, 2, 6, 3], [0.2, 4, 20, 9], [0.45, 12, 72, 30], [0.7, 40, 152, 72], [0.88, 120, 226, 146], [1, 222, 255, 226]];
+    for (var i = 0; i < 256; i++) {
+      var t = Math.pow(i / 255, 1.3), a = stops[0], b = stops[1];
+      for (var k = 1; k < stops.length; k++) { if (t <= stops[k][0]) { a = stops[k - 1]; b = stops[k]; break; } }
+      var u = (t - a[0]) / (b[0] - a[0] || 1);
+      LUT[i] = [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u];
+    }
+  })();
+  var phos = null;
+  function makePhos(img) {
+    var c = document.createElement('canvas'); c.width = 192; c.height = 144;
+    var x = c.getContext('2d'); x.drawImage(img, 0, 0, 192, 144);
+    var id = x.getImageData(0, 0, 192, 144), p = id.data;
+    for (var i = 0; i < p.length; i += 4) {
+      var l = Math.min(255, Math.max(0, (0.3 * p[i] + 0.59 * p[i + 1] + 0.11 * p[i + 2]) * 1.08 + 6 + (Math.random() - 0.5) * 16));
+      var o = LUT[l | 0]; p[i] = o[0]; p[i + 1] = o[1]; p[i + 2] = o[2];
+    }
+    x.putImageData(id, 0, 0); return c;
+  }
+  function paintTube(cv, P, on) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    var x = cv.getContext('2d'), W = cv.width, H = cv.height;
+    x.fillStyle = '#030503'; x.fillRect(0, 0, W, H);
+    if (!on || !phos) return;
+    var sx = W / 400, sy = H / 300, slip = 1.2;
+    P.shards.forEach(function (s) {
+      x.save(); x.beginPath();
+      s.poly.forEach(function (p, i) { i ? x.lineTo(p[0] * sx, p[1] * sy) : x.moveTo(p[0] * sx, p[1] * sy); });
+      x.closePath(); x.clip(); x.globalAlpha = s.a;
+      x.imageSmoothingEnabled = false;
+      x.drawImage(phos, s.dx * sx * slip, s.dy * sy * slip, W, H);
+      x.globalAlpha = 0.28 * s.a; x.filter = 'blur(' + (4 * dpr) + 'px)'; x.globalCompositeOperation = 'lighter';
+      x.drawImage(phos, s.dx * sx * slip, s.dy * sy * slip, W, H);
+      x.restore();
+    });
+  }
+
+  function tube(opt, P, on) {
+    var html = '<div class="bezel"><div class="zankyo-scene"><div class="zk-tube-wrap"><div class="zk-tube">' +
+      '<canvas></canvas><div class="zankyo-scanlines"></div>' +
+      '<svg class="zk-crack" viewBox="0 0 400 300" preserveAspectRatio="none">' + opt.svg(P) + '</svg>' +
+      (opt.lit ? '<svg class="zk-crack lit" viewBox="0 0 400 300" preserveAspectRatio="none">' + opt.lit(P) + '</svg>' : '') +
+      '<div class="zk-glass"></div></div></div></div></div><div class="cap">' + (on ? 'with a picture' : 'dark tube') + '</div>';
+    return html;
+  }
+
+  var cur = 'A';
+  function render() {
+    var P = PATS[cur], box = document.getElementById('opts'), h = '';
+    OPTS.forEach(function (o) {
+      h += '<div class="opt"><b>' + o.key + '</b><span>' + o.name + '</span><p>' + o.note + '</p></div>' +
+           '<div class="pair"><div>' + tube(o, P, false) + '</div><div>' + tube(o, P, true) + '</div></div>';
+    });
+    box.innerHTML = h;
+    var cvs = box.querySelectorAll('canvas');
+    for (var i = 0; i < cvs.length; i++) paintTube(cvs[i], P, i % 2 === 1);
+    var bs = document.querySelectorAll('#ctl button');
+    for (var j = 0; j < bs.length; j++) bs[j].className = bs[j].dataset.p === cur ? 'on' : '';
+  }
+  var ctl = document.getElementById('ctl');
+  ctl.innerHTML = 'Pattern: <button data-p="A">A · struck upper right</button><button data-p="D">D · struck twice</button>';
+  ctl.addEventListener('click', function (e) { if (e.target.dataset.p) { cur = e.target.dataset.p; render(); } });
+  var img = new Image();
+  img.onload = function () { phos = makePhos(img); render(); };
+  img.onerror = function () { render(); };
+  img.src = 'crack-frames/bbc1-ni-closedown-1973.png';
+  render();
+  window.addEventListener('resize', render);
+})();
+</script>
+</body>
+</html>
