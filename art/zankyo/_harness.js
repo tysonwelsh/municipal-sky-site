@@ -155,6 +155,11 @@ function mkCtx() {
   ctx.createBufferSource = () => mkNode("BufferSource", { playbackRate: 1, detune: 0 }, { buffer: null, loop: false, loopStart: 0, loopEnd: 0 });
   ctx.createPeriodicWave = () => ({});
   ctx.createMediaElementSource = (el) => mkNode("MediaElementSource", {}, { mediaElement: el });
+  // 経路 the decoded reel (Q0): the decoder answers AT ONCE, through its
+  // callback, with a buffer the length of a long reel and no samples — the
+  // receiver only ever hands it to a BufferSource. Synchronous for the reason
+  // every mock here is: a promise would settle after the run.
+  ctx.decodeAudioData = (ab, ok) => { const b = { numberOfChannels: 1, length: 48000 * 130, sampleRate: 48000, duration: 130, getChannelData: () => new Float32Array(1) }; if (ok) ok(b); return undefined; };
   return ctx;
 }
 
@@ -202,7 +207,7 @@ function mockVideo() {
   return v;
 }
 function mockDocument() { return { createElement: (tag) => tag === "video" ? mockVideo() : { style: {}, setAttribute() {}, appendChild() {} }, body: { appendChild() {} }, documentElement: { appendChild() {} } }; }
-function mockFetch(url) { if (SIGNAL_MOCK === "none") return failing(new Error("offline")); return thenableOf({ ok: true, json: () => thenableOf(JSON.parse(MANIFEST_TEXT)) }); }
+function mockFetch(url) { if (SIGNAL_MOCK === "none") return failing(new Error("offline")); return thenableOf({ ok: true, json: () => thenableOf(JSON.parse(MANIFEST_TEXT)), arrayBuffer: () => thenableOf(new ArrayBuffer(8)) }); }
 
 // ---- load the substrate + the engine, fresh per run ----
 const PJ2_DIR = path.join(__dirname, "..", "prosperos-jukebox-v2");

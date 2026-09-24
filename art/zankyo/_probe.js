@@ -154,7 +154,11 @@ function runOnce(seed, runS, jitterSeed) {
     // every broadcast falls back with "no media element" even when the pool is
     // ready and a reel is drawn.
     this.createMediaElementSource = function (el) { return node("mediaelementsource", { mediaElement: el }); };
-    this.decodeAudioData = function (buf, ok, err) { var p = { then: function (f) { return p; }, catch: function (f) { return p; } }; return p; };
+    // 経路 the decoded reel (Q0): answered AT ONCE through the callback, as in
+    // _harness.js — this used to be a thenable that never settled, so under
+    // ?reels=buffer every broadcast fell back and the probe could not see the
+    // decoded path at all (the W4 shape of blindness, again).
+    this.decodeAudioData = function (buf, ok, err) { var b = { numberOfChannels: 1, length: 48000 * 130, sampleRate: 48000, duration: 130, getChannelData: function () { return new Float32Array(1); } }; if (ok) ok(b); return undefined; };
   }
   // ---- the receiver's world: the real manifest and a <video>, on the virtual
   // clock. ZK_SIGNAL_MOCK=ready (default: the reel is ready 0.3 s after
@@ -204,7 +208,7 @@ function runOnce(seed, runS, jitterSeed) {
   W.addEventListener = function () {}; W.removeEventListener = function () {};
   W.location = { search: FAR != null ? "?far=" + FAR : "", href: "http://127.0.0.1/art/zankyo/", pathname: "/art/zankyo/" };
   W.navigator = { userAgent: "probe", mediaSession: null };
-  W.fetch = function () { return SIGNAL_MOCK === "none" ? failing(new Error("offline")) : thenableOf({ ok: true, json: function () { return thenableOf(JSON.parse(MANIFEST_TEXT)); } }); };
+  W.fetch = function () { return SIGNAL_MOCK === "none" ? failing(new Error("offline")) : thenableOf({ ok: true, json: function () { return thenableOf(JSON.parse(MANIFEST_TEXT)); }, arrayBuffer: function () { return thenableOf(new ArrayBuffer(8)); } }); };
   W.console = console;
   global.window = W; global.document = doc; global.PJ2 = W.PJ2 = {};
   global.location = W.location; try { Object.defineProperty(global, "navigator", { value: W.navigator, configurable: true, writable: true }); } catch (e) {}
