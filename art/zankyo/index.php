@@ -150,6 +150,17 @@ include '../../includes/header.php';
           </div>
         </div>
 
+        <!-- 拡声器 THE SPEAKER (owner's pick, 2026-09-24:
+             mockups/speaker-1-options.php option C): louvres moulded into
+             the plastic, dark cloth behind them, a recessed 音 medallion. Its
+             own casing, in the scope's plastic, filling the column under it to
+             the foot of the second set. Decorative — it plays nothing — and
+             gone under 700 px, where the bank stacks and there is no gap. -->
+        <div class="zk-spk" aria-hidden="true">
+          <span class="zk-spk-medal"><i>音</i></span>
+          <span class="zk-spk-slots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+        </div>
+
       </div>
 
       <!-- 隣 THE SECOND SET — 映像管 MSHI CRT-9, 受信専用: the older receive-only

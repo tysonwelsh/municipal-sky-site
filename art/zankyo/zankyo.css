@@ -1025,6 +1025,42 @@
 .zk-bank-side { order: -1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 14px; }   /* SETTLED (PLAN-MONITOR-2 §2.1): the set takes column 1 — 516 px → tube 488 × 366 */
 .zk-bank-main { min-width: 0; display: flex; flex-direction: column; }
 .zk-bank-main .zk-monitor { margin-bottom: 0; }   /* the bar rides inside it now */
+/* 拡声器 THE SPEAKER (owner's pick 2026-09-24, mockups/speaker-1-options.php
+   option C). The right column stretches to the height of the second set and
+   the speaker takes what is left under the scope's casing: its own casing in
+   the same plastic, 14 px down — the bank's own gap between units. Louvres
+   moulded into the plastic with dark cloth behind, and a recessed 音. */
+.zk-bank-main { align-self: stretch; }
+.zk-spk {
+  flex: 1; min-height: 110px; margin-top: 14px; position: relative;
+  display: flex; align-items: center; gap: 16px; padding: 12px 16px;
+  border-radius: 9px; border: 1px solid #000;
+  background:
+    radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%),
+    linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -5px 12px rgba(0, 0, 0, 0.6),
+    0 6px 16px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.zk-spk-medal {
+  flex: none; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 40% 30%, #26262c, #111114 70%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.06), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.zk-spk-medal i {
+  font: normal 700 24px/1 "Shippori Mincho", serif; color: rgba(var(--amber-rgb), 0.42);
+  text-shadow: 0 0 8px rgba(var(--amber-rgb), 0.18), 0 -1px 0 rgba(0, 0, 0, 0.9);
+}
+.zk-spk-slots { flex: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: space-evenly; }
+.zk-spk-slots span {   /* one louvre: a moulded slot, the cloth's weave just visible in it */
+  display: block; height: 6px; border-radius: 3px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #000, #09090b 55%, #17171b);
+  box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.95), 0 1px 0 rgba(255, 255, 255, 0.07), 0 -1px 0 rgba(0, 0, 0, 0.6);
+}
 
 /* The mounting strap is gone (owner §C). It wrapped the set in a second
    housing — a striped steel strip with four bolts through it — and the set is
@@ -1555,6 +1591,7 @@
      pushes the grid column wider than the frame. */
   .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
   .zk-bank-main, .zk-bank-side { display: contents; }
+  .zk-spk { display: none; }   /* the bank stacks: no gap for the speaker to fill */
   .zk-set2    { order: 1; }   /* the television */
   .zk-monitor { order: 2; margin-bottom: 0; }   /* the scope + 段階 + PLAY · STOP · volume, one casing */
   .zk-set2, .zk-monitor, .zk-bargraph, .zk-rxpanel { min-width: 0; }
