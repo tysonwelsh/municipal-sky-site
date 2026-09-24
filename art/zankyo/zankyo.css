@@ -1484,6 +1484,17 @@
 .zk-rxpanel .zk-bolt-bl, .zk-rxpanel .zk-bolt-br { bottom: 4px; }
 .zk-rxpanel .zk-bolt-tl, .zk-rxpanel .zk-bolt-bl { left: 4px; }
 .zk-rxpanel .zk-bolt-tr, .zk-rxpanel .zk-bolt-br { right: 4px; }
+/* 2026-09-24 (owner): the transport left its bolted plate under the second
+   set and moved INTO .zk-monitor, under the bar — so it drops its own stock,
+   border, shadow and screws and sits on the monitor's moulding, parted from
+   the bar by the same 12 px gutter of plastic that parts the bar from the
+   tube. Horizontal padding 0: the keys and the wheel line up with the bar's
+   edges. Scoped to .zk-monitor so it beats the older panel rules, including
+   the narrow-width padding below. */
+.zk-monitor .zk-rxpanel {
+  flex: none; min-height: 0; margin-top: 12px; padding: 0;
+  background: none; border: 0; border-radius: 0; box-shadow: none;
+}
 /* owner §4.7, re-cut 2026-09-18 for the deck keys and the roller: the controls
    still speak for themselves — keys 42 x 46 in their bed, the wheel 150 wide —
    and the volume carries no readout at all: the knurl turning under the finger
@@ -1515,6 +1526,7 @@
 
   /* bargraph: slimmer cells, and a tighter gutter to the tube above */
   .zk-bargraph { margin-top: 9px; padding: 0; gap: 3px 8px; }
+  .zk-monitor .zk-rxpanel { margin-top: 9px; }
   .zk-bar-cells { gap: 1px; height: 13px; }
 
   /* control rail wraps: transport + master share a row, module beneath */
@@ -1559,8 +1571,7 @@
   .zk-bank { grid-template-columns: 1fr; row-gap: 14px; column-gap: 0; }
   .zk-bank-main, .zk-bank-side { display: contents; }
   .zk-set2    { order: 1; }   /* the television */
-  .zk-monitor { order: 2; margin-bottom: 0; }   /* the scope + 段階, one casing */
-  .zk-rxpanel { order: 4; }                     /* PLAY · STOP · volume */
+  .zk-monitor { order: 2; margin-bottom: 0; }   /* the scope + 段階 + PLAY · STOP · volume, one casing */
   .zk-set2, .zk-monitor, .zk-bargraph, .zk-rxpanel { min-width: 0; }
   .zankyo-viz { max-width: 100%; }
   /* the strap carried the set's slight crookedness at narrow widths; with the

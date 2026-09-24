@@ -103,6 +103,52 @@ include '../../includes/header.php';
             <!-- no foot: just the bar (owner, 2026-09-14) -->
           </div>
 
+          <!-- the transport: PLAY · STOP · master volume, moved off its own
+               bolted plate under the second set and INTO this casing, below the
+               bar (owner, 2026-09-24) — no plate, no screws, the monitor's
+               moulding carries it. The ids are the same; zankyo-ui.js binds to
+               them wherever they sit. -->
+          <div class="zk-rxpanel" id="zankyo-rxpanel">
+            <!-- TRANSPORT (owner's pick, 2026-09-18: mockups/transport-1-options.html
+                 option B3): mechanical deck keys in their own recessed bed. PLAY
+                 LATCHES DOWN and stays down while the station runs — the machine's
+                 state is a physical position, so it still reads with the lamp off —
+                 and STOP releases it. Green on PLAY, red on STOP. -->
+            <div class="zk-transport-cluster">
+              <div class="zk-keybed">
+                <button type="button" class="zk-key zk-key-play" id="zankyo-play" aria-label="Play" aria-pressed="false">
+                  <span class="zk-key-glyph" aria-hidden="true">&#9654;&#xFE0E;</span>
+                </button>
+                <button type="button" class="zk-key zk-key-stop" id="zankyo-stop" aria-label="Stop">
+                  <span class="zk-key-glyph" aria-hidden="true">&#9632;&#xFE0E;</span>
+                </button>
+              </div>
+              <span class="zk-tally" id="zankyo-tally" aria-hidden="true"></span>
+            </div>
+            <span class="zk-rxpanel-gap" aria-hidden="true"></span>
+            <!-- MASTER VOLUME (owner's pick, 2026-09-20: mockups/volume-2-options.html
+                 option W6). A moulded rubber thumbwheel turned on a vertical axle.
+                 The scale is printed on the wheel — 0-100 in tens, each numeral on
+                 its own flat milled into the middle of the tread band, with the
+                 tread carrying on above and below it — and a fixed 指標 pointer
+                 above reads whichever flat has come round to it.
+
+                 The treads and flats are placed by zankyo-ui.js, by ANGLE rather
+                 than at even spacing, so they crowd toward the edges the way a real
+                 cylinder's do. That projection is the whole of the effect; an
+                 evenly-spaced pattern reads as a strip sliding sideways. -->
+            <div class="zk-master">
+              <div class="zk-wheel" id="zankyo-master-wheel">
+                <span class="zk-wheel-ind" aria-hidden="true"></span>
+                <span class="zk-wheel-barrel" aria-hidden="true">
+                  <span class="zk-wheel-sheen"></span>
+                </span>
+                <input type="range" class="zk-wheel-input" id="zankyo-master-vol"
+                       min="0" max="100" step="1" value="60" aria-label="Master volume" />
+              </div>
+            </div>
+          </div>
+
           <!-- the chin carries only the power lamp, and now sits below BOTH
                screens — it is the casing's foot, not the tube's (owner,
                2026-09-18) -->
@@ -199,53 +245,6 @@ include '../../includes/header.php';
             </div>
           </div>
         <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
-      </div>
-      <!-- the transport plate (owner §4.5): PLAY · STOP · master volume, moved
-           here from the control rail; the ids are the same, zankyo-ui.js binds
-           to them wherever they sit -->
-      <div class="zk-rxpanel" id="zankyo-rxpanel">
-        <span class="zk-bolt zk-bolt-tl" style="--hex:33deg" aria-hidden="true"></span>
-        <span class="zk-bolt zk-bolt-tr" style="--hex:-8deg" aria-hidden="true"></span>
-        <span class="zk-bolt zk-bolt-bl" style="--hex:17deg" aria-hidden="true"></span>
-        <span class="zk-bolt zk-bolt-br" style="--hex:-41deg" aria-hidden="true"></span>
-        <!-- TRANSPORT (owner's pick, 2026-09-18: mockups/transport-1-options.html
-             option B3): mechanical deck keys in their own recessed bed. PLAY
-             LATCHES DOWN and stays down while the station runs — the machine's
-             state is a physical position, so it still reads with the lamp off —
-             and STOP releases it. Green on PLAY, red on STOP. -->
-        <div class="zk-transport-cluster">
-          <div class="zk-keybed">
-            <button type="button" class="zk-key zk-key-play" id="zankyo-play" aria-label="Play" aria-pressed="false">
-              <span class="zk-key-glyph" aria-hidden="true">&#9654;&#xFE0E;</span>
-            </button>
-            <button type="button" class="zk-key zk-key-stop" id="zankyo-stop" aria-label="Stop">
-              <span class="zk-key-glyph" aria-hidden="true">&#9632;&#xFE0E;</span>
-            </button>
-          </div>
-          <span class="zk-tally" id="zankyo-tally" aria-hidden="true"></span>
-        </div>
-        <span class="zk-rxpanel-gap" aria-hidden="true"></span>
-        <!-- MASTER VOLUME (owner's pick, 2026-09-20: mockups/volume-2-options.html
-             option W6). A moulded rubber thumbwheel turned on a vertical axle.
-             The scale is printed on the wheel — 0-100 in tens, each numeral on
-             its own flat milled into the middle of the tread band, with the
-             tread carrying on above and below it — and a fixed 指標 pointer
-             above reads whichever flat has come round to it.
-
-             The treads and flats are placed by zankyo-ui.js, by ANGLE rather
-             than at even spacing, so they crowd toward the edges the way a real
-             cylinder's do. That projection is the whole of the effect; an
-             evenly-spaced pattern reads as a strip sliding sideways. -->
-        <div class="zk-master">
-          <div class="zk-wheel" id="zankyo-master-wheel">
-            <span class="zk-wheel-ind" aria-hidden="true"></span>
-            <span class="zk-wheel-barrel" aria-hidden="true">
-              <span class="zk-wheel-sheen"></span>
-            </span>
-            <input type="range" class="zk-wheel-input" id="zankyo-master-vol"
-                   min="0" max="100" step="1" value="60" aria-label="Master volume" />
-          </div>
-        </div>
       </div>
       </div>
     </div>
