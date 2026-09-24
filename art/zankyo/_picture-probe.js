@@ -210,12 +210,14 @@ async function runPage(browser, fx, o) {
     await page.send("Page.addScriptToEvaluateOnNewDocument", { source: "window.ZK_SET_DEV = " + JSON.stringify(cfg) + ";" });
     const errors = [];
     page.on("Runtime.exceptionThrown", (e) => errors.push((e.exceptionDetails.exception && e.exceptionDetails.exception.description) || e.exceptionDetails.text));
+    let served = 0;
     if (o.baseSrc) {
       await page.send("Fetch.enable", { patterns: [{ urlPattern: "*zk-set.js*", requestStage: "Request" }] });
       page.on("Fetch.requestPaused", (e) => {
+        served++;
         page.send("Fetch.fulfillRequest", { requestId: e.requestId, responseCode: 200,
           responseHeaders: [{ name: "Content-Type", value: "application/javascript; charset=utf-8" }],
-          body: Buffer.from(o.baseSrc, "utf8").toString("base64") }).catch(() => {});
+          body: Buffer.from(o.baseSrc, "utf8").toString("base64") }).catch((err) => errors.push("the base zk-set.js was not served: " + (err && err.message)));
       });
     }
     await page.send("Page.navigate", { url: URL0 + "?seed=" + SEED });
@@ -231,6 +233,15 @@ async function runPage(browser, fx, o) {
     const res = await page.eval("(" + PAGE_RUN.toString() + ")(" + JSON.stringify(fx) + "," + JSON.stringify(REELS) + "," + JSON.stringify({
       t0S: T0_S, fps: FPS, hash: !!o.hash, png: !!o.png, nSamples: 20, gray: !!o.gray, grayEvery: o.grayEvery || 3, force: o.force || null }) + ")", 600000);
     res.errors = errors;
+    // THE BASE MUST BE THE BASE (critic P0 r1). If the interception ever
+    // failed silently, the "base" page would load this tree's zk-set.js, the
+    // identity gate would compare the tree with itself and pass, and the
+    // sensitivity check (which moves only the tree) would still pass — a
+    // green gate for the wrong reason. So a base page must prove it: the
+    // request was intercepted, and the page lacks the tree's character hook
+    // (rc.91's _dev has none; the shim does not add one).
+    if (o.baseSrc && (served < 1 || res.character != null))
+      throw new Error("the base page is not the base (zk-set.js intercepted " + served + "×, character hook " + (res.character != null ? "PRESENT" : "absent") + ")");
     return res;
   } finally { await page.closeTarget(); }
 }
